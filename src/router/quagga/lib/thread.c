@@ -303,7 +303,7 @@ cpu_record_print(struct vty *vty, thread_type filter)
   void *args[3] = {&tmp, vty, &filter};
 
   memset(&tmp, 0, sizeof tmp);
-  tmp.funcname = "TOTAL";
+  tmp.funcname = (char *)"TOTAL";
   tmp.types = filter;
 
 #ifdef HAVE_RUSAGE
@@ -380,6 +380,89 @@ DEFUN(show_thread_cpu,
     }
 
   cpu_record_print(vty, filter);
+  return CMD_SUCCESS;
+}
+
+static void
+cpu_record_hash_clear (struct hash_backet *bucket, 
+		      void *args)
+{
+  thread_type *filter = args;
+  struct cpu_thread_history *a = bucket->data;
+  
+  a = bucket->data;
+  if ( !(a->types & *filter) )
+       return;
+  
+  hash_release (cpu_record, bucket->data);
+}
+
+static void
+cpu_record_clear (thread_type filter)
+{
+  thread_type *tmp = &filter;
+  hash_iterate (cpu_record,
+	        (void (*) (struct hash_backet*,void*)) cpu_record_hash_clear,
+	        tmp);
+}
+
+DEFUN(clear_thread_cpu,
+      clear_thread_cpu_cmd,
+      "clear thread cpu [FILTER]",
+      "Clear stored data\n"
+      "Thread information\n"
+      "Thread CPU usage\n"
+      "Display filter (rwtexb)\n")
+{
+  int i = 0;
+  thread_type filter = (thread_type) -1U;
+
+  if (argc > 0)
+    {
+      filter = 0;
+      while (argv[0][i] != '\0')
+	{
+	  switch ( argv[0][i] )
+	    {
+	    case 'r':
+	    case 'R':
+	      filter |= (1 << THREAD_READ);
+	      break;
+	    case 'w':
+	    case 'W':
+	      filter |= (1 << THREAD_WRITE);
+	      break;
+	    case 't':
+	    case 'T':
+	      filter |= (1 << THREAD_TIMER);
+	      break;
+	    case 'e':
+	    case 'E':
+	      filter |= (1 << THREAD_EVENT);
+	      break;
+	    case 'x':
+	    case 'X':
+	      filter |= (1 << THREAD_EXECUTE);
+	      break;
+	    case 'b':
+	    case 'B':
+	      filter |= (1 << THREAD_BACKGROUND);
+	      break;
+	    default:
+	      break;
+	    }
+	  ++i;
+	}
+      if (filter == 0)
+	{
+	  vty_out(vty, "Invalid filter \"%s\" specified,"
+                  " must contain at least one of 'RWTEXB'%s",
+		  argv[0], VTY_NEWLINE);
+	  return CMD_WARNING;
+	}
+    }
+
+  cpu_record_clear (filter);
   return CMD_SUCCESS;
 }
 
@@ -903,6 +986,24 @@ thread_timer_process (struct thread_list *list, struct timeval *timenow)
   return ready;
 }
 
+/* process a list en masse, e.g. for event thread lists */
+static unsigned int
+thread_process (struct thread_list *list)
+{
+  struct thread *thread;
+  unsigned int ready = 0;
+  
+  for (thread = list->head; thread; thread = thread->next)
+    {
+      thread_list_delete (list, thread);
+      thread->type = THREAD_READY;
+      thread_list_add (&thread->master->ready, thread);
+      ready++;
+    }
+  return ready;
+}
+
+
 /* Fetch next ready thread. */
 struct thread *
 thread_fetch (struct thread_master *m, struct thread *fetch)
@@ -911,27 +1012,31 @@ thread_fetch (struct thread_master *m, struct thread *fetch)
   fd_set readfd;
   fd_set writefd;
   fd_set exceptfd;
-  struct timeval timer_val;
+  struct timeval timer_val = { .tv_sec = 0, .tv_usec = 0 };
   struct timeval timer_val_bg;
-  struct timeval *timer_wait;
+  struct timeval *timer_wait = &timer_val;
   struct timeval *timer_wait_bg;
 
   while (1)
     {
       int num = 0;
       
-      /* Signals are highest priority */
+      /* Signals pre-empt everything */
       quagga_sigevent_process ();
        
-      /* Normal event are the next highest priority.  */
-      if ((thread = thread_trim_head (&m->event)) != NULL)
-        return thread_run (m, thread, fetch);
-      
-      /* If there are any ready threads from previous scheduler runs,
-       * process top of them.  
+      /* Drain the ready queue of already scheduled jobs, before scheduling
+       * more.
        */
       if ((thread = thread_trim_head (&m->ready)) != NULL)
         return thread_run (m, thread, fetch);
+      
+      /* To be fair to all kinds of threads, and avoid starvation, we
+       * need to be careful to consider all thread types for scheduling
+       * in each quanta. I.e. we should not return early from here on.
+       */
+       
+      /* Normal event are the next highest priority.  */
+      thread_process (&m->event);
       
       /* Structure copy.  */
       readfd = m->readfd;
@@ -939,13 +1044,16 @@ thread_fetch (struct thread_master *m, struct thread *fetch)
       exceptfd = m->exceptfd;
       
       /* Calculate select wait timer if nothing else to do */
-      quagga_get_relative (NULL);
-      timer_wait = thread_timer_wait (&m->timer, &timer_val);
-      timer_wait_bg = thread_timer_wait (&m->background, &timer_val_bg);
-      
-      if (timer_wait_bg &&
-	  (!timer_wait || (timeval_cmp (*timer_wait, *timer_wait_bg) > 0)))
-	timer_wait = timer_wait_bg;
+      if (m->ready.count == 0)
+        {
+          quagga_get_relative (NULL);
+          timer_wait = thread_timer_wait (&m->timer, &timer_val);
+          timer_wait_bg = thread_timer_wait (&m->background, &timer_val_bg);
+          
+          if (timer_wait_bg &&
+              (!timer_wait || (timeval_cmp (*timer_wait, *timer_wait_bg) > 0)))
+            timer_wait = timer_wait_bg;
+        }
       
       num = select (FD_SETSIZE, &readfd, &writefd, &exceptfd, timer_wait);
       

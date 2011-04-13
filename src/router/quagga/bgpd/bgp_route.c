@@ -910,19 +910,6 @@ bgp_announce_check (struct bgp_info *ri, struct peer *peer, struct prefix *p,
 	}
     }
   
-  /* AS-Pathlimit check */
-  if (ri->attr->pathlimit.ttl && peer_sort (peer) == BGP_PEER_EBGP)
-    /* Our ASN has not yet been pre-pended, that's done in packet_attribute
-     * on output. Hence the test here is for >=.
-     */
-    if (aspath_count_hops (ri->attr->aspath) >= ri->attr->pathlimit.ttl)
-      {
-        if (BGP_DEBUG (filter, FILTER))
-          zlog_info ("%s [Update:SEND] suppressed, AS-Pathlimit TTL %u exceeded",
-                     peer->host, ri->attr->pathlimit.ttl);
-        return 0;
-      }
-  
   /* For modify attribute, copy it to temporary structure. */
   bgp_attr_dup (attr, ri->attr);
   
@@ -1027,39 +1014,6 @@ bgp_announce_check (struct bgp_info *ri, struct peer *peer, struct prefix *p,
     }
 #endif /* HAVE_IPV6 */
 
-  /* AS-Pathlimit: Check ASN for private/confed */
-  if (attr->pathlimit.ttl)
-    {
-      /* locally originated update */
-      if (!attr->pathlimit.as)
-        attr->pathlimit.as = peer->local_as;
-      
-      /* if the AS_PATHLIMIT attribute is attached to a prefix by a
-         member of a confederation, then when the prefix is advertised outside
-         of the confederation boundary, then the AS number of the
-         confederation member inside of the AS_PATHLIMIT attribute should be
-         replaced by the confederation's AS number. */
-      if (peer_sort (from) == BGP_PEER_CONFED 
-          && peer_sort (peer) != BGP_PEER_CONFED)
-        attr->pathlimit.as = peer->local_as;
-
-      /* Private ASN should be updated whenever announcement leaves
-       * private space. This is deliberately done after simple confed
-       * based update..
-       */
-      if (attr->pathlimit.as >= BGP_PRIVATE_AS_MIN
-          && attr->pathlimit.as <= BGP_PRIVATE_AS_MAX)
-        {
-          if (peer->local_as < BGP_PRIVATE_AS_MIN 
-              || peer->local_as > BGP_PRIVATE_AS_MAX)
-            attr->pathlimit.as = peer->local_as;
-          /* Ours is private, try using theirs.. */
-          else if (peer->as < BGP_PRIVATE_AS_MIN
-                   || peer->local_as > BGP_PRIVATE_AS_MAX)
-            attr->pathlimit.as = peer->as;
-        }
-    }
-  
   /* If this is EBGP peer and remove-private-AS is set.  */
   if (peer_sort (peer) == BGP_PEER_EBGP
       && peer_af_flag_check (peer, afi, safi, PEER_FLAG_REMOVE_PRIVATE_AS)
@@ -1614,14 +1568,13 @@ bgp_process_queue_init (void)
     }
   
   bm->process_main_queue->spec.workfunc = &bgp_process_main;
-  bm->process_rsclient_queue->spec.workfunc = &bgp_process_rsclient;
   bm->process_main_queue->spec.del_item_data = &bgp_processq_del;
-  bm->process_rsclient_queue->spec.del_item_data
-    =  bm->process_main_queue->spec.del_item_data;
-  bm->process_main_queue->spec.max_retries
-    = bm->process_main_queue->spec.max_retries = 0;
-  bm->process_rsclient_queue->spec.hold
-    = bm->process_main_queue->spec.hold = 50;
+  bm->process_main_queue->spec.max_retries = 0;
+  bm->process_main_queue->spec.hold = 50;
+  
+  memcpy (bm->process_rsclient_queue, bm->process_main_queue,
+          sizeof (struct work_queue *));
+  bm->process_rsclient_queue->spec.workfunc = &bgp_process_rsclient;
 }
 
 void
@@ -3239,14 +3192,6 @@ bgp_static_update_rsclient (struct peer *rsclient, struct prefix *p,
   attr.med = bgp_static->igpmetric;
   attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_MULTI_EXIT_DISC);
   
-  if (bgp_static->ttl)
-    {
-      attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_AS_PATHLIMIT);
-      attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ATOMIC_AGGREGATE);
-      attr.pathlimit.as = 0;
-      attr.pathlimit.ttl = bgp_static->ttl;
-    }
-  
   if (bgp_static->atomic)
     attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ATOMIC_AGGREGATE);
   
@@ -3281,7 +3226,7 @@ bgp_static_update_rsclient (struct peer *rsclient, struct prefix *p,
   else
     attr_new = bgp_attr_intern (&attr);
   
-  new_attr = *attr_new;
+  bgp_attr_dup(&new_attr, attr_new);
   
   SET_FLAG (bgp->peer_self->rmap_type, PEER_RMAP_TYPE_NETWORK);
 
@@ -3310,6 +3255,7 @@ bgp_static_update_rsclient (struct peer *rsclient, struct prefix *p,
 
   bgp_attr_unintern (attr_new);
   attr_new = bgp_attr_intern (&new_attr);
+  bgp_attr_extra_free (&new_attr);
 
   for (ri = rn->info; ri; ri = ri->next)
     if (ri->peer == bgp->peer_self && ri->type == ZEBRA_ROUTE_BGP
@@ -3394,14 +3340,6 @@ bgp_static_update_main (struct bgp *bgp, struct prefix *p,
   attr.nexthop = bgp_static->igpnexthop;
   attr.med = bgp_static->igpmetric;
   attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_MULTI_EXIT_DISC);
-
-  if (bgp_static->ttl)
-    {
-      attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_AS_PATHLIMIT);
-      attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ATOMIC_AGGREGATE);
-      attr.pathlimit.as = 0;
-      attr.pathlimit.ttl = bgp_static->ttl;
-    }
 
   if (bgp_static->atomic)
     attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ATOMIC_AGGREGATE);
@@ -3518,8 +3456,8 @@ bgp_static_update (struct bgp *bgp, struct prefix *p,
 }
 
 static void
-bgp_static_update_vpnv4 (struct bgp *bgp, struct prefix *p, u_int16_t afi,
-			 u_char safi, struct prefix_rd *prd, u_char *tag)
+bgp_static_update_vpnv4 (struct bgp *bgp, struct prefix *p, afi_t afi,
+			 safi_t safi, struct prefix_rd *prd, u_char *tag)
 {
   struct bgp_node *rn;
   struct bgp_info *new;
@@ -3599,8 +3537,8 @@ bgp_check_local_routes_rsclient (struct peer *rsclient, afi_t afi, safi_t safi)
 }
 
 static void
-bgp_static_withdraw_vpnv4 (struct bgp *bgp, struct prefix *p, u_int16_t afi,
-			   u_char safi, struct prefix_rd *prd, u_char *tag)
+bgp_static_withdraw_vpnv4 (struct bgp *bgp, struct prefix *p, afi_t afi,
+			   safi_t safi, struct prefix_rd *prd, u_char *tag)
 {
   struct bgp_node *rn;
   struct bgp_info *ri;
@@ -3626,44 +3564,17 @@ bgp_static_withdraw_vpnv4 (struct bgp *bgp, struct prefix *p, u_int16_t afi,
   bgp_unlock_node (rn);
 }
 
-static void
-bgp_pathlimit_update_parents (struct bgp *bgp, struct bgp_node *rn,
-                              int ttl_edge)
-{
-  struct bgp_node *parent = rn;
-  struct bgp_static *sp;
-  
-  /* Existing static changed TTL, search parents and adjust their atomic */
-  while ((parent = parent->parent))
-    if ((sp = parent->info))
-      {
-        int sp_level = (sp->atomic ? 1 : 0);
-        ttl_edge ? sp->atomic++ : sp->atomic--;
-        
-        /* did we change state of parent whether atomic is set or not? */
-        if (sp_level != (sp->atomic ? 1 : 0))
-          {
-            bgp_static_update (bgp, &parent->p, sp,
-                               rn->table->afi, rn->table->safi);
-          }
-      }
-}
-
 /* Configure static BGP network.  When user don't run zebra, static
    route should be installed as valid.  */
 static int
 bgp_static_set (struct vty *vty, struct bgp *bgp, const char *ip_str, 
-                u_int16_t afi, u_char safi, const char *rmap, int backdoor,
-                u_char ttl)
+                afi_t afi, safi_t safi, const char *rmap, int backdoor)
 {
   int ret;
   struct prefix p;
   struct bgp_static *bgp_static;
   struct bgp_node *rn;
   u_char need_update = 0;
-  u_char ttl_change = 0;
-  u_char ttl_edge = (ttl ? 1 : 0);
-  u_char new = 0;
 
   /* Convert IP prefix string to struct prefix. */
   ret = str2prefix (ip_str, &p);
@@ -3692,21 +3603,10 @@ bgp_static_set (struct vty *vty, struct bgp *bgp, const char *ip_str,
       bgp_static = rn->info;
 
       /* Check previous routes are installed into BGP.  */
-      if (bgp_static->valid)
-        {
-          if (bgp_static->backdoor != backdoor
-              || bgp_static->ttl != ttl)
-            need_update = 1;
-        }
+      if (bgp_static->valid && bgp_static->backdoor != backdoor)
+        need_update = 1;
       
-      /* need to catch TTL set/unset transitions for handling of
-       * ATOMIC_AGGREGATE 
-       */ 
-      if ((bgp_static->ttl ? 1 : 0) != ttl_edge)
-        ttl_change = 1;
-          
       bgp_static->backdoor = backdoor;
-      bgp_static->ttl = ttl;
       
       if (rmap)
 	{
@@ -3733,9 +3633,6 @@ bgp_static_set (struct vty *vty, struct bgp *bgp, const char *ip_str,
       bgp_static->valid = 0;
       bgp_static->igpmetric = 0;
       bgp_static->igpnexthop.s_addr = 0;
-      bgp_static->ttl = ttl;
-      ttl_change = ttl_edge;
-      new = 1;
       
       if (rmap)
 	{
@@ -3747,39 +3644,6 @@ bgp_static_set (struct vty *vty, struct bgp *bgp, const char *ip_str,
       rn->info = bgp_static;
     }
 
-  /* ".. sites that choose to advertise the
-   *  AS_PATHLIMIT path attribute SHOULD advertise the ATOMIC_AGGREGATE on
-   *  all less specific covering prefixes as well as the more specific
-   *  prefixes."
-   *
-   * So:
-   * Prefix that has just had pathlimit set/unset:
-   * - Must bump ATOMIC refcount on all parents.
-   *
-   * To catch less specific prefixes:
-   * - Must search children for ones with TTL, bump atomic refcount
-   *   (we dont care if we're deleting a less specific prefix..)
-   */
-  if (ttl_change)
-    {
-      /* Existing static changed TTL, search parents and adjust their atomic */
-      bgp_pathlimit_update_parents (bgp, rn, ttl_edge);
-    }
-  
-  if (new)
-    {
-      struct bgp_node *child;
-      struct bgp_static *sc;
-      
-      /* New static, search children and bump this statics atomic.. */
-      child = bgp_lock_node (rn); /* route_next_until unlocks it.. */
-      while ((child = bgp_route_next_until (child, rn)))
-        {
-          if ((sc = child->info) && sc->ttl)
-            bgp_static->atomic++;
-        }
-    }
-  
   /* If BGP scan is not enabled, we should install this route here.  */
   if (! bgp_flag_check (bgp, BGP_FLAG_IMPORT_CHECK))
     {
@@ -3798,7 +3662,7 @@ bgp_static_set (struct vty *vty, struct bgp *bgp, const char *ip_str,
 /* Configure static BGP network. */
 static int
 bgp_static_unset (struct vty *vty, struct bgp *bgp, const char *ip_str,
-		  u_int16_t afi, u_char safi)
+		  afi_t afi, safi_t safi)
 {
   int ret;
   struct prefix p;
@@ -3832,9 +3696,6 @@ bgp_static_unset (struct vty *vty, struct bgp *bgp, const char *ip_str,
     }
 
   bgp_static = rn->info;
-  
-  /* decrement atomic in parents, see bgp_static_set */
-  bgp_pathlimit_update_parents (bgp, rn, 0);
   
   /* Update BGP RIB. */
   if (! bgp_static->backdoor)
@@ -4032,22 +3893,9 @@ DEFUN (bgp_network,
        "Specify a network to announce via BGP\n"
        "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n")
 {
-  u_char ttl = 0;
-  
-  if (argc == 2)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[1], 1, 255);
-  
   return bgp_static_set (vty, vty->index, argv[0],
-			 AFI_IP, bgp_node_safi (vty), NULL, 0, ttl);
+			 AFI_IP, bgp_node_safi (vty), NULL, 0);
 }
-
-ALIAS (bgp_network,
-       bgp_network_ttl_cmd,
-       "network A.B.C.D/M pathlimit <0-255>",
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (bgp_network_route_map,
        bgp_network_route_map_cmd,
@@ -4058,7 +3906,7 @@ DEFUN (bgp_network_route_map,
        "Name of the route map\n")
 {
   return bgp_static_set (vty, vty->index, argv[0],
-			 AFI_IP, bgp_node_safi (vty), argv[1], 0, 0);
+			 AFI_IP, bgp_node_safi (vty), argv[1], 0);
 }
 
 DEFUN (bgp_network_backdoor,
@@ -4068,23 +3916,9 @@ DEFUN (bgp_network_backdoor,
        "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
        "Specify a BGP backdoor route\n")
 {
-  u_char ttl = 0;
-  
-  if (argc == 2)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[1], 1, 255);
-  
   return bgp_static_set (vty, vty->index, argv[0], AFI_IP, SAFI_UNICAST,
-                         NULL, 1, ttl);
+                         NULL, 1);
 }
-
-ALIAS (bgp_network_backdoor,
-       bgp_network_backdoor_ttl_cmd,
-       "network A.B.C.D/M backdoor pathlimit <0-255>",
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (bgp_network_mask,
        bgp_network_mask_cmd,
@@ -4096,10 +3930,6 @@ DEFUN (bgp_network_mask,
 {
   int ret;
   char prefix_str[BUFSIZ];
-  u_char ttl = 0;
-  
-  if (argc == 3)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[2], 1, 255);
   
   ret = netmask_str2prefix_str (argv[0], argv[1], prefix_str);
   if (! ret)
@@ -4109,18 +3939,8 @@ DEFUN (bgp_network_mask,
     }
 
   return bgp_static_set (vty, vty->index, prefix_str,
-			 AFI_IP, bgp_node_safi (vty), NULL, 0, ttl);
+			 AFI_IP, bgp_node_safi (vty), NULL, 0);
 }
-
-ALIAS (bgp_network_mask,
-       bgp_network_mask_ttl_cmd,
-       "network A.B.C.D mask A.B.C.D pathlimit <0-255>",
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (bgp_network_mask_route_map,
        bgp_network_mask_route_map_cmd,
@@ -4143,7 +3963,7 @@ DEFUN (bgp_network_mask_route_map,
     }
 
   return bgp_static_set (vty, vty->index, prefix_str,
-			 AFI_IP, bgp_node_safi (vty), argv[2], 0, 0);
+			 AFI_IP, bgp_node_safi (vty), argv[2], 0);
 }
 
 DEFUN (bgp_network_mask_backdoor,
@@ -4157,11 +3977,7 @@ DEFUN (bgp_network_mask_backdoor,
 {
   int ret;
   char prefix_str[BUFSIZ];
-  u_char ttl = 0;
   
-  if (argc == 3)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[2], 1, 255);
-
   ret = netmask_str2prefix_str (argv[0], argv[1], prefix_str);
   if (! ret)
     {
@@ -4170,19 +3986,8 @@ DEFUN (bgp_network_mask_backdoor,
     }
 
   return bgp_static_set (vty, vty->index, prefix_str, AFI_IP, SAFI_UNICAST,
-                         NULL, 1, ttl);
+                         NULL, 1);
 }
-
-ALIAS (bgp_network_mask_backdoor,
-       bgp_network_mask_backdoor_ttl_cmd,
-       "network A.B.C.D mask A.B.C.D backdoor pathlimit <0-255>",
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (bgp_network_mask_natural,
        bgp_network_mask_natural_cmd,
@@ -4192,10 +3997,6 @@ DEFUN (bgp_network_mask_natural,
 {
   int ret;
   char prefix_str[BUFSIZ];
-  u_char ttl = 0;
-  
-  if (argc == 2)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[1], 1, 255);
 
   ret = netmask_str2prefix_str (argv[0], NULL, prefix_str);
   if (! ret)
@@ -4205,16 +4006,8 @@ DEFUN (bgp_network_mask_natural,
     }
 
   return bgp_static_set (vty, vty->index, prefix_str,
-			 AFI_IP, bgp_node_safi (vty), NULL, 0, ttl);
+			 AFI_IP, bgp_node_safi (vty), NULL, 0);
 }
-
-ALIAS (bgp_network_mask_natural,
-       bgp_network_mask_natural_ttl_cmd,
-       "network A.B.C.D pathlimit <0-255>",
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (bgp_network_mask_natural_route_map,
        bgp_network_mask_natural_route_map_cmd,
@@ -4235,7 +4028,7 @@ DEFUN (bgp_network_mask_natural_route_map,
     }
 
   return bgp_static_set (vty, vty->index, prefix_str,
-			 AFI_IP, bgp_node_safi (vty), argv[1], 0, 0);
+			 AFI_IP, bgp_node_safi (vty), argv[1], 0);
 }
 
 DEFUN (bgp_network_mask_natural_backdoor,
@@ -4247,10 +4040,6 @@ DEFUN (bgp_network_mask_natural_backdoor,
 {
   int ret;
   char prefix_str[BUFSIZ];
-  u_char ttl = 0;
-  
-  if (argc == 2)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[1], 1, 255);
 
   ret = netmask_str2prefix_str (argv[0], NULL, prefix_str);
   if (! ret)
@@ -4260,17 +4049,8 @@ DEFUN (bgp_network_mask_natural_backdoor,
     }
 
   return bgp_static_set (vty, vty->index, prefix_str, AFI_IP, SAFI_UNICAST,
-                         NULL, 1, ttl);
+                         NULL, 1);
 }
-
-ALIAS (bgp_network_mask_natural_backdoor,
-       bgp_network_mask_natural_backdoor_ttl_cmd,
-       "network A.B.C.D backdoor pathlimit (1-255>",
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (no_bgp_network,
        no_bgp_network_cmd,
@@ -4282,15 +4062,6 @@ DEFUN (no_bgp_network,
   return bgp_static_unset (vty, vty->index, argv[0], AFI_IP, 
 			   bgp_node_safi (vty));
 }
-
-ALIAS (no_bgp_network,
-       no_bgp_network_ttl_cmd,
-       "no network A.B.C.D/M pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 ALIAS (no_bgp_network,
        no_bgp_network_route_map_cmd,
@@ -4308,16 +4079,6 @@ ALIAS (no_bgp_network,
        "Specify a network to announce via BGP\n"
        "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
        "Specify a BGP backdoor route\n")
-
-ALIAS (no_bgp_network,
-       no_bgp_network_backdoor_ttl_cmd,
-       "no network A.B.C.D/M backdoor pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (no_bgp_network_mask,
        no_bgp_network_mask_cmd,
@@ -4342,17 +4103,6 @@ DEFUN (no_bgp_network_mask,
 			   bgp_node_safi (vty));
 }
 
-ALIAS (no_bgp_network,
-       no_bgp_network_mask_ttl_cmd,
-       "no network A.B.C.D mask A.B.C.D pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
-
 ALIAS (no_bgp_network_mask,
        no_bgp_network_mask_route_map_cmd,
        "no network A.B.C.D mask A.B.C.D route-map WORD",
@@ -4373,18 +4123,6 @@ ALIAS (no_bgp_network_mask,
        "Network mask\n"
        "Network mask\n"
        "Specify a BGP backdoor route\n")
-
-ALIAS (no_bgp_network_mask,
-       no_bgp_network_mask_backdoor_ttl_cmd,
-       "no network A.B.C.D mask A.B.C.D  backdoor pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Network mask\n"
-       "Network mask\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (no_bgp_network_mask_natural,
        no_bgp_network_mask_natural_cmd,
@@ -4424,25 +4162,6 @@ ALIAS (no_bgp_network_mask_natural,
        "Network number\n"
        "Specify a BGP backdoor route\n")
 
-ALIAS (no_bgp_network_mask_natural,
-       no_bgp_network_mask_natural_ttl_cmd,
-       "no network A.B.C.D pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
-
-ALIAS (no_bgp_network_mask_natural,
-       no_bgp_network_mask_natural_backdoor_ttl_cmd,
-       "no network A.B.C.D backdoor pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "Network number\n"
-       "Specify a BGP backdoor route\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
-
 #ifdef HAVE_IPV6
 DEFUN (ipv6_bgp_network,
        ipv6_bgp_network_cmd,
@@ -4450,22 +4169,9 @@ DEFUN (ipv6_bgp_network,
        "Specify a network to announce via BGP\n"
        "IPv6 prefix <network>/<length>\n")
 {
-  u_char ttl = 0;
-  
-  if (argc == 2)
-    VTY_GET_INTEGER_RANGE ("Pathlimit TTL", ttl, argv[1], 1, 255);
-
   return bgp_static_set (vty, vty->index, argv[0], AFI_IP6, SAFI_UNICAST,
-                         NULL, 0, ttl);
+                         NULL, 0);
 }
-
-ALIAS (ipv6_bgp_network,
-       ipv6_bgp_network_ttl_cmd,
-       "network X:X::X:X/M pathlimit <0-255>",
-       "Specify a network to announce via BGP\n"
-       "IPv6 prefix <network>/<length>\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 DEFUN (ipv6_bgp_network_route_map,
        ipv6_bgp_network_route_map_cmd,
@@ -4476,7 +4182,7 @@ DEFUN (ipv6_bgp_network_route_map,
        "Name of the route map\n")
 {
   return bgp_static_set (vty, vty->index, argv[0], AFI_IP6,
-			 bgp_node_safi (vty), argv[1], 0, 0);
+			 bgp_node_safi (vty), argv[1], 0);
 }
 
 DEFUN (no_ipv6_bgp_network,
@@ -4498,15 +4204,6 @@ ALIAS (no_ipv6_bgp_network,
        "Route-map to modify the attributes\n"
        "Name of the route map\n")
 
-ALIAS (no_ipv6_bgp_network,
-       no_ipv6_bgp_network_ttl_cmd,
-       "no network X:X::X:X/M pathlimit <0-255>",
-       NO_STR
-       "Specify a network to announce via BGP\n"
-       "IPv6 prefix <network>/<length>\n"
-       "AS-Path hopcount limit attribute\n"
-       "AS-Pathlimit TTL, in number of AS-Path hops\n")
-
 ALIAS (ipv6_bgp_network,
        old_ipv6_bgp_network_cmd,
        "ipv6 bgp network X:X::X:X/M",
@@ -4524,6 +4221,127 @@ ALIAS (no_ipv6_bgp_network,
        "Specify a network to announce via BGP\n"
        "IPv6 prefix <network>/<length>, e.g., 3ffe::/16\n")
 #endif /* HAVE_IPV6 */
+
+/* stubs for removed AS-Pathlimit commands, kept for config compatibility */
+ALIAS_DEPRECATED (bgp_network,
+       bgp_network_ttl_cmd,
+       "network A.B.C.D/M pathlimit <0-255>",
+       "Specify a network to announce via BGP\n"
+       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (bgp_network_backdoor,
+       bgp_network_backdoor_ttl_cmd,
+       "network A.B.C.D/M backdoor pathlimit <0-255>",
+       "Specify a network to announce via BGP\n"
+       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
+       "Specify a BGP backdoor route\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (bgp_network_mask,
+       bgp_network_mask_ttl_cmd,
+       "network A.B.C.D mask A.B.C.D pathlimit <0-255>",
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "Network mask\n"
+       "Network mask\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (bgp_network_mask_backdoor,
+       bgp_network_mask_backdoor_ttl_cmd,
+       "network A.B.C.D mask A.B.C.D backdoor pathlimit <0-255>",
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "Network mask\n"
+       "Network mask\n"
+       "Specify a BGP backdoor route\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (bgp_network_mask_natural,
+       bgp_network_mask_natural_ttl_cmd,
+       "network A.B.C.D pathlimit <0-255>",
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (bgp_network_mask_natural_backdoor,
+       bgp_network_mask_natural_backdoor_ttl_cmd,
+       "network A.B.C.D backdoor pathlimit (1-255>",
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "Specify a BGP backdoor route\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_bgp_network,
+       no_bgp_network_ttl_cmd,
+       "no network A.B.C.D/M pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_bgp_network,
+       no_bgp_network_backdoor_ttl_cmd,
+       "no network A.B.C.D/M backdoor pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "IP prefix <network>/<length>, e.g., 35.0.0.0/8\n"
+       "Specify a BGP backdoor route\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_bgp_network,
+       no_bgp_network_mask_ttl_cmd,
+       "no network A.B.C.D mask A.B.C.D pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "Network mask\n"
+       "Network mask\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_bgp_network_mask,
+       no_bgp_network_mask_backdoor_ttl_cmd,
+       "no network A.B.C.D mask A.B.C.D  backdoor pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "Network mask\n"
+       "Network mask\n"
+       "Specify a BGP backdoor route\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_bgp_network_mask_natural,
+       no_bgp_network_mask_natural_ttl_cmd,
+       "no network A.B.C.D pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_bgp_network_mask_natural,
+       no_bgp_network_mask_natural_backdoor_ttl_cmd,
+       "no network A.B.C.D backdoor pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "Network number\n"
+       "Specify a BGP backdoor route\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (ipv6_bgp_network,
+       ipv6_bgp_network_ttl_cmd,
+       "network X:X::X:X/M pathlimit <0-255>",
+       "Specify a network to announce via BGP\n"
+       "IPv6 prefix <network>/<length>\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
+ALIAS_DEPRECATED (no_ipv6_bgp_network,
+       no_ipv6_bgp_network_ttl_cmd,
+       "no network X:X::X:X/M pathlimit <0-255>",
+       NO_STR
+       "Specify a network to announce via BGP\n"
+       "IPv6 prefix <network>/<length>\n"
+       "AS-Path hopcount limit attribute\n"
+       "AS-Pathlimit TTL, in number of AS-Path hops\n")
 
 /* Aggreagete address:
 
@@ -4986,7 +4804,53 @@ bgp_aggregate_delete (struct bgp *bgp, struct prefix *p, afi_t afi,
 #define AGGREGATE_AS_SET       1
 
 static int
-bgp_aggregate_set (struct vty *vty, const char *prefix_str, 
+bgp_aggregate_unset (struct vty *vty, const char *prefix_str,
+                     afi_t afi, safi_t safi)
+{
+  int ret;
+  struct prefix p;
+  struct bgp_node *rn;
+  struct bgp *bgp;
+  struct bgp_aggregate *aggregate;
+
+  /* Convert string to prefix structure. */
+  ret = str2prefix (prefix_str, &p);
+  if (!ret)
+    {
+      vty_out (vty, "Malformed prefix%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+  apply_mask (&p);
+
+  /* Get BGP structure. */
+  bgp = vty->index;
+
+  /* Old configuration check. */
+  rn = bgp_node_lookup (bgp->aggregate[afi][safi], &p);
+  if (! rn)
+    {
+      vty_out (vty, "%% There is no aggregate-address configuration.%s",
+               VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  aggregate = rn->info;
+  if (aggregate->safi & SAFI_UNICAST)
+    bgp_aggregate_delete (bgp, &p, afi, SAFI_UNICAST, aggregate);
+  if (aggregate->safi & SAFI_MULTICAST)
+    bgp_aggregate_delete (bgp, &p, afi, SAFI_MULTICAST, aggregate);
+
+  /* Unlock aggregate address configuration. */
+  rn->info = NULL;
+  bgp_aggregate_free (aggregate);
+  bgp_unlock_node (rn);
+  bgp_unlock_node (rn);
+
+  return CMD_SUCCESS;
+}
+
+static int
+bgp_aggregate_set (struct vty *vty, const char *prefix_str,
                    afi_t afi, safi_t safi,
 		   u_char summary_only, u_char as_set)
 {
@@ -5014,8 +4878,14 @@ bgp_aggregate_set (struct vty *vty, const char *prefix_str,
   if (rn->info)
     {
       vty_out (vty, "There is already same aggregate network.%s", VTY_NEWLINE);
-      bgp_unlock_node (rn);
-      return CMD_WARNING;
+      /* try to remove the old entry */
+      ret = bgp_aggregate_unset (vty, prefix_str, afi, safi);
+      if (ret)
+        {
+          vty_out (vty, "Error deleting aggregate.%s", VTY_NEWLINE);
+	  bgp_unlock_node (rn);
+	  return CMD_WARNING;
+        }
     }
 
   /* Make aggregate address structure. */
@@ -5030,52 +4900,6 @@ bgp_aggregate_set (struct vty *vty, const char *prefix_str,
     bgp_aggregate_add (bgp, &p, afi, SAFI_UNICAST, aggregate);
   if (safi & SAFI_MULTICAST)
     bgp_aggregate_add (bgp, &p, afi, SAFI_MULTICAST, aggregate);
-
-  return CMD_SUCCESS;
-}
-
-static int
-bgp_aggregate_unset (struct vty *vty, const char *prefix_str, 
-                     afi_t afi, safi_t safi)
-{
-  int ret;
-  struct prefix p;
-  struct bgp_node *rn;
-  struct bgp *bgp;
-  struct bgp_aggregate *aggregate;
-
-  /* Convert string to prefix structure. */
-  ret = str2prefix (prefix_str, &p);
-  if (!ret)
-    {
-      vty_out (vty, "Malformed prefix%s", VTY_NEWLINE);
-      return CMD_WARNING;
-    }
-  apply_mask (&p);
-
-  /* Get BGP structure. */
-  bgp = vty->index;
-
-  /* Old configuration check. */
-  rn = bgp_node_lookup (bgp->aggregate[afi][safi], &p);
-  if (! rn)
-    {
-      vty_out (vty, "%% There is no aggregate-address configuration.%s",
-	       VTY_NEWLINE);
-      return CMD_WARNING;
-    }
-
-  aggregate = rn->info;
-  if (aggregate->safi & SAFI_UNICAST)
-    bgp_aggregate_delete (bgp, &p, afi, SAFI_UNICAST, aggregate);
-  if (aggregate->safi & SAFI_MULTICAST)
-    bgp_aggregate_delete (bgp, &p, afi, SAFI_MULTICAST, aggregate);
-
-  /* Unlock aggregate address configuration. */
-  rn->info = NULL;
-  bgp_aggregate_free (aggregate);
-  bgp_unlock_node (rn);
-  bgp_unlock_node (rn);
 
   return CMD_SUCCESS;
 }
@@ -5723,12 +5547,12 @@ route_vty_out (struct vty *vty, struct prefix *p,
 #endif /* HAVE_IPV6 */
 
       if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_MULTI_EXIT_DISC))
-	vty_out (vty, "%10d", attr->med);
+	vty_out (vty, "%10u", attr->med);
       else
 	vty_out (vty, "          ");
 
       if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_LOCAL_PREF))
-	vty_out (vty, "%7d", attr->local_pref);
+	vty_out (vty, "%7u", attr->local_pref);
       else
 	vty_out (vty, "       ");
 
@@ -5788,16 +5612,16 @@ route_vty_out_tmp (struct vty *vty, struct prefix *p,
 #endif /* HAVE_IPV6 */
 
       if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_MULTI_EXIT_DISC))
-	vty_out (vty, "%10d", attr->med);
+	vty_out (vty, "%10u", attr->med);
       else
 	vty_out (vty, "          ");
 
       if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_LOCAL_PREF))
-	vty_out (vty, "%7d", attr->local_pref);
+	vty_out (vty, "%7u", attr->local_pref);
       else
 	vty_out (vty, "       ");
       
-      vty_out (vty, "%7d ", (attr->extra ? attr->extra->weight : 0));
+      vty_out (vty, "%7u ", (attr->extra ? attr->extra->weight : 0));
       
       /* Print aspath */
       if (attr->aspath)
@@ -5979,6 +5803,9 @@ route_vty_out_detail (struct vty *vty, struct bgp *bgp, struct prefix *p,
   char buf1[BUFSIZ];
   struct attr *attr;
   int sockunion_vty_out (struct vty *, union sockunion *);
+#ifdef HAVE_CLOCK_MONOTONIC
+  time_t tbuf;
+#endif
 	
   attr = binfo->attr;
 
@@ -6064,15 +5891,15 @@ route_vty_out_detail (struct vty *vty, struct bgp *bgp, struct prefix *p,
       vty_out (vty, "      Origin %s", bgp_origin_long_str[attr->origin]);
 	  
       if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC))
-	vty_out (vty, ", metric %d", attr->med);
+	vty_out (vty, ", metric %u", attr->med);
 	  
       if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF))
-	vty_out (vty, ", localpref %d", attr->local_pref);
+	vty_out (vty, ", localpref %u", attr->local_pref);
       else
-	vty_out (vty, ", localpref %d", bgp->default_local_pref);
+	vty_out (vty, ", localpref %u", bgp->default_local_pref);
 
       if (attr->extra && attr->extra->weight != 0)
-	vty_out (vty, ", weight %d", attr->extra->weight);
+	vty_out (vty, ", weight %u", attr->extra->weight);
 	
       if (! CHECK_FLAG (binfo->flags, BGP_INFO_HISTORY))
 	vty_out (vty, ", valid");
@@ -6130,22 +5957,16 @@ route_vty_out_detail (struct vty *vty, struct bgp *bgp, struct prefix *p,
 	  vty_out (vty, "%s", VTY_NEWLINE);
 	}
       
-      /* 7: AS Pathlimit */
-      if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_AS_PATHLIMIT))
-        {
-          
-          vty_out (vty, "      AS-Pathlimit: %u",
-                   attr->pathlimit.ttl);
-          if (attr->pathlimit.as)
-            vty_out (vty, " (%u)", attr->pathlimit.as);
-          vty_out (vty, "%s", VTY_NEWLINE);
-        }
-      
       if (binfo->extra && binfo->extra->damp_info)
 	bgp_damp_info_vty (vty, binfo);
 
       /* Line 7 display Uptime */
-      vty_out (vty, "      Last update: %s", ctime (&binfo->uptime));
+#ifdef HAVE_CLOCK_MONOTONIC
+      tbuf = time(NULL) - (bgp_clock() - binfo->uptime);
+      vty_out (vty, "      Last update: %s", ctime(&tbuf));
+#else
+      vty_out (vty, "      Last update: %s", ctime(&binfo->uptime));
+#endif /* HAVE_CLOCK_MONOTONIC */
     }
   vty_out (vty, "%s", VTY_NEWLINE);
 }  
@@ -6554,7 +6375,10 @@ bgp_show_route_in_table (struct vty *vty, struct bgp *bgp,
               if ((rm = bgp_node_match (table, &match)) != NULL)
                 {
                   if (prefix_check && rm->p.prefixlen != match.prefixlen)
-                    continue;
+                    {
+                      bgp_unlock_node (rm);
+                      continue;
+                    }
 
                   for (ri = rm->info; ri; ri = ri->next)
                     {
@@ -6568,6 +6392,8 @@ bgp_show_route_in_table (struct vty *vty, struct bgp *bgp,
                       display++;
                       route_vty_out_detail (vty, bgp, &rm->p, ri, AFI_IP, SAFI_MPLS_VPN);
                     }
+
+                  bgp_unlock_node (rm);
                 }
             }
         }
@@ -6591,6 +6417,8 @@ bgp_show_route_in_table (struct vty *vty, struct bgp *bgp,
                   route_vty_out_detail (vty, bgp, &rn->p, ri, afi, safi);
                 }
             }
+
+          bgp_unlock_node (rn);
         }
     }
 
@@ -7622,7 +7450,7 @@ DEFUN (show_ipv6_mbgp_community_all,
 
 static int
 bgp_show_community (struct vty *vty, int argc, const char **argv, int exact,
-                    u_int16_t afi, u_char safi)
+                    afi_t afi, safi_t safi)
 {
   struct community *com;
   struct buffer *b;
@@ -8622,7 +8450,7 @@ ALIAS (show_ipv6_mbgp_community_exact,
 
 static int
 bgp_show_community_list (struct vty *vty, const char *com, int exact,
-			 u_int16_t afi, u_char safi)
+			 afi_t afi, safi_t safi)
 {
   struct community_list *list;
 
@@ -11348,41 +11176,49 @@ bgp_clear_damp_route (struct vty *vty, const char *view_name,
 
 	  if ((table = rn->info) != NULL)
 	    if ((rm = bgp_node_match (table, &match)) != NULL)
-	      if (! prefix_check || rm->p.prefixlen == match.prefixlen)
-		{
-		  ri = rm->info;
-		  while (ri)
-		    {
-		      if (ri->extra && ri->extra->damp_info)
-			{
-			  ri_temp = ri->next;
-			  bgp_damp_info_free (ri->extra->damp_info, 1);
-			  ri = ri_temp;
-			}
-		      else
-			ri = ri->next;
-		    }
-		}
+              {
+                if (! prefix_check || rm->p.prefixlen == match.prefixlen)
+                  {
+                    ri = rm->info;
+                    while (ri)
+                      {
+                        if (ri->extra && ri->extra->damp_info)
+                          {
+                            ri_temp = ri->next;
+                            bgp_damp_info_free (ri->extra->damp_info, 1);
+                            ri = ri_temp;
+                          }
+                        else
+                          ri = ri->next;
+                      }
+                  }
+
+                bgp_unlock_node (rm);
+              }
         }
     }
   else
     {
       if ((rn = bgp_node_match (bgp->rib[afi][safi], &match)) != NULL)
-	if (! prefix_check || rn->p.prefixlen == match.prefixlen)
-	  {
-	    ri = rn->info;
-	    while (ri)
-	      {
-		if (ri->extra && ri->extra->damp_info)
-		  {
-		    ri_temp = ri->next;
-		    bgp_damp_info_free (ri->extra->damp_info, 1);
-		    ri = ri_temp;
-		  }
-		else
-		  ri = ri->next;
-	      }
-	  }
+        {
+          if (! prefix_check || rn->p.prefixlen == match.prefixlen)
+            {
+              ri = rn->info;
+              while (ri)
+                {
+                  if (ri->extra && ri->extra->damp_info)
+                    {
+                      ri_temp = ri->next;
+                      bgp_damp_info_free (ri->extra->damp_info, 1);
+                      ri = ri_temp;
+                    }
+                  else
+                    ri = ri->next;
+                }
+            }
+
+          bgp_unlock_node (rn);
+        }
     }
 
   return CMD_SUCCESS;
@@ -11547,8 +11383,6 @@ bgp_config_write_network (struct vty *vty, struct bgp *bgp,
 	  {
 	    if (bgp_static->backdoor)
 	      vty_out (vty, " backdoor");
-            if (bgp_static->ttl)
-              vty_out (vty, " pathlimit %u", bgp_static->ttl);
           }
 
 	vty_out (vty, "%s", VTY_NEWLINE);
@@ -11637,12 +11471,6 @@ bgp_route_init (void)
   install_element (BGP_NODE, &bgp_network_backdoor_cmd);
   install_element (BGP_NODE, &bgp_network_mask_backdoor_cmd);
   install_element (BGP_NODE, &bgp_network_mask_natural_backdoor_cmd);
-  install_element (BGP_NODE, &bgp_network_ttl_cmd);
-  install_element (BGP_NODE, &bgp_network_mask_ttl_cmd);
-  install_element (BGP_NODE, &bgp_network_mask_natural_ttl_cmd);
-  install_element (BGP_NODE, &bgp_network_backdoor_ttl_cmd);
-  install_element (BGP_NODE, &bgp_network_mask_backdoor_ttl_cmd);
-  install_element (BGP_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd);
   install_element (BGP_NODE, &no_bgp_network_cmd);
   install_element (BGP_NODE, &no_bgp_network_mask_cmd);
   install_element (BGP_NODE, &no_bgp_network_mask_natural_cmd);
@@ -11652,12 +11480,6 @@ bgp_route_init (void)
   install_element (BGP_NODE, &no_bgp_network_backdoor_cmd);
   install_element (BGP_NODE, &no_bgp_network_mask_backdoor_cmd);
   install_element (BGP_NODE, &no_bgp_network_mask_natural_backdoor_cmd);
-  install_element (BGP_NODE, &no_bgp_network_ttl_cmd);
-  install_element (BGP_NODE, &no_bgp_network_mask_ttl_cmd);
-  install_element (BGP_NODE, &no_bgp_network_mask_natural_ttl_cmd);
-  install_element (BGP_NODE, &no_bgp_network_backdoor_ttl_cmd);
-  install_element (BGP_NODE, &no_bgp_network_mask_backdoor_ttl_cmd);
-  install_element (BGP_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd);
 
   install_element (BGP_NODE, &aggregate_address_cmd);
   install_element (BGP_NODE, &aggregate_address_mask_cmd);
@@ -11687,23 +11509,13 @@ bgp_route_init (void)
   install_element (BGP_IPV4_NODE, &bgp_network_route_map_cmd);
   install_element (BGP_IPV4_NODE, &bgp_network_mask_route_map_cmd);
   install_element (BGP_IPV4_NODE, &bgp_network_mask_natural_route_map_cmd);
-  install_element (BGP_IPV4_NODE, &bgp_network_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_natural_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &bgp_network_backdoor_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_backdoor_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd);  install_element (BGP_IPV4_NODE, &no_bgp_network_cmd);
+  install_element (BGP_IPV4_NODE, &no_bgp_network_cmd);
   install_element (BGP_IPV4_NODE, &no_bgp_network_mask_cmd);
   install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_cmd);
   install_element (BGP_IPV4_NODE, &no_bgp_network_route_map_cmd);
   install_element (BGP_IPV4_NODE, &no_bgp_network_mask_route_map_cmd);
   install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_route_map_cmd);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_backdoor_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_backdoor_ttl_cmd);
-  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd);  install_element (BGP_IPV4_NODE, &no_bgp_network_cmd);
+  
   install_element (BGP_IPV4_NODE, &aggregate_address_cmd);
   install_element (BGP_IPV4_NODE, &aggregate_address_mask_cmd);
   install_element (BGP_IPV4_NODE, &aggregate_address_summary_only_cmd);
@@ -11732,24 +11544,12 @@ bgp_route_init (void)
   install_element (BGP_IPV4M_NODE, &bgp_network_route_map_cmd);
   install_element (BGP_IPV4M_NODE, &bgp_network_mask_route_map_cmd);
   install_element (BGP_IPV4M_NODE, &bgp_network_mask_natural_route_map_cmd);
-  install_element (BGP_IPV4M_NODE, &bgp_network_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_natural_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &bgp_network_backdoor_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_backdoor_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd);  install_element (BGP_IPV4_NODE, &no_bgp_network_cmd);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_cmd);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_cmd);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_cmd);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_route_map_cmd);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_route_map_cmd);
   install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_route_map_cmd);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_backdoor_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_backdoor_ttl_cmd);
-  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd);  install_element (BGP_IPV4_NODE, &no_bgp_network_cmd);
   install_element (BGP_IPV4M_NODE, &aggregate_address_cmd);
   install_element (BGP_IPV4M_NODE, &aggregate_address_mask_cmd);
   install_element (BGP_IPV4M_NODE, &aggregate_address_summary_only_cmd);
@@ -11970,10 +11770,8 @@ bgp_route_init (void)
   /* New config IPv6 BGP commands.  */
   install_element (BGP_IPV6_NODE, &ipv6_bgp_network_cmd);
   install_element (BGP_IPV6_NODE, &ipv6_bgp_network_route_map_cmd);
-  install_element (BGP_IPV6_NODE, &ipv6_bgp_network_ttl_cmd);
   install_element (BGP_IPV6_NODE, &no_ipv6_bgp_network_cmd);
   install_element (BGP_IPV6_NODE, &no_ipv6_bgp_network_route_map_cmd);
-  install_element (BGP_IPV6_NODE, &no_ipv6_bgp_network_ttl_cmd);
 
   install_element (BGP_IPV6_NODE, &ipv6_aggregate_address_cmd);
   install_element (BGP_IPV6_NODE, &ipv6_aggregate_address_summary_only_cmd);
@@ -12292,6 +12090,52 @@ bgp_route_init (void)
   install_element (BGP_IPV4_NODE, &bgp_damp_set3_cmd);
   install_element (BGP_IPV4_NODE, &bgp_damp_unset_cmd);
   install_element (BGP_IPV4_NODE, &bgp_damp_unset2_cmd);
+  
+  /* Deprecated AS-Pathlimit commands */
+  install_element (BGP_NODE, &bgp_network_ttl_cmd);
+  install_element (BGP_NODE, &bgp_network_mask_ttl_cmd);
+  install_element (BGP_NODE, &bgp_network_mask_natural_ttl_cmd);
+  install_element (BGP_NODE, &bgp_network_backdoor_ttl_cmd);
+  install_element (BGP_NODE, &bgp_network_mask_backdoor_ttl_cmd);
+  install_element (BGP_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd);
+  
+  install_element (BGP_NODE, &no_bgp_network_ttl_cmd);
+  install_element (BGP_NODE, &no_bgp_network_mask_ttl_cmd);
+  install_element (BGP_NODE, &no_bgp_network_mask_natural_ttl_cmd);
+  install_element (BGP_NODE, &no_bgp_network_backdoor_ttl_cmd);
+  install_element (BGP_NODE, &no_bgp_network_mask_backdoor_ttl_cmd);
+  install_element (BGP_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd);
+  
+  install_element (BGP_IPV4_NODE, &bgp_network_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &bgp_network_mask_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &bgp_network_mask_natural_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &bgp_network_backdoor_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &bgp_network_mask_backdoor_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd);
+  
+  install_element (BGP_IPV4_NODE, &no_bgp_network_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &no_bgp_network_backdoor_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_backdoor_ttl_cmd);
+  install_element (BGP_IPV4_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd);
+  
+  install_element (BGP_IPV4M_NODE, &bgp_network_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &bgp_network_mask_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &bgp_network_mask_natural_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &bgp_network_backdoor_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &bgp_network_mask_backdoor_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &bgp_network_mask_natural_backdoor_ttl_cmd);
+  
+  install_element (BGP_IPV4M_NODE, &no_bgp_network_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &no_bgp_network_backdoor_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_backdoor_ttl_cmd);
+  install_element (BGP_IPV4M_NODE, &no_bgp_network_mask_natural_backdoor_ttl_cmd);
+  
+  install_element (BGP_IPV6_NODE, &ipv6_bgp_network_ttl_cmd);
+  install_element (BGP_IPV6_NODE, &no_ipv6_bgp_network_ttl_cmd);
 }
 
 void
