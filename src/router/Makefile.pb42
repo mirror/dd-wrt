@@ -530,10 +530,16 @@ endif
 ifeq ($(CONFIG_WZRG300NH),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
+
 	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh-firmware.enc
-	tools/bufenc/mkfw-multi -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh-firmware.enc $(ARCH)-uclibc/wzrg300nh-firmware_MULTI.enc
 	tools/bufenc/encryptRC4 WZR-HP-G300NH 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg301nh-firmware.enc
+ifeq ($(CONFIG_BUFFALO),y)
+	tools/bufenc/mkfw -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "1.01" "US-EU-AP-TW-KR-CH" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh-firmware.enc $(ARCH)-uclibc/wzrg300nh-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=3 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "3.01" "US-EU-AP-TW-KR-CH" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg301nh-firmware.enc $(ARCH)-uclibc/wzrg301nh-firmware_MULTI.enc
+else
+	tools/bufenc/mkfw-multi -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh-firmware.enc $(ARCH)-uclibc/wzrg300nh-firmware_MULTI.enc
 	tools/bufenc/mkfw-multi -hw_ver=3 -hcrypt="Buffalo" "WZR-HP-G300NH" "WZR-HP-G300NH" "1.74" "3.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg301nh-firmware.enc $(ARCH)-uclibc/wzrg301nh-firmware_MULTI.enc
+endif
 else
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
 #eu-us region
@@ -555,15 +561,19 @@ ifeq ($(CONFIG_WZRG450),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
-	tools/bufenc/mkfw-multi -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.74" "1.01" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+ifeq ($(CONFIG_BUFFALO),y)
+	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.75" "2.08" "US-EU-AP-TW-KR-CH" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+else
+	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.75" "2.08" "US-EU-AP-TW-KR-CH-JP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+endif
 else
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
 #eu-us region
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
-	tools/bufenc/mkfw-eu-us -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.75" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 else
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
-	tools/bufenc/mkfw -hw_ver=2 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.74" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.75" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 endif
 endif
 endif
