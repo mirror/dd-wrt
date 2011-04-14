@@ -261,7 +261,7 @@ void store_tmp_attrs(rte *e, ea_list *attrs)
  * The standard use of this hook is to reject routes having originated
  * from the same instance and to set default values of the protocol's metrics.
  *
- * Result: -1 if the route has to be accepted, 1 if rejected and 0 if it
+ * Result: 1 if the route has to be accepted, -1 if rejected and 0 if it
  * should be passed to the filters.
  */
 int import_control(struct proto *p, rte **e, ea_list **attrs, struct linpool *pool)

@@ -14,7 +14,7 @@
  * indicates the index of the bit in the address that is used to
  * branch at the node. If we need to represent just a set of
  * prefixes, it would be simple, but we have to represent a
- * set of prefix pattern. Each prefix pattern consists of
+ * set of prefix patterns. Each prefix pattern consists of
  * &ppaddr/&pplen and two integers: &low and &high, and a prefix
  * &paddr/&plen matches that pattern if the first MIN(&plen, &pplen)
  * bits of &paddr and &ppaddr are the same and &low <= &plen <= &high.
@@ -65,8 +65,8 @@
  * - we are beyond the end of path (node length > &plen)
  * - we are still on path and keep walking (node length < &plen)
  *
- * The walking code in add_node_to_trie() and trie_match_prefix()
- * is structured according to these cases.
+ * The walking code in trie_match_prefix() is structured according to
+ * these cases.
  */
 
 #include "nest/bird.h"
@@ -80,17 +80,18 @@
  * Allocates and returns a new empty trie.
  */
 struct f_trie *
-f_new_trie(void)
+f_new_trie(linpool *lp)
 {
   struct f_trie * ret;
-  ret = cfg_allocz(sizeof(struct f_trie));
+  ret = lp_allocz(lp, sizeof(struct f_trie));
+  ret->lp = lp;
   return ret;
 }
 
 static inline struct f_trie_node *
-new_node(int plen, ip_addr paddr, ip_addr pmask, ip_addr amask)
+new_node(struct f_trie *t, int plen, ip_addr paddr, ip_addr pmask, ip_addr amask)
 {
-  struct f_trie_node *n = cfg_allocz(sizeof(struct f_trie_node));
+  struct f_trie_node *n = lp_allocz(t->lp, sizeof(struct f_trie_node));
   n->plen = plen;
   n->addr = paddr;
   n->mask = pmask;
@@ -104,11 +105,33 @@ attach_node(struct f_trie_node *parent, struct f_trie_node *child)
   parent->c[ipa_getbit(child->addr, parent->plen) ? 1 : 0] = child;
 }
 
-static void
-add_node_to_trie(struct f_trie *t, int plen, ip_addr ip, ip_addr amask)
+/**
+ * trie_add_prefix
+ * @t: trie to add to
+ * @px: prefix address
+ * @plen: prefix length
+ * @l: prefix lower bound 
+ * @h: prefix upper bound
+ *
+ * Adds prefix (prefix pattern) @px/@plen to trie @t.  @l and @h are lower
+ * and upper bounds on accepted prefix lengths, both inclusive.
+ * 0 <= l, h <= 32 (128 for IPv6).
+ */
+
+void
+trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h)
 {
+  if (l == 0)
+    t->zero = 1;
+  else
+    l--;
+
+  if (h < plen)
+    plen = h;
+
+  ip_addr amask = ipa_xor(ipa_mkmask(l), ipa_mkmask(h));
   ip_addr pmask = ipa_mkmask(plen);
-  ip_addr paddr = ipa_and(ip, pmask);
+  ip_addr paddr = ipa_and(px, pmask);
   struct f_trie_node *o = NULL;
   struct f_trie_node *n = &t->root;
 
@@ -123,13 +146,13 @@ add_node_to_trie(struct f_trie *t, int plen, ip_addr ip, ip_addr amask)
 	     as the other child of 'b'. */
 	  int blen = ipa_pxlen(paddr, n->addr);
 	  ip_addr bmask = ipa_mkmask(blen);
-	  ip_addr baddr = ipa_and(ip, bmask);
+	  ip_addr baddr = ipa_and(px, bmask);
 
 	  /* Merge accept masks from children to get accept mask for node 'b' */
 	  ip_addr baccm = ipa_and(ipa_or(amask, n->accept), bmask);
 
-	  struct f_trie_node *a = new_node(plen, paddr, pmask, amask);
-	  struct f_trie_node *b = new_node(blen, baddr, bmask, baccm);
+	  struct f_trie_node *a = new_node(t, plen, paddr, pmask, amask);
+	  struct f_trie_node *b = new_node(t, blen, baddr, bmask, baccm);
 	  attach_node(o, b);
 	  attach_node(b, n);
 	  attach_node(b, a);
@@ -140,7 +163,7 @@ add_node_to_trie(struct f_trie *t, int plen, ip_addr ip, ip_addr amask)
 	{
 	  /* We add new node 'a' between node 'o' and node 'n' */
 	  amask = ipa_or(amask, ipa_and(n->accept, pmask));
-	  struct f_trie_node *a = new_node(plen, paddr, pmask, amask);
+	  struct f_trie_node *a = new_node(t, plen, paddr, pmask, amask);
 	  attach_node(o, a);
 	  attach_node(a, n);
 	  return;
@@ -156,58 +179,31 @@ add_node_to_trie(struct f_trie *t, int plen, ip_addr ip, ip_addr amask)
       /* Update accept mask part M2 and go deeper */
       n->accept = ipa_or(n->accept, ipa_and(amask, n->mask));
 
-      /* n->plen < plen and plen <= 32 */
+      /* n->plen < plen and plen <= 32 (128) */
       o = n;
       n = n->c[ipa_getbit(paddr, n->plen) ? 1 : 0];
     }
 
   /* We add new tail node 'a' after node 'o' */
-  struct f_trie_node *a = new_node(plen, paddr, pmask, amask);
+  struct f_trie_node *a = new_node(t, plen, paddr, pmask, amask);
   attach_node(o, a);
 }
 
 /**
- * trie_add_prefix
- * @t: trie to add to
- * @px: prefix to add
- *
- * Adds prefix (prefix pattern) @px to trie @t.
- */
-void
-trie_add_prefix(struct f_trie *t, struct f_prefix *px)
-{
-  int l, h;
-  int plen = px->len & LEN_MASK;
-
-  /* 'l' and 'h' are lower and upper bounds on accepted
-     prefix lengths, both inclusive. 0 <= l, h <= 32 */
-  f_prefix_get_bounds(px, &l, &h);
-
-  if (l == 0)
-    t->zero = 1;
-  else
-    l--;
-
-  ip_addr amask = ipa_xor(ipa_mkmask(l), ipa_mkmask(h));
-  /* MIN(plen, h) instead of just plen is a little trick. */
-  add_node_to_trie(t, MIN(plen, h), px->ip, amask);
-}
-
-/**
- * trie_match_prefix
+ * trie_match
  * @t: trie
- * @px: prefix
+ * @px: prefix address
+ * @plen: prefix length
  *
  * Tries to find a matching prefix pattern in the trie such that
- * prefix @px matches that prefix pattern. Returns 1 if there
+ * prefix @px/@plen matches that prefix pattern. Returns 1 if there
  * is such prefix pattern in the trie.
  */
 int
-trie_match_prefix(struct f_trie *t, struct f_prefix *px)
+trie_match_prefix(struct f_trie *t, ip_addr px, int plen)
 {
-  int plen = px->len & LEN_MASK;
   ip_addr pmask = ipa_mkmask(plen);
-  ip_addr paddr = ipa_and(px->ip, pmask);
+  ip_addr paddr = ipa_and(px, pmask);
 
   if (plen == 0)
     return t->zero;
@@ -268,53 +264,38 @@ trie_same(struct f_trie *t1, struct f_trie *t2)
   return (t1->zero == t2->zero) && trie_node_same(&t1->root, &t2->root);
 }
 
-static int
-trie_node_print(struct f_trie_node *t, char *buf, int blen)
+static void
+trie_node_print(struct f_trie_node *t, char **sep)
 {
   if (t == NULL)
-    return 0;
+    return;
 
-  int old_blen = blen;
-  int wb = 0; // bsnprintf(buf, blen, "%I/%d accept %I\n", t->addr, t->plen, t->accept);
-debug("%I/%d accept %I\n", t->addr, t->plen, t->accept);
-
-  if ((wb < 0) || ((blen - wb) < 10))
+  if (ipa_nonzero(t->accept))
     {
-      bsnprintf(buf, blen, "...\n");
-      return -1;
+      logn("%s%I/%d{%I}", *sep, t->addr, t->plen, t->accept);
+      *sep = ", ";
     }
 
-  buf += wb;
-  blen -= wb;
-
-  wb = trie_node_print(t->c[0], buf, blen);
-  if (wb < 0)
-    return -1;
-
-  buf += wb;
-  blen -= wb;
-
-  wb = trie_node_print(t->c[1], buf, blen);
-  if (wb < 0)
-    return -1;
-
-  blen -= wb;
-
-  return (old_blen - blen);
+  trie_node_print(t->c[0], sep);
+  trie_node_print(t->c[1], sep);
 }
 
 /**
  * trie_print
  * @t: trie to be printed
- * @buf: buffer
- * @blen: buffer length
  *
- * Prints the trie to the buffer, using at most blen bytes.
- * Returns the number of used bytes, or -1 if there is not
- * enough space in the buffer.
+ * Prints the trie to the log buffer.
  */
-int
-trie_print(struct f_trie *t, char *buf, int blen)
+void
+trie_print(struct f_trie *t)
 {
-  return trie_node_print(&t->root, buf, blen);
+  char *sep = "";
+  logn("[");
+  if (t->zero)
+    {
+      logn("0.0.0.0/0");
+      sep = ", ";
+    }
+  trie_node_print(&t->root, &sep);
+  logn("]");
 }

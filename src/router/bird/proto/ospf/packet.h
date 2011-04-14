@@ -21,4 +21,17 @@ void ospf_send_to(struct ospf_iface *ifa, ip_addr ip);
 
 static inline void * ospf_tx_buffer(struct ospf_iface *ifa) { return ifa->sk->tbuf; }
 
+static inline unsigned
+ospf_pkt_bufsize(struct ospf_iface *ifa)
+{
+#ifdef OSPFv2
+  unsigned headers = (ifa->autype == OSPF_AUTH_CRYPT) ? OSPF_AUTH_CRYPT_SIZE : 0;
+#else
+  unsigned headers = 0;
+#endif
+
+  return ifa->sk->tbsize - headers;
+}
+
+
 #endif /* _BIRD_OSPF_PACKET_H_ */

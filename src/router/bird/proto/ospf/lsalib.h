@@ -36,5 +36,7 @@ int lsa_validate(struct ospf_lsa_header *lsa, void *body);
 struct top_hash_entry * lsa_install_new(struct proto_ospf *po, struct ospf_lsa_header *lsa, u32 domain, void *body);
 void ospf_age(struct proto_ospf *po);
 void flush_lsa(struct top_hash_entry *en, struct proto_ospf *po);
+void ospf_flush_area(struct proto_ospf *po, u32 areaid);
+
 
 #endif /* _BIRD_OSPF_LSALIB_H_ */

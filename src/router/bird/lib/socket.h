@@ -67,6 +67,7 @@ int sk_leave_group(sock *s, ip_addr maddr);
 
 #ifdef IPV6
 int sk_set_ipv6_checksum(sock *s, int offset);
+int sk_set_icmp_filter(sock *s, int p1, int p2);
 #endif
 
 int sk_set_broadcast(sock *s, int enable);

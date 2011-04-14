@@ -179,7 +179,7 @@ in the trie represents one prefix (<I>addr</I>/<I>plen</I>) and <I>plen</I> also
 indicates the index of the bit in the address that is used to
 branch at the node. If we need to represent just a set of
 prefixes, it would be simple, but we have to represent a
-set of prefix pattern. Each prefix pattern consists of
+set of prefix patterns. Each prefix pattern consists of
 <I>ppaddr</I>/<I>pplen</I> and two integers: <I>low</I> and <I>high</I>, and a prefix
 <I>paddr</I>/<I>plen</I> matches that pattern if the first MIN(<I>plen</I>, <I>pplen</I>)
 bits of <I>paddr</I> and <I>ppaddr</I> are the same and <I>low</I> &lt;= <I>plen</I> &lt;= <I>high</I>.
@@ -222,13 +222,18 @@ so we have to store them together in <I>accept</I> mask - the first
 - we are in the wanted (final) node (node length == <I>plen</I>)
 - we are beyond the end of path (node length &gt; <I>plen</I>)
 - we are still on path and keep walking (node length &lt; <I>plen</I>)
-<P>The walking code in <B>add_node_to_trie()</B> and <B>trie_match_prefix()</B>
-is structured according to these cases.
+<P>The walking code in <B>trie_match_prefix()</B> is structured according to
+these cases.
 <P>
 <P><HR><H3>Function</H3>
 <P><I>struct f_trie *</I>
 <B>f_new_trie</B>
-(<B>void</B>)
+(<I>linpool *</I> <B>lp</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>linpool *</I> <B>lp</B><DD><P>-- undescribed --
+</DL>
 <H3>Trie for prefix sets</H3>
 <P>
 <P>Allocates and returns a new empty trie.
@@ -237,30 +242,36 @@ is structured according to these cases.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>trie_add_prefix</B>
-(<I>struct f_trie *</I> <B>t</B>, <I>struct f_prefix *</I> <B>px</B>)
+(<I>struct f_trie *</I> <B>t</B>, <I>ip_addr</I> <B>px</B>, <I>int</I> <B>plen</B>, <I>int</I> <B>l</B>, <I>int</I> <B>h</B>)
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to add to
-<DT><I>struct f_prefix *</I> <B>px</B><DD><P>prefix to add
+<DT><I>ip_addr</I> <B>px</B><DD><P>prefix address
+<DT><I>int</I> <B>plen</B><DD><P>prefix length
+<DT><I>int</I> <B>l</B><DD><P>prefix lower bound 
+<DT><I>int</I> <B>h</B><DD><P>prefix upper bound
 </DL>
 <H3>Description</H3>
-<P>Adds prefix (prefix pattern) <B>px</B> to trie <B>t</B>.
+<P>Adds prefix (prefix pattern) <B>px</B>/<B>plen</B> to trie <B>t</B>.  <B>l</B> and <B>h</B> are lower
+and upper bounds on accepted prefix lengths, both inclusive.
+0 &lt;= l, h &lt;= 32 (128 for IPv6).
 
 
 <HR><H3>Function</H3>
 <P><I>int</I>
 <B>trie_match_prefix</B>
-(<I>struct f_trie *</I> <B>t</B>, <I>struct f_prefix *</I> <B>px</B>)
+(<I>struct f_trie *</I> <B>t</B>, <I>ip_addr</I> <B>px</B>, <I>int</I> <B>plen</B>)
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct f_trie *</I> <B>t</B><DD><P>trie
-<DT><I>struct f_prefix *</I> <B>px</B><DD><P>prefix
+<DT><I>ip_addr</I> <B>px</B><DD><P>prefix address
+<DT><I>int</I> <B>plen</B><DD><P>prefix length
 </DL>
 <H3>Description</H3>
 <P>Tries to find a matching prefix pattern in the trie such that
-prefix <B>px</B> matches that prefix pattern. Returns 1 if there
+prefix <B>px</B>/<B>plen</B> matches that prefix pattern. Returns 1 if there
 is such prefix pattern in the trie.
 
 
@@ -279,20 +290,16 @@ is such prefix pattern in the trie.
 
 
 <HR><H3>Function</H3>
-<P><I>int</I>
+<P><I>void</I>
 <B>trie_print</B>
-(<I>struct f_trie *</I> <B>t</B>, <I>char *</I> <B>buf</B>, <I>int</I> <B>blen</B>)
+(<I>struct f_trie *</I> <B>t</B>)
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to be printed
-<DT><I>char *</I> <B>buf</B><DD><P>buffer
-<DT><I>int</I> <B>blen</B><DD><P>buffer length
 </DL>
 <H3>Description</H3>
-<P>Prints the trie to the buffer, using at most blen bytes.
-Returns the number of used bytes, or -1 if there is not
-enough space in the buffer.
+<P>Prints the trie to the log buffer.
 
 <HR>
 <A HREF="prog-5.html">Next</A>

@@ -8,6 +8,8 @@
 
 CF_HDR
 
+#define PARSER 1
+
 #include "nest/bird.h"
 #include "conf/conf.h"
 #include "lib/resource.h"
@@ -46,7 +48,7 @@ CF_DECLS
   struct timeformat *tf;
 }
 
-%token END CLI_MARKER INVALID_TOKEN
+%token END CLI_MARKER INVALID_TOKEN ELSECOL
 %token GEQ LEQ NEQ AND OR
 %token PO PC
 %token <i> NUM ENUM
@@ -63,10 +65,11 @@ CF_DECLS
 
 %nonassoc PREFIX_DUMMY
 %left AND OR
-%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ PO PC
+%nonassoc '=' '<' '>' '~' GEQ LEQ NEQ PO PC
 %left '+' '-'
 %left '*' '/' '%'
 %left '!'
+%nonassoc '.'
 
 CF_KEYWORDS(DEFINE, ON, OFF, YES, NO)
 

@@ -78,12 +78,12 @@ scan_ifs(struct ifreq *r, int cnt)
 	faulty:
 	  log(L_ERR "%s(%s): %m", err, i.name);
 	bad:
-	  i.flags = (i.flags & ~IF_LINK_UP) | IF_ADMIN_DOWN;
+	  i.flags = (i.flags & ~IF_ADMIN_UP) | IF_SHUTDOWN;
 	  continue;
 	}
       fl = r->ifr_flags;
       if (fl & IFF_UP)
-	i.flags |= IF_LINK_UP;
+	i.flags |= IF_ADMIN_UP;
 
       if (ioctl(if_scan_sock, SIOCGIFNETMASK, r) < 0)
 	{ err = "SIOCGIFNETMASK"; goto faulty; }
@@ -98,7 +98,7 @@ scan_ifs(struct ifreq *r, int cnt)
 
       if (fl & IFF_POINTOPOINT)
 	{
-	  a.flags |= IA_UNNUMBERED;
+	  a.flags |= IA_PEER;
 	  if (ioctl(if_scan_sock, SIOCGIFDSTADDR, r) < 0)
 	    { err = "SIOCGIFDSTADDR"; goto faulty; }
 	  get_sockaddr((struct sockaddr_in *) &r->ifr_addr, &a.opposite, NULL, 1);
@@ -114,7 +114,7 @@ scan_ifs(struct ifreq *r, int cnt)
 	  && (fl & IFF_MULTICAST)
 #endif
 #ifndef CONFIG_UNNUM_MULTICAST
-	  && !(a.flags & IA_UNNUMBERED)
+	  && !(a.flags & IA_PEER)
 #endif
 	 )
 	i.flags |= IF_MULTICAST;

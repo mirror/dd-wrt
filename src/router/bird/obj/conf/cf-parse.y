@@ -1000,8 +1000,9 @@ proto_patt2:
 /* Grammar from ../../filter/config.Y */
 
 filter_def:
-   FILTER SYM { cf_push_scope( $2 ); } filter_body {
-     $2 = cf_define_symbol($2, SYM_FILTER, $4);
+   FILTER SYM { $2 = cf_define_symbol($2, SYM_FILTER, NULL); cf_push_scope( $2 ); }
+     filter_body {
+     $2->def = $4;
      $4->name = $2->name;
      DBG( "We have new filter defined (%s)\n", $2->name );
      cf_pop_scope();

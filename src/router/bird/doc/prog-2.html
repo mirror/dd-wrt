@@ -1452,7 +1452,7 @@ of the route distribution process.
 <P>The standard use of this hook is to reject routes having originated
 from the same instance and to set default values of the protocol's metrics.
 <H3>Result</H3>
-<P>-1 if the route has to be accepted, 1 if rejected and 0 if it
+<P>1 if the route has to be accepted, -1 if rejected and 0 if it
 should be passed to the filters.
 
 
@@ -1800,6 +1800,22 @@ addresses belonging to prefixes of the interface <B>i</B>.
 <P>Notify the neighbor cache that an interface has ceased to exist.
 <P>It causes all entries belonging to neighbors connected to this interface
 to be flushed.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_if_link</B>
+(<I>struct iface *</I> <B>i</B>) --     notify neighbor cache about interface link change
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>i</B><DD><P>the interface in question
+</DL>
+<H3>Description</H3>
+<P>Notify the neighbor cache that an interface changed link state.
+All owners of neighbor entries connected to this interface are
+notified.
 
 
 <HR><H3>Function</H3>

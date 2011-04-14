@@ -70,11 +70,28 @@ struct f_tree *build_tree(struct f_tree *);
 struct f_tree *find_tree(struct f_tree *t, struct f_val val);
 int same_tree(struct f_tree *t1, struct f_tree *t2);
 
-struct f_trie *f_new_trie(void);
-void trie_add_prefix(struct f_trie *t, struct f_prefix *px);
-int trie_match_prefix(struct f_trie *t, struct f_prefix *px);
+struct f_trie *f_new_trie(linpool *lp);
+void trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h);
+int trie_match_prefix(struct f_trie *t, ip_addr px, int plen);
 int trie_same(struct f_trie *t1, struct f_trie *t2);
-int trie_print(struct f_trie *t, char *buf, int blen);
+void trie_print(struct f_trie *t);
+
+void fprefix_get_bounds(struct f_prefix *px, int *l, int *h);
+
+static inline void
+trie_add_fprefix(struct f_trie *t, struct f_prefix *px)
+{
+  int l, h;
+  fprefix_get_bounds(px, &l, &h);
+  trie_add_prefix(t, px->ip, px->len & LEN_MASK, l, h);
+}
+
+static inline int
+trie_match_fprefix(struct f_trie *t, struct f_prefix *px)
+{
+  return trie_match_prefix(t, px->ip, px->len & LEN_MASK);
+}
+
 
 struct ea_list;
 struct rte;
@@ -87,12 +104,9 @@ char *filter_name(struct filter *filter);
 int filter_same(struct filter *new, struct filter *old);
 
 int i_same(struct f_inst *f1, struct f_inst *f2);
-void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 
-void f_prefix_get_bounds(struct f_prefix *px, int *l, int *h);
 int val_compare(struct f_val v1, struct f_val v2);
 int tree_compare(const void *p1, const void *p2);
-void val_print(struct f_val v);
 
 #define F_NOP 0
 #define F_NONL 1
@@ -158,6 +172,7 @@ struct f_trie_node
 
 struct f_trie
 {
+  linpool *lp;
   int zero;
   struct f_trie_node root;
 };

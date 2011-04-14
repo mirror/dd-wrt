@@ -63,6 +63,7 @@ pipe_rt_notify(struct proto *P, rtable *src_table, net *n, rte *new, rte *old, e
 
       a.aflags = 0;
       a.eattrs = attrs;
+      a.hostentry = NULL;
       e = rte_get_temp(&a);
       e->net = nn;
       e->pflags = 0;
@@ -120,13 +121,20 @@ pipe_start(struct proto *P)
   /* Clean up the secondary stats */
   bzero(&p->peer_stats, sizeof(struct proto_stats));
 
-  /* Lock the peer table, unlock is handled in proto_fell_down() */
+  /* Lock the peer table, unlock is handled in pipe_cleanup() */
   rt_lock_table(p->peer);
 
   /* Connect the protocol also to the peer routing table. */
   a = proto_add_announce_hook(P, p->peer);
 
   return PS_UP;
+}
+
+static void
+pipe_cleanup(struct proto *P)
+{
+  struct pipe_proto *p = (struct pipe_proto *) P;
+  rt_unlock_table(p->peer);
 }
 
 static struct proto *
@@ -185,6 +193,7 @@ struct protocol proto_pipe = {
   postconfig:	pipe_postconfig,
   init:		pipe_init,
   start:	pipe_start,
+  cleanup:	pipe_cleanup,
   reconfigure:	pipe_reconfigure,
   get_status:	pipe_get_status,
 };

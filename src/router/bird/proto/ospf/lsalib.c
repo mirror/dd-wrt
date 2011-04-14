@@ -23,6 +23,18 @@ flush_lsa(struct top_hash_entry *en, struct proto_ospf *po)
   ospf_hash_delete(po->gr, en);
 }
 
+void
+ospf_flush_area(struct proto_ospf *po, u32 areaid)
+{
+  struct top_hash_entry *en, *nxt;
+
+  WALK_SLIST_DELSAFE(en, nxt, po->lsal)
+  {
+    if ((LSA_SCOPE(&en->lsa) == LSA_SCOPE_AREA) && (en->domain == areaid))
+      flush_lsa(en, po);
+  }
+}
+
 /**
  * ospf_age
  * @po: ospf protocol

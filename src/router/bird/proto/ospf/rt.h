@@ -40,10 +40,15 @@ typedef struct orta
   u32 tag;
   u32 rid;			/* Router ID of real advertising router */
   struct ospf_area *oa;
-  struct ospf_iface *ifa;	/* Outgoing interface */
-  ip_addr nh;			/* Next hop */
+  struct ospf_area *voa;	/* Used when route is replaced in ospf_rt_sum_tr(),
+				   NULL otherwise */
+  struct mpnh *nhs;		/* Next hops computed during SPF */
 }
 orta;
+
+//  struct ospf_iface *ifa;	/* Outgoing interface */
+//  ip_addr nh;			/* Next hop */
+
 
 typedef struct ort
 {
@@ -51,10 +56,16 @@ typedef struct ort
    * We use fn.x0 to mark persistent rt entries, that are needed for summary
    * LSAs that don't have 'proper' rt entry (area networks + default to stubs)
    * to keep uid stable (used for LSA ID in OSPFv3 - see fibnode_to_lsaid()).
+   *
+   * old_* values are here to represent the last route update. old_rta
+   * is cached (we keep reference), mainly for multipath nexthops.
+   * old_rta == NULL means route wasn not in the last update, in that
+   * case other old_* values are not valid.
    */
   struct fib_node fn;
   orta n;
-  orta o;
+  u32 old_metric1, old_metric2, old_tag, old_rid;
+  rta *old_rta;
 }
 ort;
 
@@ -64,18 +75,24 @@ ort;
  * - only router, network and AS-external LSAs
  * - lsa.age < LSA_MAXAGE
  * - dist < LSINFINITY (or 2*LSINFINITY for ext-LSAs)
- * - nhi are non-NULL unless the node is oa->rt (calculating router itself)
- * - beware, nhi is not valid after SPF calculation
- * - nh is IFA_NONE iff the node is a local network
+ * - nhs is non-NULL unless the node is oa->rt (calculating router itself)
+ * - beware, nhs is not valid after SPF calculation
  *
  * Invariants for structs orta nodes of fib tables po->rtf, oa->rtr:
  * - nodes may be invalid (fn.type == 0), in that case other invariants don't hold
  * - n.metric1 may be at most a small multiple of LSINFINITY,
  *   therefore sums do not overflow
  * - n.oa is always non-NULL
- * - n.ifa is always non-NULL with one exception - configured stubnet
-     nodes (in po->rtf). In that case, n.nh is IFA_NONE.
+ * - n.nhs is always non-NULL with one exception - configured stubnet
+ *   nodes (in po->rtf).
  * - oa->rtr does not contain calculating router itself
+ *
+ * There are three types of nexthops in nhs fields:
+ * - gateway nexthops (non-NULL iface, gw != IPA_NONE)
+ * - device nexthops (non-NULL iface, gw == IPA_NONE)
+ * - dummy vlink nexthops (NULL iface, gw == IPA_NONE)
+ * These three types don't mix, nhs field contains either
+ * one device, one vlink node, or one/more gateway nodes.
  */
 
 void ospf_rt_spf(struct proto_ospf *po);
