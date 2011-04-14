@@ -20,11 +20,12 @@ struct bgp_config {
   u32 local_as, remote_as;
   ip_addr remote_ip;
   int multihop;				/* Number of hops if multihop */
-  ip_addr multihop_via;			/* Multihop: address to route to */
   ip_addr source_addr;			/* Source address to use */
   int next_hop_self;			/* Always set next hop to local IP address */
   int missing_lladdr;			/* What we will do when we don' know link-local addr, see MLL_* */
+  int gw_mode;				/* How we compute route gateway from next_hop attr, see GW_* */
   int compare_path_lengths;		/* Use path lengths when selecting best route */
+  int igp_metric;			/* Use IGP metrics when selecting best route */
   int prefer_older;			/* Prefer older routes according to RFC 5004 */
   u32 default_local_pref;		/* Default value for LOCAL_PREF attribute */
   u32 default_med;			/* Default value for MULTI_EXIT_DISC attribute */
@@ -47,11 +48,15 @@ struct bgp_config {
   unsigned error_delay_time_max;
   unsigned disable_after_error;		/* Disable the protocol when error is detected */
   char *password;			/* Password used for MD5 authentication */
+  struct rtable_config *igp_table;	/* Table used for recursive next hop lookups */
 };
 
 #define MLL_SELF 1
 #define MLL_DROP 2
 #define MLL_IGNORE 3
+
+#define GW_DIRECT 1
+#define GW_RECURSIVE 2
 
 struct bgp_conn {
   struct bgp_proto *bgp;
@@ -88,10 +93,9 @@ struct bgp_proto {
   struct bgp_conn outgoing_conn;	/* Outgoing connection we're working with */
   struct bgp_conn incoming_conn;	/* Incoming connection we have neither accepted nor rejected yet */
   struct object_lock *lock;		/* Lock for neighbor connection */
-  ip_addr next_hop;			/* Either the peer or multihop_via */
-  struct neighbor *neigh;		/* Neighbor entry corresponding to next_hop */
-  ip_addr local_addr;			/* Address of the local end of the link to next_hop */
-  ip_addr source_addr;			/* Address used as advertised next hop, usually local_addr */
+  struct neighbor *neigh;		/* Neighbor entry corresponding to remote ip, NULL if multihop */
+  ip_addr source_addr;			/* Local address used as an advertised next hop */
+  rtable *igp_table;			/* Table used for recursive next hop lookups */
   struct event *event;			/* Event for respawning and shutting process */
   struct timer *startup_timer;		/* Timer used to delay protocol startup due to previous errors (startup_delay) */
   struct bgp_bucket **bucket_hash;	/* Hash table of attribute buckets */
@@ -107,7 +111,7 @@ struct bgp_proto {
 #ifdef IPV6
   byte *mp_reach_start, *mp_unreach_start; /* Multiprotocol BGP attribute notes */
   unsigned mp_reach_len, mp_unreach_len;
-  ip_addr local_link;			/* Link-level version of local_addr */
+  ip_addr local_link;			/* Link-level version of source_addr */
 #endif
 };
 

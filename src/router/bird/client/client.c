@@ -96,6 +96,7 @@ parse_args(int argc, char **argv)
 	  tmp += strlen(tmp);
 	  *tmp++ = ' ';
 	}
+      tmp[-1] = 0;
 
       once = 1;
     }

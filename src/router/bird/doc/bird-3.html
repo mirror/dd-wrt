@@ -98,22 +98,23 @@ you could use a simple integer or an IP address.
 <P>
 <DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
 <P>
-<DT><CODE>listen bgp [address <I>address</I>] [port <I>port</I>] [v6only]</CODE><DD><P>This option allows to specify address and port where BGP
+<DT><CODE>listen bgp [address <I>address</I>] [port <I>port</I>] [dual]</CODE><DD><P>This option allows to specify address and port where BGP
 protocol should listen. It is global option as listening
 socket is common to all BGP instances. Default is to listen on
 all addresses (0.0.0.0) and port 179. In IPv6 mode, option
-<CODE>v6only</CODE> can be used to specify that BGP socket should
-listen to IPv6 connections only. This is needed if you want to
-run both bird and bird6 on the same port.
+<CODE>dual</CODE> can be used to specify that BGP socket should accept
+both IPv4 and IPv6 connections (but even in that case, BIRD
+would accept IPv6 routes only). Such behavior was default in
+older versions of BIRD.
 <P>
-<DT><CODE>timeformat route|protocol|base|log "<I>format1</I>" [<I>limit> "<I>format2</I>"]</I></CODE><DD><P>This option allows to specify a format of date/time used by
+<DT><CODE>timeformat route|protocol|base|log "<I>format1</I>" [<I>limit</I> "<I>format2</I>"]</CODE><DD><P>This option allows to specify a format of date/time used by
 BIRD.  The first argument specifies for which purpose such
 format is used. <CODE>route</CODE> is a format used in 'show route'
 command output, <CODE>protocol</CODE> is used in 'show protocols'
 command output, <CODE>base</CODE> is used for other commands and
 <CODE>log</CODE> is used in a log file.
-<P>"<I>format1</I>" is a format string using strftime(3)
-notation (see man strftime for details). <I>limit> and
+<P>"<I>format1</I>" is a format string using <I>strftime(3)</I>
+notation (see <I>man strftime</I> for details). <I>limit> and
 "<I>format2</I>" allow to specify the second format string for
 times in past deeper than <I>limit</I> seconds. There are two
 shorthands: <CODE>iso long</CODE> is a ISO 8601 date</I>time format
@@ -204,7 +205,8 @@ interface pattern consists of a sequence of clauses (separated by
 commas), each clause may contain a mask, a prefix, or both of them. An
 interface matches the clause if its name matches the mask (if
 specified) and its address matches the prefix (if specified). Mask is
-specified as shell-like pattern.
+specified as shell-like pattern. For IPv6, the prefix part of a clause
+is generally ignored and interfaces are matched just by their name.
 <P>An interface matches the pattern if it matches any of its
 clauses. If the clause begins with <CODE>-</CODE>, matching interfaces are
 excluded. Patterns are parsed left-to-right, thus
@@ -213,14 +215,14 @@ non-ethernets.
 <P>An interface option can be used more times with different
 interfaces-specific options, in that case for given interface
 the first matching interface option is used.
-<P>This option is allowed in Direct, OSPF and RIP protocols,
+<P>This option is allowed in Direct, OSPF, RIP and RAdv protocols,
 but in OSPF protocol it is used in <CODE>area</CODE> subsection.
 <P>Default: none.
 <P>Examples:
 <P><CODE>interface "*" { type broadcast; };</CODE> - start the protocol on all interfaces with
 <CODE>type broadcast</CODE> option.
-<P><CODE>interface "eth1", "eth4", "eth5" { type pointopoint; };</CODE> - start the protocol
-on enumerated interfaces with <CODE>type pointopoint</CODE> option.
+<P><CODE>interface "eth1", "eth4", "eth5" { type ptp; };</CODE> - start the protocol
+on enumerated interfaces with <CODE>type ptp</CODE> option.
 <P><CODE>interface -192.168.1.0/24, 192.168.0.0/16;</CODE> - start the protocol on all
 interfaces that have address from 192.168.0.0/16, but not
 from 192.168.1.0/24.

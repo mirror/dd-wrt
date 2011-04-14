@@ -51,6 +51,31 @@ static linpool *rte_update_pool;
 static list routing_tables;
 
 static void rt_format_via(rte *e, byte *via);
+static void rt_free_hostcache(rtable *tab);
+static void rt_notify_hostcache(rtable *tab, net *net);
+static void rt_update_hostcache(rtable *tab);
+static void rt_next_hop_update(rtable *tab);
+static void rt_prune(rtable *tab);
+
+static inline void rt_schedule_gc(rtable *tab);
+
+/* Like fib_route(), but skips empty net entries */
+static net *
+net_route(rtable *tab, ip_addr a, int len)
+{
+  ip_addr a0;
+  net *n;
+
+  while (len >= 0)
+    {
+      a0 = ipa_and(a, ipa_mkmask(len));
+      n = fib_find(&tab->fib, &a0, len);
+      if (n && n->routes)
+	return n;
+      len--;
+    }
+  return NULL;
+}
 
 static void
 rte_init(struct fib_node *N)
@@ -210,7 +235,7 @@ do_rte_announce(struct announce_hook *a, int type UNUSED, net *net, rte *new, rt
    * This is a tricky part - we don't know whether route 'old' was
    * exported to protocol 'p' or was filtered by the export filter.
    * We try tu run the export filter to know this to have a correct
-   * value in 'old' argument of rt_update (and proper filter value)
+   * value in 'old' argument of rte_update (and proper filter value)
    *
    * FIXME - this is broken because 'configure soft' may change
    * filters but keep routes. Refeed is expected to be called after
@@ -327,6 +352,9 @@ rte_announce(rtable *tab, unsigned type, net *net, rte *new, rte *old, ea_list *
 	new->attrs->proto->stats.pref_routes++;
       if (old)
 	old->attrs->proto->stats.pref_routes--;
+
+      if (tab->hostcache)
+	rt_notify_hostcache(tab, net);
     }
 
   WALK_LIST(a, tab->hooks)
@@ -337,6 +365,7 @@ rte_announce(rtable *tab, unsigned type, net *net, rte *new, rte *old, ea_list *
     }
 }
 
+
 static inline int
 rte_validate(rte *e)
 {
@@ -345,7 +374,7 @@ rte_validate(rte *e)
 
   if ((n->n.pxlen > BITS_PER_IP_ADDRESS) || !ip_is_prefix(n->n.prefix,n->n.pxlen))
     {
-      log(L_BUG "Ignoring bogus prefix %I/%d received via %s",
+      log(L_WARN "Ignoring bogus prefix %I/%d received via %s",
 	  n->n.prefix, n->n.pxlen, e->sender->name);
       return 0;
     }
@@ -469,7 +498,6 @@ rte_recalculate(rtable *table, net *net, struct proto *p, struct proto *src, rte
 
   rte_announce(table, RA_ANY, net, new, old, tmpa);
 
-  
   if (new && rte_better(new, old_best))
     {
       /* The first case - the new route is cleary optimal, we link it
@@ -523,7 +551,7 @@ rte_recalculate(rtable *table, net *net, struct proto *p, struct proto *src, rte
 	}
       else if (table->gc_counter++ >= table->config->gc_max_ops &&
 	       table->gc_time + table->config->gc_min_time <= now)
-	ev_schedule(table->gc_event);
+	rt_schedule_gc(table);
     }
   else if (new)
     {
@@ -688,6 +716,21 @@ drop:
   rte_update_unlock();
 }
 
+/* Independent call to rte_announce(), used from next hop
+   recalculation, outside of rte_update(). new must be non-NULL */
+static inline void 
+rte_announce_i(rtable *tab, unsigned type, net *n, rte *new, rte *old)
+{
+  struct proto *src;
+  ea_list *tmpa;
+
+  rte_update_lock();
+  src = new->attrs->proto;
+  tmpa = src->make_tmp_attrs ? src->make_tmp_attrs(new, rte_update_pool) : NULL;
+  rte_announce(tab, type, n, new, old, tmpa);
+  rte_update_unlock();
+}
+
 void
 rte_discard(rtable *t, rte *old)	/* Non-filtered route deletion, used during garbage collection */
 {
@@ -760,14 +803,49 @@ rt_dump_all(void)
     rt_dump(t);
 }
 
-static void
-rt_gc(void *tab)
+static inline void
+rt_schedule_gc(rtable *tab)
 {
-  rtable *t = tab;
+  if (tab->gc_scheduled)
+    return;
 
-  DBG("Entered routing table garbage collector for %s after %d seconds and %d deletes\n",
-      t->name, (int)(now - t->gc_time), t->gc_counter);
-  rt_prune(t);
+  tab->gc_scheduled = 1;
+  ev_schedule(tab->rt_event);
+}
+
+static inline void
+rt_schedule_hcu(rtable *tab)
+{
+  if (tab->hcu_scheduled)
+    return;
+
+  tab->hcu_scheduled = 1;
+  ev_schedule(tab->rt_event);
+}
+
+static inline void
+rt_schedule_nhu(rtable *tab)
+{
+  if (tab->nhu_state == 0)
+    ev_schedule(tab->rt_event);
+
+  /* state change 0->1, 2->3 */
+  tab->nhu_state |= 1;
+}
+
+static void
+rt_event(void *ptr)
+{
+  rtable *tab = ptr;
+
+  if (tab->hcu_scheduled)
+    rt_update_hostcache(tab);
+
+  if (tab->nhu_state)
+    rt_next_hop_update(tab);
+
+  if (tab->gc_scheduled)
+    rt_prune(tab);
 }
 
 void
@@ -780,9 +858,9 @@ rt_setup(pool *p, rtable *t, char *name, struct rtable_config *cf)
   init_list(&t->hooks);
   if (cf)
     {
-      t->gc_event = ev_new(p);
-      t->gc_event->hook = rt_gc;
-      t->gc_event->data = t;
+      t->rt_event = ev_new(p);
+      t->rt_event->hook = rt_event;
+      t->rt_event->data = t;
       t->gc_time = now;
     }
 }
@@ -811,7 +889,7 @@ rt_init(void)
  * the routing table and removes all routes belonging to inactive
  * protocols and also stale network entries.
  */
-void
+static void
 rt_prune(rtable *tab)
 {
   struct fib_iterator fit;
@@ -852,6 +930,7 @@ again:
 #endif
   tab->gc_counter = 0;
   tab->gc_time = now;
+  tab->gc_scheduled = 0;
 }
 
 /**
@@ -868,6 +947,156 @@ rt_prune_all(void)
     rt_prune(t);
 }
 
+void
+rt_preconfig(struct config *c)
+{
+  struct symbol *s = cf_find_symbol("master");
+
+  init_list(&c->tables);
+  c->master_rtc = rt_new_table(s);
+}
+
+
+/* 
+ * Some functions for handing internal next hop updates
+ * triggered by rt_schedule_nhu().
+ */
+
+static inline int
+rta_next_hop_outdated(rta *a)
+{
+  struct hostentry *he = a->hostentry;
+
+  if (!he)
+    return 0;
+
+  if (!he->src)
+    return a->dest != RTD_UNREACHABLE;
+
+  return (a->iface != he->src->iface) || !ipa_equal(a->gw, he->gw) ||
+    (a->dest != he->dest) || (a->igp_metric != he->igp_metric) ||
+    !mpnh_same(a->nexthops, he->src->nexthops);
+}
+
+static inline void
+rta_apply_hostentry(rta *a, struct hostentry *he)
+{
+  a->hostentry = he;
+  a->iface = he->src ? he->src->iface : NULL;
+  a->gw = he->gw;
+  a->dest = he->dest;
+  a->igp_metric = he->igp_metric;
+  a->nexthops = he->src ? he->src->nexthops : NULL;
+}
+
+static inline rte *
+rt_next_hop_update_rte(rtable *tab, rte *old)
+{
+  rta a;
+  memcpy(&a, old->attrs, sizeof(rta));
+  rta_apply_hostentry(&a, old->attrs->hostentry);
+  a.aflags = 0;
+
+  rte *e = sl_alloc(rte_slab);
+  memcpy(e, old, sizeof(rte));
+  e->attrs = rta_lookup(&a);
+
+  return e;
+}
+
+static inline int
+rt_next_hop_update_net(rtable *tab, net *n)
+{
+  rte **k, *e, *new, *old_best, **new_best;
+  int count = 0;
+  int free_old_best = 0;
+
+  old_best = n->routes;
+  if (!old_best)
+    return 0;
+
+  new_best = NULL;
+
+  for (k = &n->routes; e = *k; k = &e->next)
+    {
+      if (rta_next_hop_outdated(e->attrs))
+	{
+	  new = rt_next_hop_update_rte(tab, e);
+	  *k = new;
+
+	  rte_announce_i(tab, RA_ANY, n, new, e);
+	  rte_trace_in(D_ROUTES, new->sender, new, "updated");
+
+	  if (e != old_best)
+	    rte_free_quick(e);
+	  else /* Freeing of the old best rte is postponed */
+	    free_old_best = 1;
+
+	  e = new;
+	  count++;
+	}
+
+      if (!new_best || rte_better(e, *new_best))
+	new_best = k;
+    }
+
+  /* Relink the new best route to the first position */
+  new = *new_best;
+  if (new != n->routes)
+    {
+      *new_best = new->next;
+      new->next = n->routes;
+      n->routes = new;
+    }
+
+  /* Announce the new best route */
+  if (new != old_best)
+    {
+      rte_announce_i(tab, RA_OPTIMAL, n, new, old_best);
+      rte_trace_in(D_ROUTES, new->sender, new, "updated [best]");
+    }
+
+   if (free_old_best)
+    rte_free_quick(old_best);
+
+  return count;
+}
+
+static void
+rt_next_hop_update(rtable *tab)
+{
+  struct fib_iterator *fit = &tab->nhu_fit;
+  int max_feed = 32;
+
+  if (tab->nhu_state == 0)
+    return;
+
+  if (tab->nhu_state == 1)
+    {
+      FIB_ITERATE_INIT(fit, &tab->fib);
+      tab->nhu_state = 2;
+    }
+
+  FIB_ITERATE_START(&tab->fib, fit, fn)
+    {
+      if (max_feed <= 0)
+	{
+	  FIB_ITERATE_PUT(fit, fn);
+	  ev_schedule(tab->rt_event);
+	  return;
+	}
+      max_feed -= rt_next_hop_update_net(tab, (net *) fn);
+    }
+  FIB_ITERATE_END(fn);
+
+  /* state change 2->0, 3->1 */
+  tab->nhu_state &= 1;
+
+  if (tab->nhu_state > 0)
+    ev_schedule(tab->rt_event);
+}
+
+
 struct rtable_config *
 rt_new_table(struct symbol *s)
 {
@@ -879,15 +1108,6 @@ rt_new_table(struct symbol *s)
   c->gc_max_ops = 1000;
   c->gc_min_time = 5;
   return c;
-}
-
-void
-rt_preconfig(struct config *c)
-{
-  struct symbol *s = cf_find_symbol("master");
-
-  init_list(&c->tables);
-  c->master_rtc = rt_new_table(s);
 }
 
 /**
@@ -919,9 +1139,11 @@ rt_unlock_table(rtable *r)
     {
       struct config *conf = r->deleted;
       DBG("Deleting routing table %s\n", r->name);
+      if (r->hostcache)
+	rt_free_hostcache(r);
       rem_node(&r->n);
       fib_free(&r->fib);
-      rfree(r->gc_event);
+      rfree(r->rt_event);
       mb_free(r);
       config_del_obstacle(conf);
     }
@@ -1088,6 +1310,308 @@ rt_feed_baby_abort(struct proto *p)
     }
 }
 
+
+static inline unsigned
+ptr_hash(void *ptr)
+{
+  uintptr_t p = (uintptr_t) ptr;
+  return p ^ (p << 8) ^ (p >> 16);
+}
+
+static inline unsigned
+hc_hash(ip_addr a, rtable *dep)
+{
+  return (ipa_hash(a) ^ ptr_hash(dep)) & 0xffff;
+}
+
+static inline void
+hc_insert(struct hostcache *hc, struct hostentry *he)
+{
+  unsigned int k = he->hash_key >> hc->hash_shift;
+  he->next = hc->hash_table[k];
+  hc->hash_table[k] = he;
+}
+
+static inline void
+hc_remove(struct hostcache *hc, struct hostentry *he)
+{
+  struct hostentry **hep;
+  unsigned int k = he->hash_key >> hc->hash_shift;
+
+  for (hep = &hc->hash_table[k]; *hep != he; hep = &(*hep)->next);
+  *hep = he->next;
+}
+
+#define HC_DEF_ORDER 10
+#define HC_HI_MARK *4
+#define HC_HI_STEP 2
+#define HC_HI_ORDER 16			/* Must be at most 16 */
+#define HC_LO_MARK /5
+#define HC_LO_STEP 2
+#define HC_LO_ORDER 10
+
+static void
+hc_alloc_table(struct hostcache *hc, unsigned order)
+{
+  unsigned hsize = 1 << order;
+  hc->hash_order = order;
+  hc->hash_shift = 16 - order;
+  hc->hash_max = (order >= HC_HI_ORDER) ? ~0 : (hsize HC_HI_MARK);
+  hc->hash_min = (order <= HC_LO_ORDER) ?  0 : (hsize HC_LO_MARK);
+
+  hc->hash_table = mb_allocz(rt_table_pool, hsize * sizeof(struct hostentry *));
+}
+
+static void
+hc_resize(struct hostcache *hc, unsigned new_order)
+{
+  unsigned old_size = 1 << hc->hash_order;
+  struct hostentry **old_table = hc->hash_table;
+  struct hostentry *he, *hen;
+  int i;
+
+  hc_alloc_table(hc, new_order);
+  for (i = 0; i < old_size; i++)
+    for (he = old_table[i]; he != NULL; he=hen)
+      {
+	hen = he->next;
+	hc_insert(hc, he);
+      }
+  mb_free(old_table);
+}
+
+static struct hostentry *
+hc_new_hostentry(struct hostcache *hc, ip_addr a, ip_addr ll, rtable *dep, unsigned k)
+{
+  struct hostentry *he = sl_alloc(hc->slab);
+
+  he->addr = a;
+  he->link = ll;
+  he->tab = dep;
+  he->hash_key = k;
+  he->uc = 0;
+  he->src = NULL;
+
+  add_tail(&hc->hostentries, &he->ln);
+  hc_insert(hc, he);
+
+  hc->hash_items++;
+  if (hc->hash_items > hc->hash_max)
+    hc_resize(hc, hc->hash_order + HC_HI_STEP);
+
+  return he;
+}
+
+static void
+hc_delete_hostentry(struct hostcache *hc, struct hostentry *he)
+{
+  rta_free(he->src);
+
+  rem_node(&he->ln);
+  hc_remove(hc, he);
+  sl_free(hc->slab, he);
+
+  hc->hash_items--;
+  if (hc->hash_items < hc->hash_min)
+    hc_resize(hc, hc->hash_order - HC_LO_STEP);
+}
+
+static void
+rt_init_hostcache(rtable *tab)
+{
+  struct hostcache *hc = mb_allocz(rt_table_pool, sizeof(struct hostcache));
+  init_list(&hc->hostentries);
+
+  hc->hash_items = 0;
+  hc_alloc_table(hc, HC_DEF_ORDER);
+  hc->slab = sl_new(rt_table_pool, sizeof(struct hostentry));
+
+  hc->lp = lp_new(rt_table_pool, 1008);
+  hc->trie = f_new_trie(hc->lp);
+
+  tab->hostcache = hc;
+}
+
+static void
+rt_free_hostcache(rtable *tab)
+{
+  struct hostcache *hc = tab->hostcache;
+
+  node *n;
+  WALK_LIST(n, hc->hostentries)
+    {
+      struct hostentry *he = SKIP_BACK(struct hostentry, ln, n);
+      rta_free(he->src);
+
+      if (he->uc)
+	log(L_ERR "Hostcache is not empty in table %s", tab->name);
+    }
+
+  rfree(hc->slab);
+  rfree(hc->lp);
+  mb_free(hc->hash_table);
+  mb_free(hc);
+}
+
+static void
+rt_notify_hostcache(rtable *tab, net *net)
+{
+  struct hostcache *hc = tab->hostcache;
+
+  if (tab->hcu_scheduled)
+    return;
+
+  if (trie_match_prefix(hc->trie, net->n.prefix, net->n.pxlen))
+    rt_schedule_hcu(tab);
+}
+
+static int
+if_local_addr(ip_addr a, struct iface *i)
+{
+  struct ifa *b;
+
+  WALK_LIST(b, i->addrs)
+    if (ipa_equal(a, b->ip))
+      return 1;
+
+  return 0;
+}
+
+static u32 
+rt_get_igp_metric(rte *rt)
+{
+  eattr *ea = ea_find(rt->attrs->eattrs, EA_GEN_IGP_METRIC);
+
+  if (ea)
+    return ea->u.data;
+
+  rta *a = rt->attrs;
+  if ((a->source == RTS_OSPF) ||
+      (a->source == RTS_OSPF_IA) ||
+      (a->source == RTS_OSPF_EXT1))
+    return rt->u.ospf.metric1;
+
+  if (a->source == RTS_RIP)
+    return rt->u.rip.metric;
+
+  /* Device routes */
+  if ((a->dest != RTD_ROUTER) && (a->dest != RTD_MULTIPATH))
+    return 0;
+
+  return IGP_METRIC_UNKNOWN;
+}
+
+static int
+rt_update_hostentry(rtable *tab, struct hostentry *he)
+{
+  rta *old_src = he->src;
+  int pxlen = 0;
+
+  /* Reset the hostentry */ 
+  he->src = NULL;
+  he->gw = IPA_NONE;
+  he->dest = RTD_UNREACHABLE;
+  he->igp_metric = 0;
+
+  net *n = net_route(tab, he->addr, MAX_PREFIX_LENGTH);
+  if (n)
+    {
+      rta *a = n->routes->attrs;
+      pxlen = n->n.pxlen;
+
+      if (a->hostentry)
+	{
+	  /* Recursive route should not depend on another recursive route */
+	  log(L_WARN "Next hop address %I resolvable through recursive route for %I/%d",
+	      he->addr, n->n.prefix, pxlen);
+	  goto done;
+	}
+
+      if (a->dest == RTD_DEVICE)
+	{
+	  if (if_local_addr(he->addr, a->iface))
+	    {
+	      /* The host address is a local address, this is not valid */
+	      log(L_WARN "Next hop address %I is a local address of iface %s",
+		  he->addr, a->iface->name);
+	      goto done;
+      	    }
+
+	  /* The host is directly reachable, use link as a gateway */
+	  he->gw = he->link;
+	  he->dest = RTD_ROUTER;
+	}
+      else
+	{
+	  /* The host is reachable through some route entry */
+	  he->gw = a->gw;
+	  he->dest = a->dest;
+	}
+
+      he->src = rta_clone(a);
+      he->igp_metric = rt_get_igp_metric(n->routes);
+    }
+
+ done:
+  /* Add a prefix range to the trie */
+  trie_add_prefix(tab->hostcache->trie, he->addr, MAX_PREFIX_LENGTH, pxlen, MAX_PREFIX_LENGTH);
+
+  rta_free(old_src);
+  return old_src != he->src;
+}
+
+static void
+rt_update_hostcache(rtable *tab)
+{
+  struct hostcache *hc = tab->hostcache;
+  struct hostentry *he;
+  node *n, *x;
+
+  /* Reset the trie */
+  lp_flush(hc->lp);
+  hc->trie = f_new_trie(hc->lp);
+
+  WALK_LIST_DELSAFE(n, x, hc->hostentries)
+    {
+      he = SKIP_BACK(struct hostentry, ln, n);
+      if (!he->uc)
+	{
+	  hc_delete_hostentry(hc, he);
+	  continue;
+	}
+
+      if (rt_update_hostentry(tab, he))
+	rt_schedule_nhu(he->tab);
+    }
+
+  tab->hcu_scheduled = 0;
+}
+
+static struct hostentry *
+rt_find_hostentry(rtable *tab, ip_addr a, ip_addr ll, rtable *dep)
+{
+  struct hostentry *he;
+
+  if (!tab->hostcache)
+    rt_init_hostcache(tab);
+
+  unsigned int k = hc_hash(a, dep);
+  struct hostcache *hc = tab->hostcache;
+  for (he = hc->hash_table[k >> hc->hash_shift]; he != NULL; he = he->next)
+    if (ipa_equal(he->addr, a) && (he->tab == dep))
+      return he;
+
+  he = hc_new_hostentry(hc, a, ll, dep, k);
+  rt_update_hostentry(tab, he);
+  return he;
+}
+
+void
+rta_set_recursive_next_hop(rtable *dep, rta *a, rtable *tab, ip_addr *gw, ip_addr *ll)
+{
+  rta_apply_hostentry(a, rt_find_hostentry(tab, *gw, *ll, dep));
+}
+
 /*
  *  CLI commands
  */
@@ -1104,6 +1628,7 @@ rt_format_via(rte *e, byte *via)
     case RTD_BLACKHOLE:	bsprintf(via, "blackhole"); break;
     case RTD_UNREACHABLE:	bsprintf(via, "unreachable"); break;
     case RTD_PROHIBIT:	bsprintf(via, "prohibited"); break;
+    case RTD_MULTIPATH:	bsprintf(via, "multipath"); break;
     default:		bsprintf(via, "???");
     }
 }
@@ -1115,6 +1640,7 @@ rt_show_rte(struct cli *c, byte *ia, rte *e, struct rt_show_data *d, ea_list *tm
   byte tm[TM_DATETIME_BUFFER_SIZE], info[256];
   rta *a = e->attrs;
   int primary = (e->net->routes == e);
+  struct mpnh *nh;
 
   rt_format_via(e, via);
   tm_format_datetime(tm, &config->tf_route, e->lastmod);
@@ -1137,6 +1663,8 @@ rt_show_rte(struct cli *c, byte *ia, rte *e, struct rt_show_data *d, ea_list *tm
     bsprintf(info, " (%d)", e->pref);
   cli_printf(c, -1007, "%-18s %s [%s %s%s]%s%s", ia, via, a->proto->name,
 	     tm, from, primary ? " *" : "", info);
+  for (nh = a->nexthops; nh; nh = nh->next)
+    cli_printf(c, -1007, "\tvia %I on %s weight %d", nh->gw, nh->iface->name, nh->weight + 1);
   if (d->verbose)
     rta_show(c, a, tmpa);
 }
@@ -1262,9 +1790,9 @@ rt_show(struct rt_show_data *d)
   else
     {
       if (d->show_for)
-	n = fib_route(&d->table->fib, d->prefix, d->pxlen);
+	n = net_route(d->table, d->prefix, d->pxlen);
       else
-	n = fib_find(&d->table->fib, &d->prefix, d->pxlen);
+	n = net_find(d->table, d->prefix, d->pxlen);
       if (n)
 	{
 	  rt_show_net(this_cli, n, d);

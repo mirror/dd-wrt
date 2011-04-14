@@ -66,7 +66,7 @@ if_connected(ip_addr *a, struct iface *i) /* -1=error, 1=match, 0=no match */
     {
       if (ipa_equal(*a, b->ip))
 	return SCOPE_HOST;
-      if (b->flags & IA_UNNUMBERED)
+      if (b->flags & IA_PEER)
 	{
 	  if (ipa_equal(*a, b->opposite))
 	    return b->scope;
@@ -166,7 +166,7 @@ neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags)
 	 fortunately, we don't use this combination */
       add_tail(&sticky_neigh_list, &n->n);
       ifa = NULL;
-      scope = 0;
+      scope = -1;
     }
   n->iface = ifa;
   n->proto = p;
@@ -275,6 +275,28 @@ neigh_if_down(struct iface *i)
 	add_tail(&sticky_neigh_list, &n->n);
       else
 	sl_free(neigh_slab, n);
+    }
+}
+
+/**
+ * neigh_if_link - notify neighbor cache about interface link change
+ * @i: the interface in question
+ *
+ * Notify the neighbor cache that an interface changed link state.
+ * All owners of neighbor entries connected to this interface are
+ * notified.
+ */
+
+void
+neigh_if_link(struct iface *i)
+{
+  node *x, *y;
+
+  WALK_LIST_DELSAFE(x, y, i->neighbors)
+    {
+      neighbor *n = SKIP_BACK(neighbor, if_n, x);
+      if (n->proto->neigh_notify && n->proto->core_state != FS_FLUSHING)
+	n->proto->neigh_notify(n);
     }
 }
 

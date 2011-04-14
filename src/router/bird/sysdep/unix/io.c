@@ -22,6 +22,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <netinet/icmp6.h>
 
 #include "nest/bird.h"
 #include "lib/lists.h"
@@ -881,6 +883,25 @@ sk_set_ipv6_checksum(sock *s, int offset)
 }
 
 int
+sk_set_icmp_filter(sock *s, int p1, int p2)
+{
+  /* a bit of lame interface, but it is here only for Radv */
+  struct icmp6_filter f;
+
+  ICMP6_FILTER_SETBLOCKALL(&f);
+  ICMP6_FILTER_SETPASS(p1, &f);
+  ICMP6_FILTER_SETPASS(p2, &f);
+
+  if (setsockopt(s->fd, IPPROTO_ICMPV6, ICMP6_FILTER, &f, sizeof(f)) < 0)
+    {
+      log(L_ERR "sk_setup_icmp_filter: ICMP6_FILTER: %m");
+      return -1;
+    }
+
+  return 0;
+}
+
+int
 sk_setup_multicast(sock *s)
 {
   char *err;
@@ -951,7 +972,6 @@ sk_leave_group(sock *s, ip_addr maddr)
   return 0;
 }
 
-
 #else /* IPV4 */
 
 int
@@ -1004,6 +1024,11 @@ sk_leave_group(sock *s, ip_addr maddr)
 static void
 sk_tcp_connected(sock *s)
 {
+  sockaddr lsa;
+  int lsa_len = sizeof(lsa);
+  if (getsockname(s->fd, (struct sockaddr *) &lsa, &lsa_len) == 0)
+    get_sockaddr(&lsa, &s->saddr, &s->sport, 1);
+
   s->type = SK_TCP;
   sk_alloc_bufs(s);
   s->tx_hook(s);

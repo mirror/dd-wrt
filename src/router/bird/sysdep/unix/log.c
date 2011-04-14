@@ -65,14 +65,43 @@ static char *class_names[] = {
   "BUG"
 };
 
-static void
-vlog(int class, char *msg, va_list args)
-{
-  char buf[1024];
-  struct log_config *l;
+#define LOG_BUFFER_SIZE 1024
+static char log_buffer[LOG_BUFFER_SIZE];
+static char *log_buffer_pos;
+static int log_buffer_remains;
 
-  if (bvsnprintf(buf, sizeof(buf)-1, msg, args) < 0)
-    bsprintf(buf + sizeof(buf) - 100, " ... <too long>");
+
+/**
+ * log_reset - reset the log buffer
+ *
+ * This function resets a log buffer and discards buffered
+ * messages. Should be used before a log message is prepared
+ * using logn().
+ */
+void
+log_reset(void)
+{
+  log_buffer_pos = log_buffer;
+  log_buffer_remains = LOG_BUFFER_SIZE;
+  log_buffer[0] = 0;
+}
+
+/**
+ * log_commit - commit a log message
+ * @class: message class information (%L_DEBUG to %L_BUG, see |lib/birdlib.h|)
+ *
+ * This function writes a message prepared in the log buffer to the
+ * log file (as specified in the configuration). The log buffer is
+ * reset after that. The log message is a full line, log_commit()
+ * terminates it.
+ *
+ * The message class is an integer, not a first char of a string like
+ * in log(), so it should be written like *L_INFO.
+ */
+void
+log_commit(int class)
+{
+  struct log_config *l;
 
   WALK_LIST(l, *current_log_list)
     {
@@ -88,17 +117,50 @@ vlog(int class, char *msg, va_list args)
 	      tm_format_datetime(tbuf, &config->tf_log, now);
 	      fprintf(l->fh, "%s <%s> ", tbuf, class_names[class]);
 	    }
-	  fputs(buf, l->fh);
+	  fputs(log_buffer, l->fh);
 	  fputc('\n', l->fh);
 	  fflush(l->fh);
 	}
 #ifdef HAVE_SYSLOG
       else
-	syslog(syslog_priorities[class], "%s", buf);
+	syslog(syslog_priorities[class], "%s", log_buffer);
 #endif
     }
-  cli_echo(class, buf);
+  cli_echo(class, log_buffer);
+
+  log_reset();
 }
+
+static void
+log_print(const char *msg, va_list args)
+{
+  int i;
+
+  if (log_buffer_remains == 0)
+    return;
+
+  i=bvsnprintf(log_buffer_pos, log_buffer_remains, msg, args);
+  if (i < 0)
+    {
+      bsprintf(log_buffer + LOG_BUFFER_SIZE - 100, " ... <too long>");
+      log_buffer_remains = 0;
+      return;
+    }
+
+  log_buffer_pos += i;
+  log_buffer_remains -= i;
+}
+
+
+static void
+vlog(int class, const char *msg, va_list args)
+{
+  log_reset();
+  log_print(msg, args);
+  log_commit(class);
+}
+
+
 
 /**
  * log - log a message
@@ -109,6 +171,7 @@ vlog(int class, char *msg, va_list args)
  * and writes it to the corresponding log file (as specified in the
  * configuration). Please note that the message is automatically
  * formatted as a full line, no need to include |\n| inside.
+ * It is essentially a sequence of log_reset(), logn() and log_commit().
  */
 void
 log_msg(char *msg, ...)
@@ -120,6 +183,26 @@ log_msg(char *msg, ...)
   if (*msg >= 1 && *msg <= 8)
     class = *msg++;
   vlog(class, msg, args);
+  va_end(args);
+}
+
+/**
+ * logn - prepare a partial message in the log buffer
+ * @msg: printf-like formatting string (without message class information)
+ *
+ * This function formats a message according to the format string @msg
+ * and adds it to the log buffer. Messages in the log buffer are
+ * logged when the buffer is flushed using log_commit() function. The
+ * message should not contain |\n|, log_commit() also terminates a
+ * line.
+ */
+void
+logn(char *msg, ...)
+{
+  va_list args;
+
+  va_start(args, msg);
+  log_print(msg, args);
   va_end(args);
 }
 

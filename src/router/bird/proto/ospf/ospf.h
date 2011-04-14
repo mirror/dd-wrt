@@ -10,14 +10,15 @@
 #define _BIRD_OSPF_H_
 
 #define MAXNETS 10
-#define OSPF_VLINK_MTU 576	/* RFC2328 - A.1 */
-#define OSPF_MAX_PKT_SIZE 65536
-			/*
-                         * RFC 2328 says, maximum packet size is 65535
-			 * This could be too much for small systems, so I
-			 * normally allocate 2*mtu - (I found one cisco
-			 * sending packets mtu+16)
-			 */
+#define OSPF_MAX_PKT_SIZE 65535
+/*
+ * RFC 2328 says, maximum packet size is 65535 (IP packet size
+ * limit). Really a bit less for OSPF, because this contains also IP
+ * header. This could be too much for small systems, so I normally
+ * allocate 2*mtu (i found one cisco sending packets mtu+16). OSPF
+ * packets are almost always sent small enough to not be fragmented.
+ */
+
 #ifdef LOCAL_DEBUG
 #define OSPF_FORCE_DEBUG 1
 #else
@@ -53,11 +54,13 @@ do { if ((p->debug & D_PACKETS) || OSPF_FORCE_DEBUG) \
 #ifndef IPV6
 #define OSPFv2 1
 #define OSPF_VERSION 2
+#define OSPF_VLINK_MTU 576			/* RFC 2328 A.1 */
 #define AllSPFRouters ipa_from_u32(0xe0000005)	/* 224.0.0.5 */
 #define AllDRouters ipa_from_u32(0xe0000006)	/* 224.0.0.6 */
 #else
 #define OSPFv3 1
 #define OSPF_VERSION 3
+#define OSPF_VLINK_MTU 1280			/* RFC 5340 A.1 */
 #define AllSPFRouters _MI(0xFF020000, 0, 0, 5)	/* FF02::5 */
 #define AllDRouters   _MI(0xFF020000, 0, 0, 6)	/* FF02::6 */
 #endif
@@ -71,21 +74,26 @@ do { if ((p->debug & D_PACKETS) || OSPF_FORCE_DEBUG) \
 #define DEFAULT_OSPFTICK 1
 #define DEFAULT_RFC1583 0	/* compatibility with rfc1583 */
 #define DEFAULT_STUB_COST 1000
+#define DEFAULT_ECMP_LIMIT 16
 
 
 struct ospf_config
 {
   struct proto_config c;
   unsigned tick;
-  int rfc1583;
+  byte rfc1583;
+  byte abr;
+  int ecmp;
   list area_list;
+  list vlink_list;
 };
 
 struct nbma_node
 {
   node n;
   ip_addr ip;
-  int eligible;
+  byte eligible;
+  byte found; 
 };
 
 struct area_net_config
@@ -115,11 +123,10 @@ struct ospf_area_config
 {
   node n;
   u32 areaid;
-  int stub;
+  u32 stub;
   list patt_list;
-  list vlink_list;
-  list net_list;
-  list stubnet_list;
+  list net_list;	      	/* List of aggregate networks for that area */
+  list stubnet_list;		/* List of stub networks added to Router LSA */
 };
 
 
@@ -161,14 +168,15 @@ struct ospf_iface
   struct iface *iface;		/* Nest's iface */
   struct ifa *addr;		/* IP prefix associated with that OSPF iface */
   struct ospf_area *oa;
-  struct object_lock *lock;
+  struct ospf_iface_patt *cf;
+  pool *pool;
   sock *sk;			/* IP socket (for DD ...) */
   list neigh_list;		/* List of neigbours */
   u32 cost;			/* Cost of iface */
   u32 waitint;			/* number of sec before changing state from wait */
   u32 rxmtint;			/* number of seconds between LSA retransmissions */
   u32 pollint;			/* Poll interval */
-  u32 dead;			/* after "deadint" missing hellos is router dead */
+  u32 deadint;			/* after "deadint" missing hellos is router dead */
   u32 vid;			/* Id of peer of virtual link */
   ip_addr vip;			/* IP of peer of virtual link */
   struct ospf_iface *vifa;	/* OSPF iface which the vlink goes through */
@@ -186,11 +194,16 @@ struct ospf_iface
 #endif
 
   ip_addr drip;			/* Designated router */
-  u32 drid;
   ip_addr bdrip;		/* Backup DR */
+  u32 drid;
   u32 bdrid;
+  s16 rt_pos_beg;		/* Position of iface in Router-LSA, begin, inclusive */
+  s16 rt_pos_end;		/* Position of iface in Router-LSA, end, exclusive */
 
 #ifdef OSPFv3
+  s16 px_pos_beg;		/* Position of iface in Rt Prefix-LSA, begin, inclusive */
+  s16 px_pos_end;		/* Position of iface in Rt Prefix-LSA, end, exclusive */
+
   u32 dr_iface_id;		/* if drid is valid, this is iface_id of DR (for connecting network) */
   u8 instance_id;		/* Used to differentiate between more OSPF
 				   instances on one interface */
@@ -200,13 +213,14 @@ struct ospf_iface
 #define OSPF_IT_BCAST 0
 #define OSPF_IT_NBMA 1
 #define OSPF_IT_PTP 2
-#define OSPF_IT_VLINK 3
-#define OSPF_IT_UNDEF 4
+#define OSPF_IT_PTMP 3
+#define OSPF_IT_VLINK 4
+#define OSPF_IT_UNDEF 5
   u8 strictnbma;		/* Can I talk with unknown neighbors? */
   u8 stub;			/* Inactive interface */
   u8 state;			/* Interface state machine */
 #define OSPF_IS_DOWN 0		/* Not working */
-#define OSPF_IS_LOOP 1		/* Should never happen */
+#define OSPF_IS_LOOP 1		/* Iface with no link */
 #define OSPF_IS_WAITING 2	/* Waiting for Wait timer */
 #define OSPF_IS_PTP 3		/* PTP operational */
 #define OSPF_IS_DROTHER 4	/* I'm on BCAST or NBMA and I'm not DR */
@@ -240,9 +254,11 @@ struct ospf_iface
 #define OSPF_I_OK 0		/* Everything OK */
 #define OSPF_I_SK 1		/* Socket open failed */
 #define OSPF_I_LL 2		/* Missing link-local address (OSPFv3) */
-  u8 sk_spf;			/* Socket is a member of SPFRouters group */
   u8 sk_dr; 			/* Socket is a member of DRouters group */
-  u32 rxbuf;
+  u8 marked;			/* Used in OSPF reconfigure */
+  u16 rxbuf;			/* Buffer size */
+  u8 check_link;		/* Whether iface link change is used */
+  u8 ecmp_weight;		/* Weight used for ECMP */
 };
 
 struct ospf_md5
@@ -571,6 +587,10 @@ lsa_get_ipv6_prefix(u32 *buf, ip_addr *addr, int *pxlen, u8 *pxopts, u16 *rest)
   if (pxl > 96)
     _I3(*addr) = *buf++;
 
+  /* Clean up remaining bits */
+  if (pxl < 128)
+    addr->addr[pxl / 32] &= u32_mkmask(pxl % 32);
+
   return buf;
 }
 
@@ -677,8 +697,8 @@ struct ospf_neighbor
 #define ISM_WAITF 1		/* Wait timer fired */
 #define ISM_BACKS 2		/* Backup seen */
 #define ISM_NEICH 3		/* Neighbor change */
-// #define ISM_LOOP 4		/* Loop indicated */
-// #define ISM_UNLOOP 5		/* Unloop indicated */
+#define ISM_LOOP 4		/* Link down */
+#define ISM_UNLOOP 5		/* Link up */
 #define ISM_DOWN 6		/* Interface down */
 
 /* Definitions for neighbor state machine */
@@ -700,15 +720,16 @@ struct ospf_area
 {
   node n;
   u32 areaid;
-  struct ospf_area_config *ac;	/* Related area config */
-  int origrt;			/* Rt lsa origination scheduled? */
+  struct ospf_area_config *ac;	/* Related area config, might be NULL */
   struct top_hash_entry *rt;	/* My own router LSA */
   struct top_hash_entry *pxr_lsa; /* Originated prefix LSA */
   list cand;			/* List of candidates for RT calc. */
   struct fib net_fib;		/* Networks to advertise or not */
-  unsigned stub;
-  int trcap;			/* Transit capability? */
+  u32 stub;			/* 0 or stub area cost */
   u32 options;			/* Optional features */
+  byte origrt;			/* Rt lsa origination scheduled? */
+  byte trcap;			/* Transit capability? */
+  byte marked;			/* Used in OSPF reconfigure */
   struct proto_ospf *po;
   struct fib rtr;		/* Routing tables for routers */
 };
@@ -726,37 +747,41 @@ struct proto_ospf
   list area_list;
   int areano;			/* Number of area I belong to */
   struct fib rtf;		/* Routing table */
-  int rfc1583;			/* RFC1583 compatibility */
-  int ebit;			/* Did I originate any ext lsa? */
+  byte rfc1583;			/* RFC1583 compatibility */
+  byte ebit;			/* Did I originate any ext lsa? */
+  byte ecmp;			/* Maximal number of nexthops in ECMP route, or 0 */
   struct ospf_area *backbone;	/* If exists */
   void *lsab;			/* LSA buffer used when originating router LSAs */
   int lsab_size, lsab_used;
+  linpool *nhpool;		/* Linpool used for next hops computed in SPF */
   u32 router_id;
 };
 
 struct ospf_iface_patt
 {
   struct iface_patt i;
+  u32 type;
+  u32 stub;
   u32 cost;
   u32 helloint;
   u32 rxmtint;
   u32 pollint;
-  u32 inftransdelay;
-  u32 priority;
   u32 waitint;
   u32 deadc;
-  u32 dead;
-  u32 type;
+  u32 deadint;
+  u32 inftransdelay;
+  u32 priority;
   u32 strictnbma;
-  u32 stub;
+  list nbma_list;
+  u32 voa;
   u32 vid;
-  u32 rxbuf;
+  u16 rxbuf;
+  u8 check_link;
+  u8 ecmp_weight;
 #define OSPF_RXBUF_NORMAL 0
 #define OSPF_RXBUF_LARGE 1
 #define OSPF_RXBUF_MINSIZE 256	/* Minimal allowed size */
-  list nbma_list;
-
-  u32 autype;			  /* Not really used in OSPFv3 */
+  u32 autype;			/* Not really used in OSPFv3 */
 #define OSPF_AUTH_NONE 0
 #define OSPF_AUTH_SIMPLE 1
 #define OSPF_AUTH_CRYPT 2
@@ -771,24 +796,6 @@ struct ospf_iface_patt
 #endif
 };
 
-#if defined(OSPFv2) && !defined(CONFIG_MC_PROPER_SRC)
-static inline int
-ospf_iface_stubby(struct ospf_iface_patt *ip, struct ifa *addr)
-{
-  /*
-   * We cannot properly support multiple OSPF ifaces on real iface
-   * with multiple prefixes, therefore we force OSPF ifaces with
-   * non-primary IP prefixes to be stub.
-   */
-  return ip->stub || !(addr->flags & IA_PRIMARY);
-}
-#else
-static inline int
-ospf_iface_stubby(struct ospf_iface_patt *ip, struct ifa *addr UNUSED)
-{
-  return ip->stub;
-}
-#endif
 
 int ospf_import_control(struct proto *p, rte **new, ea_list **attrs,
 			struct linpool *pool);
@@ -797,6 +804,8 @@ void ospf_store_tmp_attrs(struct rte *rt, struct ea_list *attrs);
 void schedule_rt_lsa(struct ospf_area *oa);
 void schedule_rtcalc(struct proto_ospf *po);
 void schedule_net_lsa(struct ospf_iface *ifa);
+
+struct ospf_area *ospf_find_area(struct proto_ospf *po, u32 aid);
 
 #ifdef OSPFv3
 void schedule_link_lsa(struct ospf_iface *ifa);

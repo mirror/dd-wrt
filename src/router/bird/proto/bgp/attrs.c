@@ -22,6 +22,42 @@
 
 #include "bgp.h"
 
+/*
+ *   UPDATE message error handling
+ *
+ * All checks from RFC 4271 6.3 are done as specified with these exceptions:
+ *  - The semantic check of an IP address from NEXT_HOP attribute is missing.
+ *  - Checks of some optional attribute values are missing.
+ *  - Syntactic and semantic checks of NLRIs (done in DECODE_PREFIX())
+ *    are probably inadequate.
+ *
+ * Loop detection based on AS_PATH causes updates to be withdrawn. RFC
+ * 4271 does not explicitly specifiy the behavior in that case.
+ *
+ * Loop detection related to route reflection (based on ORIGINATOR_ID
+ * and CLUSTER_LIST) causes updates to be withdrawn. RFC 4456 8
+ * specifies that such updates should be ignored, but that is generally
+ * a bad idea.
+ *
+ * Error checking of optional transitive attributes is done according to
+ * draft-ietf-idr-optional-transitive-03, but errors are handled always
+ * as withdraws.
+ *
+ * Unexpected AS_CONFED_* segments in AS_PATH are logged and removed,
+ * but unknown segments cause a session drop with Malformed AS_PATH
+ * error (see validate_path()). The behavior in such case is not
+ * explicitly specified by RFC 4271. RFC 5065 specifies that
+ * inconsistent AS_CONFED_* segments should cause a session drop, but
+ * implementations that pass invalid AS_CONFED_* segments are
+ * widespread.
+ *
+ * Error handling of AS4_* attributes is done as specified by
+ * draft-ietf-idr-rfc4893bis-03. There are several possible
+ * inconsistencies between AGGREGATOR and AS4_AGGREGATOR that are not
+ * handled by that draft, these are logged and ignored (see
+ * bgp_reconstruct_4b_attrs()).
+ */
+
 static byte bgp_mandatory_attrs[] = { BA_ORIGIN, BA_AS_PATH
 #ifndef IPV6
 ,BA_NEXT_HOP
@@ -37,6 +73,9 @@ struct attr_desc {
   int (*validate)(struct bgp_proto *p, byte *attr, int len);
   void (*format)(eattr *ea, byte *buf, int buflen);
 };
+
+#define IGNORE -1
+#define WITHDRAW -2
 
 static int
 bgp_check_origin(struct bgp_proto *p UNUSED, byte *a, int len UNUSED)
@@ -152,7 +191,7 @@ static int
 bgp_check_next_hop(struct bgp_proto *p UNUSED, byte *a, int len)
 {
 #ifdef IPV6
-  return -1;
+  return IGNORE;
 #else
   ip_addr addr;
 
@@ -186,7 +225,7 @@ bgp_check_aggregator(struct bgp_proto *p, byte *a UNUSED, int len)
 {
   int exp_len = p->as4_session ? 8 : 6;
   
-  return (len == exp_len) ? 0 : 5;
+  return (len == exp_len) ? 0 : WITHDRAW;
 }
 
 static void
@@ -201,6 +240,13 @@ bgp_format_aggregator(eattr *a, byte *buf, int buflen UNUSED)
 
   bsprintf(buf, "%d.%d.%d.%d AS%d", data[0], data[1], data[2], data[3], as);
 }
+
+static int
+bgp_check_community(struct bgp_proto *p UNUSED, byte *a UNUSED, int len)
+{
+  return ((len % 4) == 0) ? 0 : WITHDRAW;
+}
+
 
 static int
 bgp_check_cluster_list(struct bgp_proto *p UNUSED, byte *a UNUSED, int len)
@@ -221,7 +267,7 @@ bgp_check_reach_nlri(struct bgp_proto *p UNUSED, byte *a UNUSED, int len UNUSED)
   p->mp_reach_start = a;
   p->mp_reach_len = len;
 #endif
-  return -1;
+  return IGNORE;
 }
 
 static int
@@ -231,7 +277,7 @@ bgp_check_unreach_nlri(struct bgp_proto *p UNUSED, byte *a UNUSED, int len UNUSE
   p->mp_unreach_start = a;
   p->mp_unreach_len = len;
 #endif
-  return -1;
+  return IGNORE;
 }
 
 static struct attr_desc bgp_attr_table[] = {
@@ -252,19 +298,19 @@ static struct attr_desc bgp_attr_table[] = {
   { "aggregator", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,	/* BA_AGGREGATOR */
     bgp_check_aggregator, bgp_format_aggregator },
   { "community", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_INT_SET, 1,	/* BA_COMMUNITY */
-    NULL, NULL },
+    bgp_check_community, NULL },
   { "originator_id", 4, BAF_OPTIONAL, EAF_TYPE_ROUTER_ID, 0,			/* BA_ORIGINATOR_ID */
     NULL, NULL },
   { "cluster_list", -1, BAF_OPTIONAL, EAF_TYPE_INT_SET, 0,			/* BA_CLUSTER_LIST */
     bgp_check_cluster_list, bgp_format_cluster_list }, 
   { .name = NULL },								/* BA_DPA */
-  { .name = NULL },									/* BA_ADVERTISER */
-  { .name = NULL },									/* BA_RCID_PATH */
+  { .name = NULL },								/* BA_ADVERTISER */
+  { .name = NULL },								/* BA_RCID_PATH */
   { "mp_reach_nlri", -1, BAF_OPTIONAL, EAF_TYPE_OPAQUE, 1,			/* BA_MP_REACH_NLRI */
     bgp_check_reach_nlri, NULL },
   { "mp_unreach_nlri", -1, BAF_OPTIONAL, EAF_TYPE_OPAQUE, 1,			/* BA_MP_UNREACH_NLRI */
     bgp_check_unreach_nlri, NULL },
-  {  .name = NULL },									/* BA_EXTENDED_COMM */
+  {  .name = NULL },								/* BA_EXTENDED_COMM */
   { "as4_path", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,		/* BA_AS4_PATH */
     NULL, NULL },
   { "as4_aggregator", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,	/* BA_AS4_PATH */
@@ -752,7 +798,7 @@ bgp_get_bucket(struct bgp_proto *p, net *n, ea_list *attrs, int originate)
 
   /* Check if next hop is valid */
   a = ea_find(new, EA_CODE(EAP_BGP, BA_NEXT_HOP));
-  if (!a || ipa_equal(p->next_hop, *(ip_addr *)a->u.ptr->data))
+  if (!a || ipa_equal(p->cf->remote_ip, *(ip_addr *)a->u.ptr->data))
     {
       log(L_ERR "%s: Invalid NEXT_HOP attribute in route %I/%d", p->p.name, n->n.prefix, n->n.pxlen);
       return NULL;
@@ -808,7 +854,6 @@ bgp_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UN
   bgp_schedule_packet(p->conn, PKT_UPDATE);
 }
 
-
 static int
 bgp_create_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *pool)
 {
@@ -834,12 +879,14 @@ bgp_create_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
       put_u32(z+2, p->local_as);
     }
 
+  /* iBGP -> use gw, eBGP multi-hop -> use source_addr,
+     eBGP single-hop -> use gw if on the same iface */
   z = bgp_set_attr_wa(ea->attrs+2, pool, BA_NEXT_HOP, NEXT_HOP_LENGTH);
   if (p->cf->next_hop_self ||
       rta->dest != RTD_ROUTER ||
-      ipa_equal(e->attrs->gw, IPA_NONE) ||
+      ipa_equal(rta->gw, IPA_NONE) ||
       ipa_has_link_scope(rta->gw) ||
-      (!p->is_internal && (rta->iface != p->neigh->iface)))
+      (!p->is_internal && (!p->neigh || (rta->iface != p->neigh->iface))))
     set_next_hop(z, p->source_addr);
   else
     set_next_hop(z, rta->gw);
@@ -904,8 +951,11 @@ bgp_update_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
 	bgp_attach_attr(attrs, pool, BA_MULTI_EXIT_DISC, 0);
     }
 
+  /* iBGP -> keep next_hop, eBGP multi-hop -> use source_addr,
+     eBGP single-hop -> keep next_hop if on the same iface */
   a = ea_find(e->attrs->eattrs, EA_CODE(EAP_BGP, BA_NEXT_HOP));
-  if (a && !p->cf->next_hop_self && (p->is_internal || (!p->is_internal && e->attrs->iface == p->neigh->iface)))
+  if (a && !p->cf->next_hop_self && 
+      (p->is_internal || (p->neigh && (e->attrs->iface == p->neigh->iface))))
     {
       /* Leave the original next hop attribute, will check later where does it point */
     }
@@ -1011,6 +1061,13 @@ bgp_get_neighbor(rte *r)
     return ((struct bgp_proto *) r->attrs->proto)->remote_as;
 }
 
+static inline int
+rte_resolvable(rte *rt)
+{
+  int rd = rt->attrs->dest;  
+  return (rd == RTD_ROUTER) || (rd == RTD_DEVICE) || (rd == RTD_MULTIPATH);
+}
+
 int
 bgp_rte_better(rte *new, rte *old)
 {
@@ -1018,6 +1075,14 @@ bgp_rte_better(rte *new, rte *old)
   struct bgp_proto *old_bgp = (struct bgp_proto *) old->attrs->proto;
   eattr *x, *y;
   u32 n, o;
+
+  /* RFC 4271 9.1.2.1. Route resolvability test */
+  n = rte_resolvable(new);
+  o = rte_resolvable(old);
+  if (n > o)
+    return 1;
+  if (n < o)
+    return 0;
 
   /* Start with local preferences */
   x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_LOCAL_PREF));
@@ -1071,8 +1136,13 @@ bgp_rte_better(rte *new, rte *old)
   if (new_bgp->is_internal < old_bgp->is_internal)
     return 1;
 
-  /* Skipping RFC 4271 9.1.2.2. e) */
-  /* We don't have interior distances */
+  /* RFC 4271 9.1.2.2. e) Compare IGP metrics */
+  n = new_bgp->cf->igp_metric ? new->attrs->igp_metric : 0;
+  o = old_bgp->cf->igp_metric ? old->attrs->igp_metric : 0;
+  if (n < o)
+    return 1;
+  if (n > o)
+    return 0;
 
   /* RFC 4271 9.1.2.2. f) Compare BGP identifiers */
   /* RFC 4456 9. a) Use ORIGINATOR_ID instead of local neighor ID */
@@ -1139,15 +1209,7 @@ bgp_merge_as_paths(struct adata *old2, struct adata *old4, int req_as, struct li
 static int
 as4_aggregator_valid(struct adata *aggr)
 {
-  if (aggr->length != 8)
-    return 0;
-
-  u32 *a = (u32 *) aggr->data;
-
-  if ((a[0] == 0) || (a[1] == 0))
-    return 0;
-
-  return 1;
+  return aggr->length == 8;
 }
 
 
@@ -1234,7 +1296,7 @@ bgp_remove_as4_attrs(struct bgp_proto *p, rta *a)
 	{
 	  *el = (*el)->next;
 	  if (p->as4_session)
-	    log(L_WARN "BGP: Unexpected AS4_* attributes received");
+	    log(L_WARN "%s: Unexpected AS4_* attributes received", p->p.name);
 	}
       else
 	el = &((*el)->next);
@@ -1264,16 +1326,15 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
   byte seen[256/8];
   ea_list *ea;
   struct adata *ad;
+  int withdraw = 0;
 
+  bzero(a, sizeof(rta));
   a->proto = &bgp->p;
   a->source = RTS_BGP;
   a->scope = SCOPE_UNIVERSE;
   a->cast = RTC_UNICAST;
-  a->dest = RTD_ROUTER;
-  a->flags = 0;
-  a->aflags = 0;
+  /* a->dest = RTD_ROUTER;  -- set in bgp_set_next_hop() */
   a->from = bgp->cf->remote_ip;
-  a->eattrs = NULL;
 
   /* Parse the attributes */
   bzero(seen, sizeof(seen));
@@ -1323,8 +1384,14 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
 	      errcode = desc->validate(bgp, z, l);
 	      if (errcode > 0)
 		goto err;
-	      if (errcode < 0)
+	      if (errcode == IGNORE)
 		continue;
+	      if (errcode <= WITHDRAW)
+		{
+		  log(L_WARN "%s: Attribute %s is malformed, withdrawing update",
+		      bgp->p.name, desc->name);
+		  withdraw = 1;
+		}
 	    }
 	  else if (code == BA_AS_PATH)
 	    {
@@ -1385,6 +1452,9 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
 	}
     }
 
+  if (withdraw)
+    goto withdraw;
+
 #ifdef IPV6
   /* If we received MP_REACH_NLRI we should check mandatory attributes */
   if (bgp->mp_reach_len != 0)
@@ -1416,12 +1486,12 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
 
   /* If the AS path attribute contains our AS, reject the routes */
   if (bgp_as_path_loopy(bgp, a))
-    goto loop;
+    goto withdraw;
 
   /* Two checks for IBGP loops caused by route reflection, RFC 4456 */ 
   if (bgp_originator_id_loopy(bgp, a) ||
       bgp_cluster_list_loopy(bgp, a))
-    goto loop;
+    goto withdraw;
 
   /* If there's no local preference, define one */
   if (!(seen[0] & (1 << BA_LOCAL_PREF)))
@@ -1429,8 +1499,7 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
 
   return a;
 
-loop:
-  DBG("BGP: Path loop!\n");
+withdraw:
   return NULL;
 
 malformed:
@@ -1483,7 +1552,18 @@ bgp_get_route_info(rte *e, byte *buf, ea_list *attrs)
   eattr *o = ea_find(attrs, EA_CODE(EAP_BGP, BA_ORIGIN));
   u32 origas;
 
-  buf += bsprintf(buf, " (%d) [", e->pref);
+  buf += bsprintf(buf, " (%d", e->pref);
+  if (e->attrs->hostentry)
+    {
+      if (!rte_resolvable(e))
+	buf += bsprintf(buf, "/-");
+      else if (e->attrs->igp_metric >= IGP_METRIC_UNKNOWN)
+	buf += bsprintf(buf, "/?");
+      else
+	buf += bsprintf(buf, "/%d", e->attrs->igp_metric);
+    }
+  buf += bsprintf(buf, ") [");
+
   if (p && as_path_get_last(p->u.ptr, &origas))
     buf += bsprintf(buf, "AS%u", origas);
   if (o)

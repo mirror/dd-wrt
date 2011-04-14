@@ -546,6 +546,9 @@ protos_build(void)
   init_list(&initial_proto_list);
   init_list(&flush_proto_list);
   proto_build(&proto_device);
+#ifdef CONFIG_RADV
+  proto_build(&proto_radv);
+#endif
 #ifdef CONFIG_RIP
   proto_build(&proto_rip);
 #endif
@@ -577,10 +580,8 @@ proto_fell_down(struct proto *p)
   bzero(&p->stats, sizeof(struct proto_stats));
   rt_unlock_table(p->table);
 
-#ifdef CONFIG_PIPE
-  if (proto_is_pipe(p))
-    rt_unlock_table(pipe_get_peer_table(p));
-#endif
+  if (p->proto->cleanup)
+    p->proto->cleanup(p);
 
   proto_rethink_goal(p);
 }

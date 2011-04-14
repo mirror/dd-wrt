@@ -1,3 +1,19 @@
+Version 1.3.0 (2011-03-31)
+  o Proper iBGP (can be used with IGP).
+  o Multipath support (OSPF and static).
+  o L2 link state detection.
+  o IPv6 router advertisements.
+  o Much improved OSPF reconfiguration.
+  o Point-to-MultiPoint interfaces (OSPF).
+  o Minor changes and improvements in config file grammar.
+  o Better community list matching
+  o Changes default behavior of BGP IPv6 socket to v6only.
+    Use 'listen bgp dual' for the old behavior.
+  o Changes default for handling missing link-local addresses on
+    route servers. Use 'missing lladdr drop' for the old behavior.
+  o Important bugfix for OSPF.
+  o Several minor bugfixes.
+
 Version 1.2.5 (2010-10-10)
   o Several mostly minor bugfixes.
 

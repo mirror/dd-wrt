@@ -194,7 +194,7 @@ tree_compare(const void *p1, const void *p2)
 }
 
 void
-f_prefix_get_bounds(struct f_prefix *px, int *l, int *h)
+fprefix_get_bounds(struct f_prefix *px, int *l, int *h)
 {
   *l = *h = px->len & LEN_MASK;
 
@@ -327,7 +327,7 @@ val_in_range(struct f_val v1, struct f_val v2)
     return res;
   
   if ((v1.type == T_PREFIX) && (v2.type == T_PREFIX_SET))
-    return trie_match_prefix(v2.val.ti, &v1.val.px);
+    return trie_match_fprefix(v2.val.ti, &v1.val.px);
 
   if ((v1.type == T_CLIST) && (v2.type == T_SET))
     return clist_match_set(v1.val.ad, v2.val.t);
@@ -350,49 +350,61 @@ val_in_range(struct f_val v1, struct f_val v2)
   return CMP_ERROR;
 }
 
+static void val_print(struct f_val v);
+
+static void
+tree_node_print(struct f_tree *t, char **sep)
+{
+  if (t == NULL)
+    return;
+
+  tree_node_print(t->left, sep);
+
+  logn(*sep);
+  val_print(t->from);
+  if (val_compare(t->from, t->to) != 0)
+    {
+      logn( ".." );
+      val_print(t->to);
+    }
+  *sep = ", ";
+
+  tree_node_print(t->right, sep);
+}
+
 static void
 tree_print(struct f_tree *t)
 {
-  if (!t) {
-    debug( "() " );
-    return;
-  }
-  debug( "[ " );
-  tree_print( t->left );
-  debug( ", " ); val_print( t->from ); debug( ".." ); val_print( t->to ); debug( ", " );
-  tree_print( t->right );
-  debug( "] " );
+  char *sep = "";
+  logn( "[" );
+  tree_node_print(t, &sep);
+  logn( "] " );
 }
 
 /*
  * val_print - format filter value
  */
-void
+static void
 val_print(struct f_val v)
 {
-  char buf[2048];
   char buf2[1024];
-#define PRINTF(a...) bsnprintf( buf, 2040, a )
-  buf[0] = 0;
   switch (v.type) {
-  case T_VOID: PRINTF( "(void)" ); break;
-  case T_BOOL: PRINTF( v.val.i ? "TRUE" : "FALSE" ); break;
-  case T_INT: PRINTF( "%d ", v.val.i ); break;
-  case T_STRING: PRINTF( "%s", v.val.s ); break;
-  case T_IP: PRINTF( "%I", v.val.px.ip ); break;
-  case T_PREFIX: PRINTF( "%I/%d", v.val.px.ip, v.val.px.len ); break;
-  case T_PAIR: PRINTF( "(%d,%d)", v.val.i >> 16, v.val.i & 0xffff ); break;
-  case T_QUAD: PRINTF( "%R", v.val.i ); break;
-  case T_PREFIX_SET: trie_print(v.val.ti, buf, 2040); break;
-  case T_SET: tree_print( v.val.t ); PRINTF( "\n" ); break;
-  case T_ENUM: PRINTF( "(enum %x)%d", v.type, v.val.i ); break;
-  case T_PATH: as_path_format(v.val.ad, buf2, 1020); PRINTF( "(path %s)", buf2 ); break;
-  case T_CLIST: int_set_format(v.val.ad, 1, buf2, 1020); PRINTF( "(clist %s)", buf2 ); break;
-  case T_PATH_MASK: pm_format(v.val.path_mask, buf2, 1020); PRINTF( "(pathmask%s)", buf2 ); break;
-  default: PRINTF( "[unknown type %x]", v.type );
-#undef PRINTF
+  case T_VOID: logn("(void)"); return;
+  case T_BOOL: logn(v.val.i ? "TRUE" : "FALSE"); return;
+  case T_INT: logn("%d", v.val.i); return;
+  case T_STRING: logn("%s", v.val.s); return;
+  case T_IP: logn("%I", v.val.px.ip); return;
+  case T_PREFIX: logn("%I/%d", v.val.px.ip, v.val.px.len); return;
+  case T_PAIR: logn("(%d,%d)", v.val.i >> 16, v.val.i & 0xffff); return;
+  case T_QUAD: logn("%R", v.val.i); return;
+  case T_PREFIX_SET: trie_print(v.val.ti); return;
+  case T_SET: tree_print(v.val.t); return;
+  case T_ENUM: logn("(enum %x)%d", v.type, v.val.i); return;
+  case T_PATH: as_path_format(v.val.ad, buf2, 1000); logn("(path %s)", buf2); return;
+  case T_CLIST: int_set_format(v.val.ad, 1, buf2, 1000); logn("(clist %s)", buf2); return;
+  case T_PATH_MASK: pm_format(v.val.path_mask, buf2, 1000); logn("(pathmask%s)", buf2); return;
+  default: logn( "[unknown type %x]", v.type ); return;
   }
-  debug( buf );
 }
 
 static struct rte **f_rte, *f_rte_old;
@@ -511,16 +523,21 @@ interpret(struct f_inst *what)
     break;
     
   case '&':
-    TWOARGS_C;
-    res.type = v1.type;
-    if (res.type != T_BOOL) runtime( "Can't do boolean operation on non-booleans" );
-    res.val.i = v1.val.i && v2.val.i;
-    break;
   case '|':
-    TWOARGS_C;
-    res.type = v1.type;
-    if (res.type != T_BOOL) runtime( "Can't do boolean operation on non-booleans" );
-    res.val.i = v1.val.i || v2.val.i;
+    ARG(v1, a1.p);
+    if (v1.type != T_BOOL)
+      runtime( "Can't do boolean operation on non-booleans" );
+    if (v1.val.i == (what->code == '|')) {
+      res.type = T_BOOL;
+      res.val.i = v1.val.i;
+      break;
+    }
+
+    ARG(v2, a2.p);
+    if (v2.type != T_BOOL)
+      runtime( "Can't do boolean operation on non-booleans" );
+    res.type = T_BOOL;
+    res.val.i = v2.val.i;
     break;
 
   case P('m','p'):
@@ -565,6 +582,7 @@ interpret(struct f_inst *what)
     res.val.i = val_in_range(v1, v2);
     if (res.val.i == CMP_ERROR)
       runtime( "~ applied on unknown type pair" );
+    res.val.i = !!res.val.i;
     break;
   case P('d','e'):
     ONEARG;
@@ -628,7 +646,7 @@ interpret(struct f_inst *what)
   case P('p',','):
     ONEARG;
     if (what->a2.i == F_NOP || (what->a2.i != F_NONL && what->a1.p))
-      debug( "\n" );
+      log_commit(*L_INFO);
 
     switch (what->a2.i) {
     case F_QUITBIRD:
@@ -1101,7 +1119,10 @@ f_run(struct filter *filter, struct rte **rte, struct ea_list **tmp_attrs, struc
   f_rte_old = *rte;
   f_pool = tmp_pool;
   inst = filter->root;
+
+  log_reset();
   res = interpret(inst);
+
   if (res.type != T_RETURN) {
     log( L_ERR "Filter %s did not return accept nor reject. Make up your mind", filter->name); 
     return F_ERROR;
@@ -1113,6 +1134,7 @@ f_run(struct filter *filter, struct rte **rte, struct ea_list **tmp_attrs, struc
 int
 f_eval_int(struct f_inst *expr)
 {
+  /* Called independently in parse-time to eval expressions */
   struct f_val res;
 
   f_flags = 0;
@@ -1120,7 +1142,10 @@ f_eval_int(struct f_inst *expr)
   f_rte = NULL;
   f_rte_old = NULL;
   f_pool = cfg_mem;
+
+  log_reset();
   res = interpret(expr);
+
   if (res.type != T_INT)
     cf_error("Integer expression expected");
   return res.val.i;
@@ -1129,6 +1154,7 @@ f_eval_int(struct f_inst *expr)
 u32
 f_eval_asn(struct f_inst *expr)
 {
+  /* Called as a part of another interpret call, therefore no log_reset() */
   struct f_val res = interpret(expr);
   return (res.type == T_INT) ? res.val.i : 0;
 }

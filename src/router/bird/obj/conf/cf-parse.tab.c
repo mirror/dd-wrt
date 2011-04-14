@@ -1405,47 +1405,47 @@ static const yytype_uint16 yyrline[] =
      922,   925,   929,   931,   933,   935,   937,   939,   941,   944,
      950,   951,   952,   956,   957,   963,   965,   967,   969,   971,
      973,   977,   981,   984,   988,   989,   990,   994,   995,   996,
-    1003,  1003,  1012,  1016,  1017,  1018,  1019,  1020,  1021,  1022,
-    1023,  1024,  1025,  1026,  1046,  1057,  1058,  1065,  1066,  1073,
-    1082,  1086,  1090,  1114,  1115,  1119,  1132,  1132,  1148,  1149,
-    1152,  1153,  1157,  1160,  1169,  1176,  1180,  1181,  1182,  1183,
-    1184,  1188,  1194,  1199,  1207,  1208,  1212,  1219,  1220,  1221,
-    1222,  1229,  1230,  1233,  1234,  1239,  1251,  1252,  1256,  1257,
-    1261,  1262,  1263,  1264,  1265,  1269,  1270,  1271,  1275,  1288,
-    1289,  1290,  1291,  1292,  1293,  1294,  1295,  1296,  1297,  1298,
-    1308,  1312,  1335,  1369,  1371,  1372,  1373,  1374,  1375,  1376,
-    1377,  1381,  1382,  1383,  1384,  1385,  1386,  1387,  1388,  1389,
-    1390,  1391,  1392,  1393,  1394,  1395,  1396,  1398,  1399,  1400,
-    1402,  1404,  1406,  1408,  1409,  1410,  1411,  1412,  1422,  1423,
-    1424,  1425,  1426,  1431,  1454,  1455,  1456,  1457,  1458,  1459,
-    1463,  1466,  1467,  1468,  1477,  1484,  1493,  1494,  1498,  1504,
-    1514,  1523,  1529,  1534,  1541,  1546,  1552,  1553,  1554,  1562,
-    1564,  1565,  1566,  1572,  1593,  1594,  1595,  1596,  1602,  1603,
-    1604,  1605,  1606,  1607,  1608,  1609,  1610,  1611,  1612,  1613,
-    1614,  1615,  1616,  1617,  1618,  1619,  1620,  1621,  1622,  1623,
-    1624,  1625,  1626,  1627,  1628,  1629,  1630,  1640,  1650,  1651,
-    1655,  1656,  1657,  1658,  1661,  1673,  1676,  1678,  1682,  1683,
-    1684,  1685,  1686,  1687,  1691,  1692,  1696,  1704,  1706,  1710,
-    1711,  1712,  1716,  1717,  1720,  1722,  1725,  1726,  1727,  1728,
-    1729,  1730,  1731,  1732,  1733,  1734,  1735,  1738,  1759,  1760,
-    1761,  1762,  1763,  1764,  1765,  1766,  1767,  1768,  1769,  1770,
-    1771,  1772,  1773,  1774,  1775,  1776,  1777,  1778,  1779,  1780,
-    1783,  1785,  1789,  1790,  1792,  1801,  1811,  1813,  1817,  1818,
-    1820,  1829,  1840,  1862,  1864,  1867,  1869,  1873,  1877,  1878,
-    1882,  1885,  1888,  1893,  1896,  1901,  1904,  1907,  1913,  1921,
-    1922,  1923,  1928,  1929,  1935,  1942,  1943,  1944,  1945,  1946,
-    1947,  1948,  1949,  1950,  1951,  1952,  1953,  1954,  1958,  1959,
-    1960,  1965,  1966,  1967,  1968,  1969,  1972,  1973,  1974,  1977,
-    1979,  1982,  1984,  1988,  1997,  2004,  2011,  2012,  2013,  2016,
-    2025,  2029,  2035,  2036,  2037,  2040,  2047,  2047,  2047,  2047,
-    2047,  2047,  2047,  2047,  2047,  2047,  2047,  2047,  2047,  2048,
-    2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,
-    2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,
-    2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,
-    2048,  2048,  2048,  2048,  2048,  2048,  2049,  2049,  2049,  2049,
-    2049,  2049,  2049,  2049,  2050,  2050,  2050,  2050,  2051,  2051,
-    2051,  2052,  2052,  2053,  2054,  2055,  2056,  2057,  2058,  2059,
-    2060,  2061,  2062,  2062,  2062,  2062,  2062,  2062
+    1003,  1003,  1013,  1017,  1018,  1019,  1020,  1021,  1022,  1023,
+    1024,  1025,  1026,  1027,  1047,  1058,  1059,  1066,  1067,  1074,
+    1083,  1087,  1091,  1115,  1116,  1120,  1133,  1133,  1149,  1150,
+    1153,  1154,  1158,  1161,  1170,  1177,  1181,  1182,  1183,  1184,
+    1185,  1189,  1195,  1200,  1208,  1209,  1213,  1220,  1221,  1222,
+    1223,  1230,  1231,  1234,  1235,  1240,  1252,  1253,  1257,  1258,
+    1262,  1263,  1264,  1265,  1266,  1270,  1271,  1272,  1276,  1289,
+    1290,  1291,  1292,  1293,  1294,  1295,  1296,  1297,  1298,  1299,
+    1309,  1313,  1336,  1370,  1372,  1373,  1374,  1375,  1376,  1377,
+    1378,  1382,  1383,  1384,  1385,  1386,  1387,  1388,  1389,  1390,
+    1391,  1392,  1393,  1394,  1395,  1396,  1397,  1399,  1400,  1401,
+    1403,  1405,  1407,  1409,  1410,  1411,  1412,  1413,  1423,  1424,
+    1425,  1426,  1427,  1432,  1455,  1456,  1457,  1458,  1459,  1460,
+    1464,  1467,  1468,  1469,  1478,  1485,  1494,  1495,  1499,  1505,
+    1515,  1524,  1530,  1535,  1542,  1547,  1553,  1554,  1555,  1563,
+    1565,  1566,  1567,  1573,  1594,  1595,  1596,  1597,  1603,  1604,
+    1605,  1606,  1607,  1608,  1609,  1610,  1611,  1612,  1613,  1614,
+    1615,  1616,  1617,  1618,  1619,  1620,  1621,  1622,  1623,  1624,
+    1625,  1626,  1627,  1628,  1629,  1630,  1631,  1641,  1651,  1652,
+    1656,  1657,  1658,  1659,  1662,  1674,  1677,  1679,  1683,  1684,
+    1685,  1686,  1687,  1688,  1692,  1693,  1697,  1705,  1707,  1711,
+    1712,  1713,  1717,  1718,  1721,  1723,  1726,  1727,  1728,  1729,
+    1730,  1731,  1732,  1733,  1734,  1735,  1736,  1739,  1760,  1761,
+    1762,  1763,  1764,  1765,  1766,  1767,  1768,  1769,  1770,  1771,
+    1772,  1773,  1774,  1775,  1776,  1777,  1778,  1779,  1780,  1781,
+    1784,  1786,  1790,  1791,  1793,  1802,  1812,  1814,  1818,  1819,
+    1821,  1830,  1841,  1863,  1865,  1868,  1870,  1874,  1878,  1879,
+    1883,  1886,  1889,  1894,  1897,  1902,  1905,  1908,  1914,  1922,
+    1923,  1924,  1929,  1930,  1936,  1943,  1944,  1945,  1946,  1947,
+    1948,  1949,  1950,  1951,  1952,  1953,  1954,  1955,  1959,  1960,
+    1961,  1966,  1967,  1968,  1969,  1970,  1973,  1974,  1975,  1978,
+    1980,  1983,  1985,  1989,  1998,  2005,  2012,  2013,  2014,  2017,
+    2026,  2030,  2036,  2037,  2038,  2041,  2048,  2048,  2048,  2048,
+    2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2048,  2049,
+    2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,
+    2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,
+    2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,  2049,
+    2049,  2049,  2049,  2049,  2049,  2049,  2050,  2050,  2050,  2050,
+    2050,  2050,  2050,  2050,  2051,  2051,  2051,  2051,  2052,  2052,
+    2052,  2053,  2053,  2054,  2055,  2056,  2057,  2058,  2059,  2060,
+    2061,  2062,  2063,  2063,  2063,  2063,  2063,  2063
 };
 #endif
 
@@ -4330,13 +4330,13 @@ yyreduce:
 
   case 200:
 #line 1003 "cf-parse.y"
-    { cf_push_scope( (yyvsp[(2) - (2)].s) ); ;}
+    { (yyvsp[(2) - (2)].s) = cf_define_symbol((yyvsp[(2) - (2)].s), SYM_FILTER, NULL); cf_push_scope( (yyvsp[(2) - (2)].s) ); ;}
     break;
 
   case 201:
-#line 1003 "cf-parse.y"
+#line 1004 "cf-parse.y"
     {
-     (yyvsp[(2) - (4)].s) = cf_define_symbol((yyvsp[(2) - (4)].s), SYM_FILTER, (yyvsp[(4) - (4)].f));
+     (yyvsp[(2) - (4)].s)->def = (yyvsp[(4) - (4)].f);
      (yyvsp[(4) - (4)].f)->name = (yyvsp[(2) - (4)].s)->name;
      DBG( "We have new filter defined (%s)\n", (yyvsp[(2) - (4)].s)->name );
      cf_pop_scope();
@@ -4344,62 +4344,62 @@ yyreduce:
     break;
 
   case 202:
-#line 1012 "cf-parse.y"
+#line 1013 "cf-parse.y"
     { f_eval_int((yyvsp[(2) - (2)].x)); ;}
     break;
 
   case 203:
-#line 1016 "cf-parse.y"
+#line 1017 "cf-parse.y"
     { (yyval.i) = T_INT; ;}
     break;
 
   case 204:
-#line 1017 "cf-parse.y"
+#line 1018 "cf-parse.y"
     { (yyval.i) = T_BOOL; ;}
     break;
 
   case 205:
-#line 1018 "cf-parse.y"
+#line 1019 "cf-parse.y"
     { (yyval.i) = T_IP; ;}
     break;
 
   case 206:
-#line 1019 "cf-parse.y"
+#line 1020 "cf-parse.y"
     { (yyval.i) = T_PREFIX; ;}
     break;
 
   case 207:
-#line 1020 "cf-parse.y"
+#line 1021 "cf-parse.y"
     { (yyval.i) = T_PAIR; ;}
     break;
 
   case 208:
-#line 1021 "cf-parse.y"
+#line 1022 "cf-parse.y"
     { (yyval.i) = T_QUAD; ;}
     break;
 
   case 209:
-#line 1022 "cf-parse.y"
+#line 1023 "cf-parse.y"
     { (yyval.i) = T_STRING; ;}
     break;
 
   case 210:
-#line 1023 "cf-parse.y"
+#line 1024 "cf-parse.y"
     { (yyval.i) = T_PATH_MASK; ;}
     break;
 
   case 211:
-#line 1024 "cf-parse.y"
+#line 1025 "cf-parse.y"
     { (yyval.i) = T_PATH; ;}
     break;
 
   case 212:
-#line 1025 "cf-parse.y"
+#line 1026 "cf-parse.y"
     { (yyval.i) = T_CLIST; ;}
     break;
 
   case 213:
-#line 1026 "cf-parse.y"
+#line 1027 "cf-parse.y"
     { 
 	switch ((yyvsp[(1) - (2)].i)) {
 	  case T_INT:
@@ -4420,7 +4420,7 @@ yyreduce:
     break;
 
   case 214:
-#line 1046 "cf-parse.y"
+#line 1047 "cf-parse.y"
     {
      struct f_val * val = cfg_alloc(sizeof(struct f_val)); 
      val->type = (yyvsp[(1) - (2)].i); 
@@ -4432,12 +4432,12 @@ yyreduce:
     break;
 
   case 215:
-#line 1057 "cf-parse.y"
+#line 1058 "cf-parse.y"
     { (yyval.s) = NULL; ;}
     break;
 
   case 216:
-#line 1058 "cf-parse.y"
+#line 1059 "cf-parse.y"
     {
      (yyval.s) = (yyvsp[(1) - (3)].s);
      (yyval.s)->aux2 = (yyvsp[(3) - (3)].s);
@@ -4445,12 +4445,12 @@ yyreduce:
     break;
 
   case 217:
-#line 1065 "cf-parse.y"
+#line 1066 "cf-parse.y"
     { (yyval.s) = (yyvsp[(1) - (1)].s); ;}
     break;
 
   case 218:
-#line 1066 "cf-parse.y"
+#line 1067 "cf-parse.y"
     {
      (yyval.s) = (yyvsp[(1) - (3)].s);
      (yyval.s)->aux2 = (yyvsp[(3) - (3)].s);
@@ -4458,7 +4458,7 @@ yyreduce:
     break;
 
   case 219:
-#line 1073 "cf-parse.y"
+#line 1074 "cf-parse.y"
     {
      struct filter *f = cfg_alloc(sizeof(struct filter));
      f->name = NULL;
@@ -4468,7 +4468,7 @@ yyreduce:
     break;
 
   case 220:
-#line 1082 "cf-parse.y"
+#line 1083 "cf-parse.y"
     {
      if ((yyvsp[(1) - (1)].s)->class != SYM_FILTER) cf_error("No such filter.");
      (yyval.f) = (yyvsp[(1) - (1)].s)->def;
@@ -4476,7 +4476,7 @@ yyreduce:
     break;
 
   case 222:
-#line 1090 "cf-parse.y"
+#line 1091 "cf-parse.y"
     {
      /* Construct 'IF term THEN ACCEPT; REJECT;' */
      struct filter *f = cfg_alloc(sizeof(struct filter));
@@ -4501,17 +4501,17 @@ yyreduce:
     break;
 
   case 223:
-#line 1114 "cf-parse.y"
+#line 1115 "cf-parse.y"
     { DBG( "Have function parameters\n" ); (yyval.s)=(yyvsp[(2) - (3)].s); ;}
     break;
 
   case 224:
-#line 1115 "cf-parse.y"
+#line 1116 "cf-parse.y"
     { (yyval.s)=NULL; ;}
     break;
 
   case 225:
-#line 1119 "cf-parse.y"
+#line 1120 "cf-parse.y"
     {
      if ((yyvsp[(1) - (4)].s)) {
        /* Prepend instruction to clear local variables */
@@ -4525,7 +4525,7 @@ yyreduce:
     break;
 
   case 226:
-#line 1132 "cf-parse.y"
+#line 1133 "cf-parse.y"
     { DBG( "Beginning of function %s\n", (yyvsp[(2) - (2)].s)->name );
      (yyvsp[(2) - (2)].s) = cf_define_symbol((yyvsp[(2) - (2)].s), SYM_FUNCTION, NULL);
      cf_push_scope((yyvsp[(2) - (2)].s));
@@ -4533,7 +4533,7 @@ yyreduce:
     break;
 
   case 227:
-#line 1135 "cf-parse.y"
+#line 1136 "cf-parse.y"
     {
      (yyvsp[(2) - (5)].s)->def = (yyvsp[(5) - (5)].x);
      (yyvsp[(2) - (5)].s)->aux2 = (yyvsp[(4) - (5)].s);
@@ -4543,76 +4543,76 @@ yyreduce:
     break;
 
   case 228:
-#line 1148 "cf-parse.y"
+#line 1149 "cf-parse.y"
     { (yyval.x) = NULL; ;}
     break;
 
   case 229:
-#line 1149 "cf-parse.y"
+#line 1150 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x)->next; (yyvsp[(1) - (1)].x)->next = NULL; ;}
     break;
 
   case 230:
-#line 1152 "cf-parse.y"
+#line 1153 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x); (yyvsp[(1) - (1)].x)->next = (yyvsp[(1) - (1)].x); ;}
     break;
 
   case 231:
-#line 1153 "cf-parse.y"
+#line 1154 "cf-parse.y"
     { (yyval.x) = (yyvsp[(2) - (2)].x); (yyvsp[(2) - (2)].x)->next = (yyvsp[(1) - (2)].x)->next ; (yyvsp[(1) - (2)].x)->next = (yyvsp[(2) - (2)].x); ;}
     break;
 
   case 232:
-#line 1157 "cf-parse.y"
+#line 1158 "cf-parse.y"
     {
      (yyval.x)=(yyvsp[(1) - (1)].x);
    ;}
     break;
 
   case 233:
-#line 1160 "cf-parse.y"
+#line 1161 "cf-parse.y"
     {
      (yyval.x)=(yyvsp[(2) - (3)].x);
    ;}
     break;
 
   case 234:
-#line 1169 "cf-parse.y"
+#line 1170 "cf-parse.y"
     { (yyval.i) = make_pair((yyvsp[(2) - (5)].i), (yyvsp[(4) - (5)].i)); ;}
     break;
 
   case 235:
-#line 1176 "cf-parse.y"
+#line 1177 "cf-parse.y"
     { (yyval.v).type = T_IP; (yyval.v).val.px.ip = (yyvsp[(1) - (1)].a); ;}
     break;
 
   case 236:
-#line 1180 "cf-parse.y"
+#line 1181 "cf-parse.y"
     { (yyval.v).type = T_INT; (yyval.v).val.i = (yyvsp[(1) - (1)].i); ;}
     break;
 
   case 237:
-#line 1181 "cf-parse.y"
+#line 1182 "cf-parse.y"
     { (yyval.v).type = T_QUAD; (yyval.v).val.i = (yyvsp[(1) - (1)].i32); ;}
     break;
 
   case 238:
-#line 1182 "cf-parse.y"
+#line 1183 "cf-parse.y"
     { (yyval.v).type = T_PAIR; (yyval.v).val.i = (yyvsp[(1) - (1)].i); ;}
     break;
 
   case 239:
-#line 1183 "cf-parse.y"
+#line 1184 "cf-parse.y"
     { (yyval.v) = (yyvsp[(1) - (1)].v); ;}
     break;
 
   case 240:
-#line 1184 "cf-parse.y"
+#line 1185 "cf-parse.y"
     {  (yyval.v).type = (yyvsp[(1) - (1)].i) >> 16; (yyval.v).val.i = (yyvsp[(1) - (1)].i) & 0xffff; ;}
     break;
 
   case 241:
-#line 1188 "cf-parse.y"
+#line 1189 "cf-parse.y"
     { 
 	(yyval.e) = f_new_tree(); 
 	(yyval.e)->from.type = (yyval.e)->to.type = T_PAIR;
@@ -4622,7 +4622,7 @@ yyreduce:
     break;
 
   case 242:
-#line 1194 "cf-parse.y"
+#line 1195 "cf-parse.y"
     { 
 	(yyval.e) = f_new_tree(); 
 	(yyval.e)->from = (yyvsp[(1) - (1)].v); 
@@ -4631,7 +4631,7 @@ yyreduce:
     break;
 
   case 243:
-#line 1199 "cf-parse.y"
+#line 1200 "cf-parse.y"
     { 
 	(yyval.e) = f_new_tree(); 
 	(yyval.e)->from = (yyvsp[(1) - (4)].v); 
@@ -4640,17 +4640,17 @@ yyreduce:
     break;
 
   case 244:
-#line 1207 "cf-parse.y"
+#line 1208 "cf-parse.y"
     { (yyval.e) = (yyvsp[(1) - (1)].e); ;}
     break;
 
   case 245:
-#line 1208 "cf-parse.y"
+#line 1209 "cf-parse.y"
     { (yyval.e) = (yyvsp[(3) - (3)].e); (yyval.e)->left = (yyvsp[(1) - (3)].e); ;}
     break;
 
   case 246:
-#line 1212 "cf-parse.y"
+#line 1213 "cf-parse.y"
     {
      if (((yyvsp[(3) - (3)].i) < 0) || ((yyvsp[(3) - (3)].i) > MAX_PREFIX_LENGTH) || !ip_is_prefix((yyvsp[(1) - (3)].a), (yyvsp[(3) - (3)].i))) cf_error("Invalid network prefix: %I/%d.", (yyvsp[(1) - (3)].a), (yyvsp[(3) - (3)].i));
      (yyval.v).type = T_PREFIX; (yyval.v).val.px.ip = (yyvsp[(1) - (3)].a); (yyval.v).val.px.len = (yyvsp[(3) - (3)].i);
@@ -4658,22 +4658,22 @@ yyreduce:
     break;
 
   case 247:
-#line 1219 "cf-parse.y"
+#line 1220 "cf-parse.y"
     { (yyval.v) = (yyvsp[(1) - (1)].v); ;}
     break;
 
   case 248:
-#line 1220 "cf-parse.y"
+#line 1221 "cf-parse.y"
     { (yyval.v) = (yyvsp[(1) - (2)].v); (yyval.v).val.px.len |= LEN_PLUS; ;}
     break;
 
   case 249:
-#line 1221 "cf-parse.y"
+#line 1222 "cf-parse.y"
     { (yyval.v) = (yyvsp[(1) - (2)].v); (yyval.v).val.px.len |= LEN_MINUS; ;}
     break;
 
   case 250:
-#line 1222 "cf-parse.y"
+#line 1223 "cf-parse.y"
     { 
      if (! ((0 <= (yyvsp[(3) - (6)].i)) && ((yyvsp[(3) - (6)].i) <= (yyvsp[(5) - (6)].i)) && ((yyvsp[(5) - (6)].i) <= MAX_PREFIX_LENGTH))) cf_error("Invalid prefix pattern range: {%d, %d}.", (yyvsp[(3) - (6)].i), (yyvsp[(5) - (6)].i));
      (yyval.v) = (yyvsp[(1) - (6)].v); (yyval.v).val.px.len |= LEN_RANGE | ((yyvsp[(3) - (6)].i) << 16) | ((yyvsp[(5) - (6)].i) << 8);
@@ -4681,22 +4681,22 @@ yyreduce:
     break;
 
   case 251:
-#line 1229 "cf-parse.y"
+#line 1230 "cf-parse.y"
     { (yyval.trie) = f_new_trie(); trie_add_prefix((yyval.trie), &((yyvsp[(1) - (1)].v).val.px)); ;}
     break;
 
   case 252:
-#line 1230 "cf-parse.y"
+#line 1231 "cf-parse.y"
     { (yyval.trie) = (yyvsp[(1) - (3)].trie); trie_add_prefix((yyval.trie), &((yyvsp[(3) - (3)].v).val.px)); ;}
     break;
 
   case 253:
-#line 1233 "cf-parse.y"
+#line 1234 "cf-parse.y"
     { (yyval.e) = NULL; ;}
     break;
 
   case 254:
-#line 1234 "cf-parse.y"
+#line 1235 "cf-parse.y"
     {
      (yyval.e) = (yyvsp[(2) - (4)].e);
      (yyval.e)->data = (yyvsp[(4) - (4)].x);
@@ -4705,7 +4705,7 @@ yyreduce:
     break;
 
   case 255:
-#line 1239 "cf-parse.y"
+#line 1240 "cf-parse.y"
     {
      (yyval.e) = f_new_tree(); 
      (yyval.e)->from.type = T_VOID; 
@@ -4716,67 +4716,67 @@ yyreduce:
     break;
 
   case 256:
-#line 1251 "cf-parse.y"
+#line 1252 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
     break;
 
   case 257:
-#line 1252 "cf-parse.y"
+#line 1253 "cf-parse.y"
     { (yyval.x) = (yyvsp[(2) - (3)].x); ;}
     break;
 
   case 258:
-#line 1256 "cf-parse.y"
-    { (yyval.h) = (yyvsp[(2) - (3)].h); ;}
-    break;
-
-  case 259:
 #line 1257 "cf-parse.y"
     { (yyval.h) = (yyvsp[(2) - (3)].h); ;}
     break;
 
+  case 259:
+#line 1258 "cf-parse.y"
+    { (yyval.h) = (yyvsp[(2) - (3)].h); ;}
+    break;
+
   case 260:
-#line 1261 "cf-parse.y"
+#line 1262 "cf-parse.y"
     { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[(2) - (2)].h); (yyval.h)->kind = PM_ASN;      (yyval.h)->val = (yyvsp[(1) - (2)].i); ;}
     break;
 
   case 261:
-#line 1262 "cf-parse.y"
+#line 1263 "cf-parse.y"
     { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[(2) - (2)].h); (yyval.h)->kind = PM_ASTERISK; (yyval.h)->val  = 0; ;}
     break;
 
   case 262:
-#line 1263 "cf-parse.y"
+#line 1264 "cf-parse.y"
     { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[(2) - (2)].h); (yyval.h)->kind = PM_QUESTION; (yyval.h)->val  = 0; ;}
     break;
 
   case 263:
-#line 1264 "cf-parse.y"
+#line 1265 "cf-parse.y"
     { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[(2) - (2)].h); (yyval.h)->kind = PM_ASN_EXPR; (yyval.h)->val = (uintptr_t) (yyvsp[(1) - (2)].x); ;}
     break;
 
   case 264:
-#line 1265 "cf-parse.y"
+#line 1266 "cf-parse.y"
     { (yyval.h) = NULL; ;}
     break;
 
   case 265:
-#line 1269 "cf-parse.y"
+#line 1270 "cf-parse.y"
     { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[(2) - (2)].h); (yyval.h)->kind = PM_ASN;      (yyval.h)->val = (yyvsp[(1) - (2)].i); ;}
     break;
 
   case 266:
-#line 1270 "cf-parse.y"
+#line 1271 "cf-parse.y"
     { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[(2) - (2)].h); (yyval.h)->kind = PM_ASTERISK; (yyval.h)->val  = 0; ;}
     break;
 
   case 267:
-#line 1271 "cf-parse.y"
+#line 1272 "cf-parse.y"
     { (yyval.h) = NULL; ;}
     break;
 
   case 268:
-#line 1275 "cf-parse.y"
+#line 1276 "cf-parse.y"
     {
         if (((yyvsp[(2) - (5)].x)->code == 'c') && ((yyvsp[(4) - (5)].x)->code == 'c'))
           { 
@@ -4790,62 +4790,62 @@ yyreduce:
     break;
 
   case 269:
-#line 1288 "cf-parse.y"
+#line 1289 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_INT;  (yyval.x)->a2.i = (yyvsp[(1) - (1)].i); ;}
     break;
 
   case 270:
-#line 1289 "cf-parse.y"
+#line 1290 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_BOOL; (yyval.x)->a2.i = 1;  ;}
     break;
 
   case 271:
-#line 1290 "cf-parse.y"
+#line 1291 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_BOOL; (yyval.x)->a2.i = 0;  ;}
     break;
 
   case 272:
-#line 1291 "cf-parse.y"
+#line 1292 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_STRING; (yyval.x)->a2.p = (yyvsp[(1) - (1)].t); ;}
     break;
 
   case 273:
-#line 1292 "cf-parse.y"
+#line 1293 "cf-parse.y"
     { NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; (yyval.x)->a1.p = val; *val = (yyvsp[(1) - (1)].v); ;}
     break;
 
   case 274:
-#line 1293 "cf-parse.y"
+#line 1294 "cf-parse.y"
     {NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; (yyval.x)->a1.p = val; *val = (yyvsp[(1) - (1)].v); ;}
     break;
 
   case 275:
-#line 1294 "cf-parse.y"
+#line 1295 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_QUAD;  (yyval.x)->a2.i = (yyvsp[(1) - (1)].i32); ;}
     break;
 
   case 276:
-#line 1295 "cf-parse.y"
+#line 1296 "cf-parse.y"
     { DBG( "We've got a set here..." ); (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_SET; (yyval.x)->a2.p = build_tree((yyvsp[(2) - (3)].e)); DBG( "ook\n" ); ;}
     break;
 
   case 277:
-#line 1296 "cf-parse.y"
+#line 1297 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_PREFIX_SET;  (yyval.x)->a2.p = (yyvsp[(2) - (3)].trie); ;}
     break;
 
   case 278:
-#line 1297 "cf-parse.y"
+#line 1298 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = (yyvsp[(1) - (1)].i) >> 16; (yyval.x)->a2.i = (yyvsp[(1) - (1)].i) & 0xffff; ;}
     break;
 
   case 279:
-#line 1298 "cf-parse.y"
+#line 1299 "cf-parse.y"
     { NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; val->type = T_PATH_MASK; val->val.path_mask = (yyvsp[(1) - (1)].h); (yyval.x)->a1.p = val; ;}
     break;
 
   case 281:
-#line 1312 "cf-parse.y"
+#line 1313 "cf-parse.y"
     {
      struct symbol *sym;
      struct f_inst *inst = (yyvsp[(3) - (4)].x);
@@ -4869,7 +4869,7 @@ yyreduce:
     break;
 
   case 282:
-#line 1335 "cf-parse.y"
+#line 1336 "cf-parse.y"
     {
      (yyval.x) = f_new_inst();
      switch ((yyvsp[(1) - (1)].s)->class) {
@@ -4905,207 +4905,207 @@ yyreduce:
     break;
 
   case 283:
-#line 1369 "cf-parse.y"
+#line 1370 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_IP;         (yyval.x)->a2.i = OFFSETOF(struct rta, from);   (yyval.x)->a1.i = 1; ;}
     break;
 
   case 284:
-#line 1371 "cf-parse.y"
+#line 1372 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_IP;         (yyval.x)->a2.i = OFFSETOF(struct rta, gw);     (yyval.x)->a1.i = 1; ;}
     break;
 
   case 285:
-#line 1372 "cf-parse.y"
+#line 1373 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_PREFIX;     (yyval.x)->a2.i = 0x12345678; /* This is actually ok - T_PREFIX is special-cased. */ ;}
     break;
 
   case 286:
-#line 1373 "cf-parse.y"
+#line 1374 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_STRING;     (yyval.x)->a2.i = 0x12345678; /* T_STRING is also special-cased. */ ;}
     break;
 
   case 287:
-#line 1374 "cf-parse.y"
+#line 1375 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_RTS;   (yyval.x)->a2.i = OFFSETOF(struct rta, source); ;}
     break;
 
   case 288:
-#line 1375 "cf-parse.y"
+#line 1376 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_SCOPE; (yyval.x)->a2.i = OFFSETOF(struct rta, scope);  (yyval.x)->a1.i = 1; ;}
     break;
 
   case 289:
-#line 1376 "cf-parse.y"
+#line 1377 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_RTC;   (yyval.x)->a2.i = OFFSETOF(struct rta, cast); ;}
     break;
 
   case 290:
-#line 1377 "cf-parse.y"
+#line 1378 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_RTD;   (yyval.x)->a2.i = OFFSETOF(struct rta, dest); ;}
     break;
 
   case 291:
-#line 1381 "cf-parse.y"
+#line 1382 "cf-parse.y"
     { (yyval.x) = (yyvsp[(2) - (3)].x); ;}
     break;
 
   case 292:
-#line 1382 "cf-parse.y"
+#line 1383 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '+';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 293:
-#line 1383 "cf-parse.y"
+#line 1384 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '-';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 294:
-#line 1384 "cf-parse.y"
+#line 1385 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '*';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 295:
-#line 1385 "cf-parse.y"
+#line 1386 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '/';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 296:
-#line 1386 "cf-parse.y"
+#line 1387 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '&';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 297:
-#line 1387 "cf-parse.y"
+#line 1388 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '|';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 298:
-#line 1388 "cf-parse.y"
+#line 1389 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('=','='); (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 299:
-#line 1389 "cf-parse.y"
+#line 1390 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('!','=');     (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 300:
-#line 1390 "cf-parse.y"
+#line 1391 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '<';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 301:
-#line 1391 "cf-parse.y"
+#line 1392 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('<','=');     (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 302:
-#line 1392 "cf-parse.y"
+#line 1393 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '<';        (yyval.x)->a1.p = (yyvsp[(3) - (3)].x); (yyval.x)->a2.p = (yyvsp[(1) - (3)].x); ;}
     break;
 
   case 303:
-#line 1393 "cf-parse.y"
+#line 1394 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('<','=');     (yyval.x)->a1.p = (yyvsp[(3) - (3)].x); (yyval.x)->a2.p = (yyvsp[(1) - (3)].x); ;}
     break;
 
   case 304:
-#line 1394 "cf-parse.y"
+#line 1395 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '~';        (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->a2.p = (yyvsp[(3) - (3)].x); ;}
     break;
 
   case 305:
-#line 1395 "cf-parse.y"
+#line 1396 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = '!'; (yyval.x)->a1.p = (yyvsp[(2) - (2)].x); ;}
     break;
 
   case 306:
-#line 1396 "cf-parse.y"
+#line 1397 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('d','e');  (yyval.x)->a1.p = (yyvsp[(3) - (4)].x); ;}
     break;
 
   case 307:
-#line 1398 "cf-parse.y"
-    { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
-    break;
-
-  case 308:
 #line 1399 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
     break;
 
-  case 309:
+  case 308:
 #line 1400 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
     break;
 
+  case 309:
+#line 1401 "cf-parse.y"
+    { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
+    break;
+
   case 310:
-#line 1402 "cf-parse.y"
+#line 1403 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'P'; ;}
     break;
 
   case 311:
-#line 1404 "cf-parse.y"
+#line 1405 "cf-parse.y"
     { (yyval.x) = (yyvsp[(2) - (2)].x); (yyval.x)->code = 'a'; ;}
     break;
 
   case 312:
-#line 1406 "cf-parse.y"
+#line 1407 "cf-parse.y"
     { (yyval.x) = (yyvsp[(2) - (2)].x); (yyval.x)->code = P('e','a'); ;}
     break;
 
   case 313:
-#line 1408 "cf-parse.y"
+#line 1409 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('c','p'); (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); (yyval.x)->aux = T_IP; ;}
     break;
 
   case 314:
-#line 1409 "cf-parse.y"
+#line 1410 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'L'; (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); ;}
     break;
 
   case 315:
-#line 1410 "cf-parse.y"
+#line 1411 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('i','M'); (yyval.x)->a1.p = (yyvsp[(1) - (6)].x); (yyval.x)->a2.p = (yyvsp[(5) - (6)].x); ;}
     break;
 
   case 316:
-#line 1411 "cf-parse.y"
+#line 1412 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('a','f'); (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); ;}
     break;
 
   case 317:
-#line 1412 "cf-parse.y"
+#line 1413 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('a','l'); (yyval.x)->a1.p = (yyvsp[(1) - (3)].x); ;}
     break;
 
   case 318:
-#line 1422 "cf-parse.y"
+#line 1423 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'E'; (yyval.x)->aux = T_PATH; ;}
     break;
 
   case 319:
-#line 1423 "cf-parse.y"
+#line 1424 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'E'; (yyval.x)->aux = T_CLIST; ;}
     break;
 
   case 320:
-#line 1424 "cf-parse.y"
+#line 1425 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('A','p'); (yyval.x)->a1.p = (yyvsp[(3) - (6)].x); (yyval.x)->a2.p = (yyvsp[(5) - (6)].x); ;}
     break;
 
   case 321:
-#line 1425 "cf-parse.y"
+#line 1426 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('C','a'); (yyval.x)->a1.p = (yyvsp[(3) - (6)].x); (yyval.x)->a2.p = (yyvsp[(5) - (6)].x); (yyval.x)->aux = 'a'; ;}
     break;
 
   case 322:
-#line 1426 "cf-parse.y"
+#line 1427 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('C','a'); (yyval.x)->a1.p = (yyvsp[(3) - (6)].x); (yyval.x)->a2.p = (yyvsp[(5) - (6)].x); (yyval.x)->aux = 'd'; ;}
     break;
 
   case 323:
-#line 1431 "cf-parse.y"
+#line 1432 "cf-parse.y"
     {
      struct symbol *sym;
      struct f_inst *inst = (yyvsp[(3) - (4)].x);
@@ -5129,52 +5129,52 @@ yyreduce:
     break;
 
   case 324:
-#line 1454 "cf-parse.y"
+#line 1455 "cf-parse.y"
     { (yyval.i) = F_QUITBIRD; ;}
     break;
 
   case 325:
-#line 1455 "cf-parse.y"
+#line 1456 "cf-parse.y"
     { (yyval.i) = F_ACCEPT; ;}
     break;
 
   case 326:
-#line 1456 "cf-parse.y"
+#line 1457 "cf-parse.y"
     { (yyval.i) = F_REJECT; ;}
     break;
 
   case 327:
-#line 1457 "cf-parse.y"
+#line 1458 "cf-parse.y"
     { (yyval.i) = F_ERROR; ;}
     break;
 
   case 328:
-#line 1458 "cf-parse.y"
+#line 1459 "cf-parse.y"
     { (yyval.i) = F_NOP; ;}
     break;
 
   case 329:
-#line 1459 "cf-parse.y"
+#line 1460 "cf-parse.y"
     { (yyval.i) = F_NONL; ;}
     break;
 
   case 330:
-#line 1463 "cf-parse.y"
+#line 1464 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = 'p'; (yyval.x)->a1.p = (yyvsp[(1) - (1)].x); (yyval.x)->a2.p = NULL; ;}
     break;
 
   case 331:
-#line 1466 "cf-parse.y"
+#line 1467 "cf-parse.y"
     { (yyval.x) = NULL; ;}
     break;
 
   case 332:
-#line 1467 "cf-parse.y"
+#line 1468 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
     break;
 
   case 333:
-#line 1468 "cf-parse.y"
+#line 1469 "cf-parse.y"
     {
      if ((yyvsp[(1) - (3)].x)) {
        (yyvsp[(1) - (3)].x)->next = (yyvsp[(3) - (3)].x);
@@ -5184,7 +5184,7 @@ yyreduce:
     break;
 
   case 334:
-#line 1477 "cf-parse.y"
+#line 1478 "cf-parse.y"
     { 
      (yyval.x) = f_new_inst();
      (yyval.x)->code = 's';
@@ -5195,7 +5195,7 @@ yyreduce:
     break;
 
   case 335:
-#line 1484 "cf-parse.y"
+#line 1485 "cf-parse.y"
     {
      (yyval.x) = f_new_inst();
      (yyval.x)->code = 's';
@@ -5206,17 +5206,17 @@ yyreduce:
     break;
 
   case 336:
-#line 1493 "cf-parse.y"
+#line 1494 "cf-parse.y"
     { (yyval.x) = NULL; ;}
     break;
 
   case 337:
-#line 1494 "cf-parse.y"
+#line 1495 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (1)].x); ;}
     break;
 
   case 338:
-#line 1498 "cf-parse.y"
+#line 1499 "cf-parse.y"
     {
      (yyval.x) = f_new_inst();
      (yyval.x)->code = '?';
@@ -5226,7 +5226,7 @@ yyreduce:
     break;
 
   case 339:
-#line 1504 "cf-parse.y"
+#line 1505 "cf-parse.y"
     {
      struct f_inst *i = f_new_inst();
      i->code = '?';
@@ -5240,7 +5240,7 @@ yyreduce:
     break;
 
   case 340:
-#line 1514 "cf-parse.y"
+#line 1515 "cf-parse.y"
     {
      (yyval.x) = f_new_inst();
      DBG( "Ook, we'll set value\n" );
@@ -5253,7 +5253,7 @@ yyreduce:
     break;
 
   case 341:
-#line 1523 "cf-parse.y"
+#line 1524 "cf-parse.y"
     {
      (yyval.x) = f_new_inst();
      DBG( "Ook, we'll return the value\n" );
@@ -5263,7 +5263,7 @@ yyreduce:
     break;
 
   case 342:
-#line 1529 "cf-parse.y"
+#line 1530 "cf-parse.y"
     {
      (yyval.x) = (yyvsp[(2) - (5)].x);
      (yyval.x)->code = P('e','S');
@@ -5272,7 +5272,7 @@ yyreduce:
     break;
 
   case 343:
-#line 1534 "cf-parse.y"
+#line 1535 "cf-parse.y"
     {
      (yyval.x) = (yyvsp[(2) - (5)].x);
      if (!(yyval.x)->a1.i)
@@ -5283,7 +5283,7 @@ yyreduce:
     break;
 
   case 344:
-#line 1541 "cf-parse.y"
+#line 1542 "cf-parse.y"
     {
      (yyval.x) = f_new_inst();
      (yyval.x)->code = P('P','S');
@@ -5292,7 +5292,7 @@ yyreduce:
     break;
 
   case 345:
-#line 1546 "cf-parse.y"
+#line 1547 "cf-parse.y"
     {
      (yyval.x) = (yyvsp[(4) - (6)].x);
      (yyval.x)->aux = EAF_TYPE_UNDEF | EAF_TEMP;
@@ -5302,17 +5302,17 @@ yyreduce:
     break;
 
   case 346:
-#line 1552 "cf-parse.y"
+#line 1553 "cf-parse.y"
     { (yyval.x) = f_new_inst(); (yyval.x)->code = P('p',','); (yyval.x)->a1.p = (yyvsp[(2) - (3)].x); (yyval.x)->a2.i = (yyvsp[(1) - (3)].i); ;}
     break;
 
   case 347:
-#line 1553 "cf-parse.y"
+#line 1554 "cf-parse.y"
     { (yyval.x) = (yyvsp[(1) - (2)].x); ;}
     break;
 
   case 348:
-#line 1554 "cf-parse.y"
+#line 1555 "cf-parse.y"
     {
       (yyval.x) = f_new_inst();
       (yyval.x)->code = P('S','W');
@@ -5322,27 +5322,27 @@ yyreduce:
     break;
 
   case 349:
-#line 1563 "cf-parse.y"
+#line 1564 "cf-parse.y"
     { struct f_inst *i = f_new_inst(); i->code = 'E'; i->aux = T_CLIST; (yyval.x) = (yyvsp[(2) - (5)].x); (yyval.x)->code = P('e','S'); (yyval.x)->a1.p = i; ;}
     break;
 
   case 350:
-#line 1564 "cf-parse.y"
+#line 1565 "cf-parse.y"
     { (yyval.x) = f_generate_complex( P('A','p'), 'x', (yyvsp[(2) - (8)].x), (yyvsp[(6) - (8)].x) ); ;}
     break;
 
   case 351:
-#line 1565 "cf-parse.y"
+#line 1566 "cf-parse.y"
     { (yyval.x) = f_generate_complex( P('C','a'), 'a', (yyvsp[(2) - (8)].x), (yyvsp[(6) - (8)].x) ); ;}
     break;
 
   case 352:
-#line 1566 "cf-parse.y"
+#line 1567 "cf-parse.y"
     { (yyval.x) = f_generate_complex( P('C','a'), 'd', (yyvsp[(2) - (8)].x), (yyvsp[(6) - (8)].x) ); ;}
     break;
 
   case 353:
-#line 1572 "cf-parse.y"
+#line 1573 "cf-parse.y"
     {
      this_proto = proto_config_new(&proto_bgp, sizeof(struct bgp_config));
      this_proto->preference = DEF_PREF_BGP;
@@ -5364,12 +5364,12 @@ yyreduce:
     break;
 
   case 356:
-#line 1595 "cf-parse.y"
+#line 1596 "cf-parse.y"
     { BGP_CFG->local_as = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 357:
-#line 1596 "cf-parse.y"
+#line 1597 "cf-parse.y"
     {
      if (ipa_nonzero(BGP_CFG->remote_ip)) cf_error("Only one neighbor per BGP instance is allowed");
 
@@ -5379,152 +5379,152 @@ yyreduce:
     break;
 
   case 358:
-#line 1602 "cf-parse.y"
+#line 1603 "cf-parse.y"
     { BGP_CFG->rr_cluster_id = (yyvsp[(5) - (6)].i32); ;}
     break;
 
   case 359:
-#line 1603 "cf-parse.y"
+#line 1604 "cf-parse.y"
     { BGP_CFG->rr_client = 1; ;}
     break;
 
   case 360:
-#line 1604 "cf-parse.y"
+#line 1605 "cf-parse.y"
     { BGP_CFG->rs_client = 1; ;}
     break;
 
   case 361:
-#line 1605 "cf-parse.y"
+#line 1606 "cf-parse.y"
     { BGP_CFG->hold_time = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 362:
-#line 1606 "cf-parse.y"
+#line 1607 "cf-parse.y"
     { BGP_CFG->initial_hold_time = (yyvsp[(5) - (6)].i); ;}
     break;
 
   case 363:
-#line 1607 "cf-parse.y"
+#line 1608 "cf-parse.y"
     { BGP_CFG->connect_retry_time = (yyvsp[(5) - (6)].i); ;}
     break;
 
   case 364:
-#line 1608 "cf-parse.y"
+#line 1609 "cf-parse.y"
     { BGP_CFG->keepalive_time = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 365:
-#line 1609 "cf-parse.y"
+#line 1610 "cf-parse.y"
     { BGP_CFG->multihop = (yyvsp[(3) - (6)].i); BGP_CFG->multihop_via = (yyvsp[(5) - (6)].a); ;}
     break;
 
   case 366:
-#line 1610 "cf-parse.y"
+#line 1611 "cf-parse.y"
     { BGP_CFG->next_hop_self = 1; ;}
     break;
 
   case 367:
-#line 1611 "cf-parse.y"
+#line 1612 "cf-parse.y"
     { BGP_CFG->missing_lladdr = MLL_SELF; ;}
     break;
 
   case 368:
-#line 1612 "cf-parse.y"
+#line 1613 "cf-parse.y"
     { BGP_CFG->missing_lladdr = MLL_DROP; ;}
     break;
 
   case 369:
-#line 1613 "cf-parse.y"
+#line 1614 "cf-parse.y"
     { BGP_CFG->missing_lladdr = MLL_IGNORE; ;}
     break;
 
   case 370:
-#line 1614 "cf-parse.y"
+#line 1615 "cf-parse.y"
     { BGP_CFG->compare_path_lengths = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 371:
-#line 1615 "cf-parse.y"
+#line 1616 "cf-parse.y"
     { BGP_CFG->prefer_older = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 372:
-#line 1616 "cf-parse.y"
+#line 1617 "cf-parse.y"
     { BGP_CFG->default_med = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 373:
-#line 1617 "cf-parse.y"
+#line 1618 "cf-parse.y"
     { BGP_CFG->default_local_pref = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 374:
-#line 1618 "cf-parse.y"
+#line 1619 "cf-parse.y"
     { BGP_CFG->source_addr = (yyvsp[(4) - (5)].a); ;}
     break;
 
   case 375:
-#line 1619 "cf-parse.y"
+#line 1620 "cf-parse.y"
     { BGP_CFG->start_delay_time = (yyvsp[(5) - (6)].i); ;}
     break;
 
   case 376:
-#line 1620 "cf-parse.y"
+#line 1621 "cf-parse.y"
     { BGP_CFG->error_amnesia_time = (yyvsp[(5) - (6)].i); ;}
     break;
 
   case 377:
-#line 1621 "cf-parse.y"
+#line 1622 "cf-parse.y"
     { BGP_CFG->error_delay_time_min = (yyvsp[(5) - (8)].i); BGP_CFG->error_delay_time_max = (yyvsp[(7) - (8)].i); ;}
     break;
 
   case 378:
-#line 1622 "cf-parse.y"
+#line 1623 "cf-parse.y"
     { BGP_CFG->disable_after_error = (yyvsp[(5) - (6)].i); ;}
     break;
 
   case 379:
-#line 1623 "cf-parse.y"
+#line 1624 "cf-parse.y"
     { BGP_CFG->enable_refresh = (yyvsp[(5) - (6)].i); ;}
     break;
 
   case 380:
-#line 1624 "cf-parse.y"
+#line 1625 "cf-parse.y"
     { BGP_CFG->enable_as4 = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 381:
-#line 1625 "cf-parse.y"
+#line 1626 "cf-parse.y"
     { BGP_CFG->capabilities = (yyvsp[(3) - (4)].i); ;}
     break;
 
   case 382:
-#line 1626 "cf-parse.y"
+#line 1627 "cf-parse.y"
     { BGP_CFG->advertise_ipv4 = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 383:
-#line 1627 "cf-parse.y"
+#line 1628 "cf-parse.y"
     { BGP_CFG->password = (yyvsp[(3) - (4)].t); ;}
     break;
 
   case 384:
-#line 1628 "cf-parse.y"
+#line 1629 "cf-parse.y"
     { BGP_CFG->route_limit = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 385:
-#line 1629 "cf-parse.y"
+#line 1630 "cf-parse.y"
     { BGP_CFG->passive = (yyvsp[(3) - (4)].i); ;}
     break;
 
   case 386:
-#line 1630 "cf-parse.y"
+#line 1631 "cf-parse.y"
     { BGP_CFG->interpret_communities = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 387:
-#line 1640 "cf-parse.y"
+#line 1641 "cf-parse.y"
     {
      this_proto = proto_config_new(&proto_ospf, sizeof(struct ospf_config));
      this_proto->preference = DEF_PREF_OSPF;
@@ -5535,17 +5535,17 @@ yyreduce:
     break;
 
   case 391:
-#line 1656 "cf-parse.y"
+#line 1657 "cf-parse.y"
     { OSPF_CFG->rfc1583 = (yyvsp[(2) - (2)].i); ;}
     break;
 
   case 392:
-#line 1657 "cf-parse.y"
+#line 1658 "cf-parse.y"
     { OSPF_CFG->tick = (yyvsp[(2) - (2)].i) ; if((yyvsp[(2) - (2)].i)<=0) cf_error("Tick must be greater than zero"); ;}
     break;
 
   case 394:
-#line 1661 "cf-parse.y"
+#line 1662 "cf-parse.y"
     {
   this_area = cfg_allocz(sizeof(struct ospf_area_config));
   add_tail(&OSPF_CFG->area_list, NODE this_area);
@@ -5559,17 +5559,17 @@ yyreduce:
     break;
 
   case 398:
-#line 1682 "cf-parse.y"
+#line 1683 "cf-parse.y"
     { this_area->stub = (yyvsp[(3) - (3)].i) ; if((yyvsp[(3) - (3)].i)<=0) cf_error("Stub cost must be greater than zero"); ;}
     break;
 
   case 399:
-#line 1683 "cf-parse.y"
+#line 1684 "cf-parse.y"
     {if((yyvsp[(2) - (2)].i)) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;};}
     break;
 
   case 406:
-#line 1696 "cf-parse.y"
+#line 1697 "cf-parse.y"
     {
      this_stubnet = cfg_allocz(sizeof(struct ospf_stubnet_config));
      add_tail(&this_area->stubnet_list, NODE this_stubnet);
@@ -5579,72 +5579,72 @@ yyreduce:
     break;
 
   case 409:
-#line 1710 "cf-parse.y"
+#line 1711 "cf-parse.y"
     { this_stubnet->hidden = (yyvsp[(2) - (2)].i); ;}
     break;
 
   case 410:
-#line 1711 "cf-parse.y"
+#line 1712 "cf-parse.y"
     { this_stubnet->summary = (yyvsp[(2) - (2)].i); ;}
     break;
 
   case 411:
-#line 1712 "cf-parse.y"
+#line 1713 "cf-parse.y"
     { this_stubnet->cost = (yyvsp[(2) - (2)].i); ;}
     break;
 
   case 412:
-#line 1716 "cf-parse.y"
+#line 1717 "cf-parse.y"
     { finish_iface_config(OSPF_PATT); ;}
     break;
 
   case 417:
-#line 1726 "cf-parse.y"
+#line 1727 "cf-parse.y"
     { OSPF_PATT->helloint = (yyvsp[(2) - (2)].i) ; if (((yyvsp[(2) - (2)].i)<=0) || ((yyvsp[(2) - (2)].i)>65535)) cf_error("Hello interval must be in range 1-65535"); ;}
     break;
 
   case 418:
-#line 1727 "cf-parse.y"
+#line 1728 "cf-parse.y"
     { OSPF_PATT->rxmtint = (yyvsp[(2) - (2)].i) ; if ((yyvsp[(2) - (2)].i)<=0) cf_error("Retransmit int must be greater than zero"); ;}
     break;
 
   case 419:
-#line 1728 "cf-parse.y"
+#line 1729 "cf-parse.y"
     { OSPF_PATT->inftransdelay = (yyvsp[(3) - (3)].i) ; if (((yyvsp[(3) - (3)].i)<=0) || ((yyvsp[(3) - (3)].i)>65535)) cf_error("Transmit delay must be in range 1-65535"); ;}
     break;
 
   case 420:
-#line 1729 "cf-parse.y"
+#line 1730 "cf-parse.y"
     { OSPF_PATT->waitint = (yyvsp[(2) - (2)].i) ; ;}
     break;
 
   case 421:
-#line 1730 "cf-parse.y"
+#line 1731 "cf-parse.y"
     { OSPF_PATT->dead = (yyvsp[(2) - (2)].i) ; if ((yyvsp[(2) - (2)].i)<=1) cf_error("Dead interval must be greater than one"); ;}
     break;
 
   case 422:
-#line 1731 "cf-parse.y"
+#line 1732 "cf-parse.y"
     { OSPF_PATT->deadc = (yyvsp[(3) - (3)].i) ; if ((yyvsp[(3) - (3)].i)<=1) cf_error("Dead count must be greater than one"); ;}
     break;
 
   case 423:
-#line 1732 "cf-parse.y"
+#line 1733 "cf-parse.y"
     { OSPF_PATT->autype = OSPF_AUTH_NONE ; ;}
     break;
 
   case 424:
-#line 1733 "cf-parse.y"
+#line 1734 "cf-parse.y"
     { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; ;}
     break;
 
   case 425:
-#line 1734 "cf-parse.y"
+#line 1735 "cf-parse.y"
     { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; ;}
     break;
 
   case 427:
-#line 1739 "cf-parse.y"
+#line 1740 "cf-parse.y"
     {
   if (this_area->areaid == 0) cf_error("Virtual link cannot be in backbone");
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
@@ -5665,107 +5665,107 @@ yyreduce:
     break;
 
   case 428:
-#line 1759 "cf-parse.y"
+#line 1760 "cf-parse.y"
     { OSPF_PATT->cost = (yyvsp[(2) - (2)].i) ; if (((yyvsp[(2) - (2)].i)<=0) || ((yyvsp[(2) - (2)].i)>65535)) cf_error("Cost must be in range 1-65535"); ;}
     break;
 
   case 429:
-#line 1760 "cf-parse.y"
+#line 1761 "cf-parse.y"
     { OSPF_PATT->helloint = (yyvsp[(2) - (2)].i) ; if (((yyvsp[(2) - (2)].i)<=0) || ((yyvsp[(2) - (2)].i)>65535)) cf_error("Hello interval must be in range 1-65535"); ;}
     break;
 
   case 430:
-#line 1761 "cf-parse.y"
+#line 1762 "cf-parse.y"
     { OSPF_PATT->pollint = (yyvsp[(2) - (2)].i) ; if ((yyvsp[(2) - (2)].i)<=0) cf_error("Poll int must be greater than zero"); ;}
     break;
 
   case 431:
-#line 1762 "cf-parse.y"
+#line 1763 "cf-parse.y"
     { OSPF_PATT->rxmtint = (yyvsp[(2) - (2)].i) ; if ((yyvsp[(2) - (2)].i)<=0) cf_error("Retransmit int must be greater than zero"); ;}
     break;
 
   case 432:
-#line 1763 "cf-parse.y"
+#line 1764 "cf-parse.y"
     { OSPF_PATT->inftransdelay = (yyvsp[(3) - (3)].i) ; if (((yyvsp[(3) - (3)].i)<=0) || ((yyvsp[(3) - (3)].i)>65535)) cf_error("Transmit delay must be in range 1-65535"); ;}
     break;
 
   case 433:
-#line 1764 "cf-parse.y"
+#line 1765 "cf-parse.y"
     { OSPF_PATT->priority = (yyvsp[(2) - (2)].i) ; if (((yyvsp[(2) - (2)].i)<0) || ((yyvsp[(2) - (2)].i)>255)) cf_error("Priority must be in range 0-255"); ;}
     break;
 
   case 434:
-#line 1765 "cf-parse.y"
+#line 1766 "cf-parse.y"
     { OSPF_PATT->waitint = (yyvsp[(2) - (2)].i) ; ;}
     break;
 
   case 435:
-#line 1766 "cf-parse.y"
+#line 1767 "cf-parse.y"
     { OSPF_PATT->dead = (yyvsp[(2) - (2)].i) ; if ((yyvsp[(2) - (2)].i)<=1) cf_error("Dead interval must be greater than one"); ;}
     break;
 
   case 436:
-#line 1767 "cf-parse.y"
+#line 1768 "cf-parse.y"
     { OSPF_PATT->deadc = (yyvsp[(3) - (3)].i) ; if ((yyvsp[(3) - (3)].i)<=1) cf_error("Dead count must be greater than one"); ;}
     break;
 
   case 437:
-#line 1768 "cf-parse.y"
+#line 1769 "cf-parse.y"
     { OSPF_PATT->type = OSPF_IT_BCAST ; ;}
     break;
 
   case 438:
-#line 1769 "cf-parse.y"
+#line 1770 "cf-parse.y"
     { OSPF_PATT->type = OSPF_IT_NBMA ; ;}
     break;
 
   case 439:
-#line 1770 "cf-parse.y"
+#line 1771 "cf-parse.y"
     { OSPF_PATT->type = OSPF_IT_PTP ; ;}
     break;
 
   case 440:
-#line 1771 "cf-parse.y"
+#line 1772 "cf-parse.y"
     { OSPF_PATT->strictnbma = (yyvsp[(3) - (3)].i) ; ;}
     break;
 
   case 441:
-#line 1772 "cf-parse.y"
+#line 1773 "cf-parse.y"
     { OSPF_PATT->stub = (yyvsp[(2) - (2)].i) ; ;}
     break;
 
   case 443:
-#line 1774 "cf-parse.y"
+#line 1775 "cf-parse.y"
     { OSPF_PATT->autype = OSPF_AUTH_NONE ; ;}
     break;
 
   case 444:
-#line 1775 "cf-parse.y"
+#line 1776 "cf-parse.y"
     { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; ;}
     break;
 
   case 445:
-#line 1776 "cf-parse.y"
+#line 1777 "cf-parse.y"
     { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; ;}
     break;
 
   case 446:
-#line 1777 "cf-parse.y"
+#line 1778 "cf-parse.y"
     { OSPF_PATT->rxbuf = OSPF_RXBUF_LARGE ; ;}
     break;
 
   case 447:
-#line 1778 "cf-parse.y"
+#line 1779 "cf-parse.y"
     { OSPF_PATT->rxbuf = OSPF_RXBUF_NORMAL ; ;}
     break;
 
   case 448:
-#line 1779 "cf-parse.y"
+#line 1780 "cf-parse.y"
     { OSPF_PATT->rxbuf = (yyvsp[(3) - (3)].i) ; if ((yyvsp[(3) - (3)].i) < OSPF_RXBUF_MINSIZE) cf_error("Buffer size is too small") ; ;}
     break;
 
   case 454:
-#line 1793 "cf-parse.y"
+#line 1794 "cf-parse.y"
     {
    this_pref = cfg_allocz(sizeof(struct area_net_config));
    add_tail(&this_area->net_list, NODE this_pref);
@@ -5775,7 +5775,7 @@ yyreduce:
     break;
 
   case 455:
-#line 1802 "cf-parse.y"
+#line 1803 "cf-parse.y"
     {
    this_pref = cfg_allocz(sizeof(struct area_net_config));
    add_tail(&this_area->net_list, NODE this_pref);
@@ -5786,7 +5786,7 @@ yyreduce:
     break;
 
   case 460:
-#line 1821 "cf-parse.y"
+#line 1822 "cf-parse.y"
     {
    this_nbma = cfg_allocz(sizeof(struct nbma_node));
    add_tail(&OSPF_PATT->nbma_list, NODE this_nbma);
@@ -5796,7 +5796,7 @@ yyreduce:
     break;
 
   case 461:
-#line 1830 "cf-parse.y"
+#line 1831 "cf-parse.y"
     {
    this_nbma = cfg_allocz(sizeof(struct nbma_node));
    add_tail(&OSPF_PATT->nbma_list, NODE this_nbma);
@@ -5806,7 +5806,7 @@ yyreduce:
     break;
 
   case 462:
-#line 1840 "cf-parse.y"
+#line 1841 "cf-parse.y"
     {
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
   add_tail(&this_area->patt_list, NODE this_ipatt);
@@ -5830,57 +5830,57 @@ yyreduce:
     break;
 
   case 467:
-#line 1873 "cf-parse.y"
+#line 1874 "cf-parse.y"
     { finish_iface_config(OSPF_PATT); ;}
     break;
 
   case 469:
-#line 1878 "cf-parse.y"
+#line 1879 "cf-parse.y"
     { (yyval.t) = NULL; ;}
     break;
 
   case 470:
-#line 1883 "cf-parse.y"
+#line 1884 "cf-parse.y"
     { ospf_sh(proto_get_named((yyvsp[(3) - (4)].s), &proto_ospf)); ;}
     break;
 
   case 471:
-#line 1886 "cf-parse.y"
+#line 1887 "cf-parse.y"
     { ospf_sh_neigh(proto_get_named((yyvsp[(4) - (6)].s), &proto_ospf), (yyvsp[(5) - (6)].t)); ;}
     break;
 
   case 472:
-#line 1889 "cf-parse.y"
+#line 1890 "cf-parse.y"
     { ospf_sh_iface(proto_get_named((yyvsp[(4) - (6)].s), &proto_ospf), (yyvsp[(5) - (6)].t)); ;}
     break;
 
   case 473:
-#line 1894 "cf-parse.y"
+#line 1895 "cf-parse.y"
     { ospf_sh_state(proto_get_named((yyvsp[(4) - (6)].s), &proto_ospf), 0, 1); ;}
     break;
 
   case 474:
-#line 1897 "cf-parse.y"
+#line 1898 "cf-parse.y"
     { ospf_sh_state(proto_get_named((yyvsp[(5) - (7)].s), &proto_ospf), 0, 0); ;}
     break;
 
   case 475:
-#line 1902 "cf-parse.y"
+#line 1903 "cf-parse.y"
     { ospf_sh_state(proto_get_named((yyvsp[(4) - (6)].s), &proto_ospf), 1, 1); ;}
     break;
 
   case 476:
-#line 1905 "cf-parse.y"
+#line 1906 "cf-parse.y"
     { ospf_sh_state(proto_get_named((yyvsp[(5) - (7)].s), &proto_ospf), 1, 0); ;}
     break;
 
   case 477:
-#line 1908 "cf-parse.y"
+#line 1909 "cf-parse.y"
     { ospf_sh_lsadb(proto_get_named((yyvsp[(4) - (6)].s), &proto_ospf)); ;}
     break;
 
   case 478:
-#line 1913 "cf-parse.y"
+#line 1914 "cf-parse.y"
     {
      this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config));
      this_proto->preference = DEF_PREF_PIPE;
@@ -5889,7 +5889,7 @@ yyreduce:
     break;
 
   case 481:
-#line 1923 "cf-parse.y"
+#line 1924 "cf-parse.y"
     {
      if ((yyvsp[(4) - (5)].s)->class != SYM_TABLE)
        cf_error("Routing table name expected");
@@ -5898,17 +5898,17 @@ yyreduce:
     break;
 
   case 482:
-#line 1928 "cf-parse.y"
+#line 1929 "cf-parse.y"
     { PIPE_CFG->mode = PIPE_OPAQUE; ;}
     break;
 
   case 483:
-#line 1929 "cf-parse.y"
+#line 1930 "cf-parse.y"
     { PIPE_CFG->mode = PIPE_TRANSPARENT; ;}
     break;
 
   case 484:
-#line 1935 "cf-parse.y"
+#line 1936 "cf-parse.y"
     {
      this_proto = proto_config_new(&proto_rip, sizeof(struct rip_proto_config));
      rip_init_config(RIP_CFG);
@@ -5916,102 +5916,102 @@ yyreduce:
     break;
 
   case 487:
-#line 1944 "cf-parse.y"
+#line 1945 "cf-parse.y"
     { RIP_CFG->infinity = (yyvsp[(3) - (4)].i); ;}
     break;
 
   case 488:
-#line 1945 "cf-parse.y"
+#line 1946 "cf-parse.y"
     { RIP_CFG->port = (yyvsp[(3) - (4)].i); ;}
     break;
 
   case 489:
-#line 1946 "cf-parse.y"
+#line 1947 "cf-parse.y"
     { RIP_CFG->period = (yyvsp[(3) - (4)].i); ;}
     break;
 
   case 490:
-#line 1947 "cf-parse.y"
+#line 1948 "cf-parse.y"
     { RIP_CFG->garbage_time = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 491:
-#line 1948 "cf-parse.y"
+#line 1949 "cf-parse.y"
     { RIP_CFG->timeout_time = (yyvsp[(4) - (5)].i); ;}
     break;
 
   case 492:
-#line 1949 "cf-parse.y"
+#line 1950 "cf-parse.y"
     {RIP_CFG->authtype = (yyvsp[(3) - (4)].i); ;}
     break;
 
   case 494:
-#line 1951 "cf-parse.y"
+#line 1952 "cf-parse.y"
     { RIP_CFG->honor = HO_ALWAYS; ;}
     break;
 
   case 495:
-#line 1952 "cf-parse.y"
+#line 1953 "cf-parse.y"
     { RIP_CFG->honor = HO_NEIGHBOR; ;}
     break;
 
   case 496:
-#line 1953 "cf-parse.y"
+#line 1954 "cf-parse.y"
     { RIP_CFG->honor = HO_NEVER; ;}
     break;
 
   case 498:
-#line 1958 "cf-parse.y"
+#line 1959 "cf-parse.y"
     { (yyval.i)=AT_PLAINTEXT; ;}
     break;
 
   case 499:
-#line 1959 "cf-parse.y"
+#line 1960 "cf-parse.y"
     { (yyval.i)=AT_MD5; ;}
     break;
 
   case 500:
-#line 1960 "cf-parse.y"
+#line 1961 "cf-parse.y"
     { (yyval.i)=AT_NONE; ;}
     break;
 
   case 501:
-#line 1965 "cf-parse.y"
+#line 1966 "cf-parse.y"
     { (yyval.i)=IM_BROADCAST; ;}
     break;
 
   case 502:
-#line 1966 "cf-parse.y"
+#line 1967 "cf-parse.y"
     { (yyval.i)=0; ;}
     break;
 
   case 503:
-#line 1967 "cf-parse.y"
+#line 1968 "cf-parse.y"
     { (yyval.i)=IM_QUIET; ;}
     break;
 
   case 504:
-#line 1968 "cf-parse.y"
+#line 1969 "cf-parse.y"
     { (yyval.i)=IM_NOLISTEN; ;}
     break;
 
   case 505:
-#line 1969 "cf-parse.y"
+#line 1970 "cf-parse.y"
     { (yyval.i)=IM_VERSION1 | IM_BROADCAST; ;}
     break;
 
   case 507:
-#line 1973 "cf-parse.y"
+#line 1974 "cf-parse.y"
     { RIP_IPATT->metric = (yyvsp[(2) - (2)].i); ;}
     break;
 
   case 508:
-#line 1974 "cf-parse.y"
+#line 1975 "cf-parse.y"
     { RIP_IPATT->mode |= (yyvsp[(2) - (2)].i); ;}
     break;
 
   case 513:
-#line 1988 "cf-parse.y"
+#line 1989 "cf-parse.y"
     {
      this_ipatt = cfg_allocz(sizeof(struct rip_patt));
      add_tail(&RIP_CFG->iface_list, NODE this_ipatt);
@@ -6021,7 +6021,7 @@ yyreduce:
     break;
 
   case 515:
-#line 2004 "cf-parse.y"
+#line 2005 "cf-parse.y"
     {
      this_proto = proto_config_new(&proto_static, sizeof(struct static_config));
      static_init_config((struct static_config *) this_proto);
@@ -6029,7 +6029,7 @@ yyreduce:
     break;
 
   case 519:
-#line 2016 "cf-parse.y"
+#line 2017 "cf-parse.y"
     {
      this_srt = cfg_allocz(sizeof(struct static_route));
      add_tail(&((struct static_config *) this_proto)->other_routes, &this_srt->n);
@@ -6039,7 +6039,7 @@ yyreduce:
     break;
 
   case 520:
-#line 2025 "cf-parse.y"
+#line 2026 "cf-parse.y"
     {
       this_srt->dest = RTD_ROUTER;
       this_srt->via = (yyvsp[(3) - (3)].a);
@@ -6047,7 +6047,7 @@ yyreduce:
     break;
 
   case 521:
-#line 2029 "cf-parse.y"
+#line 2030 "cf-parse.y"
     {
       this_srt->dest = RTD_DEVICE;
       this_srt->if_name = (yyvsp[(3) - (3)].t);
@@ -6057,117 +6057,117 @@ yyreduce:
     break;
 
   case 522:
-#line 2035 "cf-parse.y"
+#line 2036 "cf-parse.y"
     { this_srt->dest = RTD_BLACKHOLE; ;}
     break;
 
   case 523:
-#line 2036 "cf-parse.y"
+#line 2037 "cf-parse.y"
     { this_srt->dest = RTD_UNREACHABLE; ;}
     break;
 
   case 524:
-#line 2037 "cf-parse.y"
+#line 2038 "cf-parse.y"
     { this_srt->dest = RTD_PROHIBIT; ;}
     break;
 
   case 525:
-#line 2041 "cf-parse.y"
+#line 2042 "cf-parse.y"
     { static_show(proto_get_named((yyvsp[(3) - (4)].s), &proto_static)); ;}
     break;
 
   case 579:
-#line 2049 "cf-parse.y"
+#line 2050 "cf-parse.y"
     { bgp_check(BGP_CFG); ;}
     break;
 
   case 582:
-#line 2049 "cf-parse.y"
+#line 2050 "cf-parse.y"
     { RIP_CFG->passwords = get_passwords(); ;}
     break;
 
   case 591:
-#line 2052 "cf-parse.y"
+#line 2053 "cf-parse.y"
     { (yyval.x) = NULL; ;}
     break;
 
   case 592:
-#line 2053 "cf-parse.y"
+#line 2054 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); ;}
     break;
 
   case 593:
-#line 2054 "cf-parse.y"
+#line 2055 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); ;}
     break;
 
   case 594:
-#line 2055 "cf-parse.y"
+#line 2056 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); ;}
     break;
 
   case 595:
-#line 2056 "cf-parse.y"
+#line 2057 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); ;}
     break;
 
   case 596:
-#line 2057 "cf-parse.y"
+#line 2058 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); ;}
     break;
 
   case 597:
-#line 2058 "cf-parse.y"
+#line 2059 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_OPAQUE, T_ENUM_EMPTY, EA_CODE(EAP_BGP, BA_ATOMIC_AGGR)); ;}
     break;
 
   case 598:
-#line 2059 "cf-parse.y"
+#line 2060 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); ;}
     break;
 
   case 599:
-#line 2060 "cf-parse.y"
+#line 2061 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); ;}
     break;
 
   case 600:
-#line 2061 "cf-parse.y"
+#line 2062 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID, T_QUAD, EA_CODE(EAP_BGP, BA_ORIGINATOR_ID)); ;}
     break;
 
   case 601:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_CLUSTER_LIST)); ;}
     break;
 
   case 602:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); ;}
     break;
 
   case 603:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); ;}
     break;
 
   case 604:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); ;}
     break;
 
   case 605:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID | EAF_TEMP, T_QUAD, EA_OSPF_ROUTER_ID); ;}
     break;
 
   case 606:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); ;}
     break;
 
   case 607:
-#line 2062 "cf-parse.y"
+#line 2063 "cf-parse.y"
     { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); ;}
     break;
 
@@ -6387,7 +6387,7 @@ yyreturn:
 }
 
 
-#line 2064 "cf-parse.y"
+#line 2065 "cf-parse.y"
 
 /* C Code from ../../conf/confbase.Y */
 
