@@ -12,11 +12,14 @@ CF_HDR
 
 CF_DEFINES
 
-static struct static_route *this_srt;
+#define STATIC_CFG ((struct static_config *) this_proto)
+static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 CF_DECLS
 
-CF_KEYWORDS(STATIC, ROUTE, VIA, DROP, REJECT, PROHIBIT, PREFERENCE)
+CF_KEYWORDS(STATIC, ROUTE, VIA, DROP, REJECT, PROHIBIT, PREFERENCE, CHECK, LINK)
+CF_KEYWORDS(MULTIPATH, WEIGHT)
+
 
 CF_GRAMMAR
 
@@ -31,15 +34,35 @@ static_proto_start: proto_start STATIC {
 static_proto:
    static_proto_start proto_name '{'
  | static_proto proto_item ';'
+ | static_proto CHECK LINK bool ';' { STATIC_CFG->check_link = $4; }
  | static_proto stat_route ';'
  ;
 
 stat_route0: ROUTE prefix {
      this_srt = cfg_allocz(sizeof(struct static_route));
-     add_tail(&((struct static_config *) this_proto)->other_routes, &this_srt->n);
+     add_tail(&STATIC_CFG->other_routes, &this_srt->n);
      this_srt->net = $2.addr;
      this_srt->masklen = $2.len;
   }
+ ;
+
+stat_multipath1:
+   VIA ipa {
+     last_srt_nh = this_srt_nh;
+     this_srt_nh = cfg_allocz(sizeof(struct static_route));
+     this_srt_nh->dest = RTD_NONE;
+     this_srt_nh->via = $2;
+     this_srt_nh->if_name = (void *) this_srt; /* really */
+   }
+ | stat_multipath1 WEIGHT expr {
+     this_srt_nh->masklen = $3 - 1; /* really */
+     if (($3<1) || ($3>256)) cf_error("Weight must be in range 1-256"); 
+   }
+ ;
+
+stat_multipath:
+   stat_multipath1 { this_srt->mp_next = this_srt_nh; }
+ | stat_multipath stat_multipath1 { last_srt_nh->mp_next = this_srt_nh; }
  ;
 
 stat_route:
@@ -51,7 +74,10 @@ stat_route:
       this_srt->dest = RTD_DEVICE;
       this_srt->if_name = $3;
       rem_node(&this_srt->n);
-      add_tail(&((struct static_config *) this_proto)->iface_routes, &this_srt->n);
+      add_tail(&STATIC_CFG->iface_routes, &this_srt->n);
+   }
+ | stat_route0 MULTIPATH stat_multipath {
+      this_srt->dest = RTD_MULTIPATH;
    }
  | stat_route0 DROP { this_srt->dest = RTD_BLACKHOLE; }
  | stat_route0 REJECT { this_srt->dest = RTD_UNREACHABLE; }

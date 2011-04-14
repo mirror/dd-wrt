@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#include <net/if.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -27,11 +26,16 @@
 #include "conf/conf.h"
 
 #include <asm/types.h>
+#include <linux/if.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
 #ifndef MSG_TRUNC			/* Hack: Several versions of glibc miss this one :( */
 #define MSG_TRUNC 0x20
+#endif
+
+#ifndef IFF_LOWER_UP
+#define IFF_LOWER_UP 0x10000
 #endif
 
 /*
@@ -234,36 +238,142 @@ nl_parse_attrs(struct rtattr *a, struct rtattr **k, int ksize)
     return 1;
 }
 
-static void
-nl_add_attr_u32(struct nlmsghdr *h, unsigned maxsize, int code, u32 data)
+void
+nl_add_attr(struct nlmsghdr *h, unsigned bufsize, unsigned code,
+	    void *data, unsigned dlen)
 {
-  unsigned len = RTA_LENGTH(4);
+  unsigned len = RTA_LENGTH(dlen);
+  unsigned pos = NLMSG_ALIGN(h->nlmsg_len);
   struct rtattr *a;
 
-  if (NLMSG_ALIGN(h->nlmsg_len) + len > maxsize)
-    bug("nl_add_attr32: packet buffer overflow");
-  a = (struct rtattr *)((char *)h + NLMSG_ALIGN(h->nlmsg_len));
+  if (pos + len > bufsize)
+    bug("nl_add_attr: packet buffer overflow");
+  a = (struct rtattr *)((char *)h + pos);
   a->rta_type = code;
   a->rta_len = len;
-  memcpy(RTA_DATA(a), &data, 4);
-  h->nlmsg_len = NLMSG_ALIGN(h->nlmsg_len) + len;
+  h->nlmsg_len = pos + len;
+  memcpy(RTA_DATA(a), data, dlen);
 }
 
-static void
-nl_add_attr_ipa(struct nlmsghdr *h, unsigned maxsize, int code, ip_addr ipa)
+static inline void
+nl_add_attr_u32(struct nlmsghdr *h, unsigned bufsize, int code, u32 data)
 {
-  unsigned len = RTA_LENGTH(sizeof(ipa));
-  struct rtattr *a;
+  nl_add_attr(h, bufsize, code, &data, 4);
+}
 
-  if (NLMSG_ALIGN(h->nlmsg_len) + len > maxsize)
-    bug("nl_add_attr_ipa: packet buffer overflow");
-  a = (struct rtattr *)((char *)h + NLMSG_ALIGN(h->nlmsg_len));
-  a->rta_type = code;
-  a->rta_len = len;
+static inline void
+nl_add_attr_ipa(struct nlmsghdr *h, unsigned bufsize, int code, ip_addr ipa)
+{
   ipa_hton(ipa);
-  memcpy(RTA_DATA(a), &ipa, sizeof(ipa));
-  h->nlmsg_len = NLMSG_ALIGN(h->nlmsg_len) + len;
+  nl_add_attr(h, bufsize, code, &ipa, sizeof(ipa));
 }
+
+#define RTNH_SIZE (sizeof(struct rtnexthop) + sizeof(struct rtattr) + sizeof(ip_addr))
+
+static inline void
+add_mpnexthop(char *buf, ip_addr ipa, unsigned iface, unsigned char weight)
+{
+  struct rtnexthop *nh = (void *) buf;
+  struct rtattr *rt = (void *) (buf + sizeof(*nh));
+  nh->rtnh_len = RTNH_SIZE;
+  nh->rtnh_flags = 0;
+  nh->rtnh_hops = weight;
+  nh->rtnh_ifindex = iface;
+  rt->rta_len = sizeof(*rt) + sizeof(ipa);
+  rt->rta_type = RTA_GATEWAY;
+  ipa_hton(ipa);
+  memcpy(buf + sizeof(*nh) + sizeof(*rt), &ipa, sizeof(ipa));
+}
+
+
+static void
+nl_add_multipath(struct nlmsghdr *h, unsigned bufsize, struct mpnh *nh)
+{
+  unsigned len = sizeof(struct rtattr);
+  unsigned pos = NLMSG_ALIGN(h->nlmsg_len);
+  char *buf = (char *)h + pos;
+  struct rtattr *rt = (void *) buf;
+  buf += len;
+  
+  for (; nh; nh = nh->next)
+    {
+      len += RTNH_SIZE;
+      if (pos + len > bufsize)
+	bug("nl_add_multipath: packet buffer overflow");
+
+      add_mpnexthop(buf, nh->gw, nh->iface->index, nh->weight);
+      buf += RTNH_SIZE;
+    }
+
+  rt->rta_type = RTA_MULTIPATH;
+  rt->rta_len = len;
+  h->nlmsg_len = pos + len;
+}
+
+
+static struct mpnh *
+nl_parse_multipath(struct krt_proto *p, struct rtattr *ra)
+{
+  /* Temporary buffer for multicast nexthops */
+  static struct mpnh *nh_buffer;
+  static int nh_buf_size;	/* in number of structures */
+  static int nh_buf_used;
+
+  struct rtattr *a[RTA_CACHEINFO+1];
+  struct rtnexthop *nh = RTA_DATA(ra);
+  struct mpnh *rv, *first, **last;
+  int len = RTA_PAYLOAD(ra);
+
+  first = NULL;
+  last = &first;
+  nh_buf_used = 0;
+
+  while (len)
+    {
+      /* Use RTNH_OK(nh,len) ?? */
+      if ((len < sizeof(*nh)) || (len < nh->rtnh_len))
+	return NULL;
+
+      if (nh_buf_used == nh_buf_size)
+      {
+	nh_buf_size = nh_buf_size ? (nh_buf_size * 2) : 4;
+	nh_buffer = xrealloc(nh_buffer, nh_buf_size * sizeof(struct mpnh));
+      }
+      *last = rv = nh_buffer + nh_buf_used++;
+      rv->next = NULL;
+      last = &(rv->next);
+
+      rv->weight = nh->rtnh_hops;
+      rv->iface = if_find_by_index(nh->rtnh_ifindex);
+      if (!rv->iface)
+	return NULL;
+
+      /* Nonexistent RTNH_PAYLOAD ?? */
+      nl_attr_len = nh->rtnh_len - RTNH_LENGTH(0);
+      nl_parse_attrs(RTNH_DATA(nh), a, sizeof(a));
+      if (a[RTA_GATEWAY])
+	{
+	  if (RTA_PAYLOAD(a[RTA_GATEWAY]) != sizeof(ip_addr))
+	    return NULL;
+
+	  memcpy(&rv->gw, RTA_DATA(a[RTA_GATEWAY]), sizeof(ip_addr));
+	  ipa_ntoh(rv->gw);
+
+	  neighbor *ng = neigh_find2(&p->p, &rv->gw, rv->iface,
+				     (nh->rtnh_flags & RTNH_F_ONLINK) ? NEF_ONLINK : 0);
+	  if (!ng || (ng->scope == SCOPE_HOST))
+	    return NULL;
+	}
+      else
+	return NULL;
+
+      len -= NLMSG_ALIGN(nh->rtnh_len);
+      nh = RTNH_NEXT(nh);
+    }
+
+  return first;
+}
+
 
 /*
  *	Scanning of interfaces
@@ -300,7 +410,7 @@ nl_parse_link(struct nlmsghdr *h, int scan)
       if (ifi && !scan)
 	{
 	  memcpy(&f, ifi, sizeof(struct iface));
-	  f.flags |= IF_ADMIN_DOWN;
+	  f.flags |= IF_SHUTDOWN;
 	  if_update(&f);
 	}
     }
@@ -319,6 +429,8 @@ nl_parse_link(struct nlmsghdr *h, int scan)
       f.flags = 0;
       fl = i->ifi_flags;
       if (fl & IFF_UP)
+	f.flags |= IF_ADMIN_UP;
+      if (fl & IFF_LOWER_UP)
 	f.flags |= IF_LINK_UP;
       if (fl & IFF_LOOPBACK)		/* Loopback */
 	f.flags |= IF_MULTIACCESS | IF_LOOPBACK | IF_IGNORE;
@@ -387,10 +499,12 @@ nl_parse_addr(struct nlmsghdr *h)
       ipa_ntoh(addr);
       ifa.prefix = ifa.brd = addr;
 
-      /* It is either a peer address, or loopback/dummy address */
-      if (!ipa_equal(ifa.ip, addr))
+      /* It is either a host address or a peer address */
+      if (ipa_equal(ifa.ip, addr))
+	ifa.flags |= IA_HOST;
+      else
 	{
-	  ifa.flags |= IA_UNNUMBERED;
+	  ifa.flags |= IA_PEER;
 	  ifa.opposite = addr;
 	}
     }
@@ -484,11 +598,21 @@ krt_capable(rte *e)
     case RTD_BLACKHOLE:
     case RTD_UNREACHABLE:
     case RTD_PROHIBIT:
+    case RTD_MULTIPATH:
       break;
     default:
       return 0;
     }
   return 1;
+}
+
+static inline int
+nh_bufsize(struct mpnh *nh)
+{
+  int rv = 0;
+  for (; nh != NULL; nh = nh->next)
+    rv += RTNH_SIZE;
+  return rv;
 }
 
 static void
@@ -499,7 +623,7 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
   struct {
     struct nlmsghdr h;
     struct rtmsg r;
-    char buf[128];
+    char buf[64 + nh_bufsize(a->nexthops)];
   } r;
 
   DBG("nl_send_route(%I/%d,new=%d)\n", net->n.prefix, net->n.pxlen, new);
@@ -525,7 +649,7 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
 
       /* a->iface != NULL checked in krt_capable() */
       if (ipa_has_link_scope(a->gw))
-	nl_add_attr_u32(&r.h, sizeof(r), RTA_OIF, a->iface->index);
+      	nl_add_attr_u32(&r.h, sizeof(r), RTA_OIF, a->iface->index);
 
       break;
     case RTD_DEVICE:
@@ -542,6 +666,10 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
       break;
     case RTD_PROHIBIT:
       r.r.rtm_type = RTN_PROHIBIT;
+      break;
+    case RTD_MULTIPATH:
+      r.r.rtm_type = RTN_UNICAST;
+      nl_add_multipath(&r.h, sizeof(r), a->nexthops);
       break;
     default:
       bug("krt_capable inconsistent with nl_send_route");
@@ -560,6 +688,7 @@ krt_set_notify(struct krt_proto *p, net *n UNUSED, rte *new, rte *old)
     nl_send_route(p, new, 1);
 }
 
+
 #define SKIP(ARG...) do { DBG("KRT: Ignoring route - " ARG); return; } while(0)
 
 static void
@@ -570,7 +699,6 @@ nl_parse_route(struct nlmsghdr *h, int scan)
   struct rtattr *a[RTA_CACHEINFO+1];
   int new = h->nlmsg_type == RTM_NEWROUTE;
   ip_addr dst;
-  rta ra;
   rte *e;
   net *net;
   u32 oif;
@@ -655,19 +783,32 @@ nl_parse_route(struct nlmsghdr *h, int scan)
     }
 
   net = net_get(p->p.table, dst, i->rtm_dst_len);
-  ra.proto = &p->p;
-  ra.source = RTS_INHERIT;
-  ra.scope = SCOPE_UNIVERSE;
-  ra.cast = RTC_UNICAST;
-  ra.flags = ra.aflags = 0;
-  ra.from = IPA_NONE;
-  ra.gw = IPA_NONE;
-  ra.iface = NULL;
-  ra.eattrs = NULL;
+
+  rta ra = {
+    .proto = &p->p,
+    .source = RTS_INHERIT,
+    .scope = SCOPE_UNIVERSE,
+    .cast = RTC_UNICAST
+  };
 
   switch (i->rtm_type)
     {
     case RTN_UNICAST:
+
+      if (a[RTA_MULTIPATH])
+	{
+	  ra.dest = RTD_MULTIPATH;
+	  ra.nexthops = nl_parse_multipath(p, a[RTA_MULTIPATH]);
+	  if (!ra.nexthops)
+	    {
+	      log(L_ERR "KRT: Received strange multipath route %I/%d",
+		  net->n.prefix, net->n.pxlen);
+	      return;
+	    }
+	    
+	  break;
+	}
+
       ra.iface = if_find_by_index(oif);
       if (!ra.iface)
 	{
@@ -682,6 +823,10 @@ nl_parse_route(struct nlmsghdr *h, int scan)
 	  ra.dest = RTD_ROUTER;
 	  memcpy(&ra.gw, RTA_DATA(a[RTA_GATEWAY]), sizeof(ra.gw));
 	  ipa_ntoh(ra.gw);
+
+	  /* Silently skip strange 6to4 routes */
+	  if (ipa_in_net(ra.gw, IPA_NONE, 96))
+	    return;
 
 	  ng = neigh_find2(&p->p, &ra.gw, ra.iface,
 			   (i->rtm_flags & RTNH_F_ONLINK) ? NEF_ONLINK : 0);

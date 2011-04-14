@@ -17,6 +17,17 @@
  * to be notified about gaining or losing the neighbor. Special
  * routes like black holes or rejects are inserted all the time.
  *
+ * Multipath routes are tricky. Because these routes depends on
+ * several neighbors we need to integrate that to the neighbor
+ * notification handling, we use dummy static_route nodes, one for
+ * each nexthop. Therefore, a multipath route consists of a master
+ * static_route node (of dest RTD_MULTIPATH), which specifies prefix
+ * and is used in most circumstances, and a list of dummy static_route
+ * nodes (of dest RTD_NONE), which stores info about nexthops and are
+ * connected to neighbor entries and neighbor notifications. Dummy
+ * nodes are chained using mp_next, they aren't in other_routes list,
+ * and abuse some fields (masklen, if_name) for other purposes.
+ *
  * The only other thing worth mentioning is that when asked for reconfiguration,
  * Static not only compares the two configurations, but it also calculates
  * difference between the lists of static routes and it just inserts the
@@ -32,6 +43,7 @@
 #include "nest/cli.h"
 #include "conf/conf.h"
 #include "lib/string.h"
+#include "lib/alloca.h"
 
 #include "static.h"
 
@@ -54,8 +66,38 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
   a.dest = r->dest;
   a.gw = r->via;
   a.iface = ifa;
-  aa = rta_lookup(&a);
 
+  if (r->dest == RTD_MULTIPATH)
+    {
+      struct static_route *r2;
+      struct mpnh *nhs = NULL;
+      struct mpnh **nhp = &nhs;
+
+      for (r2 = r->mp_next; r2; r2 = r2->mp_next)
+	if (r2->installed)
+	  {
+	    struct mpnh *nh = alloca(sizeof(struct mpnh));
+	    nh->gw = r2->via;
+	    nh->iface = r2->neigh->iface;
+	    nh->weight = r2->masklen; /* really */
+	    nh->next = NULL;
+	    *nhp = nh;
+	    nhp = &(nh->next);
+	  }
+
+      /* There is at least one nexthop */
+      if (!nhs->next)
+	{
+	  /* Fallback to unipath route for exactly one nexthop */
+	  a.dest = RTD_ROUTER;
+	  a.gw = nhs->gw;
+	  a.iface = nhs->iface;
+	}
+      else
+	a.nexthops = nhs;
+    }
+
+  aa = rta_lookup(&a);
   n = net_get(p->table, r->net, r->masklen);
   e = rte_get_temp(aa);
   e->net = n;
@@ -79,8 +121,26 @@ static_remove(struct proto *p, struct static_route *r)
   r->installed = 0;
 }
 
+static int
+static_decide(struct static_config *cf, struct static_route *r)
+{
+  /* r->dest != RTD_MULTIPATH, but may be RTD_NONE (part of multipath route)
+     the route also have to be valid (r->neigh != NULL) */
+
+  struct iface *ifa = r->neigh->iface;
+
+  if (!ifa)
+    return 0;
+
+  if (cf->check_link && !(ifa->flags & IF_LINK_UP))
+    return 0;
+
+  return 1;
+}
+
+
 static void
-static_add(struct proto *p, struct static_route *r)
+static_add(struct proto *p, struct static_config *cf, struct static_route *r)
 {
   DBG("static_add(%I/%d,%d)\n", r->net, r->masklen, r->dest);
   switch (r->dest)
@@ -93,15 +153,52 @@ static_add(struct proto *p, struct static_route *r)
 	    r->chain = n->data;
 	    n->data = r;
 	    r->neigh = n;
-	    if (n->iface)
+	    if (static_decide(cf, r))
 	      static_install(p, r, n->iface);
+	    else
+	      static_remove(p, r);
 	  }
 	else
-	  log(L_ERR "Static route destination %I is invalid. Ignoring.", r->via);
+	  {
+	    log(L_ERR "Static route destination %I is invalid. Ignoring.", r->via);
+	    static_remove(p, r);
+	  }
 	break;
       }
+
     case RTD_DEVICE:
       break;
+
+    case RTD_MULTIPATH:
+      {
+	int count = 0;
+	struct static_route *r2;
+
+	for (r2 = r->mp_next; r2; r2 = r2->mp_next)
+	  {
+	    struct neighbor *n = neigh_find(p, &r2->via, NEF_STICKY);
+	    if (n)
+	      {
+		r2->chain = n->data;
+		n->data = r2;
+		r2->neigh = n;
+		r2->installed = static_decide(cf, r2);
+		count += r2->installed;
+	      }
+	    else
+	      {
+		log(L_ERR "Static route destination %I is invalid. Ignoring.", r2->via);
+		r2->installed = 0;
+	      }
+	  }
+
+	if (count)
+	  static_install(p, r, NULL);
+	else
+	  static_remove(p, r);
+	break;
+      }
+
     default:
       static_install(p, r, NULL);
     }
@@ -115,7 +212,7 @@ static_start(struct proto *p)
 
   DBG("Static: take off!\n");
   WALK_LIST(r, c->other_routes)
-    static_add(p, r);
+    static_add(p, c, r);
   return PS_UP;
 }
 
@@ -140,12 +237,42 @@ static_neigh_notify(struct neighbor *n)
   struct proto *p = n->proto;
   struct static_route *r;
 
-  DBG("Static: neighbor notify for %I: iface %p\n", n->addr, n->iface);
+  log(L_WARN "Static: neighbor notify for %I: iface %p\n", n->addr, n->iface);
   for(r=n->data; r; r=r->chain)
-    if (n->iface)
-      static_install(p, r, n->iface);
-    else
-      static_remove(p, r);
+    switch (r->dest)
+      {
+      case RTD_ROUTER:
+	if (static_decide((struct static_config *) p->cf, r))
+	  static_install(p, r, n->iface);
+	else
+	  static_remove(p, r);
+	break;
+
+      case RTD_NONE: /* a part of multipath route */
+	{
+	  int decision = static_decide((struct static_config *) p->cf, r);
+	  if (decision == r->installed)
+	    break; /* no change */
+	  r->installed = decision;
+
+	  struct static_route *r1, *r2;
+	  int count = 0;
+	  r1 = (void *) r->if_name; /* really */
+	  for (r2 = r1->mp_next; r2; r2 = r2->mp_next)
+	    count += r2->installed;
+
+	  if (count)
+	    {
+	      /* Set of nexthops changed - force reinstall */
+	      r1->installed = 0;
+	      static_install(p, r1, NULL);
+	    }
+	  else
+	    static_remove(p, r1);
+
+	  break;
+	}
+      }
 }
 
 static void
@@ -227,9 +354,28 @@ static_same_net(struct static_route *x, struct static_route *y)
 static inline int
 static_same_dest(struct static_route *x, struct static_route *y)
 {
-  return (x->dest == y->dest)
-    && (x->dest != RTD_ROUTER || ipa_equal(x->via, y->via))
-    && (x->dest != RTD_DEVICE || !strcmp(x->if_name, y->if_name));
+  if (x->dest != y->dest)
+    return 0;
+
+  switch (x->dest)
+    {
+    case RTD_ROUTER:
+      return ipa_equal(x->via, y->via);
+
+    case RTD_DEVICE:
+      return !strcmp(x->if_name, y->if_name);
+
+    case RTD_MULTIPATH:
+      for (x = x->mp_next, y = y->mp_next;
+	   x && y;
+	   x = x->mp_next, y = y->mp_next)
+	if (!ipa_equal(x->via, y->via))
+	  return 0;
+      return !x && !y;
+
+    default:
+      return 1;
+    }
 }
 
 static void
@@ -249,13 +395,13 @@ static_match(struct proto *p, struct static_route *r, struct static_config *n)
   WALK_LIST(t, n->iface_routes)
     if (static_same_net(r, t))
       {
-	t->installed = static_same_dest(r, t);
+	t->installed = r->installed && static_same_dest(r, t);
 	return;
       }
   WALK_LIST(t, n->other_routes)
     if (static_same_net(r, t))
       {
-	t->installed = static_same_dest(r, t);
+	t->installed = r->installed && static_same_dest(r, t);
 	return;
       }
   static_remove(p, r);
@@ -282,7 +428,7 @@ static_reconfigure(struct proto *p, struct proto_config *new)
 	static_install(p, r, ifa);
     }
   WALK_LIST(r, n->other_routes)
-    static_add(p, r);
+    static_add(p, n, r);
 
   return 1;
 }
@@ -307,11 +453,18 @@ static_show_rt(struct static_route *r)
     case RTD_ROUTER:	bsprintf(via, "via %I", r->via); break;
     case RTD_DEVICE:	bsprintf(via, "dev %s", r->if_name); break;
     case RTD_BLACKHOLE:	bsprintf(via, "blackhole"); break;
-    case RTD_UNREACHABLE:	bsprintf(via, "unreachable"); break;
+    case RTD_UNREACHABLE: bsprintf(via, "unreachable"); break;
     case RTD_PROHIBIT:	bsprintf(via, "prohibited"); break;
+    case RTD_MULTIPATH:	bsprintf(via, "multipath"); break;
     default:		bsprintf(via, "???");
     }
   cli_msg(-1009, "%I/%d %s%s", r->net, r->masklen, via, r->installed ? "" : " (dormant)");
+
+  struct static_route *r2;
+  if (r->dest == RTD_MULTIPATH)
+    for (r2 = r->mp_next; r2; r2 = r2->mp_next)
+      cli_msg(-1009, "\tvia %I weight %d%s", r2->via, r2->masklen + 1, /* really */
+	      r2->installed ? "" : " (dormant)");
 }
 
 void

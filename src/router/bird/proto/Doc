@@ -3,5 +3,6 @@ C bgp
 C ospf
 C pipe
 C rip
+C radv
 C static
 S ../nest/rt-dev.c

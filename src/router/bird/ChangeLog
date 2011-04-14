@@ -1,110 +1,517 @@
-commit d846d5f29676a8d2905b36bcbafc4dc44283efce
+commit a5b84ab540ff3131938b38ebc82ed8e3ce46f261
+Author: Ondrej 'Feela' Filip <feela@atrey.karlin.mff.cuni.cz>
+Date:   Thu Mar 31 10:30:58 2011 +0200
+
+    NEWS updated.
+
+commit eb3786e4ea46ce1abc4ca211346369b36dc17dd7
 Author: Ondrej Zajicek <santiago@crfreenet.org>
-Date:   Sat Oct 9 20:08:00 2010 +0200
+Date:   Wed Mar 30 02:00:56 2011 +0200
 
     NEWS and version update.
+    
+    (and minor changes in documentation)
 
-commit 06ad8f9ebc1d1ce804d51285604ccb6297229451
+commit 06fb60c4af38d529d20b662748243b3f4a693c60
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Mar 30 01:09:18 2011 +0200
+
+    Fixes some problems in BGP error handling.
+
+commit 83696b3913c9f52a3d53db073e1ba0641b60ab07
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Mar 29 02:44:39 2011 +0200
+
+    Hide 6to4 route warnings.
+
+commit ab164971891c64126097eedca11d2f5586f1d8e7
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Mar 29 01:41:46 2011 +0200
+
+    Fixes a nasty bug in OSPF.
+    
+    Sending malformed network prefixes in LSAs causes OSPF to crash
+    just after the LSA is propagated to the other routers.
+
+commit 52a43ae3b76f86b697537bc3ad8afdb3b421cf2c
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Mar 28 22:46:18 2011 +0200
+
+    Minor changes in addresses.
+    
+    Mainly changes IA_UNNUMBERED to IA_PEER and adds IA_HOST. Also do not
+    show broadcast addr in show interfaces. Nobody cares for that.
+
+commit c454872f4e81e69a8e9950289ab810fcac3fc922
+Author: Ondrej Filip <feela@network.cz>
+Date:   Sun Mar 27 23:27:37 2011 +0200
+
+    Avoid using stack.
+
+commit 4e712ec3b7cb4678607b2a48a2feaa0658333ab2
+Author: Ondrej Filip <feela@network.cz>
+Date:   Sat Mar 26 15:21:35 2011 +0100
+
+    Added CZ.NIC copyright.
+
+commit 86c038ccae2149645058d4288ff8efb498013522
+Author: Ondrej Filip <feela@network.cz>
+Date:   Sat Mar 26 14:38:00 2011 +0100
+
+    Documentation about previous commit added.
+
+commit 4fc36f394ec0988a18decb2d1916e3cebef18d22
+Author: Ondrej Filip <feela@network.cz>
+Date:   Sat Mar 26 14:18:56 2011 +0100
+
+    This adds (*,x) functionality.
+
+commit d0e9b36d30176a9e18cad6151b20746e1588cdc8
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Mar 23 17:15:11 2011 +0100
+
+    Added header file.
+
+commit 0aa88530ad3c58a6bdab886cabd9b2a4278486e8
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Mar 23 13:40:46 2011 +0100
+
+    Convert && and || to shortcut boolean operators.
+
+commit 26d92bb8921ac4e022cdc88bde8fc7bc617f8766
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Mar 23 12:49:53 2011 +0100
+
+    A hack to distinguish if..else from else: in case.
+    
+    The old BIRD grammar needs two lookaheads to distinguish if..else from
+    else: in case, which caused the parser to fail on some combinations of
+    both expressions.
+    
+    This patch replaces two tokens 'else' ':' by one token 'else:' to fix
+    that.
+
+commit 6bcef22580010aec695fb2b559c7b33ee00261b0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Mar 19 12:13:59 2011 +0100
+
+    Documentation for the router advertisement protocol.
+
+commit 8e48831a970a784a979446813191628790d477f1
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Mar 17 15:53:36 2011 +0100
+
+    Vastly improved OSPF reconfiguration.
+    
+    Now it can handle a change in iface pattern structure.
+    It can add, remove and reconfigure interfaces, vlinks and areas.
+
+commit 93e868c730dc0b1825b2a685e0b066c051b1cb07
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Mar 13 11:33:50 2011 +0100
+
+    Implements Router Advertisement protocol.
+
+commit 9d67ffb0b4cdfbbf88779ce2b44ba810d1ba85d3
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jan 8 19:34:12 2011 +0100
+
+    Fixes scope for sticky neighbors.
+
+commit d32a071da9655c2d05038e721bcf020498263c1e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jan 8 11:31:12 2011 +0100
+
+    Some cleanups in krt_read_ifinfo().
+
+commit dad7ee70c1711b2cbdfd86c615736fe12c0d126a
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jan 8 11:22:38 2011 +0100
+
+    Fixes interface names on BSD systems.
+
+commit e7b4948cbd3e4cacf4fe0f774b44d1f74029ea6d
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Dec 28 01:43:07 2010 +0100
+
+    A simplification of the next-hop calculation.
+    
+    Thanks to Joakim Tjernlund for the idea.
+
+commit 919f5411c48f509a49400a1293e670f5d5d2bcf1
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Dec 24 18:08:07 2010 +0100
+
+    Implements Point-to-MultiPoint interface type for OSPF.
+
+commit 39847cda73d8e8536300b74d90d01b6e2f233ef7
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Dec 23 12:24:40 2010 +0100
+
+    Add some comments.
+
+commit f0160f0e06be883528e5e29edfd509efa14d0c78
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Dec 23 10:25:22 2010 +0100
+
+    Fixes a minor memory wasting.
+
+commit 8cab377d92b62c028ee7aab49049b7cb6cd53ab9
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Dec 22 23:33:40 2010 +0100
+
+    Remove unnecessary check.
+
+commit 154e2aeded13f46666a69b7a7241149c43ebc01f
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Dec 13 11:17:11 2010 +0100
+
+    Fixes string handling in birdc.
+
+commit e91f6960bae16314e9429719c2c2321edb484a44
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Dec 7 23:36:48 2010 +0100
+
+    Documentation update (multipath).
+
+commit 32b4972834352d641f7d2c08a27c18b0babd3790
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Dec 7 23:36:11 2010 +0100
+
+    Multipath support for linux kernel protocol.
+
+commit 57c574d82a44d10143aba7aaea6d1384d850c079
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Dec 7 23:35:39 2010 +0100
+
+    Multipath support for OSPF
+
+commit 9852f81064a38d35ff1bd5cc9fab7fc33926c83c
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Dec 7 23:34:36 2010 +0100
+
+    Multipath support for static protocol.
+
+commit 7e95c05d889f22be44aef5051eb07d35a4a8f579
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Dec 7 23:33:55 2010 +0100
+
+    Core multipath support.
+
+commit 01427d3f2b69a4ae1b616b380d4911a132ec450f
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Nov 19 18:03:27 2010 +0100
+
+    Remove some runaway debug messages and typos.
+
+commit 391931d45686a807d322878d4b3d5c9634e2dbca
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Nov 19 13:46:21 2010 +0100
+
+    Minor finalizations of link state checks.
+
+commit 79f561a173c9ceb824d64aa32d82e43ba62acebc
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Nov 13 14:19:55 2010 +0100
+
+    Fixes a typo (in OSPF_MAX_PKT_SIZE value).
+    
+    And updates a comment.
+
+commit d9e7e1b13d69fa50d1979576c418c579f05463c6
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Nov 13 14:19:23 2010 +0100
+
+    Adds support for iface link detection to OSPF.
+
+commit fe181e7c63843ad65401cc1e400ae1ac3187122f
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Nov 11 12:24:27 2010 +0100
+
+    Adds support for iface link check to static protocol.
+
+commit f25cb0ef9f6341648513e793a3162b32fc250d2b
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Nov 11 10:03:02 2010 +0100
+
+    Implements link state detection.
+    
+    Also changes some symbol names (IFF_ADMIN_DOWN -> IFF_SHUTDOWN,
+    IFF_LINK_UP -> IFF_ADMIN_UP).
+
+commit 5cdf264f937687aff194574f5fe2badb087337b8
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Nov 10 16:43:11 2010 +0100
+
+    Fixes a bug related to implicit backbone on ABR.
+
+commit c4443085a198c26a478463429477e7e8a599fa07
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Nov 4 17:25:48 2010 +0100
+
+    OSPF tx buffers should have the same size as rx buffers.
+    
+    We should be able to send everything we received.
+
+commit d5356072ac18d5b0eb12f14afca6bfbea702dda2
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Nov 4 17:22:43 2010 +0100
+
+    Fixes a bug in LSA update of large LSAs.
+
+commit d3209d939d4d0d8801432f212edd4302a7d03633
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Nov 3 10:04:46 2010 +0100
+
+    Fixes a bug in OSPF.
+
+commit fcf5a4f4b3e1a984f65d873e7a5a8c830b1ad9bf
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Nov 3 10:02:24 2010 +0100
+
+    Change default for BGP IPv6 socket to V6ONLY.
+    
+    Also add a new option 'dual' for the old behavior.
+
+commit 5adc02a6f87bda06094ce36eb699884c03760bf5
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Oct 22 11:25:47 2010 +0200
+
+    Documentation update.
+
+commit ed76033c847939877e4fbfadf06898521aafb740
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Oct 22 08:35:19 2010 +0200
+
+    Fixes some typos.
+
+commit 938b191b9282b138cbdd30dfc11b78c0467d6380
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Sat Oct 9 01:00:53 2010 +0200
 
     Fixes error handling in ASN expressions.
 
-commit 7e4553865f339f1dc01de1a0601239b7adda0d32
+commit 112d71a73f30d26891eda4374bf0f2ab31c5c048
 Author: Ondrej Zajicek <santiago@crfreenet.org>
-Date:   Mon Oct 4 20:17:48 2010 +0200
+Date:   Fri Oct 8 14:25:53 2010 +0200
 
-    Fixes a sporadic crash during reconfigure.
+    Fixes syntactic priority of '.' .
+    
+    Dot in expressions like net.len definitely should have the highhest
+    priority.
 
-commit 0d18f3f265021547668510855eacc1b4359feb18
+commit b2b7bbfc690a7ad6a61a8cdf4abe87345057fb2e
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Mon Oct 4 19:55:11 2010 +0200
 
     Fixes scope of filter symbols.
 
-commit 35456c9b33fc6463114090d1850cfc459a0b6599
+commit 0d1b3c4c0e3261d1d4261e9aeb9975a01d0ff2f9
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Sep 20 13:01:01 2010 +0200
+
+    Changes print-like filter commands to use a log instead of a stderr.
+    
+    And extends the log subsystem to better handle that.
+
+commit 2dec1e3471385ea191862c8fe85d76a8e47410de
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Wed Sep 15 02:01:23 2010 +0200
 
     Fixes a bug in pair sets.
 
-commit 408595259f4eea4e31dd7142100d2f1863574685
+commit a58022a64ee8aa2fc46816020723dfbf4bfd08d9
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Sat Sep 11 20:14:53 2010 +0200
 
     Fixes a bug in community set delete.
 
-commit b2c8936720e18d57a7c0c9a26985abccb0c67af9
+commit 4ca93a50675489a6a5ef9369c24806cc3cbff45e
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Wed Sep 8 12:08:38 2010 +0200
 
     Fixes a one byte buffer overflow.
 
-commit 8f2d438844d22319cf08af9e5ac66967fb1fab1b
+commit 948c865fac85f91dd7463195b190d8f133e0f741
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Fri Sep 3 17:15:02 2010 +0200
 
     Fixes a crash in RIP during reconfigure.
 
-commit c4f8e745f8767356895f053ad60ed98c6473a4ea
+commit 3cb6c83f1a2eb563e459ce34d0f4850cc9dd4776
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Fri Sep 3 16:32:00 2010 +0200
 
     Fixes a memory leak in RIP.
 
-commit 0c69be079abfd43b683c2d9daed3e9d42fd09ec2
+commit faf58cec4d0c0d3c1fddee6faf2f57a1362477bb
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Sun Aug 22 14:43:53 2010 +0200
 
     Fixes a bug in NBMA on an iface with multiple IP addresses.
 
-commit 2083c12f7d4e2617d5163da0e56b741a98270d6c
+commit ac4a1eedfc515e041877d48fd5f64ee4e3b30532
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Aug 13 14:30:36 2010 +0200
+
+    Change default for handling missing link-local addresses on route servers.
+
+commit dcc71a7fb7e507acc2e0b417e6c9d1940448908e
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Thu Aug 12 10:22:40 2010 +0200
 
     Supports unique local unicast addresses.
 
-commit 7a9aeb8f601c22f16cf14113d447eeacfa14f322
+commit 0ef69b1c4a255360e1fa76dffd7a0cb97ea1e9dc
+Author: Ondrej Filip <feela@network.cz>
+Date:   Mon Aug 9 14:09:53 2010 +0200
+
+    Typo in doc.
+
+commit 265d06dcbc138c7373ec7b341fcd628eb87e4c4b
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Aug 4 15:27:11 2010 +0200
+
+    Fixes IPv6 build.
+
+commit 373d3dbe8dfbce21af72618c0f912dd0e23a6f3c
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Wed Aug 4 13:53:52 2010 +0200
 
     Fixes build on Sparc.
 
-commit bf5aa0d17cd9a96b22397d5d2dd7c03197838067
+commit 946dc15c928d9a48cdcc857bc80f4fabf9a4e2bf
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue Aug 3 17:35:34 2010 +0200
+
+    Documentation update and improvement of tests related to expressions in sets.
+
+commit e0e8c04a83bbe24cdcf3836ca171ce60db299b1f
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue Aug 3 15:23:30 2010 +0200
+
+    Small typo in documentation.
+
+commit edaec901e12c2f0756ab44f7493e999145d7dff9
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue Aug 3 15:22:29 2010 +0200
+
+    Even set of number can be made by expressions.
+
+commit 4733b49ed6ec11669061e15680417961d13c7a61
+Author: Ondrej Filip <feela@network.cz>
+Date:   Tue Aug 3 15:14:26 2010 +0200
+
+    Syntax of sets improved.
+
+commit 2c9033afd5ce5e99255d248fb065e94534405da7
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Aug 3 08:26:47 2010 +0200
+
+    Do not allow interdependent recursive routes.
+
+commit f428631cd6f48c5155bd1b7724e9bb8a545fda12
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Tue Aug 3 01:12:43 2010 +0200
 
     Ignore warning when BGP peer is unreachable.
 
-commit 487e90fbdf9362ca0eafc80a606c7f75e4eef31f
+commit b74f45f8a05444dca16f0995c7d201ea592ce299
 Author: Ondrej Zajicek <santiago@crfreenet.org>
-Date:   Tue Aug 3 14:04:39 2010 +0200
+Date:   Tue Aug 3 00:59:13 2010 +0200
 
-    NEWS and version update.
+    Documentation update.
 
-commit c756a1c54743b634f65d5e39955cf42514671ec7
+commit ba5e5940aa1f11128c76a3964823bda22e47ab04
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Aug 2 13:11:53 2010 +0200
+
+    Adds igp_metric attribute.
+
+commit d395fe48553062413a85fd04cda0752f933e70c6
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Sat Jul 31 11:37:30 2010 +0200
 
     Fixes bug in OSPF ext-LSA origination.
 
-commit 1a35a27b64ce2cbef0eb71d874fe41d9b240a2d8
+commit d1e146f2f8da303af7bbe0cec363cc15c58c37fd
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jul 31 01:04:32 2010 +0200
+
+    Implements IGP metric comparison for BGP routes.
+
+commit ac3ac49a71d4b290cfb28aecafc8ac4a69df7a64
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Jul 28 13:13:34 2010 +0200
+
+    Adds route resolvability test.
+
+commit 1b180121a90ef98f3adce1a355d48d64c6fc3c4f
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Jul 28 11:45:35 2010 +0200
+
+    Use link-local addresses in recursive next hops for IPv6 BGP.
+
+commit c477f48916d74c2db6156145851f9536ae0a0a6c
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Jul 27 18:20:12 2010 +0200
+
+    Hostcache should use trie to filter relevant route changes.
+
+commit 7f0d245a5e6d2d789e1fce4b5388ea69aba3b428
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Jul 27 17:17:11 2010 +0200
+
+    Minor changes in prefix trie.
+
+commit f2b76f2c45bb8e7c1f13f6d4924e10f0c6b12778
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jul 26 16:39:27 2010 +0200
+
+    For hostentry cache, replace FIB with a hash table using (IP, dep table) as a key.
+
+commit 852b7062e33b9886eb869fac8b9354497c49b126
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Thu Jul 22 15:09:35 2010 +0200
 
     Fixes a buffer overflow in TX code of IPv6 BGP.
 
-commit 9472efaa571c44e67e24f1854bb91382977ad339
+commit 7873e9828ff7ba7203fd30ffa7d50859d583d4ca
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Wed Jul 14 19:03:23 2010 +0200
 
     Fixes the documentation.
 
-commit df09a5dbf2c6e9b971aa30f80969487f922d6ee0
+commit 087cecd0e2db0ec1e630fde67ec560578264bf32
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Jul 13 12:48:23 2010 +0200
+
+    Adds some options and documentation related to recursive next hops.
+
+commit f038f0a6385d7b81f57254e3c9bf84021a6b040d
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Mon Jul 12 21:39:10 2010 +0200
 
     Fixes missing check in reconfiguration.
+
+commit 9be9a264137cdd881f339c37d1a1918527924254
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jul 12 17:39:39 2010 +0200
+
+    Implements proper multihop BGP.
+    
+    Also does some incompatible changes to config file syntax,
+    like removing 'via IP' from multihop option.
+
+commit cfe34a316e35a209fcd814ccf3523c262e8d4b0a
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jul 5 17:50:19 2010 +0200
+
+    Implements hostcache and recursive next hops.
+    
+    Hostcache is a structure for monitoring changes in a routing table that
+    is used for routes with dynamic/recursive next hops. This is needed for
+    proper iBGP next hop handling.
 
 commit 824de84d48eff6cbd0c550309fbd0bbf7740cb14
 Author: Ondrej Zajicek <santiago@crfreenet.org>

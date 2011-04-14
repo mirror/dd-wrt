@@ -656,8 +656,11 @@ LSAs must be originated, flushed, new multicast sockets to listen for messages f
 <DT><I>int</I> <B>event</B><DD><P>event comming to state machine
 </DL>
 <H3>Description</H3>
-<P>This fully respects 9.3 of RFC 2328 except we don't use <I>LOOP</I> state of
-interface.
+<P>This fully respects 9.3 of RFC 2328 except we have slightly
+different handling of <I>DOWN</I> and <I>LOOP</I> state. We remove intefaces
+that are <I>DOWN</I>. <I>DOWN</I> state is used when an interface is waiting
+for a lock. <I>LOOP</I> state is used when an interface does not have a
+link.
 
 
 <HR><H3>Function</H3>
@@ -835,7 +838,28 @@ sending requested responses.
 <H3>Description</H3>
 <P>Create an interface structure and start listening on the interface.
 
-<H2><A NAME="ss5.5">5.5</A> <A HREF="prog.html#toc5.5">Static</A>
+<H2><A NAME="ss5.5">5.5</A> <A HREF="prog.html#toc5.5">Router Advertisements</A>
+</H2>
+
+<P>
+<P>The RAdv protocol is implemented in two files: <CODE>radv.c</CODE> containing
+the interface with BIRD core and the protocol logic and <CODE>packets.c</CODE>
+handling low level protocol stuff (RX, TX and packet formats).
+The protocol does not import or export any routes.
+<P>The RAdv is structured in the usual way - for each handled interface
+there is a structure <I>radv_iface</I> that contains a state related to
+that interface together with its resources (a socket, a timer).
+There is also a prepared RA stored in a TX buffer of the socket
+associated with an iface. These iface structures are created
+and removed according to iface events from BIRD core handled by
+<B>radv_if_notify()</B> callback.
+<P>The main logic of RAdv consists of two functions:
+<B>radv_iface_notify()</B>, which processes asynchronous events (specified
+by RA_EV_* codes), and <B>radv_timer()</B>, which triggers sending RAs and
+computes the next timeout.
+<P>
+<P>
+<H2><A NAME="ss5.6">5.6</A> <A HREF="prog.html#toc5.6">Static</A>
 </H2>
 
 <P>
@@ -846,13 +870,23 @@ to interface events received from the core via the <B>if_notify()</B> hook. Rout
 pointing to a neighboring router use a sticky node in the neighbor cache
 to be notified about gaining or losing the neighbor. Special
 routes like black holes or rejects are inserted all the time.
+<P>Multipath routes are tricky. Because these routes depends on
+several neighbors we need to integrate that to the neighbor
+notification handling, we use dummy static_route nodes, one for
+each nexthop. Therefore, a multipath route consists of a master
+static_route node (of dest RTD_MULTIPATH), which specifies prefix
+and is used in most circumstances, and a list of dummy static_route
+nodes (of dest RTD_NONE), which stores info about nexthops and are
+connected to neighbor entries and neighbor notifications. Dummy
+nodes are chained using mp_next, they aren't in other_routes list,
+and abuse some fields (masklen, if_name) for other purposes.
 <P>The only other thing worth mentioning is that when asked for reconfiguration,
 Static not only compares the two configurations, but it also calculates
 difference between the lists of static routes and it just inserts the
 newly added routes and removes the obsolete ones.
 <P>
 <P>
-<H2><A NAME="ss5.6">5.6</A> <A HREF="prog.html#toc5.6">Direct</A>
+<H2><A NAME="ss5.7">5.7</A> <A HREF="prog.html#toc5.7">Direct</A>
 </H2>
 
 <P>

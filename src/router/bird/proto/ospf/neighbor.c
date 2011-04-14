@@ -276,6 +276,7 @@ can_do_adj(struct ospf_neighbor *n)
   switch (ifa->type)
   {
   case OSPF_IT_PTP:
+  case OSPF_IT_PTMP:
   case OSPF_IT_VLINK:
     i = 1;
     break;
@@ -284,6 +285,7 @@ can_do_adj(struct ospf_neighbor *n)
     switch (ifa->state)
     {
     case OSPF_IS_DOWN:
+    case OSPF_IS_LOOP:
       bug("%s: Iface %s in down state?", p->name, ifa->iface->name);
       break;
     case OSPF_IS_WAITING:
@@ -347,7 +349,7 @@ ospf_neigh_sm(struct ospf_neighbor *n, int event)
     case NEIGHBOR_DOWN:
       neigh_chstate(n, NEIGHBOR_INIT);
     default:
-      tm_start(n->inactim, n->ifa->dead);	/* Restart inactivity timer */
+      tm_start(n->inactim, n->ifa->deadint);	/* Restart inactivity timer */
       break;
     }
     break;
@@ -530,19 +532,19 @@ struct ospf_neighbor *
 find_neigh(struct ospf_iface *ifa, u32 rid)
 {
   struct ospf_neighbor *n;
-
-  WALK_LIST(n, ifa->neigh_list) if (n->rid == rid)
-    return n;
+  WALK_LIST(n, ifa->neigh_list)
+    if (n->rid == rid)
+      return n;
   return NULL;
 }
 
-struct ospf_area *
-ospf_find_area(struct proto_ospf *po, u32 aid)
+struct ospf_neighbor *
+find_neigh_by_ip(struct ospf_iface *ifa, ip_addr ip)
 {
-  struct ospf_area *oa;
-  WALK_LIST(oa, po->area_list)
-    if (((struct ospf_area *) oa)->areaid == aid)
-    return oa;
+  struct ospf_neighbor *n;
+  WALK_LIST(n, ifa->neigh_list)
+    if (ipa_equal(n->ip, ip))
+      return n;
   return NULL;
 }
 
@@ -565,6 +567,13 @@ ospf_neigh_remove(struct ospf_neighbor *n)
 {
   struct ospf_iface *ifa = n->ifa;
   struct proto *p = &ifa->oa->po->proto;
+
+  if ((ifa->type == OSPF_IT_NBMA) || (ifa->type == OSPF_IT_PTMP))
+  {
+    struct nbma_node *nn = find_nbma_node(ifa, n->ip);
+    if (nn)
+      nn->found = 0;
+  }
 
   s_get(&(n->dbsi));
   neigh_chstate(n, NEIGHBOR_DOWN);
@@ -595,9 +604,10 @@ ospf_sh_neigh_info(struct ospf_neighbor *n)
 
   if (n->rid == ifa->drid)
     pos = "dr   ";
-  if (n->rid == ifa->bdrid)
+  else if (n->rid == ifa->bdrid)
     pos = "bdr  ";
-  if ((n->ifa->type == OSPF_IT_PTP) || (n->ifa->type == OSPF_IT_VLINK))
+  else if ((n->ifa->type == OSPF_IT_PTP) || (n->ifa->type == OSPF_IT_PTMP) ||
+	   (n->ifa->type == OSPF_IT_VLINK))
     pos = "ptp  ";
 
   cli_msg(-1013, "%-1R\t%3u\t%s/%s\t%-5s\t%-10s %-1I", n->rid, n->priority,

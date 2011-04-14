@@ -16,15 +16,16 @@ CF_DEFINES
 
 CF_DECLS
 
-CF_KEYWORDS(BGP, LOCAL, NEIGHBOR, AS, HOLD, TIME, CONNECT, RETRY, KEEPALIVE,
-	MULTIHOP, STARTUP, VIA, NEXT, HOP, SELF, DEFAULT, PATH, METRIC,
-	ERROR, START, DELAY, FORGET, WAIT, ENABLE, DISABLE, AFTER,
-	BGP_PATH, BGP_LOCAL_PREF, BGP_MED, BGP_ORIGIN, BGP_NEXT_HOP,
-	BGP_ATOMIC_AGGR, BGP_AGGREGATOR, BGP_COMMUNITY, SOURCE, ADDRESS,
-	PASSWORD, RR, RS, CLIENT, CLUSTER, ID, AS4, ADVERTISE, IPV4,
-	CAPABILITIES, LIMIT, PASSIVE, PREFER, OLDER, MISSING, LLADDR,
-	DROP, IGNORE, ROUTE, REFRESH, INTERPRET, COMMUNITIES,
-	BGP_ORIGINATOR_ID, BGP_CLUSTER_LIST)
+CF_KEYWORDS(BGP, LOCAL, NEIGHBOR, AS, HOLD, TIME, CONNECT, RETRY,
+	KEEPALIVE, MULTIHOP, STARTUP, VIA, NEXT, HOP, SELF, DEFAULT,
+	PATH, METRIC, ERROR, START, DELAY, FORGET, WAIT, ENABLE,
+	DISABLE, AFTER, BGP_PATH, BGP_LOCAL_PREF, BGP_MED, BGP_ORIGIN,
+	BGP_NEXT_HOP, BGP_ATOMIC_AGGR, BGP_AGGREGATOR, BGP_COMMUNITY,
+	SOURCE, ADDRESS, PASSWORD, RR, RS, CLIENT, CLUSTER, ID, AS4,
+	ADVERTISE, IPV4, CAPABILITIES, LIMIT, PASSIVE, PREFER, OLDER,
+	MISSING, LLADDR, DROP, IGNORE, ROUTE, REFRESH, INTERPRET,
+	COMMUNITIES, BGP_ORIGINATOR_ID, BGP_CLUSTER_LIST, IGP, TABLE,
+	GATEWAY, DIRECT, RECURSIVE)
 
 CF_GRAMMAR
 
@@ -37,6 +38,7 @@ bgp_proto_start: proto_start BGP {
      BGP_CFG->connect_retry_time = 120;
      BGP_CFG->initial_hold_time = 240;
      BGP_CFG->compare_path_lengths = 1;
+     BGP_CFG->igp_metric = 1;
      BGP_CFG->start_delay_time = 5;
      BGP_CFG->error_amnesia_time = 300;
      BGP_CFG->error_delay_time_min = 60;
@@ -54,6 +56,7 @@ bgp_proto:
    bgp_proto_start proto_name '{'
  | bgp_proto proto_item ';'
  | bgp_proto LOCAL AS expr ';' { BGP_CFG->local_as = $4; }
+ | bgp_proto LOCAL ipa AS expr ';' { BGP_CFG->source_addr = $3; BGP_CFG->local_as = $5; }
  | bgp_proto NEIGHBOR ipa AS expr ';' {
      if (ipa_nonzero(BGP_CFG->remote_ip)) cf_error("Only one neighbor per BGP instance is allowed");
 
@@ -67,12 +70,16 @@ bgp_proto:
  | bgp_proto STARTUP HOLD TIME expr ';' { BGP_CFG->initial_hold_time = $5; }
  | bgp_proto CONNECT RETRY TIME expr ';' { BGP_CFG->connect_retry_time = $5; }
  | bgp_proto KEEPALIVE TIME expr ';' { BGP_CFG->keepalive_time = $4; }
- | bgp_proto MULTIHOP expr VIA ipa ';' { BGP_CFG->multihop = $3; BGP_CFG->multihop_via = $5; }
+ | bgp_proto MULTIHOP ';' { BGP_CFG->multihop = 64; }
+ | bgp_proto MULTIHOP expr ';' { BGP_CFG->multihop = $3; }
  | bgp_proto NEXT HOP SELF ';' { BGP_CFG->next_hop_self = 1; }
  | bgp_proto MISSING LLADDR SELF ';' { BGP_CFG->missing_lladdr = MLL_SELF; }
  | bgp_proto MISSING LLADDR DROP ';' { BGP_CFG->missing_lladdr = MLL_DROP; }
  | bgp_proto MISSING LLADDR IGNORE ';' { BGP_CFG->missing_lladdr = MLL_IGNORE; }
+ | bgp_proto GATEWAY DIRECT ';' { BGP_CFG->gw_mode = GW_DIRECT; }
+ | bgp_proto GATEWAY RECURSIVE ';' { BGP_CFG->gw_mode = GW_RECURSIVE; }
  | bgp_proto PATH METRIC bool ';' { BGP_CFG->compare_path_lengths = $4; }
+ | bgp_proto IGP METRIC bool ';' { BGP_CFG->igp_metric = $4; }
  | bgp_proto PREFER OLDER bool ';' { BGP_CFG->prefer_older = $4; }
  | bgp_proto DEFAULT BGP_MED expr ';' { BGP_CFG->default_med = $4; }
  | bgp_proto DEFAULT BGP_LOCAL_PREF expr ';' { BGP_CFG->default_local_pref = $4; }
@@ -89,6 +96,7 @@ bgp_proto:
  | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
  | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
+ | bgp_proto IGP TABLE rtable ';' { BGP_CFG->igp_table = $4; }
  ;
 
 CF_ADDTO(dynamic_attr, BGP_ORIGIN

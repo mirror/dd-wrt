@@ -51,7 +51,7 @@ ifa_dump(struct ifa *a)
   debug("\t%I, net %I/%-2d bc %I -> %I%s%s%s\n", a->ip, a->prefix, a->pxlen, a->brd, a->opposite,
 	(a->flags & IF_UP) ? "" : " DOWN",
 	(a->flags & IA_PRIMARY) ? "" : " SEC",
-	(a->flags & IA_UNNUMBERED) ? " UNNUM" : "");
+	(a->flags & IA_PEER) ? "PEER" : "");
 }
 
 /**
@@ -67,13 +67,13 @@ if_dump(struct iface *i)
   struct ifa *a;
 
   debug("IF%d: %s", i->index, i->name);
-  if (i->flags & IF_ADMIN_DOWN)
-    debug(" ADMIN-DOWN");
+  if (i->flags & IF_SHUTDOWN)
+    debug(" SHUTDOWN");
   if (i->flags & IF_UP)
     debug(" UP");
   else
     debug(" DOWN");
-  if (i->flags & IF_LINK_UP)
+  if (i->flags & IF_ADMIN_UP)
     debug(" LINK-UP");
   if (i->flags & IF_MULTIACCESS)
     debug(" MA");
@@ -117,12 +117,14 @@ if_what_changed(struct iface *i, struct iface *j)
 {
   unsigned c;
 
-  if (((i->flags ^ j->flags) & ~(IF_UP | IF_ADMIN_DOWN | IF_UPDATED | IF_LINK_UP | IF_TMP_DOWN | IF_JUST_CREATED))
+  if (((i->flags ^ j->flags) & ~(IF_UP | IF_SHUTDOWN | IF_UPDATED | IF_ADMIN_UP | IF_LINK_UP | IF_TMP_DOWN | IF_JUST_CREATED))
       || i->index != j->index)
     return IF_CHANGE_TOO_MUCH;
   c = 0;
   if ((i->flags ^ j->flags) & IF_UP)
     c |= (i->flags & IF_UP) ? IF_CHANGE_DOWN : IF_CHANGE_UP;
+  if ((i->flags ^ j->flags) & IF_LINK_UP)
+    c |= IF_CHANGE_LINK;
   if (i->mtu != j->mtu)
     c |= IF_CHANGE_MTU;
   return c;
@@ -169,6 +171,7 @@ if_send_notify(struct proto *p, unsigned c, struct iface *i)
 	    (c & IF_CHANGE_UP) ? "goes up" :
 	    (c & IF_CHANGE_DOWN) ? "goes down" :
 	    (c & IF_CHANGE_MTU) ? "changes MTU" :
+	    (c & IF_CHANGE_LINK) ? "changes link" :
 	    (c & IF_CHANGE_CREATE) ? "created" :
 	    "sends unknown event");
       p->if_notify(p, c, i);
@@ -210,6 +213,10 @@ if_notify_change(unsigned c, struct iface *i)
 	a->flags = (i->flags & ~IA_FLAGS) | (a->flags & IA_FLAGS);
 	ifa_notify_change(IF_CHANGE_UP, a);
       }
+
+  if ((c & (IF_CHANGE_UP | IF_CHANGE_DOWN | IF_CHANGE_LINK)) == IF_CHANGE_LINK)
+    neigh_if_link(i);
+
   if (c & IF_CHANGE_DOWN)
     neigh_if_down(i);
 }
@@ -217,8 +224,8 @@ if_notify_change(unsigned c, struct iface *i)
 static unsigned
 if_recalc_flags(struct iface *i, unsigned flags)
 {
-  if ((flags & (IF_ADMIN_DOWN | IF_TMP_DOWN)) ||
-      !(flags & IF_LINK_UP) ||
+  if ((flags & (IF_SHUTDOWN | IF_TMP_DOWN)) ||
+      !(flags & IF_ADMIN_UP) ||
       !i->addr)
     flags &= ~IF_UP;
   else
@@ -325,7 +332,7 @@ if_end_update(void)
   WALK_LIST(i, iface_list)
     {
       if (!(i->flags & IF_UPDATED))
-	if_change_flags(i, (i->flags & ~IF_LINK_UP) | IF_ADMIN_DOWN);
+	if_change_flags(i, (i->flags & ~IF_ADMIN_UP) | IF_SHUTDOWN);
       else
 	{
 	  WALK_LIST_DELSAFE(a, b, i->addrs)
@@ -467,7 +474,7 @@ ifa_update(struct ifa *a)
 	    ipa_equal(b->brd, a->brd) &&
 	    ipa_equal(b->opposite, a->opposite) &&
 	    b->scope == a->scope &&
-	    !((b->flags ^ a->flags) & IA_UNNUMBERED))
+	    !((b->flags ^ a->flags) & IA_PEER))
 	  {
 	    b->flags |= IF_UPDATED;
 	    return b;
@@ -476,8 +483,6 @@ ifa_update(struct ifa *a)
 	break;
       }
 
-  if (!(i->flags & IF_MULTIACCESS) && a->pxlen < BITS_PER_IP_ADDRESS - 2)
-    log(L_WARN "Strange prefix length %d for point-to-point interface %s", a->pxlen, i->name);
 #ifndef IPV6
   if ((i->flags & IF_BROADCAST) && !ipa_nonzero(a->brd))
     log(L_ERR "Missing broadcast address for interface %s", i->name);
@@ -535,10 +540,10 @@ auto_router_id(void)
 
   j = NULL;
   WALK_LIST(i, iface_list)
-    if ((i->flags & IF_LINK_UP) &&
-	!(i->flags & (IF_IGNORE | IF_ADMIN_DOWN)) &&
+    if ((i->flags & IF_ADMIN_UP) &&
+	!(i->flags & (IF_IGNORE | IF_SHUTDOWN)) &&
 	i->addr &&
-	!(i->addr->flags & IA_UNNUMBERED) &&
+	!(i->addr->flags & IA_PEER) &&
 	(!j || ipa_to_u32(i->addr->ip) < ipa_to_u32(j->addr->ip)))
       j = i;
   if (!j)
@@ -597,7 +602,7 @@ iface_patt_match(struct iface_patt *ifp, struct iface *i, struct ifa *a)
       if (ipa_in_net(a->ip, p->prefix, p->pxlen))
 	return pos;
 
-      if ((a->flags & IA_UNNUMBERED) &&
+      if ((a->flags & IA_PEER) &&
 	  ipa_in_net(a->opposite, p->prefix, p->pxlen))
 	return pos;
 	  
@@ -666,23 +671,16 @@ iface_patts_equal(list *a, list *b, int (*comp)(struct iface_patt *, struct ifac
 static void
 if_show_addr(struct ifa *a)
 {
-  byte broad[STD_ADDRESS_P_LENGTH + 16];
   byte opp[STD_ADDRESS_P_LENGTH + 16];
 
-  if (ipa_nonzero(a->brd))
-    bsprintf(broad, ", broadcast %I", a->brd);
-  else
-    broad[0] = 0;
   if (ipa_nonzero(a->opposite))
     bsprintf(opp, ", opposite %I", a->opposite);
   else
     opp[0] = 0;
-  cli_msg(-1003, "\t%I/%d (%s%s%s, scope %s%s)",
+  cli_msg(-1003, "\t%I/%d (%s%s, scope %s)",
 	  a->ip, a->pxlen,
 	  (a->flags & IA_PRIMARY) ? "Primary" : (a->flags & IA_SECONDARY) ? "Secondary" : "Unselected",
-	  broad, opp,
-	  ip_scope_text(a->scope),
-	  (a->flags & IA_UNNUMBERED) ? ", unnumbered" : "");
+	  opp, ip_scope_text(a->scope));
 }
 
 void
@@ -694,6 +692,9 @@ if_show(void)
 
   WALK_LIST(i, iface_list)
     {
+      if (i->flags & IF_SHUTDOWN)
+	continue;
+
       cli_msg(-1001, "%s %s (index=%d)", i->name, (i->flags & IF_UP) ? "up" : "DOWN", i->index);
       if (!(i->flags & IF_MULTIACCESS))
 	type = "PtP";
@@ -703,7 +704,7 @@ if_show(void)
 	      type,
 	      (i->flags & IF_BROADCAST) ? " Broadcast" : "",
 	      (i->flags & IF_MULTICAST) ? " Multicast" : "",
-	      (i->flags & IF_ADMIN_DOWN) ? "Down" : "Up",
+	      (i->flags & IF_ADMIN_UP) ? "Up" : "Down",
 	      (i->flags & IF_LINK_UP) ? "Up" : "Down",
 	      (i->flags & IF_LOOPBACK) ? " Loopback" : "",
 	      (i->flags & IF_IGNORE) ? " Ignored" : "",

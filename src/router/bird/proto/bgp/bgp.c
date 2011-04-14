@@ -145,6 +145,10 @@ bgp_startup_timeout(timer *t)
 static void
 bgp_initiate(struct bgp_proto *p)
 {
+  int rv = bgp_open(p);
+  if (rv < 0)
+    return;
+
   if (p->startup_delay)
     {
       BGP_TRACE(D_EVENTS, "Startup delayed by %d seconds", p->startup_delay);
@@ -346,6 +350,10 @@ bgp_conn_enter_established_state(struct bgp_conn *conn)
  
   BGP_TRACE(D_EVENTS, "BGP session established");
   DBG("BGP: UP!!!\n");
+
+  /* For multi-hop BGP sessions */
+  if (ipa_zero(p->source_addr))
+    p->source_addr = conn->sk->saddr; 
 
   p->conn = conn;
   p->last_error_class = 0;
@@ -650,7 +658,7 @@ bgp_setup_listen_sk(ip_addr addr, unsigned port, u32 flags)
   s->type = SK_TCP_PASSIVE;
   s->saddr = addr;
   s->sport = port ? port : BGP_PORT;
-  s->flags = flags;
+  s->flags = flags ? 0 : SKF_V6ONLY;
   s->tos = IP_PREC_INTERNET_CONTROL;
   s->rbsize = BGP_RX_BUFFER_SIZE;
   s->tbsize = BGP_TX_BUFFER_SIZE;
@@ -669,10 +677,11 @@ bgp_setup_listen_sk(ip_addr addr, unsigned port, u32 flags)
 static void
 bgp_start_neighbor(struct bgp_proto *p)
 {
-  p->local_addr = p->neigh->iface->addr->ip;
-  p->source_addr = ipa_nonzero(p->cf->source_addr) ? p->cf->source_addr : p->local_addr;
+  /* Called only for single-hop BGP sessions */
 
-  DBG("BGP: local=%I remote=%I\n", p->source_addr, p->next_hop);
+  if (ipa_zero(p->source_addr))
+    p->source_addr = p->neigh->iface->addr->ip; 
+
 #ifdef IPV6
   {
     struct ifa *a;
@@ -690,10 +699,6 @@ bgp_start_neighbor(struct bgp_proto *p)
     DBG("BGP: Selected link-level address %I\n", p->local_link);
   }
 #endif
-
-  int rv = bgp_open(p);
-  if (rv < 0)
-    return;
 
   bgp_initiate(p);
 }
@@ -742,25 +747,22 @@ bgp_start_locked(struct object_lock *lock)
   if (p->p.proto_state != PS_START)
     {
       DBG("BGP: Got lock in different state %d\n", p->p.proto_state);
-    return;
+      return;
     }
 
   DBG("BGP: Got lock\n");
-  p->local_id = proto_get_router_id(&cf->c);
-  p->next_hop = cf->multihop ? cf->multihop_via : cf->remote_ip;
-  p->neigh = neigh_find(&p->p, &p->next_hop, NEF_STICKY);
 
-  if (cf->rr_client)
+  if (cf->multihop)
     {
-      p->rr_cluster_id = cf->rr_cluster_id ? cf->rr_cluster_id : p->local_id;
-      p->rr_client = cf->rr_client;
+      /* Multi-hop sessions do not use neighbor entries */
+      bgp_initiate(p);
+      return;
     }
 
-  p->rs_client = cf->rs_client;
-
-  if (!p->neigh)
+  p->neigh = neigh_find(&p->p, &cf->remote_ip, NEF_STICKY);
+  if (!p->neigh || (p->neigh->scope == SCOPE_HOST))
     {
-      log(L_ERR "%s: Invalid next hop %I", p->p.name, p->next_hop);
+      log(L_ERR "%s: Invalid remote address %I", p->p.name, cf->remote_ip);
       /* As we do not start yet, we can just disable protocol */
       p->p.disabled = 1;
       bgp_store_error(p, NULL, BE_MISC, BEM_INVALID_NEXT_HOP);
@@ -771,7 +773,7 @@ bgp_start_locked(struct object_lock *lock)
   if (p->neigh->iface)
     bgp_start_neighbor(p);
   else
-    BGP_TRACE(D_EVENTS, "Waiting for %I to become my neighbor", p->next_hop);
+    BGP_TRACE(D_EVENTS, "Waiting for %I to become my neighbor", cf->remote_ip);
 }
 
 static int
@@ -786,6 +788,8 @@ bgp_start(struct proto *P)
   p->incoming_conn.state = BS_IDLE;
   p->neigh = NULL;
 
+  rt_lock_table(p->igp_table);
+
   p->event = ev_new(p->p.pool);
   p->event->hook = bgp_decision;
   p->event->data = p;
@@ -793,6 +797,9 @@ bgp_start(struct proto *P)
   p->startup_timer = tm_new(p->p.pool);
   p->startup_timer->hook = bgp_startup_timeout;
   p->startup_timer->data = p;
+
+  p->remote_id = 0;
+  p->source_addr = p->cf->source_addr;
 
   /*
    *  Before attempting to create the connection, we need to lock the
@@ -837,6 +844,19 @@ bgp_shutdown(struct proto *P)
   return p->p.proto_state;
 }
 
+static void
+bgp_cleanup(struct proto *P)
+{
+  struct bgp_proto *p = (struct bgp_proto *) P;
+  rt_unlock_table(p->igp_table);
+}
+
+static rtable *
+get_igp_table(struct bgp_config *cf)
+{
+  return cf->igp_table ? cf->igp_table->table : cf->c.table->table;
+}
+
 static struct proto *
 bgp_init(struct proto_config *C)
 {
@@ -854,6 +874,13 @@ bgp_init(struct proto_config *C)
   p->local_as = c->local_as;
   p->remote_as = c->remote_as;
   p->is_internal = (c->local_as == c->remote_as);
+  p->local_id = proto_get_router_id(C);
+  p->rs_client = c->rs_client;
+  p->rr_client = c->rr_client;
+  if (p->rr_client)
+    p->rr_cluster_id = c->rr_cluster_id ? c->rr_cluster_id : p->local_id;
+  p->igp_table = get_igp_table(c);
+
   return P;
 }
 
@@ -924,6 +951,8 @@ bgp_store_error(struct bgp_proto *p, struct bgp_conn *c, u8 class, u32 code)
 void
 bgp_check(struct bgp_config *c)
 {
+  int internal = (c->local_as == c->remote_as);
+
   if (!c->local_as)
     cf_error("Local AS number must be set");
 
@@ -933,15 +962,22 @@ bgp_check(struct bgp_config *c)
   if (!(c->capabilities && c->enable_as4) && (c->remote_as > 0xFFFF))
     cf_error("Neighbor AS number out of range (AS4 not available)");
 
-  if ((c->local_as != c->remote_as) && (c->rr_client))
+  if (!internal && c->rr_client)
     cf_error("Only internal neighbor can be RR client");
 
-  if ((c->local_as == c->remote_as) && (c->rs_client))
+  if (internal && c->rs_client)
     cf_error("Only external neighbor can be RS client");
 
+  if (c->multihop && (c->gw_mode == GW_DIRECT))
+    cf_error("Multihop BGP cannot use direct gateway mode");
+
   /* Different default based on rs_client */
-  if (c->missing_lladdr == 0)
-    c->missing_lladdr = c->rs_client ? MLL_DROP : MLL_SELF;
+  if (!c->missing_lladdr)
+    c->missing_lladdr = c->rs_client ? MLL_IGNORE : MLL_SELF;
+
+  /* Different default for gw_mode */
+  if (!c->gw_mode)
+    c->gw_mode = (c->multihop || internal) ? GW_RECURSIVE : GW_DIRECT;
 }
 
 static char *bgp_state_names[] = { "Idle", "Connect", "Active", "OpenSent", "OpenConfirm", "Established", "Close" };
@@ -1030,7 +1066,6 @@ bgp_show_proto_info(struct proto *P)
       cli_msg(-1006, "    Neighbor AS:      %u", p->remote_as);
       cli_msg(-1006, "    Neighbor ID:      %R", p->remote_id);
       cli_msg(-1006, "    Neighbor address: %I", p->cf->remote_ip);
-      cli_msg(-1006, "    Nexthop address:  %I", p->next_hop);
       cli_msg(-1006, "    Source address:   %I", p->source_addr);
       cli_msg(-1006, "    Neighbor caps:   %s%s",
 	      c->peer_refresh_support ? " refresh" : "",
@@ -1065,7 +1100,8 @@ bgp_reconfigure(struct proto *P, struct proto_config *C)
 		     // password item is last and must be checked separately
 		     OFFSETOF(struct bgp_config, password) - sizeof(struct proto_config))
     && ((!old->password && !new->password)
-	|| (old->password && new->password && !strcmp(old->password, new->password)));
+	|| (old->password && new->password && !strcmp(old->password, new->password)))
+    && (get_igp_table(old) == get_igp_table(new));
 
   /* We should update our copy of configuration ptr as old configuration will be freed */
   if (same)
@@ -1081,6 +1117,7 @@ struct protocol proto_bgp = {
   init:			bgp_init,
   start:		bgp_start,
   shutdown:		bgp_shutdown,
+  cleanup:		bgp_cleanup,
   reconfigure:		bgp_reconfigure,
   get_status:		bgp_get_status,
   get_attr:		bgp_get_attr,

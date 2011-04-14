@@ -119,7 +119,7 @@ lsab_allocz(struct proto_ospf *po, unsigned size)
 static inline void *
 lsab_flush(struct proto_ospf *po)
 {
-  void *r = mb_alloc(po->proto.pool, po->lsab_size);
+  void *r = mb_alloc(po->proto.pool, po->lsab_used);
   memcpy(r, po->lsab, po->lsab_used);
   po->lsab_used = 0;
   return r;
@@ -157,6 +157,10 @@ get_seqnum(struct top_hash_entry *en)
 static int
 configured_stubnet(struct ospf_area *oa, struct ifa *a)
 {
+  if (!oa->ac)
+    return 0;
+
+  /* Does not work for IA_PEER addresses, but it is not called on these */
   struct ospf_stubnet_config *sn;
   WALK_LIST(sn, oa->ac->stubnet_list)
     {
@@ -238,27 +242,28 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
     if ((ifa->oa != oa) || (ifa->state == OSPF_IS_DOWN))
       continue;
 
-    /* BIRD does not support interface loops */
-    ASSERT(ifa->state != OSPF_IS_LOOP);
+    ifa->rt_pos_beg = i;
 
+    /* RFC2328 - 12.4.1.1-4 */
     switch (ifa->type)
       {
-      case OSPF_IT_PTP:	/* RFC2328 - 12.4.1.1 */
-	neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
-	if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL))
-	{
-	  ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
-	  ln->type = LSART_PTP;
-	  ln->id = neigh->rid;
-	  ln->data = (ifa->addr->flags & IA_UNNUMBERED) ?
-	    ifa->iface->index : ipa_to_u32(ifa->addr->ip);
-	  ln->metric = ifa->cost;
-	  ln->padding = 0;
-	  i++;
-	}
+      case OSPF_IT_PTP:
+      case OSPF_IT_PTMP:
+	WALK_LIST(neigh, ifa->neigh_list)
+	  if (neigh->state == NEIGHBOR_FULL)
+	  {
+	    ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
+	    ln->type = LSART_PTP;
+	    ln->id = neigh->rid;
+	    ln->data = (ifa->addr->flags & IA_PEER) ?
+	      ifa->iface->index : ipa_to_u32(ifa->addr->ip);
+	    ln->metric = ifa->cost;
+	    ln->padding = 0;
+	    i++;
+	  }
 	break;
 
-      case OSPF_IT_BCAST: /* RFC2328 - 12.4.1.2 */
+      case OSPF_IT_BCAST:
       case OSPF_IT_NBMA:
 	if (bcast_net_active(ifa))
 	  {
@@ -273,7 +278,7 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
 	  }
 	break;
 
-      case OSPF_IT_VLINK: /* RFC2328 - 12.4.1.3 */
+      case OSPF_IT_VLINK:
 	neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
 	if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL) && (ifa->cost <= 0xffff))
 	{
@@ -292,25 +297,45 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
         break;
       }
 
+    ifa->rt_pos_end = i;
+
     /* Now we will originate stub area if there is no primary */
     if (net_lsa ||
 	(ifa->type == OSPF_IT_VLINK) ||
-	(ifa->addr->flags & IA_UNNUMBERED) ||
+	(ifa->addr->flags & IA_PEER) ||
 	configured_stubnet(oa, ifa->addr))
       continue;
 
     ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
-    ln->type = LSART_STUB;
-    ln->id = ipa_to_u32(ifa->addr->prefix);
-    ln->data = ipa_to_u32(ipa_mkmask(ifa->addr->pxlen));
-    ln->metric = ifa->cost;
-    ln->padding = 0;
+    if ((ifa->addr->flags & IA_HOST) ||
+	(ifa->state == OSPF_IS_LOOP) ||
+	(ifa->type == OSPF_IT_PTMP))
+    {
+      /* Host stub entry */
+      ln->type = LSART_STUB;
+      ln->id = ipa_to_u32(ifa->addr->ip);
+      ln->data = 0xffffffff;
+      ln->metric = 0;
+      ln->padding = 0;
+    }
+    else 
+    {
+      /* Network stub entry */
+      ln->type = LSART_STUB;
+      ln->id = ipa_to_u32(ifa->addr->prefix);
+      ln->data = ipa_to_u32(ipa_mkmask(ifa->addr->pxlen));
+      ln->metric = ifa->cost;
+      ln->padding = 0;
+    }
     i++;
+
+    ifa->rt_pos_end = i;
   }
 
   struct ospf_stubnet_config *sn;
-  WALK_LIST(sn, oa->ac->stubnet_list)
-    if (!sn->hidden)
+  if (oa->ac)
+    WALK_LIST(sn, oa->ac->stubnet_list)
+      if (!sn->hidden)
       {
 	ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
 	ln->type = LSART_STUB;
@@ -351,6 +376,7 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
   struct proto_ospf *po = oa->po;
   struct ospf_iface *ifa;
   int bitv = 0;
+  int i = 0;
   struct ospf_lsa_rt *rt;
   struct ospf_neighbor *neigh;
 
@@ -380,34 +406,36 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
     if ((ifa->oa != oa) || (ifa->state == OSPF_IS_DOWN))
       continue;
 
-    /* BIRD does not support interface loops */
-    ASSERT(ifa->state != OSPF_IS_LOOP);
+    ifa->rt_pos_beg = i;
 
     /* RFC5340 - 4.4.3.2 */
     switch (ifa->type)
       {
       case OSPF_IT_PTP:
-	neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
-	if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL))
-	  add_lsa_rt_link(po, ifa, LSART_PTP, neigh->iface_id, neigh->rid);
+      case OSPF_IT_PTMP:
+	WALK_LIST(neigh, ifa->neigh_list)
+	  if (neigh->state == NEIGHBOR_FULL)
+	    add_lsa_rt_link(po, ifa, LSART_PTP, neigh->iface_id, neigh->rid), i++;
 	break;
 
       case OSPF_IT_BCAST:
       case OSPF_IT_NBMA:
 	if (bcast_net_active(ifa))
-	  add_lsa_rt_link(po, ifa, LSART_NET, ifa->dr_iface_id, ifa->drid);
+	  add_lsa_rt_link(po, ifa, LSART_NET, ifa->dr_iface_id, ifa->drid), i++;
 	break;
 
       case OSPF_IT_VLINK:
 	neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
 	if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL) && (ifa->cost <= 0xffff))
-	  add_lsa_rt_link(po, ifa, LSART_VLNK, neigh->iface_id, neigh->rid);
+	  add_lsa_rt_link(po, ifa, LSART_VLNK, neigh->iface_id, neigh->rid), i++;
         break;
 
       default:
         log("Unknown interface type %s", ifa->iface->name);
         break;
       }
+
+    ifa->rt_pos_end = i;
   }
 
   if (bitv)
@@ -1140,17 +1168,24 @@ update_link_lsa(struct ospf_iface *ifa)
   ifa->origlink = 0;
 }
 
+static inline void
+lsa_put_prefix(struct proto_ospf *po, ip_addr prefix, u32 pxlen, u32 cost)
+{
+  put_ipv6_prefix(lsab_alloc(po, IPV6_PREFIX_SPACE(pxlen)), prefix, pxlen,
+		  (pxlen < MAX_PREFIX_LENGTH) ? 0 : OPT_PX_LA, cost);
+}
+
 static void *
 originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
 {
   struct proto_ospf *po = oa->po;
+  struct ospf_config *cf = (struct ospf_config *) (po->proto.cf);
   struct ospf_iface *ifa;
   struct ospf_lsa_prefix *lp;
   struct ifa *vlink_addr = NULL;
   int host_addr = 0;
   int net_lsa;
   int i = 0;
-  u8 flags;
 
   ASSERT(po->lsab_used == 0);
   lp = lsab_allocz(po, sizeof(struct ospf_lsa_prefix));
@@ -1164,6 +1199,8 @@ originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
     if ((ifa->oa != oa) || (ifa->state == OSPF_IS_DOWN))
       continue;
 
+    ifa->px_pos_beg = i;
+
     if ((ifa->type == OSPF_IT_BCAST) ||
 	(ifa->type == OSPF_IT_NBMA))
       net_lsa = bcast_net_active(ifa);
@@ -1174,7 +1211,7 @@ originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
     WALK_LIST(a, ifa->iface->addrs)
       {
 	if ((a->flags & IA_SECONDARY) ||
-	    (a->flags & IA_UNNUMBERED) ||
+	    (a->flags & IA_PEER) ||
 	    (a->scope <= SCOPE_LINK))
 	  continue;
 
@@ -1185,32 +1222,35 @@ originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
 	    configured_stubnet(oa, a))
 	  continue;
 
-	flags = (a->pxlen < MAX_PREFIX_LENGTH) ? 0 : OPT_PX_LA;
-	put_ipv6_prefix(lsab_alloc(po, IPV6_PREFIX_SPACE(a->pxlen)),
-			a->ip, a->pxlen, flags, ifa->cost);
-	i++;
-
-	if (flags & OPT_PX_LA)
+	if ((a->flags & IA_HOST) ||
+	    (ifa->state == OSPF_IS_LOOP) ||
+	    (ifa->type == OSPF_IT_PTMP))
+	{
+	  lsa_put_prefix(po, a->ip, MAX_PREFIX_LENGTH, 0);
 	  host_addr = 1;
+	}
+	else
+	  lsa_put_prefix(po, a->prefix, a->pxlen, ifa->cost);
+	i++;
       }
+
+    ifa->px_pos_end = i;
   }
 
   /* If there are some configured vlinks, add some global address,
      which will be used as a vlink endpoint. */
-  if (!EMPTY_LIST(oa->ac->vlink_list) && !host_addr && vlink_addr)
+  if (!EMPTY_LIST(cf->vlink_list) && !host_addr && vlink_addr)
   {
-    put_ipv6_prefix(lsab_alloc(po, IPV6_PREFIX_SPACE(MAX_PREFIX_LENGTH)),
-		    vlink_addr->ip, MAX_PREFIX_LENGTH, OPT_PX_LA, 0);
+    lsa_put_prefix(po, vlink_addr->ip, MAX_PREFIX_LENGTH, 0);
     i++;
   }
 
   struct ospf_stubnet_config *sn;
-  WALK_LIST(sn, oa->ac->stubnet_list)
-    if (!sn->hidden)
+  if (oa->ac)
+    WALK_LIST(sn, oa->ac->stubnet_list)
+      if (!sn->hidden)
       {
-	flags = (sn->px.len < MAX_PREFIX_LENGTH) ? 0 : OPT_PX_LA;
-	put_ipv6_prefix(lsab_alloc(po, IPV6_PREFIX_SPACE(sn->px.len)),
-			sn->px.addr, sn->px.len, flags, sn->cost);
+	lsa_put_prefix(po, sn->px.addr, sn->px.len, sn->cost);
 	i++;
       }
 
@@ -1657,14 +1697,12 @@ ospf_hash_get(struct top_graph *f, u32 domain, u32 lsa, u32 rtr, u32 type)
   e = sl_alloc(f->hash_slab);
   e->color = OUTSPF;
   e->dist = LSINFINITY;
-  e->nhi = NULL;
-  e->nh = IPA_NONE;
+  e->nhs = NULL;
   e->lb = IPA_NONE;
   e->lsa.id = lsa;
   e->lsa.rt = rtr;
   e->lsa.type = type;
   e->lsa_body = NULL;
-  e->nhi = NULL;
   e->domain = domain;
   e->next = *ee;
   *ee = e;

@@ -39,18 +39,16 @@ ospf_pkt_fill_hdr(struct ospf_iface *ifa, void *buf, u8 h_type)
 unsigned
 ospf_pkt_maxsize(struct ospf_iface *ifa)
 {
-  /* For virtual links use mtu=576, can be mtu < 576? */
   unsigned mtu = (ifa->type == OSPF_IT_VLINK) ? OSPF_VLINK_MTU : ifa->iface->mtu;
-  unsigned add = 0;
+  unsigned headers = SIZE_OF_IP_HEADER;
 
 #ifdef OSPFv2
-  add = ((ifa->autype == OSPF_AUTH_CRYPT) ? OSPF_AUTH_CRYPT_SIZE : 0);
+  if (ifa->autype == OSPF_AUTH_CRYPT)
+    headers += OSPF_AUTH_CRYPT_SIZE;
 #endif
 
-  return ((mtu <=  ifa->iface->mtu) ? mtu : ifa->iface->mtu) -
-  SIZE_OF_IP_HEADER - add;
+  return mtu - headers;
 }
-
 
 #ifdef OSPFv2
 
@@ -242,19 +240,6 @@ ospf_pkt_checkauth(struct ospf_neighbor *n, struct ospf_iface *ifa, struct ospf_
  
 #endif
 
-#ifdef OSPFv2
-static inline struct ospf_neighbor *
-find_neigh_by_ip(struct ospf_iface *ifa, ip_addr ip)
-{
-  struct ospf_neighbor *n;
-  WALK_LIST(n, ifa->neigh_list)
-    if (ipa_equal(n->ip, ip))
-      return n;
-  return NULL;
-}
-#endif
-
-
 
 /**
  * ospf_rx_hook
@@ -284,9 +269,10 @@ ospf_rx_hook(sock *sk, int size)
   struct proto_ospf *po = ifa->oa->po;
   // struct proto *p = &po->proto;
 
-  int src_local = ifa_match_addr(ifa->addr, sk->faddr);
-  int dst_local = ipa_equal(sk->laddr, ifa->addr->ip);
-  int dst_mcast = ipa_equal(sk->laddr, AllSPFRouters) || ipa_equal(sk->laddr, AllDRouters);
+  int src_local, dst_local UNUSED, dst_mcast; 
+  src_local = ipa_in_net(sk->faddr, ifa->addr->prefix, ifa->addr->pxlen);
+  dst_local = ipa_equal(sk->laddr, ifa->addr->ip);
+  dst_mcast = ipa_equal(sk->laddr, AllSPFRouters) || ipa_equal(sk->laddr, AllDRouters);
 
 #ifdef OSPFv2
   /* First, we eliminate packets with strange address combinations.
@@ -408,7 +394,7 @@ ospf_rx_hook(sock *sk, int size)
     }
 
 #ifdef OSPFv2
-    log(L_WARN "OSPF: Received packet for uknown vlink (ID %R, IP %I)", rid, sk->faddr);
+    log(L_WARN "OSPF: Received packet for unknown vlink (ID %R, IP %I)", rid, sk->faddr);
 #endif
     return 1;
   }
@@ -435,7 +421,7 @@ ospf_rx_hook(sock *sk, int size)
 #ifdef OSPFv2
   /* In OSPFv2, neighbors are identified by either IP or Router ID, base on network type */
   struct ospf_neighbor *n;
-  if ((ifa->type == OSPF_IT_BCAST) || (ifa->type == OSPF_IT_NBMA))
+  if ((ifa->type == OSPF_IT_BCAST) || (ifa->type == OSPF_IT_NBMA) || (ifa->type == OSPF_IT_PTMP))
     n = find_neigh_by_ip(ifa, sk->faddr);
   else
     n = find_neigh(ifa, rid);
@@ -445,14 +431,14 @@ ospf_rx_hook(sock *sk, int size)
 
   if(!n && (ps->type != HELLO_P))
   {
-    log(L_WARN "OSPF: Received non-hello packet from uknown neighbor (src %I, iface %s)",
+    log(L_WARN "OSPF: Received non-hello packet from unknown neighbor (src %I, iface %s)",
 	sk->faddr, ifa->iface->name);
     return 1;
   }
 
   if (!ospf_pkt_checkauth(n, ifa, ps, size))
   {
-    log(L_ERR "%s%I - authentification failed", mesg, sk->faddr);
+    log(L_ERR "%s%I - authentication failed", mesg, sk->faddr);
     return 1;
   }
 

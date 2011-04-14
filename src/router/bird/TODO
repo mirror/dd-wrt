@@ -29,7 +29,6 @@ Various ideas
 - filters: user defined attributes?
 - client: access control
 - io: use poll if available
-- IPv6 router advertisements
 - real multipath (doesn't seem to be simple at all :()
 - fake multipath (even less simple)
 - route recalculation timing and flap dampening [see RFC2439 for algorithms]

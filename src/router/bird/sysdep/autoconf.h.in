@@ -35,6 +35,7 @@
 /* Protocols compiled in */
 #undef CONFIG_STATIC
 #undef CONFIG_RIP
+#undef CONFIG_RADV
 #undef CONFIG_BGP
 #undef CONFIG_OSPF
 #undef CONFIG_PIPE
