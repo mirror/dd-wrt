@@ -129,20 +129,52 @@ typedef struct rtable {
   list hooks;				/* List of announcement hooks */
   int pipe_busy;			/* Pipe loop detection */
   int use_count;			/* Number of protocols using this table */
+  struct hostcache *hostcache;
   struct rtable_config *config;		/* Configuration of this table */
   struct config *deleted;		/* Table doesn't exist in current configuration,
 					 * delete as soon as use_count becomes 0 and remove
 					 * obstacle from this routing table.
 					 */
-  struct event *gc_event;		/* Garbage collector event */
+  struct event *rt_event;		/* Routing table event */
   int gc_counter;			/* Number of operations since last GC */
   bird_clock_t gc_time;			/* Time of last GC */
+  byte gc_scheduled;			/* GC is scheduled */
+  byte hcu_scheduled;			/* Hostcache update is scheduled */
+  byte nhu_state;			/* Next Hop Update state */
+  struct fib_iterator nhu_fit;		/* Next Hop Update FIB iterator */
 } rtable;
 
 typedef struct network {
   struct fib_node n;			/* FIB flags reserved for kernel syncer */
   struct rte *routes;			/* Available routes for this network */
 } net;
+
+struct hostcache {
+  slab *slab;				/* Slab holding all hostentries */
+  struct hostentry **hash_table;	/* Hash table for hostentries */
+  unsigned hash_order, hash_shift;
+  unsigned hash_max, hash_min;
+  unsigned hash_items;
+  linpool *lp;				/* Linpool for trie */
+  struct f_trie *trie;			/* Trie of prefixes that might affect hostentries */
+  list hostentries;			/* List of all hostentries */
+  byte update_hostcache;
+};
+
+struct hostentry {
+  node ln;
+  ip_addr addr;				/* IP address of host, part of key */
+  ip_addr link;				/* (link-local) IP address of host, used as gw
+					   if host is directly attached */
+  struct rtable *tab;			/* Dependent table, part of key*/
+  struct hostentry *next;		/* Next in hash chain */
+  unsigned hash_key;			/* Hash key */
+  unsigned uc;				/* Use count */
+  struct rta *src;			/* Source rta entry */
+  ip_addr gw;				/* Chosen next hop */
+  byte dest;				/* Chosen route destination type (RTD_...) */
+  u32 igp_metric;			/* Chosen route IGP metric */
+};
 
 typedef struct rte {
   struct rte *next;
@@ -207,7 +239,6 @@ void rt_dump(rtable *);
 void rt_dump_all(void);
 int rt_feed_baby(struct proto *p);
 void rt_feed_baby_abort(struct proto *p);
-void rt_prune(rtable *tab);
 void rt_prune_all(void);
 struct rtable_config *rt_new_table(struct symbol *s);
 
@@ -235,6 +266,14 @@ void rt_show(struct rt_show_data *);
  *	construction of BGP route attribute lists.
  */
 
+/* Multipath next-hop */
+struct mpnh {
+  ip_addr gw;				/* Next hop */
+  struct iface *iface;			/* Outgoing interface */
+  struct mpnh *next;
+  unsigned char weight;
+};
+
 typedef struct rta {
   struct rta *next, **pprev;		/* Hash chain */
   struct proto *proto;			/* Protocol instance that originally created the route */
@@ -246,9 +285,12 @@ typedef struct rta {
   byte flags;				/* Route flags (RTF_...), now unused */
   byte aflags;				/* Attribute cache flags (RTAF_...) */
   u16 hash_key;				/* Hash over important fields */
+  u32 igp_metric;			/* IGP metric to next hop (for iBGP routes) */
   ip_addr gw;				/* Next hop */
   ip_addr from;				/* Advertising router */
+  struct hostentry *hostentry;		/* Hostentry for recursive next-hops */
   struct iface *iface;			/* Outgoing interface */
+  struct mpnh *nexthops;		/* Next-hops for multipath routes */
   struct ea_list *eattrs;		/* Extended Attribute chain */
 } rta;
 
@@ -276,9 +318,13 @@ typedef struct rta {
 #define RTD_BLACKHOLE 2			/* Silently drop packets */
 #define RTD_UNREACHABLE 3		/* Reject as unreachable */
 #define RTD_PROHIBIT 4			/* Administratively prohibited */
-#define RTD_NONE 5			/* Invalid RTD */
+#define RTD_MULTIPATH 5			/* Multipath route (nexthops != NULL) */
+#define RTD_NONE 6			/* Invalid RTD */
 
 #define RTAF_CACHED 1			/* This is a cached rta */
+
+#define IGP_METRIC_UNKNOWN 0x80000000	/* Default igp_metric used when no other
+					   protocol-specific metric is availabe */
 
 /*
  *	Extended Route Attributes
@@ -303,6 +349,8 @@ typedef struct eattr {
 #define EA_CODE(proto,id) (((proto) << 8) | (id))
 #define EA_PROTO(ea) ((ea) >> 8)
 #define EA_ID(ea) ((ea) & 0xff)
+
+#define EA_GEN_IGP_METRIC EA_CODE(EAP_GENERIC, 0)
 
 #define EA_CODE_MASK 0xffff
 #define EA_ALLOW_UNDEF 0x10000		/* ea_find: allow EAF_TYPE_UNDEF */
@@ -349,6 +397,10 @@ void ea_format(eattr *e, byte *buf);
 #define EA_FORMAT_BUF_SIZE 256
 ea_list *ea_append(ea_list *to, ea_list *what);
 
+int mpnh__same(struct mpnh *x, struct mpnh *y); /* Compare multipath nexthops */
+static inline int mpnh_same(struct mpnh *x, struct mpnh *y)
+{ return (x == y) || mpnh__same(x, y); }
+
 void rta_init(void);
 rta *rta_lookup(rta *);			/* Get rta equivalent to this one, uc++ */
 static inline rta *rta_clone(rta *r) { r->uc++; return r; }
@@ -357,6 +409,27 @@ static inline void rta_free(rta *r) { if (r && !--r->uc) rta__free(r); }
 void rta_dump(rta *);
 void rta_dump_all(void);
 void rta_show(struct cli *, rta *, ea_list *);
+void rta_set_recursive_next_hop(rtable *dep, rta *a, rtable *tab, ip_addr *gw, ip_addr *ll);
+
+/*
+ * rta_set_recursive_next_hop() acquires hostentry from hostcache and
+ * fills rta->hostentry field.  New hostentry has zero use
+ * count. Cached rta locks its hostentry (increases its use count),
+ * uncached rta does not lock it. Hostentry with zero use count is
+ * removed asynchronously during host cache update, therefore it is
+ * safe to hold such hostentry temorarily. Hostentry holds a lock for
+ * a 'source' rta, mainly to share multipath nexthops. There is no
+ * need to hold a lock for hostentry->dep table, because that table
+ * contains routes responsible for that hostentry, and therefore is
+ * non-empty if given hostentry has non-zero use count. The protocol
+ * responsible for routes with recursive next hops should also hold a
+ * lock for a table governing that routes (argument tab to
+ * rta_set_recursive_next_hop()).
+ */
+
+static inline void rt_lock_hostentry(struct hostentry *he) { if (he) he->uc++; }
+static inline void rt_unlock_hostentry(struct hostentry *he) { if (he) he->uc--; }
+
 
 extern struct protocol *attr_class_to_protocol[EAP_MAX];
 

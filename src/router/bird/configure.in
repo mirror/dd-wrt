@@ -42,13 +42,15 @@ AC_SUBST(srcdir_rel_mf)
 if test "$enable_ipv6" = yes ; then
 	ip=ipv6
 	SUFFIX6=6
+	all_protocols=bgp,ospf,pipe,radv,rip,static
 else
 	ip=ipv4
 	SUFFIX6=""
+	all_protocols=bgp,ospf,pipe,rip,static
 fi
 
 if test "$with_protocols" = all ; then
-	with_protocols=bgp,ospf,pipe,rip,static
+	with_protocols="$all_protocols"
 fi
 
 AC_SEARCH_LIBS(clock_gettime,[c rt posix4])

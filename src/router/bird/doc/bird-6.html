@@ -24,12 +24,16 @@ making it possible to implement any routing policy at any router in the
 network, the only restriction being that if a router advertises a route,
 it must accept and forward packets according to it.
 <P>
-<P>BGP works in terms of autonomous systems (often abbreviated as AS). Each
-AS is a part of the network with common management and common routing policy. It is identified by a unique 16-bit number.
-Routers within each AS usually communicate with each other using either a interior routing
-protocol (such as OSPF or RIP) or an interior variant of BGP (called iBGP).
-Boundary routers at the border of the AS communicate with their peers
-in the neighboring AS'es via exterior BGP (eBGP).
+<P>BGP works in terms of autonomous systems (often abbreviated as
+AS). Each AS is a part of the network with common management and
+common routing policy. It is identified by a unique 16-bit number
+(ASN).  Routers within each AS usually exchange AS-internal routing
+information with each other using an interior gateway protocol (IGP,
+such as OSPF or RIP). Boundary routers at the border of
+the AS communicate global (inter-AS) network reachability information with
+their neighbors in the neighboring AS'es via exterior BGP (eBGP) and
+redistribute received information to other routers in the AS via
+interior BGP (iBGP).
 <P>
 <P>Each BGP router sends to its neighbors updates of the parts of its
 routing table it wishes to export along with complete path information
@@ -79,12 +83,24 @@ among them and so on.
 <UL>
 <LI>Prefer route with the highest Local Preference attribute.</LI>
 <LI>Prefer route with the shortest AS path.</LI>
-<LI>Prefer IGP origin over EGP and EGP over incomplete.</LI>
+<LI>Prefer IGP origin over EGP and EGP origin over incomplete.</LI>
 <LI>Prefer the lowest value of the Multiple Exit Discriminator.</LI>
-<LI>Prefer internal routes over external ones.</LI>
+<LI>Prefer routes received via eBGP over ones received via iBGP.</LI>
+<LI>Prefer routes with lower internal distance to a boundary router.</LI>
 <LI>Prefer the route with the lowest value of router ID of the
 advertising router.</LI>
 </UL>
+<P>
+<H3>IGP routing table</H3>
+
+<P>BGP is mainly concerned with global network reachability and with
+routes to other autonomous systems. When such routes are redistributed
+to routers in the AS via BGP, they contain IP addresses of a boundary
+routers (in route attribute NEXT_HOP). BGP depends on existing IGP
+routing table with AS-internal routes to determine immediate next hops
+for routes and to know their internal distances to boundary routers
+for the purpose of BGP route selection. In BIRD, there is usually
+one routing table used for both IGP routes and BGP routes.
 <P>
 <H3>Configuration</H3>
 
@@ -93,10 +109,13 @@ This allows to set routing policy and all the other parameters differently
 for each neighbor using the following configuration parameters:
 <P>
 <DL>
-<DT><CODE>local as <I>number</I></CODE><DD><P>Define which AS we are part of. (Note that
-contrary to other IP routers, BIRD is able to act as a router located
-in multiple AS'es simultaneously, but in such cases you need to tweak
-the BGP paths manually in the filters to get consistent behavior.)
+<DT><CODE>local <I>[ip]</I>] as <I>number</I></CODE><DD><P>Define which AS we
+are part of. (Note that contrary to other IP routers, BIRD is
+able to act as a router located in multiple AS'es
+simultaneously, but in such cases you need to tweak the BGP
+paths manually in the filters to get consistent behavior.)
+Optional <CODE>ip</CODE> argument specifies a source address,
+equivalent to the <CODE>source address</CODE> option (see below).
 This parameter is mandatory.
 <P>
 <DT><CODE>neighbor <I>ip</I> as <I>number</I></CODE><DD><P>Define neighboring router
@@ -105,16 +124,27 @@ you use the <CODE>multihop</CODE> clause, it must be directly connected to one
 of your router's interfaces. In case the neighbor is in the same AS
 as we are, we automatically switch to iBGP. This parameter is mandatory.
 <P>
-<DT><CODE>multihop <I>number</I> via <I>ip</I></CODE><DD><P>Configure multihop BGP to a
-neighbor which is connected at most <I>number</I> hops far and to which
-we should route via our direct neighbor with address <I>ip</I>.
+<DT><CODE>multihop <I>[number]</I>]</CODE><DD><P>Configure multihop BGP
+session to a neighbor that isn't directly connected.
+Accurately, this option should be used if the configured
+neighbor IP address does not match with any local network
+subnets. Such IP address have to be reachable through system
+routing table. For multihop BGP it is recommended to
+explicitly configure <CODE>source address</CODE> to have it
+stable. Optional <CODE>number</CODE> argument can be used to limit TTL
+(the number of hops).
 Default: switched off.
 <P>
+<DT><CODE>source address <I>ip</I></CODE><DD><P>Define local address we
+should use for next hop calculation and as a source address
+for the BGP session. Default: the address of the local
+end of the interface our neighbor is connected to.
+<P>
 <DT><CODE>next hop self</CODE><DD><P>Avoid calculation of the Next Hop
-attribute and always advertise our own source address (see
-below) as a next hop.  This needs to be used only occasionally
-to circumvent misconfigurations of other routers.
-Default: disabled.
+attribute and always advertise our own source address as a
+next hop.  This needs to be used only occasionally to
+circumvent misconfigurations of other routers.  Default:
+disabled.
 <P>
 <DT><CODE>missing lladdr self|drop|ignore</CODE><DD><P>Next Hop attribute
 in BGP-IPv6 sometimes contains just the global IPv6 address,
@@ -129,12 +159,26 @@ prefixes and logs error. <CODE>ignore</CODE> means that BIRD ignores
 the problem and sends just the global address (and therefore
 forms improper BGP update). Default: <CODE>self</CODE>, unless BIRD
 is configured as a route server (option <CODE>rs client</CODE>), in
-that case default is <CODE>drop</CODE>, because route servers usually
-does not forward packets ifselves.
+that case default is <CODE>ignore</CODE>, because route servers usually
+do not forward packets themselves.
 <P>
-<DT><CODE>source address <I>ip</I></CODE><DD><P>Define local address we should use
-for next hop calculation. Default: the address of the local end
-of the interface our neighbor is connected to.
+<DT><CODE>gateway direct|recursive</CODE><DD><P>For received routes, their
+<CODE>gw</CODE> (immediate next hop) attribute is computed from
+received <CODE>bgp_next_hop</CODE> attribute. This option specifies
+how it is computed. Direct mode means that the IP address from
+<CODE>bgp_next_hop</CODE> is used if it is directly reachable,
+otherwise the neighbor IP address is used. Recursive mode
+means that the gateway is computed by an IGP routing table
+lookup for the IP address from <CODE>bgp_next_hop</CODE>. Recursive
+mode is the behavior specified by the BGP standard. Direct
+mode is simpler, does not require any routes in a routing
+table, and was used in older versions of BIRD, but does not
+handle well nontrivial iBGP setups and multihop. Default:
+<CODE>direct</CODE> for singlehop eBGP, <CODE>recursive</CODE> otherwise.
+<P>
+<DT><CODE>igp table <I>name</I></CODE><DD><P>Specifies a table that is used
+as an IGP routing table. Default: the same as the table BGP is
+connected to.
 <P>
 <DT><CODE>password <I>string</I></CODE><DD><P>Use this password for MD5 authentication
 of BGP sessions. Default: no authentication. Password has to be set by
@@ -246,6 +290,9 @@ increase exponentially. Default: 300 seconds.
 <DT><CODE>path metric <I>switch</I></CODE><DD><P>Enable comparison of path lengths
 when deciding which BGP route is the best one. Default: on.
 <P>
+<DT><CODE>igp metric <I>switch</I></CODE><DD><P>Enable comparison of internal
+distances to boundary routers during best route selection. Default: on.
+<P>
 <DT><CODE>prefer older <I>switch</I></CODE><DD><P>Standard route selection algorithm
 breaks ties by comparing router IDs. This changes the behavior
 to prefer older routes (when both are external and from different
@@ -334,7 +381,7 @@ cluster ID when reflecting the route.
 protocol bgp {
         local as 65000;                      # Use a private AS number
         neighbor 62.168.0.130 as 5588;       # Our neighbor ...
-        multihop 20 via 62.168.0.13;         # ... which is connected indirectly
+        multihop;                            # ... which is connected indirectly
         export filter {                      # We use non-trivial export rules
                 if source = RTS_STATIC then { # Export only static routes
                         # Assign our community
@@ -575,7 +622,7 @@ that each router detects all changes.
 <H3>Configuration</H3>
 
 <P>In the main part of configuration, there can be multiple definitions of
-OSPF area witch different id included. These definitions includes many other
+OSPF areas, each with a different id. These definitions includes many other
 switches and multiple definitions of interfaces. Definition of interface
 may contain many switches and constant definitions and list of neighbors
 on nonbroadcast networks.
@@ -585,6 +632,7 @@ on nonbroadcast networks.
 protocol ospf &lt;name&gt; {
         rfc1583compat &lt;switch&gt;;
         tick &lt;num&gt;;
+        ecmp &lt;switch&gt; [limit &lt;num&gt;];
         area &lt;id&gt; {
                 stub cost &lt;num&gt;;
                 networks {
@@ -608,8 +656,11 @@ protocol ospf &lt;name&gt; {
                         dead count &lt;num&gt;;
                         dead &lt;num&gt;;
                         rx buffer [normal|large|&lt;num&gt;];
-                        type [broadcast|nonbroadcast|pointopoint];
+                        type [broadcast|bcast|pointopoint|ptp|
+                                nonbroadcast|nbma|pointomultipoint|ptmp];
                         strict nonbroadcast &lt;switch&gt;;
+                        check link &lt;switch&gt;;
+                        ecmp weight &lt;num&gt;;
                         authentication [none|simple|cryptographic];
                         password "&lt;text&gt;";
                         password "&lt;text&gt;" {
@@ -644,19 +695,26 @@ calculation with RFC 1583
 <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc1583.txt">ftp://ftp.rfc-editor.org/in-notes/rfc1583.txt</A>. Default
 value is no.
 <P>
+<DT><CODE>tick <I>num</I></CODE><DD><P>The routing table calculation and clean-up of areas' databases
+is not performed when a single link state
+change arrives. To lower the CPU utilization, it's processed later
+at periodical intervals of <I>num</I> seconds. The default value is 1.
+<P>
+<DT><CODE>ecmp <I>switch</I> [limit <I>number</I>]</CODE><DD><P>This option specifies whether OSPF is allowed to generate
+ECMP (equal-cost multipath) routes. Such routes are used when
+there are several directions to the destination, each with
+the same (computed) cost. This option also allows to specify
+a limit on maximal number of nexthops in one route. By
+default, ECMP is disabled.  If enabled, default value of the
+limit is 16.
+<P>
 <DT><CODE>area <I>id</I></CODE><DD><P>This defines an OSPF area with given area ID (an integer or an IPv4
-address, similarly to a router ID).
-The most important area is
+address, similarly to a router ID). The most important area is
 the backbone (ID 0) to which every other area must be connected.
 <P>
 <DT><CODE>stub cost <I>num</I></CODE><DD><P>No external (except default) routes are flooded into stub areas.
 Setting this value marks area stub with defined cost of default route.
 Default value is no. (Area is not stub.)
-<P>
-<DT><CODE>tick <I>num</I></CODE><DD><P>The routing table calculation and clean-up of areas' databases
-is not performed when a single link state
-change arrives. To lower the CPU utilization, it's processed later
-at periodical intervals of <I>num</I> seconds. The default value is 1.
 <P>
 <DT><CODE>networks { <I>set</I> }</CODE><DD><P>Definition of area IP ranges. This is used in summary LSA origination.
 Hidden networks are not propagated into other areas.
@@ -718,21 +776,51 @@ election and building adjacency. Default value is 40.
 <P>
 <DT><CODE>rx buffer <I>num</I></CODE><DD><P>This sets the size of buffer used for receiving packets. The buffer should
 be bigger than maximal size of any packets. Value NORMAL (default)
-means 2*MTU, value LARGE means maximal allowed packet - 65536.
+means 2*MTU, value LARGE means maximal allowed packet - 65535.
 <P>
-<DT><CODE>type broadcast</CODE><DD><P>BIRD detects a type of a connected network automatically, but sometimes it's
-convenient to force use of a different type manually.
-On broadcast networks, flooding and Hello messages are sent using multicasts
-(a single packet for all the neighbors).
+<DT><CODE>type broadcast|bcast</CODE><DD><P>BIRD detects a type of a connected network automatically, but
+sometimes it's convenient to force use of a different type
+manually. On broadcast networks (like ethernet), flooding
+and Hello messages are sent using multicasts (a single packet
+for all the neighbors). A designated router is elected and it
+is responsible for synchronizing the link-state databases and
+originating network LSAs. This network type cannot be used on
+physically NBMA networks and on unnumbered networks (networks
+without proper IP prefix).
 <P>
-<DT><CODE>type pointopoint</CODE><DD><P>Point-to-point networks connect just 2 routers together. No election
-is performed there which reduces the number of messages sent.
+<DT><CODE>type pointopoint|ptp</CODE><DD><P>Point-to-point networks connect just 2 routers together. No
+election is performed and no network LSA is originated, which
+makes it simpler and faster to establish. This network type
+is useful not only for physically PtP ifaces (like PPP or
+tunnels), but also for broadcast networks used as PtP links.
+This network type cannot be used on physically NBMA networks.
 <P>
-<DT><CODE>type nonbroadcast</CODE><DD><P>On nonbroadcast networks, the packets are sent to each neighbor
+<DT><CODE>type nonbroadcast|nbma</CODE><DD><P>On NBMA networks, the packets are sent to each neighbor
 separately because of lack of multicast capabilities.
+Like on broadcast networks, a designated router is elected,
+which plays a central role in propagation of LSAs.
+This network type cannot be used on unnumbered networks.
+<P>
+<DT><CODE>type pointomultipoint|ptmp</CODE><DD><P>This is another network type designed to handle NBMA
+networks. In this case the NBMA network is treated as a
+collection of PtP links. This is useful if not every pair of
+routers on the NBMA network has direct communication, or if
+the NBMA network is used as an (possibly unnumbered) PtP
+link.
 <P>
 <DT><CODE>strict nonbroadcast <I>switch</I></CODE><DD><P>If set, don't send hello to any undefined neighbor. This switch
-is ignored on any non-NBMA network. Default is No.
+is ignored on other than NBMA or PtMP networks. Default value is no.
+<P>
+<DT><CODE>check link <I>switch</I></CODE><DD><P>If set, a hardware link state (reported by OS) is taken into
+consideration. When a link disappears (e.g. an ethernet cable is
+unplugged), neighbors are immediately considered unreachable
+and only the address of the iface (instead of whole network
+prefix) is propagated. It is possible that some hardware
+drivers or platforms do not implement this feature. Default value is no.
+<P>
+<DT><CODE>ecmp weight <I>num</I></CODE><DD><P>When ECMP (multipath) routes are allowed, this value specifies
+a relative weight used for nexthops going through the iface.
+Allowed values are 1-256. Default value is 1.
 <P>
 <DT><CODE>authentication none</CODE><DD><P>No passwords are sent in OSPF packets. This is the default value.
 <P>
@@ -749,8 +837,9 @@ Packets can still be read by an attacker.
 See 
 <A HREF="bird-3.html#dsc-pass">password</A> common option for detailed description.
 <P>
-<DT><CODE>neighbors { <I>set</I> } </CODE><DD><P>A set of neighbors to which Hello messages on nonbroadcast networks
-are to be sent. Some of them could be marked as eligible.
+<DT><CODE>neighbors { <I>set</I> } </CODE><DD><P>A set of neighbors to which Hello messages on NBMA or PtMP
+networks are to be sent. For NBMA networks, some of them
+could be marked as eligible.
 <P>
 </DL>
 <P>
@@ -961,7 +1050,139 @@ protocol pipe {                         # The Pipe
 </PRE>
 <HR>
 <P>
-<H2><A NAME="ss6.7">6.7</A> <A HREF="bird.html#toc6.7">RIP</A>
+<H2><A NAME="ss6.7">6.7</A> <A HREF="bird.html#toc6.7">RAdv</A>
+</H2>
+
+<H3>Introduction</H3>
+
+<P>The RAdv protocol is an implementation of Router Advertisements,
+which are used in the IPv6 stateless autoconfiguration. IPv6 routers
+send (in irregular time intervals or as an answer to a request)
+advertisement packets to connected networks. These packets contain
+basic information about a local network (e.g. a list of network
+prefixes), which allows network hosts to autoconfigure network
+addresses and choose a default route. BIRD implements router behavior
+as defined in RFC 4861
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4861.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4861.txt</A>.
+<P>
+<H3>Configuration</H3>
+
+<P>There are two classes of definitions in RAdv configuration --
+interface definitions and prefix definitions:
+<P>
+<DL>
+<DT><CODE>interface <I>pattern [, ...]</I>  { <I>options</I> }</CODE><DD><P>Interface definitions specify a set of interfaces on which the
+protocol is activated and contain interface specific options.
+See 
+<A HREF="bird-3.html#dsc-iface">interface</A> common options for
+detailed description.
+<P>
+<DT><CODE>prefix <I>prefix</I> { <I>options</I> }</CODE><DD><P>Prefix definitions allows to modify a list of advertised
+prefixes. By default, the advertised prefixes are the same as
+the network prefixes assigned to the interface. For each
+network prefix, the matching prefix definition is found and
+its options are used. If no matching prefix definition is
+found, the prefix is used with default options.
+<P>Prefix definitions can be either global or interface-specific.
+The second ones are part of interface options. The prefix
+definition matching is done in the first-match style, when
+interface-specific definitions are processed before global
+definitions. As expected, the prefix definition is matching if
+the network prefix is a subnet of the prefix in prefix
+definition.
+</DL>
+<P>
+<P>Interface specific options:
+<P>
+<DL>
+<DT><CODE>max ra interval <I>expr</I></CODE><DD><P>Unsolicited router advertisements are sent in irregular time
+intervals. This option specifies the maximum length of these
+intervals, in seconds. Valid values are 4-1800. Default: 600
+<P>
+<DT><CODE>min ra interval <I>expr</I></CODE><DD><P>This option specifies the minimum length of that intervals, in
+seconds. Must be at least 3 and at most 3/4 * max ra interval.
+Default: about 1/3 * max ra interval.
+<P>
+<DT><CODE>min delay <I>expr</I></CODE><DD><P>The minimum delay between two consecutive router advertisements,
+in seconds. Default: 3
+<P>
+<DT><CODE>managed <I>switch</I></CODE><DD><P>This option specifies whether hosts should use DHCPv6 for
+IP address configuration. Default: no
+<P>
+<DT><CODE>other config <I>switch</I></CODE><DD><P>This option specifies whether hosts should use DHCPv6 to
+receive other configuration information. Default: no
+<P>
+<DT><CODE>link mtu <I>expr</I></CODE><DD><P>This option specifies which value of MTU should be used by
+hosts. 0 means unspecified. Default: 0
+<P>
+<DT><CODE>reachable time <I>expr</I></CODE><DD><P>This option specifies the time (in milliseconds) how long
+hosts should assume a neighbor is reachable (from the last
+confirmation). Maximum is 3600000, 0 means unspecified.
+Default 0.
+<P>
+<DT><CODE>retrans timer <I>expr</I></CODE><DD><P>This option specifies the time (in milliseconds) how long
+hosts should wait before retransmitting Neighbor Solicitation
+messages. 0 means unspecified. Default 0.
+<P>
+<DT><CODE>current hop limit <I>expr</I></CODE><DD><P>This option specifies which value of Hop Limit should be used
+by hosts. Valid values are 0-255, 0 means unspecified. Default: 64
+<P>
+<DT><CODE>default lifetime <I>expr</I></CODE><DD><P>This option specifies the time (in seconds) how long (after
+the receipt of RA) hosts may use the router as a default
+router. 0 means do not use as a default router. Default: 3 *
+max ra interval.
+</DL>
+<P>
+<P>
+<P>Prefix specific options:
+<P>
+<DL>
+<DT><CODE>onlink <I>switch</I></CODE><DD><P>This option specifies whether hosts may use the advertised
+prefix for onlink determination. Default: yes
+<P>
+<DT><CODE>autonomous <I>switch</I></CODE><DD><P>This option specifies whether hosts may use the advertised
+prefix for stateless autoconfiguration. Default: yes
+<P>
+<DT><CODE>valid lifetime <I>expr</I></CODE><DD><P>This option specifies the time (in seconds) how long (after
+the receipt of RA) the prefix information is valid, i.e.,
+autoconfigured IP addresses can be assigned and hosts with
+that IP addresses are considered directly reachable. 0 means
+the prefix is no longer valid. Default: 86400 (1 day)
+<P>
+<DT><CODE>preferred lifetime <I>expr</I></CODE><DD><P>This option specifies the time (in seconds) how long (after
+the receipt of RA) IP addresses generated from the prefix
+using stateless autoconfiguration remain preferred. Default:
+14400 (4 hours)
+</DL>
+<P>
+<H3>Example</H3>
+
+<P>
+<HR>
+<PRE>
+protocol radv {
+        interface "eth2" {
+                max ra interval 5;      # Fast failover with more routers
+                managed yes;            # Using DHCPv6 on eth2
+                prefix ::/0 {
+                        autonomous off; # So do not autoconfigure any IP
+                };
+        };
+
+        interface "eth*";               # No need for any other options
+
+        prefix 2001:0DB8:1234::/48 {
+                preferred lifetime 0;   # Deprecated address range
+        };
+
+        prefix 2001:0DB8:2000::/48 {
+                autonomous off;         # Do not autoconfigure
+        };
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.8">6.8</A> <A HREF="bird.html#toc6.8">RIP</A>
 </H2>
 
 <H3>Introduction</H3>
@@ -1067,7 +1288,7 @@ protocol rip MyRIP_test {
 </PRE>
 <HR>
 <P>
-<H2><A NAME="ss6.8">6.8</A> <A HREF="bird.html#toc6.8">Static</A>
+<H2><A NAME="ss6.9">6.9</A> <A HREF="bird.html#toc6.9">Static</A>
 </H2>
 
 <P>The Static protocol doesn't communicate with other routers in the network,
@@ -1089,17 +1310,26 @@ the next hop of the route is not a neighbor at the moment), Static just
 uninstalls the route from the table it is connected to and adds it again as soon
 as the destination becomes adjacent again.
 <P>
-<P>The Static protocol has no configuration options. Instead, the
-definition of the protocol contains a list of static routes:
+<P>The Static protocol does not have many configuration options. The
+definition of the protocol contains mainly a list of static routes:
 <P>
 <DL>
 <DT><CODE>route <I>prefix</I> via <I>ip</I></CODE><DD><P>Static route through
 a neighboring router.
+<DT><CODE>route <I>prefix</I> multipath via <I>ip</I> [weight <I>num</I>] [via ...]</CODE><DD><P>Static multipath route. Contains several nexthops (gateways), possibly
+with their weights.
 <DT><CODE>route <I>prefix</I> via <I>"interface"</I></CODE><DD><P>Static device
 route through an interface to hosts on a directly connected network.
 <DT><CODE>route <I>prefix</I> drop|reject|prohibit</CODE><DD><P>Special routes
 specifying to drop the packet, return it as unreachable or return
 it as administratively prohibited.
+<P>
+<DT><CODE>check link <I>switch</I></CODE><DD><P>The only option of the static protocol. If set, hardware link
+states of network interfaces are taken into consideration.
+When link disappears (e.g. ethernet cable is unplugged),
+static routes directing to that interface are removed. It is
+possible that some hardware drivers or platforms do not
+implement this feature. Default: off.
 </DL>
 <P>
 <P>Static routes have no specific attributes.
@@ -1112,6 +1342,10 @@ it as administratively prohibited.
 protocol static {
         table testable;                  # Connect to a non-default routing table
         route 0.0.0.0/0 via 62.168.0.13; # Default route
+        route 10.0.0.0/8 multipath       # Multipath route
+                via 62.168.0.14 weight 2
+                via 62.168.1.10
+                via 62.168.1.11;
         route 62.168.0.0/25 reject;      # Sink route
         route 10.2.0.0/24 via "arc0";    # Secondary network
 }

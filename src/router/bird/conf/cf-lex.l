@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#define PARSER 1
+
 #include "nest/bird.h"
 #include "nest/route.h"
 #include "nest/protocol.h"
@@ -133,6 +135,11 @@ WHITE [ \t]
     cf_error("Number out of range");
   cf_lval.i = l;
   return NUM;
+}
+
+else: {
+  /* Hack to distinguish if..else from else: in case */
+  return ELSECOL;
 }
 
 ({ALPHA}{ALNUM}*|[']({ALNUM}|[-])*[']) {

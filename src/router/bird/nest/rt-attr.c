@@ -57,8 +57,64 @@
 pool *rta_pool;
 
 static slab *rta_slab;
+static slab *mpnh_slab;
 
 struct protocol *attr_class_to_protocol[EAP_MAX];
+
+static inline unsigned int
+mpnh_hash(struct mpnh *x)
+{
+  unsigned int h = 0;
+  for (; x; x = x->next)
+    h ^= ipa_hash(x->gw);
+
+  return h;
+}
+
+int
+mpnh__same(struct mpnh *x, struct mpnh *y)
+{
+  for (; x && y; x = x->next, y = y->next)
+    if (!ipa_equal(x->gw, y->gw) || (x->iface != y->iface) || (x->weight != y->weight))
+      return 0;
+
+  return x == y;
+}
+
+static struct mpnh *
+mpnh_copy(struct mpnh *o)
+{
+  struct mpnh *first = NULL;
+  struct mpnh **last = &first;
+
+  for (; o; o = o->next)
+    {
+      struct mpnh *n = sl_alloc(mpnh_slab);
+      n->gw = o->gw;
+      n->iface = o->iface;
+      n->next = NULL;
+      n->weight = o->weight;
+
+      *last = n;
+      last = &(n->next);
+    }
+
+  return first;
+}
+
+static void
+mpnh_free(struct mpnh *o)
+{
+  struct mpnh *n;
+
+  while (o)
+    {
+      n = o->next;
+      sl_free(mpnh_slab, o);
+      o = n;
+    }
+}
+
 
 /*
  *	Extended Attributes
@@ -362,6 +418,18 @@ ea_free(ea_list *o)
     }
 }
 
+static int
+get_generic_attr(eattr *a, byte **buf, int buflen UNUSED)
+{
+  if (a->id == EA_GEN_IGP_METRIC)
+    {
+      *buf += bsprintf(*buf, "igp_metric");
+      return GA_NAME;
+    }
+ 
+  return GA_UNKNOWN;
+}
+
 /**
  * ea_format - format an &eattr for printing
  * @e: attribute to be formatted
@@ -392,6 +460,9 @@ ea_format(eattr *e, byte *buf)
     }
   else if (EA_PROTO(e->id))
     buf += bsprintf(buf, "%02x.", EA_PROTO(e->id));
+  else 
+    status = get_generic_attr(e, &buf, end - buf);
+
   if (status < GA_NAME)
     buf += bsprintf(buf, "%02x", EA_ID(e->id));
   if (status < GA_FULL)
@@ -572,7 +643,8 @@ rta_alloc_hash(void)
 static inline unsigned int
 rta_hash(rta *a)
 {
-  return (a->proto->hash_key ^ ipa_hash(a->gw) ^ ea_hash(a->eattrs)) & 0xffff;
+  return (a->proto->hash_key ^ ipa_hash(a->gw) ^
+	  mpnh_hash(a->nexthops) ^ ea_hash(a->eattrs)) & 0xffff;
 }
 
 static inline int
@@ -584,9 +656,12 @@ rta_same(rta *x, rta *y)
 	  x->cast == y->cast &&
 	  x->dest == y->dest &&
 	  x->flags == y->flags &&
+	  x->igp_metric == y->igp_metric &&
 	  ipa_equal(x->gw, y->gw) &&
 	  ipa_equal(x->from, y->from) &&
 	  x->iface == y->iface &&
+	  x->hostentry == y->hostentry &&
+	  mpnh_same(x->nexthops, y->nexthops) &&
 	  ea_same(x->eattrs, y->eattrs));
 }
 
@@ -597,6 +672,7 @@ rta_copy(rta *o)
 
   memcpy(r, o, sizeof(rta));
   r->uc = 1;
+  r->nexthops = mpnh_copy(o->nexthops);
   r->eattrs = ea_list_copy(o->eattrs);
   return r;
 }
@@ -671,6 +747,7 @@ rta_lookup(rta *o)
   r = rta_copy(o);
   r->hash_key = h;
   r->aflags = RTAF_CACHED;
+  rt_lock_hostentry(r->hostentry);
   rta_insert(r);
 
   if (++rta_cache_count > rta_cache_limit)
@@ -688,6 +765,8 @@ rta__free(rta *a)
   if (a->next)
     a->next->pprev = a->pprev;
   a->aflags = 0;		/* Poison the entry */
+  rt_unlock_hostentry(a->hostentry);
+  mpnh_free(a->nexthops);
   ea_free(a->eattrs);
   sl_free(rta_slab, a);
 }
@@ -779,6 +858,7 @@ rta_init(void)
 {
   rta_pool = rp_new(&root_pool, "Attributes");
   rta_slab = sl_new(rta_pool, sizeof(rta));
+  mpnh_slab = sl_new(rta_pool, sizeof(struct mpnh));
   rta_alloc_hash();
 }
 

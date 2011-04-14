@@ -20,9 +20,8 @@ struct top_hash_entry
   //  struct ospf_area *oa;
   void *lsa_body;
   bird_clock_t inst_t;		/* Time of installation into DB */
-  ip_addr nh;			/* Next hop */
+  struct mpnh *nhs;		/* Computed nexthops - valid only in ospf_rt_spf() */
   ip_addr lb;			/* In OSPFv2, link back address. In OSPFv3, any global address in the area useful for vlinks */
-  struct ospf_iface *nhi;	/* Next hop interface - valid only in ospf_rt_spf()*/
 #ifdef OSPFv3
   u32 lb_id;			/* Interface ID of link back iface (for bcast or NBMA networks) */
 #endif
@@ -32,7 +31,8 @@ struct top_hash_entry
 #define OUTSPF 0
 #define CANDIDATE 1
 #define INSPF 2
-  u8 padding;
+  u8 nhs_reuse;			/* Whether nhs nodes can be reused during merging.
+				   See a note in rt.c:merge_nexthops() */
 };
 
 struct top_graph

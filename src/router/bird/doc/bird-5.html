@@ -145,14 +145,31 @@ length from the pair. So <CODE>1.2.0.0/16.pxlen = 16</CODE> is true.
 <P>
 <DT><CODE>int|pair|quad|ip|prefix|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
 but you can't modify them. Literals of type <CODE>int set</CODE> look like <CODE>[ 1, 2, 5..7 ]</CODE>. As you can see, both simple values and ranges are permitted in
-sets. For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
-that case <CODE>(123,0)..(123,65535)</CODE>).
+sets.
+For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
+that case <CODE>(123,0)..(123,65535)</CODE>). You can also use <CODE>(123,5..100)</CODE> for range
+<CODE>(123,5)..(123,100)</CODE>. You can also use <CODE>(*,123)</CODE> which is translated as
+<CODE>(0,123) , (1,123) , (2,123) , ... , (65535, 123)</CODE>
+You can also use expressions for both, pair sets and int sets. However it must
+be possible to evaluate these expressions before daemon boots. So you can use
+only constants inside them. E.g.
+<HR>
+<PRE>
+         define one=1;
+         int set odds;
+         pair set ps;
+
+         odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ]; 
+         ps = [ (1,(one+one)), (3,4)..(4,8), (5,*), (6,3..6) ];
+        
+</PRE>
+<HR>
 <P>Sets of prefixes are special: their literals does not allow ranges, but allows
 prefix patterns that are written as <CODE><I>ipaddress</I>/<I>pxlen</I>{<I>low</I>,<I>high</I>}</CODE>.
-Prefix <CODE><I>ip1</I>/<I>len1</I></CODE> matches prefix pattern <CODE><I>ip2</I>/<I>len2</I>{<I>l</I>,<I>h</I>}</CODE> iff 
+Prefix <CODE><I>ip1</I>/<I>len1</I></CODE> matches prefix pattern <CODE><I>ip2</I>/<I>len2</I>{<I>l</I>,<I>h</I>}</CODE> if 
 the first <CODE>min(len1, len2)</CODE> bits of <CODE>ip1</CODE> and <CODE>ip2</CODE> are identical and <CODE>len1 &lt;= ip1 &lt;= len2</CODE>.
 A valid prefix pattern has to satisfy <CODE>low &lt;= high</CODE>, but <CODE>pxlen</CODE> is not constrained by <CODE>low</CODE>
-or <CODE>high</CODE>. Obviously, a prefix matches a prefix set literal iff it matches any prefix pattern in the
+or <CODE>high</CODE>. Obviously, a prefix matches a prefix set literal if it matches any prefix pattern in the
 prefix set literal.
 <P>There are also two shorthands for prefix patterns: <CODE><I>address</I>/<I>len</I>+</CODE> is a shorthand for
 <CODE><I>address</I>/<I>len</I>{<I>len</I>,<I>maxlen</I>}</CODE> (where <CODE><I>maxlen</I></CODE> is 32 for IPv4 and 128 for IPv6), 
@@ -239,7 +256,7 @@ prefix and prefix (returning true if first prefix is more specific than second o
 <I>command_1</I>; <I>command_2</I>; <I>...</I> }</CODE> instead of either command. The <CODE>else</CODE>
 clause may be omitted. If the <CODE><I>boolean expression</I></CODE> is true, <CODE><I>command1</I></CODE> is executed, otherwise <CODE><I>command2</I></CODE> is executed.
 <P>
-<P>The <CODE>case</CODE> is similar to case from Pascal. Syntax is <CODE>case <I>expr</I> { else |
+<P>The <CODE>case</CODE> is similar to case from Pascal. Syntax is <CODE>case <I>expr</I> { else: |
 <I>num_or_prefix [ .. num_or_prefix]</I>: <I>statement</I> ; [ ... ] }</CODE>. The expression after
 <CODE>case</CODE> can be of any type which can be on the left side of the ~ operator and anything that could
 be a member of a set is allowed before <CODE>:</CODE>. Multiple commands are allowed without <CODE>{}</CODE> grouping.
@@ -300,6 +317,13 @@ be used in the future for broadcast, multicast and anycast
 routes). Read-only.
 <P>
 <DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to (<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router, <CODE>RTD_DEVICE</CODE> for routing to a directly-connected network, <CODE>RTD_BLACKHOLE</CODE> for packets to be silently discarded, <CODE>RTD_UNREACHABLE</CODE>, <CODE>RTD_PROHIBIT</CODE> for packets that should be returned with ICMP host unreachable / ICMP administratively prohibited messages). Read-only.
+<P>
+<DT><CODE><I>int</I> igp_metric</CODE><DD><P>The optional attribute that can be used to specify a distance
+to the network for routes that do not have a native protocol
+metric attribute (like <CODE>ospf_metric1</CODE> for OSPF routes). It
+is used mainly by BGP to compare internal distances to boundary
+routers (see below). It is also used when the route is exported
+to OSPF as a default value for OSPF type 1 metric.
 </DL>
 <P>
 <P>There also exist some protocol-specific attributes which are described in the corresponding protocol sections.

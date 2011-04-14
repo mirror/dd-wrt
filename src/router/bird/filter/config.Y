@@ -25,6 +25,21 @@ static int make_pair(int i1, int i2)
   return (u1 << 16) | u2;
 }
 
+struct f_tree *f_generate_rev_wcard(int from, int to, int expr)
+{
+	struct f_tree *ret = NULL, *last = NULL;
+
+	while (from <= to) {
+		ret = f_new_tree(); 
+		ret->from.type = ret->to.type = T_PAIR;
+		ret->from.val.i = ret->to.val.i = make_pair(from, expr); 
+		ret->left = last;
+
+		from++; last = ret;
+	}
+	return ret;
+}
+
 CF_DECLS
 
 CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
@@ -45,7 +60,7 @@ CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 
 %type <x> term block cmds cmds_int cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
 %type <f> filter filter_body where_filter
-%type <i> type break_command cpair
+%type <i> type break_command
 %type <e> set_item set_items switch_body
 %type <trie> fprefix_set
 %type <v> set_atom fprefix fprefix_s fipa
@@ -222,13 +237,6 @@ block:
  ;
 
 /*
- * Simple types, their bison value is int
- */
-cpair:
-   '(' NUM ',' NUM ')' { $$ = make_pair($2, $4); }
- ;
-
-/*
  * Complex types, their bison value is struct f_val
  */
 fipa:
@@ -236,20 +244,50 @@ fipa:
  ;
 
 set_atom:
-   NUM   { $$.type = T_INT; $$.val.i = $1; }
+   expr  { $$.type = T_INT; $$.val.i = $1; }	/* 'SYM' included in 'expr' creates 3 reduce/shift conflicts */
  | RTRID { $$.type = T_QUAD; $$.val.i = $1; }
- | cpair { $$.type = T_PAIR; $$.val.i = $1; }
  | fipa  { $$ = $1; }
- | ENUM  {  $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
+ | ENUM  { $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
  ; 
 
 set_item:
-   '(' NUM ',' '*' ')' { 
+   '(' expr ',' expr ')' {
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, $4); 
+	$$->to.val.i = make_pair($2, $4);
+   }
+ | '(' expr ',' expr '.' '.' expr ')' { 
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, $4); 
+	$$->to.val.i = make_pair($2, $7);
+   }
+ | '(' expr ',' expr ')' '.' '.' '(' expr ',' expr ')' { 
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, $4); 
+	$$->to.val.i = make_pair($9, $11);
+   }
+ |  '(' '*' ',' '*' ')' { 	/* This is probably useless :-) */
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = 0;
+	$$->to.val.i = 0xffffffff;
+   }
+ |  '(' expr ',' '*' ')' { 
 	$$ = f_new_tree(); 
 	$$->from.type = $$->to.type = T_PAIR;
 	$$->from.val.i = make_pair($2, 0); 
 	$$->to.val.i = make_pair($2, 0xffff);
    }
+ |  '(' '*' ',' expr ')' { 
+	$$ = f_generate_rev_wcard(0, 0xffff, $4);
+   }
+ /* This causes 3 reduce/reduce conflicts
+ | '(' expr '.' '.' expr ',' expr ')' { 
+	cf_error("Not implemented yet");
+   }*/
  | set_atom { 
 	$$ = f_new_tree(); 
 	$$->from = $1; 
@@ -285,8 +323,8 @@ fprefix:
  ;
 
 fprefix_set:
-   fprefix { $$ = f_new_trie(); trie_add_prefix($$, &($1.val.px)); }
- | fprefix_set ',' fprefix { $$ = $1; trie_add_prefix($$, &($3.val.px)); }
+   fprefix { $$ = f_new_trie(cfg_mem); trie_add_fprefix($$, &($1.val.px)); }
+ | fprefix_set ',' fprefix { $$ = $1; trie_add_fprefix($$, &($3.val.px)); }
  ;
 
 switch_body: /* EMPTY */ { $$ = NULL; }
@@ -295,11 +333,11 @@ switch_body: /* EMPTY */ { $$ = NULL; }
      $$->data = $4;
      $$->left = $1;
    }
- | switch_body ELSE ':' cmds {
+ | switch_body ELSECOL cmds {
      $$ = f_new_tree(); 
      $$->from.type = T_VOID; 
      $$->to.type = T_VOID;
-     $$->data = $4;
+     $$->data = $3;
      $$->left = $1;
    }
  ;

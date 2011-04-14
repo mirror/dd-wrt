@@ -244,7 +244,6 @@ krt_set_start(struct krt_proto *x, int first UNUSED)
 static void
 krt_read_rt(struct ks_msg *msg, struct krt_proto *p, int scan)
 {
-  rta a;
   rte *e;
   net *net;
   sockaddr dst, gate, mask;
@@ -329,17 +328,12 @@ krt_read_rt(struct ks_msg *msg, struct krt_proto *p, int scan)
 
   net = net_get(p->p.table, idst, pxlen);
 
-  bzero(&a, sizeof(a));
-
-  a.proto = &p->p;
-  a.source = RTS_INHERIT;
-  a.scope = SCOPE_UNIVERSE;
-  a.cast = RTC_UNICAST;
-  a.flags = a.aflags = 0;
-  a.from = IPA_NONE;
-  a.gw = IPA_NONE;
-  a.iface = NULL;
-  a.eattrs = NULL;
+  rta a = {
+    .proto = &p->p,
+    .source = RTS_INHERIT,
+    .scope = SCOPE_UNIVERSE,
+    .cast = RTC_UNICAST
+  };
 
   /* reject/blackhole routes have also set RTF_GATEWAY,
      we wil check them first. */
@@ -418,19 +412,18 @@ krt_read_ifinfo(struct ks_msg *msg)
   struct sockaddr_dl *dl = NULL;
   unsigned int i;
   struct iface *iface = NULL, f;
-  char *ifname = "(none)";
   int fl = ifm->ifm_flags;
 
-  for(i = 1; i!=0; i <<= 1)
+  for (i = 1; i<=RTA_IFP; i <<= 1)
   {
-    if((i & ifm->ifm_addrs) && (i == RTA_IFP))
+    if (i & ifm->ifm_addrs)
     {
-      if( i == RTA_IFP)
+      if (i == RTA_IFP)
       {
         dl = (struct sockaddr_dl *)body;
         break;
       }
-      body += ROUNDUP(((struct sockaddr *)&(body))->sa_len);\
+      body += ROUNDUP(((struct sockaddr *)&(body))->sa_len);
     }
   }
 
@@ -440,18 +433,17 @@ krt_read_ifinfo(struct ks_msg *msg)
     return;
   }
 
-  if(dl) ifname = dl->sdl_data;
-
   iface = if_find_by_index(ifm->ifm_index);
 
   if(!iface)
   {
     /* New interface */
     if(!dl) return;	/* No interface name, ignoring */
-    DBG("New interface \"%s\" found", ifname);
+
     bzero(&f, sizeof(f));
     f.index = ifm->ifm_index;
-    strncpy(f.name, ifname, sizeof(f.name) -1);
+    memcpy(f.name, dl->sdl_data, MIN(sizeof(f.name)-1, dl->sdl_nlen));
+    DBG("New interface '%s' found", f.name);
   }
   else
   {
@@ -462,7 +454,9 @@ krt_read_ifinfo(struct ks_msg *msg)
   f.flags = 0;
 
   if (fl & IFF_UP)
-    f.flags |= IF_LINK_UP;
+    f.flags |= IF_ADMIN_UP;
+  if (ifm->ifm_data.ifi_link_state != LINK_STATE_DOWN)
+    f.flags |= IF_LINK_UP;          /* up or unknown */
   if (fl & IFF_LOOPBACK)            /* Loopback */
     f.flags |= IF_MULTIACCESS | IF_LOOPBACK | IF_IGNORE;
   else if (fl & IFF_POINTOPOINT)    /* PtP */
@@ -549,6 +543,9 @@ krt_read_addr(struct ks_msg *msg)
   {
     ifa.prefix = ipa_and(ifa.ip, ipa_mkmask(masklen));
 
+    if (masklen == BITS_PER_IP_ADDRESS)
+      ifa.flags |= IA_HOST;
+
     if (masklen == (BITS_PER_IP_ADDRESS - 1))
       ifa.opposite = ipa_opposite_m1(ifa.ip);
 
@@ -559,7 +556,7 @@ krt_read_addr(struct ks_msg *msg)
   }
   else         /* PtP iface */
   {
-    ifa.flags |= IA_UNNUMBERED;
+    ifa.flags |= IA_PEER;
     ifa.prefix = ifa.opposite = ifa.brd;
   }
 

@@ -704,7 +704,7 @@ new_iface(struct proto *p, struct iface *new, unsigned long flags, struct iface_
     }
 
   if (new) {
-    if (new->addr->flags & IA_UNNUMBERED)
+    if (new->addr->flags & IA_PEER)
       log( L_WARN "%s: rip is not defined over unnumbered links", p->name );
     if (rif->multicast) {
 #ifndef IPV6

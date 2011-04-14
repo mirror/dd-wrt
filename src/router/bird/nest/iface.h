@@ -39,19 +39,34 @@ struct iface {
   list neighbors;			/* All neighbors on this interface */
 };
 
-#define IF_UP 1				/* IF_LINK_UP and IP address known */
+#define IF_UP 1				/* IF_ADMIN_UP and IP address known */
 #define IF_MULTIACCESS 2
 #define IF_BROADCAST 4
 #define IF_MULTICAST 8
-#define IF_ADMIN_DOWN 0x10
+#define IF_SHUTDOWN 0x10		/* Interface disappeared */
 #define IF_LOOPBACK 0x20
 #define IF_IGNORE 0x40			/* Not to be used by routing protocols (loopbacks etc.) */
-#define IF_LINK_UP 0x80
+#define IF_ADMIN_UP 0x80		/* Administrative up (e.g. IFF_UP in Linux) */
+#define IF_LINK_UP 0x100		/* Link available (e.g. IFF_LOWER_UP in Linux) */
 
 #define IA_PRIMARY 0x10000		/* This address is primary */
 #define IA_SECONDARY 0x20000		/* This address has been reported as secondary by the kernel */
-#define IA_UNNUMBERED 0x40000		/* This address belongs to an unnumbered device */
+#define IA_PEER 0x40000			/* A peer/ptp address */
+#define IA_HOST 0x80000			/* A host/loopback address */
 #define IA_FLAGS 0xff0000
+
+/*
+ * There are three kinds of addresses in BIRD:
+ *  - Standard (prefix-based) addresses, these may define ifa.opposite (for /30 or /31).
+ *  - Peer/ptp addresses, without common prefix for ifa.ip and ifa.opposite.
+ *    ifa.opposite is defined and ifa.prefix/pxlen == ifa.opposite/32 (for simplicity).
+ *  - Host addresses, with ifa.prefix/pxlen == ifa.ip/32 (or /128).
+ *    May be considered a special case of standard addresses.
+ *
+ * Peer addresses (AFAIK) do not exist in IPv6. Linux alos supports generalized peer
+ * address (with pxlen < 32 and ifa.ip outside prefix), we do not support that.
+ */
+
 
 #define IF_JUST_CREATED 0x10000000	/* Send creation event as soon as possible */
 #define IF_TMP_DOWN 0x20000000		/* Temporary shutdown due to interface reconfiguration */
@@ -63,6 +78,7 @@ struct iface {
 #define IF_CHANGE_DOWN 2
 #define IF_CHANGE_MTU 4
 #define IF_CHANGE_CREATE 8		/* Seen this interface for the first time */
+#define IF_CHANGE_LINK 0x10
 #define IF_CHANGE_TOO_MUCH 0x40000000	/* Used internally */
 
 void if_init(void);
@@ -82,15 +98,6 @@ void if_feed_baby(struct proto *);
 struct iface *if_find_by_index(unsigned);
 struct iface *if_find_by_name(char *);
 void ifa_recalc_all_primary_addresses(void);
-
-static inline int
-ifa_match_addr(struct ifa *ifa, ip_addr addr)
-{
-  if (ifa->flags & IA_UNNUMBERED)
-    return ipa_equal(addr, ifa->opposite);
-  else
-    return ipa_in_net(addr, ifa->prefix, ifa->pxlen);
-}
 
 /* The Neighbor Cache */
 
@@ -123,6 +130,7 @@ void neigh_dump_all(void);
 void neigh_prune(void);
 void neigh_if_up(struct iface *);
 void neigh_if_down(struct iface *);
+void neigh_if_link(struct iface *);
 void neigh_init(struct pool *);
 
 /*

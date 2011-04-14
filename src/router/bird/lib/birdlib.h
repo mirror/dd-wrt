@@ -19,8 +19,14 @@
 
 /* Utility macros */
 
+#ifdef PARSER
+#define _MIN(a,b) (((a)<(b))?(a):(b))
+#define _MAX(a,b) (((a)>(b))?(a):(b))
+#else
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
 #define ABS(a)   ((a)>=0 ? (a) : -(a))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
 
@@ -41,8 +47,11 @@ struct rate_limit {
 };
 
 #define log log_msg
+void log_reset(void);
+void log_commit(int class);
 void log_msg(char *msg, ...);
 void log_rl(struct rate_limit *rl, char *msg, ...);
+void logn(char *msg, ...);
 void die(char *msg, ...) NORET;
 void bug(char *msg, ...) NORET;
 

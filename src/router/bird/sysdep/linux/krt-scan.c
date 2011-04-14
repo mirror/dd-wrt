@@ -48,7 +48,6 @@ krt_parse_entry(byte *ent, struct krt_proto *p)
   int masklen;
   net *net;
   byte *iface = ent;
-  rta a;
   rte *e;
 
   if (sscanf(ent, "%*s\t%x\t%x\t%x\t%*d\t%*d\t%*d\t%x\t", &dest0, &gw0, &flags, &mask0) != 4)
@@ -88,14 +87,12 @@ krt_parse_entry(byte *ent, struct krt_proto *p)
 
   net = net_get(p->p.table, dest, masklen);
 
-  a.proto = &p->p;
-  a.source = RTS_INHERIT;
-  a.scope = SCOPE_UNIVERSE;
-  a.cast = RTC_UNICAST;
-  a.flags = a.aflags = 0;
-  a.from = IPA_NONE;
-  a.iface = NULL;
-  a.eattrs = NULL;
+  rta a = {
+    .proto = &p->p,
+    .source = RTS_INHERIT,
+    .scope = SCOPE_UNIVERSE,
+    .cast = RTC_UNICAST
+  };
 
   if (flags & RTF_GATEWAY)
     {
