@@ -64,22 +64,6 @@ static void __attribute__((constructor)) mac80211_init(void) {
 
 
 
-void mac_addr_n2a(char *mac_addr, unsigned char *arg)
-{
-	int i, l;
-#define ETH_ALEN        6
-
-	l = 0;
-	for (i = 0; i < ETH_ALEN ; i++) {
-		if (i == 0) {
-			sprintf(mac_addr+l, "%02x", arg[i]);
-			l += 2;
-		} else {
-			sprintf(mac_addr+l, ":%02x", arg[i]);
-			l += 3;
-		}
-	}
-}
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = { .type = NLA_U32 },
@@ -217,7 +201,7 @@ static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
 		fprintf(stderr, "failed to parse nested attributes!\n");
 		return NL_SKIP;
 	}
-	mac_addr_n2a(mac_addr, nla_data(tb[NL80211_ATTR_MAC]));
+	ether_etoa(nla_data(tb[NL80211_ATTR_MAC]),mac_addr);
 	if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), dev);
 	printf("Station %s (on %s)", mac_addr, dev);
 	strcpy(mac80211_info->wci->mac, mac_addr);
