@@ -47,18 +47,6 @@
 // dummy TBD 
 int getassoclist_ath9k(char *ifname, unsigned char *list)
 {
-	struct mac80211_info *mac80211_info;
-	struct wifi_client_info *wc;
-	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, mac)) {
-			free_wifi_clients(mac80211_info->wci);
-			free(mac80211_info);
-			return wc->uptime;
-		}
-	}
-	free_wifi_clients(mac80211_info->wci);
-	free(mac80211_info);
 	return 0;
 }
 
@@ -84,8 +72,19 @@ int getRssi_ath9k(char *ifname, unsigned char *mac)
 // dummy TBD 
 int getUptime_ath9k(char *ifname, unsigned char *mac)
 {
-	//todo, no idea yet howto get that
-	return (300);
+	struct mac80211_info *mac80211_info;
+	struct wifi_client_info *wc;
+	mac80211_info = mac80211_assoclist(ifname);
+	for (wc = mac80211_info->wci; wc; wc = wc->next) {
+		if (!strcmp(wc->mac, mac)) {
+			free_wifi_clients(mac80211_info->wci);
+			free(mac80211_info);
+			return wc->uptime;
+		}
+	}
+	free_wifi_clients(mac80211_info->wci);
+	free(mac80211_info);
+	return 0;
 }
 
 // dummy TBD 
