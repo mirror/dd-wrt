@@ -53,12 +53,14 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 // dummy TBD 
 int getRssi_ath9k(char *ifname, unsigned char *mac)
 {
+	unsigned char rmac[32];
+	ether_etoa(mac, rmac);
 
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, mac)) {
+		if (!strcmp(wc->mac, rmac)) {
 			free_wifi_clients(mac80211_info->wci);
 			free(mac80211_info);
 			return wc->signal;
@@ -72,11 +74,13 @@ int getRssi_ath9k(char *ifname, unsigned char *mac)
 // dummy TBD 
 int getUptime_ath9k(char *ifname, unsigned char *mac)
 {
+	unsigned char rmac[32];
+	ether_etoa(mac, rmac);
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, mac)) {
+		if (!strcmp(wc->mac, rmac)) {
 			free_wifi_clients(mac80211_info->wci);
 			free(mac80211_info);
 			return wc->uptime;
@@ -90,11 +94,13 @@ int getUptime_ath9k(char *ifname, unsigned char *mac)
 // dummy TBD 
 int getNoise_ath9k(char *ifname, unsigned char *mac)
 {
+	unsigned char rmac[32];
+	ether_etoa(mac, rmac);
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, mac)) {
+		if (!strcmp(wc->mac, rmac)) {
 			free_wifi_clients(mac80211_info->wci);
 			free(mac80211_info);
 			return wc->noise;
