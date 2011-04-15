@@ -432,7 +432,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		iface = ifname;
 		if (is_ath9k(iface))
 			sysprintf("wl_ath9k -i %s %s > %s", iface,
-				  ASSOCLIST_CMD,, ASSOCLIST_TMP);
+				  ASSOCLIST_CMD, ASSOCLIST_TMP);
 		else
 			sysprintf("wl_atheros -i %s %s > %s", iface,
 				  ASSOCLIST_CMD, ASSOCLIST_TMP);
