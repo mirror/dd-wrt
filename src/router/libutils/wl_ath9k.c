@@ -44,37 +44,67 @@
 
 #include <linux/nl80211.h>
 
-
 // dummy TBD 
 int getassoclist_ath9k(char *ifname, unsigned char *list)
 {
-	// get_ath9k_phy_idx nicht vergessen
-	return(0);
+	struct mac80211_info *mac80211_info;
+	struct wifi_client_info *wc;
+	mac80211_info = mac80211_assoclist(ifname);
+	for (wc = mac80211_info->wci; wc; wc = wc->next) {
+		if (!strcmp(wc->mac, mac)) {
+			free_wifi_clients(mac80211_info->wci);
+			free(mac80211_info);
+			return wc->uptime;
+		}
+	}
+	free_wifi_clients(mac80211_info->wci);
+	free(mac80211_info);
+	return 0;
 }
 
 // dummy TBD 
 int getRssi_ath9k(char *ifname, unsigned char *mac)
 {
-	// (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));
-	return(-65);
+
+	struct mac80211_info *mac80211_info;
+	struct wifi_client_info *wc;
+	mac80211_info = mac80211_assoclist(ifname);
+	for (wc = mac80211_info->wci; wc; wc = wc->next) {
+		if (!strcmp(wc->mac, mac)) {
+			free_wifi_clients(mac80211_info->wci);
+			free(mac80211_info);
+			return wc->signal;
+		}
+	}
+	free_wifi_clients(mac80211_info->wci);
+	free(mac80211_info);
+	return 0;
 }
 
 // dummy TBD 
 int getUptime_ath9k(char *ifname, unsigned char *mac)
 {
-    //todo, no idea yet howto get that
-	return(300);
+	//todo, no idea yet howto get that
+	return (300);
 }
 
 // dummy TBD 
 int getNoise_ath9k(char *ifname, unsigned char *mac)
 {
-	// todo
-	//  (int8_t)nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]));
-	// dummy:
-	return(-103);
+	struct mac80211_info *mac80211_info;
+	struct wifi_client_info *wc;
+	mac80211_info = mac80211_assoclist(ifname);
+	for (wc = mac80211_info->wci; wc; wc = wc->next) {
+		if (!strcmp(wc->mac, mac)) {
+			free_wifi_clients(mac80211_info->wci);
+			free(mac80211_info);
+			return wc->noise;
+		}
+	}
+	free_wifi_clients(mac80211_info->wci);
+	free(mac80211_info);
+	return 0;
 }
-
 
 // dummy TBD  erstmal alles zum spielen
 /*
