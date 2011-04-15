@@ -53,16 +53,16 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 	unsigned char *l = (unsigned char *)list;
 	mac80211_info = mac80211_assoclist(ifname);
 	l += 4;
-	*count=0;
+	count[0]=0;
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 	
 		ether_atoe(wc->mac,l);
 		l+=6;
-		*count++;
+		count[0]++;
 	}
 	free_wifi_clients(mac80211_info->wci);
 	free(mac80211_info);
-	return *count;
+	return count[0];
 }
 
 // dummy TBD 
