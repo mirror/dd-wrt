@@ -18,7 +18,7 @@
  */
 
 #include <linux/kernel.h>
-#include <linux/autoconf.h>
+//#include <linux/autoconf.h>
 #include <linux/pci.h>
 #include <linux/init.h>
 #include <linux/delay.h>
