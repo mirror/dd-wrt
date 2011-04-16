@@ -1,5 +1,7 @@
 
 
+#define PARSER 1
+
 #include "nest/bird.h"
 #include "conf/conf.h"
 #include "lib/resource.h"
@@ -124,6 +126,7 @@ static struct keyword keyword_list[] = {
 { "listen", LISTEN, NULL },
 { "bgp", BGP, NULL },
 { "v6only", V6ONLY, NULL },
+{ "dual", DUAL, NULL },
 { "address", ADDRESS, NULL },
 { "port", PORT, NULL },
 { "passwords", PASSWORDS, NULL },
@@ -135,6 +138,7 @@ static struct keyword keyword_list[] = {
 { "messages", MESSAGES, NULL },
 { "restrict", RESTRICT, NULL },
 { "memory", MEMORY, NULL },
+{ "igp_metric", IGP_METRIC, NULL },
 { "RTS_DUMMY", -((T_ENUM_RTS<<16) | RTS_DUMMY), NULL },
 { "RTS_STATIC", -((T_ENUM_RTS<<16) | RTS_STATIC), NULL },
 { "RTS_INHERIT", -((T_ENUM_RTS<<16) | RTS_INHERIT), NULL },
@@ -162,6 +166,7 @@ static struct keyword keyword_list[] = {
 { "RTD_BLACKHOLE", -((T_ENUM_RTD<<16) | RTD_BLACKHOLE), NULL },
 { "RTD_UNREACHABLE", -((T_ENUM_RTD<<16) | RTD_UNREACHABLE), NULL },
 { "RTD_PROHIBIT", -((T_ENUM_RTD<<16) | RTD_PROHIBIT), NULL },
+{ "RTD_MULTIPATH", -((T_ENUM_RTD<<16) | RTD_MULTIPATH), NULL },
 { "show", SHOW, NULL },
 { "status", STATUS, NULL },
 { "summary", SUMMARY, NULL },
@@ -271,6 +276,9 @@ static struct keyword keyword_list[] = {
 { "communities", COMMUNITIES, NULL },
 { "bgp_originator_id", BGP_ORIGINATOR_ID, NULL },
 { "bgp_cluster_list", BGP_CLUSTER_LIST, NULL },
+{ "igp", IGP, NULL },
+{ "gateway", GATEWAY, NULL },
+{ "recursive", RECURSIVE, NULL },
 { "ORIGIN_IGP", -((T_ENUM_BGP_ORIGIN<<16) | ORIGIN_IGP), NULL },
 { "ORIGIN_EGP", -((T_ENUM_BGP_ORIGIN<<16) | ORIGIN_EGP), NULL },
 { "ORIGIN_INCOMPLETE", -((T_ENUM_BGP_ORIGIN<<16) | ORIGIN_INCOMPLETE), NULL },
@@ -280,7 +288,6 @@ static struct keyword keyword_list[] = {
 { "ospf_metric2", OSPF_METRIC2, NULL },
 { "ospf_tag", OSPF_TAG, NULL },
 { "ospf_router_id", OSPF_ROUTER_ID, NULL },
-{ "broadcast", BROADCAST, NULL },
 { "rfc1583compat", RFC1583COMPAT, NULL },
 { "stub", STUB, NULL },
 { "tick", TICK, NULL },
@@ -290,9 +297,15 @@ static struct keyword keyword_list[] = {
 { "transmit", TRANSMIT, NULL },
 { "priority", PRIORITY, NULL },
 { "dead", DEAD, NULL },
-{ "nonbroadcast", NONBROADCAST, NULL },
-{ "pointopoint", POINTOPOINT, NULL },
 { "type", TYPE, NULL },
+{ "broadcast", BROADCAST, NULL },
+{ "bcast", BCAST, NULL },
+{ "nonbroadcast", NONBROADCAST, NULL },
+{ "nbma", NBMA, NULL },
+{ "pointopoint", POINTOPOINT, NULL },
+{ "ptp", PTP, NULL },
+{ "pointomultipoint", POINTOMULTIPOINT, NULL },
+{ "ptmp", PTMP, NULL },
 { "simple", SIMPLE, NULL },
 { "authentication", AUTHENTICATION, NULL },
 { "strict", STRICT, NULL },
@@ -302,6 +315,7 @@ static struct keyword keyword_list[] = {
 { "networks", NETWORKS, NULL },
 { "hidden", HIDDEN, NULL },
 { "virtual", VIRTUAL, NULL },
+{ "check", CHECK, NULL },
 { "link", LINK, NULL },
 { "rx", RX, NULL },
 { "buffer", BUFFER, NULL },
@@ -309,6 +323,8 @@ static struct keyword keyword_list[] = {
 { "normal", NORMAL, NULL },
 { "stubnet", STUBNET, NULL },
 { "lsadb", LSADB, NULL },
+{ "ecmp", ECMP, NULL },
+{ "weight", WEIGHT, NULL },
 { "topology", TOPOLOGY, NULL },
 { "state", STATE, NULL },
 { "pipe", PIPE, NULL },
@@ -334,4 +350,5 @@ static struct keyword keyword_list[] = {
 { "rip_tag", RIP_TAG, NULL },
 { "static", STATIC, NULL },
 { "prohibit", PROHIBIT, NULL },
+{ "multipath", MULTIPATH, NULL },
 { NULL, -1, NULL } };
