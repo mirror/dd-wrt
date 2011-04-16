@@ -1,6 +1,8 @@
 %{
 /* Headers from ../../conf/confbase.Y */
 
+#define PARSER 1
+
 #include "nest/bird.h"
 #include "conf/conf.h"
 #include "lib/resource.h"
@@ -79,6 +81,21 @@ static int make_pair(int i1, int i2)
   return (u1 << 16) | u2;
 }
 
+struct f_tree *f_generate_rev_wcard(int from, int to, int expr)
+{
+	struct f_tree *ret = NULL, *last = NULL;
+
+	while (from <= to) {
+		ret = f_new_tree(); 
+		ret->from.type = ret->to.type = T_PAIR;
+		ret->from.val.i = ret->to.val.i = make_pair(from, expr); 
+		ret->left = last;
+
+		from++; last = ret;
+	}
+	return ret;
+}
+
 /* Headers from ../../proto/bgp/config.Y */
 
 #include "proto/bgp/bgp.h"
@@ -103,8 +120,13 @@ static struct ospf_stubnet_config *this_stubnet;
 
 #ifdef OSPFv2
 static void
-finish_iface_config(struct ospf_iface_patt *ip)
+ospf_iface_finish(void)
 {
+  struct ospf_iface_patt *ip = OSPF_PATT;
+
+  if (ip->deadint == 0)
+    ip->deadint = ip->deadc * ip->helloint;
+
   ip->passwords = get_passwords();
 
   if ((ip->autype == OSPF_AUTH_CRYPT) && (ip->helloint < 5))
@@ -117,12 +139,56 @@ finish_iface_config(struct ospf_iface_patt *ip)
 
 #ifdef OSPFv3
 static void
-finish_iface_config(struct ospf_iface_patt *ip)
+ospf_iface_finish(void)
 {
+  struct ospf_iface_patt *ip = OSPF_PATT;
+
+  if (ip->deadint == 0)
+    ip->deadint = ip->deadc * ip->helloint;
+
   if ((ip->autype != OSPF_AUTH_NONE) || (get_passwords() != NULL))
     cf_error("Authentication not supported in OSPFv3");
 }
 #endif
+
+static void
+ospf_area_finish(void)
+{
+  if ((this_area->areaid == 0) && (this_area->stub != 0))
+    cf_error( "Backbone area cannot be stub");
+}
+
+static void
+ospf_proto_finish(void)
+{
+  struct ospf_config *cf = OSPF_CFG;
+
+  if (EMPTY_LIST(cf->area_list))
+    cf_error( "No configured areas in OSPF");
+
+  int areano = 0;
+  int backbone = 0;
+  struct ospf_area_config *ac;
+  WALK_LIST(ac, cf->area_list)
+  {
+    areano++;
+    if (ac->areaid == 0)
+     backbone = 1;
+  }
+  cf->abr = areano > 1;
+
+  if (cf->abr && !backbone)
+  {
+    struct ospf_area_config *ac = cfg_allocz(sizeof(struct ospf_area_config));
+    add_head(&cf->area_list, NODE ac);
+    init_list(&ac->patt_list);
+    init_list(&ac->net_list);
+    init_list(&ac->stubnet_list);
+  }
+
+  if (!cf->abr && !EMPTY_LIST(cf->vlink_list))
+    cf_error( "No configured areas in OSPF");
+}
 
 /* Headers from ../../proto/pipe/config.Y */
 
@@ -148,7 +214,8 @@ finish_iface_config(struct ospf_iface_patt *ip)
 
 /* Defines from ../../proto/static/config.Y */
 
-static struct static_route *this_srt;
+#define STATIC_CFG ((struct static_config *) this_proto)
+static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 %}
 
@@ -176,7 +243,7 @@ static struct static_route *this_srt;
   struct timeformat *tf;
 }
 
-%token END CLI_MARKER INVALID_TOKEN
+%token END CLI_MARKER INVALID_TOKEN ELSECOL
 %token GEQ LEQ NEQ AND OR
 %token PO PC
 %token <i> NUM ENUM
@@ -193,10 +260,11 @@ static struct static_route *this_srt;
 
 %nonassoc PREFIX_DUMMY
 %left AND OR
-%nonassoc '=' '<' '>' '~' '.' GEQ LEQ NEQ PO PC
+%nonassoc '=' '<' '>' '~' GEQ LEQ NEQ PO PC
 %left '+' '-'
 %left '*' '/' '%'
 %left '!'
+%nonassoc '.'
 
 %token DEFINE ON OFF YES NO
 
@@ -227,8 +295,8 @@ static struct static_route *this_srt;
 %token INTERFACE IMPORT EXPORT FILTER NONE STATES FILTERS
 %token PASSWORD FROM PASSIVE TO EVENTS PACKETS PROTOCOLS INTERFACES
 %token PRIMARY STATS COUNT FOR COMMANDS PREEXPORT GENERATE
-%token LISTEN BGP V6ONLY ADDRESS PORT PASSWORDS DESCRIPTION
-%token RELOAD IN OUT MRTDUMP MESSAGES RESTRICT MEMORY
+%token LISTEN BGP V6ONLY DUAL ADDRESS PORT PASSWORDS DESCRIPTION
+%token RELOAD IN OUT MRTDUMP MESSAGES RESTRICT MEMORY IGP_METRIC
 
 
 
@@ -264,7 +332,7 @@ static struct static_route *this_srt;
 
 %type <x> term block cmds cmds_int cmd function_body constant print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol dpair bgp_path_expr
 %type <f> filter filter_body where_filter
-%type <i> type break_command cpair
+%type <i> type break_command
 %type <e> set_item set_items switch_body
 %type <trie> fprefix_set
 %type <v> set_atom fprefix fprefix_s fipa
@@ -273,17 +341,18 @@ static struct static_route *this_srt;
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE
 
 /* Declarations from ../../proto/ospf/config.Y */
 
 %token OSPF AREA OSPF_METRIC1 OSPF_METRIC2 OSPF_TAG OSPF_ROUTER_ID
-%token BROADCAST RFC1583COMPAT STUB TICK COST RETRANSMIT
-%token HELLO TRANSMIT PRIORITY DEAD NONBROADCAST POINTOPOINT TYPE
+%token RFC1583COMPAT STUB TICK COST RETRANSMIT
+%token HELLO TRANSMIT PRIORITY DEAD TYPE BROADCAST BCAST
+%token NONBROADCAST NBMA POINTOPOINT PTP POINTOMULTIPOINT PTMP
 %token SIMPLE AUTHENTICATION STRICT CRYPTOGRAPHIC
-%token ELIGIBLE POLL NETWORKS HIDDEN VIRTUAL LINK
+%token ELIGIBLE POLL NETWORKS HIDDEN VIRTUAL CHECK LINK
 %token RX BUFFER LARGE NORMAL STUBNET
-%token LSADB
+%token LSADB ECMP WEIGHT
 
 %type <t> opttext
 
@@ -302,6 +371,8 @@ static struct static_route *this_srt;
 /* Declarations from ../../proto/static/config.Y */
 
 %token STATIC PROHIBIT
+%token MULTIPATH
+
 
 
 %%
@@ -600,7 +671,8 @@ listen_opts:
 listen_opt: 
    ADDRESS ipa { new_config->listen_bgp_addr = $2; }
  | PORT expr { new_config->listen_bgp_port = $2; }
- | V6ONLY { new_config->listen_bgp_flags |= SKF_V6ONLY; }
+ | V6ONLY { new_config->listen_bgp_flags = 0; }
+ | DUAL { new_config->listen_bgp_flags = 1; }
  ;
 
 
@@ -997,6 +1069,7 @@ proto_patt2:
  ;
 
 
+
 /* Grammar from ../../filter/config.Y */
 
 filter_def:
@@ -1164,13 +1237,6 @@ block:
  ;
 
 /*
- * Simple types, their bison value is int
- */
-cpair:
-   '(' NUM ',' NUM ')' { $$ = make_pair($2, $4); }
- ;
-
-/*
  * Complex types, their bison value is struct f_val
  */
 fipa:
@@ -1178,20 +1244,50 @@ fipa:
  ;
 
 set_atom:
-   NUM   { $$.type = T_INT; $$.val.i = $1; }
+   expr  { $$.type = T_INT; $$.val.i = $1; }	/* 'SYM' included in 'expr' creates 3 reduce/shift conflicts */
  | RTRID { $$.type = T_QUAD; $$.val.i = $1; }
- | cpair { $$.type = T_PAIR; $$.val.i = $1; }
  | fipa  { $$ = $1; }
- | ENUM  {  $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
+ | ENUM  { $$.type = $1 >> 16; $$.val.i = $1 & 0xffff; }
  ; 
 
 set_item:
-   '(' NUM ',' '*' ')' { 
+   '(' expr ',' expr ')' {
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, $4); 
+	$$->to.val.i = make_pair($2, $4);
+   }
+ | '(' expr ',' expr '.' '.' expr ')' { 
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, $4); 
+	$$->to.val.i = make_pair($2, $7);
+   }
+ | '(' expr ',' expr ')' '.' '.' '(' expr ',' expr ')' { 
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = make_pair($2, $4); 
+	$$->to.val.i = make_pair($9, $11);
+   }
+ |  '(' '*' ',' '*' ')' { 	/* This is probably useless :-) */
+	$$ = f_new_tree(); 
+	$$->from.type = $$->to.type = T_PAIR;
+	$$->from.val.i = 0;
+	$$->to.val.i = 0xffffffff;
+   }
+ |  '(' expr ',' '*' ')' { 
 	$$ = f_new_tree(); 
 	$$->from.type = $$->to.type = T_PAIR;
 	$$->from.val.i = make_pair($2, 0); 
 	$$->to.val.i = make_pair($2, 0xffff);
    }
+ |  '(' '*' ',' expr ')' { 
+	$$ = f_generate_rev_wcard(0, 0xffff, $4);
+   }
+ /* This causes 3 reduce/reduce conflicts
+ | '(' expr '.' '.' expr ',' expr ')' { 
+	cf_error("Not implemented yet");
+   }*/
  | set_atom { 
 	$$ = f_new_tree(); 
 	$$->from = $1; 
@@ -1227,8 +1323,8 @@ fprefix:
  ;
 
 fprefix_set:
-   fprefix { $$ = f_new_trie(); trie_add_prefix($$, &($1.val.px)); }
- | fprefix_set ',' fprefix { $$ = $1; trie_add_prefix($$, &($3.val.px)); }
+   fprefix { $$ = f_new_trie(cfg_mem); trie_add_fprefix($$, &($1.val.px)); }
+ | fprefix_set ',' fprefix { $$ = $1; trie_add_fprefix($$, &($3.val.px)); }
  ;
 
 switch_body: /* EMPTY */ { $$ = NULL; }
@@ -1237,11 +1333,11 @@ switch_body: /* EMPTY */ { $$ = NULL; }
      $$->data = $4;
      $$->left = $1;
    }
- | switch_body ELSE ':' cmds {
+ | switch_body ELSECOL cmds {
      $$ = f_new_tree(); 
      $$->from.type = T_VOID; 
      $$->to.type = T_VOID;
-     $$->data = $4;
+     $$->data = $3;
      $$->left = $1;
    }
  ;
@@ -1577,6 +1673,7 @@ bgp_proto_start: proto_start BGP {
      BGP_CFG->connect_retry_time = 120;
      BGP_CFG->initial_hold_time = 240;
      BGP_CFG->compare_path_lengths = 1;
+     BGP_CFG->igp_metric = 1;
      BGP_CFG->start_delay_time = 5;
      BGP_CFG->error_amnesia_time = 300;
      BGP_CFG->error_delay_time_min = 60;
@@ -1594,6 +1691,7 @@ bgp_proto:
    bgp_proto_start proto_name '{'
  | bgp_proto proto_item ';'
  | bgp_proto LOCAL AS expr ';' { BGP_CFG->local_as = $4; }
+ | bgp_proto LOCAL ipa AS expr ';' { BGP_CFG->source_addr = $3; BGP_CFG->local_as = $5; }
  | bgp_proto NEIGHBOR ipa AS expr ';' {
      if (ipa_nonzero(BGP_CFG->remote_ip)) cf_error("Only one neighbor per BGP instance is allowed");
 
@@ -1607,12 +1705,16 @@ bgp_proto:
  | bgp_proto STARTUP HOLD TIME expr ';' { BGP_CFG->initial_hold_time = $5; }
  | bgp_proto CONNECT RETRY TIME expr ';' { BGP_CFG->connect_retry_time = $5; }
  | bgp_proto KEEPALIVE TIME expr ';' { BGP_CFG->keepalive_time = $4; }
- | bgp_proto MULTIHOP expr VIA ipa ';' { BGP_CFG->multihop = $3; BGP_CFG->multihop_via = $5; }
+ | bgp_proto MULTIHOP ';' { BGP_CFG->multihop = 64; }
+ | bgp_proto MULTIHOP expr ';' { BGP_CFG->multihop = $3; }
  | bgp_proto NEXT HOP SELF ';' { BGP_CFG->next_hop_self = 1; }
  | bgp_proto MISSING LLADDR SELF ';' { BGP_CFG->missing_lladdr = MLL_SELF; }
  | bgp_proto MISSING LLADDR DROP ';' { BGP_CFG->missing_lladdr = MLL_DROP; }
  | bgp_proto MISSING LLADDR IGNORE ';' { BGP_CFG->missing_lladdr = MLL_IGNORE; }
+ | bgp_proto GATEWAY DIRECT ';' { BGP_CFG->gw_mode = GW_DIRECT; }
+ | bgp_proto GATEWAY RECURSIVE ';' { BGP_CFG->gw_mode = GW_RECURSIVE; }
  | bgp_proto PATH METRIC bool ';' { BGP_CFG->compare_path_lengths = $4; }
+ | bgp_proto IGP METRIC bool ';' { BGP_CFG->igp_metric = $4; }
  | bgp_proto PREFER OLDER bool ';' { BGP_CFG->prefer_older = $4; }
  | bgp_proto DEFAULT BGP_MED expr ';' { BGP_CFG->default_med = $4; }
  | bgp_proto DEFAULT BGP_LOCAL_PREF expr ';' { BGP_CFG->default_local_pref = $4; }
@@ -1629,6 +1731,7 @@ bgp_proto:
  | bgp_proto ROUTE LIMIT expr ';' { BGP_CFG->route_limit = $4; }
  | bgp_proto PASSIVE bool ';' { BGP_CFG->passive = $3; }
  | bgp_proto INTERPRET COMMUNITIES bool ';' { BGP_CFG->interpret_communities = $4; }
+ | bgp_proto IGP TABLE rtable ';' { BGP_CFG->igp_table = $4; }
  ;
 
 
@@ -1642,6 +1745,7 @@ ospf_proto_start: proto_start OSPF {
      this_proto = proto_config_new(&proto_ospf, sizeof(struct ospf_config));
      this_proto->preference = DEF_PREF_OSPF;
      init_list(&OSPF_CFG->area_list);
+     init_list(&OSPF_CFG->vlink_list);
      OSPF_CFG->rfc1583 = DEFAULT_RFC1583;
      OSPF_CFG->tick = DEFAULT_OSPFTICK;
   }
@@ -1655,23 +1759,24 @@ ospf_proto:
 ospf_proto_item:
    proto_item
  | RFC1583COMPAT bool { OSPF_CFG->rfc1583 = $2; }
- | TICK expr { OSPF_CFG->tick = $2 ; if($2<=0) cf_error("Tick must be greater than zero"); }
- | ospf_area '}'
+ | ECMP bool { OSPF_CFG->ecmp = $2 ? DEFAULT_ECMP_LIMIT : 0; }
+ | ECMP bool LIMIT expr { OSPF_CFG->ecmp = $2 ? $4 : 0; if ($4 < 0) cf_error("ECMP limit cannot be negative"); }
+ | TICK expr { OSPF_CFG->tick = $2; if($2<=0) cf_error("Tick must be greater than zero"); }
+ | ospf_area
  ;
 
-ospf_area_start: AREA idval '{' {
+ospf_area_start: AREA idval {
   this_area = cfg_allocz(sizeof(struct ospf_area_config));
   add_tail(&OSPF_CFG->area_list, NODE this_area);
   this_area->areaid = $2;
   this_area->stub = 0;
   init_list(&this_area->patt_list);
-  init_list(&this_area->vlink_list);
   init_list(&this_area->net_list);
   init_list(&this_area->stubnet_list);
  }
  ;
 
-ospf_area: ospf_area_start ospf_area_opts
+ospf_area: ospf_area_start '{' ospf_area_opts '}' { ospf_area_finish(); }
  ;
 
 ospf_area_opts:
@@ -1714,7 +1819,7 @@ ospf_stubnet_item:
  ;
 
 ospf_vlink:
-   ospf_vlink_start '{' ospf_vlink_opts '}' { finish_iface_config(OSPF_PATT); }
+   ospf_vlink_start '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
  | ospf_vlink_start
  ;
 
@@ -1728,7 +1833,7 @@ ospf_vlink_item:
  | RETRANSMIT expr { OSPF_PATT->rxmtint = $2 ; if ($2<=0) cf_error("Retransmit int must be greater than zero"); }
  | TRANSMIT DELAY expr { OSPF_PATT->inftransdelay = $3 ; if (($3<=0) || ($3>65535)) cf_error("Transmit delay must be in range 1-65535"); }
  | WAIT expr { OSPF_PATT->waitint = $2 ; }
- | DEAD expr { OSPF_PATT->dead = $2 ; if ($2<=1) cf_error("Dead interval must be greater than one"); }
+ | DEAD expr { OSPF_PATT->deadint = $2 ; if ($2<=1) cf_error("Dead interval must be greater than one"); }
  | DEAD COUNT expr { OSPF_PATT->deadc = $3 ; if ($3<=1) cf_error("Dead count must be greater than one"); }
  | AUTHENTICATION NONE { OSPF_PATT->autype = OSPF_AUTH_NONE ; }
  | AUTHENTICATION SIMPLE { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; }
@@ -1740,15 +1845,16 @@ ospf_vlink_start: VIRTUAL LINK idval
  {
   if (this_area->areaid == 0) cf_error("Virtual link cannot be in backbone");
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
-  add_tail(&this_area->vlink_list, NODE this_ipatt);
+  add_tail(&OSPF_CFG->vlink_list, NODE this_ipatt);
   init_list(&this_ipatt->ipn_list);
+  OSPF_PATT->voa = this_area->areaid;
   OSPF_PATT->vid = $3;
   OSPF_PATT->helloint = HELLOINT_D;
   OSPF_PATT->rxmtint = RXMTINT_D;
   OSPF_PATT->inftransdelay = INFTRANSDELAY_D;
   OSPF_PATT->waitint = WAIT_DMH*HELLOINT_D;
   OSPF_PATT->deadc = DEADC_D;
-  OSPF_PATT->dead = 0;
+  OSPF_PATT->deadint = 0;
   OSPF_PATT->type = OSPF_IT_VLINK;
   init_list(&OSPF_PATT->nbma_list);
   OSPF_PATT->autype = OSPF_AUTH_NONE;
@@ -1761,23 +1867,30 @@ ospf_iface_item:
  | HELLO expr { OSPF_PATT->helloint = $2 ; if (($2<=0) || ($2>65535)) cf_error("Hello interval must be in range 1-65535"); }
  | POLL expr { OSPF_PATT->pollint = $2 ; if ($2<=0) cf_error("Poll int must be greater than zero"); }
  | RETRANSMIT expr { OSPF_PATT->rxmtint = $2 ; if ($2<=0) cf_error("Retransmit int must be greater than zero"); }
- | TRANSMIT DELAY expr { OSPF_PATT->inftransdelay = $3 ; if (($3<=0) || ($3>65535)) cf_error("Transmit delay must be in range 1-65535"); }
- | PRIORITY expr { OSPF_PATT->priority = $2 ; if (($2<0) || ($2>255)) cf_error("Priority must be in range 0-255"); }
  | WAIT expr { OSPF_PATT->waitint = $2 ; }
- | DEAD expr { OSPF_PATT->dead = $2 ; if ($2<=1) cf_error("Dead interval must be greater than one"); }
+ | DEAD expr { OSPF_PATT->deadint = $2 ; if ($2<=1) cf_error("Dead interval must be greater than one"); }
  | DEAD COUNT expr { OSPF_PATT->deadc = $3 ; if ($3<=1) cf_error("Dead count must be greater than one"); }
  | TYPE BROADCAST { OSPF_PATT->type = OSPF_IT_BCAST ; }
+ | TYPE BCAST { OSPF_PATT->type = OSPF_IT_BCAST ; }
  | TYPE NONBROADCAST { OSPF_PATT->type = OSPF_IT_NBMA ; }
+ | TYPE NBMA { OSPF_PATT->type = OSPF_IT_NBMA ; }
  | TYPE POINTOPOINT { OSPF_PATT->type = OSPF_IT_PTP ; }
+ | TYPE PTP { OSPF_PATT->type = OSPF_IT_PTP ; }
+ | TYPE POINTOMULTIPOINT { OSPF_PATT->type = OSPF_IT_PTMP ; }
+ | TYPE PTMP { OSPF_PATT->type = OSPF_IT_PTMP ; }
+ | TRANSMIT DELAY expr { OSPF_PATT->inftransdelay = $3 ; if (($3<=0) || ($3>65535)) cf_error("Transmit delay must be in range 1-65535"); }
+ | PRIORITY expr { OSPF_PATT->priority = $2 ; if (($2<0) || ($2>255)) cf_error("Priority must be in range 0-255"); }
  | STRICT NONBROADCAST bool { OSPF_PATT->strictnbma = $3 ; }
  | STUB bool { OSPF_PATT->stub = $2 ; }
+ | CHECK LINK bool { OSPF_PATT->check_link = $3; }
+ | ECMP WEIGHT expr { OSPF_PATT->ecmp_weight = $3 - 1; if (($3<1) || ($3>256)) cf_error("ECMP weight must be in range 1-256"); }
  | NEIGHBORS '{' ipa_list '}'
  | AUTHENTICATION NONE { OSPF_PATT->autype = OSPF_AUTH_NONE ; }
  | AUTHENTICATION SIMPLE { OSPF_PATT->autype = OSPF_AUTH_SIMPLE ; }
  | AUTHENTICATION CRYPTOGRAPHIC { OSPF_PATT->autype = OSPF_AUTH_CRYPT ; }
  | RX BUFFER LARGE { OSPF_PATT->rxbuf = OSPF_RXBUF_LARGE ; } 
  | RX BUFFER NORMAL { OSPF_PATT->rxbuf = OSPF_RXBUF_NORMAL ; } 
- | RX BUFFER expr { OSPF_PATT->rxbuf = $3 ; if ($3 < OSPF_RXBUF_MINSIZE) cf_error("Buffer size is too small") ; } 
+ | RX BUFFER expr { OSPF_PATT->rxbuf = $3 ; if (($3 < OSPF_RXBUF_MINSIZE) || ($3 > OSPF_MAX_PKT_SIZE)) cf_error("Buffer size must be in range 256-65535"); } 
  | password_list
  ;
 
@@ -1850,10 +1963,8 @@ ospf_iface_start:
   OSPF_PATT->priority = PRIORITY_D;
   OSPF_PATT->waitint = WAIT_DMH*HELLOINT_D;
   OSPF_PATT->deadc = DEADC_D;
-  OSPF_PATT->dead = 0;
+  OSPF_PATT->deadint = 0;
   OSPF_PATT->type = OSPF_IT_UNDEF;
-  OSPF_PATT->strictnbma = 0;
-  OSPF_PATT->stub = 0;
   init_list(&OSPF_PATT->nbma_list);
   OSPF_PATT->autype = OSPF_AUTH_NONE;
   reset_passwords();
@@ -1871,7 +1982,7 @@ ospf_iface_opt_list:
  ;
 
 ospf_iface:
-  ospf_iface_start iface_patt_list ospf_iface_opt_list { finish_iface_config(OSPF_PATT); }
+  ospf_iface_start iface_patt_list ospf_iface_opt_list { ospf_iface_finish(); }
  ;
 
 opttext:
@@ -2011,15 +2122,35 @@ static_proto_start: proto_start STATIC {
 static_proto:
    static_proto_start proto_name '{'
  | static_proto proto_item ';'
+ | static_proto CHECK LINK bool ';' { STATIC_CFG->check_link = $4; }
  | static_proto stat_route ';'
  ;
 
 stat_route0: ROUTE prefix {
      this_srt = cfg_allocz(sizeof(struct static_route));
-     add_tail(&((struct static_config *) this_proto)->other_routes, &this_srt->n);
+     add_tail(&STATIC_CFG->other_routes, &this_srt->n);
      this_srt->net = $2.addr;
      this_srt->masklen = $2.len;
   }
+ ;
+
+stat_multipath1:
+   VIA ipa {
+     last_srt_nh = this_srt_nh;
+     this_srt_nh = cfg_allocz(sizeof(struct static_route));
+     this_srt_nh->dest = RTD_NONE;
+     this_srt_nh->via = $2;
+     this_srt_nh->if_name = (void *) this_srt; /* really */
+   }
+ | stat_multipath1 WEIGHT expr {
+     this_srt_nh->masklen = $3 - 1; /* really */
+     if (($3<1) || ($3>256)) cf_error("Weight must be in range 1-256"); 
+   }
+ ;
+
+stat_multipath:
+   stat_multipath1 { this_srt->mp_next = this_srt_nh; }
+ | stat_multipath stat_multipath1 { last_srt_nh->mp_next = this_srt_nh; }
  ;
 
 stat_route:
@@ -2031,7 +2162,10 @@ stat_route:
       this_srt->dest = RTD_DEVICE;
       this_srt->if_name = $3;
       rem_node(&this_srt->n);
-      add_tail(&((struct static_config *) this_proto)->iface_routes, &this_srt->n);
+      add_tail(&STATIC_CFG->iface_routes, &this_srt->n);
+   }
+ | stat_route0 MULTIPATH stat_multipath {
+      this_srt->dest = RTD_MULTIPATH;
    }
  | stat_route0 DROP { this_srt->dest = RTD_BLACKHOLE; }
  | stat_route0 REJECT { this_srt->dest = RTD_UNREACHABLE; }
@@ -2047,10 +2181,11 @@ cmd_SHOW_STATIC: SHOW STATIC optsym END
 
 conf: ';' | definition | log_config | mrtdump_base | timeformat_base | rtrid | listen | newtab | proto | debug_default | filter_def | filter_eval | function_def ;
 cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_SHOW_MEMORY | cmd_SHOW_PROTOCOLS | cmd_SHOW_PROTOCOLS_ALL | cmd_SHOW_INTERFACES | cmd_SHOW_INTERFACES_SUMMARY | cmd_SHOW_ROUTE | cmd_SHOW_SYMBOLS | cmd_DUMP_RESOURCES | cmd_DUMP_SOCKETS | cmd_DUMP_INTERFACES | cmd_DUMP_NEIGHBORS | cmd_DUMP_ATTRIBUTES | cmd_DUMP_ROUTES | cmd_DUMP_PROTOCOLS | cmd_ECHO | cmd_DISABLE | cmd_ENABLE | cmd_RESTART | cmd_RELOAD | cmd_RELOAD_IN | cmd_RELOAD_OUT | cmd_DEBUG | cmd_MRTDUMP | cmd_RESTRICT | cmd_SHOW_OSPF | cmd_SHOW_OSPF_NEIGHBORS | cmd_SHOW_OSPF_INTERFACE | cmd_SHOW_OSPF_TOPOLOGY | cmd_SHOW_OSPF_TOPOLOGY_ALL | cmd_SHOW_OSPF_STATE | cmd_SHOW_OSPF_STATE_ALL | cmd_SHOW_OSPF_LSADB | cmd_SHOW_STATIC ;
-proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
+proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' { ospf_proto_finish(); }  | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
-dynamic_attr: INVALID_TOKEN { $$ = NULL; } | BGP_ORIGIN
+dynamic_attr: IGP_METRIC
+	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_GEN_IGP_METRIC); } | INVALID_TOKEN { $$ = NULL; } | BGP_ORIGIN
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); } | BGP_PATH
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); } | BGP_NEXT_HOP
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); } | BGP_MED
