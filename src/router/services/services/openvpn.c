@@ -106,7 +106,7 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mtu"));
 		if (nvram_invmatch("openvpn_mssfix", "")
 		    && nvram_match("openvpn_proto", "udp")) {
-			fprintf(fp, "mssfix");	//fragment==mssfix
+			fprintf(fp, "mssfix\n");	//fragment==mssfix
 			fprintf(fp, "fragment %s\n",
 				nvram_safe_get("openvpn_mssfix"));
 		}
@@ -273,7 +273,7 @@ void start_openvpn(void)
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_mssfix", "")
 	    && nvram_match("openvpn_proto", "udp")) {
-		fprintf(fp, "mssfix");	//fragment=mssfix
+		fprintf(fp, "mssfix\n");	//fragment=mssfix
 		fprintf(fp, "fragment %s\n",
 			nvram_safe_get("openvpncl_mssfix"));
 	}
