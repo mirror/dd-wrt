@@ -146,7 +146,7 @@
 				<textarea cols="60" rows="2" id="openvpn_clcon" name="openvpn_clcon"> </textarea>
 				<script type="text/javascript">
 				//<![CDATA[
-					var openvpn_crt = fix_cr( '<% nvram_get("openvpn_clcon"); %>' );
+					var openvpn_clcon = fix_cr( '<% nvram_get("openvpn_clcon"); %>' );
 					document.getElementById("openvpn_clcon").value = openvpn_clcon;
 				//]]>
 				</script>
