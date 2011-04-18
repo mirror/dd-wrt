@@ -28,9 +28,6 @@
 #ifndef __IPQ_PUBLIC_FUNCTIONS_H__
 #define __IPQ_PUBLIC_FUNCTIONS_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 	typedef enum {
 
 		IPQ_LOG_ERROR,
@@ -64,7 +61,4 @@ extern "C" {
 									 const unsigned char *packet,
 									 const unsigned short packetlen,
 									 const IPOQUE_TIMESTAMP_COUNTER_SIZE current_tick, void *src, void *dst);
-#ifdef __cplusplus
-}
-#endif
 #endif

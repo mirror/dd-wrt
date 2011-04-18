@@ -28,11 +28,6 @@
 #ifndef __IPQ_MACROS_H__
 #define __IPQ_MACROS_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #if IPOQUE_MAX_SUPPORTED_PROTOCOLS >= 128
 	typedef struct ipoque_protocol_bitmask_struct {
 		u64 bitmask[3];
@@ -188,7 +183,4 @@ extern "C" {
                                 ipq_parse_packet_line_info(ipoque_struct);      \
                         }                                                       \
 
-#ifdef __cplusplus
-}
-#endif
 #endif

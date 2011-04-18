@@ -28,10 +28,6 @@
 #ifndef __IPQ_PROTOCOLS_DEFAULT_H__
 #define __IPQ_PROTOCOLS_DEFAULT_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //  #define IPOQUE_ENABLE_DEBUG_MESSAGES
 
 #define IPOQUE_PROTOCOL_UNKNOWN                 0
@@ -160,7 +156,4 @@ extern "C" {
 	"ipsec","gre","icmp","igmp","egp","sctp","ospf","ipip","rtp","rdp","vnc","pcanywhere","ssl","ssh","usenet","mgcp","iax",\
 	"tftp","afp","stealthnet","aimini","sip","truphone"
 
-#ifdef __cplusplus
-}
-#endif
 #endif
