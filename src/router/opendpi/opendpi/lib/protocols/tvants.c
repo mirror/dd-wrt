@@ -25,30 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_TVANTS
 
-static void ipoque_int_tvants_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_TVANTS;
-	packet->detected_protocol = IPOQUE_PROTOCOL_TVANTS;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_TVANTS);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_TVANTS);
-	}
-}
-
-
-
-
-void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
+static void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -70,7 +47,7 @@ void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
 			|| memcmp(&packet->payload[49], "TVANTS", 6) == 0 || memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "found tvants over udp.  \n");
-		ipoque_int_tvants_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVANTS);
 
 	} else if (packet->tcp != NULL && packet->payload_packet_len > 15
 			   && packet->payload[0] == 0x04 && packet->payload[1] == 0x00
@@ -80,7 +57,7 @@ void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
 			   && memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "found tvants over tcp.  \n");
-		ipoque_int_tvants_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVANTS);
 
 	}
 	IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "exclude tvants.  \n");

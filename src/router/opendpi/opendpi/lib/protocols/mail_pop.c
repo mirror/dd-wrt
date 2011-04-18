@@ -37,34 +37,11 @@
 #define POP_BIT_DELE		0x0200
 
 
-static void ipoque_int_mail_pop_add_connection(struct ipoque_detection_module_struct
-											   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_MAIL_POP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_MAIL_POP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_POP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_POP);
-	}
-}
-
-
 static int ipoque_int_mail_pop_check_for_client_commands(struct ipoque_detection_module_struct
 														 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//  struct ipoque_id_struct         *src=ipoque_struct->src;
-//  struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (packet->payload_packet_len > 4) {
 		if ((packet->payload[0] == 'A' || packet->payload[0] == 'a')
@@ -134,13 +111,11 @@ static int ipoque_int_mail_pop_check_for_client_commands(struct ipoque_detection
 
 
 
-void ipoque_search_mail_pop_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_mail_pop_tcp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//  struct ipoque_id_struct         *src=ipoque_struct->src;
-//  struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	u8 a = 0;
 	u8 bit_count = 0;
@@ -184,7 +159,7 @@ void ipoque_search_mail_pop_tcp(struct ipoque_detection_module_struct
 
 		if ((bit_count + flow->mail_pop_stage) >= 3) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MAIL_POP, ipoque_struct, IPQ_LOG_DEBUG, "mail_pop identified\n");
-			ipoque_int_mail_pop_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MAIL_POP);
 			return;
 		} else {
 			return;

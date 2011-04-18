@@ -24,27 +24,7 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_PCANYWHERE
 
-static void ipoque_int_pcanywhere_add_connection(struct ipoque_detection_module_struct
-												 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_PCANYWHERE;
-	packet->detected_protocol = IPOQUE_PROTOCOL_PCANYWHERE;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_PCANYWHERE);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_PCANYWHERE);
-	}
-}
-
-void ipoque_search_pcanywhere(struct ipoque_detection_module_struct
+static void ipoque_search_pcanywhere(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -57,7 +37,7 @@ void ipoque_search_pcanywhere(struct ipoque_detection_module_struct
 		&& (ipq_mem_cmp(packet->payload, "NQ", 2) == 0 || ipq_mem_cmp(packet->payload, "ST", 2) == 0)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_PCANYWHERE, ipoque_struct, IPQ_LOG_DEBUG,
 				"PC Anywhere name or status query detected.\n");
-		ipoque_int_pcanywhere_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PCANYWHERE);
 		return;
 	}
 

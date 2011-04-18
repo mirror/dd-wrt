@@ -25,29 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_AIMINI
 
-
-static void ipoque_int_aimini_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_AIMINI;
-	packet->detected_protocol = IPOQUE_PROTOCOL_AIMINI;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_AIMINI);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_AIMINI);
-	}
-}
-
-
-void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -112,7 +90,7 @@ void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 										&& ntohs(get_u16(packet->payload, 0)) == 0x0115))) {
 		IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG, "found aimini (64, 0x010b), (>300, 0x0115), "
 				"(16, 0x010c || 64, 0x010b), (16, 0x010c || 64, 0x010b || >100, 0x0115).\n");
-		ipoque_int_aimini_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AIMINI);
 		return;
 	}
 
@@ -138,7 +116,7 @@ void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 										&& ntohs(get_u16(packet->payload, 0)) == 0x01ca))) {
 		IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG,
 				"found aimini (136, 0x01c9), (136, 0x01c9)," "(136, 0x01c9),(136, 0x01c9 || 32, 0x01ca).\n");
-		ipoque_int_aimini_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AIMINI);
 		return;
 	}
 
@@ -157,7 +135,7 @@ void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 	if (flow->aimini_stage == 9 && (packet->payload_packet_len == 88 && ntohs(get_u16(packet->payload, 0)) == 0x0101)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG, "found aimini (88, 0x0101), (88, 0x0101),"
 				"(88, 0x0101),(88, 0x0101).\n");
-		ipoque_int_aimini_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AIMINI);
 		return;
 	}
 
@@ -178,7 +156,7 @@ void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 										 && ntohs(get_u16(packet->payload, 0)) == 0x01ca))) {
 		IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG,
 				"found aimini (104, 0x0102), (104, 0x0102), " "(104, 0x0102), (104, 0x0102).\n");
-		ipoque_int_aimini_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AIMINI);
 		return;
 	}
 
@@ -201,7 +179,7 @@ void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 										 && ntohs(get_u16(packet->payload, 0)) == 0x01ca))) {
 		IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG,
 				"found aimini (32,0x01ca), (32,0x01ca), (32,0x01ca), ((136, 0x0166)||(32,0x01ca)).\n");
-		ipoque_int_aimini_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AIMINI);
 		return;
 	}
 
@@ -220,7 +198,7 @@ void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 	if (flow->aimini_stage == 18 && (packet->payload_packet_len == 16 && ntohs(get_u16(packet->payload, 0)) == 0x010c)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG,
 				"found aimini (16, 0x010c), (16, 0x010c), (16, 0x010c), (16, 0x010c).\n");
-		ipoque_int_aimini_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AIMINI);
 		return;
 	}
 

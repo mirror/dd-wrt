@@ -32,15 +32,12 @@ static void ipoque_int_gnutella_add_connection(struct ipoque_detection_module_st
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 	struct ipoque_id_struct *src = ipoque_struct->src;
 	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	flow->detected_protocol = IPOQUE_PROTOCOL_GNUTELLA;
-	packet->detected_protocol = IPOQUE_PROTOCOL_GNUTELLA;
+	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GNUTELLA);
 
 	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_GNUTELLA);
 		src->gnutella_ts = packet->tick_timestamp;
 		if (packet->udp != NULL) {
 			if (!src->detected_gnutella_udp_port1) {
@@ -60,17 +57,18 @@ static void ipoque_int_gnutella_add_connection(struct ipoque_detection_module_st
 		}
 	}
 	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_GNUTELLA);
 		dst->gnutella_ts = packet->tick_timestamp;
 	}
 }
 
-void ipoque_search_gnutella(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_gnutella(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 	struct ipoque_id_struct *src = ipoque_struct->src;
 	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	const u8 *p, *end, *line;
+	int len;
 
 	u16 c;
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_GNUTELLA) {
@@ -118,13 +116,12 @@ void ipoque_search_gnutella(struct ipoque_detection_module_struct *ipoque_struct
 		if (packet->payload_packet_len > 50 && ((memcmp(packet->payload, "GET /get/", 9) == 0)
 												|| (memcmp(packet->payload, "GET /uri-res/", 13) == 0)
 			)) {
-			ipq_parse_packet_line_info(ipoque_struct);
-			for (c = 0; c < packet->parsed_lines; c++) {
-				if ((packet->line[c].len > 19 && memcmp(packet->line[c].ptr, "User-Agent: Gnutella", 20) == 0)
-					|| (packet->line[c].len > 10 && memcmp(packet->line[c].ptr, "X-Gnutella-", 11) == 0)
-					|| (packet->line[c].len > 7 && memcmp(packet->line[c].ptr, "X-Queue:", 8) == 0)
-					|| (packet->line[c].len > 36 && memcmp(packet->line[c].ptr,
-														   "Content-Type: application/x-gnutella-", 37) == 0)) {
+			for (p = packet->payload, end = p + packet->payload_packet_len;
+			     get_next_line(&p, end, &line, &len);) {
+					if ((len > 19 && memcmp(line, "User-Agent: Gnutella", 20) == 0)
+					|| (len > 10 && memcmp(line, "X-Gnutella-", 11) == 0)
+					|| (len > 7 && memcmp(line, "X-Queue:", 8) == 0)
+					|| (len > 36 && memcmp(line, "Content-Type: application/x-gnutella-", 37) == 0)) {
 					IPQ_LOG(IPOQUE_PROTOCOL_GNUTELLA, ipoque_struct, IPQ_LOG_DEBUG, "DETECTED GNUTELLA GET.\n");
 					ipoque_int_gnutella_add_connection(ipoque_struct);
 					return;

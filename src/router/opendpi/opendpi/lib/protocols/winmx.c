@@ -25,32 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_WINMX
 
-
-static void ipoque_int_winmx_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct);
-
-static void ipoque_int_winmx_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_WINMX;
-	packet->detected_protocol = IPOQUE_PROTOCOL_WINMX;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_WINMX);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_WINMX);
-	}
-}
-
-
-void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -74,7 +49,7 @@ void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struc
 		if (((packet->payload_packet_len) == 3)
 			&& (memcmp(packet->payload, "GET", 3) == 0)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG, "found winmx by GET\n");
-			ipoque_int_winmx_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_WINMX);
 			return;
 		}
 
@@ -89,7 +64,7 @@ void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struc
 
 				IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG,
 						"found winmx by pattern in first packet\n");
-				ipoque_int_winmx_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_WINMX);
 				return;
 			}
 		}
@@ -100,7 +75,7 @@ void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struc
 			while (left > 0) {
 				if (packet->payload[left] == ' ') {
 					IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG, "found winmx in second packet\n");
-					ipoque_int_winmx_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_WINMX);
 					return;
 				} else if (packet->payload[left] < '0' || packet->payload[left] > '9') {
 					break;

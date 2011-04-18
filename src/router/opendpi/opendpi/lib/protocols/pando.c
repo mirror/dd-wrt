@@ -25,26 +25,6 @@
 
 #ifdef IPOQUE_PROTOCOL_PANDO
 
-static void ipoque_int_pando_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_PANDO;
-	packet->detected_protocol = IPOQUE_PROTOCOL_PANDO;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_PANDO);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_PANDO);
-	}
-}
-
 static inline u8 search_pando(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -83,7 +63,7 @@ static inline u8 search_pando(struct ipoque_detection_module_struct *ipoque_stru
 	goto end_pando_nothing_found;
 
   end_pando_found:
-	ipoque_int_pando_add_connection(ipoque_struct);
+	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PANDO);
 	return 1;
 
   end_pando_maybe_found:
@@ -93,7 +73,7 @@ static inline u8 search_pando(struct ipoque_detection_module_struct *ipoque_stru
 	return 0;
 }
 
-void ipoque_search_pando_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_search_pando_tcp_udp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 //      struct ipoque_packet_struct     *packet=&ipoque_struct->packet;

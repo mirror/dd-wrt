@@ -24,28 +24,7 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_XBOX
 
-static void ipoque_int_xbox_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_XBOX;
-	packet->detected_protocol = IPOQUE_PROTOCOL_XBOX;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_XBOX);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_XBOX);
-	}
-}
-
-
-void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -76,7 +55,7 @@ void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_struct)
 				(packet->payload[4] == 0x03 && packet->payload[6] == 0x40) ||
 				(packet->payload[4] == 0x06 && packet->payload[6] == 0x4e)) {
 
-				ipoque_int_xbox_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_XBOX);
 				IPQ_LOG(IPOQUE_PROTOCOL_XBOX, ipoque_struct, IPQ_LOG_DEBUG, "xbox udp connection detected\n");
 				return;
 			}
@@ -90,7 +69,7 @@ void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_struct)
 				|| (packet->payload_packet_len == 38 && ntohl(get_u32(packet->payload, 0)) == 0xc1457f03)
 				|| (packet->payload_packet_len == 28 && ntohl(get_u32(packet->payload, 0)) == 0x015f2c00))) {
 			if (flow->xbox_stage == 1) {
-				ipoque_int_xbox_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_XBOX);
 				IPQ_LOG(IPOQUE_PROTOCOL_XBOX, ipoque_struct, IPQ_LOG_DEBUG, "xbox udp connection detected\n");
 				return;
 			}
