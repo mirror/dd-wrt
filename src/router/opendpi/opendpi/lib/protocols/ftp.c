@@ -25,28 +25,6 @@
 
 #ifdef IPOQUE_PROTOCOL_FTP
 
-
-static void ipoque_int_ftp_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_FTP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_FTP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_FTP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_FTP);
-	}
-}
-
-
 /*
   return 0 if nothing has been detected
   return 1 if a pop packet
@@ -84,7 +62,7 @@ static u8 search_ftp(struct ipoque_detection_module_struct *ipoque_struct)
 		if (ipq_mem_cmp(packet->payload, "USER ", 5) == 0 || ipq_mem_cmp(packet->payload, "user ", 5) == 0) {
 
 			IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "FTP detected\n");
-			ipoque_int_ftp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FTP);
 
 			return 1;
 		}
@@ -99,7 +77,7 @@ static u8 search_ftp(struct ipoque_detection_module_struct *ipoque_struct)
 	if (flow->ftp_stage == 4 - packet->packet_direction && packet->payload_packet_len > 5) {
 		if (ipq_mem_cmp(packet->payload, "211-", 4) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "FTP detected\n");
-			ipoque_int_ftp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FTP);
 			return 1;
 		}
 	}
@@ -247,7 +225,7 @@ static void search_active_ftp_mode(struct ipoque_detection_module_struct *ipoque
 }
 
 
-void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -269,7 +247,7 @@ void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 		} else if (ntohs(packet->tcp->dest) > 1024
 				   && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "detected FTP data stream.\n");
-			ipoque_int_ftp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FTP);
 			return;
 		}
 	}
@@ -288,7 +266,7 @@ void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 		} else if (ntohs(packet->tcp->dest) > 1024
 				   && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "detected FTP data stream.\n");
-			ipoque_int_ftp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FTP);
 			return;
 		}
 	}

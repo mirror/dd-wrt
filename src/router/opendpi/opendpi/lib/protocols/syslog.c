@@ -24,27 +24,7 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_SYSLOG
 
-static void ipoque_int_syslog_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_SYSLOG;
-	packet->detected_protocol = IPOQUE_PROTOCOL_SYSLOG;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_SYSLOG);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_SYSLOG);
-	}
-}
-
-void ipoque_search_syslog(struct ipoque_detection_module_struct
+static void ipoque_search_syslog(struct ipoque_detection_module_struct
 						  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -108,7 +88,7 @@ void ipoque_search_syslog(struct ipoque_detection_module_struct
 			IPQ_LOG(IPOQUE_PROTOCOL_SYSLOG, ipoque_struct, IPQ_LOG_DEBUG,
 					"a month-shortname following: syslog detected.\n");
 
-			ipoque_int_syslog_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SYSLOG);
 
 			return;
 		}

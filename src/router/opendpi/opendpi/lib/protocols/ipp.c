@@ -24,33 +24,11 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_IPP
 
-static void ipoque_int_ipp_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_IPP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_IPP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_IPP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_IPP);
-	}
-}
-
-void ipoque_search_ipp(struct ipoque_detection_module_struct
+static void ipoque_search_ipp(struct ipoque_detection_module_struct
 					   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	u8 i;
 
@@ -104,7 +82,7 @@ void ipoque_search_ipp(struct ipoque_detection_module_struct
 		}
 
 		IPQ_LOG(IPOQUE_PROTOCOL_IPP, ipoque_struct, IPQ_LOG_DEBUG, "found ipp\n");
-		ipoque_int_ipp_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IPP);
 		return;
 	}
 
@@ -115,7 +93,7 @@ void ipoque_search_ipp(struct ipoque_detection_module_struct
 		if (packet->content_line.ptr != NULL && packet->content_line.len > 14
 			&& memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IPP, ipoque_struct, IPQ_LOG_DEBUG, "found ipp via POST ... application/ipp.\n");
-			ipoque_int_ipp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IPP);
 			return;
 		}
 	}

@@ -24,28 +24,6 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_TELNET
 
-
-
-static void ipoque_int_telnet_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_TELNET;
-	packet->detected_protocol = IPOQUE_PROTOCOL_TELNET;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_TELNET);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_TELNET);
-	}
-}
-
 static inline u8 search_iac(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -79,10 +57,9 @@ static inline u8 search_iac(struct ipoque_detection_module_struct *ipoque_struct
 }
 
 /* this detection also works asymmetrically */
-void ipoque_search_telnet_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_telnet_tcp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
-//  struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 //      struct ipoque_id_struct         *src=ipoque_struct->src;
 //      struct ipoque_id_struct         *dst=ipoque_struct->dst;
@@ -93,7 +70,7 @@ void ipoque_search_telnet_tcp(struct ipoque_detection_module_struct
 
 		if (flow->telnet_stage == 2) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TELNET, ipoque_struct, IPQ_LOG_DEBUG, "telnet identified.\n");
-			ipoque_int_telnet_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TELNET);
 			return;
 		}
 		flow->telnet_stage++;

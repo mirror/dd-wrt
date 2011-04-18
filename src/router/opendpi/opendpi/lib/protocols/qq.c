@@ -25,35 +25,12 @@
 
 #ifdef IPOQUE_PROTOCOL_QQ
 
-static void ipoque_int_qq_add_connection(struct ipoque_detection_module_struct
-										 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_QQ;
-	packet->detected_protocol = IPOQUE_PROTOCOL_QQ;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_QQ);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_QQ);
-	}
-}
-
 static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//  struct ipoque_id_struct *src = ipoque_struct->src;
-//  struct ipoque_id_struct *dst = ipoque_struct->dst;
 	static const u16 p8000_patt_02[10] = { 0x1549, 0x1801, 0x0961, 0x01501, 0x0e35, 0x113f, 0x0b37, 0x1131, 0x163a };
 	u16 no_of_patterns = 9, index = 0;
-
 
 	IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "search qq udp.\n");
 
@@ -78,7 +55,7 @@ static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *i
 			if (flow->qq_stage == 3) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG,
 						"found qq udp pattern 030001 or 000e35 four times.\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 			return;
@@ -91,7 +68,7 @@ static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *i
 					if (flow->qq_stage == 3) {
 						IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG,
 								"found qq udp pattern 02 ... 03 four times.\n");
-						ipoque_int_qq_add_connection(ipoque_struct);
+						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 						return;
 					}
 					return;
@@ -106,7 +83,7 @@ static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *i
 			if (flow->qq_stage == 3) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG,
 						"found qq udp pattern 04 1159 ... 03 four times.\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 			return;
@@ -119,7 +96,7 @@ static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *i
 			if (flow->qq_stage == 3) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG,
 						"found qq udp pattern 02/06 0100 ... 03/00 four times.\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 			return;
@@ -131,7 +108,7 @@ static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *i
 			if (flow->qq_stage == 3) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG,
 						"found qq udp pattern 02 1131 ... 03 four times.\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 			return;
@@ -145,7 +122,7 @@ static inline void ipoque_search_qq_udp(struct ipoque_detection_module_struct *i
 				if (flow->qq_stage == 3) {
 					IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG,
 							"found qq udp pattern 02 02 <length> four times.\n");
-					ipoque_int_qq_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 					return;
 				}
 				return;
@@ -167,13 +144,10 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
-
+	const u8 *p, *end, *line;
+	int len;
 
 	u16 i = 0;
-//  u16 a = 0;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "search qq tcp.\n");
 
@@ -213,7 +187,7 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 		flow->qq_stage++;
 		if (flow->qq_stage == 3) {
 			IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp.\n");
-			ipoque_int_qq_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 			return;
 		}
 		return;
@@ -223,7 +197,7 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 		&& get_u16(packet->payload, packet->payload_packet_len - 2) == htons(0x0000)) {
 		if (flow->qq_stage == 4) {
 			IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp.\n");
-			ipoque_int_qq_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 			return;
 		}
 		flow->qq_stage = 4;
@@ -234,29 +208,26 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 		IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found GET or POST.\n");
 		if (memcmp(packet->payload, "GET /qqfile/qq", 14) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp GET /qqfile/qq.\n");
-			ipoque_int_qq_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 			return;
 		}
-		ipq_parse_packet_line_info(ipoque_struct);
+		for (p = packet->payload, end = p + packet->payload_packet_len;
+		     get_next_line(&p, end, &line, &len);) {
 
-		if (packet->user_agent_line.ptr != NULL
-			&& (packet->user_agent_line.len > 7 && memcmp(packet->user_agent_line.ptr, "QQClient", 8) == 0)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp GET...QQClient\n");
-			ipoque_int_qq_add_connection(ipoque_struct);
-			return;
-		}
-		for (i = 0; i < packet->parsed_lines; i++) {
-			if (packet->line[i].len > 3 && memcmp(packet->line[i].ptr, "QQ: ", 4) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp GET...QQ: \n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+			if (LINE_HEADER_MATCH_I(line, len, "User-Agent: QQClient")) {
+				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp GET...QQClient\n");
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
-		}
-		if (packet->host_line.ptr != NULL) {
-			IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "host line ptr\n");
-			if (packet->host_line.len > 11 && memcmp(&packet->host_line.ptr[0], "www.qq.co.za", 12) == 0) {
+
+			if (LINE_HEADER_MATCH(line, len, "QQ: ")) {
+				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp GET...QQ: \n");
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
+				return;
+			}
+			if (LINE_HEADER_MATCH_I(line, len, "Host: www.qq.co.za")) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq over tcp Host: www.qq.co.za\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 		}
@@ -269,7 +240,7 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 			}
 			if (i == 81) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq Mail.\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 		}
@@ -279,7 +250,7 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 		&& ntohl(get_u32(packet->payload, 4)) == 0x01020000
 		&& ntohl(get_u32(packet->payload, 8)) == 0x04015151 && ntohl(get_u32(packet->payload, 12)) == 0x4d61696c) {
 		IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq Mail.\n");
-		ipoque_int_qq_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 		return;
 	}
 	if (packet->payload_packet_len == 204 && flow->qq_stage == 0 && ntohl(get_u32(packet->payload, 200)) == 0xfbffffff) {
@@ -290,7 +261,7 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 			}
 			if (i == 199) {
 				IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found qq chat or file transfer\n");
-				ipoque_int_qq_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 				return;
 			}
 		}
@@ -309,7 +280,7 @@ static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *i
 
 }
 
-void ipoque_search_qq(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_qq(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 

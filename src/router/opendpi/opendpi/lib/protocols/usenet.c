@@ -25,30 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_USENET
 
-
-static void ipoque_int_usenet_add_connection(struct ipoque_detection_module_struct
-											 *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_USENET;
-	packet->detected_protocol = IPOQUE_PROTOCOL_USENET;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_USENET);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_USENET);
-	}
-}
-
-
-
-void ipoque_search_usenet_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_usenet_tcp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -94,14 +71,14 @@ void ipoque_search_usenet_tcp(struct ipoque_detection_module_struct
 			flow->usenet_stage = 3 + packet->packet_direction;
 
 			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: found usenet.\n");
-			ipoque_int_usenet_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_USENET);
 			return;
 		} else if (packet->payload_packet_len == 13 && (ipq_mem_cmp(packet->payload, "MODE READER\r\n", 13) == 0)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG,
 					"USENET: no login necessary but we are a client.\n");
 
 			IPQ_LOG(IPOQUE_PROTOCOL_USENET, ipoque_struct, IPQ_LOG_DEBUG, "USENET: found usenet.\n");
-			ipoque_int_usenet_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_USENET);
 			return;
 		}
 	}

@@ -35,26 +35,6 @@ struct ipoque_yahoo_header {
 	u32 session_id;
 };
 
-static void ipoque_int_yahoo_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_YAHOO;
-	packet->detected_protocol = IPOQUE_PROTOCOL_YAHOO;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
-	}
-}
-
 static inline u8 check_ymsg(const u8 * payload, u16 payload_packet_len)
 {
 
@@ -84,6 +64,8 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 	struct ipoque_id_struct *src = ipoque_struct->src;
 	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	const u8 *p, *end, *line;
+	int i, len;
 
 	const struct ipoque_yahoo_header *yahoo = (struct ipoque_yahoo_header *) packet->payload;
 	if (packet->payload_packet_len == 0) {
@@ -113,7 +95,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 			}
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-		ipoque_int_yahoo_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 		return;
 	} else if (flow->yahoo_detection_finished == 2 && packet->detected_protocol == IPOQUE_PROTOCOL_YAHOO) {
 		return;
@@ -133,53 +115,62 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 				if (0) {
 				}
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 				return;
 			}
 		}
 		if (memcmp(packet->payload, "POST ", 5) == 0) {
-			u16 a;
-			ipq_parse_packet_line_info(ipoque_struct);
+			for (i = 0, p = packet->payload, end = p + packet->payload_packet_len;
+			     get_next_line(&p, end, &line, &len); i++) {
 
-			if (IPQ_SRC_OR_DST_HAS_PROTOCOL(src, dst, IPOQUE_PROTOCOL_YAHOO)
-				&& packet->parsed_lines > 5
-				&& memcmp(&packet->payload[5], "/Messenger.", 11) == 0
-				&& packet->line[1].len >= 17
-				&& ipq_mem_cmp(packet->line[1].ptr, "Connection: Close",
-							   17) == 0 && packet->line[2].len >= 6
-				&& ipq_mem_cmp(packet->line[2].ptr, "Host: ", 6) == 0
-				&& packet->line[3].len >= 16
-				&& ipq_mem_cmp(packet->line[3].ptr, "Content-Length: ",
-							   16) == 0 && packet->line[4].len >= 23
-				&& ipq_mem_cmp(packet->line[4].ptr, "User-Agent: Mozilla/5.0",
-							   23) == 0 && packet->line[5].len >= 23
-				&& ipq_mem_cmp(packet->line[5].ptr, "Cache-Control: no-cache", 23) == 0) {
+				if (line[len] != 0x0d)
+					break;
+
+				if (i > 5)
+					goto check_next;
+
+				if (!IPQ_SRC_OR_DST_HAS_PROTOCOL(src, dst, IPOQUE_PROTOCOL_YAHOO))
+					goto no_p2p_found;
+
+#define CHECK_LINE(_i, _str) \
+				case _i: \
+					if (len < sizeof(_str) - 1 || memcmp(line, _str, sizeof(_str) - 1)) \
+						goto no_p2p_found; \
+					goto check_next;
+
+				switch(i) {
+				case 0:
+					if (len - 5 < 11 || memcmp(line + 5, "/Messenger.", 11))
+						goto no_p2p_found;
+					goto check_next;
+				CHECK_LINE(1, "Connection: Close");
+				CHECK_LINE(2, "Host: ");
+				CHECK_LINE(3, "Content-Length: ");
+				CHECK_LINE(4, "User-Agent: Mozilla/5.0");
+				CHECK_LINE(5, "Cache-Control: no-cache");
+				}
+#undef CHECK_LINE
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE,
 						"YAHOO HTTP POST P2P FILETRANSFER FOUND\n");
-				if (0) {
-				}
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 				return;
-			}
 
-			if (packet->host_line.ptr != NULL && packet->host_line.len >= 26 &&
-				ipq_mem_cmp(packet->host_line.ptr, "filetransfer.msg.yahoo.com", 26) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "YAHOO HTTP POST FILETRANSFER FOUND\n");
-				if (0) {
-				}
-				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
-				return;
-			}
-			/* now check every line */
-			for (a = 0; a < packet->parsed_lines; a++) {
-				if (packet->line[a].len >= 4 && ipq_mem_cmp(packet->line[a].ptr, "YMSG", 4) == 0) {
-					IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct,
-							IPQ_LOG_TRACE,
-							"YAHOO HTTP POST FOUND, line is: %.*s\n", packet->line[a].len, packet->line[a].ptr);
+no_p2p_found:
+				i = 6;
+check_next:
+				if (len >= 32 && !memcmp(line, "Host: filetransfer.msg.yahoo.com", 32)) {
+					IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "YAHOO HTTP POST FILETRANSFER FOUND\n");
 					IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-					ipoque_int_yahoo_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
+					return;
+				}
+
+				if (len >= 4 && memcmp(line, "YMSG", 4) == 0) {
+					IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct,
+							IPQ_LOG_TRACE, "YAHOO HTTP POST FOUND, line is: %.*s\n", len, line);
+					IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 					return;
 				}
 			}
@@ -192,7 +183,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 						   != 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "YAHOO HTTP GET /Messenger. match\n");
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 				return;
 			}
 		}
@@ -200,22 +191,23 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 	/* found another http login command for yahoo, it is like OSCAR */
 	/* detect http connections */
 
-	if (packet->payload_packet_len > 50 && (memcmp(packet->payload, "content-length: ", 16) == 0)) {
-		ipq_parse_packet_line_info(ipoque_struct);
-		if (packet->parsed_lines > 2 && packet->line[1].len == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "first line is empty.\n");
-			if (packet->line[2].len > 13 && memcmp(packet->line[2].ptr, "<Ymsg Command=", 14) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "YAHOO web chat found\n");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
-				return;
-			}
-		}
+	p = packet->payload;
+	end = p + packet->payload_packet_len;
+	if (packet->payload_packet_len > 50 &&
+	    get_next_line(&p, end, &line, &len) &&
+	    (memcmp(packet->payload, "content-length: ", 16) == 0) &&
+	    get_next_line(&p, end, &line, &len) && !len &&
+	    get_next_line(&p, end, &line, &len) && len >= 14 &&
+	    memcmp(line, "<Ymsg Command=", 14)) {
+		IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "YAHOO web chat found\n");
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
+		return;
 	}
 
 	if (packet->payload_packet_len > 38 && memcmp(packet->payload, "CONNECT scs.msg.yahoo.com:5050 HTTP/1.", 38) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_TRACE, "YAHOO-HTTP FOUND\n");
 		IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-		ipoque_int_yahoo_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 		return;
 	}
 
@@ -224,7 +216,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 			&& IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO) != 0)) {
 		if (packet->payload_packet_len == 6 && memcmp(packet->payload, "YAHOO!", 6) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-			ipoque_int_yahoo_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 			return;
 		}
 		/* asymmetric detection for SNDIMG not done yet.
@@ -254,7 +246,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 
 			}
 			IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO subtype VIDEO");
-			ipoque_int_yahoo_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 			return;
 		}
 		if (src != NULL && packet->tcp->dest == htons(5100)
@@ -262,7 +254,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 				(packet->tick_timestamp - src->yahoo_video_lan_timer) < ipoque_struct->yahoo_lan_video_timeout)) {
 			if (src->yahoo_video_lan_dir == 1) {
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "IMG MARKED");
 				return;
 			}
@@ -273,7 +265,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 				(packet->tick_timestamp - dst->yahoo_video_lan_timer) < ipoque_struct->yahoo_lan_video_timeout)) {
 			if (dst->yahoo_video_lan_dir == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
-				ipoque_int_yahoo_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "IMG MARKED");
 				return;
 			}
@@ -296,20 +288,20 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 			return;
 		}
 		if (flow->yahoo_http_proxy_stage == 2 - packet->packet_direction) {
+			for (i = 0, p = packet->payload, end = p + packet->payload_packet_len;
+			     get_next_line(&p, end, &line, &len); i++) {
+				if (i > 8)
+					break;
 
-			ipq_parse_packet_line_info_unix(ipoque_struct);
+				if (i == 4 && (len < 9 || memcmp(line, "<Session ", 9) != 0))
+					break;
 
-			if (packet->parsed_unix_lines >= 9) {
+				if (i == 8 && (len < 6 || memcmp(line, "<Ymsg ", 6) != 0))
+					break;
 
-				if (packet->unix_line[4].ptr != NULL && packet->unix_line[4].len >= 9 &&
-					packet->unix_line[8].ptr != NULL && packet->unix_line[8].len >= 6 &&
-					memcmp(packet->unix_line[4].ptr, "<Session ", 9) == 0 &&
-					memcmp(packet->unix_line[8].ptr, "<Ymsg ", 6) == 0) {
-
-					IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO over HTTP proxy");
-					ipoque_int_yahoo_add_connection(ipoque_struct);
-					return;
-				}
+				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO over HTTP proxy");
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
+				return;
 			}
 		}
 	}
@@ -332,7 +324,7 @@ static inline void ipoque_search_yahoo_udp(struct ipoque_detection_module_struct
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
 }
 
-void ipoque_search_yahoo(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_yahoo(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

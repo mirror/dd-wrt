@@ -27,26 +27,6 @@
 
 #define IPOQUE_MAX_SSL_REQUEST_SIZE 10000
 
-static void ipoque_int_ssl_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct, u32 protocol)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = protocol;
-	packet->detected_protocol = protocol;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, protocol);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, protocol);
-	}
-}
-
 static void ssl_mark_and_payload_search_for_other_protocols(struct
 															ipoque_detection_module_struct
 															*ipoque_struct)
@@ -85,7 +65,7 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 				IPQ_LOG(IPOQUE_PROTOCOL_UNENCRYPED_JABBER, ipoque_struct, IPQ_LOG_DEBUG, "ssl jabber packet match\n");
 				if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK
 					(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0) {
-					ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
 					return;
 				}
 			}
@@ -110,10 +90,9 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 				if (ipoque_struct->dst != NULL && packet->payload_packet_len > 75) {
 					memcpy(ipoque_struct->dst->oscar_ssl_session_id, &packet->payload[44], 32);
 					ipoque_struct->dst->oscar_ssl_session_id[32] = '\0';
-					ipoque_struct->dst->oscar_last_safe_access_time = packet->tick_timestamp;
 				}
 
-				ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
 				return;
 			}
 		}
@@ -123,7 +102,7 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 				(memcmp(&packet->payload[a], "my.screenname.aol.com", 21) == 0
 				 || memcmp(&packet->payload[a], "sns-static.aolcdn.com", 21) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR SERVER SSL DETECTED\n");
-				ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
 				return;
 			}
 		}
@@ -132,7 +111,7 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
   no_check_for_ssl_payload:
 #endif
 	IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "found ssl connection.\n");
-	ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SSL);
+	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SSL);
 }
 
 
@@ -140,7 +119,6 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-//  struct ipoque_flow_struct *flow = ipoque_struct->flow;
 //      struct ipoque_id_struct         *src=ipoque_struct->src;
 //      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
@@ -225,7 +203,7 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 
 }
 
-void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
