@@ -25,31 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_SOULSEEK
 
-static void ipoque_int_soulseek_add_connection(struct ipoque_detection_module_struct
-											   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_SOULSEEK;
-	packet->detected_protocol = IPOQUE_PROTOCOL_SOULSEEK;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_SOULSEEK);
-		src->soulseek_last_safe_access_time = packet->tick_timestamp;
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_SOULSEEK);
-		dst->soulseek_last_safe_access_time = packet->tick_timestamp;
-	}
-
-	return;
-}
-
-void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -117,7 +93,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 				"Soulseek: Plain detection on Port : %u packet_tick_timestamp: %u soulseeek_last_safe_access_time: %u soulseek_connection_ip_ticktimeout: %u\n",
 				dst->soulseek_listen_port, packet->tick_timestamp,
 				dst->soulseek_last_safe_access_time, ipoque_struct->soulseek_connection_ip_tick_timeout);
-		ipoque_int_soulseek_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 		return;
 	}
 
@@ -145,7 +121,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 						if (index == get_l32(packet->payload, 0)) {
 							IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK,
 									ipoque_struct, IPQ_LOG_DEBUG, "Soulseek Login Detected\n");
-							ipoque_int_soulseek_add_connection(ipoque_struct);
+							ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 							return;
 						}
 					}
@@ -171,7 +147,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 						src->soulseek_listen_port = soulseek_listen_port;
 						IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct,
 								IPQ_LOG_DEBUG, "\n Listen Port Saved : %u", src->soulseek_listen_port);
-						ipoque_int_soulseek_add_connection(ipoque_struct);
+						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 						return;
 					}
 				}
@@ -187,7 +163,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 					&& (4 + 1 + 4 + namelen + 4 + 1 + 4) ==
 					packet->payload_packet_len && (type == 'F' || type == 'P' || type == 'D')) {
 					IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct, IPQ_LOG_DEBUG, "soulseek detected\n");
-					ipoque_int_soulseek_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 					return;
 				}
 				IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct, IPQ_LOG_DEBUG, "1\n");
@@ -213,7 +189,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 				if (typelen == 1 && (type == 'F' || type == 'P' || type == 'D')) {
 					IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct,
 							IPQ_LOG_DEBUG, "soulseek detected Pattern command(D|P|F).\n");
-					ipoque_int_soulseek_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 					return;
 				}
 			}
@@ -224,7 +200,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 			if ((packet->payload[0] || packet->payload[1]) && get_l32(packet->payload, 4) == 9) {
 				/* 9 is search result */
 				IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct, IPQ_LOG_DEBUG, "soulseek detected Second Pkt\n");
-				ipoque_int_soulseek_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 				return;
 			}
 			if (get_l32(packet->payload, 0) == packet->payload_packet_len - 4) {
@@ -235,7 +211,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 					if (usrlen <= packet->payload_packet_len && 4 + 4 + 4 + usrlen == packet->payload_packet_len) {
 						IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct,
 								IPQ_LOG_DEBUG, "Soulseek Request Get Peer Address Detected\n");
-						ipoque_int_soulseek_add_connection(ipoque_struct);
+						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 						return;
 					}
 				}
@@ -244,14 +220,14 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 
 		if (packet->payload_packet_len == 8 && get_l32(packet->payload, 4) == 0x00000004) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct, IPQ_LOG_DEBUG, "soulseek detected\n");
-			ipoque_int_soulseek_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 			return;
 		}
 
 		if (packet->payload_packet_len == 4
 			&& get_u16(packet->payload, 2) == 0x00 && get_u16(packet->payload, 0) != 0x00) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct, IPQ_LOG_DEBUG, "soulseek detected\n");
-			ipoque_int_soulseek_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 			return;
 		} else if (packet->payload_packet_len == 4) {
 			flow->soulseek_stage = 3;
@@ -262,7 +238,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 			if (packet->payload[4] == 0x03 && get_l32(packet->payload, 5) == 0x00000031) {
 				IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct,
 						IPQ_LOG_DEBUG, "soulseek detected Second Pkt with SIGNATURE :: 0x0331000000 \n");
-				ipoque_int_soulseek_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 				return;
 			}
 		}
@@ -270,7 +246,7 @@ void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 	if (flow->soulseek_stage == 3 && packet->payload_packet_len == 8 && !get_u32(packet->payload, 4)) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_SOULSEEK, ipoque_struct, IPQ_LOG_DEBUG, "soulseek detected bcz of 8B  pkt\n");
-		ipoque_int_soulseek_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOULSEEK);
 		return;
 	}
 	if (flow->soulseek_stage && flow->packet_counter < 11) {

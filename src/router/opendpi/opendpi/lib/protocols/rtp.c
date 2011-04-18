@@ -26,28 +26,7 @@
 
 #define RTP_MAX_OUT_OF_ORDER 10
 
-static void ipoque_int_rtp_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_RTP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_RTP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
-	}
-}
-
-
-void ipoque_search_rtp_udp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_rtp_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -143,7 +122,7 @@ void ipoque_search_rtp_udp(struct ipoque_detection_module_struct *ipoque_struct)
 
 	if (stage == 3) {
 		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "add connection I.\n");
-		ipoque_int_rtp_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_RTP);
 	} else {
 		packet->packet_direction == 0 ? flow->rtp_stage1++ : flow->rtp_stage2++;
 		IPQ_LOG(IPOQUE_PROTOCOL_RTP, ipoque_struct, IPQ_LOG_DEBUG, "stage[%u]++; need next packet.\n",

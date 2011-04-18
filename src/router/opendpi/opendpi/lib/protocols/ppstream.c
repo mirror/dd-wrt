@@ -24,27 +24,7 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_PPSTREAM
 
-static void ipoque_int_ppstream_add_connection(struct ipoque_detection_module_struct
-											   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_PPSTREAM;
-	packet->detected_protocol = IPOQUE_PROTOCOL_PPSTREAM;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_PPSTREAM);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_PPSTREAM);
-	}
-}
-
-void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -60,7 +40,7 @@ void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 		if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0
 			&& memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG, "found ppstream over tcp.\n");
-			ipoque_int_ppstream_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM);
 			return;
 		}
 	}
@@ -74,7 +54,7 @@ void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 			if (flow->ppstream_stage == 5) {
 				IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG,
 						"found ppstream over udp pattern len, 43.\n");
-				ipoque_int_ppstream_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM);
 				return;
 			}
 			return;
@@ -102,7 +82,7 @@ void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 			&& (packet->payload[2] == 0x00 && packet->payload[4] == 0x03)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG,
 					"found ppstream over udp with pattern Vb.\n");
-			ipoque_int_ppstream_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM);
 			return;
 		}
 

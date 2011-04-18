@@ -25,27 +25,6 @@
 
 #ifdef IPOQUE_PROTOCOL_MGCP
 
-static void ipoque_int_mgcp_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_MGCP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_MGCP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MGCP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_MGCP);
-	}
-}
-
-
 static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_struct
 												 *ipoque_struct)
 {
@@ -87,7 +66,7 @@ static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_
 	while ((pos + 5) < packet->payload_packet_len) {
 		if (memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MGCP, ipoque_struct, IPQ_LOG_DEBUG, "MGCP match.\n");
-			ipoque_int_mgcp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MGCP);
 			return;
 		}
 		pos++;
@@ -99,7 +78,7 @@ static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_
 }
 
 
-void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 
 	ipoque_search_mgcp_connection(ipoque_struct);

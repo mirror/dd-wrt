@@ -24,51 +24,13 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_BATTLEFIELD
 
-
-static void ipoque_int_battlefield_add_connection(struct ipoque_detection_module_struct
-												  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_BATTLEFIELD;
-	packet->detected_protocol = IPOQUE_PROTOCOL_BATTLEFIELD;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_BATTLEFIELD);
-		src->battlefield_ts = packet->tick_timestamp;
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_BATTLEFIELD);
-		dst->battlefield_ts = packet->tick_timestamp;
-	}
-}
-
-void ipoque_search_battlefield(struct ipoque_detection_module_struct
+static void ipoque_search_battlefield(struct ipoque_detection_module_struct
 							   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 	struct ipoque_id_struct *src = ipoque_struct->src;
 	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	if (packet->detected_protocol == IPOQUE_PROTOCOL_BATTLEFIELD) {
-		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - src->battlefield_ts) < ipoque_struct->battlefield_timeout)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_BATTLEFIELD, ipoque_struct, IPQ_LOG_DEBUG,
-					"battlefield : save src connection packet detected\n");
-			src->battlefield_ts = packet->tick_timestamp;
-		} else if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-								   (packet->tick_timestamp - dst->battlefield_ts) < ipoque_struct->battlefield_timeout)) {
-			IPQ_LOG(IPOQUE_PROTOCOL_BATTLEFIELD, ipoque_struct, IPQ_LOG_DEBUG,
-					"battlefield : save dst connection packet detected\n");
-			dst->battlefield_ts = packet->tick_timestamp;
-		}
-		return;
-	}
 
 	if ((ntohs(packet->udp->source) >= 27000 || ntohs(packet->udp->dest) >= 27000)
 		&& IPQ_SRC_OR_DST_HAS_PROTOCOL(src, dst, IPOQUE_PROTOCOL_BATTLEFIELD)) {
@@ -82,7 +44,7 @@ void ipoque_search_battlefield(struct ipoque_detection_module_struct
 			if (packet->payload_packet_len > 8 && get_u32(packet->payload, 0) == flow->battlefield_msg_id) {
 				IPQ_LOG(IPOQUE_PROTOCOL_BATTLEFIELD, ipoque_struct,
 						IPQ_LOG_DEBUG, "Battlefield message and reply detected.\n");
-				ipoque_int_battlefield_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_BATTLEFIELD);
 				return;
 			}
 		}
@@ -90,7 +52,7 @@ void ipoque_search_battlefield(struct ipoque_detection_module_struct
 
 	if (packet->payload_packet_len == 18 && ipq_mem_cmp(&packet->payload[5], "battlefield2\x00", 13) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_BATTLEFIELD, ipoque_struct, IPQ_LOG_DEBUG, "Battlefield 2 hello packet detected.\n");
-		ipoque_int_battlefield_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_BATTLEFIELD);
 		return;
 	} else if (packet->payload_packet_len > 10
 			   &&
@@ -102,7 +64,7 @@ void ipoque_search_battlefield(struct ipoque_detection_module_struct
 							   10) == 0
 				|| ipq_mem_cmp(packet->payload, "\x11\x20\x00\x01\x00\x00\xa0\x98\x00\x11", 10) == 0)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_BATTLEFIELD, ipoque_struct, IPQ_LOG_DEBUG, "Battlefield safe pattern detected.\n");
-		ipoque_int_battlefield_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_BATTLEFIELD);
 		return;
 	}
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_BATTLEFIELD);

@@ -24,37 +24,13 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_MEEBO
 
-static void ipoque_int_meebo_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_MEEBO;
-	packet->detected_protocol = IPOQUE_PROTOCOL_MEEBO;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MEEBO);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_MEEBO);
-	}
-}
-
-
-void ipoque_search_meebo(struct ipoque_detection_module_struct
+static void ipoque_search_meebo(struct ipoque_detection_module_struct
 						 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-
-	// struct ipoque_id_struct *src=ipoque_struct->src;
-	// struct ipoque_id_struct *dst=ipoque_struct->dst;
-
-	u8 a;
+	const u8 *p, *end, *line;
+	int len;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_MEEBO, ipoque_struct, IPQ_LOG_DEBUG, "search meebo.\n");
 
@@ -66,20 +42,19 @@ void ipoque_search_meebo(struct ipoque_detection_module_struct
 				|| (packet->payload_packet_len > 4 && memcmp(packet->payload, "POST ", 5) == 0))
 		) && flow->packet_counter == 1) {
 
-		ipq_parse_packet_line_info(ipoque_struct);
-		if (packet->host_line.ptr != NULL
-			&& packet->host_line.len >= 9
-			&& memcmp(&packet->host_line.ptr[packet->host_line.len - 9], "meebo.com", 9) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_MEEBO, ipoque_struct, IPQ_LOG_DEBUG, "found meebo by host_line .meebo.com.\n");
-			ipoque_int_meebo_add_connection(ipoque_struct);
-			return;
-		}
-		for (a = 0; a < packet->parsed_lines; a++) {
-			if (packet->line[a].len > 29 && memcmp(packet->line[a].ptr, "Referer: http://www.meebo.com/", 30) == 0) {
+		for (p = packet->payload, end = p + packet->payload_packet_len;
+		     get_next_line(&p, end, &line, &len);) {
+			if (LINE_HEADER_MATCH_I(line, len, "Host:") &&
+				len >= 9 && memcmp(&line[len - 9], "meebo.com", 9) == 0) {
+				IPQ_LOG(IPOQUE_PROTOCOL_MEEBO, ipoque_struct, IPQ_LOG_DEBUG, "found meebo by host_line .meebo.com.\n");
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MEEBO);
+				return;
+			}
+			if (len > 29 && memcmp(line, "Referer: http://www.meebo.com/", 30) == 0) {
 
 				IPQ_LOG(IPOQUE_PROTOCOL_MEEBO, ipoque_struct, IPQ_LOG_DEBUG,
 						"found meebo by Referer: http://www.meebo.com/.\n");
-				ipoque_int_meebo_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MEEBO);
 				return;
 			}
 		}

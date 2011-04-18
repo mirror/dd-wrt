@@ -25,26 +25,6 @@
 
 #ifdef IPOQUE_PROTOCOL_GADUGADU
 
-static void ipoque_int_gadugadu_add_connection(struct ipoque_detection_module_struct
-											   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_GADUGADU;
-	packet->detected_protocol = IPOQUE_PROTOCOL_GADUGADU;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_GADUGADU);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_GADUGADU);
-	}
-}
-
 static void parse_gg_foneno(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -116,7 +96,7 @@ static u8 check_for_http(struct ipoque_detection_module_struct *ipoque_struct)
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
 				"Gadu-Gadu: Is gadugadu host FOUND %s\n", packet->host_line.ptr);
-		ipoque_int_gadugadu_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 	} else if (memcmp(packet->payload, "POST /send/message/", 15) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
@@ -133,7 +113,7 @@ static u8 check_for_http(struct ipoque_detection_module_struct *ipoque_struct)
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
 				"Gadu-Gadu: Is gadugadu post FOUND %s\n", packet->host_line.ptr);
-		ipoque_int_gadugadu_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 
 	} else if (memcmp(packet->payload, "GET /rotate_token", 17) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
@@ -151,7 +131,7 @@ static u8 check_for_http(struct ipoque_detection_module_struct *ipoque_struct)
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
 				"Gadu-Gadu:  gadugadu sms FOUND %s\n", packet->host_line.ptr);
-		ipoque_int_gadugadu_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 
 	}
 
@@ -296,7 +276,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 
 			if (flow->gadugadu_stage == 2) {
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: add connection.\n");
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 			}
 			return;
 		}
@@ -309,7 +289,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 			&& ((src->gg_ft_ip_address == packet->iph->saddr && src->gg_ft_port == packet->tcp->source)
 				|| (src->gg_ft_ip_address == packet->iph->daddr && src->gg_ft_port == packet->tcp->dest))) {
 			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
 				return;
@@ -326,7 +306,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 															   && (memcmp(src->gg_call_id[1], &packet->payload[5], 4)
 																   == 0)))) {
 			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "http file transfer detetced \n");
 				return;
 			} else {
@@ -346,7 +326,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 																				  &packet->payload[0], 4)
 																				 == 0)))) {
 			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detetced %d\n", htons(packet->tcp->dest));
 				return;
@@ -362,7 +342,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 			&& ((dst->gg_ft_ip_address == packet->iph->saddr && dst->gg_ft_port == packet->tcp->source)
 				|| (dst->gg_ft_ip_address == packet->iph->daddr && dst->gg_ft_port == packet->tcp->dest))) {
 			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
 				return;
@@ -379,7 +359,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 															   && (memcmp(dst->gg_call_id[1], &packet->payload[0], 4)
 																   == 0)))) {
 			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "http file transfer detetced \n");
 				return;
 			} else {
@@ -399,7 +379,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 																				  &packet->payload[0], 4)
 																				 == 0)))) {
 			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
-				ipoque_int_gadugadu_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
 				return;
@@ -412,7 +392,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 
 }
 
-void ipoque_search_gadugadu(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_gadugadu(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	ipoque_search_gadugadu_tcp(ipoque_struct);
 }

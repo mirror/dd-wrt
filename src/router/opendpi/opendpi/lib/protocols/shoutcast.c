@@ -25,26 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_SHOUTCAST
 
-static void ipoque_int_shoutcast_add_connection(struct ipoque_detection_module_struct
-												*ipoque_struct)
-{
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_SHOUTCAST;
-	packet->detected_protocol = IPOQUE_PROTOCOL_SHOUTCAST;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_SHOUTCAST);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_SHOUTCAST);
-	}
-}
-
-void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -74,7 +55,7 @@ void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
 	/* evtl. für asym detection noch User-Agent:Winamp dazunehmen. */
 	if (packet->payload_packet_len > 11 && memcmp(packet->payload, "ICY 200 OK\x0d\x0a", 12) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "found shoutcast by ICY 200 OK.\n");
-		ipoque_int_shoutcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SHOUTCAST);
 		return;
 	}
 	if (flow->packet_counter == 2) {
@@ -95,7 +76,7 @@ void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
 			return;
 		} else if (packet->payload_packet_len > 4 && ipq_mem_cmp(&packet->payload[0], "icy-", 4) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SHOUTCAST, ipoque_struct, IPQ_LOG_DEBUG, "Shoutcast detected.\n");
-			ipoque_int_shoutcast_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SHOUTCAST);
 			return;
 		} else
 			goto exclude_shoutcast;

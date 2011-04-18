@@ -24,28 +24,7 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_POSTGRES
 
-
-static void ipoque_int_postgres_add_connection(struct ipoque_detection_module_struct
-											   *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_POSTGRES;
-	packet->detected_protocol = IPOQUE_PROTOCOL_POSTGRES;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_POSTGRES);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_POSTGRES);
-	}
-}
-
-void ipoque_search_postgres_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_postgres_tcp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -78,13 +57,13 @@ void ipoque_search_postgres_tcp(struct ipoque_detection_module_struct
 			//SSL accepted
 			if (packet->payload_packet_len == 1 && packet->payload[0] == 'S') {
 				IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "PostgreSQL detected, SSL accepted.\n");
-				ipoque_int_postgres_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 				return;
 			}
 			//SSL denied
 			if (packet->payload_packet_len == 1 && packet->payload[0] == 'N') {
 				IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "PostgreSQL detected, SSL denied.\n");
-				ipoque_int_postgres_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 				return;
 			}
 		}
@@ -94,33 +73,33 @@ void ipoque_search_postgres_tcp(struct ipoque_detection_module_struct
 				ntohl(get_u32(packet->payload, 5)) < 10 &&
 				ntohl(get_u32(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 0x52) {
 				IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "PostgreSQL detected, no SSL.\n");
-				ipoque_int_postgres_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 				return;
 			}
 		if (flow->postgres_stage == 6
 			&& ntohl(get_u32(packet->payload, 1)) == packet->payload_packet_len - 1 && packet->payload[0] == 'p') {
 			IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "found postgres asymmetrically.\n");
-			ipoque_int_postgres_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 			return;
 		}
 		if (flow->postgres_stage == 5 && packet->payload[0] == 'R') {
 			if (ntohl(get_u32(packet->payload, 1)) == packet->payload_packet_len - 1) {
 				IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "found postgres asymmetrically.\n");
-				ipoque_int_postgres_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 				return;
 			}
 			size = ntohl(get_u32(packet->payload, 1)) + 1;
 			if (packet->payload[size - 1] == 'S') {
 				if ((size + get_u32(packet->payload, (size + 1))) == packet->payload_packet_len) {
 					IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "found postgres asymmetrically.\n");
-					ipoque_int_postgres_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 					return;
 				}
 			}
 			size += get_u32(packet->payload, (size + 1)) + 1;
 			if (packet->payload[size - 1] == 'S') {
 				IPQ_LOG(IPOQUE_PROTOCOL_POSTGRES, ipoque_struct, IPQ_LOG_DEBUG, "found postgres asymmetrically.\n");
-				ipoque_int_postgres_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POSTGRES);
 				return;
 			}
 		}

@@ -25,28 +25,6 @@
 
 #ifdef IPOQUE_PROTOCOL_SOPCAST
 
-
-static void ipoque_int_sopcast_add_connection(struct ipoque_detection_module_struct
-											  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_SOPCAST;
-	packet->detected_protocol = IPOQUE_PROTOCOL_SOPCAST;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_SOPCAST);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_SOPCAST);
-	}
-}
-
-
 static void ipoque_search_sopcast_tcp(struct ipoque_detection_module_struct
 									  *ipoque_struct)
 {
@@ -71,7 +49,7 @@ static void ipoque_search_sopcast_tcp(struct ipoque_detection_module_struct
 			&& packet->payload[47] == packet->payload[51]
 			) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast TCP \n");
-			ipoque_int_sopcast_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 			return;
 		}
 	}
@@ -100,7 +78,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x2c
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00 && packet->payload[14] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if I.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 	if ((packet->payload_packet_len == 80 || packet->payload_packet_len == 28 || packet->payload_packet_len == 94)
@@ -109,7 +87,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x14
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if II.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 	/* this case has been seen once. Please revome this comment, if you see it another time */
@@ -119,7 +97,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[10] == 0x00 && packet->payload[11] == 0x34
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00 && packet->payload[14] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if III.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 	if (packet->payload_packet_len == 42 && packet->payload[0] == 0x00
@@ -129,7 +107,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[9] == 0x01 && packet->payload[10] == 0x00
 		&& packet->payload[11] == 0x22 && packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if IV.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 	if (packet->payload_packet_len == 28 && packet->payload[0] == 0x00
@@ -139,7 +117,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[9] == 0x01 && packet->payload[10] == 0x00
 		&& packet->payload[11] == 0x14 && packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if V.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 	/* this case has been seen once. Please revome this comment, if you see it another time */
@@ -150,7 +128,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[9] == 0x01 && packet->payload[10] == 0x01
 		&& packet->payload[11] == 0x16 && packet->payload[12] == 0x00 && packet->payload[13] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if VI.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 	if (packet->payload_packet_len == 76 && packet->payload[0] == 0xff
@@ -160,7 +138,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 		&& packet->payload[16] == 0x01 && packet->payload[15] == 0x01
 		&& packet->payload[12] == 0x00 && packet->payload[13] == 0x00 && packet->payload[14] == 0x00) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SOPCAST, ipoque_struct, IPQ_LOG_DEBUG, "found sopcast with if VII.  \n");
-		ipoque_int_sopcast_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SOPCAST);
 		return;
 	}
 
@@ -173,7 +151,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 
 }
 
-void ipoque_search_sopcast(struct ipoque_detection_module_struct
+static void ipoque_search_sopcast(struct ipoque_detection_module_struct
 						   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

@@ -29,6 +29,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#else
+#include <linux/kernel.h>
+#define strtoul simple_strtoul
 #endif
 
 #ifdef __linux__
@@ -50,9 +55,6 @@
 # include <sys/types.h>
 # include <netinet/in.h>
 #endif
-
-// NOT USED ANYWHERE !!
-// #include <netinet/ip6.h>
 
 //#include <arpa/inet.h>
 
@@ -217,23 +219,14 @@ typedef struct ipoque_packet_struct {
 
 	IPOQUE_TIMESTAMP_COUNTER_SIZE tick_timestamp;
 
-
 	u32 detected_protocol;
 
-	struct ipoque_int_one_line_struct line[IPOQUE_MAX_PARSE_LINES_PER_PACKET];
-	struct ipoque_int_one_line_struct
-	 unix_line[IPOQUE_MAX_PARSE_LINES_PER_PACKET];
 	struct ipoque_int_one_line_struct host_line;
 	struct ipoque_int_one_line_struct referer_line;
 	struct ipoque_int_one_line_struct content_line;
 	struct ipoque_int_one_line_struct accept_line;
 	struct ipoque_int_one_line_struct user_agent_line;
 	struct ipoque_int_one_line_struct http_url_name;
-	struct ipoque_int_one_line_struct http_encoding;
-	struct ipoque_int_one_line_struct http_transfer_encoding;
-	struct ipoque_int_one_line_struct http_contentlen;
-	struct ipoque_int_one_line_struct http_cookie;
-	struct ipoque_int_one_line_struct http_x_session_type;
 
 
 	u16 l3_packet_len;
@@ -354,14 +347,6 @@ ATTRIBUTE_ALWAYS_INLINE static inline u16 ntohs_ipq_bytestream_to_number(const u
 	return ntohs(val);
 }
 
-u64 ipq_bytestream_to_number64(const u8 * str, u16 max_chars_to_read, u16 * bytes_read);
-
-u32 ipq_bytestream_dec_or_hex_to_number(const u8 * str, u16 max_chars_to_read, u16 * bytes_read);
-u64 ipq_bytestream_dec_or_hex_to_number64(const u8 * str, u16 max_chars_to_read, u16 * bytes_read);
-
-u32 ipq_bytestream_to_ipv4(const u8 * str, u16 max_chars_to_read, u16 * bytes_read);
-
-
 /* function to parse a packet which has line based information into a line based structure
  * this function will also set some well known line pointers like:
  *  - host, user agent, empty line,....
@@ -369,12 +354,7 @@ u32 ipq_bytestream_to_ipv4(const u8 * str, u16 max_chars_to_read, u16 * bytes_re
 void ipq_parse_packet_line_info(struct ipoque_detection_module_struct
 								*ipoque_struct);
 
-void ipq_parse_packet_line_info_unix(struct ipoque_detection_module_struct
-									 *ipoque_struct);
-
-u16 ipoque_check_for_email_address(struct ipoque_detection_module_struct *ipoque_struct, u16 counter);
-
-
+void ipq_connection_detected(struct ipoque_detection_module_struct *ipoque_struct, int protocol);
 
 /* reset ip to zero */
 ATTRIBUTE_ALWAYS_INLINE static inline void ipq_ip_clear(ipq_ip_addr_t * ip)
@@ -460,5 +440,8 @@ ATTRIBUTE_ALWAYS_INLINE
 }
 #endif							/* IPOQUE_ENABLE_DEBUG_MESSAGES */
 
+
+#define LINE_HEADER_MATCH_I(_line, _len, _str) (((_len) >= sizeof(_str) - 1) && !strncasecmp((const char *) (_line), (const char *) (_str), sizeof(_str) - 1))
+#define LINE_HEADER_MATCH(_line, _len, _str) (((_len) >= sizeof(_str) - 1) && !memcmp(_line, _str, sizeof(_str) - 1))
 
 #endif							/* __IPOQUE_MAIN_INCLUDE_FILE__ */
