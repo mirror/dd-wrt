@@ -28,31 +28,23 @@
 #ifndef __IPQ_BASIC_DEF_H__
 #define __IPQ_BASIC_DEF_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* define u64, u32, here
  * this is used for compatibility restrictions on different platforms
  *
  */
 
-#ifndef u64
-#define u64 	unsigned long long
-#endif
-#ifndef u32
-#define u32 	unsigned int
-#endif
-#ifndef u16
-#define u16 	unsigned short
-#endif
-#ifndef u8
-#define u8 	unsigned char
+#ifndef __KERNEL__
+#include <stdint.h>
+
+
+typedef uint64_t	u64;
+typedef uint32_t	u32;
+typedef uint16_t	u16;
+typedef uint8_t		u8;
+
 #endif
 
 /* generic timestamp counter size */
 #define IPOQUE_TIMESTAMP_COUNTER_SIZE		u32
-#ifdef __cplusplus
-}
-#endif
+
 #endif
