@@ -24,29 +24,9 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_NTP
 
-static void ipoque_int_ntp_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_NTP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_NTP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_NTP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_NTP);
-	}
-}
-
 /* detection also works asymmetrically */
 
-void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -66,7 +46,7 @@ void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_struct)
 
 	if ((((packet->payload[0] & 0x38) >> 3) <= 4)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_NTP, ipoque_struct, IPQ_LOG_DEBUG, "detected NTP.");
-		ipoque_int_ntp_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NTP);
 		return;
 	}
 

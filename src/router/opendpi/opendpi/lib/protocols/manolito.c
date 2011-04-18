@@ -30,27 +30,20 @@ static void ipoque_int_manolito_add_connection(struct
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 	struct ipoque_id_struct *src = ipoque_struct->src;
 	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	flow->detected_protocol = IPOQUE_PROTOCOL_MANOLITO;
-	packet->detected_protocol = IPOQUE_PROTOCOL_MANOLITO;
-
+	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO);
 
 	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MANOLITO);
 		if (packet->udp != NULL) {
 			src->manolito_last_pkt_arrival_time = packet->tick_timestamp;
 		}
 	}
 	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_MANOLITO);
 		if (packet->udp != NULL) {
 			dst->manolito_last_pkt_arrival_time = packet->tick_timestamp;
 		}
-	}
-	if (packet->udp != NULL) {
 	}
 }
 
@@ -63,8 +56,6 @@ u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//  struct ipoque_id_struct *src = ipoque_struct->src;
-//  struct ipoque_id_struct *dst = ipoque_struct->dst;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO TCP DETECTION\n");
 
@@ -115,7 +106,7 @@ u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 	return 0;
 }
 
-void ipoque_search_manolito_tcp_udp(struct
+static void ipoque_search_manolito_tcp_udp(struct
 									ipoque_detection_module_struct
 									*ipoque_struct)
 {

@@ -25,36 +25,13 @@
 
 #ifdef IPOQUE_PROTOCOL_FASTTRACK
 
-
-
-static void ipoque_int_fasttrack_add_connection(struct ipoque_detection_module_struct
-												*ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_FASTTRACK;
-	packet->detected_protocol = IPOQUE_PROTOCOL_FASTTRACK;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_FASTTRACK);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_FASTTRACK);
-	}
-}
-
-
-void ipoque_search_fasttrack_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_fasttrack_tcp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	const u8 *p, *end, *line;
+	int len;
 
 	if (packet->payload_packet_len > 6 && ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a) {
 		IPQ_LOG(IPOQUE_PROTOCOL_FASTTRACK, ipoque_struct, IPQ_LOG_TRACE, "detected 0d0a at the end of the packet.\n");
@@ -69,20 +46,19 @@ void ipoque_search_fasttrack_tcp(struct ipoque_detection_module_struct
 			}
 
 			IPQ_LOG(IPOQUE_PROTOCOL_FASTTRACK, ipoque_struct, IPQ_LOG_TRACE, "FASTTRACK GIVE DETECTED\n");
-			ipoque_int_fasttrack_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FASTTRACK);
 			return;
 		}
 
 		if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
-			u8 a = 0;
 			IPQ_LOG(IPOQUE_PROTOCOL_FASTTRACK, ipoque_struct, IPQ_LOG_TRACE, "detected GET /. \n");
-			ipq_parse_packet_line_info(ipoque_struct);
-			for (a = 0; a < packet->parsed_lines; a++) {
-				if ((packet->line[a].len > 17 && memcmp(packet->line[a].ptr, "X-Kazaa-Username: ", 18) == 0)
-					|| (packet->line[a].len > 23 && memcmp(packet->line[a].ptr, "User-Agent: PeerEnabler/", 24) == 0)) {
+			for (p = packet->payload, end = p + packet->payload_packet_len;
+			     get_next_line(&p, end, &line, &len);) {
+				if ((len > 17 && memcmp(line, "X-Kazaa-Username: ", 18) == 0)
+					|| (len > 23 && memcmp(line, "User-Agent: PeerEnabler/", 24) == 0)) {
 					IPQ_LOG(IPOQUE_PROTOCOL_FASTTRACK, ipoque_struct, IPQ_LOG_TRACE,
 							"detected X-Kazaa-Username: || User-Agent: PeerEnabler/\n");
-					ipoque_int_fasttrack_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FASTTRACK);
 					return;
 				}
 			}

@@ -34,32 +34,12 @@
 #error RTSP requires RDP detection to work correctly
 #endif
 
-static void ipoque_int_rtsp_add_connection(struct ipoque_detection_module_struct
-										   *ipoque_struct)
-{
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_RTSP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_RTSP;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_RTSP);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_RTSP);
-	}
-}
-
 /* this function deals with UDP connections */
 static void ipoque_search_rdt_connection(struct ipoque_detection_module_struct
 										 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_id_struct *src = ipoque_struct->src;
-//  struct ipoque_id_struct *dst = ipoque_struct->dst;
 
 
 	IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found UDP\n");
@@ -75,7 +55,7 @@ static void ipoque_search_rdt_connection(struct ipoque_detection_module_struct
 				if (packet->payload_packet_len == 3 && packet->payload[0] == 0x00 && packet->payload[1] == 0xff
 					&& packet->payload[2] == 0x03) {
 					IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found RTSP RDT.\n");
-					ipoque_int_rtsp_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_RTSP);
 					return;
 				}
 			}
@@ -89,7 +69,7 @@ static void ipoque_search_rdt_connection(struct ipoque_detection_module_struct
 }
 
 /* this function searches for a rtsp-"handshake" over tcp or udp. */
-void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -156,7 +136,7 @@ void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
 			}
 			IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found RTSP.\n");
 			flow->rtsp_control_flow = 1;
-			ipoque_int_rtsp_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_RTSP);
 			return;
 		}
 	}

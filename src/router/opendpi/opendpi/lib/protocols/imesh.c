@@ -25,29 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_IMESH
 
-
-static void ipoque_int_imesh_add_connection(struct ipoque_detection_module_struct
-											*ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_IMESH;
-	packet->detected_protocol = IPOQUE_PROTOCOL_IMESH;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_IMESH);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_IMESH);
-	}
-}
-
-
-void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -86,7 +64,7 @@ void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 			if (dst != NULL) {
 				dst->imesh_timer = packet->tick_timestamp;
 			}
-			ipoque_int_imesh_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IMESH);
 			return;
 		} else if (				//&& ((IPOQUE_TIMESTAMP_COUNTER_SIZE)(packet->tick_timestamp - src->imesh_timer)) < ipoque_struct->imesh_connection_timeout
 					  packet->payload_packet_len == 36 && (get_l32(packet->payload, 0)) == 0x00000002	// PATTERN : 02 00 00 00
@@ -100,7 +78,7 @@ void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				if (((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 					 (packet->tick_timestamp - src->imesh_timer)) < ipoque_struct->imesh_connection_timeout) {
 					src->imesh_timer = packet->tick_timestamp;
-					ipoque_int_imesh_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IMESH);
 				}
 			}
 			if (dst != NULL) {
@@ -109,7 +87,7 @@ void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 				if (((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 					 (packet->tick_timestamp - dst->imesh_timer)) < ipoque_struct->imesh_connection_timeout) {
 					dst->imesh_timer = packet->tick_timestamp;
-					ipoque_int_imesh_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IMESH);
 				}
 			}
 			return;
@@ -264,7 +242,7 @@ void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 	/*give one packet tolerance for detection */
 	if (flow->imesh_stage >= 4)
 
-		ipoque_int_imesh_add_connection(ipoque_struct);
+		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IMESH);
 
 
 	else if ((flow->packet_counter < 5) || packet->actual_payload_len == 0) {

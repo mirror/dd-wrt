@@ -23,20 +23,6 @@
 
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_EDONKEY
-/* debug defines */
-#define IPOQUE_PROTOCOL_SAFE_DETECTION 		1
-
-#define IPOQUE_PROTOCOL_PLAIN_DETECTION 	0
-static void ipoque_add_connection_as_edonkey(struct ipoque_detection_module_struct
-											 *ipoque_struct, const u8 save_detection, const u8 encrypted_connection)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	flow->detected_protocol = IPOQUE_PROTOCOL_EDONKEY;
-	packet->detected_protocol = IPOQUE_PROTOCOL_EDONKEY;
-
-}
 
 static inline u8 check_edk_len(const u8 * payload, u16 payload_packet_len)
 {
@@ -140,8 +126,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 				&& packet->payload[5] == 0x01)) {
 			IPQ_LOG_EDONKEY(IPOQUE_PROTOCOL_EDONKEY, ipoque_struct,
 							IPQ_LOG_DEBUG, "edk 17: detected plain detection\n");
-			ipoque_add_connection_as_edonkey(ipoque_struct,
-											 IPOQUE_PROTOCOL_SAFE_DETECTION, IPOQUE_PROTOCOL_PLAIN_DETECTION);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_EDONKEY);
 			return;
 		}
 
@@ -157,7 +142,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 }
 
 
-void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	if (packet->detected_protocol != IPOQUE_PROTOCOL_EDONKEY) {

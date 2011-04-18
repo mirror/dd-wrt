@@ -67,20 +67,9 @@ typedef struct ipoque_id_struct {
 #ifdef IPOQUE_PROTOCOL_GNUTELLA
 	IPOQUE_TIMESTAMP_COUNTER_SIZE gnutella_ts;
 #endif
-#ifdef IPOQUE_PROTOCOL_BATTLEFIELD
-	IPOQUE_TIMESTAMP_COUNTER_SIZE battlefield_ts;
-#endif
-#ifdef IPOQUE_PROTOCOL_THUNDER
-	IPOQUE_TIMESTAMP_COUNTER_SIZE thunder_ts;
-#endif
 #ifdef IPOQUE_PROTOCOL_RTSP
 	IPOQUE_TIMESTAMP_COUNTER_SIZE rtsp_timer;
 	ipq_ip_addr_t rtsp_ip_address;
-#endif
-#ifdef IPOQUE_PROTOCOL_OSCAR
-//  IPOQUE_TIMESTAMP_COUNTER_SIZE oscar_timer;
-	IPOQUE_TIMESTAMP_COUNTER_SIZE oscar_last_safe_access_time;
-	IPOQUE_TIMESTAMP_COUNTER_SIZE oscar_voice_timestamp[8];
 #endif
 #ifdef IPOQUE_PROTOCOL_GADUGADU
 	u32 gg_ft_ip_address;

@@ -31,20 +31,10 @@ static void ipoque_int_http_add_connection(struct ipoque_detection_module_struct
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
+	ipq_connection_detected(ipoque_struct, protocol);
 	flow->http_detected = 1;
-	flow->detected_protocol = protocol;
 	flow->server_direction = packet->packet_direction;
-	packet->detected_protocol = protocol;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, protocol);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, protocol);
-	}
 }
 
 #ifdef IPOQUE_PROTOCOL_QQ
@@ -52,7 +42,8 @@ static void qq_parse_packet_URL_and_hostname(struct ipoque_detection_module_stru
 											 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	u32 a;
+	const u8 *p, *end, *line;
+	int len;
 
 	if (packet->payload_packet_len < 100 ||
 		/*memcmp(&packet->payload[4], "/qzone", 6) != 0 || packet->host_line.len < 7 || */
@@ -61,10 +52,11 @@ static void qq_parse_packet_URL_and_hostname(struct ipoque_detection_module_stru
 		IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "did not find QQ.\n");
 		return;
 	}
-	for (a = 0; a < packet->parsed_lines; a++) {
-		if ((packet->line[a].len > 22 && memcmp(packet->line[a].ptr, "QzoneAuth: zzpaneluin=", 22) == 0) ||
-			(packet->line[a].len > 19 && memcmp(packet->line[a].ptr, "Cookie: zzpanelkey=", 19) == 0) ||
-			(packet->line[a].len > 13 && memcmp(packet->line[a].ptr, "Cookie: adid=", 13) == 0)) {
+	for (p = packet->payload, end = p + packet->payload_packet_len;
+	     get_next_line(&p, end, &line, &len);) {
+		if ((len > 22 && memcmp(line, "QzoneAuth: zzpaneluin=", 22) == 0) ||
+			(len > 19 && memcmp(line, "Cookie: zzpanelkey=", 19) == 0) ||
+			(len > 13 && memcmp(line, "Cookie: adid=", 13) == 0)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_QQ, ipoque_struct, IPQ_LOG_DEBUG, "found QQ.\n");
 			ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_QQ);
 			return;
@@ -433,18 +425,14 @@ static void rtsp_parse_packet_acceptline(struct ipoque_detection_module_struct
 }
 #endif
 
-static void check_content_type_and_change_protocol(struct ipoque_detection_module_struct
+static void http_check_content_type_and_change_protocol(struct ipoque_detection_module_struct
 												   *ipoque_struct)
 {
 #ifdef IPOQUE_PROTOCOL_MPEG
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	const u8 *p, *end, *line;
+	int len;
 #endif
-#ifdef IPOQUE_PROTOCOL_AVI
-#endif
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
-	u8 a;
 
 	if (ipoque_struct->packet.content_line.ptr != NULL && ipoque_struct->packet.content_line.len != 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "Content Type Line found %.*s\n",
@@ -522,8 +510,9 @@ static void check_content_type_and_change_protocol(struct ipoque_detection_modul
 	}
 	/* search for line startin with "Icy-MetaData" */
 #ifdef IPOQUE_PROTOCOL_MPEG
-	for (a = 0; a < packet->parsed_lines; a++) {
-		if (packet->line[a].len > 11 && memcmp(packet->line[a].ptr, "Icy-MetaData", 12) == 0) {
+	for (p = packet->payload, end = p + packet->payload_packet_len;
+	     get_next_line(&p, end, &line, &len);) {
+		if (len > 11 && memcmp(line, "Icy-MetaData", 12) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MPEG, ipoque_struct, IPQ_LOG_DEBUG, "MPEG: Icy-MetaData found.\n");
 			ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MPEG);
 			return;
@@ -615,13 +604,12 @@ static void http_bitmask_exclude(struct ipoque_flow_struct *flow)
 #endif
 }
 
-void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
+	const u8 *p, *end, *line;
+	int len;
 	u16 filename_start;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "search http\n");
@@ -648,24 +636,26 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 				return;
 			}
 			// parse packet
-			ipq_parse_packet_line_info(ipoque_struct);
-
-			if (packet->parsed_lines <= 1) {
+			p = packet->payload;
+			end = p + packet->payload_packet_len;
+			if (!get_next_line(&p, end, &line, &len)) {
 				/* parse one more packet .. */
 				IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "just one line, search next packet\n");
 				flow->http_stage = 1;
 				return;
 			}
 			// parsed_lines > 1 here
-			if (packet->line[0].len >= (9 + filename_start)
-				&& memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+			if (len >= (9 + filename_start)
+				&& memcmp(&line[len - 9], " HTTP/1.", 8) == 0) {
+				ipq_parse_packet_line_info(ipoque_struct);
+
 				packet->http_url_name.ptr = &packet->payload[filename_start];
-				packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
+				packet->http_url_name.len = len - (filename_start + 9);
 
 				IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "http structure detected, adding\n");
 
 				ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP);
-				check_content_type_and_change_protocol(ipoque_struct);
+				http_check_content_type_and_change_protocol(ipoque_struct);
 				/* HTTP found, look for host... */
 				if (packet->host_line.ptr != NULL) {
 					/* aaahh, skip this direction and wait for a server reply here */
@@ -683,9 +673,9 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 			/* SECOND PAYLOAD TRAFFIC FROM CLIENT, FIRST PACKET MIGHT HAVE BEEN HTTP... */
 			/* UNKNOWN TRAFFIC, HERE FOR HTTP again.. */
 			// parse packet
-			ipq_parse_packet_line_info(ipoque_struct);
-
-			if (packet->parsed_lines <= 1) {
+			p = packet->payload;
+			end = p + packet->payload_packet_len;
+			if (!get_next_line(&p, end, &line, &len)) {
 				/* stop parsing here */
 				IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG,
 						"HTTP: PACKET DOES NOT HAVE A LINE STRUCTURE\n");
@@ -693,9 +683,10 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 				return;
 			}
 
-			if (packet->line[0].len >= 9 && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+			if (len >= 9 && memcmp(&line[len - 9], " HTTP/1.", 8) == 0) {
+				ipq_parse_packet_line_info(ipoque_struct);
 				ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP);
-				check_content_type_and_change_protocol(ipoque_struct);
+				http_check_content_type_and_change_protocol(ipoque_struct);
 				IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG,
 						"HTTP START HTTP found in 2. packet, check host here...\n");
 				/* HTTP found, look for host... */
@@ -718,15 +709,18 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 			ipq_parse_packet_line_info(ipoque_struct);
 			/* check for url here */
 			filename_start = http_request_url_offset(ipoque_struct);
-			if (filename_start != 0 && packet->parsed_lines > 1 && packet->line[0].len >= (9 + filename_start)
-				&& memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
+			p = packet->payload;
+			end = p + packet->payload_packet_len;
+			ipq_parse_packet_line_info(ipoque_struct);
+			if (filename_start != 0 && get_next_line(&p, end, &line, &len) &&
+			    len >= (9 + filename_start) && memcmp(line, " HTTP/1.", 8) == 0) {
 				packet->http_url_name.ptr = &packet->payload[filename_start];
-				packet->http_url_name.len = packet->line[0].len - (filename_start + 9);
+				packet->http_url_name.len = len - (filename_start + 9);
 				IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "next http action, "
 						"resetting to http and search for other protocols later.\n");
 				ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP);
 			}
-			check_content_type_and_change_protocol(ipoque_struct);
+			http_check_content_type_and_change_protocol(ipoque_struct);
 			/* HTTP found, look for host... */
 			if (packet->host_line.ptr != NULL) {
 				IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG,
@@ -741,7 +735,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 		} else if (flow->http_stage == 1) {
 			// parse packet and maybe find a packet info with host ptr,...
 			ipq_parse_packet_line_info(ipoque_struct);
-			check_content_type_and_change_protocol(ipoque_struct);
+			http_check_content_type_and_change_protocol(ipoque_struct);
 			IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "HTTP RUN second packet scanned\n");
 			/* HTTP found, look for host... */
 			flow->http_stage = 2;
@@ -754,7 +748,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 	if (flow->http_stage > 0) {
 		/* first packet from server direction, might have a content line */
 		ipq_parse_packet_line_info(ipoque_struct);
-		check_content_type_and_change_protocol(ipoque_struct);
+		http_check_content_type_and_change_protocol(ipoque_struct);
 
 
 		if (packet->empty_line_position_set != 0 || flow->http_empty_line_seen == 1) {

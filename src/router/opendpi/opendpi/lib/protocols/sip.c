@@ -24,26 +24,6 @@
 #include "ipq_protocols.h"
 
 #ifdef IPOQUE_PROTOCOL_SIP
-static void ipoque_int_sip_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_SIP;
-	packet->detected_protocol = IPOQUE_PROTOCOL_SIP;
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_SIP);
-	}
-
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_SIP);
-	}
-}
-
 
 static inline void ipoque_search_sip_handshake(struct ipoque_detection_module_struct
 											   *ipoque_struct)
@@ -64,13 +44,13 @@ static inline void ipoque_search_sip_handshake(struct ipoque_detection_module_st
 			if ((memcmp(packet->payload, "REGISTER ", 9) == 0 || memcmp(packet->payload, "register ", 9) == 0)
 				&& (memcmp(&packet->payload[9], "SIP:", 4) == 0 || memcmp(&packet->payload[9], "sip:", 4) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_SIP, ipoque_struct, IPQ_LOG_DEBUG, "found sip REGISTER.\n");
-				ipoque_int_sip_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SIP);
 				return;
 			}
 			if ((memcmp(packet->payload, "INVITE ", 7) == 0 || memcmp(packet->payload, "invite ", 7) == 0)
 				&& (memcmp(&packet->payload[7], "SIP:", 4) == 0 || memcmp(&packet->payload[7], "sip:", 4) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_SIP, ipoque_struct, IPQ_LOG_DEBUG, "found sip INVITE.\n");
-				ipoque_int_sip_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SIP);
 				return;
 			}
 			/* seen this in second direction on the third position,
@@ -80,7 +60,7 @@ static inline void ipoque_search_sip_handshake(struct ipoque_detection_module_st
 			if (memcmp(packet->payload, "SIP/2.0 200 OK", 14) == 0
 				|| memcmp(packet->payload, "sip/2.0 200 OK", 14) == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_SIP, ipoque_struct, IPQ_LOG_DEBUG, "found sip SIP/2.0 0K.\n");
-				ipoque_int_sip_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SIP);
 				return;
 			}
 		}
@@ -114,10 +94,9 @@ static inline void ipoque_search_sip_handshake(struct ipoque_detection_module_st
 
 }
 
-void ipoque_search_sip(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_sip(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-//  struct ipoque_flow_struct   *flow = ipoque_struct->flow;
 //      struct ipoque_id_struct         *src=ipoque_struct->src;
 //      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 

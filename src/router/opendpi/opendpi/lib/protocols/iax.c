@@ -26,29 +26,6 @@
 
 #define IPQ_IAX_MAX_INFORMATION_ELEMENTS 15
 
-static void ipoque_int_iax_add_connection(struct ipoque_detection_module_struct
-										  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_IAX;
-	packet->detected_protocol = IPOQUE_PROTOCOL_IAX;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_IAX);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_IAX);
-	}
-}
-
-static void ipoque_search_setup_iax(struct ipoque_detection_module_struct
-									*ipoque_struct);
-
 static void ipoque_search_setup_iax(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -77,7 +54,7 @@ static void ipoque_search_setup_iax(struct ipoque_detection_module_struct *ipoqu
 
 		if (packet->payload_packet_len == 12) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IAX, ipoque_struct, IPQ_LOG_DEBUG, "found IAX.\n");
-			ipoque_int_iax_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IAX);
 			return;
 		}
 		packet_len = 12;
@@ -85,7 +62,7 @@ static void ipoque_search_setup_iax(struct ipoque_detection_module_struct *ipoqu
 			packet_len = packet_len + 2 + packet->payload[packet_len + 1];
 			if (packet_len == packet->payload_packet_len) {
 				IPQ_LOG(IPOQUE_PROTOCOL_IAX, ipoque_struct, IPQ_LOG_DEBUG, "found IAX.\n");
-				ipoque_int_iax_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IAX);
 				return;
 			}
 			if (packet_len > packet->payload_packet_len) {
@@ -99,7 +76,7 @@ static void ipoque_search_setup_iax(struct ipoque_detection_module_struct *ipoqu
 
 }
 
-void ipoque_search_iax(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_iax(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 //      struct ipoque_flow_struct       *flow=ipoque_struct->flow;

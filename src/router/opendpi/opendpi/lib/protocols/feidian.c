@@ -25,28 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_FEIDIAN
 
-static void ipoque_int_feidian_add_connection(struct ipoque_detection_module_struct
-											  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_FEIDIAN;
-	packet->detected_protocol = IPOQUE_PROTOCOL_FEIDIAN;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_FEIDIAN);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_FEIDIAN);
-	}
-}
-
-
-void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -62,13 +41,13 @@ void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_struct)
 			IPQ_LOG(IPOQUE_PROTOCOL_FEIDIAN, ipoque_struct, IPQ_LOG_DEBUG,
 					"Feidian: found the flow (TCP): packet_size: %u; Flowstage: %u\n",
 					packet->payload_packet_len, flow->feidian_stage);
-			ipoque_int_feidian_add_connection(ipoque_struct);
+			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FEIDIAN);
 			return;
 		} else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
 			ipq_parse_packet_line_info(ipoque_struct);
 			if (packet->host_line.ptr != NULL && packet->host_line.len == 18
 				&& memcmp(packet->host_line.ptr, "config.feidian.com", 18) == 0) {
-				ipoque_int_feidian_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FEIDIAN);
 				return;
 			}
 		}
@@ -86,7 +65,7 @@ void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_struct)
 					   && (packet->payload_packet_len == 116 || packet->payload_packet_len == 112)
 					   && packet->payload[0] == 0x1c
 					   && packet->payload[1] == 0x1c && packet->payload[2] == 0x32 && packet->payload[3] == 0x01) {
-				ipoque_int_feidian_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FEIDIAN);
 				return;
 			}
 		}

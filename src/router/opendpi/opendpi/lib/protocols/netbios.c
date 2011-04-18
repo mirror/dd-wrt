@@ -25,28 +25,7 @@
 
 #ifdef IPOQUE_PROTOCOL_NETBIOS
 
-static void ipoque_int_netbios_add_connection(struct ipoque_detection_module_struct
-											  *ipoque_struct)
-{
-
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-
-	flow->detected_protocol = IPOQUE_PROTOCOL_NETBIOS;
-	packet->detected_protocol = IPOQUE_PROTOCOL_NETBIOS;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_NETBIOS);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_NETBIOS);
-	}
-}
-
-
-void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -76,7 +55,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 				IPQ_LOG(IPOQUE_PROTOCOL_NETBIOS, ipoque_struct,
 						IPQ_LOG_DEBUG, "found netbios with questions = 1 and answers = 0, authority = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (packet->payload[2] == 0x80 &&
@@ -87,7 +66,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 				IPQ_LOG(IPOQUE_PROTOCOL_NETBIOS, ipoque_struct,
 						IPQ_LOG_DEBUG, "found netbios with questions = 1 and answers, authority, additional = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (ntohs(get_u16(packet->payload, 2)) == 0x4000 &&
@@ -98,7 +77,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 				IPQ_LOG(IPOQUE_PROTOCOL_NETBIOS, ipoque_struct,
 						IPQ_LOG_DEBUG, "found netbios with questions = 1 and answers = 0, authority = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (ntohs(get_u16(packet->payload, 2)) == 0x8400 &&
@@ -110,7 +89,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 						IPQ_LOG_DEBUG,
 						"found netbios with flag 8400 questions = 0 and answers = 1, authority, additional = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (ntohs(get_u16(packet->payload, 2)) == 0x8500 &&
@@ -122,7 +101,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 						IPQ_LOG_DEBUG,
 						"found netbios with flag 8500 questions = 0 and answers = 1, authority, additional = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (ntohs(get_u16(packet->payload, 2)) == 0x2910 &&
@@ -134,7 +113,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 						IPQ_LOG_DEBUG,
 						"found netbios with flag 2910, questions = 1 and answers, authority=0, additional = 1  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (ntohs(get_u16(packet->payload, 2)) == 0xAD86 &&
@@ -146,7 +125,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 						IPQ_LOG_DEBUG,
 						"found netbios with flag ad86 questions = 0 and answers = 1, authority, additional = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 			if (ntohs(get_u16(packet->payload, 2)) == 0x0110 &&
@@ -158,7 +137,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 						IPQ_LOG_DEBUG,
 						"found netbios with flag 0110 questions = 1 and answers = 0, authority, additional = 0  \n");
 
-				ipoque_int_netbios_add_connection(ipoque_struct);
+				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 				return;
 			}
 		}
@@ -190,7 +169,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 					IPQ_LOG(IPOQUE_PROTOCOL_NETBIOS, ipoque_struct,
 							IPQ_LOG_DEBUG, "found netbios with checked ip-address.\n");
 
-					ipoque_int_netbios_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 					return;
 				}
 			}
@@ -217,7 +196,7 @@ void ipoque_search_netbios(struct ipoque_detection_module_struct *ipoque_struct)
 							IPQ_LOG_DEBUG,
 							"found netbios with session request = 81, flags=0 and length od following bytes = 68. \n");
 
-					ipoque_int_netbios_add_connection(ipoque_struct);
+					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NETBIOS);
 					return;
 				}
 			}

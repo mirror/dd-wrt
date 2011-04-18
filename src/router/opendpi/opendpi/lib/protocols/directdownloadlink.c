@@ -37,20 +37,9 @@ static void ipoque_int_direct_download_link_add_connection(struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	flow->detected_protocol = IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK;
-	packet->detected_protocol = IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK;
-
+	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK);
 	flow->ddlink_server_direction = packet->packet_direction;
-
-	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK);
-	}
-	if (dst != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK);
-	}
 }
 
 
@@ -59,12 +48,12 @@ static void ipoque_int_direct_download_link_add_connection(struct
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
 */
-u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct);
-u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct)
+static u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct);
+static u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	const u8 *p, *end, *line;
+	int len;
 
 	u16 filename_start = 0;
 	u8 i = 1;
@@ -86,6 +75,19 @@ u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct)
 	} else {
 		goto end_ddl_nothing_found;
 	}
+
+	p = packet->payload;
+	end = p + packet->payload_packet_len;
+
+	if (!get_next_line(&p, end, &line, &len))
+		goto end_ddl_nothing_found;
+
+	if (len < 9 + filename_start || memcmp(&line[len - 9], " HTTP/1.", 8) != 0) {
+		IPQ_LOG(IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK, ipoque_struct,
+				IPQ_LOG_DEBUG, "DDL: PACKET NOT HTTP CONFORM.\nXXX%.*sXXX\n",
+				8, &line[len - 9]);
+		goto end_ddl_nothing_found;
+	}
 	// parse packet
 	ipq_parse_packet_line_info(ipoque_struct);
 
@@ -96,13 +98,6 @@ u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct)
 
 	IPQ_LOG(IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK, ipoque_struct, IPQ_LOG_DEBUG, "DDL: Host: found\n");
 
-	if (packet->line[0].len < 9 + filename_start
-		|| memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) != 0) {
-		IPQ_LOG(IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK, ipoque_struct,
-				IPQ_LOG_DEBUG, "DDL: PACKET NOT HTTP CONFORM.\nXXX%.*sXXX\n",
-				8, &packet->line[0].ptr[packet->line[0].len - 9]);
-		goto end_ddl_nothing_found;
-	}
 // BEGIN OF AUTOMATED CODE GENERATION
 	// first see if we have ':port' at the end of the line
 	host_line_len_without_port = packet->host_line.len;
@@ -681,7 +676,7 @@ u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct)
 }
 
 
-void ipoque_search_direct_download_link_tcp(struct
+static void ipoque_search_direct_download_link_tcp(struct
 											ipoque_detection_module_struct
 											*ipoque_struct)
 {
