@@ -28,15 +28,10 @@
 #ifndef __IPQ_DEBUG_FUNCTIONS_H__
 #define __IPQ_DEBUG_FUNCTIONS_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #ifdef IPOQUE_ENABLE_DEBUG_MESSAGES
 	void ipoque_debug_get_last_log_function_line(struct
 												 ipoque_detection_module_struct
 												 *ipoque_struct, const char **file, const char **func, u32 * line);
 #endif
-#ifdef __cplusplus
-}
-#endif
+
 #endif
