@@ -35,11 +35,11 @@ extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
 void __init wrt300nv2_pci_preinit(void)
 {
 	gpio_line_config(AP71_PCI_INTA_PIN,
-				IXP4XX_GPIO_IN | IXP4XX_GPIO_ACTIVE_LOW);
+				IXP4XX_GPIO_IN | IXP4XX_GPIO_STYLE_ACTIVE_LOW);
 	gpio_line_config(AP71_PCI_INTB_PIN,
-				IXP4XX_GPIO_IN | IXP4XX_GPIO_ACTIVE_LOW);
+				IXP4XX_GPIO_IN | IXP4XX_GPIO_STYLE_ACTIVE_LOW);
 	gpio_line_config(AP71_PCI_INTC_PIN,
-				IXP4XX_GPIO_IN | IXP4XX_GPIO_ACTIVE_LOW);
+				IXP4XX_GPIO_IN | IXP4XX_GPIO_STYLE_ACTIVE_LOW);
 
 	gpio_line_isr_clear(AP71_PCI_INTA_PIN);
 	gpio_line_isr_clear(AP71_PCI_INTA_PIN);
