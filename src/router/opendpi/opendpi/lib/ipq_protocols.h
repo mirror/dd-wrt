@@ -27,7 +27,7 @@
 
 #define get_u8(X,O)  (*(u8 *)(((u8 *)X) + O))
 
-#ifdef OPENDPI_NETFILTER_MODULE
+#if defined(OPENDPI_NETFILTER_MODULE) && !defined(__LINUX_ARM_ARCH__)
 #include <asm/unaligned.h>
 
 #define get_u16(X, O)	__get_unaligned_cpu16(((const u8 *) (X)) + O)
