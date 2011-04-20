@@ -32,6 +32,10 @@ endif
 ifeq ($(CONFIG_RT2880),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
+ifeq ($(CONFIG_ATH9K),y)
+CCOPTS+=-DHAVE_ATH9K
+CCOPTS+=-DHAVE_MADWIFI
+endif
 ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
