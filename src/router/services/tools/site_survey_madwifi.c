@@ -202,6 +202,11 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char *cp;
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
+#ifdef HAVE_ATH9K
+	if (is_ath9k(sta)) {
+	    return site_survey_main_mac802211(argc,argv);
+	}
+#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(sta)) {
 	    return site_survey_main_11n(argc,argv);
