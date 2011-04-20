@@ -113,6 +113,10 @@ if (!strcmp(argv[1],"terminate"))
     {
 #ifdef HAVE_MADWIFI
   // return to original channel
+#ifdef HAVE_ATH9K
+if (!is_ath9k(wl_dev))
+#endif
+{
   sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",nvram_safe_get("wifi_display")));
   sleep(1);
   sysprintf("ifconfig %s down",get_monitor());
@@ -123,6 +127,7 @@ if (!strcmp(argv[1],"terminate"))
     {
      sysprintf("wlanconfig %s destroy",get_monitor());    
     }
+}
 #elif HAVE_RT2880
   nvram_set("wl0_mode",nvram_safe_get("wl0_oldmode"));
   sysprintf("startservice configurewifi");
@@ -173,6 +178,10 @@ if (!strcmp(argv[1],"terminate"))
 	  sysprintf("iwconfig ra0 mode monitor");
 	  cfg.readFromWl = 1;
 #else
+#ifdef HAVE_ATH9K
+if (!is_ath9k(nvram_safe_get("wifi_display")))
+#endif
+{
   if (is_ar5008(nvram_safe_get("wifi_display")))
     {
 	  sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(nvram_safe_get("wifi_display")));
@@ -180,6 +189,7 @@ if (!strcmp(argv[1],"terminate"))
 	  sysprintf("wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(nvram_safe_get("wifi_display")));
     }
 	  sysprintf("ifconfig %s up",get_monitor());
+}
 	  cfg.readFromWl = 1;
 #endif
   reloadConfig();
