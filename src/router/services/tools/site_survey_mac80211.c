@@ -39,12 +39,12 @@
 #include <bcmnvram.h>
 
 
+#define SITE_SURVEY_DB	"/tmp/site_survey"
+
 int site_survey_main_mac802211(int argc, char *argv[]) {
 	unlink(SITE_SURVEY_DB);
 	char *sta = nvram_safe_get("wifi_display");
-	if (!nvram_nmatch("disabled", "%s_net_mode", sta
-		&& (nvram_nmatch("ap", "%s_mode", sta))
-		|| nvram_nmatch("wdsap", "%s_mode", sta))) {
+	if (!nvram_nmatch("disabled", "%s_net_mode", sta) && (nvram_nmatch("ap", "%s_mode", sta) || nvram_nmatch("wdsap", "%s_mode", sta))) {
 		mac80211_site_survey(sta,1);
 	}
 	else {
