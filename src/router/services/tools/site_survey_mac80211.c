@@ -38,26 +38,9 @@
 #include <typedefs.h>
 #include <bcmnvram.h>
 
-#define sys_restart() kill(1, SIGHUP)
-#define SITE_SURVEY_DB	"/tmp/site_survey"
-#define SITE_SURVEY_NUM	256
-
-static int write_site_survey(void);
-static int open_site_survey(void);
 
 int site_survey_main_mac802211(int argc, char *argv[]) {
-	char *name = nvram_safe_get("wl0_ifname");
-	unsigned char mac[20];
-	int i = 0, c;
-	char *dev = name;
-
 	unlink(SITE_SURVEY_DB);
-	int ap = 0, oldap = 0;
-	unsigned char *buf = malloc(24 * 1024);
-
-	char ssid[31];
-	unsigned char *cp;
-	int len;
 	char *sta = nvram_safe_get("wifi_display");
 	if (!nvram_nmatch("disabled", "%s_net_mode", sta
 		&& (nvram_nmatch("ap", "%s_mode", sta))
