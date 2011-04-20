@@ -114,23 +114,6 @@ static const struct ie_print ieprinters[] = {
 };
 
 
-/* yes i know.. replace me with the other function */
-#define ETH_ALEN  6
-static void mymac_addr_n2a(char *mac_addr, unsigned char *arg)
-{
-	int i, l;
-
-	l = 0;
-	for (i = 0; i < ETH_ALEN ; i++) {
-		if (i == 0) {
-			sprintf(mac_addr+l, "%02x", arg[i]);
-			l += 2;
-		} else {
-			sprintf(mac_addr+l, ":%02x", arg[i]);
-			l += 3;
-		}
-	}
-}
 
 static void fillENC(const char *text,const char *space) {
 		char *buf;
@@ -180,7 +163,6 @@ static int cb_survey(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
 		int8_t lnoise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
 		int channel=ieee80211_mhz2ieee(freq);
-		fprintf(stderr,"%d:%d\n",channel,lnoise);
 		noise[channel] = lnoise;
 	}
 
@@ -647,8 +629,7 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 
 	if (!bss[NL80211_BSS_BSSID])
 		return NL_SKIP;
-
-	mymac_addr_n2a(mac_addr, nla_data(bss[NL80211_BSS_BSSID]));
+	ether_etoa(nla_data(bss[NL80211_BSS_BSSID]),mac_addr);
 	if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), dev);
 	printf("BSS %s (on %s)", mac_addr, dev);
 	strcpy(site_survey_lists[sscount].BSSID, mac_addr);
