@@ -670,6 +670,7 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	}
 	if (bss[NL80211_BSS_CAPABILITY]) {
 		__u16 capa = nla_get_u16(bss[NL80211_BSS_CAPABILITY]);
+		site_survey_lists[sscount].capability=capa;
 		printf("\tcapability:");
 		if (capa & WLAN_CAPABILITY_ESS)
 			printf(" ESS");
@@ -1220,7 +1221,6 @@ static void print_ht_capability(__u16 cap)
 	} while (0)
 
 	printf("\t\tCapabilities: 0x%02x\n", cap);
-	site_survey_lists[sscount].capability=cap;
 
 	PRINT_HT_CAP((cap & BIT(0)), "RX LDPC");
 	PRINT_HT_CAP((cap & BIT(1)), "HT20/HT40");
