@@ -374,14 +374,14 @@ NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mim
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
-ATH9KOBJS += madwifi_ath9k.o
-ATH9KFILES += networking/madwifi_ath9k.c
+ATH9KOBJS += madwifi_ath9k.o site_survey_mac80211.o
+ATH9KFILES += networking/madwifi_ath9k.c tools/site_survey_mac80211.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
-OBJS += stabridge.o beep.o
+OBJS += stabridge.o beep.o ledtracking.o
 else
 ifeq ($(CONFIG_RT2880),y)
 OBJS += site_survey_ralink.o

@@ -81,8 +81,8 @@ NFILES += wl_11n.c
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
-ATH9KOBJS += wl_ath9k.o list_sort.o unl.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
-ATH9KFILES += wl_ath9k.c list_sort.c unl.c mac80211info.c mac80211regulatory.c mac80211autochannel.c
+ATH9KOBJS += wl_ath9k.o list_sort.o unl.o mac80211info.o mac80211regulatory.o mac80211autochannel.o mac80211site_survey.o
+ATH9KFILES += wl_ath9k.c list_sort.c unl.c mac80211info.c mac80211regulatory.c mac80211autochannel.c mac80211site_survey.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
@@ -118,7 +118,7 @@ ifeq ($(CONFIG_BUFFALO),y)
   NCFLAGS += -DHAVE_BUFFALO
 endif
 ifeq ($(CONFIG_BUFFALO_BL_DEFAULTS),y)
-CFLAGS_EXTRA += -DHAVE_BUFFALO_BL_DEFAULTS
+  CFLAGS += -DHAVE_BUFFALO_BL_DEFAULTS
 endif
 ifeq ($(CONFIG_LAGUNA),y)
   CFLAGS += -DHAVE_LAGUNA
