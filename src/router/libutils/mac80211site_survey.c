@@ -1417,13 +1417,13 @@ void mac80211_site_survey(char *interface, int isap) {
 			hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 		sysprintf("ifconfig %s hw ether %s", scaninterface,macaddr);
 		sysprintf("ifconfig %s 0.0.0.0 up", scaninterface);
-		eval("iw","dev", scaninterface, "scan");
+		sysprintf("iw dev %s scan", scaninterface);
 		mac80211_scan(scaninterface);
 		sysprintf("ifconfig %s down", scaninterface);
 		sysprintf("iw dev %s del", scaninterface);
 	}
 	else {
-		eval("iw","dev", interface, "scan");
+		sysprintf("iw dev %s scan", scaninterface);
 		mac80211_scan(interface);
 	}
 	write_site_survey();
