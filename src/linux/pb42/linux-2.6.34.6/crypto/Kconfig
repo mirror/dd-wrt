@@ -100,13 +100,13 @@ config CRYPTO_MANAGER_NO_TESTS
 	bool "Disable internal testsuite to save space"
 	depends on CRYPTO_MANAGER
 
-config CRYPTO_MANAGER_TESTS
-	bool "Run algolithms' self-tests"
-	default y
-	depends on CRYPTO_MANAGER2
-	help
-	  Run cryptomanager's tests for the new crypto algorithms being
-	  registered.
+#config CRYPTO_MANAGER_TESTS
+#	bool "Run algolithms' self-tests"
+#	default n
+#	depends on CRYPTO_MANAGER2
+#	help
+#	  Run cryptomanager's tests for the new crypto algorithms being
+#	  registered.
 
 config CRYPTO_GF128MUL
 	tristate "GF(2^128) multiplication functions (EXPERIMENTAL)"
