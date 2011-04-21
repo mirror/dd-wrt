@@ -292,12 +292,12 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-int get_distance(void)
+int get_distance(char *ifname)
 {
 	char path[64];
 	int ifcount, distance = 0;
 
-	strcpy(path, nvram_safe_get("wifi_display"));
+	strcpy(path, ifname);
 	sscanf(path, "ath%d", &ifcount);
 	sprintf(path, "/proc/sys/dev/wifi%d/distance", ifcount);
 	FILE *in = fopen(path, "rb");
@@ -319,12 +319,12 @@ int get_distance(void)
 	return distance;
 }
 
-int get_acktiming(void)
+int get_acktiming(char *ifname)
 {
 	char path[64];
 	int ifcount, ack = 0;
 
-	strcpy(path, nvram_safe_get("wifi_display"));
+	strcpy(path, ifname);
 	sscanf(path, "ath%d", &ifcount);
 	sprintf(path, "/proc/sys/dev/wifi%d/acktimeout", ifcount);
 	FILE *in = fopen(path, "rb");
@@ -352,19 +352,21 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<div class=\"label\">%s</div>\n",
 		  live_translate("share.acktiming"));
 
+	char *ifname = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH9K
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
-	int coverage=mac80211_get_coverageclass(nvram_safe_get("wifi_display"));
-	/* See handle_distance() for an explanation where the '450' comes from */
-	websWrite(wp, "<span id=\"wl_ack\">Coverage class %d (up to %dm)</span> &nbsp;\n",
-		  coverage, coverage*450);
-	websWrite(wp, "</div>\n");
-	return;
+	if (is_ath9k(ifname)) {
+		int coverage = mac80211_get_coverageclass(ifname);
+		/* See handle_distance() for an explanation where the '450' comes from */
+		websWrite(wp,
+			  "<span id=\"wl_ack\">Coverage class %d (%dm)</span> &nbsp;\n",
+			  coverage, coverage * 450);
+		websWrite(wp, "</div>\n");
+		return;
 	}
 #endif
 
-	int ack = get_acktiming();
-	int distance = get_distance();
+	int ack = get_acktiming(ifname);
+	int distance = get_distance(ifname);
 
 	websWrite(wp, "<span id=\"wl_ack\">%d&#181;s (%dm)</span> &nbsp;\n",
 		  ack, distance);
@@ -373,16 +375,18 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
+	char *ifname = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH9K
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
-	int coverage=mac80211_get_coverageclass(nvram_safe_get("wifi_display"));
-	/* See handle_distance() for an explanation where the '450' comes from */
-	websWrite(wp, "Coverage class %d (up to %dm)", coverage, coverage*450);
-	return;
+	if (is_ath9k(ifname)) {
+		int coverage = mac80211_get_coverageclass(ifname);
+		/* See handle_distance() for an explanation where the '450' comes from */
+		websWrite(wp, "Coverage class %d (%dm)", coverage,
+			  coverage * 450);
+		return;
 	}
 #endif
-	int ack = get_acktiming();
-	int distance = get_distance();
+	int ack = get_acktiming(ifname);
+	int distance = get_distance(ifname);
 
 	websWrite(wp, "%d&#181;s (%dm)", ack, distance);
 }
@@ -404,34 +408,34 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 	float rate = wifi_getrate(ifname);
-		char scale;
-		int divisor;
+	char scale;
+	int divisor;
 
-		if (rate >= GIGA) {
-			scale = 'G';
-			divisor = GIGA;
+	if (rate >= GIGA) {
+		scale = 'G';
+		divisor = GIGA;
+	} else {
+		if (rate >= MEGA) {
+			scale = 'M';
+			divisor = MEGA;
 		} else {
-			if (rate >= MEGA) {
-				scale = 'M';
-				divisor = MEGA;
-			} else {
-				scale = 'k';
-				divisor = KILO;
-			}
+			scale = 'k';
+			divisor = KILO;
 		}
-		sprintf(mode, "%s_channelbw", ifname);
+	}
+	sprintf(mode, "%s_channelbw", ifname);
 #ifdef HAVE_ATH9K
-		if (!is_ath9k(ifname))
+	if (!is_ath9k(ifname))
 #endif
-		{
+	{
 
 		if (nvram_match(mode, "40"))
 			rate *= 2;
-		}
-		if (rate > 0.0) {
-			websWrite(wp, "%g %cb/s", rate / divisor, scale);
-		} else
-			websWrite(wp, "%s", live_translate("share.auto"));
+	}
+	if (rate > 0.0) {
+		websWrite(wp, "%g %cb/s", rate / divisor, scale);
+	} else
+		websWrite(wp, "%s", live_translate("share.auto"));
 }
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
