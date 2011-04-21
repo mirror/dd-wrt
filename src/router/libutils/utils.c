@@ -1038,7 +1038,6 @@ int internal_getRouterBrand()
 		{"Ubiquiti 3G Station Outdoor", 0xe6c2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti WispStation M5", 0xe2a5, "3", "3", ROUTER_BOARD_BS5M, 0},	//
 
-
 		{NULL, 0, NULL, NULL, 0},	//
 	};
 
@@ -1453,7 +1452,7 @@ int internal_getRouterBrand()
 		setRouter("Belkin F5D8235-4 v3");
 		return ROUTER_BELKIN_F5D8235V3;
 	}
-	
+
 	if (nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
 		setRouter("Belkin Play Max F7D4301 v1");
@@ -2318,18 +2317,21 @@ char *get_wan_ipaddr(void)
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("pptp_get_ip") :
 		    nvram_safe_get("wan_ipaddr");
-	} else if (!strcmp(wan_proto, "pppoe") 
+	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
-	|| !strcmp(wan_proto, "pppoa")
+		   || !strcmp(wan_proto, "pppoa")
 #endif
 #ifdef HAVE_3G
-	|| !strcmp(wan_proto, "3g")
+		   || !strcmp(wan_proto, "3g")
 #endif
-	) {
-		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+	    ) {
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
 #ifdef HAVE_L2TP
 	} else if (!strcmp(wan_proto, "l2tp")) {
-		wan_ipaddr = wan_link ? nvram_safe_get("l2tp_get_ip") : nvram_safe_get("wan_ipaddr");
+		wan_ipaddr =
+		    wan_link ? nvram_safe_get("l2tp_get_ip") :
+		    nvram_safe_get("wan_ipaddr");
 #endif
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
@@ -3189,8 +3191,8 @@ int led_control(int type, int act)
 		connected_gpio = 111;
 		disconnected_gpio = 112;
 		power_gpio = 101;
-#endif 
-	break;
+#endif
+		break;
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WR941
 		diag_gpio = 0x102;
@@ -3247,19 +3249,19 @@ int led_control(int type, int act)
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
 		usb_power = 0x110;
-		connected_gpio = 0x12e; // card 1, gpio 14
+		connected_gpio = 0x12e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
 		ses_gpio = 0x126;	// card 1, gpio 6
 		usb_power = 0x00d;
-		connected_gpio = 0x127; // card 1, gpio 7
+		connected_gpio = 0x127;	// card 1, gpio 7
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
-		connected_gpio = 0x133; // card 2 gpio 3
-		ses_gpio = 0x125; // card 1 gpio 5
-		ses2_gpio = 0x135; // card 2 gpio 5
+		connected_gpio = 0x133;	// card 2 gpio 3
+		ses_gpio = 0x125;	// card 1 gpio 5
+		ses2_gpio = 0x135;	// card 2 gpio 5
 		usb_power = 0x002;
 #endif
 #ifdef HAVE_DIR615E
@@ -3412,7 +3414,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
 		usb_power = 0x110;
-		connected_gpio = 0x12e; // card 1, gpio 14
+		connected_gpio = 0x12e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
@@ -3650,10 +3652,10 @@ int led_control(int type, int act)
 		ses_gpio = 0x008;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E4200:
-		power_gpio = 0x105;  // white LED1
+		power_gpio = 0x105;	// white LED1
 		diag_gpio = 0x005;	// power led blink / off to indicate fac.def. 
 		connected_gpio = 0x103;	// white LED2
-		break;		
+		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
 		diag_gpio = 0x000;	// power led blink /off to indicate factory
@@ -3742,9 +3744,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x002;	// power blink
 		break;
 	case ROUTER_BOARD_NEPTUNE:
-//		usb_gpio = 0x108;
+//              usb_gpio = 0x108;
 		// 0x10c //unknown gpio label, use as diag
-		diag_gpio = 0x10c;		
+		diag_gpio = 0x10c;
 		break;
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
@@ -4178,7 +4180,8 @@ int getath9kdevicecount(void)
 	return (count);
 }
 
-int get_ath9k_phy_idx(int idx) {
+int get_ath9k_phy_idx(int idx)
+{
 	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 	return idx - getifcount("wifi");
 }
@@ -4208,54 +4211,58 @@ int is_ath9k(char *prefix)
 }
 #endif
 
-double HTTxRate20_800(unsigned int index) {
+double HTTxRate20_800(unsigned int index)
+{
 	static const double vHTTxRate20_800[24] =
 	    { 6.5, 13.0, 19.5, 26.0, 39.0, 52.0, 58.5, 65.0, 13.0, 26.0, 39.0,
 		52.0, 78.0, 104.0, 117.0, 130.0,
 		19.5, 39.0, 58.5, 78.0, 117.0, 156.0, 175.5, 195.0
 	};
-	if (index > sizeof(HTTxRate20_800)/sizeof(double) - 1 ) {
-		fprintf(stderr,"utils.c HTTxRate20_800() index overflow\n");
+	if (index > sizeof(HTTxRate20_800) / sizeof(double) - 1) {
+		fprintf(stderr, "utils.c HTTxRate20_800() index overflow\n");
 		return 0.0;
-		}
+	}
 	return vHTTxRate20_800[index];
 }
 
-double HTTxRate20_400(unsigned int index) {
+double HTTxRate20_400(unsigned int index)
+{
 	static const double vHTTxRate20_400[24] =
 	    { 7.2, 14.4, 21.7, 28.9, 43.3, 57.8, 65.0, 72.2, 14.444, 28.889,
 		43.333, 57.778, 86.667, 115.556, 130.000, 144.444,
 		21.7, 43.3, 65.0, 86.7, 130.0, 173.3, 195.0, 216.7
 	};
-	if (index > sizeof(vHTTxRate20_400)/sizeof(double) - 1 ) {
-		fprintf(stderr,"utils.c HTTxRate20_400() index overflow\n");
+	if (index > sizeof(vHTTxRate20_400) / sizeof(double) - 1) {
+		fprintf(stderr, "utils.c HTTxRate20_400() index overflow\n");
 		return 0.0;
-		}
+	}
 	return vHTTxRate20_400[index];
 }
 
-double HTTxRate40_800(unsigned int index) {
+double HTTxRate40_800(unsigned int index)
+{
 	static const double vHTTxRate40_800[25] =
 	    { 13.5, 27.0, 40.5, 54.0, 81.0, 108.0, 121.5, 135.0, 27.0, 54.0,
 		81.0, 108.0, 162.0, 216.0, 243.0, 270.0,
 		40.5, 81.0, 121.5, 162.0, 243.0, 324.0, 364.5, 405.0, 6.0
 	};
-	if (index > sizeof(vHTTxRate40_800)/sizeof(double) - 1 ) {
-		fprintf(stderr,"utils.c HTTxRate40_800() index overflow\n");
+	if (index > sizeof(vHTTxRate40_800) / sizeof(double) - 1) {
+		fprintf(stderr, "utils.c HTTxRate40_800() index overflow\n");
 		return 0.0;
-		}
+	}
 	return vHTTxRate40_800[index];
 }
 
-double HTTxRate40_400(unsigned int index) {
+double HTTxRate40_400(unsigned int index)
+{
 	static const double vHTTxRate40_400[25] =
 	    { 15.0, 30.0, 45.0, 60.0, 90.0, 120.0, 135.0, 150.0, 30.0, 60.0,
 		90.0, 120.0, 180.0, 240.0, 270.0, 300.0,
 		45.0, 90.0, 135.0, 180.0, 270.0, 360.0, 405.0, 450.0, 6.7
 	};
-	if (index > sizeof(vHTTxRate40_400)/sizeof(double) - 1 ) {
-		fprintf(stderr,"utils.c HTTxRate40_400() index overflow\n");
+	if (index > sizeof(vHTTxRate40_400) / sizeof(double) - 1) {
+		fprintf(stderr, "utils.c HTTxRate40_400() index overflow\n");
 		return 0.0;
-		}
+	}
 	return vHTTxRate40_400[index];
 }
