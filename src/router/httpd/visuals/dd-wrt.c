@@ -4148,7 +4148,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 }
 #endif
 #ifdef HAVE_ATH9K
-if (is_ath9k(prefix))
+if (!is_ath9k(prefix))
 #endif
     {
 websWrite(wp,
@@ -4792,7 +4792,7 @@ if (!strcmp(prefix, "wl1"))
 		  nvram_match(wl_width,
 			      "20") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_ATH9K
-if (is_ath9k(prefix))
+if (!is_ath9k(prefix))
 #endif
     {
 	websWrite(wp,
