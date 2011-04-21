@@ -740,8 +740,7 @@ float wifi_getrate(char *ifname)
 			return 54.0;
 		if (nvram_nmatch("2040", "%s_channelbw", ifname)
 		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
-			if (nvram_nmatch("7
-			", "%s_txantenna", ifname))
+			if (nvram_nmatch("7", "%s_txantenna", ifname))
 				return HTTxRate40_400(23);
 			else if (nvram_nmatch("3", "%s_txantenna", ifname) || nvram_nmatch("5", "%s_txantenna", ifname))
 				return HTTxRate40_400(15);
