@@ -1404,7 +1404,7 @@ void mac80211_site_survey(char *interface, int isap) {
 		sysprintf("iw dev %s del", scaninterface);
 	}
 	else {
-		sysprintf("iw dev %s scan", scaninterface);
+		sysprintf("iw dev %s scan", interface);
 		mac80211_scan(interface);
 	}
 	write_site_survey();
