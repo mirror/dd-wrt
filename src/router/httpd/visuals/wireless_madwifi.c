@@ -360,6 +360,7 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
 		distance = coverage * 450;
+		distance >>=1; // roundtrip to distance
 	}
 	else {
 #endif
@@ -384,6 +385,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
 		distance = coverage * 450;
+		distance >>=1; // roundtrip to distance
 	}
 	else {
 #endif
