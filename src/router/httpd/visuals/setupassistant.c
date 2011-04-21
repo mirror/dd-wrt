@@ -695,6 +695,10 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		  "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_width,
 				 "20") ? "selected=\\\"selected\\\"" : "");
+#ifdef HAVE_ATH9K
+if (is_ath9k(prefix)
+#endif
+    {
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
 		  nvram_selmatch(wp, wl_width,
@@ -710,6 +714,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		  nvram_selmatch(wp, wl_width,
 				 "2") ? "selected=\\\"selected\\\"" : "");
 #endif
+    }
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
