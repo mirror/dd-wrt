@@ -730,7 +730,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 float wifi_getrate(char *ifname)
 {
 #ifdef HAVE_ATH9K
-	if (is_ath9k(ifname) && (nvram_nmatch("ap","%s_net_mode",nvram_safe_get("wifi_display") || nvram_nmatch("wdsap","%s_net_mode",nvram_safe_get("wifi_display"))))) {
+	if (is_ath9k(ifname) && (nvram_nmatch("ap","%s_net_mode",ifname) || nvram_nmatch("wdsap","%s_net_mode",ifname))) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
 			return 11.0;
 		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
@@ -742,18 +742,18 @@ float wifi_getrate(char *ifname)
 		if (nvram_nmatch("2040", "%s_channelbw", ifname)
 		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
 			if (nvram_nmatch("7", "%s_txantenna", ifname))
-				return (float)HTTxRate40_400(23) * MEGA;
+				return (float)(HTTxRate40_400(23)) * MEGA;
 			else if (nvram_nmatch("3", "%s_txantenna", ifname) || nvram_nmatch("5", "%s_txantenna", ifname))
-				return (float)HTTxRate40_400(15) * MEGA;
+				return (float)(HTTxRate40_400(15)) * MEGA;
 			else
-				return (float)HTTxRate40_400(7) * MEGA;
+				return (float)(HTTxRate40_400(7)) * MEGA;
 		} else {
 			if (nvram_nmatch("7", "%s_txantenna", ifname))
-				return (float)HTTxRate20_400(23) * MEGA;
+				return (float)(HTTxRate20_400(23)) * MEGA;
 			else if (nvram_nmatch("3", "%s_txantenna", ifname) || nvram_nmatch("5", "%s_txantenna", ifname))
-				return (float)HTTxRate20_400(15) * MEGA;
+				return (float)(HTTxRate20_400(15)) * MEGA;
 			else
-				return (float)HTTxRate20_400(7) * MEGA;
+				return (float)(HTTxRate20_400(7)) * MEGA;
 		}
 	} else
 #endif
