@@ -383,12 +383,6 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 	float rate = wifi_getrate(nvram_safe_get("wifi_display"));
-#ifdef HAVE_ATH9K
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
-		websWrite(wp, "%g Mb/s", rate);
-	} else
-#endif
-	{
 		char scale;
 		int divisor;
 
@@ -411,7 +405,6 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%g %cb/s", rate / divisor, scale);
 		} else
 			websWrite(wp, "%s", live_translate("share.auto"));
-	}
 }
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
