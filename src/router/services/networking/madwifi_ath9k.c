@@ -397,7 +397,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
 	fprintf(fp, "\n");
 }
 
-static void setMacFilter(char *fp, char *iface)
+static void setMacFilter(FILE *fp, char *iface)
 {
 	char *next;
 	char var[32];
