@@ -1537,8 +1537,6 @@ void start_sysinit(void)
 
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
-			case ROUTER_ASUS_RTN10:
-				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
@@ -1558,7 +1556,7 @@ void start_sysinit(void)
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
 #else
-				modules = "bcm57xxlsys";
+				modules = "bcm57xxlsys switch-core switch-robo";
 #endif
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
@@ -1611,6 +1609,7 @@ void start_sysinit(void)
 				    :
 				    "switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 				break;
+			case ROUTER_ASUS_RTN10:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
 				nvram_set("portprio_support", "0");
@@ -1626,8 +1625,6 @@ void start_sysinit(void)
 			}
 		} else {
 			switch (brand) {
-			case ROUTER_ASUS_RTN10:
-				break;
 			case ROUTER_WRT310N:
 			case ROUTER_WRT310NV2:
 			case ROUTER_WRT320N:
@@ -1644,7 +1641,7 @@ void start_sysinit(void)
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
 #else
-				modules = "bcm57xxlsys";
+				modules = "bcm57xxlsys switch-core switch-robo";
 #endif
 				break;
 			case ROUTER_LINKSYS_WRT55AG:
@@ -1688,7 +1685,13 @@ void start_sysinit(void)
 					    "pcmcia_core yenta_socket ds";
 				}
 				break;
-
+			case ROUTER_ASUS_RTN10:
+			case ROUTER_ASUS_RTN12B:
+			case ROUTER_LINKSYS_E1000V2:
+				nvram_set("portprio_support", "0");
+				modules = "";
+				break;
+				
 			default:
 #ifndef HAVE_BCMMODERN
 				if (check_vlan_support())
@@ -1704,7 +1707,7 @@ void start_sysinit(void)
 					modules =
 					    nvram_invmatch("ct_modules",
 							   "") ?
-					    nvram_safe_get("ct_modules") : "";
+					    nvram_safe_get("ct_modules") : "switch-core switch-robo";
 				}
 				break;
 			}
@@ -2045,152 +2048,10 @@ char *enable_dtag_vlan(int enable)
 	else
 		nvram_set("vdsl_state", "0");
 
-	char *vlan7ports = NULL;
-
-	vlan7ports = "4t 5";
-	if (nvram_match("vlan1ports", "4 5")) {
-		vlan7ports = "4t 5";
-	}
-	if (nvram_match("vlan1ports", "0 5")) {
-		vlan7ports = "0t 5";
-	}
-	if (nvram_match("vlan1ports", "1 5")) {
-		vlan7ports = "1t 5";
-	}
-	if (nvram_match("vlan2ports", "0 8") || nvram_match("vlan2ports", "0 8*") || nvram_match("vlan2ports", "0 8t") || nvram_match("vlan1ports", "4 8"))	// special 
-		// 
-		// condition 
-		// for 
-		// Broadcom 
-		// Gigabit 
-		// Phy 
-		// routers 
-		// 
-	{
-		char *eth = NULL;
-
-		vlan7ports = "0t 8";
-		int vlanswap = 0;
-
-		if (nvram_match("vlan1ports", "4 8")) {
-			vlanswap = 1;
-			vlan7ports = "4t 8";
-		}
-		char *save_ports2 = nvram_safe_get("vlan2ports");
-		char *save_ports1 = nvram_safe_get("vlan1ports");
+	char *eth = "eth0";
 #ifdef HAVE_MADWIFI
 		eth = "eth0";
-#else
-		switch (getRouterBrand()) {
-		case ROUTER_NETGEAR_WNR3500L:
-		case ROUTER_WRT320N:
-		case ROUTER_ASUS_RTN16:
-		case ROUTER_WRT310NV2:
-		case ROUTER_WRT610NV2:
-		case ROUTER_BELKIN_F7D3301:
-		case ROUTER_BELKIN_F7D4301:
-		case ROUTER_BELKIN_F5D8235V3:
-		case ROUTER_LINKSYS_E4200:
-			eth = "eth0";
-			break;
-		case ROUTER_WRT600N:
-		case ROUTER_WRT610N:
-			eth = "eth2";
-			break;
-		default:
-			eth = "eth1";
-			break;
-		}
-#endif
-		if (donothing) {
-			nvram_set("fromvdsl", "0");
-			return eth;
-		}
-		if (enable) {
-			if (vlanswap)
-				nvram_set("vlan1ports", "");
-			else
-				nvram_set("vlan2ports", "");
-			nvram_set("vlan7ports", vlan7ports);
-			if (nvram_match("dtag_vlan8", "1")
-			    && nvram_match("wan_vdsl", "1")) {
-				nvram_set("vlan8ports", vlan7ports);
-			}
-		}
-		stop_lan();
-		eval("ifconfig", eth, "down");
-#ifdef HAVE_BCMMODERN
-		rmmod("bcm57xx");
-		insmod("bcm57xx");
-#else
-		rmmod("bcm57xxlsys");
-		insmod("bcm57xxlsys");
-#endif
-		eval("ifconfig", eth, "up");
-		start_config_vlan();
-		start_lan();
-		if (enable) {
-			nvram_set("vlan1ports", save_ports1);
-			nvram_set("vlan2ports", save_ports2);
-			nvram_set("vlan7ports", "");
-			nvram_set("vlan8ports", "");
-		}
-		nvram_set("fromvdsl", "0");
-		return eth;
-	}
-
-	if (nvram_match("switch_type", "BCM5325")
-		 && (getRouterBrand() != ROUTER_WRT160NV3)
-		 && (getRouterBrand() != ROUTER_BELKIN_F7D3302)
-		 && (getRouterBrand() != ROUTER_BELKIN_F7D4302))	// special condition
-		// for Broadcom
-		// Gigabit Phy
-		// routers 
-	{
-#ifdef HAVE_MADWIFI
-		char *eth = "eth0";
-#else
-		char *eth = "eth1";
-#endif
-		vlan7ports = "0t 5";
-		char *save_ports2 = nvram_safe_get("vlan1ports");
-		char *save_ports1 = nvram_safe_get("vlan0ports");
-
-		if (donothing) {
-			nvram_set("fromvdsl", "0");
-			return eth;
-		}
-		if (enable) {
-			nvram_set("vlan1ports", "");
-			nvram_set("vlan7ports", vlan7ports);
-			if (nvram_match("dtag_vlan8", "1")
-			    && nvram_match("wan_vdsl", "1")) {
-				nvram_set("vlan8ports", vlan7ports);
-			}
-		}
-		stop_lan();
-		eval("ifconfig", eth, "down");
-#ifdef HAVE_BCMMODERN
-		rmmod("bcm57xx");
-		insmod("bcm57xx");
-#else
-		rmmod("bcm57xxlsys");
-		insmod("bcm57xxlsys");
-#endif
-		eval("ifconfig", eth, "up");
-		start_config_vlan();
-		start_lan();
-		if (enable) {
-			nvram_set("vlan0ports", save_ports1);
-			nvram_set("vlan1ports", save_ports2);
-			nvram_set("vlan7ports", "");
-			nvram_set("vlan8ports", "");
-		}
-		nvram_set("fromvdsl", "0");
-		return eth;
-	}
-
-	char *eth = "eth0";
+#else		
 
 	FILE *in = fopen("/proc/switch/eth1/reset", "rb");	// this
 
@@ -2203,43 +2064,71 @@ char *enable_dtag_vlan(int enable)
 	// DIR-330)
 	// requires
 	// it
+	
 	if (in) {
 		eth = "eth1";
 		fclose(in);
 	} else {
-		FILE *in = fopen("/proc/switch/eth2/reset", "rb");	// this
-
-		// condition
-		// fails
-		// almost.
-		// just one
-		// router
-		// (DLINK
-		// DIR-330)
-		// requires
-		// it
+		FILE *in = fopen("/proc/switch/eth2/reset", "rb");
 		if (in) {
 			eth = "eth2";
 			fclose(in);
 		} else
 			eth = "eth0";
 	}
+#endif
 
-	char *vlan_lan_ports = nvram_safe_get("vlan0ports");
-	char *vlan_wan_ports = nvram_safe_get("vlan1ports");
+	char *lan_vlan = nvram_safe_get("lan_ifnames");
+	char *wan_vlan = nvram_safe_get("wan_ifname");	
+	char *vlan_lan_ports = NULL;
+	char *vlan_wan_ports = NULL;
 	int lan_vlan_num = 0;
 	int wan_vlan_num = 1;
+	
 
-	if (nvram_match("vlan2ports", "0 5") || nvram_match("vlan2ports", "4 5")) {	//e.g wrt160nv3, f7d3302, f7d4302
-		vlan_lan_ports = nvram_safe_get("vlan1ports");
-		vlan_wan_ports = nvram_safe_get("vlan2ports");
-		lan_vlan_num = 1;
-		wan_vlan_num = 2;
-		if (nvram_match("vlan2ports", "4 5"))
-			vlan7ports = "4t 5";
-		else
-			vlan7ports = "0t 5";
+	if(startswith(lan_vlan, "vlan0")) {
+		lan_vlan_num = 0;
 	}
+	else if(startswith(lan_vlan, "vlan1")) {
+		lan_vlan_num = 1;
+	}
+	else if(startswith(lan_vlan, "vlan2")) {
+		lan_vlan_num = 2;
+	}
+	else
+		return eth;
+	
+	if(startswith(wan_vlan, "vlan0")) {
+		wan_vlan_num = 0;
+	}
+	else if(startswith(wan_vlan, "vlan1")) {
+		wan_vlan_num = 1;
+	}
+	else if(startswith(wan_vlan, "vlan2")) {
+		wan_vlan_num = 2;
+	}
+	else
+		return eth;
+	
+	if (wan_vlan_num == lan_vlan_num)
+		return eth;
+		
+	vlan_lan_ports = nvram_nget("vlan%dports", lan_vlan_num);
+	vlan_wan_ports = nvram_nget("vlan%dports", wan_vlan_num);
+			
+	
+	char *vlan7ports = "4t 5";;
+		
+	if (!strcmp(vlan_wan_ports, "4 5"))
+		vlan7ports = "4t 5";
+	else if (!strcmp(vlan_wan_ports, "0 5"))
+		vlan7ports = "0t 5";
+	else if (!strcmp(vlan_wan_ports, "1 5"))
+		vlan7ports = "1t 5";
+	else if (!strcmp(vlan_wan_ports, "4 8"))
+		vlan7ports = "4t 8";
+	else if (!strcmp(vlan_wan_ports, "0 8"))
+		vlan7ports = "0t 8";
 
 	if (!donothing) {
 		sysprintf("echo 1 > /proc/switch/%s/reset", eth);
