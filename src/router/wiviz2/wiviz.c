@@ -473,22 +473,59 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
   src=i_src;
   dst=i_dst;
   bss=i_bss;
-#if 0 //HAVE_MADWIFI  (use prism now here too)
-int noise;
+#ifdef HAVE_ATH9K
+if (is_ath9k(nvram_safe_get("wifi_display")))
+{
   if (packet[0]>0)
     {
     printf( "Wrong radiotap header version.\n" );
     return;
     }
+    else
+    printf("ver %d\n",packet[0]); 
   int number = packet[2] | (unsigned int)((unsigned int)packet[3]<<8);
+    printf("num %d\n",number); 
     if (number<=0 || number>=pktlen)
 	{
 	printf("something wrong %d\n",number);
 	return;
 	}
-    noise = packet[number-3];
+
+    int noise = packet[number-3];
     rssi = -(100-(packet[number-4]-noise));
+    printf("rssi %d\n",rssi);
     hWifi = (ieee802_11_hdr *) (packet + (number));
+}else{
+  prism_hdr * hPrism;
+  prism_did * i;
+  if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr))) return;
+  hPrism = (prism_hdr *) packet;
+  if (pktlen < hPrism->msg_length + (sizeof(ieee802_11_hdr))) return; // bogus packet
+  hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
+ i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
+  //Parse the prism DIDs
+  int received=0;
+  while ((int)i < (int)hWifi) {
+    if (i->did == pdn_rssi) {
+	    received=1;
+	    rssi = i->data;
+	    }
+    if (i->did == pdn_signal) {
+	    rssi = (int)i->data+rssi;
+	    }
+    if (i->did == 0) //skip bogus empty value from atheros sequence counter
+	{ 
+	i = (prism_did *) (((unsigned char*)&i->data) + 4);
+	}else{
+	i = (prism_did *) (((unsigned char*)&i->data) + i->length);
+	}
+    }
+    if (!received) // bogus, no prism data
+	return;
+    if (!rssi) // no rssi? can't be a packet
+	return;
+
+}
 #else
   prism_hdr * hPrism;
   prism_did * i;
@@ -536,6 +573,7 @@ int noise;
   int fctype = (hWifi->frame_control & 0xC);
   int fc = (hWifi->frame_control & 0xf0);
   type =typeUnknown;
+  printf("type %X, fc %X\n",fctype,fc);
 if (!fctype) // only accept management frames (type 0)
 {
   switch (fc) {
