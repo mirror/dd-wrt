@@ -396,13 +396,14 @@ extern float wifi_getrate(char *ifname);
 void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
-	int state = get_radiostate(nvram_safe_get("wifi_display"));
+	char *ifname = nvram_safe_get("wifi_display");
+	int state = get_radiostate(ifname);
 
 	if (state == 0 || state == -1) {
 		websWrite(wp, "%s", live_translate("share.disabled"));
 		return;
 	}
-	float rate = wifi_getrate(nvram_safe_get("wifi_display"));
+	float rate = wifi_getrate(ifname);
 		char scale;
 		int divisor;
 
@@ -418,9 +419,15 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 				divisor = KILO;
 			}
 		}
-		sprintf(mode, "%s_channelbw", nvram_safe_get("wifi_display"));
+		sprintf(mode, "%s_channelbw", ifname);
+#ifdef HAVE_ATH9K
+		if (!is_ath9k(ifname))
+#endif
+		{
+
 		if (nvram_match(mode, "40"))
 			rate *= 2;
+		}
 		if (rate > 0.0) {
 			websWrite(wp, "%g %cb/s", rate / divisor, scale);
 		} else
