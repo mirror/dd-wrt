@@ -348,6 +348,7 @@ int get_acktiming(char *ifname)
 
 void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
+	int ack,distance;
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n",
 		  live_translate("share.acktiming"));
@@ -356,17 +357,17 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
+		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
-		websWrite(wp,
-			  "<span id=\"wl_ack\">Coverage class %d (%dm)</span> &nbsp;\n",
-			  coverage, coverage * 450);
-		websWrite(wp, "</div>\n");
-		return;
+		distance = coverage * 450;
+	}
+	else {
+#endif
+	ack = get_acktiming(ifname);
+	distance = get_distance(ifname);
+#ifdef HAVE_ATH9K
 	}
 #endif
-
-	int ack = get_acktiming(ifname);
-	int distance = get_distance(ifname);
 
 	websWrite(wp, "<span id=\"wl_ack\">%d&#181;s (%dm)</span> &nbsp;\n",
 		  ack, distance);
@@ -375,18 +376,22 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
+	int ack,distance;
 	char *ifname = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
+		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
-		websWrite(wp, "Coverage class %d (%dm)", coverage,
-			  coverage * 450);
-		return;
+		distance = coverage * 450;
+	}
+	else {
+#endif
+	ack = get_acktiming(ifname);
+	distance = get_distance(ifname);
+#ifdef HAVE_ATH9K
 	}
 #endif
-	int ack = get_acktiming(ifname);
-	int distance = get_distance(ifname);
 
 	websWrite(wp, "%d&#181;s (%dm)", ack, distance);
 }
