@@ -159,6 +159,35 @@ nla_put_failure:
 	return(-199);
 }
 
+int mac80211_get_coverageclass(char *interface) {
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct genlmsghdr *gnlh;
+	int wdev,phy;
+	unsigned char coverage=0;
+
+	wdev = if_nametoindex(interface);
+	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, true);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+	gnlh=nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
+		coverage = nla_get_u8(tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]);
+		/* See handle_distance() for an explanation where the '450' comes from */
+		// printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
+	}
+	// printf ("%d\n", coverage);
+	return coverage;
+nla_put_failure:
+	nlmsg_free(msg);
+	return 0;
+}
+
 static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
 	// struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
 	struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
