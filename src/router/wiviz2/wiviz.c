@@ -473,6 +473,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
   src=i_src;
   dst=i_dst;
   bss=i_bss;
+
 #ifdef HAVE_ATH9K
 if (is_ath9k(nvram_safe_get("wifi_display")))
 {
@@ -495,38 +496,9 @@ if (is_ath9k(nvram_safe_get("wifi_display")))
     rssi = -(100-(packet[number-4]-noise));
     printf("rssi %d\n",rssi);
     hWifi = (ieee802_11_hdr *) (packet + (number));
-}else{
-  prism_hdr * hPrism;
-  prism_did * i;
-  if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr))) return;
-  hPrism = (prism_hdr *) packet;
-  if (pktlen < hPrism->msg_length + (sizeof(ieee802_11_hdr))) return; // bogus packet
-  hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
- i = (prism_did *)((char *)hPrism + sizeof(prism_hdr));
-  //Parse the prism DIDs
-  int received=0;
-  while ((int)i < (int)hWifi) {
-    if (i->did == pdn_rssi) {
-	    received=1;
-	    rssi = i->data;
-	    }
-    if (i->did == pdn_signal) {
-	    rssi = (int)i->data+rssi;
-	    }
-    if (i->did == 0) //skip bogus empty value from atheros sequence counter
-	{ 
-	i = (prism_did *) (((unsigned char*)&i->data) + 4);
-	}else{
-	i = (prism_did *) (((unsigned char*)&i->data) + i->length);
-	}
-    }
-    if (!received) // bogus, no prism data
-	return;
-    if (!rssi) // no rssi? can't be a packet
-	return;
-
-}
-#else
+}else
+#endif
+{
   prism_hdr * hPrism;
   prism_did * i;
   if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr))) return;
@@ -563,8 +535,8 @@ if (is_ath9k(nvram_safe_get("wifi_display")))
     i = (prism_did *) ((int)(i+1) + i->length);
     }
 #endif
+}
 
-#endif
   
 
   memset(bss,0,6);
