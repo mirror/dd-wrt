@@ -174,7 +174,7 @@ ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv,
 #if defined(HAVE_ATH9K)
 extern int
 ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
-			  char *ifname, int cnt, int turbo, int macmask);
+			    char *ifname, int cnt, int turbo, int macmask);
 #endif
 
 extern char *getiflist(void);
@@ -209,21 +209,22 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			cnt =
 			    ej_active_wireless_if_11n(wp, argc, argv,
 						      devs, cnt, t, macmask);
-				gotassocs=1;
-			}
+			gotassocs = 1;
+		}
 #endif
 #ifdef HAVE_ATH9K
-			if (is_ath9k(devs)) {
-			    cnt = ej_active_wireless_if_ath9k(wp, argc, argv,
-						      devs, cnt, t, macmask);
-				gotassocs=1;
-			}
+		if (is_ath9k(devs)) {
+			cnt = ej_active_wireless_if_ath9k(wp, argc, argv,
+							  devs, cnt, t,
+							  macmask);
+			gotassocs = 1;
+		}
 #endif
 		if (!gotassocs) {
 			cnt =
 			    ej_active_wireless_if(wp, argc, argv, devs,
 						  cnt, t, macmask);
-			}
+		}
 
 		char vif[32];
 
@@ -382,29 +383,35 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 	float rate = wifi_getrate(nvram_safe_get("wifi_display"));
-	char scale;
-	int divisor;
-
-	if (rate >= GIGA) {
-		scale = 'G';
-		divisor = GIGA;
-	} else {
-		if (rate >= MEGA) {
-			scale = 'M';
-			divisor = MEGA;
-		} else {
-			scale = 'k';
-			divisor = KILO;
-		}
-	}
-	sprintf(mode, "%s_channelbw", nvram_safe_get("wifi_display"));
-	if (nvram_match(mode, "40"))
-		rate *= 2;
-	if (rate > 0.0) {
-		websWrite(wp, "%g %cb/s", rate / divisor, scale);
+#ifdef HAVE_ATH9K
+	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+		websWrite(wp, "%g Mb/s", rate);
 	} else
-		websWrite(wp, "%s", live_translate("share.auto"));
+#endif
+	{
+		char scale;
+		int divisor;
 
+		if (rate >= GIGA) {
+			scale = 'G';
+			divisor = GIGA;
+		} else {
+			if (rate >= MEGA) {
+				scale = 'M';
+				divisor = MEGA;
+			} else {
+				scale = 'k';
+				divisor = KILO;
+			}
+		}
+		sprintf(mode, "%s_channelbw", nvram_safe_get("wifi_display"));
+		if (nvram_match(mode, "40"))
+			rate *= 2;
+		if (rate > 0.0) {
+			websWrite(wp, "%g %cb/s", rate / divisor, scale);
+		} else
+			websWrite(wp, "%s", live_translate("share.auto"));
+	}
 }
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)

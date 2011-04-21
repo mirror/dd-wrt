@@ -728,11 +728,42 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 float wifi_getrate(char *ifname)
 {
-	struct iwreq wrq;
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
+			return 11.0;
+		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
+			return 54.0;
+		if (nvram_nmatch("a-only", "%s_net_mode", ifname))
+			return 54.0;
+		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
+			return 54.0;
+		if (nvram_nmatch("2040", "%s_channelbw", ifname)
+		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
+			if (nvram_nmatch("3", "%s_txantenna", ifname))
+				return HTTxRate40_400(23);
+			else if (nvram_nmatch("2", "%s_txantenna", ifname))
+				return HTTxRate40_400(15);
+			else
+				return HTTxRate40_400(7);
+		} else {
+			if (nvram_nmatch("3", "%s_txantenna", ifname))
+				return HTTxRate20_400(23);
+			else if (nvram_nmatch("2", "%s_txantenna", ifname))
+				return HTTxRate20_400(15);
+			else
+				return HTTxRate20_400(7);
+		}
+	} else
+#endif
+	{
 
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-	ioctl(getsocket(), SIOCGIWRATE, &wrq);
-	return wrq.u.bitrate.value;
+		struct iwreq wrq;
+
+		strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+		ioctl(getsocket(), SIOCGIWRATE, &wrq);
+		return wrq.u.bitrate.value;
+	}
 }
 
 /*
