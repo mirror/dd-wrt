@@ -570,3 +570,159 @@ void free_wifi_clients(struct wifi_client_info *wci) {
 		wci = next;
 		}
 	}
+
+static int get_max_mcs_index(const __u8 *mcs)
+{
+	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
+
+	for (mcs_bit = 0; mcs_bit <= 76; mcs_bit++) {
+		unsigned int mcs_octet = mcs_bit/8;
+		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
+		bool mcs_rate_idx_set;
+
+		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
+
+		if (!mcs_rate_idx_set)
+			continue;
+
+		if (prev_bit != mcs_bit - 1) {
+			/* if (prev_bit != -2)
+				printf("%d, ", prev_bit);
+			else
+				printf(" ");
+			printf("%d", mcs_bit); */
+			prev_cont = 0;
+		} else if (!prev_cont) {
+			// printf("-");
+			prev_cont = 1;
+		}
+
+		prev_bit = mcs_bit;
+	}
+
+	if (prev_cont)
+		// printf("%d", prev_bit);
+		return prev_bit;
+	// printf("\n");
+	return 0;
+}
+
+static int get_ht_mcs(const __u8 *mcs)
+{
+	/* As defined in 7.3.2.57.4 Supported MCS Set field */
+	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
+	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
+
+	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
+	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
+	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
+	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
+	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
+
+	// if (max_rx_supp_data_rate)
+	//	printf("\t\tHT Max RX data rate: %d Mbps\n", max_rx_supp_data_rate);
+	/* XXX: else see 9.6.0e.5.3 how to get this I think */
+
+	if (tx_mcs_set_defined) {
+		if (tx_mcs_set_equal) {
+			// printf("\t\tHT TX/RX MCS rate indexes supported:");
+			return(get_max_mcs_index(mcs));
+		} else {
+			// printf("\t\tHT RX MCS rate indexes supported:");
+			return(get_max_mcs_index(mcs));
+
+			// if (tx_unequal_modulation)
+				// printf("\t\tTX unequal modulation supported\n");
+			// else
+				// printf("\t\tTX unequal modulation not supported\n");
+
+			// printf("\t\tHT TX Max spatial streams: %d\n",
+			// 	tx_max_num_spatial_streams);
+
+			// printf("\t\tHT TX MCS rate indexes supported may differ\n");
+		}
+	} else {
+		// printf("\t\tHT RX MCS rate indexes supported:");
+		return(get_max_mcs_index(mcs));
+		// printf("\t\tHT TX MCS rate indexes are undefined\n");
+	}
+}
+
+int mac80211_get_maxrate(char *interface) {
+	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *bands, *band,*ratelist,*rate;
+	int rem, rem2;
+	int wdev,phy;
+	int maxrate=0;
+	static struct nla_policy rate_policy[NL80211_BITRATE_ATTR_MAX + 1] = {
+		[NL80211_BITRATE_ATTR_RATE] = { .type = NLA_U32 },
+		[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = { .type = NLA_FLAG },
+	};
+	wdev = if_nametoindex(interface);
+	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+
+	nla_for_each_nested(band, bands, rem) {
+		ratelist = nla_find(nla_data(band), nla_len(band),
+				    NL80211_BAND_ATTR_RATES);
+		if (!ratelist)
+			continue;
+		nla_for_each_nested(rate, ratelist, rem2) {
+			nla_parse_nested(tb, NL80211_BITRATE_ATTR_MAX,
+					 rate, rate_policy);
+			if (!tb[NL80211_BITRATE_ATTR_RATE])
+				continue;
+			maxrate=0.1 * nla_get_u32(tb[NL80211_BITRATE_ATTR_RATE]);
+		}
+	}
+	printf("maxrate: %d\n",maxrate);
+	return maxrate;
+out:
+nla_put_failure:
+	nlmsg_free(msg);
+	return 0;
+}
+
+int mac80211_get_maxmcs(char *interface) {
+	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *bands, *band;
+	int rem;
+	int wdev,phy;
+	int maxmcs=0;
+
+	wdev = if_nametoindex(interface);
+	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+
+	nla_for_each_nested(band, bands, rem) {
+	nla_parse(tb, NL80211_BAND_ATTR_MAX, nla_data(band),
+		  nla_len(band), NULL);
+	if (tb[NL80211_BAND_ATTR_HT_MCS_SET] &&
+		nla_len(tb[NL80211_BAND_ATTR_HT_MCS_SET]) == 16)
+		maxmcs=get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
+	}
+	printf("maxmcs: %d\n",maxmcs);
+	return maxmcs;
+out:
+	return 0;
+nla_put_failure:
+	nlmsg_free(msg);
+	return 0;
+}
