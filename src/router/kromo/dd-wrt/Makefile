@@ -100,12 +100,21 @@ ifeq ($(CONFIG_3COM),y)
 endif
 
 ifeq ($(CONFIG_BUFFALO),y)
+ifneq ($(CONFIG_NINTENDO),y)
 	
 	mkdir $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
 	cp buffalo/images/* $(INSTALLDIR)/www/images
 	cp buffalo/help/* $(INSTALLDIR)/www/help
+endif
+endif
+
+ifeq ($(CONFIG_NINTENDO),y)
+	mkdir $(INSTALLDIR)/www/style/nintendo
+	cp nintendo/style.css $(INSTALLDIR)/www/style/nintendo
+	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
+	cp nintendo/images/* $(INSTALLDIR)/www/images
 endif
 
 ifeq ($(CONFIG_CORENET),y)
