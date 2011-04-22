@@ -198,7 +198,7 @@ void configure_single_ath9k(int count)
 	getMacAddr(dev, macaddr);
 	nvram_set(athmac, macaddr);
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
-	sysprintf("iw phy %s set distance %d", wif, distance << 1); // distance to roundtrip 
+	sysprintf("iw phy %s set distance %d", wif, distance);  
 
 	int newpower = atoi(nvram_default_get(power, "16"));
 	sysprintf("iw phy %s set txpower fixed %d", wif, newpower*100);
