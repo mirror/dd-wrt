@@ -40,7 +40,7 @@ ifeq ($(CONFIG_RT61),y)
 CCOPTS+=-DHAVE_RT2880 
 endif
 
-wiviz: ${OBJS}
+wiviz: clean ${OBJS}
 	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS}
 
 wiviz.o: wiviz.c
