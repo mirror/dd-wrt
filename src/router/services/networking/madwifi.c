@@ -142,7 +142,6 @@ void deconfigure_wifi(void)
 
 	for (i = 0; i < c; i++)
 		deconfigure_single(i);
-sysprintf("ifconfig -a");
 }
 
 static int need_commit = 0;
