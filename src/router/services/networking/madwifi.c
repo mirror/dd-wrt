@@ -137,12 +137,12 @@ void deconfigure_wifi(void)
 	stop_process("wrt-radauth", "Radius daemon");
 	stop_process("hostapd", "hostapd daemon");
 	stop_process("wpa_supplicant", "wpa_supplicant daemon");
-
 	int c = getdevicecount();
 	int i;
 
 	for (i = 0; i < c; i++)
 		deconfigure_single(i);
+sysprintf("ifconfig -a");
 }
 
 static int need_commit = 0;
