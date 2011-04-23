@@ -251,10 +251,10 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dd class="term"><% tran("service.vpnd_config"); %></dd>
-							<dt class="definition"><% tran("hstatus_vpn.right2"); %></dt>
-							<dd class="term"><% tran("service.vpn_route"); %></dd>
-							<dt class="definition"><% tran("hstatus_vpn.right1"); %></dt>
+							<dt class="term"><% tran("service.vpnd_config"); %></dt>
+							<dd class="definition"><% tran("hstatus_vpn.right2"); %></dd>
+							<dt class="term"><% tran("service.vpn_route"); %></dt>
+							<dd class="definition"><% tran("hstatus_vpn.right1"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HPPTP.asp');"><% tran("share.more"); %></a>
 					</div>

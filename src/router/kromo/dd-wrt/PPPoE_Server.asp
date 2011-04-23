@@ -260,7 +260,7 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hpppoesrv.right2"); %></dd>
 						</dl><br />
 							<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('Hpppoesrv.asp');"><% tran("share.more"); %></a>
-						</div>
+					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
