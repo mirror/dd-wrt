@@ -494,6 +494,7 @@ static void wpas_group_formation_completed(struct wpa_supplicant *wpa_s,
 		ssid_txt = "";
 		client = wpa_s->p2p_group_interface ==
 			P2P_GROUP_INTERFACE_CLIENT;
+		os_memset(go_dev_addr, 0, ETH_ALEN);
 	}
 
 	wpa_s->show_group_started = 0;
@@ -1476,6 +1477,7 @@ static void wpas_sd_req_upnp(struct wpa_supplicant *wpa_s,
 			break;
 		wpabuf_put_str(resp, usrv->service);
 	}
+	os_free(str);
 
 	if (count == 0) {
 		wpa_printf(MSG_DEBUG, "P2P: Requested UPnP service not "

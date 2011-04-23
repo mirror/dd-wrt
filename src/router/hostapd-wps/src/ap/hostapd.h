@@ -219,6 +219,9 @@ struct hostapd_iface {
 	/* Overlapping BSS information */
 	int olbc_ht;
 
+	int force_20mhz;
+	struct os_time last_20mhz_trigger;
+
 	u16 ht_op_mode;
 	void (*scan_cb)(struct hostapd_iface *iface);
 

@@ -1901,6 +1901,10 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 					   "ht_capab", line);
 				errors++;
 			}
+		} else if (os_strcmp(buf, "dynamic_ht40") == 0) {
+			conf->dynamic_ht40 = atoi(pos);
+			if (conf->dynamic_ht40 == 1)
+				conf->dynamic_ht40 = 1500;
 		} else if (os_strcmp(buf, "require_ht") == 0) {
 			conf->require_ht = atoi(pos);
 #endif /* CONFIG_IEEE80211N */

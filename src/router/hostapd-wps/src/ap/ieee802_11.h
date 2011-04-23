@@ -65,4 +65,17 @@ void hostapd_tx_status(struct hostapd_data *hapd, const u8 *addr,
 void ieee802_11_rx_from_unknown(struct hostapd_data *hapd, const u8 *src,
 				int wds);
 
+#ifdef CONFIG_IEEE80211N
+void hostapd_trigger_20mhz(struct hostapd_iface *iface);
+void hostapd_deinit_ht(struct hostapd_iface *iface);
+
+#else
+static inline void hostapd_deinit_ht(struct hostapd_iface *iface)
+{
+}
+static inline void hostapd_trigger_20mhz(struct hostapd_iface *iface)
+{
+}
+#endif /* CONFIG_IEEE80211N */
+
 #endif /* IEEE802_11_H */
