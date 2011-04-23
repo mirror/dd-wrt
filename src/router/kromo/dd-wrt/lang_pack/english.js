@@ -1311,7 +1311,7 @@ service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
 var hpppoesrv = new Object();
-hpppoesrv.right2="IP: 0.0.0.0; you will get served an IP from the pool";
+hpppoesrv.right2="IP: 0.0.0.0; you'ĺl serve IP's from the pool";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1323,7 +1323,7 @@ service.snmp_read="RO Community";
 service.snmp_write="RW Community";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN Server";
+service.vpnd_legend="OpenVPN Server/Daemon";
 service.vpnd_srv="Start OpenVPN Server";
 service.vpnd_starttype="Start Type";
 service.vpnd_startWanup="WAN Up";
@@ -1358,7 +1358,7 @@ service.vpn_srvcert="CA Cert";
 service.vpn_clicert="Public Client Cert";
 service.vpn_certtype="nsCertType verification";
 service.vpn_clikey="Private Client Key";
-service.vpn_nat="Enable NAT";
+service.vpn_nat="NAT";
 service.vpn_cipher="Encryption Cipher";
 service.vpn_auth="Hash Algorithm";
 service.vpn_bridge="Bridge TAP to br0";
@@ -1368,8 +1368,8 @@ service.vpn_route="Policy based Routing";
 
 //help container
 var hstatus_vpn = new Object();
-hstatus_vpn.right1="Add IP's in the form 0.0.0.0/0 to use the tunnelgateway. One Line per IP. Redirect Gateway MUST be off.";
-hstatus_vpn.right2="To push routes to clients add push \"route 0.0.0.0\", to push DNS/WINS add push \"dhcp-option DNS (or WINS) 0.0.0.0\" to the config ";
+hstatus_vpn.right1="Add IP's in the form 0.0.0.0/0 to force clients to use the tunnel as defaultgateway. One Line per IP. Redirect Gateway MUST be off.";
+hstatus_vpn.right2="To push routes to clients add \'push \"route 0.0.0.0\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) 0.0.0.0\"\' to the config ";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
