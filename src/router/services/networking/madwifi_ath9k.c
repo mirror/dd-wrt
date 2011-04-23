@@ -198,10 +198,10 @@ void configure_single_ath9k(int count)
 	getMacAddr(dev, macaddr);
 	nvram_set(athmac, macaddr);
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
-	sysprintf("iw phy %s set distance %d", wif, distance);  
+	sysprintf("iw phy %s set distance %d", wif, distance);
 
 	int newpower = atoi(nvram_default_get(power, "16"));
-	sysprintf("iw phy %s set txpower fixed %d", wif, newpower*100);
+	sysprintf("iw phy %s set txpower fixed %d", wif, newpower * 100);
 
 // das scheint noch aerger zu machen
 	sysprintf("iw dev %s set power_save off", dev);
@@ -303,14 +303,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
 		    && strcmp(netmode, "na-only")) {
 			fprintf(fp, "require_ht=1\n");
 		}
-
 		fprintf(fp, "ieee80211n=1\n");
 		char bw[32];
 		sprintf(bw, "%s_channelbw", prefix);
+		if (nvram_match(bw, "2040")) {
+			fprintf(fp, "dynamic_ht40=1\n");
+		}
 		if (nvram_default_match(bw, "20", "20")) {
 			sprintf(ht, "20");
-		} else if (nvram_match(bw, "40")
-			   || nvram_match(bw, "2040")) {
+		} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "upper", "lower")) {
@@ -397,7 +398,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
 	fprintf(fp, "\n");
 }
 
-static void setMacFilter(FILE *fp, char *iface)
+static void setMacFilter(FILE * fp, char *iface)
 {
 	char *next;
 	char var[32];
