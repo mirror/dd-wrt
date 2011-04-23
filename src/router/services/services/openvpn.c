@@ -72,6 +72,7 @@ void start_openvpnserver(void)
 			"mtu-disc yes\n"
 			"topology subnet\n"
 			"client-config-dir /tmp/openvpn/peers\n"
+			"script-security 2\n"
 			"port %s\n"
 			"proto %s\n"
 			"cipher %s\n"
@@ -261,7 +262,8 @@ void start_openvpn(void)
 		"client\n"
 		"tls-client\n"
 		"resolv-retry infinite\n"
-		"nobind\n" "persist-key\n" "persist-tun\n" "mtu-disc yes\n");
+		"nobind\n" "persist-key\n" "persist-tun\n" 
+		"script-security 2\n" "mtu-disc yes\n");
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
