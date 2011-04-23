@@ -394,6 +394,7 @@ struct hostapd_config {
 	int ieee80211n;
 	int secondary_channel;
 	int require_ht;
+	int dynamic_ht40;
 };
 
 
