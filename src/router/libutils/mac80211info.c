@@ -210,6 +210,7 @@ static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
         [NL80211_STA_INFO_LLID] = { .type = NLA_U16 },
         [NL80211_STA_INFO_PLID] = { .type = NLA_U16 },
         [NL80211_STA_INFO_PLINK_STATE] = { .type = NLA_U8 },
+        [NL80211_STA_INFO_CONNECTED_TIME] = { .type = NLA_U32 },
     };
 
     static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
@@ -267,6 +268,12 @@ static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
 		printf("\n\tsignal:  \t%d dBm",
 			(int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));
 		}
+
+	if (sinfo[NL80211_STA_INFO_CONNECTED_TIME]) {
+		mac80211_info->wci->uptime=nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]);
+		printf("\n\tuptime:\t%u",
+			nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]));
+	}
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX,
