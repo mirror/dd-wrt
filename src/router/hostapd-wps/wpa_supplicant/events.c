@@ -430,15 +430,8 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_supplicant *wpa_s,
 		return 0;
 	}
 
-	if (!wpa_key_mgmt_wpa(ssid->key_mgmt)) {
-		wpa_dbg(wpa_s, MSG_DEBUG, "   allow in non-WPA/WPA2");
-		return 1;
-	}
-
-	wpa_dbg(wpa_s, MSG_DEBUG, "   reject due to mismatch with "
-		"WPA/WPA2");
-
-	return 0;
+	/* Allow in non-WPA configuration */
+	return 1;
 }
 
 
@@ -500,13 +493,13 @@ static struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 		if (e->count > limit) {
 			wpa_dbg(wpa_s, MSG_DEBUG, "   skip - blacklisted "
 				"(count=%d limit=%d)", e->count, limit);
-			return NULL;
+			return 0;
 		}
 	}
 
 	if (ssid_len == 0) {
 		wpa_dbg(wpa_s, MSG_DEBUG, "   skip - SSID not known");
-		return NULL;
+		return 0;
 	}
 
 	wpa = wpa_ie_len > 0 || rsn_ie_len > 0;
@@ -597,7 +590,7 @@ static struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 	}
 
 	/* No matching configuration found */
-	return NULL;
+	return 0;
 }
 
 
@@ -960,7 +953,7 @@ static int _wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s,
 			wpa_dbg(wpa_s, MSG_DEBUG, "Setup a new network");
 			wpa_supplicant_associate(wpa_s, NULL, ssid);
 		} else {
-			int timeout_sec = wpa_s->scan_interval;
+			int timeout_sec = 0;
 			int timeout_usec = 0;
 #ifdef CONFIG_P2P
 			if (wpa_s->p2p_in_provisioning) {
@@ -1098,7 +1091,7 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 	l = data->assoc_info.resp_ies_len;
 
 #ifdef CONFIG_WPS_STRICT
-	if (p && wpa_s->current_ssid &&
+	if (wpa_s->current_ssid &&
 	    wpa_s->current_ssid->key_mgmt == WPA_KEY_MGMT_WPS) {
 		struct wpabuf *wps;
 		wps = ieee802_11_vendor_ie_concat(p, l, WPS_IE_VENDOR_TYPE);
@@ -1996,9 +1989,6 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 #endif /* CONFIG_P2P */
 		break;
 	case EVENT_RX_PROBE_REQ:
-		if (data->rx_probe_req.sa == NULL ||
-		    data->rx_probe_req.ie == NULL)
-			break;
 #ifdef CONFIG_AP
 		if (wpa_s->ap_iface) {
 			hostapd_probe_req_rx(wpa_s->ap_iface->bss[0],
