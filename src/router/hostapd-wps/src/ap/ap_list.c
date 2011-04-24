@@ -227,7 +227,6 @@ void ap_list_process_beacon(struct hostapd_iface *iface,
 			    struct hostapd_frame_info *fi)
 {
 	struct ap_info *ap;
-	struct os_time now;
 	int new_ap = 0;
 	size_t len;
 	int set_beacon = 0;
@@ -293,8 +292,7 @@ void ap_list_process_beacon(struct hostapd_iface *iface,
 		ap->ht_support = 0;
 
 	ap->num_beacons++;
-	os_get_time(&now);
-	ap->last_beacon = now.sec;
+	time(&ap->last_beacon);
 	if (fi) {
 		ap->ssi_signal = fi->ssi_signal;
 		ap->datarate = fi->datarate;
@@ -333,7 +331,7 @@ void ap_list_process_beacon(struct hostapd_iface *iface,
 static void ap_list_timer(void *eloop_ctx, void *timeout_ctx)
 {
 	struct hostapd_iface *iface = eloop_ctx;
-	struct os_time now;
+	time_t now;
 	struct ap_info *ap;
 	int set_beacon = 0;
 
@@ -342,12 +340,12 @@ static void ap_list_timer(void *eloop_ctx, void *timeout_ctx)
 	if (!iface->ap_list)
 		return;
 
-	os_get_time(&now);
+	time(&now);
 
 	while (iface->ap_list) {
 		ap = iface->ap_list->prev;
 		if (ap->last_beacon + iface->conf->ap_table_expiration_time >=
-		    now.sec)
+		    now)
 			break;
 
 		ap_free_ap(iface, ap);

@@ -33,7 +33,7 @@
 
 
 struct hostapd_cached_radius_acl {
-	os_time_t timestamp;
+	time_t timestamp;
 	macaddr addr;
 	int accepted; /* HOSTAPD_ACL_* */
 	struct hostapd_cached_radius_acl *next;
@@ -44,7 +44,7 @@ struct hostapd_cached_radius_acl {
 
 
 struct hostapd_acl_query_data {
-	os_time_t timestamp;
+	time_t timestamp;
 	u8 radius_id;
 	macaddr addr;
 	u8 *auth_msg; /* IEEE 802.11 authentication frame from station */
@@ -71,14 +71,14 @@ static int hostapd_acl_cache_get(struct hostapd_data *hapd, const u8 *addr,
 				 u32 *acct_interim_interval, int *vlan_id)
 {
 	struct hostapd_cached_radius_acl *entry;
-	struct os_time now;
+	time_t now;
 
-	os_get_time(&now);
+	time(&now);
 	entry = hapd->acl_cache;
 
 	while (entry) {
 		if (os_memcmp(entry->addr, addr, ETH_ALEN) == 0) {
-			if (now.sec - entry->timestamp > RADIUS_ACL_TIMEOUT)
+			if (now - entry->timestamp > RADIUS_ACL_TIMEOUT)
 				return -1; /* entry has expired */
 			if (entry->accepted == HOSTAPD_ACL_ACCEPT_TIMEOUT)
 				if (session_timeout)
@@ -303,7 +303,7 @@ int hostapd_allowed_address(struct hostapd_data *hapd, const u8 *addr,
 
 
 #ifndef CONFIG_NO_RADIUS
-static void hostapd_acl_expire_cache(struct hostapd_data *hapd, os_time_t now)
+static void hostapd_acl_expire_cache(struct hostapd_data *hapd, time_t now)
 {
 	struct hostapd_cached_radius_acl *prev, *entry, *tmp;
 
@@ -331,8 +331,7 @@ static void hostapd_acl_expire_cache(struct hostapd_data *hapd, os_time_t now)
 }
 
 
-static void hostapd_acl_expire_queries(struct hostapd_data *hapd,
-				       os_time_t now)
+static void hostapd_acl_expire_queries(struct hostapd_data *hapd, time_t now)
 {
 	struct hostapd_acl_query_data *prev, *entry, *tmp;
 
@@ -368,11 +367,11 @@ static void hostapd_acl_expire_queries(struct hostapd_data *hapd,
 static void hostapd_acl_expire(void *eloop_ctx, void *timeout_ctx)
 {
 	struct hostapd_data *hapd = eloop_ctx;
-	struct os_time now;
+	time_t now;
 
-	os_get_time(&now);
-	hostapd_acl_expire_cache(hapd, now.sec);
-	hostapd_acl_expire_queries(hapd, now.sec);
+	time(&now);
+	hostapd_acl_expire_cache(hapd, now);
+	hostapd_acl_expire_queries(hapd, now);
 
 	eloop_register_timeout(10, 0, hostapd_acl_expire, hapd, NULL);
 }

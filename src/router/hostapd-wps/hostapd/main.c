@@ -556,10 +556,10 @@ int main(int argc, char *argv[])
 		wpa_debug_open_file(log_file);
 
 	interfaces.count = argc - optind;
-	interfaces.iface = os_zalloc(interfaces.count *
+	interfaces.iface = os_malloc(interfaces.count *
 				     sizeof(struct hostapd_iface *));
 	if (interfaces.iface == NULL) {
-		wpa_printf(MSG_ERROR, "malloc failed");
+		wpa_printf(MSG_ERROR, "malloc failed\n");
 		return -1;
 	}
 

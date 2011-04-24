@@ -716,7 +716,7 @@ void * tls_init(const struct tls_config *conf)
 #endif /* CONFIG_FIPS */
 		SSL_load_error_strings();
 		SSL_library_init();
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800fL) && !defined(OPENSSL_NO_SHA256)
+#ifndef OPENSSL_NO_SHA256
 		EVP_add_digest(EVP_sha256());
 #endif /* OPENSSL_NO_SHA256 */
 		/* TODO: if /dev/urandom is available, PRNG is seeded
@@ -1183,10 +1183,8 @@ static int tls_verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx)
 	X509_NAME_oneline(X509_get_subject_name(err_cert), buf, sizeof(buf));
 
 	conn = SSL_get_app_data(ssl);
-	if (conn == NULL)
-		return 0;
-	match = conn->subject_match;
-	altmatch = conn->altsubject_match;
+	match = conn ? conn->subject_match : NULL;
+	altmatch = conn ? conn->altsubject_match : NULL;
 
 	if (!preverify_ok && !conn->ca_cert_verify)
 		preverify_ok = 1;
