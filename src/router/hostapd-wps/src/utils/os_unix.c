@@ -315,21 +315,14 @@ char * os_readfile(const char *name, size_t *len)
 {
 	FILE *f;
 	char *buf;
-	long pos;
 
 	f = fopen(name, "rb");
 	if (f == NULL)
 		return NULL;
 
-	if (fseek(f, 0, SEEK_END) < 0 || (pos = ftell(f)) < 0) {
-		fclose(f);
-		return NULL;
-	}
-	*len = pos;
-	if (fseek(f, 0, SEEK_SET) < 0) {
-		fclose(f);
-		return NULL;
-	}
+	fseek(f, 0, SEEK_END);
+	*len = ftell(f);
+	fseek(f, 0, SEEK_SET);
 
 	buf = os_malloc(*len);
 	if (buf == NULL) {

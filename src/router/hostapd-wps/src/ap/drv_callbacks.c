@@ -157,20 +157,17 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 		}
 	} else if (hapd->conf->wps_state) {
 #ifdef CONFIG_WPS_STRICT
-		if (ie) {
-			struct wpabuf *wps;
-			wps = ieee802_11_vendor_ie_concat(ie, ielen,
-							  WPS_IE_VENDOR_TYPE);
-			if (wps && wps_validate_assoc_req(wps) < 0) {
-				hostapd_drv_sta_disassoc(
-					hapd, sta->addr,
-					WLAN_REASON_INVALID_IE);
-				ap_free_sta(hapd, sta);
-				wpabuf_free(wps);
-				return -1;
-			}
+		struct wpabuf *wps;
+		wps = ieee802_11_vendor_ie_concat(ie, ielen,
+						  WPS_IE_VENDOR_TYPE);
+		if (wps && wps_validate_assoc_req(wps) < 0) {
+			hostapd_drv_sta_disassoc(hapd, sta->addr,
+						 WLAN_REASON_INVALID_IE);
+			ap_free_sta(hapd, sta);
 			wpabuf_free(wps);
+			return -1;
 		}
+		wpabuf_free(wps);
 #endif /* CONFIG_WPS_STRICT */
 		if (ie && ielen > 4 && ie[0] == 0xdd && ie[1] >= 4 &&
 		    os_memcmp(ie + 2, "\x00\x50\xf2\x04", 4) == 0) {
@@ -256,10 +253,8 @@ int hostapd_probe_req_rx(struct hostapd_data *hapd, const u8 *sa,
 	size_t i;
 	int ret = 0;
 
-	if (sa == NULL || ie == NULL)
-		return -1;
-
-	random_add_randomness(sa, ETH_ALEN);
+	if (sa)
+		random_add_randomness(sa, ETH_ALEN);
 	for (i = 0; hapd->probereq_cb && i < hapd->num_probereq_cb; i++) {
 		if (hapd->probereq_cb[i].cb(hapd->probereq_cb[i].ctx,
 					    sa, ie, ie_len) > 0) {
@@ -496,9 +491,6 @@ void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
 		break;
 #endif /* NEED_AP_MLME */
 	case EVENT_RX_PROBE_REQ:
-		if (data->rx_probe_req.sa == NULL ||
-		    data->rx_probe_req.ie == NULL)
-			break;
 		hostapd_probe_req_rx(hapd, data->rx_probe_req.sa,
 				     data->rx_probe_req.ie,
 				     data->rx_probe_req.ie_len);

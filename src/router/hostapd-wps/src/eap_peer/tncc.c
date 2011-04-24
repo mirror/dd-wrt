@@ -180,11 +180,11 @@ TNC_Result TNC_TNCC_ReportMessageTypes(
 	imc = tnc_imc[imcID];
 	os_free(imc->supported_types);
 	imc->supported_types =
-		os_malloc(typeCount * sizeof(TNC_MessageType));
+		os_malloc(typeCount * sizeof(TNC_MessageTypeList));
 	if (imc->supported_types == NULL)
 		return TNC_RESULT_FATAL;
 	os_memcpy(imc->supported_types, supportedTypes,
-		  typeCount * sizeof(TNC_MessageType));
+		  typeCount * sizeof(TNC_MessageTypeList));
 	imc->num_supported_types = typeCount;
 
 	return TNC_RESULT_SUCCESS;
