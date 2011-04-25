@@ -36,6 +36,7 @@
 #include "ap_drv_ops.h"
 #include "ap_config.h"
 #include "p2p_hostapd.h"
+#include "ieee802_11.h"
 
 
 static int hostapd_flush_old_stations(struct hostapd_data *hapd);
