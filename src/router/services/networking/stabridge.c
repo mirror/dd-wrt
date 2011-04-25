@@ -49,26 +49,34 @@ void start_stabridge(void)
 		char label[32], debug[32], debug_string[32];
 		sprintf(label, "%s_relayd_gw_auto", getWET());
 		sprintf(debug, "%s_relayd_debug", getWET());
-		if(nvram_match(debug, "1")) {
+		if (nvram_match(debug, "1")) {
 			//sprintf(debug_string, " -dd >/tmp/%s_relayd.log 2>&1", getWET());
-			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger", getWET());
-		}else
-		{
-			sprintf(debug_string,"");
-		}
-		if (nvram_match(label,"0")) {
-		    sprintf(label, "%s_relayd_gw_ipaddr", getWET());
-		    sysprintf("relayd -I %s -I %s -G %s -L %s -D -B%s &", getBridge(getWET()), getWET(), nvram_safe_get(label), nvram_safe_get("lan_ipaddr"), debug_string);
+			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger",
+				getWET());
 		} else {
-		    sysprintf("relayd -I %s -I %s -L %s -D -B%s &", getBridge(getWET()), getWET(), nvram_safe_get("lan_ipaddr"), debug_string);
+			sprintf(debug_string, "");
+		}
+		if (nvram_match(label, "0")) {
+			sprintf(label, "%s_relayd_gw_ipaddr", getWET());
+			sysprintf("relayd -I %s -I %s -G %s -L %s -D -B%s &",
+				  getBridge(getWET()), getWET(),
+				  nvram_safe_get(label),
+				  nvram_safe_get("lan_ipaddr"), debug_string);
+		} else {
+			sysprintf("relayd -I %s -I %s -L %s -D -B%s &",
+				  getBridge(getWET()), getWET(),
+				  nvram_safe_get("lan_ipaddr"), debug_string);
 		}
 	}
 #else
 	if (getWET()) {
 		// let packages pass to iptables without ebtables loaded
-		sysprintf("echo 1 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-		sysprintf("echo 1 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-		sysprintf("echo 1 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+		sysprintf
+		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-arptables");
+		sysprintf
+		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
+		sysprintf
+		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-iptables");
 		insmod("ebtables");
 		insmod("ebtables");
 		insmod("ebtable_filter");
