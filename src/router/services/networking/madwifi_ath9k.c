@@ -241,7 +241,7 @@ void configure_single_ath9k(int count)
 		}
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
-
+		int s;
 		for (s = 1; s <= 10; s++) {
 			char wdsvarname[32] = { 0 };
 			char wdsdevname[32] = { 0 };
