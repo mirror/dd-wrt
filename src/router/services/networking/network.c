@@ -598,7 +598,7 @@ static int wlconf_up(char *name)
 		eval("ifconfig", var, "up");
 		}
 #endif
-	eval("ifconfig",name,"up");
+	eval("ifconfig", name, "up");
 	return ret;
 }
 
@@ -1910,8 +1910,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2101,7 +2101,6 @@ void start_lan(void)
 #endif
 	close(s);
 	reset_hwaddr(lan_ifname);
-
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
@@ -3489,10 +3488,10 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_MODEMBRIDGE
 	if ((strcmp(wan_proto, "bridge") == 0)) {
-	    stop_atm();
-	    start_atm();
-	    br_add_interface("br0", "nas0");
-	    start_wan_done("nas0");
+		stop_atm();
+		start_atm();
+		br_add_interface("br0", "nas0");
+		start_wan_done("nas0");
 	} else
 #endif
 #ifdef HAVE_PPPOATM
@@ -3517,9 +3516,9 @@ void start_wan(int status)
 
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
-		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s llc-encaps",nvram_safe_get("vpi"),nvram_safe_get("vci"));
+		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s llc-encaps",
+			nvram_safe_get("vpi"), nvram_safe_get("vci"));
 		fprintf(fp, "\n");
-
 
 		// Those are default options we use + user/passwd
 		// By using user/password options we dont have to deal with chap/pap
@@ -3533,8 +3532,7 @@ void start_wan(int status)
 		fprintf(fp, "noipdefault\n"
 			"noauth\n"
 			"defaultroute\n" "noaccomp\n" "nobsdcomp\n"
-			"nodeflate\n"
-			"nopcomp\n");
+			"nodeflate\n" "nopcomp\n");
 		if (nvram_invmatch("ppp_mppe", ""))
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
@@ -3857,7 +3855,9 @@ void start_wan_done(char *wan_ifname)
 			while (route_add
 			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 			       && timeout--) {
-				if ((nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoa")) && nvram_match("ppp_demand", "1")) {
+				if ((nvram_match("wan_proto", "pppoe")
+				     || nvram_match("wan_proto", "pppoa"))
+				    && nvram_match("ppp_demand", "1")) {
 					printf
 					    ("Wait ppp interface to init (3) ...\n");
 					sleep(1);
@@ -4152,7 +4152,7 @@ void stop_wan(void)
 	 */
 	ifconfig(wan_ifname, 0, NULL, NULL);
 #ifdef HAVE_MODEMBRIDGE
-	br_del_interface("br0", "nas0");    
+	br_del_interface("br0", "nas0");
 #endif
 	eval("ifconfig", wan_ifname, "down");	// to allow for MAC clone to
 	// take effect
