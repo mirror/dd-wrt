@@ -82,9 +82,9 @@ static void deconfigure_single(int count)
 	char wifivifs[16];
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(dev, "ath%d", count);
-	if (!strcmp(dev, "ath0"))
+	if (!strncmp(dev, "ath0",4))
 		led_control(LED_SEC0, LED_OFF);
-	if (!strcmp(dev, "ath1"))
+	if (!strncmp(dev, "ath1",4))
 		led_control(LED_SEC1, LED_OFF);
 
 	char vifs[128];
@@ -815,9 +815,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	}*/
 	// wep key support
 	if (nvram_match(akm, "wep")) {
-		if (!strcmp(prefix, "ath0"))
+		if (!strncmp(prefix, "ath0",4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strcmp(prefix, "ath1"))
+		if (!strncmp(prefix, "ath1",4))
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -856,9 +856,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 		   || nvram_match(akm, "wpa wpa2")) {
-		if (!strcmp(prefix, "ath0"))
+		if (!strncmp(prefix, "ath0",4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strcmp(prefix, "ath1"))
+		if (!strncmp(prefix, "ath1",4))
 			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
@@ -1310,9 +1310,9 @@ static void configure_single(int count)
 
 	sprintf(wif, "wifi%d", count);
 	sprintf(dev, "ath%d", count);
-	if (!strcmp(dev, "ath0"))
+	if (!strncmp(dev, "ath0",4))
 		led_control(LED_SEC0, LED_OFF);
-	if (!strcmp(dev, "ath1"))
+	if (!strncmp(dev, "ath1",4))
 		led_control(LED_SEC1, LED_OFF);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
