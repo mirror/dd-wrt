@@ -409,14 +409,20 @@ int svqos_iptables(void)
 		rmmod("ebtable_nat");
 		rmmod("ebtables");
 		// don't let packages pass to iptables without ebtables loaded
-		sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-		sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-		sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+		sysprintf
+		    ("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
+		sysprintf
+		    ("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
+		sysprintf
+		    ("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
 	} else {
 		// don't let packages pass to iptables without ebtables loaded
-		sysprintf("echo 1 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-		sysprintf("echo 1 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-		sysprintf("echo 1 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+		sysprintf
+		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-arptables");
+		sysprintf
+		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
+		sysprintf
+		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-iptables");
 		insmod("ebtables");
 		insmod("ebtable_nat");
 		insmod("ebtable_filter");
@@ -899,9 +905,12 @@ void stop_wshaper(void)
 		rmmod("ebtable_nat");
 		rmmod("ebtables");
 		// don't let packages pass to iptables without ebtables loaded
-		sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-		sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-		sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+		sysprintf
+		    ("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
+		sysprintf
+		    ("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
+		sysprintf
+		    ("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
 	}
 	rmmod("imq");
 	return;

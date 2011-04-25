@@ -3244,22 +3244,27 @@ int led_control(int type, int act)
 		diag_gpio = 0x101;
 		connected_gpio = 0x112;
 		ses_gpio = 0x111;
+		sec0_gpio = 0x111;
 #endif
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
 		ses_gpio = 0x10d;
+		sec0_gpio = 0x10d;
 		usb_power = 0x110;
 		connected_gpio = 0x12e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
 		ses_gpio = 0x126;	// card 1, gpio 6
+		sec0_gpio = 0x126;
 		usb_power = 0x00d;
 		connected_gpio = 0x127;	// card 1, gpio 7
 #endif
 #ifdef HAVE_WZRHPAG300NH
 		diag_gpio = 0x101;
 		connected_gpio = 0x133;	// card 2 gpio 3
+		sec0_gpio = 0x125;
+		sec1_gpio = 0x135;
 		ses_gpio = 0x125;	// card 1 gpio 5
 		ses2_gpio = 0x135;	// card 2 gpio 5
 		usb_power = 0x002;
@@ -3396,41 +3401,8 @@ int led_control(int type, int act)
 		ses_gpio = 0x005;
 #endif
 		break;
-#else
-	case ROUTER_BOARD_PB42:
-#ifdef HAVE_WZRG300NH
-		diag_gpio = 0x101;
-		connected_gpio = 0x112;
-		ses_gpio = 0x111;
-#endif
-#ifdef HAVE_WZRHPAG300NH
-		diag_gpio = 0x101;
-		connected_gpio = 0x133;
-		ses_gpio = 0x121;
-		ses2_gpio = 0x135;
-		usb_power = 0x002;
-#endif
-#ifdef HAVE_WZRG450
-		diag_gpio = 0x10e;
-		ses_gpio = 0x10d;
-		usb_power = 0x110;
-		connected_gpio = 0x12e;	// card 1, gpio 14
-#endif
-#ifdef HAVE_WZRG300NH2
-		diag_gpio = 0x110;
-		ses_gpio = 0x126;
-		usb_power = 0x00d;
-		connected_gpio = 0x127;
-#endif
-		break;
 	case ROUTER_BOARD_WR5422:
 		ses_gpio = 0x10d;
-		break;
-#endif
-	case ROUTER_BOARD_WHRG300N:
-		diag_gpio = 0x107;
-		connected_gpio = 0x109;
-		ses_gpio = 0x10e;
 		break;
 	case ROUTER_BOARD_F5D8235:
 		usb_gpio = 0x117;
@@ -3439,10 +3411,49 @@ int led_control(int type, int act)
 		connected_gpio = 0x105;
 		ses_gpio = 0x10c;
 		break;
+#else
+	case ROUTER_BOARD_PB42:
+#ifdef HAVE_WZRG300NH
+		diag_gpio = 0x101;
+		connected_gpio = 0x112;
+		ses_gpio = 0x111;
+		sec0_gpio = 0x111;
+#endif
+#ifdef HAVE_WZRHPAG300NH
+		diag_gpio = 0x101;
+		connected_gpio = 0x133;
+		ses_gpio = 0x121;
+		ses2_gpio = 0x135;
+		sec0_gpio = 0x121;
+		sec1_gpio = 0x135;
+		usb_power = 0x002;
+#endif
+#ifdef HAVE_WZRG450
+		diag_gpio = 0x10e;
+		ses_gpio = 0x10d;
+		sec0_gpio = 0x10d;
+		usb_power = 0x110;
+		connected_gpio = 0x12e;	// card 1, gpio 14
+#endif
+#ifdef HAVE_WZRG300NH2
+		diag_gpio = 0x110;
+		ses_gpio = 0x126;
+		sec0_gpio = 0x126;
+		usb_power = 0x00d;
+		connected_gpio = 0x127;
+#endif
+		break;
+#endif
+	case ROUTER_BOARD_WHRG300N:
+		diag_gpio = 0x107;
+		connected_gpio = 0x109;
+		ses_gpio = 0x10e;
+		break;
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x101;
 		connected_gpio = 0x106;
 		ses_gpio = 0x100;
+		sec0_gpio = 0x100;
 		break;
 	case ROUTER_BUFFALO_WBR54G:
 		diag_gpio = 0x107;

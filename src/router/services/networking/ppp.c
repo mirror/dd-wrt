@@ -131,10 +131,11 @@ int ipup_main(int argc, char **argv)
 			nvram_set("wan_ipaddr", value);
 			nvram_set("wan_netmask", "255.255.255.255");
 			// reset 3gnetmodetoggle for mode 5
-            nvram_unset("3gnetmodetoggle");
+			nvram_unset("3gnetmodetoggle");
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
-			char * gpio3g=nvram_get("gpio3g");
-			if (gpio3g != NULL) set_gpio(atoi(gpio3g),1);
+			char *gpio3g = nvram_get("gpio3g");
+			if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 1);
 #endif
 		}
 #endif
@@ -212,8 +213,9 @@ int ipdown_main(int argc, char **argv)
 #ifdef HAVE_3G
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 	else if (nvram_match("wan_proto", "3g")) {
-			char * gpio3g=nvram_get("gpio3g");
-			if (gpio3g != NULL) set_gpio(atoi(gpio3g),0);
+		char *gpio3g = nvram_get("gpio3g");
+		if (gpio3g != NULL)
+			set_gpio(atoi(gpio3g), 0);
 	}
 #endif
 #endif
