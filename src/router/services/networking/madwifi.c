@@ -815,9 +815,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	}*/
 	// wep key support
 	if (nvram_match(akm, "wep")) {
-		if (!strcmp(ifname, "ath0"))
+		if (!strcmp(prefix, "ath0"))
 			led_control(LED_SEC0, LED_ON);
-		if (!strcmp(ifname, "ath1"))
+		if (!strcmp(prefix, "ath1"))
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -856,9 +856,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 		   || nvram_match(akm, "wpa wpa2")) {
-		if (!strcmp(ifname, "ath0"))
+		if (!strcmp(prefix, "ath0"))
 			led_control(LED_SEC0, LED_ON);
-		if (!strcmp(ifname, "ath1"))
+		if (!strcmp(prefix, "ath1"))
 			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
