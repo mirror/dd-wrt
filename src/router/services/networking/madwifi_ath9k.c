@@ -551,9 +551,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname));
 		if (!aoss) {
-			if (!strcmp(ifname, "ath0"))
+			if (!strncmp(ifname, "ath0",4))
 				led_control(LED_SEC0, LED_ON);
-			if (!strcmp(ifname, "ath1"))
+			if (!strncmp(ifname, "ath1",4))
 				led_control(LED_SEC1, LED_ON);
 
 		}
@@ -598,9 +598,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 		   || nvram_match(akm, "wpa wpa2")) {
-		if (!strcmp(ifname, "ath0"))
+		if (!strncmp(ifname, "ath0",4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strcmp(ifname, "ath1"))
+		if (!strncmp(ifname, "ath1",4))
 			led_control(LED_SEC1, LED_ON);
 
 		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
