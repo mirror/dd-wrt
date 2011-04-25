@@ -330,7 +330,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
 	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
-	fprintf(fp, "country_code=%s\n", getIsoName(country));
+	// jumps to world if set here?!?
+	// fprintf(fp, "country_code=%s\n", getIsoName(country));
 	chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
