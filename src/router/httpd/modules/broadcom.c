@@ -1301,6 +1301,7 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
 #endif
 #endif
+	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
 };
 
 struct gozila_action *handle_gozila_action(char *name, char *type)
