@@ -89,6 +89,7 @@ struct samba3_user *getsamba3users(void) {
 				current = current->next;
 			}
 		}
+	json_array_clear(json);		
 	}
 		
 	return list;
@@ -167,11 +168,7 @@ struct samba3_share *getsamba3shares(void) {
 				current = current->next;
 			}
 		}
+	json_array_clear(json);		
 	}
-		
-/*	current->next = getsamba3share("/jffs", "testshare", "rw", 0);
-	current = current->next;
-	current->next = getsamba3share("/mnt", "othertest", "ro", 1);
-*/		
 	return list;
 }
