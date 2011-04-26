@@ -567,6 +567,7 @@ CFLAGS_EXTRA += -DHAVE_FTP
 OBJS += proftp.o
 endif
 ifeq ($(CONFIG_SAMBA3),y)
+CFLAGS_EXTRA += -I$(TOP)/jansson/src
 CFLAGS_EXTRA += -DHAVE_SAMBA3
 OBJS += samba3.o
 endif
