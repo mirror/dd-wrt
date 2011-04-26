@@ -111,6 +111,10 @@ struct samba3_share *getsamba3share(char *mp, char *label, char *access_perms, i
 	return share;
 }
 
+void refjson(void)
+{
+    json_dumps( NULL, JSON_COMPACT ) ;
+}
 
 struct samba3_share *getsamba3shares(void) {
 	
