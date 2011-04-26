@@ -1256,26 +1256,6 @@ int getAssocMAC(char *ifname, char *mac)
 
 #ifdef HAVE_ATH9K
 
-void delete_ath9k_devices(char *physical_iface)
-{
-	glob_t globbuf;
-	char globstring[1024];
-	int globresult;
-	if (physical_iface)
-		sprintf(globstring, "/sys/class/ieee80211/%s/device/net/*",
-			physical_iface);
-	else
-		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/*");
-	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-	int i;
-	for (i = 0; i < globbuf.gl_pathc; i++) {
-		char *ifname;
-		ifname = strrchr(globbuf.gl_pathv[i], '/');
-		if (!ifname)
-			continue;
-		eval("iw", ifname + 1, "del");
-	}
-}
 
 void radio_off_ath9k(int idx)
 {
