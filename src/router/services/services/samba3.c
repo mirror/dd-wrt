@@ -38,10 +38,10 @@
 
 void start_samba3(void)
 {
-	struct samba3_share *cs;
-	struct samba3_shareuser *csu;
-	struct samba3_user *samba3users, *cu;
-	struct samba3_share *samba3shares;
+	struct samba3_share *cs, *csnext;
+	struct samba3_shareuser *csu, *csunext;
+	struct samba3_user *samba3users, *cu, *cunext;
+	struct samba3_share *samba3shares,;
 	if (!nvram_match("samba3_enable", "1"))
 		return;
 
@@ -51,14 +51,17 @@ void start_samba3(void)
 	sysprintf("touch /var/samba/smbpasswd");
 
 	samba3users = getsamba3users();
-	for (cu = samba3users; cu; cu = cu->next) {
+	for (cu = samba3users; cu; cu = cunext) {
 		sysprintf
 		    ("grep -q \"%s\" /etc/passwd || echo \"%s\"\":*:1000:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
-		     cu->username, cu->username,cu->username);
+		     cu->username, cu->username, cu->username);
 		sysprintf("smbpasswd \"%s\" \"%s\"", cu->username,
 			  cu->password);
+		cunext = cu->next;
+		free(cu);
 
 	}
+	free(samba3users);
 	FILE *fp = fopen("/tmp/smb.conf", "wb");
 	fprintf(fp,
 		"[global]\n"
@@ -80,7 +83,7 @@ void start_samba3(void)
 
 	samba3shares = getsamba3shares();
 
-	for (cs = samba3shares; cs; cs = cs->next) {
+	for (cs = samba3shares; cs; cs = csnext) {
 
 		fprintf(fp, "[%s]\n", cs->label);
 		fprintf(fp, "comment = %s\n", cs->label);
@@ -88,8 +91,23 @@ void start_samba3(void)
 		fprintf(fp, "read only = %s\n",
 			!strcmp(cs->access_perms, "ro") ? "Yes" : "No");
 		fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "Yes" : "No");
+		fprintf(fp, "valid users =");
+		int first = 0;
+		for (csu = cs->users; csu; csu = csunext) {
+			if (first)
+				fprintf(",");
+			first = 1;
+			fprintf(" %s", csu->username);
+			csunext = csu->next;
+			free(csunext);
+		}
+		free(cs->users);
+		fprintf(fp, "\n");
 		fprintf(fp, "force user = root\n");
+		csnext = cs->next;
+		free(cs);
 	}
+	free(samba3shares);
 	fclose(fp);
 	sysprintf("chmod 777 /jffs\n");
 
