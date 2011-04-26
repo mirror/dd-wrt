@@ -2439,8 +2439,6 @@ void start_lan(void)
 	else
 		br_set_stp_state("br0", 1);
 
-	free(lan_ifnames);
-	free(lan_ifname);
 	// eval ("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1");
 	if (strlen(nvram_safe_get("wan_hostname")) > 0)
