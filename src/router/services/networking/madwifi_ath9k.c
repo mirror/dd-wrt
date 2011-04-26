@@ -1041,6 +1041,8 @@ void ath9k_start_supplicant(int count)
 	char psk[16];
 	char wmode[16];
 	int ctrlifneeded = 0;
+	char wif[10];
+	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
 	sprintf(wl, "ath%d_mode", count);
 	sprintf(dev, "ath%d", count);
 	apm = nvram_safe_get(wl);
