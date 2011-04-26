@@ -137,7 +137,7 @@ ifeq ($(CONFIG_SAMBA3),y)
   CFLAGS += -I$(TOP)/jansson/src
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
-  LDFLAGS += -L$(TOP)/jansson/src/.libs/ -ljansson
+  OBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
