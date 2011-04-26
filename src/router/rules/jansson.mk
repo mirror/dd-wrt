@@ -1,7 +1,7 @@
 jansson-configure:
-	cd jansson && ./configure --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	if ! test -e "jansson/Makefile"; then cd jansson && ./configure --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC"; fi
 
-jansson:
+jansson: jansson-configure
 	$(MAKE) -C jansson
 
 jansson-clean:
@@ -9,4 +9,4 @@ jansson-clean:
 	@true
 
 jansson-install:
-	install -D jansson/src/.libs/libjansson.so $(INSTALLDIR)/jansson/usr/lib/libjansson.so.0
+	@true
