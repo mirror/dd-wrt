@@ -43,7 +43,7 @@ function setWDS(val) {
 		setElementsActive("%s_wds1_enable", "%s_br1_netmask3", val == "1");
 	} else {
 		setElementsActive("%s_wds1_enable", "%s_br1_enable", val == "1");
-		setElementsActive("%s_br1_nat", "%s_br1_netmask3", <%% nvram_get("%s_br1_enable"); %%> == "1");
+		setElementsActive("%s_br1_nat", "%s_br1_netmask3", "<%% nvram_get("%s_br1_enable"); %%>" == "1");
 	}
 }
 
