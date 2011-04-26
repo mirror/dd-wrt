@@ -35,6 +35,10 @@ endif
 
 #CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless
+#LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless -L$(TOP)/jansson/src/.libs/ -ljansson
+ifeq ($(CONFIG_SAMBA3),y)
+LDFLAGS += -L$(TOP)/jansson/src/.libs/ -ljansson
+endif
 
 BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
@@ -846,6 +850,9 @@ endif
 
 #use this do disable number of arguments checking (less code and faster exec)
 CFLAGS += -DFASTWEB
+
+#JSON encoding/decoding
+CFLAGS += -I$(TOP)/jansson/src
 
 #OBJS += http.o
 
