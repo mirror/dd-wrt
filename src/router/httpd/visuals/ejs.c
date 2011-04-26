@@ -1617,7 +1617,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	sprintf(&menuname[1][9][0], "");
 #else
 	// fill up WDS
-	int ifcount = getdevicecount(void);
+	int ifcount = getdevicecount();
 	if (ifcount > 4)
 		ifcount = 4;	//truncate to max of 4
 	int a;
