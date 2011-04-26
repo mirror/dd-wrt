@@ -796,7 +796,6 @@ extern int count_processes(char *pidName);
 #ifdef HAVE_ATH9K
 extern int is_ath9k(char *prefix);
 extern int getath9kdevicecount(void);
-extern void delete_ath9k_devices(char *physical_iface);
 #endif
 
 

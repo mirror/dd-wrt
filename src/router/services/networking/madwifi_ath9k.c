@@ -48,6 +48,29 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater);
 
+
+static void delete_ath9k_devices(char *physical_iface)
+{
+	glob_t globbuf;
+	char globstring[1024];
+	int globresult;
+	if (physical_iface)
+		sprintf(globstring, "/sys/class/ieee80211/%s/device/net/*",
+			physical_iface);
+	else
+		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/*");
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	int i;
+	for (i = 0; i < globbuf.gl_pathc; i++) {
+		char *ifname;
+		ifname = strrchr(globbuf.gl_pathv[i], '/');
+		if (!ifname)
+			continue;
+		eval("iw", ifname + 1, "del");
+	}
+}
+
+
 void deconfigure_single_ath9k(int count)
 {
 	fprintf(stderr, "ath9k deconfigure_single: phy%d ath%d\n",
