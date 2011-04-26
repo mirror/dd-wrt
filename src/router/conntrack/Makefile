@@ -14,6 +14,12 @@ endif
 ifeq ($(CONFIG_BCMMODERN),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_DANUBE),y)
+MODULE:=conntrack.26
+endif
+ifeq ($(CONFIG_AR9),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_XSCALE),y)
 MODULE:=conntrack.26
 endif
