@@ -12,6 +12,12 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 MODULE:=networksettings.rb532
 endif
+ifeq ($(CONFIG_DANUBE),y)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_AR9),y)
+MODULE:=networksettings.rb532
+endif
 ifeq ($(CONFIG_X86),y)
 MODULE:=networksettings.rb532
 endif
