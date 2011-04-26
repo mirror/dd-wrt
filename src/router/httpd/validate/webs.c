@@ -38,6 +38,9 @@
 #include <utils.h>
 #include <stdarg.h>
 #include <sha1.h>
+#ifdef HAVE_SAMBA_SERVER
+#include <jansson.h>
+#endif
 
 extern char *(*websGetVar) (webs_t wp, char *var, char *d);
 
@@ -3444,4 +3447,64 @@ void tf_upnp(webs_t wp)
 		eval("startservice", "firewall");	//restart firewall
 	}
 
+}
+
+void nassrv_save(webs_t wp)
+{
+#ifdef HAVE_SAMBA_SERVER
+	int c,j;
+	char var[32], val[32];
+	json_t *entry = NULL, *user_entries;
+
+	// samba shares
+	json_t *entries = json_array();	
+	int share_number = atoi(websGetVar(wp, "samba_shares_count", "0"));
+	int user_number = atoi(websGetVar(wp, "samba_users_count", "0"));
+	for( c = 1; c <= share_number; c++ ) {
+		entry = json_object();
+		sprintf(var, "smbshare_mp_%d", c);
+		json_object_set_new( entry, "mp", json_string( websGetVar( wp, var, "" ) ) );
+		sprintf(var, "smbshare_label_%d", c);
+		json_object_set_new( entry, "label", json_string( websGetVar( wp, var, "" ) ) );
+		sprintf(var, "smbshare_public_%d", c);
+		json_object_set_new( entry, "public", json_integer( atoi( websGetVar( wp, var, "0" ) ) ) );
+		sprintf(var, "smbshare_access_perms_%d", c);
+		sprintf(val, "%s", websGetVar( wp, var, "-" ) );
+		if( !strcmp( val, "-") ) {
+			sprintf(var, "smbshare_access_perms_prev_%d", c);
+			sprintf(val, "%s", websGetVar( wp, var, "x" ) );
+		}
+		json_object_set_new( entry, "perms", json_string( val ) );
+		user_entries = json_array();
+		for( j = 1; j <= user_number; j++ ) {
+			sprintf(var, "smbshare_%d_user_%d", c, j);
+			if( !strcmp(  websGetVar( wp, var, "" ), "1" ) ) {
+				sprintf(var, "smbuser_username_%d", j);
+				json_array_append(user_entries, json_string( websGetVar( wp, var, "" ) ) );
+			}
+		}
+		json_object_set_new( entry , "users", user_entries );
+		json_array_append( entries, entry);
+	}
+	//fprintf(stderr, "[SAVE NAS] %s\n", json_dumps( entries, JSON_COMPACT ) );
+	nvram_set("samba3_shares", json_dumps( entries, JSON_COMPACT ) );
+	free( entries );
+
+	entries = json_array();
+	for( c = 1; c <= user_number; c++ ) {
+		entry = json_object();
+		sprintf(var, "smbuser_username_%d", c);
+		json_object_set_new( entry, "user", json_string( websGetVar( wp, var, "" ) ) );
+		sprintf(var, "smbuser_password_%d", c);
+		json_object_set_new( entry, "pass", json_string( websGetVar( wp, var, "" ) ) );
+		json_array_append( entries, entry);
+	}
+	//fprintf(stderr, "[SAVE NAS USERS] %s\n", json_dumps( entries, JSON_COMPACT ) );
+	nvram_set("samba3_users", json_dumps( entries, JSON_COMPACT ) );
+	free( entries );
+	if(entry != NULL) free( entry );
+#endif
+
+	// all other vars
+	validate_cgi(wp);
 }
