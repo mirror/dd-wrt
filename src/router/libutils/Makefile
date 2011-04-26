@@ -132,6 +132,13 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
+ifeq ($(CONFIG_SAMBA3),y)
+  OBJS += samba3.o
+  CFLAGS += -I$(TOP)/jansson/src
+  CFLAGS += -DHAVE_SAMBA3
+  CFLAGS += -DHAVE_SAMBA_SERVER
+  LDFLAGS += -L$(TOP)/jansson/src/.libs/ -ljansson
+endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
 endif
