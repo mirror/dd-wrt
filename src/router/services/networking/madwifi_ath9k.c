@@ -42,6 +42,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#include <glob.h>
 
 #include <services.h>
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
