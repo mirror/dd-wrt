@@ -96,6 +96,7 @@ include rules/eou.mk
 include rules/ses.mk
 include rules/libnet.mk
 include rules/httpd.mk
+include rules/jansson.mk
 include rules/rc.mk
 include rules/www.mk
 include rules/bridge.mk
@@ -152,6 +153,8 @@ include rules/parprouted.mk
 include rules/hostapd.mk
 ifeq ($(CONFIG_MADWIFI),y)
 include rules/hostapd-wps.mk
+#include rules/hostapd2.mk
+#include rules/wpa_supplicant2.mk
 else
 include rules/hostapd2.mk
 include rules/wpa_supplicant2.mk
