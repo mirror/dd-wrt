@@ -85,6 +85,7 @@ obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_SAMBA) += samba
 obj-$(CONFIG_SAMBA3) += samba3
+obj-$(CONFIG_SAMBA3) += jansson
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 obj-$(CONFIG_RADAUTH) += radauth
 ifneq ($(CONFIG_FONERA),y)
