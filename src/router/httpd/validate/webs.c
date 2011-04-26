@@ -3457,11 +3457,9 @@ void nassrv_save(webs_t wp)
 	json_t *entry = NULL, *user_entries;
 
 	// samba shares
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	json_t *entries = json_array();	
 	int share_number = atoi(websGetVar(wp, "samba_shares_count", "0"));
 	int user_number = atoi(websGetVar(wp, "samba_users_count", "0"));
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	for( c = 1; c <= share_number; c++ ) {
 		entry = json_object();
 		sprintf(var, "smbshare_mp_%d", c);
@@ -3488,15 +3486,11 @@ void nassrv_save(webs_t wp)
 		json_object_set_new( entry , "users", user_entries );
 		json_array_append( entries, entry);
 	}
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	//fprintf(stderr, "[SAVE NAS] %s\n", json_dumps( entries, JSON_COMPACT ) );
 	nvram_set("samba3_shares", json_dumps( entries, JSON_COMPACT ) );
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	json_array_clear(entries);
 	
 	entries = json_array();
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	for( c = 1; c <= user_number; c++ ) {
 		entry = json_object();
 		sprintf(var, "smbuser_username_%d", c);
@@ -3505,12 +3499,9 @@ void nassrv_save(webs_t wp)
 		json_object_set_new( entry, "pass", json_string( websGetVar( wp, var, "" ) ) );
 		json_array_append( entries, entry);
 	}
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	//fprintf(stderr, "[SAVE NAS USERS] %s\n", json_dumps( entries, JSON_COMPACT ) );
 	nvram_set("samba3_users", json_dumps( entries, JSON_COMPACT ) );
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 	json_array_clear(entries);
-	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__); 
 #endif
 
 	// all other vars
