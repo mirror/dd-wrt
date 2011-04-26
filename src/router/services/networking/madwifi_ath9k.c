@@ -50,7 +50,7 @@ static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater);
 
 
-static void delete_ath9k_devices(char *physical_iface)
+void delete_ath9k_devices(char *physical_iface)
 {
 	glob_t globbuf;
 	char globstring[1024];
