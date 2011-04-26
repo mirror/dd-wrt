@@ -1116,6 +1116,7 @@ function setElementMask(id, state) {
 	var parent = OldInput.parentNode;
 	var sibling = OldInput.nextSibling;
 	var className = OldInput.className;
+	var style = OldInput.style;
 	var newInput = document.createElement('input');
 	newInput.setAttribute('value', val);
 	newInput.setAttribute('name', id);
@@ -1123,6 +1124,7 @@ function setElementMask(id, state) {
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
 	newInput.className = className;
+	newInput.style = style;
 	//newInput.setAttribute('onblur', val_onblur);
 	newInput.onblur = val_onblur;
 	
@@ -1400,13 +1402,26 @@ function addTableEntry( tableId ) {
 		if($(tableId + '_count')) {
 			$(tableId + '_count').value++;
 		}
+
+		// remove add button
+		if($(tableId + '_add')) {
+			if($(tableId + '_count_limit')) {
+				if($(tableId + '_count_limit').value <= rows.length - 2 ) {
+					$(tableId + '_add').hide();
+				}
+			}
+		}
+		
+		return section.childElements()[section.childElements().length - 1];
+	} else {
+		return null;
 	}
 }
 
 function removeTableEntry( tableId, button ) {
 	
 	if(button.name.indexOf('_del_') >= 0) {
-		var rowNumber = button.name.substr(button.name.indexOf('_del_') + 5, button.name.length - button.name.indexOf('_del_') - 5);
+		var rowNumber = parseInt(button.name.substr(button.name.indexOf('_del_') + 5, button.name.length - button.name.indexOf('_del_') - 5));
 		
 		if(rowNumber > 0) {
 			var table = $(tableId);
@@ -1419,7 +1434,7 @@ function removeTableEntry( tableId, button ) {
 			var sublabel = tableId + '_row_';
 			for (i = 0; i < rows.length; i++) {
 				if( rows[i].id.substr( 0, sublabel.length ) == sublabel && rows[i].id.substr(rows[i].id.length - 9, 9) != '_template') {
-					var index = rows[i].id.substr( sublabel.length, rows[i].id.length - sublabel.length);
+					var index = parseInt(rows[i].id.substr( sublabel.length, rows[i].id.length - sublabel.length));
 					if(index > rowNumber) {
 						rows[i].id = sublabel + (index - 1);
 						for(j = 0; j < rows[i].childElements().length; j++) {
@@ -1444,6 +1459,15 @@ function removeTableEntry( tableId, button ) {
 			// adjust share counter
 			if($(tableId + '_count')) {
 				$(tableId + '_count').value--;
+			}
+
+			// show add button
+			if($(tableId + '_add')) {
+				if($(tableId + '_count_limit')) {
+					if($(tableId + '_count_limit').value > rows.length - 4 ) {
+						$(tableId + '_add').show();
+					}
+				}
 			}
 		}
 	}
