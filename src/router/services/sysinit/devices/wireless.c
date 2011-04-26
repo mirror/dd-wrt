@@ -23,7 +23,7 @@
  */
 
 // extern int getath9kdevicecount(void);
-extern void delete_ath9k_devices(char *physical_iface)
+extern void delete_ath9k_devices(char *physical_iface);
 
 static void detect_wireless_devices(void)
 {
