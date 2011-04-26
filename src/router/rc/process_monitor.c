@@ -56,6 +56,7 @@ int main(int argc, char **argv)
 		dd_timer_settime(udhcpd_id, 0, &t1, NULL);
 	}
 
+fprintf(stderr, "[PROCESS MONITOR] check ntp\n");
 	if (nvram_invmatch("ntp_enable", "0")) {	// && check_wan_link(0) ) {
 
 		/* 
@@ -71,6 +72,7 @@ int main(int argc, char **argv)
 				  "Last update failed, we need to re-update after %d seconds\n",
 				  NTP_N_TIMER);
 			time = NTP_N_TIMER;
+fprintf(stderr, "[PROCESS MONITOR] check ntp failed, retry in %d\n", NTP_N_TIMER);
 
 			memset(&t4, 0, sizeof(t4));
 			t4.it_interval.tv_sec = time;
@@ -80,6 +82,8 @@ int main(int argc, char **argv)
 					(timer_t *) & ntp1_id);
 			dd_timer_connect(ntp1_id, ntp_main, FIRST);
 			dd_timer_settime(ntp1_id, 0, &t4, NULL);
+		} else {
+fprintf(stderr, "[PROCESS MONITOR] check ntp suceeded\n");
 		}
 
 		struct timeval then;
