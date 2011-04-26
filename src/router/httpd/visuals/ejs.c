@@ -1612,7 +1612,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 //fprintf(stderr,"generate menu content\n");
 #ifdef HAVE_MADWIFI
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
 	sprintf(&menu[1][8][0], "");
 	sprintf(&menuname[1][9][0], "");
 #else
