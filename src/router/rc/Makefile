@@ -87,12 +87,6 @@ endif
 ifeq ($(CONFIG_OVERCLOCKING),y)
 CFLAGS += -DHAVE_OVERCLOCKING
 endif
-ifeq ($(CONFIG_SAMBA3),y)
-  CFLAGS += -I$(TOP)/jansson/src
-  CFLAGS += -DHAVE_SAMBA3
-  CFLAGS += -DHAVE_SAMBA_SERVER
-  LDFLAGS += -L$(TOP)/jansson/src/.libs/ -ljansson
-endif
 
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
@@ -863,10 +857,10 @@ endif
 #ifeq ($(CONFIG_LSX),y)
 #	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
 #else
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils
 #endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils $(LDFLAGS)
+	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
 ifeq ($(CONFIG_WPS),y)
 	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
