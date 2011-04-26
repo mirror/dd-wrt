@@ -2345,7 +2345,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			eval("roaming_daemon");
 	}
 
-	int cnt = getifcount("wifi");
+	int cnt = getdevicecount();
 	int s;
 
 	for (c = 0; c < cnt; c++) {
