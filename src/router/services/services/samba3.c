@@ -41,7 +41,7 @@ void start_samba3(void)
 	struct samba3_share *cs, *csnext;
 	struct samba3_shareuser *csu, *csunext;
 	struct samba3_user *samba3users, *cu, *cunext;
-	struct samba3_share *samba3shares,;
+	struct samba3_share *samba3shares;
 	if (!nvram_match("samba3_enable", "1"))
 		return;
 
@@ -95,9 +95,9 @@ void start_samba3(void)
 		int first = 0;
 		for (csu = cs->users; csu; csu = csunext) {
 			if (first)
-				fprintf(",");
+				fprintf(fp, ",");
 			first = 1;
-			fprintf(" %s", csu->username);
+			fprintf(fp, " %s", csu->username);
 			csunext = csu->next;
 			free(csunext);
 		}
