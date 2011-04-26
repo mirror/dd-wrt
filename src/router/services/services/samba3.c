@@ -34,13 +34,67 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <services.h>
+#include <samba3.h>
 
 void start_samba3(void)
 {
+	struct samba3_share *cs;
+	struct samba3_shareuser *csu;
+	struct samba3_user *samba3users, *cu;
+	struct samba3_share *samba3shares;
 	if (!nvram_match("samba3_enable", "1"))
 		return;
 
-	eval("sh", "/etc/config/samba3.startup");;
+	sysprintf
+	    ("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
+	sysprintf("mkdir -p /var/samba");
+	sysprintf("touch /var/samba/smbpasswd");
+
+	samba3users = getsamba3users();
+	for (cu = samba3users; cu; cu = cu->next) {
+		sysprintf
+		    ("grep -q \"%s\" /etc/passwd || echo \"%s\"\":*:1000:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
+		     cu->username, cu->username,cu->username);
+		sysprintf("smbpasswd \"%s\" \"%s\"", cu->username,
+			  cu->password);
+
+	}
+	FILE *fp = fopen("/tmp/smb.conf", "wb");
+	fprintf(fp,
+		"[global]\n"
+		"server string = %s\n"
+		"workgroup = %s\n"
+		"bind interfaces only = Yes\n"
+		"map to guest = Bad User\n"
+		"smb passwd file = /var/samba/smbpasswd\n"
+		"private dir = /var/samba\n"
+		"passdb backend = smbpasswd\n"
+		"log file = /var/smbd.log\n"
+		"max log size = 1000\n"
+		"socket options = TCP_NODELAY\n"
+		"printing = none\n"
+		"load printers = No\n"
+		"usershare allow guests = Yes\n",
+		nvram_safe_get("samba3_srvstr"),
+		nvram_safe_get("samba3_workgrp"));
+
+	samba3shares = getsamba3shares();
+
+	for (cs = samba3shares; cs; cs = cs->next) {
+
+		fprintf(fp, "[%s]\n", cs->label);
+		fprintf(fp, "comment = %s\n", cs->label);
+		fprintf(fp, "path = %s\n", cs->mp);
+		fprintf(fp, "read only = %s\n",
+			!strcmp(cs->access_perms, "ro") ? "Yes" : "No");
+		fprintf(fp, "guest ok = %s\n", cs->public == 1 ? "Yes" : "No");
+		fprintf(fp, "force user = root\n");
+	}
+	fclose(fp);
+	sysprintf("chmod 777 /jffs\n");
+
+	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 	syslog(LOG_INFO, "Samba3 : samba started\n");
 	return;
 }
