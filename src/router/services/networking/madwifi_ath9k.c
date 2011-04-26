@@ -264,33 +264,6 @@ void configure_single_ath9k(int count)
 
 		}
 
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
-		int s;
-		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
-			char wdsmacname[32] = { 0 };
-			char *wdsdev;
-			char *hwaddr;
-
-			sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
-			sprintf(wdsdevname, "%s_wds%d_if", dev, s);
-			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
-			wdsdev = nvram_safe_get(wdsdevname);
-			if (strlen(wdsdev) == 0)
-				continue;
-			if (nvram_match(wdsvarname, "0"))
-				continue;
-			hwaddr = nvram_get(wdsmacname);
-			if (hwaddr != NULL) {
-				sysprintf("iw %s interface add %s type wds",
-					  wif, wdsdev);
-				sysprintf("iw dev %s set peer %s", wdsdev,
-					  hwaddr);
-				sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
-			}
-		}
-	}
 
 }
 
@@ -1202,5 +1175,34 @@ void ath9k_start_supplicant(int count)
 			}
 		}
 	}
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
+		int s;
+		for (s = 1; s <= 10; s++) {
+			char wdsvarname[32] = { 0 };
+			char wdsdevname[32] = { 0 };
+			char wdsmacname[32] = { 0 };
+			char *wdsdev;
+			char *hwaddr;
+
+			sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
+			sprintf(wdsdevname, "%s_wds%d_if", dev, s);
+			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
+			wdsdev = nvram_safe_get(wdsdevname);
+			if (strlen(wdsdev) == 0)
+				continue;
+			if (nvram_match(wdsvarname, "0"))
+				continue;
+			hwaddr = nvram_get(wdsmacname);
+			if (hwaddr != NULL) {
+				sysprintf("iw %s interface add %s type wds",
+					  wif, wdsdev);
+				sysprintf("iw dev %s set peer %s", wdsdev,
+					  hwaddr);
+				sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
+			}
+		}
+	}
+
+
 }
 #endif
