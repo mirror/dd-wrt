@@ -3453,7 +3453,7 @@ void nassrv_save(webs_t wp)
 {
 #ifdef HAVE_SAMBA_SERVER
 	int c,j;
-	char var[32], val[32];
+	char var[128], val[128];
 	json_t *entry = NULL, *user_entries;
 
 	// samba shares
