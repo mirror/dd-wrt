@@ -87,7 +87,6 @@ void start_samba3(void)
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
-			fprintf(stderr, "add share %s\n", cs->label);
 			if (strlen(cs->label)) {
 				fprintf(fp, "[%s]\n", cs->label);
 				fprintf(fp, "comment = %s\n", cs->label);
@@ -97,15 +96,16 @@ void start_samba3(void)
 						"ro") ? "Yes" : "No");
 				fprintf(fp, "guest ok = %s\n",
 					cs->public == 1 ? "Yes" : "No");
-				fprintf(fp, "valid users =");
+				if (!cs->public)
+					fprintf(fp, "valid users =");
 				int first = 0;
 				for (csu = cs->users; csu; csu = csunext) {
-					fprintf(stderr, "permitt user %s\n",
-						csu->username);
-					if (first)
+					if (first && !cs->public)
 						fprintf(fp, ",");
 					first = 1;
-					fprintf(fp, " %s", csu->username);
+					if (!cs->public)
+						fprintf(fp, " %s",
+							csu->username);
 					csunext = csu->next;
 					free(csu);
 				}
