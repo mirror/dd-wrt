@@ -20,6 +20,7 @@ struct wpa_bss_params;
 struct wpa_driver_scan_params;
 struct ieee80211_ht_capabilities;
 
+u32 hostapd_sta_flags_to_drv(u32 flags);
 int hostapd_set_ap_wps_ie(struct hostapd_data *hapd);
 int hostapd_set_authorized(struct hostapd_data *hapd,
 			   struct sta_info *sta, int authorized);
