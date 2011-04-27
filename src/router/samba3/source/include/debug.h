@@ -162,7 +162,7 @@ extern BOOL *DEBUGLEVEL_CLASS_ISSET;
  * will remove the extra conditional test.
  */
 
-#if 1 /* AR7 */
+#ifndef NEED_PRINTF /* AR7 */
 
 #define DEBUGLVL( level ) (0)
 #define DEBUGLVLC( dbgc_class, level ) (0)
