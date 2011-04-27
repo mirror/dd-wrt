@@ -39,6 +39,46 @@ void E_md4hash(const char *passwd, uchar p16[16])
 	ZERO_STRUCT(wpwd);
 }
 
+/**
+ * Creates the DES forward-only Hash of the users password in DOS ASCII charset
+ * @param passwd password in 'unix' charset.
+ * @param p16 return password hashed with DES, caller allocated 16 byte buffer
+ * @return False if password was > 14 characters, and therefore may be incorrect, otherwise True
+ * @note p16 is filled in regardless
+ */
+ 
+BOOL E_deshash(const char *passwd, uchar p16[16])
+{
+	BOOL ret = True;
+	char dospwd[256+2];
+	int i;
+	int len;
+	
+	/* Password must be converted to DOS charset - null terminated, uppercase. */
+//	push_ascii(dospwd, passwd, sizeof(dospwd), STR_UPPER|STR_TERMINATE);
+	len = strlen(passwd);
+	for (i = 0; i < len; i++) {
+		char c = passwd[i];
+		if (islower(c)) c = toupper(c);
+		dospwd[i] = c;
+	}
+	dospwd[i] = 0;
+       
+	/* Only the fisrt 14 chars are considered, password need not be null terminated. */
+	E_P16((const unsigned char *)dospwd, p16);
+
+	if (strlen(dospwd) > 14) {
+		ret = False;
+	}
+
+	memset(dospwd, 0, sizeof(dospwd));
+	// ZERO_STRUCT(dospwd);	
+
+	return ret;
+}
+
+
+
 /* returns -1 if user is not present in /etc/passwd*/
 int find_uid_for_user(char *user)
 {
@@ -162,6 +202,7 @@ int main(int argc, char **argv)
 {
 	unsigned uid;
 	uchar new_nt_p16[NT_HASH_LEN];
+	uchar new_lanman_p16[LM_HASH_LEN];
 	int g;
 	int smbpasswd_present;
 	char smbpasswd_line[256];
@@ -183,11 +224,26 @@ int main(int argc, char **argv)
 		exit(2);
 
 	E_md4hash(argv[2], new_nt_p16);
+
+	if (!E_deshash(argv[2], new_lanman_p16)) {
+		/* E_deshash returns false for 'long' passwords (> 14
+		   DOS chars).  This allows us to match Win2k, which
+		   does not store a LM hash for these passwords (which
+		   would reduce the effective password length to 14 */
+
+		memset(new_lanman_p16, 0, LM_HASH_LEN);
+	}
+
+
 	s = smbpasswd_line;
-	s += snprintf(s, 256 - (s - smbpasswd_line), "%s:%u:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:", argv[1], uid);
+	s += snprintf(s, 256 - (s - smbpasswd_line), "%s:%u:", argv[1], uid);
+	for(g = 0; g < 16; g++)
+		s += snprintf(s, 256 - (s - smbpasswd_line), "%02X", new_lanman_p16[g]);
+	s += snprintf(s, 256 - (s - smbpasswd_line), ":");
+	
 	for(g = 0; g < 16; g++)
 		s += snprintf(s, 256 - (s - smbpasswd_line), "%02X", new_nt_p16[g]);
-	snprintf(s, 256 - (s - smbpasswd_line), ":[U          ]:LCT-00000001:\n");
+	snprintf(s, 256 - (s - smbpasswd_line), ":[UX         ]:LCT-00000001:\n");
 
 	insert_user_in_smbpasswd(argv[1], smbpasswd_line);
 
