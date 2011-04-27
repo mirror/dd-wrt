@@ -17,7 +17,11 @@
 */
 #ifndef MAX_DEBUG_LEVEL
 /* AR7 #define MAX_DEBUG_LEVEL 1000 */
+#ifdef NEED_PRINTF
+#define MAX_DEBUG_LEVEL 1000
+#else
 #define MAX_DEBUG_LEVEL 0
+#endif
 #endif
 
 /* This defines the section name in the configuration file that will contain */
