@@ -68,6 +68,7 @@ int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd);
 int athr_ioctl(uint32_t *args, int cmd);
 #endif
 void ar7240_s26_intr(void);
+void ag7240_dma_reset(ag7240_mac_t *mac);
 
 int  ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac,
     int max_work, int *work_done);
@@ -1852,7 +1853,7 @@ ag7240_tx_reap(ag7240_mac_t *mac,int ac)
 
         reaped ++;
     }
-    spin_lock_irqrestore(&mac->mac_lock, flags);
+    spin_unlock_irqrestore(&mac->mac_lock, flags);
 
     r->ring_tail = tail;
 
