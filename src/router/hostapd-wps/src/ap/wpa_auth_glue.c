@@ -248,7 +248,7 @@ static int hostapd_wpa_auth_send_eapol(void *ctx, const u8 *addr,
 
 	sta = ap_get_sta(hapd, addr);
 	if (sta)
-		flags = sta->flags;
+		flags = hostapd_sta_flags_to_drv(sta->flags);
 
 	return hostapd_drv_hapd_send_eapol(hapd, addr, data, data_len,
 					   encrypt, flags);
