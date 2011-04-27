@@ -1195,7 +1195,8 @@ ag7240_get_tx_ds(ag7240_mac_t *mac, int *len, unsigned char **start,int ac)
 
     ag7240_trc_new(ds,"ds addr");
     ag7240_trc_new(ds,"ds len");
-    assert(!ag7240_tx_owned_by_dma(ds));
+    if (ag7240_tx_owned_by_dma(ds))
+	ag7240_dma_reset(mac);
 
     ds->pkt_size       = len_this_ds;
     ds->pkt_start_addr = virt_to_phys(*start);
@@ -1822,7 +1823,7 @@ ag7240_tx_reap(ag7240_mac_t *mac,int ac)
     ag7240_trc_new(tail,"tl");
 
     ar7240_flush_ge(mac->mac_unit);
-
+    spin_lock_irqsave(&mac->mac_lock, flags);
     while(tail != head)
     {
         ds   = &r->ring_desc[tail];
@@ -1851,6 +1852,7 @@ ag7240_tx_reap(ag7240_mac_t *mac,int ac)
 
         reaped ++;
     }
+    spin_lock_irqrestore(&mac->mac_lock, flags);
 
     r->ring_tail = tail;
 
@@ -2032,7 +2034,7 @@ ag7240_oom_timer(unsigned long data)
     int val;
 
     ag7240_trc(data,"data");
-    ag7240_rx_replenish(mac);
+//    ag7240_rx_replenish(mac);
     if (ag7240_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
