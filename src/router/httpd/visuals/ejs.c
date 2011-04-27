@@ -3446,15 +3446,14 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "		</tr>\n");
 		rows++;
 
-		for (csu = cs->users; csu; csu = csunext) {
-			csunext = csu->next;
-			free(csu);
-		}
-
 		cunext = cu->next;
 		free(cu);
 	}
 	for (cs = samba3shares; cs; cs = csnext) {
+		for (csu = cs->users; csu; csu = csunext) {
+			csunext = csu->next;
+			free(csu);
+		}
 		csnext = cs->next;
 		free(csnext);
 	}
