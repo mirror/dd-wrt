@@ -202,6 +202,7 @@ void athrs16_reg_init(int ethUinit)
     //athrs16_reg_write(0x8, 0x012e1bea);
     athrs16_reg_write(0x8, 0x01261be2);
 #endif
+#if 0
     athrs16_reg_write(S16_PORT_STATUS_REGISTER0, /* 0x7e */
                                     S16_PORT_STATUS_SPEED_1000MBPS 
                                     | S16_PORT_STATUS_TXMAC_EN 
@@ -228,12 +229,12 @@ void athrs16_reg_init(int ethUinit)
                              S16_PORT_STATUS_LINK_EN
                            | S16_PORT_STATUS_RXFLOW_EN
                            | S16_PORT_STATUS_TXFLOW_EN);
-    
-//    athrs16_reg_write(S16_PORT_STATUS_REGISTER0, 0x7e);
-//    athrs16_reg_write(S16_PORT_STATUS_REGISTER1, 0x200);
-//    athrs16_reg_write(S16_PORT_STATUS_REGISTER2, 0x200);
-//    athrs16_reg_write(S16_PORT_STATUS_REGISTER3, 0x200);
-//    athrs16_reg_write(S16_PORT_STATUS_REGISTER4, 0x200);
+#endif    
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER0, 0x7e);
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER1, 0x200);
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER2, 0x200);
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER3, 0x200);
+    athrs16_reg_write(S16_PORT_STATUS_REGISTER4, 0x200);
 #if CFG_BOARD_PB45
     athrs16_reg_write(0x600, 0x200);
     printk("CFG Board PB45 \n");
