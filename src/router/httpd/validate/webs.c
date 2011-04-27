@@ -3503,7 +3503,11 @@ void nassrv_save(webs_t wp)
 	nvram_set("samba3_users", json_dumps( entries, JSON_COMPACT ) );
 	json_array_clear(entries);
 #endif
+	char *value = websGetVar(wp, "action", "");
 
 	// all other vars
 	validate_cgi(wp);
+
+	addAction("nassrv");
+	applytake(value);
 }
