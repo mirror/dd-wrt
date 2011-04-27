@@ -69,9 +69,18 @@ void start_samba3(void)
 		fp = fopen("/tmp/smb.conf", "wb");
 		fprintf(fp,
 			"[global]\n"
+			"netbios name = %s\n"
 			"server string = %s\n"
+			"syslog = 10\n"
+			"encrypt passwords = true\n"
+			"obey pam restrictions = yes\n"
+			"unix charset = ISO-8859-1\n"
+			"preferred master = yes\n"
+			"os level = 20\n"
+			"security = share\n"
 			"workgroup = %s\n"
 			"bind interfaces only = Yes\n"
+			"guest account = nobody\n"
 			"map to guest = Bad User\n"
 			"smb passwd file = /var/samba/smbpasswd\n"
 			"private dir = /var/samba\n"
@@ -82,6 +91,7 @@ void start_samba3(void)
 			"printing = none\n"
 			"load printers = No\n"
 			"usershare allow guests = Yes\n",
+			nvram_safe_get("router_name"),
 			nvram_safe_get("samba3_srvstr"),
 			nvram_safe_get("samba3_workgrp"));
 
