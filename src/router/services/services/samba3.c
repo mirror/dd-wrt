@@ -50,72 +50,75 @@ void start_samba3(void)
 	    ("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	sysprintf("mkdir -p /var/samba");
 	sysprintf("touch /var/samba/smbpasswd");
-
-	samba3users = getsamba3users();
-	for (cu = samba3users; cu; cu = cunext) {
-		if (strlen(cu->username)) {
-			sysprintf
-			    ("grep -q \"%s\" /etc/passwd || echo \"%s\"\":*:1000:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
-			     cu->username, cu->username, cu->username);
-			sysprintf("smbpasswd \"%s\" \"%s\"", cu->username,
-				  cu->password);
-		}
-		cunext = cu->next;
-		free(cu);
-
-	}
-	fp = fopen("/tmp/smb.conf", "wb");
-	fprintf(fp,
-		"[global]\n"
-		"server string = %s\n"
-		"workgroup = %s\n"
-		"bind interfaces only = Yes\n"
-		"map to guest = Bad User\n"
-		"smb passwd file = /var/samba/smbpasswd\n"
-		"private dir = /var/samba\n"
-		"passdb backend = smbpasswd\n"
-		"log file = /var/smbd.log\n"
-		"max log size = 1000\n"
-		"socket options = TCP_NODELAY\n"
-		"printing = none\n"
-		"load printers = No\n"
-		"usershare allow guests = Yes\n",
-		nvram_safe_get("samba3_srvstr"),
-		nvram_safe_get("samba3_workgrp"));
-
-	samba3shares = getsamba3shares();
-	for (cs = samba3shares; cs; cs = csnext) {
-		fprintf(stderr, "add share %s\n", cs->label);
-		if (strlen(cs->label)) {
-			fprintf(fp, "[%s]\n", cs->label);
-			fprintf(fp, "comment = %s\n", cs->label);
-			fprintf(fp, "path = %s\n", cs->mp);
-			fprintf(fp, "read only = %s\n",
-				!strcmp(cs->access_perms, "ro") ? "Yes" : "No");
-			fprintf(fp, "guest ok = %s\n",
-				cs->public == 1 ? "Yes" : "No");
-			fprintf(fp, "valid users =");
-			int first = 0;
-			for (csu = cs->users; csu; csu = csunext) {
-				fprintf(stderr, "permitt user %s\n",
-					csu->username);
-				if (first)
-					fprintf(fp, ",");
-				first = 1;
-				fprintf(fp, " %s", csu->username);
-				csunext = csu->next;
-				free(csu);
+	if (nvram_match("samba3_advanced", "1")) {
+		write_nvram("/tmp/smb.conf", "samba3_conf");
+	} else {
+		samba3users = getsamba3users();
+		for (cu = samba3users; cu; cu = cunext) {
+			if (strlen(cu->username)) {
+				sysprintf
+				    ("grep -q \"%s\" /etc/passwd || echo \"%s\"\":*:1000:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
+				     cu->username, cu->username, cu->username);
+				sysprintf("smbpasswd \"%s\" \"%s\"",
+					  cu->username, cu->password);
 			}
-			free(cs->users);
-			fprintf(fp, "\n");
-			fprintf(fp, "force user = root\n");
-		}
-		csnext = cs->next;
-		free(cs);
-	}
-	fclose(fp);
-	sysprintf("chmod 777 /jffs\n");
+			cunext = cu->next;
+			free(cu);
 
+		}
+		fp = fopen("/tmp/smb.conf", "wb");
+		fprintf(fp,
+			"[global]\n"
+			"server string = %s\n"
+			"workgroup = %s\n"
+			"bind interfaces only = Yes\n"
+			"map to guest = Bad User\n"
+			"smb passwd file = /var/samba/smbpasswd\n"
+			"private dir = /var/samba\n"
+			"passdb backend = smbpasswd\n"
+			"log file = /var/smbd.log\n"
+			"max log size = 1000\n"
+			"socket options = TCP_NODELAY\n"
+			"printing = none\n"
+			"load printers = No\n"
+			"usershare allow guests = Yes\n",
+			nvram_safe_get("samba3_srvstr"),
+			nvram_safe_get("samba3_workgrp"));
+
+		samba3shares = getsamba3shares();
+		for (cs = samba3shares; cs; cs = csnext) {
+			fprintf(stderr, "add share %s\n", cs->label);
+			if (strlen(cs->label)) {
+				fprintf(fp, "[%s]\n", cs->label);
+				fprintf(fp, "comment = %s\n", cs->label);
+				fprintf(fp, "path = %s\n", cs->mp);
+				fprintf(fp, "read only = %s\n",
+					!strcmp(cs->access_perms,
+						"ro") ? "Yes" : "No");
+				fprintf(fp, "guest ok = %s\n",
+					cs->public == 1 ? "Yes" : "No");
+				fprintf(fp, "valid users =");
+				int first = 0;
+				for (csu = cs->users; csu; csu = csunext) {
+					fprintf(stderr, "permitt user %s\n",
+						csu->username);
+					if (first)
+						fprintf(fp, ",");
+					first = 1;
+					fprintf(fp, " %s", csu->username);
+					csunext = csu->next;
+					free(csu);
+				}
+				free(cs->users);
+				fprintf(fp, "\n");
+				fprintf(fp, "force user = root\n");
+			}
+			csnext = cs->next;
+			free(cs);
+		}
+		fclose(fp);
+	}
+	sysprintf("chmod 777 /jffs\n");
 	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 	syslog(LOG_INFO, "Samba3 : samba started\n");
