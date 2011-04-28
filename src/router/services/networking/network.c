@@ -4029,10 +4029,12 @@ void start_wan_done(char *wan_ifname)
 #endif
 	cprintf("trigger gpio");
 
-	led_control(LED_CONNECTED, LED_ON);
-
+	led_control(LED_CONNECTED, LED_OFF);
 	if (!nvram_match("wan_proto", "disabled"))
+	    {
+		led_control(LED_CONNECTED, LED_ON);
 		dd_syslog(LOG_INFO, "WAN is up. IP: %s\n", get_wan_ipaddr());
+	    }
 
 	float sys_uptime;
 	FILE *up;
