@@ -3251,7 +3251,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x10d;
 		sec0_gpio = 0x10d;
 		usb_power = 0x110;
-		power_gpio = 0x12e;	// card 1, gpio 14
+		connected_gpio = 0x12e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
@@ -3433,7 +3433,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x10d;
 		sec0_gpio = 0x10d;
 		usb_power = 0x110;
-		power_gpio = 0x12e;	// card 1, gpio 14
+		connected_gpio = 0x12e;	// card 1, gpio 14
 #endif
 #ifdef HAVE_WZRG300NH2
 		diag_gpio = 0x110;
