@@ -1116,7 +1116,6 @@ function setElementMask(id, state) {
 	var parent = OldInput.parentNode;
 	var sibling = OldInput.nextSibling;
 	var className = OldInput.className;
-	var style = OldInput.style;
 	var newInput = document.createElement('input');
 	newInput.setAttribute('value', val);
 	newInput.setAttribute('name', id);
@@ -1124,7 +1123,6 @@ function setElementMask(id, state) {
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
 	newInput.className = className;
-	newInput.style = style;
 	//newInput.setAttribute('onblur', val_onblur);
 	newInput.onblur = val_onblur;
 	
