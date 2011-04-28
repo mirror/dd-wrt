@@ -1,0 +1,246 @@
+.\"     Title: ldbedit
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.74.0 <http://docbook.sf.net/>
+.\"      Date: 02/22/2010
+.\"    Manual: User Commands
+.\"    Source: Samba 3.3
+.\"  Language: English
+.\"
+.TH "LDBEDIT" "1" "02/22/2010" "Samba 3\&.3" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * (re)Define some macros
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" toupper - uppercase a string (locale-aware)
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de toupper
+.tr aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ
+\\$*
+.tr aabbccddeeffgghhiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" SH-xref - format a cross-reference to an SH section
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de SH-xref
+.ie n \{\
+.\}
+.toupper \\$*
+.el \{\
+\\$*
+.\}
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" SH - level-one heading that works better for non-TTY output
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de1 SH
+.\" put an extra blank line of space above the head in non-TTY output
+.if t \{\
+.sp 1
+.\}
+.sp \\n[PD]u
+.nr an-level 1
+.set-an-margin
+.nr an-prevailing-indent \\n[IN]
+.fi
+.in \\n[an-margin]u
+.ti 0
+.HTML-TAG ".NH \\n[an-level]"
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+\." make the size of the head bigger
+.ps +3
+.ft B
+.ne (2v + 1u)
+.ie n \{\
+.\" if n (TTY output), use uppercase
+.toupper \\$*
+.\}
+.el \{\
+.nr an-break-flag 0
+.\" if not n (not TTY), use normal case (not uppercase)
+\\$1
+.in \\n[an-margin]u
+.ti 0
+.\" if not n (not TTY), put a border/line under subheading
+.sp -.6
+\l'\n(.lu'
+.\}
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" SS - level-two heading that works better for non-TTY output
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de1 SS
+.sp \\n[PD]u
+.nr an-level 1
+.set-an-margin
+.nr an-prevailing-indent \\n[IN]
+.fi
+.in \\n[IN]u
+.ti \\n[SN]u
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.ps \\n[PS-SS]u
+\." make the size of the head bigger
+.ps +2
+.ft B
+.ne (2v + 1u)
+.if \\n[.$] \&\\$*
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" BB/BE - put background/screen (filled box) around block of text
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de BB
+.if t \{\
+.sp -.5
+.br
+.in +2n
+.ll -2n
+.gcolor red
+.di BX
+.\}
+..
+.de EB
+.if t \{\
+.if "\\$2"adjust-for-leading-newline" \{\
+.sp -1
+.\}
+.br
+.di
+.in
+.ll
+.gcolor
+.nr BW \\n(.lu-\\n(.i
+.nr BH \\n(dn+.5v
+.ne \\n(BHu+.5v
+.ie "\\$2"adjust-for-leading-newline" \{\
+\M[\\$1]\h'1n'\v'+.5v'\D'P \\n(BWu 0 0 \\n(BHu -\\n(BWu 0 0 -\\n(BHu'\M[]
+.\}
+.el \{\
+\M[\\$1]\h'1n'\v'-.5v'\D'P \\n(BWu 0 0 \\n(BHu -\\n(BWu 0 0 -\\n(BHu'\M[]
+.\}
+.in 0
+.sp -.5v
+.nf
+.BX
+.in
+.sp .5v
+.fi
+.\}
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" BM/EM - put colored marker in margin next to block of text
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de BM
+.if t \{\
+.br
+.ll -2n
+.gcolor red
+.di BX
+.\}
+..
+.de EM
+.if t \{\
+.br
+.di
+.ll
+.gcolor
+.nr BH \\n(dn
+.ne \\n(BHu
+\M[\\$1]\D'P -.75n 0 0 \\n(BHu -(\\n[.i]u - \\n(INu - .75n) 0 0 -\\n(BHu'\M[]
+.in 0
+.nf
+.BX
+.in
+.fi
+.\}
+..
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "Name"
+ldbedit \- Edit LDB databases using your preferred editor
+.SH "Synopsis"
+.fam C
+.HP \w'\ 'u
+\FCldbedit\F[] [\-?] [\-\-usage] [\-s\ base|one|sub] [\-b\ basedn] [\-a] [\-e\ editor] [\-H\ LDB\-URL] [expression] [attributes...]
+.fam
+.SH "DESCRIPTION"
+.PP
+ldbedit is a utility that allows you to edit LDB entries (in tdb files, sqlite files or LDAP servers) using your preferred editor\&. ldbedit generates an LDIF file based on your query, allows you to edit the LDIF, and then merges that LDIF back into the LDB backend\&.
+.SH "OPTIONS"
+.PP
+\-?, \-\-help
+.RS 4
+Show list of available options, and a phrase describing what that option does\&.
+.RE
+.PP
+\-\-usage
+.RS 4
+Show list of available options\&. This is similar to the help option, however it does not provide any description, and is hence shorter\&.
+.RE
+.PP
+\-H <ldb\-url>
+.RS 4
+LDB URL to connect to\&. For a tdb database, this will be of the form tdb://\fIfilename\fR\&. For a LDAP connection over unix domain sockets, this will be of the form ldapi://\fIsocket\fR\&. For a (potentially remote) LDAP connection over TCP, this will be of the form ldap://\fIhostname\fR\&. For an SQLite database, this will be of the form sqlite://\fIfilename\fR\&.
+.RE
+.PP
+\-s one|sub|base
+.RS 4
+Search scope to use\&. One\-level, subtree or base\&.
+.RE
+.PP
+\-a, \-all
+.RS 4
+Edit all records\&. This allows you to apply the same change to a number of records at once\&. You probably want to combine this with an expression of the form "objectclass=*"\&.
+.RE
+.PP
+\-e editor, \-\-editor editor
+.RS 4
+Specify the editor that should be used (overrides the VISUAL and EDITOR environment variables)\&. If this option is not used, and neither VISUAL nor EDITOR environment variables are set, then the vi editor will be used\&.
+.RE
+.PP
+\-b basedn
+.RS 4
+Specify Base Distinguished Name to use\&.
+.RE
+.PP
+\-v, \-\-verbose
+.RS 4
+Make ldbedit more verbose about the operations that are being performed\&. Without this option, ldbedit will only provide a summary change line\&.
+.RE
+.SH "ENVIRONMENT"
+.PP
+LDB_URL
+.RS 4
+LDB URL to connect to\&. This can be overridden by using the \-H command\-line option\&.)
+.RE
+.PP
+VISUAL and EDITOR
+.RS 4
+Environment variables used to determine what editor to use\&. VISUAL takes precedence over EDITOR, and both are overridden by the \-e command\-line option\&.
+.RE
+.SH "VERSION"
+.PP
+This man page is correct for version 4\&.0 of the Samba suite\&.
+.SH "SEE ALSO"
+.PP
+ldb(7), ldbmodify(1), ldbdel(1), ldif(5), vi(1)
+.SH "AUTHOR"
+.PP
+ldb was written by
+Andrew Tridgell\&.
+.PP
+If you wish to report a problem or make a suggestion then please see the
+: http://ldb.samba.org/
+web site for current contact and maintainer information\&.
+.PP
+This manpage was written by Jelmer Vernooij and updated by Brad Hards\&.
