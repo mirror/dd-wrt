@@ -50,8 +50,8 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
 
 static const u32 dot11RSNAConfigGroupUpdateCount = 4;
 static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
-static const u32 eapol_key_timeout_first = 100; /* ms */
-static const u32 eapol_key_timeout_subseq = 1000; /* ms */
+static const u32 eapol_key_timeout_first = 2000; /* ms */
+static const u32 eapol_key_timeout_subseq = 2000; /* ms */
 
 /* TODO: make these configurable */
 static const int dot11RSNAConfigPMKLifetime = 43200;
