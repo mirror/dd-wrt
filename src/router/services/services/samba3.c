@@ -42,6 +42,7 @@ void start_samba3(void)
 	struct samba3_shareuser *csu, *csunext;
 	struct samba3_user *samba3users, *cu, *cunext;
 	struct samba3_share *samba3shares;
+	int uniqueuserid=1000;
 	FILE *fp;
 	if (!nvram_match("samba3_enable", "1"))
 		return;
@@ -57,8 +58,8 @@ void start_samba3(void)
 		for (cu = samba3users; cu; cu = cunext) {
 			if (strlen(cu->username)) {
 				sysprintf
-				    ("grep -q \"%s\" /etc/passwd || echo \"%s\"\":*:1000:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
-				     cu->username, cu->username, cu->username);
+				    ("grep -q \"%s\" /etc/passwd || echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd",
+				     cu->username, cu->username, uniqueuserid++ , cu->username);
 				sysprintf("smbpasswd \"%s\" \"%s\"",
 					  cu->username, cu->password);
 			}
