@@ -1,5 +1,5 @@
 ifeq ($(CONFIG_ATH9K),y)
-ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include \
+ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include\
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE
 ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
