@@ -19,9 +19,9 @@ $(PROG):    $(OBJS)
 
 
 configure:
-	cd libusb && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF" CXXFLAGS="$(COPTS) -DNEED_PRINTF" CPPFLAGS="$(COPTS) -DNEED_PRINTF"
+	cd libusb && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC"
 	make -C libusb
-	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF" CXXFLAGS="$(COPTS) -DNEED_PRINTF" CPPFLAGS="$(COPTS) -DNEED_PRINTF" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
+	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
 
 clean:
 	    	cd libusb && make clean
