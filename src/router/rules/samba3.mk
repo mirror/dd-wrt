@@ -3,7 +3,7 @@ samba3:
 	CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 	CPPFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
 	LDFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-	$(MAKE) -C samba3/source all bin/smbpasswd WITH_LFS=yes
+	$(MAKE) -C samba3/source all bin/nmbd bin/smbpasswd WITH_LFS=yes
 
 samba3-install:
 	mkdir -p $(INSTALLDIR)/samba3
