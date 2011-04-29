@@ -3266,8 +3266,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 					  current->mp,
 					  current->fstype,
 					  buffer,
-					  found ==
-					  0 ? "" :
+					  strcmp(current->mp, cs->mp) ? "" :
 					  "selected=\"selected\"", current->mp);
 			}
 		}
