@@ -82,9 +82,9 @@ static void deconfigure_single(int count)
 	char wifivifs[16];
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(dev, "ath%d", count);
-	if (!strncmp(dev, "ath0",4))
+	if (!strncmp(dev, "ath0", 4))
 		led_control(LED_SEC0, LED_OFF);
-	if (!strncmp(dev, "ath1",4))
+	if (!strncmp(dev, "ath1", 4))
 		led_control(LED_SEC1, LED_OFF);
 
 	char vifs[128];
@@ -751,13 +751,25 @@ void addWPS(FILE * fp, char *prefix, int configured)
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 		if (nvram_match("wps_forcerelease", "1")) {
 			nvram_set("wps_status", "0");
+			nvram_commit();
 			fprintf(fp, "wps_state=1\n");
 		} else {
-			if (configured)
-				nvram_set("wps_status", "1");
+			if (configured) {
+				if (nvram_match("wps_status", "")) {
+					nvram_set("wps_status", "1");
+					nvram_commit();
+				}
+			} else {
+				if (nvram_match("wps_status", "")) {
+					nvram_set("wps_status", "0");
+					nvram_commit();
+				}
+			}
+
+			if (nvram_match("wps_status", "1"))
+				fprintf(fp, "wps_state=2\n");
 			else
-				nvram_set("wps_status", "0");
-			fprintf(fp, "wps_state=%d\n", 1 + configured);
+				fprintf(fp, "wps_state=1\n");
 		}
 		if (nvram_match("wps_registrar", "1"))
 			fprintf(fp, "ap_setup_locked=0\n");
@@ -815,9 +827,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	}*/
 	// wep key support
 	if (nvram_match(akm, "wep")) {
-		if (!strncmp(prefix, "ath0",4))
+		if (!strncmp(prefix, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strncmp(prefix, "ath1",4))
+		if (!strncmp(prefix, "ath1", 4))
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -856,9 +868,9 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 		   || nvram_match(akm, "wpa wpa2")) {
-		if (!strncmp(prefix, "ath0",4))
+		if (!strncmp(prefix, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strncmp(prefix, "ath1",4))
+		if (!strncmp(prefix, "ath1", 4))
 			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
@@ -1310,9 +1322,9 @@ static void configure_single(int count)
 
 	sprintf(wif, "wifi%d", count);
 	sprintf(dev, "ath%d", count);
-	if (!strncmp(dev, "ath0",4))
+	if (!strncmp(dev, "ath0", 4))
 		led_control(LED_SEC0, LED_OFF);
-	if (!strncmp(dev, "ath1",4))
+	if (!strncmp(dev, "ath1", 4))
 		led_control(LED_SEC1, LED_OFF);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
