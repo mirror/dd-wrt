@@ -13,8 +13,7 @@
 #
 
 SRCBASE := ../../../brcm
-EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include 
-#-DCONFIG_NOPRINTK=1
+EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include -DCONFIG_NOPRINTK=1
 
 TARGET := wl
 WLCONF_H := wlconf.h
