@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 		if (fp) {
 			killall("ledtool",SIGKILL);
 			nvram_set("wps_status", "1");
+			nvram_commit();
 			sysprintf("rm -f /tmp/.wpsdone");
 			fclose(fp);
 			led_control(LED_SES, LED_ON);
@@ -57,6 +58,7 @@ int main(int argc, char **argv)
 	if (!timeout) {
 		killall("ledtool",SIGKILL);
 		nvram_set("wps_status", "1");
+		nvram_commit();
 		system("ledtool 1800 3");
 	}
 	return 0;
