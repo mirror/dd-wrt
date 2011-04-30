@@ -151,9 +151,9 @@ void __init prom_meminit(void)
  	//add_memory_region(0x0a000000, rt2880_res_ram.end - rt2880_res_ram.start, BOOT_MEM_RAM);
 	unsigned long mem, before, offset;
 
-	before = ((unsigned long) &prom_meminit) & (127 << 20);
+	before = ((unsigned long) &prom_meminit) & (63 << 20);
 	offset = ((unsigned long) &prom_meminit) - before;
-	for (mem = before + (1 << 20); mem < (128 << 20); mem += (1 << 20))
+	for (mem = before + (1 << 20); mem < (64 << 20); mem += (1 << 20))
 		if (*(unsigned long *)(offset + mem) ==
 		    *(unsigned long *)(prom_meminit)) {
 			/*
