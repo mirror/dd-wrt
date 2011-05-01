@@ -790,6 +790,15 @@ static int check_dma_status_pause(ag7240_mac_t *mac) {
 
     int RxFsm,TxFsm,RxFD,RxCtrl,TxCtrl;
 
+    /*
+     * If get called by tx timeout for other chips we assume
+     * the DMA is in pause state and update the watchdog
+     * timer to avoid MAC reset.
+     */
+
+    if(!is_ar7240())
+       return 1;
+
     RxFsm = ag7240_reg_rd(mac,AG7240_DMA_RXFSM);
     TxFsm = ag7240_reg_rd(mac,AG7240_DMA_TXFSM);
     RxFD  = ag7240_reg_rd(mac,AG7240_DMA_XFIFO_DEPTH);
