@@ -539,7 +539,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
 #endif
-				  nvram_match(wl_mode,
+				  nvram_selmatch(wp, wl_mode,
 					      "wet") ?
 				  "selected=\\\"selected\\\"" : "");
 #endif
