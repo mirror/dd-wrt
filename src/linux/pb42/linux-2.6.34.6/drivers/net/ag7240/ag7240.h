@@ -428,6 +428,7 @@ typedef enum {
  * Everything but TX
  */
 #define AG7240_INTR_MASK    (AG7240_INTR_RX | \
+                             AG7240_INTR_RX_OVF |             \
                              AG7240_INTR_RX_BUS_ERROR |             \
                              AG7240_INTR_TX_BUS_ERROR              \
                              /*| AG7240_INTR_TX_URN | AG7240_INTR_TX*/)
