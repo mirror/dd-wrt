@@ -192,6 +192,15 @@ wlconf_setint(char* ifname, int cmd, int val)
 	return wl_ioctl(ifname, cmd, &val, sizeof(int));
 }
 
+char *nvram_ifexists_get(char *var, char *def)
+{
+	char *v = nvram_get(var);
+	if (v == NULL || strlen(v) == 0) {
+		return def;
+	}
+	return nvram_safe_get(var);
+}
+
 /* set WEP key */
 static int
 wlconf_set_wep_key(char *name, char *prefix, int bsscfg_idx, int i)
@@ -1208,27 +1217,27 @@ cprintf("set bsscfg %s\n",name);
 	}
 
 	if (rxchain_pwrsave) {
-		val = atoi(nvram_default_get(strcat_r(prefix, "rxchain_pwrsave_enable", tmp), "1"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "rxchain_pwrsave_enable", tmp), "1"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_enable", bsscfg->idx, val);
 
-		val = atoi(nvram_default_get(strcat_r(prefix, "rxchain_pwrsave_quiet_time", tmp), "1800"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "rxchain_pwrsave_quiet_time", tmp), "1800"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_quiet_time", bsscfg->idx, val);
 
-		val = atoi(nvram_default_get(strcat_r(prefix, "rxchain_pwrsave_pps", tmp), "10"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "rxchain_pwrsave_pps", tmp), "10"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_pps", bsscfg->idx, val);
 	}
 
 	if (radio_pwrsave) {
-		val = atoi(nvram_default_get(strcat_r(prefix, "radio_pwrsave_enable", tmp), "0"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "radio_pwrsave_enable", tmp), "0"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_enable", bsscfg->idx, val);
 
-		val = atoi(nvram_default_get(strcat_r(prefix, "radio_pwrsave_quiet_time", tmp), "1800"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "radio_pwrsave_quiet_time", tmp), "1800"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_quiet_time", bsscfg->idx, val);
 
-		val = atoi(nvram_default_get(strcat_r(prefix, "radio_pwrsave_pps", tmp), "10"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "radio_pwrsave_pps", tmp), "10"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_pps", bsscfg->idx, val);
 
-		val = atoi(nvram_default_get(strcat_r(prefix, "radio_pwrsave_level", tmp), "0"));
+		val = atoi(nvram_ifexists_get(strcat_r(prefix, "radio_pwrsave_level", tmp), "0"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_level", bsscfg->idx, val);
 	}
 
