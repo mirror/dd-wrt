@@ -350,8 +350,7 @@ static inline dma_addr_t dma_map_page(struct device *dev, struct page *page,
 static inline void dma_unmap_single(struct device *dev, dma_addr_t handle,
 		size_t size, enum dma_data_direction dir)
 {
-	if (dir != DMA_TO_DEVICE)
-		dma_cache_maint(dma_to_virt(dev, handle), size, DMA_FROM_DEVICE);
+	/* nothing to do */
 }
 #endif /* CONFIG_DMABOUNCE */
 
@@ -399,8 +398,6 @@ static inline void dma_sync_single_range_for_cpu(struct device *dev,
 {
 	BUG_ON(!valid_dma_direction(dir));
 
-	if (dir != DMA_TO_DEVICE)
-		dma_cache_maint(dma_to_virt(dev, handle) + offset, size, DMA_FROM_DEVICE);
 	dmabounce_sync_for_cpu(dev, handle, offset, size, dir);
 }
 
