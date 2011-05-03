@@ -270,6 +270,12 @@ chosen, providing a sort of basic load-balancing and
 failover capability.
 .\"*********************************************************
 .TP
+.B \-\-remote-random-hostname
+Add a random string (6 characters) to first DNS label of hostname to prevent
+DNS caching.  For example, "foo.bar.gov" would be modified to
+"<random-chars>.foo.bar.gov".
+.\"*********************************************************
+.TP
 .B <connection>
 Define a client connection
 profile.  Client connection profiles are groups of OpenVPN options that
@@ -457,6 +463,14 @@ take
 as the
 number of seconds to wait
 between connection retries (default=5).
+.\"*********************************************************
+.TP
+.B \-\-connect-timeout n
+For
+.B \-\-proto tcp-client,
+set connection timeout to
+.B n
+seconds (default=10).
 .\"*********************************************************
 .TP
 .B \-\-connect-retry-max n
@@ -1127,6 +1141,11 @@ bypasses the tunnel
 on non-Windows clients).
 
 Using the def1 flag is highly recommended.
+.\"*********************************************************
+.TP
+.B \-\-redirect-private [flags]
+Like \-\-redirect-gateway, but omit actually changing the default
+gateway.  Useful when pushing private subnets.
 .\"*********************************************************
 .TP
 .B \-\-link-mtu n
@@ -2338,6 +2357,13 @@ It is strongly recommended that
 be set to 127.0.0.1
 (localhost) to restrict accessibility of the management
 server to local clients. 
+.TP
+.B \-\-management-client
+Management interface will connect as a TCP client to
+.B IP:port
+specified by
+.B \-\-management
+rather than listen as a TCP server.
 .\"*********************************************************
 .TP
 .B \-\-management-query-passwords
@@ -2928,9 +2954,26 @@ file.
 Specify a directory
 .B dir
 for temporary files.  This directory will be used by
+openvpn processes and script to communicate temporary
+data with openvpn main process. Note that
+the directory must be writable by the OpenVPN process
+after it has dropped it's root privileges.
+
+This directory will be used by in the following cases:
+
+*
 .B \-\-client-connect
 scripts to dynamically generate client-specific
 configuration files.
+
+*
+.B OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY
+plugin hook to return success/failure via auth_control_file
+when using deferred auth method
+
+*
+.B OPENVPN_PLUGIN_ENABLE_PF
+plugin hook to pass filtering rules via pf_file
 .\"*********************************************************
 .TP
 .B \-\-hash-size r v
@@ -3793,6 +3836,11 @@ Of course you should never use
 the test certificates and test keys distributed with OpenVPN in a
 production environment, since by virtue of the fact that
 they are distributed with OpenVPN, they are totally insecure.
+.\"*********************************************************
+.TP
+.B \-\-capath dir
+Directory containing trusted certificates (CAs and CRLs).
+Available with OpenSSL version >= 0.9.7 dev.
 .\"*********************************************************
 .TP
 .B \-\-dh file
