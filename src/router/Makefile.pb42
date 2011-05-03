@@ -99,7 +99,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -funit-at-a-time 
 endif
 ifeq ($(ARCH),mips)
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time -msoft-float
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves
 endif
 ifeq ($(ARCH),powerpc)
 export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align 
@@ -117,6 +117,7 @@ export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
+export LTO :=
 
 export CFLAGS := $(COPTS)
 
@@ -268,7 +269,7 @@ realclean: $(obj-clean)
 	-rm -f $(ARCH)-uclibc/*
 
 		
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean nvram-clean
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean nvram-clean utils-clean radauth-clean
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
