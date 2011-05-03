@@ -120,7 +120,7 @@ void start_mkfiles(void)
 #elif HAVE_WIKINGS
 		// default username and password for Excel Networks
 		fprintf(fp,
-			"ExCel:$1$8uq.U/Tn$xij6YU4G53TdJa.Ht4EeE1:0:0:Root User,,,:/tmp/root:/bin/sh\n");
+			"ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
 #else
 		fprintf(fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
 			"reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
