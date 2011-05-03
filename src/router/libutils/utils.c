@@ -1833,12 +1833,10 @@ int internal_getRouterBrand()
 		} else if (nvram_match("boot_hw_model", "WRT150N")
 			   && nvram_match("boot_hw_ver", "1.1")) {
 			setRouter("Linksys WRT150N v1.1");
-			// return ROUTER_WRT150NV11;
 			return ROUTER_WRT150N;
 		} else if (nvram_match("boot_hw_model", "WRT150N")
 			   && nvram_match("boot_hw_ver", "1.2")) {
 			setRouter("Linksys WRT150N v1.2");
-			// return ROUTER_WRT150NV12;
 			return ROUTER_WRT150N;
 		} else if (nvram_match("boot_hw_model", "WRT160N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
@@ -1859,6 +1857,10 @@ int internal_getRouterBrand()
 		} else if (nvram_match("boot_hw_model", "E1000")
 			   && nvram_match("boot_hw_ver", "2.0")) {
 			setRouter("Linksys E1000 v2");
+			return ROUTER_LINKSYS_E1000V2;
+		} else if (nvram_match("boot_hw_model", "E1000")
+			   && nvram_match("boot_hw_ver", "2.1")) {
+			setRouter("Linksys E1000 v2.1");
 			return ROUTER_LINKSYS_E1000V2;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
