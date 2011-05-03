@@ -503,6 +503,7 @@
 #define ROUTER_ASUS_RTN10PLUS 0x9e1a
 
 // Linksys E1000 v2 (BCM5357 cpu, 4MB serial flash, 32 MB ram, fccid: Linksys Q87-E1000V2)
+// Linksys E1000 v2.1 (BCM5357 cpu, 4MB serial flash, 32 MB ram, fccid: Linksys Q87-E1000V21)
 #define ROUTER_LINKSYS_E1000V2 0x9f1a
 
 // Repotec RP-WR5422
