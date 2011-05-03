@@ -186,7 +186,7 @@ void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 	if (type == NULL)
 		type = nvram_safe_get("wan_proto");
 	char ejname[32];
-	snprintf(ejname,31,"sas_%s.asp",type);
+	snprintf(ejname, 31, "sas_%s.asp", type);
 	do_ej(NULL, ejname, wp, NULL);
 }
 
@@ -533,15 +533,14 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #ifndef HAVE_RT2880
 #ifdef HAVE_RELAYD
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientRelayd + \"</option>\");\n",
 #else
-			websWrite(wp,
-				  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
 #endif
-				  nvram_selmatch(wp, wl_mode,
-					      "wet") ?
-				  "selected=\\\"selected\\\"" : "");
+		  nvram_selmatch(wp, wl_mode,
+				 "wet") ? "selected=\\\"selected\\\"" : "");
 #endif
 	if (!cpeonly)
 		websWrite(wp,
@@ -581,23 +580,21 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 
 // RELAYD OPTIONAL SETTINGS
 #ifdef HAVE_RELAYD
-	if (nvram_match(wl_mode, "wet")) {
+	if (nvram_selmatch(wp, wl_mode, "wet")) {
 		char wl_relayd[32];
 		int ip[4] = { 0, 0, 0, 0 };
-
 		websWrite(wp,
 			  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.clientRelaydDefaultGwMode)</script></div>");
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
+		nvram_default_get(wl_relayd, "1");
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
 			  prefix, prefix,
-			  nvram_default_match(wl_relayd, "1",
-					      "1") ? "checked" : "");
+			  nvram_selmatch(wp, wl_relayd, "1") ? "checked" : "");
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
 			  prefix, prefix,
-			  nvram_default_match(wl_relayd, "0",
-					      "1") ? "checked" : "");
+			  nvram_selmatch(wp, wl_relayd, "0") ? "checked" : "");
 		websWrite(wp, "</div>\n");
 
 		sprintf(wl_relayd, "%s_relayd_gw_ipaddr", prefix);
@@ -609,7 +606,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	          <input type=\"hidden\" name=\"%s_relayd_gw_ipaddr\" value=\"4\">\n\
 	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n\
 	          <input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
-       </div>\n", prefix, nvram_default_match(wl_relayd, "1", "0") ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
+       </div>\n", prefix, nvram_selmatch(wp, wl_relayd, "1") ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
 	}
 #endif
 
@@ -736,25 +733,28 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		  nvram_selmatch(wp, wl_width,
 				 "20") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_ATH9K
-if (!is_ath9k(prefix))
+	if (!is_ath9k(prefix))
 #endif
-    {
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
-		  nvram_selmatch(wp, wl_width,
-				 "10") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
-		  nvram_selmatch(wp, wl_width,
-				 "5") ? "selected=\\\"selected\\\"" : "");
+	{
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
+			  nvram_selmatch(wp, wl_width,
+					 "10") ? "selected=\\\"selected\\\"" :
+			  "");
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
+			  nvram_selmatch(wp, wl_width,
+					 "5") ? "selected=\\\"selected\\\"" :
+			  "");
 #ifdef HAVE_SUBQUARTER
-	/* will be enabled once it is tested and the spectrum analyse is done */
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
-		  nvram_selmatch(wp, wl_width,
-				 "2") ? "selected=\\\"selected\\\"" : "");
+		/* will be enabled once it is tested and the spectrum analyse is done */
+		websWrite(wp,
+			  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
+			  nvram_selmatch(wp, wl_width,
+					 "2") ? "selected=\\\"selected\\\"" :
+			  "");
 #endif
-    }
+	}
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
@@ -1154,8 +1154,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 	}
 	if (nvram_selmatch(wp, wl_mode, "ap")
 	    || nvram_selmatch(wp, wl_mode, "wdsap")
-	    || nvram_selmatch(wp, wl_mode, "infra"))
-	{
+	    || nvram_selmatch(wp, wl_mode, "infra")) {
 		char wl_channel[16];
 		sprintf(wl_channel, "%s_channel", prefix);
 
