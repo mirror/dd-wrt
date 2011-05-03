@@ -332,9 +332,9 @@ if (nvram_match("boardtype", "0xa4cf")
 }
 
 if (nvram_match("boot_hw_model", "E1000")
-		&& nvram_match("boot_hw_ver", "2.0"))
+		&& (nvram_match("boot_hw_ver", "2.0") || nvram_match("boot_hw_ver", "2.1")))
 {
-		printk(KERN_EMERG "E1000v2 GPIO Init\n");
+		printk(KERN_EMERG "E1000v2/v21 GPIO Init\n");
 		gpios = 1 << 6 | 1 << 7 | 1 << 8;
 }
 
