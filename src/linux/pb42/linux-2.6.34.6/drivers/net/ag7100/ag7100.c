@@ -1447,7 +1447,7 @@ ag7100_poll(struct net_device *dev, int *budget)
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
+	if (likely(ret == AG7100_RX_STATUS_DONE) && work_done < budget)
 		{
     		napi_complete(napi);
     		ag7100_intr_enable_recv(mac);
@@ -1472,6 +1472,8 @@ ag7100_poll(struct net_device *dev, int *budget)
         * We have work left
         */
         status = 1;
+    	napi_complete(napi);
+    	napi_resched(napi);
     }
     else if (ret == AG7100_RX_STATUS_OOM)
     {
