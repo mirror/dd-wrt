@@ -1521,7 +1521,7 @@ ag7240_poll(struct net_device *dev, int *budget)
     ret = ag7240_recv_packets(dev, mac, max_work, &work_done);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-	if (work_done < budget)
+	if (likely(ret == AG7240_RX_STATUS_DONE) && work_done < budget )
 		{
     		napi_complete(napi);
     		ag7240_intr_enable_recv(mac);
@@ -1545,6 +1545,8 @@ ag7240_poll(struct net_device *dev, int *budget)
         * We have work left
         */
         status = 1;
+    	napi_complete(napi);
+    	napi_resched(napi);
     }
     else if (ret == AG7240_RX_STATUS_OOM)
     {
@@ -1609,7 +1611,6 @@ process_pkts:
 
         bp                  = &r->ring_buffer[head];
         len                 = ds->pkt_size;
-//        printk(KERN_INFO "pkt_size=%d\n",len);
         skb                 = bp->buf_pkt;
 
         assert(skb);
@@ -1672,30 +1673,19 @@ process_pkts:
         /*
         * also pulls the ether header
         */
-        skb->protocol       = eth_type_trans(skb, dev);
         skb->dev            = dev;
         bp->buf_pkt         = NULL;
         dev->last_rx        = jiffies;
 
-        quota--;
         *work_done++;
+        quota--;
+        skb->protocol       = eth_type_trans(skb, dev);
         netif_receive_skb(skb);
         ag7240_ring_incr(head);
     }
 
-/*    if(quota == iquota)
-    {
-        *work_done = quota = 0;
-        return AG7240_RX_DMA_HANG;
-    }*/
     r->ring_head   =  head;
-
     rep = ag7240_rx_replenish(mac);
-/*    if(rep < 0)
-    {
-        *work_done =0 ;
-        return AG7240_RX_DMA_HANG;
-    }*/
 
     /*
     * let's see what changed while we were slogging.
@@ -2044,7 +2034,7 @@ ag7240_oom_timer(unsigned long data)
     int val;
 
     ag7240_trc(data,"data");
-//    ag7240_rx_replenish(mac);
+    ag7240_rx_replenish(mac);
     if (ag7240_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
