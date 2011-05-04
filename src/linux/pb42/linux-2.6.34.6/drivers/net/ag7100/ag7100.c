@@ -1473,7 +1473,7 @@ ag7100_poll(struct net_device *dev, int *budget)
         */
         status = 1;
     	napi_complete(napi);
-    	napi_resched(napi);
+    	napi_reschedule(napi);
     }
     else if (ret == AG7100_RX_STATUS_OOM)
     {
