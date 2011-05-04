@@ -1668,6 +1668,8 @@ process_pkts:
 		}	
 	}
 #endif
+        dma_cache_sync(NULL, (void *)skb->data,  skb->len, DMA_FROM_DEVICE);
+
         mac->net_rx_packets ++;
         mac->net_rx_bytes += skb->len;
         /*
