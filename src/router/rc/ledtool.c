@@ -69,6 +69,22 @@ int main(int argc, char **argv)
 			usleep(100000);
 			led_control(LED_SES, LED_OFF);
 			usleep(100000);
+			led_control(LED_SES, LED_ON);
+			usleep(100000);
+			led_control(LED_SES, LED_OFF);
+			usleep(100000);
+			led_control(LED_SES, LED_ON);
+			usleep(100000);
+			led_control(LED_SES, LED_OFF);
+			usleep(100000);
+			led_control(LED_SES, LED_ON);
+			usleep(100000);
+			led_control(LED_SES, LED_OFF);
+			usleep(100000);
+			led_control(LED_SES, LED_ON);
+			usleep(100000);
+			led_control(LED_SES, LED_OFF);
+			usleep(100000);
 			break;
 
 		default:
