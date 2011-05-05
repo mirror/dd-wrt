@@ -1647,6 +1647,12 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		killall("udhcpc", SIGKILL);
 		sys_commit();
 #ifdef HAVE_X86
+#ifdef HAVE_ERC
+		eval("mount", "/usr/local", "-o", "remount,rw");
+		eval("nvram","restore","/etc/defaults/x86ree.backup");
+		eval("reboot");
+		eval("event", "5", "1", "15");
+#endif
 		char drive[64];
 		sprintf(drive, "/dev/discs/disc%d/disc", getdiscindex());
 		FILE *in = fopen64(drive, "r+b");
