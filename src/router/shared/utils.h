@@ -528,6 +528,8 @@
 
 #define ROUTER_BOARD_RT3352 0xa81a // concept
 
+// Asus RT-N10U (BCM5358 cpu, 8MB serial flash / 32MB ram, USB 2.0)
+#define ROUTER_ASUS_RTN10U 0xa9115
 
 
 #define NVROUTER "DD_BOARD"
