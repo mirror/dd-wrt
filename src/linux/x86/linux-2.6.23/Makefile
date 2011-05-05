@@ -158,7 +158,7 @@ export srctree objtree VPATH TOPDIR
 # then ARCH is assigned, getting whatever value it gets normally, and 
 # SUBARCH is subsequently ignored.
 
-SUBARCH := i386
+SUBARCH = i386
 
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
@@ -181,7 +181,7 @@ SUBARCH := i386
 
 
 ARCH		= $(SUBARCH)
-CROSS_COMPILE	= i386-linux-uclibc-
+CROSS_COMPILE	= i486-linux-uclibc-
 
 # Architecture as present in compile.h
 UTS_MACHINE := $(ARCH)
