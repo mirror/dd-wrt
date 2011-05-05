@@ -156,6 +156,9 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_ASUS_RTN10:
 		nvram_set("wl0gpio0", "136");
 		break;
+	case ROUTER_ASUS_RTN10U:
+		nvram_set("ledbh5", "7");
+		break;
 	case ROUTER_WAP54G_V3:
 		nvram_set("wl0gpio0", "0");
 		nvram_set("wl0gpio2", "255");
