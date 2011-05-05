@@ -1429,6 +1429,12 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN10;
 	}
 
+	if (boardnum == 45 && nvram_match("boardtype", "0x0550")
+	    && nvram_match("boardrev", "0x1102")) {
+		setRouter("Asus RT-N10U");
+		return ROUTER_ASUS_RTN10U;
+	}
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
 	    && nvram_match("boardrev", "0x1201")) {
 		setRouter("Asus RT-N12");
@@ -3760,6 +3766,10 @@ int led_control(int type, int act)
 //              usb_gpio = 0x108;
 		// 0x10c //unknown gpio label, use as diag
 		diag_gpio = 0x10c;
+		break;
+	case ROUTER_ASUS_RTN10U:
+		ses_gpio = 0x007;
+		usb_gpio = 0x008;
 		break;
 	case ROUTER_ASUS_RTN10:
 	case ROUTER_ASUS_RTN16:
