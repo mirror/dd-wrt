@@ -1679,7 +1679,7 @@ process_pkts:
         bp->buf_pkt         = NULL;
         dev->last_rx        = jiffies;
 
-        *work_done++;
+        work_done[0]++;
         quota--;
         skb->protocol       = eth_type_trans(skb, dev);
         netif_receive_skb(skb);
