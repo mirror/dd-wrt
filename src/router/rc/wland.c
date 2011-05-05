@@ -199,14 +199,11 @@ static void do_aqos_check(void)
 	FILE *arp = fopen("/proc/net/arp", "rb");
 	char ip_buf[32];
 	char hw_buf[16];
-	char cmd[1024];
 	char fl_buf[16];
 	char mac_buf[32];
 	char mask_buf[16];
 	char dev_buf[16];
-	char *wdev = get_wshaper_dev();
 	int cmac;
-	int defaultlevel;
 	char *defaulup;
 	char *defauldown;
 	int cip;
