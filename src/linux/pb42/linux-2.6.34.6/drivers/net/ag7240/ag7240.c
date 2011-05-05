@@ -294,7 +294,6 @@ ag7240_open(struct net_device *dev)
     mac->mac_ifup = 1;
     ag7240_int_enable(mac);
 
-//    if (is_ar7240())
         ag7240_intr_enable_rxovf(mac);
 
 #if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY)   
@@ -1412,7 +1411,6 @@ ag7240_intr(int cpl, void *dev_id)
     {
         handled = 1;
 
-//    if (is_ar7240()) 
         ag7240_reg_wr(mac,AG7240_MAC_CFG1,(ag7240_reg_rd(mac,AG7240_MAC_CFG1)&0xfffffff3));
 
         ag7240_intr_ack_rxovf(mac);
@@ -1795,10 +1793,8 @@ ag7240_rx_replenish(ag7240_mac_t *mac)
     */
     wmb();
 
-//    if (is_ar7240()) {
         ag7240_reg_wr(mac,AG7240_MAC_CFG1,(ag7240_reg_rd(mac,AG7240_MAC_CFG1)|0xc));
         ag7240_rx_start(mac);
-//    }
 
     r->ring_tail = tail;
     ag7240_trc(refilled,"refilled");
