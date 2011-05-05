@@ -800,6 +800,56 @@ void addWPS(FILE * fp, char *prefix, int configured)
 
 }
 
+void start_ses_led_control(void)
+{
+	char ath[32];
+	char *next;
+	char var[80];
+	char akm[16];
+	int c = getdevicecount();
+	int i;
+	led_control(LED_SEC0, LED_OFF);
+	led_control(LED_SEC1, LED_OFF);
+
+	for (i = 0; i < c; i++) {
+		sprintf(ath, "ath%d", i);
+		if (nvram_nmatch("ap", "%s_mode", ath)
+		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
+			sprintf(akm, "%s_akm", ath);
+			if (nvram_match(akm, "psk") ||
+			    nvram_match(akm, "psk2") ||
+			    nvram_match(akm, "psk psk2") ||
+			    nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+			    || nvram_match(akm, "wpa wpa2") ||
+			    nvram_match(akm, "wep")) {
+				if (!strncmp(ath, "ath0", 4))
+					led_control(LED_SEC0, LED_ON);
+				if (!strncmp(ath, "ath1", 4))
+					led_control(LED_SEC1, LED_ON);
+			}
+
+		}
+		char *vifs = nvram_nget("ath%d_vifs", i);
+
+		if (vifs != NULL)
+			foreach(var, vifs, next) {
+			sprintf(akm, "%s_akm", var);
+			if (nvram_match(akm, "psk") ||
+			    nvram_match(akm, "psk2") ||
+			    nvram_match(akm, "psk psk2") ||
+			    nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+			    || nvram_match(akm, "wpa wpa2") ||
+			    nvram_match(akm, "wep")) {
+				if (!strncmp(var, "ath0", 4))
+					led_control(LED_SEC0, LED_ON);
+				if (!strncmp(var, "ath1", 4))
+					led_control(LED_SEC1, LED_ON);
+			}
+
+			}
+	}
+}
+
 #ifdef HAVE_MADWIFI
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
