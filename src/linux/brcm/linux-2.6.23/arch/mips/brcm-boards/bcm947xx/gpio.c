@@ -277,6 +277,13 @@ if (boardnum == 45 && nvram_match("boardrev", "0x1402")
 		gpios = 1 << 1;
 }
 
+if (boardnum == 45 && nvram_match("boardrev", "0x1102")
+		&& nvram_match("boardtype", "0x0550"))
+{
+		printk(KERN_EMERG "RT-N10U GPIO Init\n");
+		gpios = 1 << 5;
+}
+
 if (boardnum == 1 && nvram_match("boardtype", "0xE4CD")
 		&& nvram_match("boardrev", "0x1700"))
 {
