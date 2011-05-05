@@ -100,6 +100,10 @@ int main(int argc, char **argv)
 		times--;
 		count++;
 	}
+	if (type==3)
+	{
+	    system("startservice ses_led_control");
+	}
 
 	return 0;
 }				// end main
