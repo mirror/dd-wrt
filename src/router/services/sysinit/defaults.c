@@ -205,6 +205,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lan_ipaddr", "192.168.1.4", 0},	/* LAN IP address */
 #elif HAVE_SPUTNIK
 	{"lan_ipaddr", "192.168.180.1", 0},	/* LAN IP address */
+#elif HAVE_ERC
+	{"lan_ipaddr", "10.195.0.1", 0},	/* LAN IP address */
 #elif HAVE_BKM
 	{"lan_ipaddr", "192.168.42.1", 0},	/* LAN IP address */
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
@@ -1272,6 +1274,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "BKM-HSDL", 0},
 #elif  HAVE_ERC
 	{"router_name", "RemoteEngineer", 0},
+	{"ree_resetme", "1", 0},
 #elif  HAVE_CARLSONWIRELESS
 	{"router_name", "CWT", 0},		/* Router name) */
 #else
