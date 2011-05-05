@@ -141,11 +141,11 @@ _nvram_read(char *buf)
 		header->magic = NVRAM_MAGIC;
 		header->len = 0;
 	set_fs(old_fs);
-	    return -1;	    
+	    return 0;	    
 	    }
 	if ((srcf->f_op == NULL) || (srcf->f_op->read == NULL) || (srcf->f_op->write == NULL))
 	    {
-	        printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem not ready)\n");
+	        printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem not ready/mounted)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
@@ -153,7 +153,7 @@ _nvram_read(char *buf)
 		header->len = 0;
 	    filp_close(srcf, NULL);			
 	set_fs(old_fs);
-	    return -1;
+	    return 0;
 	    } /* End of if */
 	len = srcf->f_op->read(srcf,buf,NVRAM_SPACE,&srcf->f_pos);
 

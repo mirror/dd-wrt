@@ -109,9 +109,10 @@ typedef unsigned int addr_t;
 static inline u8 rdfs8(addr_t addr)
 {
 	u8 v;
-	asm volatile("movb %%fs:%1,%0" : "=r" (v) : "m" (*(u8 *)addr));
+	asm volatile("movb %%fs:%1,%0" : "=q" (v) : "m" (*(u8 *)addr));
 	return v;
 }
+
 static inline u16 rdfs16(addr_t addr)
 {
 	u16 v;
