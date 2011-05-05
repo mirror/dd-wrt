@@ -803,6 +803,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 void start_ses_led_control(void)
 {
 	char ath[32];
+	char net[32];
 	char *next;
 	char var[80];
 	char akm[16];
@@ -813,6 +814,9 @@ void start_ses_led_control(void)
 
 	for (i = 0; i < c; i++) {
 		sprintf(ath, "ath%d", i);
+		sprintf(net, "%s_net_mode", ath);
+		if (nvram_match(net, "disabled"))
+			continue;
 		if (nvram_nmatch("ap", "%s_mode", ath)
 		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
