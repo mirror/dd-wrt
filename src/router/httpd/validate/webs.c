@@ -940,7 +940,7 @@ void add_active_mac(webs_t wp)
 			continue;
 
 		count++;
-		cur += snprintf(cur, buf  + 4096 - cur, "%s%s",
+		cur += snprintf(cur, buf + 4096 - cur, "%s%s",
 				cur == buf ? "" : " ",
 				wl_client_macs[atoi(index)].hwaddr);
 	}
@@ -1223,19 +1223,17 @@ int get_svc(char *svc, char *protocol, char *ports)
 		strncpy(ports, port + sizeof("$PORT:nnn:") - 1, len);
 		ports[len] = '\0';
 
-		if (sscanf(ports, "%d:%d", &from, &to) != 2)
-		{
-		free(services);
+		if (sscanf(ports, "%d:%d", &from, &to) != 2) {
+			free(services);
 			return -1;
 		}
 
-		if (strcasecmp(svc, name) == 0)
-		{
-		free(services);
+		if (strcasecmp(svc, name) == 0) {
+			free(services);
 			return 0;
 		}
 	}
-		free(services);
+	free(services);
 
 	return -1;
 }
@@ -1265,7 +1263,6 @@ void qos_add_svc(webs_t wp)
 		for (i = 0; i < slen; i++)
 			add_svc[i] = tolower(add_svc[i]);
 	}
-
 #ifdef HAVE_OPENDPI
 	if (strcmp(protocol, "dpi") == 0) {
 		int slen = strlen(add_svc);
@@ -2711,7 +2708,8 @@ static void save_prefix(webs_t wp, char *prefix)
 
 		if (wl)
 			if ((!strcmp(wl, "ap") || !strcmp(wl, "wdsap")
-			    || !strcmp(wl, "infra") || !strcmp(wl, "wdssta")) && nvram_invmatch("wan_proto","3g") ) {
+			     || !strcmp(wl, "infra") || !strcmp(wl, "wdssta"))
+			    && nvram_invmatch("wan_proto", "3g")) {
 				nvram_set("wan_proto", "disabled");
 			}
 	}
@@ -2797,6 +2795,21 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv(wp, n);
 
+}
+
+void wireless_join(webs_t wp)
+{
+	char *value = websGetVar(wp, "action", "");
+	char *ssid = websGetVar(wp, "wl_ssid", NULL);
+	if (ssid) {
+		char *wifi = nvram_safe_get("wifi_display");
+		if (strlen(wifi) > 0) {
+			nvram_nset(ssid, "%s_ssid", wifi);
+			nvram_commit();
+		}
+
+	}
+	applytake(value);
 }
 
 void wireless_save(webs_t wp)
@@ -3452,55 +3465,63 @@ void tf_upnp(webs_t wp)
 void nassrv_save(webs_t wp)
 {
 #ifdef HAVE_SAMBA_SERVER
-	int c,j;
+	int c, j;
 	char var[128], val[128];
 	json_t *entry = NULL, *user_entries;
 
 	// samba shares
-	json_t *entries = json_array();	
+	json_t *entries = json_array();
 	int share_number = atoi(websGetVar(wp, "samba_shares_count", "0"));
 	int user_number = atoi(websGetVar(wp, "samba_users_count", "0"));
-	for( c = 1; c <= share_number; c++ ) {
+	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbshare_mp_%d", c);
-		json_object_set_new( entry, "mp", json_string( websGetVar( wp, var, "" ) ) );
+		json_object_set_new(entry, "mp",
+				    json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_label_%d", c);
-		json_object_set_new( entry, "label", json_string( websGetVar( wp, var, "" ) ) );
+		json_object_set_new(entry, "label",
+				    json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_public_%d", c);
-		json_object_set_new( entry, "public", json_integer( atoi( websGetVar( wp, var, "0" ) ) ) );
+		json_object_set_new(entry, "public",
+				    json_integer(atoi
+						 (websGetVar(wp, var, "0"))));
 		sprintf(var, "smbshare_access_perms_%d", c);
-		sprintf(val, "%s", websGetVar( wp, var, "-" ) );
-		if( !strcmp( val, "-") ) {
+		sprintf(val, "%s", websGetVar(wp, var, "-"));
+		if (!strcmp(val, "-")) {
 			sprintf(var, "smbshare_access_perms_prev_%d", c);
-			sprintf(val, "%s", websGetVar( wp, var, "x" ) );
+			sprintf(val, "%s", websGetVar(wp, var, "x"));
 		}
-		json_object_set_new( entry, "perms", json_string( val ) );
+		json_object_set_new(entry, "perms", json_string(val));
 		user_entries = json_array();
-		for( j = 1; j <= user_number; j++ ) {
+		for (j = 1; j <= user_number; j++) {
 			sprintf(var, "smbshare_%d_user_%d", c, j);
-			if( !strcmp(  websGetVar( wp, var, "" ), "1" ) ) {
+			if (!strcmp(websGetVar(wp, var, ""), "1")) {
 				sprintf(var, "smbuser_username_%d", j);
-				json_array_append(user_entries, json_string( websGetVar( wp, var, "" ) ) );
+				json_array_append(user_entries,
+						  json_string(websGetVar
+							      (wp, var, "")));
 			}
 		}
-		json_object_set_new( entry , "users", user_entries );
-		json_array_append( entries, entry);
+		json_object_set_new(entry, "users", user_entries);
+		json_array_append(entries, entry);
 	}
 	//fprintf(stderr, "[SAVE NAS] %s\n", json_dumps( entries, JSON_COMPACT ) );
-	nvram_set("samba3_shares", json_dumps( entries, JSON_COMPACT ) );
+	nvram_set("samba3_shares", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
-	
+
 	entries = json_array();
-	for( c = 1; c <= user_number; c++ ) {
+	for (c = 1; c <= user_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbuser_username_%d", c);
-		json_object_set_new( entry, "user", json_string( websGetVar( wp, var, "" ) ) );
+		json_object_set_new(entry, "user",
+				    json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbuser_password_%d", c);
-		json_object_set_new( entry, "pass", json_string( websGetVar( wp, var, "" ) ) );
-		json_array_append( entries, entry);
+		json_object_set_new(entry, "pass",
+				    json_string(websGetVar(wp, var, "")));
+		json_array_append(entries, entry);
 	}
 	//fprintf(stderr, "[SAVE NAS USERS] %s\n", json_dumps( entries, JSON_COMPACT ) );
-	nvram_set("samba3_users", json_dumps( entries, JSON_COMPACT ) );
+	nvram_set("samba3_users", json_dumps(entries, JSON_COMPACT));
 	json_array_clear(entries);
 #endif
 	char *value = websGetVar(wp, "action", "");
