@@ -23,7 +23,6 @@ function do_join (F,SSID) {
 			<input type="hidden" name="submit_type" value="Join" />
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
-			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="commit" value="1" />
 			
 			<input type="hidden" name="wl_ssid" />
