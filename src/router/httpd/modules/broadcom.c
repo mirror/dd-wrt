@@ -1301,7 +1301,7 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
 #endif
 #endif
-	{"Join", "Join", "wireless",1, SERVICE_RESTART, "wireless_join"},
+	{"Join", "Join", "wireless",1, REFRESH, "wireless_join"},
 	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
 };
 
