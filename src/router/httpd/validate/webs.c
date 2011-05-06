@@ -2804,8 +2804,12 @@ void wireless_join(webs_t wp)
 	if (ssid) {
 		char *wifi = nvram_safe_get("wifi_display");
 		if (strlen(wifi) > 0) {
-			nvram_nset(ssid, "%s_ssid", wifi);
-			nvram_set("cur_ssid",ssid);
+			if (!strcmp(wifi, "ath0"))
+				nvram_set("wl_ssid", ssid)
+				    if (!strcmp(wifi, "wl0"))
+					nvram_set("wl_ssid", ssid)
+					    nvram_nset(ssid, "%s_ssid", wifi);
+			nvram_set("cur_ssid", ssid);
 			nvram_commit();
 		}
 
