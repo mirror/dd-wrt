@@ -1,7 +1,7 @@
 openvpn-configure: openssl
 	if ! test -e "lzo/Makefile"; then cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"; fi
 	make -j 4 -C lzo
-	if ! test -e "openvpn/Makefile"; then cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --enable-lzo --enable-server --enable-multihome CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs -ldl"; fi
+	if ! test -e "openvpn/Makefile"; then cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --enable-lzo --enable-server --enable-multihome CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs -ldl" ac_cv_func_epoll_create=no; fi 
 
 openvpn: openssl openvpn-configure
 #ifeq ($(CONFIG_NEWMEDIA),y)
