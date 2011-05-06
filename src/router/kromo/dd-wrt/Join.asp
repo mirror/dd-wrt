@@ -2,7 +2,7 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-var SSID = "<% nvram_get("wl_ssid"); %>";
+var SSID = "<% nvram_get("cur_ssid"); %>";
 
 function to_send(url)
 {
