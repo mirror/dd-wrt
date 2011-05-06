@@ -4,10 +4,6 @@
 
 function do_join (F,SSID) {
 	F.wl_ssid.value = SSID;
-	F.ath0_ssid.value = SSID;
-	
-	<% nvram_invmatch("wl_mode", "ap", "/"); %><% nvram_invmatch("wl_mode", "ap", "/"); %>F.wl_mode.value="<% nvram_match("wl_mode", "ap", "sta"); %>"
-	<% nvram_invmatch("ath0_mode", "ap", "/"); %><% nvram_invmatch("ath0_mode", "ap", "/"); %>F.ath0_mode.value="<% nvram_match("ath0_mode", "ap", "sta"); %>"
 
 	if (F.wl_ssid.value == "") {
 		alert(errmsg.err47);
@@ -22,17 +18,16 @@ function do_join (F,SSID) {
 
 	<body>
 		<div id="bulle" class="bulle"></div>
-		<form name="wireless" action="apply.cgi" method="post">
+		<form name="Join" action="apply.cgi" method="post">
 			<input type="hidden" name="submit_button" value="Join" />
+			<input type="hidden" name="submit_type" value="Join" />
 			<input type="hidden" name="action" value="Apply" />
-			<input type="hidden" name="change_action" />
+			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="commit" value="1" />
 			
 			<input type="hidden" name="wl_ssid" />
 			<input type="hidden" name="wl_mode" />
-			<input type="hidden" name="ath0_ssid" />
-			<input type="hidden" name="ath0_mode" />
 			<h2><% tran("survey.h2"); %></h2>
 			<table class="center table" cellspacing="5" id="survey_table">
 				<tr>
