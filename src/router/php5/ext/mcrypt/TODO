@@ -1,0 +1,6 @@
+/* $Id: TODO 242949 2007-09-26 15:44:16Z cvs2svn $ */
+
+ToDo:
+- Convert to zend_parse_parameters
+- Unify error handling
+- Implement encryption streams
