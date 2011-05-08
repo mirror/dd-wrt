@@ -1,6 +1,0 @@
-/* $Id: TODO,v 1.3 2003/12/19 15:29:34 derick Exp $ */
-
-ToDo:
-- Convert to zend_parse_parameters
-- Unify error handling
-- Implement encryption streams

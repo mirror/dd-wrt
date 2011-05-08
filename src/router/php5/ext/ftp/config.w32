@@ -1,9 +1,0 @@
-// $Id: config.w32,v 1.1 2003/12/02 23:16:52 wez Exp $
-// vim:ft=javascript
-
-ARG_ENABLE("ftp", "ftp support", "yes");
-
-if (PHP_FTP == "yes") {
-	EXTENSION("ftp", "php_ftp.c ftp.c");
-	AC_DEFINE('HAVE_FTP', 1, 'Have FTP support');
-}

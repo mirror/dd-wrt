@@ -1,9 +1,0 @@
-// $Id: config.w32,v 1.1 2003/12/19 15:04:23 wez Exp $
-// vim:ft=javascript
-
-ARG_WITH("mime-magic", "Mime Magic support", "no");
-
-if (PHP_MIME_MAGIC != "no") {
-	EXTENSION('mime_magic', 'mime_magic.c');
-}
-
