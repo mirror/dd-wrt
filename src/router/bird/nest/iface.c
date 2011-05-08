@@ -451,6 +451,13 @@ ifa_recalc_all_primary_addresses(void)
     }
 }
 
+static inline int
+ifa_same(struct ifa *a, struct ifa *b)
+{
+  return ipa_equal(a->ip, b->ip) && ipa_equal(a->prefix, b->prefix) &&
+    a->pxlen == b->pxlen;
+}
+
 
 /**
  * ifa_update - update interface address
@@ -467,11 +474,9 @@ ifa_update(struct ifa *a)
   struct ifa *b;
 
   WALK_LIST(b, i->addrs)
-    if (ipa_equal(b->ip, a->ip))
+    if (ifa_same(b, a))
       {
-	if (ipa_equal(b->prefix, a->prefix) &&
-	    b->pxlen == a->pxlen &&
-	    ipa_equal(b->brd, a->brd) &&
+	if (ipa_equal(b->brd, a->brd) &&
 	    ipa_equal(b->opposite, a->opposite) &&
 	    b->scope == a->scope &&
 	    !((b->flags ^ a->flags) & IA_PEER))
@@ -514,7 +519,7 @@ ifa_delete(struct ifa *a)
   struct ifa *b;
 
   WALK_LIST(b, i->addrs)
-    if (ipa_equal(b->ip, a->ip))
+    if (ifa_same(b, a))
       {
 	rem_node(&b->n);
 	if (b->flags & IF_UP)
