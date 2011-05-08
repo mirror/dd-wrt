@@ -1118,7 +1118,17 @@ bgp_rte_better(rte *new, rte *old)
     return 0;
 
   /* RFC 4271 9.1.2.2. c) Compare MED's */
-  if (bgp_get_neighbor(new) == bgp_get_neighbor(old))
+  /* This is noncompliant. Proper RFC 4271 path selection cannot be
+   * interpreted as finding the best path in some ordering.
+   * Therefore, it cannot be implemented in BIRD without some ugly
+   * hacks. This is just an approximation, which in specific
+   * situations may lead to persistent routing loops, because it is
+   * nondeterministic - it depends on the order in which routes
+   * appeared. But it is also the same behavior as used by default in
+   * Cisco routers, so it is probably not a big issue.
+   */
+  if (new_bgp->cf->med_metric || old_bgp->cf->med_metric ||
+      (bgp_get_neighbor(new) == bgp_get_neighbor(old)))
     {
       x = ea_find(new->attrs->eattrs, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC));
       y = ea_find(old->attrs->eattrs, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC));

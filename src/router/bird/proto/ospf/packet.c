@@ -312,6 +312,12 @@ ospf_rx_hook(sock *sk, int size)
   }
 
   int osize = ntohs(ps->length);
+  if ((unsigned) osize < sizeof(struct ospf_packet))
+  {
+    log(L_ERR "%s%I - too low value in size field (%u bytes)", mesg, sk->faddr, osize);
+    return 1;
+  }
+
   if ((osize > size) || ((osize % 4) != 0))
   {
     log(L_ERR "%s%I - size field does not match (%d/%d)", mesg, sk->faddr, osize, size);

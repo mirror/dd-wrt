@@ -18,6 +18,7 @@
 #include "nest/route.h"
 #include "nest/protocol.h"
 #include "nest/iface.h"
+#include "lib/alloca.h"
 #include "lib/timer.h"
 #include "lib/unix.h"
 #include "lib/krt.h"
@@ -618,6 +619,7 @@ nh_bufsize(struct mpnh *nh)
 static void
 nl_send_route(struct krt_proto *p, rte *e, int new)
 {
+  eattr *ea;
   net *net = e->net;
   rta *a = e->attrs;
   struct {
@@ -641,6 +643,13 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
   r.r.rtm_protocol = RTPROT_BIRD;
   r.r.rtm_scope = RT_SCOPE_UNIVERSE;
   nl_add_attr_ipa(&r.h, sizeof(r), RTA_DST, net->n.prefix);
+
+  if (ea = ea_find(a->eattrs, EA_KRT_PREFSRC))
+    nl_add_attr_ipa(&r.h, sizeof(r), RTA_PREFSRC, *(ip_addr *)ea->u.ptr->data);
+
+  if (ea = ea_find(a->eattrs, EA_KRT_REALM))
+    nl_add_attr_u32(&r.h, sizeof(r), RTA_FLOW, ea->u.data);
+
   switch (a->dest)
     {
     case RTD_ROUTER:
@@ -698,10 +707,9 @@ nl_parse_route(struct nlmsghdr *h, int scan)
   struct rtmsg *i;
   struct rtattr *a[RTA_CACHEINFO+1];
   int new = h->nlmsg_type == RTM_NEWROUTE;
-  ip_addr dst;
-  rte *e;
-  net *net;
-  u32 oif;
+
+  ip_addr dst = IPA_NONE;
+  u32 oif = ~0;
   int src;
 
   if (!(i = nl_checkin(h, sizeof(*i))) || !nl_parse_attrs(RTM_RTA(i), a, sizeof(a)))
@@ -709,12 +717,14 @@ nl_parse_route(struct nlmsghdr *h, int scan)
   if (i->rtm_family != BIRD_AF)
     return;
   if ((a[RTA_DST] && RTA_PAYLOAD(a[RTA_DST]) != sizeof(ip_addr)) ||
-      (a[RTA_OIF] && RTA_PAYLOAD(a[RTA_OIF]) != 4) ||
-      (a[RTA_PRIORITY] && RTA_PAYLOAD(a[RTA_PRIORITY]) != 4) ||
 #ifdef IPV6
       (a[RTA_IIF] && RTA_PAYLOAD(a[RTA_IIF]) != 4) ||
 #endif
-      (a[RTA_GATEWAY] && RTA_PAYLOAD(a[RTA_GATEWAY]) != sizeof(ip_addr)))
+      (a[RTA_OIF] && RTA_PAYLOAD(a[RTA_OIF]) != 4) ||
+      (a[RTA_GATEWAY] && RTA_PAYLOAD(a[RTA_GATEWAY]) != sizeof(ip_addr)) ||
+      (a[RTA_PRIORITY] && RTA_PAYLOAD(a[RTA_PRIORITY]) != 4) ||
+      (a[RTA_PREFSRC] && RTA_PAYLOAD(a[RTA_PREFSRC]) != sizeof(ip_addr)) ||
+      (a[RTA_FLOW] && RTA_PAYLOAD(a[RTA_OIF]) != 4))
     {
       log(L_ERR "KRT: Malformed message received");
       return;
@@ -725,13 +735,9 @@ nl_parse_route(struct nlmsghdr *h, int scan)
       memcpy(&dst, RTA_DATA(a[RTA_DST]), sizeof(dst));
       ipa_ntoh(dst);
     }
-  else
-    dst = IPA_NONE;
 
   if (a[RTA_OIF])
     memcpy(&oif, RTA_DATA(a[RTA_OIF]), sizeof(oif));
-  else
-    oif = ~0;
 
   DBG("KRT: Got %I/%d, type=%d, oif=%d, table=%d, prid=%d, proto=%s\n", dst, i->rtm_dst_len, i->rtm_type, oif, i->rtm_table, i->rtm_protocol, p->p.name);
 
@@ -782,7 +788,7 @@ nl_parse_route(struct nlmsghdr *h, int scan)
       src = KRT_SRC_ALIEN;
     }
 
-  net = net_get(p->p.table, dst, i->rtm_dst_len);
+  net *net = net_get(p->p.table, dst, i->rtm_dst_len);
 
   rta ra = {
     .proto = &p->p,
@@ -871,15 +877,49 @@ nl_parse_route(struct nlmsghdr *h, int scan)
       return;
     }
 
-  e = rte_get_temp(&ra);
+  rte *e = rte_get_temp(&ra);
   e->net = net;
   e->u.krt.src = src;
   e->u.krt.proto = i->rtm_protocol;
   e->u.krt.type = i->rtm_type;
+
   if (a[RTA_PRIORITY])
     memcpy(&e->u.krt.metric, RTA_DATA(a[RTA_PRIORITY]), sizeof(e->u.krt.metric));
   else
     e->u.krt.metric = 0;
+
+  if (a[RTA_PREFSRC])
+    {
+      ip_addr ps;
+      memcpy(&ps, RTA_DATA(a[RTA_PREFSRC]), sizeof(ps));
+      ipa_ntoh(ps);
+
+      ea_list *ea = alloca(sizeof(ea_list) + sizeof(eattr));
+      ea->next = ra.eattrs;
+      ra.eattrs = ea;
+      ea->flags = EALF_SORTED;
+      ea->count = 1;
+      ea->attrs[0].id = EA_KRT_PREFSRC;
+      ea->attrs[0].flags = 0;
+      ea->attrs[0].type = EAF_TYPE_IP_ADDRESS;
+      ea->attrs[0].u.ptr = alloca(sizeof(struct adata) + sizeof(ps));
+      ea->attrs[0].u.ptr->length = sizeof(ps);
+      memcpy(ea->attrs[0].u.ptr->data, &ps, sizeof(ps));
+    }
+
+  if (a[RTA_FLOW])
+    {
+      ea_list *ea = alloca(sizeof(ea_list) + sizeof(eattr));
+      ea->next = ra.eattrs;
+      ra.eattrs = ea;
+      ea->flags = EALF_SORTED;
+      ea->count = 1;
+      ea->attrs[0].id = EA_KRT_REALM;
+      ea->attrs[0].flags = 0;
+      ea->attrs[0].type = EAF_TYPE_INT;
+      memcpy(&ea->attrs[0].u.data, RTA_DATA(a[RTA_FLOW]), 4);
+    }
+
   if (scan)
     krt_got_route(p, e);
   else

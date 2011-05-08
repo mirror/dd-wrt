@@ -1,3 +1,83 @@
+commit 409e8a6e21d3df0919fd2e131ba9a58222baee50
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon May 2 02:06:03 2011 +0200
+
+    NEWS and version update.
+
+commit a506476acd4baa212f542b257eb5abba733ba4c5
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun May 1 17:16:05 2011 +0200
+
+    There may be more IP address records with the same IP.
+
+commit 5964569c23829ec93fcf671a2582be01c8aebecf
+Merge: acc93ef... d600909...
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 29 19:03:19 2011 +0200
+
+    Merge commit 'origin/master'
+
+commit acc93efd4c754cc995ee8edf52ce0bc45511062e
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Apr 28 00:31:37 2011 +0200
+
+    Use constants from /etc/iproute2/rt_* files.
+
+commit 73272f04af40484b72451f541a986da996b0da58
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 22 16:13:27 2011 +0200
+
+    Adds BGP option related to MED handling.
+    
+    Adds option 'med metric' allows to compare MEDs
+    between routes received from different neighbors.
+
+commit d600909da9ef0a4b25052c1bf2de83d4e7628b0e
+Author: Ondrej Filip <feela@trubka.network.cz>
+Date:   Wed Apr 13 13:19:37 2011 +0200
+
+    Fixed bug FICORA #503685.
+
+commit 71ca77169d5d3e67459e46841b8bdb95accd8c2a
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Apr 13 12:32:27 2011 +0200
+
+    Adds support for several Linux kernel route attributes.
+
+commit 4aef102be1e29d3450e53a20a6b2f96d50527139
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Apr 7 11:31:56 2011 +0200
+
+    Fixes KRT sync in BSD.
+    
+    When buffer is too small (because of change between sysctls()),
+    needed is *not* changed.
+
+commit 489c308a75b121f286cc8637ead8b2bf7bf896ec
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue Apr 5 11:41:18 2011 +0200
+
+    Minor fixes.
+
+commit bf27abd6d4a20448f5b4c80e9aa9258dc8670f62
+Merge: 4ef0950... a5b84ab...
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 1 13:56:42 2011 +0200
+
+    Merge commit 'origin/master'
+
+commit 4ef0950603ffbd515d97359015585b4a7512bc75
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 1 13:54:39 2011 +0200
+
+    Fixes a problem with BGP protocols and implicit router IDs.
+
+commit d93a43a57d37b7cc5506a823a081d21f515c3820
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Apr 1 12:21:18 2011 +0200
+
+    Fix leaked debug message.
+
 commit a5b84ab540ff3131938b38ebc82ed8e3ce46f261
 Author: Ondrej 'Feela' Filip <feela@atrey.karlin.mff.cuni.cz>
 Date:   Thu Mar 31 10:30:58 2011 +0200

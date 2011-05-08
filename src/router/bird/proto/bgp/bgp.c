@@ -798,6 +798,10 @@ bgp_start(struct proto *P)
   p->startup_timer->hook = bgp_startup_timeout;
   p->startup_timer->data = p;
 
+  p->local_id = proto_get_router_id(P->cf);
+  if (p->rr_client)
+    p->rr_cluster_id = p->cf->rr_cluster_id ? p->cf->rr_cluster_id : p->local_id;
+
   p->remote_id = 0;
   p->source_addr = p->cf->source_addr;
 
@@ -874,11 +878,8 @@ bgp_init(struct proto_config *C)
   p->local_as = c->local_as;
   p->remote_as = c->remote_as;
   p->is_internal = (c->local_as == c->remote_as);
-  p->local_id = proto_get_router_id(C);
   p->rs_client = c->rs_client;
   p->rr_client = c->rr_client;
-  if (p->rr_client)
-    p->rr_cluster_id = c->rr_cluster_id ? c->rr_cluster_id : p->local_id;
   p->igp_table = get_igp_table(c);
 
   return P;

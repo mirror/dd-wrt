@@ -62,6 +62,66 @@ async_dump(void)
  *	Reading the Configuration
  */
 
+#ifdef PATH_IPROUTE_DIR
+
+static inline void
+add_num_const(char *name, int val)
+{
+  struct symbol *s = cf_find_symbol(name);
+  s->class = SYM_NUMBER;
+  s->def = NULL;
+  s->aux = val;
+}
+
+/* the code of read_iproute_table() is based on
+   rtnl_tab_initialize() from iproute2 package */
+static void
+read_iproute_table(char *file, char *prefix, int max)
+{
+  char buf[512], namebuf[512];
+  char *name;
+  int val;
+  FILE *fp;
+
+  strcpy(namebuf, prefix);
+  name = namebuf + strlen(prefix);
+
+  fp = fopen(file, "r");
+  if (!fp)
+    return;
+
+  while (fgets(buf, sizeof(buf), fp))
+  {
+    char *p = buf;
+
+    while (*p == ' ' || *p == '\t')
+      p++;
+
+    if (*p == '#' || *p == '\n' || *p == 0)
+      continue;
+   
+    if (sscanf(p, "0x%x %s\n", &val, name) != 2 &&
+	sscanf(p, "0x%x %s #", &val, name) != 2 &&
+	sscanf(p, "%d %s\n", &val, name) != 2 &&
+	sscanf(p, "%d %s #", &val, name) != 2)
+      continue;
+
+    if (val < 0 || val > max)
+      continue;
+
+    for(p = name; *p; p++)
+      if ((*p < 'a' || *p > 'z') && (*p < '0' || *p > '9') && (*p != '_'))
+	*p = '_';
+
+    add_num_const(namebuf, val);
+  }
+
+  fclose(fp);
+}
+
+#endif // PATH_IPROUTE_DIR
+
+
 static int conf_fd;
 static char *config_name = PATH_CONFIG;
 
@@ -78,6 +138,13 @@ void
 sysdep_preconfig(struct config *c)
 {
   init_list(&c->logfiles);
+
+#ifdef PATH_IPROUTE_DIR
+  // read_iproute_table(PATH_IPROUTE_DIR "/rt_protos", "ipp_", 256);
+  read_iproute_table(PATH_IPROUTE_DIR "/rt_realms", "ipr_", 256);
+  read_iproute_table(PATH_IPROUTE_DIR "/rt_scopes", "ips_", 256);
+  read_iproute_table(PATH_IPROUTE_DIR "/rt_tables", "ipt_", 256);
+#endif
 }
 
 int

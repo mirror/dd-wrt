@@ -63,8 +63,8 @@ struct iface {
  *  - Host addresses, with ifa.prefix/pxlen == ifa.ip/32 (or /128).
  *    May be considered a special case of standard addresses.
  *
- * Peer addresses (AFAIK) do not exist in IPv6. Linux alos supports generalized peer
- * address (with pxlen < 32 and ifa.ip outside prefix), we do not support that.
+ * Peer addresses (AFAIK) do not exist in IPv6. Linux also supports generalized peer
+ * addresses (with pxlen < 32 and ifa.ip outside prefix), we do not support that.
  */
 
 

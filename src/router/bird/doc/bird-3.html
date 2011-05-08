@@ -93,8 +93,9 @@ instance called <CODE><I>name</I></CODE> (or with a name like "rip5" generated a
 about configuring protocols in their own chapters. You can run more than one instance of
 most protocols (like RIP or BGP). By default, no instances are configured.
 <P>
-<DT><CODE>define <I>constant</I> = (<I>expression</I>)|<I>number</I>|<I>IP address</I></CODE><DD><P>Define a constant. You can use it later in every place
-you could use a simple integer or an IP address.
+<DT><CODE>define <I>constant</I> = (<I>expression</I>)|<I>number</I>|<I>IP address</I></CODE><DD><P>Define a constant. You can use it later in every place you could use a simple integer or an IP address.
+Besides, there are some predefined numeric constants based on /etc/iproute2/rt_* files.
+A list of defined constants can be seen (together with other symbols) using 'show symbols' command.
 <P>
 <DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
 <P>

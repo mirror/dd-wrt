@@ -237,7 +237,7 @@ static_neigh_notify(struct neighbor *n)
   struct proto *p = n->proto;
   struct static_route *r;
 
-  log(L_WARN "Static: neighbor notify for %I: iface %p\n", n->addr, n->iface);
+  DBG("Static: neighbor notify for %I: iface %p\n", n->addr, n->iface);
   for(r=n->data; r; r=r->chain)
     switch (r->dest)
       {

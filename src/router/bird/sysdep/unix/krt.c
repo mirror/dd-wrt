@@ -890,6 +890,7 @@ krt_init(struct proto_config *c)
   p->p.accept_ra_types = RA_OPTIMAL;
   p->p.import_control = krt_import_control;
   p->p.rt_notify = krt_notify;
+
   return &p->p;
 }
 
@@ -907,15 +908,35 @@ krt_reconfigure(struct proto *p, struct proto_config *new)
     ;
 }
 
+
+static int
+krt_get_attr(eattr * a, byte * buf, int buflen UNUSED)
+{
+  switch (a->id)
+  {
+  case EA_KRT_PREFSRC:
+    bsprintf(buf, "prefsrc");
+    return GA_NAME;
+  case EA_KRT_REALM:
+    bsprintf(buf, "realm");
+    return GA_NAME;
+  default:
+    return GA_UNKNOWN;
+  }
+}
+
+
 struct protocol proto_unix_kernel = {
   name:		"Kernel",
   template:	"kernel%d",
+  attr_class:	EAP_KRT,
   preconfig:	krt_preconfig,
   postconfig:	krt_postconfig,
   init:		krt_init,
   start:	krt_start,
   shutdown:	krt_shutdown,
   reconfigure:	krt_reconfigure,
+  get_attr:	krt_get_attr,
 #ifdef KRT_ALLOW_LEARN
   dump:		krt_dump,
   dump_attrs:	krt_dump_attrs,

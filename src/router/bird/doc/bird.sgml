@@ -266,8 +266,10 @@ protocol rip {
 	about configuring protocols in their own chapters. You can run more than one instance of
 	most protocols (like RIP or BGP). By default, no instances are configured.
 
-	<tag>define <m/constant/ = (<m/expression/)|<m/number/|<m/IP address/</tag> Define a constant. You can use it later in every place
-	you could use a simple integer or an IP address.
+	<tag>define <m/constant/ = (<m/expression/)|<m/number/|<m/IP address/</tag>
+	Define a constant. You can use it later in every place you could use a simple integer or an IP address.
+	Besides, there are some predefined numeric constants based on /etc/iproute2/rt_* files.
+	A list of defined constants can be seen (together with other symbols) using 'show symbols' command.
 
 	<tag>router id <m/IPv4 address/</tag> Set BIRD's router ID. It's a world-wide unique identification of your router, usually one of router's IPv4 addresses. Default: in IPv4 version, the lowest IP address of a non-loopback interface. In IPv6 version, this option is mandatory. 
 
@@ -1024,7 +1026,7 @@ This allows to set routing policy and all the other parameters differently
 for each neighbor using the following configuration parameters:
 
 <descrip>
-	<tag>local <m/[ip]/] as <m/number/</tag> Define which AS we
+	<tag>local [<m/ip/] as <m/number/</tag> Define which AS we
 	are part of. (Note that contrary to other IP routers, BIRD is
 	able to act as a router located in multiple AS'es
 	simultaneously, but in such cases you need to tweak the BGP
@@ -1039,7 +1041,7 @@ for each neighbor using the following configuration parameters:
 	of your router's interfaces. In case the neighbor is in the same AS
 	as we are, we automatically switch to iBGP. This parameter is mandatory.
 
-	<tag>multihop <m/[number]/]</tag> Configure multihop BGP
+	<tag>multihop [<m/number/]</tag> Configure multihop BGP
 	session to a neighbor that isn't directly connected.
 	Accurately, this option should be used if the configured
 	neighbor IP address does not match with any local network
@@ -1121,7 +1123,7 @@ for each neighbor using the following configuration parameters:
 	BIRD does not implement obsoleted RFC 1863, but uses ad-hoc implementation,
 	which behaves like plain EBGP but reduces modifications to advertised route
 	attributes to be transparent (for example does not prepend its AS number to
-	AS PATH attribute and keep MED attribute). Default: disabled.
+	AS PATH attribute and keeps MED attribute). Default: disabled.
 
 	<tag>enable route refresh <m/switch/</tag> When BGP speaker
 	changes its import filter, it has to re-examine all routes
@@ -1205,6 +1207,15 @@ for each neighbor using the following configuration parameters:
 	<tag>path metric <m/switch/</tag> Enable comparison of path lengths
 	when deciding which BGP route is the best one. Default: on.
 
+	<tag>med metric <m/switch/</tag> Enable comparison of MED
+	attributes (during best route selection) even between routes
+	received from different ASes.  This may be useful if all MED
+	attributes contain some consistent metric, perhaps enforced in
+	import filters of AS boundary routers. If this option is
+	disabled, MED attributes are compared only if routes are
+	received from the same AS (which is the standard behavior).
+	Default: off.
+
 	<tag>igp metric <m/switch/</tag> Enable comparison of internal
  	distances to boundary routers during best route selection. Default: on.
 
@@ -1233,21 +1244,21 @@ with `<tt/O/') are optional.
 
 <descrip>
 	<tag>bgppath <cf/bgp_path/</tag> Sequence of AS numbers describing the AS path
-	the packet will travel through when forwarded according to the particular route. In case of 
-	internal BGP it doesn't contain the number of the local AS.
+	the packet will travel through when forwarded according to the particular route.
+	In case of internal BGP it doesn't contain the number of the local AS.
 
 	<tag>int <cf/bgp_local_pref/ [I]</tag> Local preference value used for
 	selection among multiple BGP routes (see the selection rules above). It's
 	used as an additional metric which is propagated through the whole local AS.
 
 	<tag>int <cf/bgp_med/ [O]</tag> The Multiple Exit Discriminator of the route
-	is an optional attribute which is used on on external (inter-AS) links to
+	is an optional attribute which is used on external (inter-AS) links to
 	convey to an adjacent AS the optimal entry point into the local AS.
-	The received attribute may be also propagated over internal BGP links
-	(and this is default behavior). The attribute value is zeroed when a route
-	is exported from a routing table to a BGP instance to ensure that the attribute
-	received from a neighboring AS is not propagated to other neighboring ASes.
-	A new value might be set in the export filter of a BGP instance.
+	The received attribute is also propagated over internal BGP links.
+	The attribute value is zeroed when a route is exported to an external BGP
+	instance to ensure that the attribute received from a neighboring AS is
+	not propagated to other neighboring ASes. A new value might be set in
+	the export filter of an external BGP instance.
 	See RFC 4451<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4451.txt">
 	for further discussion of BGP MED attribute.
 
@@ -1281,11 +1292,11 @@ with `<tt/O/') are optional.
 	its own routing policy, it also has a complete freedom about which community
 	attributes it defines and what will their semantics be.
 
-	<tag>quad <cf/bgp_originator_id/ [O]</tag> This attribute is created by the
+	<tag>quad <cf/bgp_originator_id/ [I, O]</tag> This attribute is created by the
 	route reflector when reflecting the route and contains the router ID of the
 	originator of the route in the local AS.
 
-	<tag>clist <cf/bgp_cluster_list/ [O]</tag> This attribute contains a list
+	<tag>clist <cf/bgp_cluster_list/ [I, O]</tag> This attribute contains a list
 	of cluster IDs of route reflectors. Each route reflector prepends its
 	cluster ID when reflecting the route.
 </descrip>
@@ -1334,11 +1345,10 @@ require network interfaces to be defined for them to work with.
 	notification messages, so the default time is set to a large value.
 
 	<tag>primary  [ "<m/mask/" ] <m/prefix/</tag>
-	If a network interface has more than one network address,
-	BIRD has to choose one of them as a primary one, because some
-	routing protocols (for example OSPFv2) suppose there is only
-	one network address per interface. By default, BIRD chooses
-	the lexicographically smallest address as the primary one.
+	If a network interface has more than one network address, BIRD
+	has to choose one of them as a primary one. By default, BIRD
+	chooses the lexicographically smallest address as the primary
+	one.
 
 	This option allows to specify which network address should be
 	chosen as a primary one. Network addresses that match
@@ -1421,11 +1431,19 @@ device routes from BIRD tables to kernel routing tables is restricted
 to prevent accidental interference. This restriction can be disabled using
 <cf/device routes/ switch.
 
-<p>If your OS supports only a single routing table, you can configure only one
-instance of the Kernel protocol. If it supports multiple tables (in order to
-allow policy routing; such an OS is for example Linux 2.2), you can run as many instances as you want, but each of
-them must be connected to a different BIRD routing table and to a different
+<p>If your OS supports only a single routing table, you can configure
+only one instance of the Kernel protocol. If it supports multiple
+tables (in order to allow policy routing; such an OS is for example
+Linux), you can run as many instances as you want, but each of them
+must be connected to a different BIRD routing table and to a different
 kernel table.
+
+<p>Because the kernel protocol is partially integrated with the
+connected routing table, there are two limitations - it is not
+possible to connect more kernel protocols to the same routing table
+and changing route attributes (even the kernel ones) in an export
+filter of a kernel protocol does not work. Both limitations can be
+overcome using another routing table and the pipe protocol.
 
 <sect1>Configuration
 
@@ -1451,12 +1469,27 @@ kernel table.
 	only on systems supporting multiple routing tables.
 </descrip>
 
-<p>The Kernel protocol doesn't define any route attributes.
+<sect1>Attributes
+
+<p>The Kernel protocol defines several attributes. These attributes
+are translated to appropriate system (and OS-specific) route attributes.
+We support these attributes:
+
+<descrip>
+	<tag>ip <cf/krt_prefsrc/</tag> (Linux) The preferred source address.
+ 	Used in source address selection for outgoing packets. Have to
+ 	be one of IP addresses of the router.
+
+	<tag>int <cf/krt_realm/</tag> (Linux) The realm of the route. Can be
+	used for traffic classification.
+</descrip>
+
+<sect1>Example
+
 <p>A simple configuration can look this way:
 
 <p><code>
 protocol kernel {
-	import all;
 	export all;
 }
 </code>

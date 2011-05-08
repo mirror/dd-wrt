@@ -25,7 +25,7 @@ CF_KEYWORDS(BGP, LOCAL, NEIGHBOR, AS, HOLD, TIME, CONNECT, RETRY,
 	ADVERTISE, IPV4, CAPABILITIES, LIMIT, PASSIVE, PREFER, OLDER,
 	MISSING, LLADDR, DROP, IGNORE, ROUTE, REFRESH, INTERPRET,
 	COMMUNITIES, BGP_ORIGINATOR_ID, BGP_CLUSTER_LIST, IGP, TABLE,
-	GATEWAY, DIRECT, RECURSIVE)
+	GATEWAY, DIRECT, RECURSIVE, MED)
 
 CF_GRAMMAR
 
@@ -79,6 +79,7 @@ bgp_proto:
  | bgp_proto GATEWAY DIRECT ';' { BGP_CFG->gw_mode = GW_DIRECT; }
  | bgp_proto GATEWAY RECURSIVE ';' { BGP_CFG->gw_mode = GW_RECURSIVE; }
  | bgp_proto PATH METRIC bool ';' { BGP_CFG->compare_path_lengths = $4; }
+ | bgp_proto MED METRIC bool ';' { BGP_CFG->med_metric = $4; }
  | bgp_proto IGP METRIC bool ';' { BGP_CFG->igp_metric = $4; }
  | bgp_proto PREFER OLDER bool ';' { BGP_CFG->prefer_older = $4; }
  | bgp_proto DEFAULT BGP_MED expr ';' { BGP_CFG->default_med = $4; }
