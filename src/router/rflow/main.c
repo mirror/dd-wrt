@@ -7,9 +7,21 @@
 #include "pidfile.h"
 #include "storage.h"
 
-#include <sys/syscall.h>
+/*#include <sys/syscall.h>*/
+#include <syscall.h>
+#include <errno.h>
+
 #include <sys/resource.h>
-_syscall3(int, setpriority, __priority_which_t, which, id_t, who, int, prio);
+
+/*_syscall3(int, setpriority, __priority_which_t, which, id_t, who, int, prio);*/
+static int my_setpriority(__priority_which_t which, id_t who, int prio) {
+	#ifdef __NR_my_setpriority
+	return syscall(__NR_my_setpriority, which, who, prio);
+	#else
+	errno = ENOSYS;
+	return -1;
+	#endif
+}
 
 #define IPCAD_VERSION_STRING "123"
 #define IPCAD_COPYRIGHT "fcff"
@@ -296,7 +308,7 @@ int main(int ac, char **av) {
 	 * Required to process high loads without
 	 * significant packet loss.
 	 */
-	setpriority(PRIO_PROCESS, 0, -15);
+	my_setpriority(PRIO_PROCESS, 0, -15);
 #endif
 
 	/*
