@@ -1,8 +1,0 @@
-// $Id: config.w32,v 1.1 2005/12/01 00:48:13 sniper Exp $
-// vim:ft=javascript
-
-ARG_ENABLE("filter", "Filter Support", "yes");
-
-if (PHP_FILTER == "yes") {
-	EXTENSION("filter", "filter.c sanitizing_filters.c logical_filters.c callback_filter.c");
-}
