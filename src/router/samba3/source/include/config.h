@@ -1948,8 +1948,11 @@
 /* #undef HAVE_SYS_ID_H */
 
 /* Define to 1 if you have the <sys/inotify.h> header file. */
+#ifdef HAVE_INOFITY
 #define HAVE_SYS_INOTIFY_H 1
-
+#else
+#undef HAVE_SYS_INOTIFY_H
+#endif
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #define HAVE_SYS_IOCTL_H 1
 
