@@ -620,9 +620,10 @@ static void
 krt_sysctl_scan(struct proto *p, pool *pool, byte **buf, size_t *bl, int cmd)
 {
   byte *next;
-  int mib[6], on;
+  int mib[6];
   size_t obl, needed;
   struct ks_msg *m;
+  int retries = 3;
 
   mib[0] = CTL_NET;
   mib[1] = PF_ROUTE;
@@ -631,10 +632,9 @@ krt_sysctl_scan(struct proto *p, pool *pool, byte **buf, size_t *bl, int cmd)
   mib[4] = cmd;
   mib[5] = 0;
 
+ try:
   if (sysctl(mib, 6 , NULL , &needed, NULL, 0) < 0)
-  {
-    die("RT scan...");
-  }
+    die("krt_sysctl_scan 1: %m");
 
   obl = *bl;
 
@@ -647,12 +647,18 @@ krt_sysctl_scan(struct proto *p, pool *pool, byte **buf, size_t *bl, int cmd)
     if ((*buf = mb_alloc(pool, *bl)) == NULL) die("RT scan buf alloc");
   }
 
-  on = needed;
-
   if (sysctl(mib, 6 , *buf, &needed, NULL, 0) < 0)
   {
-    if (on != needed) return; 	/* The buffer size changed since last sysctl */
-    die("RT scan 2");
+    if (errno == ENOMEM)
+    {
+      /* The buffer size changed since last sysctl ('needed' is not changed) */
+      if (retries--)
+	goto try;
+
+      log(L_ERR "KRT: Route scan failed");
+      return;
+    }
+    die("krt_sysctl_scan 2: %m");
   }
 
   for (next = *buf; next < (*buf + needed); next += m->rtm.rtm_msglen)

@@ -30,6 +30,10 @@ struct kif_proto;
 
 #define KRF_INSTALLED 0x80		/* This route should be installed in the kernel */
 
+
+#define EA_KRT_PREFSRC EA_CODE(EAP_KRT, 0)
+#define EA_KRT_REALM EA_CODE(EAP_KRT, 1)
+
 /* Whenever we recognize our own routes, we allow learing of foreign routes */
 
 #ifdef CONFIG_SELF_CONSCIOUS

@@ -167,7 +167,7 @@ protocol static {
 #	description "My BGP uplink";
 #	local as 65000;
 #	neighbor 62.168.0.130 as 5588;
-#	multihop 20 via 62.168.0.13;
+#	multihop;
 #	hold time 240;
 #	startup hold time 240;
 #	connect retry time 120;

@@ -678,6 +678,7 @@ INSTALL_SCRIPT
 INSTALL_DATA
 RANLIB
 sysdep_dirs
+iproutedir
 protocols
 GREP
 EGREP
@@ -1282,6 +1283,7 @@ Optional Packages:
   --with-sysconfig=FILE   use specified BIRD system configuration file
   --with-protocols=LIST   include specified routing protocols (default: all)
   --with-sysinclude=PATH  search for system includes on specified place
+  --with-iproutedir=PATH  path to iproute2 config files (default: /etc/iproute2)
 
 Some influential environment variables:
   FLEX        location of the Flex program
@@ -1796,6 +1798,12 @@ fi
 # Check whether --with-sysinclude was given.
 if test "${with_sysinclude+set}" = set; then
   withval=$with_sysinclude;
+fi
+
+
+# Check whether --with-iproutedir was given.
+if test "${with_iproutedir+set}" = set; then
+  withval=$with_iproutedir; given_iproutedir="yes"
 fi
 
 
@@ -4207,7 +4215,7 @@ if test "${bird_cv_sys_linux_version+set}" = set; then
 else
 
 cat > conftest.$ac_ext <<EOF
-#line 4210 "configure"
+#line 4218 "configure"
 #include "confdefs.h"
 #include <linux/version.h>
 VERSION: UTS_RELEASE
@@ -4225,6 +4233,7 @@ fi
 fi
 { echo "$as_me:$LINENO: result: $bird_cv_sys_linux_version" >&5
 echo "${ECHO_T}$bird_cv_sys_linux_version" >&6; }
+				default_iproutedir="/etc/iproute2"
 				case $bird_cv_sys_linux_version in
 					1.*|2.0.*)	sysdesc=linux-20 ;;
 					*)		sysdesc=linux-22 ;;
@@ -4237,7 +4246,7 @@ if test "${bird_cv_sys_linux_version+set}" = set; then
 else
 
 cat > conftest.$ac_ext <<EOF
-#line 4240 "configure"
+#line 4249 "configure"
 #include "confdefs.h"
 #include <linux/version.h>
 VERSION: UTS_RELEASE
@@ -4255,6 +4264,7 @@ fi
 fi
 { echo "$as_me:$LINENO: result: $bird_cv_sys_linux_version" >&5
 echo "${ECHO_T}$bird_cv_sys_linux_version" >&6; }
+				default_iproutedir="/etc/iproute2"
 				case $bird_cv_sys_linux_version in
 					1.*|2.0.*)	{ { echo "$as_me:$LINENO: error: This version of Linux doesn't support IPv6." >&5
 echo "$as_me: error: This version of Linux doesn't support IPv6." >&2;}
@@ -4309,6 +4319,15 @@ echo $ECHO_N "checking system-dependent directories... $ECHO_C" >&6; }
 sysdep_dirs="`sed <$sysdesc '/^Link: /!d;s/^Link: \(.*\)$/\1/' | tr '\012' ' '` lib"
 { echo "$as_me:$LINENO: result: $sysdep_dirs" >&5
 echo "${ECHO_T}$sysdep_dirs" >&6; }
+
+
+if test "$with_iproutedir" = no ; then with_iproutedir= ; fi
+
+if test -n "$given_iproutedir"
+then iproutedir=$with_iproutedir
+else iproutedir=$default_iproutedir
+fi
+
 
 
 { echo "$as_me:$LINENO: checking protocols" >&5
@@ -7582,7 +7601,134 @@ echo "${ECHO_T}$ac_cv_lib_curses_tgetent" >&6; }
 if test $ac_cv_lib_curses_tgetent = yes; then
   USE_TERMCAP_LIB=-lcurses
 else
-  { echo "$as_me:$LINENO: checking for tgetent in -ltermcap" >&5
+  { echo "$as_me:$LINENO: checking for tgetent in -ltinfow" >&5
+echo $ECHO_N "checking for tgetent in -ltinfow... $ECHO_C" >&6; }
+if test "${ac_cv_lib_tinfow_tgetent+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfow  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char tgetent ();
+int
+main ()
+{
+return tgetent ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_tinfow_tgetent=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_tinfow_tgetent=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_tinfow_tgetent" >&5
+echo "${ECHO_T}$ac_cv_lib_tinfow_tgetent" >&6; }
+if test $ac_cv_lib_tinfow_tgetent = yes; then
+  USE_TERMCAP_LIB=-ltinfow
+else
+  { echo "$as_me:$LINENO: checking for tgetent in -ltinfo" >&5
+echo $ECHO_N "checking for tgetent in -ltinfo... $ECHO_C" >&6; }
+if test "${ac_cv_lib_tinfo_tgetent+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltinfo  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char tgetent ();
+int
+main ()
+{
+return tgetent ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_tinfo_tgetent=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_tinfo_tgetent=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_tinfo_tgetent" >&5
+echo "${ECHO_T}$ac_cv_lib_tinfo_tgetent" >&6; }
+if test $ac_cv_lib_tinfo_tgetent = yes; then
+  USE_TERMCAP_LIB=-ltinfo
+					{ echo "$as_me:$LINENO: checking for tgetent in -ltermcap" >&5
 echo $ECHO_N "checking for tgetent in -ltermcap... $ECHO_C" >&6; }
 if test "${ac_cv_lib_termcap_tgetent+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -7645,6 +7791,10 @@ fi
 echo "${ECHO_T}$ac_cv_lib_termcap_tgetent" >&6; }
 if test $ac_cv_lib_termcap_tgetent = yes; then
   USE_TERMCAP_LIB=-ltermcap
+fi
+
+fi
+
 fi
 
 fi
@@ -8562,6 +8712,7 @@ INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 RANLIB!$RANLIB$ac_delim
 sysdep_dirs!$sysdep_dirs$ac_delim
+iproutedir!$iproutedir$ac_delim
 protocols!$protocols$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
@@ -8572,7 +8723,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 72; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 73; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -9010,11 +9161,14 @@ if test "$no_create" != yes; then
 fi
 
 
+rm -f $objdir/sysdep/paths.h
+
 cat >&6 <<EOF
 
 BIRD was configured with the following options:
 	Source directory:	$srcdir
 	Object directory:	$objdir
+	Iproute2 directory:	$iproutedir
 	System configuration:	$sysdesc
 	Debugging:		$enable_debug
 	Routing protocols:	$protocols
