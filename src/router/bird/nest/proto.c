@@ -31,6 +31,7 @@ list active_proto_list;
 static list inactive_proto_list;
 static list initial_proto_list;
 static list flush_proto_list;
+static struct proto *initial_device_proto;
 
 static event *proto_flush_event;
 
@@ -248,6 +249,8 @@ protos_postconfig(struct config *c)
   DBG("\n");
 }
 
+extern struct protocol proto_unix_iface;
+
 static struct proto *
 proto_init(struct proto_config *c)
 {
@@ -257,6 +260,9 @@ proto_init(struct proto_config *c)
   q->proto_state = PS_DOWN;
   q->core_state = FS_HUNGRY;
   proto_enqueue(&initial_proto_list, q);
+  if (p == &proto_unix_iface)
+    initial_device_proto = q;
+
   add_tail(&proto_list, &q->glob_node);
   PD(q, "Initializing%s", q->disabled ? " [disabled]" : "");
   return q;
@@ -413,6 +419,14 @@ protos_commit(struct config *new, struct config *old, int force_reconfig, int ty
   DBG("\tdone\n");
 
   DBG("Protocol start\n");
+
+  /* Start device protocol first */
+  if (initial_device_proto)
+  {
+    proto_rethink_goal(initial_device_proto);
+    initial_device_proto = NULL;
+  }
+
   WALK_LIST_DELSAFE(p, n, initial_proto_list)
     proto_rethink_goal(p);
 }
@@ -740,8 +754,6 @@ proto_notify_state(struct proto *p, unsigned ps)
       bug("Invalid state transition for %s from %s/%s to */%s", p->name, c_states[cs], p_states[ops], p_states[ps]);
     }
 }
-
-extern struct protocol proto_unix_iface;
 
 static void
 proto_flush_all(void *unused UNUSED)
