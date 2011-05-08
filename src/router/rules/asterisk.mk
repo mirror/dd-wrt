@@ -1,7 +1,8 @@
 
 
 asterisk-configure:
-	-rm asterisk/menuselect.makeopts
+	if ! test -e "asterisk/makeopts"; then \
+	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--without-curl \
 	--without-curses \
@@ -34,9 +35,9 @@ asterisk-configure:
 	--disable-xmldoc \
 	--without-dahdi \
 	--without-gnutls \
-	--without-iksemel
+	--without-iksemel; fi
 
-asterisk:
+asterisk: asterisk-configure
 	$(MAKE) -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
