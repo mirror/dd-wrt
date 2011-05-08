@@ -880,11 +880,10 @@ static struct ast_channel *sig_pri_new_ast_channel(struct sig_pri_chan *p, int s
 	if (transfercapability & AST_TRANS_CAP_DIGITAL) {
 		sig_pri_set_digital(p, 1);
 	}
-	if (p->pri && !pri_grab(p, p->pri)) {
+	if (p->pri) {
+		ast_mutex_lock(&p->pri->lock);
 		sig_pri_span_devstate_changed(p->pri);
-		pri_rel(p->pri);
-	} else {
-		ast_log(LOG_WARNING, "Failed to grab PRI!\n");
+		ast_mutex_unlock(&p->pri->lock);
 	}
 
 	return c;
@@ -1078,6 +1077,19 @@ static void pri_queue_control(struct sig_pri_span *pri, int chanpos, int subclas
 	pri_queue_frame(pri, chanpos, &f);
 }
 
+/*!
+ * \internal
+ * \brief Find the private structure for the libpri call.
+ *
+ * \param pri Span controller structure.
+ * \param channel LibPRI encoded channel ID.
+ * \param call LibPRI opaque call pointer.
+ *
+ * \note Assumes the pri->lock is already obtained.
+ *
+ * \retval array-index into private pointer array on success.
+ * \retval -1 on error.
+ */
 static int pri_find_principle(struct sig_pri_span *pri, int channel, q931_call *call)
 {
 	int x;
@@ -1132,6 +1144,19 @@ static int pri_find_principle(struct sig_pri_span *pri, int channel, q931_call *
 	return principle;
 }
 
+/*!
+ * \internal
+ * \brief Fixup the private structure associated with the libpri call.
+ *
+ * \param pri Span controller structure.
+ * \param principle Array-index into private array to move call to if not already there.
+ * \param call LibPRI opaque call pointer to find if need to move call.
+ *
+ * \note Assumes the pri->lock is already obtained.
+ *
+ * \retval principle on success.
+ * \retval -1 on error.
+ */
 static int pri_fixup_principle(struct sig_pri_span *pri, int principle, q931_call *call)
 {
 	int x;
@@ -1162,12 +1187,24 @@ static int pri_fixup_principle(struct sig_pri_span *pri, int principle, q931_cal
 		new_chan = pri->pvts[principle];
 		old_chan = pri->pvts[x];
 
-		ast_verb(3, "Moving call from channel %d to channel %d\n",
+		/* Get locks to safely move to the new private structure. */
+		sig_pri_lock_private(old_chan);
+		sig_pri_lock_owner(pri, x);
+		sig_pri_lock_private(new_chan);
+
+		ast_verb(3, "Moving call (%s) from channel %d to %d.\n",
+			old_chan->owner ? old_chan->owner->name : "",
 			old_chan->channel, new_chan->channel);
 		if (new_chan->owner) {
 			ast_log(LOG_WARNING,
-				"Can't fix up channel from %d to %d because %d is already in use\n",
-				old_chan->channel, new_chan->channel, new_chan->channel);
+				"Can't move call (%s) from channel %d to %d.  It is already in use.\n",
+				old_chan->owner ? old_chan->owner->name : "",
+				old_chan->channel, new_chan->channel);
+			sig_pri_unlock_private(new_chan);
+			if (old_chan->owner) {
+				ast_channel_unlock(old_chan->owner);
+			}
+			sig_pri_unlock_private(old_chan);
 			return -1;
 		}
 
@@ -1244,7 +1281,21 @@ static int pri_fixup_principle(struct sig_pri_span *pri, int principle, q931_cal
 			/* Become a member of the old channel span/trunk-group. */
 			new_chan->logicalspan = old_chan->logicalspan;
 			new_chan->mastertrunkgroup = old_chan->mastertrunkgroup;
+		} else if (old_chan->no_b_channel) {
+			/*
+			 * We are transitioning from a held/call-waiting channel to a
+			 * real channel so we need to make sure that the media path is
+			 * open.  (Needed especially if the channel is natively
+			 * bridged.)
+			 */
+			sig_pri_open_media(new_chan);
 		}
+
+		sig_pri_unlock_private(old_chan);
+		if (new_chan->owner) {
+			ast_channel_unlock(new_chan->owner);
+		}
+		sig_pri_unlock_private(new_chan);
 
 		return principle;
 	}
@@ -3751,9 +3802,6 @@ static void sig_pri_handle_subcmds(struct sig_pri_span *pri, int chanpos, int ev
 						ast_connected.id.number.str, sizeof(pri->pvts[chanpos]->cid_num));
 					pri->pvts[chanpos]->cid_ton = ast_connected.id.number.plan;
 					caller_id_update = 1;
-				} else {
-					ast_connected.id.number.valid = 1;
-					ast_connected.id.number.str = ast_strdup("");
 				}
 				ast_connected.source = AST_CONNECTED_LINE_UPDATE_SOURCE_ANSWER;
 
@@ -3770,12 +3818,16 @@ static void sig_pri_handle_subcmds(struct sig_pri_span *pri, int chanpos, int ev
 				}
 #endif	/* defined(HAVE_PRI_SUBADDR) */
 				if (caller_id_update) {
+					struct ast_party_caller ast_caller;
+
 					pri->pvts[chanpos]->callingpres =
 						ast_party_id_presentation(&ast_connected.id);
 					sig_pri_set_caller_id(pri->pvts[chanpos]);
-					ast_set_callerid(owner, S_OR(ast_connected.id.number.str, NULL),
-						S_OR(ast_connected.id.name.str, NULL),
-						S_OR(ast_connected.id.number.str, NULL));
+
+					ast_party_caller_set_init(&ast_caller, &owner->caller);
+					ast_caller.id = ast_connected.id;
+					ast_caller.ani = ast_connected.id;
+					ast_channel_set_caller_event(owner, &ast_caller, NULL);
 				}
 
 				/* Update the connected line information on the other channel */
@@ -5259,6 +5311,7 @@ static void *pri_dchannel(void *vpri)
 #endif	/* defined(HAVE_PRI_CALL_WAITING) */
 				sig_pri_handle_subcmds(pri, chanpos, e->e, e->answer.channel,
 					e->answer.subcmds, e->answer.call);
+				pri->pvts[chanpos]->proceeding = 1;
 				sig_pri_open_media(pri->pvts[chanpos]);
 				pri_queue_control(pri, chanpos, AST_CONTROL_ANSWER);
 				/* Enable echo cancellation if it's not on already */

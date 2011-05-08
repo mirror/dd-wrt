@@ -26,7 +26,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 211539 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301177 $")
 
 #include "asterisk/module.h"
 #include "asterisk/app.h"
@@ -57,7 +57,7 @@ static char *app_log = "Log";
 			Send arbitrary text to a selected log level.
 		</synopsis>
 		<syntax>
-			<parameter name="level">
+			<parameter name="level" required="true">
 				<para>Level must be one of <literal>ERROR</literal>, <literal>WARNING</literal>, <literal>NOTICE</literal>,
 				<literal>DEBUG</literal>, <literal>VERBOSE</literal> or <literal>DTMF</literal>.</para>	
 			</parameter>

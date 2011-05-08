@@ -26,7 +26,7 @@
 ***/
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 287269 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 300214 $")
 
 #include <libical/ical.h>
 #include <ne_session.h>
@@ -142,6 +142,7 @@ static icalcomponent *fetch_icalendar(struct icalendar_pvt *pvt)
 	ne_add_response_body_reader(req, ne_accept_2xx, fetch_response_reader, &response);
 
 	ret = ne_request_dispatch(req);
+	ne_request_destroy(req);
 	if (ret != NE_OK || !ast_str_strlen(response)) {
 		ast_log(LOG_WARNING, "Unable to retrieve iCalendar '%s' from '%s': %s\n", pvt->owner->name, pvt->url, ne_get_error(pvt->session));
 		ast_free(response);

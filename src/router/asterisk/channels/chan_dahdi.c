@@ -48,7 +48,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296167 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301134 $")
 
 #if defined(__NetBSD__) || defined(__FreeBSD__)
 #include <pthread.h>
@@ -1188,6 +1188,7 @@ struct dahdi_pvt {
 	int mfcr2_forced_release:1;
 	int mfcr2_dnis_matched:1;
 	int mfcr2_call_accepted:1;
+	int mfcr2_progress:1;
 	int mfcr2_accept_on_offer:1;
 #endif
 	/*! \brief DTMF digit in progress.  0 when no digit in progress. */
@@ -5306,6 +5307,8 @@ static int dahdi_call(struct ast_channel *ast, char *rdest, int timeout)
 			ast_log(LOG_ERROR, "unable to make new MFC/R2 call!\n");
 			return -1;
 		}
+		p->mfcr2_call_accepted = 0;
+		p->mfcr2_progress = 0;
 		ast_setstate(ast, AST_STATE_DIALING);
 	}
 #endif /* HAVE_OPENR2 */
@@ -8683,6 +8686,18 @@ static struct ast_frame *dahdi_read(struct ast_channel *ast)
 #ifdef HAVE_OPENR2
 	if (p->mfcr2) {
 		openr2_chan_process_event(p->r2chan);
+		if (OR2_DIR_FORWARD == openr2_chan_get_direction(p->r2chan)) {
+			struct ast_frame f = { AST_FRAME_CONTROL, { AST_CONTROL_PROGRESS }, };
+			/* if the call is already accepted and we already delivered AST_CONTROL_RINGING
+			 * now enqueue a progress frame to bridge the media up */
+			if (p->mfcr2_call_accepted &&
+			    !p->mfcr2_progress && 
+			    ast->_state == AST_STATE_RINGING) {
+				ast_log(LOG_DEBUG, "Enqueuing progress frame after R2 accept in chan %d\n", p->channel);
+				ast_queue_frame(p->owner, &f);
+				p->mfcr2_progress = 1;
+			}
+		}
 	}
 #endif
 
@@ -8912,7 +8927,8 @@ static struct ast_frame *dahdi_read(struct ast_channel *ast)
 					   a busy */
 					f = NULL;
 				}
-			} else if (f->frametype == AST_FRAME_DTMF) {
+			} else if (f->frametype == AST_FRAME_DTMF_BEGIN
+				|| f->frametype == AST_FRAME_DTMF_END) {
 #ifdef HAVE_PRI
 				if (dahdi_sig_pri_lib_handles(p->sig)
 					&& !((struct sig_pri_chan *) p->sig_pvt)->proceeding
@@ -8920,6 +8936,10 @@ static struct ast_frame *dahdi_read(struct ast_channel *ast)
 					&& ((!p->outgoing && (p->pri->overlapdial & DAHDI_OVERLAPDIAL_INCOMING))
 						|| (p->outgoing && (p->pri->overlapdial & DAHDI_OVERLAPDIAL_OUTGOING)))) {
 					/* Don't accept in-band DTMF when in overlap dial mode */
+					ast_debug(1, "Absorbing inband %s DTMF digit: 0x%02X '%c' on %s\n",
+						f->frametype == AST_FRAME_DTMF_BEGIN ? "begin" : "end",
+						f->subclass.integer, f->subclass.integer, ast->name);
+
 					f->frametype = AST_FRAME_NULL;
 					f->subclass.integer = 0;
 				}
@@ -12753,6 +12773,11 @@ static int is_group_or_channel_match(struct dahdi_pvt *p, int span, ast_group_t 
 		if (!p->pri || p->pri->span != span) {
 			return 0;
 		}
+		if (!groupmatch && channelmatch == -1) {
+			/* Match any group since it only needs to be on the PRI span. */
+			*groupmatched = 1;
+			return 1;
+		}
 	}
 #endif	/* defined(HAVE_PRI) */
 	/* check group matching */
@@ -13063,11 +13088,14 @@ static struct dahdi_pvt *determine_starting_point(const char *data, struct dahdi
 	 * data is ---v
 	 * Dial(DAHDI/pseudo[/extension[/options]])
 	 * Dial(DAHDI/<channel#>[c|r<cadance#>|d][/extension[/options]])
-	 * Dial(DAHDI/[i<span>-](g|G|r|R)<group#(0-63)>[c|r<cadance#>|d][/extension[/options]])
 	 * Dial(DAHDI/<subdir>!<channel#>[c|r<cadance#>|d][/extension[/options]])
+	 * Dial(DAHDI/i<span>[/extension[/options]])
+	 * Dial(DAHDI/[i<span>-](g|G|r|R)<group#(0-63)>[c|r<cadance#>|d][/extension[/options]])
 	 *
 	 * i - ISDN span channel restriction.
 	 *     Used by CC to ensure that the CC recall goes out the same span.
+	 *     Also to make ISDN channel names dialable when the sequence number
+	 *     is stripped off.  (Used by DTMF attended transfer feature.)
 	 *
 	 * g - channel group allocation search forward
 	 * G - channel group allocation search backward
@@ -13116,8 +13144,8 @@ static struct dahdi_pvt *determine_starting_point(const char *data, struct dahdi
 		/* Remove the ISDN span channel restriction specifier. */
 		s = strchr(args.group, '-');
 		if (!s) {
-			ast_log(LOG_WARNING, "Bad ISDN span format for data %s\n", data);
-			return NULL;
+			/* Search all groups since we are ISDN span restricted. */
+			return iflist;
 		}
 		args.group = s + 1;
 		res = 0;
