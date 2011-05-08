@@ -1,3 +1,9 @@
+
+#ifdef HAVE_DDINOTIFY
+#define HAVE_SYS_INOTIFY_H 1
+#else
+#undef HAVE_SYS_INOTIFY_H
+#endif
 /* include/config.h.  Generated from config.h.in by configure.  */
 /* include/config.h.in.  Generated from configure.in by autoheader.  */
 
@@ -795,10 +801,19 @@
 /* #undef HAVE_INO64_T */
 
 /* Whether kernel has inotify support */
+#ifdef HAVE_DDINOTIFY
+#define HAVE_SYS_INOTIFY_H 1
 #define HAVE_INOTIFY 1
+#define HAVE_INOTIFY_INIT 1
+#define HAVE_LINUX_INOTIFY_H 1
+#else
+#undef HAVE_INOTIFY
+#undef HAVE_INOTIFY_INIT
+#undef HAVE_LINUX_INOTIFY_H
+#undef HAVE_SYS_INOTIFY_H
+#endif
 
 /* Define to 1 if you have the `inotify_init' function. */
-#define HAVE_INOTIFY_INIT 1
 
 /* Whether int16 typedef is included by rpc/rpc.h */
 /* #undef HAVE_INT16_FROM_RPC_RPC_H */
@@ -1169,7 +1184,6 @@
 #define HAVE_LINUX_DQBLK_XFS_H 1
 
 /* Define to 1 if you have the <linux/inotify.h> header file. */
-#define HAVE_LINUX_INOTIFY_H 1
 
 /* Whether the Linux ptrace(2) interface is available. */
 /* #undef HAVE_LINUX_PTRACE */
@@ -1948,11 +1962,6 @@
 /* #undef HAVE_SYS_ID_H */
 
 /* Define to 1 if you have the <sys/inotify.h> header file. */
-#ifdef HAVE_INOFITY
-#define HAVE_SYS_INOTIFY_H 1
-#else
-#undef HAVE_SYS_INOTIFY_H
-#endif
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #define HAVE_SYS_IOCTL_H 1
 
