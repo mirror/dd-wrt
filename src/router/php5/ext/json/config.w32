@@ -1,0 +1,10 @@
+// $Id: config.w32 216887 2006-07-22 15:33:02Z rrichards $
+// vim:ft=javascript
+
+ARG_ENABLE("json", "JavaScript Object Serialization support", "yes");
+
+if (PHP_JSON != "no") {
+	EXTENSION('json', 'json.c', PHP_JSON_SHARED, "");
+	ADD_SOURCES(configure_module_dirname, "JSON_parser.c utf8_decode.c utf8_to_utf16.c", "json");
+}
+
