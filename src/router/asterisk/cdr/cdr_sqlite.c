@@ -40,7 +40,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 300575 $")
 
 #include <sqlite.h>
 
@@ -188,9 +188,10 @@ static int sqlite_log(struct ast_cdr *cdr)
 
 static int unload_module(void)
 {
-	if (db)
-		sqlite_close(db);
 	ast_cdr_unregister(name);
+	if (db) {
+		sqlite_close(db);
+	}
 	return 0;
 }
 
@@ -200,8 +201,8 @@ static int load_module(void)
 	char fn[PATH_MAX];
 	int res;
 
-	ast_log(LOG_WARNING, "This module has been marked deprecated in favor of "
-		"using cdr_sqlite3_custom. (May be removed after Asterisk 1.6)\n");
+	ast_log(LOG_NOTICE, "This module has been marked deprecated in favor of "
+		"using cdr_sqlite3_custom.\n");
 
 	/* is the database there? */
 	snprintf(fn, sizeof(fn), "%s/cdr.db", ast_config_AST_LOG_DIR);

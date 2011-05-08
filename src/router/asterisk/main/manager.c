@@ -43,7 +43,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293611 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 314723 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use various ast_config_AST_* */
@@ -860,6 +860,8 @@ static const int DEFAULT_DISPLAYCONNECTS	= 1;	/*!< Default setting for displayin
 static const int DEFAULT_TIMESTAMPEVENTS	= 0;	/*!< Default setting for timestampevents */	
 static const int DEFAULT_HTTPTIMEOUT 		= 60;	/*!< Default manager http timeout */
 static const int DEFAULT_BROKENEVENTSACTION	= 0;	/*!< Default setting for brokeneventsaction */
+static const int DEFAULT_AUTHTIMEOUT		= 30;	/*!< Default setting for authtimeout */
+static const int DEFAULT_AUTHLIMIT		= 50;	/*!< Default setting for authlimit */
 
 static int displayconnects;
 static int allowmultiplelogin = 1;
@@ -868,12 +870,15 @@ static int httptimeout;
 static int broken_events_action;
 static int manager_enabled = 0;
 static int webmanager_enabled = 0;
+static int authtimeout;
+static int authlimit;
 static char *manager_channelvars;
 
 #define DEFAULT_REALM		"asterisk"
 static char global_realm[MAXHOSTNAMELEN];	/*!< Default realm */
 
 static int block_sockets;
+static int unauth_sessions = 0;
 
 static int manager_debug;	/*!< enable some debugging code in the manager */
 
@@ -929,7 +934,6 @@ static const struct {
  * data.
  */
 struct mansession_session {
-	pthread_t ms_t;		/*!< Execution thread, basically useless */
 				/* XXX need to document which fields it is protecting */
 	struct sockaddr_in sin;	/*!< address we are connecting from */
 	FILE *f;		/*!< fdopen() on the underlying fd */
@@ -952,6 +956,7 @@ struct mansession_session {
 	int send_events;	/*!<  XXX what ? */
 	struct eventqent *last_ev;	/*!< last event processed. */
 	int writetimeout;	/*!< Timeout for ast_carefulwrite() */
+	time_t authstart;
 	int pending_event;         /*!< Pending events indicator in case when waiting_thread is NULL */
 	time_t noncetime;	/*!< Timer for nonce value expiration */
 	struct ao2_container *whitefilters;
@@ -972,6 +977,7 @@ struct mansession {
 	struct ast_tcptls_session_instance *tcptls_session;
 	FILE *f;
 	int fd;
+	int write_error:1;
 	struct manager_custom_hook *hook;
 	ast_mutex_t lock;
 };
@@ -1845,6 +1851,10 @@ int ast_hook_send_action(struct manager_custom_hook *hook, const char *msg)
  */
 static int send_string(struct mansession *s, char *string)
 {
+	int res;
+	FILE *f = s->f ? s->f : s->session->f;
+	int fd = s->f ? s->fd : s->session->fd;
+
 	/* It's a result from one of the hook's action invocation */
 	if (s->hook) {
 		/*
@@ -1853,11 +1863,13 @@ static int send_string(struct mansession *s, char *string)
 		 */
 		s->hook->helper(EVENT_FLAG_HOOKRESPONSE, "HookResponse", string);
 		return 0;
-	} else if (s->f) {
-		return ast_careful_fwrite(s->f, s->fd, string, strlen(string), s->session->writetimeout);
-	} else {
-		return ast_careful_fwrite(s->session->f, s->session->fd, string, strlen(string), s->session->writetimeout);
 	}
+       
+	if ((res = ast_careful_fwrite(f, fd, string, strlen(string), s->session->writetimeout))) {
+		s->write_error = 1;
+	}
+
+	return res;
 }
 
 /*!
@@ -2929,6 +2941,7 @@ static int action_login(struct mansession *s, const struct message *m)
 		return -1;
 	}
 	s->session->authenticated = 1;
+	ast_atomic_fetchadd_int(&unauth_sessions, -1);
 	if (manager_displayconnects(s->session)) {
 		ast_verb(2, "%sManager '%s' logged on from %s\n", (s->session->managerid ? "HTTP " : ""), s->session->username, ast_inet_ntoa(s->session->sin.sin_addr));
 	}
@@ -3873,6 +3886,24 @@ static int action_originate(struct mansession *s, const struct message *m)
 		format = 0;
 		ast_parse_allow_disallow(NULL, &format, codecs, 1);
 	}
+	if (!ast_strlen_zero(app)) {
+		/* To run the System application (or anything else that goes to
+		 * shell), you must have the additional System privilege */
+		if (!(s->session->writeperm & EVENT_FLAG_SYSTEM)
+			&& (
+				strcasestr(app, "system") ||      /* System(rm -rf /)
+				                                     TrySystem(rm -rf /)       */
+				strcasestr(app, "exec") ||        /* Exec(System(rm -rf /))
+				                                     TryExec(System(rm -rf /)) */
+				strcasestr(app, "agi") ||         /* AGI(/bin/rm,-rf /)
+				                                     EAGI(/bin/rm,-rf /)       */
+				strstr(appdata, "SHELL") ||       /* NoOp(${SHELL(rm -rf /)})  */
+				strstr(appdata, "EVAL")           /* NoOp(${EVAL(${some_var_containing_SHELL})}) */
+				)) {
+			astman_send_error(s, m, "Originate with certain 'Application' arguments requires the additional System privilege, which you do not have.");
+			return 0;
+		}
+	}
 	/* Allocate requested channel variables */
 	vars = astman_get_variables(m);
 
@@ -3908,21 +3939,6 @@ static int action_originate(struct mansession *s, const struct message *m)
 			}
 		}
 	} else if (!ast_strlen_zero(app)) {
-		/* To run the System application (or anything else that goes to shell), you must have the additional System privilege */
-		if (!(s->session->writeperm & EVENT_FLAG_SYSTEM)
-			&& (
-				strcasestr(app, "system") ||      /* System(rm -rf /)
-				                                     TrySystem(rm -rf /)       */
-				strcasestr(app, "exec") ||        /* Exec(System(rm -rf /))
-				                                     TryExec(System(rm -rf /)) */
-				strcasestr(app, "agi") ||         /* AGI(/bin/rm,-rf /)
-				                                     EAGI(/bin/rm,-rf /)       */
-				strstr(appdata, "SHELL") ||       /* NoOp(${SHELL(rm -rf /)})  */
-				strstr(appdata, "EVAL")           /* NoOp(${EVAL(${some_var_containing_SHELL})}) */
-				)) {
-			astman_send_error(s, m, "Originate with certain 'Application' arguments requires the additional System privilege, which you do not have.");
-			return 0;
-		}
 		res = ast_pbx_outgoing_app(tech, format, data, to, app, appdata, &reason, 1, l, n, vars, account, NULL);
 	} else {
 		if (exten && context && pi) {
@@ -4514,6 +4530,8 @@ static int get_input(struct mansession *s, char *output)
 	int res, x;
 	int maxlen = sizeof(s->session->inbuf) - 1;
 	char *src = s->session->inbuf;
+	int timeout = -1;
+	time_t now;
 
 	/*
 	 * Look for \r\n within the buffer. If found, copy to the output
@@ -4542,6 +4560,20 @@ static int get_input(struct mansession *s, char *output)
 	}
 	res = 0;
 	while (res == 0) {
+		/* calculate a timeout if we are not authenticated */
+		if (!s->session->authenticated) {
+			if(time(&now) == -1) {
+				ast_log(LOG_ERROR, "error executing time(): %s\n", strerror(errno));
+				return -1;
+			}
+
+			timeout = (authtimeout - (now - s->session->authstart)) * 1000;
+			if (timeout < 0) {
+				/* we have timed out */
+				return 0;
+			}
+		}
+
 		ao2_lock(s->session);
 		if (s->session->pending_event) {
 			s->session->pending_event = 0;
@@ -4551,7 +4583,7 @@ static int get_input(struct mansession *s, char *output)
 		s->session->waiting_thread = pthread_self();
 		ao2_unlock(s->session);
 
-		res = ast_wait_for_input(s->session->fd, -1);	/* return 0 on timeout ? */
+		res = ast_wait_for_input(s->session->fd, timeout);
 
 		ao2_lock(s->session);
 		s->session->waiting_thread = AST_PTHREADT_NULL;
@@ -4586,6 +4618,7 @@ static int do_message(struct mansession *s)
 	struct message m = { 0 };
 	char header_buf[sizeof(s->session->inbuf)] = { '\0' };
 	int res;
+	time_t now;
 
 	for (;;) {
 		/* Check if any events are pending and do them if needed */
@@ -4594,6 +4627,19 @@ static int do_message(struct mansession *s)
 		}
 		res = get_input(s, header_buf);
 		if (res == 0) {
+			if (!s->session->authenticated) {
+				if(time(&now) == -1) {
+					ast_log(LOG_ERROR, "error executing time(): %s\n", strerror(errno));
+					return -1;
+				}
+
+				if (now - s->session->authstart > authtimeout) {
+					if (displayconnects) {
+						ast_verb(2, "Client from %s, failed to authenticate in %d seconds\n", ast_inet_ntoa(s->session->sin.sin_addr), authtimeout);
+					}
+					return -1;
+				}
+			}
 			continue;
 		} else if (res > 0) {
 			if (ast_strlen_zero(header_buf)) {
@@ -4627,10 +4673,18 @@ static void *session_do(void *data)
 	struct sockaddr_in ser_remote_address_tmp;
 	struct protoent *p;
 
+	if (ast_atomic_fetchadd_int(&unauth_sessions, +1) >= authlimit) {
+		fclose(ser->f);
+		ast_atomic_fetchadd_int(&unauth_sessions, -1);
+		goto done;
+	}
+
 	ast_sockaddr_to_sin(&ser->remote_address, &ser_remote_address_tmp);
 	session = build_mansession(ser_remote_address_tmp);
 
 	if (session == NULL) {
+		fclose(ser->f);
+		ast_atomic_fetchadd_int(&unauth_sessions, -1);
 		goto done;
 	}
 
@@ -4669,10 +4723,18 @@ static void *session_do(void *data)
 
 	AST_LIST_HEAD_INIT_NOLOCK(&session->datastores);
 
+	if(time(&session->authstart) == -1) {
+		ast_log(LOG_ERROR, "error executing time(): %s; disconnecting client\n", strerror(errno));
+		ast_atomic_fetchadd_int(&unauth_sessions, -1);
+		ao2_unlock(session);
+		session_destroy(session);
+		goto done;
+	}
 	ao2_unlock(session);
+
 	astman_append(&s, "Asterisk Call Manager/%s\r\n", AMI_VERSION);	/* welcome prompt */
 	for (;;) {
-		if ((res = do_message(&s)) < 0) {
+		if ((res = do_message(&s)) < 0 || s.write_error) {
 			break;
 		}
 	}
@@ -4682,23 +4744,11 @@ static void *session_do(void *data)
 			ast_verb(2, "Manager '%s' logged off from %s\n", session->username, ast_inet_ntoa(session->sin.sin_addr));
 		}
 	} else {
+		ast_atomic_fetchadd_int(&unauth_sessions, -1);
 		if (displayconnects) {
 			ast_verb(2, "Connect attempt from '%s' unable to authenticate\n", ast_inet_ntoa(session->sin.sin_addr));
 		}
 	}
-
-	/* It is possible under certain circumstances for this session thread
-	   to complete its work and exit *before* the thread that created it
-	   has finished executing the ast_pthread_create_background() function.
-	   If this occurs, some versions of glibc appear to act in a buggy
-	   fashion and attempt to write data into memory that it thinks belongs
-	   to the thread but is in fact not owned by the thread (or may have
-	   been freed completely).
-
-	   Causing this thread to yield to other threads at least one time
-	   appears to work around this bug.
-	*/
-	usleep(1);
 
 	session_destroy(session);
 
@@ -4801,7 +4851,7 @@ int __ast_manager_event_multichan(int category, const char *event, int chancount
 	struct ast_str *buf;
 	int i;
 
-	if (!sessions && AST_RWLIST_EMPTY(&manager_hooks)) {
+	if (!(sessions && ao2_container_count(sessions)) && AST_RWLIST_EMPTY(&manager_hooks)) {
 		return 0;
 	}
 	
@@ -6207,6 +6257,8 @@ static int __init_manager(int reload)
 	block_sockets = DEFAULT_BLOCKSOCKETS;
 	timestampevents = DEFAULT_TIMESTAMPEVENTS;
 	httptimeout = DEFAULT_HTTPTIMEOUT;
+	authtimeout = DEFAULT_AUTHTIMEOUT;
+	authlimit = DEFAULT_AUTHLIMIT;
 
 	if (!cfg || cfg == CONFIG_STATUS_FILEINVALID) {
 		ast_log(LOG_NOTICE, "Unable to open AMI configuration manager.conf, or configuration is invalid. Asterisk management interface (AMI) disabled.\n");
@@ -6269,6 +6321,22 @@ static int __init_manager(int reload)
 			manager_debug = ast_true(val);
 		} else if (!strcasecmp(var->name, "httptimeout")) {
 			newhttptimeout = atoi(val);
+		} else if (!strcasecmp(var->name, "authtimeout")) {
+			int timeout = atoi(var->value);
+
+			if (timeout < 1) {
+				ast_log(LOG_WARNING, "Invalid authtimeout value '%s', using default value\n", var->value);
+			} else {
+				authtimeout = timeout;
+			}
+		} else if (!strcasecmp(var->name, "authlimit")) {
+			int limit = atoi(var->value);
+
+			if (limit < 1) {
+				ast_log(LOG_WARNING, "Invalid authlimit value '%s', using default value\n", var->value);
+			} else {
+				authlimit = limit;
+			}
 		} else if (!strcasecmp(var->name, "channelvars")) {
 			struct manager_channel_variable *mcv;
 			char *remaining = ast_strdupa(val), *next;

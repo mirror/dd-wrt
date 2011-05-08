@@ -87,7 +87,7 @@
 #endif
 #endif
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296870 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301047 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_SPOOL_DIR */
 #include <sys/time.h>
@@ -5224,12 +5224,20 @@ static int copy_message(struct ast_channel *chan, struct ast_vm_user *vmu, int i
 	recipmsgnum = last_message_index(recip, todir) + 1;
 	if (recipmsgnum < recip->maxmsg - (imbox ? 0 : inprocess_count(vmu->mailbox, vmu->context, 0))) {
 		make_file(topath, sizeof(topath), todir, recipmsgnum);
-		/* If we are prepending a message for ODBC, then the message already
-		 * exists in the database, but we want to force copying from the
-		 * filesystem (since only the FS contains the prepend). */
-		copy_plain_file(frompath, topath);
-		STORE(todir, recip->mailbox, recip->context, recipmsgnum, chan, recip, fmt, duration, NULL, NULL);
-		vm_delete(topath);
+#ifndef ODBC_STORAGE
+		if (EXISTS(fromdir, msgnum, frompath, chan->language)) {	
+			COPY(fromdir, msgnum, todir, recipmsgnum, recip->mailbox, recip->context, frompath, topath);
+		} else {
+#endif
+			/* If we are prepending a message for ODBC, then the message already
+			 * exists in the database, but we want to force copying from the
+			 * filesystem (since only the FS contains the prepend). */
+			copy_plain_file(frompath, topath);
+			STORE(todir, recip->mailbox, recip->context, recipmsgnum, chan, recip, fmt, duration, NULL, NULL);
+			vm_delete(topath);
+#ifndef ODBC_STORAGE
+		}
+#endif
 	} else {
 		ast_log(AST_LOG_ERROR, "Recipient mailbox %s@%s is full\n", recip->mailbox, recip->context);
 		res = -1;
@@ -5981,7 +5989,7 @@ static int leave_voicemail(struct ast_channel *chan, char *ext, struct leave_vm_
 		}
 		if (res == '0') {
 			goto transfer;
-		} else if (res > 0)
+		} else if (res > 0 && res != 't')
 			res = 0;
 
 		if (duration < vmu->minsecs)
@@ -6745,6 +6753,10 @@ static int vm_forwardoptions(struct ast_channel *chan, struct ast_vm_user *vmu, 
 				ast_channel_setoption(chan, AST_OPTION_RXGAIN, &record_gain, sizeof(record_gain), 0);
 
 			cmd = ast_play_and_prepend(chan, NULL, msgfile, 0, vm_fmts, &prepend_duration, 1, silencethreshold, maxsilence);
+			if (cmd == 'S') {
+				ast_filerename(backup, msgfile, NULL);
+			}
+
 			if (record_gain)
 				ast_channel_setoption(chan, AST_OPTION_RXGAIN, &zero_gain, sizeof(zero_gain), 0);
 
@@ -10403,6 +10415,11 @@ static int vm_exec(struct ast_channel *chan, const char *data)
 	}
 
 	res = leave_voicemail(chan, args.argv0, &leave_options);
+	if (res == 't') {
+		ast_play_and_wait(chan, "vm-goodbye");
+		res = 0;
+	}
+
 	if (res == OPERATOR_EXIT) {
 		res = 0;
 	}
@@ -12378,7 +12395,7 @@ AST_TEST_DEFINE(test_voicemail_msgcount)
 	}
 
 	/* Make sure the original path was completely empty */
-	snprintf(syscmd, sizeof(syscmd), "rm -rf %s%s/%s", VM_SPOOL_DIR, testcontext, testmailbox);
+	snprintf(syscmd, sizeof(syscmd), "rm -rf \"%s%s/%s\"", VM_SPOOL_DIR, testcontext, testmailbox);
 	if ((syserr = ast_safe_system(syscmd))) {
 		ast_test_status_update(test, "Unable to clear test directory: %s\n",
 			syserr > 0 ? strerror(syserr) : "unable to fork()");
@@ -12409,7 +12426,7 @@ AST_TEST_DEFINE(test_voicemail_msgcount)
 		snprintf(tmp[i].txtfile, sizeof(tmp[i].txtfile), "%s.txt", tmp[i].file);
 
 		if (ast_fileexists(origweasels, "gsm", "en") > 0) {
-			snprintf(syscmd, sizeof(syscmd), "cp %s/sounds/en/%s.gsm %s/%s/%s/%s/msg0000.gsm", ast_config_AST_DATA_DIR, origweasels,
+			snprintf(syscmd, sizeof(syscmd), "cp \"%s/sounds/en/%s.gsm\" \"%s/%s/%s/%s/msg0000.gsm\"", ast_config_AST_DATA_DIR, origweasels,
 				VM_SPOOL_DIR, testcontext, testmailbox, folders[i]);
 			if ((syserr = ast_safe_system(syscmd))) {
 				ast_test_status_update(test, "Unable to create test voicemail: %s\n",
@@ -12492,7 +12509,7 @@ AST_TEST_DEFINE(test_voicemail_msgcount)
 #endif
 
 	/* And remove test directory */
-	snprintf(syscmd, sizeof(syscmd), "rm -rf %s%s/%s", VM_SPOOL_DIR, testcontext, testmailbox);
+	snprintf(syscmd, sizeof(syscmd), "rm -rf \"%s%s/%s\"", VM_SPOOL_DIR, testcontext, testmailbox);
 	if ((syserr = ast_safe_system(syscmd))) {
 		ast_test_status_update(test, "Unable to clear test directory: %s\n",
 			syserr > 0 ? strerror(syserr) : "unable to fork()");
@@ -13185,10 +13202,10 @@ static int play_record_review(struct ast_channel *chan, char *playfile, char *re
 		/* Hang up or timeout, so delete the recording. */
 		ast_filedelete(tempfile, NULL);
 	}
-	if (cmd == 't')
-		cmd = 0;
-	else if (outsidecaller) /* won't play if time out occurs */
+
+	if (cmd != 't' && outsidecaller)
 		ast_play_and_wait(chan, "vm-goodbye");
+
 	return cmd;
 }
 
