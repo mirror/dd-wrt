@@ -1,8 +1,13 @@
+ifeq ($(CONFIG_HOTPLUG2),y)
+export SAMBA3_EXTRA:= -DHAVE_INOFITY
+endif
+
+
 samba3:
 	CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-	CPPFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
-	LDFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO)" \
+	CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" \
+	CPPFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" \
+	LDFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" \
 	$(MAKE) -C samba3/source all bin/nmbd bin/smbpasswd WITH_LFS=yes
 
 samba3-install:
