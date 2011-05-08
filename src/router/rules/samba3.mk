@@ -1,5 +1,5 @@
 ifeq ($(CONFIG_HOTPLUG2),y)
-export SAMBA3_EXTRA:= -DHAVE_DDINOFITY
+export SAMBA3_EXTRA:= -DHAVE_DDINOTIFY
 endif
 
 
