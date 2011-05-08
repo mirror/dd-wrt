@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 290576 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301446 $")
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -290,8 +290,6 @@ static int exts_compare(const char *exts, const char *type)
 
 static void filestream_destructor(void *arg)
 {
-	char *cmd = NULL;
-	size_t size = 0;
 	struct ast_filestream *f = arg;
 
 	/* Stop a running stream if there is one */
@@ -310,11 +308,9 @@ static void filestream_destructor(void *arg)
 		ast_translator_free_path(f->trans);
 
 	if (f->realfilename && f->filename) {
-			size = strlen(f->filename) + strlen(f->realfilename) + 15;
-			cmd = alloca(size);
-			memset(cmd,0,size);
-			snprintf(cmd,size,"/bin/mv -f %s %s",f->filename,f->realfilename);
-			ast_safe_system(cmd);
+		if (ast_safe_fork(0) == 0) {
+			execl("/bin/mv", "mv", "-f", f->filename, f->realfilename, SENTINEL);
+		}
 	}
 
 	if (f->filename)

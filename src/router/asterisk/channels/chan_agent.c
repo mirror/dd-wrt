@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 284610 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 300521 $")
 
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -167,7 +167,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 284610 $")
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description />
+		<description></description>
 	</function>
 	<manager name="Agents" language="en_US">
 		<synopsis>

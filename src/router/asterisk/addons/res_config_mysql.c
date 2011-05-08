@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 290938 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 300798 $")
 
 #include <sys/stat.h>
 
@@ -745,6 +745,7 @@ static int update2_mysql(const char *database, const char *tablename, va_list ap
 
 		ESCAPE_STRING(buf, newval);
 		ast_str_append(&sql, 0, "%s %s = '%s'", first ? "" : ",", newparam, ast_str_buffer(buf));
+		first = 0;
 
 		/* If the column length isn't long enough, give a chance to lengthen it. */
 		if (strncmp(column->type, "char", 4) == 0 || strncmp(column->type, "varchar", 7) == 0) {
@@ -977,7 +978,6 @@ static struct ast_config *config_mysql(const char *database, const char *table, 
 				if (!ast_config_internal_load(row[2], cfg, config_flags, "", who_asked)) {
 					mysql_free_result(result);
 					release_database(dbh);
-					ast_config_destroy(cfg);
 					return NULL;
 				}
 				continue;
