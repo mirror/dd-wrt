@@ -1,0 +1,8 @@
+// vim:ft=javascript
+// $Id: config.w32 146968 2003-12-19 23:19:19Z wez $
+
+ARG_ENABLE('embed', 'Embedded SAPI library', 'no');
+
+if (PHP_EMBED != "no") {
+	SAPI('embed', 'php_embed.c', 'php' + PHP_VERSION + 'embed.lib');
+}
