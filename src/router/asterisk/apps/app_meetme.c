@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 297245 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301090 $")
 
 #include <dahdi/user.h>
 
@@ -3787,8 +3787,8 @@ static struct ast_conference *find_conf_realtime(struct ast_channel *chan, char 
 		char eatime[32] = "";
 		char bookid[51] = "";
 		char recordingtmp[AST_MAX_EXTENSION] = "";
-		char useropts[OPTIONS_LEN + 1]; /* Used for RealTime conferences */
-		char adminopts[OPTIONS_LEN + 1];
+		char useropts[OPTIONS_LEN + 1] = ""; /* Used for RealTime conferences */
+		char adminopts[OPTIONS_LEN + 1] = "";
 		struct ast_tm tm, etm;
 		struct timeval endtime = { .tv_sec = 0 };
 		const char *var2;

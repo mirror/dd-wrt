@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296951 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 300521 $")
 
 #include <sys/mman.h>
 #include <dirent.h>
@@ -164,7 +164,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296951 $")
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description />
+		<description></description>
 		<see-also>
 			<ref type="function">SIPPEER</ref>
 		</see-also>
@@ -176,7 +176,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296951 $")
 		<syntax>
 			<parameter name="varname" required="true" />
 		</syntax>
-		<description />
+		<description></description>
 	</function>
 	<manager name="IAXpeers" language="en_US">
 		<synopsis>

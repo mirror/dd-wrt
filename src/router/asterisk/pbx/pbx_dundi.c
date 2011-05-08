@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 284610 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 300082 $")
 
 #include "asterisk/network.h"
 #include <sys/ioctl.h>
@@ -286,7 +286,7 @@ struct dundi_mapping {
 	int options;
 	int tech;
 	int dead;
-	char dest[AST_MAX_EXTENSION];
+	char dest[512];
 	AST_LIST_ENTRY(dundi_mapping) list;
 };
 
