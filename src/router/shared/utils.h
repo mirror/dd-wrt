@@ -523,13 +523,16 @@
 
 #define ROUTER_ASUS_RTN12B 0xa6116
 
-// Linksys E4200 (dual radio, BCM53115 giga switch, BCM4718 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E4200) >60K nvram<
+// Linksys E4200 (dual radio, BCM53115 giga switch, BCM4718 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E4200) >_60K nvram_<
 #define ROUTER_LINKSYS_E4200 0xa716
 
 #define ROUTER_BOARD_RT3352 0xa81a // concept
 
 // Asus RT-N10U (BCM5358 cpu, 8MB serial flash / 32MB ram, USB 2.0)
 #define ROUTER_ASUS_RTN10U 0xa9115
+
+// Linksys E3200 (dual radio, BCM53125 giga switch, BCM5357 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E3200) >_60K nvram_<
+#define ROUTER_LINKSYS_E4200 0xaa0f
 
 
 #define NVROUTER "DD_BOARD"
