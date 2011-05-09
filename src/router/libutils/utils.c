@@ -1880,6 +1880,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Cisco Valet Plus M20");	// ranamed wrt310nv2
 			return ROUTER_WRT310NV2;
+		} else if (nvram_match("boot_hw_model", "E3200")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys E3200");
+			return ROUTER_LINKSYS_E3200;			
 		} else if (nvram_match("boot_hw_model", "E4200")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E4200");
