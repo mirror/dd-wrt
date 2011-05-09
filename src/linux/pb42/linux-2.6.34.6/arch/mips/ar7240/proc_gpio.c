@@ -167,17 +167,24 @@ typedef	u32					gpio_words;
 #define AR_GPIO_OE_OUT_DRV_HI                    0x2    // drive if high
 #define AR_GPIO_OE_OUT_DRV_ALL                   0x3    // drive always
 
+int is_ar9300=0;
+
 void set_wl0_gpio(int gpio,int val)
 {
 	register	gpio_words	wl0;
 	int shift;
-	
-	wl0 = (gpio_words)ar7240_reg_rd(GPIOOUT_WL0_ADDR);
+	int addr;
 
+	unsigned int output = GPIOOUT_WL0_ADDR;
+	if (is_ar9300)
+	    output = KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4050);
+	    
+
+	wl0 = (gpio_words)ar7240_reg_rd(output);
 	shift = gpio*2;
 	wl0 |= 	AR_GPIO_OE_OUT_DRV << shift;
-	ar7240_reg_wr(GPIOOUT_WL0_ADDR, wl0);	//ar9283 register [0x4048]
-	ar7240_reg_rd(GPIOOUT_WL0_ADDR);	//ar9283 register [0x4048]
+	ar7240_reg_wr(output, wl0);	//ar9283 register [0x4048]
+	ar7240_reg_rd(output);	//ar9283 register [0x4048]
 	
 	wl0 = (gpio_words)ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
 	if (val)

@@ -221,7 +221,7 @@ return NULL;
 
 
 static struct ath9k_platform_data wmac_data[1];
-
+extern int is_ar9300;
 static void ap91_pci_fixup(struct pci_dev *dev)
 {
 	void __iomem *mem;
@@ -290,6 +290,7 @@ static void ap91_pci_fixup(struct pci_dev *dev)
  		calcopy+=0x1000;
 		memcpy(wmac_data[0].eeprom_data,calcopy,sizeof(wmac_data[0].eeprom_data));
 		wmac_data[0].led_pin = 15;
+		is_ar9300=1;
 		dev->dev.platform_data = &wmac_data[0];	    
 	    }
 
