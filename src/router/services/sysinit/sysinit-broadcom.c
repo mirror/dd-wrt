@@ -267,6 +267,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT610NV2:
 	case ROUTER_DYNEX_DX_NRUTER:
 	case ROUTER_LINKSYS_E1000V2:
+	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 
 		break;
@@ -796,6 +797,11 @@ void start_sysinit(void)
 		
 	case ROUTER_LINKSYS_E1000V2:
 		basic_params = vlan_1_2;
+		break;
+		
+	case ROUTER_LINKSYS_E3200:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
 		break;
 		
 	case ROUTER_LINKSYS_E4200:
@@ -1616,6 +1622,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN10U:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
+			case ROUTER_LINKSYS_E3200:
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
@@ -1693,6 +1700,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN10U:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
+			case ROUTER_LINKSYS_E3200:
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
