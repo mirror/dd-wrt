@@ -116,12 +116,14 @@ addEvent(window, "unload", function() {
 			<input size="60" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
 		</div>
 
+<% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_auth"); %></div>
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("radius.legend"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 		</div>
 		<div id="idlocal">
+<% ifndef("RADIUSPLUGIN", "-->"); %>
 			<fieldset>
 				<div class="setting">
 				<div class="label"><% tran("service.pptp_chap"); %></div>
@@ -134,7 +136,9 @@ addEvent(window, "unload", function() {
 				</script>
 				</div>
 			</fieldset>
+<% ifndef("RADIUSPLUGIN", "<!--"); %>
 		</div>
+<% ifndef("RADIUSPLUGIN", "-->"); %>
 		<div id="idradius">
 		<fieldset>
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
