@@ -409,9 +409,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 			if ((brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307")) //E2000
 			 || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300")) //E3000
+			 || brand == ROUTER_LINKSYS_E3200
 			 || brand == ROUTER_LINKSYS_E4200) {
 			    if (memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
 				cprintf("image not compatibe with nv60k router!\n");
@@ -445,6 +447,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			    && memcmp(&buf[0], &CODE_PATTERN_E1000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)			    
 			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
 				cprintf("code pattern error!\n");
