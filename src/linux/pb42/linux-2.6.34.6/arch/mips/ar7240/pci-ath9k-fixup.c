@@ -22,7 +22,7 @@ struct ath9k_fixup {
 
 static int ath9k_num_fixups = 0;
 static struct ath9k_fixup ath9k_fixups[2];
-
+extern int is_ar9300;
 extern struct ath9k_platform_data wmac_data;
 static void ath9k_pci_fixup(struct pci_dev *dev)
 {
@@ -123,6 +123,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	       dev->device);
 	if (dev->device == 0x0030)	//AR9300 Hack
 	{
+		is_ar9300=1;
 		printk(KERN_EMERG "move calibration data offset %d\n",
 		       sizeof(wmac_data.eeprom_data));
 		memcpy(calcopy, calcopy + 0x1000,
