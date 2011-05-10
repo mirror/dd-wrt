@@ -443,7 +443,7 @@ void __init cns3xxx_sys_init(void)
 	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
 
 	dmac_init();
-	cns_rdma_init();
+//	cns_rdma_init();
 
 	platform_device_register(&cns3xxx_gpio);
 	platform_device_register(&cns3xxx_watchdog_device);

@@ -57,6 +57,7 @@
 #include <linux/types.h>
 #include <linux/stat.h>	 /* permission constants */
 #include <linux/version.h>
+#include <linux/platform_device.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 # include <linux/irq.h>
@@ -904,7 +905,7 @@ static struct lm_driver dwc_otg_driver = {
  *
  * @return
  */
-static int __init dwc_otg_driver_init(void)
+static int dwc_otg_driver_init(void)
 {
 	int retval = 0;
 	int error;
@@ -920,15 +921,8 @@ static int __init dwc_otg_driver_init(void)
 
 	return retval;
 }
-module_init(dwc_otg_driver_init);
 
-/**
- * This function is called when the driver is removed from the kernel
- * with the rmmod command. The driver unregisters itself with its bus
- * driver.
- *
- */
-static void __exit dwc_otg_driver_cleanup(void)
+static void dwc_otg_driver_cleanup(void)
 {
 	printk(KERN_DEBUG "dwc_otg_driver_cleanup()\n");
 
@@ -939,7 +933,43 @@ static void __exit dwc_otg_driver_cleanup(void)
 
 	printk(KERN_INFO "%s module removed\n", dwc_driver_name);
 }
-module_exit(dwc_otg_driver_cleanup);
+
+static int __devinit dwc_otg_driver_init_one(struct platform_device *pdev)
+{
+	return dwc_otg_driver_init();
+}
+
+static int __devexit dwc_otg_driver_remove_one(struct platform_device *pdev)
+{
+	dwc_otg_driver_cleanup();
+	return 0;
+}
+
+static struct platform_driver dwc_otg_platform_driver = {
+	.driver.name = "dwc_otg_platform_driver",
+	.probe = dwc_otg_driver_init_one,
+	.remove = dwc_otg_driver_remove_one,
+};
+
+static int __init dwc_otg_init_module(void)
+{
+	return platform_driver_register(&dwc_otg_platform_driver);
+}
+
+static void __exit dwc_otg_cleanup_module(void)
+{
+	platform_driver_unregister(&dwc_otg_platform_driver);
+}
+
+module_init(dwc_otg_init_module);
+module_exit(dwc_otg_cleanup_module);
+
+/**
+ * This function is called when the driver is removed from the kernel
+ * with the rmmod command. The driver unregisters itself with its bus
+ * driver.
+ *
+ */
 
 MODULE_DESCRIPTION(DWC_DRIVER_DESC);
 MODULE_AUTHOR("Synopsys Inc.");

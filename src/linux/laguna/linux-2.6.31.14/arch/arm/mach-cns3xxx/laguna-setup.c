@@ -295,18 +295,8 @@ static struct platform_device laguna_usb_ohci_device = {
     .resource = laguna_usb_ohci_resource,
 };
 
-static u64 laguna_usbotg_dma_mask = 0xffffffffULL;
-static struct lm_device laguna_usb_otg_device = {
-    .dev                = {
-        .dma_mask       = &laguna_usbotg_dma_mask,
-        .coherent_dma_mask = 0xffffffffULL,
-     },
-    .resource           = {
-        .start          = CNS3XXX_USBOTG_BASE,
-        .end            = CNS3XXX_USBOTG_BASE + SZ_16M - 1,
-        .flags          = IORESOURCE_MEM,
-     },
-    .irq      = IRQ_CNS3XXX_USB_OTG,
+static struct platform_device laguna_usb_otg_device = {
+	.name = "dwc_otg_platform_driver",
 };
 
 static struct resource laguna_ahci_resource[] = {
@@ -524,7 +514,7 @@ static int __init laguna_model_setup(void)
 			cns3xxx_pcie_init(2);
 
 		if (laguna_info.config_bitmap & (USB0_LOAD))
-			lm_device_register(&laguna_usb_otg_device);
+			platform_device_register(&laguna_usb_otg_device);
 
 		if (laguna_info.config_bitmap & (USB1_LOAD)) {
 			platform_device_register(&laguna_usb_ehci_device);
