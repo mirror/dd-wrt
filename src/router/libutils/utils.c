@@ -3674,6 +3674,10 @@ int led_control(int type, int act)
 		connected_gpio = 0x007;	// ses orange
 		ses_gpio = 0x008;	// ses blue
 		break;
+	case ROUTER_LINKSYS_E3200:
+		power_gpio = 0x103;
+		diag_gpio = 0x003;	// power led blink / off to indicate fac.def. 
+		break;
 	case ROUTER_LINKSYS_E4200:
 		power_gpio = 0x105;	// white LED1
 		diag_gpio = 0x005;	// power led blink / off to indicate fac.def. 
