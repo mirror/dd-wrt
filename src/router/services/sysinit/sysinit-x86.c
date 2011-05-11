@@ -96,14 +96,6 @@ void start_sysinit(void)
 		eval("/bin/sh");
 		exit(0);
 	}
-#ifdef HAVE_ERC
-	if (nvram_match("ree_resetme", "1")) {
-		fprintf(stderr, "Restoring REE default nvram\n");
-		eval("nvram","restore","/etc/defaults/x86ree.backup");
-		eval("reboot");
-		eval("event", "5", "1", "15");
-		}
-#endif
 
 	FILE *in = fopen("/usr/local/nvram/nvram.db", "rb");
 
@@ -149,6 +141,14 @@ void start_sysinit(void)
 
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");	// system watchdog
+#ifdef HAVE_ERC
+	if (isregistered_real() && nvram_match("ree_resetme", "1")) {
+		fprintf(stderr, "Restoring REE default nvram\n");
+		eval("nvram","restore","/etc/defaults/x86ree.backup");
+		eval("reboot");
+		eval("event", "5", "1", "15");
+		}
+#endif
 
 	cprintf("sysinit() setup console\n");
 
