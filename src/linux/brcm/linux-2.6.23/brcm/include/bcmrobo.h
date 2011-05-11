@@ -27,6 +27,7 @@
 #define	DEVID5397	0x97	/* 5397 */
 #define	DEVID5398	0x98	/* 5398 */
 #define	DEVID53115	0x3115	/* 53115 */
+#define	DEVID53125	0x3125	/* 53125 */
 
 /* Power save duty cycle times */
 #define MAX_NO_PHYS		5
