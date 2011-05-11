@@ -680,6 +680,8 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 			nvram_set("switch_type", "BCM5325");
 		else if(robo->devid == DEVID53115)
 			nvram_set("switch_type", "BCM53115S");
+		else if(robo->devid == DEVID53125)
+			nvram_set("switch_type", "BCM53135");
 		else
 			nvram_set("switch_type", "unknown");						
 		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N")
@@ -761,7 +763,8 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	       (robo->devid == DEVID5395) ||
 	       (robo->devid == DEVID5397) ||
 	       (robo->devid == DEVID5398) ||
-	       (robo->devid == DEVID53115));
+	       (robo->devid == DEVID53115) ||
+	       (robo->devid == DEVID53125));
 
 	/* nvram variable switch_mode controls the power save mode on the switch
 	 * set the default value in the beginning
@@ -1133,7 +1136,7 @@ vlan_setup:
 		} else {
 			uint8 vtble, vtbli, vtbla;
 
-			if ((robo->devid == DEVID5395) || (robo->devid == DEVID53115)) {
+			if ((robo->devid == DEVID5395) || (robo->devid == DEVID53115) || (robo->devid == DEVID53125)) {
 				vtble = REG_VTBL_ENTRY_5395;
 				vtbli = REG_VTBL_INDX_5395;
 				vtbla = REG_VTBL_ACCESS_5395;
@@ -1173,7 +1176,7 @@ vlan_setup:
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_PMAP, &val32, sizeof(val32));
 	}
 
-	if (robo->devid == DEVID53115) {
+	if ((robo->devid == DEVID53115) || (robo->devid == DEVID53125)) {
 		/* Configure the priority system to use to determine the TC of
 		 * ingress frames. Use DiffServ TC mapping, otherwise 802.1p
 		 * TC mapping, otherwise MAC based TC mapping.
@@ -1296,7 +1299,7 @@ robo_power_save_mode_update(robo_info_t *robo)
 static int32
 robo_power_save_mode_clear_auto(robo_info_t *robo, int32 phy)
 {
-	if (robo->devid == DEVID53115) {
+	if ((robo->devid == DEVID53115) || (robo->devid == DEVID53125)) {
 		/* For 53115 0x1C is the MII address of the auto power
 		 * down register. Bit 5 is enabling the mode
 		 * bits has the following purpose
@@ -1344,7 +1347,7 @@ robo_power_save_mode_clear_manual(robo_info_t *robo, int32 phy)
 	uint8 val8;
 	uint16 val16;
 
-	if ((robo->devid == DEVID53115) ||
+	if ((robo->devid == DEVID53115) || (robo->devid == DEVID53125) ||
 	    (robo->sih->chip == BCM5356_CHIP_ID)) {
 		/* For 53115 0x0 is the MII control register
 		 * Bit 11 is the power down mode bit 
@@ -1388,7 +1391,7 @@ robo_power_save_mode_clear_wlonly(robo_info_t *robo)
 	uint16 val16;
 	int32 phy = 0;
 
-	if ((robo->devid == DEVID53115) ||
+	if ((robo->devid == DEVID53115) || (robo->devid == DEVID53125) ||
 	    (robo->sih->chip == BCM5356_CHIP_ID)) {
 		/* For 53115 0x0 is the MII control register
 		 * Bit 11 is the power down mode bit 
@@ -1512,7 +1515,7 @@ static int32
 robo_power_save_mode_auto(robo_info_t *robo, int32 phy)
 {
 	/* If the switch supports auto power down enable that */  
-	if (robo->devid ==  DEVID53115) {
+	if ((robo->devid ==  DEVID53115) || (robo->devid == DEVID53125)) {
 		/* For 53115 0x1C is the MII address of the auto power
 		 * down register. Bit 5 is enabling the mode 	
 		 * bits has the following purpose
@@ -1569,7 +1572,7 @@ robo_power_save_mode_manual(robo_info_t *robo, int32 phy)
 		return 0;
 
 	/* If the switch supports manual power down enable that */  
-	if (robo->devid ==  DEVID53115) {
+	if ((robo->devid ==  DEVID53115) || (robo->devid == DEVID53125)) {
 		/* For 53115 0x0 is the MII control register bit 11 is the
 		 * power down mode bit 
 		 */
@@ -1615,7 +1618,7 @@ robo_power_save_mode_wlonly(robo_info_t *robo)
 	uint16 val16;
 	int32 phy;
 
-	if (robo->devid ==  DEVID53115) {
+	if ((robo->devid ==  DEVID53115) || (robo->devid == DEVID53125)) {
 		/* For 53115 0x0 is the MII control register bit 11 is the
 		 * power down mode bit 
 		 */
