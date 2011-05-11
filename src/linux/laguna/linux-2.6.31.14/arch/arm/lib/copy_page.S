@@ -27,7 +27,7 @@ ENTRY(copy_page)
 		stmfd	sp!, {r4, lr}			@	2
 	PLD(	pld	[r1, #0]		)
 	PLD(	pld	[r1, #32]		)
-		mov	r2, #COPY_COUNT			@	1
+		ldr	r2, =COPY_COUNT			@	1
 		ldmia	r1!, {r3, r4, ip, lr}		@	4+1
 1:	PLD(	pld	[r1, #64]		)
 	PLD(	pld	[r1, #96]		)

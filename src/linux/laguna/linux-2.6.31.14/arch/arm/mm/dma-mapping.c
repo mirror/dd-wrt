@@ -17,6 +17,7 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/dma-mapping.h>
+#include <linux/page-flags.h>
 
 #include <asm/memory.h>
 #include <asm/highmem.h>
@@ -222,9 +223,10 @@ __dma_alloc(struct device *dev, size_t size, dma_addr_t *handle, gfp_t gfp,
 		pte_t *pte;
 		struct page *end = page + (1 << order);
 		int idx = CONSISTENT_PTE_INDEX(c->vm_start);
-		u32 off = CONSISTENT_OFFSET(c->vm_start) & (PTRS_PER_PTE-1);
+		u32 off = CONSISTENT_OFFSET(c->vm_start) & 
+			(PTRS_PER_PTE_REAL - 1);
 
-		pte = consistent_pte[idx] + off;
+		pte = consistent_pte[idx] + off * PTE_STEP;
 		c->vm_pages = page;
 
 		split_page(page, order);
@@ -243,9 +245,9 @@ __dma_alloc(struct device *dev, size_t size, dma_addr_t *handle, gfp_t gfp,
 			SetPageReserved(page);
 			set_pte_ext(pte, mk_pte(page, prot), 0);
 			page++;
-			pte++;
+			pte += PTE_STEP;
 			off++;
-			if (off >= PTRS_PER_PTE) {
+			if (off >= PTRS_PER_PTE_REAL) {
 				off = 0;
 				pte = consistent_pte[++idx];
 			}
@@ -395,17 +397,17 @@ void dma_free_coherent(struct device *dev, size_t size, void *cpu_addr, dma_addr
 	}
 
 	idx = CONSISTENT_PTE_INDEX(c->vm_start);
-	off = CONSISTENT_OFFSET(c->vm_start) & (PTRS_PER_PTE-1);
-	ptep = consistent_pte[idx] + off;
+	off = CONSISTENT_OFFSET(c->vm_start) & (PTRS_PER_PTE_REAL - 1);
+	ptep = consistent_pte[idx] + off * PTE_STEP;
 	addr = c->vm_start;
 	do {
 		pte_t pte = ptep_get_and_clear(&init_mm, addr, ptep);
 		unsigned long pfn;
 
-		ptep++;
+		ptep += PTE_STEP;
 		addr += PAGE_SIZE;
 		off++;
-		if (off >= PTRS_PER_PTE) {
+		if (off >= PTRS_PER_PTE_REAL) {
 			off = 0;
 			ptep = consistent_pte[++idx];
 		}
@@ -495,19 +497,37 @@ void dma_cache_maint(const void *start, size_t size, int direction)
 	void (*inner_op)(const void *, const void *);
 	void (*outer_op)(unsigned long, unsigned long);
 
-	BUG_ON(!virt_addr_valid(start) || !virt_addr_valid(start + size - 1));
 
+	if(!virt_addr_valid(start) || !virt_addr_valid(start + size - 1))
+	{
+		printk("Addr : %x\n", (unsigned int)start);
+		printk("Himem = %x\n", (unsigned int)high_memory);
+		dump_stack();
+	}
+	BUG_ON(!virt_addr_valid(start) || !virt_addr_valid(start + size - 1));
 	switch (direction) {
 	case DMA_FROM_DEVICE:		/* invalidate only */
-		inner_op = smp_dma_inv_range;
+#ifdef CONFIG_AMP
+                inner_op = dmac_inv_range;
+#else
+                inner_op = smp_dma_inv_range;
+#endif
 		outer_op = outer_inv_range;
 		break;
 	case DMA_TO_DEVICE:		/* writeback only */
-		inner_op = smp_dma_clean_range;
+#ifdef CONFIG_AMP
+                inner_op = dmac_clean_range;
+#else
+                inner_op = smp_dma_clean_range;
+#endif
 		outer_op = outer_clean_range;
 		break;
 	case DMA_BIDIRECTIONAL:		/* writeback and invalidate */
-		inner_op = smp_dma_flush_range;
+#ifdef CONFIG_AMP
+                inner_op = dmac_flush_range;
+#else
+                inner_op = smp_dma_flush_range;
+#endif
 		outer_op = outer_flush_range;
 		break;
 	default:
@@ -587,6 +607,111 @@ void dma_cache_maint_page(struct page *page, unsigned long offset,
 }
 EXPORT_SYMBOL(dma_cache_maint_page);
 
+
+#ifdef CONFIG_AMP
+/*
+ * Single core version of dma_cache_maint API.
+ * Flushes/Invalidates are performed only on the current CPU.
+ */
+void dma_cache_maint_local(const void *start, size_t size, int direction)
+{
+	void (*inner_op)(const void *, const void *);
+	void (*outer_op)(unsigned long, unsigned long);
+
+	BUG_ON(!virt_addr_valid(start) || !virt_addr_valid(start + size - 1));
+	switch (direction) {
+	case DMA_FROM_DEVICE:		/* invalidate only */
+                inner_op = dmac_inv_range_local;
+		outer_op = outer_inv_range;
+		break;
+	case DMA_TO_DEVICE:		/* writeback only */
+                inner_op = dmac_clean_range_local;
+		outer_op = outer_clean_range;
+		break;
+	case DMA_BIDIRECTIONAL:		/* writeback and invalidate */
+                inner_op = dmac_flush_range_local;
+		outer_op = outer_flush_range;
+		break;
+	default:
+		BUG();
+	}
+
+	inner_op(start, start + size);
+	outer_op(__pa(start), __pa(start) + size);
+}
+EXPORT_SYMBOL(dma_cache_maint_local);
+
+
+
+static void dma_cache_maint_contiguous_local(struct page *page, unsigned long offset,
+				       size_t size, int direction)
+{
+	void *vaddr;
+	unsigned long paddr;
+	void (*inner_op)(const void *, const void *);
+	void (*outer_op)(unsigned long, unsigned long);
+
+	switch (direction) {
+	case DMA_FROM_DEVICE:		/* invalidate only */
+		inner_op = dmac_inv_range_local;
+		outer_op = outer_inv_range;
+		break;
+	case DMA_TO_DEVICE:		/* writeback only */
+		inner_op = dmac_clean_range_local;
+		outer_op = outer_clean_range;
+		break;
+	case DMA_BIDIRECTIONAL:		/* writeback and invalidate */
+		inner_op = dmac_flush_range_local;
+		outer_op = outer_flush_range;
+		break;
+	default:
+		BUG();
+	}
+
+	if (!PageHighMem(page)) {
+		vaddr = page_address(page) + offset;
+		inner_op(vaddr, vaddr + size);
+	} else {
+		vaddr = kmap_high_get(page);
+		if (vaddr) {
+			vaddr += offset;
+			inner_op(vaddr, vaddr + size);
+			kunmap_high(page);
+		}
+	}
+
+	paddr = page_to_phys(page) + offset;
+	outer_op(paddr, paddr + size);
+}
+
+void dma_cache_maint_page_local(struct page *page, unsigned long offset,
+			  size_t size, int dir)
+{
+	/*
+	 * A single sg entry may refer to multiple physically contiguous
+	 * pages.  But we still need to process highmem pages individually.
+	 * If highmem is not configured then the bulk of this loop gets
+	 * optimized out.
+	 */
+	size_t left = size;
+	do {
+		size_t len = left;
+		if (PageHighMem(page) && len + offset > PAGE_SIZE) {
+			if (offset >= PAGE_SIZE) {
+				page += offset / PAGE_SIZE;
+				offset %= PAGE_SIZE;
+			}
+			len = PAGE_SIZE - offset;
+		}
+		dma_cache_maint_contiguous_local(page, offset, len, dir);
+		offset = 0;
+		page++;
+		left -= len;
+	} while (left);
+}
+EXPORT_SYMBOL(dma_cache_maint_page_local);
+#endif //#ifdef CONFIG_AMP
+
 /**
  * dma_map_sg - map a set of SG buffers for streaming mode DMA
  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
@@ -623,6 +748,29 @@ int dma_map_sg(struct device *dev, struct scatterlist *sg, int nents,
 	return 0;
 }
 EXPORT_SYMBOL(dma_map_sg);
+
+#if defined(CONFIG_AMP_PURENAS) || defined(CONFIG_AMP_ALL)
+int dma_map_sg_ata(struct device *dev, struct scatterlist *sg, int nents,
+		enum dma_data_direction dir)
+{
+	struct scatterlist *s;
+	int i, j;
+
+	for_each_sg(sg, s, nents, i) {
+		s->dma_address = dma_map_page_ata(dev, sg_page(s), s->offset,
+						s->length, dir);
+		if (dma_mapping_error(dev, s->dma_address))
+			goto bad_mapping;
+	}
+	return nents;
+
+ bad_mapping:
+	for_each_sg(sg, s, i, j)
+		dma_unmap_page(dev, sg_dma_address(s), sg_dma_len(s), dir);
+	return 0;
+}
+EXPORT_SYMBOL(dma_map_sg_ata);
+#endif /* CONFIG_AMP_PURENAS */
 
 /**
  * dma_unmap_sg - unmap a set of SG buffers mapped by dma_map_sg
