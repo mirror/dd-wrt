@@ -96,6 +96,14 @@ void start_sysinit(void)
 		eval("/bin/sh");
 		exit(0);
 	}
+#ifdef HAVE_ERC
+	if (nvram_match("ree_resetme", "1")) {
+		fprintf(stderr, "Restoring REE default nvram\n");
+		eval("nvram","restore","/etc/defaults/x86ree.backup");
+		eval("reboot");
+		eval("event", "5", "1", "15");
+		}
+#endif
 
 	FILE *in = fopen("/usr/local/nvram/nvram.db", "rb");
 
