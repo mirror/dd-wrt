@@ -681,7 +681,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		else if(robo->devid == DEVID53115)
 			nvram_set("switch_type", "BCM53115S");
 		else if(robo->devid == DEVID53125)
-			nvram_set("switch_type", "BCM53135");
+			nvram_set("switch_type", "BCM53125");
 		else
 			nvram_set("switch_type", "unknown");						
 		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N")
