@@ -840,12 +840,20 @@ config CACHE_L2CC_256KB
 
 endchoice
 
-config CACHE_L2_I_PREFETCH
-	bool "Enable the L2 instruction prefetching"
-	depends on CACHE_L2CC
-	default y
-	help
-	  This option enables instruction prefetching.
+config PAGE_SIZE_64K
+       bool "Use 64K pages"
+       help
+          Enables support for 64k page size in kernel.
+	  If not enabled kernel uses the default 4k page size.
+	  Make sure the rootfs used with this configuration is 
+	  build with toolchain that supports 64K
+
+#config CACHE_L2_I_PREFETCH
+#	bool "Enable the L2 instruction prefetching"
+#	depends on CACHE_L2CC
+#	default y
+#	help
+#	  This option enables instruction prefetching.
 
 config CACHE_XSC3L2
 	bool "Enable the L2 cache on XScale3"
@@ -854,3 +862,4 @@ config CACHE_XSC3L2
 	select OUTER_CACHE
 	help
 	  This option enables the L2 cache on XScale3.
+

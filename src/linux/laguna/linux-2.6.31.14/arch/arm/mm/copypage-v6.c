@@ -20,8 +20,11 @@
 
 #include "mm.h"
 
+/* Fix Me: Do we break something when page size is 64k and SHMLBA is 64k ? */
+#ifndef CONFIG_PAGE_SIZE_64K
 #if SHMLBA > 16384
 #error FIX ME
+#endif
 #endif
 
 #define from_address	(0xffff8000)

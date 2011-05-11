@@ -35,6 +35,15 @@
 static void __iomem *cns3xxx_l2_base;
 static DEFINE_SPINLOCK(cns3xxx_l2_lock);
 
+#ifndef CONFIG_CNS3XXX_SPEEDUP
+unsigned int l2cc=1;
+static int __init l2cc_setup(char *str)
+{
+	get_option(&str, &l2cc);
+	return 1;
+}
+__setup("l2cc=", l2cc_setup);
+
 static inline void cache_wait(void __iomem *reg, unsigned long mask)
 {
 #ifndef CONFIG_L2CC_NO_WAIT
@@ -42,6 +51,7 @@ static inline void cache_wait(void __iomem *reg, unsigned long mask)
 	while (readl(reg) & mask);
 #endif
 }
+#endif
 
 static inline void sync_writel(unsigned long val, unsigned long reg,
 			       unsigned long complete_mask)
@@ -71,20 +81,43 @@ static inline void cns3xxx_l2_inv_all(void)
 static void cns3xxx_l2_inv_range(unsigned long start, unsigned long end)
 {
 	unsigned long addr;
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+	unsigned long flags;
+	static void __iomem *cns3xxx_l2_base_inv;
+	unsigned long complete_mask = 1;
+
+//	spin_lock_irqsave(&cns3xxx_l2_lock, flags);
+	cns3xxx_l2_base_inv = cns3xxx_l2_base + L2CC_CLEAN_INV_LINE_PA;
+#endif
 
 	if (start & (CACHE_LINE_SIZE - 1)) {
 		start &= ~(CACHE_LINE_SIZE - 1);
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+		writel(start, cns3xxx_l2_base_inv); 
+#else
 		writel(start, cns3xxx_l2_base + L2CC_CLEAN_INV_LINE_PA);
+#endif
 		start += CACHE_LINE_SIZE;
 	}
 
 	if (end & (CACHE_LINE_SIZE - 1)) {
 		end &= ~(CACHE_LINE_SIZE - 1);
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+		writel(end, cns3xxx_l2_base_inv); 
+#else
 		writel(end, cns3xxx_l2_base + L2CC_CLEAN_INV_LINE_PA);
+#endif
 	}
 
 	for (addr = start; addr < end; addr += CACHE_LINE_SIZE)
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+		writel(addr, cns3xxx_l2_base_inv); 
+
+	/* wait for the operation to complete */
+	while (readl(cns3xxx_l2_base_inv) & complete_mask);
+#else
 		writel(addr, cns3xxx_l2_base + L2CC_INV_LINE_PA);
+#endif
 
 	cache_sync();
 }
@@ -92,127 +125,163 @@ static void cns3xxx_l2_inv_range(unsigned long start, unsigned long end)
 static void cns3xxx_l2_clean_range(unsigned long start, unsigned long end)
 {
 	unsigned long addr;
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+	unsigned long flags;
+	static void __iomem *cns3xxx_l2_base_clean;
+	unsigned long complete_mask = 1;
+
+	cns3xxx_l2_base_clean = cns3xxx_l2_base + L2CC_CLEAN_LINE_PA;
+#endif
 
 	start &= ~(CACHE_LINE_SIZE - 1);
 	for (addr = start; addr < end; addr += CACHE_LINE_SIZE)
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+		writel(addr, cns3xxx_l2_base_clean);
+
+	/* wait for the operation to complete */
+	while (readl(cns3xxx_l2_base_clean) & complete_mask);
+#else
 		writel(addr, cns3xxx_l2_base + L2CC_CLEAN_LINE_PA);
 
 	cache_wait(cns3xxx_l2_base + L2CC_CLEAN_LINE_PA, 1);
+#endif
+
 	cache_sync();
 }
 
 static void cns3xxx_l2_flush_range(unsigned long start, unsigned long end)
 {
 	unsigned long addr;
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+	unsigned long flags;
+	static void __iomem *cns3xxx_l2_base_inv;
+	unsigned long complete_mask = 1;
+
+	cns3xxx_l2_base_inv = cns3xxx_l2_base + L2CC_CLEAN_INV_LINE_PA;
+#endif
 
 	start &= ~(CACHE_LINE_SIZE - 1);
 	for (addr = start; addr < end; addr += CACHE_LINE_SIZE)
+#ifdef CONFIG_CNS3XXX_SPEEDUP
+		writel(addr, cns3xxx_l2_base_inv);
+	/* wait for the operation to complete */
+	while (readl(cns3xxx_l2_base_inv) & complete_mask);
+#else
 		writel(addr, cns3xxx_l2_base + L2CC_CLEAN_INV_LINE_PA);
-
 	cache_wait(cns3xxx_l2_base + L2CC_CLEAN_INV_LINE_PA, 1);
+#endif
+
 	cache_sync();
 }
 
 void __init l2cc_init(void __iomem *base)
 {
 	__u32 aux, prefetch, tag, data;
-
-	printk(KERN_INFO "Initializing CNS3XXX L2 cache controller... ");
-
-	cns3xxx_l2_base = base;
-
-	/* disable L2CC */
-	writel(0, cns3xxx_l2_base + L2CC_CTRL);
-
-	/*
-	 * Auxiliary control register 
-	 *
-	 * bit[22]	- shared attribute internally ignored
-	 * bit[21]	- parity enabled
-	 * bit[20]	- 
-	 * bit[19:17]	- 32kB way size 
-	 * bit[16]	- way associative
-	 * bit[12]	- exclusive cache disabled
-	 *
-	 */
-	aux = readl(cns3xxx_l2_base + L2CC_AUX_CTRL);
-	aux &= 0xfe000fff;
+	
+#ifndef CONFIG_CNS3XXX_SPEEDUP
+	if(l2cc){
+#endif
+		printk(KERN_INFO "Initializing CNS3XXX L2 cache controller... ");
+	
+		cns3xxx_l2_base = base;
+	
+		/* disable L2CC */
+		writel(0, cns3xxx_l2_base + L2CC_CTRL);
+	
+		/*
+		 * Auxiliary control register 
+		 *
+		 * bit[22]	- shared attribute internally ignored
+		 * bit[21]	- parity enabled
+		 * bit[20]	- 
+		 * bit[19:17]	- 32kB way size 
+		 * bit[16]	- way associative
+		 * bit[12]	- exclusive cache disabled
+		 *
+		 */
+		aux = readl(cns3xxx_l2_base + L2CC_AUX_CTRL);
+		aux &= 0xfe000fff;
 #ifdef CONFIG_CACHE_L2_I_PREFETCH
-	aux |= 0x20000000;	/* bit[29]: Instruction prefetching enable, bit[29]: Data prefetching enable */
+		aux |= 0x20000000;	/* bit[29]: Instruction prefetching enable, bit[29]: Data prefetching enable */
 #endif
 #ifdef CONFIG_CACHE_L2_D_PREFETCH
-	aux |= 0x10000000;	/* bit[28]: Instruction prefetching enable, bit[28]: Data prefetching enable */
+		aux |= 0x10000000;	/* bit[28]: Instruction prefetching enable, bit[28]: Data prefetching enable */
 #endif
-	aux |= 0x00540000;	/* ...010..., 32KB, 8-way, Parity Disable*/
-	writel(aux, cns3xxx_l2_base + L2CC_AUX_CTRL);
-
-	prefetch = readl(cns3xxx_l2_base + 0xF60);
-	prefetch |= 0x00000008; /* prefetch offset, bit[4..0] */
+		aux |= 0x00540000;	/* ...010..., 32KB, 8-way, Parity Disable*/
+		writel(aux, cns3xxx_l2_base + L2CC_AUX_CTRL);
+	
+		prefetch = readl(cns3xxx_l2_base + 0xF60);
+		prefetch |= 0x00000008; /* prefetch offset, bit[4..0] */
 #ifdef CONFIG_CACHE_L2_I_PREFETCH
-	prefetch |= 0x20000000;
+		prefetch |= 0x20000000;
 #endif
 #ifdef CONFIG_CACHE_L2_D_PREFETCH
-	prefetch |= 0x10000000;
+		prefetch |= 0x10000000;
 #endif
-	writel(prefetch, cns3xxx_l2_base + 0xF60);
-
-	/* Tag RAM Control register
-	 * 
-	 * bit[10:8]	- 1 cycle of write accesses latency
-	 * bit[6:4]	- 1 cycle of read accesses latency
-	 * bit[3:0]	- 1 cycle of setup latency
-	 *
-	 * 1 cycle of latency for setup, read and write accesses
-	 */
-	tag = readl(cns3xxx_l2_base + L2CC_TAG_RAM_LATENCY_CTRL);
-	tag &= 0xfffff888;
-	tag |= 0x00000000;
-	writel(tag, cns3xxx_l2_base + L2CC_TAG_RAM_LATENCY_CTRL);
-
-	/* Data RAM Control register
-	 *
-	 * bit[10:8]	- 1 cycles of write accesses latency
-	 * bit[6:4]	- 1 cycles of read accesses latency
-	 * bit[3:0]	- 1 cycle of setup latency
-	 *
-	 * 1 cycle of setup latency, 2 cycles of read and write accesses latency
-	 */
-	data = readl(cns3xxx_l2_base + L2CC_DATA_RAM_LATENCY_CTRL);
-	data &= 0xfffff888;
-	data |= 0x00000000;
-	writel(data, cns3xxx_l2_base + L2CC_DATA_RAM_LATENCY_CTRL);
-
-	cns3xxx_l2_inv_all();
-
-	/* lockdown required ways for different effective size of the L2 cache */
+		writel(prefetch, cns3xxx_l2_base + 0xF60);
+	
+		/* Tag RAM Control register
+		 * 
+		 * bit[10:8]	- 1 cycle of write accesses latency
+		 * bit[6:4]	- 1 cycle of read accesses latency
+		 * bit[3:0]	- 1 cycle of setup latency
+		 *
+		 * 1 cycle of latency for setup, read and write accesses
+		 */
+		tag = readl(cns3xxx_l2_base + L2CC_TAG_RAM_LATENCY_CTRL);
+		tag &= 0xfffff888;
+		tag |= 0x00000000;
+		writel(tag, cns3xxx_l2_base + L2CC_TAG_RAM_LATENCY_CTRL);
+	
+		/* Data RAM Control register
+		 *
+		 * bit[10:8]	- 1 cycles of write accesses latency
+		 * bit[6:4]	- 1 cycles of read accesses latency
+		 * bit[3:0]	- 1 cycle of setup latency
+		 *
+		 * 1 cycle of setup latency, 2 cycles of read and write accesses latency
+		 */
+		data = readl(cns3xxx_l2_base + L2CC_DATA_RAM_LATENCY_CTRL);
+		data &= 0xfffff888;
+		data |= 0x00000000;
+		writel(data, cns3xxx_l2_base + L2CC_DATA_RAM_LATENCY_CTRL);
+	
+		cns3xxx_l2_inv_all();
+	
+		/* lockdown required ways for different effective size of the L2 cache */
 #ifdef CONFIG_CACHE_L2CC_32KB
-        /* 32KB, lock way7..1 */
-        writel(0xfe, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
-        writel(0xfe, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
-        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..1\n");
+	        /* 32KB, lock way7..1 */
+	        writel(0xfe, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
+	        writel(0xfe, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
+	        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..1\n");
 #elif defined(CONFIG_CACHE_L2CC_64KB)
-        /* 64KB, lock way7..2 */
-        writel(0xfc, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
-        writel(0xfc, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
-        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..2\n");
+	        /* 64KB, lock way7..2 */
+	        writel(0xfc, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
+	        writel(0xfc, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
+	        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..2\n");
 #elif defined(CONFIG_CACHE_L2CC_96KB)
-        /* 96KB, lock way7..3 */
-        writel(0xf8, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
-        writel(0xf8, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
-        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..3\n");
+	        /* 96KB, lock way7..3 */
+	        writel(0xf8, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
+	        writel(0xf8, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
+	        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..3\n");
 #elif defined(CONFIG_CACHE_L2CC_128KB)
-        /* 128KB, lock way7..4 */
-        writel(0xf0, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
-        writel(0xf0, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
-        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..4\n");
+	        /* 128KB, lock way7..4 */
+	        writel(0xf0, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_D);
+	        writel(0xf0, cns3xxx_l2_base + L2CC_LOCKDOWN_0_WAY_I);
+	        printk(KERN_INFO "CNS3XXX L2 cache lock down : way7..4\n");
 #endif
-
-	/* enable L2CC */
-	writel(1, cns3xxx_l2_base + L2CC_CTRL);
-
-	outer_cache.inv_range = cns3xxx_l2_inv_range;
-	outer_cache.clean_range = cns3xxx_l2_clean_range;
-	outer_cache.flush_range = cns3xxx_l2_flush_range;
-
-	printk("done.\n");
+	
+		/* enable L2CC */
+		writel(1, cns3xxx_l2_base + L2CC_CTRL);
+	
+		outer_cache.inv_range = cns3xxx_l2_inv_range;
+		outer_cache.clean_range = cns3xxx_l2_clean_range;
+		outer_cache.flush_range = cns3xxx_l2_flush_range;
+	
+		printk("done.\n");
+#ifndef CONFIG_CNS3XXX_SPEEDUP
+	}else{
+		printk(KERN_INFO "CNS3XXX L2 cache controller selected, but disabled by boot option l2cc=%d... ",l2cc);
+	}
+#endif
 }

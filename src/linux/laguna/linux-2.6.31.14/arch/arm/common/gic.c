@@ -82,7 +82,7 @@ static inline unsigned int gic_irq(unsigned int irq)
  * our "acknowledge" routine disable the interrupt, then mark it as
  * complete.
  */
-static void gic_ack_irq(unsigned int irq)
+void gic_ack_irq(unsigned int irq)
 {
 	u32 mask = 1 << (irq % 32);
 
@@ -101,7 +101,8 @@ void gic_mask_irq(unsigned int irq)
 	spin_unlock(&irq_controller_lock);
 }
 
-static void gic_unmask_irq(unsigned int irq)
+
+void gic_unmask_irq(unsigned int irq)
 {
 	u32 mask = 1 << (irq % 32);
 
@@ -197,18 +198,19 @@ void set_interrupt_type_by_base(void __iomem *base, int id, u32 type)
 
         writel(gic_v, base + GIC_DIST_CONFIG + id/16*4);
 }
+
 // type: level or edge 
 // 0 - level high active, 1 - rising edge sensitive
 void set_interrupt_type(int id, u32 type)
 {
 	set_interrupt_type_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, type);
 }
-EXPORT_SYMBOL(set_interrupt_type);
 
 void get_interrupt_type_by_base(void __iomem *base, u32 id, u32 *type)
 {
         unsigned char int_type_bit=0;
         u32 gic_v=0;
+	//u16 offset=id/16*4;
 
         // judge gic offset
         int_type_bit=(id%16*2+1);
@@ -226,7 +228,6 @@ void get_interrupt_type(u32 id, u32 *type)
 	get_interrupt_type_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, type);
 }
 
-EXPORT_SYMBOL(get_interrupt_type);
 
 
 // set interrupt priority
@@ -255,7 +256,6 @@ void set_interrupt_pri(u32 id, u32 pri)
 {
 	set_interrupt_pri_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, pri);
 }
-EXPORT_SYMBOL(set_interrupt_pri);
 
 void get_interrupt_pri_by_base(void __iomem *base, int id, u32 *type)
 {
@@ -280,7 +280,6 @@ void get_interrupt_pri(int id, u32 *pri)
 {
 	get_interrupt_pri_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, pri);
 }
-EXPORT_SYMBOL(get_interrupt_pri);
 
 
 void __init gic_dist_init(unsigned int gic_nr, void __iomem *base,
@@ -294,7 +293,6 @@ void __init gic_dist_init(unsigned int gic_nr, void __iomem *base,
 
 	cpumask |= cpumask << 8;
 	cpumask |= cpumask << 16;
-
 	gic_data[gic_nr].dist_base = base;
 	gic_data[gic_nr].irq_offset = (irq_start - 1) & ~31;
 
@@ -367,8 +365,8 @@ void cns3xxx_write_pri_mask(u8 pri_mask)
         writel(pri_mask, (void __iomem *) CNS3XXX_TC11MP_GIC_CPU_BASE_VIRT + GIC_CPU_PRIMASK);
 }
 
-EXPORT_SYMBOL(cns3xxx_write_pri_mask);
-#ifdef CONFIG_SMP
+/* This is needed by AMP as softirq is raised by CPU0 TO CPU1 for WFI */
+#if defined(CONFIG_SMP) || defined(CONFIG_AMP)
 void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 {
 	unsigned long map = *cpus_addr(*mask);
@@ -377,3 +375,14 @@ void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 	writel(map << 16 | irq, gic_data[0].dist_base + GIC_DIST_SOFTINT);
 }
 #endif
+
+EXPORT_SYMBOL_GPL(cns3xxx_write_pri_mask);
+EXPORT_SYMBOL_GPL(set_interrupt_type);
+EXPORT_SYMBOL_GPL(get_interrupt_type);
+EXPORT_SYMBOL_GPL(set_interrupt_pri);
+EXPORT_SYMBOL_GPL(get_interrupt_pri);
+EXPORT_SYMBOL_GPL(gic_ack_irq);
+EXPORT_SYMBOL_GPL(gic_mask_irq);
+EXPORT_SYMBOL_GPL(gic_unmask_irq);
+
+

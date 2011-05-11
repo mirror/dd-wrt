@@ -3688,6 +3688,11 @@ static struct net_device *init_napi_dev(struct net_device *ndev, const RingInfo 
 
 void cns3xxx_config_intr(void)
 {
+/*	void set_interrupt_type(u32 id, u32 type);
+	void get_interrupt_type(u32 id, u32 *type);
+
+	void set_interrupt_pri(u32 id, u32 pri);
+	void get_interrupt_pri(u32 id, u32 *pri);*/
 	u32 v=0xffffffff;
 
 	get_interrupt_type(FSRC_RING0_INTERRUPT_ID, &v);

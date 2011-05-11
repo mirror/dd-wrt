@@ -282,8 +282,26 @@ static void __init build_mem_type_table(void)
 			cachepolicy = CPOLICY_WRITEBACK;
 		ecc_mask = 0;
 	}
-#ifdef CONFIG_SMP
-	cachepolicy = CPOLICY_WRITEALLOC;
+
+        /*
+         * From the Manual:->
+         * The Snoop Control Unit manages data cache coherency issues for an access if:
+         *      1-> the cache policy for the page is write-back write-allocate
+         *      2-> the Shared bit is set for the page in the MMU
+         *      3-> the CPU is in coherent mode, that is, the SMP/nAMP bit [5] of the 
+         *                      Auxiliary Control Register is set.
+         *
+         * When the Shared attribute is applied to a cachable page that does not match 
+         * these conditions, it is treated as noncachable.
+         */
+
+        /*
+         * Point 1->
+         * Use the same cache policy as SMP for AMP mode to 
+         * get the L1 working
+         */
+#if defined(CONFIG_SMP) || defined(CONFIG_AMP)
+        cachepolicy = CPOLICY_WRITEALLOC;
 #endif
 
 	/*
@@ -378,13 +396,19 @@ static void __init build_mem_type_table(void)
 	cp = &cache_policies[cachepolicy];
 	vecs_pgprot = kern_pgprot = user_pgprot = cp->pte;
 
-#ifndef CONFIG_SMP
 	/*
-	 * Only use write-through for non-SMP systems
+	 * Extension of Point 1->
+	 * Use the same cache policy as SMP for AMP mode to 
+	 * get the L1 working
 	 */
-	if (cpu_arch >= CPU_ARCH_ARMv5 && cachepolicy > CPOLICY_WRITETHROUGH)
-		vecs_pgprot = cache_policies[CPOLICY_WRITETHROUGH].pte;
+#if !(defined(CONFIG_SMP) || defined(CONFIG_AMP))
+        /*
+         * Only use write-through for non-SMP systems
+         */
+        if (cpu_arch >= CPU_ARCH_ARMv5 && cachepolicy > CPOLICY_WRITETHROUGH)
+                vecs_pgprot = cache_policies[CPOLICY_WRITETHROUGH].pte;
 #endif
+
 
 	/*
 	 * Enable CPU-specific coherency if supported.
@@ -405,7 +429,12 @@ static void __init build_mem_type_table(void)
 		mem_types[MT_MINICLEAN].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
 		mem_types[MT_CACHECLEAN].prot_sect |= PMD_SECT_APX|PMD_SECT_AP_WRITE;
 
-#ifdef CONFIG_SMP
+	/*
+	 * Point 2 -> Set shared bit
+	 * Use the same cache policy as SMP for AMP mode to 
+	 * get the L1 working
+	 */
+#if defined(CONFIG_SMP) || defined(CONFIG_AMP)
 		/*
 		 * Mark memory with the "shared" attribute for SMP systems
 		 */
@@ -491,7 +520,7 @@ static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
 	do {
 		set_pte_ext(pte, pfn_pte(pfn, __pgprot(type->prot_pte)), 0);
 		pfn++;
-	} while (pte++, addr += PAGE_SIZE, addr != end);
+	} while (pte+=PTE_STEP, addr += PAGE_SIZE, addr != end);
 }
 
 static void __init alloc_init_section(pgd_t *pgd, unsigned long addr,
@@ -688,6 +717,9 @@ __early_param("vmalloc=", early_vmalloc);
 static void __init sanity_check_meminfo(void)
 {
 	int i, j;
+#ifdef CONFIG_HIGHMEM
+	int highmem = 0;
+#endif
 
 	for (i = 0, j = 0; i < meminfo.nr_banks; i++) {
 		struct membank *bank = &meminfo.bank[j];

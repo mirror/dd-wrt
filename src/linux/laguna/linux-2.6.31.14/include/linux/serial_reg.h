@@ -83,6 +83,13 @@
 #define UART_FCR6_T_TRIGGER_30	0x30 /* Mask for transmit trigger set at 30 */
 #define UART_FCR7_64BYTE	0x20 /* Go into 64 byte mode (TI16C750) */
 
+#if defined(CONFIG_ARCH_CNS3XXX)
+#define UART_PSR	2	/* Pre-scalar Register */
+#define UART_PSR_CLK_DISABLE	0x0
+#define UART_PSR_CLK_24000000	0x1
+#define UART_PSR_CLK_14745600	0x2
+#endif
+
 #define UART_LCR	3	/* Out: Line Control Register */
 /*
  * Note: if the word length is 5 bits (UART_LCR_WLEN5), then setting 

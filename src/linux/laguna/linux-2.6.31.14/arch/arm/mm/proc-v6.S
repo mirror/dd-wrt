@@ -30,7 +30,7 @@
 #define TTB_RGN_WT	(2 << 3)
 #define TTB_RGN_WB	(3 << 3)
 
-#ifndef CONFIG_SMP
+#if !(defined(CONFIG_SMP) || defined(CONFIG_AMP))
 #define TTB_FLAGS	TTB_RGN_WBWA
 #else
 #define TTB_FLAGS	TTB_RGN_WBWA|TTB_S
@@ -155,6 +155,16 @@ __v6_setup:
 	mrc	p15, 0, r0, c1, c0, 1		@ Enable SMP/nAMP mode
 	orr	r0, r0, #0x20
 	mcr	p15, 0, r0, c1, c0, 1
+#endif
+
+/*
+ * For L1 cache coherency, CPU must be set in SMP mode in Aux-ctrl reg
+ */
+
+#ifdef CONFIG_AMP
+        mrc     p15, 0, r0, c1, c0, 1           @ Enable SMP mode in Aux-ctrl reg
+        orr     r0, r0, #0x20                   @ We tried with AMP mode, but later
+        mcr     p15, 0, r0, c1, c0, 1           @ changed to SMP for enabling L1
 #endif
 
 	mov	r0, #0
