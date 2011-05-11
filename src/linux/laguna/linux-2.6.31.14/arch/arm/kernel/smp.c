@@ -751,10 +751,11 @@ struct smp_dma_cache_struct {
 	int type;
 	const void *start;
 	const void *end;
-	char unfinished;
+	cpumask_t unfinished;
 };
 
-static struct smp_dma_cache_struct smp_dma_cache_data[3];
+static struct smp_dma_cache_struct *smp_dma_cache_data;
+static DEFINE_RWLOCK(smp_dma_cache_data_lock);
 static DEFINE_SPINLOCK(smp_dma_cache_lock);
 
 static void local_dma_cache_op(int type, const void *start, const void *end)
@@ -780,32 +781,17 @@ static void local_dma_cache_op(int type, const void *start, const void *end)
  */
 static void ipi_dma_cache_op(unsigned int cpu)
 {
-	unsigned long flags;
-	int type;
-	const void *start;
-	const void *end;
+	read_lock(&smp_dma_cache_data_lock);
 
 	/* check for spurious IPI */
-	spin_lock_irqsave(&smp_dma_cache_lock, flags);
-	if (!test_bit(cpu, &bcache_bitmap))
+	if ((smp_dma_cache_data == NULL) ||
+	    (!cpu_isset(cpu, smp_dma_cache_data->unfinished)))
 		goto out;
-
-	type = smp_dma_cache_data[cpu].type;
-	start = smp_dma_cache_data[cpu].start;
-	end = smp_dma_cache_data[cpu].end;
-	spin_unlock_irqrestore(&smp_dma_cache_lock, flags);
-
-
-	local_dma_cache_op(type, start, end);
-
-	spin_lock_irqsave(&smp_dma_cache_lock, flags);
-	clear_bit(cpu, &bcache_bitmap);
-	smp_dma_cache_data[cpu].type = 0;
-	smp_dma_cache_data[cpu].start = 0;
-	smp_dma_cache_data[cpu].end = 0;
-	smp_dma_cache_data[cpu].unfinished = 0;
-out:
-	spin_unlock_irqrestore(&smp_dma_cache_lock, flags);
+	local_dma_cache_op(smp_dma_cache_data->type,
+			   smp_dma_cache_data->start, smp_dma_cache_data->end);
+	cpu_clear(cpu, smp_dma_cache_data->unfinished);
+ out:
+	read_unlock(&smp_dma_cache_data_lock);
 }
 
 /*
@@ -814,30 +800,44 @@ out:
  */
 static void __smp_dma_cache_op(int type, const void *start, const void *end)
 {
+	struct smp_dma_cache_struct data;
 	cpumask_t callmap = cpu_online_map;
 	unsigned int cpu = get_cpu();
 	unsigned long flags;
-	unsigned long cpu_check;
+
 	cpu_clear(cpu, callmap);
-	cpu_check = *cpus_addr(callmap) >> 1;
+	data.type = type;
+	data.start = start;
+	data.end = end;
+	data.unfinished = callmap;
 
-	while (test_bit(cpu, &bcache_bitmap))
-		ipi_dma_cache_op(cpu);
+	/*
+	 * If the spinlock cannot be acquired, other CPU is trying to
+	 * send an IPI. If the interrupts are disabled, we have to
+	 * poll for an incoming IPI.
+	 */
+	while (!spin_trylock_irqsave(&smp_dma_cache_lock, flags)) {
+		if (irqs_disabled())
+			ipi_dma_cache_op(cpu);
+	}
 
-	while (test_bit(cpu_check, &bcache_bitmap))
-		barrier();
+	write_lock(&smp_dma_cache_data_lock);
+	smp_dma_cache_data = &data;
+	write_unlock(&smp_dma_cache_data_lock);
 
-	spin_lock_irqsave(&smp_dma_cache_lock, flags);
-	smp_dma_cache_data[cpu_check].type = type;
-	smp_dma_cache_data[cpu_check].start = start;
-	smp_dma_cache_data[cpu_check].end = end;
-	smp_dma_cache_data[cpu_check].unfinished = 1;
-	set_bit(cpu_check, &bcache_bitmap);
-	send_ipi_message_cache(&callmap);
-	spin_unlock_irqrestore(&smp_dma_cache_lock, flags);
-
+	if (!cpus_empty(callmap))
+		send_ipi_message(&callmap, IPI_DMA_CACHE);
 	/* run the local operation in parallel with the other CPUs */
 	local_dma_cache_op(type, start, end);
+
+	while (!cpus_empty(data.unfinished))
+		barrier();
+
+	write_lock(&smp_dma_cache_data_lock);
+	smp_dma_cache_data = NULL;
+	write_unlock(&smp_dma_cache_data_lock);
+
+	spin_unlock_irqrestore(&smp_dma_cache_lock, flags);
 	put_cpu();
 }
 
@@ -850,6 +850,14 @@ static void __smp_dma_cache_op(int type, const void *start, const void *end)
  */
 void smp_dma_cache_op(int type, const void *start, const void *end)
 {
-	__smp_dma_cache_op(type, start, end);
+	if (irqs_disabled() || (end - start <= DMA_MAX_RANGE))
+		__smp_dma_cache_op(type, start, end);
+	else {
+		const void *ptr;
+		for (ptr = start; ptr < end - DMA_MAX_RANGE;
+		     ptr += DMA_MAX_RANGE)
+			__smp_dma_cache_op(type, ptr, ptr + DMA_MAX_RANGE);
+		__smp_dma_cache_op(type, ptr, end);
+	}
 }
 #endif

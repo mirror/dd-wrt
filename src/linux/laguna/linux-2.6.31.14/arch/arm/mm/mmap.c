@@ -22,6 +22,8 @@
  *
  * We unconditionally provide this function for all cases, however
  * in the VIVT case, we optimise out the alignment rules.
+ * Since we dont have cache aliasing issues in case of 64k page size, we 
+ * can skip the alignment rules for that as well.
  */
 unsigned long
 arch_get_unmapped_area(struct file *filp, unsigned long addr,
@@ -30,7 +32,7 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
 	struct mm_struct *mm = current->mm;
 	struct vm_area_struct *vma;
 	unsigned long start_addr;
-#ifdef CONFIG_CPU_V6
+#if defined CONFIG_CPU_V6 && !defined CONFIG_PAGE_SIZE_64K 
 	unsigned int cache_type;
 	int do_align = 0, aliasing = 0;
 

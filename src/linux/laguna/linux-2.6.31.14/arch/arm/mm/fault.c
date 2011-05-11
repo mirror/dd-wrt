@@ -21,6 +21,8 @@
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>
 
+#include <mach/smp.h>
+
 #include "fault.h"
 
 
@@ -116,9 +118,9 @@ __do_kernel_fault(struct mm_struct *mm, unsigned long addr, unsigned int fsr,
 	 */
 	bust_spinlocks(1);
 	printk(KERN_ALERT
-		"Unable to handle kernel %s at virtual address %08lx\n",
+		"Unable to handle kernel %s at virtual address %08lx from cpu %d\n",
 		(addr < PAGE_SIZE) ? "NULL pointer dereference" :
-		"paging request", addr);
+	       "paging request", addr, hard_smp_processor_id());
 
 	show_pte(mm, addr);
 	die("Oops", regs, fsr);
@@ -459,6 +461,12 @@ hook_fault_code(int nr, int (*fn)(unsigned long, unsigned int, struct pt_regs *)
 	}
 }
 
+#ifdef CONFIG_AMP 
+void (*cnsx_dump_dp_debug_info_op)(void) = NULL;
+EXPORT_SYMBOL(cnsx_dump_dp_debug_info_op);
+void cnsx_dump_dataplane_trace(void);
+#endif /* CONFIG_AMP */
+
 /*
  * Dispatch a data abort to the relevant handler.
  */
@@ -470,7 +478,15 @@ do_DataAbort(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 
 	if (!inf->fn(addr, fsr, regs))
 		return;
-
+#ifdef CONFIG_AMP
+	if (hard_smp_processor_id() == 1 /*DP Core*/ ) {
+		cnsx_dump_dataplane_trace();
+		if (cnsx_dump_dp_debug_info_op) 
+			cnsx_dump_dp_debug_info_op();
+	 	while(1);
+	}
+#endif /* CONFIG_AMP */
+	
 	printk(KERN_ALERT "Unhandled fault: %s (0x%03x) at 0x%08lx\n",
 		inf->name, fsr, addr);
 

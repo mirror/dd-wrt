@@ -125,12 +125,16 @@
 	.endm
 
 	.macro	armv6_set_pte_ext pfx
-	str	r1, [r0], #-2048		@ linux version
-
+	str     r1, [r0], #-2048                @ linux version
+	
 	bic	r3, r1, #0x000003fc
 	bic	r3, r3, #PTE_TYPE_MASK
 	orr	r3, r3, r2
-	orr	r3, r3, #PTE_EXT_AP0 | 2
+#ifdef CONFIG_PAGE_SIZE_64K	
+	orr	r3, r3, #PTE_EXT_AP0 | PTE_TYPE_LARGE
+#else
+	orr	r3, r3, #PTE_EXT_AP0 | PTE_TYPE_SMALL
+#endif	
 
 	adr	ip, \pfx\()_mt_table
 	and	r2, r1, #L_PTE_MT_MASK
@@ -154,9 +158,25 @@
 	tstne	r1, #L_PTE_PRESENT
 	moveq	r3, #0
 
-	str	r3, [r0]
-	mcr	p15, 0, r0, c7, c10, 1		@ flush_pte
+#ifdef CONFIG_PAGE_SIZE_64K	
+	/*
+	 * Repeat the hw entry 16 times in case of 64k page
+	 * This is a requirement from the hw ;
+	 * linux ptes need not be repeated.
+	 */
+	mov     r12, #16
+.Lrpt_for_hw:
+	mov     r1, r0
+	str	r3, [r0], #4
+	mcr	p15, 0, r1, c7, c10, 1		@ flush_pte
+	subs    r12, r12, #1
+	bne     .Lrpt_for_hw
+#else
+	str 	r3, [r0]
+	mcr     p15, 0, r0, c7, c10, 1          @ flush_pte
+#endif	
 	.endm
+	
 
 
 /*

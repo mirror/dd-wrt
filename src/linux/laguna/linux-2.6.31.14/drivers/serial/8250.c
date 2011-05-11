@@ -1074,6 +1074,23 @@ static void autoconfig_16550a(struct uart_8250_port *up)
 	serial_outp(up, UART_IER, iersave);
 }
 
+
+#if defined(CONFIG_ARCH_CNS3XXX)
+static void autoconfig(struct uart_8250_port *up, unsigned int probeflags)
+{
+    unsigned char c;
+
+	up->port.type = PORT_16550A;
+	/* set clock source => 24MHz */
+    c = serial_in(up, UART_LCR);
+    serial_out(up, UART_LCR, c | UART_LCR_DLAB);
+    serial_out(up, UART_PSR, UART_PSR_CLK_24000000);
+    serial_out(up, UART_LCR, c & ~UART_LCR_DLAB);
+
+	return;
+}
+#else
+
 /*
  * This routine is called by rs_init() to initialize a specific serial
  * port.  It determines what type of UART chip this serial port is
@@ -1256,7 +1273,7 @@ static void autoconfig(struct uart_8250_port *up, unsigned int probeflags)
 	spin_unlock_irqrestore(&up->port.lock, flags);
 	DEBUG_AUTOCONF("type=%s\n", uart_config[up->port.type].name);
 }
-
+#endif
 static void autoconfig_irq(struct uart_8250_port *up)
 {
 	unsigned char save_mcr, save_ier;
@@ -1743,15 +1760,15 @@ static void serial8250_backup_timeout(unsigned long data)
 	unsigned int iir, ier = 0, lsr;
 	unsigned long flags;
 
+
+	spin_lock_irqsave(&up->port.lock, flags);
 	/*
 	 * Must disable interrupts or else we risk racing with the interrupt
 	 * based handler.
 	 */
 	if (is_real_interrupt(up->port.irq)) {
-		spin_lock_irqsave(&up->port.lock, flags);
 		ier = serial_in(up, UART_IER);
 		serial_out(up, UART_IER, 0);
-		spin_unlock_irqrestore(&up->port.lock, flags);
 	}
 
 	iir = serial_in(up, UART_IIR);
@@ -1762,10 +1779,8 @@ static void serial8250_backup_timeout(unsigned long data)
 	 * the "Diva" UART used on the management processor on many HP
 	 * ia64 and parisc boxes.
 	 */
-	spin_lock_irqsave(&up->port.lock, flags);
 	lsr = serial_in(up, UART_LSR);
 	up->lsr_saved_flags |= lsr & LSR_SAVE_FLAGS;
-	spin_unlock_irqrestore(&up->port.lock, flags);
 	if ((iir & UART_IIR_NO_INT) && (up->ier & UART_IER_THRI) &&
 	    (!uart_circ_empty(&up->port.info->xmit) || up->port.x_char) &&
 	    (lsr & UART_LSR_THRE)) {
@@ -1775,11 +1790,10 @@ static void serial8250_backup_timeout(unsigned long data)
 
 	if (is_real_interrupt(up->port.irq))
 	    {
-		spin_lock_irqsave(&up->port.lock, flags);
 		serial_out(up, UART_IER, ier);
-		spin_unlock_irqrestore(&up->port.lock, flags);
 	    }
 
+	spin_unlock_irqrestore(&up->port.lock, flags);
 
 	if (!(iir & UART_IIR_NO_INT))
 		serial8250_handle_port(up);
@@ -1948,7 +1962,10 @@ static int serial8250_startup(struct uart_port *port)
 {
 	struct uart_8250_port *up = (struct uart_8250_port *)port;
 	unsigned long flags;
-	unsigned char lsr, iir;
+#if !defined(CONFIG_ARCH_CNS3XXX)
+	unsigned char lsr;
+#endif
+	unsigned char iir;
 	int retval;
 
 	up->capabilities = uart_config[up->port.type].flags;
@@ -2117,6 +2134,7 @@ static int serial8250_startup(struct uart_port *port)
 	if (up->port.flags & UPF_NO_TXEN_TEST)
 		goto dont_test_tx_en;
 
+#if !defined(CONFIG_ARCH_CNS3XXX)
 	/*
 	 * Do a quick test to see if we receive an
 	 * interrupt when we enable the TX irq.
@@ -2135,6 +2153,7 @@ static int serial8250_startup(struct uart_port *port)
 	} else {
 		up->bugs &= ~UART_BUG_TXEN;
 	}
+#endif
 
 dont_test_tx_en:
 	spin_unlock_irqrestore(&up->port.lock, flags);
@@ -3019,8 +3038,8 @@ static int serial8250_resume(struct platform_device *dev)
 static struct platform_driver serial8250_isa_driver = {
 	.probe		= serial8250_probe,
 	.remove		= __devexit_p(serial8250_remove),
-	.suspend	= serial8250_suspend,
-	.resume		= serial8250_resume,
+//	.suspend	= serial8250_suspend,
+//	.resume		= serial8250_resume,
 	.driver		= {
 		.name	= "serial8250",
 		.owner	= THIS_MODULE,

@@ -339,6 +339,8 @@ static int __devinit cns3xxx_wdt_probe(struct platform_device *dev)
 	struct resource *res;
 	int ret;
 
+	printk("watchdog: cns3xxx_wdt_probe\n");
+
 	/* We only accept one device, and it must have an id of -1 */
 	if (dev->id != -1)
 		return -ENODEV;
@@ -357,11 +359,13 @@ static int __devinit cns3xxx_wdt_probe(struct platform_device *dev)
 
 	wdt->dev = &dev->dev;
 	wdt->irq = platform_get_irq(dev, 0);
+	printk("watchdog irq = %d\n", wdt->irq);
 	if (wdt->irq < 0) {
 		ret = -ENXIO;
 		goto err_free;
 	}
 	wdt->base = ioremap(res->start, res->end - res->start + 1);
+	printk("watchdog start_regs  = 0x%8X\n", (unsigned int)wdt->base);
 	if (!wdt->base) {
 		ret = -ENOMEM;
 		goto err_free;
@@ -404,6 +408,8 @@ err_out:
 static int __devexit cns3xxx_wdt_remove(struct platform_device *dev)
 {
 	struct cns3xxx_wdt *wdt = platform_get_drvdata(dev);
+
+	printk("watchdog: cns3xxx_wdt_remove\n");
 
 	platform_set_drvdata(dev, NULL);
 
