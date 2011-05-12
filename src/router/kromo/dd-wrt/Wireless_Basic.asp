@@ -201,11 +201,14 @@ function submitcheck(F) {
 		F.wl0_nbw.value = 20;
 	}
 	else { // 40MHz
+		if (F.wl0_channel)
+		{
 		if(F.wl0_channel.selectedIndex == 0) {
 		F.wl0_nctrlsb.value = "lower";
 		}
 		else {
 		F.wl0_nctrlsb.value = "upper";
+		}
 		}
 		F.wl0_nbw.value = 40;
 	}
@@ -224,11 +227,14 @@ function submitcheck(F) {
 		F.wl1_nbw.value = 20;
 	}
 	else { // 40MHz
+		if (F.wl1_channel)
+		{
 		if(F.wl1_channel.selectedIndex == 0) {
 			F.wl1_nctrlsb.value = "lower";
 		}
 		else {
 			F.wl1_nctrlsb.value = "upper";
+		}
 		}
 		F.wl1_nbw.value = 40;
 	}
