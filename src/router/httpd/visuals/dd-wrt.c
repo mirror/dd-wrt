@@ -4389,11 +4389,8 @@ if (has_5ghz(prefix)) {
 show_chanshift(wp, prefix);
 #endif
 #endif
-#ifdef HAVE_RT2880
-#else
 if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
     || nvram_match(wl_mode, "infra"))
-#endif
 {
 
 	if (has_mimo(prefix)
@@ -4818,11 +4815,8 @@ if (!is_ath9k(prefix))
 	websWrite(wp, "</div>\n");
 
 // test
-#ifdef HAVE_RT2880
-#else
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	    || nvram_match(wl_mode, "infra"))
-#endif
 	{
 
 		if (has_mimo(prefix)
