@@ -29,6 +29,7 @@
 #include <linux/if_ether.h>
 #include <linux/socket.h>
 #include <linux/netdevice.h>
+#include <linux/vmalloc.h>
 
 #include <linux/serial.h>
 #include <linux/tty.h>
@@ -44,8 +45,12 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/mmc/host.h>
+#include <mach/board.h>
+#include <mach/dmac.h>
 #include <mach/lm.h>
 #include <mach/sdhci.h>
+#include <mach/pm.h>
+#include <mach/misc.h>
 
 #include <asm/types.h>
 #include <asm/setup.h>
@@ -331,38 +336,38 @@ static struct mtd_partition laguna_spiflash_partitions[] = {
 	{
 		.name		= "bootloader",
 		.offset		= 0,
-		.size		= SZ_128K,
+		.size		= SZ_256K,
 	},
 	/* Bootloader params */
 	{
 		.name		= "params",
-		.offset		= SZ_128K,
-		.size		= SZ_128K,
+		.offset		= SZ_256K,
+		.size		= SZ_256K,
 	},
 	/* linux */
 	{
 		.name = "linux",
-		.offset = SZ_256K,
-		.size = 0x180000,
+		.offset = SZ_512K,
+		.size = SZ_2M,
 		.mask_flags = 0,
 	},
 	/* FileSystem */
 	{
 		.name		= "rootfs",
-		.offset		= SZ_256K + 0x180000,
-		.size		= SZ_4M - SZ_256K - 0x180000,
+		.offset		= SZ_512K + SZ_2M ,
+		.size		= SZ_16M - SZ_512K - SZ_2M,
 	},
 	/* ddwrt */
 	{
 		.name = "ddwrt",
-		.offset = SZ_256K + SZ_128K + SZ_2M,
+		.offset = SZ_512K + SZ_2M,
 		.size = SZ_128K,
 		.mask_flags = 0,
 	},
 	/* NVRAM */
 	{
 		.name = "nvram",
-		.offset = SZ_256K + SZ_128K + SZ_2M,
+		.offset = SZ_512K + SZ_2M,
 		.size = SZ_128K,
 		.mask_flags = 0,
 	}
@@ -486,6 +491,33 @@ static void __init laguna_init(void)
 
 	pm_power_off = cns3xxx_power_off;
 }
+#define LE8221_SPI_CS		1
+#define SI3226_SPI_CS		1
+
+#define CNS3XXX_SPI_INTERRUPT
+#undef CNS3XXX_SPI_INTERRUPT	/* Interrupt is not supported for D2 and SEN */
+
+/*
+ * define access macros
+ */
+#define SPI_MEM_MAP_VALUE(reg_offset)		(*((u32 volatile *)(CNS3XXX_SSP_BASE_VIRT + reg_offset)))
+
+#define SPI_CONFIGURATION_REG			SPI_MEM_MAP_VALUE(0x40)
+#define SPI_SERVICE_STATUS_REG			SPI_MEM_MAP_VALUE(0x44)
+#define SPI_BIT_RATE_CONTROL_REG		SPI_MEM_MAP_VALUE(0x48)
+#define SPI_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x4C)
+#define SPI_TRANSMIT_BUFFER_REG			SPI_MEM_MAP_VALUE(0x50)
+#define SPI_RECEIVE_CONTROL_REG			SPI_MEM_MAP_VALUE(0x54)
+#define SPI_RECEIVE_BUFFER_REG			SPI_MEM_MAP_VALUE(0x58)
+#define SPI_FIFO_TRANSMIT_CONFIG_REG		SPI_MEM_MAP_VALUE(0x5C)
+#define SPI_FIFO_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x60)
+#define SPI_FIFO_RECEIVE_CONFIG_REG		SPI_MEM_MAP_VALUE(0x64)
+#define SPI_INTERRUPT_STATUS_REG		SPI_MEM_MAP_VALUE(0x68)
+#define SPI_INTERRUPT_ENABLE_REG		SPI_MEM_MAP_VALUE(0x6C)
+
+#define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x50)
+#define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
+
 
 static int __init laguna_model_setup(void)
 {
@@ -532,7 +564,7 @@ static int __init laguna_model_setup(void)
 			laguna_uart.num_resources = 3;
 		platform_device_register(&laguna_uart);
 		printk(KERN_EMERG "notflash size %d\n",laguna_info.nor_flash_size);
-		if (laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) {
+		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && strncmp(laguna_info.model, "GW2388", 6) == 0) {
 			printk(KERN_EMERG "detecting NOR FLASH\n");
 //			if (laguna_info.nor_flash_size < 1 || laguna_info.nor_flash_size > 5)
 //			    laguna_info.nor_flash_size = 2; //guess default for wrong config 
@@ -592,26 +624,69 @@ static int __init laguna_model_setup(void)
 			platform_device_register(&laguna_norflash_device);
 		}
 
-		if (laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) {
+		if ((laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) && strncmp(laguna_info.model, "GW2380", 6) == 0) {
 			printk(KERN_EMERG "detecting SPI FLASH\n");
+			SPI_CONFIGURATION_REG = 0x40000000;
+			HAL_MISC_ENABLE_SPI_SERIAL_FLASH_BANK_ACCESS();
+			laguna_spiflash_partitions[2].size		= SZ_16M - SZ_512K;
+#if 0
 			switch (laguna_info.spi_flash_size) {
 				case 1:
-					laguna_spiflash_partitions[2].size		= SZ_4M - SZ_256K - SZ_128K;
+					laguna_spiflash_partitions[2].size		= SZ_4M - SZ_512K;
 				break;
 				case 2:
-					laguna_spiflash_partitions[2].size		= SZ_8M - SZ_256K - SZ_128K;
+					laguna_spiflash_partitions[2].size		= SZ_8M - SZ_512K;
 				break;
 				case 3:
-					laguna_spiflash_partitions[2].size		= SZ_16M - SZ_256K - SZ_128K;
+					laguna_spiflash_partitions[2].size		= SZ_16M - SZ_512K;
 				break;
 				case 4:
-					laguna_spiflash_partitions[2].size		= SZ_32M - SZ_256K - SZ_128K;
+					laguna_spiflash_partitions[2].size		= SZ_32M - SZ_512K;
 				break;
 				case 5:
-					laguna_spiflash_partitions[2].size		= SZ_64M - SZ_256K - SZ_128K;
+					laguna_spiflash_partitions[2].size		= SZ_64M - SZ_512K;
 				break;
 			}
-//			spi_register_board_info(laguna_spi_devices, ARRAY_SIZE(laguna_spi_devices));
+#endif
+			unsigned int flashsize = laguna_spiflash_partitions[2].size + SZ_512K;
+			unsigned char *buf = (unsigned char *)ioremap(CNS3XXX_SPI_FLASH_BASE,SZ_16M-1);
+		//	unsigned char *buf = (unsigned char *)CNS3XXX_SPI_FLASH_BASE;
+			unsigned int offset=0;
+			int tmplen;
+			int filesyssize=0;
+			int erasesize=0x40000;
+			while(offset<SZ_8M)
+			{
+			if (*((__u32 *) buf) == SQUASHFS_MAGIC || *((__u16 *) buf) == 0x1985) 
+			{
+			struct squashfs_super_block *sb;
+			char *block = vmalloc(0x40000);
+			memcpy(block,buf,0x40000);
+			sb = (struct squashfs_super_block*)block;
+			printk(KERN_EMERG "found squashfs @0x%08X magic=0x%08X\n",offset,*((__u32 *) buf));
+			filesyssize = sb->bytes_used;
+			vfree(block);
+			printk(KERN_EMERG "filesystem size 0x%08X\n",filesyssize);
+			tmplen = offset + filesyssize;
+			tmplen +=  (erasesize - 1);
+			tmplen &= ~(erasesize - 1);
+			filesyssize = tmplen - offset;
+			printk(KERN_EMERG "filesystem size 0x%08X\n",filesyssize);
+			laguna_spiflash_partitions[3].offset = offset;
+			laguna_spiflash_partitions[3].size = filesyssize;
+			laguna_spiflash_partitions[4].offset = offset + filesyssize;
+			laguna_spiflash_partitions[4].size = (flashsize- SZ_256K) - laguna_spiflash_partitions[4].offset;
+			laguna_spiflash_partitions[5].offset = (flashsize - SZ_256K);
+			laguna_spiflash_partitions[5].size = SZ_256K;
+			break;
+			}
+			buf+=0x1000;
+			offset+=0x1000;
+			}
+			HAL_MISC_DISABLE_SPI_SERIAL_FLASH_BANK_ACCESS();
+
+		if (strncmp(laguna_info.model, "GW2380", 6) == 0)
+			spi_register_board_info(laguna_spi_devices, ARRAY_SIZE(laguna_spi_devices));
 
 		}
 

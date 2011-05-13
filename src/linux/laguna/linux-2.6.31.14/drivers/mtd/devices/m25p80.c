@@ -506,13 +506,14 @@ static struct flash_info __devinitdata m25p_data [] = {
 	/* Spansion -- single (large) sector size only, at least
 	 * for the chips listed here (without boot sectors).
 	 */
+	{ "s25sl016a", 0x010120, 0x0184d, 256 * 1024, 64, },
 	{ "s25sl004a", 0x010212, 0, 64 * 1024, 8, },
 	{ "s25sl008a", 0x010213, 0, 64 * 1024, 16, },
 	{ "s25sl016a", 0x010214, 0, 64 * 1024, 32, },
 	{ "s25sl032a", 0x010215, 0, 64 * 1024, 64, },
 	{ "s25sl064a", 0x010216, 0, 64 * 1024, 128, },
-        { "s25sl12800", 0x012018, 0x0300, 256 * 1024, 64, },
-	{ "s25sl12801", 0x012018, 0x0301, 64 * 1024, 256, },
+        { "s25sl12800", 0x012018, 0x4d00, 256 * 1024, 64, },
+	{ "s25sl12801", 0x012018, 0x4d01, 64 * 1024, 256, },
 
 	/* SST -- large erase sizes are "overlays", "sectors" are 4K */
 	{ "sst25vf040b", 0xbf258d, 0, 64 * 1024, 8, SECT_4K, },
@@ -584,7 +585,7 @@ static struct flash_info *__devinit jedec_probe(struct spi_device *spi)
 			return info;
 		}
 	}
-	dev_err(&spi->dev, "unrecognized JEDEC id %06x\n", jedec);
+	dev_err(&spi->dev, "unrecognized JEDEC id %06x,%06x \n", jedec, ext_jedec);
 	return NULL;
 }
 
