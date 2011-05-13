@@ -529,10 +529,13 @@ static int __init laguna_model_setup(void)
 	if (strncmp(laguna_info.model, "GW", 2) == 0) {
 		if (laguna_info.config_bitmap & ETH0_LOAD)
 			laguna_net_data.ports |= BIT(0);
+		if (strncmp(laguna_info.model, "GW2388", 6) == 0)
+		{
 		if (laguna_info.config_bitmap & ETH1_LOAD)
 			laguna_net_data.ports |= BIT(1);
 		if (laguna_info.config_bitmap & ETH2_LOAD)
 			laguna_net_data.ports |= BIT(2);
+		}
 		if (laguna_net_data.ports)
 			platform_device_register(&laguna_net_device);
 		
