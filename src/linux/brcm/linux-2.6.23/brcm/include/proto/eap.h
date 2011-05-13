@@ -6,7 +6,7 @@
  *
  * Copyright (C) 2002 Broadcom Corporation
  *
- * $Id: eap.h,v 9.5 2005/09/14 02:12:43 Exp $
+ * $Id: eap.h,v 9.5 2005-09-14 02:12:43 Exp $
  */
 
 #ifndef _eap_h_

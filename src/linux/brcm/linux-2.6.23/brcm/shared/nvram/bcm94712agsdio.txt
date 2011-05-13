@@ -1,12 +1,6 @@
 # bcm94712agsdio board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm94712agsdio.txt,v 1.2 2005/12/05 21:35:11 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm94712agsdio.txt,v 1.2 2005-12-05 21:35:11 mtanner Exp $
 boardtype=0x047b
 boardnum=${serno}
 # Board revision 1.2

@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nicpci.h,v 13.10.12.2 2010/05/24 16:44:11 Exp $
+ * $Id: nicpci.h,v 13.10.12.3 2011-01-27 19:03:20 Exp $
  */
 
 #ifndef	_NICPCI_H
@@ -54,6 +54,8 @@
 #define pcicore_pmeen(a)	do { } while (0)
 #define pcicore_pmeclr(a)	do { } while (0)
 #define pcicore_pmestat(a)	(FALSE)
+#define pcie_set_request_size(pch, size) do { } while (0)
+#define pcie_get_request_size(pch) (0)
 #else
 struct sbpcieregs;
 
@@ -94,6 +96,8 @@ extern bool pcicore_pmecap_fast(osl_t *osh);
 extern void pcicore_pmeen(void *pch);
 extern void pcicore_pmeclr(void *pch);
 extern bool pcicore_pmestat(void *pch);
+extern void pcie_set_request_size(void *pch, uint16 size);
+extern uint16 pcie_get_request_size(void *pch);
 #endif 
 
 #endif	/* _NICPCI_H */

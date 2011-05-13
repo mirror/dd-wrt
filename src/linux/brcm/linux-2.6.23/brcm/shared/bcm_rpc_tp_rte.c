@@ -2,7 +2,7 @@
  * RPC Transport layer(for HNDRTE bus driver)
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_rpc_tp_rte.c,v 1.26.4.1 2010/02/09 20:46:51 Exp $
+ * $Id: bcm_rpc_tp_rte.c,v 1.28.2.6 2010-09-03 04:09:49 Exp $
  */
 
 #ifndef WLC_LOW
@@ -108,8 +108,8 @@ struct rpc_transport_info {
 /* no. of aggregated subframes per second to activate/deactivate lazy agg(delay release)
  * For medium traffic, the sf/s is > 5k+
  */
-#define BCM_RPC_TP_AGG_LAZY_WM_HI	2000	/* activate lazy agg if higher than this */
-#define BCM_RPC_TP_AGG_LAZY_WM_LO	1000	/* deactivate lazy agg if lower than this */
+#define BCM_RPC_TP_AGG_LAZY_WM_HI	50	/* activate lazy agg if higher than this */
+#define BCM_RPC_TP_AGG_LAZY_WM_LO	20	/* deactivate lazy agg if lower than this */
 
 #define BCM_RPC_TP_DNGL_TOTLEN_BAD	516
 #define BCM_RPC_TP_DNGL_TOTLEN_BAD_PAD	8
@@ -183,12 +183,11 @@ BCMATTACHFN(bcm_rpc_tp_detach)(rpc_tp_info_t * rpc_th)
 void
 bcm_rpc_tp_watchdog(rpc_tp_info_t *rpcb)
 {
-	static int old = 0;
-	int delta;
+	static uint old = 0;
+	uint delta = 0;
 
 	/* (1) close agg periodically to avoid stale aggregation */
 	bcm_rpc_tp_dngl_agg_release(rpcb);
-
 
 	delta = rpcb->tp_dngl_agg_cnt_sf - old;
 	old = rpcb->tp_dngl_agg_cnt_sf;
@@ -486,7 +485,7 @@ bcm_rpc_tp_send_callreturn(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
 {
 	int err;
 	struct lbuf *lb;
-	hndrte_dev_t *chained = rpc_th->ctx->dev_chained;
+	hndrte_dev_t *chained = rpc_th->ctx->chained;
 
 	ASSERT(chained);
 
@@ -496,9 +495,9 @@ bcm_rpc_tp_send_callreturn(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
 	lb = PKTTONATIVE(rpc_th->osh, b);
 
 	if (rpc_th->has_2nd_bulk_in_ep) {
-		err = chained->dev_funcs->xmit2(rpc_th->ctx, chained, lb, USBDEV_BULK_IN_EP2);
+		err = chained->funcs->xmit2(rpc_th->ctx, chained, lb, USBDEV_BULK_IN_EP2);
 	} else {
-		err = chained->dev_funcs->xmit_ctl(rpc_th->ctx, chained, lb);
+		err = chained->funcs->xmit_ctl(rpc_th->ctx, chained, lb);
 	}
 	/* send through control endpoint */
 	if (err != 0) {
@@ -562,6 +561,7 @@ bcm_rpc_tp_buf_send(rpc_tp_info_t * rpc_th, rpc_buf_t *b)
 	return err;
 }
 
+#ifdef BCMUSBDEV
 static void
 bcm_rpc_tp_buf_pad(rpc_tp_info_t * rpcb, rpc_buf_t *bb, uint padbytes)
 {
@@ -575,17 +575,20 @@ bcm_rpc_tp_buf_pad(rpc_tp_info_t * rpcb, rpc_buf_t *bb, uint padbytes)
 	*tp_lenp = htol32(tp_len);
 	bcm_rpc_buf_len_set(rpcb, bb, pktlen);
 }
+#endif /* BCMUSBDEV */
 
 static int
 bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b, uint32 tx_ep_index)
 {
 	int err;
 	struct lbuf *lb = (struct lbuf *)b;
-	hndrte_dev_t *chained = rpcb->ctx->dev_chained;
+	hndrte_dev_t *chained = rpcb->ctx->chained;
 	uint pktlen;
 
 	ASSERT(chained);
 
+	UNUSED_PARAMETER(pktlen);
+#ifdef BCMUSBDEV
 	if ((rpcb->tp_dngl_agg_bytes != 0) && (tx_ep_index == USBDEV_BULK_IN_EP1)) {
 		if (rpcb->tp_dngl_agg_bytes == BCM_RPC_TP_DNGL_TOTLEN_BAD) {
 			ASSERT(rpcb->tp_dngl_agg_p == b);
@@ -623,10 +626,11 @@ bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b, uint32 tx_ep_in
 			bcm_rpc_tp_buf_pad(rpcb, b, BCM_RPC_TP_DNGL_TOTLEN_ZLP_PAD);
 		}
 	}
+#endif /* BCMUSBDEV */
 
 	lb = PKTTONATIVE(rpcb->osh, b);
 	/* send through data endpoint */
-	if ((err = chained->dev_funcs->xmit(rpcb->ctx, chained, lb)) != 0) {
+	if ((err = chained->funcs->xmit(rpcb->ctx, chained, lb)) != 0) {
 		RPC_TP_ERR(("%s: xmit failed; free pkt 0x%p\n", __FUNCTION__, lb));
 		rpcb->txerr_cnt++;
 		lb_free(lb);
@@ -686,14 +690,14 @@ rpc_buf_t *
 bcm_rpc_tp_buf_alloc(rpc_tp_info_t * rpc_th, int len)
 {
 	rpc_buf_t * b;
-	size_t tp_len = len + BCM_RPC_TP_ENCAP_LEN;
+	size_t tp_len = len + BCM_RPC_TP_ENCAP_LEN + BCM_RPC_BUS_HDR_LEN;
 
 	b = (rpc_buf_t*)PKTGET(rpc_th->osh, tp_len, FALSE);
 
 	if (b != NULL) {
 		rpc_th->bufalloc++;
 		rpc_th->buf_cnt_inuse++;
-		PKTPULL(rpc_th->osh, b, BCM_RPC_TP_ENCAP_LEN);
+		PKTPULL(rpc_th->osh, b, BCM_RPC_TP_ENCAP_LEN + BCM_RPC_BUS_HDR_LEN);
 	}
 
 	return b;
@@ -838,7 +842,8 @@ bcm_rpc_tp_dngl_agg(rpc_tp_info_t *rpcb, rpc_buf_t *b)
 	bcm_rpc_tp_dngl_agg_append(rpcb, b);
 
 	/* if the new frag is also already over the agg limit, release it */
-	if (pktlen >= rpcb->tp_dngl_agg_bytes_max) {
+	if ((pktlen >= rpcb->tp_dngl_agg_bytes_max) ||
+		(rpcb->tp_dngl_agg_sframes + 1 > rpcb->tp_dngl_agg_sframes_limit)) {
 		int new_err;
 		new_err = bcm_rpc_tp_dngl_agg_release(rpcb);
 		if (!err)

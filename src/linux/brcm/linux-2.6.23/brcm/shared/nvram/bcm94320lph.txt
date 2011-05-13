@@ -1,12 +1,6 @@
 # BCM94320lph board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
-# the contents of this file may not be disclosed to third parties, copied
-# or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
-# $Id: bcm94320lph.txt,v 1.10 2006/10/12 00:53:09 Exp $
+# $Copyright (C) 2003 Broadcom Corporation$
+# $Id: bcm94320lph.txt,v 1.10 2006-10-12 00:53:09 mtanner Exp $
 boardtype=0x046a
 boardnum=${serno}
 # Board revision 4.0

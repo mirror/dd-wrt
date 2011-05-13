@@ -127,6 +127,10 @@ typedef u_int32_t sbprof_pc;
 extern void sbprof_cpu_intr(sbprof_pc restartpc);
 #endif	/* CONFIG_HND_BMIPS3300_PROF */
 
+/* watchdog */
+#define WATCHDOG_CLOCK		48000000	/* Hz */
+#define WATCHDOG_CLOCK_5354 	32000		/* Hz */
+
 static irqreturn_t
 bcm947xx_timer_interrupt(int irq, void *dev_id)
 {

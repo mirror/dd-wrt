@@ -2,7 +2,7 @@
  * Common [OS-independent] header file for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: etc.h,v 1.71.6.3 2010/03/03 19:44:41 Exp $
+ * $Id: etc.h,v 1.72.18.1 2010-07-01 23:24:44 Exp $
  */
 
 #ifndef _etc_h_
@@ -25,6 +25,8 @@
 #endif
 
 #define NUMTXQ		4
+
+#define TXREC_THR       8
 
 struct etc_info;	/* forward declaration */
 struct bcmstrbuf;	/* forward declaration */
@@ -112,8 +114,10 @@ typedef struct etc_info {
 	uint32		now;		/* elapsed seconds */
 
 	uint32		boardflags;	/* board flags */
+	uint32		txrec_thresh;	/* # of tx frames after which reclaim is done */
 
 	/* sw-maintained stat counters */
+	uint32		txframes[NUMTXQ];	/* transmitted frames on each tx fifo */
 	uint32		txframe;	/* transmitted frames */
 	uint32		txbyte;		/* transmitted bytes */
 	uint32		rxframe;	/* received frames */
@@ -183,8 +187,6 @@ typedef struct etc_info {
 #define TX_Q1		TC_BE	/* DMA txq 1 */
 #define TX_Q2		TC_CL	/* DMA txq 2 */
 #define TX_Q3		TC_VO	/* DMA txq 3 */
-
-#define	ETDUMPSZ	13312
 
 static inline uint32
 etc_up2tc(uint32 up)

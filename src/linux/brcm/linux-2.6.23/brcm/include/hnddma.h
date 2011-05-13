@@ -2,15 +2,21 @@
  * Generic Broadcom Home Networking Division (HND) DMA engine SW interface
  * This supports the following chips: BCM42xx, 44xx, 47xx .
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hnddma.h,v 13.81.4.2 2010/06/21 08:24:09 Exp $
+ * $Id: hnddma.h,v 13.82.12.4 2011-01-27 19:03:20 Exp $
  */
 
 #ifndef	_hnddma_h_
@@ -40,12 +46,15 @@ typedef void (*di_txsuspend_t)(hnddma_t *dmah);
 typedef void (*di_txresume_t)(hnddma_t *dmah);
 typedef bool (*di_txsuspended_t)(hnddma_t *dmah);
 typedef bool (*di_txsuspendedidle_t)(hnddma_t *dmah);
+#ifdef WL_MULTIQUEUE
+typedef void (*di_txflush_t)(hnddma_t *dmah);
+typedef void (*di_txflush_clear_t)(hnddma_t *dmah);
+#endif /* WL_MULTIQUEUE */
 typedef int (*di_txfast_t)(hnddma_t *dmah, void *p, bool commit);
-#ifdef DMA_UNFRAMED
+#if !defined(_CFE_)
 typedef int (*di_txunframed_t)(hnddma_t *dmah, void *p, uint len, bool commit);
-typedef void* (*di_rxunframed)(void *di_void);
-typedef bool (*di_rxfill_unframed)(void *di_void, unsigned char *p);
-#endif /* DMA_UNFRAMED */
+typedef void* (*di_getpos_t)(hnddma_t *di, bool direction);
+#endif /* !_CFE_ */
 typedef void (*di_fifoloopbackenable_t)(hnddma_t *dmah);
 typedef bool  (*di_txstopped_t)(hnddma_t *dmah);
 typedef bool  (*di_rxstopped_t)(hnddma_t *dmah);
@@ -73,6 +82,7 @@ typedef char* (*di_dumprx_t)(hnddma_t *dmah, struct bcmstrbuf *b, bool dumpring)
 typedef uint (*di_rxactive_t)(hnddma_t *dmah);
 typedef uint (*di_txpending_t)(hnddma_t *dmah);
 typedef uint (*di_txcommitted_t)(hnddma_t *dmah);
+typedef uint (*di_avoidancecnt_t)(hnddma_t *dmah);
 
 /* dma opsvec */
 typedef struct di_fcn_s {
@@ -84,12 +94,15 @@ typedef struct di_fcn_s {
 	di_txresume_t           txresume;
 	di_txsuspended_t        txsuspended;
 	di_txsuspendedidle_t    txsuspendedidle;
+#ifdef WL_MULTIQUEUE
+	di_txflush_t            txflush;
+	di_txflush_clear_t      txflush_clear;
+#endif /* WL_MULTIQUEUE */
 	di_txfast_t             txfast;
-#ifdef DMA_UNFRAMED
+#if !defined(_CFE_)
 	di_txunframed_t         txunframed;
-	di_rxunframed			rxunframed;
-	di_rxfill_unframed		rxfill_unframed;
-#endif /* DMA_UNFRAMED */
+	di_getpos_t             getpos;
+#endif /* _CFE_ */
 	di_txstopped_t		txstopped;
 	di_txreclaim_t          txreclaim;
 	di_getnexttxp_t         getnexttxp;
@@ -122,6 +135,7 @@ typedef struct di_fcn_s {
 	di_rxactive_t		rxactive;
 	di_txpending_t		txpending;
 	di_txcommitted_t	txcommitted;
+	di_avoidancecnt_t	avoidancecnt;
 	uint			endnum;
 } di_fcn_t;
 
@@ -139,6 +153,7 @@ struct hnddma_pub {
 	uint		rxnobuf;	/* rx out of dma descriptors */
 	/* tx error counters */
 	uint		txnobuf;	/* tx out of dma descriptors */
+	uint		txnodesc;	/* tx out of dma descriptors running count */
 };
 
 
@@ -158,6 +173,10 @@ extern hnddma_t * dma_attach(osl_t *osh, char *name, si_t *sih, void *dmaregstx,
 #define dma_txresume(di)                ((di)->di_fn->txresume(di))
 #define dma_txsuspended(di)             ((di)->di_fn->txsuspended(di))
 #define dma_txsuspendedidle(di)         ((di)->di_fn->txsuspendedidle(di))
+#ifdef WL_MULTIQUEUE
+#define dma_txflush(di)                 ((di)->di_fn->txflush(di))
+#define dma_txflush_clear(di)           ((di)->di_fn->txflush_clear(di))
+#endif /* WL_MULTIQUEUE */
 #define dma_txfast(di, p, commit)	((di)->di_fn->txfast(di, p, commit))
 #define dma_fifoloopbackenable(di)      ((di)->di_fn->fifoloopbackenable(di))
 #define dma_txstopped(di)               ((di)->di_fn->txstopped(di))
@@ -189,6 +208,7 @@ extern hnddma_t * dma_attach(osl_t *osh, char *name, si_t *sih, void *dmaregstx,
 #define dma_dumptx(di, buf, dumpring)	((di)->di_fn->dumptx(di, buf, dumpring))
 #define dma_dumprx(di, buf, dumpring)	((di)->di_fn->dumprx(di, buf, dumpring))
 #endif /* defined(BCMDBG) || defined(BCMDBG_DUMP) */
+#define dma_avoidance_cnt(di)		((di)->di_fn->avoidancecnt(di))
 
 #else /* BCMDMA32 */
 extern const di_fcn_t dma64proc;
@@ -204,12 +224,15 @@ extern const di_fcn_t dma64proc;
 #define dma_txresume(di)                (dma64proc.txresume(di))
 #define dma_txsuspended(di)             (dma64proc.txsuspended(di))
 #define dma_txsuspendedidle(di)         (dma64proc.txsuspendedidle(di))
+#ifdef WL_MULTIQUEUE
+#define dma_txflush(di)                 (dma64proc.txflush(di))
+#define dma_txflush_clear(di)           (dma64proc.txflush_clear(di))
+#endif /* WL_MULTIQUEUE */
 #define dma_txfast(di, p, commit)	(dma64proc.txfast(di, p, commit))
-#ifdef DMA_UNFRAMED
+#if !defined(_CFE_)
 #define dma_txunframed(di, p, l, commit)(dma64proc.txunframed(di, p, l, commit))
-#define dma_rxunframed(di) 		(dma64proc.rxunframed(di))
-#define dma_rxfill_unframed(di, p) (dma64proc.rxfill_unframed(di, p))
-#endif /* DMA_UNFRAMED */
+#define dma_getpos(di, dir)		(dma64proc.getpos(di, dir))
+#endif /* !_CFE_ */
 #define dma_fifoloopbackenable(di)      (dma64proc.fifoloopbackenable(di))
 #define dma_txstopped(di)               (dma64proc.txstopped(di))
 #define dma_rxstopped(di)               (dma64proc.rxstopped(di))
@@ -240,6 +263,7 @@ extern const di_fcn_t dma64proc;
 #define dma_dumptx(di, buf, dumpring)	(dma64proc.dumptx(di, buf, dumpring))
 #define dma_dumprx(di, buf, dumpring)	(dma64proc.dumprx(di, buf, dumpring))
 #endif
+#define dma_avoidance_cnt(di)		(dma64proc.avoidancecnt(di))
 
 #endif /* BCMDMA32 */
 

@@ -2,7 +2,7 @@
  * Chip-specific hardware definitions for
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: d11.h,v 13.499.2.57 2010/06/29 00:20:18 Exp $
+ * $Id: d11.h,v 13.549.2.55 2011-02-03 02:22:07 Exp $
  */
 
 #ifndef	_D11_H
@@ -45,6 +45,7 @@
 #endif
 
 #define	BCN_TMPL_LEN		512	/* length of the BCN template area */
+#define LPRS_TMPL_LEN		512	/* length of the legacy PRS template area */
 
 /* RX FIFO numbers */
 #define	RX_FIFO			0	/* data and ctl frames */
@@ -300,7 +301,7 @@ typedef volatile struct _d11regs {
 	uint16 psm_pc_reg_3;		/* 0x4D4 */
 	uint16 PAD[0xD];		/* 0x4D6 - 0x4DE */
 	uint16 psm_corectlsts;          /* 0x4f0 */	/* Corerev >= 13 */
-	uint16 PAD[0x7];                /* 0x4f2 - 0x4fE */ 
+	uint16 PAD[0x7];                /* 0x4f2 - 0x4fE */
 
 	/* TXE0 Block */		/* 0x500 - 0x580 */
 	uint16	txe_ctl;		/* 0x500 */
@@ -564,6 +565,8 @@ typedef volatile struct _d11regs {
 #define	MI_BT_RFACT_STUCK	(1 << 22)	/* MAC has detected invalid BT_RFACT pin */
 #define	MI_BT_PRED_REQ		(1 << 23)	/* MAC requested driver BTCX predictor calc */
 #define MI_P2P			(1 << 25)	/* WiFi P2P interrupt */
+#define MI_DMATX		(1 << 26)	/* MAC new frame ready */
+#define MI_TSSI_LIMIT   (1 << 27)   /* Tssi Limit Reach, TxIdx=0 Interrupt */
 #define MI_RFDISABLE		(1 << 28)	/* MAC detected a change on RF Disable input
 						 * (corerev >= 10)
 						 */
@@ -676,7 +679,7 @@ typedef volatile struct _d11regs {
 #define CCS_ERSRC_AVAIL_D11PLL	0x01000000	/* d11 core pll available */
 #define CCS_ERSRC_AVAIL_PHYPLL	0x02000000	/* PHY pll available */
 
-/* HT Cloclk Ctrl and Clock Avail */
+/* HT Cloclk Ctrl and Clock Avail for 4313 */
 #define CCS_ERSRC_REQ_HT    0x00000010   /* HT avail request */
 #define CCS_ERSRC_AVAIL_HT  0x00020000   /* HT clock available */
 
@@ -723,7 +726,12 @@ typedef volatile struct _d11regs {
 #define TXFIFOCMD_FIFOSEL_SHIFT	8		/* fifo */
 #define TXFIFO_FIFOTOP_SHIFT	8		/* fifo start */
 
-#define TXFIFO_START_BLK16	 65		/* Base address + 32 * 512 B/P */
+/* Must redefine to 65 for 16 MBSS */
+#ifdef WLLPRS
+#define TXFIFO_START_BLK16	(65+16)	/* Base address + 32 * 512 B/P + 8 * 512 11g P */
+#else /* WLLPRS */
+#define TXFIFO_START_BLK16	65		/* Base address + 32 * 512 B/P */
+#endif /* WLLPRS */
 #define TXFIFO_START_BLK	 6		/* Base address + 6 * 256 B */
 #define TXFIFO_SIZE_UNIT	256		/* one unit corresponds to 256 bytes */
 #define MBSS16_TEMPLMEM_MINBLKS	65 /* one unit corresponds to 256 bytes */
@@ -746,6 +754,7 @@ typedef volatile struct _d11regs {
 #define	PHY_TYPE_HT		7	/* 3x3 HTPhy value */
 #define	PHY_TYPE_LCN		8	/* LCN-Phy value */
 #define	PHY_TYPE_LCNXN		9	/* LCNXN-Phy value */
+#define	PHY_TYPE_LCN40		10	/* LCN40-Phy value */
 #define	PHY_TYPE_NULL		0xf	/* Invalid Phy value */
 
 /* analog types, PhyVersion:AnalogType field */
@@ -866,8 +875,14 @@ BWL_PRE_PACKED_STRUCT struct d11txh {
 	uint16	TxFrameID;			/* 0x26 */
 	uint16	TxStatus;			/* 0x27 */
 	uint16	MaxNMpdus;			/* 0x28 corerev >=16 */
-	uint16	MaxABytes_MRT;			/* 0x29 corerev >=16 */
-	uint16	MaxABytes_FBR;			/* 0x2a corerev >=16 */
+	union {
+		uint16 MaxAggDur;		/* 0x29 corerev >=16 */
+		uint16 MaxAggLen;
+	} u1;
+	union {
+		uint16	MaxRNum;		/* 0x2a corerev >=16 */
+		uint16	MaxAggLen_FBR;
+	} u2;
 	uint16	MinMBytes;			/* 0x2b corerev >=16 */
 	uint8	RTSPhyHeader[D11_PHY_HDR_LEN];	/* 0x2c - 0x2e */
 	struct	dot11_rts_frame rts_frame;	/* 0x2f - 0x36 */
@@ -979,6 +994,7 @@ BWL_PRE_PACKED_STRUCT struct d11txh {
 /* PhyTxControl for HTphy that are different from Mimophy */
 #define	PHY_TXC_HTANT_MASK		0x3fC0	/* bit 6, 7, 8, 9, 10, 11, 12, 13 */
 #define	PHY_TXC_HTCORE_MASK		0x03C0	/* core enable core3:core0, 1=enable, 0=disable */
+#define	PHY_TXC_HTCORE_SHIFT		6	/* bit 6, 7, 8, 9 */
 #define	PHY_TXC_HTANT_IDX_MASK		0x3C00	/* 4-bit, 16 possible antenna configuration */
 #define	PHY_TXC_HTANT_IDX_SHIFT		10
 #define	PHY_TXC_HTANT_IDX0		0
@@ -1017,6 +1033,8 @@ BWL_PRE_PACKED_STRUCT struct d11txh {
 #define IFS_CTL1_EDCRS	(1 << 3)
 #define IFS_CTL1_EDCRS_20L (1 << 4)
 #define IFS_CTL1_EDCRS_40 (1 << 5)
+#define IFS_EDCRS_MASK	(IFS_CTL1_EDCRS | IFS_CTL1_EDCRS_20L | IFS_CTL1_EDCRS_40)
+#define IFS_EDCRS_SHIFT	3
 
 /* ABI_MimoAntSel */
 #define ABI_MAS_ADDR_BMP_IDX_MASK	0x0f00
@@ -1025,15 +1043,36 @@ BWL_PRE_PACKED_STRUCT struct d11txh {
 #define ABI_MAS_FBR_ANT_PTN_SHIFT	4
 #define ABI_MAS_MRT_ANT_PTN_MASK	0x000f
 
-/* tx status packet */
-typedef struct tx_status tx_status_t;
-BWL_PRE_PACKED_STRUCT struct tx_status {
+/* MinMBytes */
+#define MINMBYTES_PKT_LEN_MASK          0x0300
+#define MINMBYTES_FBRATE_PWROFFSET_MASK     0xFC00
+#define MINMBYTES_FBRATE_PWROFFSET_SHIFT    10
+
+/* tx status packet for core rev 4 */
+typedef struct tx_status_cr4 tx_status_cr4_t;
+BWL_PRE_PACKED_STRUCT struct tx_status_cr4 {
 	uint16 framelen;
 	uint16 PAD;
 	uint16 frameid;
 	uint16 status;
 	uint16 lasttxtime;
 	uint16 sequence;
+	uint16 phyerr;
+	uint16 ackphyrxsh;
+} BWL_POST_PACKED_STRUCT;
+
+
+/* Generic tx status packet for software use. This is independent of hardware
+ * structure for a particular core. Hardware structure should be read and converted
+ * to this structure before being sent for the sofware consumption.
+ */
+typedef struct tx_status tx_status_t;
+BWL_PRE_PACKED_STRUCT struct tx_status {
+	uint16 framelen;
+	uint16 frameid;
+	uint16 status;
+	uint16 sequence;
+	uint32 lasttxtime;
 	uint16 phyerr;
 	uint16 ackphyrxsh;
 } BWL_POST_PACKED_STRUCT;
@@ -1128,34 +1167,12 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 /* the number of RCMTA entries */
 #define RCMTA_SIZE 50
 
-/* WiFi P2P address attribute block */
-#define M_ADDR_BMP_BLK		(0x37e * 2)
-#define M_ADDR_BMP_BLK_SZ	12
-
-#define ADDR_BMP_RA		(1 << 0)	/* Receiver Address (RA) */
-#define ADDR_BMP_TA		(1 << 1)	/* Transmitter Address (TA) */
-#define ADDR_BMP_BSSID		(1 << 2)	/* BSSID */
-#define ADDR_BMP_AP		(1 << 3)	/* Infra-BSS Access Point (AP) */
-#define ADDR_BMP_STA		(1 << 4)	/* Infra-BSS Station (STA) */
-#define ADDR_BMP_P2P_DISC	(1 << 5)	/* P2P Device */
-#define ADDR_BMP_P2P_GO		(1 << 6)	/* P2P Group Owner */
-#define ADDR_BMP_P2P_GC		(1 << 7)	/* P2P Client */
-#define ADDR_BMP_BSS_IDX_MASK	(3 << 8)	/* BSS control block index */
-#define ADDR_BMP_BSS_IDX_SHIFT	8
-
-/* WiFi P2P address starts from this entry in RCMTA */
-#define P2P_ADDR_STRT_INDX	(RCMTA_SIZE - M_ADDR_BMP_BLK_SZ)
-
-
-#ifdef WLP2P
-/* Reserve bottom of RCMTA for P2P Addresses */
-#define	WSEC_MAX_RCMTA_KEYS	(54 - M_ADDR_BMP_BLK_SZ)
-#else
-#define	WSEC_MAX_RCMTA_KEYS	54
-#endif
-
 /* max keys in M_TKMICKEYS_BLK */
 #define	WSEC_MAX_TKMIC_ENGINE_KEYS		12 /* 8 + 4 default */
+
+/* max keys in M_WAPIMICKEYS_BLK */
+#define	WSEC_MAX_SMS4MIC_ENGINE_REAL_KEYS	12 /* (4 * 2) + 4 default */
+#define	WSEC_MAX_SMS4MIC_ENGINE_KEYS		8 /* (4 * 2) + 4 default */
 
 /* max RXE match registers */
 #define WSEC_MAX_RXE_KEYS	4
@@ -1220,7 +1237,6 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define	T_BCN0_TPL_BASE		(0x34 * 2)
 #define	T_PRS_TPL_BASE		(0x134 * 2)
 #define	T_BCN1_TPL_BASE		(0x234 * 2)
-#define T_TX_FIFO_TXRAM_BASE	(T_ACTS_TPL_BASE + (TXFIFO_START_BLK * TXFIFO_SIZE_UNIT))
 
 
 #define T_BA_TPL_BASE		T_QNULL_TPL_BASE	/* template area for BA */
@@ -1228,7 +1244,11 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define T_RAM_ACCESS_SZ		4	/* template ram is 4 byte access only */
 
 #define TPLBLKS_PER_BCN	2
+#if defined(WLLPRS) && defined(MBSS)
+#define TPLBLKS_PER_PRS	4
+#else
 #define TPLBLKS_PER_PRS	2
+#endif /* WLLPRS && MBSS */
 /* calculate the number of template mem blks needed for beacons
  * and probe responses of all the BSSs. add one additional block
  * to account for 104 bytes of space reserved (?) at the start of
@@ -1393,6 +1413,7 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define M_SSLPN_SNR_A_3 	0x1346
 #define M_SSLPN_SNR_B_3 	0x1348
 
+
 /* Olympic N9037.4Mhz crystal change */
 #define M_SSLPNPHY_REG_55f_REG_VAL  16
 #define M_SSLPNPHY_REG_4F2_2_4		17
@@ -1413,26 +1434,9 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define M_SSLPNPHY_REG_4F3_CCK		22
 #define M_SSLPNPHY_ANTDIV_REG		27
 #define M_SSLPNPHY_NOISE_SAMPLES	34
+#define M_SSLPNPHY_TSSICAL_EN           35
 #define M_SSLPNPHY_LNA_TX               36
-
-/* ??? PBR
-#define M_SSLPN_RSSI_0 		0x133a
-#define M_SSLPN_RSSI_1 		0x1340
-#define M_SSLPN_RSSI_2 		0x1346
-#define M_SSLPN_RSSI_3 		0x134c
-
-#define M_SSLPN_SNR_A_0 	0x133c
-#define M_SSLPN_SNR_B_0 	0x133e
-
-#define M_SSLPN_SNR_A_1 	0x1342
-#define M_SSLPN_SNR_B_1 	0x1344
-
-#define M_SSLPN_SNR_A_2 	0x1348
-#define M_SSLPN_SNR_B_2 	0x134a
-
-#define M_SSLPN_SNR_A_3 	0x134e
-#define M_SSLPN_SNR_B_3 	0x1350
-*/
+#define M_SSLPNPHY_TXPWR_BLK		40
 
 /* For noise cal */
 #define M_NOISE_CAL_MIN    35
@@ -1453,24 +1457,24 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define M_SSLPNPHY_RESET_CNT	(0x98c*2)
 
 
-/* CW RSSI for LCNPHY */
-#define M_LCN_RSSI_0 		0x1332
-#define M_LCN_RSSI_1 		0x1338
-#define M_LCN_RSSI_2 		0x133e
-#define M_LCN_RSSI_3 		0x1344
+#define M_LCNPHYREGS_PTR	M_SSLPNPHYREGS_PTR
 
-/* SNR for LCNPHY */
-#define M_LCN_SNR_A_0 	0x1334
-#define M_LCN_SNR_B_0 	0x1336
+/* CW RSSI and SNR for LCNPHY */
+#define M_LCN_RSSI_0	(4 *2)
+#define M_LCN_SNR_A_0	(5 *2)
+#define M_LCN_SNR_B_0	(6 *2)
 
-#define M_LCN_SNR_A_1 	0x133a
-#define M_LCN_SNR_B_1 	0x133c
+#define M_LCN_RSSI_1	(7 *2)
+#define M_LCN_SNR_A_1   (8 *2)
+#define M_LCN_SNR_B_1   (9 *2)
 
-#define M_LCN_SNR_A_2 	0x1340
-#define M_LCN_SNR_B_2 	0x1342
+#define M_LCN_RSSI_2	(10*2)
+#define M_LCN_SNR_A_2   (11*2)
+#define M_LCN_SNR_B_2   (12*2)
 
-#define M_LCN_SNR_A_3 	0x1346
-#define M_LCN_SNR_B_3 	0x1348
+#define M_LCN_RSSI_3	(13*2)
+#define M_LCN_SNR_A_3   (14*2)
+#define M_LCN_SNR_B_3   (15*2)
 
 #define M_LCN_ACI_TMOUT   0x1308
 #define M_LCN_ACI_CNT     0x130a
@@ -1492,6 +1496,7 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define	M_RT_PRS_PLCP_POS	10
 #define	M_RT_PRS_DUR_POS	16
 #define	M_RT_OFDM_PCTL1_POS	18
+#define	M_RT_TXPWROFF_POS	20
 
 #define M_20IN40_IQ			(0x380 * 2)
 
@@ -1541,14 +1546,18 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define M_PKTENG_FRMCNT_VLD		0x0100	/* TX frames indicated in the frmcnt reg */
 
 /* Sample Collect parameters (bitmap and type) */
-#define M_SMPL_COL_BMP		(0x37d * 2)	/* Trigger bitmap for sample collect */
-#define M_SMPL_COL_CTL		(0x3b2 * 2)	/* Sample collect type */
+#define M_SMPL_COL_BMP		(0x372 * 2)	/* Trigger bitmap for sample collect */
+#define M_SMPL_COL_CTL		(0x373 * 2)	/* Sample collect type */
 
 #define ANTSEL_CLKDIV_4MHZ	6
 #define MIMO_ANTSEL_BUSY	0x4000 /* bit 14 (busy) */
 #define MIMO_ANTSEL_SEL		0x8000 /* bit 15 write the value */
 #define MIMO_ANTSEL_WAIT	50	/* 50us wait */
 #define MIMO_ANTSEL_OVERRIDE	0x8000 /* flag */
+
+#define M_AFEOVR_PTR		(0x2c*2)
+/* address of stored default ifs_ctl1 value */
+#define M_IFSCTL1			(0x2d*2)
 
 typedef struct shm_acparams shm_acparams_t;
 BWL_PRE_PACKED_STRUCT struct shm_acparams {
@@ -1579,6 +1588,7 @@ BWL_PRE_PACKED_STRUCT struct shm_acparams {
 #define MHF1_WLAN_CRITICAL  0x0002  /* WLAN is in critical state */
 #define	MHF1_MBSS_EN		0x0004		/* Enable MBSS: RXPUWAR deprecated for rev >= 9 */
 #define	MHF1_CCKPWR		0x0008		/* Enable 4 Db CCK power boost */
+#define	MHF1_4331EPA_MUX	0x0008		/* WAR pin mux, shared with CCK power boost */
 #define	MHF1_BTCOEXIST		0x0010		/* Enable Bluetooth / WLAN coexistence */
 #define	MHF1_DCFILTWAR		0x0020		/* Enable g-mode DC canceler filter bw WAR */
 #define	MHF1_PACTL		0x0040		/* Enable PA gain boost for OFDM frames */
@@ -1600,7 +1610,7 @@ BWL_PRE_PACKED_STRUCT struct shm_acparams {
 #define MHF2_SKIP_ADJTSF	0x0010		/* skip TSF update when receiving bcn/probeRsp */
 #define MHF2_4317PIORXWAR	0x0020		/* PR38778WAR : PIO receiving */
 #define MHF2_TXBCMC_NOW		0x0040		/* Flush BCMC FIFO immediately */
-#define MHF2_HWPWRCTL		0x0080		/* Enable ucode/hw power control */
+#define MHF2_PPR_HWPWRCTL	0x0080		/* For corerev24+, ppr; for GPHY, Hwpwrctrl */
 #define MHF2_BTC2WIRE_ALTGPIO	0x0100		/* BTC 2wire in alternate pins */
 #define MHF2_BTCPREMPT		0x0200		/* BTC enable bluetooth check during tx */
 #define MHF2_SKIP_CFP_UPDATE	0x0400		/* Skip CFP update */
@@ -1616,7 +1626,7 @@ BWL_PRE_PACKED_STRUCT struct shm_acparams {
 #define MHF3_BTCX_DEF_BT	0x0004		/* corerev >= 13 BT Coex. */
 #define MHF3_BTCX_ACTIVE_PROT	0x0008		/* corerev >= 13 BT Coex. */
 #define MHF3_NPHY_MLADV_WAR	0x0010
-#define MHF3_AESAAD_PSM		0x0020		/* PSM supplies AES nonce and mic_iv */
+#define MHF3_KNOISE		0x0020		/* Use this to enable/disable knoise. */
 #define MHF3_UCAMPDU_RETX	0x0040		/* ucode handles AMPDU retransmission */
 #define MHF3_BTCX_DELL_WAR	0x0080
 #define MHF3_BTCX_SIM_RSP 	0x0100		/* allow limited lwo power tx when BT is active */
@@ -1624,7 +1634,7 @@ BWL_PRE_PACKED_STRUCT struct shm_acparams {
 #define MHF3_BTCX_SIM_TX_LP	0x0400		/* use low power for simultaneous tx responses */
 #define MHF3_PR45960_WAR	0x0800
 #define MHF3_BTCX_ECI		0x1000		/* Enable BTCX ECI interface */
-#define MHF3_BTCX_EXTRA_PRI 0x2000      /* Extra priority for 4th wire */
+#define MHF3_BTCX_EXTRA_PRI	0x2000		/* Extra priority for 4th wire */
 #define MHF3_PAPD_OFF_CCK	0x4000		/* Disable PAPD comp for CCK frames */
 #define MHF3_PAPD_OFF_OFDM	0x8000		/* Disable PAPD comp for OFDM frames */
 
@@ -1640,11 +1650,21 @@ BWL_PRE_PACKED_STRUCT struct shm_acparams {
 #define MHF4_BTAMP_TXLOWPWR	0x0100		/* BTAMP, low tx-power mode */
 #define MHF4_WMAC_ACKTMOUT	0x0200		/* reserved for WMAC testing */
 #define MHF4_IBSS_SEC		0x0800		/* IBSS WPA2-PSK operating mode */
+#define MHF4_EXTPA_ENABLE	0x4000		/* for 4313A0 FEM boards */
 
 /* Flags in M_HOST_FLAGS5 */
 #define MHF5_4313_BTCX_GPIOCTRL	0x0001		/* Enable gpio for bt/wlan sel for 4313 */
-#define MHF5_BTCX_LIGHT         0x0002 /* light coex mode, turn off txpu only for critical BT */
-#define MHF5_BTCX_PARALLEL      0x0004 /* BT and WLAN run in parallel. */
+#define MHF5_BTCX_LIGHT         0x0002	 /* light coex mode, turn off txpu only for critical BT */
+#define MHF5_BTCX_PARALLEL      0x0004		/* BT and WLAN run in parallel. */
+#define MHF5_BTCX_DEFANT        0x0008		/* default position for shared antenna */
+#define MHF5_P2P_MODE		0x0010		/* Enable P2P mode */
+#define MHF5_LEGACY_PRS		0x0020		/* Enable legacy probe resp support */
+#define MHF5_BTCX_AUX_SHARED	0x0040		/* BT uses AUX antenna */
+#define MHF5_HTPHY_RSSI_PWRDN	0x0080		/* Disable RSSI_PWRDN feature */
+#define MHF5_TONEJAMMER_WAR	0x0100		/* Enable Tone Jammer war */
+#define   MHF5_TXBA_BURST       0x0400          /* Throughput boost for Intel */
+#define MHF5_DMAHANG_WAR		0x0800		/* Enable DMA Hang war */
+
 /* Radio power setting for ucode */
 #define	M_RADIO_PWR		(0x32 * 2)
 
@@ -1682,6 +1702,9 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 	int8	do_rssi_ma;	/* do per-pkt sampling for per-antenna ma in HIGH */
 	int8	rxpwr[WL_RSSI_ANT_MAX];	/* rssi for supported antennas */
 } BWL_POST_PACKED_STRUCT;
+
+#define	WRXHDR_LEN		36	/* sizeof wlc_d11rxhdr_t */
+
 
 /* PhyRxStatus_0: */
 #define	PRXS0_FT_MASK		0x0003	/* NPHY only: CCK, OFDM, preN, N */
@@ -1743,6 +1766,8 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 #define PRXS3_nphy_MMPLCP_RATE_MASK	0xF000	/* Mixed-mode preamble rate field */
 #define PRXS3_nphy_MMPLCP_RATE_SHIFT	12
 
+#define NPHY_MMPLCPLen(rxs)	((rxs)->PhyRxStatus_3 & PRXS3_nphy_MMPLCPLen_MASK)
+
 /* HTPHY Rx Status defines */
 /* htphy PhyRxStatus_0: those bit are overlapped with PhyRxStatus_0 */
 #define PRXS0_BAND	        0x0400	/* 0 = 2.4G, 1 = 5G */
@@ -1770,6 +1795,15 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 /* htphy PhyRxStatus_5: */
 #define PRXS5_HTPHY_FFO	        0x00FF	/* Fine frequency offset */
 #define PRXS5_HTPHY_AR	        0xFF00	/* Advance Retard */
+
+#define HTPHY_MMPLCPLen(rxs)	((((rxs)->PhyRxStatus_1 & PRXS1_HTPHY_MMPLCPLenL_MASK) >> 8) | \
+	(((rxs)->PhyRxStatus_2 & PRXS2_HTPHY_MMPLCPLenH_MASK) << 8))
+/* Get Rx power on core 0 */
+#define HTPHY_RXPWR_ANT0(rxs)	((((rxs)->PhyRxStatus_2) & PRXS2_HTPHY_RXPWR_ANT0) >> 8)
+/* Get Rx power on core 1 */
+#define HTPHY_RXPWR_ANT1(rxs)	(((rxs)->PhyRxStatus_3) & PRXS3_HTPHY_RXPWR_ANT1)
+/* Get Rx power on core 2 */
+#define HTPHY_RXPWR_ANT2(rxs)	((((rxs)->PhyRxStatus_3) & PRXS3_HTPHY_RXPWR_ANT2) >> 8)
 
 /* ucode RxStatus1: */
 #define	RXS_BCNSENT		0x8000
@@ -1850,8 +1884,6 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 
 #define M_BTCX_MAX_INDEX		89
 #define M_BTCX_BLK_PTR			(M_PSM_SOFT_REGS + (0x49 * 2))
-
-#define M_BTCX_BT_TXOP			(1 * 2)
 #define M_BTCX_PRED_PER			(4 * 2)
 #define M_BTCX_LAST_SCO			(12 * 2)
 #define M_BTCX_LAST_SCO_H		(13 * 2)
@@ -1860,13 +1892,11 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 #define M_BTCX_A2DP_BUFFER		(30 * 2)
 #define M_BTCX_LAST_A2DP		(38 * 2)
 #define M_BTCX_A2DP_BUFFER_LOWMARK	(40 * 2)
-#define M_BTCX_BT_TX_MODE 		(41 * 2)
 #define M_BTCX_PRED_PER_COUNT		(72 * 2)
 #define M_BTCX_PROT_RSSI_THRESH		(73 * 2)
 #define M_BTCX_AMPDUTX_RSSI_THRESH	(74 * 2)
 #define M_BTCX_AMPDURX_RSSI_THRESH	(75 * 2)
 #define M_BTCX_DIVERSITY_SAVE		(89 * 2)
-
 
 #define M_ALT_TXPWR_IDX		(M_PSM_SOFT_REGS + (0x3b * 2))	/* offset to the target txpwr */
 #define M_PHY_TX_FLT_PTR	(M_PSM_SOFT_REGS + (0x3d * 2))
@@ -1875,12 +1905,50 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 #define M_LP_RCCAL_OVR		(M_PSM_SOFT_REGS + (0x6b * 2))
 
 #ifdef WLP2P
+/* WiFi P2P SHM location */
+#define M_P2P_BLK_PTR		(M_PSM_SOFT_REGS + (0x57 * 2))
+
+/* The number of scheduling blocks */
+#define M_P2P_BSS_MAX		4
+
+/* WiFi P2P interrupt block positions */
+#define M_P2P_I_BLK_SZ		4
+#define M_P2P_I_BLK(b)		((0x0 * 2) + (M_P2P_I_BLK_SZ * (b) * 2))
+#define M_P2P_I(b, i)		(M_P2P_I_BLK(b) + ((i) * 2))
+
+#define M_P2P_I_PRE_TBTT	0		/* pretbtt */
+#define M_P2P_I_CTW_END		1		/* CTWindow ends */
+#define M_P2P_I_ABS		2		/* absence period starts */
+#define M_P2P_I_PRS		3		/* presence period starts */
+
+/* P2P hps flags */
+#define M_P2P_HPS		((0x10 * 2))
+#define M_P2P_HPS_CTW(b)	(1 << (b))
+#define M_P2P_HPS_NOA(b)	(1 << ((b) + M_P2P_BSS_MAX))
+
+/* WiFi P2P address attribute block */
+#define M_ADDR_BMP_BLK_SZ	12
+#define M_ADDR_BMP_BLK(b)	((0x11 * 2) + ((b) * 2))
+
+#define ADDR_BMP_RA		(1 << 0)	/* Receiver Address (RA) */
+#define ADDR_BMP_TA		(1 << 1)	/* Transmitter Address (TA) */
+#define ADDR_BMP_BSSID		(1 << 2)	/* BSSID */
+#define ADDR_BMP_AP		(1 << 3)	/* Infra-BSS Access Point (AP) */
+#define ADDR_BMP_STA		(1 << 4)	/* Infra-BSS Station (STA) */
+#define ADDR_BMP_P2P_DISC	(1 << 5)	/* P2P Device */
+#define ADDR_BMP_P2P_GO		(1 << 6)	/* P2P Group Owner */
+#define ADDR_BMP_P2P_GC		(1 << 7)	/* P2P Client */
+#define ADDR_BMP_BSS_IDX_MASK	(3 << 8)	/* BSS control block index */
+#define ADDR_BMP_BSS_IDX_SHIFT	8
+
+/* WiFi P2P address starts from this entry in RCMTA */
+#define P2P_ADDR_STRT_INDX	(RCMTA_SIZE - M_ADDR_BMP_BLK_SZ)
+
 /* WiFi P2P per BSS control block positions.
  * all time related fields are in units of 32us unless noted otherwise.
  */
-#define M_P2P_BSS_MAX		4
-#define M_P2P_BSS_BLK_SZ	10
-#define M_P2P_BSS_BLK(b)	(M_PSM_SOFT_REGS + (0x38a * 2) + M_P2P_BSS_BLK_SZ * (b) * 2)
+#define M_P2P_BSS_BLK_SZ	11
+#define M_P2P_BSS_BLK(b)	((0x1d * 2) + (M_P2P_BSS_BLK_SZ * (b) * 2))
 #define M_P2P_BSS(b, p)		(M_P2P_BSS_BLK(b) + (p) * 2)
 #define M_P2P_BSS_BCN_INT(b)	(M_P2P_BSS_BLK(b) + (0 * 2))	/* beacon interval */
 #define M_P2P_BSS_DTIM_CNT(b)	(M_P2P_BSS_BLK(b) + (1 * 2))	/* DTIM interval? */
@@ -1891,40 +1959,59 @@ BWL_PRE_PACKED_STRUCT struct wlc_d11rxhdr {
 #define M_P2P_BSS_NOA_CNT(b)	(M_P2P_BSS_BLK(b) + (6 * 2))	/* NoA count */
 #define M_P2P_BSS_N_NOA(b)	(M_P2P_BSS_BLK(b) + (7 * 2))	/* next absence time */
 #define M_P2P_BSS_NOA_DUR(b)	(M_P2P_BSS_BLK(b) + (8 * 2))	/* absence period */
-#define M_P2P_BSS_NOA_TD(b)	(M_P2P_BSS_BLK(b) + (9 * 2))	/* presence per. (NoA int - dur) */
+#define M_P2P_BSS_NOA_TD(b)	(M_P2P_BSS_BLK(b) + (9 * 2))	/* presence period (int - dur) */
+#define M_P2P_BSS_NOA_OFS(b)	(M_P2P_BSS_BLK(b) + (10 * 2))	/* last 5 bits of interval */
 
 /* M_P2P_BSS_ST word positions. */
+#define M_P2P_BSS_ST_CTW	(1 << 0)	/* BSS is in CTWindow */
+#define M_P2P_BSS_ST_SUPR	(1 << 1)	/* BSS is suppressing frames */
+#define M_P2P_BSS_ST_ABS	(1 << 2)	/* BSS is in absence period */
+#define M_P2P_BSS_ST_WAKE	(1 << 3)
 #define M_P2P_BSS_ST_AP		(1 << 4)	/* BSS is Infra-BSS AP */
 #define M_P2P_BSS_ST_STA	(1 << 5)	/* BSS is Infra-BSS STA */
 #define M_P2P_BSS_ST_GO		(1 << 6)	/* BSS is P2P Group Owner */
 #define M_P2P_BSS_ST_GC		(1 << 7)	/* BSS is P2P Client */
 
-/* WiFi P2P interrupt block positions */
-#define M_P2P_I_BLK_SZ		4
-#define M_P2P_I_BLK(b)		(M_PSM_SOFT_REGS + (0x36c * 2) + M_P2P_I_BLK_SZ * (b) * 2)
-#define M_P2P_I(b, i)		(M_P2P_I_BLK(b) + (i) * 2)
-#define M_P2P_I_PRE_TBTT	0		/* pretbtt */
-#define M_P2P_I_CTW_END		1		/* CTWindow ends */
-#define M_P2P_I_ABS		2		/* absence period starts */
-#define M_P2P_I_PRS		3		/* presence period starts */
+/* WiFi P2P TSF block positions */
+#define M_P2P_TSF_BLK_SZ	4
+#define M_P2P_TSF_BLK(b)	((0x49 * 2) + (M_P2P_TSF_BLK_SZ * (b) * 2))
+#define M_P2P_TSF(b, w)		(M_P2P_TSF_BLK(b) + (w) * 2)
 
-/* P2P hps flags */
-#define M_P2P_HPS		(M_PSM_SOFT_REGS + (0x37c * 2))
-#define M_P2P_HPS_CTW(b)	(1 << (b))
-#define M_P2P_HPS_NOA(b)	(1 << ((b) + M_P2P_BSS_MAX))
+/* GO operating channel */
+#define M_P2P_GO_CHANNEL	((0x59 * 2))
 #endif /* WLP2P */
+
+#ifdef WLP2P
+/* Reserve bottom of RCMTA for P2P Addresses */
+#define	WSEC_MAX_RCMTA_KEYS	(54 - M_ADDR_BMP_BLK_SZ)
+#else
+#define	WSEC_MAX_RCMTA_KEYS	54
+#endif
 
 /* PKTENG Rx Stats Block */
 #define M_RXSTATS_BLK_PTR	(M_PSM_SOFT_REGS + (0x65 * 2))
 
+/* LUT for Phy/Radio Registers for Idle TSSI measurement */
+#define M_TSSI_MSMT_BLK_PTR	(M_PSM_SOFT_REGS + (53 * 2))
+#define M_LCNPHY_TSSICAL_EN 		(0 * 2)
+#define M_PHY_REG_LUT_CNT			(1 * 2)
+#define M_RADIO_REG_LUT_CNT			(2 * 2)
+#define M_LUT_PHY_REG_RESTORE_BLK	(3 * 2) 		/* 26 locations, 13 regs */
+#define M_LUT_PHY_REG_SETUP_BLK		(29 * 2)		/* 26 locations, 13 regs */
+#define M_LUT_RADIO_REG_RESTORE_BLK	(55 * 2)		/* 30 locations, 15 regs  */
+#define M_LUT_RADIO_REG_SETUP_BLK	(85 * 2)		/* 30 locations, 15 regs  */
+#define M_LCNPHY_TSSICAL_DELAY		(115 * 2)
+#define M_LCNPHY_TSSICAL_TIME		(116 * 2)
+
 /* Txcore Mask related parameters 5 locations (BPHY, OFDM, 1-streams ~ 3-Streams */
-#define M_COREMASK_BLK  	0x3b4
+#define M_COREMASK_BLK  	0x374
 #define M_COREMASK_BPHY		((M_COREMASK_BLK + 0) * 2)
 #define M_COREMASK_OFDM		((M_COREMASK_BLK + 1) * 2)
 #define M_COREMASK_MCS		((M_COREMASK_BLK + 2) * 2)
 #define TXCOREMASK		0x0F
 #define SPATIAL_SHIFT		8
 #define MAX_COREMASK_BLK	5
+
 
 
 /* ucode debug status codes */
@@ -2026,14 +2113,6 @@ typedef enum
 #define S_PHYVER	S_SLRC
 
 /* IHR offsets */
-
-#define PSM_PC_REG_0            0x068
-#define PSM_PC_REG_1            0x069
-#define PSM_PC_REG_2            0x06a
-#define PSM_PC_REG_3            0x06b
-
-#define TSF_CLK_FRAC_L		0x117
-#define TSF_CLK_FRAC_H		0x118
 #define TSF_TMR_TSF_L		0x119
 #define TSF_TMR_TSF_ML		0x11A
 #define TSF_TMR_TSF_MU		0x11B
@@ -2318,10 +2397,12 @@ typedef struct macstat {
 #define SHM_MBSS_PRSLEN0		SHM_MBSS_WORD_OFFSET_TO_ADDR(0x10)
 #define SHM_MBSS_BCFID0			SHM_MBSS_WORD_OFFSET_TO_ADDR(0x20)
 #define SHM_MBSS_SSIDLEN0		SHM_MBSS_WORD_OFFSET_TO_ADDR(0x30)
+#define SHM_MBSS_LPRSLEN0		SHM_MBSS_WORD_OFFSET_TO_ADDR(0x38)
 #define SHM_MBSS_CLOSED_NET		(0x80)	/* indicates closed network */
 
 /* set value for 16 mbss */
 #define SHM_MBSS_PRS_TPL0		(2 * 0x1034)
+#define SHM_MBSS_LPRS_TPL0		(2 * 0x2034)
 
 /* SSID Search Engine entries */
 #define SHM_MBSS_SSIDSE_BASE_ADDR	(0)
@@ -2356,7 +2437,7 @@ typedef struct shm_mbss_prq_entry_s shm_mbss_prq_entry_t;
 BWL_PRE_PACKED_STRUCT struct shm_mbss_prq_entry_s {
 	struct ether_addr ta;
 	uint8 prq_info[2];
-	uint16 time_stamp;
+	uint16 time_stamp; 	/* 7:0 timestamp, 8  HT STA Indication, 15:9 Reserved */
 } BWL_POST_PACKED_STRUCT;
 
 typedef enum shm_mbss_prq_ft_e {
@@ -2380,6 +2461,9 @@ typedef enum shm_mbss_prq_ft_e {
 #define SHM_MBSS_PRQ_ENT_DIR_BSSID(entry) \
 	((((entry)->prq_info[0] >> 6) == 0) || ((entry)->prq_info[0] >> 6) == 2)
 
+/* Was the probe request from a ht STA or a legacy STA */
+#define SHM_MBSS_PRQ_ENT_HTSTA(entry)		((ltoh16((entry)->time_stamp) >> 8) & 0x1)
+#define SHM_MBSS_PRQ_ENT_TIMESTAMP(entry)	(ltoh16((entry)->time_stamp) & 0xFF)
 
 /* This marks the end of a packed structure section. */
 #include <packed_section_end.h>
@@ -2387,9 +2471,18 @@ typedef enum shm_mbss_prq_ft_e {
 #define SHM_BYT_CNT	0x2 /* IHR location */
 #define MAX_BYT_CNT	0x600 /* Maximum frame len */
 
+
 #define M_HOST_WOWLBM	(0x06a * 2) /* Events to be set by driver */
 #define M_WAKEEVENT_IND	(0x06b * 2) /* Event indication by ucode */
 #define M_WOWL_NOBCN	(0x06c * 2) /* loss of bcn value */
+
+#define M_TXPSP_CNT	(0x7b * 2)
+#define M_PHYERR	(0x7f * 2)
+
+#define WOWL_PSP_TPL_BASE	(0x334 * 2)
+#define WOWL_GTK_MSG2	(0x434 * 2)
+#define WOWL_TX_FIFO_TXRAM_BASE	(0x628 * 2)
+
 
 /* Event definitions */
 #define WOWL_MAGIC	(1 << 0)	/* Wakeup on Magic packet */
@@ -2414,6 +2507,7 @@ typedef enum shm_mbss_prq_ft_e {
 /* Shared memory for net-pattern */
 #define M_NETPAT_NUM	(0x0f9 * 2)	/* #of netpatterns */
 #define M_NETPAT_BLK0	(0x178 * 2)	/* pattern 1 */
+
 /* UCODE shm view:
  * typedef struct {
  *         uint16 offset; // byte offset
@@ -2465,8 +2559,6 @@ typedef enum shm_mbss_prq_ft_e {
 #define M_COREMASK_BPHY_WOWL	((M_COREMASK_BLK_WOWL + 0) * 2)
 #define M_COREMASK_OFDM_WOWL	((M_COREMASK_BLK_WOWL + 1) * 2)
 #define M_COREMASK_MCS_WOWL	((M_COREMASK_BLK_WOWL + 2) * 2)
-
-#define MHF4_EXTPA_ENABLE  0x4000 /* for 4313A0 FEM boards */
 
 /* Organization of Template RAM is as follows
  *   typedef struct {
@@ -2522,17 +2614,17 @@ extern uint16 aes_xtime9dbe[512];
 
 #ifdef WLAMPDU_UCODE
 /* ucode assisted AMPDU aggregation */
-#define TOT_TXFS_WSIZE		50		/* totally 50 entries */
-#define M_TXFS_BLKS		(0x36C * 2)	/* Start of side channel, len = 264 bytes */
-#define M_TXFS_INTF_BLKS	(0x39E * 2)	/* Start of side channel descriptors.  One 10 
-						 * byte descriptor for each of the 4 channels
-						 */
-#define C_TXFS_SIZE		10		/* Each descriptor is 10 bytes */
-#define C_TXFS_STRT_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 0) /* start */
-#define C_TXFS_END_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 2) /* end */
-#define C_TXFS_WPTR_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 4) /* driver updates */
-#define C_TXFS_RPTR_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 6) /* ucode updates */
-#define C_TXFS_RNUM_POS(q)	(M_TXFS_INTF_BLKS + (q * C_TXFS_SIZE) + 8) /* For ucode debugging */
+/* ucode allocates a big block starting with 4 side channels, followed by 4 descriptor blocks */
+#define M_TXFS_PTR              (M_PSM_SOFT_REGS + (0x69 * 2))      /* pointer to txfs block */
+#define TOT_TXFS_WSIZE          50              /* totally 50 entries */
+#define C_TXFSD_WOFFSET         TOT_TXFS_WSIZE  /* offset of M_TXFS_INTF_BLK in M_TXFS_BLK */
+
+#define C_TXFSD_SIZE	          10		/* Each descriptor is 10 bytes */
+#define C_TXFSD_STRT_POS(base, q)  (base + (q * C_TXFSD_SIZE) + 0) /* start */
+#define C_TXFSD_END_POS(base, q)   (base + (q * C_TXFSD_SIZE) + 2) /* end */
+#define C_TXFSD_WPTR_POS(base, q)  (base + (q * C_TXFSD_SIZE) + 4) /* driver updates */
+#define C_TXFSD_RPTR_POS(base, q)  (base + (q * C_TXFSD_SIZE) + 6) /* ucode updates */
+#define C_TXFSD_RNUM_POS(base, q)  (base + (q * C_TXFSD_SIZE) + 8) /* For ucode debugging */
 
 #define MPDU_LEN_SHIFT		0
 #define MPDU_LEN_MASK		(0xfff << MPDU_LEN_SHIFT)	/* Bits 0 - 11 */
@@ -2552,7 +2644,20 @@ extern uint16 aes_xtime9dbe[512];
 #define MPDU_RSVD_MASK		(0x7 << MPDU_RSVD_SHIFT)	/* Bit 13-15 */
 #define MPDU_FIFOSEL_SHIFT	16
 #define MPDU_FIFOSEL_MASK	(0x3 << MPDU_FIFOSEL_SHIFT)	/* Bit 16-17 */
-#define M_AMU_MPDU_PTR          (0x69 * 2)
 #endif /* WLAMPDU_HW */
 
+#define MAX_MPDU_SPACE          (D11_TXH_LEN + 1538)
+#define M_HWAGG_STATS_PTR       (0x69 * 2)
+#define C_HWAGG_STATS_MPDU_WSZ  66 /* comes first */
+#define C_HWAGG_RDEMP_WOFF      64 /* offset within the above block */
+#define C_HWAGG_NAMPDU_WOFF     65
+#define C_HWAGG_STATS_TXMCS_WSZ 32 /* next blocks: txmcs (32 bytes) and txmcs_succ (32 bytes) */
+#define C_HWAGG_STATS_WSZ       (C_HWAGG_STATS_MPDU_WSZ + C_HWAGG_STATS_TXMCS_WSZ * 2)
+#define C_MBURST_WOFF           C_HWAGG_STATS_WSZ
+#define C_MBURST_WSZ            8
+#define C_AGGBURST_STATS_WSZ    (C_HWAGG_STATS_WSZ + C_MBURST_WSZ)
+
+#define M_LCNPHY_BLK_PTR		(0x3d * 2)
+#define M_LCNPHY_PABIAS_CCK_OFFSET	0
+#define M_LCNPHY_PABIAS_OFDM_OFFSET	1
 #endif	/* _D11_H */

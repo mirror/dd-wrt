@@ -1,15 +1,21 @@
 /*
  * BCM47XX Sonics SiliconBackplane MIPS core routines
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndmips.c,v 1.51.2.8 2010/06/28 21:58:59 Exp $
+ * $Id: hndmips.c,v 1.63.10.6 2011-01-26 08:19:49 Exp $
  */
 
 #include <typedefs.h>
@@ -164,7 +170,7 @@ BCMINITFN(si_clearirq)(si_t *sih, uint irq)
  * The old assignment to the specified core is removed first.
  */
 static void
-BCMINITFN(si_setirq)(si_t *sih, uint irq, uint coreid, uint coreunit)
+BCMATTACHFN(si_setirq)(si_t *sih, uint irq, uint coreid, uint coreunit)
 {
 	osl_t *osh;
 	void *regs;
@@ -215,7 +221,7 @@ BCMINITFN(si_setirq)(si_t *sih, uint irq, uint coreid, uint coreunit)
  * 'shirqmap' enables virtual dedicated OS IRQ mapping if non-zero.
  */
 void
-BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
+BCMATTACHFN(si_mips_init)(si_t *sih, uint shirqmap)
 {
 	osl_t *osh;
 	uint32 c0reg;
@@ -247,7 +253,7 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 		W_REG(osh, &cc->flash_waitcount, tmp);
 
 	if ((sih->ccrev < 9) ||
-	    ((sih->chip == BCM5350_CHIP_ID) && sih->chiprev == 0)) {
+	    ((CHIPID(sih->chip) == BCM5350_CHIP_ID) && CHIPREV(sih->chiprev) == 0)) {
 		W_REG(osh, &cc->pcmcia_memwait, tmp);
 	}
 
@@ -255,7 +261,7 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 	shirq_map_base = shirqmap;
 
 	/* Chip specific initialization */
-	switch (sih->chip) {
+	switch (CHIPID(sih->chip)) {
 	case BCM5350_CHIP_ID:
 		/* Clear interrupt map */
 		for (irq = 0; irq <= 4; irq++)
@@ -284,6 +290,8 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 		si_setirq(sih, 0, I2S_CORE_ID, 0);
 		break;
 	case BCM5356_CHIP_ID:
+	case BCM47162_CHIP_ID:
+	case BCM53572_CHIP_ID:
 		/* Clear interrupt map */
 		for (irq = 0; irq <= 4; irq++)
 			si_clearirq(sih, irq);
@@ -301,13 +309,16 @@ BCMINITFN(si_mips_init)(si_t *sih, uint shirqmap)
 		si_setirq(sih, 0, CC_CORE_ID, 0);
 		si_setirq(sih, 0, I2S_CORE_ID, 0);
 		break;
-	case BCM47162_CHIP_ID:
+	case BCM4706_CHIP_ID:
 		/* Clear interrupt map */
 		for (irq = 0; irq <= 4; irq++)
 			si_clearirq(sih, irq);
-		si_setirq(sih, 1, D11_CORE_ID, 0);
+		si_setirq(sih, 1, PCIE_CORE_ID, 0);
 		si_setirq(sih, 2, GMAC_CORE_ID, 0);
+		si_setirq(sih, 3, PCIE_CORE_ID, 1);
+		si_setirq(sih, 4, USB20H_CORE_ID, 0);
 		si_setirq(sih, 0, CC_CORE_ID, 0);
+
 		break;
 	}
 }
@@ -354,7 +365,7 @@ BCMINITFN(si_cpu_clock)(si_t *sih)
 		rate = 200000000;
 		goto out;
 	} else if (pll_type == PLL_TYPE3) {
-		if (sih->chip == BCM5365_CHIP_ID) {
+		if (CHIPID(sih->chip) == BCM5365_CHIP_ID) {
 			rate = 200000000;
 			goto out;
 		}
@@ -393,167 +404,121 @@ BCMINITFN(si_mem_clock)(si_t *sih)
 #define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4)
 
 static void
-do_router_coma(si_t *sih, dmemcregs_t *dmc, int delay)
+BCMINITFN(dmc_phyctl)(osl_t *osh, dmemcregs_t *dmc0, uint32 phyctl_val)
 {
-	/* SDRAM refresh */
+	int i;
+	int val, val1;
+	_dmemcregs_t *dmc = (_dmemcregs_t *)dmc0;
+
 	SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, DMC09_SREFRESH);
 	SET_REG(osh, &dmc->control[9], DMC09_START, 0);
 
-	OSL_DELAY(delay * 1000000);
+	SET_REG(osh, &dmc->control[147], (1 << 16), (phyctl_val & (1 << 16)));
+	SET_REG(osh, &dmc->control[148], (1 << 16), (phyctl_val & (1 << 16)));
+	SET_REG(osh, &dmc->control[149], 0x7, (phyctl_val & 0x7));
+	SET_REG(osh, &dmc->control[150], 0x7, (phyctl_val & 0x7));
 
-	/* set jtag user reg 0 = 0x80 to set DDR pad power saving mode */
-	asm("lui  $8, 0xb800");
-	asm("li   $9, 0xff03ff3a");   /* (16 + addr) << 20 | 0xfe03ff3a */
-	asm("sw   $9, 0x0034($8)");
-	asm("li   $9, 0x80");      /* data */
-	asm("sw   $9, 0x0038($8)");
-	asm("li   $9, 0x80071f1f");
-	asm("sw   $9, 0x0030($8)");
-	asm("sync");
-
-	OSL_DELAY(delay * 1000000);
-
-	/* A0 vs B0 steps */
-	if (sih->chiprev == 0) {
-
-		/* set jtag user reg 3 = 0x60000 to turn off ephy pll and bias power */
-		asm("lui  $8, 0xb800");
-		asm("li   $9, 0xff33ff3a");   /* (16 + addr) << 20 | 0xfe03ff3a */
-		asm("sw   $9, 0x0034($8)");
-		asm("li   $9, 0x60000");      /* data */
-		asm("sw   $9, 0x0038($8)");
-		asm("li   $9, 0x80071f1f");
-		asm("sw   $9, 0x0030($8)");
-		asm("sync");
-
-		OSL_DELAY(delay * 1000000);
-	} else {
-
-		/* set ephy pll and bias power power save through chipc registers */
-		asm("lui  $8, 0xb800");
-		asm("li   $9, 0x4");
-		asm("sw   $9, 0x0650($8)");
-		asm("li   $9, 0x8a60e001");
-		asm("sw   $9, 0x0654($8)");
-		asm("sync");
-		asm("nop");
-
-		OSL_DELAY(delay * 1000000);
-
-		asm("lui  $8, 0xb800");
-		asm("li   $9, 0x2");
-		asm("sw   $9, 0x0650($8)");
-		asm("li   $9, 0xcad00000");
-		asm("sw   $9, 0x0654($8)");
-		asm("sync");
-		asm("nop");
-
-		OSL_DELAY(delay * 1000000);
-	}
-
-	/* set ddr dmp io control = 0 */
-	asm("lui  $8, 0xb810");
-	asm("li   $9, 0x0");
-	asm("sw   $9, 0x5408($8)");
-	asm("sync");
-	asm("nop");
-
-	OSL_DELAY(delay * 1000000);
-
-	/* set PMU control = 1 */
-	asm("lui  $8, 0xb800");
-	asm("li   $9, 0x1");
-	asm("sw   $9, 0x0600($8)");
-	asm("sync");
-	asm("nop");
-
-	OSL_DELAY(delay * 1000000);
-
-	/* set mips dmp io control = 0 */
-	asm("lui  $8, 0xb810");
-	asm("li   $9, 0x0");
-	asm("sw   $9, 0x3408($8)");
-	asm("sync");
-	asm("nop");
-
-	/* wait for watch dog timer done */
 	__asm__(
 		".set\tmips3\n\t"
 		"sync\n\t"
 		"wait\n\t"
 		".set\tmips0");
 
-	asm("nop");
-	asm("nop");
+	SET_REG(osh, &dmc->control[9], DMC09_START, DMC09_START);
+
+	/* Check DLL lock */
+	while ((R_REG(osh, &dmc->control[4]) & DMC04_DLLLOCK) == 0);
+
+	/* Add some delay */
+	for (i = 0; i < 3000000; i++);
+
+	val = R_REG(osh, &dmc->control[5]) & 0x1;
+	if (val) {
+		/* bypass mode */
+		val1 = R_REG(osh, &dmc->control[144]) >> 3;
+		val = (R_REG(osh, &dmc->control[140]) & ~0x03ff0000) | (val1 << 16);
+		W_REG(osh, &dmc->control[140], val);
+		val = (R_REG(osh, &dmc->control[142]) & ~0x1ff8000) | (((val1 * 3) & 0x3ff) << 15);
+		W_REG(osh, &dmc->control[142], val);
+		val1 = R_REG(osh, &dmc->control[145]) >> 3;
+		val = (R_REG(osh, &dmc->control[141]) & ~0x03ff0000) | (val1 << 16);
+		W_REG(osh, &dmc->control[141], val);
+		val = (R_REG(osh, &dmc->control[143]) & ~0x1ff8000) | (((val1 * 3) & 0x3ff) << 15);
+		W_REG(osh, &dmc->control[143], val);
+	}
+
+	for (i = 0; i < 1000000; i++);
+
+	SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, 0);
 }
 
 static void
-BCMINITFN(aftercoma)(void)
+BCMINITFN(afterphyctl)(void)
 {
-
 }
 
 void
-si_router_coma(si_t *sih, int reset, int delay)
+si_dmc_phyctl(si_t *sih, uint32 phyctl_val)
 {
+	osl_t *osh;
+	chipcregs_t *cc = NULL;
 	dmemcregs_t *dmc = NULL;
-	chipcregs_t *cc;
-	uint ic_size, ic_lsize;
-	ulong start, end;
-	uint32 c0reg;
-	uint32 tmp;
-	int i;
+	uint idx, i;
 
-	/* Disable interrupts */
+	osh = si_osh(sih);
 
-	c0reg = MFC0(C0_STATUS, 0);
-	tmp = (c0reg & ~(ALLINTS | ST0_IE));
-	MTC0(C0_STATUS, 0, tmp);
+	/* get index of the current core */
+	idx = si_coreidx(sih);
 
-	icache_probe(MFC0(C0_CONFIG, 1), &ic_size, &ic_lsize);
-
-	/* Put coma routine into the icache */
-	start = (ulong)&do_router_coma;
-	end = (ulong)&aftercoma;
-	for (i = 0; i < (end - start); i += ic_lsize)
-		cache_op(start + i, Fill_I);
-
-	/* d11:  aidmp(resetctrl) = 1, aidmp(ioctrl) = 0 */
-	si_setcore(sih, D11_CORE_ID, 0);
-	si_core_disable(sih, 0);
-
-	OSL_DELAY(delay * 1000000);
-
-	/* gmac: aidmp(ioctrl) = 0 */
-	si_setcore(sih, GMAC_CORE_ID, 0);
-	si_core_cflags(sih, -1, 0);
-
-	OSL_DELAY(delay * 1000000);
-
-	/* Prepare JTAG registers */ 
-	si_setcore(sih, CC_CORE_ID, 0);
+	/* switch to chipc core */
 	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+	ASSERT(cc);
+	if ((dmc = (dmemcregs_t *)si_setcore(sih, DMEMC_CORE_ID, 0)) != NULL) {
+		uint ic_size, ic_lsize;
+		ulong start, end;
+		uint32 c0reg;
+		uint32 tmp;
 
-	W_REG(osh, &cc->jtagctrl, 0x01);
-	W_REG(osh, &cc->jtagcmd, 0x80030000);
-	W_REG(osh, &cc->gpioouten, 0x0);
+		/* Enable mips interrupt */
+		c0reg = MFC0(C0_STATUS, 0);
+		tmp = (c0reg & ~ALLINTS) | IE_IRQ0;
+		MTC0(C0_STATUS, 0, tmp);
 
-	/* Set the watchdog */
-	if (sih->chiprev == 0) {
-		W_REG(osh, &cc->watchdog, reset*ILP_CLOCK);
-	} else {
-		si_watchdog_ms(sih, reset*1000);
+		/* Enable PMU interrupt */
+		OR_REG(osh, &cc->intmask, CI_PMU);
+
+		icache_probe(MFC0(C0_CONFIG, 1), &ic_size, &ic_lsize);
+
+		/* Put dmc_phyctl routine into the icache */
+		start = (ulong)&dmc_phyctl;
+		end = (ulong)&afterphyctl;
+		for (i = 0; i < (end - start); i += ic_lsize)
+			cache_op(start + i, Fill_I);
+
+		/* Program PMU timer */
+		tmp = R_REG(osh, &cc->res_req_timer);
+		tmp &= 0xfc000000;
+		tmp |= 0x0100011b;
+		W_REG(osh, &cc->res_req_timer, tmp);
+
+		dmc_phyctl(osh, dmc, phyctl_val);
+
+		/* Clear PMU interrupt */
+		W_REG(osh, &cc->pmustatus, 0x40);
+
+		/* Restore mips interrupt mask */
+		MTC0(C0_STATUS, 0, c0reg);
 	}
-
-	dmc = (dmemcregs_t *)si_setcore(sih, DMEMC_CORE_ID, 0);
-	do_router_coma(sih, dmc, delay);
+	/* switch back to previous core */
+	si_setcoreidx(sih, idx);
 }
 
 static void
-BCMINITFN(sdsleep)(osl_t *osh, dmemcregs_t *dmc)
+BCMINITFN(sdsleep)(osl_t *osh, dmemcregs_t *dmc0)
 {
 	int i;
 	int val, val1;
+	_dmemcregs_t *dmc = (_dmemcregs_t *)dmc0;
 
 	SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, DMC09_SREFRESH);
 	SET_REG(osh, &dmc->control[9], DMC09_START, 0);
@@ -597,7 +562,78 @@ BCMINITFN(aftersdsleep)(void)
 {
 }
 
-#define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4)
+#define PLL_ENTRIES_4706	1
+static bool
+BCMINITFN(mips_pmu_setclock_4706)(si_t *sih, uint32 mipsclock,
+	uint32 ddrclock, uint32 axiclock)
+{
+	chipcregs_t *cc = NULL;
+	uint idx, i;
+	bool ret = TRUE, boolChanged = FALSE;
+	/* 25MHz table for 4706 */
+	static uint32 BCMINITDATA(pll25mhz_table)[][3 + PLL_ENTRIES_4706] = {
+	/*	cpu, ddr, axi, proc_PLL,    */
+		{ 200, 100,  50, 0xc0011080, },
+		{ 300, 150,  75, 0xc00110c0, },
+		{ 400, 200, 100, 0xc0011100, },
+		{ 500, 250, 125, 0xc0011140, },
+		{ 600, 300, 150, 0xc0011180, },
+		{0}
+	};
+	uint32 (*pll_table)[4] = pll25mhz_table;
+
+	/* get index of the current core */
+	idx = si_coreidx(sih);
+
+	/* switch to chipc core */
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+	ASSERT(cc);
+
+	mipsclock /= 1000000;
+	ddrclock /= 1000000;
+	axiclock /= 1000000;
+
+	for (idx = 0; pll_table[idx][0] != 0; idx++) {
+		if ((mipsclock <= pll_table[idx][0]) &&
+		    ((ddrclock == 0) || (ddrclock <= pll_table[idx][1])) &&
+		    ((axiclock == 0) || (axiclock <= pll_table[idx][2])))
+			break;
+	}
+
+	if (pll_table[idx][0] == 0) {
+		ret = FALSE;
+		goto done;
+	}
+
+	for (i = 0; i < PLL_ENTRIES_4706; i++) {
+		W_REG(osh, &cc->pllcontrol_addr, PMU6_4706_PROCPLL_OFF + i);
+		(void)R_REG(osh, &cc->pllcontrol_addr);
+		if (R_REG(osh, &cc->pllcontrol_data) != pll_table[idx][i + 3]) {
+			W_REG(osh, &cc->pllcontrol_data, pll_table[idx][i + 3]);
+			boolChanged = TRUE;
+		}
+	}
+
+	if (boolChanged == FALSE)
+		goto done;
+
+	/* Wait for the last write */
+	(void)R_REG(osh, &cc->pllcontrol_data);
+
+	/* And now do the pll update */
+	W_REG(osh, &cc->pmucontrol,
+	      R_REG(osh, &cc->pmucontrol) | PCTL_PLL_PLLCTL_UPD);
+
+	__asm__ __volatile__(
+		"nop\n"
+		"nop\n"
+		"nop\n"
+		"nop");
+
+done:
+	si_setcoreidx(sih, idx);
+	return ret;
+}
 
 /*
  * Set the MIPS, backplane and DDR clocks as closely as possible in chips
@@ -689,6 +725,7 @@ BCMINITFN(mips_pmu_setclock)(si_t *sih, uint32 mipsclock, uint32 ddrclock, uint3
 		{ 500, 250, 125, 0x11100070, 0x00080402, 0x03200000, 0x48000000, 0x200005c0 },
 		{ 530, 176,  88, 0x11100070, 0x000c0602, 0x03500000, 0x68000000, 0x200005c0 },
 		{ 530, 176, 176, 0x11100070, 0x00060602, 0x03500000, 0x60000000, 0x200005c0 },
+		{ 530, 212, 106, 0x11100070, 0x000a0502, 0x03500000, 0x58000000, 0x200005c0 },
 		{ 530, 265, 132, 0x11100070, 0x00080402, 0x03500000, 0x48000000, 0x200005c0 },
 		{ 533, 133, 133, 0x11100070, 0x000c0c03, 0x05000000, 0x80000000, 0x200005c0 },
 		{ 533, 266, 133, 0x11100070, 0x000c0603, 0x05000000, 0x48000000, 0x200005c0 },
@@ -739,6 +776,9 @@ BCMINITFN(mips_pmu_setclock)(si_t *sih, uint32 mipsclock, uint32 ddrclock, uint3
 		{ 500, 250, 125, 0x11100070, 0x00080402, 0x02800000, 0x48000000, 0x200005c0 },
 		{0}
 	};
+
+	if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
+		return mips_pmu_setclock_4706(sih, mipsclock, ddrclock, axiclock);
 
 	/* By default use the 20MHz pll table */
 	pll_table = pll20mhz_table;
@@ -1142,7 +1182,7 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 	 * The PMU on power up comes up with the default clk frequency
 	 * of 240MHz
 	 */
-	if (sih->chip == BCM5354_CHIP_ID)
+	if ((CHIPID(sih->chip) == BCM5354_CHIP_ID) || (CHIPID(sih->chip) == BCM53572_CHIP_ID))
 		return TRUE;
 
 	if (sih->cccaps & CC_CAP_PMU)
@@ -1182,7 +1222,7 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 
 	if (pll_type == PLL_TYPE3) {
 		/* 5350 */
-		if (sih->chip != BCM5365_CHIP_ID) {
+		if (CHIPID(sih->chip) != BCM5365_CHIP_ID) {
 			/*
 			 * Search for the closest MIPS clock less than or equal to
 			 * a preferred value.
@@ -1314,14 +1354,14 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 			      R_REG(osh, &cc->chipcontrol) | 0x100);
 
 		/* No ratio change */
-		if (sih->chip != BCM4785_CHIP_ID) {
+		if (CHIPID(sih->chip) != BCM4785_CHIP_ID) {
 			if (orig_ratio_parm == te->ratio_parm)
 				goto end_fill;
 		}
 
 		/* Preload the code into the cache */
 		icache_probe(MFC0(C0_CONFIG, 1), &ic_size, &ic_lsize);
-		if (sih->chip == BCM4785_CHIP_ID) {
+		if (CHIPID(sih->chip) == BCM4785_CHIP_ID) {
 			start = ((ulong) &&start_fill_4785) & ~(ic_lsize - 1);
 			end = ((ulong) &&end_fill_4785 + (ic_lsize - 1)) & ~(ic_lsize - 1);
 		}
@@ -1335,7 +1375,7 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 		}
 
 		/* 4785 clock freq change procedures */
-		if (sih->chip == BCM4785_CHIP_ID) {
+		if (CHIPID(sih->chip) == BCM4785_CHIP_ID) {
 	start_fill_4785:
 			/* Switch to async */
 			MTC0(C0_BROADCOM, 4, (1 << 22));
@@ -1441,7 +1481,7 @@ BCMINITFN(si_mips_setclock)(si_t *sih, uint32 mipsclock, uint32 siclock, uint32 
 
 done:
 	/* Enable 4785 DLL */
-	if (sih->chip == BCM4785_CHIP_ID) {
+	if (CHIPID(sih->chip) == BCM4785_CHIP_ID) {
 		uint32 tmp;
 
 		/* set mask to 1e, enable DLL (bit 0) */
@@ -1566,10 +1606,10 @@ out:
 void
 hnd_cpu_reset(si_t *sih)
 {
-	if (sih->chip == BCM4785_CHIP_ID)
+	if (CHIPID(sih->chip) == BCM4785_CHIP_ID)
 		MTC0(C0_BROADCOM, 4, (1 << 22));
 	si_watchdog(sih, 1);
-	if (sih->chip == BCM4785_CHIP_ID) {
+	if (CHIPID(sih->chip) == BCM4785_CHIP_ID) {
 		__asm__ __volatile__(
 			".set\tmips3\n\t"
 			"sync\n\t"

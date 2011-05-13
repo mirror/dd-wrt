@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nicpci.c,v 1.33.10.11 2010/08/13 02:19:45 Exp $
+ * $Id: nicpci.c,v 1.33.10.24 2011-02-03 01:11:15 Exp $
  */
 
 #include <typedefs.h>
@@ -48,6 +48,7 @@ typedef struct {
 	bool 	pmecap;				/* Capable of generating PME */
 	bool	pcie_power_save;
 	uint16	pmebits;
+	uint16	pcie_reqsize;
 } pcicore_info_t;
 
 /* debug/trace */
@@ -564,6 +565,7 @@ pcie_war_pmebits(pcicore_info_t *pi)
 	if (val16 != pi->pmebits) {
 		PCI_ERROR(("pcie_war_pmebits: pmebits mismatch 0x%x (was 0x%x)\n",
 			val16, pi->pmebits));
+		pi->pmebits = 0x1f30;
 		W_REG(pi->osh, reg16, pi->pmebits);
 		val16 = R_REG(pi->osh, reg16);
 		PCI_ERROR(("pcie_war_pmebits: update pmebits to 0x%x\n", val16));
@@ -701,27 +703,10 @@ static void
 pcie_power_save_upd(pcicore_info_t *pi, bool up)
 {
 	si_t *sih = pi->sih;
-	uint32 ccreg = 0;
 
 	if (!pi->pcie_power_save)
 		return;
 
-	switch (CHIPID(sih->chip)) {
-
-		case BCM4313_CHIP_ID :
-			ccreg = 1<<4; /* bit 4 */
-			break;
-		case BCM43224_CHIP_ID :
-		case BCM43225_CHIP_ID :
-			ccreg = 1<<11;	/* Bit 11 */
-			break;
-		case BCM4331_CHIP_ID :
-			ccreg = 1<<9; /* Bit 9 */
-			break;
-	}
-
-	if (ccreg)
-		si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, chipcontrol), ccreg, ccreg);
 
 	if ((sih->buscorerev >= 15) && (sih->buscorerev <= 20)) {
 
@@ -734,6 +719,42 @@ pcie_power_save_upd(pcicore_info_t *pi, bool up)
 	}
 }
 
+void
+pcie_set_request_size(void *pch, uint16 size)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+
+	if (!pi)
+		return;
+	if (size == 128)
+		pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_128B;
+	else if (size == 256)
+		pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_256B;
+	else if (size == 512)
+		pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_512B;
+	else
+		return;
+
+	if (pi->sih->buscorerev == 18 || pi->sih->buscorerev == 19)
+		pcie_devcontrol_mrrs(pi, PCIE_CAP_DEVCTRL_MRRS_MASK, (uint32)pi->pcie_reqsize);
+}
+
+uint16
+pcie_get_request_size(void *pch)
+{
+	pcicore_info_t *pi = (pcicore_info_t *)pch;
+
+	if (!pi)
+		return (0);
+
+	if (pi->pcie_reqsize == PCIE_CAP_DEVCTRL_MRRS_128B)
+		return (128);
+	else if (pi->pcie_reqsize == PCIE_CAP_DEVCTRL_MRRS_256B)
+		return (256);
+	else if (pi->pcie_reqsize == PCIE_CAP_DEVCTRL_MRRS_512B)
+		return (512);
+	return (0);
+}
 
 /* ***** Functions called during driver state changes ***** */
 void
@@ -753,6 +774,10 @@ BCMATTACHFN(pcicore_attach)(void *pch, char *pvars, int state)
 		}
 	}
 
+	pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_128B;
+	if (BCM4331_CHIP_ID == CHIPID(sih->chip))
+	    pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_512B;
+
 	/* These need to happen in this order only */
 	pcie_war_polarity(pi);
 
@@ -762,11 +787,15 @@ BCMATTACHFN(pcicore_attach)(void *pch, char *pvars, int state)
 
 	pcie_clkreq_upd(pi, state);
 
-	/* Default setting for increasing the TX drive strength */
-	if ((sih->boardvendor == VENDOR_APPLE) &&
-	    (sih->boardtype == 0x8d))
-		pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x7f);
-
+	/* Alter default TX drive strength setting */
+	if (sih->boardvendor == VENDOR_APPLE) {
+		if (sih->boardtype == 0x8d)
+			/* change the TX drive strength to max */
+			pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x7f);
+		else if (BCM4331_CHIP_ID == CHIPID(sih->chip))
+			/* change the drive strength for X19b & X28 to 700mv */
+			pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x70);
+	}
 }
 
 void
@@ -784,16 +813,22 @@ pcicore_hwup(void *pch)
 
 	pcie_war_pci_setup(pi);
 
-	/* Default setting for increasing the TX drive strength */
-	if ((pi->sih->boardvendor == VENDOR_APPLE) &&
-	    (pi->sih->boardtype == 0x8d))
-		pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x7f);
+	/* Alter default TX drive strength setting */
+	if (pi->sih->boardvendor == VENDOR_APPLE) {
+		if (pi->sih->boardtype == 0x8d)
+			/* change the TX drive strength to max */
+			pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x7f);
+		else if (BCM4331_CHIP_ID == CHIPID(pi->sih->chip))
+			/* change the drive strength for X19b & X28 to 700mv */
+			pcicore_pcieserdesreg(pch, MDIO_DEV_TXCTRL0, 0x18, 0xff, 0x70);
+	}
 }
 
 void
 pcicore_up(void *pch, int state)
 {
 	pcicore_info_t *pi = (pcicore_info_t *)pch;
+	bool is_x19_x28 = FALSE;
 
 	if (!pi || !PCIE(pi->sih))
 		return;
@@ -805,9 +840,15 @@ pcicore_up(void *pch, int state)
 
 	pcie_clkreq_upd(pi, state);
 
-	if (pi->sih->buscorerev == 18 || pi->sih->buscorerev == 19)
-		pcie_devcontrol_mrrs(pi, PCIE_CAP_DEVCTRL_MRRS_MASK, PCIE_CAP_DEVCTRL_MRRS_128B);
+	is_x19_x28 = ((pi->sih->boardvendor == VENDOR_APPLE) &&
+	              ((pi->sih->boardtype == BCM94331X19) ||
+	               (pi->sih->boardtype == BCM94331PCIEBT3Ax_SSID)));
 
+	if (pi->sih->buscorerev == 18 ||
+	    (pi->sih->buscorerev == 19 && !is_x19_x28))
+		pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_128B;
+
+	pcie_devcontrol_mrrs(pi, PCIE_CAP_DEVCTRL_MRRS_MASK, pi->pcie_reqsize);
 }
 
 /* When the device is going to enter D3 state (or the system is going to enter S3/S4 states */

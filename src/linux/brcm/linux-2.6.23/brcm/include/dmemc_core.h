@@ -1,15 +1,21 @@
 /*
  * BCM47XX Denali DDR1/DDR2 and SDR/DDR1 memory controlers.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: dmemc_core.h,v 13.5.32.1 2009/11/16 03:58:52 Exp $
+ * $Id: dmemc_core.h,v 13.8.24.1 2010-11-19 04:15:25 Exp $
  */
 
 #ifndef	_DMEMC_H
@@ -236,15 +242,16 @@
 #define	DMEMC_PVTREGS		9
 
 /* DMEMC core registers */
-typedef volatile struct dmemcregs {
+typedef struct dmemcregs {
 	uint32	control[DMEMC_MAXREG];
 	uint32	PAD[105];
 	uint32	pvtgroup[DMEMC_PVTREGS];	/* 0x400 */
 	uint32	PAD[247];
 	uint32	gpiosel;			/* 0x800 */
 	uint32	gpioouten;			/* 0x804 */
-} dmemcregs_t;
+} _dmemcregs_t;
 
+typedef volatile _dmemcregs_t dmemcregs_t;
 
 #define	DMEMS_MAXREG		53
 

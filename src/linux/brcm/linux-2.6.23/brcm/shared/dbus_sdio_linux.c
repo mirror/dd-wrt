@@ -2,7 +2,7 @@
  * Dongle BUS interface
  * SDIO Linux Implementation
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: dbus_sdio_linux.c,v 1.13.22.1 2010/01/05 09:00:54 Exp $
+ * $Id: dbus_sdio_linux.c,v 1.16.2.5 2010-10-16 01:33:17 Exp $
  */
 
 #include <linuxver.h>
@@ -85,6 +85,12 @@ static int dhd_probe_thread(void *data);
 extern int dbus_sdio_txq_sched(void *bus);
 extern int dbus_sdio_txq_stop(void *bus);
 extern int dbus_sdio_txq_process(void *bus);
+extern int dbus_sdio_dpc_stop(void *bus);
+extern int probe_dlstart(void);
+extern int probe_dlstop(void);
+extern int probe_dlwrite(uint8 *buf, int count, bool isvars);
+extern int probe_iovar(const char *name, void *params, int plen, void *arg, int len, bool set,
+	void **val, int *val_len);
 
 /* This stores SDIO info during Linux probe callback
  * since attach() is not called yet at this point
@@ -94,6 +100,8 @@ typedef struct {
 
 	struct tasklet_struct probe_tasklet;
 	long dpc_pid;
+	struct semaphore sem;
+	struct semaphore dlsem;
 	struct completion dpc_exited;
 } probe_info_t;
 
@@ -198,6 +206,24 @@ module_param(dhd_pktgen, uint, 0);
 uint dhd_pktgen_len = 0;
 module_param(dhd_pktgen_len, uint, 0);
 #endif
+
+/* Same as DHD_GET_VAR/DHD_SET_VAR */
+#define	DBUS_GET_VAR	2
+#define	DBUS_SET_VAR	3
+#define	MAX_BLKSZ	8192
+#define DL_BLKSZ	2048
+#define TSTVARSZ	200
+/*
+ * Delay bringing up eth1 until image is downloaded.
+ * Use char interface for download:
+ *   - mknod /dev/sddl0 c 248 0
+ *   - chmod 777 /dev/sddl0
+ *   - cat rtecdc.bin nvram.txt > /dev/sddl0
+ *
+ * Default is to bring up eth1 immediately.
+ */
+extern uint delay_eth;
+module_param(delay_eth, uint, 0);
 
 /*
  * SDIO Linux dbus_intf_t
@@ -447,8 +473,10 @@ dbus_sdos_unlock(void *bus)
 static int
 dbus_sdos_sched_probe_cb(void *bus)
 {
-	init_completion(&g_probe_info.dpc_exited);
-	g_probe_info.dpc_pid = kernel_thread(dhd_probe_thread, &g_probe_info, 0);
+	if (delay_eth != 0) {
+		if (g_probe_info.dpc_pid >= 0)
+			up(&g_probe_info.sem);
+	}
 	return DBUS_OK;
 }
 
@@ -539,9 +567,11 @@ dhd_probe_thread(void *data)
 	DAEMONIZE("dbus_probe_thread");
 
 	if (probe_cb) {
-		disc_arg = probe_cb(probe_arg, "", 0, 0);
+		if (down_interruptible(&pinfo->sem) == 0)
+			disc_arg = probe_cb(probe_arg, "", 0, 0);
 	}
 
+	pinfo->dpc_pid = -1;
 	complete_and_exit(&pinfo->dpc_exited, 0);
 }
 
@@ -800,15 +830,13 @@ static int dbus_dldr_mmap(struct file * file, struct vm_area_struct * vma);
 static int
 dbus_dldr_open(struct inode *inode, struct file *filp)
 {
-	probe_cb(NULL, "download", TRUE, 0);  /* Start DL */
-	return 0;
+	return probe_dlstart();
 }
 
 static int
 dbus_dldr_close(struct inode *inode, struct file *filp)
 {
-	probe_cb(NULL, "download", FALSE, 0); /* End DL */
-	return 0;
+	return probe_dlstop();
 }
 
 static unsigned int
@@ -823,20 +851,150 @@ dbus_dldr_read(struct file *filp, char *buf, size_t count, loff_t *off)
 	return 0;
 }
 
+static uint8 g_wrblk[MAX_BLKSZ];
+static uint8 g_vars[MAX_BLKSZ];
+
+static bool
+is_vars(char *buf, int count)
+{
+	int n;
+	char c;
+	bool b = TRUE;
+
+	n = count <= TSTVARSZ ? count : TSTVARSZ;
+	while (n--) {
+		c = buf[n];
+		if (!((c >= 0x20 && c <= 0x7E) || (c == 0xA) || (c == 0xD))) {
+			b = FALSE;
+			break;
+		}
+	}
+
+	return b;
+}
+
+/*
+ * Ported from dhdu app
+ */
+static int
+parse_vars(char *inbuf, int incnt, char *obuf, int ocnt)
+{
+	int buf_len, slen;
+	char *line, *s, *e, *f;
+	char *buf;
+	int buf_maxlen = ocnt;
+
+	if (inbuf == NULL)
+		return -1;
+
+	buf_len = 0;
+	line = inbuf;
+	buf = obuf;
+
+	while ((line - inbuf) < incnt) {
+		bool found_eq = FALSE;
+
+		/* Skip any initial white space */
+		for (s = line; *s == ' ' || *s == '\t'; s++)
+			;
+		/* Determine end of string */
+		for (e = s; *e != 0 && *e != '#' && *e != '\r' && *e != '\n'; e++)
+			if (*e == '=')
+				found_eq = TRUE;
+
+		for (f = e; *f != '\n'; f++)
+			;
+
+		if (*f == '\n') {
+			f++;
+			line = f;
+		} else {
+			printf("Invalid vars file: unexpected eof.\n");
+			return -1;
+		}
+
+		/* Strip any white space from end of string */
+		while (e > s && (e[-1] == ' ' || e[-1] == '\t'))
+			e--;
+
+		slen = e - s;
+
+		/* Skip lines that end up blank */
+		if (slen == 0)
+			continue;
+
+		if (!found_eq) {
+			printf("Invalid line in NVRAM file \n");
+			return -1;
+		}
+
+		if (buf_len + slen + 1 > buf_maxlen) {
+			printf("NVRAM file too long\n");
+			return -1;
+		}
+
+		memcpy(buf + buf_len, s, slen);
+		buf_len += slen;
+		buf[buf_len++] = 0;
+	}
+
+	return buf_len;
+}
 
 static ssize_t
 dbus_dldr_write(struct file *filp, const char *buf, size_t count, loff_t *off)
 {
-	probe_cb((void *)buf, "membytes", count, 0);
-	return 0;
+	int n, k;
+	bool isvars;
+	char *bp = (char *) buf;
+
+	down(&g_probe_info.dlsem);
+
+	n = count >= DL_BLKSZ ? DL_BLKSZ : count;
+	if (copy_from_user(g_wrblk, bp, n)) {
+		n = -EFAULT;
+		goto exit;
+	}
+
+	isvars = is_vars(g_wrblk, n);
+
+	if (isvars == TRUE) {
+		k = parse_vars(bp, n, g_vars, sizeof(g_vars));
+		probe_dlwrite((uint8 *)g_vars, k, TRUE);
+		goto exit;
+	}
+
+	n = 0;
+	bp = (char *) buf;
+	while (count > 0) {
+		k = count >= DL_BLKSZ ? DL_BLKSZ : count;
+		if (copy_from_user(g_wrblk, bp, k)) {
+			n = -EFAULT;
+			break;
+		}
+
+		n += k;
+		bp += k;
+		count -= k;
+		probe_dlwrite((uint8 *)g_wrblk, k, isvars);
+	}
+
+exit:
+	up(&g_probe_info.dlsem);
+	return n;
 }
 
 static int
 dbus_dldr_ioctl(struct inode *inode, struct file *filp,
 	unsigned int cmd, unsigned long arg)
 {
-	int access_ok = 1;
+	int access_ok = 1, err = 0;
 	unsigned int size;
+	void *val = NULL;
+	uint8 *buf = (uint8 *) arg;
+	void *parms;
+	char *name;
+	int len = 0;
 
 	size = _IOC_SIZE(cmd);
 	if (_IOC_DIR(cmd) & _IOC_READ)
@@ -847,8 +1005,40 @@ dbus_dldr_ioctl(struct inode *inode, struct file *filp,
 	if (!access_ok)
 		return -EFAULT;
 
-	probe_cb(NULL, "iovar", cmd, arg);
-	return 0;
+	down(&g_probe_info.dlsem);
+
+	switch (cmd) {
+	case DBUS_GET_VAR:
+		name = (char *)arg;
+		parms = buf + strlen(buf) + 1;
+		err = probe_iovar((const char *)name,
+			parms, 0, (void *) arg, 0 /* len */, FALSE, &val, &len);
+
+		if (val != NULL) {
+			if (copy_to_user((void *)arg, val, len))
+				err = -EFAULT;
+		}
+	break;
+
+	case DBUS_SET_VAR:
+		name = (char *)arg;
+		parms = buf + strlen(buf) + 1;
+		err = probe_iovar((const char *)name,
+			parms, 0, (void *) arg, 0 /* len */, TRUE, NULL, NULL);
+	break;
+
+	default:
+		DBUSERR(("Unhandled char ioctl: %d\n", cmd));
+		err = -EINVAL;
+	break;
+	}
+
+	if (err)
+		err = -EFAULT;
+
+	up(&g_probe_info.dlsem);
+
+	return err;
 }
 
 static int
@@ -890,13 +1080,24 @@ dbus_bus_osl_register(int vid, int pid, probe_cb_t prcb,
 	 */
 	if (register_chrdev(CHARDEV_MAJOR, CHARDEV_NAME CHARDEV_SUFFIX, &dbus_dldr_fops))
 		DBUSERR(("register_chrdev failed\n"));
+	else
+		init_MUTEX(&g_probe_info.dlsem);
 #endif
 
+	g_probe_info.dpc_pid = -1;
 	err = bcmsdh_register(&sdh_driver);
 	if (err == 0)
 		err = DBUS_OK;
 	else
 		err = DBUS_ERR;
+
+	if (delay_eth != 0) {
+		sema_init(&g_probe_info.sem, 0);
+		init_completion(&g_probe_info.dpc_exited);
+		g_probe_info.dpc_pid = kernel_thread(dhd_probe_thread, &g_probe_info, 0);
+	} else {
+		g_probe_info.dpc_pid = -1;
+	}
 
 	return err;
 }
@@ -924,6 +1125,9 @@ dbus_sdos_attach(dbus_pub_t *pub, void *cbarg, dbus_intf_callbacks_t *cbs)
 	sdos_info = MALLOC(pub->osh, sizeof(sdos_info_t));
 	if (sdos_info == NULL)
 		return NULL;
+
+	/* Sanity check for BUS_INFO() */
+	ASSERT(OFFSETOF(sdos_info_t, pub) == 0);
 
 	bzero(sdos_info, sizeof(sdos_info_t));
 
@@ -990,20 +1194,25 @@ dbus_sdos_detach(dbus_pub_t *pub, void *info)
 	dbusos_stop(sdos_info);
 
 	if (sdos_info->watchdog_pid >= 0) {
-		kill_proc(sdos_info->watchdog_pid, SIGTERM, 1);
+		KILL_PROC(sdos_info->watchdog_pid, SIGTERM);
 		wait_for_completion(&sdos_info->watchdog_exited);
 	}
 
 	if (sdos_info->txq_pid >= 0) {
-		kill_proc(sdos_info->txq_pid, SIGTERM, 1);
+		KILL_PROC(sdos_info->txq_pid, SIGTERM);
 		wait_for_completion(&sdos_info->txq_exited);
 	}
 
 	if (sdos_info->dpc_pid >= 0) {
-		kill_proc(sdos_info->dpc_pid, SIGTERM, 1);
+		KILL_PROC(sdos_info->dpc_pid, SIGTERM);
 		wait_for_completion(&sdos_info->dpc_exited);
 	} else
 		tasklet_kill(&sdos_info->tasklet);
+
+	if (g_probe_info.dpc_pid >= 0) {
+		KILL_PROC(g_probe_info.dpc_pid, SIGTERM);
+		wait_for_completion(&g_probe_info.dpc_exited);
+	}
 
 	g_probe_info.sdos_info = NULL;
 	MFREE(osh, sdos_info, sizeof(sdos_info_t));
@@ -1034,12 +1243,29 @@ dbus_sdio_txq_stop(void *bus)
 		return DBUS_ERR;
 
 	if (sdos_info->txq_pid >= 0) {
-		kill_proc(sdos_info->txq_pid, SIGTERM, 1);
+		KILL_PROC(sdos_info->txq_pid, SIGTERM);
 		wait_for_completion(&sdos_info->txq_exited);
 		sdos_info->txq_pid = -1;
 	}
 	return DBUS_OK;
 }
+
+int
+dbus_sdio_dpc_stop(void *bus)
+{
+	sdos_info_t *sdos_info = (sdos_info_t *) bus;
+
+	if (sdos_info == NULL)
+		return DBUS_ERR;
+
+	if (sdos_info->dpc_pid >= 0) {
+		KILL_PROC(sdos_info->dpc_pid, SIGTERM);
+		wait_for_completion(&sdos_info->dpc_exited);
+		sdos_info->dpc_pid = -1;
+	}
+	return DBUS_OK;
+}
+
 
 /* FIX: */
 extern void test(void);

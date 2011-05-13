@@ -1,16 +1,21 @@
-
 /*
  * BCM43XX Sonics SiliconBackplane PCMCIA core hardware definitions.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbpcmcia.h,v 13.47.2.2 2010/02/12 02:53:30 Exp $
+ * $Id: sbpcmcia.h,v 13.48.22.3 2011-01-28 00:42:42 Exp $
  */
 
 #ifndef	_SBPCMCIA_H
@@ -172,7 +177,7 @@
 #define HNBU_BOARDTYPE		0x1b	/* 2 bytes; boardtype */
 #define HNBU_LEDDC		0x1c	/* 2 bytes; LED duty cycle */
 #define HNBU_HNBUCIS		0x1d	/* what follows is proprietary HNBU CIS format */
-#define HNBU_PAPARMS_SSLPNPHY 0x1e	/* SSLPNPHY PA params */
+#define HNBU_PAPARMS_SSLPNPHY	0x1e	/* SSLPNPHY PA params */
 #define HNBU_RSSISMBXA2G_SSLPNPHY 0x1f /* SSLPNPHY RSSI mid pt sel & board switch arch */
 #define HNBU_RDLRNDIS		0x20	/* 1 byte; 1 = RDL advertises RNDIS config */
 #define HNBU_CHAINSWITCH	0x21	/* 2 byte; txchain, rxchain */
@@ -197,12 +202,69 @@
 #define HNBU_BRMIN		0x33	/* 4 byte bootloader min resource mask */
 #define HNBU_BRMAX		0x34	/* 4 byte bootloader max resource mask */
 #define HNBU_PATCH		0x35	/* bootloader patch addr(2b) & data(4b) pair */
-#define HNBU_CCKFILTTYPE 0x36   /* CCK digital filter selection options */
+#define HNBU_CCKFILTTYPE	0x36	/* CCK digital filter selection options */
 #define HNBU_OFDMPO5G		0x37	/* 4 * 3 = 12 byte 11a ofdm power offsets in rev 3 */
 #define HNBU_ELNA2G             0x38
 #define HNBU_ELNA5G             0x39
+#define HNBU_TEMPTHRESH 0x3A /* 2 bytes 
+					 * byte1 tempthresh
+					 * byte2 period(msb 4 bits) | hysterisis(lsb 4 bits)
+					 */
+#define HNBU_UUID 0x3B /* 16 Bytes Hex */
 
 #define HNBU_USBEPNUM		0x40	/* USB endpoint numbers */
+
+/* POWER PER RATE for SROM V9 */
+#define HNBU_CCKBW202GPO       0x41    /* 2 bytes each
+					 * CCK Power offsets for 20 MHz rates (11, 5.5, 2, 1Mbps) 
+					 * cckbw202gpo cckbw20ul2gpo
+					 */
+
+#define HNBU_LEGOFDMBW202GPO    0x42    /* 4 bytes each
+					 * OFDM power offsets for 20 MHz Legacy rates 
+					 * (54, 48, 36, 24, 18, 12, 9, 6 Mbps) 
+					 * legofdmbw202gpo  legofdmbw20ul2gpo 
+					 */
+
+#define HNBU_LEGOFDMBW205GPO   0x43    /* 4 bytes each
+					* 5G band: OFDM power offsets for 20 MHz Legacy rates 
+					* (54, 48, 36, 24, 18, 12, 9, 6 Mbps) 
+					* low subband : legofdmbw205glpo  legofdmbw20ul2glpo 
+					* mid subband :legofdmbw205gmpo  legofdmbw20ul2gmpo 
+					* high subband :legofdmbw205ghpo  legofdmbw20ul2ghpo
+					*/ 
+
+#define HNBU_MCS2GPO    0x44    /* 4 bytes each 
+				     * mcs 0-7  power-offset. LSB nibble: m0, MSB nibble: m7
+				     * mcsbw202gpo  mcsbw20ul2gpo mcsbw402gpo 
+				     */
+#define HNBU_MCS5GLPO    0x45    /* 4 bytes each 
+				     * 5G low subband mcs 0-7 power-offset.
+				     * LSB nibble: m0, MSB nibble: m7
+				     * mcsbw205glpo  mcsbw20ul5glpo mcsbw405glpo 
+				     */
+#define HNBU_MCS5GMPO    0x46    /* 4 bytes each 
+				     * 5G mid subband mcs 0-7 power-offset.
+				     * LSB nibble: m0, MSB nibble: m7
+				     * mcsbw205gmpo  mcsbw20ul5gmpo mcsbw405gmpo 
+				     */
+#define HNBU_MCS5GHPO    0x47    /* 4 bytes each 
+				     * 5G high subband mcs 0-7 power-offset.
+				     * LSB nibble: m0, MSB nibble: m7
+				     * mcsbw205ghpo  mcsbw20ul5ghpo mcsbw405ghpo 
+				     */
+#define HNBU_MCS32PO	0x48	/*  2 bytes total
+				 * mcs-32 power offset for each band/subband.
+				 * LSB nibble: 2G band, MSB nibble:
+				 * mcs322ghpo, mcs325gmpo, mcs325glpo, mcs322gpo
+				 */
+#define HNBU_LEG40DUPPO	0x49 /*  2 bytes total
+				* Additional power offset for Legacy Dup40 transmissions.
+				 * Applied in addition to legofdmbw20ulXpo, X=2g, 5gl, 5gm, or 5gh. 
+				 * LSB nibble: 2G band, MSB nibble: 5G band high subband.
+				 * leg40dup5ghpo, leg40dup5gmpo, leg40dup5glpo, leg40dup2gpo 
+				 */	
+
 #define HNBU_SROM3SWRGN		0x80	/* 78 bytes; srom rev 3 s/w region without crc8
 					 * plus extra info appended.
 					 */

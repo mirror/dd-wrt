@@ -1,12 +1,6 @@
 # BCM4712ap board with SDRAM memory
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm94712ap-sd.txt,v 1.21 2004/12/15 21:09:43 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm94712ap-sd.txt,v 1.21 2004-12-15 21:09:43 rtrask Exp $
 boardtype=0x0445
 boardnum=${serno}
 # Board revision 2.5
@@ -64,3 +58,4 @@ watchdog=3000
 # glue between bootloader and OS
 landevs=et0 wl0
 wandevs=
+

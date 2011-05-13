@@ -1,12 +1,6 @@
 # BCM94710AP board as switch
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm94710ap-sw.txt,v 1.2 2004/12/15 21:09:35 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm94710ap-sw.txt,v 1.2 2004-12-15 21:09:35 rtrask Exp $
 boardtype=bcm94710ap
 boardnum=${serno}
 
@@ -44,3 +38,4 @@ watchdog=3000
 # glue between bootloader and firmware
 landevs=et0 et1 wl0 wl1 il0
 wandevs=
+

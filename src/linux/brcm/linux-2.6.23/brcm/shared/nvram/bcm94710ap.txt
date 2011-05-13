@@ -1,12 +1,6 @@
 # BCM94710AP board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm94710ap.txt,v 1.5 2004/12/15 21:09:36 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm94710ap.txt,v 1.5 2004-12-15 21:09:36 rtrask Exp $
 boardtype=bcm94710ap
 boardnum=${serno}
 
@@ -40,3 +34,4 @@ boot_wait=on
 
 # watchdog set to 3 sec
 watchdog=3000
+

@@ -2,7 +2,7 @@
  * tkmic.h
  * Prototypes for TKIP Message Integrity Check (MIC) functions.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: tkmic.h,v 1.2 2006/06/14 21:10:12 Exp $
+ * $Id: tkmic.h,v 1.2 2006-06-14 21:10:12 Exp $
  */
 
 #ifndef _TKMIC_H_

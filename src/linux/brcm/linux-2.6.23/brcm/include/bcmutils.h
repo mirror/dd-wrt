@@ -1,15 +1,21 @@
 /*
  * Misc useful os-independent macros and functions.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmutils.h,v 13.217.4.6 2010/07/14 08:02:43 Exp $
+ * $Id: bcmutils.h,v 13.239.2.10 2011-01-27 19:03:20 Exp $
  */
 
 #ifndef	_bcmutils_h_
@@ -95,25 +101,26 @@ typedef struct pktq_prec {
 	void *tail;     /* last packet to dequeue */
 	uint16 len;     /* number of queued packets */
 	uint16 max;     /* maximum number of queued packets */
+	uint16 threshold;       /* queue threshold to claim congestion */
 } pktq_prec_t;
 
+#define PKTQ_COMMON	\
+	uint16 num_prec;        /* number of precedences in use */			\
+	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */	\
+	uint16 max;             /* total max packets */					\
+	uint16 threshold;       /* queue threshold to claim congestion */		\
+	uint16 len;             /* total number of packets */
 
 /* multi-priority pkt queue */
 struct pktq {
-	uint16 num_prec;        /* number of precedences in use */
-	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */
-	uint16 max;             /* total max packets */
-	uint16 len;             /* total number of packets */
+	PKTQ_COMMON
 	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
 	struct pktq_prec q[PKTQ_MAX_PREC];
 };
 
 /* simple, non-priority pkt queue */
 struct spktq {
-	uint16 num_prec;        /* number of precedences in use (always 1) */
-	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */
-	uint16 max;             /* total max packets */
-	uint16 len;             /* total number of packets */
+	PKTQ_COMMON
 	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
 	struct pktq_prec q[1];
 };
@@ -123,28 +130,120 @@ struct spktq {
 /* fn(pkt, arg).  return true if pkt belongs to if */
 typedef bool (*ifpkt_cb_t)(void*, int);
 
+#define PKTPOOL_MIN_LEN     32  /* limit small rxbuf using big pktpool buf */
+#ifndef PKTPOOL_LEN_MAX
+#define PKTPOOL_LEN_MAX		40
+#endif /* PKTPOOL_LEN_MAX */
+#define PKTPOOL_CB_MAX		3
+
+struct pktpool;
+typedef void (*pktpool_cb_t)(struct pktpool *pool, void *arg);
+typedef struct {
+	pktpool_cb_t cb;
+	void *arg;
+} pktpool_cbinfo_t;
+
+#ifdef BCMDBG_POOL
+/* pkt pool debug states */
+#define POOL_IDLE	0
+#define POOL_RXFILL	1
+#define POOL_RXDH	2
+#define POOL_RXD11	3
+#define POOL_TXDH	4
+#define POOL_TXD11	5
+#define POOL_AMPDU	6
+#define POOL_TXENQ	7
+
+typedef struct {
+	void *p;
+	uint32 cycles;
+	uint32 dur;
+} pktpool_dbg_t;
+
+typedef struct {
+	uint8 txdh;	/* tx to host */
+	uint8 txd11;	/* tx to d11 */
+	uint8 enq;	/* waiting in q */
+	uint8 rxdh;	/* rx from host */
+	uint8 rxd11;	/* rx from d11 */
+	uint8 rxfill;	/* dma_rxfill */
+	uint8 idle;	/* avail in pool */
+} pktpool_stats_t;
+#endif /* BCMDBG_POOL */
+
+typedef struct pktpool {
+	bool	inited;
+	uint16 r;
+	uint16 w;
+	uint16 len;
+	uint16 maxlen;
+	uint16 plen;
+	bool istx;
+	bool empty;
+	uint8 cbtoggle;
+	uint8 cbcnt;
+	uint8 ecbcnt;
+	pktpool_cbinfo_t cbs[PKTPOOL_CB_MAX];
+	pktpool_cbinfo_t ecbs[PKTPOOL_CB_MAX];
+	void *q[PKTPOOL_LEN_MAX + 1];
+
+#ifdef BCMDBG_POOL
+	uint8 dbg_cbcnt;
+	pktpool_cbinfo_t dbg_cbs[PKTPOOL_CB_MAX];
+	uint16 dbg_qlen;
+	pktpool_dbg_t dbg_q[PKTPOOL_LEN_MAX + 1];
+#endif
+} pktpool_t;
+
+extern int pktpool_init(osl_t *osh, pktpool_t *pktp, int *pktplen, int plen, bool istx);
+extern int pktpool_deinit(osl_t *osh, pktpool_t *pktp);
+extern int pktpool_fill(osl_t *osh, pktpool_t *pktp, bool minimal);
+extern void* pktpool_get(pktpool_t *pktp);
+extern void pktpool_free(pktpool_t *pktp, void *p);
+extern int pktpool_add(pktpool_t *pktp, void *p);
+extern uint16 pktpool_avail(pktpool_t *pktp);
+extern int pktpool_avail_register(pktpool_t *pktp, pktpool_cb_t cb, void *arg);
+extern int pktpool_empty_register(pktpool_t *pktp, pktpool_cb_t cb, void *arg);
+extern int pktpool_setmaxlen(pktpool_t *pktp, uint16 maxlen);
+
+#define POOLPTR(pp)			((pktpool_t *)(pp))
+#define pktpool_len(pp)			(POOLPTR(pp)->len - 1)
+#define pktpool_plen(pp)		(POOLPTR(pp)->plen)
+#define pktpool_maxlen(pp)		(POOLPTR(pp)->maxlen)
+
+#ifdef BCMDBG_POOL
+extern int pktpool_dbg_register(pktpool_t *pktp, pktpool_cb_t cb, void *arg);
+extern int pktpool_start_trigger(pktpool_t *pktp, void *p);
+extern int pktpool_dbg_dump(pktpool_t *pktp);
+extern int pktpool_dbg_notify(pktpool_t *pktp);
+extern int pktpool_stats_dump(pktpool_t *pktp, pktpool_stats_t *stats);
+#endif /* BCMDBG_POOL */
+
 /* forward definition of ether_addr structure used by some function prototypes */
 
 struct ether_addr;
 
+extern int ether_isbcast(const void *ea);
+extern int ether_isnulladdr(const void *ea);
+
 /* operations on a specific precedence in packet queue */
 
-#define pktq_psetmax(pq, prec, _max)    ((pq)->q[prec].max = (_max))
-#define pktq_plen(pq, prec)             ((pq)->q[prec].len)
-#define pktq_pavail(pq, prec)           ((pq)->q[prec].max - (pq)->q[prec].len)
-#define pktq_pfull(pq, prec)            ((pq)->q[prec].len >= (pq)->q[prec].max)
-#define pktq_pempty(pq, prec)           ((pq)->q[prec].len == 0)
+#define pktq_psetmax(pq, prec, _max)	((pq)->q[prec].max = (_max))
+#define pktq_plen(pq, prec)		((pq)->q[prec].len)
+#define pktq_pavail(pq, prec)		((pq)->q[prec].max - (pq)->q[prec].len)
+#define pktq_pfull(pq, prec)		((pq)->q[prec].len >= (pq)->q[prec].max)
+#define pktq_pempty(pq, prec)		((pq)->q[prec].len == 0)
+#define pktq_pcongested(pq, prec)	((pq)->q[prec].len >= (pq)->q[prec].threshold)
 
-#define pktq_ppeek(pq, prec)            ((pq)->q[prec].head)
-#define pktq_ppeek_tail(pq, prec)       ((pq)->q[prec].tail)
+#define pktq_ppeek(pq, prec)		((pq)->q[prec].head)
+#define pktq_ppeek_tail(pq, prec)	((pq)->q[prec].tail)
 
 extern void *pktq_penq(struct pktq *pq, int prec, void *p);
 extern void *pktq_penq_head(struct pktq *pq, int prec, void *p);
 extern void *pktq_pdeq(struct pktq *pq, int prec);
 extern void *pktq_pdeq_tail(struct pktq *pq, int prec);
 /* Empty the queue at particular precedence level */
-extern void pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir,
-	ifpkt_cb_t fn, int arg);
+extern void pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir, ifpkt_cb_t fn, int arg);
 /* Remove a specified packet from its queue */
 extern bool pktq_pdel(struct pktq *pq, void *p, int prec);
 
@@ -152,23 +251,26 @@ extern bool pktq_pdel(struct pktq *pq, void *p, int prec);
 
 extern int pktq_mlen(struct pktq *pq, uint prec_bmp);
 extern void *pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out);
+extern void *pktq_mpeek(struct pktq *pq, uint prec_bmp, int *prec_out);
 
 /* operations on packet queue as a whole */
 
-#define pktq_len(pq)                    ((int)(pq)->len)
-#define pktq_max(pq)                    ((int)(pq)->max)
-#define pktq_avail(pq)                  ((int)((pq)->max - (pq)->len))
-#define pktq_full(pq)                   ((pq)->len >= (pq)->max)
-#define pktq_empty(pq)                  ((pq)->len == 0)
+#define pktq_len(pq)		((int)(pq)->len)
+#define pktq_max(pq)		((int)(pq)->max)
+#define pktq_avail(pq)		((int)((pq)->max - (pq)->len))
+#define pktq_full(pq)		((pq)->len >= (pq)->max)
+#define pktq_empty(pq)		((pq)->len == 0)
+#define pktq_congested(pq)	((pq)->len >= (pq)->threshold)
 
 /* operations for single precedence queues */
-#define pktenq(pq, p)		pktq_penq(((struct pktq *)pq), 0, (p))
-#define pktenq_head(pq, p)	pktq_penq_head(((struct pktq *)pq), 0, (p))
-#define pktdeq(pq)		pktq_pdeq(((struct pktq *)pq), 0)
-#define pktdeq_tail(pq)		pktq_pdeq_tail(((struct pktq *)pq), 0)
-#define pktqinit(pq, len) pktq_init(((struct pktq *)pq), 1, len)
+#define pktenq(pq, p)		pktq_penq(((struct pktq *)(void *)pq), 0, (p))
+#define pktenq_head(pq, p)	pktq_penq_head(((struct pktq *)(void *)pq), 0, (p))
+#define pktdeq(pq)		pktq_pdeq(((struct pktq *)(void *)pq), 0)
+#define pktdeq_tail(pq)		pktq_pdeq_tail(((struct pktq *)(void *)pq), 0)
+#define pktqinit(pq, len)	pktq_init(((struct pktq *)(void *)pq), 1, len)
 
 extern void pktq_init(struct pktq *pq, int num_prec, int max_len);
+extern void pktq_init_threshold(struct pktq *pq, int num_prec, int max_len, int threshold);
 /* prec_out may be NULL if caller is not interested in return value */
 extern void *pktq_deq(struct pktq *pq, int *prec_out);
 extern void *pktq_deq_tail(struct pktq *pq, int *prec_out);
@@ -183,6 +285,7 @@ extern uint pktfrombuf(osl_t *osh, void *p, uint offset, int len, uchar *buf);
 extern uint pkttotlen(osl_t *osh, void *p);
 extern void *pktlast(osl_t *osh, void *p);
 extern uint pktsegcnt(osl_t *osh, void *p);
+extern uint pktsegcnt_war(osl_t *osh, void *p);
 
 /* Get priority from a packet and pass it back in scb (or equiv) */
 extern uint pktsetprio(void *pkt, bool update_vtag);
@@ -216,6 +319,8 @@ extern void bcm_mdelay(uint ms);
 /* variable access */
 extern char *getvar(char *vars, const char *name);
 extern int getintvar(char *vars, const char *name);
+extern int getintvararray(char *vars, const char *name, int indx);
+extern int getintvararraysize(char *vars, const char *name);
 extern uint getgpiopin(char *vars, char *pin_name, uint def_pin);
 #ifdef BCMDBG
 extern void prpkt(const char *msg, osl_t *osh, void *p0);
@@ -379,7 +484,8 @@ extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
 #define BCME_RXFAIL			-39	/* RX failure */
 #define BCME_NODEVICE			-40 	/* Device not present */
 #define BCME_NMODE_DISABLED		-41 	/* NMODE disabled */
-#define BCME_LAST			BCME_NMODE_DISABLED
+#define BCME_NONRESIDENT		-42 /* access to nonresident overlay */
+#define BCME_LAST			BCME_NONRESIDENT
 
 /* These are collection of BCME Error strings */
 #define BCMERRSTRINGTABLE {		\
@@ -425,6 +531,7 @@ extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
 	"RX Failure",			\
 	"Device Not Present",		\
 	"NMODE Disabled",		\
+	"Nonresident overlay access", \
 }
 
 #ifndef ABS
@@ -518,68 +625,6 @@ typedef struct bcm_tlv {
 /* buffer length for ethernet address from bcm_ether_ntoa() */
 #define ETHER_ADDR_STR_LEN	18	/* 18-bytes of Ethernet address buffer length */
 
-/* unaligned load and store macros */
-#ifdef IL_BIGENDIAN
-static INLINE uint32
-load32_ua(uint8 *a)
-{
-	return ((a[0] << 24) | (a[1] << 16) | (a[2] << 8) | a[3]);
-}
-
-static INLINE void
-store32_ua(uint8 *a, uint32 v)
-{
-	a[0] = (v >> 24) & 0xff;
-	a[1] = (v >> 16) & 0xff;
-	a[2] = (v >> 8) & 0xff;
-	a[3] = v & 0xff;
-}
-
-static INLINE uint16
-load16_ua(uint8 *a)
-{
-	return ((a[0] << 8) | a[1]);
-}
-
-static INLINE void
-store16_ua(uint8 *a, uint16 v)
-{
-	a[0] = (v >> 8) & 0xff;
-	a[1] = v & 0xff;
-}
-
-#else /* IL_BIGENDIAN */
-
-static INLINE uint32
-load32_ua(uint8 *a)
-{
-	return ((a[3] << 24) | (a[2] << 16) | (a[1] << 8) | a[0]);
-}
-
-static INLINE void
-store32_ua(uint8 *a, uint32 v)
-{
-	a[3] = (v >> 24) & 0xff;
-	a[2] = (v >> 16) & 0xff;
-	a[1] = (v >> 8) & 0xff;
-	a[0] = v & 0xff;
-}
-
-static INLINE uint16
-load16_ua(uint8 *a)
-{
-	return ((a[1] << 8) | a[0]);
-}
-
-static INLINE void
-store16_ua(uint8 *a, uint16 v)
-{
-	a[1] = (v >> 8) & 0xff;
-	a[0] = v & 0xff;
-}
-
-#endif /* IL_BIGENDIAN */
-
 /* crypto utility function */
 /* 128-bit xor: *dst = *src1 xor *src2. dst1, src1 and src2 may have any alignment */
 static INLINE void
@@ -610,10 +655,11 @@ extern uint8 BCMROMFN(hndcrc8)(uint8 *p, uint nbytes, uint8 crc);
 extern uint16 BCMROMFN(hndcrc16)(uint8 *p, uint nbytes, uint16 crc);
 extern uint32 BCMROMFN(hndcrc32)(uint8 *p, uint nbytes, uint32 crc);
 /* format/print */
-#if 1
+#if defined(BCMDBG) || defined(DHD_DEBUG) || defined(BCMDBG_ERR) || \
+	defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
+	defined(BCMDBG_DUMP)
 extern int bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len);
 extern int bcm_format_hex(char *str, const void *bytes, int len);
-extern void prhex(const char *msg, uchar *buf, uint len);
 #endif
 #ifdef BCMDBG
 extern void deadbeef(void *p, uint len);
@@ -622,6 +668,7 @@ extern const char *bcm_crypto_algo_name(uint algo);
 extern char *bcm_chipname(uint chipid, char *buf, uint len);
 extern char *bcm_brev_str(uint32 brev, char *buf);
 extern void printbig(char *buf);
+extern void prhex(const char *msg, uchar *buf, uint len);
 
 /* IE parsing */
 extern bcm_tlv_t *BCMROMFN(bcm_next_tlv)(bcm_tlv_t *elt, int *buflen);
@@ -651,6 +698,8 @@ struct fielddesc {
 
 extern void bcm_binit(struct bcmstrbuf *b, char *buf, uint size);
 extern int bcm_bprintf(struct bcmstrbuf *b, const char *fmt, ...);
+extern void bcm_bprhex(struct bcmstrbuf *b, const char *msg, bool newline, uint8 *buf, int len);
+
 extern void bcm_inc_bytes(uchar *num, int num_bytes, uint8 amount);
 extern int bcm_cmp_bytes(uchar *arg1, uchar *arg2, uint8 nbytes);
 extern void bcm_print_bytes(char *name, const uchar *cdata, int len);
@@ -676,9 +725,7 @@ enum pkttrace_info {
 	PKTLIST_MI_TFS_RCVD,	/* Received TX status */
 	PKTLIST_TXDONE,		/* Pkt TX done */
 	PKTLIST_TXFAIL,		/* Pkt TX failed */
-	PKTLIST_PKTFREE,	/* pkt is freed */
-	PKTLIST_PRECREQ,	/* Pkt requeued in precq */
-	PKTLIST_TXFIFO		/* To trace in wlc_fifo */
+	PKTLIST_PKTFREE		/* pkt is freed */
 };
 #endif /* BCMDBG_PTRACE */
 

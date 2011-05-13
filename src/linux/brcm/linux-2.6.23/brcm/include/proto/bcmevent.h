@@ -1,17 +1,23 @@
 /*
  * Broadcom Event  protocol definitions
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Dependencies: proto/bcmeth.h
  *
- * $Id: bcmevent.h,v 9.52.2.12 2010/02/10 01:17:02 Exp $
+ * $Id: bcmevent.h,v 9.68.4.5 2010-10-07 11:44:10 Exp $
  *
  */
 
@@ -30,15 +36,19 @@
 /* This marks the start of a packed structure section. */
 #include <packed_section_start.h>
 
-#define BCM_EVENT_MSG_VERSION		1	/* wl_event_msg_t struct version */
+#define BCM_EVENT_MSG_VERSION		2	/* wl_event_msg_t struct version */
 #define BCM_MSG_IFNAME_MAX		16	/* max length of interface name */
 
 /* flags */
 #define WLC_EVENT_MSG_LINK		0x01	/* link is up */
 #define WLC_EVENT_MSG_FLUSHTXQ		0x02	/* flush tx queue on MIC error */
 #define WLC_EVENT_MSG_GROUP		0x04	/* group MIC error */
+#define WLC_EVENT_MSG_UNKBSS		0x08	/* unknown source bsscfg */
+#define WLC_EVENT_MSG_UNKIF		0x10	/* unknown source OS i/f */
 
 /* these fields are stored in network order */
+
+/* version 1 */
 typedef BWL_PRE_PACKED_STRUCT struct
 {
 	uint16	version;
@@ -50,6 +60,22 @@ typedef BWL_PRE_PACKED_STRUCT struct
 	uint32	datalen;		/* data buf */
 	struct ether_addr	addr;	/* Station address (if applicable) */
 	char	ifname[BCM_MSG_IFNAME_MAX]; /* name of the packet incoming interface */
+} BWL_POST_PACKED_STRUCT wl_event_msg_v1_t;
+
+/* the current version */
+typedef BWL_PRE_PACKED_STRUCT struct
+{
+	uint16	version;
+	uint16	flags;			/* see flags below */
+	uint32	event_type;		/* Message (see below) */
+	uint32	status;			/* Status code (see below) */
+	uint32	reason;			/* Reason code (if applicable) */
+	uint32	auth_type;		/* WLC_E_AUTH */
+	uint32	datalen;		/* data buf */
+	struct ether_addr	addr;	/* Station address (if applicable) */
+	char	ifname[BCM_MSG_IFNAME_MAX]; /* name of the packet incoming interface */
+	uint8	ifidx;			/* destination OS i/f index */
+	uint8	bsscfgidx;		/* source bsscfg index */
 } BWL_POST_PACKED_STRUCT wl_event_msg_t;
 
 /* used by driver msgs */
@@ -108,24 +134,24 @@ typedef BWL_PRE_PACKED_STRUCT struct bcm_event {
 #define WLC_E_PROBREQ_MSG       44      /* probe request received */
 #define WLC_E_SCAN_CONFIRM_IND  45
 #define WLC_E_PSK_SUP		46	/* WPA Handshake fail */
-#define WLC_E_COUNTRY_CODE_CHANGED 47
-#define	WLC_E_EXCEEDED_MEDIUM_TIME 48	/* WMMAC excedded medium time */
+#define WLC_E_COUNTRY_CODE_CHANGED	47
+#define	WLC_E_EXCEEDED_MEDIUM_TIME	48	/* WMMAC excedded medium time */
 #define WLC_E_ICV_ERROR		49	/* WEP ICV error occurred */
-#define WLC_E_UNICAST_DECODE_ERROR 50	/* Unsupported unicast encrypted frame */
-#define WLC_E_MULTICAST_DECODE_ERROR 51 /* Unsupported multicast encrypted frame */
+#define WLC_E_UNICAST_DECODE_ERROR	50	/* Unsupported unicast encrypted frame */
+#define WLC_E_MULTICAST_DECODE_ERROR	51 /* Unsupported multicast encrypted frame */
 #define WLC_E_TRACE		52
 #ifdef WLBTAMP
 #define WLC_E_BTA_HCI_EVENT	53	/* BT-AMP HCI event */
 #endif
-#define WLC_E_IF		54	/* I/F change (for dongle host notification) */
+#define WLC_E_IF		54	/* bsscfg change (for host notification) */
 #ifdef WLP2P
-#define WLC_E_P2P_DISC_LISTEN_COMPLETE 	55	/* listen state expires */
+#define WLC_E_P2P_DISC_LISTEN_COMPLETE	55	/* listen state expires */
 #endif
 #define WLC_E_RSSI		56	/* indicate RSSI change based on configured levels */
 #define WLC_E_PFN_SCAN_COMPLETE	57	/* PFN completed scan of network list */
 #define WLC_E_EXTLOG_MSG	58
 #define WLC_E_ACTION_FRAME      59 	/* Action frame Rx */
-#define WLC_E_ACTION_FRAME_COMPLETE 60	/* Action frame Tx complete */
+#define WLC_E_ACTION_FRAME_COMPLETE	60	/* Action frame Tx complete */
 #define WLC_E_PRE_ASSOC_IND	61	/* assoc request received */
 #define WLC_E_PRE_REASSOC_IND	62	/* re-assoc request received */
 #define WLC_E_CHANNEL_ADOPTED	63
@@ -140,13 +166,15 @@ typedef BWL_PRE_PACKED_STRUCT struct bcm_event {
 #define WLC_E_PROBRESP_MSG	71	/* probe response received */
 #define WLC_E_P2P_PROBREQ_MSG	72	/* P2P Probe request received */
 #endif
-#define WLC_E_DCS_REQUEST	73 /* bcm dcs */
-#define WLC_E_FIFO_CREDIT_MAP	74 /* credits for D11 FIFOs. [AC0,AC1,AC2,AC3,BC_MC,ATIM] */
-
+#define WLC_E_DCS_REQUEST	73
+#define WLC_E_FIFO_CREDIT_MAP	74	/* credits for D11 FIFOs. [AC0,AC1,AC2,AC3,BC_MC,ATIM] */
 #define WLC_E_ACTION_FRAME_RX	75	/* Received action frame event WITH
 					 * wl_event_rx_frame_data_t header
 					 */
-#define WLC_E_LAST		76	/* highest val + 1 for range checking */
+#define WLC_E_ASSOC_IND_NDIS		76	/* 802.11 ASSOC indication for NDIS only */
+#define WLC_E_REASSOC_IND_NDIS	77	/* 802.11 REASSOC indication for NDIS only */
+#define WLC_E_CSA_COMPLETE_IND		78	/* 802.11 CHANNEL SWITCH ACTION completed */
+#define WLC_E_LAST		79	/* highest val + 1 for range checking */
 
 /* Table of event name strings for UIs and debugging dumps */
 typedef struct {
@@ -231,7 +259,7 @@ extern const int		bcmevent_names_size;
  */
 typedef BWL_PRE_PACKED_STRUCT struct wl_event_rx_frame_data {
 	uint16	version;
-	uint16	channel;	/* Matches chanspec_t in bcmwifi.h */
+	uint16	channel;	/* Matches chanspec_t format from bcmwifi.h */
 	int32	rssi;
 	uint32	mactime;
 	uint32	rate;
@@ -241,24 +269,28 @@ typedef BWL_PRE_PACKED_STRUCT struct wl_event_rx_frame_data {
 
 /* WLC_E_IF event data */
 typedef struct wl_event_data_if {
-	uint8 ifidx;
-	uint8 opcode;		/* see I/F opcode */
+	uint8 ifidx;		/* RTE virtual device index (for dongle) */
+	uint8 opcode;		/* see opcode */
 	uint8 reserved;
 	uint8 bssidx;		/* bsscfg index */
-	uint8 role;		/* see I/F role */
+	uint8 role;		/* see bsscfg role */
 } wl_event_data_if_t;
 
-/* I/F opcode in WLC_E_IF event */
-#define WLC_E_IF_ADD		1	/* add */
-#define WLC_E_IF_DEL		2	/* delete */
-#define WLC_E_IF_CHANGE		3	/* change */
+/* opcode in WLC_E_IF event */
+#define WLC_E_IF_ADD		1	/* bsscfg add */
+#define WLC_E_IF_DEL		2	/* bsscfg delete */
+#define WLC_E_IF_CHANGE		3	/* bsscfg role change */
 
-/* I/F role code in WLC_E_IF event */
+/* bsscfg role in WLC_E_IF event */
 #define WLC_E_IF_ROLE_STA		0	/* Infra STA */
 #define WLC_E_IF_ROLE_AP		1	/* Access Point */
 #define WLC_E_IF_ROLE_WDS		2	/* WDS link */
 #define WLC_E_IF_ROLE_P2P_GO		3	/* P2P Group Owner */
 #define WLC_E_IF_ROLE_P2P_CLIENT	4	/* P2P Client */
+#ifdef WLBTAMP
+#define WLC_E_IF_ROLE_BTA_CREATOR	5	/* BT-AMP Creator */
+#define WLC_E_IF_ROLE_BTA_ACCEPTOR	6	/* BT-AMP Acceptor */
+#endif
 
 /* Reason codes for LINK */
 #define WLC_E_LINK_BCN_LOSS	1	/* Link down because of beacon loss */

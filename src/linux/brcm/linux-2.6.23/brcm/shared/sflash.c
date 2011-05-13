@@ -1,15 +1,21 @@
 /*
  * Broadcom SiliconBackplane chipcommon serial flash interface
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sflash.c,v 1.50.24.1 2010/02/18 02:35:15 Exp $
+ * $Id: sflash.c,v 1.54 2009-12-29 19:57:52 Exp $
  */
 
 #include <typedefs.h>
@@ -39,6 +45,8 @@ sflash_cmd(osl_t *osh, chipcregs_t *cc, uint opcode)
 	while (R_REG(osh, &cc->flashcontrol) & SFLASH_BUSY);
 }
 
+static bool firsttime = TRUE;
+
 /* Initialize serial flash access */
 struct sflash *
 sflash_init(si_t *sih, chipcregs_t *cc)
@@ -46,7 +54,6 @@ sflash_init(si_t *sih, chipcregs_t *cc)
 	uint32 id, id2;
 	char *name = "";
 	osl_t *osh;
-	static bool firsttime = TRUE;
 
 	ASSERT(sih);
 
@@ -61,53 +68,107 @@ sflash_init(si_t *sih, chipcregs_t *cc)
 		/* Probe for ST chips */
 		name = "ST compatible";
 		sflash_cmd(osh, cc, SFLASH_ST_DP);
+		W_REG(osh, &cc->flashaddress, 0);
 		sflash_cmd(osh, cc, SFLASH_ST_RES);
 		id = R_REG(osh, &cc->flashdata);
+		sflash.blocksize = 64 * 1024;
 		switch (id) {
 		case 0x11:
 			/* ST M25P20 2 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 4;
 			break;
 		case 0x12:
 			/* ST M25P40 4 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 8;
 			break;
 		case 0x13:
 			/* ST M25P80 8 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 16;
 			break;
 		case 0x14:
 			/* ST M25P16 16 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 32;
 			break;
 		case 0x15:
 			/* ST M25P32 32 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 64;
 			break;
 		case 0x16:
 			/* ST M25P64 64 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 128;
 			break;
 		case 0x17:
 			/* ST M25FL128 128 Mbit Serial Flash */
-			sflash.blocksize = 64 * 1024;
 			sflash.numblocks = 256;
 			break;
 		case 0xbf:
+			/* All of the following flashes are SST with
+			 * 4KB subsectors. Others should be added but
+			 * We'll have to revamp the way we identify them
+			 * since RES is not eough to disambiguate them.
+			 */
+			name = "SST";
+			sflash.blocksize = 4 * 1024;
 			W_REG(osh, &cc->flashaddress, 1);
 			sflash_cmd(osh, cc, SFLASH_ST_RES);
 			id2 = R_REG(osh, &cc->flashdata);
-			if (id2 == 0x44) {
-				/* SST M25VF80 4 Mbit Serial Flash */
-				name = "SST";
-				sflash.blocksize = 64 * 1024;
-				sflash.numblocks = 8;
+			switch (id2) {
+			case 1:
+				/* SST25WF512 512 Kbit Serial Flash */
+				sflash.numblocks = 16;
+				break;
+			case 0x48:
+				/* SST25VF512 512 Kbit Serial Flash */
+				sflash.numblocks = 16;
+				break;
+			case 2:
+				/* SST25WF010 1 Mbit Serial Flash */
+				sflash.numblocks = 32;
+				break;
+			case 0x49:
+				/* SST25VF010 1 Mbit Serial Flash */
+				sflash.numblocks = 32;
+				break;
+			case 3:
+				/* SST25WF020 2 Mbit Serial Flash */
+				sflash.numblocks = 64;
+				break;
+			case 0x43:
+				/* SST25VF020 2 Mbit Serial Flash */
+				sflash.numblocks = 64;
+				break;
+			case 4:
+				/* SST25WF040 4 Mbit Serial Flash */
+				sflash.numblocks = 128;
+				break;
+			case 0x44:
+				/* SST25VF040 4 Mbit Serial Flash */
+				sflash.numblocks = 128;
+				break;
+			case 0x8d:
+				/* SST25VF040B 4 Mbit Serial Flash */
+				sflash.numblocks = 128;
+				break;
+			case 5:
+				/* SST25WF080 8 Mbit Serial Flash */
+				sflash.numblocks = 256;
+				break;
+			case 0x8e:
+				/* SST25VF080B 8 Mbit Serial Flash */
+				sflash.numblocks = 256;
+				break;
+			case 0x41:
+				/* SST25VF016 16 Mbit Serial Flash */
+				sflash.numblocks = 512;
+				break;
+			case 0x4a:
+				/* SST25VF032 32 Mbit Serial Flash */
+				sflash.numblocks = 1024;
+				break;
+			case 0x4b:
+				/* SST25VF064 64 Mbit Serial Flash */
+				sflash.numblocks = 2048;
+				break;
 			}
 			break;
 		}
@@ -161,18 +222,10 @@ sflash_init(si_t *sih, chipcregs_t *cc)
 	sflash.size = sflash.blocksize * sflash.numblocks;
 
 	if (firsttime)
-		printf("Found a %dMB %s serial flash\n",
-		       sflash.size / (1024 * 1024), name);
+		printf("Found an %s serial flash with %d %dKB blocks; total size %dMB\n",
+		       name, sflash.numblocks, sflash.blocksize / 1024,
+		       sflash.size / (1024 * 1024));
 
-	/* 4716A0 hack */
-	if (((sih->chip == BCM4716_CHIP_ID) || (sih->chip == BCM4748_CHIP_ID)) &&
-		(sih->chiprev == 0)) {
-		if (sflash.size > (4 * 1024 * 1024)) {
-			sflash.size = 4 * 1024 * 1024;
-			if (firsttime)
-				printf("Using only 4MB in BCM4716a0\n");
-		}
-	}
 	firsttime = FALSE;
 	return sflash.size ? &sflash : NULL;
 }
@@ -203,9 +256,9 @@ sflash_read(si_t *sih, chipcregs_t *cc, uint offset, uint len, uchar *buf)
 	osh = si_osh(sih);
 
 	if (sih->ccrev == 12)
-		from = (uint8 *)OSL_UNCACHED(SI_FLASH2 + offset);
+		from = (uint8 *)OSL_UNCACHED((void *)SI_FLASH2 + offset);
 	else
-		from = (uint8 *)OSL_CACHED(SI_FLASH2 + offset);
+		from = (uint8 *)OSL_CACHED((void *)SI_FLASH2 + offset);
 	to = (uint8 *)buf;
 
 	if (cnt < 4) {
@@ -297,7 +350,7 @@ sflash_write(si_t *sih, chipcregs_t *cc, uint offset, uint length, const uchar *
 
 	switch (sfl->type) {
 	case SFLASH_ST:
-		is4712b0 = (sih->chip == BCM4712_CHIP_ID) && (sih->chiprev == 3);
+		is4712b0 = (CHIPID(sih->chip) == BCM4712_CHIP_ID) && (CHIPREV(sih->chiprev) == 3);
 		/* Enable writes */
 retry:		sflash_cmd(osh, cc, SFLASH_ST_WREN);
 		off = offset;
@@ -458,7 +511,11 @@ sflash_erase(si_t *sih, chipcregs_t *cc, uint offset)
 	case SFLASH_ST:
 		sflash_cmd(osh, cc, SFLASH_ST_WREN);
 		W_REG(osh, &cc->flashaddress, offset);
-		sflash_cmd(osh, cc, SFLASH_ST_SE);
+		/* Newer flashes have "sub-sectors" which can be erased independently
+		 * with a new command: ST_SSE. The ST_SE command erases 64KB just as
+		 * before.
+		 */
+		sflash_cmd(osh, cc, (sfl->blocksize < (64 * 1024)) ? SFLASH_ST_SSE : SFLASH_ST_SE);
 		return sfl->blocksize;
 	case SFLASH_AT:
 		W_REG(osh, &cc->flashaddress, offset << 1);

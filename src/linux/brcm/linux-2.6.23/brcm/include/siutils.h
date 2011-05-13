@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: siutils.h,v 13.254.4.4 2010/05/25 12:17:57 Exp $
+ * $Id: siutils.h,v 13.254.4.14 2011-01-27 19:03:20 Exp $
  */
 
 #ifndef	_siutils_h_
@@ -42,6 +42,7 @@ struct si_pub {
 	int	pmurev;			/* pmu core rev */
 	uint32	pmucaps;		/* pmu capabilities */
 	uint	boardtype;		/* board type */
+	uint    boardrev;               /* board rev */
 	uint	boardvendor;		/* board vendor */
 	uint	boardflags;		/* board flags */
 	uint	boardflags2;		/* board flags2 */
@@ -56,10 +57,6 @@ struct si_pub {
 #if defined(WLC_HIGH) && !defined(WLC_LOW)
 	rpc_info_t *rpc;
 #endif
-#ifdef SI_SPROM_PROBE
-	int	wl_srom_present;
-	char 	wl_srom_sw_map[SROM_MAX];
-#endif /* SI_SPROM_PROBE */
 #ifdef SI_ENUM_BASE_VARIABLE
 	uint32  si_enum_base;
 #endif /* SI_ENUM_BASE_VARIABLE */
@@ -244,12 +241,14 @@ extern int si_eci_init(si_t *sih);
 extern void si_eci_notify_bt(si_t *sih, uint32 mask, uint32 val, bool interrupt);
 extern bool si_seci(si_t *sih);
 extern void* si_seci_init(si_t *sih, uint8 seci_mode);
+extern void si_seci_down(si_t *sih);
 #else
 #define si_eci(sih) 0
 #define si_eci_init(sih) (0)
 #define si_eci_notify_bt(sih, type, val)  (0)
 #define si_seci(sih) 0
 static INLINE void * si_seci_init(si_t *sih, uint8 use_seci) {return NULL;}
+#define si_seci_down(sih) do { } while (0)
 #endif /* BCMECICOEX */
 
 /* OTP status */
@@ -276,6 +275,7 @@ extern int si_cis_source(si_t *sih);
 #define	CSM_FAB7	0x1	/* CSM Fab7 chip */
 #define	TSMC_FAB12	0x2	/* TSMC Fab12/Fab14 chip */
 #define	SMIC_FAB4	0x3	/* SMIC Fab4 chip */
+extern int BCMINITFN(si_otp_fabid)(si_t *sih, uint16 *fabid, bool rw);
 
 /*
  * Build device path. Path size must be >= SI_DEVPATH_BUFSZ.
@@ -303,13 +303,17 @@ extern bool si_ldo_war(si_t *sih, uint devid);
 extern void si_chippkg_set(si_t *sih, uint);
 
 
+extern void si_chipcontrl_epa4331_restore(si_t *sih, uint32 val);
+extern uint32 si_chipcontrl_epa4331_read(si_t *sih);
 extern void si_chipcontrl_epa4331(si_t *sih, bool on);
+extern void si_chipcontrl_epa4331_wowl(si_t *sih, bool enter_wowl);
 /* Enable BT-COEX & Ex-PA for 4313 */
 extern void si_epa_4313war(si_t *sih);
 extern void si_btc_enable_chipcontrol(si_t *sih);
 /* BT/WL selection for 4313 bt combo >= P250 boards */
 extern void si_btcombo_p250_4313_war(si_t *sih);
 extern void si_clk_pmu_htavail_set(si_t *sih, bool set_clear);
+extern uint si_pll_reset(si_t *sih);
 
 
 /* === debug routines === */
@@ -334,6 +338,8 @@ extern void si_dumpregs(si_t *sih, struct bcmstrbuf *b);
 
 extern uint32 si_pciereg(si_t *sih, uint32 offset, uint32 mask, uint32 val, uint type);
 extern uint32 si_pcieserdesreg(si_t *sih, uint32 mdioslave, uint32 offset, uint32 mask, uint32 val);
+extern void si_pcie_set_request_size(si_t *sih, uint16 size);
+extern uint16 si_pcie_get_request_size(si_t *sih);
 
 #ifndef DONGLEBUILD
 char *si_getnvramflvar(si_t *sih, const char *name);
