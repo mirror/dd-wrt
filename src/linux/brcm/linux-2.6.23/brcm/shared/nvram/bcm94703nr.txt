@@ -1,13 +1,7 @@
 # NVRAM board text file for the BCM4703nr
-# Copyright (C) 2009, Broadcom Corporation
+# $Copyright (C) 2007 Broadcom Corporation$
 # All Rights Reserved.
-# 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
-# the contents of this file may not be disclosed to third parties, copied
-# or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
-# All Rights Reserved.
-# $Id: bcm94703nr.txt,v 1.13 2007/10/25 21:21:54 Exp $
+# $Id: bcm94703nr.txt,v 1.13 2007-10-25 21:21:54 mtanner Exp $
 #
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 # KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM

@@ -1,7 +1,7 @@
 /*
  * Dongle BUS interface for USB, OS independent
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: dbus_usb.c,v 1.21.2.6 2010/01/19 08:52:24 Exp $
+ * $Id: dbus_usb.c,v 1.34.8.4 2010-08-10 20:39:22 Exp $
  */
 
 #include <osl.h>
@@ -32,14 +32,12 @@ typedef struct {
 #define USB_DLIMAGE_LIMIT		500	/* spinwait limit (ms) */
 #define USB_SFLASH_DLIMAGE_SPINWAIT	200	/* in unit of ms */
 #define USB_SFLASH_DLIMAGE_LIMIT	1000	/* spinwait limit (ms) */
-#define USB_RESETCFG_SPINWAIT		1	/* wait after resetcfg (ms) */
 #define POSTBOOT_ID			0xA123  /* ID to detect if dongle has boot up */
+#define USB_RESETCFG_SPINWAIT		1	/* wait after resetcfg (ms) */
 #define USB_DEV_ISBAD(u)		(u->pub->attrib.devid == 0xDEAD)
 
-#if defined(BCM_DNGL_EMBEDIMAGE)
 #define USB_DLGO_SPINWAIT		100	/* wait after DL_GO (ms) */
 #define TEST_CHIP			0x4328
-#endif
 
 /*
  * Callbacks common to all USB
@@ -54,7 +52,8 @@ static void dbus_usb_state_change(void *handle, int state);
 struct dbus_irb* dbus_usb_getirb(void *handle, bool send);
 static void dbus_usb_rxerr_indicate(void *handle, bool on);
 static int dbus_usb_resetcfg(usb_info_t *usbinfo);
-#if defined(BCM_DNGL_EMBEDIMAGE)
+
+#ifdef BCM_DNGL_EMBEDIMAGE
 static int dbus_usb_dlstart(void *bus, uint8 *fw, int len);
 static bool dbus_usb_dlneeded(void *bus);
 static int dbus_usb_dlrun(void *bus);
@@ -64,7 +63,7 @@ static bool dbus_usb_device_exists(void *bus);
 /* OS specific */
 extern bool dbus_usbos_dl_cmd(void *info, uint8 cmd, void *buffer, int buflen);
 extern int dbus_usbos_wait(void *info, uint16 ms);
-#if defined(BCM_DNGL_EMBEDIMAGE)
+#ifdef BCM_DNGL_EMBEDIMAGE
 extern bool dbus_usbos_dl_send_bulk(void *info, void *buffer, int len);
 #endif
 
@@ -125,7 +124,7 @@ dbus_usb_probe(void *arg, const char *desc, uint32 bustype, uint32 hdrlen)
 			dbus_usb_intf.attach = dbus_usb_attach;
 			dbus_usb_intf.detach = dbus_usb_detach;
 
-#if defined(BCM_DNGL_EMBEDIMAGE)
+#ifdef BCM_DNGL_EMBEDIMAGE
 			dbus_usb_intf.dlstart = dbus_usb_dlstart;
 			dbus_usb_intf.dlneeded = dbus_usb_dlneeded;
 			dbus_usb_intf.dlrun = dbus_usb_dlrun;
@@ -376,7 +375,7 @@ static int dbus_usb_resetcfg(usb_info_t *usbinfo)
 	return DBUS_OK;
 }
 
-#if defined(BCM_DNGL_EMBEDIMAGE)
+#ifdef BCM_DNGL_EMBEDIMAGE
 static int
 dbus_usb_dl_writeimage(usb_info_t *usbinfo, uint8 *fw, int fwlen)
 {
@@ -412,10 +411,8 @@ dbus_usb_dl_writeimage(usb_info_t *usbinfo, uint8 *fw, int fwlen)
 	dlpos = fw;
 	dllen = fwlen;
 
-	/* Get chip id and rev */
-	dbus_usbos_dl_cmd(osinfo, DL_GETVER, &id, sizeof(bootrom_id_t));
-	id.chip = ltoh32(id.chip);
-	id.chiprev = ltoh32(id.chiprev);
+	id.chip = usbinfo->pub->attrib.devid;
+	id.chiprev = usbinfo->pub->attrib.chiprev;
 
 	/* 3) Load the image */
 	while ((state.bytes != dllen)) {
@@ -454,7 +451,7 @@ dbus_usb_dl_writeimage(usb_info_t *usbinfo, uint8 *fw, int fwlen)
 			sizeof(rdl_state_t))) {
 			if ((id.chip == 43236) && (id.chiprev == 0)) {
 				DBUSERR(("%s: 43236a0 SFlash delay, waiting for dongle crc check "
-					"completion!!!\n", __FUNCTION__));
+					 "completion!!!\n", __FUNCTION__));
 				dbus_usbos_wait(osinfo, wait_time);
 				wait += wait_time;
 				if (wait >= USB_SFLASH_DLIMAGE_LIMIT) {

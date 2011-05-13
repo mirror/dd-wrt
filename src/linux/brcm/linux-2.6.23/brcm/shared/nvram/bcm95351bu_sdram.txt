@@ -1,12 +1,6 @@
 # BCM95351BU SDRAM board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm95351bu_sdram.txt,v 1.1 2005/11/14 22:47:35 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm95351bu_sdram.txt,v 1.1 2005-11-14 22:47:35 jhuston Exp $
 boardtype=0x047a
 boardnum=${serno}
 # VLAN + ROBO
@@ -116,3 +110,4 @@ pci/1/1/wl0gpio2=4
 
 # misc. parameters
 pci/1/1/ccode=0
+

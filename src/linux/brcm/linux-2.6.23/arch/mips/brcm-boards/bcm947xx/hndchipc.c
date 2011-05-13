@@ -1,15 +1,21 @@
 /*
  * BCM47XX support code for some chipcommon facilities (uart, jtagm)
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndchipc.c,v 1.24 2008/11/13 23:35:46 Exp $
+ * $Id: hndchipc.c,v 1.26 2010-01-05 19:11:24 Exp $
  */
 
 #include <typedefs.h>
@@ -24,9 +30,17 @@
 #include <hndcpu.h>
 
 /* debug/trace */
+#ifdef BCMDBG_ERR
+#define	CC_ERROR(args)	printf args
+#else
 #define	CC_ERROR(args)
+#endif	/* BCMDBG_ERR */
 
+#ifdef BCMDBG
+#define	CC_MSG(args)	printf args
+#else
 #define	CC_MSG(args)
+#endif	/* BCMDBG */
 
 /* interested chipcommon interrupt source
  *  - GPIO
@@ -54,12 +68,12 @@ static uint32 cc_intmask = 0;
  * per found UART.
  */
 void
-BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
+BCMATTACHFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 {
 	osl_t *osh;
 	void *regs;
 	chipcregs_t *cc;
-	uint32 rev, cap, pll, baud_base, div = 48;
+	uint32 rev, cap, pll, baud_base, div;
 	uint irq;
 	int i, n;
 
@@ -84,11 +98,7 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 		div = 1;
 	} else {
 		/* Fixed ALP clock */
-		if (si_corerev(sih) == 20) {
-			/* Set the override bit so we don't divide it */
-			W_REG(osh, &cc->corecontrol, CC_UARTCLKO);
-			baud_base = 25000000;
-		} else if (rev >= 11 && rev != 15) {
+		if (rev >= 11 && rev != 15) {
 			baud_base = si_alp_clock(sih);
 			div = 1;
 			/* Turn off UART clock before switching clock source */
@@ -111,8 +121,7 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 		}
 
 		/* Clock source depends on strapping if UartClkOverride is unset */
-		if ((rev > 0) &&
-		    ((R_REG(osh, &cc->corecontrol) & CC_UARTCLKO) == 0)) {
+		if ((R_REG(osh, &cc->corecontrol) & CC_UARTCLKO) == 0) {
 			if ((cap & CC_CAP_UCLKSEL) == CC_CAP_UINTCLK) {
 				/* Internal divided backplane clock */
 				baud_base /= div;
@@ -126,12 +135,7 @@ BCMINITFN(si_serial_init)(si_t *sih, si_serial_init_fn add)
 	/* Add internal UARTs */
 	n = cap & CC_CAP_UARTS_MASK;
 	for (i = 0; i < n; i++) {
-		/* Register offset changed after revision 0 */
-		if (rev)
-			regs = (void *)((ulong) &cc->uart0data + (i * 256));
-		else
-			regs = (void *)((ulong) &cc->uart0data + (i * 8));
-
+		regs = (void *)((ulong) &cc->uart0data + (i * 256));
 		if (add)
 			add(regs, irq, baud_base, 0);
 	}
@@ -287,7 +291,7 @@ jtag_scan(si_t *sih, void *h, uint irsz, uint32 ir0, uint32 ir1,
  */
 
 bool
-BCMINITFN(si_cc_register_isr)(si_t *sih, cc_isr_fn isr, uint32 ccintmask, void *cbdata)
+BCMATTACHFN(si_cc_register_isr)(si_t *sih, cc_isr_fn isr, uint32 ccintmask, void *cbdata)
 {
 	bool done = FALSE;
 	chipcregs_t *regs;

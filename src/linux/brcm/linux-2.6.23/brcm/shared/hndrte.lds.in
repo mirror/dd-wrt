@@ -41,6 +41,7 @@ SECTIONS {
 		bss_end = .;
 	}
 
+	/* Reclaim region 1 for BCMINITFN/BCMINITDATA */
 	.textrc1 : {
 		_rstart1 = .;
 		*(.textini1.*)
@@ -54,6 +55,7 @@ SECTIONS {
 		_rend1 = .;
 	}
 
+	/* Reclaim region 2 for BCMATTACHFN/BCMATTACHDATA */
 	.textrc2 : {
 		_rstart2 = .;
 		*(.textini2.*)

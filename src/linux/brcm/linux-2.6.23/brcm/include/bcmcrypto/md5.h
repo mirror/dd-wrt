@@ -1,7 +1,7 @@
 /*
  * md5.h, copied from src/router/ppp/pppd to src/include/bcmcrypto for general use
  *
- * $Id: md5.h,v 1.5 2006/06/14 21:10:12 Exp $
+ * $Id: md5.h,v 1.5 2006-06-14 21:10:12 Exp $
  *
  ***********************************************************************
  ** md5.h -- header file for implementation of MD5                    **

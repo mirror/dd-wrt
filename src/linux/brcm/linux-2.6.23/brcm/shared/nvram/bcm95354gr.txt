@@ -1,12 +1,6 @@
 # bcm95354gr board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
-# the contents of this file may not be disclosed to third parties, copied
-# or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
-# $Id: bcm95354gr.txt,v 1.12 2008/02/08 21:51:55 Exp $
+# $Copyright (C) 2003 Broadcom Corporation$
+# $Id: bcm95354gr.txt,v 1.12 2008-02-08 21:51:55 lfjiang Exp $
 boardtype=0x048e
 boardnum=${serno}
 # Board revision 3.7

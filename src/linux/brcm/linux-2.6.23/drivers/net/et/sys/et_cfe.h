@@ -2,7 +2,7 @@
  * CFE device driver tunables for
  * Broadcom BCM47XX 10/100Mbps Ethernet Device Driver
 
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: et_cfe.h,v 1.5 2006/03/16 19:28:57 Exp $
+ * $Id: et_cfe.h,v 1.5 2006-03-16 19:28:57 Exp $
  */
 
 #ifndef _et_cfe_h_

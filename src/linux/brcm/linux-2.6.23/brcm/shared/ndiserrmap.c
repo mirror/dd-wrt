@@ -1,7 +1,7 @@
 /*
  * NDIS Error codes
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: ndiserrmap.c,v 1.13.24.1 2009/12/09 04:05:56 Exp $
+ * $Id: ndiserrmap.c,v 1.15 2010-01-15 01:22:15 Exp $
  */
 #ifndef NDIS
 #include <bcm_ndis.h>
@@ -65,15 +65,16 @@ static NDIS_STATUS ndisbcmerrormap[] =
 	NDIS_STATUS_FAILURE,			/* BCME_RXFAIL */
 	NDIS_STATUS_ADAPTER_REMOVED,		/* BCME_NODEVICE */
 	NDIS_STATUS_FAILURE,			/* BCME_NMODE_DISABLED */
+	NDIS_STATUS_FAILURE,			/* BCME_NONRESIDENT */
 
 /* When an new error code is added to bcmutils.h, add os 
  * spcecific error translation here as well
  */
 /* check if BCME_LAST changed since the last time this function was updated */
-#if BCME_LAST != -41
+#if BCME_LAST != -42
 #error "You need to add a OS error translation in the ndisbcmerrormap \
 	for new error code defined in bcmutils.h"
-#endif /* BCME_LAST != -41 */
+#endif /* BCME_LAST != -42 */
 	};
 
 int

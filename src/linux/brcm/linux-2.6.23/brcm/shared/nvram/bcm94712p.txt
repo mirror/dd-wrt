@@ -6,7 +6,7 @@
 # the contents of this file may not be disclosed to third parties, copied
 # or duplicated in any form, in whole or in part, without the prior      
 # written permission of Broadcom Corporation.                            
-# $Id: bcm94712p.txt,v 1.13 2005/01/21 19:08:04 Exp $
+# $Id: bcm94712p.txt,v 1.13 2005-01-21 19:08:04 vpiskun Exp $
 boardtype=0x0446
 boardnum=${serno}
 # Board revision 6.0

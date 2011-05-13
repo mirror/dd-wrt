@@ -7,7 +7,7 @@
  *
  * Copyright (C) 2002 Broadcom Corporation
  *
- * $Id: eapol.h,v 9.23 2009/04/15 20:01:44 Exp $
+ * $Id: eapol.h,v 9.23.96.5 2010-11-11 19:42:34 Exp $
  */
 
 #ifndef _eapol_h_
@@ -32,6 +32,14 @@ typedef struct {
 } eapol_header_t;
 
 #define EAPOL_HEADER_LEN 18
+
+typedef struct {
+	unsigned char version;		/* EAPOL protocol version */
+	unsigned char type;		/* EAPOL type */
+	unsigned short length;		/* Length of body */
+} eapol_hdr_t;
+
+#define EAPOL_HDR_LEN 4
 
 /* EAPOL version */
 #define WPA2_EAPOL_VERSION	2
@@ -107,6 +115,7 @@ typedef BWL_PRE_PACKED_STRUCT struct {
 /* WPA/802.11i/WPA2 KEY KEY_INFO bits */
 #define WPA_KEY_DESC_V1		0x01
 #define WPA_KEY_DESC_V2		0x02
+#define WPA_KEY_DESC_V3		0x03
 #define WPA_KEY_PAIRWISE	0x08
 #define WPA_KEY_INSTALL		0x40
 #define WPA_KEY_ACK		0x80
@@ -114,6 +123,8 @@ typedef BWL_PRE_PACKED_STRUCT struct {
 #define WPA_KEY_SECURE		0x200
 #define WPA_KEY_ERROR		0x400
 #define WPA_KEY_REQ		0x800
+
+#define WPA_KEY_DESC_V2_OR_V3 WPA_KEY_DESC_V2
 
 /* WPA-only KEY KEY_INFO bits */
 #define WPA_KEY_INDEX_0		0x00
@@ -141,6 +152,7 @@ typedef BWL_PRE_PACKED_STRUCT struct {
 #define WPA2_KEY_DATA_SUBTYPE_STAKEY	2
 #define WPA2_KEY_DATA_SUBTYPE_MAC	3
 #define WPA2_KEY_DATA_SUBTYPE_PMKID	4
+#define WPA2_KEY_DATA_SUBTYPE_IGTK	9
 
 /* GTK encapsulation */
 typedef BWL_PRE_PACKED_STRUCT struct {
@@ -155,6 +167,15 @@ typedef BWL_PRE_PACKED_STRUCT struct {
 #define WPA2_GTK_INDEX_SHIFT	0x00
 
 #define WPA2_GTK_TRANSMIT	0x04
+
+/* IGTK encapsulation */
+typedef BWL_PRE_PACKED_STRUCT struct {
+	uint16	key_id;
+	uint8	ipn[6];
+	uint8	key[EAPOL_WPA_MAX_KEY_SIZE];
+} BWL_POST_PACKED_STRUCT eapol_wpa2_key_igtk_encap_t;
+
+#define EAPOL_WPA2_KEY_IGTK_ENCAP_HDR_LEN 	8
 
 /* STAKey encapsulation */
 typedef BWL_PRE_PACKED_STRUCT struct {

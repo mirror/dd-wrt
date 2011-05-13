@@ -2,7 +2,7 @@
  * wep.h
  * Prototypes for WEP functions.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: wep.h,v 1.3 2006/06/14 21:10:12 Exp $
+ * $Id: wep.h,v 1.3 2006-06-14 21:10:12 Exp $
  */
 
 #ifndef _WEP_H_

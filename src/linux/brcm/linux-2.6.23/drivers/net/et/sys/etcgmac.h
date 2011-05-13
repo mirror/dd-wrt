@@ -1,14 +1,14 @@
 /*
  * Broadcom Gigabit Ethernet MAC defines.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etcgmac.h,v 1.2 2008/07/24 05:19:27 Exp $
+ * $Id: etcgmac.h,v 1.2 2008-07-24 05:19:27 Exp $
  */
 #ifndef _etcgmac_h_
 #define _etcgmac_h_

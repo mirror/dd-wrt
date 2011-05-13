@@ -2,15 +2,21 @@
  * Code copied from openssl distribution and
  * Modified just enough so that compiles and runs standalone
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hmac_sha256.h,v 1.3 2007/03/05 20:34:30 Exp $
+ * $Id: hmac_sha256.h,v 1.3.622.1 2010-05-28 15:27:15 Exp $
  */
 /* ====================================================================
  * Copyright (c) 2004 The OpenSSL Project.  All rights reserved
@@ -21,3 +27,13 @@ void hmac_sha256(const void *key, int key_len,
                  const unsigned char *text, size_t text_len,
                  unsigned char *digest,
                  unsigned int *digest_len);
+void hmac_sha256_n(const void *key, int key_len,
+                   const unsigned char *text, size_t text_len,
+                   unsigned char *digest,
+                   unsigned int digest_len);
+void sha256(const unsigned char *text, size_t text_len, unsigned char *digest,
+            unsigned int digest_len);
+int
+KDF(unsigned char *key, int key_len, unsigned char *prefix,
+              int prefix_len, unsigned char *data, int data_len,
+              unsigned char *output, int len);
