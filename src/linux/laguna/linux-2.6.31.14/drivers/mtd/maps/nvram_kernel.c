@@ -8,6 +8,7 @@
 #include <linux/spinlock.h>
 #include <linux/slab.h>
 #include <linux/bootmem.h>
+#include <linux/vmalloc.h>
 #include "wrapper.h"
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
@@ -260,7 +261,7 @@ nvram_commit(void)
 
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = kmalloc(erasesize, GFP_KERNEL))) {
+	if (!(buf = vmalloc(erasesize, GFP_KERNEL))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
@@ -332,7 +333,7 @@ nvram_commit(void)
 
  done:
 	up(&nvram_sem);
-	kfree(buf);
+	vfree(buf);
 	return ret;
 }
 
