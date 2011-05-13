@@ -534,6 +534,8 @@
 // Linksys E3200 (dual radio, BCM53125 giga switch, BCM5357 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E3200) >_60K nvram_<
 #define ROUTER_LINKSYS_E3200 0xaa15
 
+#define ROUTER_BOARD_GW2380 0x990f
+
 
 #define NVROUTER "DD_BOARD"
 
