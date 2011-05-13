@@ -417,7 +417,7 @@ static struct platform_device laguna_gpio_leds_device = {
 };
 
 static struct eth_plat_info laguna_net_data = {
-	.ports = 3,	// Bring Up both Eth port by Default 
+	.ports = 0,	// Bring Up both Eth port by Default 
 };
 
 static struct platform_device laguna_net_device = {
