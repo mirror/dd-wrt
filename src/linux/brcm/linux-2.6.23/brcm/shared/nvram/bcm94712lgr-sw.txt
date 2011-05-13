@@ -1,12 +1,6 @@
 # BCM94712LGR DDR board as L2 switch
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm94712lgr-sw.txt,v 1.1 2004/06/30 22:47:34 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm94712lgr-sw.txt,v 1.1 2004-06-30 22:47:34 jqliu Exp $
 boardtype=0x0460
 boardnum=${serno}
 # Board revision 1.0
@@ -63,3 +57,4 @@ watchdog=3000
 # Bootloader and OS glue
 landevs=et0 wl0
 wandevs=
+

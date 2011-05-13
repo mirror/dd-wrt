@@ -1,12 +1,6 @@
 # BCM94320pflsh board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
-# the contents of this file may not be disclosed to third parties, copied
-# or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
-# $Id: bcm94320pflsh.txt,v 1.12 2004/09/20 23:23:08 Exp $
+# $Copyright (C) 2003 Broadcom Corporation$
+# $Id: bcm94320pflsh.txt,v 1.12 2004-09-20 23:23:08 mtanner Exp $
 boardtype=0x045e
 boardnum=${serno}
 # Board revision 4.6

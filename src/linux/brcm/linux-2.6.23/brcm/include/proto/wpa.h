@@ -1,15 +1,21 @@
 /*
  * Fundamental types and constants relating to WPA
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wpa.h,v 1.18.18.1 2009/10/22 07:38:44 Exp $
+ * $Id: wpa.h,v 1.19.24.2 2010-10-07 19:28:22 Exp $
  */
 
 #ifndef _proto_wpa_h_
@@ -103,6 +109,7 @@ typedef BWL_PRE_PACKED_STRUCT struct
 #define WPA_CIPHER_AES_OCB	3	/* AES (OCB) */
 #define WPA_CIPHER_AES_CCM	4	/* AES (CCM) */
 #define WPA_CIPHER_WEP_104	5	/* WEP (104-bit) */
+#define WPA_CIPHER_BIP		6	/* WEP (104-bit) */
 
 
 #define IS_WPA_CIPHER(cipher)	((cipher) == WPA_CIPHER_NONE || \
@@ -130,6 +137,10 @@ typedef BWL_PRE_PACKED_STRUCT struct
 #define RSN_CAP_2_REPLAY_CNTRS		1
 #define RSN_CAP_4_REPLAY_CNTRS		2
 #define RSN_CAP_16_REPLAY_CNTRS		3
+#ifdef MFP
+#define RSN_CAP_MFPR			0x0040
+#define RSN_CAP_MFPC			0x0080
+#endif
 
 /* WPA capabilities defined in 802.11i */
 #define WPA_CAP_4_REPLAY_CNTRS		RSN_CAP_4_REPLAY_CNTRS
@@ -141,6 +152,8 @@ typedef BWL_PRE_PACKED_STRUCT struct
 #define WPA_CAP_LEN	RSN_CAP_LEN	/* Length of RSN capabilities in RSN IE (2 octets) */
 
 #define	WPA_CAP_WPA2_PREAUTH		RSN_CAP_PREAUTH
+
+#define WPA2_PMKID_COUNT_LEN	2
 
 
 /* This marks the end of a packed structure section. */

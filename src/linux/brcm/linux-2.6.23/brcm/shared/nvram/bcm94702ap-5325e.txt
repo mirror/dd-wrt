@@ -1,12 +1,6 @@
 # BCM94702AP board with BCM5325E
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm94702ap-5325e.txt,v 1.3 2004/12/15 21:09:28 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm94702ap-5325e.txt,v 1.3 2004-12-15 21:09:28 rtrask Exp $
 boardflags=0x0110
 boardnum=${serno}
 
@@ -52,3 +46,4 @@ vlan1ports=0 5u
 # Bootloader and OS glue
 landevs=vlan0 wl0 wl1
 wandevs=et0
+

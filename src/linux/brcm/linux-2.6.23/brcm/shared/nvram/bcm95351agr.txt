@@ -1,12 +1,6 @@
 # BCM95351AGR sdram board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-# $Id: bcm95351agr.txt,v 1.19 2005/10/01 03:12:02 Exp $
+# $Copyright Open Broadcom Corporation$
+# $Id: bcm95351agr.txt,v 1.19 2005-10-01 03:12:02 loitran Exp $
 boardtype=0x0470
 boardnum=${serno}
 # VLAN + ROBO
@@ -116,3 +110,4 @@ pci/1/1/wl0gpio2=4
 
 # misc. parameters
 pci/1/1/ccode=0
+

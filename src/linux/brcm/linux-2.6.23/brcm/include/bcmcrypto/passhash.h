@@ -3,21 +3,31 @@
  * Perform password to key hash algorithm as defined in WPA and 802.11i
  * specifications.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: passhash.h,v 1.8 2007/01/12 21:56:16 Exp $
+ * $Id: passhash.h,v 1.8.426.2 2010-12-01 23:31:03 Exp $
  */
 
 #ifndef _PASSHASH_H_
 #define _PASSHASH_H_
 
 #include <typedefs.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* passhash: perform passwork to key hash algorithm as defined in WPA and 802.11i
  * specifications.
@@ -62,9 +72,12 @@ typedef struct {
 	int iters;
 } passhash_t;
 
-extern int init_passhash(passhash_t *passhash,
+extern int init_passhash(passhash_t *ph,
                          char *password, int passlen, unsigned char *ssid, int ssidlen);
-extern int do_passhash(passhash_t *passhash, int iterations);
-extern int get_passhash(passhash_t *passhash, unsigned char *output, int outlen);
+extern int do_passhash(passhash_t *ph, int iterations);
+extern int get_passhash(passhash_t *ph, unsigned char *output, int outlen);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* _PASSHASH_H_ */

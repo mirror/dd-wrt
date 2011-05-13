@@ -2,7 +2,7 @@
  * RPC OSL linux port
  * Broadcom 802.11abg Networking Device Driver
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: linux_rpc_osl.c,v 1.7.40.1 2010/08/11 06:57:55 Exp $
+ * $Id: linux_rpc_osl.c,v 1.7.114.1 2010-08-11 07:08:24 Exp $
  */
 #if (!defined(WLC_HIGH) && !defined(WLC_LOW))
 #error "SPLIT"

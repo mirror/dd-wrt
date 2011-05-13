@@ -2,7 +2,7 @@
  * CFE polled-mode device driver for
  * Broadcom BCM47XX 10/100 Mbps Ethernet Controller
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: et_cfe.c,v 1.23 2008/11/18 04:01:38 Exp $
+ * $Id: et_cfe.c,v 1.25 2009-10-18 18:35:22 Exp $
  */
 
 #include "lib_types.h"
@@ -122,6 +122,9 @@ et_down(et_info_t *et, int reset)
 void
 et_dump(et_info_t *et, struct bcmstrbuf *b)
 {
+#ifdef BCMDBG
+	etc_dump(et->etc, b);
+#endif
 }
 
 et_info_t *et_phyfind(et_info_t *et, uint coreunit);

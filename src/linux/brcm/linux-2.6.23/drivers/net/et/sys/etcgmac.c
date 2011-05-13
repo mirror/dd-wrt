@@ -3,14 +3,14 @@
  *
  * This file implements the chip-specific routines for the GMAC core.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: etcgmac.c,v 1.12.20.12 2010/08/03 17:05:16 Exp $
+ * $Id: etcgmac.c,v 1.25.8.6 2010-11-16 21:25:19 Exp $
  */
 
 #include <typedefs.h>
@@ -30,6 +30,7 @@
 #include <hndsoc.h>
 #include <hndpmu.h>
 #include <bcmgmacmib.h>
+#include <gmac_common.h>
 #include <gmac_core.h>
 #include <et_export.h>		/* for et_phyxx() routines */
 #include <etcgmac.h>
@@ -52,6 +53,7 @@ struct bcmgmac {
 	void 		*et;		/* pointer to et private state */
 	etc_info_t	*etc;		/* pointer to etc public state */
 
+	gmac_commonregs_t *regscomm; /* pointer to GMAC COMMON registers */
 	gmacregs_t	*regs;		/* pointer to chip registers */
 	osl_t 		*osh;		/* os handle */
 
@@ -59,6 +61,7 @@ struct bcmgmac {
 
 	uint32		intstatus;	/* saved interrupt condition bits */
 	uint32		intmask;	/* current software interrupt mask */
+	uint32		def_intmask;	/* default interrupt mask */
 
 	hnddma_t	*di[NUMTXQ];	/* dma engine software state */
 
@@ -103,6 +106,9 @@ static void chipphyinit(ch_t *ch, uint phyaddr);
 static void chipphyor(ch_t *ch, uint phyaddr, uint reg, uint16 v);
 static void chipphyforce(ch_t *ch, uint phyaddr);
 static void chipphyadvertise(ch_t *ch, uint phyaddr);
+#ifdef BCMDBG
+static void chipdumpregs(ch_t *ch, gmacregs_t *regs, struct bcmstrbuf *b);
+#endif /* BCMDBG */
 static void gmac_mf_cleanup(ch_t *ch);
 static int gmac_speed(ch_t *ch, uint32 speed);
 static void gmac_miiconfig(ch_t *ch);
@@ -137,7 +143,6 @@ struct chops bcmgmac_et_chops = {
 static uint devices[] = {
 	BCM47XX_GMAC_ID,
 	BCM4716_CHIP_ID,
-	BCM4748_CHIP_ID,
 	0x0000
 };
 
@@ -190,6 +195,13 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 		goto fail;
 	}
 
+	if ((etc->corerev = si_corerev(ch->sih)) == GMAC_4706B0_CORE_REV &&
+		(ch->regscomm = (gmac_commonregs_t *)si_setcore(ch->sih,
+			GMAC_COMMON_4706_CORE_ID, 0)) == NULL) {
+		ET_ERROR(("et%d: chipattach: Could not setcore to the GMAC common core\n", etc->unit));
+		goto fail;
+	}
+
 	if ((regs = (gmacregs_t *)si_setcore(ch->sih, GMAC_CORE_ID, etc->unit)) == NULL) {
 		ET_ERROR(("et%d: chipattach: Could not setcore to the GMAC core\n", etc->unit));
 		goto fail;
@@ -199,7 +211,6 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	etc->chip = ch->sih->chip;
 	etc->chiprev = ch->sih->chiprev;
 	etc->coreid = si_coreid(ch->sih);
-	etc->corerev = si_corerev(ch->sih);
 	etc->nicmode = !(ch->sih->bustype == SI_BUS);
 	etc->coreunit = si_coreunit(ch->sih);
 	etc->boardflags = getintvar(ch->vars, "boardflags");
@@ -288,7 +299,17 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 			etc->txavail[i] = (uint *)&ch->di[i]->txavail;
 
 	/* set default sofware intmask */
-	ch->intmask = DEF_INTMASK;
+	sprintf(name, "et%d_no_txint", etc->coreunit);
+	if (getintvar(ch->vars, name)) {
+		/* if no_txint variable is non-zero we disable tx interrupts.
+		 * we do the tx buffer reclaim once every few frames.
+		 */
+		ch->def_intmask = (DEF_INTMASK & ~(I_XI0 | I_XI1 | I_XI2 | I_XI3));
+		etc->txrec_thresh = (((NTXD >> 2) > TXREC_THR) ? TXREC_THR - 1 : 1);
+	} else
+		ch->def_intmask = DEF_INTMASK;
+
+	ch->intmask = ch->def_intmask;
 
 	/* reset the external phy */
 	if ((reset = getgpiopin(ch->vars, "ephy_reset", GPIO_PIN_NOTDEFINED)) !=
@@ -434,7 +455,6 @@ chiplongname(ch_t *ch, char *buf, uint bufsize)
 	switch (ch->etc->deviceid) {
 		case BCM47XX_GMAC_ID:
 		case BCM4716_CHIP_ID:
-		case BCM4748_CHIP_ID:
 		default:
 			s = "Broadcom BCM47XX 10/100/1000 Mbps Ethernet Controller";
 			break;
@@ -447,13 +467,139 @@ chiplongname(ch_t *ch, char *buf, uint bufsize)
 static void
 chipdump(ch_t *ch, struct bcmstrbuf *b)
 {
+#ifdef BCMDBG
+	int32 i;
+
+	bcm_bprintf(b, "regs 0x%lx etphy 0x%lx ch->intstatus 0x%x intmask 0x%x\n",
+		(ulong)ch->regs, (ulong)ch->etphy, ch->intstatus, ch->intmask);
+	bcm_bprintf(b, "\n");
+
+	/* dma engine state */
+	for (i = 0; i < NUMTXQ; i++) {
+		dma_dump(ch->di[i], b, TRUE);
+		bcm_bprintf(b, "\n");
+	}
+
+	/* registers */
+	chipdumpregs(ch, ch->regs, b);
+	bcm_bprintf(b, "\n");
+
+	/* switch registers */
+#ifdef ETROBO
+	if (ch->etc->robo)
+		robo_dump_regs(ch->etc->robo, b);
+#endif /* ETROBO */
+#ifdef ETADM
+	if (ch->adm)
+		adm_dump_regs(ch->adm, b->buf);
+#endif /* ETADM */
+#endif	/* BCMDBG */
 }
 
+#ifdef BCMDBG
+
+#define	PRREG(name)	bcm_bprintf(b, #name " 0x%x ", R_REG(ch->osh, &regs->name))
+#define	PRMIBREG(name)	bcm_bprintf(b, #name " 0x%x ", R_REG(ch->osh, &regs->mib.name))
+
+static void
+chipdumpregs(ch_t *ch, gmacregs_t *regs, struct bcmstrbuf *b)
+{
+	uint phyaddr;
+
+	phyaddr = ch->etc->phyaddr;
+
+	PRREG(devcontrol); PRREG(devstatus);
+	bcm_bprintf(b, "\n");
+	PRREG(biststatus);
+	bcm_bprintf(b, "\n");
+	PRREG(intstatus); PRREG(intmask); PRREG(gptimer);
+	bcm_bprintf(b, "\n");
+	PRREG(intrecvlazy);
+	bcm_bprintf(b, "\n");
+	PRREG(flowctlthresh); PRREG(wrrthresh); PRREG(gmac_idle_cnt_thresh);
+	bcm_bprintf(b, "\n");
+	if (ch->etc->corerev != GMAC_4706B0_CORE_REV) {
+		PRREG(phyaccess); PRREG(phycontrol);
+		bcm_bprintf(b, "\n");
+	}
+	PRREG(txqctl); PRREG(rxqctl);
+	bcm_bprintf(b, "\n");
+	PRREG(gpioselect); PRREG(gpio_output_en);
+	bcm_bprintf(b, "\n");
+	PRREG(clk_ctl_st); PRREG(pwrctl);
+	bcm_bprintf(b, "\n");
+
+	/* unimac registers */
+	PRREG(unimacversion); PRREG(hdbkpctl);
+	bcm_bprintf(b, "\n");
+	PRREG(cmdcfg);
+	bcm_bprintf(b, "\n");
+	PRREG(macaddrhigh); PRREG(macaddrlow);
+	bcm_bprintf(b, "\n");
+	PRREG(rxmaxlength); PRREG(pausequanta); PRREG(macmode);
+	bcm_bprintf(b, "\n");
+	PRREG(outertag); PRREG(innertag); PRREG(txipg); PRREG(pausectl);
+	bcm_bprintf(b, "\n");
+	PRREG(txflush); PRREG(rxstatus); PRREG(txstatus);
+	bcm_bprintf(b, "\n");
+
+	/* mib registers */
+	PRMIBREG(tx_good_octets); PRMIBREG(tx_good_pkts); PRMIBREG(tx_octets); PRMIBREG(tx_pkts);
+	bcm_bprintf(b, "\n");
+	PRMIBREG(tx_broadcast_pkts); PRMIBREG(tx_multicast_pkts);
+	bcm_bprintf(b, "\n");
+	PRMIBREG(tx_jabber_pkts); PRMIBREG(tx_oversize_pkts); PRMIBREG(tx_fragment_pkts);
+	bcm_bprintf(b, "\n");
+	PRMIBREG(tx_underruns); PRMIBREG(tx_total_cols); PRMIBREG(tx_single_cols);
+	bcm_bprintf(b, "\n");
+	PRMIBREG(tx_multiple_cols); PRMIBREG(tx_excessive_cols); PRMIBREG(tx_late_cols);
+	bcm_bprintf(b, "\n");
+	if (ch->etc->corerev != GMAC_4706B0_CORE_REV) {
+		PRMIBREG(tx_defered); PRMIBREG(tx_carrier_lost); PRMIBREG(tx_pause_pkts);
+		bcm_bprintf(b, "\n");
+	}
+
+	PRMIBREG(rx_good_octets); PRMIBREG(rx_good_pkts); PRMIBREG(rx_octets); PRMIBREG(rx_pkts);
+	bcm_bprintf(b, "\n");
+	PRMIBREG(rx_broadcast_pkts); PRMIBREG(rx_multicast_pkts);
+	bcm_bprintf(b, "\n");
+	PRMIBREG(rx_jabber_pkts); 
+	if (ch->etc->corerev != GMAC_4706B0_CORE_REV) {
+		PRMIBREG(rx_oversize_pkts); PRMIBREG(rx_fragment_pkts);
+		bcm_bprintf(b, "\n");
+		PRMIBREG(rx_missed_pkts); PRMIBREG(rx_crc_align_errs); PRMIBREG(rx_undersize);
+	}
+	bcm_bprintf(b, "\n");
+	if (ch->etc->corerev != GMAC_4706B0_CORE_REV) {
+		PRMIBREG(rx_crc_errs); PRMIBREG(rx_align_errs); PRMIBREG(rx_symbol_errs);
+		bcm_bprintf(b, "\n");
+		PRMIBREG(rx_pause_pkts); PRMIBREG(rx_nonpause_pkts);
+		bcm_bprintf(b, "\n");
+	}
+	if (phyaddr != EPHY_NOREG) {
+		/* print a few interesting phy registers */
+		bcm_bprintf(b, "phy0 0x%x phy1 0x%x phy2 0x%x phy3 0x%x\n",
+		               chipphyrd(ch, phyaddr, 0),
+		               chipphyrd(ch, phyaddr, 1),
+		               chipphyrd(ch, phyaddr, 2),
+		               chipphyrd(ch, phyaddr, 3));
+		bcm_bprintf(b, "phy4 0x%x phy5 0x%x phy24 0x%x phy25 0x%x\n",
+		               chipphyrd(ch, phyaddr, 4),
+		               chipphyrd(ch, phyaddr, 5),
+		               chipphyrd(ch, phyaddr, 24),
+		               chipphyrd(ch, phyaddr, 25));
+	}
+
+}
+#endif	/* BCMDBG */
 
 static void
 gmac_clearmib(ch_t *ch)
 {
 	volatile uint32 *ptr;
+
+	if (ch->etc->corerev == GMAC_4706B0_CORE_REV)
+		return;
 
 	/* enable clear on read */
 	OR_REG(ch->osh, &ch->regs->devcontrol, DC_MROR);
@@ -674,11 +820,15 @@ gmac_enable(ch_t *ch)
 	 * the thresholds are tuned based on size of buffer internal to GMAC.
 	 */
 	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM4749_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) ||
 	    (CHIPID(ch->sih->chip) == BCM4716_CHIP_ID) ||
 	    (CHIPID(ch->sih->chip) == BCM47162_CHIP_ID)) {
 		uint32 flctl = 0x03cb04cb;
 
-		if (CHIPID(ch->sih->chip) == BCM5357_CHIP_ID)
+		if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
+		    (CHIPID(ch->sih->chip) == BCM4749_CHIP_ID) ||
+		    (CHIPID(ch->sih->chip) == BCM53572_CHIP_ID))
 			flctl = 0x2300e1;
 
 		W_REG(ch->osh, &regs->flowctlthresh, flctl);
@@ -788,8 +938,11 @@ chipreset(ch_t *ch)
 
 chipinreset:
 	sflags = si_core_sflags(ch->sih, 0, 0);
-	/* Do not enable internal switch for 47186 */
-	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) && (ch->sih->chippkg == BCM47186_PKG_ID))
+	/* Do not enable internal switch for 47186/47188 */
+	if ((((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM4749_CHIP_ID)) &&
+	    (ch->sih->chippkg == BCM47186_PKG_ID)) ||
+	    ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) && (ch->sih->chippkg == BCM47188_PKG_ID)))
 		sflags &= ~SISF_SW_ATTACHED;
 
 	if (sflags & SISF_SW_ATTACHED) {
@@ -810,15 +963,21 @@ chipinreset:
 		SPINWAIT((R_REG(ch->osh, &regs->clk_ctl_st) & CS_ES) != CS_ES, 1000);
 	}
 
-	if (CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) {
+	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM4749_CHIP_ID) ||
+	    (CHIPID(ch->sih->chip) == BCM53572_CHIP_ID)) {
 		char *var;
 		uint32 sw_type = PMU_CC1_SW_TYPE_EPHY | PMU_CC1_IF_TYPE_MII;
 
 		if ((var = getvar(ch->vars, "et_swtype")) != NULL)
 			sw_type = (bcm_atoi(var) & 0x0f) << 4;
-		else if (ch->sih->chippkg == BCM5358_PKG_ID)
+		else if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) &&
+		         (ch->sih->chippkg == BCM5358_PKG_ID))
 			sw_type = PMU_CC1_SW_TYPE_EPHYRMII;
-		else if (ch->sih->chippkg == BCM47186_PKG_ID)
+		else if ((ch->sih->chippkg == BCM47186_PKG_ID) ||
+		         ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) &&
+		          (ch->sih->chippkg == BCM47188_PKG_ID)) ||
+		         (ch->sih->chippkg == HWSIM_PKG_ID))
 			sw_type = PMU_CC1_IF_TYPE_RGMII|PMU_CC1_SW_TYPE_RGMII;
 
 		ET_TRACE(("%s: sw_type %04x\n", __FUNCTION__, sw_type));
@@ -839,7 +998,10 @@ chipinreset:
 	gmac_clearmib(ch);
 	ch->mibgood = TRUE;
 
-	OR_REG(ch->osh, &regs->phycontrol, PC_MTE);
+	if (ch->etc->corerev == GMAC_4706B0_CORE_REV)
+		OR_REG(ch->osh, &ch->regscomm->phycontrol, PC_MTE);
+	else
+		OR_REG(ch->osh, &regs->phycontrol, PC_MTE);
 
 	/* Read the devstatus to figure out the configuration mode of
 	 * the interface. Set the speed to 100 if the switch interface
@@ -879,6 +1041,9 @@ gmac_mf_add(ch_t *ch, struct ether_addr *mcaddr)
 {
 	uint32 hash;
 	mflist_t *entry;
+#ifdef BCMDBG
+	char mac[ETHER_ADDR_STR_LEN];
+#endif /* BCMDBG */
 
 	/* add multicast addresses only */
 	if (!ETHER_ISMULTI(mcaddr)) {
@@ -1051,6 +1216,13 @@ chiptx(ch_t *ch, void *p0)
 		q = etc_up2tc(PKTPRIO(p0));
 
 	ASSERT(q < NUMTXQ);
+
+	/* if tx completion intr is disabled then do the reclaim
+	 * once every few frames transmitted.
+	 */
+	if ((ch->etc->txframes[q] & ch->etc->txrec_thresh) == 1)
+		dma_txreclaim(ch->di[q], HNDDMA_RANGE_TRANSMITTED);
+
 	error = dma_txfast(ch->di[q], p0, TRUE);
 
 	if (error) {
@@ -1058,6 +1230,8 @@ chiptx(ch_t *ch, void *p0)
 		ch->etc->txnobuf++;
 		return FALSE;
 	}
+
+	ch->etc->txframes[q]++;
 
 	/* set back the orig length */
 	PKTSETLEN(ch->osh, p0, len);
@@ -1153,7 +1327,7 @@ chipgetintrevents(ch_t *ch, bool in_isr)
 	intstatus = R_REG(ch->osh, &ch->regs->intstatus);
 
 	/* defer unsolicited interrupts */
-	intstatus &= (in_isr ? ch->intmask : DEF_INTMASK);
+	intstatus &= (in_isr ? ch->intmask : ch->def_intmask);
 
 	if (intstatus != 0)
 		events = INTR_NEW;
@@ -1170,7 +1344,11 @@ chipgetintrevents(ch_t *ch, bool in_isr)
 		events |= INTR_RX;
 	if (intstatus & (I_XI0 | I_XI1 | I_XI2 | I_XI3))
 		events |= INTR_TX;
+#if defined(_CFE_)
+	if (intstatus & ~(I_RDU | I_RFO) & I_ERRORS)
+#else
 	if (intstatus & I_ERRORS)
+#endif
 		events |= INTR_ERROR;
 
 	return (events);
@@ -1180,7 +1358,7 @@ chipgetintrevents(ch_t *ch, bool in_isr)
 static void BCMFASTPATH
 chipintrson(ch_t *ch)
 {
-	ch->intmask = DEF_INTMASK;
+	ch->intmask = ch->def_intmask;
 	W_REG(ch->osh, &ch->regs->intmask, ch->intmask);
 }
 
@@ -1264,13 +1442,15 @@ chipstatsupd(ch_t *ch)
 	/* read the mib counters and update the driver maintained software
 	 * counters.
 	 */
-	OR_REG(ch->osh, &regs->devcontrol, DC_MROR);
-	for (s = &regs->mib.tx_good_octets, d = &ch->mib.tx_good_octets;
-	     s <=  &regs->mib.rx_uni_pkts; s++, d++) {
-		*d += R_REG(ch->osh, s);
-		if (s == &ch->regs->mib.tx_q3_octets_high) {
-			s++;
-			d++;
+	if (etc->corerev != GMAC_4706B0_CORE_REV) {
+		OR_REG(ch->osh, &regs->devcontrol, DC_MROR);
+		for (s = &regs->mib.tx_good_octets, d = &ch->mib.tx_good_octets;
+	  	   s <=  &regs->mib.rx_uni_pkts; s++, d++) {
+			*d += R_REG(ch->osh, s);
+			if (s == &ch->regs->mib.tx_q3_octets_high) {
+				s++;
+				d++;
+			}
 		}
 	}
 
@@ -1410,23 +1590,32 @@ chipphyrd(ch_t *ch, uint phyaddr, uint reg)
 {
 	uint32 tmp;
 	gmacregs_t *regs;
+	uint32 *phycontrol_addr, *phyaccess_addr;
 
 	ASSERT(phyaddr < MAXEPHY);
 	ASSERT(reg < MAXPHYREG);
 
 	regs = ch->regs;
 
+	if (ch->etc->corerev == GMAC_4706B0_CORE_REV) {
+		phycontrol_addr = (uint32 *)&ch->regscomm->phycontrol;
+		phyaccess_addr = (uint32 *)&ch->regscomm->phyaccess;
+	} else {
+		phycontrol_addr = (uint32 *)&regs->phycontrol;
+		phyaccess_addr = (uint32 *)&regs->phyaccess;
+	}
+
 	/* issue the read */
-	tmp = R_REG(ch->osh, &regs->phycontrol);
+	tmp = R_REG(ch->osh, phycontrol_addr);
 	tmp &= ~0x1f;
 	tmp |= phyaddr;
-	W_REG(ch->osh, &regs->phycontrol, tmp);
-	W_REG(ch->osh, &regs->phyaccess,
+	W_REG(ch->osh, phycontrol_addr, tmp);
+	W_REG(ch->osh, phyaccess_addr,
 	      (PA_START | (phyaddr << PA_ADDR_SHIFT) | (reg << PA_REG_SHIFT)));
 
 	/* wait for it to complete */
-	SPINWAIT((R_REG(ch->osh, &regs->phyaccess) & PA_START), 1000);
-	tmp = R_REG(ch->osh, &regs->phyaccess);
+	SPINWAIT((R_REG(ch->osh, phyaccess_addr) & PA_START), 1000);
+	tmp = R_REG(ch->osh, phyaccess_addr);
 	if (tmp & PA_START) {
 		ET_ERROR(("et%d: chipphyrd: did not complete\n", ch->etc->unit));
 		tmp = 0xffff;
@@ -1440,27 +1629,36 @@ chipphywr(ch_t *ch, uint phyaddr, uint reg, uint16 v)
 {
 	uint32 tmp;
 	gmacregs_t *regs;
+	uint32 *phycontrol_addr, *phyaccess_addr;
 
 	ASSERT(phyaddr < MAXEPHY);
 	ASSERT(reg < MAXPHYREG);
 
 	regs = ch->regs;
 
+	if (ch->etc->corerev == GMAC_4706B0_CORE_REV) {
+		phycontrol_addr = (uint32 *)&ch->regscomm->phycontrol;
+		phyaccess_addr = (uint32 *)&ch->regscomm->phyaccess;
+	} else {
+		phycontrol_addr = (uint32 *)&regs->phycontrol;
+		phyaccess_addr = (uint32 *)&regs->phyaccess;
+	}
+
 	/* clear mdioint bit of intstatus first  */
-	tmp = R_REG(ch->osh, &regs->phycontrol);
+	tmp = R_REG(ch->osh, phycontrol_addr);
 	tmp &= ~0x1f;
 	tmp |= phyaddr;
-	W_REG(ch->osh, &regs->phycontrol, tmp);
+	W_REG(ch->osh, phycontrol_addr, tmp);
 	W_REG(ch->osh, &regs->intstatus, I_MDIO);
 	ASSERT((R_REG(ch->osh, &regs->intstatus) & I_MDIO) == 0);
 
 	/* issue the write */
-	W_REG(ch->osh, &regs->phyaccess,
+	W_REG(ch->osh, phyaccess_addr,
 	      (PA_START | PA_WRITE | (phyaddr << PA_ADDR_SHIFT) | (reg << PA_REG_SHIFT) | v));
 
 	/* wait for it to complete */
-	SPINWAIT((R_REG(ch->osh, &regs->phyaccess) & PA_START), 1000);
-	if (R_REG(ch->osh, &regs->phyaccess) & PA_START) {
+	SPINWAIT((R_REG(ch->osh, phyaccess_addr) & PA_START), 1000);
+	if (R_REG(ch->osh, phyaccess_addr) & PA_START) {
 		ET_ERROR(("et%d: chipphywr: did not complete\n", ch->etc->unit));
 	}
 }
@@ -1509,7 +1707,11 @@ chipphyinit(ch_t *ch, uint phyaddr)
 		}
 	}
 
-	if ((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) && (ch->sih->chippkg != BCM47186_PKG_ID)) {
+	if ((((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
+		(CHIPID(ch->sih->chip) == BCM4749_CHIP_ID)) &&
+	     (ch->sih->chippkg != BCM47186_PKG_ID)) ||
+	    ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) &&
+	     (ch->sih->chippkg != BCM47188_PKG_ID))) {
 		int i;
 
 		for (i = 0; i < 5; i++) {

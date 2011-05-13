@@ -1,15 +1,21 @@
 /*
  * Low-Level PCI and SI support for BCM47xx
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: hndpci.c,v 1.44.2.2 2010/02/09 10:07:47 Exp $
+ * $Id: hndpci.c,v 1.49.2.2 2010-11-16 21:44:41 Exp $
  */
 
 #include <typedefs.h>
@@ -26,6 +32,7 @@
 #include <hndcpu.h>
 #include <hndpci.h>
 #include <nicpci.h>
+#include <sbchipc.h>
 
 /* For now we need some real Silicon Backplane utils */
 #include "siutils_priv.h"
@@ -69,8 +76,23 @@ static uint pci_banned = 0;
 /* CardBus mode */
 static bool cardbus = FALSE;
 
+/* The OS's enumerated bus numbers for supported PCI/PCIe core units */
+static uint pci_busid[SI_PCI_MAXCORES] = { 0, };
+
+static uint32 pci_membase_cfg[SI_PCI_MAXCORES] = {
+	SI_PCI_CFG,
+};
+
+static uint32 pci_membase[SI_PCI_MAXCORES] = {
+	SI_PCI_DMA,
+};
+
+static uint32 pci_membase_1G[SI_PCI_MAXCORES] = {
+	SI_PCI_DMA,
+};
+
 /* Disable PCI host core */
-static bool pci_disabled = FALSE;
+static bool pci_disabled[SI_PCI_MAXCORES] = {	FALSE };
 
 /* Host bridge slot #, default to 0 */
 static uint8 pci_hbslot = 0;
@@ -82,8 +104,60 @@ static uint8 pci_hbslot = 0;
 /* Functions for accessing external PCI configuration space, Assume one-hot slot wiring */
 #define PCI_SLOT_MAX	16	/* Max. PCI Slots */
 
+static void
+hndpci_set_busid(uint busid)
+{	int i;
+
+	for (i = 0; i < SI_PCI_MAXCORES; i++) {
+		if (pci_busid[i] == 0) {
+			pci_busid[i] = busid;
+			printf("PCI/PCIe coreunit %d is set to bus %d.\n", i, pci_busid[i]);
+			return;
+		}
+		if (busid == pci_busid[i])
+			return;
+	}
+}
+
+static int
+hndpci_pci_coreunit(uint bus)
+{	uint i;
+
+	ASSERT(bus >= 1);
+	for (i = SI_PCI_MAXCORES - 1; i >= 0; i--) {
+		if (pci_busid[i] && bus >= pci_busid[i])
+			return i;
+	}
+	return -1;
+}
+
+bool
+hndpci_is_hostbridge(uint bus, uint dev)
+{	uint i;
+
+	ASSERT(bus >= 1);
+	if (dev != pci_hbslot)
+		return FALSE;
+
+	for (i = 0; i < SI_PCI_MAXCORES; i++)
+		if (bus == pci_busid[i])
+			return TRUE;
+
+	return FALSE;
+}
+
+uint32 hndpci_get_membase(uint bus)
+{
+	int coreunit;
+
+	coreunit = hndpci_pci_coreunit(bus);
+	ASSERT(coreunit >= 0);
+	ASSERT(pci_membase[coreunit]);
+	return pci_membase[coreunit];
+}
+
 static uint32
-config_cmd(si_t *sih, uint bus, uint dev, uint func, uint off)
+config_cmd(si_t *sih, uint coreunit, uint bus, uint dev, uint func, uint off)
 {
 	uint coreidx;
 	sbpciregs_t *pci;
@@ -97,14 +171,14 @@ config_cmd(si_t *sih, uint bus, uint dev, uint func, uint off)
 	osh = si_osh(sih);
 
 	coreidx = si_coreidx(sih);
-	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, 0);
+	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, coreunit);
 
 	if (pci) {
 		sbtopci1 = &pci->sbtopci1;
 	} else {
 		sbpcieregs_t *pcie;
 
-		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, 0);
+		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, coreunit);
 
 		/* Issue config commands only when the data link is up (atleast
 		 * one external pcie device is present).
@@ -121,7 +195,7 @@ config_cmd(si_t *sih, uint bus, uint dev, uint func, uint off)
 
 
 	/* Type 0 transaction */
-	if (bus == 1) {
+	if (!hndpci_is_hostbridge(bus, dev)) {
 		/* Skip unwired slots */
 		if (dev < PCI_SLOT_MAX) {
 			/* Slide the PCI window to the appropriate slot */
@@ -131,13 +205,13 @@ config_cmd(si_t *sih, uint bus, uint dev, uint func, uint off)
 				win = (SBTOPCI_CFG0 |
 					((1 << (dev + PCI_SLOTAD_MAP)) & SBTOPCI1_MASK));
 				W_REG(osh, sbtopci1, win);
-				addr = (SI_PCI_CFG |
+				addr = (pci_membase_cfg[coreunit] |
 					((1 << (dev + PCI_SLOTAD_MAP)) & ~SBTOPCI1_MASK) |
 					(func << PCICFG_FUN_SHIFT) |
 					(off & ~3));
 			} else {
 				W_REG(osh, sbtopci1, SBTOPCI_CFG0);
-				addr = (SI_PCI_CFG |
+				addr = (pci_membase_cfg[coreunit] |
 					(dev << PCIECFG_SLOT_SHIFT) |
 					(func << PCIECFG_FUN_SHIFT) |
 					(off & ~3));
@@ -146,7 +220,7 @@ config_cmd(si_t *sih, uint bus, uint dev, uint func, uint off)
 	} else {
 		/* Type 1 transaction */
 		W_REG(osh, sbtopci1, SBTOPCI_CFG1);
-		addr = (SI_PCI_CFG |
+		addr = (pci_membase_cfg[coreunit] |
 			(pci ? PCI_CONFIG_ADDR(bus, dev, func, (off & ~3)) :
 			PCIE_CONFIG_ADDR((bus - 1), dev, func, (off & ~3))));
 	}
@@ -167,8 +241,8 @@ config_cmd(si_t *sih, uint bus, uint dev, uint func, uint off)
  * the register address where value in 'val' is read.
  */
 static bool
-si_pcihb_read_config(si_t *sih, uint bus, uint dev, uint func, uint off, uint32 **addr,
-	uint32 *val)
+si_pcihb_read_config(si_t *sih, uint coreunit, uint bus, uint dev, uint func,
+	uint off, uint32 **addr, uint32 *val)
 {
 	sbpciregs_t *pci;
 	osl_t *osh;
@@ -176,8 +250,7 @@ si_pcihb_read_config(si_t *sih, uint bus, uint dev, uint func, uint off, uint32 
 	bool ret = FALSE;
 
 	/* sanity check */
-	ASSERT(bus == 1);
-	ASSERT(dev == pci_hbslot);
+	ASSERT(hndpci_is_hostbridge(bus, dev));
 
 	/* we support only two functions on device 0 */
 	if (func > 1)
@@ -187,7 +260,7 @@ si_pcihb_read_config(si_t *sih, uint bus, uint dev, uint func, uint off, uint32 
 
 	/* read pci config when core rev >= 8 */
 	coreidx = si_coreidx(sih);
-	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, 0);
+	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, coreunit);
 	if (pci) {
 		if (si_corerev(sih) >= PCI_HBSBCFG_REV) {
 			*addr = (uint32 *)&pci->pcicfg[func][off >> 2];
@@ -198,7 +271,7 @@ si_pcihb_read_config(si_t *sih, uint bus, uint dev, uint func, uint off, uint32 
 		sbpcieregs_t *pcie;
 
 		/* read pcie config */
-		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, 0);
+		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, coreunit);
 		if (pcie != NULL) {
 			/* accesses to config registers with offsets >= 256
 			 * requires indirect access.
@@ -224,6 +297,10 @@ extpci_read_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *buf
 {
 	uint32 addr = 0, *reg = NULL, val;
 	int ret = 0;
+	int coreunit = hndpci_pci_coreunit(bus);
+
+	if (coreunit < 0)
+		return -1;
 
 	/*
 	 * Set value to -1 when:
@@ -232,12 +309,12 @@ extpci_read_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *buf
 	 *	REG_MAP() fails;
 	 *	BUSPROBE() fails;
 	 */
-	if (pci_disabled)
+	if (pci_disabled[coreunit])
 		val = 0xffffffff;
-	else if (bus == 1 && dev == pci_hbslot) {
-	         if (!si_pcihb_read_config(sih, bus, dev, func, off, &reg, &val))
+	else if (hndpci_is_hostbridge(bus, dev)) {
+		if (!si_pcihb_read_config(sih, coreunit, bus, dev, func, off, &reg, &val))
 			return -1;
-	} else if (((addr = config_cmd(sih, bus, dev, func, off)) == 0) ||
+	} else if (((addr = config_cmd(sih, coreunit, bus, dev, func, off)) == 0) ||
 	         ((reg = (uint32 *)REG_MAP(addr, len)) == 0) ||
 	         (BUSPROBE(val, reg) != 0)) {
 		PCI_MSG(("%s: Failed to read!\n", __FUNCTION__));
@@ -269,6 +346,11 @@ extpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 	osl_t *osh;
 	uint32 addr = 0, *reg = NULL, val;
 	int ret = 0;
+	bool is_hostbridge;
+	int coreunit = hndpci_pci_coreunit(bus);
+
+	if (coreunit < 0)
+		return -1;
 
 	osh = si_osh(sih);
 
@@ -279,12 +361,12 @@ extpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 	 *	REG_MAP() fails;
 	 *	BUSPROBE() fails;
 	 */
-	if (pci_disabled)
+	if (pci_disabled[coreunit])
 		return 0;
-	else if (bus == 1 && dev == pci_hbslot) {
-	         if (!si_pcihb_read_config(sih, bus, dev, func, off, &reg, &val))
+	if ((is_hostbridge = hndpci_is_hostbridge(bus, dev))) {
+		if (!si_pcihb_read_config(sih, coreunit, bus, dev, func, off, &reg, &val))
 			return -1;
-	} else if (((addr = config_cmd(sih, bus, dev, func, off)) == 0) ||
+	} else if (((addr = config_cmd(sih, coreunit, bus, dev, func, off)) == 0) ||
 	         ((reg = (uint32 *)REG_MAP(addr, len)) == 0) ||
 	         (BUSPROBE(val, reg) != 0)) {
 		PCI_MSG(("%s: Failed to write!\n", __FUNCTION__));
@@ -306,14 +388,14 @@ extpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 
 	PCI_MSG(("%s: 0x%x => 0x%p\n", __FUNCTION__, val, reg));
 
-	if (bus == 1 && dev == pci_hbslot && reg == NULL) {
+	if (is_hostbridge && reg == NULL) {
 		sbpcieregs_t *pcie;
 		uint coreidx;
 
 		coreidx = si_coreidx(sih);
 
 		/* read pcie config */
-		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, 0);
+		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, coreunit);
 		if (pcie != NULL)
 			/* accesses to config registers with offsets >= 256
 			 * requires indirect access.
@@ -325,7 +407,8 @@ extpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 	} else {
 		W_REG(osh, reg, val);
 
-		if ((sih->chip == BCM4716_CHIP_ID) || (sih->chip == BCM4748_CHIP_ID))
+		if ((CHIPID(sih->chip) == BCM4716_CHIP_ID) ||
+		    (CHIPID(sih->chip) == BCM4748_CHIP_ID))
 			(void)R_REG(osh, reg);
 	}
 
@@ -479,6 +562,16 @@ si_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *buf, i
 
 	osh = si_osh(sih);
 
+	if (cfg->header_type == PCI_HEADER_BRIDGE) {
+		uint busid = 0;
+		if (off == OFFSETOF(ppb_config_regs, prim_bus) && len >= 2)
+			busid = (*((uint16 *)buf) & 0xff00) >> 8;
+		else if (off == OFFSETOF(ppb_config_regs, sec_bus))
+			busid = *((uint8 *)buf);
+		if (busid)
+			hndpci_set_busid(busid);
+	}
+
 	/* Emulate BAR sizing */
 	if (off >= OFFSETOF(pci_config_regs, base[0]) &&
 	    off <= OFFSETOF(pci_config_regs, base[3]) &&
@@ -605,7 +698,7 @@ hndpci_find_pci_capability(si_t *sih, uint bus, uint dev, uint func,
  * return 1 to indicate PCI core is disabled.
  */
 int __init
-hndpci_init_pci(si_t *sih)
+BCMATTACHFN(hndpci_init_pci)(si_t *sih, uint coreunit)
 {
 	uint chip, chiprev, chippkg, host;
 	uint32 boardflags;
@@ -615,6 +708,7 @@ hndpci_init_pci(si_t *sih)
 	int ret = 0;
 	char *hbslot;
 	osl_t *osh;
+	int bus;
 
 	chip = sih->chip;
 	chiprev = sih->chiprev;
@@ -622,13 +716,22 @@ hndpci_init_pci(si_t *sih)
 
 	osh = si_osh(sih);
 
-	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, 0);
+	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, coreunit);
 	if (pci == NULL) {
-		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, 0);
+		pcie = (sbpcieregs_t *)si_setcore(sih, PCIE_CORE_ID, coreunit);
 		if (pcie == NULL) {
 			printf("PCI: no core\n");
-			pci_disabled = TRUE;
+			pci_disabled[coreunit] = TRUE;
 			return -1;
+		}
+	}
+
+	if ((CHIPID(chip) == BCM4706_CHIP_ID) && (coreunit == 1)) {
+		/* Check if PCIE 1 is disabled */
+		if (sih->chipst & CST4706_PCIE1_DISABLE) {
+			pci_disabled[coreunit] = TRUE;
+			host = 0;
+			PCI_MSG(("PCIE port %d is disabled\n", port));
 		}
 	}
 
@@ -643,13 +746,16 @@ hndpci_init_pci(si_t *sih)
 	if ((boardflags & BFL_NOPCI) ||
 	    ((chip == BCM4712_CHIP_ID) &&
 	     ((chippkg == BCM4712SMALL_PKG_ID) || (chippkg == BCM4712MID_PKG_ID)))) {
-		pci_disabled = TRUE;
+		pci_disabled[coreunit] = TRUE;
 		host = 0;
 	} else {
 		/* Enable the core */
 		si_core_reset(sih, 0, 0);
 
-		/* Figure out if it is in host mode */
+		/* Figure out if it is in host mode:
+		 * In host mode, it returns 0, in client mode, this register access will trap
+		 * Trap handler must be implemented to support this like hndrte_mips.c
+		 */
 		host = !BUSPROBE(val, (pci ? &pci->control : &pcie->control));
 	}
 
@@ -660,7 +766,7 @@ hndpci_init_pci(si_t *sih)
 		si_setint(sih, -1);
 
 		/* Disable the PCI bridge in client mode */
-		hndpci_ban(PCI_CORE_ID);
+		hndpci_ban(pci? PCI_CORE_ID : PCIE_CORE_ID);
 
 		/* Make sure the core is disabled */
 		si_core_disable(sih, 0);
@@ -668,7 +774,8 @@ hndpci_init_pci(si_t *sih)
 		/* On 4716 (and other AXI chips?) make sure the slave wrapper
 		 * is also put in reset.
 		 */
-		if ((chip == BCM4716_CHIP_ID) || (chip == BCM4748_CHIP_ID)) {
+		if ((chip == BCM4716_CHIP_ID) || (chip == BCM4748_CHIP_ID) ||
+			(chip == BCM4706_CHIP_ID)) {
 			uint32 *resetctrl;
 
 			resetctrl = (uint32 *)OSL_UNCACHED(SI_WRAP_BASE + (9 * SI_CORE_SIZE) +
@@ -723,6 +830,7 @@ hndpci_init_pci(si_t *sih)
 			ASSERT(pci_hbslot < PCI_MAX_DEVICES);
 		}
 
+		bus = pci_busid[coreunit] = coreunit + 1;
 		if (pci) {
 			/* 64 MB I/O access window */
 			W_REG(osh, &pci->sbtopci0, SBTOPCI_IO);
@@ -741,7 +849,21 @@ hndpci_init_pci(si_t *sih)
 			 * backplane.
 			 */
 			if ((chip == BCM4716_CHIP_ID) || (chip == BCM4748_CHIP_ID))
-				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_MEM | SI_PCI_MEM);
+				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_MEM |
+					(pci_membase[coreunit] = SI_PCI_MEM));
+			else if (chip == BCM4706_CHIP_ID) {
+				if (coreunit == 0) {
+					pci_membase[coreunit] = SI_PCI_MEM;
+					pci_membase_1G[coreunit] = SI_PCIE_DMA_H32;
+				} else if (coreunit == 1) {
+					pci_membase_cfg[coreunit] = SI_PCI1_CFG;
+					pci_membase[coreunit] = SI_PCI1_MEM;
+					pci_membase_1G[coreunit] = SI_PCIE1_DMA_H32;
+				}
+				W_REG(osh, &pcie->sbtopcie0,
+					SBTOPCIE_MEM | SBTOPCIE_PF | SBTOPCIE_WR_BURST |
+					pci_membase[coreunit]);
+			}
 			else
 				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_IO);
 
@@ -749,7 +871,8 @@ hndpci_init_pci(si_t *sih)
 			W_REG(osh, &pcie->sbtopcie1, SBTOPCIE_CFG0);
 
 			/* 1 GB memory access window */
-			W_REG(osh, &pcie->sbtopcie2, SBTOPCIE_MEM | SI_PCI_DMA);
+			W_REG(osh, &pcie->sbtopcie2, SBTOPCIE_MEM |
+				pci_membase_1G[coreunit]);
 
 			/* As per PCI Express Base Spec 1.1 we need to wait for
 			 * at least 100 ms from the end of a reset (cold/warm/hot)
@@ -762,18 +885,18 @@ hndpci_init_pci(si_t *sih)
 			 * Retry Status (CRS) Completion Status to software then
 			 * enable the feature.
 			 */
-			cap_ptr = hndpci_find_pci_capability(sih, 1, pci_hbslot, 0,
+			cap_ptr = hndpci_find_pci_capability(sih, bus, pci_hbslot, 0,
 			                                     PCI_CAP_PCIECAP_ID, NULL, NULL);
 			ASSERT(cap_ptr);
 
 			root_cap = cap_ptr + OFFSETOF(pciconfig_cap_pcie, root_cap);
-			hndpci_read_config(sih, 1, pci_hbslot, 0, root_cap,
+			hndpci_read_config(sih, bus, pci_hbslot, 0, root_cap,
 			                   &val16, sizeof(uint16));
 			if (val16 & PCIE_RC_CRS_VISIBILITY) {
 				/* Enable CRS software visibility */
 				root_ctrl = cap_ptr + OFFSETOF(pciconfig_cap_pcie, root_ctrl);
 				val16 = PCIE_RC_CRS_EN;
-				hndpci_write_config(sih, 1, pci_hbslot, 0, root_ctrl,
+				hndpci_write_config(sih, bus, pci_hbslot, 0, root_ctrl,
 				                    &val16, sizeof(uint16));
 
 				/* Initiate a configuration request to read the vendor id
@@ -790,7 +913,7 @@ hndpci_init_pci(si_t *sih)
 				 * the procedure for all the devices.
 				 */
 				for (dev = pci_hbslot + 1; dev < PCI_MAX_DEVICES; dev++) {
-					SPINWAIT((hndpci_read_config(sih, 1, dev, 0,
+					SPINWAIT((hndpci_read_config(sih, bus, dev, 0,
 					         PCI_CFG_VID, &val16, sizeof(val16)),
 					         (val16 == 0x1)), 1000000);
 					if (val16 == 0x1)
@@ -801,7 +924,7 @@ hndpci_init_pci(si_t *sih)
 
 		/* Enable PCI bridge BAR0 memory & master access */
 		val = PCI_CMD_MASTER | PCI_CMD_MEMORY;
-		hndpci_write_config(sih, 1, pci_hbslot, 0, PCI_CFG_CMD, &val, sizeof(val));
+		hndpci_write_config(sih, bus, pci_hbslot, 0, PCI_CFG_CMD, &val, sizeof(val));
 
 		/* Enable PCI interrupts */
 		if (pci)
@@ -810,6 +933,8 @@ hndpci_init_pci(si_t *sih)
 			W_REG(osh, &pcie->intmask, PCI_INTA);
 	}
 
+	/* Reset busid to 0. Bus number will be assigned by OS later */
+	pci_busid[coreunit] = 0;
 	return ret;
 }
 
@@ -821,7 +946,7 @@ hndpci_arb_park(si_t *sih, uint parkid)
 	uint32  arb;
 
 	pci = (sbpciregs_t *)si_setcore(sih, PCI_CORE_ID, 0);
-	if ((pci == NULL) || pci_disabled) {
+	if ((pci == NULL) || pci_disabled[0]) {
 		/* Should not happen */
 		PCI_MSG(("%s: no PCI core\n", __FUNCTION__));
 		return;
@@ -859,7 +984,7 @@ hndpci_arb_park(si_t *sih, uint parkid)
  * Get the PCI region address and size information.
  */
 static void __init
-hndpci_init_regions(si_t *sih, uint func, pci_config_regs *cfg, si_bar_cfg_t *bar)
+BCMATTACHFN(hndpci_init_regions)(si_t *sih, uint func, pci_config_regs *cfg, si_bar_cfg_t *bar)
 {
 	bool issb = sih->socitype == SOCI_SB;
 	uint i, n;
@@ -873,8 +998,9 @@ hndpci_init_regions(si_t *sih, uint func, pci_config_regs *cfg, si_bar_cfg_t *ba
 		} else {
 			/* In AI chips EHCI is addrspace 0, OHCI is 1 */
 			base1 = base;
-			if (sih->chip == BCM5357_CHIP_ID &&
-			    sih->chiprev == 0)
+			if ((CHIPID(sih->chip) == BCM5357_CHIP_ID ||
+				(CHIPID(sih->chip) == BCM4749_CHIP_ID)) &&
+			    CHIPREV(sih->chiprev) == 0)
 				base = 0x18009000;
 			else
 				base = htol32(si_addrspace(sih, 1));
@@ -904,7 +1030,7 @@ hndpci_init_regions(si_t *sih, uint func, pci_config_regs *cfg, si_bar_cfg_t *ba
  * Construct PCI config spaces for SB cores to be accessed as if they were PCI devices.
  */
 void __init
-hndpci_init_cores(si_t *sih)
+BCMATTACHFN(hndpci_init_cores)(si_t *sih)
 {
 	uint chiprev, coreidx, i;
 	pci_config_regs *cfg, *pci;
@@ -944,10 +1070,20 @@ hndpci_init_cores(si_t *sih)
 			continue;
 
 		if (coreid == USB20H_CORE_ID) {
-			if ((CHIPID(sih->chip) == BCM5357_CHIP_ID) &&
+			if (((CHIPID(sih->chip) == BCM5357_CHIP_ID) ||
+				(CHIPID(sih->chip) == BCM4749_CHIP_ID)) &&
 				(sih->chippkg == BCM5357_PKG_ID)) {
 				printf("PCI: skip disabled USB20H\n");
 				continue;
+			}
+		}
+
+		if ((CHIPID(sih->chip) == BCM4706_CHIP_ID)) {
+			if (coreid == GMAC_CORE_ID) {
+				/* Only GMAC core 0 is used by 4706 */
+				if (si_coreunit(sih) > 0) {
+					continue;
+				}
 			}
 		}
 
@@ -1017,9 +1153,12 @@ done:
  * them know the PCI core initialization status.
  */
 int __init
-hndpci_init(si_t *sih)
+BCMATTACHFN(hndpci_init)(si_t *sih)
 {
-	int status = hndpci_init_pci(sih);
+	int coreunit, status = 0;
+
+	for (coreunit = 0; coreunit < SI_PCI_MAXCORES; coreunit++)
+		status |= hndpci_init_pci(sih, coreunit);
 	hndpci_init_cores(sih);
 	return status;
 }

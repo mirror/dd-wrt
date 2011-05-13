@@ -2,15 +2,21 @@
  * Misc utility routines for accessing chip-specific features
  * of the SiliconBackplane-based Broadcom chips.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbutils.c,v 1.683 2009/04/25 00:14:30 Exp $
+ * $Id: sbutils.c,v 1.687 2009-11-05 01:06:56 Exp $
  */
 
 #include <typedefs.h>
@@ -26,6 +32,7 @@
 #include <sbpcmcia.h>
 
 #include "siutils_priv.h"
+
 
 /* local prototypes */
 static uint _sb_coreidx(si_info_t *sii, uint32 sba);
@@ -375,6 +382,9 @@ sb_corereg(si_t *sih, uint coreidx, uint regoff, uint mask, uint val)
 	ASSERT(regoff < SI_CORE_SIZE);
 	ASSERT((val & ~mask) == 0);
 
+	if (coreidx >= SI_MAXCORES)
+		return 0;
+
 	if (BUSTYPE(sii->pub.bustype) == SI_BUS) {
 		/* If internal bus, we can always get at everything */
 		fast = TRUE;
@@ -505,7 +515,7 @@ BCMATTACHFN(_sb_scan)(si_info_t *sii, uint32 sba, void *regs, uint bus, uint32 s
 				        CID_CC_SHIFT;
 			else {
 				/* Older chips */
-				uint chip = sii->pub.chip;
+				uint chip = CHIPID(sii->pub.chip);
 
 				if (chip == BCM4306_CHIP_ID)	/* < 4306c0 */
 					numcores = 6;
@@ -726,7 +736,7 @@ sb_addrspacesize(si_t *sih, uint asidx)
 	return (sb_size(R_SBREG(sii, sb_admatch(sii, asidx))));
 }
 
-#if 1// defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
+#if defined(BCMDBG_ERR) || defined(BCMASSERT_SUPPORT) || defined(BCMDBG_DUMP)
 /* traverse all cores to find and clear source of serror */
 static void
 sb_serr_clear(si_info_t *sii)

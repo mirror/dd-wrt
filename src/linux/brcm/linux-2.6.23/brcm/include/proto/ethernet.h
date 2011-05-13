@@ -1,15 +1,21 @@
 /*
  * From FreeBSD 2.2.7: Fundamental constants relating to ethernet.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: ethernet.h,v 9.50.4.4 2010/06/15 00:13:01 Exp $
+ * $Id: ethernet.h,v 9.56.18.1 2010-06-16 19:39:55 Exp $
  */
 
 #ifndef _NET_ETHERNET_H_	    /* use native BSD ethernet.h when available */
@@ -89,14 +95,14 @@
 #define	ETHER_IS_VALID_LEN(foo)	\
 	((foo) >= ETHER_MIN_LEN && (foo) <= ETHER_MAX_LEN)
 
-
-#define ETHER_FILL_MCAST_ADDR_FROM_IP(eaddr, mgrp_ip) \
-		eaddr[0] = 0x01;	\
-		eaddr[1] = 0x00;	\
-		eaddr[2] = 0x5e;	\
-		eaddr[5] = mgrp_ip & 0xff; mgrp_ip >>= 8; \
-		eaddr[4] = mgrp_ip & 0xff; mgrp_ip >>= 8; \
-		eaddr[3] = mgrp_ip & 0x7f
+#define ETHER_FILL_MCAST_ADDR_FROM_IP(ea, mgrp_ip) {		\
+		((uint8 *)ea)[0] = 0x01;			\
+		((uint8 *)ea)[1] = 0x00;			\
+		((uint8 *)ea)[2] = 0x5e;			\
+		((uint8 *)ea)[3] = ((mgrp_ip) >> 16) & 0x7f;	\
+		((uint8 *)ea)[4] = ((mgrp_ip) >>  8) & 0xff;	\
+		((uint8 *)ea)[5] = ((mgrp_ip) >>  0) & 0xff;	\
+}
 
 #ifndef __INCif_etherh     /* Quick and ugly hack for VxWorks */
 /*
@@ -146,28 +152,23 @@ BWL_PRE_PACKED_STRUCT struct	ether_addr {
 		((short*)(d))[1] = ((short*)(s))[1]; \
 		((short*)(d))[2] = ((short*)(s))[2]; }
 
-/*
- * Takes a pointer, returns true if a 48-bit broadcast (all ones)
- */
-#define ETHER_ISBCAST(ea) ((((uint8 *)(ea))[0] &		\
-			    ((uint8 *)(ea))[1] &		\
-			    ((uint8 *)(ea))[2] &		\
-			    ((uint8 *)(ea))[3] &		\
-			    ((uint8 *)(ea))[4] &		\
-			    ((uint8 *)(ea))[5]) == 0xff)
 
 static const struct ether_addr ether_bcast = {{255, 255, 255, 255, 255, 255}};
 static const struct ether_addr ether_null = {{0, 0, 0, 0, 0, 0}};
 
-/*
- * Takes a pointer, returns true if a 48-bit null address (all zeros)
- */
-#define ETHER_ISNULLADDR(ea) ((((uint8 *)(ea))[0] |		\
-			    ((uint8 *)(ea))[1] |		\
-			    ((uint8 *)(ea))[2] |		\
-			    ((uint8 *)(ea))[3] |		\
-			    ((uint8 *)(ea))[4] |		\
-			    ((uint8 *)(ea))[5]) == 0)
+#define ETHER_ISBCAST(ea)	((((uint8 *)(ea))[0] &		\
+	                          ((uint8 *)(ea))[1] &		\
+				  ((uint8 *)(ea))[2] &		\
+				  ((uint8 *)(ea))[3] &		\
+				  ((uint8 *)(ea))[4] &		\
+				  ((uint8 *)(ea))[5]) == 0xff)
+#define ETHER_ISNULLADDR(ea)	((((uint8 *)(ea))[0] |		\
+				  ((uint8 *)(ea))[1] |		\
+				  ((uint8 *)(ea))[2] |		\
+				  ((uint8 *)(ea))[3] |		\
+				  ((uint8 *)(ea))[4] |		\
+				  ((uint8 *)(ea))[5]) == 0)
+
 
 #define ETHER_MOVE_HDR(d, s) \
 do { \

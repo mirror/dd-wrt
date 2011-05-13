@@ -1,15 +1,21 @@
 /*
  * stdlib support routines for self-contained images.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmstdlib.c,v 1.50.32.1 2010/05/27 22:44:57 Exp $
+ * $Id: bcmstdlib.c,v 1.51.20.1 2010-03-23 01:20:17 Exp $
  */
 
 /*
@@ -88,7 +94,6 @@ snprintf(char *buf, size_t bufsize, const char *fmt, ...)
 
 #else /* BCMSTDLIB_WIN32_APP */
 
-#if	!defined(BCMROMOFFLOAD) || defined(BMAC_ROML_SHARED_LIB)
 
 static const char digits[17] = "0123456789ABCDEF";
 static const char ldigits[17] = "0123456789abcdef";
@@ -295,7 +300,6 @@ BCMROMFN(snprintf)(char *buf, size_t bufsize, const char *fmt, ...)
 
 	return r;
 }
-#endif	/* (!defined(BCMROMOFFLOAD)) || defined(BMAC_ROML_SHARED_LIB) */
 
 #endif /* BCMSTDLIB_WIN32_APP */
 
@@ -710,6 +714,8 @@ printf(const char *fmt, ...)
 }
 #endif /* printf */
 
+
+#if !defined(_WIN32) && !defined(_CFE_) && !defined(EFI)
 int
 fputs(const char *s, FILE *stream /* UNUSED */)
 {
@@ -749,4 +755,5 @@ rand(void)
 	seed = t;
 	return t;
 }
+#endif 
 #endif /* BCMSTDLIB_SNPRINTF_ONLY */

@@ -1,12 +1,6 @@
 # BCM94710R1 board
-# Copyright (C) 2009, Broadcom Corporation
-# All Rights Reserved.
-# 
-# This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
-# the contents of this file may not be disclosed to third parties, copied
-# or duplicated in any form, in whole or in part, without the prior
-# written permission of Broadcom Corporation.
-# $Id: bcm94710r1.txt,v 1.4 2004/12/15 21:09:38 Exp $
+# $Copyright (C) 2003 Broadcom Corporation$
+# $Id: bcm94710r1.txt,v 1.4 2004-12-15 21:09:38 rtrask Exp $
 boardtype=bcm94710r1
 boardnum=${serno}
 
@@ -42,3 +36,4 @@ boot_wait=on
 
 # watchdog set to 3 sec
 watchdog=3000
+
