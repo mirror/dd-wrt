@@ -261,7 +261,7 @@ nvram_commit(void)
 
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = vmalloc(erasesize, GFP_KERNEL))) {
+	if (!(buf = vmalloc(erasesize))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
