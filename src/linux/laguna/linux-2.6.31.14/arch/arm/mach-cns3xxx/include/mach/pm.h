@@ -318,6 +318,8 @@ void cns3xxx_pwr_change_pll_cpu(unsigned int cpu_sel);
 
 /* Clock enable*/
 void cns3xxx_pwr_clk_en(unsigned int block);
+/* Clock disable*/
+void cns3xxx_pwr_clk_disable(unsigned int block);
 /* Software reset*/
 void cns3xxx_pwr_soft_rst(unsigned int block);
 void cns3xxx_pwr_soft_rst_force(unsigned int block);

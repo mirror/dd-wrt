@@ -669,18 +669,17 @@ static void __init cns3xxx_spi_initial(void)
 {
 
 	/* share pin config. */
-#if 1
-#if 0
-	/* GPIOB18 is set to PCM by default */
-    MISC_GPIOB_PIN_ENABLE_REG &= ~(MISC_GSW_P0_CRS_PIN);
-    gpio_direction_output(50, 1);
-#endif
-	PM_PLL_HM_PD_CTRL_REG &= ~(0x1 << 5);
 	HAL_MISC_ENABLE_SPI_PINS();
-	HAL_MISC_ENABLE_PCM_PINS(); /* this just for PCM test */
 	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
 	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SPI_PCM_I2C));
-#endif
+
+	//SPI Pin Drive Strength
+	//(0x30: 21mA) 
+	//(0x20: 15.7mA) 
+	//(0x10: 10.5mA) 
+	//(0x00: 5.2mA)
+//	MISC_IO_PAD_DRIVE_STRENGTH_CTRL_B &= ~0x30;
+//	MISC_IO_PAD_DRIVE_STRENGTH_CTRL_B |= 0x30; //21mA...
 
 	SPI_CONFIGURATION_REG = (((0x0 & 0x3) << 0) |	/* 8bits shift length */
 				 (0x0 << 9) |	/* SPI mode */
@@ -698,7 +697,7 @@ static void __init cns3xxx_spi_initial(void)
 				 (0x0 << 30) |	/* disable - SPI high speed read for system boot up */
 				 (0x0 << 31));	/* disable - SPI */
 
-	/* Set SPI bit rate PCLK/2 */
+	/* Set SPI bit rate 100MHz/4 */
 	SPI_BIT_RATE_CONTROL_REG = 0x1;
 
 	/* Set SPI Tx channel 0 */
@@ -818,8 +817,12 @@ static int __devexit cns3xxx_spi_remove(struct platform_device *dev)
 	spi_unregister_master(hw->master);
 
 	//cns3xxx_spi_clk_disable();
-
 	spi_master_put(hw->master);
+
+	/* Disable SPI */
+	SPI_CONFIGURATION_REG &= ~(0x1 << 31);
+	cns3xxx_pwr_clk_disable(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
+
 	return 0;
 }
 
@@ -827,7 +830,7 @@ static int __devexit cns3xxx_spi_remove(struct platform_device *dev)
 
 static int cns3xxx_spi_suspend(struct platform_device *pdev, pm_message_t msg)
 {
-	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
+//	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
 
 	//cns3xxx_spi_clk_disable();
 	return 0;
@@ -835,7 +838,7 @@ static int cns3xxx_spi_suspend(struct platform_device *pdev, pm_message_t msg)
 
 static int cns3xxx_spi_resume(struct platform_device *pdev)
 {
-	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
+//	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
 
 	//cns3xxx_spi_clk_enable()
 	return 0;
@@ -856,6 +859,7 @@ static struct platform_driver cns3xxx_spi_driver = {
 		.owner = THIS_MODULE,
 	},
 };
+EXPORT_SYMBOL(cns3xxx_spi_driver);
 
 static int __init cns3xxx_spi_init(void)
 {
