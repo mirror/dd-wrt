@@ -38,6 +38,11 @@ void cns3xxx_pwr_clk_en(unsigned int block)
 	PM_CLK_GATE_REG |= (block&PM_CLK_GATE_REG_MASK);
 }
 
+void cns3xxx_pwr_clk_disable(unsigned int block)
+{
+	PM_CLK_GATE_REG &= ~(block&PM_CLK_GATE_REG_MASK);
+}
+
 /*
  * cns3xxx_pwr_soft_rst - software reset
  * @block: bitmap for peripheral
