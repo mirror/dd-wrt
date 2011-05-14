@@ -649,16 +649,16 @@ include rules/all.mk
 #
 
 %:
-	[ ! -d $* ] || $(MAKE) -C $* 
+	[ ! -d $* ] || $(MAKE) -f Makefile.brcm26 -C $* 
 
 %-distclean:
-	[ ! -d $* ] || $(MAKE) -C $* clean
+	[ ! -d $* ] || $(MAKE) -f Makefile.brcm26 -C $* clean
 
 %-clean:
-	[ ! -d $* ] || $(MAKE) -C $* clean
+	[ ! -d $* ] || $(MAKE) -f Makefile.brcm26 -C $* clean
 
 %-install:
-	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
+	[ ! -d $* ] || $(MAKE) -f Makefile.brcm26 -C $* install INSTALLDIR=$(INSTALLDIR)/$*
 
 $(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
 
