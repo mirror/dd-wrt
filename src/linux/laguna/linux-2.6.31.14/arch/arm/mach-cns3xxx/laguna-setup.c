@@ -605,7 +605,7 @@ static int __init laguna_model_setup(void)
 			{
 			if (*((__u32 *) buf) == SQUASHFS_MAGIC || *((__u16 *) buf) == 0x1985) 
 			{
-			printk(KERN_EMERG "found squashfs\n");
+		//	printk(KERN_EMERG "found squashfs\n");
 	    		struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
 			filesyssize = sb->bytes_used;
 			tmplen = offset + filesyssize;
@@ -628,7 +628,7 @@ static int __init laguna_model_setup(void)
 		}
 
 		if ((laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) && strncmp(laguna_info.model, "GW2380", 6) == 0) {
-			printk(KERN_EMERG "detecting SPI FLASH\n");
+		//	printk(KERN_EMERG "detecting SPI FLASH\n");
 			SPI_CONFIGURATION_REG = 0x40000000;
 			HAL_MISC_ENABLE_SPI_SERIAL_FLASH_BANK_ACCESS();
 			laguna_spiflash_partitions[2].size		= SZ_16M - SZ_512K;
@@ -666,15 +666,15 @@ static int __init laguna_model_setup(void)
 			char *block = vmalloc(0x40000);
 			memcpy(block,buf,0x40000);
 			sb = (struct squashfs_super_block*)block;
-			printk(KERN_EMERG "found squashfs @0x%08X magic=0x%08X\n",offset,*((__u32 *) buf));
+		//	printk(KERN_EMERG "found squashfs @0x%08X magic=0x%08X\n",offset,*((__u32 *) buf));
 			filesyssize = sb->bytes_used;
 			vfree(block);
-			printk(KERN_EMERG "filesystem size 0x%08X\n",filesyssize);
+		//	printk(KERN_EMERG "filesystem size 0x%08X\n",filesyssize);
 			tmplen = offset + filesyssize;
 			tmplen +=  (erasesize - 1);
 			tmplen &= ~(erasesize - 1);
 			filesyssize = tmplen - offset;
-			printk(KERN_EMERG "filesystem size 0x%08X\n",filesyssize);
+		//	printk(KERN_EMERG "filesystem size 0x%08X\n",filesyssize);
 			laguna_spiflash_partitions[3].offset = offset;
 			laguna_spiflash_partitions[3].size = filesyssize;
 			laguna_spiflash_partitions[4].offset = offset + filesyssize;
