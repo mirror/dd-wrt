@@ -55,10 +55,12 @@
 /* Robo device ID register (in ROBO_MGMT_PAGE) */
 #define ROBO_DEVICE_ID		0x30
 #define  ROBO_DEVICE_ID_5325	0x25 /* Faked */
+#define  ROBO_DEVICE_ID_5356	0x56 /* Faked ?? */
 #define  ROBO_DEVICE_ID_5395	0x95
 #define  ROBO_DEVICE_ID_5397	0x97
 #define  ROBO_DEVICE_ID_5398	0x98
 #define  ROBO_DEVICE_ID_53115	0x3115
+#define  ROBO_DEVICE_ID_53125	0x3125
 
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
@@ -347,6 +349,10 @@ static int robo_probe(char *devname)
 
 	phyid = mdio_read(robo.phy_addr, 0x2) | 
 		(mdio_read(robo.phy_addr, 0x3) << 16);
+		
+	if (phyid == 0 && robo.use_et == 0)
+	    phyid = mdio_read(0, 0x2) | 
+			(mdio_read(0, 0x3) << 16);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		printk("No Robo switch in managed mode found, phy_id = 0x%08x\n", phyid);
@@ -360,6 +366,11 @@ static int robo_probe(char *devname)
 			break;
 		udelay(10);
 	}
+	
+	/* dirty trick for 5356 */
+	if ((phyid & 0xfff0ffff ) == 0x5da00362)
+		robo.devid = ROBO_DEVICE_ID_5356;
+	
 	if (!robo.devid)
 		robo.devid = ROBO_DEVICE_ID_5325; /* Fake it */
 	robo.is_5350 = robo_vlan5350();
@@ -387,7 +398,7 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
 		/* actual read */
 		val32 = robo_read32(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-		if ((val32 & (1 << 20)) /* valid */) {
+		if ((val32 & (robo.devid == ROBO_DEVICE_ID_5356 ? (1 << 24) : (1 << 20))) /* valid */) {
 			for (j = 0; j < 6; j++) {
 				if (val32 & (1 << j)) {
 					len += sprintf(buf + len, "%d", j);
@@ -436,6 +447,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 	switch_vlan_config *c = switch_parse_vlan(d, buf);
 	int j;
 	__u16 val16;
+	__u32 val32;
 	
 	if (c == NULL)
 		return -EINVAL;
@@ -448,9 +460,9 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 
 	/* write config now */
 
-	if (robo.devid != ROBO_DEVICE_ID_5325) {
+	if (robo.devid != ROBO_DEVICE_ID_5325 && robo.devid != ROBO_DEVICE_ID_5356) {
 		__u8 regoff = ((robo.devid == ROBO_DEVICE_ID_5395) ||
-			(robo.devid == ROBO_DEVICE_ID_53115)) ? 0x20 : 0;
+			(robo.devid == ROBO_DEVICE_ID_53115) || (robo.devid == ROBO_DEVICE_ID_53125)) ? 0x20 : 0;
 
 		robo_write32(ROBO_ARLIO_PAGE, 0x63 + regoff, (c->untag << 9) | c->port);
 		robo_write16(ROBO_ARLIO_PAGE, 0x61 + regoff, nr);
@@ -460,8 +472,11 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 
 	val16 = (nr) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
 	if (robo.is_5350) {
-		robo_write32(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350,
-			(1 << 20) /* valid */ | (c->untag << 6) | c->port);
+		if (robo.devid == ROBO_DEVICE_ID_5356)
+			val32 = (1 << 24) /* valid */ | (c->untag << 6) | c->port;
+		else
+			val32 = (1 << 20) /* valid */ | (c->untag << 6) | c->port;		
+		robo_write32(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350, val32);
 		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
 	} else {
 		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE,
@@ -502,7 +517,7 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 		(robo.devid == ROBO_DEVICE_ID_5325 ? (1 << 1) :
 		0) | (1 << 2) | (1 << 3)); /* RSV multicast */
 
-	if (robo.devid != ROBO_DEVICE_ID_5325)
+	if (robo.devid != ROBO_DEVICE_ID_5325 && robo.devid != ROBO_DEVICE_ID_5356)
 		return 0;
 
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
@@ -603,7 +618,7 @@ static int __init robo_init(void)
 			.port_handlers		= NULL,
 			.vlan_handlers		= vlan,
 		};
-		if (robo.devid != ROBO_DEVICE_ID_5325) {
+		if (robo.devid != ROBO_DEVICE_ID_5325 && robo.devid != ROBO_DEVICE_ID_5356) {
 			driver.ports = 9;
 			driver.cpuport = 8;
 		}
