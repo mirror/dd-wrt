@@ -29,11 +29,13 @@ int sppe_hook_ready = 0;
 int (*sppe_func_hook)(SPPE_PARAM *param) = NULL;
 int sppe_pci_fp_ready = 0;
 int (*sppe_pci_fp_hook)(SPPE_PARAM *param) = NULL;
+int sppe_hook_mode = 1;
 
 EXPORT_SYMBOL(sppe_hook_ready);
 EXPORT_SYMBOL(sppe_func_hook);
 EXPORT_SYMBOL(sppe_pci_fp_ready);
 EXPORT_SYMBOL(sppe_pci_fp_hook);
+EXPORT_SYMBOL(sppe_hook_mode);
 
 #endif //#if defined(CONFIG_CNS3XXX_SPPE)
 

@@ -185,6 +185,10 @@ config VECTORS_BASE
 	help
 	  The base address of exception vectors.
 
+config ARCH_HIBERNATION_POSSIBLE
+	def_bool y
+	depends on ARCH_CNS3XXX && !SMP && !AMP
+
 source "init/Kconfig"
 
 source "kernel/Kconfig.freezer"

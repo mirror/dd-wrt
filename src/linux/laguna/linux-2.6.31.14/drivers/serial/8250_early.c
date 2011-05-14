@@ -45,6 +45,23 @@ struct early_serial8250_device {
 };
 
 static struct early_serial8250_device early_device;
+#if defined(CONFIG_ARCH_CNS3XXX)
+static unsigned int __init serial_in(struct uart_port *port, int offset)
+{
+	if (port->iotype == UPIO_MEM)
+		return readb(port->membase + (offset << 2));
+	else
+		return inb(port->iobase + (offset << 2));
+}
+
+static void __init serial_out(struct uart_port *port, int offset, int value)
+{
+	if (port->iotype == UPIO_MEM)
+		writeb(value, port->membase + (offset << 2));
+	else
+		outb(value, port->iobase + (offset << 2));
+}
+#else
 
 static unsigned int __init serial_in(struct uart_port *port, int offset)
 {
@@ -61,7 +78,7 @@ static void __init serial_out(struct uart_port *port, int offset, int value)
 	else
 		outb(value, port->iobase + offset);
 }
-
+#endif
 #define BOTH_EMPTY (UART_LSR_TEMT | UART_LSR_THRE)
 
 static void __init wait_for_xmitr(struct uart_port *port)

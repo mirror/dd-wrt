@@ -28,6 +28,10 @@
 #include "cns3xxx_tool.h"
 #include "cns3xxx_config.h"
 
+#ifdef CONFIG_SUSPEND
+#include <linux/suspend.h>
+#endif
+
 #if defined (CONFIG_CNS3XXX_SPPE)
 #include <linux/cns3xxx/sppe.h>
 #define PACKET_REASON_TO_CPU (0x2C)
@@ -65,6 +69,11 @@
 	ctl.q2_w = ((MAC##port##_PRI_CTRL_REG >> 8 ) & 0x7); \
 	ctl.q3_w = ((MAC##port##_PRI_CTRL_REG >> 12 ) & 0x7); \
 }
+
+#ifdef CONFIG_CPU_FREQ
+#include <linux/cpufreq.h>
+atomic_t cpufreq_pse_flag;
+#endif
 
 int cns3xxx_send_packet(struct sk_buff *skb, struct net_device *netdev);
 static int install_isr_rc = 0;
@@ -636,13 +645,24 @@ static int cns3xxx_get_rfd_buff(RXBuffer volatile *rx_buffer, CNS3XXXPrivate *ol
 
 	pci_dma_sync_single_for_device(NULL, virt_to_phys(skb->data), len, PCI_DMA_FROMDEVICE);
 #if defined (CONFIG_CNS3XXX_SPPE)
-	if (PACKET_REASON_TO_CPU == rx_buffer->rx_desc->hr) {
+	if (PACKET_REASON_TO_CPU == rx_desc->hr) {
 		if (sppe_pci_fp_ready) {
 			SPPE_PARAM param;
 			int pci_dev_index;
 			struct iphdr *iph;
+			struct ethhdr *ethh;
 	
 			skb_put(skb, len);
+			ethh = (struct ethhdr *)(skb->data);
+
+			if (ntohs(ETH_P_PPP_SES) == ethh->h_proto) {
+				/* Remove PPPoE Header */
+				memmove(skb->data+8, skb->data, 12); 
+				skb->data+=8; 
+				skb->len-=8;
+				ethh = (struct ethhdr *)(skb->data);
+				ethh->h_proto = htons(ETH_P_IP);
+			}
 			iph = (struct iphdr *)(skb->data + sizeof(struct ethhdr));
 
 			memset(&param, 0, sizeof(SPPE_PARAM));
@@ -650,6 +670,7 @@ static int cns3xxx_get_rfd_buff(RXBuffer volatile *rx_buffer, CNS3XXXPrivate *ol
 			param.op = SPPE_OP_GET;
 			param.data.sppe_arp.ip[0] = iph->daddr;
 			if (SPPE_RESULT_SUCCESS != sppe_func_hook(&param)) {
+				printk("<%s>read arp fail\n", __FUNCTION__);
 				goto NOT_IN_PCI_FP;
 			} else {
 				pci_dev_index = param.data.sppe_arp.unused_1;
@@ -659,20 +680,23 @@ static int cns3xxx_get_rfd_buff(RXBuffer volatile *rx_buffer, CNS3XXXPrivate *ol
 			param.data.sppe_pci_fp_dev.dev = NULL;
 			param.data.sppe_pci_fp_dev.index = pci_dev_index;
 			if (SPPE_RESULT_SUCCESS != sppe_pci_fp_hook(&param)) {
+				printk("<%s>get dev fail\n", __FUNCTION__);
 				goto NOT_IN_PCI_FP;
 			} else {
 				skb->dev = param.data.sppe_pci_fp_dev.dev;
 			}
-			#if 1
 			dev_queue_xmit(skb);
-			#else
-			skb->dev->hard_start_xmit(skb, skb->dev);
-			#endif
 
 			return 0;
 		}
 	}
 NOT_IN_PCI_FP:
+	/*printk("hr: %x ## sp: %d\n", rx_desc->hr, rx_desc->sp);*/
+#endif
+
+#if defined (CONFIG_CPU_FREQ)
+	if (unlikely(atomic_read(&cpufreq_pse_flag)))
+		goto freepacket;	
 #endif
 
 #ifdef CNS3XXX_NON_NIC_MODE_8021Q
@@ -886,6 +910,12 @@ void cns3xxx_receive_packet(CNS3XXXPrivate *priv, int mode)
 		rxcount = (get_rx_ring_size(&priv->rx_ring[queue_index]) - get_rx_cur_index(&priv->rx_ring[queue_index]) ) + fssd_index;
 	} else { // fssd_index == rxring.cur_index
 		if (rx_desc->cown == 0) { // if rx_desc->cown is 1, we can receive the RX descriptor.
+#if defined (CONFIG_CPU_FREQ)
+#if 0
+			if (unlikely(atomic_read(&cpufreq_pse_flag)))
+				goto receive_packet_exit;
+#endif
+#endif
 			enable_rx_dma(0, 1);
 			goto receive_packet_exit;
 		} else {
@@ -1217,6 +1247,13 @@ int cns3xxx_send_packet(struct sk_buff *skb, struct net_device *netdev)
 #endif
 
         spin_lock_irqsave(&tx_lock, flags);
+
+#if defined (CONFIG_CPU_FREQ)
+	if (unlikely(atomic_read(&cpufreq_pse_flag))) {
+		spin_unlock_irqrestore(&tx_lock, flags);
+		return NETDEV_TX_OK;
+	}
+#endif
 
 	if (cns3xxx_check_enough_tx_descriptor(priv->tx_ring + ring_index, (nr_frags==0 ) ? 1 : nr_frags) == 0) { 
 		// no enough tx descriptor
@@ -3734,6 +3771,190 @@ void cns3xxx_config_intr(void)
 #endif
 }
 
+#define PSE_DEFAULT_FREE_PAGE_COUNT	0x2F6
+static inline void empty_rx(void)
+{
+	/* FIXME: 
+	 * this function recevie all packets (in PSE memory) and drop them.
+	 * If SRAM_TEST_REG[9:0] is 0x2F6, we think that PSE is idle
+	 */
+    struct net_device *netdev = PORT0_NETDEV;
+    int work_done;
+#ifdef DEBUG
+	int cnt = 0;
+#endif
+	
+    CNS3XXXPrivate *priv = netdev_priv(netdev);
+	while ((SRAM_TEST_REG &0x3FF) < PSE_DEFAULT_FREE_PAGE_COUNT) {
+		work_done = 0;
+#ifdef CONFIG_CNS3XXX_NAPI
+	    cns3xxx_receive_packet(priv, 0, &work_done, 16);
+#else
+	    cns3xxx_receive_packet(priv, 0);
+#endif
+	/*XXX: for debug */
+	#if 0 
+		cnt++;
+		if (cnt>100) {
+			printk("%s: count %d, SRAM_TEST_REG: 0x%.8x\n", __FUNCTION__, cnt, SRAM_TEST_REG);
+			printk("MAC0_CFG_REG 0x%.8x MAC1_CFG_REG 0x%.8x MAC2_CFG_REG 0x%.8x\n", MAC0_CFG_REG, MAC1_CFG_REG, MAC2_CFG_REG);
+			break;
+		}
+	#endif
+	}
+}
+
+static int is_tx_empty(TXRing *tx_ring)
+{
+
+	u32 cur_index, ring_size = get_tx_ring_size(tx_ring);
+	TXDesc *tx_desc;
+
+	for (cur_index=0; cur_index<ring_size; cur_index++) {
+		tx_desc = (get_tx_buffer_by_index(tx_ring, cur_index))->tx_desc;
+
+		if (0 == tx_desc->cown) {
+			return 0;
+		}
+	}
+	return 1;	
+}
+
+static inline int pse_suspend(void)
+{
+    struct net_device *netdev = PORT0_NETDEV;
+    CNS3XXXPrivate *priv = netdev_priv(netdev);
+
+#ifdef CONFIG_CPU_FREQ
+	atomic_set(&cpufreq_pse_flag, 1);
+#endif
+	/* 1. suspend tx dma and disable TX DMA */
+	while(!is_tx_empty(priv->tx_ring));
+	while (TS_DMA_STA_REG); /* wait for TX DMA complete */
+	DMA_AUTO_POLL_CFG_REG |= (0x1<<4);
+	enable_tx_dma(0, 0);
+	enable_tx_dma(1, 0);
+	/* 2. disable mac port */
+	enable_port(0, 0);
+	enable_port(1, 0);
+	enable_port(2, 0);
+	enable_port(3, 0);
+ 	/* 3. empty PSE memory */
+	empty_rx();
+ 	/* 4. suspend rx dma and disable RX DMA */
+	while (FS_DMA_STA_REG); /* wait for RX DMA complete */
+	DMA_AUTO_POLL_CFG_REG |= 0x1;
+	enable_rx_dma(0, 0);
+	enable_rx_dma(1, 0);
+	INTR_MASK_REG=0xffffffff;
+
+    return NOTIFY_DONE;
+}
+
+static inline int pse_resume(void)
+{
+	/*  2. resume tx dma */
+	while (TS_DMA_STA_REG);
+	DMA_AUTO_POLL_CFG_REG &= ~(0x1<<4);
+	enable_tx_dma(0, 1);
+	enable_tx_dma(1, 1);
+	/*  3. resume rx dma */
+	while (FS_DMA_STA_REG);
+	DMA_AUTO_POLL_CFG_REG &= ~ 0x1;
+	enable_rx_dma(0, 1);
+	enable_rx_dma(1, 1);
+	/*  1. enable mac port */
+	enable_port(0, 1);
+	enable_port(1, 1);
+	enable_port(2, 1);
+	enable_port(3, 1);
+	INTR_MASK_REG=0x0;
+#ifdef CONFIG_CPU_FREQ
+	atomic_set(&cpufreq_pse_flag, 0);
+#endif
+    return NOTIFY_DONE;
+}
+
+#ifdef CONFIG_CNS3XXX_PSE_WOL
+static int pse_wol_suspend(void)
+{
+	INTR_STAT_REG = INTR_STAT_REG; /* clear interrupt status */
+	INTR_MASK_REG = 0xE3FFFFFF; /* Only enable pause frame drop interrupt */
+	enable_port(3, 0); /* disable CPU port */
+    return NOTIFY_DONE;
+}
+
+static int pse_wol_resume(void)
+{
+	INTR_STAT_REG = INTR_STAT_REG; /* clear interrupt status*/
+	INTR_MASK_REG = 0x0; /* */
+	enable_port(3, 1); /* enable CPU port */
+	
+    return NOTIFY_DONE;
+}
+#endif
+
+#ifdef CONFIG_CPU_FREQ
+static int pse_cpufreq_notifier(struct notifier_block *nb, unsigned long phase, void *p)
+{
+	if (unlikely(!rc_setup_rx_tx)) {
+		return NOTIFY_DONE;
+	}
+
+	switch (phase) {
+	case CPUFREQ_POSTCHANGE:
+		pse_resume();
+		break;
+	case CPUFREQ_PRECHANGE:
+		pse_suspend();
+		break;
+	default:
+		break; 
+	}
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block pse_cpufreq_notifier_block = {
+	.notifier_call = pse_cpufreq_notifier
+};
+#endif /* #ifdef CONFIG_CPU_FREQ */
+
+#ifdef CONFIG_SUSPEND
+/*
+ * This function is called for suspend and resume.
+ */
+static int pse_power_event(struct notifier_block *this, unsigned long event,
+                 void *ptr)
+{
+	if (unlikely(!rc_setup_rx_tx)) {
+		return NOTIFY_DONE;
+	}
+
+    switch (event) {
+    case PM_POST_SUSPEND:
+#ifdef CONFIG_CNS3XXX_PSE_WOL
+		return pse_wol_resume();
+#endif
+    case PM_POST_HIBERNATION:
+        return pse_resume();
+    case PM_SUSPEND_PREPARE:
+#ifdef CONFIG_CNS3XXX_PSE_WOL
+		return pse_wol_suspend();
+#endif
+    case PM_HIBERNATION_PREPARE:
+        return pse_suspend();
+    default:
+        return NOTIFY_DONE;
+    }
+}
+
+static struct notifier_block pse_power_notifier = {
+    .notifier_call = pse_power_event,
+};
+#endif
+
+
+
 static int __devinit cns3xxx_init(struct platform_device *pdev)
 {
 	// when tx_ring/rx_ring alloc memory, 
@@ -3846,6 +4067,18 @@ static int __devinit cns3xxx_init(struct platform_device *pdev)
 		DMA_RING_CTRL_REG |= (1 << 16);
 	}
 
+#ifdef CONFIG_SUSPEND
+    register_pm_notifier(&pse_power_notifier);
+#endif
+
+#ifdef CONFIG_CPU_FREQ
+	atomic_set(&cpufreq_pse_flag, 0);
+	if (cpufreq_register_notifier(&pse_cpufreq_notifier_block, 
+						CPUFREQ_TRANSITION_NOTIFIER)) {
+		printk("%s: Failed to setup cpufreq notifier\n", __FUNCTION__);
+	}
+#endif
+
 
 	return 0;
 }
@@ -3894,6 +4127,9 @@ static int __devexit cns3xxx_remove(struct platform_device *pdev)
 	#endif
 #endif
 
+#ifdef CONFIG_CPU_FREQ
+	cpufreq_unregister_notifier(&pse_cpufreq_notifier_block, CPUFREQ_TRANSITION_NOTIFIER);
+#endif
 
 #if 0
 	//star_gsw_buffer_free(); 

@@ -92,7 +92,7 @@ static int sppe_udp_flow_add_ipv4(struct nf_conn *ct)
     param.data.flow_nat_ipv4.nat_port = htons(reply->dst.u.tcp.port);
 
     if (sppe_func_hook(&param)) {
-        printk("<0><%s> fail to add IPv4 UDP from-LAN flow!!\n", __FUNCTION__);
+        //printk("<%s> fail to add IPv4 UDP from-LAN flow!!\n", __FUNCTION__);
     }
     param.data.flow_nat_ipv4.fw = 1;
     param.data.flow_nat_ipv4.sip = htonl(reply->src.u3.ip);
@@ -105,7 +105,7 @@ static int sppe_udp_flow_add_ipv4(struct nf_conn *ct)
     param.data.flow_nat_ipv4.nat_port = htons(orig->src.u.tcp.port);
 
     if (sppe_func_hook(&param)) {
-        printk("<0><%s> fail to add IPv4 from-WAN flow!!\n", __FUNCTION__);
+        //printk("<%s> fail to add IPv4 UDP from-WAN flow!!\n", __FUNCTION__);
     }
 
     return 0;
@@ -139,7 +139,7 @@ static int sppe_udp_flow_add_ipv6(struct nf_conn *ct)
     param.data.flow_route_ipv6.l4.port.dst = htons(orig->dst.u.udp.port);
 
     if (sppe_func_hook(&param)) {
-        printk("<0><%s> fail to add IPv6 from-LAN flow!!\n", __FUNCTION__);
+        //printk("<%s> fail to add IPv6 UDP from-LAN flow!!\n", __FUNCTION__);
     }
 
     /* from-WAN flow */
@@ -156,7 +156,7 @@ static int sppe_udp_flow_add_ipv6(struct nf_conn *ct)
     param.data.flow_route_ipv6.l4.port.dst = htons(reply->dst.u.udp.port);
 
     if (sppe_func_hook(&param)) {
-        printk("<0><%s> fail to add IPv6 from-LAN flow!!\n", __FUNCTION__);
+        //printk("<%s> fail to add IPv6 UDP from-LAN flow!!\n", __FUNCTION__);
     }
 
     return 0;
@@ -202,6 +202,7 @@ static int udp_packet(struct nf_conn *ct,
 			nf_conntrack_event_cache(IPCT_STATUS, ct);
 #if defined (CONFIG_CNS3XXX_SPPE)
             /* Add SPPE hardware flow */
+					if(sppe_hook_mode)
             sppe_udp_flow_add(ct);
         }
 #endif
