@@ -1560,6 +1560,7 @@ void start_sysinit(void)
 			case ROUTER_BELKIN_F7D3301:
 			case ROUTER_BELKIN_F7D4301:
 			case ROUTER_BELKIN_F5D8235V3:
+			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
@@ -1622,7 +1623,6 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN10U:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
-			case ROUTER_LINKSYS_E3200:
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
@@ -1647,6 +1647,7 @@ void start_sysinit(void)
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_ASUS_RTN16:
+			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
@@ -1700,7 +1701,6 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN10U:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
-			case ROUTER_LINKSYS_E3200:
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
