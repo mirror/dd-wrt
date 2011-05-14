@@ -289,9 +289,9 @@ install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) lib.mipsel-install
+	$(MAKE) -f Makefile.brcm26 lib.mipsel-install
 	# optimize the others library by removing unneeded symbols
-	$(MAKE) optimize-lib
+	$(MAKE) -f Makefile.brcm26 optimize-lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
@@ -520,7 +520,7 @@ ifeq ($(CONFIG_OPENSSL),y)
 	rm -f $(TARGETDIR)/usr/sbin/openssl
 endif
 ifeq ($(CONFIG_KAID),y)
-	make -C kaid/src
+	make -f Makefile.brcm26 -C kaid/src
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
