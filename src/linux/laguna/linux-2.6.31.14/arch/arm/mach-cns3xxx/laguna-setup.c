@@ -387,6 +387,7 @@ static struct spi_board_info __initdata laguna_spi_devices[] = {
 		.chip_select		= 0,
 	},
 };
+struct proc_dir_entry *cns3xxx_proc_dir=0;
 
 static struct platform_device laguna_spi_controller_device = {
 	.name		= "cns3xxx_spi",
@@ -490,6 +491,7 @@ static void __init laguna_init(void)
 	i2c_register_board_info(0, laguna_i2c_devices, ARRAY_SIZE(laguna_i2c_devices));
 
 	pm_power_off = cns3xxx_power_off;
+	cns3xxx_proc_dir = proc_mkdir("cns3xxx", NULL);
 }
 #define LE8221_SPI_CS		1
 #define SI3226_SPI_CS		1
