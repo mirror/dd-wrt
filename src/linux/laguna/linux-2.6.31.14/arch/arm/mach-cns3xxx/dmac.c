@@ -32,7 +32,7 @@
 #include <linux/dma-mapping.h>
 #include <asm/memory.h>
 #include <asm/dma.h>
-#include <mach/hardware.h>
+#include <mach/board.h>
 #include <mach/pm.h>
 
 
@@ -52,9 +52,9 @@
 #define DMAC_DBGINST0		DMAC_MEM_MAP_VALUE(0xD08)	/* Debug Instrucion-0 Register */
 #define DMAC_DBGINST1		DMAC_MEM_MAP_VALUE(0xD0C)	/* Debug Instrucion-1 Register */
 
-#define CHANNEL_AND_MANAGER	0x1ff
+#define CHANNEL_AND_MANAGER	0xffff //0x1ff
 #define CHANNEL_ONLY		0xff
-#define MANAGER_ONLY		0x100
+#define MANAGER_ONLY		0xff00 //0x100
 
 #define MAX_MICROCODE_SIZE	2048
 
@@ -82,8 +82,8 @@
 spinlock_t dma_mgr_lock;
 
 typedef enum {
-//      DMAC_INSTR_DMAADDH = 0, /* Add Halfword */ /*** No implement ***/
-	DMAC_INSTR_DMAEND = 0,	/* End */
+	DMAC_INSTR_DMAADDH = 0, /* Add Halfword */ /*** No implement ***/
+	DMAC_INSTR_DMAEND,	/* End */
 	DMAC_INSTR_DMAFLUSHP,	/* Flash and notify Peripheral */
 	DMAC_INSTR_DMAGO,	/* Go */
 	DMAC_INSTR_DMALD,	/* Load */
@@ -101,7 +101,7 @@ typedef enum {
 	DMAC_INSTR_DMASTZ,	/* Store Zero */
 	DMAC_INSTR_DMAWFE,	/* Wait For Event */
 	DMAC_INSTR_DMAWFP,	/* Wait For Peripheral */
-	DMAC_INSTR_DMAWMB	/* Wait For Barrier */
+	DMAC_INSTR_DMAWMB,	/* Wait For Barrier */
 } dmac_instr_t;
 
 typedef struct {
@@ -151,6 +151,7 @@ typedef struct {
 	uint8_t iter;		/* iteration count */
 	uint8_t backwards_jump;	/* backwards jump length */
 	uint8_t rd;		/* destination register, <SAR=b000, CCR=b001, DAR=b010> */
+	uint8_t ra;             /* address register, <SAR=b0, DAR=b1> */
 	uint8_t event_num;	/* event number */
 
 	union {
@@ -159,6 +160,8 @@ typedef struct {
 	} bits;
 
 	dmac_cmd_imm32_t imm32;	/* immediate 32bit value */
+	uint16_t imm16;
+
 } dmac_instr_param_t;
 
 typedef struct {
@@ -173,7 +176,7 @@ typedef struct {
 } dmac_channel_t;
 
 /* TODO: Not protected as of now */
-dmac_channel_t *dmac_channels[MAX_DMA_CHANNELS];
+dmac_channel_t *dmac_channels[MAX_DMA_CHANNELS + (MIN_EVENT_NUM-1)];
 
 int dmac_events[MAX_INTR_EVENTS];
 
@@ -274,15 +277,15 @@ int DMAC_DMAGO(int ch_num)
 	       __LINE__, param.imm32.i.val,
 	       *((uint32_t *) phys_to_virt(dma_ch->microcode_dma)));
 #endif
-	instr_len = dmac_create_instr(DMAC_CHMGR, DMAC_INSTR_DMAGO, &param);
+	instr_len = dmac_create_instr((DMAC_CHMGR + ch_num), DMAC_INSTR_DMAGO, &param);
 	if (instr_len < 0) {
 		printk("dmac_create_instr failed \n");
 		return -1;
 	}
 
-	dmac_exec_ucode(DMAC_CHMGR, DMAC_CHMGR);	// DMAC_CHMGR);
-	if (dmac_channels[DMAC_CHMGR])
-		dmac_channels[DMAC_CHMGR]->microcode_size = 0;
+	dmac_exec_ucode((DMAC_CHMGR + ch_num), (DMAC_CHMGR + ch_num));	// DMAC_CHMGR);
+	if (dmac_channels[(DMAC_CHMGR + ch_num)])
+		dmac_channels[(DMAC_CHMGR + ch_num)]->microcode_size = 0;
 	else
 		printk("BUG HERE !! DEBUG .. \n");
 
@@ -764,7 +767,42 @@ int DMAC_DMASTP(int ch_num, int periph_id, int burst)
 
 EXPORT_SYMBOL(DMAC_DMASTP);
 
+/******************************************************************************
+ *
+ * Instruction:  DMAADDH
+ * Description:
+ *      | 23 22 21 20 | 19 18 17 16 | 15 14 13 12 | 11 10  9  8 |  7  6  5  4 |  3  2  1  0 |
+ *        <       imm[15:8]       >   <       imm[7:0]        >    0  1  0  1    0  1 ra  0
+ * Example:
+ *      DMAADDH <address register> <16-bit immediate>
+ *      56 00 00
+ ******************************************************************************/
+const char dmac_code_DMAADDH[] = {0x56, 0x00, 0x00};
+
+int DMAC_DMAADDH(int ch_num, int r, int val)
+{
+        dmac_instr_param_t param;
+        int instr_len;
+
+        memset(&param, 0, sizeof(dmac_instr_param_t));
+        param.ra = r;
+        param.imm16 = val;
+        instr_len = dmac_create_instr(ch_num, DMAC_INSTR_DMAADDH, &param);
+        if (instr_len < 0) {
+                printk("dmac_create_instr failed \n");
+                return -1;
+        }
+
+        return 0;
+}
+
+EXPORT_SYMBOL(DMAC_DMAADDH);
+
+
+
 dmac_instr_encode_t dmac_codes[] = {
+	{dmac_code_DMAADDH, sizeof(dmac_code_DMAADDH), CHANNEL_ONLY}
+	,
 	{dmac_code_DMAEND, sizeof(dmac_code_DMAEND), CHANNEL_AND_MANAGER}
 	,
 	{dmac_code_DMAFLUSHP, sizeof(dmac_code_DMAFLUSHP), CHANNEL_ONLY}
@@ -969,6 +1007,16 @@ dmac_create_instr(int chan, dmac_instr_t instr, dmac_instr_param_t * param)
 			buf[0] &= ~0x2;
 		buf[1] |= (param->periph) << 3;	// shift to bit 11
 		break;
+	case DMAC_INSTR_DMAADDH:
+		if(param->ra)
+			buf[0] |=0x2;
+		else
+			buf[0] &= ~0x2;
+
+		buf[1] = param->imm16 & 0xFF;
+		buf[2] = (param->imm16 >> 8) & 0xFF;
+			
+		break;
 
 	default:
 		printk("%s: unknown instr (%d)\r\n", __FUNCTION__, instr);
@@ -1003,7 +1051,7 @@ static int dmac_exec_ucode(int ucode_channel, int ch)
 	}
 
 	dbg_cmd_buf = dma_ch->microcode;
-	dbg_cmd_len = dma_ch->microcode_size;
+	dbg_cmd_len = dma_ch->microcode_size;	
 #ifdef DEBUG_GDMA
 	{
 		int tmp;
@@ -1052,7 +1100,7 @@ static int dmac_exec_ucode(int ucode_channel, int ch)
 	}
 
 	// Fill channel field
-	if (ch == DMAC_CHMGR) {
+	if (ch >= DMAC_CHMGR) {
 		dbg1_val &= (~DMAC_DBG_THREAD_BIT);
 	} else {
 		dbg1_val |= DMAC_DBG_THREAD_BIT;
@@ -1140,39 +1188,33 @@ static irqreturn_t dmac_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+#ifdef CONFIG_SILICON
 static void cns3xxx_dmac_hw_init(void)
 {
-#ifdef CONFIG_CNS3XXX_PM_API
 	/* enable GDMA clock*/
 	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(GDMA));
-	/* check clok status and power status */
-	#if 0
-	PM_PWR_STA_REG & (0x1 << PM_PWR_STA_REG_REG_OFFSET_GDMA)
-	PM_CACTIVE_STA_REG & (0x1 << PM_CACTIVE_STA_REG_OFFSET_GDMA)
-	#endif
 	/* do software reset*/
 	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(GDMA));
-#else
-#error "CNS3XXX PM API support should be enabled in Linux kernel"
-#endif
 }
+
+#endif
 
 /*
  * dmac_init
  */
-int __init dmac_init(void)
+int dmac_init(void)
 {
 	int i, irqno = DMAC_IRQNO_BASE;
 
 	printk(KERN_INFO "Initializing CNS3XXX DMA controller \n");
-
+#ifdef CONFIG_SILICON
 	cns3xxx_dmac_hw_init();
-
-	memset(dmac_channels, 0, sizeof(dmac_channel_t *) * MAX_DMA_CHANNELS);
+#endif
+	memset(dmac_channels, 0, sizeof(dmac_channel_t *) * (MAX_DMA_CHANNELS + (MIN_EVENT_NUM-1)));
 
 	spin_lock_init(&dma_mgr_lock);
 
-	for (i = 0; i < MAX_DMA_CHANNELS; i++) {
+	for (i = 0; i < (MAX_DMA_CHANNELS + (MIN_EVENT_NUM-1)); i++) {
 		dmac_channels[i] = kmalloc(sizeof(dmac_channel_t), GFP_KERNEL);
 
 		if (dmac_channels[i] == NULL) {
@@ -1212,6 +1254,8 @@ int __init dmac_init(void)
 
 	return 0;
 }
+
+EXPORT_SYMBOL(dmac_init);
 
 /*
  * dmac_get_channel

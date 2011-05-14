@@ -57,14 +57,15 @@
 #define PM_CLK_GATE_REG_OFFSET_HCIE				(12)
 #define PM_CLK_GATE_REG_OFFSET_SWITCH			(11)
 #define PM_CLK_GATE_REG_OFFSET_GPIO				(10)
-#define PM_CLK_GATE_REG_OFFSET_UART3			(9)
+//#define PM_CLK_GATE_REG_OFFSET_UART3			(9)
 #define PM_CLK_GATE_REG_OFFSET_UART2			(8)
 #define PM_CLK_GATE_REG_OFFSET_UART1			(7)
+#define PM_CLK_GATE_REG_OFFSET_UART0			(6)
 #define PM_CLK_GATE_REG_OFFSET_RTC				(5)
 #define PM_CLK_GATE_REG_OFFSET_GDMA				(4)
 #define PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C		(3)
 #define PM_CLK_GATE_REG_OFFSET_SMC_NFI			(1)
-#define PM_CLK_GATE_REG_MASK				(0x03FFFFBA)
+#define PM_CLK_GATE_REG_MASK				(0x03FFFDFA)
 
 /* PM_SOFT_RST_REG */
 #define PM_SOFT_RST_REG_OFFST_WARM_RST_FLAG		(31) 
@@ -86,9 +87,10 @@
 #define PM_SOFT_RST_REG_OFFST_HCIE				(12)
 #define PM_SOFT_RST_REG_OFFST_SWITCH			(11)
 #define PM_SOFT_RST_REG_OFFST_GPIO				(10)
-#define PM_SOFT_RST_REG_OFFST_UART3				(9)
+//#define PM_SOFT_RST_REG_OFFST_UART3				(9)
 #define PM_SOFT_RST_REG_OFFST_UART2				(8)
 #define PM_SOFT_RST_REG_OFFST_UART1				(7)
+#define PM_SOFT_RST_REG_OFFST_UART0				(6)
 #define PM_SOFT_RST_REG_OFFST_RTC				(5)
 #define PM_SOFT_RST_REG_OFFST_GDMA				(4)
 #define PM_SOFT_RST_REG_OFFST_SPI_PCM_I2C		(3)
@@ -114,7 +116,7 @@
 #define PM_HS_CFG_REG_OFFSET_HCIE				(12)
 #define PM_HS_CFG_REG_OFFSET_SWITCH				(11)
 #define PM_HS_CFG_REG_OFFSET_GPIO				(10)
-#define PM_HS_CFG_REG_OFFSET_UART3				(9)
+//#define PM_HS_CFG_REG_OFFSET_UART3				(9)
 #define PM_HS_CFG_REG_OFFSET_UART2				(8)
 #define PM_HS_CFG_REG_OFFSET_UART1				(7)
 #define PM_HS_CFG_REG_OFFSET_RTC				(5)
@@ -142,7 +144,7 @@
 #define PM_CACTIVE_STA_REG_OFFSET_HCIE				(12)
 #define PM_CACTIVE_STA_REG_OFFSET_SWITCH			(11)
 #define PM_CACTIVE_STA_REG_OFFSET_GPIO				(10)
-#define PM_CACTIVE_STA_REG_OFFSET_UART3				(9)
+//#define PM_CACTIVE_STA_REG_OFFSET_UART3				(9)
 #define PM_CACTIVE_STA_REG_OFFSET_UART2				(8)
 #define PM_CACTIVE_STA_REG_OFFSET_UART1				(7)
 #define PM_CACTIVE_STA_REG_OFFSET_RTC				(5)
@@ -206,6 +208,16 @@
 	PM_CLK_CTRL_REG &= ~((0xF) << PM_CLK_CTRL_REG_OFFSET_PLL_CPU_SEL); \
 	PM_CLK_CTRL_REG |= (((CPU)&0xF) << PM_CLK_CTRL_REG_OFFSET_PLL_CPU_SEL); \
 }
+
+#define CNS3XXX_PMU_CLKOUT_PLL_CPU  0x1
+#define CNS3XXX_PMU_CLKOUT_PLL_DDR2 0xE
+#define CNS3XXX_PMU_CLKOUT_DIV_1    0x0
+#define CNS3XXX_PMU_CLKOUT_DIV_2    0x1
+#define CNS3XXX_PMU_CLKOUT_DIV_3    0x2
+#define CNS3XXX_PMU_CLKOUT_DIV_16   0x3
+
+
+
 	
 /* PM_PLL_LCD_I2S_CTRL_REG */
 #define PM_PLL_LCD_I2S_CTRL_REG_OFFSET_MCLK_SMC_DIV	(22)
@@ -316,6 +328,19 @@ void cns3xxx_pwr_change_pll_cpu(unsigned int cpu_sel);
 #define CNS3XXX_PWR_PLL_DDR2_333MHZ		(2)
 #define CNS3XXX_PWR_PLL_DDR2_400MHZ		(3)
 
+
+
+/*
+ *  * ARM11 MPCore test chip interrupt sources (primary GIC on the test chip)
+ *   */
+#ifndef CONFIG_SILICON 
+/* FIXME */
+#define IRQ_CNS3XXX_PMU     (IRQ_TC11MP_GIC_START + 0)
+#define IRQ_CNS3XXX_EXTERNAL_PIN2   (IRQ_TC11MP_GIC_START + 63)
+#endif
+
+
+
 /* Clock enable*/
 void cns3xxx_pwr_clk_en(unsigned int block);
 /* Clock disable*/
@@ -330,6 +355,9 @@ void cns3xxx_pwr_power_down(unsigned int dev_num);
 void cns3xxx_pwr_change_cpu_clock(unsigned int cpu_sel, unsigned int div_sel);
 /* System enter into sleep mode */
 void cns3xxx_pwr_sleep(void);
+void cns3xxx_pwr_mode(unsigned int pwr_mode);
+void cns3xxx_wfi(void);
+
 
 int cns3xxx_cpu_clock(void);
 #endif

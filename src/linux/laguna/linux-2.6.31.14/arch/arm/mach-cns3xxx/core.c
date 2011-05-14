@@ -319,7 +319,7 @@ void __init cns3xxx_init_irq(void)
 	gic_cpu_base_addr = (void __iomem *) CNS3XXX_TC11MP_GIC_CPU_BASE_VIRT;
 	gic_dist_init(0, (void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, 29);
 	gic_cpu_init(0, gic_cpu_base_addr);
-	set_interrupt_pri(1, 0);		// Set cache broadcast priority to the highest priority
+//	set_interrupt_pri(1, 0);		// Set cache broadcast priority to the highest priority
 }
 
 int gpio_to_irq(int gpio)
@@ -442,178 +442,344 @@ void __init cns3xxx_sys_init(void)
 {
 	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
 
+#ifdef CONFIG_CNS3XXX_DMAC
 	dmac_init();
-//	cns_rdma_init();
+#endif
+#ifdef CONFIG_CNS3XXX_RAID
+	cns_rdma_init();
+#endif
 
 	platform_device_register(&cns3xxx_gpio);
 	platform_device_register(&cns3xxx_watchdog_device);
 	gpiochip_add(&cns3xxx_gpio_chip);
 }
 
-void __iomem *timer1_va_base;
 
-static void timer_set_mode(enum clock_event_mode mode,
+/**********************************************************************
+   ____            _                   _____ _                     
+  / ___| _   _ ___| |_ ___ _ __ ___   |_   _(_)_ __ ___   ___ _ __ 
+  \___ \| | | / __| __/ _ \ '_ ` _ \    | | | | '_ ` _ \ / _ \ '__|
+   ___) | |_| \__ \ ||  __/ | | | | |   | | | | | | | | |  __/ |   
+  |____/ \__, |___/\__\___|_| |_| |_|   |_| |_|_| |_| |_|\___|_|   
+         |___/                         
+	 
+**********************************************************************/
+/*
+ * Where is the timer (VA)?
+ */
+void __iomem *timer1_va_base;
+u32 timer1_reload;
+u64 timer1_ticks         = 0;
+
+#define KHZ			(1000)
+#define MHZ			(1000*1000)
+#define CNS3XXX_PCLK		(cns3xxx_cpu_clock() >> 3)
+/* CONFIG_HZ = 100 => 1 tick = 10 ms */
+#define NR_CYCLES_PER_TICK	((CNS3XXX_PCLK * MHZ) / CONFIG_HZ)
+
+/* Timer 1, 2, and 3 Control Register */
+#define TIMER1_ENABLE		(1 << 0)
+#define TIMER2_ENABLE		(1 << 3)
+#define TIMER3_ENABLE		(1 << 6)
+#define TIMER1_USE_1KHZ_SOURCE	(1 << 1)
+#define TIMER2_USE_1KHZ_SOURCE	(1 << 4)
+#define TIMER3_USE_1KHZ_SOURCE	(1 << 7)
+#define TIMER1_INTR_ENABLE	(1 << 2)
+#define TIMER2_INTR_ENABLE	(1 << 5)
+#define TIMER3_INTR_ENABLE	(1 << 8)
+#define TIMER1_DOWN_COUNT	(1 << 9)
+#define TIMER2_DOWN_COUNT	(1 << 10)
+#define TIMER3_DOWN_COUNT	(1 << 11)
+
+/* Timer 1, 2, and 3 Interrupt Status */
+#define TIMER1_OVERFLOW		(1 << 2)
+#define TIMER2_OVERFLOW		(1 << 5)
+#define TIMER3_OVERFLOW		(1 << 8)
+
+/* Free running Timer */
+#define TIMER4_ENABLE		(1 << 17)
+#define TIMER4_RESET		(1 << 16)
+#define TIMER4_COUNTER_BITS	(0x0000FFFF)
+
+static void timer1_set_mode(enum clock_event_mode mode,
 			   struct clock_event_device *clk)
 {
-	unsigned long ctrl = readl(timer1_va_base + TIMER1_2_CONTROL_OFFSET); 
-	int reload;
-	int pclk = (cns3xxx_cpu_clock() >> 3);
+	u32 ctrl = readl(timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
 
 	switch(mode) {
 	case CLOCK_EVT_MODE_PERIODIC:
-		/* pclk is cpu clock/8 */
-		reload=pclk*1000000/HZ;
-		writel(reload, timer1_va_base + TIMER1_AUTO_RELOAD_OFFSET);
-		ctrl |= (1 << 0) | (1 << 2) | (1 << 9);
+		ctrl |= TIMER1_ENABLE | TIMER1_INTR_ENABLE;
 		break;
 	case CLOCK_EVT_MODE_ONESHOT:
 		/* period set, and timer enabled in 'next_event' hook */
-		writel(0, timer1_va_base + TIMER1_AUTO_RELOAD_OFFSET);
-		ctrl |= (1 << 2) | (1 << 9);
+		ctrl |= TIMER1_INTR_ENABLE;
 		break;
 	case CLOCK_EVT_MODE_UNUSED:
 	case CLOCK_EVT_MODE_SHUTDOWN:
 	default:
-		ctrl = 0;
+		ctrl &= ~(TIMER1_ENABLE | TIMER3_ENABLE);
 	}
 
-	writel(ctrl, timer1_va_base + TIMER1_2_CONTROL_OFFSET);
+	writel(ctrl, timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
 }
 
-static int timer_set_next_event(unsigned long evt,
+static int timer1_set_next_event(unsigned long evt,
 				struct clock_event_device *unused)
 {
-	unsigned long ctrl = readl(timer1_va_base + TIMER1_2_CONTROL_OFFSET); 
+	u32 ctrl = readl(timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
 
-	writel(evt, timer1_va_base + TIMER1_COUNTER_OFFSET);
-	writel(ctrl | (1 << 0), timer1_va_base + TIMER1_2_CONTROL_OFFSET);
+	writel(evt, timer1_va_base + TIMER1_AUTO_RELOAD_OFFSET);
+	writel(ctrl | TIMER1_ENABLE, timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
 
 	return 0;
 }
 
-static struct clock_event_device timer1_clockevent =	 {
+static struct clock_event_device timer1_ce =	 {
 	.name		= "timer1",
-	.shift		= 32,
+	.rating		= 350,
+	.shift		= 8,
 	.features       = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
-	.set_mode	= timer_set_mode,
-	.set_next_event	= timer_set_next_event,
-	.rating		= 300,
+	.set_mode	= timer1_set_mode,
+	.set_next_event	= timer1_set_next_event,
 	.cpumask	= cpu_all_mask,
 };
 
+static cycle_t timer1_get_cycles(struct clocksource *cs)
+{
+	u32 current_counter = readl(timer1_va_base + TIMER1_COUNTER_OFFSET);
+	u64 tmp = timer1_ticks * NR_CYCLES_PER_TICK;
+
+	return (cycle_t)(tmp + timer1_reload - current_counter);
+}
+
+
+/* PCLK clock source (default is 75 MHz @ CPU 300 MHz) */
+static struct clocksource timer1_cs = {
+	.name		= "timer1",
+	.rating		= 500,
+	.read		= timer1_get_cycles,
+	.mask		= CLOCKSOURCE_MASK(32),
+	.shift		= 8,
+	.flags		= 0
+};
+
+
+
 static void __init cns3xxx_clockevents_init(unsigned int timer_irq)
 {
-	timer1_clockevent.irq = timer_irq;
-	timer1_clockevent.mult =
-		div_sc( (cns3xxx_cpu_clock() >> 3)*1000000, NSEC_PER_SEC, timer1_clockevent.shift);
-	timer1_clockevent.max_delta_ns =
-		clockevent_delta2ns(0xffffffff, &timer1_clockevent);
-	timer1_clockevent.min_delta_ns =
-		clockevent_delta2ns(0xf, &timer1_clockevent);
+	timer1_ce.irq = timer_irq;
+	timer1_ce.mult =
+		div_sc( (CNS3XXX_PCLK * MHZ), NSEC_PER_SEC, timer1_ce.shift);
+	timer1_ce.max_delta_ns = clockevent_delta2ns(0xffffffff, &timer1_ce);
+	timer1_ce.min_delta_ns = clockevent_delta2ns(0xf       , &timer1_ce);
 
-	clockevents_register_device(&timer1_clockevent);
+	clockevents_register_device(&timer1_ce);
 }
 
 /*
  * IRQ handler for the timer
  */
-static irqreturn_t cns3xxx_timer_interrupt(int irq, void *dev_id)
+static irqreturn_t cns3xxx_timer1_interrupt(int irq, void *dev_id)
 {
 	u32 val;
-	struct clock_event_device *evt = &timer1_clockevent;
-	
-	/* Clear the interrupt */
-	val = readl(timer1_va_base + TIMER1_2_INTERRUPT_STATUS_OFFSET);
-	writel(val & ~(1 << 2), timer1_va_base + TIMER1_2_INTERRUPT_STATUS_OFFSET);
-	
-	evt->event_handler(evt);
+	struct clock_event_device *evt = dev_id;
+
+	val = readl(timer1_va_base + TIMER1_2_3_INTERRUPT_STATUS_OFFSET);
+	if (val & TIMER1_OVERFLOW) {
+		timer1_ticks++;
+		evt->event_handler(evt);
+		/* Clear the interrupt */
+		writel(val & ~(TIMER1_OVERFLOW), timer1_va_base + TIMER1_2_3_INTERRUPT_STATUS_OFFSET);
+	}
+	else {
+		printk("%s Unexpected interrupt(status=%08x)....", __func__, val);
+		writel(val, timer1_va_base + TIMER1_2_3_INTERRUPT_STATUS_OFFSET);
+	}
 
 	return IRQ_HANDLED;
 }
 
-static struct irqaction cns3xxx_timer_irq = {
-	.name		= "timer",
+static struct irqaction cns3xxx_timer1_irq = {
+	.name		= "timer1",
 	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
-	.handler	= cns3xxx_timer_interrupt,
+	.handler	= cns3xxx_timer1_interrupt,
+	.dev_id		= &timer1_ce,
 };
 
-static cycle_t cns3xxx_get_cycles(struct clocksource *cs)
+static cycle_t timer2_get_cycles(struct clocksource *cs)
 {
-	u64 val;
-
-	val = readl(timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET);
-	val &= 0xffff;
-
-	return ((val << 32) | readl(timer1_va_base + TIMER_FREERUN_OFFSET));
+	return (cycle_t)readl(timer1_va_base + TIMER2_COUNTER_OFFSET);
 }
 
-static struct clocksource clocksource_cns3xxx = {
-	.name = "freerun",
-	.rating = 200,
-	.read = cns3xxx_get_cycles,
-	.mask = CLOCKSOURCE_MASK(48),
-	.shift  = 16,
-	.flags  = CLOCK_SOURCE_IS_CONTINUOUS,
+/* Configured to use 1K Hz clock source */
+static struct clocksource timer2_cs = {
+	.name		= "timer2_1khz",
+	.rating		= 100,
+	.read		= timer2_get_cycles,
+	.mask		= CLOCKSOURCE_MASK(32),
+	.shift		= 8,
+	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
 };
-            
+
+static cycle_t timer4_get_cycles(struct clocksource *cs)
+{
+	u64 tmp;
+	tmp = (readl(timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET) & TIMER4_COUNTER_BITS) << 16;
+	tmp |= readl(timer1_va_base + TIMER_FREERUN_OFFSET);
+
+	return (cycle_t)tmp;
+}
+
+/* Timer4 is a free run 100K Hz timer. */
+static struct clocksource timer4_cs = {
+	.name		= "timer4_100khz",
+	.rating		= 200,
+	.read		= timer4_get_cycles,
+	.mask		= CLOCKSOURCE_MASK(48),
+	.shift		= 8,
+	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
+};
 
 static void __init cns3xxx_clocksource_init(void)
 {
-	/* Reset the FreeRunning counter */
-	writel((1 << 16), timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET);
-	
-	clocksource_cns3xxx.mult =
-		clocksource_khz2mult(100, clocksource_cns3xxx.shift);
-	clocksource_register(&clocksource_cns3xxx);
+	timer4_cs.mult = clocksource_hz2mult(100 * KHZ,            timer4_cs.shift);
+	timer2_cs.mult = clocksource_hz2mult(1 * KHZ,              timer2_cs.shift);
+	timer1_cs.mult = clocksource_hz2mult((CNS3XXX_PCLK * MHZ), timer1_cs.shift);
+
+	clocksource_register(&timer4_cs);
+	clocksource_register(&timer2_cs);
+	clocksource_register(&timer1_cs);
 }
+#include <linux/tick.h>
+
+
+
+void cns3xxx_timer1_change_clock(void)
+{
+	u32 counter=*(volatile unsigned int *) (CNS3XXX_TIMER1_2_3_BASE_VIRT + TIMER1_COUNTER_OFFSET);
+
+	/************ timer1 ************/
+#ifdef CONFIG_SILICON
+	timer1_reload = NR_CYCLES_PER_TICK;
+#else
+	timer1_reload = 0x25000;
+#endif
+
+	if (timer1_reload < counter) {
+		*(volatile unsigned int *) (CNS3XXX_TIMER1_2_3_BASE_VIRT + TIMER1_COUNTER_OFFSET)
+			= timer1_reload;
+	}
+
+	/* for timer, because CPU clock is changed */
+	*(volatile unsigned int *) (CNS3XXX_TIMER1_2_3_BASE_VIRT + TIMER1_AUTO_RELOAD_OFFSET)
+			= timer1_reload;
+
+	timer1_cs.mult = clocksource_hz2mult((CNS3XXX_PCLK * MHZ), timer1_cs.shift);
+	timer1_cs.mult_orig = timer1_cs.mult;
+
+	timer1_ce.mult =
+		div_sc( (CNS3XXX_PCLK * MHZ), NSEC_PER_SEC, timer1_ce.shift);
+	timer1_ce.max_delta_ns = clockevent_delta2ns(0xffffffff, &timer1_ce);
+	timer1_ce.min_delta_ns = clockevent_delta2ns(0xf       , &timer1_ce);
+
+	timer1_cs.cycle_last = 0;
+	timer1_cs.cycle_last = clocksource_read(&timer1_cs);
+	timer1_cs.error = 0;
+	timer1_cs.xtime_nsec = 0;
+	clocksource_calculate_interval(&timer1_cs, NTP_INTERVAL_LENGTH);
+
+	tick_clock_notify();
+
+	//printk("timer1_reload v22: %u", timer1_reload);
+}
+
 
 /*
  * Set up the clock source and clock events devices
  */
-void __init __cns3xxx_timer_init(unsigned int timer_irq)
+void __init cns3xxx_timer_init(unsigned int timer_irq)
 {
-	unsigned long val, irq_mask; 
+	u32 val, irq_mask; 
 
 	/*
 	 * Initialise to a known state (all timers off)
 	 */
-	writel(0, timer1_va_base + TIMER1_2_CONTROL_OFFSET);		/* disable timer1 and timer2 */
-	writel(0, timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET);	/* stop free running timer3 */
-	writel(0, timer1_va_base + TIMER1_MATCH_V1_OFFSET);
-	writel(0, timer1_va_base + TIMER1_MATCH_V2_OFFSET);
+	writel(0, timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);		/* Disable timer1, 2 and 3 */
+	writel(0, timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET);	/* Stop free running timer4 */
 
-	val = (cns3xxx_cpu_clock() >> 3) * 1000000 / HZ;
-	writel(val, timer1_va_base + TIMER1_COUNTER_OFFSET);
-	
+
+	/************ timer1 ************/
+#ifdef CONFIG_SILICON
+	timer1_reload = NR_CYCLES_PER_TICK;
+#else
+	timer1_reload = 0x25000;
+#endif
+	writel(timer1_reload, timer1_va_base + TIMER1_COUNTER_OFFSET);
+	writel(timer1_reload, timer1_va_base + TIMER1_AUTO_RELOAD_OFFSET);
+
+	writel(0xFFFFFFFF, timer1_va_base + TIMER1_MATCH_V1_OFFSET);
+	writel(0xFFFFFFFF, timer1_va_base + TIMER1_MATCH_V2_OFFSET);
 	/* mask irq, non-mask timer1 overflow */
-	irq_mask = readl(timer1_va_base + TIMER1_2_INTERRUPT_MASK_OFFSET);
+	irq_mask = readl(timer1_va_base + TIMER1_2_3_INTERRUPT_MASK_OFFSET);
 	irq_mask &= ~(1 << 2);
 	irq_mask |= 0x03;
-	writel(irq_mask, timer1_va_base + TIMER1_2_INTERRUPT_MASK_OFFSET);
+	writel(irq_mask, timer1_va_base + TIMER1_2_3_INTERRUPT_MASK_OFFSET);
 	/* down counter */
-	val = readl(timer1_va_base + TIMER1_2_CONTROL_OFFSET);
-	val |= (1 << 9);
-	writel(val, timer1_va_base + TIMER1_2_CONTROL_OFFSET);
+	val = readl(timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
+	val |= TIMER1_DOWN_COUNT;
+	writel(val, timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
+
+
+	/************ timer2 ************/
+	/* Configure timer2 as periodic free-running clocksource, interrupt disabled. */
+	writel(0,          timer1_va_base + TIMER2_COUNTER_OFFSET);
+	writel(0xFFFFFFFF, timer1_va_base + TIMER2_AUTO_RELOAD_OFFSET);
+
+	writel(0xFFFFFFFF, timer1_va_base + TIMER2_MATCH_V1_OFFSET);
+	writel(0xFFFFFFFF, timer1_va_base + TIMER2_MATCH_V2_OFFSET);
+	/* mask irq */
+	irq_mask = readl(timer1_va_base + TIMER1_2_3_INTERRUPT_MASK_OFFSET);
+	irq_mask |= ((1 << 3) | (1 << 4) | (1 << 5));
+	writel(irq_mask,   timer1_va_base + TIMER1_2_3_INTERRUPT_MASK_OFFSET);
+	/* Enable timer2 /Use 1K Hz clock source / Up count */
+	val = readl(timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
+	val |= TIMER2_ENABLE | TIMER2_USE_1KHZ_SOURCE;
+	writel(val, timer1_va_base + TIMER1_2_3_CONTROL_OFFSET);
+
+
+	/************ timer3 ************/
+	/* Not enabled */
+
+	/************ timer4 ************/
+	writel(TIMER4_RESET,  timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET);
+	writel(TIMER4_ENABLE, timer1_va_base + TIMER_FREERUN_CONTROL_OFFSET);
+
 
 	/* 
 	 * Make irqs happen for the system timer
 	 */
-	setup_irq(timer_irq, &cns3xxx_timer_irq);
+	/* Clear all interrupts */
+	writel(0x000001FF, timer1_va_base + TIMER1_2_3_INTERRUPT_STATUS_OFFSET);
+	setup_irq(timer_irq, &cns3xxx_timer1_irq);
 
 	cns3xxx_clocksource_init();
 	cns3xxx_clockevents_init(timer_irq);
 }
 
-void __init cns3xxx_timer_init(void)
+static void __init timer_init(void)
 {
 	timer1_va_base = (void __iomem *) CNS3XXX_TIMER1_2_3_BASE_VIRT;
+
+#ifdef CONFIG_LOCAL_TIMERS
 	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
-	__cns3xxx_timer_init(IRQ_CNS3XXX_TIMER0);
+#endif
+	cns3xxx_timer_init(IRQ_CNS3XXX_TIMER0);
 }
 
 struct sys_timer cns3xxx_timer = {
-	.init		= cns3xxx_timer_init,
+	.init		= timer_init,
 };
+
 
 
 void cns3xxx_power_off(void)
