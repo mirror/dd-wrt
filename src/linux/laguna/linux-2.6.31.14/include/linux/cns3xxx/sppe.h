@@ -26,6 +26,11 @@
 #define PPE_TABLE_SIZE_128K    (0x6)
 #define PPE_TABLE_SIZE_256K    (0x7)
 
+#define ONE_MATCH_METHOD_SRC_IP				0
+#define ONE_MATCH_METHOD_SRC_PORT			1
+#define ONE_MATCH_METHOD_DEST_IP			2
+#define ONE_MATCH_METHOD_DEST_PORT		3
+
 typedef enum _sppe_cmd {
 	SPPE_CMD_INIT = 0,
 	SPPE_CMD_VERSION,
@@ -93,6 +98,10 @@ typedef enum _sppe_cmd {
 	SPPE_CMD_DROP_OTHERS,
 
 	SPPE_CMD_PCI_FP_DEV,
+	SPPE_CMD_HOOK_MODE,
+	
+	SPPE_CMD_RL_FLOW_EX,
+	SPPE_CMD_RL_ONE_MATCH,
 
 } SPPE_CMD;
 
@@ -170,9 +179,25 @@ typedef struct _sppe_bridge {
 	unsigned int fp:1;	/* force VLAN priority */
 	unsigned int pri:3;
 	unsigned int ag:2;
+	#if 0 
 	unsigned int unused:15;
+	#else
+	unsigned int to:4;
+	unsigned int from:4;
+	unsigned int nosa:1;
+	unsigned int noda:1;
+	unsigned int unused:5;
+	#endif
 #else
+	#if 0
 	unsigned int unused:15;
+	#else
+	unsigned int unused:5;
+	unsigned int noda:1;
+	unsigned int nosa:1;
+	unsigned int from:4;
+	unsigned int to:4;
+	#endif
 	unsigned int ag:2;
 	unsigned int pri:3;
 	unsigned int fp:1;	/* force VLAN priority */
@@ -1538,6 +1563,39 @@ typedef struct _sppe_param_t {
 			SPPE_LIMIT limit;
 		} sppe_bm_flow;
 
+		struct {
+			unsigned short used; 
+			unsigned short fw; 
+			unsigned short fp; 
+			unsigned short pri; 
+			unsigned short rl; 
+			unsigned short protocol; 
+			unsigned short cmd;
+			unsigned short user_record;
+			unsigned short kernel_record;
+			unsigned short sport; 
+			unsigned short dport; 
+			unsigned short nport; 
+			unsigned int sip[4];
+			unsigned int dip[4];
+			unsigned int nip[4];
+			SPPE_LIMIT limit;
+		} sppe_bm_flow_ex;
+
+		struct {
+			unsigned short used;
+			unsigned short index; 
+			unsigned short fp; 
+			unsigned short pri; 
+			unsigned short rl; 
+			unsigned short match_method;
+			unsigned short sport; 
+			unsigned short dport; 
+			unsigned int sip[4];
+			unsigned int dip[4];
+			SPPE_LIMIT limit;
+		} sppe_bm_one_match;
+
 		struct {	
 			unsigned int index;
 			unsigned int pkt_cnt;
@@ -1566,6 +1624,8 @@ typedef struct _sppe_param_t {
 		SPPE_INIT sppe_init;
 
 	} data;
+	
+	int private_data;
 } SPPE_PARAM;
 
 extern int sppe_hook_ready;
@@ -1573,6 +1633,8 @@ extern int (*sppe_func_hook)(SPPE_PARAM *param);
 
 extern int sppe_pci_fp_ready;
 extern int (*sppe_pci_fp_hook)(SPPE_PARAM *param);
+
+extern int sppe_hook_mode;
 
 #endif /* CONFIG_CNS3XXX_SPPE */
 

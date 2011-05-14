@@ -2045,7 +2045,27 @@ int sppe_pci_fp(struct sk_buff *skb)
 			goto NOT_IN_FP;
 		} else {
 			struct ethhdr *eth;
-
+#if defined (CONFIG_PPPOE)
+			unsigned int wanip;
+			int i;
+			/* check whether WAN is PPPoE connection */
+			wanip = param.data.flow_nat_ipv4.nat_ip;
+			param.cmd = SPPE_CMD_WANIPV4;
+			param.op = SPPE_OP_GET;
+			for (i=0; i<16; i++) {
+				param.data.sppe_wanip.index = i;
+				if (SPPE_RESULT_SUCCESS == sppe_func_hook(&param)) {
+					if (param.data.sppe_wanip.ip == wanip) {
+						if (param.data.sppe_wanip.session_id) {
+							if (1492 < skb->len) {
+								goto NOT_IN_FP;
+							}
+						}
+						break;
+					}
+				}
+			}
+#endif
 			eth = (struct ethhdr *)skb->mac_header;
 
 			memset(&param, 0, sizeof(SPPE_PARAM));

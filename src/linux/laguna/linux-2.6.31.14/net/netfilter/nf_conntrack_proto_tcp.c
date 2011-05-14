@@ -856,9 +856,15 @@ static int sppe_tcp_flow_add_ipv4(struct nf_conn *ct)
 	param.data.flow_nat_ipv4.nat_ip = htonl(reply->dst.u3.ip);
 	param.data.flow_nat_ipv4.nat_port = htons(reply->dst.u.tcp.port);
 	param.data.flow_nat_ipv4.max_len = 0x3;
+
+	if (orig->src.u3.ip == reply->dst.u3.ip) {
+		param.data.flow_nat_ipv4.fw = 1;
+		param.data.flow_nat_ipv4.nat_ip = htonl(reply->src.u3.ip);
+		param.data.flow_nat_ipv4.nat_port = htons(reply->src.u.tcp.port);
+	}
 	
 	if (sppe_func_hook(&param)) {
-		printk("<0><%s> fail to add IPv4 from-LAN flow!!\n", __FUNCTION__);
+		//printk("<%s> fail to add IPv4 TCP from-LAN flow!!\n", __FUNCTION__);
 	}
 
 	param.data.flow_nat_ipv4.fw = 1;
@@ -870,8 +876,14 @@ static int sppe_tcp_flow_add_ipv4(struct nf_conn *ct)
 	param.data.flow_nat_ipv4.nat_ip = htonl(orig->src.u3.ip);
 	param.data.flow_nat_ipv4.nat_port = htons(orig->src.u.tcp.port);
 
+	if (orig->src.u3.ip == reply->dst.u3.ip) {
+		param.data.flow_nat_ipv4.fw = 0;
+		param.data.flow_nat_ipv4.nat_ip = htonl(orig->dst.u3.ip);
+		param.data.flow_nat_ipv4.nat_port = htons(orig->dst.u.tcp.port);
+	}
+
 	if (sppe_func_hook(&param)) {
-		printk("<0><%s> fail to add IPv4 from-WAN flow!!\n", __FUNCTION__);
+		//printk("<%s> fail to add IPv4 TCP from-WAN flow!!\n", __FUNCTION__);
 	}
 	
 	return 0;
@@ -911,7 +923,7 @@ static int sppe_tcp_flow_add_ipv6(struct nf_conn *ct)
 	param.data.flow_route_ipv6.max_len = 0x3;
 	
 	if (sppe_func_hook(&param)) {
-		printk("<0><%s> fail to add IPv6 from-LAN flow!!\n", __FUNCTION__);
+		//printk("<%s> fail to add IPv6 TCP from-LAN flow!!\n", __FUNCTION__);
 	}
 
 	/* from-WAN flow */
@@ -928,7 +940,7 @@ static int sppe_tcp_flow_add_ipv6(struct nf_conn *ct)
 	param.data.flow_route_ipv6.l4.port.dst = htons(reply->dst.u.tcp.port);
 
 	if (sppe_func_hook(&param)) {
-		printk("<0><%s> fail to add IPv6 from-LAN flow!!\n", __FUNCTION__);
+		//printk("<%s> fail to add IPv6 TCP from-LAN flow!!\n", __FUNCTION__);
 	}
 
 	return 0;
@@ -1101,6 +1113,7 @@ static int tcp_packet(struct nf_conn *ct,
 	}
 
 #if defined (CONFIG_CNS3XXX_SPPE)
+  if (sppe_hook_mode) {
     if(!(th->rst == 1 || th->fin == 1)) {
 #endif
 	if (!tcp_in_window(ct, &ct->proto.tcp, dir, index,
@@ -1110,6 +1123,7 @@ static int tcp_packet(struct nf_conn *ct,
 	}
 #if defined (CONFIG_CNS3XXX_SPPE)
     }
+}
 #endif
 
      in_window:
@@ -1163,6 +1177,7 @@ static int tcp_packet(struct nf_conn *ct,
 		nf_conntrack_event_cache(IPCT_STATUS, ct);
 #if defined (CONFIG_CNS3XXX_SPPE)
 		/* Add SPPE hardware flow */
+		if(sppe_hook_mode)
 		sppe_tcp_flow_add(ct);
 #endif
 	}

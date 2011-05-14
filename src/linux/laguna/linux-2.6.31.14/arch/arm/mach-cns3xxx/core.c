@@ -62,6 +62,7 @@
 #include <mach/pm.h>
 #include <asm/dma.h>
 #include <mach/dmac.h>
+#include <mach/misc.h>
 
 #include "core.h"
 #include "rdma.h"
@@ -305,9 +306,68 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 	},
 };
 
+#ifdef CONFIG_SERIAL_8250_CONSOLE
+static struct uart_port cns3xxx_serial_ports[] = {
+	{
+		.membase        = (char*) (CNS3XXX_UART0_BASE_VIRT),
+		.mapbase        = (CNS3XXX_UART0_BASE),
+		.irq            = IRQ_CNS3XXX_UART0,
+		.iotype         = UPIO_MEM,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
+		.regshift       = 2,
+		.uartclk        = 24000000,
+		.line           = 0,
+		.type           = PORT_16550A,
+		.fifosize       = 16
+	},
+	{
+		.membase        = (char*) (CNS3XXX_UART1_BASE_VIRT),
+		.mapbase        = (CNS3XXX_UART1_BASE),
+		.irq            = IRQ_CNS3XXX_UART1,
+		.iotype         = UPIO_MEM,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
+		.regshift       = 2,
+		.uartclk        = 24000000,
+		.line           = 1,
+		.type           = PORT_16550A,
+		.fifosize       = 16
+	},
+	{
+		.membase        = (char*) (CNS3XXX_UART2_BASE_VIRT),
+		.mapbase        = (CNS3XXX_UART2_BASE),
+		.irq            = IRQ_CNS3XXX_UART2,
+		.iotype         = UPIO_MEM,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
+		.regshift       = 2,
+		.uartclk        = 24000000,
+		.line           = 2,
+		.type           = PORT_16550A,
+		.fifosize       = 16
+	},
+};
+#endif
+
+
 void __init cns3xxx_map_io(void)
 {
 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
+
+#ifdef CONFIG_SERIAL_8250_CONSOLE
+	cns3xxx_pwr_power_up(CNS3XXX_PWR_PLL(PLL_USB));
+	early_serial_setup(&cns3xxx_serial_ports[0]);
+#if (1 < CONFIG_SERIAL_8250_NR_UARTS)
+	HAL_MISC_ENABLE_UART1_PINS();
+	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(UART1));
+	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(UART1));
+	early_serial_setup(&cns3xxx_serial_ports[1]);
+#endif
+#if (2 < CONFIG_SERIAL_8250_NR_UARTS)
+	HAL_MISC_ENABLE_UART2_PINS();
+	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(UART2));
+	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(UART2));
+	early_serial_setup(&cns3xxx_serial_ports[2]);
+#endif
+#endif
 }
 
 /* used by entry-macro.S */

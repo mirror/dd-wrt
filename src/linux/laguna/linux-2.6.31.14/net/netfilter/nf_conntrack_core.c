@@ -380,11 +380,13 @@ static void death_by_timeout(unsigned long ul_conntrack)
 	nf_ct_put(ct);
 
 #if defined (CONFIG_CNS3XXX_SPPE)
-	if (sppe_flow_del(ct)) {
-		#if 0
-		ct->timeout.expires = jiffies + (120*HZ);
-		add_timer(&ct->timeout);
-		#endif
+	if (sppe_hook_mode) {
+		if (sppe_flow_del(ct)) {
+			#if 0
+			ct->timeout.expires = jiffies + (120*HZ);
+			add_timer(&ct->timeout);
+			#endif
+		}
 	}
 #endif
 

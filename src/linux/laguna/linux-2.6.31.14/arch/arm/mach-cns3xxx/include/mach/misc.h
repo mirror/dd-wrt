@@ -178,6 +178,26 @@
 #define MISC_SPI_CS0_PIN                     ((0x1 << 30))
 #define MISC_SPI_CLK_PIN                     ((0x1 << 31))
 #else
+
+#define MISC_UART0_PINS                      ((0x1 << 15) | (0x1 << 16) | (0x1 << 17) | (0x1 << 18))
+#define MISC_UART0_RTS_PIN                   ((0x1 << 15))
+#define MISC_UART0_CTS_PIN                   ((0x1 << 16))
+#define MISC_UART0_TXD_PIN                   ((0x1 << 17))
+#define MISC_UART0_RXD_PIN                   ((0x1 << 18))
+
+#define MISC_UART1_PINS                      ((0x1 << 19) | (0x1 << 20) | (0x1 << 21) | (0x1 << 22))
+#define MISC_UART1_RTS_PIN                   ((0x1 << 19))
+#define MISC_UART1_CTS_PIN                   ((0x1 << 20))
+#define MISC_UART1_RXD_PIN                   ((0x1 << 21))
+#define MISC_UART1_TXD_PIN                   ((0x1 << 22))
+
+#define MISC_UART2_PINS                      ((0x1 << 23) | (0x1 << 24))
+#define MISC_UART2_RXD_PIN                   ((0x1 << 23))
+#define MISC_UART2_TXD_PIN                   ((0x1 << 24))
+
+
+
+
 #define MISC_SD_PWR_ON_PIN                   ((0x1 << 2))
 #define MISC_OTG_DRVVBUS_PIN                 ((0x1 << 3))
 #define MISC_CIM_OE_PIN                      ((0x1 << 8))
