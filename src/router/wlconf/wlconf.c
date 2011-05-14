@@ -57,6 +57,7 @@
 #define BCM43362_CHIP_ID	43362		/* 43362 chipcommon chipid */
 #define BCM4330_CHIP_ID		0x4330		/* 4330 chipcommon chipid */
 #define BCM6362_CHIP_ID		0x6362		/* 6362 chipcommon chipid */
+#define	BCM43431_CHIP_ID	43431		/* 4331  chipcommon chipid (OTP, RBBU) */
 
 #define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
@@ -943,6 +944,11 @@ cprintf("get caps\n");
 			max_no_vifs = 16;
 			mbsscap = 1;
 		}
+		else if (!strcmp(cap, "mbss8"))
+		{
+			max_no_vifs = 8;
+			mbsscap = 1;
+		}
 		else if (!strcmp(cap, "mbss4"))
 		{
 			max_no_vifs = 4;
@@ -1225,6 +1231,10 @@ cprintf("set bsscfg %s\n",name);
 
 		val = atoi(nvram_ifexists_get(strcat_r(prefix, "rxchain_pwrsave_pps", tmp), "10"));
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_pps", bsscfg->idx, val);
+
+		val = atoi(nvram_ifexists_get(strcat_r(bsscfg->prefix, "rxchain_pwrsave_stas_assoc_check", tmp),"0"));
+		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_stas_assoc_check", bsscfg->idx,
+			val);
 	}
 
 	if (radio_pwrsave) {
@@ -1239,6 +1249,10 @@ cprintf("set bsscfg %s\n",name);
 
 		val = atoi(nvram_ifexists_get(strcat_r(prefix, "radio_pwrsave_level", tmp), "0"));
 		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_level", bsscfg->idx, val);
+
+		val = atoi(nvram_ifexists_get(strcat_r(bsscfg->prefix, "radio_pwrsave_stas_assoc_check", tmp),"0"));
+		WL_BSSIOVAR_SETINT(name, "radio_pwrsave_stas_assoc_check", bsscfg->idx,
+			val);
 	}
 
 
@@ -1447,7 +1461,8 @@ cprintf("get core rev %s\n",name);
 	nvram_set(strcat_r(prefix, "corerev", tmp), buf);
 
 	if ((rev.chipnum == BCM4716_CHIP_ID) || (rev.chipnum == BCM47162_CHIP_ID) ||
-		(rev.chipnum == BCM4748_CHIP_ID) || (rev.chipnum == BCM4331_CHIP_ID)) {
+		(rev.chipnum == BCM4748_CHIP_ID) || (rev.chipnum == BCM4331_CHIP_ID) ||
+		(rev.chipnum == BCM43431_CHIP_ID)) {
 		int pam_mode = WLC_N_PREAMBLE_GF_BRCM; /* default GF-BRCM */
 
 		strcat_r(prefix, "mimo_preamble", tmp);
@@ -1944,6 +1959,10 @@ cprintf("set frag tres %s\n",name);
 	else
 		val = nvram_match(strcat_r(prefix, "frameburst", tmp), "on");
 	WL_IOCTL(name, WLC_SET_FAKEFRAG, &val, sizeof(val));
+
+	/* Enable or disable PLC failover */
+	val = atoi(nvram_safe_get(strcat_r(prefix, "plc", tmp)));
+	WL_IOVAR_SETINT(name, "plc", val);
 
 
 cprintf("set wds %s\n",name);
