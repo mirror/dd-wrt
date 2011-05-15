@@ -1466,7 +1466,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardtype", "0xd4cf")
 	    && nvram_match("boardrev", "0x1204")) {
-		setRouter("Belkin Play Max F7D4301 v1");
+		setRouter("Belkin F7D4301 / F7D8301 v1");
 		return ROUTER_BELKIN_F7D4301;
 	}
 
@@ -1478,15 +1478,15 @@ int internal_getRouterBrand()
 			fread(&trxhd, 4, 1, mtd1);
 			fclose(mtd1);
 			if (trxhd == TRX_MAGIC_F7D3301) {
-				setRouter("Belkin Share Max F7D3301 v1");
+				setRouter("Belkin F7D3301 / F7D7301 v1");
 				return ROUTER_BELKIN_F7D3301;
 			}
 			if (trxhd == TRX_MAGIC_F7D3302) {
-				setRouter("Belkin Share F7D3302 v1");
+				setRouter("Belkin F7D3302 / F7D7302 v1");
 				return ROUTER_BELKIN_F7D3302;
 			}
 		}
-		setRouter("Belkin Play F7D4302 v1");
+		setRouter("Belkin F7D4302 / F7D8302 v1");
 		return ROUTER_BELKIN_F7D4302;
 	}
 #endif
