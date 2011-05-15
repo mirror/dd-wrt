@@ -896,6 +896,10 @@ ifeq ($(CONFIG_TMK),y)
 CFLAGS_EXTRA += -DHAVE_TMK
 endif
 
+ifeq ($(CONFIG_BKM),y)
+CFLAGS_EXTRA += -DHAVE_BKM
+endif
+
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS_EXTRA += -DHAVE_VILIM
 endif
