@@ -520,7 +520,7 @@ ifeq ($(CONFIG_OPENSSL),y)
 	rm -f $(TARGETDIR)/usr/sbin/openssl
 endif
 ifeq ($(CONFIG_KAID),y)
-	make -f Makefile.brcm26 -C kaid/src
+	make -C kaid/src
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
