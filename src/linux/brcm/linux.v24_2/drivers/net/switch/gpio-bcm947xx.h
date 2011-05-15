@@ -1,70 +1,47 @@
 #ifndef __SWITCH_GPIO_H
 #define __SWITCH_GPIO_H
-#include <linux/interrupt.h>
 
-#ifndef BCMDRIVER
-#include <linux/ssb/ssb_embedded.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
-#define ssb ssb_bcm47xx
+#if defined(BCMGPIO2)
+
+#ifdef LINUX_2_4
+#define sbh bcm947xx_sbh
+extern void *bcm947xx_sbh;
+#else
+extern void *sbh;
 #endif
 
-extern struct ssb_bus ssb;
+extern __u32 sb_gpioin(void *sbh);
+extern __u32 sb_gpiointpolarity(void *sbh, __u32 mask, __u32 val, __u8 prio);
+extern __u32 sb_gpiointmask(void *sbh, __u32 mask, __u32 val, __u8 prio);
+extern __u32 sb_gpioouten(void *sbh, __u32 mask, __u32 val, __u8 prio);
+extern __u32 sb_gpioout(void *sbh, __u32 mask, __u32 val, __u8 prio);
 
+#define gpio_in() sb_gpioin(sbh)
+#define gpio_intpolarity(mask,val) sb_gpiointpolarity(sbh, mask, val, 0)
+#define gpio_intmask(mask,val) sb_gpiointmask(sbh, mask, val, 0)
+#define gpio_outen(mask,val) sb_gpioouten(sbh, mask, val, 0)
+#define gpio_out(mask,val) sb_gpioout(sbh, mask, val, 0)
 
-static inline u32 gpio_in(void)
-{
-	return ssb_gpio_in(&ssb, ~0);
-}
+#elif defined(BCMGPIO)
 
-static inline u32 gpio_out(u32 mask, u32 value)
-{
-	return ssb_gpio_out(&ssb, mask, value);
-}
+#define sbh bcm947xx_sbh
+extern void *bcm947xx_sbh;
+extern __u32 sb_gpioin(void *sbh);
+extern __u32 sb_gpiointpolarity(void *sbh, __u32 mask, __u32 val);
+extern __u32 sb_gpiointmask(void *sbh, __u32 mask, __u32 val);
+extern __u32 sb_gpioouten(void *sbh, __u32 mask, __u32 val);
+extern __u32 sb_gpioout(void *sbh, __u32 mask, __u32 val);
 
-static inline u32 gpio_outen(u32 mask, u32 value)
-{
-	return ssb_gpio_outen(&ssb, mask, value);
-}
-
-static inline u32 gpio_control(u32 mask, u32 value)
-{
-	return ssb_gpio_control(&ssb, mask, value);
-}
-
-static inline u32 gpio_intmask(u32 mask, u32 value)
-{
-	return ssb_gpio_intmask(&ssb, mask, value);
-}
-
-static inline u32 gpio_intpolarity(u32 mask, u32 value)
-{
-	return ssb_gpio_polarity(&ssb, mask, value);
-}
+#define gpio_in() sb_gpioin(sbh)
+#define gpio_intpolarity(mask,val) sb_gpiointpolarity(sbh, mask, val)
+#define gpio_intmask(mask,val) sb_gpiointmask(sbh, mask, val)
+#define gpio_outen(mask,val) sb_gpioouten(sbh, mask, val)
+#define gpio_out(mask,val) sb_gpioout(sbh, mask, val)
 
 #else
+#error Unsupported/unknown GPIO configuration
+#endif
 
-#include <typedefs.h>
-#include <osl.h>
-#include <bcmdevs.h>
-#include <sbutils.h>
-#include <sbconfig.h>
-#include <sbchipc.h>
-#include <hndchipc.h>
-#include <hndcpu.h>
 
-#define sbh bcm947xx_sih
-#define sbh_lock bcm947xx_sbh_lock
-
-extern void *sbh;
-extern spinlock_t sbh_lock;
-
-#define gpio_in()	sbh_gpioin(sbh)
-#define gpio_out(mask, value) 	sbh_gpioout(sbh, mask, ((value) & (mask)), GPIO_DRV_PRIORITY)
-#define gpio_outen(mask, value) 	sbh_gpioouten(sbh, mask, value, GPIO_DRV_PRIORITY)
-#define gpio_control(mask, value) 	sbh_gpiocontrol(sbh, mask, value, GPIO_DRV_PRIORITY)
-#define gpio_intmask(mask, value) 	sbh_gpiointmask(sbh, mask, value, GPIO_DRV_PRIORITY)
-#define gpio_intpolarity(mask, value) 	sbh_gpiointpolarity(sbh, mask, value, GPIO_DRV_PRIORITY)
-
-#endif /* BCMDRIVER */
 #endif /* __SWITCH_GPIO_H */
