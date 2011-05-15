@@ -500,7 +500,14 @@ static struct platform_device cns3xxx_gpio = {
 
 void __init cns3xxx_sys_init(void)
 {
+#ifdef CONFIG_CACHE_L2X0
+	/* 1MB (128KB/way), 8-way associativity, evmon/parity/share enabled
+	 * Bits:  .... ...0 0111 1001 0000 .... .... .... */
+	l2x0_init((void __iomem *) CNS3XXX_TC11MP_L220_BASE_VIRT, 0x00790000, 0xfe000fff);
+#endif
+#ifdef CONFIG_CACHE_L2CC
 	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
+#endif
 
 #ifdef CONFIG_CNS3XXX_DMAC
 	dmac_init();
