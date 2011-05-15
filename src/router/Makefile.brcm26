@@ -579,7 +579,7 @@ endif
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N10U
 
-# Belkin f7d3301 / f7d3302 / f7d4302 /f5d8235v3
+# Belkin f7d3301-7301 / f7d3302-7302 / f7d4302-8302  / f5d8235v3
 	dd if=$(ARCH)-uclibc/dd-wrt.v24-K26.trx of=$(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd bs=4 count=10000000 skip=1 conv=notrunc
 	printf '\x22\x03\x10\x20' > $(ARCH)-uclibc/f7d3301.hdr
 	cat $(ARCH)-uclibc/f7d3301.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d3301.bin
