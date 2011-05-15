@@ -294,6 +294,9 @@ endif
 ifeq ($(CONFIG_TMK),y)
 CFLAGS += -DHAVE_TMK
 endif
+ifeq ($(CONFIG_BKM),y)
+CFLAGS += -DHAVE_BKM
+endif
 ifeq ($(CONFIG_SOLO51),y)
 CFLAGS += -DHAVE_SOLO51
 endif
