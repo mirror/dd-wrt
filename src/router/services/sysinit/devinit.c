@@ -152,8 +152,9 @@ void start_devinit(void)
 	mkdir("/var/log", 0777);
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
-
+fprintf(stderr,"starting hotplug\n");
 #ifdef HAVE_HOTPLUG2
 	system("/etc/hotplug2.startup");
 #endif
+fprintf(stderr,"done\n");
 }

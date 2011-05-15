@@ -84,12 +84,17 @@ void start_sysinit(void)
 		nvram_set("intel_eth", "1");
 
 	//load mmc drivers
+	insmod("mmc_core");
 	eval("insmod", "sdhci", "debug_quirks=1");	// workaround for mmc detection issue. 
 //      insmod("sdhci");
 	insmod("sdhci-pltfm");
 	insmod("sdhci-cns3xxx");
 	insmod("mmc_block");
 	//sata drivers
+	insmod("scsi_mod");
+	insmod("scsi_wait_scan");
+	insmod("scsi_sd_mod");
+	insmod("libata");
 	insmod("ahci");
 	insmod("cns3xxx_ahci");
 	/*
