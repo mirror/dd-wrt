@@ -299,6 +299,19 @@ extern void cns3xxx_timer1_change_clock(void);
  * 		4. Let CPU enter into WFI state
  * 		5. Wait PMU to change PLL_CPU and divider and wake up CPU 
  */
+void enter_wfi(void)
+{
+
+	mb();
+	/* 4. Let CPU enter into WFI state */
+	    asm volatile(
+            "mov r0, #0\n"
+            "mcr p15, 0, r0, c7, c10, 5\n"
+            "mcr p15, 0, r0, c7, c10, 4\n"
+            "mcr p15, 0, r0, c7, c0, 4\n"
+            );
+
+}
 void cns3xxx_pwr_change_cpu_clock(unsigned int cpu_sel, unsigned int div_sel)
 {
 	int old_cpu, old_div;
@@ -329,25 +342,19 @@ void cns3xxx_pwr_change_cpu_clock(unsigned int cpu_sel, unsigned int div_sel)
 	//PM_HS_CFG_REG |= ((0x1<<2) | (0x1<<11));
 
 	/* 3. disable all interrupt except interrupt ID-32 (clkscale_intr) */
-	GIC_REG_VALUE(0x184) = 0xffffffff; GIC_REG_VALUE(0x188) = 0xffffffff;
-	GIC_REG_VALUE(0x104) = 0x00000001; GIC_REG_VALUE(0x108) = 0x80000000;
+	GIC_REG_VALUE(0x184) = 0xffffffff; 
+	GIC_REG_VALUE(0x188) = 0xffffffff;
+	GIC_REG_VALUE(0x104) = 0x00000001; 
+	GIC_REG_VALUE(0x108) = 0x80000000;
 #if defined (CNS_PMU_DEBUG)
 	clean_wakeup_intr();
 	set_wakeup_intr(IRQ_CNS3XXX_EXTERNAL_PIN2);
 	MISC_GPIOB_PIN_ENABLE_REG |= (0x1 << 27); /* ext intr2 share with GPIOB28*/
 #endif
-	mb();
-
-	/* 4. Let CPU enter into WFI state */
-	    asm volatile(
-            "mov r0, #0\n"
-            "mcr p15, 0, r0, c7, c10, 5\n"
-            "mcr p15, 0, r0, c7, c10, 4\n"
-            "mcr p15, 0, r0, c7, c0, 4\n"
-            );
-	
+	enter_wfi();
 	/* enable interrupts (we disabled before WFI) */
-	GIC_REG_VALUE(0x104) = 0xffffffff; GIC_REG_VALUE(0x108) = 0xffffffff;
+	GIC_REG_VALUE(0x104) = 0xffffffff; 
+	GIC_REG_VALUE(0x108) = 0xffffffff;
 
 #if 1
 	/* FIXME: this section should be move to cpufreq notifier of timer */
