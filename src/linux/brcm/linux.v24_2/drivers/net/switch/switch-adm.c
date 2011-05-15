@@ -75,7 +75,7 @@ MODULE_PARM(force, "i");
 
 #define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
 
-#ifdef BROADCOM
+
 extern char *nvram_get(char *name);
 
 /* Return gpio pin number assigned to the named pin */
@@ -101,7 +101,7 @@ static unsigned int get_gpiopin(char *pin_name, unsigned int def_pin)
 	}
 	return def_pin;
 }
-#endif
+
 
 
 static void adm_write(int cs, char *buf, unsigned int bits)
@@ -500,7 +500,7 @@ static int detect_adm(void)
 {
 	int ret = 0;
 
-#ifdef BROADCOM
+
 	int boardflags = atoi(nvram_get("boardflags"));
         int boardnum = atoi(nvram_get("boardnum"));
 
@@ -538,9 +538,7 @@ static int detect_adm(void)
 		eedi = (1 << eedi);
 	if (eerc)
 		eerc = (1 << eerc);
-#else
-	ret = 1;
-#endif
+
 
 	return ret;
 }
