@@ -491,16 +491,16 @@
 // Belkin Share Max N300 F7D7301v1  - same
 #define ROUTER_BELKIN_F7D3301 0x9a16
 
-// Belkin Share F7D3302v1 (BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3302V1)
+// Belkin Share F7D3302v1 (BCM4718 cpu, BCM5325 switch, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3302V1)
 // Belkin Share N300 F7D7302v1  - same
 #define ROUTER_BELKIN_F7D3302 0x9b16
 
 // Belkin Play Max F7D4301v1 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4301V1)
-// Play N600 HD F7D8301v1 - same
+// Belkin Play N600 HD F7D8301v1 - same
 #define ROUTER_BELKIN_F7D4301 0x9c16
 
 // Belkin Play F7D4302v1 (dual radio, BCM5325 switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4302V1)
-// Play N600 F7D8302v1 - same 
+// Belkin Play N600 F7D8302v1 - same 
 #define ROUTER_BELKIN_F7D4302 0x9d16
 
 // Asus RT-N10+
