@@ -400,6 +400,7 @@ ifeq ($(CONFIG_TMK),y)
 	cp -f kmt/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f kmt/kmt_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f kmt/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	#rm -f $(INSTALLDIR)/www/images/favicon.ico
 	cp -f kmt/About.htm $(INSTALLDIR)/www/About.htm
 	cp -f kmt/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
 	cp -f kmt/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
@@ -411,6 +412,28 @@ ifeq ($(CONFIG_TMK),y)
 	#cp kmt/images/* $(INSTALLDIR)/www/images
 	#mkdir $(INSTALLDIR)/www/style/maksat
 	#cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
+endif
+ifeq ($(CONFIG_BKM),y)
+	cp -f bkm/SuperChannel.asp $(INSTALLDIR)/www
+	cp -f bkm/Wiviz_Survey.asp $(INSTALLDIR)/www
+	cp -f bkm/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f bkm/logo.png $(INSTALLDIR)/www/images/logo.png
+	cp -f bkm/bkm_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp -f bkm/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f bkm/About.htm $(INSTALLDIR)/www/About.htm
+	cp -f bkm/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
+	cp -f bkm/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
+	cp -f bkm/help/HUpgrade.asp $(INSTALLDIR)/www/help/HUpgrade.asp
+	cp -f bkm/help/HStatus.asp $(INSTALLDIR)/www/help/HStatus.asp
+	cp -f bkm/help/index.asp $(INSTALLDIR)/www/help/index.asp
+	#cp -f kmt/common.js $(INSTALLDIR)/www/common.js
+	#cp -f kmt/common.css $(INSTALLDIR)/www/style/common.css
+	#cp kmt/images/* $(INSTALLDIR)/www/images
+	#mkdir $(INSTALLDIR)/www/style/maksat
+	#cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
+endif
+ifneq ($(CONFIG_STATUS_GPIO),y)
+	rm -f $(INSTALLDIR)/www/Gpio.asp 
 endif
 ifneq ($(CONFIG_WAVESAT),y)
 	rm -f $(INSTALLDIR)/www/WiMAX.asp 
