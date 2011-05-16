@@ -47,7 +47,7 @@
 #include <services.h>
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater);
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,int aoss);
 
 
 void delete_ath9k_devices(char *physical_iface)
@@ -267,7 +267,7 @@ void configure_single_ath9k(int count)
 
 }
 
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
 	struct wifi_channels *chan;
 	int channel = 0;
@@ -323,7 +323,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater)
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
 	     !strcmp(netmode, "n5-only") ||	//
-	     !strcmp(netmode, "mixed")) && strcmp(akm, "wep")) {
+	     !strcmp(netmode, "mixed")) && strcmp(akm, "wep") && !aoss) {
 
 		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only")
 		    && strcmp(netmode, "na-only")) {
@@ -496,7 +496,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
-		setupHostAP_generic_ath9k(maininterface, fp, isrepeater);
+		setupHostAP_generic_ath9k(maininterface, fp, isrepeater,aoss);
 		fprintf(fp, "interface=%s\n", ifname);
 	} else {
 		fp = fopen(fstr, "ab");
