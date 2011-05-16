@@ -56,18 +56,18 @@
 
 #ifdef __linux
 
+//#include <asm/elf.h>
+//#include <asm/procinfo.h>
+//#include <asm/arch/hardware.h>
 #define __ASSEMBLY__
 
 #include <linux/version.h>
 #include <linux/linkage.h>
-#include <linux/autoconf.h>
 #if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 #include <asm/assembler.h>
 #else
 #include <asm/proc-armv/assembler.h>
 #endif
-#include <asm/procinfo.h>
-#include <asm/arch/hardware.h>
 
 #define _ARM_FUNCTION(a)    ENTRY(a)
 
