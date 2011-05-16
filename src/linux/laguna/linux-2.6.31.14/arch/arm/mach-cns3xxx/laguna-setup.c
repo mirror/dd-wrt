@@ -61,6 +61,10 @@
 #include <asm/mach/arch.h>
 #include <linux/irq.h>
 #include <linux/squashfs_fs.h>
+#ifdef CONFIG_CPU_FREQ
+#include <linux/cpufreq.h>
+extern struct cpufreq_driver cns_cpu_freq_driver;
+#endif
 
 #include "core.h"
 
@@ -705,6 +709,14 @@ static int __init laguna_model_setup(void)
 
 		if (strncmp(laguna_info.model, "GW2388", 6) == 0)
 		{
+			platform_device_register(&laguna_gpio_leds_device);
+#ifdef CONFIG_CPU_FREQ
+			cpufreq_register_driver(&cns_cpu_freq_driver);
+#endif
+		}
+		else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
+			laguna_gpio_leds[0].gpio = 107;
+			laguna_gpio_leds_data.num_leds = 1;
 			platform_device_register(&laguna_gpio_leds_device);
 		}
 	} else {

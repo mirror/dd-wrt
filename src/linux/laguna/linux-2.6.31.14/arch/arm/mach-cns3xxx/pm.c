@@ -35,7 +35,7 @@ extern struct proc_dir_entry *cns3xxx_proc_dir;
 
 #ifdef CONFIG_CPU_FREQ
 #include <linux/cpufreq.h>
-static struct cpufreq_driver cns_cpu_freq_driver;
+struct cpufreq_driver cns_cpu_freq_driver;
 #endif
 
 //#define CNS_PMU_DEBUG
@@ -1096,9 +1096,6 @@ static int __init cns3xxx_pmu_init(void)
  	 */
 	cns3xxx_lp_hs(PM_CLK_GATE_REG);
 
-#ifdef CONFIG_CPU_FREQ
-	cpufreq_register_driver(&cns_cpu_freq_driver);
-#endif
 	return 0;
 }
 
@@ -1311,7 +1308,7 @@ static __init int cns_cpufreq_init(struct cpufreq_policy *policy)
     return 0;
 };
 
-static struct cpufreq_driver cns_cpu_freq_driver = {
+struct cpufreq_driver cns_cpu_freq_driver = {
 	.verify     = cns_cpufreq_verify,
 	.target     = cns_cpufreq_target,
 	.init       = cns_cpufreq_init,
