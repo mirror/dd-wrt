@@ -3318,6 +3318,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x102;
 		break;
 	case ROUTER_BOARD_GW2388:
+	case ROUTER_BOARD_GW2380:
 		connected_gpio = 0x110;	// 16 is mapped to front led
 		break;
 	case ROUTER_BOARD_GATEWORX:
