@@ -2998,7 +2998,7 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 
 #ifdef HAVE_AOSS
 extern int sysprintf(const char *fmt, ...);
- 
+extern void nvram_set(const char *name, char *value);
 #endif
 
 
@@ -3068,6 +3068,7 @@ enum wps_process_res wps_registrar_process_msg(struct wps_data *wps,
 				       wps->error_indication);
 		}else{
 #ifdef HAVE_AOSS
+		nvram_set("wps_status", "1");
 		sysprintf("echo done > /tmp/.wpsdone");
 #endif
 		
