@@ -2709,7 +2709,7 @@ void dwc_otg_hcd_complete_urb(dwc_otg_hcd_t *hcd, struct urb *urb, int status)
 
 	//if we use the aligned buffer instead of the original unaligned buffer, 
 	//for IN data, we have to move the data to the original buffer
-	if((urb->transfer_dma==urb->aligned_transfer_dma)&&((urb->transfer_flags & URB_DIR_MASK)==URB_DIR_IN)){
+	if((urb->transfer_dma)&&(urb->transfer_dma==urb->aligned_transfer_dma)&&((urb->transfer_flags & URB_DIR_MASK)==URB_DIR_IN)){
 		dma_sync_single_for_device(NULL,urb->transfer_dma,urb->actual_length,DMA_FROM_DEVICE);
 		memcpy(urb->transfer_buffer,urb->aligned_transfer_buffer,urb->actual_length);
 	}

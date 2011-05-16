@@ -3,7 +3,7 @@
 #include <mach/board.h>
 
 #define cns3xxx_ioremap      ioremap
-#define cns3xxx_iounmap(addr) iounmap        
+#define cns3xxx_iounmap      iounmap        
 
 static int __devinit
 cns3xxx_ohci_start (struct usb_hcd *hcd)
