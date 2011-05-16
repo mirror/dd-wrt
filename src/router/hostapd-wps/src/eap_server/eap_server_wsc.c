@@ -350,6 +350,7 @@ static int eap_wsc_process_fragment(struct eap_wsc_data *data,
 }
 #ifdef HAVE_AOSS
 extern int sysprintf(const char *fmt, ...);
+extern void nvram_set(const char *name, char *value);
  
 #endif
 
@@ -450,6 +451,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		eap_wsc_state(data, FAIL);
 #ifdef HAVE_AOSS
 		sysprintf("echo done > /tmp/.wpsdone");
+		nvram_set("wps_status", "1");
 #endif
 		break;
 	case WPS_CONTINUE:
