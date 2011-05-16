@@ -25,7 +25,8 @@
 
 #include <asm/uaccess.h>
 #include <asm/byteorder.h>
-
+#include <asm/io.h>
+#include <linux/usb/ehci_def.h>
 #include "usb.h"
 #include "hcd.h"
 #include "hub.h"
