@@ -96,6 +96,9 @@ EXTRA_CFLAGS += \
 	-DENABLE_IOMEM \
 	-DENABLE_BUFFERMGT \
 	-DIX_OSAL_OEM_FAST_MUTEX \
+	-Iinclude \
+	-Iarch/arm/include \
+	-Iarch/arm/mach-ixp4xx/include \
 	-I$(ROOTDIR)/. \
 	-I$(IXP400_DIR) \
 	-I$(IX_XSCALE_SW)/src/include \
