@@ -94,7 +94,7 @@ void dwc_otg_hcd_qh_free (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 
 	/* Free each QTD in the QTD list */
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 	//the spinlock is locked before this function get called,
 	//but in case the lock is needed, the check function is preserved
 	
@@ -105,7 +105,7 @@ void dwc_otg_hcd_qh_free (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 		printk("%s: It is not supposed to be lockable!!\n",__func__);
 		BUG();
 	}
-#endif
+#endif /* CONFIG_SMP */
 //	SPIN_LOCK_IRQSAVE(&hcd->lock, flags)
 	for (pos = qh->qtd_list.next;
 	     pos != &qh->qtd_list;
@@ -429,7 +429,7 @@ int dwc_otg_hcd_qh_add (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 	//unsigned long flags;
 	int status = 0;
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 	//the spinlock is locked before this function get called,
 	//but in case the lock is needed, the check function is preserved
 	
@@ -440,7 +440,7 @@ int dwc_otg_hcd_qh_add (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 		printk("%s: It is not supposed to be lockable!!\n",__func__);
 		BUG();
 	}
-#endif
+#endif /* CONFIG_SMP */
 //	SPIN_LOCK_IRQSAVE(&hcd->lock, flags)
 
 	if (!list_empty(&qh->qh_list_entry)) {
@@ -502,7 +502,7 @@ void dwc_otg_hcd_qh_remove (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 {
 	//unsigned long flags;
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 	//the spinlock is locked before this function get called,
 	//but in case the lock is needed, the check function is preserved
 	
@@ -513,7 +513,7 @@ void dwc_otg_hcd_qh_remove (dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
 		printk("%s: It is not supposed to be lockable!!\n",__func__);
 		BUG();
 	}
-#endif
+#endif /* CONFIG)SMP */
 //	SPIN_LOCK_IRQSAVE(&hcd->lock, flags);
 
 	if (list_empty(&qh->qh_list_entry)) {

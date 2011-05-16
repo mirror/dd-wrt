@@ -4,7 +4,7 @@
 #include <mach/pm.h>
 
 #define cns3xxx_ioremap      ioremap
-#define cns3xxx_iounmap(addr) iounmap        
+#define cns3xxx_iounmap      iounmap        
 
 static int cns3xxx_ehci_init(struct usb_hcd *hcd)
 {
@@ -37,8 +37,16 @@ static int cns3xxx_ehci_init(struct usb_hcd *hcd)
 	if (retval)
 		return retval;
 
-        /* XXX: Only for FPGA, remove it later */
-        ehci_writel(ehci, 0x00800080, hcd->regs + 0x94);
+#if    defined (CONFIG_CNS3XXX_SPEEDUP_NAS) && defined (CONFIG_PAGE_SIZE_64K)
+//	ehci_writel(ehci, 0x00030003, hcd->regs + 0x94); //KH: modify from 80 to 03
+	ehci_writel(ehci, 0x00800060, hcd->regs + 0x94); //Jacky-2011-0121: Fix Seagate issue for up-nas-64k
+        printk("%s,***Threshold OUT=0x80,IN=0x60 ***\n",__func__);
+#else
+	ehci_writel(ehci, 0x00600060, hcd->regs + 0x94); //Jacky-20100915: fix Seagate FreeeAgent go 320G issue
+        printk("%s,***Threshold OUT=0x60,IN=0x60 ***\n",__func__);
+#endif
+	//write USB AHB INCR length from 4 to 16
+        writel( (readl((CNS3XXX_MISC_BASE_VIRT+0x04))| (0X2<<24)), (CNS3XXX_MISC_BASE_VIRT+0x04));//Jacky-20100921: INCR4-->INCR16
 
 	ehci_port_power(ehci, 0);
 
@@ -58,6 +66,7 @@ static const struct hc_driver cns3xxx_ehci_hc_driver = {
 	.urb_enqueue		= ehci_urb_enqueue,
 	.urb_dequeue		= ehci_urb_dequeue,
 	.endpoint_disable	= ehci_endpoint_disable,
+	.endpoint_reset		= ehci_endpoint_reset,
 	.get_frame_number	= ehci_get_frame,
 	.hub_status_data	= ehci_hub_status_data,
 	.hub_control		= ehci_hub_control,
@@ -67,6 +76,8 @@ static const struct hc_driver cns3xxx_ehci_hc_driver = {
 #endif
 	.relinquish_port	= ehci_relinquish_port,
 	.port_handed_over	= ehci_port_handed_over,
+
+	.clear_tt_buffer_complete	= ehci_clear_tt_buffer_complete,
 };
 
 static int cns3xxx_ehci_probe(struct platform_device *pdev)
