@@ -540,8 +540,12 @@ struct scsi_host_template usb_stor_host_template = {
 	/* lots of sg segments can be handled */
 	.sg_tablesize =			SG_ALL,
 
-	/* limit the total size of a transfer to 120 KB */
-	.max_sectors =                  240,
+	/* limit the total size of a transfer to 1024 KB */
+#ifdef CONFIG_USB_XHCI_HCD
+	.max_sectors =                  240,	// larger than 240 will cause USB 3.0 fail
+#else
+	.max_sectors =                  1024, //Jacky-20100917.  when value >= 1024, the USB Bulk performance gets no more improve
+#endif
 
 	/* merge commands... this seems to help performance, but
 	 * periodically someone should test to see which setting is more
