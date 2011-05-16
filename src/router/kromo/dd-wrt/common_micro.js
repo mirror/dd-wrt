@@ -878,24 +878,88 @@ function StatusbarUpdate() {
 
 }
 
-function apply(form) {
-	form.submit();
-	for (i = 0; i < form.elements.length; i++) {
-		if(defined(form.elements[i].disabled)) 
-			form.elements[i].disabled = true;
+function invalidTextValue( value ) {
+	var needle = new Array(
+		'<',
+		'>'
+		);
+		if( value ) {
+		var i = 0;
+		var chars = '';
+		
+		for(i = 0; i < needle.length; i++) {
+			re = new RegExp( needle[i] );
+			if( value.match( re ) ) {
+				if( chars.length ) {
+					chars = chars + ', ' + needle[i];
+				} else {
+					chars = needle[i];
+				}
+			}	
+		}
+		if(chars.length) {
+			return chars;
+		}
 	}
-	if (form.contents) document.getElementById("contents").style.color = '#999999';
+	return false;
+}
+
+function getInputLabel( type, name ) {
+	var elements = document.getElementsByTagName( type );
+	for(var i = 0; i < elements.length; i++) {
+		if( elements[i].name == name && elements[i].parentNode.children ) {
+			if( elements[i].parentNode.children[0].className == "label" ) {
+				return elements[i].parentNode.children[0].innerHTML.match(/[^>]+$/);
+			}
+		}
+	}
+	return name;
+}
+
+function checkformelements( form ) {
+	var errors = null;
+	var i = 0;
+	for( i = 0; i < form.elements.length; i++ ) {
+		if( form.elements[i].className == "no-check" ) {
+		} else if( form.elements[i].type == 'text' ) {
+			if( chars = invalidTextValue(form.elements[i].value ) ) {
+				alert('Invalid input characters "' + chars + '" in field "' + getInputLabel( 'input', form.elements[i].name ) + '"');
+				form.elements[i].style.border = "solid 2px #f00";
+				form.elements[i].focus();
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+function apply(form) {
+	if( !checkformelements( form )) {
+		return false;
+	} else {
+		form.submit();
+		for (i = 0; i < form.elements.length; i++) {
+			if(defined(form.elements[i].disabled)) 
+				form.elements[i].disabled = true;
+		}
+		if (form.contents) document.getElementById("contents").style.color = '#999999';
+	}
 }
 
 function applytake(form) {
-	form.action.value="ApplyTake";
-	form.submit();
-	for (i = 0; i < form.elements.length; i++) {
-		if(defined(form.elements[i].disabled)) 
-			form.elements[i].disabled = true;
+	if( !checkformelements( form )) {
+		return false;
+	} else {
+		form.action.value="ApplyTake";
+		form.submit();
+		for (i = 0; i < form.elements.length; i++) {
+			if(defined(form.elements[i].disabled)) 
+				form.elements[i].disabled = true;
+		}
+		if (form.contents) document.getElementById("contents").style.color = '#999999';
 	}
-	if (form.contents) document.getElementById("contents").style.color = '#999999';
 }
+
 function applyupdate(form) {
 	form.submit();
 	for (i = 0; i < form.elements.length; i++) {
@@ -968,12 +1032,14 @@ function setElementMask(id, state) {
 	var val_onblur = OldInput.onblur;
 	var parent = OldInput.parentNode;
 	var sibling = OldInput.nextSibling;
+	var className = OldInput.className;
 	var newInput = document.createElement('input');
 	newInput.setAttribute('value', val);
 	newInput.setAttribute('name', id);
 	newInput.setAttribute('id', id);
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
+	newInput.className = className;
 	//newInput.setAttribute('onblur', val_onblur);
 	newInput.onblur = val_onblur;
 
@@ -1204,3 +1270,112 @@ function SortableTable (tableEl) {
 	}
  
 }
+
+function addTableEntry( tableId ) {
+	
+	var table = $(tableId);
+	var section = table.childElements()[0];
+	var rows = section.childElements();
+	var row = null;
+	
+	for (i = 0; i < rows.length; i++) {
+		if(rows[i].id) {
+			if(rows[i].id.substr( rows[i].id.length - 9, 9 ) == '_template' ) {
+				// create copy
+				row = document.createElement('TR');
+				row.id = tableId + '_row_' + (rows.length - i);
+				for(j = 0; j < rows[i].childElements().length; j++) {
+					var cell = rows[i].childElements()[j].cloneNode(true);
+					// rename fields
+					for(k = 0; k < cell.childElements().length; k++) {
+						if(cell.childElements()[k].name) {
+							cell.childElements()[k].name = cell.childElements()[k].name + '_' + (rows.length - i);
+						}
+						if(cell.childElements()[k].id) {
+							cell.childElements()[k].id = cell.childElements()[k].id + '_' + (rows.length - i);
+						}
+					}
+					row.appendChild(cell);
+				}
+			}
+		}
+	}
+
+	if(row != null) {
+		section.appendChild(row);
+		
+		// adjust share counter
+		if($(tableId + '_count')) {
+			$(tableId + '_count').value++;
+		}
+
+		// remove add button
+		if($(tableId + '_add')) {
+			if($(tableId + '_count_limit')) {
+				if($(tableId + '_count_limit').value <= rows.length - 2 ) {
+					$(tableId + '_add').hide();
+				}
+			}
+		}
+		
+		return section.childElements()[section.childElements().length - 1];
+	} else {
+		return null;
+	}
+}
+
+function removeTableEntry( tableId, button ) {
+	
+	if(button.name.indexOf('_del_') >= 0) {
+		var rowNumber = parseInt(button.name.substr(button.name.indexOf('_del_') + 5, button.name.length - button.name.indexOf('_del_') - 5));
+		
+		if(rowNumber > 0) {
+			var table = $(tableId);
+			var section = table.childElements()[0];
+			var row = $(tableId + '_row_' + rowNumber);
+			section.removeChild( row );
+			
+			// reorder remaining rows
+			var rows = section.childElements();
+			var sublabel = tableId + '_row_';
+			for (i = 0; i < rows.length; i++) {
+				if( rows[i].id.substr( 0, sublabel.length ) == sublabel && rows[i].id.substr(rows[i].id.length - 9, 9) != '_template') {
+					var index = parseInt(rows[i].id.substr( sublabel.length, rows[i].id.length - sublabel.length));
+					if(index > rowNumber) {
+						rows[i].id = sublabel + (index - 1);
+						for(j = 0; j < rows[i].childElements().length; j++) {
+							var cell = rows[i].childElements()[j];
+							// rename fields
+							for(k = 0; k < cell.childElements().length; k++) {
+								var label = cell.childElements()[k].name;
+								label = label.substr(0, label.length - index.length);
+								cell.childElements()[k].name = label + (index - 1);
+								
+								if(cell.childElements()[k].id) {
+									var id = cell.childElements()[k].id;
+									id = id.substr(0, id.length - index.length);
+									cell.childElements()[k].id = id + (index - 1);
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			// adjust share counter
+			if($(tableId + '_count')) {
+				$(tableId + '_count').value--;
+			}
+
+			// show add button
+			if($(tableId + '_add')) {
+				if($(tableId + '_count_limit')) {
+					if($(tableId + '_count_limit').value > rows.length - 4 ) {
+						$(tableId + '_add').show();
+					}
+				}
+			}
+		}
+	}
+}
+
