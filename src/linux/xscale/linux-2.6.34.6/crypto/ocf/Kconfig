@@ -78,11 +78,11 @@ config OCF_PASEMI
 	help
 	  OCF driver for the PA Semi PWRficient DMA Engine
 
-config OCF_EP80579
-	tristate "ep80579 (HW crypto engine)"
-	depends on OCF_OCF
-	help
-	  OCF driver for the Intel EP80579 Integrated Processor Product Line.
+#config OCF_EP80579
+#	tristate "ep80579 (HW crypto engine)"
+#	depends on OCF_OCF
+#	help
+#	  OCF driver for the Intel EP80579 Integrated Processor Product Line.
 
 config OCF_CRYPTOCTEON
 	tristate "cryptocteon (HW crypto engine)"
