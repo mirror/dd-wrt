@@ -16,6 +16,6 @@ install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
-	mkdir -p $(INSTALLDIR)/usr/sbin
-	cp st $(INSTALLDIR)/usr/sbin/show_txpower
+	#mkdir -p $(INSTALLDIR)/usr/sbin
+	#cp st $(INSTALLDIR)/usr/sbin/show_txpower
 
