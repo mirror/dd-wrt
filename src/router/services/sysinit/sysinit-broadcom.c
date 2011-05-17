@@ -1541,8 +1541,11 @@ void start_sysinit(void)
 	if (stat("/proc/modules", &tmp_stat) == 0 && stat(buf, &tmp_stat) == 0) {
 		char module[80], *modules, *next;
 
-		// modules="wl switch-core";
-		nvram_set("portprio_support", "1");
+#ifdef HAVE_ACK
+		nvram_set("portprio_support", "0");  // no portprio support in NEWD or BCMMODERN
+#else
+		nvram_set("portprio_support", "1");  // only switch drivers in VINT support this
+#endif
 
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
