@@ -1371,8 +1371,8 @@ service.vpn_route="Policy based Routing";
 
 //help container
 var hstatus_vpn = new Object();
-hstatus_vpn.right1="Add IP's in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One Line per IP. Redirect Gateway MUST be off.";
-hstatus_vpn.right2="To push routes to clients add \'push \"route 0.0.0.0\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) 0.0.0.0\"\' to the config ";
+hstatus_vpn.right1="Add IPs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP. Redirect Gateway MUST be off.";
+hstatus_vpn.right2="To push routes to clients add \'push \"route 0.0.0.0\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) 0.0.0.0\"\' to the config.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
