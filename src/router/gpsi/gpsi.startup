@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 /usr/bin/killall gpsd
 /usr/bin/killall gpsi
@@ -18,11 +18,16 @@ if [ x$GPS_NEED_SETUP = x1 ]; then
         BOARD=$(nvram get DD_BOARD | cut -c11-17) 
 	fi                                             
 	if [ x$BOARD = xCambria ]; then                     
-        TTY=/dev/tts/1
+        TTY=/dev/ttyS1
+        BAUD=4800
+    elif [ x$BOARD = xLaguna ] ; then
+        TTY=/dev/ttyS2
+        BAUD=9600
 	else                  
         TTY=/dev/tts/0
+        BAUD=4800
 	fi           
-	/bin/stty 4800 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon -opost < ${TTY}
+	/bin/stty ${BAUD} -echo -echoe -echok -echoctl -echoke -ignbrk -ixon -opost < ${TTY}
 fi
 
 if [ "$(nvram get gps_gpsd)" = "1" ]; then
@@ -33,7 +38,7 @@ if [ "$(nvram get gps_gpsd)" = "1" ]; then
 		GPSDPORT=2947
 		nvram set gps_gpsd_port=2947
 	fi
-	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
 fi
 
 if [ "$(nvram get gps)" = "1" ]; then
@@ -60,11 +65,12 @@ if test -z $BOARD
 then
         BOARD=$(nvram get DD_BOARD | cut -c11-17) 
 fi                                             
-if [ x$BOARD = xCambria ]
-then                     
-        TTY=/dev/tts/1
+if [ x$BOARD = xCambria ] ; then                     
+	TTY=/dev/ttyS1
+elif [ x$BOARD = xLaguna ] ; then
+	TTY=/dev/ttyS2
 else                  
-        TTY=/dev/tts/0
+	TTY=/dev/tts/0
 fi           
 GPSD=$(nvram get gps_gpsd) 
 if [ x$GPSD = x1 ]
