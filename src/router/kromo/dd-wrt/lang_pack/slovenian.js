@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 15.Jan.2011, svn 16025	//
+//				Slovenian translation DD-WRT by Eko, last revision: 17.May.2011, svn 17083	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -32,7 +32,7 @@ share.hostname="Ime gostitelja";
 share.vdsl="T-Home VDSL 7 VLAN označevanje";
 share.vdslvlan8="VLAN 8 podpora";
 share.wan_vlantag="ID VLAN značke";
-share.compression="PPP kompresija";
+share.compression="PPP kompresija (MPPC)";
 share.mlppp="Multi Link";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
@@ -48,6 +48,7 @@ share.mac="MAC naslov";
 share.none="Noben";
 share.none2="nič";
 share.both="Oba";
+share.add="Dodaj";
 share.del="Izbriši";
 share.remove="Odstrani";
 share.descr="Opis";
@@ -161,6 +162,8 @@ share.styl="Stil";
 share.err="napak";
 share.errs="napak";
 share.meters="metrov";
+share.ht40="Široki HT40 (20+20 MHz)";
+share.ht20="Polni HT20 (20 MHz)";
 share.dynamicturbo="Dinamično (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
 share.full="Polni (20 MHz)";
@@ -752,7 +755,8 @@ hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Ime prehoda";
 hotspot.nocat_gatewayaddr="IP naslov prehoda";
 hotspot.nocat_home="Domača stran";
-hotspot.nocat_ifname="Vmesnik";
+hotspot.nocat_extifname="Zunanji vmesnik";
+hotspot.nocat_ifname="Notranji vmesnik";
 hotspot.nocat_redirect="Preusmerjanje domače strani";
 hotspot.nocat_allowweb="Dovoljeni spletni gostitelji";
 hotspot.nocat_docroot="Korenski imenik dokumenta";
@@ -1294,12 +1298,9 @@ service.pppoe_srv="Posredovanje";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE strežnik";
 service.pppoesrv_srv="Demon RP-PPPoE strežnik";
-service.pppoesrv_legend="RP-PPPoE strežnik: vmesnik";
+service.pppoesrv_interface="RP-PPPoE strežnik: vmesnik";
 service.pppoesrv_srvopt="RP-PPPoE strežnik: možnosti";
 service.pppoesrv_compr="Kompresija";
-service.pppoesrv_remoteaddr="Oddaljeni začetni IP";
-service.pppoesrv_remotenet="IP oddaljene mreže";
-service.pppoesrv_remotemask="Maska oddaljene mreže";
 service.pppoesrv_lcpei="LCP Echo interval";
 service.pppoesrv_lcpef="LCP Echo neuspeh";
 service.pppoesrv_limit="Meja seje po MACu"
@@ -1311,6 +1312,10 @@ service.pppoesrv_radaccport="Radius vrata za račune";
 service.pppoesrv_radkey="Radius deljeni ključ";
 service.pppoesrv_chaps="Lokalno upr. računov (CHAP skrivnosti)";
 
+//help container
+
+hpppoesrv.right2="IP: 0.0.0.0; dodeljevali boste IPje s seznama";
+
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
@@ -1321,7 +1326,7 @@ service.snmp_read="RO skupnost";
 service.snmp_write="RW skupnost";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN demon";
+service.vpnd_legend="OpenVPN strežnik/demon";
 service.vpnd_srv="Začni OpenVPN demon";
 service.vpnd_starttype="Začni ob";
 service.vpnd_startWanup="WAN vzpostavljen";
@@ -1340,6 +1345,8 @@ service.vpnd_endip="Pool končni IP";
 service.vpnd_cl2cl="Dovoli zvezo odjemalec-odjemalec";
 service.vpnd_switch="Konfiguracija stikala stežnika";
 service.vpnd_dupcn="Dovoli podvojeni cn";
+service.vpnd_proxy="DHCP-Proxy način";
+service.vpnd_clcon="Skripta za priklop odjemalca";
 service.vpn_redirgate="Preusmeri privzeti prehod";
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Začni OpenVPN";
@@ -1354,17 +1361,18 @@ service.vpn_srvcert="Javno strežniško potrdilo";
 service.vpn_clicert="Javno odjemalčevo potrdilo";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Zasebni odjemalčev ključ";
-service.vpn_nat="Dovoli NAT";
+service.vpn_nat="NAT";
 service.vpn_cipher="Šifra za šifriranje";
 service.vpn_auth="Hash algoritem";
 service.vpn_bridge="Most TAP - br0";
 service.vpn_adv="Napredne možnosti";
 service.vpn_tlscip="Šifra TLS";
+service.vpn_route="Usmerjanje po politiki";
 
 //help container
 
-hstatus_vpn.right1="OpenVPN strežnik:";
-hstatus_vpn.right2="";
+hstatus_vpn.right1="Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.";
+hstatus_vpn.right2="Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1481,7 +1489,15 @@ service.samba3_pass2=" Geslo2";
 service.samba3_pubacl="Samo za branje";
 service.samba3_advanced="Napredno"
 service.samba3_custom="Uporabi konfiguracijo po meri";
-
+service.samba3_shares="Souporaba";
+service.samba3_share_path="Pot";
+service.samba3_share_label="Ime";
+service.samba3_share_public="Javno";
+service.samba3_share_access="Dostop";
+service.samba3_users="Uporabniki";
+service.samba3_username="Uporabniško ime";
+service.samba3_password="Geslo";
+service.samba3_user_shares="Dostop do souporabe";
 
 // ** eop-tunnel.asp **//
 
@@ -1830,9 +1846,16 @@ aoss.ap_mode_notice="OBVESTILO: AOSS se lahko uporablja samo kadar je brezžičn
 aoss.wep_notice="način WEP ni dovolj varen, zato ga ne priporočamo.";
 aoss.wep_info="(potrebno za večino igralnih konzol, ki podpirajo AOSS)";
 aoss.wps="Namestitev WPS";
-aoss.wpspin="WPS PIN";
+aoss.wps_ap_pin="WPS PIN prehoda (nalepka)";
+aoss.wpspin="WPS odjemalčev PIN";
+aoss.wpsactivate="Aktiviraj PIN";
 aoss.wpsregister="Registriraj PIN";
+aoss.wpsgenerate="Generiraj PIN";
+aoss.pinnotvalid="Neveljaven PIN, kontrolna vsota ni pravilna!";
 aoss.wpsenable="WPS gumb";
+aoss.wpsstatus="WPS status";
+aoss.externalregistrar="Zunanji registrator";
+aoss.release="Razreši";
 
 
 sec80211x.xsuptype="Tip XSupplicanta";
@@ -1921,7 +1944,7 @@ wl_wimax.upstream="Upstream frekvenca";
 wl_wimax.width="Širina kanala";
 wl_wimax.duplex="Duplex način";
 wl_wimax.mode="Način delovanja";
-wl_wimax.mac="Subscriber MAC Address";
+wl_wimax.mac="Naročnikov MAC naslov";
 
 // ** Gpio **//
 
@@ -2162,7 +2185,6 @@ sas.wireless_settings="Brezžične nastavitve";
 sas.other_settings="Druge nastavitve";
 sas.hwan="Internet (WAN) nastavitev";
 
-// ** Setup Assistant **//
 
 hsas.wan="WAN vmesnik poveže vaš usmerjevalnik v internet ali druge mreže. Če je vaša mreža povezana v internet in potrebujete le dostopno točko, nastavite WAN način na \"Onemogočeno\".";
 hsas.h_routerip="Usmerjevalnikov IP";
@@ -2175,14 +2197,15 @@ hsas.h_wireless_security="Brezžična zaščita";
 hsas.wireless_security="Za lažjo konfiguracijo odjemalcev lahko spremenite geslo brezžične mreze. Uporaba odprte mreže ali WEP se ne priporoča zaradi varnostnih razlogov.";
 hsas.h_routername="Ime usmerjevalnika";
 hsas.routername="To ime je posredovano drugim napravam v vaši mreži za lažje razpoznavanje.";
-hsas.networking="Networking help text";
-hsas.wireless="Wireless help text";
-hsas.other="Other Settings help text";
+hsas.networking="Omreženje: pomoč";
+hsas.wireless="Brezžično: pomoč";
+hsas.other="Druge nastavitve: pomoč";
+
 // ** AOSS **//
 
 haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogoča, da povežete AOSS sposobne odjemalce na vašo dostopno točko brez potrebe po ročni nastavitvi.";
 haoss.securitymodes="AOSS varnostni načini določajo, kateri načini so sprejeti za AOSS pogajanje. Če odjemalec podpira samo načine, ki niso omogočeni, se ne more povezati.";
-
+haoss.wps="WPS omogoči podporo za Wifi Protected Setup z uporabo gumba na vašem usmerjevalniku ali s PIN kodo natisnjeno na vašem odjemalcu ali aplikaciji";
 // *******************		OLD PAGES 	****************//
 // ********************** DHCPTable.asp ****************//
 
