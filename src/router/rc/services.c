@@ -911,8 +911,17 @@ static void handle_wireless(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree("stabridge", handle);
 #endif
-	handle = stop_service_nofree("ttraff", handle);
-	handle = stop_service_nofree("wan", handle);
+	if (getSTA() || getWET())	// since we need to cover apstawet,
+		// we must use getWET as well
+	{
+#ifdef HAVE_3G
+		if (!nvram_match("wan_proto", "3g"))
+#endif
+		{
+			handle = stop_service_nofree("ttraff", handle);
+			handle = stop_service_nofree("wan", handle);
+		}
+	}
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree("bridgesif", handle);
 	handle = stop_service_nofree("vlantagging", handle);
@@ -934,8 +943,6 @@ static void handle_wireless(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-	handle = start_service_nofree_f("wan", handle);
-	handle = start_service_nofree_f("ttraff", handle);
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
 #endif
@@ -953,7 +960,17 @@ static void handle_wireless(void)
 #ifdef HAVE_DNSMASQ
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
-	handle = start_service_nofree("wan_boot", handle);
+	if (getSTA() || getWET())	// since we need to cover apstawet,
+		// we must use getWET as well
+	{
+#ifdef HAVE_3G
+		if (!nvram_match("wan_proto", "3g"))
+#endif
+		{
+			handle = start_service_nofree("wan_boot", handle);
+			handle = start_service_nofree_f("ttraff", handle);
+		}
+	}
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree("zebra", handle);
 #endif
@@ -981,10 +998,14 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree("stabridge", handle);
 #endif
-//	if (getSTA() || getWET()) 
-	{
-		handle = stop_service_nofree("ttraff", handle);
-		handle = stop_service_nofree("wan", handle);
+	if (getSTA() || getWET()) {
+#ifdef HAVE_3G
+		if (!nvram_match("wan_proto", "3g"))
+#endif
+		{
+			handle = stop_service_nofree("ttraff", handle);
+			handle = stop_service_nofree("wan", handle);
+		}
 	}
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree("bridgesif", handle);
@@ -1007,12 +1028,6 @@ static void handle_wireless_2(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-//	if (getSTA() || getWET())	// since we need to cover apstawet,
-		// we must use getWET as well
-	{
-		handle = start_service_nofree_f("wan", handle);
-		handle = start_service_nofree_f("ttraff", handle);
-	}
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
 #endif
@@ -1031,7 +1046,17 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("hostapdwan", handle);
 #endif
-	handle = start_service_nofree("wan_boot", handle);
+	if (getSTA() || getWET())	// since we need to cover apstawet,
+		// we must use getWET as well
+	{
+#ifdef HAVE_3G
+		if (!nvram_match("wan_proto", "3g"))
+#endif
+		{
+			handle = start_service_nofree("wan_boot", handle);
+			handle = start_service_nofree_f("ttraff", handle);
+		}
+	}
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree_f("zebra", handle);
 #endif
@@ -1046,10 +1071,11 @@ static void handle_dhcp_release(void)
 	sleep(1);
 
 }
+
 #ifdef HAVE_USB
 static void handle_usbdrivers(void)
 {
-	startstop("drivers"); //stop is not yet implemented but we dont care about yet
+	startstop("drivers");	//stop is not yet implemented but we dont care about yet
 #ifdef HAVE_P910ND
 	startstop("printer");
 #endif
