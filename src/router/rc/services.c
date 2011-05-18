@@ -911,9 +911,11 @@ static void handle_wireless(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree("stabridge", handle);
 #endif
-	if (getSTA() || getWET())	// since we need to cover apstawet,
-		// we must use getWET as well
-	{
+	if (getSTA() || getWET()
+#ifdef HAVE_MADWIFI
+	    || getWDSSTA()
+#endif
+	    ) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -960,9 +962,11 @@ static void handle_wireless(void)
 #ifdef HAVE_DNSMASQ
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
-	if (getSTA() || getWET())	// since we need to cover apstawet,
-		// we must use getWET as well
-	{
+	if (getSTA() || getWET()
+#ifdef HAVE_MADWIFI
+	    || getWDSSTA()
+#endif
+	    ) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -998,7 +1002,11 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree("stabridge", handle);
 #endif
-	if (getSTA() || getWET()) {
+	if (getSTA() || getWET()
+#ifdef HAVE_MADWIFI
+	    || getWDSSTA()
+#endif
+	    ) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
@@ -1040,15 +1048,25 @@ static void handle_wireless_2(void)
 	handle = start_service_nofree("guest_nas", handle);
 #endif
 	handle = start_service_nofree_f("radio_timer", handle);
-	if (getSTA() || getWET())
-		startstop_f("httpd");	// httpd will not accept connection anymore
+	if (getSTA() || getWET()
+#ifdef HAVE_MADWIFI
+	    || getWDSSTA()
+#endif
+	    ) {
+#ifdef HAVE_3G
+		if (!nvram_match("wan_proto", "3g"))
+#endif
+			startstop_f("httpd");	// httpd will not accept connection anymore
+	}
 	// on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("hostapdwan", handle);
 #endif
-	if (getSTA() || getWET())	// since we need to cover apstawet,
-		// we must use getWET as well
-	{
+	if (getSTA() || getWET()
+#ifdef HAVE_MADWIFI
+	    || getWDSSTA()
+#endif
+	    ) {
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
