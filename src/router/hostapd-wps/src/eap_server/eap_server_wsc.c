@@ -452,6 +452,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 #ifdef HAVE_AOSS
 		sysprintf("echo done > /tmp/.wpsdone");
 		nvram_set("wps_status", "1");
+		nvram_commit();
 #endif
 		break;
 	case WPS_CONTINUE:
