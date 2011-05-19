@@ -3069,6 +3069,7 @@ enum wps_process_res wps_registrar_process_msg(struct wps_data *wps,
 		}else{
 #ifdef HAVE_AOSS
 		nvram_set("wps_status", "1");
+		nvram_commit();
 		sysprintf("echo done > /tmp/.wpsdone");
 #endif
 		
