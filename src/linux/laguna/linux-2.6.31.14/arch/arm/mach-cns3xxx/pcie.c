@@ -1262,12 +1262,13 @@ static void pcie_debugfs_init(void){
 	//char *data;
 	int i=0;
 
-	if( cns3xxx_debugfs_dir == NULL ){
+	/* if( cns3xxx_debugfs_dir == NULL ){
 		printk("Create Debug fs failed \n");
 		BUG();
-	}
+	} */
 
-	pcie_dir = debugfs_create_dir("pcie", cns3xxx_debugfs_dir);
+	// pcie_dir = debugfs_create_dir("pcie", cns3xxx_debugfs_dir);
+	pcie_dir = debugfs_create_dir("pcie", NULL);
 
 	if( pcie_dir != NULL ) {
 		while( dbgfs_reg[i].name != 0 ){
