@@ -155,8 +155,7 @@ void start_config_vlan(void)
 	char *phy = getPhyDev();
 
 	// configure ports
-	system2("echo 1 > /proc/switch/eth0/reset");
-	system2("echo 1 > /proc/switch/eth1/reset");
+	sysprintf("echo 1 > /proc/switch/%s/reset", phy);	
 	for (i = 0; i < 16; i++) {
 		char vlanb[16];
 
