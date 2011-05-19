@@ -533,6 +533,7 @@ static int __init laguna_model_setup(void)
 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
 
 	if (strncmp(laguna_info.model, "GW", 2) == 0) {
+		printk("CONFIG BITMAP = 0x%08X\n",laguna_info.config_bitmap);
 		if (laguna_info.config_bitmap & ETH0_LOAD)
 			laguna_net_data.ports |= BIT(0);
 		if (strncmp(laguna_info.model, "GW2388", 6) == 0)
@@ -554,13 +555,16 @@ static int __init laguna_model_setup(void)
 		if (laguna_info.config_bitmap & (PCIe1_LOAD))
 			cns3xxx_pcie_init(2);
 
-		if (laguna_info.config_bitmap & (USB0_LOAD))
-			platform_device_register(&laguna_usb_otg_device);
+		//if (laguna_info.config_bitmap & (USB0_LOAD))
+			
+		platform_device_register(&laguna_usb_otg_device);
+		platform_device_register(&laguna_usb_ehci_device);
+		platform_device_register(&laguna_usb_ohci_device);
 
-		if (laguna_info.config_bitmap & (USB1_LOAD)) {
-			platform_device_register(&laguna_usb_ehci_device);
-			platform_device_register(&laguna_usb_ohci_device);
-		}
+		//if (laguna_info.config_bitmap & (USB1_LOAD)) {
+		//	platform_device_register(&laguna_usb_ehci_device);
+		//	platform_device_register(&laguna_usb_ohci_device);
+		//}
 
 		if (laguna_info.config_bitmap & (SD_LOAD))
 			platform_device_register(&laguna_sdio_device);
