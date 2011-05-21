@@ -700,7 +700,7 @@ int get_gpio(int pin)
 
 void set_gpio(int pin, int value)
 {
-
+	int fd;
 	switch (pin) {
 	case 16:		// main LED
 		sysprintf
@@ -708,7 +708,6 @@ void set_gpio(int pin, int value)
 		     value);
 		break;
 	default:
-		int fd;
 		if ((fd = open("/dev/misc/gpio", O_RDWR)) < 0) {
 			printf("Error whilst opening /dev/gpio\n");
 			return;
