@@ -135,7 +135,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.clock"); %></div>
-									<% get_clkfreq(); %>&nbsp;MHz
+									<span id="clkfreq"><% get_clkfreq(); %></span>&nbsp;MHz
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_load"); %></div>
