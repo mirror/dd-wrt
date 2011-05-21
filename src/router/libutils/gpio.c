@@ -60,7 +60,7 @@ void set_gpio(int gpio, int value)
 		fclose(in);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
 	} else {
-		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio-GPIOMAX));
+		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 #undef GPIOMAX
 	in = fopen(buf, "wb");
@@ -127,7 +127,7 @@ void set_gpio(int gpio, int value)
 		return;
 	}
 
-    	/*
+	/*
 	 * Config bit as output 
 	 */
 	_bit.bit = gpio;
@@ -141,7 +141,7 @@ void set_gpio(int gpio, int value)
 		close(file);
 		return;
 	}
-    	/*
+	/*
 	 * Write data 
 	 */
 	_bit.bit = gpio;
@@ -153,7 +153,7 @@ void set_gpio(int gpio, int value)
 		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
 			strerror(errno), errno);
 	}
-//	fprintf(stderr,"done\n");
+//      fprintf(stderr,"done\n");
 
 	close(file);
 
@@ -700,11 +700,6 @@ int get_gpio(int pin)
 
 void set_gpio(int pin, int value)
 {
-	int fd;
-	if ((fd = open("/dev/misc/gpio", O_RDWR)) < 0) {
-		printf("Error whilst opening /dev/gpio\n");
-		return;
-	}
 
 	switch (pin) {
 	case 16:		// main LED
@@ -713,14 +708,19 @@ void set_gpio(int pin, int value)
 		     value);
 		break;
 	default:
+		int fd;
+		if ((fd = open("/dev/misc/gpio", O_RDWR)) < 0) {
+			printf("Error whilst opening /dev/gpio\n");
+			return;
+		}
 		ioctl(fd, GPIO_DIR_OUT, pin);
 		if (value)
 			ioctl(fd, GPIO_SET, pin);
 		else
 			ioctl(fd, GPIO_CLEAR, pin);
+		close(fd);
 		break;
 	}
-	close(fd);
 }
 
 int get_gpio(int pin)
