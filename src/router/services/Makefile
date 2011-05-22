@@ -144,6 +144,10 @@ ifeq ($(CONFIG_DNSMASQ),y)
 CFLAGS_EXTRA += -DHAVE_DNSMASQ
 OBJS += dnsmasq.o
 endif
+ifeq ($(CONFIG_POWERSAVE),y)
+CFLAGS_EXTRA += -DHAVE_POWERSAVE
+OBJS += powersave.o
+endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS_EXTRA += -DHAVE_KAID
 endif
