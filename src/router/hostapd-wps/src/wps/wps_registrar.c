@@ -1499,6 +1499,7 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 				      wps->new_psk, wps->new_psk_len);
 		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);
 		wps->cred.key_len = wps->new_psk_len;
+		/* brainslayer: add here auto config store */
 	} else if (wps->use_psk_key && wps->wps->psk_set) {
 		char hex[65];
 		wpa_printf(MSG_DEBUG, "WPS: Use PSK format for Network Key");
@@ -2919,6 +2920,7 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 			   "Registrar completed successfully");
 		wps_device_store(wps->wps->registrar, &wps->peer_dev,
 				 wps->uuid_e);
+		/* brainslayer: done here */
 		return WPS_DONE;
 	}
 #endif /* CONFIG_WPS_UPNP */
