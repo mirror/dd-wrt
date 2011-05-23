@@ -1285,6 +1285,16 @@ static enum wps_process_res wps_process_wsc_nack(struct wps_data *wps,
 	config_error = WPA_GET_BE16(attr.config_error);
 	wpa_printf(MSG_DEBUG, "WPS: Registrar terminated negotiation with "
 		   "Configuration Error %d", config_error);
+	if (config_error==0)
+	{
+	// brainslayer: no error
+#ifdef HAVE_AOSS
+		nvram_set("wps_status", "1");
+		nvram_commit();
+		sysprintf("echo done > /tmp/.wpsdone");
+#endif
+	
+	}
 
 	switch (wps->state) {
 	case RECV_M4:
