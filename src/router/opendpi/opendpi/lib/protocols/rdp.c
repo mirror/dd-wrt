@@ -28,8 +28,6 @@ static void ipoque_search_rdp(struct ipoque_detection_module_struct *ipoque_stru
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (packet->payload_packet_len > 10
 		&& get_u8(packet->payload, 0) > 0

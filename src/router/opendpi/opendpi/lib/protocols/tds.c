@@ -29,8 +29,6 @@ static void ipoque_search_tds_tcp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (packet->payload_packet_len > 8
 		&& packet->payload_packet_len < 512

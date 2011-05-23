@@ -38,31 +38,25 @@ u32 ipoque_detection_get_sizeof_ipoque_id_struct(void)
 }
 
 
-struct ipoque_detection_module_struct *ipoque_init_detection_module(u32 ticks_per_second, void
+struct ipoque_static_data *ipoque_init_detection_module(u32 ticks_per_second, void
 																	*(*ipoque_malloc)
 																	 (unsigned
 																	  long size),
 																	ipoque_debug_function_ptr ipoque_debug_printf)
 {
-	struct ipoque_detection_module_struct *ipq_str;
-	ipq_str = ipoque_malloc(sizeof(struct ipoque_detection_module_struct));
+	struct ipoque_static_data *ipq_str;
+
+	ipq_str = ipoque_malloc(sizeof(struct ipoque_static_data));
 
 	if (ipq_str == NULL) {
 		ipoque_debug_printf(0, NULL, IPQ_LOG_DEBUG, "ipoque_init_detection_module initial malloc failed\n");
 		return NULL;
 	}
-	memset(ipq_str, 0, sizeof(struct ipoque_detection_module_struct));
-
+	memset(ipq_str, 0, sizeof(struct ipoque_static_data));
 
 	IPOQUE_BITMASK_RESET(ipq_str->detection_bitmask);
-#ifdef IPOQUE_ENABLE_DEBUG_MESSAGES
-	ipq_str->ipoque_debug_printf = ipoque_debug_printf;
-	ipq_str->user_data = NULL;
-#endif
-
 
 	ipq_str->ticks_per_second = ticks_per_second;
-	ipq_str->tcp_max_retransmission_window_size = IPOQUE_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE;
 	ipq_str->directconnect_connection_ip_tick_timeout =
 		IPOQUE_DIRECTCONNECT_CONNECTION_IP_TICK_TIMEOUT * ticks_per_second;
 
@@ -92,16 +86,14 @@ struct ipoque_detection_module_struct *ipoque_init_detection_module(u32 ticks_pe
 	return ipq_str;
 }
 
-void ipoque_exit_detection_module(struct ipoque_detection_module_struct
-								  *ipoque_struct, void (*ipoque_free) (void *ptr))
+void ipoque_exit_detection_module(struct ipoque_static_data *ipoque_s, void (*ipoque_free) (void *ptr))
 {
-	if (ipoque_struct != NULL) {
-		ipoque_free(ipoque_struct);
+	if (ipoque_s != NULL) {
+		ipoque_free(ipoque_s);
 	}
 }
 
-void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struct
-											*ipoque_struct, const IPOQUE_PROTOCOL_BITMASK * dbm)
+void ipoque_set_protocol_detection_bitmask2(struct ipoque_static_data *ipoque_s, const IPOQUE_PROTOCOL_BITMASK * dbm)
 {
 	IPOQUE_PROTOCOL_BITMASK detection_bitmask_local;
 	IPOQUE_PROTOCOL_BITMASK *detection_bitmask = &detection_bitmask_local;
@@ -109,21 +101,21 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 	int a = 0;
 
 	IPOQUE_BITMASK_SET(detection_bitmask_local, *dbm);
-	IPOQUE_BITMASK_SET(ipoque_struct->detection_bitmask, *dbm);
+	IPOQUE_BITMASK_SET(ipoque_s->detection_bitmask, *dbm);
 
 	/* set this here to zero to be interrupt safe */
-	ipoque_struct->callback_buffer_size = 0;
+	ipoque_s->callback_buffer_size = 0;
 
-	proto_common_detection_mask(ipoque_struct, detection_bitmask, &a);
+	proto_common_detection_mask(ipoque_s, detection_bitmask, &a);
 
 #ifdef IPOQUE_PROTOCOL_SSL
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SSL) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ssl_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_ssl_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSL);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSL);
 		a++;
 	}
 #endif
@@ -133,134 +125,134 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 		|| IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_RTP) != 0
 #endif
 		) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_stun_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_stun_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_STUN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_STUN);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_RTP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_RTP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_rtp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_rtp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
 #ifdef IPOQUE_PROTOCOL_STUN
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_STUN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_STUN);
 #endif
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_RTSP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_RTSP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_rtsp_tcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
+		ipoque_s->callback_buffer[a].func = ipoque_search_rtsp_tcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTSP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTSP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SIP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SIP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_sip;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_sip;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SIP);
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SIP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SIP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SIP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_BITTORRENT
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_BITTORRENT) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_bittorrent;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
+		ipoque_s->callback_buffer[a].func = ipoque_search_bittorrent;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_EDONKEY
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_EDONKEY) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_edonkey;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
+		ipoque_s->callback_buffer[a].func = ipoque_search_edonkey;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_EDONKEY);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_EDONKEY);
 #ifdef IPOQUE_PROTOCOL_BITTORRENT
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
 #endif
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_EDONKEY);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_EDONKEY);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_FASTTRACK
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_FASTTRACK) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_fasttrack_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_fasttrack_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FASTTRACK);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FASTTRACK);
 		a++;
 
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_GNUTELLA
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_GNUTELLA) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_gnutella;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_gnutella;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
 #ifdef IPOQUE_PROTOCOL_XBOX
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_XBOX);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_XBOX);
 #endif
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_GNUTELLA);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_GNUTELLA);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_WINMX
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_WINMX) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_winmx_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_winmx_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_WINMX);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_WINMX);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_DIRECTCONNECT
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_DIRECTCONNECT) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_directconnect;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_directconnect;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask,
 									   IPOQUE_PROTOCOL_DIRECTCONNECT);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 							   IPOQUE_PROTOCOL_DIRECTCONNECT);
 
 		a++;
@@ -268,32 +260,32 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 #endif
 #ifdef IPOQUE_PROTOCOL_MSN
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MSN) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_msn;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_msn;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_MSN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_MSN);
 #ifdef IPOQUE_PROTOCOL_HTTP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_HTTP);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_HTTP);
 #endif
 #ifdef IPOQUE_PROTOCOL_SSL
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SSL);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SSL);
 #endif
-		IPOQUE_BITMASK_RESET(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask);
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,IPOQUE_PROTOCOL_MSN);
+		IPOQUE_BITMASK_RESET(ipoque_s->callback_buffer[a].excluded_protocol_bitmask);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,IPOQUE_PROTOCOL_MSN);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_YAHOO
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_YAHOO) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_yahoo;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
+		ipoque_s->callback_buffer[a].func = ipoque_search_yahoo;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_YAHOO);
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_YAHOO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
 
 		a++;
 	}
@@ -301,38 +293,38 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 
 #ifdef IPOQUE_PROTOCOL_OSCAR
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_OSCAR) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_oscar;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_oscar;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_OSCAR);
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_OSCAR);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_OSCAR);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_OSCAR);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_APPLEJUICE
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_APPLEJUICE) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_applejuice_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_applejuice_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_APPLEJUICE);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_APPLEJUICE);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SOULSEEK
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SOULSEEK) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_soulseek_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_soulseek_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SOULSEEK);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SOULSEEK);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOULSEEK);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOULSEEK);
 
 
 		a++;
@@ -340,31 +332,31 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 #endif
 #ifdef IPOQUE_PROTOCOL_IRC
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_IRC) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_irc_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_irc_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_IRC);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_IRC);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IRC);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IRC);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_UNENCRYPED_JABBER
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_jabber_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_jabber_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask,
 									   IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
 #ifdef IPOQUE_PROTOCOL_SSL
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SSL);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_SSL);
 #endif
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 							   IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
 
 		a++;
@@ -372,145 +364,145 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 #endif
 #ifdef IPOQUE_PROTOCOL_MAIL_POP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MAIL_POP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mail_pop_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_mail_pop_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_POP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_POP);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_MAIL_IMAP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MAIL_IMAP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mail_imap_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_mail_imap_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_IMAP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_IMAP);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_MAIL_SMTP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MAIL_SMTP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mail_smtp_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_mail_smtp_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_SMTP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_SMTP);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_FTP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_FTP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ftp_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_ftp_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_FTP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_FTP);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FTP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FTP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_USENET
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_USENET) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_usenet_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_usenet_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_USENET);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_USENET);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_DNS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_DNS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_dns;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_dns;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_DNS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_DNS);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_FILETOPIA
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_FILETOPIA) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_filetopia_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_filetopia_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FILETOPIA);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FILETOPIA);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_MANOLITO
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MANOLITO) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_manolito_tcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_manolito_tcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MANOLITO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MANOLITO);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_IMESH
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_IMESH) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_imesh_tcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_imesh_tcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_IMESH);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_IMESH);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IMESH);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IMESH);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_MMS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MMS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mms_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_mms_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MMS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MMS);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_PANDO
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_PANDO) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_pando_tcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_pando_tcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PANDO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PANDO);
 
 		a++;
 	}
@@ -518,41 +510,41 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 #if defined(IPOQUE_PROTOCOL_IPSEC) || defined(IPOQUE_PROTOCOL_GRE) || defined(IPOQUE_PROTOCOL_ICMP) || defined(IPOQUE_PROTOCOL_IGMP) || defined(IPOQUE_PROTOCOL_EGP) || defined(IPOQUE_PROTOCOL_SCTP) || defined(IPOQUE_PROTOCOL_OSPF) || defined(IPOQUE_PROTOCOL_IP_IN_IP)
 	/* always add non tcp/udp if one protocol is compiled in */
 	if (1) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_in_non_tcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_IP;
+		ipoque_s->callback_buffer[a].func = ipoque_search_in_non_tcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_IP;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_BITMASK_RESET(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_BITMASK_RESET(ipoque_s->callback_buffer[a].excluded_protocol_bitmask);
 #ifdef IPOQUE_PROTOCOL_IPSEC
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_IPSEC);
 #endif
 #ifdef IPOQUE_PROTOCOL_GRE
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_GRE);
 #endif
 #ifdef IPOQUE_PROTOCOL_IGMP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_ICMP);
 #endif
 #ifdef IPOQUE_PROTOCOL_IGMP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_IGMP);
 #endif
 #ifdef IPOQUE_PROTOCOL_EGP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_EGP);
 #endif
 #ifdef IPOQUE_PROTOCOL_SCTP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_SCTP);
 #endif
 #ifdef IPOQUE_PROTOCOL_OSPF
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_OSPF);
 #endif
 #ifdef IPOQUE_PROTOCOL_IP_IN_IP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 									   IPOQUE_PROTOCOL_IP_IN_IP);
 #endif
 		a++;
@@ -560,422 +552,422 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 #endif
 #ifdef IPOQUE_PROTOCOL_TVANTS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_TVANTS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_tvants_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_tvants_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TVANTS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TVANTS);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SOPCAST
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SOPCAST) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_sopcast;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_sopcast;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOPCAST);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOPCAST);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_TVUPLAYER
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_TVUPLAYER) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_tvuplayer;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_tvuplayer;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TVUPLAYER);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TVUPLAYER);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_PPSTREAM
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_PPSTREAM) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ppstream_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_ppstream_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PPSTREAM);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PPSTREAM);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_PPLIVE
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_PPLIVE) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_pplive_tcp_udp;
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_PPLIVE);
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_pplive_tcp_udp;
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_PPLIVE);
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PPLIVE);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PPLIVE);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_IAX
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_IAX) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_iax;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_iax;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_IAX);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_IAX);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IAX);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IAX);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_MGCP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MGCP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mgcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_mgcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		//IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_MGCP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		//IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_MGCP);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MGCP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MGCP);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_GADUGADU
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_GADUGADU) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_gadugadu;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_gadugadu;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 #ifdef IPOQUE_PROTOCOL_HTTP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_HTTP);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_HTTP);
 #endif
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_GADUGADU);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_GADUGADU);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_GADUGADU);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_GADUGADU);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_ZATTOO
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_ZATTOO) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_zattoo_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_zattoo_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_ZATTOO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_ZATTOO);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_ZATTOO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_ZATTOO);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_QQ
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_QQ) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_qq;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_qq;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_QQ);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_QQ);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_FEIDIAN
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_FEIDIAN) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_feidian;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_feidian;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FEIDIAN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FEIDIAN);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SSH
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SSH) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ssh_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_ssh_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSH);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSH);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_POPO
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_POPO) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_popo_tcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_popo_tcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_POPO);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_POPO);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_THUNDER
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_THUNDER) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_thunder;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_thunder;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_THUNDER);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_THUNDER);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_VNC
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_VNC) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_vnc_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_vnc_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_VNC);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_VNC);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_DHCP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_DHCP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_dhcp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_dhcp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_DHCP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_DHCP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_I23V5
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_I23V5) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_i23v5;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_i23v5;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_I23V5);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_I23V5);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SOCRATES
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SOCRATES) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_socrates;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_socrates;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOCRATES);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SOCRATES);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_STEAM
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_STEAM) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_steam;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_steam;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_STEAM);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_STEAM);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_HALFLIFE2
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_HALFLIFE2) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_halflife2;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_halflife2;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_HALFLIFE2);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_HALFLIFE2);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_XBOX
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_XBOX) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_xbox;
+		ipoque_s->callback_buffer[a].func = ipoque_search_xbox;
 
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_XBOX);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_XBOX);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SMB
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SMB) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_smb_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_smb_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SMB);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SMB);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_TELNET
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_TELNET) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_telnet_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_telnet_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TELNET);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TELNET);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_NTP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_NTP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ntp_udp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_ntp_udp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_NTP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_NTP);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_NFS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_NFS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_nfs;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_nfs;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_NFS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_NFS);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_SSDP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SSDP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ssdp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_ssdp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSDP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSDP);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_WORLDOFWARCRAFT
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_WORLDOFWARCRAFT) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_worldofwarcraft;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_worldofwarcraft;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 							   IPOQUE_PROTOCOL_WORLDOFWARCRAFT);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_FLASH
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_FLASH) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_flash;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_flash;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FLASH);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_FLASH);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_POSTGRES
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_POSTGRES) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_postgres_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_postgres_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_POSTGRES);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_POSTGRES);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_MYSQL
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MYSQL) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mysql_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_mysql_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MYSQL);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MYSQL);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_BGP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_BGP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_bgp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_bgp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_BGP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_BGP);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_QUAKE
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_QUAKE) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_quake;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_quake;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_QUAKE);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_QUAKE);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_BATTLEFIELD
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_BATTLEFIELD) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_battlefield;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_battlefield;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 							   IPOQUE_PROTOCOL_BATTLEFIELD);
 		a++;
 	}
@@ -983,122 +975,122 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 
 #ifdef IPOQUE_PROTOCOL_SECONDLIFE
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SECONDLIFE) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_secondlife;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_secondlife;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SECONDLIFE);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SECONDLIFE);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_PCANYWHERE
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_PCANYWHERE) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_pcanywhere;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_pcanywhere;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PCANYWHERE);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_PCANYWHERE);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_RDP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_RDP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_rdp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_rdp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_RDP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_RDP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SNMP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SNMP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_snmp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_snmp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SNMP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SNMP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_KONTIKI
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_KONTIKI) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_kontiki;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_kontiki;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_KONTIKI);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_KONTIKI);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_ICECAST
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_ICECAST) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_icecast_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_icecast_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_ICECAST);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_ICECAST);
 		a++;
 	}
 #endif
 
 #ifdef IPOQUE_PROTOCOL_SHOUTCAST
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SHOUTCAST) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_shoutcast_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_shoutcast_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 #ifdef	IPOQUE_PROTOCOL_HTTP
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_HTTP);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_HTTP);
 #endif
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SHOUTCAST);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SHOUTCAST);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_VEOHTV
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_VEOHTV) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_veohtv_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_veohtv_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_VEOHTV);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_VEOHTV);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_OPENFT
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_OPENFT) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_openft_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_openft_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_OPENFT);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_OPENFT);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_SYSLOG
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_SYSLOG) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_syslog;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_syslog;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SYSLOG);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_SYSLOG);
 
 		a++;
 	}
@@ -1106,28 +1098,28 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 
 #ifdef IPOQUE_PROTOCOL_TDS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_TDS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_tds_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_tds_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TDS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TDS);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_direct_download_link_tcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_direct_download_link_tcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD;
 
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask,
 									   IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask,
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask,
 							   IPOQUE_PROTOCOL_DIRECT_DOWNLOAD_LINK);
 
 		a++;
@@ -1136,13 +1128,13 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 
 #ifdef IPOQUE_PROTOCOL_NETBIOS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_NETBIOS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_netbios;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_netbios;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_NETBIOS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_NETBIOS);
 
 		a++;
 	}
@@ -1150,13 +1142,13 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 
 #ifdef IPOQUE_PROTOCOL_MDNS
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_MDNS) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_mdns;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_mdns;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD;
 
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MDNS);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_MDNS);
 
 		a++;
 	}
@@ -1164,141 +1156,141 @@ void ipoque_set_protocol_detection_bitmask2(struct ipoque_detection_module_struc
 
 #ifdef IPOQUE_PROTOCOL_IPP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_IPP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_ipp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_ipp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IPP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_IPP);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_XDMCP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_XDMCP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_xdmcp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_xdmcp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
 
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_XDMCP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_XDMCP);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_XDMCP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_XDMCP);
 
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_TFTP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_TFTP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_tftp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_tftp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TFTP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_TFTP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_STEALTHNET
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_STEALTHNET) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_stealthnet;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_stealthnet;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_STEALTHNET);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_STEALTHNET);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_AFP
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_AFP) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_afp;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask =
+		ipoque_s->callback_buffer[a].func = ipoque_search_afp;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask =
 			IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_AFP);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_AFP);
 		a++;
 	}
 #endif
 #ifdef IPOQUE_PROTOCOL_AIMINI
 	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, IPOQUE_PROTOCOL_AIMINI) != 0) {
-		ipoque_struct->callback_buffer[a].func = ipoque_search_aimini;
-		ipoque_struct->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD;
+		ipoque_s->callback_buffer[a].func = ipoque_search_aimini;
+		ipoque_s->callback_buffer[a].ipq_selection_bitmask = IPQ_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD;
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].detection_bitmask, IPOQUE_PROTOCOL_UNKNOWN);
 
-		IPOQUE_SAVE_AS_BITMASK(ipoque_struct->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_AIMINI);
+		IPOQUE_SAVE_AS_BITMASK(ipoque_s->callback_buffer[a].excluded_protocol_bitmask, IPOQUE_PROTOCOL_AIMINI);
 		a++;
 	}
 #endif
-	ipoque_struct->callback_buffer_size = a;
+	ipoque_s->callback_buffer_size = a;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct, IPQ_LOG_DEBUG,
-			"callback_buffer_size is %u\n", ipoque_struct->callback_buffer_size);
+	IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_s, IPQ_LOG_DEBUG,
+			"callback_buffer_size is %u\n", ipoque_s->callback_buffer_size);
 
 	/* now build the specific buffer for tcp, udp and non_tcp_udp */
-	ipoque_struct->callback_buffer_size_tcp_payload = 0;
-	ipoque_struct->callback_buffer_size_tcp_no_payload = 0;
-	for (a = 0; a < ipoque_struct->callback_buffer_size; a++) {
-		if ((ipoque_struct->callback_buffer[a].ipq_selection_bitmask & (IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP |
+	ipoque_s->callback_buffer_size_tcp_payload = 0;
+	ipoque_s->callback_buffer_size_tcp_no_payload = 0;
+	for (a = 0; a < ipoque_s->callback_buffer_size; a++) {
+		if ((ipoque_s->callback_buffer[a].ipq_selection_bitmask & (IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP |
 																		IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP |
 																		IPQ_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC))
 			!= 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct, IPQ_LOG_DEBUG,
+			IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_s, IPQ_LOG_DEBUG,
 					"callback_buffer_tcp_payload, adding buffer %u as entry %u\n", a,
-					ipoque_struct->callback_buffer_size_tcp_payload);
+					ipoque_s->callback_buffer_size_tcp_payload);
 
-			memcpy(&ipoque_struct->callback_buffer_tcp_payload[ipoque_struct->callback_buffer_size_tcp_payload],
-				   &ipoque_struct->callback_buffer[a], sizeof(struct ipq_call_function_struct));
-			ipoque_struct->callback_buffer_size_tcp_payload++;
+			memcpy(&ipoque_s->callback_buffer_tcp_payload[ipoque_s->callback_buffer_size_tcp_payload],
+				   &ipoque_s->callback_buffer[a], sizeof(struct ipq_call_function_struct));
+			ipoque_s->callback_buffer_size_tcp_payload++;
 
-			if ((ipoque_struct->
+			if ((ipoque_s->
 				 callback_buffer[a].ipq_selection_bitmask & IPQ_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD) == 0) {
-				IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct, IPQ_LOG_DEBUG,
+				IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_s, IPQ_LOG_DEBUG,
 						"callback_buffer_tcp_no_payload, additional adding buffer %u to no_payload process\n", a);
 
-				memcpy(&ipoque_struct->callback_buffer_tcp_no_payload
-					   [ipoque_struct->callback_buffer_size_tcp_no_payload], &ipoque_struct->callback_buffer[a],
+				memcpy(&ipoque_s->callback_buffer_tcp_no_payload
+					   [ipoque_s->callback_buffer_size_tcp_no_payload], &ipoque_s->callback_buffer[a],
 					   sizeof(struct ipq_call_function_struct));
-				ipoque_struct->callback_buffer_size_tcp_no_payload++;
+				ipoque_s->callback_buffer_size_tcp_no_payload++;
 			}
 		}
 	}
 
-	ipoque_struct->callback_buffer_size_udp = 0;
-	for (a = 0; a < ipoque_struct->callback_buffer_size; a++) {
-		if ((ipoque_struct->callback_buffer[a].ipq_selection_bitmask & (IPQ_SELECTION_BITMASK_PROTOCOL_INT_UDP |
+	ipoque_s->callback_buffer_size_udp = 0;
+	for (a = 0; a < ipoque_s->callback_buffer_size; a++) {
+		if ((ipoque_s->callback_buffer[a].ipq_selection_bitmask & (IPQ_SELECTION_BITMASK_PROTOCOL_INT_UDP |
 																		IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP |
 																		IPQ_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC))
 			!= 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct, IPQ_LOG_DEBUG,
+			IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_s, IPQ_LOG_DEBUG,
 					"callback_buffer_size_udp, adding buffer %u\n", a);
 
-			memcpy(&ipoque_struct->callback_buffer_udp[ipoque_struct->callback_buffer_size_udp],
-				   &ipoque_struct->callback_buffer[a], sizeof(struct ipq_call_function_struct));
-			ipoque_struct->callback_buffer_size_udp++;
+			memcpy(&ipoque_s->callback_buffer_udp[ipoque_s->callback_buffer_size_udp],
+				   &ipoque_s->callback_buffer[a], sizeof(struct ipq_call_function_struct));
+			ipoque_s->callback_buffer_size_udp++;
 		}
 	}
 
-	ipoque_struct->callback_buffer_size_non_tcp_udp = 0;
-	for (a = 0; a < ipoque_struct->callback_buffer_size; a++) {
-		if ((ipoque_struct->callback_buffer[a].ipq_selection_bitmask & (IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP |
+	ipoque_s->callback_buffer_size_non_tcp_udp = 0;
+	for (a = 0; a < ipoque_s->callback_buffer_size; a++) {
+		if ((ipoque_s->callback_buffer[a].ipq_selection_bitmask & (IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP |
 																		IPQ_SELECTION_BITMASK_PROTOCOL_INT_UDP |
 																		IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP))
 			== 0
-			|| (ipoque_struct->
+			|| (ipoque_s->
 				callback_buffer[a].ipq_selection_bitmask & IPQ_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC) != 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct, IPQ_LOG_DEBUG,
+			IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_s, IPQ_LOG_DEBUG,
 					"callback_buffer_size_non_tcp_udp, adding buffer %u\n", a);
 
-			memcpy(&ipoque_struct->callback_buffer_non_tcp_udp[ipoque_struct->callback_buffer_size_non_tcp_udp],
-				   &ipoque_struct->callback_buffer[a], sizeof(struct ipq_call_function_struct));
-			ipoque_struct->callback_buffer_size_non_tcp_udp++;
+			memcpy(&ipoque_s->callback_buffer_non_tcp_udp[ipoque_s->callback_buffer_size_non_tcp_udp],
+				   &ipoque_s->callback_buffer[a], sizeof(struct ipq_call_function_struct));
+			ipoque_s->callback_buffer_size_non_tcp_udp++;
 		}
 	}
 }
@@ -1313,20 +1305,16 @@ static int ipq_init_packet_header(struct ipoque_detection_module_struct *ipoque_
 	u16 l4len;
 	u8 *l4ptr;
 	u8 l4protocol;
+
 	/* reset payload_packet_len, will be set if ipv4 tcp or udp */
 	ipoque_struct->packet.payload_packet_len = 0;
-	ipoque_struct->packet.l4_packet_len = 0;
-	ipoque_struct->packet.l3_packet_len = packetlen;
+	l4len = 0;
+	l3len = packetlen;
 
 	ipoque_struct->packet.tcp = NULL;
 	ipoque_struct->packet.udp = NULL;
-	ipoque_struct->packet.generic_l4_ptr = NULL;
-
-	l3len = ipoque_struct->packet.l3_packet_len;
-
 
 	decaps_iph = ipoque_struct->packet.iph;
-
 
 	if (decaps_iph->version == 4 && decaps_iph->ihl >= 5) {
 		IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct, IPQ_LOG_DEBUG, "ipv4 header\n");
@@ -1355,44 +1343,25 @@ static int ipq_init_packet_header(struct ipoque_detection_module_struct *ipoque_
 		return 1;
 	}
 
-	ipoque_struct->packet.l4_protocol = l4protocol;
-	ipoque_struct->packet.l4_packet_len = l4len;
-
 	/* tcp / udp detection */
-	if (l4protocol == 6 /* TCP */  && ipoque_struct->packet.l4_packet_len >= 20 /* min size of tcp */ ) {
+	if (l4protocol == 6 /* TCP */  && l4len >= 20 /* min size of tcp */ ) {
 		/* tcp */
 		ipoque_struct->packet.tcp = (struct tcphdr *) l4ptr;
 
-		if (ipoque_struct->packet.l4_packet_len >= ipoque_struct->packet.tcp->doff * 4) {
+		if (l4len >= ipoque_struct->packet.tcp->doff * 4) {
 			ipoque_struct->packet.payload_packet_len =
-				ipoque_struct->packet.l4_packet_len - ipoque_struct->packet.tcp->doff * 4;
+				l4len - ipoque_struct->packet.tcp->doff * 4;
 			ipoque_struct->packet.actual_payload_len = ipoque_struct->packet.payload_packet_len;
 			ipoque_struct->packet.payload = ((u8 *) ipoque_struct->packet.tcp) + (ipoque_struct->packet.tcp->doff * 4);
 
-			/* check for new tcp syn packets, here
-			 * idea: reset detection state if a connection is unknown
-			 */
-			if (ipoque_struct->packet.tcp->syn != 0
-				&& ipoque_struct->packet.tcp->ack == 0
-				&& ipoque_struct->flow != NULL
-				&& ipoque_struct->flow->init_finished != 0
-				&& ipoque_struct->flow->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN) {
-				memset(ipoque_struct->flow, 0, sizeof(*(ipoque_struct->flow)));
-				IPQ_LOG(IPOQUE_PROTOCOL_UNKNOWN, ipoque_struct,
-						IPQ_LOG_DEBUG,
-						"%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
-
-			}
 		} else {
 			/* tcp header not complete */
 			ipoque_struct->packet.tcp = NULL;
 		}
-	} else if (l4protocol == 17 /* udp */  && ipoque_struct->packet.l4_packet_len >= 8 /* size of udp */ ) {
+	} else if (l4protocol == 17 /* udp */  && l4len >= 8 /* size of udp */ ) {
 		ipoque_struct->packet.udp = (struct udphdr *) l4ptr;
-		ipoque_struct->packet.payload_packet_len = ipoque_struct->packet.l4_packet_len - 8;
+		ipoque_struct->packet.payload_packet_len = l4len - 8;
 		ipoque_struct->packet.payload = ((u8 *) ipoque_struct->packet.udp) + 8;
-	} else {
-		ipoque_struct->packet.generic_l4_ptr = l4ptr;
 	}
 	return 0;
 }
@@ -1404,11 +1373,8 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	const struct iphdr *iph = packet->iph;
 	const struct tcphdr *tcph = packet->tcp;
-	//const struct udphdr   *udph=ipoque_struct->packet.udp;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 
-	//struct ipoque_unique_flow_struct      unique_flow;
-	//uint8_t                               new_connection;
 
 	packet->detected_protocol = 0;
 
@@ -1419,9 +1385,6 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 	if (iph != NULL && iph->saddr < iph->daddr)
 		packet->packet_direction = 1;
 
-
-	packet->packet_lines_parsed_complete = 0;
-	packet->packet_unix_lines_parsed_complete = 0;
 	if (flow == NULL)
 		return;
 
@@ -1431,13 +1394,8 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 	}
 
 	packet->detected_protocol = flow->detected_protocol;
-	ipoque_struct->packet.detected_sub_protocol = flow->protocol_subtype;
-
 
 	if (tcph != NULL) {
-		/* reset retried bytes here before setting it */
-		packet->num_retried_bytes = 0;
-
 		if (flow->next_tcp_seq_nr[0] == 0 && flow->next_tcp_seq_nr[1] == 0) {
 			/* initalize tcp sequence counters */
 			if (tcph->seq != 0 && tcph->ack_seq != 0) {
@@ -1450,7 +1408,7 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 			if (((u32)
 				 (ntohl(tcph->seq) -
 				  flow->next_tcp_seq_nr[packet->packet_direction])) >
-				ipoque_struct->tcp_max_retransmission_window_size) {
+				IPOQUE_DEFAULT_MAX_TCP_RETRANSMISSION_WINDOW_SIZE) {
 
 				packet->tcp_retransmission = 1;
 
@@ -1460,8 +1418,8 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 					/* num_retried_bytes actual_payload_len hold info about the partial retry
 					   analyzer which require this info can make use of this info
 					   Other analyzer can use packet->payload_packet_len */
-					packet->num_retried_bytes = flow->next_tcp_seq_nr[packet->packet_direction] - ntohl(tcph->seq);
-					packet->actual_payload_len = packet->payload_packet_len - packet->num_retried_bytes;
+					int num_retried_bytes = flow->next_tcp_seq_nr[packet->packet_direction] - ntohl(tcph->seq);
+					packet->actual_payload_len = packet->payload_packet_len - num_retried_bytes;
 					flow->next_tcp_seq_nr[packet->packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
 				}
 			}
@@ -1469,16 +1427,8 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 			   actual_payload_len is initialized to payload_packet_len during tcp header parsing itself.
 			   It will be changed only in case of retransmission */
 			else {
-				packet->num_retried_bytes = 0;
 				flow->next_tcp_seq_nr[packet->packet_direction] = ntohl(tcph->seq) + packet->payload_packet_len;
 			}
-
-
-		}
-
-		if (tcph->rst) {
-			flow->next_tcp_seq_nr[0] = 0;
-			flow->next_tcp_seq_nr[1] = 0;
 		}
 	}
 
@@ -1492,134 +1442,132 @@ static inline void ipoque_connection_tracking(struct ipoque_detection_module_str
 
 }
 
-unsigned int ipoque_detection_process_packet(struct ipoque_detection_module_struct
-											 *ipoque_struct, void *flow,
+unsigned int ipoque_detection_process_packet(struct ipoque_static_data *ipoque_s, void *flow,
 											 const unsigned char *packet,
 											 const unsigned short packetlen,
 											 const IPOQUE_TIMESTAMP_COUNTER_SIZE current_tick, void *src, void *dst)
 {
-	u32 a;
+	struct ipoque_detection_module_struct ipoque_struct;
 	IPQ_SELECTION_BITMASK_PROTOCOL_SIZE ipq_selection_packet;
 	IPOQUE_PROTOCOL_BITMASK detection_bitmask;
+	u32 a;
 
+	memset(&ipoque_struct, 0, sizeof(ipoque_struct));
+	ipoque_struct.sd = ipoque_s;
 
 	/* need at least 20 bytes for ip header */
 	if (packetlen < 20) {
-		ipoque_struct->packet.detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
+		ipoque_struct.packet.detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
 		return IPOQUE_PROTOCOL_UNKNOWN;
 	}
-	ipoque_struct->packet.tick_timestamp = current_tick;
-	ipoque_struct->flow = flow;
+	ipoque_struct.packet.tick_timestamp = current_tick;
+	ipoque_struct.flow = flow;
 
 	/* parse packet */
-	ipoque_struct->packet.iph = (struct iphdr *) packet;
+	ipoque_struct.packet.iph = (struct iphdr *) packet;
 	/* we are interested in ipv4 packet */
 
-	if (ipq_init_packet_header(ipoque_struct, packetlen) != 0) {
-		ipoque_struct->packet.detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
+	if (ipq_init_packet_header(&ipoque_struct, packetlen) != 0) {
+		ipoque_struct.packet.detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
 		return IPOQUE_PROTOCOL_UNKNOWN;
 	}
 	/* detect traffic for tcp or udp only */
 
-	ipoque_struct->src = src;
-	ipoque_struct->dst = dst;
-	ipoque_connection_tracking(ipoque_struct);
+	ipoque_struct.src = src;
+	ipoque_struct.dst = dst;
+	ipoque_connection_tracking(&ipoque_struct);
 
-	if (flow == NULL && (ipoque_struct->packet.tcp != NULL || ipoque_struct->packet.udp != NULL)) {
-		ipoque_struct->packet.detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
+	if (flow == NULL && (ipoque_struct.packet.tcp != NULL || ipoque_struct.packet.udp != NULL)) {
+		ipoque_struct.packet.detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
 		return (IPOQUE_PROTOCOL_UNKNOWN);
 	}
 
 	/* build ipq_selction packet bitmask */
 	ipq_selection_packet = IPQ_SELECTION_BITMASK_PROTOCOL_COMPLETE_TRAFFIC;
-	if (ipoque_struct->packet.iph != NULL) {
+	if (ipoque_struct.packet.iph != NULL) {
 		ipq_selection_packet |= IPQ_SELECTION_BITMASK_PROTOCOL_IP | IPQ_SELECTION_BITMASK_PROTOCOL_IPV4_OR_IPV6;
 
 	}
-	if (ipoque_struct->packet.tcp != NULL) {
+	if (ipoque_struct.packet.tcp != NULL) {
 		ipq_selection_packet |=
 			(IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP | IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP);
 
 	}
-	if (ipoque_struct->packet.udp != NULL) {
+	if (ipoque_struct.packet.udp != NULL) {
 		ipq_selection_packet |=
 			(IPQ_SELECTION_BITMASK_PROTOCOL_INT_UDP | IPQ_SELECTION_BITMASK_PROTOCOL_INT_TCP_OR_UDP);
 	}
-	if (ipoque_struct->packet.payload_packet_len != 0) {
+	if (ipoque_struct.packet.payload_packet_len != 0) {
 		ipq_selection_packet |= IPQ_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD;
 	}
 
-	if (ipoque_struct->packet.tcp_retransmission == 0) {
+	if (ipoque_struct.packet.tcp_retransmission == 0) {
 		ipq_selection_packet |= IPQ_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION;
 
 	}
 
 
-	IPOQUE_SAVE_AS_BITMASK(detection_bitmask, ipoque_struct->packet.detected_protocol);
+	IPOQUE_SAVE_AS_BITMASK(detection_bitmask, ipoque_struct.packet.detected_protocol);
 
 
-	if (flow != NULL && ipoque_struct->packet.tcp != NULL) {
-		if (ipoque_struct->packet.payload_packet_len != 0) {
-			for (a = 0; a < ipoque_struct->callback_buffer_size_tcp_payload; a++) {
-				if ((ipoque_struct->callback_buffer_tcp_payload[a].ipq_selection_bitmask & ipq_selection_packet) ==
-					ipoque_struct->callback_buffer_tcp_payload[a].ipq_selection_bitmask
-					&& IPOQUE_BITMASK_COMPARE(ipoque_struct->flow->excluded_protocol_bitmask,
-											  ipoque_struct->callback_buffer_tcp_payload[a].excluded_protocol_bitmask) == 0
-					&& IPOQUE_BITMASK_COMPARE(ipoque_struct->callback_buffer_tcp_payload[a].detection_bitmask,
+	if (flow != NULL && ipoque_struct.packet.tcp != NULL) {
+		if (ipoque_struct.packet.payload_packet_len != 0) {
+			for (a = 0; a < ipoque_s->callback_buffer_size_tcp_payload; a++) {
+				if ((ipoque_s->callback_buffer_tcp_payload[a].ipq_selection_bitmask & ipq_selection_packet) ==
+					ipoque_s->callback_buffer_tcp_payload[a].ipq_selection_bitmask
+					&& IPOQUE_BITMASK_COMPARE(ipoque_struct.flow->excluded_protocol_bitmask,
+											  ipoque_s->callback_buffer_tcp_payload[a].excluded_protocol_bitmask) == 0
+					&& IPOQUE_BITMASK_COMPARE(ipoque_s->callback_buffer_tcp_payload[a].detection_bitmask,
 											  detection_bitmask) != 0) {
-					ipoque_struct->callback_buffer_tcp_payload[a].func(ipoque_struct);
+					ipoque_s->callback_buffer_tcp_payload[a].func(&ipoque_struct);
 				}
 			}
 		} else {				/* no payload */
 
-			for (a = 0; a < ipoque_struct->callback_buffer_size_tcp_no_payload; a++) {
-				if ((ipoque_struct->callback_buffer_tcp_no_payload[a].ipq_selection_bitmask & ipq_selection_packet) ==
-					ipoque_struct->callback_buffer_tcp_no_payload[a].ipq_selection_bitmask
-					&& IPOQUE_BITMASK_COMPARE(ipoque_struct->flow->excluded_protocol_bitmask,
-											  ipoque_struct->callback_buffer_tcp_no_payload[a].excluded_protocol_bitmask) == 0
-					&& IPOQUE_BITMASK_COMPARE(ipoque_struct->callback_buffer_tcp_no_payload[a].detection_bitmask,
+			for (a = 0; a < ipoque_s->callback_buffer_size_tcp_no_payload; a++) {
+				if ((ipoque_s->callback_buffer_tcp_no_payload[a].ipq_selection_bitmask & ipq_selection_packet) ==
+					ipoque_s->callback_buffer_tcp_no_payload[a].ipq_selection_bitmask
+					&& IPOQUE_BITMASK_COMPARE(ipoque_struct.flow->excluded_protocol_bitmask,
+											  ipoque_s->callback_buffer_tcp_no_payload[a].excluded_protocol_bitmask) == 0
+					&& IPOQUE_BITMASK_COMPARE(ipoque_s->callback_buffer_tcp_no_payload[a].detection_bitmask,
 											  detection_bitmask) != 0) {
-					ipoque_struct->callback_buffer_tcp_no_payload[a].func(ipoque_struct);
+					ipoque_s->callback_buffer_tcp_no_payload[a].func(&ipoque_struct);
 				}
 			}
 		}
-	} else if (flow != NULL && ipoque_struct->packet.udp != NULL) {
-		for (a = 0; a < ipoque_struct->callback_buffer_size_udp; a++) {
-			if ((ipoque_struct->callback_buffer_udp[a].ipq_selection_bitmask & ipq_selection_packet) ==
-				ipoque_struct->callback_buffer_udp[a].ipq_selection_bitmask
-				&& IPOQUE_BITMASK_COMPARE(ipoque_struct->flow->excluded_protocol_bitmask,
-										  ipoque_struct->callback_buffer_udp[a].excluded_protocol_bitmask) == 0
-				&& IPOQUE_BITMASK_COMPARE(ipoque_struct->callback_buffer_udp[a].detection_bitmask,
+	} else if (flow != NULL && ipoque_struct.packet.udp != NULL) {
+		for (a = 0; a < ipoque_s->callback_buffer_size_udp; a++) {
+			if ((ipoque_s->callback_buffer_udp[a].ipq_selection_bitmask & ipq_selection_packet) ==
+				ipoque_s->callback_buffer_udp[a].ipq_selection_bitmask
+				&& IPOQUE_BITMASK_COMPARE(ipoque_struct.flow->excluded_protocol_bitmask,
+										  ipoque_s->callback_buffer_udp[a].excluded_protocol_bitmask) == 0
+				&& IPOQUE_BITMASK_COMPARE(ipoque_s->callback_buffer_udp[a].detection_bitmask,
 										  detection_bitmask) != 0) {
-				ipoque_struct->callback_buffer_udp[a].func(ipoque_struct);
+				ipoque_s->callback_buffer_udp[a].func(&ipoque_struct);
 
 			}
 		}
 	} else {
 
-		for (a = 0; a < ipoque_struct->callback_buffer_size_non_tcp_udp; a++) {
-			if ((ipoque_struct->callback_buffer_non_tcp_udp[a].ipq_selection_bitmask & ipq_selection_packet) ==
-				ipoque_struct->callback_buffer_non_tcp_udp[a].ipq_selection_bitmask
-				&& (ipoque_struct->flow == NULL ||
-					IPOQUE_BITMASK_COMPARE(ipoque_struct->flow->excluded_protocol_bitmask,
-										   ipoque_struct->callback_buffer_non_tcp_udp[a].excluded_protocol_bitmask) == 0)
-				&& IPOQUE_BITMASK_COMPARE(ipoque_struct->callback_buffer_non_tcp_udp[a].detection_bitmask,
+		for (a = 0; a < ipoque_s->callback_buffer_size_non_tcp_udp; a++) {
+			if ((ipoque_s->callback_buffer_non_tcp_udp[a].ipq_selection_bitmask & ipq_selection_packet) ==
+				ipoque_s->callback_buffer_non_tcp_udp[a].ipq_selection_bitmask
+				&& (ipoque_struct.flow == NULL ||
+					IPOQUE_BITMASK_COMPARE(ipoque_struct.flow->excluded_protocol_bitmask,
+										   ipoque_s->callback_buffer_non_tcp_udp[a].excluded_protocol_bitmask) == 0)
+				&& IPOQUE_BITMASK_COMPARE(ipoque_s->callback_buffer_non_tcp_udp[a].detection_bitmask,
 										  detection_bitmask) != 0) {
 
-				ipoque_struct->callback_buffer_non_tcp_udp[a].func(ipoque_struct);
+				ipoque_s->callback_buffer_non_tcp_udp[a].func(&ipoque_struct);
 			}
 
 		}
 	}
 
-
-
-	a = ipoque_struct->packet.detected_protocol;
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, a)
+	a = ipoque_struct.packet.detected_protocol;
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_s->detection_bitmask, a)
 		== 0)
 		a = IPOQUE_PROTOCOL_UNKNOWN;
-
-
 
 	return a;
 }
@@ -1641,31 +1589,14 @@ u32 ipq_bytestream_to_number(const u8 * str, u16 max_chars_to_read, u16 * bytes_
 
 /* internal function for every detection to parse one packet and to increase the info buffer */
 void ipq_parse_packet_line_info(struct ipoque_detection_module_struct
-								*ipoque_struct)
+								*ipoque_struct, struct ipoque_parse_data *pd)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	u32 a;
 	u16 end = packet->payload_packet_len - 1;
 	const u8 *ptr;
 
-	if (packet->packet_lines_parsed_complete != 0)
-		return;
-
-	packet->packet_lines_parsed_complete = 1;
-	packet->parsed_lines = 0;
-
-	packet->empty_line_position_set = 0;
-
-	packet->host_line.ptr = NULL;
-	packet->host_line.len = 0;
-	packet->content_line.ptr = NULL;
-	packet->content_line.len = 0;
-	packet->accept_line.ptr = NULL;
-	packet->accept_line.len = 0;
-	packet->user_agent_line.ptr = NULL;
-	packet->user_agent_line.len = 0;
-	packet->http_url_name.ptr = NULL;
-	packet->http_url_name.len = 0;
+	memset(pd, 0, sizeof(*pd));
 
 	if (packet->payload_packet_len == 0)
 		return;
@@ -1680,51 +1611,51 @@ void ipq_parse_packet_line_info(struct ipoque_detection_module_struct
 				&& memcmp(ptr, "Host:", 5) == 0) {
 				// some stupid clients omit a space and place the hostname directly after the colon
 				if (ptr[5] == ' ') {
-					packet->host_line.ptr = &ptr[6];
-					packet->host_line.len = len - 6;
+					pd->host_line.ptr = &ptr[6];
+					pd->host_line.len = len - 6;
 				} else {
-					packet->host_line.ptr = &ptr[5];
-					packet->host_line.len = len - 5;
+					pd->host_line.ptr = &ptr[5];
+					pd->host_line.len = len - 5;
 				}
 			}
 
 			if (len > 14 &&
 				(memcmp(ptr, "Content-Type: ", 14) == 0 ||
 				 memcmp(ptr, "Content-type: ", 14) == 0)) {
-				packet->content_line.ptr = &ptr[14];
-				packet->content_line.len = len - 14;
+				pd->content_line.ptr = &ptr[14];
+				pd->content_line.len = len - 14;
 			}
 
 			if (len > 13 && memcmp(ptr, "content-type:", 13) == 0) {
-				packet->content_line.ptr = &ptr[13];
-				packet->content_line.len = len - 13;
+				pd->content_line.ptr = &ptr[13];
+				pd->content_line.len = len - 13;
 			}
 
 			if (len > 8 && memcmp(ptr, "Accept: ", 8) == 0) {
-				packet->accept_line.ptr = &ptr[8];
-				packet->accept_line.len = len - 8;
+				pd->accept_line.ptr = &ptr[8];
+				pd->accept_line.len = len - 8;
 			}
 
 			if (len > 9 && memcmp(ptr, "Referer: ", 9) == 0) {
-				packet->referer_line.ptr = &ptr[9];
-				packet->referer_line.len = len - 9;
+				pd->referer_line.ptr = &ptr[9];
+				pd->referer_line.len = len - 9;
 			}
 
 			if (len > 12 && memcmp(ptr, "User-Agent: ", 12) == 0) {
-				packet->user_agent_line.ptr = &ptr[12];
-				packet->user_agent_line.len = len - 12;
+				pd->user_agent_line.ptr = &ptr[12];
+				pd->user_agent_line.len = len - 12;
 			}
 
 			if (len == 0) {
-				packet->empty_line_position = a;
-				packet->empty_line_position_set = 1;
+				pd->empty_line_position = a;
+				pd->empty_line_position_set = 1;
 			}
 
-			if (packet->parsed_lines >= (IPOQUE_MAX_PARSE_LINES_PER_PACKET - 1)) {
+			if (pd->parsed_lines >= (IPOQUE_MAX_PARSE_LINES_PER_PACKET - 1)) {
 				return;
 			}
 
-			packet->parsed_lines++;
+			pd->parsed_lines++;
 			ptr = &packet->payload[a + 2];
 			len = 0;
 
@@ -1735,8 +1666,8 @@ void ipq_parse_packet_line_info(struct ipoque_detection_module_struct
 		}
 	}
 
-	if (packet->parsed_lines >= 1)
-		packet->parsed_lines++;
+	if (pd->parsed_lines >= 1)
+		pd->parsed_lines++;
 }
 
 void ipq_connection_detected(struct ipoque_detection_module_struct *ipoque_struct, int protocol)
@@ -1747,6 +1678,18 @@ void ipq_connection_detected(struct ipoque_detection_module_struct *ipoque_struc
 	flow->detected_protocol = protocol;
 	packet->detected_protocol = protocol;
 }
+
+void
+ipq_lookup_flow_addr(struct ipoque_detection_module_struct *ipoque_struct, int protocol,
+		     struct ipoque_id_struct **src, struct ipoque_id_struct **dst)
+{
+	if (dst)
+		*dst = ipoque_struct->dst;
+
+	if (src)
+		*src = ipoque_struct->src;
+}
+
 
 
 bool get_next_line(const u8 **p, const u8 *end, const u8 **line, int *len)

@@ -36,11 +36,6 @@ static u8 search_ftp(struct ipoque_detection_module_struct *ipoque_struct)
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
-
-
 	/* Check for initial Server response */
 	if ((flow->ftp_stage == 0)
 		&& packet->payload_packet_len > 2) {
@@ -90,12 +85,13 @@ static u8 search_ftp(struct ipoque_detection_module_struct *ipoque_struct)
 static void search_passive_ftp_mode(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
-	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src;
 	u16 plen;
 	u8 i;
 	u32 ftp_ip;
 
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_FTP, &src, &dst);
 
 // TODO check if normal passive mode also needs adaption for ipv6
 	if ((packet->payload_packet_len > 30
@@ -199,8 +195,10 @@ static void search_passive_ftp_mode(struct ipoque_detection_module_struct *ipoqu
 static void search_active_ftp_mode(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_FTP, &src, &dst);
 
 	if (packet->payload_packet_len > 5
 		&& (ipq_mem_cmp(packet->payload, "PORT ", 5) == 0 || ipq_mem_cmp(packet->payload, "EPRT ", 5) == 0)) {
@@ -229,10 +227,10 @@ static void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
-
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_FTP, &src, &dst);
 
 	if (src != NULL && ipq_packet_dst_ip_eql(packet, &src->ftp_ip)
 		&& packet->tcp->syn != 0 && packet->tcp->ack == 0
@@ -242,7 +240,7 @@ static void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_
 		IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "possible ftp data, src!= 0.\n");
 
 		if (((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-			 (packet->tick_timestamp - src->ftp_timer)) >= ipoque_struct->ftp_connection_timeout) {
+			 (packet->tick_timestamp - src->ftp_timer)) >= ipoque_struct->sd->ftp_connection_timeout) {
 			src->ftp_timer_set = 0;
 		} else if (ntohs(packet->tcp->dest) > 1024
 				   && (ntohs(packet->tcp->source) > 1024 || ntohs(packet->tcp->source) == 20)) {
@@ -260,7 +258,7 @@ static void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_
 		IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "possible ftp data; dst!= 0.\n");
 
 		if (((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-			 (packet->tick_timestamp - dst->ftp_timer)) >= ipoque_struct->ftp_connection_timeout) {
+			 (packet->tick_timestamp - dst->ftp_timer)) >= ipoque_struct->sd->ftp_connection_timeout) {
 			dst->ftp_timer_set = 0;
 
 		} else if (ntohs(packet->tcp->dest) > 1024
@@ -290,7 +288,6 @@ static void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_
 		search_active_ftp_mode(ipoque_struct);
 		return;
 	}
-
 
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN && search_ftp(ipoque_struct) != 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_FTP, ipoque_struct, IPQ_LOG_DEBUG, "unknown. need next packet.\n");

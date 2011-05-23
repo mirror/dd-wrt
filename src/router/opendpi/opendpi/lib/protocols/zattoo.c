@@ -67,19 +67,20 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+	struct ipoque_parse_data pd;
 	const u8 *p, *end, *line;
 	int len;
 
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO, &src, &dst);
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_ZATTOO) {
 		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - src->zattoo_ts) < ipoque_struct->zattoo_connection_timeout)) {
+							(packet->tick_timestamp - src->zattoo_ts) < ipoque_struct->sd->zattoo_connection_timeout)) {
 			src->zattoo_ts = packet->tick_timestamp;
 		}
 		if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - dst->zattoo_ts) < ipoque_struct->zattoo_connection_timeout)) {
+							(packet->tick_timestamp - dst->zattoo_ts) < ipoque_struct->sd->zattoo_connection_timeout)) {
 			dst->zattoo_ts = packet->tick_timestamp;
 		}
 		return;
@@ -114,9 +115,9 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 				}
 			}
 		} else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "POST http://", 12) == 0) {
-			ipq_parse_packet_line_info(ipoque_struct);
+			ipq_parse_packet_line_info(ipoque_struct, &pd);
 			// test for unique character of the zattoo header
-			if (packet->parsed_lines == 4 && packet->host_line.ptr != NULL) {
+			if (pd.parsed_lines == 4 && pd.host_line.ptr != NULL) {
 				u32 ip;
 				u16 bytes_read = 0;
 
@@ -124,18 +125,14 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 
 				// and now test the firt 5 bytes of the payload for zattoo pattern
 				if (ip == packet->iph->daddr
-					&& packet->empty_line_position_set != 0
-					&& ((packet->payload_packet_len - packet->empty_line_position) > 10)
-					&& packet->payload[packet->empty_line_position + 2] ==
-					0x03
-					&& packet->payload[packet->empty_line_position + 3] ==
-					0x04
-					&& packet->payload[packet->empty_line_position + 4] ==
-					0x00
-					&& packet->payload[packet->empty_line_position + 5] ==
-					0x04
-					&& packet->payload[packet->empty_line_position + 6] ==
-					0x0a && packet->payload[packet->empty_line_position + 7] == 0x00) {
+					&& pd.empty_line_position_set != 0
+					&& ((packet->payload_packet_len - pd.empty_line_position) > 10)
+					&& packet->payload[pd.empty_line_position + 2] == 0x03
+					&& packet->payload[pd.empty_line_position + 3] == 0x04
+					&& packet->payload[pd.empty_line_position + 4] == 0x00
+					&& packet->payload[pd.empty_line_position + 5] == 0x04
+					&& packet->payload[pd.empty_line_position + 6] == 0x0a
+					&& packet->payload[pd.empty_line_position + 7] == 0x00) {
 					IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct,
 							IPQ_LOG_DEBUG, "add connection over tcp with pattern POST http://\n");
 					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);

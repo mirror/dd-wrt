@@ -29,10 +29,7 @@ static void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
+	struct ipoque_parse_data pd;
 
 	if (packet->tcp != NULL) {
 		if (packet->tcp->dest == htons(8080) && packet->payload_packet_len == 4
@@ -44,9 +41,9 @@ static void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_
 			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FEIDIAN);
 			return;
 		} else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
-			ipq_parse_packet_line_info(ipoque_struct);
-			if (packet->host_line.ptr != NULL && packet->host_line.len == 18
-				&& memcmp(packet->host_line.ptr, "config.feidian.com", 18) == 0) {
+			ipq_parse_packet_line_info(ipoque_struct, &pd);
+			if (pd.host_line.ptr != NULL && pd.host_line.len == 18
+				&& memcmp(pd.host_line.ptr, "config.feidian.com", 18) == 0) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_FEIDIAN);
 				return;
 			}

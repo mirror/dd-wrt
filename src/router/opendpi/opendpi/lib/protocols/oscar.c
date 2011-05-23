@@ -30,8 +30,11 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+	struct ipoque_parse_data pd;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_OSCAR, &src, &dst);
 	if (packet->payload_packet_len >= 10 && packet->payload[0] == 0x2a) {
 
 		/* if is a oscar connection, 10 bytes long */
@@ -74,10 +77,10 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 	/* detect http connections */
 	if (packet->payload_packet_len > 40
 		&& ((memcmp(packet->payload, "GET /aim", 8) == 0) || (memcmp(packet->payload, "GET /im", 7) == 0))) {
-		IPQ_PARSE_PACKET_LINE_INFO(ipoque_struct, packet);
-		if (packet->user_agent_line.len > 15 && packet->user_agent_line.ptr != NULL &&
-			((memcmp(packet->user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
-			 memcmp(packet->user_agent_line.ptr, "mobileICQ/", 10) == 0)) {
+		ipq_parse_packet_line_info(ipoque_struct, &pd);
+		if (pd.user_agent_line.len > 15 && pd.user_agent_line.ptr != NULL &&
+			((memcmp(pd.user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
+			 memcmp(pd.user_agent_line.ptr, "mobileICQ/", 10) == 0)) {
 			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
 			return;
 		}

@@ -29,6 +29,7 @@ static void ipoque_search_ipp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	struct ipoque_parse_data pd;
 
 	u8 i;
 
@@ -89,9 +90,9 @@ static void ipoque_search_ipp(struct ipoque_detection_module_struct
   search_for_next_pattern:
 
 	if (packet->payload_packet_len > 3 && memcmp(packet->payload, "POST", 4) == 0) {
-		ipq_parse_packet_line_info(ipoque_struct);
-		if (packet->content_line.ptr != NULL && packet->content_line.len > 14
-			&& memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
+		ipq_parse_packet_line_info(ipoque_struct, &pd);
+		if (pd.content_line.ptr != NULL && pd.content_line.len > 14
+			&& memcmp(pd.content_line.ptr, "application/ipp", 15) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IPP, ipoque_struct, IPQ_LOG_DEBUG, "found ipp via POST ... application/ipp.\n");
 			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IPP);
 			return;

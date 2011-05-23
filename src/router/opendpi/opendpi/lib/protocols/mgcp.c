@@ -31,8 +31,6 @@ static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	/* information about MGCP taken from http://en.wikipedia.org/wiki/MGCP */
 

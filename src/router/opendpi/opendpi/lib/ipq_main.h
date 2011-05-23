@@ -176,14 +176,9 @@
 
 #define IPQ_LOG_EDONKEY(proto, mod, log_level, args...) \
     IPQ_LOG(proto,mod,log_level,args)
+
 #define IPQ_LOG(proto, mod, log_level, args...)                   \
 {                                                                 \
-    if(mod != NULL) {                                             \
-      mod->ipoque_debug_print_file=__FILE__;                      \
-      mod->ipoque_debug_print_function=__FUNCTION__;              \
-      mod->ipoque_debug_print_line=__LINE__;                      \
-      mod->ipoque_debug_printf(proto, mod, log_level, args);      \
-    }                                                             \
 }
 
 
@@ -197,6 +192,9 @@
 #define IPQ_LOG(proto, mod, log_level, args...) {}
 
 #endif							/* IPOQUE_ENABLE_DEBUG_MESSAGES */
+
+struct ipoque_detection_module_struct;
+
 typedef struct ipq_call_function_struct {
 	IPOQUE_PROTOCOL_BITMASK detection_bitmask;
 	IPOQUE_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -210,17 +208,7 @@ typedef struct ipoque_int_one_line_struct {
 	u16 len;
 } ipoque_int_one_line_struct_t;
 
-typedef struct ipoque_packet_struct {
-	const struct iphdr *iph;
-	const struct tcphdr *tcp;
-	const struct udphdr *udp;
-	const u8 *generic_l4_ptr;	/* is set only for non tcp-udp traffic */
-	const u8 *payload;
-
-	IPOQUE_TIMESTAMP_COUNTER_SIZE tick_timestamp;
-
-	u32 detected_protocol;
-
+struct ipoque_parse_data {
 	struct ipoque_int_one_line_struct host_line;
 	struct ipoque_int_one_line_struct referer_line;
 	struct ipoque_int_one_line_struct content_line;
@@ -228,42 +216,32 @@ typedef struct ipoque_packet_struct {
 	struct ipoque_int_one_line_struct user_agent_line;
 	struct ipoque_int_one_line_struct http_url_name;
 
+	u16 parsed_lines;
+	u16 empty_line_position;
+	u8 empty_line_position_set;
+};
 
-	u16 l3_packet_len;
-	u16 l4_packet_len;
+typedef struct ipoque_packet_struct {
+	const struct iphdr *iph;
+	const struct tcphdr *tcp;
+	const struct udphdr *udp;
+	const u8 *payload;
+
+	IPOQUE_TIMESTAMP_COUNTER_SIZE tick_timestamp;
+
+	u32 detected_protocol;
+
 	u16 payload_packet_len;
 	u16 actual_payload_len;
-	u16 num_retried_bytes;
-	u16 parsed_lines;
-	u16 parsed_unix_lines;
-	u16 empty_line_position;
 	u8 tcp_retransmission;
-	u8 detected_sub_protocol;
-	u8 l4_protocol;
-
-	u8 packet_lines_parsed_complete;
-	u8 packet_unix_lines_parsed_complete;
-	u8 empty_line_position_set;
 	u8 packet_direction:1;
 } ipoque_packet_struct_t;
 
-
-
-typedef struct ipoque_detection_module_struct {
-	IPOQUE_PROTOCOL_BITMASK detection_bitmask;
+struct ipoque_static_data {
 	IPOQUE_PROTOCOL_BITMASK generic_http_packet_bitmask;
-
-	IPOQUE_TIMESTAMP_COUNTER_SIZE current_ts;
+	IPOQUE_PROTOCOL_BITMASK detection_bitmask;
 	u32 ticks_per_second;
 
-#ifdef IPOQUE_ENABLE_DEBUG_MESSAGES
-	void *user_data;
-#endif
-	/* internal structures to save functions calls */
-	struct ipoque_packet_struct packet;
-	struct ipoque_flow_struct *flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
 	/* callback function buffer */
 	struct ipq_call_function_struct
 	 callback_buffer[IPOQUE_MAX_SUPPORTED_PROTOCOLS + 1];
@@ -285,17 +263,8 @@ typedef struct ipoque_detection_module_struct {
 	struct ipq_call_function_struct
 	 callback_buffer_non_tcp_udp[IPOQUE_MAX_SUPPORTED_PROTOCOLS + 1];
 	u32 callback_buffer_size_non_tcp_udp;
-#ifdef IPOQUE_ENABLE_DEBUG_MESSAGES
-	/* debug callback, only set when debug is used */
-	ipoque_debug_function_ptr ipoque_debug_printf;
-	const char *ipoque_debug_print_file;
-	const char *ipoque_debug_print_function;
-	u32 ipoque_debug_print_line;
-#endif
-	void (*direct_download_link_counter_callback) (u32 ddl_id, u16 packet_size);
-	/* misc parameters */
-	u32 tcp_max_retransmission_window_size;
 
+	/* misc parameters */
 	u32 edonkey_upper_ports_only:1;
 	u32 edonkey_safe_mode:1;
 	u32 directconnect_connection_ip_tick_timeout;
@@ -324,13 +293,25 @@ typedef struct ipoque_detection_module_struct {
 	u32 tvants_connection_timeout;
 	u32 orb_rstp_ts_timeout;
 	/* yahoo */
-//      u32 yahoo_http_filetransfer_timeout;
 	u8 yahoo_detect_http_connections;
 	u32 yahoo_lan_video_timeout;
 	u32 zattoo_connection_timeout;
 	u32 jabber_stun_timeout;
 	u32 jabber_file_transfer_timeout;
 	u32 manolito_subscriber_timeout;
+};
+
+typedef struct ipoque_detection_module_struct {
+	IPOQUE_TIMESTAMP_COUNTER_SIZE current_ts;
+
+	struct ipoque_static_data *sd;
+
+	/* internal structures to save functions calls */
+	struct ipoque_packet_struct packet;
+	struct ipoque_flow_struct *flow;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+
 #ifdef IPOQUE_ENABLE_DEBUG_MESSAGES
 #define IPOQUE_IP_STRING_SIZE 40
 	char ip_string[IPOQUE_IP_STRING_SIZE];
@@ -352,9 +333,13 @@ ATTRIBUTE_ALWAYS_INLINE static inline u16 ntohs_ipq_bytestream_to_number(const u
  *  - host, user agent, empty line,....
  */
 void ipq_parse_packet_line_info(struct ipoque_detection_module_struct
-								*ipoque_struct);
+								*ipoque_struct, struct ipoque_parse_data *pd);
 
 void ipq_connection_detected(struct ipoque_detection_module_struct *ipoque_struct, int protocol);
+
+void
+ipq_lookup_flow_addr(struct ipoque_detection_module_struct *ipoque_struct, int protocol,
+		     struct ipoque_id_struct **src, struct ipoque_id_struct **dst);
 
 /* reset ip to zero */
 ATTRIBUTE_ALWAYS_INLINE static inline void ipq_ip_clear(ipq_ip_addr_t * ip)

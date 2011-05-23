@@ -30,23 +30,20 @@ static void ipoque_search_pplive_tcp_udp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 	const u8 *p, *end, *line;
 	int len;
-
-
 	u16 a;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_PPLIVE, ipoque_struct, IPQ_LOG_DEBUG, "search pplive.\n");
-
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_PPLIVE, &src, &dst);
 
 	if (packet->udp != NULL) {
 
 		if (src != NULL && src->pplive_vod_cli_port == packet->udp->source
 			&& IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_PPLIVE)) {
 			if (src->pplive_last_packet_time_set == 1 && (IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				(packet->tick_timestamp - src->pplive_last_packet_time) < ipoque_struct->pplive_connection_timeout) {
+				(packet->tick_timestamp - src->pplive_last_packet_time) < ipoque_struct->sd->pplive_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPLIVE);
 				src->pplive_last_packet_time_set = 1;
 				src->pplive_last_packet_time = packet->tick_timestamp;
@@ -62,7 +59,7 @@ static void ipoque_search_pplive_tcp_udp(struct ipoque_detection_module_struct
 		if (dst != NULL && dst->pplive_vod_cli_port == packet->udp->dest
 			&& IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_PPLIVE)) {
 			if (dst->pplive_last_packet_time_set == 1 && (IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				(packet->tick_timestamp - dst->pplive_last_packet_time) < ipoque_struct->pplive_connection_timeout) {
+				(packet->tick_timestamp - dst->pplive_last_packet_time) < ipoque_struct->sd->pplive_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPLIVE);
 				dst->pplive_last_packet_time_set = 1;
 				dst->pplive_last_packet_time = packet->tick_timestamp;
@@ -181,7 +178,7 @@ static void ipoque_search_pplive_tcp_udp(struct ipoque_detection_module_struct
 		if (src != NULL && src->pplive_vod_cli_port == packet->tcp->source
 			&& IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_PPLIVE)) {
 			if (src->pplive_last_packet_time_set == 1 && (IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				(packet->tick_timestamp - src->pplive_last_packet_time) < ipoque_struct->pplive_connection_timeout) {
+				(packet->tick_timestamp - src->pplive_last_packet_time) < ipoque_struct->sd->pplive_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPLIVE);
 				src->pplive_last_packet_time_set = 1;
 				src->pplive_last_packet_time = packet->tick_timestamp;
@@ -197,7 +194,7 @@ static void ipoque_search_pplive_tcp_udp(struct ipoque_detection_module_struct
 		if (dst != NULL && dst->pplive_vod_cli_port == packet->tcp->dest
 			&& IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_PPLIVE)) {
 			if (dst->pplive_last_packet_time_set == 1 && (IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				(packet->tick_timestamp - dst->pplive_last_packet_time) < ipoque_struct->pplive_connection_timeout) {
+				(packet->tick_timestamp - dst->pplive_last_packet_time) < ipoque_struct->sd->pplive_connection_timeout) {
 				flow->detected_protocol = IPOQUE_PROTOCOL_PPLIVE;
 				packet->detected_protocol = IPOQUE_PROTOCOL_PPLIVE;
 				dst->pplive_last_packet_time_set = 1;
