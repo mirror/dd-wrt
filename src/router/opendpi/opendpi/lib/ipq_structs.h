@@ -129,7 +129,6 @@ typedef struct ipoque_id_struct {
 #endif
 #ifdef IPOQUE_PROTOCOL_GADUGADU
 	u8 gg_call_id[2][7];
-	u8 gg_fmnumber[8];
 #endif
 #ifdef IPOQUE_PROTOCOL_UNENCRYPED_JABBER
 	u8 jabber_voice_stun_used_ports;

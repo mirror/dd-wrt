@@ -30,10 +30,11 @@ static void ipoque_int_manolito_add_connection(struct
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
 	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO);
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO, &src, &dst);
 
 	if (src != NULL) {
 		if (packet->udp != NULL) {
@@ -51,7 +52,6 @@ static void ipoque_int_manolito_add_connection(struct
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
 */
-u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct);
 u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -112,10 +112,10 @@ static void ipoque_search_manolito_tcp_udp(struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
-
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO, &src, &dst);
 	if (packet->tcp != NULL) {
 		if (search_manolito_tcp(ipoque_struct) != 0)
 			return;
@@ -132,25 +132,25 @@ static void ipoque_search_manolito_tcp_udp(struct
 				   || packet->udp->dest == htons(41170)) {
 			if (src != NULL && src->manolito_last_pkt_arrival_time != 0
 				&& (packet->tick_timestamp - src->manolito_last_pkt_arrival_time <
-					ipoque_struct->manolito_subscriber_timeout)) {
+					ipoque_struct->sd->manolito_subscriber_timeout)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO: UDP detected \n");
 				ipoque_int_manolito_add_connection(ipoque_struct);
 				return;
 			} else if (src != NULL
 					   && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time) >=
-					   ipoque_struct->manolito_subscriber_timeout) {
+					   ipoque_struct->sd->manolito_subscriber_timeout) {
 				src->manolito_last_pkt_arrival_time = 0;
 			}
 
 			if (dst != NULL && dst->manolito_last_pkt_arrival_time != 0
 				&& (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time <
-					ipoque_struct->manolito_subscriber_timeout)) {
+					ipoque_struct->sd->manolito_subscriber_timeout)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO: UDP detected \n");
 				ipoque_int_manolito_add_connection(ipoque_struct);
 				return;
 			} else if (dst != NULL
 					   && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time) >=
-					   ipoque_struct->manolito_subscriber_timeout) {
+					   ipoque_struct->sd->manolito_subscriber_timeout) {
 				dst->manolito_last_pkt_arrival_time = 0;
 			}
 

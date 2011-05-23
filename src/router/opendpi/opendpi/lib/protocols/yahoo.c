@@ -62,12 +62,15 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 	const u8 *p, *end, *line;
 	int i, len;
 
 	const struct ipoque_yahoo_header *yahoo = (struct ipoque_yahoo_header *) packet->payload;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_YAHOO, &src, &dst);
+
 	if (packet->payload_packet_len == 0) {
 		return;
 	}
@@ -101,7 +104,7 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 		return;
 	}
 	/* now test for http login, at least 100 a bytes packet */
-	if (ipoque_struct->yahoo_detect_http_connections != 0 && packet->payload_packet_len > 100) {
+	if (ipoque_struct->sd->yahoo_detect_http_connections != 0 && packet->payload_packet_len > 100) {
 		if (memcmp(packet->payload, "POST /relay?token=", 18) == 0
 			|| memcmp(packet->payload, "GET /relay?token=", 17) == 0
 			|| memcmp(packet->payload, "GET /?token=", 12) == 0
@@ -251,7 +254,7 @@ check_next:
 		}
 		if (src != NULL && packet->tcp->dest == htons(5100)
 			&& ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				(packet->tick_timestamp - src->yahoo_video_lan_timer) < ipoque_struct->yahoo_lan_video_timeout)) {
+				(packet->tick_timestamp - src->yahoo_video_lan_timer) < ipoque_struct->sd->yahoo_lan_video_timeout)) {
 			if (src->yahoo_video_lan_dir == 1) {
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
@@ -262,7 +265,7 @@ check_next:
 		}
 		if (dst != NULL && packet->tcp->dest == htons(5100)
 			&& ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				(packet->tick_timestamp - dst->yahoo_video_lan_timer) < ipoque_struct->yahoo_lan_video_timeout)) {
+				(packet->tick_timestamp - dst->yahoo_video_lan_timer) < ipoque_struct->sd->yahoo_lan_video_timeout)) {
 			if (dst->yahoo_video_lan_dir == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_YAHOO, ipoque_struct, IPQ_LOG_DEBUG, "found YAHOO");
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_YAHOO);
@@ -314,7 +317,9 @@ check_next:
 static inline void ipoque_search_yahoo_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *src;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_YAHOO, &src, NULL);
 
 	if (src == NULL || IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO) == 0) {
 		goto excl_yahoo_udp;

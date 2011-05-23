@@ -32,10 +32,11 @@ static void ipoque_int_gnutella_add_connection(struct ipoque_detection_module_st
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
 	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GNUTELLA);
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_GNUTELLA, &src, &dst);
 
 	if (src != NULL) {
 		src->gnutella_ts = packet->tick_timestamp;
@@ -65,29 +66,32 @@ static void ipoque_search_gnutella(struct ipoque_detection_module_struct *ipoque
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+	struct ipoque_parse_data pd;
 	const u8 *p, *end, *line;
 	int len;
-
 	u16 c;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_GNUTELLA, &src, &dst);
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_GNUTELLA) {
+
 		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - src->gnutella_ts) < ipoque_struct->gnutella_timeout)) {
+							(packet->tick_timestamp - src->gnutella_ts) < ipoque_struct->sd->gnutella_timeout)) {
 			IPQ_LOG_GNUTELLA(IPOQUE_PROTOCOL_GNUTELLA, ipoque_struct,
 							 IPQ_LOG_DEBUG, "gnutella : save src connection packet detected\n");
 			src->gnutella_ts = packet->tick_timestamp;
 		} else if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-								   (packet->tick_timestamp - dst->gnutella_ts) < ipoque_struct->gnutella_timeout)) {
+								   (packet->tick_timestamp - dst->gnutella_ts) < ipoque_struct->sd->gnutella_timeout)) {
 			IPQ_LOG_GNUTELLA(IPOQUE_PROTOCOL_GNUTELLA, ipoque_struct,
 							 IPQ_LOG_DEBUG, "gnutella : save dst connection packet detected\n");
 			dst->gnutella_ts = packet->tick_timestamp;
 		}
-		if (src != NULL && (packet->tick_timestamp - src->gnutella_ts) > ipoque_struct->gnutella_timeout) {
+		if (src != NULL && (packet->tick_timestamp - src->gnutella_ts) > ipoque_struct->sd->gnutella_timeout) {
 			src->detected_gnutella_udp_port1 = 0;
 			src->detected_gnutella_udp_port2 = 0;
 		}
-		if (dst != NULL && (packet->tick_timestamp - dst->gnutella_ts) > ipoque_struct->gnutella_timeout) {
+		if (dst != NULL && (packet->tick_timestamp - dst->gnutella_ts) > ipoque_struct->sd->gnutella_timeout) {
 			dst->detected_gnutella_udp_port1 = 0;
 			dst->detected_gnutella_udp_port2 = 0;
 		}
@@ -129,11 +133,11 @@ static void ipoque_search_gnutella(struct ipoque_detection_module_struct *ipoque
 			}
 		}
 		if (packet->payload_packet_len > 50 && ((memcmp(packet->payload, "GET / HTTP", 9) == 0))) {
-			ipq_parse_packet_line_info(ipoque_struct);
-			if ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 15
-				 && memcmp(packet->user_agent_line.ptr, "BearShare Lite ", 15) == 0)
-				|| (packet->accept_line.ptr != NULL && packet->accept_line.len > 24
-					&& memcmp(packet->accept_line.ptr, "application n/x-gnutella", 24) == 0)) {
+			ipq_parse_packet_line_info(ipoque_struct, &pd);
+			if ((pd.user_agent_line.ptr != NULL && pd.user_agent_line.len > 15
+				 && memcmp(pd.user_agent_line.ptr, "BearShare Lite ", 15) == 0)
+				|| (pd.accept_line.ptr != NULL && pd.accept_line.len > 24
+					&& memcmp(pd.accept_line.ptr, "application n/x-gnutella", 24) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_GNUTELLA, ipoque_struct, IPQ_LOG_DEBUG, "DETECTED GNUTELLA GET.\n");
 				ipoque_int_gnutella_add_connection(ipoque_struct);
 			}
@@ -230,7 +234,7 @@ static void ipoque_search_gnutella(struct ipoque_detection_module_struct *ipoque
 	} else if (packet->udp != NULL) {
 		if (src != NULL && (packet->udp->source == src->detected_gnutella_udp_port1 ||
 							packet->udp->source == src->detected_gnutella_udp_port2) &&
-			(packet->tick_timestamp - src->gnutella_ts) < ipoque_struct->gnutella_timeout) {
+			(packet->tick_timestamp - src->gnutella_ts) < ipoque_struct->sd->gnutella_timeout) {
 			IPQ_LOG_GNUTELLA(IPOQUE_PROTOCOL_GNUTELLA, ipoque_struct, IPQ_LOG_DEBUG, "port based detection\n\n");
 			ipoque_int_gnutella_add_connection(ipoque_struct);
 		}
