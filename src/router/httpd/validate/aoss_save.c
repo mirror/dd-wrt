@@ -76,6 +76,7 @@ void aoss_save(webs_t wp)
 	{
 	    nvram_set("wps_registrar",registrar);
 	    addAction("wireless");
+	    service_restart();
 	}
 	// all other vars
 	//validate_cgi(wp);
