@@ -1016,12 +1016,21 @@ copy_entries_to_user(unsigned int total_size,
 		unsigned int i;
 		struct ipt_entry_match *m;
 		struct ipt_entry_target *t;
+		u8 flags;
 
 		e = (struct ipt_entry *)(loc_cpu_entry + off);
 		if (copy_to_user(userptr + off
 				 + offsetof(struct ipt_entry, counters),
 				 &counters[num],
 				 sizeof(counters[num])) != 0) {
+			ret = -EFAULT;
+			goto free_counters;
+		}
+
+		flags = e->ip.flags & ~IPT_F_NO_DEF_MATCH;
+		if (copy_to_user(userptr + off
+				 + offsetof(struct ipt_entry, ip.flags),
+				 &flags, sizeof(flags)) !=0) {
 			ret = -EFAULT;
 			goto free_counters;
 		}
