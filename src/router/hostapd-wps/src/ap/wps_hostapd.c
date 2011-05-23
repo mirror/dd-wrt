@@ -305,6 +305,31 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 		os_memcpy(hapd->wps->network_key, cred->key, cred->key_len);
 	}
 	hapd->wps->wps_state = WPS_STATE_CONFIGURED;
+	nvram_set("wps_status","1");
+	char ifname[32];
+	strncpy(ifname,hapd->iface->config_fname,4);
+	ifname[4]=0;
+	char akm[32];
+	sprintf(akm,"%s_akm",ifname);
+	char psk[32];
+	sprintf(psk,"%s_wpa_psk",ifname);
+
+	if ((cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) &&
+	    (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK)))
+	    nvram_set(akm,"psk psk2");
+	else if (cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK))
+	    nvram_set(akm,"psk2");
+	else if (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK))
+	    nvram_set(akm,"psk");
+	else
+	    nvram_set(akm,"disabled");
+	char newkey[65];
+	strncpy(newkey,cred->key,cred->key_len);
+	newkey[cred->key_len)=0;
+	nvram_set(psk,newkey);
+
+	nvram_commit();
+	sysprintf("echo done > /tmp/.wpsdone");
 
 	len = os_strlen(hapd->iface->config_fname) + 5;
 	tmp_fname = os_malloc(len);
