@@ -767,9 +767,15 @@ void addWPS(FILE * fp, char *prefix, int configured)
 			}
 
 			if (nvram_match("wps_status", "0"))
+			{
+				nvram_set("wps_status","0");
 				fprintf(fp, "wps_state=1\n");
+			}
 			else
+			{
+				nvram_set("wps_status","1");
 				fprintf(fp, "wps_state=2\n");
+			}
 		}
 		if (nvram_match("wps_registrar", "1"))
 			fprintf(fp, "ap_setup_locked=0\n");
