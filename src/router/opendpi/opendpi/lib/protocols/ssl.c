@@ -37,8 +37,6 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 #ifdef IPOQUE_PROTOCOL_ISKOOT
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 #endif
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 	u32 a;
 #if defined ( IPOQUE_PROTOCOL_TOR) || defined (IPOQUE_PROTOCOL_ISKOOT)
 	u32 b;
@@ -46,11 +44,11 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 
 	u32 end;
 #if defined(IPOQUE_PROTOCOL_UNENCRYPED_JABBER)
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0)
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->sd->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0)
 		goto check_for_ssl_payload;
 #endif
 #if defined(IPOQUE_PROTOCOL_OSCAR)
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_OSCAR) != 0)
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->sd->detection_bitmask, IPOQUE_PROTOCOL_OSCAR) != 0)
 		goto check_for_ssl_payload;
 #endif
 
@@ -64,7 +62,7 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 			if (memcmp(&packet->payload[a], "talk.google.com", 15) == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_UNENCRYPED_JABBER, ipoque_struct, IPQ_LOG_DEBUG, "ssl jabber packet match\n");
 				if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK
-					(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0) {
+					(ipoque_struct->sd->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0) {
 					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
 					return;
 				}
@@ -119,9 +117,6 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
 
 	if (packet->payload_packet_len >= 5 && packet->payload[0] == 0x16 && packet->payload[1] == 0x03
 		&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02)) {
@@ -207,9 +202,6 @@ static void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
 
 	IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "search ssl\n");
 

@@ -57,7 +57,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 	int edk_stage2_len;
 
 	/*len range increase if safe mode and also only once */
-	if (ipoque_struct->edonkey_safe_mode == 0)
+	if (ipoque_struct->sd->edonkey_safe_mode == 0)
 		edk_stage2_len = 140;
 	else if (!flow->edk_ext) {
 		edk_stage2_len = 300;
@@ -71,7 +71,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 		return;
 
 	/* source and dst port must be 80 443 or > 1024 */
-	if (ipoque_struct->edonkey_upper_ports_only != 0) {
+	if (ipoque_struct->sd->edonkey_upper_ports_only != 0) {
 		u16 port;
 		port = ntohs(packet->tcp->source);
 		/* source and dst port must be 80 443 or > 1024 */

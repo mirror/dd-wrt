@@ -30,8 +30,6 @@ static void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
 		goto exclude_ntp;

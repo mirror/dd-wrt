@@ -28,9 +28,6 @@ static void ipoque_search_kontiki(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
 
 	if (packet->payload_packet_len == 4 && (get_u32(packet->payload, 0) == htonl(0x02010100))) {
 		IPQ_LOG(IPOQUE_PROTOCOL_KONTIKI, ipoque_struct, IPQ_LOG_DEBUG, "Kontiki UDP detected.\n");

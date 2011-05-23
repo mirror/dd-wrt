@@ -43,38 +43,22 @@
 #define IPQ_IPIP_PROTOCOL_TYPE  0x04
 
 #define set_protocol_and_bmask(nprot)	\
-{													\
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask,nprot) != 0)		\
-	{												\
-		packet->detected_protocol=(nprot);            						\
-		if (flow != NULL)                                                                       \
-                {                                                                                       \
-		  flow->detected_protocol = (nprot);                                                    \
-                }                                                                                       \
-		if (src != NULL)									\
-		{											\
-			IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask,(nprot));		\
-		}											\
-		if (dst != NULL)									\
-		{											\
-			IPOQUE_ADD_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,(nprot));		\
-		}											\
-	}												\
-}
+do {													\
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->sd->detection_bitmask,nprot) != 0)		\
+		ipq_connection_detected(ipoque_struct, nprot);						\
+} while(0)
 
 
 static void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
 								  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	const struct iphdr *decaps_iph = ipoque_struct->packet.iph;
 
 	if (packet->iph == NULL) {
 		return;
 	}
-	switch (packet->l4_protocol) {
+	switch (decaps_iph->protocol) {
 #ifdef IPOQUE_PROTOCOL_IPSEC
 	case IPQ_IPSEC_PROTOCOL_ESP:
 	case IPQ_IPSEC_PROTOCOL_AH:

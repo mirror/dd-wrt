@@ -42,22 +42,18 @@
 	u32 ipoque_detection_get_sizeof_ipoque_id_struct(void);
 
 
-	struct ipoque_detection_module_struct *ipoque_init_detection_module(u32 ticks_per_second, void
+	struct ipoque_static_data *ipoque_init_detection_module(u32 ticks_per_second, void
 																		*(*ipoque_malloc)
 																		 (unsigned
 																		  long size),
 																		ipoque_debug_function_ptr ipoque_debug_printf);
 	void
-	 ipoque_exit_detection_module(struct ipoque_detection_module_struct
+	 ipoque_exit_detection_module(struct ipoque_static_data
 								  *ipoque_struct, void (*ipoque_free) (void *ptr));
 
-	void
-	 ipoque_set_protocol_detection_bitmask2(struct
-											ipoque_detection_module_struct
-											*ipoque_struct, const IPOQUE_PROTOCOL_BITMASK * detection_bitmask);
+	void ipoque_set_protocol_detection_bitmask2(struct ipoque_static_data *ipoque_struct, const IPOQUE_PROTOCOL_BITMASK * detection_bitmask);
 	unsigned int
-	 ipoque_detection_process_packet(struct ipoque_detection_module_struct
-									 *ipoque_struct, void *flow,
+	 ipoque_detection_process_packet(struct ipoque_static_data *ipoque_struct, void *flow,
 									 const unsigned char *packet,
 									 const unsigned short packetlen,
 									 const IPOQUE_TIMESTAMP_COUNTER_SIZE current_tick, void *src, void *dst);

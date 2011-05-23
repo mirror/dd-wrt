@@ -61,8 +61,6 @@ static void ipoque_search_telnet_tcp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_TELNET, ipoque_struct, IPQ_LOG_DEBUG, "search telnet.\n");
 
