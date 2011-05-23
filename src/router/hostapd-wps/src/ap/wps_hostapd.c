@@ -325,7 +325,7 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	    nvram_set(akm,"disabled");
 	char newkey[65];
 	strncpy(newkey,cred->key,cred->key_len);
-	newkey[cred->key_len)=0;
+	newkey[cred->key_len]=0;
 	nvram_set(psk,newkey);
 
 	nvram_commit();
