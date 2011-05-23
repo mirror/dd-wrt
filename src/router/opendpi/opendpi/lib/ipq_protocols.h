@@ -27,7 +27,7 @@
 
 #define get_u8(X,O)  (*(u8 *)(((u8 *)X) + O))
 
-#if defined(OPENDPI_NETFILTER_MODULE)
+#ifdef OPENDPI_NETFILTER_MODULE
 #include <asm/unaligned.h>
 #include <linux/unaligned/packed_struct.h>
 

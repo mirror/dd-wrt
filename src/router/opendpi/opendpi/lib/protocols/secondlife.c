@@ -29,8 +29,6 @@ static void ipoque_search_secondlife(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 //  if ((ntohs(packet->udp->dest) == 12035 || ntohs(packet->udp->dest) == 12036 || (ntohs(packet->udp->dest) >= 13000 && ntohs(packet->udp->dest) <= 13050))    //port
 //      && packet->payload_packet_len > 6   // min length with no extra header, high frequency and 1 byte message body

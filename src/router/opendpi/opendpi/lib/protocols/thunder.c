@@ -30,8 +30,8 @@ static inline void ipoque_int_search_thunder_udp(struct ipoque_detection_module_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_THUNDER, NULL, NULL);
 
 	if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30
 		&& packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
@@ -58,8 +58,7 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+	struct ipoque_parse_data pd;
 
 	if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30
 		&& packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
@@ -77,22 +76,22 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 
 	if (flow->thunder_stage == 0 && packet->payload_packet_len > 17
 		&& ipq_mem_cmp(packet->payload, "POST / HTTP/1.1\r\n", 17) == 0) {
-		ipq_parse_packet_line_info(ipoque_struct);
+		ipq_parse_packet_line_info(ipoque_struct, &pd);
 
 		IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
 				"maybe thunder http POST packet detected, parsed packet lines: %u, empty line set %u (at: %u)\n",
 				packet->parsed_lines, packet->empty_line_position_set, packet->empty_line_position);
 
-		if (packet->empty_line_position_set != 0 &&
-			packet->content_line.ptr != NULL &&
-			packet->content_line.len == 24 &&
-			ipq_mem_cmp(packet->content_line.ptr, "application/octet-stream",
-						24) == 0 && packet->empty_line_position_set < (packet->payload_packet_len - 8)
-			&& packet->payload[packet->empty_line_position + 2] >= 0x30
-			&& packet->payload[packet->empty_line_position + 2] < 0x40
-			&& packet->payload[packet->empty_line_position + 3] == 0x00
-			&& packet->payload[packet->empty_line_position + 4] == 0x00
-			&& packet->payload[packet->empty_line_position + 5] == 0x00) {
+		if (pd.empty_line_position_set != 0 &&
+			pd.content_line.ptr != NULL &&
+			pd.content_line.len == 24 &&
+			ipq_mem_cmp(pd.content_line.ptr, "application/octet-stream",
+						24) == 0 && pd.empty_line_position_set < (packet->payload_packet_len - 8)
+			&& packet->payload[pd.empty_line_position + 2] >= 0x30
+			&& packet->payload[pd.empty_line_position + 2] < 0x40
+			&& packet->payload[pd.empty_line_position + 3] == 0x00
+			&& packet->payload[pd.empty_line_position + 4] == 0x00
+			&& packet->payload[pd.empty_line_position + 5] == 0x00) {
 			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
 					"maybe thunder http POST packet application does match\n");
 			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_THUNDER);
@@ -108,12 +107,13 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 static void ipoque_int_search_thunder_http(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 	const u8 *p, *end, *line;
 	bool ua_found = false;
 	int i, len;
 
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_THUNDER, &src, &dst);
 	if (packet->payload_packet_len > 5
 		&& memcmp(packet->payload, "GET /", 5) == 0 && IPQ_SRC_OR_DST_HAS_PROTOCOL(src, dst, IPOQUE_PROTOCOL_THUNDER)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG, "HTTP packet detected.\n");

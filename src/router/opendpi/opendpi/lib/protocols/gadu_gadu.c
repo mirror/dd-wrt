@@ -25,55 +25,10 @@
 
 #ifdef IPOQUE_PROTOCOL_GADUGADU
 
-static void parse_gg_foneno(struct ipoque_detection_module_struct *ipoque_struct)
-{
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	u16 pos = 18;
-
-	IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: parse_gg_foneno.\n");
-
-	if (packet->payload_packet_len < 19) {
-		return;
-	}
-
-	while (packet->payload[pos] != '?') {
-		pos++;
-		if ((pos + 18) > packet->payload_packet_len)
-			return;
-	}
-	pos++;
-	if (pos + 16 < packet->payload_packet_len) {
-		char fmnumber[8];
-		int i = 0;
-		if (memcmp(&packet->payload[pos], "fmnumber=", 9) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: fmnumber found .\n");
-		} else
-			return;
-
-		pos += 9;
-		while (packet->payload[pos] != '&') {
-			fmnumber[i] = packet->payload[pos];
-			i++;
-			pos++;
-			if (pos > packet->payload_packet_len || i > 7)
-				break;
-		}
-		if (i < 8) {
-			fmnumber[i] = '\0';
-			if (src != NULL) {
-				memcpy(src->gg_fmnumber, fmnumber, i);
-				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
-						"Gadu-Gadu: fmnumber %s\n", src->gg_fmnumber);
-			}
-		}
-	}
-
-}
-
 static u8 check_for_http(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	struct ipoque_parse_data pd;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: check for http.\n");
 
@@ -82,51 +37,50 @@ static u8 check_for_http(struct ipoque_detection_module_struct *ipoque_struct)
 		return 0;
 	} else if (memcmp(packet->payload, "GET /appsvc/appmsg", 18) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
-		parse_gg_foneno(ipoque_struct);
 		// parse packet
-		ipq_parse_packet_line_info(ipoque_struct);
-		if (packet->parsed_lines <= 1) {
+		ipq_parse_packet_line_info(ipoque_struct, &pd);
+		if (pd.parsed_lines <= 1) {
 			return 0;
 		}
-		if (packet->host_line.ptr == NULL) {
+		if (pd.host_line.ptr == NULL) {
 			return 0;
 		}
-		if (packet->host_line.len >= 19 && memcmp(packet->host_line.ptr, "appmsg.gadu-gadu.pl", 19) != 0) {
+		if (pd.host_line.len >= 19 && memcmp(pd.host_line.ptr, "appmsg.gadu-gadu.pl", 19) != 0) {
 			return 0;
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
-				"Gadu-Gadu: Is gadugadu host FOUND %s\n", packet->host_line.ptr);
+				"Gadu-Gadu: Is gadugadu host FOUND %s\n", pd.host_line.ptr);
 		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 	} else if (memcmp(packet->payload, "POST /send/message/", 15) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
 		// parse packet
-		ipq_parse_packet_line_info(ipoque_struct);
-		if (packet->parsed_lines <= 1) {
+		ipq_parse_packet_line_info(ipoque_struct, &pd);
+		if (pd.parsed_lines <= 1) {
 			return 0;
 		}
-		if (packet->host_line.ptr == NULL) {
+		if (pd.host_line.ptr == NULL) {
 			return 0;
 		}
-		if (packet->host_line.len >= 17 && memcmp(packet->host_line.ptr, "life.gadu-gadu.pl", 17) != 0) {
+		if (pd.host_line.len >= 17 && memcmp(pd.host_line.ptr, "life.gadu-gadu.pl", 17) != 0) {
 			return 0;
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
-				"Gadu-Gadu: Is gadugadu post FOUND %s\n", packet->host_line.ptr);
+				"Gadu-Gadu: Is gadugadu post FOUND %s\n", pd.host_line.ptr);
 		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 
 	} else if (memcmp(packet->payload, "GET /rotate_token", 17) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "Gadu-Gadu: GET FOUND\n");
 
 		// parse packet
-		ipq_parse_packet_line_info(ipoque_struct);
-		if (packet->parsed_lines <= 1) {
+		ipq_parse_packet_line_info(ipoque_struct, &pd);
+		if (pd.parsed_lines <= 1) {
 			return 0;
 		}
-		if (packet->host_line.ptr == NULL) {
+		if (pd.host_line.ptr == NULL) {
 			return 0;
 		}
-		if (packet->host_line.len >= 13 && memcmp(packet->host_line.ptr, "sms.orange.pl", 13) != 0) {
+		if (pd.host_line.len >= 13 && memcmp(pd.host_line.ptr, "sms.orange.pl", 13) != 0) {
 			return 0;
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG,
@@ -144,9 +98,10 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU, &src, &dst);
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_GADUGADU) {
 		if (packet->tcp != NULL) {
 			if (src != NULL)
@@ -288,7 +243,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 			(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_GADUGADU) != 0
 			&& ((src->gg_ft_ip_address == packet->iph->saddr && src->gg_ft_port == packet->tcp->source)
 				|| (src->gg_ft_ip_address == packet->iph->daddr && src->gg_ft_port == packet->tcp->dest))) {
-			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
+			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->sd->gadugadu_peer_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
@@ -305,7 +260,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 														   || (src->gg_call_id[1][0]
 															   && (memcmp(src->gg_call_id[1], &packet->payload[5], 4)
 																   == 0)))) {
-			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
+			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->sd->gadugadu_peer_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "http file transfer detetced \n");
 				return;
@@ -325,7 +280,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 																				 (src->gg_call_id[1],
 																				  &packet->payload[0], 4)
 																				 == 0)))) {
-			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
+			if ((packet->tick_timestamp - src->gg_timeout) < ipoque_struct->sd->gadugadu_peer_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detetced %d\n", htons(packet->tcp->dest));
@@ -341,7 +296,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 			(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_GADUGADU) != 0
 			&& ((dst->gg_ft_ip_address == packet->iph->saddr && dst->gg_ft_port == packet->tcp->source)
 				|| (dst->gg_ft_ip_address == packet->iph->daddr && dst->gg_ft_port == packet->tcp->dest))) {
-			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
+			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->sd->gadugadu_peer_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));
@@ -358,7 +313,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 														   || (dst->gg_call_id[1][0]
 															   && (memcmp(dst->gg_call_id[1], &packet->payload[0], 4)
 																   == 0)))) {
-			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
+			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->sd->gadugadu_peer_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct, IPQ_LOG_DEBUG, "http file transfer detetced \n");
 				return;
@@ -378,7 +333,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 																				 (dst->gg_call_id[1],
 																				  &packet->payload[0], 4)
 																				 == 0)))) {
-			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->gadugadu_peer_connection_timeout) {
+			if ((packet->tick_timestamp - dst->gg_timeout) < ipoque_struct->sd->gadugadu_peer_connection_timeout) {
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_GADUGADU);
 				IPQ_LOG(IPOQUE_PROTOCOL_GADUGADU, ipoque_struct,
 						IPQ_LOG_DEBUG, "file transfer detected %d\n", ntohs(packet->tcp->dest));

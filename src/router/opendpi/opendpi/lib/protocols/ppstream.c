@@ -30,11 +30,6 @@ static void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 
-	// struct ipoque_id_struct *src=ipoque_struct->src;
-	// struct ipoque_id_struct *dst=ipoque_struct->dst;
-
-
-
 	/* check TCP Connections -> Videodata */
 	if (packet->tcp != NULL) {
 		if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0

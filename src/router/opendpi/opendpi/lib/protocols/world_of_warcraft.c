@@ -29,8 +29,10 @@ static void ipoque_search_worldofwarcraft(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_WORLDOFWARCRAFT, &src, &dst);
 
 	if (packet->tcp != NULL) {
 		if (packet->tcp->dest == htons(3724) && packet->payload_packet_len < 70

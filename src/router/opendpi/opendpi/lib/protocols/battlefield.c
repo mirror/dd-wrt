@@ -29,8 +29,9 @@ static void ipoque_search_battlefield(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_BATTLEFIELD, &src, &dst);
 
 	if ((ntohs(packet->udp->source) >= 27000 || ntohs(packet->udp->dest) >= 27000)
 		&& IPQ_SRC_OR_DST_HAS_PROTOCOL(src, dst, IPOQUE_PROTOCOL_BATTLEFIELD)) {

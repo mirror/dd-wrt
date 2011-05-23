@@ -110,8 +110,9 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
+	struct ipoque_parse_data pd;
 	const u8 *p, *end, *line;
 	int len;
 
@@ -119,6 +120,7 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 	u16 status = 0;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "search msn.\n");
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MSN, &src, &dst);
 #ifdef IPOQUE_PROTOCOL_SSL
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_SSL) {
 		if (flow->packet_counter < 7) {
@@ -209,11 +211,11 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 #endif
 				   memcmp(packet->payload, "POST http://", 12) == 0) {
 				/* scan packet if not already done... */
-				ipq_parse_packet_line_info(ipoque_struct);
+				ipq_parse_packet_line_info(ipoque_struct, &pd);
 
-				if (packet->content_line.ptr != NULL
-					&& packet->content_line.len == 27
-					&& memcmp(packet->content_line.ptr, "application/x-msn-messenger", 27) == 0) {
+				if (pd.content_line.ptr != NULL
+					&& pd.content_line.len == 27
+					&& memcmp(pd.content_line.ptr, "application/x-msn-messenger", 27) == 0) {
 					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 							"found MSN by pattern POST http:// .... application/x-msn-messenger.\n");
 					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
@@ -292,11 +294,11 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 				   (memcmp(packet->payload, "HTTP/1.1 200 OK", 15) == 0)
 				) {
 
-				ipq_parse_packet_line_info(ipoque_struct);
+				ipq_parse_packet_line_info(ipoque_struct, &pd);
 
-				if (packet->content_line.ptr != NULL
-					&& packet->content_line.len == 27
-					&& memcmp(packet->content_line.ptr, "application/x-msn-messenger", 27) == 0) {
+				if (pd.content_line.ptr != NULL
+					&& pd.content_line.len == 27
+					&& memcmp(pd.content_line.ptr, "application/x-msn-messenger", 27) == 0) {
 					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 							"HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
 					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
@@ -373,11 +375,11 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 			   (memcmp(packet->payload, "HTTP/1.1 200 OK", 15) == 0)
 			) {
 
-			ipq_parse_packet_line_info(ipoque_struct);
+			ipq_parse_packet_line_info(ipoque_struct, &pd);
 
-			if (packet->content_line.ptr != NULL
-				&& packet->content_line.len == 27
-				&& memcmp(packet->content_line.ptr, "application/x-msn-messenger", 27) == 0) {
+			if (pd.content_line.ptr != NULL
+				&& pd.content_line.len == 27
+				&& memcmp(pd.content_line.ptr, "application/x-msn-messenger", 27) == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 						"HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
 				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
@@ -471,10 +473,10 @@ static inline void ipoque_search_udp_msn_misc(struct ipoque_detection_module_str
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
-
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MSN, &src, &dst);
 	/* do we have an msn login ? */
 	if ((src == NULL || IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MSN) == 0)
 		&& (dst == NULL

@@ -29,9 +29,10 @@ static void ipoque_search_popo_tcp_udp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_POPO, &src, &dst);
 	if (packet->tcp != NULL) {
 		if ((packet->payload_packet_len == 20)
 			&& get_u32(packet->payload, 0) == htonl(0x0c000000)

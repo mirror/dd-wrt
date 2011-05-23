@@ -53,20 +53,21 @@ static void ipoque_search_jabber_tcp(struct ipoque_detection_module_struct
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 
 	u16 x;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_UNENCRYPED_JABBER, ipoque_struct, IPQ_LOG_DEBUG, "search jabber.\n");
+
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_UNENCRYPED_JABBER, &src, &dst);
 
 	/* search for jabber file transfer */
 	/* this part is working asymmetrically */
 	if (packet->tcp != NULL && packet->tcp->syn != 0 && packet->payload_packet_len == 0) {
 		if (src != NULL && src->jabber_file_transfer_port != 0) {
 			if (((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				 (packet->tick_timestamp - src->jabber_stun_or_ft_ts)) >= ipoque_struct->jabber_file_transfer_timeout) {
+				 (packet->tick_timestamp - src->jabber_stun_or_ft_ts)) >= ipoque_struct->sd->jabber_file_transfer_timeout) {
 				IPQ_LOG(IPOQUE_PROTOCOL_UNENCRYPED_JABBER, ipoque_struct,
 						IPQ_LOG_DEBUG, "JABBER src stun timeout %u %u\n", src->jabber_stun_or_ft_ts,
 						packet->tick_timestamp);
@@ -80,7 +81,7 @@ static void ipoque_search_jabber_tcp(struct ipoque_detection_module_struct
 		}
 		if (dst != NULL && dst->jabber_file_transfer_port != 0) {
 			if (((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-				 (packet->tick_timestamp - dst->jabber_stun_or_ft_ts)) >= ipoque_struct->jabber_file_transfer_timeout) {
+				 (packet->tick_timestamp - dst->jabber_stun_or_ft_ts)) >= ipoque_struct->sd->jabber_file_transfer_timeout) {
 				IPQ_LOG(IPOQUE_PROTOCOL_UNENCRYPED_JABBER, ipoque_struct,
 						IPQ_LOG_DEBUG, "JABBER dst stun timeout %u %u\n", dst->jabber_stun_or_ft_ts,
 						packet->tick_timestamp);

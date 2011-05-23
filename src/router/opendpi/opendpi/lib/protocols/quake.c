@@ -28,8 +28,6 @@ static void ipoque_search_quake(struct ipoque_detection_module_struct *ipoque_st
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if ((packet->payload_packet_len == 14
 		 && get_u16(packet->payload, 0) == 0xffff && ipq_mem_cmp(&packet->payload[2], "getInfo", 7) == 0)

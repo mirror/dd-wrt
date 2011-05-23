@@ -29,9 +29,6 @@ static void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_s
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	//    struct ipoque_id_struct         *src=ipoque_struct->src;
-	//    struct ipoque_id_struct         *dst=ipoque_struct->dst;
-
 
 	IPQ_LOG(IPOQUE_PROTOCOL_AIMINI, ipoque_struct, IPQ_LOG_DEBUG, "search aimini.\n");
 

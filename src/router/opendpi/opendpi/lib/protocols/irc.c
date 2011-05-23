@@ -287,8 +287,8 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src = ipoque_struct->src;
-	struct ipoque_id_struct *dst = ipoque_struct->dst;
+	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *dst;
 	int less;
 	u16 c1 = 0;
 	u16 port = 0;
@@ -303,6 +303,8 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 	int len;
 
 
+	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_IRC, &src, &dst);
+
 	IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "irc : search irc\n");
 	if (flow->detected_protocol != IPOQUE_PROTOCOL_IRC && flow->packet_counter > 70) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "exclude irc, packet_counter > 70\n");
@@ -316,11 +318,11 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 	}
 	if (packet->detected_protocol == IPOQUE_PROTOCOL_IRC) {
 		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - src->irc_ts) < ipoque_struct->irc_timeout)) {
+							(packet->tick_timestamp - src->irc_ts) < ipoque_struct->sd->irc_timeout)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "irc : save src connection packet detected\n");
 			src->irc_ts = packet->tick_timestamp;
 		} else if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-								   (packet->tick_timestamp - dst->irc_ts) < ipoque_struct->irc_timeout)) {
+								   (packet->tick_timestamp - dst->irc_ts) < ipoque_struct->sd->irc_timeout)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "irc : save dst connection packet detected\n");
 			dst->irc_ts = packet->tick_timestamp;
 		}
@@ -329,12 +331,12 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 	if (((dst != NULL && IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_IRC)
 		  && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 			  (packet->tick_timestamp - dst->irc_ts)) <
-		  ipoque_struct->irc_timeout)) || (src != NULL
+		  ipoque_struct->sd->irc_timeout)) || (src != NULL
 										   &&
 										   IPOQUE_COMPARE_PROTOCOL_TO_BITMASK
 										   (src->detected_protocol_bitmask, IPOQUE_PROTOCOL_IRC)
 										   && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-											   (packet->tick_timestamp - src->irc_ts)) < ipoque_struct->irc_timeout)) {
+											   (packet->tick_timestamp - src->irc_ts)) < ipoque_struct->sd->irc_timeout)) {
 		if (packet->tcp != NULL) {
 			sport = packet->tcp->source;
 			dport = packet->tcp->dest;

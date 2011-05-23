@@ -30,8 +30,7 @@ static inline void ipoque_search_sip_handshake(struct ipoque_detection_module_st
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+
 #ifndef IPOQUE_PROTOCOL_YAHOO
 	if (packet->payload_packet_len >= 14
 		&& packet->payload[packet->payload_packet_len - 2] == 0x0d
@@ -97,8 +96,6 @@ static inline void ipoque_search_sip_handshake(struct ipoque_detection_module_st
 static void ipoque_search_sip(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_SIP, ipoque_struct, IPQ_LOG_DEBUG, "sip detection...\n");
 

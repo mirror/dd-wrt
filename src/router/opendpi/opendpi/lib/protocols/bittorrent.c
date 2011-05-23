@@ -358,14 +358,20 @@ static void ipoque_search_bittorrent(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+
+	if (flow->packet_counter > 50) {
+		IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_BITTORRENT);
+		return;
+	}
+
 	if (packet->detected_protocol != IPOQUE_PROTOCOL_BITTORRENT) {
 		/* check for tcp retransmission here */
 
-		if ((packet->tcp != NULL)
-			&& (packet->tcp_retransmission == 0 || packet->num_retried_bytes)) {
+		if ((packet->tcp != NULL) && packet->tcp_retransmission == 0) {
 			ipoque_int_search_bittorrent_tcp(ipoque_struct);
 		}
+		find_bittorrent_metadata(ipoque_struct);
 	}
-	find_bittorrent_metadata(ipoque_struct);
 }
 #endif

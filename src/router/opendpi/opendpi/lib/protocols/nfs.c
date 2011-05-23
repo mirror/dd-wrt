@@ -28,8 +28,6 @@ static void ipoque_search_nfs(struct ipoque_detection_module_struct *ipoque_stru
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-//      struct ipoque_id_struct         *src=ipoque_struct->src;
-//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	u8 offset = 0;
 	if (packet->tcp != NULL)
