@@ -307,7 +307,7 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	hapd->wps->wps_state = WPS_STATE_CONFIGURED;
 	nvram_set("wps_status","1");
 	char ifname[32];
-	strncpy(ifname,hapd->iface->config_fname,4);
+	strcpy(ifname,hapd->conf->iface);
 	ifname[4]=0;
 	char akm[32];
 	sprintf(akm,"%s_akm",ifname);
