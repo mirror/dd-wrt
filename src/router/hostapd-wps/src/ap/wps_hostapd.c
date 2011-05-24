@@ -313,6 +313,8 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	sprintf(akm,"%s_akm",ifname);
 	char psk[32];
 	sprintf(psk,"%s_wpa_psk",ifname);
+	char crypto[32];
+	sprintf(crypto,"%s_crypto",ifname);
 
 	if ((cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) &&
 	    (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK)))
@@ -327,6 +329,18 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	strncpy(newkey,cred->key,cred->key_len);
 	newkey[cred->key_len]=0;
 	nvram_set(psk,newkey);
+
+	if (cred->encr_type & (WPS_ENCR_AES | WPS_ENCR_TKIP)) {
+	    nvram_set(crypto,"tkip+aes");
+	}else
+	if (cred->encr_type & (WPS_ENCR_AES)) {
+	    nvram_set(crypto,"aes");
+	}else
+	if (cred->encr_type & (WPS_ENCR_TKIP)) {
+	    nvram_set(crypto,"tkip");
+	}
+	
+
 
 	nvram_commit();
 	sysprintf("echo done > /tmp/.wpsdone");
