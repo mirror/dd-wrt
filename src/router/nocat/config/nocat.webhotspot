@@ -18,7 +18,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_extifname"); %></div>
-			<% show_ifselect("NC_extifname","auto"); %>
+			<% show_ifselect("NC_extifname","auto","tun0"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_ifname"); %></div>
