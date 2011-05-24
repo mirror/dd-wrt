@@ -1,0 +1,106 @@
+#
+# This is an example configuration file for ser2net.  It has the following
+# format:
+#  <TCP port>:<state>:<timeout>:<device>:<options>
+#     TCP port
+#            Name   or  number of the TCP/IP port to accept con-
+#            nections from for this device.  A port number may
+#            be of the form [host,]port, such as 127.0.0.1,2000
+#            or localhost,2000.  If this is specified, it will
+#            only bind to the IP address specified. Otherwise
+#            it will bind to all the ports on the machine.
+#
+#     state  Either raw or rawlp or telnet or off.  off disables
+#            the  port  from  accepting  connections.  It can be
+#            turned on later from the control port.  raw enables
+#            the port and  transfers  all data as-is between the
+#            port  and  the long.  rawlp  enables  the port  and
+#            transfers  all input data to device, device is open
+#            without  any  termios  setting.  It  allow  to  use
+#            /dev/lpX  devices  and  printers connected to them.
+#            telnet enables the port and runs the telnet  proto-
+#            col  on the port to set up telnet parameters.  This
+#            is most useful for using telnet.
+#
+#     timeout
+#            The time (in seconds) before the port will be  dis-
+#            connected  if  there  is no activity on it.  A zero
+#            value disables this function.
+#
+#     device The  name  of  the  device   to  connect  to.  This
+#            must be in the form of /dev/<device>.
+#
+#     options
+#            Sets  operational  parameters  for the serial port.
+#            Options 300, 1200, 2400, 4800, 9600, 19200, 38400,
+#            57600, 115200 set the various baud rates.  EVEN,
+#            ODD, NONE set the parity.  1STOPBIT, 2STOPBITS set
+#            the number of stop bits.  7DATABITS, 8DATABITS set
+#            the number of data bits.  [-]XONXOFF turns on (-
+#            off) XON/XOFF support.  [-]RTSCTS turns on (- off)
+#            hardware flow control, [-]LOCAL turns off (- on)
+#            monitoring of the modem lines, and
+#            [-]HANGUP_WHEN_DONE turns on (- off) lowering the
+#            modem control lines when the connection is done. 
+#            NOBREAK disables automatic setting of the break
+#            setting of the serial port.
+#            The "remctl" option allow remote control (ala RFC
+#            2217) of serial-port configuration.  A banner name
+#            may also be specified, that banner will be printed
+#            for the line.  If no banner is given, then no
+#            banner is printed.
+#            The tw, tr, and tb options take a tracefile name (
+#            specified in TRACEFILE that will take all traced data.
+#            tw is data written to the device, tr is data read from
+#            the device, and tb is both.
+#
+# or...
+
+#  BANNER:<banner name>:banner
+#    This will create a banner, if the banner name is given in the
+#    options of a line, that banner will be printed.  This takes the
+#    standard "C" \x characters (\r is carraige return, \n is newline,
+#    etc.).  It also accepts \d, which prints the device name, \p,
+#    which prints the TCP port number, and \s which prints the serial
+#    parameters (eg 9600N81).  Banners can span lines if the last
+#    character on a line is '\'.  Note that you *must* use \r\n to
+#    start a new line.
+#
+#  TRACEFILE:<name>:filename
+#    This specifies a filename to trace output into, as tw:/tmp/trace1.
+#    This takes a large number of escape sequences, see the man page
+#    for details on these options.
+#
+# Note that the same device can be listed multiple times under different
+# ports, this allows the same serial port to have both telnet and raw
+# protocols.
+
+BANNER:banner1:Welcome to ser2net TCP port \p device \d\r\n\
+second line \
+third line\r\n
+
+BANNER:banner2:this is ser2net TCP port \p device \d\r\n\
+second line \
+third line\r\n
+
+BANNER:banner3:this is ser2net TCP port \p device \d  serial parms \s\r\n
+
+TRACEFILE:tw1:/tmp/tw-\p-\Y-\M-\D-\H:\i:\s.\U
+TRACEFILE:tr1:/tmp/tr-\p-\Y-\M-\D-\H:\i:\s.\U
+
+2001:raw:600:/dev/ttyS0:9600 NONE 1STOPBIT 8DATABITS XONXOFF LOCAL -RTSCTS
+#2002:raw:600:/dev/ttyS1:9600 NONE 1STOPBIT 8DATABITS XONXOFF LOCAL -RTSCTS
+2003:raw:5:/dev/ttyS2:9600
+2004:raw:5:/dev/ttyS3:115200
+2005:raw:5:/dev/ttyS4:9600
+2006:raw:5:/dev/ttyS5:9600
+2007:raw:5:/dev/ttyS6:9600 tw=tw1 tr=tr1
+3001:telnet:0:/dev/ttyS0:19200 remctl banner1
+3011:telnet:3:/dev/ttyS0:19200 banner2
+#3002:telnet:0:/dev/ttyS1:9600
+3003:telnet:0:/dev/ttyS2:9600 banner3
+3004:telnet:0:/dev/ttyS3:115200
+3005:telnet:0:/dev/ttyS4:9600
+3006:telnet:0:/dev/ttyS5:9600
+3007:telnet:0:/dev/ttyS6:9600
+5001:rawlp:10:/dev/lp0
