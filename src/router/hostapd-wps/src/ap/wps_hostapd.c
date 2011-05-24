@@ -311,20 +311,39 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	ifname[4]=0;
 	char akm[32];
 	sprintf(akm,"%s_akm",ifname);
+	char smode[32];
+	sprintf(smode,"%s_security_mode",ifname);
 	char psk[32];
 	sprintf(psk,"%s_wpa_psk",ifname);
 	char crypto[32];
 	sprintf(crypto,"%s_crypto",ifname);
+	char ssid[32];
+	sprintf(ssid,"%s_ssid",ifname);
 
 	if ((cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) &&
 	    (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK)))
+	    {
 	    nvram_set(akm,"psk psk2");
+	    nvram_set(smode,"psk psk2");
+	    }
 	else if (cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK))
+	{
 	    nvram_set(akm,"psk2");
+	    nvram_set(smode,"psk2");
+	}
 	else if (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK))
+	{
 	    nvram_set(akm,"psk");
+	    nvram_set(smode,"psk");
+	}
 	else
+	{
 	    nvram_set(akm,"disabled");
+	    nvram_set(smode,"disabled");
+	}
+	
+	
+
 	char newkey[65];
 	strncpy(newkey,cred->key,cred->key_len);
 	newkey[cred->key_len]=0;
@@ -339,6 +358,10 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	if (cred->encr_type & (WPS_ENCR_TKIP)) {
 	    nvram_set(crypto,"tkip");
 	}
+	char str_ssid[40];
+	memcpy(str_ssid,cred->ssid,cred->ssid_len);
+	str_ssid[cred->ssid_len]=0;
+	nvram_set(ssid,str_ssid);
 	
 
 
