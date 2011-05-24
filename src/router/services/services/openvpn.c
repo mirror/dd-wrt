@@ -161,8 +161,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "brctl addif br0 tap0\n"
 			"ifconfig tap0 0.0.0.0 promisc up\n");
 	} else {	//else only bring up tun/tap
-		fprintf(fp, "ifconfig %s0 0.0.0.0 up\n",
-			nvram_safe_get("openvpn_tuntap"));
+//		fprintf(fp, "ifconfig %s0 0.0.0.0 up\n",
+//			nvram_safe_get("openvpn_tuntap"));
 		}
 	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
@@ -316,8 +316,8 @@ void start_openvpn(void)
 			fprintf(fp, "ifconfig tap1 %s up\n",
 				nvram_safe_get("openvpncl_ip"));
 		} else {	//else only bring up tun/tap
-			fprintf(fp, "ifconfig %s1 0.0.0.0 up\n",
-				nvram_safe_get("openvpncl_tuntap"));
+//			fprintf(fp, "ifconfig %s1 0.0.0.0 up\n",
+//				nvram_safe_get("openvpncl_tuntap"));
 			} 
 	}
 	if (nvram_match("openvpncl_nat", "1")) {
