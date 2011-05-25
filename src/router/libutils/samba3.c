@@ -5,7 +5,7 @@ struct samba3_shareuser *getsamba3shareuser(const char *username) {
 	
 	struct samba3_shareuser *user = calloc(1, sizeof(struct samba3_shareuser));
 	
-	strcpy(user->username, username);
+	strncpy(user->username, username,sizeof(user->username)-1);
 
 	return user;
 };
@@ -38,8 +38,8 @@ struct samba3_user *getsamba3user(char *username, char *password) {
 	
 	struct samba3_user *user = calloc(1, sizeof(struct samba3_user));
 	
-	strcpy(user->username, username);
-	strcpy(user->password, password);
+	strncpy(user->username, username,sizeof(user->username)-1);
+	strncpy(user->password, password,sizeof(user->password)-1);
 
 	return user;
 }
@@ -78,9 +78,9 @@ struct samba3_user *getsamba3users(void) {
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if( !strcmp( key, "user" ) ) {
-					strcpy( username, json_string_value( value ));
+					strncpy( username, json_string_value( value ),sizeof(username)-1);
 				} else if( !strcmp( key, "pass" ) ) {
-					strcpy( password, json_string_value( value ));
+					strncpy( password, json_string_value( value ),sizeof(password)-1);
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
@@ -99,9 +99,9 @@ struct samba3_share *getsamba3share(char *mp, char *label, char *access_perms, i
 	
 	struct samba3_share *share = calloc(1, sizeof(struct samba3_share));
 	
-	strcpy(share->mp, mp);
-	strcpy(share->label, label);
-	strcpy(share->access_perms, access_perms);
+	strncpy(share->mp, mp,sizeof(share->mp)-1);
+	strncpy(share->label, label,sizeof(share->label)-1);
+	strncpy(share->access_perms, access_perms,sizeof(share->access_perms)-1);
 	share->public = public;
 	if(users != NULL) {
 		//fprintf(stderr, "[SHAREUSERS] add\n");
@@ -154,11 +154,11 @@ struct samba3_share *getsamba3shares(void) {
 				value = json_object_iter_value(iterator);
 				/* use key and value ... */
 				if( !strcmp( key, "mp" ) ) {
-					strcpy( mp, json_string_value( value ));
+					strncpy( mp, json_string_value( value ),sizeof(mp)-1);
 				} else if( !strcmp( key, "label" ) ) {
-					strcpy( label, json_string_value( value ));
+					strncpy( label, json_string_value( value ),sizeof(label)-1);
 				} else if( !strcmp( key, "perms" ) ) {
-					strcpy( access_perms, json_string_value( value ));
+					strncpy( access_perms, json_string_value( value ),sizeof(access_perms)-1);
 				} else if( !strcmp( key, "public") ) {
 					public = json_integer_value( value );
 				} else if( !strcmp( key, "users" ) ) {
