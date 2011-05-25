@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.34.7
-# Sat Nov 27 00:34:04 2010
+# Linux kernel version: 2.6.34.9
+# Wed May 25 17:53:28 2011
 #
 CONFIG_MIPS=y
 
@@ -762,8 +762,6 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOC2001 is not set
 # CONFIG_MTD_DOC2001PLUS is not set
 # CONFIG_MTD_AR7100_SPI_FLASH is not set
-# CONFIG_MTD_FLASH_16MB is not set
-# CONFIG_MTD_FLASH_8MB is not set
 # CONFIG_MTD_AR9100_PARALLEL_FLASH is not set
 CONFIG_WZRG450NH=y
 CONFIG_WZRG300NH2=y
@@ -806,9 +804,9 @@ CONFIG_HAVE_IDE=y
 #
 # SCSI device support
 #
-CONFIG_SCSI_MOD=y
+CONFIG_SCSI_MOD=m
 # CONFIG_RAID_ATTRS is not set
-CONFIG_SCSI=y
+CONFIG_SCSI=m
 CONFIG_SCSI_DMA=y
 # CONFIG_SCSI_TGT is not set
 # CONFIG_SCSI_NETLINK is not set
@@ -817,12 +815,12 @@ CONFIG_SCSI_PROC_FS=y
 #
 # SCSI support type (disk, tape, CD-ROM)
 #
-CONFIG_BLK_DEV_SD=y
+CONFIG_BLK_DEV_SD=m
 # CONFIG_CHR_DEV_ST is not set
 # CONFIG_CHR_DEV_OSST is not set
-CONFIG_BLK_DEV_SR=y
+CONFIG_BLK_DEV_SR=m
 # CONFIG_BLK_DEV_SR_VENDOR is not set
-CONFIG_CHR_DEV_SG=y
+CONFIG_CHR_DEV_SG=m
 # CONFIG_CHR_DEV_SCH is not set
 CONFIG_SCSI_MULTI_LUN=y
 # CONFIG_SCSI_CONSTANTS is not set
@@ -943,7 +941,6 @@ CONFIG_AG7100_LEN_PER_TX_DS=1536
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_USBNET is not set
 CONFIG_USB_HSO=m
-CONFIG_USB_CDC_PHONET=m
 # CONFIG_USB_IPHETH is not set
 # CONFIG_WAN is not set
 # CONFIG_FDDI is not set
@@ -1136,6 +1133,10 @@ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
 # CONFIG_USB_HWA_HCD is not set
 
 #
+# Enable Host or Gadget support to see Inventra options
+#
+
+#
 # USB Device Class drivers
 #
 CONFIG_USB_ACM=m
@@ -1150,7 +1151,7 @@ CONFIG_USB_PRINTER=m
 #
 # also be needed; see USB_STORAGE Help for more info
 #
-CONFIG_USB_STORAGE=y
+CONFIG_USB_STORAGE=m
 # CONFIG_USB_STORAGE_DEBUG is not set
 # CONFIG_USB_STORAGE_DATAFAB is not set
 # CONFIG_USB_STORAGE_FREECOM is not set
