@@ -13,7 +13,12 @@ samba3:
 samba3-install:
 	mkdir -p $(INSTALLDIR)/samba3
 	install -D samba3/source/bin/smbd $(INSTALLDIR)/samba3/usr/sbin/smbd
-#	install -D samba3/source/bin/nmbd $(INSTALLDIR)/samba3/usr/sbin/nmbd
+ifeq ($(CONFIG_BUFFALO),y)
+	install -D samba3/source/bin/nmbd $(INSTALLDIR)/samba3/usr/sbin/nmbd
+endif
+ifeq ($(CONFIG_NMBD),y)
+	install -D samba3/source/bin/nmbd $(INSTALLDIR)/samba3/usr/sbin/nmbd
+endif
 	install -D samba3/source/bin/smbpasswd $(INSTALLDIR)/samba3/usr/sbin/smbpasswd
 	install -D samba3/config/samba3.webnas $(INSTALLDIR)/samba3/etc/config/samba3.webnas
 #	install -D samba3/config/samba3.startup $(INSTALLDIR)/samba3/etc/config/samba3.startup
