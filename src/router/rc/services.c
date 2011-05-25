@@ -581,10 +581,14 @@ static void handle_nassrv(void)
 	void *handle = NULL;
 
 #ifdef HAVE_FTP
-	handle = startstop_nofree_f("ftpsrv", handle);
+	handle = stop_service_nofree("ftpsrv", handle);
 #endif
 #ifdef HAVE_SAMBA3
-	handle = startstop_nofree_f("samba3", handle);
+	handle = stop_service_nofree("samba3", handle);
+	handle = start_service_nofree_f("samba3", handle);
+#endif
+#ifdef HAVE_FTP
+	handle = start_service_nofree_f("ftpsrv", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
