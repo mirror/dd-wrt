@@ -1,0 +1,15 @@
+Index: samba-3.0.24/source/lib/ms_fnmatch.c
+===================================================================
+--- samba-3.0.24.orig/source/lib/ms_fnmatch.c	2008-08-11 11:08:03.000000000 +0200
++++ samba-3.0.24/source/lib/ms_fnmatch.c	2008-08-11 11:11:33.000000000 +0200
+@@ -153,6 +153,10 @@
+ 	int ret, count, i;
+ 	struct max_n *max_n = NULL;
+ 
++	if (strcmp(pattern, "*") == 0) {
++		return 0;
++	}
++
+ 	if (strcmp(string, "..") == 0) {
+ 		string = ".";
+ 	}

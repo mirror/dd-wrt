@@ -1,0 +1,105 @@
+Index: samba-3.0.24/source/Makefile
+===================================================================
+--- samba-3.0.24.orig/source/Makefile	2008-08-07 11:15:02.000000000 +0200
++++ samba-3.0.24/source/Makefile	2008-08-07 11:18:28.000000000 +0200
+@@ -10,8 +10,6 @@
+ SOURCEROOT=$(shell pwd)/../../../..
+ SHAREDLIBS=$(SOURCEROOT)/sharedlibs
+ 
+-include ${SHAREDLIBS}/ar7def.mk
+-
+ # AR7
+ # prefix=/usr/local/samba
+ prefix=/var/samba
+@@ -22,25 +20,27 @@
+ LIBS= -lcrypt -ldl -lpthread
+ # AR7
+ # CC=gcc
+-CC=${TARGET}-gcc
++CC?=${TARGET}-gcc
+ RANLIB = ${TARGET}-ranlib
+ AR = ${TARGET}-ar
+ 
+ SHLD=${CC} ${CFLAGS}
+ # AR7
+ # CFLAGS= -O -D_SAMBA_BUILD_
+-CFLAGS= -Os -D_SAMBA_BUILD_ -DAVM_NO_PRINTING
+-CFLAGS+= -DAVM_NO_POPT
++CFLAPGS?=
++CFLAGS+= -Os -D_SAMBA_BUILD_ -DAVM_NO_PRINTING
++#CFLAGS+= -DAVM_NO_POPT
+ CFLAGS+= -DAVM_SMALLER
+-
++#CFLAGS+= -DSAMBA_DEBUG
+ # uncomment this to get debugs
+ # CFLAGS += -DSAMBA_DEBUG
+ 
+ # AR7
+ # CPPFLAGS= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+-CPPFLAGS= -D_GNU_SOURCE
++CPPFLAGS?= -D_GNU_SOURCE
++CPPFLAGS+= -D_GNU_SOURCE
+ EXEEXT=
+-LDFLAGS=
++LDFLAGS?=
+ AR=ar
+ LDSHFLAGS=-shared -Wl,-Bsymbolic 
+ WINBIND_NSS_LDSHFLAGS=-shared -Wl,-Bsymbolic 
+
+Index: samba-3.0.24/source/popt/popt.c
+===================================================================
+--- samba-3.0.24.orig/source/popt/popt.c	2008-08-07 11:15:00.000000000 +0200
++++ samba-3.0.24/source/popt/popt.c	2008-08-07 11:15:02.000000000 +0200
+@@ -10,13 +10,14 @@
+ 
+ #include "system.h"
+ 
+-#if HAVE_FLOAT_H
++//#if HAVE_FLOAT_H
+ #include <float.h>
+-#endif
++//#endif
+ #include <math.h>
+ 
+ #include "findme.h"
+ #include "poptint.h"
++#include "../include/config.h"
+ 
+ #ifdef	MYDEBUG
+ /*@unchecked@*/
+@@ -384,7 +385,7 @@
+ 	sprintf(s, "%s/%s", con->execPath, item->argv[0]);
+ 	argv[argc] = s;
+     } else {
+-	argv[argc] = findProgramPath(item->argv[0]);
++	argv[argc] = ""/*findProgramPath(item->argv[0])*/;
+     }
+     if (argv[argc++] == NULL) return POPT_ERROR_NOARG;
+ 
+@@ -1235,4 +1236,3 @@
+     
+     return numargs;
+ }
+-/*@=boundswrite@*/
+Index: samba-3.0.24/source/smbd/server.c
+===================================================================
+--- samba-3.0.24.orig/source/smbd/server.c	2008-08-07 11:15:02.000000000 +0200
++++ samba-3.0.24/source/smbd/server.c	2008-08-07 11:15:02.000000000 +0200
+@@ -47,7 +47,7 @@
+ void _fLog(char *fmt, ...)
+ {
+ 	va_list va;
+-	FILE *fp = fopen("/var/tmp/smbd.log", "a");
++	FILE *fp = fopen("/var/log/smbd.log", "a");
+ 	time_t t = time(0); /* LOG */
+ 
+ 	if (!fp) return;
+@@ -63,7 +63,7 @@
+ void _fDebug(char *fmt, ...)
+ {
+ 	va_list va;
+-	FILE *fp = fopen("/var/tmp/smbd.log", "a");
++	FILE *fp = fopen("/var/log/smbd.log", "a");
+ 	time_t t = time(0); /* LOG */
+ 
+ 	if (!fp) return;
