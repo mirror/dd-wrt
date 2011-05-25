@@ -2206,6 +2206,32 @@ void start_drivers(void)
 		eval("rmmod", "usb-uhci");
 		eval("rmmod", "ehci-hcd");
 		eval("rmmod", "usbcore");
+/* unload filesystems */
+/* xfs */
+		eval("rmmod", "xfs");
+/* fat */
+		eval("rmmod", "msdos");
+		eval("rmmod", "vfat");
+		eval("rmmod", "fat");
+		eval("rmmod", "nls_utf8");
+		eval("rmmod", "nls_iso8859-2");
+		eval("rmmod", "nls_iso8859-1");
+		eval("rmmod", "nls_cp437");
+		eval("rmmod", "nls_base");
+//
+/* ext3 */
+#ifdef HAVE_USB_ADVANCED
+		eval("rmmod", "ext3");
+		eval("rmmod", "jbd");
+#endif
+/* ext2 */
+		eval("rmmod", "ext2");
+		eval("rmmod", "mbcache");
+/* ntfs-3g */
+#ifdef HAVE_NTFS3G
+		eval("rmmod", "fuse");
+#endif
+
 		led_control(USB_POWER, LED_OFF);
 
 		led_control(LED_USB, LED_OFF);
