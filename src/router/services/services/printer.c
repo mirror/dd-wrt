@@ -35,7 +35,7 @@ void stop_printer(void)
 
 void start_printer(void)
 {
-	if (nvram_match("usb_printer", "1")) {
+	if (nvram_match("usb_enable", "1") && nvram_match("usb_printer", "1")) {
 		FILE *test = fopen("/dev/usb/lp0", "rb");
 		if (!test) {
 			eval("mknod", "/dev/lp0", "c", "180", "0");
