@@ -187,8 +187,8 @@ extern void *getUEnv(char *name);
 static void buffalo_defaults(int force)
 {
 	char *pincode = getUEnv("pincode");
-	if (pincode && nvram_get("pincode")==NULL) {
-		nvram_set("pincode",pincode);
+	if (pincode && nvram_get("pincode") == NULL) {
+		nvram_set("pincode", pincode);
 	}
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
@@ -2009,16 +2009,16 @@ void start_restore_defaults(void)
 	}
 
 	if (restore_defaults &&
-	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN12B || brand == ROUTER_ASUS_RTN16)) {
+	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN12
+	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN12B
+	     || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
-	
-	if (restore_defaults &&
-	    (brand == ROUTER_LINKSYS_E4200)) {
+
+	if (restore_defaults && (brand == ROUTER_LINKSYS_E4200)) {
 		nvram_set("wl0_txpwr", "100");
 		nvram_set("wl1_txpwr", "100");
 	}
-	
 #ifndef HAVE_BUFFALO
 	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S
 	    && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
@@ -2099,19 +2099,19 @@ void start_restore_defaults(void)
 		char *style;
 		style = strrchr(globbuf.gl_pathv[i], '/') + 1;
 #ifdef HAVE_PWC
-		if( strcmp( style, "pwc" ) ) 
+		if (strcmp(style, "pwc"))
 #endif
-			if( firststyle[0] == '\0')
-				strcpy( firststyle, style);
-		
-		if( !strcmp( nvram_get("router_style"), style ) ) {
+			if (firststyle[0] == '\0')
+				strcpy(firststyle, style);
+
+		if (!strcmp(nvram_get("router_style"), style)) {
 			found = 1;
 		}
 	}
-	if( found == 0 && firststyle[0] != '\0') {
+	if (found == 0 && firststyle[0] != '\0') {
 		fprintf(stderr, "[SET ROUTER STYLE] %s\n", firststyle);
 		nvram_set("router_style", firststyle);
-		if( !restore_defaults ) {
+		if (!restore_defaults) {
 			nvram_commit();
 		}
 	}
@@ -2165,7 +2165,7 @@ void start_drivers(void)
 		insmod("usb-ohci");
 		insmod("ohci-hcd");
 #ifdef HAVE_DANUBE
-		insmod("dwc_otg"); // usb
+		insmod("dwc_otg");	// usb
 #endif
 
 		if (nvram_match("usb_storage", "1")) {
@@ -2190,6 +2190,10 @@ void start_drivers(void)
 //                      usb_add_ufd();
 //              }
 	} else {
+		eval("stopservice", "samba3");
+		eval("stopservice", "ftpsrv");
+		sysprintf("umount /%s",
+			  nvram_default_get("usb_mntpoint", "mnt"));
 		eval("rmmod", "usblp");
 		eval("rmmod", "printer");
 		eval("rmmod", "usb-storage");
