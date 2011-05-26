@@ -403,31 +403,6 @@ int irq2gpio(int irq)
 		return -EINVAL;
 }
 
-static inline void gpio_line_config(u8 line, u32 direction)
-{
-	u32 reg;
-	if (direction) {
-		if (line < 32) {
-			reg = __raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
-			reg |= (1 << line);
-			__raw_writel(reg, CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
-		} else {
-			reg = __raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
-			reg |= (1 << (line - 32));
-			__raw_writel(reg, CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);		
-		}
-	} else {
-		if (line < 32) {
-			reg = __raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
-			reg &= ~(1 << line);
-			__raw_writel(reg, CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
-		} else {
-			reg = __raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
-			reg &= ~(1 << (line - 32));
-			__raw_writel(reg, CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);		
-		}
-	}
-}
 
 static int cns3xxx_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
 {
