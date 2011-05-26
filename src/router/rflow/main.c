@@ -15,8 +15,8 @@
 
 /*_syscall3(int, setpriority, __priority_which_t, which, id_t, who, int, prio);*/
 static int my_setpriority(__priority_which_t which, id_t who, int prio) {
-	#ifdef __NR_my_setpriority
-	return syscall(__NR_my_setpriority, which, who, prio);
+	#ifdef __NR_setpriority
+	return syscall(__NR_setpriority, which, who, prio);
 	#else
 	errno = ENOSYS;
 	return -1;
