@@ -316,8 +316,9 @@ void start_openvpn(void)
 			fprintf(fp, "ifconfig tap1 %s up\n",
 				nvram_safe_get("openvpncl_ip"));
 		} else {
-			if (nvram_match("openvpncl_tuntap", "tap"))	//else only bring up tap
-				fprintf(fp, "ifconfig tap1 0.0.0.0 up\n"); 
+//			if (nvram_match("openvpncl_tuntap", "tap"))	//else only bring up tap
+//				fprintf(fp, "ifconfig tap1 0.0.0.0 up\n"); 
+
 			}
 	}
 	if (nvram_match("openvpncl_nat", "1")) {
