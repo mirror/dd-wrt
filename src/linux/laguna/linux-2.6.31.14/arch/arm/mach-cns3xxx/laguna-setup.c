@@ -47,6 +47,7 @@
 #include <linux/mmc/host.h>
 #include <mach/board.h>
 #include <mach/dmac.h>
+#include <mach/gpio.h>
 #include <mach/lm.h>
 #include <mach/sdhci.h>
 #include <mach/pm.h>
@@ -525,13 +526,14 @@ static void __init laguna_init(void)
 #define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
 
 
+
+
 static int __init laguna_model_setup(void)
 {
 	if (!machine_is_gw2388())
 		return 0;
 
 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
-
 	if (strncmp(laguna_info.model, "GW", 2) == 0) {
 		printk("CONFIG BITMAP = 0x%08X\n",laguna_info.config_bitmap);
 		if (laguna_info.config_bitmap & ETH0_LOAD)
@@ -555,17 +557,26 @@ static int __init laguna_model_setup(void)
 		if (laguna_info.config_bitmap & (PCIe1_LOAD))
 			cns3xxx_pcie_init(2);
 
-		//if (laguna_info.config_bitmap & (USB0_LOAD))
 			
+		if (strncmp(laguna_info.model, "GW2380", 6) == 0)
+		{
 		platform_device_register(&laguna_usb_otg_device);
 		platform_device_register(&laguna_usb_ehci_device);
 		platform_device_register(&laguna_usb_ohci_device);
+		}else{
+		/* enable gpio power for newer board rev */
+		gpio_line_set(3, 1);
+		gpio_line_config(3, CNS3XXX_GPIO_OUT);
+		gpio_set_value(3, 1);
 
-		//if (laguna_info.config_bitmap & (USB1_LOAD)) {
-		//	platform_device_register(&laguna_usb_ehci_device);
-		//	platform_device_register(&laguna_usb_ohci_device);
-		//}
+		if (laguna_info.config_bitmap & (USB0_LOAD))
+		    platform_device_register(&laguna_usb_otg_device);
 
+		if (laguna_info.config_bitmap & (USB1_LOAD)) {
+			platform_device_register(&laguna_usb_ehci_device);
+			platform_device_register(&laguna_usb_ohci_device);
+		}
+		}
 		if (laguna_info.config_bitmap & (SD_LOAD))
 			platform_device_register(&laguna_sdio_device);
 
