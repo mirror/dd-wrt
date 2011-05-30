@@ -487,58 +487,62 @@
 // Belkin Share Max F5D8235v3 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 32MB ram, fccid: Belkin K7SF5D8235V3)
 #define ROUTER_BELKIN_F5D8235V3 0x9916
 
+#define ROUTER_BOARD_GW2380 0x9a0f
+
 // Belkin Share Max F7D3301v1 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3301V1)
 // Belkin Share Max N300 F7D7301v1  - same
-#define ROUTER_BELKIN_F7D3301 0x9a16
+#define ROUTER_BELKIN_F7D3301 0x9b16
 
 // Belkin Share F7D3302v1 (BCM4718 cpu, BCM5325 switch, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3302V1)
 // Belkin Share N300 F7D7302v1  - same
-#define ROUTER_BELKIN_F7D3302 0x9b16
+#define ROUTER_BELKIN_F7D3302 0x9c16
 
 // Belkin Play Max F7D4301v1 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4301V1)
 // Belkin Play N600 HD F7D8301v1 - same
-#define ROUTER_BELKIN_F7D4301 0x9c16
+#define ROUTER_BELKIN_F7D4301 0x9d16
 
 // Belkin Play F7D4302v1 (dual radio, BCM5325 switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D4302V1)
 // Belkin Play N600 F7D8302v1 - same 
-#define ROUTER_BELKIN_F7D4302 0x9d16
+#define ROUTER_BELKIN_F7D4302 0x9e16
 
 // Asus RT-N10+
-#define ROUTER_ASUS_RTN10PLUS 0x9e1a
+#define ROUTER_ASUS_RTN10PLUS 0x9f1a
 
 // Linksys E1000 v2 (BCM5357 cpu, 4MB serial flash, 32 MB ram, fccid: Linksys Q87-E1000V2)
 // Linksys E1000 v2.1 (BCM5357 cpu, 4MB serial flash, 32 MB ram, fccid: Linksys Q87-E1000V21)
-#define ROUTER_LINKSYS_E1000V2 0x9f1a
+#define ROUTER_LINKSYS_E1000V2 0xa01a
 
 // Repotec RP-WR5422
-#define ROUTER_BOARD_WR5422 0xa01a
+#define ROUTER_BOARD_WR5422 0xa11a
 
 // Asus WL-700ge (BCM4780 cpu, 2MB flash, 64MB ram, BCM5325E switch)
-#define ROUTER_ASUS_WL700GE 0xa117
+#define ROUTER_ASUS_WL700GE 0xa217
 
-#define ROUTER_BOARD_F5D8235 0xa21a
+#define ROUTER_BOARD_F5D8235 0xa31a
 
 // Asus RT-15N
-#define ROUTER_BOARD_RT15N 0xa310c
+#define ROUTER_BOARD_RT15N 0xa410c
 
-#define ROUTER_BOARD_TECHNAXX 0xa40f
+#define ROUTER_BOARD_TECHNAXX 0xa50f
 
-#define ROUTER_BOARD_NEPTUNE 0xa51a
+#define ROUTER_BOARD_NEPTUNE 0xa61a
 
-#define ROUTER_ASUS_RTN12B 0xa6116
+#define ROUTER_ASUS_RTN12B 0xa7116
 
 // Linksys E4200 (dual radio, BCM53115 giga switch, BCM4718 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E4200) >_60K nvram_<
-#define ROUTER_LINKSYS_E4200 0xa716
+#define ROUTER_LINKSYS_E4200 0xa816
 
-#define ROUTER_BOARD_RT3352 0xa81a // concept
+#define ROUTER_BOARD_RT3352 0xa91a // concept
 
 // Asus RT-N10U (BCM5358 cpu, 8MB serial flash / 32MB ram, USB 2.0)
-#define ROUTER_ASUS_RTN10U 0xa9115
+#define ROUTER_ASUS_RTN10U 0xaa115
 
 // Linksys E3200 (dual radio, BCM53125 giga switch, BCM5357 cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E3200) >_60K nvram_<
-#define ROUTER_LINKSYS_E3200 0xaa15
+#define ROUTER_LINKSYS_E3200 0xab15
 
-#define ROUTER_BOARD_GW2380 0x990f
+// Netgear WNDR4000 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Netgear PY310400144) >_60K nvram_<
+#define ROUTER_NETGEAR_WNDR4000 0xac0f
+
 
 
 #define NVROUTER "DD_BOARD"
