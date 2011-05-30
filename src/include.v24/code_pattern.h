@@ -67,6 +67,7 @@
 #define CODE_PATTERN_E3200   "3200"
 #define CODE_PATTERN_E4200   "4200"
 #define CODE_PATTERN_NV60K   "NV60"  //used for flashing nvram=60k routers
+#define CODE_PATTERN_NV60K   "NV64"  //used for flashing nvram=64k routers
 
 
 #ifdef HAVE_OMNI
