@@ -453,6 +453,19 @@ dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 //int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
 //		    unsigned long pfn, unsigned long size, pgprot_t prot)
 
+static DEFINE_MUTEX(mtd_mutex);
+
+static long nvram_unlocked_ioctl(struct file *file, u_int cmd, u_long arg)
+{
+	int ret;
+
+	mutex_lock(&mtd_mutex);
+	ret = dev_nvram_ioctl(file, cmd, arg);
+	mutex_unlock(&mtd_mutex);
+
+	return ret;
+}
+
 static int
 dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
@@ -483,7 +496,10 @@ static struct file_operations dev_nvram_fops = {
 	release:	dev_nvram_release,
 	read:		dev_nvram_read,
 	write:		dev_nvram_write,
-	compat_ioctl:		dev_nvram_ioctl,
+#ifdef CONFIG_COMPAT
+	compat_ioctl:	dev_nvram_ioctl,
+#endif
+	unlocked_ioctl:	nvram_unlocked_ioctl,
 	mmap:		dev_nvram_mmap,
 };
 
