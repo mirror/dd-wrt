@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 / updated since svn15672 / by Silvio Peša / 2011-01-15 // 
+// Croatian Translation / DD-WRT v24-sp2 / updated since svn16041 / by Silvio Peša / 2011-05-30 // 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -32,7 +32,7 @@ share.hostname="Ime Stroja";
 share.vdsl="T-Home VDSL VLAN 7/8 Tagging";
 share.vdslvlan8="VLAN 8 podrška";
 share.wan_vlantag="VLAN Oznaka ID";
-share.compression="PPP Sažimanje";
+share.compression="PPP Sažimanje (MPPC)";
 share.mlppp="Višestruka PPP Veza";
 share.domainname="Ime Domene";
 share.wandomainname="Ime WAN Domene";
@@ -48,6 +48,7 @@ share.mac="MAC Adresa";
 share.none="Nijedna";
 share.none2="nijedna";
 share.both="Oboje";
+share.add="Dodaj";
 share.del="Briši";
 share.remove="Ukloni";
 share.descr="Opis";
@@ -161,6 +162,8 @@ share.styl="Stil";
 share.err="greška";
 share.errs="greške";
 share.meters="metri";
+share.ht40="Wide HT40 (20+20 MHz)";
+share.ht20="Full HT20 (20 MHz)";
 share.dynamicturbo="Dinamički (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
 share.full="Pun (20 MHz)";
@@ -637,7 +640,7 @@ firewall.cookies="Filtrirati Cookies";
 firewall.applet="Filtrirati Java Applets";
 firewall.activex="Filtrirati ActiveX";
 firewall.legend3="Blokiranje WAN Zahtjeva";
-firewall.legend4="Impede DoS/Brutforce";
+firewall.legend4="Impede WAN DoS/Bruteforce";
 firewall.ping="Blokiranje Anonimnih WAN Zahtjeva (ping)";
 firewall.muticast="Filter Multicast";
 firewall.ssh="Limit SSH Access";
@@ -752,7 +755,8 @@ hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Ime Poveznika";
 hotspot.nocat_gatewayaddr="IP Adresa Poveznika";
 hotspot.nocat_home="Home Page";
-hotspot.nocat_ifname="Sučelje";
+hotspot.nocat_extifname="Vanjsko Sučelje";
+hotspot.nocat_ifname="Unutrašnje Sučelje";
 hotspot.nocat_redirect="Homepage Redirection";
 hotspot.nocat_allowweb="Allowed Web Hosts";
 hotspot.nocat_docroot="Document Root";
@@ -1297,9 +1301,6 @@ service.pppoesrv_srv="RP-PPPoE Server Daemon";
 service.pppoesrv_interface="RP-PPPoE Sučelje Poslužitelja";
 service.pppoesrv_srvopt="Opcije RP-PPPoE Poslužitelja";
 service.pppoesrv_compr="Sažimanje";
-service.pppoesrv_remoteaddr="Udaljena Početna IP Adresa";
-service.pppoesrv_remotenet="IP Adresa Udaljene Mreže";
-service.pppoesrv_remotemask="Maska Udaljene Podmreže";
 service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Pogreška";
 service.pppoesrv_limit="Session Limit per MAC";
@@ -1311,6 +1312,10 @@ service.pppoesrv_radaccport="Vrata Radius Računovodstva";
 service.pppoesrv_radkey="Dijeljeni Radius Ključ";
 service.pppoesrv_chaps="Lokalno Upravljanje Korisnicima (CHAP Secrets)";
 
+//help container
+
+hpppoesrv.right2="IP: 0.0.0.0; you'll serve IP's from the pool";
+
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
@@ -1321,7 +1326,7 @@ service.snmp_read="RO Zajednica";
 service.snmp_write="RW Zajednica";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN Poslužitelj";
+service.vpnd_legend="OpenVPN Poslužitelj (Daemon)";
 service.vpnd_srv="Pokreni OpenVPN uslugu";
 service.vpnd_starttype="Način pokretanja";
 service.vpnd_startWanup="nakon WAN sučelja";
@@ -1338,8 +1343,10 @@ service.vpnd_mask="Maska Mreže";
 service.vpnd_startip="Pool start IP";
 service.vpnd_endip="Pool end IP";
 service.vpnd_cl2cl="Dozvoli Vezu Klijent do Klijenta";
-service.vpnd_switch="Konf. Switch Poslužitelja";
+service.vpnd_switch="Konf. preko";
 service.vpnd_dupcn="Dozvoli dvostruki CN";
+service.vpnd_proxy="DHCP-Proxy mode";
+service.vpnd_clcon="Client connect script";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Klijent";
 service.vpn_srv="Pokreni OpenVPN Klijent";
@@ -1360,11 +1367,12 @@ service.vpn_auth="Hash Algoritam";
 service.vpn_bridge="Premosti TAP u br0";
 service.vpn_adv="Napredne Opcije";
 service.vpn_tlscip="TLS Cipher";
+service.vpn_route="Policy based Routing";
 
 //help container
 
-hstatus_vpn.right1="OpenVPN Server:";
-hstatus_vpn.right2="";
+hstatus_vpn.right1="Add IPs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP. Redirect Gateway MUST be off.";
+hstatus_vpn.right2="To push routes to clients add \'push \"route 0.0.0.0\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) 0.0.0.0\"\' to the config.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1429,7 +1437,7 @@ service.warn_pass="SMTP Auth Password";
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
-service.milkfish_mainswitch="Main Switch";
+service.milkfish_mainswitch="SIP Usmjerivač";
 service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish Username";
@@ -1481,7 +1489,15 @@ service.samba3_pass2=" Zaporka2";
 service.samba3_pubacl="Samo Čitaj";
 service.samba3_advanced="Napredno"
 service.samba3_custom="Koristi Posebnu Konfiguraciju";
-
+service.samba3_shares="Shares";
+service.samba3_share_path="Path";
+service.samba3_share_label="Name";
+service.samba3_share_public="Public";
+service.samba3_share_access="Access";
+service.samba3_users="Users";
+service.samba3_username="Username";
+service.samba3_password="Password";
+service.samba3_user_shares="Access Shares";
 
 // ** eop-tunnel.asp **//
 
@@ -1830,9 +1846,16 @@ aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is con
 aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
 aoss.wep_info="(required for most gaming consoles supporting AOSS)";
 aoss.wps="WPS Setup";
-aoss.wpspin="WPS PIN";
+aoss.wps_ap_pin="WPS Gateway PIN (Label)";
+aoss.wpspin="WPS Client PIN";
+aoss.wpsactivate="Activate PIN";
 aoss.wpsregister="Register PIN";
+aoss.wpsgenerate="Generate PIN";
+aoss.pinnotvalid="Invalid PIN, checksum not correct!";
 aoss.wpsenable="WPS Button";
+aoss.wpsstatus="WPS Status";
+aoss.externalregistrar="External Registrar";
+aoss.release="Release";
 
 
 sec80211x.xsuptype="XSupplicant Type";
@@ -1961,7 +1984,7 @@ freeradius.port="Radius Port";
 
 //help container
 
-hstatus_freeradius.right2="You must enable JFFS before starting FreeRadius.";
+hfreeradius.right2="You must enable JFFS before starting FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 
@@ -2103,7 +2126,7 @@ wl_basic.supergff="Super G Fast Framing";
 wl_basic.extchannel="Extended Channel Mode";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Kanalna Širina";
-wl_basic.channel_wide="Kontrolni Kanal";
+wl_basic.channel_wide="Rastezni Kanal";
 wl_basic.regulatory="SuperChannel";
 wl_basic.chanshift="Zamjena Kanala";
 wl_basic.specialmode="2.3 GHz Mode";
