@@ -104,6 +104,9 @@ endif
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
 endif
+ifeq ($(CONFIG_NVRAM_64K),y)
+CFLAGS += -DHAVE_NVRAM_64K
+endif
 
 vpath %.c $(SRCBASE)/shared/nvram
 
