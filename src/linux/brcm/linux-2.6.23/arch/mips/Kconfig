@@ -648,6 +648,10 @@ config BCM47XX
 config NVRAM_60K
 	bool "Nvram size 60k"
 	depends on BCM947XX
+	
+config NVRAM_64K
+	bool "Nvram size 64k"
+	depends on BCM947XX
 
 config BCMIPDSCP
 	bool "Support for Using DSCP based IP forwarding"
