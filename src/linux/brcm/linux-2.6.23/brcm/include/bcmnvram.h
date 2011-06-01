@@ -164,6 +164,8 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define NVRAM_HEADER_SIZE	20
 #ifdef CONFIG_NVRAM_60K
 #define NVRAM_SPACE		0xf000
+#elif CONFIG_NVRAM_64K
+#define NVRAM_SPACE		0x10000
 #else
 #define NVRAM_SPACE		0x8000
 #endif
