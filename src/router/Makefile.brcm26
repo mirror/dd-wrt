@@ -149,8 +149,15 @@ else
 endif
 ifeq ($(CONFIG_NVRAM_60K),y)
 	echo CONFIG_NVRAM_60K=y >> $(LINUXDIR)/.config
+	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config	
+else
+ifeq ($(CONFIG_NVRAM_64K),y)
+	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
+	echo CONFIG_NVRAM_64K=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_NVRAM_60K" is not set >> $(LINUXDIR)/.config
+	echo "# CONFIG_NVRAM_64K" is not set >> $(LINUXDIR)/.config
+endif
 endif
 #ifeq ($(CONFIG_REGISTER),y)
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
@@ -608,6 +615,8 @@ endif
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR2000v2.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr4000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4000.chk
 # end Netgear
 
 # Linksys
