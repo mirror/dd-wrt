@@ -320,8 +320,8 @@ static void __init cns3xxx_pcie_hw_init(struct cns3xxx_pcie *cnspci)
 	u32 host_base = cnspci->cfg_bases[CNS3XXX_HOST_TYPE].pfn;
 	u32 cfg0_base = cnspci->cfg_bases[CNS3XXX_CFG0_TYPE].pfn;
 	u32 devfn = 0;
-	u8 tmp8;
-	u16 pos;
+	u8 tmp8,cp,u8tmp;
+	u16 pos,u16tmp;
 	u16 dc;
 
 	host_base = (__pfn_to_phys(host_base) - 1) >> 16;
@@ -340,8 +340,24 @@ static void __init cns3xxx_pcie_hw_init(struct cns3xxx_pcie *cnspci)
 	pci_bus_write_config_word(&bus, devfn, PCI_IO_BASE_UPPER16, io_base);
 	pci_bus_write_config_word(&bus, devfn, PCI_IO_LIMIT_UPPER16, cfg0_base);
 
+	pci_bus_read_config_byte(&bus, devfn, PCI_CAPABILITY_LIST, &cp);
+	while (cp != 0) {
+		pci_bus_read_config_byte(&bus, devfn, cp, &u8tmp);
+		// Read Next ID
+		pci_bus_read_config_word(&bus, devfn, cp, &u16tmp);
+		cp = (u16tmp & 0xFF00) >> 8;
+	}
+
 	if (!cnspci->linked)
 		return;
+
+	pci_bus_read_config_byte(&bus, devfn, PCI_CAPABILITY_LIST, &cp);
+	while (cp != 0) {
+		pci_bus_read_config_byte(&bus, devfn, cp, &u8tmp);
+		// Read Next ID
+		pci_bus_read_config_word(&bus, devfn, cp, &u16tmp);
+		cp = (u16tmp & 0xFF00) >> 8;
+	}
 
 	/* Set Device Max_Read_Request_Size to 128 byte */
 	devfn = PCI_DEVFN(1, 0);
@@ -378,8 +394,8 @@ int cns3xxx_pcie_init(u8 bitmap)
 
 		iotable_init(cns3xxx_pcie[i].cfg_bases,
 			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
-		cns3xxx_pwr_clk_en(0x1 << PM_CLK_GATE_REG_OFFSET_PCIE(i));
-		cns3xxx_pwr_soft_rst(0x1 << PM_SOFT_RST_REG_OFFST_PCIE(i));
+//		cns3xxx_pwr_clk_en(0x1 << PM_CLK_GATE_REG_OFFSET_PCIE(i));
+//		cns3xxx_pwr_soft_rst(0x1 << PM_SOFT_RST_REG_OFFST_PCIE(i));
 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
 		cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
 		pci_common_init(&cns3xxx_pcie[i].hw_pci);
