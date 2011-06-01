@@ -47,6 +47,34 @@
 #define CNS3XXX_GPIO_SET            0x10
 #define CNS3XXX_GPIO_CLEAR          0x14
 
+
+static inline void gpio_line_config(u8 line, u32 direction)
+{
+	u32 reg;
+	if (direction) {
+		if (line < 32) {
+			reg = __raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
+			reg |= (1 << line);
+			__raw_writel(reg, CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
+		} else {
+			reg = __raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
+			reg |= (1 << (line - 32));
+			__raw_writel(reg, CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);		
+		}
+	} else {
+		if (line < 32) {
+			reg = __raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
+			reg &= ~(1 << line);
+			__raw_writel(reg, CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
+		} else {
+			reg = __raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
+			reg &= ~(1 << (line - 32));
+			__raw_writel(reg, CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);		
+		}
+	}
+}
+
+
 static inline void gpio_line_get(u8 line, int *value)
 {
 	if (line < 32)
