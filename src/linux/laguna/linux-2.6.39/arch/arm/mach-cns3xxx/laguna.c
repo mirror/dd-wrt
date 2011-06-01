@@ -48,6 +48,7 @@
 extern struct cpufreq_driver cns_cpu_freq_driver;
 #endif
 #include <mach/pm.h>
+#include <mach/gpio.h>
 #include "core.h"
 #include "devices.h"
 
@@ -630,6 +631,10 @@ static int __init laguna_model_setup(void)
 
 		cns3xxx_pcie_init(pcie_bitmap);
 
+		gpio_line_set(3, 1);
+		gpio_line_config(3, CNS3XXX_GPIO_OUT);
+		gpio_set_value(3, 1);
+
 		if (strncmp(laguna_info.model, "GW2380", 6) == 0)
 		{
 		if (laguna_info.config_bitmap & (USB0_LOAD)) {
@@ -656,6 +661,8 @@ static int __init laguna_model_setup(void)
 		}
 		}else{
 		if (laguna_info.config_bitmap & (USB0_LOAD)) {
+
+			printk(KERN_EMERG "power up USB0\n");
 			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
 
 			/* DRVVBUS pins share with GPIOA */
@@ -674,6 +681,7 @@ static int __init laguna_model_setup(void)
 		}
 
 		if (laguna_info.config_bitmap & (USB1_LOAD)) {
+			printk(KERN_EMERG "power up ehci/ohci\n");
 			platform_device_register(&cns3xxx_usb_ehci_device);
 			platform_device_register(&cns3xxx_usb_ohci_device);
 		}
@@ -835,7 +843,8 @@ static int __init laguna_model_setup(void)
 		}
 		else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
 			laguna_gpio_leds[0].gpio = 107;
-			laguna_gpio_leds_data.num_leds = 1;
+			laguna_gpio_leds[1].gpio = 106;
+			laguna_gpio_leds_data.num_leds = 2;
 			platform_device_register(&laguna_gpio_leds_device);
 		}
 	} else {
