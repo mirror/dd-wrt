@@ -95,6 +95,7 @@ void start_sysinit(void)
 	insmod("scsi_wait_scan");
 	insmod("scsi_sd_mod");
 	insmod("libata");
+	insmod("libahci");
 	insmod("ahci");
 	insmod("cns3xxx_ahci");
 	/*
