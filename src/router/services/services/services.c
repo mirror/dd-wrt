@@ -218,6 +218,7 @@ void start_ipv6(void)
 	insmod("xfrm6_mode_transport");
 	insmod("xfrm6_mode_tunnel");
 	insmod("xfrm6_tunnel");
+	insmod("xfrm_ipcomp");
 	insmod("ipcomp6");
 
 	dd_syslog(LOG_INFO, "ipv6 successfully started\n");
