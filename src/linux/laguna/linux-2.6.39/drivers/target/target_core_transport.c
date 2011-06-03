@@ -762,7 +762,6 @@ static void transport_lun_remove_cmd(struct se_cmd *cmd)
 	transport_all_task_dev_remove_state(cmd);
 	spin_unlock_irqrestore(&T_TASK(cmd)->t_state_lock, flags);
 
-	transport_free_dev_tasks(cmd);
 
 check_lun:
 	spin_lock_irqsave(&lun->lun_cmd_lock, flags);
@@ -1195,6 +1194,7 @@ transport_get_task_from_execute_queue(struct se_device *dev)
 		break;
 
 	list_del(&task->t_execute_list);
+	atomic_set(&task->task_execute_queue, 0);
 	atomic_dec(&dev->execute_tasks);
 
 	return task;
@@ -1210,8 +1210,14 @@ void transport_remove_task_from_execute_queue(
 {
 	unsigned long flags;
 
+	if (atomic_read(&task->task_execute_queue) == 0) {
+		dump_stack();
+		return;
+	}
+
 	spin_lock_irqsave(&dev->execute_task_lock, flags);
 	list_del(&task->t_execute_list);
+	atomic_set(&task->task_execute_queue, 0);
 	atomic_dec(&dev->execute_tasks);
 	spin_unlock_irqrestore(&dev->execute_task_lock, flags);
 }
@@ -2057,6 +2063,13 @@ int transport_generic_handle_tmr(
 	return 0;
 }
 EXPORT_SYMBOL(transport_generic_handle_tmr);
+
+void transport_generic_free_cmd_intr(
+	struct se_cmd *cmd)
+{
+	transport_add_cmd_to_queue(cmd, TRANSPORT_FREE_CMD_INTR);
+}
+EXPORT_SYMBOL(transport_generic_free_cmd_intr);
 
 static int transport_stop_tasks_for_cmd(struct se_cmd *cmd)
 {
@@ -4776,18 +4789,20 @@ void transport_do_task_sg_chain(struct se_cmd *cmd)
 				sg_end_cur->page_link &= ~0x02;
 
 				sg_chain(sg_head, task_sg_num, sg_head_cur);
-				sg_count += (task->task_sg_num + 1);
-			} else
 				sg_count += task->task_sg_num;
+				task_sg_num = (task->task_sg_num + 1);
+			} else {
+				sg_chain(sg_head, task_sg_num, sg_head_cur);
+				sg_count += task->task_sg_num;
+				task_sg_num = task->task_sg_num;
+			}
 
 			sg_head = sg_head_cur;
 			sg_link = sg_link_cur;
-			task_sg_num = task->task_sg_num;
 			continue;
 		}
 		sg_head = sg_first = &task->task_sg[0];
 		sg_link = &task->task_sg[task->task_sg_num];
-		task_sg_num = task->task_sg_num;
 		/*
 		 * Check for single task..
 		 */
@@ -4798,9 +4813,12 @@ void transport_do_task_sg_chain(struct se_cmd *cmd)
 			 */
 			sg_end = &task->task_sg[task->task_sg_num - 1];
 			sg_end->page_link &= ~0x02;
-			sg_count += (task->task_sg_num + 1);
-		} else
 			sg_count += task->task_sg_num;
+			task_sg_num = (task->task_sg_num + 1);
+		} else {
+			sg_count += task->task_sg_num;
+			task_sg_num = task->task_sg_num;
+		}
 	}
 	/*
 	 * Setup the starting pointer and total t_tasks_sg_linked_no including
@@ -4809,21 +4827,20 @@ void transport_do_task_sg_chain(struct se_cmd *cmd)
 	T_TASK(cmd)->t_tasks_sg_chained = sg_first;
 	T_TASK(cmd)->t_tasks_sg_chained_no = sg_count;
 
-	DEBUG_CMD_M("Setup T_TASK(cmd)->t_tasks_sg_chained: %p and"
-		" t_tasks_sg_chained_no: %u\n", T_TASK(cmd)->t_tasks_sg_chained,
+	DEBUG_CMD_M("Setup cmd: %p T_TASK(cmd)->t_tasks_sg_chained: %p and"
+		" t_tasks_sg_chained_no: %u\n", cmd, T_TASK(cmd)->t_tasks_sg_chained,
 		T_TASK(cmd)->t_tasks_sg_chained_no);
 
 	for_each_sg(T_TASK(cmd)->t_tasks_sg_chained, sg,
 			T_TASK(cmd)->t_tasks_sg_chained_no, i) {
 
-		DEBUG_CMD_M("SG: %p page: %p length: %d offset: %d\n",
-			sg, sg_page(sg), sg->length, sg->offset);
+		DEBUG_CMD_M("SG[%d]: %p page: %p length: %d offset: %d, magic: 0x%08x\n",
+			i, sg, sg_page(sg), sg->length, sg->offset, sg->sg_magic);
 		if (sg_is_chain(sg))
 			DEBUG_CMD_M("SG: %p sg_is_chain=1\n", sg);
 		if (sg_is_last(sg))
 			DEBUG_CMD_M("SG: %p sg_is_last=1\n", sg);
 	}
-
 }
 EXPORT_SYMBOL(transport_do_task_sg_chain);
 
@@ -5296,6 +5313,8 @@ void transport_generic_free_cmd(
 
 		if (wait_for_tasks && cmd->transport_wait_for_tasks)
 			cmd->transport_wait_for_tasks(cmd, 0, 0);
+
+		transport_free_dev_tasks(cmd);
 
 		transport_generic_remove(cmd, release_to_pool,
 				session_reinstatement);
@@ -6131,6 +6150,9 @@ get_cmd:
 			break;
 		case TRANSPORT_REMOVE:
 			transport_generic_remove(cmd, 1, 0);
+			break;
+		case TRANSPORT_FREE_CMD_INTR:
+			transport_generic_free_cmd(cmd, 0, 1, 0);
 			break;
 		case TRANSPORT_PROCESS_TMR:
 			transport_generic_do_tmr(cmd);

@@ -624,13 +624,11 @@ static int cx8802_request_acquire(struct cx8802_driver *drv)
 
 	if (drv->advise_acquire)
 	{
-		mutex_lock(&drv->core->lock);
 		core->active_ref++;
 		if (core->active_type_id == CX88_BOARD_NONE) {
 			core->active_type_id = drv->type_id;
 			drv->advise_acquire(drv);
 		}
-		mutex_unlock(&drv->core->lock);
 
 		mpeg_dbg(1,"%s() Post acquire GPIO=%x\n", __func__, cx_read(MO_GP0_IO));
 	}
@@ -643,14 +641,12 @@ static int cx8802_request_release(struct cx8802_driver *drv)
 {
 	struct cx88_core *core = drv->core;
 
-	mutex_lock(&drv->core->lock);
 	if (drv->advise_release && --core->active_ref == 0)
 	{
 		drv->advise_release(drv);
 		core->active_type_id = CX88_BOARD_NONE;
 		mpeg_dbg(1,"%s() Post release GPIO=%x\n", __func__, cx_read(MO_GP0_IO));
 	}
-	mutex_unlock(&drv->core->lock);
 
 	return 0;
 }
@@ -713,18 +709,17 @@ int cx8802_register_driver(struct cx8802_driver *drv)
 		drv->request_release = cx8802_request_release;
 		memcpy(driver, drv, sizeof(*driver));
 
+		mutex_lock(&drv->core->lock);
 		err = drv->probe(driver);
 		if (err == 0) {
 			i++;
-			mutex_lock(&drv->core->lock);
 			list_add_tail(&driver->drvlist, &dev->drvlist);
-			mutex_unlock(&drv->core->lock);
 		} else {
 			printk(KERN_ERR
 			       "%s/2: cx8802 probe failed, err = %d\n",
 			       dev->core->name, err);
 		}
-
+		mutex_unlock(&drv->core->lock);
 	}
 
 	return i ? 0 : -ENODEV;
@@ -748,6 +743,8 @@ int cx8802_unregister_driver(struct cx8802_driver *drv)
 		       dev->pci->subsystem_device, dev->core->board.name,
 		       dev->core->boardnr);
 
+		mutex_lock(&dev->core->lock);
+
 		list_for_each_entry_safe(d, dtmp, &dev->drvlist, drvlist) {
 			/* only unregister the correct driver type */
 			if (d->type_id != drv->type_id)
@@ -755,15 +752,14 @@ int cx8802_unregister_driver(struct cx8802_driver *drv)
 
 			err = d->remove(d);
 			if (err == 0) {
-				mutex_lock(&drv->core->lock);
 				list_del(&d->drvlist);
-				mutex_unlock(&drv->core->lock);
 				kfree(d);
 			} else
 				printk(KERN_ERR "%s/2: cx8802 driver remove "
 				       "failed (%d)\n", dev->core->name, err);
 		}
 
+		mutex_unlock(&dev->core->lock);
 	}
 
 	return err;
@@ -827,6 +823,8 @@ static void __devexit cx8802_remove(struct pci_dev *pci_dev)
 
 	flush_request_modules(dev);
 
+	mutex_lock(&dev->core->lock);
+
 	if (!list_empty(&dev->drvlist)) {
 		struct cx8802_driver *drv, *tmp;
 		int err;
@@ -838,15 +836,15 @@ static void __devexit cx8802_remove(struct pci_dev *pci_dev)
 		list_for_each_entry_safe(drv, tmp, &dev->drvlist, drvlist) {
 			err = drv->remove(drv);
 			if (err == 0) {
-				mutex_lock(&drv->core->lock);
 				list_del(&drv->drvlist);
-				mutex_unlock(&drv->core->lock);
 			} else
 				printk(KERN_ERR "%s/2: cx8802 driver remove "
 				       "failed (%d)\n", dev->core->name, err);
 			kfree(drv);
 		}
 	}
+
+	mutex_unlock(&dev->core->lock);
 
 	/* Destroy any 8802 reference. */
 	dev->core->dvbdev = NULL;
