@@ -1146,6 +1146,11 @@ service.snmp_read="RO Community";
 service.snmp_write="RW Community";
 
 //openvpn.webservices
+service.vpnd_cert="Certificato Pubblico Server";
+service.vpnd_key="Chiave Privata Server";
+service.vpnd_crl="CRL-Lista Certificati Revocati";
+service.vpnd_cl2cl="Consenti connessioni da Client a Client";
+service.vpnd_dupcn="Consenti cn duplicati";
 service.vpn_legend="OpenVPN Client";
 service.vpn_srv="Avvio OpenVPN";
 service.vpn_ipname="IP/Nome del Server";
@@ -1154,8 +1159,8 @@ service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="Usa La Compressione LZO";
 service.vpn_tunnel="Tunnel Protocol";
-service.vpn_srvcert="Public Server Cert";
-service.vpn_clicert="Public Client Cert";
+service.vpn_srvcert="Certificato Pubblico CA";
+service.vpn_clicert="Certificato Pubblico Client";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Chiave Privata Del Client ";
 
