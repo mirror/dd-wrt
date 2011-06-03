@@ -641,7 +641,7 @@ static int __init laguna_model_setup(void)
 			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
 
 			/* DRVVBUS pins share with GPIOA */
-			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0014);
+			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0010);
 			reg = __raw_readl(mem);
 			reg |= 0x8;
 			__raw_writel(reg, mem);
@@ -666,7 +666,7 @@ static int __init laguna_model_setup(void)
 			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
 
 			/* DRVVBUS pins share with GPIOA */
-			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0014);
+			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0010);
 			reg = __raw_readl(mem);
 			reg |= 0x8;
 			__raw_writel(reg, mem);

@@ -1,10 +1,7 @@
 /*
- *  linux/arch/arm/mach-cns3xxx/headsmp.S
+ *  linux/arch/arm/plat-versatile/headsmp.S
  *
  *  Copyright (c) 2003 ARM Limited
- *  Copyright 2011 Gateworks Corporation
- *		   Chris Lang <clang@gateworks.com
- *
  *  All Rights Reserved
  *
  * This program is free software; you can redistribute it and/or modify
@@ -14,13 +11,14 @@
 #include <linux/linkage.h>
 #include <linux/init.h>
 
-	__INIT
+	__CPUINIT
 
 /*
- * CNS3XXX specific entry point for secondary CPUs.  This
- * provides a "holding pen" into which all secondary cores are held
+ * Realview/Versatile Express specific entry point for secondary CPUs.
+ * This provides a "holding pen" into which all secondary cores are held
  * until we're ready for them to initialise.
  */
+	.align 8
 ENTRY(cns3xxx_secondary_startup)
 	mrc	p15, 0, r0, c0, c0, 5
 	and	r0, r0, #15
@@ -38,6 +36,6 @@ pen:	ldr	r7, [r6]
 	 */
 	b	secondary_startup
 
-	.align
-1:	.long	.
+	.align 8
+1:	.long 	.
 	.long	pen_release
