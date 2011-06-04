@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 / updated since svn16041 / by Silvio Peša / 2011-05-30 // 
+// Croatian Translation / DD-WRT v24-sp2 / updated since svn17147 / by Silvio Peša / 2011-06-04 // 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -144,7 +144,7 @@ share.srvip="IP Adresa Poslužitelja";
 share.srvipname="IP Adresa / Ime Poslužitelja";
 share.localdns="Lokalni DNS Poslužitelj";
 share.minutes="minuta";
-share.oui="OUI Pretraga";
+share.oui="OUI Upit";
 share.sttic="Statično";
 share.connecting="Povezivanje";
 share.connect="Poveži";
@@ -193,10 +193,10 @@ share._12h="Svakih 12 sati";
 share._24h="Svaki dan";
 share._48h="Svaka 2 dana";
 share._168h="Svaki tjedan";
-share.days="Dana";
+share.days="Dan";
 share.from2=share.from;
 share.to2=share.to;
-share.days_genetive=share.days;
+share.days_genetive="Dana";
 share.standard="Standard";
 share.execscript="Izvrši skriptu";
 share.user="Korisnik";
@@ -272,57 +272,57 @@ sbutton.prev="&laquo; Prethodno";
 
 errmsg.err0="Morate postaviti korisničko ime.";
 errmsg.err1="Morate postaviti ime usmjerivača.";
-errmsg.err2="Out of range, please adjust start IP address or user&#39;s numbers.";
-errmsg.err3="You must at least select a day.";
-errmsg.err4="The end time must be bigger than start time.";
-errmsg.err5="The MAC Address length is not correct.";
+errmsg.err2="Van raspona, uskladite početnu IP adresu ili user&#39;s brojeve.";
+errmsg.err3="Morate barem odabrati dan.";
+errmsg.err4="Završno vrijeme mora biti veće od početnog vremena.";
+errmsg.err5="Neispravna Duljina MAC Adrese.";
 errmsg.err6="Morate unijeti zaporku.";
 errmsg.err7="Morate unijeti ime stroja.";
 errmsg.err8="Morate unijeti IP adresu ili ime domene.";
-errmsg.err9="Illegal DMZ IP Address.";
-errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
+errmsg.err9="Ilegalna DMZ IP Adresa.";
+errmsg.err10="Potvrđena zaporka ne odgovara već unesenoj zaporci. Ponovo unesite zaporku.";
 errmsg.err11="Razmaci nisu dozvoljeni u zaporkama";
-errmsg.err12="You must input a command to run.";
+errmsg.err12="Morate unijeti naredbu za izvršenje.";
 errmsg.err13="Nadogradnja nije uspjela.";
 errmsg.err45="Nije dostupno u HTTPS! Molim spojite se u HTTP modu.";
 errmsg.err46="Nije dostupno u HTTPS";
 
 //common.js error messages
-errmsg.err14=" value is out of range [";
-errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
-errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="The MAC Address is not correct.";
-errmsg.err18="The MAC Address length is not correct.";
-errmsg.err19="The MAC Address cannot be the broadcast address.";
-errmsg.err20="Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.";
-errmsg.err21="Invalid MAC address format.";
-errmsg.err22="The WAN MAC Address is not correct.";
-errmsg.err23="Invalid hex value ";
-errmsg.err24=" found in MAC address ";
-errmsg.err25="The key value is not correct.";
-errmsg.err26="The key length is not correct.";
-errmsg.err27="Illegal subnet mask.";
-errmsg.err28=" have illegal characters, must be [ 0 - 9 ].";
-errmsg.err29=" have illegal ascii code.";
-errmsg.err30=" have illegal hexadecimal digits.";
-errmsg.err31=" value is illegal.";
-errmsg.err32="IP address and gateway is not at same subnet mask.";
-errmsg.err33="IP address and gateway can't be same.";
-errmsg.err34=" is not allowed to contain a space.";
-errmsg.err110="End number must be bigger then start number";
-errmsg.err111="Invalid IP address";
+errmsg.err14=" vrijednost je van raspona [";
+errmsg.err15="WAN MAC Adresa je van raspona [00 - ff].";
+errmsg.err16="Drugi karakter MAC adrese mora biti paran broj: [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="MAC Adresa nije ispravna.";
+errmsg.err18="Neispravna Duljina MAC Adrese.";
+errmsg.err19="MAC Adresa ne može biti objavna (broadcast) adresa.";
+errmsg.err20="Unesi MAC Adresu u [xx:xx:xx:xx:xx:xx] formatu.";
+errmsg.err21="Neispravni format MAC adrese.";
+errmsg.err22="WAN MAC Adresa nije ispravna.";
+errmsg.err23="Neispravna HEX vrijednost ";
+errmsg.err24=" nađena u MAC adresi ";
+errmsg.err25="Vrijednost Ključa nije ispravna.";
+errmsg.err26="Dužina Ključa nije ispravna.";
+errmsg.err27="Ilegalna maska podmreže.";
+errmsg.err28=" ima ilegalni karakter, mora biti [ 0 - 9 ].";
+errmsg.err29=" ima ilegalni ASCII kod.";
+errmsg.err30=" ima ilegalne HEX znamenke.";
+errmsg.err31=" vrijednost je ilegalna.";
+errmsg.err32="IP adresa i poveznik nisu u istoj masci podmreže.";
+errmsg.err33="IP adresa i poveznik ne mogu biti isti.";
+errmsg.err34=" nije dozvoljeno da sadrži razmak.";
+errmsg.err110="Završni broj mora biti veći od početnog";
+errmsg.err111="Neispravna IP adresa";
 
 //Wol.asp error messages
-errmsg.err35="You must input a MAC address to run.";
-errmsg.err36="You must input a network broadcast address to run.";
-errmsg.err37="You must input a UDP port to run.";
+errmsg.err35="Morate unijeti MAC adresu.";
+errmsg.err36="Morate unijeti adresu mrežne objave.";
+errmsg.err37="Morate unijeti UDP vrata.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits";
-errmsg.err40="You have to enter a key for Key ";
-errmsg.err41="Invalid Length in key ";
+errmsg.err38="Unesi Dijeljeni Ključ!";
+errmsg.err39="Neispravan Ključ, mora biti u rasponu od 8 do 63 ASCII karaktera ili 64 heksadecimalne znamenke";
+errmsg.err40="Morate unijeti Ključ ";
+errmsg.err41="Neispravna dužina ključa ";
 errmsg.err43="Rekey interval";
 
 //config.asp error messages
@@ -332,16 +332,16 @@ errmsg.err42="Please select a configuration file to restore.";
 errmsg.err44="The total checks exceed 128 counts.";
 
 //Site_Survey.asp error messages
-errmsg.err47="invalid SSID.";
+errmsg.err47="Neispravan SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
+errmsg.err48="WDS nije sukladan s trenutnom konfiguracijom usmjerivača. Provjerite postavke :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius is only available in AP mode.";
+errmsg.err49="RADIUS je dostupan samo u AP modu.";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="You must input a SSID.";
+errmsg.err50="Morate unijeti SSID.";
 
 // Management.asp error messages
 errmsg.err51="The Router is currently set to its default password. As a security measure, you must change the password before the Remote Management feature can be enabled. Click the OK button to change your password. Click the Cancel button to leave the Remote Management feature disabled.";
@@ -356,12 +356,12 @@ errmsg.err55="The Service Name exists.";
 errmsg.err56="Vrijednost Vrata je izvan raspona [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="Delete the Entry ?";
-errmsg.err103=" must be lower than ";
+errmsg.err57="Brisati Unos ?";
+errmsg.err103=" mora biti manji od ";
 
 // Status_Lan.asp error messages
-errmsg.err58="Click to delete lease";
-errmsg.err581="Click to disconnect pptp client";
+errmsg.err58="Klikni za brisanje najma";
+errmsg.err581="Klikni za prekid veze PPTP klijenta";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Not available! Please enable Wireless Network.";
@@ -371,7 +371,7 @@ errmsg.err60="Please select a file to upgrade.";
 errmsg.err61="Incorrect image file.";
 
 //Services.asp error messages
-errmsg.err62=" is already defined as a static lease.";
+errmsg.err62=" je već definirani statični najam.";
 
 //Saving message
 errmsg.err100="Procesiram...<br/>Molim, pričekajte.";
@@ -397,7 +397,7 @@ bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Sigurnost";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
-bmenu.wirelessMac="Filter MAC Adresa";
+bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Napredno";
 bmenu.wirelessAdvancedwl0="WL0-Napredno";
 bmenu.wirelessAdvancedwl1="WL1-Napredno";
@@ -482,7 +482,7 @@ alive.port="Proxy Vrata";
 
 //help container
 
-halive.right2="Odaberi kada ponovo pokrenuti usmjerivač. CRON mora biti omogućen u kartici UPRAVLJANJE.";
+halive.right2="Postavi kada želite ponovo pokrenuti usmjerivač. CRON mora biti omogućen u kartici UPRAVLJANJE.";
 halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<br/>Format IP adresa je:xxx.xxx.xxx.xxx .";
 
 
@@ -1114,8 +1114,8 @@ networking.legend5="Višestruki DHCP Poslužitelj";
 
 //help container
 
-hnetworking.right1="Multi DHCPD";
-hnetworking.right2="To use Multiple DHCPD enable DNSMasq as DHCP-Server";
+hnetworking.right1="Višestruki DHCP Poslužitelj";
+hnetworking.right2="Za upotrebu Višestrukog DHCP Poslužitelja omogući DNSMasq kao DHCP-Poslužitelj";
 
 // ** QoS.asp **//
 
@@ -1202,17 +1202,17 @@ route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
 route.gateway_legend="Dinamičko Usmjerivanje";
 route.static_legend="Statičko Usmjerivanje";
-route.static_setno="Izaberi skupni broj";
+route.static_setno="Smjer broj";
 route.static_name="Ime Smjera";
 route.static_ip="Ciljna LAN Mreža";
 
 //help container
 
-hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
-hroute.right4="This is the unique route number, you may set up to 50 routes.";
-hroute.right6="Enter the name you would like to assign to this route.";
-hroute.right8="This is the remote host to which you would like to assign the static route.";
-hroute.right10="Determines the host and the network portion.";
+hroute.right2="Ako ovaj usmjerivač podiže Internet vezu, izaberite <em>Poveznik</em> mod. Ako na vašoj mreži postoji drugi usmjerivač, izaberite <em>Usmjerivač</em> mod.";
+hroute.right4="Ovo je jedinstven broj Smjera, možete postaviti do 50 Smjerova.";
+hroute.right6="Dodijelite Ime Smjera.";
+hroute.right8="Udaljeni stroj prema kojem definirate statični Smjer.";
+hroute.right10="Određuje stroj i masku podmreže.";
 
 
 // ** Site_Survey.asp **//
@@ -1806,7 +1806,7 @@ wanmac.wlan="Kloniraj Bežičnu MAC Adresu";
 
 //help container
 
-hwanmac.right2="Some ISPs will require you to register your MAC address. If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
+hwanmac.right2="Neki davatelji usluga pristupa (ISP) traže registraciju vaše MAC adrese. Ako ne želite ponovno registrirati vašu MAC adresu, usmjerivač može klonirati MAC adresu koja je registrirana s vašim ISP-om.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
@@ -1965,8 +1965,8 @@ freeradius.users="Korisnici";
 freeradius.clients="Klijenti";
 freeradius.username="Korisničko Ime";
 freeradius.password="Zaporka";
-freeradius.downstream="Nizvodno Slijed";
-freeradius.upstream="Uzvodno Slijed";
+freeradius.downstream="Nizvodni Tok";
+freeradius.upstream="Uzvodno Tok";
 freeradius.sharedkey="Dijeljeni Ključ";
 
 
