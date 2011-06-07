@@ -541,7 +541,7 @@
 #define ROUTER_LINKSYS_E3200 0xab15
 
 // Netgear WNDR4000 (dual radio, BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Netgear PY310400144) >_64K nvram_<
-#define ROUTER_NETGEAR_WNDR4000 0xac0f
+#define ROUTER_NETGEAR_WNDR4000 0xac13
 
 
 
