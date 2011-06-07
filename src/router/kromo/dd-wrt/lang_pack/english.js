@@ -1347,6 +1347,7 @@ service.vpnd_switch="Config via";
 service.vpnd_dupcn="Allow duplicate cn";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client connect script";
+service.vpnd_ccddef="CCD-Dir DEFAULT file";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Client";
 service.vpn_srv="Start OpenVPN Client";

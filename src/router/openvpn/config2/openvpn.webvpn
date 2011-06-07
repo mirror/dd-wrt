@@ -216,6 +216,16 @@
 		</script>
 	</div>
 	<div class="setting">		
+		<div class="label"><% tran("service.vpnd_ccddef"); %></div>
+		<textarea cols="60" rows="10" id="openvpn_ccddef" name="openvpn_ccddef"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_ccddef = fix_cr( '<% nvram_get("openvpn_ccddef"); %>' );
+				document.getElementById("openvpn_ccddef").value = openvpn_ccddef;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_tlsauth"); %></div>
 		<textarea cols="60" rows="2" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
 		<script type="text/javascript">
