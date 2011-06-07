@@ -38,16 +38,14 @@ void start_openvpnserver(void)
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;
 	mkdir("/tmp/openvpn", 0700);
+	mkdir("/tmp/openvpn/ccd", 0700);
+	write_nvram("/tmp/openvpn/ccd/DEFAULT", "openvpn_ccddef");
 	write_nvram("/tmp/openvpn/dh.pem", "openvpn_dh");
 	write_nvram("/tmp/openvpn/ca.crt", "openvpn_ca");
 	write_nvram("/tmp/openvpn/cert.pem", "openvpn_crt");
 	write_nvram("/tmp/openvpn/ca.crl", "openvpn_crl");
 	write_nvram("/tmp/openvpn/key.pem", "openvpn_key");
 	write_nvram("/tmp/openvpn/ta.key", "openvpn_tlsauth");
-	mkdir("/tmp/openvpn/ccd", 0700);
-	//use one script to do actions on client connect. will be replaced by the ccd dir when we have a gui solution
-	if (strlen(nvram_safe_get("openvpn_clcon")) > 0)
-			write_nvram("/tmp/openvpn/clientconnect.sh", "openvpn_clcon");
 
 	FILE *fp = fopen("/tmp/openvpn/openvpn.conf", "wb");
 	if (fp == NULL)
@@ -290,8 +288,8 @@ void start_openvpn(void)
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
-	if (nvram_match("openvpncl_tuntap", "tun"))
-		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support. not supported on server in version 2.1.3
+//	if (nvram_match("openvpncl_tuntap", "tun"))
+//		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support. not supported on server in version 2.1.3
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	if (nvram_invmatch("openvpncl_tlscip", "0"))
@@ -323,7 +321,7 @@ void start_openvpn(void)
 	}
 	if (nvram_match("openvpncl_nat", "1")) {
 		fprintf(fp,
-			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
+			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADEv\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
