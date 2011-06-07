@@ -72,8 +72,9 @@ static struct mtd_info *bcm947xx_mtd;
 #define ROUTER_NETGEAR_WNDR3300          3
 #define ROUTER_NETGEAR_WNR3500L          4
 #define ROUTER_NETGEAR_WNR2000V2         5
-#define ROUTER_BELKIN_F5D8235V3          6
-#define ROUTER_BELKIN_F7D3301_3302_4302  7
+#define ROUTER_NETGEAR_WNDR4000          6
+#define ROUTER_BELKIN_F5D8235V3          7
+#define ROUTER_BELKIN_F7D3301_3302_4302  8
 
 /* Belkin series */
 #define TRX_MAGIC_F7D3301              0x20100322      /* Belkin Share Max; router's birthday ? */
@@ -122,6 +123,12 @@ static int get_router (void)
 	  && nvram_match ("boardtype", "0xE4CD")
 	  && nvram_match ("boardrev", "0x1700") ) {
 		return ROUTER_NETGEAR_WNR2000V2;  //Netgear WNR2000v2	
+	}
+	
+	if ( boardnum == 01
+	  && nvram_match("boardtype", "0xF52C")
+	  && nvram_match("boardrev", "0x1101")) {
+		return ROUTER_NETGEAR_WNDR40000;  //Netgear WNDR4000	
 	}
 	
 	if (nvram_match("boardtype", "0xa4cf")
@@ -477,6 +484,10 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		case ROUTER_NETGEAR_WNR2000V2:	
 			board_data_size = 0x10000;
 		break;
+		case ROUTER_NETGEAR_WNDR4000:
+			board_data_size = 11 * 0x10000;  //Netgear: checksum is @ 0x0073FFF8 @ 8M flash
+			jffs_exclude_size = 0x10000;
+			break;
 	}
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
