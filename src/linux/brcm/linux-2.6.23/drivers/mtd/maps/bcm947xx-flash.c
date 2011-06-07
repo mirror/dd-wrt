@@ -128,7 +128,7 @@ static int get_router (void)
 	if ( boardnum == 01
 	  && nvram_match("boardtype", "0xF52C")
 	  && nvram_match("boardrev", "0x1101")) {
-		return ROUTER_NETGEAR_WNDR40000;  //Netgear WNDR4000	
+		return ROUTER_NETGEAR_WNDR4000;  //Netgear WNDR4000	
 	}
 	
 	if (nvram_match("boardtype", "0xa4cf")
