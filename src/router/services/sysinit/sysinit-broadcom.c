@@ -750,6 +750,15 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
+		
+	case ROUTER_NETGEAR_WNDR4000:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
+		if (nvram_match("vlan2ports", "4 8u")) {
+			nvram_set("vlan2ports", "4 8");
+			need_reboot = 1;
+		}
+		break;
 
 	case ROUTER_NETGEAR_WNR2000V2:
 		basic_params = vlan_0_1;
