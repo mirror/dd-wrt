@@ -269,6 +269,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_LINKSYS_E1000V2:
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
+	case ROUTER_NETGEAR_WNDR4000:
 
 		break;
 	case ROUTER_WRT600N:
@@ -1587,6 +1588,7 @@ void start_sysinit(void)
 			case ROUTER_BELKIN_F5D8235V3:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
+			case ROUTER_NETGEAR_WNDR4000:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
@@ -1674,6 +1676,7 @@ void start_sysinit(void)
 			case ROUTER_ASUS_RTN16:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
+			case ROUTER_NETGEAR_WNDR4000:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
