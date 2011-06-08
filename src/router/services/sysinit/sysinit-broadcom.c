@@ -758,6 +758,19 @@ void start_sysinit(void)
 			nvram_set("vlan2ports", "4 8");
 			need_reboot = 1;
 		}
+		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+			|| startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || !sv_valid_hwaddr(nvram_safe_get("sb/1/macaddr"))
+		    || startswith(nvram_safe_get("sb/1/macaddr"), "00:90:4C")) {
+			unsigned char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("sb/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			need_reboot = 1;
+		}
 		break;
 
 	case ROUTER_NETGEAR_WNR2000V2:
