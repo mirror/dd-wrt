@@ -787,6 +787,7 @@ void period_check(int sig)
 		break;
 #ifndef HAVE_BUFFALO
 	case ROUTER_LINKSYS_WTR54GS:
+	case ROUTER_NETGEAR_WNDR4000:
 		sesgpio = 0x102;	// gpio 2, inversed
 		break;
 	case ROUTER_WRT54G:
