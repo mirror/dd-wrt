@@ -217,7 +217,7 @@
 	</div>
 	<div class="setting">		
 		<div class="label"><% tran("service.vpnd_ccddef"); %></div>
-		<textarea cols="60" rows="10" id="openvpn_ccddef" name="openvpn_ccddef"> </textarea>
+		<textarea cols="60" rows="2" id="openvpn_ccddef" name="openvpn_ccddef"> </textarea>
 		<script type="text/javascript">
 		//<![CDATA[
 				var openvpn_ccddef = fix_cr( '<% nvram_get("openvpn_ccddef"); %>' );
