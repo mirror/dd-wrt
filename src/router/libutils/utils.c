@@ -3769,6 +3769,16 @@ int led_control(int type, int act)
 		ses_gpio = 0x001;	// WPS led green
 		connected_gpio = 0x002;	//wan led green
 		break;
+	case ROUTER_NETGEAR_WNDR4000:
+		power_gpio = 0x000;	//power led green
+		diag_gpio = 0x001;	// power led amber
+		connected_gpio = 0x002;	//wan led green
+		wlan0_gpio = 0x003;	//radio 0 led green
+		wlan1_gpio = 0x004;	// radio 1 led blue
+		usb_gpio = 0x005;	//usb led green
+		ses_gpio = 0x106;	// WPS led green - inverse
+		ses2_gpio = 0x107;	// WLAN led green - inverse
+		break;
 	case ROUTER_NETGEAR_WNR2000V2:
 		//power_gpio = ??;
 		diag_gpio = 0x002;
