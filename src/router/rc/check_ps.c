@@ -106,52 +106,74 @@ void checknas(void)		// for broadcom v24 only
 #endif
 }
 
-/* 
- * software wlan led control 
- */
+		/* 
+		 * software wlan led control 
+		 */
 void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro
 					// builds.
 {
 #if defined(HAVE_MICRO) && !defined(HAVE_ADM5120) && !defined(HAVE_WRK54G)
-
 	int brand;
-	int radiostate = -1;
-	int oldstate = -1;
+	int radiostate0 = -1;
+	int oldstate0 = -1;
+	int radiostate1 = -1;
+	int oldstate1 = -1;
 
 #ifdef HAVE_MADWIFI
-	radiostate = get_radiostate("ath0");
+		if (!nvram_match("flash_active", "1")) {
+			radiostate0 = get_radiostate("ath0");
+			radiostate1 = get_radiostate("ath1");
+		}
 #else
-	wl_ioctl(get_wdev(), WLC_GET_RADIO, &radiostate, sizeof(int));
+		wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
+		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 #endif
 
-	if (radiostate != oldstate) {
+		if (radiostate0 != oldstate0) {
 #ifdef HAVE_MADWIFI
-		if (radiostate == 1)
+			if (radiostate0 == 1)
 #else
-		if ((radiostate & WL_RADIO_SW_DISABLE) == 0)
+			if ((radiostate0 & WL_RADIO_SW_DISABLE) == 0)
 #endif
-			led_control(LED_WLAN, LED_ON);
-		else {
-			led_control(LED_WLAN, LED_OFF);
+				led_control(LED_WLAN0, LED_ON);
+			else {
+				led_control(LED_WLAN0, LED_OFF);
 #ifndef HAVE_MADWIFI
 			brand = getRouterBrand();
-			/* 
-			 * Disable wireless will cause diag led blink, so we want to stop 
-			 * it. 
-			 */
-			if (brand == ROUTER_WRT54G)
-				diag_led(DIAG, STOP_LED);
-			/* 
-			 * Disable wireless will cause power led off, so we want to turn
-			 * it on. 
-			 */
-			if (brand == ROUTER_WRT54G_V8)
-				led_control(LED_POWER, LED_ON);
+				/*
+				 * Disable wireless will cause diag led blink, so we want to
+				 * stop it. 
+				 */
+				if (brand == ROUTER_WRT54G)
+					diag_led(DIAG, STOP_LED);
+				/* 
+				 * Disable wireless will cause power led off, so we want to
+				 * turn it on. 
+				 */
+				if (brand == ROUTER_WRT54G_V8)
+					led_control(LED_POWER, LED_ON);
 #endif
+			}
+
+			oldstate0 = radiostate0;
 		}
 
-		oldstate = radiostate;
-	}
+		if (radiostate1 != oldstate1) {
+#ifdef HAVE_MADWIFI
+			if (radiostate1 == 1)
+#else
+			if ((radiostate1 & WL_RADIO_SW_DISABLE) == 0)
+#endif
+				led_control(LED_WLAN1, LED_ON);
+			else {
+				led_control(LED_WLAN1, LED_OFF);
+			}
+
+			oldstate1 = radiostate1;
+		}
+		/* 
+		 * end software wlan led control 
+		 */
 	return;
 
 #endif
