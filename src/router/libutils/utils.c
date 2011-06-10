@@ -3174,7 +3174,8 @@ int isap8x(void)
 int led_control(int type, int act)
 /*
  * type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
- * LED_SES, LED_SES2, LED_WLAN act: LED_ON, LED_OFF, LED_FLASH 
+ * LED_SES, LED_SES2, LED_WLAN0, LED_WLAN1, LED_SEC0, LED_SEC1, USB_POWER
+ * act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
 #if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX)  || defined(HAVE_RB600) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_RTG32) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
@@ -3194,7 +3195,8 @@ int led_control(int type, int act)
 	int vpn_gpio = 0x0ff;
 	int ses_gpio = 0x0ff;	// use for SES1 (Linksys), AOSS (Buffalo)
 	int ses2_gpio = 0x0ff;
-	int wlan_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
+	int wlan0_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
+	int wlan1_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
 	int usb_gpio = 0x0ff;
 	int sec0_gpio = 0x0ff;	// security leds, wrt600n
 	int sec1_gpio = 0x0ff;
@@ -3330,10 +3332,10 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
 		diag_gpio = 0x104;
-		wlan_gpio = 0x105;
+		wlan0_gpio = 0x105;
 #elif HAVE_WG302
 		diag_gpio = 0x102;
-		wlan_gpio = 0x104;
+		wlan0_gpio = 0x104;
 #else
 		if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
 		    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
@@ -3580,7 +3582,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x005;	// power led blink / off to indicate factory
 		// defaults
 		connected_gpio = 0x100;
-		wlan_gpio = 0x103;
+		wlan0_gpio = 0x103;
 		break;
 	case ROUTER_RT480W:
 	case ROUTER_BELKIN_F5D7230_V2000:
@@ -3622,7 +3624,7 @@ int led_control(int type, int act)
 	case ROUTER_MOTOROLA_WE800G:
 	case ROUTER_MOTOROLA_V1:
 		diag_gpio = 0x103;
-		wlan_gpio = 0x101;
+		wlan0_gpio = 0x101;
 		bridge_gpio = 0x105;
 		break;
 	case ROUTER_DELL_TRUEMOBILE_2300:
@@ -3630,18 +3632,18 @@ int led_control(int type, int act)
 		power_gpio = 0x107;
 		diag_gpio = 0x007;	// power led blink / off to indicate factory
 		// defaults
-		wlan_gpio = 0x106;
+		wlan0_gpio = 0x106;
 		break;
 	case ROUTER_NETGEAR_WNR834B:
 		power_gpio = 0x104;
 		diag_gpio = 0x105;
-		wlan_gpio = 0x106;
+		wlan0_gpio = 0x106;
 		break;
 	case ROUTER_SITECOM_WL105B:
 		power_gpio = 0x003;
 		diag_gpio = 0x103;	// power led blink / off to indicate factory
 		// defaults
-		wlan_gpio = 0x104;
+		wlan0_gpio = 0x104;
 		break;
 	case ROUTER_WRT300N:
 		power_gpio = 0x001;
@@ -3710,7 +3712,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_WAP54G_V1:
 		diag_gpio = 0x103;
-		wlan_gpio = 0x104;	// LINK led
+		wlan0_gpio = 0x104;	// LINK led
 		break;
 	case ROUTER_WAP54G_V3:
 		ses_gpio = 0x10c;
@@ -3727,7 +3729,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x007;	// WAN led green 
 		break;
 	case ROUTER_ASKEY_RT220XD:
-		wlan_gpio = 0x100;
+		wlan0_gpio = 0x100;
 		dmz_gpio = 0x101;	// not soldered 
 		break;
 	case ROUTER_WRT610N:
@@ -3855,8 +3857,11 @@ int led_control(int type, int act)
 	case LED_SES2:
 		use_gpio = ses2_gpio;
 		break;
-	case LED_WLAN:
-		use_gpio = wlan_gpio;
+	case LED_WLAN0:
+		use_gpio = wlan0_gpio;
+		break;
+	case LED_WLAN1:
+		use_gpio = wlan1_gpio;
 		break;
 	case LED_USB:
 		use_gpio = usb_gpio;
