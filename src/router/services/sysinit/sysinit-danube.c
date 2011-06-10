@@ -193,7 +193,8 @@ void start_sysinit(void)
 	led_control(LED_SES2, LED_OFF);
 	led_control(LED_DIAG, LED_OFF);
 	led_control(LED_BRIDGE, LED_OFF);
-	led_control(LED_WLAN, LED_OFF);
+	led_control(LED_WLAN0, LED_OFF);
+	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 	system2("gpio disable 1");
 	system2("gpio disable 18");
