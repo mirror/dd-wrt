@@ -11,8 +11,10 @@ static void watchdog(void)
 {
 	int brand = getRouterBrand();
 	int registered = -1;
-	int radiostate = -1;
-	int oldstate = -1;
+	int radiostate0 = -1;
+	int oldstate0 = -1;
+	int radiostate1 = -1;
+	int oldstate1 = -1;
 	int counter = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
 	if (fd == -1)
@@ -38,21 +40,23 @@ static void watchdog(void)
 		 */
 #ifdef HAVE_MADWIFI
 		if (!nvram_match("flash_active", "1")) {
-			radiostate = get_radiostate("ath0");
+			radiostate0 = get_radiostate("ath0");
+			radiostate1 = get_radiostate("ath1");
 		}
 #else
-		wl_ioctl(get_wdev(), WLC_GET_RADIO, &radiostate, sizeof(int));
+		wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
+		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 #endif
 
-		if (radiostate != oldstate) {
+		if (radiostate0 != oldstate0) {
 #ifdef HAVE_MADWIFI
-			if (radiostate == 1)
+			if (radiostate0 == 1)
 #else
-			if ((radiostate & WL_RADIO_SW_DISABLE) == 0)
+			if ((radiostate0 & WL_RADIO_SW_DISABLE) == 0)
 #endif
-				led_control(LED_WLAN, LED_ON);
+				led_control(LED_WLAN0, LED_ON);
 			else {
-				led_control(LED_WLAN, LED_OFF);
+				led_control(LED_WLAN0, LED_OFF);
 #ifndef HAVE_MADWIFI
 				/* 
 				 * Disable wireless will cause diag led blink, so we want to
@@ -69,7 +73,21 @@ static void watchdog(void)
 #endif
 			}
 
-			oldstate = radiostate;
+			oldstate0 = radiostate0;
+		}
+
+		if (radiostate1 != oldstate1) {
+#ifdef HAVE_MADWIFI
+			if (radiostate1 == 1)
+#else
+			if ((radiostate1 & WL_RADIO_SW_DISABLE) == 0)
+#endif
+				led_control(LED_WLAN1, LED_ON);
+			else {
+				led_control(LED_WLAN1, LED_OFF);
+			}
+
+			oldstate1 = radiostate1;
 		}
 		/* 
 		 * end software wlan led control 
