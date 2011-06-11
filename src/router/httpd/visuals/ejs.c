@@ -3266,7 +3266,10 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 					  current->mp,
 					  current->fstype,
 					  buffer,
-					  strcmp(current->mp, cs->mp) ? "" :
+					  strcmp(current->
+						 mp,
+						 cs->
+						 mp) ? "" :
 					  "selected=\"selected\"", current->mp);
 			}
 		}
@@ -3289,13 +3292,11 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "					<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
 			  number, number,
 			  !strcmp(perms, "") ? " disabled" : "");
-		if (rows == 0 || !strcmp(perms, "rw")) {
+		if (rows == 0 || strcmp(perms, "")) {
 			websWrite(wp,
 				  "						<option value=\"rw\"%s>Read/Write</option>\n",
 				  !strcmp
 				  (cs->access_perms, "rw") ? " selected" : "");
-		}
-		if (rows == 0 || strcmp(perms, "")) {
 			websWrite(wp,
 				  "						<option value=\"ro\"%s>Read Only</option>\n",
 				  !strcmp
