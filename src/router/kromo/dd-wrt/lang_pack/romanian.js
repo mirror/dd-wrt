@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//		Romanian translation file - DD-WRT V24 by Daniel Alămiță - 11/2010                  //
+//		Romanian translation file - DD-WRT V24 by Daniel Alămiță - 06/2011                  //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -30,7 +30,7 @@ share.hostname="Nume gazdă";
 share.vdsl="Etichetă T-Home VDSL VLAN 7/8";
 share.vdslvlan8="Compatibilitate VLAN 8";
 share.wan_vlantag="ID Etichetă VLAN";
-share.compression="Comprimare PPP";
+share.compression="Comprimare PPP (MPPC)";
 share.mlppp="Legătură multiplă pe o singură linie";
 share.domainname="Nume domeniu";
 share.wandomainname="Nume domeniu WAN";
@@ -46,6 +46,7 @@ share.mac="Adresă MAC";
 share.none="Niciunul";
 share.none2="nicio";
 share.both="Ambele";
+share.add="Adaugă";
 share.del="Șterge";
 share.remove="Elimină";
 share.descr="Descriere";
@@ -159,6 +160,8 @@ share.styl="Stil";
 share.err="eroare";
 share.errs="erori";
 share.meters="metri";
+share.ht40="Lat HT40 (20+20 MHz)";
+share.ht20="Complet HT20 (20 MHz)";
 share.dynamicturbo="Dinamic (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
 share.full="Complet (20 MHz)";
@@ -612,7 +615,7 @@ firewall.cookies="Filtrează cookie-uri";
 firewall.applet="Filtrează applet-uri Java";
 firewall.activex="Filtrează ActiveX";
 firewall.legend3="Blocare cereri WAN";
-firewall.legend4="Impiedică DoS/Brutforce";
+firewall.legend4="Impiedică DoS/Bruteforce din WAN";
 firewall.ping="Blochează cereri WAN anonime (ping)";
 firewall.muticast="Filtrează difuzare multiplă (multicast)";
 firewall.ssh="Limitează accesul prin SSH";
@@ -719,7 +722,8 @@ hotspot.nocat_srv="Întâmpinare NoCat";
 hotspot.nocat_gateway="Nume gateway";
 hotspot.nocat_gatewayaddr="Adresă IP gateway";
 hotspot.nocat_home="Pagina de început";
-hotspot.nocat_ifname="Interfață";
+hotspot.nocat_extifname="Interfață externă";
+hotspot.nocat_ifname="Interfață internă";
 hotspot.nocat_redirect="Redirecționare pagină de pornire";
 hotspot.nocat_allowweb="Permite gazde web";
 hotspot.nocat_docroot="Rădăcină document";
@@ -1052,6 +1056,9 @@ networking.iface="Interfețe";
 networking.h5="DHCPD";
 networking.legend5="Server DHCP multiplu";
 
+//help container
+hnetworking.right1="DHCPD multiplu";
+hnetworking.right2="Pentru a folosi DHCPD multiplu activați DNSMasq ca server DHCP";
 
 // ** QoS.asp **//
 qos.titl="Calitatea serviciului";
@@ -1228,9 +1235,6 @@ service.pppoesrv_srv="Daemon server RP-PPPoE";
 service.pppoesrv_interface="Interfață server RP-PPPoE";
 service.pppoesrv_srvopt="Opțiuni server RP-PPPoE";
 service.pppoesrv_compr="Comprimare";
-service.pppoesrv_remoteaddr="IP de început la distanță";
-service.pppoesrv_remotenet="IP rețea la distanță";
-service.pppoesrv_remotemask="Mască rețea la distanță";
 service.pppoesrv_lcpei="Interval repetare LCP";
 service.pppoesrv_lcpef="Eșuare repetare LCP";
 service.pppoesrv_limit="Limită sesiune per MAC";
@@ -1242,6 +1246,9 @@ service.pppoesrv_radaccport="Port registru Radius";
 service.pppoesrv_radkey="Cheie partajată Radius";
 service.pppoesrv_chaps="Administrare utilizator local (secrete CHAP)";
 
+//help container
+hpppoesrv.right2="IP: 0.0.0.0; veți da IP-uri din interval";
+
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
@@ -1252,7 +1259,7 @@ service.snmp_read="Comunitate RO";
 service.snmp_write="Comunitate RW";
 
 //openvpn.webvpn
-service.vpnd_legend="Server OpenVPN";
+service.vpnd_legend="Server/Daemon OpenVPN";
 service.vpnd_srv="Pornește server OpenVPN";
 service.vpnd_starttype="Tip pornire";
 service.vpnd_startWanup="WAN pornit";
@@ -1269,8 +1276,11 @@ service.vpnd_mask="Mască de rețea";
 service.vpnd_startip="IP de început";
 service.vpnd_endip="IP de sfârșit";
 service.vpnd_cl2cl="Conexiune client către client permisă";
-service.vpnd_switch="Schimbă configurație server";
+service.vpnd_switch="Config. prin";
 service.vpnd_dupcn="Permite cn duplicat";
+service.vpnd_proxy="Mod DHCP-Proxy";
+service.vpnd_clcon="Script conectare clienți";
+service.vpnd_ccddef="Fișier implicit CCD-Dir";
 service.vpn_redirgate="Redirecționează Gateway implicit";
 service.vpn_legend="Client OpenVPN";
 service.vpn_srv="Start client OpenVPN";
@@ -1285,11 +1295,17 @@ service.vpn_srvcert="Certificat CA";
 service.vpn_clicert="Certificat client public";
 service.vpn_certtype="Verificare tip certificat ns";
 service.vpn_clikey="Cheie client privată";
-service.vpn_nat="Activează NAT";
+service.vpn_nat="NAT";
 service.vpn_cipher="Cifru de criptare";
 service.vpn_auth="Algoritm hash";
-service.vpn_bridge="Creează punte Tap cu br0";
+service.vpn_bridge="Creează punte TAP cu br0";
 service.vpn_adv="Opțiuni avansate";
+service.vpn_tlscip="Cifru TLS";
+service.vpn_route="Rutare bazată pe politici";
+
+//help container
+hstatus_vpn.right1="Adăugați IP-uri sub form 0.0.0.0/0 pentru a forța clienții să folosească tunelul ca gateway implicit. O linie pentru fiecare IP. Redirecționare Gateway TREBUIE să fie dezactivată.";
+hstatus_vpn.right2="Pentru a trimite rute către clienți adăugați \'push \"route 0.0.0.0\"\', pentru a trimite DNS/WINS adăugați \'push \"dhcp-option DNS (sau WINS) 0.0.0.0\"\' în configurație.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1354,7 +1370,7 @@ service.warn_pass="Parolă autentificare SMTP";
 service.milkfish_siprouter="Ruter SIP Milkfish";
 service.milkfish_alias="Alias";
 service.milkfish_uri="URI SIP";
-service.milkfish_mainswitch="Switch principal";
+service.milkfish_mainswitch="Ruter SIP";
 service.milkfish_fromswitch="De la-substituție";
 service.milkfish_fromdomain="De la-domeniu";
 service.milkfish_username="Utilizator Milkfish";
@@ -1406,6 +1422,15 @@ service.samba3_pass2=" Password2";
 service.samba3_pubacl="Doar citire";
 service.samba3_advanced="Avansat"
 service.samba3_custom="Folosește configurație particulară";
+service.samba3_shares="Partajări";
+service.samba3_share_path="Cale";
+service.samba3_share_label="Nume";
+service.samba3_share_public="Public";
+service.samba3_share_access="Acces";
+service.samba3_users="Utilizatori";
+service.samba3_username="Utilizator";
+service.samba3_password="Parolă";
+service.samba3_user_shares="Acces partajări";
 
 // ** eop-tunnel.asp **//
 eoip.titl="Tunel EoIP";
@@ -1722,9 +1747,16 @@ aoss.ap_mode_notice="ATENȚIE: AOSS poate fi folosit doar atunci când rețeaua 
 aoss.wep_notice="Modul de securitate WEP nu este sigur, de aceea folosirea acestui mod nu este recomandată.";
 aoss.wep_info="(necesar pentru majoritatea consolelor compatibile AOSS)";
 aoss.wps="Instalare WPS";
-aoss.wpspin="PIN WPS";
+aoss.wps_ap_pin="PIN Gateway WPS (Etichetă)";
+aoss.wpspin="PIN client WPS";
+aoss.wpsactivate="Activează PIN";
 aoss.wpsregister="Înregistreză PIN";
+aoss.wpsgenerate="Generează PIN";
+aoss.pinnotvalid="PIN incorect, suma de control nu este corectă!";
 aoss.wpsenable="Buton WPS";
+aoss.wpsstatus="Stare WPS";
+aoss.externalregistrar="Registrar extern";
+aoss.release="Eliberează";
 
 sec80211x.xsuptype="Tip XSupplicant";
 sec80211x.servercertif="Certificat server public";
@@ -1838,6 +1870,8 @@ freeradius.generate="Generează certificat";
 freeradius.cert_status="Stare certificat";
 freeradius.port="Port Radius";
 
+//help container
+hfreeradius.right2="Trebuie să activați JFFS înainte de a porni FreeRadius.";
 
 // ** Wireless_Advanced.asp **//
 wl_adv.titl="Setări avansate rețea fără fir";
@@ -1975,7 +2009,7 @@ wl_basic.supergff="Încadrare rapidă Super G";
 wl_basic.extchannel="Mod canal extins";
 wl_basic.outband="Bandă pentru exterior";
 wl_basic.channel_width="Lățime canal";
-wl_basic.channel_wide="Canal de control";
+wl_basic.channel_wide="Canal de extensie";
 wl_basic.regulatory="SuperChannel";
 wl_basic.chanshift="Schimbare canal";
 wl_basic.specialmode="Mod 2.3 GHz";
