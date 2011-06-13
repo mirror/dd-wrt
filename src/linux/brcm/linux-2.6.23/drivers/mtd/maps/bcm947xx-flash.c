@@ -483,10 +483,9 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 			break;	
 		case ROUTER_NETGEAR_WNR2000V2:	
 			board_data_size = 0x10000;
-		break;
+			break;
 		case ROUTER_NETGEAR_WNDR4000:
-			board_data_size = 11 * 0x10000;  //Netgear: checksum is @ 0x0073FFF8 @ 8M flash
-			jffs_exclude_size = 0x10000;
+			board_data_size = 0x10000;  //Netgear: checksum is @ 0x0073FFF8 @ 8M flash, but can be overwritten
 			break;
 	}
 
