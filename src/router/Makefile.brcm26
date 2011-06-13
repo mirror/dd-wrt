@@ -546,6 +546,9 @@ endif
 	-./strip_libs.sh $(ARCH)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/rootfs.squashfs -noappend -root-owned -le
 	../../opt/tools/trx -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+
+ifneq ($(CONFIG_NVRAM_60K),y)
+ifneq ($(CONFIG_NVRAM_64K),y)	
 # Asus RT-N16
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N16 1.00 1.05 $(ARCH)-uclibc/vmlinuz
@@ -603,8 +606,12 @@ endif
 	rm -rf $(ARCH)-uclibc/f5d8235v3.hdr
 	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd
 # end Belkin  f7d3301 / f7d3302 / f7d4302 / f5d8235v3
+endif
+endif
 
 # Netgear
+ifneq ($(CONFIG_NVRAM_60K),y)
+ifneq ($(CONFIG_NVRAM_64K),y)
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
@@ -615,11 +622,17 @@ endif
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR2000v2.chk
+endif
+endif
+ifeq ($(CONFIG_NVRAM_64K),y)
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr4000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4000.chk
+endif
 # end Netgear
 
 # Linksys
+ifneq ($(CONFIG_NVRAM_60K),y)
+ifneq ($(CONFIG_NVRAM_64K),y)
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
 	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
 	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt610n.bin -g
@@ -628,20 +641,29 @@ endif
 	../../opt/tools/addpattern -4 -p M020 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m20.bin -g
 	../../opt/tools/addpattern -4 -p E100 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v1.bin -g
 	../../opt/tools/addpattern -4 -p E100 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v2.bin -g
+endif
+endif
+ifeq ($(CONFIG_NVRAM_60K),y)
 	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
 	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
 	../../opt/tools/addpattern -4 -p 3200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3200.bin -g
 	../../opt/tools/addpattern -4 -p 4200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e4200.bin -g
-	../../opt/tools/addpattern -4 -p NV60 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv60k.bin -g
-	../../opt/tools/addpattern -4 -p NV64 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv64k.bin -g
+
+endif
 # end Linksys
+
+# special
+ifeq ($(CONFIG_NVRAM_60K),y)
+	../../opt/tools/addpattern -4 -p NV60 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv60k.bin -g
+endif
+ifeq ($(CONFIG_NVRAM_64K),y)
+	../../opt/tools/addpattern -4 -p NV64 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv64k.bin -g
+endif
+# end special
 
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
 
 
-#BOARDID_FILE=compatible_WNR3500v2.txt
-#FW_NAME=WNR3500v2
-#fw_cfg_file := ambitCfg_NA.h
 
 #	./tools/kernelopt/kernelopt.sh $(LINUXDIR) $(ARCH)-uclibc/target $(ARCH)-linux-uclibc-
 #	make -C $(LINUXDIR) vmlinux_optimize
