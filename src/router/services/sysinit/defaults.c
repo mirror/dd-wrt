@@ -795,6 +795,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+	{"wl1_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 #endif
 	{"wl0.1_ssid", "", 0},	/* Service set ID (network name) */
 	{"wl0.2_ssid", "", 0},	/* Service set ID (network name) */
