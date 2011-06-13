@@ -533,7 +533,7 @@ int mtd_write(const char *path, const char *mtd)
 	    || brand == ROUTER_NETGEAR_WNR834B
 	    || brand == ROUTER_NETGEAR_WNR834BV2
 	    || brand == ROUTER_NETGEAR_WNDR3300
-	    || brand == ROUTER_NETGEAR_WNDR4000
+//	    || brand == ROUTER_NETGEAR_WNDR4000
 	    || brand == ROUTER_NETGEAR_WNR3500L) {
 #ifndef NETGEAR_CRC_FAKE
 		cal_chksum = calculate_checksum(2, NULL, 0);
@@ -549,12 +549,12 @@ int mtd_write(const char *path, const char *mtd)
 				flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_8M;
 			}
 		}
-
+/*
 		if (brand == ROUTER_NETGEAR_WNDR4000) {
 			cfe_size = CFE_SIZE_256K;
 			flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_8M_2;
 		}
-		
+*/		
 #ifndef NETGEAR_CRC_FAKE
 		trx.len = STORE32_LE(trx.len);
 		cal_chksum = STORE32_LE(cal_chksum);
