@@ -772,6 +772,133 @@ void start_sysinit(void)
 			nvram_set("pci/1/1/macaddr", mac);
 			need_reboot = 1;
 		}
+
+		struct nvram_tuple wndr4000_sb_1_params[] = {
+						
+			{"aa2g", "3", 0},
+			{"ag0", "0", 0},
+			{"ag1", "0", 0},
+			{"ag2", "0", 0},
+			{"txchain", "3", 0},
+			{"rxchain", "3", 0},
+			{"antswitch", "0", 0},
+			{"itt2ga0", "0x20", 0},
+			{"itt2ga1", "0x20", 0},
+			{"tssipos2g", "1", 0},
+			{"extpagain2g", "3", 0},
+			{"pdetrange2g", "5", 0},
+			{"triso2g", "4", 0},
+			{"antswctl2g", "2", 0},
+			{"elna2g",  "3", 0},
+
+			{"pa2gw0a0", "0xFEA6", 0},
+			{"pa2gw1a0", "0x191D", 0},
+			{"pa2gw2a0", "0xFA18", 0},
+
+			{"pa2gw0a1", "0xFE9E", 0},
+			{"pa2gw1a1", "0x1809", 0},
+			{"pa2gw2a1", "0xFA4B", 0},
+
+			{0, 0, 0}
+		};
+		/*
+		 * set router's extra parameters 
+		 */
+		extra_params = wndr4000_sb_1_params;
+		while (extra_params->name) {
+			nvram_nset(extra_params->value, "sb/1/%s",
+				   extra_params->name);
+			extra_params++;
+		}
+		
+		struct nvram_tuple wndr4000_pci_1_1_params[] = {
+			
+			{"boardflags2", "0x04000000", 0},
+			{"legofdmbw20ul5ghpo", "0x11000000", 0},
+			{"legofdmbw205ghpo", "0x11000000", 0},
+			{"legofdm40duppo", "0x2222", 0},
+			{"aa2g", "7", 0},
+			{"aa5g", "7", 0},
+			{"ag0", "0", 0},
+			{"ag1", "0", 0},
+			{"ag2", "0", 0},
+			{"txchain", "7", 0},
+			{"rxchain", "7", 0},
+			{"antswitch", "0", 0},
+			{"tssipos2g", "1", 0},
+			{"extpagain2g", "0", 0},
+			{"pdetrange2g", "4", 0},
+			{"antswctl2g", "0", 0},
+			{"tssipos5g", "1", 0},
+			{"extpagain5g", "0", 0},
+			{"pdetrange5g", "4", 0},
+			{"triso5g", "1", 0},
+			{"antswctl5g", "0", 0}, 
+			
+			{"pa2gw0a0", "0xFE6D", 0},
+			{"pa2gw0a1", "0xFE72", 0},
+			{"pa2gw0a2", "0xFE74", 0},
+			{"pa2gw1a0", "0x1772", 0},
+			{"pa2gw1a1", "0x1792", 0},
+			{"pa2gw1a2", "0x1710", 0},
+			{"pa2gw2a0", "0xFA34", 0},
+			{"pa2gw2a1", "0xFA31", 0},
+			{"pa2gw2a2", "0xFA4F", 0},
+			{"maxp2ga0", "0x48", 0},
+			{"maxp2ga1", "0x48", 0},
+			{"maxp2ga2", "0x48", 0},			
+			
+			
+			{"pa5gw0a0", "0xFE82", 0},
+			{"pa5gw0a1", "0xFE85", 0},
+			{"pa5gw0a2", "0xFE7F", 0},
+			{"pa5gw1a0", "0x1677", 0},
+			{"pa5gw1a1", "0x167C", 0},
+			{"pa5gw1a2", "0x1620", 0},
+			{"pa5gw2a0", "0xFA72", 0},
+			{"pa5gw2a1", "0xFA7A", 0},
+			{"pa5gw2a2", "0xFA88", 0},
+			{"maxp5ga0", "0x48", 0},
+			{"maxp5ga1", "0x48", 0},
+			{"maxp5ga2", "0x48", 0},
+			
+			{"pa5ghw0a0", "0xFE9A", 0},
+			{"pa5ghw0a1", "0xFE89", 0},
+			{"pa5ghw0a2", "0xFE98", 0},
+			{"pa5ghw1a0", "0x15E7", 0},
+			{"pa5ghw1a1", "0x15F9", 0},
+			{"pa5ghw1a2", "0x15CD", 0},
+			{"pa5ghw2a0", "0xFAAC", 0},
+			{"pa5ghw2a1", "0xFA94", 0},
+			{"pa5ghw2a2", "0xFAB2", 0},
+			{"maxp5gha0", "0x40", 0},
+			{"maxp5gha1", "0x40", 0},
+			{"maxp5gha2", "0x40", 0},
+			
+			{"pa5glw0a0", "0xFE97", 0},
+			{"pa5glw0a1", "0xFE82", 0},
+			{"pa5glw0a2", "0xFE84", 0},
+			{"pa5glw1a0", "0x162F", 0},
+			{"pa5glw1a1", "0x15ED", 0},
+			{"pa5glw1a2", "0x167F", 0},
+			{"pa5glw2a0", "0xFA98", 0},
+			{"pa5glw2a1", "0xFA99", 0},
+			{"pa5glw2a2", "0xFA84", 0},
+			{"maxp5gla0", "0x48", 0},
+			{"maxp5gla1", "0x48", 0},
+			{"maxp5gla2", "0x48", 0},
+
+			{0, 0, 0}
+		};
+		/*
+		 * set router's extra parameters 
+		 */
+		extra_params = wndr4000_pci_1_1_params;
+		while (extra_params->name) {
+			nvram_nset(extra_params->value, "pci/1/1/%s",
+				   extra_params->name);
+			extra_params++;
+		}
 		break;
 
 	case ROUTER_NETGEAR_WNR2000V2:
