@@ -67,6 +67,7 @@ void delete_ath9k_devices(char *physical_iface)
 		ifname = strrchr(globbuf.gl_pathv[i], '/');
 		if (!ifname)
 			continue;
+		eval("ifconfig", ifname + 1, "down");
 		eval("iw", ifname + 1, "del");
 	}
 }
