@@ -2165,6 +2165,9 @@ void start_drivers(void)
 		cprintf("loading usb-ohci\n");
 		insmod("usb-ohci");
 		insmod("ohci-hcd");
+
+
+		insmod("xhci-hcd");
 #ifdef HAVE_DANUBE
 		insmod("dwc_otg");	// usb
 #endif
