@@ -34,11 +34,12 @@ static int upgrade_ret;
 static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
-	unsigned char *disks[]={"/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2"};
+	static char ret[4];
+	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
-		strcpy(dev, disks[i]);
+		sprintf(dev, "/dev/%s", disks[i]);
 		FILE *in = fopen(dev, "rb");
 
 		if (in == NULL)
@@ -51,7 +52,8 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			return disks[i];
+			strncpy(ret,disks[i],3);
+			return ret;
 		}
 		fclose(in);
 	}
@@ -211,7 +213,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #ifdef HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
-	strcpy(drive, getdisc());
+	sprintf(drive, "/dev/%s",getdisc());
 #endif
 	fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
 	//backup nvram
@@ -354,7 +356,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 #ifdef HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
-	strcpy(drive, getdisc());
+	sprintf(drive, "/dev/%s",getdisc());
 #endif
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);

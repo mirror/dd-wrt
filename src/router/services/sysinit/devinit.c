@@ -57,11 +57,12 @@
 static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
-	unsigned char *disks[]={"/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2"};
+	static char ret[4];
+	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
-		strcpy(dev, disks[i]);
+		sprintf(dev, "/dev/%s", disks[i]);
 		FILE *in = fopen(dev, "rb");
 
 		if (in == NULL)
@@ -74,7 +75,8 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			return disks[i];
+			strncpy(ret,disks[i],3);
+			return ret;
 		}
 		fclose(in);
 	}
@@ -96,27 +98,6 @@ void start_devinit(void)
 	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
 #endif
 	cprintf("sysinit() tmp\n");
-#ifdef HAVE_X86
-	char dev[64];
-	char *disc = getdisc();
-
-	if (disc == NULL) {
-		fprintf(stderr,
-			"no valid dd-wrt partition found, calling shell");
-		eval("/bin/sh");
-		exit(0);
-	}
-	// sprintf (dev, "/dev/discs/disc%d/part1", index);
-	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-
-	sprintf(dev, "/dev/discs/disc%d/part3", index);
-	if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL)) {
-		eval("/sbin/mke2fs", "-F", "-b", "1024", dev);
-		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
-//		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
-	}
-	eval("mkdir", "-p", "/usr/local/nvram");
-#endif
 	/*
 	 * /tmp 
 	 */
@@ -155,6 +136,27 @@ void start_devinit(void)
 fprintf(stderr,"starting hotplug\n");
 #ifdef HAVE_HOTPLUG2
 	system("/etc/hotplug2.startup");
+#endif
+#ifdef HAVE_X86
+	fprintf(stderr,"waiting for hotplug\n");
+	char dev[64];
+	char *disc = getdisc();
+
+	if (disc == NULL) {
+		fprintf(stderr,
+			"no valid dd-wrt partition found, calling shell");
+		eval("/bin/sh");
+	}
+	// sprintf (dev, "/dev/discs/disc%d/part1", index);
+	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
+
+	sprintf(dev, "/dev/%s3", disc);
+	if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL)) {
+		eval("/sbin/mke2fs", "-F", "-b", "1024", dev);
+		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
+//		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+	}
+	eval("mkdir", "-p", "/usr/local/nvram");
 #endif
 fprintf(stderr,"done\n");
 }
