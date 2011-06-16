@@ -1,0 +1,169 @@
+###################
+# @par
+# This file is provided under a dual BSD/GPLv2 license.  When using or 
+#   redistributing this file, you may do so under either license.
+# 
+#   GPL LICENSE SUMMARY
+# 
+#   Copyright(c) 2007,2008,2009 Intel Corporation. All rights reserved.
+# 
+#   This program is free software; you can redistribute it and/or modify 
+#   it under the terms of version 2 of the GNU General Public License as
+#   published by the Free Software Foundation.
+# 
+#   This program is distributed in the hope that it will be useful, but 
+#   WITHOUT ANY WARRANTY; without even the implied warranty of 
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+#   General Public License for more details.
+# 
+#   You should have received a copy of the GNU General Public License 
+#   along with this program; if not, write to the Free Software 
+#   Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+#   The full GNU General Public License is included in this distribution 
+#   in the file called LICENSE.GPL.
+# 
+#   Contact Information:
+#   Intel Corporation
+# 
+#   BSD LICENSE 
+# 
+#   Copyright(c) 2007,2008,2009 Intel Corporation. All rights reserved.
+#   All rights reserved.
+# 
+#   Redistribution and use in source and binary forms, with or without 
+#   modification, are permitted provided that the following conditions 
+#   are met:
+# 
+#     * Redistributions of source code must retain the above copyright 
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright 
+#       notice, this list of conditions and the following disclaimer in 
+#       the documentation and/or other materials provided with the 
+#       distribution.
+#     * Neither the name of Intel Corporation nor the names of its 
+#       contributors may be used to endorse or promote products derived 
+#       from this software without specific prior written permission.
+# 
+#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+#   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+#   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
+#   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+#   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+#   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+#   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+#   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
+#   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+#   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+#   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# 
+#  version: Security.L.1.0.3-98
+###################
+
+ifeq ($(MKDEFINC_DIR),)
+MKDEFINC_DIR = ../makDefs
+endif
+
+include $(MKDEFINC_DIR)/environment.mk
+
+ifeq ($(LIB_DIR_ROOT),)
+ LIB_DIR_ROOT = $(ICP_TOOLS_SDK_ROOT)
+endif
+
+ifeq ($(BIN_DIR_ROOT),)
+ BIN_DIR_ROOT = $(ICP_TOOLS_SDK_ROOT)
+endif
+
+# get CPU type
+ifeq ($(CPU),)
+ CPU = x86
+endif
+
+ifeq ($(BE),1)
+ ENDIAN = _be
+ BE_FLAG = -DBE=1
+else
+ ENDIAN	= _le
+ BE_FLAG =
+endif
+
+# determine and set the OS type
+ifeq ($(SYS),)
+ SYS = LINUX
+endif
+
+ifneq ($(KVER),)
+ KVER_OPTION = KVER=$(KVER)
+else
+ KVER_OPTION = 
+endif
+
+EXT_INCLUDE = -I$(ICP_API_ROOT) -I$(ICP_ASD_ROOT)/include \
+              -I$(ICP_OSAL_COMMON)/include -I$(ICP_OSAL_LINUX_USER) -I$(ICP_OSAL_POSIX)/include \
+              -I$(ICP_OSAL_PLATFORM)/include -I$(ICP_OSAL_PLATFORM_LINUX_USER)/include
+
+# set default directory seperator
+DIR_SEP = /
+
+ifeq ($(SYS),LINUX)
+# set system type
+ O_S = -D__linux -D__linux_user
+ SYS_ABRV = linux
+ CMD_CAT = ;
+ EXE_FILTYP =
+ ifeq ($(MODE),KERNEL)
+      SYS_ABRV = linux_kernel
+ endif
+ include $(MKDEFINC_DIR)/linuxMak.def
+else
+  ERROR=1
+  #Invalid OS type -- force failure 
+  include invalid_sys.null
+endif
+
+
+#set ICP definitions
+ICP_FLAGS = $(O_S) $(IO_STYLE) $(BE_FLAG) $(PROD_TYP)
+
+
+ifneq ($(CCMODE),DEBUG)
+ DBG_FLAG =
+ ifeq ($(TARGET),HOST)
+  BIN_DIR       = $(BIN_DIR_ROOT)/bin
+  LIB_DIR       = $(LIB_DIR_ROOT)/lib
+  OBJ_DIR       = ./$(SYS_ABRV)_rel$(ENDIAN)
+ else
+  BIN_DIR       = $(BIN_DIR_ROOT)/bin_$(SYS_ABRV)$(ENDIAN)
+  LIB_DIR       = $(LIB_DIR_ROOT)/lib_$(SYS_ABRV)$(ENDIAN)
+  OBJ_DIR       = ./$(SYS_ABRV)_rel$(ENDIAN)
+ endif
+else
+ DBG_FLAG = -g -D_DBG_PRINT
+ ifeq ($(TARGET),HOST)
+  BIN_DIR       = $(BIN_DIR_ROOT)/bin/debug
+  LIB_DIR       = $(LIB_DIR_ROOT)/lib/debug
+  OBJ_DIR       = ./$(SYS_ABRV)_dbg$(ENDIAN)
+ else
+  BIN_DIR       = $(BIN_DIR_ROOT)/bin_$(SYS_ABRV)$(ENDIAN)/debug
+  LIB_DIR       = $(LIB_DIR_ROOT)/lib_$(SYS_ABRV)$(ENDIAN)/debug
+  OBJ_DIR       = ./$(SYS_ABRV)_dbg$(ENDIAN)
+ endif
+endif
+
+.PHONY: clean lib exe all
+
+$(OBJ_DIR)/%.o : %.cpp
+	-@ $(MKDIR) "$(OBJ_DIR)"
+	$(CC) $(CXX_FLAGS) $(KERNEL_FLAGS) $(DBG_FLAG) $(ICP_FLAGS) $(AUX_CXXFLAGS) $(INCLUDE) $(EXT_INCLUDE) -c $^ -o $@
+	@ echo ""
+
+$(OBJ_DIR)/%.o : %.c
+	-@ $(MKDIR)  "$(OBJ_DIR)"
+	$(CC) $(CC_FLAGS) $(KERNEL_FLAGS) $(DBG_FLAG) $(ICP_FLAGS) $(AUX_CFLAGS) $(INCLUDE) $(EXT_INCLUDE) -c $^ -o $@
+	@ echo ""
+
+$(OBJ_DIR)/%.o : %.s
+	-@ $(MKDIR)  "$(OBJ_DIR)"
+	$(CC) $(ASFLAGS) $(KERNEL_FLAGS) $(DBG_FLAG) $(ICP_FLAGS) $(AUX_ASFLAGS) $(INCLUDE) $(EXT_INCLUDE) -c $^ -o $@
+	@ echo ""
+
