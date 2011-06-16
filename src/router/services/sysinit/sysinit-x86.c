@@ -56,14 +56,14 @@
 
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
 
-static int getdiscindex(void)	// works only for squashfs 
+static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
-
-	for (i = 0; i < 10; i++) {
+	unsigned char *disks[]={"/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2"};
+	for (i = 0; i < 9; i++) {
 		char dev[64];
 
-		sprintf(dev, "/dev/discs/disc%d/part2", i);
+		strcpy(dev, disks[i]);
 		FILE *in = fopen(dev, "rb");
 
 		if (in == NULL)
@@ -76,11 +76,11 @@ static int getdiscindex(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			return i;
+			return disks[i];
 		}
 		fclose(in);
 	}
-	return -1;
+	return NULL;
 }
 
 void start_sysinit(void)
@@ -88,9 +88,9 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	char dev[64];
-	int index = getdiscindex();
+	char *disk = getdisc();
 
-	if (index == -1) {
+	if (disk == NULL) {
 		fprintf(stderr,
 			"no valid dd-wrt partition found, calling shell");
 		eval("/bin/sh");
@@ -113,7 +113,7 @@ void start_sysinit(void)
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
-		sprintf(dev, "/dev/discs/disc%d/disc", index);
+		strcpy(dev,disk);
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
