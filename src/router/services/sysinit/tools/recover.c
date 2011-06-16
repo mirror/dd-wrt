@@ -4,7 +4,7 @@ void start_backup(void)
 #ifdef HAVE_RB600
 	sprintf(drive, "/dev/sda");
 #else
-	strcpy(drive, getdisc());
+	sprintf(drive, "/dev/%s",getdisc());
 #endif
 	//backup nvram
 	fprintf(stderr, "backup nvram\n");
@@ -40,7 +40,7 @@ void start_recover(void)
 #ifdef HAVE_RB600
 	sprintf(dev, "/dev/sda");
 #else
-	strcpy(dev, getdisc());
+	sprintf(dev, "/dev/%s",getdisc());
 #endif
 	in = fopen(dev, "rb");
 	fseeko(in, 0, SEEK_END);
