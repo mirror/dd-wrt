@@ -2171,6 +2171,7 @@ void start_drivers(void)
 #ifdef HAVE_DANUBE
 		insmod("dwc_otg");	// usb
 #endif
+		insmod("usb-libusual");
 
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
