@@ -98,7 +98,7 @@ void start_devinit(void)
 	cprintf("sysinit() tmp\n");
 #ifdef HAVE_X86
 	char dev[64];
-	char *disc = getdiscindex();
+	char *disc = getdisc();
 
 	if (disc == NULL) {
 		fprintf(stderr,
