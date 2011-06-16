@@ -1529,11 +1529,12 @@ void do_logout(void)		// static functions are not exportable,
 static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
-	unsigned char *disks[]={"/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2"};
+	static char ret[4];
+	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
-		strcpy(dev, disks[i]);
+		sprintf(dev, "/dev/%s", disks[i]);
 		FILE *in = fopen(dev, "rb");
 
 		if (in == NULL)
@@ -1546,7 +1547,8 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			return disks[i];
+			strncpy(ret,disks[i],3);
+			return ret;
 		}
 		fclose(in);
 	}
@@ -1654,7 +1656,7 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		eval("event", "5", "1", "15");
 #endif
 		char drive[64];
-		strcpy(drive, getdisc());
+		sprintf(drive,"/dev/%s",getdisc());
 		FILE *in = fopen64(drive, "r+b");
 		fseeko64(in, 0, SEEK_END);
 		__off64_t mtdlen = ftell(in);
