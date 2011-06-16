@@ -40,7 +40,7 @@ void start_recover(void)
 #ifdef HAVE_RB600
 	sprintf(dev, "/dev/sda");
 #else
-	strcpy(drive, getdisc());
+	strcpy(dev, getdisc());
 #endif
 	in = fopen(dev, "rb");
 	fseeko(in, 0, SEEK_END);
