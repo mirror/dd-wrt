@@ -59,11 +59,12 @@
 static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
-	unsigned char *disks[]={"/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2"};
+	static char ret[4];
+	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
-		strcpy(dev, disks[i]);
+		sprintf(dev, "/dev/%s", disks[i]);
 		FILE *in = fopen(dev, "rb");
 
 		if (in == NULL)
@@ -76,7 +77,8 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			return disks[i];
+			strncpy(ret,disks[i],3);
+			return ret;
 		}
 		fclose(in);
 	}
@@ -113,6 +115,7 @@ void start_sysinit(void)
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
+		sprintf(dev,"/dev/%s",disk);
 		strcpy(dev,disk);
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
