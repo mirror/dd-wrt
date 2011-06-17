@@ -249,7 +249,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	iph->saddr = rt->rt_src;
 	iph->ttl = tunnel->parms.iph.ttl;
 	if (iph->ttl == 0)
-		iph->ttl = dst_metric(&rt->dst, RTAX_HOPLIMIT);
+		iph->ttl = ip4_dst_hoplimit(&rt->dst);
 
 	/* add the 16bit etherip header after the ip header */
 	((u16*)(iph+1))[0]=htons(ETHERIP_HEADER);
