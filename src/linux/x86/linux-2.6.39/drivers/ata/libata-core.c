@@ -31,7 +31,7 @@
  *  http://www.sata-io.org/
  *
  *  Standards documents from:
- *	http://www.t13.org (ATA standards, PCI DMA IDE spec)
+ *	http://www.t13.org (ATA standards, PCI +DMA IDE spec)
  *	http://www.t10.org (SCSI MMC - for ATAPI MMC)
  *	http://www.sata-io.org (SATA)
  *	http://www.compactflash.org (CF)
@@ -140,7 +140,7 @@ static int ata_ignore_hpa;
 module_param_named(ignore_hpa, ata_ignore_hpa, int, 0644);
 MODULE_PARM_DESC(ignore_hpa, "Ignore HPA limit (0=keep BIOS limits, 1=ignore limits, using full disk)");
 
-static int libata_dma_mask = ATA_DMA_MASK_ATA|ATA_DMA_MASK_ATAPI|ATA_DMA_MASK_CFA;
+static int libata_dma_mask = 0;
 module_param_named(dma, libata_dma_mask, int, 0444);
 MODULE_PARM_DESC(dma, "DMA enable/disable (0x1==ATA, 0x2==ATAPI, 0x4==CF)");
 
