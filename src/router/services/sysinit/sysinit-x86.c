@@ -116,7 +116,6 @@ void start_sysinit(void)
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
 		sprintf(dev,"/dev/%s",disk);
-		strcpy(dev,disk);
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
