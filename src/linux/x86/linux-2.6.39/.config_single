@@ -1113,7 +1113,7 @@ CONFIG_PATA_RZ1000=y
 #
 # Generic fallback / legacy drivers
 #
-CONFIG_ATA_GENERIC=y
+# CONFIG_ATA_GENERIC is not set
 CONFIG_PATA_LEGACY=y
 CONFIG_MD=y
 CONFIG_BLK_DEV_MD=m
