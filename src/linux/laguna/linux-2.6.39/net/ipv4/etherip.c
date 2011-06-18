@@ -64,19 +64,19 @@ struct etherip_tunnel {
 };
 
 
-struct pcpu_tstats {
+/*struct pcpu_tstats {
 	unsigned long	rx_packets;
 	unsigned long	rx_bytes;
 	unsigned long	tx_packets;
 	unsigned long	tx_bytes;
-};
+};*/
 
 static void etherip_dev_free(struct net_device *dev)
 {
-	free_percpu(dev->tstats);
+//	free_percpu(dev->tstats);
 	free_netdev(dev);
 }
-
+/*
 static struct net_device_stats *etherip_get_stats(struct net_device *dev)
 {
 	struct pcpu_tstats sum = { 0 };
@@ -96,7 +96,7 @@ static struct net_device_stats *etherip_get_stats(struct net_device *dev)
 	dev->stats.tx_bytes   = sum.tx_bytes;
 	return &dev->stats;
 }
-
+*/
 static struct net_device *etherip_tunnel_dev;
 static struct list_head tunnels[HASH_SIZE];
 
@@ -163,10 +163,11 @@ static int etherip_tunnel_stop(struct net_device *dev)
 static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct etherip_tunnel *tunnel = netdev_priv(dev);
-	struct pcpu_tstats *tstats;
+//	struct pcpu_tstats *tstats;
 	struct iphdr *iph;
 	struct flowi4 fl;
 	struct net_device *tdev;
+	struct rtable *rt;
 	int max_headroom;
 	struct net_device_stats *stats = &tunnel->dev->stats;
 
@@ -180,7 +181,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	fl.flowi4_proto             = IPPROTO_ETHERIP;
 	fl.daddr  = tunnel->parms.iph.daddr;
 	fl.saddr  = tunnel->parms.iph.saddr;
-	struct rtable *rt = ip_route_output_key(dev_net(dev), &fl);
+	rt = ip_route_output_key(dev_net(dev), &fl);
 	if (IS_ERR(rt)) {
 		stats->tx_carrier_errors++;
 		goto tx_error_icmp;
@@ -249,13 +250,13 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	iph->saddr = rt->rt_src;
 	iph->ttl = tunnel->parms.iph.ttl;
 	if (iph->ttl == 0)
-		iph->ttl = dst_metric(&rt->dst, RTAX_HOPLIMIT);
+		iph->ttl = ip4_dst_hoplimit(&rt->dst);
 
 	/* add the 16bit etherip header after the ip header */
 	((u16*)(iph+1))[0]=htons(ETHERIP_HEADER);
 	nf_reset(skb);
-	tstats = this_cpu_ptr(dev->tstats);
-	__IPTUNNEL_XMIT(tstats, &dev->stats);
+//	tstats = this_cpu_ptr(dev->tstats);
+	__IPTUNNEL_XMIT(&dev->stats, &dev->stats);
 	tunnel->dev->trans_start = jiffies;
 	tunnel->recursion--;
 
@@ -354,9 +355,9 @@ static int etherip_tunnel_ioctl(struct net_device *dev, struct ifreq *ifr,
 
 			t = netdev_priv(tmp_dev);
 			t->dev = tmp_dev;
-			tmp_dev->tstats = alloc_percpu(struct pcpu_tstats);
-			if (!tmp_dev->tstats)
-			    goto add_err;
+//			tmp_dev->tstats = alloc_percpu(struct pcpu_tstats);
+//			if (!tmp_dev->tstats)
+//			    goto add_err;
 
 			strncpy(p.name, tmp_dev->name, IFNAMSIZ);
 			memcpy(&(t->parms), &p, sizeof(p));
@@ -465,7 +466,7 @@ static int etherip_rcv(struct sk_buff *skb)
 	tunnel = etherip_tunnel_locate(iph->saddr);
 	if (tunnel == NULL)
 		goto drop;
-	struct pcpu_tstats *tstats;
+//	struct pcpu_tstats *tstats;
 
 	dev = tunnel->dev;
 	secpath_reset(skb);
@@ -493,9 +494,9 @@ drop:
 	return 0;
 
 accept:
-	tstats = this_cpu_ptr(tunnel->dev->tstats);
-	tstats->rx_packets++;
-	tstats->rx_bytes += skb->len;
+//	tstats = this_cpu_ptr(tunnel->dev->tstats);
+//	tstats->rx_packets++;
+//	tstats->rx_bytes += skb->len;
 	
 	tunnel->dev->last_rx = jiffies;
 	tunnel->dev->stats.rx_packets++;
@@ -549,9 +550,9 @@ static int __init etherip_init(void)
 	if ((err = register_netdev(etherip_tunnel_dev)))
 		goto err1;
 
-	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_tstats);
-	if (!etherip_tunnel_dev->tstats)
-		return -ENOMEM;
+//	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_tstats);
+//	if (!etherip_tunnel_dev->tstats)
+//		return -ENOMEM;
 
 out:
 	return err;
