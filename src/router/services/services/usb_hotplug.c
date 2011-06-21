@@ -18,7 +18,7 @@
 #include <bcmnvram.h>
 
 static bool usb_ufd_connected(char *str);
-static int usb_process_path(char *path, char *fs);
+static int usb_process_path(char *path, char *fs, char *target);
 static void usb_unmount(void);
 int usb_add_ufd(void);
 
@@ -29,7 +29,9 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
+	unsigned char *disks[] =
+	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+"sdi2" };
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
@@ -46,7 +48,7 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			strncpy(ret,disks[i],3);
+			strncpy(ret, disks[i], 3);
 			return ret;
 		}
 		fclose(in);
@@ -129,14 +131,19 @@ static bool usb_ufd_connected(char *str)
      *   Mount the path and look for the WCN configuration file.  If it
      * exists launch wcnparse to process the configuration.  
      */
-static int usb_process_path(char *path, char *fs)
+static int usb_process_path(char *path, char *fs, char *target)
 {
 	int ret = ENOENT;
 	char mount_point[32];
 	eval("stopservice", "samba3");
 	eval("stopservice", "ftpsrv");
 
-	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
+	if (nvram_match("usb_mntpoint", "mnt") && target)
+		sprintf(mount_point, "/%s/%s",
+			nvram_default_get("usb_mntpoint", "mnt"), target);
+	else
+		sprintf(mount_point, "/%s",
+			nvram_default_get("usb_mntpoint", "mnt"));
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs"))
 		insmod("fuse");
@@ -166,6 +173,7 @@ static int usb_process_path(char *path, char *fs)
 	if (!strcmp(fs, "xfs")) {
 		insmod("xfs");
 	}
+	sysprintf("mkdir -p /tmp/mnt/%s", target);
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 		ret = eval("ntfs-3g", path, mount_point);
@@ -287,7 +295,7 @@ int usb_add_ufd(void)
 			}
 			sysprintf("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 			//set spindown time
-			sysprintf("hdparm -S 120 %s",path);
+			sysprintf("hdparm -S 120 %s", path);
 
 			/* 
 			 * Check if it has file system 
@@ -333,6 +341,7 @@ int usb_add_ufd(void)
 				fclose(fp);
 			}
 
+			char targetname[64];
 			if (fs) {
 				/* 
 				 * If it is partioned, mount first partition else raw disk 
@@ -346,7 +355,10 @@ int usb_add_ufd(void)
 							entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						if (usb_process_path(path, fs)
+						sprintf(targetname, "disk%s_%s",
+							entry->d_name, part);
+						if (usb_process_path
+						    (path, fs, targetname)
 						    == 0) {
 							is_mounted = 1;
 							break;
@@ -360,14 +372,20 @@ int usb_add_ufd(void)
 							entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						if (usb_process_path(path, fs)
+						sprintf(targetname, "%s_part%s",
+							entry->d_name, part);
+						if (usb_process_path
+						    (path, fs, targetname)
 						    == 0) {
 							is_mounted = 1;
 							break;
 						}
 					}
 				} else {
-					if (usb_process_path(path, fs) == 0)
+					sprintf(targetname, "disk%s",
+						entry->d_name);
+					if (usb_process_path
+					    (path, fs, targetname) == 0)
 						is_mounted = 1;
 				}
 
