@@ -222,7 +222,6 @@ int usb_add_ufd(void)
 	char path[128];
 	char *fs = NULL;
 	int is_part = 0;
-	int is_mounted = 0;
 	char part[10], *partitions, *next;
 	struct stat tmp_stat;
 	int i, found = 0;
@@ -255,6 +254,7 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
+		int is_mounted = 0;
 
 #ifdef HAVE_X86
 			char check[32];
@@ -422,10 +422,10 @@ int usb_add_ufd(void)
 				}
 			}
 
-			if (is_mounted) {	//temp. fix: only mount 1st mountable part, then exit
-				closedir(dir);
-				return 0;
-			}
+//			if (is_mounted) {	//temp. fix: only mount 1st mountable part, then exit
+//				closedir(dir);
+//				return 0;
+//			}
 		}
 		if (!found)
 			sleep(1);
