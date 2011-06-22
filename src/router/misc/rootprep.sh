@@ -55,5 +55,5 @@ echo "/usr/lib" >> etc/ld.so.conf
 /sbin/ldconfig -r $ROOTDIR
 
 # miscellaneous
-ln -s /tmp/mnt /mnt
+ln -sf tmp/mnt mnt
 mkdir -p proc
