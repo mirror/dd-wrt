@@ -38,15 +38,23 @@
 int main(int argc, char **argv)
 {
 	if (argc >= 2) {
+		sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
 			start_service("hotplug_net");
 			return 0;
 		}
 #ifdef HAVE_USB
+#ifdef HAVE_HOTPLUG2
+		if (!strcmp(argv[1], "block")) {
+			start_service("hotplug_block");
+			return 0;
+		}
+#else
 		if (!strcmp(argv[1], "usb")) {
 			start_service("hotplug_usb");
 			return 0;
 		}
+#endif
 #endif
 #ifdef HAVE_ATH9K
 		if (!strcmp(argv[1], "regulatory")) {
