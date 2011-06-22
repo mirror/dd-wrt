@@ -3123,7 +3123,14 @@ struct fsentry *parsefsentry(char line[256])
 	while (token != NULL) {
 		// check for values
 		if (tokcount == 0) {
-			strcpy(entry->fs, token);
+			if (!strncmp(token, "/tmp/mnt/", 9)) {
+				char newpath[64];
+				strcpy(newpath, token);
+				char *slash = strrchr(newpath, '/') + 1;
+				sprintf(entry->fs, "/mnt/%s", slash);	// convert symbolic link to absolute path
+			} else {
+				strcpy(entry->fs, token);
+			}
 		} else if (tokcount == 2) {
 			strcpy(entry->mp, token);
 		} else if (tokcount == 4) {
@@ -3266,10 +3273,9 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 					  current->mp,
 					  current->fstype,
 					  buffer,
-					  strcmp(current->
-						 mp,
-						 cs->
-						 mp) ? "" :
+					  strcmp
+					  (current->mp,
+					   cs->mp) ? "" :
 					  "selected=\"selected\"", current->mp);
 			}
 		}
