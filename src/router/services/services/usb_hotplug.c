@@ -19,8 +19,8 @@
 
 static bool usb_ufd_connected(char *str);
 static int usb_process_path(char *path, char *fs, char *target);
-static void usb_unmount(void);
-int usb_add_ufd(void);
+static void usb_unmount(char *dev);
+int usb_add_ufd(char *dev);
 
 #define DUMPFILE	"/tmp/disktype.dump"
 
@@ -31,7 +31,8 @@ static char *getdisc(void)	// works only for squashfs
 	static char ret[4];
 	unsigned char *disks[] =
 	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-"sdi2" };
+		"sdi2"
+	};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
@@ -81,10 +82,42 @@ void start_hotplug_usb(void)
 	 */
 	if (class == 8 && subclass == 6) {
 		if (!strcmp(action, "add"))
-			usb_add_ufd();
+			usb_add_ufd(NULL);
 		if (!strcmp(action, "remove"))
-			usb_unmount();
+			usb_unmount(NULL);
 	}
+
+	return;
+}
+
+void start_hotplug_block(void)
+{
+	char *devpath;
+	char *action;
+
+	if (!(nvram_match("usb_automnt", "1")))
+		return;
+
+	if (!(action = getenv("ACTION")))
+		return;
+	if (!(devpath = getenv("DEVPATH")))
+		return;
+	char *slash = strrchr(devpath, '/');
+
+	sysprintf("echo hotplug %s >> /tmp/hotplugs", slash + 1);
+	char devname[64];
+	sprintf(devname, "/dev/%s", slash + 1);
+	char sysdev[128];
+	sprintf(sysdev, "/sys%s/partition", devpath);
+	FILE *fp = fopen(sysdev, "rb");
+	if (fp) {
+		fclose(fp);	// skip partitions
+		return;
+	}
+	if (!strcmp(action, "add"))
+		usb_add_ufd(devname);
+	if (!strcmp(action, "remove"))
+		usb_unmount(devname);
 
 	return;
 }
@@ -195,14 +228,18 @@ static int usb_process_path(char *path, char *fs, char *target)
 	return ret;
 }
 
-static void usb_unmount(void)
+static void usb_unmount(char *path)
 {
 	char mount_point[32];
 	eval("stopservice", "samba3");
 	eval("stopservice", "ftpsrv");
 	system("echo 1 > /proc/sys/vm/drop_caches");	// flush fs cache
 /* todo: how to unmount correct drive */
-	sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));
+	if (!path)
+		sprintf(mount_point, "/%s",
+			nvram_default_get("usb_mntpoint", "mnt"));
+	else
+		strcpy(mount_point, path);
 	eval("/bin/umount", mount_point);
 	eval("rm", "-f", DUMPFILE);
 	eval("startservice", "samba3");
@@ -213,7 +250,7 @@ static void usb_unmount(void)
     /* 
      * Handle hotplugging of UFD 
      */
-int usb_add_ufd(void)
+int usb_add_ufd(char *devpath)
 {
 	DIR *dir = NULL;
 	FILE *fp = NULL;
@@ -226,15 +263,19 @@ int usb_add_ufd(void)
 	struct stat tmp_stat;
 	int i, found = 0;
 
-	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
-		if ((dir = opendir("/dev/discs")) != NULL
-		    || (fp = fopen("/dev/sda", "rb")) != NULL
-		    || (fp = fopen("/dev/sdb", "rb")) != NULL
-		    || (fp = fopen("/dev/sdc", "rb")) != NULL
-		    || (fp = fopen("/dev/sdd", "rb")) != NULL) {
-			break;
-		} else {
-			sleep(1);
+	if (devpath) {
+		fp = fopen(devpath, "rb");
+	} else {
+		for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
+			if ((dir = opendir("/dev/discs")) != NULL
+			    || (fp = fopen("/dev/sda", "rb")) != NULL
+			    || (fp = fopen("/dev/sdb", "rb")) != NULL
+			    || (fp = fopen("/dev/sdc", "rb")) != NULL
+			    || (fp = fopen("/dev/sdd", "rb")) != NULL) {
+				break;
+			} else {
+				sleep(1);
+			}
 		}
 	}
 	int new = 0;
@@ -254,7 +295,7 @@ int usb_add_ufd(void)
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
-		int is_mounted = 0;
+			int is_mounted = 0;
 
 #ifdef HAVE_X86
 			char check[32];
@@ -266,6 +307,12 @@ int usb_add_ufd(void)
 				continue;
 			}
 #endif
+			if (devpath) {
+				char devname[64];
+				sprintf(devname, "/dev/%s", entry->d_name);
+				if (strcmp(devname, devpath))
+					continue;	// skip all non matching devices
+			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
 			if (new && (strncmp(entry->d_name, "sd", 2)))
@@ -421,11 +468,10 @@ int usb_add_ufd(void)
 					system(path);
 				}
 			}
-
-//			if (is_mounted) {	//temp. fix: only mount 1st mountable part, then exit
-//				closedir(dir);
-//				return 0;
-//			}
+//                      if (is_mounted) {       //temp. fix: only mount 1st mountable part, then exit
+//                              closedir(dir);
+//                              return 0;
+//                      }
 		}
 		if (!found)
 			sleep(1);
