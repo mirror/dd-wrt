@@ -164,7 +164,7 @@ getaddr_multi (unsigned int flags,
 	{
 	  /* try hostname lookup */
 #if defined(HAVE_RES_INIT)
-//	  res_init ();
+	  res_init ();
 #endif
 	  h = gethostbyname (hostname);
 
