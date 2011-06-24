@@ -312,7 +312,6 @@ config ARCH_CLPS711X
 
 config ARCH_CNS3XXX
 	bool "Cavium Networks CNS3XXX family"
-	select CPU_V6K
 	select ARCH_WANT_OPTIONAL_GPIOLIB
 	select ARM_GIC
 	select HAVE_CLK

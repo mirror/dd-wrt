@@ -69,9 +69,8 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
 	 */
-	pen_release = -1;
 	smp_wmb();
-//	write_pen_release(-1);
+	write_pen_release(-1);
 
 	/*
 	 * Synchronise with the boot thread.
@@ -96,15 +95,14 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * since we haven't sent them a soft interrupt, they shouldn't
 	 * be there.
 	 */
-	pen_release = cpu;
-	flush_cache_all();
+	write_pen_release(cpu);
 
 	/*
 	 * Send the secondary CPU a soft interrupt, thereby causing
 	 * the boot monitor to read the system wide flags register,
 	 * and branch to the address found there.
 	 */
-	smp_cross_call(cpumask_of(cpu), 2);
+	smp_cross_call(cpumask_of(cpu),2);
 
 	timeout = jiffies + (2 * HZ);
 	while (time_before(jiffies, timeout)) {
