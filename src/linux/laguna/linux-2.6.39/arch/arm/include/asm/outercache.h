@@ -23,6 +23,37 @@
 
 #include <linux/types.h>
 
+
+#ifdef CONFIG_CPU_NO_CACHE_BCAST
+enum smp_dma_cache_type {
+	SMP_DMA_CACHE_INV,
+	SMP_DMA_CACHE_CLEAN,
+	SMP_DMA_CACHE_FLUSH,
+};
+
+extern void smp_dma_cache_op(int type, const void *start, const void *end);
+
+static inline void smp_dma_inv_range(const void *start, const void *end)
+{
+	smp_dma_cache_op(SMP_DMA_CACHE_INV, start, end);
+}
+
+static inline void smp_dma_clean_range(const void *start, const void *end)
+{
+	smp_dma_cache_op(SMP_DMA_CACHE_CLEAN, start, end);
+}
+
+static inline void smp_dma_flush_range(const void *start, const void *end)
+{
+	smp_dma_cache_op(SMP_DMA_CACHE_FLUSH, start, end);
+}
+#else
+#define smp_dma_inv_range		dmac_map_area
+#define smp_dma_clean_range		dmac_unmap_area
+#define smp_dma_flush_range		dmac_flush_range
+#endif
+
+
 struct outer_cache_fns {
 	void (*inv_range)(unsigned long, unsigned long);
 	void (*clean_range)(unsigned long, unsigned long);

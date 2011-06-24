@@ -18,7 +18,6 @@
  * This provides a "holding pen" into which all secondary cores are held
  * until we're ready for them to initialise.
  */
-	.align 8
 ENTRY(cns3xxx_secondary_startup)
 	mrc	p15, 0, r0, c0, c0, 5
 	and	r0, r0, #15
@@ -36,6 +35,6 @@ pen:	ldr	r7, [r6]
 	 */
 	b	secondary_startup
 
-	.align 8
+	.align
 1:	.long 	.
 	.long	pen_release

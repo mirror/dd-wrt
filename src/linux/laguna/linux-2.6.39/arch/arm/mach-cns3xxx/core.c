@@ -159,6 +159,9 @@ void __init cns3xxx_common_init(void)
 
 	l2x0_init(l2x0_base, 0x00400000, 0xfe0fffff);
 #endif
+#ifdef CONFIG_CACHE_L2CC
+	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
+#endif
 #ifdef CONFIG_LOCAL_TIMERS
 	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
 #endif
