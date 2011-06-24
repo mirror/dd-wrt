@@ -46,6 +46,8 @@
 #define ROOT_SIZE		VTD_PAGE_SIZE
 #define CONTEXT_SIZE		VTD_PAGE_SIZE
 
+#define IS_BRIDGE_HOST_DEVICE(pdev) \
+			    ((pdev->class >> 8) == PCI_CLASS_BRIDGE_HOST)
 #define IS_GFX_DEVICE(pdev) ((pdev->class >> 16) == PCI_BASE_CLASS_DISPLAY)
 #define IS_ISA_DEVICE(pdev) ((pdev->class >> 8) == PCI_CLASS_BRIDGE_ISA)
 #define IS_AZALIA(pdev) ((pdev)->vendor == 0x8086 && (pdev)->device == 0x3a3e)
@@ -1416,6 +1418,10 @@ static void domain_exit(struct dmar_domain *domain)
 	if (!domain)
 		return;
 
+	/* Flush any lazy unmaps that may reference this domain */
+	if (!intel_iommu_strict)
+		flush_unmaps_timeout(0);
+
 	domain_remove_dev_info(domain);
 	/* destroy iovas */
 	put_iova_domain(&domain->iovad);
@@ -2105,10 +2111,10 @@ static int identity_mapping(struct pci_dev *pdev)
 	if (likely(!iommu_identity_mapping))
 		return 0;
 
+	info = pdev->dev.archdata.iommu;
+	if (info && info != DUMMY_DEVICE_DOMAIN_INFO)
+		return (info->domain == si_domain);
 
-	list_for_each_entry(info, &si_domain->devices, link)
-		if (info->dev == pdev)
-			return 1;
 	return 0;
 }
 
@@ -2186,8 +2192,19 @@ static int iommu_should_identity_map(struct pci_dev *pdev, int startup)
 	 * Assume that they will -- if they turn out not to be, then we can 
 	 * take them out of the 1:1 domain later.
 	 */
-	if (!startup)
-		return pdev->dma_mask > DMA_BIT_MASK(32);
+	if (!startup) {
+		/*
+		 * If the device's dma_mask is less than the system's memory
+		 * size then this is not a candidate for identity mapping.
+		 */
+		u64 dma_mask = pdev->dma_mask;
+
+		if (pdev->dev.coherent_dma_mask &&
+		    pdev->dev.coherent_dma_mask < dma_mask)
+			dma_mask = pdev->dev.coherent_dma_mask;
+
+		return dma_mask >= dma_get_required_mask(&pdev->dev);
+	}
 
 	return 1;
 }
@@ -2202,6 +2219,9 @@ static int __init iommu_prepare_static_identity_mapping(int hw)
 		return -EFAULT;
 
 	for_each_pci_dev(pdev) {
+		/* Skip Host/PCI Bridge devices */
+		if (IS_BRIDGE_HOST_DEVICE(pdev))
+			continue;
 		if (iommu_should_identity_map(pdev, 1)) {
 			printk(KERN_INFO "IOMMU: %s identity mapping for device %s\n",
 			       hw ? "hardware" : "software", pci_name(pdev));
@@ -2591,8 +2611,7 @@ static dma_addr_t __intel_map_single(struct device *hwdev, phys_addr_t paddr,
 	iommu = domain_get_iommu(domain);
 	size = aligned_nrpages(paddr, size);
 
-	iova = intel_alloc_iova(hwdev, domain, dma_to_mm_pfn(size),
-				pdev->dma_mask);
+	iova = intel_alloc_iova(hwdev, domain, dma_to_mm_pfn(size), dma_mask);
 	if (!iova)
 		goto error;
 
@@ -3379,8 +3398,8 @@ static void domain_remove_one_dev_info(struct dmar_domain *domain,
 	spin_lock_irqsave(&device_domain_lock, flags);
 	list_for_each_safe(entry, tmp, &domain->devices) {
 		info = list_entry(entry, struct device_domain_info, link);
-		/* No need to compare PCI domain; it has to be the same */
-		if (info->bus == pdev->bus->number &&
+		if (info->segment == pci_domain_nr(pdev->bus) &&
+		    info->bus == pdev->bus->number &&
 		    info->devfn == pdev->devfn) {
 			list_del(&info->link);
 			list_del(&info->global);
@@ -3418,10 +3437,13 @@ static void domain_remove_one_dev_info(struct dmar_domain *domain,
 		domain_update_iommu_cap(domain);
 		spin_unlock_irqrestore(&domain->iommu_lock, tmp_flags);
 
-		spin_lock_irqsave(&iommu->lock, tmp_flags);
-		clear_bit(domain->id, iommu->domain_ids);
-		iommu->domains[domain->id] = NULL;
-		spin_unlock_irqrestore(&iommu->lock, tmp_flags);
+		if (!(domain->flags & DOMAIN_FLAG_VIRTUAL_MACHINE) &&
+		    !(domain->flags & DOMAIN_FLAG_STATIC_IDENTITY)) {
+			spin_lock_irqsave(&iommu->lock, tmp_flags);
+			clear_bit(domain->id, iommu->domain_ids);
+			iommu->domains[domain->id] = NULL;
+			spin_unlock_irqrestore(&iommu->lock, tmp_flags);
+		}
 	}
 
 	spin_unlock_irqrestore(&device_domain_lock, flags);

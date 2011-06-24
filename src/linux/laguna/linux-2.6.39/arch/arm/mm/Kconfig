@@ -390,7 +390,7 @@ config CPU_PJ4
 
 # ARMv6
 config CPU_V6
-	bool "Support ARM V6 processor" if ARCH_INTEGRATOR || MACH_REALVIEW_EB || MACH_REALVIEW_PBX
+	bool "Support ARM V6 processor" if ARCH_INTEGRATOR || MACH_REALVIEW_EB || MACH_REALVIEW_PBX || ARCH_CNS3XXX
 	select CPU_32v6
 	select CPU_ABRT_EV6
 	select CPU_PABRT_V6
@@ -403,7 +403,7 @@ config CPU_V6
 
 # ARMv6k
 config CPU_V6K
-	bool "Support ARM V6K processor" if ARCH_INTEGRATOR || MACH_REALVIEW_EB || MACH_REALVIEW_PBX
+	bool "Support ARM V6K processor" if ARCH_INTEGRATOR || MACH_REALVIEW_EB || MACH_REALVIEW_PBX || ARCH_CNS3XXX
 	select CPU_32v6
 	select CPU_32v6K
 	select CPU_ABRT_EV6
@@ -527,6 +527,16 @@ config CPU_CACHE_VIPT
 
 config CPU_CACHE_FA
 	bool
+
+config CPU_NO_CACHE_BCAST
+	bool
+	depends on SMP
+	default y
+
+config CPU_NO_CACHE_BCAST_DEBUG
+	bool
+	depends on SMP
+	default y if CPU_V6
 
 if MMU
 # The copy-page model
@@ -827,6 +837,80 @@ config CACHE_L2X0
 	select OUTER_CACHE_SYNC
 	help
 	  This option enables the L2x0 PrimeCell.
+
+choice
+	prompt "L2 Cache Size"
+	depends on CACHE_L2X0
+	default CACHE_L2X0_1MB
+
+config CACHE_L2X0_128KB
+	bool "128KB"
+	help
+	  16KB/way, 8-way, evmon/parity/share enabled
+
+config CACHE_L2X0_256KB
+	bool "256KB"
+	help
+	  32KB/way, 8-way, evmon/parity/share enabled
+
+config CACHE_L2X0_512KB
+	bool "512KB"
+	help
+	  64KB/way, 8-way, evmon/parity/share enabled
+
+config CACHE_L2X0_1MB
+	bool "1MB"
+	help
+	  128KB/way, 8-way, evmon/parity/share enabled
+endchoice
+
+config CACHE_L2CC
+	bool "Enable the L2 outer cache controller"
+	depends on ARCH_CNS3XXX
+	default n
+	select OUTER_CACHE
+	help
+	  This option enables the L2 cache controller.
+
+choice
+	prompt "L2 Cache Size"
+	depends on CACHE_L2CC
+	default CACHE_L2CC_256KB
+
+config CACHE_L2CC_32KB
+	bool "32KB"
+	help
+	  4KB/way, 8-way, evmon/share enabled
+
+config CACHE_L2CC_64KB
+	bool "64KB"
+	help
+	  8KB/way, 8-way, evmon/share enabled
+
+config CACHE_L2CC_96KB
+	bool "96KB"
+	help
+	  12KB/way, 8-way, evmon/share enabled
+
+config CACHE_L2CC_128KB
+	bool "128KB"
+	help
+	  16KB/way, 8-way, evmon/share enabled
+
+config CACHE_L2CC_256KB 
+	bool "256KB"
+	help
+	  32KB/way, 8-way, evmon/share enabled
+
+endchoice
+
+config CACHE_L2_I_PREFETCH
+	bool "Enable the L2 instruction prefetching"
+	depends on CACHE_L2CC
+	default y
+	help
+	  This option enables instruction prefetching.
+
 
 config CACHE_PL310
 	bool
