@@ -225,6 +225,9 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			    ej_active_wireless_if(wp, argc, argv, devs,
 						  cnt, t, macmask);
 		}
+#ifdef HAVE_ATH9K
+		if (!is_ath9k(devs))
+#endif
 		{
 			char vif[32];
 
