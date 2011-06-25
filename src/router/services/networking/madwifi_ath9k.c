@@ -487,9 +487,19 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(ifname, "%s.%d", maininterface, vapid);
 		isrepeater = 1;
 	}
+#ifdef HAVE_WZRHPAG300NH
+	if (aoss)
+		{
+		if (!strncmp(ifname,"ath0",4))
+		    sprintf(ifname, "aossg");
+		else
+		    sprintf(ifname, "aossa");
+		}
+#else
 	if (aoss)
 		sprintf(ifname, "aoss");
 
+#endif
 	sprintf(akm, "%s_akm", ifname);
 	if (nvram_match(akm, "8021X"))
 		return;
@@ -536,7 +546,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 
 	if (aoss)
+	{
+	if (!strncmp(ifname,"ath1",4))
+		ssid = "ESSID-AOSS-1";
+		else
 		ssid = "ESSID-AOSS";
+	}
 	else
 		ssid = nvram_nget("%s_ssid", ifname);
 
