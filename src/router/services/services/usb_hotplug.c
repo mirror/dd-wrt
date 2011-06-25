@@ -104,7 +104,6 @@ void start_hotplug_block(void)
 		return;
 	char *slash = strrchr(devpath, '/');
 
-	sysprintf("echo hotplug %s >> /tmp/hotplugs", slash + 1);
 	char devname[64];
 	sprintf(devname, "/dev/%s", slash + 1);
 	char sysdev[128];
@@ -172,8 +171,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 	eval("stopservice", "ftpsrv");
 
 	if (nvram_match("usb_mntpoint", "mnt") && target)
-		sprintf(mount_point, "/%s/%s",
-			nvram_default_get("usb_mntpoint", "mnt"), target);
+		sprintf(mount_point, "/mnt/%s", target);
 	else
 		sprintf(mount_point, "/%s",
 			nvram_default_get("usb_mntpoint", "mnt"));
@@ -206,7 +204,10 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (!strcmp(fs, "xfs")) {
 		insmod("xfs");
 	}
-	sysprintf("mkdir -p /tmp/mnt/%s", target);
+	if (target)
+		sysprintf("mkdir -p /tmp/mnt/%s", target);
+	else
+		sysprintf("mkdir -p /tmp/mnt");
 #ifdef HAVE_NTFS3G
 	if (!strcmp(fs, "ntfs")) {
 		ret = eval("ntfs-3g", path, mount_point);
