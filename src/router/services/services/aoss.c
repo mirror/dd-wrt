@@ -105,6 +105,65 @@ void start_aoss(void)
 	nvram_commit();
 	int hasaoss = 0;
 #ifdef HAVE_WZRHPAG300NH
+#ifdef HAVE_ATH9K
+	if ((nvram_match("ath0_mode", "ap")
+	     || nvram_match("ath0_mode", "wdsap"))
+	    && !nvram_match("ath0_net_mode", "disabled")) {
+		hasaoss = 1;
+			deconfigure_single_ath9k(0);
+			configure_single_ath9k(0);
+			hasaoss = 1;
+			char *next;
+			static char var[80];
+			char *vifs = nvram_safe_get("ath0_vifs");
+			int counter = 1;
+			foreach(var, vifs, next) {
+				counter++;
+			}
+			setupHostAP_ath9k("ath0", 0, counter, 1);
+			FILE *fp = fopen("/var/run/ath0_hostapd.pid", "rb");
+			if (fp)	// file not found means that hostapd usually doesnt run
+			{
+				int pid;
+				fscanf(fp, "%d", &pid);
+				fclose(fp);
+				sysprintf("kill %d", pid);
+				sleep(2);
+			}
+			sysprintf
+			    ("hostapd -B -P /var/run/ath0_hostapd.pid /tmp/ath0_hostap.conf");
+		} 
+	if ((nvram_match("ath1_mode", "ap")
+	     || nvram_match("ath1_mode", "wdsap"))
+	    && !nvram_match("ath1_net_mode", "disabled")) {
+		hasaoss = 1;
+			deconfigure_single_ath9k(1);
+			configure_single_ath9k(1);
+			hasaoss = 1;
+			char *next;
+			static char var[80];
+			char *vifs = nvram_safe_get("ath1_vifs");
+			int counter = 1;
+			foreach(var, vifs, next) {
+				counter++;
+			}
+			setupHostAP_ath9k("ath1", 0, counter, 1);
+			FILE *fp = fopen("/var/run/ath1_hostapd.pid", "rb");
+			if (fp)	// file not found means that hostapd usually doesnt run
+			{
+				int pid;
+				fscanf(fp, "%d", &pid);
+				fclose(fp);
+				sysprintf("kill %d", pid);
+				sleep(2);
+			}
+			sysprintf
+			    ("hostapd -B -P /var/run/ath1_hostapd.pid /tmp/ath1_hostap.conf");
+		 
+		
+#else
+
+			hasaoss = 1;
 	if ((nvram_match("ath1_mode", "ap")
 	     || nvram_match("ath1_mode", "wdsap"))
 	    && !nvram_match("ath1_net_mode", "disabled")) {
@@ -129,6 +188,7 @@ void start_aoss(void)
 		sysprintf("iwconfig aossg key [1]");
 		sysprintf("ifconfig aossg 0.0.0.0 up");
 	}
+#endif
 	if (hasaoss) {
 		//create aoss bridge
 		sysprintf("brctl addbr aoss");
