@@ -1497,16 +1497,11 @@ int haswifi(void)
 #ifdef HAVE_NOWIFI
 	return 0;
 #elif defined(HAVE_ATH9K) || defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
-#ifdef HAVE_ATH9K
-	count+=getath9kdevicecount();
-#endif
-#if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
-	count+=getifcount("wifi");
-#endif
+	count+=getdevicecount();
+	return(count);
 #else
 	return 1;
 #endif
-	return(count);
 }
 
 static uint32_t str_to_addr(const char *addr)
