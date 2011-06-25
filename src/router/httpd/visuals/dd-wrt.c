@@ -1227,7 +1227,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 {
 	char *next;
 	char var[32];
-	int count = getifcount("wifi");
+	int count = getdevicecount();
 
 	if (count < 1)
 		return;
@@ -1673,7 +1673,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	getIfList(buffer, "br");
 	sprintf(bufferif, "%s %s", bufferif, buffer);
 #ifdef HAVE_MADWIFI
-	int c = getifcount("wifi");
+	int c = getdevicecount();
 
 	for (i = 0; i < c; i++) {
 		char ath[32];
@@ -2197,7 +2197,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 //              if (contains(word, '.'))
 //                      sprintf(bufferif, "%s %s", bufferif, word);
 //      }
-	int c = getifcount("wifi");
+	int c = getdevicecount();
 
 	for (i = 0; i < c; i++) {
 		char ath[32];
