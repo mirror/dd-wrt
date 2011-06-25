@@ -225,69 +225,80 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			    ej_active_wireless_if(wp, argc, argv, devs,
 						  cnt, t, macmask);
 		}
+		{
+			char vif[32];
 
-		char vif[32];
-
-		sprintf(vif, "%s_vifs", devs);
-		char var[80], *next;
-		char *vifs = nvram_get(vif);
-
-		if (vifs != NULL)
-			foreach(var, vifs, next) {
+			sprintf(vif, "%s_vifs", devs);
+			char var[80], *next;
+			char *vifs = nvram_get(vif);
+			if (vifs != NULL)
+				foreach(var, vifs, next) {
 #if defined(HAVE_MADWIFI_MIMO)
-			if (is_ar5008(devs))
-				cnt =
-				    ej_active_wireless_if_11n(wp, argc,
-							      argv, var,
-							      cnt, t, macmask);
-			else
+				if (is_ar5008(devs))
+					cnt =
+					    ej_active_wireless_if_11n(wp, argc,
+								      argv, var,
+								      cnt, t,
+								      macmask);
+				else
 #endif
-				cnt =
-				    ej_active_wireless_if(wp, argc,
-							  argv, var,
-							  cnt, t, macmask);
-			}
+					cnt =
+					    ej_active_wireless_if(wp, argc,
+								  argv, var,
+								  cnt, t,
+								  macmask);
+				}
+		}
 	}
 
 	// show wds links
 	for (i = 0; i < c; i++) {
-
-		int s;
-
-		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
-			char wdsmacname[32] = { 0 };
-			char *dev;
-			char *hwaddr;
-			char var[80];
-
-			sprintf(wdsvarname, "ath%d_wds%d_enable", i, s);
-			sprintf(wdsdevname, "ath%d_wds%d_if", i, s);
-			sprintf(wdsmacname, "ath%d_wds%d_hwaddr", i, s);
-			sprintf(turbo, "ath%d_channelbw", i);
-			if (nvram_match(turbo, "40"))
-				t = 2;
-			else
-				t = 1;
-
-			dev = nvram_safe_get(wdsdevname);
-			if (dev == NULL || strlen(dev) == 0)
-				continue;
-			if (nvram_match(wdsvarname, "0"))
-				continue;
-#if defined(HAVE_MADWIFI_MIMO)
-			if (is_ar5008(devs))
-				cnt =
-				    ej_active_wireless_if_11n(wp, argc,
-							      argv, dev,
-							      cnt, t, macmask);
-			else
+#ifdef HAVE_ATH9K
+		sprintf(devs, "ath%d", i);
+		if (!is_ath9k(devs))
 #endif
-				cnt =
-				    ej_active_wireless_if(wp, argc,
-							  argv, dev,
-							  cnt, t, macmask);
+
+		{
+
+			int s;
+
+			for (s = 1; s <= 10; s++) {
+				char wdsvarname[32] = { 0 };
+				char wdsdevname[32] = { 0 };
+				char wdsmacname[32] = { 0 };
+				char *dev;
+				char *hwaddr;
+				char var[80];
+
+				sprintf(wdsvarname, "ath%d_wds%d_enable", i, s);
+				sprintf(wdsdevname, "ath%d_wds%d_if", i, s);
+				sprintf(wdsmacname, "ath%d_wds%d_hwaddr", i, s);
+				sprintf(turbo, "ath%d_channelbw", i);
+				if (nvram_match(turbo, "40"))
+					t = 2;
+				else
+					t = 1;
+
+				dev = nvram_safe_get(wdsdevname);
+				if (dev == NULL || strlen(dev) == 0)
+					continue;
+				if (nvram_match(wdsvarname, "0"))
+					continue;
+#if defined(HAVE_MADWIFI_MIMO)
+				if (is_ar5008(devs))
+					cnt =
+					    ej_active_wireless_if_11n(wp, argc,
+								      argv, dev,
+								      cnt, t,
+								      macmask);
+				else
+#endif
+					cnt =
+					    ej_active_wireless_if(wp, argc,
+								  argv, dev,
+								  cnt, t,
+								  macmask);
+			}
 		}
 	}
 }
@@ -348,7 +359,7 @@ int get_acktiming(char *ifname)
 
 void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
-	int ack,distance;
+	int ack, distance;
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n",
 		  live_translate("share.acktiming"));
@@ -360,11 +371,10 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
 		distance = coverage * 450;
-	}
-	else {
+	} else {
 #endif
-	ack = get_acktiming(ifname);
-	distance = get_distance(ifname);
+		ack = get_acktiming(ifname);
+		distance = get_distance(ifname);
 #ifdef HAVE_ATH9K
 	}
 #endif
@@ -376,7 +386,7 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 {
-	int ack,distance;
+	int ack, distance;
 	char *ifname = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -384,11 +394,10 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
 		distance = coverage * 450;
-	}
-	else {
+	} else {
 #endif
-	ack = get_acktiming(ifname);
-	distance = get_distance(ifname);
+		ack = get_acktiming(ifname);
+		distance = get_distance(ifname);
 #ifdef HAVE_ATH9K
 	}
 #endif
