@@ -1158,7 +1158,29 @@ CONFIG_USB_SERIAL_OPTION=y
 #
 # LED devices
 #
-# CONFIG_NEW_LEDS is not set
+CONFIG_NEW_LEDS=y
+CONFIG_LEDS_CLASS=y
+
+#
+# LED drivers
+#
+CONFIG_LEDS_TRIGGERS=y
+
+#
+# LED Triggers
+#
+# CONFIG_LEDS_TRIGGER_TIMER is not set
+# CONFIG_LEDS_TRIGGER_HEARTBEAT is not set
+# CONFIG_LEDS_TRIGGER_BACKLIGHT is not set
+# CONFIG_LEDS_TRIGGER_DEFAULT_ON is not set
+
+#
+# iptables trigger is under Netfilter config (LED target)
+#
+# CONFIG_LEDS_TRIGGER_MORSE is not set
+# CONFIG_LEDS_TRIGGER_NETDEV is not set
+# CONFIG_NETFILTER_XT_TARGET_LED is not set
+CONFIG_RFKILL_LEDS=y
 
 #
 # LED drivers
@@ -1389,7 +1411,12 @@ CONFIG_TRACE_IRQFLAGS_SUPPORT=y
 # CONFIG_ENABLE_MUST_CHECK is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_UNUSED_SYMBOLS is not set
-# CONFIG_DEBUG_FS is not set
+CONFIG_DEBUG_FS=y
+# CONFIG_GCOV_KERNEL is not set
+# CONFIG_SLOW_WORK_DEBUG is not set
+# CONFIG_LKDTM is not set
+# CONFIG_DYNAMIC_DEBUG is not set
+# CONFIG_SPINLOCK_TEST is not set
 # CONFIG_HEADERS_CHECK is not set
 # CONFIG_DEBUG_KERNEL is not set
 # CONFIG_CROSSCOMPILE is not set
