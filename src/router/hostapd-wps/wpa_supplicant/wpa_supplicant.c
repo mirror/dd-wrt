@@ -19,6 +19,7 @@
 #include "includes.h"
 
 #include "common.h"
+#include "crypto/random.h"
 #include "eapol_supp/eapol_supp_sm.h"
 #include "eap_peer/eap.h"
 #include "eap_server/eap_methods.h"
@@ -1133,6 +1134,11 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	int assoc_failed = 0;
 	struct wpa_ssid *old_ssid;
 
+#ifdef CONFIG_IBSS_RSN
+	ibss_rsn_deinit(wpa_s->ibss_rsn);
+	wpa_s->ibss_rsn = NULL;
+#endif /* CONFIG_IBSS_RSN */
+
 	if (ssid->mode == WPAS_MODE_AP || ssid->mode == WPAS_MODE_P2P_GO ||
 	    ssid->mode == WPAS_MODE_P2P_GROUP_FORMATION) {
 #ifdef CONFIG_AP
@@ -1151,7 +1157,9 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	}
 
 #ifdef CONFIG_TDLS
-	wpa_tdls_ap_ies(wpa_s->wpa, (const u8 *) (bss + 1), bss->ie_len);
+	if (bss)
+		wpa_tdls_ap_ies(wpa_s->wpa, (const u8 *) (bss + 1),
+				bss->ie_len);
 #endif /* CONFIG_TDLS */
 
 	if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) &&
@@ -1443,7 +1451,6 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	} else if (ssid->mode == WPAS_MODE_IBSS &&
 		   wpa_s->key_mgmt != WPA_KEY_MGMT_NONE &&
 		   wpa_s->key_mgmt != WPA_KEY_MGMT_WPA_NONE) {
-		ibss_rsn_set_psk(wpa_s->ibss_rsn, ssid->psk);
 		/*
 		 * RSN IBSS authentication is per-STA and we can disable the
 		 * per-BSSID authentication.
@@ -1779,7 +1786,8 @@ int wpa_supplicant_set_debug_params(struct wpa_global *global, int debug_level,
 	int old_level, old_timestamp, old_show_keys;
 
 	/* check for allowed debuglevels */
-	if (debug_level != MSG_MSGDUMP &&
+	if (debug_level != MSG_EXCESSIVE &&
+	    debug_level != MSG_MSGDUMP &&
 	    debug_level != MSG_DEBUG &&
 	    debug_level != MSG_INFO &&
 	    debug_level != MSG_WARNING &&
@@ -2119,6 +2127,7 @@ static struct wpa_supplicant * wpa_supplicant_alloc(void)
 	if (wpa_s == NULL)
 		return NULL;
 	wpa_s->scan_req = 1;
+	wpa_s->scan_interval = 0;
 	wpa_s->new_connection = 1;
 	wpa_s->parent = wpa_s;
 
@@ -2342,14 +2351,6 @@ next_driver:
 			   wpa_s->conf->ctrl_interface);
 		return -1;
 	}
-
-#ifdef CONFIG_IBSS_RSN
-	wpa_s->ibss_rsn = ibss_rsn_init(wpa_s);
-	if (!wpa_s->ibss_rsn) {
-		wpa_dbg(wpa_s, MSG_DEBUG, "Failed to init IBSS RSN");
-		return -1;
-	}
-#endif /* CONFIG_IBSS_RSN */
 
 #ifdef CONFIG_P2P
 	if (wpas_p2p_init(wpa_s->global, wpa_s) < 0) {
@@ -2619,6 +2620,8 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 		return NULL;
 	}
 
+	random_init();
+
 	global->ctrl_iface = wpa_supplicant_global_ctrl_iface_init(global);
 	if (global->ctrl_iface == NULL) {
 		wpa_supplicant_deinit(global);
@@ -2729,6 +2732,8 @@ void wpa_supplicant_deinit(struct wpa_global *global)
 	}
 	os_free(global->drv_priv);
 
+	random_deinit();
+
 	eloop_destroy();
 
 	if (global->params.pid_file) {
@@ -2747,6 +2752,18 @@ void wpa_supplicant_deinit(struct wpa_global *global)
 
 void wpa_supplicant_update_config(struct wpa_supplicant *wpa_s)
 {
+	if ((wpa_s->conf->changed_parameters & CFG_CHANGED_COUNTRY) &&
+	    wpa_s->conf->country[0] && wpa_s->conf->country[1]) {
+		char country[3];
+		country[0] = wpa_s->conf->country[0];
+		country[1] = wpa_s->conf->country[1];
+		country[2] = '\0';
+		if (wpa_drv_set_country(wpa_s, country) < 0) {
+			wpa_printf(MSG_ERROR, "Failed to set country code "
+				   "'%s'", country);
+		}
+	}
+
 #ifdef CONFIG_WPS
 	wpas_wps_update_config(wpa_s);
 #endif /* CONFIG_WPS */

@@ -319,7 +319,7 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	sprintf(crypto,"%s_crypto",ifname);
 	char ssid[32];
 	sprintf(ssid,"%s_ssid",ifname);
-
+ 
 	if ((cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) &&
 	    (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK)))
 	    {
@@ -367,6 +367,7 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 
 	nvram_commit();
 	sysprintf("echo done > /tmp/.wpsdone");
+
 
 	len = os_strlen(hapd->iface->config_fname) + 5;
 	tmp_fname = os_malloc(len);
@@ -835,9 +836,11 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 
 		if (conf->rsn_pairwise & WPA_CIPHER_CCMP)
 			wps->encr_types |= WPS_ENCR_AES;
-		else if (conf->rsn_pairwise & WPA_CIPHER_TKIP)
+		if (conf->rsn_pairwise & WPA_CIPHER_TKIP)
 			wps->encr_types |= WPS_ENCR_TKIP;
-	} else if (conf->wpa & WPA_PROTO_WPA) {
+	}
+
+	if (conf->wpa & WPA_PROTO_WPA) {
 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK)
 			wps->auth_types |= WPS_AUTH_WPAPSK;
 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_IEEE8021X)
@@ -845,7 +848,7 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 
 		if (conf->wpa_pairwise & WPA_CIPHER_CCMP)
 			wps->encr_types |= WPS_ENCR_AES;
-		else if (conf->wpa_pairwise & WPA_CIPHER_TKIP)
+		if (conf->wpa_pairwise & WPA_CIPHER_TKIP)
 			wps->encr_types |= WPS_ENCR_TKIP;
 	}
 
@@ -938,19 +941,33 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 	wps->model_description = hapd->conf->model_description;
 	wps->model_url = hapd->conf->model_url;
 	wps->upc = hapd->conf->upc;
-
-	if (hostapd_wps_upnp_init(hapd, wps) < 0) {
-		wpa_printf(MSG_ERROR, "Failed to initialize WPS UPnP");
-		wps_registrar_deinit(wps->registrar);
-		os_free(wps->network_key);
-		os_free(wps);
-		return -1;
-	}
 #endif /* CONFIG_WPS_UPNP */
 
 	hostapd_register_probereq_cb(hapd, hostapd_wps_probe_req_rx, hapd);
 
 	hapd->wps = wps;
+
+	return 0;
+}
+
+
+int hostapd_init_wps_complete(struct hostapd_data *hapd)
+{
+	struct wps_context *wps = hapd->wps;
+
+	if (hapd->wps == NULL)
+		return 0;
+
+#ifdef CONFIG_WPS_UPNP
+	if (hostapd_wps_upnp_init(hapd, wps) < 0) {
+		wpa_printf(MSG_ERROR, "Failed to initialize WPS UPnP");
+		wps_registrar_deinit(wps->registrar);
+		os_free(wps->network_key);
+		os_free(wps);
+		hapd->wps = NULL;
+		return -1;
+	}
+#endif /* CONFIG_WPS_UPNP */
 
 	return 0;
 }
@@ -1307,7 +1324,6 @@ static void hostapd_wps_ap_pin_enable(struct hostapd_data *hapd, int timeout)
 		hapd->wps->ap_setup_locked = 0;
 		wps_registrar_update_ie(hapd->wps->registrar);
 	}
-
 	eloop_cancel_timeout(hostapd_wps_ap_pin_timeout, hapd, NULL);
 	if (timeout > 0)
 		eloop_register_timeout(timeout, 0,

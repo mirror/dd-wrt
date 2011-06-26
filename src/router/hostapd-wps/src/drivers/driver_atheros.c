@@ -315,6 +315,14 @@ atheros_configure_wpa(struct atheros_driver_data *drv,
 	v = 0;
 	if (params->rsn_preauth)
 		v |= BIT(0);
+#ifdef CONFIG_IEEE80211W
+	if (params->ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+		v |= BIT(7);
+		if (params->ieee80211w == MGMT_FRAME_PROTECTION_REQUIRED)
+			v |= BIT(6);
+	}
+#endif /* CONFIG_IEEE80211W */
+
 	wpa_printf(MSG_DEBUG, "%s: rsn capabilities=0x%x",
 		   __func__, params->rsn_preauth);
 	if (set80211param(drv, IEEE80211_PARAM_RSNCAPS, v)) {
@@ -466,6 +474,11 @@ atheros_set_key(const char *ifname, void *priv, enum wpa_alg alg,
 	case WPA_ALG_CCMP:
 		cipher = IEEE80211_CIPHER_AES_CCM;
 		break;
+#ifdef CONFIG_IEEE80211W
+	case WPA_ALG_IGTK:
+		cipher = IEEE80211_CIPHER_AES_CMAC;
+		break;
+#endif /* CONFIG_IEEE80211W */
 	default:
 		printf("%s: unknown/unsupported algorithm %d\n",
 			__func__, alg);
@@ -1344,6 +1357,23 @@ atheros_commit(void *priv)
 	return linux_set_iface_flags(drv->ioctl_sock, drv->iface, 1);
 }
 
+static int atheros_set_authmode(void *priv, int auth_algs)
+{
+	int authmode;
+
+	if ((auth_algs & WPA_AUTH_ALG_OPEN) &&
+	    (auth_algs & WPA_AUTH_ALG_SHARED))
+		authmode = IEEE80211_AUTH_AUTO;
+	else if (auth_algs & WPA_AUTH_ALG_OPEN)
+		authmode = IEEE80211_AUTH_OPEN;
+	else if (auth_algs & WPA_AUTH_ALG_SHARED)
+		authmode = IEEE80211_AUTH_SHARED;
+	else
+		return -1;
+
+	return set80211param(priv, IEEE80211_PARAM_AUTHMODE, authmode);
+}
+
 const struct wpa_driver_ops wpa_driver_atheros_ops = {
 	.name			= "atheros",
 	.hapd_init		= atheros_init,
@@ -1365,4 +1395,5 @@ const struct wpa_driver_ops wpa_driver_atheros_ops = {
 	.sta_clear_stats	= atheros_sta_clear_stats,
 	.commit			= atheros_commit,
 	.set_ap_wps_ie		= atheros_set_ap_wps_ie,
+	.set_authmode		= atheros_set_authmode,
 };

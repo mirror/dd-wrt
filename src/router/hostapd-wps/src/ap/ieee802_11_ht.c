@@ -20,9 +20,11 @@
 #include "drivers/driver.h"
 #include "hostapd.h"
 #include "ap_config.h"
+#include "ap_drv_ops.h"
 #include "sta_info.h"
 #include "beacon.h"
 #include "ieee802_11.h"
+#include "utils/eloop.h"
 
 
 u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid)
@@ -269,9 +271,9 @@ void hostapd_get_ht_capab(struct hostapd_data *hapd,
 	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
 }
 
-static int hostapd_set_force_20mhz(struct hostapd_iface *iface);
+static void hostapd_set_force_20mhz(struct hostapd_iface *iface);
 
-static int hostapd_restore_40mhz(void *eloop_data, void *user_ctx)
+static void hostapd_restore_40mhz(void *eloop_data, void *user_ctx)
 {
 	struct hostapd_iface *iface = eloop_data;
 	struct os_time time;
@@ -297,7 +299,7 @@ static int hostapd_restore_40mhz(void *eloop_data, void *user_ctx)
 	hostapd_set_force_20mhz(iface);
 }
 
-static int hostapd_set_force_20mhz(struct hostapd_iface *iface)
+static void hostapd_set_force_20mhz(struct hostapd_iface *iface)
 {
 	int secondary_channel;
 	int i;

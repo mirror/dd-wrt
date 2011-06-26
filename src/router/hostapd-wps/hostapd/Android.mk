@@ -717,11 +717,11 @@ endif
 ifdef CONFIG_NO_RANDOM_POOL
 L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
 else
-OBJS += src/crypto/random.c
-HOBJS += src/crypto/random.c
 HOBJS += $(SHA1OBJS)
 HOBJS += src/crypto/md5.c
 endif
+OBJS += src/crypto/random.c
+HOBJS += src/crypto/random.c
 
 ifdef CONFIG_RADIUS_SERVER
 L_CFLAGS += -DRADIUS_SERVER
