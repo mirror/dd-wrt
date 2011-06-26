@@ -757,7 +757,9 @@ void reset_hwaddr(char *ifname)
 		}
 	}
 	close(s);
-
+	// lock mac address on bridge if possible
+	eval("ifconfig",ifname,"hw","ether",nvram_safe_get("lan_hwaddr"));
+	
 }
 
 #ifdef HAVE_3G
@@ -2073,6 +2075,7 @@ void start_lan(void)
 	/*
 	 * Bring up and configure LAN interface 
 	 */
+	reset_hwaddr(lan_ifname);
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"),
 		 nvram_safe_get("lan_netmask"));
 	eval("ifconfig", lan_ifname, "promisc");
@@ -2100,7 +2103,7 @@ void start_lan(void)
 			eval("ifconfig", staticlan, "0.0.0.0", "down");
 #endif
 	close(s);
-	reset_hwaddr(lan_ifname);
+
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
