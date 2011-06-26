@@ -31,6 +31,8 @@
 #include "utils/includes.h"
 #ifdef __linux__
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #endif /* __linux__ */
 
 #include "utils/common.h"
@@ -277,6 +279,9 @@ void random_mark_pool_ready(void)
 	wpa_printf(MSG_DEBUG, "random: Mark internal entropy pool to be "
 		   "ready (count=%u/%u)", own_pool_ready, MIN_READY_MARK);
 
+#ifndef O_NOFOLLOW
+# define O_NOFOLLOW	0x20000	/* Do not follow links.	 */
+#endif
 	fd = open(RANDOM_STAMPFILE, O_CREAT | O_WRONLY | O_EXCL | O_NOFOLLOW, 0600);
 	if (fd >= 0)
 		close(fd);
