@@ -561,6 +561,8 @@ struct wpa_driver_capa {
 #define WPA_DRIVER_FLAGS_SANE_ERROR_CODES		0x00004000
 /* Driver supports off-channel TX */
 #define WPA_DRIVER_FLAGS_OFFCHANNEL_TX			0x00008000
+/* Driver indicates TX status events for EAPOL Data frames */
+#define WPA_DRIVER_FLAGS_EAPOL_TX_STATUS		0x00010000
 	unsigned int flags;
 
 	int max_scan_ssids;
@@ -676,6 +678,7 @@ struct wpa_bss_params {
 	int wpa_pairwise;
 	int wpa_key_mgmt;
 	int rsn_preauth;
+	enum mfp_options ieee80211w;
 };
 
 #define WPA_STA_AUTHORIZED BIT(0)
@@ -699,7 +702,20 @@ enum tdls_oper {
 	TDLS_SETUP,
 	TDLS_TEARDOWN,
 	TDLS_ENABLE_LINK,
-	TDLS_DISABLE_LINK
+	TDLS_DISABLE_LINK,
+	TDLS_ENABLE,
+	TDLS_DISABLE
+};
+
+/**
+ * struct wpa_signal_info - Information about channel signal quality
+ */
+struct wpa_signal_info {
+	u32 frequency;
+	int above_threshold;
+	int current_signal;
+	int current_noise;
+	int current_txrate;
 };
 
 /**
@@ -1391,6 +1407,7 @@ struct wpa_driver_ops {
 	 * @data_len: Length of the EAPOL packet in octets
 	 * @encrypt: Whether the frame should be encrypted
 	 * @own_addr: Source MAC address
+	 * @flags: WPA_STA_* flags for the destination station
 	 *
 	 * Returns: 0 on success, -1 on failure
 	 */
@@ -2217,6 +2234,25 @@ struct wpa_driver_ops {
 			      const u8 *buf, size_t len);
 
 	int (*tdls_oper)(void *priv, enum tdls_oper oper, const u8 *peer);
+
+	/**
+	 * signal_poll - Get current connection information
+	 * @priv: Private driver interface data
+	 * @signal_info: Connection info structure
+         */
+	int (*signal_poll)(void *priv, struct wpa_signal_info *signal_info);
+
+	/**
+	 * set_authmode - Set authentication algorithm(s) for static WEP
+	 * @priv: Private driver interface data
+	 * @authmode: 1=Open System, 2=Shared Key, 3=both
+	 * Returns: 0 on success, -1 on failure
+	 *
+	 * This function can be used to set authentication algorithms for AP
+	 * mode when static WEP is used. If the driver uses user space MLME/SME
+	 * implementation, there is no need to implement this function.
+	 */
+	int (*set_authmode)(void *priv, int authmode);
 
 	int (*stop_ap)(void *priv);
 };
@@ -3049,15 +3085,9 @@ union wpa_event_data {
 	} eapol_rx;
 
 	/**
-	 * struct signal_change - Data for EVENT_SIGNAL_CHANGE events
+	 * signal_change - Data for EVENT_SIGNAL_CHANGE events
 	 */
-	struct signal_change {
-		u32 frequency;
-		int above_threshold;
-		int current_signal;
-		int current_noise;
-		int current_txrate;
-	} signal_change;
+	struct wpa_signal_info signal_change;
 
 	/**
 	 * struct best_channel - Data for EVENT_BEST_CHANNEL events

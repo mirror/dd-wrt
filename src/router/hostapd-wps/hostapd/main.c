@@ -19,6 +19,7 @@
 
 #include "utils/common.h"
 #include "utils/eloop.h"
+#include "crypto/random.h"
 #include "crypto/tls.h"
 #include "common/version.h"
 #include "drivers/driver.h"
@@ -171,6 +172,7 @@ static int hostapd_init_complete(struct hostapd_iface *iface)
 		return -1;
 	}
 	daemonize = 0;
+	return 0;
 }
 
 
@@ -245,6 +247,7 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 	struct hostapd_data *hapd = iface->bss[0];
 	struct hostapd_bss_config *conf = hapd->conf;
 	u8 *b = conf->bssid;
+	struct wpa_driver_capa capa;
 
 	if (hapd->driver == NULL || hapd->driver->hapd_init == NULL) {
 		wpa_printf(MSG_ERROR, "No hostapd driver wrapper available");
@@ -283,6 +286,10 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 		hapd->driver = NULL;
 		return -1;
 	}
+
+	if (hapd->driver->get_capa &&
+	    hapd->driver->get_capa(hapd->drv_priv, &capa) == 0)
+		iface->drv_flags = capa.flags;
 
 	return 0;
 }
@@ -389,6 +396,8 @@ static int hostapd_global_init(struct hapd_interfaces *interfaces)
 		return -1;
 	}
 
+	random_init();
+
 #ifndef CONFIG_NATIVE_WINDOWS
 	eloop_register_signal(SIGHUP, handle_reload, interfaces);
 	eloop_register_signal(SIGUSR1, handle_dump_state, interfaces);
@@ -408,6 +417,8 @@ static void hostapd_global_deinit(void)
 #ifdef EAP_SERVER_TNC
 	tncs_global_deinit();
 #endif /* EAP_SERVER_TNC */
+
+	random_deinit();
 
 	eloop_destroy();
 
@@ -556,10 +567,10 @@ int main(int argc, char *argv[])
 		wpa_debug_open_file(log_file);
 
 	interfaces.count = argc - optind;
-	interfaces.iface = os_malloc(interfaces.count *
+	interfaces.iface = os_zalloc(interfaces.count *
 				     sizeof(struct hostapd_iface *));
 	if (interfaces.iface == NULL) {
-		wpa_printf(MSG_ERROR, "malloc failed\n");
+		wpa_printf(MSG_ERROR, "malloc failed");
 		return -1;
 	}
 

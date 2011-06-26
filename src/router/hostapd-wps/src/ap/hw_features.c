@@ -214,10 +214,7 @@ static int ieee80211n_allowed_ht40_channel_pair(struct hostapd_iface *iface)
 	 * 2.4 GHz rules allow all cases where the secondary channel fits into
 	 * the list of allowed channels (already checked above).
 	 */
-#if 0
-// breaks BFWA channels, moved to mac80211_get_channels
 	if (iface->current_mode->mode != HOSTAPD_MODE_IEEE80211A)
-#endif
 		return 1;
 
 	if (iface->conf->secondary_channel > 0)
@@ -606,7 +603,7 @@ int hostapd_check_ht_capab(struct hostapd_iface *iface)
 /**
  * hostapd_select_hw_mode - Select the hardware mode
  * @iface: Pointer to interface data.
- * Returns: 0 on success, -1 on failure
+ * Returns: 0 on success, < 0 on failure
  *
  * Sets up the hardware mode, channel, rates, and passive scanning
  * based on the configuration.
@@ -634,17 +631,23 @@ int hostapd_select_hw_mode(struct hostapd_iface *iface)
 			       HOSTAPD_LEVEL_WARNING,
 			       "Hardware does not support configured mode "
 			       "(%d)", (int) iface->conf->hw_mode);
-		return -1;
+		return -2;
 	}
 
 	ok = 0;
 	for (j = 0; j < iface->current_mode->num_channels; j++) {
 		struct hostapd_channel_data *chan =
 			&iface->current_mode->channels[j];
-		if (!(chan->flag & HOSTAPD_CHAN_DISABLED) &&
-		    (chan->chan == iface->conf->channel)) {
-			ok = 1;
-			break;
+		if (chan->chan == iface->conf->channel) {
+			if (chan->flag & HOSTAPD_CHAN_DISABLED) {
+				wpa_printf(MSG_ERROR,
+					   "channel [%i] (%i) is disabled for "
+					   "use in AP mode, flags: 0x%x",
+					   j, chan->chan, chan->flag);
+			} else {
+				ok = 1;
+				break;
+			}
 		}
 	}
 	if (ok && iface->conf->secondary_channel) {
@@ -678,7 +681,7 @@ int hostapd_select_hw_mode(struct hostapd_iface *iface)
 		 * the channel automatically */
 		wpa_printf(MSG_ERROR, "Channel not configured "
 			   "(hw_mode/channel in hostapd.conf)");
-		return -1;
+		return -3;
 	}
 	if (ok == 0 && iface->conf->channel != 0) {
 		hostapd_logger(iface->bss[0], NULL,
@@ -696,7 +699,7 @@ int hostapd_select_hw_mode(struct hostapd_iface *iface)
 		hostapd_logger(iface->bss[0], NULL, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_WARNING,
 			       "Hardware does not support configured channel");
-		return -1;
+		return -4;
 	}
 
 	return 0;

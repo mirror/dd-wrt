@@ -1098,9 +1098,8 @@ endif
 
 ifdef CONFIG_NO_RANDOM_POOL
 CFLAGS += -DCONFIG_NO_RANDOM_POOL
-else
-OBJS += ../src/crypto/random.o
 endif
+OBJS += ../src/crypto/random.o
 
 ifdef CONFIG_CTRL_IFACE
 ifeq ($(CONFIG_CTRL_IFACE), y)
