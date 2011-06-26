@@ -680,6 +680,7 @@ void ieee802_1x_receive(struct hostapd_data *hapd, const u8 *sa, const u8 *buf,
 	struct ieee802_1x_eapol_key *key;
 	u16 datalen;
 	struct rsn_pmksa_cache_entry *pmksa;
+	int key_mgmt;
 
 	if (!hapd->conf->ieee802_1x && !hapd->conf->wpa &&
 	    !hapd->conf->wps_state)
@@ -731,10 +732,19 @@ void ieee802_1x_receive(struct hostapd_data *hapd, const u8 *sa, const u8 *buf,
 		return;
 	}
 
-	if ((!hapd->conf->ieee802_1x &&
-	     !(sta->flags & (WLAN_STA_WPS | WLAN_STA_MAYBE_WPS))) ||
-	    wpa_key_mgmt_wpa_psk(wpa_auth_sta_key_mgmt(sta->wpa_sm)))
+	if (!hapd->conf->ieee802_1x &&
+	    !(sta->flags & (WLAN_STA_WPS | WLAN_STA_MAYBE_WPS))) {
+		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Ignore EAPOL message - "
+			   "802.1X not enabled and WPS not used");
 		return;
+	}
+
+	key_mgmt = wpa_auth_sta_key_mgmt(sta->wpa_sm);
+	if (key_mgmt != -1 && wpa_key_mgmt_wpa_psk(key_mgmt)) {
+		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Ignore EAPOL message - "
+			   "STA is using PSK");
+		return;
+	}
 
 	if (!sta->eapol_sm) {
 		sta->eapol_sm = ieee802_1x_alloc_eapol_sm(hapd, sta);
@@ -836,6 +846,7 @@ void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta)
 	struct rsn_pmksa_cache_entry *pmksa;
 	int reassoc = 1;
 	int force_1x = 0;
+	int key_mgmt;
 
 #ifdef CONFIG_WPS
 	if (hapd->conf->wps_state && hapd->conf->wpa &&
@@ -849,9 +860,17 @@ void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta)
 	}
 #endif /* CONFIG_WPS */
 
-	if ((!force_1x && !hapd->conf->ieee802_1x) ||
-	    wpa_key_mgmt_wpa_psk(wpa_auth_sta_key_mgmt(sta->wpa_sm)))
+	if (!force_1x && !hapd->conf->ieee802_1x) {
+		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Ignore STA - "
+			   "802.1X not enabled or forced for WPS");
 		return;
+	}
+
+	key_mgmt = wpa_auth_sta_key_mgmt(sta->wpa_sm);
+	if (key_mgmt != -1 && wpa_key_mgmt_wpa_psk(key_mgmt)) {
+		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Ignore STA - using PSK");
+		return;
+	}
 
 	if (sta->eapol_sm == NULL) {
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE8021X,
@@ -1238,7 +1257,6 @@ int addrule(char *mac, char *upstream, char *downstream)
 
 #endif
 
-
 /**
  * ieee802_1x_receive_auth - Process RADIUS frames from Authentication Server
  * @msg: RADIUS response message
@@ -1287,7 +1305,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 	}
 
 	if (hdr->code != RADIUS_CODE_ACCESS_ACCEPT &&
-	    hdr->code != RADIUS_CODE_ACCESS_REJECT &&
+        hdr->code != RADIUS_CODE_ACCESS_REJECT &&
 	    hdr->code != RADIUS_CODE_ACCESS_CHALLENGE) {
 		printf("Unknown RADIUS message code\n");
 		return RADIUS_RX_UNKNOWN;
@@ -1766,6 +1784,7 @@ int ieee802_1x_init(struct hostapd_data *hapd)
 	conf.wps = hapd->wps;
 	conf.fragment_size = hapd->conf->fragment_size;
 	conf.pwd_group = hapd->conf->pwd_group;
+	conf.pbc_in_m1 = hapd->conf->pbc_in_m1;
 
 	os_memset(&cb, 0, sizeof(cb));
 	cb.eapol_send = ieee802_1x_eapol_send;
@@ -1853,6 +1872,16 @@ int ieee802_1x_tx_status(struct hostapd_data *hapd, struct sta_info *sta,
 		   "type=%d length=%d - ack=%d",
 		   MAC2STR(sta->addr), xhdr->version, xhdr->type,
 		   be_to_host16(xhdr->length), ack);
+
+	if (xhdr->type == IEEE802_1X_TYPE_EAPOL_KEY &&
+	    pos + sizeof(struct wpa_eapol_key) <= buf + len) {
+		const struct wpa_eapol_key *wpa;
+		wpa = (const struct wpa_eapol_key *) pos;
+		if (wpa->type == EAPOL_KEY_TYPE_RSN ||
+		    wpa->type == EAPOL_KEY_TYPE_WPA)
+			wpa_auth_eapol_key_tx_status(hapd->wpa_auth,
+						     sta->wpa_sm, ack);
+	}
 
 	/* EAPOL EAP-Packet packets are eventually re-sent by either Supplicant
 	 * or Authenticator state machines, but EAPOL-Key packets are not

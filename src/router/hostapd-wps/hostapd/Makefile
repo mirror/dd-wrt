@@ -1,5 +1,4 @@
 CFLAGS+ = -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
-
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CFLAGS += -I../src
@@ -695,11 +694,11 @@ endif
 ifdef CONFIG_NO_RANDOM_POOL
 CFLAGS += -DCONFIG_NO_RANDOM_POOL
 else
-OBJS += ../src/crypto/random.o
-HOBJS += ../src/crypto/random.o
 HOBJS += $(SHA1OBJS)
 HOBJS += ../src/crypto/md5.o
 endif
+OBJS += ../src/crypto/random.o
+HOBJS += ../src/crypto/random.o
 
 ifdef CONFIG_RADIUS_SERVER
 CFLAGS += -DRADIUS_SERVER

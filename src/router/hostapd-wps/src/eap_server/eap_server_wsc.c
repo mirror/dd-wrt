@@ -144,6 +144,7 @@ static void * eap_wsc_init(struct eap_sm *sm)
 		cfg.p2p_dev_addr = p2p_get_go_dev_addr(sm->assoc_p2p_ie);
 	}
 #endif /* CONFIG_P2P */
+	cfg.pbc_in_m1 = sm->pbc_in_m1;
 	data->wps = wps_init(&cfg);
 	if (data->wps == NULL) {
 		os_free(data);
@@ -291,6 +292,11 @@ static Boolean eap_wsc_check(struct eap_sm *sm, void *priv,
 	return FALSE;
 }
 
+#ifdef HAVE_AOSS
+extern int sysprintf(const char *fmt, ...);
+extern void nvram_set(const char *name, char *value);
+ 
+#endif
 
 static int eap_wsc_process_cont(struct eap_wsc_data *data,
 				const u8 *buf, size_t len, u8 op_code)
@@ -348,11 +354,6 @@ static int eap_wsc_process_fragment(struct eap_wsc_data *data,
 
 	return 0;
 }
-#ifdef HAVE_AOSS
-extern int sysprintf(const char *fmt, ...);
-extern void nvram_set(const char *name, char *value);
- 
-#endif
 
 
 static void eap_wsc_process(struct eap_sm *sm, void *priv,

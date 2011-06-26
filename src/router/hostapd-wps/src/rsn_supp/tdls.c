@@ -625,6 +625,9 @@ int wpa_tdls_recv_teardown_notify(struct wpa_sm *sm, const u8 *addr,
 	u8 *rbuf, *pos;
 	int ielen;
 
+	if (sm->tdls_disabled)
+		return -1;
+
 	/* Find the node and free from the list */
 	for (peer = sm->tdls; peer; peer = peer->next) {
 		if (os_memcmp(peer->addr, addr, ETH_ALEN) == 0)
@@ -750,7 +753,7 @@ static int wpa_tdls_recv_teardown(struct wpa_sm *sm, const u8 *src_addr,
 	if (!wpa_tdls_get_privacy(sm) || !peer->tpk_set || !peer->tpk_success)
 		goto skip_ftie;
 
-	if (kde.ftie == NULL) {
+	if (kde.ftie == NULL || kde.ftie_len < sizeof(*ftie)) {
 		wpa_printf(MSG_INFO, "TDLS: No FTIE in TDLS Teardown");
 		return -1;
 	}
@@ -763,14 +766,7 @@ static int wpa_tdls_recv_teardown(struct wpa_sm *sm, const u8 *src_addr,
 						    (u8 *) lnkid, ftie) < 0) {
 		wpa_printf(MSG_DEBUG, "TDLS: MIC failure for TDLS "
 			   "Teardown Request from " MACSTR, MAC2STR(src_addr));
-#if 0
 		return -1;
-#else
-		/* TODO: figure out whether this workaround could be disabled
-		 */
-		wpa_printf(MSG_DEBUG, "TDLS: Workaround - ignore Teardown MIC "
-			   "failure");
-#endif
 	}
 
 skip_ftie:
@@ -1251,7 +1247,8 @@ static int wpa_tdls_process_tpk_m1(struct wpa_sm *sm, const u8 *src_addr,
 		goto skip_rsn;
 	}
 
-	if (kde.ftie == NULL || kde.rsn_ie == NULL) {
+	if (kde.ftie == NULL || kde.ftie_len < sizeof(*ftie) ||
+	    kde.rsn_ie == NULL) {
 		wpa_printf(MSG_INFO, "TDLS: No FTIE or RSN IE in TPK M1");
 		status = WLAN_STATUS_INVALID_PARAMETERS;
 		goto error;
@@ -1562,7 +1559,8 @@ static int wpa_tdls_process_tpk_m2(struct wpa_sm *sm, const u8 *src_addr,
 		goto skip_rsn;
 	}
 
-	if (kde.ftie == NULL || kde.rsn_ie == NULL) {
+	if (kde.ftie == NULL || kde.ftie_len < sizeof(*ftie) ||
+	    kde.rsn_ie == NULL) {
 		wpa_printf(MSG_INFO, "TDLS: No FTIE or RSN IE in TPK M2");
 		status = WLAN_STATUS_INVALID_PARAMETERS;
 		goto error;
@@ -1731,12 +1729,12 @@ static int wpa_tdls_process_tpk_m3(struct wpa_sm *sm, const u8 *src_addr,
 	if (!wpa_tdls_get_privacy(sm))
 		goto skip_rsn;
 
-	if (kde.ftie == NULL) {
+	if (kde.ftie == NULL || kde.ftie_len < sizeof(*ftie)) {
 		wpa_printf(MSG_INFO, "TDLS: No FTIE in TPK M3");
 		return -1;
 	}
 	wpa_hexdump(MSG_DEBUG, "TDLS: FTIE Received from TPK M3",
-		    (u8 *) ftie, sizeof(*ftie));
+		    kde.ftie, sizeof(*ftie));
 	ftie = (struct wpa_tdls_ftie *) kde.ftie;
 
 	if (kde.rsn_ie == NULL) {
@@ -1825,6 +1823,9 @@ int wpa_tdls_start(struct wpa_sm *sm, const u8 *addr)
 	struct wpa_tdls_peer *peer;
 	int tdls_prohibited = sm->tdls_prohibited;
 
+	if (sm->tdls_disabled)
+		return -1;
+
 #ifdef CONFIG_TDLS_TESTING
 	if ((tdls_testing & TDLS_TESTING_IGNORE_AP_PROHIBIT) &&
 	    tdls_prohibited) {
@@ -1869,6 +1870,9 @@ int wpa_tdls_reneg(struct wpa_sm *sm, const u8 *addr)
 {
 	struct wpa_tdls_peer *peer;
 
+	if (sm->tdls_disabled)
+		return -1;
+
 	for (peer = sm->tdls; peer; peer = peer->next) {
 		if (os_memcmp(peer->addr, addr, ETH_ALEN) == 0)
 			break;
@@ -1894,6 +1898,11 @@ static void wpa_supplicant_rx_tdls(void *ctx, const u8 *src_addr,
 
 	wpa_hexdump(MSG_DEBUG, "TDLS: Received Data frame encapsulation",
 		    buf, len);
+
+	if (sm->tdls_disabled) {
+		wpa_printf(MSG_DEBUG, "TDLS: Discard message - TDLS disabled");
+		return;
+	}
 
 	if (os_memcmp(src_addr, sm->own_addr, ETH_ALEN) == 0) {
 		wpa_printf(MSG_DEBUG, "TDLS: Discard copy of own message");
@@ -2050,4 +2059,11 @@ void wpa_tdls_assoc_resp_ies(struct wpa_sm *sm, const u8 *ies, size_t len)
 			   "(Re)Association Response IEs");
 		sm->tdls_prohibited = 1;
 	}
+}
+
+
+void wpa_tdls_enable(struct wpa_sm *sm, int enabled)
+{
+	wpa_printf(MSG_DEBUG, "TDLS: %s", enabled ? "enabled" : "disabled");
+	sm->tdls_disabled = !enabled;
 }
