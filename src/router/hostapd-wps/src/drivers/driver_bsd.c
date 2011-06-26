@@ -536,12 +536,21 @@ bsd_set_freq(void *priv, struct hostapd_freq_params *freq)
 	u32 mode;
 	int channel = freq->channel;
 
-	if (channel < 14)
-		mode = IFM_IEEE80211_11G;
-	else if (channel == 14)
+	if (channel < 14) {
+		mode =
+#ifdef CONFIG_IEEE80211N
+			freq->ht_enabled ? IFM_IEEE80211_11NG :
+#endif /* CONFIG_IEEE80211N */
+		        IFM_IEEE80211_11G;
+	} else if (channel == 14) {
 		mode = IFM_IEEE80211_11B;
-	else
-		mode = IFM_IEEE80211_11A;
+	} else {
+		mode =
+#ifdef CONFIG_IEEE80211N
+			freq->ht_enabled ? IFM_IEEE80211_11NA :
+#endif /* CONFIG_IEEE80211N */
+			IFM_IEEE80211_11A;
+	}
 	if (bsd_set_mediaopt(drv, IFM_MMASK, mode) < 0) {
 		wpa_printf(MSG_ERROR, "%s: failed to set modulation mode",
 			   __func__);
@@ -575,12 +584,12 @@ rtbuf_len(void)
 {
 	size_t len;
 
-	int mib[6] = {CTL_NET, AF_ROUTE, 0, AF_INET6, NET_RT_DUMP, 0};
+	int mib[6] = {CTL_NET, AF_ROUTE, 0, AF_INET, NET_RT_DUMP, 0};
 
 	if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0) {
-		wpa_printf(MSG_ERROR, "%s failed: %s\n", __func__,
+		wpa_printf(MSG_WARNING, "%s failed: %s\n", __func__,
 			   strerror(errno));
-		return -1;
+		len = 2048;
 	}
 
 	return len;
@@ -717,8 +726,6 @@ bsd_wireless_event_receive(int sock, void *ctx, void *sock_ctx)
 	union wpa_event_data data;
 
 	len = rtbuf_len();
-	if (len < 0)
-		return;
 
 	buf = os_malloc(len);
 	if (buf == NULL) {
@@ -1156,8 +1163,6 @@ wpa_driver_bsd_event_receive(int sock, void *ctx, void *sock_ctx)
 	int n, len;
 
 	len = rtbuf_len();
-	if (len < 0)
-		return;
 
 	buf = os_malloc(len);
 	if (buf == NULL) {

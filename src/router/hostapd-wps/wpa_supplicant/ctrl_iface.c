@@ -114,6 +114,17 @@ static int wpa_supplicant_ctrl_iface_set(struct wpa_supplicant *wpa_s,
 		tdls_testing = strtol(value, NULL, 0);
 		wpa_printf(MSG_DEBUG, "TDLS: tdls_testing=0x%x", tdls_testing);
 #endif /* CONFIG_TDLS_TESTING */
+#ifdef CONFIG_TDLS
+	} else if (os_strcasecmp(cmd, "tdls_disabled") == 0) {
+		int disabled = atoi(value);
+		wpa_printf(MSG_DEBUG, "TDLS: tdls_disabled=%d", disabled);
+		if (disabled) {
+			if (wpa_drv_tdls_oper(wpa_s, TDLS_DISABLE, NULL) < 0)
+				ret = -1;
+		} else if (wpa_drv_tdls_oper(wpa_s, TDLS_ENABLE, NULL) < 0)
+			ret = -1;
+		wpa_tdls_enable(wpa_s->wpa, !disabled);
+#endif /* CONFIG_TDLS */
 	} else {
 		value[-1] = '=';
 		ret = wpa_config_process_global(wpa_s->conf, cmd, -1);
@@ -281,7 +292,9 @@ static int wpa_supplicant_ctrl_iface_wps_pbc(struct wpa_supplicant *wpa_s,
 					     char *cmd)
 {
 	u8 bssid[ETH_ALEN], *_bssid = bssid;
+#ifdef CONFIG_P2P
 	u8 p2p_dev_addr[ETH_ALEN], *_p2p_dev_addr = NULL;
+#endif /* CONFIG_P2P */
 
 	if (cmd == NULL || os_strcmp(cmd, "any") == 0) {
 		_bssid = NULL;
@@ -1994,6 +2007,17 @@ static int wpa_supplicant_ctrl_iface_ap_scan(
 }
 
 
+static int wpa_supplicant_ctrl_iface_scan_interval(
+	struct wpa_supplicant *wpa_s, char *cmd)
+{
+	int scan_int = atoi(cmd);
+	if (scan_int < 0)
+		return -1;
+	wpa_s->scan_interval = scan_int;
+	return 0;
+}
+
+
 static int wpa_supplicant_ctrl_iface_bss_expire_age(
 	struct wpa_supplicant *wpa_s, char *cmd)
 {
@@ -2848,6 +2872,26 @@ static int wpa_supplicant_ctrl_iface_sta_autoconnect(
 }
 
 
+static int wpa_supplicant_signal_poll(struct wpa_supplicant *wpa_s, char *buf,
+				      size_t buflen)
+{
+	struct wpa_signal_info si;
+	int ret;
+
+	ret = wpa_drv_signal_poll(wpa_s, &si);
+	if (ret)
+		return -1;
+
+	ret = os_snprintf(buf, buflen, "RSSI=%d\nLINKSPEED=%d\n"
+			  "NOISE=%d\nFREQUENCY=%u\n",
+			  si.current_signal, si.current_txrate / 1000,
+			  si.current_noise, si.frequency);
+	if (ret < 0 || (unsigned int) ret > buflen)
+		return -1;
+	return ret;
+}
+
+
 char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 					 char *buf, size_t *resp_len)
 {
@@ -3143,8 +3187,17 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 		if (wpa_s->wpa_state == WPA_INTERFACE_DISABLED)
 			reply_len = -1;
 		else {
-			wpa_s->scan_req = 2;
-			wpa_supplicant_req_scan(wpa_s, 0, 0);
+			if (!wpa_s->scanning &&
+			    ((wpa_s->wpa_state <= WPA_SCANNING) ||
+			     (wpa_s->wpa_state == WPA_COMPLETED))) {
+				wpa_s->scan_req = 2;
+				wpa_supplicant_req_scan(wpa_s, 0, 0);
+			} else {
+				wpa_printf(MSG_DEBUG, "Ongoing scan action - "
+					   "reject new request");
+				reply_len = os_snprintf(reply, reply_size,
+							"FAIL-BUSY\n");
+			}
 		}
 	} else if (os_strcmp(buf, "SCAN_RESULTS") == 0) {
 		reply_len = wpa_supplicant_ctrl_iface_scan_results(
@@ -3180,6 +3233,9 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 			wpa_s, buf + 15, reply, reply_size);
 	} else if (os_strncmp(buf, "AP_SCAN ", 8) == 0) {
 		if (wpa_supplicant_ctrl_iface_ap_scan(wpa_s, buf + 8))
+			reply_len = -1;
+	} else if (os_strncmp(buf, "SCAN_INTERVAL ", 14) == 0) {
+		if (wpa_supplicant_ctrl_iface_scan_interval(wpa_s, buf + 14))
 			reply_len = -1;
 	} else if (os_strcmp(buf, "INTERFACE_LIST") == 0) {
 		reply_len = wpa_supplicant_global_iface_list(
@@ -3232,6 +3288,9 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 		if (wpa_supplicant_ctrl_iface_tdls_teardown(wpa_s, buf + 14))
 			reply_len = -1;
 #endif /* CONFIG_TDLS */
+	} else if (os_strncmp(buf, "SIGNAL_POLL", 11) == 0) {
+		reply_len = wpa_supplicant_signal_poll(wpa_s, reply,
+						       reply_size);
 	} else {
 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;

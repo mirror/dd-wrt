@@ -171,6 +171,13 @@ NEED_SHA256=y
 NEED_AES_OMAC1=y
 endif
 
+ifdef CONFIG_TDLS
+L_CFLAGS += -DCONFIG_TDLS
+OBJS += src/rsn_supp/tdls.o
+NEED_SHA256=y
+NEED_AES_OMAC1=y
+endif
+
 ifdef CONFIG_PEERKEY
 L_CFLAGS += -DCONFIG_PEERKEY
 endif
@@ -1102,9 +1109,8 @@ endif
 
 ifdef CONFIG_NO_RANDOM_POOL
 L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
-else
-OBJS += src/crypto/random.c
 endif
+OBJS += src/crypto/random.c
 
 ifdef CONFIG_CTRL_IFACE
 ifeq ($(CONFIG_CTRL_IFACE), y)

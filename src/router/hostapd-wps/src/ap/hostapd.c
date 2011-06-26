@@ -27,6 +27,7 @@
 #include "beacon.h"
 #include "iapp.h"
 #include "ieee802_1x.h"
+#include "ieee802_11.h"
 #include "ieee802_11_auth.h"
 #include "vlan_init.h"
 #include "wpa_auth.h"
@@ -36,7 +37,6 @@
 #include "ap_drv_ops.h"
 #include "ap_config.h"
 #include "p2p_hostapd.h"
-#include "ieee802_11.h"
 
 
 static int hostapd_flush_old_stations(struct hostapd_data *hapd);
@@ -311,6 +311,12 @@ static int hostapd_setup_encryption(char *iface, struct hostapd_data *hapd)
 		hostapd_set_privacy(hapd, 1);
 		return 0;
 	}
+
+	/*
+	 * When IEEE 802.1X is not enabled, the driver may need to know how to
+	 * set authentication algorithms for static WEP.
+	 */
+	hostapd_drv_set_authmode(hapd, hapd->conf->auth_algs);
 
 	for (i = 0; i < 4; i++) {
 		if (hapd->conf->ssid.wep.key[i] &&
@@ -785,6 +791,17 @@ int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err)
 		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
 			   "configuration", __func__);
 		goto error;
+	}
+
+	/*
+	 * WPS UPnP module can be initialized only when the "upnp_iface" is up.
+	 * If "interface" and "upnp_iface" are the same (e.g., non-bridge
+	 * mode), the interface is up only after driver_commit, so initialize
+	 * WPS after driver_commit.
+	 */
+	for (j = 0; j < iface->num_bss; j++) {
+		if (hostapd_init_wps_complete(iface->bss[j]))
+			return -1;
 	}
 
 	if (hapd->setup_complete_cb)

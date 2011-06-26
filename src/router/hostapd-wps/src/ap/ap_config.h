@@ -319,6 +319,7 @@ struct hostapd_bss_config {
 	char *upc;
 	struct wpabuf *wps_vendor_ext[MAX_WPS_VENDOR_EXTENSIONS];
 #endif /* CONFIG_WPS */
+	int pbc_in_m1;
 
 #define P2P_ENABLED BIT(0)
 #define P2P_GROUP_OWNER BIT(1)

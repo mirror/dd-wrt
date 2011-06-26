@@ -1094,8 +1094,8 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 		wpa_printf(MSG_ERROR, "HT (IEEE 802.11n) with WEP is not "
 			   "allowed, disabling HT capabilities");
 	}
-	/*
-	if (conf->ieee80211n && bss->wpa &&
+
+/*	if (conf->ieee80211n && bss->wpa &&
 	    !(bss->wpa_pairwise & WPA_CIPHER_CCMP) &&
 	    !(bss->rsn_pairwise & WPA_CIPHER_CCMP)) {
 		bss->disable_11n = 1;
@@ -1103,7 +1103,7 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 			   "requires CCMP to be enabled, disabling HT "
 			   "capabilities");
 	}*/
-#endif 
+#endif /* CONFIG_IEEE80211N */
 
 #ifdef CONFIG_WPS2
 	if (bss->wps_state && bss->ignore_broadcast_ssid) {
@@ -2029,6 +2029,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		} else if (os_strcmp(buf, "upc") == 0) {
 			os_free(bss->upc);
 			bss->upc = os_strdup(pos);
+		} else if (os_strcmp(buf, "pbc_in_m1") == 0) {
+			bss->pbc_in_m1 = atoi(pos);
 #endif /* CONFIG_WPS */
 #ifdef CONFIG_P2P_MANAGER
 		} else if (os_strcmp(buf, "manage_p2p") == 0) {

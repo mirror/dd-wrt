@@ -113,6 +113,11 @@ void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s)
 {
 	int bssid_changed;
 
+#ifdef CONFIG_IBSS_RSN
+	ibss_rsn_deinit(wpa_s->ibss_rsn);
+	wpa_s->ibss_rsn = NULL;
+#endif /* CONFIG_IBSS_RSN */
+
 	if (wpa_s->wpa_state == WPA_INTERFACE_DISABLED)
 		return;
 
@@ -430,8 +435,15 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_supplicant *wpa_s,
 		return 0;
 	}
 
-	/* Allow in non-WPA configuration */
-	return 1;
+	if (!wpa_key_mgmt_wpa(ssid->key_mgmt)) {
+		wpa_dbg(wpa_s, MSG_DEBUG, "   allow in non-WPA/WPA2");
+		return 1;
+	}
+
+	wpa_dbg(wpa_s, MSG_DEBUG, "   reject due to mismatch with "
+		"WPA/WPA2");
+
+	return 0;
 }
 
 
@@ -493,13 +505,13 @@ static struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 		if (e->count > limit) {
 			wpa_dbg(wpa_s, MSG_DEBUG, "   skip - blacklisted "
 				"(count=%d limit=%d)", e->count, limit);
-			return 0;
+			return NULL;
 		}
 	}
 
 	if (ssid_len == 0) {
 		wpa_dbg(wpa_s, MSG_DEBUG, "   skip - SSID not known");
-		return 0;
+		return NULL;
 	}
 
 	wpa = wpa_ie_len > 0 || rsn_ie_len > 0;
@@ -590,7 +602,7 @@ static struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 	}
 
 	/* No matching configuration found */
-	return 0;
+	return NULL;
 }
 
 
@@ -744,28 +756,25 @@ wpa_supplicant_pick_new_network(struct wpa_supplicant *wpa_s)
 /* TODO: move the rsn_preauth_scan_result*() to be called from notify.c based
  * on BSS added and BSS changed events */
 static void wpa_supplicant_rsn_preauth_scan_results(
-	struct wpa_supplicant *wpa_s, struct wpa_scan_results *scan_res)
+	struct wpa_supplicant *wpa_s)
 {
-	int i;
+	struct wpa_bss *bss;
 
 	if (rsn_preauth_scan_results(wpa_s->wpa) < 0)
 		return;
 
-	for (i = scan_res->num - 1; i >= 0; i--) {
+	dl_list_for_each(bss, &wpa_s->bss, struct wpa_bss, list) {
 		const u8 *ssid, *rsn;
-		struct wpa_scan_res *r;
 
-		r = scan_res->res[i];
-
-		ssid = wpa_scan_get_ie(r, WLAN_EID_SSID);
+		ssid = wpa_bss_get_ie(bss, WLAN_EID_SSID);
 		if (ssid == NULL)
 			continue;
 
-		rsn = wpa_scan_get_ie(r, WLAN_EID_RSN);
+		rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
 		if (rsn == NULL)
 			continue;
 
-		rsn_preauth_scan_result(wpa_s->wpa, r->bssid, ssid, rsn);
+		rsn_preauth_scan_result(wpa_s->wpa, bss->bssid, ssid, rsn);
 	}
 
 }
@@ -933,8 +942,6 @@ static int _wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s,
 		return 0;
 	}
 
-	wpa_supplicant_rsn_preauth_scan_results(wpa_s, scan_res);
-
 	selected = wpa_supplicant_pick_network(wpa_s, scan_res, &ssid);
 
 	if (selected) {
@@ -945,6 +952,7 @@ static int _wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s,
 		if (skip)
 			return 0;
 		wpa_supplicant_connect(wpa_s, selected, ssid);
+		wpa_supplicant_rsn_preauth_scan_results(wpa_s);
 	} else {
 		wpa_scan_results_free(scan_res);
 		wpa_dbg(wpa_s, MSG_DEBUG, "No suitable network found");
@@ -952,8 +960,9 @@ static int _wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s,
 		if (ssid) {
 			wpa_dbg(wpa_s, MSG_DEBUG, "Setup a new network");
 			wpa_supplicant_associate(wpa_s, NULL, ssid);
+			wpa_supplicant_rsn_preauth_scan_results(wpa_s);
 		} else {
-			int timeout_sec = 0;
+			int timeout_sec = wpa_s->scan_interval;
 			int timeout_usec = 0;
 #ifdef CONFIG_P2P
 			if (wpa_s->p2p_in_provisioning) {
@@ -1091,7 +1100,7 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 	l = data->assoc_info.resp_ies_len;
 
 #ifdef CONFIG_WPS_STRICT
-	if (wpa_s->current_ssid &&
+	if (p && wpa_s->current_ssid &&
 	    wpa_s->current_ssid->key_mgmt == WPA_KEY_MGMT_WPS) {
 		struct wpabuf *wps;
 		wps = ieee802_11_vendor_ie_concat(p, l, WPS_IE_VENDOR_TYPE);
@@ -1172,6 +1181,14 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 		wpa_sm_set_ap_rsn_ie(wpa_s->wpa, NULL, 0);
 	if (wpa_found || rsn_found)
 		wpa_s->ap_ies_from_associnfo = 1;
+
+	if (wpa_s->assoc_freq && data->assoc_info.freq &&
+	    wpa_s->assoc_freq != data->assoc_info.freq) {
+		wpa_printf(MSG_DEBUG, "Operating frequency changed from "
+			   "%u to %u MHz",
+			   wpa_s->assoc_freq, data->assoc_info.freq);
+		wpa_supplicant_update_scan_results(wpa_s);
+	}
 
 	wpa_s->assoc_freq = data->assoc_info.freq;
 
@@ -1344,8 +1361,18 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 	if (wpa_s->current_ssid &&
 	    wpa_s->current_ssid->mode == WPAS_MODE_IBSS &&
 	    wpa_s->key_mgmt != WPA_KEY_MGMT_NONE &&
-	    wpa_s->key_mgmt != WPA_KEY_MGMT_WPA_NONE)
-		ibss_rsn_connected(wpa_s->ibss_rsn);
+	    wpa_s->key_mgmt != WPA_KEY_MGMT_WPA_NONE &&
+	    wpa_s->ibss_rsn == NULL) {
+		wpa_s->ibss_rsn = ibss_rsn_init(wpa_s);
+		if (!wpa_s->ibss_rsn) {
+			wpa_msg(wpa_s, MSG_INFO, "Failed to init IBSS RSN");
+			wpa_supplicant_deauthenticate(
+				wpa_s, WLAN_REASON_DEAUTH_LEAVING);
+			return;
+		}
+
+		ibss_rsn_set_psk(wpa_s->ibss_rsn, wpa_s->current_ssid->psk);
+	}
 #endif /* CONFIG_IBSS_RSN */
 }
 
@@ -1554,7 +1581,8 @@ wpa_supplicant_event_interface_status(struct wpa_supplicant *wpa_s,
 		l2_packet_deinit(wpa_s->l2);
 		wpa_s->l2 = NULL;
 #ifdef CONFIG_IBSS_RSN
-		ibss_rsn_stop(wpa_s->ibss_rsn, NULL);
+		ibss_rsn_deinit(wpa_s->ibss_rsn);
+		wpa_s->ibss_rsn = NULL;
 #endif /* CONFIG_IBSS_RSN */
 #ifdef CONFIG_TERMINATE_ONLASTIF
 		/* check if last interface */
@@ -1989,6 +2017,9 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 #endif /* CONFIG_P2P */
 		break;
 	case EVENT_RX_PROBE_REQ:
+		if (data->rx_probe_req.sa == NULL ||
+		    data->rx_probe_req.ie == NULL)
+			break;
 #ifdef CONFIG_AP
 		if (wpa_s->ap_iface) {
 			hostapd_probe_req_rx(wpa_s->ap_iface->bss[0],

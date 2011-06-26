@@ -50,8 +50,8 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
 
 static const u32 dot11RSNAConfigGroupUpdateCount = 4;
 static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
-static const u32 eapol_key_timeout_first = 2000; /* ms */
-static const u32 eapol_key_timeout_subseq = 2000; /* ms */
+static const u32 eapol_key_timeout_first = 100; /* ms */
+static const u32 eapol_key_timeout_subseq = 1000; /* ms */
 
 /* TODO: make these configurable */
 static const int dot11RSNAConfigPMKLifetime = 43200;
@@ -574,6 +574,10 @@ void wpa_auth_sta_no_wpa(struct wpa_state_machine *sm)
 
 static void wpa_free_sta_sm(struct wpa_state_machine *sm)
 {
+	if (sm->GUpdateStationKeys) {
+		sm->group->GKeyDoneStations--;
+		sm->GUpdateStationKeys = FALSE;
+	}
 #ifdef CONFIG_IEEE80211R
 	os_free(sm->assoc_resp_ftie);
 #endif /* CONFIG_IEEE80211R */
@@ -598,6 +602,7 @@ void wpa_auth_sta_deinit(struct wpa_state_machine *sm)
 	}
 
 	eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
+	sm->pending_1_of_4_timeout = 0;
 	eloop_cancel_timeout(wpa_sm_call_step, sm, NULL);
 	eloop_cancel_timeout(wpa_rekey_ptk, sm->wpa_auth, sm);
 	if (sm->in_step_loop) {
@@ -965,6 +970,7 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 		}
 		sm->MICVerified = TRUE;
 		eloop_cancel_timeout(wpa_send_eapol_timeout, wpa_auth, sm);
+		sm->pending_1_of_4_timeout = 0;
 	}
 
 	if (key_info & WPA_KEY_INFO_REQUEST) {
@@ -1094,6 +1100,7 @@ static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx)
 	struct wpa_authenticator *wpa_auth = eloop_ctx;
 	struct wpa_state_machine *sm = timeout_ctx;
 
+	sm->pending_1_of_4_timeout = 0;
 	wpa_auth_logger(wpa_auth, sm->addr, LOGGER_DEBUG, "EAPOL-Key timeout");
 	sm->TimeoutEvt = TRUE;
 	wpa_sm_step(sm);
@@ -1281,10 +1288,14 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 			 keyidx, encr, 0);
 
 	ctr = pairwise ? sm->TimeoutCtr : sm->GTimeoutCtr;
-	if (ctr == 1)
+	if (ctr == 1 && wpa_auth->conf.tx_status)
 		timeout_ms = eapol_key_timeout_first;
 	else
 		timeout_ms = eapol_key_timeout_subseq;
+	if (pairwise && ctr == 1 && !(key_info & WPA_KEY_INFO_MIC))
+		sm->pending_1_of_4_timeout = 1;
+	wpa_printf(MSG_DEBUG, "WPA: Use EAPOL-Key timeout of %u ms (retry "
+		   "counter %d)", timeout_ms, ctr);
 	eloop_register_timeout(timeout_ms / 1000, (timeout_ms % 1000) * 1000,
 			       wpa_send_eapol_timeout, wpa_auth, sm);
 }
@@ -1707,6 +1718,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 	}
 #endif /* CONFIG_IEEE80211R */
 
+	sm->pending_1_of_4_timeout = 0;
 	eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
 
 	if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
@@ -2261,20 +2273,23 @@ static int wpa_group_update_sta(struct wpa_state_machine *sm, void *ctx)
 	if (sm->wpa_ptk_state != WPA_PTK_PTKINITDONE) {
 		wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
 				"Not in PTKINITDONE; skip Group Key update");
+		sm->GUpdateStationKeys = FALSE;
 		return 0;
 	}
 	if (sm->GUpdateStationKeys) {
 		/*
-		 * This should not really happen, but just in case, make sure
-		 * we do not count the same STA twice in GKeyDoneStations.
+		 * This should not really happen, so add a debug log entry.
+		 * Since we clear the GKeyDoneStations before the loop, the
+		 * station needs to be counted here anyway.
 		 */
 		wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
-				"GUpdateStationKeys already set - do not "
-				"increment GKeyDoneStations");
-	} else {
-		sm->group->GKeyDoneStations++;
-		sm->GUpdateStationKeys = TRUE;
+				"GUpdateStationKeys was already set when "
+				"marking station for GTK rekeying");
 	}
+
+	sm->group->GKeyDoneStations++;
+	sm->GUpdateStationKeys = TRUE;
+
 	wpa_sm_step(sm);
 	return 0;
 }
@@ -2303,6 +2318,12 @@ static void wpa_group_setkeys(struct wpa_authenticator *wpa_auth,
 	 * including all STAs that could be in not-yet-completed state. */
 	wpa_gtk_update(wpa_auth, group);
 
+	if (group->GKeyDoneStations) {
+		wpa_printf(MSG_DEBUG, "wpa_group_setkeys: Unexpected "
+			   "GKeyDoneStations=%d when starting new GTK rekey",
+			   group->GKeyDoneStations);
+		group->GKeyDoneStations = 0;
+	}
 	wpa_auth_for_each_sta(wpa_auth, wpa_group_update_sta, NULL);
 	wpa_printf(MSG_DEBUG, "wpa_group_setkeys: GKeyDoneStations=%d",
 		   group->GKeyDoneStations);
@@ -2610,7 +2631,7 @@ int wpa_get_mib_sta(struct wpa_state_machine *sm, char *buf, size_t buflen)
 		"dot11RSNAStatsSelectedPairwiseCipher=" RSN_SUITE "\n"
 		/* TODO: dot11RSNAStatsTKIPICVErrors */
 		"dot11RSNAStatsTKIPLocalMICFailures=%u\n"
-		"dot11RSNAStatsTKIPRemoveMICFailures=%u\n"
+		"dot11RSNAStatsTKIPRemoteMICFailures=%u\n"
 		/* TODO: dot11RSNAStatsCCMPReplays */
 		/* TODO: dot11RSNAStatsCCMPDecryptErrors */
 		/* TODO: dot11RSNAStatsTKIPReplays */,
@@ -2785,4 +2806,34 @@ int wpa_auth_sta_set_vlan(struct wpa_state_machine *sm, int vlan_id)
 
 	sm->group = group;
 	return 0;
+}
+
+
+void wpa_auth_eapol_key_tx_status(struct wpa_authenticator *wpa_auth,
+				  struct wpa_state_machine *sm, int ack)
+{
+	if (wpa_auth == NULL || sm == NULL)
+		return;
+	wpa_printf(MSG_DEBUG, "WPA: EAPOL-Key TX status for STA " MACSTR
+		   " ack=%d", MAC2STR(sm->addr), ack);
+	if (sm->pending_1_of_4_timeout && ack) {
+		/*
+		 * Some deployed supplicant implementations update their SNonce
+		 * for each EAPOL-Key 2/4 message even within the same 4-way
+		 * handshake and then fail to use the first SNonce when
+		 * deriving the PTK. This results in unsuccessful 4-way
+		 * handshake whenever the relatively short initial timeout is
+		 * reached and EAPOL-Key 1/4 is retransmitted. Try to work
+		 * around this by increasing the timeout now that we know that
+		 * the station has received the frame.
+		 */
+		int timeout_ms = eapol_key_timeout_subseq;
+		wpa_printf(MSG_DEBUG, "WPA: Increase initial EAPOL-Key 1/4 "
+			   "timeout by %u ms because of acknowledged frame",
+			   timeout_ms);
+		eloop_cancel_timeout(wpa_send_eapol_timeout, wpa_auth, sm);
+		eloop_register_timeout(timeout_ms / 1000,
+				       (timeout_ms % 1000) * 1000,
+				       wpa_send_eapol_timeout, wpa_auth, sm);
+	}
 }
