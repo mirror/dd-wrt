@@ -142,6 +142,7 @@ void deconfigure_wifi(void)
 	stop_process("wrt-radauth", "Radius daemon");
 	stop_process("hostapd", "hostapd daemon");
 	stop_process("wpa_supplicant", "wpa_supplicant daemon");
+	sysprintf("rm -f /var/run/ath*"); // delete pid files
 	int c = getdevicecount();
 	int i;
 
