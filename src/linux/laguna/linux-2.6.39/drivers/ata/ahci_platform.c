@@ -19,9 +19,11 @@
 #include <linux/interrupt.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
+#include <linux/mod_devicetable.h>
 #include <linux/libata.h>
 #include <linux/ahci_platform.h>
 #include "ahci.h"
+#include "ahci_platform.h"
 
 static struct scsi_host_template ahci_platform_sht = {
 	AHCI_SHT("ahci_platform"),
@@ -29,6 +31,7 @@ static struct scsi_host_template ahci_platform_sht = {
 
 static int __init ahci_probe(struct platform_device *pdev)
 {
+	const struct platform_device_id *platid = platform_get_device_id(pdev);
 	struct device *dev = &pdev->dev;
 	struct ahci_platform_data *pdata = dev->platform_data;
 	struct ata_port_info pi = {
@@ -45,6 +48,9 @@ static int __init ahci_probe(struct platform_device *pdev)
 	int n_ports;
 	int i;
 	int rc;
+
+	if (!pdata && platid && platid->driver_data)
+		pdata = (void *)platid->driver_data;
 
 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!mem) {
@@ -171,17 +177,28 @@ static int __devexit ahci_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct platform_device_id ahci_platform_ids[] = {
+	{ "ahci", },
+#ifdef CONFIG_SATA_AHCI_CNS3XXX
+	{ "ahci-cns3xxx", (kernel_ulong_t)&cns3xxx_ahci_platform_data},
+#endif
+	{ },
+};
+MODULE_DEVICE_TABLE(platform, ahci_platform_ids);
+
 static struct platform_driver ahci_driver = {
-	.remove = __devexit_p(ahci_remove),
 	.driver = {
 		.name = "ahci",
 		.owner = THIS_MODULE,
 	},
+	.probe	= ahci_probe,
+	.remove = __devexit_p(ahci_remove),
+	.id_table = ahci_platform_ids,
 };
 
 static int __init ahci_init(void)
 {
-	return platform_driver_probe(&ahci_driver, ahci_probe);
+	return platform_driver_register(&ahci_driver);
 }
 module_init(ahci_init);
 
@@ -194,4 +211,3 @@ module_exit(ahci_exit);
 MODULE_DESCRIPTION("AHCI SATA platform driver");
 MODULE_AUTHOR("Anton Vorontsov <avorontsov@ru.mvista.com>");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS("platform:ahci");
