@@ -1079,6 +1079,7 @@ void ath9k_start_supplicant(int count)
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
+		sleep(3);
 	} else {
 		if (strlen(vifs) > 0) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
