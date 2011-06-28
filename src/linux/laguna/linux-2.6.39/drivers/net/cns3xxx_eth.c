@@ -21,41 +21,71 @@
 #include <linux/skbuff.h>
 #include <mach/hardware.h>
 
-#define DRV_NAME		"cns3xxx_eth"
+#define DRV_NAME "cns3xxx_eth"
 
-#define RX_DESCS		512
-#define TX_DESCS		512
-#define SKB_DMA_REALIGN   ((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES)
+#define RX_DESCS 512
+#define TX_DESCS 512
+#define SKB_DMA_REALIGN ((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES)
 
 #define RX_POOL_ALLOC_SIZE (sizeof(struct rx_desc) * RX_DESCS)
 #define TX_POOL_ALLOC_SIZE (sizeof(struct tx_desc) * TX_DESCS)
-#define REGS_SIZE		0x150
-#define MAX_MRU			9500
+#define REGS_SIZE 336
+#define MAX_MRU	9500
 
-#define NAPI_WEIGHT		64
+#define NAPI_WEIGHT 64
+
+/* MDIO Defines */
+#define MDIO_CMD_COMPLETE 0x00008000
+#define MDIO_WRITE_COMMAND 0x00002000
+#define MDIO_READ_COMMAND 0x00004000
+#define MDIO_REG_OFFSET 8
+#define MDIO_VALUE_OFFSET 16
+
+/* Descritor Defines */
+#define END_OF_RING 0x40000000
+#define FIRST_SEGMENT 0x20000000
+#define LAST_SEGMENT 0x10000000
+#define FORCE_ROUTE 0x04000000
+#define IP_CHECKSUM 0x00040000
+#define UDP_CHECKSUM 0x00020000
+#define TCP_CHECKSUM 0x00010000
 
 /* Port Config Defines */
-#define PORT_DISABLE (1 << 18)
+#define PORT_DISABLE 0x00040000
+#define PROMISC_OFFSET 29
+
+/* Global Config Defines */
+#define UNKNOWN_VLAN_TO_CPU 0x02000000
+#define ACCEPT_CRC_PACKET 0x00200000
+#define CRC_STRIPPING 0x00100000
+
+/* VLAN Config Defines */
+#define NIC_MODE 0x00008000
+#define VLAN_UNAWARE 0x00000001
 
 /* DMA AUTO Poll Defines */
-#define TS_POLL_EN (1 << 5)
-#define TS_SUSPEND (1 << 4)
-#define FS_POLL_EN (1 << 1)
-#define FS_SUSPEND (1 << 0)
+#define TS_POLL_EN 0x00000020
+#define TS_SUSPEND 0x00000010
+#define FS_POLL_EN 0x00000002
+#define FS_SUSPEND 0x00000001
+
+/* DMA Ring Control Defines */
+#define QUEUE_THRESHOLD 0x000000f0
+#define CLR_FS_STATE 0x80000000
 
 struct tx_desc
 {
-	u32 sdp; // segment data pointer
+	u32 sdp; /* segment data pointer */
 
 	union {
 		struct {
-			u32 sdl:16; // segment data length
+			u32 sdl:16; /* segment data length */
 			u32 tco:1;
 			u32 uco:1;
 			u32 ico:1;
-			u32 rsv_1:3; // reserve
+			u32 rsv_1:3; /* reserve */
 			u32 pri:3;
-			u32 fp:1; // force priority
+			u32 fp:1; /* force priority */
 			u32 fr:1;
 			u32 interrupt:1;
 			u32 lsd:1;
@@ -95,16 +125,16 @@ struct tx_desc
 		u32 config2;
 	};
 
-	u8 alignment[16]; // for alignment 32 byte
+	u8 alignment[16]; /* for 32 byte */
 };
 
 struct rx_desc
 {
-	u32 sdp; // segment data pointer
+	u32 sdp; /* segment data pointer */
 
 	union {
 		struct {
-			u32 sdl:16; // segment data length
+			u32 sdl:16; /* segment data length */
 			u32 l4f:1;
 			u32 ipf:1;
 			u32 prot:4;
@@ -149,12 +179,12 @@ struct rx_desc
 		u32 config2;
 	};
 
-	u8 alignment[16]; // for alignment 32 byte
+	u8 alignment[16]; /* for 32 byte alignment */
 };
 
 
 struct switch_regs {
-	u32 phy_control;		/* 000 */
+	u32 phy_control;
 	u32 phy_auto_addr;
 	u32 mac_glob_cfg;
 	u32 mac_cfg[4];
@@ -259,22 +289,22 @@ static int cns3xxx_mdio_cmd(struct mii_bus *bus, int phy_id, int location,
 	u32 temp = 0;
 
 	temp = __raw_readl(&mdio_regs->phy_control);
-	temp |= (1 << 15);  /* Clear Command Complete bit */
+	temp |= MDIO_CMD_COMPLETE;
 	__raw_writel(temp, &mdio_regs->phy_control);
 	udelay(10);
 
 	if (write) {
-		temp = (cmd << 16);
-		temp |= (1 << 13);	/* Write Command */
+		temp = (cmd << MDIO_VALUE_OFFSET);
+		temp |= MDIO_WRITE_COMMAND;
 	} else {
-		temp = (1 << 14);  /* Read Command */
+		temp = MDIO_READ_COMMAND;
 	}
-	temp |= ((location & 0x1f) << 8);
+	temp |= ((location & 0x1f) << MDIO_REG_OFFSET);
 	temp |= (phy_id & 0x1f);
 
 	__raw_writel(temp, &mdio_regs->phy_control);
 
-	while (((__raw_readl(&mdio_regs->phy_control) & 0x8000) == 0)
+	while (((__raw_readl(&mdio_regs->phy_control) & MDIO_CMD_COMPLETE) == 0)
 			&& cycles < 5000) {
 		udelay(1);
 		cycles++;
@@ -287,13 +317,13 @@ static int cns3xxx_mdio_cmd(struct mii_bus *bus, int phy_id, int location,
 	}
 
 	temp = __raw_readl(&mdio_regs->phy_control);
-	temp |= (1 << 15);  /* Clear Command Complete bit */
+	temp |= MDIO_CMD_COMPLETE;
 	__raw_writel(temp, &mdio_regs->phy_control);
 
 	if (write)
 		return 0;
 
-	return ((temp >> 16) & 0xFFFF);
+	return ((temp >> MDIO_VALUE_OFFSET) & 0xFFFF);
 }
 
 static int cns3xxx_mdio_read(struct mii_bus *bus, int phy_id, int location)
@@ -400,13 +430,11 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 			desc->sdp = dma_map_single(NULL, skb->data,
 				    mtu, DMA_FROM_DEVICE);
 			if (dma_mapping_error(NULL, desc->sdp)) {
-				printk("failed to map\n");
 				dev_kfree_skb(skb);
 				/* Failed to map, better luck next time */
 				goto out;;
 			}
 		} else {
-			printk("failed to alloc\n");
 			/* Failed to allocate skb, try again next time */
 			goto out;
 		}
@@ -416,9 +444,10 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 
 		if (++i == RX_DESCS) {
 			i = 0;
-			desc->config0 = 0x70000000 | mtu;
+			desc->config0 = END_OF_RING | FIRST_SEGMENT |
+					LAST_SEGMENT | mtu;
 		} else {
-			desc->config0 = 0x30000000 | mtu;
+			desc->config0 = FIRST_SEGMENT | LAST_SEGMENT | mtu;
 		}
 	}
 out:
@@ -525,8 +554,6 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		if (++i == RX_DESCS) i = 0;
 		next_desc = &(rx_ring)->desc[i];
 		prefetch(next_desc);
-		prefetch(next_desc + 4);
-		prefetch(next_desc + 8);
 
 		port_id = desc->sp;
 		if (port_id == 4)
@@ -636,9 +663,13 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 	tx_ring->buff_tab[index] = skb;
 
 	if (index == TX_DESCS - 1) {
-		tx_desc->config0 = 0x74070000 | len;
+		tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
+				   FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+				   TCP_CHECKSUM | len;
 	} else {
-		tx_desc->config0 = 0x34070000 | len;
+		tx_desc->config0 = FIRST_SEGMENT | LAST_SEGMENT |
+				   FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
+				   TCP_CHECKSUM | len;
 	}
 
 	return NETDEV_TX_OK;
@@ -695,14 +726,15 @@ static int init_rings(struct sw *sw)
 	struct _rx_ring *rx_ring = sw->rx_ring;
 	struct _tx_ring *tx_ring = sw->tx_ring;
 
-	__raw_writel(0x0, &sw->regs->fs_dma_ctrl0);
-	__raw_writel(0x11, &sw->regs->dma_auto_poll_cfg);
-	__raw_writel(0x000000f0, &sw->regs->dma_ring_ctrl);
-	__raw_writel(0x800000f0, &sw->regs->dma_ring_ctrl);
+	__raw_writel(0, &sw->regs->fs_dma_ctrl0);
+	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
+	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
+	__raw_writel(CLR_FS_STATE | QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
 
-	__raw_writel(0x000000f0, &sw->regs->dma_ring_ctrl);
+	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
 
-	if (!(rx_dma_pool = dma_pool_create(DRV_NAME, NULL, RX_POOL_ALLOC_SIZE, 32, 0)))
+	if (!(rx_dma_pool = dma_pool_create(DRV_NAME, NULL,
+					    RX_POOL_ALLOC_SIZE, 32, 0)))
 		return -ENOMEM;
 
 	if (!(rx_ring->desc = dma_pool_alloc(rx_dma_pool, GFP_KERNEL,
@@ -736,7 +768,8 @@ static int init_rings(struct sw *sw)
 	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_ptr0);
 	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_base_addr0);
 
-	if (!(tx_dma_pool = dma_pool_create(DRV_NAME, NULL, TX_POOL_ALLOC_SIZE, 32, 0)))
+	if (!(tx_dma_pool = dma_pool_create(DRV_NAME, NULL,
+					    TX_POOL_ALLOC_SIZE, 32, 0)))
 		return -ENOMEM;
 
 	if (!(tx_ring->desc = dma_pool_alloc(tx_dma_pool, GFP_KERNEL,
@@ -819,7 +852,7 @@ static int eth_open(struct net_device *dev)
 		__raw_writel(temp, &sw->regs->mac_cfg[2]);
 
 		temp = __raw_readl(&sw->regs->dma_auto_poll_cfg);
-		temp &= ~(0x11);
+		temp &= ~(TS_SUSPEND | FS_SUSPEND);
 		__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
 
 		__raw_writel((TS_POLL_EN | FS_POLL_EN), &sw->regs->dma_auto_poll_cfg);
@@ -859,8 +892,8 @@ static int eth_close(struct net_device *dev)
 		temp |= (PORT_DISABLE);
 		__raw_writel(temp, &sw->regs->mac_cfg[2]);
 
-		temp = 0x11;
-		__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
+		__raw_writel(TS_SUSPEND | FS_SUSPEND,
+			     &sw->regs->dma_auto_poll_cfg);
 	}
 
 	netif_carrier_off(dev);
@@ -877,14 +910,14 @@ static void eth_rx_mode(struct net_device *dev)
 
 	if (dev->flags & IFF_PROMISC) {
 		if (port->id == 3)
-			temp |= ((1 << 2) << 29);
+			temp |= ((1 << 2) << PROMISC_OFFSET);
 		else
-			temp |= ((1 << port->id) << 29);
+			temp |= ((1 << port->id) << PROMISC_OFFSET);
 	} else {
 		if (port->id == 3)
-			temp &= ~((1 << 2) << 29);
+			temp &= ~((1 << 2) << PROMISC_OFFSET);
 		else
-			temp &= ~((1 << port->id) << 29);
+			temp &= ~((1 << port->id) << PROMISC_OFFSET);
 	}
 	__raw_writel(temp, &sw->regs->mac_glob_cfg);
 }
@@ -977,15 +1010,16 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 	sw->mtu = new_mtu;
 
 	/* Disable DMA */
-	temp = 0x11;
-	__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
+	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
 
 	for (i = 0; i < RX_DESCS; i++) {
 		desc = &(rx_ring)->desc[i];
-		/* Check if we own it, if we do, it will get set correctly when it is re-used */
+		/* Check if we own it, if we do, it will get set correctly
+		 * when it is re-used */
 		if (!desc->cown) {
 			skb = rx_ring->buff_tab[i];
-			dma_unmap_single(NULL, desc->sdp, desc->sdl, DMA_FROM_DEVICE);
+			dma_unmap_single(NULL, desc->sdp, desc->sdl,
+					 DMA_FROM_DEVICE);
 			dev_kfree_skb(skb);
 
 			if ((skb = dev_alloc_skb(new_mtu))) {
@@ -1004,15 +1038,17 @@ static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
 			rx_ring->buff_tab[i] = skb;
 
 			if (i == RX_DESCS - 1)
-				desc->config0 = 0x70000000 | new_mtu;
+				desc->config0 = END_OF_RING | FIRST_SEGMENT |
+						LAST_SEGMENT | new_mtu;
 			else
-				desc->config0 = 0x30000000 | new_mtu;
+				desc->config0 = FIRST_SEGMENT |
+						LAST_SEGMENT | new_mtu;
 		}
 	}
 
 	/* Re-ENABLE DMA */
 	temp = __raw_readl(&sw->regs->dma_auto_poll_cfg);
-	temp &= ~(0x11);
+	temp &= ~(TS_SUSPEND | FS_SUSPEND);
 	__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
 
 	__raw_writel((TS_POLL_EN | FS_POLL_EN), &sw->regs->dma_auto_poll_cfg);
@@ -1075,11 +1111,11 @@ static int __devinit eth_init_one(struct platform_device *pdev)
 	__raw_writel(temp, &sw->regs->mac_cfg[2]);
 
 	temp = __raw_readl(&sw->regs->vlan_cfg);
-	temp |= ((1 << 15) | (1 << 0));
+	temp |= NIC_MODE | VLAN_UNAWARE;
 	__raw_writel(temp, &sw->regs->vlan_cfg);
 
-	temp = 0x02300000;
-	__raw_writel(temp, &sw->regs->mac_glob_cfg);
+	__raw_writel(UNKNOWN_VLAN_TO_CPU | ACCEPT_CRC_PACKET |
+		     CRC_STRIPPING, &sw->regs->mac_glob_cfg);
 
 	if (!(sw->rx_ring = kmalloc(sizeof(struct _rx_ring), GFP_KERNEL))) {
 		err = -ENOMEM;

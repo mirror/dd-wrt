@@ -41,7 +41,7 @@ static struct resource cns3xxx_ahci_resource[] = {
 static u64 cns3xxx_ahci_dmamask = DMA_BIT_MASK(32);
 
 static struct platform_device cns3xxx_ahci_pdev = {
-	.name		= "ahci",
+	.name		= "ahci-cns3xxx",
 	.id		= 0,
 	.resource	= cns3xxx_ahci_resource,
 	.num_resources	= ARRAY_SIZE(cns3xxx_ahci_resource),
