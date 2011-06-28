@@ -616,10 +616,8 @@ void do_hostapd(char *fstr, char *prefix)
 
 static void checkhostapd(char *ifname)
 {
-	char akm[32];
 	int pid;
 	char fname[32];
-	sprintf(akm, "%s_akm", ifname);
 	    {
 		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
 		FILE *fp;
