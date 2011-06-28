@@ -620,8 +620,7 @@ static void checkhostapd(char *ifname)
 	int pid;
 	char fname[32];
 	sprintf(akm, "%s_akm", ifname);
-	if (nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-	    || nvram_match(akm, "wpa wpa2")) {
+	    {
 		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
 		FILE *fp;
 		fp = fopen(fname, "rb");
