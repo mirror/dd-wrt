@@ -83,6 +83,17 @@ config SATA_AHCI_PLATFORM
 
 	  If unsure, say N.
 
+config SATA_AHCI_CNS3XXX
+	bool "AHCI Support on the Cavium Networks CNS3xxx SOC"
+	depends on ARCH_CNS3XXX
+	depends on SATA_AHCI_PLATFORM
+	help
+	  This option enables AHCI platform driver to support CNS3xxx
+	  System-on-Chip devices. This is only needed when using CNS3xxx AHCI
+	  controller.
+
+	  If unsure, say N.
+
 config SATA_FSL
 	tristate "Freescale 3.0Gbps SATA support"
 	depends on FSL_SOC

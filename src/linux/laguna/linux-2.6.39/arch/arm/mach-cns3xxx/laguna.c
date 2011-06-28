@@ -251,11 +251,91 @@ static struct gpio_led laguna_gpio_leds[] = {
 		.name = "user2", /* Red Led */
 		.gpio = 114,
 		.active_low = 1,
+	},{
+		.name = "pwr1", /* Green Led */
+		.gpio = 116,
+		.active_low = 1,
+	},{
+		.name = "pwr2", /* Yellow Led */
+		.gpio = 117,
+		.active_low = 1,
+	},{
+		.name = "txd1", /* Green Led */
+		.gpio = 118,
+		.active_low = 1,
+	},{
+		.name = "txd2", /* Yellow Led */
+		.gpio = 119,
+		.active_low = 1,
+	},{
+		.name = "rxd1", /* Green Led */
+		.gpio = 120,
+		.active_low = 1,
+	},{
+		.name = "rxd2", /* Yellow Led */
+		.gpio = 121,
+		.active_low = 1,
+	},{
+		.name = "ser1", /* Green Led */
+		.gpio = 122,
+		.active_low = 1,
+	},{
+		.name = "ser2", /* Yellow Led */
+		.gpio = 123,
+		.active_low = 1,
+	},{
+		.name = "enet1", /* Green Led */
+		.gpio = 124,
+		.active_low = 1,
+	},{
+		.name = "enet2", /* Yellow Led */
+		.gpio = 125,
+		.active_low = 1,
+	},{
+		.name = "sig1_1", /* Green Led */
+		.gpio = 126,
+		.active_low = 1,
+	},{
+		.name = "sig1_2", /* Yellow Led */
+		.gpio = 127,
+		.active_low = 1,
+	},{
+		.name = "sig2_1", /* Green Led */
+		.gpio = 128,
+		.active_low = 1,
+	},{
+		.name = "sig2_2", /* Yellow Led */
+		.gpio = 129,
+		.active_low = 1,
+	},{
+		.name = "sig3_1", /* Green Led */
+		.gpio = 130,
+		.active_low = 1,
+	},{
+		.name = "sig3_2", /* Yellow Led */
+		.gpio = 131,
+		.active_low = 1,
+	},{
+		.name = "net1", /*Green Led */
+		.gpio = 109,
+		.active_low = 1,
+	},{
+		.name = "net2", /* Red Led */
+		.gpio = 110,
+		.active_low = 1,
+	},{
+		.name = "mod1", /* Green Led */
+		.gpio = 111,
+		.active_low = 1,
+	},{
+		.name = "mod2", /* Red Led */
+		.gpio = 112,
+		.active_low = 1,
 	},
 };
 
 static struct gpio_led_platform_data laguna_gpio_leds_data = {
-	.num_leds = 2,
+	.num_leds = 22,
 	.leds = laguna_gpio_leds,
 };
 
@@ -498,10 +578,18 @@ static struct pca953x_platform_data laguna_pca_data = {
  	.gpio_base = 100,
 };
 
+static struct pca953x_platform_data laguna_pca2_data = {
+ 	.gpio_base = 116,
+	.irq_base = -1,
+};
+
 static struct i2c_board_info __initdata laguna_i2c_devices[] = {
 	{
 		I2C_BOARD_INFO("pca9555", 0x23),
 		.platform_data = &laguna_pca_data,
+	},{
+		I2C_BOARD_INFO("pca9555", 0x27),
+		.platform_data = &laguna_pca2_data,
 	},{
 		I2C_BOARD_INFO("gsp", 0x29),
 	},{
@@ -836,17 +924,17 @@ static int __init laguna_model_setup(void)
 
 		if (strncmp(laguna_info.model, "GW2388", 6) == 0)
 		{
-			platform_device_register(&laguna_gpio_leds_device);
 #ifdef CONFIG_CPU_FREQ
 			cpufreq_register_driver(&cns_cpu_freq_driver);
 #endif
+			laguna_gpio_leds_data.num_leds = 2;
 		}
 		else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds[1].gpio = 106;
 			laguna_gpio_leds_data.num_leds = 2;
-			platform_device_register(&laguna_gpio_leds_device);
 		}
+			platform_device_register(&laguna_gpio_leds_device);
 	} else {
 		// Do some defaults here, not sure what yet
 	}
