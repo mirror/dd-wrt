@@ -1,3 +1,3 @@
-pppoe pppoe-%:
+pppoe-%:
 	@true
 
