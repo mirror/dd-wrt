@@ -50,6 +50,7 @@ ntfs_log_handler ntfs_log_handler_outerr  __attribute__((format(printf, 6, 0)));
 ntfs_log_handler ntfs_log_handler_stderr  __attribute__((format(printf, 6, 0)));
 
 /* Enable/disable certain log levels */
+#ifdef DEBUG
 u32 ntfs_log_set_levels(u32 levels);
 u32 ntfs_log_clear_levels(u32 levels);
 u32 ntfs_log_get_levels(void);
@@ -58,9 +59,21 @@ u32 ntfs_log_get_levels(void);
 u32 ntfs_log_set_flags(u32 flags);
 u32 ntfs_log_clear_flags(u32 flags);
 u32 ntfs_log_get_flags(void);
-
-/* Turn command-line options into logging flags */
 BOOL ntfs_log_parse_option(const char *option);
+#else
+#define ntfs_log_set_levels(levels)
+#define ntfs_log_clear_levels(levels)
+#define ntfs_log_get_levels() 0
+
+/* Enable/disable certain log flags */
+#define ntfs_log_set_flags(flags);
+#define ntfs_log_clear_flags(flags);
+#define ntfs_log_get_flags() 0
+
+#define ntfs_log_parse_option(option) 0
+
+#endif
+/* Turn command-line options into logging flags */
 
 int ntfs_log_redirect(const char *function, const char *file, int line,
 	u32 level, void *data, const char *format, ...)
