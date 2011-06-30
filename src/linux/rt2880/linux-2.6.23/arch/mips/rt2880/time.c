@@ -111,11 +111,7 @@ void __init mips_time_init(void)
 #ifndef CONFIG_RALINK_EXTERNAL_TIMER
 	mips_hpt_frequency = mips_cpu_feq/2;
 #else
-  #ifdef CONFIG_RT3352_FPGA
-	mips_hpt_frequency = 10000000;
-  #else
-	mips_hpt_frequency = 40000000;
-  #endif
+	mips_hpt_frequency = 50000;
 #endif
 
 	printk("calculating r4koff... ");

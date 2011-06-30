@@ -43,7 +43,9 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-
+#ifdef CONFIG_TIXI
+#include <asm/rt2880/rt2880.h>
+#endif
 #include "8250.h"
 
 /*
@@ -62,6 +64,12 @@ static unsigned int nr_uarts = CONFIG_SERIAL_8250_RUNTIME_UARTS;
 #define DEBUG_AUTOCONF(fmt...)	printk(fmt)
 #else
 #define DEBUG_AUTOCONF(fmt...)	do { } while (0)
+#endif
+
+#if 0
+#define TIXI_DEBUG(fmt...)	printk(fmt)
+#else
+#define TIXI_DEBUG(fmt...)	do { } while (0)
 #endif
 
 #if 0
@@ -267,43 +275,225 @@ static const struct serial8250_config uart_config[] = {
 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
 		.flags		= UART_CAP_FIFO,
 	},
+	[TIXI8_UART] = {
+		.name		= "TIXI8_16550A",
+		.fifo_size	= 16,
+		.tx_loadsz	= 16,
+		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+		.flags		= UART_CAP_FIFO | UART_NATSEMI,
+	},
 };
+#if defined(CONFIG_TIXI)
 
-#if defined (CONFIG_SERIAL_8250_AU1X00)
-
-/* Au1x00 UART hardware has a weird register layout */
+/* Tixi UART hardware has a standard register layout. Ralink has different */
 static const u8 au_io_in_map[] = {
-	[UART_RX]  = 0,
-	[UART_IER] = 2,
-	[UART_IIR] = 3,
-	[UART_LCR] = 5,
-	[UART_MCR] = 6,
-	[UART_LSR] = 7,
-	[UART_MSR] = 8,
+	[UART_RX]  = UART_RX_EXTERNAL,
+	[UART_IER] = UART_IER_EXTERNAL,
+	[UART_IIR] = UART_IIR_EXTERNAL,
+	[UART_LCR] = UART_LCR_EXTERNAL,
+	[UART_MCR] = UART_MCR_EXTERNAL,
+	[UART_LSR] = UART_LSR_EXTERNAL,
+	[UART_MSR] = UART_MSR_EXTERNAL,
 };
 
 static const u8 au_io_out_map[] = {
-	[UART_TX]  = 1,
-	[UART_IER] = 2,
-	[UART_FCR] = 4,
-	[UART_LCR] = 5,
-	[UART_MCR] = 6,
+	[UART_TX]  = UART_TX_EXTERNAL,
+	[UART_IER] = UART_IER_EXTERNAL,
+	[UART_FCR] = UART_FCR_EXTERNAL,
+	[UART_LCR] = UART_LCR_EXTERNAL,
+	[UART_MCR] = UART_MCR_EXTERNAL,
 };
 
 /* sane hardware needs no mapping */
 static inline int map_8250_in_reg(struct uart_8250_port *up, int offset)
 {
-	if (up->port.iotype != UPIO_AU)
+	if(up->port.iotype!=TIXI8_UART)
 		return offset;
 	return au_io_in_map[offset];
 }
 
 static inline int map_8250_out_reg(struct uart_8250_port *up, int offset)
 {
-	if (up->port.iotype != UPIO_AU)
+	if(up->port.iotype!=TIXI8_UART)
 		return offset;
 	return au_io_out_map[offset];
 }
+
+// defines for CRITICAL SECTIONS, suppress task change
+#define CRITICAL_SECTION_ENTER()
+#define CRITICAL_SECTION_LEAVE()
+
+#define SoCreg(n)		(*((volatile u32 *)(n)))
+
+// delay for STROBE impule on EBIREG0 (U18) and EBIREG1 (U18)
+#define ebidelaystrobe()	udelay(1)
+//#define ebidelaystrobe()
+// delay for access a device on EBI ("/XEBI-EN")
+#define ebidelayselect()	udelay(1)
+//#define ebidelayselect()
+
+static unsigned char ebireg0, ebireg1;	// values of IC's U18, U19
+static unsigned char bTixiUart_init=0;
+
+/******************************************************************************
+* void tixi8_init( void )
+*   initialized the "tixi8-databus"
+*   also known as ebi (external bus interface)
+******************************************************************************/
+void tixi8_init( void )
+{
+	if (bTixiUart_init){
+		return;
+	}
+	TIXI_DEBUG("+tixi8_init \n");
+	bTixiUart_init=1;
+	#define INIT_DELAY()	udelay(2)
+	// "XEBI-D*" as output (data bits)
+	SoCreg(GPIO39_24_DIR) |= 0x000000FF; // GPIO39_24_DIR 'b*.****.oooo.oooo
+
+	// start values for EBIREG1 ( Abbild von Register U19)
+	ebireg1 = 0x60; // "RESET" =1, "/IIC-EN" = 1;
+	//  ebireg1 to be written to "XEBI-D*" (databits)
+	SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | 0x80 | ebireg1;
+	INIT_DELAY();
+	// stobe signal U19.Pin11 = 0 ("XEBI-D7"==1);
+	SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+	INIT_DELAY();
+	// stobe signal U19.Pin11 = 1;
+	SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+	INIT_DELAY();
+
+	// default values for EBIREG0 ( Abbild von Register U18)
+	ebireg0 = 0x70; 		// "CSA0" = 1, "/EBWR0" = 1, "EBRD0" = 1;
+	//  ebireg0 to be written to "XEBI-D*" (databits)
+	SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | ebireg0;
+	INIT_DELAY();
+	// stobe signal U18.Pin11 = 0 ("XEBI-D7"==0);
+	SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+	INIT_DELAY();
+	// stobe signal U18.Pin11 = 1;
+	SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+	INIT_DELAY();
+
+	// start values for EBIREG1 ( Abbild von Register U19)
+	ebireg1 = 0x40; // "RESET" =0, "/IIC-EN" = 1;
+	//  ebireg1 to be written to "XEBI-D*" (databits)
+	SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | 0x80 | ebireg1;
+	INIT_DELAY();
+	// stobe signal U19.Pin11 = 0 ("XEBI-D7"==1);
+	SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+	INIT_DELAY();
+	// stobe signal U19.Pin11 = 1;
+	SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+	INIT_DELAY();
+
+	// "XEBI-D*" as input (data bits)
+	SoCreg(GPIO39_24_DIR) &= 0xFFFFFF00; // GPIO39_24_DIR 'b*.****.iiii.iiii
+} // tixi8_init()
+
+/******************************************************************************
+* void tixi8_write_byte(u16 address, u8 value)
+*   write a byte to an external device via ebi
+* address : address of device
+*   value : byte to be written
+* return : void
+******************************************************************************/
+void tixi8_write_byte(u16 address, u8 value)
+{
+	tixi8_init();
+	if(address == 0x11c) value |= 0x04;
+	if(address == 0x13d)
+		{
+		address = 0x118;
+		}
+
+	TIXI_DEBUG("+tixi8_write_byte 0x%x <- %x \n",address,value);
+
+	CRITICAL_SECTION_ENTER();
+		// set adress "EBA8".."EBA4"
+		ebireg1 = (ebireg1 & 0x60) | ((address >> 4) & 0x1F);		// set address hi nibble
+		// "XEBI-D*" as output (data bits)
+		SoCreg(GPIO39_24_DIR) |= 0x000000FF; // GPIO39_24_DIR 'b*.****.oooo.oooo
+
+		//  ebireg1 to be written to "XEBI-D*" (databits)
+		SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | 0x80 | ebireg1;
+		// stobe signal U19.Pin11 = 0 ("XEBI-D7"==1);
+		SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+		ebidelaystrobe();
+		// stobe signal U19.Pin11 = 1;
+		SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+
+		// set "EBA3".."EBA0"," /EBWR0"=0," /EBRD0"=1, "/CSA0"=0
+		ebireg0 = 0x10 | (address & 0xF);	// set address lo nibble
+		//  ebireg0 to be written to "XEBI-D*" (databits)
+		SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | ebireg0;
+		// stobe signal U18.Pin11 = 0 ("XEBI-D7"==0);
+		SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+		ebidelaystrobe();
+		// stobe signal U18.Pin11 = 1;
+		SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+
+		// data to be written to "XEBI-D*" (databits)
+		SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | value;
+		// enable and disable EBI
+		SoCreg(GPIO23_00_RESET) = 0x800000;	// "/XEBI-EN" = 0
+		ebidelayselect();
+		SoCreg(GPIO23_00_SET) = 0x800000;	// "/XEBI-EN" = 1
+		// "XEBI-D*" as input (data bits)
+		SoCreg(GPIO39_24_DIR) &= 0xFFFFFF00; // GPIO39_24_DIR 'b*.****.iiii.iiii
+	CRITICAL_SECTION_LEAVE();
+} // tixi8_write_byte()
+
+/******************************************************************************
+* int tixi8_read_byte(u16 address)
+*   read a byte from an external device via ebi
+* address : address of device
+* return : value from external device
+******************************************************************************/
+u8 tixi8_read_byte(u16 address)
+{
+	u8 data;
+	tixi8_init();
+
+	CRITICAL_SECTION_ENTER();
+		// set adress EBA8..EBA4
+		ebireg1 = (ebireg1 & 0x60) | ((address >> 4) & 0x1F);		// set address hi nibble
+		// "XEBI-D*" as output (data bits)
+		SoCreg(GPIO39_24_DIR) |= 0xFF; // GPIO39_24_DIR 'b*.****.oooo.oooo
+
+		//  ebireg1 to be written to "XEBI-D*" (databits)
+		SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | 0x80 | ebireg1;
+		// stobe signal U19.Pin11 = 0 ("XEBI-D7"==1);
+		SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+		ebidelaystrobe();
+		// stobe signal U19.Pin11 = 1;
+		SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+
+		// set EBA3..EBA0, /EBWR0=1, /EBRD0=0, /CSA0=0
+		ebireg0 = 0x20 | (address & 0xF);	// set address lo nibble
+		//  ebireg0 to be written to "XEBI-D*" (databits)
+		SoCreg(GPIO39_24_DATA) = ( SoCreg(GPIO39_24_DATA) & 0xFFFFFF00 ) | ebireg0;
+		// stobe signal U18.Pin11 = 0 ("XEBI-D7"==0);
+		SoCreg(GPIO45_40_SET) = 2; // "XEBI-STR" = 1
+		ebidelaystrobe();
+		// stobe signal U18.Pin11 = 1;
+		SoCreg(GPIO45_40_RESET) = 2; // "XEBI-STR" = 0;
+
+		// "XEBI-D*" as input (data bits)
+		SoCreg(GPIO39_24_DIR) &= 0xFFFFFF00; // GPIO39_24_DIR 'b*.****.iiii.iiii
+		// enable EBI
+		SoCreg(GPIO23_00_RESET) = 0x800000;	// "/XEBI-EN" = 0
+		ebidelayselect();
+		// raed data from "XEBI-D*" (databits)
+		data = SoCreg(GPIO39_24_DATA) & 0xFF;
+		// disable EBI
+		SoCreg(GPIO23_00_SET) = 0x800000;	// "/XEBI-EN" = 1
+	CRITICAL_SECTION_LEAVE();
+	//TIXI_DEBUG("+tixi8_read_byte 0x%x = %x\n",address,data);
+
+	return data;
+} // tixi8_read_byte()
+
 
 #elif defined (CONFIG_SERIAL_8250_RM9K)
 
@@ -343,6 +533,44 @@ static inline int map_8250_out_reg(struct uart_8250_port *up, int offset)
 	return regmap_out[offset];
 }
 
+#elif defined (CONFIG_SERIAL_8250_AU1X00)
+
+/* Au1x00 UART hardware has a weird register layout */
+static const u8 au_io_in_map[] = {
+	[UART_RX]  = 0,
+	[UART_IER] = 2,
+	[UART_IIR] = 3,
+	[UART_LCR] = 5,
+	[UART_MCR] = 6,
+	[UART_LSR] = 7,
+	[UART_MSR] = 8,
+};
+
+static const u8 au_io_out_map[] = {
+	[UART_TX]  = 1,
+	[UART_IER] = 2,
+	[UART_FCR] = 4,
+	[UART_LCR] = 5,
+	[UART_MCR] = 6,
+};
+
+/* sane hardware needs no mapping */
+static inline int map_8250_in_reg(struct uart_8250_port *up, int offset)
+{
+	if (up->port.iotype != UPIO_AU)
+		return offset;
+	return au_io_in_map[offset];
+}
+
+static inline int map_8250_out_reg(struct uart_8250_port *up, int offset)
+{
+	if (up->port.iotype != UPIO_AU)
+		return offset;
+	return au_io_out_map[offset];
+}
+
+
+
 #else
 
 /* sane hardware needs no mapping */
@@ -350,6 +578,8 @@ static inline int map_8250_out_reg(struct uart_8250_port *up, int offset)
 #define map_8250_out_reg(up, offset) (offset)
 
 #endif
+
+
 
 static unsigned int serial_in(struct uart_8250_port *up, int offset)
 {
@@ -360,7 +590,10 @@ static unsigned int serial_in(struct uart_8250_port *up, int offset)
 	case UPIO_HUB6:
 		outb(up->port.hub6 - 1 + offset, up->port.iobase);
 		return inb(up->port.iobase + 1);
-
+#ifdef CONFIG_TIXI
+	case TIXI8_UART:
+		return tixi8_read_byte(up->port.iobase + offset);
+#endif
 	case UPIO_MEM:
 	case UPIO_DWAPB:
 		return readb(up->port.membase + offset);
@@ -386,6 +619,7 @@ static unsigned int serial_in(struct uart_8250_port *up, int offset)
     defined (CONFIG_RALINK_RT2883) || \
     defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
     defined (CONFIG_RALINK_RT3052)
 		return (*(int*)(up->port.iobase + offset));
 #else
@@ -406,7 +640,11 @@ serial_out(struct uart_8250_port *up, int offset, int value)
 		outb(up->port.hub6 - 1 + offset, up->port.iobase);
 		outb(value, up->port.iobase + 1);
 		break;
-
+#ifdef CONFIG_TIXI
+	case TIXI8_UART:
+		tixi8_write_byte(up->port.iobase + offset,value);
+		break;
+#endif
 	case UPIO_MEM:
 		writeb(value, up->port.membase + offset);
 		break;
@@ -443,6 +681,7 @@ serial_out(struct uart_8250_port *up, int offset, int value)
     defined (CONFIG_RALINK_RT2883) || \
     defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
     defined (CONFIG_RALINK_RT3052)
 		*(int*)(up->port.iobase + offset) = value;
 #else
@@ -495,6 +734,7 @@ static inline void _serial_dl_write(struct uart_8250_port *up, int value)
     defined (CONFIG_RALINK_RT2883) || \
     defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
     defined (CONFIG_RALINK_RT3052)
  /* Ralink haven't got a standard divisor latch */
 static int serial_dl_read(struct uart_8250_port *up)
@@ -720,6 +960,7 @@ static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
     defined (CONFIG_RALINK_RT2883) || \
     defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
     defined (CONFIG_RALINK_RT3052)
 	unsigned short old_dl;
 

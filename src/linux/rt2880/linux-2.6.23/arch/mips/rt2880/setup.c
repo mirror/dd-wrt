@@ -41,6 +41,10 @@
 #include <linux/sched.h>
 #include <linux/mc146818rtc.h>
 #include <linux/ioport.h>
+#include <linux/serial_core.h>
+#include <linux/serial.h>
+#include <asm/rt2880/surfboard.h>
+#include <asm/serial.h>
 
 #include <asm/cpu.h>
 #include <asm/bootinfo.h>
@@ -74,6 +78,8 @@ const char *get_system_type(void)
 
 extern void mips_time_init(void);
 extern void mips_timer_setup(struct irqaction *irq);
+static struct uart_port serial_aboard[4];
+extern int early_serial_setup(struct uart_port *port);
 
 void __init rt2880_setup(void)
 {
@@ -144,6 +150,31 @@ void __init rt2880_setup(void)
 	//board_timer_setup = mips_timer_setup;
 
 	mips_reboot_setup();
+
+#ifdef CONFIG_TIXI
+	int i;
+	 for (i=0; 4 > i; i++) {
+		  serial_aboard[i].type       = PORT_16550A;
+		  serial_aboard[i].line       = i+2;
+		  serial_aboard[i].irq        = SURFBOARDINT_GPIO;
+		  //serial_aboard[i].flags      = STD_COM_FLAGS;
+		  serial_aboard[i].flags      = STD_COM_TIXI_FLAGS;
+		  serial_aboard[i].uartclk    = 57600 *16;
+		  serial_aboard[i].iotype     = TIXI8_UART;
+		  serial_aboard[i].iobase	  = 0x118-(i*8);
+		  serial_aboard[i].regshift   = 0;
+		  serial_aboard[i].mapbase    = NULL;
+		  //serial_aboard[i].custom_divisor = (40000000 / SURFBOARD_BAUD_DIV / 57600);
+		  //serial_aboard[i].custom_divisor = (3686400 / SURFBOARD_BAUD_DIV / 115200);
+		  serial_aboard[i].custom_divisor = (3686400 / SURFBOARD_BAUD_DIV / 9600);
+	  }
+
+	  printk("+serial8250_register_port 0");
+	  early_serial_setup(&serial_aboard[0]);
+	  early_serial_setup(&serial_aboard[1]);
+	  early_serial_setup(&serial_aboard[2]);
+	  early_serial_setup(&serial_aboard[3]);
+#endif
 }
 
 void __init plat_mem_setup(void)
