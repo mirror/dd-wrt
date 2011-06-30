@@ -233,6 +233,7 @@ configs-checkout:
 		
 
 configs-update:
+	svn update $(LINUXDIR)
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP)
 
