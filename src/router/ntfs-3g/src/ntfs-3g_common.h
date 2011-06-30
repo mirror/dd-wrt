@@ -1,8 +1,8 @@
 /*
  * ntfs-3g_common.h - Common declarations for ntfs-3g and lowntfs-3g.
  *
- * Copyright (c) 2010 Jean-Pierre Andre
- * Copyright (c) 2010 Erik Larsson
+ * Copyright (c) 2010-2011 Jean-Pierre Andre
+ * Copyright (c) 2010      Erik Larsson
  *
  * This program/include file is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
@@ -72,6 +72,7 @@ enum {
 	OPT_NORECOVER,
 	OPT_REMOVE_HIBERFILE,
 	OPT_SYNC,
+	OPT_BIG_WRITES,
 	OPT_LOCALE,
 	OPT_NFCONV,
 	OPT_NONFCONV,
@@ -126,6 +127,7 @@ typedef struct {
 	BOOL recover;
 	BOOL hiberfile;
 	BOOL sync;
+	BOOL big_writes;
 	BOOL debug;
 	BOOL no_detach;
 	BOOL blkdev;
