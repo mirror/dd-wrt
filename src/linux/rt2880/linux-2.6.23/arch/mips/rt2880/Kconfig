@@ -261,9 +261,16 @@ config  RALINK_TIMER_DFS
         depends on RALINK_TIMER
 
 
-
 config RT3XXX_EHCI_OHCI
 	bool "Ralink USB EHCI/OHCI controller support"
         depends on (RALINK_RT3883 || RALINK_RT3352)
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
+
+#config RALINK_EXTERNAL_TIMER
+#	bool "Ralink External Timer"
+#	depends on RALINK_RT3352 || RALINK_RT5350
+
+config TIXI
+	bool "Tixi Board support"
+	depends on RALINK_RT3352

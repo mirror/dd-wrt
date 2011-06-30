@@ -109,21 +109,16 @@ static unsigned int __init probe_baud(struct uart_port *port)
     defined (CONFIG_RALINK_RT2883) || \
     defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
     defined (CONFIG_RALINK_RT3052)
 	quot= serial_in(port, UART_DLL);
 #else
 	dll = serial_in(port, UART_DLL);
 	dlm = serial_in(port, UART_DLM);
+	quot = (dlm << 8) | dll;
 #endif
 	serial_out(port, UART_LCR, lcr);
 
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT3052)
-	quot = (dlm << 8) | dll;
-#endif
 	return (port->uartclk / 16) / quot;
 }
 

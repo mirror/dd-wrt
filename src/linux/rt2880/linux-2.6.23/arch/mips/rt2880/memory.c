@@ -153,7 +153,11 @@ void __init prom_meminit(void)
 
 	before = ((unsigned long) &prom_meminit) & (63 << 20);
 	offset = ((unsigned long) &prom_meminit) - before;
+#ifdef CONFIG_TIXI
+	for (mem = before + (1 << 20); mem < (256 << 20); mem += (1 << 20))
+#else
 	for (mem = before + (1 << 20); mem < (64 << 20); mem += (1 << 20))
+#endif
 		if (*(unsigned long *)(offset + mem) ==
 		    *(unsigned long *)(prom_meminit)) {
 			/*
