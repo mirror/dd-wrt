@@ -1525,8 +1525,8 @@ static struct usb_isoc_ep_ops dwc_otg_pcd_ep_ops =
 		.alloc_request	= dwc_otg_pcd_alloc_request,
 		.free_request	= dwc_otg_pcd_free_request,
 	
-		.alloc_buffer	= dwc_otg_pcd_alloc_buffer,
-		.free_buffer	= dwc_otg_pcd_free_buffer,
+//		.alloc_buffer	= dwc_otg_pcd_alloc_buffer,
+//		.free_buffer	= dwc_otg_pcd_free_buffer,
 	
 		.queue		= dwc_otg_pcd_ep_queue,
 		.dequeue	= dwc_otg_pcd_ep_dequeue,
@@ -1552,8 +1552,8 @@ static struct usb_ep_ops dwc_otg_pcd_ep_ops =
 	.alloc_request	= dwc_otg_pcd_alloc_request,
 	.free_request	= dwc_otg_pcd_free_request,
 
-	.alloc_buffer	= dwc_otg_pcd_alloc_buffer,
-	.free_buffer	= dwc_otg_pcd_free_buffer,
+//	.alloc_buffer	= dwc_otg_pcd_alloc_buffer,
+//	.free_buffer	= dwc_otg_pcd_free_buffer,
 
 	.queue		= dwc_otg_pcd_ep_queue,
 	.dequeue	= dwc_otg_pcd_ep_dequeue,

@@ -1,5 +1,5 @@
 config DWC_OTG
-        depends on RALINK_RT3052
+        depends on RALINK_RT3052 || RALINK_RT3352
         tristate "Ralink DWC_OTG support"
         ---help---
           This driver supports Ralink DWC_OTG

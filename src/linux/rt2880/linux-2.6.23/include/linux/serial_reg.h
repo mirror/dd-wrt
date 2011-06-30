@@ -47,6 +47,28 @@
  */
 #define UART_DLM	11	/* Out: Divisor Latch High (DLAB=1) */
 
+
+#define UART_RX_EXTERNAL	0
+#define UART_TX_EXTERNAL	0	/* Out: Transmit buffer */
+#define UART_TRG_EXTERNAL	0	/* FCTR bit 7 selects Rx or Tx
+ 	 	 	 	 	 	 	 	 * In: Fifo count
+ 	 	 	 	 	 	 	 	 * Out: Fifo custom trigger levels */
+
+#define UART_DLM_EXTERNAL	1	/* Out: Divisor Latch High */
+#define UART_FCTR_EXTERNAL	1	/* Feature Control Register */
+#define UART_IER_EXTERNAL	1	/* Out: Interrupt Enable Register */
+
+#define UART_IIR_EXTERNAL	2	/* In:  Interrupt ID Register */
+#define UART_FCR_EXTERNAL	2	/* Out: FIFO Control Register */
+#define UART_EFR_EXTERNAL	2	/* I/O: Extended Features Register */
+
+#define UART_LCR_EXTERNAL	3	/* Out: Line Control Register */
+#define UART_MCR_EXTERNAL	4	/* Out: Modem Control Register */
+#define UART_LSR_EXTERNAL	5	/* In:  Line Status Register */
+#define UART_MSR_EXTERNAL	6	/* In:  Modem Status Register */
+#define UART_SCR_EXTERNAL	7	/* I/O: Scratch Register */
+#define UART_EMSR_EXTERNAL	7	/* Extended Mode Select Register */
+
 #else
 
 #define UART_RX		0	/* In:  Receive buffer */

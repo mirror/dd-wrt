@@ -851,12 +851,16 @@ extern void ralink_gpio_control(int gpio,int level);
  *
  * @return
  */
+
+#define SoCreg(n)		(*((volatile u32 *)(n)))
 static int __init dwc_otg_driver_init(void)
 {
 	int retval = 0;
 	struct lm_device *lmdev;
 	int error;
-	
+#ifdef CONFIG_DWC_OTG_DEVICE_ONLY	
+SoCreg(0xb0000014) &= 0xFFFFFBFF;
+#endif	
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
 #ifdef CONFIG_MTD_ESR6650
 	ralink_gpio_control(6,1); // turn on 5V
@@ -907,6 +911,9 @@ static void __exit dwc_otg_driver_cleanup(void)
 #endif
 	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0xF; //Disable USB Port
 	printk(KERN_INFO "%s module removed\n", dwc_driver_name);
+#ifdef CONFIG_DWC_OTG_DEVICE_ONLY	
+	SoCreg(0xb0000014) |= 0x400;
+#endif
 }
 module_exit(dwc_otg_driver_cleanup);
 
@@ -1248,5 +1255,16 @@ MODULE_PARM_DESC(mpi_enable, "Multiprocessor Interrupt mode 0=disabled 1=enabled
  when dynamic FIFO sizing is enabled.
  - Values: 4 to 768 (default 256)
  </td></tr>
+#define SoCreg(n)		(*((volatile u32 *)(n)))
+
+On init:
+
+printk(" *************   USB INIT *****************\n");
+SoCreg(0xb0000014) &= 0xFFFFFBFF;
+
+On exit:
+
+printk(" *************   USB CLEAR *****************\n");
+SoCreg(0xb0000014) |= 0x400;
 
 */
