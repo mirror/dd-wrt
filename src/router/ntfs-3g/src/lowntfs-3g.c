@@ -4,7 +4,7 @@
  * Copyright (c) 2005-2007 Yura Pakhuchiy
  * Copyright (c) 2005 Yuval Fledel
  * Copyright (c) 2006-2009 Szabolcs Szakacsits
- * Copyright (c) 2007-2010 Jean-Pierre Andre
+ * Copyright (c) 2007-2011 Jean-Pierre Andre
  * Copyright (c) 2009 Erik Larsson
  *
  * This file is originated from the Linux-NTFS project.
@@ -207,7 +207,7 @@ static const char *usage_msg =
 "\n"
 "Copyright (C) 2005-2007 Yura Pakhuchiy\n"
 "Copyright (C) 2006-2009 Szabolcs Szakacsits\n"
-"Copyright (C) 2007-2010 Jean-Pierre Andre\n"
+"Copyright (C) 2007-2011 Jean-Pierre Andre\n"
 "Copyright (C) 2009 Erik Larsson\n"
 "\n"
 "Usage:    %s [-o option[,...]] <device|image_file> <mount_point>\n"
@@ -239,13 +239,14 @@ static const char *setuid_msg =
 "Mount is denied because setuid and setgid root ntfs-3g is insecure with the\n"
 "external FUSE library. Either remove the setuid/setgid bit from the binary\n"
 "or rebuild NTFS-3G with integrated FUSE support and make it setuid root.\n"
-"Please see more information at http://ntfs-3g.org/support.html#unprivileged\n";
+"Please see more information at\n"
+"http://tuxera.com/community/ntfs-3g-faq/#unprivileged\n";
 
 static const char *unpriv_fuseblk_msg =
 "Unprivileged user can not mount NTFS block devices using the external FUSE\n"
 "library. Either mount the volume as root, or rebuild NTFS-3G with integrated\n"
 "FUSE support and make it setuid root. Please see more information at\n"
-"http://ntfs-3g.org/support.html#unprivileged\n";
+"http://tuxera.com/community/ntfs-3g-faq/#unprivileged\n";
 #endif	
 
 
@@ -493,7 +494,8 @@ static void ntfs_macfuse_getxtimes(fuse_req_t req, fuse_ino_t ino,
 
 #endif /* defined(__APPLE__) || defined(__DARWIN__) */
 
-#if defined(FUSE_CAP_DONT_MASK) || (defined(__APPLE__) || defined(__DARWIN__))
+#if defined(FUSE_CAP_DONT_MASK) || defined(FUSE_CAP_BIG_WRITES) \
+		|| (defined(__APPLE__) || defined(__DARWIN__))
 static void ntfs_init(void *userdata __attribute__((unused)),
 			struct fuse_conn_info *conn)
 {
@@ -504,6 +506,12 @@ static void ntfs_init(void *userdata __attribute__((unused)),
 		/* request umask not to be enforced by fuse */
 	conn->want |= FUSE_CAP_DONT_MASK;
 #endif /* defined FUSE_CAP_DONT_MASK */
+#ifdef FUSE_CAP_BIG_WRITES
+	if (ctx->big_writes
+	    && ((ctx->vol->nr_clusters << ctx->vol->cluster_size_bits)
+			>= SAFE_CAPACITY_FOR_BIG_WRITES))
+		conn->want |= FUSE_CAP_BIG_WRITES;
+#endif
 }
 #endif /* defined(FUSE_CAP_DONT_MASK) || (defined(__APPLE__) || defined(__DARWIN__)) */
 
@@ -3569,7 +3577,8 @@ static struct fuse_lowlevel_ops ntfs_3g_ops = {
 	.getxtimes	= ntfs_macfuse_getxtimes,
 	.setattr_x	= ntfs_macfuse_setattr_x,
 #endif /* defined(__APPLE__) || defined(__DARWIN__) */
-#if defined(FUSE_CAP_DONT_MASK) || (defined(__APPLE__) || defined(__DARWIN__))
+#if defined(FUSE_CAP_DONT_MASK) || defined(FUSE_CAP_BIG_WRITES) \
+		|| (defined(__APPLE__) || defined(__DARWIN__))
 	.init		= ntfs_init
 #endif
 };
@@ -3662,16 +3671,6 @@ static void usage(void)
 			EXEC_NAME, ntfs_home);
 }
 
-#ifndef HAVE_REALPATH
-/* If there is no realpath() on the system, provide a dummy one. */
-static char *realpath(const char *path, char *resolved_path)
-{
-	strncpy(resolved_path, path, PATH_MAX);
-	resolved_path[PATH_MAX] = '\0';
-	return resolved_path;
-}
-#endif
-
 #if defined(linux) || defined(__uClinux__)
 
 static const char *dev_fuse_msg =
@@ -3688,7 +3687,7 @@ static const char *fuse26_kmod_msg =
 "         message to disappear then you should upgrade to at least kernel\n"
 "         version 2.6.20, or request help from your distribution to fix\n"
 "         the kernel problem. The below web page has more information:\n"
-"         http://ntfs-3g.org/support.html#fuse26\n"
+"         http://tuxera.com/community/ntfs-3g-faq/#fuse26\n"
 "\n";
 
 static void mknod_dev_fuse(const char *dev)
@@ -3862,7 +3861,7 @@ static void setup_logging(char *parsed_options)
 		if (daemon(0, ctx->debug))
 			ntfs_log_error("Failed to daemonize.\n");
 		else if (!ctx->debug) {
-#ifndef DEBUG
+#ifdef DEBUG
 			ntfs_log_set_handler(ntfs_log_handler_syslog);
 			/* Override default libntfs identify. */
 			openlog(EXEC_NAME, LOG_PID, LOG_DAEMON);
@@ -3917,8 +3916,9 @@ int main(int argc, char *argv[])
 		return NTFS_VOLUME_NO_PRIVILEGE;
         
 	ntfs_set_locale();
+#ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
-
+#endif
 	if (ntfs_parse_options(&opts, usage, argc, argv)) {
 		usage();
 		return NTFS_VOLUME_SYNTAX_ERROR;
