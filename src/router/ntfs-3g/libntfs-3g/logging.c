@@ -20,7 +20,7 @@
  * distribution in the file COPYING); if not, write to the Free Software
  * Foundation,Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+#ifdef DEBUG
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -333,7 +333,6 @@ int ntfs_log_redirect(const char *function, const char *file,
 	return ret;
 }
 
-
 /**
  * ntfs_log_handler_syslog - syslog logging handler
  * @function:	Function in which the log line occurred
@@ -635,3 +634,4 @@ BOOL ntfs_log_parse_option(const char *option)
 	return FALSE;
 }
 
+#endif

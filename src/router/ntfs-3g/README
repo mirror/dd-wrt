@@ -21,6 +21,10 @@ be required to enable them, please get the instructions from
 
 	http://www.tuxera.com/community/ntfs-3g-advanced/
 
+This specific version has support for new features as described in
+
+	http://b.andre/pagesperso-orange.fr/ntfs-3g.html
+
 News, support answers, problem submission instructions, support and discussion 
 forums, performance numbers and other information are available on the project 
 web site at
@@ -38,14 +42,32 @@ the FUSE kernel module. Then unpack the source tarball and type:
 	make
 	make install      # or 'sudo make install' if you aren't root.
 
-Please note that NTFS-3G doesn't require the FUSE user space package.
+Please note that NTFS-3G doesn't require the FUSE user space package any
+more.
+
+The list of options for building specific configurations is displayed by
+typing :
+
+	./configure --help
+
+Below are a few specific options to ./configure :
+	--disable-ntfsprogs : do not build the ntfsprogs tools,
+	--enable-posix-acls : enable support for Posix ACLs
+	--enable-xattr-mappings : enable system extended attributes mappings
+	--with-fuse=external : use external fuse (overriding Linux default)
+
+There are also a few make targets for building parts :
+	make libntfs : only build the libntfs-3g library
+	make libs : only build libntfs-3g (and libfuse-lite, if relevant)
+	make drivers : only build drivers and libraries, without ntfsprogs
+	make ntfsprogs : only build ntfsprogs and libntfs-3g, without drivers
 
 Non-Linux: Please see 
 
 	http://www.tuxera.com/community/ntfs-3g-download/
 
-for OS specific installation and source packages.
-
+for known OS specific installation and source packages, but generally
+the same procedures apply.
 
 USAGE
 =====
@@ -66,3 +88,78 @@ line at the END(!) of the /etc/fstab file:
 
 	/dev/sda1 /mnt/windows ntfs-3g defaults 0 0
 
+
+TESTING WITHOUT INSTALLING
+=========================
+
+Newer versions of ntfs-3g can be tested without installing anything and
+without disturbing an existing installation. Just configure and make as
+shown previously. This will create the scripts ntfs-3g and lowntfs-3g
+in the src directory, which you may activate for testing :
+
+	./configure
+	make
+
+then, as root :
+	src/ntfs-3g [-o mount-options] /dev/sda1 /mnt/windows
+
+And, to end the test, unmount the usual way :
+	umount /dev/sda1
+
+
+PRELINKED BINARY VERSION
+========================
+
+Statically prelinked versions for X86 are compiled with gcc 4.1.2 and
+prepared as an upgrade to the ntfs-3g shipped with the live-CD Knoppix 5.1.1.
+The statically prelinked versions for Sparc are compiled with gcc 4.0.0.
+Both are restricting to using glibc 2.3.2 and should be usable on
+virtually any configuration since kernel 2.6.20 having a fuse kernel
+module (fuse.ko) installed.
+
+They can be used like ordinary versions. Just copy the appropriate
+executable file into a readable directory, set the executable flags and
+start as root with the mount arguments :
+
+	linked-ntfs-3g /dev/sda1 /mnt/windows
+or
+	sparc-ntfs-3g /dev/sda1 /mnt/windows
+
+
+NTFS UTILITIES
+==============
+
+The ntfsprogs includes utilities for doing all required tasks to NTFS 
+partitions.  In general, just run a utility without any command line
+options to display the version number and usage syntax.
+
+The following utilities are so far implemented:
+
+ntfsfix - Attempt to fix an NTFS partition and force Windows to check NTFS.
+
+mkntfs - Format a partition with the NTFS filesystem.  See man 8 mkntfs for
+command line options.
+
+ntfslabel - Display/change the label of an NTFS partition.  See man 8 ntfslabel
+for details.
+
+ntfsundelete - Recover deleted files from an NTFS volume.  See man 8
+ntfsundelete for more details.
+
+ntfsresize - Resize NTFS volumes.  See man 8 ntfsresize for details.
+
+ntfsclone - Efficiently create/restore an image of an NTFS partition.  See
+man 8 ntfsclone for details.
+
+ntfscluster - Locate the owner of any given sector or cluster on an NTFS
+partition.  See man 8 ntfscluster for details.
+
+ntfsinfo - Show some information about an NTFS partition or one of the files
+or directories within it.  See man 8 ntfsinfo for details.
+
+ntfsls - List information about files in a directory residing on an NTFS
+partition.  See man 8 ntfsls for details.
+
+ntfscat - Concatenate files and print their contents on the standard output.
+
+ntfscp - Overwrite files on an NTFS partition.

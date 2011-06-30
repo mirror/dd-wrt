@@ -1,8 +1,8 @@
 /**
  * ntfs-3g_common.c - Common definitions for ntfs-3g and lowntfs-3g.
  *
- * Copyright (c) 2010 Jean-Pierre Andre
- * Copyright (c) 2010 Erik Larsson
+ * Copyright (c) 2010-2011 Jean-Pierre Andre
+ * Copyright (c) 2010      Erik Larsson
  *
  * This program/include file is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
@@ -32,6 +32,10 @@
 #include <string.h>
 #endif
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
@@ -43,6 +47,7 @@
 #include "security.h"
 #include "xattrs.h"
 #include "ntfs-3g_common.h"
+#include "realpath.h"
 #include "misc.h"
 
 const char xattr_ntfs_3g[] = "ntfs-3g.";
@@ -57,7 +62,6 @@ const char nf_ns_trusted_prefix[] = "trusted.";
 const int nf_ns_trusted_prefix_len = sizeof(nf_ns_trusted_prefix) - 1;
 
 static const char nf_ns_alt_xattr_efsinfo[] = "user.ntfs.efsinfo";
-
 
 static const char def_opts[] = "allow_other,nonempty,";
 
@@ -95,6 +99,7 @@ const struct DEFOPTION optionlist[] = {
 	{ "norecover", OPT_NORECOVER, FLGOPT_BOGUS },
 	{ "remove_hiberfile", OPT_REMOVE_HIBERFILE, FLGOPT_BOGUS },
 	{ "sync", OPT_SYNC, FLGOPT_BOGUS | FLGOPT_APPEND },
+	{ "big_writes", OPT_BIG_WRITES, FLGOPT_BOGUS },
 	{ "locale", OPT_LOCALE, FLGOPT_STRING },
 	{ "nfconv", OPT_NFCONV, FLGOPT_BOGUS },
 	{ "nonfconv", OPT_NONFCONV, FLGOPT_BOGUS },
@@ -185,7 +190,6 @@ char *parse_mount_options(ntfs_fuse_context_t *ctx,
 	ctx->efs_raw = FALSE;
 #endif /* HAVE_SETXATTR */
 	ctx->compression = DEFAULT_COMPRESSION;
-	ctx->atime = ATIME_ENABLED;
 	options = strdup(orig_opts ? orig_opts : "");
 	if (!options) {
 		ntfs_log_perror("%s: strdup failed", EXEC_NAME);
@@ -311,6 +315,11 @@ char *parse_mount_options(ntfs_fuse_context_t *ctx,
 			case OPT_SYNC :
 				ctx->sync = TRUE;
 				break;
+#ifdef FUSE_CAP_BIG_WRITES
+			case OPT_BIG_WRITES :
+				ctx->big_writes = TRUE;
+				break;
+#endif
 			case OPT_LOCALE :
 				ntfs_set_char_encoding(val);
 				break;
@@ -506,7 +515,8 @@ int ntfs_parse_options(struct ntfs_options *popts, void (*usage)(void),
 					return -1;
 				
 				/* Canonicalize device name (mtab, etc) */
-				if (!realpath(optarg, popts->device)) {
+				if (!ntfs_realpath_canonicalize(optarg,
+						popts->device)) {
 					ntfs_log_perror("%s: Failed to access "
 					     "volume '%s'", EXEC_NAME, optarg);
 					free(popts->device);
@@ -565,6 +575,8 @@ int ntfs_parse_options(struct ntfs_options *popts, void (*usage)(void),
 
 	return 0;
 }
+
+#ifdef HAVE_SETXATTR
 
 int ntfs_fuse_listxattr_common(ntfs_inode *ni, ntfs_attr_search_ctx *actx,
 			char *list, size_t size, BOOL prefixing)
@@ -670,3 +682,4 @@ exit :
 	return (ret);
 }
 
+#endif /* HAVE_SETXATTR */
