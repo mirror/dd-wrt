@@ -48,11 +48,11 @@ ifneq ($(SUBARCH),$(ARCH))
   endif
 endif
 
-ifndef CONFIG_FUNCTION_TRACER
-  ifndef CONFIG_PROFILING
-    cflags-y := -ffunction-sections
-  endif
-endif
+#ifndef CONFIG_FUNCTION_TRACER
+#  ifndef CONFIG_PROFILING
+#    cflags-y := -ffunction-sections
+#  endif
+#endif
 ifdef CONFIG_FUNCTION_GRAPH_TRACER
   ifndef KBUILD_MCOUNT_RA_ADDRESS
     ifeq ($(call cc-option-yn,-mmcount-ra-address), y)
