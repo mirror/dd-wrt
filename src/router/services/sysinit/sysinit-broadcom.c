@@ -270,6 +270,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_NETCORE_NW715P:
 
 		break;
 	case ROUTER_WRT600N:
@@ -717,7 +718,11 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
+	case ROUTER_NETCORE_NW715P:
+		basic_params = vlan_1_2;
+		nvram_set("vlan0ports"," ");
+		nvram_set("vlan0hwname"," ");
+		break;
 	case ROUTER_BELKIN_F5D8235V3:
 		basic_params = vlan_1_2;
 		if (nvram_match("vlan1ports", "0 8")
@@ -1775,6 +1780,7 @@ void start_sysinit(void)
 				break;
 			case ROUTER_ASUS_RTN10:
 			case ROUTER_ASUS_RTN10U:
+			case ROUTER_NETCORE_NW715P:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
 				nvram_set("portprio_support", "0");
@@ -1854,6 +1860,7 @@ void start_sysinit(void)
 				break;
 			case ROUTER_ASUS_RTN10:
 			case ROUTER_ASUS_RTN10U:
+			case ROUTER_NETCORE_NW715P:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
 				nvram_set("portprio_support", "0");
