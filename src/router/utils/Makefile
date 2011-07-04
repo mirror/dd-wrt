@@ -69,6 +69,13 @@ endif
 ifeq ($(CONFIG_LS5),y)
 UTILS += fischecksum
 endif
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS += -DHAVE_MICRO
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS += -DHAVE_MICRO
+endif
+
 ifeq ($(CONFIG_MERAKI),y)
 UTILS += fischecksum
 endif
@@ -89,17 +96,17 @@ endif
 #endif
 
 ifeq ($(ARCHITECTURE),newmedia)
-all:
+all: clean
 	$(CC) -o mtd -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
 	$(CC) -o epi_ttcp -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
 #	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 else
-all: $(UTILS)
+all: clean $(UTILS)
 	if test -e "src/Makefile"; then make -C src; fi
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
-	make -C wprobe
+#	make -C wprobe
 endif
 endif
 
@@ -110,7 +117,7 @@ clean:
 	if test -e "src/Makefile"; then make -C src clean; fi
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
-	make -C wprobe clean
+#	make -C wprobe clean
 endif
 endif
 	rm -f *.o *~ $(UTILS)
@@ -120,8 +127,8 @@ install: all
 #	install -d $(INSTALLDIR)/utils/usr/lib
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-ifneq ($(origin UTILS), undefined)
-	install $(UTILS) $(INSTALLDIR)/utils/usr/sbin 
+ifneq ($(UTILS),)
+	install $(UTILS) $(INSTALLDIR)/utils/usr/sbin
 endif
 endif
 endif
@@ -134,7 +141,9 @@ else
 
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_RT2880),y)
-
+ifeq ($(CONFIG_BCMMODERN),y)
+	install -D wl.modern $(INSTALLDIR)/utils/usr/sbin/wl
+else
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BCMMODERN),y)
 	install -D wl.modern $(INSTALLDIR)/utils/usr/sbin/wl
@@ -153,8 +162,9 @@ endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
-	install -D wprobe/wprobe-util $(INSTALLDIR)/utils/usr/sbin/wprobe-util
+#	install -D wprobe/wprobe-util $(INSTALLDIR)/utils/usr/sbin/wprobe-util
 endif
 endif
 	@true
+endif
 endif
