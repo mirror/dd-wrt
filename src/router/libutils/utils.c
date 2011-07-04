@@ -1440,6 +1440,13 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN10U;
 	}
 
+	if (nvram_match("boardnum", "1") && nvram_match("boardtype", "0x054d")
+	    && nvram_match("boardrev", "0x1109")) {
+		setRouter("NetCore NW715P");
+		return ROUTER_NETCORE_NW715P;
+	}
+
+
 	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
 	    && nvram_match("boardrev", "0x1201")) {
 		setRouter("Asus RT-N12");
@@ -2171,10 +2178,12 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 	
-	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
-	    && nvram_match("boardrev", "0x1101")) {
-		setRouter("Netgear WNDR4000");
-		return ROUTER_NETGEAR_WNDR4000;
+	if ((boardnum == 1 || boardnum == 3500)
+	    && nvram_match("boardtype", "0x04CF")
+	    && (nvram_match("boardrev", "0x1213")
+		|| nvram_match("boardrev", "02"))) {
+		setRouter("Netgear WNR3500v2/U/L");
+		return ROUTER_NETGEAR_WNR3500L;
 	}
 
 	if ((boardnum == 42 || boardnum == 66)
