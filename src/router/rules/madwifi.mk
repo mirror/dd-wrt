@@ -776,6 +776,17 @@ madwifi-install:
 	@true
 
 else
+ifeq ($(ARCHITECTURE),unifi)
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
 ifeq ($(ARCHITECTURE),whrhpgn)
 madwifi:
 	@true
@@ -823,6 +834,7 @@ madwifi-install:
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
 endif
 
+endif
 endif
 endif
 endif
