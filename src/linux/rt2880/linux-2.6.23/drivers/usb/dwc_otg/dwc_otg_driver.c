@@ -852,12 +852,22 @@ extern void ralink_gpio_control(int gpio,int level);
  * @return
  */
 
+#define RT2880_SYS_CNTL_BASE			(RALINK_SYSCTL_BASE)
+#define RT2880_RSTCTRL_REG			(RT2880_SYS_CNTL_BASE+0x34)
+
 #define SoCreg(n)		(*((volatile u32 *)(n)))
 static int __init dwc_otg_driver_init(void)
 {
 	int retval = 0;
 	struct lm_device *lmdev;
 	int error;
+	unsigned long resetval = *(unsigned long *)(KSEG1ADDR(RT2880_RSTCTRL_REG));
+	resetval &= ~(1<<22);
+#ifdef CONFIG_RT3352
+	resetval &= ~(1<<25);
+#endif
+	*(unsigned long *)(KSEG1ADDR(RT2880_RSTCTRL_REG)) = resetval;  // Fix this problem - reset register inactive (RALINK_UDEV_RST and RALINK_UHST_RST flags shall be used)
+
 #ifdef CONFIG_DWC_OTG_DEVICE_ONLY	
 SoCreg(0xb0000014) &= 0xFFFFFBFF;
 #endif	
