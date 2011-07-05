@@ -102,7 +102,8 @@ int ipup_main(int argc, char **argv)
 	if (nvram_match("wan_proto", "pppoe"))
 		nvram_set("pppoe_ifname", wan_ifname);
 
-	if ((value = getenvs("IPLOCAL"))) {
+	if (getenv("IPLOCAL")) {
+		value = getenvs("IPLOCAL");
 		ifconfig(wan_ifname, IFUP, value, "255.255.255.255");
 		if (nvram_match("wan_proto", "pppoe")) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));	// Store 
@@ -141,7 +142,8 @@ int ipup_main(int argc, char **argv)
 #endif
 	}
 
-	if ((value = getenvs("IPREMOTE"))) {
+	if (getenv("IPREMOTE")) {
+		value = getenvs("IPREMOTE");
 		nvram_set("wan_gateway", value);
 		if (nvram_match("wan_proto", "pptp")) {
 			eval("route", "del", "default");
@@ -149,9 +151,9 @@ int ipup_main(int argc, char **argv)
 		}
 	}
 	strcpy(buf, "");
-	if (getenvs("DNS1"))
+	if (getenv("DNS1"))
 		sprintf(buf, "%s", getenvs("DNS1"));
-	if (getenvs("DNS2"))
+	if (getenv("DNS2"))
 		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "",
 			getenvs("DNS2"));
 	nvram_set("wan_get_dns", buf);
