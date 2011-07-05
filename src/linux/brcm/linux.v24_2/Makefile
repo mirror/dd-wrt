@@ -422,6 +422,10 @@ tags: dummy
 	find include -type d \( -name "asm-*" -o -name config \) -prune -o -name '*.h' -print | xargs ctags $$CTAGSF -a && \
 	find $(SUBDIRS) init -name '*.[ch]' | xargs ctags $$CTAGSF -a
 
+cscope: dummy
+	(echo \-k; echo \-q; find * -name '*.[chS]') > cscope.files
+	cscope -b -f cscope.out
+
 ifdef CONFIG_MODULES
 ifdef CONFIG_MODVERSIONS
 MODFLAGS += -DMODVERSIONS -include $(HPATH)/linux/modversions.h
