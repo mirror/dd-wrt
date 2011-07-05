@@ -545,6 +545,7 @@
 
 #define ROUTER_NETCORE_NW715P 0xad0f
 
+#define ROUTER_BOARD_UNIFI 0xac1c	//bullet 2m
 
 
 #define NVROUTER "DD_BOARD"
