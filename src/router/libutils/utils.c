@@ -1042,7 +1042,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti 3G Station Professional", 0xe6b2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti 3G Station Outdoor", 0xe6c2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti WispStation M5", 0xe2a5, "3", "3", ROUTER_BOARD_BS5M, 0},	//
-
+		{"Ubiquiti UniFi AP", 0xe502, "3", "3", ROUTER_BOARD_BS2M, 0},	//
 		{NULL, 0, NULL, NULL, 0},	//
 	};
 
