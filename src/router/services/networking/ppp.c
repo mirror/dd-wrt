@@ -50,6 +50,8 @@ char *getenvs(char *env)
 {
 	static unsigned char r[64];
 	char *e = getenv(env);
+	if (!e)
+	    return NULL;	
 	int c = 0;
 	int i;
 	for (i = 0; i < strlen(e); i++) {
