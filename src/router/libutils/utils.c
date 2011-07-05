@@ -1042,7 +1042,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti 3G Station Professional", 0xe6b2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti 3G Station Outdoor", 0xe6c2, "3", "3", ROUTER_BOARD_BS2M, 0},	//
 		{"Ubiquiti WispStation M5", 0xe2a5, "3", "3", ROUTER_BOARD_BS5M, 0},	//
-		{"Ubiquiti UniFi AP", 0xe502, "3", "3", ROUTER_BOARD_BS2M, 0},	//
+		{"Ubiquiti UniFi AP", 0xe502, "3", "3", ROUTER_BOARD_UNIFI, 0},	//
 		{NULL, 0, NULL, NULL, 0},	//
 	};
 
@@ -3218,6 +3218,9 @@ int led_control(int type, int act)
 		// number (f=disabled)
 	{
 #ifndef HAVE_BUFFALO
+	case ROUTER_BOARD_UNIFI:
+	    diag_gpio=0x001;
+	break;
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH
 		diag_gpio = 0x105;
