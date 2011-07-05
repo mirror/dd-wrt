@@ -176,6 +176,10 @@ ifeq ($(ARCHITECTURE),ubntm)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
+ifeq ($(ARCHITECTURE),unifi)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
 ifeq ($(ARCHITECTURE),whrhpgn)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
@@ -193,6 +197,7 @@ ifeq ($(ARCHITECTURE),danube)
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 	cp busybox/.config_3com busybox/.config
+endif
 endif
 endif
 endif
@@ -261,7 +266,7 @@ ifeq ($(CONFIG_IPV6),y)
 	echo "CONFIG_FEATURE_IPV6=y" >> busybox/.config
 	echo "CONFIG_FEATURE_PREFER_IPV4_ADDRESS=y" >> busybox/.config
 else
-	echo "# CONFIG_TRACEROUTE is not set" >> busybox/.config
+	echo "# CONFIG_TRACEROUTE6 is not set" >> busybox/.config
 	echo "# CONFIG_PING6 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_IPV6 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_PREFER_IPV4_ADDRESS is not set" >> busybox/.config
