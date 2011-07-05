@@ -93,7 +93,14 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
+	int brand = getRouterBrand();
+	if (brand==ROUTER_BOARD_UNIFI)
+	{
+	system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	}else{
 	system2("echo 0 >/proc/sys/dev/wifi0/softled");
+	}
 
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */	
 	if (nvram_match("ubnt_power","1"))
