@@ -192,7 +192,7 @@ static void buffalo_defaults(int force)
 	}
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
-		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
+		if (!region || (strcmp(region, "AP") && strcmp(region, "TW") && strcmp(region, "RU")
 				&& strcmp(region, "KR")
 				&& strcmp(region, "CH"))) {
 			{
@@ -376,6 +376,8 @@ static void buffalo_defaults(int force)
 			nvram_set("ath0_regdomain", "JAPAN");
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("ath0_regdomain", "SINGAPORE");
+		} else if (!strcmp(region, "RU")) {
+			nvram_set("ath0_regdomain", "RUSSIA");
 		} else if (!strcmp(region, "TW")) {
 			nvram_set("ath0_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "CH")) {
@@ -390,6 +392,8 @@ static void buffalo_defaults(int force)
 			nvram_set("ath1_regdomain", "GERMANY");
 		} else if (!strcmp(region, "JP")) {
 			nvram_set("ath1_regdomain", "JAPAN");
+		} else if (!strcmp(region, "RU")) {
+			nvram_set("ath1_regdomain", "RUSSIA");
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("ath1_regdomain", "SINGAPORE");
 		} else if (!strcmp(region, "TW")) {
