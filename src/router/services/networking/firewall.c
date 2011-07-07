@@ -2121,6 +2121,13 @@ static void filter_input(void)
 	 */
 	save2file("-A INPUT -p igmp -j %s\n",
 		  doMultiCast() == 0 ? log_drop : TARG_PASS);
+	/*
+	 * SNMP access from WAN interface 
+	 */	
+	if (nvram_match("snmpd_enable", "1") && nvram_match("block_snmp", "0")) {
+		save2file("-A INPUT -i %s -p udp --dport 161 -j ACCEPT\n",
+			  wanface);
+	}
 
 #ifdef HAVE_TFTP
 	/*
