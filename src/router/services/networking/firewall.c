@@ -2121,6 +2121,7 @@ static void filter_input(void)
 	 */
 	save2file("-A INPUT -p igmp -j %s\n",
 		  doMultiCast() == 0 ? log_drop : TARG_PASS);
+#ifndef HAVE_MICRO
 	/*
 	 * SNMP access from WAN interface 
 	 */	
@@ -2128,6 +2129,7 @@ static void filter_input(void)
 		save2file("-A INPUT -i %s -p udp --dport 161 -j ACCEPT\n",
 			  wanface);
 	}
+#endif
 
 #ifdef HAVE_TFTP
 	/*
