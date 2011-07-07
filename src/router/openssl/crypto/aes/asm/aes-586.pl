@@ -505,7 +505,7 @@ sub enctransform()
 	&xor	($s2,&DWP(8,$key));
 	&xor	($s3,&DWP(12,$key));
 
-	&mov	($acc,&DWP(240,$key));		# load key->rounds
+	&mov	($acc,&DWP(464,$key));		# load key->rounds
 	&lea	($acc,&DWP(-2,$acc,$acc));
 	&lea	($acc,&DWP(0,$key,$acc,8));
 	&mov	($__end,$acc);			# end of key schedule
@@ -694,7 +694,7 @@ sub sse_enccompact()
 	&pxor	("mm4",&QWP(8,$key));	# 15,14,13,12,11,10, 9, 8
 
 	# note that caller is expected to allocate stack frame for me!
-	&mov	($acc,&DWP(240,$key));		# load key->rounds
+	&mov	($acc,&DWP(464,$key));		# load key->rounds
 	&lea	($acc,&DWP(-2,$acc,$acc));
 	&lea	($acc,&DWP(0,$key,$acc,8));
 	&mov	($__end,$acc);			# end of key schedule
@@ -851,7 +851,7 @@ sub enclast()
 	&xor	($s2,&DWP(8,$key));
 	&xor	($s3,&DWP(12,$key));
 
-	&mov	($acc,&DWP(240,$key));		# load key->rounds
+	&mov	($acc,&DWP(464,$key));		# load key->rounds
 
 	if ($small_footprint) {
 	    &lea	($acc,&DWP(-2,$acc,$acc));
@@ -1157,7 +1157,7 @@ sub enclast()
 &function_end_B("_x86_AES_encrypt");
 
 # void AES_encrypt (const void *inp,void *out,const AES_KEY *key);
-&function_begin("AES_encrypt");
+&function_begin("asm_AES_encrypt");
 	&mov	($acc,&wparam(0));		# load inp
 	&mov	($key,&wparam(2));		# load key
 
@@ -1213,7 +1213,7 @@ sub enclast()
 	&mov	(&DWP(4,$acc),$s1);
 	&mov	(&DWP(8,$acc),$s2);
 	&mov	(&DWP(12,$acc),$s3);
-&function_end("AES_encrypt");
+&function_end("asm_AES_encrypt");
 
 #--------------------------------------------------------------------#
 
@@ -1331,7 +1331,7 @@ sub dectransform()
 	&xor	($s2,&DWP(8,$key));
 	&xor	($s3,&DWP(12,$key));
 
-	&mov	($acc,&DWP(240,$key));		# load key->rounds
+	&mov	($acc,&DWP(464,$key));		# load key->rounds
 
 	&lea	($acc,&DWP(-2,$acc,$acc));
 	&lea	($acc,&DWP(0,$key,$acc,8));
@@ -1479,7 +1479,7 @@ sub sse_deccompact()
 	&pxor	("mm4",&QWP(8,$key));	# 15,14,13,12,11,10, 9, 8
 
 	# note that caller is expected to allocate stack frame for me!
-	&mov	($acc,&DWP(240,$key));		# load key->rounds
+	&mov	($acc,&DWP(464,$key));		# load key->rounds
 	&lea	($acc,&DWP(-2,$acc,$acc));
 	&lea	($acc,&DWP(0,$key,$acc,8));
 	&mov	($__end,$acc);			# end of key schedule
@@ -1667,7 +1667,7 @@ sub declast()
 	&xor	($s2,&DWP(8,$key));
 	&xor	($s3,&DWP(12,$key));
 
-	&mov	($acc,&DWP(240,$key));		# load key->rounds
+	&mov	($acc,&DWP(464,$key));		# load key->rounds
 
 	if ($small_footprint) {
 	    &lea	($acc,&DWP(-2,$acc,$acc));
@@ -1946,7 +1946,7 @@ sub declast()
 &function_end_B("_x86_AES_decrypt");
 
 # void AES_decrypt (const void *inp,void *out,const AES_KEY *key);
-&function_begin("AES_decrypt");
+&function_begin("asm_AES_decrypt");
 	&mov	($acc,&wparam(0));		# load inp
 	&mov	($key,&wparam(2));		# load key
 
@@ -2002,7 +2002,7 @@ sub declast()
 	&mov	(&DWP(4,$acc),$s1);
 	&mov	(&DWP(8,$acc),$s2);
 	&mov	(&DWP(12,$acc),$s3);
-&function_end("AES_decrypt");
+&function_end("asm_AES_decrypt");
 
 # void AES_cbc_encrypt (const void char *inp, unsigned char *out,
 #			size_t length, const AES_KEY *key,
@@ -2027,7 +2027,7 @@ my $_tmp=&DWP(52,"esp");	# volatile variable
 #
 my $ivec=&DWP(60,"esp");	# ivec[16]
 my $aes_key=&DWP(76,"esp");	# copy of aes_key
-my $mark=&DWP(76+240,"esp");	# copy of aes_key->rounds
+my $mark=&DWP(76+464,"esp");	# copy of aes_key->rounds
 
 &function_begin("AES_cbc_encrypt");
 	&mov	($s2 eq "ecx"? $s2 : "",&wparam(2));	# load len
@@ -2178,7 +2178,7 @@ my $mark=&DWP(76+240,"esp");	# copy of aes_key->rounds
 	&mov	("edi",$_key);
 	&je	(&label("skip_ezero"));
 	# zero copy of key schedule
-	&mov	("ecx",240/4);
+	&mov	("ecx",464/4);
 	&xor	("eax","eax");
 	&align	(4);
 	&data_word(0xABF3F689);	# rep stosd
@@ -2298,7 +2298,7 @@ my $mark=&DWP(76+240,"esp");	# copy of aes_key->rounds
 	&mov	("edi",$_key);
 	&je	(&label("skip_dzero"));
 	# zero copy of key schedule
-	&mov	("ecx",240/4);
+	&mov	("ecx",464/4);
 	&xor	("eax","eax");
 	&align	(4);
 	&data_word(0xABF3F689);	# rep stosd
@@ -2856,10 +2856,10 @@ sub enckey()
 
 # int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 #                        AES_KEY *key)
-&function_begin_B("AES_set_encrypt_key");
+&function_begin_B("asm_AES_set_encrypt_key");
 	&call	("_x86_AES_set_encrypt_key");
 	&ret	();
-&function_end_B("AES_set_encrypt_key");
+&function_end_B("asm_AES_set_encrypt_key");
 
 sub deckey()
 { my ($i,$key,$tp1,$tp2,$tp4,$tp8) = @_;
@@ -2918,7 +2918,7 @@ sub deckey()
 
 # int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
 #                        AES_KEY *key)
-&function_begin_B("AES_set_decrypt_key");
+&function_begin_B("asm_AES_set_decrypt_key");
 	&call	("_x86_AES_set_encrypt_key");
 	&cmp	("eax",0);
 	&je	(&label("proceed"));
@@ -2931,7 +2931,7 @@ sub deckey()
 	&push	("edi");
 
 	&mov	("esi",&wparam(2));
-	&mov	("ecx",&DWP(240,"esi"));	# pull number of rounds
+	&mov	("ecx",&DWP(464,"esi"));	# pull number of rounds
 	&lea	("ecx",&DWP(0,"","ecx",4));
 	&lea	("edi",&DWP(0,"esi","ecx",4));	# pointer to last chunk
 
@@ -2958,7 +2958,7 @@ sub deckey()
 	&jne	(&label("invert"));
 
 	&mov	($key,&wparam(2));
-	&mov	($acc,&DWP(240,$key));		# pull number of rounds
+	&mov	($acc,&DWP(464,$key));		# pull number of rounds
 	&lea	($acc,&DWP(-2,$acc,$acc));
 	&lea	($acc,&DWP(0,$key,$acc,8));
 	&mov	(&wparam(2),$acc);
@@ -2974,7 +2974,7 @@ sub deckey()
 	&jb	(&label("permute"));
 
 	&xor	("eax","eax");			# return success
-&function_end("AES_set_decrypt_key");
+&function_end("asm_AES_set_decrypt_key");
 &asciz("AES for x86, CRYPTOGAMS by <appro\@openssl.org>");
 
 &asm_finish();
