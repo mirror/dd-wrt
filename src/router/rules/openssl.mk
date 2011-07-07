@@ -1,11 +1,14 @@
 export OPENSSL_TARGET := linux-openwrt
 ifeq ($(ARCH),armeb)
 export OPENSSL_TARGET := linux-armv4
-#export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
+export OPENSSL_CMAKEFLAGS := -DASMAES512
 endif
 ifeq ($(ARCH),arm)
 export OPENSSL_TARGET := linux-armv4
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
+export OPENSSL_CMAKEFLAGS := -DASMAES512
 endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-ppc
@@ -26,8 +29,14 @@ openssl-shared: openssl
 	$(MAKE) -j 4 -C openssl build-shared CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 
-openssl-apps: openssl-shared
-	rm openssl/apps/openssl
+openssl-apps: openssl-shared	
+	-rm openssl/apps/openssl
+	$(MAKE) -j 4 -C openssl build_apps CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+
+openssl-apps-static:
+	-rm openssl/libcrypto.so.0.9.8
+	-rm openssl/libssl.so.0.9.8
+	-rm openssl/apps/openssl
 	$(MAKE) -j 4 -C openssl build_apps CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 openssl-install:
