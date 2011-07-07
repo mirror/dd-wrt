@@ -157,15 +157,15 @@ AES_Te:
 
 @ void AES_encrypt(const unsigned char *in, unsigned char *out,
 @ 		 const AES_KEY *key) {
-.global AES_encrypt
-.type   AES_encrypt,%function
+.global asm_AES_encrypt
+.type   asm_AES_encrypt,%function
 .align	5
-AES_encrypt:
+asm_AES_encrypt:
 	sub	r3,pc,#8		@ AES_encrypt
 	stmdb   sp!,{r1,r4-r12,lr}
 	mov	$rounds,r0		@ inp
 	mov	$key,r2
-	sub	$tbl,r3,#AES_encrypt-AES_Te	@ Te
+	sub	$tbl,r3,#asm_AES_encrypt-AES_Te	@ Te
 
 	ldrb	$s0,[$rounds,#3]	@ load input data in endian-neutral
 	ldrb	$t1,[$rounds,#2]	@ manner...
@@ -232,7 +232,7 @@ AES_encrypt:
 	tst	lr,#1
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
-.size	AES_encrypt,.-AES_encrypt
+.size	asm_AES_encrypt,.-asm_AES_encrypt
 
 .type   _armv4_AES_encrypt,%function
 .align	2
@@ -240,7 +240,7 @@ _armv4_AES_encrypt:
 	str	lr,[sp,#-4]!		@ push lr
 	ldmia	$key!,{$t1-$i1}
 	eor	$s0,$s0,$t1
-	ldr	$rounds,[$key,#240-16]
+	ldr	$rounds,[$key,#464-16]
 	eor	$s1,$s1,$t2
 	eor	$s2,$s2,$t3
 	eor	$s3,$s3,$i1
@@ -371,10 +371,10 @@ _armv4_AES_encrypt:
 	ldr	pc,[sp],#4		@ pop and return
 .size	_armv4_AES_encrypt,.-_armv4_AES_encrypt
 
-.global AES_set_encrypt_key
-.type   AES_set_encrypt_key,%function
+.global asm_AES_set_encrypt_key
+.type   asm_AES_set_encrypt_key,%function
 .align	5
-AES_set_encrypt_key:
+asm_AES_set_encrypt_key:
 	sub	r3,pc,#8		@ AES_set_encrypt_key
 	teq	r0,#0
 	moveq	r0,#-1
@@ -392,7 +392,7 @@ AES_set_encrypt_key:
 	bne	.Labrt
 
 .Lok:	stmdb   sp!,{r4-r12,lr}
-	sub	$tbl,r3,#AES_set_encrypt_key-AES_Te-1024	@ Te4
+	sub	$tbl,r3,#asm_AES_set_encrypt_key-AES_Te-1024	@ Te4
 
 	mov	$rounds,r0		@ inp
 	mov	lr,r1			@ bits
@@ -434,7 +434,7 @@ AES_set_encrypt_key:
 	teq	lr,#128
 	bne	.Lnot128
 	mov	$rounds,#10
-	str	$rounds,[$key,#240-16]
+	str	$rounds,[$key,#464-16]
 	add	$t3,$tbl,#256			@ rcon
 	mov	lr,#255
 
@@ -486,7 +486,7 @@ AES_set_encrypt_key:
 	teq	lr,#192
 	bne	.Lnot192
 	mov	$rounds,#12
-	str	$rounds,[$key,#240-24]
+	str	$rounds,[$key,#464-24]
 	add	$t3,$tbl,#256			@ rcon
 	mov	lr,#255
 	mov	$rounds,#8
@@ -544,7 +544,7 @@ AES_set_encrypt_key:
 	str	$i3,[$key,#-4]
 
 	mov	$rounds,#14
-	str	$rounds,[$key,#240-32]
+	str	$rounds,[$key,#464-32]
 	add	$t3,$tbl,#256			@ rcon
 	mov	lr,#255
 	mov	$rounds,#7
@@ -606,21 +606,21 @@ AES_set_encrypt_key:
 .Labrt:	tst	lr,#1
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
-.size	AES_set_encrypt_key,.-AES_set_encrypt_key
+.size	asm_AES_set_encrypt_key,.-asm_AES_set_encrypt_key
 
-.global AES_set_decrypt_key
-.type   AES_set_decrypt_key,%function
+.global asm_AES_set_decrypt_key
+.type   asm_AES_set_decrypt_key,%function
 .align	5
-AES_set_decrypt_key:
+asm_AES_set_decrypt_key:
 	str	lr,[sp,#-4]!            @ push lr
-	bl	AES_set_encrypt_key
+	bl	asm_AES_set_encrypt_key
 	teq	r0,#0
 	ldrne	lr,[sp],#4              @ pop lr
 	bne	.Labrt
 
 	stmdb   sp!,{r4-r12}
 
-	ldr	$rounds,[r2,#240]	@ AES_set_encrypt_key preserves r2,
+	ldr	$rounds,[r2,#464]	@ AES_set_encrypt_key preserves r2,
 	mov	$key,r2			@ which is AES_KEY *key
 	mov	$i1,r2
 	add	$i2,r2,$rounds,lsl#4
@@ -696,7 +696,7 @@ $code.=<<___;
 	tst	lr,#1
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
-.size	AES_set_decrypt_key,.-AES_set_decrypt_key
+.size	asm_AES_set_decrypt_key,.-asm_AES_set_decrypt_key
 
 .type	AES_Td,%object
 .align	5
@@ -800,17 +800,17 @@ AES_Td:
 .byte	0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 .size	AES_Td,.-AES_Td
 
-@ void AES_decrypt(const unsigned char *in, unsigned char *out,
+@ void asm_AES_decrypt(const unsigned char *in, unsigned char *out,
 @ 		 const AES_KEY *key) {
-.global AES_decrypt
-.type   AES_decrypt,%function
+.global asm_AES_decrypt
+.type   asm_AES_decrypt,%function
 .align	5
-AES_decrypt:
-	sub	r3,pc,#8		@ AES_decrypt
+asm_AES_decrypt:
+	sub	r3,pc,#8		@ asm_AES_decrypt
 	stmdb   sp!,{r1,r4-r12,lr}
 	mov	$rounds,r0		@ inp
 	mov	$key,r2
-	sub	$tbl,r3,#AES_decrypt-AES_Td		@ Td
+	sub	$tbl,r3,#asm_AES_decrypt-AES_Td		@ Td
 
 	ldrb	$s0,[$rounds,#3]	@ load input data in endian-neutral
 	ldrb	$t1,[$rounds,#2]	@ manner...
@@ -877,7 +877,7 @@ AES_decrypt:
 	tst	lr,#1
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
-.size	AES_decrypt,.-AES_decrypt
+.size	asm_AES_decrypt,.-asm_AES_decrypt
 
 .type   _armv4_AES_decrypt,%function
 .align	2
@@ -885,7 +885,7 @@ _armv4_AES_decrypt:
 	str	lr,[sp,#-4]!		@ push lr
 	ldmia	$key!,{$t1-$i1}
 	eor	$s0,$s0,$t1
-	ldr	$rounds,[$key,#240-16]
+	ldr	$rounds,[$key,#464-16]
 	eor	$s1,$s1,$t2
 	eor	$s2,$s2,$t3
 	eor	$s3,$s3,$i1
