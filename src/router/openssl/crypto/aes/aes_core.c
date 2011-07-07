@@ -625,16 +625,22 @@ static const u32 rcon[] = {
 	0x1B000000, 0x36000000, /* for 128-bit blocks, Rijndael never uses more than 10 rcon values */
 };
 
+
 /**
  * Expand the cipher key into the encryption key schedule.
  */
+extern  int asm_AES_set_encrypt_key(const unsigned char *userKey, const int bits,AES_KEY *key);
+
 int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 			AES_KEY *key) {
 
 	u32 *rk;
    	int i = 0;
 	u32 temp;
-
+#ifdef ASMAES512
+	if (bits<512)
+	    return asm_AES_set_encrypt_key(userKey,bits,key);
+#endif
 #ifdef OPENSSL_FIPS
 	FIPS_selftest_check();
 #endif
@@ -790,12 +796,22 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 /**
  * Expand the cipher key into the decryption key schedule.
  */
+
+
+extern int asm_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
+			 AES_KEY *key);
+
+
 int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
 			 AES_KEY *key) {
 
         u32 *rk;
 	int i, j, status;
 	u32 temp;
+#ifdef ASMAES512
+	if (bits<512)
+	    return asm_AES_set_decrypt_key(userKey,bits,key);
+#endif
 
 	/* first, start with an encryption schedule */
 	status = AES_set_encrypt_key(userKey, bits, key);
@@ -843,15 +859,24 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
  * Encrypt a single block
  * in and out can overlap
  */
-void AES_encrypt(const unsigned char *in, unsigned char *out,
-		 const AES_KEY *key) {
+extern void asm_AES_encrypt(const unsigned char *in, unsigned char *out,const AES_KEY *key);
+
+void AES_encrypt(const unsigned char *in, unsigned char *out,const AES_KEY *key) {
 
 	const u32 *rk;
 	u32 s0, s1, s2, s3, t0, t1, t2, t3;
 #ifndef FULL_UNROLL
 	int r;
 #endif /* ?FULL_UNROLL */
+#ifdef ASMAES512
+	if (key->rounds<16)
+	    {
+	    asm_AES_encrypt(in,out,key);
+	    return;
+	    }
+#endif
 
+	
 	assert(in && out && key);
 	rk = key->rd_key;
 
@@ -1046,6 +1071,8 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
  * Decrypt a single block
  * in and out can overlap
  */
+extern void asm_AES_decrypt(const unsigned char *in, unsigned char *out,const AES_KEY *key);
+
 void AES_decrypt(const unsigned char *in, unsigned char *out,
 		 const AES_KEY *key) {
 
@@ -1054,6 +1081,13 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 #ifndef FULL_UNROLL
 	int r;
 #endif /* ?FULL_UNROLL */
+#ifdef ASMAES512
+	if (key->rounds<16)
+	    {
+	    asm_AES_decrypt(in,out,key);
+	    return;
+	    }
+#endif
 
 	assert(in && out && key);
 	rk = key->rd_key;
