@@ -1393,6 +1393,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"block_cookie", "0", 0},	/* Block Cookie [1|0] */
 	{"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
 	{"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
+	{"block_snmp", "1", 0},	/* Block WAN SNMP access [1|0] */
 	{"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
