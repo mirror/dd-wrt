@@ -869,7 +869,7 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,const AES_KEY *key)
 	int r;
 #endif /* ?FULL_UNROLL */
 #ifdef ASMAES512
-	if (key->rounds<16)
+//	if (key->rounds<16)
 	    {
 	    asm_AES_encrypt(in,out,key);
 	    return;
@@ -1082,7 +1082,7 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 	int r;
 #endif /* ?FULL_UNROLL */
 #ifdef ASMAES512
-	if (key->rounds<16)
+//	if (key->rounds<16)
 	    {
 	    asm_AES_decrypt(in,out,key);
 	    return;
