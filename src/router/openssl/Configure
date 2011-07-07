@@ -124,7 +124,7 @@ my $tlib="-lnsl -lsocket";
 #$bits2="THIRTY_TWO_BIT ";
 my $bits1="THIRTY_TWO_BIT ";
 my $bits2="SIXTY_FOUR_BIT ";
-my $x86_asm="x86cpuid.o:bn-586.o co-586.o x86-mont.o:des-586.o crypt586.o:aes-586.o:bf-586.o:md5-586.o:sha1-586.o sha256-586.o sha512-586.o:cast-586.o:rc4-586.o:rmd-586.o:rc5-586.o";
+my $x86_asm="x86cpuid.o:bn-586.o co-586.o x86-mont.o:des-586.o crypt586.o:aes-586.o aes_core.o:bf-586.o:md5-586.o:sha1-586.o sha256-586.o sha512-586.o:cast-586.o:rc4-586.o:rmd-586.o:rc5-586.o";
 my $x86_elf_asm="$x86_asm";
 
 my $x86_coff_asm="x86cpuid-cof.o:bn86-cof.o co86-cof.o MAYBE-MO86-cof.o:dx86-cof.o yx86-cof.o:ax86-cof.o:bx86-cof.o:mx86-cof.o:sx86-cof.o s512sse2-cof.o:cx86-cof.o:rx86-cof.o rc4_skey.o:rm86-cof.o:r586-cof.o";
@@ -132,7 +132,7 @@ my $x86_out_asm="x86cpuid-out.o:bn86-out.o co86-out.o MAYBE-MO86-out.o:dx86-out.
 
 my $x86_64_asm="x86_64cpuid.o:x86_64-gcc.o x86_64-mont.o::aes-x86_64.o::md5-x86_64.o:sha1-x86_64.o sha256-x86_64.o sha512-x86_64.o::rc4-x86_64.o::";
 my $ia64_asm=":bn-ia64.o::aes_core.o aes_cbc.o aes-ia64.o:::sha1-ia64.o sha256-ia64.o sha512-ia64.o::rc4-ia64.o rc4_skey.o::";
-my $armv4_asm=":bn_asm.o armv4-mont.o::aes_cbc.o aes-armv4.o:::sha1-armv4-large.o sha256-armv4.o sha512-armv4.o::::";
+my $armv4_asm=":bn_asm.o armv4-mont.o::aes_cbc.o aes-armv4.o aes_core.o:::sha1-armv4-large.o sha256-armv4.o sha512-armv4.o::::";
 my $ppc32_asm="ppccpuid.o:bn-ppc.o::aes_core.o aes_cbc.o aes-ppc.o:::sha1-ppc.o sha256-ppc.o::::";
 my $ppc64_asm="ppccpuid.o:bn-ppc.o ppc-mont.o::aes_core.o aes_cbc.o aes-ppc.o:::sha1-ppc.o sha256-ppc.o sha512-ppc.o::::";
 
@@ -371,8 +371,12 @@ my %table=(
 "linux-alpha+bwx-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",
 # OpenWrt targets
 "linux-openwrt","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
-"linux-armv4","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
-"linux-i386","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+"linux-armv4","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${armv4_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+#"linux-armv4","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+"linux-i386","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${x86_elf_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+#"linux-i386","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+"linux-i486","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${x86_elf_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+#"linux-i486","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
 "linux-ppc","gcc:-DB_ENDIAN -DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
 
 #### *BSD [do see comment about ${BSDthreads} above!]
