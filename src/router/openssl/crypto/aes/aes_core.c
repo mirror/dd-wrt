@@ -854,7 +854,7 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
 	return 0;
 }
 
-#ifndef AES_ASM
+#if 1//ndef AES_ASM
 /*
  * Encrypt a single block
  * in and out can overlap
