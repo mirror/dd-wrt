@@ -648,6 +648,7 @@ firewall.telnet="Limit Telnet Access";
 firewall.http="Limit HTTP Access";
 filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
+block.snmp="Block WAN SNMP access";
 
 //help container
 var hfirewall = new Object();
