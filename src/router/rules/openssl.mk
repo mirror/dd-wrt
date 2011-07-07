@@ -16,8 +16,8 @@ export OPENSSL_TARGET := linux-ppc
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-i386
-export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-586.o aes_cbc.o"
-export OPENSSL_CMAKEFLAGS := -DOPENSSL_FIPS_AES_ASM=1 -DOPENSSL_BN_ASM_PART_WORDS  -DASMAES512
+#export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-586.o aes_cbc.o"
+#export OPENSSL_CMAKEFLAGS := -DOPENSSL_FIPS_AES_ASM=1 -DOPENSSL_BN_ASM_PART_WORDS -DASMAES512 -DOPENSSL_IA32_SSE2
 endif
 
 openssl:
@@ -69,7 +69,7 @@ OPENSSL_OPTIONS:= no-ec no-err no-hw threads zlib-dynamic \
 					no-sse2 no-perlasm --with-cryptodev
 else
 OPENSSL_OPTIONS:= no-ec no-err no-hw threads zlib-dynamic \
-					no-engines no-sse2 no-perlasm
+					no-engines no-perlasm
 endif
 
 
