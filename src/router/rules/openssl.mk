@@ -78,7 +78,7 @@ openssl-configure:
 	cd openssl && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(OPENSSL_CMAKEFLAGS) \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DNDEBUG \
 			$(TARGET_LDFLAGS) -ldl \
 			-DOPENSSL_SMALL_FOOTPRINT \
 			$(OPENSSL_NO_CIPHERS) \
