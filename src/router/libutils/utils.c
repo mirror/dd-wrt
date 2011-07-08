@@ -1296,6 +1296,11 @@ int internal_getRouterBrand()
 #elif HAVE_WR941v4
 	setRouter("TP-Link TL-WR941ND v4");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR743
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("TP-Link TL-WR743ND v1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR741
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
