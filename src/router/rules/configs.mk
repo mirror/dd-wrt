@@ -216,7 +216,7 @@ obj-$(CONFIG_LLTD) += lltd
 
 obj-y+=anchorfree
 obj-y+=ttraff
-obj-y+=speedtest
+#obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
 
@@ -233,7 +233,7 @@ configs-checkout:
 		
 
 configs-update:
-	svn commit -m "automatic repository sync" $(LINUXDIR)
+#	svn commit -m "automatic repository sync" $(LINUXDIR)
 	svn update $(LINUXDIR)
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP)
