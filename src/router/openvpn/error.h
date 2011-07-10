@@ -205,7 +205,7 @@ const char *msg_flags_string (const unsigned int flags, struct gc_arena *gc);
 FILE *msg_fp(const unsigned int flags);
 
 /* Fatal logic errors */
-#define ASSERT(x) 
+#define ASSERT(x) (x)
 //do { if (!(x)) assert_failed(__FILE__, __LINE__); } while (false)
 
 void assert_failed (const char *filename, int line);
