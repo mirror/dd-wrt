@@ -405,6 +405,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14a5, "option", "0", "0", 2, NULL, "Huawei E173"},	//
 	{0x12d1, 0x1c0b, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173s CDROM Mode"},	//
 	{0x12d1, 0x1c05, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
+	{0x12d1, 0x1c08, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
 
 	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
 
