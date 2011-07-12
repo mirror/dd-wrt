@@ -7,18 +7,18 @@
  *
  * Version:	$Id$
  *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ *   This library is free software; you can redistribute it and/or
+ *   modify it under the terms of the GNU Lesser General Public
+ *   License as published by the Free Software Foundation; either
+ *   version 2.1 of the License, or (at your option) any later version.
  *
- *   This program is distributed in the hope that it will be useful,
+ *   This library is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ *   Lesser General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
+ *   You should have received a copy of the GNU Lesser General Public
+ *   License along with this library; if not, write to the Free Software
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
  * Copyright 1999,2000,2001,2002,2003,2004,2005,2006,2007,2008  The FreeRADIUS server project
@@ -53,6 +53,10 @@ RCSIDH(libradius_h, "$Id$")
 #include <freeradius-devel/sha1.h>
 #include <freeradius-devel/md4.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define EAP_START               2
 
 #define AUTH_VECTOR_LEN		16
@@ -68,9 +72,7 @@ RCSIDH(libradius_h, "$Id$")
 #define VENDORPEC_STARENT	8164
 #  define DEBUG			if (fr_debug_flag && fr_log_fp) fr_printf_log
 #  define debug_pair(vp)	do { if (fr_debug_flag && fr_log_fp) { \
-					fputc('\t', fr_log_fp); \
 					vp_print(fr_log_fp, vp); \
-					fputc('\n', fr_log_fp); \
 				     } \
 				} while(0)
 #  define TAG_VALID(x)          ((x) > 0 && (x) < 0x20)
@@ -157,7 +159,16 @@ typedef struct value_pair {
 	int			vendor;
 	int			type;
 	size_t			length; /* of data */
+#ifdef __cplusplus
+	/*
+	 *	C++ hackery.  The server and modules are all C, so
+	 *	the defs here don't affect them.  But any C++ code
+	 *	gets excited over "operator", so we change the name.
+	 */
+	FR_TOKEN		op_token;
+#else
 	FR_TOKEN		operator;
+#endif
         ATTR_FLAGS              flags;
 	struct value_pair	*next;
 	uint32_t		lvalue;
@@ -227,7 +238,7 @@ typedef struct radius_packet {
  *	Printing functions.
  */
 int		fr_utf8_char(const uint8_t *str);
-void		fr_print_string(const char *in, size_t inlen,
+size_t		fr_print_string(const char *in, size_t inlen,
 				 char *out, size_t outlen);
 int     	vp_prints_value(char *out, size_t outlen,
 				VALUE_PAIR *vp, int delimitst);
@@ -301,6 +312,7 @@ int		rad_encode(RADIUS_PACKET *packet, const RADIUS_PACKET *original,
 int		rad_sign(RADIUS_PACKET *packet, const RADIUS_PACKET *original,
 			 const char *secret);
 
+int rad_digest_cmp(const uint8_t *a, const uint8_t *b, size_t length);
 RADIUS_PACKET	*rad_alloc(int newvector);
 RADIUS_PACKET	*rad_alloc_reply(RADIUS_PACKET *);
 void		rad_free(RADIUS_PACKET **);
@@ -365,6 +377,7 @@ extern int	fr_max_attributes; /* per incoming packet */
 #define	FR_MAX_PACKET_CODE (52)
 extern const char *fr_packet_codes[FR_MAX_PACKET_CODE];
 extern FILE	*fr_log_fp;
+extern void rad_print_hex(RADIUS_PACKET *packet);
 void		fr_printf_log(const char *, ...)
 #ifdef __GNUC__
 		__attribute__ ((format (printf, 1, 2)))
@@ -472,6 +485,10 @@ int fr_fifo_push(fr_fifo_t *fi, void *data);
 void *fr_fifo_pop(fr_fifo_t *fi);
 void *fr_fifo_peek(fr_fifo_t *fi);
 int fr_fifo_num_elements(fr_fifo_t *fi);
+
+#ifdef __cplusplus
+}
+#endif
 
 #include <freeradius-devel/packet.h>
 
