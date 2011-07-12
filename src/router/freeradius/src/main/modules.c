@@ -239,6 +239,24 @@ static int virtual_server_idx(const char *name)
 	return hash & (VIRTUAL_SERVER_HASH_SIZE - 1);
 }
 
+static virtual_server_t *virtual_server_find(const char *name)
+{
+	int rcode;
+	virtual_server_t *server;
+
+	rcode = virtual_server_idx(name);
+	for (server = virtual_servers[rcode];
+	     server != NULL;
+	     server = server->next) {
+		if (!name && !server->name) break;
+
+		if ((name && server->name) &&
+		    (strcmp(name, server->name) == 0)) break;
+	}
+
+	return server;
+}
+
 static void virtual_server_free(virtual_server_t *server)
 {
 	if (!server) return;
@@ -682,16 +700,7 @@ int indexed_modcall(int comp, int idx, REQUEST *request)
 	/*
 	 *	Hack to find the correct virtual server.
 	 */
-	rcode = virtual_server_idx(request->server);
-	for (server = virtual_servers[rcode];
-	     server != NULL;
-	     server = server->next) {
-		if (!request->server && !server->name) break;
-
-		if ((request->server && server->name) &&
-		    (strcmp(request->server, server->name) == 0)) break;
-	}
-
+	server = virtual_server_find(request->server);
 	if (!server) {
 		RDEBUG("No such virtual server \"%s\"", request->server);
 		return RLM_MODULE_FAIL;
@@ -995,7 +1004,7 @@ static int load_byserver(CONF_SECTION *cs)
 		subcs = cf_section_sub_find(cs,
 					    section_type_value[comp].section);
 		if (!subcs) continue;
-			
+
 		if (cf_item_find_next(subcs, NULL) == NULL) continue;
 
 		/*
@@ -1044,7 +1053,7 @@ static int load_byserver(CONF_SECTION *cs)
 			
 			subsubcs = cf_itemtosection(modref);
 			name1 = cf_section_name1(subsubcs);
-		
+
 			if (strcmp(name1, section_type_value[comp].typename) == 0) {
 				if (!define_type(dattr,
 						 cf_section_name2(subsubcs))) {
@@ -1077,8 +1086,8 @@ static int load_byserver(CONF_SECTION *cs)
 		 *	proxying.
 		 */
 		if (!mainconfig.proxy_requests &&
-		    ((comp == PW_PRE_PROXY_TYPE) ||
-		     (comp == PW_PRE_PROXY_TYPE))) {
+		    ((comp == RLM_COMPONENT_PRE_PROXY) ||
+		     (comp == RLM_COMPONENT_POST_PROXY))) {
 			continue;
 		}
 #endif
@@ -1197,11 +1206,29 @@ static int load_byserver(CONF_SECTION *cs)
  */
 int virtual_servers_load(CONF_SECTION *config)
 {
-	int null_server = FALSE;
 	CONF_SECTION *cs;
 	static int first_time = TRUE;
 
 	DEBUG2("%s: #### Loading Virtual Servers ####", mainconfig.name);
+
+	/*
+	 *	If we have "server { ...}", then there SHOULD NOT be
+	 *	bare "authorize", etc. sections.  if there is no such
+	 *	server, then try to load the old-style sections first.
+	 *
+	 *	In either case, load the "default" virtual server first.
+	 *	this matches better iwth users expectations.
+	 */
+	cs = cf_section_find_name2(config, "server", NULL);
+	if (!cs) {
+		if (load_byserver(config) < 0) {
+			return -1;
+		}
+	} else {
+		if (load_byserver(cs) < 0) {
+			return -1;
+		}
+	}
 
 	/*
 	 *	Load all of the virtual servers.
@@ -1209,25 +1236,30 @@ int virtual_servers_load(CONF_SECTION *config)
 	for (cs = cf_subsection_find_next(config, NULL, "server");
 	     cs != NULL;
 	     cs = cf_subsection_find_next(config, cs, "server")) {
-		if (!cf_section_name2(cs)) null_server = TRUE;
+		const char *name2;
+		virtual_server_t *server;
+
+		name2 = cf_section_name2(cs);
+		if (!name2) continue; /* handled above */
+
+		server = virtual_server_find(name2);
+		if (server) {
+			radlog(L_ERR, "Duplicate virtual server \"%s\" in file %s:%d and file %s:%d",
+			       server->name,
+			       cf_section_filename(server->cs),
+			       cf_section_lineno(server->cs),
+			       cf_section_filename(cs),
+			       cf_section_lineno(cs));
+			return -1;
+		}
 
 		if (load_byserver(cs) < 0) {
 			/*
-			 *	Once we successfully staryed once,
+			 *	Once we successfully started once,
 			 *	continue loading the OTHER servers,
 			 *	even if one fails.
 			 */
 			if (!first_time) continue;
-			return -1;
-		}
-	}
-
-	/*
-	 *	No empty server defined.  Try to load an old-style
-	 *	one for backwards compatibility.
-	 */
-	if (!null_server) {
-		if (load_byserver(config) < 0) {
 			return -1;
 		}
 	}
@@ -1333,6 +1365,7 @@ int module_hup(CONF_SECTION *modules)
  */
 int setup_modules(int reload, CONF_SECTION *config)
 {
+	CONF_ITEM	*ci, *next;
 	CONF_SECTION	*cs, *modules;
 	rad_listen_t	*listener;
 
@@ -1409,11 +1442,47 @@ int setup_modules(int reload, CONF_SECTION *config)
 	 */
 	modules = cf_section_sub_find(config, "modules");
 	if (!modules) {
-		radlog(L_ERR, "Cannot find a \"modules\" section in the configuration file!");
-		return -1;
+		radlog(L_INFO, "WARNING: Cannot find a \"modules\" section in the configuration file!");
 	}
 
 	DEBUG2("%s: #### Instantiating modules ####", mainconfig.name);
+
+	/*
+	 *	Loop over module definitions, looking for duplicates.
+	 *
+	 *	This is O(N^2) in the number of modules, but most
+	 *	systems should have less than 100 modules.
+	 */
+	for (ci=cf_item_find_next(modules, NULL);
+	     ci != NULL;
+	     ci=next) {
+		const char *name1, *name2;
+		CONF_SECTION *subcs, *duplicate;
+
+		next = cf_item_find_next(modules, ci);
+
+		if (!cf_item_is_section(ci)) continue;
+
+		if (!next || !cf_item_is_section(next)) continue;
+
+		subcs = cf_itemtosection(ci);
+		name1 = cf_section_name1(subcs);
+		name2 = cf_section_name2(subcs);
+
+		duplicate = cf_section_find_name2(cf_itemtosection(next),
+						  name1, name2);
+		if (!duplicate) continue;
+
+		if (!name2) name2 = "";
+
+		radlog(L_ERR, "Duplicate module \"%s %s\", in file %s:%d and file %s:%d",
+		       name1, name2,
+		       cf_section_filename(subcs),
+		       cf_section_lineno(subcs),
+		       cf_section_filename(duplicate),
+		       cf_section_lineno(duplicate));
+		return -1;
+	}
 
 	/*
 	 *  Look for the 'instantiate' section, which tells us
@@ -1423,7 +1492,6 @@ int setup_modules(int reload, CONF_SECTION *config)
 	 */
 	cs = cf_section_sub_find(config, "instantiate");
 	if (cs != NULL) {
-		CONF_ITEM *ci;
 		CONF_PAIR *cp;
 		module_instance_t *module;
 		const char *name;
@@ -1491,6 +1559,19 @@ int setup_modules(int reload, CONF_SECTION *config)
  */
 int module_authorize(int autz_type, REQUEST *request)
 {
+#ifdef WITH_POST_PROXY_AUTHORIZE
+	/*
+	 *	We have a proxied packet, and we've been told
+	 *	to NOT pass proxied packets through 'authorize'
+	 *	a second time.  So stop.
+	 */
+	if ((request->proxy != NULL &&
+	     mainconfig.post_proxy_authorize == FALSE)) {
+		DEBUG2(" authorize: Skipping authorize in post-proxy stage");
+		return RLM_MODULE_NOOP;
+	}
+#endif
+
 	return indexed_modcall(RLM_COMPONENT_AUTZ, autz_type, request);
 }
 

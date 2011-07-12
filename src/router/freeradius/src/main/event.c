@@ -181,6 +181,8 @@ static void ev_request_free(REQUEST **prequest)
 #endif
 	if (request->in_request_hash) remove_from_request_hash(request);
 
+	rad_assert(request->child_state != REQUEST_QUEUED);
+
 	request_free(prequest);
 }
 
@@ -1122,7 +1124,7 @@ static void no_response_to_proxied_request(void *ctx)
 	home->state = HOME_STATE_ZOMBIE;
 	
 	home->zombie_period_start.tv_sec = home->last_packet;
-	home->zombie_period_start.tv_sec = USEC / 2;
+	home->zombie_period_start.tv_usec = USEC / 2;
 	
 	fr_event_delete(el, &home->ev);
 	home->currently_outstanding = 0;
@@ -1170,16 +1172,17 @@ static void wait_a_bit(void *ctx)
 	case REQUEST_RUNNING:
 		/*
 		 *	If we're not thread-capable, OR we're capable,
-		 *	but have been told to run without threads,
-		 *	complain when the requests is queued for a
-		 *	thread, or running in a child thread.
+		 *	but have been told to run without threads, and
+		 *	the request is still running.  This is usually
+		 *	because the request was proxied, and the home
+		 *	server didn't respond.
 		 */
 #ifdef HAVE_PTHREAD_H
 		if (!have_children)
 #endif
 		{
-			rad_assert("We do not have threads, but the request is marked as queued or running in a child thread" == NULL);
-			break;
+			request->child_state = REQUEST_DONE;
+			goto done;
 		}
 
 #ifdef HAVE_PTHREAD_H
@@ -1249,6 +1252,7 @@ static void wait_a_bit(void *ctx)
 		 *	and clean it up.
 		 */
 	case REQUEST_DONE:
+	done:
 #ifdef HAVE_PTHREAD_H
 		request->child_pid = NO_SUCH_CHILD_PID;
 #endif
@@ -2572,7 +2576,7 @@ static void received_retransmit(REQUEST *request, const RADCLIENT *client)
 	discard:
 #endif
 		radlog(L_ERR, "Discarding duplicate request from "
-		       "client %s port %d - ID: %d due to unfinished request %u",
+		       "client %s port %d - ID: %u due to unfinished request %u",
 		       client->shortname,
 		       request->packet->src_port,request->packet->id,
 		       request->number);
@@ -3281,8 +3285,10 @@ static void handle_signal_self(int flag)
 {
 	if ((flag & (RADIUS_SIGNAL_SELF_EXIT | RADIUS_SIGNAL_SELF_TERM)) != 0) {
 		if ((flag & RADIUS_SIGNAL_SELF_EXIT) != 0) {
+			radlog(L_INFO, "Signalled to exit");
 			fr_event_loop_exit(el, 1);
 		} else {
+			radlog(L_INFO, "Signalled to terminate");
 			fr_event_loop_exit(el, 2);
 		}
 

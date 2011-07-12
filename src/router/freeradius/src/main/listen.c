@@ -79,6 +79,35 @@ typedef struct listen_socket_t {
 static rad_listen_t *listen_alloc(RAD_LISTEN_TYPE type);
 
 /*
+ *	Xlat for %{listen:foo}
+ */
+static size_t xlat_listen(UNUSED void *instance, REQUEST *request,
+		       char *fmt, char *out,
+		       size_t outlen,
+		       UNUSED RADIUS_ESCAPE_STRING func)
+{
+	const char *value = NULL;
+	CONF_PAIR *cp;
+
+	if (!fmt || !out || (outlen < 1)) return 0;
+
+	if (!request || !request->listener) {
+		*out = '\0';
+		return 0;
+	}
+
+	cp = cf_pair_find(request->listener->cs, fmt);
+	if (!cp || !(value = cf_pair_value(cp))) {
+		*out = '\0';
+		return 0;
+	}
+	
+	strlcpy(out, value, outlen);
+
+	return strlen(out);
+}
+
+/*
  *	Find a per-socket client.
  */
 RADCLIENT *client_listener_find(const rad_listen_t *listener,
@@ -475,6 +504,8 @@ static int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	listen_socket_t *sock = this->data;
 	char		*section_name = NULL;
 	CONF_SECTION	*client_cs, *parentcs;
+
+	this->cs = cs;
 
 	/*
 	 *	Try IPv4 first
@@ -955,6 +986,27 @@ static int rad_coa_reply(REQUEST *request)
 	return RLM_MODULE_OK;
 }
 
+static int do_proxy(REQUEST *request)
+{
+	VALUE_PAIR *vp;
+
+	if (request->in_proxy_hash ||
+	    (request->proxy_reply && (request->proxy_reply->code != 0))) {
+		return 0;
+	}
+
+	vp = pairfind(request->config_items, PW_HOME_SERVER_POOL);
+	if (!vp) return 0;
+	
+	if (!home_pool_byname(vp->vp_strvalue, HOME_TYPE_COA)) {
+		RDEBUG2("ERROR: Cannot proxy to unknown pool %s",
+			vp->vp_strvalue);
+		return 0;
+	}
+
+	return 1;
+}
+
 /*
  *	Receive a CoA packet.
  */
@@ -1030,6 +1082,7 @@ static int rad_coa_recv(REQUEST *request)
 		case RLM_MODULE_NOTFOUND:
 		case RLM_MODULE_OK:
 		case RLM_MODULE_UPDATED:
+			if (do_proxy(request)) return RLM_MODULE_OK;
 			request->reply->code = ack;
 			break;
 		}
@@ -1454,7 +1507,11 @@ static int listen_bind(rad_listen_t *this)
 	 */
 	this->fd = socket(sock->ipaddr.af, SOCK_DGRAM, 0);
 	if (this->fd < 0) {
-		radlog(L_ERR, "Failed opening socket: %s", strerror(errno));
+		char buffer[256];
+
+		this->print(this, buffer, sizeof(buffer));
+
+		radlog(L_ERR, "Failed opening %s: %s", buffer, strerror(errno));
 		return -1;
 	}
 		
@@ -1519,6 +1576,8 @@ static int listen_bind(rad_listen_t *this)
 	 *	Initialize udpfromto for all sockets.
 	 */
 	if (udpfromto_init(this->fd) != 0) {
+		radlog(L_ERR, "Failed initializing udpfromto: %s",
+		       strerror(errno));
 		close(this->fd);
 		return -1;
 	}
@@ -1778,6 +1837,11 @@ rad_listen_t *proxy_new_listener(fr_ipaddr_t *ipaddr, int exists)
 	sock->port = 0;
 
 	if (listen_bind(this) >= 0) {
+		char buffer[256];
+
+		this->print(this, buffer, sizeof(buffer));
+		radlog(L_INFO, " ... adding new socket %s", buffer);
+
 		/*
 		 *	Add the new listener to the list of
 		 *	listeners.
@@ -2231,6 +2295,8 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head)
 		if (home_server_create_listeners() != 0) return -1;
 	}
 #endif
+
+	xlat_register("listen", xlat_listen, NULL);
 
 	return 0;
 }

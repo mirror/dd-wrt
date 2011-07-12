@@ -6,7 +6,7 @@ TARGET      = @targetname@
 SRCS        = rlm_eap.c eap.c mem.c
 HEADERS     = eap.h rlm_eap.h
 RLM_CFLAGS  = $(INCLTDL) -Ilibeap
-CLIENTLIBS  = libeap/$(LIBPREFIX)freeradius-eap.la
+CLIENTLIBS  = libeap/$(LIBPREFIX)freeradius-eap.la $(LIBRADIUS)
 RLM_LIBS    = libeap/$(LIBPREFIX)freeradius-eap.la $(LIBLTDL)
 RLM_INSTALL = install-subdirs
 RLM_SUBDIRS = libeap @eaptypes@
@@ -30,7 +30,7 @@ all: common
 $(LT_OBJS): $(HEADERS)
 
 radeapclient: radeapclient.lo $(CLIENTLIBS)
-	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) -o radeapclient radeapclient.lo $(CLIENTLIBS) $(LIBS) $(OPENSSL_LIBS) $(LIBRADIUS)
+	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) -o radeapclient radeapclient.lo $(LIBRADIUS) $(CLIENTLIBS) $(LIBS) $(OPENSSL_LIBS)
 
 radeapclient.lo: radeapclient.c $(HEADERS)
 	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(RLM_CFLAGS) -c radeapclient.c

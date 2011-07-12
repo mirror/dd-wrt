@@ -34,11 +34,15 @@ RCSID("$Id$")
 
 typedef struct rlm_eap_mschapv2_t {
         int with_ntdomain_hack;
+	int send_error;
 } rlm_eap_mschapv2_t;
 
 static CONF_PARSER module_config[] = {
 	{ "with_ntdomain_hack",     PW_TYPE_BOOLEAN,
 	  offsetof(rlm_eap_mschapv2_t,with_ntdomain_hack), NULL, "no" },
+
+	{ "send_error",     PW_TYPE_BOOLEAN,
+	  offsetof(rlm_eap_mschapv2_t,send_error), NULL, "no" },
 
 	{ NULL, -1, 0, NULL, NULL }		/* end the list */
 };
@@ -195,7 +199,7 @@ static int eapmschapv2_compose(EAP_HANDLER *handler, VALUE_PAIR *reply)
 
 	case PW_MSCHAP_ERROR:
 		DEBUG2("MSCHAP Failure\n");
-		length = 4 + MSCHAPV2_FAILURE_MESSAGE_LEN;
+		length = 4 + reply->length - 1;
 		eap_ds->request->type.data = malloc(length);
 
 		/*
@@ -212,7 +216,11 @@ static int eapmschapv2_compose(EAP_HANDLER *handler, VALUE_PAIR *reply)
 		eap_ds->request->type.data[1] = eap_ds->response->id;
 		length = htons(length);
 		memcpy((eap_ds->request->type.data + 2), &length, sizeof(uint16_t));
-		memcpy((eap_ds->request->type.data + 4), MSCHAPV2_FAILURE_MESSAGE, MSCHAPV2_FAILURE_MESSAGE_LEN);
+		/*
+		 *	Copy the entire failure message.
+		 */
+		memcpy((eap_ds->request->type.data + 4),
+		       reply->vp_strvalue + 1, reply->length - 1);
 		break;
 
 	default:
@@ -378,6 +386,7 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 	mschapv2_opaque_t *data;
 	EAP_DS *eap_ds = handler->eap_ds;
 	VALUE_PAIR *challenge, *response, *name;
+	rlm_eap_mschapv2_t *inst = (rlm_eap_mschapv2_t *) arg;
 
 	rad_assert(handler->request != NULL);
 	rad_assert(handler->stage == AUTHENTICATE);
@@ -486,6 +495,19 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 		break;
 
 		/*
+		 *	Ack of a failure message
+		 */
+        case PW_EAP_MSCHAPV2_FAILURE:
+		if (data->code != PW_EAP_MSCHAPV2_FAILURE) {
+			radlog(L_ERR, "rlm_eap_mschapv2: Unexpected FAILURE received");
+			return 0;
+		}
+
+                handler->request->options &= ~RAD_REQUEST_OPTION_PROXY_EAP;
+                eap_ds->request->code = PW_EAP_FAILURE;
+                return 1;
+
+		/*
 		 *	Something else, we don't know what it is.
 		 */
 	default:
@@ -569,7 +591,6 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 	if (handler->request->options & RAD_REQUEST_OPTION_PROXY_EAP) {
 		char *username = NULL;
 		eap_tunnel_data_t *tunnel;
-		rlm_eap_mschapv2_t *inst = (rlm_eap_mschapv2_t *) arg;
 
 		/*
 		 *	Set up the callbacks for the tunnel
@@ -652,17 +673,14 @@ static int mschapv2_authenticate(void *arg, EAP_HANDLER *handler)
 		pairmove2(&response, &handler->request->reply->vps,
 			 PW_MSCHAP2_SUCCESS);
 		data->code = PW_EAP_MSCHAPV2_SUCCESS;
+
+	} else if (inst->send_error) {
+	  pairmove2(&response, &handler->request->reply->vps,
+		    PW_MSCHAP_ERROR);
+		data->code = PW_EAP_MSCHAPV2_FAILURE;
 	} else {
-		/*
-		 *	Don't return anything in the error message.
-		 */
 		eap_ds->request->code = PW_EAP_FAILURE;
 		return 1;
-#if 0
-		pairmove2(&handler->request->reply->vps, &response
-			  PW_MSCHAP_ERROR);
-		data->code = PW_EAP_MSCHAPV2_FAILURE;
-#endif
 	}
 
 	/*

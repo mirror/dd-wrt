@@ -222,7 +222,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 	/*
 	 *	MIP-RK-2 = HMAC-SSHA256(EMSK, MIP-RK-1 | usage-data | 0x01)
 	 */
-	HMAC_CTX_init(&hmac);
 	HMAC_Init_ex(&hmac, emsk->vp_octets, emsk->length, EVP_sha256(), NULL);
 	
 	HMAC_Update(&hmac, (const uint8_t *) &mip_rk_1, rk1_len);
@@ -239,7 +238,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 	/*
 	 *	MIP-SPI = HMAC-SSHA256(MIP-RK, "SPI CMIP PMIP");
 	 */
-	HMAC_CTX_init(&hmac);
 	HMAC_Init_ex(&hmac, mip_rk, rk_len, EVP_sha256(), NULL);
 	
 	HMAC_Update(&hmac, (const uint8_t *) "SPI CMIP PMIP", 12);
@@ -304,7 +302,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 		 *	MN-HA-PMIP4 =
 		 *	   H(MIP-RK, "PMIP4 MN HA" | HA-IPv4 | MN-NAI);
 		 */
-		HMAC_CTX_init(&hmac);
 		HMAC_Init_ex(&hmac, mip_rk, rk_len, EVP_sha1(), NULL);
 
 		HMAC_Update(&hmac, (const uint8_t *) "PMIP4 MN HA", 11);
@@ -356,7 +353,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 		 *	MN-HA-CMIP4 =
 		 *	   H(MIP-RK, "CMIP4 MN HA" | HA-IPv4 | MN-NAI);
 		 */
-		HMAC_CTX_init(&hmac);
 		HMAC_Init_ex(&hmac, mip_rk, rk_len, EVP_sha1(), NULL);
 
 		HMAC_Update(&hmac, (const uint8_t *) "CMIP4 MN HA", 11);
@@ -408,7 +404,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 		 *	MN-HA-CMIP6 =
 		 *	   H(MIP-RK, "CMIP6 MN HA" | HA-IPv6 | MN-NAI);
 		 */
-		HMAC_CTX_init(&hmac);
 		HMAC_Init_ex(&hmac, mip_rk, rk_len, EVP_sha1(), NULL);
 
 		HMAC_Update(&hmac, (const uint8_t *) "CMIP6 MN HA", 11);
@@ -457,7 +452,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 	 */
 	fa_rk = pairfind(request->reply->vps, WIMAX2ATTR(14));
 	if (fa_rk && (fa_rk->length <= 1)) {
-		HMAC_CTX_init(&hmac);
 		HMAC_Init_ex(&hmac, mip_rk, rk_len, EVP_sha1(), NULL);
 		
 		HMAC_Update(&hmac, (const uint8_t *) "FA-RK", 5);
@@ -482,31 +476,6 @@ static int wimax_postauth(void *instance, REQUEST *request)
 			RDEBUG("WARNING: Failed creating WiMAX-FA-RK-SPI");
 		} else {
 			vp->vp_integer = mip_spi;
-		}
-	}
-
-	/*
-	 *	Generate MN-FA = H(FA-RK, "MN FA" | FA-IP | MN-NAI)
-	 */
-	ip = pairfind(request->reply->vps, 1901);
-	if (fa_rk && ip && mn_nai) {
-		HMAC_CTX_init(&hmac);
-		HMAC_Init_ex(&hmac, fa_rk->vp_octets, fa_rk->length,
-			     EVP_sha1(), NULL);
-		
-		HMAC_Update(&hmac, (const uint8_t *) "MN FA", 5);
-		HMAC_Update(&hmac, (const uint8_t *) &ip->vp_ipaddr, 4);
-		HMAC_Update(&hmac, (const uint8_t *) &mn_nai->vp_strvalue, mn_nai->length);
-
-		HMAC_Final(&hmac, &mip_rk_1[0], &rk1_len);
-
-		vp = radius_paircreate(request, &request->reply->vps,
-				       1902, PW_TYPE_OCTETS);
-		if (!vp) {
-			RDEBUG("WARNING: Failed creating WiMAX-MN-FA");
-		} else {
-			memcpy(vp->vp_octets, &mip_rk_1[0], rk1_len);
-			vp->length = rk1_len;
 		}
 	}
 

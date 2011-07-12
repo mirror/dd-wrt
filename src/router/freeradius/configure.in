@@ -52,6 +52,13 @@ AC_PROG_GCC_TRADITIONAL
 AC_PROG_CC_SUNPRO
 AC_PROG_RANLIB
 
+dnl #
+dnl # Set Default CFLAGS
+dnl #
+if test "x$GCC" = "xyes"; then
+    CFLAGS="$CFLAGS -Wall -D_GNU_SOURCE"
+fi
+
 dnl Compile in large (2G+) file support.
 AC_SYS_LARGEFILE
 
@@ -94,7 +101,8 @@ AC_SUBST(LTDL_SUBDIRS)
 dnl use system-wide libtool, if it exists
 AC_ARG_WITH(system-libtool,
 [  --with-system-libtool   Use the libtool installed in your system (default=use our own)],
-[ AC_PATH_PROG(LIBTOOL, libtool,,$PATH:/usr/local/bin) ],
+[ AC_PATH_PROG(LIBTOOL, libtool,,$PATH:/usr/local/bin) AC_LIBTOOL_DLOPEN
+ AC_PROG_LIBTOOL],
 [
   LIBTOOL="`pwd`/libtool"
   AC_SUBST(LIBTOOL)
@@ -261,6 +269,19 @@ AC_ARG_WITH(dhcp,
   esac ]
 )
 
+
+dnl extra argument: --with-post-proxy-authorize
+WITH_POST_PROXY_AUTHORIZE=
+AC_ARG_WITH(post-proxy-authorize,
+[  --with-post-proxy-authorize  1.x compatibility  (default=no) ],
+[ case "$withval" in
+    yes)
+	WITH_POST_PROXY_AUTHORIZE=""
+        ;;
+    *)
+	;;
+  esac ]
+)
 
 dnl #
 dnl #  Allow the user to specify a list of modules to be linked
@@ -618,6 +639,8 @@ AC_CHECK_HEADERS( \
 	prot.h \
 	pwd.h \
 	grp.h \
+	stddef.h \
+        fnmatch.h \
 	sia.h \
 	siad.h
 )
@@ -674,6 +697,7 @@ if test "x$WITH_OPENSSL" = xyes; then
 	openssl/crypto.h \
 	openssl/err.h \
 	openssl/evp.h \
+	openssl/ocsp.h \
 	openssl/engine.h,
 	[],
 	OPENSSL_LIBS=
@@ -714,6 +738,15 @@ else
 		[Define to 1 if you have the <pcap.h> header file.]),
 	[ PCAP_LIBS=
 	AC_MSG_WARN([pcap.h not found, silently disabling the RADIUS sniffer.])
+	])
+
+    AC_CHECK_LIB(pcap, pcap_fopen_offline,
+	[ AC_DEFINE(HAVE_PCAP_FOPEN_OFFLINE, 1,
+		[Define to 1 if you have the function pcap_fopen_offline.])
+	])
+    AC_CHECK_LIB(pcap, pcap_dump_fopen,
+	[ AC_DEFINE(HAVE_PCAP_DUMP_FOPEN, 1,
+		[Define to 1 if you have the function pcap_dump_fopen.])
 	])
 fi
 AC_SUBST(PCAP_LIBS)
@@ -906,13 +939,6 @@ else
 fi
 AC_SUBST(LIBPREFIX)
 
-dnl #
-dnl # Set Default CFLAGS
-dnl #
-if test "x$GCC" = "xyes"; then
-    CFLAGS="$CFLAGS -Wall -D_GNU_SOURCE"
-fi
-
 AC_MSG_CHECKING(for developer gcc flags)
 if test "x$developer" = "xyes" -a "x$GCC" = "xyes"; then
   devflags="-g -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef"
@@ -936,7 +962,7 @@ dnl #############################################################
 
 old_LIBS="$LIBS"
 LIBS="$LIBS $LIBLTDL"
-AC_CHECK_FUNC(lt_dladvise_init, AC_DEFINE(HAVE_HAVE_LT_DLADVISE_INIT, [], [Do we have the lt_dladvise_init function]))
+AC_CHECK_FUNC(lt_dladvise_init, AC_DEFINE(HAVE_LT_DLADVISE_INIT, [], [Do we have the lt_dladvise_init function]))
 LIBS="$old_LIBS"
 
 dnl Check for libcrypt
@@ -1096,6 +1122,10 @@ else
 fi
 
 AC_SUBST(HOSTINFO, $host)
+
+if test "x$WITH_POST_PROXY_AUTHORIZE" != "x"; then
+	AC_DEFINE(WITH_POST_PROXY_AUTHORIZE, 1, [1.x compatibility])
+fi
 
 dnl #############################################################
 dnl #
