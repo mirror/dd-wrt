@@ -399,6 +399,12 @@ int detail_recv(rad_listen_t *listener,
 				listener->fd = -1;
 				data->state = STATE_UNOPENED;
 				rad_assert(data->vps == NULL);
+
+				if (data->one_shot) {
+					radlog(L_INFO, "Finished reading \"one shot\" detail file - Exiting");
+					radius_signal_self(RADIUS_SIGNAL_SELF_EXIT);
+				}
+
 				return 0;
 			}
 
@@ -598,7 +604,7 @@ int detail_recv(rad_listen_t *listener,
 	 */
 	if (!data->vps) {
 		data->state = STATE_HEADER;
-		if (feof(data->fp)) goto cleanup; 
+		if (!data->fp || feof(data->fp)) goto cleanup; 
 		return 0;
 	}
 
@@ -677,6 +683,17 @@ int detail_recv(rad_listen_t *listener,
 	 *	contents, unmolested.
 	 */
 	packet->vps = paircopy(data->vps);
+
+	/*
+	 *	Prefer the Event-Timestamp in the packet, if it
+	 *	exists.  That is when the event occurred, whereas the
+	 *	"Timestamp" field is when we wrote the packet to the
+	 *	detail file, which could have been much later.
+	 */
+	vp = pairfind(packet->vps, PW_EVENT_TIMESTAMP);
+	if (vp) {
+		data->timestamp = vp->vp_integer;
+	}
 
 	/*
 	 *	Look for Acct-Delay-Time, and update
@@ -821,6 +838,8 @@ static const CONF_PARSER detail_config[] = {
 	  offsetof(listen_detail_t, poll_interval), NULL, Stringify(1)},
 	{ "retry_interval",   PW_TYPE_INTEGER,
 	  offsetof(listen_detail_t, retry_interval), NULL, Stringify(30)},
+	{ "one_shot",   PW_TYPE_BOOLEAN,
+	  offsetof(listen_detail_t, one_shot), NULL, NULL},
 
 	{ NULL, -1, 0, NULL, NULL }		/* end the list */
 };

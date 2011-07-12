@@ -48,6 +48,45 @@ RCSID("$Id$")
 
 #include <fcntl.h>
 
+/*
+ * glibc 2.4 and uClibc 0.9.29 introduce IPV6_RECVPKTINFO etc. and
+ * change IPV6_PKTINFO This is only supported in Linux kernel >=
+ * 2.6.14
+ *
+ * This is only an approximation because the kernel version that libc
+ * was compiled against could be older or newer than the one being
+ * run.  But this should not be a problem -- we just keep using the
+ * old kernel interface.
+ */
+#ifdef __linux__
+#  if defined IPV6_RECVPKTINFO
+#    include <linux/version.h>
+#    if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,14)
+#      if defined IPV6_2292PKTINFO
+#        undef IPV6_RECVPKTINFO
+#        undef IPV6_PKTINFO
+#        define IPV6_RECVPKTINFO IPV6_2292PKTINFO
+#        define IPV6_PKTINFO IPV6_2292PKTINFO
+#      endif
+#    endif
+#  endif
+#endif
+
+/*
+ *	Linux requires IPV6_RECVPKTINFO for the setsockopt() call,
+ *	but sendmsg() and recvmsg() require IPV6_PKTINFO. <sigh>
+ *
+ *	We want all *other* (i.e. sane) systems to use IPV6_PKTINFO
+ *	for all three calls.
+ */
+#ifdef IPV6_PKTINFO
+#ifdef __linux__
+#define FR_IPV6_RECVPKTINFO IPV6_RECVPKTINFO
+#else
+#define FR_IPV6_RECVPKTINFO IPV6_PKTINFO
+#endif
+#endif
+
 int udpfromto_init(int s)
 {
 	int proto, flag, opt = 1;
@@ -82,12 +121,16 @@ int udpfromto_init(int s)
 
 #ifdef AF_INET6
 	} else if (si.ss_family == AF_INET6) {
-#ifdef HAVE_IN6_PKTINFO
+#ifdef IPV6_PKTINFO
 		/*
 		 *	This should actually be standard IPv6
 		 */
 		proto = IPPROTO_IPV6;
-		flag = IPV6_PKTINFO;
+
+		/*
+		 *	Work around Linux-specific hackery.
+		 */
+		flag = FR_IPV6_RECVPKTINFO;
 #endif
 #endif
 	} else {
@@ -117,19 +160,18 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 	struct sockaddr_storage si;
 	socklen_t si_len = sizeof(si);
 
-#if !defined(HAVE_IP_PKTINFO) && !defined(IP_RECVDSTADDR) && !defined (HAVE_IN6_PKTINFO)
+#if !defined(IP_PKTINFO) && !defined(IP_RECVDSTADDR) && !defined (IPV6_PKTINFO)
 	/*
 	 *	If the recvmsg() flags aren't defined, fall back to
 	 *	using recvfrom().
 	 */
-	to = NULL;
+	to = NULL:
 #endif
 
 	/*
 	 *	Catch the case where the caller passes invalid arguments.
 	 */
 	if (!to || !tolen) return recvfrom(s, buf, len, flags, from, fromlen);
-
 
 	/*
 	 *	recvmsg doesn't provide sin_port so we have to
@@ -144,6 +186,9 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 	 *	with a more specific address given by recvmsg(), below.
 	 */
 	if (si.ss_family == AF_INET) {
+#if !defined(IP_PKTINFO) && !defined(IP_RECVDSTADDR)
+		return recvfrom(s, buf, len, flags, from, fromlen);
+#else
 		struct sockaddr_in *dst = (struct sockaddr_in *) to;
 		struct sockaddr_in *src = (struct sockaddr_in *) &si;
 		
@@ -153,17 +198,14 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 		}
 		*tolen = sizeof(*dst);
 		*dst = *src;
-
-#if !defined(HAVE_IP_PKTINFO) && !defined(IP_RECVDSTADDR)
-		/*
-		 *	recvmsg() flags aren't defined.  Use recvfrom()
-		 */
-		return recvfrom(s, buf, len, flags, from, fromlen);
 #endif
 	}
 
 #ifdef AF_INET6
 	else if (si.ss_family == AF_INET6) {
+#if !defined(IPV6_PKTINFO)
+		return recvfrom(s, buf, len, flags, from, fromlen);
+#else
 		struct sockaddr_in6 *dst = (struct sockaddr_in6 *) to;
 		struct sockaddr_in6 *src = (struct sockaddr_in6 *) &si;
 		
@@ -173,12 +215,6 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 		}
 		*tolen = sizeof(*dst);
 		*dst = *src;
-
-#if !defined(HAVE_IN6_PKTINFO)
-		/*
-		 *	recvmsg() flags aren't defined.  Use recvfrom()
-		 */
-		return recvfrom(s, buf, len, flags, from, fromlen);
 #endif
 	}
 #endif
@@ -214,7 +250,7 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 	     cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
 
-#ifdef HAVE_IP_PKTINFO
+#ifdef IP_PKTINFO
 		if ((cmsg->cmsg_level == SOL_IP) &&
 		    (cmsg->cmsg_type == IP_PKTINFO)) {
 			struct in_pktinfo *i =
@@ -235,7 +271,7 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 		}
 #endif
 
-#ifdef HAVE_IN6_PKTINFO
+#ifdef IPV6_PKTINFO
 		if ((cmsg->cmsg_level == IPPROTO_IPV6) &&
 		    (cmsg->cmsg_type == IPV6_PKTINFO)) {
 			struct in6_pktinfo *i =
@@ -259,7 +295,7 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 	struct iovec iov;
 	char cbuf[256];
 
-#if !defined(HAVE_IP_PKTINFO) && !defined(IP_SENDSRCADDR) && !defined(HAVE_IN6_PKTINFO)
+#if !defined(IP_PKTINFO) && !defined(IP_SENDSRCADDR) && !defined(IPV6_PKTINFO)
 	/*
 	 *	If the sendmsg() flags aren't defined, fall back to
 	 *	using sendto().
@@ -284,9 +320,12 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 	msgh.msg_namelen = tolen;
 
 	if (from->sa_family == AF_INET) {
+#if !defined(IP_PKTINFO) && !defined(IP_SENDSRCADDR)
+		return sendto(s, buf, len, flags, to, tolen);
+#else
 		struct sockaddr_in *s4 = (struct sockaddr_in *) from;
 
-#ifdef HAVE_IP_PKTINFO
+#ifdef IP_PKTINFO
 		struct in_pktinfo *pkt;
 
 		msgh.msg_control = cbuf;
@@ -316,11 +355,14 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 		in = (struct in_addr *) CMSG_DATA(cmsg);
 		*in = s4->sin_addr;
 #endif
+#endif	/* IP_PKTINFO or IP_SENDSRCADDR */
 	}
 
 #ifdef AF_INET6
 	else if (from->sa_family == AF_INET6) {
-#ifdef HAVE_IN6_PKTINFO
+#if !defined(IPV6_PKTINFO)
+		return sendto(s, buf, len, flags, to, tolen);
+#else		
 		struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) from;
 
 		struct in6_pktinfo *pkt;
@@ -336,7 +378,7 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 		pkt = (struct in6_pktinfo *) CMSG_DATA(cmsg);
 		memset(pkt, 0, sizeof(*pkt));
 		pkt->ipi6_addr = s6->sin6_addr;
-#endif
+#endif	/* IPV6_PKTINFO */
 	}
 #endif
 

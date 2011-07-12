@@ -340,8 +340,10 @@ static void fr_pool_delete(fr_pool_t **pfp)
 
 	for (fp = *pfp; fp != NULL; fp = next) {
 		next = fp->page_next;
+		fp->page_next = NULL;
 		free(fp);
 	}
+	*pfp = NULL;
 }
 
 
@@ -993,6 +995,18 @@ static int process_attribute(const char* fn, const int line,
 		flags.is_tlv = 1;
 	}
 
+#ifdef WITH_DICTIONARY_WARNINGS
+	/*
+	 *	Hack to help us discover which vendors have illegal
+	 *	attributes.
+	 */
+	if (!vendor && (value < 256) &&
+	    !strstr(fn, "rfc") && !strstr(fn, "illegal")) {
+		fprintf(stderr, "WARNING: Illegal Attribute %s in %s\n",
+			argv[0], fn);
+	}
+#endif
+
 	/*
 	 *	Add it in.
 	 */
@@ -1471,6 +1485,14 @@ static int my_dict_init(const char *dir, const char *fn,
 				fr_strerror_printf(
 					"dict_init: %s[%d]: attribute %s is not of type tlv",
 					fn, line, argv[1]);
+				fclose(fp);
+				return -1;
+			}
+
+			if (block_tlv) {
+				fr_strerror_printf(
+					"dict_init: %s[%d]: Cannot nest TLVs",
+					fn, line);
 				fclose(fp);
 				return -1;
 			}

@@ -104,6 +104,9 @@ typedef struct auth_req REQUEST;
 #include <freeradius-devel/stats.h>
 #include <freeradius-devel/realms.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  *	See util.c
@@ -322,6 +325,7 @@ struct rad_listen_t {
 	rad_listen_decode_t decode;
 	rad_listen_print_t print;
 
+	const CONF_SECTION *cs;
 	void		*data;
 
 #ifdef WITH_STATS
@@ -373,6 +377,9 @@ typedef struct main_config_t {
 	const char	*name;
 	const char	*auth_badpass_msg;
 	const char	*auth_goodpass_msg;
+#ifdef WITH_POST_PROXY_AUTHORIZE
+	int		post_proxy_authorize;
+#endif
 } MAIN_CONFIG_T;
 
 #define DEBUG	if(debug_flag)log_debug
@@ -650,4 +657,9 @@ int radius_evaluate_condition(REQUEST *request, int modreturn, int depth,
 int radius_update_attrlist(REQUEST *request, CONF_SECTION *cs,
 			   VALUE_PAIR *input_vps, const char *name);
 void radius_pairmove(REQUEST *request, VALUE_PAIR **to, VALUE_PAIR *from);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /*RADIUSD_H*/

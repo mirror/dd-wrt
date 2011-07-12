@@ -285,6 +285,7 @@ static void got_packet(uint8_t *args, const struct pcap_pkthdr *header, const ui
 		pairfree(&packet->vps);
 	}
 	printf("\n");
+	if (fr_debug_flag > 2) rad_print_hex(packet);
 	fflush(stdout);
 
  check_filter:
@@ -318,6 +319,7 @@ static void NEVER_RETURNS usage(int status)
 	fprintf(output, "\t-s secret\tRADIUS secret.\n");
 	fprintf(output, "\t-S\t\tSort attributes in the packet.\n");
 	fprintf(output, "\t\t\tUsed to compare server results.\n");
+	fprintf(output, "\t-w file\tWrite output packets to file.\n");
 	fprintf(output, "\t-x\t\tPrint out debugging information.\n");
 	exit(status);
 }
@@ -334,6 +336,7 @@ int main(int argc, char *argv[])
 	char *pcap_filter = NULL;
 	char *radius_filter = NULL;
 	char *filename = NULL;
+	int printable_output = 1;
 	char *dump_file = NULL;
 	int packet_count = -1;		/* how many packets to sniff */
 	int opt;
@@ -361,6 +364,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'F':
 			filter_stdin = 1;
+			printable_output = 0;
 			break;
 		case 'f':
 			pcap_filter = optarg;
@@ -391,6 +395,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'w':
 			dump_file = optarg;
+			printable_output = 0;
 			break;
 		case 'x':
 		case 'X':	/* for backwards compatibility */
@@ -406,6 +411,13 @@ int main(int argc, char *argv[])
 	 */
 	if (filter_stdin && (filename || dump_file)) usage(1);
 
+#ifndef HAVE_PCAP_FOPEN_OFFLINE
+	if (filter_stdin) {
+		fr_perror("-F is unsupported on this platform.");
+		return 1;
+	}
+#endif
+
 	if (!pcap_filter) {
 		pcap_filter = buffer;
 		snprintf(buffer, sizeof(buffer), "udp port %d or %d",
@@ -413,9 +425,9 @@ int main(int argc, char *argv[])
 	}
 	
 	/*
-	 *	There are many times where we don't need the dictionaries.
+	 *	There are times when we don't need the dictionaries.
 	 */
-	if (fr_debug_flag || radius_filter) {
+	if (printable_output) {
 		if (dict_init(radius_dir, RADIUS_DICTIONARY) < 0) {
 			fr_perror("radsniff");
 			return 1;
@@ -463,8 +475,10 @@ int main(int argc, char *argv[])
 	if (filename) {
 		descr = pcap_open_offline(filename, errbuf);
 
+#ifdef HAVE_PCAP_FOPEN_OFFLINE
 	} else if (filter_stdin) {
 		descr = pcap_fopen_offline(stdin, errbuf);
+#endif
 
 	} else if (!dev) {
 		fprintf(stderr, "radsniff: No filename or device was specified.\n");
@@ -485,6 +499,8 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "radsniff: Failed opening output file (%s)\n", pcap_geterr(descr));
 			exit(1);
 		}
+
+#ifdef HAVE_PCAP_DUMP_FOPEN
 	} else if (filter_stdin) {
 		pcap_dumper = pcap_dump_fopen(descr, stdout);
 		if (!pcap_dumper) {
@@ -492,6 +508,7 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
+#endif
 	}
 
 	/* Apply the rules */

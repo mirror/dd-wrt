@@ -56,6 +56,7 @@ typedef struct eap_tls_conf {
 	 */
 	int		fragment_size;
 	int		check_crl;
+	int		allow_expired_crl;
 	char		*check_cert_cn;
 	char		*cipher_list;
 	char		*check_cert_issuer;
@@ -70,12 +71,24 @@ typedef struct eap_tls_conf {
 	char		*verify_tmp_dir;
 	char		*verify_client_cert_cmd;
 
+#ifdef HAVE_OPENSSL_OCSP_H
+	/*
+	 * OCSP Configuration
+	 */
+	int		ocsp_enable;
+	int		ocsp_override_url;
+	char		*ocsp_url;
+#endif
+
 } EAP_TLS_CONF;
 
 /* This structure gets stored in arg */
 typedef struct _eap_tls_t {
 	EAP_TLS_CONF 	*conf;
 	SSL_CTX		*ctx;
+#ifdef HAVE_OPENSSL_OCSP_H
+	X509_STORE	*store; /* OCSP Revocation Store */
+#endif
 } eap_tls_t;
 
 

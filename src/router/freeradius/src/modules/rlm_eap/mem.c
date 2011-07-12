@@ -27,6 +27,14 @@ RCSID("$Id$")
 #include <stdio.h>
 #include "rlm_eap.h"
 
+#ifdef HAVE_PTHREAD_H
+#define PTHREAD_MUTEX_LOCK pthread_mutex_lock
+#define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+#else
+#define PTHREAD_MUTEX_LOCK(_x)
+#define PTHREAD_MUTEX_UNLOCK(_x)
+#endif
+
 /*
  * Allocate a new EAP_PACKET
  */
@@ -119,13 +127,21 @@ EAP_HANDLER *eap_handler_alloc(rlm_eap_t *inst)
 	handler = rad_malloc(sizeof(EAP_HANDLER));
 	memset(handler, 0, sizeof(EAP_HANDLER));
 
-	if (fr_debug_flag && inst->handler_tree) {
-		pthread_mutex_lock(&(inst->handler_mutex));
+	if (inst->handler_tree) {
+		PTHREAD_MUTEX_LOCK(&(inst->handler_mutex));
 		rbtree_insert(inst->handler_tree, handler);
-		pthread_mutex_unlock(&(inst->handler_mutex));
+		PTHREAD_MUTEX_UNLOCK(&(inst->handler_mutex));
 	
 	}
 	return handler;
+}
+
+void eap_opaque_free(EAP_HANDLER *handler)
+{
+	if (!handler)
+		return;
+
+	eap_handler_free(handler->inst_holder, handler);
 }
 
 void eap_handler_free(rlm_eap_t *inst, EAP_HANDLER *handler)
@@ -134,9 +150,9 @@ void eap_handler_free(rlm_eap_t *inst, EAP_HANDLER *handler)
 		return;
 
 	if (inst->handler_tree) {
-		pthread_mutex_lock(&(inst->handler_mutex));
+		PTHREAD_MUTEX_LOCK(&(inst->handler_mutex));
 		rbtree_deletebydata(inst->handler_tree, handler);
-		pthread_mutex_unlock(&(inst->handler_mutex));
+		PTHREAD_MUTEX_UNLOCK(&(inst->handler_mutex));
 	}
 
 	if (handler->identity) {
@@ -171,38 +187,65 @@ typedef struct check_handler_t {
 
 static void check_handler(void *data)
 {
+	int do_warning = FALSE;
+	uint8_t state[8];
 	check_handler_t *check = data;
 
 	if (!check) return;
+
 	if (!check->inst || !check->handler) {
 		free(check);
 		return;
 	}
 
-	pthread_mutex_lock(&(check->inst->session_mutex));
+	if (!check->inst->handler_tree) goto done;
+
+	PTHREAD_MUTEX_LOCK(&(check->inst->handler_mutex));
 	if (!rbtree_finddata(check->inst->handler_tree, check->handler)) {
 		goto done;
 	}
 
+	/*
+	 *	The session has continued *after* this packet.
+	 *	Don't do a warning.
+	 */
 	if (check->handler->trips > check->trips) {
 		goto done;
 	}
 
-	if (check->handler->tls && !check->handler->finished) {
+	/*
+	 *	No TLS means no warnings.
+	 */
+	if (!check->handler->tls) goto done;
+
+	/*
+	 *	If we're being deleted early, it's likely because we
+	 *	received a transmit from the client that re-uses the
+	 *	same RADIUS Id, which forces the current packet to be
+	 *	deleted.  In that case, ignore the error.
+	 */
+	if (time(NULL) < (check->handler->timestamp + 3)) goto done;
+
+	if (!check->handler->finished) {
+		do_warning = TRUE;
+		memcpy(state, check->handler->state, sizeof(state));
+	}
+
+done:
+	PTHREAD_MUTEX_UNLOCK(&(check->inst->handler_mutex));
+	free(check);
+
+	if (do_warning) {
 		DEBUG("WARNING: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		DEBUG("WARNING: !! EAP session for state 0x%02x%02x%02x%02x%02x%02x%02x%02x did not finish!",
-		      check->handler->state[0], check->handler->state[1],
-		      check->handler->state[2], check->handler->state[3],
-		      check->handler->state[4], check->handler->state[5],
-		      check->handler->state[6], check->handler->state[7]);
+		      state[0], state[1],
+		      state[2], state[3],
+		      state[4], state[5],
+		      state[6], state[7]);
 
 		DEBUG("WARNING: !! Please read http://wiki.freeradius.org/Certificate_Compatibility");
 		DEBUG("WARNING: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	}
-
-done:
-	pthread_mutex_unlock(&(check->inst->session_mutex));
-	free(check);
 }
 
 void eaptype_free(EAP_TYPES *i)
@@ -353,7 +396,7 @@ int eaplist_add(rlm_eap_t *inst, EAP_HANDLER *handler)
 	 *	Playing with a data structure shared among threads
 	 *	means that we need a lock, to avoid conflict.
 	 */
-	pthread_mutex_lock(&(inst->session_mutex));
+	PTHREAD_MUTEX_LOCK(&(inst->session_mutex));
 
 	/*
 	 *	If we have a DoS attack, discard new sessions.
@@ -405,7 +448,7 @@ int eaplist_add(rlm_eap_t *inst, EAP_HANDLER *handler)
 	/*
 	 *	Catch Access-Challenge without response.
 	 */
-	if (fr_debug_flag) {
+	if (inst->handler_tree) {
 		check_handler_t *check = rad_malloc(sizeof(*check));
 
 		check->inst = inst;
@@ -440,7 +483,7 @@ int eaplist_add(rlm_eap_t *inst, EAP_HANDLER *handler)
 	 */
 	if (status > 0) handler->request = NULL;
 
-	pthread_mutex_unlock(&(inst->session_mutex));
+	PTHREAD_MUTEX_UNLOCK(&(inst->session_mutex));
 
 	if (status <= 0) {
 		pairfree(&state);
@@ -497,12 +540,12 @@ EAP_HANDLER *eaplist_find(rlm_eap_t *inst, REQUEST *request,
 	 *	Playing with a data structure shared among threads
 	 *	means that we need a lock, to avoid conflict.
 	 */
-	pthread_mutex_lock(&(inst->session_mutex));
+	PTHREAD_MUTEX_LOCK(&(inst->session_mutex));
 
 	eaplist_expire(inst, request->timestamp);
 
 	handler = eaplist_delete(inst, &myHandler);
-	pthread_mutex_unlock(&(inst->session_mutex));
+	PTHREAD_MUTEX_UNLOCK(&(inst->session_mutex));
 
 	/*
 	 *	Might not have been there.

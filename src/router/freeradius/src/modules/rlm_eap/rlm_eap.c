@@ -55,6 +55,11 @@ static int eap_detach(void *instance)
 
 	inst = (rlm_eap_t *)instance;
 
+#ifdef HAVE_PTHREAD_H
+	pthread_mutex_destroy(&(inst->session_mutex));
+	if (inst->handler_tree) pthread_mutex_destroy(&(inst->handler_mutex));
+#endif
+
 	rbtree_free(inst->session_tree);
 	if (inst->handler_tree) rbtree_free(inst->handler_tree);
 	inst->session_tree = NULL;
@@ -64,9 +69,6 @@ static int eap_detach(void *instance)
 		if (inst->types[i]) eaptype_free(inst->types[i]);
 		inst->types[i] = NULL;
 	}
-
-	pthread_mutex_destroy(&(inst->session_mutex));
-	if (fr_debug_flag) pthread_mutex_destroy(&(inst->handler_mutex));
 
 	free(inst);
 
@@ -108,7 +110,9 @@ static int eap_handler_cmp(const void *a, const void *b)
  */
 static int eap_handler_ptr_cmp(const void *a, const void *b)
 {
-  return (a - b);
+	if (a < b) return -1;
+	if (a > b) return +1;
+	return 0;
 }
 
 
@@ -257,18 +261,22 @@ static int eap_instantiate(CONF_SECTION *cs, void **instance)
 			return -1;
 		}
 
+#ifdef HAVE_PTHREAD_H
 		if (pthread_mutex_init(&(inst->handler_mutex), NULL) < 0) {
 			radlog(L_ERR|L_CONS, "rlm_eap: Failed initializing mutex: %s", strerror(errno));
 			eap_detach(inst);
 			return -1;
 		}
+#endif
 	}
 
+#ifdef HAVE_PTHREAD_H
 	if (pthread_mutex_init(&(inst->session_mutex), NULL) < 0) {
 		radlog(L_ERR|L_CONS, "rlm_eap: Failed initializing mutex: %s", strerror(errno));
 		eap_detach(inst);
 		return -1;
 	}
+#endif
 
 	*instance = inst;
 	return 0;
@@ -339,10 +347,11 @@ static int eap_authenticate(void *instance, REQUEST *request)
 		 *	can retrieve it in the post-proxy stage, and
 		 *	send a response.
 		 */
+		handler->inst_holder = inst;
 		rcode = request_data_add(request,
 					 inst, REQUEST_DATA_EAP_HANDLER,
 					 handler,
-					 (void *) eap_handler_free);
+					 (void *) eap_opaque_free);
 		rad_assert(rcode == 0);
 
 		return RLM_MODULE_HANDLED;
@@ -364,10 +373,11 @@ static int eap_authenticate(void *instance, REQUEST *request)
 		 *	can retrieve it in the post-proxy stage, and
 		 *	send a response.
 		 */
+		handler->inst_holder = inst;
 		rcode = request_data_add(request,
 					 inst, REQUEST_DATA_EAP_HANDLER,
 					 handler,
-					 (void *) eap_handler_free);
+					 (void *) eap_opaque_free);
 		rad_assert(rcode == 0);
 
 		/*
@@ -568,11 +578,6 @@ static int eap_post_proxy(void *inst, REQUEST *request)
 	size_t		len;
 	VALUE_PAIR	*vp;
 	EAP_HANDLER	*handler;
-
-	/*
-	 *	Just in case the admin lists EAP in post-proxy-type Fail.
-	 */
-	if (!request->proxy_reply) return RLM_MODULE_NOOP;
 
 	/*
 	 *	If there was a handler associated with this request,

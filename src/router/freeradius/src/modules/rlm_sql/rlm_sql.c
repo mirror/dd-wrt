@@ -692,6 +692,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 		if (!sql_group) {
 			radlog_request(L_ERR, 0, request,
 				       "Error creating Sql-Group attribute");
+			sql_grouplist_free(&group_list);
 			return -1;
 		}
 		pairadd(&request->packet->vps, sql_group);
@@ -700,6 +701,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 				       "Error generating query; rejecting user");
 			/* Remove the grouup we added above */
 			pairdelete(&request->packet->vps, PW_SQL_GROUP);
+			sql_grouplist_free(&group_list);
 			return -1;
 		}
 		rows = sql_getvpdata(inst, sqlsocket, &check_tmp, querystr);
@@ -709,6 +711,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 			/* Remove the grouup we added above */
 			pairdelete(&request->packet->vps, PW_SQL_GROUP);
 			pairfree(&check_tmp);
+			sql_grouplist_free(&group_list);
 			return -1;
 		} else if (rows > 0) {
 			/*
@@ -726,6 +729,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 					/* Remove the grouup we added above */
 					pairdelete(&request->packet->vps, PW_SQL_GROUP);
 					pairfree(&check_tmp);
+					sql_grouplist_free(&group_list);
 					return -1;
 				}
 				if (sql_getvpdata(inst, sqlsocket, &reply_tmp, querystr) < 0) {
@@ -735,6 +739,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 					pairdelete(&request->packet->vps, PW_SQL_GROUP);
 					pairfree(&check_tmp);
 					pairfree(&reply_tmp);
+					sql_grouplist_free(&group_list);
 					return -1;
 				}
 				*dofallthrough = fallthrough(reply_tmp);
@@ -759,6 +764,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 				/* Remove the grouup we added above */
 				pairdelete(&request->packet->vps, PW_SQL_GROUP);
 				pairfree(&check_tmp);
+				sql_grouplist_free(&group_list);
 				return -1;
 			}
 			if (sql_getvpdata(inst, sqlsocket, &reply_tmp, querystr) < 0) {
@@ -768,6 +774,7 @@ static int rlm_sql_process_groups(SQL_INST *inst, REQUEST *request, SQLSOCK *sql
 				pairdelete(&request->packet->vps, PW_SQL_GROUP);
 				pairfree(&check_tmp);
 				pairfree(&reply_tmp);
+				sql_grouplist_free(&group_list);
 				return -1;
 			}
 			*dofallthrough = fallthrough(reply_tmp);
@@ -901,7 +908,7 @@ static int rlm_sql_instantiate(CONF_SECTION * conf, void **instance)
 		dict_addattr(group_name, 0, PW_TYPE_STRING, -1, flags);
 		dattr = dict_attrbyname(group_name);
 		if (dattr == NULL){
-			radlog(L_ERR, "rlm_ldap: Failed to create attribute %s",group_name);
+			radlog(L_ERR, "rlm_sql: Failed to create attribute %s",group_name);
 			free(group_name);
 			free(inst);	/* FIXME: detach */
 			return -1;
@@ -1219,6 +1226,10 @@ static int rlm_sql_accounting(void *instance, REQUEST * request) {
 					       (inst->module->sql_error)(sqlsocket, inst->config));
 					ret = RLM_MODULE_FAIL;
 				}
+				/*
+				 *	If no one is online, num_affected_rows
+				 *	will be zero, which is OK.
+				 */
 				(inst->module->sql_finish_query)(sqlsocket, inst->config);
 			}
 
@@ -1263,8 +1274,12 @@ static int rlm_sql_accounting(void *instance, REQUEST * request) {
 								radlog_request(L_ERR, 0, request, "Couldn't insert SQL accounting ALIVE record - %s",
 								       (inst->module->sql_error)(sqlsocket, inst->config));
 								ret = RLM_MODULE_FAIL;
+							} else {
+								numaffected = (inst->module->sql_affected_rows)(sqlsocket, inst->config);
+								if (numaffected < 1) {
+									ret = RLM_MODULE_NOOP;
+								}
 							}
-							(inst->module->sql_finish_query)(sqlsocket, inst->config);
 						}
 					}
 				}
@@ -1306,8 +1321,12 @@ static int rlm_sql_accounting(void *instance, REQUEST * request) {
 							radlog_request(L_ERR, 0, request, "Couldn't update SQL accounting START record - %s",
 							       (inst->module->sql_error)(sqlsocket, inst->config));
 							ret = RLM_MODULE_FAIL;
+						} else {
+							numaffected = (inst->module->sql_affected_rows)(sqlsocket, inst->config);
+							if (numaffected < 1) {
+								ret = RLM_MODULE_NOOP;
+							}
 						}
-						(inst->module->sql_finish_query)(sqlsocket, inst->config);
 					}
 				}
 				(inst->module->sql_finish_query)(sqlsocket, inst->config);
@@ -1372,8 +1391,12 @@ static int rlm_sql_accounting(void *instance, REQUEST * request) {
 
 								       (inst->module->sql_error)(sqlsocket, inst->config));
 								ret = RLM_MODULE_FAIL;
+							} else {
+								numaffected = (inst->module->sql_affected_rows)(sqlsocket, inst->config);
+								if (numaffected < 1) {
+									ret = RLM_MODULE_NOOP;
+								}
 							}
-							(inst->module->sql_finish_query)(sqlsocket, inst->config);
 						}
 					}
 				}

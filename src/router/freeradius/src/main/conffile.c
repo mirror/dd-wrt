@@ -915,10 +915,13 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 			/*
 			 *	FIXME: sizeof(buffer)?
 			 */
-			value = cf_expand_variables("?",
+			value = cf_expand_variables("<internal>",
 						    &lineno,
 						    cs, buffer, value);
-			if (!value) return -1;
+			if (!value) {
+				cf_log_err(cf_sectiontoitem(cs),"Failed expanding variable %s", name);
+				return -1;
+			}
 		}
 
 		cf_log_info(cs, "\t%s = \"%s\"", name, value ? value : "(null)");
@@ -1019,8 +1022,16 @@ int cf_item_parse(CONF_SECTION *cs, const char *name,
 	default:
 		radlog(L_ERR, "type %d not supported yet", type);
 		return -1;
-		break;
 	} /* switch over variable type */
+
+	if (!cp) {
+		CONF_PAIR *cpn;
+
+		cpn = cf_pair_alloc(name, value, T_OP_SET, T_BARE_WORD, cs);
+		cpn->item.filename = "<internal>";
+		cpn->item.lineno = 0;
+		cf_item_add(cs, cf_pairtoitem(cpn));
+	}
 
 	return rcode;
 }
@@ -1219,6 +1230,28 @@ static const char *cf_local_file(CONF_SECTION *cs, const char *local,
 	return buffer;
 }
 
+static int seen_too_much(const char *filename, int lineno, const char *ptr)
+{
+	while (*ptr) {
+		if (isspace(*ptr)) {
+			ptr++;
+			continue;
+		}
+
+		if (*ptr == '#') return FALSE;
+
+		break;
+	}
+
+	if (*ptr) {
+		radlog(L_ERR, "%s[%d] Unexpected text %s.  See \"man unlang\"",
+		       filename, lineno, ptr);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 
 /*
  *	Read a part of the config file.
@@ -1354,6 +1387,7 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 
 		       }
 		       this = this->item.parent;
+		       if (seen_too_much(filename, *lineno, ptr)) return -1;
 		       continue;
 		}
 
@@ -1539,6 +1573,17 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 			}
 
 			/*
+			 *	These are not allowed.  Print a
+			 *	helpful error message.
+			 */
+			if ((t3 == T_BACK_QUOTED_STRING) &&
+			    (!this || (strcmp(this->name1, "update") != 0))) {
+				radlog(L_ERR, "%s[%d]: Syntax error: Invalid string `...` in assignment",
+				       filename, *lineno);
+				return -1;
+			}
+
+			/*
 			 *	Handle variable substitution via ${foo}
 			 */
 			if ((t3 == T_BARE_WORD) ||
@@ -1606,8 +1651,14 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 				buf2[0] = '(';
 				memcpy(buf2 + 1, ptr, end - ptr);
 				buf2[end - ptr + 1] = '\0';
-				ptr = end + 1;
+				ptr = end;
 				t2 = T_BARE_WORD;
+
+				if (gettoken(&ptr, buf3, sizeof(buf3)) != T_LCBRACE) {
+					radlog(L_ERR, "%s[%d]: Expected '{'",
+					       filename, *lineno);
+					return -1;
+				}
 				goto section_alloc;
 
 			} else {
@@ -1633,6 +1684,8 @@ static int cf_section_read(const char *filename, int *lineno, FILE *fp,
 
 		case T_LCBRACE:
 		section_alloc:
+			if (seen_too_much(filename, *lineno, ptr)) return -1;
+
 			css = cf_section_alloc(buf1,
 					       t2 == T_LCBRACE ? NULL : buf2,
 					       this);
@@ -1849,6 +1902,11 @@ VALUE_PAIR *cf_pairtovp(CONF_PAIR *pair)
 		return NULL;
 	}
 
+	/*
+	 *	Ignore the value if it's a false comparison.
+	 */
+	if (pair->operator == T_OP_CMP_FALSE) return vp;
+
 	if (pair->value_type == T_BARE_WORD) {
 		if ((vp->type == PW_TYPE_STRING) && 
 		    (pair->value[0] == '0') && (pair->value[1] == 'x')) {
@@ -1901,6 +1959,33 @@ const char *cf_section_value_find(const CONF_SECTION *cs, const char *attr)
 	cp = cf_pair_find(cs, attr);
 
 	return (cp ? cp->value : NULL);
+}
+
+
+CONF_SECTION *cf_section_find_name2(const CONF_SECTION *section,
+				    const char *name1, const char *name2)
+{
+	const char	*their2;
+	CONF_ITEM	*ci;
+
+	if (!section || !name1) return NULL;
+
+	for (ci = cf_sectiontoitem(section); ci; ci = ci->next) {
+		if (ci->type != CONF_ITEM_SECTION)
+			continue;
+
+		if (strcmp(cf_itemtosection(ci)->name1, name1) != 0)
+			continue;
+
+		their2 = cf_itemtosection(ci)->name2;
+
+		if ((!name2 && !their2) ||
+		    (name2 && their2 && (strcmp(name2, their2) == 0))) {
+			return cf_itemtosection(ci);
+		}
+	}
+	
+	return NULL;
 }
 
 /*
@@ -2096,6 +2181,13 @@ CONF_ITEM *cf_item_find_next(CONF_SECTION *section, CONF_ITEM *item)
 	} else {
 		return item->next;
 	}
+}
+
+CONF_SECTION *cf_item_parent(CONF_ITEM *ci)
+{
+	if (!ci) return NULL;
+
+	return ci->parent;
 }
 
 int cf_section_lineno(CONF_SECTION *section)
