@@ -51,6 +51,7 @@ static const char * const internal_xlat[] = {"check",
 					     "proxy-reply",
 					     "outer.request",
 					     "outer.reply",
+					     "outer.control",
 					     NULL};
 
 #if REQUEST_MAX_REGEX > 8
@@ -150,6 +151,12 @@ static size_t xlat_packet(void *instance, REQUEST *request,
 		}
 		break;
 			
+	case 7:
+		if (request->parent) {
+			vps = request->parent->config_items;
+		}
+		break;
+			
 	default:		/* WTF? */
 		return 0;
 	}
@@ -231,9 +238,10 @@ static size_t xlat_packet(void *instance, REQUEST *request,
 
 				*(out++) = '\n';
 
-				if (outlen == 0) break;
+				if (outlen <= 1) break;
 			}
 
+			*out = '\0';
 			return total;
 		}
 
@@ -407,6 +415,66 @@ static size_t xlat_packet(void *instance, REQUEST *request,
 	 *	Convert the VP to a string, and return it.
 	 */
 	return valuepair2str(out, outlen, vp, da->type, func);
+}
+
+/*
+ *	Print data as integer, not as VALUE.
+ */
+static size_t xlat_integer(UNUSED void *instance, REQUEST *request,
+			   char *fmt, char *out, size_t outlen,
+			   UNUSED RADIUS_ESCAPE_STRING func)
+{
+	VALUE_PAIR *vp;
+
+	while (isspace((int) *fmt)) fmt++;
+
+	if (!radius_get_vp(request, fmt, &vp) || !vp) {
+		*out = '\0';
+		return 0;
+	}
+
+	if ((vp->type != PW_TYPE_IPADDR) &&
+	    (vp->type != PW_TYPE_INTEGER) &&
+	    (vp->type != PW_TYPE_SHORT) &&
+	    (vp->type != PW_TYPE_BYTE) &&
+	    (vp->type != PW_TYPE_DATE)) {
+		*out = '\0';
+		return 0;
+	}
+
+	return snprintf(out, outlen, "%u", vp->vp_integer);
+}
+
+/*
+ *	Print data as string, if possible.
+ */
+static size_t xlat_string(UNUSED void *instance, REQUEST *request,
+			  char *fmt, char *out, size_t outlen,
+			  UNUSED RADIUS_ESCAPE_STRING func)
+{
+	int len;
+	VALUE_PAIR *vp;
+
+	while (isspace((int) *fmt)) fmt++;
+
+	if (outlen < 3) {
+	nothing:
+		*out = '\0';
+		return 0;
+	}
+
+	if (!radius_get_vp(request, fmt, &vp)) goto nothing;
+
+	if (!vp) goto nothing;
+
+	if (vp->type != PW_TYPE_OCTETS) goto nothing;
+
+	*out++ = '"';
+	len = fr_print_string(vp->vp_strvalue, vp->length, out + 1, outlen - 3);
+	out[len] = '"';
+	out[len + 1] = '\0';
+
+	return len + 2;
 }
 
 #ifdef HAVE_REGEX_H
@@ -644,6 +712,16 @@ int xlat_register(const char *module, RAD_XLAT_FUNC func, void *instance)
 		rad_assert(c != NULL);
 		c->internal = TRUE;
 
+		xlat_register("integer", xlat_integer, "");
+		c = xlat_find("integer");
+		rad_assert(c != NULL);
+		c->internal = TRUE;
+
+		xlat_register("string", xlat_string, "");
+		c = xlat_find("string");
+		rad_assert(c != NULL);
+		c->internal = TRUE;
+
 #ifdef HAVE_REGEX_H
 		/*
 		 *	Register xlat's for regexes.
@@ -755,7 +833,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 			     RADIUS_ESCAPE_STRING func)
 {
 	int	do_length = 0;
-	char	*xlat_name, *xlat_string;
+	char	*xlat_name, *xlat_str;
 	char *p, *q, *l, *next = NULL;
 	int retlen=0;
 	const xlat_t *c;
@@ -772,7 +850,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 	 */
 	varlen = rad_copy_variable(buffer, *from);
 	if (varlen < 0) {
-		RDEBUG2("Badly formatted variable: %s", *from);
+		RDEBUG2("ERROR: Badly formatted variable: %s", *from);
 		return -1;
 	}
 	*from += varlen;
@@ -803,7 +881,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 		 */
 		len1 = rad_copy_variable(buffer, p);
 		if (len1 < 0) {
-			RDEBUG2("Badly formatted variable: %s", p);
+			RDEBUG2("ERROR: Badly formatted variable: %s", p);
 			return -1;
 		}
 
@@ -836,7 +914,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 			len2 = rad_copy_variable(l, p);
 
 			if (len2 < 0) {
-				RDEBUG2("Invalid text after :- at %s", p);
+				RDEBUG2("ERROR: Invalid text after :- at %s", p);
 				return -1;
 			}
 			p += len2;
@@ -908,7 +986,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 	 *	or regex reference.
 	 */
 	if (!xlat_name) {
-		xlat_name = xlat_string = p;
+		xlat_name = xlat_str = p;
 		goto do_xlat;
 	}
 
@@ -919,7 +997,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 		RDEBUG2("WARNING: Deprecated conditional expansion \":-\".  See \"man unlang\" for details");
 		p++;
 
-		xlat_string = xlat_name;
+		xlat_str = xlat_name;
 		next = p;
 		goto do_xlat;
 	}
@@ -930,13 +1008,13 @@ static int decode_attribute(const char **from, char **to, int freespace,
 	 */
 
 	/* module name, followed by (possibly) per-module string */
-	xlat_string = p;
+	xlat_str = p;
 	
 do_xlat:
 	if ((c = xlat_find(xlat_name)) != NULL) {
 		if (!c->internal) RDEBUG3("radius_xlat: Running registered xlat function of module %s for string \'%s\'",
-					  c->module, xlat_string);
-		retlen = c->do_xlat(c->instance, request, xlat_string,
+					  c->module, xlat_str);
+		retlen = c->do_xlat(c->instance, request, xlat_str,
 				    q, freespace, func);
 		if (retlen > 0) {
 			if (do_length) {
@@ -975,7 +1053,7 @@ static size_t xlat_copy(char *out, size_t outlen, const char *in)
 {
 	int freespace = outlen;
 
-	rad_assert(outlen > 0);
+	if (outlen < 1) return 0;
 
 	while ((*in) && (freespace > 1)) {
 		/*

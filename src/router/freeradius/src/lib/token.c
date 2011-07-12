@@ -240,7 +240,7 @@ FR_TOKEN getstring(const char **ptr, char *buf, int buflen)
 {
 	const char *p = *ptr;
 
-	while (p && (isspace((int)*p))) p++;
+	while (*p && (isspace((int)*p))) p++;
 
 	*ptr = p;
 
@@ -282,4 +282,9 @@ const char *fr_int2str(const FR_NAME_NUMBER *table, int number,
 	}
 
 	return def;
+}
+
+const char *fr_token_name(int token)
+{
+	return fr_int2str(tokens, token, "???");
 }

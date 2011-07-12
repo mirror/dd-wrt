@@ -28,9 +28,13 @@ RCSID("$Id$")
 #include	<freeradius-devel/rad_assert.h>
 #include	<freeradius-devel/detail.h>
 
-#include	<sys/stat.h>
 #include	<ctype.h>
 #include	<fcntl.h>
+#include	<sys/stat.h>
+
+#ifdef HAVE_FNMATCH_H
+#include	<fnmatch.h>
+#endif
 
 #define 	DIRLEN	8192
 
@@ -43,9 +47,6 @@ struct detail_instance {
 
 	/* directory permissions */
 	int dirperm;
-
-	/* last made directory */
-	char *last_made_directory;
 
 	/* timestamp & stuff */
 	char *header;
@@ -82,7 +83,6 @@ static const CONF_PARSER module_config[] = {
 static int detail_detach(void *instance)
 {
         struct detail_instance *inst = instance;
-	free((char*) inst->last_made_directory);
 	if (inst->ht) fr_hash_table_free(inst->ht);
 
         free(inst);
@@ -120,8 +120,6 @@ static int detail_instantiate(CONF_SECTION *conf, void **instance)
 		detail_detach(inst);
 		return -1;
 	}
-
-	inst->last_made_directory = NULL;
 
 	/*
 	 *	Suppress certain attributes.
@@ -176,7 +174,6 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 		     int compat)
 {
 	int		outfd;
-	FILE		*outfp;
 	char		timestamp[256];
 	char		buffer[DIRLEN];
 	char		*p;
@@ -185,6 +182,8 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 	int		lock_count;
 	struct timeval	tv;
 	VALUE_PAIR	*pair;
+	off_t		fsize;
+	FILE		*fp;
 
 	struct detail_instance *inst = instance;
 
@@ -205,8 +204,29 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 	 *	feed it through radius_xlat() to expand the
 	 *	variables.
 	 */
-	radius_xlat(buffer, sizeof(buffer), inst->detailfile, request, NULL);
+	if (radius_xlat(buffer, sizeof(buffer), inst->detailfile, request, NULL) == 0) {
+		radlog_request(L_ERR, 0, request, "rlm_detail: Failed to expand detail file %s",
+		    inst->detailfile);
+	    return RLM_MODULE_FAIL;
+	}
 	RDEBUG2("%s expands to %s", inst->detailfile, buffer);
+
+#ifdef HAVE_FNMATCH_H
+#ifdef FNM_FILE_NAME
+	/*
+	 *	If we read it from a detail file, and we're about to
+	 *	write it back to the SAME detail file directory, then
+	 *	suppress the write.  This check prevents an infinite
+	 *	loop.
+	 */
+	if ((request->listener == RAD_LISTEN_DETAIL) &&
+	    (fnmatch(((listen_detail_t *)request->listener->data)->filename,
+		     buffer, FNM_FILE_NAME | FNM_PERIOD ) == 0)) {
+		RDEBUG2("WARNING: Suppressing infinite loop.");
+		return RLM_MODULE_NOOP;
+	}
+#endif
+#endif
 
 	/*
 	 *	Grab the last directory delimiter.
@@ -214,40 +234,25 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 	p = strrchr(buffer,'/');
 
 	/*
-	 *	There WAS a directory delimiter there, and
-	 *	the file doesn't exist, so
-	 *	we prolly must create it the dir(s)
+	 *	There WAS a directory delimiter there, and the file
+	 *	doesn't exist, so we must create it the directories..
 	 */
-	if ((p) && (stat(buffer, &st) < 0)) {
+	if (p) {
 		*p = '\0';
-		/*
-		 *	NO previously cached directory name, so we've
-		 *	got to create a new one.
-		 *
-		 *	OR the new directory name is different than the old,
-		 *	so we've got to create a new one.
-		 *
-		 *	OR the cached directory has somehow gotten removed,
-		 *	so we've got to create a new one.
-		 */
-		if ((inst->last_made_directory == NULL) ||
-		    (strcmp(inst->last_made_directory, buffer) != 0)) {
-			free((char *) inst->last_made_directory);
-			inst->last_made_directory = strdup(buffer);
-		}
 
 		/*
-		 *	stat the directory, and don't do anything if
-		 *	it exists.  If it doesn't exist, create it.
+		 *	Always try to create the directory.  If it
+		 *	exists, rad_mkdir() will check via stat(), and
+		 *	return immediately.
 		 *
-		 *	This also catches the case where some idiot
-		 *	deleted a directory that the server was using.
+		 *	This catches the case where some idiot deleted
+		 *	a directory that the server was using.
 		 */
-		if (rad_mkdir(inst->last_made_directory, inst->dirperm) < 0) {
-			radlog_request(L_ERR, 0, request, "rlm_detail: Failed to create directory %s: %s", inst->last_made_directory, strerror(errno));
+		if (rad_mkdir(buffer, inst->dirperm) < 0) {
+			radlog_request(L_ERR, 0, request, "rlm_detail: Failed to create directory %s: %s", buffer, strerror(errno));
 			return RLM_MODULE_FAIL;
 		}
-
+		
 		*p = '/';
 	} /* else there was no directory delimiter. */
 
@@ -313,28 +318,34 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 	}
 
 	/*
-	 *	Convert the FD to FP.  The FD is no longer valid
-	 *	after this operation.
+	 *	Post a timestamp
 	 */
-	if ((outfp = fdopen(outfd, "a")) == NULL) {
-		radlog_request(L_ERR, 0, request, "rlm_detail: Couldn't open file %s: %s",
-		       buffer, strerror(errno));
-		if (inst->locking) {
-			lseek(outfd, 0L, SEEK_SET);
-			rad_unlockfd(outfd, 0);
-			RDEBUG2("Released filelock");
-		}
-		close(outfd);	/* automatically releases the lock */
+	fsize = lseek(outfd, 0L, SEEK_END);
+	if (fsize < 0) {
+		radlog_request(L_ERR, 0, request, "rlm_detail: Failed to seek to the end of detail file %s",
+			buffer);
+		close(outfd);
+		return RLM_MODULE_FAIL;
+	}
 
+	if (radius_xlat(timestamp, sizeof(timestamp), inst->header, request, NULL) == 0) {
+		radlog_request(L_ERR, 0, request, "rlm_detail: Unable to expand detail header format %s",
+			inst->header);
+		close(outfd);
 		return RLM_MODULE_FAIL;
 	}
 
 	/*
-	 *	Post a timestamp
+	 *	Open the FP for buffering.
 	 */
-	fseek(outfp, 0L, SEEK_END);
-	radius_xlat(timestamp, sizeof(timestamp), inst->header, request, NULL);
-	fprintf(outfp, "%s\n", timestamp);
+	if ((fp = fdopen(outfd, "a")) == NULL) {
+		radlog_request(L_ERR, 0, request, "rlm_detail: Couldn't open file %s: %s",
+			       buffer, strerror(errno));
+		close(outfd);
+		return RLM_MODULE_FAIL;
+	}
+
+	fprintf(fp, "%s\n", timestamp);
 
 	/*
 	 *	Write the information to the file.
@@ -346,10 +357,10 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 		 */
 		if ((packet->code > 0) &&
 		    (packet->code < FR_MAX_PACKET_CODE)) {
-			fprintf(outfp, "\tPacket-Type = %s\n",
+			fprintf(fp, "\tPacket-Type = %s\n",
 				fr_packet_codes[packet->code]);
 		} else {
-			fprintf(outfp, "\tPacket-Type = %d\n", packet->code);
+			fprintf(fp, "\tPacket-Type = %d\n", packet->code);
 		}
 	}
 
@@ -362,19 +373,23 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 
 		switch (packet->src_ipaddr.af) {
 		case AF_INET:
+			src_vp.name = "Packet-Src-IP-Address";
 			src_vp.type = PW_TYPE_IPADDR;
 			src_vp.attribute = PW_PACKET_SRC_IP_ADDRESS;
 			src_vp.vp_ipaddr = packet->src_ipaddr.ipaddr.ip4addr.s_addr;
+			dst_vp.name = "Packet-Dst-IP-Address";
 			dst_vp.type = PW_TYPE_IPADDR;
 			dst_vp.attribute = PW_PACKET_DST_IP_ADDRESS;
 			dst_vp.vp_ipaddr = packet->dst_ipaddr.ipaddr.ip4addr.s_addr;
 			break;
 		case AF_INET6:
+			src_vp.name = "Packet-Src-IPv6-Address";
 			src_vp.type = PW_TYPE_IPV6ADDR;
 			src_vp.attribute = PW_PACKET_SRC_IPV6_ADDRESS;
 			memcpy(src_vp.vp_strvalue,
 			       &packet->src_ipaddr.ipaddr.ip6addr,
 			       sizeof(packet->src_ipaddr.ipaddr.ip6addr));
+			dst_vp.name = "Packet-Dst-IPv6-Address";
 			dst_vp.type = PW_TYPE_IPV6ADDR;
 			dst_vp.attribute = PW_PACKET_DST_IPV6_ADDRESS;
 			memcpy(dst_vp.vp_strvalue,
@@ -385,26 +400,20 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 			break;
 		}
 
-		fputs("\t", outfp);
-		vp_print(outfp, &src_vp);
-		fputs("\n", outfp);
-		fputs("\t", outfp);
-		vp_print(outfp, &dst_vp);
-		fputs("\n", outfp);
+		vp_print(fp, &src_vp);
+		vp_print(fp, &dst_vp);
 
+		src_vp.name = "Packet-Src-IP-Port";
 		src_vp.attribute = PW_PACKET_SRC_PORT;
 		src_vp.type = PW_TYPE_INTEGER;
 		src_vp.vp_integer = packet->src_port;
+		dst_vp.name = "Packet-Dst-IP-Port";
 		dst_vp.attribute = PW_PACKET_DST_PORT;
 		dst_vp.type = PW_TYPE_INTEGER;
 		dst_vp.vp_integer = packet->dst_port;
 
-		fputs("\t", outfp);
-		vp_print(outfp, &src_vp);
-		fputs("\n", outfp);
-		fputs("\t", outfp);
-		vp_print(outfp, &dst_vp);
-		fputs("\n", outfp);
+		vp_print(fp, &src_vp);
+		vp_print(fp, &dst_vp);
 	}
 
 	/* Write each attribute/value to the log file */
@@ -423,9 +432,7 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 		/*
 		 *	Print all of the attributes.
 		 */
-		fputs("\t", outfp);
-		vp_print(outfp, pair);
-		fputs("\n", outfp);
+		vp_print(fp, pair);
 	}
 
 	/*
@@ -438,32 +445,29 @@ static int do_detail(void *instance, REQUEST *request, RADIUS_PACKET *packet,
 			inet_ntop(request->proxy->dst_ipaddr.af,
 				  &request->proxy->dst_ipaddr.ipaddr,
 				  proxy_buffer, sizeof(proxy_buffer));
-			fprintf(outfp, "\tFreeradius-Proxied-To = %s\n",
-					proxy_buffer);
-				RDEBUG("Freeradius-Proxied-To = %s",
-				      proxy_buffer);
+			fprintf(fp, "\tFreeradius-Proxied-To = %s\n",
+				proxy_buffer);
+			RDEBUG("Freeradius-Proxied-To = %s",
+				proxy_buffer);
 		}
 
-		fprintf(outfp, "\tTimestamp = %ld\n",
+		fprintf(fp, "\tTimestamp = %ld\n",
 			(unsigned long) request->timestamp);
-
-		/*
-		 *	We no longer permit Accounting-Request packets
-		 *	with an authenticator of zero.
-		 */
-		fputs("\tRequest-Authenticator = Verified\n", outfp);
 	}
 
-	fputs("\n", outfp);
+	fprintf(fp, "\n");
 
-	if (inst->locking) {
-		fflush(outfp);
-		lseek(outfd, 0L, SEEK_SET);
-		rad_unlockfd(outfd, 0);
-		RDEBUG2("Released filelock");
+	/*
+	 *	If we can't flush it to disk, truncate the file and
+	 *	return an error.
+	 */
+	if (fflush(fp) != 0) {
+		ftruncate(outfd, fsize); /* ignore errors! */
+		close(outfd);
+		return RLM_MODULE_FAIL;
 	}
 
-	fclose(outfp);
+	close(outfd);
 
 	/*
 	 *	And everything is fine.
