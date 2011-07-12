@@ -84,6 +84,9 @@ freeradius-configure: openssl
 	--without-rlm_sql_unixodbc \
 	--without-rlm_sql_log \
 	--without-rlm_sql_sqlite \
+	--without-rlm_caching \
+	--without-rlm_redis \
+	--without-rlm_rediswho \
 	--without-rlm_eap_tnc \
 	--without-rlm_eap_ikev2 \
 	--without-rlm_opendirectory \
