@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Directory listing module for ProFTPD.
- * $Id: mod_ls.c,v 1.172.2.2 2010/07/20 16:23:47 castaglia Exp $
+ * $Id: mod_ls.c,v 1.172.2.5 2011/02/26 02:46:45 castaglia Exp $
  */
 
 #include "conf.h"
@@ -251,7 +251,7 @@ static int ls_perms(pool *p, cmd_rec *cmd, const char *path, int *hidden) {
 
 /* sendline() now has an internal buffer, to help speed up LIST output.
  * This buffer is allocated one, the first time sendline() is called.
- * By using a runtime allocation, we can use pr_config_get_xfer_bufsz()
+ * By using a runtime allocation, we can use pr_config_get_server_xfer_bufsz()
  * to get the optimal buffer size for network transfers.
  */
 static char *listbuf = NULL;
@@ -263,8 +263,10 @@ static int sendline(int flags, char *fmt, ...) {
   int res = 0;
 
   if (listbuf == NULL) {
-    listbufsz = pr_config_get_xfer_bufsz();
+    listbufsz = pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR);
     listbuf = pcalloc(session.pool, listbufsz);
+    pr_trace_msg("data", 8, "allocated list buffer of %lu bytes",
+      (unsigned long) listbufsz);
   }
 
   if (flags & LS_SENDLINE_FL_FLUSH) {
@@ -1678,8 +1680,14 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
             target_mode = lmode;
           }
 
+          /* If the -d option is used or the file is not a directory, OR
+           * if the -R option is NOT used AND the file IS a directory AND,
+           * the file is NOT the target/given parameter, then list the file
+           * as is.
+           */
           if (opt_d ||
-              !(S_ISDIR(target_mode))) {
+              !(S_ISDIR(target_mode)) ||
+              (!opt_R && S_ISDIR(target_mode) && strcmp(*path, target) != 0)) {
 
             if (listfile(cmd, cmd->tmp_pool, *path) < 0) {
               ls_terminate();
@@ -1734,6 +1742,7 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
             }
           }
 
+          /* Recurse into the directory. */
           push_cwd(cwd_buf, &symhold);
 
           if (!pr_fsio_chdir_canon(*path, !opt_L && list_show_symlinks)) {
@@ -1765,6 +1774,14 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
         }
 
         path++;
+      }
+
+      if (outputfiles(cmd) < 0) {
+        ls_terminate();
+        if (use_globbing && globbed) {
+          pr_fs_globfree(&g);
+        }
+        return -1;
       }
 
     } else if (!skiparg) {

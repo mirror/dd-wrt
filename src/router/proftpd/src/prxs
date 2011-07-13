@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # ---------------------------------------------------------------------------
-# Copyright (C) 2008-2009 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2008-2011 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
 #
-#  $Id: prxs.in,v 1.5 2009/03/04 16:21:14 castaglia Exp $
+#  $Id: prxs.in,v 1.5.2.1 2011/02/15 20:07:48 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
@@ -29,8 +29,8 @@ Getopt::Long::Configure("no_ignorecase");
 
 my $prog = basename($0);
 
-my $compiler = q(mips-linux-uclibc-gcc);
-my $cflags = q( -DLINUX -Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time -Wall -DPR_SHARED_MODULE);
+my $compiler = q(arm-linux-uclibc-gcc);
+my $cflags = q( -DLINUX -Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves -Wall -DPR_SHARED_MODULE);
 my $cppflags = q();
 my $ltdl_ldflags = q();
 my $sbindir = q(/tmp/proftpd/sbin);
@@ -48,8 +48,6 @@ if (!defined($ENV{LIBTOOL})) {
 } else {
   $libtool = $ENV{LIBTOOL};
 }
-
-my $shell = q(/bin/sh);
 
 my $opts = {};
 GetOptions($opts, 'c|compile', 'i|install', 'd|clean', 'h|help', 'name=s',
@@ -117,7 +115,7 @@ if (defined($opts->{c})) {
 
   my $cmds = [];
   foreach my $src (@$srcs) {
-    push(@$cmds, "$shell $libtool --mode=compile $compiler $cflags -c $src");
+    push(@$cmds, "$libtool --mode=compile $compiler $cflags -c $src");
   }
 
   run_cmds($cmds);
@@ -169,14 +167,14 @@ if (defined($opts->{c})) {
   }
 
   $cmds = [];
-  push(@$cmds, "$shell $libtool --mode=link $compiler -o $mod_name.la -rpath $libexecdir $ldflags $objlist $libs");
+  push(@$cmds, "$libtool --mode=link $compiler -o $mod_name.la -rpath $libexecdir $ldflags $objlist $libs");
 
   run_cmds($cmds);
 }
 
 if (defined($opts->{i})) {
   my $cmds = [];
-  push(@$cmds, "$shell $libtool --mode=install $installer $install_strip $mod_name.la $ENV{DESTDIR}$libexecdir");
+  push(@$cmds, "$libtool --mode=install $installer $install_strip $mod_name.la $ENV{DESTDIR}$libexecdir");
 
   run_cmds($cmds);
 
@@ -194,7 +192,7 @@ if (defined($opts->{i})) {
 
 if (defined($opts->{d})) {
   my $cmds = [];
-  push(@$cmds, "$shell $libtool --mode=clean rm -f $mod_name.la *.lo");
+  push(@$cmds, "$libtool --mode=clean rm -f $mod_name.la *.lo");
 
   run_cmds($cmds);
 }

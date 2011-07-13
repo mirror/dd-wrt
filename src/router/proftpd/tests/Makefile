@@ -1,4 +1,4 @@
-CC=mips-linux-uclibc-gcc
+CC=arm-linux-uclibc-gcc
 
 
 top_builddir=..

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp disconnect msgs
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: disconnect.h,v 1.6 2009/08/28 16:14:23 castaglia Exp $
+ * $Id: disconnect.h,v 1.6.2.1 2010/10/29 22:28:52 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -33,6 +33,11 @@ void sftp_disconnect_conn(uint32_t, const char *, const char *, int,
   const char *);
 void sftp_disconnect_send(uint32_t, const char *, const char *, int,
   const char *);
+
+/* Given a disconnect reason code from a client, return a string explaining
+ * that code.
+ */
+const char *sftp_disconnect_get_str(uint32_t);
 
 /* Deal with the fact that __FUNCTION__ is a gcc extension.  Sun's compilers
  * (e.g. SunStudio) like __func__.

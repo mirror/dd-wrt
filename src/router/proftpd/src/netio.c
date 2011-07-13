@@ -23,7 +23,7 @@
  */
 
 /* NetIO routines
- * $Id: netio.c,v 1.39.2.1 2010/10/29 16:31:35 castaglia Exp $
+ * $Id: netio.c,v 1.39.2.2 2011/02/26 02:46:45 castaglia Exp $
  */
 
 #include "conf.h"
@@ -109,7 +109,7 @@ static pr_buffer_t *netio_buffer_alloc(pr_netio_stream_t *nstrm) {
   pbuf = pcalloc(nstrm->strm_pool, sizeof(pr_buffer_t));
 
   /* Allocate a buffer. */
-  bufsz = pr_config_get_xfer_bufsz();
+  bufsz = pr_config_get_server_xfer_bufsz(nstrm->strm_mode);
   pbuf->buf = pcalloc(nstrm->strm_pool, bufsz);
   pbuf->buflen = bufsz;
 

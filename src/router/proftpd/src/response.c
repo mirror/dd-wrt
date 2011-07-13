@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Command response routines
- * $Id: response.c,v 1.12 2008/09/26 20:57:29 castaglia Exp $
+ * $Id: response.c,v 1.12.4.4 2011/02/23 02:51:31 castaglia Exp $
  */
 
 #include "conf.h"
@@ -36,6 +36,9 @@ static pool *resp_pool = NULL;
 
 static char resp_buf[PR_RESPONSE_BUFFER_SIZE] = {'\0'};
 static char resp_ml_numeric[4] = {'\0'};
+
+static char *resp_last_response_code = NULL;
+static char *resp_last_response_msg = NULL;
 
 static char *(*resp_handler_cb)(pool *, const char *, ...) = NULL;
 
@@ -69,8 +72,51 @@ pool *pr_response_get_pool(void) {
   return resp_pool;
 }
 
+static void reset_last_response(void) {
+  resp_last_response_code = NULL;
+  resp_last_response_msg = NULL;
+}
+
 void pr_response_set_pool(pool *p) {
   resp_pool = p;
+
+  /* Copy any old "last" values out of the new pool. */
+  if (resp_last_response_code != NULL) {
+    char *tmp;
+
+    tmp = resp_last_response_code;
+    resp_last_response_code = pstrdup(p, tmp);
+  }
+
+  if (resp_last_response_msg != NULL) {
+    char *tmp;
+  
+    tmp = resp_last_response_msg;
+    resp_last_response_msg = pstrdup(p, tmp);
+  }
+}
+
+int pr_response_get_last(pool *p, char **response_code, char **response_msg) {
+  if (p == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (response_code == NULL &&
+      response_msg == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (response_code != NULL) {
+    *response_code = pstrdup(p, resp_last_response_code);
+  }
+
+  if (response_msg != NULL) {
+    *response_msg = pstrdup(p, resp_last_response_msg);
+  }
+
+  return 0;
 }
 
 void pr_response_register_handler(char *(*handler_cb)(pool *, const char *,
@@ -90,6 +136,7 @@ int pr_response_block(int bool) {
 }
 
 void pr_response_clear(pr_response_t **head) {
+  reset_last_response();
   *head = NULL;
 }
 
@@ -98,19 +145,21 @@ void pr_response_flush(pr_response_t **head) {
   char *last_numeric = NULL;
   pr_response_t *resp = NULL;
 
-  if (resp_blocked)
+  if (resp_blocked) {
     return;
+  }
 
   for (resp = *head; resp; resp = resp->next) {
     if (ml) {
       /* Look for end of multiline */
-      if (!resp->next || (resp->num && strcmp(resp->num, last_numeric) != 0)) {
+      if (resp->next == NULL ||
+          (resp->num != NULL &&
+           strcmp(resp->num, last_numeric) != 0)) {
         RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s %s\r\n", last_numeric,
           resp->msg)
         ml = FALSE;
 
       } else {
-
         /* RFC2228's multiline responses are required for protected sessions. */
 	if (MultilineRFC2228 || session.sp_flags) {
           RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s-%s\r\n", last_numeric,
@@ -123,8 +172,9 @@ void pr_response_flush(pr_response_t **head) {
 
     } else {
       /* Look for start of multiline */
-      if (resp->next && (!resp->next->num ||
-          strcmp(resp->num, resp->next->num) == 0)) {
+      if (resp->next &&
+          (resp->next->num == NULL ||
+           strcmp(resp->num, resp->next->num) == 0)) {
         RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s-%s\r\n", resp->num,
           resp->msg)
         ml = TRUE;
@@ -154,13 +204,31 @@ void pr_response_add_err(const char *numeric, const char *fmt, ...) {
   resp->num = (numeric ? pstrdup(resp_pool, numeric) : NULL);
   resp->msg = pstrdup(resp_pool, resp_buf);
 
+  resp_last_response_code = pstrdup(resp_pool, resp->num);
+  resp_last_response_msg = pstrdup(resp_pool, resp->msg);
+
   pr_trace_msg(trace_channel, 7, "error response added to pending list: %s %s",
     resp->num ? resp->num : "(null)", resp->msg);
+
+  if (numeric != NULL) {
+    pr_response_t *iter;
+    
+    /* Handle the case where the first messages in the list may have R_DUP
+     * for the numeric response code (i.e. NULL).  To do this, we scan the
+     * list for the first non-null response code, and use that for any R_DUP
+     * messages.
+     */
+    for (iter = resp_err_list; iter; iter = iter->next) {
+      if (iter->num == NULL) {
+        iter->num = resp->num;
+      }
+    }
+  }
 
   for (head = &resp_err_list;
     *head &&
     (!numeric || !(*head)->num || strcmp((*head)->num, numeric) <= 0) &&
-    !(numeric && !(*head)->num && head == &resp_list);
+    !(numeric && !(*head)->num && head == &resp_err_list);
   head = &(*head)->next);
 
   resp->next = *head;
@@ -180,9 +248,27 @@ void pr_response_add(const char *numeric, const char *fmt, ...) {
   resp = (pr_response_t *) pcalloc(resp_pool, sizeof(pr_response_t));
   resp->num = (numeric ? pstrdup(resp_pool, numeric) : NULL);
   resp->msg = pstrdup(resp_pool, resp_buf);
-  
+
+  resp_last_response_code = pstrdup(resp_pool, resp->num);
+  resp_last_response_msg = pstrdup(resp_pool, resp->msg);
+
   pr_trace_msg(trace_channel, 7, "response added to pending list: %s %s",
     resp->num ? resp->num : "(null)", resp->msg);
+
+  if (numeric != NULL) {
+    pr_response_t *iter;
+    
+    /* Handle the case where the first messages in the list may have R_DUP
+     * for the numeric response code (i.e. NULL).  To do this, we scan the
+     * list for the first non-null response code, and use that for any R_DUP
+     * messages.
+     */
+    for (iter = resp_list; iter; iter = iter->next) {
+      if (iter->num == NULL) {
+        iter->num = resp->num;
+      }
+    }
+  }
 
   for (head = &resp_list;
     *head &&
@@ -212,8 +298,11 @@ void pr_response_send_async(const char *resp_numeric, const char *fmt, ...) {
   va_end(msg);
   
   buf[sizeof(buf) - 1] = '\0';
-  sstrcat(buf, "\r\n", sizeof(buf));
 
+  resp_last_response_code = pstrdup(resp_pool, resp_numeric);
+  resp_last_response_msg = pstrdup(resp_pool, buf + strlen(resp_numeric) + 1);
+
+  sstrcat(buf, "\r\n", sizeof(buf));
   RESPONSE_WRITE_STR_ASYNC(session.c->outstrm, "%s", buf)
 }
 
@@ -228,6 +317,9 @@ void pr_response_send(const char *resp_numeric, const char *fmt, ...) {
   va_end(msg);
   
   resp_buf[sizeof(resp_buf) - 1] = '\0';
+
+  resp_last_response_code = pstrdup(resp_pool, resp_numeric);
+  resp_last_response_msg = pstrdup(resp_pool, resp_buf);
 
   RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s %s\r\n", resp_numeric,
     resp_buf)

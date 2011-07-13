@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * DO NOT EDIT BELOW THIS LINE
  * $Archive: mod_sftp.a $
  * $Libraries: -lcrypto -lz $
- * $Id: mod_sftp.c,v 1.29.2.1 2010/03/03 00:55:15 castaglia Exp $
+ * $Id: mod_sftp.c,v 1.29.2.3 2011/03/24 05:17:59 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -83,12 +83,12 @@ static int sftp_get_client_version(conn_t *conn) {
     memset(buf, '\0', sizeof(buf));
 
     for (i = 0; i < sizeof(buf) - 1; i++) {
-      res = sftp_ssh2_packet_sock_read(conn->rfd, &buf[i], 1);
+      res = sftp_ssh2_packet_sock_read(conn->rfd, &buf[i], 1, 0);
       while (res <= 0) {
         if (errno == EINTR) {
           pr_signals_handle();
 
-          res = sftp_ssh2_packet_sock_read(conn->rfd, &buf[i], 1);
+          res = sftp_ssh2_packet_sock_read(conn->rfd, &buf[i], 1, 0);
           continue;
         }
 
@@ -1377,18 +1377,6 @@ static int sftp_init(void) {
   sftp_keystore_init();
 
   pr_event_register(&sftp_module, "core.exit", sftp_exit_ev, NULL);
-  pr_event_register(&sftp_module, "mod_auth.max-clients",
-    sftp_max_conns_ev, NULL);
-  pr_event_register(&sftp_module, "mod_auth.max-clients-per-class",
-    sftp_max_conns_ev, NULL);
-  pr_event_register(&sftp_module, "mod_auth.max-clients-per-host",
-    sftp_max_conns_ev, NULL);
-  pr_event_register(&sftp_module, "mod_auth.max-clients-per-user",
-    sftp_max_conns_ev, NULL);
-  pr_event_register(&sftp_module, "mod_auth.max-connections-per-host",
-    sftp_max_conns_ev, NULL);
-  pr_event_register(&sftp_module, "mod_auth.max-hosts-per-user",
-    sftp_max_conns_ev, NULL);
 #if defined(PR_SHARED_MODULE)
   pr_event_register(&sftp_module, "core.module-unload", sftp_mod_unload_ev,
     NULL);
@@ -1410,6 +1398,19 @@ static int sftp_sess_init(void) {
 
   if (!sftp_engine)
     return 0;
+
+  pr_event_register(&sftp_module, "mod_auth.max-clients",
+    sftp_max_conns_ev, NULL);
+  pr_event_register(&sftp_module, "mod_auth.max-clients-per-class",
+    sftp_max_conns_ev, NULL);
+  pr_event_register(&sftp_module, "mod_auth.max-clients-per-host",
+    sftp_max_conns_ev, NULL);
+  pr_event_register(&sftp_module, "mod_auth.max-clients-per-user",
+    sftp_max_conns_ev, NULL);
+  pr_event_register(&sftp_module, "mod_auth.max-connections-per-host",
+    sftp_max_conns_ev, NULL);
+  pr_event_register(&sftp_module, "mod_auth.max-hosts-per-user",
+    sftp_max_conns_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPLog", FALSE);
   if (c) {

@@ -25,7 +25,7 @@
  */
 
 /* Read configuration file(s), and manage server/configuration structures.
- * $Id: dirtree.c,v 1.232.2.6 2010/10/29 16:51:45 castaglia Exp $
+ * $Id: dirtree.c,v 1.232.2.11 2011/02/27 01:09:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -849,7 +849,6 @@ static int dir_check_op(pool *p, xaset_t *set, int op, const char *path,
     uid_t file_uid, gid_t file_gid, mode_t mode) {
   int res = TRUE;
   config_rec *c;
-  unsigned char *hide_no_access = NULL;
 
   /* Default is to allow. */
   if (!set)
@@ -887,78 +886,93 @@ static int dir_check_op(pool *p, xaset_t *set, int op, const char *path,
         c = find_config_next(c, c->next, CONF_PARAM, "HideUser", FALSE);
       }
 
-      c = find_config(set, CONF_PARAM, "HideGroup", FALSE);
-      while (c) {
-        unsigned char inverted;
-        gid_t hide_gid;
+      /* We only need to check for HideGroup restrictions if we are not
+       * already hiding the file.  I.e. if res = FALSE, then the path is to
+       * be hidden, and we don't need to check for other reasons to hide it
+       * (Bug#3530).
+       */
+      if (res == TRUE) {
+        c = find_config(set, CONF_PARAM, "HideGroup", FALSE);
+        while (c) {
+          unsigned char inverted;
+          gid_t hide_gid;
 
-        pr_signals_handle();
+          pr_signals_handle();
 
-        hide_gid = *((gid_t *) c->argv[0]);
-        inverted = *((unsigned char *) c->argv[1]);
+          hide_gid = *((gid_t *) c->argv[0]);
+          inverted = *((unsigned char *) c->argv[1]);
 
-        if (hide_gid != (gid_t) -1) {
-          if (file_gid == hide_gid) {
-            if (!inverted)
-              res = FALSE;
+          if (hide_gid != (gid_t) -1) {
+            if (file_gid == hide_gid) {
+              if (!inverted)
+                res = FALSE;
 
-            break;
+              break;
+
+            } else {
+              if (inverted) {
+                res = FALSE;
+                break;
+              }
+            }
 
           } else {
+            register unsigned int i;
+            gid_t *group_ids = session.gids->elts;
+
+            /* First check to see if the file GID matches the session GID. */
+            if (file_gid == session.gid) {
+              if (!inverted)
+                res = FALSE;
+
+              break;
+            }
+
+            /* Next, scan the list of supplemental groups for this user. */
+            for (i = 0; i < session.gids->nelts; i++) {
+              if (file_gid == group_ids[i]) {
+                if (!inverted)
+                  res = FALSE;
+
+                break;
+              }
+            }
+
             if (inverted) {
               res = FALSE;
               break;
             }
           }
 
-        } else {
-          register unsigned int i;
-          gid_t *group_ids = session.gids->elts;
-
-          /* First check to see if the file GID matches the session GID. */
-          if (file_gid == session.gid) {
-            if (!inverted)
-              res = FALSE;
-
-            break;
-          }
-
-          /* Next, scan the list of supplemental groups for this user. */
-          for (i = 0; i < session.gids->nelts; i++) {
-            if (file_gid == group_ids[i]) {
-              if (!inverted)
-                res = FALSE;
-
-              break;
-            }
-          }
-
-          if (inverted) {
-            res = FALSE;
-            break;
-          }
+          c = find_config_next(c, c->next, CONF_PARAM, "HideGroup", FALSE);
         }
-
-        c = find_config_next(c, c->next, CONF_PARAM, "HideGroup", FALSE);
       }
 
-      hide_no_access = get_param_ptr(set, "HideNoAccess", FALSE);
-      if (hide_no_access &&
-          *hide_no_access == TRUE) {
+      /* If we have already decided to hide this path (i.e. res = FALSE),
+       * then we do not need to check for HideNoAccess.  Hence why we
+       * only look for HideNoAccess here if res = TRUE (Bug#3530).
+       */
+      if (res == TRUE) {
+        unsigned char *hide_no_access = NULL;
 
-        if (S_ISDIR(mode)) {
-          /* Check to see if the mode of this directory allows the
-           * current user to list its contents.
-           */
-          res = pr_fsio_access(path, X_OK, session.uid, session.gid,
-            session.gids) == 0 ? TRUE : FALSE;
+        hide_no_access = get_param_ptr(set, "HideNoAccess", FALSE);
+        if (hide_no_access &&
+            *hide_no_access == TRUE) {
 
-        } else {
-          /* Check to see if the mode of this file allows the current
-           * user to read it.
-           */
-          res = pr_fsio_access(path, R_OK, session.uid, session.gid,
-            session.gids) == 0 ? TRUE : FALSE;
+          if (S_ISDIR(mode)) {
+            /* Check to see if the mode of this directory allows the
+             * current user to list its contents.
+             */
+            res = pr_fsio_access(path, X_OK, session.uid, session.gid,
+              session.gids) == 0 ? TRUE : FALSE;
+
+          } else {
+            /* Check to see if the mode of this file allows the current
+             * user to read it.
+             */
+            res = pr_fsio_access(path, R_OK, session.uid, session.gid,
+              session.gids) == 0 ? TRUE : FALSE;
+          }
         }
       }
       break;
@@ -1552,13 +1566,55 @@ int dir_check_limits(cmd_rec *cmd, config_rec *c, const char *cmd_name,
   return res;
 }
 
+/* Manage .ftpaccess dynamic directory sections
+ *
+ * build_dyn_config() is called to check for and then handle .ftpaccess 
+ * files.  It determines:
+ *
+ *   - whether an .ftpaccess file exists in a directory
+ *   - whether an existing .ftpaccess section for that file exists
+ *   - whether a new .ftpaccess section needs to be constructed
+ *   - whether an existing .ftpaccess section needs rebuilding 
+ *         as its corresponding .ftpaccess file has been modified   
+ *   - whether an existing .ftpaccess section must now be removed
+ *         as its corresponding .ftpaccess file has disappeared
+ *
+ * The routine must check for .ftpaccess files in each directory that is
+ * a component of the path argument.  The input path may be for either a 
+ * directory or file, and that may or may not already exist.  
+ *
+ * build_dyn_config() may be called with a path to:
+ *
+ *   - an existing directory        - start check in that dir
+ *   - an existing file             - start check in containing dir
+ *   - a proposed directory         - start check in containing dir
+ *   - a proposed file              - start check in containing dir
+ *
+ * As in 1.3.3b code, the key is that for path "/a/b/c", one of either 
+ * "/a/b/c" or "/a/b" is an existing directory, or we MUST give up as we
+ * cannot even start scanning for .ftpaccess files without a valid starting
+ * directory.
+ */
 void build_dyn_config(pool *p, const char *_path, struct stat *stp,
     unsigned char recurse) {
-  char *fullpath = NULL, *path = NULL, *dynpath = NULL, *cp = NULL;
   struct stat st;
   config_rec *d = NULL;
   xaset_t **set = NULL;
   int isfile, removed = 0;
+  char *ptr = NULL;
+
+  /* Need three path strings: 
+   *
+   *  curr_dir_path: current relative directory path, for tracking our
+   *                 progress as we scan upwards 
+   *
+   *  ftpaccess_path: current relative file path to the .ftpaccess file for
+   *                  which to check.
+   *
+   *  ftpaccess_name: absolute directory path of the .ftpaccess file,
+   *                  to be used as the name for the new config_rec.
+   */
+  char *curr_dir_path = NULL, *ftpaccess_path = NULL, *ftpaccess_name = NULL;
 
   /* Switch through each directory, from "deepest" up looking for
    * new or updated .ftpaccess files
@@ -1571,53 +1627,88 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
   if (!allow_dyn_config(_path))
     return;
 
-  path = pstrdup(p, _path);
-
+  /* Determine the starting directory path for the .ftpaccess file scan. */
   memcpy(&st, stp, sizeof(st));
+  curr_dir_path = pstrdup(p, _path);
 
-  if (S_ISDIR(st.st_mode)) {
-    dynpath = pdircat(p, path, "/.ftpaccess", NULL);
-
-  } else {
-    char *ptr;
+  if (!S_ISDIR(st.st_mode)) {
 
     /* If the given st is not for a directory (i.e. path is for a file),
      * then construct the path for the .ftpaccess file to check.
      *
      * strrchr(3) should always return non-NULL here, right?
      */
-    ptr = strrchr(path, '/');
-    if (ptr) {
+    ptr = strrchr(curr_dir_path, '/');
+    if (ptr != NULL) {
       *ptr = '\0';
-
-      dynpath = pdircat(p, path, "/.ftpaccess", NULL);
-      *ptr = '/';
     }
   }
 
-  while (path) {
+  while (curr_dir_path) {
+    size_t curr_dir_pathlen;
+
     pr_signals_handle();
 
-    if (session.chroot_path) {
-      fullpath = pdircat(p, session.chroot_path, path, NULL);
+    curr_dir_pathlen = strlen(curr_dir_path);
 
-      if (strcmp(fullpath, "/") &&
-          *(fullpath + strlen(fullpath) - 1) == '/') {
-        *(fullpath + strlen(fullpath) - 1) = '\0';
+    /* Remove any trailing "*" character. */
+    if (curr_dir_pathlen > 1 &&
+        *(curr_dir_path + curr_dir_pathlen - 1) == '*') {
+      *(curr_dir_path + curr_dir_pathlen - 1) = '\0';
+      curr_dir_pathlen--;
+    }
+
+    /* Trim any trailing path separator (unless it is the first AND last
+     * character, e.g. "/").  For example:
+     *
+     *  "/a/b/" -->  "/a/b"
+     *  "/a/"   -->  "/a"
+     *  "/"     -->  "/"
+     *
+     * The check for a string length greater than 1 character skips the
+     * "/" case effectively.
+     */ 
+
+    if (curr_dir_pathlen > 1 &&
+      *(curr_dir_path + curr_dir_pathlen - 1) == '/') {
+      *(curr_dir_path + curr_dir_pathlen - 1) = '\0';
+      curr_dir_pathlen--;  
+    }
+
+    ftpaccess_path = pdircat(p, curr_dir_path, ".ftpaccess", NULL);
+
+    /* Construct the name for the config_rec name for the .ftpaccess file
+     * from curr_dir_path.
+     */
+
+    if (session.chroot_path) {
+      size_t ftpaccess_namelen;
+
+      ftpaccess_name = pdircat(p, session.chroot_path, curr_dir_path,
+        NULL);
+
+      ftpaccess_namelen = strlen(ftpaccess_name);
+
+      if (ftpaccess_namelen > 1 &&
+          *(ftpaccess_name + ftpaccess_namelen - 1) == '/') {
+        *(ftpaccess_name + ftpaccess_namelen - 1) = '\0';
+        ftpaccess_namelen--;
       }
 
     } else {
-      fullpath = path;
+      ftpaccess_name = curr_dir_path;
     }
 
-    if (dynpath) {
-      isfile = pr_fsio_stat(dynpath, &st);
+    if (ftpaccess_path != NULL) {
+      pr_trace_msg("ftpaccess", 6, "checking for .ftpaccess file '%s'",
+        ftpaccess_path);
+      isfile = pr_fsio_stat(ftpaccess_path, &st);
 
     } else {
       isfile = -1;
     }
 
-    d = dir_match_path(p, fullpath);
+    d = dir_match_path(p, ftpaccess_name);
 
     if (!d &&
         isfile != -1 &&
@@ -1625,9 +1716,9 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
       set = (session.anon_config ? &session.anon_config->subset :
         &main_server->conf);
 
-      pr_trace_msg("ftpaccess", 6, "adding config for '%s'", fullpath);
+      pr_trace_msg("ftpaccess", 6, "adding config for '%s'", ftpaccess_name);
 
-      d = add_config_set(set, fullpath);
+      d = add_config_set(set, ftpaccess_name);
       d->config_type = CONF_DIR;
       d->argc = 1;
       d->argv = pcalloc(d->pool, 2 * sizeof (void *));
@@ -1637,12 +1728,12 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
 
       if (isfile != -1 &&
           st.st_size > 0 &&
-          strcmp(d->name, fullpath) != 0) {
+          strcmp(d->name, ftpaccess_name) != 0) {
         set = &d->subset;
 
-        pr_trace_msg("ftpaccess", 6, "adding config for '%s'", fullpath);
+        pr_trace_msg("ftpaccess", 6, "adding config for '%s'", ftpaccess_name);
 
-        newd = add_config_set(set, fullpath);
+        newd = add_config_set(set, ftpaccess_name);
         newd->config_type = CONF_DIR;
         newd->argc = 1;
         newd->argv = pcalloc(newd->pool, 2 * sizeof(void *));
@@ -1650,7 +1741,7 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
 
         d = newd;
 
-      } else if (strcmp(d->name, fullpath) == 0 &&
+      } else if (strcmp(d->name, ftpaccess_name) == 0 &&
           (isfile == -1 ||
            st.st_mtime > (d->argv[0] ? *((time_t *) d->argv[0]) : 0))) {
 
@@ -1698,10 +1789,11 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
 
       d->config_type = CONF_DYNDIR;
 
-      pr_trace_msg("ftpaccess", 3, "parsing '%s'", dynpath);
+      pr_trace_msg("ftpaccess", 3, "parsing '%s'", ftpaccess_path);
 
       pr_parser_prepare(p, NULL);
-      res = pr_parser_parse_file(p, dynpath, d, PR_PARSER_FL_DYNAMIC_CONFIG);
+      res = pr_parser_parse_file(p, ftpaccess_path, d,
+        PR_PARSER_FL_DYNAMIC_CONFIG);
       pr_parser_cleanup();
 
       if (res == 0) {
@@ -1712,8 +1804,12 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
         fixup_dirs(main_server, CF_SILENT);
 
       } else {
-        pr_log_debug(DEBUG0, "error parsing '%s': %s", dynpath,
-          strerror(errno));
+        int xerrno = errno;
+
+        pr_trace_msg("ftpaccess", 2, "error parsing '%s': %s", ftpaccess_path,
+          strerror(xerrno));
+        pr_log_debug(DEBUG0, "error parsing '%s': %s", ftpaccess_path,
+          strerror(xerrno));
       }
     }
 
@@ -1721,52 +1817,41 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
         removed &&
         d &&
         set) {
-      pr_log_debug(DEBUG5, "dynamic configuration removed for %s", fullpath);
+      pr_trace_msg("ftpaccess", 6, "adding config for '%s'", ftpaccess_name);
       merge_down(*set, FALSE);
     }
 
     if (!recurse)
       break;
 
-    cp = strrchr(path, '/');
-    if (cp) {
-      if (strcmp(path, "/") != 0) {
-
-        /* We need to handle the case where path might be "/path".  We
-         * can't just set *cp to '\0', as that would result in the empty
-         * string.  Thus check if cp is the same value as path, i.e.
-         * that cp points to the start of the string.  If so, by definition
-         * we know that we are dealing with the "/path" case.
-         */
-        if (cp != path) {
-          *cp = '\0';
+    /* Remove the last path component of current directory path. */
+    ptr = strrchr(curr_dir_path, '/');
+    if (ptr != NULL) {
+      /* We need to handle the case where path might be "/path".  We
+       * can't just set *ptr to '\0', as that would result in the empty
+       * string.  Thus check if ptr is the same value as curr_dir_path, i.e.
+       * that ptr points to the start of the string.  If so, by definition
+       * we know that we are dealing with the "/path" case.
+       */
+      if (ptr == curr_dir_path) {
+        if (strcmp(curr_dir_path, "/") == 0) {
+          /* We've reached the top; stop scanning. */
+          curr_dir_path = NULL;
 
         } else {
-          /* Set the recurse flag to 'false', so that we go one more pass
-           * through the loop, but stop after that.
-           */
-          *(cp+1) = '\0';
-          recurse = FALSE;        
+          *(ptr+1) = '\0';
         }
 
       } else {
-        /* Set the recurse flag to 'false', so that we go one more pass
-         * through the loop, but stop after that.
-         */
-        recurse = FALSE;        
+        *ptr = '\0';
       }
 
     } else {
-      path = NULL;
-    }
-
-    if (path) {
-      if (*path && *(path + strlen(path) - 1) == '*')
-        *(path +strlen(path) - 1) = '\0';
-
-      dynpath = pdircat(p, path, "/.ftpaccess", NULL);
+      curr_dir_path = NULL;
     }
   }
+
+  return;
 }
 
 /* dir_check_full() fully recurses the path passed
@@ -2073,8 +2158,8 @@ int dir_check_canon(pool *pp, cmd_rec *cmd, const char *group,
 /* Move all the members (i.e. a "branch") of one config set to a different
  * parent.
  */
-static void _reparent_all(config_rec *newparent, xaset_t *set) {
-  config_rec *c,*cnext;
+static void reparent_all(config_rec *newparent, xaset_t *set) {
+  config_rec *c, *cnext;
 
   if (!newparent->subset)
     newparent->subset = xaset_create(newparent->pool, NULL);
@@ -2163,7 +2248,7 @@ static config_rec *_find_best_dir(xaset_t *set, char *path, size_t *matchlen) {
  * in directory tree order
  */
 
-static void _reorder_dirs(xaset_t *set, int flags) {
+static void reorder_dirs(xaset_t *set, int flags) {
   config_rec *c = NULL, *cnext = NULL, *newparent = NULL;
   int defer = 0;
   size_t tmp;
@@ -2176,6 +2261,8 @@ static void _reorder_dirs(xaset_t *set, int flags) {
 
   for (c = (config_rec *) set->xas_list; c; c = cnext) {
     cnext = c->next;
+
+    pr_signals_handle();
 
     if (c->config_type == CONF_DIR) {
       if (flags && !(c->flags & flags))
@@ -2192,7 +2279,7 @@ static void _reorder_dirs(xaset_t *set, int flags) {
           strcmp(c->name, "*") == 0) {
 
         if (c->subset)
-          _reparent_all(c->parent, c->subset);
+          reparent_all(c->parent, c->subset);
 
         xaset_remove(c->parent->subset, (xasetmember_t*) c);
 
@@ -2212,9 +2299,11 @@ static void _reorder_dirs(xaset_t *set, int flags) {
   }
 
   /* Top level is now sorted, now we recursively sort all the sublevels. */
-  for (c = (config_rec *) set->xas_list; c; c = c->next)
-    if (c->config_type == CONF_DIR || c->config_type == CONF_ANON)
-      _reorder_dirs(c->subset, flags);
+  for (c = (config_rec *) set->xas_list; c; c = c->next) {
+    if (c->config_type == CONF_DIR || c->config_type == CONF_ANON) {
+      reorder_dirs(c->subset, flags);
+    }
+  }
 }
 
 static void config_dumpf(const char *fmt, ...) {
@@ -2501,7 +2590,7 @@ void fixup_dirs(server_rec *s, int flags) {
     return;
   }
  
-  _reorder_dirs(s->conf, flags);
+  reorder_dirs(s->conf, flags);
 
   /* Merge mergeable configuration items down. */
   merge_down(s->conf, FALSE);
@@ -3061,7 +3150,7 @@ static void set_tcp_bufsz(void) {
 #endif
 
   p = getprotobyname("tcp");
-  if (!p) {
+  if (p == NULL) {
 #ifndef PR_TUNABLE_RCVBUFSZ
     tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
 #else
@@ -3115,7 +3204,7 @@ static void set_tcp_bufsz(void) {
   }
 #else
   optlen = -1;
-  tcp_sndbufsz = PR_TUNABLE_RCVBUFSZ;
+  tcp_rcvbufsz = PR_TUNABLE_RCVBUFSZ;
   pr_log_debug(DEBUG5, "using preset TCP receive buffer size of %d bytes",
     tcp_rcvbufsz);
 #endif /* PR_TUNABLE_RCVBUFSZ */
@@ -3374,3 +3463,30 @@ unsigned int pr_config_set_id(const char *name) {
 int pr_config_get_xfer_bufsz(void) {
   return xfer_bufsz;
 }
+
+int pr_config_get_xfer_bufsz2(int direction) {
+  switch (direction) {
+    case PR_NETIO_IO_RD:
+      return tcp_rcvbufsz;
+
+    case PR_NETIO_IO_WR:
+      return tcp_sndbufsz;
+  }
+
+  return xfer_bufsz;
+}
+
+int pr_config_get_server_xfer_bufsz(int direction) {
+  if (main_server != NULL) {
+    switch (direction) {
+      case PR_NETIO_IO_RD:
+        return main_server->tcp_rcvbuf_len;
+
+      case PR_NETIO_IO_WR:
+        return main_server->tcp_sndbuf_len;
+    }
+  }
+
+  return pr_config_get_xfer_bufsz2(direction);
+}
+

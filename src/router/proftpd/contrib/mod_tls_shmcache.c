@@ -2,7 +2,7 @@
  * ProFTPD: mod_tls_shmcache -- a module which provides a shared SSL session
  *                              cache using SysV shared memory
  *
- * Copyright (c) 2009 TJ Saunders
+ * Copyright (c) 2009-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
  *  --- DO NOT DELETE BELOW THIS LINE ----
- *  $Id: mod_tls_shmcache.c,v 1.7 2009/12/18 17:40:13 castaglia Exp $
+ *  $Id: mod_tls_shmcache.c,v 1.7.2.1 2011/02/15 21:35:15 castaglia Exp $
  *  $Libraries: -lssl -lcrypto$
  */
 
@@ -774,7 +774,7 @@ static int shmcache_close(tls_sess_cache_t *cache) {
 static int shmcache_add_large_sess(tls_sess_cache_t *cache,
     unsigned char *sess_id, unsigned int sess_id_len, time_t expires,
     SSL_SESSION *sess, int sess_len) {
-  struct shmcache_large_entry *entry;
+  struct shmcache_large_entry *entry = NULL;
 
   if (sess_len > TLS_MAX_SSL_SESSION_SIZE) {
     /* We may get sessions to add to the list which do not exceed the max
@@ -823,6 +823,12 @@ static int shmcache_add_large_sess(tls_sess_cache_t *cache,
     shmcache_sess_list = make_array(cache->cache_pool, 1,
       sizeof(struct shmcache_large_entry));
     entry = push_array(shmcache_sess_list);
+  }
+
+  /* Be defensive, and catch the case where entry might still be null here. */
+  if (entry == NULL) {
+    errno = EPERM;
+    return -1;
   }
 
   entry->expires = expires;

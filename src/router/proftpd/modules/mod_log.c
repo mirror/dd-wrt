@@ -25,13 +25,11 @@
  */
 
 /* Flexible logging module for proftpd
- * $Id: mod_log.c,v 1.103 2010/01/29 19:00:08 castaglia Exp $
+ * $Id: mod_log.c,v 1.103.2.1 2010/11/04 18:52:40 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
-
-extern pr_response_t *resp_list, *resp_err_list;
 
 module log_module;
 
@@ -1024,15 +1022,15 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
     }
 
     case META_RESPONSE_CODE: {
-      pr_response_t *r;
+      char *resp_code = NULL;
+      int res;
 
       argp = arg;
-      r = (resp_list ? resp_list : resp_err_list);
 
-      for (; r && !r->num; r = r->next) ;
-      if (r &&
-          r->num) {
-        sstrncpy(argp, r->num, sizeof(arg));
+      res = pr_response_get_last(cmd->tmp_pool, &resp_code, NULL);
+      if (res == 0 &&
+          resp_code != NULL) {
+        sstrncpy(argp, resp_code, sizeof(arg));
 
       /* Hack to add return code for proper logging of QUIT command. */
       } else if (strcasecmp(cmd->argv[0], C_QUIT) == 0) {
@@ -1047,15 +1045,15 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
     }
 
     case META_RESPONSE_STR: {
-      pr_response_t *r;
+      char *resp_msg = NULL;
+      int res;
 
       argp = arg;
-      r = (resp_list ? resp_list : resp_err_list);
 
-      for (; r && !r->msg; r = r->next) ;
-      if (r &&
-          r->msg) {
-        sstrncpy(argp, r->msg, sizeof(arg));
+      res = pr_response_get_last(cmd->tmp_pool, NULL, &resp_msg);
+      if (res == 0 &&
+          resp_msg != NULL) {
+        sstrncpy(argp, resp_msg, sizeof(arg));
 
       } else {
         sstrncpy(argp, "-", sizeof(arg));

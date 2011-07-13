@@ -6,6 +6,27 @@ This file contains a description of the major changes to ProFTPD for the
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
+1.3.3e
+---------
+
+  + Display messages work properly again.
+
+  + Fixes plaintext command injection vulnerability in FTPS implementation
+    (i.e. mod_tls).  See http://bugs.proftpd.org/show_bug.cgi?id=3624 for
+    details.
+
+  + Fixes CVE-2011-1137 (badly formed SSH messages cause DoS).  See
+    http://bugs.proftpd.org/show_bug.cgi?id=3586 for details.
+
+  + Performance improvements, especially during server startup/restarts.
+
+1.3.3d
+---------
+
+  + Fixed sql_prepare_where() buffer overflow (Bug#3536)
+  + Fixed CPU spike when handling .ftpaccess files.
+  + Fixed handling of SFTP uploads when compression is used.
+
 1.3.3c
 ---------
 
@@ -529,4 +550,4 @@ ChangeLog files.
         this will probably not apply to most modules.
 
  
-Last Updated: $Date: 2010/10/29 17:08:56 $
+Last Updated: $Date: 2011/03/29 17:53:00 $

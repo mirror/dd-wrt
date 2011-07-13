@@ -1,4 +1,4 @@
-# $Id: proftpd.spec,v 1.73.2.3 2010/10/29 17:08:56 castaglia Exp $
+# $Id: proftpd.spec,v 1.73.2.5 2011/04/01 16:43:48 castaglia Exp $
 
 # You can specify additional modules on the RPM build line by specifying
 # flags like:
@@ -51,7 +51,7 @@
 #  rpmbuild --define 'nohome 1' ...
 %{!?nohome:%define nohome 0}
 
-%define proftpd_version 1.3.3c
+%define proftpd_version 1.3.3e
 %define usecvsversion             0%{?_with_cvs:1}
 %define proftpd_cvs_version_main  1.2
 %define proftpd_cvs_version_date  20070929
@@ -81,7 +81,7 @@
 # we don't actually pass this list into configure... we just use it to
 # generate the manifest of modules for the %description section of the
 # resulting package.
-%define builtin_modules	mod_core:mod_xfer:mod_auth_unix:mod_auth_file:mod_auth:mod_ls:mod_log:mod_site:mod_delay%{?_with_dso::mod_dso}:mod_cap:mod_auth_pam%{?_with_ctrls::mod_ctrls}
+%define builtin_modules	mod_core:mod_xfer:mod_auth_unix:mod_auth_file:mod_auth:mod_ls:mod_log:mod_site:mod_delay:mod_facts%{?_with_dso::mod_dso}:mod_cap:mod_auth_pam%{?_with_ctrls::mod_ctrls}
 
 Summary:		ProFTPD -- Professional FTP Server.
 Name:			proftpd
