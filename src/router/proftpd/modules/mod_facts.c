@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.26.2.1 2010/03/02 18:08:07 castaglia Exp $
+ * $Id: mod_facts.c,v 1.26.2.2 2011/02/26 02:46:45 castaglia Exp $
  */
 
 #include "conf.h"
@@ -252,8 +252,10 @@ static size_t mlinfo_buflen = 0;
 
 static void facts_mlinfobuf_init(void) {
   if (mlinfo_buf == NULL) {
-    mlinfo_bufsz = pr_config_get_xfer_bufsz();
+    mlinfo_bufsz = pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR);
     mlinfo_buf = palloc(session.pool, mlinfo_bufsz);
+    pr_trace_msg("data", 8, "allocated facts buffer of %lu bytes",
+      (unsigned long) mlinfo_bufsz);
   }
 
   memset(mlinfo_buf, '\0', mlinfo_bufsz);

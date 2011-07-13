@@ -24,7 +24,7 @@
  * This is mod_exec, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_exec.c,v 1.9.2.1 2010/04/12 17:09:29 castaglia Exp $
+ * $Id: mod_exec.c,v 1.9.2.2 2011/03/26 00:49:04 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1371,7 +1371,6 @@ MODRET set_execenviron(cmd_rec *cmd) {
   for (i = 0; i < strlen(cmd->argv[1]); i++)
     (cmd->argv[1])[i] = toupper((cmd->argv[1])[i]);
   c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
-  c->flags |= CF_MERGEDOWN_MULTI;
 
   return PR_HANDLED(cmd);
 }

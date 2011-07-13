@@ -26,7 +26,7 @@
 
 /*
  * House initialization and main program loop
- * $Id: main.c,v 1.391.2.3 2010/07/16 15:54:01 castaglia Exp $
+ * $Id: main.c,v 1.391.2.5 2011/02/26 02:46:45 castaglia Exp $
  */
 
 #include "conf.h"
@@ -839,7 +839,9 @@ static void send_session_banner(server_rec *server) {
 
   display = get_param_ptr(server->conf, "DisplayConnect", FALSE);
   if (display != NULL) {
-    if (pr_display_file(display, NULL, R_220, PR_DISPLAY_FL_NO_EOM) < 0) {
+    int flags = PR_DISPLAY_FL_NO_EOM|PR_DISPLAY_FL_SEND_NOW;
+
+    if (pr_display_file(display, NULL, R_220, flags) < 0) {
       pr_log_debug(DEBUG6, "unable to display DisplayConnect file '%s': %s",
         display, strerror(errno));
     }
@@ -2690,6 +2692,8 @@ static void show_settings(void) {
   /* Tunable settings */
   printf("\n  Tunable Options:\n");
   printf("    PR_TUNABLE_BUFFER_SIZE = %u\n", PR_TUNABLE_BUFFER_SIZE);
+  printf("    PR_TUNABLE_DEFAULT_RCVBUFSZ = %u\n", PR_TUNABLE_DEFAULT_RCVBUFSZ);
+  printf("    PR_TUNABLE_DEFAULT_SNDBUFSZ = %u\n", PR_TUNABLE_DEFAULT_SNDBUFSZ);
   printf("    PR_TUNABLE_GLOBBING_MAX_MATCHES = %lu\n", PR_TUNABLE_GLOBBING_MAX_MATCHES);
   printf("    PR_TUNABLE_GLOBBING_MAX_RECURSION = %u\n", PR_TUNABLE_GLOBBING_MAX_RECURSION);
   printf("    PR_TUNABLE_HASH_TABLE_SIZE = %u\n", PR_TUNABLE_HASH_TABLE_SIZE);

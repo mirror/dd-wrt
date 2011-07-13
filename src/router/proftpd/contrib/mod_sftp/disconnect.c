@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp disconnect msgs
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: disconnect.c,v 1.4 2009/08/28 16:14:23 castaglia Exp $
+ * $Id: disconnect.c,v 1.4.2.1 2010/10/29 22:28:52 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -55,6 +55,19 @@ static struct disconnect_reason explanations[] = {
 };
 
 static const char *trace_channel = "ssh2";
+
+const char *sftp_disconnect_get_str(uint32_t reason_code) {
+  register unsigned int i;
+
+  for (i = 0; explanations[i].explain; i++) {
+    if (explanations[i].code == reason_code) {
+      return explanations[i].explain;
+    }
+  }
+
+  errno = ENOENT;
+  return NULL;
+}
 
 void sftp_disconnect_send(uint32_t reason, const char *explain,
     const char *file, int lineno, const char *func) {

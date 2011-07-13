@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Authentication module for ProFTPD
- * $Id: mod_auth.c,v 1.273.2.2 2010/07/27 00:38:23 castaglia Exp $
+ * $Id: mod_auth.c,v 1.273.2.4 2011/02/21 02:36:38 castaglia Exp $
  */
 
 #include "conf.h"
@@ -387,8 +387,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
   /* Handle a DisplayLogin file. */
   if (displaylogin_fh) {
     if (!(session.sf_flags & SF_ANON)) {
-      if (pr_display_fh(displaylogin_fh, NULL, auth_pass_resp_code,
-          PR_DISPLAY_FL_NO_EOM) < 0) {
+      if (pr_display_fh(displaylogin_fh, NULL, auth_pass_resp_code, 0) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayLogin file '%s': %s",
           displaylogin_fh->fh_path, strerror(errno));
       }
@@ -408,8 +407,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
 
       displaylogin = get_param_ptr(TOPLEVEL_CONF, "DisplayLogin", FALSE);
       if (displaylogin) {
-        if (pr_display_file(displaylogin, NULL, auth_pass_resp_code,
-            PR_DISPLAY_FL_NO_EOM) < 0) {
+        if (pr_display_file(displaylogin, NULL, auth_pass_resp_code, 0) < 0) {
           pr_log_debug(DEBUG6, "unable to display DisplayLogin file '%s': %s",
             displaylogin, strerror(errno));
         }
@@ -419,34 +417,28 @@ MODRET auth_post_pass(cmd_rec *cmd) {
   } else {
     char *displaylogin = get_param_ptr(TOPLEVEL_CONF, "DisplayLogin", FALSE);
     if (displaylogin) {
-      if (pr_display_file(displaylogin, NULL, auth_pass_resp_code,
-          PR_DISPLAY_FL_NO_EOM) < 0) {
+      if (pr_display_file(displaylogin, NULL, auth_pass_resp_code, 0) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayLogin file '%s': %s",
           displaylogin, strerror(errno));
       }
     }
   }
 
-  /* The sending of DisplayLogin lines uses pr_response_send(), rather than
-   * pr_response_add().  This means that to play along with them, we need
-   * to use pr_response_send() here as well.
-   */
-
   grantmsg = get_param_ptr(TOPLEVEL_CONF, "AccessGrantMsg", FALSE);
   if (grantmsg == NULL) {
     /* Append the final greeting lines. */
     if (session.sf_flags & SF_ANON) {
-      pr_response_send(auth_pass_resp_code,
+      pr_response_add(auth_pass_resp_code, "%s",
         _("Anonymous access granted, restrictions apply"));
 
     } else {
-      pr_response_send(auth_pass_resp_code, _("User %s logged in"), user);
+      pr_response_add(auth_pass_resp_code, _("User %s logged in"), user);
     }
 
   } else {
      /* Handle any AccessGrantMsg directive. */
      grantmsg = sreplace(cmd->tmp_pool, grantmsg, "%u", user, NULL);
-     pr_response_send(auth_pass_resp_code, "%s", grantmsg);
+     pr_response_add(auth_pass_resp_code, "%s", grantmsg);
   }
 
   privsdrop = get_param_ptr(TOPLEVEL_CONF, "RootRevoke", FALSE);
@@ -1158,7 +1150,7 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
     defined(__FreeBSD_version) && __FreeBSD_version >= 900007
   if (wtmp_log == NULL ||
       *wtmp_log == TRUE) {
-    wtmp_log = pcalloc(p, sizeof(int));
+    wtmp_log = pcalloc(p, sizeof(unsigned char));
     *wtmp_log = FALSE;
 
     pr_log_debug(DEBUG5,
@@ -1269,7 +1261,6 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
     pr_log_pri(PR_LOG_ERR, "error: %s setregid() or setreuid(): %s",
       session.user, strerror(errno));
     pr_response_send(R_530, _("Login incorrect."));
-
     end_login(1);
   }
 #endif
@@ -1907,7 +1898,7 @@ MODRET auth_user(cmd_rec *cmd) {
         pr_response_send(R_530, "%s", denymsg);
 
       } else {
-        pr_response_send(R_530, _("Login incorrect."));
+        pr_response_send(R_530, "%s", _("Login incorrect."));
       }
 
       end_login(0);
@@ -2062,7 +2053,7 @@ MODRET auth_pass(cmd_rec *cmd) {
         pr_response_send(R_530, "%s", denymsg);
 
       } else {
-        pr_response_send(R_530, _("Login incorrect."));
+        pr_response_send(R_530, "%s", _("Login incorrect."));
       }
 
       pr_log_auth(PR_LOG_NOTICE,
