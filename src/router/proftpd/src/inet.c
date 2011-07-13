@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Inet support functions, many wrappers for netdb functions
- * $Id: inet.c,v 1.121 2010/02/21 19:51:42 castaglia Exp $
+ * $Id: inet.c,v 1.121.2.2 2011/03/23 16:37:11 castaglia Exp $
  */
 
 #include "conf.h"
@@ -226,7 +226,8 @@ static conn_t *init_conn(pool *p, xaset_t *servers, int fd,
 
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
-    defined(FREEBSD7) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+    defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
+    defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
@@ -244,7 +245,8 @@ static conn_t *init_conn(pool *p, xaset_t *servers, int fd,
 
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
-    defined(FREEBSD7) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+    defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
+    defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
@@ -699,36 +701,61 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf) {
 
   if (c->listen_fd != -1) {
     int keepalive = 0;
-    int crcvbuf, csndbuf;
+    int crcvbuf = 0, csndbuf = 0;
     socklen_t len;
 
     if (setsockopt(c->listen_fd, SOL_SOCKET, SO_KEEPALIVE, (void *)
-        &keepalive, sizeof(int)) < 0)
+        &keepalive, sizeof(int)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_KEEPALIVE: %s",
         strerror(errno));
+    }
 
-    len = sizeof(csndbuf);
-    getsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &csndbuf, &len);
+    if (sndbuf > 0) {
+      len = sizeof(csndbuf);
+      getsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &csndbuf, &len);
 
-    if (sndbuf &&
-        sndbuf > csndbuf) {
-      if (setsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &sndbuf,
-          sizeof(sndbuf)) < 0)
-        pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_SNDBUF: %s",
-          strerror(errno));
+      if (sndbuf > csndbuf) {
+        if (setsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &sndbuf,
+            sizeof(sndbuf)) < 0) {
+          pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_SNDBUF: %s",
+            strerror(errno));
+
+        } else {
+          pr_trace_msg("data", 8,
+            "set socket sndbuf of %lu bytes", (unsigned long) sndbuf);
+        }
+
+      } else {
+        pr_trace_msg("data", 8,
+          "socket %d has sndbuf of %lu bytes, ignoring "
+          "requested %lu bytes sndbuf", c->listen_fd, (unsigned long) csndbuf,
+          (unsigned long) sndbuf);
+      }
     }
 
     c->sndbuf = (sndbuf ? sndbuf : csndbuf);
 
-    len = sizeof(crcvbuf);
-    getsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &crcvbuf, &len);
+    if (rcvbuf > 0) {
+      len = sizeof(crcvbuf);
+      getsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &crcvbuf, &len);
 
-    if (rcvbuf &&
-        rcvbuf > crcvbuf) {
-      if (setsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &rcvbuf,
-          sizeof(rcvbuf)) < 0)
-        pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_RCVFBUF: %s",
-          strerror(errno));
+      if (rcvbuf > crcvbuf) {
+        if (setsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &rcvbuf,
+            sizeof(rcvbuf)) < 0) {
+          pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_RCVFBUF: %s",
+            strerror(errno));
+
+        } else {
+          pr_trace_msg("data", 8,
+            "set socket rcvbuf of %lu bytes", (unsigned long) rcvbuf);
+        }
+
+      } else {
+        pr_trace_msg("data", 8,
+          "socket %d has rcvbuf of %lu bytes, ignoring "
+          "requested %lu bytes rcvbuf", c->listen_fd, (unsigned long) crcvbuf,
+          (unsigned long) rcvbuf);
+      }
     }
 
     c->rcvbuf = (rcvbuf ? rcvbuf : crcvbuf);

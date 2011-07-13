@@ -25,7 +25,7 @@
  */
 
 /* Core FTPD module
- * $Id: mod_core.c,v 1.366.2.3 2010/04/17 17:11:14 castaglia Exp $
+ * $Id: mod_core.c,v 1.366.2.5 2011/02/21 02:36:38 castaglia Exp $
  */
 
 #include "conf.h"
@@ -2521,12 +2521,13 @@ MODRET set_allowdenyusergroupclass(cmd_rec *cmd) {
   if (strcmp(cmd->argv[0], "AllowClass") == 0 ||
       strcmp(cmd->argv[0], "AllowUser") == 0 ||
       strcmp(cmd->argv[0], "DenyClass") == 0 ||
-      strcmp(cmd->argv[0], "DenyUser") == 0)
+      strcmp(cmd->argv[0], "DenyUser") == 0) {
     eval_type = PR_EXPR_EVAL_OR;
 
   /* For AllowGroup and DenyGroup, the default expression type is "and". */
-  else
+  } else {
     eval_type = PR_EXPR_EVAL_AND;
+  }
 
   if (cmd->argc > 2) {
     /* Check the first parameter to see if it is an evaluation modifier:
@@ -2567,6 +2568,7 @@ MODRET set_allowdenyusergroupclass(cmd_rec *cmd) {
       c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
       *((unsigned char *) c->argv[0]) = PR_EXPR_EVAL_REGEX;
       c->argv[1] = (void *) preg;
+      c->flags |= CF_MERGEDOWN_MULTI;
 
       return PR_HANDLED(cmd);
 
@@ -2606,6 +2608,7 @@ MODRET set_allowdenyusergroupclass(cmd_rec *cmd) {
 
   *argv = NULL;
 
+  c->flags |= CF_MERGEDOWN_MULTI;
   return PR_HANDLED(cmd);
 }
 
@@ -3017,8 +3020,10 @@ MODRET core_clear_fs(cmd_rec *cmd) {
 }
 
 MODRET core_quit(cmd_rec *cmd) {
+  int flags = PR_DISPLAY_FL_SEND_NOW;
+
   if (displayquit_fh) {
-    if (pr_display_fh(displayquit_fh, NULL, R_221, 0) < 0) {
+    if (pr_display_fh(displayquit_fh, NULL, R_221, flags) < 0) {
       pr_log_debug(DEBUG6, "unable to display DisplayQuit file '%s': %s",
         displayquit_fh->fh_path, strerror(errno));
     }
@@ -3026,25 +3031,16 @@ MODRET core_quit(cmd_rec *cmd) {
     pr_fsio_close(displayquit_fh);
     displayquit_fh = NULL;
 
-    /* Hack or feature, pr_display_file() always puts a hyphen on the last line.
-     */
-    pr_response_send(R_221, "%s", "");
-
   } else {
     char *display = get_param_ptr(TOPLEVEL_CONF, "DisplayQuit", FALSE); 
     if (display) {
-      if (pr_display_file(display, NULL, R_221, 0) < 0) {
+      if (pr_display_file(display, NULL, R_221, flags) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayQuit file '%s': %s",
           display, strerror(errno));
       }
 
-      /* Hack or feature, pr_display_file() always puts a hyphen on the
-       * last line
-       */
-      pr_response_send(R_221, "%s", "");
-
     } else {
-      pr_response_send(R_221, _("Goodbye."));
+      pr_response_send(R_221, "%s", _("Goodbye."));
     }
   }
 
@@ -3935,8 +3931,7 @@ MODRET _chdir(cmd_rec *cmd, char *ndir) {
         !S_ISDIR(st.st_mode) &&
         (bool ? st.st_mtime > prev : TRUE)) {
 
-      if (pr_display_file(display, session.cwd, R_250,
-          PR_DISPLAY_FL_NO_EOM) < 0) {
+      if (pr_display_file(display, session.cwd, R_250, 0) < 0) {
         pr_log_debug(DEBUG3, "error displaying '%s': %s", display,
           strerror(errno));
       }

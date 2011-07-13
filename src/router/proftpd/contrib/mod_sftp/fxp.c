@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp sftp
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: fxp.c,v 1.88.2.14 2010/10/14 21:39:48 castaglia Exp $
+ * $Id: fxp.c,v 1.88.2.19 2011/03/19 23:02:09 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -2120,6 +2120,13 @@ static int fxp_handle_abort(const void *key_data, size_t key_datasz,
     }
 
     fxh->dirh = NULL;
+    return 0;
+  }
+
+  /* This filehandle may already have been closed.  If so, just move on to
+   * the next one.
+   */
+  if (fxh->fh == NULL) {
     return 0;
   }
 
@@ -5336,7 +5343,7 @@ static int fxp_handle_lstat(struct fxp_packet *fxp) {
 static int fxp_handle_mkdir(struct fxp_packet *fxp) {
   char *buf, *cmd_name, *ptr, *path;
   struct stat *attrs;
-  int have_error = FALSE;
+  int have_error = FALSE, res = 0;
   mode_t dir_mode;
   uint32_t attr_flags, buflen, bufsz, status_code;
   struct fxp_packet *resp;
@@ -5474,6 +5481,9 @@ static int fxp_handle_mkdir(struct fxp_packet *fxp) {
       fxp_strerror(status_code), NULL);
 
     pr_cmd_dispatch_phase(cmd2, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
     resp = fxp_packet_create(fxp->pool, fxp->channel_id);
@@ -5488,7 +5498,8 @@ static int fxp_handle_mkdir(struct fxp_packet *fxp) {
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
     "creating directory '%s' with mode 0%o", path, (unsigned int) dir_mode);
 
-  if (pr_fsio_mkdir(path, dir_mode) < 0) {
+  res = pr_fsio_mkdir(path, dir_mode);
+  if (res < 0) {
     const char *reason;
     int xerrno = errno;
 
@@ -5510,6 +5521,7 @@ static int fxp_handle_mkdir(struct fxp_packet *fxp) {
       NULL);
 
     pr_cmd_dispatch_phase(cmd2, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
     resp = fxp_packet_create(fxp->pool, fxp->channel_id);
@@ -5534,6 +5546,7 @@ static int fxp_handle_mkdir(struct fxp_packet *fxp) {
     fxp_strerror(status_code), NULL);
 
   pr_cmd_dispatch_phase(cmd2, POST_CMD, 0);
+  pr_cmd_dispatch_phase(cmd2, LOG_CMD, 0);
   pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
 
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
@@ -5948,6 +5961,12 @@ static int fxp_handle_open(struct fxp_packet *fxp) {
   sftp_msg_write_int(&buf, &buflen, fxp->request_id);
   sftp_msg_write_string(&buf, &buflen, fxh->name);
 
+  /* Clear out any transfer-specific data. */
+  if (session.xfer.p) {
+    destroy_pool(session.xfer.p);
+  }
+  memset(&session.xfer, 0, sizeof(session.xfer));
+
   session.xfer.p = pr_pool_create_sz(fxp_pool, 64);
   session.xfer.path = pstrdup(session.xfer.p, path);
   memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
@@ -6140,10 +6159,21 @@ static int fxp_handle_opendir(struct fxp_packet *fxp) {
   sftp_msg_write_int(&buf, &buflen, fxp->request_id);
   sftp_msg_write_string(&buf, &buflen, fxh->name);
 
-  session.xfer.p = pr_pool_create_sz(fxp_pool, 64);
-  memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
-  gettimeofday(&session.xfer.start_time, NULL);
-  session.xfer.direction = PR_NETIO_IO_WR;
+  /* If there is any existing transfer-specific data, leave it alone.
+   *
+   * Unlike FTP, SFTP allows for file downloads whilst in the middle of
+   * a directory listing.  Thus this OPENDIR could arrive while a file
+   * is being read/written.  Assume that the per-file stats are more
+   * important.
+   */
+  if (session.xfer.p == NULL) {
+    memset(&session.xfer, 0, sizeof(session.xfer));
+
+    session.xfer.p = pr_pool_create_sz(fxp_pool, 64);
+    memset(&session.xfer.start_time, 0, sizeof(session.xfer.start_time));
+    gettimeofday(&session.xfer.start_time, NULL);
+    session.xfer.direction = PR_NETIO_IO_WR;
+  }
 
   pr_timer_remove(PR_TIMER_STALLED, ANY_MODULE);
 
@@ -7556,7 +7586,7 @@ static int fxp_handle_rmdir(struct fxp_packet *fxp) {
   uint32_t buflen, bufsz, status_code;
   struct fxp_packet *resp;
   cmd_rec *cmd, *cmd2;
-  int have_error = FALSE;
+  int have_error = FALSE, res = 0;
 
   path = sftp_msg_read_string(fxp->pool, &fxp->payload, &fxp->payload_sz);
   if (fxp_session->client_version >= fxp_utf8_protocol_version) {
@@ -7681,6 +7711,9 @@ static int fxp_handle_rmdir(struct fxp_packet *fxp) {
       fxp_strerror(status_code), NULL);
 
     pr_cmd_dispatch_phase(cmd2, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd2, LOG_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
 
     resp = fxp_packet_create(fxp->pool, fxp->channel_id);
@@ -7690,7 +7723,8 @@ static int fxp_handle_rmdir(struct fxp_packet *fxp) {
     return fxp_packet_write(resp);
   }
 
-  if (pr_fsio_rmdir(path) < 0) {
+  res = pr_fsio_rmdir(path);
+  if (res < 0) {
     int xerrno = errno;
 
     (void) pr_trace_msg("fileperms", 1, "RMDIR, user '%s' (UID %lu, GID %lu): "
@@ -7701,45 +7735,45 @@ static int fxp_handle_rmdir(struct fxp_packet *fxp) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error removing directory '%s': %s", path, strerror(xerrno));
 
-    errno = xerrno;
+#if defined(ENOTEMPTY) && ENOTEMPTY != EEXIST
+    status_code = fxp_errno2status(xerrno, &reason);
+
+#else
+    /* On AIX5, ENOTEMPTY and EEXIST are defined to the same value.  See:
+     *
+     *  http://forums.proftpd.org/smf/index.php/topic,3971.0.html
+     *
+     * We still want to send the proper SFTP error code/string if we see
+     * these values, though.  The fix for handling this case in
+     * fxp_errno2status() means that we need to do the errno lookup a little
+     * more manually here.
+     */
+
+    if (xerrno != ENOTEMPTY) {
+      status_code = fxp_errno2status(xerrno, &reason);
+
+    } else {
+      /* Generic failure code, works for all protocol versions. */
+      status_code = SSH2_FX_FAILURE;
+
+      if (fxp_session->client_version > 3) {
+        status_code = SSH2_FX_FILE_ALREADY_EXISTS;
+      }
+
+      if (fxp_session->client_version > 5) {
+        status_code = SSH2_FX_DIR_NOT_EMPTY;
+      }
+
+      reason = fxp_strerror(status_code);
+    }
+#endif
 
   } else {
     /* No error. */
     errno = 0;
-  }
-
-#if defined(ENOTEMPTY) && ENOTEMPTY != EEXIST
-  status_code = fxp_errno2status(errno, &reason);
-
-#else
-  /* On AIX5, ENOTEMPTY and EEXIST are defined to the same value.  See:
-   *
-   *  http://forums.proftpd.org/smf/index.php/topic,3971.0.html
-   *
-   * We still want to send the proper SFTP error code/string if we see
-   * these values, though.  The fix for handling this case in
-   * fxp_errno2status() means that we need to do the errno lookup a little
-   * more manually here.
-   */
-
-  if (errno != ENOTEMPTY) {
-    status_code = fxp_errno2status(errno, &reason);
-
-  } else {
-    /* Generic failure code, works for all protocol versions. */
-    status_code = SSH2_FX_FAILURE;
-
-    if (fxp_session->client_version > 3) {
-      status_code = SSH2_FX_FILE_ALREADY_EXISTS;
-    }
-
-    if (fxp_session->client_version > 5) {
-      status_code = SSH2_FX_DIR_NOT_EMPTY;
-    }
-
+    status_code = SSH2_FX_OK;
     reason = fxp_strerror(status_code);
   }
-#endif
 
   pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s' "
     "('%s' [%d])", (unsigned long) status_code, reason,
@@ -7747,8 +7781,9 @@ static int fxp_handle_rmdir(struct fxp_packet *fxp) {
 
   fxp_status_write(&buf, &buflen, fxp->request_id, status_code, reason, NULL);
 
-  pr_cmd_dispatch_phase(cmd2, errno == 0 ? POST_CMD : POST_CMD_ERR, 0);
-  pr_cmd_dispatch_phase(cmd, errno == 0 ? LOG_CMD : LOG_CMD_ERR, 0);
+  pr_cmd_dispatch_phase(cmd2, res == 0 ? POST_CMD : POST_CMD_ERR, 0);
+  pr_cmd_dispatch_phase(cmd2, res == 0 ? LOG_CMD : LOG_CMD_ERR, 0);
+  pr_cmd_dispatch_phase(cmd, res == 0 ? LOG_CMD : LOG_CMD_ERR, 0);
 
   resp = fxp_packet_create(fxp->pool, fxp->channel_id);
   resp->payload = ptr;

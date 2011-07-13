@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2010 The ProFTPD Project team
+ * Copyright (c) 2004-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Display of files
- * $Id: display.h,v 1.2.4.1 2010/04/07 23:30:04 castaglia Exp $
+ * $Id: display.h,v 1.2.4.4 2011/02/21 02:36:38 castaglia Exp $
  */
 
 #ifndef PR_DISPLAY_H
@@ -38,10 +38,16 @@ struct fh_rec;
  */
 #define PR_DISPLAY_FL_NO_EOM	0x0001
 
+/* This flag should be used to tell the pr_display_file() function to send
+ * the file lines immediately via pr_response_send(), rather than queueing
+ * up the lines, to be flushed out to the client later.
+ */
+#define PR_DISPLAY_FL_SEND_NOW	0x0002
+
 /* Used to read the file handle given by fh, located on the filesystem fs, and
  * return the results, with variables expanded, to the client, using the
  * response code given by code.  Returns 0 if the file handle's contents
- * are displayed without * issue, -1 otherwise (with errno set appropriately).
+ * are displayed without issue, -1 otherwise (with errno set appropriately).
  */
 int pr_display_fh(struct fh_rec *fh, const char *fs, const char *code,
   int flags);

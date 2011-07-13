@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,18 +23,21 @@
  */
 
 /* String manipulation functions
- * $Id: str.c,v 1.6 2008/06/14 02:40:04 castaglia Exp $
+ * $Id: str.c,v 1.6.4.1 2011/03/09 22:15:12 castaglia Exp $
  */
 
 #include "conf.h"
+
+/* Maximum number of replacements that we will do in a given string. */
+#define PR_STR_MAX_REPLACEMENTS                       128
 
 char *sreplace(pool *p, char *s, ...) {
   va_list args;
   char *m,*r,*src = s,*cp;
   char **mptr,**rptr;
-  char *marr[33],*rarr[33];
+  char *matches[PR_STR_MAX_REPLACEMENTS+1], *replaces[PR_STR_MAX_REPLACEMENTS+1];
   char buf[PR_TUNABLE_PATH_MAX] = {'\0'}, *pbuf = NULL;
-  size_t mlen = 0, rlen = 0;
+  size_t nmatches = 0, rlen = 0;
   int blen;
   int dyn = TRUE;
 
@@ -46,13 +49,15 @@ char *sreplace(pool *p, char *s, ...) {
   cp = buf;
   *cp = '\0';
 
-  memset(marr, '\0', sizeof(marr));
-  memset(rarr, '\0', sizeof(rarr));
+  memset(matches, 0, sizeof(matches));
+  memset(replaces, 0, sizeof(replaces));
+
   blen = strlen(src) + 1;
 
   va_start(args, s);
 
-  while ((m = va_arg(args, char *)) != NULL && mlen < sizeof(marr)-1) {
+  while ((m = va_arg(args, char *)) != NULL &&
+         nmatches < PR_STR_MAX_REPLACEMENTS) {
     char *tmp = NULL;
     int count = 0;
 
@@ -97,12 +102,17 @@ char *sreplace(pool *p, char *s, ...) {
          */
         return s;
       }
-      marr[mlen] = m;
-      rarr[mlen++] = r;
+      matches[nmatches] = m;
+      replaces[nmatches++] = r;
     }
   }
 
   va_end(args);
+
+  /* If there are no matches, then there is nothing to replace. */
+  if (nmatches == 0) {
+    return s;
+  }
 
   /* Try to handle large buffer situations (i.e. escaping of PR_TUNABLE_PATH_MAX
    * (>2048) correctly, but do not allow very big buffer sizes, that may
@@ -123,7 +133,9 @@ char *sreplace(pool *p, char *s, ...) {
   }
 
   while (*src) {
-    for (mptr = marr, rptr = rarr; *mptr; mptr++, rptr++) {
+    for (mptr = matches, rptr = replaces; *mptr; mptr++, rptr++) {
+      size_t mlen;
+
       mlen = strlen(*mptr);
       rlen = strlen(*rptr);
 

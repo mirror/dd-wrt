@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2010 The ProFTPD Project team
+ * Copyright (c) 2004-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,14 @@
  */
 
 /* Display of files
- * $Id: display.c,v 1.16.2.2 2010/04/17 17:11:14 castaglia Exp $
+ * $Id: display.c,v 1.16.2.6 2011/02/21 02:36:38 castaglia Exp $
  */
 
 #include "conf.h"
+
+static int first_msg_sent = FALSE;
+static const char *first_msg = NULL;
+static const char *prev_msg = NULL;
 
 static void format_size_str(char *buf, size_t buflen, off_t size) {
   char units[] = {'K', 'M', 'G', 'T', 'P'};
@@ -40,6 +44,82 @@ static void format_size_str(char *buf, size_t buflen, off_t size) {
 
   /* Now, prepare the buffer. */
   snprintf(buf, buflen, "%.3" PR_LU "%cB", (pr_off_t) size, units[i]);
+}
+
+static int display_add_line(pool *p, const char *resp_code,
+    const char *resp_msg) {
+
+  /* Handle the case where the data to Display might contain only one line. */
+
+  if (first_msg_sent == FALSE &&
+      first_msg == NULL) {
+      first_msg = pstrdup(p, resp_msg);
+    return 0;
+  }
+
+  if (first_msg != NULL) {
+    pr_response_send_raw("%s-%s", resp_code, first_msg);
+    first_msg = NULL;
+    first_msg_sent = TRUE;
+
+    prev_msg = pstrdup(p, resp_msg);
+    return 0; 
+  }
+
+  if (prev_msg != NULL) {
+    if (MultilineRFC2228) {
+      pr_response_send_raw("%s-%s", resp_code, prev_msg);
+
+    } else {
+      pr_response_send_raw(" %s", prev_msg);
+    }
+  }
+
+  prev_msg = pstrdup(p, resp_msg);
+  return 0;
+}
+
+static int display_flush_lines(pool *p, const char *resp_code, int flags) {
+  if (first_msg != NULL) {
+    if (session.auth_mech != NULL) {
+      if (flags & PR_DISPLAY_FL_NO_EOM) {
+        pr_response_send_raw("%s-%s", resp_code, first_msg);
+
+      } else {
+        pr_response_send_raw("%s %s", resp_code, first_msg);
+      }
+
+    } else {
+      /* There is a special case if the client has not yet authenticated; it
+       * means we are handling a DisplayConnect file.  The server will send
+       * a banner as well, so we need to treat this is the start of a multiline
+       * response.
+       */
+      pr_response_send_raw("%s-%s", resp_code, first_msg);
+    }
+
+  } else {
+    if (prev_msg) {
+      if (MultilineRFC2228) {
+        pr_response_send_raw("%s-%s", resp_code, prev_msg);
+
+      } else {
+        if (flags & PR_DISPLAY_FL_NO_EOM) {
+          pr_response_send_raw(" %s", prev_msg);
+
+        } else {
+          pr_response_send_raw("%s %s", resp_code, prev_msg);
+        }
+      }
+    }
+  }
+
+  /* Reset state for the next set of lines. */
+  first_msg_sent = FALSE;
+  first_msg = NULL;
+  prev_msg = NULL;
+
+  return 0;
 }
 
 static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
@@ -64,8 +144,6 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   char mg_xfer_units[12] = {'\0'}, *user;
   const char *mg_time;
   char *rfc1413_ident = NULL;
-  char *first = NULL, *prev = NULL;
-  int sent_first = FALSE;
 
   /* Stat the opened file to determine the optimal buffer size for IO. */
   memset(&st, 0, sizeof(st));
@@ -201,7 +279,8 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
     buf[sizeof(buf)-1] = '\0';
     len = strlen(buf);
 
-    while(len && (buf[len-1] == '\r' || buf[len-1] == '\n')) {
+    while (len &&
+           (buf[len-1] == '\r' || buf[len-1] == '\n')) {
       buf[len-1] = '\0';
       len--;
     }
@@ -300,75 +379,22 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
 
     sstrncpy(buf, outs, sizeof(buf));
 
-    /* Handle the case where the Display file might contain only one
-     * line.
-     *
-     * We _could_ just use pr_response_add(), and let the response code
-     * automatically handle all of the multiline response formatting.
-     * However, some of the Display files are at times waiting for the
-     * response chains to be flushed, which won't work (e.g. login, logout).
-     * Thus we have to deal with multiline files appropriately here.
-     */
-
-    if (sent_first == FALSE &&
-        first == NULL) {
-      first = pstrdup(p, outs);
-      continue;
-    }
-
-    if (first) {
-      pr_response_send_raw("%s-%s", code, first);
-      first = NULL;
-      sent_first = TRUE;
-
-      prev = pstrdup(p, outs);
-      continue;
-    }
-
-    if (prev) {
-      if (MultilineRFC2228) {
-        pr_response_send_raw("%s-%s", code, prev);
-
-      } else {
-        pr_response_send_raw(" %s", prev);
-      }
-    }
-
-    prev = pstrdup(p, outs);
-  }
-
-  if (first != NULL) {
-    if (session.auth_mech != NULL) {
-      if (flags & PR_DISPLAY_FL_NO_EOM) {
-        pr_response_send_raw("%s-%s", code, first);
-
-      } else {
-        pr_response_send_raw("%s %s", code, first);
-      }
+    if (flags & PR_DISPLAY_FL_SEND_NOW) {
+      /* Normally we use pr_response_add(), and let the response code
+       * automatically handle all of the multiline response formatting.
+       * However, some of the Display files are at times waiting for the
+       * response chains to be flushed, which won't work (i.e. DisplayConnect
+       * and DisplayQuit).
+       */
+      display_add_line(p, code, outs);
 
     } else {
-      /* There is a special case if the client has not yet authenticated; it
-       * means we are handling a DisplayConnect file.  The server will send
-       * a banner as well, so we need to treat this is the start of a multiline
-       * response.
-       */
-      pr_response_send_raw("%s-%s", code, first);
+      pr_response_add(code, "%s", outs);
     }
+  }
 
-  } else {
-    if (prev) {
-      if (MultilineRFC2228) {
-        pr_response_send_raw("%s-%s", code, prev);
-
-      } else {
-        if (flags & PR_DISPLAY_FL_NO_EOM) {
-          pr_response_send_raw(" %s", prev);
-
-        } else {
-          pr_response_send_raw("%s %s", code, prev);
-        }
-      }
-    }
+  if (flags & PR_DISPLAY_FL_SEND_NOW) {
+    display_flush_lines(p, code, flags);
   }
 
   destroy_pool(p);

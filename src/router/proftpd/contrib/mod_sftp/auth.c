@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp user authentication
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth.c,v 1.23.2.2 2010/04/09 18:26:01 castaglia Exp $
+ * $Id: auth.c,v 1.23.2.3 2011/01/24 17:53:26 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -385,6 +385,30 @@ static int setup_env(pool *p, char *user) {
       *((unsigned char *) c->argv[0]) == FALSE) {
     session.wtmp_log = FALSE;
   }
+
+  /* As per Bug#3482, we need to disable WtmpLog for FreeBSD 9.0, as
+   * an interim measure.
+   *
+   * The issue is that some platforms update multiple files for a single
+   * pututxline(3) call; proftpd tries to update those files manually,
+   * do to chroots (after which a pututxline(3) call will fail).  A proper
+   * solution requires a separate process, running with the correct
+   * privileges, which would handle wtmp logging. The proftpd session
+   * processes would send messages to this logging daemon (via Unix domain
+   * socket, or FIFO, or TCP socket).
+   *
+   * Also note that this hack to disable WtmpLog may need to be extended
+   * to other platforms in the future.
+   */
+#if defined(HAVE_UTMPX_H) && \
+    defined(__FreeBSD_version) && __FreeBSD_version >= 900007
+  if (session.wtmp_log == TRUE) {
+    session.wtmp_log = FALSE;
+
+    pr_log_debug(DEBUG5,
+      "WtpmLog automatically disabled; see Bug#3482 for details");
+  }
+#endif
 
   PRIVS_ROOT
 

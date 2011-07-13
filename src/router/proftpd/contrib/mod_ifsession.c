@@ -26,7 +26,7 @@
  * This is mod_ifsession, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ifsession.c,v 1.24.4.1 2010/06/15 20:46:09 castaglia Exp $
+ * $Id: mod_ifsession.c,v 1.24.4.4 2011/03/26 00:49:04 castaglia Exp $
  */
 
 #include "conf.h"
@@ -47,11 +47,15 @@
 
 static int ifsess_merged = FALSE;
 
+static const char *trace_channel = "ifsession";
+
 /* Support routines
  */
 
 static void ifsess_remove_param(xaset_t *set, const char *name) {
   config_rec *c = NULL;
+
+  pr_trace_msg(trace_channel, 9, "removing '%s' config", name);
 
   c = find_config(set, -1, name, TRUE);
   while (c != NULL) {
@@ -69,6 +73,8 @@ static void ifsess_remove_param(xaset_t *set, const char *name) {
 static void ifsess_dup_param(pool *dst_pool, xaset_t **dst, config_rec *c,
     config_rec *parent) {
   config_rec *dup_c = NULL;
+
+  pr_trace_msg(trace_channel, 9, "adding '%s' config", c->name);
 
   if (!*dst)
     *dst = xaset_create(dst_pool, NULL);
@@ -104,8 +110,12 @@ static void ifsess_dup_param(pool *dst_pool, xaset_t **dst, config_rec *c,
        * directive then effectively replaces any directive there.
        */
       if (c->config_type == CONF_PARAM &&
-          !(c->flags & CF_MERGEDOWN_MULTI))
+          !(c->flags & CF_MERGEDOWN_MULTI) &&
+          !(c->flags & CF_MULTI)) {
+          pr_trace_msg(trace_channel, 15, "removing '%s' config because "
+            "c->flags does not contain MULTI or MERGEDOWN_MULTI", c->name);
         ifsess_remove_param(dup_c->subset, c->name);
+      }
 
       ifsess_dup_param(dst_pool, &dup_c->subset, c, dup_c);
     }
@@ -129,8 +139,11 @@ static void ifsess_dup_set(pool *dst_pool, xaset_t *dst, xaset_t *src) {
      * directive then effectively replaces any directive there.
      */
     if (c->config_type == CONF_PARAM &&
-        !(c->flags & CF_MERGEDOWN_MULTI))
+        !(c->flags & CF_MERGEDOWN_MULTI)) {
+        pr_trace_msg(trace_channel, 15, "removing '%s' config because "
+          "c->flags does not contain MERGEDOWN_MULTI", c->name);
       ifsess_remove_param(dst, c->name);
+    }
 
     ifsess_dup_param(dst_pool, &dst, c, NULL);
   }
@@ -210,10 +223,12 @@ MODRET start_ifctxt(cmd_rec *cmd) {
           "regex compilation: ", errstr, NULL));
       }
 
+      eval_type = PR_EXPR_EVAL_REGEX;
+
       c = add_config_param(name, 2, NULL, NULL);
       c->config_type = config_type;
       c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-      *((unsigned char *) c->argv[0]) = PR_EXPR_EVAL_REGEX;
+      *((unsigned char *) c->argv[1]) = eval_type;
       c->argv[1] = (void *) preg;
 
       return PR_HANDLED(cmd);
@@ -303,16 +318,19 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
       if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_REGEX) {
         regex_t *preg = (regex_t *) list->argv[1];
 
-        if (session.group && regexec(preg, session.group, 0, NULL, 0) == 0)
+        if (session.group != NULL &&
+            regexec(preg, session.group, 0, NULL, 0) == 0) {
           mergein = TRUE;
 
-        else if (session.groups) {
+        } else if (session.groups) {
           register int j = 0;
 
-          for (j = session.groups->nelts-1; j >= 0; j--)
+          for (j = session.groups->nelts-1; j >= 0; j--) {
             if (regexec(preg, *(((char **) session.groups->elts) + j), 0,
-                NULL, 0) == 0)
+                NULL, 0) == 0) {
               mergein = TRUE;
+            }
+          }
         }
       } else
 #endif /* HAVE_REGEX_H && HAVE_REGCOMP */
@@ -349,9 +367,10 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
 
         ifsess_merged = TRUE;
 
-      } else
+      } else {
         pr_log_debug(DEBUG9, MOD_IFSESSION_VERSION
           ": <IfGroup> not matched, skipping");
+      } 
     }
 
     /* Note: it would be more efficient, memory-wise, to destroy the
@@ -394,12 +413,13 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
 #endif /* HAVE_REGEX_H && HAVE_REGCOMP */
 
       if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_OR &&
-          pr_expr_eval_user_or((char **) &list->argv[1]) == TRUE)
+          pr_expr_eval_user_or((char **) &list->argv[1]) == TRUE) {
         mergein = TRUE;
 
-      else if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_AND &&
-          pr_expr_eval_user_and((char **) &list->argv[1]) == TRUE)
+      } else if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_AND &&
+          pr_expr_eval_user_and((char **) &list->argv[1]) == TRUE) {
         mergein = TRUE;
+      }
 
       if (mergein) {
         pr_log_debug(DEBUG2, MOD_IFSESSION_VERSION
@@ -422,9 +442,10 @@ MODRET ifsess_post_pass(cmd_rec *cmd) {
 
         ifsess_merged = TRUE;
 
-      } else
+      } else {
         pr_log_debug(DEBUG9, MOD_IFSESSION_VERSION
           ": <IfUser> not matched, skipping");
+      }
     }
 
     c = find_config_next(c, c->next, -1, IFSESS_USER_TEXT, FALSE);
@@ -483,12 +504,13 @@ static int ifsess_sess_init(void) {
 #endif /* HAVE_REGEX_H && HAVE_REGCOMP */
 
       if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_OR &&
-          pr_expr_eval_class_or((char **) &list->argv[1]) == TRUE)
+          pr_expr_eval_class_or((char **) &list->argv[1]) == TRUE) {
         mergein = TRUE;
 
-      else if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_AND &&
-          pr_expr_eval_class_and((char **) &list->argv[1]) == TRUE)
+      } else if (*((unsigned char *) list->argv[0]) == PR_EXPR_EVAL_AND &&
+          pr_expr_eval_class_and((char **) &list->argv[1]) == TRUE) {
         mergein = TRUE;
+      }
 
       if (mergein) {
         pr_log_debug(DEBUG2, MOD_IFSESSION_VERSION
@@ -509,9 +531,10 @@ static int ifsess_sess_init(void) {
 
         ifsess_merged = TRUE;
 
-      } else
+      } else {
         pr_log_debug(DEBUG9, MOD_IFSESSION_VERSION
           ": <IfClass> not matched, skipping");
+      }
     }
 
     c = find_config_next(c, c->next, -1, IFSESS_CLASS_TEXT, FALSE);
