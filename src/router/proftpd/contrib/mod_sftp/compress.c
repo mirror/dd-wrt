@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp compression
- * Copyright (c) 2008 TJ Saunders
+ * Copyright (c) 2008-2010 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: compress.c,v 1.3 2009/11/22 22:18:13 castaglia Exp $
+ * $Id: compress.c,v 1.3.2.1 2010/12/08 22:30:34 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -32,6 +32,8 @@
 #include "packet.h"
 #include "crypto.h"
 #include "compress.h"
+
+static const char *trace_channel = "ssh2";
 
 struct sftp_compress {
   int use_zlib;
@@ -218,7 +220,7 @@ int sftp_compress_read_data(struct ssh2_packet *pkt) {
 
   if (comp->use_zlib &&
       comp->stream_ready) {
-    unsigned char buf[16382], *input;
+    unsigned char buf[16384], *input;
     char *payload;
     uint32_t input_len, payload_len = 0, payload_sz;
     pool *sub_pool;
@@ -255,45 +257,74 @@ int sftp_compress_read_data(struct ssh2_packet *pkt) {
       stream->avail_out = sizeof(buf);
 
       zres = inflate(stream, Z_SYNC_FLUSH);
-      if (zres == Z_OK) {
-        copy_len = sizeof(buf) - stream->avail_out;
+      switch (zres) {
+        case Z_OK:
+          copy_len = sizeof(buf) - stream->avail_out;
 
-        /* Allocate more space for the data if necessary. */
-        if ((payload_len + copy_len) > payload_sz) {
-          uint32_t new_sz;
-          char *tmp;
+          /* Allocate more space for the data if necessary. */
+          if ((payload_len + copy_len) > payload_sz) {
+            uint32_t new_sz;
+            char *tmp;
 
-          new_sz = payload_sz * 2;
-          tmp = palloc(sub_pool, new_sz);
-          memcpy(tmp, payload, payload_len);
-          payload = tmp;
-        }
+            pr_signals_handle();
 
-        if (copy_len > 0) {
-          memcpy(payload + payload_len, buf, copy_len);
-          payload_len += copy_len;
-        }
+            new_sz = payload_sz;
+            while ((payload_len + copy_len) > new_sz) {
+              pr_signals_handle();
 
-        continue;
+              /* Keep doubling the size until it is large enough. */
+              new_sz *= 2;
+            }
 
-      } else if (zres == Z_BUF_ERROR) {
-        /* Make sure that pkt->payload has enough room for the uncompressed
-         * data.  If not, allocate a larger buffer.
-         */
-        if (pkt->payload_len < payload_len) {
-          pkt->payload = palloc(pkt->pool, payload_len);
-        }
+            pr_trace_msg(trace_channel, 20,
+              "allocating larger payload size (%lu bytes) for "
+              "inflated data (%lu bytes) plus existing payload %lu bytes",
+              (unsigned long) new_sz, (unsigned long) copy_len,
+              (unsigned long) payload_len);
 
-        memcpy(pkt->payload, payload, payload_len);
-        pkt->payload_len = payload_len;
-        break;
+            tmp = palloc(sub_pool, new_sz);
+            memcpy(tmp, payload, payload_len);
+            payload = tmp;
+            payload_sz = new_sz;
+          }
+
+          if (copy_len > 0) {
+            memcpy(payload + payload_len, buf, copy_len);
+            payload_len += copy_len;
+
+            pr_trace_msg(trace_channel, 20,
+              "inflated %lu bytes to %lu bytes",
+              (unsigned long) input_len, (unsigned long) copy_len);
+          }
+
+          continue;
+
+        case Z_BUF_ERROR:
+          break;
+
+        default:
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "unhandled zlib error (%d) while decompressing", zres);
+          destroy_pool(sub_pool);
+          return -1;
       }
 
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "unhandled zlib error (%d) while decompressing", zres);
-      destroy_pool(sub_pool);
-      return -1;
+      break;
     }
+
+    /* Make sure that pkt->payload has enough room for the uncompressed data.
+     * If not, allocate a larger buffer.
+     */
+    if (pkt->payload_len < payload_len) {
+      pkt->payload = palloc(pkt->pool, payload_len);
+    }
+
+    memcpy(pkt->payload, payload, payload_len);
+    pkt->payload_len = payload_len;
+
+    pr_trace_msg(trace_channel, 20,
+      "finished inflating (payload len = %lu bytes)",
+      (unsigned long) payload_len);
 
     destroy_pool(sub_pool);
   }
@@ -381,7 +412,7 @@ int sftp_compress_write_data(struct ssh2_packet *pkt) {
 
   if (comp->use_zlib &&
       comp->stream_ready) {
-    unsigned char buf[8192], *input;
+    unsigned char buf[16384], *input;
     char *payload;
     uint32_t input_len, payload_len = 0, payload_sz;
     pool *sub_pool;
@@ -432,14 +463,33 @@ int sftp_compress_write_data(struct ssh2_packet *pkt) {
             uint32_t new_sz;
             char *tmp;
 
-            new_sz = payload_sz * 2;
+            new_sz = payload_sz;
+            while ((payload_len + copy_len) > new_sz) {
+              pr_signals_handle();
+
+              /* Keep doubling the size until it is large enough. */
+              new_sz *= 2;
+            }
+
+            pr_trace_msg(trace_channel, 20,
+              "allocating larger payload size (%lu bytes) for "
+              "deflated data (%lu bytes) plus existing payload %lu bytes",
+              (unsigned long) new_sz, (unsigned long) copy_len,
+              (unsigned long) payload_len);
+
             tmp = palloc(sub_pool, new_sz);
             memcpy(tmp, payload, payload_len);
             payload = tmp;
+            payload_sz = new_sz;
           }
 
           memcpy(payload + payload_len, buf, copy_len);
           payload_len += copy_len;
+
+          pr_trace_msg(trace_channel, 20,
+            "deflated %lu bytes to %lu bytes",
+            (unsigned long) input_len, (unsigned long) copy_len);
+
           break;
 
         default:
@@ -457,10 +507,13 @@ int sftp_compress_write_data(struct ssh2_packet *pkt) {
 
       memcpy(pkt->payload, payload, payload_len);
       pkt->payload_len = payload_len;
+
+      pr_trace_msg(trace_channel, 20,
+        "finished deflating (payload len = %lu bytes)",
+        (unsigned long) payload_len);
     }
 
     destroy_pool(sub_pool);
-    return 0;
   }
 
   return 0;

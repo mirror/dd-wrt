@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2010 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Command response routines
- * $Id: response.h,v 1.6 2008/05/06 17:42:48 castaglia Exp $
+ * $Id: response.h,v 1.6.4.1 2010/11/04 18:52:40 castaglia Exp $
  */
 
 #ifndef PR_RESPONSE_H
@@ -58,6 +58,12 @@ void pr_response_add_err(const char *, const char *, ...)
 int pr_response_block(int);
 void pr_response_clear(pr_response_t **);
 void pr_response_flush(pr_response_t **);
+
+/* Retrieves the response code and response message from the last response
+ * sent/added for flushing to the client.  The strings for the values are
+ * allocated out of the given pool.
+ */
+int pr_response_get_last(pool *, char **resp_code, char **response_msg);
 
 void pr_response_send(const char *, const char *, ...)
 #ifdef __GNUC__

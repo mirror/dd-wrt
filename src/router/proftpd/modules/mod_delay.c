@@ -2,7 +2,7 @@
  * ProFTPD: mod_delay -- a module for adding arbitrary delays to the FTP
  *                       session lifecycle
  *
- * Copyright (c) 2004-2010 TJ Saunders
+ * Copyright (c) 2004-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_delay, contrib software for proftpd 1.2.10 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_delay.c,v 1.39 2010/02/10 19:20:15 castaglia Exp $
+ * $Id: mod_delay.c,v 1.39.2.2 2011/03/21 15:44:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -236,7 +236,7 @@ static long delay_get_median(pool *p, unsigned int rownum, const char *protocol,
    */
   if (tab_vals != NULL) {
     for (i = 1; i < dv->dv_nvals; i++)
-      *((long *) push_array(list)) = tab_vals[DELAY_NVALUES - i];
+      *((long *) push_array(list)) = tab_vals[DELAY_NVALUES - 1 - i];
   }
   *((long *) push_array(list)) = interval;
 
@@ -858,7 +858,8 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
         char buf[80];
 
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf)-1, "%10ld", dv->dv_vals[DELAY_NVALUES - j]);
+        snprintf(buf, sizeof(buf)-1, "%10ld",
+          dv->dv_vals[DELAY_NVALUES - 1 - j]);
 
         vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
 
@@ -898,7 +899,8 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
         char buf[80];
 
         memset(buf, '\0', sizeof(buf));
-        snprintf(buf, sizeof(buf)-1, "%10ld", dv->dv_vals[DELAY_NVALUES - j]);
+        snprintf(buf, sizeof(buf)-1, "%10ld",
+          dv->dv_vals[DELAY_NVALUES - 1 - j]);
 
         vals = pstrcat(tmp_pool, vals, " ", buf, NULL);
 
@@ -1099,10 +1101,18 @@ MODRET delay_post_pass(cmd_rec *cmd) {
   unsigned int rownum;
   long interval, median;
   const char *proto;
+  unsigned char *authenticated;
 
   if (!delay_engine)
     return PR_DECLINED(cmd);
 
+  /* Has the client already authenticated? */
+  authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
+  if (authenticated != NULL &&
+      *authenticated == TRUE) {
+    return PR_DECLINED(cmd);
+  }
+ 
   /* We use sid-1, since the sid is a server number, and the locking
    * routines want a row index.  However, PASS rows are always after
    * USER rows, so we need to add 1 to the row number, leaving us
@@ -1191,10 +1201,18 @@ MODRET delay_post_user(cmd_rec *cmd) {
   unsigned int rownum;
   long interval, median;
   const char *proto;
+  unsigned char *authenticated;
 
   if (!delay_engine)
     return PR_DECLINED(cmd);
 
+  /* Has the client already authenticated? */
+  authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
+  if (authenticated != NULL &&
+      *authenticated == TRUE) {
+    return PR_DECLINED(cmd);
+  }
+ 
   /* We use sid-1, since the sid is a server number, and the locking
    * routines want a row index.
    */

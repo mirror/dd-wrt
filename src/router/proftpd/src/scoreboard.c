@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 /*
  * ProFTPD scoreboard support.
  *
- * $Id: scoreboard.c,v 1.52.2.1 2010/03/22 23:24:00 castaglia Exp $
+ * $Id: scoreboard.c,v 1.52.2.2 2011/03/21 21:55:55 castaglia Exp $
  */
 
 #include "conf.h"
@@ -914,7 +914,7 @@ int pr_scoreboard_entry_update(pid_t pid, ...) {
           memset(entry.sce_client_name, '\0', sizeof(entry.sce_client_name));
 
           snprintf(entry.sce_client_name,
-            str_getlen(remote_name, sizeof(entry.sce_client_name)-1),
+            str_getlen(remote_name, sizeof(entry.sce_client_name)-1) + 1,
             "%s", remote_name);
           entry.sce_client_name[sizeof(entry.sce_client_name)-1] = '\0';
         }

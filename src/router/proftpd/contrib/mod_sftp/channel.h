@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: channel.h,v 1.6 2009/08/26 17:23:06 castaglia Exp $
+ * $Id: channel.h,v 1.6.2.1 2011/02/12 18:12:07 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -40,7 +40,7 @@
 #define SFTP_SSH2_CHANNEL_MAX_PACKET_SIZE	32768
 
 /* Max channel window size, per RFC4254 Section 5.2 is 2^32-1 bytes. */
-#define SFTP_SSH2_CHANNEL_WINDOW_SIZE		(uint32_t) -1
+#define SFTP_SSH2_CHANNEL_WINDOW_SIZE		4294967295
 
 struct ssh2_channel_databuf;
 

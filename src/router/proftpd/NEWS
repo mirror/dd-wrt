@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.1133.2.67 2010/10/29 16:31:35 castaglia Exp $
+$Id: NEWS,v 1.1133.2.103 2011/04/01 16:43:48 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -8,6 +8,60 @@ $Id: NEWS,v 1.1133.2.67 2010/10/29 16:31:35 castaglia Exp $
 
   where `N' is the bug number.
 -----------------------------------------------------------------------------
+
+1.3.3e - Released 01-Apr-2011
+--------------------------------
+- Bug 3757 - Process privileges may not handled properly when
+  --enable-autoshadow is used.
+- Bug 3544 - mod_sftp closes channel too early after scp download.  This
+  manifests as "lost connection" using OpenSSH's scp(1).
+- Bug 3579 - mod_sftp_pam may tell client to disable echoing erroneously.
+- Bug 3586 - mod_sftp behaves badly when receiving badly formed SSH messages.
+- Bug 3593 - Using "$shell $libtool" in prxs does not work for all shells.
+- Bug 3538 - WrapAllowMsg directive broken due to Bug#3423.
+- Bug 3607 - SocketOptions receive/send buffer size parameters no longer work.
+- Bug 3606 - mod_wrap2 needs to support netmask rules for IPv6 addresses.
+- Bug 3612 - APPE/STOU upload flags erroneously preserved across upload
+  commands.
+- Bug 3614 - Malicious module can use sreplace() function to overflow buffer.
+- Bug 3619 - Exiting sessions don't seem to die properly.
+- Bug 3622 - mod_delay sometimes logs "unable to load DelayTable into memory".
+- Bug 3624 - Plaintext command injection in FTPS support.
+- Bug 3625 - mod_ifsession rules using regular expressions do not work.
+- Bug 3623 - Truncated client name saved in ScoreboardFile.
+- Bug 3627 - %w variable populated with non-absolute path in SQLLog statement.
+- Bug 3628 - Unnecessarily verbose "warning: unable to throttle bandwidth:
+  Interrupted system call".
+- Bug 3630 - SSH DISCONNECT messages sent by mod_sftp even for FTP connections
+  in some cases.
+- Bug 3632 - mod_sql should log "unrecoverable database error" at a higher
+  priority.
+- Bug 3610 - Proftpd is eating CPU when reparsing configuration file on SIGHUP.
+- Bug 3634 - Incorrect generation of DSA signature for SSH sessions.
+
+1.3.3d - Released 17-Dec-2010
+--------------------------------
+- Bug 3522 - Error when handling SSH DISCONNECT messages with no language tag.
+- Bug 3525 - Default syslog logging causes logging to the wrong syslog
+  facilities.
+- Bug 3528 - ExtendedLog %s variable not expanded properly for successful PASS
+  commands.
+- Bug 3529 - "LIST /*" now lists more than the expected directory.
+- Bug 3526 - CPU usage at 100% when checking HideFiles pattern.  Credit goes
+  to Thomas Shinnick for providing the fix for this; it addresses a more
+  general problem of high memory and CPU consumption when proftpd searches
+  for .ftpaccess files.
+- Bug 3530 - Conflicting interactions among HideUser, HideGroup, and
+  HideNoAccess directives.
+- Bug 3536 - mod_sql has insufficient bounds checking in sql_prepare_where()
+  function.
+- Bug 3547 - Multiple AllowClass directives not handled properly.
+- Bug 3548 - Null pointer segfault in mod_sftp when handling aborted connection.
+- Bug 3551 - SQLAuthType Crypt implementation needs to handle NULL return value
+  from crypt(3).
+- Bug 3550 - SFTP compressed uploads can cause corrupted uploaded files.
+- Bug 3560 - ExtendedLog shows incorrect byte size for first file downloaded
+  via SFTP in some cases.
 
 1.3.3c - Released 29-Oct-2010
 --------------------------------

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Unix authentication module for ProFTPD
- * $Id: mod_auth_unix.c,v 1.42.2.1 2010/06/22 22:02:52 castaglia Exp $
+ * $Id: mod_auth_unix.c,v 1.42.2.4 2011/01/13 18:13:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -38,7 +38,9 @@
 #endif
 
 #ifdef PR_USE_SHADOW
-# include <shadow.h>
+# ifdef HAVE_SHADOW_H
+#   include <shadow.h>
+# endif
 #endif
 
 #ifdef HAVE_SYS_SECURITY_H
@@ -385,36 +387,42 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
 #endif /* HAVE_SETSPENT */
 
   sp = getspnam(u);
-
-  if (sp) {
+  if (sp != NULL) {
     cpw = pstrdup(p, sp->sp_pwdp);
 
-    if (lstchg)
+    if (lstchg != NULL) {
       *lstchg = SP_CVT_DAYS(sp->sp_lstchg);
+    }
 
-    if (min)
+    if (min != NULL) {
       *min = SP_CVT_DAYS(sp->sp_min);
+    }
 
-    if (max)
+    if (max != NULL) {
       *max = SP_CVT_DAYS(sp->sp_max);
+    }
 
 #ifdef HAVE_SPWD_SP_WARN
-    if (warn)
+    if (warn != NULL) {
       *warn = SP_CVT_DAYS(sp->sp_warn);
+    }
 #endif /* HAVE_SPWD_SP_WARN */
 
 #ifdef HAVE_SPWD_SP_INACT
-    if (inact)
+    if (inact != NULL) {
       *inact = SP_CVT_DAYS(sp->sp_inact);
+    }
 #endif /* HAVE_SPWD_SP_INACT */
 
 #ifdef HAVE_SPWD_SP_EXPIRE
-    if (expire)
+    if (expire != NULL) {
       *expire = SP_CVT_DAYS(sp->sp_expire);
+    }
 #endif /* HAVE_SPWD_SP_EXPIRE */
   }
+
 #ifdef PR_USE_AUTO_SHADOW
-  else {
+  if (sp == NULL) {
     struct passwd *pw;
 
     endspent();
@@ -424,29 +432,39 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
     if (pw != NULL) {
       cpw = pstrdup(p, pw->pw_passwd);
 
-      if (lstchg)
+      if (lstchg != NULL) {
         *lstchg = (time_t) -1;
+      }
 
-      if (min)
+      if (min != NULL) {
         *min = (time_t) -1;
+      }
 
-      if (max)
+      if (max != NULL) {
         *max = (time_t) -1;
+      }
 
-      if (warn)
+      if (warn != NULL) {
         *warn = (time_t) -1;
+      }
 
-      if (inact)
+      if (inact != NULL) {
         *inact = (time_t) -1;
+      }
 
-      if (expire)
+      if (expire != NULL) {
         *expire = (time_t) -1;
+      }
     }
+
+  } else {
+    PRIVS_RELINQUISH
   }
 #else
   endspent();
   PRIVS_RELINQUISH
 #endif /* PR_USE_AUTO_SHADOW */
+
   return cpw;
 }
 
@@ -671,6 +689,7 @@ MODRET pw_check(cmd_rec *cmd) {
   const char *pw = cmd->argv[2];
   modret_t *mr = NULL;
   cmd_rec *cmd2 = NULL;
+  char *crypted_text = NULL;
 
 #ifdef PR_USE_SIA
   SIAENTITY *ent = NULL;
@@ -793,7 +812,13 @@ MODRET pw_check(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
-  if (strcmp(crypt(pw, cpw), cpw) != 0) {
+  crypted_text = (char *) crypt(pw, cpw);
+  if (crypted_text == NULL) {
+    pr_log_pri(PR_LOG_NOTICE, "error error crypt(3): %s", strerror(errno));
+    return PR_DECLINED(cmd);
+  }
+
+  if (strcmp(crypted_text, cpw) != 0) {
     return PR_DECLINED(cmd);
   }
 #endif /* PR_USE_SIA */

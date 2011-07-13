@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
  *
- * Copyright (c) 2000-2010 TJ Saunders
+ * Copyright (c) 2000-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -305,9 +305,10 @@ static char *wrap2_get_user(wrap2_conn_t *conn) {
 }
 
 static char *wrap2_get_hostaddr(wrap2_host_t *host) {
-  if (*host->addr == '\0')
+  if (*host->addr == '\0') {
     sstrncpy(host->addr, pr_netaddr_get_ipstr(session.c->remote_addr),
       sizeof(host->addr));
+  }
 
   return host->addr;
 }
@@ -446,11 +447,15 @@ static unsigned char wrap2_match_netmask(const char *net_tok,
    * access control language. John P. Rouillard <rouilj@cs.umb.edu>.
    */
 
-  if ((addr = wrap2_addr_a2n(str)) == INADDR_NONE)
+  addr = wrap2_addr_a2n(str);
+  if (addr == INADDR_NONE) {
     return FALSE;
+  }
 
-  if ((net = wrap2_addr_a2n(net_tok)) == INADDR_NONE ||
-      (mask = wrap2_addr_a2n(mask_tok)) == INADDR_NONE) {
+  net = wrap2_addr_a2n(net_tok);
+  mask = wrap2_addr_a2n(mask_tok);
+  if (net == INADDR_NONE ||
+      mask == INADDR_NONE) {
     wrap2_log("warning: bad net/mask expression: '%s/%s'", net_tok, mask_tok);
     return FALSE;
   }
@@ -529,24 +534,34 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 
     /* IPv6 address */
 
-    if (pr_netaddr_get_family(session.c->remote_addr) == AF_INET)
+    if (pr_netaddr_get_family(session.c->remote_addr) == AF_INET) {
       /* No need to try to match an IPv6 address against an IPv4 client. */
       return FALSE;
+    }
 
     /* Find the terminating ']'. */
     cp = strchr(tok, ']');
-    if (cp)
-      *cp = '\0';
+    if (cp == NULL) {
+      wrap2_log("bad IPv6 address syntax: '%s'", tok);
+      return FALSE;
+    }
+
+    *cp = '\0';
 
     /* Lookup a netaddr for the IPv6 address. */
-    acl_addr = pr_netaddr_get_addr(wrap2_pool, tok, NULL);
+    acl_addr = pr_netaddr_get_addr(wrap2_pool, tok + 1, NULL);
     if (!acl_addr) {
-      wrap2_log("unable to resolve IPv6 address '%s'", tok);
+      wrap2_log("unable to resolve IPv6 address '%s'", tok + 1);
+      return FALSE;
+    }
+
+    if (*(cp + 1) != '/') {
+      wrap2_log("bad mask syntax: '%s'", cp + 1);
       return FALSE;
     }
 
     /* Determine the number of mask bits. */
-    nmaskbits = strtol(cp + 1, &tmp, 10);
+    nmaskbits = strtol(cp + 2, &tmp, 10);
     if (tmp && *tmp) {
       wrap2_log("bad mask syntax: '%s'", tmp);
       return FALSE;

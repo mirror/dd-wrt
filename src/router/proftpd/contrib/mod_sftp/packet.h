@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: packet.h,v 1.3 2010/02/15 22:03:52 castaglia Exp $
+ * $Id: packet.h,v 1.3.2.1 2011/02/12 17:41:15 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -78,7 +78,15 @@ int sftp_ssh2_packet_get_last_recvd(time_t *);
 int sftp_ssh2_packet_get_last_sent(time_t *);
 
 int sftp_ssh2_packet_read(int, struct ssh2_packet *);
-int sftp_ssh2_packet_sock_read(int, void *, size_t);
+int sftp_ssh2_packet_sock_read(int, void *, size_t, int);
+
+/* This sftp_ssh2_packet_sock_read() flag is used to tell the function to
+ * read in as many of the requested length of data as it can, but to NOT
+ * keep polling until that length has been acquired (i.e. to read the
+ * requested length pessimistically, assuming that it will not all appear).
+ */
+#define SFTP_PACKET_READ_FL_PESSIMISTIC		0x001
+
 int sftp_ssh2_packet_write(int, struct ssh2_packet *);
 
 int sftp_ssh2_packet_handle(void);
