@@ -1445,6 +1445,12 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN10U;
 	}
 
+	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
+	    && nvram_match("boardrev", "0x1100")) {
+		setRouter("Asus RT-N66+");
+		return ROUTER_ASUS_RTN66;
+	}
+
 	if (nvram_match("boardnum", "1") && nvram_match("boardtype", "0x054d")
 	    && nvram_match("boardrev", "0x1109")) {
 		setRouter("NetCore NW715P");
