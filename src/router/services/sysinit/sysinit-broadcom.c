@@ -270,6 +270,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_ASUS_RTN66:
 	case ROUTER_NETCORE_NW715P:
 
 		break;
@@ -1720,6 +1721,7 @@ void start_sysinit(void)
 			case ROUTER_BELKIN_F5D8235V3:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
+			case ROUTER_ASUS_RTN66:
 			case ROUTER_NETGEAR_WNDR4000:
 				nvram_set("portprio_support", "0");
 #ifdef HAVE_BCMMODERN
@@ -1807,6 +1809,7 @@ void start_sysinit(void)
 			case ROUTER_BUFFALO_WZRG144NH:
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_ASUS_RTN16:
+			case ROUTER_ASUS_RTN66:
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
