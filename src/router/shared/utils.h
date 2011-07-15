@@ -547,6 +547,8 @@
 
 #define ROUTER_BOARD_UNIFI 0xac1c	//bullet 2m
 
+#define ROUTER_ASUS_RTN66 0xad0f
+
 
 #define NVROUTER "DD_BOARD"
 
