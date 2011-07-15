@@ -545,9 +545,9 @@
 
 #define ROUTER_NETCORE_NW715P 0xad0f
 
-#define ROUTER_BOARD_UNIFI 0xac1c	//bullet 2m
+#define ROUTER_BOARD_UNIFI 0xae1c	//bullet 2m
 
-#define ROUTER_ASUS_RTN66 0xad0f
+#define ROUTER_ASUS_RTN66 0xaf0f
 
 
 #define NVROUTER "DD_BOARD"
