@@ -1545,6 +1545,7 @@ void start_restore_defaults(void)
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
+	case ROUTER_ASUS_RTN66:
 		linux_overrides = wrt6102vlan;
 		break;
 #endif
@@ -1863,6 +1864,17 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan0ports", "1 2 3 4 5*");
 			nvram_set("vlan1ports", "0 5");
+		}
+
+	} else if (brand == ROUTER_ASUS_RTN66) {
+
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 8u");
+		}
+		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 8u");
 		}
 
 	} else if (brand == ROUTER_BUFFALO_WZRG144NH) {
