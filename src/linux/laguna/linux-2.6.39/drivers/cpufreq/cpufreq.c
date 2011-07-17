@@ -1905,7 +1905,7 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 	    ((!driver_data->setpolicy) && (!driver_data->target)))
 		return -EINVAL;
 
-	dprintk("trying to register driver %s\n", driver_data->name);
+	printk(KERN_INFO "trying to register driver %s\n", driver_data->name);
 
 	if (driver_data->setpolicy)
 		driver_data->flags |= CPUFREQ_CONST_LOOPS;
@@ -1921,7 +1921,10 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 	ret = sysdev_driver_register(&cpu_sysdev_class,
 					&cpufreq_sysdev_driver);
 	if (ret)
+	{
+		printk(KERN_INFO "NULL Driver\n");
 		goto err_null_driver;
+	}
 
 	if (!(cpufreq_driver->flags & CPUFREQ_STICKY)) {
 		int i;
@@ -1936,14 +1939,14 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 
 		/* if all ->init() calls failed, unregister */
 		if (ret) {
-			dprintk("no CPU initialized for driver %s\n",
+			printk(KERN_INFO "no CPU initialized for driver %s\n",
 							driver_data->name);
 			goto err_sysdev_unreg;
 		}
 	}
 
 	register_hotcpu_notifier(&cpufreq_cpu_notifier);
-	dprintk("driver %s up and running\n", driver_data->name);
+	printk(KERN_INFO "driver %s up and running\n", driver_data->name);
 	cpufreq_debug_enable_ratelimit();
 
 	return 0;

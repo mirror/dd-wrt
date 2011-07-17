@@ -623,6 +623,11 @@ static struct platform_device laguna_watchdog = {
 	.resource = laguna_watchdog_resource,
 };
 
+static struct platform_device laguna_gpio_dev = {
+	.name = "GPIODEV",
+	.id = -1,
+};
+
 /*
  * Initialization
  */
@@ -935,6 +940,7 @@ static int __init laguna_model_setup(void)
 			laguna_gpio_leds_data.num_leds = 2;
 		}
 			platform_device_register(&laguna_gpio_leds_device);
+			platform_device_register(&laguna_gpio_dev);
 	} else {
 		// Do some defaults here, not sure what yet
 	}

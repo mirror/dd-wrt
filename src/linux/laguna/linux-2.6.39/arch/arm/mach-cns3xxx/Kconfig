@@ -19,4 +19,8 @@ config MACH_GW2388
 	  This is a platform with an on-board ARM11 MPCore and has support
 	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, I2C, GIG, etc.
 
+config CPU_FREQ_CNS3XXX
+	bool "CPUfreq support for Cavium CNS3XXX CPUs"
+	depends on CPU_FREQ && ARCH_CNS3XXX
+
 endmenu
