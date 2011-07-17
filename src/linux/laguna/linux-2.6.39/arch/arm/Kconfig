@@ -312,6 +312,7 @@ config ARCH_CLPS711X
 
 config ARCH_CNS3XXX
 	bool "Cavium Networks CNS3XXX family"
+	select CPU_V6K
 	select ARCH_WANT_OPTIONAL_GPIOLIB
 	select ARM_GIC
 	select HAVE_CLK
@@ -320,6 +321,7 @@ config ARCH_CNS3XXX
 	select GENERIC_CLOCKEVENTS
 	select ARCH_REQUIRE_GPIOLIB
 	select MIGHT_HAVE_PCI
+	select ARCH_HAS_CPUFREQ
 	select PCI_DOMAINS if PCI
 	help
 	  Support for Cavium Networks CNS3XXX platform.

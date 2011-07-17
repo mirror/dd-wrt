@@ -12,11 +12,6 @@
 	bne	asm_do_IRQ
 
 #ifdef CONFIG_SMP
-	test_for_cache_ipi r0, r6, r5, lr
-	movne 	r0, sp
-	adrne	lr, BSYM(1b)
-	bne do_cache_IPI
-
 	/*
 	 * XXX
 	 *

@@ -273,6 +273,8 @@ static void l2x0_disable(void)
 void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 {
 	__u32 aux;
+	__u32 tag;
+	__u32 data;
 	__u32 cache_id;
 	__u32 way_size = 0;
 	int ways;
@@ -326,27 +328,35 @@ void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 		/* l2x0 controller is disabled */
 		writel_relaxed(aux, l2x0_base + L2X0_AUX_CTRL);
 
+
+		/* Tag RAM Control register
+		 * 
+		 * bit[10:8]    - 1 cycle of write accesses latency
+		 * bit[6:4]     - 1 cycle of read accesses latency
+		 * bit[3:0]     - 1 cycle of setup latency
+		 *
+		 * 1 cycle of latency for setup, read and write accesses
+		 */
+		tag = readl_relaxed(l2x0_base + L2X0_TAG_LATENCY_CTRL);
+		tag &= 0xfffff888;
+		tag |= 0x00000000;
+		writel_relaxed(tag, l2x0_base + L2X0_TAG_LATENCY_CTRL);
+
+		/* Data RAM Control register
+		 *
+		 * bit[10:8]    - 1 cycles of write accesses latency
+		 * bit[6:4]     - 1 cycles of read accesses latency
+		 * bit[3:0]     - 1 cycle of setup latency
+		 *
+		 * 1 cycle of setup latency, 2 cycles of read and write accesses latency
+		 */
+		data = readl_relaxed(l2x0_base + L2X0_DATA_LATENCY_CTRL);
+		data &= 0xfffff888;
+		data |= 0x00000000;
+		writel_relaxed(data, l2x0_base + L2X0_DATA_LATENCY_CTRL);
+
 		l2x0_inv_all();
 
-	/* lockdown required ways for different effective size of the L2 cache */
-#ifdef CONFIG_CACHE_L2X0_128KB
-	/* 128KB, lock way7..1 */
-	writel(0xfe, l2x0_base + L2X0_LOCKDOWN_WAY_D);
-	writel(0xfe, l2x0_base + L2X0_LOCKDOWN_WAY_I);
-#elif defined(CONFIG_CACHE_L2X0_256KB)
-	/* 256KB, lock way7..2 */
-	writel(0xfc, l2x0_base + L2X0_LOCKDOWN_WAY_D);
-	writel(0xfc, l2x0_base + L2X0_LOCKDOWN_WAY_I);
-#elif defined(CONFIG_CACHE_L2X0_512KB)
-	/* 512KB, lock way7..3 */
-	writel(0xf8, l2x0_base + L2X0_LOCKDOWN_WAY_D);
-	writel(0xf8, l2x0_base + L2X0_LOCKDOWN_WAY_I);
-#elif defined(CONFIG_CACHE_L2X0_1MB)
-	/* 1MB, lock way7..4 */
-	writel(0xf0, l2x0_base + L2X0_LOCKDOWN_WAY_D);
-	writel(0xf0, l2x0_base + L2X0_LOCKDOWN_WAY_I);
-#endif
-		check=1;
 
 		/* enable L2X0 */
 		writel_relaxed(1, l2x0_base + L2X0_CTRL);
@@ -362,6 +372,6 @@ void __init l2x0_init(void __iomem *base, __u32 aux_val, __u32 aux_mask)
 	outer_cache.set_debug = l2x0_set_debug;
 
 	printk(KERN_INFO "%s cache controller enabled\n", type);
-	printk(KERN_INFO "l2x0: %d ways, CACHE_ID 0x%08x, AUX_CTRL 0x%08x, Cache size: %d B, Controler State %d\n",
-			ways, cache_id, aux, l2x0_size,check);
+	printk(KERN_INFO "l2x0: %d ways, CACHE_ID 0x%08x, AUX_CTRL 0x%08x, Cache size: %d B\n",
+			ways, cache_id, aux, l2x0_size);
 }

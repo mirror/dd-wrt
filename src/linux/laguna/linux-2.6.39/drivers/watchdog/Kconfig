@@ -251,6 +251,16 @@ config DAVINCI_WATCHDOG
 	  NOTE: once enabled, this timer cannot be disabled.
 	  Say N if you are unsure.
 
+config CNS3XXX_WATCHDOG
+	tristate "CNS3XXX watchdog"
+	depends on ARCH_CNS3XXX
+	help
+	  Watchdog timer embedded into the CNS3XXX SoCs system.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called cns3xxx_wdt.
+
+
 config ORION_WATCHDOG
 	tristate "Orion watchdog"
 	depends on ARCH_ORION5X || ARCH_KIRKWOOD

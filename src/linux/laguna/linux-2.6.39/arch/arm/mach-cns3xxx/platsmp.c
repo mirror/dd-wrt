@@ -63,13 +63,11 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * for us: do so
 	 */
 	gic_secondary_init(0);
-	set_interrupt_pri(1, 0); // set cache broadcast ipi to highest priority
 
 	/*
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
 	 */
-	smp_wmb();
 	write_pen_release(-1);
 
 	/*
@@ -102,9 +100,9 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * the boot monitor to read the system wide flags register,
 	 * and branch to the address found there.
 	 */
-	smp_cross_call(cpumask_of(cpu),2);
+	smp_cross_call(cpumask_of(cpu), 1);
 
-	timeout = jiffies + (2 * HZ);
+	timeout = jiffies + (1 * HZ);
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();
 		if (pen_release == -1)
@@ -146,7 +144,6 @@ void __init smp_init_cpus(void)
 		set_cpu_possible(i, true);
 }
 
-
 void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 {
 	int i;
@@ -159,7 +156,7 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 		set_cpu_present(i, true);
 
 	scu_enable(scu_base_addr());
-	pen_release = -1;
+
 	/*
 	 * Write the address of secondary startup into the
 	 * system-wide flags register. The boot monitor waits
@@ -168,5 +165,4 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 */
 	__raw_writel(virt_to_phys(cns3xxx_secondary_startup),
 			(void __iomem *)(0xFFF07000 + 0x0600));
-	mb();
 }
