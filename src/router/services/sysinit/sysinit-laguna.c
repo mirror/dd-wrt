@@ -61,8 +61,10 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_match("disable_watchdog", "1")) {
+		insmod("cns3xxx_wdt");
 		eval("watchdog");
+	}
 	/*
 	 * Setup console 
 	 */
