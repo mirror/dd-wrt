@@ -176,6 +176,7 @@ void start_openvpnserver(void)
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
 	}
+	fprintf(fp, "sleep 2\n");
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
@@ -364,9 +365,12 @@ void start_openvpn(void)
 			"for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
 			"	ip rule del from $IP table 10\n" "done\n");
 	}
+	fprintf(fp, "sleep 2\n");
 	fclose(fp);
+
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
+
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config",
 		     "/tmp/openvpncl/openvpn.conf", "--route-up",
