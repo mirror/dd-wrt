@@ -115,35 +115,6 @@ static void gic_unmask_irq(struct irq_data *d)
 	spin_unlock(&irq_controller_lock);
 }
 
-
-// set interrupt priority
-void set_interrupt_pri_by_base(void __iomem *base, u32 id, u32 pri)
-{
-        unsigned char int_type_bit=0;
-        u32 gic_v=0;
-
-
-        // judge gic offset
-        int_type_bit=(id%4*8+4);
-
-        gic_v = readl(base + GIC_DIST_PRI + id/4*4);
-
-        gic_v &= (~(0xf << int_type_bit));
-        gic_v |= (pri << int_type_bit);
-
-        writel(gic_v, base + GIC_DIST_PRI + id/4*4);
-
-        gic_v = 0;
-        gic_v = readl(base + GIC_DIST_PRI + id/4*4);
-	//printk("read gic_v: %x\n", gic_v);
-}
-
-void set_interrupt_pri(u32 id, u32 pri)
-{
-	set_interrupt_pri_by_base((void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT, id, pri);
-}
-
-
 static int gic_set_type(struct irq_data *d, unsigned int type)
 {
 	void __iomem *base = gic_dist_base(d);
@@ -419,8 +390,6 @@ void __cpuinit gic_enable_ppi(unsigned int irq)
 void gic_raise_softirq(const struct cpumask *mask, unsigned int irq)
 {
 	unsigned long map = *cpus_addr(*mask);
-	
-	dsb();
 
 	/* this always happens on GIC0 */
 	writel(map << 16 | irq, gic_data[0].dist_base + GIC_DIST_SOFTINT);

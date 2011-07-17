@@ -5,3 +5,4 @@ obj-$(CONFIG_MACH_GW2388)		+= laguna.o
 obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
 obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
 obj-$(CONFIG_LOCAL_TIMERS)		+= localtimer.o
+obj-$(CONFIG_CPU_FREQ_CNS3XXX)		+= cpufreq.o
