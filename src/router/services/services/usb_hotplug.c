@@ -263,6 +263,8 @@ int usb_add_ufd(char *devpath)
 	char part[10], *partitions, *next;
 	struct stat tmp_stat;
 	int i, found = 0;
+	int mounted[16];
+	memset(mounted,sizeof(mounted),0);
 
 	if (devpath) {
 		fp = fopen(devpath, "rb");
@@ -297,6 +299,8 @@ int usb_add_ufd(char *devpath)
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
 		while ((entry = readdir(dir)) != NULL) {
 			int is_mounted = 0;
+			if (mounted[i])
+			    continue;
 
 #ifdef HAVE_X86
 			char check[32];
@@ -318,7 +322,7 @@ int usb_add_ufd(char *devpath)
 				continue;
 			if (new && (strncmp(entry->d_name, "sd", 2)))
 				continue;
-			found = 1;
+			mounted[i]=1;
 
 			/* 
 			 * Files created when the UFD is inserted are not removed when
@@ -349,6 +353,7 @@ int usb_add_ufd(char *devpath)
 			/* 
 			 * Check if it has file system 
 			 */
+			fs = NULL;
 			if ((fp = fopen(DUMPFILE, "r"))) {
 				while (fgets(line, sizeof(line), fp) != NULL) {
 					if (strstr(line, "Partition"))
@@ -474,10 +479,7 @@ int usb_add_ufd(char *devpath)
 //                              return 0;
 //                      }
 		}
-		if (!found)
-			sleep(1);
-		else
-			break;
+		sleep(1);
 	}
 	closedir(dir);
 	return 0;
