@@ -409,8 +409,9 @@ int usb_add_ufd(char *devpath)
 							entry->d_name, part);
 						if (stat(path, &tmp_stat))
 							continue;
-						sprintf(targetname, "disk%s_%s",
+						sprintf(targetname, "%s_%s",
 							entry->d_name, part);
+
 						if (usb_process_path
 						    (path, fs, targetname)
 						    == 0) {
@@ -436,7 +437,11 @@ int usb_add_ufd(char *devpath)
 						}
 					}
 				} else {
-					sprintf(targetname, "disk%s",
+					if (new)
+					sprintf(targetname, "disc%s",
+						entry->d_name);
+					else
+					sprintf(targetname, "%s",
 						entry->d_name);
 					if (usb_process_path
 					    (path, fs, targetname) == 0)
