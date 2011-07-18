@@ -3137,6 +3137,18 @@ void start_firewall(void)
 		    atoi(nvram_safe_get("http_lanport")) ? : HTTP_PORT;
 
 	/*
+	*	Redirect LAN port 80 to 443 if http=0 & https=1
+	*/
+	if (nvram_match("http_enable", "0") &&
+		nvram_match("https_enable", "1")) {
+		save2file
+		    ("-A PREROUTING -p tcp -d %s --dport %s "
+		     "-j DNAT --to-destination %s:443\n", 
+		     nvram_safe_get("lan_ipaddr"),
+		     nvram_safe_get("http_lanport"),
+		     nvram_safe_get("lan_ipaddr"));
+
+	/*
 	 * Remove existent file 
 	 */
 	DEBUG("start firewall()........3\n");
