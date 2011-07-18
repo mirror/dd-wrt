@@ -11,6 +11,8 @@
 #include <asm/byteorder.h>
 #include <linux/sched.h>
 #include <linux/vmalloc.h>
+#include <linux/hardirq.h>
+#include <linux/highmem.h>
 #include <asm/cacheflush.h>
 #include <asm/io.h>
 #include <asm/tlbflush.h>
@@ -159,6 +161,13 @@ void __iomem * __ioremap(phys_t phys_addr, phys_t size, unsigned long flags)
 	phys_addr &= PAGE_MASK;
 	size = PAGE_ALIGN(last_addr + 1) - phys_addr;
 
+	/* If we are in interrupt/Bottom half context, try to use fixed temporary
+	 * map, which we can get atomically. However we are limited by one page only.
+	 */
+	if (in_interrupt() && (size <= PAGE_SIZE))
+		return (void __iomem *) (kmap_atomic_pfn_prot(phys_addr >> PAGE_SHIFT,
+			KM_PCIE, PAGE_KERNEL_UNCACHED) + offset);
+
 	/*
 	 * Ok, go for it..
 	 */
@@ -182,6 +191,11 @@ void __iounmap(const volatile void __iomem *addr)
 
 	if (IS_KSEG1(addr))
 		return;
+
+	if (in_interrupt()) {
+		kunmap_atomic((void *)addr, KM_PCIE);
+		return;
+	}
 
 	p = remove_vm_area((void *) (PAGE_MASK & (unsigned long __force) addr));
 	if (!p)

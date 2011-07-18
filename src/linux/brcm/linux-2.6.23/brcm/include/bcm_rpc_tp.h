@@ -3,7 +3,7 @@
  *   HOST may glue it to DBUS layer
  *   CLIENT may glue it to its bus driver
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -11,7 +11,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_rpc_tp.h,v 13.34.20.6 2010/03/17 11:11:32 Exp $
+ * $Id: bcm_rpc_tp.h,v 13.36.2.8 2010-12-09 19:17:49 Exp $
  */
 
 #ifndef _bcm_rpc_tp_h_
@@ -19,6 +19,11 @@
 #include <bcm_rpc.h>
 
 #define BCM_RPC_TP_ENCAP_LEN	4	/* TP header is 4 bytes */
+#if defined(BCMSDIODEV_ENABLED)
+#define BCM_RPC_BUS_HDR_LEN	(BCMDONGLEHDRSZ + SDALIGN)
+#else
+#define BCM_RPC_BUS_HDR_LEN	0
+#endif
 
 #define BCM_RPC_TP_HOST_AGG_MASK	0xffff0000
 #define BCM_RPC_TP_HOST_AGG_SHIFT	16
@@ -30,12 +35,7 @@
 #define BCM_RPC_TP_DNGL_AGG_TEST	0x00000010	/* DNGL->HOST test agg */
 
 #define BCM_RPC_TP_DNGL_AGG_MAX_SFRAME	3       /* max agg subframes, must be <= USB_NTXD */
-#if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY)
-#define BCM_RPC_TP_DNGL_AGG_MAX_BYTE	2100    /* max agg bytes, we only do either agg or nocopy */
-#else
 #define BCM_RPC_TP_DNGL_AGG_MAX_BYTE	4000    /* max agg bytes */
-#endif /* BCM_RPC_NOCOPY || BCM_RPC_RXNOCOPY */
-
 /* rxbufsize for dbus_attach, linux only for now */
 #define DBUS_RX_BUFFER_SIZE_RPC	(BCM_RPC_TP_DNGL_AGG_MAX_BYTE)
 
@@ -53,12 +53,8 @@
 #define BCM_RPC_TP_HOST_AGG_DEFAULT_43236	(((BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME_43236)\
 	 << BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE_43236)
 /* TP-DBUS pkts flowcontrol */
-#ifndef BCM_RPC_TP_DBUS_NTXQ
 #define BCM_RPC_TP_DBUS_NTXQ	50	/* queue size for TX on bulk OUT, aggregation possible */
-#endif
-#ifndef BCM_RPC_TP_DBUS_NRXQ
 #define BCM_RPC_TP_DBUS_NRXQ	50	/* queue size for RX on bulk IN, aggregation possible */
-#endif
 #define BCM_RPC_TP_DBUS_NRXQ_CTRL	1	/* queue size for RX on ctl EP0 */
 
 #define BCM_RPC_TP_DBUS_NRXQ_PKT	(BCM_RPC_TP_DBUS_NRXQ * BCM_RPC_TP_DNGL_AGG_MAX_SFRAME)
@@ -74,7 +70,7 @@ typedef void (*rpc_txflowctl_cb_t)(void *ctx, bool on);
 #endif
 
 extern void bcm_rpc_tp_sleep(rpc_tp_info_t * rpcb);
-extern int  bcm_rpc_tp_resume(rpc_tp_info_t * rpcb);
+extern int  bcm_rpc_tp_resume(rpc_tp_info_t * rpcb, int *fw_reload);
 extern int bcm_rpc_tp_shutdown(rpc_tp_info_t * rpcb);
 #if defined(NDIS)
 extern void bcm_rpc_tp_surp_remove(rpc_tp_info_t * rpcb);
@@ -105,11 +101,14 @@ extern void bcm_rpc_buf_next_set(rpc_tp_info_t * rpcb, rpc_buf_t* b, rpc_buf_t *
 extern unsigned char* bcm_rpc_buf_data(rpc_tp_info_t * rpcb, rpc_buf_t* b);
 extern unsigned char* bcm_rpc_buf_push(rpc_tp_info_t * rpcb, rpc_buf_t* b, uint delta);
 extern unsigned char* bcm_rpc_buf_pull(rpc_tp_info_t * rpcb, rpc_buf_t* b, uint delta);
+extern void bcm_rpc_tp_buf_release(rpc_tp_info_t * rpcb, rpc_buf_t *buf);
 extern void bcm_rpc_tp_buf_cnt_adjust(rpc_tp_info_t * rpcb, int adjust);
 #ifdef WLC_HIGH
 /* RPC call_with_return */
 extern int bcm_rpc_tp_recv_rtn(rpc_tp_info_t *rpcb);
 extern int bcm_rpc_tp_get_device_speed(rpc_tp_info_t *rpc_th);
+extern void bcm_rpc_tp_get_vidpid(rpc_tp_info_t *rpc_th, uint16 *dnglvid, uint16 *dnglpid);
+extern void* bcm_rpc_tp_get_devinfo(rpc_tp_info_t *rpc_th);
 #ifdef BCMDBG
 extern int bcm_rpc_tp_dump(rpc_tp_info_t *rpcb, struct bcmstrbuf *b);
 #endif

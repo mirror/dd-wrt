@@ -1,12 +1,18 @@
 /*
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id: typedefs.h,v 1.96.28.3 2010/04/08 04:42:13 Exp $
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * $Id: typedefs.h,v 1.103.12.6 2010-12-21 02:38:54 Exp $
  */
 
 #ifndef _TYPEDEFS_H_
@@ -69,9 +75,6 @@ typedef ULONG_PTR uintptr;
 typedef unsigned long long int uintptr;
 #endif
 
-#if defined(_HNDRTE_) && !defined(_HNDRTE_SIM_)
-#define _NEED_SIZE_T_
-#endif
 
 #if defined(_MINOSL_)
 #define _NEED_SIZE_T_
@@ -95,10 +98,6 @@ typedef unsigned long long int uintptr;
 typedef long unsigned int size_t;
 #endif
 
-#ifdef __DJGPP__
-typedef long unsigned int size_t;
-#endif /* __DJGPP__ */
-
 #ifdef _MSC_VER	    /* Microsoft C */
 #define TYPEDEF_INT64
 #define TYPEDEF_UINT64
@@ -107,10 +106,27 @@ typedef unsigned __int64 uint64;
 #endif
 
 #if defined(MACOSX)
+#ifdef KERNEL
+#include <libkern/version.h>
+#if VERSION_MAJOR > 10
+#define WLP2P
+#define IO80211P2P
+#define APSTA
+#define WLMCHAN
+#define WL_MULTIQUEUE
+#define WL_BSSCFG_TX_SUPR
+#define WIFI_ACT_FRAME
+#define FAST_ACTFRM_TX
+#endif
+#endif /* KERNEL */
 #define TYPEDEF_BOOL
 #endif
 
 #if defined(__NetBSD__)
+#define TYPEDEF_ULONG
+#endif
+
+#if defined(__sparc__)
 #define TYPEDEF_ULONG
 #endif
 
@@ -125,8 +141,10 @@ typedef unsigned __int64 uint64;
  */
 #if !defined(LINUX_HYBRID) || defined(LINUX_PORT)
 #define TYPEDEF_UINT
+#ifndef TARGETENV_android
 #define TYPEDEF_USHORT
 #define TYPEDEF_ULONG
+#endif /* TARGETENV_android */
 #ifdef __KERNEL__
 #include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19))
@@ -144,8 +162,8 @@ typedef unsigned __int64 uint64;
 #define TYPEDEF_BOOL
 #endif
 
-#if !defined(linux) && !defined(_WIN32) && !defined(_CFE_) && !defined(_HNDRTE_) && \
-	!defined(_MINOSL_) && !defined(__DJGPP__) && !defined(__ECOS) && !defined(__BOB__) && \
+#if !defined(linux) && !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && \
+	!defined(__DJGPP__) && !defined(__ECOS) && !defined(__BOB__) && \
 	!defined(TARGETOS_nucleus)
 #define TYPEDEF_UINT
 #define TYPEDEF_USHORT
@@ -171,8 +189,8 @@ typedef unsigned __int64 uint64;
 
 #endif /* __ICL */
 
-#if !defined(_WIN32) && !defined(_CFE_) && !defined(_HNDRTE_) && !defined(_MINOSL_) && \
-	!defined(__DJGPP__) && !defined(__BOB__) && !defined(TARGETOS_nucleus)
+#if !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && !defined(__DJGPP__) && \
+	!defined(__BOB__) && !defined(TARGETOS_nucleus)
 
 /* pick up ushort & uint from standard types.h */
 #if defined(linux) && defined(__KERNEL__)
@@ -198,7 +216,7 @@ typedef unsigned __int64 uint64;
 
 #endif /* linux && __KERNEL__ */
 
-#endif /* !_WIN32 && !PMON && !_CFE_ && !_HNDRTE_  && !_MINOSL_ && !__DJGPP__ */
+#endif 
 
 #if defined(MACOSX)
 
@@ -414,5 +432,13 @@ typedef float64 float_t;
  * gets this automatically
 */
 #include <bcmdefs.h>
+/*
+ * If android target is building then include this file
+ */
+#ifndef LINUX_HYBRID
+#ifdef TARGETENV_android
+#include <bcm_android_types.h>
+#endif /* TARGETENV_android */
+#endif /* LINUX_HYBRID */
 
 #endif /* _TYPEDEFS_H_ */

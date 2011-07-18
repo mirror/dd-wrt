@@ -3,14 +3,14 @@
  * Broadcom Home Networking Division
  * BCM47XX GbE cores.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: bcmgmacrxh.h,v 13.1 2008/07/18 00:29:07 Exp $
+ * $Id: bcmgmacrxh.h,v 13.1 2008-07-18 00:29:07 Exp $
  */
 
 #ifndef _bcmgmacrxh_h_

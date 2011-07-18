@@ -1,7 +1,7 @@
 /*
  * Broadcom USB remote download definitions
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,8 +9,11 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: usbrdl.h,v 13.19.4.2 2009/12/12 01:46:26 Exp $
+ * $Id: usbrdl.h,v 13.22.14.2 2010-09-07 19:23:08 Exp $
  */
+
+#ifndef _USB_RDL_H
+#define _USB_RDL_H
 
 /* Control messages: bRequest values */
 #define DL_GETSTATE		0	/* returns the rdl_state_t struct */
@@ -20,7 +23,7 @@
 #define DL_REBOOT		4	/* reboot the device in 2 seconds */
 #define DL_GETVER		5	/* returns the bootrom_id_t struct */
 #define DL_GO_PROTECTED		6	/* execute the downloaded code and set reset event
-					 * to occur in 2 seconds.  It is the reponsibility
+					 * to occur in 2 seconds.  It is the responsibility
 					 * of the downloaded code to clear this event
 					 */
 #define DL_EXEC			7	/* jump to a supplied address */
@@ -53,6 +56,8 @@
 #define	DL_RDJT16		0x1e	/* Read 16 bits (sz = 4 - low bits) */
 #define	DL_RDJT8		0x1f	/* Read 8 bits */
 
+#define	DL_DBGTRIG		0xFF	/* Trigger bRequest type to aid debug */
+
 #define	DL_JTERROR		0x80000000
 
 
@@ -61,8 +66,8 @@
 #define DL_READY	1	/* hdr was good, waiting for more of the compressed image */
 #define DL_BAD_HDR	2	/* hdr was corrupted */
 #define DL_BAD_CRC	3	/* compressed image was corrupted */
-#define DL_RUNNABLE	4	/* download was successfull, waiting for go cmd */
-#define DL_START_FAIL	5	/* failed to initialise correctly */
+#define DL_RUNNABLE	4	/* download was successful, waiting for go cmd */
+#define DL_START_FAIL	5	/* failed to initialize correctly */
 #define DL_NVRAM_TOOBIG	6	/* host specified nvram data exceeds DL_NVRAM value */
 #define DL_IMAGE_TOOBIG	7	/* download image too big (exceeds DATA_START for rdl) */
 
@@ -128,3 +133,5 @@ typedef void (*exec_fn_t)(void *sih);
 #define TRX_OFFSETS_NVM_LEN_IDX	2	/* Length of appended NVRAM data */
 
 #define TRX_OFFSETS_DLBASE_IDX  0       /* RAM start address for download */
+
+#endif  /* _USB_RDL_H */

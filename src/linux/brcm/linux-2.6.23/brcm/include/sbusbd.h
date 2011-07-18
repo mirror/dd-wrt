@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane USB device core support
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: sbusbd.h,v 13.13.30.2 2010/01/13 09:07:37 Exp $
+ * $Id: sbusbd.h,v 13.15 2010-01-13 09:21:06 Exp $
  */
 
 #ifndef	_usbdev_sb_h_

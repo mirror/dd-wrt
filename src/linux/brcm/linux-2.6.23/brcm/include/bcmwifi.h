@@ -3,15 +3,21 @@
  * This header file housing the define and function prototype use by
  * both the wl driver, tools & Apps.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmwifi.h,v 1.24 2009/05/21 21:22:04 Exp $
+ * $Id: bcmwifi.h,v 1.29.16.1 2010-08-25 22:06:55 Exp $
  */
 
 #ifndef	_bcmwifi_h_
@@ -34,6 +40,7 @@ typedef uint16 chanspec_t;
 					 * this is that + 1 rounded up to a multiple of NBBY (8).
 					 * DO NOT MAKE it > 255: channels are uint8's all over
 					 */
+#define CHSPEC_CTLOVLP(sp1, sp2, sep)	ABS(wf_chspec_ctlchan(sp1) - wf_chspec_ctlchan(sp2)) < (sep)
 
 #define WL_CHANSPEC_CHAN_MASK		0x00ff
 #define WL_CHANSPEC_CHAN_SHIFT		0
@@ -62,40 +69,53 @@ typedef uint16 chanspec_t;
 #define WF_CHAN_FACTOR_4_G		8000	/* 4.9 GHz band for Japan */
 
 /* channel defines */
-#define LOWER_20_SB(channel)	((channel > CH_10MHZ_APART) ? (channel - CH_10MHZ_APART) : 0)
-#define UPPER_20_SB(channel)	((channel < (MAXCHANNEL - CH_10MHZ_APART)) ? \
-				(channel + CH_10MHZ_APART) : 0)
+#define LOWER_20_SB(channel)	(((channel) > CH_10MHZ_APART) ? ((channel) - CH_10MHZ_APART) : 0)
+#define UPPER_20_SB(channel)	(((channel) < (MAXCHANNEL - CH_10MHZ_APART)) ? \
+				((channel) + CH_10MHZ_APART) : 0)
 #define CHSPEC_WLCBANDUNIT(chspec)	(CHSPEC_IS5G(chspec) ? BAND_5G_INDEX : BAND_2G_INDEX)
 #define CH20MHZ_CHSPEC(channel)	(chanspec_t)((chanspec_t)(channel) | WL_CHANSPEC_BW_20 | \
 				WL_CHANSPEC_CTL_SB_NONE | (((channel) <= CH_MAX_2G_CHANNEL) ? \
 				WL_CHANSPEC_BAND_2G : WL_CHANSPEC_BAND_5G))
-#define NEXT_20MHZ_CHAN(channel)	((channel < (MAXCHANNEL - CH_20MHZ_APART)) ? \
-					(channel + CH_20MHZ_APART) : 0)
+#define NEXT_20MHZ_CHAN(channel)	(((channel) < (MAXCHANNEL - CH_20MHZ_APART)) ? \
+					((channel) + CH_20MHZ_APART) : 0)
 #define CH40MHZ_CHSPEC(channel, ctlsb)	(chanspec_t) \
 					((channel) | (ctlsb) | WL_CHANSPEC_BW_40 | \
 					((channel) <= CH_MAX_2G_CHANNEL ? WL_CHANSPEC_BAND_2G : \
 					WL_CHANSPEC_BAND_5G))
-#define CHSPEC_CHANNEL(chspec)	((uint8)(chspec & WL_CHANSPEC_CHAN_MASK))
-#define CHSPEC_CTL_SB(chspec)	(chspec & WL_CHANSPEC_CTL_SB_MASK)
-#define CHSPEC_BW(chspec)	(chspec & WL_CHANSPEC_BW_MASK)
-#define CHSPEC_BAND(chspec)	(chspec & WL_CHANSPEC_BAND_MASK)
+#define CHSPEC_CHANNEL(chspec)	((uint8)((chspec) & WL_CHANSPEC_CHAN_MASK))
+#define CHSPEC_BAND(chspec)	((chspec) & WL_CHANSPEC_BAND_MASK)
 
-#define CHSPEC_IS10(chspec)	((chspec & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_10)
-#define CHSPEC_IS20(chspec)	((chspec & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_20)
+#ifdef WL11N_20MHZONLY
 
+#define CHSPEC_CTL_SB(chspec)	WL_CHANSPEC_CTL_SB_NONE
+#define CHSPEC_BW(chspec)	WL_CHANSPEC_BW_20
+#define CHSPEC_IS10(chspec)	0
+#define CHSPEC_IS20(chspec)	1
+#ifndef CHSPEC_IS40
+#define CHSPEC_IS40(chspec)	0
+#endif
+
+#else /* !WL11N_20MHZONLY */
+
+#define CHSPEC_CTL_SB(chspec)	((chspec) & WL_CHANSPEC_CTL_SB_MASK)
+#define CHSPEC_BW(chspec)	((chspec) & WL_CHANSPEC_BW_MASK)
+#define CHSPEC_IS10(chspec)	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_10)
+#define CHSPEC_IS20(chspec)	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_20)
 #ifndef CHSPEC_IS40
 #define CHSPEC_IS40(chspec)	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
 #endif
 
-#define CHSPEC_IS5G(chspec)	((chspec & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_5G)
-#define CHSPEC_IS2G(chspec)	((chspec & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_2G)
-#define CHSPEC_SB_NONE(chspec)	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_NONE)
-#define CHSPEC_SB_UPPER(chspec)	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
-#define CHSPEC_SB_LOWER(chspec)	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
+#endif /* !WL11N_20MHZONLY */
+
+#define CHSPEC_IS5G(chspec)	(((chspec) & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_5G)
+#define CHSPEC_IS2G(chspec)	(((chspec) & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_2G)
+#define CHSPEC_SB_NONE(chspec)	(((chspec) & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_NONE)
+#define CHSPEC_SB_UPPER(chspec)	(((chspec) & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
+#define CHSPEC_SB_LOWER(chspec)	(((chspec) & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
 #define CHSPEC_CTL_CHAN(chspec)  ((CHSPEC_SB_LOWER(chspec)) ? \
-				  (LOWER_20_SB((chspec & WL_CHANSPEC_CHAN_MASK))) : \
-				  (UPPER_20_SB((chspec & WL_CHANSPEC_CHAN_MASK))))
-#define CHSPEC2WLC_BAND(chspec) (CHSPEC_IS5G((chspec))? WLC_BAND_5G: WLC_BAND_2G)
+				  (LOWER_20_SB(((chspec) & WL_CHANSPEC_CHAN_MASK))) : \
+				  (UPPER_20_SB(((chspec) & WL_CHANSPEC_CHAN_MASK))))
+#define CHSPEC2WLC_BAND(chspec) (CHSPEC_IS5G(chspec) ? WLC_BAND_5G : WLC_BAND_2G)
 
 #define CHANSPEC_STR_LEN    8
 

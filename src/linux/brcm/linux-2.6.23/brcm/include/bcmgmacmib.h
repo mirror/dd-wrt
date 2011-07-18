@@ -3,14 +3,14 @@
  * Broadcom Home Networking Division
  * GbE Unimac core
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: bcmgmacmib.h,v 13.1 2008/07/18 00:28:28 Exp $
+ * $Id: bcmgmacmib.h,v 13.1 2008-07-18 00:28:28 Exp $
  */
 
 #ifndef	_bcmgmacmib_h_

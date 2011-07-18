@@ -1,15 +1,21 @@
 /*
  * SROM format definition.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmsrom_fmt.h,v 13.15.28.7 2010/03/12 19:35:28 Exp $
+ * $Id: bcmsrom_fmt.h,v 13.21.4.7 2011-02-05 19:11:33 Exp $
  */
 
 #ifndef	_bcmsrom_fmt_h_
@@ -263,7 +269,6 @@
 #define SROM8_FEM_TSSIPOS_SHIFT		0
 
 #define SROM8_THERMAL		89
-#define SROM8_EXTLNAGAIN        93
 
 /* Temp sense related entries */
 #define SROM8_MPWR_RAWTS		90
@@ -275,6 +280,10 @@
 
 /* Temperature delta for PHY calibration */
 #define SROM8_PHYCAL_TEMPDELTA	94
+
+/* Measured power 1 & 2, 0-13 bits at offset 95, MSB 2 bits are unused for now. */
+#define SROM8_MPWR_1_AND_2	95
+
 
 /* Per-path offsets & fields */
 #define	SROM8_PATH0		96
@@ -359,6 +368,19 @@
 
 #define SROM9_PO_MCS32		202
 #define SROM9_PO_LOFDM40DUP	203
+#define SROM8_RXGAINERR_2G	205
+#define SROM8_RXGAINERR_5GL	206
+#define SROM8_RXGAINERR_5GM	207
+#define SROM8_RXGAINERR_5GH	208
+#define SROM8_RXGAINERR_5GU	209
+#define SROM8_PCIEINGRESS_WAR	211
+#define SROM9_SAR		212
+
+#define SROM8_NOISELVL_2G	213
+#define SROM8_NOISELVL_5GL	214
+#define SROM8_NOISELVL_5GM	215
+#define SROM8_NOISELVL_5GH	216
+#define SROM8_NOISELVL_5GU	217
 
 #define SROM9_REV_CRC		219
 

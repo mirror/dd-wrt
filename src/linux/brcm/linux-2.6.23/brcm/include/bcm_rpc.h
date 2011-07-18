@@ -1,7 +1,7 @@
 /*
  * RPC module header file
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: bcm_rpc.h,v 13.17.8.3 2010/03/06 01:28:33 Exp $
+ * $Id: bcm_rpc.h,v 13.19.2.2 2010-06-18 01:17:05 Exp $
  */
 
 #ifndef _BCM_RPC_H_
@@ -31,8 +31,8 @@ extern struct rpc_info *bcm_rpc_attach(void *pdev, osl_t *osh, struct rpc_transp
 #ifdef NDIS
 extern int bcm_rpc_shutdown(struct rpc_info *rpc);
 #endif
-extern void bcm_rpc_sleep(struct rpc_info *rpc);
-extern bool bcm_rpc_resume(struct rpc_info *rpc);
+extern bool bcm_rpc_sleep(struct rpc_info *rpc);
+extern bool bcm_rpc_resume(struct rpc_info *rpc, int *fw_reload);
 extern void bcm_rpc_detach(struct rpc_info *rpc);
 extern void bcm_rpc_down(struct rpc_info *rpc);
 extern void bcm_rpc_watchdog(struct rpc_info *rpc);

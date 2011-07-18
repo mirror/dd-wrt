@@ -57,6 +57,7 @@ ifeq ($(REBUILD_WL_MODULE),1)
     EXTRA_CFLAGS += -DDMA $(WL_DFLAGS) -Os -I$(src) -I$(src)/.. -I$(src)/$(SRCBASE)/wl/linux \
 		    -I$(src)/$(SRCBASE)/wl/sys -finline-limit=0
 
+    EXTRA_CFLAGS    += -DWL_ALL_PASSIVE
     # If the PHY_HAL flag is defined we look in directory wl/phy for the
     # phy source files.
     ifneq ($(findstring PHY_HAL,$(WL_DFLAGS)),)
@@ -76,6 +77,11 @@ else # SRCBASE/wl/sys doesn't exist
     prebuilt := wl_$(wl_suffix).o
     $(TARGET)-objs := $(SRCBASE)/wl/linux/$(prebuilt)
     obj-$(CONFIG_WL) := $(TARGET).o
+
+    ifeq ("$(CONFIG_WL_USBAP)","y")
+        wl_high-objs := $(SRCBASE)/wl/linux/wl_high.o
+        obj-m += wl_high.o
+    endif
 
 endif
 
