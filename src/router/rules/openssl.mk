@@ -56,6 +56,9 @@ endif
 ifneq ($(ARCH),mipsel)
 	install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
 endif
+ifeq ($(CONFIG_FREERADIUS),y)
+	install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+endif
 	@true
 
 openssl-clean:
