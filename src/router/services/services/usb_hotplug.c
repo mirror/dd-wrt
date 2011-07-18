@@ -479,7 +479,8 @@ int usb_add_ufd(char *devpath)
 //                              return 0;
 //                      }
 		}
-		sleep(1);
+		if (i<4)
+		    sleep(1);
 	}
 	closedir(dir);
 	return 0;
