@@ -1,15 +1,21 @@
 /*
  * HND Run Time Environment for standalone ARM programs.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: arminc.h,v 13.8.134.1 2010/02/23 16:54:10 Exp $
+ * $Id: arminc.h,v 13.10 2010-01-15 01:13:59 Exp $
  */
 
 #ifndef	_ARMINC_H
@@ -97,6 +103,10 @@ function:
 #ifdef BCMDBG_ARMRST
 #define	TR_ARMRST	0xF			/* Debug facility to trap Arm reset */
 #endif
+
+/* used to fill an overlay region with nop's */
+#define NOP_UINT32	0x46c046c0
+
 #endif	/* __ARM_ARCH_4T__ */
 
 #if defined(__ARM_ARCH_7M__)
@@ -151,17 +161,20 @@ function:
 #define TR_SYSTICK	15			/* SysTick */
 #define TR_ISR		16			/* External Interrupts start here */
 
-#define	TR_BAD		256			/* Bad trap: Not used by ARM */
+#define	TR_BAD		256			/* Bad trap: Not used by CM3 */
 
 /* Offsets of automatically saved registers from sp upon trap */
-#define CM3_TROFF_R0    0
-#define CM3_TROFF_R1    4
-#define CM3_TROFF_R2    8
-#define CM3_TROFF_R3    12
-#define CM3_TROFF_R12   16
-#define CM3_TROFF_LR    20
-#define CM3_TROFF_PC    24
-#define CM3_TROFF_xPSR  28
+#define CM3_TROFF_R0	0
+#define CM3_TROFF_R1	4
+#define CM3_TROFF_R2	8
+#define CM3_TROFF_R3	12
+#define CM3_TROFF_R12	16
+#define CM3_TROFF_LR	20
+#define CM3_TROFF_PC	24
+#define CM3_TROFF_xPSR	28
+
+/* used to fill an overlay region with nop's */
+#define NOP_UINT32	0x46c046c0
 
 #endif	/* __ARM_ARCH_7M__ */
 

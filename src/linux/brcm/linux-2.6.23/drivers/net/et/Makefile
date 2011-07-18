@@ -13,6 +13,7 @@
 #
 
 EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include 
+EXTRA_CFLAGS    += -DET_ALL_PASSIVE
 ETSRCDIR := .
 
 et-objs := $(ETSRCDIR)/sys/et_linux.o $(ETSRCDIR)/sys/etc.o

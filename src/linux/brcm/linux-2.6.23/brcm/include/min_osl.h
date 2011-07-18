@@ -1,15 +1,21 @@
 /*
  * HND Minimal OS Abstraction Layer.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: min_osl.h,v 13.28.30.2 2010/03/18 02:03:55 Exp $
+ * $Id: min_osl.h,v 13.31.18.1 2010-05-23 18:21:38 Exp $
  */
 
 #ifndef _min_osl_h_
@@ -37,7 +43,7 @@ static inline void blast_icache(void) { return; };
 extern void assfail(char *exp, char *file, int line);
 #define ASSERT(exp) \
 	do { if (!(exp)) assfail(#exp, __FILE__, __LINE__); } while (0)
-#define	TRACE_LOC		OSL_UNCACHED(0x18000044)	/* flash address reg in chipc */
+#define	TRACE_LOC		OSL_UNCACHED(0x180000d0)	/* BP access address reg in chipc */
 #define	BCMDBG_TRACE(val)	do {*((uint32 *)TRACE_LOC) = val;} while (0)
 #else
 #define	ASSERT(exp)		do {} while (0)
@@ -192,8 +198,16 @@ extern int osl_error(int);
 #define PKTLIST_DUMP(osh, buf)
 #define PKTFRMNATIVE(osh, lb)		((void *)NULL)
 #define PKTTONATIVE(osh, p)		((struct lbuf *)NULL)
+#define PKTSETPOOL(osh, lb, x, y)	do {} while (0)
+#define PKTPOOL(osh, lb)		FALSE
 
-/* Global ASSERT type flag */
+/* Global ASSERT type */
 extern uint32 g_assert_type;
+
+/* Kernel: File Operations: start */
+#define osl_os_open_image(filename)	NULL
+#define osl_os_get_image_block(buf, len, image)	0
+#define osl_os_close_image(image)	do {} while (0)
+/* Kernel: File Operations: end */
 
 #endif	/* _min_osl_h_ */

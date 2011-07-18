@@ -1,7 +1,7 @@
 /*
  * RPC OSL
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: rpc_osl.h,v 13.2 2008/03/05 07:21:30 Exp $
+ * $Id: rpc_osl.h,v 13.2 2008-03-05 07:21:30 Exp $
  */
 
 #ifndef _rpcosl_h_

@@ -1,15 +1,21 @@
 /*
  * Low-Level PCI and SB support for BCM47xx (Linux support code)
  *
- * Copyright (C) 2008, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pcibios.c,v 1.8 2008/07/04 01:09:57 Exp $
+ * $Id: pcibios.c,v 1.11 2011-01-10 23:25:05 Exp $
  */
 
 #include <linux/config.h>
@@ -27,11 +33,11 @@
 #include <bcmutils.h>
 #include <hndsoc.h>
 #include <siutils.h>
+#include <hndcpu.h>
 #include <hndpci.h>
 #include <pcicfg.h>
 #include <bcmdevs.h>
 #include <bcmnvram.h>
-#include <hndcpu.h>
 
 /* Global SB handle */
 extern si_t *bcm947xx_sih;
@@ -86,7 +92,7 @@ pcibios_init(void)
 	 * can't use address match 2 (1 GB window) region as MIPS
 	 * can not generate 64-bit address on the backplane.
 	 */
-	if ((sih->chip == BCM4716_CHIP_ID) || (sih->chip == BCM4748_CHIP_ID)) {
+	if (sih->chip == BCM4716_CHIP_ID) {
 		printk("PCI: Using membase %x\n", SI_PCI_MEM);
 		pci_membase = SI_PCI_MEM;
 	}
@@ -123,7 +129,7 @@ pcibios_fixup_bus(struct pci_bus *b)
 	struct pci_dev *d, *dev;
 	struct resource *res;
 	int pos, size;
-	u32 *base, capw;
+	u32 *base;
 	u8 irq;
 
 	printk("PCI: Fixing up bus %d\n", b->number);
@@ -138,9 +144,27 @@ pcibios_fixup_bus(struct pci_bus *b)
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
 		}
 	} else {
+		irq = 0;
+		/* Find the corresponding IRQ of the PCI/PCIe core per bus number */
+		/* All devices on the bus use the same IRQ as the core */
+		list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
+			if ((dev != NULL) &&
+			    ((dev->device == PCI_CORE_ID) ||
+			    (dev->device == PCIE_CORE_ID))) {
+				if (dev->subordinate && dev->subordinate->number == b->number) {
+					irq = dev->irq;
+					break;
+				}
+			}
+		}
+
+		pci_membase = hndpci_get_membase(b->number);
 		/* Fix up external PCI */
 		for (ln = b->devices.next; ln != &b->devices; ln = ln->next) {
+			bool is_hostbridge;
+
 			d = pci_dev_b(ln);
+			is_hostbridge = hndpci_is_hostbridge(b->number, PCI_SLOT(d->devfn));
 			/* Fix up resource bases */
 			for (pos = 0; pos < 6; pos++) {
 				res = &d->resource[pos];
@@ -156,57 +180,12 @@ pcibios_fixup_bus(struct pci_bus *b)
 						PCI_BASE_ADDRESS_0 + (pos << 2), res->start);
 				}
 				/* Fix up PCI bridge BAR0 only */
-				if (b->number == 1 && PCI_SLOT(d->devfn) == 0)
+				if (is_hostbridge)
 					break;
 			}
 			/* Fix up interrupt lines */
-
-			printk("Device %d map irq %d\n",PCI_SLOT(d->devfn),d->irq);
-
-			list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
-				if ((dev != NULL) &&
-				    ((dev->device == PCI_CORE_ID) ||
-				    (dev->device == PCIE_CORE_ID)))
-					d->irq = dev->irq;
-			}
+			d->irq = irq;
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
-			printk("result->irq %d\n",d->irq);
-
-			/* If the device is a Broadcom HND device, corerev 18 or higher,
-			 * make sure it does not issue requests > 128 bytes.
-			 */
-			pci_read_config_dword(d, 0x58, &capw);
-			if ((capw & 0xff00ff) == 0x780009) {
-				/* There is a Vendor Specific Info capability of the
-				 * right length at 0x58, preety good bet its an HND
-				 * pcie core.
-				 */
-
-				pci_read_config_dword(d, 0x5c, &capw);
-				printk("HND PCIE device corerev %d found at %d/%d/%d\n",
-				       capw, d->bus->number,  PCI_SLOT(d->devfn),
-				       PCI_FUNC(d->devfn));
-				if (capw >= 18) {
-					u32 pciecap;
-					u16 devctrl;
-
-					pci_read_config_dword(d, 0xd0, &pciecap);
-					pci_read_config_word(d, 0xd8, &devctrl);
-					if (pciecap == 0x10010) {
-						u16 new = devctrl & ~0x7000;
-
-						if (devctrl != new) {
-							printk("  Setting DevCtrl to 0x%x "
-								"(was 0x%x)\n", new, devctrl);
-							pci_write_config_word(d, 0xd8, new);
-						} else
-							printk("  DevCtrl is ok: 0x%x\n", new);
-					} else
-						printk(" ERROR: PCIECap is not at 0xd0\n");
-				}
-			}
-
-
 		}
 		hndpci_arb_park(sih, PCI_PARK_NVRAM);
 	}
@@ -261,8 +240,6 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 	/* These cores come out of reset enabled */
 	if (dev->device == MIPS_CORE_ID ||
 	    dev->device == MIPS33_CORE_ID ||
-	    dev->device == MIPS74K_CORE_ID ||
-	    dev->device == EXTIF_CORE_ID ||
 	    dev->device == CC_CORE_ID)
 		return 0;
 
@@ -283,7 +260,7 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 	 */
 	if (si_coreid(sih) == USB_CORE_ID) {
 		si_core_disable(sih, si_core_cflags(sih, 0, 0));
-		si_core_reset(sih, 1 << 13, 0);
+		si_core_reset(sih, 1 << 29, 0);
 	}
 	/*
 	 * USB 2.0 special considerations:
@@ -347,39 +324,6 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 				udelay(1);
 			}
 		}
-		
-		/* Broadcom suggested to add this block to improve
-		 *  USB stability and performance.
-		 */
-		/* War for 4716 failures. */
-		if (sih->chip == BCM4716_CHIP_ID) {
-			uint32 tmp;
-			uint32 delay = 500;
-			uint32 val = 0;
-			uint32 clk_freq;
-			
-			clk_freq = si_cpu_clock(sih);
-			if(clk_freq >= 480000000)
-				val = 0x1846b; /* set CDR to 0x11(fast) */
-			else if (clk_freq == 453000000)
-				val = 0x1046b; /* set CDR to 0x10(slow) */
-
-			/* Change Shim mdio control reg to fix host not acking at high frequencies
-			*/
-			if (val) {
-				writel(0x1, (uintptr)regs + 0x524); /* write sel to enable */
-				udelay(delay);
-
-				writel(val, (uintptr)regs + 0x524);
-				udelay(delay);
-				writel(0x4ab, (uintptr)regs + 0x524);
-				udelay(delay);
-				tmp = readl((uintptr)regs + 0x528);
-				printk("USB20H mdio control register : 0x%x\n", tmp);
-				writel(0x80000000, (uintptr)regs + 0x528);
-			}
-		}
-		
 		/* PRxxxx: War for 5354 failures. */
 		if (si_corerev(sih) == 1) {
 			uint32 tmp;
@@ -398,39 +342,6 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 			tmp = readl(regs + 0x304);
 			printk("USB20H shim cr: 0x%x\n", tmp);
 		}
-
-                                /* War for 4716 failures. */
-		if ((sih->chip == BCM4716_CHIP_ID) ||
-			(sih->chip == BCM4748_CHIP_ID)) {
-                        uint32 tmp;
-                        uint32 delay = 500;
-                        uint32 val = 0;
-                        uint32 clk_freq;
-
-                        clk_freq = si_cpu_clock(sih);
-                        if(clk_freq == 480000000)
-                                val = 0x1846b;
-                        else if (clk_freq == 453000000)
-                                val = 0x1046b;
-
-                        /* Change Shim mdio control reg to fix host not acking at high frequencies
- *                         */
-                        if (val) {
-                                writel(val, (uintptr)regs + 0x524);
-                                udelay(delay);
-                                writel(0x4ab, (uintptr)regs + 0x524);
-                                udelay(delay);
-                                tmp = readl((uintptr)regs + 0x528);
-                                udelay(delay);
-                                writel(val, (uintptr)regs + 0x524);
-                                udelay(delay);
-                                writel(0x4ab, (uintptr)regs + 0x524);
-                                udelay(delay);
-                                tmp = readl((uintptr)regs + 0x528);
-                                printk("USB20H mdio control register : 0x%x\n", tmp);
-                        }
-                }
-
 	} else
 		si_core_reset(sih, 0, 0);
 
@@ -461,7 +372,8 @@ pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 static void __init
 quirk_sbpci_bridge(struct pci_dev *dev)
 {
-	if (dev->bus->number != 1 || PCI_SLOT(dev->devfn) != 0)
+	if (dev->bus->number == 0 ||
+		!hndpci_is_hostbridge(dev->bus->number, PCI_SLOT(dev->devfn)))
 		return;
 
 	printk("PCI: Fixing up bridge\n");

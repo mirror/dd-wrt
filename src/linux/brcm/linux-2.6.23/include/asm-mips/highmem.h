@@ -53,6 +53,7 @@ extern void __kunmap(struct page *page);
 extern void *__kmap_atomic(struct page *page, enum km_type type);
 extern void __kunmap_atomic(void *kvaddr, enum km_type type);
 extern void *kmap_atomic_pfn(unsigned long pfn, enum km_type type);
+extern void *kmap_atomic_pfn_prot(unsigned long pfn, enum km_type type, pgprot_t prot);
 extern struct page *__kmap_atomic_to_page(void *ptr);
 
 #define kmap			__kmap

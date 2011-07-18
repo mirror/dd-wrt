@@ -174,6 +174,7 @@
 #define ADDRMASK (NBYTES-1)
 
 	.text
+	.section .text.fastpath, "a"
 	.set	noreorder
 	.set	noat
 

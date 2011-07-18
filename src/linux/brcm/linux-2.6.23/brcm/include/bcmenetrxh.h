@@ -3,14 +3,14 @@
  * Broadcom Home Networking Division
  * BCM44XX and BCM47XX 10/100 Mbps Ethernet cores.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: bcmenetrxh.h,v 13.5 2005/06/21 18:01:46 Exp $
+ * $Id: bcmenetrxh.h,v 13.5 2005-06-21 18:01:46 Exp $
  */
 
 #ifndef _bcmenetrxh_h_

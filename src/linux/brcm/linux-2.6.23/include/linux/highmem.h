@@ -56,6 +56,9 @@ static inline void *kmap_atomic(struct page *page, enum km_type idx)
 #define kunmap_atomic(addr, idx)	do { pagefault_enable(); } while (0)
 #define kmap_atomic_pfn(pfn, idx)	kmap_atomic(pfn_to_page(pfn), (idx))
 #define kmap_atomic_to_page(ptr)	virt_to_page(ptr)
+#define kmap_atomic_pfn_prot(x, y, z)   ( \
+					 panic("Enable CONFIG_HIGHMEM to use kmap_atomic_pfn_prot!!!\n"), \
+					 NULL)
 
 #define kmap_flush_unused()	do {} while(0)
 #endif

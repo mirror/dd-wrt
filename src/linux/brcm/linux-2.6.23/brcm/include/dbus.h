@@ -2,7 +2,7 @@
  * Dongle BUS interface Abstraction layer
  *   target serial buses like USB, SDIO, SPI, etc.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -10,7 +10,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: dbus.h,v 13.27.20.7 2010/05/26 01:27:56 Exp $
+ * $Id: dbus.h,v 13.31.2.6 2010-12-09 19:17:49 Exp $
  */
 
 #ifndef __DBUS_H__
@@ -20,12 +20,13 @@
 
 #ifdef BCMDBG
 #define DBUSERR(args)         printf args
+#define DBUSINFO(args)
 #define DBUSTRACE(args)
 #define DBUSDBGLOCK(args)
-
 #else
-#define DBUSTRACE(args)
 #define DBUSERR(args)
+#define DBUSINFO(args)
+#define DBUSTRACE(args)
 #define DBUSDBGLOCK(args)
 #endif
 
@@ -47,8 +48,14 @@ enum {
 	DBUS_ERR_RXCTLFAIL,
 	DBUS_ERR_REG_PARAM,
 	DBUS_STATUS_CANCELLED,
-	DBUS_ERR_NVRAM
+	DBUS_ERR_NVRAM,
+	DBUS_JUMBO_NOMATCH,
+	DBUS_JUMBO_BAD_FORMAT
 };
+
+#define BCM_OTP_SIZE_43236  84	/* number of 16 bit values */
+#define BCM_OTP_SW_RGN_43236	24  /* start offset of SW config region */
+#define BCM_OTP_ADDR_43236 0x18000800 /* address of otp base */
 
 #define ERR_CBMASK_TXFAIL		0x00000001
 #define ERR_CBMASK_RXFAIL		0x00000002
@@ -208,6 +215,9 @@ typedef struct {
 	int (*recv_resume)(void *bus);
 
 	int (*recv_irb_from_ep)(void *bus, struct dbus_irb_rx *rxirb, uint ep_idx);
+
+	int (*readreg)(void *bus, uint32 regaddr, int datalen, uint32 *value);
+
 	/* Add from the bottom */
 } dbus_intf_t;
 
@@ -220,6 +230,7 @@ typedef struct dbus_pub {
 	int ntxq, nrxq, rxsize;
 	void *bus;
 	struct shared_info *sh;
+    void *dev_info;
 } dbus_pub_t;
 
 #define BUS_INFO(bus, type) (((type *) bus)->pub->bus)
@@ -260,6 +271,7 @@ extern int dbus_get_attrib(const dbus_pub_t *pub, dbus_attrib_t *attrib);
 extern int dbus_get_device_speed(const dbus_pub_t *pub);
 extern int dbus_set_config(const dbus_pub_t *pub, dbus_config_t *config);
 extern int dbus_get_config(const dbus_pub_t *pub, dbus_config_t *config);
+extern void * dbus_get_devinfo(const dbus_pub_t *pub);
 
 extern void *dbus_pktget(const dbus_pub_t *pub, int len);
 extern void dbus_pktfree(const dbus_pub_t *pub, void* pkt);

@@ -1,15 +1,21 @@
 /*
  * Definitiosn for Jtag taps in HND chips.
  *
- * $Id: hndjtagdefs.h,v 13.2 2009/04/27 20:49:08 Exp $
+ * $Id: hndjtagdefs.h,v 13.3 2009-07-02 20:33:03 Exp $
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef	_HNDJTAGDEFS_H
@@ -85,6 +91,9 @@
 #define LV_RO			0x00080000
 #define	LV_USER_BASE		0x10
 
+/* Keystone base */
+#define	LV_BASE_KY		0xfe07ff3a
+
 /* Register addresses */
 #define LV_CAP			0
 #define LV_CHAIN_CTL		1
@@ -100,6 +109,8 @@
 #define	LV_UREG_IR(reg)		(LV_BASE | ((((reg) + LV_USER_BASE) << LV_REG_SHIFT) & LV_REG_MASK))
 #define	LV_UREG_ROIR(reg)	\
 	(LV_BASE | LV_RO | ((((reg) + LV_USER_BASE) << LV_REG_SHIFT) & LV_REG_MASK))
+
+#define	LV_REG_IR_KY(reg)	(LV_BASE_KY | (((reg) << LV_REG_SHIFT) & LV_REG_MASK))
 
 #define	LV_IDCODE		0xfffffffe
 #define	LV_BYPASS		0xffffffff
