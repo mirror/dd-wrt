@@ -1447,7 +1447,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")) {
-		setRouter("Asus RT-N66+");
+		setRouter("Asus RT-N66U");
 		return ROUTER_ASUS_RTN66;
 	}
 
