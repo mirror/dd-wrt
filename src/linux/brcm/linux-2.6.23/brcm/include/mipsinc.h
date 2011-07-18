@@ -1,15 +1,21 @@
 /*
  * HND Run Time Environment for standalone MIPS programs.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: mipsinc.h,v 13.26 2008/10/07 01:15:49 Exp $
+ * $Id: mipsinc.h,v 13.27.10.1 2010-09-15 00:27:33 Exp $
  */
 
 #ifndef	_MISPINC_H
@@ -391,7 +397,9 @@ symbol:		.frame	sp, 0, ra
 #define PRID_COPT_MASK		0xff000000
 #define PRID_COMP_MASK		0x00ff0000
 #define PRID_IMP_MASK		0x0000ff00
+#ifndef PRID_REV_MASK				    /* May duplicate in cpu.h */
 #define PRID_REV_MASK		0x000000ff
+#endif
 
 #define PRID_COMP_LEGACY	0x000000
 #define PRID_COMP_MIPS		0x010000
@@ -566,5 +574,8 @@ static INLINE void dcache_probe(uint32 config1, uint *size, uint *lsize)
 		  "i" (op));
 
 #endif /* !_LANGUAGE_ASSEMBLY */
+
+/* used to fill an overlay region with nop's */
+#define NOP_UINT32	0x00000000
 
 #endif	/* _MISPINC_H */

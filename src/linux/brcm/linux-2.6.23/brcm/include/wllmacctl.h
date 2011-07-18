@@ -4,15 +4,21 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wllmacctl.h,v 13.29 2008/12/02 22:10:53 Exp $:
+ * $Id: wllmacctl.h,v 13.31 2009-10-05 20:49:01 Exp $:
  */
 
 #ifndef _wllmacctl_h_
@@ -23,6 +29,13 @@
 #include <proto/bcmeth.h>
 #include <proto/bcmevent.h>
 #include <proto/802.11.h>
+
+/* cpp contortions to concatenate w/arg prescan */
+#ifndef PAD
+#define	_PADLINE(line)	pad ## line
+#define	_XSTR(line)	_PADLINE(line)
+#define	PAD		_XSTR(__LINE__)
+#endif	/* PAD */
 
 /* Init/Configure response */
 
@@ -138,10 +151,15 @@ typedef struct wl_lmac_cap {
 	lmac_ht_cap_t	lmac_htcap;
 
 	/* BROADCOM specific parts */
-	wlc_rev_info_t	lmac_rev_info;
 	uint32		radioid[2];
 	lmacchanvec_t 	sup_chan[2];
 	char		lmac_version[LMAC_VERSION_BUF_SIZE];
+	uint8		rxhdr_size;
+	uint8		rxhdr_hwrxoff;
+	uint8		PAD[2];
+	uint32		PAD[7];
+	wlc_rev_info_t	lmac_rev_info;
+	uint32		PAD[8];
 } wl_lmac_cap_t;
 
 /* LMAC capabilities */

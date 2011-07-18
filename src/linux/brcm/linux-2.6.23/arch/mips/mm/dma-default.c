@@ -19,6 +19,9 @@
 
 #include <dma-coherence.h>
 
+#include <typedefs.h>
+#include <bcmdefs.h>
+
 static inline unsigned long dma_addr_to_virt(dma_addr_t dma_addr)
 {
 	unsigned long addr = plat_dma_addr_to_phys(dma_addr);
@@ -130,7 +133,7 @@ static inline void __dma_sync(unsigned long addr, size_t size,
 	}
 }
 
-dma_addr_t dma_map_single(struct device *dev, void *ptr, size_t size,
+dma_addr_t BCMFASTPATH dma_map_single(struct device *dev, void *ptr, size_t size,
 	enum dma_data_direction direction)
 {
 	unsigned long addr = (unsigned long) ptr;
@@ -143,7 +146,7 @@ dma_addr_t dma_map_single(struct device *dev, void *ptr, size_t size,
 
 EXPORT_SYMBOL(dma_map_single);
 
-void dma_unmap_single(struct device *dev, dma_addr_t dma_addr, size_t size,
+void BCMFASTPATH dma_unmap_single(struct device *dev, dma_addr_t dma_addr, size_t size,
 	enum dma_data_direction direction)
 {
 	if (cpu_is_noncoherent_r10000(dev))

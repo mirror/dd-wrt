@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment ARM7TDMIs specific.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_arm.h,v 13.20 2009/01/07 12:54:17 Exp $
+ * $Id: hndrte_arm.h,v 13.20 2009-01-07 12:54:17 Exp $
  */
 
 #ifndef _hndrte_arm_h_

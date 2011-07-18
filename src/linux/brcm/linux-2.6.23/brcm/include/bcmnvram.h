@@ -1,15 +1,21 @@
 /*
  * NVRAM variable manipulation
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmnvram.h,v 13.62 2008/11/25 21:02:44 Exp $
+ * $Id: bcmnvram.h,v 13.62.110.1 2010-08-05 23:00:00 Exp $
  */
 
 #ifndef _bcmnvram_h_
@@ -49,7 +55,7 @@ extern int nvram_init(void *sih);
  * Append a chunk of nvram variables to the global list
  */
 extern int nvram_append(void *si, char *vars, uint varsz);
-
+extern void nvram_get_global_vars(char **varlst, uint *varsz);
 /*
  * Check for reset button press for restoring factory defaults.
  */
@@ -162,13 +168,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define NVRAM_INVALID_MAGIC	0xFFFFFFFF
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#ifdef CONFIG_NVRAM_60K
-#define NVRAM_SPACE		0xf000
-#elif CONFIG_NVRAM_64K
-#define NVRAM_SPACE		0x10000
-#else
 #define NVRAM_SPACE		0x8000
-#endif
 
 #define NVRAM_MAX_VALUE_LEN 255
 #define NVRAM_MAX_PARAM_LEN 64
@@ -176,4 +176,26 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define NVRAM_CRC_START_POSITION	9 /* magic, len, crc8 to be skipped */
 #define NVRAM_CRC_VER_MASK	0xffffff00 /* for crc_ver_init */
 
+#if (defined(DUAL_IMAGE) || defined(CONFIG_DUAL_IMAGE) || \
+	defined(__CONFIG_DUAL_IMAGE_FLASH_SUPPORT__))
+/* Shared by all: CFE, Linux Kernel, and Ap */
+#define IMAGE_BOOT "image_boot"
+/* CFE variables */
+#define IMAGE_1ST_FLASH_TRX "flash3.trx"
+#define IMAGE_1ST_FLASH_OS "flash3.os"
+#define IMAGE_2ND_FLASH_TRX "flash3.trx2"
+#define IMAGE_2ND_FLASH_OS "flash3.os2"
+
+/* CFE and Linux Kernel shared variables */
+#define IMAGE_FIRST_OFFSET "image_first_offset"
+#define IMAGE_SECOND_OFFSET "image_second_offset"
+
+/* Linux application variables */
+#define LINUX_FIRST "linux"
+#define LINUX_SECOND "linux2"
+#define POLICY_TOGGLE "toggle"
+#define LINUX_PART_TO_FLASH "linux_to_flash"
+#define LINUX_FLASH_POLICY "linux_flash_policy"
+
+#endif /* defined(DUAL_IMAGE||CONFIG_DUAL_IMAGE)||__CONFIG_DUAL_IMAGE_FLASH_SUPPORT__ */
 #endif /* _bcmnvram_h_ */

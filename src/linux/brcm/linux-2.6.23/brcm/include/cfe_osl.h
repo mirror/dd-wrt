@@ -1,7 +1,7 @@
 /*
  * CFE boot loader OS Abstraction Layer.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: cfe_osl.h,v 1.57.8.2 2010/03/18 02:03:55 Exp $
+ * $Id: cfe_osl.h,v 1.60.12.1 2010-05-23 18:14:46 Exp $
  */
 
 #ifndef _cfe_osl_h_
@@ -101,6 +101,7 @@ extern void osl_assert(char *exp, char *file, int line);
 
 /* bcopy, bcmp, and bzero */
 #define bcmp(b1, b2, len)	lib_memcmp((b1), (b2), (len))
+#define	memmove(dest, src, n)	lib_memcpy((dest), (src), (n))
 
 struct osl_info {
 	void *pdev;
@@ -132,6 +133,7 @@ extern void osl_detach(osl_t *osh);
 #define OSL_UNCACHED(a)		(a)
 #define OSL_CACHED(a)		(a)
 #endif
+
 
 #ifdef __mips__
 #define OSL_PREF_RANGE_LD(va, sz) prefetch_range_PREF_LOAD_RETAINED(va, sz)
@@ -232,6 +234,8 @@ struct lbuf {
 #define	PKTTONATIVE(lb, buffer)		osl_pkt_tonative((lb), (buffer))
 #define PKTSHARED(lb)                   (0)
 #define PKTALLOCED(osh)			(0)
+#define PKTSETPOOL(osh, lb, x, y)	do {} while (0)
+#define PKTPOOL(osh, lb)		FALSE
 #define PKTLIST_DUMP(osh, buf)
 
 extern void osl_pkt_frmnative(iocb_buffer_t *buffer, struct lbuf *lb);
@@ -244,7 +248,7 @@ extern uchar *osl_pktpull(struct lbuf *lb, uint bytes);
 extern struct lbuf *osl_pktdup(struct lbuf *lb);
 extern int osl_error(int bcmerror);
 
-/* Global ASSERT type flag */
+/* Global ASSERT type */
 extern uint32 g_assert_type;
 
 #endif	/* _cfe_osl_h_ */

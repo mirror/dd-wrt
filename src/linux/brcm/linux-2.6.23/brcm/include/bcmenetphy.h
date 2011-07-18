@@ -1,14 +1,14 @@
 /*
  * Misc Broadcom BCM47XX MDC/MDIO enet phy definitions.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
  * the contents of this file may not be disclosed to third parties, copied
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
- * $Id: bcmenetphy.h,v 13.4 2008/07/24 03:15:30 Exp $
+ * $Id: bcmenetphy.h,v 13.4 2008-07-24 03:15:30 Exp $
  */
 
 #ifndef	_bcmenetphy_h_

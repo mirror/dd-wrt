@@ -4,15 +4,21 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmcdc.h,v 13.23.18.1 2009/08/28 09:30:12 Exp $
+ * $Id: bcmcdc.h,v 13.25 2009-09-23 22:40:26 Exp $
  */
 #ifndef _bcmcdc_h_
 #define	_bcmcdc_h_
@@ -82,8 +88,11 @@ struct bdc_header {
 	uint8	flags;			/* Flags */
 	uint8	priority;		/* 802.1d Priority (low 3 bits) */
 	uint8	flags2;
-	uint8	dataOffset;		/* Data Offset in 4-byte words */
+	uint8	dataOffset;		/* Offset from end of BDC header to packet data, in
+					 * 4-byte words.  Leaves room for optional headers.
+					 */
 };
 
 #define BDC_PROTO_VER_1		1	/* Old Protocol version */
+
 #endif /* _bcmcdc_h_ */

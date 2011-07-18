@@ -1,15 +1,21 @@
 /*
  * Table that encodes the srom formats for PCI/PCIe NICs.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmsrom_tbl.h,v 13.32.4.10 2010/04/30 04:33:41 Exp $
+ * $Id: bcmsrom_tbl.h,v 13.40.10.12 2011-02-05 01:08:27 Exp $
  */
 
 #ifndef	_bcmsrom_tbl_h_
@@ -243,6 +249,8 @@ static const sromvar_t pci_sromvars[] = {
 	{"phycal_tempdelta",	0xffffff00,	0,	SROM8_PHYCAL_TEMPDELTA,	0x00ff},
 	{"temps_period",	0xffffff00,	0,	SROM8_PHYCAL_TEMPDELTA,	0x0f00},
 	{"temps_hysteresis",	0xffffff00,	0,	SROM8_PHYCAL_TEMPDELTA,	0xf000},
+	{"measpower1", 0xffffff00,	SRFL_PRHEX, SROM8_MPWR_1_AND_2, 	0x007f},
+	{"measpower2",	0xffffff00, 	SRFL_PRHEX, SROM8_MPWR_1_AND_2, 	0x3f80},
 
 	{"cck2gpo",	0x000000f0,	0,		SROM4_2G_CCKPO,		0xffff},
 	{"cck2gpo",	0x00000100,	0,		SROM8_2G_CCKPO,		0xffff},
@@ -380,7 +388,39 @@ static const sromvar_t pci_sromvars[] = {
 	{"",			0,		0,	SROM9_5GHPO_MCSBW40 + 1,	0xffff},
 	{"mcs32po",		0xfffffe00,	0,	SROM9_PO_MCS32,			0xffff},
 	{"legofdm40duppo",	0xfffffe00,	0,	SROM9_PO_LOFDM40DUP,		0xffff},
-
+	{"pcieingress_war",	0xffffff00,	0,	SROM8_PCIEINGRESS_WAR,		0xf},
+	{"rxgainerr2ga0",	0xffffff00,	0,	SROM8_RXGAINERR_2G,		0x003f},
+	{"rxgainerr2ga1",	0xffffff00,	0,	SROM8_RXGAINERR_2G,		0x07c0},
+	{"rxgainerr2ga2",	0xffffff00,	0,	SROM8_RXGAINERR_2G,		0xf800},
+	{"rxgainerr5gla0",	0xffffff00,	0,	SROM8_RXGAINERR_5GL,		0x003f},
+	{"rxgainerr5gla1",	0xffffff00,	0,	SROM8_RXGAINERR_5GL,		0x07c0},
+	{"rxgainerr5gla2",	0xffffff00,	0,	SROM8_RXGAINERR_5GL,		0xf800},
+	{"rxgainerr5gma0",	0xffffff00,	0,	SROM8_RXGAINERR_5GM,		0x003f},
+	{"rxgainerr5gma1",	0xffffff00,	0,	SROM8_RXGAINERR_5GM,		0x07c0},
+	{"rxgainerr5gma2",	0xffffff00,	0,	SROM8_RXGAINERR_5GM,		0xf800},
+	{"rxgainerr5gha0",	0xffffff00,	0,	SROM8_RXGAINERR_5GH,		0x003f},
+	{"rxgainerr5gha1",	0xffffff00,	0,	SROM8_RXGAINERR_5GH,		0x07c0},
+	{"rxgainerr5gha2",	0xffffff00,	0,	SROM8_RXGAINERR_5GH,		0xf800},
+	{"rxgainerr5gua0",	0xffffff00,	0,	SROM8_RXGAINERR_5GU,		0x003f},
+	{"rxgainerr5gua1",	0xffffff00,	0,	SROM8_RXGAINERR_5GU,		0x07c0},
+	{"rxgainerr5gua2",	0xffffff00,	0,	SROM8_RXGAINERR_5GU,		0xf800},
+	{"sar2g",       	0xfffffe00,	0,	SROM9_SAR,          		0x00ff},
+	{"sar5g",               0xfffffe00,	0,	SROM9_SAR,	                0xff00},
+	{"noiselvl2ga0",	0xffffff00,	0,	SROM8_NOISELVL_2G,		0x001f},
+	{"noiselvl2ga1",	0xffffff00,	0,	SROM8_NOISELVL_2G,		0x03e0},
+	{"noiselvl2ga2",	0xffffff00,	0,	SROM8_NOISELVL_2G,		0x7c00},
+	{"noiselvl5gla0",	0xffffff00,	0,	SROM8_NOISELVL_5GL,		0x001f},
+	{"noiselvl5gla1",	0xffffff00,	0,	SROM8_NOISELVL_5GL,		0x03e0},
+	{"noiselvl5gla2",	0xffffff00,	0,	SROM8_NOISELVL_5GL,		0x7c00},
+	{"noiselvl5gma0",	0xffffff00,	0,	SROM8_NOISELVL_5GM,		0x001f},
+	{"noiselvl5gma1",	0xffffff00,	0,	SROM8_NOISELVL_5GM,		0x03e0},
+	{"noiselvl5gma2",	0xffffff00,	0,	SROM8_NOISELVL_5GM,		0x7c00},
+	{"noiselvl5gha0",	0xffffff00,	0,	SROM8_NOISELVL_5GH,		0x001f},
+	{"noiselvl5gha1",	0xffffff00,	0,	SROM8_NOISELVL_5GH,		0x03e0},
+	{"noiselvl5gha2",	0xffffff00,	0,	SROM8_NOISELVL_5GH,		0x7c00},
+	{"noiselvl5gua0",	0xffffff00,	0,	SROM8_NOISELVL_5GU,		0x001f},
+	{"noiselvl5gua1",	0xffffff00,	0,	SROM8_NOISELVL_5GU,		0x03e0},
+	{"noiselvl5gua2",	0xffffff00,	0,	SROM8_NOISELVL_5GU,		0x7c00},
 	{NULL,		0,		0,		0,			0}
 };
 
@@ -571,12 +611,22 @@ static const cis_tuple_t cis_hnbuvars[] = {
 	{HNBU_RDLRWU,		2, "1rdlrwu"},
 	{HNBU_WPS,		3, "1wpsgpio 1wpsled"},
 	{HNBU_USBFS,		2, "1usbfs"},
-	{HNBU_ELNA2G,           2, "1elna2g"},
-	{HNBU_ELNA5G,           2, "1elna5g"},
 	{HNBU_CUSTOM1,		5, "4customvar1"},
 	{OTP_RAW,		0, ""},	/* special case */
 	{HNBU_OFDMPO5G,		13, "4ofdm5gpo 4ofdm5glpo 4ofdm5ghpo"},
 	{HNBU_USBEPNUM,		3, "2usbepnum"},
+	{HNBU_CCKBW202GPO,	5, "2cckbw202gpo 2cckbw20ul2gpo"},
+	{HNBU_LEGOFDMBW202GPO,	9, "4legofdmbw202gpo 4legofdmbw20ul2gp"},
+	{HNBU_LEGOFDMBW205GPO,	25, "4legofdmbw205glpo 4legofdmbw20ul5glpo 4legofdmbw205gmpo "
+	"4legofdmbw20ul5gmpo 4legofdmbw205ghpo 4legofdmbw20ul5ghpo"},
+	{HNBU_MCS2GPO,	13,	"4mcsbw202gpo 4mcsbw20ul2gpo 4mcsbw402gpo"},
+	{HNBU_MCS5GLPO,	13,	"4mcsbw205glpo 4mcsbw20ul5glpo 4mcsbw405glpo"},
+	{HNBU_MCS5GMPO,	13,	"4mcsbw205gmpo 4mcsbw20ul5gmpo 4mcsbw405gmpo"},
+	{HNBU_MCS5GHPO,	13,	"4mcsbw205ghpo 4mcsbw20ul5ghpo 4mcsbw405ghpo"},
+	{HNBU_MCS32PO,	3,	"2mcs32po"},
+	{HNBU_LEG40DUPPO, 	3,	"2legofdm40duppo"},
+	{HNBU_TEMPTHRESH, 	3,	"1tempthresh 1periodhyst"},
+	{HNBU_UUID, 	17,	"16uuid"},
 	{0xFF,			0, ""}
 };
 

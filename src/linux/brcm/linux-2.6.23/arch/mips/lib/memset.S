@@ -53,6 +53,7 @@
  * a2: size of area to clear
  */
 	.set	noreorder
+	.section .text.fastpath, "a"
 	.align	5
 LEAF(memset)
 	beqz		a1, 1f

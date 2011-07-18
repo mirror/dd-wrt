@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -7,7 +7,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: osl_linux.h,v 1.2 2008/08/12 17:50:33 Exp $
+ * $Id: osl_linux.h,v 1.2 2008-08-12 17:50:33 Exp $
  */
 
 #ifndef _OSL_LINUX_H_

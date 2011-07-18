@@ -1,15 +1,21 @@
 /*
  * flash.h: Common definitions for flash access.
  *
- * Copyright (C) 2009, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2010, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: flash.h,v 13.25 2008/11/28 03:26:24 Exp $
+ * $Id: flash.h,v 13.25.110.1 2010-10-13 04:00:31 Exp $
  */
 
 /* FILE-CSTYLED Cannot figure out how to make the initialization continuation lines acceptable */
@@ -60,6 +66,11 @@ typedef struct _flash_desc {
 #ifdef	DECLARE_FLASHES
 flash_cmds_t sflash_cmd_t =
 	{ SFLASH, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+#ifdef NANDBOOT
+flash_cmds_t nflash_cmd_t =
+	{ NFLASH, 0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+#endif /* NANDBOOT */
 
 flash_cmds_t flash_cmds[] = {
 /*	  type	needu	preera	eraseb	erasech	write	wbuf	clcsr	rdcsr	rdid
@@ -156,6 +167,11 @@ uint amd2114[] = {
 
 flash_desc_t sflash_desc =
 	{ 0, 0, 0, 0, SFLASH, 0, 0, 0, 0, 0, NULL, "SFLASH" };
+
+#ifdef NANDBOOT
+flash_desc_t nflash_desc =
+	{ 0, 0, 0, 0, NFLASH, 0, 0, 0, 0, 0, NULL, "NFLASH" };
+#endif /* NANDBOOT */
 
 flash_desc_t flashes[] = {
 	{ 0x00b0, 0x00d0, 0x0200000, 2,	SCS, 0x10000, 32,  0, 31,  0, NULL,

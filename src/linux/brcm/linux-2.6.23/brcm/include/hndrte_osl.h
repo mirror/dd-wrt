@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment OS Abstraction Layer.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte_osl.h,v 13.90.18.3 2010/03/18 02:03:55 Exp $
+ * $Id: hndrte_osl.h,v 13.98.14.1 2010-05-23 18:19:25 Exp $
  */
 
 #ifndef _hndrte_osl_h_
@@ -18,9 +18,6 @@
 #include <hndrte.h>
 #include <hndrte_lbuf.h>
 
-/* Global ASSERT type */
-extern uint32 g_assert_type;
-
 struct osl_info {
 	uint pktalloced;	/* Number of allocated packet buffers */
 	void *dev;		/* Device handle */
@@ -28,6 +25,7 @@ struct osl_info {
 	void *tx_ctx;		/* Context to the callback function */
 };
 
+struct pktpool;
 struct bcmstrbuf;
 
 /* PCMCIA attribute space access macros */
@@ -171,7 +169,7 @@ extern int osl_busprobe(uint32 *val, uint32 addr);
 
 /* packet primitives */
 #define PKTGET(osh, len, send)		(void *)osl_pktget((osh), (len))
-#define PKTFREE(osh, p, send)            osl_pktfree((osh), (p), (send))
+#define PKTFREE(osh, p, send)		osl_pktfree((osh), (p), (send))
 #define	PKTDATA(osh, lb)		LBP(lb)->data
 #define	PKTLEN(osh, lb)			LBP(lb)->len
 #define	PKTHEADROOM(osh, lb)		(LBP(lb)->data - LBP(lb)->head)
@@ -185,18 +183,24 @@ extern int osl_busprobe(uint32 *val, uint32 addr);
 #define	PKTTAG(lb)			((void *)((LBP(lb))->pkttag))
 #define	PKTLINK(lb)			(LBP(lb)->link)
 #define	PKTSETLINK(lb, x)		(LBP(lb)->link = LBP(x))
-#define	PKTPRIO(lb)			lb_pri(lb)
-#define	PKTSETPRIO(lb, x)		lb_setpri((lb), (x))
-#define PKTSHARED(lb)                   (lb_isclone(lb) || LBP(lb)->refcnt > 1)
+#define	PKTPRIO(lb)			lb_pri(LBP(lb))
+#define	PKTSETPRIO(lb, x)		lb_setpri(LBP(lb), (x))
+#define PKTSHARED(lb)                   (lb_isclone(LBP(lb)) || LBP(lb)->refcnt > 1)
 #define PKTALLOCED(osh)			((osl_t *)osh)->pktalloced
-#define PKTSUMNEEDED(lb)		lb_sumneeded(lb)
-#define PKTSETSUMNEEDED(lb, x)		lb_setsumneeded((lb), (x))
-#define PKTSUMGOOD(lb)			lb_sumgood(lb)
-#define PKTSETSUMGOOD(lb, x)		lb_setsumgood((lb), (x))
-#define PKTMSGTRACE(lb)			lb_msgtrace(lb)
-#define PKTSETMSGTRACE(lb, x)		lb_setmsgtrace((lb), (x))
-#define PKTDATAOFFSET(lb)			lb_dataoff(LBP(lb))
+#define PKTSUMNEEDED(lb)		lb_sumneeded(LBP(lb))
+#define PKTSETSUMNEEDED(lb, x)		lb_setsumneeded(LBP(lb), (x))
+#define PKTSUMGOOD(lb)			lb_sumgood(LBP(lb))
+#define PKTSETSUMGOOD(lb, x)		lb_setsumgood(LBP(lb), (x))
+#define PKTMSGTRACE(lb)			lb_msgtrace(LBP(lb))
+#define PKTSETMSGTRACE(lb, x)		lb_setmsgtrace(LBP(lb), (x))
+#define PKTDATAOFFSET(lb)		lb_dataoff(LBP(lb))
 #define PKTSETDATAOFFSET(lb, dataOff)	lb_setdataoff(LBP(lb), dataOff)
+#define PKTSETPOOL(osh, lb, x, y)	lb_setpool(LBP(lb), (x), (y))
+#define PKTPOOL(osh, lb)		lb_pool(LBP(lb))
+#ifdef BCMDBG_POOL
+#define PKTPOOLSTATE(lb)		lb_poolstate(LBP(lb))
+#define PKTPOOLSETSTATE(lb, s)		lb_setpoolstate(LBP(lb), s)
+#endif
 
 #define BCM_DMAPAD
 #define PKTDMAPAD(osh, lb)		(LBP(lb)->dmapad)
@@ -209,7 +213,7 @@ extern int osl_busprobe(uint32 *val, uint32 addr);
 #define PKTLIST_DUMP(osh, buf)
 #endif /* BCMDBG_PKT */
 
-#define PKTFRMNATIVE(osh, lb)	((void *)(osl_pktfrmnative((osh), (lb))))
+#define PKTFRMNATIVE(osh, lb)		((void *)(osl_pktfrmnative((osh), (lb))))
 #define PKTTONATIVE(osh, p)		((struct lbuf *)(osl_pkttonative((osh), (p))))
 
 
@@ -220,8 +224,15 @@ extern void osl_pktfree(osl_t *osh, void *p, bool send);
 extern void * osl_pktdup(osl_t *osh, void *p);
 extern void * osl_pktclone(osl_t *osh, void *p, int offset, int len);
 
-/* get system up time in miliseconds */
+/* get system up time in milliseconds */
 #define OSL_SYSUPTIME()		(hndrte_time())
+
+/* Kernel: File Operations: start */
+extern void * osl_os_open_image(char * filename);
+extern int osl_os_get_image_block(char * buf, int len, void * image);
+extern void osl_os_close_image(void * image);
+/* Kernel: File Operations: end */
+
 /* free memory available in pool */ 
 #define OSL_MEM_AVAIL()         (hndrte_memavail())
 

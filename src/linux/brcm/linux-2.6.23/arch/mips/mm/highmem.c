@@ -139,6 +139,17 @@ void *kmap_atomic_pfn(unsigned long pfn, enum km_type type)
 	return (void*) vaddr;
 }
 
+void *kmap_atomic_pfn_prot(unsigned long pfn, enum km_type type, pgprot_t prot)
+{
+	pgprot_t old_kmap_prot = kmap_prot;
+	void * vaddr;
+
+	kmap_prot =  prot;
+	vaddr = kmap_atomic_pfn(pfn, type);
+	kmap_prot = old_kmap_prot;
+	return vaddr;
+}
+
 struct page *__kmap_atomic_to_page(void *ptr)
 {
 	unsigned long idx, vaddr = (unsigned long)ptr;

@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone MIPS programs.
  *
- * Copyright (C) 2009, Broadcom Corporation
+ * Copyright (C) 2010, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -9,7 +9,7 @@
  * or duplicated in any form, in whole or in part, without the prior
  * written permission of Broadcom Corporation.
  *
- * $Id: hndrte.h,v 13.118.4.2 2010/02/09 20:45:12 Exp $
+ * $Id: hndrte.h,v 13.133.2.1.18.1 2011-02-11 18:38:23 Exp $
  */
 
 #ifndef	_HNDRTE_H
@@ -32,7 +32,7 @@
 #include <bcmstdlib.h>
 #include <hndrte_trap.h>
 
-#define MAX_NETDEV_NAME		32
+#define HNDRTE_DEV_NAME_MAX	16
 
 /* RTE IOCTL definitions for generic ether devices */
 #define RTEGHWADDR		0x8901
@@ -49,11 +49,13 @@
 
 /* Forward declaration */
 struct lbuf;
+struct pktpool;
 
 extern si_t *hndrte_sih;		/* Chip backplane handle */
 extern osl_t *hndrte_osh;		/* Chip backplane osl */
 extern chipcregs_t *hndrte_ccr;		/* Chipcommon core regs */
 extern sbconfig_t *hndrte_ccsbr;	/* Chipcommon core SB config regs */
+extern struct pktpool pktpool_shared;
 
 typedef struct hndrte_devfuncs hndrte_devfuncs_t;
 
@@ -67,7 +69,7 @@ typedef struct {
 	unsigned long	tx_errors;		/* packet transmit problems	*/
 	unsigned long	rx_dropped;		/* no space in linux buffers	*/
 	unsigned long	tx_dropped;		/* no space available in linux	*/
-	unsigned long   multicast;      /* multicast packets received */
+	unsigned long   multicast;		/* multicast packets received */
 } hndrte_stats_t;
 
 #ifdef BCMDBG_CPU
@@ -78,16 +80,17 @@ typedef struct {
 	uint32 num_wfi_hit;
 } hndrte_cpu_stats_t;
 #endif
+
 /* Device instance */
 typedef struct hndrte_dev {
-	char		dev_fullname[MAX_NETDEV_NAME];
-	hndrte_devfuncs_t *dev_funcs;
-	uint32		devid;
-	void		*dev_softc;
-	uint32		flags;		/* see RTEDEVFLAG_XXXX */
-	struct hndrte_dev *dev_next;
-	struct hndrte_dev *dev_chained;
-	void		*pdev;
+	char			name[HNDRTE_DEV_NAME_MAX];
+	hndrte_devfuncs_t	*funcs;
+	uint32			devid;
+	void			*softc;		/* Software context */
+	uint32			flags;		/* RTEDEVFLAG_XXXX */
+	struct hndrte_dev	*next;
+	struct hndrte_dev	*chained;
+	void			*pdev;
 } hndrte_dev_t;
 
 #define RTEDEVFLAG_HOSTASLEEP	0x000000001	/* host is asleep */
@@ -119,7 +122,7 @@ struct hndrte_devfuncs {
 	void (*txflowcontrol) (hndrte_dev_t *dev, bool state, int prio);
 	void (*poll)(hndrte_dev_t *dev);
 	int (*xmit_ctl)(hndrte_dev_t *src, hndrte_dev_t *dev, struct lbuf *lb);
-	int (*xmit2)(hndrte_dev_t *src, hndrte_dev_t *dev, struct lbuf *lb, uint32 ep_idx);
+	int (*xmit2)(hndrte_dev_t *src, hndrte_dev_t *dev, struct lbuf *lb, int8 ch);
 };
 
 /* Use standard symbols for Armulator build which does not use the hndrte.lds linker script */
@@ -167,7 +170,12 @@ extern void hndrte_update_stats(hndrte_cpu_stats_t *cpustats);
 
 /* Console command support */
 typedef void (*cons_fun_t)(uint32 arg, uint argc, char *argv[]);
+
+#ifdef HNDRTE_CONSOLE
 extern	void hndrte_cons_addcmd(char *name, cons_fun_t fun, uint32 arg);
+#else
+#define hndrte_cons_addcmd(name, fun, arg) { (void)(name); (void)(fun); (void)(arg); }
+#endif
 
 /* bcopy, bcmp, and bzero */
 #define	bcopy(src, dst, len)	memcpy((dst), (src), (len))
@@ -177,8 +185,14 @@ extern	void hndrte_cons_addcmd(char *name, cons_fun_t fun, uint32 arg);
 #ifdef BCMDBG
 #define	TRACE_LOC		OSL_UNCACHED(0x18000044)	/* flash address reg in chipc */
 #define	HNDRTE_TRACE(val)	do {*((uint32 *)TRACE_LOC) = val;} while (0)
+#define	TRACE_LOC2		OSL_UNCACHED(0x180000d0)	/* bpaddrlow */
+#define	HNDRTE_TRACE2(val)	do {*((uint32 *)TRACE_LOC2) = val;} while (0)
+#define	TRACE_LOC3		OSL_UNCACHED(0x180000d8)	/* bpdata */
+#define	HNDRTE_TRACE3(val)	do {*((uint32 *)TRACE_LOC3) = val;} while (0)
 #else
 #define	HNDRTE_TRACE(val)	do {} while (0)
+#define	HNDRTE_TRACE2(val)	do {} while (0)
+#define	HNDRTE_TRACE3(val)	do {} while (0)
 #endif
 
 /* debugging prints */
@@ -189,25 +203,20 @@ extern	void hndrte_cons_addcmd(char *name, cons_fun_t fun, uint32 arg);
 #endif /* BCMDBG_ERR */
 
 /* assert */
-#if defined(BCMDBG_ASSERT) || defined(BCMASSERT_LOG)
-#ifdef BCMSPACE
-extern void hndrte_assert(const char *exp, const char *file, int line);
-#define ASSERT(exp) \
-	do { if (!(exp)) hndrte_assert(#exp, __FILE__, __LINE__); } while (0)
-#else
+#if defined(BCMDBG_ASSERT)
 extern void hndrte_assert(const char *file, int line);
 #ifndef _FILENAME_
 #define _FILENAME_ "_FILENAME_ is not defined"
 #endif
 #define ASSERT(exp) \
 	do { if (!(exp)) hndrte_assert(_FILENAME_, __LINE__); } while (0)
-#endif /* BCMSPACE */
 #else
 #define	ASSERT(exp)		do {} while (0)
 #endif /* BCMDBG_ASSERT */
 
 /* Timing */
 typedef void (*to_fun_t)(void *arg);
+
 typedef struct _ctimeout {
 	struct _ctimeout *next;
 	uint32 ms;
@@ -215,6 +224,9 @@ typedef struct _ctimeout {
 	void *arg;
 	bool expired;
 } ctimeout_t;
+
+extern uint32 _memsize;
+
 extern void hndrte_delay(uint32 usec);
 extern uint32 hndrte_time(void);
 extern uint32 hndrte_update_now(void);
@@ -229,6 +241,7 @@ extern void hndrte_set_irq_timer(uint ms);
 extern void hndrte_ack_irq_timer(void);
 extern void hndrte_suspend_timer(void);
 extern void hndrte_resume_timer(void);
+extern void hndrte_trap_init(void);
 extern void hndrte_trap_handler(trap_t *tr);
 
 typedef struct hndrte_timer
@@ -271,6 +284,7 @@ extern void *hndrte_malloc_align(uint size, uint alignbits);
 #define hndrte_malloc_pt(_size)	hndrte_malloc_ptblk((_size))
 extern void *hndrte_malloc_ptblk(uint size);
 #endif /* BCMDBG_MEM */
+extern void hndrte_append_ptblk(void);
 extern void *hndrte_realloc(void *ptr, uint size);
 extern int hndrte_free(void *ptr);
 extern int hndrte_free_pt(void *ptr);
@@ -321,11 +335,12 @@ extern uint hndrte_arena_add(uint32 base, uint size);
 #define	 HNDRTE_STACK_SIZE	(8192)
 #endif
 
+extern uint __watermark;
+
 #ifdef	BCMDBG
 extern void hndrte_print_timers(uint32 arg, uint argc, char *argv[]);
 
 #if defined(__arm__) || defined(__thumb__) || defined(__thumb2__)
-extern uint __watermark;
 #define	BCMDBG_TRACE(x)		__watermark = (x)
 #else
 #define	BCMDBG_TRACE(x)
@@ -334,7 +349,13 @@ extern uint __watermark;
 #define	BCMDBG_TRACE(x)
 #endif	/* BCMDBG */
 
-/* Global ASSERT type flag */
 extern uint32 g_assert_type;
+
+#ifdef DONGLEOVERLAYS
+extern int hndrte_overlay_copy(uint32 overlay_idx, uint8 *overlay, int offset, int len);
+extern int hndrte_overlay_invalidate(uint32 overlay_idx);
+extern void hndrte_overlay_prep(void);
+extern uint32 hndrte_overlayerrfn_branch_instr(int32 from, int32 to);
+#endif /* DONGLEOVERLAYS */
 
 #endif	/* _HNDRTE_H */
