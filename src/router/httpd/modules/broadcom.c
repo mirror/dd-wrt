@@ -1300,6 +1300,9 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
 	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
 #endif
+#ifdef HAVE_SPOTPASS
+	{"Nintendo", "save", "spotpass", 1, REFRESH, "nintendo_save"},
+#endif
 #endif
 	{"Join", "Join", "wireless",1, REFRESH, "wireless_join"},
 	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
@@ -1458,6 +1461,7 @@ struct apply_action apply_actions[] = {
 	{"NAS", "nassrv", 0, SERVICE_RESTART, NULL},
 	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
 	{"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
+	{"Nintendo", "nintendo", 0, SERVICE_RESTART, NULL},
 
 	/*
 	 * APP & GAMING 

@@ -56,12 +56,14 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "cesar", 0},
 #elif HAVE_THOM
 	{"router_style", "orange", 0},
-#elif HAVE_NINTENDO
+#elif HAVE_SPOTPASS
 	{"router_style", "nintendo", 0},
 #elif HAVE_BUFFALO
 	{"router_style", "buffalo", 0},
 #elif HAVE_WIKINGS
 	{"router_style", "wikings", 0},
+#elif HAVE_ESPOD
+	{"router_style", "espod", 0},
 #elif HAVE_NEXTMEDIA
 	{"router_style", "nextmedia", 0},
 #elif HAVE_3COM
@@ -734,6 +736,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_WIKINGS)
 	{"wl0_ssid", "Excel Networks", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "Excel Networks", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_ESPOD)
+	{"wl0_ssid", "ESPOD", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "ESPOD", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_NEXTMEDIA)
 	{"wl0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "nextmedia", 0},	/* Service set ID (network name) */
@@ -1265,6 +1270,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "TRIMAX", 0},
 #elif  HAVE_WIKINGS
 	{"router_name", "Excel Networks", 0},
+#elif  HAVE_ESPOD
+	{"router_name", "ESPOD", 0},
 #elif  HAVE_NEXTMEDIA
 	{"router_name", "NEXTMEDIA", 0},
 #elif  HAVE_DDLAN
@@ -2080,6 +2087,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"snmpd_sysname", "trimax", 0},
 #elif defined(HAVE_WIKINGS)
 	{"snmpd_sysname", "Excel Networks", 0},
+#elif defined(HAVE_ESPOD)
+	{"snmpd_sysname", "ESPOD Technologies", 0},
 #elif defined(HAVE_NEXTMEDIA)
 	{"snmpd_sysname", "nextmedia", 0},
 #else
