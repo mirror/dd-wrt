@@ -547,6 +547,7 @@ int main(int argc, char **argv)
 
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_WIKINGS
+#ifndef HAVE_ESPOD
 #ifndef HAVE_NEXTMEDIA
 #ifndef HAVE_ERC
 #ifndef HAVE_CORENET
@@ -568,6 +569,7 @@ int main(int argc, char **argv)
 	fprintf(fp,
 		"DD-WRT v24-sp2 custom (c) 2011 NewMedia-NET GmbH\nRelease: "
 		BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+#endif
 #endif
 #endif
 #endif

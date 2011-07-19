@@ -35,6 +35,18 @@ void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
+#ifdef HAVE_ESPOD
+	char *p;
+	char string[32], date[16];
+	sprintf( string, CYBERTAN_VERSION );
+	p = strtok( string, "(" );
+	if( p != NULL ) {
+		p = strtok( NULL, ")" );
+		if( p != NULL ) {
+			sprintf( date, "%s", p);
+		}
+	}
+#endif
 #ifdef HAVE_BUFFALO
 	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
 		  nvram_safe_get("dist_type"), DIST_OPT);
@@ -55,6 +67,20 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #endif
 		websWrite(wp, "Excel Networks (%s series) V 2.10", V);
 #undef V
+#elif HAVE_ESPOD
+#ifdef HAVE_SUB3
+#define V "A600"
+#elif HAVE_SUB6
+#define V "A1000"
+#else
+#define V "MIMO"
+#endif
+	if( argc == 2 ) {
+		websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
+	} else {
+		websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
+	}
+#undef V
 #elif HAVE_CARLSONWIRELESS
 		websWrite(wp, "Carlson Wireless v5.3 (%s)", SVN_REVISION);
 #else
@@ -74,6 +100,20 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #define V "Excellent"
 #endif
 	websWrite(wp, "Excel Networks (%s series) V 2.10", V);
+#undef V
+#elif HAVE_ESPOD
+#ifdef HAVE_SUB3
+#define V "A600"
+#elif HAVE_SUB6
+#define V "A1000"
+#else
+#define V "MIMO"
+#endif
+	if( argc == 2 ) {
+		websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
+	} else {
+		websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
+	}
 #undef V
 #elif HAVE_CARLSONWIRELESS
 	websWrite(wp, "Carlson Wireless v1.0 (%s)", SVN_REVISION);
