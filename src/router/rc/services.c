@@ -185,6 +185,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_AP_SERV
 	handle = start_service_nofree_f("apserv", handle);
 #endif
+#ifdef HAVE_SPOTPASS
+	handle = start_service_nofree_f("spotpass", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 
@@ -838,6 +841,14 @@ static void handle_routedel(void)
 
 }
 
+#ifdef HAVE_SPOTPASS
+static void handle_spotpass(void)
+{
+        void *handle = NULL;
+	startstop("spotpass");
+}
+#endif
+
 struct SERVICES {
 	char *servicename;
 	void (*service) (void);
@@ -1172,6 +1183,9 @@ static struct SERVICES services_def[] = {
 #endif
 #ifdef HAVE_EOP_TUNNEL
 	{"eop", handle_eop},
+#endif
+#ifdef HAVE_SPOTPASS
+	{"spotpass", handle_spotpass},
 #endif
 	{NULL, NULL}
 };

@@ -1558,8 +1558,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "",
 	 "", ""},
 	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp",
-	 "USB.asp", "NAS.asp", "Hotspot.asp", "Milkfish.asp", "AnchorFree.asp",
-	 "", "", ""},
+	 "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", 
+         "AnchorFree.asp", "", ""},
 	{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},
 	{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},
 	{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
@@ -1589,8 +1589,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
 		{"services", "servicesServices", "servicesRadius",
 		 "servicesPppoesrv", "servicesPptp", "servicesUSB",
-		 "servicesNAS", "servicesHotspot", "servicesMilkfish",
-		 "servicesAnchorFree", "", "", ""},
+		 "servicesNAS", "servicesHotspot", "servicesNintendo",
+		 "servicesMilkfish","servicesAnchorFree", "", ""},
 		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "",
 		 "", ""},
 		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "",
@@ -1742,6 +1742,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// AOSS
 					j++;
 #endif
+#ifndef HAVE_SPOTPASS
+				if (!strcmp(menu[i][j], "Nintendo.asp"))	// jump over
+					// Nintendo
+					j++;
+#endif
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strcmp(menu[i][j], "WL_WPATable.asp"))	// jump 
 					// over 
@@ -1808,6 +1813,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 #endif
 #ifdef HAVE_WIKINGS
+				if (!strcmp(menu[i][j], "AnchorFree.asp"))
+					j++;
+#endif
+#ifdef HAVE_ESPOD
 				if (!strcmp(menu[i][j], "AnchorFree.asp"))
 					j++;
 #endif
@@ -1983,6 +1992,8 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
+#elif HAVE_ESPOD
+	websWrite(wp, "\t\t<title>ESPOD Technologies");
 #else
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"),
 		  SVN_REVISION);
@@ -3512,4 +3523,30 @@ void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
 }
 
 // end changed by steve
+#endif
+
+#ifdef HAVE_SPOTPASS
+void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv) {
+	char url[128],proto[8],ports[64];
+	char dummy1[1], dummy2[8];
+	int port1, port2;
+	char *ptr;
+	char *serverlist = (char *)safe_malloc(strlen(nvram_default_get("spotpass_servers", "")) + 1);
+	
+	strcpy(serverlist, nvram_get("spotpass_servers"));
+	ptr = strtok(serverlist, "|");
+	while(ptr != NULL) {
+		if(sscanf(ptr, "%s %s %s %s %d %d", &dummy1, &url, &proto, &dummy2, &port1, &port2) == 6) {
+			websWrite(wp, "%s %s %d,%d", url, proto, port1, port2);
+		} else if(sscanf(ptr, "%s %s %s %d %d", &dummy1, &url, &proto, &port1, &port2) == 5) {
+			websWrite(wp, "%s %s %d,%d", url, proto, port1, port2);
+		} else if(sscanf(ptr, "%s %s %s", &url, &proto, &ports) == 3) {
+			websWrite(wp, "%s %s %s", url, proto, ports);
+		}
+		ptr = strtok(NULL, "|");
+		if(ptr != NULL) {
+			websWrite(wp, "\n");
+		}
+	}
+}
 #endif
