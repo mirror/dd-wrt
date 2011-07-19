@@ -404,6 +404,9 @@ static void buffalo_defaults(int force)
 			nvram_set("ath1_regdomain", "KOREA_REPUBLIC");
 		}
 #endif
+#ifdef HAVE_SPOTPASS
+		system("startservice spotpass_defaults");
+#endif
 	}
 }
 #endif

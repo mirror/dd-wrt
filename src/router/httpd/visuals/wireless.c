@@ -71,6 +71,10 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 	char ifname[32];
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
+#ifdef HAVE_SPOTPASS
+	int wildcard, count;
+	char mac[18];
+#endif
 
 	char var[32];
 	if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
@@ -84,7 +88,20 @@ char *wl_filter_mac_get(char *ifname2, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-
+#ifdef HAVE_SPOTPASS
+			//rep( word, '/', ' ');
+			if( sscanf(word, "%17s/%i", &mac, &wildcard) != 0) {
+				wildcard = wildcard / 4;
+				for( count = strlen(mac) - 1; wildcard > 0; count-- ) {
+					if(mac[count] != ':') {
+						mac[count] = '*';
+						wildcard--;
+					}
+				}
+				return mac;
+			
+			} else
+#endif
 			return word;
 		}
 	}
@@ -137,12 +154,20 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 			item = 0 * WL_FILTER_MAC_NUM + i + 1;
 
 			websWrite(wp,
+#ifdef HAVE_SPOTPASS
+				  "<div class=\"setting\"><div class=\"label\" style=\"width: 17%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
+#else
 				  "<div class=\"setting\"><div class=\"label\" style=\"width: 17%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
+#endif
 				  mac_mess, item, BOX_LEN, ifname, item - 1,
 				  wl_filter_mac_get(ifname, "mac", item - 1));
 
 			websWrite(wp,
+#ifdef HAVE_SPOTPASS
+				  "<div class=\"label\" style=\"width: 17%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
+#else
 				  "<div class=\"label\" style=\"width: 17%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
+#endif
 				  mac_mess, item + (WL_FILTER_MAC_NUM / 2),
 				  BOX_LEN, ifname,
 				  item + (WL_FILTER_MAC_NUM / 2) - 1,

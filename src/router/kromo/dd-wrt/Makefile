@@ -31,6 +31,10 @@ ifneq ($(CONFIG_AOSS),y)
 	rm -f $(INSTALLDIR)/www/AOSS.asp
 endif
 
+ifneq ($(CONFIG_SPOTPASS),y)
+	rm -f $(INSTALLDIR)/www/Nintendo.asp
+endif
+
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/dd-logo.png
@@ -100,7 +104,7 @@ ifeq ($(CONFIG_3COM),y)
 endif
 
 ifeq ($(CONFIG_BUFFALO),y)
-ifneq ($(CONFIG_NINTENDO),y)
+ifneq ($(CONFIG_SPOTPASS),y)
 	
 	mkdir $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
@@ -110,7 +114,7 @@ ifneq ($(CONFIG_NINTENDO),y)
 endif
 endif
 
-ifeq ($(CONFIG_NINTENDO),y)
+ifeq ($(CONFIG_SPOTPASS),y)
 	mkdir $(INSTALLDIR)/www/style/nintendo
 	cp nintendo/style.css $(INSTALLDIR)/www/style/nintendo
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
@@ -296,6 +300,19 @@ ifeq ($(CONFIG_WIKINGS),y)
 	cp wikings/*.asp $(INSTALLDIR)/www
 	rm -f $(INSTALLDIR)/www/About.htm
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
+endif
+ifeq ($(CONFIG_ESPOD),y)
+	mkdir $(INSTALLDIR)/www/style/espod
+	cp espod/favicon.ico $(INSTALLDIR)/www/images
+	cp espod/common.css $(INSTALLDIR)/www/style/
+	cp espod/style.css $(INSTALLDIR)/www/style/espod
+	cp espod/images/* $(INSTALLDIR)/www/images
+	cp espod/help/* $(INSTALLDIR)/www/help
+	cp espod/About.htm $(INSTALLDIR)/www
+	cp espod/Status_Router.asp $(INSTALLDIR)/www
+	cp espod/SuperChannel.asp $(INSTALLDIR)/www
+	cp espod/UPnP.asp $(INSTALLDIR)/www
+	cp espod/Wiviz_Survey.asp $(INSTALLDIR)/www
 endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
 	mkdir $(INSTALLDIR)/www/style/nextmedia
@@ -713,7 +730,11 @@ else
 ifeq ($(CONFIG_CARLSONWIRELESS),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/carlsonwireless/common/ install
 else
+ifeq ($(CONFIG_ESPOD),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/espod/common/ install
+else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
+endif
 endif
 endif
 endif
