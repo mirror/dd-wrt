@@ -483,6 +483,16 @@ void setRouter(char *name)
 #else
 	nvram_set(NVROUTER, "Excellent");
 #endif
+#elif HAVE_ESPOD
+	if (name)
+		nvram_set("DD_BOARD2", name);
+#ifdef HAVE_SUB3
+	nvram_set(NVROUTER, "ESPOD ES-3680");
+#elif HAVE_SUB6
+	nvram_set(NVROUTER, "ESPOD ES-3680");
+#else
+	nvram_set(NVROUTER, "ESPOD ES-3680");
+#endif
 #elif HAVE_CARLSONWIRELESS
 	nvram_set(NVROUTER, "LH-135/270 ST");
 #else

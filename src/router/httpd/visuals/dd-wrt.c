@@ -3854,11 +3854,25 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, " 	</div>\n");
 
 	}
+	int txpower = atoi(nvram_safe_get(power)); 
+#ifdef HAVE_ESPOD
+#ifdef HAVE_SUB3
+	if( txpower > 28 ) {
+		txpower = 28;
+		nvram_set(power, "28");
+	}
+#else
+	if( txpower > 30 ) {
+		txpower = 28;
+		nvram_set(power, "30");
+	}
+#endif
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
 		  power,
-		  atoi(nvram_safe_get(power)) + wifi_gettxpoweroffset(prefix));
+		  txpower + wifi_gettxpoweroffset(prefix));
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
@@ -5117,11 +5131,25 @@ if (!is_ath9k(prefix))
 		websWrite(wp, " 	</div>\n");
 
 	}
+	int txpower = atoi(nvram_safe_get(power));
+#ifdef HAVE_ESPOD
+#ifdef HAVE_SUB3
+	if( txpower > 28 ) {
+		txpower = 28;
+		nvram_set(power, "28");
+	}
+#else
+	if( txpower > 30 ) {
+		txpower = 30;
+		nvram_set(power, "30");
+	}
+#endif
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
 		  power,
-		  atoi(nvram_safe_get(power)) + wifi_gettxpoweroffset(prefix));
+		  txpower + wifi_gettxpoweroffset(prefix));
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
@@ -6514,7 +6542,17 @@ void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 	if ((fp = popen("uptime", "r"))) {
 		fgets(line, sizeof(line), fp);
 		line[strlen(line) - 1] = '\0';	// replace new line with null
+#ifdef HAVE_ESPOD
+		char *p;
+		p = strtok( line, "," );
+		if( p != NULL ) {
+			websWrite(wp, "%s<br>\n", p);
+			p = strtok( NULL, "\0");
+			websWrite(wp, "%s", p);
+		}
+#else
 		websWrite(wp, "%s", line);
+#endif
 		pclose(fp);
 	}
 	return;

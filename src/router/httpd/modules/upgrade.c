@@ -384,6 +384,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			fprintf(stderr,
 				"upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
 				ver, ver1, ver2, ver3);
+#if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
+
 #ifdef HAVE_WIKINGS
 #ifdef HAVE_SUB3
 #define V "XMED"
@@ -392,14 +394,27 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #else
 #define V "XMAX"
 #endif
+#endif
+
+#ifdef HAVE_ESPOD
+#ifdef HAVE_SUB3
+#define V "EPMN"
+#elif HAVE_SUB6
+#define V "EPMD"
+#else
+#define V "EPMX"
+#endif
+#endif
 			if (memcmp(&buf[0], V, 4)) {
 				fprintf(stderr, "code pattern error!\n");
 				goto write_data;	// must be there, otherwise fail here
+				//goto err;	// must be there, otherwise fail here
 			}
 #undef V
 #endif
 
-#ifndef HAVE_WIKINGS
+#if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
+#else
 #ifdef HAVE_WRT160NL
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
 				cprintf("code pattern error!\n");
