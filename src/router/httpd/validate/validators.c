@@ -1265,10 +1265,13 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		return;
 	}
 
+#ifdef HAVE_SPOTPASS
+		int count, wildcard, wildcard_valid;
+#endif
 	for (i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++) {
 		char filter_mac[] = "ath10.99_macXXX";
 		char *mac = NULL;
-		char mac1[20];
+		char mac1[21];
 
 		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname2,
 			 "_mac", i);
@@ -1279,6 +1282,34 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 			continue;
 		}
 
+#ifdef HAVE_SPOTPASS
+		count = strlen(mac) - 1;
+		wildcard = 0;
+		wildcard_valid = 0;
+
+		for (count; count >= 0; count--) {
+			if (mac[count] == '*') {
+				if( count == strlen(mac) - 1 ) {
+					wildcard_valid = 1;
+					wildcard++;
+					mac[count] = '0';
+				} else if( wildcard_valid == 0 ) {
+					wildcard_valid = -1;
+					break;
+				} else {
+					wildcard++;
+					mac[count] = '0';
+				}
+			} else if( mac[count] != ':' && wildcard_valid == 1 ) {
+				wildcard_valid = 0;
+			}
+		}
+
+		if(wildcard_valid == -1 ) {
+			// validation error - skip MAC
+			continue;
+		}
+#endif
 		if (strlen(mac) == 12) {
 			sscanf(mac, "%02X%02X%02X%02X%02X%02X", &m[0],
 			       &m[1], &m[2], &m[3], &m[4], &m[5]);
@@ -1297,10 +1328,16 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 			error_value = 1;
 			continue;
 		}
+
+#ifdef HAVE_SPOTPASS
+		if( wildcard_valid == 0 && wildcard > 0 ) {
+			sprintf( mac1, "%s\/%d", mac1, wildcard * 4 );
+		}
+#endif
 		cur +=
 		    snprintf(cur,
 			     buf +
-			     (19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) -
+			     ((strlen(mac1) + 1) * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) -
 			     cur, "%s%s", cur == buf ? "" : " ", mac1);
 
 	}

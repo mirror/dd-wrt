@@ -1733,7 +1733,7 @@ void add_vifs_single(char *prefix, int device)
 
 	sprintf(vif, "%s_vifs", prefix);
 	char *vifs = nvram_safe_get(vif);
-
+	
 	if (vifs == NULL)
 		return;
 	char *n = (char *)safe_malloc(strlen(vifs) + 8);
@@ -1768,6 +1768,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "trimax_vap");
 #elif defined(HAVE_WIKINGS)
 	nvram_set(v2, "Excel Networks_vap");
+#elif defined(HAVE_ESPOD)
+	nvram_set(v2, "ESPOD Technologies_vap");
 #elif defined(HAVE_NEXTMEDIA)
 	nvram_set(v2, "nextmedia_vap");
 #elif defined(HAVE_TMK)
@@ -2560,6 +2562,19 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_SUB6
 			if (base > 22)
 				base = 22;
+#endif
+#endif
+
+#ifdef HAVE_ESPOD
+			if (base > 30)
+				base = 30;
+#ifdef HAVE_SUB6
+			if (base > 30)
+				base = 30;
+#endif
+#ifdef HAVE_SUB3
+			if (base > 28)
+				base = 28;
 #endif
 #endif
 			int txpower = base - wifi_gettxpoweroffset(prefix);
@@ -3537,3 +3552,120 @@ void nassrv_save(webs_t wp)
 	addAction("nassrv");
 	applytake(value);
 }
+
+#ifdef HAVE_SPOTPASS
+void nintendo_save(webs_t wp) {
+	
+	char prefix[16] = "ath0";
+	char var[32], param[32];
+	int device = 0;
+	
+	int enabled = atoi(nvram_default_get("spotpass", "0"));
+	
+	device = prefix[strlen(prefix) - 1] - '0';
+	
+	// handle server list
+	int count = 0;
+	char *buffer = (char *)safe_malloc(strlen(websGetVar(wp, "spotpass_servers", "")) + 1);
+	strcpy( buffer, websGetVar(wp, "spotpass_servers", ""));
+	
+	char *ptr = strtok( buffer, "\n");
+	while( ptr != NULL ) {
+		count++;
+		ptr = strtok(NULL, "\n");
+	}
+	char *serverlist = (char *)safe_malloc(strlen(websGetVar(wp, "spotpass_servers", "")) + (count * 2) + 1);
+	char line[256], url[128], proto[8], mode[16], ports[64];
+	int port1, port2, lines = 0;
+
+	strcpy( buffer, websGetVar(wp, "spotpass_servers", ""));
+	strcpy( serverlist, "\0" );
+	fprintf( stderr, "%s\n", buffer );
+	ptr = strtok( buffer, "\n" );
+	while( ptr != NULL ) {
+		strcpy( line, "\0" );
+		if( sscanf( ptr, "%s %s %s %d %d", &url, &proto, &mode, &port1, &port2 ) == 5 ) {
+			sprintf( line, "%s %s %d,%d", url, proto, port1, port2);
+		} else if( sscanf( ptr, "%s %s %d %d", &url, &proto, &port1, &port2 ) == 4 ) {
+			sprintf( line, "%s %s %d,%d", url, proto, port1, port2);
+		} else if( sscanf( ptr, "%s %s %s", &url, &proto, &ports ) == 3 ) {
+			sprintf( line, "%s %s %s", url, proto, ports);
+		}
+		lines++;
+		if( strlen(line) > 0 ) {
+		strcat(serverlist, line);
+			if( lines < count ) {
+				strcat(serverlist, "|");
+			}
+		}
+		ptr = strtok( NULL, "\n");
+	}
+	nvram_set( "spotpass_servers", serverlist );
+		
+	if( enabled == 0 && !strcmp(websGetVar(wp, "spotpass", "0"), "1") ) {
+		
+		// check if vap is set
+		if( !strcmp(nvram_default_get("spotpass_vif", ""), "" ) ) {	
+		
+			int count = get_vifcount(prefix) + 1;
+			add_vifs_single(prefix, device);
+			sprintf(var, "%s.%d", prefix, count);
+			nvram_set("spotpass_vif", var);
+			
+			// set parameters for vap
+			sprintf(param, "%s_ssid", var);
+			nvram_set(param, "NintendoSpotPass1");
+			sprintf(param, "%s_bridged", var);
+			nvram_set(param, "0");
+			sprintf(param, "%s_ipaddr", var);
+			nvram_set(param, "192.168.12.1");
+			sprintf(param, "%s_netmask", var);
+			nvram_set(param, "255.255.255.0");
+			sprintf(param, "%s_macmode", var);
+			nvram_set(param, "allow");
+			rep(param, '.', 'X');	
+			nvram_set(param, "allow");
+			sprintf(param, "%s_macmode1", var);
+			rep(param, '.', 'X');	
+			nvram_set(param, "other");
+			sprintf(param, "%s_maclist", var);
+			nvram_set(param, "A4:C0:E1:00:00:00/24");
+			
+			// dhcpd
+			sprintf(param, "%s>On>20>200>60", var);
+			nvram_set("mdhcpd", param);
+			nvram_set("mdhcpd_count", "1");
+		}
+	
+	} else if( enabled == 1 && !strcmp(websGetVar(wp, "spotpass", "0"), "0") ) {
+
+		if( strcmp(nvram_default_get("spotpass_vif", ""), "") ) {
+			sprintf(var, "%s.%%d", prefix);
+			int index = 0;
+			if(sscanf(nvram_get("spotpass_vif"), var, &index) == 1) {
+				sprintf(var, "%s", nvram_get("spotpass_vif"));
+				int count = get_vifcount(prefix);
+				int index = var[strlen(var) - 1] - '0';
+				while( get_vifcount(prefix) >= index ) {
+					remove_vifs_single(prefix);
+				}
+				nvram_set("spotpass_vif", "");
+
+				nvram_set("mdhcpd", "");
+				nvram_set("mdhcpd_count", "0");
+			}
+		}
+	}
+
+	if( atoi(websGetVar(wp, "spotpass", "")) != enabled) {
+		addAction("wireless");
+	}
+	
+	nvram_set("spotpass", websGetVar(wp, "spotpass", "0"));
+	
+	char *value = websGetVar(wp, "action", "");
+
+	//addAction("spotpass_start");
+        applytake(value);
+}
+#endif
