@@ -903,6 +903,9 @@ void configure_single_11n(int count)
 #elif defined(HAVE_WIKINGS)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "Excel Networks_vap"));
+#elif defined(HAVE_ESPOD)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "ESPOD Technologies_vap"));
 #elif defined(HAVE_NEXTMEDIA)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "nextmedia_vap"));
@@ -983,6 +986,9 @@ void configure_single_11n(int count)
 #elif defined(HAVE_WIKINGS)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "Excel Networks"));
+#elif defined(HAVE_ESPOD)
+	sysprintf("iwconfig %s essid -- \"%s\"", dev,
+		  nvram_default_get(ssid, "ESPOD Technologies"));
 #elif defined(HAVE_NEXTMEDIA)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "nextmedia"));
@@ -1034,6 +1040,9 @@ void configure_single_11n(int count)
 #elif defined(HAVE_WIKINGS)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "Excel Networks"));
+#elif defined(HAVE_ESPOD)
+		sysprintf("iwconfig %s essid -- \"%s\"", dev,
+			  nvram_default_get(ssid, "ESPOD Technologies"));
 #elif defined(HAVE_NEXTMEDIA)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "nextmedia"));
