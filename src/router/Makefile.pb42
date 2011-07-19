@@ -650,6 +650,7 @@ ifeq ($(CONFIG_UBNTM),y)
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
 	tools/ubnt/src/mkfwimage -v XM.ar7240.DD-WRT -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	tools/ubnt/src/mkfwimage -v BZ.ar7240.DD-WRT -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 ifeq ($(CONFIG_WHRHPGN),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
@@ -827,6 +828,9 @@ ifeq ($(CONFIG_WR741),y)
 
 	./tools/tplink/mktplinkfw -B TL-WR740NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR740NDv3-firmware.bin mips-uclibc/tplink-WR740NDv3-firmware.bin
+
+	./tools/tplink/mktplinkfw -B TL-WR743NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR743NDv1-firmware.bin
+	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR743NDv1-firmware.bin mips-uclibc/tplink-WR743NDv1-firmware.bin
 
 	./tools/tplink/mktplinkfw -B TL-WR841NDv5 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv5-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR841NDv5-firmware.bin mips-uclibc/tplink-WR841NDv5-firmware.bin
