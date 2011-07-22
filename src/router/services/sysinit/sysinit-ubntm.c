@@ -96,6 +96,7 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 	if (brand==ROUTER_BOARD_UNIFI)
 	{
+	setWirelessLed(0,0);
 	system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	}else{

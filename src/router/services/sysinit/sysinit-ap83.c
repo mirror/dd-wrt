@@ -320,6 +320,9 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 
 #ifdef HAVE_RS
+	setWirelessLed(0,2);
+	setWirelessLed(1,2);
+	setWirelessLed(2,2);
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 2 >/proc/sys/dev/wifi1/ledpin");
@@ -327,24 +330,30 @@ void start_sysinit(void)
 	system2("echo 2 >/proc/sys/dev/wifi2/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi2/softled");
 #elif HAVE_WRT160NL
+	setWirelessLed(0,6);
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4 5\"");
 #elif HAVE_WZRG300NH
+	setWirelessLed(0,6);
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #elif HAVE_TEW632BRP
+	setWirelessLed(0,6);
 	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #elif HAVE_WR941
+	setWirelessLed(0,9);
 	system2("echo 9 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #elif HAVE_WR1043
+	setWirelessLed(0,9);
 	system2("echo 9 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #else
+	setWirelessLed(0,2);
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif

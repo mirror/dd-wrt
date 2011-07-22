@@ -199,6 +199,9 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 #ifdef HAVE_RS
+	setWirelessLed(0,2);
+	setWirelessLed(1,2);
+	setWirelessLed(2,2);
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 2 >/proc/sys/dev/wifi1/ledpin");
@@ -206,9 +209,11 @@ void start_sysinit(void)
 	system2("echo 2 >/proc/sys/dev/wifi2/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi2/softled");
 #elif HAVE_WP543
+	setWirelessLed(0,5);
 	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #else
+	setWirelessLed(0,2);
 	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
