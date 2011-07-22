@@ -25,21 +25,32 @@
 // extern int getath9kdevicecount(void);
 extern void delete_ath9k_devices(char *physical_iface);
 
-
 static void setWirelessLed(int phynum, int ledpin)
 {
 #ifdef HAVE_ATH9K
-char trigger[32];
-char sysname[32];
-sprintf(trigger,"phy%dtpt",phynum);
-if (ledpin<32)
-    {
-    sprintf(sysname,"generic_%d",ledpin);
-    }else
-    {
-    sprintf(sysname,"wireless_generic_%d",ledpin-32);
-    }
-sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger",trigger,sysname);
+	char trigger[32];
+	char sysname[32];
+#ifdef HAVE_MADWIFI_MIMO
+	int triggergpio = ledpin;
+#endif
+	sprintf(trigger, "phy%dtpt", phynum);
+	if (ledpin < 32) {
+		sprintf(sysname, "generic_%d", ledpin);
+	} else {
+#ifdef HAVE_MADWIFI_MIMO
+		if (ledpin < 48)
+			triggergpio = ledpin - 32;
+		else
+			triggergpio = ledpin - 48;
+#endif
+		sprintf(sysname, "wireless_generic_%d", ledpin - 32);
+	}
+	sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger",
+		  trigger, sysname);
+#endif
+#ifdef HAVE_MADWIFI_MIMO
+	sysprintf("echo %d >/proc/sys/dev/wifi%d/ledpin", triggergpio, phynum);
+	sysprintf("echo 1 >/proc/sys/dev/wifi%d/softled", phynum);
 #endif
 }
 

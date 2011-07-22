@@ -223,35 +223,21 @@ void start_sysinit(void)
 //	eval("ifconfig", "wifi1", "hw", "ether", wmac);
 	setWirelessLedPhy0(1);
 	setWirelessLedPhy1(5);
-	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 
 #else
 #ifndef HAVE_WNDR3700
 
 #ifdef HAVE_WZRG300NH2
 	setWirelessLedPhy0(5);
-	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #else
 	setWirelessLedPhy0(6);
 	setWirelessLedPhy1(6);
-	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 6 >/proc/sys/dev/wifi1/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 #endif
 #else
 	eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	eval("ifconfig", "wifi1", "hw", "ether", wmac);
 	setWirelessLedPhy0(5);
 	setWirelessLedPhy1(5);
-	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 #endif
 #endif
 

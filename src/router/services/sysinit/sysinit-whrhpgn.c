@@ -121,8 +121,6 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 
 	setWirelessLedPhy0(1);
-	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
 	/*
 	 * Set a sane date 
