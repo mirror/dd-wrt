@@ -243,7 +243,7 @@ lsasum_check(struct ospf_lsa_header *h, void *body)
       }
       else
       {
-	c0 += *(b + (p - sp) - sizeof(struct ospf_lsa_header) + 2);
+	c0 += *(b + (p - (u8 *) (h + 1)));
       }
 
       c1 += c0;

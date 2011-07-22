@@ -148,8 +148,10 @@ but you can't modify them. Literals of type <CODE>int set</CODE> look like <CODE
 sets.
 For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
 that case <CODE>(123,0)..(123,65535)</CODE>). You can also use <CODE>(123,5..100)</CODE> for range
-<CODE>(123,5)..(123,100)</CODE>. You can also use <CODE>(*,123)</CODE> which is translated as
-<CODE>(0,123) , (1,123) , (2,123) , ... , (65535, 123)</CODE>
+<CODE>(123,5)..(123,100)</CODE>. You can also use <CODE>*</CODE> and <CODE>a..b</CODE> expressions
+in the first part of a pair, note that such expressions are translated to a set
+of intervals, which may be memory intensive. E.g. <CODE>(*,4..20)</CODE> is translated to
+<CODE>(0,4..20), (1,4..20), (2,4..20), ... (65535, 4..20)</CODE>.
 You can also use expressions for both, pair sets and int sets. However it must
 be possible to evaluate these expressions before daemon boots. So you can use
 only constants inside them. E.g.
@@ -159,8 +161,8 @@ only constants inside them. E.g.
          int set odds;
          pair set ps;
 
-         odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ]; 
-         ps = [ (1,(one+one)), (3,4)..(4,8), (5,*), (6,3..6) ];
+         odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ];
+         ps = [ (1,one+one), (3,4)..(4,8), (5,*), (6,3..6), (7..9,*) ];
         
 </PRE>
 <HR>
@@ -229,10 +231,14 @@ clist <I>C</I>, it does nothing.
 <I>P</I> may also be a pair (or quad) set, in that case the
 operator deletes all items from clist <I>C</I> that are also
 members of set <I>P</I>.
+<P><CODE>filter(<I>C</I>,<I>P</I>)</CODE> deletes all items from clist
+<I>C</I> that are not members of pair (or quad) set <I>P</I>.
+I.e., <CODE>filter</CODE> do the same as <CODE>delete</CODE> with inverted
+set <I>P</I>.
 <P>Statement <CODE><I>C</I> = add(<I>C</I>, <I>P</I>);</CODE> can be shortened to
-<CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route attribute
-(for example <CODE>bgp_community</CODE>). Similarly for <CODE>delete</CODE>.
-<P>
+<CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route
+attribute (for example <CODE>bgp_community</CODE>). Similarly for
+<CODE>delete</CODE> and <CODE>filter</CODE>.
 </DL>
 <P>
 <H2><A NAME="ss5.3">5.3</A> <A HREF="bird.html#toc5.3">Operators</A>

@@ -13,33 +13,53 @@
 #include "lib/resource.h"
 #include "lib/string.h"
 
-void
-int_set_format(struct adata *set, int way, byte *buf, unsigned int size)
+/**
+ * int_set_format - format an &set for printing
+ * @set: set attribute to be formatted
+ * @way: style of format (0 for router ID list, 1 for community list)
+ * @from: starting position in set
+ * @buf: destination buffer
+ * @size: size of buffer
+ *
+ * This function takes a set attribute and formats it. @way specifies
+ * the style of format (router ID / community). @from argument can be
+ * used to specify the first printed value for the purpose of printing
+ * untruncated sets even with smaller buffers. If the output fits in
+ * the buffer, 0 is returned, otherwise the position of the first not
+ * printed item is returned. This value can be used as @from argument
+ * in subsequent calls. If truncated output suffices, -1 can be
+ * instead used as @from, in that case " ..." is eventually added at
+ * the buffer to indicate truncation.
+ */
+int
+int_set_format(struct adata *set, int way, int from, byte *buf, unsigned int size)
 {
   u32 *z = (u32 *) set->data;
-  int l = set->length / 4;
-  int sp = 1;
-  byte *end = buf + size - 16;
+  byte *end = buf + size - 24;
+  int to = set->length / 4;
+  int i;
 
-  while (l--)
+  for (i = MAX(from, 0); i < to; i++)
     {
-      if (!sp)
-	*buf++ = ' ';
       if (buf > end)
 	{
-	  strcpy(buf, "...");
-	  return;
+	  if (from < 0)
+	    strcpy(buf, " ...");
+	  else
+	    *buf = 0;
+	  return i;
 	}
 
-      if (way)
-	buf += bsprintf(buf, "(%d,%d)", *z >> 16, *z & 0xffff);
-      else
-	buf += bsprintf(buf, "%R", *z);
+      if (i > from)
+	*buf++ = ' ';
 
-      z++;
-      sp = 0;
+      if (way)
+	buf += bsprintf(buf, "(%d,%d)", z[i] >> 16, z[i] & 0xffff);
+      else
+	buf += bsprintf(buf, "%R", z[i]);
     }
   *buf = 0;
+  return 0;
 }
 
 int

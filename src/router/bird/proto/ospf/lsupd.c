@@ -43,12 +43,12 @@ static void ospf_dump_lsupd(struct proto *p, struct ospf_lsupd_packet *pkt)
   u8 *pbuf= (u8 *) pkt;
   unsigned int offset = sizeof(struct ospf_lsupd_packet);
   unsigned int bound = ntohs(op->length) - sizeof(struct ospf_lsa_header);
-  unsigned int i, j;
+  unsigned int i, j, lsalen;
 
   j = ntohl(pkt->lsano);
   for (i = 0; i < j; i++)
     {
-      if ((offset > bound) || ((offset % 4) != 0))
+      if (offset > bound)
 	{
 	  log(L_TRACE "%s:     LSA      invalid", p->name);
 	  return;
@@ -56,7 +56,14 @@ static void ospf_dump_lsupd(struct proto *p, struct ospf_lsupd_packet *pkt)
 
       struct ospf_lsa_header *lsa = (void *) (pbuf + offset);
       ospf_dump_lsahdr(p, lsa);
-      offset += ntohs(lsa->length);
+      lsalen = ntohs(lsa->length);
+      offset += lsalen;
+
+      if (((lsalen % 4) != 0) || (lsalen <= sizeof(struct ospf_lsa_header)))
+	{
+	  log(L_TRACE "%s:     LSA      invalid", p->name);
+	  return;
+	}
     }
 }
 

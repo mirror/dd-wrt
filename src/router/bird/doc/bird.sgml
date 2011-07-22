@@ -145,9 +145,41 @@ options. The most important ones are:
 
 	<tag>-s <m/name of communication socket/</tag>
 	use given filename for a  socket for communications with the client, default is <it/prefix/<file>/var/run/bird.ctl</file>.
+
+	<tag>-u <m/user/</tag>
+	drop privileges and use that user ID, see the next section for details.
+
+	<tag>-g <m/group/</tag>
+	use that group ID, see the next section for details.
 </descrip>
 
 <p>BIRD writes messages about its work to log files or syslog (according to config).
+
+<sect>Privileges
+
+<p>BIRD, as a routing daemon, uses several privileged operations (like
+setting routing table and using raw sockets). Traditionally, BIRD is
+executed and runs with root privileges, which may be prone to security
+problems. The recommended way is to use a privilege restriction
+(options <cf/-u/, <cf/-g/). In that case BIRD is executed with root
+privileges, but it changes its user and group ID to an unprivileged
+ones, while using Linux capabilities to retain just required
+privileges (capabilities CAP_NET_*). Note that the control socket is
+created before the privileges are dropped, but the config file is read
+after that. The privilege restriction is not implemented in BSD port
+of BIRD.
+
+<p>A nonprivileged user (as an argument to <cf/-u/ options) may be the
+user <cf/nobody/, but it is suggested to use a new dedicated user
+account (like <cf/bird/). The similar considerations apply for
+the group option, but there is one more condition -- the users
+in the same group can use <file/birdc/ to control BIRD.
+
+<p>Finally, there is a possibility to use external tools to run BIRD in
+an environment with restricted privileges. This may need some
+configuration, but it is generally easy -- BIRD needs just the
+standard library, privileges to read the config file and create the
+control socket and the CAP_NET_* capabilities.
 
 <chapt>About routing tables
 
@@ -721,8 +753,10 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  sets.
 	  For pair sets, expressions like <cf/(123,*)/ can be used to denote ranges (in
 	  that case <cf/(123,0)..(123,65535)/). You can also use <cf/(123,5..100)/ for range
-	  <cf/(123,5)..(123,100)/. You can also use <cf/(*,123)/ which is translated as
-	  <cf/(0,123) , (1,123) , (2,123) , ... , (65535, 123)/
+	  <cf/(123,5)..(123,100)/. You can also use <cf/*/ and <cf/a..b/ expressions
+	  in the first part of a pair, note that such expressions are translated to a set
+	  of intervals, which may be memory intensive. E.g. <cf/(*,4..20)/ is translated to
+	  <cf/(0,4..20), (1,4..20), (2,4..20), ... (65535, 4..20)/.
 	  You can also use expressions for both, pair sets and int sets. However it must
 	  be possible to evaluate these expressions before daemon boots. So you can use
 	  only constants inside them. E.g.
@@ -731,8 +765,8 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	 int set odds;
 	 pair set ps;
 
-	 odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ]; 
-	 ps = [ (1,(one+one)), (3,4)..(4,8), (5,*), (6,3..6) ];
+	 odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ];
+	 ps = [ (1,one+one), (3,4)..(4,8), (5,*), (6,3..6), (7..9,*) ];
 	</code>
 
 	  Sets of prefixes are special: their literals does not allow ranges, but allows
@@ -815,10 +849,15 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  operator deletes all items from clist <m/C/ that are also
 	  members of set <m/P/.
 
-          Statement <cf><m/C/ = add(<m/C/, <m/P/);</cf> can be shortened to
-          <cf><m/C/.add(<m/P/);</cf> if <m/C/ is appropriate route attribute
-          (for example <cf/bgp_community/). Similarly for <cf/delete/.
+          <cf>filter(<m/C/,<m/P/)</cf> deletes all items from clist
+	  <m/C/ that are not members of pair (or quad) set <m/P/.
+	  I.e., <cf/filter/ do the same as <cf/delete/ with inverted
+	  set <m/P/.
 
+          Statement <cf><m/C/ = add(<m/C/, <m/P/);</cf> can be shortened to
+          <cf><m/C/.add(<m/P/);</cf> if <m/C/ is appropriate route
+          attribute (for example <cf/bgp_community/). Similarly for
+          <cf/delete/ and <cf/filter/.
 </descrip>
 
 <sect>Operators

@@ -279,7 +279,7 @@ clist_match_set(struct adata *clist, struct f_tree *set)
 }
 
 static struct adata *
-clist_del_matching(struct linpool *pool, struct adata *clist, struct f_tree *set)
+clist_filter(struct linpool *pool, struct adata *clist, struct f_tree *set, int pos)
 {
   if (!clist)
     return NULL;
@@ -294,7 +294,7 @@ clist_del_matching(struct linpool *pool, struct adata *clist, struct f_tree *set
 
   while (l < end) {
     v.val.i = *l++;
-    if (!find_tree(set, v))
+    if (pos == !!find_tree(set, v))	/* pos && find_tree || !pos && !find_tree */
       *k++ = v.val.i;
   }
 
@@ -401,7 +401,7 @@ val_print(struct f_val v)
   case T_SET: tree_print(v.val.t); return;
   case T_ENUM: logn("(enum %x)%d", v.type, v.val.i); return;
   case T_PATH: as_path_format(v.val.ad, buf2, 1000); logn("(path %s)", buf2); return;
-  case T_CLIST: int_set_format(v.val.ad, 1, buf2, 1000); logn("(clist %s)", buf2); return;
+  case T_CLIST: int_set_format(v.val.ad, 1, -1, buf2, 1000); logn("(clist %s)", buf2); return;
   case T_PATH_MASK: pm_format(v.val.path_mask, buf2, 1000); logn("(pathmask%s)", buf2); return;
   default: logn( "[unknown type %x]", v.type ); return;
   }
@@ -945,7 +945,7 @@ interpret(struct f_inst *what)
       runtime("Can't add/delete to non-clist");
 
     struct f_val dummy;
-    u16 op = what->aux;
+    int arg_set = 0;
     i = 0;
 
     if ((v2.type == T_PAIR) || (v2.type == T_QUAD))
@@ -955,17 +955,35 @@ interpret(struct f_inst *what)
     else if (v2.type == T_IP)
       i = ipa_to_u32(v2.val.px.ip);
 #endif
-    else if ((v2.type == T_SET) && (op == 'd') && clist_set_type(v2.val.t, &dummy))
-      op = 'D';
+    else if ((v2.type == T_SET) && clist_set_type(v2.val.t, &dummy))
+      arg_set = 1;
     else
       runtime("Can't add/delete non-pair");
 
     res.type = T_CLIST;
-    switch (op) {
-    case 'a': res.val.ad = int_set_add(f_pool, v1.val.ad, i); break;
-    case 'd': res.val.ad = int_set_del(f_pool, v1.val.ad, i); break;
-    case 'D': res.val.ad = clist_del_matching(f_pool, v1.val.ad, v2.val.t); break;
-    default: bug("unknown Ca operation");
+    switch (what->aux)
+    {
+    case 'a':
+      if (arg_set)
+	runtime("Can't add set");
+      res.val.ad = int_set_add(f_pool, v1.val.ad, i);
+      break;
+      
+    case 'd':
+      if (!arg_set)
+	res.val.ad = int_set_del(f_pool, v1.val.ad, i);
+      else
+	res.val.ad = clist_filter(f_pool, v1.val.ad, v2.val.t, 0);
+      break;
+
+    case 'f':
+      if (!arg_set)
+	runtime("Can't filter pair");
+      res.val.ad = clist_filter(f_pool, v1.val.ad, v2.val.t, 1);
+      break;
+
+    default:
+      bug("unknown Ca operation");
     }
     break;
 
