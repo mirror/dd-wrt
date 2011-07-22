@@ -661,19 +661,18 @@ by calling <B>ea_sort()</B>.
 
 <HR><H3>Function</H3>
 <P><I>void</I>
-<B>ea_format</B>
-(<I>eattr *</I> <B>e</B>, <I>byte *</I> <B>buf</B>) --     format an <I>eattr</I> for printing
+<B>ea_show</B>
+(<I>struct cli *</I> <B>c</B>, <I>eattr *</I> <B>e</B>) --     print an <I>eattr</I> to CLI
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>eattr *</I> <B>e</B><DD><P>attribute to be formatted
-<DT><I>byte *</I> <B>buf</B><DD><P>destination buffer of size <I>EA_FORMAT_BUF_SIZE</I>
+<DT><I>struct cli *</I> <B>c</B><DD><P>destination CLI
+<DT><I>eattr *</I> <B>e</B><DD><P>attribute to be printed
 </DL>
 <H3>Description</H3>
-<P>This function takes an extended attribute represented by its
-<I>eattr</I> structure and formats it nicely for printing according
-to the type information.
+<P>This function takes an extended attribute represented by its <I>eattr</I>
+structure and prints it to the CLI according to the type information.
 <P>If the protocol defining the attribute provides its own
 <B>get_attr()</B> hook, it's consulted first.
 

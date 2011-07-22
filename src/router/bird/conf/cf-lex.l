@@ -172,6 +172,10 @@ else: {
   return CLI_MARKER;
 }
 
+\.\. {
+  return DDOT;
+}
+
 [={}:;,.()+*/%<>~\[\]?!\|-] {
   return yytext[0];
 }

@@ -120,7 +120,7 @@ void
 cli_printf(cli *c, int code, char *msg, ...)
 {
   va_list args;
-  byte buf[1024];
+  byte buf[CLI_LINE_SIZE];
   int cd = code;
   int size, cnt;
 

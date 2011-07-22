@@ -394,8 +394,6 @@ unsigned ea_scan(ea_list *);		/* How many bytes do we need for merged ea_list */
 void ea_merge(ea_list *from, ea_list *to); /* Merge sub-lists to allocated buffer */
 int ea_same(ea_list *x, ea_list *y);	/* Test whether two ea_lists are identical */
 unsigned int ea_hash(ea_list *e);	/* Calculate 16-bit hash value */
-void ea_format(eattr *e, byte *buf);
-#define EA_FORMAT_BUF_SIZE 256
 ea_list *ea_append(ea_list *to, ea_list *what);
 
 int mpnh__same(struct mpnh *x, struct mpnh *y); /* Compare multipath nexthops */

@@ -50,7 +50,7 @@ int as_path_match(struct adata *path, struct f_path_mask *mask);
 
 /* a-set.c */
 
-void int_set_format(struct adata *set, int way, byte *buf, unsigned int size);
+int int_set_format(struct adata *set, int way, int from, byte *buf, unsigned int size);
 struct adata *int_set_add(struct linpool *pool, struct adata *list, u32 val);
 int int_set_contains(struct adata *list, u32 val);
 struct adata *int_set_del(struct linpool *pool, struct adata *list, u32 val);

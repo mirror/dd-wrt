@@ -124,9 +124,40 @@ options. The most important ones are:
 nonzero if there are some errors.
 <P>
 <DT><CODE>-s <I>name of communication socket</I></CODE><DD><P>use given filename for a  socket for communications with the client, default is <I>prefix</I>/var/run/bird.ctl.
+<P>
+<DT><CODE>-u <I>user</I></CODE><DD><P>drop privileges and use that user ID, see the next section for details.
+<P>
+<DT><CODE>-g <I>group</I></CODE><DD><P>use that group ID, see the next section for details.
 </DL>
 <P>
 <P>BIRD writes messages about its work to log files or syslog (according to config).
+<P>
+<H2><A NAME="ss1.4">1.4</A> <A HREF="bird.html#toc1.4">Privileges</A>
+</H2>
+
+<P>BIRD, as a routing daemon, uses several privileged operations (like
+setting routing table and using raw sockets). Traditionally, BIRD is
+executed and runs with root privileges, which may be prone to security
+problems. The recommended way is to use a privilege restriction
+(options <CODE>-u</CODE>, <CODE>-g</CODE>). In that case BIRD is executed with root
+privileges, but it changes its user and group ID to an unprivileged
+ones, while using Linux capabilities to retain just required
+privileges (capabilities CAP_NET_*). Note that the control socket is
+created before the privileges are dropped, but the config file is read
+after that. The privilege restriction is not implemented in BSD port
+of BIRD.
+<P>
+<P>A nonprivileged user (as an argument to <CODE>-u</CODE> options) may be the
+user <CODE>nobody</CODE>, but it is suggested to use a new dedicated user
+account (like <CODE>bird</CODE>). The similar considerations apply for
+the group option, but there is one more condition -- the users
+in the same group can use birdc to control BIRD.
+<P>
+<P>Finally, there is a possibility to use external tools to run BIRD in
+an environment with restricted privileges. This may need some
+configuration, but it is generally easy -- BIRD needs just the
+standard library, privileges to read the config file and create the
+control socket and the CAP_NET_* capabilities.
 <P>
 <HR>
 <A HREF="bird-2.html">Next</A>

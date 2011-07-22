@@ -24,6 +24,15 @@ CF_HDR
 
 /* FIXME: Turn on YYERROR_VERBOSE and work around lots of bison bugs? */
 
+CF_DEFINES
+
+static void
+check_u16(unsigned val)
+{
+  if (val > 0xFFFF)
+    cf_error("Value %d out of range (0-65535)", val);
+}
+
 CF_DECLS
 
 %union {
@@ -48,7 +57,7 @@ CF_DECLS
   struct timeformat *tf;
 }
 
-%token END CLI_MARKER INVALID_TOKEN ELSECOL
+%token END CLI_MARKER INVALID_TOKEN ELSECOL DDOT
 %token GEQ LEQ NEQ AND OR
 %token PO PC
 %token <i> NUM ENUM
@@ -95,6 +104,8 @@ expr:
  | '(' term ')' { $$ = f_eval_int($2); }
  | SYM { if ($1->class != SYM_NUMBER) cf_error("Number expected"); else $$ = $1->aux; }
  ;
+
+/* expr_u16: expr { check_u16($1); $$ = $1; }; */
 
 CF_ADDTO(conf, definition)
 definition:

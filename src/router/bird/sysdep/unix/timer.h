@@ -30,6 +30,17 @@ void tm_start(timer *, unsigned after);
 void tm_stop(timer *);
 void tm_dump_all(void);
 
+static inline timer *
+tm_new_set(pool *p, void (*hook)(struct timer *), void *data, unsigned rand, unsigned rec)
+{
+  timer *t = tm_new(p);
+  t->hook = hook;
+  t->data = data;
+  t->randomize = rand;
+  t->recurrent = rec;
+  return t;
+}
+
 extern bird_clock_t now; 		/* Relative, monotonic time in seconds */
 extern bird_clock_t now_real;		/* Time in seconds since fixed known epoch */
 

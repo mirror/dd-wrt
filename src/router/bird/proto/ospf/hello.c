@@ -217,15 +217,14 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
   if (ifa->type == OSPF_IT_NBMA)
   {
     if ((ifa->priority == 0) && (n->priority > 0))
-      ospf_hello_send(NULL, OHS_HELLO, n);
+      ospf_hello_send(n->ifa, OHS_HELLO, n);
   }
   ospf_neigh_sm(n, INM_HELLOREC);
 }
 
 void
-ospf_hello_send(timer *timer, int kind, struct ospf_neighbor *dirn)
+ospf_hello_send(struct ospf_iface *ifa, int kind, struct ospf_neighbor *dirn)
 {
-  struct ospf_iface *ifa;
   struct ospf_hello_packet *pkt;
   struct ospf_packet *op;
   struct proto *p;
@@ -233,11 +232,6 @@ ospf_hello_send(timer *timer, int kind, struct ospf_neighbor *dirn)
   u16 length;
   int i;
   struct nbma_node *nb;
-
-  if (timer == NULL)
-    ifa = dirn->ifa;
-  else
-    ifa = (struct ospf_iface *) timer->data;
 
   if (ifa->state <= OSPF_IS_LOOP)
     return;
@@ -313,7 +307,7 @@ ospf_hello_send(timer *timer, int kind, struct ospf_neighbor *dirn)
     break;
 
   case OSPF_IT_NBMA:
-    if (timer == NULL)		/* Response to received hello */
+    if (dirn)		/* Response to received hello */
     {
       ospf_send_to(ifa, dirn->ip);
       break;

@@ -17,6 +17,8 @@
 #define CONFIG_LINUX_MC_MREQN
 #define CONFIG_UNIX_DONTROUTE
 
+#define CONFIG_RESTRICTED_PRIVILEGES
+
 /*
 Link: sysdep/linux/netlink
 Link: sysdep/linux
