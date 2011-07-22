@@ -1,11 +1,11 @@
 /*
- *   $Id: socket.c,v 1.7 2005/10/18 19:17:29 lutchann Exp $
+ *   $Id: socket.c,v 1.8 2010/12/14 11:58:21 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
  *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -14,9 +14,9 @@
  *
  */
 
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
+#include "config.h"
+#include "includes.h"
+#include "radvd.h"
 
 /* Note: these are applicable to receiving sockopts only */
 #if defined IPV6_HOPLIMIT && !defined IPV6_RECVHOPLIMIT
@@ -90,7 +90,7 @@ open_icmpv6_socket(void)
 	/*
 	 * setup ICMP filter
 	 */
-	
+
 	ICMP6_FILTER_SETBLOCKALL(&filter);
 	ICMP6_FILTER_SETPASS(ND_ROUTER_SOLICIT, &filter);
 	ICMP6_FILTER_SETPASS(ND_ROUTER_ADVERT, &filter);

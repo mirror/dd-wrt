@@ -1,21 +1,21 @@
 /*
- *	$Id: log.c,v 1.11 2008/01/24 17:08:46 psavola Exp $
+ *	$Id: log.c,v 1.12 2010/12/14 11:58:21 psavola Exp $
  *
  *	Authors:
- *	 Lars Fenneberg		<lf@elemental.net>	 
+ *	 Lars Fenneberg		<lf@elemental.net>
  *
- *	This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *	This software is Copyright 1996,1997 by the above mentioned author(s),
  *	All Rights Reserved.
  *
  *	The license which is distributed with this software in the file
- *	COPYRIGHT applies to this software. If your distribution is missing 
+ *	COPYRIGHT applies to this software. If your distribution is missing
  *	this file, you may request it from <pekkas@netcore.fi>.
  *
  */
 
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
+#include "config.h"
+#include "includes.h"
+#include "radvd.h"
 
 static int	log_method = L_NONE;
 static char *log_ident;
@@ -29,7 +29,7 @@ log_open(int method, char *ident, char *log, int facility)
 {
 	log_method = method;
 	log_ident = ident;
-	
+
 	switch (log_method) {
 		case L_NONE:
 		case L_STDERR:
@@ -39,28 +39,28 @@ log_open(int method, char *ident, char *log, int facility)
 		case L_SYSLOG:
 			if (facility == -1)
 				log_facility = LOG_DAEMON;
-			else 
+			else
 				log_facility = facility;
-				
+
 			openlog(log_ident, LOG_PID, log_facility);
 			break;
 		case L_LOGFILE:
 			if (!log)
 			{
 				fprintf(stderr, "%s: no logfile specified\n", log_ident);
-				return (-1);				
+				return (-1);
 			}
 			log_file = log;
 			if ((log_file_fd = fopen(log_file, "a")) == NULL)
 			{
 				fprintf(stderr, "%s: can't open %s: %s\n", log_ident, log_file, strerror(errno));
-				return (-1);				
+				return (-1);
 			}
 			break;
 		default:
 			fprintf(stderr, "%s: unknown logging method: %d\n", log_ident, log_method);
 			log_method = L_NONE;
-			return (-1);				
+			return (-1);
 	}
 	return 0;
 }
@@ -72,7 +72,7 @@ vlog(int prio, char *format, va_list ap)
 	char tstamp[64], buff[1024];
 	struct tm *tm;
 	time_t current;
-                  
+
 	vsnprintf(buff, sizeof(buff), format, ap);
 
 	switch (log_method) {
@@ -104,7 +104,7 @@ vlog(int prio, char *format, va_list ap)
 		default:
 			fprintf(stderr, "%s: unknown logging method: %d\n", log_ident, log_method);
 			log_method = L_NONE;
-			return (-1);				
+			return (-1);
 	}
 	return 0;
 }
@@ -117,10 +117,10 @@ dlog(int prio, int level, char *format, ...)
 
 	if (debug_level < level)
 		return;
-	
+
 	va_start(ap, format);
 	res = vlog(prio, format, ap);
-	va_end(ap);		
+	va_end(ap);
 
 	/* XXX: should we do something if res < 0.. */
 }
@@ -133,7 +133,7 @@ flog(int prio, char *format, ...)
 
 	va_start(ap, format);
 	res = vlog(prio, format, ap);
-	va_end(ap);		
+	va_end(ap);
 
 	/* XXX: should we do something if res < 0.. */
 }
@@ -155,7 +155,7 @@ log_close(void)
 		default:
 			fprintf(stderr, "%s: unknown logging method: %d\n", log_ident, log_method);
 			log_method = L_NONE;
-			return (-1);				
+			return (-1);
 	}
 	return 0;
 }
@@ -168,13 +168,13 @@ log_reopen(void)
 }
 
 void
-set_debuglevel(int level) 
+set_debuglevel(int level)
 {
 	debug_level = level;
 }
 
 int
-get_debuglevel(void) 
+get_debuglevel(void)
 {
 	return debug_level;
 }
