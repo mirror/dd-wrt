@@ -1,3 +1,140 @@
+commit c49490f8c096ef1379f08e7d70cc24f0c28b80ef
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri Jul 8 08:58:50 2011 +0200
+
+    NEWS and version update.
+
+commit beeda6af44e72e3a20fcd2837b231a04354790fa
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu Jul 7 17:43:39 2011 +0200
+
+    Removes timers for stub interfaces. Also fixes some minor bugs.
+
+commit 7d4e923603fdb43b6f017e5ef78e37d0891c699c
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Wed Jul 6 03:10:02 2011 +0200
+
+    Do not open sockets for stub interfaces.
+
+commit f796945f04d8be4e71cdf48d919c2035c0a2551d
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Jul 3 23:24:38 2011 +0200
+
+    Fixes LSA checksum computation for larger LSAs.
+
+commit fdf16eb65872b3bee02fb9e25c80ea32cf59f8e9
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Jul 3 19:43:30 2011 +0200
+
+    Prints full community lists during 'show route all'.
+
+commit 6370d6f61b30b2390727eee8136e0e575dff609f
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Jun 26 22:25:09 2011 +0200
+
+    Fix route types in rta_show().
+
+commit e08d2ff08e4cff4bec38878e084fee7666caaaf2
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun Jun 26 17:09:24 2011 +0200
+
+    Adds filter clist operation.
+
+commit 35f8c731ea29bd534c74b2d0de089d5683ebcd8d
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jun 25 14:51:16 2011 +0200
+
+    Fixes output of BGP timers in 'show protocols all'.
+
+commit d8b5a786d27eed72106f88f893c521e67f1bef06
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat Jun 25 11:35:54 2011 +0200
+
+    IPV6_CHECKSUM should not be used on ICMPv6 sockets.
+
+commit 23fd464447c4d0f0efe7b61ca3128bbb1bc1c21c
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jun 20 20:35:59 2011 +0200
+
+    Fixes a bug related to protocol enabling and reconfigure.
+    
+    When a protocol was enabled interactively (but disabled in the config
+    file), then reconfigure in some cases forgets to disable it.
+
+commit ae85e28cf410cefe4f6e1cdf92510fbf9cea7ae0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon Jun 20 07:37:55 2011 +0200
+
+    Fixes a bug in OSPF causing DoS by an invalid packet.
+
+commit 61c96d724464ee067e589b72ca9d10a2f7692901
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue May 31 17:27:46 2011 +0200
+
+    Fixes bug that causes crash with strange BGP updates.
+
+commit 5e9bdac28ec95172b0c31641507f6a2fcd2e95fb
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sat May 21 22:48:08 2011 +0200
+
+    Fixes a bug with setting preference during show route cmd.
+    
+    If show route cmd was used with a filter that changed preference,
+    BIRD crashed.
+
+commit 1155c79209b6a670d0e1f85b2603363ba1132ae0
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Thu May 19 01:20:00 2011 +0200
+
+    Fixes compatibility with Mikrotik.
+
+commit b54ad333b3c8b486b059f6c0e1afc8c35b64ebea
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Mon May 16 12:39:55 2011 +0200
+
+    Documentation update.
+
+commit e8b89a610443f32b901801668cbae634e13f3e68
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Sun May 15 16:29:44 2011 +0200
+
+    Update and document the privilege restriction.
+
+commit 1bc2695744c729804af32d48ce68854cba4de8f7
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Tue May 10 02:42:17 2011 +0200
+
+    Allows run with restricted privileges.
+    
+    Adds option -u and -g to specify user and group.
+    When different user (than root) is specified,
+    linux capabilities CAP_NET_* are kept.
+
+commit 46bb7e0d176a4dc0a47bb406988f92fb29cceaf4
+Merge: b8cc390... b7c4898...
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 6 22:09:44 2011 +0200
+
+    Merge commit 'origin/master'
+
+commit b8cc390e7ed724a9ad605453227d1e4686f3a11b
+Author: Ondrej Zajicek <santiago@crfreenet.org>
+Date:   Fri May 6 22:00:54 2011 +0200
+
+    Fixes several problems in filter syntax.
+    
+     - Fixes several conflicts in the grammar.
+     - Fixes a bug in (a..b, c) pair patterns.
+     - Makes pair patterns orthogonal.
+     - Allows term expressions in pair patterns without additional ( ).
+     - Allows several comma separated values in switch cases.
+
+commit b7c48981069f25c01c552519e10aec4ebab1f031
+Author: Ondrej Filip <feela@network.cz>
+Date:   Thu May 5 14:14:20 2011 +0200
+
+    Compilation was failing without OSPF or RIP protocol - FIXED.
+
 commit 409e8a6e21d3df0919fd2e131ba9a58222baee50
 Author: Ondrej Zajicek <santiago@crfreenet.org>
 Date:   Mon May 2 02:06:03 2011 +0200

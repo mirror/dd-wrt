@@ -255,9 +255,10 @@ bgp_check_cluster_list(struct bgp_proto *p UNUSED, byte *a UNUSED, int len)
 }
 
 static void
-bgp_format_cluster_list(eattr *a, byte *buf, int buflen UNUSED)
+bgp_format_cluster_list(eattr *a, byte *buf, int buflen)
 {
-  int_set_format(a->u.ptr, 0, buf, buflen);
+  /* Truncates cluster lists larger than buflen, probably not a problem */
+  int_set_format(a->u.ptr, 0, -1, buf, buflen);
 }
 
 static int
@@ -735,13 +736,6 @@ bgp_get_bucket(struct bgp_proto *p, net *n, ea_list *attrs, int originate)
   for(i=0; i<cnt; i++)
     {
       a = &new->attrs[i];
-#ifdef LOCAL_DEBUG
-      {
-	byte buf[EA_FORMAT_BUF_SIZE];
-	ea_format(a, buf);
-	DBG("\t%s\n", buf);
-      }
-#endif
       if (EA_PROTO(a->id) != EAP_BGP)
 	continue;
       code = EA_ID(a->id);

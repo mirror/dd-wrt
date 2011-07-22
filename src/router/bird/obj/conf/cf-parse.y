@@ -287,7 +287,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 /* Declarations from ../../sysdep/linux/netlink/netlink.Y */
 
-%token ASYNC TABLE
+%token ASYNC TABLE KRT_PREFSRC KRT_REALM
 
 /* Declarations from ../../nest/config.Y */
 
@@ -341,7 +341,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 
 /* Declarations from ../../proto/bgp/config.Y */
 
-%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE
+%token LOCAL NEIGHBOR AS HOLD CONNECT RETRY KEEPALIVE MULTIHOP STARTUP VIA NEXT HOP SELF DEFAULT PATH METRIC START DELAY FORGET WAIT AFTER BGP_PATH BGP_LOCAL_PREF BGP_MED BGP_ORIGIN BGP_NEXT_HOP BGP_ATOMIC_AGGR BGP_AGGREGATOR BGP_COMMUNITY RR RS CLIENT CLUSTER AS4 ADVERTISE IPV4 CAPABILITIES LIMIT PREFER OLDER MISSING LLADDR DROP IGNORE REFRESH INTERPRET COMMUNITIES BGP_ORIGINATOR_ID BGP_CLUSTER_LIST IGP GATEWAY RECURSIVE MED
 
 /* Declarations from ../../proto/ospf/config.Y */
 
@@ -636,6 +636,7 @@ nl_item:
 	THIS_KRT->scan.table_id = $3;
    }
  ;
+
 
 /* Grammar from ../../nest/config.Y */
 
@@ -1714,6 +1715,7 @@ bgp_proto:
  | bgp_proto GATEWAY DIRECT ';' { BGP_CFG->gw_mode = GW_DIRECT; }
  | bgp_proto GATEWAY RECURSIVE ';' { BGP_CFG->gw_mode = GW_RECURSIVE; }
  | bgp_proto PATH METRIC bool ';' { BGP_CFG->compare_path_lengths = $4; }
+ | bgp_proto MED METRIC bool ';' { BGP_CFG->med_metric = $4; }
  | bgp_proto IGP METRIC bool ';' { BGP_CFG->igp_metric = $4; }
  | bgp_proto PREFER OLDER bool ';' { BGP_CFG->prefer_older = $4; }
  | bgp_proto DEFAULT BGP_MED expr ';' { BGP_CFG->default_med = $4; }
@@ -2184,7 +2186,7 @@ cli_cmd: cmd_CONFIGURE | cmd_CONFIGURE_SOFT | cmd_DOWN | cmd_SHOW_STATUS | cmd_S
 proto: kern_proto '}' | kif_proto '}' | dev_proto '}' | bgp_proto '}' { bgp_check(BGP_CFG); }  | ospf_proto '}' { ospf_proto_finish(); }  | pipe_proto '}' | rip_cfg '}' { RIP_CFG->passwords = get_passwords(); }  | static_proto '}' ;
 kern_proto: kern_proto_start proto_name '{' | kern_proto proto_item ';' | kern_proto kern_item ';' | kern_proto nl_item ';' ;
 kif_proto: kif_proto_start proto_name '{' | kif_proto proto_item ';' | kif_proto kif_item ';' ;
-dynamic_attr: IGP_METRIC
+dynamic_attr: KRT_PREFSRC { $$ = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_KRT_PREFSRC); } | KRT_REALM { $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_KRT_REALM); } | IGP_METRIC
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_GEN_IGP_METRIC); } | INVALID_TOKEN { $$ = NULL; } | BGP_ORIGIN
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); } | BGP_PATH
 	{ $$ = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); } | BGP_NEXT_HOP

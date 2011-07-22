@@ -277,7 +277,7 @@ proto_reconfigure(struct proto *p, struct proto_config *oc, struct proto_config 
 
   /* If there is a too big change in core attributes, ... */
   if ((nc->protocol != oc->protocol) ||
-      (nc->disabled != oc->disabled) ||
+      (nc->disabled != p->disabled) ||
       (nc->table->table != oc->table->table) ||
       (proto_get_router_id(nc) != proto_get_router_id(oc)))
     return 0;

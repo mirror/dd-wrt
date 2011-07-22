@@ -60,12 +60,16 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
   struct MD5Context ctxt;
   char password[OSPF_AUTH_CRYPT_SIZE];
 
+  pkt->checksum = 0;
   pkt->autype = htons(ifa->autype);
+  bzero(&pkt->u, sizeof(union ospf_auth));
+
+  /* Compatibility note: pkt->u may contain anything if autype is
+     none, but nonzero values do not work with Mikrotik OSPF */
 
   switch(ifa->autype)
   {
     case OSPF_AUTH_SIMPLE:
-      bzero(&pkt->u, sizeof(union ospf_auth));
       passwd = password_find(ifa->passwords, 1);
       if (!passwd)
       {
@@ -74,7 +78,6 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
       }
       password_cpy(pkt->u.password, passwd->password, sizeof(union ospf_auth));
     case OSPF_AUTH_NONE:
-      pkt->checksum = 0;
       pkt->checksum = ipsum_calculate(pkt, sizeof(struct ospf_packet) -
                                   sizeof(union ospf_auth), (pkt + 1),
 				  ntohs(pkt->length) -
@@ -87,8 +90,6 @@ ospf_pkt_finalize(struct ospf_iface *ifa, struct ospf_packet *pkt)
         log( L_ERR "No suitable password found for authentication" );
         return;
       }
-
-      pkt->checksum = 0;
 
       /* Perhaps use random value to prevent replay attacks after
 	 reboot when system does not have independent RTC? */

@@ -430,81 +430,105 @@ get_generic_attr(eattr *a, byte **buf, int buflen UNUSED)
   return GA_UNKNOWN;
 }
 
+static inline void
+opaque_format(struct adata *ad, byte *buf, unsigned int size)
+{
+  byte *bound = buf + size - 10;
+  int i;
+
+  for(i = 0; i < ad->length; i++)
+    {
+      if (buf > bound)
+	{
+	  strcpy(buf, " ...");
+	  return;
+	}
+      if (i)
+	*buf++ = ' ';
+
+      buf += bsprintf(buf, "%02x", ad->data[i]);
+    }
+
+  *buf = 0;
+  return;
+}
+
+static inline void
+ea_show_int_set(struct cli *c, struct adata *ad, int way, byte *pos, byte *buf, byte *end)
+{
+  int i = int_set_format(ad, way, 0, pos, end - pos);
+  cli_printf(c, -1012, "%s", buf);
+  while (i)
+    {
+      i = int_set_format(ad, way, i, buf, end - buf - 1);
+      cli_printf(c, -1012, "\t%s", buf);
+    }
+}
+
 /**
- * ea_format - format an &eattr for printing
- * @e: attribute to be formatted
- * @buf: destination buffer of size %EA_FORMAT_BUF_SIZE
+ * ea_show - print an &eattr to CLI
+ * @c: destination CLI
+ * @e: attribute to be printed
  *
- * This function takes an extended attribute represented by its
- * &eattr structure and formats it nicely for printing according
- * to the type information.
+ * This function takes an extended attribute represented by its &eattr
+ * structure and prints it to the CLI according to the type information.
  *
  * If the protocol defining the attribute provides its own
  * get_attr() hook, it's consulted first.
  */
 void
-ea_format(eattr *e, byte *buf)
+ea_show(struct cli *c, eattr *e)
 {
   struct protocol *p;
   int status = GA_UNKNOWN;
-  unsigned int i;
   struct adata *ad = (e->type & EAF_EMBEDDED) ? NULL : e->u.ptr;
-  byte *end = buf + EA_FORMAT_BUF_SIZE - 1;
+  byte buf[CLI_MSG_SIZE];
+  byte *pos = buf, *end = buf + sizeof(buf);
 
   if (p = attr_class_to_protocol[EA_PROTO(e->id)])
     {
-      buf += bsprintf(buf, "%s.", p->name);
+      pos += bsprintf(pos, "%s.", p->name);
       if (p->get_attr)
-	status = p->get_attr(e, buf, end - buf);
-      buf += strlen(buf);
+	status = p->get_attr(e, pos, end - pos);
+      pos += strlen(pos);
     }
   else if (EA_PROTO(e->id))
-    buf += bsprintf(buf, "%02x.", EA_PROTO(e->id));
+    pos += bsprintf(pos, "%02x.", EA_PROTO(e->id));
   else 
-    status = get_generic_attr(e, &buf, end - buf);
+    status = get_generic_attr(e, &pos, end - pos);
 
   if (status < GA_NAME)
-    buf += bsprintf(buf, "%02x", EA_ID(e->id));
+    pos += bsprintf(pos, "%02x", EA_ID(e->id));
   if (status < GA_FULL)
     {
-      *buf++ = ':';
-      *buf++ = ' ';
+      *pos++ = ':';
+      *pos++ = ' ';
       switch (e->type & EAF_TYPE_MASK)
 	{
 	case EAF_TYPE_INT:
-	  bsprintf(buf, "%u", e->u.data);
+	  bsprintf(pos, "%u", e->u.data);
 	  break;
 	case EAF_TYPE_OPAQUE:
-	  *buf = 0;
-	  for(i=0; i<ad->length; i++)
-	    {
-	      if (buf > end - 8)
-		{
-		  strcpy(buf, " ...");
-		  break;
-		}
-	      if (i)
-		*buf++ = ' ';
-	      buf += bsprintf(buf, "%02x", ad->data[i]);
-	    }
+	  opaque_format(ad, pos, end - pos);
 	  break;
 	case EAF_TYPE_IP_ADDRESS:
-	  bsprintf(buf, "%I", *(ip_addr *) ad->data);
+	  bsprintf(pos, "%I", *(ip_addr *) ad->data);
 	  break;
 	case EAF_TYPE_ROUTER_ID:
-	  bsprintf(buf, "%R", e->u.data);
+	  bsprintf(pos, "%R", e->u.data);
 	  break;
 	case EAF_TYPE_AS_PATH:
-	  as_path_format(ad, buf, end - buf);
+	  as_path_format(ad, pos, end - pos);
 	  break;
 	case EAF_TYPE_INT_SET:
-	  int_set_format(ad, 1, buf, end - buf);
-	  break;
+	  ea_show_int_set(c, ad, 1, pos, buf, end);
+	  return;
 	case EAF_TYPE_UNDEF:
 	default:
-	  bsprintf(buf, "<type %02x>", e->type);
+	  bsprintf(pos, "<type %02x>", e->type);
 	}
     }
+  cli_printf(c, -1012, "%s", buf);
 }
 
 /**
@@ -831,20 +855,16 @@ void
 rta_show(struct cli *c, rta *a, ea_list *eal)
 {
   static char *src_names[] = { "dummy", "static", "inherit", "device", "static-device", "redirect",
-			       "RIP", "OSPF", "OSPF-ext", "OSPF-IA", "OSPF-boundary", "BGP" };
+			       "RIP", "OSPF", "OSPF-IA", "OSPF-E1", "OSPF-E2", "BGP", "pipe" };
   static char *cast_names[] = { "unicast", "broadcast", "multicast", "anycast" };
   int i;
-  byte buf[EA_FORMAT_BUF_SIZE];
 
   cli_printf(c, -1008, "\tType: %s %s %s", src_names[a->source], cast_names[a->cast], ip_scope_text(a->scope));
   if (!eal)
     eal = a->eattrs;
   for(; eal; eal=eal->next)
     for(i=0; i<eal->count; i++)
-      {
-	ea_format(&eal->attrs[i], buf);
-	cli_printf(c, -1012, "\t%s", buf);
-      }
+      ea_show(c, &eal->attrs[i]);
 }
 
 /**
