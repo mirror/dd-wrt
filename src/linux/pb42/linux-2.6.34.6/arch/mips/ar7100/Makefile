@@ -22,6 +22,8 @@ obj-y	+=	prom.o	\
 			proc_gpio.o	\
 			proc_wlgpio.o	\
 			irq.o	\
+			gpio_driver.o	\
+			dev-leds-gpio.o \
 			setup.o	\
 			ar7100.o \
 			platform.o

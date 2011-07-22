@@ -376,6 +376,9 @@ gpio_proc_write(struct file *file, const char *buffer, unsigned long count,
 	return procfs_buffer_size;
 }
 
+void __init ar71xx_gpio_init(void);
+
+
 static __init int register_proc(void)
 {
 	unsigned char i, flag = 0;
@@ -423,6 +426,9 @@ static __init int register_proc(void)
 
 	printk(KERN_NOTICE
 	       "gpio_proc: module loaded and /proc/gpio/ created\n");
+	ar71xx_gpio_init();
+
+
 	return 0;
 
 fault:
