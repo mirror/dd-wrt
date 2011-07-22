@@ -733,8 +733,7 @@ LIBS
 CPPFLAGS
 YACC
 YFLAGS
-CPP
-CPPFLAGS'
+CPP'
 
 
 # Initialize some variables set by options.
