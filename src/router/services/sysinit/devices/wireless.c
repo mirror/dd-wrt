@@ -36,7 +36,6 @@ if (ledpin<32)
     {
     sprintf(sysname,"generic_%d",ledpin);
     }else
-if (ledpin<48)
     {
     sprintf(sysname,"wireless_generic_%d",ledpin-32);
     }
