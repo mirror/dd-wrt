@@ -16,6 +16,9 @@
 #define CLI_TX_BUF_SIZE 4096
 #define CLI_MAX_ASYNC_QUEUE 4096
 
+#define CLI_MSG_SIZE 500
+#define CLI_LINE_SIZE 512
+
 struct cli_out {
   struct cli_out *next;
   byte *wpos, *outpos, *end;

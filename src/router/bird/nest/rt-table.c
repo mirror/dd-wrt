@@ -1486,13 +1486,18 @@ rt_get_igp_metric(rte *rt)
     return ea->u.data;
 
   rta *a = rt->attrs;
+
+#ifdef CONFIG_OSPF
   if ((a->source == RTS_OSPF) ||
       (a->source == RTS_OSPF_IA) ||
       (a->source == RTS_OSPF_EXT1))
     return rt->u.ospf.metric1;
+#endif
 
+#ifdef CONFIG_RIP
   if (a->source == RTS_RIP)
     return rt->u.rip.metric;
+#endif
 
   /* Device routes */
   if ((a->dest != RTD_ROUTER) && (a->dest != RTD_MULTIPATH))
@@ -1716,7 +1721,10 @@ rt_show_net(struct cli *c, net *n, struct rt_show_data *d)
 	  ia[0] = 0;
 	}
       if (e != ee)
-	rte_free(ee);
+      {
+	rte_free(e);
+	e = ee;
+      }
       rte_update_unlock();
       if (d->primary_only)
 	break;

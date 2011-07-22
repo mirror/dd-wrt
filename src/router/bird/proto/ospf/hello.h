@@ -12,7 +12,7 @@
 
 void ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
 			struct ospf_neighbor *n, ip_addr faddr);
-void ospf_hello_send(timer *timer, int kind, struct ospf_neighbor *dirn);
+void ospf_hello_send(struct ospf_iface *ifa, int kind, struct ospf_neighbor *dirn);
 
 #define OHS_HELLO    0
 #define OHS_POLL     1

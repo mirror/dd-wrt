@@ -8,11 +8,15 @@
 
 #undef LOCAL_DEBUG
 
+#define _GNU_SOURCE 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "nest/bird.h"
 #include "lib/lists.h"
@@ -56,6 +60,29 @@ async_dump(void)
   protos_dump_all();
 
   debug("\n");
+}
+
+/*
+ *	Dropping privileges
+ */
+
+#ifdef CONFIG_RESTRICTED_PRIVILEGES
+#include "lib/syspriv.h"
+#else
+
+static inline void
+drop_uid(uid_t uid)
+{
+  die("Cannot change user on this platform");
+}
+
+#endif
+
+static inline void
+drop_gid(gid_t gid)
+{
+  if (setgid(gid) < 0)
+    die("setgid: %m");
 }
 
 /*
@@ -356,7 +383,7 @@ cli_connect(sock *s, int size UNUSED)
 }
 
 static void
-cli_init_unix(void)
+cli_init_unix(uid_t use_uid, gid_t use_gid)
 {
   sock *s;
 
@@ -366,6 +393,13 @@ cli_init_unix(void)
   s->rx_hook = cli_connect;
   s->rbsize = 1024;
   sk_open_unix(s, path_control_socket);
+
+  if (use_uid || use_gid)
+    if (chown(path_control_socket, use_uid, use_gid) < 0)
+      die("chown: %m");
+
+  if (chmod(path_control_socket, 0660) < 0)
+    die("chmod: %m");
 }
 
 /*
@@ -444,14 +478,16 @@ signal_init(void)
  *	Parsing of command-line arguments
  */
 
-static char *opt_list = "c:dD:ps:";
+static char *opt_list = "c:dD:ps:u:g:";
 static int parse_and_exit;
 char *bird_name;
+static char *use_user;
+static char *use_group;
 
 static void
 usage(void)
 {
-  fprintf(stderr, "Usage: %s [-c <config-file>] [-d] [-D <debug-file>] [-p] [-s <control-socket>]\n", bird_name);
+  fprintf(stderr, "Usage: %s [-c <config-file>] [-d] [-D <debug-file>] [-p] [-s <control-socket>] [-u <user>] [-g <group>]\n", bird_name);
   exit(1);
 }
 
@@ -467,6 +503,52 @@ get_bird_name(char *s, char *def)
   if (!t[1])
     return def;
   return t+1;
+}
+
+static inline uid_t
+get_uid(const char *s)
+{
+  struct passwd *pw;
+  char *endptr;
+  long int rv;
+
+  if (!s)
+    return 0;
+
+  errno = 0;
+  rv = strtol(s, &endptr, 10);
+
+  if (!errno && !*endptr)
+    return rv;
+
+  pw = getpwnam(s);
+  if (!pw)
+    die("Cannot find user '%s'", s);
+
+  return pw->pw_uid;
+}
+
+static inline gid_t
+get_gid(const char *s)
+{
+  struct group *gr;
+  char *endptr;
+  long int rv;
+
+  if (!s)
+    return 0;
+  
+  errno = 0;
+  rv = strtol(s, &endptr, 10);
+
+  if (!errno && !*endptr)
+    return rv;
+
+  gr = getgrnam(s);
+  if (!gr)
+    die("Cannot find group '%s'", s);
+
+  return gr->gr_gid;
 }
 
 static void
@@ -504,6 +586,12 @@ parse_args(int argc, char **argv)
       case 's':
 	path_control_socket = optarg;
 	break;
+      case 'u':
+	use_user = optarg;
+	break;
+      case 'g':
+	use_group = optarg;
+	break;
       default:
 	usage();
       }
@@ -528,18 +616,26 @@ main(int argc, char **argv)
     log_init_debug("");
   log_switch(debug_flag, NULL, NULL);
 
-  if (!parse_and_exit)
-    test_old_bird(path_control_socket);
-
-  DBG("Initializing.\n");
   resource_init();
   olock_init();
   io_init();
   rt_init();
   if_init();
 
+  uid_t use_uid = get_uid(use_user);
+  gid_t use_gid = get_gid(use_group);
+
   if (!parse_and_exit)
-    cli_init_unix();
+  {
+    test_old_bird(path_control_socket);
+    cli_init_unix(use_uid, use_gid);
+  }
+
+  if (use_gid)
+    drop_gid(use_gid);
+
+  if (use_uid)
+    drop_uid(use_uid);
 
   protos_build();
   proto_build(&proto_unix_kernel);

@@ -19,6 +19,8 @@
 #define CONFIG_MULTIPLE_TABLES
 #define CONFIG_ALL_TABLES_AT_ONCE
 
+#define CONFIG_RESTRICTED_PRIVILEGES
+
 /*
 Link: sysdep/linux/netlink
 Link: sysdep/linux

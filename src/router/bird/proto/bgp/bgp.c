@@ -1032,6 +1032,9 @@ bgp_get_status(struct proto *P, byte *buf)
     bsprintf(buf, "%-14s%s%s", bgp_state_dsc(p), err1, err2);
 }
 
+static inline bird_clock_t tm_remains(timer *t)
+{ return t->expires ? t->expires - now : 0; }
+
 static void
 bgp_show_proto_info(struct proto *P)
 {
@@ -1074,10 +1077,10 @@ bgp_show_proto_info(struct proto *P)
       if (p->cf->route_limit)
 	cli_msg(-1006, "    Route limit:      %d/%d",
 		p->p.stats.imp_routes, p->cf->route_limit);
-      cli_msg(-1006, "    Hold timer:       %d/%d", 
-	      c->hold_timer->expires - now, c->hold_time);
-      cli_msg(-1006, "    Keepalive timer:  %d/%d", 
-	      c->keepalive_timer->expires - now, c->keepalive_time);
+      cli_msg(-1006, "    Hold timer:       %d/%d",
+	      tm_remains(c->hold_timer), c->hold_time);
+      cli_msg(-1006, "    Keepalive timer:  %d/%d",
+	      tm_remains(c->keepalive_timer), c->keepalive_time);
     }
 
   if ((p->last_error_class != BE_NONE) && 
