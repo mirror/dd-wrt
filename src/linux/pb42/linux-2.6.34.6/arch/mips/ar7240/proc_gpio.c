@@ -234,6 +234,8 @@ set_wl0_gpio(4,1);
 }
 EXPORT_SYMBOL(ap_usb_led_off);
 
+void __init ar71xx_gpio_init(void);
+
 static __init int
 register_proc (void)
 {
@@ -285,6 +287,7 @@ register_proc (void)
     goto fault;
 
   printk (KERN_NOTICE "gpio_proc: module loaded and /proc/gpio/ created\n");
+  ar71xx_gpio_init();
   return 0;
 
 fault:

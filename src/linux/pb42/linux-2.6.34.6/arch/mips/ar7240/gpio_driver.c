@@ -32,11 +32,6 @@ EXPORT_SYMBOL(ar71xx_gpio_count);
 void __ar71xx_gpio_set_value(unsigned gpio, int value)
 {
 	void __iomem *base = ar71xx_gpio_base;
-	if (gpio>=48)
-	    {
-	    set_wl1_gpio(gpio-48,value);
-	    return;
-	    }
 	if (gpio>=32)
 	    {
 	    set_wl0_gpio(gpio-32,value);
