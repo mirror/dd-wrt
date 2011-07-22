@@ -132,6 +132,8 @@ void start_sysinit(void)
 #ifdef HAVE_WRT400
 //      eval("ifconfig", "wifi0", "hw", "ether", mac1);
 //      eval("ifconfig", "wifi1", "hw", "ether", mac1);
+	setWirelessLedPhy0(0);
+	setWirelessLedPhy1(0);
 	system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 0 >/proc/sys/dev/wifi1/ledpin");
@@ -143,6 +145,8 @@ void start_sysinit(void)
 	eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	eval("ifconfig", "wifi1", "hw", "ether", mac1);
 #endif
+	setWirelessLedPhy0(5);
+	setWirelessLedPhy1(5);
 	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");

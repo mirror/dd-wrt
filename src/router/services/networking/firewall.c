@@ -1959,7 +1959,7 @@ static void filter_input(void)
 			save2file
 			    ("-A INPUT -i %s -p udp --sport 67 --dport 68 -j ACCEPT\n",
 			     lanface);
-			save2file("-A INPUT -i %s -j DROP\n", lanface);
+			save2file("-A INPUT -i %s -j %s\n", lanface,log_drop);
 		}
 	}
 #endif
@@ -2008,20 +2008,20 @@ static void filter_input(void)
 			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n",
 				  wanface, RIP_PORT, TARG_PASS);
 		else
-			save2file("-A INPUT -p udp -i %s --dport %d -j DROP\n",
-				  wanface, RIP_PORT);
+			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n",
+				  wanface, RIP_PORT, log_drop);
 	}
 	if (nvram_invmatch("dr_lan_rx", "0"))
 		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface,
 			  RIP_PORT, TARG_PASS);
 	else
-		save2file("-A INPUT -p udp -i %s --dport %d -j DROP\n", lanface,
-			  RIP_PORT);
+		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface,
+			  RIP_PORT, log_drop);
 
 	iflist = nvram_safe_get("no_route_if");
 	foreach(buff, iflist, next) {
-		save2file("-A INPUT -p udp -i %s --dport %d -j DROP\n", buff,
-			  RIP_PORT);
+		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", buff,
+			  RIP_PORT, log_drop);
 	}
 
 	save2file("-A INPUT -p udp --dport %d -j %s\n", RIP_PORT, TARG_PASS);
@@ -2261,7 +2261,7 @@ static void filter_forward(void)
 	 * Drop all traffic from lan 
 	 */
 	if (nvram_match("pptpd_lockdown", "1"))
-		save2file("-A FORWARD -i %s -j DROP\n", lanface);
+		save2file("-A FORWARD -i %s -j %s\n", lanface,log_drop);
 
 	/*
 	 * Drop the wrong state, INVALID, packets 
@@ -2539,7 +2539,7 @@ static void filter_table(void)
 	    && (nvram_match("log_dropped", "1")))
 		save2file
 		    ("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options\n");
-	save2file("-A logbrute -j DROP\n");
+	save2file("-A logbrute -j %s\n",log_drop);
 #endif
 	if (nvram_match("chilli_enable", "1")) {
 		if (has_gateway()) {
@@ -2565,17 +2565,17 @@ static void filter_table(void)
 			 */
 			if (!remotemanage && strlen(wanface)) {
 				save2file
-				    ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
-				     wanface, nvram_safe_get("http_wanport"));
+				    ("-A INPUT -p tcp -i %s --dport %s -j %s\n",
+				     wanface, nvram_safe_get("http_wanport"),log_drop);
 				save2file
-				    ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n",
-				     wanface);
+				    ("-A INPUT -p tcp -i %s --dport 80 -j %s\n",
+				     wanface,log_drop);
 				save2file
-				    ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n",
-				     wanface);
+				    ("-A INPUT -p tcp -i %s --dport 443 -j %s\n",
+				     wanface,log_drop);
 				save2file
-				    ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n",
-				     wanface);
+				    ("-A INPUT -p tcp -i %s --dport 69 -j %s\n",
+				     wanface,log_drop);
 			}
 			/*
 			 * Make sure remote ssh/telnet port is filtered if it is disabled :
@@ -2584,16 +2584,16 @@ static void filter_table(void)
 #ifdef HAVE_SSHD
 			if (!remotessh && strlen(wanface) > 0) {
 				save2file
-				    ("-A INPUT -i %s -p tcp --dport %s -j DROP\n",
-				     wanface, nvram_safe_get("sshd_port"));
+				    ("-A INPUT -i %s -p tcp --dport %s -j %s\n",
+				     wanface, nvram_safe_get("sshd_port"),log_drop);
 			}
 #endif
 
 #ifdef HAVE_TELNET
 			if (!remotetelnet && strlen(wanface) > 0) {
 				save2file
-				    ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
-				     wanface);
+				    ("-A INPUT -p tcp -i %s --dport 23 -j %s\n",
+				     wanface,log_drop);
 			}
 #endif
 			filter_forward();
@@ -2616,8 +2616,8 @@ static void filter_table(void)
 		     "--log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n",
 		     wanface, FLOOD_RATE);
 	save2file
-	    ("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j DROP\n",
-	     wanface, FLOOD_RATE);
+	    ("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n",
+	     wanface, FLOOD_RATE,log_drop);
 #endif
 	if ((nvram_match("log_enable", "1"))
 	    && (nvram_match("log_accepted", "1")))
@@ -2665,17 +2665,17 @@ static void filter_table(void)
 		    ("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG "
 		     "--log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	save2file
-	    ("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j DROP\n"
+	    ("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n"
 	     "-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface,
-	     FLOOD_RATE);
+	     FLOOD_RATE,log_drop);
 #endif
 #ifdef HAVE_CHILLI
 	/*
 	 * DD-WRT BrainSlayer CHILLI Security Fix 
 	 */
 	if (nvram_match("chilli_enable", "1")) {
-		save2file("-A FORWARD -i br0 -j DROP\n");
-		save2file("-A FORWARD -o br0 -j DROP\n");
+		save2file("-A FORWARD -i br0 -j %s\n",log_drop);
+		save2file("-A FORWARD -o br0 -j %s\n",log_drop);
 	}
 	/*
 	 * DD-WRT end 

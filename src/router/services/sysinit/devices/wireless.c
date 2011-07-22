@@ -25,6 +25,29 @@
 // extern int getath9kdevicecount(void);
 extern void delete_ath9k_devices(char *physical_iface);
 
+
+static setWirelessLed(int phynum, ledpin)
+{
+#ifdef HAVE_ATH9K
+char trigger[32];
+char sysname[32];
+sprintf(trigger,"phy%dtpt",phynum);
+if (ledpin<32)
+    {
+    sprintf(sysname,"generic_%d",ledpin);
+    }else
+if (ledpin<48)
+    {
+    sprintf(sysname,"wireless_generic_%d",ledpin-32);
+    }
+sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger",trigger,sysname);
+#endif
+}
+
+#define setWirelessLedGeneric(a,b) setWirelessLed(a,b);
+#define setWirelessLedPhy0(b) setWirelessLed(0,b+32);
+#define setWirelessLedPhy1(b) setWirelessLed(1,b+48);
+
 static void detect_wireless_devices(void)
 {
 #ifdef HAVE_RT61
