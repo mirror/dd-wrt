@@ -23,6 +23,8 @@ obj-y	+=	prom.o	\
 			proc_wlgpio.o \
 			irq.o	\
 			setup.o	\
+			gpio_driver.o	\
+			dev-leds-gpio.o \
 			ar7240.o \
 			ar71xx.o \
 			pci.o \
