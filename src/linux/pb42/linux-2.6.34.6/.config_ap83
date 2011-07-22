@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.34.8
-# Sat Feb 12 23:58:09 2011
+# Linux kernel version: 2.6.34.10
+# Wed Jul 20 23:58:39 2011
 #
 CONFIG_MIPS=y
 
@@ -79,6 +79,7 @@ CONFIG_SYS_HAS_EARLY_PRINTK=y
 # CONFIG_MIPS_MACHINE is not set
 # CONFIG_IMAGE_CMDLINE_HACK is not set
 # CONFIG_NO_IOPORT is not set
+CONFIG_GENERIC_GPIO=y
 CONFIG_CPU_BIG_ENDIAN=y
 # CONFIG_CPU_LITTLE_ENDIAN is not set
 CONFIG_SYS_SUPPORTS_BIG_ENDIAN=y
@@ -989,6 +990,7 @@ CONFIG_UNIX98_PTYS=y
 # CONFIG_IPMI_HANDLER is not set
 # CONFIG_HW_RANDOM is not set
 # CONFIG_R3964 is not set
+CONFIG_GPIO_DEVICE=y
 # CONFIG_RAW_DRIVER is not set
 # CONFIG_TCG_TPM is not set
 # CONFIG_I2C is not set
@@ -998,6 +1000,30 @@ CONFIG_UNIX98_PTYS=y
 # PPS support
 #
 # CONFIG_PPS is not set
+CONFIG_ARCH_REQUIRE_GPIOLIB=y
+CONFIG_GPIOLIB=y
+CONFIG_GPIO_SYSFS=y
+
+#
+# Memory mapped GPIO expanders:
+#
+# CONFIG_GPIO_IT8761E is not set
+
+#
+# I2C GPIO expanders:
+#
+
+#
+# PCI GPIO expanders:
+#
+
+#
+# SPI GPIO expanders:
+#
+
+#
+# AC97 GPIO expanders:
+#
 # CONFIG_GENERIC_PWM is not set
 # CONFIG_W1 is not set
 # CONFIG_POWER_SUPPLY is not set
@@ -1199,6 +1225,7 @@ CONFIG_USB_SERIAL_OPTION=m
 #
 # OTG and related infrastructure
 #
+# CONFIG_USB_GPIO_VBUS is not set
 # CONFIG_NOP_USB_XCEIV is not set
 # CONFIG_MMC is not set
 # CONFIG_MEMSTICK is not set
@@ -1208,6 +1235,9 @@ CONFIG_LEDS_CLASS=y
 #
 # LED drivers
 #
+CONFIG_LEDS_GPIO=y
+CONFIG_LEDS_GPIO_PLATFORM=y
+# CONFIG_LEDS_LT3593 is not set
 CONFIG_LEDS_TRIGGERS=y
 
 #
@@ -1216,13 +1246,14 @@ CONFIG_LEDS_TRIGGERS=y
 # CONFIG_LEDS_TRIGGER_TIMER is not set
 # CONFIG_LEDS_TRIGGER_HEARTBEAT is not set
 # CONFIG_LEDS_TRIGGER_BACKLIGHT is not set
+CONFIG_LEDS_TRIGGER_GPIO=y
 # CONFIG_LEDS_TRIGGER_DEFAULT_ON is not set
 
 #
 # iptables trigger is under Netfilter config (LED target)
 #
 # CONFIG_LEDS_TRIGGER_MORSE is not set
-# CONFIG_LEDS_TRIGGER_NETDEV is not set
+CONFIG_LEDS_TRIGGER_NETDEV=y
 # CONFIG_ACCESSIBILITY is not set
 CONFIG_RTC_LIB=y
 # CONFIG_RTC_CLASS is not set

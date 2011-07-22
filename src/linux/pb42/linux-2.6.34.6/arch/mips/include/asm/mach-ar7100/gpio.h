@@ -1,65 +1,53 @@
 /*
- * include/asm-mips/mach-ar7100/gpio.h
+ *  Atheros AR71xx GPIO API definitions
  *
- *  Copyright (C) 2007 Ubiquiti Networks
- *   Based on Atheros code
+ *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  *
  */
 
-#ifndef __ASM_MACH_AR7100_H
-#define __ASM_MACH_AR7100_H
+#ifndef __ASM_MACH_AR71XX_GPIO_H
+#define __ASM_MACH_AR71XX_GPIO_H
 
-#include <asm/errno.h>
-#include <asm/mach-ar7100/ar7100.h>
+#define ARCH_NR_GPIOS	64
+#include <asm-generic/gpio.h>
 
-static inline int gpio_request(unsigned gpio, const char *label)
-{
-	/* TODO: implement */
-	return 0;
-}
+#include <asm/mach-ar71xx/ar71xx.h>
 
-static inline void gpio_free(unsigned gpio)
-{
-	/* TODO: implement */
-}
-
-static inline int gpio_direction_input(unsigned gpio)
-{
-	ar7100_gpio_config_input(gpio);
-
-}
-
-static inline int gpio_direction_output(unsigned gpio, int value)
-{
-	ar7100_gpio_config_output(gpio);
-	ar7100_gpio_out_val(gpio, value);
-}
-
-static inline int gpio_get_value(unsigned gpio)
-{
-	return ar7100_gpio_in_val(gpio);
-}
-
-static inline void gpio_set_value(unsigned gpio, int value)
-{
-	ar7100_gpio_out_val(gpio, value);
-}
-
-#include <asm-generic/gpio.h>		/* cansleep wrappers */
+extern unsigned long ar71xx_gpio_count;
+extern void __ar71xx_gpio_set_value(unsigned gpio, int value);
+extern int __ar71xx_gpio_get_value(unsigned gpio);
 
 static inline int gpio_to_irq(unsigned gpio)
 {
-	return AR7100_GPIO_IRQn(gpio);
+	return AR71XX_GPIO_IRQ(gpio);
 }
 
 static inline int irq_to_gpio(unsigned irq)
 {
-        return irq - AR7100_GPIO_IRQ_BASE;
+	return irq - AR71XX_GPIO_IRQ_BASE;
 }
 
-#endif /* __ASM_MACH_AR7100_H */
+static inline int gpio_get_value(unsigned gpio)
+{
+	if (gpio < ar71xx_gpio_count)
+		return __ar71xx_gpio_get_value(gpio);
+
+	return __gpio_get_value(gpio);
+}
+
+static inline void gpio_set_value(unsigned gpio, int value)
+{
+	if (gpio < ar71xx_gpio_count)
+		__ar71xx_gpio_set_value(gpio, value);
+	else
+		__gpio_set_value(gpio, value);
+}
+
+#define gpio_cansleep	__gpio_cansleep
+
+#endif /* __ASM_MACH_AR71XX_GPIO_H */
