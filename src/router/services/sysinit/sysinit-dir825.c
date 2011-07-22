@@ -147,10 +147,6 @@ void start_sysinit(void)
 #endif
 	setWirelessLedPhy0(5);
 	setWirelessLedPhy1(5);
-	system2("echo 5 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi1/softled");
 #endif
 
 	led_control(LED_POWER, LED_ON);
