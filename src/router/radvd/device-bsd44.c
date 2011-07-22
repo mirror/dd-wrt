@@ -1,10 +1,10 @@
 /*
- *   $Id: device-bsd44.c,v 1.24 2010/01/22 12:18:21 psavola Exp $
+ *   $Id: device-bsd44.c,v 1.29 2011/02/06 03:41:38 reubenhwk Exp $
  *
  *   Authors:
  *    Craig Metz		<cmetz@inner.net>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -13,11 +13,11 @@
  *
  */
 
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
-#include <defaults.h>
-#include <pathnames.h>		/* for PATH_PROC_NET_IF_INET6 */
+#include "config.h"
+#include "includes.h"
+#include "radvd.h"
+#include "defaults.h"
+#include "pathnames.h"		/* for PATH_PROC_NET_IF_INET6 */
 
 static uint8_t ll_prefix[] = { 0xfe, 0x80 };
 
@@ -27,13 +27,18 @@ static uint8_t ll_prefix[] = { 0xfe, 0x80 };
  * the defined prefixes
  */
 int
-setup_deviceinfo(int sock, struct Interface *iface)
+setup_deviceinfo(struct Interface *iface)
 {
-	struct ifaddrs *addresses, *ifa;
+	struct ifaddrs *addresses = 0, *ifa;
 
 	struct ifreq ifr;
 	struct AdvPrefix *prefix;
 	char zero[sizeof(iface->if_addr)];
+
+	if(if_nametoindex(iface->Name) == 0){
+		flog(LOG_ERR, "%s not found: %s", iface->Name, strerror(errno));
+		goto ret;
+	}
 
  	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, iface->Name, IFNAMSIZ-1);
@@ -42,7 +47,7 @@ setup_deviceinfo(int sock, struct Interface *iface)
 	if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
 		flog(LOG_ERR, "ioctl(SIOCGIFMTU) failed for %s: %s", iface->Name, strerror(errno));
 		goto ret;
-	}	
+	}
 
 	dlog(LOG_DEBUG, 3, "mtu for %s is %d", iface->Name, ifr.ifr_mtu);
 	iface->if_maxmtu = ifr.ifr_mtu;
@@ -74,7 +79,7 @@ setup_deviceinfo(int sock, struct Interface *iface)
 				iface->Name);
 			goto ret;
 		}
-		
+
 		memcpy(iface->if_hwaddr, LLADDR(dl), dl->sdl_alen);
 		iface->if_hwaddr_len = dl->sdl_alen << 3;
 
@@ -104,7 +109,7 @@ setup_deviceinfo(int sock, struct Interface *iface)
 				flog(LOG_WARNING, "WARNING, MAC address on %s is all zero!",
 					iface->Name);
 		}
-		
+
 		prefix = iface->AdvPrefixList;
 		while (prefix)
 		{
@@ -127,7 +132,8 @@ ret:
 	iface->if_maxmtu = -1;
 	iface->if_hwaddr_len = -1;
 	iface->if_prefix_len = -1;
-	freeifaddrs(addresses);
+	if (addresses != 0)
+		freeifaddrs(addresses);
 	return -1;
 }
 
@@ -135,9 +141,9 @@ ret:
  * Saves the first link local address seen on the specified interface to iface->if_addr
  *
  */
-int setup_linklocal_addr(int sock, struct Interface *iface)
+int setup_linklocal_addr(struct Interface *iface)
 {
-	struct ifaddrs *addresses, *ifa;
+	struct ifaddrs *addresses = 0, *ifa;
 
 	if (getifaddrs(&addresses) != 0)
 	{
@@ -173,19 +179,20 @@ int setup_linklocal_addr(int sock, struct Interface *iface)
 		freeifaddrs(addresses);
 		return 0;
 	}
-	freeifaddrs(addresses);
 
 ret:
+	if(addresses)
+		freeifaddrs(addresses);
 	flog(LOG_ERR, "no linklocal address configured for %s", iface->Name);
 	return -1;
 }
 
-int setup_allrouters_membership(int sock, struct Interface *iface)
+int setup_allrouters_membership(struct Interface *iface)
 {
 	return (0);
 }
 
-int check_allrouters_membership(int sock, struct Interface *iface)
+int check_allrouters_membership(struct Interface *iface)
 {
 	return (0);
 }

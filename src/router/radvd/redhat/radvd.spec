@@ -1,13 +1,12 @@
-# $Id: radvd.spec,v 1.27 2010/03/05 12:14:47 psavola Exp $
+# $Id: radvd.spec,v 1.31 2011/05/06 14:32:12 reubenhwk Exp $
 
-%define initdir /etc/rc.d/init.d
-#%(if test -d /etc/init.d/. ; then echo /etc/init.d ; else echo /etc/rc.d/init.d ; fi)
+%define initdir %{_sysconfdir}/rc.d/init.d
 
 %define RADVD_UID 75
 
 Summary: A Router Advertisement daemon
 Name: radvd
-Version: 1.6
+Version: 1.8
 Release: 1
 # The code includes the advertising clause, so it's GPL-incompatible
 License: BSD with advertising
@@ -38,7 +37,7 @@ services.
 %build
 export CFLAGS="$RPM_OPT_FLAGS -D_GNU_SOURCE -fPIE" 
 export LDFLAGS='-pie -Wl,-z,relro,-z,now,-z,noexecstack,-z,nodlopen'
-%configure --with-pidfile=/var/run/radvd/radvd.pid
+%configure --with-pidfile=%{_localstatedir}/run/radvd/radvd.pid
 make
 # make %{?_smp_mflags} 
 # Parallel builds still fail because seds that transform y.tab.x into
@@ -52,11 +51,14 @@ make DESTDIR=$RPM_BUILD_ROOT install
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
 mkdir -p $RPM_BUILD_ROOT%{initdir}
-mkdir -p $RPM_BUILD_ROOT/var/run/radvd
+mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/run/radvd
 
 install -m 644 redhat/radvd.conf.empty $RPM_BUILD_ROOT%{_sysconfdir}/radvd.conf
 install -m 755 redhat/radvd.init $RPM_BUILD_ROOT%{initdir}/radvd
 install -m 644 redhat/radvd.sysconfig $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/radvd
+
+install -d -m 755 $RPM_BUILD_ROOT%{_sysconfdir}/tmpfiles.d
+install -p -m 644 redhat/radvd-tmpfs.conf $RPM_BUILD_ROOT%{_sysconfdir}/tmpfiles.d/radvd.conf 
 
 %clean
 [ $RPM_BUILD_ROOT != "/" ] && rm -rf $RPM_BUILD_ROOT
@@ -76,22 +78,49 @@ if [ $1 = 0 ]; then
 fi
 
 %pre
-
-/usr/sbin/useradd -c "radvd user" -r -M -s /sbin/nologin -u %{RADVD_UID} -d / radvd 2>/dev/null || :
+getent group radvd >/dev/null || groupadd -g %RADVD_UID -r radvd
+getent passwd radvd >/dev/null || \
+  useradd -r -u %RADVD_UID -g radvd -d / -s /sbin/nologin -c "radvd user" radvd
+exit 0
 
 %files
 %defattr(-,root,root,-)
 %doc COPYRIGHT README CHANGES INTRO.html TODO
 %config(noreplace) %{_sysconfdir}/radvd.conf
-%config(noreplace) /etc/sysconfig/radvd
+%config(noreplace) %{_sysconfdir}/sysconfig/radvd
+%config(noreplace) %{_sysconfdir}/tmpfiles.d/radvd.conf
 %{initdir}/radvd
-%dir %attr(-,radvd,radvd) /var/run/radvd/
+%dir %attr(-,radvd,radvd) %{_localstatedir}/run/radvd/
 %doc radvd.conf.example
 %{_mandir}/*/*
 %{_sbindir}/radvd
 %{_sbindir}/radvdump
 
 %changelog
+* Fri May  6 2011 Reuben Hawkins <reubenhwk@gmail.com> 1.8-1
+- 1.8
+- IgnoreIfMissing now defaults to on
+- Added FlushRoute
+- Added DeprecatePrefix
+- Added DecrementLifetimes
+- Using netlink (on linux) to instantly detect changes in interface states
+- Timer code removed, replaces with poll
+- build system overhaul
+- Some bug fixes
+
+* Sat Jan  1 2011 Pekka Savola <pekkas@netcore.fi> 1.7-1
+- 1.7
+- Deprecate old, pre-RFC5006 parameters.
+- Support RFC6106 by adding DNS Search List support.
+- Add '-c' flag to test configuration
+- Fix a segmentation fault on reload_config() timer list
+  corruption that only occurs with multiple interfaces
+- Fix radvd skipping multiple interfaces when
+  UnicastOnly is on or AdvSendAdvert is off.
+  This got broken in radvd 1.3. Patch from Cedric BAIL
+- OSX build
+- minor code cleanups
+
 * Fri Mar  5 2010 Pekka Savola <pekkas@netcore.fi> 1.6-1
 - 1.6
 - Updated the spec file from Fedora (remove userdel at postun),

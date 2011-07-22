@@ -1,10 +1,10 @@
 /*
- *   $Id: device-linux.c,v 1.25 2008/01/24 17:08:46 psavola Exp $
+ *   $Id: device-linux.c,v 1.28 2011/02/06 03:41:38 reubenhwk Exp $
  *
  *   Authors:
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -13,11 +13,11 @@
  *
  */
 
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
-#include <defaults.h>
-#include <pathnames.h>		/* for PATH_PROC_NET_IF_INET6 */
+#include "config.h"
+#include "includes.h"
+#include "radvd.h"
+#include "defaults.h"
+#include "pathnames.h"		/* for PATH_PROC_NET_IF_INET6 */
 
 #ifndef IPV6_ADDR_LINKLOCAL
 #define IPV6_ADDR_LINKLOCAL   0x0020U
@@ -29,12 +29,12 @@
  * the defined prefixes
  */
 int
-setup_deviceinfo(int sock, struct Interface *iface)
+setup_deviceinfo(struct Interface *iface)
 {
 	struct ifreq	ifr;
 	struct AdvPrefix *prefix;
 	char zero[sizeof(iface->if_addr)];
-	
+
 	strncpy(ifr.ifr_name, iface->Name, IFNAMSIZ-1);
 	ifr.ifr_name[IFNAMSIZ-1] = '\0';
 
@@ -55,7 +55,7 @@ setup_deviceinfo(int sock, struct Interface *iface)
 	}
 
 	dlog(LOG_DEBUG, 3, "hardware type for %s is %d", iface->Name,
-		ifr.ifr_hwaddr.sa_family); 
+		ifr.ifr_hwaddr.sa_family);
 
 	switch(ifr.ifr_hwaddr.sa_family)
         {
@@ -91,7 +91,7 @@ setup_deviceinfo(int sock, struct Interface *iface)
 
 	if (iface->if_hwaddr_len != -1) {
 		unsigned int if_hwaddr_len_bytes = (iface->if_hwaddr_len + 7) >> 3;
-		
+
 		if (if_hwaddr_len_bytes > sizeof(iface->if_hwaddr)) {
 			flog(LOG_ERR, "address length %d too big for %s", if_hwaddr_len_bytes, iface->Name);
 			return(-2);
@@ -113,10 +113,10 @@ setup_deviceinfo(int sock, struct Interface *iface)
 			flog(LOG_WARNING, "prefix length should be %d for %s",
 				iface->if_prefix_len, iface->Name);
  		}
- 			
+
  		prefix = prefix->next;
 	}
-                
+
 	return (0);
 }
 
@@ -124,7 +124,7 @@ setup_deviceinfo(int sock, struct Interface *iface)
  * this function extracts the link local address and interface index
  * from PATH_PROC_NET_IF_INET6.  Note: 'sock' unused in Linux.
  */
-int setup_linklocal_addr(int sock, struct Interface *iface)
+int setup_linklocal_addr(struct Interface *iface)
 {
 	FILE *fp;
 	char str_addr[40];
@@ -135,9 +135,9 @@ int setup_linklocal_addr(int sock, struct Interface *iface)
 	{
 		flog(LOG_ERR, "can't open %s: %s", PATH_PROC_NET_IF_INET6,
 			strerror(errno));
-		return (-1);	
+		return (-1);
 	}
-	
+
 	while (fscanf(fp, "%32s %x %02x %02x %02x %15s\n",
 		      str_addr, &if_idx, &plen, &scope, &dad_status,
 		      devname) != EOF)
@@ -148,7 +148,7 @@ int setup_linklocal_addr(int sock, struct Interface *iface)
 			struct in6_addr addr;
 			unsigned int ap;
 			int i;
-			
+
 			for (i=0; i<16; i++)
 			{
 				sscanf(str_addr + i * 2, "%02x", &ap);
@@ -167,16 +167,16 @@ int setup_linklocal_addr(int sock, struct Interface *iface)
 	return (-1);
 }
 
-int setup_allrouters_membership(int sock, struct Interface *iface)
+int setup_allrouters_membership(struct Interface *iface)
 {
-	struct ipv6_mreq mreq;                  
-	
-	memset(&mreq, 0, sizeof(mreq));                  
+	struct ipv6_mreq mreq;
+
+	memset(&mreq, 0, sizeof(mreq));
 	mreq.ipv6mr_interface = iface->if_index;
-	
+
 	/* ipv6-allrouters: ff02::2 */
-	mreq.ipv6mr_multiaddr.s6_addr32[0] = htonl(0xFF020000);                                          
-	mreq.ipv6mr_multiaddr.s6_addr32[3] = htonl(0x2);     
+	mreq.ipv6mr_multiaddr.s6_addr32[0] = htonl(0xFF020000);
+	mreq.ipv6mr_multiaddr.s6_addr32[3] = htonl(0x2);
 
 	if (setsockopt(sock, SOL_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
 	{
@@ -191,40 +191,46 @@ int setup_allrouters_membership(int sock, struct Interface *iface)
 	return (0);
 }
 
-int check_allrouters_membership(int sock, struct Interface *iface)
+int check_allrouters_membership(struct Interface *iface)
 {
 	#define ALL_ROUTERS_MCAST "ff020000000000000000000000000002"
-	
+
 	FILE *fp;
 	unsigned int if_idx, allrouters_ok=0;
 	char addr[32+1];
+	char buffer[301] = {""}, *str;
 	int ret=0;
 
 	if ((fp = fopen(PATH_PROC_NET_IGMP6, "r")) == NULL)
 	{
 		flog(LOG_ERR, "can't open %s: %s", PATH_PROC_NET_IGMP6,
 			strerror(errno));
-		return (-1);	
+		return (-1);
 	}
-	
-	while ( (ret=fscanf(fp, "%u %*s %32[0-9A-Fa-f] %*x %*x %*x\n", &if_idx, addr)) != EOF) {
+
+	str = fgets(buffer, 300, fp);
+
+	while (str && (ret = sscanf(str, "%u %*s %32[0-9A-Fa-f]", &if_idx, addr)) ) {
 		if (ret == 2) {
 			if (iface->if_index == if_idx) {
-				if (strncmp(addr, ALL_ROUTERS_MCAST, sizeof(addr)) == 0)
+				if (strncmp(addr, ALL_ROUTERS_MCAST, sizeof(addr)) == 0){
 					allrouters_ok = 1;
+					break;
+				}
 			}
 		}
+		str = fgets(buffer, 300, fp);
 	}
 
 	fclose(fp);
 
 	if (!allrouters_ok) {
 		flog(LOG_WARNING, "resetting ipv6-allrouters membership on %s", iface->Name);
-		setup_allrouters_membership(sock, iface);
-	}	
+		setup_allrouters_membership(iface);
+	}
 
 	return(0);
-}		
+}
 
 /* note: also called from the root context */
 int

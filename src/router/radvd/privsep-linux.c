@@ -1,12 +1,12 @@
 /*
- *   $Id: privsep-linux.c,v 1.3 2008/01/24 17:08:46 psavola Exp $
+ *   $Id: privsep-linux.c,v 1.6 2011/02/28 10:53:07 reubenhwk Exp $
  *
  *   Authors:
  *    Jim Paris			<jim@jtan.com>
  *    Pedro Roque		<roque@di.fc.ul.pt>
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996,1997,2008 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997,2008 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -15,10 +15,10 @@
  *
  */
 
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
-#include <pathnames.h>
+#include "config.h"
+#include "includes.h"
+#include "radvd.h"
+#include "pathnames.h"
 
 int privsep_set(const char *iface, const char *var, uint32_t val);
 void privsep_read_loop(void);
@@ -52,6 +52,12 @@ privsep_read_loop(void)
 		ret = readn(pfd, &cmd, sizeof(cmd));
 		if (ret <= 0) {
 			/* Error or EOF, give up */
+			if (ret < 0) {
+				flog(LOG_ERR, "Exiting, privsep_read_loop had readn error: %s\n",
+				     strerror(errno));
+			} else {
+				flog(LOG_ERR, "Exiting, privsep_read_loop had readn return 0 bytes\n");
+			}
 			close(pfd);
 			_exit(0);
 		}
@@ -161,6 +167,7 @@ privsep_init(void)
 
 		privsep_read_loop();
 		close(pfd);
+		flog(LOG_ERR, "Exiting, privsep_read_loop is complete.\n");
 		_exit(0);
 	}
 

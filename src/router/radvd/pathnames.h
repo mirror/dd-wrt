@@ -1,11 +1,11 @@
 /*
- *   $Id: pathnames.h,v 1.8 2005/12/30 15:13:11 psavola Exp $
+ *   $Id: pathnames.h,v 1.9 2010/12/14 11:58:21 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
