@@ -1,5 +1,5 @@
 .\"
-.\"   $Id: radvdump.8.man,v 1.6 2008/03/31 09:18:15 psavola Exp $
+.\"   $Id: radvdump.8.man,v 1.7 2011/01/05 08:21:42 psavola Exp $
 .\"
 .\"   Authors:
 .\"    Lars Fenneberg		<lf@elemental.net>	 
@@ -14,7 +14,7 @@
 .\"
 .\"
 .\"
-.TH RADVDUMP 8 "29 Dec 2001" "radvd @VERSION@" ""
+.TH RADVDUMP 8 "31 Mar 2008" "radvd @VERSION@" ""
 .SH NAME
 radvdump \- dump router advertisements
 .SH SYNOPSIS

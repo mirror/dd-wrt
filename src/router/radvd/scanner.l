@@ -1,11 +1,11 @@
 /*
- *   $Id: scanner.l,v 1.18 2009/06/19 07:34:07 psavola Exp $
+ *   $Id: scanner.l,v 1.29 2011/05/07 02:09:40 reubenhwk Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996-2000 by the above mentioned author(s), 
+ *   This software is Copyright 1996-2000 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -13,11 +13,14 @@
  *   may request it from <pekkas@netcore.fi>.
  *
  */
+
+%option nounput noinput noyywrap
+
 %{
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
-#include <gram.h>
+#include "config.h"
+#include "includes.h"
+#include "log.h"
+#include "gram.h"
 
 extern char *conf_file;
 
@@ -34,7 +37,7 @@ addr2		{hexdigit}{1,4}(":"{hexdigit}{1,4})*"::"
 addr3		({hexdigit}{1,4}":"){7}{hexdigit}{1,4}
 addr		({addr1}|{addr2}|{addr3}|"::")
 whitespace	([ \t])+
-string         [a-zA-Z0-9`~!@#$%\^&*()_\-+=:\[\]<>,\.?\\]{1,15}
+string		[a-zA-Z0-9`~!@#$%\^&*()_\-+=:\[\]<>,\.?\\]+
 %%
 
 #.*$			{/* ignore comments */}
@@ -45,6 +48,7 @@ interface		{ return T_INTERFACE; }
 prefix			{ return T_PREFIX; }
 route			{ return T_ROUTE; }
 RDNSS			{ return T_RDNSS; }
+DNSSL			{ return T_DNSSL; }
 clients			{ return T_CLIENTS; }
 
 IgnoreIfMissing		{ return T_IgnoreIfMissing; }
@@ -65,6 +69,8 @@ AdvOnLink		{ return T_AdvOnLink; }
 AdvAutonomous		{ return T_AdvAutonomous; }
 AdvValidLifetime	{ return T_AdvValidLifetime; }
 AdvPreferredLifetime	{ return T_AdvPreferredLifetime; }
+DeprecatePrefix		{ return T_DeprecatePrefix; }
+DecrementLifetimes	{ return T_DecrementLifetimes; }
 
 AdvRouterAddr		{ return T_AdvRouterAddr; }
 AdvHomeAgentFlag	{ return T_AdvHomeAgentFlag; }
@@ -72,6 +78,7 @@ AdvIntervalOpt		{ return T_AdvIntervalOpt; }
 AdvHomeAgentInfo	{ return T_AdvHomeAgentInfo; }
 UnicastOnly		{ return T_UnicastOnly; }
 
+Base6Interface		{ return T_Base6Interface; }
 Base6to4Interface	{ return T_Base6to4Interface; }
 
 HomeAgentPreference	{ return T_HomeAgentPreference; }
@@ -79,10 +86,15 @@ HomeAgentLifetime	{ return T_HomeAgentLifetime; }
 
 AdvRoutePreference	{ return T_AdvRoutePreference; }
 AdvRouteLifetime	{ return T_AdvRouteLifetime; }
+RemoveRoute		{ return T_RemoveRoute; }
 
 AdvRDNSSPreference 	{ return T_AdvRDNSSPreference; }
 AdvRDNSSOpen		{ return T_AdvRDNSSOpenFlag; }
 AdvRDNSSLifetime	{ return T_AdvRDNSSLifetime; }
+FlushRDNSS		{ return T_FlushRDNSS; }
+
+AdvDNSSLLifetime	{ return T_AdvDNSSLLifetime; }
+FlushDNSSL		{ return T_FlushDNSSL; }
 
 MinDelayBetweenRAs      { return T_MinDelayBetweenRAs; }
 
@@ -129,11 +141,11 @@ medium		{ yylval.snum = 0; return SIGNEDNUMBER; }
 high		{ yylval.snum = 1; return SIGNEDNUMBER; }
 
 {string}	{
-			static char name[IFNAMSIZ];
-				
-			strncpy(name, yytext, IFNAMSIZ-1);
-			name[IFNAMSIZ-1] = '\0';
-			yylval.str = name;
+			static char string[256];
+
+			strncpy(string, yytext, sizeof(string));
+			string[sizeof(string)-1] = '\0';
+			yylval.str = string;
 			return STRING;
 		}
 

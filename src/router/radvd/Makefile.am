@@ -1,5 +1,5 @@
 #
-#   $Id: Makefile.am,v 1.7 2009/08/25 05:41:56 psavola Exp $
+#   $Id: Makefile.am,v 1.22 2011/05/09 11:04:12 psavola Exp $
 #
 #   Authors:
 #    Lars Fenneberg		<lf@elemental.net>	 
@@ -14,41 +14,109 @@
 
 AUTOMAKE_OPTIONS = 1.2 foreign
 
-DEFS=  -DPATH_RADVD_CONF=\"$(PATH_RADVD_CONF)\" \
-	-DPATH_RADVD_LOG=\"$(PATH_RADVD_LOG)\" -DLOG_FACILITY=$(LOG_FACILITY) \
+DEFS = \
+	-DINET6=1 \
+	-DLOG_FACILITY=$(LOG_FACILITY) \
+	-DPATH_RADVD_CONF=\"$(PATH_RADVD_CONF)\" \
+	-DPATH_RADVD_LOG=\"$(PATH_RADVD_LOG)\" \
 	-DPATH_RADVD_PID=\"$(PATH_RADVD_PID)\" \
-	-DVERSION=\"$(VERSION)\" -DINET6=1
-INCLUDES=-I$(srcdir) -I.
+	-DVERSION=\"$(VERSION)\"
 
-########################################################################
+INCLUDES = \
+	-I$(srcdir) \
+	-I.
 
-COMMON_SRC = log.c socket.c recv.c util.c radvd.h defaults.h pathnames.h \
-	includes.h
+COMMON_SRC = \
+	defaults.h \
+	includes.h \
+	log.c \
+	log.h \
+	pathnames.h \
+	radvd.h \
+	recv.c \
+	socket.c \
+	util.c
 
-sbin_PROGRAMS = radvd radvdump
+sbin_PROGRAMS = \
+	radvd \
+	radvdump
 
-radvd_SOURCES = $(COMMON_SRC) radvd.c timer.c send.c process.c interface.c \
-	device.c device-common.c privsep.c gram.y gram.h scanner.l
-radvd_LDADD = -lfl
-EXTRA_radvd_SOURCES = device-linux.c device-bsd44.c privsep-linux.c privsep-bsd44.c
-YFLAGS = -d
-CFLAGS = @CFLAGS@ -Wall -Wpointer-arith  -Wcast-qual -Wcast-align \
-	-Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
+radvd_SOURCES = \
+	$(COMMON_SRC) \
+	device-common.c \
+	gram.h \
+	gram.y \
+	interface.c \
+	process.c \
+	radvd.c \
+	scanner.l \
+	send.c \
+	timer.c
 
-radvdump_SOURCES = $(COMMON_SRC) radvdump.c
+EXTRA_radvd_SOURCES = \
+	device-bsd44.c \
+	device-linux.c \
+	netlink.c \
+	netlink.h \
+	privsep-bsd44.c \
+	privsep-linux.c
 
-man_MANS = radvd.8 radvdump.8 radvd.conf.5
-EXTRA_DIST = radvd.8.man radvdump.8.man radvd.conf.5.man VERSION CHANGES \
-	COPYRIGHT INTRO.html copyright.blurb radvd.conf.example
-BUILT_SOURCES = device.c
+radvd_LDADD = \
+	@CONDITIONAL_SOURCES@
 
-CLEANFILES = radvd.8 radvdump.8 radvd.conf.5
-DISTCLEANFILES = device.c
+radvd_DEPENDENCIES = \
+	@CONDITIONAL_SOURCES@
+
+AM_YFLAGS = -d
+
+AM_CFLAGS = \
+	-Wall \
+	-Wcast-align \
+	-Wcast-qual \
+	-Wpointer-arith \
+	-Wmissing-declarations \
+	-Wmissing-prototypes \
+	-Wno-strict-aliasing \
+	-Wstrict-prototypes
+
+radvdump_SOURCES = \
+	$(COMMON_SRC) \
+	radvdump.c
+
+man_MANS = \
+	radvd.8 \
+	radvd.conf.5 \
+	radvdump.8
+
+EXTRA_DIST = \
+	CHANGES \
+	COPYRIGHT \
+	INTRO.html \
+	VERSION \
+	copyright.blurb \
+	radvd.8.man \
+	radvd.conf.5.man \
+	radvd.conf.example \
+	radvdump.8.man \
+	redhat/radvd.conf.empty \
+	redhat/radvd.init \
+	redhat/radvd.spec \
+	redhat/radvd.sysconfig \
+	redhat/radvd-tmpfs.conf
+
+CLEANFILES = \
+	gram.c \
+	gram.h \
+	radvd.8 \
+	radvd.conf.5 \
+	radvdump.8 \
+	scanner.c
 
 SUFFIXES = .man
 
 .man:
-	$(SED) 	-e 's,@''VERSION''@,$(VERSION),g' \
+	$(AM_V_GEN)$(SED) \
+		-e 's,@''VERSION''@,$(VERSION),g' \
 		-e 's,@''sbindir''@,$(sbindir),g' \
 		-e 's,@''PATH_RADVD_CONF''@,$(PATH_RADVD_CONF),g' \
 		-e 's,@''PATH_RADVD_PID''@,$(PATH_RADVD_PID),g' \
@@ -57,9 +125,9 @@ SUFFIXES = .man
 		$< > $@
 
 dist-hook:
-	rm -f $(distdir)/device.c	
-	mkdir $(distdir)/redhat
-	cp -p $(srcdir)/redhat/radvd.init $(srcdir)/redhat/radvd.spec \
-		$(srcdir)/redhat/radvd.sysconfig $(distdir)/redhat
+	rm -f $(distdir)/gram.c
+	rm -f $(distdir)/gram.h
+	rm -f $(distdir)/scanner.c
 
 scanner.o: gram.h
+

@@ -1,4 +1,64 @@
-$Id: CHANGES,v 1.97 2010/03/05 12:15:33 psavola Exp $
+14/05/2011	Version 1.8 release
+
+10/05/2011	removed AdvRDNSSPreference and AdvRDNSSOpen from the manpages
+
+06/05/2011	- IgnoreIfMissing now defaults to on
+		- Fixed inf loop in Base6Interface (from Ludwig Nussel)
+		- Modified string regex in scanner.l reducing the compiled
+		size of scanner.o by a factor or 10.
+
+04/05/2011	- radvd is useful for advertising ULA's without having a
+		router too (from Ludwig Nussel)
+		- Bumping version number to 1.8alpha in VERSION for testing
+
+28/04/2011	Adding DecrementLifetimes patch (from Mark Smith)
+
+25/03/2011	Renaming RemoveRoute to FlushRoute (from Mark Smith)
+
+22/03/2011	Adding RemoveRoute options (from Mark Smith)
+
+20/03/2011	Added DeprecatePrefix option (from Mark Smith)
+
+28/02/2011	fixed Debian Bug#615625: radvd: Error in DNSSL parsing
+
+26/02/2011	Added Base6Interface option
+
+30/01/2011	Added detailed output to radvd --help for the long options.
+		Two sigterms or sigints calls abort.
+		build system cleanup work.
+
+22/01/2011	Fixed crash and memory leak in device-bsd44.c when an
+		interface defined in the config file doesn't exist.
+		Patch submitted by Manual Kasper.
+
+12/01/2011	Release 1.7.
+
+07/01/2011	make dist (for building tar.gz source packages) fixed.
+		- 07/01: AdvSourceLLAddress fixed on FreeBSD when link
+		layer token length is zero.
+
+14/12/2010	Deprecate old, pre-RFC5006 parameters.
+		Support RFC6106 by adding DNS Search List support.
+		From Pierre Ossman.
+
+14/12/2010      Integrate cleanup patches from Reuben Hawkins:
+                - 14/05: patch configure.in to allow OSX 10.6 builds
+		- 05/06: Unnecessary >255 test when using uint8_t
+                - 06/06: fix fscanf parsing on Linux 
+		- 10/12: Fix whitespaces; #includes; CLEANFILES
+		From Ben Greear:
+                - 05/11: Print errors on all exit() codepaths.
+		From Iain J. Watson:
+		- 09/12: Add '-c' flag to test configuration.
+		From Pierre Ossman (idea):
+                - 13/12: Remove automake-generated files.
+
+04/05/2010	Fix a segmentation fault on reload_config() timer list
+		corruption that only occurs with multiple interfaces.
+
+10/03/2010	Fix radvd skipping multiple interfaces when
+                UnicastOnly is on or AdvSendAdvert is off.
+		This got broken in radvd 1.3. Patch from Cedric BAIL.
 
 05/03/2010	Release 1.6.
 

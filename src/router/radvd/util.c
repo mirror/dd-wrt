@@ -1,10 +1,10 @@
 /*
- *   $Id: util.c,v 1.10 2008/10/15 05:34:35 psavola Exp $
+ *   $Id: util.c,v 1.12 2010/12/14 11:58:21 psavola Exp $
  *
  *   Authors:
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -13,15 +13,15 @@
  *
  */
 
-#include <config.h>
-#include <includes.h>
-#include <radvd.h>
-               
+#include "config.h"
+#include "includes.h"
+#include "radvd.h"
+
 void
 mdelay(double msecs)
 {
 	struct timeval tv;
-                
+
 	tv.tv_sec = (time_t)(msecs / 1000.0);
 	tv.tv_usec = (suseconds_t)((msecs - tv.tv_sec * 1000.0) * 1000.0);
 
@@ -41,11 +41,11 @@ print_addr(struct in6_addr *addr, char *str)
 
 	/* XXX: overflows 'str' if it isn't big enough */
 	res = inet_ntop(AF_INET6, (void *)addr, str, INET6_ADDRSTRLEN);
-	
-	if (res == NULL) 
+
+	if (res == NULL)
 	{
-		flog(LOG_ERR, "print_addr: inet_ntop: %s", strerror(errno));		
-		strcpy(str, "[invalid address]");	
+		flog(LOG_ERR, "print_addr: inet_ntop: %s", strerror(errno));
+		strcpy(str, "[invalid address]");
 	}
 }
 
@@ -54,7 +54,7 @@ int
 check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 {
 	while (rdnss) {
-		if (    !memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr)) 
+		if (    !memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr))
 		     || !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr))
 		     || !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)) )
 			break; /* rdnss address found in the list */
@@ -62,6 +62,24 @@ check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 			rdnss = rdnss->next; /* no match */
 	}
 	return (rdnss != NULL);
+}
+
+/* Check if a suffix exists in the dnssl list */
+int
+check_dnssl_presence(struct AdvDNSSL *dnssl, const char *suffix)
+{
+	int i;
+	while (dnssl) {
+		for (i = 0; i < dnssl->AdvDNSSLNumber; i++) {
+			if (strcmp(dnssl->AdvDNSSLSuffixes[i], suffix) == 0)
+				break; /* suffix found in the list */
+		}
+		if (i != dnssl->AdvDNSSLNumber)
+			break;
+
+		dnssl = dnssl->next; /* no match */
+	}
+	return (dnssl != NULL);
 }
 
 /* Like read(), but retries in case of partial read */
