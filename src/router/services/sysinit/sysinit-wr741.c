@@ -116,6 +116,7 @@ void start_sysinit(void)
 	fprintf(stderr, "configure wifi0 to %s\n", mac);
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
 	//enable wlan led (card gpio based)
+	setWirelessLedPhy0(1);
 	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 
