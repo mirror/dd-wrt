@@ -503,5 +503,5 @@ void __init ar71xx_gpio_init(void)
 	err = gpiochip_add(&ar71xx_gpio_chip);
 	if (err)
 		panic("cannot add AR71xx GPIO chip, error=%d", err);
-	ar71xx_add_device_leds_gpio(-1,64,generic_leds_gpio);
+	ar71xx_add_device_leds_gpio(-1,48,generic_leds_gpio);
 }
