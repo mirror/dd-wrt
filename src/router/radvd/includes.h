@@ -1,10 +1,10 @@
 /*
- *   $Id: includes.h,v 1.14 2007/10/25 19:29:40 psavola Exp $
+ *   $Id: includes.h,v 1.15 2010/12/14 11:58:21 psavola Exp $
  *
  *   Authors:
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -16,7 +16,7 @@
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
-#include <config.h>
+#include "config.h"
 
 #include <string.h>
 #include <stdio.h>

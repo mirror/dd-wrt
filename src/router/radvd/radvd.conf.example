@@ -108,11 +108,15 @@ interface eth0
 #
         RDNSS 2001:db8::1 2001:db8::2
         {
-                AdvRDNSSPreference 8;
-		### AdvRDNSSOpen was removed from the final specification but
-		### may be used for experimental purposes.
-                # AdvRDNSSOpen off;
                 AdvRDNSSLifetime 30;
+        };
+
+#
+# DNS Search Lists
+#
+        DNSSL branch.example.com example.com
+        {
+                AdvDNSSLLifetime 30;
         };
 
 

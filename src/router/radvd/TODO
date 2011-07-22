@@ -1,4 +1,4 @@
-$Id: TODO,v 1.34 2010/01/28 13:34:26 psavola Exp $
+$Id: TODO,v 1.36 2010/12/14 12:40:18 psavola Exp $
 
                        NOTE WELL
                        =========
@@ -51,8 +51,7 @@ this.
 Use getifaddrs() instead of ioctl SIOCGIFADDR and other friends.  The
 problem with this is that e.g. RHL73's glibc didn't support getifaddrs(),
 and before glibc 2.3.3 getifaddrs() didn't use netlink so it didn't work
-well with IPv6.  So, some kind of compat library would be needed if this
-would be used...
+well with IPv6.  These old compat concerns are likely moot now..
 
 Consider whether radvd should work around missing/broken interfaces by
 default, especially if a previously working interface gets disabled.
@@ -80,3 +79,7 @@ Known problems (probably can't do anything about these):
    Ethernet frames with the old MAC until interface is flapped.
    More: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=508466
 
+http://lists.litech.org/pipermail/radvd-devel-l/2009-August/000420.html
+localtime() used in vlog() is not reentrant, and is not safe in signal
+handling context.  There may be other such functions as well. It's not clear
+what could be done about that.

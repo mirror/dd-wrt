@@ -1,5 +1,5 @@
 .\"
-.\"   $Id: radvd.8.man,v 1.13 2008/03/31 09:18:15 psavola Exp $
+.\"   $Id: radvd.8.man,v 1.15 2011/01/05 08:19:23 psavola Exp $
 .\"
 .\"   Authors:
 .\"    Lars Fenneberg		<lf@elemental.net>	 
@@ -13,12 +13,12 @@
 .\"
 .\"
 .\"
-.TH RADVD 8 "24 Jan 2008" "radvd @VERSION@" ""
+.TH RADVD 8 "14 Dec 2010" "radvd @VERSION@" ""
 .SH NAME
 radvd \- router advertisement daemon for IPv6
 .SH SYNOPSIS
 .B radvd
-.B "[ \-hsv ]"
+.B "[ \-hsvc ]"
 .BI "[ \-d " debuglevel " ]"
 .BI "[ \-C " configfile " ]"
 .BI "[ \-p " pidfile " ]"
@@ -71,6 +71,9 @@ two processes.
 This option disables privilege separation, and as a result,
 the non-privileged radvd process does not have permissions to
 change interface configuration.
+.TP
+.BR "\-c" , " \-\-configtest"
+Test configuration and do startup tests and then exit.
 .TP
 .BR "\-d " debuglevel, " \-\-debug " debuglevel
 With this option you turn on debugging information. The debugging level is
@@ -180,4 +183,6 @@ Pekka Savola	<pekkas@netcore.fi>	- current maintainer
 Craig Metz	<cmetz@inner.net>	- port to NRL's IPv6 code for BSD4.4
 Marko Myllynen	<myllynen@lut.fi>	- RFC 2461 update, Mobile IPv6 support
 Jim Paris	<jim@jtan.com>		- Privilege separation support
+Reuben Hawkins  <reubenhwk@gmail.com>   - Many fixes and cleanups
+Pierre Ossman   <pierre@ossman.eu>      - RFC6106 (DNSSL) support
 .fi
