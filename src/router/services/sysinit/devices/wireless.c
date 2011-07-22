@@ -26,7 +26,7 @@
 extern void delete_ath9k_devices(char *physical_iface);
 
 
-static setWirelessLed(int phynum, ledpin)
+static void setWirelessLed(int phynum, int ledpin)
 {
 #ifdef HAVE_ATH9K
 char trigger[32];
@@ -44,9 +44,9 @@ sysprintf("echo %s > /sys/devices/platform/leds-gpio/leds/%s/trigger",trigger,sy
 #endif
 }
 
-#define setWirelessLedGeneric(a,b) setWirelessLed(a,b);
-#define setWirelessLedPhy0(b) setWirelessLed(0,b+32);
-#define setWirelessLedPhy1(b) setWirelessLed(1,b+48);
+#define setWirelessLedGeneric(a,b) setWirelessLed(a,b)
+#define setWirelessLedPhy0(b) setWirelessLed(0,b+32)
+#define setWirelessLedPhy1(b) setWirelessLed(1,b+48)
 
 static void detect_wireless_devices(void)
 {
