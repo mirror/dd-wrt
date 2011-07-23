@@ -3104,6 +3104,8 @@ void start_wan(int status)
 				dial = "ATD*99#";
 			if (nvram_match("wan_dial", "2"))
 				dial = "ATDT#777";
+			if (nvram_match("wan_dial", "3"))
+				dial = "ATD*99***3#";
 			fprintf(fp,
 				"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
 				dial, nvram_safe_get("3gdata"));
