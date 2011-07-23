@@ -10,9 +10,9 @@
 <div class="setting">
 	<div class="label"><% tran("share.dial"); %></div>
 	<select name="wan_dial" >
-		<option value="0" <% nvram_selmatch("wan_dial", "0", "selected"); %> >*99***1# (3G/UMTS)</option>
-		<option value="1" <% nvram_selmatch("wan_dial", "1", "selected"); %> >*99# (3G/UMTS)</option>
-		<option value="3" <% nvram_selmatch("wan_dial", "3", "selected"); %> >#99***3# (LTE/4G)</option>
+		<option value="0" <% nvram_selmatch("wan_dial", "0", "selected"); %> >*99***1# (UMTS/3G/3.5G)</option>
+		<option value="1" <% nvram_selmatch("wan_dial", "1", "selected"); %> >*99# (UMTS/3G/3.5G)</option>
+		<option value="3" <% nvram_selmatch("wan_dial", "3", "selected"); %> >#99***3# (LTE/3.75/4G)</option>
 		<option value="2" <% nvram_selmatch("wan_dial", "2", "selected"); %> >#777 (CDMA/EVDO)</option>
 	</select>
 </div>
