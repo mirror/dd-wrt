@@ -230,8 +230,10 @@ void start_sysinit(void)
 #ifdef HAVE_WZRG300NH2
 	setWirelessLedPhy0(5);
 #else
+#ifndef HAVE_WZRG450
 	setWirelessLedPhy0(6);
 	setWirelessLedPhy1(6);
+#endif
 #endif
 #else
 	eval("ifconfig", "wifi0", "hw", "ether", mac1);
