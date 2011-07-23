@@ -142,3 +142,10 @@ void __cpuinit twd_timer_setup(struct clock_event_device *clk)
 
 	clockevents_register_device(clk);
 }
+
+/* Needed by mpcore_wdt */
+unsigned long twd_timer_get_rate(void)
+{
+	return twd_timer_rate;
+}
+EXPORT_SYMBOL_GPL(twd_timer_get_rate);
