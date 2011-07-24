@@ -39,6 +39,9 @@ set_capabilities(u32 caps)
   return -1;
 }
 
+#ifndef CAP_TO_MASK
+#define CAP_TO_MASK(x) (1 << (x))
+#endif
 static void
 drop_uid(uid_t uid)
 {
