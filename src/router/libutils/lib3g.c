@@ -478,7 +478,7 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x0622, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
 	{0x0421, 0x0623, "option", "0", "0", 2 | 0x10, NULL, "Nokia CS-17 (modem mode)"},	//
 	{0x0421, 0x0627, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
-	{0x106c, 0x3718, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "PANTECH UML290 4G Modem"},	//
+	{0x106c, 0x3718, "option", "0", "0", 2 | 0x10, NULL, "PANTECH UML290 4G Modem"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
