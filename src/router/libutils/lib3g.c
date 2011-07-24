@@ -93,8 +93,7 @@ void checkreset(char *tty)
 #ifdef HAVE_CAMBRIA
 	FILE *check = NULL;
 	int count = 0;
-	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt\n",
-		tty);
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt\n", tty);
 	sleep(1);
 	while (!(check = fopen(tty, "rb")) && count < 10) {
 		sleep(1);
@@ -105,8 +104,7 @@ void checkreset(char *tty)
 	else
 		fprintf(stderr, "reset error\n");
 	fprintf(stderr, "wakeup card\n");
-	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt\n",
-		tty);
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt\n", tty);
 	sleep(5);		//give extra delay for registering
 #endif
 }
@@ -473,13 +471,14 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0xfff6, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
 	{0x19d2, 0xfff1, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
 	{0x19d2, 0xffff, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
-	{0x0421, 0x060c, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-10 (cdrom mode)"},	//
-	{0x0421, 0x060e, "option", "0", "0", 2, NULL, "Nokia CS-10 (modem mode)"},	//
-	{0x0421, 0x0610, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-15 (cdrom mode)"},	//
-	{0x0421, 0x0612, "option", "0", "0", 2, NULL, "Nokia CS-15/CS-18 (modem mode)"},	//
-	{0x0421, 0x0622, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
-	{0x0421, 0x0623, "option", "0", "0", 2, NULL, "Nokia CS-17 (modem mode)"},	//
-	{0x0421, 0x0627, "option", "0", "0", 2, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
+	{0x0421, 0x060c, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "Nokia CS-10 (cdrom mode)"},	//
+	{0x0421, 0x060e, "option", "0", "0", 2 | 0x10, NULL, "Nokia CS-10 (modem mode)"},	//
+	{0x0421, 0x0610, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "Nokia CS-15 (cdrom mode)"},	//
+	{0x0421, 0x0612, "option", "0", "0", 2 | 0x10, NULL, "Nokia CS-15/CS-18 (modem mode)"},	//
+	{0x0421, 0x0622, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
+	{0x0421, 0x0623, "option", "0", "0", 2 | 0x10, NULL, "Nokia CS-17 (modem mode)"},	//
+	{0x0421, 0x0627, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
+	{0x106c, 0x3718, "option", "0", "0", 2 | 0x10, &modeswitch_nokia, "PANTECH UML290 4G Modem"},	//
 
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
@@ -494,7 +493,7 @@ char *get3GControlDevice(void)
 	int needreset = 1;
 	char *ttsdevice = "/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
-	int gpio1,gpio2;
+	int gpio1, gpio2;
 	int select = atoi(nvram_safe_get("wan_select"));
 	switch (select) {
 	case 1:
@@ -516,8 +515,8 @@ char *get3GControlDevice(void)
 	}
 
 	if (gpio1 == atoi(nvram_safe_get("gpio26"))
-		&& gpio2 == atoi(nvram_safe_get("gpio27")) )
-		needreset=0;
+	    && gpio2 == atoi(nvram_safe_get("gpio27")))
+		needreset = 0;
 
 	if (gpio1) {
 		nvram_set("gpio26", "1");
@@ -554,23 +553,27 @@ char *get3GControlDevice(void)
 				    (devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
 				else {
-					if (devicelist[devicecount].vendor ==
-					    0x0421)
+					if (devicelist[devicecount].
+					    modeswitch & 0x10 == 0x10) {
+						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%s",
 							devicelist
-							[devicecount].datadevice);
-					else
+							[devicecount].
+							datadevice);
+					} else
 						sprintf(data, "/dev/usb/tts/%s",
 							devicelist
-							[devicecount].datadevice);
+							[devicecount].
+							datadevice);
 
 				}
 				nvram_set("3gdata", data);
 			}
-			if (devicelist[devicecount].modeswitch) {
+			if (devicelist[devicecount].modeswitch & 0xf) {
 				char variant[32];
 				sprintf(variant, "%d",
-					devicelist[devicecount].modeswitch);
+					devicelist[devicecount].
+					modeswitch & 0xf);
 				nvram_set("3gnmvariant", variant);
 			}
 			//start custom setup, if defined
@@ -578,22 +581,23 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].
-								    controldevice);
-				}
+								    [devicecount].controldevice);
+			}
 			static char control[32];
 			if (!strcmp
 			    (devicelist[devicecount].controldevice, "hso"))
 				sprintf(control, "hso");
 			else {
-				if (devicelist[devicecount].vendor == 0x0421)
+				if (devicelist[devicecount].modeswitch & 0x10 ==
+				    0x10) {
+					insmod("cdc-acm");
 					sprintf(control, "/dev/ttyACM%s",
-						devicelist[devicecount].
-						controldevice);
-				else
+						devicelist
+						[devicecount].controldevice);
+				} else
 					sprintf(control, "/dev/usb/tts/%s",
-						devicelist[devicecount].
-						controldevice);
+						devicelist
+						[devicecount].controldevice);
 			}
 			return control;
 		}
