@@ -206,6 +206,8 @@ static u8 mac1[6];
 #endif  
 
 #ifdef CONFIG_WNDR3700
+static u8 mac0[6];
+static u8 mac1[6];
 #define WNDR3700_MAC_LOCATION_0			0x1fff0000
 #define WNDR3700_MAC_LOCATION_1			0x1fff000c
 #endif 
