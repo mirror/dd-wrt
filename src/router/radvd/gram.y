@@ -400,6 +400,10 @@ prefixdef	: prefixhead optional_prefixplist ';'
 				{
 					struct ifaddrs *ifap = 0, *ifa = 0;
 					struct AdvPrefix *next = prefix->next;
+#ifndef HAVE_IFADDRS_H
+				flog(LOG_ERR, "invalid all-zeros prefix in %s, line %d", conf_file, num_lines);
+				ABORT;
+#else
 
 					if (prefix->PrefixLen != 64) {
 						flog(LOG_ERR, "Only /64 is allowed with Base6Interface.  %s:%d", conf_file, num_lines);
@@ -450,6 +454,7 @@ prefixdef	: prefixhead optional_prefixplist ';'
 
 					if (ifap)
 						freeifaddrs(ifap);
+#endif
 				}
 			}
 			$$ = prefix;
