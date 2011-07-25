@@ -194,11 +194,25 @@ static void ar71xx_pci_fixup(struct pci_dev *dev)
 	pci_write_config_word(dev, PCI_COMMAND, t);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar71xx_pci_fixup);
- 
+
+#ifdef CONFIG_DIR825
+#define STARTSCAN 0x1f660000
+#define DIR825B1_MAC_LOCATION_0			0x2ffa81b8
+#define DIR825B1_MAC_LOCATION_1			0x2ffa8370
+static u8 mac0[6];
+static u8 mac1[6];
+#else  
+#define STARTSCAN 0x1f000000
+#endif  
+
+#ifdef CONFIG_WNDR3700
+#define WNDR3700_MAC_LOCATION_0			0x1fff0000
+#define WNDR3700_MAC_LOCATION_1			0x1fff000c
+#endif 
 static void *getCalData(int slot)
 {
 u8 *base;
-for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
+for (base=(u8 *) KSEG1ADDR(STARTSCAN);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
     u32 *cal = (u32 *)base;
     if (*cal==0xa55a0000 || *cal==0x5aa50000) { //protection bit is always zero on inflash devices, so we can use for match it
 	if (slot) {
@@ -211,6 +225,7 @@ for (base=(u8 *) KSEG1ADDR(0x1f000000);base<KSEG1ADDR (0x1fff0000);base+=0x1000)
 return NULL;
 }
 static struct ath9k_platform_data wmac_data[2];
+
 
 static void ath_pci_fixup(struct pci_dev *dev)
 {
@@ -228,6 +243,17 @@ static void ath_pci_fixup(struct pci_dev *dev)
 		cal_data = (u16 *)getCalData(0);
 		if (cal_data) {
 		memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
+		#ifdef CONFIG_DIR825
+		memcpy(mac0,KSEG1ADDR(DIR825B1_MAC_LOCATION_0),6);
+		wmac_data[0].macaddr = mac0;
+		#endif
+		#ifdef CONFIG_WNDR3700
+		memcpy(mac0,KSEG1ADDR(WNDR3700_MAC_LOCATION_0),6);
+		wmac_data[0].macaddr = mac0;
+		/* 2.4 GHz uses the first fixed antenna group (1, 0, 1, 0) */
+		wmac_data[0].gpio_mask = (0xf << 6);
+		wmac_data[0].gpio_val = (0xa << 6);
+		#endif
 		dev->dev.platform_data = &wmac_data[0];
 		}
 		break;
@@ -235,6 +261,17 @@ static void ath_pci_fixup(struct pci_dev *dev)
 		cal_data = (u16 *)getCalData(1);
 		if (cal_data) {
 		memcpy(wmac_data[1].eeprom_data,cal_data,sizeof(wmac_data[1].eeprom_data));
+		#ifdef CONFIG_DIR825
+		memcpy(mac1,KSEG1ADDR(DIR825B1_MAC_LOCATION_1),6);
+		wmac_data[1].macaddr = mac1;
+		#endif
+		#ifdef CONFIG_WNDR3700
+		memcpy(mac1,KSEG1ADDR(WNDR3700_MAC_LOCATION_1),6);
+		wmac_data[1].macaddr = mac1;
+		/* 5 GHz uses the second fixed antenna group (0, 1, 1, 0) */
+		wmac_data[1].gpio_mask = (0xf << 6);
+		wmac_data[1].gpio_val = (0x6 << 6);
+		#endif
 		dev->dev.platform_data = &wmac_data[1];
 		}
 		break;
