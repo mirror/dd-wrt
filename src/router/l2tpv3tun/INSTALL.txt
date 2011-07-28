@@ -1,0 +1,18 @@
+Installation instructions for l2tpv3tun
+=======================================
+
+1. Install libnl
+   Fedora:	yum install libnl
+   Debian:	apt-get install libnl1
+
+2. Build l2tpv3tun
+   make 
+   make install
+
+The kernel must be 2.6.35 or later and have the new L2TPv3 drivers
+with the following options enabled.
+
+ CONFIG_L2TP
+ CONFIG_L2TP_V3
+ CONFIG_L2TP_IP
+ CONFIG_L2TP_ETH
