@@ -222,6 +222,7 @@ include rules/hotplug2.mk
 include rules/dsl_cpe_control.mk
 include rules/atm.mk
 include rules/aiccu.mk
+include rules/l2tpv3tun.mk
 include rules/rt3062.mk
 # Generic rules
 #
