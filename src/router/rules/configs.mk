@@ -58,6 +58,7 @@ obj-$(CONFIG_FROTTLE) += frottle
 obj-$(CONFIG_WOL) += wol
 obj-$(CONFIG_SNMP) += snmp
 obj-$(CONFIG_RADVD) += radvd aiccu
+obj-$(CONFIG_L2TPV3TUN) += l2tpv3tun
 obj-$(CONFIG_SPUTNIK_APD) += sputnik
 
 #obj-$(CONFIG_ADM6996) += adm6996
