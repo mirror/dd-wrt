@@ -73,9 +73,10 @@ void start_hotplug_usb(void)
 
 	if (class == 0) {
 		if (!(interface = getenv("INTERFACE")))
-			return;
+		    goto skip;
 		sscanf(interface, "%d/%d/%d", &class, &subclass, &protocol);
 	}
+	skip:;
 
 	/* 
 	 * If a new USB device is added and it is of storage class 
