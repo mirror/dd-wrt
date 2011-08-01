@@ -86,6 +86,13 @@ void start_hotplug_usb(void)
 		if (!strcmp(action, "remove"))
 			usb_unmount(NULL);
 	}
+	
+	if (class == 0 && subclass == 0) {
+		if (!strcmp(action, "add"))
+			usb_add_ufd(NULL);
+		if (!strcmp(action, "remove"))
+			usb_unmount(NULL);
+	}
 
 	return;
 }
