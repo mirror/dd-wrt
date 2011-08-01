@@ -204,6 +204,10 @@ static int usb_process_path(char *path, char *fs, char *target)
 	if (!strcmp(fs, "xfs")) {
 		insmod("xfs");
 	}
+	if (!strcmp(fs, "udf")) {
+		insmod("crc-itu-t");
+		insmod("udf");
+	}
 	if (target)
 		sysprintf("mkdir -p /tmp/mnt/%s", target);
 	else
@@ -274,6 +278,8 @@ int usb_add_ufd(char *devpath)
 			    || (fp = fopen("/dev/sda", "rb")) != NULL
 			    || (fp = fopen("/dev/sdb", "rb")) != NULL
 			    || (fp = fopen("/dev/sdc", "rb")) != NULL
+			    || (fp = fopen("/dev/sr0", "rb")) != NULL
+			    || (fp = fopen("/dev/sr1", "rb")) != NULL
 			    || (fp = fopen("/dev/sdd", "rb")) != NULL) {
 				break;
 			} else {
@@ -320,7 +326,7 @@ int usb_add_ufd(char *devpath)
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			if (new && (strncmp(entry->d_name, "sd", 2)))
+			if (new && (strncmp(entry->d_name, "sd", 2))  && (strncmp(entry->d_name, "sr", 2)))
 				continue;
 			mounted[i]=1;
 
@@ -374,6 +380,9 @@ int usb_add_ufd(char *devpath)
 							break;
 						} else if (strstr(line, "XFS")) {
 							fs = "xfs";
+							break;
+						} else if (strstr(line, "UDF")) {
+							fs = "udf";
 							break;
 						} else if (strstr(line, "Ext3")) {
 #ifdef HAVE_USB_ADVANCED
