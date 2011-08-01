@@ -2198,6 +2198,9 @@ void start_drivers(void)
 			insmod("scsi_wait_scan");
 			cprintf("loading sd_mod\n");
 			insmod("sd_mod");
+			cprintf("loading cdrom drivers\n");
+			insmod("cdrom");
+			insmod("sr_mod");
 			cprintf("loading usb-storage\n");
 			insmod("usb-storage");
 		}
@@ -2221,6 +2224,8 @@ void start_drivers(void)
 		eval("rmmod", "usblp");
 		eval("rmmod", "printer");
 		eval("rmmod", "usb-storage");
+		eval("rmmod", "sr_mod");
+		eval("rmmod", "cdrom");
 		eval("rmmod", "sd_mod");
 		eval("rmmod", "scsi_wait_scan");
 		eval("rmmod", "scsi_mod");
