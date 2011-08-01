@@ -251,6 +251,8 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
+	
+	getRouterBrand(); // restore some default settings
 
 	if (!nvram_get("ath0_rxantenna"))
 		nvram_set("ath0_rxantenna", "3");
