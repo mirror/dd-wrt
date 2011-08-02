@@ -38,7 +38,7 @@
 int main(int argc, char **argv)
 {
 	if (argc >= 2) {
-		sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
+//		sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
 			start_service("hotplug_net");
 			return 0;
