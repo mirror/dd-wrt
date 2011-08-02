@@ -553,8 +553,8 @@ char *get3GControlDevice(void)
 				    (devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
 				else {
-					if (devicelist[devicecount].
-					    modeswitch & 0x10 == 0x10) {
+					if ((devicelist[devicecount].
+					    modeswitch & 0x10) == 0x10) {
 						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%s",
 							devicelist
@@ -588,7 +588,7 @@ char *get3GControlDevice(void)
 			    (devicelist[devicecount].controldevice, "hso"))
 				sprintf(control, "hso");
 			else {
-				if (devicelist[devicecount].modeswitch & 0x10 ==
+				if ((devicelist[devicecount].modeswitch & 0x10) ==
 				    0x10) {
 					insmod("cdc-acm");
 					sprintf(control, "/dev/ttyACM%s",
