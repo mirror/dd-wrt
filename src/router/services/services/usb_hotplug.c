@@ -125,6 +125,15 @@ void start_hotplug_block(void)
 		fclose(fp);	// skip partitions
 		return;
 	}
+	sprintf(sysdev, "/sys%s/dev", devpath);
+	fp = fopen(sysdev, "rb");
+	if (fp) {
+		int major;
+		int minor;
+		fscanf(fp, "%d:%d", &major, &minor);
+		sysprintf("mknod %s b %d %d\n", devname, major, minor);
+		fclose(fp);	// skip partitions
+	}
 //      sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
 	if (!strcmp(action, "add"))
 		usb_add_ufd(devname);
@@ -288,7 +297,7 @@ int usb_add_ufd(char *devpath)
 	      retry:;
 		fp = fopen(devpath, "rb");
 		if (!fp && rcnt < 10) {
-//                  sysprintf("echo not available, try again %s >> /tmp/hotplugs",devpath);
+//                      sysprintf("echo not available, try again %s >> /tmp/hotplugs",devpath);
 			sleep(1);
 			rcnt++;
 			goto retry;
