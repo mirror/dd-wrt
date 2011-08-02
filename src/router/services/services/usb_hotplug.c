@@ -68,15 +68,17 @@ void start_hotplug_usb(void)
 
 	if (!(action = getenv("ACTION")) || !(device = getenv("TYPE")))
 		return;
+	//sysprintf("echo action %s type %s >> /tmp/hotplugs", action, device);
 
 	sscanf(device, "%d/%d/%d", &class, &subclass, &protocol);
 
 	if (class == 0) {
 		if (!(interface = getenv("INTERFACE")))
-		    goto skip;
+			goto skip;
 		sscanf(interface, "%d/%d/%d", &class, &subclass, &protocol);
 	}
-	skip:;
+      skip:;
+	//sysprintf("echo action %d type %d >> /tmp/hotplugs", class, subclass);
 
 	/* 
 	 * If a new USB device is added and it is of storage class 
@@ -87,7 +89,7 @@ void start_hotplug_usb(void)
 		if (!strcmp(action, "remove"))
 			usb_unmount(NULL);
 	}
-	
+
 	if (class == 0 && subclass == 0) {
 		if (!strcmp(action, "add"))
 			usb_add_ufd(NULL);
@@ -111,6 +113,8 @@ void start_hotplug_block(void)
 	if (!(devpath = getenv("DEVPATH")))
 		return;
 	char *slash = strrchr(devpath, '/');
+	//sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
+	//        devpath);
 
 	char devname[64];
 	sprintf(devname, "/dev/%s", slash + 1);
@@ -121,6 +125,7 @@ void start_hotplug_block(void)
 		fclose(fp);	// skip partitions
 		return;
 	}
+//      sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
 	if (!strcmp(action, "add"))
 		usb_add_ufd(devname);
 	if (!strcmp(action, "remove"))
@@ -276,10 +281,19 @@ int usb_add_ufd(char *devpath)
 	struct stat tmp_stat;
 	int i, found = 0;
 	int mounted[16];
-	memset(mounted,sizeof(mounted),0);
+	memset(mounted, sizeof(mounted), 0);
 
 	if (devpath) {
+		int rcnt = 0;
+	      retry:;
 		fp = fopen(devpath, "rb");
+		if (!fp && rcnt < 10) {
+//                  sysprintf("echo not available, try again %s >> /tmp/hotplugs",devpath);
+			sleep(1);
+			rcnt++;
+			goto retry;
+		}
+//              sysprintf("echo open devname %s fp %d>> /tmp/hotplugs", devpath,fp);
 	} else {
 		for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 			if ((dir = opendir("/dev/discs")) != NULL
@@ -301,20 +315,22 @@ int usb_add_ufd(char *devpath)
 		new = 1;
 		if (dir)
 			closedir(dir);
-		dir = opendir("/dev");
 	}
-	if (dir == NULL)	// i is 16 here and not 15 if timeout happens
-		return EINVAL;
 
 	/* 
 	 * Scan through entries in the directories 
 	 */
 
 	for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs/discs%d is created
+		if (new) {
+			dir = opendir("/dev");
+		}
+		if (dir == NULL)	// i is 16 here and not 15 if timeout happens
+			return EINVAL;
 		while ((entry = readdir(dir)) != NULL) {
 			int is_mounted = 0;
 			if (mounted[i])
-			    continue;
+				continue;
 
 #ifdef HAVE_X86
 			char check[32];
@@ -329,14 +345,21 @@ int usb_add_ufd(char *devpath)
 			if (devpath) {
 				char devname[64];
 				sprintf(devname, "/dev/%s", entry->d_name);
+//                              sysprintf
+//                                  ("echo cmp devname %s >> /tmp/hotplugs"
+//                                   ,entry->d_name);
 				if (strcmp(devname, devpath))
 					continue;	// skip all non matching devices
+//                              sysprintf
+//                                  ("echo take devname %s >> /tmp/hotplugs",
+//                                   devname);
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			if (new && (strncmp(entry->d_name, "sd", 2))  && (strncmp(entry->d_name, "sr", 2)))
+			if (new && (strncmp(entry->d_name, "sd", 2))
+			    && (strncmp(entry->d_name, "sr", 2)))
 				continue;
-			mounted[i]=1;
+			mounted[i] = 1;
 
 			/* 
 			 * Files created when the UFD is inserted are not removed when
@@ -455,11 +478,11 @@ int usb_add_ufd(char *devpath)
 					}
 				} else {
 					if (new)
-					sprintf(targetname, "disc%s",
-						entry->d_name);
+						sprintf(targetname, "disc%s",
+							entry->d_name);
 					else
-					sprintf(targetname, "%s",
-						entry->d_name);
+						sprintf(targetname, "%s",
+							entry->d_name);
 					if (usb_process_path
 					    (path, fs, targetname) == 0)
 						is_mounted = 1;
@@ -501,9 +524,10 @@ int usb_add_ufd(char *devpath)
 //                              return 0;
 //                      }
 		}
-		if (i<4)
-		    sleep(1);
+		if (i < 4)
+			sleep(1);
+		if (new)
+			closedir(dir);
 	}
-	closedir(dir);
 	return 0;
 }
