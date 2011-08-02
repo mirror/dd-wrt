@@ -12,6 +12,7 @@
 #define _ASM_CHECKSUM_H
 
 #include <linux/in6.h>
+#include <linux/unaligned/packed_struct.h>
 
 #include <asm/uaccess.h>
 
@@ -104,26 +105,30 @@ static inline __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 	const unsigned int *stop = word + ihl;
 	unsigned int csum;
 	int carry;
+	unsigned int w;
 
-	csum = word[0];
-	csum += word[1];
-	carry = (csum < word[1]);
+	csum = __get_unaligned_cpu32(word++);
+
+	w = __get_unaligned_cpu32(word++);
+	csum += w;
+	carry = (csum < w);
 	csum += carry;
 
-	csum += word[2];
-	carry = (csum < word[2]);
+	w = __get_unaligned_cpu32(word++);
+	csum += w;
+	carry = (csum < w);
 	csum += carry;
 
-	csum += word[3];
-	carry = (csum < word[3]);
+	w = __get_unaligned_cpu32(word++);
+	csum += w;
+	carry = (csum < w);
 	csum += carry;
 
-	word += 4;
 	do {
-		csum += *word;
-		carry = (csum < *word);
+		w = __get_unaligned_cpu32(word++);
+		csum += w;
+		carry = (csum < w);
 		csum += carry;
-		word++;
 	} while (word != stop);
 
 	return csum_fold(csum);
