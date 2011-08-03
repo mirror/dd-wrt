@@ -553,18 +553,16 @@ char *get3GControlDevice(void)
 				    (devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
 				else {
-					if ((devicelist[devicecount].
-					    modeswitch & 0x10) == 0x10) {
+					if ((devicelist[devicecount].modeswitch
+					     & 0x10)) {
 						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%s",
 							devicelist
-							[devicecount].
-							datadevice);
+							[devicecount].datadevice);
 					} else
 						sprintf(data, "/dev/usb/tts/%s",
 							devicelist
-							[devicecount].
-							datadevice);
+							[devicecount].datadevice);
 
 				}
 				nvram_set("3gdata", data);
@@ -572,8 +570,8 @@ char *get3GControlDevice(void)
 			if (devicelist[devicecount].modeswitch & 0xf) {
 				char variant[32];
 				sprintf(variant, "%d",
-					devicelist[devicecount].
-					modeswitch & 0xf);
+					devicelist[devicecount].modeswitch &
+					0xf);
 				nvram_set("3gnmvariant", variant);
 			}
 			//start custom setup, if defined
@@ -581,15 +579,15 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].controldevice);
+								    [devicecount].
+								    controldevice);
 			}
 			static char control[32];
 			if (!strcmp
 			    (devicelist[devicecount].controldevice, "hso"))
 				sprintf(control, "hso");
 			else {
-				if ((devicelist[devicecount].modeswitch & 0x10) ==
-				    0x10) {
+				if ((devicelist[devicecount].modeswitch & 0x10)) {
 					insmod("cdc-acm");
 					sprintf(control, "/dev/ttyACM%s",
 						devicelist
