@@ -230,6 +230,9 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("crc-itu-t");
 		insmod("udf");
 	}
+	if (!strcmp(fs, "iso9660")) {
+		insmod("isofs");
+	}
 	if (target)
 		sysprintf("mkdir -p /tmp/mnt/%s", target);
 	else
@@ -423,6 +426,9 @@ int usb_add_ufd(char *devpath)
 							break;
 						} else if (strstr(line, "UDF")) {
 							fs = "udf";
+							break;
+						} else if (strstr(line, "ISO9660")) {
+							fs = "iso9660";
 							break;
 						} else if (strstr(line, "Ext3")) {
 #ifdef HAVE_USB_ADVANCED
