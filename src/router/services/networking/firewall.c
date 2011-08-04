@@ -2141,7 +2141,7 @@ static void filter_input(void)
 #endif
 
 #ifdef HAVE_MILKFISH
-	if (strlen(wanface))
+	if (strlen(wanface) && nvram_match("milkfish_enabled", "1"))
 		save2file("-A INPUT -p udp -i %s --dport 5060 -j ACCEPT\n",
 			  wanface);
 	// save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
