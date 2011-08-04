@@ -2643,7 +2643,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_EOP
 	{"oet1_en", "0", 0},
 	{"oet1_rem", "192.168.90.1", 0},
-	{"oet1_ip", "1.2.3.4", 0},
+	{"oet1_ipaddr=1.2.3.4", "1.2.3.4", 0},
 	{"oet1_netmask", "255.255.255.0", 0},
 	{"oet1_id", "1", 0},
 	{"oet1_comp", "0", 0},
@@ -2655,7 +2655,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet2_en", "0", 0},
 	{"oet2_rem", "192.168.90.1", 0},
-	{"oet2_ip", "1.2.3.4", 0},
+	{"oet2_ipaddr", "1.2.3.4", 0},
 	{"oet2_netmask", "255.255.255.0", 0},
 	{"oet2_id", "1", 0},
 	{"oet2_comp", "0", 0},
@@ -2667,7 +2667,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet3_en", "0", 0},
 	{"oet3_rem", "192.168.90.1", 0},
-	{"oet3_ip", "1.2.3.4", 0},
+	{"oet3_ipaddr", "1.2.3.4", 0},
 	{"oet3_netmask", "255.255.255.0", 0},
 	{"oet3_id", "1", 0},
 	{"oet3_comp", "0", 0},
@@ -2679,7 +2679,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet4_en", "0", 0},
 	{"oet4_rem", "192.168.90.1", 0},
-	{"oet4_ip", "1.2.3.4", 0},
+	{"oet4_ipaddr", "1.2.3.4", 0},
 	{"oet4_netmask", "255.255.255.0", 0},
 	{"oet4_id", "1", 0},
 	{"oet4_comp", "0", 0},
@@ -2691,7 +2691,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet5_en", "0", 0},
 	{"oet5_rem", "192.168.90.1", 0},
-	{"oet5_ip", "1.2.3.4", 0},
+	{"oet5_ipaddr", "1.2.3.4", 0},
 	{"oet5_netmask", "255.255.255.0", 0},
 	{"oet5_id", "1", 0},
 	{"oet5_comp", "0", 0},
@@ -2703,7 +2703,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet6_en", "0", 0},
 	{"oet6_rem", "192.168.90.1", 0},
-	{"oet6_ip", "1.2.3.4", 0},
+	{"oet6_ipaddr", "1.2.3.4", 0},
 	{"oet6_netmask", "255.255.255.0", 0},
 	{"oet6_id", "1", 0},
 	{"oet6_comp", "0", 0},
@@ -2715,7 +2715,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet7_en", "0", 0},
 	{"oet7_rem", "192.168.90.1", 0},
-	{"oet7_ip", "1.2.3.4", 0},
+	{"oet7_ipaddr", "1.2.3.4", 0},
 	{"oet7_netmask", "255.255.255.0", 0},
 	{"oet7_id", "1", 0},
 	{"oet7_comp", "0", 0},
@@ -2727,7 +2727,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet8_en", "0", 0},
 	{"oet8_rem", "192.168.90.1", 0},
-	{"oet8_ip", "1.2.3.4", 0},
+	{"oet8_ipaddr", "1.2.3.4", 0},
 	{"oet8_netmask", "255.255.255.0", 0},
 	{"oet8_id", "1", 0},
 	{"oet8_comp", "0", 0},
@@ -2739,7 +2739,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet9_en", "0", 0},
 	{"oet9_rem", "192.168.90.1", 0},
-	{"oet9_ip", "1.2.3.4", 0},
+	{"oet9_ipaddr", "1.2.3.4", 0},
 	{"oet9_netmask", "255.255.255.0", 0},
 	{"oet9_id", "1", 0},
 	{"oet9_comp", "0", 0},
@@ -2751,7 +2751,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 	{"oet10_en", "0", 0},
 	{"oet10_rem", "192.168.90.1", 0},
-	{"oet10_ip", "1.2.3.4", 0},
+	{"oet10_ipaddr", "1.2.3.4", 0},
 	{"oet10_netmask", "255.255.255.0", 0},
 	{"oet10_id", "1", 0},
 	{"oet10_comp", "0", 0},
