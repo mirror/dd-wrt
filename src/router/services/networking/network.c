@@ -758,8 +758,8 @@ void reset_hwaddr(char *ifname)
 	}
 	close(s);
 	// lock mac address on bridge if possible
-	eval("ifconfig",ifname,"hw","ether",nvram_safe_get("lan_hwaddr"));
-	
+	eval("ifconfig", ifname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
+
 }
 
 #ifdef HAVE_3G
@@ -1913,8 +1913,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2104,7 +2104,6 @@ void start_lan(void)
 			eval("ifconfig", staticlan, "0.0.0.0", "down");
 #endif
 	close(s);
-
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
@@ -2896,11 +2895,14 @@ void start_wan(int status)
 
 		if (wlifname && !strcmp(wan_ifname, wlifname))
 			eval("wl", "-i", wan_ifname, "down");
+		else
+			eval("ifconfig", wan_ifname, "down");
+
 		ioctl(s, SIOCSIFHWADDR, &ifr);
 #else
 		if (!wlifname) {
+			eval("ifconfig", wan_ifname, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
-//          eval("ifconfig",wan_ifname,"promisc"); // set wan to promisc, since we now have usually different mac addresses on vlans
 		}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -4036,11 +4038,10 @@ void start_wan_done(char *wan_ifname)
 	cprintf("trigger gpio");
 
 	led_control(LED_CONNECTED, LED_OFF);
-	if (!nvram_match("wan_proto", "disabled"))
-	    {
+	if (!nvram_match("wan_proto", "disabled")) {
 		led_control(LED_CONNECTED, LED_ON);
 		dd_syslog(LOG_INFO, "WAN is up. IP: %s\n", get_wan_ipaddr());
-	    }
+	}
 
 	float sys_uptime;
 	FILE *up;
