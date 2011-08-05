@@ -151,6 +151,9 @@ endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS_EXTRA += -DHAVE_KAID
 endif
+ifeq ($(CONFIG_USBIP),y)
+CFLAGS_EXTRA += -DHAVE_USBIP
+endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS_EXTRA += -DHAVE_OLED
 endif

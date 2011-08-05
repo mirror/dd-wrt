@@ -2210,6 +2210,15 @@ void start_drivers(void)
 			insmod("printer");
 			insmod("usblp");
 		}
+
+#ifdef HAVE_USBIP
+		if (nvram_match("usb_ip", "1")) {
+			cprintf("loading usb over ip drivers\n");
+			insmod("usbip_common_mod");
+			insmod("usbip");
+			eval("usbipd","-D");
+		}
+#endif
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 //   Mounting is done by hotplug event!         
 //              if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
