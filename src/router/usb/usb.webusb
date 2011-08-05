@@ -17,6 +17,14 @@
 			<input class="spaceradio" type="radio" value="1" name="usb_storage" <% nvram_checked("usb_storage","1"); %> onclick="show_layer_ext(this, 'idusbstor', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvram_checked("usb_storage","0"); %> onclick="show_layer_ext(this, 'idusbstor', false)" /><% tran("share.disable"); %>
 		</div>
+<% ifndef("USBIP", "<!--"); %>
+		<div class="setting">
+			<div class="label"><% tran("usb.usb_ip"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="usb_ip" <% nvram_checked("usb_ip","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="usb_ip" <% nvram_checked("usb_ip","0"); %> /><% tran("share.disable"); %>
+		</div>
+<% ifndef("USBIP", "-->"); %>
+
 			<div id="idusbstor">
 				<div class="setting">					
 					<div class="label"><% tran("usb.usb_automnt"); %></div>
