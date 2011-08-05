@@ -81,9 +81,14 @@ ip_packet_match(const struct iphdr *ip,
 
 #define FWINV(bool, invflg) ((bool) ^ !!(ipinfo->invflags & (invflg)))
 
-	if (FWINV((ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
+	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
+		return true;
+
+	if (FWINV(ipinfo->smsk.s_addr &&
+		  (ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
 		  IPT_INV_SRCIP) ||
-	    FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
+	    FWINV(ipinfo->smsk.s_addr &&
+		  (ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
 		  IPT_INV_DSTIP)) {
 		dprintf("Source or dest mismatch.\n");
 
@@ -132,6 +137,26 @@ ip_packet_match(const struct iphdr *ip,
 	}
 
 	return true;
+}
+
+static void
+ip_checkdefault(struct ipt_ip *ip)
+{
+	static const char iface_mask[IFNAMSIZ] = {};
+
+	if (ip->invflags || ip->flags & IPT_F_FRAG)
+		return;
+
+	if (memcmp(ip->iniface_mask, iface_mask, IFNAMSIZ) != 0)
+		return;
+
+	if (memcmp(ip->outiface_mask, iface_mask, IFNAMSIZ) != 0)
+		return;
+
+	if (ip->proto)
+		return;
+
+	ip->flags |= IPT_F_NO_DEF_MATCH;
 }
 
 static bool
@@ -284,6 +309,33 @@ struct ipt_entry *ipt_next_entry(const struct ipt_entry *entry)
 	return (void *)entry + entry->next_offset;
 }
 
+static bool
+ipt_handle_default_rule(struct ipt_entry *e, unsigned int *verdict)
+{
+	struct xt_entry_target *t;
+	struct xt_standard_target *st;
+
+	if (e->target_offset != sizeof(struct ipt_entry))
+		return false;
+
+	if (!(e->ip.flags & IPT_F_NO_DEF_MATCH))
+		return false;
+
+	t = ipt_get_target(e);
+	if (t->u.kernel.target->target)
+		return false;
+
+	st = (struct xt_standard_target *) t;
+	if (st->verdict == XT_RETURN)
+		return false;
+
+	if (st->verdict >= 0)
+		return false;
+
+	*verdict = (unsigned)(-st->verdict) - 1;
+	return true;
+}
+
 /* Returns one of the generic firewall policies, like NF_ACCEPT. */
 unsigned int
 ipt_do_table(struct sk_buff *skb,
@@ -308,6 +360,25 @@ ipt_do_table(struct sk_buff *skb,
 	ip = ip_hdr(skb);
 	indev = in ? in->name : nulldevname;
 	outdev = out ? out->name : nulldevname;
+
+	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
+	local_bh_disable();
+	addend = xt_write_recseq_begin();
+	private = table->private;
+	cpu        = smp_processor_id();
+	table_base = private->entries[cpu];
+	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
+	stackptr   = per_cpu_ptr(private->stackptr, cpu);
+	origptr    = *stackptr;
+
+	e = get_entry(table_base, private->hook_entry[hook]);
+	if (ipt_handle_default_rule(e, &verdict)) {
+		ADD_COUNTER(e->counters, skb->len, 1);
+		xt_write_recseq_end(addend);
+		local_bh_enable();
+		return verdict;
+	}
+
 	/* We handle fragments by dealing with the first fragment as
 	 * if it was a normal packet.  All other fragments are treated
 	 * normally, except that they will NEVER match rules that ask
@@ -321,18 +392,6 @@ ipt_do_table(struct sk_buff *skb,
 	acpar.out     = out;
 	acpar.family  = NFPROTO_IPV4;
 	acpar.hooknum = hook;
-
-	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
-	local_bh_disable();
-	addend = xt_write_recseq_begin();
-	private = table->private;
-	cpu        = smp_processor_id();
-	table_base = private->entries[cpu];
-	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
-	stackptr   = per_cpu_ptr(private->stackptr, cpu);
-	origptr    = *stackptr;
-
-	e = get_entry(table_base, private->hook_entry[hook]);
 
 	pr_debug("Entering %s(hook %u); sp at %u (UF %p)\n",
 		 table->name, hook, origptr,
@@ -561,7 +620,7 @@ static void cleanup_match(struct xt_entry_match *m, struct net *net)
 }
 
 static int
-check_entry(const struct ipt_entry *e, const char *name)
+check_entry(struct ipt_entry *e, const char *name)
 {
 	const struct xt_entry_target *t;
 
@@ -569,6 +628,8 @@ check_entry(const struct ipt_entry *e, const char *name)
 		duprintf("ip check failed %p %s.\n", e, name);
 		return -EINVAL;
 	}
+
+	ip_checkdefault(&e->ip);
 
 	if (e->target_offset + sizeof(struct xt_entry_target) >
 	    e->next_offset)
@@ -931,6 +992,7 @@ copy_entries_to_user(unsigned int total_size,
 	const struct xt_table_info *private = table->private;
 	int ret = 0;
 	const void *loc_cpu_entry;
+	u8 flags;
 
 	counters = alloc_counters(table);
 	if (IS_ERR(counters))
@@ -958,6 +1020,14 @@ copy_entries_to_user(unsigned int total_size,
 				 + offsetof(struct ipt_entry, counters),
 				 &counters[num],
 				 sizeof(counters[num])) != 0) {
+			ret = -EFAULT;
+			goto free_counters;
+		}
+
+		flags = e->ip.flags & IPT_F_MASK;
+		if (copy_to_user(userptr + off
+				 + offsetof(struct ipt_entry, ip.flags),
+				 &flags, sizeof(flags)) != 0) {
 			ret = -EFAULT;
 			goto free_counters;
 		}
