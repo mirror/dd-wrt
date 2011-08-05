@@ -121,10 +121,8 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 			mac80211_info->noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
 		}
 	}
-	return 0;
 
 out:
-	nlmsg_free(msg);
 	return NL_SKIP;
 }
 
@@ -183,6 +181,7 @@ int mac80211_get_coverageclass(char *interface) {
 		// printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
 	}
 	// printf ("%d\n", coverage);
+	nlmsg_free(msg);
 	return coverage;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -393,6 +392,7 @@ char *mac80211_get_caps(char *interface) {
 			);
 	}
 	printf("%s\n",capstring);
+	nlmsg_free(msg);
 	return capstring;
 out:
 nla_put_failure:
@@ -442,6 +442,7 @@ int mac80211_check_band(char *interface,int checkband) {
 				bandfound=1;
 		}
 	}
+	nlmsg_free(msg);
 	return bandfound;
 out:
 nla_put_failure:
@@ -551,6 +552,7 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 	list[count].freq=-1;
 	if (rd) 
 		free(rd);
+	nlmsg_free(msg);
 	return list;
 out:
 nla_put_failure:
@@ -693,6 +695,7 @@ int mac80211_get_maxrate(char *interface) {
 		}
 	}
 	printf("maxrate: %d\n",maxrate);
+	nlmsg_free(msg);
 	return maxrate;
 out:
 nla_put_failure:
@@ -727,6 +730,7 @@ int mac80211_get_maxmcs(char *interface) {
 		maxmcs=get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
 	}
 	printf("maxmcs: %d\n",maxmcs);
+	nlmsg_free(msg);
 	return maxmcs;
 out:
 	return 0;
