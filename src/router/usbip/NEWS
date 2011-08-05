@@ -1,0 +1,123 @@
+# vim:tw=78:ts=4:expandtab:ai:sw=4
+# $Id: NEWS 86 2009-01-13 18:04:21Z hirofuchi $
+
+usbip-0.1.7
+    - Remove: temporarily contributed auto-import-daemon code
+    - Add: info about linux-staging
+
+usbip-0.1.6
+    - Fix: inet_shutdown()'s argment bug
+    - Add: support 2.6.24 and 2.6.25
+    - Add: compatibility code after 2.6.16 
+    - Add: the basic header cleanup for future other operating system
+           support
+    - Add: some code that might fix reset issues (after 2.6.24 only)
+    - Add: some code about power managment in 2.6.24
+    - Add: some code about tracking URBs in 2.6.24
+    - Fix: connection termination caused by isochrounous urbs with no
+           isochronous descriptor
+
+usbip-0.1.5
+    - Fix: "make dist" works.
+    - Cleanup: use autoreconf instead.
+    - Cleanup: change vhci_driver as a global value in libusbip
+    - Cleanup: change stub_driver as a global value in libusbip
+    - Cleanup: trim unused spaces.
+    - Add: version info in configure.ac
+    - Fix: auto detection of "glib-2.0 >= 2.6.0"
+    - Add: mailing list information in README
+    - Cleanup: use daemon(3), instead.
+    - Add: usb.ids 
+    - setsockopt in userland
+    - Add: 2.6.20 support?
+    - Fix: use spin_lock_init() instead of SPIN_...
+    - Add: auto export of devices
+    - Remove: bandwidth entry from a pdu
+    - Fix: make common code as a separate module
+        * Load usbip_common_mod.ko first!
+
+usbip-0.1.4
+    - Fix: compile error & warning fix for 2.6.19
+    - Fix: locking in vhci_urb_dequeue
+    - Fix: small cleanup
+    - Fix: command line option of usbip
+    - Fix: include config.h
+
+usbip-0.1.3
+    - usage has been changed a lot. please read READMEs again!
+    - Add: busid matching for usbip.ko
+    - Add: a tool for binding drivers.
+    - Fix: spinlock recursion in stub_rx
+    - Add: comments for unlinking
+    - Fix: cleanup of clear_halt, set_interface code
+    - Add: endian conversion support
+    - Fix: use -1 to shutdown for usbip.ko
+    - Fix: cleanup vhci_sysfs (remove ip address showing from kernel)
+    - Fix: amd64 issues (null pointer reference, etc.)
+    - Fix: also now Xen ok?
+
+usbip-0.1.2
+    - Use automake/autoconf for utilities.
+    - Make libusbip. But, its API is not matured.
+
+usbip-0.1.1
+    - Fix memory leak of urb->setup in stub_tx.
+    - Add CMD_UNLINK/RET_UNLINK for usb_unlink_urb().
+    - Fix "unknown pdu" caused by buffer overwrite from mutli threads.
+    - Fix USB speed emulation in VHCI root hub. 
+    - Rename driver names.
+        - vhci.ko -> vhci-hcd.ko
+        - stub.ko -> usbip.ko
+    - Fix counter operations to be atomic.
+    - Support 2.6.15 and drop 2.6.14.
+
+usbip-utils-0.0.1
+    - Write userland utilities by C.
+
+usbip-0.1-2.6.14
+    - Support 2.6.14.
+
+usbip-0.1-2.6.13
+    - Catch up to 2.6.13.
+    - Drop support for older versions of kernel.
+    - A lot of bug fixes and improvements.
+
+usbip-20050709
+    - Catch up to 2.6.12.
+    - Drop support for older versions of kernel.
+
+usbip-20050611
+    - More cleanup.
+    - Small bug fix.
+    - Add contribution code.
+
+usbip-20050128-0
+    - vhci.ko & stub.ko: The event handler daemon is added.
+    - vhci.ko & stub.ko: More cleanups have been done.
+    - stub.ko: sysfs is now used instead of procfs.
+    - vhci.ko: Multiple ports are emulated.
+
+usbip-20041218-0
+    - PDU format is changed to be more simple.
+    - The Stub driver supports multiple clients.
+    - stub_{rx,tx} threads are stopped correctly.
+    - The Stub driver resets a used device.
+
+usbip-20041207-0
+    - minor fix
+        a lot of cleanup
+        support Low/Full speed mode (manual config only)
+        stub.ko
+            purge stub_list_priv.c
+            suport unlink message
+
+usbip-20041203-0
+    - minor fix
+        remove unusable codes
+        rename some functions and structures to be understandable
+
+usbip-20041201-0
+    - fix critical typos in README
+
+usbip-20041130-1
+    - initial release.

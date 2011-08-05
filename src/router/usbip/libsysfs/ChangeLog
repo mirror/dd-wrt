@@ -1,0 +1,481 @@
+18/07/2006 - Mohan Kumar M <mohan@in.ibm.com>
+		* Add subsystem in sysfs_device
+
+07/07/2006 - Mohan Kumar M <mohan@in.ibm.com>
+		* Add C++ compilation suport
+
+28/06/2006 - Mohan Kumar M <mohan@in.ibm.com>
+		* Add sysfs_open_device_tree()
+
+17/04/2006 - Mohan Kumar M <mohan@in.ibm.com>
+		* Add sysfs_open_link_list()
+
+12/07/2005 - Mohan Kumar M <mohan@in.ibm.com>
+		* Minor code cleanup in sysfs_class.c to conform to C99
+
+12/06/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Ship systool.1
+		* Update README CREDITS, AUTHORS, libsysfs.txt, systool.1
+
+12/05/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Add support for class:class_device representation
+
+11/28/2005 - Kay Sievers <Kay.Sievers@vrfy.org>
+		* Remove stale brute force code to determine device's
+			bus and device's driver
+
+11/28/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Add sysfs_get_driver_module()
+		* Remove sysfs_open_module_attr()
+
+11/25/2005 - Mohan Kumar <mohan@in.ibm.com>
+		* Documentation update
+		* Add missing function prototype in libsysfs.h
+
+11/25/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Other autotool updates
+
+11/25/2005 - Martin Schlemmer <azarah@nosferatu.za.org>
+		* KLIBC support for sysfsutils
+
+11/14/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* More class_devices now have a "parent"
+
+11/14/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Handle nested classes transparently
+
+10/31/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Check-in Mohan's dlist custom sorter + dlist memory leak fix
+
+10/31/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Check-in Dan's detach_state removal patch for 2_0_0 tag
+
+05/05/2005 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Moved sysfs_dir.c to sysfs_attr.c
+
+05/05/2005 - Dominik Brodowski <linux@dominikbrodowski.net>
+		* The check which tests whether the value to be written
+			into a sysfs attribute is already there should only
+			trigger if the length of both strings is the same.
+
+05/03/2005 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Added modules support to systool
+		* Renamed get_attributes_list() function to
+			get_dev_attributes_list() function
+		* Added new get_attributes_list() function that takes
+			a dlist and a path to directory of attributes
+		* Modified sysfs_module to grab parameters and sections
+			using new get_attributes_list() function
+		* Removed device children support from systool
+
+05/03/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+	 	* Implemented /sys/modules support
+
+04/11/2005 - Kay Sievers <kay.sievers@vrfy.org>
+		* Update for building with klibc and udev, plus other small
+			fixes.
+
+03/06/2005 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* sysfs_directory, sysfs_link baggage is gone
+		* When an attribute is requested, _only_ that attribute
+			is "stat"ed and read
+		* APIs have been audited and only the relevent ones
+			have been retained.
+		* Fixed sysfs mount point to /sys
+
+04/06/2005 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Merged tag sysfsutils-1_3_0 with main trunk
+		* Created new sysfsutils-2_0_0 branch
+
+01/17/2005 - Kay Sievers <kay.sievers@vrfy.org>
+		* Fix dlist.c so it compiles with older gcc versions
+
+12/16/2004 - Kay Sievers <kay.sievers@vrfy.org>
+		* Fix sysfs_get_classdev_attr() for case when the
+			sysfs_directory vanishes from beneath us
+
+11/18/2004 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Check "driver" link under the device dir before
+			taking the "brute-force" route
+
+10/03/2004 - Arun Bhanu <arun@codemovers.org>
+		* docs - fix wrong return type in sysfs_read_dir_subdirs
+
+09/13/2004 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Patch systool to print error if sysfs
+			is not mounted
+
+09/10/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Changed version number in package files
+			to 1.2.0
+
+08/31/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Fix sysfs_open_link() failure path
+
+08/16/2004 - Eric J Bohm <bohm@gate.csgeeks.org>
+		* Custom sorting dlists patch
+
+08/16/2004 - Brian King <brking@us.ibm.com>
+		* Fix sysfs write only attributes bug
+
+07/16/2004 - Daniel Stekloff <dsteklof@us.ibm.com>
+	* Merged version 1.2.0 into main tree
+	* Tagged new branch - version 1.2.0
+
+03/31/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* More updates to docs/libsysfs.txt
+		* Updated NEWS and CREDITS files
+
+03/19/2004 - Dr. Hannes Reinecke <hare@suse.de>
+		* Fixed SEGV in dlist.c
+
+03/15/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Updated docs/libsysfs.txt for release 1.1.0
+
+03/12/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Modified string functions to use wrappers to take care
+			of potential buffer overflow issues
+
+03/08/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Remove "unsigned" declarations for prototype
+			compatibility per Lev Makhlis' suggestion
+
+03/08/2004 - Lev Makhlis <mlev@despammed.com>
+		* Changes for C++ compatibility
+
+03/08/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Changed version number in configure.ac to 1.1.0
+
+03/08/2004 - Martin Schlemmer <azarah@gentoo.org>
+		* Don't check for installed libsysfs while building
+			sysfsutils from the source package
+
+02/24/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added validation code for test defines
+		* Updated the README, libsyfs.txt and NEWS files
+		* Provided descriptive comments for the libsysfs.conf file
+
+02/19/2004 - Brian King <brking@us.ibm.com>
+		* Fixed memory leak in sysfs_read_attribute()
+
+02/19/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Set errnos correctly in the library
+		* Provided libsysfs.conf - the config file for the testsuite
+			and a script to create a test.h on the fly
+		* Added numerous testsuite updates
+
+02/13/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Patched code to fill sysfs_device->driver_name correctly
+
+02/12/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added Nitin Vashisth to AUTHORS
+		* Removed lsbus and its manpage
+		* Updated systool for better display
+		* Updated manpage for systool
+
+02/10/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Updated docs/libsysfs.txt
+
+02/09/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added testsuite in "test" directory
+		* Updated autotool scripts to build testsuite
+		* Changed version number to 1.0.0
+
+02/09/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Fixed miscellaneous issues in sysfs_device/driver.c sources
+
+02/04/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added list sorting support
+		* Exported get_device_bus()
+		* Removed sysfs_open_bus_device()
+		* Other cosmetic changes
+
+01/07/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Modified parameter order for "open" functions to make them
+			consistent
+
+01/07/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added additional CFLAGS for building lib and apps
+
+01/07/2004 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added numerous "refresh" functions
+		* Added funtion to remove trailing slash from paths
+		* Fixed sysfs_get_link() to handle different possibilities
+
+01/07/2004 - Martin Hicks <mort@bork.org>
+		* Fixed sysfs_get_class_device()
+
+12/26/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Removed unneeded functions
+		* Added APIs to get directory links, subdirs and attribs
+
+12/17/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Updated docs/libsysfs.txt for 0.4.0
+		* Made some miscallaneous changes in library
+
+12/16/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Added sysfs_get_device_parent() function
+
+12/15/2003 - Martin Pitt <mpitt@debian.org>
+		* Added initial version of manpages for lsbus and systool
+
+12/15/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Updated autotools for 0.4.0 - shared library will now
+			have version-info
+		* Fixed miscllaneous issues with library files
+		* Fixed names.c, systool.c and lsbus.c to free all allocated
+			memory
+
+12/12/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Miscllaneous changes - added new function definitions,
+			general code cleanup
+
+12/12/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Changed function prototypes for sysfs_open_* calls that
+			accept absolute path to have _path suffix
+		* Changed function prototypes that take the device/driver
+			bus/class and name to be normal sysfs_open_xxx()
+		* Changed sysfs_close_cls_dev() to be a static function
+
+12/12/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added function to open a driver knowing its name
+			and the bus it is on
+
+12/10/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added more optimization changes
+		* Added code to add and refresh attributes dynamically
+
+12/08/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Patched code for directory/attribute read optimization
+
+12/05/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Remove unused argument from sysfs_get_device_by_id()
+
+12/02/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Simplified routine to get bus a device is on
+
+12/02/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Patched code to use already available functions for
+			optimization.
+
+12/02/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Corrected sysfs_get_directory_attribute()
+
+12/01/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Removed usage of _DIR #defines
+		* Added functionality to obtain parent of a class device
+		* Added get_classdev_parent.c in test/. This file is not
+			built by default as of now
+
+11/27/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Updated library and utilities with the optimization patch
+
+11/24/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Removed getpagesize() usage (Dan)
+		* Added patch to postpone reading of attributes until
+			absolutely necessary
+		* Cleaned up sysfs_driver.c
+		* Changed stale sysutils references to sysfsutils
+
+11/04/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added code to consider "block" part of "class"
+		* Fixed systool to show driver details (if available)
+			when listing the class device
+		* Added bus to struct sysfs_device
+		* Modified "read_attr" functions for device/driver/classdev
+			to return a sysfs_attribute
+		* Modified test functions, added a test function to
+			demonstrate usage of "write" attribute functions
+		* Updated libsysfs.txt to reflect latest updates to the
+			library
+
+10/27/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Fixed bug in sysfs_get_name_from_path()
+		* Added code to check if SYSFS_PATH environment variable
+			is set
+		* Modified sysfs_get_link()
+		* Added "classname" to struct sysfs_class_device
+
+10/22/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Removed "block" subsystem support
+
+10/20/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added code to install header files (from include dir)
+			to /usr/local/include/ directory
+		* Added "read_attr" functions for device, driver and
+			class; simplified "write_attr" handling
+		* Made sysfs_get_directory_attribute() recurse subdirs
+		* Fixed potential bugs in sysfs_dir.c
+
+10/17/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Added "path" to device in sysfs_device structure
+
+10/15/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Fixed bug in sysfs_block.c (initrd)
+		* Fixed possible bug in systool.c
+
+10/15/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Changed get_devices_list to get_bus_devices_list
+		* Fixed usage messages in tests
+
+10/15/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added support for building shared library
+
+10/14/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Changed version number to 0.3.0
+		* Cleanups to remove warnings
+		* Remove perror usage
+
+10/10/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Modified the way systool displayed block devices
+
+10/09/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Updated docs/libsysfs.txt
+		* Fixed warning in cmd/names.c
+		* Modified "write" attribute functions to accept
+			length to write as a parameter
+		* Added functions sysfs_get_driver_attr(),
+			sysfs_get_blockdev_attr(), sysfs_get_classdev_attr()
+
+10/07/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Miscellaneous changes - renaming of some
+			functions, etc
+
+10/06/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Pruned "test" routines
+		* Corrected pci name decode in cmds
+
+10/01/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added number of utility routines in "test" directory
+		* Adapted PCI name decode support from Martin Mares'
+			pciutils
+
+09/30/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Modified routines to find device/driver on a bus
+		* Made some miscellaneous changes to use #defines
+			instead of hardcoding values
+
+09/29/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added "block" subsystem support
+		* Modified systool to use sysfs_root_device
+
+09/24/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added "write" attribute functions specific to device,
+			driver and class device.
+		* Removed generic write function
+			sysfs_change_attribue_value()
+		* Changed sysfs_open_device_by_name() to
+			sysfs_change_device_by_id()
+
+09/23/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Fixed "write" attribute functions.
+		* Removed sysfs_write_attribute_value()
+		* Added sysfs_change_attribute_value() - a wrapper for
+			sysfs_write_attribute()
+		* Simplified sysfs_get_device_attr()
+
+09/16/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Patch sysfs_close_driver() so as not to segfault when
+			during dlist shifting.
+
+09/15/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added sysfs_open_device_by_name() to open a device
+			given the device name
+		* Modified "name" field of sysfs_device to contain same
+			data as the "bus_id" field
+
+09/11/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added sysfs_open_driver_by_name() to open a driver and
+			its device, given the driver name
+
+09/09/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added sysfs_find_device_class() to find what class a
+			device is on
+
+09/05/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Add sysfs_open_bus_devices_list()
+		* Simplify sysfs_find_device_bus_name()
+
+09/04/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Simplified sysfs_open_bus_device
+
+08/29/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Removed "bus_name" from struct sysfs_device
+		* Updated NEWS, TODO and docs/libsysfs.txt files
+
+08/28/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added more utility functions to sysfsutils
+		* Modified commands to make use of the new functions
+		* Updated libsysfs.txt to reflect new structure modifications
+		* Added sysfs_open_subsystem_list() to get subsystem specific
+			lists from the library
+		* Added sysfs_close_list() - a generic list deletion routine
+
+08/28/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Added sysfs_root_device struct for modelling /sys/devices
+			path.
+
+08/28/2003 - Guo Min <min.guo@intel.com>
+		* Added "write" attribute support to sysfsutils
+
+08/28/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Changed sysfs_driver to contain a dlist of devices
+
+08/28/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Removed sysfs_driver reference from sysfs_device struct
+		* Fixed a few bugs in the commands.
+
+08/19/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Integrated Eric Bohm's dlist patch
+		* Integrated Eric Bohm's follow on patch adding dlist_for_each
+		* Changed chars to unsigned chars
+		* Reworked structures to be neater and to contain
+			sysfs_directories as private structures
+		* Added more functions for retrieving data like attributes
+		* Added some find functions
+
+08/06/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Patch to correct dprintf usage
+
+08/01/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added autoconf configuration support
+		* Modified IBM Copyright information
+
+08/01/2003 - Released version 0.1.1
+
+07/24/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Changed sysutils name to sysfsutils
+
+07/23/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Changed sysfs_dlink to sysfs_link, got rid of
+			sysfs_directory link for target char path.
+
+07/18/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Changed default systool and lsbus to just print
+			device info. Device info already prints drivers.
+
+07/10/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+	     Ananth Mavinakayanahalli <ananth@in.ibm.com>
+		* Added printing binary attribute support to systool
+			and lsbus
+
+07/09/2003 - Lev Makhlis <mlev@despammed.com>
+		* Libsysfs code cleanup including:
+			- code simplification
+			- read-only strings
+			- C++ compatibility
+	   - Daniel Stekloff <dsteklof@us.ibm.com>
+		* Removed "-t" option
+
+07/08/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+	* Created NEWS file listing version history
+
+07/07/2003 - Daniel Stekloff <dsteklof@us.ibm.com>
+	* Merged version 0.1.0 into main tree
+	* Tagged new branch - version 0.1.1
+
+07/07/2003 - Ananth Mavinakayanahalli <ananth@in.ibm.com>
+	* Added parent reference to sysfs_device
+	* Added device reference to sysfs_driver
+
+06/30/2003 - Initial Version Released

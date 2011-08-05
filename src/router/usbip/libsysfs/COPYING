@@ -1,0 +1,11 @@
+
+The commands and utilities under the "test" directory are licensed under the 
+GNU General Public License (GPL) Version 2, June 1991. The full text of the 
+GPL is located at:
+
+sysfsutils/cmd/GPL
+
+The sysfs library is licensed under the GNU Lesser Public License (LGPL)
+Version 2.1, February 1999. The full text of the LGPL is located at:
+
+sysfsutils/lib/LGPL

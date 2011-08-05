@@ -1,0 +1,42 @@
+#! /bin/sh
+
+rm -f test.h
+
+conf_file=./libsysfs.conf
+
+. $conf_file
+
+echo "#define val_dir_path		\"$VALID_DIRECTORY_PATH\"" > test.h
+echo "#define val_link_path		\"$VALID_LINK_PATH\"" >> test.h
+echo "#define val_file_path		\"$VALID_FILE_PATH\"" >> test.h
+echo "#define val_subdir_link_name	\"$VALID_SUBDIR_LINK_NAME\"" >> test.h
+echo "#define val_subdir_name		\"$VALID_SUBDIR_NAME\"" >> test.h
+echo "#define val_subsys		\"$VALID_SUBSYSTEM\"" >> test.h
+echo "#define val_bus_name		\"$VALID_BUS_NAME\"" >> test.h
+echo "#define val_bus_attr		\"$VALID_BUS_ATTR\"" >> test.h
+echo "#define val_root_name		\"$VALID_ROOT_NAME\"" >> test.h
+echo "#define val_root_dev_path		\"$VALID_ROOT_PATH\"" >> test.h
+echo "#define val_bus_id		\"$VALID_BUS_ID\"" >> test.h
+echo "#define val_dev_path		\"$VALID_DEVICE_PATH\"" >> test.h
+echo "#define val_dev_attr		\"$VALID_DEVICE_ATTR\"" >> test.h
+echo "#define val_class			\"$VALID_CLASS\"" >> test.h
+echo "#define val_class_dev		\"$VALID_CLASS_DEVICE\"" >> test.h
+echo "#define val_class_dev_path	\"$VALID_CLASS_DEVICE_PATH\"" >> test.h
+echo "#define val_class_dev_attr	\"$VALID_CLASS_DEV_ATTR\"" >> test.h
+echo "#define val_block_class_dev_path	\"$VALID_BLOCK_DEV_PATH\"" >> test.h
+echo "#define val_drv_name		\"$VALID_DRIVER\"" >> test.h
+echo "#define val_drv_path		\"$VALID_DRIVER_PATH\"" >> test.h
+echo "#define val_drv_bus_name		\"$VALID_DRIVER_BUS\"" >> test.h
+echo "#define val_drv_dev_name		\"$VALID_DRIVER_DEVICE\"" >> test.h
+echo "#define val_drv_attr_name         \"$VALID_DRIVER_ATTR\"" >> test.h
+echo "#define val_drv1_name		\"$VALID_DRIVER1\"" >> test.h
+echo "#define val_drv1_path		\"$VALID_DRIVER1_PATH\"" >> test.h
+echo "#define val_drv1_bus_name		\"$VALID_DRIVER1_BUS\"" >> test.h
+echo "#define val_write_attr_path	\"$VALID_WRITE_ATTR_PATH\"" >> test.h
+echo "#define val_mod_path		\"$VALID_MODULE_PATH\"" >> test.h
+echo "#define val_mod_name		\"$VALID_MODULE\"" >> test.h
+echo "#define val_mod_attr_name 	\"$VALID_MODULE_ATTRIBUTE\"" >> test.h
+echo "#define val_mod_param		\"$VALID_MODULE_PARAM\"" >> test.h
+echo "#define val_mod_section		\"$VALID_MODULE_SECTION\"" >> test.h
+
+
