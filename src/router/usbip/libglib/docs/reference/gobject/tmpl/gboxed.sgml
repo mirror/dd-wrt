@@ -1,0 +1,139 @@
+<!-- ##### SECTION Title ##### -->
+Boxed Types
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### USER_FUNCTION GBoxedCopyFunc ##### -->
+<para>
+
+</para>
+
+@boxed: 
+@Returns: 
+
+
+<!-- ##### USER_FUNCTION GBoxedFreeFunc ##### -->
+<para>
+
+</para>
+
+@boxed: 
+
+
+<!-- ##### FUNCTION g_boxed_copy ##### -->
+<para>
+
+</para>
+
+@boxed_type: 
+@src_boxed: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_boxed_free ##### -->
+<para>
+
+</para>
+
+@boxed_type: 
+@boxed: 
+
+
+<!-- ##### FUNCTION g_boxed_type_register_static ##### -->
+<para>
+
+</para>
+
+@name: 
+@boxed_copy: 
+@boxed_free: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_pointer_type_register_static ##### -->
+<para>
+
+</para>
+
+@name: 
+@Returns: 
+
+
+<!-- ##### MACRO G_TYPE_HASH_TABLE ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_DATE ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_GSTRING ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_STRV ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_REGEX ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_ARRAY ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_BYTE_ARRAY ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### MACRO G_TYPE_PTR_ARRAY ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### TYPEDEF GStrv ##### -->
+<para>
+
+</para>
+
+

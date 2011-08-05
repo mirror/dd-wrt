@@ -1,0 +1,11 @@
+Library:
+--------
+- Rework debugging error messages and look into better logging on error.
+
+Commands:
+---------
+- Add topology tree view.
+
+Documentation:
+--------------
+- Update/improve documentation.

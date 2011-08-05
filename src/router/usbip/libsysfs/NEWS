@@ -1,0 +1,66 @@
+Version History:
+---------------
+
+ 1.2.0 - Released September 13, 2004
+	* Added dlist_sort_custom() (Thanks to Eric Bohm)
+	* Some minor bug fixes.
+
+ 1.1.0 - Released March 31, 2004
+	* Added changes for C++ compatibility (Thanks to Lev Makhlis)
+	* Patched configure.ac not to check for installed headers
+	* Fixed SEGV in dlist.c (Thanks to Dr. Hannes Reinecke)
+	* Added security audits in library.
+
+ 1.0.0 - Released February 24, 2004
+	* Libsysfs now ships with a comprehensive testsuite.
+	* List elements are now maintained in sorted order.
+	* Updated systool for better output and removed lsbus 
+		from the package.
+	* Populated sysfs_device->drivername field correctly.
+		If device does not have a driver, field reflects 
+		"unknown".
+	* Added additional CFLAGS while building the package.
+
+ 0.4.0 - Released December 18, 2003
+	* Lots of optimizations. Structure elements that are dlists
+		or structs themselves are not populated by default.
+	* Provided APIs for applications to obtain dlists
+		and structure elements.
+	* Modified API prototypes to be more meaningful.
+	* Included manpages for systool and lsbus.
+	* Added support functions to obtain "parent" of
+		sysfs_device and sysfs_class_device.
+	* Modified Makefile.am to make use of Libtool's versioning
+		facility.
+
+ 0.3.0 - Released November 6, 2003
+	* Added support to build shared library
+	* Added patch to consider "block" as a class
+	* Corrected "write" attribute functions
+	* Added more "find/open" functions
+	* Added pci name decode support
+	* Added "test" functions to demonstrate API usage
+	* Lots of other updates resulting from user feedback
+
+ 0.2.0 - Released August 29, 2003
+	* Added autoconf configuration support.
+	* Added Eric J Bohm's dlist patch.
+	* Changed the library structures and routines to use dlists.
+	* Added Guo Min's sysfs_write_attribute patch
+	* Added sysfs_root_device for use with /sys/devices subsystem
+	* Added lots of "find"/utility functions.
+	* Modified commands to make use of new API.
+	* Added functions to get lists of specific subsystems.
+ 
+ 0.1.1 - Released August 1, 2003
+	* Created NEWS file for Version History.
+	* Added device reference in sysfs_driver.
+	* Added parent reference in sysfs_device.
+	* Applied Lev Makhlis' code cleanup patch.
+	* Removed "-t" option.
+	* Added binary attribute support.
+	* Changed sysfs_dlink to generic sysfs_link and
+		removed sysfs_read_dlinks function.
+	* Changed sysutils to sysfsutils
+
+ 0.1.0 - Released June 30, 2003
