@@ -59,11 +59,12 @@ static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *lis
 static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 
 static void __attribute__((constructor)) mac80211_init(void) {
-	unl_genl_init(&unl, "nl80211");
-} 
-
-
-
+	static bool bunl;
+	if (!bunl) {
+		unl_genl_init(&unl, "nl80211");
+		bunl=1;
+	}
+}
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = { .type = NLA_U32 },
