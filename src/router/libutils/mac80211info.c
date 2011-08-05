@@ -362,7 +362,7 @@ char *mac80211_get_caps(char *interface) {
 	struct nlattr *caps, *bands, *band;
 	int rem;
 	u16 cap;
-	char *capstring="";
+	char *capstring=NULL;
 	int wdev,phy;
 	wdev = if_nametoindex(interface);
 	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
@@ -391,13 +391,12 @@ char *mac80211_get_caps(char *interface) {
 			,(cap & HT_CAP_INFO_DSSS_CCK40MHZ ? "[DSSS_CCK-40]" : "")
 			);
 	}
-	printf("%s\n",capstring);
-	nlmsg_free(msg);
-	return capstring;
 out:
 nla_put_failure:
 	nlmsg_free(msg);
-	return "";
+	if (!capstring) 
+		return strdup("");
+	return capstring;
 	}
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
