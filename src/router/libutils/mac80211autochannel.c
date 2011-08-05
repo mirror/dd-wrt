@@ -29,6 +29,11 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
+static struct unl unl;
+static void __attribute__((constructor)) mac80211_init(void) {
+	unl_genl_init(&unl, "nl80211");
+} 
+
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
@@ -324,7 +329,6 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive) {
 	struct mac80211_ac *acs = NULL;
 	struct frequency *f,*ftmp;
-	struct unl unl;
 	int verbose = 0;
 	int i, ch;
 	struct sort_data sdata;
@@ -334,7 +338,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 
 	if (scans=0) scans=2;
 
-	unl_genl_init(&unl, "nl80211");
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
 		fprintf(stderr, "mac80211autochannel Interface not found\n");
@@ -391,7 +394,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 
 out:
-	unl_free(&unl);
 	return acs;
 }
 
