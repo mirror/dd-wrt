@@ -478,7 +478,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char akm[16];
 	char fstr[32];
 	FILE *fp = NULL;
-	char *ssid,*nssid;
+	char *ssid;
+	char nssid[16];
 	static char maxassoc[32];
 	char ifname[10];
 	int isrepeater = 0;
