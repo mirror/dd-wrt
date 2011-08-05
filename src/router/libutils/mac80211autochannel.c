@@ -29,10 +29,15 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
+
 static struct unl unl;
 static void __attribute__((constructor)) mac80211_init(void) {
-	unl_genl_init(&unl, "nl80211");
-} 
+	static bool bunl;
+	if (!bunl) {
+		unl_genl_init(&unl, "nl80211");
+		bunl=1;
+	}
+}
 
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
