@@ -147,6 +147,9 @@ endif
 ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
+ifeq ($(CONFIG_USBIP),y)
+CFLAGS += -DHAVE_USBIP
+endif
 ifeq ($(CONFIG_ESR6650),y)
   CFLAGS += -DHAVE_ESR6650
 endif
