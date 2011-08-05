@@ -296,7 +296,7 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	idx = (f->freq - 2412) / 5;
 
 	/* strongly discourage the use of channels other than 1,6,11 */
-	if (f->freq >= 2412 && idx < ARRAY_SIZE(bias_2g))
+	if (f->freq >= 2412 && f->freq <=2484 && idx < ARRAY_SIZE(bias_2g))
 		c = (c * bias_2g[idx]) / 100;
 
 	/* subtract 2 * the number of db that the noise value is over the
@@ -323,7 +323,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 // leave space for enhencements with more cards and already chosen channels...
 struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive) {
 	struct mac80211_ac *acs = NULL;
-	struct frequency *f;
+	struct frequency *f,*ftmp;
 	struct unl unl;
 	int verbose = 0;
 	int i, ch;
@@ -383,6 +383,11 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		acs->freq=f->freq;
 		acs->quality=f->quality;
 		acs->noise=f->noise;
+	}
+
+	list_for_each_entry_safe(f,ftmp, &frequencies, list) {
+		list_del(&f->list);
+		free(f);
 	}
 
 out:
