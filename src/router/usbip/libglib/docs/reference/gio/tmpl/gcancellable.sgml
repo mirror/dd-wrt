@@ -1,0 +1,147 @@
+<!-- ##### SECTION Title ##### -->
+GCancellable
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### STRUCT GCancellable ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SIGNAL GCancellable::cancelled ##### -->
+<para>
+
+</para>
+
+@gcancellable: the object which received the signal.
+
+<!-- ##### FUNCTION g_cancellable_new ##### -->
+<para>
+
+</para>
+
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_is_cancelled ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_set_error_if_cancelled ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_get_fd ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_make_pollfd ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+@pollfd: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_release_fd ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+
+
+<!-- ##### FUNCTION g_cancellable_get_current ##### -->
+<para>
+
+</para>
+
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_pop_current ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+
+
+<!-- ##### FUNCTION g_cancellable_push_current ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+
+
+<!-- ##### FUNCTION g_cancellable_reset ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+
+
+<!-- ##### FUNCTION g_cancellable_connect ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+@callback: 
+@data: 
+@data_destroy_func: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_cancellable_disconnect ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+@handler_id: 
+
+
+<!-- ##### FUNCTION g_cancellable_cancel ##### -->
+<para>
+
+</para>
+
+@cancellable: 
+
+
