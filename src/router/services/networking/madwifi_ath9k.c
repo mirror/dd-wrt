@@ -274,6 +274,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	int channel = 0;
 	static char nfreq[16];
 	int i = 0;
+	char *caps;
 
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
@@ -415,7 +416,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			channel = ieee80211_mhz2ieee(freq);
 		}
 	}
-	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, mac80211_get_caps(prefix));
+	caps=mac80211_get_caps(prefix);
+	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, caps);
+	free(caps);
 	if (chan)
 		free(chan);
 	if (channel < 36)
