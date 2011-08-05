@@ -8,7 +8,7 @@ usbip-configure:
 	cd usbip/gettext && ./configure --enable-static --disable-shared --disable-openmp --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
 	make -C usbip/gettext clean all
 
-	cd usbip/libglib && ./configure --disable-shared --enable-static --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc -I$(TOP)/usbip/gettext/gettext-runtime/intl  -I$(TOP)/usbip/libiconv/include -L$(TOP)/usbip/libiconv/lib/.libs -L$(TOP)/usbip/gettext/gettext-runtime/intl/.libs" --with-libiconv=gnu
+	cd usbip/libglib && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc -I$(TOP)/usbip/gettext/gettext-runtime/intl  -I$(TOP)/usbip/libiconv/include -L$(TOP)/usbip/libiconv/lib/.libs -L$(TOP)/usbip/gettext/gettext-runtime/intl/.libs" --with-libiconv=gnu
 	make -C usbip/libglib clean all
 	cd usbip/libsysfs && ./configure --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
 	make -C usbip/libsysfs clean all
@@ -30,4 +30,5 @@ usbip-install:
 	install -D usbip/cmd/.libs/usbipd $(INSTALLDIR)/usbip/usr/sbin/usbipd
 	install -D usbip/lib/.libs/libusbip.so.0.0.1 $(INSTALLDIR)/usbip/usr/lib/libusbip.so
 	install -D usbip/usb.ids $(INSTALLDIR)/usbip/usr/share/hwdata/usb.ids
+	install -D usbip/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/usbip/usr/lib/libglib-2.0.so.0
 
