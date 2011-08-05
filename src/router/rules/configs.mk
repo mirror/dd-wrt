@@ -214,6 +214,7 @@ obj-$(CONFIG_UBOOTENV) += ubootenv
 obj-$(CONFIG_DSL_CPE_CONTROL) += dsl_cpe_control atm
 obj-$(CONFIG_OPENDPI) += opendpi
 obj-$(CONFIG_LLTD) += lltd
+obj-$(CONFIG_USBIP) += usbip
 
 obj-y+=anchorfree
 obj-y+=ttraff
