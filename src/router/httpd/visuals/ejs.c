@@ -587,6 +587,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_ATH9K
 	"HAVE_ATH9K",
 #endif
+#ifdef HAVE_USBIP
+	"USBIP",
+#endif
 	NULL
 };
 
