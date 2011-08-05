@@ -2643,7 +2643,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_EOP
 	{"oet1_en", "0", 0},
 	{"oet1_rem", "192.168.90.1", 0},
-	{"oet1_ipaddr=1.2.3.4", "1.2.3.4", 0},
+	{"oet1_ipaddr", "1.2.3.4", 0},
 	{"oet1_netmask", "255.255.255.0", 0},
 	{"oet1_id", "1", 0},
 	{"oet1_comp", "0", 0},
