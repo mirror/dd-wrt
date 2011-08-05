@@ -475,7 +475,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char akm[16];
 	char fstr[32];
 	FILE *fp = NULL;
-	char *ssid;
+	char *ssid,*nssid;
 	static char maxassoc[32];
 	char ifname[10];
 	int isrepeater = 0;
@@ -552,8 +552,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		else
 		ssid = "ESSID-AOSS";
 	}
-	else
-		ssid = nvram_nget("%s_ssid", ifname);
+	else {
+		sprintf(nssid, "%s_ssid", ifname);
+		ssid = nvram_default_get(nssid, "dd-wrt");
+	}
 
 	fprintf(fp, "ssid=%s\n", ssid);
 	// wep key support
