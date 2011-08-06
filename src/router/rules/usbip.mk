@@ -28,7 +28,7 @@ usbip-install:
 	install -D usbip/cmd/.libs/bind_driver $(INSTALLDIR)/usbip/usr/sbin/bind_driver
 	install -D usbip/cmd/.libs/usbip $(INSTALLDIR)/usbip/usr/sbin/usbip
 	install -D usbip/cmd/.libs/usbipd $(INSTALLDIR)/usbip/usr/sbin/usbipd
-	install -D usbip/lib/.libs/libusbip.so.0.0.1 $(INSTALLDIR)/usbip/usr/lib/libusbip.so
+	install -D usbip/lib/.libs/libusbip.so.0 $(INSTALLDIR)/usbip/usr/lib/libusbip.so.0
 	install -D usbip/usb.ids $(INSTALLDIR)/usbip/usr/share/hwdata/usb.ids
 	install -D usbip/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/usbip/usr/lib/libglib-2.0.so.0
 
