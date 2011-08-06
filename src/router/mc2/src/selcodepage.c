@@ -1,0 +1,171 @@
+/* User interface for charset selection.
+
+   Copyright (C) 2001 Walery Studennikov <despair@sama.ru>
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+
+/** \file selcodepage.c
+ *  \brief Source: user %interface for charset %selection
+ */
+
+#include <config.h>
+
+#ifdef HAVE_CHARSET
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "lib/global.h"
+#include "lib/widget.h"
+#include "lib/charsets.h"
+
+#include "main.h"
+
+#include "selcodepage.h"
+
+/*** global variables ****************************************************************************/
+
+/*** file scope macro definitions ****************************************************************/
+
+#define ENTRY_LEN 30
+
+/*** file scope type declarations ****************************************************************/
+
+/*** file scope variables ************************************************************************/
+
+/*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+
+static unsigned char
+get_hotkey (int n)
+{
+    return (n <= 9) ? '0' + n : 'a' + n - 10;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+/* Return value:
+ *   -2 (SELECT_CHARSET_CANCEL)       : Cancel
+ *   -1 (SELECT_CHARSET_OTHER_8BIT)   : "Other 8 bit"    if seldisplay == TRUE
+ *   -1 (SELECT_CHARSET_NO_TRANSLATE) : "No translation" if seldisplay == FALSE
+ *   >= 0                             : charset number
+ */
+int
+select_charset (int center_y, int center_x, int current_charset, gboolean seldisplay)
+{
+    size_t i;
+    int listbox_result;
+    char buffer[255];
+
+    /* Create listbox */
+    Listbox *listbox = create_listbox_window_centered (center_y, center_x,
+                                                       codepages->len + 1, ENTRY_LEN + 2,
+                                                       _("Choose codepage"),
+                                                       "[Codepages Translation]");
+
+    if (!seldisplay)
+        LISTBOX_APPEND_TEXT (listbox, '-', _("-  < No translation >"), NULL);
+
+    /* insert all the items found */
+    for (i = 0; i < codepages->len; i++)
+    {
+        const char *name = ((codepage_desc *) g_ptr_array_index (codepages, i))->name;
+        g_snprintf (buffer, sizeof (buffer), "%c  %s", get_hotkey (i), name);
+        LISTBOX_APPEND_TEXT (listbox, get_hotkey (i), buffer, NULL);
+    }
+    if (seldisplay)
+    {
+        unsigned char hotkey = get_hotkey (codepages->len);
+        g_snprintf (buffer, sizeof (buffer), "%c  %s", hotkey, _("Other 8 bit"));
+        LISTBOX_APPEND_TEXT (listbox, hotkey, buffer, NULL);
+    }
+
+    /* Select the default entry */
+    i = (seldisplay)
+        ? ((current_charset < 0) ? codepages->len : (size_t) current_charset)
+        : ((size_t) current_charset + 1);
+
+    listbox_select_entry (listbox->list, i);
+
+    listbox_result = run_listbox (listbox);
+
+    if (listbox_result < 0)
+    {
+        /* Cancel dialog */
+        return SELECT_CHARSET_CANCEL;
+    }
+    else
+    {
+        /* some charset has been selected */
+        if (seldisplay)
+        {
+            /* charset list is finished with "Other 8 bit" item */
+            return (listbox_result >= (int) codepages->len)
+                ? SELECT_CHARSET_OTHER_8BIT : listbox_result;
+        }
+        else
+        {
+            /* charset list is began with "-  < No translation >" item */
+            return (listbox_result - 1);
+        }
+    }
+}
+
+
+/* --------------------------------------------------------------------------------------------- */
+/** Set codepage */
+gboolean
+do_set_codepage (int codepage)
+{
+    char *errmsg;
+    gboolean ret;
+
+    source_codepage = codepage;
+    errmsg = init_translation_table (codepage == SELECT_CHARSET_NO_TRANSLATE ?
+                                     display_codepage : source_codepage, display_codepage);
+    ret = errmsg == NULL;
+
+    if (!ret)
+    {
+        message (D_ERROR, MSG_ERROR, "%s", errmsg);
+        g_free (errmsg);
+    }
+
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/** Show menu selecting codepage */
+
+gboolean
+do_select_codepage (void)
+{
+    int r;
+
+    r = select_charset (-1, -1, default_source_codepage, FALSE);
+    if (r == SELECT_CHARSET_CANCEL)
+        return FALSE;
+
+    default_source_codepage = r;
+    return do_set_codepage (default_source_codepage);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+#endif /* HAVE_CHARSET */

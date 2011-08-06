@@ -1,0 +1,69 @@
+#! /bin/sh
+
+# Based on previous version of lslR
+# Modified by Tomas Novak <tnovak@ipex.cz>   April 2000
+#   (to allow spaces in filenames)
+#
+# It's assumed that lslR was generated in C locale.
+LC_ALL=C
+export LC_ALL=C
+
+AWK=@AWK@
+
+mclslRfs_list () {
+case "$1" in
+  *.lzma) MYCAT="lzma -dc";;
+  *.xz)  MYCAT="xz -dc";;
+  *.bz2) MYCAT="bzip2 -dc";;
+  *.gz)  MYCAT="gzip -dc";;
+  *.z)   MYCAT="gzip -dc";;
+  *.Z)   MYCAT="gzip -dc";;
+  *)     MYCAT="cat";;
+esac
+
+$MYCAT "$1" | $AWK '
+BEGIN {
+  dir="";
+  empty=1;
+  rx = "[^ 	]+[ 	]+";
+  # Pattern to match 7 first fields.
+  rx7 = "^" rx rx rx rx rx rx "[^ 	]+[ 	]";
+  # Pattern to match 8 first fields.
+  rx8 = "^" rx rx rx rx rx rx rx "[^ 	]+[ 	]";
+}
+/^total\ [0-9]*$/ { next }
+/^$/ { empty=1; next }
+empty==1 && /:$/ {
+  empty=0
+  if ($0 ~ /^\//) dir=substr($0, 2);
+  else dir=$0;
+  if (dir ~ /\/:$/) sub(/:$/, "", dir);
+  else sub(/:$/, "/", dir);
+  if (dir ~ /^[ 	]/) dir="./"dir;
+  next;
+}
+( NF > 7 ) {
+  empty=0
+  # gensub() is not portable.
+  name=$0
+  i=index($6, "-")
+  if (i) {
+    sub(rx7, "", name)
+    NF = 7
+    $6=substr($6,i+1)"-"substr($6,1,i-1)
+  }
+  else {
+    sub(rx8, "", name)
+    NF = 8
+  }
+  printf "%s %s%s\n", $0, dir, name
+}
+ {
+  empty=0
+}' 
+}
+
+case "$1" in
+  list) mclslRfs_list "$2"; exit 0;;
+esac
+exit 1

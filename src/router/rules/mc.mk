@@ -1,44 +1,32 @@
 export glib_cv_stack_grows=no 
 export glib_cv_uscore=no 
-export ac_cv_path_GLIB_GENMARSHAL=$(STAGING_DIR_HOST)/bin/glib-genmarshal 
+#export ac_cv_path_GLIB_GENMARSHAL=$(STAGING_DIR_HOST)/bin/glib-genmarshal 
 export ac_cv_func_mmap_fixed_mapped=yes 
 export ac_cv_func_posix_getpwuid_r=no
 export ac_cv_func_posix_getgrgid_r=no
-export GLIB_CONFIG=$(TOP)/glib-1.2.10-install/bin/glib-config
-export GLIB_CFLAGS=-I$(TOP)/glib-1.2.10-install/include/glib-1.2
+#export GLIB_CONFIG=$(TOP)/glib-1.2.10-install/bin/glib-config
+export GLIB_CFLAGS=-I$(TOP)/usbip/libglib/glib
 
 mc-configure: ncurses
-#	cd mc/libiconv && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -fPIC" --enable-shared \
-#	--enable-static \
-#	--disable-rpath \
-##	--enable-relocatable
 
-#	cd mc/gettext && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -fPIC" --enable-shared \
-#	--enable-static \
-#	--disable-rpath \
-#	--enable-nls \
-#	--disable-java \
-#	--disable-native-java \
-#	--disable-openmp \
-#	--with-included-gettext \
-#	--without-libintl-prefix \
-#	--without-libexpat-prefix \
-#	--without-emacs
+	cd usbip/libiconv && ./configure --enable-static --disable-shared --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
+	make -C usbip/libiconv clean all
+	rm -f $(TOP)/usbip/libiconv/lib/.libs/*.so*
+	rm -f $(TOP)/usbip/libiconv/lib/.libs/*.la*
+	rm -f $(TOP)/usbip/libiconv/lib/.libs/*la*
 
+	cd usbip/gettext && ./configure --enable-static --disable-shared --disable-openmp --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
+	make -C usbip/gettext clean all
 
+	cd usbip/libglib && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc -I$(TOP)/usbip/gettext/gettext-runtime/intl  -I$(TOP)/usbip/libiconv/include -L$(TOP)/usbip/libiconv/lib/.libs -L$(TOP)/usbip/gettext/gettext-runtime/intl/.libs" --with-libiconv=gnu
+	make -C usbip/libglib clean all
 
-#	cd mc/glib && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -fPIC" --enable-shared \
-#		--enable-static \
-#		--enable-debug=no \
-#		--with-libiconv=gnu \
-#		--disable-selinux \
-#    		--disable-fam \
+	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" --enable-shared \
+		--enable-static \
+		--enable-debug=no 
+	make -C mc2/slang
 
-#	cd mc/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -fPIC" --enable-shared \
-#		--enable-static \
-#		--enable-debug=no \
-
-	cd mc && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -DNEED_PRINTF" LDFLAGS="-L$(TOP)/ncurses/lib -lncurses" \
+	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/usbip/libglib/glib -I$(TOP)/usbip/libglib -I$(TOP)/mc2/slang/src" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -L$(TOP)/usbip/libglib/glib/.libs -lncurses" \
 	--with-included-gettext \
 	--with-ncurses \
 	--without-sco \
@@ -60,8 +48,6 @@ mc-configure: ncurses
 	--without-xview \
 	--disable-glibtest \
 	--prefix=/usr \
-	--with-glib12 \
-	--with-glib-prefix=$(TOP)/glib-1.2.10-install \
 
 #	--without-subshell \
 #	--without-netrc \
@@ -72,11 +58,13 @@ mc-configure: ncurses
 
 
 mc: ncurses
-	$(MAKE) -j 4 -C mc
+	$(MAKE) -j 4 -C mc2
 
 mc-install:
-	if test -e "mc/Makefile"; then $(MAKE) -C mc install DESTDIR=$(INSTALLDIR)/mc; fi
+	install -D usbip/libglib/glib/.libs/libglib-2.0.so.0 $(INSTALLDIR)/mc/usr/lib/libglib-2.0.so.0
+	install -D mc2/slang/src/elf$(ARCH)objs/libslang.so.2 $(INSTALLDIR)/mc/usr/lib/libslang.so.2
+	if test -e "mc2/Makefile"; then $(MAKE) -C mc2 install DESTDIR=$(INSTALLDIR)/mc; fi
 
 
 mc-clean: ncurses
-	if test -e "mc/Makefile"; then $(MAKE) -C mc clean; fi
+	if test -e "mc2/Makefile"; then $(MAKE) -C mc2 clean; fi

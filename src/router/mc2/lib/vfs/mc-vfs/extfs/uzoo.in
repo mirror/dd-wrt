@@ -1,0 +1,65 @@
+#! /bin/sh
+#
+# Zoo file system
+#
+# Source of zoo can be found at
+# ftp://ftp.ibiblio.org/pub/Linux/utils/compress/
+
+ZOO=zoo
+
+# Stupid zoo won't work if the archive name has no .zoo extension, so we
+# have to make a symlink with a "better" name.  Also, zoo can create
+# directories even if printing files to stdout, so it's safer to confine
+# it to a temporary directory.
+mklink ()
+{
+    TMPDIR=`mktemp -d ${MC_TMPDIR:-/tmp}/mctmpdir-uzoo.XXXXXX` || exit 1
+    trap 'cd /; rm -rf "$TMPDIR"' 0 1 2 3 5 13 15
+    ARCHIVE="$TMPDIR/tmp.zoo"
+    ln -sf "$1" "$ARCHIVE"
+    cd "$TMPDIR" || exit 1
+}
+
+mczoofs_list ()
+{
+    mklink "$1"
+    $ZOO lq "$ARCHIVE" | @AWK@ -v uid=$(id -ru)  '
+/^[^\ ]/ { next }
+{
+if (NF < 8)
+    next
+if ($8 ~ /^\^/)
+    $8=substr($8, 2)
+if ($6 > 50)
+    $6=$6 + 1900
+else
+    $6=$6 + 2000
+split($7, a, ":")
+if ($8 ~ /\/$/)
+    printf "drwxr-xr-x   1 %-8d %-8d %8d %s %2d %4d %02d:%02d %s\n", uid, 0, $1, $5, $4, $6, a[1], a[2], $8
+else
+    printf "-rw-r--r--   1 %-8d %-8d %8d %s %2d %4d %02d:%02d %s\n", uid, 0, $1, $5, $4, $6, a[1], a[2], $8
+}' 2>/dev/null
+    exit 0
+}
+
+mczoofs_copyout ()
+{
+    mklink "$1"
+    # zoo only accepts name without directory as file to extract
+    base=`echo "$2" | sed 's,.*/,,'`
+    $ZOO xpq: "$ARCHIVE" "$base" > "$3"
+    cd /
+    exit 0
+}
+
+umask 077
+
+cmd="$1"
+shift
+case "$cmd" in
+  list) mczoofs_list "$@" ;;
+  copyout) mczoofs_copyout "$@" ;;
+  *) exit 1 ;;
+esac
+exit 0

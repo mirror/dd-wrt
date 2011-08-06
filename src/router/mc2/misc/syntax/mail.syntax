@@ -1,0 +1,73 @@
+wholechars abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_01234567890.-
+
+context default
+    spellcheck
+
+context linestart From\s \n\n cyan
+    keyword linestart From: brightgreen
+    keyword linestart From\s brightred
+    keyword <*@*> white
+    keyword whole +@+ white
+    keyword linestart To: brightmagenta
+    keyword linestart Subject: brightred/Orange
+    keyword linestart +: brown
+
+context linestart Return-path:\s \n\n cyan
+    keyword linestart From: brightgreen
+    keyword linestart From\s brightred
+    keyword <*@*> white
+    keyword whole +@+ white
+    keyword linestart To: brightmagenta
+    keyword linestart Subject: brightred/Orange
+    keyword linestart +: brown
+
+context linestart Return-Path:\s \n\n cyan
+    keyword linestart From: brightgreen
+    keyword linestart From\s brightred
+    keyword <*@*> white
+    keyword whole +@+ white
+    keyword linestart To: brightmagenta
+    keyword linestart Subject: brightred/Orange
+    keyword linestart +: brown
+
+context linestart From:\s \n\n cyan
+    keyword linestart From: brightgreen
+    keyword linestart From\s brightred
+    keyword <*@*> white
+    keyword whole +@+ white
+    keyword linestart To: brightmagenta
+    keyword linestart Subject: brightred/Orange
+    keyword linestart +: brown
+
+context linestart Date:\s \n\n cyan
+    keyword linestart From: brightgreen
+    keyword linestart From\s brightred
+    keyword <*@*> white
+    keyword whole +@+ white
+    keyword linestart To: brightmagenta
+    keyword linestart Subject: brightred/Orange
+    keyword linestart +: brown
+
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]>\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]>\[\s\]>\[\s\]> \n brightred
+context linestart >\[\s\]>\[\s\]> \n brightgreen
+context linestart >\[\s\]> \n brightred
+context linestart > \n brightgreen

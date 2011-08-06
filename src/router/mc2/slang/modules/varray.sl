@@ -1,0 +1,2 @@
+import("varray");
+provide("varray");
