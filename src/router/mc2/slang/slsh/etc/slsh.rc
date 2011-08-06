@@ -1,0 +1,50 @@
+% -*- slang -*-
+
+% This file gets loaded whenever slsh runs.  Its primary purpose is to define
+% some functions that are useful in scripts, and to set up some local paths
+
+private define dir_exists (dir)
+{
+   variable s = stat_file (dir);
+   if (s == NULL) return 0;
+   return stat_is ("dir", s.st_mode);
+}
+
+%!%+
+%\function{prepend_to_slang_load_path}
+%\synopsis{Prepend a directory to the load-path}
+%\usage{prepend_to_slang_load_path (String_Type dir)}
+%\description
+% This function adds a directory to the beginning of the interpreter's
+% load-path.
+%\seealso{append_to_slang_load_path, set_slang_load_path}
+%!%-
+public define prepend_to_slang_load_path (p)
+{
+   if (dir_exists (p))
+     set_slang_load_path (sprintf ("%s%c%s", p, path_get_delimiter (), get_slang_load_path ()));
+}
+
+%!%+
+%\function{append_to_slang_load_path}
+%\synopsis{Append a directory to the load-path}
+%\usage{append_to_slang_load_path (String_Type dir)}
+%\description
+% This function adds a directory to the end of the interpreter's
+% load-path.
+%\seealso{prepend_to_slang_load_path, set_slang_load_path}
+%!%-
+public define append_to_slang_load_path (p)
+{
+   if (dir_exists (p))
+     set_slang_load_path (sprintf ("%s%c%s", get_slang_load_path (), path_get_delimiter (), p));
+}
+
+() = evalfile ("autoload.sl");
+
+#ifdef __INTERACTIVE__
+() = evalfile ("slshrl.sl");
+#endif
+
+% Add local additions here
+

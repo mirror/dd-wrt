@@ -1,0 +1,48 @@
+#! /usr/bin/env slsh
+% -*- mode: slang -*-
+%_debug_info = 1;
+
+% This file strips HTML tags from one or more html files and write the result
+% to stdout.  It is very simple minded.
+
+define process_file (file)
+{
+   variable fp, l;
+
+   if (file != NULL)
+     {
+	fp = fopen (file, "r");
+	if (fp == NULL)
+	  {
+	     () = fputs (sprintf ("Unable to open %s\n", file), stderr);
+	     return;
+	  }
+     }
+   else fp = stdin;
+
+   foreach (fp)
+     {
+	l = ();
+
+	l = strtrim (str_uncomment_string (l, "<", ">"));
+	!if (strlen (l))
+	  continue;
+
+	() = fputs (l, stdout);
+	() = fputs ("\n", stdout);
+     }
+}
+
+if (__argc == 1)
+{
+   if (isatty (stdin))
+     {
+	() = fprintf (stderr, "Usage: %s [files...]\n", __argv[0]);
+	exit (1);
+     }
+   process_file (NULL);
+   exit (0);
+}
+
+foreach (__argv[[1:]]) process_file ();
+exit (0);

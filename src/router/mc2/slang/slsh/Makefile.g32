@@ -1,0 +1,38 @@
+# This is a makefile for mingw32.  See mkfiles/README for other compilers.
+#
+CC		= gcc
+CFLAGS		= -W -Wall -O2
+COPY		= cp
+SLCONFIG_H	= ../src/slconfig.h
+#---------------------------------------------------------------------------
+# Installation location of the slang library
+#---------------------------------------------------------------------------
+SLANG_INC	= -I../src
+SLANG_LIB	= -L../src/gw32objs -lslang
+#----------------------------------------------------------------------------
+# Installation location of lib/slsh.rc and lib/*.sl
+#----------------------------------------------------------------------------
+COPY = cp
+MKDIR = mkdir
+SLSH_CONF_DIR	= C:/slsh
+SLSH_LIB_DIR	= C:/slsh
+#----------------------------------------------------------------------------
+# End of user configuration
+#----------------------------------------------------------------------------
+LIBS = $(RPATH) $(SLANG_LIB) $(DL_LIB) -lm
+#DEFS = -DSLSH_CONF_DIR='"$(SLSH_CONF_DIR)"' -DSLSH_PATH='"$(SLSH_LIB_DIR)"'
+
+all: slsh.exe
+slsh.exe: slsh.o readline.o
+	$(CC) slsh.o readline.o -o slsh.exe $(LIBS)
+slsh.o: slsh.c slsh.h config.h
+	$(CC) -c $(CFLAGS) $(SLANG_INC) $(DEFS) slsh.c
+readline.o: readline.c slsh.h config.h
+	$(CC) -c $(CFLAGS) $(SLANG_INC) $(DEFS) readline.c
+config.h: ../src/config.h
+	$(COPY) $(SLCONFIG_H) config.h
+install: slsh
+	-$(MKDIR) $(SLSH_CONF_DIR)
+	-$(MKDIR) $(SLSH_LIB_DIR)
+	$(COPY) lib/*.sl $(SLSH_LIB_DIR)
+	$(COPY) lib/slsh.rc $(SLSH_CONF_DIR)
