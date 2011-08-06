@@ -1,0 +1,108 @@
+#! /bin/sh
+#
+# Written by andrey joukov
+# (C) 1996 2:5020/337.13@fidonet.org
+# Updated by christian.gennerat@alcatel.fr 1999
+#            Andrew V. Samoilov <sav@bcs.zp.ua> 2000
+# beta version 2.0
+#
+# rar and unrar can be found on http://www.rarlabs.com/
+
+RAR=rar
+UNRAR=$RAR
+
+# Prefer unrar (freeware).  Try to find unrar in $PATH.
+save_IFS="$IFS"; IFS=:
+for dir in $PATH; do
+    IFS="$save_IFS"
+    test -z "$dir" && dir=.
+    if test -x "$dir/unrar" -a -f "$dir/unrar"; then
+	UNRAR="$dir/unrar"
+	break
+    fi
+done
+
+if [ ! -x $UNRAR -a -x $RAR ]; then
+    UNRAR=$RAR
+fi
+
+mcrarfs_list ()
+{
+     $UNRAR v -c- -cfg- "$1" | @AWK@ -v uid=`id -u` -v gid=`id -g` '
+BEGIN { flag=0 }
+/^-------/ { flag++; if (flag > 1) exit 0; next }
+flag==1 {
+    str = substr($0, 2)
+    getline
+    split($4, a, "-")
+    if (index($6, "D") != 0)
+	$6="drwxr-xr-x"
+    else
+	if (index($6, ".") != 0)
+	    $6="-rw-r--r--"
+    printf "%s 1 %s %s %d %02d/%02d/%02d %s ./%s\n", $6, uid, gid, $1, a[2], a[1], a[3], $5, str
+}'
+}
+
+mcrarfs_copyin ()
+{
+# copyin by christian.gennerat@alcatel.fr
+# preserve pwd. It is clean, but is it necessary?
+    pwd=`pwd`
+# Create a directory and copy in it the tmp file with the good name     
+    mkdir "$3.dir"
+    cd "$3.dir"
+    di="${2%/*}"
+# if file is to be written upper in the archive tree, make fake dir
+    if test x"$di" != x"${2##*/}" ; then
+        mkdir -p "$di"
+    fi
+    cp -fp "$3" "$3.dir/$2" 
+    $RAR a "$1" "$2" >/dev/null
+    cd "$pwd"
+    rm -rf "$3.dir"
+}
+
+mcrarfs_copyout ()
+{
+    $UNRAR p -p- -c- -cfg- -inul "$1" "$2" > "$3"
+}
+
+mcrarfs_mkdir ()
+{
+# preserve pwd. It is clean, but is it necessary?
+    pwd=`pwd`
+# Create a directory and create in it a tmp directory with the good name     
+    dir=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-urar.XXXXXX"` || exit 1
+    cd "$dir"
+    mkdir -p "$2"  
+# rar cannot create an empty directory    
+    touch "$2"/.rarfs
+    $RAR a -r "$1" "$2" >/dev/null
+    $RAR d "$1" "$2/.rarfs" >/dev/null
+    cd "$pwd"
+    rm -rf "$dir"
+}
+
+mcrarfs_rm ()
+{
+    $RAR d "$1" "$2" >/dev/null
+}
+
+umask 077
+
+cmd="$1"
+shift
+
+case "$cmd" in
+  # Workaround for a bug in mc - directories must precede files to
+  # avoid duplicate entries, so we sort output by filenames
+  list)    mcrarfs_list    "$@" | sort -k 8 ;;
+  rm)      mcrarfs_rm      "$@" ;;
+  rmdir)   mcrarfs_rm      "$@" ;;
+  mkdir)   mcrarfs_mkdir   "$@" ;;
+  copyin)  mcrarfs_copyin  "$@" ;;
+  copyout) mcrarfs_copyout "$@" ;;
+  *) exit 1 ;;
+esac
+exit 0

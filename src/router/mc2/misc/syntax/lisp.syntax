@@ -1,0 +1,84 @@
+#
+# Lisp syntax highlighting
+#
+# Author: Mykolas Juraitis (juramyko@soften.ktu.lt)
+# Version: 6 Aug, 2002
+#
+
+wholechars abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-*0123456789
+
+context default
+    keyword whole apply yellow
+    keyword whole and yellow
+    keyword whole car yellow
+    keyword whole caar yellow
+    keyword whole cadr yellow
+    keyword whole cdar yellow
+    keyword whole cddr yellow
+    keyword whole cdr yellow
+    keyword whole close yellow
+    keyword whole cond yellow
+    keyword whole cons yellow
+    keyword whole count yellow
+    keyword whole defvar yellow
+    keyword whole defstruct yellow
+    keyword whole defun yellow
+    keyword whole do yellow
+    keyword whole eq yellow
+    keyword whole eql yellow
+    keyword whole equal yellow
+    keyword whole eval yellow
+    keyword whole format yellow
+    keyword whole if yellow
+    keyword whole let* yellow
+    keyword whole let yellow
+    keyword whole list yellow
+    keyword whole load yellow
+    keyword whole make-package yellow
+    keyword whole mapcar yellow
+    keyword whole not yellow
+    keyword whole null yellow
+    keyword whole numberp yellow
+    keyword whole open yellow
+    keyword whole or yellow
+    keyword whole pprint yellow
+    keyword whole prin1 yellow
+    keyword whole princ yellow
+    keyword whole print yellow
+    keyword whole provide yellow
+    keyword whole read yellow
+    keyword whole require yellow
+    keyword whole set yellow
+    keyword whole setf yellow
+    keyword whole setq yellow
+    keyword whole slot-value yellow
+    keyword whole sort yellow
+    keyword whole stringp yellow
+    keyword whole terpri yellow
+    keyword whole write yellow
+
+    keyword whole lambda brightred
+    keyword whole nil brightred
+    keyword whole t brightred
+
+    keyword #' brightmagenta
+    keyword ' brightmagenta
+    keyword , brightmagenta
+
+    keyword ( brightcyan
+    keyword ) brightcyan
+
+# Keyword declarations and keywords
+
+    keyword :\[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-*0123456789\] white
+    keyword &\[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-*0123456789\] white
+
+# Comments
+
+context ; \n brown
+
+# Strings
+
+context " " green
+    keyword \\" green
+    keyword \\\\ green

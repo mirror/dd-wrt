@@ -1,0 +1,364 @@
+context default
+
+# subroutine prototypes
+    keyword (\[$%&\*;@[\\]\]) brightcyan
+
+    keyword $_ red
+    keyword $. red
+    keyword $/ red
+    keyword $, red
+    keyword $" red
+    keyword $\\ red
+    keyword $# red
+    keyword $\* red
+    keyword $? red
+    keyword $] red
+    keyword $[ red
+    keyword $; red
+    keyword $! red
+    keyword $@ red
+    keyword $: red
+    keyword $0 red
+    keyword $$ red
+    keyword $< red
+    keyword $> red
+    keyword $( red
+    keyword $) red
+
+    keyword $% red
+    keyword $= red
+    keyword $- red
+    keyword $~ red
+    keyword $| red
+    keyword $& red
+    keyword $` red
+    keyword $' red
+    keyword $\+ red
+    keyword $\{0123456789\}\{0123456789\} red
+    keyword $\{0123456789\} red
+
+    keyword $^A red
+    keyword $^D red
+    keyword $^E red
+    keyword $^I red
+    keyword $^L red
+    keyword $^P red
+    keyword $^T red
+    keyword $^W red
+    keyword $^X red
+    keyword $^A red
+
+    keyword @EXPORT_OK red
+    keyword @EXPORT red
+    keyword @INC red
+    keyword @ISA red
+    keyword @_ red
+    keyword @ENV red
+    keyword @OVERLOAD red
+    keyword @SIG red
+
+
+    keyword <+> brightred
+    keyword -> yellow
+    keyword => yellow
+    keyword > yellow
+    keyword < yellow
+    keyword \+ yellow
+    keyword - yellow
+    keyword \* yellow
+    keyword / yellow
+    keyword = yellow
+    keyword != yellow
+    keyword == yellow
+    keyword && yellow
+    keyword || yellow
+    keyword ! yellow
+    keyword whole ge yellow
+    keyword whole le yellow
+    keyword whole gt yellow
+    keyword whole lt yellow
+    keyword whole eq yellow
+    keyword whole ne yellow
+    keyword whole cmp yellow
+    keyword ~ yellow
+    keyword { brightcyan
+    keyword } brightcyan
+    keyword ( brightcyan
+    keyword ) brightcyan
+    keyword [ brightcyan
+    keyword ] brightcyan
+    keyword , brightcyan
+    keyword .. brightcyan
+    keyword : brightcyan
+    keyword ; brightmagenta
+
+    keyword whole sub yellow
+    keyword whole STDIN brightred
+    keyword whole STDOUT brightred
+    keyword whole STDERR brightred
+    keyword whole STDARGV brightred
+    keyword whole DATA brightred
+
+    keyword wholeright $+ brightgreen
+    keyword wholeright %+ brightcyan
+    keyword wholeright @+ white
+    keyword \\" brightred
+    keyword \\' brightred
+
+    keyword % yellow
+    keyword & brightmagenta
+
+    keyword whole and magenta
+    keyword whole bless magenta
+    keyword whole break magenta
+    keyword whole caller magenta
+    keyword whole do magenta
+    keyword whole else magenta
+    keyword whole elsif magenta
+    keyword whole foreach magenta
+    keyword whole for magenta
+    keyword whole goto magenta
+    keyword whole if magenta
+    keyword whole import magenta
+    keyword whole last magenta
+    keyword whole next magenta
+    keyword whole not magenta
+    keyword whole or magenta
+    keyword whole package magenta
+    keyword whole require magenta
+    keyword whole return magenta
+    keyword whole unless magenta
+    keyword whole untie magenta
+    keyword whole until magenta
+    keyword whole use magenta
+    keyword whole while magenta
+
+    keyword whole diagnostics brightcyan
+    keyword whole integer brightcyan
+    keyword whole less brightcyan
+    keyword whole lib brightcyan
+    keyword whole ops brightcyan
+    keyword whole overload brightcyan
+    keyword whole sigtrap brightcyan
+    keyword whole strict brightcyan
+    keyword whole vars brightcyan
+    keyword whole warnings brightcyan
+
+    keyword whole abs yellow
+    keyword whole atan2 yellow
+    keyword whole chr yellow
+    keyword whole cos yellow
+    keyword whole exp yellow
+    keyword whole gmtime yellow
+    keyword whole hex yellow
+    keyword whole int yellow
+    keyword whole localtime yellow
+    keyword whole log yellow
+    keyword whole oct yellow
+    keyword whole ord yellow
+    keyword whole pack yellow
+    keyword whole rand yellow
+    keyword whole sin yellow
+    keyword whole sqrt yellow
+    keyword whole srand yellow
+    keyword whole time yellow
+    keyword whole unpack yellow
+    keyword whole vec yellow
+
+    keyword whole chomp yellow
+    keyword whole chop yellow
+    keyword whole crypt yellow
+    keyword whole eval yellow
+    keyword whole index yellow
+    keyword whole lc yellow
+    keyword whole lcfirst yellow
+    keyword whole length yellow
+    keyword whole quotemeta yellow
+    keyword whole rindex yellow
+    keyword whole substr yellow
+    keyword whole uc yellow
+    keyword whole ucfirst yellow
+
+    keyword whole delete yellow
+    keyword whole each yellow
+    keyword whole exists yellow
+    keyword whole grep yellow
+    keyword whole join yellow
+    keyword whole keys yellow
+    keyword whole map yellow
+    keyword whole pop yellow
+    keyword whole push yellow
+    keyword whole reverse yellow
+    keyword whole scalar yellow
+    keyword whole shift yellow
+    keyword whole sort yellow
+    keyword whole splice yellow
+    keyword whole split yellow
+    keyword whole unshift yellow
+    keyword whole values yellow
+
+    keyword whole chmod yellow
+    keyword whole chown yellow
+    keyword whole link yellow
+    keyword whole lstat yellow
+    keyword whole mkdir yellow
+    keyword whole readlink yellow
+    keyword whole rename yellow
+    keyword whole rmdir yellow
+    keyword whole stat yellow
+    keyword whole symlink yellow
+    keyword whole truncate yellow
+    keyword whole unlink yellow
+    keyword whole utime yellow
+
+    keyword whole binmode yellow
+    keyword whole close yellow
+    keyword whole dbmclose yellow
+    keyword whole dbmopen yellow
+    keyword whole eof yellow
+    keyword whole fcntl yellow
+    keyword whole fileno yellow
+    keyword whole flock yellow
+    keyword whole getc yellow
+    keyword whole ioctl yellow
+    keyword whole open yellow
+    keyword whole pipe yellow
+    keyword whole print yellow
+    keyword whole printf yellow
+    keyword whole read yellow
+    keyword whole seek yellow
+    keyword whole select yellow
+    keyword whole sprintf yellow
+    keyword whole sysopen yellow
+    keyword whole sysread yellow
+    keyword whole syswrite yellow
+    keyword whole tell yellow
+
+    keyword whole formline yellow
+    keyword whole write yellow
+
+    keyword whole closedir yellow
+    keyword whole opendir yellow
+    keyword whole readdir yellow
+    keyword whole rewinddir yellow
+    keyword whole seekdir yellow
+    keyword whole telldir yellow
+
+    keyword whole alarm yellow
+    keyword whole chdir yellow
+    keyword whole chroot yellow
+    keyword whole die yellow
+    keyword whole exec yellow
+    keyword whole exit yellow
+    keyword whole fork yellow
+    keyword whole getlogin yellow
+    keyword whole getpgrp yellow
+    keyword whole getppid yellow
+    keyword whole getpriority yellow
+    keyword whole glob yellow
+    keyword whole kill yellow
+    keyword whole setpgrp yellow
+    keyword whole setpriority yellow
+    keyword whole sleep yellow
+    keyword whole syscall yellow
+    keyword whole system yellow
+    keyword whole times yellow
+    keyword whole umask yellow
+    keyword whole waitpid yellow
+    keyword whole wait yellow
+    keyword whole warn yellow
+
+    keyword whole accept yellow
+    keyword whole bind yellow
+    keyword whole connect yellow
+    keyword whole getpeername yellow
+    keyword whole getsockname yellow
+    keyword whole getsockopt yellow
+    keyword whole listen yellow
+    keyword whole recv yellow
+    keyword whole send yellow
+    keyword whole setsockopt yellow
+    keyword whole shutdown yellow
+    keyword whole socketpair yellow
+    keyword whole socket yellow
+
+    keyword whole msgctl yellow
+    keyword whole msgget yellow
+    keyword whole msgrcv yellow
+    keyword whole msgsnd yellow
+    keyword whole semctl yellow
+    keyword whole semget yellow
+    keyword whole semop yellow
+    keyword whole shmctl yellow
+    keyword whole shmget yellow
+    keyword whole shmread yellow
+    keyword whole shmwrite yellow
+
+    keyword whole defined yellow
+    keyword whole dump yellow
+    keyword whole eval yellow
+    keyword whole local yellow
+    keyword whole my yellow
+    keyword whole our yellow
+    keyword whole ref yellow
+    keyword whole reset yellow
+    keyword whole scalar yellow
+    keyword whole undef yellow
+    keyword whole wantarray yellow
+
+    keyword whole endgrent yellow
+    keyword whole endpwent yellow
+    keyword whole getgrent yellow
+    keyword whole getgrgid yellow
+    keyword whole getgrnam yellow
+    keyword whole getpwent yellow
+    keyword whole getpwnam yellow
+    keyword whole getpwuid yellow
+    keyword whole setgrent yellow
+    keyword whole setpwent yellow
+
+    keyword whole endhostent yellow
+    keyword whole gethostbyaddr yellow
+    keyword whole gethostbyname yellow
+    keyword whole gethostent yellow
+    keyword whole sethostent yellow
+
+    keyword whole endnetent yellow
+    keyword whole endprotoent yellow
+    keyword whole endservent yellow
+    keyword whole getnetbyaddr yellow
+    keyword whole getnetbyname yellow
+    keyword whole getnetent yellow
+    keyword whole getprotobyname yellow
+    keyword whole getprotobynumber yellow
+    keyword whole getprotoent yellow
+    keyword whole getservbyname yellow
+    keyword whole getservbyport yellow
+    keyword whole getservent yellow
+    keyword whole serservent yellow
+    keyword whole setnetent yellow
+    keyword whole setprotoent yellow
+
+context linestart #! \n brightcyan black
+
+context exclusive whole <\[\s\\\]EOF EOF green
+
+context # \n brown
+    spellcheck
+
+context exclusive linestart = linestart =cut brown
+    spellcheck
+
+context " " green
+    keyword \\" brightgreen
+    keyword \\\\ brightgreen
+
+context ' ' brightgreen
+    keyword \\' green
+    keyword \\\\ green
+
+context exclusive qw( ) green
+
+context exclusive ` ` white black
+
+context whole __END__ guacomale_pudding brown

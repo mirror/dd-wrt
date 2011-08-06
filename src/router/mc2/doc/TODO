@@ -1,0 +1,326 @@
+Before 4.6.2
+============
+
+mc manual: describe new Find File feature options (find Recursively,
+case Sensitive and Regular expression) 
+mc manual: Add Environment Variables section
+
+Check all instances of const_cast and str_unconst, remove the
+unnecessary and comment the rest.
+
+Clean up #include's in all files.
+
+Make mc work with 64 bit data types. This includes support for 64 bit
+processors, 64 bit operating systems and 64 bit file sizes. Generalizing
+this, mc should use datatypes as they are appropriate.
+
+Remove all instances of type casts on function pointers. Run the
+following command to get a list of function pointer types.
+    grep -r 'typedef.*(\*' . \
+    | sed -n 's/.*(\*\([[:alnum:]_]*\)).*/(\1)/p' \
+    | sort -u \
+    > fn-types.txt
+Then use fgrep to find illegal uses of these types.
+    fgrep -r "`cat fn-types.txt`" .
+Fix these uses by writing small wrapper functions.
+
+When saving a file is not possible, mcedit should ask the user what to
+do:
+- su(1) to another user and try again
+- sudo
+- change permissions of the file or the containg directory
+- other smart things
+
+Due to problems in the VFS, files are not written back after being edited
+over VFS with an external editor.
+
+Allow pathnames starting with spaces in vfs/extfs.
+
+Hide the passwords when displaying mcvfs path names.
+
+Broken pipe warning when viewing large *.tar.gz files.  Warnings should
+be shown before the viewer is started if possible.
+
+Cannot spell check unsaved files in the editor.
+
+Dynamic loading for libgpm, libext2fs.
+
+Check if the archive was changed for extfs, tar and cpio.  Free the data
+associated with the old archive.
+
+Ctrl-q Ctrl-m in input dialog should enter \r, not a newline.
+
+Interpret C literals in regular expressions entered by the user, e.g. \r
+and \0x0D.
+
+Allow entering archives in VFS by Ctrl-PgDown with non-empty command
+line.  Right now, there is no convenient way to enter an archive when
+the command line is not empty.
+
+Allow switching between histories of two panels.  It's convenient to
+change to a directory from the history of the other panel.
+
+Allow calling the directory hotlist from Copy, Move and Find File
+dialogs.  Recent directories are the obvious candidates for copying and
+looking for files.
+
+Allow modifiers for keys in mc.lib, like "shift-up".  Right now,
+modifiers can be read from the terminal (if supported), but not from the
+config file.  This change would make it possible to use modifiers even
+if they can only be identified by the escape sequences.
+
+When saving config files, write to a copy, then replace the file.  This
+would avoid the problem of partly written config files.  Consider using
+locking of the config files.
+
+Totals are not calculated when copying or moving a single directory. 
+Totals should only be omitted for single files.
+
+Recheck all mouse handlers, make sure that they check button number.  We
+don't want mouse scrolling to be interpreted as mouse click.
+
+Smooth mouse scrolling on panels.  Scrolling one page per step is too
+fast.
+
+Don't read prompt from the subshell, because it's unreliable.  Interpret
+environment variable MC_PS1 (or PS1) in the same way as bash.
+
+Support an environment variable (also like PS1 in bash) for setting the
+window title.
+
+real_input_dialog_help() shouldn't use translated strings in the section
+names in .mc/history.  Right now, mc writes separate history sections
+for different locales.  Only input history is affected.
+
+Add "Ignore" and "Ignore all" buttons when reporting permission
+problems.
+
+Better date parser - don't allow seconds and year in ftp listings on the
+same line.
+
+Report errors in fish operations and recover from them.
+
+Allow colors to be defined in the mc.lib file.  Make it possible to
+avoid using a super-long line to redefine all colors.
+
+Allow verbatim search in "Find File".  Right now, the context is always
+interpreted as regular expression.
+
+Filters in the editor should operate on the open file - don't close and
+reopen the file.  They don't work on VFS now.  For example, a gzipped
+files on FTP cannot be edited.
+
+ftp and fish with home != '/' - readjust directory to the home.
+
+Search in the viewer should have an option for case sensitive search.
+
+Make "Find File" dialog more responsive.  Keep state in a structure and
+preserve it when the search is suspended.
+
+Use KDGKBENT ioctl on Linux console to find the mapping for shifted
+functional keys.  Two mappings are widely used (Shift-F1 = F11 and
+Shift-F1 = F13).  mc should adjust the keys to the mapping.
+
+Alt-O should optionally show the current directory and move cursor down
+(as in older versions).  Old functionality on files (go to "..") is not
+needed.
+
+
+After 4.6.2 on 4.6.x branch
+===========================
+
+Make the internal editor reentrant.  Add "edit menu file" to the editor
+menu.
+
+Safe and restore file position in the viewer.
+
+Consistent support for mc.lib.
+
+Consistent support for terminal-specific settings.
+
+New syntax for mc.ext - path check, desktop environment check.  Detach X
+programs into a separate process group.  Allow forcing the full path on
+local files.
+
+Click on an image doesn't always work on remote vfs - local copy may
+be deleted before the application has time to load it.
+
+Allow running executables from remote VFS.  Possibly warn the user.
+
+Add print dialog in the internal editor.
+
+Implement logging, not just for VFS.
+
+"Find file" should remember full starting path, not "." in the history.
+
+
+In the 4.7 branch
+=================
+
+Eliminate all pipes in subshell.c, run pwd after kill.  Add support for
+more shells (e.g. ksh).
+
+Internal terminal - no more console saving.
+
+Implement a really Advanced Chown/Chmod.
+
+Support for multi-byte charsets (e.g. UTF-8).
+
+sftp and fxp support in VFS.
+
+New listing mode keyword "time": mtime or the time (atime, ctime) used
+to sort files.
+
+Support for X clipboard.
+
+Provide "patch" and "diff" editors. The patch editor will automatically
+adjust the line numbers of the following chunks when lines are deleted
+or inserted at the beginning of the file.
+
+Provide context menus for files. Possible actions include: [compile],
+[CVS commit], [CVS diff -up], [pack], [unpack], [grep].
+
+Make mc a CVS frontend comparable to Eclipse-3.0.
+
+More standard Widgets: WTreeView, WDirectoryList, WGroupBox, WTextArea,
+WOpenDialog, WSaveDialog, WPrintDialog, WKeyBar.
+
+========================================================================
+Everything below this point is the old TODO list.  It doesn't reflect
+the current priorities of the developers, but may contain interesting
+ideas still waiting for their implementation.
+========================================================================
+
+
+* Bugs
+
+  - "Files" message flickers a lot when copying files.
+
+  - Make the extfs handle re-reads.
+
+  - Document (or remove) C-x C-r, C-x C-s.
+
+  - Check that all the help contexts exist on the help file.
+
+  - Make the buttonbar for the tree box work.
+
+  - In the incremental search mode, when backspacing, select the
+    correct file, do not stop in current file.
+
+  - Make C-y yank back all the killed text at once if you've just done
+    several kill operations in a row (C-k, M-d, etc).
+
+  - In learn keys, warn the user if he is trying to
+    i) define a same sequence as an already defined (if the keycode differs)
+    ii) define a sequence, which is a prefix of other longer and already
+        defined sequence
+
+* Configuration 
+
+* Documentation
+
+  - Convert the source mc.1 to mc.sgml and create automagically from it
+    mc.1, mc.html, mc.hlp, mc.info, mc.tex, mc.txt etc.
+
+* Extensions
+
+   - Hotlist should allow people to edit the entry (like we do in the external
+     panelize thing).
+
+   - Change ext.c to allow the %{..} to recursively expand any other %thingies.
+
+   - Write a general grow_string routine.  This code is used in the internal
+     viewer and would also be used in the profile.c code.
+
+   -  A command to set the line length to a fixed value for viewing
+      fixed length binary files. LIST does this with Ctrl-B and then
+      prompts for a "record" length.
+
+   - Viewer: Mark all found matches, and when 'n' is pressed go to the
+     next page, not the next match on the same screen (when there is
+     more than one).
+
+  - In ftpfs_open, extfs_open, if we set local_filename to tmpnam, use
+    a mechanism to set local_filename to another place on the local
+    diskspace (this would be useful for copying, so that we would save
+    some tmp space). This would require special care in file.c afterwards.
+
+  - In Listing mode... give at least three user-definable formats
+    (using Janne's Listing mode editor) and assign hot-keys to both
+    standard and user defined (what about c-x f [fbl123] ?).
+
+  - Shift-Home, Shift-End for the input line: home and end.
+
+  - Make a mechanism to lock all the mouse events and send them to
+    the locking widget until unlocking is done.
+
+  - Sort with numerical extensions.
+
+  - Allow the program to execute a command even when we are on a vfs, maybe
+    a special box, or make subshell code ignore the change directory
+    request. Perhaps each vfs should store a local path attached to it,
+    like in tarfs, extfs it would be the directory which contains the
+    topmost tararchive, in ftpfs it would be the directory which we entered
+    to ftp from.
+
+  - auto_hint_lines: a variable that would choose to use hint mode when
+    at least auto_hint_lines are visible.
+
+  - Listbox: Mouse handler for the scrollbar: this will be hard with
+    the current approach (since the listbox scrollbar is drawn *outside*
+    the listbox control area).
+
+  - In file.c, we shouldn't need to get a full path name in order to
+    work, we should instead canon the file name inside the tar.c (the
+    only fs that relies on this), tar.c should know about the cwd (i
+    think).
+
+  - Panelize the selected files.
+
+  - Recursive delete should (perhaps as an option) delete files just after
+    they have been copied and not to delay deleting until everything was
+    moved.
+
+  - When copying a tree (or moving or deleting), as an option act primarily
+    on the regular files and at the end on directories recursively, so that
+    we get complete high parts of the tree if something fails (useful for
+    ftpfs).
+
+  - Put into a new and bigger Options/Configuration dialog all the options
+    we have now to set using .mc/ini manually.
+
+  - When after deleting there are no files in a panelized panel, restore
+    it automagically to the real directory content.
+
+  - Files/Symlink and Link should be able to do multiple links (if the
+    target is a directory).
+
+  - Directory sizes should work in background using try_channels.
+
+  - Support of non-UNIX ls in ftpfs. Perhaps using an ascii configuration
+    file similar to moxftp.
+
+  - Have an option to let the user choose the preferred keybindings.
+    Currently, only the emacs keybindings are supported, add support
+    for Norton Commander and vi keybindings.
+
+  - Find command should have a way to specify directories to skip.
+
+  - Add an option that will let listboxes do incremental searches.
+
+* Optimizations and cleanup
+
+  - When verbose is off, remove all the clutter on the screen about
+    the files being copied.
+
+  - The viewer is calling view_update in many places, I call
+    view_update after handling a key, should all the other
+    view_updates be removed?
+
+  - If the viewer is too slow, some caching could be done.
+    width and cols are currently computed each time they are needed.
+
+ ++ In the user menu, don't use the entries array, we can now grow
+    dynamically.  I should take a look at this one day, it's easy to
+    fix.
+

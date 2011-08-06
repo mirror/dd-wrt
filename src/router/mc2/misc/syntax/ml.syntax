@@ -1,0 +1,95 @@
+##################################################################################
+# ML (CamlLight) syntax hilighting by Carlos Rodrigues <a9566@lei.di.fct.unl.pt> #
+##################################################################################
+
+context default
+    keyword whole and yellow
+    keyword whole as yellow
+    keyword whole begin yellow
+    keyword whole do yellow
+    keyword whole done yellow
+    keyword whole downto yellow
+    keyword whole else yellow
+    keyword whole end yellow
+    keyword whole exception yellow
+    keyword whole for yellow
+    keyword whole fun yellow
+    keyword whole function yellow
+    keyword whole if yellow
+    keyword whole in yellow
+    keyword whole let yellow
+    keyword whole match yellow
+    keyword whole mutable yellow
+    keyword whole not yellow
+    keyword whole of yellow
+    keyword whole or yellow
+    keyword whole prefix yellow
+    keyword whole rec yellow
+    keyword whole then yellow
+    keyword whole to yellow
+    keyword whole try yellow
+    keyword whole type yellow
+    keyword whole value yellow
+    keyword whole where yellow
+    keyword whole while yellow
+    keyword whole mod yellow
+    keyword whole with yellow
+    keyword whole true yellow
+    keyword whole false yellow
+
+    keyword (\* brown
+    keyword \*) brown
+
+    keyword `\s` brightcyan
+    keyword `+` brightcyan
+    keyword > cyan
+    keyword <> cyan
+    keyword < cyan
+    keyword . cyan
+    keyword -> brightgreen
+    keyword <- cyan
+    keyword \+ cyan
+    keyword - cyan
+    keyword \* cyan
+    keyword / cyan
+    keyword % cyan
+    keyword = cyan
+    keyword | cyan
+    keyword # cyan
+    keyword @ cyan
+    keyword ^ cyan
+    keyword { cyan
+    keyword } cyan
+    keyword ( cyan
+    keyword ) cyan
+    keyword [ cyan
+    keyword ] cyan
+    keyword , cyan
+    keyword : cyan
+    keyword & cyan
+
+    keyword wholeright ;; brightred
+    keyword wholeright ; brightred
+
+    keyword ; cyan
+
+context exclusive (\* \*) brown
+
+    keyword \\\n yellow
+    keyword "+" brown
+    keyword <+> brown
+
+context " " brightcyan
+    keyword \\" brightmagenta
+    keyword \\n brightmagenta
+    keyword %% brightmagenta
+    keyword %\[#0\s-\+,\]\[0123456789\]\[.\]\[0123456789\]\[L\]\{eEfgGoxX\} brightmagenta
+    keyword %\[0\s-\+,\]\[0123456789\]\[.\]\[0123456789\]\[hl\]\{diuxX\} brightmagenta
+    keyword %\[hl\]n brightmagenta
+    keyword %\[.\]\[0123456789\]s brightmagenta
+    keyword %[*] brightmagenta
+    keyword %c brightmagenta
+    keyword \\\{0123\}\{01234567\}\{01234567\} brightmagenta
+    keyword \\\\ brightmagenta
+    keyword \\' brightmagenta
+    keyword \\\{abtnvfr\} brightmagenta

@@ -1,0 +1,344 @@
+# SQL syntax highlighting for CoolEdit
+# by Walery Studennikov <despair@sama.ru>
+
+caseinsensitive
+
+context default
+    keyword whole abort yellow
+    keyword whole absolute yellow
+    keyword whole action yellow
+    keyword whole ada yellow
+    keyword whole add yellow
+    keyword whole all yellow
+    keyword whole allocate yellow
+    keyword whole alter yellow
+    keyword whole and yellow
+    keyword whole any yellow
+    keyword whole are yellow
+    keyword whole as yellow
+    keyword whole asc yellow
+    keyword whole assertion yellow
+    keyword whole at yellow
+    keyword whole authorization yellow
+    keyword whole auto_increment yellow
+    keyword whole begin yellow
+    keyword whole between yellow
+    keyword whole bigint yellow
+    keyword whole bit yellow
+    keyword whole bit_length yellow
+    keyword whole blob yellow
+    keyword whole both yellow
+    keyword whole by yellow
+    keyword whole cascade yellow
+    keyword whole cascaded yellow
+    keyword whole case yellow
+    keyword whole cast yellow
+    keyword whole catalog yellow
+    keyword whole char yellow
+    keyword whole char_length yellow
+    keyword whole character yellow
+    keyword whole character_length yellow
+    keyword whole check yellow
+    keyword whole close yellow
+    keyword whole coalesce yellow
+    keyword whole collate yellow
+    keyword whole collation yellow
+    keyword whole column yellow
+    keyword whole commit yellow
+    keyword whole compile yellow
+    keyword whole connect yellow
+    keyword whole connection yellow
+    keyword whole constraint yellow
+    keyword whole constraint yellow
+    keyword whole constraints yellow
+    keyword whole continue yellow
+    keyword whole copy yellow
+    keyword whole corresponding yellow
+    keyword whole create yellow
+    keyword whole cross yellow
+    keyword whole current yellow
+    keyword whole current_date yellow
+    keyword whole current_time yellow
+    keyword whole current_timestamp yellow
+    keyword whole current_user yellow
+    keyword whole cursor yellow
+    keyword whole database yellow
+    keyword whole date yellow
+    keyword whole datetime yellow
+    keyword whole day yellow
+    keyword whole deallocate yellow
+    keyword whole dec yellow
+    keyword whole decimal yellow
+    keyword whole declare yellow
+    keyword whole default yellow
+    keyword whole deferrable yellow
+    keyword whole deferred yellow
+    keyword whole delete yellow
+    keyword whole desc yellow
+    keyword whole describe yellow
+    keyword whole descriptor yellow
+    keyword whole diagnostics yellow
+    keyword whole disconnect yellow
+    keyword whole distinct yellow
+    keyword whole domain yellow
+    keyword whole double yellow
+    keyword whole drop yellow
+    keyword whole else yellow
+    keyword whole encoding yellow
+    keyword whole end yellow
+    keyword whole end-exec yellow
+    keyword whole enum yellow
+    keyword whole escape yellow
+    keyword whole except yellow
+    keyword whole exception yellow
+    keyword whole exec yellow
+    keyword whole execute yellow
+    keyword whole exists yellow
+    keyword whole external yellow
+    keyword whole extract yellow
+    keyword whole false yellow
+    keyword whole fetch yellow
+    keyword whole first yellow
+    keyword whole float yellow
+    keyword whole for yellow
+    keyword whole foreign yellow
+    keyword whole fortran yellow
+    keyword whole found yellow
+    keyword whole from yellow
+    keyword whole full yellow
+    keyword whole get yellow
+    keyword whole global yellow
+    keyword whole go yellow
+    keyword whole goto yellow
+    keyword whole grant yellow
+    keyword whole group yellow
+    keyword whole having yellow
+    keyword whole hour yellow
+    keyword whole identity yellow
+    keyword whole if yellow
+    keyword whole immediate yellow
+    keyword whole in yellow
+    keyword whole include yellow
+    keyword whole index yellow
+    keyword whole indicator yellow
+    keyword whole initially yellow
+    keyword whole inner yellow
+    keyword whole input yellow
+    keyword whole insensitive yellow
+    keyword whole insert yellow
+    keyword whole int yellow
+    keyword whole integer yellow
+    keyword whole intersect yellow
+    keyword whole interval yellow
+    keyword whole into yellow
+    keyword whole is yellow
+    keyword whole isolation yellow
+    keyword whole join yellow
+    keyword whole key yellow
+    keyword whole key yellow
+    keyword whole language yellow
+    keyword whole last yellow
+    keyword whole leading yellow
+    keyword whole left yellow
+    keyword whole level yellow
+    keyword whole like yellow
+    keyword whole local yellow
+    keyword whole lock yellow
+    keyword whole longblob yellow
+    keyword whole longtext yellow
+    keyword whole loop yellow
+    keyword whole match yellow
+    keyword whole mediumblob yellow
+    keyword whole mediumint yellow
+    keyword whole mediumtext yellow
+    keyword whole merge yellow
+    keyword whole minute yellow
+    keyword whole minus yellow
+    keyword whole module yellow
+    keyword whole month yellow
+    keyword whole names yellow
+    keyword whole national yellow
+    keyword whole natural yellow
+    keyword whole nchar yellow
+    keyword whole next yellow
+    keyword whole no yellow
+    keyword whole none yellow
+    keyword whole not yellow
+    keyword whole null yellow
+    keyword whole nullif yellow
+    keyword whole numeric yellow
+    keyword whole octet_length yellow
+    keyword whole of yellow
+    keyword whole offline yellow
+    keyword whole on yellow
+    keyword whole online yellow
+    keyword whole only yellow
+    keyword whole open yellow
+    keyword whole option yellow
+    keyword whole or yellow
+    keyword whole order yellow
+    keyword whole outer yellow
+    keyword whole output yellow
+    keyword whole overlaps yellow
+    keyword whole pad yellow
+    keyword whole partial yellow
+    keyword whole pascal yellow
+    keyword whole position yellow
+    keyword whole precision yellow
+    keyword whole prepare yellow
+    keyword whole preserve yellow
+    keyword whole primary yellow
+    keyword whole primary yellow
+    keyword whole prior yellow
+    keyword whole privileges yellow
+    keyword whole procedure yellow
+    keyword whole public yellow
+    keyword whole read yellow
+    keyword whole real yellow
+    keyword whole rebuild yellow
+    keyword whole references yellow
+    keyword whole relative yellow
+    keyword whole replace yellow
+    keyword whole restrict yellow
+    keyword whole revoke yellow
+    keyword whole right yellow
+    keyword whole rollback yellow
+    keyword whole rows yellow
+    keyword whole schema yellow
+    keyword whole scroll yellow
+    keyword whole second yellow
+    keyword whole section yellow
+    keyword whole select yellow
+    keyword whole sequence yellow
+    keyword whole session yellow
+    keyword whole session_user yellow
+    keyword whole set yellow
+    keyword whole size yellow
+    keyword whole smallint yellow
+    keyword whole some yellow
+    keyword whole space yellow
+    keyword whole sql yellow
+    keyword whole sqlca yellow
+    keyword whole sqlstate yellow
+    keyword whole sqlwarning yellow
+    keyword whole substring yellow
+    keyword whole system_user yellow
+    keyword whole table yellow
+    keyword whole tablespace yellow
+    keyword whole template yellow
+    keyword whole temporary yellow
+    keyword whole text yellow
+    keyword whole then yellow
+    keyword whole time yellow
+    keyword whole truncate yellow
+    keyword whole timestamp yellow
+    keyword whole timezone_hour yellow
+    keyword whole timezone_minute yellow
+    keyword whole tinyblob yellow
+    keyword whole tinyint yellow
+    keyword whole tinytext yellow
+    keyword whole to yellow
+    keyword whole trailing yellow
+    keyword whole transaction yellow
+    keyword whole translation yellow
+    keyword whole trigger yellow
+    keyword whole trim yellow
+    keyword whole true yellow
+    keyword whole type yellow
+    keyword whole union yellow
+    keyword whole unique yellow
+    keyword whole unknown yellow
+    keyword whole unsigned yellow
+    keyword whole update yellow
+    keyword whole usage yellow
+    keyword whole use yellow
+    keyword whole user yellow
+    keyword whole using yellow
+    keyword whole value yellow
+    keyword whole values yellow
+    keyword whole varchar yellow
+    keyword whole varying yellow
+    keyword whole view yellow
+    keyword whole when yellow
+    keyword whole whenever yellow
+    keyword whole where yellow
+    keyword whole while yellow
+    keyword whole with yellow
+    keyword whole work yellow
+    keyword whole write yellow
+    keyword whole year yellow
+    keyword whole zone yellow
+
+    keyword /\* brown
+    keyword \*/ brown
+    keyword -- brown
+
+    keyword > brightcyan
+    keyword < brightcyan
+    keyword \+ brightcyan
+    keyword - brightcyan
+    keyword \* brightcyan
+    keyword / brightcyan
+    keyword % brightcyan
+    keyword = brightcyan
+    keyword ( brightcyan
+    keyword ) brightcyan
+    keyword , brightcyan
+    keyword ; brightcyan
+    keyword . white
+
+# PostgreSQL specific
+    keyword aggregate yellow
+    keyword checkpoint yellow
+    keyword cluster yellow
+    keyword conversion yellow
+    keyword listen yellow
+    keyword notify yellow
+    keyword operator yellow
+    keyword reindex yellow
+    keyword savepoint yellow
+    keyword unlisten yellow
+    keyword vacuum yellow
+
+    keyword createdb white
+    keyword createuser white
+    keyword nocreatedb white
+    keyword nocreateuser white
+    keyword password white
+    keyword sysid white
+
+    keyword currval white
+    keyword nextval white
+    keyword pg_database white
+    keyword pg_group white
+    keyword pg_shadow white
+    keyword setval white
+    keyword stdin white
+
+# PostgreSQL sequences
+    keyword cache white
+    keyword increment white
+    keyword maxvalue white
+    keyword minvalue white
+    keyword start white
+
+# MySQL comment
+context linestart # \n brown
+    spellcheck
+
+# ANSI SQL comment
+context exclusive -- \n brown
+    spellcheck
+
+context exclusive /\* \*/ brown
+    spellcheck
+
+context ' ' green
+    keyword \\' green
+
+context " " green
+    keyword \\" green
+
+# Beckticks are used to escape reserved words in MySQL
+context ` ` cyan
+    keyword . white

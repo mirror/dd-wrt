@@ -1,0 +1,229 @@
+wholechars abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-+="'[]{}()
+
+context default
+    spellcheck
+    keyword \\fP brightgreen
+    keyword \\fR brightgreen
+    keyword \\fB brightgreen
+    keyword \\fI brightgreen
+    keyword whole linestart .AS cyan
+    keyword whole linestart .Ar cyan
+    keyword whole linestart .At cyan
+    keyword whole linestart .BE cyan
+    keyword whole linestart .BH cyan
+    keyword whole linestart .BI cyan
+    keyword whole linestart .BR cyan
+    keyword whole linestart .BS cyan
+    keyword whole linestart .Bd cyan
+    keyword whole linestart .Bk cyan
+    keyword whole linestart .Bl cyan
+    keyword whole linestart .Bu cyan
+    keyword whole linestart .Bx cyan
+    keyword whole linestart .CE cyan
+    keyword whole linestart .CM cyan
+    keyword whole linestart .CS cyan
+    keyword whole linestart .CT cyan
+    keyword whole linestart .CW cyan
+    keyword whole linestart .Cm cyan
+    keyword whole linestart .Co cyan
+    keyword whole linestart .DA cyan
+    keyword whole linestart .DE cyan
+    keyword whole linestart .DS cyan
+    keyword whole linestart .DT cyan
+    keyword whole linestart .Dd cyan
+    keyword whole linestart .De cyan
+    keyword whole linestart .Dl cyan
+    keyword whole linestart .Dq cyan
+    keyword whole linestart .Ds cyan
+    keyword whole linestart .Dt cyan
+    keyword whole linestart .Dv cyan
+    keyword whole linestart .EE cyan
+    keyword whole linestart .EN cyan
+    keyword whole linestart .EQ cyan
+    keyword whole linestart .EX cyan
+    keyword whole linestart .Ed cyan
+    keyword whole linestart .Ee cyan
+    keyword whole linestart .Ek cyan
+    keyword whole linestart .El cyan
+    keyword whole linestart .Em cyan
+    keyword whole linestart .En cyan
+    keyword whole linestart .Ev cyan
+    keyword whole linestart .Ex cyan
+    keyword whole linestart .FI cyan
+    keyword whole linestart .FL cyan
+    keyword whole linestart .FN cyan
+    keyword whole linestart .FT cyan
+    keyword whole linestart .Fi cyan
+    keyword whole linestart .Fl cyan
+    keyword whole linestart .Fn cyan
+    keyword whole linestart .HP cyan
+    keyword whole linestart .HS cyan
+    keyword whole linestart .Hh cyan
+    keyword whole linestart .Hi cyan
+    keyword whole linestart .IB cyan
+    keyword whole linestart .IP cyan
+    keyword whole linestart .IR cyan
+    keyword whole linestart .IX cyan
+    keyword whole linestart .Ic cyan
+    keyword whole linestart .Id cyan
+    keyword whole linestart .Ip cyan
+    keyword whole linestart .It cyan
+    keyword whole linestart .LI cyan
+    keyword whole linestart .LO cyan
+    keyword whole linestart .LP cyan
+    keyword whole linestart .LR cyan
+    keyword whole linestart .Li cyan
+    keyword whole linestart .MF cyan
+    keyword whole linestart .ML cyan
+    keyword whole linestart .MU cyan
+    keyword whole linestart .MV cyan
+    keyword whole linestart .NF cyan
+    keyword whole linestart .Nd cyan
+    keyword whole linestart .Nm cyan
+    keyword whole linestart .No cyan
+    keyword whole linestart .OP cyan
+    keyword whole linestart .Oc cyan
+    keyword whole linestart .Oo cyan
+    keyword whole linestart .Op cyan
+    keyword whole linestart .Os cyan
+    keyword whole linestart .PD cyan
+    keyword whole linestart .PN cyan
+    keyword whole linestart .PP cyan
+    keyword whole linestart .PU cyan
+    keyword whole linestart .Pa cyan
+    keyword whole linestart .Pf cyan
+    keyword whole linestart .Pp cyan
+    keyword whole linestart .Pq cyan
+    keyword whole linestart .Pr cyan
+    keyword whole linestart .Ps cyan
+    keyword whole linestart .Ql cyan
+    keyword whole linestart .RB cyan
+    keyword whole linestart .RE cyan
+    keyword whole linestart .RI cyan
+    keyword whole linestart .RS cyan
+    keyword whole linestart .RT cyan
+    keyword whole linestart .Re cyan
+    keyword whole linestart .Rs cyan
+    keyword whole linestart .SB cyan
+    keyword whole linestart .SH cyan
+    keyword whole linestart .SM cyan
+    keyword whole linestart .SP cyan
+    keyword whole linestart .SS cyan
+    keyword whole linestart .Sa cyan
+    keyword whole linestart .Sh cyan
+    keyword whole linestart .Sm cyan
+    keyword whole linestart .Sp cyan
+    keyword whole linestart .Sq cyan
+    keyword whole linestart .Ss cyan
+    keyword whole linestart .St cyan
+    keyword whole linestart .Sx cyan
+    keyword whole linestart .Sy cyan
+    keyword whole linestart .TE cyan
+    keyword whole linestart .TH cyan
+    keyword whole linestart .TP cyan
+    keyword whole linestart .TQ cyan
+    keyword whole linestart .TS cyan
+    keyword whole linestart .Tn cyan
+    keyword whole linestart .Tp cyan
+    keyword whole linestart .UC cyan
+    keyword whole linestart .Uh cyan
+    keyword whole linestart .Ux cyan
+    keyword whole linestart .VE cyan
+    keyword whole linestart .VS cyan
+    keyword whole linestart .Va cyan
+    keyword whole linestart .Vb cyan
+    keyword whole linestart .Ve cyan
+    keyword whole linestart .Xc cyan
+    keyword whole linestart .Xe cyan
+    keyword whole linestart .Xr cyan
+    keyword whole linestart .YN cyan
+    keyword whole linestart .ad cyan
+    keyword whole linestart .am cyan
+    keyword whole linestart .bd cyan
+    keyword whole linestart .bp cyan
+    keyword whole linestart .br cyan
+    keyword whole linestart .ce cyan
+    keyword whole linestart .cs cyan
+    keyword whole linestart .de cyan
+    keyword whole linestart .ds cyan
+    keyword whole linestart .ec cyan
+    keyword whole linestart .eh cyan
+    keyword whole linestart .el cyan
+    keyword whole linestart .eo cyan
+    keyword whole linestart .ev cyan
+    keyword whole linestart .fc cyan
+    keyword whole linestart .fi cyan
+    keyword whole linestart .ft cyan
+    keyword whole linestart .hy cyan
+    keyword whole linestart .iX cyan
+    keyword whole linestart .ie cyan
+    keyword whole linestart .if cyan
+    keyword whole linestart .ig cyan
+    keyword whole linestart .in cyan
+    keyword whole linestart .ll cyan
+    keyword whole linestart .lp cyan
+    keyword whole linestart .ls cyan
+    keyword whole linestart .mk cyan
+    keyword whole linestart .na cyan
+    keyword whole linestart .ne cyan
+    keyword whole linestart .nf cyan
+    keyword whole linestart .nh cyan
+    keyword whole linestart .nr cyan
+    keyword whole linestart .ns cyan
+    keyword whole linestart .oh cyan
+    keyword whole linestart .ps cyan
+    keyword whole linestart .re cyan
+    keyword whole linestart .rm cyan
+    keyword whole linestart .rn cyan
+    keyword whole linestart .rr cyan
+    keyword whole linestart .so cyan
+    keyword whole linestart .sp cyan
+    keyword whole linestart .ss cyan
+    keyword whole linestart .ta cyan
+    keyword whole linestart .ti cyan
+    keyword whole linestart .tm cyan
+    keyword whole linestart .tr cyan
+    keyword whole linestart .ul cyan
+    keyword whole linestart .vs cyan
+    keyword whole linestart .zZ cyan
+    keyword whole linestart .B cyan
+    keyword whole linestart .F cyan
+    keyword whole linestart .I cyan
+    keyword whole linestart .R cyan
+    keyword whole linestart .P cyan
+    keyword whole linestart .L cyan
+    keyword whole linestart .V cyan
+    keyword whole linestart .F cyan
+    keyword whole linestart .T cyan
+    keyword whole linestart .X cyan
+    keyword whole linestart .Y cyan
+    keyword whole linestart .b cyan
+    keyword whole linestart .l cyan
+    keyword whole linestart .i cyan
+
+context exclusive linestart .SH \n white
+    keyword \\fB*\\fP yellow
+    keyword \\fI*\\fP brightred
+    spellcheck
+context exclusive linestart .TH \n white
+    keyword \\fB*\\fP yellow
+    keyword \\fI*\\fP brightred
+    spellcheck
+context exclusive linestart .B \n yellow
+    keyword \\fI*\\fP brightred
+    spellcheck
+context exclusive linestart .I \n brightred
+    keyword \\fB*\\fP yellow
+    spellcheck
+context exclusive whole linestart .nf linestart .fi green
+    keyword \\fB*\\fP yellow
+    keyword \\fI*\\fP brightred
+    spellcheck
+
+# font changes should end in a \fP
+context exclusive \\fB \\f\{PR\} yellow
+    spellcheck
+context exclusive \\fI \\f\{PR\} brightred
+    spellcheck
+context linestart .\\" \n brown
+    spellcheck

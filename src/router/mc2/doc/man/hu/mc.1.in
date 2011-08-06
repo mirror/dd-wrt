@@ -1,0 +1,3146 @@
+.\"TOPICS "Tartalomjegyzék"
+.TH MC 1 "@DATE_OF_MAN_PAGE@" "MC Version @DISTR_VERSION@" "GNU Midnight Commander"
+.\"SKIP_SECTION"
+.SH "NÉV"
+mc \- Fájlkezelő Unix típusú rendszerekhez
+.\"SKIP_SECTION"
+.SH "ALKALMAZÁSA"
+.B mc
+[\-abcCdfhPstuUVx] [\-l log] [dir1 [dir2]] [\-v file]
+.\"NODE "DESCRIPTION"
+.SH "LEÍRÁS"
+A Midnight Commander Unix típusú operációs rendszerekhez készített
+könyvtár böngésző és filekezelő eszköz
+.\"DONT_SPLIT"
+.\"NODE "OPTIONS"
+.SH "OPCIÓK"
+.I "\-a"
+A kereteket és vonalakat egyszerűsített karakterekkel rajzolja ki
+.TP
+.I "\-b"
+Fekete\-fehér megjelenítés kérése
+.TP
+.I "\-c"
+Engedélyezi a színes megjelenítést; nézd meg a
+.\"LINK2"
+Színek
+.\"Colors"
+részt további információkért.
+.TP
+.I "\-C opció"
+Saját parancssori színválaszték beállításához használható.  Az
+.B opció
+használatáról a
+.\"LINK2"
+Színek
+.\"Colors"
+részben olvashatsz.
+.TP
+.I "\-d"
+Nem engedélyezi az egér használatát.
+.TP
+.I "\-f"
+Megjeleníti a Midnight Commander fájlainak elérési útvonalát, ahogy azt
+a fordításnál beállítottuk.
+.TP
+.I "\-k"
+Törli azon gyorsbillentyűket, amelyek alapértelmezésben a termcap/terminfo
+adatbázisból töltődnek be. Csak HP terminálokon érdemes használni,
+ahol a funkció billentyűk nem működnek.
+.TP
+.I "\-l fájl"
+Fájlba menti a szerverrel lebonyolított ftpfs dialógus adatait.
+.TP
+.I "\-P"
+A program befejezésekor a Midnight Commander kiírja az utolsó
+munkakönyvtárat, ez nem használható közvetlenül, csak olyan különleges
+shell funkcióval, amely lehetővé teszi az aktuális shell könyvtár
+helyett a Midnight Commander által utoljára meglátogatott könyvtárra való
+átváltást (köszönet a funkcióért és a funkcióhoz szükséges kódért Torben
+Fjerdingstad\-nek és Sergey\-nek közreműködésükért). Kérlek, ne csinálj
+szó szerinti másolatot a funkció beállításairól. A fájlok forrása a
+.I @prefix@/share/mc/bin/mc.sh
+(bash és zsh felhasználóknak), illetőleg a
+.I @prefix@/share/mc/bin/mc.csh
+(tcsh felhasználóknak) fájl. Ilyenkor, amikor a funkció beállításokat
+változtatod, a profil értékeket nem szükséges megváltoztatnod, csak
+arról gondoskodj, hogy az MC\-t ne fordítsd eltérő beállításokkal.
+.PP
+A bash és zsh funkciók lehetnének rövidebbek is, de a bash környezete
+nem fogadja el a program C\-z háttérbe helyezését. A temp fájlok a saját
+~/.mc/tmp könyvtáradban találhatók, mert ez biztonságosabb, mint a közös
+írható /tmp könyvtár.
+.TP
+.I "\-s"
+Bekapcsolja a lassú terminál módot, ebben a módban a program nem használja
+a sok energiát felemésztő vonal karaktereket és az un. bővített módot
+kikapcsolja.
+.TP
+.I "\-t"
+Ezt csak akkor használd, ha Slang\-gel és terminfo\-val fordítottad a
+programot: a
+.B TERMCAP
+váltózó értékét használja, és nem a rendszer szintű terminál adatbázist.
+.TP
+.I "\-u"
+Nem engedélyezi a konkurrens shell\-ek használatát (csak akkor használható,
+ha a Midnight Commandert a "concurrent shell" támogatással fordították).
+.TP
+.I "\-U"
+Engedélyezi a konkurens shell támogatást (csak akkor használható ha
+a Midnight Commander fordításakor beállították a subshell támogatást,
+mint választható lehetőséget).
+.TP
+.I "\-v fájl"
+Belép a belső fájlnézőbe a kiválasztott fájl megtekintéséhez.
+.TP
+.I "\-V"
+Megmutatja a program verziószámát.
+.TP
+.I "\-x"
+Belép xterm módba. (Két képernyős módban használható, és az egér escape
+szekvenciái is használhatóak).
+.PP
+Ha megadtad, akkor az első útvonal tartalma jelenik meg az aktuális
+panelen; a második könyvtár útvonal pedig a másik panelen jelenik meg.
+.\"NODE "Overview"
+.SH "Áttekintés"
+A Midnight Commander képernyőjének négy része van.  Csaknem az egész
+képernyőt a két könyvtár panelre tölti ki.  Alapértelmezésben a képernyőn
+alulról a második sor a parancssor, a legalsó sor pedig a funkció gombok
+elnevezéseit jeleníti meg. A legfelső sor a
+.\"LINK2"
+Menüsor
+.\"Menu Bar"
+A menüsor esetleg nem látható, de könnyen megjeleníthető úgy, hogy a
+felső sorra kattintasz az egérrel, vagy lenyomod az F9\-et.
+.PP
+A Midnight Commander lehetővé teszi, hogy egyszerre két panelt
+láthassunk. Az egyik a panelek közül az aktív "current" panel
+(a kiválasztó sáv az aktív panelen található). Majdnem minden
+művelet a jelenlegi panelben történik. Néhány fájlművelet, úgy, mint
+átnevezés\-áthelyezés és másolás alapértelmezésben a kiválasztatlan panelt
+használja rendeltetési helyként (ne aggódj, végrehajtás előtt erre mindíg
+rákérdez a megerősítés műveletnél). További információkért nézd meg a
+.\"LINK2"
+Könyvtár panelek\&,
+.\"Directory Panels"
+a
+.\"LINK2"
+Bal és Jobb oldali menük
+.\"Left and Right Menus"
+és a
+.\"LINK2"
+Fájl menü
+.\"File Menu"
+részt.
+.PP
+Futtathatsz rendszer parancsot is a Midnight Commander\-ből, annak egyszerű
+begépelésével. A megjelenő shell parancssorba mindíg begépelheted a
+parancsot és az Enter lenyomásakor a Midnight Commander lefuttatja azt;
+olvasd el a
+.\"LINK2"
+Shell parancssor
+.\"Shell Command Line"
+és a
+.\"LINK2"
+Beviteli gombok
+.\"Input Line Keys"
+részt, hogy többet is megtudhass a parancssorról.
+.\"NODE "Mouse Support"
+.SH "Egér kezelés"
+A Midnight Commander eredendően tartalmazza az egér támogatást. Ez
+aktiválódik, ha
+.B xterm(1)
+terminálon futtatod (akkor is működik, amikor telnet, vagy rlogin
+kapcsolatban vagy egy másik géppel az xterm\-ből), vagy, ha Linux konzolon
+használod, és a
+.B gpm
+egér szerver fut.
+.PP
+Amikor bal gombbal kattintasz a fájlra, a könyvtár panalben a fájl
+kiválasztódik; ha a jobb gombbal kattintasz, a fájlt ezzel megjelölöd
+(vagy megszünteted azt, az azt megelőző állapotnak megfelelően).
+.PP
+A fájlra történő dupla kattintásra az MC megpróbálja futtani
+azt, ha futtatható fájlról van szó; ha a
+.\"LINK2"
+fájl kiterjesztését
+.\"Extension File Edit"
+egy adott programhoz már hozzá rendelted, a fájl kiterjesztéséhez
+hozzárendelt program lefut.
+.PP
+Továbbá rájuk kattintva láthatóvá teszi a parancs futtatásához megadott
+funkció billentyű elnevezéseket is.
+.PP
+Ha az egérrel a könyvtár panel legfelső sorára kattintunk, az egy
+oldalnyit lapozik visszafelé. Ennek megfelelően az alsó sorra kattintva
+egy oldalnyit ugrasz előre. Ez az eszköze használható a
+.\"LINK2"
+Súgó néző
+.\"Contents"
+és a
+.\"LINK2"
+Könyvtárfa
+.\"Directory Tree"
+esetén is.
+.PP
+Az egérgomb automatikus ismétlésének határértéke alapesetben 400
+ezredmásodpercnyi. Ez megváltoztatható az
+.\"LINK2"
+~/.mc/ini
+.\"Save Setup"
+fájlban a
+.I mouse_repeat_rate
+paraméter értékének megváltoztatásával.
+.PP
+Ha a Commander\-t egér támogatással indítottad az eredeti egér
+tulajdonságok (szöveg kivágás és beillesztés) a Shift gomb lenyomásával
+érhetők el.
+.\"NODE "Keys"
+.SH "Billentyűzet"
+Néhány Midnight Commander parancshoz szükséges a
+.I Control (~vezérlő)
+(ezeket CTRL\-lal vagy CTL\-lel jelöljük) és a
+.I Meta (~Váltó)
+(ezeket ALT\-tal vagy néha Compose\-zal jelöljük) gombok használata. Ebben
+a leírásban a következő rövidítéseket használjuk:
+.PP
+C\-<kar> ilyenkor lenyomva kell tartanod a Control billentyűt addíg, amíg
+a megadott karaktert <kar> le nem ütöd. Így például a C\-f esetén: tartsd
+lenyomva a Control billentyűt, amíg az f\-et begépeled.
+.PP
+M\-<kar> ilyenkor lenyomva kell tartanod a Meta, vagy az Alt billentyűt
+addíg, amíg a megfelelő karaktert <kar> be nem gépeled. Ha ez nem a
+Meta, vagy az Alt billentyű, akkor használd az ESC\-et, a megfelelő
+karakter <kar> begépelésekor. A Meta funkció Linux alatt úgy érhető el,
+hogy megnyomjuk, majd elengedjük az ESC billentyűt. A Meta funkció az
+ezután megnyomott billentyűre vonatkozik!
+.PP A Midnight Commander
+beviteli eszköze a GNU Emacs szerkesztő billentyűzet\-kombinációihoz
+hasonlóan működik.
+.PP
+Több részben is beszélünk majd ezekről a gombokról. Az itt következők a
+legfontosabbak ezek közül.
+.PP
+A
+.\"LINK2"
+Fájl menü
+.\"File Menu"
+rész tartalmazza a Fájl menü parancsainak billentyűzet gyorskapcsolóit.
+Ez a rész tartalmazza még a funkció billentyűket is. Ezen parancsok
+jobbára valamilyen műveletet végeznek el, általában a kiválasztott
+fájlon, vagy a kijelölt fájlokon.
+.PP
+A
+.\"LINK2"
+Könyvtár panelek
+.\"Directory Panels"
+rész tartamazza azokat a billentyűket, amelyek a későbbi műveletekhez
+kiválasztják, vagy kijelölik a fájlokat (a művelet általában a Fájl
+menüben megtalálható).
+.PP
+A
+.\"LINK2"
+Shell Parancssor
+.\"Shell Command Line"
+felsorolja azokat a gombokat, amelyeket használhatsz a begépeléshez és a
+parancssor szerkesztéshez. Ezek átmásolják a fájlnevet a könyvtár
+panelből a parancssorba (a túlságosan sok gépelést elkerülendő), vagy
+hozzáférést enged a parancssor előzményeihez.
+.PP
+.\"LINK2"
+Beviteli gombok
+.\"Input Line Keys"
+a beviteli sorok szerkesztésére szolgálnak. Ezen eszközök a
+parancssorban és lekérdező dialógus (query dialog) beviteli soraihoz
+szükségesek.
+.\"NODE "  Miscellaneous Keys"
+.SH "  Különleges gombok"
+Itt azon billentyűket találhatod meg, amelyek nem tartoznak bele
+egyetlen más kategóriába sem:
+.PP
+.B Enter.
+Ha található valamilyen szöveg a parancssorban (az egyik sor a panelek
+aljánál), akkor azt lefuttatja, mint parancsot. Ha nem található szöveg
+a parancssorban, és a kiválasztás egy könyvtár felett van a Midnight
+Commander\-ben, akkor végrehajtja a
+.B chdir(2)
+(könyvtárváltás) parancsot a kiválasztott könyvtárra és újraolvassa a
+panel információit; ha a kiválasztás egy futtatható fájlon van, akkor
+lefuttatja azt. Végül, ha a kiválasztott fájl kiterjesztése szerepel a
+.\"LINK2"
+társításoknál\&,
+.\"Extension File Edit"
+akkor a kijelölt parancs fut le.
+.PP
+.B C\-l
+Frissít minden információt a Midnight Commander.
+.PP
+.B C\-x c
+Futtatja a
+.\"LINK2"
+Chmod
+.\"Chmod"
+parancsot a fájlon, vagy a kijelölt fájlokon.
+.PP
+.B C\-x o
+Futtatja a
+.\"LINK2"
+Chown
+.\"Chown"
+parancsot a fájlon, vagy a kijelölt fájlokon.
+.PP
+.B C\-x l
+Futtatja a link parancsot.
+.PP
+.B C\-x s
+Futtatja a szimbolikus link parancsot.
+.PP
+.B C\-x i
+Beállítja a másik panel információ megjelenítési
+módját.
+.PP
+.B C\-x q
+Beállítja a másik panelt a quick view\-ra (villámnézetre).
+.PP
+.B C\-x !
+Futtatja a
+.\"LINK2"
+Parancskimenet panel
+.\"External panelize"
+parancsot.
+.PP
+.B C\-x h
+Futtatja a
+.\"LINK2"
+könyvtár hozzáadása a Könyvjelzőkhöz
+.\"Hotlist"
+parancsot.
+.PP
+.B M\-!
+Futtatja a Szűrés (Filtered view) parancsot, a
+.\"LINK2"
+Belső fájlnézőnek
+.\"Internal File Viewer"
+megfelelően.
+.PP
+.B M\-?
+Futtatja a
+.\"LINK2"
+Fájl keresés
+.\"Find File"
+parancsot.
+.PP
+.B M\-c
+Beugrik a
+.\"LINK2"
+Gyors cd
+.\"Quick cd"
+dialógboxba.
+.PP
+.B C\-o
+A parancs futtatásakor xterm\-en Linux, vagy FreeBSD konzolon, megmutatja
+az előzö parancs kimeneteit. Linux konzolon történő futtatáskor a
+Midnight Commander egy beépített programot használ (cons.saver) a
+képernyő\-információk elmentésére és visszaállítására. Tehát az MC
+képernyőjét bármikor kikapcsolhatjuk, és visszakapcsolhatjuk.
+.PP
+Ha a subshell támogatást is befordították, bármikor begépelheted a C\-o
+gombokat ahhoz, hogy visszatérhess a Midnight Commander saját
+képernyőjéhez, majd a C\-o gombok használatával visszatérhetsz a
+parancsodhoz. Ha az alkalmazásod felfüggesztett állapotba kerül, ennek a
+trükknek a használatakor, nem leszel képes futtatni más parancsot a
+Midnight Commander\-ből addíg, amíg a felfüggesztett alkalmazást meg nem
+szakítod.
+.\"NODE "  Directory Panels"
+.SH "  Könyvtár panelek"
+Ez a rész azon billentyűket sorolja fel, amelyek a könyvtár panelekben
+használhatóak. Ha tudni akarod azt, hogy hogyan tudod megváltoztatni a
+panelek külső megjelenését, akkor nézd meg a
+.\"LINK2"
+Bal és jobboldali menük
+.\"Left and Right Menus"
+részt.
+.PP
+.B Tab, C\-i
+Váltja az aktuális panelt. Az előzőleg inaktív panel lesz a jelenlegi
+panel és az előzőleg aktív panel lesz az inaktív panel. A kiválasztó sáv
+az előzőleg aktívról átugrik az újonnan aktív panelre.
+.PP
+.B Insert, C\-t
+DEPRECATED! A fájlok kijelölésére az Insert gombot használhatod (a kich1 terminfo
+kombináció), vagy a C\-t (Control\-t) kombinációt. A kijelölés
+megszüntetéséhez csak újra ki kell jelölni a kijelölt fájlt.
+.TP
+.B Insert
+to tag files you may use the Insert key (the kich1 terminfo sequence). 
+To untag files, just retag a tagged file.
+.TP
+.B M\-e
+to change charset of panel you may use M\-e (Alt\-e).
+Recoding is made from selected codepage into system codepage. To
+cancel the recoding you may select "directory up" (..) in active panel.
+To cancel the charsets in all directories, select "No translation " in 
+the dialog of encodings.
+.PP
+.B M\-g, M\-r, M\-j
+A panel legfelső, középső és alsó fájljának kiválasztásához használd
+sorban a megfelelő billentyű\-kombinációt. Linuxban M\-h a "history"
+bekapcsolására szolgál.
+.PP
+.B M\-t
+Vált a jelenlegi lista megjelenítési módról a következő megjelenítési
+módra. Ezzel gyorsan át tudsz váltani a hosszú listáról a rendezett
+listára és a felhasználó által definiált listázási módra.
+.PP
+.B C\-\\\\ (control\-backslash)
+Megjeleníti a
+.\"LINK2"
+Könyvjelzőket
+.\"Hotlist"
+és átvált a kiválasztott könyvtárra.
+.PP
+.B + \ (plusz)
+Ez használható a fájlok csoportjainak kiválasztásához (kijelöléséhez). A
+Midnight Commander megjelenít egy ablakot a jelölendő csoport pontos
+kiterjesztésének megadásához. Ha a
+.I Shell kifejezések
+opció engedélyezve van, csak a pontos kiterjesztések használhatók a
+shell\-ben kiterjesztésként (* jelent egy, vagy több karaktert, a ?
+egyetlen karaktert). Ha a
+.IR "Shell kifejezések" \-et
+kikapcsolva tartjuk, a fájlok kijelölésére a normál kifejezések
+használhatóak (lásd
+.IR "ed (1)" ).
+.PP
+.B \\\\ (backslash).
+Használd a "\\" gombot a fájlcsoportok kiválasztásának megszüntetéséhez.
+Ez a Plusz gomb ellentettje.
+.PP
+.B crsr up, C\-p
+Az előző panel\-bejegyzésre mozgatja a kiválasztó sávot.
+.PP
+.B crsr down, C\-n
+A következő bejegyzésre lépteti a kiválasztó sávot a panelben.
+.PP
+.B home, a1, M\-<
+A kiválasztó sávot a panel első bejegyzésére mozgatja.
+.PP
+.B end, c1, M\->
+A kiválasztó sávot a panel utolsó bejegyzésére mozgatja.
+.PP
+.B Page Down, C\-v
+A kiválasztó sávot egy oldallal lejjebb viszi.
+.PP
+.B Page Up, M\-v
+A kiválasztó sávot egy oldallal feljebb viszi.
+.PP
+.B M\-o
+Ha a másik panel a lista panel és te a könyvtárodon vagy az aktív
+panelen, akkor a másik panel tartalma állítódik be a jelenleg aktív
+könyvtárban (hasonlóan az Emacs C\-o gombjához), egyébként a másik panel
+tartalma állítódik be a jelenlegi könyvtár eredeti könyvtárába. Ha a
+kurzor könyvtáron áll, akkor az inaktív panelen megnyitja.
+.PP
+.B C\-PageUp, C\-PageDown
+Csak Linux konzolon történő futtatáskor: könyvtárat vált felfelé (..) a
+jelenleg kiválasztott könyvtárnak megfelelően.
+.PP
+.B M\-y
+Az előzőleg látogatott könyvtárba lép vissza, ami azonos a panel tetején
+látható '<' jelre egérrel történő kattintással.
+.PP
+.B M\-u
+A következő látogatott könyvtárba lép át, azonos a '>'
+egérrel történő lenyomásával.
+.PP
+.B M\-S\-h, M\-H
+Megjeleníti a könyvtár előzményeket, azonos a 'v' egérrel történő
+lenyomásával.
+.\"NODE "  Quick search"
+.SH "  Quick search"
+.PP
+.B C\-s, M\-s
+Elindítja a fájl keresést a könyvtár listában.  Amikor a keresés
+aktív, a billentyűlenyomások hozzáadódnak a keresett szöveghez a
+parancssorban. Ha a
+.I Mini fájlinfó
+opció engedélyezve van, a kereső szöveg a mini\-fájlinfó sorban jelenik
+meg. Amikor gépelsz, a mini kiválasztó sáv átlép a következő fájlra,
+amely a begépelt szöveggel egyezik. A
+.IR backspace ,
+vagy a
+.I DEL
+gombokat használhatod a gépelési hibák javítására. Ha a C\-s gombokat
+használod újra, új keresés kezdhető.
+.\"NODE "  Shell Command Line"
+.SH "  Shell parancssor"
+Ez a rész tartalamazza azokat a billentyű\-kombinációkat,
+amiket a túlságosan sok gépelés elkerülésére használhatunk a
+shell parancsok begépelésénél.
+.PP
+.B M\-Enter
+A jelenleg kiválasztott parancs nevét átmásolja a parancssorba.
+.PP
+.B C\-Enter
+Azonos az M\-Enter\-rel, de ez csak Linux konzolon működik.
+.PP
+.B M\-Tab
+Fájlnév, parancs, változó, felhasználónév és hostnév
+.\"LINK2"
+Kiegészítés
+.\"Completion"
+készítés. A hiányosan bebillenyűzött filenevet kiegészíti.
+.PP
+.B C\-x t, C\-x C\-t
+A parancssorba másolja az aktív panel kijelölt fájlait (ha nincsennek
+kijelölt fájlok, a kiválasztott fájlt) (C\-xt), vagy a másik paneléit
+(C\-x C\-t).
+.PP
+.B C\-x p, C\-x C\-p
+Az első billentyű\-sorozat az aktív panel elérési útját átmásolja a
+parancssorba, a második billentyű\-sorozat pedig az inaktív panel
+könyvtárának elérési útját másolja át a parancssorba.
+.PP
+.B C\-q
+A quote (idézet) parancsot olyan karakterek beillesztésére használhatod,
+amelyeket egyébként a Midnight Commander használ (ilyen pl. a '+'
+szimbólum). Például a C\-+ elindítja a fájlkijelőlést ahelyett, hogy
+beíródna a parancssorba. A
+.B C\-q
+segítségével viszont be lehet írni.
+.PP
+.B M\-p, M\-n
+Ezeket a gombokat az előzőleg kiadott parancsok (a history) közötti
+böngészésre használhatod. Az M\-p átléptet az előző bejegyzésre, az M\-n
+átléptet a következő bejegyzésre.
+.PP
+.B M\-h
+Megjeleníti a jelenlegi beviteli sor előzményeit (history).
+.\"NODE "  General Movement Keys"
+.SH "  Általános mozgási lehetőségek billentyűzettel"
+A Súgó néző, a Fájl néző és a Könyvtárfa azonos kódokat használ a
+mozgáshoz. Emiatt ezek pontosan ugyanazokat a billentyűket fogadják el.
+Ezeken túl néhány olyan van, amely csak az adott eszköz számára
+fogadható el.
+.PP
+A Midnight Commander többi része is használ néhány billentyűt a
+mozgáshoz, ezért ebben a részben ezek is használhatók a mozgáshoz.
+.PP
+.B crsr Up, C\-p
+Egy sort ugrik vissza.
+.PP
+.B crsr Down, C\-n
+Egy sort ugrik előre.
+.PP
+.B Prev Page, Page Up, M\-v
+Egy teljes oldalnyit ugrik vissza.
+.PP
+.B Next Page, Page Down, C\-v
+Egy teljes oldalnyit ugrik előre.
+.PP
+.B Home, A1
+A fájl elejére ugrik.
+.PP
+.B End, C1
+A fájl végére ugrik.
+.PP
+A Súgó néző és a Fájl néző az itt látható további billentyű\-kombinációk
+használatát teszi lehetővé:
+.PP
+.B b, C\-b, C\-h, Backspace, Delete
+Egy teljes oldalnyit ugrik hátra.
+.PP
+.B Space bar
+Egy teljes oldalnyit ugrik előre.
+.PP
+.B u, d
+Egy fél oldalnyit ugrik vissza, vagy előre.
+.PP
+.B g, G
+Az elejére, vagy a végére ugrik.
+.\"NODE "  Input Line Keys"
+.SH "  Beviteli gombok"
+A beviteli sorok (ezek azok, amelyeket a
+.\"LINK2"
+Shell parancssor
+.\"Shell Command Line"
+és a programok lekérdező dialógusablakai használnak) a következő
+billyentyűk használatát engedélyezik:
+.PP
+.B C\-a
+a kurzor a sor elejére ugrik.
+.PP
+.B C\-e
+a kurzor a sor végére ugrik.
+.PP
+.B C\-b, a kurzort egy pozícióval balra mozgatja.
+.PP
+.B C\-f, a kurzort egy pozicióval jobbra mozgatja.
+.PP
+.B M\-f
+egy szónyit ugrik előre.
+.PP
+.B M\-b
+egy szónyit ugrik vissza.
+.PP
+.B C\-h, backspace
+törli az előző (balra eső) karaktert.
+.PP
+.B C\-d, Delete
+törli az adott pontban lévő karaktert (a kurzor alól).
+.PP
+.B C\-@
+beállítja a kijelölés helyét.
+.PP
+.B C\-w
+kimásolja a szöveget a kurzor és a kijelölt rész közül a kill bufferbe
+és a bemeneti sorokat törli a szövegből.
+.PP
+.B M\-w
+kimásolja a szöveget a kurzor és a kijelölt rész közül a kill bufferbe.
+.PP
+.B C\-y
+visszateszi a kill bufferben lévő bejegyzést.
+.PP
+.B C\-k
+törli a szöveget a kurzortól a sor végéig.
+.PP
+.B M\-p, M\-n
+Ezen billentyűk segítségével közvetlenül böngészhetünk az előzőleg
+kiadott parancsok közt. Az M\-p visszaléptet az előző bejegyzésre, az M\-n
+pedig átléptet a következőre.
+.PP
+.B M\-C\-h, M\-Backspace
+egy szót töröl visszafelé.
+.PP
+.B M\-Tab
+Fájlnév, parancs, változó, felhasználónév és hostname
+.\"LINK2"
+Kiegészítést
+.\"Completion"
+csinál.
+.SH ""
+.\"NODE "Menu Bar"
+.SH "Menüsor"
+A menüsor akkor jelenik meg, ha az F9\-es gombot lenyomod, vagy ha a
+képernyő legfelső sorára kattintasz. A menüsor öt menüt tartalmaz:
+"Bal", "Fájl", "Parancsok", "Beállítások" és "Jobb".
+.PP
+A
+.\"LINK2"
+Bal és jobboldali menük
+.\"Left and Right Menus"
+lehetővé teszik a bal és jobb oldali könyvtár panelek külső
+megjelenítésének módosítását.
+.PP
+A
+.\"LINK2"
+Fájl menü
+.\"File Menu"
+felsorolja a kiválasztott fájlon, vagy a kijelölt fájlokon végrehajtható
+parancsokat.
+.PP
+A
+.\"LINK2"
+Parancsok menü
+.\"Command Menu"
+felsorolja az általános és a jelenleg kiválasztott fájltól, kijelölt
+fájloktól függetlenül végrehajtható parancsokat.
+.\"NODE "  Left and Right Menus"
+.SH "  Bal és jobboldali menük"
+A könyvtárpanelek megjelenése változtatható a
+.B "Bal"
+és
+.B "Jobb"
+menükben.
+.\"NODE "    Listing Mode..."
+.SH "    Fájllista..."
+A fájllista módozatok a fájlok megjelenítésének beállítására szolgálnak,
+négy különböző listázási mód használható:
+.BR Hosszúlista ,
+.BR Rövidlista ,
+.B Részleteslista
+és a
+.BR Felhasználói .
+A hosszú könyvtár nézet megmutatja a fájlneveket, a méretüket és a
+módosításuk idejét.
+.PP
+A rövid lista nézet csak a fájl nevét és ezt két oszlopban (ekkor
+kétszer, vagy többször annyi fájlt láthatsz mint a többi nézetekben). A
+részletes lista tisztán az
+.B "ls \-l"
+parancs kimenetét jeleníti meg. A részletes lista helyenként képernyő
+széles is lehet.
+.PP
+Ha a "Felhasználói" megjelenítési formátumot választod, akkor te tudod
+meghatározni azt, hogy mi is jelenjen meg a panelekben.
+.PP
+A felhasználói megjelenítésnek a panel méretét megadó bejegyzéssel kell
+kezdődnie. Ez lehet "half" (fél), vagy "full" (teljes), ezek határozzák
+meg azt, hogy a panelek fél, illetve teljes képernyő szélesen
+jelenjenek\-e meg.
+.PP
+A panel méretének magadása után, meghatározhatod azt, hogy a panel két
+oszlopot tartalmazzon, egy "2"\-es hozzáadásával a felhasználói
+formátumot megadó szöveghez.
+.PP
+Ezután az opcionális fájl jellemzők neveit kell megadnod. Az itt
+megjelenített értékek használhatóak:
+.TP
+.B name
+a fájl nevét jeleníti meg.
+.TP
+.B size
+a fájl méretét jeleníti meg.
+.TP
+.B bsize
+ez a
+.B size
+formátum egyik formája. Megjeleníti a fájlok és könyvtárak méretét, ha
+az utóbbi tartalmaz SUB\-DIR\-t vagy UP\-\-DIR\-t.
+.TP
+.B type
+megjelenít egy egykarakteres érték típust. Ez a karakter állítja be azt,
+hogy mit jelenítsen meg az
+.B "ls \-F"
+flaggel. A csillag\-jel a futtatható fájlokhoz, a "slash" jel (törtvonal)
+a könyvtárakhoz, a "at\-sign" a linkekhez, az "equal" (egyenlőség) jel a
+socket\-ekhez, a "hyphen" a karakteres eszközökhöz, a pluszjel a blokk
+eszközökhöz, a "pipe" a fifo\-hoz, a "tilde" a könyvtárak szimbolikus
+linkjeihez és a felkiáltójel a stalled szimlinkekhez (linkek, amik
+sehova sem mutatnak) használhatók.
+.TP
+.B mark
+a kijelölt fájl megjelölése, csillagozása, space, ha a fájl nem
+kijelölt.
+.TP
+.B mtime
+a fájl utolsó módosításának (modify) ideje.
+.TP
+.B atime
+a fájl utolsó hozzáférésének (access) ideje.
+.TP
+.B ctime
+a fájl készítésének (create) ideje.
+.TP
+.B perm
+a megjelenített szöveg a fájl jelenlegi hozzáférési jogainak
+(permission) bitjeit mutatja.
+.TP
+.B mode
+a fájl jelenlegi nyolcas számrendszerbeli hozzáférését mutató bit
+értéke.
+.TP
+.B nlink
+a fájlra mutató linkek száma.
+.TP
+.B ngid
+a GID (a csoport azonosító kódja; szám).
+.TP
+.B nuid
+a UID  (felhasználó azonosító kódja; szám).
+.TP
+.B owner
+a fájl tulajdonosa.
+.TP
+.B group
+a fájl csoportja.
+.TP
+.B inode
+a fájl inódja (helyfoglalása a harddiszken).
+.PP
+Ezeken kívül még a következő érték megnevezések adhatók meg az értékek
+megjelenítéskori rendezéséhez:
+.TP
+.B space
+helykitöltő a megjelenítési formátumban.
+.TP
+.B |
+ez a karakter használható arra, hogy függőleges vonalat jelenítsünk meg.
+.PP
+Egy érték fix méretének megadásához (mezőszélesség megadás), csak egy
+\&':'\-ra van szükséged és azt követően a megjelenített érték karaktereinek
+számára, ha a szám egy '+' jelet követ, akkor a méret meghatározás a
+minimum érték szélességet adja meg, ha a program több helyet talál a
+képernyőn, mint ami az alap megjelenítéshez szükséges, ki tudja
+használni a maradékot is, az értékek helyének kinyújtásával.
+.PP
+Például a
+.B Hosszú lista
+megjelenítés ehhez a formátumhoz hasonló:
+.PP
+half type name | size | mtime
+.PP
+A
+.B Részletes lista
+megjelenítés ennek a formátumnak megfelelő:
+.PP
+full perm space nlink space owner space group space size space mtime
+space name
+.PP
+Érdemes például ezt kipróbálni:
+.PP
+half name | size:7 | type mode:3
+.PP
+A Paneleket még a következő módokba lehet állítani:
+.TP
+.B Infó
+Az infó nézet a jelenleg kiválasztott fájlra vonatkozó adatokat mutatja,
+és, ha látható információ a jelenlegi fájlrendszerről, akkor azt is.
+.TP
+.B Könyvtárfa
+A könyvtárfa nézet azonos a
+.\"LINK2"
+Könyvtárfa
+.\"Directory Tree"
+eszközzel. Lásd az erről szóló részt további információkért.
+.TP
+.B Gyorsnézőke
+Ebben a módban a panel átvált
+.\"LINK2"
+Belső fájlnézőre\&,
+.\"Internal File Viewer"
+amely megjeleníti a jelenleg kiválasztott fájl tartalmát, ha a panelt
+választod ki (a tab billentyűvel, vagy az egérrel), elérhetővé válnak a
+fájlnéző parancsai.
+.\"NODE "    Sort Order..."
+.SH "    Rendezés..."
+Nyolc rendezési sorrend található itt: Név szerinti, Kiterjesztés
+szerinti, Módosítás ideje szerinti, Elérés ideje szerinti, az inode
+információk módosítása szerinti, Méret szerinti, az Inode szerinti és a
+Rendezetlen elrendezés. A Rendezés dialógus ablakban választhatsz a
+rendezési szabályok közül és megadhatod azt is, hogy a megjelenítés a
+kijelölt rendezési sorrenddel ellentétes legyen a megfelelő box
+kijelölésével.
+.PP
+Alapértelmezésben a könyvtárak a fájlok előtt találhatók, de ez
+megváltoztatható a
+.\"LINK2"
+Beállításokban
+.\"Options Menu"
+.RB ( "Minden fájl vegyesen"
+opciójával).
+.\"NODE "    Filter..."
+.SH "    Szűrés"
+A szűrés parancs engedélyezi számodra azt, hogy meghatározhasd a shell
+mintát (például
+.BR *.tar.gz ),
+ha csak az ilyen fájlokat szeretnéd megjeleníteni.  Tekintet nélkül
+a filter kiegészítésre, a könyvtárak, és a könyvtárakra mutató linkek
+megjelennek a könyvtár panelben.
+.\"NODE "    Reread"
+.SH "    Frissít"
+A frissítés parancs újraolvassa a könyvtár fájl listáját. Ez más
+processzekben is használható, amikor készítünk egy új fájlt, vagy törlünk
+fájlokat. Ha a panelbe mentett fájlneveket használod, a panel újra fogja
+olvastatni a könyvtár bejegyzéseket és törli ezen információkat (Lásd a
+.\"LINK2"
+Parancskimenet panel
+.\"External panelize"
+részt további információkért).
+.\"NODE "  File Menu"
+.SH "  Fájl menü"
+A Midnight Commander az F1 \- F10 gombokat, mint gyorsbillentyűket
+használja a Fájl menü parancsainak végrehajtásához. Az F\-es gombok
+(funkciógombok) a TERMINFO kf1 ... kf10 escape szekvenciáit használják. Ha
+a terminálon nincs funkciógomb támogatás, neked kell néhány funkciót
+végrehajtanod az ESC (META) gomb és az 1\-től 9\-ig terjedő és a 0 számok
+használatával ( F1\-től F9\-ig és F10 egyenként megfelelően).
+.PP
+A Fájl menü a következő parancsokat tartalmazza (a gyorsbillentyűk
+megjegyzésként megtalálhatóak):
+.PP
+.B Súgó (F1)
+.PP
+Segítségül hívja a beépített hypertext Súgó nézőt. A
+.\"LINK2"
+Súgó nézőn\&,
+.\"Contents"
+belül a Tab gombot használhatod a következő link kiválasztására és az
+Enter gombot a link követésére. A Space és a Backspace gombok az előre\-
+és hátralépésre használhatóak a súgó oldalon belül. Az F1 újbóli
+lenyomására egy teljes listát kapsz az elérhető gombokról.
+.PP
+.B Menü (F2)
+.PP
+Ez segítségül hívja a
+.\"LINK2"
+felhasználói menüt\&.
+.\"Menu File Edit"
+A felhasználói menü könnyű használatot biztosít az új menükkel és az
+extra eszközökkel a Midnight Commander\-hez.
+.PP
+.B Megnéz (F3, Shift\-F3)
+.PP
+Megmutatja a jelenlegi fájlt. Alapértelmezésben ehhez a
+.\"LINK2"
+Belső fájlnézőt
+.\"Internal File Viewer"
+használja, de ha a "Belső Nézegető" opció ki van kapcsolva, a
+.B PAGER
+környezeti változóban megadott külső fájlnézőt fogja használni. Ha a
+.B PAGER
+értéke sincs megadva, a "view" parancsot fogja használni. Ha a
+Shift\-F3\-at használod, a fájlnéző minden formázás, vagy átszerkesztés
+nélkül nyitja meg a fájlt.
+.PP
+.B Szűrés... (M\-!)
+.PP
+Ez egy parancssort jelenít meg a kiadandó parancshoz és a hozzá tartozó
+kiegészítés magadásához (a kiegészítés alapértelmezésben a jelenleg
+kiválasztott fájl neve), a parancs kimeneteit a belső fájl nézővel
+nézhetjük meg.
+.PP
+.B Szerkesztés (F4)
+.PP
+Alapértelmezésben a
+.B vi
+editort használja, vagy az
+.B EDITOR
+környezeti változóban megadott szerkesztőt, vagy a
+.\"LINK2"
+Belső fájl szerkesztőt\&,
+.\"Internal File Editor"
+ha a belső szerkesztő be van kapcsolva.
+.PP
+.B Másol (F5)
+.PP
+Egy beviteli ablakot jelenít meg, amely alapértelmezésben a nem
+kiválasztott panel könyvtárát adja meg rendeltetési helyként, majd
+átmásolja a kiválasztott fájlt (vagy kijelölt fájlokat, ha egynél több
+fájlról van szó) a beviteli ablakban megadott könyvtárba. A folyamat
+futását a C\-c, vagy ESC lenyomásával szakíthatod meg. A forrás maszk
+beállításairól (ami általában a *, vagy a ^\\(.*\\)$ közül valamelyik.
+Ezekről a "Shell kifejezések" beállításnál, illetve a
+.\"LINK2"
+Kijelölt fájlok másolása vagy áthelyezése
+.\"Mask Copy/Rename"
+rendeltetésénél olvashatsz.
+.PP
+Néhány rendszeren a láthatóság beállítható a háttérben történő
+másoláshoz a background gomb kijelölésével (vagy a M\-b lenyomásával a
+dialógboxban). A
+.\"LINK2"
+Háttérmunkák
+.\"Background jobs"
+a háttér processzek beállítására használható.
+.PP
+.B Link (C\-x l)
+.PP
+Hard linket csinál a fájlhoz.
+.PP
+.B SymLink (C\-x s)
+.PP
+Szimbolikus linket készít a jelenlegi fájlhoz. Azoknak, amik nem tudják
+mire jók ezek a linkek: kapcsolatot hoz létre a fájlhoz a fájl egy
+kicsiny másolatával, ám a forrás fájlnév és a célfájl fájlneve ugyanazt
+a fájlt jeleníti meg.  Például, ha szerkeszted ezeket a fájlokat, minden
+változtatás, amit elvégzel, mindkét fájlban végrehajtódik.  Néhányan a
+linkeket alias\-nak (~álnév), vagy gyorsbillyentyűnek hívják.
+.PP
+A hard link valós fájlként látszik. Elkészítése után nem lehet megmondani
+azt, hogy melyik az eredeti és melyik a link. Ha ezek közül az egyiket
+törlöd, a másik sértetlen marad. Ez nagyon eltér attól, hogy egy fájl
+önmaga másolataként jelenjen meg. Akkor használj hard linket, amikor
+nem igazán tudod mit akarsz csinálni.
+.PP
+A szimbolikus link az eredeti fájl nevére vonatkozik. Ha az eredeti fájlt
+töröljük, a szimbolikus link használhatatlan lesz. Ezt elég egyszerű
+úgy megjegyezni, hogy ez a fájlok megjelenítése más néven. A Midnight
+Commander "@"\-jelet jelenít meg a fájlnév előtt, ha az szimbolikus linkkel
+mutat valahova (a könyvtárakat kivéve, ahol tilde (~) jelet mutat). Az
+eredeti fájl, ahova mutat a link, láthatóvá válik a mini\-fájlinfó sorban,
+ha a
+.I "Mini fájlinfó"
+opciót engedélyezted. Használj szimbolikus linket, ha el akarod kerülni
+az összevisszaságot, amit a hard link okozhat.
+.PP
+.B Átnevezés, vagy mozgatás (F6)
+.PP
+Egy beviteli ablakot jelenít meg, amely alapértelmezésben a nem
+kiválasztott panel könyvtárát adja meg rendeltetési helyként, és
+átmásolja a kiválasztott fájlt (vagy kijelölt fájlokat, ha egynél
+több fájlról van szó) a beviteli ablakban megadott könyvtárba úgy,
+hogy az eredeti helyéről letörli. A folyamat futását a C\-c, vagy az
+ESC lenyomásával megszakíthatod. További részletekért lásd a Másolás
+műveletet az elöbbiekben, mivel több dolog azonos.
+.PP
+Néhány rendszeren a láthatóság beállítható a háttérben történő másolás a
+.B Háttérben gomb
+kijelölésével (vagy a M\-b lenyomásával a dialógboxban). A
+.\"LINK2"
+Háttérmunkák
+.\"Background jobs"
+használható a háttér processzek beállítására is.
+.PP
+.B Új könyvtár (F7)
+.PP
+Megnyit egy beviteli dialógus ablakot, amelyben megadhatod a készítendő
+könyvtár jellemzőit.
+.PP
+.B Törlés (F8)
+.PP
+Törli a kiválasztott fájlt, vagy kijelölt fájlokat, vagy könyvtárakat
+az aktuális panelben. A folyamatot a C\-c, vagy az ESC lenyomásával
+megszakíthatod.
+.PP
+.B Gyors cd (M\-c)
+Használd a
+.\"LINK2"
+Gyors cd
+.\"Quick cd"
+parancsot, ha teljes parancssort akarsz alkalmazni a könyvtárváltáshoz.
+.PP
+.B Csoport kiválasztás (+)
+.PP
+Ez a fájlok csoportjainak kiválasztására (kijelölésére) használható. A
+Midnight Commander promptot (dialógus ablakot) jelenít meg a csoport
+meghatározásának leírására. Ha a
+.I Shell kifejezések
+et engedélyezted, a pontos beírásnak megfelelő fájlnevek választódnak
+ki a shell\-ben (*\-ot helyezve az üres\-, vagy a több karakterhez és ?\-et
+helyezve egy adott karakter helyére). Ha a
+.IR "Shell kifejezések" \-et
+kikapcsoltad, akkor a fájlok kijelölése a szabványos kifejezésekkel
+(regular expression) történik (lásd
+.IR "ed (1)" ).
+.PP
+.B Csoport kiválasztás megszüntetése (\)
+.PP
+A fájlcsoportok kiválasztottságának megszüntetésére szolgál.  Ez a
+.I "Csoport kiválasztás"
+parancs ellentéte.
+.PP
+.B Kilépés (F10, Shift\-F10)
+.PP
+Leállítja a Midnight Commander\-t. A Shift\-F10 akkor használható a
+kilépéshez, ha rejtett shellt használsz. A Shift\-F10 nem a Midnight
+Commander\-rel utoljára meglátogatott könyvtárat őrzi meg, hanem a Midnight
+Commander induláskori könyvtárát.
+.\"NODE "    Quick cd"
+.SH "    Gyors cd"
+Ez a parancs akkor használható, amikor a teljes parancssort akarod a
+.\"LINK2"
+cd
+.\"The cd internal command"
+parancshoz használni, parancssor nélkül. Ez a parancs egy kis dialógus
+ablakot jelenít meg, amelybe bármit begépelhetsz, amit a parancssorban a
+.B cd
+parancs után begépeltél volna, és ezután használd az entert.Ez az eszkőz
+mindenben ugyanaz, mint a
+.\"LINK2"
+belső cd parancs\&.
+.\"The cd internal command"
+.\"NODE "  Command Menu"
+.SH "  Parancsok menü"
+A
+.\"LINK2"
+Könyvtárfa
+.\"Directory Tree"
+parancs lehetővé teszi számodra azt, hogy fa szerkezetben jelenítsd meg
+a könyvtárakat.
+.PP
+A
+.\"LINK2"
+Fájl keresés
+.\"Find File"
+parancs lehetővé teszi számodra a speciális fájlok megkeresését. A
+"Panelek felcserélése" parancs felcseréli a két könyvtár panel
+tartalmát.
+.PP
+A "Panelok ki\-be" parancs megmutatja az utolsó shell parancs kimenetét.
+Ez csak xterm\-en, Linux\-on és FreeBSD konzolon működik.
+.PP
+A Könyvtár összehasonlítás (C\-x d) parancs összehasonlítja a könyvtár
+paneleket egymással. Ilyenkor használható a Másol (F5) parancs a panelek
+azonossá tételére. Ennek három formája van. A gyors változat csak a fájlok
+méretét, és dátumát vizsgálja meg. Az alapos változat teljesen, byte\-ról
+byte\-ra végzi el a vizsgálatot. Az alapos változat nem használható,
+ha a gép nem támogatja az mmap(2) rendszerhívást. A 'Csak fájlhossz'
+szerinti változat csak a fájlméretet hasonlítja össze és nem ellenőrzi
+le a dátumukat.
+.PP
+A Parancssor előzmények parancs megmutatja a begépelt parancsok
+listáját. Az itt kiválasztott parancs átmásolódik a parancssorba. A
+Parancssor előzmények a M\-p, vagy a M\-n begépelésével is elérhető.
+.PP
+A
+.\"LINK2"
+Könyvjelzők (C\-\\)
+.\"Hotlist"
+parancs felveszi a jelenlegi könyvtárat a gyakran használt könyvtárak
+közé.
+.PP
+A
+.\"LINK2"
+Parancskimenet panel
+.\"External panelize"
+lehetővé teszi számodra külső parancsok futtatását, majd a program
+tartalmát a jellegi panelbe teszi.
+.PP
+A
+.\"LINK2"
+Társítások
+.\"Extension File Edit"
+lehetővé teszik számodra a futtatandó programok meghatározását, a
+kiválasztott fájl kiterjesztésének (fájlnév vége) megfelelően akkor, ha
+futtatod, megtekinted a tartalmát, átszerkeszted vagy más egyéb dolgot
+szeretnél vele csinálni. A
+.\"LINK2"
+Menu editor edit
+.\"Menu File Edit"
+parancs a felhasználói menü szerkesztésére használható (ami az F2
+lenyomásával elérhető).
+.\"NODE "    Directory Tree"
+.SH "    Könyvtárfa"
+A Könyvtárfa parancs fa formában mutatja meg a könyvtárakat. Ebből a
+listából kiválaszthatsz egy könyvtárat és a Midnight Commander abba a
+könyvtárba lép át.
+.PP
+Két lehetőség van a fa megjelenítésére. Az igazi könyvtárfa parancs
+elérhető a Parancsok menüből. A másik mód a Bal, vagy a Jobb menüben a
+fa nézet kiválasztása.
+.PP
+A Midnight Commander a fa nézet készítéséhez csak minden könyvtár belső
+beállításait szkenneli le, így magszabadít téged a hosszú várakozástól. Ha
+megtalálod a megtekinteni kívánt könyvtárat, menj rá a szülökönyvtárára
+és nyomd le a C\-r\-t (vagy az F2\-t).
+.PP
+A következő gombokat használhatod:
+.PP
+.\"LINK2"
+Általános mozgási lehetőségek billentyűzettel\&.
+.\"General Movement Keys"
+.PP
+.B Enter.
+A Könyvtárfánál kilép a Könyvtárfából és a jelenlegi panelben átváltja
+a könyvtárat. Fa nézetben átvált erre a könyvtárra a másik panelben és
+a jelenlegi panelben marad a fa nézet.
+.PP
+.B C\-r, F2 (Újraolvasás).
+Újraolvassa ezt a könyvtárat. Ezt akkor használd, ha a fa nézet
+aktualitását vesztette: ez megkeresi a belső könyvtárakat és megmutat
+néhány belső könyvtárat, amely eddig nem létezett.
+.PP
+.B F3 (Elfelejt).
+Törli ezt a könyvtárat a fa nézetből. Ezt az összevisszaság eltüntetésére
+használhatod a fa nézetben.  Ha vissza akarsz tenni egy könyvtárat a fa
+nézetbe, nyomd le az F2\-t a szülő könyvtáron állva.
+.PP
+.B F4 (Statikus\-Dinamikus).
+Vált a dinamikus (alapértelmezett) és a statikus böngésző mód között.
+.PP
+A statikus böngésző módban a Fel és Le gombokat használhatod a könyvtár
+kiválasztására. Minden ismert könyvtár látható.
+.PP
+A dinamikus böngésző módban a Fel és Le gombokat a testvér könyvtárak
+kiválasztására, a Bal gombot a szülő könyvtárra való lépéshez és a Jobb
+gombot az alárendelt könyvtárra lépéshez. Csak a szülő, a testvér és
+az alárendelt könyvtár látható, a többi nem. A fa nézet a dinamikus
+váltáshoz használhatod.
+.PP
+.B F5 (Másolás).
+A könyvtárat másolja.
+.PP
+.B F6 (Átnevezés vagy mozgatás).
+Áthelyezi a könyvtárat.
+.PP
+.B F7 (Létrehoz Könyvtárat).
+Új könyvtárat készít a könyvtár
+alá.
+.PP
+.B F8 (Töröl).
+Törli a könyvtárat a fájlrendszerből.
+.PP
+.B C\-s, M\-s
+Megkeresi a következő könyvtárat, amely megfelel a keresett szövegnek.
+Ha nincs ilyen könyvtár, akkor egy sorral lejjebb lép.
+.PP
+.B C\-h, Backspace
+Törli az utolsó karaktert a keresési
+szövegben.
+.PP
+.B Bármely más karakter.
+Karaktert tesz hozzá a keresési szöveghez és átlép a következő olyan
+könyvtárra, amely ezekkel a karakterekkel kezdődik. A fa nézetben
+először a C\-s\-sel tudod aktiválni a keresést. A keresett szöveg a mini
+fájlinfó sorban jelenik meg.
+.PP
+A további műveletek csak a könyvtárfában érhetőek el. Ezeket a fa nézet
+nem támogatja.
+.PP
+.B F1 (Súgó)
+Belép a Súgó nézőbe és megjeleníti ezt a részt.
+.PP
+.B Esc, F10
+Kilép a Könyvtárfából. Nem vált könyvtárat.
+.PP
+Az egér használható. A dupla kattintás egy Enter\-nek felel meg. További
+információkat az
+.\"LINK2"
+Egér kezelés
+.\"Mouse Support"
+részben találhatsz.
+.\"NODE "    Find File"
+.SH "    Fájl keresés"
+A Fájl keresés eszköz először megkérdezi a keresés induló könyvtárát,
+majd a keresett fájlnevet. A Könyvtárfa gomb lenyomásával kiválaszthatod
+az induló könyvtárat a
+.\"LINK2"
+Könyvtárfa
+.\"Directory Tree"
+nézetből.
+.PP
+A tartalom mezőben szabványos kifejezéseket is használhatunk megadásával
+(man egrep(1)). Használd az egrep escape (kilépés) karakterét (backslash,
+\\). Például, ha az "strcmp (" szöveget keresed, ezt így add meg:
+"strcmp \\(" (a dupla idézőjel nélkül).
+.PP
+Az Oké gomb lenyomásával indíthatod el a keresést. Keresés közben a
+keresés leállítható a Felfüggeszt gombbal és folytatható a Folytatás
+gombbal.
+.PP
+Böngészhetsz a fájllistában a le és fel gombok használatával. Az Ugrás
+gombbal a jelenlegi könyvtárat fel tudod cserélni a kiválasztott
+fájléval. Az Újra gomb az új keresés paramétereit megkérdezi tőled. A
+Kilép gomb bezárja a keresés műveletet. A Panelba gomb a elhelyezi a
+jelenlegi könyvtárban a keresett fájlokat, így további műveletek
+végezhetőek velük (megtekintés, másolás, mozgatás, törlés és a többi). A
+panelba helyezés művelet után a C\-r lenyomásával visszatérhetsz a normál
+fájl listához.
+.PP
+Lehetséges azon könyvtárak listájának megadása, amelyeket át szeretnénk
+ugrani a Fájl Keresés parancs használata során (például ha a keresés
+során el szeretnéd kerülni a CDROM\-ot, vagy az NFS könyvtárait amelyeket
+slow linkkel csatoltak).
+.PP
+Az átlépendő könyvtárakat a
+.B ignore_dirs
+változó állítja be az ~/.mc/ini fájlod
+.B FindFile
+részében.
+.PP
+A könyvtár elemeket kettősponttal tudod elválasztani egymástól, emire
+itt egy példát is láthatsz:
+.PP
+.nf
+[FindFile]
+ignore_dirs=/cdrom:/nfs/wuarchive:/afs
+.fi
+.PP
+A
+.\"LINK2"
+Parancskimenet panel
+.\"External panelize"
+parancs használatos néhány műveletben.
+.PP
+A Fájl keresés parancs egyszerű lekérdező eljárás, amely a
+Parancskimenet panelt használja a szükséges fájlok megkeresésére.
+.\"NODE "    External panelize"
+.SH "    Parancskimenet panel"
+A Parancskimenet panel lehetvé teszi számodra külső program futtatását,
+és a parancs kimenetének megjelenítését a jelenlegi panelben.
+.PP
+Például, ha egyszerre szeretnéd módosítani a jelenlegi könyvtár összes
+szimbolikus linkjét a jelenlegi panelben, a következő parancsot is
+használhatod a parancskimenet panelben:
+.PP
+.nf
+find . \-type l \-print
+.fi
+.PP
+A parancs befejeztével a panelban lévő könyvtár\-bejegyzések száma nem
+nagyobb mint a jelenlegi könyvtáré, de minden szimbolikus link fájlt
+tartalmaz.
+.PP
+Ha minden olyan fájlt meg akarsz jeleníteni a panelben, amelyet ftp
+szerverről töltöttél le, használhatod az awk parancsot az átmásolt
+fájlok neveit tartalmazó log fájl tartalmának megjelenítésére:
+.PP
+.nf
+awk '$9 ~! /incoming/ { print $9 }' < /var/log/xferlog
+.fi
+.PP
+A gyakran használt parancsokat elmentheted egy számodra egyértelmű
+néven, így azokat gyorsan újra előhívhatod a későbbiekben is. Úgy tudsz
+ilyen parancsokat létrehozni, hogy begépeled a parancsot a beviteli
+mezőbe, és lenyomod az Új gombot. Ekkor begépelheted azt a nevet,
+amilyen néven el szeretnéd menteni a parancsot. Következő alkalommal
+csak ki kell választanod a parancsot a listából ahhoz, hogy ne kelljen
+mégegyszer begépelned azt.
+.\"NODE "    Hotlist"
+.SH "    Könyvjelzők"
+A Könyvjelzők parancs megmutatja a gyorslistában szereplő könyvtárakat.
+A Midnight Commander  a kiválasztott értéknek megfelelő könyvtárra
+váltja át a panel tartalmát. A Könyvjelzők dialógus ablakból kiveheted a
+már létező elnevezés\-\-könyvtár párokat, és hozzáadhatsz újakat is.
+Továbbiak hozzáadásához a Hozzáadás a kedvencekhez parancsot
+használhatod (C\-x h), amely a jelenlegi könyvtárat hozzáadja a
+könyvjelzőkhöz. A felhasználó ezután egyéni megnevezéssel hivatkozhat a
+könyvtárra.
+.PP
+Ezzel a gyakran használt könyvtárakhoz ugorhatunk. A CDPATH változó
+használatát megtekintheted a
+.\"LINK2"
+A cd belső parancs
+.\"The cd internal command"
+leírásánál.
+.\"NODE "    Extension File Edit"
+.SH "    Társítások"
+Ez az ~/.mc/bindings szerkesztéséhez segítségül fogja hívni a
+szövegszerkesztődet. A fájl formátuma a következő (a formátum a 3.0\-ás
+verzióval megváltozott):
+.PP
+Minden # jellel kezdődő sor, vagy üres sor kommentárnak tekinthető.
+.PP
+A sorok az első rovatban látható formátumnak megfelelően kezdődnek:
+.PP
+.IR kulcsszó/desc ,
+pl. akármi a
+.I kulcsszó/
+után úgy, hogy a sor vége karakter előtt a
+.I desc
+áll kulcsszó lehet:
+.PP
+.I shell
+.IP
+bármely kiterjesztés esetén, amely ponttal kezdődik (nem szükséges a
+helyettesítő karaktert beírni, például: .tar az *.tar párja)
+.PP
+.I regex
+.IP
+(szabványos kifejezés; regular expression esetén)
+.PP
+.I type
+.IP
+(azokra a fájlokra illeszkedik, amelyek tartalmazzák a `file %f`
+szöveget. A fájlnév a `file %f` résztől törlődik)
+.PP
+.I default
+.IP
+(illeszkedik bármely fájlra, kiterjesztésétől függetlenül)
+.PP
+A többi sor kezdődhet szóközzel, vagy tabulátorral, a formátumuk pedig a
+következő:
+.PP
+.I keyword=command
+(szóközt nem szabad az egyenlőségjel mellé írni), ahol a
+.I kulcsszó
+lehet:
+.PP
+.I Open
+(ha a felhasználó lenyomja az Enter\-t, vagy duplán kattint),
+.I View
+(F3) és
+.I Edit
+(F4).
+.PP
+.I command
+ez bármely egysoros shell parancs lehet, az egyszerű
+.\"LINK2"
+Macro Helyettesítővel\&.
+.\"Macro Substitution"
+.PP
+A feladatokatokat fentről lefelé értékeljük ki (tehát a sorrend nagyon
+fontos).  Ha néhány műveletet keresünk, a keresés úgy folytatódik,
+mintha ez a cél nem létezne (pl. ha a fájl tartalmazza az első és a
+második bejegyzést és a Nézet művelet hiányzik az elsőből, akkor az F3
+lenyomására a Nézet művelet a második bejegyzést fogja használni.
+Alapértelmezésben végrehajt minden műveletet.
+.\"NODE "    Background jobs"
+.SH "    Háttérmunkák"
+Ezzel szabályozhatod néhány Commander háttérfolyamat állapotát (csak a
+másolás és a mozgatás fájlműveletek tehetők háttérbe). Ezeket a
+háttérmunkákat állíthatod le, indíthatod újra, lőheted ki itt. A
+linuxban futó background processzekre hatástalan.
+.\"NODE "    Menu File Edit"
+.SH "    Menü szerkesztés"
+A felhasználói menüt a felhasználó testre szabhatja. Ez az aktulis
+könyvtár .mc.menu fájlja, ha az létezik, de csak, ha az a felhasználó
+(illetve a root) a tulajdonosa, és nem lehet bárki számára írható. Ha
+nem talál ilyen fájlt, az
+.I ~/.mc/menu
+keresése a következő lépés, egyébként pedig az mc az alapértelmezett
+rendszerszintű menüt használja, pl.:
+.IR @prefix@/share/mc/mc.menu ,
+esetleg @sysconfdir@/mc/mc.menu.
+.PP
+A menü fájl formátuma nagyon egyszerű. A sorok, amelyek bármivel
+kezdődhetnek, de a space, vagy a tab megkülönböztetett menübejegyzések
+(gyorsbillentyűként definiálható az első karakter). Minden olyan sor ami
+szóközzel, tabulátorral kezdődik, parancs, amit lefuttat az mc, ha
+kiválasztottad a bejegyzést.
+.PP
+Ha az opciót kiválasztod, a parancssor bemásolódik egy ideiglenes fájlba
+a temp könyvtárba (ez vagy az /usr/tmp, vagy a /tmp), és ilyenkor a fájl
+lefut. Ez lehetővé teszi a felhasználónak normál shell parancslista
+(script) készítését a menüben. Továbbá egyszerű Makrók helyezhetők el
+benne, amelyek a menü kód futtatása előtt futnak le. További
+információkért lásd a
+.\"LINK2"
+Macro Helyettesítő
+.\"Macro Substitution"
+részt.
+.PP
+Egy példa az mc.menu fájlra:
+.PP
+.nf
+A       A kiválasztott fájlok listázása oktális formában
+        od \-c %f
+
+B       A hiba leírás szerkesztése és elküldése a root\-nak
+	I=`mktemp ${MC_TMPDIR:\-/tmp}/mail.XXXXXX` || exit 1
+        vi $I
+        mail \-s "Midnight Commander bug" root < $I
+	rm \-f $I
+
+M       Levél olvasás
+        emacs \-f rmail
+
+N       A Usenet hírek elolvasása
+        emacs \-f gnus
+
+H       Az info hypertext böngésző elindítása
+        info
+
+J       A jelenlegi könyvtár rekurzív átmásolása a másikba
+        tar cf \- . | (cd %D && tar xvpf \-)
+
+K       Az aktuális könyvtárról archiválása
+        echo \-n "Name of distribution file: "
+        read tar
+        ln \-s %d `dirname %d`/$tar
+        cd ..
+        tar cvhf ${tar}.tar $tar
+
+= f *.tar.gz | f *.tgz & t n
+X       A kijelölt tömörített tar fájl kicsomagolása
+        tar xzvf %f
+.fi
+.PP
+.B Alapértelmezett Feltételek
+.PP
+Néhány menü bejegyzés irányadó feltételként szerepelhet. A feltétel eslő
+oszlopában az '=' karakternek kell lennie. Ha a feltétel igaz, a
+menüpont alapértelmezett bejegyzéssé fog válni.
+.PP
+.nf
+Feltétel szintaktika: 	= <belső\-felt.>
+   vagy:                = <belső\-felt.> | <belső\-felt.> ...
+   vagy:                = <belső\-felt.> & <belső\-felt.> ...
+
+A belső feltétel az alábbiak közül valamelyik:
+
+  y <minta>             a jelenlegi fájlminta szintaktikusan
+                        illeszkedik?
+                        csak menüszerkesztéshez
+  f <minta>             jelenlegi fájlminta egyezik?
+  F <minta>             egyéb fájlminta egyezik?
+  d <minta>             jelenlegi könyvtár minta egyezik?
+  D <minta>             más könyvtár minta egyezik?
+  t <type>              jelenlegi fájltípus?
+  T <type>              más fájltípus?
+  x <fájlnév>           ez futtatható fájlnév?
+  ! <belső\-felt.>       a belső feltételek ellentéte
+.fi
+.PP
+A minta lehet a shell által értelmezett, vagy lehet szabványos
+kifejezés. Felülírhatod a rendszerszintű értékeket a Shell kifejezések
+opcióval a "shell_patterns=x" beírásával a menü fájl első sorában (ahol az
+"x" a 0 és 1 közül valamelyik lehet).
+.PP
+A következő karakterek közül egyet, vagy többet is begépelhetsz:
+.PP
+.nf
+  n	nem könyvtár
+  r	szabályos fájl
+  d	könyvtár
+  l	link
+  c	speciális karakter
+  b	speciális blokk
+  f	fifo
+  s	socket
+  x	futtatható fájl
+  t	fájl kijelölve
+.fi
+.PP
+Például az 'rlf' bejegyzés esetén lehet fájl, link, vagy fifo. A 't'
+típus egy kicsit különleges, mert nem fájlon, hanem panelen dolgozik. A
+\&'=t t' feltétel igaz akkor, ha a jelenlegi panelben vannak kijelölt
+fájlok és hamis, ha nincsennek.
+.PP
+Ha a feltétel '=?'\-lel kezdődik '=' helyett, a hibakereső (debug)
+kimenete jelenik meg, mialatt akkor a feltétel eredményét a program
+kiértékeli.
+.PP
+A feltételek kiértékelése balról\-jobbra történik. Ennek megfelelően:
+.nf
+	= f *.tar.gz | f *.tgz & t n
+.fi
+kibontva:
+.nf
+ 	( (f *.tar.gz) | (f *.tgz) ) & (t n)
+.fi
+.PP
+Egy példa a feltételek használatára:
+.PP
+.nf
+= f *.tar.gz | f *.tgz & t n
+L	Listázza az aktuális tar archívumot
+	gzip \-cd %f | tar xvf \-
+.fi
+.PP
+.B Járulékos feltételek
+.PP
+Ha a feltétel '+'\-szal (vagy '+?'\-lel) kezdődik az '=' (vagy '=?')
+helyett, ez járulékos feltétel. Ha a feltétel igaz, a menü bejegyzés
+megjelenik a menüben. Ha a feltétel hamis, a menü bejegyzés nem jelenik
+meg.
+.PP
+Kombinálhatod is az alapértelmezett és a járulékos feltételeket a
+feltétel sorának '+='\-lel, vagy '=+'\-szal (vagy '+=?'\-lel és '=+?\-lel',
+ha hiba követőt is szeretnél) kezdésével. Ha két eltérő feltételt
+szeretnél használni, egyet járulékosként és egyet alapértelmezettként,
+két feltételsort kell készítened; egyet '+'\-szal kezdődően és egy
+másikat '='\-lel kezdődően.
+.PP
+A magyarázat sorát '#'\-kal kell kezdened. A kiegészítő magyarázat sorait
+\&'#'\-kal, space\-szel, vagy tab\-bal kell kezdened.
+.\"NODE "  Options Menu"
+.SH "  Beállítások"
+A Midnight Commander rendelkezik néhány olyan opcióval, amely lehetővé
+teszi a be\- illetve a kikapcsolását néhány dialógus eszköznek, amely az
+adott menüből elérhető. Az opció engedélyezett, ha csillag, vagy "x" áll
+előtte.
+.PP
+A
+.\"LINK2"
+Beállítások
+.\"Configuration"
+parancs dialógus ablakot nyit meg, amelyben a Midnight Commander főbb
+beállításait elvégezheted.
+.PP
+A
+.\"LINK2"
+Megjelenés
+.\"Layout"
+parancs dialógus ablakot jelenít meg, amelyben az mc képernyőn történő
+megjelenésének opcióit találod egy csokorban.
+.PP
+A
+.\"LINK2"
+Megerősítés
+.\"Confirmation"
+parancs dialógus ablakot jelenít meg, amelyben meg tudod adni azt, hogy
+mely műveletekhez kell megerősítést kérni.
+.PP
+A
+.\"LINK2"
+Képernyőbitek
+.\"Display bits"
+parancs dialógus ablakot nyit meg, amellyel beállíthatod azt, hogy
+milyen karakterek jelenhessenek meg a terminálodon.
+.PP
+A
+.\"LINK2"
+Billentyűzet tanítás
+.\"Learn keys"
+dialódus ablakot jelenít meg, amelyben megvizsgálhatod azokat a
+gombokat, amelyek nem működnek néhány terminálon, és kijavíthatod őket.
+.PP
+A
+.\"LINK2"
+Csatolt fájlrendszer...
+.\"Virtual FS"
+parancs olyan dialógus ablakot jelenít meg, amelyben VFS\-hez kapcsolódó
+opciókat adhatod meg.
+.PP
+A
+.\"LINK2"
+Beállítások mentése
+.\"Save Setup"
+parancs elmenti a Bal, Jobb és a Beállítások jelenlegi értékeit. Néhány
+egyéb beállítás is elmentődik.
+.\"NODE "    Configuration"
+.SH "    Az MC konfigurálása"
+A dialógus ablalban lévő opciók három csoportra bonthatók: Panel
+Beállítások, Futtatás után vár... és Egyéb.
+.PP
+.B Panel Beállítások
+.PP
+.I Backup fájlt mutat.
+Alapértelmezésben a Midnight Commander nem mutatja a '~'\-re végzödő
+fájlokat (a GNU' \-B opciójának megfelelően).
+.PP
+.I Rejtett fájlt mutat.
+Alapértelmezésben a Midnight Commander láthatóvá teszi a ponttal kezdődő
+fájlokat (az ls \-a \-hoz hasonlóan).
+.PP
+.I Kijelölés után lefele lép
+Alapértelmezésben, amikor kijelölsz egy fájlt (a Insert
+gomb közül valamelyikkel,) a kiválasztó sáv lefelé mozdul el.
+.PP
+.I Legördülő menük.
+Amikor ezt az opciót engedélyezed, az
+.B F9
+gomb lenyomásakor a menü le fog ereszkedni, egyébként te csak a menü
+címét tudod megjeleníteni és ezek után tudod kiválasztani a menü
+bejegyzést a nyíl gombokkal, vagy annak megjelölt betűjével, és csak
+ekkortól tudsz menüpontot kiválasztani.
+.PP
+.I Minden fájl vegyesen.
+Ha ezt az opciót engedélyezted, a fájlok és könyvtárak vegyesen jelennek
+meg. Ha az opció ki van kapcsolva, a felsorolás a könyvtárakkal (és a
+könyvtár linkekkel) fog kezdődni, és ezeket az egyéb fájlok követik.
+.PP
+.I Gyors könyvtárlista.
+Ez az opció alapértelmezésben ki van kapcsolva. Ha bekapcsolod a gyors
+könyvtárlista funkciót, a Midnight Commander egy trükköt fog használni
+akkor, ha a könyvtár tartalma megváltozik. A trükk az, hogy csak
+akkor olvassa újra a könyvtárat, ha a könyvtár inode\-ja megváltozott;
+ez azt jelenti, hogy csak fájl létrehozásakor, és törlésekor kerül
+újraolvasásra. Ha valami a könyvtárban lévő fájl inode\-jában történik
+(fájlméret\-változás, módok, és tulajdonosok változnak, stb.) a
+megjelenítés nem kerül frisítésre. Ebben az esetben, ha az opció be van
+kapcsolva, kézzel tudod újraolvastatni a könyvtár tartalmát (a
+.IR C\-r \-rel).
+.PP
+.B Futtatás után vár
+.PP
+Az általad kiadott parancs lefutása után a Midnight Commander várhat
+amiatt, hogy meg tudd vizsgálni a parancs kimenetét. Három beállítás
+adható meg ennek a változónak:
+.I Soha
+Abban az esetben, ha te nem kívánod látni azt, hogy mit írt ki a
+parancs. Ha Linux, vagy FreeBSD konzolt, vagy xterm\-et használsz, a
+parancs kimenete a
+.I C\-o
+begépelésével megjeleníthető.
+.I Buta terminálokon
+várakozási üzenetet fogsz kapni azon a terminálon, amely nem képes
+megmutatni az utolsóként kiadott parancs kimenetét (bármilyen terminálon,
+amely nem xterm, vagy nem Linux konzol).
+.I Mindig
+A program mindig vár, miután a parancsod lefutott.
+.PP
+.B Egyéb beállítások
+.PP
+.I Részletes műveletinfó.
+Ez van bejelölve akkor, ha a fájl
+Másolás, Átnevezés és Törlés műveletek részletesek (pl., egy
+dialógus ablakot jelenít meg néhány művelethez). Ha lassú
+terminálod van, beállíthatod azt, hogy ne legyenek részletes
+műveletek. Automatikusan kikapcsolódik ez a beállítás, ha a
+terminálod sebessége kissebb mint 9600 bps.
+.PP
+.I Byteok számítása
+Ha ez az opció engedélyezve van, a Midnight Commander számítja a teljes
+byte méretet és a teljes fájlszámot a Másolás, Átnevezés és a Törlés
+műveleteknél. Ez a funkció ellát téged több pontos folyamat sávval,
+kiegészítve azt néhány sebességgel. Ez az opció nem látható, ha a
+.IR "Részletes műveletinfó" t
+nem engedélyezted.
+.PP
+.I Shell mintázatok
+Alapesetben a Kiválasztás, Kiválasztás megszüntetése és a Szűrés
+parancsok a shell\-nek megfelelő pontos kiterjesztéseket használják. A
+következő konverzió átalakítások vannak jelenleg: a '*' kicserélődik
+a '.*'\-gal (zeró, vagy több karakter); a '?' kicserélődik a '.'\-tal
+(pontosan egy karakter) és a '.' a szó szerinti ponttal. Ha az opció nem
+engedélyezett, akkor a szokásos kiterjesztések azonosak a ed\-ben lévőkkel:
+.IR "man ed" .
+.PP
+.I Beállítások automatikus mentése
+Ha ez az opciót bekapcsoltad, amikor kilépsz a Midnight Commander\-ből,
+az MC opcióinak beállításait az ~/.mc/ini fájlba menti.
+.PP
+.I Auto menük.
+Ha ez az opció engedélyezett, a felhasználói menü megjelenik az mc
+indításkor. Különösen azok számára ajánlott, akik nem szoktak hozzá a
+UNIX\-os környezethez.
+.PP
+.I Belső szövegszerkesztő
+Ha ez az opció engedélyezve van, a beépített fájlszerkesztőt használja a
+fájlok szerkesztésére. Ha az opciót nem engedélyezzük, az mc az
+.B EDITOR
+környezeti változóban megadottat használja. Ha ez sincs megadva, a
+.BR vi \-t
+fogja használni. Lásd a
+.\"LINK2"
+Belső fájlszerkesztő\&.
+.\"Internal File Editor"
+részben.
+.PP
+.I Belső nézegető.
+Ha ezt az opciót engedélyeztük, a beépített fájlnézőt fogja a fájlok
+tartalmának megtekintéséhez használni a program. Ha nem engedélyeztük, a
+.B PAGER
+környezeti változóban megadott pager értéket használja. Ha nincs megadva
+a pager értéke, a
+.B Megnéz
+parancsot használja. Lásd a
+.\"LINK2"
+Belső fájlnéző
+.\"Internal File Viewer"
+részben.
+.PP
+.I Kiegészítés: minden mutat
+Alapértelmezésben a Midnight Commander megjelenít minden elem
+.\"LINK2"
+Kiegészítést\&.
+.\"Completion"
+Ha a kiegészítésben bizonytalan vagy, nyomd le az
+.BR M\-Tab \-ot
+és a második alkalommal kiegészíti, első alkalommal csak annyit jelenít
+meg, mint amennyit lát, és ebben az esetben a kétértelműség miatt egy
+beep hangot is kapsz. Ha látni szeretnéd az összes kiegészítést, az első
+.B M\-Tab
+lenyomása után, engedélyezd ezt az opciót.
+.PP
+.I Forgó törtjel
+Ha ezt az opciót engedélyezted, a Midnight Commander forgó törtjelet
+jelenít meg a jobb felső sarokban, mutatva ezzel azt, hogy munka van
+folyamatban.
+.PP
+.I Mozgás, mint lynx\-ben
+Ha ezt az opciót engedélyezted, a nyíl gombokat, mint automatikus
+könyvtárváltókat használhatod ha az aktuális kiválasztás egy belső
+könyvtár és a shell parancssor elérhető. Alapértelmezésben ez a
+beállítás ki van kapcsolva.
+.PP
+.I Cd követi a linket
+Ez az opció, ha be van állítva, akkor a Midnight Commander követi a
+könyvtárak logikai kapcsolatait ha könyvtárat váltasz valamelyik
+panelben, vagy a cd parancsot használod. Ez alapértelmezésben a bash
+jellemzője. Amikor ez nincs beállítva, a Midnight Commander a valós
+könyvtárszerkezetet követi, úgy, mint amikor a cd..\-t gépeled be, a
+könyvtáron keresztül átlépsz a "szülő" könyvtárba, és nem abba a
+könyvtárba, amelyre a link mutat.
+.PP
+.I Biztonságos törlés
+Ha ezt az opciót engedélyezted, a fájlok közvetlen szándék nélkül
+törlését megnehezíted.  Alapesetben egy "Megerősítés" dialógus ablaknan
+választhatunk az "Igen" és "Nem" gombok között törléskor. Alapesetben ez
+az opció nem engedélyezett.
+.\"NODE "    Layout"
+.SH "    Megjelenés"
+A Megjelenés dialógus ablakban megváltoztathatod a képernyő\-megjelenés
+beállításait. Beállíthatod azt, hogy a menüsor, a parancssor, a tippek
+és a funkcióbillentyűk láthatóak legyenek\-e. Linux, vagy FreeBSD
+konzolon megadhatod azt, hogy hány sorban legyen látható a megjelenő
+ablak.
+.PP
+A képernyő nyugalomban lévő részén két panelt használhatunk.  Megadhatod
+azt, hogy vízszintesen, vagy függőlegesen ossza\-e fel a képernyőt a
+két panel. A felosztás lehet egyenlő arányú, vagy te is megadhatod az
+arány mértékét.
+.PP
+Alapesetben a könyvtár panelokban lévő fájlok csak néhány színnel kerülnek
+megjelenítésre, de te azt is megadhatod, hogy a
+.I jogosultságok
+vagy a
+.I fájltípusok
+jelenjenek\-e meg speciális
+.\"LINK2"
+Színekkel\&.
+.\"Colors"
+Ha pl. a jogosultságokat kérted, a
+.I jogok
+és a
+.I mode
+értékek a Midnight Commander\-t futtató felhasználó jogainak megfelelően
+láthatók a
+.\"LINK2"
+Fájllistában
+.\"Listing Mode..."
+a
+.I kiválasztás
+színével. Ez különösen előnyös, ha a könyvtárunkban más felhasználó
+fájljai is előfordulnak. Ha a fájltípus megjelölést engedélyezted,
+a fájlok a fájltípusuknak megfelelően jelennek meg (pl. könyvtár, core
+fájl, futtatható fájl, stb.).
+.PP
+Ha a
+.I Mini fájlinfó
+opciót engedélyezted, egy sor lesz látható a panel alján, a látható,
+jelenleg is kiválasztott bejegyzések információival.
+.\"NODE "    Confirmation"
+.SH "    Megerősítés"
+Ebben a menüben tudod beállítani enter lenyomására a törlés,
+felülírás, futtatás, és programból történő kilépés
+Megerősítésének opcióit.
+.\"NODE "    Display bits"
+.SH "    Képernyőbitek"
+Ez az ablak a megjelenített karakterek tartományának beállítására
+szolgál. Ez a beállítás lehet 7\-bites, ha terminálod, vagy
+megjelenítésed csak a hét bites karaktereket támogatja; az
+ISO\-8859\-1\-ben az ISO\-8859\-1\-es karaktetábla valamennyi karaktere
+megjeleníthető; végül teljes 8 biten azokon a terminálokon, ahol teljes
+8 bitet meg tudsz jeleníteni. A két utolsó megjelenítési forma képes az
+ő és ű betűk kivételével az összes magyar betűt kijelezni a Belső
+filenézőben.
+.\"NODE "    Learn keys"
+.SH "    Billentyűzet tanítás"
+Ebben a dialógus ablakban tudod letesztelni azt, hogy terminálodon az
+F1\-F20, Home, End, stb. gombok megfelelően működnek\-e. Ezek gyakran nem
+működnek, mióta néhány Terminál adatbázis megváltozott.
+.PP
+A mezőket a Tab gombbal és a vi mozgató gombjaival ('h' balra, 'j' le,
+\&'k' fel és 'l' jobbra) járhatod körbe. Ha egy kurzor gombot legalább
+egyszer megnyomsz, OK\-val jelöli; kilépéskor ez a állapot elmenthető.
+.PP
+Ezek közül bármelyiket tesztelheted a gomb lenyomásával. Amint
+lenyomtad, a gomb megfelelően fog működni, és egy OK jelenik meg a gomb
+neve mellett. Amelyik gomb OK\-val jelölődik meg, általában az
+használható. Az F1 az első alkalommal csak le fogja ellenőrizni, hogy
+megfelelően műkődik\-e, másodszor már a súgót jeleníti meg. A tab gomb
+továbbra is működni fog.
+.PP
+Ha néhány gomb nem működik megfelelően, akkor nem jelenik meg OK a gomb
+neve után. Ilyenkor lehetőséged van kijavítani ezt. Ezt ennek a gombnak
+a lenyomásával (egér, vagy a Tab gombbal és az Enter\-rel) tudod
+kijavítani. Ekkor egy piros színű üzenet jelenik meg amely arra kér
+téged, hogy üsd le a megfelelő gombot. Ha ezt meg akarod szakítani, csak
+nyomd le az Esc\-et, és várj amíg az üzenet el nem tűnik. Egyébként a
+begépelt gomb lesz az megkérdezett gombbal azonosított. Ezután a
+dialógus ablak eltűnik.
+.PP
+Amikor végeztél minden gombbal, ezt elmentheted a Mentés gombbal az
+~/.mc/ini fájlba, a [terminal:TERM] részbe (ahol a TERM a jelenlegi
+terminál neve), vagy elvetheted. Ha minden gombod megfelelően működik,
+és nem javítottál semmit, akkor (természetesen) nem fog menteni semmit
+sem.
+.\"NODE "    Virtual FS"
+.SH "    Csatolt (látszólagos) fájlrendszer"
+Ez az opció lehetővé teszi számodra a
+.\"LINK2"
+Csatolt fájlrendszer
+.\"Virtual File System"
+informcáció cache\-ének beállítását.
+.PP
+A Midnight Commander a memóriában tárolja a csatolt fájlrendszer
+információit a fájlrendszeren lévő fájlok gyorsabb elérése érdekében
+(Például, könyvtár listázás trükkje távoli ftp szerverek esetén).
+.PP
+Azonfelül a tömörített fájlok tartalmához való hozzáféréskor (például,
+tömörített tar fájlok) a Midnight Commander készít egy kitömörített temp
+fájlt a merevlemezeden.
+.PP
+A memóriában és a temp fájlban lévő információk között van némi időbeni
+különbség, te a hozzáférési sebesség maximalizálása miatt átállíthatod a
+cached információk újraolvasási paramétereit.
+.PP
+A Tar Fájlrendszer elég ügyesen kezeli a tar fájlokat:  csak beolvassa a
+könyvtár bejegyzéseket, és amikor szükséges a tar fájlban tárolt
+információk használata, újraolvassa azokat, és kinyeri a szükséges
+infókat.
+.PP
+Igazából a tar fájlok tömörítettek maradnak (alap tar fájlok fajtái
+esetében), és mivel ezek a fájlok természetes fájlok (a tar fájlok
+könyvtár\-bejegyzéseinek kiolvasására nem kell várni), a tar fájlrendszer
+a fájlt a lemez temp könyvtárba kitömöríti, ilyenkor a kitömörített
+tarfájl hozzáférhető, mint szabványos tar fájl.
+.PP
+Ha elkezdjük böngészni a merevlemezen található tar fájlokat, majd
+elkezdjük nézni a többit, elveszne a rájuk vonatkozó információ. A
+Midnight Commander a memória cache\-ben tárolja ezeket egy időre, hogy
+gyorsabb legyen az újraolvasásuk. Az alap frissítési idő egy perc.
+.PP
+Az
+.\"LINK2"
+FTP fájlrendszer
+.\"FTP File System"
+az ftp szerverről beolvasott könyvtárszerkezetet éppígy a cache\-ben
+tárolja. A cache frissítési ideje az
+.I ftpfs cache elévülési idő
+opcióban konfigurálható. Alacsony érték esetén minden művelet nagyon
+lassúvá válhat az FTP fájlrendszeren, mivel minden művelet az ftp szerver
+lekérdezésével történik.
+.PP
+Ezenfelül definiálhatod a proxy host\-ot az ftp adatforgalomhoz, és
+beállíthatod a Midnight Commander\-t, hogy mindíg használja a proxy
+host\-ot. Az ezzel kapcsolatos információkat lásd az
+.\"LINK2"
+FTP fájlrendszernél\&.
+.\"FTP File System"
+.\"NODE "    Save Setup"
+.SH "    Beállítások mentése"
+A Midnight Commander indításkor megpróbálja az indítási információkat
+beolvasni az
+.I ~/.mc/ini
+fájlból. Ha ez a fájl nem létezik, ezeket az információkat a
+rendszerszintű konfigurációs fájlból fogja beolvasni, amelyek a
+.I @prefix@/share/mc/mc.ini
+fájlban találhatóak meg. Ha ez a rendszerszintű konfigurációs fájl sem
+létezik, a MC az alapértelmezett beállításokat használja.
+.PP
+A
+.I Beállítások mentése
+parancs elmenti a
+.\"LINK2"
+Bal és Jobb oldali menü
+.\"Left and Right Menus"
+és a
+.\"LINK2"
+Beállítások
+.\"Options Menu"
+menü beállításait az ~/.mc/ini fájlba.
+.PP
+Ha aktiválod az
+.I Auto Beállításmentés
+opciót a MC mindíg elmenti a beállításait kilépéskor.
+.PP
+Még vannak beállítások, amelyek nem állíthatóak be a menükből. Ezek
+beállításához használd a kedvenc fájlszerkesztődet. Lásd a
+.\"LINK2"
+Speciális Beállítások
+.\"Special Settings"
+részt a további információkért.
+.SH ""
+.\"NODE "Executing operating system commands"
+.SH "Az operációs rendszer parancsainak futtatása"
+Közvetlenül futtathatod a parancsokat azok begépelésével a Midnight
+Commander beviteli sorába, vagy a futtatandó program kiválaszátásval
+valamely panelben a kiválasztó sáv segítségével, és az Enter
+használatával.
+.PP
+Ha az Enter\-t az adott fájl felett lenyomod, nem indul el azonnal, hanem
+a Midnight Commander leellenőrzi a kiválasztott fájl kiterjesztését a
+.\"LINK2"
+Társításokban
+.\"Extension File Edit"
+találhatónak megfelelően. Ha talál egyezést, akkor a kódnak megfelelő
+bejegyzést futtatja. Egy nagyon egyszerű
+.\"LINK2"
+Macro Helyettesítő
+.\"Macro Substitution"
+végzi ezt el a parancs futtatása előtt.
+.\"NODE "  The cd internal command"
+.SH "  A cd belső parancs"
+A
+.I cd
+parancs végrehajtását a Midnight Commander nem adja át a shellnek. Tehát
+a shellben értelmezett makrók és helyettesítések helyett a saját
+beállításai szerint dolgozik:
+.PP
+.I Tilde helyettesítés
+A (~) karakter helyettesíti a home könyvtár nevét, ha hozzáfűzöl bármely
+felhasználói nevet, akkor az MC a megadott felhasználó saját HOME
+könyvtárára ugrik.
+.PP
+Például a ~guest a guest felhasználó könyvtárára mutat, amíg a ~/guest a
+guest könyvtárra a te home könyvtáradban.
+.PP
+.I Előző könyvtár
+Vissza tudsz ugrani abba a könyvtárba, ahol előzőleg voltál a '\-'
+speciális könyvtárnévvel így:
+.B cd \-
+.PP
+.I CDPATH könyvtárak
+Ha a könyvtármeghatározás a
+.B cd
+parancs és nem a jelenlegi könyvtár, akkor a Midnight Commander a
+.B CDPATH
+környezeti változót keresi a könyvtárnevek között.
+.PP
+Például te beállítod a
+.B CDPATH
+változót az ~/src:/usr/src\-re, lehetővé teszi számodra azt, hogy bármely
+könyvtárról a fájlrendszeren belül a relatív név használatával bárhonnan
+átléphess az ~/src\-be, vagy az /usr/src\-be bárhonnan (például a
+.I cd linux
+az /usr/src/linux könyvtárba léptet át).
+.\"NODE "  Macro Substitution"
+.SH "  Makro helyettesítő"
+Amikor belépsz a
+.\"LINK2"
+felhasználói menübe\&,
+.\"Menu File Edit"
+vagy a
+.\"LINK2"
+társítások parancsot\&,
+.\"Extension File Edit"
+futtatod, illetve a parancsot a parancssorból futtatod, a Makró
+Helyettesítőt használod.
+.PP
+A makrók:
+.PP
+.I "%i"
+.IP
+A space\-szel jelölt rész, amely azonos a kurzor oszlop pozíciójával.
+Csak menü szerkesztéshez.
+.PP
+.I "%y"
+.IP
+A jelenlegi fájl szintaktikájának típusa. Csak menü szerkesztéshez.
+.PP
+.I "%k"
+.IP
+A blokk fájl neve.
+.PP
+.I "%e"
+.IP
+A hiba fájl neve.
+.PP
+.I "%m"
+.IP
+A jelenlegi menu neve.
+.PP
+.I "%f"
+és
+.I "%p"
+.IP
+A jelenlegi fájl neve.
+.PP
+.I "%n"
+.IP
+Csak a jelenlegi fájlnév kiterjesztés nélkül.
+.PP
+.I "%x"
+.IP
+A jelenlegi fájl kiterjesztése.
+.PP
+.I "%d"
+.IP
+A jelenlegi könyvtár neve.
+.PP
+.I "%F"
+.IP
+A jelenlegi fájl a nem kijelölt panelben.
+.PP
+.I "%D"
+.IP
+A könyvtár neve a nem kiválasztott panelben.
+.PP
+.I "%t"
+.IP
+A jelenleg kijelölt fájlok.
+.PP
+.I "%T"
+.IP
+A kijelölt fájlok a nem aktív panelben.
+.PP
+.I "%u"
+és
+.I "%U"
+.IP
+Azonos a %t és a %T makrókkal, de hozzáadáskor a fájlok nem kerülnek
+kijelölésre. Ezt a makrót csak egyszer használhatod egy menü fájlon
+belül, vagy fájl kiterjesztésben bekezdés esetén, mivel a következő
+alkalommal ezek nem lesznek kijelölt fájlok.
+.PP
+.I "%s"
+és
+.I "%S"
+.IP
+A kiválasztott, kijelölt fájlok, ha vannak ilyenek. Egyébként a jelenlegi
+fájlok.
+.PP
+.I "%cd"
+.IP
+Ez a speciális makro, ami arra használható, hogy a jelenlegi könyvtárat
+lecserélhessük az előtte levő könyvtárra. Ezt elsősorban a
+.\"LINK2"
+Csatolt fájlrendszernél
+.\"Virtual File System"
+használhatjuk.
+.PP
+.I "%view"
+.IP
+Ez a makro használható a belső fájlnéző meghívására. Ez a makro
+használható egyedül, vagy kiegészítésekkel is. Ha ezen makro bármely
+kiegészítését használod, akkor annak zárójelen belül kell lennie. A
+kiegészítések a következők:
+.I ascii
+a fájlnéző ascii módú használatához;
+.I hex
+a hex mód használatához; a
+.I nroff
+mondja meg a fájlnézőnek az nroff a félkövér és az aláhúzás
+szekvenciáját; az
+.I unformated
+mondja meg a fájlnézőnek azt, hogy az nroff paranccsal készített
+vastagítása és aláhúzása nem használható.
+.PP
+.I "%%"
+.IP
+A % karakter
+.PP
+.I "%{valamilyen szöveg}"
+.IP
+Súgó a kiegészítéshez. Beviteli ablak jelenik meg, és a szöveg
+magyarázatként jelenik meg. A makró a felhasználó által begépelendő
+szöveget helyettesíti. Ezt az ESC, vagy az F10 lenyomásával tudja törölni
+a felhasználó.  Ez a makró jelenleg még nem működik a parancssorban.
+.\"NODE "  The subshell support"
+.SH "  A subshell támogatás"
+A subshell támogatás fordításkori opció, amely a shellek alkalmazásával
+működik: bash, tcsh and zsh.
+.PP
+Amikor a subshell kódot aktiváljuk, a Midnight Commander létrehozza a
+shell\-ed másolatát (azét, amelyik a
+.B SHELL
+változóban definiálva van, vagy ilyen nincs, akkor az /etc/passwd fájlban
+találhatóét) és egy ál\-terminált fog futtatni, ahelyett, hogy minden
+parancsfuttatáskor az új shellt aktiválná, a parancs a subshellt fogja
+használni, ha megadtál ilyet. Ez lehetővé teszi számodra azt is, hogy
+megváltoztasd a környezeti változókat is, a shell funkciók használatával
+és megadva az értéküket, amelyeket a Midnight Commander\-ből való kilépésig
+használni fog.
+.PP
+Ha
+.BR bash \-t
+használsz, a subshell indító parancsait megadhatod az ~/.mc/bashrc
+fájlban, és tetszőleges billentyűzet térképet az ~/.mc/inputrc fájlban. A
+.B tcsh
+felhasználóknak az indítási parancsokat az ~/.mc/tcshrc fájlban van
+lehetőségük megadni.
+.PP
+Amikor a subshell kódot használod, bármikor megszakíthatod az
+alkalmazásokat
+.BR C\-o \-val,
+és visszaugrasz a Midnight Commander\-be. Ha félbeszakítod az alkalmazást,
+nincs lehetőséged más külső parancsot futtatni, amíg ki nem lépsz a
+megszakított alkalmazásból.
+.PP
+A subshell által használt további eszköz a Midnight Commander által
+megjelenített prompt, amely ugyanaz, mint amit a jelenleg használt shell
+is használ.
+.PP
+Az OPTIONS részben további információkat olvashatsz arról, hogy hogyan
+vezérelheted a subshell kódot.
+.\"NODE "Chmod"
+.SH "Chmod (hozzáférési jogosultság)"
+A Chmod ablak a fájlok, könyvtárak attribútum bitjeinek beállítására
+szolgál. A
+.I C\-x c
+billenytűkombinációval is indítható ez a funkció.
+.PP
+A Chmod ablak két részből áll \-
+.I Jogosultság
+és
+.I Állomány
+(Az Állomány szó itt fájlt, vagy könyvtárnevet jelent).
+.PP
+Az Állomány részben megjelenik a fájlok, illetve könyvtárak neve, és a
+hozzáférési jogok nyolcas számrendszerbeli formátumban, úgyanúgy mint a
+tulajdonos és a csoport neve.
+.PP
+A Jogosultság részben az Állomány attribútumbitjének megfelelő sorban a
+check gombot kell kijelölni. Változtatáskor a nyolcas számrendszerbeli
+atribútumbitek megváltozott értékét az Állomány részben láthatod.
+.PP
+A widgetek közötti mozgáshoz (gombok, és check gombok) a
+.IR "kurzor billentyűket" ,
+vagy a
+.I Tab
+gombot használhatod. A check gombok kijelöléséhez, vagy a gombok
+kijelöléséhez használd a
+.I Space
+gombot. Ezeken kívül még használhatsz gyorsbillentyűket is, a gombok
+gyorsabb kiválasztásához (a megjelölt betük a gombokon).
+.PP
+Az attribútum bitek beállítására használd az Enter gombot.
+.PP
+Amikor könyvtárak, vagy fájlok csoportjával dolgozol, csak rá kell
+kattintanod a megfelelő bitre annak kijelöléséhez, vagy a kijelölés
+törléséhez. Amikor kiválasztottad azokat a biteket, amiket meg akarsz
+változtatni, válasz ki egy gombot a művelet gombok közül (Bekapcsol,
+vagy Töröl).
+.PP
+Végül, az itt megadott beállításoknak megfelelően állítsuk be
+az attribútumokat a
+.B [Mind]
+gombbal, ami az összes kijelölt fájlon végrehajtja a beállítást.
+.PP
+A
+.B [Beállít]
+csak a kijelölt attribútumokat állítja be a fájlokhoz.
+.PP
+A
+.B [Bekapcsol]
+a megjelölt biteket állítja be az összes fájlhoz.
+.PP
+A
+.B [Töröl]
+a megjelölt attribútum biteket törli a kiválasztott fájloknál.
+.PP
+Az
+.B [Ok]
+egyetlen fájlhoz állítja be az attributumot.
+.PP
+A
+.B [Mégsem]
+kilép Chmod parancs módból.
+.\"NODE "Chown"
+.SH "Chown (Tulajdonos változtatása)"
+A Chown parancs a fájl tulajdonos, vagy csoport azonosítójának
+beállítására szolgál. A parancs gyorsbillentyűje a C\-x o.
+.\"NODE "Chown\-advanced"
+.SH "Haladó (bővített) Chown"
+A Haladó Chown parancs a
+.\"LINK2"
+Chmod
+.\"Chmod"
+és a
+.\"LINK2"
+Chown
+.\"Chown"
+parancsok kombinációja egyetlen ablakban. Egyszerre tudod megváltoztatni
+a fájlok jogosultságait, és tulajdonos, vagy csoport azonosítóját.
+.\"NODE "File Operations"
+.SH "Fájl műveletek"
+Amikor fájlokat másolsz, mozgatsz, vagy törölsz, a Midnight Commander a
+Fájl műveletek dialógus ablakot jeleníti meg. Majd megjeleníti az
+elkezdett művelet fájljait, ahol jobbára három folyamatsávot jelenít
+meg. A fájl sáv azt mutatja meg, hogy a kijelölt fájlok közül a jelenleg
+másolt fájlnak mekkora részén hajtotta végre a művelet. A Darab sáv azt
+mutatja meg, hogy a kijelölt fájlok közül hányat dolgozott fel eddig. A
+bájt sáv azt mutatja meg, hogy a kijelölt fájlok teljes méretének
+mekkora része került már átmásolásra. Ha a Részletes műveletinfó ki van
+kapcsolva, a fájl és a bájtok sáv nem jelenik meg. Két gomb található a
+dialógus ablak alján. A Következő gomb lenyomásával át tudod lépni a
+jelenlegi fájlt. A Megszakít gomb megszakítja a műveletet, a fájlok
+visszamaradó részével nem történik semmi.
+.PP
+Van három másik dialógus ablak is, amelyekkel a fájl műveleteknél
+találkozhatsz.
+.PP
+A hiba dialógus ablak a hiba körülményeiröl értesít bennünket, és három
+választási lehetőséget tartalmaz. Normálisan a Következő gomb, amellyel
+átlépheted a jelenlegi fájlt, vagy a Megszakít gomb, amellyel
+megszakíthatod a további műveleteket, között választhatsz. Választhatod
+még az Újra gombot is, ha egy másik virtuális terminálról ki tudtad
+javítani a hibát.
+.PP
+"A fájl már létezik" dialógus ablak jelenik meg, ha megpróbálod
+másolással, vagy áthelyezéssel felülírni a már létező fájlt. A dialógus
+ablak megmutatja mindkét fájl méretét és dátumát. Az Igen gombbal
+felüliratod a fájlt, a Nem gombbal átléped a fájlt, a Mind gombbal
+felüliratod az összes fájlt, a Nem gombbal átléped az összes hasonló
+fájlt és a Frissít gombbal felüliratod a fájlt, ha a célfájl nem azonos
+dátumú a forrás fájllal. A Megszakít gomb lenyomásával bárhol
+megszakíthatod a műveletet.
+.PP
+A rekurzív törlés dialógus ablak jelenik meg akkor, amikor egy olyan
+könyvtárat akarsz törölni, amely nem üres. Az Igen gomb lenyomásakor
+rekurzívan törli a könyvtárat, a Nem lenyomásakor átlépi a könyvtárat, a
+Mind gomb lenyomásakor törli az összes könyvtárat, és a nem gomb átlépi
+az összes olyan könyvtárat, amely nem üres. A Megszakít gomb
+lenoymásával bárhol megállíthatod a folyamatot. Ha az Igen, vagy a Mind
+gombot választod egy Megerősítés. Az "Igen"\-t csak akkor válaszd, ha
+teljesen biztos vagy abban, hogy rekurzívan akarsz törölni.
+.PP
+Ha vannak kijelölt fájlok, azok kijelöltsége a művelet sikeres
+végrehajtása után megszűnik. A művelet megszakításkor a kihagyott fájlok
+kijelöltek maradnak.
+.\"NODE "Mask Copy/Rename"
+.SH "Kijelölt fájlok másolása vagy áthelyezése"
+A másolás, vagy mozgatás művelet a fájlok átnevezésének legegyszerűbb
+módja. Ennek elvégzéséhez meg kell határoznod a megfelelő forrás
+maszkot, és általában a cél részben a rendeltetés szerinti maszknak
+megfelelően. Minden forrás maszkkal azonos fájl átmásolásra vagy
+átnevezésre kerül a cél maszknak megfelelően. Ha vannak kijelölt fájlok,
+csak a kijelölt fájlokra vonatkozik a átnevezett forrás maszk.
+.PP
+Ezen kívül vannak egyéb opciók is, amiket még beállíthatsz:
+.PP
+A link követés megadja vajon symlink, vagy hardlink készült\-e a forrás
+könyvtárban (rekurzívan belső könyvtáraknál), és új linket kell\-e
+csinálni a cél könyvtárba, vagy csak át kell másolnod a bejegyzést.
+.PP
+"Létező könyvtárba belép" megmondja azt, hogy történjék, ha azonos nevű
+célkönyvtár létezik, mint amelyet elkezdtünk másolni. Az alapértelmezett
+művelet ilyenkor az, hogy ebbe a könyvtárba történő átmásoláskor,
+lehetővé teszi számodra azt, hogy a forrás könyvtárat átmásold. Talán
+egy példa segíteni fog:
+.PP
+Neked a foo könyvtár tartalmát át kell másolnod a /bla/foo könyvtárba,
+amely már létezik. Normálisan (amikor az Ugrás (Dive) nincs beállítva),
+az mc be fogja másolni ezt a /bla/foo könyvtárba. Az opció
+engedélyezésekor a bejegyzéseket a /bla/foo/foo könyvtárba fogod
+másolni, mivel a könyvtár már létezik.
+.PP
+Az "Attributumok megőrzése" megmondja azt, vajon az eredeti fájlok
+jogosultságait, időadatait, és (ha root vagy) az eredeti fájlok UID és
+GID értéekit. Ha ez az opció nincs beállítva, az umask jelenlegi értékét
+fogja használni a funkció.
+.PP
+.B "Shell kifejezések be"
+.PP
+Amikor a "Shell mintát használ" kifejezések opció be van kapcsolva, a
+forrás maszkhoz használhatsz használhatod a '*' és a '?' maszkokat. Ezek
+használhatóak a shellben is. A cél maszkhoz csak '*' és '\\<szám>' maszk
+használható. A célmaszk első '*' maszkja megfelel a forrás maszk első
+maszk csoportjának, a második '*' megfelel a második csoportnak, és így
+tovább. A '\\1' maszk megfelel a forrás maszk első maszk csoportjának, a
+\&'\\2' maszk megfelel a második csoportnak, és ez így megy '\\9'\-ig. A
+\&'\\0' maszk jelentése: a forrás fájl teljes neve.
+.PP
+Két példa:
+.PP
+Ha a forrás maszk, "*.tar.gz" a rendeltetésé a "/bla/*.tgz", a másolandó
+fájl a "foo.tar.gz", \- a másolat a "/bla" könyvtárban található
+"foo.tgz" lesz.
+.PP
+Tételezzük fel azt, hogy fel akarod cserélni a fájlnevet a
+kiterjesztéssel, például a "file.c"\-t a "c.file"\-lal, és a többit. Ennek
+a forrásmaszkja a "*.*" lesz, a rendeltetésé pedig a "\\2.\\1".
+.PP
+.B "Shell kifejezések ki"
+.PP
+Amikor a shell kifejezések opció ki van kapcsolva az MC a továbbiakban
+nem csoportosít automatikusan. Az '\\(...\\)' kiegészítést kell
+használnod a forrásmaszkban, a célmaszk specifikációnak meagadásához. Ez
+jóval gördülékenyebb módszernel tűnik, de több gépelést igényel.
+Egyébként a cél maszk használata egyszerűbb, ha a Shell kifejezések
+opció be van kapcsolva.
+.PP
+.B Kisbetű\-nagybetű csere"
+.PP
+Magváltoztathatod a fájlnév betűnagyságát. Ha a '\\u'\-t, vagy a '\\l'\-t
+használod a cél maszkban, a következő karaktert naggyá, vagy kicsivé
+konvertálja.
+.PP
+Ha a '\\U'\-t, vagy '\\L'\-t használod a cél maszkban a következő
+karakterek naggyá, illetve kicsivé fognak változni egészen addig, amíg
+\&'\\E', vagy '\\U', '\\L', vagy a fájlnév vége következik.
+.PP
+Az '\\u' és '\\l' erősebb az '\\U'\-nál és az '\\L'\-nél.
+.PP
+Például, ha a forrás maszk '*' (Shell kifejezés be van kapcsolva), vagy
+\&'^\\(.*\\)$' (Shell kifejezés ki van kapcsolva) és a célmaszk '\\L\\u*'
+a fájl nevek eleje nagybetűsre konvertálódik, a többi betű pedig
+kicsire.
+.PP
+Ezeken kívül még használhatod a '\\' karaktert, mint hivatkozó
+karaktert. Például a  '\\\\'\-t a backslash\-hez és a '\\*'\-et a
+csillaghoz.
+.\"NODE "Internal File Viewer"
+.SH "Belső fájlnéző"
+A Belső fájlnéző két megjelenítési módra képes: ASCII és hex. A két mód
+közötti váltásra használd az F4\-es billentyűt. Ha a GNU gzip programot
+telepítetted, szükség esetén ezzel automatikusan kitömöríti a fájlokat.
+.PP
+A fájlnéző megpróbálja megállapítani a legjobb módot az információk
+megjelenítéséhez a rendszerednek, vagy a fájl típusának megfelelően. A
+Belső fájlnéző használ néhány szövegrészletet a vastag, és az aláhúzott
+szövegattribútumok megjelenítésére azért, hogy a fájl megjelenítése
+szebb legyen.
+.PP
+Amikor hex módban vagy, a keresés funkcióban lehetővé teszi
+hexadecimális értékek használatát.
+.PP
+Használhatsz kevert hivatkozást is ezen értékeknek megfelelően: "Szöveg"
+0xFE 0xBB "további szöveg". A szöveg értékek közötti részt és a
+hivatkozás szövegét nem veszi figyelembe.
+.PP
+Néhány belső részlet a fájlnézőről: Azokon a rendszereken, ahol létezik
+az mmap(2) rendszerhívás, a fájl programtérképe olvasódik be ehelyett;
+ha a rendszer nem tartalmazza az mmap(2) rendszerhívást, vagy a fájl
+tartalmaz olyan műveletet, mint ami megfelel a szűrőnek, a fájlnéző egy
+növekvő buffert fog használni, amely csak azokat a részeit tartalmazza a
+fájlnak, amelyekhez jelenleg hozzáférsz (ez tömörített fájlokra is
+vonatkozik).
+.PP
+Ez a lista tartalmazza azokat a gombokat, amelyekhez művelet kapcsolódik
+a Midnight Commander belső fájlnézőjében.
+.PP
+.B F1
+Elindítja a beépített hypertext súgót.
+.PP
+.B F2
+Átvált sortörés módba.
+.PP
+.B F4
+Átvált hex módba.
+.PP
+.B F5
+Sorra lép. Egy promptot jelenít meg a sor számának megadására, és
+magjeleníti azt.
+.PP
+.B F6, /.
+Szabványos kifejezés keresése.
+.PP
+.B ?,
+Szabványosos kifejezés keresése visszafelé.
+.PP
+.B F7
+Normál keresés / hex módú keresés.
+.PP
+.B C\-s
+Normál keresést indít el, ha nem volt megelőző kifejezés keresés,
+egyébként a következő előfordulást keresi meg.
+.PP
+.B C\-r.
+Keresés visszafelé, ha nem volt megelőző kifejezés keresés, egyébként a
+következő előfordulást keresi meg.
+.PP
+.B n.
+A következő egyezőt keresi.
+.PP
+.B F8
+Vált a Nyers és Feldolgozott mód között: ez a fájlt, úgy mutatja meg,
+ahogy megtalálta, vagy, ha folyamatszűrő meg van adva az mc.ext fájlban,
+akkor a szűrő kimenetét. A Jelenlegi mód mindig a másik, mit amit a gomb
+felirata mutat.
+.PP
+.B F9
+Vált a formázott\-nem formázott mód között: amikor a formázott mód be van
+kapcsolva, néhány szöveg elemet, a vastagítást és az aláhúzást eltérő
+színnel jelenít meg. A menüsorban mindíg a másik felirat látható,
+jelezve, hogy milyen módba lehet átkapcsolni.
+.PP
+.B F10, Esc.
+Kilép a Belső fájlnézőből.
+.PP
+.B next\-page, space, C\-v.
+Egy lapot lapoz előre.
+.PP
+.B prev\-page, M\-v, C\-b, backspace.
+Egy lapot lapoz vissza.
+.PP
+.B down\-gomb
+Egy sort gördít elöre.
+.PP
+.B up\-gomb
+Egy sort gördít vissza.
+.PP
+.B C\-l
+Frissíti képernyőt.
+.PP
+.B !
+Shell belépés a jelenlegi munkakönyvtárba.
+.PP
+.B "[n] m"
+Beállítja az n kijelölést.
+.PP
+.B "[n] r"
+Az n kijelölésre ugrik.
+.PP
+.B C\-f
+A következő fájlra ugrik.
+.PP
+.B C\-b
+Az elöző fájlra ugrik.
+.PP
+.B M\-r
+Ki\- és bekapcsolja a vonalzót.
+.PP
+Ez a rész a fájl fájlnézővel történő megjelenítésének leírását
+tartalmazta, lásd még a
+.\"LINK2"
+Társítások
+.\"Extension File Edit"
+részt.
+.\"NODE "Internal File Editor"
+.SH "Belső fájlszerkesztő"
+A Belső fájlszerkesztő egy rengeteg eszközzel ellátott, de egyszerű
+teljes képernyős szerkesztő. Az
+.B F4
+gomb segítségével lehet elindítani az inicializáló fájl
+.I use_internal_edit
+opciójának megfelelő beállításokkal. A kezelt fájlnál 16 MByte\-os
+mérethatárral rendelkezik, és hibátlanul lekezeli a bináris fájlokat is.
+.PP
+Az eszközök, amielyek használhatók: Blokk másolás, mozgatás, törlés,
+kivágás, beillesztés;
+.I "billentyű a billentyű visszavonására";
+legördülő menük; fájl beillesztés; makró készítés; szabványos kifejezés
+keresés és csere; shift\-kurzor MSW\-MAC szöveg kijelölés (csak linux konzolon);
+beillesztés\-felülírás beállítás váltása; és a pipe szöveg blokkokkal a
+shell parancsok közvetlen elérése.
+.PP
+A szerkesztő használata nagyon egyszerű és nem igényel magyarázatot.
+Annak megtekintéséhez, hogy melyik gomb mit csinál, a megfelelő
+legördülő menü megtekintése szükséges.  Egyéb gombok: Shift és nyíl
+billentyűk a szöveg kijelöléséhez. A
+.B Ctrl\-Ins
+kimásolja a szöveget a
+.BR cooledit.clip \-be
+és a
+.B Shift\-Ins
+beilleszti azt a cooledit.clip\-ből. A
+.B Shift\-Del
+kivágja a szöveget a
+.BR cooledit.clip \-be,
+és a
+.B Ctrl\-Del
+törli a kijelölt szöveget. A lezáró billentyűként szintén használható a
+Return az automatikus bekezdéssel. Az egér kijelölés is működik,
+kijelölhetsz egérrel a shift gomb lenyomásával, amíg a normál terminál
+egeret csak a szöveg megjelölésére használhatod.
+.PP
+Macró megadásához nyomd le a
+.BR Ctrl\-R \-t
+és ekkor add meg a vezérlő gombokat a futtatandó folyamat megadásához.
+Nyomd le a
+.BR Ctrl\-R \-t
+újra, ha ezt be akarod fejezni. Ekkor a makróhoz bármilyen billentyűt
+hozzárendelhetsz az adott gomb lenyomásával. A makró lefut a
+.B Ctrl\-A
+és a megadott gomb lenyomásakor. A makró lefuttatható még akkor is, ha
+lenyomod a Váltó (Alt), Ctrl, vagy az Esc\-et és a megadott gombot,
+feltételezve azt, hogy a gombot nem használja más funkció. Miután
+megadtad, a makro parancs a home könyvtárad
+.B ~/.cedit/cooledit.macros
+fájljába kerül. A makrót a fájl megfelelő sorának törlésével végezheted
+el.
+.PP
+Az
+.B F19
+formázza a szöveget
+.RB ( C ", " C++ ,
+vagy más kódra) amikor ez a rész
+.BR kijelölt .
+Ennek használatához elöször egy futtatható fájlt kell készítened
+.B ~/.cedit/edit.indent.rc
+néven. Szerkeszd ezt szkriptet, ha szükséges.
+.PP
+A szerkesztő megjeleníti még a nem\-amerikai karaktereket is (160
+fölött). Amikor bináris fájlokat szerkesztesz, a Beállításoknál
+beállíthatod a
+.B Képernyőbiteket
+7 bitre a térközök tisztasága miatt.
+.\"NODE "Completion"
+.SH "Kiegészítés"
+A Midnight Commander begépeli neked a kívánt szöveget.
+.PP
+Megkísérli kiegészíteni a szöveget a jelenlegi pozíciótól. Az MC
+kiegészíti a szöveget (ha a szöveg
+.BR $ \-ral
+kezdődik), felhasználónevet (ha a szöveg
+.BR ~ \-vel
+kezdődik), hostnevet (ha a szöveg
+.BR @ \-lel
+kezdődik), vagy parancsot (ha a parancssor azon részén állsz, ahova
+a parancsot kell begépelni, megjeleníti a kiegészítést, ha a shell
+tartalmazza a szót, és az a shell beépített parancsa). Ha ezek közül
+egyik sem egyezik, akkor fájlnév kiegészítéssel próbálkozik.
+.PP
+A fájlnév, felhasználónév, változó és hostnév kiegészítése működik az
+összes beviteli sorban, a parancskiegészítés csak a parancssorban. Ha
+a kiegészítés kétértelmű (több érték megjelenítése lehetséges), a MC
+hangjelzést ad és a
+.\"LINK2"
+Beállítások
+.\"Configuration"
+dialogbox
+.I kiegészítés: összes
+opciójának megfelelően hajtja végre a további műveleteket. Ha ez az
+opció be van állítva, az összes megjeleníthető elem egy listában jelenik
+meg a jelenlegi pozíciótól kezdődően, a fel\-le nyilak segítségével, és
+az
+.BR Enter \-rel
+tudod kiegészíteni a bejegyzésed. Ezen kívűl, még begépelhetsz az első
+helyre akkor, amikor a listában megjelenített összes kiegészítés eltér
+az általad kívánttól. Ha újra lenyomod a
+.BR M\-Tab \-ot,
+egy listarészlet jelenik meg a listában, egyébként pedig csak az első
+egyező elem, amely az összes kijelölt karakterrel egyezik. Hamarosan a
+kétértelműség meg fog szűnni, a dialógus ablak eltűnik, amit az
+.B Esc
+.B F10
+és a bal, illetve a jobb nyíl billentyűkkel is megtehetsz. Ha a
+.\"LINK2"
+kiegészítés: összes
+.\"Configuration"
+nincs beállítva, a dialógus ablak csak a
+.B M\-Tab
+második lenyomására jelenik meg, az első lenyomáskor, az MC csak
+hangjelzést ad.
+.\"NODE "Virtual File System"
+.SH "Csatolt (látszólagos) fájlrendszer"
+A Midnight Commander kód rétegekkel biztosítja azt, hozzáférj a
+fájlrednszerhez; Ez a kód réteg arra képes, hogy átváltson csatolt
+fájlrendszerre. A csatolt fájlrendszerre történő átváltás lehetővé teszi
+a Midnight Commander számára azt, hogy a fájl műveleteket végezzen akkor
+is, ha a fájlok nincsenek a UNIX fájlrendszeren.
+.PP
+Jelenleg a Midnight Commander a következő Csatolt Fájlrendszerekkel
+rendelkezik (VFS): a helyi fájlrendszert a szokásos Unix fájlrendszeren
+lévő fájlokhoz használja; az ftpfs\-t, az FTP protokollal rendelkező
+távoli gépek fájlainak módosítására használja; a tarfs\-t a tar
+és tömörített tar fájlok módosítására használja; az undelfs\-t, a
+törölt fájlok visszaállítására használja az ext2\-es fájlrendszeren
+(az alapértelmezett fájlrendszer Linux rendszereken), a fish (a fájlok
+shellen keresztüli módosításához, mint pl. rsh és ssh) és végül az mcfs
+(a Midnight Commander fájlrendszere), amely hálózat alapú fájlrendszer.
+.PP
+A VFS kódváltója minden elérési útvonal leírást értelmez és
+követi azt a megfelelő fájlrendszerrel, azt, hogy melyik
+rendszeren melyik használatos, azt a későbbiekben a
+megfelelő résznél találhatod meg.
+.\"NODE "  FTP File System"
+.SH "  FTP fájlrendszer"
+Az ftpfs lehetővé teszi számodra azt, hogy távoli gépeken
+használjunk fájlokat, ennek használatához, próbáld ki a
+panel FTP kapcsolat... parancsát (elérhető a menüből), vagy
+közvetlenül átválthatsz a jelenlegi könyvtárból a cd
+parancs használatával, valahogy így:
+.PP
+.I /#ftp:[!][felhasználó[:jelszó]@]machine[:port][távoli\-könyvtár]
+.PP
+A
+.I felhasználó, port
+és a
+.I távoli\-könyvtár
+elemek opcionálisak. Ha megadod a
+.I felhasználó
+elemet, akkor a Midnight Commander a távoli gépre megpróbál ezzel a
+felhasználónévvel belépni, egyébként a te bejelentkező nevedet fogja
+használni. Opcionális a
+.I jelszó
+elem, ha meg van adva akkor ezt a jelszót fogja használni a
+bejelentkezéshez. Ajánlott ennek használata (soha ne tartsd ezeket a
+gyorslistádban, kivéve ha beállítod a megfelelő jogosultságokat, és még
+ekkor sem lesz minden esetben tökéletesen biztonságos megoldás).
+.PP
+Példák:
+.PP
+.nf
+    /#ftp:ftp.nuclecu.unam.mx/linux/local
+    /#ftp:tsx\-11.mit.edu/pub/linux/packages
+    /#ftp:!behind.firewall.edu/pub
+    /#ftp:guest@remote\-host.com:40/pub
+    /#ftp:miguel:xxx@server/pub
+.fi
+.PP
+Tűzfalon keresztüli kapcsolat létrehozásához, az /#ftp:!  kiegészítés
+használatára van szükséged (pl., felkiáltójel a dupla perjel után)
+ahhoz, hogy a Midnight Commander használni tudja a proxy host\-ot az ftp
+átvitelhez. A
+.\"LINK2"
+Csatolt fájlrendszer...
+.\"Virtual FS"
+dialógus ablakban tudod beállítani a proxy host tulajdonságait.
+.PP
+A
+.\"LINK2"
+Csatolt fájlrendszer...
+.\"Virtual FS"
+dialógus ablak másik beállítandó opciója az
+.I ftp proxy\-n keresztül
+opció. Ez beállítja a program számára azt, hogy mindig használja a proxy
+host\-ot. Ha ez a változó be van állítva, akkor a program két dolgot
+csinál: konzultál a @prefix@/share/mc.no_proxy fájl soraival, hogy azok
+tartalmazzák\-e a host nevet, mint helyi eszközt (ha a host neve ponttal
+kezdődik, akkor ezt domainként tartja számon), és feltételezi azt, hogy
+a pont nélküli hostnevek közvetlenül felodhatók.
+.PP
+Ha ftpfs kódot használsz csomagszűrő router esetén, akkor nincs
+lehetőséged a fájlok megszokott módon történő megnyitására, ezért neked
+kell a program számára megadnod azt, hogy a fájlokat passzív módon
+nyissa meg. Ennek használatához állítsd be az
+ftpfs_use_passive_connections opciót az indító fájlban.
+.PP
+A Midnight Commander a könyvtárlistát a cache\-ben tárolja. A
+cache frissítésének ideje a
+.\"LINK2"
+Csatolt fájlrendszer...
+.\"Virtual FS"
+dialógus ablakban végezhető el. Ez komikus helyzetet idézhet elő akkor,
+amikor változtatást hajtasz végre a könyvtárban, és az nem jelenik meg
+addíg, amíg a cache\-t nem iratod újra a C\-r gombbal. Ez sajátos
+jellegzetesség (amikor tapasztalod ezt a hibát, gondolj arra, hogy az
+ftpfs\-el megváltoztatott fájlok esetleg az Atlanti\-óceán másik oldalán
+vannak).
+.\"NODE "  Tar File System"
+.SH "  Tar fájlrendszer"
+A Tar fájlrendszer gondoskodik arról, hogy csak olvasható módon a chdir
+parancs használatával hozzáférhess a tar fájlaidhoz és tömörített tar
+fájljaidhoz. A könyvtár tar fájlra történő átváltásához a tar fájlodat a
+következő szintaktikájú parancs segítségével tudod átváltani könyvtárrá:
+.PP
+.I /filename.tar:utar/[dir\-inside\-tar]
+.PP
+Az mc.ext fájl már tartalmaz gyorsbillentyűket a tar fájlokhoz, ezért
+csak rá kell mutatnod a tar fájlra és le kell nyomnod az entert ahhoz,
+hogy beléphess a tar fájlba, ehhez nézd meg a
+.\"LINK2"
+Társítások
+.\"Extension File Edit"
+részt, hogy megismerhesd az ezzel kapcsolatos információkat:
+.PP
+Példák:
+.PP
+.nf
+    mc\-3.0.tar.gz#utar/mc\-3.0/vfs
+    /ftp/GCC/gcc\-2.7.0.tar#utar
+.fi
+.PP
+Az utóbbi meghatározás a tar arhívum teljes elérési útját tartalmazza.
+.\"NODE "  FIle transfer over SHell filesystem"
+.SH "  Fájl áthelyezése a Shell fájlrendszeren túlra"
+A fish fájlrendszer hálózat alapú fájlrendszer, amely lehetővé teszi
+műveletek végrehajtását a távoli gépeken, mintha azok a saját gépeden
+lennének. Ennek használatához a másik oldali gépnek futtatnia kell a
+fish szervert, vagy bash kompatibilis shellel kell rendelkeznie.
+.PP
+A távoli géphez történő kapcsolódáshoz csak könyvtárat kell váltanod a
+következő formátumnak megfelelő könyvtárba:
+.PP
+.nf
+/#sh:[felhasználó@]machine[:opciók];/[távoli\-könyvtár];</em>
+.fi
+.PP
+A
+.IR felhasználó ,
+.I opciók
+és a
+.I távoli\-könyvtár
+elemek opcionálisak. Ha megadod a
+.I felhasználó
+elemet, akkor a Midnight Commander megpróbál belépni a távoli gépre
+ezzel a felhasználó névvel, egyébként pedig a te belépő nevedet
+használja.
+.PP
+A 'C'
+.I opció
+a tömörítéshez használatos; a 'rsh' az rsh használatához az ssh helyett.
+Ha a
+.I távoli\-könyvtár
+elemet beírtad, a távoli gépnek ezt a könyvtárát állítod be.
+.PP
+Példák:
+.PP
+.nf
+    /#sh:onlyrsh.mx:r/linux/local
+    /#sh:joe@want.compression.edu:C/private
+    /#sh:joe@noncompressed.ssh.edu/private
+.fi
+.\"NODE "  Undelete File System"
+.SH "  Törlés visszaállítása"
+(csak ext2; second extended filesystem)
+.PP
+Linux rendszereken, ha azt válaszolod a konfiguráláskor, hogy használni
+akarod az ext2fs törlés visszavonás lehetőségét, akkor lehetőséged lesz
+a törlés művelet visszavonására. A Törlés visszaállítása funkció csak
+ext2 fájlrendszeren végezhető el. A Törlés visszaállítása csak
+csatlakozó eszköz az ext2fs library\-hoz: helyrehozza az összes törölt
+fájlnevet az ext2fs\-en, megjeleníti őket és a kiválasztott fájlokat a
+kiteszi a megadott partícióra.
+.PP
+Ezen fájlrendszer használatához abba a speciális fájlrendszerbe kell
+belépned, amely "/#undel" meghatározással kezdődik, és annak az aktuális
+fájlrendszernek a nevét tartalmazza, ahol a visszaállítani kívánt file
+található.
+.PP
+Például, ha a törölt fájlokat az első scsi lemez második partícióján
+szeretnénk visszaállítani, akkor a következő elérési utat kell
+megadnunk:
+.PP
+.nf
+    /#undel:sda2
+.fi
+.PP
+Persze várakozni kell, amíg az undelfs a szükséges információkat
+beolvassa, a fájl böngészés megkezdése előtt.
+.\"NODE "Colors"
+.SH "Színek"
+A Midnight Commander megpróbálja megállapítani azt, hogy a terminál
+amelyet használsz, támogatja\-e a színhasználatot a terminál adatbázis és
+a terminál név segítségével. Néha ez összezavarodhat, ezért
+előfordulhat, hogy neked kell megmondanod azt, hogy színes, vagy
+színtelen módot használjon a \-c illetve a \-b kiegészítéssel.
+.PP
+Ha a programot a Slang képernyő kezelővel fordították az ncurses
+helyett, szintén le fogja ellenőrizni a
+.B COLORTERM
+változó értékét, ha be van állítva, ez olyan hatású, mintha a \-c flaggal
+indítottál volna.
+.PP
+Magadhatod azt a terminálnak, hogy mindíg a színes módot használja a
+Colors részben
+.I color_terminals
+változónál az indító fájlban. Így a terminál színtámogatásának vizsgálatát
+a Midnight Commander nem végzi el. Például:
+.PP
+.nf
+[Colors]
+color_terminals=linux,xterm
+color_terminals=terminal\-name1,terminal\-name2...
+.fi
+.PP
+A program mindkét opcióval fordítható (ncurses és slang).  Az ncurses nem
+jelent feltétlenül színes üzemmódot; csak a terminál adatbázist használja.
+.PP
+A Midnight Commander lehetőséget nyújt az alapértelmezett színek
+beállítására. Jelenleg a színek a
+.B MC_COLOR_TABLE
+környezeti változóban, vagy a Colors részben definiálhatók az indító
+fájlban.
+.PP
+Az alapértelmezett színtérképet a Colors rész a
+.I base_color
+változójából olvassa ki. Megadhatsz ettől eltérő színtérképet is, a
+terminál nevének kulcsszóként való használatával. Példa:
+.PP
+.nf
+[Colors]
+base_color=
+xterm=menu=magenta:marked=,magenta:markselect=,red
+.fi
+.PP
+A színmeghatározás formátuma:
+.PP
+.nf
+  <kulcsszó>=<előtérszín>,<háttérszín>:<kulcsszó>= ...
+.fi
+.PP
+A színek opcionálisak, a kulcsszavak a következők: normal, selected,
+marked, markselect, errors, input, reverse, gauge; A menü színek: menunormal,
+menusel, menuhot, menuhotsel, menuinactive; A dialog színek: dnormal, dfocus,
+dhotnormal, dhotfocus; Súgó színek: helpnormal, helpitalic, helpbold,
+helplink, helpslink; Fájlnéző színek: viewunderline; Speciális kijelölés
+színei: executable, directory, link, stalelink, device, special, core;
+Szerkesztő színei: editnormal, editbold, editmarked.
+.PP
+.I input
+maghatározza a beviteli sorok színét a dialogus ablakora vonatkozóan.
+.PP
+.I gauge
+meghatározza a folyamat\-mutató sáv (gauge) kitöltött részének, amely pl.
+azt mutatja, hogy a fájl másolásakor annak hány százaléka másolásolódott
+már át a grafikus megjelenítésben.
+.PP
+A dialógus ablakok a következő színeket használják:
+.I dnormal
+a normál szöveghez,
+.I dfocus
+a jelenleg kiválasztott szövegelemekhez,
+.I dhotnormal
+a gyorsbillentyűk színei, amelyek eltérnek a normál szöveg színétől,
+aholis a
+.I dhotfocus
+színt használjuk a jelenleg kiválasztott komponensekhez.
+.PP
+A menük azonos sémát használnak a menunormal, menusel, menuhot, menuhotsel és a
+menuinactive részeknél.
+.PP
+A súgó a következő színeket használja:
+.I helpnormal
+a normál szöveghez,
+.I helpitalic
+ahhoz a szöveghez, amelyet dőlt betűvel szeretnénk nyomatékosítani
+akarunk a manualban,
+.I helpbold
+ahhoz a szöveghez, amelyet félkövérrel szeretnénk nyomatékosítani a man
+oldalon,
+.IR helplink \-et
+a nem kiválaszott hyperlinkekhez használjuk és a
+.IR helpslink \-et
+a kiválasztott hyperlinkekhez.
+.PP
+A kiemelés színei azt határozzák meg, a fájlok hogyan jelenjenek meg
+akkor, ha a kiemelés engedélyezve van (lásd a
+.\"LINK2"
+Megjelenés részt\&).
+.\"Layout"
+.I directory
+a könyvtárakhoz, és a könyvtárak szimbolikus linkjeihez használatos;
+.I executable
+a futtatható fájlokhoz;
+.I link
+a szimbolikus linkekhez, amelyekk még létezőek, és nem könyvtárra
+mutató linkek;
+.I stalelink
+az elvesztett szimbolikus linkekhez;
+.I device
+\- karakter és blokk eszközökhöz;
+.I special
+a speciális fájlokhoz, mint pl.FIFO\-k és az IPC socket\-ek;
+.I core
+a core fájlokhoz.
+.PP
+A megjeleníthető színek: black (fekete), gray (szürke), red (piros),
+brightred (világospiros), green (zöld), brightgreen (világoszöld), brown
+(barna), yellow (sárga), blue (kék), brightblue (világoskék), magenta
+(bíborvörös), brightmagenta (világos bíborvörös), cyan, brightcyan
+(világos zöldeskék), lightgray (világosszürke) és a white (fehér). Van
+külön speciális kulcsszó az átlátszó háttérhez. Ez a 'default'
+(alapértelmezett). Csak a 'default'\-ot tudod háttérszínként használni.
+Példa:
+.PP
+.nf
+[Colors]
+base_color=normal=white,default:marked=magenta,default
+.fi
+.\"NODE "Special Settings"
+.SH "Speciális Beállítások"
+A legtöbb Midnight Commander beállítás a menükből is elérhető. Ám van
+néhány beállítás, ami csak a setup fájl szerkesztésével állítható be.
+.PP
+Ezeket a változókat az ~/.mc/ini fájlban állíthatod be:
+.PP
+.I clear_before_exec
+.IP
+Alapértelmezésben a Midnight Commander törli a képernyőt, mielőtt
+futtatna egy parancsot. Ha a parancs kimenetét a képernyő alján
+szeretnéd látni, az ~/mc.ini fájlban javítsd ki a clear_before_exec
+értékét 0\-ra.
+.PP
+.I confirm_view_dir
+.IP
+Ha lenyomod az F3 gombot a könyvtár felett állva, normálisan a MC belép
+a könyvtárba. Ha ez a flag 1\-re van állítva, akkor az MC kijelölt fájlok
+esetén megerősítő kérdést fog feltenni, mielőtt könyvtárat váltana.
+.PP
+.I ftpfs_retry_seconds
+.IP
+Ez az érték az a szám, amely megadja azt, hogy Commander mennyit várjon
+mielőtt megpróbál újra kapcsolódni az ftp szerverre, elutasítás esetén.
+Ha az érték nulla, akkor nem próbálkozik újra a kapcsolatteremtéssel.
+.PP
+.I ftpfs_use_passive_connections.
+.IP
+Ez az opció alapesetben ki van kapcsolva. Ez teszi az ftpfs kódot
+használhatóvá passzív megnyitás módúvá a letöltött fájloknál. Ezt akkor
+használják, ha csomagszűrő routert használnak. Ez az opció csak akkor
+működik, ha a nem használsz ftp proxy\-t.
+.PP
+.I max_dirt_limit
+.IP
+Meghatározza azt, hogy hány képernyőfrissítést tudjon átlépni a Belső
+fájlnéző. Normálisan ez az érték nem meghatározott, mivel a kód
+automatikusan módosítja a képfrissítés sebességét, ha túl gyosran ütöd
+le egymás után a billentyűket. Habár a nagyon lassú gépeken, vagy, ha
+nagy billenty\ ismétlési sebességet állítottunk, a nagy érték tudja
+megfelelően frissíteni a képernyőt. A legjobb az ha a max_dirt_limit
+értékét 10\-re állítod, és ez az alapértelmezett érték.
+.PP
+.I mouse_move_pages
+.IP
+Vezérel akkor, amikor a panelben az egérrel legördítesz oldalanként,
+vagy sorról sorra.
+.PP
+.I mouse_move_pages_viewer
+.IP
+Vezérel akkor, amikor a panelben az egérrel legördítesz egy oldala
+oldalanként, vagy sorról sorra a Belső fájlnézőben.
+.PP
+.I old_esc_mode
+.IP
+Alapesetben a Midnight Commander az ESC gombot a gomb rendeltetésének
+megfelelően használja (Meta) (old_esc_mode=0), ha beállítod ezt az
+opciót, (old_esc_mode=1), akkor az ESC gomb egy másodpercig vár, és, ha
+ilyenkor nem nyomsz le egy kiegészítő gombot, az ESC műveletet
+megszakító gombként fog működni (ESC ESC).
+.PP
+.I only_leading_plus_minus
+.IP
+speciálisan kezeli a '+', '\-', '*' karaktereket a parancssorban
+(kiválasztás, kiválasztás megszüntetése, megfordítja a kiválasztást), de
+csak akkor, ha a parancssor üres. A parancssorban nem kell idézőjelek
+közé tenni. Amikor a parancssor nem üres, nem tudjuk megváltoztatni a
+kiválasztást.
+.PP
+.I panel_scroll_pages
+.IP
+Ha be van állítva (alapértelmezésben), a panel egy fél képernyőnyit fog
+fel\-le gördülni, ha a kurzor eléri a panel végét, vagy elejét, egyébként
+csak egy fájlt fog legördítani ilyenkor.
+.PP
+.I show_output_starts_shell
+.IP
+Ez a változó csak akkor működik, ha a subshell támogatást nem használod.
+Amikor a C\-o billentyű kombinációt használod, visszalépsz a felhasználói
+képernyőre, ha "egy" a beállítás, akkor a shellt frissíted. Egyébként
+bármely gomb lenyomásával visszatérhetsz a Midnight Commander\-hez.
+.PP
+.I torben_fj_mode
+.IP
+Ha ez a flag be van állítva, akkor a home és az end gombok kissé
+eltérően fognak működni a panelekben, a kiválasztást a panel első és
+utolsó fájljára mozgatja, s a következőképp működik: A home gombnál:
+Felmegy a középső sorra, ha lejjebb volt; egyébként a felső sor lép
+addíg, amíg el nem éri a legfelső sort, ebben ez esetben ez lesz a panel
+első fájlja. Az end gomb működése hasonló: Lemegy a középső sorra, ha
+felette volt; egyébként a legalsó sorra lép addíg, amíg el nem éri az
+utolsó fájl a panelben.
+.PP
+.I use_file_to_guess_type
+.IP
+Ha ez a változó be van állítva (alapértelmezésben) meg foja jelölni azt
+a fájl parancsot, amelyhez a
+.\"LINK2"
+Társításokban
+.\"Extension File Edit"
+a fájl típusnál egyezőt talált.
+.PP
+.I xtree_mode
+.IP
+Ha ez a változó be van kapcsolva (alapértelmezésben ki van kapcsolva),
+akkor, amikor a fájlrendszert a Fa panelben böngészed, az automatikusan
+újraolvassa a másik panelt a kiválasztott könyvtárnak megfelelő
+tartalommal.
+.\"NODE "Terminal databases"
+.SH "Terminál adatbázisok"
+A Midnight Commander lehetőséget nyújt a terminál adatbázis root jogok
+használata nélküli módosítására. A Midnight Commander a rendszer indító
+fájlban (az mc.lib fájlt a Midnight Commander library könyvtárában
+találjuk), vagy az ~/.mc/ini file "terminal:your\-terminal\-name" részében
+keres, és, a "terminal:general" rész minden sora tartalmazza azokat a
+billentyűzet szimbólumokat az egyenlőségjelet és a definiált szimbólumot
+követően, amelyeket te mag akarsz határozni. A \\e speciális formátumot
+az escape és a ^x\-t a control\-x karakter megjelenítésére használhatod.
+.PP
+A látható billentyű szimbólumok:
+.PP
+.nf
+f0\-tól f20\-ig Funkció billentyűk f0\-f20
+bs            backspace
+home          home gomb
+end           end gomb
+up            kurzor fel gomb
+down          kurzor le gomb
+left          kurzor balra gomb
+right         kurzor jobbra gomb
+pgdn          page down gomb
+pgup          page up gomb
+insert        az insert karakter
+delete        a delete karakter
+complete      a lezáró
+.fi
+.PP
+Például ahhoz, hogy az insert gomb az Escape + [+ O + p\-pel legyen
+azonos, az alábbiakat állítsd be az ini fájlban:
+.PP
+.nf
+insert=\\e[Op
+.fi
+.PP
+A
+.I complete
+billentyű szimbólum megjeleníti az escape szekvenciát, amely a leállító
+folyamatot indítja el, az M\-tab\-bal indítható el, de definiálhatsz más
+gombokat is ugyanerre a folyamatra (azokon a billentyűzeteken, ahol
+valamelyik gomb nem használható).
+.SH ""
+.\"NODE "FILES"
+.SH "Fájlok"
+A progam minden ezzel kapcsolatos infomációt az MCHOME környezeti
+változóban tárol. Ha ezt a változót nem állítottuk be, akkor ez vissza
+fog állítódni a /usr könyvtárra.
+.PP
+.I @prefix@/share/mc/mc.hlp
+.IP
+A program súgó fájlja.
+.PP
+.I @prefix@/share/mc/mc.ext
+.IP
+Az alapértelmezett rendszerszintű kiterjesztés fájl.
+.PP
+.I ~/.mc/bindings
+.IP
+A felhasználó saját kiterjesztései, nézet beállítások és szerkesztési
+beállítások. Ezek felülbírálják a rendszerszintű fájl bejegyzéseit, ha
+van ilyen.
+.PP
+.I @prefix@/share/mc/mc.ini
+.IP
+Az alapértelmezett rendszerszintű Midnight Commander beállítás, amelyet
+csak akkor használ, ha a felhasználónak nincs saját ~/.mc/ini fájlja.
+.PP
+.I @prefix@/share/mc/mc.lib
+.IP
+A Midnight Commander globális beállításai. Az ebben a fájlban elvégzett
+beállítások minden felhasználó Midnight Commander\-jére vonatkoznak, ez
+használható a site\-globális terminál beállításaihoz.
+.PP
+.I ~/.mc/ini
+.IP
+A felhasználó saját beállításai. Ha ez a fájl elérhető, akkor a
+beállítások ebből a fájlból olvasódnak be a rendszerszintű indító fájl
+helyett.
+.PP
+.I @prefix@/share/mc/mc.hint
+.IP
+Ez a fájl tartalmazza a program által megjelenített útmutattásokat
+(cookie\-kat).
+.PP
+.I @prefix@/share/mc/mc.menu
+.IP
+Ez a fájl azonos a rendszerszintű alkalmazás menüvel.
+.PP
+.I ~/.mc/menu
+.IP
+A falhasználó saját alkalmazás menüje. Ha ez a fájl elérhető a
+rendszerszintű alkalmazás menü helyett ezt fogja használni.
+.PP
+.I ~/.mc/Tree
+.IP
+A könyvtárlista a Könyvtárfa és a Fa nézethez.  Minden sor egy
+bejegyzés. Minden sor perjellel kezdik a teljes könyvtár neveknél. A
+sorok egy számmal kezdődnek, amik azonosak az elöző könyvtáréval. Ha ezt
+a fájlt el akarod készíteni a következő parancsot használd: 
+.nf
+find / \-type d \-print | sort > ~/.mc/Tree"
+.fi
+Normálisan nincs erre szükséged, mert a Midnight Commander automatikusan
+frissíti ezt.
+.PP
+.I ./.mc.menu
+.IP
+Helyi felhasználó által definiált menü. Ha ez a fájl létezik, ezt
+használja a home, vagy rendszerszintű alkalmazás menü helyett.
+.\"NODE "AVAILABILITY"
+.SH "A Midnight Commander frissítése"
+A program legutolsó verzióját az ftp.nuclecu.unam.mx címen a
+/linux/local könyvtárban találhatod meg, Európából pedig a
+sunsite.mff.cuni.cz címen a /GNU/mc könyvtárban és az ftp.teuto.de címen
+az /lmb/mc könyvtárban.
+.\"NODE "SEE ALSO"
+.SH "Lásd még..."
+ed(1), gpm(1), terminfo(1), view(1), sh(1), bash(1), tcsh(1),
+zsh(1).
+.PP
+.nf
+A Midnight Commander World Wide Web oldalának címe a
+következő:
+	http://www.midnight\-commander.org/
+.fi
+.\"NODE "AUTHORS"
+.SH "Szerzők"
+Miguel de Icaza (miguel@roxanne.nuclecu.unam.mx), Janne Kukonlehto
+(jtklehto@paju.oulu.fi), Radek Doulik (rodo@ucw.cz), Fred Leeflang
+(fredl@nebula.ow.org), Dugan Porter (dugan@b011.eunet.es), Jakub Jelinek
+(jj@sunsite.mff.cuni.cz), Ching Hui (mr854307@cs.nthu.edu.tw), Andrej
+Borsenkow (borsenkow.msk@sni.de), Norbert Warmuth
+(nwarmuth@privat.circular.de), Mauricio Plaza
+(mok@roxanne.nuclecu.unam.mx), Paul Sheer (psheer@icon.co.za) and Pavel
+Machek (pavel@ucw.cz) are the developers of this package; Alessandro
+Rubini (rubini@ipvvis.unipv.it) has been especially helpful debugging
+and enhancing the program's mouse support, John Davis
+(davis@space.mit.edu) also made his S\-Lang library available to us under
+the GPL and answered my questions about it, and the following people
+have contributed code and many bug fixes (in alphabetical order):
+.PP
+Adam Tla/lka (atlka@sunrise.pg.gda.pl), alex@bcs.zp.ua (Alex I.
+Tkachenko), Antonio Palama, DOS port (palama@posso.dm.unipi.it), Erwin
+van Eijk (wabbit@corner.iaf.nl), Gerd Knorr (kraxel@cs.tu\-berlin.de),
+Jean\-Daniel Luiset (luiset@cih.hcuge.ch), Jon Stevens
+(root@dolphin.csudh.edu), Juan Francisco Grigera, Win32 port
+(j\-grigera@usa.net), Juan Jose Ciarlante (jjciarla@raiz.uncu.edu.ar),
+Ilya Rybkin (rybkin@rouge.phys.lsu.edu), Marcelo Roccasalva
+(mfroccas@raiz.uncu.edu.ar), Massimo Fontanelli (MC8737@mclink.it),
+Pavel Roskin (proski@gnu.org), Sergey Ya. Korshunoff
+(root@seyko.msk.su), Thomas Pundt (pundtt@math.uni\-muenster.de), Timur
+Bakeyev (timur@goff.comtat.kazan.su), Tomasz Cholewo
+(tjchol01@mecca.spd.louisville.edu), Torben Fjerdingstad
+(torben.fjerdingstad@uni\-c.dk), Vadim Sinolitis (vvs@nsrd.npi.msu.su)
+and Wim Osterholt (wim@djo.wtm.tudelft.nl).
+.\"NODE "BUGS"
+.SH "Hibák bejelentése"
+Nézd meg a disztribúció TODO fájlát, hogy megtudhasd, milyen teendők
+vannak még vissza.
+.PP
+Ha a programmal kapcsolatos problémád van, akkor azt küld el az alábbi
+levélcímre: mc\-devel@gnome.org.
+.PP
+Gondoskodj arról, hogy tartalmazza a hiba minél pontosabb
+meghatározását, a futtatott program verziószámát (az mc \-V parancs meg
+fogja jeleníttetni ezt), az operációs rendszert, amin futtatod a
+programot amikor az összeomlott, méltányolni fogjuk a részletes leírást.
