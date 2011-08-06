@@ -2903,6 +2903,7 @@ void start_wan(int status)
 		if (!wlifname) {
 			eval("ifconfig", wan_ifname, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
+			eval("ifconfig", wan_ifname, "up");
 		}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
