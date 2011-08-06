@@ -2901,6 +2901,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"warn_enabled", "0", 0},
 	{"warn_connlimit", "500", 0},
 
+#ifdef HAVE_USBIP
+	{"usb_ip", "0", 0},
+#endif
 	{0, 0, 0}
 };
 #else
