@@ -1,0 +1,245 @@
+# This file describes which highlighting scheme is applied to a particular
+# file in mcedit.
+#
+# Each entry consists of two lines: a "file" specification and the
+# corresponding highlighting definition ("include"). A file specification
+# can have two or three fields, each separated by white-space characters.
+#
+# The first field is a regular expression that is matched against the file
+# name. The second field is a description of the file type and is
+# currently unused. The third (optional) field is a regular expression
+# that is matched against the first line of the file. The first entry
+# that matches wins, that is, all the entries below are ignored.
+#
+# Certain characters must be quoted in these fields. These are space (\s),
+# tabs (\t), backslashes(\\), plus (\+) and asterisk (\*). Braces {} and
+# brackets [] must not be quoted in this file. However, they have a special
+# meaning when used in the actual syntax definitions.
+#
+# You can use the following colors in the syntax highlighting files:
+# black, blue, brightblue, brightcyan, brightgreen, brightmagenta,
+# brightred, brown, cyan, gray, green, lightgray, magenta, red, white,
+# yellow
+#
+
+file [Ss]yntax$ Syntax\sHighlighting\sdefinitions ^#\ssyntax\srules\sversion\s
+include syntax.syntax
+
+file filehighlight.ini$ File\sHighlighting\sdefinitions ^#\sfile\shighlight\srules\sversion\s
+include filehighlight.syntax
+
+file ..\*\\.(e)$ Eiffel\sSource\sFile
+include eiffel.syntax
+
+file ..\*\\.(diff|rej|patch)$ Diff\sOutput ^(diff|Index:)\s
+include diff.syntax
+
+file ..\*\\.lsm$ LSM\sFile
+include lsm.syntax
+
+file .\*(bash_completion|profile|\\.(sh|bash_login|bash_profile|bash_logout|bash_aliases|bash_exports|bash_history|bashrc|profile))$ Shell\sScript ^#!\s\*/(.\*/|usr/bin/env\s)([a-z]?|ba|pdk)sh
+include sh.syntax
+
+file ..\*\\.(pl|PL|pm|PM)$ Perl\sProgram ^#!.\*([\s/]perl|@PERL@)
+include perl.syntax
+
+file ..\*\\.(py|PY)$ Python\sProgram ^#!.\*([\s/]python|@PYTHON@)
+include python.syntax
+
+file ..\*\\.(pyx|pxd|pxi)$ Cython\sor\sPyrex\sProgram
+include cython.syntax
+
+file ..\*\\.(rb|RB)$ Ruby\sProgram ^#!.\*([\s/]ruby|@RUBY@)
+include ruby.syntax
+
+file ..\*\\.(man|[0-9n]|[0-9](x|ncurses|ssl|p|pm|menu|form|vga|t|td))$ NROFF\sSource
+include nroff.syntax
+
+file ..\*\\.(htm|html|HTM|HTML)$ HTML\sFile
+include html.syntax
+
+file ..\*\\.(xml|XML|xsd|XSD|xslt?|XSLT?|dtd|DTD|qpg|qpg.in)$ XML\sdocument (\\?xml\sversion|!DOCTYPE\s)
+include xml.syntax
+
+file ..\*\\.(tt|TT)$ Template::Toolkit\sFile
+include tt.syntax
+
+file (.\*[Mm]akefile[\\\.A-Za-z0-9]\*|..\*\\.mk|Kbuild)$ Makefile
+include makefile.syntax
+
+file ..\*\\.(pp|PP|pas|PAS|dpr|DPR|inc|INC)$ Pascal\sProgram
+include pascal.syntax
+
+file ..\*\\.(ada|adb|ads|ADA|ADB|ADS)$ Ada\sProgram
+include ada95.syntax
+
+file ..\*\\.(tcl|itcl|TCL|ITCL)$ Tcl\sProgram
+include tcl.syntax
+
+file ..\*\\.(sl|SL)$ S-Lang\sProgram
+include slang.syntax
+
+file ..\*\\.tex$ LaTeX\s2.09\sDocument
+include latex.syntax
+
+file ..\*\.(texi|texinfo|TEXI|TEXINFO)$ Texinfo\sDocument
+include texinfo.syntax
+
+file ..\*\\.c$ C\sProgram
+include c.syntax
+
+file ..\*\\.([hC]|CC|cxx|cc|cpp|CPP|CXX|hxx|hh|hpp|HPP|h\.in)$ C/C\+\+\sProgram
+include cxx.syntax
+
+file ..\*\\.d$ D\sProgram
+include d.syntax
+
+file ..\*\\.[fF]$ Fortran\sProgram
+include fortran.syntax
+
+file ..\*\\.[fF]9[05]$ Freeform\sFortran\sProgram
+include f90.syntax
+
+file ..\*\\.i$ SWIG\sSource
+include swig.syntax
+
+file ..\*\\.(php|PHP)[0-9]?$ PHP\sProgram
+include php.syntax
+
+file ..\*\\.ij[xs]$ J\sFile
+include j.syntax
+
+file ..\*\\.(java|JAVA|Java|jav|groovy|GROOVY|Groovy)$ Java\sProgram
+include java.syntax
+
+file ..\*\\.(properties|config) Java\sFile
+include properties.syntax
+
+file ..\*\\.(cs|CS)$ C\#\sProgram
+include cs.syntax
+
+file ..\*\\.(js|JS)$ JavaScript\sProgram
+include js.syntax
+
+file ..\*\\.(asax|aspx|ascx|asmx|ashx)$ ASPX\sFile
+include aspx.syntax
+
+file ..\*\\.st$ SmallTalk\sProgram
+include smalltalk.syntax
+
+file ..\*\\.(lisp|lsp|el|cl)$ Lisp\sProgram
+include lisp.syntax
+
+file ..\*\\.(ml|mli|mly|mll|mlp)$ ML\sProgram
+include ml.syntax
+
+file ..\*\\.m$ Matlab\sor\sOctave\sFile
+include octave.syntax
+
+file ..\*\\.(sql|SQL)$ SQL\sProgram
+include sql.syntax
+
+file ..\*\\.(spec|spec\.in)$ RPM\sSpecfile
+include spec.syntax
+
+file ..\*\\.repo$ YUM\sRepo\sFile
+include yum-repo.syntax
+
+file ..\*\\.(awk)$ AWK\sFile
+include awk.syntax
+
+file ..\*\\.(css|qss|CSS|QSS)$ CSS\sFile
+include css.syntax
+
+file .\*ChangeLog[\\\.A-Za-z0-9_]\*$ GNU\sChangeLog\sFile
+include changelog.syntax
+
+file (..\*\\.m4$|configure\\.in|configure\\.ac) M4\sMacroprocessor\sSource
+include m4.syntax
+
+file ..\*\\.(bat|cmd)$ DOS\sBatch
+include dos.syntax
+
+file ..\*\\.(po|pot|pox)$ PO\sFile
+include po.syntax
+
+file ..\*\\.([Aa][Ss][Mm]|s|S)$ ASM\sProgram
+include assembler.syntax
+ 
+file ..\*\\.([Pp][Oo][Vv])$ POV\sScript
+include povray.syntax
+
+file .\*\\.(ebuild|eclass)$ Gentoo\sEbuild
+include ebuild.syntax
+
+file ..\*\\.([lL][uU][aA])$ LUA\sProgram ^#!.*/lua
+include lua.syntax
+
+file ..\*\\.([iI][dD][lL])$ CORBA\sIDL
+include idl.syntax
+
+file ..\*\\.([iI][nN][iI])$ INI\sFile
+include ini.syntax
+
+file Don_t_match_me Mail\sfolder ^(From|Return-(P|p)ath:|From:|Date:)\s
+include mail.syntax
+
+file \.procmailrc$ Procmail\sRC\sFile ^#/usr/bin/procmail
+include procmail.syntax
+
+file sources.list$ sources\slist
+include debian-sources-list.syntax
+
+file control$ Debian\scontrol\sfile
+include debian-control.syntax
+
+file (rules|rocks)$ Debian\srules
+include makefile.syntax
+
+file .\*changelog$ Debian\schangelog\sfile
+include debian-changelog.syntax
+
+file changelog.Debian$ Debian\schangelog\sfile
+include debian-changelog.syntax
+
+file .\*\\.dsc$ Debian\sdescriptiom\sfile
+include debian-description.syntax
+
+file ..\*\\.([hH][sS][cC]?)$ Haskell\sprogram
+include haskell.syntax
+
+file ..\*\\.([cC][aA][bB][aA][lL])$ Cabal\sconfig\sfile
+include cabal.syntax
+
+file ..\*\\.(n|N)$ Nemerle\sProgram
+include nemerle.syntax
+
+file ..\*\\.(v|V)$ Verilog\sDevice\sDescription
+include verilog.syntax
+
+file ..\*\\.(hdl|vhd|vdhl|HDL|VHD|VHDL)$ VHDL\sDevice\sDescription
+include vhdl.syntax
+
+file ..\*\\.erl$ Erlang\sProgram ^(-module\\(|#!.*escript)
+include erlang.syntax
+
+file ..\*\\.hrl$ Erlang\sHeader ^-record\\(
+include erlang.syntax
+
+file .\*named.conf$ Bind9\sconfiguration
+include named.syntax
+
+file .\*\\.strace$ Strace\sdebug\soutput
+include strace.syntax
+
+file PKGBUILD$ Arch\spackage\sbuild\sscript
+include PKGBUILD.syntax
+
+file \\.install$ Arch\spackage\sinstall\sscript
+include sh.syntax
+
+file ..\*\\.(y|yxx|ypp)$ Yacc/Bison\sParser
+include yxx.syntax
+
+file .\* unknown
+include unknown.syntax

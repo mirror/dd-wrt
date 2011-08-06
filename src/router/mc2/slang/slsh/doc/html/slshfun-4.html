@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Filename Globbing Functions</TITLE>
+ <LINK HREF="slshfun-5.html" REL=next>
+ <LINK HREF="slshfun-3.html" REL=previous>
+ <LINK HREF="slshfun.html#toc4" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-5.html">Next</A>
+<A HREF="slshfun-3.html">Previous</A>
+<A HREF="slshfun.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="s4">4.</A> <A HREF="slshfun.html#toc4">Filename Globbing Functions</A></H2>
+
+<P>These functions are defined <CODE>glob.sl</CODE>.</P>
+<H2><A NAME="glob"></A> <A NAME="ss4.1">4.1</A> <A HREF="slshfun.html#toc4.1"><B>glob</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Find files using wildcards</P>
+<DT><B> Usage </B><DD>
+<P><CODE>files = glob (pattern1, ..., patternN)</CODE>;</P>
+<DT><B> Description </B><DD>
+<P>This function returns a list of files whose names match the specified
+globbing patterns.  A globbing pattern is one in which '?' matches a
+single character, and '*' matches 0 or more characters.</P>
+<DT><B> Example </B><DD>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+   files = glob ("*.c", "*.h");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> See Also </B><DD>
+<P><CODE>glob_to_regexp</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-5.html">Next</A>
+<A HREF="slshfun-3.html">Previous</A>
+<A HREF="slshfun.html#toc4">Contents</A>
+</BODY>
+</HTML>
