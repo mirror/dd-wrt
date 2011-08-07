@@ -2216,6 +2216,9 @@ void start_drivers(void)
 			cprintf("loading usb over ip drivers\n");
 			insmod("usbip_common_mod");
 			insmod("usbip");
+
+			insmod("usbip-core");
+			insmod("usbip-host");
 			eval("usbipd","-D");
 		}
 #endif
