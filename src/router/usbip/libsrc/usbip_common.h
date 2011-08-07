@@ -22,6 +22,9 @@
 #define USBIDS_FILE "/usr/share/hwdata/usb.ids"
 #endif
 
+#ifndef VHCI_STATE_PATH
+#define VHCI_STATE_PATH "/var/run/vhci_hcd"
+#endif
 
 //#include <linux/usb_ch9.h>
 enum usb_device_speed {

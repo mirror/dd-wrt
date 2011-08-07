@@ -1,7 +1,7 @@
 # Vietnamese Translation for gettext-tools.
 # Copyright © 2006 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2005-2006.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: gettext-tools 0.15-pre5\n"
@@ -10,6 +10,7 @@ msgstr ""
 "PO-Revision-Date: 2006-07-15 15:36+0930\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -557,17 +558,17 @@ msgid ""
 "In the directive number %u, parameter %u is of type '%s' but a parameter of "
 "type '%s' is expected."
 msgstr ""
-"Trong chỉ thị số %u, tham số %u có kiểu « %s » nhưng mà ngờ tham số kiểu « %"
-"s »."
+"Trong chỉ thị số %u, tham số %u có kiểu « %s » nhưng mà ngờ tham số kiểu « "
+"%s »."
 
 #: src/format-lisp.c:2387 src/format-scheme.c:2413
 #, c-format
 msgid ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameter."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameter."
 msgid_plural ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameters."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameters."
 msgstr[0] ""
 "Trong chỉ thị số %u, có quá nhiều tham số được đưa ra, còn ngờ nhiều nhất %u "
 "tham số."
@@ -2019,8 +2020,8 @@ msgstr "  -f, --use-fuzzy             _dùng_ mục nhập _mờ_ trong kết xu
 msgid ""
 "  -a, --alignment=NUMBER      align strings to NUMBER bytes (default: %d)\n"
 msgstr ""
-"  -a, --alignment=SỐ      _canh lề_ mọi chuỗi theo số byte này (mặc định: %"
-"d)\n"
+"  -a, --alignment=SỐ      _canh lề_ mọi chuỗi theo số byte này (mặc định: "
+"%d)\n"
 
 #: src/msgfmt.c:746
 #, c-format
@@ -3371,8 +3372,8 @@ msgstr ""
 
 #: src/write-qt.c:697
 msgid ""
-"message catalog has msgctxt strings containing characters outside ISO-8859-"
-"1\n"
+"message catalog has msgctxt strings containing characters outside "
+"ISO-8859-1\n"
 "but the Qt message catalog format supports Unicode only in the translated\n"
 "strings, not in the context strings\n"
 msgstr ""
@@ -3950,8 +3951,8 @@ msgstr ""
 #: src/xgettext.c:1649
 #, c-format
 msgid ""
-"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: %"
-"s"
+"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: "
+"%s"
 msgstr ""
 "Đối số « --flag » (cờ) không có cú pháp <từ khóa>:<số đối số>:[qua-]<cờ>: %s"
 
@@ -3976,8 +3977,8 @@ msgstr ""
 #: src/xgettext.c:1934
 #, c-format
 msgid ""
-"Although declared as such, the %s is not a valid %s format string. Reason: %"
-"s\n"
+"Although declared as such, the %s is not a valid %s format string. Reason: "
+"%s\n"
 msgstr ""
 "Dù nó được tuyên bố như vậy, %s không phải là một chuỗi dạng thức %s hợp lệ. "
 "Lý do : %s\n"

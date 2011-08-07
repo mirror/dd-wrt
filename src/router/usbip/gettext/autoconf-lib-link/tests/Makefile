@@ -30,7 +30,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = x86_64-unknown-linux-gnu
-host_triplet = mips-unknown-linux-gnu
+host_triplet = arm-unknown-linux-gnu
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -47,21 +47,21 @@ am__depfiles_maybe =
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run aclocal-1.10
-AMTAR = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run tar
-AR = mips-linux-uclibc-ar
-AS = mips-linux-uclibc-as
-AUTOCONF = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run automake-1.10
+ACLOCAL = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run aclocal-1.10
+AMTAR = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run tar
+AR = arm-linux-uclibc-ar
+AS = arm-linux-uclibc-as
+AUTOCONF = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run automake-1.10
 AWK = gawk
-CC = mips-linux-uclibc-gcc
+CC = arm-linux-uclibc-gcc
 CCDEPMODE = depmode=none
-CFLAGS = -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc
-CPP = mips-linux-uclibc-gcc -E
+CFLAGS = -Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc
+CPP = arm-linux-uclibc-gcc -E
 CPPFLAGS = 
-CXX = mips-linux-uclibc-g++
-CXXCPP = mips-linux-uclibc-g++ -E
+CXX = arm-linux-uclibc-g++
+CXXCPP = arm-linux-uclibc-g++ -E
 CXXDEPMODE = depmode=none
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
@@ -83,7 +83,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LD = mips-linux-uclibc-ld
+LD = arm-linux-uclibc-ld
 LDFLAGS = 
 LIBDIRSTEM = lib
 LIBOBJS = 
@@ -91,7 +91,7 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJDUMP = objdump
 OBJEXT = o
@@ -102,15 +102,15 @@ PACKAGE_STRING =
 PACKAGE_TARNAME = 
 PACKAGE_VERSION = 
 PATH_SEPARATOR = :
-RANLIB = mips-linux-uclibc-ranlib
+RANLIB = arm-linux-uclibc-ranlib
 SET_MAKE = 
 SHELL = /bin/sh
-STRIP = mips-linux-uclibc-strip
+STRIP = arm-linux-uclibc-strip
 VERSION = 0.16.1
-abs_builddir = /home/seg/DEV/pb42/src/router/usbip/gettext/autoconf-lib-link/tests
-abs_srcdir = /home/seg/DEV/pb42/src/router/usbip/gettext/autoconf-lib-link/tests
-abs_top_builddir = /home/seg/DEV/pb42/src/router/usbip/gettext/autoconf-lib-link
-abs_top_srcdir = /home/seg/DEV/pb42/src/router/usbip/gettext/autoconf-lib-link
+abs_builddir = /home/seg/DEV/laguna/src/router/usbip/gettext/autoconf-lib-link/tests
+abs_srcdir = /home/seg/DEV/laguna/src/router/usbip/gettext/autoconf-lib-link/tests
+abs_top_builddir = /home/seg/DEV/laguna/src/router/usbip/gettext/autoconf-lib-link
+abs_top_srcdir = /home/seg/DEV/laguna/src/router/usbip/gettext/autoconf-lib-link
 ac_ct_CC = 
 ac_ct_CXX = 
 ac_ct_F77 = gfortran
@@ -132,15 +132,15 @@ datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = mips-unknown-linux-gnu
-host_alias = mips-linux
-host_cpu = mips
+host = arm-unknown-linux-gnu
+host_alias = arm-linux
+host_cpu = arm
 host_os = linux-gnu
 host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = $(SHELL) /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/install-sh
+install_sh = $(SHELL) /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -200,7 +200,7 @@ EXTRA_DIST = $(TESTS) \
 TESTS_ENVIRONMENT = top_srcdir=$(srcdir)/../.. srcdir=$(srcdir) \
 		    OBJEXT='o' EXEEXT='' \
 		    LIBTOOL='$(SHELL) $(top_builddir)/libtool' \
-		    CC='mips-linux-uclibc-gcc' CFLAGS='-Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc' \
+		    CC='arm-linux-uclibc-gcc' CFLAGS='-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc' \
 		    CPPFLAGS='' LDFLAGS='' \
 		    LIBDIRSTEM='lib' \
 		    CONFIG_SHELL='$(SHELL)' \
@@ -453,10 +453,10 @@ uninstall-am:
 rpathcfg: rpathcfg.sh
 	top_srcdir=$(srcdir)/../.. srcdir=$(srcdir) \
 	CONFIG_SHELL='$(SHELL)' \
-	CC='mips-linux-uclibc-gcc' GCC='yes' \
+	CC='arm-linux-uclibc-gcc' GCC='yes' \
 	LDFLAGS='' \
-	LD='mips-linux-uclibc-ld' with_gnu_ld='yes' \
-	host='mips-unknown-linux-gnu' \
+	LD='arm-linux-uclibc-ld' with_gnu_ld='yes' \
+	host='arm-unknown-linux-gnu' \
 	$(SHELL) $(srcdir)/rpathcfg.sh > rpathcfg 2> rpathcfg.log
 
 # Clean up the intermediate directory created by running the tests.
