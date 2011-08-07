@@ -4,8 +4,8 @@
 # Il a été le traducteur jusqu'en 2001.
 # Michel Robitaille <robitail@iro.umontreal.ca>, traducteur depuis/since 1996.
 # Christophe Combelles <ccomb@free.fr>, 2006
-# 
-# 
+#
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU gettext-tools 0.15-pre5\n"
@@ -14,6 +14,7 @@ msgstr ""
 "PO-Revision-Date: 2006-10-01 02:23+0200\n"
 "Last-Translator: Christophe Combelles <ccomb@free.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -586,11 +587,11 @@ msgstr ""
 #: src/format-lisp.c:2387 src/format-scheme.c:2413
 #, c-format
 msgid ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameter."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameter."
 msgid_plural ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameters."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameters."
 msgstr[0] ""
 "Dans la directive numéro %u, trop de paramètres sont fournis (il en faut %u "
 "au maximum)."
@@ -2426,16 +2427,16 @@ msgstr ""
 #, c-format
 msgid "two different charsets \"%s\" and \"%s\" in input file"
 msgstr ""
-"Le fichier d'entrée contient deux jeux de caractères différents « %s » et « %"
-"s »"
+"Le fichier d'entrée contient deux jeux de caractères différents « %s » et "
+"« %s »"
 
 #: src/msgl-cat.c:205
 #, c-format
 msgid ""
 "input file `%s' doesn't contain a header entry with a charset specification"
 msgstr ""
-"Aucun jeu de caractères n'est spécifié dans l'en-tête du fichier d'entrée « %"
-"s »"
+"Aucun jeu de caractères n'est spécifié dans l'en-tête du fichier d'entrée "
+"« %s »"
 
 #: src/msgl-cat.c:209
 #, c-format
@@ -2908,8 +2909,8 @@ msgid ""
 "%sRead %ld old + %ld reference, merged %ld, fuzzied %ld, missing %ld, "
 "obsolete %ld.\n"
 msgstr ""
-"%s lues %ld anciennes + %ld références, %ld fusionnées, %ld approximatives, %"
-"ld manquantes, %ld périmées.\n"
+"%s lues %ld anciennes + %ld références, %ld fusionnées, %ld approximatives, "
+"%ld manquantes, %ld périmées.\n"
 
 #: src/msgmerge.c:1687
 msgid " done.\n"
@@ -3468,8 +3469,8 @@ msgstr ""
 
 #: src/write-qt.c:697
 msgid ""
-"message catalog has msgctxt strings containing characters outside ISO-8859-"
-"1\n"
+"message catalog has msgctxt strings containing characters outside "
+"ISO-8859-1\n"
 "but the Qt message catalog format supports Unicode only in the translated\n"
 "strings, not in the context strings\n"
 msgstr ""
@@ -4051,8 +4052,8 @@ msgstr ""
 #: src/xgettext.c:1649
 #, c-format
 msgid ""
-"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: %"
-"s"
+"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: "
+"%s"
 msgstr ""
 "Un argument « --flag » n'a pas la syntaxe <mot_clé>:<n°_argument>:[pass-]"
 "<drapeau>:%s"
@@ -4078,8 +4079,8 @@ msgstr ""
 #: src/xgettext.c:1934
 #, c-format
 msgid ""
-"Although declared as such, the %s is not a valid %s format string. Reason: %"
-"s\n"
+"Although declared as such, the %s is not a valid %s format string. Reason: "
+"%s\n"
 msgstr ""
 "Malgré sa déclaration, %s n'est pas une chaîne de format %s valide. La "
 "raison est :%s\n"
@@ -5188,8 +5189,8 @@ msgstr "<sans nom>"
 #~ "Generate binary message catalog from textual translation description.\n"
 #~ "\n"
 #~ "Mandatory arguments to long options are mandatory for short options too.\n"
-#~ "  -a, --alignment=NUMBER      align strings to NUMBER bytes (default: %"
-#~ "d)\n"
+#~ "  -a, --alignment=NUMBER      align strings to NUMBER bytes (default: "
+#~ "%d)\n"
 #~ "  -c, --check                 perform language dependent checks on "
 #~ "strings\n"
 #~ "  -D, --directory=DIRECTORY   add DIRECTORY to list for input files "

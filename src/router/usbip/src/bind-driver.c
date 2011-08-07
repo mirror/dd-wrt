@@ -1,5 +1,4 @@
 /*
- * $Id: bind-driver.c 85 2009-01-13 17:10:51Z hirofuchi $
  *
  * Copyright (C) 2005-2007 Takahiro Hirofuchi
  */
@@ -8,9 +7,7 @@
 
 #define _GNU_SOURCE
 #include <getopt.h>
-#include <syslog.h>
 #include <glib.h>
-//#define g_warning(a) syslog(LOG_INFO,a);
 
 
 
@@ -18,9 +15,10 @@ static const struct option longopts[] = {
 	{"usbip",	required_argument,	NULL, 'u'},
 	{"other",	required_argument,	NULL, 'o'},
 	{"list",	no_argument,		NULL, 'l'},
+	{"list2",	no_argument,		NULL, 'L'},
 	{"help",	no_argument,		NULL, 'h'},
-	{"allusbip",	no_argument,		NULL, 'a'},
 #if 0
+	{"allusbip",	no_argument,		NULL, 'a'},
 	{"export-to",   required_argument,	NULL, 'e'},
 	{"unexport",    required_argument,	NULL, 'x'},
 	{"busid",	required_argument,	NULL, 'b'},
@@ -34,14 +32,14 @@ static const char match_busid_path[] = "/sys/bus/usb/drivers/usbip/match_busid";
 
 static void show_help(void)
 {
-	printf("Usage: bind-driver [OPTION]\n");
+	printf("Usage: usbip_bind_driver [OPTION]\n");
 	printf("Change driver binding for USB/IP.\n");
 	printf("  --usbip busid        make a device exportable\n");
 	printf("  --other busid        use a device by a local driver\n");
 	printf("  --list               print usb devices and their drivers\n");
-	printf("  --allusbip           make all devices exportable\n");
-
+	printf("  --list2              print usb devices and their drivers in parseable mode\n");
 #if 0
+	printf("  --allusbip           make all devices exportable\n");
 	printf("  --export-to host     export the device to 'host'\n");
 	printf("  --unexport host      unexport a device previously exported to 'host'\n");
 	printf("  --busid busid        the busid used for --export-to\n");
@@ -178,13 +176,13 @@ static int unbind(char *busid)
 		return -1;
 	}
 
- 	for (i = 0; i < ninterface; i++) {
- 		char driver[PATH_MAX];
+	for (i = 0; i < ninterface; i++) {
+		char driver[PATH_MAX];
 		int ret;
 
 		bzero(&driver, sizeof(driver));
 
- 		getdriver(busid, configvalue, i, driver, PATH_MAX-1);
+		getdriver(busid, configvalue, i, driver, PATH_MAX-1);
 
 		g_debug(" %s:%d.%d	-> %s ", busid, configvalue, i, driver);
 
@@ -227,7 +225,7 @@ static int bind_to_usbip(char *busid)
 		return -1;
 	}
 
- 	for (i = 0; i < ninterface; i++) {
+	for (i = 0; i < ninterface; i++) {
 		int ret;
 
 		ret = bind_interface(busid, configvalue, i, "usbip");
@@ -380,6 +378,50 @@ static int show_devices(void)
 	return 0;
 }
 
+static int show_devices2(void)
+{
+	DIR *dir;
+
+	dir = opendir("/sys/bus/usb/devices/");
+	if (!dir)
+		g_error("opendir: %s", strerror(errno));
+
+	for (;;) {
+		struct dirent *dirent;
+		char *busid;
+
+		dirent = readdir(dir);
+		if (!dirent)
+			break;
+
+		busid = dirent->d_name;
+
+		if (is_usb_device(busid)) {
+			char name[100] = {'\0'};
+			char driver[100] =  {'\0'};
+			int conf, ninf = 0;
+			int i;
+
+			conf = read_bConfigurationValue(busid);
+			ninf = read_bNumInterfaces(busid);
+
+			getdevicename(busid, name, sizeof(name));
+
+			printf("busid=%s#usbid=%s#", busid, name);
+
+			for (i = 0; i < ninf; i++) {
+				getdriver(busid, conf, i, driver, sizeof(driver));
+				printf("%s:%d.%d=%s#", busid, conf, i, driver);
+			}
+			printf("\n");
+		}
+	}
+
+	closedir(dir);
+
+	return 0;
+}
+
 
 #if 0
 static int export_to(char *host, char *busid) {
@@ -440,7 +482,6 @@ static int unexport_from(char *host, char *busid) {
 	return 0;
 }
 
-#endif
 
 static int allusbip(void)
 {
@@ -485,7 +526,7 @@ static int allusbip(void)
 				}
 #endif
 			}
-			
+
 			if (be_local == 0)
 				use_device_by_usbip(busid);
 		}
@@ -495,17 +536,19 @@ static int allusbip(void)
 
 	return 0;
 }
+#endif
 
 int main(int argc, char **argv)
 {
 	char *busid = NULL;
-	char *remote_host = NULL;
+	char *remote_host __attribute__((unused)) = NULL;
 
 	enum {
 		cmd_unknown = 0,
 		cmd_use_by_usbip,
 		cmd_use_by_other,
 		cmd_list,
+		cmd_list2,
 		cmd_allusbip,
 		cmd_export_to,
 		cmd_unexport,
@@ -519,7 +562,7 @@ int main(int argc, char **argv)
 		int c;
 		int index = 0;
 
-		c = getopt_long(argc, argv, "u:o:hlae:x:b:", longopts, &index);
+		c = getopt_long(argc, argv, "u:o:hlLae:x:b:", longopts, &index);
 		if (c == -1)
 			break;
 
@@ -534,6 +577,9 @@ int main(int argc, char **argv)
 				break;
 			case 'l' :
 				cmd = cmd_list;
+				break;
+			case 'L' :
+				cmd = cmd_list2;
 				break;
 			case 'a' :
 				cmd = cmd_allusbip;
@@ -571,12 +617,13 @@ int main(int argc, char **argv)
 		case cmd_list:
 			show_devices();
 			break;
-#if 1
+		case cmd_list2:
+			show_devices2();
+			break;
+#if 0
 		case cmd_allusbip:
 			allusbip();
 			break;
-#endif
-#if 0
 		case cmd_export_to:
 			export_to(remote_host, busid);
 			break;
