@@ -31,7 +31,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = x86_64-unknown-linux-gnu
-host_triplet = mips-unknown-linux-gnu
+host_triplet = arm-unknown-linux-gnu
 noinst_PROGRAMS = tstgettext$(EXEEXT) tstngettext$(EXEEXT) \
 	testlocale$(EXEEXT) gettext-3-prg$(EXEEXT) \
 	gettext-4-prg$(EXEEXT) gettext-5-prg$(EXEEXT) \
@@ -253,16 +253,16 @@ DIST_SOURCES = $(cake_SOURCES) $(fc3_SOURCES) $(fc4_SOURCES) \
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ABSOLUTE_STDINT_H = "///home/xfs/toolchains/toolchain-mips_r2_gcc-linaro_uClibc-0.9.32/bin/../lib/gcc/mips-openwrt-linux-uclibc/4.5.4/include/stdint.h"
-ACLOCAL = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run aclocal-1.10
+ABSOLUTE_STDINT_H = "///home/xfs/toolchains/toolchain-arm_v6k_gcc-linaro_uClibc-0.9.32_eabi/bin/../lib/gcc/arm-openwrt-linux-uclibcgnueabi/4.5.4/include/stdint.h"
+ACLOCAL = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run aclocal-1.10
 ALLOCA = 
 ALLOCA_H = alloca.h
-AMTAR = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run tar
-AR = mips-linux-uclibc-ar
-AS = mips-linux-uclibc-as
-AUTOCONF = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run automake-1.10
+AMTAR = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run tar
+AR = arm-linux-uclibc-ar
+AS = arm-linux-uclibc-as
+AUTOCONF = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run automake-1.10
 AWK = gawk
 BISON_LOCALEDIR = /usr/share/locale
 BITSIZEOF_PTRDIFF_T = 
@@ -276,9 +276,9 @@ BUILDJAVAEXE = no
 BUILD_INCLUDED_LIBINTL = yes
 BYTESWAP_H = 
 CATOBJEXT = .gmo
-CC = mips-linux-uclibc-gcc
+CC = arm-linux-uclibc-gcc
 CCDEPMODE = depmode=none
-CFLAGS = -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc
+CFLAGS = -Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc
 CFLAG_VISIBILITY = -fvisibility=hidden
 CLASSPATH = 
 CLASSPATH_SEPARATOR = :
@@ -286,13 +286,13 @@ CLIX_PATH =
 CLIX_PATH_VAR = 
 CONF_JAVA = gij
 CONF_JAVAC = 
-CPP = mips-linux-uclibc-gcc -E
+CPP = arm-linux-uclibc-gcc -E
 CPPFLAGS = 
 CROSS_COMPILING = yes
 CSHARPCOMPFLAGS = -O -g
 CSHARP_CHOICE = any
-CXX = mips-linux-uclibc-g++
-CXXCPP = mips-linux-uclibc-g++ -E
+CXX = arm-linux-uclibc-g++
+CXXCPP = arm-linux-uclibc-g++ -E
 CXXDEPMODE = depmode=none
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
@@ -300,7 +300,7 @@ DATADIRNAME = share
 DEFS = -DLOCALEDIR=\"$(localedir)\" -DHAVE_CONFIG_H
 DEPDIR = .deps
 DLLTOOL = dlltool
-DVIPS = /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing dvips
+DVIPS = /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing dvips
 ECHO = echo
 ECHO_C = 
 ECHO_N = -n
@@ -405,7 +405,7 @@ LTLIBOBJS =
 LTLIBPTH = 
 LTLIBTHREAD = 
 LTNOUNDEF = 
-MAKEINFO = ${SHELL} /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MONO_PATH = 
 MONO_PATH_SEPARATOR = :
@@ -413,7 +413,7 @@ MSGFMT = /usr/bin/msgfmt
 MSGFMT_015 = /usr/bin/msgfmt
 MSGMERGE = /usr/bin/msgmerge
 MSGMERGE_LIBM = -lm
-NM = mips-linux-uclibc-nm
+NM = arm-linux-uclibc-nm
 OBJDUMP = objdump
 OBJEXT = o
 OPENMP_CFLAGS = 
@@ -428,7 +428,7 @@ PERL = /usr/bin/perl
 POSUB = po
 PRI_MACROS_BROKEN = 0
 PTRDIFF_T_SUFFIX = 
-RANLIB = mips-linux-uclibc-ranlib
+RANLIB = arm-linux-uclibc-ranlib
 RELOCATABLE = no
 SET_MAKE = 
 SET_RELOCATABLE = 
@@ -437,7 +437,7 @@ SIG_ATOMIC_T_SUFFIX =
 SIZE_T_SUFFIX = 
 STDBOOL_H = 
 STDINT_H = 
-STRIP = mips-linux-uclibc-strip
+STRIP = arm-linux-uclibc-strip
 TESTCSHARP = yes
 TESTJAVA = no
 TESTLIBASPRINTF = yes
@@ -453,10 +453,10 @@ XGETTEXT = ../src/xgettext
 XGETTEXT_015 = /usr/bin/xgettext
 YACC = bison -y
 YFLAGS = 
-abs_builddir = /home/seg/DEV/pb42/src/router/usbip/gettext/gettext-tools/tests
-abs_srcdir = /home/seg/DEV/pb42/src/router/usbip/gettext/gettext-tools/tests
-abs_top_builddir = /home/seg/DEV/pb42/src/router/usbip/gettext/gettext-tools
-abs_top_srcdir = /home/seg/DEV/pb42/src/router/usbip/gettext/gettext-tools
+abs_builddir = /home/seg/DEV/laguna/src/router/usbip/gettext/gettext-tools/tests
+abs_srcdir = /home/seg/DEV/laguna/src/router/usbip/gettext/gettext-tools/tests
+abs_top_builddir = /home/seg/DEV/laguna/src/router/usbip/gettext/gettext-tools
+abs_top_srcdir = /home/seg/DEV/laguna/src/router/usbip/gettext/gettext-tools
 ac_ct_CC = 
 ac_ct_CXX = 
 ac_ct_F77 = gfortran
@@ -482,15 +482,15 @@ gl_LIBOBJS =  argmatch.o fnmatch.o mbchar.o safe-read.o safe-write.o strstr.o
 gl_LTLIBOBJS =  argmatch.lo fnmatch.lo mbchar.lo safe-read.lo safe-write.lo strstr.lo
 gtpo_LIBOBJS = 
 gtpo_LTLIBOBJS = 
-host = mips-unknown-linux-gnu
-host_alias = mips-linux
-host_cpu = mips
+host = arm-unknown-linux-gnu
+host_alias = arm-linux
+host_cpu = arm
 host_os = linux-gnu
 host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = $(SHELL) /home/seg/DEV/pb42/src/router/usbip/gettext/build-aux/install-sh
+install_sh = $(SHELL) /home/seg/DEV/laguna/src/router/usbip/gettext/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 lispdir = ${datadir}/emacs/site-lisp
@@ -646,8 +646,8 @@ TESTS_ENVIRONMENT = top_srcdir=$(top_srcdir) \
 		    RECODE="$(CHECKER) recode" \
 		    OBJEXT='o' EXEEXT='' \
 		    LIBTOOL='$(SHELL) $(top_builddir)/libtool' \
-		    CC='mips-linux-uclibc-gcc' CFLAGS='-Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc' \
-		    CXX='mips-linux-uclibc-g++' CXXFLAGS='-g -O2' \
+		    CC='arm-linux-uclibc-gcc' CFLAGS='-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc' \
+		    CXX='arm-linux-uclibc-g++' CXXFLAGS='-g -O2' \
 		    CPPFLAGS='' LDFLAGS='' \
 		    LTLIBINTL='${top_builddir}/intl/libintl.la  ' \
 		    JAVA_CHOICE='yes' \

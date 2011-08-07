@@ -34,7 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = lib
+subdir = libsrc
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -72,7 +72,10 @@ am_libusbip_la_OBJECTS = libusbip_la-names.lo \
 	libusbip_la-stub_driver.lo libusbip_la-usbip_common.lo \
 	libusbip_la-vhci_driver.lo
 libusbip_la_OBJECTS = $(am_libusbip_la_OBJECTS)
-libusbip_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
+libusbip_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libusbip_la_CFLAGS) \
 	$(CFLAGS) $(libusbip_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -81,13 +84,26 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC    " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD  " $@;
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libusbip_la_SOURCES)
 DIST_SOURCES = $(libusbip_la_SOURCES)
 ETAGS = etags
@@ -95,6 +111,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -115,7 +132,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXTRA_CFLAGS = @EXTRA_CLFAGS@
+EXTRA_CFLAGS = @EXTRA_CFLAGS@
 FGREP = @FGREP@
 GREP = @GREP@
 INSTALL = @INSTALL@
@@ -128,6 +145,7 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIBUSBIP_VERSION = @LIBUSBIP_VERSION@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -211,15 +229,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+libusbip_la_CPPFLAGS := -DUSBIDS_FILE='"@USBIDS_DIR@/usb.ids"'
+libusbip_la_CFLAGS := @EXTRA_CFLAGS@
+libusbip_la_LDFLAGS := -version-info @LIBUSBIP_VERSION@
+lib_LTLIBRARIES := libusbip.la
+libusbip_la_SOURCES := names.c names.h stub_driver.c stub_driver.h usbip.h \
+		       usbip_common.c usbip_common.h vhci_driver.c vhci_driver.h
 
-# AM_CFLAGS = -Wall -std=gnu99
-lib_LTLIBRARIES = libusbip.la
-libusbip_la_SOURCES = names.c names.h stub_driver.c stub_driver.h usbip.h usbip_common.c usbip_common.h vhci_driver.c vhci_driver.h
-#libusbip_la_SOURCES = names.c names.h stub_driver.c usbip_common.c vhci_driver.c
-#INCLUDES = -I../include
-#AM_CPPFLAGS = -I../include -Wall -std=gnu99
-libusbip_la_LDFLAGS = -version-info 0:1:0
-libusbip_la_CFLAGS = -Wall -W -Wstrict-prototypes -std=gnu99 $(EXTRA_CLFAGS) -DUSBIDS_FILE='"@USBIDS_DIR@/usb.ids"'
 all: all-am
 
 .SUFFIXES:
@@ -233,9 +249,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu lib/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign libsrc/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu lib/Makefile
+	  $(AUTOMAKE) --foreign libsrc/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -286,7 +302,7 @@ clean-libLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libusbip.la: $(libusbip_la_OBJECTS) $(libusbip_la_DEPENDENCIES) 
-	$(libusbip_la_LINK) -rpath $(libdir) $(libusbip_la_OBJECTS) $(libusbip_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libusbip_la_LINK) -rpath $(libdir) $(libusbip_la_OBJECTS) $(libusbip_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -300,53 +316,60 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-vhci_driver.Plo@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
 libusbip_la-names.lo: names.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-names.lo -MD -MP -MF $(DEPDIR)/libusbip_la-names.Tpo -c -o libusbip_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libusbip_la-names.Tpo $(DEPDIR)/libusbip_la-names.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-names.lo -MD -MP -MF $(DEPDIR)/libusbip_la-names.Tpo -c -o libusbip_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-names.Tpo $(DEPDIR)/libusbip_la-names.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='names.c' object='libusbip_la-names.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
 
 libusbip_la-stub_driver.lo: stub_driver.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-stub_driver.lo -MD -MP -MF $(DEPDIR)/libusbip_la-stub_driver.Tpo -c -o libusbip_la-stub_driver.lo `test -f 'stub_driver.c' || echo '$(srcdir)/'`stub_driver.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libusbip_la-stub_driver.Tpo $(DEPDIR)/libusbip_la-stub_driver.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-stub_driver.lo -MD -MP -MF $(DEPDIR)/libusbip_la-stub_driver.Tpo -c -o libusbip_la-stub_driver.lo `test -f 'stub_driver.c' || echo '$(srcdir)/'`stub_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-stub_driver.Tpo $(DEPDIR)/libusbip_la-stub_driver.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='stub_driver.c' object='libusbip_la-stub_driver.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-stub_driver.lo `test -f 'stub_driver.c' || echo '$(srcdir)/'`stub_driver.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-stub_driver.lo `test -f 'stub_driver.c' || echo '$(srcdir)/'`stub_driver.c
 
 libusbip_la-usbip_common.lo: usbip_common.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-usbip_common.lo -MD -MP -MF $(DEPDIR)/libusbip_la-usbip_common.Tpo -c -o libusbip_la-usbip_common.lo `test -f 'usbip_common.c' || echo '$(srcdir)/'`usbip_common.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libusbip_la-usbip_common.Tpo $(DEPDIR)/libusbip_la-usbip_common.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-usbip_common.lo -MD -MP -MF $(DEPDIR)/libusbip_la-usbip_common.Tpo -c -o libusbip_la-usbip_common.lo `test -f 'usbip_common.c' || echo '$(srcdir)/'`usbip_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-usbip_common.Tpo $(DEPDIR)/libusbip_la-usbip_common.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='usbip_common.c' object='libusbip_la-usbip_common.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-usbip_common.lo `test -f 'usbip_common.c' || echo '$(srcdir)/'`usbip_common.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-usbip_common.lo `test -f 'usbip_common.c' || echo '$(srcdir)/'`usbip_common.c
 
 libusbip_la-vhci_driver.lo: vhci_driver.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-vhci_driver.lo -MD -MP -MF $(DEPDIR)/libusbip_la-vhci_driver.Tpo -c -o libusbip_la-vhci_driver.lo `test -f 'vhci_driver.c' || echo '$(srcdir)/'`vhci_driver.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libusbip_la-vhci_driver.Tpo $(DEPDIR)/libusbip_la-vhci_driver.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-vhci_driver.lo -MD -MP -MF $(DEPDIR)/libusbip_la-vhci_driver.Tpo -c -o libusbip_la-vhci_driver.lo `test -f 'vhci_driver.c' || echo '$(srcdir)/'`vhci_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-vhci_driver.Tpo $(DEPDIR)/libusbip_la-vhci_driver.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='vhci_driver.c' object='libusbip_la-vhci_driver.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-vhci_driver.lo `test -f 'vhci_driver.c' || echo '$(srcdir)/'`vhci_driver.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-vhci_driver.lo `test -f 'vhci_driver.c' || echo '$(srcdir)/'`vhci_driver.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

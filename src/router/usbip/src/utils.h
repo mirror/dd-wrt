@@ -10,7 +10,7 @@
 #include <sys/socket.h>
 
 #include <sysfs/libsysfs.h>
-//#include <glib.h>
+#include <glib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>

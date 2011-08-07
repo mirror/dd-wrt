@@ -1,5 +1,4 @@
 /*
- * $Id: utils.c 40 2007-09-07 11:52:17Z hirofuchi $
  *
  * Copyright (C) 2005-2007 Takahiro Hirofuchi
  */

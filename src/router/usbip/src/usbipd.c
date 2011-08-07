@@ -1,5 +1,4 @@
 /*
- * $Id: stub_server.c 42 2007-09-07 12:07:51Z hirofuchi $
  *
  * Copyright (C) 2005-2007 Takahiro Hirofuchi
  */
@@ -31,8 +30,7 @@
 
 #include <glib.h>
 
-static const char version[] = PACKAGE_STRING
-	" ($Id: stub_server.c 42 2007-09-07 12:07:51Z hirofuchi $)";
+static const char version[] = PACKAGE_STRING;
 
 
 static int send_reply_devlist(int sockfd)
@@ -390,7 +388,8 @@ static void set_signal(void)
 }
 
 
-gboolean process_comming_request(GIOChannel *gio, GIOCondition condition, gpointer data)
+gboolean process_comming_request(GIOChannel *gio, GIOCondition condition,
+				 gpointer data __attribute__((unused)))
 {
 	int ret;
 
@@ -504,6 +503,7 @@ static const struct option longopts[] = {
 	{"help",	no_argument,	NULL, 'h'},
 	{NULL,		0,		NULL,  0}
 };
+
 int main(int argc, char *argv[])
 {
 	gboolean daemonize = FALSE;

@@ -10,11 +10,12 @@ msgstr ""
 "PO-Revision-Date: 2002-09-04 18:51+0300\n"
 "Last-Translator: Ales Nyakhaychyk <i18n@infonet.by>\n"
 "Language-Team: Belarusian <i18n@tut.by>\n"
+"Language: be\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: gnulib-lib/argmatch.c:135
 #, fuzzy, c-format
@@ -524,11 +525,11 @@ msgstr ""
 #: src/format-lisp.c:2387 src/format-scheme.c:2413
 #, c-format
 msgid ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameter."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameter."
 msgid_plural ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameters."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameters."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -1899,8 +1900,8 @@ msgid ""
 "  -a, --alignment=NUMBER      align strings to NUMBER bytes (default: %d)\n"
 msgstr ""
 "Падрабязнасьці вываду:\n"
-"  -a, --alignment=ЛІК         выроўніваць радкі па ЛІКу байтаў (звычайна: %"
-"d)\n"
+"  -a, --alignment=ЛІК         выроўніваць радкі па ЛІКу байтаў (звычайна: "
+"%d)\n"
 "      --no-hash               дваічны файл не зьмяшчае хэш табліцы\n"
 
 #: src/msgfmt.c:746
@@ -1909,8 +1910,8 @@ msgid ""
 "      --no-hash               binary file will not include the hash table\n"
 msgstr ""
 "Падрабязнасьці вываду:\n"
-"  -a, --alignment=ЛІК         выроўніваць радкі па ЛІКу байтаў (звычайна: %"
-"d)\n"
+"  -a, --alignment=ЛІК         выроўніваць радкі па ЛІКу байтаў (звычайна: "
+"%d)\n"
 "      --no-hash               дваічны файл не зьмяшчае хэш табліцы\n"
 
 #: src/msgfmt.c:755
@@ -3127,8 +3128,8 @@ msgstr ""
 
 #: src/write-qt.c:697
 msgid ""
-"message catalog has msgctxt strings containing characters outside ISO-8859-"
-"1\n"
+"message catalog has msgctxt strings containing characters outside "
+"ISO-8859-1\n"
 "but the Qt message catalog format supports Unicode only in the translated\n"
 "strings, not in the context strings\n"
 msgstr ""
@@ -3598,8 +3599,8 @@ msgstr ""
 #: src/xgettext.c:1649
 #, c-format
 msgid ""
-"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: %"
-"s"
+"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: "
+"%s"
 msgstr ""
 
 #: src/xgettext.c:1750
@@ -3621,8 +3622,8 @@ msgstr ""
 #: src/xgettext.c:1934
 #, fuzzy, c-format
 msgid ""
-"Although declared as such, the %s is not a valid %s format string. Reason: %"
-"s\n"
+"Although declared as such, the %s is not a valid %s format string. Reason: "
+"%s\n"
 msgstr "'%s' - гэта нерэчаісны %s фармат радку, у адрозьненьне ад 'msgid'"
 
 #: src/xgettext.c:1965
