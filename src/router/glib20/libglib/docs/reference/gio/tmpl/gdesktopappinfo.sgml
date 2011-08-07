@@ -1,0 +1,92 @@
+<!-- ##### SECTION Title ##### -->
+Desktop file based GAppInfo
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### STRUCT GDesktopAppInfo ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION g_desktop_app_info_new_from_filename ##### -->
+<para>
+
+</para>
+
+@filename: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_desktop_app_info_new_from_keyfile ##### -->
+<para>
+
+</para>
+
+@key_file: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_desktop_app_info_new ##### -->
+<para>
+
+</para>
+
+@desktop_id: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_desktop_app_info_get_is_hidden ##### -->
+<para>
+
+</para>
+
+@info: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_desktop_app_info_set_desktop_env ##### -->
+<para>
+
+</para>
+
+@desktop_env: 
+
+
+<!-- ##### STRUCT GDesktopAppInfoLookup ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### MACRO G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME ##### -->
+<para>
+
+</para>
+
+
+
+<!-- ##### FUNCTION g_desktop_app_info_lookup_get_default_for_uri_scheme ##### -->
+<para>
+
+</para>
+
+@lookup: 
+@uri_scheme: 
+@Returns: 
+
+

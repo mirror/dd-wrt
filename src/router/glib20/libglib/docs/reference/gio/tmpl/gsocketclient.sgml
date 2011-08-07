@@ -1,0 +1,234 @@
+<!-- ##### SECTION Title ##### -->
+GSocketClient
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### STRUCT GSocketClient ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### ARG GSocketClient:family ##### -->
+<para>
+
+</para>
+
+<!-- ##### ARG GSocketClient:local-address ##### -->
+<para>
+
+</para>
+
+<!-- ##### ARG GSocketClient:protocol ##### -->
+<para>
+
+</para>
+
+<!-- ##### ARG GSocketClient:type ##### -->
+<para>
+
+</para>
+
+<!-- ##### FUNCTION g_socket_client_new ##### -->
+<para>
+
+</para>
+
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect ##### -->
+<para>
+
+</para>
+
+@client: 
+@connectable: 
+@cancellable: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_async ##### -->
+<para>
+
+</para>
+
+@client: 
+@connectable: 
+@cancellable: 
+@callback: 
+@user_data: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_finish ##### -->
+<para>
+
+</para>
+
+@client: 
+@result: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_to_host ##### -->
+<para>
+
+</para>
+
+@client: 
+@host_and_port: 
+@default_port: 
+@cancellable: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_to_host_async ##### -->
+<para>
+
+</para>
+
+@client: 
+@host_and_port: 
+@default_port: 
+@cancellable: 
+@callback: 
+@user_data: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_to_host_finish ##### -->
+<para>
+
+</para>
+
+@client: 
+@result: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_to_service ##### -->
+<para>
+
+</para>
+
+@client: 
+@domain: 
+@service: 
+@cancellable: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_to_service_async ##### -->
+<para>
+
+</para>
+
+@client: 
+@domain: 
+@service: 
+@cancellable: 
+@callback: 
+@user_data: 
+
+
+<!-- ##### FUNCTION g_socket_client_connect_to_service_finish ##### -->
+<para>
+
+</para>
+
+@client: 
+@result: 
+@error: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_set_family ##### -->
+<para>
+
+</para>
+
+@client: 
+@family: 
+
+
+<!-- ##### FUNCTION g_socket_client_set_local_address ##### -->
+<para>
+
+</para>
+
+@client: 
+@address: 
+
+
+<!-- ##### FUNCTION g_socket_client_set_protocol ##### -->
+<para>
+
+</para>
+
+@client: 
+@protocol: 
+
+
+<!-- ##### FUNCTION g_socket_client_set_socket_type ##### -->
+<para>
+
+</para>
+
+@client: 
+@type: 
+
+
+<!-- ##### FUNCTION g_socket_client_get_family ##### -->
+<para>
+
+</para>
+
+@client: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_get_local_address ##### -->
+<para>
+
+</para>
+
+@client: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_get_protocol ##### -->
+<para>
+
+</para>
+
+@client: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_socket_client_get_socket_type ##### -->
+<para>
+
+</para>
+
+@client: 
+@Returns: 
+
+
