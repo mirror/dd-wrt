@@ -264,7 +264,9 @@ rtl8366sr_phy_setup(int ethUnit)
     	smi_init();
     	switch_reg_read(0x6,&checkvalue);
     	printk(KERN_EMERG "rtl8366sr register 0x6 state = %08X\n",checkvalue);
-//    	switch_reg_write(0x6,0x108);
+#ifdef CONFIG_DIR825
+    	switch_reg_write(0x6,0x108);
+#endif
     
 		switch_reg_read(RTL8366S_CHIP_ID_REG,&phyHwStatus);
 		switch_reg_read(RTL8366S_CHIP_ID_REG,&phyHwStatus);
