@@ -1,0 +1,74 @@
+<!-- ##### SECTION Title ##### -->
+GMemoryOutputStream
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### USER_FUNCTION GReallocFunc ##### -->
+<para>
+
+</para>
+
+@data: 
+@size: 
+@Returns: 
+
+
+<!-- ##### STRUCT GMemoryOutputStream ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION g_memory_output_stream_new ##### -->
+<para>
+
+</para>
+
+@data: 
+@len: 
+@realloc_fn: 
+@destroy: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_memory_output_stream_get_data ##### -->
+<para>
+
+</para>
+
+@ostream: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_memory_output_stream_get_size ##### -->
+<para>
+
+</para>
+
+@ostream: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_memory_output_stream_get_data_size ##### -->
+<para>
+
+</para>
+
+@ostream: 
+@Returns: 
+
+
