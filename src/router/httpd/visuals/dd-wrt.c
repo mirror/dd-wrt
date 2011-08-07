@@ -7658,14 +7658,17 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
 	foreach(var, eths, next) {
-		if (!strcmp(get_wan_face(), var))
+		if (!strcmp("etherip0", var))
 			continue;
-		if (!strcmp(nvram_safe_get("lan_ifname"), var))
-			continue;
-		// filter bridges they are under bridges, not under ports
-		foreach(bword, bufferif, bnext) {
-			if(!strcmp( bword, var) ) {
-				goto skip;
+		if (strchr(var,'.') == NULL)  {
+			if (!strcmp(get_wan_face(), var))
+				continue;
+			if (!strcmp(nvram_safe_get("lan_ifname"), var))
+				continue;
+			foreach(bword, bufferif, bnext) {
+				if(!strcmp( bword, var) ) {
+					goto skip;
+				}
 			}
 		}
 
