@@ -81,7 +81,7 @@ obj-$(CONFIG_OTHERS) += others
 obj-$(CONFIG_EOU) += eou
 obj-$(CONFIG_OPENSER) += openser
 obj-$(CONFIG_MILKFISH) += milkfish
-obj-$(CONFIG_MC) += glib mc
+obj-$(CONFIG_MC) += glib20 mc
 obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_SAMBA) += samba
@@ -214,7 +214,7 @@ obj-$(CONFIG_UBOOTENV) += ubootenv
 obj-$(CONFIG_DSL_CPE_CONTROL) += dsl_cpe_control atm
 obj-$(CONFIG_OPENDPI) += opendpi
 obj-$(CONFIG_LLTD) += lltd
-obj-$(CONFIG_USBIP) += glib usbip
+obj-$(CONFIG_USBIP) += glib20 usbip
 
 obj-y+=anchorfree
 obj-y+=ttraff
