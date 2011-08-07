@@ -1,0 +1,55 @@
+<!-- ##### SECTION Title ##### -->
+GMemoryInputStream
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### STRUCT GMemoryInputStream ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION g_memory_input_stream_new ##### -->
+<para>
+
+</para>
+
+@Returns: 
+
+
+<!-- ##### FUNCTION g_memory_input_stream_new_from_data ##### -->
+<para>
+
+</para>
+
+@data: 
+@len: 
+@destroy: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_memory_input_stream_add_data ##### -->
+<para>
+
+</para>
+
+@stream: 
+@data: 
+@len: 
+@destroy: 
+
+
