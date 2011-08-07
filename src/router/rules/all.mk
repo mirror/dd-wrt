@@ -225,6 +225,7 @@ include rules/aiccu.mk
 include rules/l2tpv3tun.mk
 include rules/rt3062.mk
 include rules/usbip.mk
+include rules/glib.mk
 # Generic rules
 #
 
