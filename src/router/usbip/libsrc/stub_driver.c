@@ -2,9 +2,14 @@
  * Copyright (C) 2005-2007 Takahiro Hirofuchi
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "usbip.h"
 
-static const char *usbip_stub_driver_name = "usbip";
+/* kernel module name */
+static const char *usbip_stub_driver_name = "usbip-host";
 
 
 struct usbip_stub_driver *stub_driver;
@@ -30,7 +35,7 @@ static struct sysfs_driver *open_sysfs_stub_driver(void)
 
 	stub_driver = sysfs_open_driver_path(stub_driver_path);
 	if (!stub_driver) {
-		err("usbip_common_mod.ko and usbip.ko must be loaded");
+		err("usbip-core.ko and usbip-host.ko must be loaded");
 		return NULL;
 	}
 
@@ -38,6 +43,7 @@ static struct sysfs_driver *open_sysfs_stub_driver(void)
 }
 
 
+#define SYSFS_OPEN_RETRIES 100
 
 /* only the first interface value is true! */
 static int32_t read_attr_usbip_status(struct usb_device *udev)
@@ -46,11 +52,47 @@ static int32_t read_attr_usbip_status(struct usb_device *udev)
 	struct sysfs_attribute *attr;
 	int value = 0;
 	int  ret;
+	struct stat s;
+	int retries = SYSFS_OPEN_RETRIES;
+
+	/* This access is racy!
+	 *
+	 * Just after detach, our driver removes the sysfs
+	 * files and recreates them.
+	 *
+	 * We may try and fail to open the usbip_status of
+	 * an exported device in the (short) window where
+	 * it has been removed and not yet recreated.
+	 *
+	 * This is a bug in the interface. Nothing we can do
+	 * except work around it here by polling for the sysfs
+	 * usbip_status to reappear.
+	 */
 
 	snprintf(attrpath, SYSFS_PATH_MAX, "%s/%s:%d.%d/usbip_status",
 			udev->path, udev->busid,
 			udev->bConfigurationValue,
 			0);
+
+	while (retries > 0) {
+		if (stat(attrpath, &s) == 0)
+			break;
+
+		if (errno != ENOENT) {
+			err("error stat'ing %s", attrpath);
+			return -1;
+		}
+
+		usleep(10000); /* 10ms */
+		retries--;
+	}
+
+	if (retries == 0)
+		err("usbip_status not ready after %d retries",
+			SYSFS_OPEN_RETRIES);
+	else if (retries < SYSFS_OPEN_RETRIES)
+		info("warning: usbip_status ready after %d retries",
+			 SYSFS_OPEN_RETRIES - retries);
 
 	attr = sysfs_open_attribute(attrpath);
 	if (!attr) {
@@ -140,7 +182,7 @@ static int check_new(struct dlist *dlist, struct sysfs_device *target)
 	return 1;
 }
 
-static void delete_nothing(void *dev)
+static void delete_nothing(void *dev __attribute__((unused)))
 {
 	/* do not delete anything. but, its container will be deleted. */
 }
@@ -158,7 +200,7 @@ static int refresh_exported_devices(void)
 
 	suinf_list = sysfs_get_driver_devices(stub_driver->sysfs_driver);
 	if (!suinf_list) {
-		printf("Bind usbip.ko to a usb device to be exportable!\n");
+		printf("Bind usbip-host.ko to a usb device to be exportable!\n");
 		goto bye;
 	}
 

@@ -11,6 +11,7 @@ msgstr ""
 "PO-Revision-Date: 2006-08-22 23:09+0800\n"
 "Last-Translator: Funda Wang <fundawang@linux.net.cn>\n"
 "Language-Team: Chinese (simplified) <i18n-translation@lists.linux.net.cn>\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -519,11 +520,11 @@ msgstr "第 %u 条指令中，第 %u 个参数类型为“%s”，但应为“%s
 #: src/format-lisp.c:2387 src/format-scheme.c:2413
 #, c-format
 msgid ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameter."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameter."
 msgid_plural ""
-"In the directive number %u, too many parameters are given; expected at most %"
-"u parameters."
+"In the directive number %u, too many parameters are given; expected at most "
+"%u parameters."
 msgstr[0] "第 %u 条指令中，给出的参数太多；最多只需要 %u 个参数。"
 
 #: src/format-lisp.c:2502 src/format-scheme.c:2505
@@ -3065,8 +3066,8 @@ msgstr ""
 
 #: src/write-qt.c:697
 msgid ""
-"message catalog has msgctxt strings containing characters outside ISO-8859-"
-"1\n"
+"message catalog has msgctxt strings containing characters outside "
+"ISO-8859-1\n"
 "but the Qt message catalog format supports Unicode only in the translated\n"
 "strings, not in the context strings\n"
 msgstr ""
@@ -3598,8 +3599,8 @@ msgstr ""
 #: src/xgettext.c:1649
 #, c-format
 msgid ""
-"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: %"
-"s"
+"A --flag argument doesn't have the <keyword>:<argnum>:[pass-]<flag> syntax: "
+"%s"
 msgstr "--flag 参数并非以 <关键字>:<参数编号>:[遍数-]<标志> 的语法给出：%s"
 
 #: src/xgettext.c:1750
@@ -3622,8 +3623,8 @@ msgstr ""
 #: src/xgettext.c:1934
 #, c-format
 msgid ""
-"Although declared as such, the %s is not a valid %s format string. Reason: %"
-"s\n"
+"Although declared as such, the %s is not a valid %s format string. Reason: "
+"%s\n"
 msgstr "以所声明的语言 %2$s 来看，%1$s 不是有效的格式字符串。原因：%3$s\n"
 
 #: src/xgettext.c:1965
