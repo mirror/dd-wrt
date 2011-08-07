@@ -19,8 +19,8 @@ static const struct option longopts[] = {
 	{"other",	required_argument,	NULL, 'o'},
 	{"list",	no_argument,		NULL, 'l'},
 	{"help",	no_argument,		NULL, 'h'},
-#if 0
 	{"allusbip",	no_argument,		NULL, 'a'},
+#if 0
 	{"export-to",   required_argument,	NULL, 'e'},
 	{"unexport",    required_argument,	NULL, 'x'},
 	{"busid",	required_argument,	NULL, 'b'},
@@ -440,6 +440,7 @@ static int unexport_from(char *host, char *busid) {
 	return 0;
 }
 
+#endif
 
 static int allusbip(void)
 {
@@ -494,7 +495,6 @@ static int allusbip(void)
 
 	return 0;
 }
-#endif
 
 int main(int argc, char **argv)
 {
@@ -571,10 +571,12 @@ int main(int argc, char **argv)
 		case cmd_list:
 			show_devices();
 			break;
-#if 0
+#if 1
 		case cmd_allusbip:
 			allusbip();
 			break;
+#endif
+#if 0
 		case cmd_export_to:
 			export_to(remote_host, busid);
 			break;
