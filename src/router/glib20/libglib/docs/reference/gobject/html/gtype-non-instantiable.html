@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Non-instantiable non-classed fundamental types</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<link rel="home" href="index.html" title="GObject Reference Manual">
+<link rel="up" href="chapter-gtype.html" title="The GLib Dynamic Type System">
+<link rel="prev" href="gtype-conventions.html" title="Conventions">
+<link rel="next" href="gtype-instantiable-classed.html" title="Instantiable classed types: objects">
+<meta name="generator" content="GTK-Doc V1.12 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+<link rel="preface" href="pr01.html" title="Introduction">
+<link rel="part" href="pt01.html" title="Part I. Concepts">
+<link rel="chapter" href="chapter-intro.html" title="Background">
+<link rel="chapter" href="chapter-gtype.html" title="The GLib Dynamic Type System">
+<link rel="chapter" href="chapter-gobject.html" title="The GObject base class">
+<link rel="chapter" href="chapter-signal.html" title="The GObject messaging system">
+<link rel="reference" href="rn01.html" title="API Reference">
+<link rel="reference" href="rn02.html" title="Tools Reference">
+<link rel="part" href="pt02.html" title="Part IV. Tutorial">
+<link rel="chapter" href="howto-gobject.html" title="How to define and implement a new GObject">
+<link rel="chapter" href="howto-interface.html" title="How to define and implement interfaces">
+<link rel="chapter" href="howto-signals.html" title="How to create and use signals">
+<link rel="part" href="pt03.html" title="Part V. Related Tools">
+<link rel="chapter" href="tools-vala.html" title="Vala">
+<link rel="chapter" href="tools-gob.html" title="GObject builder">
+<link rel="chapter" href="tools-ginspector.html" title="Graphical inspection of GObjects">
+<link rel="chapter" href="tools-refdb.html" title="Debugging reference count problems">
+<link rel="chapter" href="tools-gtkdoc.html" title="Writing API docs">
+<link rel="index" href="ix01.html" title="Index">
+<link rel="index" href="ix02.html" title="Index of deprecated symbols">
+<link rel="index" href="ix03.html" title="Index of new symbols in 2.2">
+<link rel="index" href="ix04.html" title="Index of new symbols in 2.4">
+<link rel="index" href="ix05.html" title="Index of new symbols in 2.6">
+<link rel="index" href="ix06.html" title="Index of new symbols in 2.8">
+<link rel="index" href="ix07.html" title="Index of new symbols in 2.10">
+<link rel="index" href="ix08.html" title="Index of new symbols in 2.12">
+<link rel="index" href="ix09.html" title="Index of new symbols in 2.14">
+<link rel="index" href="ix10.html" title="Index of new symbols in 2.18">
+<link rel="index" href="ix11.html" title="Index of new symbols in 2.22">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2"><tr valign="middle">
+<td><a accesskey="p" href="gtype-conventions.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="chapter-gtype.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">GObject Reference Manual</th>
+<td><a accesskey="n" href="gtype-instantiable-classed.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="sect1" title="Non-instantiable non-classed fundamental types">
+<div class="titlepage"><div><div><h2 class="title" style="clear: both">
+<a name="gtype-non-instantiable"></a>Non-instantiable non-classed fundamental types</h2></div></div></div>
+<p>
+          A lot of types are not instantiable by the type system and do not have
+          a class. Most of these types are fundamental trivial types such as <span class="emphasis"><em>gchar</em></span>, 
+          registered in <code class="function">g_value_types_init</code> (in <code class="filename">gvaluetypes.c</code>).
+        </p>
+<p>
+          To register such a type in the type system, you just need to fill the 
+          <span class="type"><a class="link" href="gobject-Type-Information.html#GTypeInfo" title="GTypeInfo">GTypeInfo</a></span> structure with zeros since these types are also most of the time
+          fundamental:
+          </p>
+<pre class="programlisting">
+  GTypeInfo info = {
+    0,                                /* class_size */
+    NULL,                        /* base_init */
+    NULL,                        /* base_destroy */
+    NULL,                        /* class_init */
+    NULL,                        /* class_destroy */
+    NULL,                        /* class_data */
+    0,                                /* instance_size */
+    0,                                /* n_preallocs */
+    NULL,                        /* instance_init */
+    NULL,                        /* value_table */
+  };
+  static const GTypeValueTable value_table = {
+    value_init_long0,                /* value_init */
+    NULL,                        /* value_free */
+    value_copy_long0,                /* value_copy */
+    NULL,                        /* value_peek_pointer */
+    "i",                        /* collect_format */
+    value_collect_int,        /* collect_value */
+    "p",                        /* lcopy_format */
+    value_lcopy_char,                /* lcopy_value */
+  };
+  info.value_table = &amp;value_table;
+  type = g_type_register_fundamental (G_TYPE_CHAR, "gchar", &amp;info, &amp;finfo, 0);
+          </pre>
+<p>
+        </p>
+<p>
+          Having non-instantiable types might seem a bit useless: what good is a type
+          if you cannot instantiate an instance of that type ? Most of these types
+          are used in conjunction with <span class="type"><a class="link" href="gobject-Generic-values.html#GValue" title="GValue">GValue</a></span>s: a GValue is initialized
+          with an integer or a string and it is passed around by using the registered 
+          type's value_table. <span class="type"><a class="link" href="gobject-Generic-values.html#GValue" title="GValue">GValue</a></span>s (and by extension these trivial fundamental
+          types) are most useful when used in conjunction with object properties and signals.
+        </p>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.12</div>
+</body>
+</html>
