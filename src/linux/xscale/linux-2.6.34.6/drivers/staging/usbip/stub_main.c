@@ -17,23 +17,16 @@
  * USA.
  */
 
-#include <linux/slab.h>
+#include <linux/string.h>
 
 #include "usbip_common.h"
 #include "stub.h"
 
-/* Version Information */
-#define DRIVER_VERSION "1.0"
 #define DRIVER_AUTHOR "Takahiro Hirofuchi"
-#define DRIVER_DESC "Stub Driver for USB/IP"
+#define DRIVER_DESC "USB/IP Host Driver"
 
 /* stub_priv is allocated from stub_priv_cache */
 struct kmem_cache *stub_priv_cache;
-
-/*-------------------------------------------------------------------------*/
-
-/* Define sysfs entries for the usbip driver */
-
 
 /*
  * busid_tables defines matching busids that usbip can grab. A user can change
@@ -41,10 +34,8 @@ struct kmem_cache *stub_priv_cache;
  * remote host.
  */
 #define MAX_BUSID 16
-#define BUSID_SIZE 20
-static char busid_table[MAX_BUSID][BUSID_SIZE];
+static struct bus_id_priv busid_table[MAX_BUSID];
 static spinlock_t busid_table_lock;
-
 
 int match_busid(const char *busid)
 {
@@ -53,8 +44,8 @@ int match_busid(const char *busid)
 	spin_lock(&busid_table_lock);
 
 	for (i = 0; i < MAX_BUSID; i++)
-		if (busid_table[i][0])
-			if (!strncmp(busid_table[i], busid, BUSID_SIZE)) {
+		if (busid_table[i].name[0])
+			if (!strncmp(busid_table[i].name, busid, BUSID_SIZE)) {
 				/* already registerd */
 				spin_unlock(&busid_table_lock);
 				return 0;
@@ -65,6 +56,25 @@ int match_busid(const char *busid)
 	return 1;
 }
 
+struct bus_id_priv *get_busid_priv(const char *busid)
+{
+	int i;
+
+	spin_lock(&busid_table_lock);
+
+	for (i = 0; i < MAX_BUSID; i++)
+		if (busid_table[i].name[0])
+			if (!strncmp(busid_table[i].name, busid, BUSID_SIZE)) {
+				/* already registerd */
+				spin_unlock(&busid_table_lock);
+				return &(busid_table[i]);
+			}
+
+	spin_unlock(&busid_table_lock);
+
+	return NULL;
+}
+
 static ssize_t show_match_busid(struct device_driver *drv, char *buf)
 {
 	int i;
@@ -73,8 +83,8 @@ static ssize_t show_match_busid(struct device_driver *drv, char *buf)
 	spin_lock(&busid_table_lock);
 
 	for (i = 0; i < MAX_BUSID; i++)
-		if (busid_table[i][0])
-			out += sprintf(out, "%s ", busid_table[i]);
+		if (busid_table[i].name[0])
+			out += sprintf(out, "%s ", busid_table[i].name);
 
 	spin_unlock(&busid_table_lock);
 
@@ -93,8 +103,11 @@ static int add_match_busid(char *busid)
 	spin_lock(&busid_table_lock);
 
 	for (i = 0; i < MAX_BUSID; i++)
-		if (!busid_table[i][0]) {
-			strncpy(busid_table[i], busid, BUSID_SIZE);
+		if (!busid_table[i].name[0]) {
+			strncpy(busid_table[i].name, busid, BUSID_SIZE);
+			if ((busid_table[i].status != STUB_BUSID_ALLOC) &&
+			    (busid_table[i].status != STUB_BUSID_REMOV))
+				busid_table[i].status = STUB_BUSID_ADDED;
 			spin_unlock(&busid_table_lock);
 			return 0;
 		}
@@ -104,16 +117,21 @@ static int add_match_busid(char *busid)
 	return -1;
 }
 
-static int del_match_busid(char *busid)
+int del_match_busid(char *busid)
 {
 	int i;
 
 	spin_lock(&busid_table_lock);
 
 	for (i = 0; i < MAX_BUSID; i++)
-		if (!strncmp(busid_table[i], busid, BUSID_SIZE)) {
+		if (!strncmp(busid_table[i].name, busid, BUSID_SIZE)) {
 			/* found */
-			memset(busid_table[i], 0, BUSID_SIZE);
+			if (busid_table[i].status == STUB_BUSID_OTHER)
+				memset(busid_table[i].name, 0, BUSID_SIZE);
+			if ((busid_table[i].status != STUB_BUSID_OTHER) &&
+			    (busid_table[i].status != STUB_BUSID_ADDED)) {
+				busid_table[i].status = STUB_BUSID_REMOV;
+			}
 			spin_unlock(&busid_table_lock);
 			return 0;
 		}
@@ -123,8 +141,23 @@ static int del_match_busid(char *busid)
 	return -1;
 }
 
+static void init_busid_table(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_BUSID; i++) {
+		memset(busid_table[i].name, 0, BUSID_SIZE);
+		busid_table[i].status = STUB_BUSID_OTHER;
+		busid_table[i].interf_count = 0;
+		busid_table[i].sdev = NULL;
+		busid_table[i].shutdown_busid = 0;
+	}
+
+	spin_lock_init(&busid_table_lock);
+}
+
 static ssize_t store_match_busid(struct device_driver *dev, const char *buf,
-		size_t count)
+				 size_t count)
 {
 	int len;
 	char busid[BUSID_SIZE];
@@ -141,33 +174,25 @@ static ssize_t store_match_busid(struct device_driver *dev, const char *buf,
 
 	strncpy(busid, buf + 4, BUSID_SIZE);
 
-
 	if (!strncmp(buf, "add ", 4)) {
 		if (add_match_busid(busid) < 0)
 			return -ENOMEM;
 		else {
-			usbip_udbg("add busid %s\n", busid);
+			pr_debug("add busid %s\n", busid);
 			return count;
 		}
 	} else if (!strncmp(buf, "del ", 4)) {
 		if (del_match_busid(busid) < 0)
 			return -ENODEV;
 		else {
-			usbip_udbg("del busid %s\n", busid);
+			pr_debug("del busid %s\n", busid);
 			return count;
 		}
 	} else
 		return -EINVAL;
 }
-
 static DRIVER_ATTR(match_busid, S_IRUSR|S_IWUSR, show_match_busid,
-							store_match_busid);
-
-
-
-/*-------------------------------------------------------------------------*/
-
-/* Cleanup functions used to free private data */
+		   store_match_busid);
 
 static struct stub_priv *stub_priv_pop_from_listhead(struct list_head *listhead)
 {
@@ -214,28 +239,22 @@ void stub_device_cleanup_urbs(struct stub_device *sdev)
 {
 	struct stub_priv *priv;
 
-	usbip_udbg("free sdev %p\n", sdev);
+	dev_dbg(&sdev->udev->dev, "free sdev %p\n", sdev);
 
 	while ((priv = stub_priv_pop(sdev))) {
 		struct urb *urb = priv->urb;
 
-		usbip_udbg("   free urb %p\n", urb);
+		dev_dbg(&sdev->udev->dev, "free urb %p\n", urb);
 		usb_kill_urb(urb);
 
 		kmem_cache_free(stub_priv_cache, priv);
 
-		if (urb->transfer_buffer != NULL)
-			kfree(urb->transfer_buffer);
-
-		if (urb->setup_packet != NULL)
-			kfree(urb->setup_packet);
+		kfree(urb->transfer_buffer);
+		kfree(urb->setup_packet);
 
 		usb_free_urb(urb);
 	}
 }
-
-
-/*-------------------------------------------------------------------------*/
 
 static int __init usb_stub_init(void)
 {
@@ -246,29 +265,25 @@ static int __init usb_stub_init(void)
 					    SLAB_HWCACHE_ALIGN, NULL);
 
 	if (!stub_priv_cache) {
-		printk(KERN_ERR KBUILD_MODNAME
-		       ": create stub_priv_cache error\n");
+		pr_err("create stub_priv_cache error\n");
 		return -ENOMEM;
 	}
 
 	ret = usb_register(&stub_driver);
 	if (ret) {
-		printk(KERN_ERR KBUILD_MODNAME ": usb_register failed %d\n",
-		       ret);
+		pr_err("usb_register failed %d\n", ret);
 		goto error_usb_register;
 	}
 
-	printk(KERN_INFO KBUILD_MODNAME ":"
-	       DRIVER_DESC ":" DRIVER_VERSION "\n");
+	pr_info(DRIVER_DESC " " USBIP_VERSION "\n");
 
-	memset(busid_table, 0, sizeof(busid_table));
-	spin_lock_init(&busid_table_lock);
+	init_busid_table();
 
 	ret = driver_create_file(&stub_driver.drvwrap.driver,
 				 &driver_attr_match_busid);
 
 	if (ret) {
-		printk(KERN_ERR KBUILD_MODNAME ": create driver sysfs\n");
+		pr_err("create driver sysfs\n");
 		goto error_create_file;
 	}
 
@@ -300,3 +315,4 @@ module_exit(usb_stub_exit);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
+MODULE_VERSION(USBIP_VERSION);

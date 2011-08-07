@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.34.8
-# Fri Jan  7 21:56:48 2011
+# Linux kernel version: 2.6.34.10
+# Fri Aug  5 22:21:13 2011
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -800,9 +800,6 @@ CONFIG_MTD_IXP4XX=y
 # Self-contained MTD device drivers
 #
 # CONFIG_MTD_PMC551 is not set
-# CONFIG_MTD_DATAFLASH is not set
-# CONFIG_MTD_M25P80 is not set
-# CONFIG_MTD_SST25L is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_PHRAM is not set
 # CONFIG_MTD_MTDRAM is not set
@@ -858,14 +855,12 @@ CONFIG_MISC_DEVICES=y
 # CONFIG_ISL29003 is not set
 # CONFIG_SENSORS_TSL2550 is not set
 # CONFIG_DS1682 is not set
-# CONFIG_TI_DAC7512 is not set
 # CONFIG_C2PORT is not set
 
 #
 # EEPROM support
 #
 CONFIG_EEPROM_AT24=y
-# CONFIG_EEPROM_AT25 is not set
 CONFIG_EEPROM_LEGACY=y
 # CONFIG_EEPROM_MAX6875 is not set
 # CONFIG_EEPROM_93CX6 is not set
@@ -1026,7 +1021,6 @@ CONFIG_IXP400_ETH_ALL=y
 # CONFIG_NET_VENDOR_3COM is not set
 # CONFIG_SMC91X is not set
 # CONFIG_DM9000 is not set
-# CONFIG_ENC28J60 is not set
 # CONFIG_ETHOC is not set
 # CONFIG_SMC911X is not set
 # CONFIG_SMSC911X is not set
@@ -1064,7 +1058,6 @@ CONFIG_8139TOO=m
 # CONFIG_SUNDANCE is not set
 # CONFIG_TLAN is not set
 # CONFIG_KS8842 is not set
-# CONFIG_KS8851 is not set
 # CONFIG_KS8851_MLL is not set
 # CONFIG_VIA_RHINE is not set
 # CONFIG_SC92031 is not set
@@ -1213,7 +1206,6 @@ CONFIG_SERIAL_8250_GW2358=m
 #
 # Non-8250 serial port support
 #
-# CONFIG_SERIAL_MAX3100 is not set
 CONFIG_SERIAL_CORE=y
 CONFIG_SERIAL_CORE_CONSOLE=y
 # CONFIG_SERIAL_JSM is not set
@@ -1288,22 +1280,6 @@ CONFIG_I2C_IXP4XX=y
 # CONFIG_I2C_DEBUG_ALGO is not set
 # CONFIG_I2C_DEBUG_BUS is not set
 # CONFIG_SPI is not set
-CONFIG_SPI_MASTER=y
-
-#
-# SPI Master Controller Drivers
-#
-# CONFIG_SPI_BITBANG is not set
-# CONFIG_SPI_GPIO is not set
-# CONFIG_SPI_GPIO_OLD is not set
-# CONFIG_SPI_XILINX is not set
-# CONFIG_SPI_DESIGNWARE is not set
-
-#
-# SPI Protocol Masters
-#
-# CONFIG_SPI_SPIDEV is not set
-# CONFIG_SPI_TLE62X0 is not set
 
 #
 # PPS support
@@ -1322,7 +1298,6 @@ CONFIG_HWMON=y
 # CONFIG_SENSORS_AD7414 is not set
 CONFIG_SENSORS_AD7418=m
 # CONFIG_SENSORS_AD741X is not set
-# CONFIG_SENSORS_ADCXX is not set
 # CONFIG_SENSORS_ADM1021 is not set
 # CONFIG_SENSORS_ADM1025 is not set
 # CONFIG_SENSORS_ADM1026 is not set
@@ -1345,7 +1320,6 @@ CONFIG_SENSORS_AD7418=m
 # CONFIG_SENSORS_GL520SM is not set
 # CONFIG_SENSORS_IT87 is not set
 # CONFIG_SENSORS_LM63 is not set
-# CONFIG_SENSORS_LM70 is not set
 # CONFIG_SENSORS_LM73 is not set
 # CONFIG_SENSORS_LM75 is not set
 # CONFIG_SENSORS_LM77 is not set
@@ -1360,7 +1334,6 @@ CONFIG_SENSORS_AD7418=m
 # CONFIG_SENSORS_LTC4215 is not set
 # CONFIG_SENSORS_LTC4245 is not set
 # CONFIG_SENSORS_LM95241 is not set
-# CONFIG_SENSORS_MAX1111 is not set
 # CONFIG_SENSORS_MAX1619 is not set
 # CONFIG_SENSORS_MAX6650 is not set
 # CONFIG_SENSORS_PC87360 is not set
@@ -1388,7 +1361,6 @@ CONFIG_SENSORS_AD7418=m
 # CONFIG_SENSORS_W83L786NG is not set
 # CONFIG_SENSORS_W83627HF is not set
 # CONFIG_SENSORS_W83627EHF is not set
-# CONFIG_SENSORS_LIS3_SPI is not set
 # CONFIG_SENSORS_LIS3_I2C is not set
 # CONFIG_THERMAL is not set
 CONFIG_WATCHDOG=y
@@ -1436,10 +1408,7 @@ CONFIG_SSB_POSSIBLE=y
 # CONFIG_MFD_WM8350_I2C is not set
 # CONFIG_MFD_WM8994 is not set
 # CONFIG_MFD_PCF50633 is not set
-# CONFIG_MFD_MC13783 is not set
 # CONFIG_AB3100_CORE is not set
-# CONFIG_EZX_PCAP is not set
-# CONFIG_AB4500_CORE is not set
 # CONFIG_LPC_SCH is not set
 # CONFIG_REGULATOR is not set
 # CONFIG_MEDIA_SUPPORT is not set
@@ -1672,14 +1641,6 @@ CONFIG_RTC_DRV_DS1672=y
 #
 # SPI RTC drivers
 #
-# CONFIG_RTC_DRV_M41T94 is not set
-# CONFIG_RTC_DRV_DS1305 is not set
-# CONFIG_RTC_DRV_DS1390 is not set
-# CONFIG_RTC_DRV_MAX6902 is not set
-# CONFIG_RTC_DRV_R9701 is not set
-# CONFIG_RTC_DRV_RS5C348 is not set
-# CONFIG_RTC_DRV_DS3234 is not set
-# CONFIG_RTC_DRV_PCF2123 is not set
 
 #
 # Platform RTC drivers
@@ -1709,7 +1670,48 @@ CONFIG_RTC_DRV_DS1672=y
 #
 # TI VLYNQ
 #
-# CONFIG_STAGING is not set
+CONFIG_STAGING=y
+# CONFIG_STAGING_EXCLUDE_BUILD is not set
+# CONFIG_ET131X is not set
+CONFIG_USBIP_CORE=m
+CONFIG_USBIP_VHCI_HCD=m
+CONFIG_USBIP_HOST=m
+# CONFIG_USBIP_DEBUG is not set
+# CONFIG_PRISM2_USB is not set
+# CONFIG_ECHO is not set
+# CONFIG_COMEDI is not set
+# CONFIG_ASUS_OLED is not set
+# CONFIG_R8187SE is not set
+# CONFIG_RTL8192SU is not set
+# CONFIG_RTL8192U is not set
+# CONFIG_RTL8192E is not set
+# CONFIG_TRANZPORT is not set
+
+#
+# Qualcomm MSM Camera And Video
+#
+
+#
+# Camera Sensor Selection
+#
+# CONFIG_INPUT_GPIO is not set
+# CONFIG_POHMELFS is not set
+# CONFIG_IDE_PHISON is not set
+# CONFIG_USB_SERIAL_QUATECH2 is not set
+# CONFIG_USB_SERIAL_QUATECH_USB2 is not set
+# CONFIG_VT6655 is not set
+# CONFIG_VT6656 is not set
+# CONFIG_VME_BUS is not set
+
+#
+# RAR Register Driver
+#
+# CONFIG_RAR_REGISTER is not set
+# CONFIG_IIO is not set
+# CONFIG_BATMAN_ADV is not set
+# CONFIG_STRIP is not set
+# CONFIG_DT3155 is not set
+# CONFIG_CRYSTALHD is not set
 
 #
 # File systems
@@ -1726,8 +1728,8 @@ CONFIG_EXT3_FS_XATTR=y
 # CONFIG_EXT3_FS_SECURITY is not set
 # CONFIG_EXT4_FS is not set
 CONFIG_FS_XIP=y
-CONFIG_JBD=y
-CONFIG_FS_MBCACHE=y
+CONFIG_JBD=m
+CONFIG_FS_MBCACHE=m
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
 CONFIG_FS_POSIX_ACL=y
@@ -1751,7 +1753,6 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=y
 # CONFIG_CUSE is not set
-
 
 #
 # Caches
@@ -2069,7 +2070,6 @@ CONFIG_OCF_IXP4XX_SHA1_MD5=y
 # CONFIG_OCF_HIFN is not set
 # CONFIG_OCF_HIFNHIPP is not set
 # CONFIG_OCF_TALITOS is not set
-# CONFIG_OCF_EP80579 is not set
 # CONFIG_OCF_CRYPTOCTEON is not set
 # CONFIG_OCF_KIRKWOOD is not set
 # CONFIG_OCF_C7108 is not set
