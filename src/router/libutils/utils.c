@@ -2199,6 +2199,12 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 	
+	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
+	    && nvram_match("boardrev", "0x1100")) {
+		setRouter("Netgear WNDR3400");
+		return ROUTER_NETGEAR_WNDR3400;
+	}
+	
 	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear WNDR4000");
