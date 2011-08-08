@@ -96,7 +96,7 @@ ip_packet_match(const struct iphdr *ip,
 	if (FWINV(ipinfo->smsk.s_addr &&
 		  (ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
 		  IPT_INV_SRCIP) ||
-	    FWINV(ipinfo->smsk.s_addr &&
+	    FWINV(ipinfo->dmsk.s_addr &&
 		  (ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
 		  IPT_INV_DSTIP)) {
 		dprintf("Source or dest mismatch.\n");
@@ -160,6 +160,9 @@ ip_checkdefault(struct ipt_ip *ip)
 		return;
 
 	if (memcmp(ip->outiface_mask, iface_mask, IFNAMSIZ) != 0)
+		return;
+
+	if (ip->smsk.s_addr || ip->dmsk.s_addr)
 		return;
 
 	if (ip->proto)
