@@ -27,7 +27,8 @@ mc-configure: ncurses
 	--without-efence \
 	--without-terminfo \
 	--without-termcap \
-	--without-slang \
+	--with-slang-includes=$(TOP)/mc2/slang/src \
+	--with-slang-libs=$(TOP)/mc2/slang/src/elf$(ARCH)objs \
 	--without-ext2undel \
 	--without-catgets \
 	--without-x \
