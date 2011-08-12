@@ -838,7 +838,7 @@ static void nat_postrouting(void)
 				     lanface);
 			} else {
 				loopmask = getmask(nmask);
-				if (nvram_match("br0_nat", "1") || nvram_match("wk_mode","gateway"))
+				if (!nvram_match("br0_nat","0"))
 				save2file
 				    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
 				     lanface, lan_cclass, loopmask, lan_cclass,
