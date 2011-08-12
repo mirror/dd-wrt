@@ -7664,7 +7664,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		if (strchr(var, '.') == NULL) {
 			if (!strcmp(get_wan_face(), var))
 				continue;
-			if (!strcmp(nvram_safe_get("lan_ifname"), var) && has_gateway())
+			if (!strcmp(nvram_safe_get("lan_ifname"), var)
+			    && has_gateway())
 				continue;
 			foreach(bword, bufferif, bnext) {
 				if (!strcmp(bword, var)) {
@@ -7672,12 +7673,12 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 				}
 			}
 		}
+		char layer[64];
+		strcpy(layer, var);
+		rep(layer, '.', 'X');
 
 		if (!skipip) {
 
-			char layer[64];
-			strcpy(layer, var);
-			rep(layer, '.', 'X');
 			sprintf(ssid, "%s_bridged", var);
 			// nvram_nset("0", "%s_bridged", var);
 			websWrite(wp,
