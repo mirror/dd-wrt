@@ -7677,7 +7677,6 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		strcpy(layer, var);
 		rep(layer, '.', 'X');
 
-		if (!skipip) {
 
 			sprintf(ssid, "%s_bridged", var);
 			// nvram_nset("0", "%s_bridged", var);
@@ -7701,18 +7700,13 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\">%s</div>\n",
 				  live_translate("idx.mtu"));
+		if (!skipip) {
 			char mtu[32];
 			sprintf(mtu, "%s_mtu", var);
 			websWrite(wp,
 				  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",
 				  var, nvram_default_get(mtu, "1500"));
 			websWrite(wp, "</div>\n");
-		} else {
-			websWrite(wp,
-				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",
-				  var);
-			websWrite(wp, "</div>\n");
-
 		}
 		char mcast[32];
 
