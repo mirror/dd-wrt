@@ -7707,6 +7707,12 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 				  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",
 				  var, nvram_default_get(mtu, "1500"));
 			websWrite(wp, "</div>\n");
+		} else {
+			websWrite(wp,
+				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",
+				  var);
+			websWrite(wp, "</div>\n");
+
 		}
 		char mcast[32];
 
@@ -7797,8 +7803,9 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</select>\n</div>\n");
 		}
 #endif
-		websWrite(wp, "<br />\n</div>\n");
+		websWrite(wp, "<br />\n");
 		if (!skipip) {
+			webswrite(wp, "</div>\n");
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 			websWrite(wp,
