@@ -7805,7 +7805,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 #endif
 		websWrite(wp, "<br />\n");
 		if (!skipip) {
-			webswrite(wp, "</div>\n");
+			websWrite(wp, "</div>\n");
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 			websWrite(wp,
