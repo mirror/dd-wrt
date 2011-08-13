@@ -1,4 +1,3 @@
 usr/sbin
 etc/xl2tpd
-var/run/xl2tpd
 usr/share/lintian/overrides

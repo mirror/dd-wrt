@@ -133,7 +133,7 @@ unsigned int get_addr (struct iprange *ipr)
     return 0;
 }
 
-int get_secret (char *us, char *them, unsigned char *secret, int size)
+static int get_secret (char *us, char *them, unsigned char *secret, int size)
 {
     FILE *f;
     char buf[STRLEN];
@@ -149,9 +149,11 @@ int get_secret (char *us, char *them, unsigned char *secret, int size)
     while (!feof (f))
     {
         num++;
-        fgets (buf, sizeof (buf), f);
-        if (feof (f))
+        if (NULL == fgets (buf, sizeof (buf), f))
+        {
+            /* Error or EOF */
             break;
+        }
         /* Strip comments */
         for (t = buf; *t; t++)
             *t = ((*t == '#') || (*t == ';')) ? 0 : *t;
@@ -321,7 +323,7 @@ struct lns *get_lns (struct tunnel *t)
             {
 #ifdef DEBUG_AAA
                 l2tp_log (LOG_DEBUG,
-                     "get_lns: Rule %s to %s, sense %s matched %s\n",
+                     "$s: Rule %s to %s, sense %s matched %s\n", __FUNCTION__,
                      IPADDY (ipr->start), IPADDY (ipr->end),
                      (ipr->sense ? "allow" : "deny"), IPADDY (t->peer.sin_addr.s_addr));
 #endif
@@ -345,13 +347,13 @@ struct lns *get_lns (struct tunnel *t)
 }
 
 #ifdef DEBUG_HIDDEN
-void print_md5 (void *md5)
+static void print_md5 (void * const md5)
 {
     int *i = (int *) md5;
     l2tp_log (LOG_DEBUG, "%X%X%X%X\n", i[0], i[1], i[2], i[3], i[4]);
 }
 
-inline void print_challenge (struct challenge *chal)
+static inline void print_challenge (struct challenge *chal)
 {
     l2tp_log (LOG_DEBUG, "vector: ");
     print_md5 (chal->vector);
@@ -449,7 +451,7 @@ int decrypt_avp (char *buf, struct tunnel *t)
     if (!t->chal_us.vector)
     {
         l2tp_log (LOG_DEBUG,
-             "decrypt_avp: Hidden bit set, but no random vector specified!\n");
+             "%s: Hidden bit set, but no random vector specified!\n", __FUNCTION__);
         return -EINVAL;
     }
     /* First, let's decrypt all the data.  We're not guaranteed
@@ -498,7 +500,7 @@ int decrypt_avp (char *buf, struct tunnel *t)
     if (len > olen - 2)
     {
         l2tp_log (LOG_DEBUG,
-             "decrypt_avp: Decrypted length is too long (%d > %d)\n", len,
+             "%s: Decrypted length is too long (%d > %d)\n", __FUNCTION__, len,
              olen - 2);
         return -EINVAL;
     }

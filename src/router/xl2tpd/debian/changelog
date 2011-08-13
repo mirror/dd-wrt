@@ -1,14 +1,15 @@
-xl2tpd (1.1.11.dfsg.1-2) unstable; urgency=low
+xl2tpd (XL2TPDBASEVERSION-1xelerance1) lucid; urgency=low
 
-  * Added missing copyright notices.
+  * Update to XL2TPDBASEVERSION
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri,  3 Aug 2007 14:13:23 -0400
+  The real changelog is in /usr/share/doc/xl2tpd/changelog.gz
 
-xl2tpd (1.1.11.dfsg.1-1) unstable; urgency=low
+  This package is NOT an official Debian/Ubuntu package. Please do
+  not file any Debian/Ubuntu bug reports for this package but contact
+  <simon@xelerance.com> if you have a problem.
 
-  * Initial release (Closes: #427113, 402660)
-  * Make l2tpd obsolete (Closes: #358799)
-  * Repackage upstream tarball to remove non-free RFC (Closes: #393381)
+ -- Simon Deziel <simon@xelerance.com>  Thu, 10 Mar 2011 11:04:42 -0400
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 31 Jul 2007 20:57:23 -0400
-
+Local variables:
+mode: debian-changelog
+End:

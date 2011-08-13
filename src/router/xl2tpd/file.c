@@ -867,19 +867,27 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
     bcopy (hp->h_addr, &ipr->start, sizeof (unsigned int));
     if (c)
     {
+		char ip_hi[16];
+
 		e = d;
 		while(*e != '\0') {
 			if (*e++ == '.')
 				count++;
 		}
-		if (count != 3) {
-			char ip_hi[16];
-
+		if (count < 3) {
 			strcpy(ip_hi, value);
-			e = strrchr(ip_hi, '.')+1;
+			for (e = ip_hi + sizeof(ip_hi); e >= ip_hi; e--) {
+				if (*e == '.') count--;
+				if (count < 0) {
+					e++;
+					break;
+				}
+			}
 			/* Copy the last field + null terminator */
-			strcpy(e, d);
-			d = ip_hi;
+			if (ip_hi + sizeof(ip_hi)-e > strlen(d)) {
+				strcpy(e, d);
+				d = ip_hi;
+			}
 		}
         hp = gethostbyname (d);
         if (!hp)
@@ -1209,15 +1217,16 @@ int parse_config (FILE * f)
     char *s, *d, *t;
     int linenum = 0;
     int def = 0;
-    struct keyword *kw;
     void *data = NULL;
     struct lns *tl;
     struct lac *tc;
     while (!feof (f))
     {
-        fgets (buf, sizeof (buf), f);
-        if (feof (f))
+        if (NULL == fgets (buf, sizeof (buf), f))
+        {
+            /* Error or EOL */
             break;
+        }
         linenum++;
         s = buf;
         /* Strip comments */
@@ -1387,26 +1396,41 @@ int parse_config (FILE * f)
             l2tp_log (LOG_DEBUG, "parse_config: field is %s, value is %s\n", s, t);
 #endif
             /* Okay, bit twidling is done.  Let's handle this */
-            for (kw = words; kw->keyword; kw++)
+            
+            switch (parse_one_option (s, t, context | def, data))
             {
-                if (!strcasecmp (s, kw->keyword))
-                {
-                    if (kw->handler (s, t, context | def, data))
-                    {
-                        l2tp_log (LOG_WARNING, "parse_config: line %d: %s", linenum,
+            case -1:
+                l2tp_log (LOG_WARNING, "parse_config: line %d: %s", linenum,
                              filerr);
-                        return -1;
-                    }
-                    break;
-                }
-            }
-            if (!kw->keyword)
-            {
+                return -1;
+            case -2:
                 l2tp_log (LOG_CRIT, "parse_config: line %d: Unknown field '%s'\n",
                      linenum, s);
                 return -1;
-            }
+            }            
         }
+    }
+    return 0;
+}
+
+int parse_one_option(char *word, char *value, int context, void *item)
+{
+    struct keyword *kw;
+    
+    for (kw = words; kw->keyword; kw++)
+    {
+        if (!strcasecmp (word, kw->keyword))
+        {
+            if (kw->handler (word, value, context, item))
+            {
+                return -1;
+            }
+            break;
+        }
+    }
+    if (!kw->keyword)
+    {
+        return -2;
     }
     return 0;
 }

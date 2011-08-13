@@ -6,18 +6,4 @@
 # Compulsory line, this is a version 3 file
 version=3
 
-# Uncomment to examine a Webpage 
-# <Webpage URL> <string match>
-#http://www.example.com/downloads.php xl2tpd-(.*)\.tar\.gz
-http://www.xelerance.com/software/xl2tpd/ xl2tpd-(.*)\.tar\.gz
-
-# Uncomment to examine a Webserver directory
-#http://www.example.com/pub/xl2tpd-(.*)\.tar\.gz
-
-# Uncommment to examine a FTP server
-#ftp://ftp.example.com/pub/xl2tpd-(.*)\.tar\.gz debian uupdate
-
-# Uncomment to find new files on sourceforge, for debscripts >= 2.9
-# http://sf.net/xl2tpd/xl2tpd-(.*)\.tar\.gz
-
-
+opts="dversionmangle=s/\+dfsg//" ftp://ftp.xelerance.com/xl2tpd/xl2tpd-(.*)\.tar\.gz debian debian/repack.sh
