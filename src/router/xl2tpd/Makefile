@@ -125,7 +125,7 @@ $(CONTROL_EXEC): $(CONTROL_SRCS)
 romfs:
 	$(ROMFSINST) /bin/$(EXEC)
 
-+install: ${EXEC} ${CONTROL_EXEC}
+install: ${EXEC} ${CONTROL_EXEC}
 	install -d -m 0755 ${SBINDIR}
 	install -m 0755 $(EXEC) ${SBINDIR}/$(EXEC)
 
