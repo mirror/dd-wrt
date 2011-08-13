@@ -38,9 +38,9 @@ clean:
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
+	dh_prep
 	dh_installdirs
-	$(MAKE) DESTDIR=$(CURDIR)/debian/xl2tpd install
+	$(MAKE) PREFIX=/usr DESTDIR=$(CURDIR)/debian/xl2tpd install
 	cp $(CURDIR)/doc/l2tpd.conf.sample $(CURDIR)/debian/xl2tpd/etc/xl2tpd/xl2tpd.conf
 	cp $(CURDIR)/doc/l2tp-secrets.sample $(CURDIR)/debian/xl2tpd/etc/xl2tpd/l2tp-secrets
 
@@ -54,6 +54,7 @@ binary-arch: build install
 	dh_testroot
 	dh_installchangelogs CHANGES
 	dh_installdocs
+	dh_installexamples
 #	dh_install
 	dh_installinit
 	dh_installman

@@ -97,7 +97,7 @@ struct call
 
 extern void push_handler (int);
 extern void toss (struct buffer *);
-extern struct call *get_call (int tunnel, int call, unsigned int addr,
+extern struct call *get_call (int tunnel, int call, struct in_addr addr,
 			      int port,
 			      IPsecSAref_t refme, IPsecSAref_t refhim);
 extern struct call *get_tunnel (int, unsigned int, int);

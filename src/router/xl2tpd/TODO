@@ -15,8 +15,9 @@ Other:
   either not installed, or no kernel support (if possible)
 
 Niceties:
-* Command-line tunnel control program, instead of using echo commands
-* --version and/or -V argument to display version number
+* Improve success/fail result codes for some commands of xl2tpd-control
+* Extend xl2tpd-control to support all available commands
+* Add xl2tpd-control status command to see/watch tunnel status
 
 Way-down-the-line:
 * GUI configuration

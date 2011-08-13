@@ -27,6 +27,7 @@
 #endif
 #include "l2tp.h"
 #include "ipsecmast.h"
+#include "misc.h"    /* for IPADDY macro */
 
 char hostname[256];
 struct sockaddr_in server, from;        /* Server and transmitter structs */
@@ -153,7 +154,7 @@ inline void fix_hdr (void *buf)
     {
         int len = 6;
         if (PSBIT (ver))
-            len += 4;
+            len += 2;
         if (PLBIT (ver))
             len += 2;
         if (PFBIT (ver))
@@ -235,9 +236,9 @@ void control_xmit (void *b)
                 strcpy (t->self->errormsg, "Timeout");
                 t->self->needclose = -1;
             }
+	    call_close(t->self);
         }
-	free(buf->rstart);
-	free(buf);
+	toss (buf);
     }
     else
     {
@@ -303,7 +304,8 @@ void udp_xmit (struct buffer *buf, struct tunnel *t)
 
     /* Receive one packet. */
     if ((err = sendmsg(server_socket, &msgh, 0)) < 0) {
-	l2tp_log(LOG_ERR, "udp_xmit failed with err=%d:%s\n",
+	l2tp_log(LOG_ERR, "udp_xmit failed to %s:%d with err=%d:%s\n",
+		 IPADDY(t->peer.sin_addr), ntohs(t->peer.sin_port),
 		 err,strerror(errno));
     }
 }
@@ -517,7 +519,7 @@ void network_thread ()
 		do_packet_dump (buf);
 	    }
 	    if (!
-		(c = get_call (tunnel, call, from.sin_addr.s_addr,
+		(c = get_call (tunnel, call, from.sin_addr,
 			       from.sin_port, refme, refhim)))
 	    {
 		if ((c =

@@ -52,8 +52,8 @@ void add_payload_hdr (struct tunnel *t, struct call *c, struct buffer *buf)
     buf->start -= sizeof (struct payload_hdr);
     buf->len += sizeof (struct payload_hdr);
     /* Account for no offset */
-    buf->start += 4;
-    buf->len -= 4;
+    buf->start += 2;
+    buf->len -= 2;
     if (!c->fbit && !c->ourfbit)
     {
         /* Forget about Ns and Nr fields then */
@@ -600,7 +600,7 @@ struct call *get_tunnel (int tunnel, unsigned int addr, int port)
     return NULL;
 }
 
-struct call *get_call (int tunnel, int call, unsigned int addr, int port,
+struct call *get_call (int tunnel, int call,  struct in_addr addr, int port,
 		       IPsecSAref_t refme, IPsecSAref_t refhim)
 {
     /*

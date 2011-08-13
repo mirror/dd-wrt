@@ -1,9 +1,10 @@
 Source: xl2tpd
 Section: net
 Priority: optional
-Maintainer: Roberto C. Sanchez <roberto@connexer.com>
-Build-Depends: debhelper (>= 5)
-Standards-Version: 3.7.2
+Maintainer: Simon Deziel <simon@xelerance.com>
+Homepage: http://www.xelerance.com/software/xl2tpd/
+Build-Depends: debhelper (>= 7), libpcap0.8-dev
+Standards-Version: 3.9.1
 
 Package: xl2tpd
 Architecture: any
@@ -22,12 +23,4 @@ Description: a layer 2 tunneling protocol implementation
  The main purpose of this protocol is to tunnel PPP frames through IP
  networks.  It implements both LAC and LNS role in the L2TP networking
  architecture.
- .
- Homepage: http://www.xelerance.com/software/xl2tpd/
-
-Package: l2tpd
-Architecture: all
-Depends: xl2tpd
-Description: dummy package for l2tpd to xl2tpd transition
- Dummy package to upgrade to the new xl2tpd package.
 
