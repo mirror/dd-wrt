@@ -158,22 +158,21 @@ addEvent(window, "unload", function() {
 											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvram_checked("block_snmp", "1"); %> /><% tran("filter.snmp"); %>
 										</div>
 									</fieldset>
-								
+								<% ifdef("MICRO", "<!--"); %>								
 								<br />
 								<fieldset>
 									<legend><% tran("firewall.legend4"); %></legend>
-									<% ifdef("MICRO", "<!--"); %>									
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvram_checked("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
 										</div>
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvram_checked("limit_ssh", "1"); %> /><% tran("firewall.ssh"); %>
 										</div>
-									<% ifdef("MICRO", "-->"); %>
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvram_checked("limit_telnet", "1"); %> /><% tran("firewall.telnet"); %>
 										</div>
 								</fieldset>
+								<% ifdef("MICRO", "-->"); %>
 <br />								</div>
 								<% show_modules(".websecurity"); %>
 								<% ifdef("MICRO", "<!--"); %>
