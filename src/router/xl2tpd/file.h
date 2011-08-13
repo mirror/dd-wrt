@@ -166,4 +166,9 @@ extern struct lac *laclist;     /* All LAC entries */
 extern struct lns *deflns;      /* Default LNS config */
 extern struct lac *deflac;      /* Default LAC config */
 extern int init_config ();      /* Read in the config file */
+
+/* Tries to apply _word_ option with _value_ to _item_ in _context_ */
+extern int parse_one_option (char *word, char *value, int context, void *item);
+/* Allocate memory and filled up new lac */
+extern struct lac *new_lac ();
 #endif

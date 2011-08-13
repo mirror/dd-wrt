@@ -873,7 +873,13 @@ int control_finish (struct tunnel *t, struct call *c)
                             "%s: Unable to create password pipe for pppd\n", __FUNCTION__);
                   return -EINVAL;
                 }
-                write (pppd_passwdfd[1], c->lac->password, strlen (c->lac->password));
+                if (-1 == write (pppd_passwdfd[1], c->lac->password, strlen (c->lac->password)))
+                {
+                    l2tp_log (LOG_DEBUG,
+                            "%s: Unable to write password to pipe for pppd\n", __FUNCTION__);
+                    close (pppd_passwdfd[1]);
+                    return -EINVAL;
+                }
                 close (pppd_passwdfd[1]);
 
                 /* clear memory used for password, paranoid?  */
@@ -892,10 +898,14 @@ int control_finish (struct tunnel *t, struct call *c)
                 po = add_opt (po, c->lac->pppoptfile);
             }
         };
+	po = add_opt (po, "ipparam");
+        po = add_opt (po, IPADDY (t->peer.sin_addr));
         start_pppd (c, po);
         opt_destroy (po);
         if (c->lac)
             c->lac->rtries = 0;
+	if (c->lac->password[0])
+	    close(pppd_passwdfd[0]);
         break;
     case ICCN:
         if (c == t->self)
@@ -964,6 +974,8 @@ int control_finish (struct tunnel *t, struct call *c)
             po = add_opt (po, "file");
             po = add_opt (po, c->lns->pppoptfile);
         }
+	po = add_opt (po, "ipparam");
+        po = add_opt (po, IPADDY (t->peer.sin_addr));
         start_pppd (c, po);
         opt_destroy (po);
         l2tp_log (LOG_NOTICE,
@@ -1022,6 +1034,8 @@ int control_finish (struct tunnel *t, struct call *c)
                 po = add_opt (po, c->lac->pppoptfile);
             }
         };
+	po = add_opt (po, "ipparam");
+        po = add_opt (po, IPADDY (t->peer.sin_addr));
         start_pppd (c, po);
 
         /*  jz: just show some information */
@@ -1299,7 +1313,7 @@ inline int check_payload (struct buffer *buf, struct tunnel *t,
 			}
 		} */
         if (PSBIT (h->ver))
-            ehlen += 4;         /* Offset information */
+            ehlen += 2;         /* Offset information */
         if (PLBIT (h->ver))
             ehlen += h->length; /* include length if available */
         if (PVER (h->ver) != VER_L2TP)
@@ -1365,7 +1379,7 @@ inline int expand_payload (struct buffer *buf, struct tunnel *t,
     if (!PFBIT (h->ver))
         ehlen += 4;             /* Should have Ns and Nr too */
     if (!PSBIT (h->ver))
-        ehlen += 4;             /* Offset information */
+        ehlen += 2;             /* Offset information */
     if (ehlen)
     {
         /*
@@ -1410,13 +1424,13 @@ inline int expand_payload (struct buffer *buf, struct tunnel *t,
         {
             r++;
             new_hdr->o_size = *r;
-            r++;
-            new_hdr->o_pad = *r;
+//            r++;
+//            new_hdr->o_pad = *r;
         }
         else
         {
             new_hdr->o_size = 0;
-            new_hdr->o_pad = 0;
+//            new_hdr->o_pad = 0;
         }
     }
     else
@@ -1548,8 +1562,9 @@ inline int write_packet (struct buffer *buf, struct tunnel *t, struct call *c,
     /*
      * Skip over header 
      */
-    buf->start += sizeof (struct payload_hdr);
-    buf->len -= sizeof (struct payload_hdr);
+    _u16 offset = ((struct payload_hdr*)(buf->start))->o_size;  // For FIXME:
+    buf->start += sizeof(struct payload_hdr) + offset;
+    buf->len -= sizeof(struct payload_hdr) + offset;
 
     c->rx_pkts++;
     c->rx_bytes += buf->len;
@@ -1636,15 +1651,14 @@ inline int write_packet (struct buffer *buf, struct tunnel *t, struct call *c,
     }
 #endif
 
-    x = write (c->fd, wbuf, pos);
-    if (x < pos)
+    x = 0;
+    while ( pos != x )
     {
-      if (DEBUG)
+      err = write (c->fd, wbuf+x, pos-x);
+      if ( err < 0 ) {
+        if ( errno != EINTR && errno != EAGAIN ) {
 	l2tp_log (LOG_WARNING, "%s: %s(%d)\n", __FUNCTION__, strerror (errno),
 		  errno);
-
-        if (!(errno == EINTR) && !(errno == EAGAIN))
-        {
             /*
                * I guess pppd died.  we'll pretend
                * everything ended normally
@@ -1653,6 +1667,11 @@ inline int write_packet (struct buffer *buf, struct tunnel *t, struct call *c,
             c->fd = -1;
             return -EIO;
         }
+        else {
+          continue;  //goto while
+        }
+      }
+      x += err;
     }
     return 0;
 }
