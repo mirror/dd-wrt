@@ -36,6 +36,9 @@ function submitcheck(F) {
 	if(F._limit_telnet){
 		F.limit_telnet.value = F._limit_telnet.checked ? 1 : 0;
 	}
+	}
+	if(F._limit_pptp){
+		F.limit_telnet.value = F._limit_pptp.checked ? 1 : 0;
 	F.save_button.value = sbutton.saving;
 	
 }
@@ -163,13 +166,13 @@ addEvent(window, "unload", function() {
 								<fieldset>
 									<legend><% tran("firewall.legend4"); %></legend>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvram_checked("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
-										</div>
-										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvram_checked("limit_ssh", "1"); %> /><% tran("firewall.ssh"); %>
 										</div>
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvram_checked("limit_telnet", "1"); %> /><% tran("firewall.telnet"); %>
+										</div>
+										<div class="setting">
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvram_checked("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
 										</div>
 								</fieldset>
 								<% ifdef("MICRO", "-->"); %>
