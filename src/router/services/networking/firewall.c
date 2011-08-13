@@ -1951,10 +1951,19 @@ static void filter_input(void)
 			  nvram_safe_get("tvnicfrom"));
 	}
 #ifdef HAVE_PPTP
+	/*
+	 * Impede DoS/Bruteforce, redcuce possilbe bruteforce on pptp server
+	 */
+#ifndef HAVE_MICRO
+	if (nvram_match("pptpd_enable", "1") && nvram_match("limit_pptp", "1")) {
+		save2file("-A INPUT -i %s -p tcp --dport PPTP_PORT -j logbrute\n",
+			  wanface);
+	}
+#endif
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
 	    || nvram_match("wan_proto", "pptp")) {
-		save2file("-A INPUT -p tcp --dport 1723 -j ACCEPT\n");
+		save2file("-A INPUT -p tcp --dport PPTP_PORT -j logaccept\n");
 		save2file("-A INPUT -p 47 -j ACCEPT\n");
 		if (nvram_match("pptpd_lockdown", "1")) {
 			save2file

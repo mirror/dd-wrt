@@ -1311,9 +1311,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
 #elif HAVE_SAGAR
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
@@ -1330,9 +1331,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
 #elif HAVE_DDLAN
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
@@ -1349,9 +1351,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
 #elif HAVE_MAKSAT
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
@@ -1367,9 +1370,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #ifndef HAVE_MICRO
-	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
 #elif HAVE_XIOCOM
 	{"filter", "off", 0},	/* Firewall Protection [on|off] */
@@ -1386,9 +1390,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 	{"remote_management", "0", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
-	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
 #else
 	{"filter", "on", 0},	/* Firewall Protection [on|off] */
@@ -1405,9 +1410,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #ifndef HAVE_MICRO
-	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+//	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif	
 #ifdef HAVE_DDLAN
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
