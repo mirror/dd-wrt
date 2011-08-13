@@ -2,8 +2,8 @@
 
 ### BEGIN INIT INFO
 # Provides:          xl2tpd l2tpd
-# Required-Start:    $network $syslog
-# Required-Stop:     $network $syslog
+# Required-Start:    $network $syslog $remote_fs
+# Required-Stop:     $network $syslog $remote_fs
 # Should-Start:      ipsec
 # Should-Stop:       ipsec
 # Default-Start:     2 3 4 5
@@ -25,35 +25,40 @@ if [ -f /etc/default/xl2tpd ] ; then
 	. /etc/default/xl2tpd
 fi
 
+PIDFILE=/var/run/$NAME.pid
+
 set -e
 
 case "$1" in
   start)
 	echo -n "Starting $DESC: "
-	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
+	start-stop-daemon --start --quiet --pidfile $PIDFILE \
 		--exec $DAEMON -- $DAEMON_OPTS
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-	start-stop-daemon --stop --quiet --pidfile /var/run/$NAME.pid \
+	start-stop-daemon --oknodo --stop --quiet --pidfile $PIDFILE \
 		--exec $DAEMON
 	echo "$NAME."
 	;;
   force-reload)
-	# check wether $DAEMON is running. If so, restart
+	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
+	# check whether $DAEMON is running. If so, restart
 	start-stop-daemon --stop --test --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON \
+		$PIDFILE --exec $DAEMON \
 	&& $0 restart \
 	|| exit 0
 	;;
   restart)
-    echo -n "Restarting $DESC: "
+	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
+	echo -n "Restarting $DESC: "
 	start-stop-daemon --stop --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON
+		$PIDFILE --exec $DAEMON
 	sleep 1
 	start-stop-daemon --start --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON -- $DAEMON_OPTS
+		$PIDFILE --exec $DAEMON -- $DAEMON_OPTS
 	echo "$NAME."
 	;;
   *)

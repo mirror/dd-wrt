@@ -51,7 +51,7 @@ void init_log()
 /*
 void l2tp_log (int level, const char *fmt, ...)
 {
-    char buf[256];
+    char buf[2048];
     va_list args;
     va_start (args, fmt);
     vsnprintf (buf, sizeof (buf), fmt, args);
@@ -115,7 +115,7 @@ void bufferDump (unsigned char *buf, int buflen)
         c = line;
         for (j = 0; j < bufferDumpWIDTH; j++)
         {
-	  sprintf (c, "%02x ", (buf[i * bufferDumpWIDTH + j]) & 0xff);
+	  sprintf (c, "%02x", (buf[i * bufferDumpWIDTH + j]) & 0xff);
             c++;
             c++;                /* again two characters to display ONE byte */
         }
@@ -128,7 +128,7 @@ void bufferDump (unsigned char *buf, int buflen)
     c = line;
     for (j = 0; j < buflen % bufferDumpWIDTH; j++)
     {
-        sprintf (c, "%02x ",
+        sprintf (c, "%02x",
                  buf[(buflen / bufferDumpWIDTH) * bufferDumpWIDTH +
                      j] & 0xff);
         c++;

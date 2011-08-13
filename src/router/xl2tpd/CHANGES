@@ -1,3 +1,27 @@
+v1.3.0 (July 23, 2011)
+* Added xl2tpd-control [Alexander Dorokhov]
+* Added 'a' (add) and 'd' (delete) control options [Alexander Dorokhov]
+* Refresh debian/ from Debian. [Roberto C. Snchez]
+* Buffer overrun in reading >16 char l2tp-secrets [Matt Domsch]
+  (https://bugzilla.redhat.com/show_bug.cgi?id=689178)
+* xl2tpd may leaks file descriptors [Steve Barth]
+* xl2tpd: field o_pad in "struct payload_hdr" unnecessary. RFC 2661 [Ilya]
+* Fix logging in write_packet() [Ilya]
+* Bug tracker bugs fixed:
+  #1119 Segfault upon config error [Andrey Cherny]
+  #1223 Gentoo QA warning: dereferencing pointer [Andrey Cherny]
+  #1236 xl2tpd hungs and wont redial after communication fail [Andrey Cherny]
+  #1237 delayed null pointer check [Andrey Cherny]
+
+v1.2.8
+* Makefile: fix compilation with --as-needed linker flag [Vladimir V. Kamarzin]
+* Workaround for apple clients missing htons() [Brian Mastenbrook]
+* Log destination ip and port in case of send failure [Mika Ilmaranta]
+* Added Default-Stop: to fedora initscript [Paul]
+* Bug tracker bugs fixed:
+  #1078 xl2tpd doesn't pass 'ipparam' to pppd and pppd won't get
+        client ip (Xiaoguang WANG)
+
 v1.2.7
 * Reduce time in signal handlers where we cannot log [Shinichi Furuso]
 * Add rx/tx bps speed setting options [Tony Hoyle]
@@ -13,7 +37,7 @@ v1.2.6
 
 v1.2.5
 * Fix initscript for https://bugzilla.redhat.com/show_bug.cgi?id=247100
-* Fix for two Windows machines behind the same NAT with the same
+* Fix for two Windows machines behind the same NAT with the samed
   number of l2tp connection attempts since boot [Shinichi Furuso]
 
 v1.2.4

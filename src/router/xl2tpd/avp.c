@@ -470,6 +470,29 @@ int result_code_avp (struct tunnel *t, struct call *c, void *data,
 #endif
     result = ntohs (raw[3].s);
     error = ntohs (raw[4].s);
+
+   /*
+    * from prepare_StopCCN and prepare_CDN, note missing htons() call
+    * http://www.opensource.apple.com/source/ppp/ppp-412.3/Drivers/L2TP/L2TP-plugin/l2tp.c 
+    */
+    if (((result & 0xFF) == 0) && (result >> 8 != 0))
+    {
+        if (DEBUG)
+            l2tp_log (LOG_DEBUG,
+                 "%s: result code endianness fix for buggy Apple client. network=%d, le=%d\n",
+                 __FUNCTION__, result, result >> 8);
+        result >>= 8;
+    }
+
+    if (((error & 0xFF) == 0) && (error >> 8 != 0))
+    {
+        if (DEBUG)
+            l2tp_log (LOG_DEBUG,
+                 "%s: error code endianness fix for buggy Apple client. network=%d, le=%d\n",
+                 __FUNCTION__, error, error >> 8);
+        error >>= 8;
+    }
+
     if ((c->msgtype == StopCCN) && ((result > 7) || (result < 1)))
     {
         if (DEBUG)
