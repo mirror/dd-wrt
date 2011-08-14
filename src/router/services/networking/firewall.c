@@ -811,8 +811,8 @@ static void nat_postrouting(void)
 		}
 		if (strlen(wanface) > 0 && wanactive())
 			save2file
-			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
-			     wanface, wanaddr);
+			    ("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n",
+			     lan_cclass, loopmask, wanface, wanaddr);
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(nvram_safe_get("pptp_ifname"), &ifaddr);
@@ -838,11 +838,11 @@ static void nat_postrouting(void)
 				     lanface);
 			} else {
 				loopmask = getmask(nmask);
-				if (!nvram_match("br0_nat","0"))
-				save2file
-				    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
-				     lanface, lan_cclass, loopmask, lan_cclass,
-				     loopmask, method);
+				if (!nvram_match("br0_nat", "0"))
+					save2file
+					    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
+					     lanface, lan_cclass, loopmask,
+					     lan_cclass, loopmask, method);
 			}
 			char *next;
 			char dev[16];
@@ -871,7 +871,18 @@ static void nat_postrouting(void)
 							nvram_default_get(nat,
 									  "1");
 							if (nvram_match
-							    (nat, "1"))
+							    (nat, "1")) {
+								save2file
+								    ("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n",
+								     nvram_nget
+								     ("%s_ipaddr",
+								      var),
+								     getmask
+								     (nvram_nget
+								      ("%s_netmask",
+								       var)),
+								     wanface,
+								     wanaddr);
 								save2file
 								    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
 								     var,
@@ -890,6 +901,7 @@ static void nat_postrouting(void)
 								      ("%s_netmask",
 								       var)),
 								     method);
+							}
 						}
 					}
 				}
@@ -1956,8 +1968,9 @@ static void filter_input(void)
 	 */
 #ifndef HAVE_MICRO
 	if (nvram_match("pptpd_enable", "1") && nvram_match("limit_pptp", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
-			  wanface, PPTP_PORT);
+		save2file
+		    ("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
+		     wanface,PPTP_PORT);
 	}
 #endif
 	if (nvram_match("pptpd_enable", "1")
@@ -2134,7 +2147,7 @@ static void filter_input(void)
 #ifndef HAVE_MICRO
 	/*
 	 * SNMP access from WAN interface 
-	 */	
+	 */
 	if (nvram_match("snmpd_enable", "1") && nvram_match("block_snmp", "0")) {
 		save2file("-A INPUT -i %s -p udp --dport 161 -j ACCEPT\n",
 			  wanface);
@@ -2271,7 +2284,7 @@ static void filter_forward(void)
 	 * Drop all traffic from lan 
 	 */
 	if (nvram_match("pptpd_lockdown", "1"))
-		save2file("-A FORWARD -i %s -j %s\n", lanface,log_drop);
+		save2file("-A FORWARD -i %s -j %s\n", lanface, log_drop);
 
 	/*
 	 * Drop the wrong state, INVALID, packets 
@@ -2549,7 +2562,7 @@ static void filter_table(void)
 	    && (nvram_match("log_dropped", "1")))
 		save2file
 		    ("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options\n");
-	save2file("-A logbrute -j %s\n",log_drop);
+	save2file("-A logbrute -j %s\n", log_drop);
 #endif
 	if (nvram_match("chilli_enable", "1")) {
 		if (has_gateway()) {
@@ -2576,16 +2589,17 @@ static void filter_table(void)
 			if (!remotemanage && strlen(wanface)) {
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport %s -j %s\n",
-				     wanface, nvram_safe_get("http_wanport"),log_drop);
+				     wanface, nvram_safe_get("http_wanport"),
+				     log_drop);
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport 80 -j %s\n",
-				     wanface,log_drop);
+				     wanface, log_drop);
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport 443 -j %s\n",
-				     wanface,log_drop);
+				     wanface, log_drop);
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport 69 -j %s\n",
-				     wanface,log_drop);
+				     wanface, log_drop);
 			}
 			/*
 			 * Make sure remote ssh/telnet port is filtered if it is disabled :
@@ -2595,7 +2609,8 @@ static void filter_table(void)
 			if (!remotessh && strlen(wanface) > 0) {
 				save2file
 				    ("-A INPUT -i %s -p tcp --dport %s -j %s\n",
-				     wanface, nvram_safe_get("sshd_port"),log_drop);
+				     wanface, nvram_safe_get("sshd_port"),
+				     log_drop);
 			}
 #endif
 
@@ -2603,7 +2618,7 @@ static void filter_table(void)
 			if (!remotetelnet && strlen(wanface) > 0) {
 				save2file
 				    ("-A INPUT -p tcp -i %s --dport 23 -j %s\n",
-				     wanface,log_drop);
+				     wanface, log_drop);
 			}
 #endif
 			filter_forward();
@@ -2627,7 +2642,7 @@ static void filter_table(void)
 		     wanface, FLOOD_RATE);
 	save2file
 	    ("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n",
-	     wanface, FLOOD_RATE,log_drop);
+	     wanface, FLOOD_RATE, log_drop);
 #endif
 	if ((nvram_match("log_enable", "1"))
 	    && (nvram_match("log_accepted", "1")))
@@ -2677,15 +2692,15 @@ static void filter_table(void)
 	save2file
 	    ("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n"
 	     "-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface,
-	     FLOOD_RATE,log_drop);
+	     FLOOD_RATE, log_drop);
 #endif
 #ifdef HAVE_CHILLI
 	/*
 	 * DD-WRT BrainSlayer CHILLI Security Fix 
 	 */
 	if (nvram_match("chilli_enable", "1")) {
-		save2file("-A FORWARD -i br0 -j %s\n",log_drop);
-		save2file("-A FORWARD -o br0 -j %s\n",log_drop);
+		save2file("-A FORWARD -i br0 -j %s\n", log_drop);
+		save2file("-A FORWARD -o br0 -j %s\n", log_drop);
 	}
 	/*
 	 * DD-WRT end 
