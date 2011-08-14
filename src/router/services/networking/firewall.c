@@ -1956,20 +1956,20 @@ static void filter_input(void)
 	 */
 #ifndef HAVE_MICRO
 	if (nvram_match("pptpd_enable", "1") && nvram_match("limit_pptp", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport PPTP_PORT -j logbrute\n",
-			  wanface);
+		save2file("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
+			  wanface, PPTP_PORT);
 	}
 #endif
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
 	    || nvram_match("wan_proto", "pptp")) {
-		save2file("-A INPUT -p tcp --dport PPTP_PORT -j logaccept\n");
+		save2file("-A INPUT -p tcp --dport %d -j logaccept\n", PPTP_PORT);
 		save2file("-A INPUT -p 47 -j ACCEPT\n");
 		if (nvram_match("pptpd_lockdown", "1")) {
 			save2file
 			    ("-A INPUT -i %s -p udp --sport 67 --dport 68 -j ACCEPT\n",
 			     lanface);
-			save2file("-A INPUT -i %s -j %s\n", lanface,log_drop);
+			save2file("-A INPUT -i %s -j %s\n", lanface, log_drop);
 		}
 	}
 #endif
