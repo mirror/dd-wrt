@@ -815,7 +815,7 @@ static void nat_postrouting(void)
 			     nvram_safe_get("tvnicfrom"),
 			     nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) > 0 && wanactive())
+		if (strlen(wanface) > 0 && wanactive() && !nvram_match("br0_nat", "0"))
 			save2file
 			    ("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n",
 			     lan_cclass, loopmask, wanface, wanaddr);
