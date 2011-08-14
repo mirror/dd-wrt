@@ -797,6 +797,12 @@ static void nat_postrouting(void)
 			  nvram_safe_get("pppoeserver_remotemask"), wanaddr);
 #endif
 	if (has_gateway()) {
+
+		// added for logic test
+		int loopmask = 0;
+		char *nmask = nvram_safe_get("lan_netmask");	// assuming
+		loopmask = getmask(nmask);
+
 		// if (strlen (wanface) > 0)
 		// save2file
 		// ("-A POSTROUTING -p udp -o %s --sport 5060:5070 -j
@@ -826,9 +832,6 @@ static void nat_postrouting(void)
 			method = "DROP";
 
 		{
-			// added for logic test
-			int loopmask = 0;
-			char *nmask = nvram_safe_get("lan_netmask");	// assuming
 
 			// lan_netmask 
 			// is valid
@@ -837,7 +840,6 @@ static void nat_postrouting(void)
 				    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 				     lanface);
 			} else {
-				loopmask = getmask(nmask);
 				if (!nvram_match("br0_nat", "0"))
 					save2file
 					    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
@@ -1970,13 +1972,14 @@ static void filter_input(void)
 	if (nvram_match("pptpd_enable", "1") && nvram_match("limit_pptp", "1")) {
 		save2file
 		    ("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
-		     wanface,PPTP_PORT);
+		     wanface, PPTP_PORT);
 	}
 #endif
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
 	    || nvram_match("wan_proto", "pptp")) {
-		save2file("-A INPUT -p tcp --dport %d -j logaccept\n", PPTP_PORT);
+		save2file("-A INPUT -p tcp --dport %d -j logaccept\n",
+			  PPTP_PORT);
 		save2file("-A INPUT -p 47 -j ACCEPT\n");
 		if (nvram_match("pptpd_lockdown", "1")) {
 			save2file
