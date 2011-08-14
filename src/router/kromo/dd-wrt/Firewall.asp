@@ -36,9 +36,9 @@ function submitcheck(F) {
 	if(F._limit_telnet){
 		F.limit_telnet.value = F._limit_telnet.checked ? 1 : 0;
 	}
-	}
 	if(F._limit_pptp){
 		F.limit_telnet.value = F._limit_pptp.checked ? 1 : 0;
+	}
 	F.save_button.value = sbutton.saving;
 	
 }
