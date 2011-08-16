@@ -1,0 +1,129 @@
+Reloading a Snort configuration
+===============================
+Snort now supports reloading a configuration in lieu of restarting Snort in
+so as to provide seamless traffic inspection during a configuration change.
+A separate thread will parse and create a swappable configuration object while
+the main Snort packet processing thread continues inspecting traffic under the
+current configuration.  When a swappable configuration object is ready for use,
+the main Snort packet processing thread will swap in the new configuration to
+use and will continue processing under the new configuration.  Note that for
+some preprocessors, existing session data will continue to use the configuration
+under which they were created in order to continue with proper state for that
+session.  All newly created sessions will, however, use the new configuration.
+
+
+Enabling support
+================
+To enable support for reloading a configuration, add "--enable-reload" to
+configure when compiling.
+
+There is also an ancillary option that determines how Snort should behave
+if any non-reloadable options are changed (see "Non-reloadable configuration
+options" below).  This option is enabled by default and the behavior is for
+Snort to restart if any non-reloadable options are added/modified/removed.
+To disable this behavior and have Snort exit instead of restart, add
+"--disable-reload-error-restart" in addition to "--enable-reload" to configure
+when compiling.
+
+NOTE: This functionality is not currently supported in Windows.
+
+
+Reloading a configuration
+=========================
+First modify your snort.conf (the file passed to the '-c' option on the
+command line).
+
+Then, to initiate a reload, send Snort a SIGHUP signal, e.g.
+
+$ kill -SIGHUP <snort pid>
+
+NOTE: If reload support is not enabled, Snort will restart (as it always has)
+upon receipt of a SIGHUP.
+
+NOTE: An invalid configuration will still result in Snort fatal erroring, so
+you should test your new configuration before issuing a reload, e.g.
+
+$ snort -c snort.conf -T
+
+
+Non-reloadable configuration options
+====================================
+There are a number of option changes that are currently non-reloadable because
+they require changes to output, startup memory allocations, etc.  Modifying any
+of these options will cause Snort to restart (as a SIGHUP previously did) or
+exit (if "--disable-reload-error-restart" was used to configure Snort).
+
+Reloadable configuration options of note:
+* Adding/modifying/removing text rules and variables are reloadable.
+* Adding/modifying/removing preprocessor configurations are reloadable (except
+  as noted below).
+
+Non-reloadable configuration options of note:
+* Adding/modifying/removing shared objects via dynamicdetection, dynamicengine
+  and dynamicpreprocessor are not reloadable, i.e. any new/modified/removed
+  shared objects will require a restart.
+* Any changes to output will require a restart.
+
+Changes to the following options are not reloadable:
+
+attribute_table
+config alertfile
+config asn1
+config chroot
+config daemon
+config detection_filter
+config flowbits_size
+config interface
+config logdir
+config max_attribute_hosts
+config nolog
+config no_promisc
+config pkt_count
+config rate_filter
+config response
+config read_bin_file
+config set_gid
+config set_uid
+config snaplen
+config threshold
+dynamicdetection
+dynamicengine
+dynamicpreprocessor
+output
+
+In certain cases, only some of the parameters to a config option or
+preprocessor configuration are not reloadable.  Those parameters are
+listed below the relevant config option or preprocessor.
+
+config ppm: max_rule_time <int>
+ rule-log
+config profile_rules
+ filename
+ print
+ sort
+config profile_preprocs
+ filename
+ print
+ sort
+preprocessor dcerpc2
+ memcap
+preprocessor frag3_global
+ max_frags
+ memcap
+ prealloc_frags
+ prealloc_memcap
+preprocessor perfmonitor
+ file
+ snortfile
+preprocessor sfportscan
+ memcap
+ logfile
+preprocessor stream5_global
+ memcap
+ max_tcp
+ max_udp
+ max_icmp
+ track_tcp
+ track_udp
+ track_icmp
+

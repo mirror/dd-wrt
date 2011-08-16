@@ -1,0 +1,118 @@
+Overview
+========
+
+Encrypted traffic should be ignored by Snort for both performance reasons and
+to reduce false positives.  The SSL Dynamic Preprocessor (SSLPP) inspects SSL
+and TLS traffic and optionally determines if and when to stop inspection of it.
+
+Typically, SSL is used over port 443 as HTTPS.  By enabling the SSLPP to
+inspect port 443, only the SSL handshake of each connection will be
+inspected.  Once the traffic is determined to be encrypted, no further
+inspection of the data on the connection is made.
+
+SSL Detection and Decoding
+==========================
+
+Each packet containing SSL traffic has an unencrypted portion that provides
+some information about the traffic itself, and the state of the connection.
+SSLPP uses this information to determine whether or not a handshake is 
+occurring or if a handshake previously occurred.
+
+By default, SSLPP looks for a handshake followed by encrypted traffic 
+traveling to both sides.  If one side responds with an indication that 
+something has failed, such as the handshake, the session is not marked as
+encrypted.  Verifying that faultless encrypted traffic is sent from both 
+endpoints ensures two things: the last client-side handshake packet was not 
+crafted to evade Snort, and that the traffic is legitimately encrypted.
+
+In some cases, especially when packets may be missed, the only observed 
+response from one endpoint will be TCP ACKs.  Therefore, if a user knows that
+server-side encrypted data can be trusted to mark the session as encrypted, the
+user should use the 'trustservers' option, documented below.
+
+
+Rule Options
+============
+
+SSLPP enables two new rule options: ssl_state and ssl_version.
+
+The ssl_state keyword takes the following identifiers as arguments:
+
+    client_hello
+    server_hello
+    client_keyx
+    server_keyx
+    unknown
+
+The ssl_version keyword takes the following identifiers as arguments:
+
+    sslv2
+    sslv3
+    tls1.0
+    tls1.1
+    tls1.2
+
+More than one identifier can be specified, to either rule keyword, via a comma
+separated list.  Lists of identifiers are OR'ed together, such that if any
+of them match, the rule option will match.
+
+The option will match if the connection is currently in any one of the OR'ed
+states.  To ensure the connection has reached each of a set of states, multiple
+rules using the ssl_state rule option should be used.
+
+The rule options support negation.  Some examples:
+
+    # Not client hello
+    ssl_state:!client_hello;
+
+    # server hello OR not client hello
+    ssl_state:server_hello,!client_hello;
+
+    # server hello AND not server key exchange
+    ssl_state:server_hello; ssl_state:!server_keyx;
+
+    # not sslv2
+    ssl_version:!sslv2;
+
+    # sslv3 and not sslv2
+    ssl_version:sslv3; ssl_version:!sslv2;
+
+
+Usage
+=====
+
+SSLPP supports the following options:
+
+  ports                -   Space separated list of ports, enclosed in braces
+    
+  noinspect_encrypted  -   Disables inspection of encrypted traffic 
+                            (default off)
+
+  trustservers         -   Disables the requirement that both sides of 
+                            Application data must be observed (default off)
+                            This requires noinspect_encrypted to be useful.
+
+For example, to make SSLPP observe ports 443 and 994, and if you trust the
+servers to not be comprised or potentially malicious, use:
+
+    preprocessor ssl: ports { 443 994 }, trustservers, noinspect_encrypted
+       
+By default, SSLPP listens on the following ports:
+
+    443     HTTPS
+    465     SMTPS   
+    563     NNTPS   
+    636     LDAPS
+    989     FTPS        
+    992     TelnetS 
+    993     IMAPS
+    994     IRCS        
+    995     POPS
+
+    Important note: Stream4 or Stream5 should be explicitly told to reassemble
+                    traffic on these ports, or else the SSL preprocessor will
+                    be trivially evadable.
+
+    To add reassembly on port 443 to Stream5, use 'ports both 443' in the 
+    Stream5 configuration.
+

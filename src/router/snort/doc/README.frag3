@@ -1,0 +1,206 @@
+# $Id$
+--------------------------------------------------------------------------------
+                                  Frag3
+--------------------------------------------------------------------------------
+Author: Martin Roesch <roesch@sourcefire.com>
+
+Overview
+--------
+The frag3 preprocessor is a target-based IP defragmentation module for Snort.
+Frag3 is intended as a replacement for the frag2 defragmentation module and 
+was designed with the following goals:
+
+1) Faster execution that frag2 with less complex data management.
+
+2) Target-based host modeling anti-evasion techniques.
+
+The frag2 preprocessor used splay trees extensively for managing the data 
+structures associated with defragmenting packets.  Splay trees are excellent 
+data structures to use when you have some assurance of locality of reference
+for the data that you are handling but in high speed, heavily fragmented 
+environments the nature of the splay trees worked against the system and 
+actually hindered performance.  Frag3 uses the sfxhash data structure and 
+linked lists for data handling internally which allows it to have much more
+predictable and deterministic performance in any environment which should 
+aid us in managing heavily fragmented environments.
+
+Target-based analysis is a relatively new concept in network-based intrusion
+detection.  The idea of a target-based system is to model the actual targets
+on the network instead of merely modeling the protocols and looking for 
+attacks within them.  When IP stacks are written for different operating 
+systems, they are usually implemented by people who read the RFCs and then
+their interpretation of what the RFC outlines into code.  Unfortunately, there
+are ambiguities in the way that the RFCs define some of the edge conditions 
+that may occur and when this happens differnt people implement certain aspects
+of their IP stacks differently.  For an IDS this is a big problem.
+
+In an environment where the attacker can determine what style of IP 
+defragmentation being used on a particular target, the attacker can try to
+fragment packets such that the target will put them back together in a 
+specific manner while any passive systems trying to model the host traffic 
+have to guess which way the target OS is going to handle the overlaps and 
+retransmits.  As I like to say, if the attacker has more information about the
+targets on a network than the IDS does, it is possible to evade the IDS.  This
+is where the idea for "target-based IDS" came from.  For more detail on this
+issue and how it affects IDSes, check out the famous Ptacek & Newsham paper at
+
+http://www.snort.org/docs/idspaper/
+
+The basic idea behind target-based IDS is that we tell the IDS information 
+about hosts on the network so that it can avoid Ptacek & Newsham style evasion
+attacks based on information about how an individual target IP stack operates.
+Vern Paxson and Umesh Shankar did a great paper on this very topic in 2003 that 
+detailed mapping the hosts on a network and determining how their various IP 
+stack implementations handled the types of problems seen in IP defragmentation 
+and TCP stream reassembly.  Check it out at
+
+http://www.icir.org/vern/papers/activemap-oak03.pdf
+
+We can also present the IDS with topology information to avoid TTL-based 
+evasions and a variety of other issues, but that's a topic for another day.  
+Once we have this information we can start to really change the game for these 
+complex modeling problems.
+
+Frag3 was implemented to showcase and prototype a target-based module within
+Snort to test this idea.
+
+Configuration
+-------------
+
+Frag3 configuration is somewhat more complex than frag2.  There are at least
+two preprocessor directives required to activate frag3, a global configuration
+directive and an engine instantiation.  There can be an arbitrary number of
+engines defined at startup with their own configuration, but only one global
+configuration.
+
+Global configuration
+ - Preprocessor name: frag3_global
+ - Available Options
+   NOTE: Global configuration options are comma separated.
+     max_frags <number> - Maximum simultaneous fragments to track, default 
+                          is 8192
+     memcap <bytes> - Memory cap for self preservation, default is 4MB
+     prealloc_memcap <bytes> - alternate memory management mode, use
+                               preallocated fragment nodes based on a
+                               memory cap (faster in some situations)
+     prealloc_frags <number> - alternate memory management mode, use
+                               preallocated fragment nodes based on a
+                               static number (faster in some situations)
+     disabled                - This optional keyword is allowed with any 
+			       policy to avoid packet processing. This 
+			       option disables the preprocessor. When 
+			       the preprocessor is disabled only the 
+			       options memcap, prealloc_memcap, and 
+                               prealloc_frags are applied when 
+                               specified with the configuration. 
+                               The other options are parsed but not 
+                               used. Any valid configuration may have 
+                               "disabled" added to it.
+
+
+Engine Configuration                          
+ - Preprocessor name: frag3_engine
+ - Available Options
+   NOTE: Engine configuration options are space separated.
+     timeout <seconds> - Timeout for fragments, fragments in the engine for 
+                         longer than this period will be automatically dropped.
+                         Default is 60 seconds.
+     min_ttl <value> - Minimum acceptable TTL value for a fragment packet.  
+                       Default is 1. The accepted range for this option is 1 - 255.
+     detect_anomalies - Detect fragment anomalies 
+     bind_to <ip_list> - IP List to bind this engine to.  This engine will only
+                         run for packets with destination addresses contained
+                         within the IP List.  Default value is "all".
+     overlap_limit <number> - Limits the number of overlapping fragments per packet.  The default 
+                       is "0" (unlimited). This config option takes values equal to or greater than zero. This is an 
+                       optional parameter. detect_anomalies option must be configured for this option 
+                       to take effect.
+     min_fragment_length <number> - Defines smallest fragment size (payload size) that should be considered valid.
+                    Fragments smaller than or equal to this limit are considered malicious and an event is raised, 
+                    if detect_anomalies is also configured.  The default is "0" (check is disabled). This config 
+	            option takes values equal to or greater than zero. This is an optional parameter. 
+		    detect_anomalies option must be configured for this option to take effect.
+     policy <type> - Select a target-based defragmentation mode.  Available 
+                     types are first, last, bsd, bsd-right, linux, windows
+                     and solaris.  Default type is bsd.
+
+                     The Paxson Active Mapping paper introduced the terminology
+                     frag3 is using to describe policy types.  It has been
+                     extended to address differences between a true "first"
+                     policy and how Windows and Solaris platforms handle
+                     fagmented traffic.  The known mappings are as follows.
+
+                     Anyone who develops more mappings and would like to add
+                     to this list please feel free to send us an email!
+                     Platform | Type
+                     ---------------
+                        AIX 2  | BSD 
+                AIX 4.3 8.9.3  | BSD 
+                    Cisco IOS  | Last 
+                      FreeBSD  | BSD 
+       HP JetDirect (printer)  | BSD-right 
+                HP-UX B.10.20  | BSD 
+                  HP-UX 11.00  | First 
+                  IRIX 4.0.5F  | BSD 
+                     IRIX 6.2  | BSD 
+                     IRIX 6.3  | BSD 
+                   IRIX64 6.4  | BSD 
+                 Linux 2.2.10  | linux 
+             Linux 2.2.14-5.0  | linux 
+               Linux 2.2.16-3  | linux 
+       Linux 2.2.19-6.2.10smp  | linux 
+               Linux 2.4.7-10  | linux 
+   Linux 2.4.9-31SGI 1.0.2smp  | linux 
+   Linux 2.4 (RedHat 7.1-7.3)  | linux 
+      MacOS (version unknown)  | First 
+             NCD Thin Clients  | BSD 
+    OpenBSD (version unknown)  | linux 
+    OpenBSD (version unknown)  | linux 
+                  OpenVMS 7.1  | BSD 
+       OS/2 (version unknown)  | BSD 
+                    OSF1 V3.0  | BSD 
+                    OSF1 V3.2  | BSD 
+            OSF1 V4.0,5.0,5.1  | BSD 
+                  SunOS 4.1.4  | BSD 
+      SunOS 5.5.1,5.6,5.7,5.8  | First 
+      Solaris 9, Solaris 10    | Solaris
+        Tru64 Unix V5.0A,V5.1  | BSD 
+                      Vax/VMS  | BSD 
+   Windows (95/98/NT4/W2K/XP)  | Windows
+
+Example configuration (Basic)
+preprocessor frag3_global
+preprocessor frag3_engine
+
+Example configuration (Advanced)
+preprocessor frag3_global: prealloc_frags 8192 
+preprocessor frag3_engine: policy linux, bind_to 192.168.1.0/24
+preprocessor frag3_engine: policy first, bind_to [10.1.47.0/24,172.16.8.0/24]
+preprocessor frag3_engine: policy last, detect_anomalies
+
+Note in the advanced example, there are three engines specified running with 
+linux, first and last policies assigned.  The first two engines are bound to
+specific IP address ranges and the last one applies to all other traffic, 
+packets that don't fall within the address requirements of the first two engines
+automatically fall through to the third one.
+
+Alert Output
+------------
+
+Frag3 uses generator ID 123 for generating the following alerts:
+
+SID   Description
+---   -----------
+1     IP Options on fragmented packet
+2     Teardrop attack
+3     Short fragment, possible DoS attempt
+4     Fragment packet ends after defragmented packet
+5     Zero-byte fragment
+6     Bad fragment size, packet size is negative
+7     Bad fragment size, packet size is greater than 65536
+8     Fragmentation overlap
+9     IPv6 BSD mbufs remote kernel buffer overflow
+10    Bogus fragmentation packet. Possible BSD attack
+11    TTL value less than configured minimum, not using for reassembly
+12    Number of overlapping fragments exceed configured limit
+13    Fragments smaller than configured min_fragment_length

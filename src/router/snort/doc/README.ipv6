@@ -1,0 +1,95 @@
+IPv6
+====
+
+Snort 2.8 adds optional support for IPv6.  To enable IPv6 support, configure 
+with --enable-ipv6.  Once enabled, Snort will process both IPv4 and IPv6 
+traffic, though some Snort modules are not supported.
+
+The following preprocessors are specifically supported when Snort is compiled 
+with IPv6 support:
+
+    Stream5
+    HTTP Inspect
+    DCERPC
+    Portscan
+    BO
+    RPC Decode
+    Frag3
+    FTP Telnet
+    DNS
+    SMTP
+
+IPv6 support is also included for the following.
+    Respond
+    Respond2
+    Dynamic plugins (Shared Object rules)
+
+IPv6 support is not included for the following, but will be 
+added in a future release:
+
+    Database
+    Aruba
+    Prelude
+
+        Note: For stream reassembly and flow, use Stream5.
+
+All rule options are supported with IPv6
+    
+
+IPv6 limitations
+================
+
+No rule options have yet been added to support inspection of specific IP 
+extension headers.  These will be added in a later release.
+
+
+IPv6 configuration
+==================
+
+All configuration options are consistent with past versions of Snort, with the
+obvious exception that IPv6 addresses can be used in place of IPv4 addresses 
+at will.  IP lists are allowed to have IP addresses from both families 
+simultaneously.  For example: 
+
+    ipvar example [1.1.1.1,2::2]
+    alert tcp [3::0/120,!3::3,4.4.4.4] any -> $example any (msg:"Example";sid:1;)
+
+See README.variables for more information.
+
+
+Miscellaneous - BSD Fragmented IPv6 Vulnerability (CVE-2007-1365)
+=================================================================
+
+Some versions of BSD are vulnerable to an attack that involves sending two
+fragmented ICMPV6 packets with specific fragmentation flags (see Bugtraq ID
+22901 or CVE-2007-1365).  Snort will, by default alert if it sees the both
+packets in sequence, or the second packet by itself.  
+
+Note: IPv6 support does NOT have to be enabled to gain this functionality.
+
+Snort will keep track of multiple simultaneous IPv6 fragmented ICMPv6 sessions,
+up to a user-configurable timeout or until a session can be confirmed to be
+safe.
+
+To configure this module's behavior, add a line to snort.conf with:
+    
+    ipv6_frag <option1 arg1>[, <option2 arg2>, ...]
+
+Options:
+   
+    bsd_icmp_frag_alert [on/off]    -       Whether or not to alert on the 
+                                            BSD fragmented ICMPv6 vulnerability
+
+    bad_ipv6_frag_alert [on/off]    -       Whether or not to alert if the 
+                                            second packet is seen by itself
+
+    frag_timeout [integer]          -       Length of time to track the attack
+                                            in seconds.  Min 0, max 3600, 
+                                            default 60 (consistent with BSD's
+                                            internal default).
+
+    max_frag_sessions [integer]     -       Total number of possible attacks 
+                                            to track.  Min 0, default 10000.
+
+To enable drops in inline mode, use "config enable_decode_drops".
+

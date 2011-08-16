@@ -1,0 +1,40 @@
+$Id$
+
+This is the Snort problems file.  It is used to document bugs that we
+can't work around and provide a bit of documentation in case someone
+finds a way to work around the problem.
+
+Platform:  Linux/x86
+
+adapter dropping out of promiscous mode
+
+  if you see syslog messages complaining of obsolete (PF_INET,SOCK_PACKET),
+  upgrade to libpcap 0.7+ and things should work correctly.
+
+Platform:  Mac OS X 
+
+- TCP traffic checksums are not handed up properly from pcap when the
+  checksum is generated from the host that is doing the sniffing.
+  Passive mode should work fine.
+
+Platform: Linux/SPARC Linux/Alpha?
+
+- Bus Errors ( Rumored to be compiler problem )
+
+  Alignment problems.  Patches welcome.
+
+Platform: HPUX
+
+- Bus Errorrs with Stream4
+
+  Compiler doesn't like bitpacked notation access
+
+- HP-UX 10.x note from Chris Sylvain:
+
+  if you run snort and receive the error message
+    "ERROR: OpenPcap() device lan0 open:
+                     recv_ack: promisc_phys: Invalid argument"
+  it's because there's another program running using the DLPI service.
+
+  The HP-UX implementation doesn't allow more than one libpcap program
+  at a time to run, unlike Linux.

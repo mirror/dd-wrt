@@ -1,0 +1,254 @@
+Overview
+========
+
+Decoding is one of the first processes a packet goes through in Snort.  The 
+decoder has the job of determining which underlying protocols are used in
+the packet (such as Ethernet, IP, TCP, etc.) and saves this data along with
+the location of the payload/application data in the packet (which it doesn't
+try to decode) and the size of this payload for use by the preprocessor and
+detection engines.
+
+As the decoder steps through the packet headers, it also looks for errors or
+anomolies in the fields of these headers, which if configured in snort.conf,
+can be alerted upon and even dropped if Snort is running in inline mode. 
+For example, if the Ethernet protocol field points to IPv4, but the
+size of the packet that was captured (after the Ethernet header) is less than
+20 bytes (the minimum length for an IPv4 header), Snort will (by default)
+generate an alert and move the packet out of the decoding phase.
+While Snort doesn't alert on bad checksums, whether or not Snort is checking
+them affects how the system responds to packets that have been flagged as 
+having bad checksums.  Stream and Frag will not process packets that have
+been flagged as having bad checksums.
+
+Note:
+To enable decoding of GRE encapsulated traffic pass --enable-gre to configure.
+
+
+Configuration
+=============
+
+The following lists the options available for configuring the decoder. 
+"disable" options mean that those alerts are enabled by default and "enable"
+options mean they are disabled by default.
+Snort must be running in inline mode for the "drops" options to have any effect.
+Also, note that alerting must be enabled for the particular alert/drop option pair
+in order for the "drops" options to work.
+
+- Options:
+
+    disable_decode_alerts               - By default, decoder alerts are enabled - use this
+                                          option to disable these alerts.
+    enable_decode_drops                 - If in inline mode, drop packets that are alerted on.
+
+
+    disable_ipopt_alerts                - Disable alerts generated due to bad IP options.
+    enable_ipopt_drops                  - Drop packets that are alerted on due to bad IP options.
+
+
+    disable_tcpopt_alerts               - Disable alerts generated due to bad TCP options.
+    enable_tcpopt_drops                 - Drop packets that are alerted on due to bad TCP options.
+
+
+    disable_ttcp_alerts                 - Disable alerts generated due to detection of T/TCP.
+    enable_ttcp_drops                   - Drop packets that are alerted on due to T/TCP detection.
+
+
+    disable_tcpopt_obsolete_alerts      - Disable alerts generated due to detection of obsolete
+                                          TCP options - Skeeter, Bubba and Unassigned.
+    enable_tcpopt_obsolete_drops        - Drop packets that are alerted on due to obsolete
+                                          TCP options.
+
+
+    disable_tcpopt_experimental_alerts  - Disable alerts generated due to detection of experimental
+                                          TCP options (kinds 9,10,15,20,21,22,23,24 - see
+                                          http://www.iana.org/assignments/tcp-parameters
+                                          for what these are).
+    enable_tcpopt_experimental_drops    - Drop packets that are alerted on due to experimental
+                                          TCP options.
+
+
+    enable_decode_oversized_alerts      - Enable alerts generated due to the length field (IP, TCP, UDP)
+                                          indicating a larger packet than we captured.  Note that this
+                                          is the only decoder alert option that is disabled by default.
+    enable_decode_oversized_drops       - Drop packets that are alerted on due to the header length
+                                          field indicating a larger packet than we captured.
+
+
+    checksum_mode: all|none|noip|notcp|noudp|noicmp|ip|tcp|udp|icmp
+                                        - By default checksums are computed for IP, TCP, UDP and ICMP.
+                                          Use this option to disable checksum checking of specific
+                                          protocols.  Use a space separated list.
+
+    checksum_drop: all|none|noip|notcp|noudp|noicmp|ip|tcp|udp|icmp
+                                        - By default packets with bad checksums are not dropped if in
+                                          inline mode.  Use a space separated list.  Note that Snort
+                                          must be doing checksums for a particular protocol in order
+                                          to drop packets with bad checksums for that protocol.
+
+   
+
+Example configurations
+======================
+
+To enable oversized alerts:
+
+    config enable_decode_oversized_alerts
+
+
+To enable drops on decode events:
+
+    config enable_decode_drops
+    config enable_decode_oversized_alerts
+    config enable_decode_oversized_drops
+
+
+To disable TCP option alerts:
+
+    config disable_tcpopt_alerts
+    config disable_tcpopt_obsolete_alerts
+    config disable_tcpopt_experimental_alerts
+
+
+To disable IP and TCP checksum checking
+
+    config checksum_mode: noip notcp
+
+
+To drop all packets that have bad checksums
+
+    config checksum_drop: all
+
+
+
+Alerts
+======
+The decoder uses generator ID 116.
+
+The list of SIDs is as follows for each type of alert:
+
+
+decode_alerts
+
+SID   Description 
+---   -----------
+  1   Ethernet protocol is IPv4 but version field in IPv4 header has a value other
+      than 4
+  2   IPv4 header length field contains a value that is less than 20 bytes
+      (the minimum IPv4 header length)
+  3   IPv4 length field contains a value that is larger than the captured length of
+      the packet (starting from IPv4 header)
+ 45   The length of the captured packet (starting from TCP header) is less than
+      20 bytes (the minimum TCP header length)
+ 46   The value of the TCP offset field is less than 5 words (20 bytes)
+ 95   The length of the captured packet (starting from UDP header) is less than
+      8 bytes (the UDP header length)
+ 96   The value of the UDP length field is less than the size of a UDP header
+ 97   UDP length field contains a value that is larger than the captured length of
+      the packet (starting from UDP header)
+105   The length of the captured packet (starting from ICMP header) is less than
+      minimum header length for that ICMP type
+106   The length of the payload (starting from ICMP header) is less than minimum
+      header length for ICMP Timestamp Request and Reply types
+107   The length of the payload (starting from ICMP header) is less than minimum
+      header length for ICMP Address Mask Request and Reply types
+109   The length of the captured packet (starting from ARP header) is less than the
+      length of an ARP header
+110   The length of the captured packet (starting from EAPOL header) is less than the
+      length of an EAPOL header
+111   The length of the captured packet (starting from EAP key) is less than the
+      length of an EAP key 
+112   The length of the captured packet (starting from EAP header) is less than the
+      length of an EAP header
+120   The length of the captured packet (starting from PPPoE header) is less than the
+      length of a PPPoE header
+130   The length of the captured packet (starting from VLAN header) is less than the
+      length of a VLAN (802.1q) header
+131   The length of the captured packet (starting from VLAN header) is less than the
+      length of a VLAN (802.1q) header plus the LLC header
+132   The length of the captured packet (starting from VLAN header) is less than the
+      length of a VLAN (802.1q) header plus the LLC header plus the SNAP header
+133   The length of the captured packet (starting from 802.11 header) is less than
+      the length of a 802.11 data header plus LLC header
+140   The length of the captured packet (starting from Token Ring header) is less
+      than the length of a Token Ring header
+141   The length of the captured packet (starting from Token Ring header) is less
+      than the length of a Token Ring header plus LLC header
+142   The length of the captured packet (starting from Token Ring header) is less
+      than the length of a Token Ring header plus LLC header plus MR header plus
+      value of length field in MR header
+143   The length of the captured packet (starting from Token Ring header) is less
+      than the length of a Token Ring header plus LLC header plus MR header
+150   The source and/or destination IPv4 address are the loopback address (127.0.0.1)
+151   The source and destination IPv4 addresses are the same 
+250   The length of the captured packet (starting from the ICMP encapsulated IP header)
+      is less than the minimum length of an IPv4 header
+251   The encapsulated IPv4 header of an ICMP packet has a value other than
+      4 in version field
+252   The length of the captured packet (starting from the ICMP encapsulated IP header)
+      is less than the ICMP encapsulated IP header length
+253   The ICMP encapsulated IP payload is less than 64 bits (at least 64 bits must
+      be included - RFC 792)
+254   The ICMP encapsulated IP payload is greater than 576 bytes
+255   The ICMP encapsulated IP was fragmented, but the fragment offset is not 0
+      (an ICMP message is only returned for the first fragment)
+
+If GRE is enabled (--enable-gre was given to configure)
+160   The length of the captured packet (starting from GRE header) is less than the
+      length of a GRE header
+161   There are multiple GRE encapsulations in the packet (currently not allowed)
+162   GRE version in packet is not 0 or 1.
+163   Flags in header are set that should be unset.
+164   For PPtP, the ether type is not PPP.
+165   For Transparent Ethernet Bridging, the length of the captured packet (starting
+      from the Transparent Ethernet Bridging header) is less than the length of a
+      Transparent Ethernet Bridging header.
+
+
+ipopt_alerts
+
+SID   Message
+---   -------
+  4   A bad length was found in IPv4 options
+  5   Truncated IPv4 options
+
+
+tcpopt_alerts
+
+SID   Message
+---   -------
+ 54   A bad length was found in TCP options
+ 55   Truncated TCP options
+
+
+ttcp_alerts
+
+SID   Message
+---   -------
+ 56   T/TCP was detected
+
+
+tcpopt_obsolete_alerts
+
+SID   Message
+---   -------
+ 57   Obsolete TCP options found
+
+
+tcpopt_experimental_alerts
+
+SID   Message
+---   -------
+ 58   Experimental TCP options found
+
+
+decode_oversized_alerts
+
+SID   Message
+---   -------
+  6   The IPv4 length field contains a value that is greater than the length
+      of the captured packet (starting from the IPv4 header)
+ 47   The TCP header length field contains a value that is greater than the length
+      of the captured packet (starting from the TCP header)
+ 98   The UDP header length field contains a value that is greater than the length
+      of the captured packet (starting from the UDP header)
+

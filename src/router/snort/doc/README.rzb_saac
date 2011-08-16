@@ -1,0 +1,39 @@
+#### EXPERIMENTAL ####
+
+RZB_SaaC
+---
+Patrick Mullen
+Ron Dempster
+
+Documentation last update 2011-01-05
+
+== Overview ==
+
+The Razorback SaaC preprocessor monitors SMTP and HTTP streams and extracts
+documents that are forwarded to a Razorback dispatcher for analysis.  HTTP
+streams have a destination port of 80 and SMTP streams have a destination port
+of 25.
+
+== Configuration ==
+
+The only configuration that is accepted is rzb_conf <file name>
+By default, all alerts are disabled and the preprocessor checks traffic on port
+22.  
+
+The available configuration options are described below:
+
+* rzb_conf <filename>
+
+This option specifies the name and location of the Razorback configuration file.
+For information on Razorback functionality and configuration, please visit
+
+http://sourceforge.net/projects/razorbacktm/
+
+and
+
+http://sourceforge.net/projects/nuggetfarm/
+
+== Example Configuration ==
+
+preprocessor rzb: rzb_conf /var/tmp/rzb.conf
+

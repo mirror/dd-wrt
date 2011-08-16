@@ -1,0 +1,42 @@
+$Id$
+
+SIGNATURES 
+----
+* UDP & ICMP flow.  (Client = first person to talk?)
+* Distance from begining of the stream
+* Distance between CONTENT and to NEWLINE
+* IP Ranges
+* Port ranges
+* SRC & DST ports not required for signatures of protocols that don't have
+  ports 
+
+PLUGINS
+----
+* unified IP formats (IPs are specified in the same way for every plugin)
+* Better portscan detection
+* coffee plugin.  (Over $X high priority alarms during off hours = 
+  make big pot of coffee)
+* all plugin alerts contain the following configurations
+  - priority
+  - classtype
+  - references
+  - host ranges (IP ranges, just like rules)
+  - port ranges (port ranges, just like rules)
+
+PROTOCOLS
+----
+* email parsing (i.e. flagging on an attachment name)
+* HTTP CGI Variables (GET & POST)
+* HTTP/1.1 decodes
+
+GENERAL
+----
+* method to reload signatures without killing state engine
+* self healing (dropping lots of packets?  drop lower priority signatures)
+* regular statistic dumps
+* better access to protocol stats (I.e. 70% TCP, 20% UDP, 10% ICMP)
+* better access to port stats (I.e. 70% 80 , 20% 25, 10% 22)
+* multithreading 
+* thresholds for all alerts (signatures & plugins)
+  - X sid:313 alerts from Y hosts in Z seconds 
+  - X tcp overlap alerts from the same host in Y seconds

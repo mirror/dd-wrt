@@ -1,0 +1,110 @@
+# /etc/sysconfig/snort
+# $Id$
+
+# All of these options with the exception of -c, which tells Snort where
+# the configuration file is, may be specified in that configuration file as
+# well as the command line. Both the command line and config file options
+# are listed here for reference.
+
+
+#### General Configuration
+
+# What interface should snort listen on?  [Pick only 1 of the next 3!]
+# This is -i {interface} on the command line
+# This is the snort.conf config interface: {interface} directive
+INTERFACE=eth0
+#
+# The following two options are not directly supported on the command line
+# or in the conf file and assume the same Snort configuration for all
+# instances
+#
+# To listen on all interfaces use this:
+#INTERFACE=ALL
+#
+# To listen only on given interfaces use this:
+#INTERFACE="eth1 eth2 eth3 eth4 eth5"
+
+
+# Where is Snort's configuration file?
+# -c {/path/to/snort.conf}
+CONF=/etc/snort/snort.conf
+
+# What user and group should Snort drop to after starting? This user and
+# group should have very few privileges.
+# -u {user} -g {group}
+# config set_uid: user
+# config set_gid: group
+USER=snort
+GROUP=snort
+
+# Should Snort change the order in which the rules are applied to packets.
+# Instead of being applied in the standard Alert->Pass->Log order, this will
+# apply them in Pass->Alert->Log order.
+# -o
+# config order: {actions in order}
+# e.g. config order: log alert pass activation dynamic suspicious redalert
+PASS_FIRST=0
+
+
+#### Logging & Alerting
+
+# NOTE: NO_PACKET_LOG and BINARY_LOG, ALERTMODE, etc. are mutually
+# exclusive. Use either NO_PACKET_LOG or any/all of the other logging
+# options. But the more logging options use you, the slower Snort will run.
+
+
+# Where should Snort log?
+# -l {/path/to/logdir}
+# config logdir: {/path/to/logdir}
+LOGDIR=/var/log/snort
+
+# How should Snort alert? Valid alert modes include fast, full, none, and
+# unsock.  Fast writes alerts to the default "alert" file in a single-line,
+# syslog style alert message.  Full writes the alert to the "alert" file
+# with the full decoded header as well as the alert message.  None turns off
+# alerting. Unsock is an experimental mode that sends the alert information
+# out over a UNIX socket to another process that attaches to that socket.
+# -A {alert-mode}
+# output alert_{type}: {options}
+ALERTMODE=fast
+
+# Should Snort dump the application layer data when displaying packets in
+# verbose or packet logging mode.
+# -d
+# config dump_payload
+DUMP_APP=1
+
+# Should Snort keep binary (AKA pcap, AKA tcpdump) logs also? This is
+# recommended as it provides very useful information for investigations.
+# -b
+# output log_tcpdump: {log name}
+BINARY_LOG=1
+
+# Should Snort turn off packet logging?  The program still generates
+# alerts normally.
+# -N
+# config nolog
+NO_PACKET_LOG=0
+
+# Print out the receiving interface name in alerts.
+# -I
+# config alert_with_interface_name
+PRINT_INTERFACE=0
+
+# When dumping the stats, what log file should we look in
+SYSLOG=/var/log/messages
+
+# When dumping the stats, how long to wait to make sure that syslog can
+# flush data to disk
+SECS=5
+
+# To add a BPF filter to the command line uncomment the following variable
+# syntax corresponds to tcpdump(8)
+#BPF="not host 192.168.1.1"
+
+# To use an external BPF filter file uncomment the following variable
+# syntax corresponds to tcpdump(8)
+# -F {/path/to/bpf_file}
+# config bpf_file: /path/to/bpf_file
+#BPFFILE=/etc/snort/bpf_file
+

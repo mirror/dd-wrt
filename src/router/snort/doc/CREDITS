@@ -1,0 +1,375 @@
+$Id$
+
+Dilbagh Chahal
+    * HTTP & FTP/Telnet Multiple IP/CIDR configuration support
+    * Detection filters, Event Filters, Rate Based Filters
+    * Multiple Policy support
+
+Ryan Jordan
+    * Application preprocessor adaptive support
+    * SSH preprocessor updates
+    * Shared library rule processing performance improvements
+    * CVS repository maintenance
+
+Kevin Liu
+    * MPLS Support
+    * SSL preprocessor updates
+    * FTP/Telnet preprocessor IPv6 support
+    * DNS preprocessor IPv6 support
+
+Russ Combs
+    * Major cleanup of pedantic warnings and compiler issues
+    * FTP/Telnet preprocessor IPv6 support
+    * Overall Performance improvements
+    * Detection filters, Event Filters, Rate Based Filters
+
+Todd Wease
+    * DCE/RPC preprocessor updates and improvements
+    * DCE2 preprocessor 
+    * SMTP preprocessor updates
+    * CVS detection plugin
+    * CVS repository maintenance
+    * 64 bit compilation cleanup
+    * Snort Manual preprocessor documentation
+    * Reconfiguration without interruption of detection
+
+Adam Keeton
+    * IPv6 support
+    * SSL preprocessor
+    * Snort Manual preprocessor documentation
+
+Chris Sherwin
+    * SSH preprocessor
+    * HTTPInspect updates
+
+Steven Sturges
+    * FTP/Telnet preprocessor
+    * DNS preprocessor
+    * Dynamic library preprocessor and rule APIs
+    * Stream4 performance improvements
+    * Frag3 performance improvements
+    * Frag3 OpSys policy additions
+    * Stream API
+    * Stream5
+    * Rule and preprocessor performance profiling
+    * Rule processing performance improvements
+    * HTTPInspect performance improvements
+    * Target-Based processing
+    * CVS repository maintenance
+
+Anderw Mullican
+    * SMTP preprocessor
+    * DCE/RPC preprocessor
+    * Dynamic library preprocessor and rule APIs
+
+Marc Norton     <mnorton@idsresearch.org>
+    * Snort 2.0 detection engine
+    * Aho-Corasick pattern matchers
+    * Wu-Manber pattern matchers
+    * Pattern Matcher CPU cache performance improvements
+    * sfxhash, sflsq, ipobj libraries
+    * Thresholding/suppression
+    * Performance monitoring preprocessor
+    * Packet performance monitoring
+
+Daniel Roelker  <djr@idsresearch.org>
+    * Snort 2.0 detection engine
+    * HttpInspect detection engine
+    * ASN.1 decoder and detection plugin
+    * Multi-event queuing, prioritizing, and logging
+    * sfPortscan detection engine
+    * Snort-inline integration from snort-inline project
+    * Performance monitoring preprocessor
+    * Frag3 integration
+
+Jeremy Hewlett <jh@sourcefire.com>
+    * CVS and release manager
+    * Snort testing 
+    * Bug triage
+    * Documentation
+
+Sebastian    <scut@nb.in-berlin.de>
+    * Added TOS decoding and logging
+
+Franck Debieve    <rmkml@free.fr>
+    * Numerous bug reports and feature testing
+    * Documentation
+
+Ron Gula    <rjg@network-defense.com>
+    * Provided lots of signatures
+
+Mike Borella    <mike@borella.net>
+    * Made some libpcap code that was actually easy enough to follow along
+      in so that even idiots like myself could do something like this.  
+      Mike's a cool dude (and he listens to Slayer), check his stuff out
+      at www.borella.net
+
+Jed Pickel    <jed@pickel.net>
+    * Sent in the RAW packet decoder routine
+    * Database output plugin module
+    * XML output plugin module
+
+Chris Sylvain    <csylvain@itg.ummc.ab.umd.edu>
+    * Added HP-UX and S/Linux code, plus the "-x" command line switch.
+
+Damien Daspit    <damien@bryan.edu>
+    * Provided the WinPopup code and some other bug fixes, plus helped me
+      debug a nasty problem with the rules parser.
+
+Sebastien L.    <splice@videotron.ca>
+    * Ideas guy and RPM guru, he's been a help behind the scenes lately.
+
+CyberPsychotic     <fygrave@tigerteam.net>
+    * configure.in Sparc alignment updates
+    * daemon mode code
+    * lots of help debugging the 1.2 release on OpenBSD/Sparc
+    * new ftpd buffer overflow rule
+    * UnixSock alerting code
+    * NULL/Loopback decoder
+    * my right hand man in Snort development, constantly working on 
+      new stuff and enhancements for the system
+
+Nick Rogness and Jim Forster <nick@rapidnet.com> <jforster@rapidnet.com>
+    * lots o' rules, bug reports
+
+Scott McIntyre <scott@whoi.edu>
+    * Happy 99 virus rule
+    * wacky FBSD bugs and attendant help with said bugs
+    * also spotted the otn_tmp NULL bug in 1.3
+    * tons of debug info and help!
+
+Ron Snyder <snyder@athena.lblesd.k12.or.us>
+    * IP address negation operator code
+    * Bug hunter extrordinaire
+
+Jonathan Emery <jemery@countersign-sq.com>
+    * Ran Purify on the Snort source and tracked down some nasty buggage
+
+Aaron Smith <aaron@mutex.org>
+    * non-promiscuous mode patch
+    * logging code streamlining
+
+Dug Song & Torbjorn Wictorin <dugsong@monkey.org> <torbjorn.wictorin@its.uu.se> 
+    * Torbjorn spotted it first, but Dug sent in a kick ass bug report so 
+      they both get credit for finding the otn_tmp NULL bug in LogPkt.
+
+Max Vision <vision@whitehats.com>
+    * Ideas, debug help, lots of rules
+
+Dragos Ruiu <dr@v-wave.com>
+    * Ideas guy, keeps me honest :)
+    * Author of defrag preprocessor
+
+Colin Haxton <Colin.Haxton@arena.co.nz>
+    * Timestamp bugfix, debug help
+
+Worm5er <worm5er@hushmail.com>
+    * Master Debugger, he's always got the best bugs! :)
+
+Lance Spitzner <lance@ksni.net>
+    * Thank Lance for the session keyword!
+    * Lots of debug help, suggestions
+
+Christian Lademann <cal@zls.de>
+    * The Man!  Added the rules file variable and include code.  This man
+      should have a place in every Snort user's heart. ;)
+    * Added the ISDN for Linux support/decoders
+
+Christian Hammers <ch@genesis.westend.com>
+    * Maintains the Debian distro of Snort, sends me nice bug reports.
+
+Michael Henry <mike@dergott.com>
+    * Sent in the URL decoder that eventually became the http_decode
+      preprocessor
+
+Bob Beck <beck@bofh.ucs.ualberta.ca>
+    * Sent in a few security patches, some advice 
+
+Sebastian <krahmer@cs.uni-potsdam.de>
+    * Linux PPC testing.
+    * Great help with tracking down `loopback failure' problem.
+
+Patrick Mullen <Patrick.Mullen@GD-CS.COM>
+    * snort portscan preprocessor.
+    * great helper on the project.
+
+Herb Commodore <herb@nc.rr.com>
+    * `--with-libpcap' fixes to configure.in.
+
+John Wilson <tug@wilson.co.uk>
+    * New implementation of insensitive pattern match code.
+
+Mike Caughran <mike_caughran@hotmail.com>
+    * Great help with porting snort to AIX platform.
+
+Astaroth <astaroth@ziplip.com>
+    * Added Tru64/Alpha support.
+
+Daniel Monjar <dmonjar@orgtek.com>
+    * More Tru64/Alpha diffs.
+
+Ralf Hildebrandt <R.Hildebrandt@tu-bs.de>
+    * HP-UX debugger and ombudsman.
+
+Stuart Staniford-Chen <stuart@SiliconDefense.com>
+    * Ideas guy, he's been bouncing around ideas for better output
+      classification in Snort.
+    * Wrote snortsnarf.pl, a CGI/HTML program for organizing Snort output.
+
+Yen-Ming Chen <yenming@andrew.cmu.edu>
+    * Wrote the excellent snort-stat.pl statistical analysis script for 
+      Snort alerts.
+    * Wrote a nice PHP front-end for the Snort alerting mechanism.
+
+Erich Meier <Erich.Meier@informatik.uni-erlangen.de>
+    * Lots of help debugging debugging!
+    * ip tos plugin.
+
+Denis Ducamp <Denis.Ducamp@hsc.fr>
+    * Solaris debugging and patching.
+
+Boa <andrew.bostaph@mcmail.vanderbilt.edu>
+    * Great help with the addition of Token Ring support to Snort.
+
+Anthony Stevens <astevens@chaotic.org>
+    * Contributed the Guardian firewall response system to Snort.
+
+Andrew R. Baker <andrewb@uab.edu>
+    * Contributed the snort-sort alert analysis script.
+    * Tweaked various other Snort analysis scripts.
+    * Added variable level alert support, officially joining the ranks
+      of the bad-asses :)
+
+J Cheesman <cheesmaj@clsyst.demon.co.uk>
+    * Enhanced the PID logging code to be more robust.
+
+"Mark Hindess" <ccsmrh@lists.bath.ac.uk>
+    * Added the RPC application layer detection plugin
+
+Dave Wreski <dave@guardiandigital.com>
+    * Provided support and help diagnosing problems with the 1.6.2
+          config scripts
+    * Snort-HOWTO paper.      
+
+Bo <thumper@alumni.caltech.edu>
+    * Provided fixes for my idiotic configure.in antics in version 1.6.2
+ 
+Peter Weinberger <pjw@rentec.com>
+    * Added code to fill in full transport protocol names
+
+Dave Dittrich <dittrich@cac.washington.edu>
+    * Provided a little patch to fix daemon mode alert filenames
+
+Christopher Cramer <cec@ee.duke.edu>
+    * Author of the TCP stream preprocessor! (spp_tcp_stream)
+
+Joe Stewart <jstewart@lurhq.com>
+    * Added UNICODE and NULL byte attack detection to http_decode preproc
+
+Thomas Zajic <zlatko@gmx.at>
+    * Provided some sanity check fixes for the PID file
+
+Jason Ish <jason@codemonkey.net>
+    * Cleaned up the plugin template files
+
+Paul Herman <pherman@frenchfries.net>
+    * Contributed a patch to clean up sloppy strlen/strncpy interactions
+
+Todd Lewis <tlewis@secureworks.net>
+    * Big new addition to the project, idea/code generator extrordinaire :)
+
+Phil Wood <cpw@lanl.gov>
+    * Master debugger, got the IP/bidirectional code back on its feet after
+      the addition of IP lists
+    * Numerous other bugpointers, tweaks etc.
+    * pointed out signature logic errors
+
+Dr SuSE <drsuse@drsuse.org>
+    * Helps out with docs, answering questions on the mailing list, etc.
+
+Joe McAlerney <joey@silicondefense.com>
+    * sp_reference plugin, constant helper on the project
+
+James Hoagland <hoagland@SiliconDefense.com>
+    * SPADE statiscal anomaly detection plugin, lots of other help and 
+      advice
+
+Maciek Szarpak <M.Szarpak@elka.pw.edu.pl>
+    * Author of the react plugin
+
+Paul Ritchey <pritchey@jasi.com>
+    * Provided the -y year printout command line switch code
+
+Eugene Tsyrklevich <eugene@securityarchitects.com>
+    * Added smalloc.h and fatal.h
+    * patches for stupidity in various files
+    * strl* functions/patches. A bunch of of other minor tweaks.
+    * ideas for new debugging code.
+
+Markus De Shon <mdeshon@secureworks.net> & Jon Ramsey <jramsey@secureworks.net>
+    * tracked down tricky false positive condition in sp_pattern_match
+
+Koji Shikata <shikap@yk.rim.or.jp>
+    * spp_http preprocessor patch which allows to catch broken unicode 
+      (which still works on IIS 4.x servers).
+
+Achim Gsell <a@tac.ch>
+    * some pointers/fixes on problems in spp_defrag.c piece.
+
+Tomtom <tomtommister@gmx.de>
+    * Added PPPoE decoder
+
+Chris Green <cmg@uab.edu>
+    * documentation
+    * testing on #snort
+    * code maintenance
+    * flow-portscan
+    * flow
+
+Bill Gercken <william.c.gercken@census.gov>
+    * lots of patches and testing on his busy network
+
+HD Moore <hdm@secureaustin.com>
+    * testing, keeping me honest :)
+
+Matt Scarborough <vexversa@usa.net>
+    * another good tester/bug reporter
+
+Jeff Nathan <jeff@wwti.com>
+    * added spp_arpcheck code, watches for ARP stuff, RTFS
+    * updated man page for 1.8
+
+Brian Caswell <bmc@mitre.org>
+    * Snort Rules Nazi, keeps the rules trains running on time
+    * wrote spo_csv
+    * constant companion on #snort
+
+Glenn Mansfield Keeni <glenn@cysol.co.jp>    
+    * Added SNMP output support plugin for Snort, cool!
+
+Chris Reid <Chris.Reid@CodeCraftConsultants.com>
+    * win32 support patches.
+    * ms-sql support for spo_database
+    * create_mssql script
+    * other minor fixes/tweaks
+
+Robert Hughes <rob@robhughes.com>
+    * rules fixes
+
+Jimmy Stags 
+    * pointed out duplicate signatures
+    
+Zeno <admin@cgisecurity.com>
+    * a number of signatures included in web-attacks.rules
+
+Ryan Russell <ryan@securityfocus.com>
+    * a zillion signature corrections.  
+
+Mike Davis <mike@datanerds.com>
+    * original win32 port
+
+Ofir Arkin <ofir@sys-security.com>
+    * Helped with cleanup and correction of ICMP decoder subsystem
+
+Fabio Bastiglia Oliva <fboliva@safenetworks.com>    
+    * Rules cleanup!

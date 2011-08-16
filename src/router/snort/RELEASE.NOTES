@@ -1,0 +1,116 @@
+2011-03-29 - Snort 2.9.0.5
+
+[*] Improvements
+  * The normalization perprocessor now has options to configure packet trimming
+    and TOS clearing. Packets injected by the preprocessor will now appear in
+    Snort's packet statistics. TCP timestamps are now only normalized if a 
+    session is established without timestamp negotiation.
+    See ChangeLog or README.normalize for more details.
+
+  * Added a "config vlan_agnostic" setting that globally disables Stream's use
+    of vlan tags in session tracking.
+
+  * Fixed some issues in the packet decoder, including one where IPv6 fragments
+    were being decoded incorrectly.
+
+  * Updated the default snort.conf to enable unlimited decompression of gzipped
+    HTTP server responses.
+
+2011-02-10 - Snort 2.9.0.4
+
+[*] Improvements
+  * Added the Razorback "Snort as a Collector" (SaaC) dynamic preprocessor.
+    This is for experimental use only! Enable it by compiling with
+    --enable-rzb-saac.
+
+  * Fixed false positives in HTTP traffic, which were caused by large HTTP
+    chunks split across two packets.
+
+  * Made several updates to the Snort manual and READMEs.
+
+  * Fixed a false positive on Stream5 rule 129:15, caused by a RST following
+    a FIN.
+
+2010-12-20 - Snort 2.9.0.3
+
+[*] Improvements
+  * Fixed an issue where "uricontent" didn't behave correctly with
+    "depth", "offset", "distance", and "within" modifiers.
+
+  * Fixed overlapping flags in the Shared Object rule API.
+
+  * Improved error checking for invalid combinations of "depth", "offset",
+    "distance", and "within" modifiers in rules. Rules that mix relative
+    and non-relative options on the same content will now cause errors.
+
+  * Updated the documentation to fix some inconsistencies.
+
+2010-11-17 - Snort 2.9.0.2
+
+[*] Improvements
+  * The HTTP Inspect "server_flow_depth" option is now applied once per
+    HTTP session, instead of once per packet. This will improve performance
+    by causing less packets to be inspected.
+
+  * Fixed an issue with the handling of TCP urgent data.
+
+  * Fixed an issue with using file_data:mime within shared library rules.
+
+  * Fixed an issue with TCP reassembly of single packets
+
+2010-11-01 - Snort 2.9.0.1
+
+[*] Improvements
+  * Fixed maximum flowbits configuration parsing to specify the number
+    of bits in accordance with the Snort manual, rather than number of
+    bytes.  If you have 'config flowbits_size' in your snort.conf,
+    double check that it has the correct setting.
+
+  * Fixed a packet size issue with the IPQ and NFQ DAQs.
+
+  * Updated the version of LibPCRE bundled with the Windows installer.
+    This update fixes a bug that caused some PCRE matches to fail on Windows.
+
+
+2010-10-04 - Snort 2.9.0
+
+[*] New Additions
+  * Feature rich IPS mode including improvements to Stream for
+    inline deployments.  Additionally a common active response API is
+    used for all packet responses, including those from Stream,
+    Respond, or React.  A new response module, respond3, supports the
+    syntax of both resp & resp2, including strafing for passive
+    deployments.  When Snort is deployed inline, a new preprocessor
+    has been added to handle packet normalization to allow Snort
+    to interpret a packet the same way as the receiving host.
+
+  * Use of a Data Acquisition API (DAQ) that supports many different
+    packet access methods including libpcap, netfilterq, IPFW, and
+    afpacket.  For libpcap, version 1.0 or higher is now required.
+    The DAQ library can be updated independently from Snort and is
+    a separate module that Snort links to.
+
+  * A new rule option 'byte_extract' that allows extracted values to
+    be used in subsequent rule options for isdataat, byte_test,
+    byte_jump, and content distance/within/depth/offset.
+
+  * Two new rule options to support base64 decoding of certain pieces
+    of data and inspection of the base64 data via subsequent rule
+    options.
+
+  * Added a new pattern matcher that supports Intel's Quick Assist
+    Technology for improved performance on supported hardware
+    platforms.  Visit http://www.intel.com to find out more about
+    Intel Quick Assist.
+
+[*] Improvements
+  * Updates to HTTP Inspect to extract and log IP addresses from
+    X-Forward-For and True-Client-IP header fields when Snort generates
+    events on HTTP traffic.
+
+  * Updates to SMTP preprocessor to support MIME attachment decoding
+    across multiple packets.
+
+  * Updates to the Snort packet decoders for IPv6 for improvements to
+    anomaly detection.
+

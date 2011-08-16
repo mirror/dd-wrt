@@ -1,0 +1,215 @@
+When operating Snort in inline mode, it is helpful to normalize packets to help
+minimize the chances of evasion.
+
+To enable the normalizer, use the following when configuring Snort:
+
+    ./configure --enable-normalizer
+
+The normalize preprocessor is activated via the conf as outlined below.  There
+are also many new preprocessor and decoder rules to alert on or drop packets
+with "abnormal" encodings.
+
+Note that in the following, fields are cleared only if they are non-zero.
+Also, normalizations will only be enabled if the selected DAQ supports packet
+replacement and is operating in inline mode.
+
+If a policy is configured for inline_test or passive mode, any normalization 
+statements in the policy config are ignored.
+
+
+IP4 Normalizations
+==================
+
+IP4 normalizations are enabled with:
+
+    preprocessor normalize_ip4: [df], [rf], [tos], [trim]
+
+Base normalizations enabled with "preprocessor normalize_ip4" include:
+
+* TTL normalizaton if enabled (explained below).
+
+* NOP all options octets.
+
+Optional normalizations include:
+
+* df - don't fragment:  clear this bit on incoming packets.
+
+* rf - reserved flag:  clear this bit on incoming packets.
+
+* tos - type of service (differentiated services): clear this byte.
+
+* trim - truncate packets with excess payload to the datagram length specified in the
+  IP header + the layer 2 header (eg ethernet), but don't truncate below minimum
+  frame length.  This is automatically disabled if the DAQ can't inject packets.
+
+
+IP6 Normalizations
+==================
+
+IP6 normalizations are enabled with:
+
+    preprocessor normalize_ip6
+
+Base normalizations enabled with "preprocessor normalize_ip6" include:
+
+* Hop limit normalizaton if enabled (explained below).
+
+* NOP all options octets in hop-by-hop and destination options extension
+  headers.
+
+
+ICMP4/6 Normalizations
+======================
+
+ICMP4 and ICMP6 normalizations are enabled with:
+
+    preprocessor normalize_icmp4
+    preprocessor normalize_icmp6
+
+Base normalizations enabled with the above include:
+
+* Clear the code field in echo requests and replies.
+
+
+TCP Normalizations
+==================
+
+TCP normalizations are enabled with:
+
+    preprocessor normalize_tcp: \
+        [ips] [urp] \
+        [ecn <ecn_type>], \
+        [opts [allow <allowed_opt>+]]
+
+    <ecn_type> ::= stream | packet
+
+    <allowed_opt> ::= \
+        sack | echo | partial_order | conn_count | alt_checksum | md5 | <num>
+
+    <sack> ::= { 4, 5 }
+    <echo> ::= { 6, 7 }
+    <partial_order> ::= { 9, 10 }
+    <conn_count> ::= { 11, 12, 13 }
+    <alt_checksum> ::= { 14, 15 }
+    <md5> ::= { 19 }
+    <num> ::= (3..255) 
+
+Base normalizations enabled with "preprocessor normalize_tcp" include:
+
+* Remove data on SYN.
+
+* Clear the reserved bits in the TCP header.
+
+* Clear the urgent pointer if the urgent flag is not set.
+
+* Clear the urgent pointer and the urgent flag if there is no payload.
+
+* Set the urgent pointer to the payload length if it is greater than the
+  payload length.
+ 
+* Clear the urgent flag if the urgent pointer is not set.
+
+* Clear any option padding bytes.
+
+* Remove any data from RST packet.
+
+* Trim data to window.
+
+* Trim data to MSS.
+
+Optional normalizations include:
+
+* ips:  ensure consistency in retransmitted data (also forces reassembly policy
+  to "first").  Any segments that can't be properly reassembled will be dropped.
+
+* urp - urgent pointer:  don't adjust the urgent pointer if it is greater than
+  payload length.
+
+* ecn packet:  clear ECN flags on a per packet basis (regardless of
+  negotiation).
+
+* ecn stream:  clear ECN flags if usage wasn't negotiated.  Should also enable
+  require_3whs.
+
+* opts:  NOP all option bytes other than maximum segment size, window scaling,
+  timestamp, and any explicitly allowed with the allow keyword.  You can allow
+  options to pass by name or number.
+
+* opts:  if timestamp is present but invalid, or valid but not negotiated, NOP
+  the timestamp octets.
+
+* opts:  if timestamp was negotiated but not present, block the packet.
+
+* opts:  clear TS ECR if ACK flag is not set.
+
+* opts:  MSS and window scale options are NOP'd if SYN flag is not set.
+
+* opts:  trim payload length to MSS if longer.
+
+
+TTL Normalization
+=================
+
+TTL normalization pertains to both IP4 TTL (time-to-live) and IP6 (hop limit)
+and is only performed if both the relevant base normalization is enabled (as
+described above) and the minimum and new TTL values are configured, as follows:
+
+    config min_ttl: <min_ttl>
+    config new_ttl: <new_ttl>
+
+    <min_ttl> ::= (1..255)
+    <new_ttl> ::= (<min_ttl>+1..255)
+
+If new_ttl > min_ttl, then if a packet is received with a TTL < min_ttl, the
+TTL will be set to new_ttl.
+
+Note that this configuration item was deprecated in 2.8.6:
+
+    preprocessor stream5_tcp: min_ttl <#>
+
+By default min_ttl = 1 and new_ttl = 0 (TTL normalization is disabled).
+
+
+New Decoder and Preprocessor Rules
+==================================
+
+116,424	Eth cap len < hdr len
+
+116,426 ICMP4 Any: len < min ICMP header
+116,416	ICMP4 Echo Request: destination is a broadcast address (255.255.255.255/32)
+116,415	ICMP4 Echo Request: destination is a multicast address (224.0.0.0/4)
+116,417	ICMP4 Source Quench: to prevent DoS
+116,418	ICMP4 other: (Other = all not decoded by Snort)
+
+116,427	ICMP6 Any: len < min ICMP header
+116,432	ICMP6 Echo request: destination is a multicast address
+116,431	ICMP6 other: (Other = all not decoded by Snort)
+
+116,430	IP4 DF set and offset > 0.
+116,409	IP4 Dst addr is current network (0.0.0.0/8)
+116,412	IP4 Dst addr is unused/reserved	(240.0.0.0/4)
+116,414	IP4 Dst addr is broadcast address (255.255.255.255/32)
+116,407	IP4 offset + len > 64KB.
+116,425	IP4 Len < header len.
+116,408	IP4 Src addr is current network	(0.0.0.0/8)
+116,410	IP4 Src addr is multicast address (224.0.0.0/4)
+116,413	IP4 Src addr is broadcast address (255.255.255.255/32)
+116,411	IP4 Src addr is unused/reserved	(240.0.0.0/4)
+
+129,11	TCP: no control flags set on data for established session
+129,3	TCP: Data on closed session
+129,8	TCP: Data after RST
+116,422	TCP: FIN==1 && ACK==0
+116,422	TCP: PUSH==1 && ACK==0
+129,15	TCP: RST not in window
+116,420	TCP: SYN==1 && FIN==1	
+129,2	TCP: SYN with data
+116,421	TCP: SYN==1 && RST==1	
+116,423	TCP: SYN==0 && ACK==0 && RST==0
+129,1	TCP: SYN on established session
+116,422	TCP: URG==1 && ACK==0
+116,419	TCP: URG==1 && (dsize==0 || urp > dsize)	
+129,6	TCP: Window Too large	normalize_tcp
+129,4	TCP TS option: packet fails PAWS test
+129,14	TCP TS option: missing but negotiated in SYN
+
