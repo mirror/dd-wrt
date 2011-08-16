@@ -1,0 +1,161 @@
+Snort 2.9 includes a number of changes to better handle inline operation,
+including:
+
+* a single mechanism for all responses
+* fully encoded reset or icmp unreachable packets
+* updated flexible response rule option
+* updated react rule option
+* added block and sblock rule actions
+
+These changes are outlined below.
+
+
+ENABLING ACTIVE RESPONSE
+========================
+
+This enables active responses (snort will send TCP RST or ICMP
+unreachable/port) when dropping a session.
+
+    ./configure --enable-active-response
+
+    preprocessor stream5_global: \
+        max_active_responses <max_rsp>, \
+        min_response_seconds <min_sec> 
+
+    <max_rsp> ::= (0..25)
+    <min_sec> ::= (1..300)
+
+Active responses will be encoded based on the triggering packet.  TTL will be
+set to the value captured at session pickup.
+
+
+CONFIGURE SNIPING
+=================
+
+Configure the number of attempts to land a TCP RST within the session's current
+window (so that it is accepted by the receiving TCP).  This sequence "strafing"
+is really only useful in passive mode.  In inline mode the reset is put
+straight into the stream in lieu of the triggering packet so strafing is not
+necessary.
+
+Each attempt (sent in rapid succession) has a different sequence number.  Each
+active response will actually cause this number of TCP resets to be sent.  TCP
+data (sent for react) is multiplied similarly.  At most 1 ICMP unreachable is
+sent, iff attempts > 0.
+
+    ./configure --enable-active-response
+
+    config response: [device <dev>] attempts <att>
+
+    <dev> ::= ip | eth0 | etc.
+    <att> ::= (1..20)
+
+device ip will perform network layer injection.  It is probably a better choice
+to specify an interface and avoid kernel routing tables, etc.
+
+
+FLEXRESP CHANGES
+================
+
+Flexresp and flexresp2 are replaced with flexresp3.
+
+* Flexresp is deleted; these features are no longer avaliable:
+
+    ./configure --enable-flexresp
+    config flexresp: attempts 1
+
+* Flexresp2 is deleted; these features are no longer avaliable:
+
+    ./configure --enable-flexresp2
+
+    config flexresp2_interface: eth0
+    config flexresp2_attempts: 4
+    config flexresp2_memcap: 1000000
+    config flexresp2_rows: 1000
+
+* Flexresp3 is new: the resp rule option keyword is used to configure active
+  responses for rules that fire.
+
+    ./configure --enable-flexresp3
+
+    alert tcp any any -> any 80 (content:"a"; resp:<resp_t>; sid:1;)
+
+* resp_t includes all flexresp and flexresp2 options:
+
+    <resp_t> ::= \
+        rst_snd | rst_rcv | rst_all | \
+        reset_source | reset_dest | reset_both | icmp_net | \
+        icmp_host | icmp_port | icmp_all
+
+See README.flexresp3 for more.
+
+
+REACT CHANGES
+=============
+
+react is a rule option keyword that enables sending an HTML page on a session
+and then resetting it.  This is built with:
+
+    ./configure --enable-react
+
+The page to be sent can be read from a file:
+
+    config react: <block.html>
+
+or else the default is used:
+
+    <default_page> ::= \
+        "HTTP/1.1 403 Forbidden\r\n"
+        "Connection: close\r\n"
+        "Content-Type: text/html; charset=utf-8\r\n"
+        "\r\n"
+        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\r\n" \
+        "    \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\r\n" \
+        "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\r\n" \
+        "<head>\r\n" \
+        "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n" \
+        "<title>Access Denied</title>\r\n" \
+        "</head>\r\n" \
+        "<body>\r\n" \
+        "<h1>Access Denied</h1>\r\n" \
+        "<p>%s</p>\r\n" \
+        "</body>\r\n" \
+        "</html>\r\n";
+
+Note that the file must contain the entire response, includeing any HTTP headers.
+In fact, the response isn't strictly limited to HTTP.  You could craft a binary
+payload of arbitrary content. 
+
+When the rule is configured, the page is loaded and the %s is replaced with the
+selected message, which defaults to:
+
+    <default_msg> ::= \
+        "You are attempting to access a forbidden site.<br />" \
+        "Consult your system administrator for details.";
+
+This is an example rule:
+
+    drop tcp any any -> any $HTTP_PORTS ( \
+        content: "d"; msg:"Unauthorized Access Prohibited!"; \
+        react: <react_opts>; sid:4;)
+
+    <react_opts> ::= [msg] [, <dep_opts>]
+
+These options are deprecated:
+
+    <dep_opts> ::= [block|warn], [proxy <port#>]
+
+The original version sent the web page to one end of the session only if the
+other end of the session was port 80 or the optional proxy port.  The new
+version always sends the page to the client.  If no page should be sent, a resp
+option can be used instead.  The deprecated options are ignored.
+
+
+RULE ACTION CHANGES
+===================
+
+The block and sblock actions have been introduced as synonyms for drop and
+sdrop to help avoid confusion between packets dropped due to load (eg lack of
+available buffers for incoming packets) and packets dropped due to Snort's
+analysis.
+

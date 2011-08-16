@@ -1,0 +1,92 @@
+Decoder and Preprocessor Rule Eventing
+======================================
+
+Decoder and preprocessor rules allow one to enable and disable decoder
+and preprocessor events on a rule by rule basis.  They also allow one
+to specify the rule type or action of a decoder or preprocessor event
+on a rule by rule basis.
+
+Decoder config options will still determine whether or not to generate
+decoder events.  For example, if 'config disable_decode_alerts' is in 
+snort.conf, decoder events will not be generated regardless of whether
+or not there are corresponding rules for the event.  Also note that if
+the decoder is configured to enable drops, e.g.
+'config enable_decode_drops', these options will take precedence
+over the event type of the rule.  A packet will be dropped if either a 
+decoder config drop option is in snort.conf or the decoder or
+preprocessor rule type is 'drop'.  Of course, the drop cases only
+apply if Snort is running inline.  See 'doc/README.decode' for config
+options that control decoder events.
+
+
+Configuring
+===========
+The following options to configure will enable decoder and preprocessor
+rules:
+
+$ ./configure --enable-decoder-preprocessor-rules
+
+The decoder and preprocessor rules are located in the 'preproc_rules/'
+directory in the top level source tree, and have the names 
+'decoder.rules' and 'preprocessor.rules' respectively.  These files
+are updated as new decoder and preprocessor events are added to Snort.
+
+To enable these rules in snort.conf, define the path to where the rules
+are located and uncomment the 'include' lines in snort.conf that
+reference the rules files:
+
+var PREPROC_RULE_PATH /path/to/preproc_rules
+...
+include $PREPROC_RULE_PATH/preprocessor.rules
+include $PREPROC_RULE_PATH/decoder.rules
+
+To disable any rule, just comment it with a '#' or remove the rule
+completely from the file (commenting is recommended).
+
+To change the rule type or action of a decoder/preprocessor rule,
+just replace 'alert' with the desired rule type.  Any one of the
+following rule types can be used:
+
+alert
+log
+pass
+drop
+sdrop
+reject
+
+For example one can change:
+
+alert ( msg: "DECODE_NOT_IPV4_DGRAM"; sid: 1; gid: 116; rev: 1; \
+    metadata: rule-type decode ; classtype:protocol-command-decode;)
+
+to
+
+drop ( msg: "DECODE_NOT_IPV4_DGRAM"; sid: 1; gid: 116; rev: 1; \
+    metadata: rule-type decode ; classtype:protocol-command-decode;)
+
+to drop (as well as alert on) packets where the Ethernet protocol is IPv4
+but version field in IPv4 header has a value other than 4.
+
+See README.decode, README.gre and the various preprocessor READMEs for
+descriptions of the rules in 'decoder.rules' and 'preprocessor.rules'.
+
+
+Reverting to original behavior
+==============================
+If you have configured snort to use decoder and preprocessor rules, the 
+following config option in snort.conf will make Snort revert to the old
+behavior:
+
+config autogenerate_preprocessor_decoder_rules
+
+Note that if you want to revert to the old behavior, you also have to
+remove the decoder and preprocessor rules and any reference to them from
+snort.conf, otherwise they will be loaded.  This option applies to rules
+not specified and the default behavior is to alert.
+
+
+Suppression and Thresholding
+============================
+The use of decoder and preprocessor rules does not change suppression
+and thresholding behavior.
+

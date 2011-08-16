@@ -1,0 +1,199 @@
+#!/bin/sh
+# $Id$
+#
+# snortd         Start/Stop the snort IDS daemon.
+#
+# chkconfig: 2345 40 60
+# description:  snort is a lightweight network intrusion detection tool that \
+#                currently detects more than 1100 host and network \
+#                vulnerabilities, portscans, backdoors, and more.
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source the local configuration file
+. /etc/sysconfig/snort
+
+# Convert the /etc/sysconfig/snort settings to something snort can
+# use on the startup line.
+if [ "$ALERTMODE"X = "X" ]; then
+   ALERTMODE=""
+else
+   ALERTMODE="-A $ALERTMODE"
+fi
+
+if [ "$USER"X = "X" ]; then
+   USER="snort"
+fi
+
+if [ "$GROUP"X = "X" ]; then
+   GROUP="snort"
+fi
+
+if [ "$BINARY_LOG"X = "1X" ]; then
+   BINARY_LOG="-b"
+else
+   BINARY_LOG=""
+fi
+
+if [ "$CONF"X = "X" ]; then
+   CONF="-c /etc/snort/snort.conf"
+else
+   CONF="-c $CONF"
+fi
+
+if [ "$INTERFACE"X = "X" ]; then
+   INTERFACE="-i eth0"
+else 
+   INTERFACE="-i $INTERFACE"
+fi
+
+if [ "$DUMP_APP"X = "1X" ]; then
+   DUMP_APP="-d"
+else
+   DUMP_APP=""
+fi 
+
+if [ "$NO_PACKET_LOG"X = "1X" ]; then
+   NO_PACKET_LOG="-N"
+else
+   NO_PACKET_LOG=""
+fi        
+
+if [ "$PRINT_INTERFACE"X = "1X" ]; then
+   PRINT_INTERFACE="-I"
+else
+   PRINT_INTERFACE=""
+fi
+
+if [ "$PASS_FIRST"X = "1X" ]; then
+   PASS_FIRST="-o"
+else
+   PASS_FIRST=""
+fi
+
+if [ "$LOGDIR"X = "X" ]; then
+   LOGDIR=/var/log/snort
+fi
+
+# These are used by the 'stats' option
+if [ "$SYSLOG"X = "X" ]; then
+   SYSLOG=/var/log/messages
+fi
+
+if [ "$SECS"X = "X" ]; then
+   SECS=5
+fi
+
+if [ ! "$BPFFILE"X = "X" ]; then
+   BPFFILE="-F $BPFFILE"
+fi
+
+######################################
+# Now to the real heart of the matter:
+
+# See how we were called.
+case "$1" in
+  start)
+        echo -n "Starting snort: "
+        cd $LOGDIR
+        if [ "$INTERFACE" = "-i ALL" ]; then
+           for i in `cat /proc/net/dev|grep eth|awk -F ":" '{ print $1; }'`
+           do
+                mkdir -p "$LOGDIR/$i"
+                chown -R $USER:$GROUP $LOGDIR
+                daemon /usr/sbin/snort $ALERTMODE $BINARY_LOG $NO_PACKET_LOG $DUMP_APP -D $PRINT_INTERFACE -i $i -u $USER -g $GROUP $CONF -l $LOGDIR/$i $PASS_FIRST $BPFFILE $BPF
+           done
+        else
+           # check if more than one interface is given
+           if [ `echo $INTERFACE|wc -w` -gt 2 ]; then
+              for i in `echo $INTERFACE | sed s/"-i "//`
+                do
+                  mkdir -p "$LOGDIR/$i"
+                  chown -R $USER:$GROUP $LOGDIR
+                  daemon /usr/sbin/snort $ALERTMODE $BINARY_LOG $NO_PACKET_LOG $DUMP_APP -D $PRINT_INTERFACE -i $i -u $USER -g $GROUP $CONF -l $LOGDIR/$i $PASS_FIRST $BPFFILE $BPF
+             done
+           else
+              # Run with a single interface (default)
+              daemon /usr/sbin/snort $ALERTMODE $BINARY_LOG $NO_PACKET_LOG $DUMP_APP -D $PRINT_INTERFACE $INTERFACE -u $USER -g $GROUP $CONF -l $LOGDIR $PASS_FIRST $BPFFILE $BPF
+           fi
+        fi
+        touch /var/lock/subsys/snort
+        echo
+        ;;
+  stop)
+        echo -n "Stopping snort: "
+        killproc snort
+        rm -f /var/lock/subsys/snort
+        echo 
+        ;;
+  reload)
+        echo "Sorry, not implemented yet"
+        ;;
+  restart)
+        $0 stop
+        $0 start
+        ;;
+  condrestart)
+        [ -e /var/lock/subsys/snort ] && $0 restart
+        ;;
+  status)
+        status snort
+        ;;
+  stats)
+        TC=125                          # Trailing context to grep
+        SNORTNAME='snort'               # Process name to look for
+
+        if [ ! -x "/sbin/pidof" ]; then
+           echo "/sbin/pidof not present, sorry, I cannot go on like this!"
+           exit 1
+        fi
+
+        #Grab Snort's PID
+        PID=`pidof -o $$ -o $PPID -o %PPID -x ${SNORTNAME}`
+
+        if [ ! -n "$PID" ]; then        # if we got no PID then:
+           echo "No PID found: ${SNORTNAME} must not running."
+           exit 2
+        fi
+
+        echo ""
+        echo "*******"
+        echo "WARNING:  This feature is EXPERIMENTAL - please report errors!"
+        echo "*******"
+        echo ""
+        echo "You can also run: $0 stats [long | opt]"
+        echo ""
+        echo "Dumping ${SNORTNAME}'s ($PID) statistics"
+        echo "please wait..."
+
+        # Get the date and tell Snort to dump stats as close together in
+        # time as possible--not 100%, but it seems to work.
+        startdate=`date '+%b %e %H:%M:%S'`
+
+        # This causes the stats to be dumped to syslog
+        kill -USR1 $PID
+
+        # Sleep for $SECS secs to give syslog a chance to catch up
+        # May need to be adjusted for slow/busy systems
+        sleep $SECS
+
+        if [ "$2" = "long" ]; then              # Long format
+            egrep -B 3 -A $TC "^$startdate .* snort.*: ={79}" $SYSLOG | \
+                grep snort.*:
+        elif [ "$2" = "opt" ]; then             # OPTimize format
+           # Just show stuff useful for optimizing Snort
+            egrep -B 3 -A $TC "^$startdate .* snort.*: ={79}" $SYSLOG | \
+                egrep "snort.*: Snort analyzed |snort.*: dropping|emory .aults:"
+        else                                    # Default format
+            egrep -B 3 -A $TC "^$startdate .* snort.*: ={79}" $SYSLOG | \
+                grep snort.*: | cut -d: -f4-
+        fi
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|reload|restart|condrestart|status|stats (long|opt)}"
+        exit 2
+esac
+
+exit 0

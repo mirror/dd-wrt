@@ -1,0 +1,183 @@
+SMTP
+====
+Andrew Mullican <amullican@sourcefire.com>
+Thanks to Dan Roelker <droelker@sourcefire.com>,
+Marc Norton <mnorton@sourcefire.com>, and Steve Sturges
+<ssturges@sourcefire.com> for their help with the design.
+
+-- Overview --
+SMTP is an SMTP decoder for user applications.  Given a data buffer,
+SMTP will decode the buffer and find SMTP commands and responses.
+It will also mark the command, data header data body sections, as well
+as TLS data.
+
+SMTP handles stateless and stateful processing.  It saves state
+between individual packets.  However maintaining correct state is
+dependent on the reassembly of the client side of the stream (ie, a
+loss of coherent stream data results in a loss of state).
+
+-- Configuration --
+SMTP has the usual configuration items, such as port and inspection_type.
+Also, SMTP command lines can be normalized to remove extraneous spaces.
+TLS-encrypted traffic can be ignored, which improves performance.  In addition,
+regular mail data can be ignored for an additional performance boost.  Since
+so few (none in the current snort ruleset) exploits are against mail data,
+this is relatively safe to do and can improve the performance of data
+inspection.
+
+The configuration options are described below:
+
+* ports { port [port] ... } *
+This specifies on what ports to check for SMTP data.  Typically, this will
+include 25 and possibly 465, for encrypted SMTP.
+Default ports if none are specified are 25, 587 (Message submission - see 
+RFC 2476) and 691 (X-LINK2STATE).  If alerting on the X-LINK2STATE vulnerability
+is disabled, port 691 will be removed from the default ports.
+DEFAULT { 25 587 691 }
+
+* inspection_type stateful|stateless
+Indicate whether to operate in stateful or stateless mode.
+
+* normalize all|none|cmds *
+This turns on normalization.  Normalization checks for more than one space
+character after a command.  Space characters are defined as space (ASCII 0x20)
+or tab (ASCII 0x09).
+all checks all commands
+none turns off normalization for all commands.
+cmds just checks commands listed with the "normalize_cmds" parameter.
+
+* ignore_data *
+Ignore data section of mail (except for mail headers) when processing rules.
+
+* ignore_tls_data *
+Ignore TLS-encrypted data when processing rules.
+
+* max_command_line_len <int> *
+Alert if an SMTP command line is longer than this value.  Absence of this
+option or a "0" means never alert on command line length.
+RFC 2821 recommends 512 as a maximum command line length.
+
+* max_header_line_len <int> *
+Alert if an SMTP DATA header line is longer than this value.  Absence of this
+option or a "0" means never alert on data header line length.
+RFC 2821 recommends 1024 as a maximum data header line length.
+
+* max_response_line_len <int> *
+Alert if an SMTP response line is longer than this value.  Absence of this
+option or a "0" means never alert on response line length.
+RFC 2821 recommends 512 as a maximum response line length.
+
+* alt_max_command_line_len <int> { <cmd> [<cmd>] }
+Overrides max_command_line_len for specific commands
+
+* no_alerts *
+Turn off all alerts for this preprocessor.
+
+* invalid_cmds { <Space-delimited list of commands> } *
+Alert if this command is sent from client side.
+DEFAULT empty list
+
+* valid_cmds { <Space-delimited list of commands> } *
+List of valid commands.  We do not alert on commands in this list.
+DEFAULT empty list, but preprocessor has this list hard-coded:
+{ ATRN AUTH BDAT DATA DEBUG EHLO EMAL ESAM ESND ESOM ETRN EVFY EXPN }
+{ HELO HELP IDENT MAIL NOOP QUIT RCPT RSET SAML SOML SEND ONEX QUEU }
+{ STARTTLS TICK TIME TURN TURNME VERB VRFY X-EXPS X-LINK2STATE }
+{ XADR XAUTH XCIR XEXCH50 XGEN XLICENSE XQUE XSTA XTRN XUSR  }
+
+* alert_unknown_cmds *
+Alert if we don't recognize command.
+DEFAULT off
+
+* normalize_cmds { <Space-delimited list of commands> } *
+Normalize this list of commands
+DEFAULT { RCPT VRFY EXPN }
+
+* xlink2state { enable/disable [drop] }
+See CVE-2005-0560 for a description of the vulnerability.
+Enable/disable xlink2state alert
+Drop if alerted
+DEFAULT { enable }
+
+* print_cmds *
+List all commands understood by the preprocessor.  This not normally
+printed out with the configuration because it prints so much data.
+
+* disabled *
+Disables the SMTP preprocessor in a policy. This is useful when specifying
+the max_mime_depth and max_mime_mem in default policy without turning on 
+the SMTP preprocessor.
+
+* enable_mime_decoding *
+Enables Base64 decoding of Mime attachments/data. Multiple base64 encoded MIME 
+attachments/data in one packet are pipelined. When stateful inspection is turned
+on the base64 encoded MIME attachments/data across multiple packets are decoded too.
+The decoding of base64 encoded attachments/data ends when either the max_mime_depth
+or maximum MIME sessions (calculated using max_mime_depth and max_mime_mem) is 
+reached or when the encoded data ends. The decoded data is available for detection
+using the rule option file_data:mime. See file_data rule option for more details.
+
+* max_mime_depth <int> *
+Specifies the maximum number of base64 encoded data to decode per SMTP session.
+The option take values ranging from 5 to 20480 bytes. The default value for this
+in snort in 1460 bytes.
+
+* max_mime_mem <int> *
+This option determines (in bytes) the maximum amount of memory the SMTP preprocessor
+will use for decoding base64 encode MIME attachments/data. This value can be set from 
+3276 bytes to 100MB. This option along with max_mime_depth determines the base64 encoded
+MIME/SMTP sessions that will be decoded at any given instant. The default value for 
+this option is 838860.
+
+Note: It is suggested to set this value such that the max mime session calculated as
+follows is atleast 1.
+
+max mime session = max_mime_mem /(max_mime_depth + max decoded bytes)
+
+max decoded bytes = (max_mime_depth/4)*3
+
+Also note that these values for max_mime_mem and max_mime_depth need to be same across
+all policy. Hence user needs to define it in the default policy with the new keyword
+disabled (used to disable SMTP preprocessor in a policy)
+
+
+Example:
+preprocessor SMTP: \
+  ports { 25 } \
+  inspection_type stateful \
+  normalize cmds \
+  normalize_cmds { EXPN VRFY RCPT } \
+  ignore_data \
+  ignore_tls_data \
+  max_command_line_len  512 \
+  max_header_line_len   1024 \
+  max_response_line_len 512 \
+  no_alerts \
+  alt_max_command_line_len 300 { RCPT } \
+  invalid_cmds { } \
+  valid_cmds { } \
+  xlink2state { disable } \
+  print_cmds
+
+preprocessor SMTP: \
+  max_mime_depth 100 \
+  max_mime_mem 1000 \
+  disabled
+
+Default:
+preprocessor SMTP: \
+  ports { 25 } \
+  inspection_type stateful \
+  normalize cmds \
+  normalize_cmds { EXPN VRFY RCPT } \
+  alt_max_command_line_len 260 { MAIL } \
+  alt_max_command_line_len 300 { RCPT } \
+  alt_max_command_line_len 500 { HELP HELO ETRN } \
+  alt_max_command_line_len 255 { EXPN VRFY }
+
+Notes:
+"RCPT TO:" and "MAIL FROM:" are SMTP commands.  For the preprocessor
+configuration, they are referred to as RCPT and MAIL, respectively.
+Within the code, the preprocessor actually maps RCPT and MAIL to the
+correct command name.
+

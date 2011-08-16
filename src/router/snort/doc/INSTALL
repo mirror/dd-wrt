@@ -1,0 +1,520 @@
+The "generic" notes for putting this thing together are below.  Here's the
+short version.
+
+1.) If you are upgrading from a prior version of Snort, it is generally a good
+    idea to start with `sudo make uninstall` in your old source tree to remove
+    any dynamic modules that could cause you grief later.
+
+2.) *** Make sure you have libdnet, libpcap, libpcre installed!!! ***
+    Also make sure that dnet-config, pcre-config, and daq-modules-config are in
+    your PATH (eg you should be able to `which` these).
+
+3.) ./configure
+
+4.) make
+
+5.) sudo make install
+
+6.) Create a sample rules file (if you want to use rules, check out the 
+    included snort.conf file)
+
+7.) snort -?
+
+8.) If you've used previous versions of Snort, you may need to rewrite your
+    rules to make them compliant to the rules format.  See 
+    snort_manual.pdf or http://www.snort.org for more information. 
+
+9.) If you used previous versions of Snort and the new Snort dies upon startup,
+    try this and then restart:
+
+    sudo make uninstall
+    sudo make install
+
+10.) Have fun!
+
+Any questions?  Sign up to the snort-users mailing list at http://www.snort.org!
+
+Snort Configure-time switches
+=============================
+
+`--enable-debug'
+     Enable debugging options (bugreports and developers only).
+     
+`--enable-pthread'
+     Enable pthread support (causes snort to be linked with libpthread).
+
+`--enable-prelude'
+     Enable Prelude Hydrid IDS support.
+
+`--enable-rulestate'
+     Enable rule state configuration feature that separates the rule
+     state (enabled/disabled) from the action (alert, drop, log, etc)
+     and definition.
+
+`--enable-dynamicplugin'
+     Enable dynamically loadable preprocessors, detection engine
+     and rules libraries.
+
+`--enable-timestats'
+     Enable real-time performance statistics.
+
+`--enable-perfprofiling'
+     Enable performance profiling of individual rules and preprocessors.
+
+`--enable-linux-smp-stats'
+     Enable CPU performance statistics through proc.
+
+`--enable-react'
+     Enable interception and termination of offending HTTP accesses.
+
+`--enable-flexresp3'
+     Enable the 'Flexible Response, version 3' code, that allows you to
+     reset hostile sessions.  See README.active for details.
+
+`--enable-aruba'
+     Enable the Aruba output plugin capability that allows you to
+     send information to an Aruba Networks Mobility Controller.  See
+     README.ARUBA for details.
+
+`--enable-gre'
+     Enable GRE decoder. Allows Snort to decode GRE encapsulated traffic.
+     Only supports GRE over IP.  Only one layer of encapsulation will be
+     decoded - packets with multiple GRE headers will be alerted and
+     discarded/blocked.
+     
+`--enable-sourcefire'
+     Enable Sourcefire specific build options, encompasing --enable-perfprofiling,
+     --enable-decoder-preprocessor-rules, --enable-ppm.
+     
+`--with-snmp'
+     Enable SNMP alerting code.
+
+` --with-dnet-includes=DIR'
+     Specify libdnet include directory.
+
+` --with-dnet-libraries=DIR'
+     Specify libdnet library directory.
+
+`--with-mysql=DIR'
+    Support for mysql, turn this on if you want to use ACID with MySQL.
+    NOTE: Specifying a directory will be deprecated in the future.
+    
+`--with-mysql-libraries=DIR'
+    Specify location for mysql client library.
+    
+`--with-mysql-includes=DIR'
+    Specify location for mysql header files.
+    
+`--with-odbc=DIR'
+    Support for ODBC databases, turn this on if you want to use ACID with a
+    non-listed DB.
+    
+`--with-postgresql=DIR'
+    Support for Postgresql databases, turn this on if you want to use ACID with
+    PostgreSQL.
+    
+`--with-oracle=DIR'
+    Support for Oracle databases, turn this on if you want to use ACID with 
+    Oracle.
+    
+`--with-openssl=DIR'
+    Support for openssl (used by the XML output plugin).
+
+`--with-libpq-includes=DIR'
+     Set the include directories for Postgres SQL database support to DIR.
+
+`--with-libpq-libraries=DIR'
+     Set the library directories for Postgres SQL database support to DIR.  
+     Setting both of these values enables the Postgres output plugin module.
+
+`--with-libpcap-includes=DIR'
+     If the configuration script can't find the libpcap include files on its 
+     own, the path can be set manually with this switch.
+
+`--with-libpcap-libraries=DIR'
+     If the configuration script can't find the libpcap library files on its 
+     own, the path can be set manually with this switch.
+
+`--with-libxml2-includes=DIR'  
+    Libxml2 include directory.
+
+`--with-libxml2-libraries=DIR'  
+    Libxml2 library directory.
+    
+`--with-libntp-libraries=DIR' 
+    Libntp library directory.
+    
+`--with-libidmef-includes=DIR'  
+    Libidmef include directory.
+    
+`--with-libidmef-libraries=DIR'  
+    Libidmef library directory.
+
+Basic Installation
+==================
+
+These are generic installation instructions.
+
+The `configure' shell script attempts to guess correct values for various
+system-dependent variables used during compilation.  It uses those values to
+create a `Makefile' in each directory of the package.  It may also create one
+or more `.h' files containing system-dependent definitions.  Finally, it
+creates a shell script `config.status' that you can run in the future to
+recreate the current configuration, a file `config.cache' that saves the
+results of its tests to speed up reconfiguring, and a file `config.log'
+containing compiler output (useful mainly for debugging `configure').
+
+If you need to do unusual things to compile the package, please try to figure
+out how `configure' could check whether to do them, and mail diffs or
+instructions to the address given in the `README' so they can be considered for
+the next release.  If at some point `config.cache' contains results you don't
+want to keep, you may remove or edit it.
+
+The file `configure.in' is used to create `configure' by a program called
+`autoconf'.  You only need `configure.in' if you want to change it or
+regenerate `configure' using a newer version of `autoconf'.
+
+The simplest way to compile this package is:
+
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system.  If you're
+     using `csh' on an old version of System V, you might need to type
+     `sh ./configure' instead to prevent `csh' from trying to execute
+     `configure' itself.
+
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
+
+  2. Type `make' to compile the package.
+
+  3. Optionally, type `make check' to run any self-tests that come with
+     the package.
+
+  4. Type `make install' to install the programs and any data files and
+     documentation.
+
+  5. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
+
+Compilers and Options
+=====================
+
+Some systems require unusual options for compilation or linking that the
+`configure' script does not know about.  You can give `configure' initial
+values for variables by setting them in the environment.  Using a
+Bourne-compatible shell, you can do that on the command line like this: CC=c89
+CFLAGS=-O2 LIBS=-lposix ./configure
+
+Or on systems that have the `env' program, you can do it like this:
+     env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
+
+Compiling For Multiple Architectures
+====================================
+
+You can compile the package for more than one kind of computer at the same
+time, by placing the object files for each architecture in their own directory.
+To do this, you must use a version of `make' that supports the `VPATH'
+variable, such as GNU `make'.  `cd' to the directory where you want the object
+files and executables to go and run the `configure' script.  `configure'
+automatically checks for the source code in the directory that `configure' is
+in and in `..'.
+
+If you have to use a `make' that does not supports the `VPATH' variable, you
+have to compile the package for one architecture at a time in the source code
+directory.  After you have installed the package for one architecture, use
+`make distclean' before reconfiguring for another architecture.
+
+Installation Names
+==================
+
+By default, `make install' will install the package's files in
+`/usr/local/bin', `/usr/local/man', etc.  You can specify an installation
+prefix other than `/usr/local' by giving `configure' the option
+`--prefix=PATH'.
+
+You can specify separate installation prefixes for architecture-specific files
+and architecture-independent files.  If you give `configure' the option
+`--exec-prefix=PATH', the package will use PATH as the prefix for installing
+programs and libraries.  Documentation and other data files will still use the
+regular prefix.
+
+In addition, if you use an unusual directory layout you can give options like
+`--bindir=PATH' to specify different values for particular kinds of files.  Run
+`configure --help' for a list of the directories you can set and what kinds of
+files go in them.
+
+If the package supports it, you can cause programs to be installed with an
+extra prefix or suffix on their names by giving `configure' the option
+`--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+
+Optional Features
+=================
+
+Some packages pay attention to `--enable-FEATURE' options to `configure', where
+FEATURE indicates an optional part of the package.  They may also pay attention
+to `--with-PACKAGE' options, where PACKAGE is something like `gnu-as' or `x'
+(for the X Window System).  The `README' should mention any `--enable-' and
+`--with-' options that the package recognizes.
+
+For packages that use the X Window System, `configure' can usually find the X
+include and library files automatically, but if it doesn't, you can use the
+`configure' options `--x-includes=DIR' and `--x-libraries=DIR' to specify their
+locations.
+
+The following configuration switches are available for Snort:
+
+Specifying the System Type
+==========================
+
+There may be some features `configure' can not figure out automatically, but
+needs to determine by the type of host the package will run on.  Usually
+`configure' can figure that out, but if it prints a message saying it can not
+guess the host type, give it the `--host=TYPE' option.  TYPE can either be a
+short name for the system type, such as `sun4', or a canonical name with three
+fields: CPU-COMPANY-SYSTEM
+
+See the file `config.sub' for the possible values of each field.  If
+`config.sub' isn't included in this package, then this package doesn't need to
+know the host type.
+
+If you are building compiler tools for cross-compiling, you can also use the
+`--target=TYPE' option to select the type of system they will produce code for
+and the `--build=TYPE' option to select the type of system on which you are
+compiling the package.
+
+Sharing Defaults
+================
+
+If you want to set default values for `configure' scripts to share, you can
+create a site shell script called `config.site' that gives default values for
+variables like `CC', `cache_file', and `prefix'.  `configure' looks for
+`PREFIX/share/config.site' if it exists, then `PREFIX/etc/config.site' if it
+exists.  Or, you can set the `CONFIG_SITE' environment variable to the location
+of the site script.  A warning: not all `configure' scripts look for a site
+script.
+
+Operation Controls
+==================
+
+   `configure' recognizes the following options to control how it operates.
+
+`--cache-file=FILE'
+     Use and save the results of the tests in FILE instead of
+     `./config.cache'.  Set FILE to `/dev/null' to disable caching, for
+     debugging `configure'.
+
+`--help'
+     Print a summary of the options to `configure', and exit.
+
+`--quiet'
+`--silent'
+`-q'
+     Do not print messages saying which checks are being made.  To
+     suppress all normal output, redirect it to `/dev/null' (any error
+     messages will still be shown).
+
+`--srcdir=DIR'
+     Look for the package's source code in directory DIR.  Usually
+     `configure' can determine that directory automatically.
+
+`--version'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`configure' also accepts some other, not widely useful, options.
+
+
+Platform Specific Notes
+=======================
+
+* 64bit platforms:
+------------------
+On some 64bit Linux systems (e.g. with Fedora distributions), when configuring
+snort with MySQL output support, the necessary library may not be found
+automatically by the configure script, giving the following error when
+'configure' is run:
+
+**********************************************
+  ERROR: unable to find mysqlclient library (libmysqlclient.*)
+  checked in the following places
+        /usr
+        /usr/lib
+        /usr/mysql
+        /usr/mysql/lib
+        /usr/local
+        /usr/local/lib
+        /usr/local/mysql
+        /usr/local/mysql/lib
+**********************************************
+
+In this case, libmysqlclient.* may actually be found in /usr/lib64/mysql, and
+the path will need to be explicitly specified in this manner: configure
+--with-mysql-libraries=/usr/lib64/mysql
+
+Note, you may also specify alternate locations for the mysql header files using
+--with-mysql-includes.  Specifying a directory as part of the --with-mysql
+option to configure will be deprecated in the future.
+
+Problems may also be encountered if both the 32bit and 64bit libraries are
+installed on the system, and configuring snort with MySQL support may result in
+a different error:
+
+checking for mysql... yes
+checking for compress in -lz... yes
+checking for dlsym in -ldl... no
+checking for dlsym in -lc... no
+
+   ERROR!  programmatic interface to dynamic link loader
+   not found.  Cannot use dynamic plugin libraries.
+
+Reading through config.log, you may see something like this (the numbers are
+the line number and may differ):
+
+configure:24280: checking for dlsym in -ldl
+configure:24310: gcc -o conftest -g -O2 -Wall  -DDYNAMIC_PLUGIN   -I/usr/include/mysql -DENABLE_MYSQL  -lpcre -L/usr/lib/mysql conftest.c -ldl  -lmysqlclient -lz -lpcre -lpcap -lm -lnsl  >&5
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
+/usr/bin/ld: cannot find -lmysqlclient
+collect2: ld returned 1 exit status
+configure:24316: $? = 1 
+
+This likely indicates a compatibility issue between a 32bit library from mysql
+(found in its normal location), and a 64bit library for libdl (dynamic loader).
+Use the --with-mysql-libraries option to specify the location of the 64bit
+mysql library (e.g. /usr/lib64/mysql).
+
+
+* Linux:
+-------- With kernels 2.2.x and higher you may get `snort [pid] uses obsolete
+(PF_INET, SOCK_PACKET)' warnings. This is because you use some older
+implementation of libpcap library and you need an upgrade. The recent version
+of libpcap could be found at www.tcpdump.org page.  On linux with kernels 2.2.x
+and higher you may also get feature to monitor several interfaces down to
+network level (session + TCP + IP) if you link your snort with the latest
+version of libpcap which incorporates Sebastian Krahmer's patch for interface
+'any'.  (Consult http://www.tcpdump.org for details).
+
+
+* IRIX
+------
+[ noticed by Scott A. McIntyre <scott@whoi.edu> ]
+There's problem with GCC on IRIX platform which causes certain misbehaviour
+of snort.
+
+From the SGI web site:
+
+Gcc does not correctly pass/return structures which are smaller than 16 bytes
+and which are not 8 bytes. The problem is very involved and difficult to fix.
+It affects a number of other targets also, but irix6 is affected the most,
+because it is a 64 bit target, and 4 byte structures are common.  The exact
+problem is that structures are being padded at the wrong end, e.g.  a 4 byte
+structure is loaded into the lower 4 bytes of the register when it should be
+loaded into the upper 4 bytes of the register. 
+
+Gcc is consistent with itself, but not consistent with the SGI C compiler [and
+the SGI supplied runtime libraries], so the only failures that can happen are
+when there are library functions that take/return such structures.  There are
+very few such library functions. I can only recall seeing a few of them:
+inet_ntoa, inet_aton, inet_lnaof, inet_netof, and semctl. 
+
+A possible workaround: if you have a program that calls inet_ntoa and friends
+or semctl, and your kernel supports 64-bit binaries (i.e. uname -a prints
+IRIX64 rather than just IRIX), then you may compile with gcc -mabi=64 to
+workaround this problem. 
+
+More information is available at:
+http://freeware.sgi.com/2000Feb/Installable/gcc-2.8.1-sgipl2.html
+
+
+* MAC OSX
+---------
+On Darwin (maybe others), the configure script shipped as part of the source
+distribution may need to be recreated.  To do this, run the following commands:
+
+glibtoolize --force
+aclocal -I m4
+autoheader
+automake --add-missing --copy
+autoconf
+
+Snort needs to be linked using the two level namespace.  To do this, set the
+LD_TWOLEVEL_NAMESPACE environment variable to something prior to running
+configure. An example:
+
+$ export LD_TWOLEVEL_NAMESPACE=1
+$ ./configure
+$ make
+
+
+* MAC OSX TIGER & LEOPARD
+-------------------------
+For users of MAC OSX 10.5 (Leopard), the following environment variables must
+be set before running configure & make. 
+
+For users of MAC OSX 10.4 (Tiger), this also applies if the compiler has been
+updated, otherwise, the instructions above may be used.
+
+Reference information for MAC OSX can be found at these two links.
+
+http://developer.apple.com/releasenotes/Darwin/SymbolVariantsRelNotes
+http://lists.apple.com/archives/xcode-users/2007/Jun/msg00163.html
+
+$ export LD_TWOLEVEL_NAMESPACE=1
+$ export MACOSX_DEPLOYMENT_TARGET=10.5 
+$ ./configure
+$ make
+
+
+* Open BSD / Free BSD / MAC OSX
+-------------------------------
+For Open BSD and some versions of Free BSD, use the --disable-static-daq
+option to Snort's configure script.  This is a work-around to an issue with
+building shared libraries that link against a static library.  Without this
+option to configure, libsf_engine.so and the dynamic preprocessors may not
+be built correctly.
+
+On certain BSD-based platforms, the make install may not symlink the version
+specific shared libraries to the non-versioned shared library.  This could
+cause a failure to load when using dynamic libraries.
+
+Work arounds:
+
+1) Create the symlinks by hand after make install.  The shared libraries can
+be located under /usr/local/lib/snort_dynamicengine and
+/usr/local/lib/snort_dynamicpreprocessor.  If necessary, symlink the .so.0 or
+.0.so files to a corresponding .so.
+
+2) Use the --dynamic-preprocessor-lib (rather than
+--dynamic-preprocessor-lib-dir) to load the version specific shared library.
+
+3) Use the config directive dynamicpreprocessor file (rather than
+dynamicpreprocessor directory) to load the version specific shared library.
+
+Note that on FreeBSD and OpenBSD, divert sockets don't work with bridges. Please 
+refer to the DAQ distro README for work arounds and more details.
+
+* FreeBSD 6.x
+-------------
+If you run the auto tools (instead of using the delivered configure script),
+you may need to include -I /usr/local/share/aclocal (in addition to -I m4) as
+arguments to aclocal.  This is required to set up the correct info for using
+LIBTOOL with aclocal version 1.9 that ships with FreeBSD.
+
+In this case, the following recommended commands should be used to configure
+snort prior to using make:
+
+libtoolize --automake --copy
+aclocal -I m4 -I /usr/local/share/aclocal
+autoheader
+automake --add-missing --copy
+autoconf
+
+Then run configure with any desired options (--enable-dynamicplugin,
+--enable-inline, etc).
+

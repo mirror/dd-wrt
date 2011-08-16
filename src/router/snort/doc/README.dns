@@ -1,0 +1,64 @@
+DNS
+---
+Steven Sturges <ssturges@sourcefire.com>
+
+Documentation last update 2006-08-25
+
+== Overview ==
+
+The DNS preprocessor decodes DNS Responses and can detect the
+following exploits: DNS Client RData Overflow, Obsolete Record
+Types, and Experimental Record Types.
+
+DNS looks are DNS Response traffic over UDP and TCP and it requires
+Stream preprocessor to be enabled for TCP decoding.
+
+== Configuration ==
+
+By default, all alerts are disabled and the preprocessor checks traffic
+on port 53.  
+
+The available configuration options are described below:
+
+* ports { port[, port] .. }*
+
+This option specifies the source ports that the DNS preprocessor should
+inspect traffic.
+
+* enable_obsolete_types *
+
+Alert on Obsolete (per RFC 1035) Record Types
+
+* enable_experimental_types *
+
+Alert on Experimental (per RFC 1035) Record Types
+
+* enable_rdata_overflow *
+
+Check for DNS Client RData Overflow
+
+== Example/Default Configuration ==
+
+Looks for traffic on DNS server port 53.  Check for the DNS Client RData
+overflow vulnerability.  Do not alert on obsolete or experimental RData
+record types.
+
+preprocessor dns: ports { 53 } \
+                  enable_rdata_overflow
+
+== Alerts ==
+The DNS preprocessor uses generator ID 131 and can produce the following
+alerts:
+
+SID  Description
+---  -----------
+1    Obsolete DNS RData Type
+2    Experimental DNS RData Type
+3    Client RData TXT Overflow
+
+== Conclusion ==
+
+The DNS preprocessor does nothing if none of the 3 vulnerabilities
+it checks for are enabled.  It will not operate on TCP sessions
+picked up midstream, and it will cease operation on a session if it
+loses state because of missing data (dropped packets).

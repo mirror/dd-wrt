@@ -1,0 +1,1636 @@
+# $Id$
+AC_INIT
+AC_CONFIG_SRCDIR([src/snort.c])
+AC_PREREQ(2.50)
+#LT_PREREQ([2.2.6])
+AM_CONFIG_HEADER(config.h)
+# When changing the snort version, please also update the VERSION
+# definition in "src/win32/WIN32-Includes/config.h"
+AM_INIT_AUTOMAKE(snort,2.9.0.5)
+
+NO_OPTIMIZE="no"
+ADD_WERROR="no"
+
+# Test for -Werror and sed it out for now since some of the auto tests,
+# for example AC_CHECK_LIB, will fail because of
+# warning: conflicting types for built-in function <func>
+if eval "echo $CFLAGS | grep -e -Werror"; then
+    CFLAGS=`echo $CFLAGS | sed -e "s/-Werror//g"`
+    ADD_WERROR="yes"
+fi
+
+# Disable annoying practice of recursively re-running the autotools
+AM_MAINTAINER_MODE
+AC_PROG_CC_STDC
+AC_PROG_CC
+AC_PROG_LIBTOOL
+AC_PROG_RANLIB
+AC_C_BIGENDIAN
+
+#AC_CANONICAL_HOST
+linux="no"
+sunos4="no"
+
+case "$host" in
+  *-openbsd2.6|*-openbsd2.5|*-openbsd2.4|*-openbsd2.3*)
+    AC_DEFINE([OPENBSD],[1],[Define if OpenBSD])
+    AC_DEFINE([BROKEN_SIOCGIFMTU],[1],[Define if BROKEN_SIOCGIFMTU])
+
+    ;;
+  *-openbsd*)
+    AC_DEFINE([OPENBSD],[1],[Define if OpenBSD < 2.3])
+
+    ;;
+  *-sgi-irix5*)
+    AC_DEFINE([IRIX],[1],[Define if Irix 5])
+    no_libsocket="yes"
+    no_libnsl="yes"
+    if test -z "$GCC"; then
+      sgi_cc="yes"
+    fi
+    LDFLAGS="${LDFLAGS} -L/usr/local/lib"
+    extra_incl="-I/usr/local/include"
+    ;;
+  *-sgi-irix6*)
+    AC_DEFINE([IRIX],[1],[Define if Irix 6])
+    no_libsocket="yes"
+    no_libnsl="yes"
+    if test -z "$GCC"; then
+      sgi_cc="yes"
+    fi
+    LDFLAGS="${LDFLAGS} -L/usr/local/lib"
+    extra_incl="-I/usr/local/include"
+    ;;
+  *-solaris*)
+    AC_DEFINE([SOLARIS],[1],[Define if Solaris])
+    CPPFLAGS="${CPPFLAGS} -DBSD_COMP -D_REENTRANT"
+    rt_nanosleep="yes"
+    ;;
+  *-sunos*)
+    AC_DEFINE([SUNOS],[1],[Define if SunOS])
+    sunos4="yes"
+    ;;
+  *-linux*)
+    linux="yes"
+    AC_DEFINE([LINUX],[1],[Define if Linux])
+    AC_SUBST(extra_incl)
+    extra_incl="-I/usr/include/pcap"
+    ;;
+  *-hpux10*|*-hpux11*)
+    AC_DEFINE([HPUX],[1],[Define if HP-UX 10 or 11])
+    AC_DEFINE([WORDS_BIGENDIAN],[1],[Define if words are big endian])
+    AC_SUBST(extra_incl)
+    extra_incl="-I/usr/local/include"
+    ;;
+
+  *-freebsd*)
+    AC_DEFINE([FREEBSD],[1],[Define if FreeBSD])
+
+    ;;
+  *-bsdi*)
+    AC_DEFINE([BSDI],[1],[Define if BSDi])
+    ;;
+  *-aix*)
+    AC_DEFINE([AIX],[1],[Define if AIX])
+    ;;
+  *-osf4*)
+    AC_DEFINE([OSF1],[1],[Define if OSF-4])
+    ;;
+  *-osf5.1*)
+    AC_DEFINE([OSF1],[1],[Define if OSF-5.1])
+    ;;
+  *-tru64*)
+    AC_DEFINE([OSF1],[1],[Define if Tru64])
+    ;;
+# it is actually <platform>-apple-darwin1.2 or <platform>-apple-rhapsody5.x but lets stick with this for the moment
+  *-apple*)
+    AC_DEFINE([MACOS],[1],[Define if MacOS])
+    AC_DEFINE([BROKEN_SIOCGIFMTU],[1],[Define if broken SIOCGIFMTU])
+    LDFLAGS="${LDFLAGS} -L/sw/lib"
+    extra_incl="-I/sw/include"
+esac
+
+# ICC stuff
+ICC=no
+if eval "echo $CC | grep icc > /dev/null" ; then
+    if eval "$CC -help | grep libcxa > /dev/null" ; then
+        CFLAGS="$CFLAGS -static-libcxa"
+        LDFLAGS="$LDFLAGS -static-libcxa"
+        XCCFLAGS="-XCClinker -static-libcxa"
+    else
+        CFLAGS="$CFLAGS -static-intel"
+        LDFLAGS="$LDFLAGS -static-intel"
+        XCCFLAGS="-XCClinker -static-intel"
+    fi
+    #CFLAGS=`echo $CFLAGS | sed 's/-O2/-O3/'`
+    CFLAGS="$CFLAGS -O3 -ip -w1"
+    ICC=yes
+    GCC=
+fi
+AC_SUBST(XCCFLAGS)
+
+# This is really meant for Solaris Sparc v9 where it has 32bit and 64bit
+# capability but builds 32bit by default
+AC_ARG_ENABLE(64bit-gcc,
+[  --enable-64bit-gcc       Try to compile 64bit (only tested on Sparc Solaris 9 and 10).],
+       enable_64bit_gcc="$enableval", enable_64bit_gcc="no")
+if test "x$enable_64bit_gcc" = "xyes"; then
+    CFLAGS="$CFLAGS -m64"
+fi
+
+# AC_PROG_YACC defaults to "yacc" when not found
+# this check defaults to "none"
+AC_CHECK_PROGS(YACC,bison yacc,none)
+# AC_PROG_YACC includes the -y arg if bison is found
+if test "x$YACC" = "xbison"; then
+    YACC="$YACC -y"
+fi
+
+# AC_PROG_LEX defaults to ":" when not found
+# this check defaults to "none"
+# We're using flex specific options so we don't support lex
+AC_CHECK_PROGS(LEX,flex,none)
+
+#
+
+dnl checking headers
+AC_CHECK_HEADERS([strings.h string.h stdlib.h unistd.h sys/sockio.h paths.h inttypes.h wchar.h math.h])
+AC_CHECK_LIB([m],[floor])
+AC_CHECK_LIB([m],[ceil])
+
+if test "x$rt_nanosleep" = "xyes"; then
+AC_CHECK_LIB([rt],[nanosleep])
+fi
+
+dnl make sure we've got all our libraries
+if test -z "$no_libnsl"; then
+AC_CHECK_LIB(nsl, inet_ntoa)
+fi
+
+if test -z "$no_libsocket"; then
+AC_CHECK_LIB(socket, socket)
+fi
+
+# SunOS4 has several things `broken'
+if test  "$sunos4" != "no"; then
+AC_CHECK_FUNCS(vsnprintf,, LIBS="$LIBS -ldb")
+AC_CHECK_FUNCS(strtoul,, LIBS="$LIBS -l44bsd")
+fi
+
+# some funky macro to be backwards compatible with earlier autoconfs
+# in current they have AC_CHECK_DECLS
+
+AC_DEFUN([SN_CHECK_DECL],[
+AC_MSG_CHECKING([whether $1 must be declared])
+AC_CACHE_VAL(sn_cv_decl_needed_$1,
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <syslog.h>
+]], [[char *(*pfn); pfn = (char *(*)) $1;]])],[eval "sn_cv_decl_needed_$1=no"],[eval "sn_cv_decl_needed_$1=yes"]) ])
+
+if eval "test \"`echo '$sn_cv_decl_needed_'$1`\" != no"; then
+ AC_MSG_RESULT(yes)
+ ifelse([$2], , :, [$2])
+else
+ AC_MSG_RESULT(no)
+ ifelse([$3], , ,[$3])
+fi
+])dnl
+
+AC_DEFUN([SN_CHECK_DECLS],
+[for sn_decl in $1
+do
+sn_def_decl=`echo $sn_decl | tr [a-z] [A-Z]`
+SN_CHECK_DECL($sn_decl,
+[
+AC_DEFINE_UNQUOTED(NEED_DECL_$sn_def_decl, 1,
+                  [you have this cuz autoheader is dumb])
+$2], $3)dnl
+done
+])
+
+# some stuff for declarations which were missed on sunos4 platform too.
+#
+# add `#undef NEED_DECL_FUNCTIONAME to acconfig.h` because autoheader
+# fails to work properly with custom macroses.
+# you will see also #undef for each SN_CHECK_DECLS macros invocation
+# because autoheader doesn't execute shell script commands.
+# it is possible to make loops using m4 but the code would look even
+# more confusing..
+SN_CHECK_DECLS(printf fprintf syslog puts fputs fputc fopen  \
+           fclose fwrite fflush getopt bzero bcopy memset strtol  \
+           strcasecmp strncasecmp strerror perror socket sendto   \
+           vsnprintf snprintf strtoul)
+
+AC_CHECK_FUNCS([strlcpy strlcat strerror vswprintf wprintf])
+
+AC_CHECK_FUNC([snprintf],[have_snprintf="yes"],[have_snprintf="no"])
+AM_CONDITIONAL(BUILD_SNPRINTF, test "x$have_snprintf" != "xyes")
+if test "x$have_snprintf" = "xyes"; then
+    AC_DEFINE([HAVE_SNPRINTF], [], [snprintf function is available])
+fi
+
+AC_CHECK_SIZEOF([char])
+AC_CHECK_SIZEOF([short])
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([long int])
+AC_CHECK_SIZEOF([long long int])
+AC_CHECK_SIZEOF([unsigned int])
+AC_CHECK_SIZEOF([unsigned long int])
+AC_CHECK_SIZEOF([unsigned long long int])
+
+# Check for int types
+AC_CHECK_TYPES([u_int8_t,u_int16_t,u_int32_t,u_int64_t,uint8_t,uint16_t,uint32_t,uint64_t])
+AC_CHECK_TYPES([int8_t,int16_t,int32_t,int64_t])
+
+AC_CHECK_TYPES([boolean])
+
+# In case INADDR_NONE is not defined (like on Solaris)
+have_inaddr_none="no"
+AC_MSG_CHECKING([for INADDR_NONE])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+]],
+[[
+	if (inet_addr("10,5,2") == INADDR_NONE);
+    return 0;
+]])],
+[have_inaddr_none="yes"],
+[have_inaddr_none="no"])
+AC_MSG_RESULT($have_inaddr_none)
+if test "x$have_inaddr_none" = "xno"; then
+	AC_DEFINE([INADDR_NONE],[-1],[For INADDR_NONE definition])
+fi
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+]], [[const char *foo; foo = sys_errlist[0];]])],[AC_DEFINE(ERRLIST_PREDEFINED,1,Define if errlist is predefined)],[])
+
+AC_MSG_CHECKING(for __FUNCTION__)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+]], [[printf ("%s", __FUNCTION__);]])],[sn_cv_have___FUNCTION__=yes],[sn_cv__have___FUNCTION__=no])
+if test "x$sn_cv_have___FUNCTION__" = "xyes"; then
+   AC_MSG_RESULT(yes)
+   AC_DEFINE([HAVE___FUNCTION__],[1],[Define if the compiler understands __FUNCTION__.])
+else
+   AC_MSG_RESULT(no)
+   AC_MSG_CHECKING(for __func__)
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+]], [[printf ("%s", __func__);]])],[sn_cv_have___func__=yes],[sn_cv__have___func__=no])
+   if test "x$sn_cv_have___func__" = "xyes"; then
+      AC_MSG_RESULT(yes)
+      AC_DEFINE([HAVE___func__],[1],[Define if the compiler understands __func__.])
+      AC_DEFINE([__FUNCTION__],[__func__],[Define __FUNCTION__ as required.])
+   else
+      AC_MSG_RESULT(no)
+      AC_DEFINE([__FUNCTION__],["mystery function"])
+   fi
+fi
+
+AC_ARG_WITH(libpcap_includes,
+	[  --with-libpcap-includes=DIR    libpcap include directory],
+	[with_libpcap_includes="$withval"],[with_libpcap_includes="no"])
+
+AC_ARG_WITH(libpcap_libraries,
+	[  --with-libpcap-libraries=DIR   libpcap library directory],
+	[with_libpcap_libraries="$withval"],[with_libpcap_libraries="no"])
+
+
+if test "x$with_libpcap_includes" != "xno"; then
+   CPPFLAGS="${CPPFLAGS} -I${with_libpcap_includes}"
+fi
+
+if test "x$with_libpcap_libraries" != "xno"; then
+   LDFLAGS="${LDFLAGS} -L${with_libpcap_libraries}"
+fi
+
+# --with-libpfring-* options
+AC_ARG_WITH(libpfring_includes,
+       [  --with-libpfring-includes=DIR  libpfring include directory],
+       [with_libpfring_includes="$withval"],[with_libpfring_includes="no"])
+
+AC_ARG_WITH(libpfring_libraries,
+       [  --with-libpfring-libraries=DIR libpfring library directory],
+       [with_libpfring_libraries="$withval"],[with_libpfring_libraries="no"])
+
+if test "x$with_libpfring_includes" != "xno"; then
+   CPPFLAGS="${CPPFLAGS} -I${with_libpfring_includes}"
+fi
+
+if test "x$with_libpfring_libraries" != "xno"; then
+   LDFLAGS="${LDFLAGS} -L${with_libpfring_libraries}"
+fi
+
+LPCAP=""
+AC_CHECK_LIB(pcap, pcap_datalink,, LPCAP="no")
+
+# If the normal AC_CHECK_LIB for pcap fails then check to see if we are
+# using a pfring-enabled pcap.
+if test "x$LPCAP" = "xno"; then
+  PFRING_H=""
+  AC_CHECK_HEADERS(pfring.h,, PFRING_H="no")
+
+# It is important to have the AC_CHECK_LIB for the pfring library BEFORE
+# the one for pfring-enabled pcap. When the Makefile is created, all the
+# libraries used during linking are added to the LIBS variable in the
+# Makefile in the opposite order that their AC_CHECK_LIB macros appear
+# in configure.in. Durring linking, the pfring library (-lpfring) MUST come
+# _after_ the libpcap library (-lpcap) or linking will fail.
+  PFRING_L=""
+  AC_CHECK_LIB(pfring, pfring_open,, PFRING_L="no")
+
+  LPFRING_PCAP=""
+  AC_CHECK_LIB(pcap, pfring_open,, LPFRING_PCAP="no",-lpfring)
+fi
+
+# If both the AC_CHECK_LIB for normal pcap and pfring-enabled pcap fail then exit.
+if test "x$LPCAP" = "xno"; then
+  if test "x$LPFRING_PCAP" = "xno"; then
+    echo
+    echo "   ERROR!  Libpcap library/headers (libpcap.a (or .so)/pcap.h)"
+    echo "   not found, go get it from http://www.tcpdump.org"
+    echo "   or use the --with-libpcap-* options, if you have it installed"
+    echo "   in unusual place.  Also check if your libpcap depends on another"
+    echo "   shared library that may be installed in an unusual place"
+    exit 1
+  fi
+fi
+
+AC_MSG_CHECKING([for pcap_lex_destroy])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <pcap.h>
+]],
+[[
+   pcap_lex_destroy();
+]])],
+[have_pcap_lex_destroy="yes"],
+[have_pcap_lex_destroy="no"])
+AC_MSG_RESULT($have_pcap_lex_destroy)
+if test "x$have_pcap_lex_destroy" = "xyes"; then
+    AC_DEFINE([HAVE_PCAP_LEX_DESTROY],[1],[Can cleanup lex buffer stack created by pcap bpf filter])
+fi
+
+AC_MSG_CHECKING([for pcap_lib_version])
+AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM(
+        [[#include <pcap.h>]],
+        [[pcap_lib_version();]]
+    )],
+    [have_pcap_lib_version="yes"],
+    [have_pcap_lib_version="no"]
+)
+AC_MSG_RESULT($have_pcap_lib_version)
+
+if test "x$have_pcap_lib_version" = "xyes"; then
+    AC_DEFINE([HAVE_PCAP_LIB_VERSION],[1],
+        [Can output the library version.])
+fi
+
+AC_DEFUN([FAIL_MESSAGE],[
+   echo
+   echo
+   echo "**********************************************"
+   echo "  ERROR: unable to find" $1
+   echo "  checked in the following places"
+   for i in `echo $2`; do
+     echo "        $i"
+   done
+   echo "**********************************************"
+   echo
+   exit 1
+])
+
+AC_ARG_WITH(libpcre_includes,
+       [  --with-libpcre-includes=DIR    libpcre include directory],
+       [with_libpcre_includes="$withval"],[with_libpcre_includes="no"])
+
+AC_ARG_WITH(libpcre_libraries,
+       [  --with-libpcre-libraries=DIR   libpcre library directory],
+       [with_libpcre_libraries="$withval"],[with_libpcre_libraries="no"])
+
+if test "x$with_libpcre_includes" != "xno"; then
+    CPPFLAGS="${CPPFLAGS} -I${with_libpcre_includes}"
+else
+    CPPFLAGS="${CPPFLAGS} `pcre-config --cflags`"
+fi
+
+if test "x$with_libpcre_libraries" != "xno"; then
+    LDFLAGS="${LDFLAGS}  -L${with_libpcre_libraries}"
+else
+    LDFLAGS="${LDFLAGS} `pcre-config --libs`"
+fi
+
+# PCRE configuration (required)
+# Verify that we have the headers
+PCRE_H=""
+AC_CHECK_HEADERS(pcre.h,, PCRE_H="no")
+if test "x$PCRE_H" = "xno"; then
+  echo
+  echo "   ERROR!  Libpcre header not found."
+  echo "   Get it from http://www.pcre.org"
+  exit 1
+fi
+
+# Verify that we have the library
+PCRE_L=""
+pcre_version_six=""
+AC_CHECK_LIB(pcre, pcre_compile, ,PCRE_L="no")
+if test "x$PCRE_L" = "xno"; then
+    echo
+    echo "   ERROR!  Libpcre library not found."
+    echo "   Get it from http://www.pcre.org"
+    echo
+    exit 1
+else
+    AC_MSG_CHECKING(for libpcre version 6.0 or greater)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pcre.h>]], [[
+       #if (PCRE_MAJOR < 6)
+       #error "Version failure"
+       #else
+       int a, b = 0, c = 0, d = 0;
+       pcre *tmp = NULL;
+       a = pcre_copy_named_substring(tmp, "", &b, c, "", "", d);
+       #endif
+      ]])],[pcre_version_six="yes"],[pcre_version_six="no"])
+fi
+
+if test "x$pcre_version_six" != "xyes"; then
+    AC_MSG_RESULT(no)
+    echo
+    echo "    ERROR!  Libpcre library version >= 6.0 not found."
+    echo "    Get it from http://www.pcre.org"
+    echo
+    exit 1
+else
+    AC_MSG_RESULT(yes)
+fi
+
+AC_ARG_ENABLE(dynamicplugin,
+[  --enable-dynamicplugin   Enable Ability to dynamically load preprocessors, detection engine, and rules lib (on by default, use --disable to not use dynamic libraries)],
+       enable_dynamicplugin="$enableval", enable_dynamicplugin="yes")
+AM_CONDITIONAL(HAVE_DYNAMIC_PLUGINS, test "x$enable_dynamicplugin" = "xyes")
+
+if test "x$enable_dynamicplugin" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DDYNAMIC_PLUGIN"
+fi
+
+# check for dnet first since some DAQs need it
+AC_ARG_WITH(dnet_includes,
+    [  --with-dnet-includes=DIR       libdnet include directory],
+    [with_dnet_includes="$withval"],[with_dnet_includes="no"])
+
+AC_ARG_WITH(dnet_libraries,
+    [  --with-dnet-libraries=DIR      libdnet library directory],
+    [with_dnet_libraries="$withval"],[with_dnet_libraries="no"])
+
+if test "x$with_dnet_includes" != "xno"; then
+    CPPFLAGS="${CPPFLAGS} -I${with_dnet_includes}"
+else
+    CPPFLAGS="${CPPFLAGS} `dnet-config --cflags`"
+fi
+
+if test "x$with_dnet_libraries" != "xno"; then
+    LDFLAGS="${LDFLAGS} -L${with_dnet_libraries} -ldnet"
+else
+    LDFLAGS="${LDFLAGS} `dnet-config --libs`"
+fi
+
+AC_CHECK_HEADERS(dnet.h, DNET="yes", DNET="no")
+if test "x$DNET" = "xno"; then
+    echo
+    echo "   ERROR!  dnet header not found, go get it from"
+    echo "   http://code.google.com/p/libdnet/ or use the --with-dnet-*"
+    echo "   options, if you have it installed in an unusual place"
+    exit
+fi
+
+AC_CHECK_LIB(dnet, eth_set, DNET="yes", DNET="no")
+if test "x$DNET" = "xno"; then
+    echo
+    echo "   ERROR!  dnet library not found, go get it from"
+    echo "   http://code.google.com/p/libdnet/ or use the --with-dnet-*"
+    echo "   options, if you have it installed in an unusual place"
+    exit
+fi
+
+AC_ARG_WITH(daq_includes,
+	[  --with-daq-includes=DIR        DAQ include directory],
+	[with_daq_includes="$withval"],[with_daq_includes="no"])
+
+AC_ARG_WITH(daq_libraries,
+	[  --with-daq-libraries=DIR       DAQ library directory],
+	[with_daq_libraries="$withval"],[with_daq_libraries="no"])
+
+if test "x$with_daq_includes" != "xno"; then
+   CPPFLAGS="${CPPFLAGS} -I${with_daq_includes}"
+fi
+
+if test "x$with_daq_libraries" != "xno"; then
+   LDFLAGS="${LDFLAGS} -L${with_daq_libraries}"
+fi
+
+AC_ARG_ENABLE(static_daq,
+[  --enable-static-daq            Link static DAQ modules.],
+       enable_static_daq="$enableval", enable_static_daq="yes")
+
+if test "x$enable_static_daq" = "xyes" \
+     -o "x$enable_dynamicplugin" = "xyes" ; \
+then
+    AC_CHECK_LIB(dl, dlsym, DLLIB="yes", DLLIB="no")
+
+    if test "$DLLIB" != "no"; then
+        LIBS="${LIBS} -ldl"
+    else
+        AC_CHECK_LIB(c, dlsym, DLLIB="yes", DLLIB="no")
+        if test "$DLLIB" = "no"; then
+           echo
+           echo "   ERROR!  programmatic interface to dynamic link loader"
+           echo "   not found.  Cannot build Snort."
+           echo
+           exit 1
+        fi
+    fi
+fi
+
+if test "x$enable_static_daq" = "xyes"; then
+    LDAQ=""
+    LIBS="${LIBS} `daq-modules-config --static --libs`"
+    AC_CHECK_LIB([daq_static], [daq_load_modules],
+        [LIBS="-ldaq_static ${LIBS}"], [LDAQ="no"], [ ])
+
+    if test "x$LDAQ" = "xno"; then
+        echo
+        echo "   ERROR!  daq_static library not found, go get it from"
+        echo "   http://www.snort.org/."
+        #AC_MSG_ERROR("Fatal!")  # FIXTHIS switch over to this macro
+        exit 1                   # instead of raw exits!
+    fi
+else
+    LDAQ=""
+    AC_CHECK_LIB([daq], [daq_load_modules],
+        [LIBS="${LIBS} -ldaq"], [LDAQ="no"], [ ])
+
+    if test "x$LDAQ" = "xno"; then
+        echo
+        echo "   ERROR!  daq library not found, go get it from"
+        echo "   http://www.snort.org/."
+        #AC_MSG_ERROR("Fatal!")
+        exit 1
+    fi
+fi
+
+# any sparc platform has to have this one defined.
+AC_MSG_CHECKING(for sparc)
+if eval "echo $host_cpu|grep -i sparc >/dev/null"; then
+    AC_DEFINE([WORDS_MUSTALIGN],[1],[Define if words must align])
+    AC_MSG_RESULT(yes)
+
+    # gcc, sparc and optimization not so good
+    if test -n "$GCC"; then
+        NO_OPTIMIZE="yes"
+    fi
+else
+    AC_MSG_RESULT(no)
+fi
+
+# check for sparc %time register
+if eval "echo $host_cpu|grep -i sparc >/dev/null"; then
+    OLD_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -mcpu=v9 "
+    AC_MSG_CHECKING([for sparc %time register])
+    AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM(
+    [[]],
+    [[
+        int val;
+        __asm__ __volatile__("rd %%tick, %0" : "=r"(val));
+    ]])],
+    [sparcv9="yes"],
+    [sparcv9="no"])
+    AC_MSG_RESULT($sparcv9)
+    if test "x$sparcv9" = "xyes"; then
+        AC_DEFINE([SPARCV9],[1],[For sparc v9 with %time register])
+    else
+        CFLAGS="$OLD_CFLAGS"
+    fi
+fi
+
+# modified from gnulib/m4/visibility.m4
+AC_DEFUN([CC_VISIBILITY],
+[
+    AC_REQUIRE([AC_PROG_CC])
+    AC_MSG_CHECKING([for visibility support])
+    AC_CACHE_VAL(gl_cv_cc_visibility, [
+        gl_save_CFLAGS="$CFLAGS"
+        # Add -Werror flag since some compilers, e.g. icc 7.1, don't support it,
+        # but only warn about it instead of compilation failing
+        CFLAGS="$CFLAGS -Werror -fvisibility=hidden"
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+            extern __attribute__((__visibility__("hidden"))) int hiddenvar;
+            extern __attribute__((__visibility__("default"))) int exportedvar;
+            extern __attribute__((__visibility__("hidden"))) int hiddenfunc (void);
+            extern __attribute__((__visibility__("default"))) int exportedfunc (void);]],
+            [[]])],
+            [gl_cv_cc_visibility="yes"],
+            [gl_cv_cc_visibility="no"])
+    ])
+    AC_MSG_RESULT([$gl_cv_cc_visibility])
+    if test "x$gl_cv_cc_visibility" = "xyes"; then
+        CFLAGS="$gl_save_CFLAGS -fvisibility=hidden"
+        AC_DEFINE([HAVE_VISIBILITY],[1],
+            [Define if the compiler supports visibility declarations.])
+    else
+        CFLAGS="$gl_save_CFLAGS"
+    fi
+])
+CC_VISIBILITY()
+
+AC_ARG_ENABLE(build-dynamic-examples,
+[  --enable-build-dynamic-examples   Enable building of example dynamically loaded preprocessor and rule (off by default)],
+       build_dynamic_examples="$enableval", build_dynamic_examples="no")
+AM_CONDITIONAL(BUILD_DYNAMIC_EXAMPLES, test "x$build_dynamic_examples" = "xyes")
+if test "x$build_dynamic_examples" = "xyes"; then
+    if test "x$enable_dynamicplugin" = "xno"; then
+       echo "   ERROR!  attempting to build dynamic examples without"
+       echo "   enabling dynamic plugins."
+       echo
+       exit 1
+    fi
+fi
+
+AC_ARG_ENABLE(dlclose,
+[  --enable-dlclose         Only use if you are developing dynamic preprocessors or shared object rules.  Disable (--disable-dlclose) for testing valgrind leaks in dynamic libraries so a usable backtrace is reported.  Enabled by default.],
+       enable_dlclose="$enableval", enable_dlclose="yes")
+if test "x$enable_dlclose" = "xno"; then
+    AC_DEFINE([DISABLE_DLCLOSE_FOR_VALGRIND_TESTING],[1],[Don't close opened shared objects for valgrind leak testing of dynamic libraries])
+fi
+
+AC_ARG_ENABLE(ipv6,
+[  --enable-ipv6            Enable IPv6 support],
+       enable_ipv6="$enableval", enable_ipv6="no")
+if test "x$enable_ipv6" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DSUP_IP6"
+fi
+AM_CONDITIONAL(HAVE_SUP_IP6, test "x$enable_ipv6" = "xyes")
+
+AC_ARG_ENABLE(zlib,
+[  --enable-zlib            Enable Http Response Decompression],
+       enable_zlib="$enableval", enable_zlib="no")
+AM_CONDITIONAL(HAVE_ZLIB, test "x$enable_zlib" = "xyes")
+if test "x$enable_zlib" = "xyes"; then
+    Z_LIB=""
+    AC_CHECK_HEADERS(zlib.h,, Z_LIB="no")
+    if test "x$ZLIB" = "xno"; then
+        echo
+        echo "   ERROR!  zlib header not found, go get it from"
+        echo "   http://www.zlib.net"
+        exit
+    fi
+
+    Z_LIB=""
+    AC_CHECK_LIB(z, inflate,, Z_LIB="no")
+    if test "x$ZLIB" = "xno"; then
+        echo
+        echo "   ERROR!  zlib library not found, go get it from"
+        echo "   http://www.zlib.net"
+        exit
+    fi
+    CPPFLAGS="$CPPFLAGS -DZLIB"
+    LIBS="$LIBS -lz"
+fi
+
+AC_ARG_ENABLE(gre,
+[  --enable-gre             Enable GRE and IP in IP encapsulation support],
+       enable_gre="$enableval", enable_gre="no")
+if test "x$enable_gre" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DGRE"
+fi
+
+AC_ARG_ENABLE(mpls,
+[  --enable-mpls             Enable MPLS support],
+       enable_mpls="$enableval", enable_mpls="no")
+if test "x$enable_mpls" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DMPLS"
+fi
+
+AC_ARG_ENABLE(targetbased,
+[  --enable-targetbased     Enable Target-Based Support in Stream, Frag, and Rules (adds pthread support implicitly)],
+       enable_targetbased="$enableval", enable_targetbased="no")
+
+AM_CONDITIONAL(HAVE_TARGET_BASED, test "x$enable_targetbased" = "xyes")
+if test "x$enable_targetbased" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DTARGET_BASED"
+    LIBS="$LIBS -lpthread"
+    if test "$LEX" = "none"; then
+      echo
+      echo "   ERROR!  flex not found."
+      echo "   Get it from http://flex.sourceforge.net/"
+      echo "   (You may also try lex instead.)"
+      echo
+      exit 1
+    fi
+    if test "$YACC" = "none"; then
+      echo
+      echo "   ERROR!  bison not found."
+      echo "   Get it from http://www.gnu.org/software/bison/"
+      echo "   (You may also try byacc or yacc instead.)"
+      echo
+      exit 1
+    fi
+fi
+
+AC_ARG_ENABLE(decoder-preprocessor-rules,
+[  --enable-decoder-preprocessor-rules  Enable rule actions for decoder and preprocessor events],
+       enable_decoder_preprocessor_rules="$enableval", enable_decoder_preprocessor_rules="no")
+if test "x$enable_decoder_preprocessor_rules" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DPREPROCESSOR_AND_DECODER_RULE_EVENTS"
+fi
+
+AC_ARG_ENABLE(ppm,
+[  --enable-ppm             Enable packet/rule performance monitor],
+       enable_ppm="$enableval", enable_ppm="no")
+if test "x$enable_ppm" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DPPM_MGR"
+fi
+
+AC_ARG_ENABLE(perfprofiling,
+[  --enable-perfprofiling   Enable preprocessor and rule performance profiling],
+       enable_perfprofiling="$enableval", enable_perfprofiling="no")
+if test "x$enable_perfprofiling" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DPERF_PROFILING"
+fi
+
+AC_ARG_ENABLE(linux-smp-stats,
+[  --enable-linux-smp-stats    Enable statistics reporting through proc],
+       enable_linux_smp_stats="$enableval", enable_linux_smp_stats="no")
+AM_CONDITIONAL(BUILD_PROCPIDSTATS, test "x$enable_linux_smp_stats" = "xyes")
+if test "x$enable_linux_smp_stats" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DLINUX_SMP"
+fi
+
+AC_ARG_ENABLE(inline-init-failopen,
+[  --enable-inline-init-failopen  Enable Fail Open during initialization for Inline Mode (adds pthread support implicitly)],
+       enable_inline_init_failopen="$enableval", enable_inline_init_failopen="no")
+if test "x$enable_inline_init_failopen" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DINLINE_FAILOPEN"
+    LIBS="$LIBS -lpthread"
+fi
+
+AC_ARG_ENABLE(prelude,
+[  --enable-prelude         Enable Prelude Hybrid IDS support],
+       enable_prelude="$enableval", enable_prelude="no")
+
+AM_CONDITIONAL(BUILD_PRELUDE, test "x$enable_prelude" = "xyes")
+if test "x$enable_prelude" = "xyes"; then
+    AM_PATH_LIBPRELUDE(0.9.6, use_prelude="yes", use_prelude="no")
+    if test "$use_prelude" = "yes"; then
+        LDFLAGS="${LDFLAGS} ${LIBPRELUDE_LDFLAGS}"
+        LIBS="$LIBS ${LIBPRELUDE_LIBS}"
+        CFLAGS="$CFLAGS ${LIBPRELUDE_PTHREAD_CFLAGS}"
+        AC_DEFINE([HAVE_LIBPRELUDE],[1],[Define whether Prelude support is enabled])
+    fi
+fi
+
+AC_ARG_ENABLE(pthread,
+[  --enable-pthread         Enable pthread support],
+       enable_pthread="$enableval", enable_pthread="no")
+
+if test "x$enable_pthread" = "xyes"; then
+    LIBS="$LIBS -lpthread"
+fi
+
+AC_ARG_ENABLE(debug-msgs,
+[  --enable-debug-msgs      Enable debug printing options (bugreports and developers only)],
+       enable_debug_msgs="$enableval", enable_debug_msgs="no")
+if test "x$enable_debug_msgs" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DDEBUG"
+fi
+
+AC_ARG_ENABLE(debug,
+[  --enable-debug           Enable debugging options (bugreports and developers only)],
+       enable_debug="$enableval", enable_debug="no")
+
+if test "x$enable_debug" = "xyes"; then
+    NO_OPTIMIZE="yes"
+
+    # in case user override doesn't include -g
+    if echo $CFLAGS | grep -qve -g ; then
+        CFLAGS="$CFLAGS -g"
+    fi
+fi
+
+AC_ARG_ENABLE(profile,
+[  --enable-profile         Enable profiling options (developers only)],
+       enable_profile="$enableval", enable_profile="no")
+
+if test "x$enable_profile" = "xyes"; then
+    if test -n "$GCC"; then
+        CPPFLAGS="$CPPFLAGS -DPROFILE"
+        CFLAGS="$CFLAGS -pg"
+    else
+        CPPFLAGS="$CPPFLAGS -DPROFILE"
+    fi
+fi
+
+AC_ARG_ENABLE(ppm-test,
+[  --enable-ppm-test        Enable packet/rule performance monitor],
+       enable_ppm_test="$enableval", enable_ppm_test="no")
+
+if test "x$enable_ppm_test" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DPPM_TEST"
+fi
+
+AC_ARG_ENABLE(sourcefire,
+[  --enable-sourcefire      Enable Sourcefire specific build options, encompasing --enable-perfprofiling,--enable-decoder-preprocessor-rules, --enable-ppm],
+       enable_sourcefire="$enableval", enable_sourcefire="no")
+
+if test "x$enable_sourcefire" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DSOURCEFIRE -DPERF_PROFILING -DPREPROCESSOR_AND_DECODER_RULE_EVENTS -DPPM_MGR"
+fi
+
+AC_ARG_ENABLE(corefiles,
+[  --disable-corefiles      Prevent Snort from generating core files],
+       enable_corefiles="$enableval", enable_corefiles="yes")
+
+if test "x$enable_corefiles" = "xno"; then
+    CPPFLAGS="$CPPFLAGS -DNOCOREFILE"
+fi
+
+AC_ARG_ENABLE(active-response,
+[  --enable-active-response Enable reject injection],
+       enable_active_response="$enableval", enable_active_response="no")
+
+AC_ARG_ENABLE(normalizer,
+[  --enable-normalizer      Enable packet/stream normalizations],
+       enable_normalizer="$enableval", enable_normalizer="no")
+
+AC_ARG_ENABLE(reload,
+[  --enable-reload          Enable reloading a configuration without restarting],
+       enable_reload="$enableval", enable_reload="no")
+
+AC_ARG_ENABLE(reload-error-restart,
+[  --enable-reload-error-restart   Enable restarting on reload error],
+       enable_reload_error_restart="$enableval", enable_reload_error_restart="yes")
+
+if test "x$enable_reload" = "xyes"; then
+    if test "x$enable_reload_error_restart" = "xyes"; then
+        CPPFLAGS="$CPPFLAGS -DSNORT_RELOAD"
+    else
+        CPPFLAGS="$CPPFLAGS -DSNORT_RELOAD -DRELOAD_ERROR_FATAL"
+    fi
+
+    LIBS="$LIBS -lpthread"
+fi
+
+AC_ARG_WITH(mysql,
+    [  --with-mysql=DIR               Support for MySQL],
+    [ with_mysql="$withval"],
+    [ with_mysql="no" ])
+
+AC_ARG_WITH(mysql_includes,
+	[  --with-mysql-includes=DIR      MySQL include directory],
+	[with_mysql_includes="$withval"; with_mysql="yes"],[with_mysql_includes="no"])
+
+AC_ARG_WITH(mysql_libraries,
+	[  --with-mysql-libraries=DIR     MySQL library directory],
+	[with_mysql_libraries="$withval"; with_mysql="yes"],[with_mysql_libraries="no"])
+
+default_directory="/usr /usr/local"
+if test "x$with_mysql" != "xno"; then
+  if test "x$with_mysql" = "xyes"; then
+    if test "x$with_mysql_includes" != "xno"; then
+        mysql_inc_directory="$with_mysql_includes";
+    else
+        mysql_inc_directory="$default_directory";
+    fi
+    if test "x$with_mysql_libraries" != "xno"; then
+        mysql_lib_directory="$with_mysql_libraries";
+    else
+        mysql_lib_directory="$default_directory";
+    fi
+    mysql_fail="yes"
+  elif test -d "$withval"; then
+    AC_MSG_WARN(Providing a directory for the --with-mysql option)
+    AC_MSG_WARN(will be deprecated in the future in favour of)
+    AC_MSG_WARN(--with-mysql-libraries and --with-mysql-includes)
+    AC_MSG_WARN(options to address issues with non-standard)
+    AC_MSG_WARN(installations and 64bit platforms.)
+    mysql_inc_directory="$withval"
+    mysql_lib_directory="$withval"
+    mysql_fail="yes"
+  elif test "x$with_mysql" = "x"; then
+    mysql_inc_directory="$default_directory"
+    mysql_lib_directory="$default_directory"
+    mysql_fail="yes"
+  fi
+
+  AC_MSG_CHECKING(for mysql)
+
+  for i in $mysql_inc_directory; do
+      if test -r "$i/mysql.h"; then
+        MYSQL_INC_DIR="$i"
+      elif test -r "$i/include/mysql.h"; then
+        MYSQL_INC_DIR="$i/include"
+      elif test -r "$i/include/mysql/mysql.h"; then
+        MYSQL_INC_DIR="$i/include/mysql"
+      elif test -r "$i/mysql/mysql.h"; then
+        MYSQL_INC_DIR="$i/mysql"
+      elif test -r "$i/mysql/include/mysql.h"; then
+        MYSQL_INC_DIR="$i/mysql/include"
+      fi
+  done
+
+  for i in $mysql_lib_directory; do
+      if test -z "$MYSQL_LIB_DIR"; then
+        str="$i/libmysqlclient.*"
+        for j in `echo $str`; do
+          if test -r $j; then
+            MYSQL_LIB_DIR=$i
+            break 2
+          fi
+        done
+      fi
+      if test -z "$MYSQL_LIB_DIR"; then
+        str="$i/lib/libmysqlclient.*"
+        for j in `echo $str`; do
+          if test -r "$j"; then
+            MYSQL_LIB_DIR="$i/lib"
+            break 2
+          fi
+        done
+      fi
+      if test -z "$MYSQL_LIB_DIR"; then
+        str="$i/mysql/libmysqlclient.*"
+        for j in `echo $str`; do
+          if test -r "$j"; then
+            MYSQL_LIB_DIR="$i/mysql"
+            break 2
+          fi
+        done
+      fi
+      if test -z "$MYSQL_LIB_DIR"; then
+        str="$i/mysql/lib/libmysqlclient.*"
+        for j in `echo $str`; do
+          if test -r "$j"; then
+            MYSQL_LIB_DIR="$i/mysql/lib"
+            break 2
+          fi
+        done
+      fi
+      if test -z "$MYSQL_LIB_DIR"; then
+        str="$i/lib/mysql/libmysqlclient.*"
+        for j in `echo $str`; do
+          if test -r "$j"; then
+            MYSQL_LIB_DIR="$i/lib/mysql"
+            break 2
+          fi
+        done
+      fi
+  done
+
+  if test -z "$MYSQL_INC_DIR"; then
+    if test "x$mysql_fail" != "xno"; then
+      tmp=""
+      for i in $mysql_inc_directory; do
+        tmp="$tmp $i $i/include $i/include/mysql $i/mysql $i/mysql/include"
+      done
+      FAIL_MESSAGE("mysql headers (mysql.h)", $tmp)
+    else
+      AC_MSG_RESULT(no)
+    fi
+  else
+
+    if test -z "$MYSQL_LIB_DIR"; then
+      if test "x$mysql_fail" != "xno"; then
+        tmp=""
+        for i in $mysql_lib_directory; do
+          tmp="$tmp $i $i/lib $i/mysql $i/mysql/lib $i/lib/mysql"
+        done
+        FAIL_MESSAGE("mysqlclient library (libmysqlclient.*)", $tmp)
+      else
+        AC_MSG_RESULT(no)
+      fi
+    else
+      AC_MSG_RESULT(yes)
+      LDFLAGS="${LDFLAGS} -L${MYSQL_LIB_DIR}"
+      CPPFLAGS="${CPPFLAGS} -I${MYSQL_INC_DIR} -DENABLE_MYSQL"
+      AC_CHECK_LIB(z, compress)
+      LIBS="-lmysqlclient ${LIBS}"
+    fi
+  fi
+
+  AC_MSG_CHECKING([for mysql default client reconnect])
+
+  AC_RUN_IFELSE(
+  [AC_LANG_PROGRAM(
+  [[
+  #include <mysql.h>
+  ]],
+  [[
+      if (mysql_get_client_version() < 50003)
+          return 1;
+  ]])],
+  [mysql_default_reconnect="no"],
+  [mysql_default_reconnect="yes"])
+
+  AC_MSG_RESULT($mysql_default_reconnect)
+
+  if test "x$mysql_default_reconnect" = "xno"; then
+      AC_MSG_CHECKING([for mysql reconnect option])
+
+      AC_RUN_IFELSE(
+      [AC_LANG_PROGRAM(
+      [[
+      #include <mysql.h>
+      ]],
+      [[
+          if (mysql_get_client_version() < 50013)
+              return 1;
+      ]])],
+      [mysql_has_reconnect="yes"],
+      [mysql_has_reconnect="no"])
+
+      AC_MSG_RESULT($mysql_has_reconnect)
+
+      if test "x$mysql_has_reconnect" = "xyes"; then
+          AC_DEFINE([MYSQL_HAS_OPT_RECONNECT],[1],[For MySQL versions 5.0.13 and greater])
+
+          AC_MSG_CHECKING([for mysql setting of reconnect option before connect bug])
+
+          AC_RUN_IFELSE(
+          [AC_LANG_PROGRAM(
+          [[
+          #include <mysql.h>
+          ]],
+          [[
+              if (mysql_get_client_version() < 50019)
+                  return 1;
+          ]])],
+          [mysql_has_reconnect_bug="no"],
+          [mysql_has_reconnect_bug="yes"])
+
+          AC_MSG_RESULT($mysql_has_reconnect_bug)
+
+          if test "x$mysql_has_reconnect_bug" = "xyes"; then
+              AC_DEFINE([MYSQL_HAS_OPT_RECONNECT_BUG],[1],[For MySQL versions 5.0.13 to 5.0.18])
+          fi
+      fi
+  fi
+fi
+
+AC_ARG_WITH(odbc,
+    [  --with-odbc=DIR                Support for ODBC],
+    [ with_odbc="$withval" ],
+    [ with_odbc="no" ])
+
+if test "x$with_odbc" != "xno"; then
+  if test "x$with_odbc" = "xyes"; then
+    odbc_directory="$default_directory"
+    odbc_fail="yes"
+  elif test -d $withval; then
+    odbc_directory="$withval $default_directory";
+    odbc_fail="yes"
+  elif test "x$with_odbc" = "x"; then
+    odbc_directory="$default_directory"
+    odbc_fail="no"
+  fi
+
+  AC_MSG_CHECKING("for odbc")
+
+  for i in $odbc_directory; do
+    if test -r "$i/include/sql.h"; then
+    if test -r "$i/include/sqlext.h"; then
+    if test -r "$i/include/sqltypes.h"; then
+      ODBC_DIR="$i"
+      ODBC_INC_DIR="$i/include"
+    fi fi fi
+  done
+
+  if test -z "$ODBC_DIR"; then
+    if test "x$odbc_fail" != "xno"; then
+      tmp=""
+      for i in $odbc_directory; do
+        tmp="$tmp $i/include"
+      done
+      FAIL_MESSAGE("odbc headers (sql.h sqlext.h sqltypes.h)", $tmp)
+    else
+      AC_MSG_RESULT(no)
+    fi
+  else
+
+    str="$ODBC_DIR/lib/libodbc.*"
+    for j in `echo $str`; do
+      if test -r "$j"; then
+        ODBC_LIB_DIR="$ODBC_DIR/lib"
+        ODBC_LIB="odbc"
+      fi
+    done
+
+dnl    if test -z "$ODBC_LIB_DIR"; then
+dnl      str="$ODBC_DIR/lib/libiodbc.*"
+dnl      for j in `echo $str`; do
+dnl        if test -r $j; then
+dnl          ODBC_LIB_DIR="$ODBC_DIR/lib"
+dnl          ODBC_LIB="iodbc"
+dnl        fi
+dnl      done
+dnl    fi
+
+    if test -z "$ODBC_LIB_DIR"; then
+      if test "x$odbc_fail" != "xno"; then
+        FAIL_MESSAGE("odbc library (libodbc)", "$ODBC_DIR/lib")
+      else
+        AC_MSG_RESULT(no)
+      fi
+    else
+      AC_MSG_RESULT(yes)
+      LDFLAGS="${LDFLAGS} -L${ODBC_LIB_DIR}"
+      CPPFLAGS="${CPPFLAGS} -I${ODBC_INC_DIR} -DENABLE_ODBC"
+      LIBS="${LIBS} -l$ODBC_LIB"
+    fi
+  fi
+fi
+
+AC_ARG_WITH(postgresql,
+    [  --with-postgresql=DIR          Support for PostgreSQL],
+    [ with_postgresql="$withval" ],
+    [ with_postgresql="no" ])
+
+AC_ARG_WITH(pgsql_includes,
+    [  --with-pgsql-includes=DIR      PostgreSQL include directory],
+    [with_pgsql_includes="$withval" ],
+    [with_pgsql_includes="no" ])
+
+if test "x$with_postgresql" != "xno"; then
+  if test "x$with_postgresql" = "xyes"; then
+    postgresql_directory="$default_directory /usr/local/pgsql /usr/pgsql /usr/local"
+    postgresql_fail="yes"
+  elif test -d $withval; then
+    postgresql_directory="$withval $default_directory /usr/local/pgsql /usr/pgsql"
+    postgresql_fail="yes"
+  elif test "$with_postgresql" = ""; then
+    postgresql_directory="$default_directory /usr/local/pgsql /usr/pgsql"
+    postgresql_fail="no"
+  fi
+
+  AC_MSG_CHECKING(for postgresql)
+
+  if test "x$with_pgsql_includes" != "xno"; then
+    for i in $with_pgsql_includes $postgresql_directory; do
+      if test -r "$i/libpq-fe.h"; then
+        POSTGRESQL_INC_DIR="$i"
+      elif test -r "$i/include/pgsql/libpq-fe.h"; then
+        POSTGRESQL_INC_DIR="$i/include/pgsql"
+      elif test -r "$i/include/libpq-fe.h"; then
+        POSTGRESQL_INC_DIR="$i/include"
+      elif test -r "$i/include/postgresql/libpq-fe.h"; then
+        POSTGRESQL_INC_DIR="$i/include/postgresql"
+      fi
+    done
+  fi
+
+  if test -z "$POSTGRESQL_INC_DIR"; then
+    for i in $postgresql_directory; do
+      if test -r "$i/include/pgsql/libpq-fe.h"; then
+        POSTGRESQL_DIR="$i"
+        POSTGRESQL_INC_DIR="$i/include/pgsql"
+      elif test -r "$i/include/libpq-fe.h"; then
+        POSTGRESQL_DIR="$i"
+        POSTGRESQL_INC_DIR="$i/include"
+      elif test -r "$i/include/postgresql/libpq-fe.h"; then
+        POSTGRESQL_DIR="$i"
+        POSTGRESQL_INC_DIR="$i/include/postgresql"
+      fi
+    done
+  fi
+
+  if test -z "$POSTGRESQL_INC_DIR"; then
+    if test "x$postgresql_fail" != "xno"; then
+      tmp=""
+      if test "x$with_pgsql_includes" != "xno"; then
+        tmp="$tmp $with_pgsql_includes"
+      fi
+      for i in $postgresql_directory; do
+        tmp="$tmp $i/include $i/include/pgsql"
+      done
+      FAIL_MESSAGE("postgresql header file (libpq-fe.h)", $tmp)
+    else
+      AC_MSG_RESULT(no)
+    fi
+  fi
+
+  if test -z "$POSTGRESQL_DIR"; then
+    for dir in $postgresql_directory; do
+       for i in "lib" "lib/pgsql"; do
+         str="$dir/$i/libpq.*"
+         for j in `echo $str`; do
+           if test -r $j; then
+  	     POSTGRESQL_LIB_DIR="$dir/$i"
+             break 2
+           fi
+         done
+       done
+   done
+  else
+   POSTGRESQL_LIB_DIR="$POSTGRESQL_DIR/lib"
+  fi
+
+  if test -z "$POSTGRESQL_LIB_DIR"; then
+     if test "$postgresql_fail" != "no"; then
+       FAIL_MESSAGE("postgresql library libpq",
+       "$POSTGRESQL_DIR/lib $POSTGRESQL_DIR/lib/pgsql")
+     else
+       AC_MSG_RESULT(no);
+     fi
+  else
+     AC_MSG_RESULT(yes)
+     LDFLAGS="${LDFLAGS} -L${POSTGRESQL_LIB_DIR}"
+     CPPFLAGS="${CPPFLAGS} -I${POSTGRESQL_INC_DIR} -DENABLE_POSTGRESQL"
+     AC_CHECK_LIB(pq, PQexec,, PQLIB="no")
+     if test "x$PQLIB" != "xno"; then
+        LIBS="${LIBS} -lpq"
+     else
+        echo
+        echo "   ERROR!  libpq (postgresql) not found!"
+        echo
+        exit 1
+     fi
+  fi
+fi
+
+AC_ARG_WITH(oracle,
+    [  --with-oracle=DIR              Support for Oracle],
+    [ with_oracle="$withval" ],
+    [ with_oracle="no" ])
+
+if test "x$with_oracle" != "xno"; then
+  if test "x$with_oracle" = "xyes"; then
+    oracle_directory="$default_directory ${ORACLE_HOME}"
+    oracle_fail="yes"
+  elif test -d $withval; then
+    oracle_directory="$withval $default_directory ${ORACLE_HOME}"
+    oracle_fail="yes"
+  elif test "x$with_oracle" = "x"; then
+    oracle_directory="$default_directory ${ORACLE_HOME}"
+    oracle_fail="no"
+  fi
+
+  AC_MSG_CHECKING(for oracle)
+
+  for i in $oracle_directory; do
+    if test -r "$i/rdbms/demo/oci.h"; then
+      ORACLE_DIR="$i"
+    fi
+  done
+
+  if test -z "$ORACLE_DIR"; then
+    if test "x$oracle_fail" != "xno"; then
+      tmp=""
+      for i in $oracle_directory; do
+        tmp="$tmp $i/rdbms/demo"
+      done
+      FAIL_MESSAGE("OCI header file (oci.h)", $tmp)
+    else
+      AC_MSG_RESULT(no)
+    fi
+  else
+    for i in "rdbms/demo" "rdbms/public" "network/public"; do
+      ORACLE_CPP_FLAGS="$ORACLE_CPP_FLAGS -I$ORACLE_DIR/$i"
+    done
+    ORACLE_LIB_DIR="$ORACLE_DIR/lib"
+    AC_MSG_RESULT(yes)
+
+    LDFLAGS="${LDFLAGS} -L${ORACLE_LIB_DIR}"
+    CPPFLAGS="${CPPFLAGS} ${ORACLE_CPP_FLAGS} -DENABLE_ORACLE"
+
+    ORACLE_LIBS="-lclntsh"
+    if test -r "$ORACLE_LIB_DIR/libwtc9.so"; then
+      ORACLE_LIBS="${ORACLE_LIBS} -lwtc9"
+    elif test -r "$ORACLE_LIB_DIR/libwtc8.so"; then
+      ORACLE_LIBS="${ORACLE_LIBS} -lwtc8"
+    fi
+    LIBS="${LIBS} ${ORACLE_LIBS}"
+  fi
+fi
+
+AC_ARG_ENABLE(react,
+[  --enable-react           Intercept and terminate offending HTTP accesses],
+       enable_react="$enableval", enable_react="no")
+
+AC_ARG_ENABLE(flexresp3,
+[  --enable-flexresp3       Flexible Responses (v3) on hostile connection attempts],
+       enable_flexresp3="$enableval", enable_flexresp3="no")
+
+AC_ARG_ENABLE(aruba,
+[  --enable-aruba           Enable Aruba output plugin],
+       enable_aruba="$enableval", enable_aruba="no")
+if test "x$enable_aruba" = "xyes"; then
+    CPPFLAGS="$CPPFLAGS -DARUBA"
+fi
+
+# test for invalid configurations here after all AC_ARG_ENABLEs
+if test "x$enable_flexresp3" = "xyes"; then
+    # flexresp3 options are a union of flexresp (deleted) and flexresp2
+    # options so we assume flexresp3 if multiple are enabled.
+    if test "x$enable_flexresp2" = "xyes"; then
+        echo "WARNING: multiple flexresp versions enabled; using flexresp3"
+        enable_flexresp2="no"
+    fi
+fi
+
+AM_CONDITIONAL(BUILD_REACT, test "x$enable_react" = "xyes")
+if test "x$enable_react" = "xyes"; then
+    CPPFLAGS="${CPPFLAGS} -DENABLE_REACT"
+fi
+
+AM_CONDITIONAL(BUILD_RESPOND3, test "x$enable_flexresp3" = "xyes")
+if test "x$enable_flexresp3" = "xyes"; then
+    CPPFLAGS="${CPPFLAGS} -DENABLE_RESPOND -DENABLE_RESPONSE3"
+fi
+
+if test "x$enable_normalizer" = "xyes" \
+     -o "x$enable_sourcefire" = "xyes" ; \
+then
+    CPPFLAGS="${CPPFLAGS} -DNORMALIZER"
+fi
+
+if test "x$enable_active_response" = "xyes" \
+     -o "x$enable_flexresp3" = "xyes" \
+     -o "x$enable_react" = "xyes" \
+     -o "x$enable_sourcefire" = "xyes" ; \
+then
+    CPPFLAGS="${CPPFLAGS} -DACTIVE_RESPONSE"
+fi
+
+AC_ARG_ENABLE(intel_soft_cpm,
+[  --enable-intel-soft-cpm  Enable Intel Soft CPM support],
+       enable_intel_soft_cpm="$enableval", enable_intel_soft_cpm="no")
+
+AC_ARG_WITH(intel_soft_cpm_includes,
+	[  --with-intel-soft-cpm-includes=DIR      Intel Soft CPM include directory],
+	[with_intel_soft_cpm_includes="$withval"],[with_intel_soft_cpm_includes="no"])
+
+AC_ARG_WITH(intel_soft_cpm_libraries,
+	[  --with-intel-soft-cpm-libraries=DIR     Intel Soft CPM library directory],
+	[with_intel_soft_cpm_libraries="$withval"],[with_intel_soft_cpm_libraries="no"])
+
+if test "x$with_intel_soft_cpm_includes" != "xno"; then
+    enable_intel_soft_cpm="yes"
+    CPPFLAGS="${CPPFLAGS} -I${with_intel_soft_cpm_includes}"
+fi
+
+if test "x$with_intel_soft_cpm_libraries" != "xno"; then
+    enable_intel_soft_cpm="yes"
+    LDFLAGS="${LDFLAGS} -L${with_intel_soft_cpm_libraries}"
+    LIBS="${LIBS} -lpm"
+fi
+
+AM_CONDITIONAL(HAVE_INTEL_SOFT_CPM, test "x$enable_intel_soft_cpm" = "xyes")
+if test "x$enable_intel_soft_cpm" = "xyes"; then
+    CPPFLAGS="${CPPFLAGS} -DINTEL_SOFT_CPM"
+fi
+
+AC_ARG_ENABLE(rzb-saac,
+[  --enable-rzb-saac        Enable Razorback SaaC support],
+       enable_rzb_saac="$enableval", enable_rzb_saac="no")
+
+AC_ARG_WITH(librzb_api_includes,
+	[  --with-librzb-api-includes=DIR    librazorback_api include directory],
+	[with_librzb_api_includes="$withval"],[with_librzb_api_includes="no"])
+
+AC_ARG_WITH(librzb_api_libraries,
+	[  --with-librzb-api-libraries=DIR   librzb_api library directory],
+	[with_librzb_api_libraries="$withval"],[with_librzb_api_libraries="no"])
+
+if test "x$with_librzb_api_includes" != "xno"; then
+   RZBCFLAGS="-I${with_librzb_api_includes}"
+else
+   RZBCFLAGS="`pkg-config --cflags razorback`"
+fi
+
+if test "x$with_librzb_api_libraries" != "xno"; then
+   RZBLIBS="-L${with_librzb_api_libraries} -lrazorback_api"
+else
+   RZBLIBS="`pkg-config --libs razorback`"
+fi
+
+if test "x$RZBLIBS" = "x"; then
+   RZBLIBS="-lrazorback_api"
+fi
+
+if test "x$enable_rzb_saac" = "xyes"; then
+    tmp_LIBS="${LIBS}"
+    LIBS="${tmp_LIBS} ${RZBLIBS}"
+    AC_CHECK_LIB(razorback_api, rzb_collection, LRZB="yes", LRZB="no")
+    LIBS="${tmp_LIBS}"
+    if test "x$LRZB" = "xno"; then
+        echo
+        echo "   ERROR!  razorback_api library not found, go get it from"
+        echo "   http://sourceforge.net/projects/razorbacktm/"
+        exit
+    fi
+fi
+
+AM_CONDITIONAL([WANT_SF_SAAC], [test x$enable_rzb_saac = xyes])
+AC_SUBST(RZBCFLAGS)
+AC_SUBST(RZBLIBS)
+
+# let's make some fixes..
+
+CFLAGS=`echo $CFLAGS | sed -e 's/-I\/usr\/include //g'`
+CPPFLAGS=`echo $CPPFLAGS | sed -e 's/-I\/usr\/include //g'`
+
+if test "x$GCC" = "xyes" ; then
+    echo `$CC -v 2>&1` | grep "version 4" > /dev/null
+    if test $? = 0 ; then
+        CFLAGS="$CFLAGS -fno-strict-aliasing"
+    fi
+fi
+
+if test "x$linux" = "xyes"; then
+    AC_MSG_CHECKING(for linuxthreads)
+    tstr=`getconf GNU_LIBPTHREAD_VERSION 2>&1`
+    if test $? = 0; then  # GNU_LIBPTHREAD_VERSION is a valid system variable
+        echo $tstr | grep -i linuxthreads > /dev/null 2>&1
+        if test $? = 0; then
+            AC_DEFINE([HAVE_LINUXTHREADS],[1],[Define whether linuxthreads is being used])
+            AC_MSG_RESULT(yes)
+        else
+            AC_MSG_RESULT(no)
+        fi
+    else
+        # Use libc.so to see if linuxthreads is being used
+        $( ldd `which --skip-alias ls` | grep libc.so | awk '{print $3}' ) | grep -i linuxthreads > /dev/null 2>&1
+        if test $? = 0; then
+            AC_DEFINE([HAVE_LINUXTHREADS],[1],[Define whether linuxthreads is being used])
+            AC_MSG_RESULT(yes)
+        else
+            AC_MSG_RESULT(no)
+        fi
+    fi
+fi
+
+if test "$LEX" != "none"; then
+    AC_MSG_CHECKING(for yylex_destroy support)
+
+    version=`$LEX --version | awk '{print $3}'`
+    if test -z $version; then
+        version=`$LEX --version | awk '{print $2}'`
+    fi
+
+    have_yylex_destroy="no"
+    if test $version; then
+        major=`echo $version | awk -F. '{ print $1 }'`
+        minor=`echo $version | awk -F. '{ print $2 }'`
+        subminor=`echo $version | awk -F. '{ print $3 }'`
+
+        if test $major -a $minor -a $subminor; then
+            if test $major -gt 2; then
+                have_yylex_destroy="yes"
+            else
+                if test $major -eq 2; then
+                    if test $minor -gt 5; then
+                        have_yylex_destroy="yes"
+                    else
+                        if test $minor -eq 5; then
+                            if test $subminor -ge 9; then
+                                have_yylex_destroy="yes"
+                            fi
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    fi
+
+    if test "x$have_yylex_destroy" = "xyes"; then
+        AC_MSG_RESULT(yes)
+        AC_DEFINE([HAVE_YYLEX_DESTROY],[1],[Define whether yylex_destroy is supported in flex version])
+    else
+        AC_MSG_RESULT(no)
+    fi
+fi
+
+# Set to no optimization regardless of what user or autostuff set
+if test "x$NO_OPTIMIZE" = "xyes"; then
+    CFLAGS=`echo $CFLAGS | sed -e "s/-O./-O0/"`
+
+    # in case user override doesn't include -O
+    if echo $CFLAGS | grep -qve -O0 ; then
+        CFLAGS="$CFLAGS -O0"
+    fi
+fi
+
+if test "x$ADD_WERROR" = "xyes"; then
+    CFLAGS="$CFLAGS -Werror"
+fi
+
+if test -n "$GCC"; then
+    CFLAGS="$CFLAGS -Wall"
+fi
+
+echo $CFLAGS > cflags.out
+echo $CPPFLAGS > cppflags.out
+
+INCLUDES='-I$(top_srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/src/sfutil $(extra_incl) -I$(top_srcdir)/src/output-plugins -I$(top_srcdir)/src/detection-plugins -I$(top_srcdir)/src/dynamic-plugins -I$(top_srcdir)/src/preprocessors -I$(top_srcdir)/src/preprocessors/portscan -I$(top_srcdir)/src/preprocessors/HttpInspect/include -I$(top_srcdir)/src/preprocessors/Stream5 -I$(top_srcdir)/src/target-based'
+
+AC_SUBST(INCLUDES)
+
+AC_PROG_INSTALL
+AC_CONFIG_FILES([ \
+snort.pc \
+Makefile \
+src/Makefile \
+src/sfutil/Makefile \
+src/detection-plugins/Makefile \
+src/dynamic-examples/Makefile \
+src/dynamic-examples/dynamic-preprocessor/Makefile \
+src/dynamic-examples/dynamic-rule/Makefile \
+src/dynamic-plugins/Makefile   \
+src/dynamic-plugins/sf_engine/Makefile   \
+src/dynamic-plugins/sf_engine/examples/Makefile   \
+src/dynamic-plugins/sf_preproc_example/Makefile   \
+src/dynamic-preprocessors/Makefile   \
+src/dynamic-preprocessors/libs/Makefile   \
+src/dynamic-preprocessors/ftptelnet/Makefile   \
+src/dynamic-preprocessors/smtp/Makefile   \
+src/dynamic-preprocessors/ssh/Makefile   \
+src/dynamic-preprocessors/dcerpc2/Makefile   \
+src/dynamic-preprocessors/sdf/Makefile   \
+src/dynamic-preprocessors/dns/Makefile   \
+src/dynamic-preprocessors/ssl/Makefile   \
+src/dynamic-preprocessors/rzb_saac/Makefile   \
+src/output-plugins/Makefile    \
+src/preprocessors/Makefile     \
+src/preprocessors/HttpInspect/Makefile    \
+src/preprocessors/HttpInspect/include/Makefile    \
+src/preprocessors/HttpInspect/utils/Makefile \
+src/preprocessors/HttpInspect/anomaly_detection/Makefile \
+src/preprocessors/HttpInspect/client/Makefile \
+src/preprocessors/HttpInspect/event_output/Makefile \
+src/preprocessors/HttpInspect/mode_inspection/Makefile \
+src/preprocessors/HttpInspect/normalization/Makefile \
+src/preprocessors/HttpInspect/server/Makefile \
+src/preprocessors/HttpInspect/session_inspection/Makefile \
+src/preprocessors/HttpInspect/user_interface/Makefile \
+src/preprocessors/Stream5/Makefile \
+src/parser/Makefile \
+src/target-based/Makefile \
+doc/Makefile \
+contrib/Makefile \
+schemas/Makefile \
+rpm/Makefile \
+preproc_rules/Makefile \
+m4/Makefile \
+etc/Makefile \
+templates/Makefile \
+tools/Makefile \
+tools/u2boat/Makefile \
+tools/u2spewfoo/Makefile \
+src/win32/Makefile])
+AC_OUTPUT
+
+if test "x$mysql_has_reconnect" = "xno"; then
+cat <<EOF
+
+********************************************************************************
+ MySQL version warning
+
+ The MySQL client version you are using does not by default reconnect to the
+ server if the connection is lost and does not have the option to configure
+ this for the client.  Snort, for security reasons, erases the connection
+ password from memory, so it cannot explicity reconnect at runtime.  Please
+ update your version of MySQL to 5.0.13 or greater or you risk connections
+ timing out because of inactivity resulting in the inablilty of Snort to write
+ alerts to the database.  If you can't upgrade, try setting the 'wait-timeout'
+ configuration parameter to the maximum value possible in the @<:@mysqld@:>@
+ section of my.cnf, e.g. wait-timeout=31536000.  This should give you a good
+ year of inactivity before the server terminates the connection ... if your
+ network is this clean, you probably don't need to use Snort.
+
+********************************************************************************
+
+EOF
+fi

@@ -1,0 +1,207 @@
+THRESHOLDING AND EVENT SUPPRESSION IN SNORT 
+
+** This document describes the 'threshold' and 'suppress' keywords.  'threshold'
+** is deprecated as of version 2.8.5.  'event_filter' should be used instead.
+** See README.filters for more information.
+
+A rule thresholding feature has been added to SNORT.  This feature is used to
+reduce the number of logged alerts for noisy rules.  This can be tuned to
+significantly reduce false alarms, and it can also be used to write a newer
+breed of rules. Thresholding commands limit the number of times a particular
+event is logged during a specified time interval. 
+
+Global thresholding has also been added. This allows you to specify a
+threshold for every rule.  Standard thresholding tests are applied 1st to an
+event, if they do not block a rule from being logged than the global
+thresholding test is applied - thresholds in a rule will always override a global.
+
+Event suppression stops specified events from firing without removing the rule
+from the rule base. Suppression uses a CIDR block notation to select specific
+networks and users for suppression.  Suppression tests are performed prior to
+either standard or global thresholding tests.
+
+There are 3 types of thresholding:
+
+1) Limit 
+   Alert on the 1st M events during the time interval, then ignore events
+   for the rest of the time interval.
+
+2) Threshold 
+   Alert every M times we see this event during the time interval.
+
+3) Both 
+   Alert once per time interval after seeing M occurrences of the event,
+   then ignore any additional events during the time interval.
+ 
+All tracking is by Src or by Dst IP, we do not track ports or anything else.
+
+Thresholding commands can be included as part of a rule, or you can use
+standalone threshold commands that reference the generator and sid  they are
+applied to. There is no functional difference between adding a threshold to a
+rule, or using a separate threshold command applied to the same rule.   There
+is a logical difference.  Some rules may only make sense with a threshold.
+These should incorporate the threshold command into the rule.  For instance a
+rule for detecting a too many login password attempts may require more than 5
+attempts.  This can be done using the 'limit' type of threshold command.  It
+makes sense that the threshold feature is an integral part of this rule.
+
+Suppression commands are standalone commands that reference generator's and
+sid's and IP addresses via an IP list. This allows a rule to be completely
+suppressed, or suppressed when the causative traffic is going to or coming
+from a specific IP or group of IP addresses.
+
+Events in SNORT are generated in the usual way, thresholding and event
+suppression are handled as part of the output system.
+
+You may apply only one threshold to any given sid, but you may apply multiple
+suppression commands to a sid.  You may also combine one threshold command and
+several suppression commands to the same sid.  If you try to apply more than
+one threshold command to a sid, SNORT will terminate while reading the
+configuration information. 
+
+ 
+THRESHOLDING CONFIGURATION COMMAND:
+----------------------------------- 
+
+config threshold: memcap 3000000
+	
+The memcap parameter is specified in bytes.
+
+
+THRESHOLD RULE FORMAT:
+---------------------
+
+threshold: type limit|threshold|both, track by_src|by_dst, count n , seconds m ;
+ 
+
+THRESHOLD RULE OPTION PARAMETERS:
+--------------------------------
+
+threshold       keyword to start a threshold command in a rule. 
+
+This format supports 4 threshold options - all are required.
+
+    type		limit, threshold, both
+    track		by_src , by_dst
+    count		n : number events used by the thresholding
+    seconds		m : time period over which count is accrued.
+
+
+EXAMPLE RULES:
+--------------
+
+This rule logs the 1st event of this sid every 60 seconds
+
+    alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"WEB-MISC robots.txt access"; flow:to_server, established; uricontent:"/robots.txt"; nocase; reference:nessus,10302; classtype:web-application-activity; threshold: type limit, track by_src, count 1 , seconds 60 ; sid:1852; rev:1;)
+ 
+
+This rule logs every 10th event on this sid during a 60 second interval, so if
+less than 10 occur in 60 seconds, nothing gets logged.  Once an event is
+logged, a new time period starts for type=threshold.
+
+    alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"WEB-MISC robots.txt access"; flow:to_server, established; uricontent:"/robots.txt"; nocase; reference:nessus,10302; classtype:web-application-activity; threshold: type threshold, track by_dst, count 10 , seconds 60 ; sid:1852; rev:1;)
+
+
+This rule logs at most one event every 60 seconds if at least 10 events on this
+sid are fired.
+
+    alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"WEB-MISC robots.txt access"; flow:to_server, established; uricontent:"/robots.txt"; nocase; reference:nessus,10302; classtype:web-application-activity; threshold: type both , track by_dst, count 10 , seconds 60 ; sid:1852; rev:1;)
+
+
+THRESHOLD COMMAND FORMAT:
+-------------------------
+
+threshold gen_id gen-id, sig_id sig-id, type limit|threshold|both, track by_src|by_dst, count n , seconds m  
+
+
+THRESHOLD COMMAND PARAMETERS:
+----------------------------
+
+This format supports 6 threshold options - all are required.
+
+gen_id  gen-id 
+sig_id  sig-id
+type    limit, threshold, both
+track   by_src, by_dst
+count   n 
+seconds m
+
+
+GLOBAL THRESHOLDING COMMAND:
+----------------------------
+
+The global threshold options are the same as the standard threshold options
+with the exception of the 'sig_id' field.  The sig_id field must be set to 0 to
+indicate this threshold command applies to all sig_id values with the specified
+gen_id. To apply the same threshold to all gen_id's at the same time, and with
+just one command specify a value of gen_id=0.
+
+
+GLOBAL THRESHOLD COMMAND FORMAT:
+--------------------------------
+
+threshold gen_id gen-id, sig_id 0, \
+    type limit|threshold|both, \
+    track by_src|by_dst, \
+    count n , seconds m  
+
+or 
+
+threshold gen_id 0 , sig_id 0, \
+    type limit|threshold|both, \
+    track by_src|by_dst, \
+    count n , seconds m  
+
+
+THRESHOLD EXAMPLES:
+------------------
+
+# Rule Threshold - Limit to logging 1 event per 60 seconds
+threshold gen_id 1, sig_id 1851, type limit, track by_src, count 1, seconds 60
+
+
+# Rule Threshold - Limit to logging every 3rd event
+threshold gen_id 1, sig_id 1852, type threshold, track by_src, count 3, seconds 60
+
+# Rule Threshold - Limit to logging just 1 event per 60 seconds, but only if 
+# we exceed 30 events in 60 seconds
+threshold gen_id 1, sig_id 1853, type both, track by_src,  count 30, seconds 60
+
+
+# Global Threshold - Limit to logging 1 event per 60 seconds per IP triggering 
+# each rule
+threshold gen_id 1, sig_id 0, type limit, track by_src, count 1, seconds 60
+
+# Global Threshold - Limit to logging 1 event per 60 seconds per IP triggering 
+# each rule for each event generator
+threshold gen_id 0, sig_id 0, type limit, track by_src, count 1, seconds 60
+
+ 
+SUPPRESS COMMAND FORMAT:
+-----------------------
+suppress gen_id gen-id, sid_id sid-id, track by_src|by_dst, ip ip-list
+
+
+SUPPRESS COMMAND PARAMETERS:
+---------------------------
+
+The suppress command supports either 2 or 4 options 
+ 
+gen_id     gen-id            # always required 
+sig_id     sig-id            # always required
+track      by_src | by_dst   # optional - 4 option version
+ip         ip-list           # optional - 4 option version
+
+
+SUPPRESS EXAMPLES:
+----------------- 
+
+# Suppress this event completely
+suppress gen_id 1, sig_id 1852
+
+# Suppress this event from this IP
+suppress gen_id 1, sig_id 1852, track by_src, ip 10.1.1.54
+
+# Suppress this event to this CIDR block
+suppress gen_id 1, sig_id 1852, track by_dst, ip 10.1.1.0/24
+

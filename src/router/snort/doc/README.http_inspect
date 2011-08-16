@@ -1,0 +1,817 @@
+HttpInspect
+-----------
+Originally authored by Daniel Roelker
+Updated by members of Snort Team
+
+-- Overview --
+HttpInspect is a generic HTTP decoder for user applications.  Given a data 
+buffer, HttpInspect will decode the buffer, find HTTP fields, and normalize 
+the fields.  HttpInspect works on both client requests and server responses.
+
+The current version of HTTP Inspect only handles stateless processing.  This
+means that HTTP Inspect looks for HTTP fields on a packet-by-packet basis, and
+will be fooled if packets are not reassembled.  This works fine when there is
+another module handling the reassembly, but there are limitations in analyzing
+the protocol.  Future versions will have a stateful processing mode which will
+hook into various reassembly modules.
+
+- Configuration --
+HttpInspect has a very "rich" user configuration.  Users can configure 
+individual HTTP servers with a variety of options, which should allow the 
+user to emulate any type of web server.
+
+** Global Configuration **
+The global configuration deals with configuration options that determine the 
+global functioning of HttpInspect.  The following example gives the generic
+global configuration format:
+
+preprocessor http_inspect: global [followed by the configuration options]
+
+You can only have a single global configuration, you'll get an error if 
+you try otherwise.
+
+The global configuration options are described below:
+
+* iis_unicode_map [filename (located in the config dir)] [codemap (integer)] *
+This is the global iis_unicode_map file.  THIS ALWAYS NEEDS TO BE SPECIFIED IN 
+THE GLOBAL CONFIGURATION, otherwise you get an error.  The Microsoft US
+unicode codepoint map is located in the snort /etc directory as a default.
+It is called unicode.map and should be used if no other is available.  You
+can generate your own unicode maps by using the program
+ms_unicode_generator.c located in the HttpInspect utils directory.
+Remember that this configuration is for the global IIS unicode map.  
+Individual servers can reference their own IIS unicode map.
+
+* detect_anomalous_servers *
+This global configuration option enables generic HTTP server traffic inspection
+on non-HTTP configured ports, and alerts if HTTP traffic is seen.  DON'T turn
+this on if you don't have a default server configuration that encompasses all
+of the HTTP server ports that your users might go to.  In the future we
+want to limit this to particular networks so it's more useful, but for right
+now this inspects all network traffic.
+
+* proxy_alert *
+This enables global alerting on HTTP server proxy usage.  By configuring
+HttpInspect servers and enabling allow_proxy_use, you will only receive proxy
+use alerts for web users that aren't using the configured proxies or are using
+a rogue proxy server.
+
+* compress_depth *
+This option specifies the maximum amount of packet payload to decompress. This
+value can be set from 1 to 65535. The default for this option is 1460.
+
+Please note, in case of multiple policies, the value specified in the default policy
+is used and this value overwrites the values specified in the other policies. In case
+of unlimited_decompress this should be set to its max value. This value should be specified
+in the default policy even when the HTTP inspect is turned off using the disabled keyword.
+
+* decompress_depth *
+This option specifies the maximum amount of decompressed data to obtain from the
+compressed packet payload. This value can be set from 1 to 65535. The default for
+this option is 2920.
+
+Please note, in case of multiple policies, the value specified in the default policy
+is used and this value overwrites the values specified in the other policies. In case
+of unlimited_decompress this should be set to its max value. This value should be specified
+in the default policy even when the HTTP inspect is turned off using the disabled keyword.
+
+* max_gzip_mem *
+This option determines (in bytes) the maximum amount of memory the HTTP Inspect preprocessor 
+will use for decompression. This value can be set from 3276 bytes to 100MB. This option
+along with compress and decompress depth determines the gzip sessions that will be 
+decompressed at any given instant. The default value for this option is 838860.
+
+Note: This value should be specified in the default policy even when the HTTP inspect is
+turned off using the disabled keyword. It is suggested to set this value such that the max gzip
+session calculated as follows is atleast 1.
+
+max gzip session = max_gzip_mem /(decompress_depth + compress_depth)
+
+* disabled *
+This optional keyword is allowed with any policy to avoid packet processing.
+This option disables the preprocessor. When the preprocessor is disabled
+only the "max_gzip_mem", "compress_depth" and "decompress_depth" options 
+are applied when specified with the configuration. Other options are 
+parsed but not used. Any valid configuration may have "disabled" added to it.
+
+Please note that if users aren't required to configure web proxy use, then
+you may get a lot of proxy alerts.  So, please only use this feature with
+traditional proxy environments. Blind firewall proxies don't count.
+
+** Server Configuration **
+This is where the fun stuff begins.  There are two types of server 
+configurations: default and [IP].  The default configuration:
+  - preprocessor http_inspect_server: server default [server options]
+  
+This configuration supplies the default server configuration for any server 
+that is not individually configured.  Most of your web servers will most 
+likely end up using this default configuration.  Most of the time I would 
+suggest setting your default server to:
+  - preprocessor http_inspect_server: server default profile all ports { [whatever ports you want] }
+
+In the case of individual IPs the configuration is very similar:
+  - preprocessor http_inspect_server: server [IP] [server options]
+
+Multiple server IPs (and/or networks using CIDR notation) can be specified
+by using a space separated list of IPs encalosed in braces {}'s:
+  - preprocessor http_inspect_server: server { 10.1.1.1 10.2.2.0/24 } [server options]
+
+NOTE: There is a limit of 40 IPs or networks per http_inspect_server line.
+
+Now we'll talk about the server options.  Some configuration options have
+an argument of 'yes' or 'no'.  This argument specifies whether the user wants
+the configuration option to generate an alert or not.  
+
+IMPORTANT: 
+The 'yes/no' argument does not specify whether the configuration option 
+itself is on or off, only the alerting functionality.
+
+* profile [all/apache/iis/iis4_0/iis5_0] *
+Users can configure HttpInspect by using pre-defined HTTP server
+profiles.  Profiles must be specified as the first server option and
+cannot be combined with any other options except:
+  - ports
+  - iis_unicode_map
+  - allow_proxy_use
+  - server_flow_depth 
+  - client_flow_depth 
+  - post_depth
+  - no_alerts
+  - inspect_uri_only
+  - oversize_dir_length
+  - normalize_headers
+  - normalize_cookies
+  - normalize_utf
+  - max_header_length
+  - max_headers
+  - enable_cookie
+  - extended_response_inspection
+  - inspect_gzip
+  - enable_xff
+  - unlimited_decompress
+  - http_methods
+These options must be specified after the 'profile' option.
+
+Example:
+
+preprocessor http_inspect_server: server 1.1.1.1 profile all ports { 80 3128 }
+ 
+There are five profiles available:
+  - all: The "all" profile is meant to normalize the URI using most of the
+  	     common tricks available.  We alert on the more serious forms of 
+	     evasions.  This is a great profile for detecting all the types of	
+	     attacks regardless of the HTTP server.
+
+  - apache: The "apache" profile is used for apache web servers.  This differs
+	     from the 'iis' profile by only accepting utf-8 standard
+	     unicode encoding and not accepting backslashes as
+	     legitimate slashes, like IIS does.  Apache also accepts 
+	     tabs as whitespace 
+
+  - iis: The "iis" profile mimics IIS servers.  So that means we use IIS
+  	     unicode codemaps for each server, %u encoding, bare-byte encoding, 
+         backslashes, etc.
+
+  - iis4_0, iis5_0: In IIS 4.0 and 5.0, there was a double decoding 
+        vulnerability.  These two profiles are identical to IIS, except
+        they will alert by default if a URL has a double encoding.  Double
+        decode is not supported in IIS 5.1 and beyond, so it's disabled in 
+        Snort.
+
+Profiles are not required by http_inspect.
+ 
+* ports { [port] [port] . . . } *
+This is how the user configures what ports to decode on the HTTP server. 
+Encrypted traffic (SSL) cannot be decoded, so adding ports 443 will only 
+yield encoding false positives.
+
+* iis_unicode_map [file (located in config dir)] [codemap (integer)] *
+The IIS Unicode Map is generated by the program ms_unicode_generator.c.  This
+program is located in src/preprocessors/HttpInspect/util.  Executing this
+program generates a unicode map for the system that it was run on.  So to get
+the specific unicode mappings for an IIS web server, you run this program on
+that server and use that unicode map in this configuration.
+
+When using this option, the user needs to specify the file that contains the
+IIS unicode map and also specify the unicode map to use.  For US servers, this
+is usually 1252.  But the ms_unicode_generator program tells you which codemap
+to use for you server, it's the ANSI codepage.  You can select the correct
+code page by looking at the available code pages that the ms_unicode_generator
+outputs.
+
+* extended_response_inspection *
+This enables the extended HTTP response inspection. The default http response
+inspection does not inspect the various fields of a HTTP response. By turning 
+this option the HTTP response will be thoroughly inspected. The different fields 
+of a HTTP response such as status code, status message, headers, cookie (when 
+enable_cookie is configured) and body are extracted and saved into buffers.
+Different rule options are provided to inspect these buffers. 
+
+When this option is turned on, if the HTTP response packet has a body then any
+content pattern matches ( without http modifiers ) will search the response body 
+(decompressed in case of gzip) and not the entire packet payload. To search for 
+patterns in the header of the response, one should use the http modifiers with 
+content such as http_header, http_stat_code, http_stat_msg and http_cookie.
+
+* enable_cookie *
+This options turns on the cookie extraction from HTTP requests and HTTP response.
+By default the cookie inspection and extraction will be turned off. The "Cookie" 
+header line is extracted and stored in HTTP Cookie buffer for HTTP requests and
+"Set-Cookie" is extracted and stored in HTTP Cookie buffer for HTTP responses.
+In both cases the header name is also stored along with the cookie.
+
+* inspect_gzip *
+This option specifies the HTTP inspect module to uncompress the compressed
+data(gzip/deflate) in HTTP response. You should select the config option 
+"extended_response_inspection" before configuring this option. Snort should 
+be configured with --enable-zlib for this option to work as expected. 
+Decompression is done across packets. So the decompression will end when 
+either the 'compress_depth' or 'decompress_depth' is reached or when the 
+compressed data ends. When the compressed data is spanned across multiple
+packets, the state of the last decompressed packet is used to decompressed
+the data of the next packet. But the decompressed data are individually 
+inspected. (i.e. the decompressed data from different packets are not combined
+while inspecting). Also the amount of decompressed data that will be inspected
+depends on the server_flow_depth configured. 
+
+* unlimited_decompress *
+This option enables the user to decompress unlimited gzip data (across multiple 
+packets).Decompression will stop when the compressed data ends or when a out of 
+sequence packet is received. To ensure unlimited decompression, user should set
+the 'compress_depth' and 'decompress_depth' to its maximum values in the default policy.
+The decompression in a single packet is still limited by the 'compress_depth' and 
+'decompress_depth'.
+
+* enable_xff *
+This option enables Snort to parse and log the original client IP present in the
+X-Forwarded-For or True-Client-IP HTTP request headers along with the generated
+events. The XFF/True-Client-IP Original client IP address is logged only with 
+unified2 output and is not logged with console (-A cmg) output.
+
+NOTE: The original client IP from XFF/True-Client-IP in unified2 logs can be viewed 
+using the tool u2spewfoo. This tool is present in the tools/u2spewfoo directory of 
+snort source tree.
+
+* server_flow_depth [integer] *
+* flow_depth [integer] *  (to be deprecated)
+This specifies the amount of server response payload to inspect. When 
+extended_response_inspection is turned on, it is applied to the HTTP response body 
+(decompressed data when inspect_gzip is turned on) and not the HTTP headers. 
+When extended_response_inspection is turned off the server_flow_depth is applied 
+to the entire HTTP response (including headers). Unlike client_flow_depth this 
+option is applied per TCP session. This option can be used to balance the needs of 
+IDS performance and level of inspection of HTTP server response data.  Snort rules are
+targeted at HTTP server response traffic and when used with a small flow_depth value 
+may cause false negatives. Most of these rules target either the HTTP header, or 
+the content that is likely to be in the first hundred or so bytes of non-header data.  
+Headers are usually under 300 bytes long, but your mileage may vary. 
+It is suggested to set the server_flow_depth to its maximum value.
+
+This value can be set from -1 to 65535. A value of -1 causes Snort 
+to ignore all server side traffic for ports defined in "ports" when 
+extended_response_inspection is turned off. When the extended_response_inspection
+ is turned on, value of -1 causes Snort to ignore the HTTP response body data and
+ not the HTTP headers.  Inversely, a value of 0 causes Snort to inspect all HTTP server
+payloads defined in "ports" (note that this will likely slow down IDS
+performance).  Values above 0 tell Snort the number of bytes to
+inspect of the server response (excluding the HTTP headers when extended_response_inspection is
+turned on) in a given HTTP session.  Only packets payloads starting with 'HTTP' will 
+be considered as the first packet of a server response.  If less than flow_depth bytes 
+are in the payload of the HTTP response packets in a given session, the entire payload will be 
+inspected.  If more than flow_depth bytes are in the payload of the HTTP response packet in a session 
+only flow_depth bytes of the payload will be inspected for that session.  Rules that are meant to
+inspect data in the payload of the HTTP response packets in a session beyond 65535 bytes will be 
+ineffective unless flow_depth is set to 0. The default value for server_flow_depth is 300.
+Note that the 65535 byte maximum flow_depth applies to stream 
+reassembled packets as well. It is suggested to set the server_flow_depth 
+to its maximum value.
+
+* client_flow_depth [integer] *
+This specifies the amount of raw client request payload to inspect. This 
+value can be set from -1 to 1460. Unlike server_flow_depth this value is applied 
+to the first packet of the HTTP request. It is not a session based flow depth.
+It has a default value of 300.  It primarily eliminates Snort from inspecting 
+larger HTTP Cookies that appear at the end of many client request Headers.
+
+A value of -1 causes Snort to ignore all client side traffic for ports 
+defined in "ports." Inversely, a value of 0 causes Snort to inspect all HTTP client
+ side traffic defined in "ports" (note that this will likely slow down IDS
+performance).  Values above 0 tell Snort the number of bytes to
+inspect in the first packet of the client request.  If less than flow_depth bytes 
+are in the TCP payload (HTTP request) of the first packet, the entire payload will be inspected.  
+If more than flow_depth bytes are in the payload of the first packet only flow_depth
+bytes of the payload will be inspected.  Rules that are meant to
+inspect data in the payload of the first packet of a client request beyond 1460 bytes will be 
+ineffective unless flow_depth is set to 0.  Note that the 1460 byte maximum flow_depth 
+applies to stream reassembled packets as well. It is suggested to set the client_flow_depth
+to its maximum value.
+
+* post_depth [integer] *
+This specifies the amount of data to inspect in a client post message. The 
+value can be set from -1 to 65495. The default value is -1. A value of -1 
+causes Snort to ignore all the data in the post message. Inversely, a value 
+of 0 causes Snort to inspect all the client post message. This increases 
+the performance by inspecting only specified bytes in the post message.
+
+* ascii [yes/no] *
+The ASCII decode option tells us whether to decode encoded ASCII chars, a.k.a
+%2f = /, %2e = ., etc.  I suggest you don't log alerts for ASCII since it is 
+very common to see normal ASCII encoding usage in URLs.
+
+* extended_ascii_uri *
+This option enables the support for extended ascii codes in the HTTP request
+URI. This option is turned off by default and is not supported with any of 
+the profiles.
+
+* utf_8 [yes/no] *
+The UTF-8 decode option tells us to decode standard UTF-8 unicode sequences that
+are in the URI.  This abides by the unicode standard and only uses % encoding.
+Apache uses this standard, so for any apache servers, make sure you have this
+option turned on.  As for alerting, you may be interested in knowing when you
+have an utf-8 encoded URI, but this will be prone to false positives as
+legitimate web clients use this type of encoding.  When utf_8 is enabled,
+ascii decoding is also enabled to enforce correct functioning.
+
+* u_encode [yes/no] *
+This option emulates the IIS %u encoding scheme.  How the %u encoding scheme
+works is as follows:  The encoding scheme is started by a %u followed by 4
+chars, like %uXXXX.  The XXXX is a hex encoded value that correlates to an
+IIS unicode codepoint.  This value can most definitely be ASCII.  An ASCII
+char is encoded like, %u002f = /, %u002e = ., etc.  If no iis_unicode_map is
+specified before or after this option, the default codemap is used.
+
+You should alert on %u encodings, because I'm not aware of any legitimate 
+clients that use this encoding.  So it is most likely someone trying to be
+covert.
+
+* bare_byte [yes/no] *
+Bare byte encoding is an IIS trick that uses non-ASCII chars as valid values in
+decoding UTF-8 values.  This is NOT in the HTTP standard, as all non-ASCII
+values have to be encoded with a %.  Bare byte encoding allows the user to 
+emulate an IIS server and interpret non-standard encodings correctly.
+
+The alert on this decoding should be enabled, because there are no legitimate
+clients that encoded UTF-8 this way, since it is non-standard.
+
+* base36 [yes/no] *
+This is an option to decode base36 encoded chars.  I didn't have access to 
+a server with this option, since it appears that this is related to certain
+Asian versions of windows.  I'm going off of info from:
+http://www.yk.rim.or.jp/~shikap/patch/spp_http_decode.patch
+So I hope that works for any of you with this option.  Please note that if you
+have enabled %u encoding, this option will not work.  You have to use the
+base36 option with the utf_8 option.  Don't use the %u option, because base36
+won't work.  When base36 is enabled, so is ascii encoding to enforce correct
+behavior.
+
+* iis_unicode [yes/no] *
+The iis_unicode option turns on the unicode codepoint mapping.  If there is no
+iis_unicode_map option specified with the server config, iis_unicode uses the
+default codemap.  The iis_unicode option handles the mapping of non-ascii
+codepoints that the IIS server accepts and decodes normal UTF-8 request.
+
+Users should alert on the iis_unicode option, because it is seen mainly in 
+attacks and evasion attempts.  When iis_unicode is enabled, so is ascii and
+utf-8 decoding to enforce correct decoding.  To alert on utf-8 decoding, the
+user must enable also enable 'utf_8 yes'. 
+
+* double_decode [yes/no] *
+The double_decode option is specific to IIS 4.0 and 5.0. The versions of IIS 
+do two passes through the request URI, doing decodes in each one.  In the 
+first pass, it seems that all types of  IIS encoding is done: UTF-8 unicode,
+ASCII, bare byte, and %u.  In the second pass the following encodings are 
+done:  ASCII, bare byte, and %u.  We leave out UTF-8 because I think how 
+this works is that the % encoded UTF-8 is decoded to the unicode byte in the 
+first pass, and then UTF-8 decoded in the second stage. Anyway, this is really
+complex and adds tons of different encodings for one char.  When double_decode
+is enabled, so is ascii to enforce correct decoding.
+
+* non_rfc_char { [byte] [0x00] . . . } *
+This option lets users receive an alert if certain non-RFC chars are used in
+a request URI.  For instance, a user may not want to see NULL bytes in the
+request-URI and we can give an alert on that.  Please use this option with
+care, because you could configure it to say, alert on all '/' or something
+like that.  It's flexible, so be careful.
+
+* multi_slash [yes/no] *
+This option normalizes multiple slashes in a row, so something like:
+"foo/////////bar" get normalized to "foo/bar".
+
+If you want an alert when multiple slashes are seen, then configure with a yes,
+otherwise a no.
+
+* iis_backslash [yes/no] *
+Normalize backslashes to slashes.  This is again an IIS emulation.  So a
+request-URI of "/foo\bar" gets normalized to "/foo/bar".
+
+* directory [yes/no] *
+This option normalizes directory traversals and self-referential directories.
+So, "/foo/this_is_not_a_real_dir/../bar" get normalized to "/foo/bar".  Also,
+"/foo/./bar" gets normalized to "/foo/bar".  If a user wants to configure an
+alert, then specify "yes", otherwise "no".  This alert may give false positives
+since some web sites refer to files using directory traversals.
+
+* apache_whitespace [yes/no] *
+This option deals with non-RFC standard of tab or carriage return for a space
+delimiter.  Apache accepts this, so if the emulated web server is Apache you need
+to enable this option.  Alerts on this option may be interesting, but may also
+be false positive prone.
+
+* iis_delimiter [yes/no] *
+I originally started out with \n being IIS specific, but Apache takes this
+non-standard delimiter was well.  Since this is common, we always take this 
+as standard since the most popular web servers accept it.  But you can still
+get an alert on this option.
+
+* chunk_length [non-zero positive integer] *
+This option is an anomaly detector for abnormally large chunk sizes.  This picks
+up the apache chunk encoding exploits, and may also alert on HTTP tunneling that
+uses chunk encoding.
+
+* no_pipeline_req *
+This option turns HTTP pipeline decoding off, and is a performance enhancement
+if needed.  By default pipeline requests are inspected for attacks, but when
+this option is enabled, pipeline requests are not decoded and analyzed per HTTP
+protocol field.  It is only inspected with the generic pattern matching.
+
+* non_strict *
+This option turns on non-strict URI parsing for the broken way in which
+Apache servers will decode a URI.  Only use this option on servers that will
+accept URIs like this "GET /index.html alsjdfk alsj lj aj  la jsj s\n".  The
+non_strict option assumes the URI is between the first and second space
+even if there is no valid HTTP identifier after the second space.
+
+* allow_proxy_use *
+By specifying this keyword, the user is allowing proxy use on this server.
+This means that no alert will be generated if the proxy_alert global keyword
+has been used.  If the proxy_alert keyword is not enabled, then this option
+does nothing.  The allow_proxy_use keyword is just a way to suppress 
+unauthorized proxy use for an authorized server.  
+
+* no_alerts *
+This option turns off all alerts that are generated by the HttpInspect
+preprocessor module.  This has no effect on http rules in the ruleset.
+No argument is specified.
+
+* oversize_dir_length [non-zero positive integer] *
+This option takes a non-zero positive integer as an argument.  The
+argument specifies the max char directory length for URL directory.  If a 
+URL directory is larger than this argument size, an alert is generated.  
+A good argument value is 300 chars.  This should limit the alerts
+to IDS evasion type attacks, like whisker -I 4.
+
+* inspect_uri_only *
+This is a performance optimization.  When enabled, only the URI portion of HTTP
+requests will be inspected for attacks.  As this field usually contains 90-95%
+of the web attacks, you'll catch most of the attacks.  So if you need extra
+performance, then enable this optimization.  It's important to note that
+if this option is used without any uricontent rules, then no inspection will
+take place.  This is obvious since the uri is only inspected with uricontent
+rules, and if there are none available then there is nothing to inspect.
+
+For example, if we have the following rule set:
+
+alert tcp any any -> any 80 ( msg:"content"; content: "foo"; )
+
+and then we inspect the following URI:
+
+GET /foo.htm HTTP/1.0\r\n\r\n
+
+No alert will be generated when 'inspect_uri_only' is enabled.  The 
+'inspect_uri_only' configuration turns off all forms of detection except 
+uricontent inspection.
+
+* max_header_length [positive integer] *
+This option takes an integer as an argument.  The integer is the maximum length
+allowed for an HTTP client request header field.  Requests that exceed this 
+length will cause a "Long Header" alert.  This alert is off by default.  To 
+enable, specify an integer argument to max_header_length of 1 to 65535.
+Specifying a value of 0 is treated as disabling the alert.
+
+* webroot *
+This option generates an alert when a directory traversal traverses past
+the web server root directory.  This generates much less false positives than 
+the directory option, because it doesn't alert on directory traversals that 
+stay within the web server directory structure.  It only alerts when the 
+directory traversals go past the web server root directory, which
+is associated with certain web attacks.
+
+* tab_uri_delimiter *
+Both Apache and newer versions of IIS accept tabs as delimiters. However, 
+this option is deprecated and has been replaced by, and is enabled by default
+with, the whitespace_chars option.  For more details on its use, see the 
+whitespace_chars section above. 
+
+* normalize_headers *
+This option turns on normalization for HTTP Header Fields, not including
+Cookies (using the same configuration parameters as the URI normalization (ie,
+multi-slash, directory, etc.).  It is useful for normalizing Referrer URIs
+that may appear in the HTTP Header.
+
+* normalize_cookies *
+This option turns on normalization for HTTP Cookie Fields (using the same
+configuration parameters as the URI normalization (ie, multi-slash, directory,
+etc.).  It is useful for normalizing data in HTTP Cookies that may be
+encoded.
+
+* normalize_utf *
+This option turns on normalization of HTTP response bodies where the Content-Type
+header lists the character set as "utf-16le", "utf-16be", "utf-32le", or
+"utf-32be". HTTP Inspect will attempt to normalize these back into 8-bit encoding,
+generating an alert if the extra bytes are non-zero.
+
+* max_headers [positive integer] *
+This option takes an integer as an argument.  The integer is the maximum
+number of HTTP client request header fields.  Requests that contain
+more HTTP Headers than this value will cause a "Max Header" alert.  The
+alert is off by default.  To enable, specify an integer argument to max_headers
+of 1 to 1024.  Specifying a value of 0 is treated as disabling the alert.
+
+*http_methods { <CMD1> <CMD2> } *
+This specifies additional HTTP Request Methods outside of those checked by
+default within the preprocessor (GET and POST). The list should be enclosed
+within braces and delimited by spaces or \t\n\r. The config option, braces and 
+methods also needs to be separated by braces.
+
+Example : http_methods { PUT CONNECT }
+
+Please note the maximum length for a method name is 7.
+
+-- Profile Breakout --
+There are three profiles that users can select.  Only the configuration 
+that are listed under the profiles are turned on.  If there is no mention 
+of alert on or off, then that means there is no alert associated with the 
+configuration.
+
+* Apache *
+
+server_flow_depth 300
+non_strict URL parsing is set
+chunk encoding (alert on chunks larger than 500000 bytes)
+ascii decoding is on (alert off)
+multiple slash (alert off)
+directory normalization (alert off)
+webroot (alert on)
+apache whitespace (alert off)
+utf_8 encoding (alert off)
+max_header_length 0 (header length not checked)
+max_headers 0 (number of headers not checked)
+
+* IIS *
+
+server_flow_depth 300
+non_strict URL parsing is set
+chunk encoding (alert on chunks larger than 500000 bytes)
+iis_unicode_map is set to the codepoint map in the global configuration
+ascii decoding (alert off)
+multiple slash (alert off)
+directory normalization (alert off)
+webroot (alert on)
+%u decoding (alert on)
+bare byte decoding (alert on)
+iis unicode codepoints (alert on)
+iis backslash (alert off)
+iis delimiter (alert off)
+apache whitespace (alert off)
+max_header_length 0 (header length not checked)
+max_headers 0 (number of headers not checked)
+
+* IIS4_0 and IIS5_0 *
+
+server_flow_depth 300
+non_strict URL parsing is set
+chunk encoding (alert on chunks larger than 500000 bytes)
+iis_unicode_map is set to the codepoint map in the global configuration
+ascii decoding (alert off)
+multiple slash (alert off)
+directory normalization (alert off)
+webroot (alert on)
+double decoding (alert on)
+%u decoding (alert on)
+bare byte decoding (alert on)
+iis unicode codepoints (alert on)
+iis backslash (alert off)
+iis delimiter (alert off)
+apache whitespace (alert off)
+max_header_length 0 (header length not checked)
+max_headers 0 (number of headers not checked)
+
+* All * 
+
+server_flow_depth 300
+non_strict URL parsing is set
+chunk encoding (alert on chunks larger than 500000 bytes)
+iis_unicode_map is set to the codepoint map in the global configuration
+ascii decoding is on (alert off)
+multiple slash (alert off)
+directory normalization (alert off)
+apache whitespace (alert off)
+double decoding (alert on)
+%u decoding (alert on)
+bare byte decoding (alert on)
+iis unicode codepoints (alert on)
+iis backslash (alert off)
+iis delimiter (alert off)
+webroot (alert on)
+max_header_length 0 (header length not checked)
+max_headers 0 (number of headers not checked)
+
+The following lists the defaults:
+
+Port 80
+server_flow_depth 300
+client_flow_depth 300
+post_depth -1
+non_strict URL parsing is set
+chunk encoding (alert on chunks larger than 500000 bytes)
+ascii decoding is on (alert off)
+utf_8 encoding (alert off)
+multiple slash (alert off)
+directory normalization (alert off)
+webroot (alert on)
+apache whitespace (alert off)
+iis delimiter (alert off)
+max_header_length 0 (header length not checked)
+max_headers 0 (number of headers not checked)
+
+-- Pattern Match with HTTP buffers --
+-- Writing uricontent rules --
+The uricontent parameter in the snort rule language searches the NORMALIZED
+request URI field.  This means that if you are writing rules that include
+things that are normalized, such as %2f or directory traversals, these
+rules will not alert.  The reason is that the things you are looking for
+are normalized out of the URI buffer.  For example, the URI:
+
+/scripts/..%c0%af../winnt/system32/cmd.exe?/c+ver
+
+will get normalized into:
+
+/winnt/system32/cmd.exe?/c+ver
+
+Another example,
+
+/cgi-bin/aaaaaaaaaaaaaaaaaaaaaaaaaa/..%252fp%68f?
+
+into:
+
+/cgi-bin/phf?
+
+So when you are writing a uricontent rule, you should write the content that
+you want to find in the context that the URI will be normalized.  Don't include
+directory traversals (if you normalize directories) and don't look for encode
+characters.  You can accomplish this type of detection by using the 'content'
+rule parameter, since this rule inspects the unnormalized buffer.
+
+-- Http Content Match Keywords --
+
+* http_client_body *
+
+The http_client_body keyword is a content modifier that restricts the search
+to the body of an HTTP client request.  As this keyword is a modifier to the 
+previous 'content' keyword, there must be a content in the rule before 
+'http_client_body' is specified. 
+
+The amount of data that is inspected with this option depends on the post_depth
+config option of HttpInspect. Pattern matches with this keyword wont work when 
+post_depth is set to -1.
+
+* http_cookie *
+
+The http_cookie keyword is a content modifier that restricts the search to the
+extracted Cookie Header field of a HTTP client request or a HTTP server 
+response. The Cookie buffer also includes the header name ("Cookie" for HTTP requests or 
+"Set-Cookie" for HTTP responses). As this keyword is a modifier to the previous 
+'content' keyword, there must be a content in the rule before 'http_cookie' is 
+specified. This keyword is dependent on the 'enable_cookie' config option. 
+The Cookie Header field will be extracted only when this option is configured.
+If enable_cookie is not specified, the cookie still ends up in HTTP header. 
+When enable_cookie is not specified, using http_cookie is the same as using http_header.
+
+The extracted Cookie Header field will be NORMALIZED if the normalize_cookies is 
+configured with HttpInspect.
+
+* http_raw_cookie *
+
+The http_raw_cookie keyword is a content modifier that restricts the search to the
+extracted UNNORMALIZED Cookie Header field of a HTTP client request or a HTTP server 
+response. As this keyword is a modifier to the previous 'content' keyword, there must be
+a content in the rule before 'http_raw_cookie' is specified. This keyword is dependent
+on the 'enable_cookie' config option. The Cookie Header field will be extracted only
+when this option is configured.
+
+* http_header *
+
+The http_header keyword is a content modifier that restricts the search to the
+extracted Header fields of a HTTP client request or a HTTP server response.  
+As this keyword is a modifier to the previous 'content' keyword, there must be
+a content in the rule before 'http_header' is specified.
+
+The extracted Header fields will be NORMALIZED if the normalize_cookies is
+configured with HttpInspect.
+
+* http_raw_header *
+
+The http_raw_header keyword is a content modifier that restricts the search to the
+extracted UNNORMALIZED Header fields of a HTTP client request or a HTTP server
+response. As this keyword is a modifier to the previous 'content' keyword, there must be
+a content in the rule before 'http_raw_header' is specified.
+
+* http_method *
+
+The http_method keyword is a content modifier that restricts the search to the
+extracted Method from a HTTP client request. As this keyword is a modifier to 
+the previous 'content' keyword, there must be a content in the rule before 
+'http_method' is specified.
+
+* http_uri *
+
+The http_uri keyword is a content modifier that restricts the search to the
+NORMALIZED request URI field . Using a content rule option followed by a 
+http_uri modifier is the same as using a uricontent by itself. As this 
+keyword is a modifier to the previous 'content' keyword, there must be
+a content in the rule before 'http_uri' is specified.
+
+* http_raw_uri *
+
+The http_raw_uri keyword is a content modifier that restricts the search to the
+UNNORMALIZED request URI field . As this keyword is a modifier to the previous 
+'content' keyword, there must be a content in the rule before 'http_raw_uri' 
+is specified.
+
+* http_stat_code *
+
+The http_stat_code keyword is a content modifier that restricts the search to the
+extracted Status code field from a HTTP server response. As this keyword is a 
+modifier to the previous 'content' keyword, there must be a content in the rule 
+before 'http_stat_code' is specified. 
+
+The Status Code field will be extracted only if the extended_reponse_inspection is 
+configured for the HttpInspect.
+
+* http_stat_msg *
+
+The http_stat_msg keyword is a content modifier that restricts the search to the
+extracted Status Message field from a HTTP server response. As this keyword is a 
+modifier to the previous 'content' keyword, there must be a content in the rule 
+before 'http_stat_msg' is specified.
+
+The Status Message field will be extracted only if the extended_reponse_inspection is
+configured for the HttpInspect.
+
+* http_encode *
+
+The http_encode keyword will enable alerting based on encoding type present
+in a HTTP client request or a HTTP server response.
+
+There are eleven keywords associated with http_encode. The keywords 'uri', 'header' 
+and 'cookie' determine the HTTP fields used to search for a particular encoding type.
+The keywords 'utf8', 'double_encode', 'non_ascii', 'base36', 'uencode', 'ascii', 'iis_encode' and 'bare_byte' 
+determine the encoding type which would trigger the alert. These keywords can be combined 
+using a OR operation. Negation is allowed on these keywords.
+
+The config option 'normalize_headers' needs to be turned on for rules to work with keyword 'header'.
+The keyword 'cookie' is depedent on config options 'enable_cookie' and 'normalize_cookies'
+This rule option will not be able to detect encodings if the specified HTTP fields are not NORMALIZED.
+
+
+-- Conclusion --
+My suggestions are to stick with the "profile" options, since they are much 
+easier to read and have been researched.
+
+If you feel like giving us profiles for other web servers, please do.
+We'll incorporate them into the default server profiles for HttpInspect.
+
+
+Alerts
+======
+
+HTTP Inspect used generator ID 119 and 120.  HTTP Inspect can generate the 
+following alerts under generator ID 119:
+
+SID   Description
+---   -----------
+1     ASCII encoding
+2     Double decoding attack
+3     U encoding
+4     Bare byte Unicode encoding
+5     Base36 encoding
+6     UTF-8 encoding
+7     IIS Unicode codepoint encoding
+8     multi-slash encoding
+9     IIS backslash evasion
+10    self-directory traversal
+11    directory traversal
+12    Apache whitespace (tab)
+13    Non-RFC HTTP delimiter
+14    Non-RFC defined char
+15    Oversize request-URI directory
+16    Oversize chunk encoding
+17    Unauthorized proxy use detected
+18    Webroot directory traversal
+19    Long header
+
+The following alert is generated with generator ID 120:
+
+SID   Description
+---   -----------
+1     Anomalous HTTP server on undefined HTTP port

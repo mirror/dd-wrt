@@ -1,0 +1,186 @@
+Packet Performance Monitoring (PPM) Capability
+----------------------------------------------
+PPM provides thresholding mechanisms that can be used to provide a basic
+level of latency control for snort.  It does not provide a hard and fast
+latency guarantee but should in effect provide a good average latency
+control.  Both rules and packets can be checked for latency.  The action
+taken upon detection of excessive latency is configurable.  The following
+sections describe configuration, sample output, and some implementation
+details worth noting.
+
+To use PPM, you must build with the --enable-ppm or the --enable-sourcefire
+option to configure.
+
+PPM is configured as follows:
+
+# Packet configuration:
+config ppm: max-pkt-time <micro-secs>, \
+    fastpath-expensive-packets, \
+    pkt-log, \
+    debug-pkts
+
+# Rule configuration:
+config ppm: max-rule-time <micro-secs>, \
+    threshold count, \
+    suspend-expensive-rules, \
+    suspend-timeout <seconds>, \
+    rule-log [log] [alert]
+
+Packets and rules can be configured separately, as above, or together in
+just one config ppm statement.  Packet and rule monitoring is independent,
+so one or both or neither may be enabled.
+
+
+Packet Configuration Options
+----------------------------
+max-pkt-time <micro-secs>
+    - enables packet latency thresholding using 'micros-secs' as the limit.
+    - default is 0 (packet latency thresholding disabled)
+    - reasonable starting defaults: 100/250/1000 for 1G/100M/5M nets
+
+fastpath-expensive-packets
+    - enables stopping further inspection of a packet if the max time is
+      exceeded
+    - default is off
+
+pkt-log
+    - enables logging packet event if packet exceeds max-pkt-time
+    - logging is to syslog or console depending upon snort configuration
+    - default is no logging
+
+debug-pkts
+    - enables per packet timing stats to be printed after each packet
+    - default is off
+
+
+Rule Configuration Options
+--------------------------
+max-rule-time <micro-secs>
+    - enables rule latency thresholding using 'micros-secs' as the limit.
+    - default is 0 (rule latency thresholding disabled)
+    - reasonable starting defaults: 100/250/1000 for 1G/100M/5M nets
+
+threshold <count>
+    - sets the number of cumulative rule time excesses before disabling
+      a rule
+    - default is 5
+
+suspend-expensive-rules
+    - enables suspending rule inspection if the max rule time is exceeded
+    - default is off
+
+suspend-timeout <seconds>
+    - rule suspension time in seconds
+    - default is 60 seconds
+    - set to zero to permanently disable expensive rules
+
+rule-log [log] [alert]
+    - enables event logging output for rules
+    - default is no logging
+    - one or both of the options 'log' and 'alert' must be used with
+      'rule-log'
+    - the log option enables output to syslog or console depending 
+      upon snort configuration
+
+
+Example 1
+---------
+The following enables packet tracking:
+
+config ppm: max-pkt-time 100
+
+The following enables rule tracking:
+config ppm: max-rule-time 50, threshold 5
+
+If fastpath-expensive-packets or suspend-expensive-rules is not used, then
+no action is taken other than to increment the count of the number of
+packets that should be fastpath'd or the rules that should be suspended. A
+summary of this information is printed out when snort exits.
+
+Example 2
+---------
+The following suspends rules and aborts packet inspection.  These rules
+were used to generate the sample output that follows.
+
+config ppm: max-pkt-time 50, fastpath-expensive-packets, pkt-log, \
+            debug-pkt
+
+config ppm: max-rule-time 50, threshold 5, suspend-expensive-rules, \
+            suspend-timeout 300, rule-log log alert
+
+
+Sample Snort Startup Output
+---------------------------
+Packet Performance Monitor Config:
+  ticks per usec  : 1600 ticks
+  max packet time : 50 usecs
+  packet action   : fastpath-expensive-packets
+  packet logging  : log
+  debug-pkts      : disabled
+
+Rule Performance Monitor Config:
+  ticks per usec  : 1600 ticks
+  max rule time   : 50 usecs
+  rule action     : suspend-expensive-rules
+  rule threshold  : 5 
+  suspend timeout : 300 secs
+  rule logging    : alert log 
+
+Sample Snort Run-time Output
+----------------------------
+...
+PPM: Process-BeginPkt[61] caplen=60
+PPM: Pkt[61] Used= 8.15385 usecs
+PPM: Process-EndPkt[61]
+
+PPM: Process-BeginPkt[62] caplen=342
+PPM: Pkt[62] Used= 65.3659 usecs
+PPM: Process-EndPkt[62]
+
+PPM: Pkt-Event Pkt[63] used=56.0438 usecs, 0 rules, 1 nc-rules tested, packet fastpathed.
+PPM: Process-BeginPkt[63] caplen=60
+PPM: Pkt[63] Used= 8.394 usecs
+PPM: Process-EndPkt[63]
+
+PPM: Process-BeginPkt[64] caplen=60
+PPM: Pkt[64] Used= 8.21764 usecs
+PPM: Process-EndPkt[64]
+...
+
+Sample Snort Exit Output
+------------------------
+Packet Performance Summary:
+   max packet time       : 50 usecs
+   packet events         : 1
+   avg pkt time          : 0.633125 usecs
+Rule Performance Summary:
+   max rule time         : 50 usecs
+   rule events           : 0
+   avg nc-rule time      : 0.2675 usecs
+
+
+Implementation Details
+----------------------
+1.  Enforcement of packet and rule processing times is done after
+processing each rule.  Latency control is not enforced after each
+preprocessor.  
+
+2.  This implementation is software based and does not use an interrupt
+driven timing mechanism and is therefore subject to the granularity of the
+software based timing tests. Due to the granularity of the timing
+measurements any individual packet may exceed the user specified packet or
+rule processing time limit.  Therefore this implementation cannot implement
+a precise latency guarantee with strict timing guarantees.  Hence the
+reason this is considered a best effort approach.
+
+3.  Since this implementation depends on hardware based high performance
+frequency counters, latency thresholding is presently only available on
+Intel and PPC platforms. 
+
+4.  Time checks are made based on the total system time, not processor
+usage by Snort.  This was a conscious design decision because when a system
+is loaded, the latency for a packet is based on the total system time, not
+just the processor time the Snort application receives.  Therefore, it is
+recommended that you tune your thresholding to operate optimally when your
+system is under load.
+

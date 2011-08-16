@@ -1,0 +1,385 @@
+FTPTelnet
+=========
+Steven Sturges <ssturges@sourcefire.com>
+Thanks to Dan Roelker <droelker@sourcefire.com>,
+Marc Norton <mnorton@sourcefire.com>, and Andy Mullican
+<amullican@sourcefire.com> for their help with the design.
+
+== Overview ==
+FTPTelnet serves two purposes, decoding and normalizing Telnet traffic,
+and decoding and interpreting FTP traffic.
+
+FTPTelnet handles stateful and stateless processing.  It saves state
+between individual packets.  However maintaining correct state is
+dependent on the reassembly of the client side of the stream (ie, a
+loss of coherent stream data results in a loss of state).
+
+-- Telnet -- 
+Given a telnet data buffer, FTPTelnet will normalize the buffer with
+respect to telnet commands and option negotiation, eliminating telnet
+command sequences per RFC 854.  It will also determine when a
+telnet connection is encrypted, per the use of the telnet encryption
+option per RFC 2946.
+
+-- FTP --
+Given an FTP command channel buffer, FTPTelnet will interpret the data,
+identifying FTP commands and parameters, as well as FTP response codes
+and messages.  It will enforce correctness of the parameters, determine
+when an FTP command connection is encrypted, and determine when an FTP
+data channel is opened.
+
+== Configuration ==
+FTPTelnet has a very "rich" user configuration.  Users can configure 
+checks for a few specific telnet exploits, and specify individual FTP
+servers and clients with a variety of options, which should allow the 
+user to emulate any type of web server or client.
+
+It is VERY IMPORTANT to understand the configuration semantics, so an
+administrator can know what to expect from the normalization routines and
+protocol correctness checks.
+
+Within the discussions of each option, occurance of a / in the option
+parameters implies that one or the other parameter must be specified
+when that option is used.  For example, with a yes/no option, the presence
+of the option causes detection to occur when tracking state.  A yes
+results in an alert being generated.
+
+-- Global Configuration --
+The global configuration deals with configuration options that determine the 
+global functioning of FTPTelnet.  The following example gives the generic
+global configuration format:
+
+preprocessor ftp_telnet: global [followed by the configuration options]
+
+There can only be a single global configuration.  An error will be reported
+otherwise.
+
+The global configuration options are described below:
+
+*inspection_type stateful/stateless *
+Indicate whether to operate in stateful stateless mode.
+
+* encrypted_traffic yes/no *
+Detect and alert on encrypted telnet and FTP sessions.
+
+* check_encrypted *
+Instructs the preprocessor to continue checking a data stream after it
+is encrypted, looking for an eventual decrypted data.  This is really
+only applicable if the encrypted_traffic is used, however that is not
+enforced.
+
+-- Telnet configuration --
+The telnet configuration deals with configuration options relating to
+the telnet protocol.  The following example gives the generic telnet
+configuration format:
+
+preprocessor ftp_telnet_protocol: telnet [followed by the options]
+
+There should only be a single telnet configuration, however, subsequent
+ones simply override configuration options established prior.
+
+The telnet configuration options are described below:
+
+* ports { port [port] ... } *
+This specifies on what ports to check for telnet data.  Typically, this will
+only include 23, however, additional ports may be specified since certain
+network routers and other devices employ telnet as a means of administration.
+Because encrypted traffic (SSL) cannot be decoded, adding ports 22 (SSH) could
+yield unexpected results.
+
+* normalize *
+This turns on normalization for the telnet connections.  Typically, it should
+be turned on.
+
+* ayt_attack_thresh number *
+Detect and alert on consecutive are you there [AYT] commands beyond the
+threshold number specified.  This addresses a few specific vulnerabilities
+relating to bsd-based implementations of telnet.
+
+* detect_anomalies *
+In order to support certain options, Telnet supports subnegotiation. Per the 
+Telnet RFC, subnegotiation begins with SB (subnegotiation begin) and must
+end with an SE (subnegotiation end). However, certain implementations of
+Telnet servers will ignore the SB without a corresponding SE. This is
+anomalous behavior which could be an evasion case. Being that FTP uses the
+Telnet protocol on the control connection, it is also susceptible to this
+behavior. The detect_anomalies option enables alerting on Telnet SB without
+the corresponding SE.
+
+-- FTP configuration --
+The FTP configuration deals with configuration options relating to
+FTP servers and FTP clients.  Each of these will be discussed invidually
+below, as the configurations are different.
+
+** Server Configuration **
+There are two types of server configurations: default and [IP].  The
+default configuration:
+  - preprocessor ftp_telnet_protocol: ftp server default [server options]
+
+This configuration supplies the default FTP server configuration for any
+server that is not individually configured.  It is suggested that you
+start with the default configuration and craft individual server
+configurations as required by the environment.
+
+For specific IP's (ie, FTP servers with known behaviour), the configuration
+is very similar:
+  - preprocessor ftp_telnet_protocol: ftp server [IP] [server options]
+
+The server options described below may be used in both the default and
+specific IP configuration.
+
+* ports { port [port] ... } *
+This specifies on what ports to check for FTP data.  Typically, this will
+only include 21, however, additional ports may be specified.
+
+* print_cmds
+Useful for debugging.  This turns on printing of the configuration
+information for each ftp command listed for this server.  By default
+it is not in use, as it generates a substantial amount of output when
+snort is run from the commandline.
+
+* ftp_cmds { cmd [cmd] ... } *
+This specifies additional FTP commands outside of those checked by
+default within the preprocessor.  The preprocessor may be configured
+to generate an alert when it sees a command it does not recognize.
+
+Aside from the default commands recognized, it may be necessary to
+allow the use of the "X" commands, specified in RFC 775.  To do so, use
+the following ftp_cmds option.  Since these are rarely used by FTP
+client implementations, they are not included in the defaults.
+
+ftp_cmds { XPWD XCWD XCUP XMKD XRMD }
+
+* def_max_param_len number *
+This specifies the default maximum parameter length for all commands
+in bytes.  If the parameter for an FTP command exceeds that length,
+and the preprocessor is configured to do so, an alert will be generated.
+This is used to check for buffer overflow exploits within FTP servers.
+
+* alt_max_param_len number { cmd [cmd] ... } *
+This specifies the maximum parameter length for the specified commands
+in bytes, overriding the default.  If the parameter for that FTP command
+exceeds that length, and the preprocessor is configured to do so, an
+alert will be generated.  It can be used to restrict specific commands to
+small parameter values.  For example the USER command -- usernames may
+be no longer than 16 bytes, so the appropriate configuration would be:
+alt_max_param_len 16 { USER }
+
+* chk_str_fmt { cmd [cmd] ... } *
+This causes the preprocessor to check for string format attacks on
+the specified commands.
+
+* cmd_validity cmd < fmt > *
+This specifies the valid format for parameters of a given command.
+fmt is as follows:
+    int            	Param must be an integer
+    number         	Param must be an integer between 1 and 255
+    char <chars>    	Param must be a single char, and one of <chars>
+    date <datefmt>  	Param follows format specified where
+                   	# = Number, C=Char, []=optional, |=OR, {}=choice,
+                   	anything else=literal (ie, .+- )
+    string         	Param is string (effectively unrestricted)
+    host_port      	Param must a host port specifier, per RFC 959.
+    long_host_port 	Parameter must be a long host port specified, per RFC 1639
+    extended_host_port 	Parameter must be an extended host port specified, per RFC 2428
+    {}, |          	One of, alternate values enclosed within
+    {}, []             	Optional value enclosed within {}, optional value enclose within []
+
+Examples of the cmd_validity option are shown below.  These examples
+are the default checks (per RFC 959 and others) performed by the
+preprocessor.
+cmd_validity MODE < char SBC >
+cmd_validity STRU < char FRP >
+cmd_validity ALLO < int [ char R int ] >
+cmd_validity TYPE < { char AE [ char NTC ] | char I | char L [ number ] } >
+cmd_validity PORT < host_port >
+
+A cmd_validity line in the configuration can be used to override these
+defaults and/or add a check for other commands.  A few examples follow
+
+# This allows additional modes, including mode Z which allows for
+# zip-style compression.
+cmd_validity MODE < char ASBCZ >
+
+# Allow for a date in the MDTM command.
+cmd_validity MDTM < [ date nnnnnnnnnnnnnn[.n[n[n]]] ] string >
+
+MDTM is an odd case that is worth discussing...
+
+While not part of an established standard, certain FTP servers accept
+MDTM commands that set the modification time on a file.  The most common
+among servers that do, accept a format using YYYYMMDDHHmmss[.uuu].  Some
+others accept a format using YYYYMMDDHHmmss[+|-]TZ format.  The example
+above is for the first case (time format as specified in
+http://www.ietf.org/internet-drafts/draft-ietf-ftpext-mlst-16.txt)
+
+To check validity for a server that uses the TZ format, use the following:
+
+cmd_validity MDTM < [ date nnnnnnnnnnnnnn[{+|-}n[n]] ] string >
+
+* telnet_cmds yes/no *
+Detect and alert when telnet cmds are seen on the FTP command channel.
+
+* ignore_telnet_erase_cmds yes/no
+
+This option allows Snort to ignore telnet escape sequences for erase character
+(TNC EAC) and erase line (TNC EAL) when normalizing FTP command channel.  Some
+FTP servers do not process those telnet escape sequences.
+
+* data_chan *
+Causes the FTP preprocessor to force the rest of snort to ignore 
+the FTP data channel connections.  This means that NO INSPECTION
+other than state (preprocessor AND rules) will be performed on that
+data channel.  It can turned on to improve performance -- especially
+with respect to large file transfers -- by ignoring traffic.
+
+Use of "data_chan" is deprecated in favor of "ignore_data_chan".
+This option will be removed in a future release.
+
+* ignore_data_chan yes/no *
+When set to "yes", causes the FTP preprocessor to force the rest of snort
+to ignore the FTP data channel connections. NO INSPECTION other than state
+(preprocessor AND rules) will be performed on that data channel. It can
+be turned on to improve performance -- especially with respect to large
+file transfers from a trusted source -- by ignoring traffic. If your rule
+set includes virus-type rules, it is recommended that this option not be used.
+
+** Client Configuration **
+There are two types of client configurations: default and [IP].  The
+default configuration:
+  - preprocessor ftp_telnet_protocol: ftp client default [client options]
+
+This configuration supplies the default FTP client configuration for any
+client that is not individually configured.  It is suggested that you
+start with the default configuration and craft individual client
+configurations as required by the environment.
+
+For specific IP's (ie, FTP clients with known behaviour), the configuration
+is very similar:
+  - preprocessor ftp_telnet_protocol: ftp client [IP] [client options]
+
+The client options described below may be used in both the default and
+specific IP configuration.
+
+* max_resp_len number *
+This specifies the maximum length for all response messages in bytes.
+If the message for an FTP response (everything after the 3 digit code)
+exceeds that length, and the preprocessor is configured to do so, an
+alert will be generated.  This is used to check for buffer overflow
+exploits within FTP clients.
+
+* bounce yes/no *
+Detect and alert on FTP bounce attacks.  An FTP bounce attack occurs
+when the FTP PORT command is issued and the specified host does not
+match the host of the client.
+
+* bounce_to { CIDR,[port|portlow,porthi] } *
+When bounce is turned on, this allows the PORT command to use the
+IP address [CIDR format] and port (or inclusive port range ) without
+generating an alert.  It can be used to deal with proxied FTP
+connections where the FTP data channel is different from the client.
+Two examples of the bounce_to command:
+1) This allows bounces to 192.168.1.1 port 20020 -- ie, the use
+of PORT 192,168,1,1,78,52.
+  bounce_to { 192.168.1.1,20020 }
+2) This allows bounces to 192.168.1.1 ports 20020 to 20040 -- ie,
+the use of PORT 192,168,1,1,78,xx, where xx is 52 through 72, inclusive.
+  bounce_to { 192.168.1.1,20020,20040 } 
+3) This allows bounces to 192.168.1.1 port 20020 and 192.168.1.2 port 20030
+  bounce_to { 192.168.1.1,20020 192.168.1.2,20030 }
+4) This allows bounces to IPv6 address fe8::5 port 59340.  NOTE: IPv6 support
+  must be enabled.
+  bounce_to { fe8::5,59340 } 
+
+* telnet_cmds yes/no *
+Detect and alert when telnet cmds are seen on the FTP command channel.
+
+* ignore_telnet_erase_cmds yes/no
+
+This option allows Snort to ignore telnet escape sequences for erase character
+(TNC EAC) and erase line (TNC EAL) when normalizing FTP command channel.  Some
+FTP clients do not process those telnet escape sequences.
+
+-- Default Configuration --
+The following gives the default configurations:
+
+# Global
+preprocessor ftp_telnet: global \
+  inspection_type stateless
+
+# Telnet protocol
+preprocessor ftp_telnet_protocol: telnet \
+  ports { 23 } 
+
+# Default FTP Server
+# The default FTP server configuration for FTP command validation.
+# Most of this comes from RFC 959, with additional commands being
+# drawn from other RFCs/Internet Drafts that are commonly in use.
+# 
+# The default_max_param_len is somewhat arbitrary, but is taken
+# from the majority of the snort FTP rules that alert on parameter
+# size > 100 characters.  This was the case as of 18 Sep 2004.
+preprocessor ftp_telnet_protocol: ftp server default \
+  ports { 21 } \
+  def_max_param_len 100 \
+  ftp_cmds { USER PASS ACCT CWD CDUP SMNT \
+    QUIT REIN PORT PASV TYPE STRU MODE RETR STOR STOU APPE ALLO REST \
+    RNFR RNTO ABOR DELE RMD MKD PWD LIST NLST SITE SYST STAT HELP NOOP } \
+  ftp_cmds { AUTH ADAT PROT PBSZ CONF ENC } \
+  ftp_cmds { FEAT OPTS } \
+  ftp_cmds { MDTM REST SIZE MLST MLSD } \
+  alt_max_param_len 0 { CDUP QUIT REIN PASV STOU ABOR PWD SYST NOOP } \
+  cmd_validity MODE < char SBC > \
+  cmd_validity STRU < char FRP > \
+  cmd_validity ALLO < int [ char R int ] > \
+  cmd_validity TYPE < { char AE [ char NTC ] | char I | char L [ number ] } > \
+  cmd_validity PORT < host_port > 
+
+# Default FTP Client
+preprocessor ftp_telnet_protocol: ftp client default \
+   max_resp_len 100
+
+== Writing rules ==
+{TBD?} Writing rules for normalized telnet changes from the telnet_decode
+preprocessor.
+
+The content parameter in the snort rule language searches the NORMALIZED
+telnet and FTP buffers.  This means that rules that include things that
+are normalized, such as telnet option negotiation for encryption,
+ie |FF FA 26|, these rules will not alert.  They should be changed to
+add the rawbytes parameter to specify look at the raw data, not the
+normalized data.
+
+== Conclusion ==
+While some of this configuration information can be overwhelming, the
+defaults are sufficient to get started.  Some of the examples provided,
+especially with respect to the FTP command validation, are derived from
+tests conducted with traffic generated from various publicly available
+freeware and/or trialware telnet & FTP client and server implementations.
+
+== Alerts ==
+
+FTP Telnet uses generator ID 125 for FTP and generator ID 126 for telnet.
+
+The following alerts will be generated for FTP:
+
+SID   Description
+---   -----------
+1     Telnet command on FTP command channel
+2     Invalid FTP command
+3     FTP parameter length overflow
+4     FTP malformed parameter
+5     Possible string format attempt in FTP command/parameter
+6     FTP response length overflow
+7     FTP command channel encrypted
+8     FTP bounce attack
+9     Evasive Telnet command on FTP command channel
+
+The following alerts will be generated for Telnet:
+
+SID   Description
+---   -----------
+1     Telnet consecutive AYT overflow
+2     Telnet data encrypted
+3     Subnegotiation Begin without matching Subnegotiation End
+

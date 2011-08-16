@@ -1,0 +1,54 @@
+IP in IP Tunneling
+==================
+Snort now has the capability of decoding IP in IP encapsulated traffic.
+
+
+Payload and Delivery header support
+===================================
+Proto     Delivery    Payload
+-----     --------    -------
+IPv4          x          x
+IPv6          x          x      (only with IPv6 compiled binary)
+
+
+How to enable the decoder
+=========================
+$ ./configure --enable-gre
+
+
+Note on multiple encapsulation
+==============================
+Snort does not support more than one encapsulation and will alert if
+it sees multiple encapsulations.  For example, the following will
+cause Snort to generate an alert:
+
+--------------------------------------
+| Eth | IP | IP | IP | TCP | Payload |
+--------------------------------------
+
+
+Logging
+=======
+Currently only the encapsulated part of the packet is logged,
+For example:
+
+-----------------------------------
+| Eth | IP1 | IP2 | TCP | Payload |
+-----------------------------------
+
+gets logged as
+
+-----------------------------
+| Eth | IP2 | TCP | Payload |
+-----------------------------
+
+
+Alerts
+======
+Alerts pertaining to the IP in IP decoder fall under the more general case of
+decoder alerts, with GID of 116.  (More general IP alerts are not mentioned here.)
+
+SID   Description
+---   -----------
+161   Alerts if multiple encapsulations are encountered.
+

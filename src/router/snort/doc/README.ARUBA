@@ -1,0 +1,196 @@
+Aruba Networks Integration
+==========================
+Joshua Wright <jwright@arubanetworks.com>
+05-SEP-2006
+
+-- Overview --
+As a centralized-processing wireless transport system, an Aruba Networks
+Mobility Controller (MC) has visibility into all wireless traffic including
+dynamic encryption keys.  This architecture allows users to easily integrate
+with Snort for centralized monitoring of all wireless network traffic.
+
+In addition to traffic reporting capabilities, an Aruba Networks MC can enforce
+dynamic role-based access controls to restrict or limit accessibility into the
+network.  When integrated with Snort's powerful rules language functionality,
+users can dynamically modify access permissions to the wireless network based
+on any matching rules.  This allows an administrator to blacklist a user if
+their workstation appears to be infected with a worm, or limit access to
+network resources if spyware is detected, or any of several configuration
+possibilities.
+
+The ability to modify a user's role (and by association, access permissions) or
+to blacklist a user is provided in the alert_aruba_action output plugin.  This
+document describes the features, implementation and configuration of this
+output plugin.
+
+
+-- Features --
+The alert_aruba_action output plugin allows a Snort administrator to create
+custom rule types that modify the access permissions for wireless users when
+triggered.  By configuring an Aruba MC to mirror all wireless traffic to a
+designated Snort box, Snort can assess all wireless traffic and interact with
+the Aruba MC to quarantine problematic sources within the network.
+
+Using the alert_aruba_action output plugin, an administrator can specify the
+action to take when a specified alert is triggered:
+
+  blacklist: When a Snort alert is triggered, the source IP address
+  becomes blacklisted on the Aruba MC, stopping all wireless access for the
+  station.
+
+  setrole: When a Snort alert is triggered, the source IP address has their
+  role changed from the currently derived role to one of the administrator's
+  choosing.  This is often deployed as a "quarantine role", where restricted
+  access is granted to the network for the station.
+
+
+-- Implementation --
+In order to use this plugin effectively, the Aruba MC must be able to mirror a
+copy of wireless traffic to a Snort sensor as a directly connected (SPAN port)
+station, or the termination endpoint of a GRE tunnel (see Configuration for
+details).  Also, the Snort sensor must be able to reach the Aruba MC on TCP/80
+to blacklist or modify the role assignments for users.
+
+-- Configuration --
+
+Configuration requires modification to the snort.conf file for the
+alert_aruba_action plugin, as well as configuration statements on the Aruba MC
+to authenticate Snort when changing client access permissions.  The Snort
+sensor and the Aruba MC share a secret passphrase for authentication, and the
+Aruba MC must specify the source IP address of the Snort sensor.
+
+
+--- alert_aruba_action ---
+
+The configuration options are described below:
+
+* <controller address> *
+Specifies the IP address or hostname of the Aruba MC that will be responsible
+for modifying user role assignments, or blacklisting users.  Mandatory.
+
+* secrettype *
+Specifies the type of secret used for the Snort sensor to authenticate to the
+Aruba MC, one of:
+
+  sha1      - The shared secret, represented as a SHA1 hash.  You can generate
+              this string with the openssl tool as 
+	      "echo password | openssl dgst -sha1", changing the string 
+	      "password" to the shared secret string.
+  md5       - The shared secret, represented as a MD5 hash.  You can generate
+              this string with the openssl tool as 
+	      "echo password | openssl dgst -md5", changing the string 
+	      "password" to the shared secret string.
+  cleartext - The shared secret in plaintext.
+
+* secret *
+Specified the secret shared between the Snort sensor and the Aruba MC.  Must
+be represented to match the secret type setting (SHA1, MD5 or cleartext).
+
+* action *
+Specifies the action that the Aruba MC will take against the source MAC
+address of the station reported by the Snort sensor, one of:
+
+  blacklist          - Terminate all network access for the wireless user, 
+                       placing them on the blacklist.  Station will be unable
+		       to access the wireless network until the blacklist
+		       duration expires.
+  setrole:<rolename> - Modify the user's role assignment to the specified role
+                       name.  The new role can be configured to restrict or
+		       grant access to the network as needed by the
+		       administrator.
+
+Example:
+
+In this example snort.conf file, we create a new rule type that has two output
+mechanisms; a local syslog entry and an Aruba action command:
+
+ruletype aruba_quarantine {
+    type alert
+    output alert_aruba_action: 172.16.0.252 cleartext foo setrole:snort_quarantine
+    output alert_syslog: LOG_AUTH LOG_ALERT
+}
+
+
+Once the new rule type is created, the Snort administrator can specify the
+Snort rules that will take this action.  For example, if the organization wants
+to prohibit the use of the ICQ chat protocol, we can use the following
+snort.conf entry to complete the output actions in the aruba_quarantine rule
+specified above:
+
+aruba_quarantine tcp $HOME_NET any -> $EXTERNAL_NET any (msg:"CHAT ICQ access"; flow:to_server,established; content:"User-Agent|3A|ICQ"; classtype:policy-violation; sid:541; rev:9;)
+
+
+--- Aruba MC ---
+
+In order to accept role change commands and blacklist events from the Snort
+sensor, the Aruba MC must be configured to recognize the Snort sensor by IP
+address and through the shared secret.  The Aruba MC must also be configured
+with the appropriate roles if the alert_aruba_action plugin is configured with
+the "settype" action; the blacklist action is always available and does not
+require additional configuration.
+
+The following example configures the Aruba MC to accept role changes or
+blacklist events from the Snort sensor at 10.10.10.10 using the shared secret
+"pedantic":
+
+(Aruba200) >en
+Password:********
+(Aruba200) #configure terminal
+Enter Configuration commands, one per line. End with CNTL/Z
+
+(Aruba200) (config) #aaa xml-api client 10.10.10.10
+(Aruba200) (ecp-client) #key pedantic
+
+(Aruba200) (ecp-client) #end
+(Aruba200) #copy running-config startup-config
+
+
+You can verify the configuration using the "show aaa xml-api" commands:
+
+
+(Aruba200) #show aaa xml-api clients
+
+XML-API Client Configuration
+----------------------------
+     IP       Key
+     -----------   ---
+     10.10.10.10   *****
+     172.16.0.106  *****
+
+(Aruba200) #show aaa xml-api statistics
+
+XML-API Statistics
+------------------
+Statistics                             10.10.10.10
+----------                             -----------
+user_authenticate                      0 (0)
+user_add                               0 (0)
+user_delete                            0 (0)
+user_blacklist                         0 (0)
+user_query                             0 (0)
+unknown user                           0 (0)
+unknown role                           0 (0)
+unknown external agent                 0 (0)
+authentication failed                  0 (0)
+invalid command                        0 (0)
+invalid message authentication method  0 (0)
+invalid message digest                 0 (0)
+missing message authentication         0 (0)
+missing or invalid version number      0 (0)
+Cant use VLAN IP                       0 (0)
+Invalid IP                             0 (0)
+
+Packets received from unknown clients : 0 (0)
+Packets received with unknown request : 0 (0)
+Requests Received/Success/Failed      : 0/0/0 (0/0/0)
+
+
+Also ensure that any roles specified with the "setrole:rolename" action exist
+on the Aruba MC:
+
+(Aruba200) #show configuration | include snort_quarantine
+user-role snort_quarantine
+
+
+For additional information on configuring the Aruba MC, please see the ArubaOS
+Reference Guide or contact Aruba Customer Support.

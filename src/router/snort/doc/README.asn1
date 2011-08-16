@@ -1,0 +1,171 @@
+ASN.1 Detection Capability
+--------------------------
+Author: Daniel Roelker
+
+The asn.1 detection plugin decodes a packet or a portion of a packet, and looks
+for various malicious encodings.
+
+The general configuration of the asn.1 rule option is as follows:
+
+asn1: [keyword [argument]], . . . 
+
+Multiple keywords can be used in an 'asn1' option and the implied logic is
+boolean OR.  So if any of the arguments evaluate as true, the whole option
+evaluates as true.
+
+ASN.1 Keywords
+--------------
+
+The ASN.1 keywords provide programmatic detection capabilities as well as some
+more dynamic type detection.  Most of the keywords don't have arguments as the
+detection is looking for non-configurable information.  If a keyword does have
+an argument, the keyword is followed by a comma and the argument is the next
+word.  If a keyword has multiple arguments, then a comman separates each.
+
+bitstring_overflow
+------------------
+
+The bitstring_overflow detects invalid bitstring encodings that are known to be
+remotely exploitable.
+
+double_overflow
+---------------
+
+The double_overflow detects an double ascii encoding that is larger than a
+standard buffer.  This is known to be an exploitable function in Microsoft, but
+it is unknown at this time which services may be exploitable.
+
+oversize_length
+---------------
+
+This detection keyword compares ASN.1 type lengths with the supplied argument.
+The syntax looks like, "oversize_length 500".  This means that if an ASN.1
+type is greater than 500, then this keyword is evaluated as true.  This
+keyword must have one argument and that is the length to compare against.
+
+absolute_offset
+----------
+
+This is the absolute offset from the beginning of the packet.  For example, if
+you wanted to decode snmp packets, you would say "absolute_offset, 0".  
+absolute_offset has one argument and that is the offset.  Offset may be
+positive or negative.
+
+relative_offset
+----------
+
+This is the relative offset from the last content match or byte_test/jump. 
+relative_offset has one argument and that is the offset number.  So if you 
+wanted to start decoding and ASN.1 sequence right after the content "foo", 
+you would specify 'content:"foo"; asn1: bitstring_overflow, 
+relative_offset, 0'.  Offset may be positive or negative.
+
+Examples
+--------
+
+alert udp any any -> any 161 (msg:"Oversize SNMP Length"; \
+    asn1: oversize_length, 10000, absolute_offset, 0;)
+    
+alert tcp any any -> any 80 (msg:"ASN1 Relative Foo"; content:"foo"; \
+    asn1: bitstring_overflow, print, relative_offset, 0;)
+
+
+Background on ASN.1
+-------------------
+
+The following comments were compiled by Chris Reid circa Feb 2003.
+
+ASN.1 - Abstract Syntax Notation number One 
+
+* * * * * *
+
+An interesting site about ASN.1 (and its primary author Professor John
+Larmouth) can be found here:  http://www.oss.com/asn1/larmouth.html
+including an electronic copy of Professor Larmouth's book titled
+"ASN.1 Complete".
+
+* * * * * *
+
+The following descriptions are copied from the website:
+"http://asn1.elibel.tm.fr/".  I have no affiliation with this website,
+but reference it here because they provide a large amount of useful
+information about ASN.1.
+
+"Abstract Syntax Notation number One (ASN.1) is an international standard
+ that aims at specifying data used in communication protocols. It is a
+ powerful and complex language: its features are designed to describe
+ accurately and efficiently communications between homogeneous or
+ heterogeneous systems."
+
+"ASN.1 is a formal notation used for describing data transmitted by
+ telecommunications protocols, regardless of language implementation and
+ physical representation of these data, whatever the application, whether
+ complex or very simple.
+ 
+    "-------------------------------------------
+     Abstract Syntax Notation number One
+     is a standard that defines a formalism
+     for the specification of abstract data types. 
+     -------------------------------------------
+
+"The notation provides a certain number of pre-defined basic types such as:
+ -  integers (INTEGER), 
+ -  booleans (BOOLEAN), 
+ -  character strings (IA5String, UniversalString...), 
+ -  bit strings (BIT STRING), 
+ -  etc., 
+
+"and makes it possible to define constructed types such as:  
+ -  structures (SEQUENCE), 
+ -  lists (SEQUENCE OF), 
+ -  choice between types (CHOICE), 
+ -  etc. "
+
+* * * * * *
+
+My own notes about ASN.1, as understood from skimming through Section 3
+("Encodings") of the book "ASN.1 Complete"...
+
+ - Data in ASN.1 is represented by groupings composed of T-L-V (Type,
+   Length, and Value)
+
+ - Datatypes are identified by the bottom six bits of a single byte.
+   Datatypes values 0 through 30 are represented in a single byte.
+   Value "31" (0x1f) is an escape marker to indicate the datatype
+   value continues in the following bytes -- as long as successive
+   bytes have the high bit set.
+
+ - The length of a given datatype can be represented in any of three
+   ways:  Short Length, Long Length, and Indefinite Length.
+
+ - Short Lengths are stored in one byte, and can indicate data lengths
+   of up to 127 bytes.  Note that Short Lengths are identified by an
+   upper bit of zero.
+
+ - Long Lengths are stored in multiple bytes.  The first byte indicates
+   how many bytes are required to contain the Long Length, and the
+   successive bytes contain the value of the Long Length.  Note that
+   the first byte of Long Lengths are identified by an upper bit of one,
+   and that only the bottom seven bits of the first byte are used to
+   represent how many bytes are required to contain the Long Length.
+   Also, note that the maximum allowed value of the bottom seven bits
+   is 126 (0x7e), and that 127 (0x7f) is reserved for future use.
+
+ - Indefinite Lengths are conceptually like BLOB data.  The upper bit of
+   the first byte is set to one, and the bottom seven bits are zero.  The
+   data value follows immediately, and continues until two zero-bytes
+   are encountered.
+
+Alerts
+======
+
+ASN.1 uses generator ID 115 and can produce the following alerts:
+
+SID   Description
+---   -----------
+1     Indefinite ASN.1 length encoding
+2     Invalid ASN.1 length encoding
+3     ASN.1 oversized item, possible overflow
+4     ASN.1 spec violation, possible overflow
+5     Datum length > packet length
+

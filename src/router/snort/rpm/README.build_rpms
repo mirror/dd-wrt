@@ -1,0 +1,283 @@
+$Id$
+
+README.build_rpms
+By JP Vossen & Dan Wittenberg 
+
+Last Updated: 2005-05-03
+
+
+How to build your own Snort RPMs--Introduction
+==============================================
+RPM is the accepted package manager for a large number of Linux
+distributions. It is designed to allow easy and repeatable builds and
+binary installations for software. This is especially important for a
+package like Snort, where security and consistency are critical. Since you
+should never install a compiler on a hardened machine, and especially
+never on a security device like a firewall or IDS, a binary installer like
+RPM makes it very easy to install and update software.
+
+However, many people are not comfortable unless they download and compile
+the software themselves. This document will show you how to download the
+Snort source code, compile it and build your own RPM very easily.
+
+RPM requires a SPEC file to provide details on how to compile and build
+the source code into an RPM package. The most difficult and time consuming
+part of building an RPM is writing a correct SPEC file. We've already done
+that for you (and it is heavily commented as well). The snort.spec
+file can build the following packages, with or without flexible response
+(see README.flexresp for more details):
+
+	plain		Snort (this package, required)
+	mysql		Snort with mysql (optional)
+	postgresql	Snort with postgresql (optional)
+	oracle		Snort with oracle (optional, not official)
+	inline		Snort with inline support (optional)
+
+
+Prerequisites
+=============
+In order to build RPMs you must install the 'rpm-build' package. You will
+also need the following if you plan to build packages other than plain:
+
+	Package				Dependency
+	---------------------		----------------
+	All				rpm-build (rpm version 4 and above),
+						pcre-devel
+	Snort with MySQL		MYSQL-devel, pcre-devel
+	Snort with PostgreSQL		postgresql-devel, pcre-devel
+	Snort with Oracle		Oracle libs in /opt/oracle, pcre-devel
+	Snort inline			iptables-devel, libnet
+
+If you plan to build flexresp, you also need libnet. Depending on which
+libnet RPM you install, you may get statically linked binaries. If you
+have statically linked libraries you only need the static library on the
+build machine, NOT the machine on which the final compiled binary runs.
+Given the fact that Snort sensors are security devices and having dynamic
+libnet capabilities may be undesirable, static linking is a Good Thing.
+
+The strongly recommended libnet to use is custom 1.0.2a Packetfactory RPM
+Chris Green built a while ago that may be found here [0]. This is the only
+Snort.org supported libnet and it allows snort to statically compile
+libnet as noted above.
+
+
+Building from a Tarball
+=======================
+If you have a recent version of RPM which supports the -tx options, you
+can build directly from the official Snort.org tarball distribution. RPM
+versions 4 and above are known to work.  Some versions of rpm 3 have been 
+known to work, specifically those with SuSE 8.1 and SuSE 8.2
+
+Version 4:
+rpmbuild {package options} -ta {path/to/snort-n.n.n.tar.gz}
+
+Version 3:
+rpm {package options} -ta {path/to/snort-n.n.n.tar.gz}
+
+(We will assume version 4 elsewhere in the documentation)
+
+
+rpmbuild Package Options
+========================
+
+	--with flexresp
+		Add flexresp capability to whatever package(s) you are
+		building.
+
+	--with inline
+		Add inline capability to whatever package(s) you are
+		building. This will create its own inline package.
+
+	--with mysql
+		Builds a binary/package with support for MySQL.
+
+	--with postgresql
+		Builds a binary/package with support for PostgreSQL.
+
+	--with oracle
+		Builds a binary/package with support for Oracle.
+
+See below for some examples.
+
+
+Rebuilding from the Source RPM (SRPM)
+=====================================
+You can also download the source RPM and rebuild from that. Simply get the
+SRPM from Snort.org and rebuild:
+
+	rpmbuild --rebuild /path/to/snort-x.x.x-x.src.rpm
+
+
+rpmbuild examples
+=================
+
+$ rpmbuild --with mysql --with postgresql -ta snort-2.0.4.tar.gz
+
+--OR--
+
+$ rpmbuild --with mysql --with postgresql --rebuild snort-2.0.4-1.src.rpm
+
+<snip>
+
+$ ls -1 /usr/src/redhat/RPMS/i386/snort-*
+/usr/src/redhat/RPMS/i386/snort-2.0.4-1.i386.rpm
+/usr/src/redhat/RPMS/i386/snort-mysql-2.0.4-1.i386.rpm
+/usr/src/redhat/RPMS/i386/snort-postgresql-2.0.4-1.i386.rpm
+
+
+The "Official" Snort.org RPM build
+==================================
+We build the official Snort.org RPMs with the generate-all-rpms script in
+the rpm directory.
+
+In theory, anyone can build RPMs that are identical to the official
+Snort.org RPMS.  However, only the official RPMs will be signed by the
+Snort.org GPG key [1].
+
+PLEASE verify your RPMs with this key before installing them.
+
+
+Distribution Specific Builds
+============================
+The SPEC file contains code to build RPMS for specific Linux
+distributions, currently cAos (www.caosity.org).  Since the
+cAos buildsystem is completely automated, no rpmbuild command line options
+are allowed, so the SPEC file looks for the '/usr/lib/rpm/caos' directory
+to see if it's running under cAos. This is not ideal as it will build all
+packages under any cAos machine--not just the autobuilder. But it's the
+best I can do right now. Anyone have any better ideas?
+
+
+Verifying an RPM's PGP/GPG Key
+==============================
+Download and add the Snort key to RPM:
+	wget http://www.snort.org/public-key.html
+	rpm --import public-key.html
+
+Verify the signature:
+	rpm --checksig /path/to/snort-x.x.x-x.i386.rpm
+	rpm -v --checksig /path/to/snort-x.x.x-x.i386.rpm
+	-- OR --
+	rpm -K /path/to/snort-x.x.x-x.i386.rpm
+	rpm -vK /path/to/snort-x.x.x-x.i386.rpm
+
+If you see something like the following, it's good. NOTE, you MUST see
+"gpg OK" for the signature to exist and be valid! Any random RPM may be
+created without a signature, so make sure your official RPM has one.
+	/path/to/snort-x.x.x-xsnort.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+
+The -v (for verbose) options give you a little more detail.  Again, make
+sure the signature lines present and OK.
+
+If you see a "NOT OK" message, something did not verify.  Any items that
+were correct will be listed in lower case (e.g. sha1 md5) while any failed
+items are in upper case (e.g. GPG). There may also be an error message,
+such as "MISSING KEYS."
+
+
+Examining the SPEC file
+=======================
+We have tried to make the Snort.org SPEC file as "user friendly" as
+possible. In particular, it has lots of comments.  So it may be useful to
+look it over, or you may just want to build the old fashioned way. In any
+case, there are three easy ways to get it.
+
+Get it from Snort's CVS (see reference section for URL).
+
+Get it from the tarball:
+	tar -xvzf /path/to/snort-x.x.x.tar.gz
+
+Get it from the SRPM
+	Get the SRPM from Snort.org
+	Extract the SRPM: rpm2cpio /path/to/snort-x.x.x-x.src.rpm | cpio -i
+	-- OR --
+	Install the SRPM: rpm -i /path/to/snort-x.x.x-x.src.rpm
+
+
+Building from Snort.org CVS Snapshots [2]
+=========================================
+
+Building from the CVS snapshot tarballs should work but requires some
+manual intervention.
+
+1. Cd to /tmp or someplace safe: cd /tmp
+2. Untar the source: tar -xvzf /path/to/snort-current.tar.gz
+3. Rename the resulting snort directory: mv snort snort-current
+4. Edit snort-current/rpm/snort.spec and change the line
+	%define release {whatever}
+to
+	%define release 1
+and
+	Version: stable (or 2.1.x or whatever)
+to
+	Version: current
+5. Rename the original tarball: mv snort-current.tar.gz snort-current-orig.tar.gz
+6. Obtain the snort rules you wish to include in the RPM (see [3]). Untar
+   the file then move the rules and doc/sigantures directories into place in
+   the working directory. E.g. mv /tmp/rules /tmp/snort-current and
+   mv /tmp/doc/signatures /tmp/snort-current/doc.
+7. Re-tar the file: tar -cvzf snort-current.tar.gz snort-current
+8. Build as usual: rpmbuild -ta snort-current.tar.gz
+
+If you don't know how to do all of that, you probably want the regular
+compiled binary packages or the snort-stable snapshot.
+
+
+Building from Snort.org Anonymous CVS [4]
+==========================================
+
+Building from Snort.org Anonymous CVS is very similar to building from
+snapshot tarballs, except without the tarballs.
+
+If you don't know how to do all of that, you probably want the regular
+compiled binary packages or the snort-stable snapshot.
+
+
+References
+==========
+[0] Chris Green's Snort Libnet:
+	http://www.starken.com/snort/index.html#libnet
+
+[1] Snort.org PGP/GPG key
+	http://www.snort.org/public-key.txt
+
+[2] Snort.org CVS Snapshots
+	http://www.snort.org/pub-bin/snapshots.cgi
+
+[3] Snort Rules
+	http://www.snort.org/rules/
+
+[4] Got Source?
+	http://www.snort.org/got_source/source.html
+
+The latest Snort README.rpms
+	http://cvs.snort.org/viewcvs.cgi/snort/rpm/README.rpms
+
+The latest Snort README.build_rpms (this document)
+	http://cvs.snort.org/viewcvs.cgi/snort/rpm/README.build_rpms
+
+The official Snort.org RPM SPEC file:
+	http://cvs.snort.org/viewcvs.cgi/snort/rpm/snort.spec
+
+The RPM Homepage
+	http://www.rpm.org/
+
+The RPM FAQ
+	http://www.rpm.org/RPM-HOWTO/
+
+Book: Red Hat Linux RPM Guide
+	Esp. pgs: 236, 399, 400
+	By Eric Foster-Johnson, ISBN: 0-7645-4965-0, 549 pages
+	http://www.wiley.com/WileyCDA/WileyTitle/productCd-0764549650.html
+	http://www.bookpool.com/.x/zsz8obm990/sm/0764549650/
+
+Book: Maximum RPM (Older, but mostly still valid)
+	On-Line, free: http://www.rpm.org/max-rpm/
+	http://www.bookpool.com/.x/zsz8obm990/sm/0672311054/
+
+Note on "rpmbuild -ta {tarfile}"
+	http://sourceforge.net/mailarchive/forum.php?thread_id=1840467&forum_id=2311
+
+Linux RPM Repository and Browse Tool
+	http://rufus.w3.org/linux/RPM/
+

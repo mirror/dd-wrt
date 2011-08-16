@@ -1,0 +1,95 @@
+Snort 2.9 introduces the DAQ, or Data Acquisition library, for packet I/O.  The
+DAQ replaces direct calls to PCAP functions with an abstraction layer that
+facilitates operation on a variety of hardware and software interfaces without
+requiring changes to Snort.  It is possible to select the DAQ type and mode
+when invoking Snort to perform PCAP readback or inline operation, etc.
+
+This README summarizes the important things you need to know to use the DAQ.
+
+See the README in the DAQ tarball for information on building and installing
+the DAQ and for information specific to DAQ modules.
+
+See README.active and README.normalize for more information on the other packet
+handling changes in 2.9.
+
+
+Building Snort
+==============
+
+If you install the DAQ libraries in a non-standard place, you can configure
+Snort accordingly with:
+
+    ./configure --with-daq-includes=<inc dir>
+                --with-daq-libraries=<lib dir>
+
+By default, snort will be built with a few static DAQ modules including pcap,
+afpacket, and dump.  If you don't want any static DAQ modules built into Snort,
+you can use this configure option:
+
+    ./configure --disable-static-daq
+
+PCAP is the default DAQ, but you can change that like this:
+
+    ./configure "CPPFLAGS=-DDEFAULT_DAQ=<type>"
+
+You can also do this:
+
+    make "DEFAULT_DAQ=<type>"
+
+If you used --with-libpcap-includes or --with-libpcap-libraries when building
+the DAQ, you will also need --with-libpcap-includes and
+--with-libpcap-libraries when building Snort.
+
+Note that configure runs daq-modules-config which must be in your PATH.  If you
+configured the DAQ with a non-standard prefix then you may need to put that in
+your path like this before running configure:
+
+    PATH=/daq/install/prefix:$PATH
+
+
+Configuring Snort
+=================
+
+Assuming that you did not disable static modules or change the default DAQ
+type, you can run Snort just as you always did for file readback or sniffing an
+interface.  However, you can select and configure the DAQ when Snort is invoked
+as follows:
+
+    ./snort \
+        [--daq <type>] \
+        [--daq-mode <mode>] \
+        [--daq-dir <dir>] \
+        [--daq-var <var>]
+
+    config daq: <type>
+    config daq_dir: <dir>
+    config daq_var: <var>
+    config daq_mode: <mode>
+
+    <type> ::= pcap | afpacket | dump | nfq | ipq | ipfw
+    <mode> ::= read-file | passive | inline
+    <var> ::= arbitrary <name>=<value> passed to DAQ
+    <dir> ::= path where to look for DAQ module so's
+
+The DAQ type, mode, variable, and directory may be specified either via the
+command line or in the conf file.  You may include as many variables and
+directories as needed by repeating the arg / config.  DAQ type may be specified
+at most once in the conf and once on the command line; if configured in both
+places, the command line overrides the conf.
+
+If the mode is not set explicitly, -Q will force it to inline, and if that
+hasn't been set, -r will force it to read-file, and if that hasn't been set,
+the mode defaults to passive.  Also, -Q and --daq-mode inline are allowed,
+since there is no conflict, but -Q and any other DAQ mode will cause a fatal
+error at start-up.
+
+Note that if Snort finds multiple versions of a given library, the most recent
+version is selected.  This applies to static and dynamic versions of the same
+library.
+
+    ./snort [--daq-list <dir>]
+
+The above command searches the specified directory for DAQ modules and prints
+type, version, and attributes of each.  This feature is not available in the
+conf.
+

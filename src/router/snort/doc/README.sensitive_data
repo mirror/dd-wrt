@@ -1,0 +1,153 @@
+Overview
+========
+The Sensitive Data preprocessor is a Snort module that performs detection and
+filtering of Personally Identifiable Information (PII). This information
+includes credit card numbers, U.S. Social Security numbers, and email addresses.
+A limited regular expression syntax is also included for defining your own PII.
+
+Sections:
+    Dependencies
+    Preprocessor Configuration
+    Rule Options
+
+Dependencies
+============
+The Stream5 preprocessor must be enabled for the Sensitive Data preprocessor
+to work.
+
+Preprocessor Configuration
+==========================
+Sensitive Data configuration is split into two parts: the preprocessor config,
+and the rule options. The preprocessor config starts with:
+
+preprocessor sensitive_data:
+
+Options are as follows:
+
+    Option                  Argument        Required    Default
+    ---------------------------------------------------------------------------
+    alert_threshold         <number>              NO    alert_threshold 25
+                            1 - 4294067295
+    mask_output             NONE                  NO    OFF
+    ssn_file                <filename>            NO    OFF
+
+Option explanations
+    alert_threshold
+        The preprocessor will alert when any combination of PII are detected
+        in a session. This option specifies how many need to be detected before
+        alerting.
+        This should be set higher than the highest individual count in your
+        "sd_pattern" rules.
+    mask_output
+        This option replaces all but the last 4 digits of a detected PII with
+        "X"s. This is only done on credit card & Social Security numbers, where
+        an organization's regulations may prevent them from seeing unencrypted
+        numbers.
+    ssn_file
+        A Social Security number is broken up into 3 sections:
+        Area (3 digits), Group (2 digits), and Serial (4 digits).
+        On a monthly basis, the Social Security Administration publishes a list
+        of which Group numbers are in use for each Area.
+        These numbers can be updated in Snort by supplying a CSV file with the
+        new maximum Group numbers to use.
+        By default, Snort recognizes Social Security numbers issued up through
+        November 2009.
+
+Example preprocessor config
+
+preprocessor sensitive_data: alert_threshold 25 \
+                             mask_output \
+                             ssn_file ssn_groups_Jan10.csv
+
+Rule Options
+============
+Snort rules are used to specify which PII the preprocessor should look for.
+A new rule option is provided by the preprocessor:
+
+sd_pattern
+
+This rule option specifies what type of PII a rule should detect.
+
+Syntax:
+    sd_pattern: <count>,<pattern>
+
+    count   = 1-255
+    pattern = any string
+
+Option Explanations:
+
+    count
+        This dictates how many times a PII pattern must be matched for an alert
+        to be generated. The count is tracked across all packets in a session.
+
+    pattern
+        This is where the pattern of the PII gets specified. There are a few
+        built-in patterns to choose from:
+
+        credit_card:
+            The "credit_card" pattern matches 15- and 16-digit credit card
+            numbers. These numbers may have spaces, dashes, or nothing in
+            between groups. This covers Visa, Mastercard, Discover, and
+            American Express.
+
+            Credit card numbers matched this way have their check digits
+            verified using the Luhn algorithm.
+
+        us_social:
+            This pattern matches against 9-digit U.S. Social Security numbers.
+            The SSNs are expected to have dashes between the Area, Group, and
+            Serial sections.
+
+            SSNs have no check digits, but the preprocessor will check matches
+            against the list of currently allocated group numbers.
+
+        us_social_nodashes:
+            This pattern matches U.S. Social Security numbers without dashes
+            separating the Area, Group, and Serial sections.
+
+        email:
+            This pattern matches against email addresses.
+
+        If the pattern specified is not one of the above built-in patterns,
+        then it is the definition of a custom PII pattern. Custom PII types
+        are defined using a limited regex-style syntax. The following
+        special characters and escape sequences are supported:
+
+        \d      - matches any digit
+        \D      - matches any non-digit
+        \l      - matches any letter
+        \L      - matches any non-letter
+        \w      - matches any alphanumeric character
+        \W      - matches any non-alphanumeric character
+        {num}   - used to repeat a character or escape sequence "num" times.
+                  example:  "\d{3}" matches 3 digits.
+        ?       - makes the previous character or escape sequence optional.
+                  example:  " ?" matches an optional space.
+                  This behaves in a greedy manner.
+        \\      - matches a backslash
+        \{, \}  - matches { and }
+        \?      - matches a question mark.
+
+        Other characters in the pattern will be matched literally.
+
+        NOTE: Unlike PCRE, "\w" in this rule option does NOT match underscores.
+
+
+Examples:
+    sd_pattern: 2,us_social;
+    Alerts when 2 social security numbers (with dashes) appear in a session.
+    
+    sd_pattern: 5,(\d{3})\d{3}-\d{4};
+    Alerts on 5 U.S. phone numbers, following the format (123)456-7890
+
+    Whole rule example:
+
+    alert tcp $HOME_NET $HIGH_PORTS -> $EXTERNAL_NET $SMTP_PORTS \
+    (msg:"Credit Card numbers sent over email"; gid:138; sid:1000; rev:1; \
+    sd_pattern:4,credit_card; metadata:service smtp;)
+
+Caveats:
+    sd_pattern is not compatible with other rule options. Trying to use
+    other rule options with sd_pattern will result in an error message.
+
+    Rules using sd_pattern must use GID 138.
