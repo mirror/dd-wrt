@@ -63,7 +63,7 @@ DYEXT = so
 PROG=libpcap
 
 # Standard CFLAGS
-CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
+CFLAGS = $(CCOPT) $(INCLS) $(DEFS) -fPIC
 CFLAGS_SHARED = -shared -Wl,-soname,$(SOLIBRARY).$(MAJ)
 
 INSTALL = /usr/bin/install -c

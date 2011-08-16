@@ -1,0 +1,120 @@
+ALERT ORDERING
+--------------
+
+The Snort 2.0 detection engine changes how the ordering of rules
+affect which alerts fire.  Before Snort 2.0, knowing which alerts would fire
+first was determined by the position of the rule during initialization.
+If the rule was read before another rule, then the rule that was read first
+would be the alert that was logged.
+
+This has all changed with the 2.0 detection engine.  There are now two stages
+that determine which alerts will fire for a packet.  Ideally, Snort would have
+the ability to log all alerts in a packet, but the current output modules do
+not allow for this.
+
+The first stage in the 2.0 detection engine is rule set selection.  Depending
+on the rule set that is selected, different alerts may be generated.  The
+rule sets are select first by transport protocol and then by characteristics
+within the specific transport protocol:
+
+  * TCP/UDP:  selection based on source and destination ports
+  * ICMP:     selection based on ICMP type
+  * IP:       selection based on IP transport protocol (if not TCP/UDP/ICMP)
+
+Each protocol also has a generic rule set associated with it.  This provides
+for the case where a packet does not match any unique properties of the
+transport protocol.
+
+It is important to note that every packet matches against a generic rule set,
+since every unique rule set includes the generic rule set.  For example, if
+a packet with a destination port of 80 is inspected, the rule set that
+contains destination port 80 rules is selected, not the generic rule set.
+
+The rule set selected is important.  In the second stage of the 2.0
+detection engine, which rules get matched are determined by the rule set that
+is selected.
+
+Once a rule set is selected, two general types of rules are matched against.
+These rules are content and non-content rules.  The content rules have
+higher rule ordering priority over non-content rules, so if a content rule
+matches a packet and a non-content rule matches a packet, the content rule
+will always win.  If no content rules match, then the non-content rule that
+is first in the file (the old snort way) will win.  This doesn't
+apply when a unique rule set has been selected because the unique non-content
+rules are first in the inspection order.  For example,  if an ICMP packet of
+type 8 is inspected, two rules will match the packet.  One of the rules
+is a generic ICMP Echo Request with no type indicated, and the other rule is
+an ICMP Echo Request with a itype:8.  The itype:8 rule will always fire 
+regardless of it's position in the rule file because it is the more unique
+rule (since it has an itype:8).
+
+-- Examples --
+
+Which rule fires when there are two identical rules:
+
+alert tcp any any -> any any ( msg:"foo1"; content: "foo"; )
+alert tcp any any -> any any ( msg:"foo2"; content: "foo"; )
+
+foo1 fires because it is first in the rules file.  This applies for all rules
+(uricontent, content, no-content) that are exactly the same.  The first rule
+in the rule files alerts.
+
+Which rule fires when there are two rule with the same content, but one rule
+has any any ports and the other has a specific port?
+
+alert tcp any any -> any any ( msg:"foo1"; content: "foo"; )
+alert tcp any any -> any 80 ( msg:"foo2"; content: "foo"; )
+
+foo2 fires because it is considered a unique rule because it specifies a port
+and gets put in the unique rule group for port 80.  foo1 is considered a 
+generic rule because it has no specific port characteristics.
+
+Which rule fires when a uricontent rule and a content rule both match a
+packet?
+
+alert tcp any any -> any 80 ( msg:"foo1"; content: "foo"; )
+alert tcp any any -> any 80 ( msg:"foo2"; uricontent: "foo"; )
+
+foo2 fires (as long as http_inspect is on) because uricontent rules are
+matched against the packet first, and if there is a uricontent match then
+this rule takes priority over content and no-content rules.
+
+Which rule fires when a content rule and a no-content rule both match a
+packet?
+
+alert tcp any any -> any any ( msg:"foo1"; content: "foo"; )
+alert tcp any any -> any any ( msg:"foo2"; )
+
+foo1 fires because content rules are matched against a packet first, and if
+there is a content match, then any no-content rules that match the packet
+also will take a lower priority than any content rule that matches a packet.
+
+Which rule fires when two content rules match a packet?
+
+alert tcp any any -> any any ( msg:"foo1"; content: "foo"; )
+alert tcp any any -> any any ( msg:"foo2"; content: "foobar";)
+
+foo2 fires because the content rule with the longer content string takes
+the higher priority.
+
+Which rule fires when two ICMP rules match a packet?
+
+alert icmp any any -> any any ( msg:"ICMP-No-iType"; dsize:>800; )
+alert icmp any any -> any any ( msg:"ICMP-iType"; itype:8; dsize:>800;)
+
+ICMP-iType fires because it has an 'itype' parameter, which specifies the
+ICMP rule as unique ('itype' is the only parameter for ICMP rules that
+specify uniqueness, otherwise it's considered generic).
+
+ 
+
+
+
+
+
+
+
+
+
+
+

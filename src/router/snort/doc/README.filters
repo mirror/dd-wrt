@@ -1,0 +1,304 @@
+OVERVIEW OF FILTERS
+===================
+
+This document describes the detection, rate, and event filtering, introduced
+in Snort 2.8.5, which control the generation, processing, and logging of events
+as follows:
+
+* detection_filter is a new rule option that replaces the current threshold
+  keyword in a rule.  It defines a rate which must be exceeded by a source or
+  destination host before a rule can generate an event.
+
+* rate_filter provides rate based attack prevention by allowing users to
+  configure a new action to take for a specified time when a given rate is
+  exceeded.
+
+* event_filter is a standalone command which replaces 'threshold', which is now
+  obsolete.  event_filters reduce the amount of data logged.
+
+* Events can also be completely suppressed with the standalone suppress
+  command.
+
+Note:  this README supercedes README.thresholding which is now deprecated.
+
+
+DEPRECATED ITEMS
+================
+
+* detection_filter replaces the existing in-rule threshold, which is now
+  obsolete.  Furthermore, the existing threshold when used within a rule was
+  not part of the detection process; it was equivalent to a standalone
+  threshold.  To retain the functionality of existing in-rule thresholds,
+  reformat them as standalone event_filters (see below).
+
+* event_filter replaces the existing standalone threshold, which is now
+  deprecated.  Furthermore, even though event_filter is an alias for threshold,
+  which is allowed to appear in a rule (although that use is now also
+  deprecated), event_filter will not be allowed in a rule.  Such use will
+  result in a fatal error during initialization.  
+
+
+DETECTION FILTERS
+=================
+
+detection_filter is a new rule option that replaces the current threshold
+keyword in a rule.  It defines a rate which must be exceeded by a source or
+destination host before a rule can generate an event.  detection_filter has the
+following format:
+
+detection_filter: \
+    track <by_src|by_dst>, \
+    count <c>, seconds <s>;
+
+* Track by_src|by_dst:  rate is tracked either by source IP address or
+  destination IP address.  This means count is maintained for each unique source
+  IP address or each unique destination IP address.
+
+* Count c:  the maximum number of rule matches in s seconds allowed before the
+  detection filter limit to be exceeded.  C must be nonzero.
+
+* Seconds s:  time period over which count is accrued.  The value must be
+  nonzero.
+
+Snort evaluates a detection_filter as part of the detection phase, just after
+pattern matching.  At most one detection_filter is permitted per rule.
+
+Example - this rule will fire on every failed login attempt from 10.1.2.100
+during one sampling period of 60 seconds, after the first 30 failed login
+attempts:
+
+drop tcp 10.1.2.100 any > 10.1.1.100 22 ( \
+    msg:”SSH Brute Force Attempt”;
+    flow:established,to_server; \
+    content:”SSH”; nocase; offset:0; depth:4; \
+    detection_filter: track by_src, count 30, seconds 60; \
+    sid:1000001; rev:1;)
+
+Since potentially many events will be generated, a detection_filter would normally
+be used in conjunction with an event_filter to reduce the number of logged
+events.
+
+
+RATE FILTERS
+============
+
+rate_filter provides rate based attack prevention by allowing users to
+configure a new action to take for a specified time when a given rate is
+exceeded.  Multiple rate filters can be defined on the same rule, in which case
+they are evaluated in the order they appear in the configuration file, and the
+first applicable action is taken.  
+
+Rate filters are used as standalone commands (outside any rule) and have the
+following format:
+
+rate_filter \
+    gen_id <gid>, sig_id <sid>, \
+    track <by_src|by_dst|by_rule>, \
+    count <c>, seconds <s>, \
+    new_action alert|drop|pass|log|sdrop|reject, \
+    timeout <seconds>, \
+    apply_to <ip-list>
+
+This format has the following options - all are required except apply_to, which
+is optional:
+
+* Track by_src|by_dst|by_rule:  rate is tracked either by source IP address,
+  destination IP address, or by rule.  This means the match statistics are
+  maintained for each unique source IP address, for each unique destination IP
+  address, or they are aggregated at rule level.  For rules related to Stream5
+  sessions, source and destination means client and server respectively.  track
+  by_rule and apply_to may not be used together.
+
+* Count c:  the maximum number of rule matches in s seconds before the rate
+  filter limit to is exceeded.  C must be positive.
+
+* seconds s:  the time period over which count is accrued. 0 seconds means
+  count is a total count instead of a specific rate.  For example, rate filter
+  may be used to detect if the number of connections to a specific server
+  exceed a specific count.  0 seconds only applies to internal rules (gen_id 135)
+  and other use will produce a fatal error by Snort.
+
+* new_action <alert|drop|pass|log|sdrop|reject>:  new_action replaces rule
+  action with alert|drop| pass|log|sdrop for r (timeout) seconds.  Drop, reject
+  and sdrop can be used only when snort is used in inline mode.  sdrop and
+  reject are conditionally compiled with #ifdef GIDS.
+
+* timeout r:  revert to the original rule action after r seconds.  If r is 0,
+  then rule action is never reverted back.  Event filter may be used to manage
+  number of alerts after the rule action is enabled by rate filter.
+
+* apply_to <ip-list>:  restrict the configuration to only to source or
+  destination IP address (indicated by track parameter) determined by
+  <ip-list>.  track by_rule and apply_to may not be used together.  Note that
+  events are generated during the timeout period, even if the rate falls below
+  the configured limit.  
+
+event_filters (below) can be used to suppress excessive rate_filter alerts,
+however, the first new_action event of the timeout period is never suppressed.
+Such events indicate a change of state that are significant to the user
+monitoring the network.
+
+Example 1 - allow a maximum of 100 connection attempts per second from any one
+IP address, and block further connection attempts from that IP address for 10
+seconds:
+
+rate_filter \
+    gen_id 135, sig_id 1, \
+    track by_src, \
+    count 100, seconds 1, \
+    new_action drop, timeout 10
+
+Example 2 - allow a maximum of 100 successful simultaneous connections from any
+one IP address, and block further connections from that IP address for 10
+seconds:
+
+rate_filter \
+    gen_id 135, sig_id 2, \
+    track by_src, \
+    count 100, seconds 0, \
+    new_action drop, timeout 10
+
+
+EVENT FILTERS
+=============
+
+In Snort 2.8.5, a new command event_filter was added with the following format.
+It functions the same as the global threshold command does in Snort 2.8.4 and
+earlier, except that it is not permitted within a rule.
+
+event_filter \
+    gen_id <gid>, sig_id <sid>, \
+    type <limit|threshold|both>, \
+    track <by_src|by_dst>, \
+    count <c>, seconds <s>
+
+This format supports the following options - all are required:
+
+* gen_id, sig_id:  specify generator and signature ids of an associated rule.  A
+  sig_id of 0 will apply to all sig_ids for the given gen_id.  If both gen_id
+  and sig_id are zero, the event_filter applies to all events.  Only one
+  event_filter may be defined for a given gen_id, sig_id.
+
+* type <limit|threshold|both>:  type limit alerts on the 1st m events during the
+  time interval, then ignores events for the rest of the time interval.  Type
+  threshold alerts every m times we see this event during the time interval.
+  Type both alerts once per time interval after seeing m occurrences of the
+  event, then ignores any additional events during the time interval.
+
+* track by_src|by_dst:  rate is tracked either by source IP address, or
+  destination IP address.  This means count is maintained at either by unique
+  source IP addresses, or unique destination IP addresses.
+
+* count c:  number of rule matching in s seconds that will cause event filter
+  limit to exceed.  C must be nonzero value.
+
+* seconds s:  time period over which count is accrued.  S must be nonzero value.
+
+Example 1 - rule event_filter - limit to logging 1 event per 60 seconds:
+
+event_filter \
+    gen_id 1, sig_id 1851, \
+    type limit, track by_src, \
+    count 1, seconds 60
+
+Example 2 - rule event_filter - limit to logging every 3rd event:
+
+event_filter \
+    gen_id 1, sig_id 1852, 
+    type threshold, track by_src, \
+    count 3, seconds 60
+
+Example 3 - rule event_filter - limit to logging just 1 event per 60 seconds,
+but only if  we exceed 30 events in 60 seconds:
+
+event_filter \
+    gen_id 1, sig_id 1853, \
+    type both, track by_src,  \
+    count 30, seconds 60
+
+
+Example 4 - global event_filter - limit to logging 1 event per 60 seconds per
+IP triggering each rule:
+
+event_filter \
+    gen_id 1, sig_id 0, \
+    type limit, track by_src, \
+    count 1, seconds 60
+
+Example 5 - global event_filter - limit to logging 1 event per 60 seconds per
+IP triggering each rule for each event generator:
+
+event_filter \
+    gen_id 0, sig_id 0, \
+    type limit, track by_src, \
+    count 1, seconds 60
+
+
+EVENT SUPPRESSION
+=================
+
+Suppression commands are standalone commands that reference generators and SIDs
+and IP addresses via an IP list.  This allows a rule to be completely
+suppressed, or suppressed when the causative traffic is going to or coming from
+a specific IP or group of IP addresses.
+
+The suppress command has these formats:
+
+suppress \
+    gen_id <gid>, sig_id <sid>
+
+suppress \
+    gen_id <gid>, sig_id <sid>, \
+    track by_src|by_dst, \
+    ip <ip-list>
+
+* gen_id, sig_id:  specify generator and signature ids of an associated rule.  A
+  sig_id of 0 will apply to all sig_ids for the given gen_id.  If both gen_id
+  and sig_id are zero, the event_filter applies to all events.  Multiple
+  suppress commands may be defined for a given gen_id !=0, sig_id != 0.
+
+* track by_src|by_dst:  rate is tracked either by source IP address or
+  destination IP address.  This means count is maintained for each unique
+  source or destination IP address.  If ip is provided, track must be provided
+  as well.
+
+* ip <ip-list>:  restrict the suppression to only source or destination IP
+  addresses (indicated by track parameter) determined by <ip-list>.  If track
+  is provided, ip must be provided as well.
+
+Example 1 - suppress this event completely:
+
+suppress \
+    gen_id 1, sig_id 1852
+
+Example 2 - suppress this event from this IP:
+
+suppress \
+    gen_id 1, sig_id 1852, \
+    track by_src, ip 10.1.1.54
+
+Example 3 - suppress this event to this CIDR block:
+
+suppress \
+    gen_id 1, sig_id 1852, \
+    track by_dst, ip 10.1.1.0/24
+
+
+MEMORY CAPS
+===========
+
+Memory caps can be configured for maximum storage of run-time data (excludes
+configuration) as follows:
+
+config rate_filter: memcap <bytes>
+config event_filter: memcap <bytes>
+
+If the rate_filter reaches its memcap, it will recycle memory by releasing the
+oldest tracker and using that memory for a new tracker.  The event_filter works
+the same way.
+
+The default in both cases is 1048576 bytes (1MB).  (Internally, global event_
+filters (sig_id = 0) are tracked separately from local event_filters (sig_id !=
+0) and the memcap limit is applied to each group separately, yielding 2*memcap
+total for event_filter.) 
+

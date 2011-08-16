@@ -1,0 +1,6 @@
+Contributed files that once lived here have moved to http://www.snort.org/dl/contrib
+
+The 'rpm' directory has moved up one directory to ../rpm
+
+The DB schemas have moved to the directory ../schemas
+

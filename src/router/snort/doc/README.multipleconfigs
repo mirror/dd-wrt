@@ -1,0 +1,144 @@
+Description:
+===========
+Snort now supports multiple configurations based on VLAN Id or IP subnet within 
+a single instance of Snort. This will allow administrators to specify multiple 
+snort configuration files and bind each configuration to one or more VLANs or 
+subnets rather than running one Snort for each configuration required. Each 
+unique snort configuration file will create a new configuration instance within 
+snort. VLANs/Subnets not bound to any specific configuration will use the 
+default configuration. Each configuration can have different preprocessor 
+settings and detection rules.
+
+Creating Multiple Configurations:
+================================
+Default configuration for snort is specified using the existing -c option. A 
+default configuration binds multiple vlans or networks to non-default 
+configurations, using the following configuration line:
+
+config binding: <path_to_snort.conf> vlan <vlanIdList>
+config binding: <path_to_snort.conf> net <ipList>
+
+<path_to_snort.conf> : Refers to the absolute or relative path to the snort.conf
+for specific configuration.
+
+<vlanIdList>         : Refers to the comma seperated list of vlandIds and vlanId
+ranges.  The format for ranges is two vlanId separated by a "-". Spaces are 
+allowed within ranges.  Valid vlanId is any number in 0-4095 range. Negative 
+vland Ids and alphanumeric are not supported.
+
+<ipList>	     : Refers to ip subnets. Subnets can be CIDR blocks for IPV6
+or IPv4.  A maximum of 512 individual IPv4 or IPv6 addresses or CIDRs can be
+specified.
+
+NOTE: Vlan and Subnets can not be used in the same line. Configurations can be 
+applied based on either Vlans or Subnets not both. 
+
+Configuration Specific Elements:
+===============================
+
+Config Options:
+==============
+
+Generally config options defined within the default configuration are global by 
+default i.e. their value applies to all other configurations. The following 
+config options are specific to each configuration.
+policy_id
+policy_mode
+policy_version  
+
+The following config options are specific to each configuration. If not defined 
+in a configuration, the default values of the option (not the default 
+configuration values) take effect.
+
+config checksum_drop
+config disable_decode_alerts
+config disable_decode_drops
+config disable_ipopt_alerts
+config disable_ipopt_drops
+config disable_tcpopt_alerts
+config disable_tcpopt_drops
+config disable_tcpopt_experimental_alerts
+config disable_tcpopt_experimental_drops
+config disable_tcpopt_obsolete_alerts
+config disable_tcpopt_obsolete_drops
+config disable_ttcp_alerts
+config disable_tcpopt_ttcp_alerts
+config disable_ttcp_drops
+
+Rules:
+=====
+Rules are specific to configurations but only some parts of a rule can be 
+customized for performance reasons. If a rule is not specified in a 
+configuration then the rule will never raise an event for the configuration. 
+A rule shares all parts of the rule options, including the general options, 
+payload detection options, non-payload detection options, and post-detection 
+options.  Parts of the rule header can be specified differently across 
+configurations, limited to: Source IP address and port
+    Destination IP address and port
+    Action
+
+A higher revision of a rule in one configuration will override other revisions 
+of the same rule in other configurations.
+
+Variables:
+==========
+Variables defined using "var", "portvar" and "ipvar" are specific to 
+configurations.  If the rules in a configuration use variables, those variables 
+must be defined in that configuration. 
+
+Preprocessors:
+==============
+Preprocessors configurations can be defined within each vlan or subnet specific 
+configuration.  Options controlling specific preprocessor memory usage, through 
+specific limit on memory usage or number of instances, are processed only in 
+default policy. The options control total memory usage for a preprocessor across
+all policies.  These options are ignored in non-default policies without raising
+an error. A preprocessor must be configured in default configuration before it 
+can be configured in non-default configuration. This is required as some 
+mandatory preprocessor configuration options are processed only in default 
+configuration.
+
+Events and Output:
+==================
+An unique policy id can be assigned by user, to each configuration using the 
+following config line:
+
+config policy_id: <id>
+
+<id>		     : Refers to a 16-bit unsigned value. This policy id will 
+be used to identify alerts from a specific configuration in the unified2 records.
+
+NOTE: If no policy id is specified, snort assigns 0 (zero) value to the 
+configuration.
+
+To enable vlanId logging in unified2 records the following 
+options can be used.
+
+output alert_unified2: vlan_event_types (alert logging only)
+output unified2: filename <filename>, vlan_event_types (true unified logging)
+
+<filename>	     : Refers to the absolute or relative filename.
+
+vlan_event_types     : When this option is set, snort will use unified2 event 
+type 104 and 105 for IPv4 and IPv6 respectively. 
+
+Events 
+
+NOTE: Each event logged will have the vlanId from the packet if vlan headers 
+are present otherwise 0 will be used.
+
+How Configuration is applied?
+============================
+Snort assigns every incoming packet to a unique configuration based on the 
+following criteria.  If VLANID is present, then the innermost VLANID is used 
+to find bound configuration. If the bound configuration is the default 
+configuration, then destination IP address is searched to the most specific 
+subnet that is bound to a non-default  configuration. The packet is assigned 
+non-default configuration if found otherwise the check is repeated using 
+source IP address.  In the end, default configuration is used if no other 
+matching configuration is found.
+
+For addressed based configuration binding, this can lead to conflicts between 
+configurations if source address is bound to one configuration and destination 
+address is bound to another.  In this case, snort will use the first 
+configuration in the order of definition, that can be applied to the packet. 

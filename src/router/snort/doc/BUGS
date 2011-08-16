@@ -1,0 +1,60 @@
+Security Related bug reports (evasions, overflows, etc) should be sent to 
+bugs@snort.org and Marty Roesch <roesch@snort.org>.
+
+Bug reports should be sent to bugs@snort.org and cc'd to
+snort-devel@lists.sourceforge.net (Snort Developers mailing list).
+
+Please include the following information with your report:
+
+System Architecture (Sparc, x86, etc)
+Operating System and version (Linux 2.0.22, IRIX 5.3, etc)
+Version of Snort
+What preprocessors you loaded
+What rules (if any) you were using
+What output plug-ins you loaded
+What command line switches you were using
+Any Snort error messages
+
+If you get a core file, here is a procedure that would be very
+helpful for me to debug your problem faster.  When it crashes,
+try the following steps:
+
+1) At the command prompt, type 'gdb snort snort.core'.  This will
+load snort and the core file into the GNU debugger.  You may need
+to give the path to the snort binary file, and your core file might
+have a different name (like "core" or something).
+
+2) At the (gdb) prompt, type 'bt' (without the quotes).
+
+3) At the (gdb) prompt, type 'quit'.  This will return you to your
+shell.  
+
+4) Cut and paste the output from gdb into the email you send me! 
+
+If the problem could be reproduced, coredump analysis and snort output
+of 'debug-enabled' build would be appreciated.
+
+
+Hints:
+To build debugging-enabled snort: 
+
+make distclean; ./configure --enable-debug; make
+
+
+If you are having trouble compiling, please try the following:
+
+make distclean; aclocal; autoconf; automake
+
+These solve a good percentange of autoconf portablity problems.
+
+
+To debug some particular part of snort functionality:
+
+export SNORT_DEBUG=<debuglevel> and run snort. See debug.h file
+for details on debugging levels. (those could be combined, f.e.
+if you want to see IP and TCP/UDP related info: debuglevel would
+be: IPdebuglevel + TCPUDPdebuglevel)
+
+Thanks!
+
+    -Marty

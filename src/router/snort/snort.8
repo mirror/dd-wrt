@@ -1,0 +1,938 @@
+.\" Process this file with
+.\" groff -man -Tascii snort.8
+.\"
+.\" $Id$
+.TH SNORT 8 "February 2009"
+.SH NAME
+Snort \- open source network intrusion detection system
+.SH SYNOPSIS
+.B snort [-bCdDeEfHIMNOpqQsTUvVwWxXy?] [-A
+.I alert-mode
+.B ] [-B
+.I address-conversion-mask
+.B ] [-c
+.I rules-file
+.B ] [-F
+.I bpf-file
+.B ] [-g
+.I grpname
+.B ] [-G
+.I id
+.B ] [-h
+.I home-net
+.B ] [-i
+.I interface
+.B ] [-k
+.I checksum-mode
+.B ] [-K
+.I logging-mode
+.B ] [-l
+.I log-dir
+.B ] [-L
+.I bin-log-file
+.B ] [-m
+.I umask
+.B ] [-n
+.I packet-count
+.B ] [-P
+.I snap-length
+.B ] [-r
+.I tcpdump-file
+.B ] [-R
+.I name
+.B ] [-S
+.I variable=value
+.B ] [-t
+.I chroot_directory
+.B ] [-u
+.I usrname
+.B ] [-Z
+.I pathname
+.B ] [--logid
+.I id
+.B ] [--perfmon-file
+.I pathname
+.B ] [--pid-path
+.I pathname
+.B ] [--snaplen
+.I snap-length
+.B ] [--help
+.B ] [--version
+.B ] [--dynamic-engine-lib
+.I file
+.B ] [--dynamic-engine-lib-dir
+.I directory
+.B ] [--dynamic-detection-lib
+.I file
+.B ] [--dynamic-detection-lib-dir
+.I directory
+.B ] [--dump-dynamic-rules
+.I directory
+.B ] [--dynamic-preprocessor-lib
+.I file
+.B ] [--dynamic-preprocessor-lib-dir
+.I directory
+.B ] [--alert-before-pass
+.B ] [--treat-drop-as-alert
+.B ] [--treat-drop-as-ignore
+.B ] [--process-all-events
+.B ] [--enable-inline-test
+.B ] [--create-pidfile
+.B ] [--nolock-pidfile
+.B ] [--pcap-single=
+.I tcpdump-file
+.B ] [--pcap-filter=
+.I filter
+.B ] [--pcap-list=
+.I list
+.B ] [--pcap-dir=
+.I directory
+.B ] [--pcap-file=
+.I file
+.B ] [--pcap-no-filter
+.B ] [--pcap-reset
+.B ] [--pcap-show
+.B ] [--exit-check
+.I count
+.B ] [--conf-error-out
+.B ] [--require-rule-sid
+.B ] [--daq
+.I type
+.B ] [--daq-mode
+.I mode
+.B ] [--daq-var
+.I name=value
+.B ] [--daq-dir
+.I dir
+.B ] [--daq-list
+.I [dir]
+.B ]
+.I expression
+.SH DESCRIPTION
+.B Snort
+is an open source network intrusion detection system, capable of performing
+real-time traffic analysis and packet logging on IP networks.  It can perform
+protocol analysis, content searching/matching and can be used to detect a
+variety of attacks and probes, such as buffer overflows, stealth port scans,
+CGI attacks, SMB probes, OS fingerprinting attempts, and much more.  Snort uses
+a flexible rules language to describe traffic that it should collect or pass,
+as well as a detection engine that utilizes a modular plugin architecture.
+Snort also has a modular real-time alerting capability, incorporating alerting
+and logging plugins for syslog, a ASCII text files, UNIX sockets, database
+(Mysql/PostgreSQL/Oracle/ODBC) or XML.
+.PP
+Snort has three primary uses.  It can be used as a straight packet sniffer like
+.BR tcpdump (1),
+a packet logger (useful for network traffic debugging, etc), or as a full
+blown network intrusion detection system.
+.PP
+Snort logs packets in
+.BR tcpdump (1)
+binary format, to a database or in Snort's decoded ASCII format to a hierarchy
+of logging directories that are named based on the IP address of the "foreign"
+host.
+.SH OPTIONS
+.IP "-A alert-mode"
+Alert using the specified
+.I alert-mode.
+Valid alert modes include
+.B fast, full, none,
+and
+.B unsock.
+.B Fast
+writes alerts to the default "alert" file in a single-line, syslog style alert
+message.
+.B Full
+writes the alert to the "alert" file with the full decoded header as well as
+the alert message.
+.B None
+turns off alerting.
+.B Unsock
+is an experimental mode that sends the alert information out over a UNIX socket
+to another process that attaches to that socket.
+.IP -b
+Log packets in a
+.BR tcpdump (1)
+formatted file.   All packets are logged in their native binary state to a
+tcpdump formatted log file named with the snort start timestamp and
+"snort.log".  This option results in much faster operation of the program
+ since it doesn't have to spend time in the packet binary->text converters.
+Snort can keep up pretty well with 100Mbps networks in '-b' mode.  To choose
+an alternate name for the binary log file, use the '-L' switch.
+.IP "-B address-conversion-mask"
+Convert all IP addresses in
+.I home-net
+to addresses specified by
+.I address-conversion-mask.
+Used to obfuscate IP addresses within binary logs. Specify
+.I home-net
+with the '-h' switch.  Note this is
+.B not
+the same as $HOME_NET.
+.IP "-c config-file"
+Use the rules located in file
+.I config-file.
+.IP -C
+Print the character data from the packet payload only (no hex).
+.IP -d
+Dump the application layer data when displaying packets in verbose or packet
+logging mode.
+.IP -D
+Run Snort in daemon mode.  Alerts are sent to /var/log/snort/alert unless
+otherwise specified.
+.IP -e
+Display/log the link layer packet headers.
+.IP -E
+.B *WIN32 ONLY*
+Log alerts to the Windows Event Log.
+.IP -f
+Activate PCAP line buffering
+.IP "-F bpf-file"
+Read BPF filters from
+.I bpf-file.
+This is handy for people running Snort as a SHADOW replacement or with a love
+Of super complex BPF filters.  See the "expressions" section of this man page
+for more info on writing BPF fileters.
+.IP "-g group"
+Change the group/GID Snort runs under to
+.I group
+after initialization.  This switch allows Snort to drop root priveleges after
+it's initialization phase has completed as a security measure.
+.IP "-G id"
+Use id as a base event ID when logging events.  Useful for distinguishing
+events logged to the same database from multiple snort instances.
+.IP "-h home-net"
+Set the "home network" to
+.I home-net.
+The format of this address variable is a network prefix plus a CIDR block, such
+as 192.168.1.0/24.  Once this variable is set, all decoded packet logging will
+be done relative to the home network address space.  This is useful because of
+the way that Snort formats its ASCII log data.  With this value set to the
+local network, all decoded output will be logged into decode directories
+with the address of the foreign computer as the directory name, which is
+very useful during traffic analysis. This option does not change "$HOME_NET" in
+IDS mode.
+.IP "-H"
+Force hash tables to be deterministic instead of using a random number
+generator for the seed & scale.  Useful for testing and generating repeatable
+results with the same traffic.
+.IP "-i interface"
+Sniff packets on
+.I interface.
+.IP "-I"
+Print out the receiving interface name in alerts.
+.IP "-k checksum-mode"
+Tune the internal checksum verification functionality with
+.I alert-mode.
+Valid checksum modes include
+.B all, noip, notcp, noudp, noicmp,
+and
+.B none.
+.B All
+activates checksum verification for all supported protocols.
+.B Noip
+turns off IP checksum verification, which is handy if the gateway router is
+already dropping packets that fail their IP checksum checks.
+.B Notcp
+turns off TCP checksum verification, all other checksum modes are
+.B on.
+.B noudp
+turns off UDP checksum verification.
+.B Noicmp
+turns off ICMP checksum verification.
+.B None
+turns off the entire checksum verification subsystem.
+.IP "-K logging-mode"
+Select a packet logging mode.  The default is pcap.
+.I logging-mode.
+Valid logging modes include
+.B pcap, ascii,
+and
+.B none.
+.B Pcap
+logs packets through the pcap library into pcap (tcpdump) format.
+.B Ascii
+logs packets in the old "directories and files" format with packet printouts in each file.
+.B None
+Turns off packet logging.
+.IP "-l log-dir"
+Set the output logging directory to
+.I log-dir.
+All plain text alerts and packet logs go into this directory.  If this option
+is not specified, the default logging directory is set to /var/log/snort.
+.IP "-L binary-log-file"
+Set the filename of the binary log file to
+.I binary-log-file.
+If this switch is not used, the default name is a timestamp for the time that
+the file is created plus "snort.log".
+.IP "-m umask"
+Set the file mode creation mask to
+.I umask
+.IP "-M"
+Log console messages to syslog when not running daemon mode.  This switch
+has no impact on logging of alerts.
+.IP "-n packet-count"
+Process
+.I packet-count
+packets and exit.
+.IP -N
+Turn off packet logging.  The program still generates alerts normally.
+.IP -O
+Obfuscate the IP addresses when in ASCII packet dump mode.  This switch changes
+the IP addresses that get printed to the screen/log file to "xxx.xxx.xxx.xxx".
+If the homenet address switch is set (-h), only addresses on the homenet will
+be obfuscated while non- homenet IPs will be left visible.  Perfect for posting
+to your favorite security mailing list!
+.IP -p
+Turn off promiscuous mode sniffing.
+.IP "-P snap-length"
+Set the packet snaplen to
+.I snap-length.
+By default, this is set to 1514.
+.IP "-q"
+Quiet operation.  Don't display banner and initialization information.
+.IP "-Q"
+Enable inline mode operation.
+.IP "-r tcpdump-file"
+Read the tcpdump-formatted file
+.I tcpdump-file.
+This will cause Snort to read and process the file fed to it.  This is
+useful if, for instance, you've got a bunch of SHADOW files that you want to
+process for content, or even if you've got a bunch of reassembled packet
+fragments which have been written into a tcpdump formatted file.
+.IP "-R name"
+Use name as a suffix to the snort pidfile.
+.IP -s
+Send alert messages to syslog.  On linux boxen, they will appear in
+/var/log/secure, /var/log/messages on many other platforms.
+.IP "-S variable=value"
+Set variable name "variable" to value "value".  This is useful for setting the
+value of a defined variable name in a Snort rules file to a command line
+specified value.  For instance, if you define a HOME_NET variable name inside
+of a Snort rules file, you can set this value from it's predefined value at the
+command line.
+.IP "-t chroot"
+Changes Snort's root directory to
+.I chroot
+after initialization.  Please note that all log/alert filenames are relative
+to the chroot directory if chroot is used.
+.IP -T
+Snort will start up in self-test mode, checking all the supplied
+command line switches and rules files that are handed to it and
+indicating that everything is ready to proceed.  This is a good
+switch to use if daemon mode is going to be used, it verifies that
+the Snort configuration that is about to be used is valid and won't fail at
+run time. Note, Snort looks for either /etc/snort.conf or ./snort.conf.
+If your config lives elsewhere, use the -c option to specify a valid
+.I config-file.
+.IP "-u user"
+Change the user/UID Snort runs under to
+.I user
+after initialization.
+.IP -U
+Changes the timestamp in all logs to be in UTC
+.IP -v
+Be verbose.  Prints packets out to the console.  There is one big problem with
+verbose mode: it's slow.  If you are doing IDS work with Snort,
+.B don't
+use the '-v' switch, you
+.B WILL
+drop packets.
+.IP -V
+Show the version number and exit.
+.IP "-w"
+Show management frames if runnong on an 802.11 (wireless) network.
+.IP "-W"
+.B *WIN32 ONLY*
+Enumerate the network interfaces available.
+.IP "-x"
+Exit if Snort configuration problems occur such as duplicate gid/sid or flowbits without Stream5.
+.IP "-X"
+Dump the raw packet data starting at the link layer.  This switch overrides the '-d' switch.
+.IP "-y"
+Include the year in alert and log files
+.IP "-Z pathname"
+Set the perfmonitor preprocessor path/filename to pathname.
+.IP -?
+Show the program usage statement and exit.
+.IP "--logid id"
+Same as -G.
+.IP "--perfmon-file pathname"
+Same as -Z.
+.IP "--pid-path directory"
+Specify the directory for the Snort PID file.
+.IP "--snaplen snap-length"
+Same as -P.
+.IP "--help"
+Same as -?
+.IP "--version"
+Same as -V
+.IP "--dynamic-engine-lib file"
+Load a dynamic detection engine shared library specified by file.
+.IP "--dynamic-engine-lib-dir directory"
+Load all dynamic detection engine shared libraries specified from directory.
+.IP "--dynamic-detection-lib file"
+Load a dynamic detection rules shared library specified by file.
+.IP "--dynamic-detection-lib-dir directory"
+Load all dynamic detection rules shared libraries specified from directory.
+.IP "--dump-dynamic-rules directory"
+Create stub rule files from all loaded dynamic detection rules libraries.
+Files will be created in directory.  This is required to be done prior
+to running snort using those detection rules and the generated rules files
+must be included in snort.conf.
+.IP "--dynamic-preprocessor-lib file"
+Load a dynamic preprocessor shared library specified by file.
+.IP "--dynamic-preprocessor-lib-dir directory"
+Load all dynamic preprocessor shared libraries specified from directory.
+.IP "--alert-before-pass"
+Process alert, drop, sdrop, or reject before pass.
+Default is pass before alert, drop, etc.
+.IP "--treat-drop-as-alert"
+Converts drop, sdrop, and reject rules into alert rules during startup.
+.IP "--treat-drop-as-ignore"
+Use drop, dsrop, and reject rules to ignore session traffic when not inline.
+.IP "--process-all-events"
+Process all triggered events in group order, per Rule Ordering
+configuration.  Default stops after first group.
+.IP "--enable-inline-test"
+Enable Inline-Test Mode Operation.
+.IP "--pid-path directory"
+Specify the path for Snort's PID file.
+.IP "--create-pidfile"
+Create PID file, even when not in Daemon mode.
+.IP "--nolock-pidfile"
+Do not try to lock Snort PID file.
+.IP "--pcap-single=\fItcpdump-file\fP"
+Same as -r.  Added for completeness.
+.IP "--pcap-filter=\fIfilter\fP"
+Shell style filter to apply when getting pcaps from
+file or directory.  This filter will apply to any
+--pcap-file or --pcap-dir arguments following.  Use
+--pcap-no-filter to delete filter for following
+--pcap-file or --pcap-dir arguments or specifiy
+--pcap-filter again to forget previous filter and
+to apply to following --pcap-file or --pcap-dir arguments.
+.IP "--pcap-list=\fI""list""\fP"
+A space separated list of pcaps to read.
+.IP "--pcap-dir=\fIdirectory\fP"
+A directory to recurse to look for pcaps.  Sorted in ascii order.
+.IP "--pcap-file=\fIfile\fP"
+File that contains a list of pcaps to read.  Can specifiy path to
+pcap or directory to recurse to get pcaps.
+.IP "--pcap-no-filter"
+Reset to use no filter when getting pcaps from file or directory.
+.IP "--pcap-reset"
+If reading multiple pcaps, reset snort to post-configuration state
+before reading next pcap.  The default, i.e. without this option,
+is not to reset state.
+.IP "--pcap-show"
+Print a line saying what pcap is currently being read.
+.IP "--exit-check=\fIcount\fP"
+Signal termination after <count> callbacks from DAQ_Acquire(), showing the
+time it takes from signaling until DAQ_Stop() is called.
+.IP "--conf-error-out"
+Same as -x.
+.IP "--require-rule-sid"
+Require an SID for every rule to be correctly hreshold all rules.
+.IP "--daq <type>"
+Select packet acquisition module (default is pcap).
+.IP "--daq-mode <mode>"
+Select the DAQ operating mode.
+.IP "--daq-var <name=value>"
+Specify extra DAQ configuration variable.
+.IP "--daq-dir <dir>"
+Tell Snort where to find desired DAQ.
+.IP "--daq-list [<dir>]"
+List packet acquisition modules available in dir.
+
+.IP "\fI expression\fP"
+.RS
+selects which packets will be dumped.  If no \fIexpression\fP
+is given, all packets on the net will be dumped.  Otherwise,
+only packets for which \fIexpression\fP is `true' will be dumped.
+.LP
+The \fIexpression\fP consists of one or more
+.I primitives.
+Primitives usually consist of an
+.I id
+(name or number) preceded by one or more qualifiers.  There are three
+different kinds of qualifier:
+.IP \fItype\fP
+qualifiers say what kind of thing the id name or number refers to.
+Possible types are
+.BR host ,
+.B net
+and
+.BR port .
+E.g., `host foo', `net 128.3', `port 20'.  If there is no type
+qualifier,
+.B host
+is assumed.
+.IP \fIdir\fP
+qualifiers specify a particular transfer direction to and/or from
+.I id.
+Possible directions are
+.BR src ,
+.BR dst ,
+.B "src or dst"
+and
+.B "src and"
+.BR dst .
+E.g., `src foo', `dst net 128.3', `src or dst port ftp-data'.  If
+there is no dir qualifier,
+.B "src or dst"
+is assumed.
+For `null' link layers (i.e. point to point protocols such as slip) the
+.B inbound
+and
+.B outbound
+qualifiers can be used to specify a desired direction.
+.IP \fIproto\fP
+qualifiers restrict the match to a particular protocol.  Possible
+protos are:
+.BR ether ,
+.BR fddi ,
+.BR ip ,
+.BR arp ,
+.BR rarp ,
+.BR decnet ,
+.BR lat ,
+.BR sca ,
+.BR moprc ,
+.BR mopdl ,
+.B tcp
+and
+.BR udp .
+E.g., `ether src foo', `arp net 128.3', `tcp port 21'.  If there is
+no proto qualifier, all protocols consistent with the type are
+assumed.  E.g., `src foo' means `(ip or arp or rarp) src foo'
+(except the latter is not legal syntax), `net bar' means `(ip or
+arp or rarp) net bar' and `port 53' means `(tcp or udp) port 53'.
+.LP
+[`fddi' is actually an alias for `ether'; the parser treats them
+identically as meaning ``the data link level used on the specified
+network interface.''  FDDI headers contain Ethernet-like source
+and destination addresses, and often contain Ethernet-like packet
+types, so you can filter on these FDDI fields just as with the
+analogous Ethernet fields.  FDDI headers also contain other fields,
+but you cannot name them explicitly in a filter expression.]
+.LP
+In addition to the above, there are some special `primitive' keywords
+that don't follow the pattern:
+.BR gateway ,
+.BR broadcast ,
+.BR less ,
+.B greater
+and arithmetic expressions.  All of these are described below.
+.LP
+More complex filter expressions are built up by using the words
+.BR and ,
+.B or
+and
+.B not
+to combine primitives.  E.g., `host foo and not port ftp and not port ftp-data'.
+To save typing, identical qualifier lists can be omitted.  E.g.,
+`tcp dst port ftp or ftp-data or domain' is exactly the same as
+`tcp dst port ftp or tcp dst port ftp-data or tcp dst port domain'.
+.LP
+Allowable primitives are:
+.IP "\fBdst host \fIhost\fR"
+True if the IP destination field of the packet is \fIhost\fP,
+which may be either an address or a name.
+.IP "\fBsrc host \fIhost\fR"
+True if the IP source field of the packet is \fIhost\fP.
+.IP "\fBhost \fIhost\fP"
+True if either the IP source or destination of the packet is \fIhost\fP.
+Any of the above host expressions can be prepended with the keywords,
+\fBip\fP, \fBarp\fP, or \fBrarp\fP as in:
+.in +.5i
+.nf
+\fBip host \fIhost\fR
+.fi
+.in -.5i
+which is equivalent to:
+.in +.5i
+.nf
+\fBether proto \fI\\ip\fB and host \fIhost\fR
+.fi
+.in -.5i
+If \fIhost\fR is a name with multiple IP addresses, each address will
+be checked for a match.
+.IP "\fBether dst \fIehost\fP"
+True if the ethernet destination address is \fIehost\fP.  \fIEhost\fP
+may be either a name from /etc/ethers or a number (see
+.IR ethers (3N)
+for numeric format).
+.IP "\fBether src \fIehost\fP"
+True if the ethernet source address is \fIehost\fP.
+.IP "\fBether host \fIehost\fP"
+True if either the ethernet source or destination address is \fIehost\fP.
+.IP "\fBgateway\fP \fIhost\fP"
+True if the packet used \fIhost\fP as a gateway.  I.e., the ethernet
+source or destination address was \fIhost\fP but neither the IP source
+nor the IP destination was \fIhost\fP.  \fIHost\fP must be a name and
+must be found in both /etc/hosts and /etc/ethers.  (An equivalent
+expression is
+.in +.5i
+.nf
+\fBether host \fIehost \fBand not host \fIhost\fR
+.fi
+.in -.5i
+which can be used with either names or numbers for \fIhost / ehost\fP.)
+.IP "\fBdst net \fInet\fR"
+True if the IP destination address of the packet has a network
+number of \fInet\fP. \fINet\fP may be either a name from /etc/networks
+or a network number (see \fInetworks(4)\fP for details).
+.IP "\fBsrc net \fInet\fR"
+True if the IP source address of the packet has a network
+number of \fInet\fP.
+.IP "\fBnet \fInet\fR"
+True if either the IP source or destination address of the packet has a network
+number of \fInet\fP.
+.IP "\fBnet \fInet\fR \fBmask \fImask\fR"
+True if the IP address matches \fInet\fR with the specific netmask.
+May be qualified with \fBsrc\fR or \fBdst\fR.
+.IP "\fBnet \fInet\fR/\fIlen\fR"
+True if the IP address matches \fInet\fR a netmask \fIlen\fR bits wide.
+May be qualified with \fBsrc\fR or \fBdst\fR.
+.IP "\fBdst port \fIport\fR"
+True if the packet is ip/tcp or ip/udp and has a
+destination port value of \fIport\fP.
+The \fIport\fP can be a number or a name used in /etc/services (see
+.IR tcp (4P)
+and
+.IR udp (4P)).
+If a name is used, both the port
+number and protocol are checked.  If a number or ambiguous name is used,
+only the port number is checked (e.g., \fBdst port 513\fR will print both
+tcp/login traffic and udp/who traffic, and \fBport domain\fR will print
+both tcp/domain and udp/domain traffic).
+.IP "\fBsrc port \fIport\fR"
+True if the packet has a source port value of \fIport\fP.
+.IP "\fBport \fIport\fR"
+True if either the source or destination port of the packet is \fIport\fP.
+Any of the above port expressions can be prepended with the keywords,
+\fBtcp\fP or \fBudp\fP, as in:
+.in +.5i
+.nf
+\fBtcp src port \fIport\fR
+.fi
+.in -.5i
+which matches only tcp packets whose source port is \fIport\fP.
+.IP "\fBless \fIlength\fR"
+True if the packet has a length less than or equal to \fIlength\fP.
+This is equivalent to:
+.in +.5i
+.nf
+\fBlen <= \fIlength\fP.
+.fi
+.in -.5i
+.IP "\fBgreater \fIlength\fR"
+True if the packet has a length greater than or equal to \fIlength\fP.
+This is equivalent to:
+.in +.5i
+.nf
+\fBlen >= \fIlength\fP.
+.fi
+.in -.5i
+.IP "\fBip proto \fIprotocol\fR"
+True if the packet is an ip packet (see
+.IR ip (4P))
+of protocol type \fIprotocol\fP.
+\fIProtocol\fP can be a number or one of the names
+\fIicmp\fP, \fIigrp\fP, \fIudp\fP, \fInd\fP, or \fItcp\fP.
+Note that the identifiers \fItcp\fP, \fIudp\fP, and \fIicmp\fP are also
+keywords and must be escaped via backslash (\\), which is \\\\ in the C-shell.
+.IP "\fBether broadcast\fR"
+True if the packet is an ethernet broadcast packet.  The \fIether\fP
+keyword is optional.
+.IP "\fBip broadcast\fR"
+True if the packet is an IP broadcast packet.  It checks for both
+the all-zeroes and all-ones broadcast conventions, and looks up
+the local subnet mask.
+.IP "\fBether multicast\fR"
+True if the packet is an ethernet multicast packet.  The \fIether\fP
+keyword is optional.
+This is shorthand for `\fBether[0] & 1 != 0\fP'.
+.IP "\fBip multicast\fR"
+True if the packet is an IP multicast packet.
+.IP  "\fBether proto \fIprotocol\fR"
+True if the packet is of ether type \fIprotocol\fR.
+\fIProtocol\fP can be a number or a name like
+\fIip\fP, \fIarp\fP, or \fIrarp\fP.
+Note these identifiers are also keywords
+and must be escaped via backslash (\\).
+[In the case of FDDI (e.g., `\fBfddi protocol arp\fR'), the
+protocol identification comes from the 802.2 Logical Link Control
+(LLC) header, which is usually layered on top of the FDDI header.
+\fITcpdump\fP assumes, when filtering on the protocol identifier,
+that all FDDI packets include an LLC header, and that the LLC header
+is in so-called SNAP format.]
+.IP "\fBdecnet src \fIhost\fR"
+True if the DECNET source address is
+.IR host ,
+which may be an address of the form ``10.123'', or a DECNET host
+name.  [DECNET host name support is only available on Ultrix systems
+that are configured to run DECNET.]
+.IP "\fBdecnet dst \fIhost\fR"
+True if the DECNET destination address is
+.IR host .
+.IP "\fBdecnet host \fIhost\fR"
+True if either the DECNET source or destination address is
+.IR host .
+.IP "\fBip\fR, \fBarp\fR, \fBrarp\fR, \fBdecnet\fR"
+Abbreviations for:
+.in +.5i
+.nf
+\fBether proto \fIp\fR
+.fi
+.in -.5i
+where \fIp\fR is one of the above protocols.
+.IP "\fBlat\fR, \fBmoprc\fR, \fBmopdl\fR"
+Abbreviations for:
+.in +.5i
+.nf
+\fBether proto \fIp\fR
+.fi
+.in -.5i
+where \fIp\fR is one of the above protocols.
+Note that
+\fISnort\fP does not currently know how to parse these protocols.
+.IP  "\fBtcp\fR, \fBudp\fR, \fBicmp\fR"
+Abbreviations for:
+.in +.5i
+.nf
+\fBip proto \fIp\fR
+.fi
+.in -.5i
+where \fIp\fR is one of the above protocols.
+.IP  "\fIexpr relop expr\fR"
+True if the relation holds, where \fIrelop\fR is one of >, <, >=, <=, =, !=,
+and \fIexpr\fR is an arithmetic expression composed of integer constants
+(expressed in standard C syntax), the normal binary operators
+[+, -, *, /, &, |], a length operator, and special packet data accessors.
+To access
+data inside the packet, use the following syntax:
+.in +.5i
+.nf
+\fIproto\fB [ \fIexpr\fB : \fIsize\fB ]\fR
+.fi
+.in -.5i
+\fIProto\fR is one of \fBether, fddi,
+ip, arp, rarp, tcp, udp, \fRor \fBicmp\fR, and
+indicates the protocol layer for the index operation.
+The byte offset, relative to the indicated protocol layer, is
+given by \fIexpr\fR.
+\fISize\fR is optional and indicates the number of bytes in the
+field of interest; it can be either one, two, or four, and defaults to one.
+The length operator, indicated by the keyword \fBlen\fP, gives the
+length of the packet.
+
+For example, `\fBether[0] & 1 != 0\fP' catches all multicast traffic.
+The expression `\fBip[0] & 0xf != 5\fP'
+catches all IP packets with options. The expression
+`\fBip[6:2] & 0x1fff = 0\fP'
+catches only unfragmented datagrams and frag zero of fragmented datagrams.
+This check is implicitly applied to the \fBtcp\fP and \fBudp\fP
+index operations.
+For instance, \fBtcp[0]\fP always means the first
+byte of the TCP \fIheader\fP, and never means the first byte of an
+intervening fragment.
+.LP
+Primitives may be combined using:
+.IP
+A parenthesized group of primitives and operators
+(parentheses are special to the Shell and must be escaped).
+.IP
+Negation (`\fB!\fP' or `\fBnot\fP').
+.IP
+Concatenation (`\fB&&\fP' or `\fBand\fP').
+.IP
+Alternation (`\fB||\fP' or `\fBor\fP').
+.LP
+Negation has highest precedence.
+Alternation and concatenation have equal precedence and associate
+left to right.  Note that explicit \fBand\fR tokens, not juxtaposition,
+are now required for concatenation.
+.LP
+If an identifier is given without a keyword, the most recent keyword
+is assumed.
+For example,
+.in +.5i
+.nf
+\fBnot host vs and ace\fR
+.fi
+.in -.5i
+is short for
+.in +.5i
+.nf
+\fBnot host vs and host ace\fR
+.fi
+.in -.5i
+which should not be confused with
+.in +.5i
+.nf
+\fBnot ( host vs or ace )\fR
+.fi
+.in -.5i
+.LP
+Expression arguments can be passed to Snort as either a single argument
+or as multiple arguments, whichever is more convenient.
+Generally, if the expression contains Shell metacharacters, it is
+easier to pass it as a single, quoted argument.
+Multiple arguments are concatenated with spaces before being parsed.
+.SH READING PCAPS
+Instead of having Snort listen on an interface, you can give it a packet
+capture to read.  Snort will read and analyze the packets as if they came
+off the wire.  This can be useful for testing and debugging Snort.
+
+\fBRead a single pcap\fR
+
+.RS 5
+.PD 0
+$ snort -r foo.pcap
+.PP
+$ snort --pcap-single=foo.pcap
+
+.RE 0
+\fBRead pcaps from a file\fR
+
+.RS 5
+$ cat foo.txt
+.PP
+foo1.pcap
+.PP
+foo2.pcap
+.PP
+/home/foo/pcaps
+
+$ snort --pcap-file=foo.txt
+
+This will read foo1.pcap, foo2.pcap and all files under /home/foo/pcaps.
+Note that Snort will not try to determine whether the files under that
+directory are really pcap files or not.
+
+.RE 0
+\fBRead pcaps from a command line list\fR
+
+.RS 5
+$ snort --pcap-list="foo1.pcap foo2.pcap foo3.pcap"
+
+This will read foo1.pcap, foo2.pcap and foo3.pcap.
+
+.RE 0
+\fBRead pcaps under a directory\fR
+
+.RS 5
+$ snort --pcap-dir="/home/foo/pcaps"
+
+This will include all of the files under /home/foo/pcaps.
+
+.RE 0
+\fBUsing filters\fR
+
+.RS 5
+$ cat foo.txt
+.PP
+foo1.pcap
+.PP
+foo2.pcap
+.PP
+/home/foo/pcaps
+
+$ snort --pcap-filter="*.pcap" --pcap-file=foo.txt
+.PP
+$ snort --pcap-filter="*.pcap" --pcap-dir=/home/foo/pcaps
+
+The above will only include files that match the shell pattern "*.pcap",
+in other words, any file ending in ".pcap".
+
+$ snort --pcap-filter="*.pcap --pcap-file=foo.txt \\
+.PP
+> --pcap-filter="*.cap" --pcap-dir=/home/foo/pcaps
+
+In the above, the first filter "*.pcap" will only be applied to the
+pcaps in the file "foo.txt" (and any directories that are recursed
+in that file).  The addition of the second filter "*.cap" will cause
+the first filter to be forgotten and then applied to the directory
+/home/foo/pcaps, so only files ending in ".cap" will be included from
+that directory.
+
+$ snort --pcap-filter="*.pcap --pcap-file=foo.txt \\
+.PP
+> --pcap-no-filter --pcap-dir=/home/foo/pcaps
+
+In this example, the first filter will be applied to foo.txt, then
+no filter will be applied to the files found under /home/foo/pcaps,
+so all files found under /home/foo/pcaps will be included.
+
+$ snort --pcap-filter="*.pcap --pcap-file=foo.txt \\
+.PP
+> --pcap-no-filter --pcap-dir=/home/foo/pcaps \\
+.PP
+> --pcap-filter="*.cap" --pcap-dir=/home/foo/pcaps2
+
+In this example, the first filter will be applied to foo.txt, then
+no filter will be applied to the files found under /home/foo/pcaps,
+so all files found under /home/foo/pcaps will be included, then the
+filter "*.cap" will be applied to files found under /home/foo/pcaps2.
+
+.RE 0
+\fBResetting state\fR
+
+.RS 5
+$ snort --pcap-dir=/home/foo/pcaps --pcap-reset
+
+The above example will read all of the files under /home/foo/pcaps, but
+after each pcap is read, Snort will be reset to a post-configuration
+state, meaning all buffers will be flushed, statistics reset, etc.  For
+each pcap, it will be like Snort is seeing traffic for the first time.
+
+.RE 0
+\fBPrinting the pcap\fR
+
+.RS 5
+$ snort --pcap-dir=/home/foo/pcaps --pcap-show
+
+The above example will read all of the files under /home/foo/pcaps and
+will print a line indicating which pcap is currently being read.
+.RE 0
+.PD
+.SH RULES
+Snort uses a simple but flexible rules language to describe network packet
+signatures and associate them with actions.  The current rules document can
+be found at http://www.snort.org/snort-rules.
+.SH NOTES
+The following signals have the specified effect when sent to the daemon process using the \fBkill(1)\fR command:
+.PP
+.IP SIGHUP
+Causes the daemon to close all opened files and restart.
+Please \fBnote\fR that this will only work if the \fBfull\fR pathname is
+used to invoke snort in daemon mode, otherwise snort will just exit with an
+error message being sent to
+.B syslogd(8)
+.
+.PP
+.IP SIGUSR1
+Causes the program to dump its current packet statistical information to the
+console or
+.B syslogd(8)
+if in daemon mode.
+.
+.PP
+Any other signal causes the daemon to close all opened files and exit.
+
+.SH HISTORY
+.B Snort
+has been freely available under the GPL license since 1998.
+.SH DIAGNOSTICS
+.B Snort
+returns a 0 on a successful exit, 1 if it exits on an error.
+.SH BUGS
+After consulting the BUGS file included with the source distribution, send bug
+reports to snort-devel@lists.sourceforge.net
+.SH AUTHOR
+Martin Roesch <roesch@snort.org>
+.SH "SEE ALSO"
+.BR tcpdump (1),
+.BR pcap (3)

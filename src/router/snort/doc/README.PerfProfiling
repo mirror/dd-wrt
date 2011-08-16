@@ -1,0 +1,145 @@
+# To use Rule or Preprocessor profiling, you must build snort using the
+# --enable-perfprofiling option to configure.
+
+# Rule Profiling Configuration
+#
+# syntax:
+# config profile_rules: print [all | num], sort sort_option, filename file_option [append]
+#  - where num is the number of rules to print
+#  - where sort_option is one of:
+#     checks, matches, nomatches, avg_ticks,
+#     avg_ticks_per_match, avg_ticks_per_nomatch, total_ticks
+#  - where file_option is the output filename
+#  - where append dictates that the output will go to the same file each time (optional)
+#
+# examples:
+#
+# 1) Print all rules, sort by avg_ticks (default configuration
+#    if option is turned on)
+# config profile_rules
+#
+# 2) Print the top 10 rules, based on highest average time
+# config profile_rules: print 10, sort avg_ticks
+#
+# 3) Print all rules, sorted by number of checks
+# config profile_rules: print all, sort checks
+#
+# 4) Print top 100 rules, based on total time
+# config profile_rules: print 100, sort total_ticks
+#
+# 5) Print with default options, save results to performance.txt each time
+# config profile_rules: filename performance.txt append
+#
+# 6) Print top 20 rules, save results to perf.txt with timestamp in filename
+# config profile_rules: print 20, filename perf.txt
+
+When you use this (see configuration info with example output),
+snort will print the following table at exit.  The column info
+is:
+- Number (rank)
+- Sig ID
+- Generator ID
+- Checks (number of times rule was evaludated after fast pattern match
+  within portgroup or ANY->ANY rules)
+- Matches (number of times ALL rule options matched, will be high for
+  rules that have no options)
+- Alerts (number of alerts generated from this rule)
+- CPU Ticks
+- Avg Ticks per Check
+- Avg Ticks per Match
+- Avg Ticks per Nonmatch
+
+Example, using config profile_rules: print 4, sort total_ticks
+Rule Profile Statistics (worst 4 rules)
+==========================================================
+   Num      SID GID Rev     Checks   Matches    Alerts               Ticks Avg/Check  Avg/Match Avg/Nonmatch
+   ===      === === ===     ======   =======    ======               ===== =========  ========= ============
+     1     2389   1  12          1         1         1              385698  385698.0   385698.0          0.0
+     2     2178   1  17          2         0         0              107822   53911.0        0.0      53911.0
+     3     2179   1   8          2         0         0               92458   46229.0        0.0      46229.0
+     4     1734   1  37          2         0         0               90054   45027.0        0.0      45027.0
+
+Interpreting this info is the key... The Ticks column is important
+because that is the total time spent evaluating a given rule.  But,
+if that rule is causing alerts, it makes sense to leave it alone.
+
+A high Avg/Check is a poor performing rule, most likely contains PCRE.
+High Checks and low Avg/Check is usually an ANY->ANY rule with few rule
+options and no content.  Quick to check, the few options may or may not
+match.  We are looking at moving some of these into code... Especially
+those with low SIDs. 
+
+By default, this information will be printed to the console when Snort
+exits. You can use the "filename" option in snort.conf to specify a
+file where this will be written. If "append" is not specified, a new
+file will be created each time Snort is run. The filenames will have
+timestamps appended to them. These files will be found in the logging
+directory.
+
+# Preprocessor Profiling Configuration
+#
+# syntax:
+# config profile_preprocs: print [all | num], sort sort_option, filename file_option [append]
+#  - where num is the number of rules to print
+#  - where sort_option is one of:
+#     checks, avg_ticks, total_ticks
+#  - where file_option is the output filename
+#  - where append dictates that the output will go to the same file each time (optional)
+#
+# examples:
+#
+# 1) Print all preprocessors, sort by avg_ticks (default configuration
+#    if option is turned on)
+# config profile_preprocs
+#
+# 2) Print the top 10 preprocessors, based on highest average time
+# config profile_preprocs: print 10, sort avg_ticks
+#
+# 3) Print all preprocessors, sorted by number of checks
+# config profile_preprocs: print all, sort checks
+# 
+# When printing a specific number of preprocessors all subtasks info
+# is printed for each layer 0 preprocessor stat.
+
+When you use this (see configuration info with example output),
+snort will print the following table at exit.  The column info
+is:
+- Number (rank)
+  The number is indented for each layer.  Layer 1 preprocessors are
+  listed under their respective caller (and sorted similarly).
+- Preprocessor Name
+- Layer
+- Checks (number of times preprocessor decided to look at a packet,
+  ports matched, app layer header was correct, etc)
+- Exits  (number of corresponding exits -- just to verify code is
+  instrumented correctly, should ALWAYS match Checks, unless an
+  exception was trapped)
+- CPU Ticks
+- Avg Ticks per Check
+- Percent of caller
+  For non layer 0 preprocessors -- ie, subroutines within preprocessors,
+  this identifies the percent of the caller's ticks that is spent for
+  this subtask.  
+
+Example, using config profile_rules: print 3, sort total_ticks
+Preprocessor Profile Statistics (worst 3)
+==========================================================
+  Num            Preprocessor Layer     Checks      Exits               Ticks  Avg/Check Pct of Caller
+  ===            ============ =====     ======      =====               =====  ========= =============
+   1                       s4     0     106323     106323          5457197986    51326.6           0.0
+    1           s4StateAction     1     106323     106323          1951276047    18352.3          35.8
+    2        s4ProcessRebuilt     1       1876       1876          1400764326   746676.1          25.7
+    3                 s4State     1     106323     106323           685831114     6450.4          12.6
+    4               s4GetSess     1     106323     106323           565310684     5316.9          10.4
+    5             s4PktInsert     1      67828      67828           293546724     4327.8           5.4
+    6                 s4Flush     1       4064       4064            74460923    18322.1           1.4
+     1              s4Rebuild     2       1876       1876            42991921    22916.8          57.7
+    7               s4NewSess     1        822        822             6625851     8060.6           0.1
+    8                 s4Prune     1         30         30             3573059   119102.0           0.1
+   2              httpinspect     0      69704      69704          1090293755    15641.8           0.0
+   3               sfportscan     0     106323     106323           972732074     9148.8           0.0
+
+Because of task swapping, non-instrumented code, and other factors, the
+Percent of caller field will not add up to 100% of the caller's time.
+It does give a reasonable indication of how much relative time is
+spent within each subtask.

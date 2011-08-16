@@ -1,0 +1,92 @@
+Generic Routing Encapsulation (GRE) Decoder
+===========================================
+Snort now has the capability of decoding GRE encapsulated traffic.
+RFC 1701 is supported which seems to be the most complete
+implementation of the header (see RFCs 2784 and 2890).  It also
+supports GRE version 1 as described in RFC 2637 (PPTP) (Note that
+decoding of PPTP is not currently supported on architectures that
+require word alignment such as SPARC).  The decoder performs some
+basic checking of the GRE header fields, and moves past the GRE
+header to the beginning of the payload header for further decoding.
+
+
+Payload and Delivery header support
+===================================
+Proto     Delivery    Payload
+-----     --------    -------
+IPv4          x          x
+IPv6          x          x      (only with IPv6 compiled binary)
+Trans-                    
+  Bridging               x
+Arp                      x
+PPP                      x      (only on architectures that do not
+                                 require word alignment - so this is
+                                 supported on Intel and PPC, but not
+                                 supported on SPARC)
+
+
+How to enable the decoder
+=========================
+$ ./configure --enable-gre
+
+
+Note on multiple encapsulation
+==============================
+Snort does not support more than 1 layer of GRE encapsulation and
+will alert if it sees multiple encapsulations.  For example, the 
+following will cause Snort to generate an alert:
+
+--------------------------------------------------
+| Eth | IP | GRE | IP | GRE | IP | TCP | Payload |
+--------------------------------------------------
+
+
+Logging
+=======
+Currently only the GRE payload packet is logged, i.e. the headers and
+payload after the GRE header.  For example:
+
+-----------------------------------------
+| Eth | IP1 | GRE | IP2 | TCP | Payload |
+-----------------------------------------
+
+gets logged as
+
+-----------------------------
+| Eth | IP2 | TCP | Payload |
+-----------------------------
+
+and
+
+-------------------------------------------------
+| Eth1 | IP1 | GRE | Eth2 | IP2 | TCP | Payload |
+-------------------------------------------------
+
+gets logged as
+
+------------------------------
+| Eth2 | IP2 | TCP | Payload |
+------------------------------
+
+
+
+Alerts
+======
+Alerts pertaining to the GRE decoder fall under the more general case of
+decoder alerts, with GID of 116.  The introduction of a GRE header can
+produce the following alerts:
+
+SID   Description
+---   -----------
+160   Alerts if the GRE header length (as determined from the header flags)
+      is greater than the length of the rest of the packet.
+161   Alerts if multiple encapsulations are encountered.
+162   Alerts if an invalid GRE version is found, i.e. not 0 or 1.
+163   Alerts if a GRE v.0 header contains invalid data - the Recur or Flags
+      fields are not zero.
+164   Alerts if a GRE v.1 header contains invalid data - the Recur or Flags
+      fields are not zero, the Checksum, Routing or SSR flag is set, the
+      Key flag is not set or the Protocol field does not contain 0x880B (PPP).
+165   Alerts if the Transparent Ethernet Bridging header length is greater
+      than the length of the rest of the packet.
+

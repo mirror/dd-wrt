@@ -1,0 +1,102 @@
+$Id$
+
+README.rpms
+By JP Vossen & Dan Wittenberg 
+
+Last Updated: 2005-05-05
+
+
+"Official" Snort.org RPM Documentation
+======================================
+
+Official Snort.org RPMs are back and better than ever.  However, we've
+made some changes that you need to be aware of, and we've documented some
+other things of interest.
+
+Thanks to JP Vossen (http://www.jpsdomain.org/security/snort.html) who was
+originally guilted into taking over RPM upkeep <g>, and to Daniel
+Wittenberg (http://www.starken.com/) who graciously volunteered to help
+and to provide a build host. The RPMs are now being co-maintained by them.
+
+
+Improvements
+------------
+We've made a lot of changes under the covers to improve the flexibility
+and maintainability of the RPMs going forward. See the next section for
+details about that.
+
+The most interesting and significant is the new ability to build RPMs
+directly from the source code tarball! That means you can download either
+a release tarball or one of the nightly CVS snapshot tarballs and build
+RPMs *almost* effortlessly. See README.build_rpms [0] for the details and
+the caveat about the "current" snapshot.
+
+
+Changes from the previous Snort RPMs
+------------------------------------
+
+Use this command to view the most current change log before you install
+the latest package:
+	rpm -q --changelog -p snort-x.x.x-x.i386.rpm | less
+
+
+Beginning around Snort 2.3.0 the RPM files moved out of the contrib
+directory, which went away.
+
+Beginning with Snort 2.0.2, the official RPMs include the following
+changes:
+
+* snortd has been significantly revised to better conform with the
+/etc/sysconfig scheme. See /etc/sysconfig/snort and /etc/init.d/snortd for
+details.
+
+* The doc, contrib and signatures directories are included in your doc
+directory (e.g. /usr/share/doc/snort-x.x.x).
+
+* The signatures directory is gzipped to save space beginning with Snort
+2.1.0.
+
+* The signatures directory is moved out from doc to the root of the Snort
+documentation directory to make it more visible.
+
+* Rules have been moved to /etc/snort/rules for readability and more 
+compatibility with rule-updating software like oinkmaster.
+
+* The RPM SPEC file has been significantly revised and documented. It has
+also been added to the source tarball (contrib/rpm), facilitating building
+your own RPM directly from the tarball. See README.build_rpms [0] and the
+SPEC [2] file for details.
+
+* The binary packages built by the SPEC file have been simplified, and
+rpmbuild '--with' options have been added to facilitate easy
+do-it-yourself builds. See README.build_rpms [0] and the SPEC [2] file for
+details.
+
+* Neither version of flexresp is included in the official binary RPMs. You
+may build it in yourself if needed.
+
+* We've added a lot of new documentation about RPMs, like this document
+you're reading.
+
+
+Supported Distributions
+=======================
+The rpmbuild -ta method and new SPEC file have been tested and are known
+to work on Red Hat 7.3, 8.0, 9, RHEL-3 (Taroon), Fedora Core [1-3].  Some basic build
+tests have been done on SuSE 8.1 and 8.2 (which use rpm version 3).
+
+They should also work on any distribution that supports RPM and have rpm v4
+or better. 
+
+
+References
+==========
+[0] The latest Snort README.build_rpms
+	http://cvs.snort.org/viewcvs.cgi/snort/rpm/README.build_rpms
+
+[1] The official Snort.org RPM SPEC file:
+	http://cvs.snort.org/viewcvs.cgi/snort/rpm/snort.spec
+
+The latest Snort README.rpms
+	http://cvs.snort.org/viewcvs.cgi/snort/rpm/README.rpms
+

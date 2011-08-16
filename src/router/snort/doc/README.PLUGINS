@@ -1,0 +1,76 @@
+Plugin Info
+12/5/99
+Martin Roesch
+
+Overview:
+
+Snort version 1.5 introduces a major new concept, plugins.  There are two types
+of plugin currently available in Snort: detection plugins and preprocessors.
+Detection plugins check a single aspect of a packet for a value defined within
+a rule and determine if the packet data meets their acceptance criteria.  For
+example, the tcp flags detection plugin checks the flags section of TCP packets 
+for matches with flag combinations defined in a particular rule.  Detection
+plugins may be called multiple times per packet with different arguments.
+
+Preprocessors are only called a single time per packet and may perform highly
+complex functions like TCP stream reassembly, IP defragmentation, or HTTP
+request normalization.  They can directly manipulate packet data and even call
+the detection engine directly with their modified data.  They can perform less
+complex tasks like statistics gathering or threshold monitoring as well.
+
+
+
+Adding New Plugins to Snort as a User:
+
+Right now, adding a new plugin to Snort is straightforward but requires you to 
+edit two files by hand.  The plugin should consist of two files, 
+"sp_something.c"/"sp_something.h" for detection plugins, and 
+"spp_something.c"/"spp_something.h" for preprocessors.  For detection plugins, 
+there are two steps to integrating it with Snort:
+
+1) Edit plugbase.h and insert the line
+     #include "sp_something.h"
+   into the file with the other "#include" statements.  Save and close the 
+   file.
+
+2) Edit the plugbase.c file and in the InitPlugins() function, add the name of 
+   the setup function to the list with the other Setup functions.  Save and 
+   close the file.
+
+3) Edit the Makefile.am and add the names of the two files to the list of 
+   names on the "snort_SOURCES" line.  Save and exit the file.  Run 
+   "automake".
+
+All set.  Now recompile Snort and the plugin should be ready to use!  
+
+Adding preprocessors is equally straightforward.  The process is essentially
+the same as above:
+
+1) Edit plugbase.h and insert the line
+     #include "spp_preproc.h"
+   into the file with the other "#include" statements.  Save and close the 
+   file.
+
+2) Edit the plugbase.c file and in the InitPreprocessors() function, add the
+   name of the setup function to the list with the other Setup functions.  
+   Save and close the file.
+
+3) Edit the Makefile.am and add the names of the two files to the list of 
+   names on the "snort_SOURCES" line.  Save and exit the file.  Run 
+   "automake".
+
+Someday, there will be a nice little program that will do all this work for you!
+
+
+
+Writing New Snort Plugins as a Developer:
+
+This process is also pretty straight forward, and the best place to look for 
+information on doing these things is at the files in the "templates" directory.
+The sp_* files are setup for detection plugins, and the spp_* files refer to 
+the preprocessor files.  The main thing to remember once you've got it written 
+is to put the proper includes and function calls into plugbase[.c|.h].  I 
+should probably flesh out this document more, but I think that the best info
+is in the template files.  If you have any questions or comments, don't
+hesitate to send me an e-mail!
+

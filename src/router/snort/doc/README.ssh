@@ -1,0 +1,124 @@
+SSH
+---
+Chris Sherwin
+Adam Keeton <akeeton@sourcefire.com>
+Marc Norton <mnorton@sourcefire.com>
+Ryan Jordan <ryan.jordan@sourcefire.com>
+
+Documentation last update 2009-03-16
+
+== Overview ==
+
+The SSH preprocessor detects the following exploits: Challenge-Response Buffer
+Overflow, CRC 32, Secure CRT, and the Protocol Mismatch exploit.  
+
+Both Challenge-Response Overflow and CRC 32 attacks occur after the key exchange,
+and are therefore encrypted.  Both attacks involve sending a large payload
+(20kb+) to the server immediately after the authentication challenge.  To detect
+the attacks, the SSH preprocessor counts the number of bytes transmitted to the
+server.  If those bytes exceed a pre-defined limit within a pre-define number of
+packets, an alert is generated.  Since Challenge-Response Overflow only effects
+SSHv2 and CRC 32 only effects SSHv1, the SSH version string exchange is used to
+distinguish the attacks.
+
+The Secure CRT and protocol mismatch exploits are observable before the key
+exchange.
+
+== Configuration ==
+
+By default, all alerts are disabled and the preprocessor checks traffic on port
+22.  
+
+The available configuration options are described below:
+
+* server_ports { port[, port] .. }*
+
+This option specifies which ports the SSH preprocessor should inspect traffic
+to.
+
+* max_encrypted_packets *
+
+The number of encrypted packets that Snort will inspect before ignoring a given
+SSH session. The SSH vulnerabilities that Snort can detect all happen at the
+very beginning of an SSH session. Once max_encrypted_packets packets have been
+seen, Snort ignores the session to increase performance.
+
+* max_client_bytes *
+
+The number of unanswered bytes allowed to be transferred before alerting on
+Challenge-Response Overflow or CRC 32. This number must be hit before
+max_encrypted_packets packets are sent, or else Snort will ignore the traffic.
+
+* max_server_version_len *
+
+The maximum number of bytes allowed in the SSH server version string before
+alerting on the Secure CRT server version string overflow.
+
+* autodetect *
+
+Attempt to automatically detect SSH.
+
+* enable_respoverflow *
+
+Enables checking for the Challenge-Response Overflow exploit.
+
+* enable_ssh1crc32 *
+
+Enables checking for the CRC 32 exploit.
+
+* enable_srvoverflow *
+
+Enables checking for the Secure CRT exploit.
+
+* enable_protomismatch *
+
+Enables checking for the Protocol Mismatch exploit.
+
+* enable_badmsgdir *
+
+Enable alerts for traffic flowing the wrong direction. For instance, if the 
+presumed server generates client traffic, or if a client generates server
+traffic.
+
+* enable_paysize *
+
+Enables alerts for invalid payload sizes.
+
+* enable_recognition *
+
+Enable alerts for non-SSH traffic on SSH ports.
+
+== Example Configuration ==
+
+Looks for attacks on SSH server port 22.  Alerts at 19600 unacknowledged bytes
+within 20 encrypted packets for the Challenge-Response Overflow/CRC32 exploits.
+
+preprocessor ssh: server_ports { 22 } \
+                  max_client_bytes 19600 \
+                  max_encrypted_packets 20 \
+                  enable_respoverflow \
+                  enable_ssh1crc32
+
+== Alerts ==
+
+The SSH Preprocessor uses generator ID 128 and can produce the following 
+alerts:
+
+SID   Description
+---   -----------
+1     Challenge-Response Buffer Overflow exploit
+2     SSH1 CRC32 exploit
+3     Server version string overflow
+4     Protocol mismatch
+5     Bad message direction
+6     Payload size incorrect for the given payload
+7     Failed to detect SSH version string
+
+
+== Conclusion ==
+
+The SSH preprocessor should work by default.  After max_client_packets is 
+reached, the preprocessor will stop processing traffic for a given session.
+If Challenge-Response Overflow or CRC 32 false positive, try increasing the
+number of required client bytes with max_client_bytes.
+
