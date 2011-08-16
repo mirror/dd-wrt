@@ -1,0 +1,161 @@
+$Id$
+
+Snort Installation for the Win32 environment
+March 2003 by Rich Adamson ( radamson at routers dot com )
+and updated in December 2004, March 2006.
+
+Introduction
+The snort intrusion detection system was written as an application intended for 
+use on a Unix operating system, relying mostly on a low-level independent
+communications driver referred to as Pcap.  Thanks to the efforts by a number
+of supporters(1), snort has been ported to the 32-bit Microsoft Windows
+operating systems of recent vintage including Windows NT, 2000, XP and others.
+Snort requires the same low-level drivers, WinPcap, in order to function on the
+Windows operating system.  (Note: running snort on the older Windows 9x systems
+should be avoided.)
+
+This README file is intended to document the minimum drivers required by snort.
+The user may wish to install other snort-related components such as IIS,
+Apache, or Snortsnarf as well.  Installation documentation for those components
+is available from(2):
+  http://www.winsnort.com
+
+Snort
+Following the installation instructions provided with snort.
+
+WinPcap Driver
+Snort requires the WinPcap driver to be installed in order to function.  Snort
+has been extensively tested with WinPcap v3.1.  The current installation 
+package can be downloaded from:
+  http://winpcap.org/
+The WinPcap installation will install packet.dll and wpcap.dll drivers in the
+system32 directory.  (Note: if older versions of these two drivers exist, the
+instructions at the above URL suggests manually deleting them from your system,
+reboot, then install newer drivers. Do NOT use any of the WinPcap "beta"
+versions as they are likely to fail.)
+
+LibnetNT Driver
+Certain snort functions, notably the FlexResp functions, will also require an
+appropriate version of LibnetNT to be installed in order for snort to operate
+properly. Snort 2.6 has been tested with the version of LibnetNT version 1.02f.
+The current installation package can be downloaded from:
+  http://www.securitybugware.org/libnetnt/
+The snort installation includes LibnetNT.dll driver in the snort/bin
+directory, and relies on the use the WinPcap drivers noted above to function.
+(Note: the FlexResp routines were being rewritten as of Dec 2004, therefore
+please verify that work has been completed prior to attempting to use them.)
+
+Installation Test Steps:
+The following steps can be used to test the installation of snort and its
+associated drivers.
+
+1. From a command line prompt, change directories to where snort was installed
+   (cd \snort\bin)
+
+2. Execute the following as a way to verify that snort can access the WinPcap
+   drivers:
+      snort -W
+   The result should provide a list of available NIC adapters on the system.
+   If more than one adapter is listed, note the interface number (e.g, 1, 2, 3)
+   of the NIC adapter that you expect snort to use for monitoring/sniffing.  If
+   the command does not provide any list, the WinPcap drivers are not installed
+   properly;  review the installation procedures provided with WinPcap and
+   reinstall if necessary.  (Note specifically the instructions at
+   http://winpcap.polito.it/ that suggest removing old versions of WinPcap and
+   rebooting prior to installing a newer version.)
+
+3. Execute the following to ensure an understanding as to which version of
+   snort is installed:
+     snort -V
+   and note the result (version 2.2, etc.).  The specific version number will
+   be required if you ask for assistance from the snort mailing list along with
+   the specific Windows operating system that you are using.
+
+4. Next, using the interface number noted in step #2, above, execute:
+     snort -v -n 3 -i 2
+   where 2 should be replaced with the interface number noted.  This will cause
+   snort to operate in a basic sniffer mode (-v), displaying the headers of the
+   first 3 packets observed (-n 3) from the interface specified (-i 2).  If
+   packets are displayed, snort is functional and can find the low-level WinPcap
+   drivers.  If no packets are displayed, either the packet drivers are not
+   installed correctly, or, the interface number (-i 2 in the example above) is
+   incorrect.
+
+5. If snort is functional, locate and read the contents of the snort.conf
+   configuration file.  The default installation places the file in the
+   snort\etc directory.  Modify the contents to include:
+	var HOME_NET 10.1.1.0/27      (replace 10.1.1.0/27 with your internal
+                                       network addresses)
+	var EXTERNAL_NET !$HOME_NET   (this tells snort the External Network is
+                                       everything not Internal)
+	var RULE_PATH c:\snort\rules  (this tells snort where to find the
+                                       installed Rules)
+   Save the text file, and execute the following (adjust each directory path to
+   match your installation):
+    C:\Snort\snort.exe -c "C:\snort\etc\snort.conf" -l "C:\snort\Log" -A full
+                       -i 2 -d -e -X
+   Note: Be sure to create the c:\snort\log directory on your machine before
+   executing the above.  If the above command line entry does not return to a
+   command line prompt, then snort is running, listening to all packets on
+   interface 2 (-i 2), dumping those packets that match the Rules to files in
+   the C:\snort\Log directory.  If after executing the above, snort aborts and
+   returns to a command line prompt, carefully read the data that snort sent to
+   the screen as it will suggest configuration and rule errors, etc.
+
+6. Carefully READ the documentation included in the snort installation,
+   including:
+	snort\doc\snort_manual.pdf
+	snort\doc\FAQ
+   Note: these two references (along with other text files included in the
+   snort\doc directory) should answer 95% of your initial questions.
+
+
+Technical Notes:
+1. Snort was written using the C programming language calling various routines
+   provided in the libpcap.lib and packet.lib libraries.  If an old version of
+   WinPcap exits on your Windows system, newer versions should be installed
+   from the URLs noted above.  At the time this document was written, snort
+   v2.2 functioned properly on Windows 2000, 2003, and Windows XP systems 
+   with:
+     system32\packet.dll     version reported: 3.0.0.18
+                             dated April 4, 2003
+                             size: 57,344 bytes
+     system32\wpcap.dll      version reported: 3.0.0.18
+                             dated April 4, 2003
+                             size: 1208,896 bytes
+     snort\bin\LibnetNT.dll  (no version reported)
+                             dated May 2, 2003
+                             size 68,161 bytes
+
+2. If you intend to run snort on a multiprocessor Intel system, WinPcap v3.0
+   is required.  Earlier versions of these libraries did not support the 
+   multiprocessor systems. Do NOT attempt to use any of the WinPcap "beta"
+   versions as snort will likely fail.
+
+3. If you intend to run snort as a Win32 Service, ALWAYS run snort from the
+   command line FIRST to ensure there are no configuration or rule errors.
+   Snort will NOT report errors when run as a Service; it will simply abort
+   providing no clue why it aborted. The syntax for running snort as a
+   Service can be seen by simply executing snort from the command line
+   (no command line parameters) and reviewing the first several lines 
+   displayed.
+
+=============================================================
+(1) Contributors to this README file include:
+    Rich Adamson
+    Chris Reid
+
+(2) Installation Documentation for other Snort-related components:
+    Michael E. Steele, ( www.winsnort.com ) has prepared, written and 
+    maintained several excellent documents integrating other snort-related 
+    components. The documents can be downloaded from:
+      http://www.winsnort.com
+    As of March 2003, the following configuration / installation documents were
+    available:
+      Snort with IIS and Snortsnarf
+      Snort with MySQL, IIS and ACID
+      Snort with Apache and Snortsnarf
+      Snort with MySQL, Apache and ACID
+      Snort with Slave and Snortsnarf
+      Snort with MySQL, Slave and ACID
+

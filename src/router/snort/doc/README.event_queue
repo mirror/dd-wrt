@@ -1,0 +1,69 @@
+Snort Multi-Event Logging (Event Queue)
+---------------------------------------
+Author: Daniel Roelker
+
+Snort supports logging multiple events per packet/stream that are prioritized
+with different insertion methods, such as max content length or event
+ordering.  This document explains how to configure the event queue that
+facilitates logging multiple events.
+
+The general configuration of the event queue is as follows:
+
+config event_queue: [max_queue [size]] [log [size]] [order_events [TYPE]]
+
+Event Queue Configuration Options
+---------------------------------
+
+There are three configuration options to the configuration parameter
+'event_queue'.
+
+max_queue
+----------
+
+This determines the maximum size of the event queue.  For example, if the
+event queue has a max size of 8, only 8 events will be stored for a single
+packet or stream.
+
+The default value is 8.
+
+log
+---
+
+This determines the number of events to log for a given packet or stream.
+You can't log more than the max_event number that was specified.
+
+The default value is 3.
+
+order_events
+------------
+
+This argument determines the way that the incoming events are ordered.  We
+currently have two different methods:
+
+  * priority - The highest priority (1 being the highest) events are ordered
+    first.
+
+  * content_length - Rules are ordered before decode or preprocessor alerts,
+    and rules that have a longer content are ordered before rules with
+    shorter contents.
+
+The method in which events are ordered does not affect rule types such as
+pass, alert, log, etc.
+
+The default value is content_length.
+
+Examples
+--------
+
+# this is the default value configuration
+config event_queue: max_queue 8 log 3 order_events content_length
+
+# reconfigure the entire event queue
+config event_queue: max_queue 10 log 3 order_events content_length
+
+# leave defaults but change the way events are ordered
+config event_queue: order_events priority
+
+# change the number of events logged
+config event_queue: log 2
+

@@ -1,0 +1,1266 @@
+/*
+** Copyright (C) 2006-2011 Sourcefire, Inc.
+**
+** This program is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License Version 2 as
+** published by the Free Software Foundation.  You may not use, modify or
+** distribute this program under any other version of the GNU General
+** Public License.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+*/
+
+/*
+ * Author: Steven Sturges
+ * sftarget_reader.c
+ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef TARGET_BASED
+
+#include <stdio.h>
+#include "mstring.h"
+#include "util.h"
+#include "parser.h"
+#include "sftarget_reader.h"
+#include "sftarget_protocol_reference.h"
+#include "sfutil/sfrt.h"
+#include "sfutil/sfxhash.h"
+#include "sfutil/util_net.h"
+#include "sftarget_hostentry.h"
+
+#include <signal.h>
+#include <sys/types.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <time.h>
+
+#ifndef WIN32
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
+
+#include "snort.h"
+
+#include "debug.h"
+#include "sfPolicy.h"
+
+typedef struct
+{
+    table_t *lookupTable;
+    SFXHASH *mapTable;
+} tTargetBasedConfig;
+
+typedef struct
+{
+    /**current configuration. */
+    tTargetBasedConfig curr;
+
+    /**previous configuration. */
+    tTargetBasedConfig prev;
+
+    /**next configuration. */
+    tTargetBasedConfig next;
+
+    //XXX recheck this flag usage
+    //char reload_attribute_table_flags;
+
+} tTargetBasedPolicyConfig;
+
+
+static tTargetBasedPolicyConfig targetBasedPolicyConfig;
+
+static HostAttributeEntry *current_host = NULL;
+static ApplicationEntry *current_app = NULL;
+
+//static MapData *current_map_entry = NULL;
+ServiceClient sfat_client_or_service;
+
+extern char sfat_error_message[STD_BUF];
+extern char sfat_grammar_error_printed;
+extern char sfat_insufficient_space_logged;
+extern char sfat_fatal_error;
+int ParseTargetMap(char *filename);
+void DestroyBufferStack(void);
+
+extern char *sfat_saved_file;
+
+extern pthread_t attribute_reload_thread_id;
+extern pid_t attribute_reload_thread_pid;
+extern volatile int attribute_reload_thread_running;
+extern volatile int attribute_reload_thread_stop;
+extern int reload_attribute_table_flags;
+extern const struct timespec thread_sleep;
+
+/*****TODO: cleanup to use config directive *******/
+#define ATTRIBUTE_MAP_MAX_ROWS 1024
+uint32_t SFAT_NumberOfHosts(void)
+{
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+    if (pConfig->curr.lookupTable)
+    {
+        return sfrt_num_entries(pConfig->curr.lookupTable);
+    }
+
+    return 0;
+}
+
+int SFAT_AddMapEntry(MapEntry *entry)
+{
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+
+    if (!pConfig->next.mapTable)
+    {
+        /* Attribute Table node includes memory for each entry,
+         * as defined by sizeof(MapEntry).
+         */
+        pConfig->next.mapTable = sfxhash_new(ATTRIBUTE_MAP_MAX_ROWS,
+                                          sizeof(int),
+                                          sizeof(MapEntry),
+                                          0,
+                                          1,
+                                          NULL,
+                                          NULL,
+                                          1);
+        if (!pConfig->next.mapTable)
+            FatalError("Failed to allocate attribute map table\n");
+    }
+
+    /* Memcopy MapEntry to newly allocated one and store in
+     * a hash table based on entry->id for easy lookup.
+     */
+
+    DEBUG_WRAP(
+        DebugMessage(DEBUG_ATTRIBUTE, "Adding Map Entry: %d %s\n",
+            entry->l_mapid, entry->s_mapvalue););
+
+    /* Data from entry will be copied into new node */
+    sfxhash_add(pConfig->next.mapTable, &entry->l_mapid, entry);
+
+    return SFAT_OK;
+}
+
+char *SFAT_LookupAttributeNameById(int id)
+{
+    MapEntry *entry;
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+
+    if (!pConfig->next.mapTable)
+        return NULL;
+    
+    entry = sfxhash_find(pConfig->next.mapTable, &id);
+
+    if (entry)
+    {
+        DEBUG_WRAP(
+            DebugMessage(DEBUG_ATTRIBUTE, "Found Attribute Name %s for Id %d\n",
+                entry->s_mapvalue, id););
+        return entry->s_mapvalue;
+    }
+    DEBUG_WRAP(
+        DebugMessage(DEBUG_ATTRIBUTE, "No Attribute Name for Id %d\n", id););
+
+    return NULL;
+}
+
+void FreeApplicationEntry(ApplicationEntry *app)
+{
+    DEBUG_WRAP(DebugMessage(DEBUG_ATTRIBUTE, "Freeing ApplicationEntry: 0x%x\n",
+        app););
+    free(app);
+}
+
+ApplicationEntry * SFAT_CreateApplicationEntry(void)
+{
+    if (current_app)
+    {
+        /* Something went wrong */
+        FreeApplicationEntry(current_app);
+        current_app = NULL;
+    }
+
+    current_app = SnortAlloc(sizeof(ApplicationEntry));
+
+    return current_app;
+}
+
+HostAttributeEntry * SFAT_CreateHostEntry(void)
+{
+    if (current_host)
+    {
+        /* Something went wrong */
+        FreeHostEntry(current_host);
+        current_host = NULL;
+    }
+
+    current_host = SnortAlloc(sizeof(HostAttributeEntry));
+
+    return current_host;
+}
+
+void FreeHostEntry(HostAttributeEntry *host)
+{
+    ApplicationEntry *app = NULL, *tmp_app;
+
+    if (!host)
+        return;
+
+    DEBUG_WRAP(DebugMessage(DEBUG_ATTRIBUTE, "Freeing HostEntry: 0x%x\n",
+        host););
+
+    /* Free the service list */
+    if (host->services)
+    {
+        do
+        {
+            tmp_app = host->services;
+            app = tmp_app->next;
+            FreeApplicationEntry(tmp_app);
+            host->services = app;
+        } while (app);
+    }
+
+    /* Free the client list */
+    if (host->clients)
+    {
+        do
+        {
+            tmp_app = host->clients;
+            app = tmp_app->next;
+            FreeApplicationEntry(tmp_app);
+            host->clients = app;
+        } while (app);
+    }
+
+    free(host);
+}
+
+void PrintAttributeData(char *prefix, AttributeData *data)
+{
+#ifdef DEBUG
+    DebugMessage(DEBUG_ATTRIBUTE, "AttributeData for %s\n", prefix);
+    if (data->type == ATTRIBUTE_NAME)
+    {
+        DebugMessage(DEBUG_ATTRIBUTE, "\ttype: %s\tname: %s\t confidence %d\n",
+                "Name", data->value.s_value, data->confidence);
+    }
+    else
+    {
+        DebugMessage(DEBUG_ATTRIBUTE, "\ttype: %s\tid: %s\t confidence %d",
+                "Id", data->value.l_value, data->confidence);
+    }
+#endif
+}
+
+#ifdef SUP_IP6
+int SFAT_SetHostIp(char *ip)
+#else
+int SFAT_SetHostIp4(char *ip)
+#endif
+{
+    static HostAttributeEntry *tmp_host = NULL;
+#ifdef SUP_IP6
+    sfip_t ipAddr;
+#else
+    struct in_addr ip4_inAddr;
+    uint32_t ipAddr = 0;
+    uint8_t bits = 32;
+    char *ipMask;
+    char *hasMask;
+#endif
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+    SFAT_CHECKHOST;
+
+#ifdef SUP_IP6
+    if (sfip_pton(ip, &ipAddr) != SFIP_SUCCESS)
+    {
+        return SFAT_ERROR;
+    }
+
+    if (ipAddr.family == AF_INET)
+    {
+        ipAddr.ip32[0] = ntohl(ipAddr.ip32[0]);
+    }
+
+    tmp_host = sfrt_lookup(&ipAddr, pConfig->next.lookupTable);
+
+    if (tmp_host &&
+        sfip_equals(tmp_host->ipAddr, ipAddr))
+    {
+        /* Exact match. */
+        FreeHostEntry(current_host);
+        current_host = tmp_host;
+    }
+    else
+    {
+        /* New entry for this host/CIDR */
+        sfip_set_ip(&current_host->ipAddr, &ipAddr);
+    }
+#else
+    ipMask = strdup(ip); /* Don't use SnortStrdup, can't FatalError here */
+    if (!ipMask)
+    {
+        return SFAT_ERROR;
+    }
+
+    hasMask = strchr(ipMask, '/');
+    if (hasMask)
+    {
+        *hasMask = '\0';
+        hasMask++;
+        bits = (char)strtoul(hasMask, NULL, 10);
+    }
+    /* No mask, implicit 32 bits */
+
+    /* this is terminated at end of
+     * IP part if mask included */
+    if (inet_pton(AF_INET, ipMask, &ip4_inAddr) == 0)
+    {
+        free(ipMask);
+        return SFAT_ERROR;
+    }
+    ipAddr = ntohl(ip4_inAddr.s_addr);
+
+    /*** : Lookup and set current_host via IP addr */
+    tmp_host = sfrt_lookup(&ipAddr, pConfig->next.lookupTable);
+
+    /*** If found, free current_host and set current_host to the one found */
+    if (tmp_host && 
+        (tmp_host->ipAddr == ipAddr) &&
+        (tmp_host->bits == bits))
+    {
+        /* Exact match. */
+        FreeHostEntry(current_host);
+        current_host = tmp_host;
+    }
+    else
+    {
+        /* New entry for this host/CIDR */
+        current_host->ipAddr = ipAddr;
+        current_host->bits = bits;
+    }
+
+    free(ipMask);
+#endif
+    return SFAT_OK;
+}
+
+int SFAT_SetOSPolicy(char *policy_name, int attribute)
+{
+    SFAT_CHECKHOST;
+
+    switch (attribute)
+    {
+        case HOST_INFO_FRAG_POLICY:
+            SnortStrncpy(current_host->hostInfo.fragPolicyName, policy_name, STD_BUF);
+            break;
+        case HOST_INFO_STREAM_POLICY:
+            SnortStrncpy(current_host->hostInfo.streamPolicyName, policy_name, STD_BUF);
+            break;
+    }
+    return SFAT_OK;
+}
+
+int SFAT_SetOSAttribute(AttributeData *data, int attribute)
+{
+    SFAT_CHECKHOST;
+
+    switch (attribute)
+    {
+        case HOST_INFO_OS:
+            memcpy(&current_host->hostInfo.operatingSystem, data, sizeof(AttributeData));
+            break;
+        case HOST_INFO_VENDOR:
+            memcpy(&current_host->hostInfo.vendor, data, sizeof(AttributeData));
+            break;
+        case HOST_INFO_VERSION:
+            memcpy(&current_host->hostInfo.version, data, sizeof(AttributeData));
+            break;
+    }
+    return SFAT_OK;
+}
+
+static void AppendApplicationData(ApplicationList **list)
+{
+    if (!list)
+        return;
+
+    if (*list)
+    {
+        current_app->next = *list;
+    }
+    *list = current_app;
+    current_app = NULL;
+}
+
+
+int SFAT_AddApplicationData(void)
+{
+    uint8_t required_fields;
+    SFAT_CHECKAPP;
+    SFAT_CHECKHOST;
+
+    if (sfat_client_or_service == ATTRIBUTE_SERVICE)
+    {
+        required_fields = (APPLICATION_ENTRY_PORT |
+                          APPLICATION_ENTRY_IPPROTO |
+                          APPLICATION_ENTRY_PROTO);
+        if ((current_app->fields & required_fields) != required_fields)
+        {
+#ifdef SUP_IP6
+            sfip_t host_addr;
+            sfip_set_ip(&host_addr, &current_host->ipAddr);
+            host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
+#else
+            struct in_addr host_addr;
+            host_addr.s_addr = ntohl(current_host->ipAddr);
+#endif
+            FatalError("%s(%d): Missing required field in Service attribute table for host %s\n",
+                file_name, file_line,
+#ifdef SUP_IP6
+                inet_ntoa(&host_addr)
+#else
+                inet_ntoa(host_addr)
+#endif
+                );
+        }
+
+        AppendApplicationData(&current_host->services);
+    }
+    else
+    {
+        required_fields = (APPLICATION_ENTRY_PROTO);
+        /* Currently, client data only includes PROTO, not IPPROTO */
+        if ((current_app->fields & required_fields) != required_fields)
+        {
+#ifdef SUP_IP6
+            sfip_t host_addr;
+            sfip_set_ip(&host_addr, &current_host->ipAddr);
+            host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
+#else
+            struct in_addr host_addr;
+            host_addr.s_addr = ntohl(current_host->ipAddr);
+#endif
+            FatalError("%s(%d): Missing required field in Client attribute table for host %s\n",
+                file_name, file_line,
+#ifdef SUP_IP6
+                inet_ntoa(&host_addr)
+#else
+                inet_ntoa(host_addr)
+#endif
+                );
+        }
+
+        AppendApplicationData(&current_host->clients);
+    }
+    return SFAT_OK;
+}
+
+int SFAT_SetApplicationAttribute(AttributeData *data, int attribute)
+{
+    SFAT_CHECKAPP;
+
+    switch(attribute)
+    {
+        case APPLICATION_ENTRY_PORT:
+            /* Convert the port to a integer */
+            if (data->type == ATTRIBUTE_NAME)
+            {
+                char *endPtr = NULL;
+                unsigned long value = SnortStrtoul(data->value.s_value, &endPtr, 10);
+                if ((endPtr == &data->value.s_value[0]) ||
+                    (errno == ERANGE))
+                {
+                    current_app->port.value.l_value = 0;
+                    return SFAT_ERROR;
+                }
+                current_app->port.value.l_value = value;
+            }
+            else
+            {
+                current_app->port.value.l_value = data->value.l_value;
+            }
+            break;
+        case APPLICATION_ENTRY_IPPROTO:
+            memcpy(&current_app->ipproto, data, sizeof(AttributeData));
+            /* Add IP Protocol to the reference list */
+            current_app->ipproto.attributeOrdinal = AddProtocolReference(data->value.s_value);
+            break;
+        case APPLICATION_ENTRY_PROTO:
+            memcpy(&current_app->protocol, data, sizeof(AttributeData));
+            /* Add Application Protocol to the reference list */
+            current_app->protocol.attributeOrdinal = AddProtocolReference(data->value.s_value);
+            break;
+        case APPLICATION_ENTRY_APPLICATION:
+            memcpy(&current_app->application, data, sizeof(AttributeData));
+            break;
+        case APPLICATION_ENTRY_VERSION:
+            memcpy(&current_app->version, data, sizeof(AttributeData));
+            break;
+        default:
+            attribute = 0;
+    }
+    current_app->fields |= attribute;
+
+    return SFAT_OK;
+}
+
+#ifdef DEBUG
+void PrintHostAttributeEntry(HostAttributeEntry *host)
+{
+    ApplicationEntry *app;
+    int i = 0;
+#ifndef SUP_IP6
+    struct in_addr host_addr;
+#else
+    sfip_t host_addr;
+#endif
+
+    if (!host)
+        return;
+
+#ifndef SUP_IP6
+    host_addr.s_addr = ntohl(host->ipAddr);
+#else
+    sfip_set_ip(&host_addr, &host->ipAddr);
+    host_addr.ip32[0] = ntohl(host_addr.ip32[0]);
+#endif
+
+    DebugMessage(DEBUG_ATTRIBUTE, "Host IP: %s/%d\n",
+#ifdef SUP_IP6
+            inet_ntoa(&host_addr),
+            host->ipAddr.bits
+#else
+            inet_ntoa(host_addr),
+            host->bits
+#endif
+            );
+    DebugMessage(DEBUG_ATTRIBUTE, "\tOS Information: %s(%d) %s(%d) %s(%d)\n",
+            host->hostInfo.operatingSystem.value.s_value,
+            host->hostInfo.operatingSystem.confidence,
+            host->hostInfo.vendor.value.s_value,
+            host->hostInfo.vendor.confidence,
+            host->hostInfo.version.value.s_value,
+            host->hostInfo.version.confidence);
+    DebugMessage(DEBUG_ATTRIBUTE, "\tPolicy Information: frag:%s stream: %s\n",
+            host->hostInfo.fragPolicyName,
+            host->hostInfo.streamPolicyName);
+    DebugMessage(DEBUG_ATTRIBUTE, "\tServices:\n");
+    for (i=0, app = host->services; app; app = app->next,i++)
+    {
+        DebugMessage(DEBUG_ATTRIBUTE, "\tService #%d:\n", i);
+        DebugMessage(DEBUG_ATTRIBUTE, "\t\tIPProtocol: %s(%d)\tPort: %s(%d)"
+                "\tProtocol %s(%d)\n",
+                app->ipproto.value.s_value,
+                app->ipproto.confidence,
+                app->port.value.s_value,
+                app->port.confidence,
+                app->protocol.value.s_value,
+                app->protocol.confidence);
+
+        if (app->fields & APPLICATION_ENTRY_APPLICATION)
+        {
+            DebugMessage(DEBUG_ATTRIBUTE, "\t\tApplication: %s(%d)\n",
+                app->application.value.s_value,
+                app->application.confidence);
+
+            if (app->fields & APPLICATION_ENTRY_VERSION)
+                DebugMessage(DEBUG_ATTRIBUTE, "\t\tVersion: %s(%d)\n",
+                    app->version.value.s_value,
+                    app->version.confidence);
+        }
+    }
+    if (i==0)
+        DebugMessage(DEBUG_ATTRIBUTE, "\t\tNone\n");
+
+    DebugMessage(DEBUG_ATTRIBUTE, "\tClients:\n");
+    for (i=0, app = host->clients; app; app = app->next,i++)
+    {
+        DebugMessage(DEBUG_ATTRIBUTE, "\tClient #%d:\n", i);
+        DebugMessage(DEBUG_ATTRIBUTE, "\t\tIPProtocol: %s(%d)\tProtocol %s(%d)\n",
+                app->ipproto.value.s_value,
+                app->ipproto.confidence,
+                app->protocol.value.s_value,
+                app->protocol.confidence);
+
+        if (app->fields & APPLICATION_ENTRY_PORT)
+        {
+            DebugMessage(DEBUG_ATTRIBUTE, "\t\tPort: %s(%d)\n",
+                app->port.value.s_value,
+                app->port.confidence);
+        }
+
+        if (app->fields & APPLICATION_ENTRY_APPLICATION)
+        {
+            DebugMessage(DEBUG_ATTRIBUTE, "\t\tApplication: %s(%d)\n",
+                app->application.value.s_value,
+                app->application.confidence);
+
+            if (app->fields & APPLICATION_ENTRY_VERSION)
+                DebugMessage(DEBUG_ATTRIBUTE, "\t\tVersion: %s(%d)\n",
+                    app->version.value.s_value,
+                    app->version.confidence);
+        }
+    }
+    if (i==0)
+    {
+        DebugMessage(DEBUG_ATTRIBUTE, "\t\tNone\n");
+    }
+}
+#endif
+
+int SFAT_AddHostEntryToMap(void)
+{
+    HostAttributeEntry *host = current_host;
+    int ret;
+#ifdef SUP_IP6
+    sfip_t *ipAddr;
+#else
+    uint32_t ipAddr;
+#endif
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+
+    SFAT_CHECKHOST;
+
+    DEBUG_WRAP(PrintHostAttributeEntry(host););
+
+#ifdef SUP_IP6
+    ipAddr = &host->ipAddr;
+
+    ret = sfrt_insert(ipAddr, (unsigned char)ipAddr->bits, host,
+                        RT_FAVOR_SPECIFIC, pConfig->next.lookupTable);
+#else
+    ipAddr = host->ipAddr;
+
+    ret = sfrt_insert(&ipAddr, host->bits, host,
+                        RT_FAVOR_SPECIFIC, pConfig->next.lookupTable);
+#endif
+
+    if (ret != RT_SUCCESS)
+    {
+        if (ret == RT_POLICY_TABLE_EXCEEDED)
+        {
+            if (!sfat_insufficient_space_logged)
+            {
+                SnortSnprintf(sfat_error_message, STD_BUF,
+                    "AttributeTable insertion failed: %d Insufficient "
+                    "space in attribute table, only configured to store %d hosts\n",
+                    ret, ScMaxAttrHosts());
+                sfat_grammar_error_printed = 1;
+                sfat_insufficient_space_logged = 1;
+                sfat_fatal_error = 0;
+            }
+            /* Reset return value and continue w/ only snort_conf->max_attribute_hosts */
+            ret = RT_SUCCESS;
+        }
+        else
+        {
+            SnortSnprintf(sfat_error_message, STD_BUF,
+                "AttributeTable insertion failed: %d '%s'\n",
+                ret, rt_error_messages[ret]);
+            sfat_grammar_error_printed = 1;
+        }
+
+        FreeHostEntry(host);
+    }
+
+    current_host = NULL;
+
+    return ret == RT_SUCCESS ? SFAT_OK : SFAT_ERROR;
+}
+
+#ifdef SUP_IP6
+HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr)
+#else
+HostAttributeEntry *SFAT_LookupHostEntryByIp4Addr(uint32_t ipAddr)
+#endif
+{
+    tTargetBasedPolicyConfig *pConfig = NULL;
+    tSfPolicyId policyId = getRuntimePolicy();
+    HostAttributeEntry *host = NULL;
+#ifdef SUP_IP6
+    sfip_t local_ipAddr;
+#endif
+
+    TargetBasedConfig *tbc = &snort_conf->targeted_policies[policyId]->target_based_config;
+
+    if (tbc->args == NULL)
+    {
+        //this policy didn't specify attribute_table
+        return NULL;
+    }
+
+    pConfig = &targetBasedPolicyConfig;
+
+#ifdef SUP_IP6
+    sfip_set_ip(&local_ipAddr, ipAddr);
+    if (local_ipAddr.family == AF_INET)
+    {
+        local_ipAddr.ip32[0] = ntohl(local_ipAddr.ip32[0]);
+    }
+
+    host = sfrt_lookup(&local_ipAddr, pConfig->curr.lookupTable);
+#else
+    host = sfrt_lookup(&ipAddr, pConfig->curr.lookupTable);
+#endif
+
+    if (host)
+    {
+        /* Set the policy values for Frag & Stream if not already set */
+        //TODO: SetTargetBasedPolicy(host);
+    }
+
+    return host;
+}
+
+HostAttributeEntry *SFAT_LookupHostEntryBySrc(Packet *p)
+{
+#ifdef SUP_IP6
+    if (!p || !p->iph_api)
+        return NULL;
+
+    return SFAT_LookupHostEntryByIP(GET_SRC_IP(p));
+#else
+    uint32_t ipAddr;
+
+    if (!p || !p->iph)
+        return NULL;
+
+    ipAddr = ntohl(p->iph->ip_src.s_addr);
+
+    return SFAT_LookupHostEntryByIp4Addr(ipAddr);
+#endif
+}
+
+HostAttributeEntry *SFAT_LookupHostEntryByDst(Packet *p)
+{
+#ifdef SUP_IP6
+    if (!p || !p->iph_api)
+        return NULL;
+
+    return SFAT_LookupHostEntryByIP(GET_DST_IP(p));
+#else
+    uint32_t ipAddr;
+
+    if (!p || !p->iph)
+        return NULL;
+
+    ipAddr = ntohl(p->iph->ip_dst.s_addr);
+
+    return SFAT_LookupHostEntryByIp4Addr(ipAddr);
+#endif
+}
+
+static GetPolicyIdFunc updatePolicyCallback;
+static GetPolicyIdsCallbackList *updatePolicyCallbackList = NULL;
+void SFAT_SetPolicyCallback(void *host_attr_ent)
+{
+    HostAttributeEntry *host_entry = (HostAttributeEntry*)host_attr_ent;
+
+    if (!host_entry)
+        return;
+
+    updatePolicyCallback(host_entry);
+
+    return;
+}
+
+void SFAT_SetPolicyIds(GetPolicyIdFunc policyCallback, int snortPolicyId)
+{
+    tTargetBasedPolicyConfig *pConfig = NULL;
+    GetPolicyIdsCallbackList *list_entry, *new_list_entry = NULL;
+
+    pConfig = &targetBasedPolicyConfig;
+
+    updatePolicyCallback = policyCallback;
+
+    sfrt_iterate(pConfig->curr.lookupTable, SFAT_SetPolicyCallback);
+
+    if (!updatePolicyCallbackList)
+    {
+        /* No list present, so no attribute table... bye-bye */
+        return;
+    }
+
+    /* Look for this callback in the list */
+    list_entry = updatePolicyCallbackList;
+    while (list_entry)
+    {
+        if (list_entry->policyCallback == policyCallback)
+            return; /* We're done with this one */
+
+        if (list_entry->next)
+        {
+            list_entry = list_entry->next;
+        }
+        else
+        {
+            /* Leave list_entry pointint to last node in list */
+            break;
+        }
+    }
+
+    /* Wasn't there, add it so that when we reload the table,
+     * we can set those policy entries on reload. */
+    new_list_entry = (GetPolicyIdsCallbackList *)SnortAlloc(sizeof(GetPolicyIdsCallbackList));
+    new_list_entry->policyCallback = policyCallback;
+    if (list_entry)
+    {
+        /* list_entry is valid here since there was at least an
+         * empty head entry in the list. */
+        list_entry->next = new_list_entry;
+    }
+}
+
+void SFAT_CleanupCallback(void *host_attr_ent)
+{
+    HostAttributeEntry *host_entry = (HostAttributeEntry*)host_attr_ent;
+    FreeHostEntry(host_entry);
+}
+
+void SFAT_Cleanup(void)
+{
+    GetPolicyIdsCallbackList *list_entry, *tmp_list_entry = NULL;
+
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+
+    if (pConfig->curr.mapTable)
+    {
+        sfxhash_delete(pConfig->curr.mapTable);
+    }
+
+    if (pConfig->prev.mapTable)
+    {
+        sfxhash_delete(pConfig->prev.mapTable);
+    }
+
+    if (pConfig->next.mapTable)
+    {
+        sfxhash_delete(pConfig->next.mapTable);
+    }
+
+    if (pConfig->curr.lookupTable)
+    {
+        sfrt_cleanup(pConfig->curr.lookupTable, SFAT_CleanupCallback);
+        sfrt_free(pConfig->curr.lookupTable);
+    }
+
+    if (pConfig->prev.lookupTable)
+    {
+        sfrt_cleanup(pConfig->prev.lookupTable, SFAT_CleanupCallback);
+        sfrt_free(pConfig->prev.lookupTable);
+    }
+
+    if (pConfig->next.lookupTable)
+    {
+        sfrt_cleanup(pConfig->next.lookupTable, SFAT_CleanupCallback);
+        sfrt_free(pConfig->next.lookupTable);
+    }
+
+    FreeProtoocolReferenceTable();
+
+    if (sfat_saved_file)
+    {
+        free(sfat_saved_file);
+        sfat_saved_file = NULL;
+    }
+
+    if (updatePolicyCallbackList)
+    {
+        list_entry = updatePolicyCallbackList;
+        while (list_entry)
+        {
+            tmp_list_entry = list_entry->next;
+            free(list_entry);
+            list_entry = tmp_list_entry;
+        }
+        updatePolicyCallbackList = NULL;
+    }
+
+    DestroyBufferStack();
+}
+
+#define set_attribute_table_flag(flag) \
+    reload_attribute_table_flags |= flag;
+#define clear_attribute_table_flag(flag) \
+    reload_attribute_table_flags &= ~flag;
+#define check_attribute_table_flag(flag) \
+    (reload_attribute_table_flags & flag)
+
+static void SigAttributeTableReloadHandler(int signal)
+{
+    /* If we're already reloading, don't do anything. */
+    if (check_attribute_table_flag(ATTRIBUTE_TABLE_RELOADING_FLAG))
+        return;
+
+    /* Set flag to reload attribute table */
+    set_attribute_table_flag(ATTRIBUTE_TABLE_RELOAD_FLAG);
+}
+
+void SFAT_VTAlrmHandler(int signal)
+{
+    /* Do nothing, just used to wake the sleeping dog... */
+    return;
+}
+
+void *SFAT_ReloadAttributeTableThread(void *arg)
+{
+#ifndef WIN32
+    sigset_t mtmask, oldmask;
+    int ret;
+    int reloads = 0;
+    tTargetBasedPolicyConfig *pConfig = NULL;
+
+    pConfig = &targetBasedPolicyConfig;
+
+    sigemptyset(&mtmask);
+    attribute_reload_thread_pid = getpid();
+
+    /* Get the current set of signals inherited from main thread.*/
+    pthread_sigmask(SIG_UNBLOCK, &mtmask, &oldmask);
+
+    /* Now block those signals from being delivered to this thread.
+     * now Main receives all signals. */
+    pthread_sigmask(SIG_BLOCK, &oldmask, NULL);
+
+    /* And allow SIGVTALRM through */
+    signal (SIGVTALRM, SFAT_VTAlrmHandler);  if(errno!=0) errno=0;
+    sigemptyset(&mtmask);
+    sigaddset(&mtmask, SIGVTALRM);
+    pthread_sigmask(SIG_UNBLOCK, &mtmask, NULL);
+
+    attribute_reload_thread_running = 1;
+
+    /* Checks the flag and terminates the attribute reload thread.
+     *
+     * Receipt of VTALRM signal pulls it out of the idle sleep (at
+     * bottom of while().  Thread exits normally on next iteration
+     * through its loop because stop flag is set.
+     */
+    while (!attribute_reload_thread_stop)
+    {
+#ifdef DEBUG
+        DebugMessage(DEBUG_ATTRIBUTE,
+            "AttrReloadThread: Checking for new attr table...\n");
+#endif
+        ret = SFAT_ERROR;
+
+        /* Is there an old table waiting to be cleaned up? */
+        if (check_attribute_table_flag(ATTRIBUTE_TABLE_TAKEN_FLAG))
+        {
+            if (check_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG))
+            {
+#ifdef DEBUG
+                DebugMessage(DEBUG_ATTRIBUTE,
+                    "AttrReloadThread: Freeing old attr table...\n");
+#endif
+                /* Free the map and attribute tables that are stored in
+                 * prev.mapTable and prev.lookupTable */
+                sfxhash_delete(pConfig->prev.mapTable);
+                pConfig->prev.mapTable = NULL;
+    
+                sfrt_cleanup(pConfig->prev.lookupTable, SFAT_CleanupCallback);
+                sfrt_free(pConfig->prev.lookupTable);
+                pConfig->prev.lookupTable = NULL;
+                clear_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG);
+            }
+            clear_attribute_table_flag(ATTRIBUTE_TABLE_PARSE_FAILED_FLAG);
+            clear_attribute_table_flag(ATTRIBUTE_TABLE_TAKEN_FLAG);
+            continue;
+        }
+        else if (check_attribute_table_flag(ATTRIBUTE_TABLE_RELOAD_FLAG) &&
+                 !check_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG) &&
+                 !check_attribute_table_flag(ATTRIBUTE_TABLE_PARSE_FAILED_FLAG))
+        {
+            /* Is there an new table ready? */
+            set_attribute_table_flag(ATTRIBUTE_TABLE_RELOADING_FLAG);
+#ifdef DEBUG
+            DebugMessage(DEBUG_ATTRIBUTE,
+                "AttrReloadThread: loading new attr table.\n");
+#endif
+            reloads++;
+            if (sfat_saved_file)
+            {
+                /* Initialize a new lookup table */
+                if (!pConfig->next.lookupTable)
+                {
+                    /* Add 1 to max for table purposes */
+#ifdef SUP_IP6
+                    pConfig->next.lookupTable =
+                        sfrt_new(DIR_16x7_4x4, IPv6, ScMaxAttrHosts() + 1,
+                                 sizeof(HostAttributeEntry) * 200);
+#else
+                    pConfig->next.lookupTable =
+                        sfrt_new(DIR_16_4x4, IPv4, ScMaxAttrHosts() + 1,
+                                 sizeof(HostAttributeEntry) * 200);
+#endif
+                    if (!pConfig->next.lookupTable)
+                    {
+                        SnortSnprintf(sfat_error_message, STD_BUF,
+                            "Failed to initialize memory for new attribute table\n");
+                        clear_attribute_table_flag(ATTRIBUTE_TABLE_RELOAD_FLAG);
+                        clear_attribute_table_flag(ATTRIBUTE_TABLE_RELOADING_FLAG);
+                        set_attribute_table_flag(ATTRIBUTE_TABLE_PARSE_FAILED_FLAG);
+                        continue;
+                    }
+                }
+                ret = ParseTargetMap(sfat_saved_file);
+                if (ret == SFAT_OK)
+                {
+                    GetPolicyIdsCallbackList *list_entry = NULL;
+                    /* Set flag that a new table is available.  Main
+                     * process will check that flag and do the swap.
+                     * After the new table is in use, the available
+                     * flag should be cleared, the taken flag gets set
+                     * and we'll go off and free the old one.
+                     */
+
+                    /* Set the policy IDs in the new table... */
+                    list_entry = (GetPolicyIdsCallbackList *)arg;
+                    while (list_entry)
+                    {
+                        if (list_entry->policyCallback)
+                        {
+                            sfrt_iterate(pConfig->next.lookupTable,
+                                (sfrt_iterator_callback)list_entry->policyCallback);
+                        }
+                        list_entry = list_entry->next;
+                    }
+
+                    set_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG);
+                }
+                else
+                {
+                    /* Failed to parse, clean it up */
+                    if (pConfig->next.mapTable)
+                        sfxhash_delete(pConfig->next.mapTable);
+                    pConfig->next.mapTable = NULL;
+
+                    sfrt_cleanup(pConfig->next.lookupTable, SFAT_CleanupCallback);
+                    sfrt_free(pConfig->next.lookupTable);
+                    pConfig->next.lookupTable = NULL;
+
+                    set_attribute_table_flag(ATTRIBUTE_TABLE_PARSE_FAILED_FLAG);
+                }
+            }
+            clear_attribute_table_flag(ATTRIBUTE_TABLE_RELOAD_FLAG);
+            clear_attribute_table_flag(ATTRIBUTE_TABLE_RELOADING_FLAG);
+        }
+        else
+        {
+            /* Sleep for 60 seconds */
+#ifdef DEBUG
+            DebugMessage(DEBUG_ATTRIBUTE,
+                "AttrReloadThread: Checked for new attr table... sleeping.\n");
+#endif
+            sleep(60);
+        }
+    }
+#ifdef DEBUG
+    DebugMessage(DEBUG_ATTRIBUTE,
+        "AttrReloadThread: exiting... Handled %d reloads\n", reloads);
+#endif
+
+    attribute_reload_thread_running = 0;
+    pthread_exit(NULL);
+#endif /* !Win32 */
+    return NULL;
+}
+
+void AttributeTableReloadCheck(void)
+{
+    tTargetBasedPolicyConfig *pConfig = NULL;
+
+    pConfig = &targetBasedPolicyConfig;
+
+    if (check_attribute_table_flag(ATTRIBUTE_TABLE_TAKEN_FLAG))
+    {
+        return; /* Nothing to do, waiting for thread to clear this
+                 * flag... */
+    }
+    /* Swap the attribute table pointers. */
+    else if ((pConfig != NULL) && 
+            check_attribute_table_flag(ATTRIBUTE_TABLE_AVAILABLE_FLAG))
+    {
+        LogMessage("Swapping Attribute Tables.\n");
+        /***Do this on receipt of new packet ****/
+        /***Avoids need for mutex****/
+        pConfig->prev.lookupTable = pConfig->curr.lookupTable;
+        pConfig->curr.lookupTable = pConfig->next.lookupTable;
+        pConfig->next.lookupTable = NULL;
+
+        pConfig->prev.mapTable = pConfig->curr.mapTable;
+        pConfig->curr.mapTable = pConfig->next.mapTable;
+        pConfig->next.mapTable = NULL;
+
+        /* Set taken to indicate we've taken the new table */
+        set_attribute_table_flag(ATTRIBUTE_TABLE_TAKEN_FLAG);
+
+        sfBase.iAttributeHosts = SFAT_NumberOfHosts();
+        sfBase.iAttributeReloads++;
+        pc.attribute_table_reloads++;
+    }
+    else if (check_attribute_table_flag(ATTRIBUTE_TABLE_PARSE_FAILED_FLAG))
+    {
+        LogMessage("%s", sfat_error_message);
+        /* Set taken to indicate we've taken the error message */
+        set_attribute_table_flag(ATTRIBUTE_TABLE_TAKEN_FLAG);
+    }
+}
+
+int SFAT_ParseAttributeTable(char *args)
+{
+    char **toks;
+    int num_toks;
+    int ret;
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+
+    DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES,"AttributeTable\n"););
+
+
+    /* Initialize lookup table */
+    if (!pConfig->next.lookupTable)
+    {
+        /* Add 1 to max for table purposes */
+#ifdef SUP_IP6
+        pConfig->next.lookupTable =
+            sfrt_new(DIR_16x7_4x4, IPv6, ScMaxAttrHosts() + 1,
+                     sizeof(HostAttributeEntry) * 200);
+#else
+        pConfig->next.lookupTable =
+            sfrt_new(DIR_16_4x4, IPv4, ScMaxAttrHosts() + 1,
+                     sizeof(HostAttributeEntry) * 200);
+#endif
+        if (!pConfig->next.lookupTable)
+        {
+            FatalError("Failed to initialize attribute table memory\n");
+        }
+    }
+
+
+    /* Parse filename */
+    toks = mSplit(args, " \t", 0, &num_toks, 0);
+
+    if (num_toks != 2)
+    {
+        FatalError("%s(%d) ==> attribute_table must have 2 parameters\n",
+                file_name, file_line);
+    }
+
+    if (!(strcasecmp(toks[0], "filename") == 0))
+    {
+        FatalError("%s(%d) ==> attribute_table must have 2 arguments, the 1st "
+                "is 'filename'\n",
+                file_name, file_line);
+    }
+
+    /* Reset... */
+    sfat_insufficient_space_logged = 0;
+    sfat_fatal_error = 1;
+
+    ret = ParseTargetMap(toks[1]);
+
+    if (ret == SFAT_OK)
+    {
+        pConfig->curr.lookupTable = pConfig->next.lookupTable;
+        pConfig->next.lookupTable = NULL;
+        pConfig->curr.mapTable = pConfig->next.mapTable;
+        pConfig->next.mapTable = NULL;
+        if (sfat_insufficient_space_logged)
+            LogMessage("%s", sfat_error_message);
+    }
+    else
+    {
+        LogMessage("%s", sfat_error_message);
+        if (sfat_fatal_error)
+            FatalError("%s(%d) ==> failed to load attribute table from %s\n",
+                file_name, file_line, toks[1]);
+    }
+    mSplitFree(&toks, num_toks);
+
+    /* Create Thread to handle reparsing stuff... */
+    sfBase.iAttributeHosts = SFAT_NumberOfHosts();
+    LogMessage("Attribute Table Loaded with " STDu64 " hosts\n", sfBase.iAttributeHosts);
+
+    /* Set up the head (empty) node in the policy callback list to
+     * pass to thread.*/
+    updatePolicyCallbackList = (GetPolicyIdsCallbackList *)SnortAlloc(sizeof(GetPolicyIdsCallbackList));
+#ifndef WIN32
+    if (!ScDisableAttrReload())
+    {
+        /* Register signal handler for attribute table. */
+        signal(SIGNAL_SNORT_READ_ATTR_TBL, SigAttributeTableReloadHandler);
+        if(errno!=0) errno=0;
+    }
+#endif
+
+    return SFAT_OK;
+}
+
+void SFAT_StartReloadThread(void)
+{
+#ifndef WIN32
+    if (!IsAdaptiveConfigured(getDefaultPolicy(), 0) || ScDisableAttrReload())
+        return;
+
+    LogMessage("Attribute Table Reload Thread Starting...\n");
+
+    if (pthread_create(&attribute_reload_thread_id, NULL,
+                       SFAT_ReloadAttributeTableThread, updatePolicyCallbackList))
+    {
+        FatalError("Failed to start thread to handle reloading attribute table\n");
+    }
+
+    while (!attribute_reload_thread_running)
+        nanosleep(&thread_sleep, NULL);
+
+    LogMessage("Attribute Table Reload Thread Started, thread %p (%u)\n",
+               (void*)attribute_reload_thread_id, attribute_reload_thread_pid);
+#endif
+}
+
+int IsAdaptiveConfigured(tSfPolicyId id, int parsing)
+{
+    SnortConfig *sc = snort_conf;
+
+    if (parsing)
+    {
+        if (snort_conf_for_parsing == NULL)
+        {
+            FatalError("%s(%d) Snort conf for parsing is NULL.\n",
+                       __FILE__, __LINE__);
+        }
+
+        sc = snort_conf_for_parsing;
+    }
+
+    if (id >= sc->num_policies_allocated)
+    {
+        ErrorMessage("%s(%d) Policy id is greater than the number of policies "
+                     "allocated.\n", __FILE__, __LINE__);
+        return 0;
+    }
+
+    if ((sc->targeted_policies[id] == NULL) ||
+        (sc->targeted_policies[id]->target_based_config.args == NULL))
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+#endif /* TARGET_BASED */

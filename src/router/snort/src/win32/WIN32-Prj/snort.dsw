@@ -1,0 +1,278 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "build_all"=".\build_all.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name dynamic_preprocessors
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_engine
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name daq
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name snort
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "daq"="..\..\..\daq\daq.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "dynamic_preprocessors"="..\..\dynamic-preprocessors\dynamic_preprocessors.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_ftptelnet
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_smtp
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_ssh
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dns
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_ssl
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_dce2
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sf_sdf
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dce2"="..\..\dynamic-preprocessors\dcerpc2\sf_dce2.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dns"="..\..\dynamic-preprocessors\dns\sf_dns.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_dynamic_initialize"="..\..\dynamic-preprocessors\sf_dynamic_initialize\sf_dynamic_initialize.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sf_engine"=".\sf_engine.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_engine_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_engine_initialize"=".\sf_engine_initialize.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "sf_ftptelnet"="..\..\dynamic-preprocessors\ftptelnet\sf_ftptelnet.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_sdf"="..\..\dynamic-preprocessors\sdf\sf_sdf.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_smtp"="..\..\dynamic-preprocessors\smtp\sf_smtp.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sfdynamic_preproc_libs
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_ssh"="..\..\dynamic-preprocessors\ssh\sf_ssh.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sf_ssl"="..\..\dynamic-preprocessors\ssl\sf_ssl.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name sfdynamic_preproc_libs
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sfdynamic_preproc_libs"="..\..\dynamic-preprocessors\libs\sfdynamic_preproc_libs.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name sf_dynamic_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "snort"=".\snort.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name snort_initialize
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "snort_initialize"=".\snort_initialize.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

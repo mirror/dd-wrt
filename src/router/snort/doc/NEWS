@@ -1,0 +1,523 @@
+04-06-03   Wow, over a year since the last update.  Well, this is "2.0" but not
+           quite the 2.0 we were expecting.  It's vastly more capable than the 
+           1.8.x and 1.9.x releases, more stable, audited, well tested in a 
+           commericial test environment (thanks to Sourcefire) and generally
+           just "better" than what has come before, but it's not the 
+           revolutionary leap that I had envisioned.  Will that leap happen
+           someday?  Probably, but the timeline will shift and things will 
+           look different than we have been talking about for the last 18
+           months.
+
+           Snort is pretty high profile now, we've got new open source IDSes 
+           nipping at our heels (amazing how they all claim to be "better" than
+           Snort, yet usually only encompass a small subset of it's features).
+           I continue to be amazed by the robustness of the architecture that
+           was developed over three years ago and the latest and greatest
+           improvements that have been added, the new detection engine from
+           Norton & Roelker has racked up impressive performance numbers, 
+           Chris Green's sheparding of the stream4 and frag2 preprocessors as
+           I've been out doing "business things" has been great as well.
+
+           Speaking of business, if you like Snort but are interested in a 
+           commercially supported version with enterprise scalability, take
+           a look at Sourcefire (http://www.sourcefire.com).  There are other
+           companies that put "Snort on a box" out there (google for them),
+           but Sourcefire is taking Snort in new directions (and I started it).
+           Snort is still free (and always will be), but if you find yourself
+           saying "I need to deploy and manage [5|10|20|100] Snort sensors,
+           is there anyone who can help me?", give us a shout.
+
+           As for features, we've got quite a few new ones for 2.0:
+
+            * Higher performance (due to a new pattern matcher and rebuilt 
+              detection engine)
+            * Better decoders
+            * Enhanced stream reassembly and defragmentation
+            * Tons of bug fixes
+            * Updated rules
+            * Updated snort.conf
+            * New detection keywords (byte_test, byte_jump, distance, 
+              within) & stateful pattern matching
+            * New HTTP flow analyzer
+            * Enhanced anomaly detection (HTTP, RPC, TCP, IP, etc)
+            * Better self preservation in stateful subsystems
+            * Xrefs fixed
+            * Flexresp works faster and more effectively
+            * Better chroot()'ing
+            * Fixed 802.1q decoding
+            * Better async state handling
+            * New alerting option: -A cmg!! 
+            * Major tagging updates
+
+
+03-14-02   Ok We're going to start being better about doing this more regularly.
+
+           This release has many many fixes over 1.8.3.  Lots of bugs
+           in stream4 have been ironed out thanks to Phil Wood.  The
+           ICMP decoders have been rewritten.
+
+           The major "gotcha" with this release will be that rules
+           with <- used as the direction operator are no longer
+           accepted.  This is a bug fix in that it was assumed to be
+           -> before ( unless you compiled with a specific define set
+           ).
+
+           * (This is a summary of recent changes -- not all mine)
+           * Fixed stream4 offset initialization
+           * Double Open of snort log file
+           * Lots of new rules
+           * Fatal error on problems other than -> and <>
+           * Fixed stream4 several low memory conditions
+           * Error checking in stream4/frag2 argument parsing
+           * snortdb schema updates to 1.05
+           * --with-pcap-includes should now look at specified pcap
+           * packet statistics now should be more accurate with regards to lost
+             packets werwerwerwerwer 
+           * double PID file write
+           * S4 alignment problems on Sparc fixed
+           * new snmptrap code
+           * documentation updates
+           * Stability fixes in frag2
+
+11-29-01    And the hits keep on coming.  There were some other things broken
+            in 1.8.2 that needed to get fixed (flexresp was totally 
+            inoperative, crashbug in frag2, etc).  Anyway, this one has had 
+            some pretty decent testing done on the core functionality and 
+            everything seems to be running nicely now.
+            
+            Major repairs include a fix to frag2 on Linux platforms, the icmp
+            decoder and printout routines were updated to match the data
+            structures that I implemented in 1.8.1 and the flexresp code was
+            repaired and should now be faster, plus the usual rule updates.  I
+            also added a new "-B" command line switch to convert IP addresses 
+            in a pcap file to a new specified IP subnet addresses.
+
+            On to 2.0...
+            
+11-02-01    Ok, I lied.  There was enough little stuff to fix in 1.8.1 that I
+            decided to do a 1.8.2 release.  This is just about fully a bugfix
+            release, but Snort is now more stable and more usable than it's been
+            in quite a while, and should do a good job of tiding people over 
+            while we transition to 2.0 and the codebase gets a little more 
+            "fluid".
+
+            Here's the list of fixes:
+
+            * fixed UTC timestamps
+            * fixed SIGUSR1 handling, should reset properly now after getting 
+              a signal
+            * fixed PID path generation code, PID files go in the right place 
+              now
+            * fixed stability problems in stream4
+            * fixed stability problems in frag2
+            * tweaks to spo_unified for better integration with barnyard
+            * added -f switch to turn off fflush() calls in binary logging mode
+            * added new config keyword to stream4, "log_flushed_streams", which 
+              causes all buffered packets in the stream reassembler for that 
+              session to be logged in the event of an event on that stream 
+              (must be used in conjunction with spo_log_tcpdump)
+            * added packet precacheing for flexresp TCP packets, responses 
+              should be generated more quickly
+            * fixed rules parser code for various failure modes
+            * several new rules files and a new classification system
+
+            After this release we're going to reorganize the whole source tree
+            and do a quick 1.9 release with the new code layout.  Once that's 
+            done, we're going to begin coding 2.0 in earnest in December, 
+            hopefully doing our initial release sometime in the February time
+            frame. 
+
+08-14-01    I was planning on getting this release out sooner than this (since
+            it's largely a bugfix release) but my wife and I went and had a 
+            baby 2 weeks ago, which effected the schedule a little. ;) Anyway,
+            barring any major problems the Snort 1.x code will now be going
+            into maintenance mode as we begin development on 2.0.
+
+            This version adds the following:
+
+            * SNMP alerts
+            * IDMEF XML output (the Silicon Defense plugin is integrated into 
+              the main codebase now)
+            * Limited regex support in the rules language
+            * New packet counters for stream4 and frag2
+            * New normalization mode for http_decode
+
+            And a slew of bug fixes.  We should get to work on 2.0 shortly, so
+            hopefully the next release of this NEWS file will be talking about
+            that!  (knock on wood...)
+            
+07-09-01    Well, this one was a long time coming, but I think it was worth the
+            wait.  Snort can now perform stateful inspection, has improved 
+            defragmentation capabilities, uses less memory, leaks less of the
+            memory that it does use, is faster, and has a bunch of other good
+            stuff.  Truely, this is probably the ultimate development of the
+            1.X series of Snort.  After this version we will begin development
+            on Snort 2.0, which will have a great many new features, be faster
+            and more flexible, and generally be about the finest network 
+            intrusion detection system that an open source community can build.
+
+            See the Changelog (read all the way back to January of this year) 
+            for changes and additions, there are far to many to list here.  
+            Some of the highlights include
+
+            * stateful inspection
+            * new tcp stream reassembly code
+            * new ip defragmenter
+            * new protocol available for the rules language: ip
+            * more extensive printouts of cross reference and info in alerts
+            * new normalizer preprocessors for telnet, rpc
+            * 2 new output plugins (unified, csv)
+            * 5 new preprocessors (stream4, frag2, bo, telnet_decode, 
+              rpc_decode)
+            * 10 new rule options
+            * unique rule IDs
+            * A whole slew of command line options (7 at last count)
+            * Mega bug-fixes from 1.7
+
+            Snort can now leap tall buildings in a single bound.
+
+            The future holds 2.0, which will revisit most of the code in Snort.
+            It probably won't be released for another 6 months or so, but for 
+            the time being I'm happy with what we've produced here and I think
+            most people will be happy with it too.
+
+            Please read the USAGE, FAQ, README, man page and any other docs you
+            can before asking your questions, there's a good chance that the
+            answer you're looking for is in there.
+
+            Commercial plug: If you decide that you need or want to take your
+            Snort installation to the next level, Sourcefire Inc. 
+            (http://www.sourcefire.com) is now producing commercial network 
+            intrusion detection appliances based on Snort with data analysis,
+            management, and rules GUIs built-in.  See the web site for more
+            information, if you want to have a commercially supported, 
+            professional Snort deployment, Sourcefire is the company to call.
+     
+01-02-01    Welcome to version 1.7. This version features clean compiles
+            on following architectures and platforms:
+
+            * Linux 2.0.X, Linux 2.1.X, Linux 2.2.X (i386)
+            * FreeBSD 3.x, 4.x (i386)
+            * SunOS/gcc 5.5, 5.5.1, 5.6, 5.7, 5.8 (sparc)
+            * OpenBSD 2.7, 2.8
+            * Tru64/gcc 
+            * HPUX 11.0/gcc
+
+            Other platforms/architectures should be supported as well, we just 
+            don't have them available for testing on the moment.  
+        
+            There are a ton of bug fixes and new features in this version, have
+            a look at the ChangeLog to see many of them.  I think that this 
+            will be the last full point release of the 1.X codebase, we're 
+            starting design work on the 2.0 series and I hope that we'll be 
+            putting it out there in the not too distant future (less than six
+            months!).  
+
+            It's been a long road to 1.7, the amount of code in the program 
+            compared to the initial release over two years ago is incredible.
+            We're just getting rolling though, and 2.0 is going to bring a 
+            great number of changes including more plugin interfaces (packet
+            acquisition and decode), faster/cleaner code (I hope ;) and a
+            better design for performing more types of analysis.
+
+            Big changes in this version: snort-lib renamed to snort.conf, IP
+            defragmentation plugin now 100% on all architectures, tcp stream
+            reassembly, statistical anomaly detection, three new command line
+            switches (-L,-I,-X), IP address lists, a cool "automatic variable"
+            in the rules file that automatically picks up the IP address and
+            netmask of a named interface, more packet header printouts, 
+            detection plugins for TOS and the IP fragment bits, as well as a
+            plugin that allows reference data to be attached to rules and a 
+            completely rewritten active response module, etc.
+
+            I hope everyone likes this release, we've put a ton of work into it
+            to make sure that it's functional and stable while still being 
+            easy to use for everyone.
+            
+07-22-00    Welcome to version 1.6.3.  This version features clean compiles
+            on all architectures and OS's that I have access to, some 
+            elusive bug fixes in the decoders, a little bit better 
+            packet printing, full-time ARP packet decoding (instead of only
+            when the -a option is spec'd), and an upgraded portscan
+            detector.  The moral of the story with the 1.6.1->1.6.2.2 
+            release cycle was "don't release when you're working on the
+            road".  This will be the last version release until the
+            Hiverworld IDS ships as I need to dedicate myself fully to
+            that cause.  Please watch http://www.snort.org for information
+            on the availability for an upgraded defragmentation 
+            preprocessor, the one shipping with this version should be
+            treated as *beta* code!  
+
+07-08-00    It wouldn't be a relase without a disaster, and in that vein
+            we lost the ability to compile cleanly on Linux boxes with 
+            version 1.6.1.  Typical.  Lessons learned: I need to reinstall
+            a RedHat box at Snort Labs so that I can do compile tests
+            before release.  C'est la vie.
+
+07-06-00    Version 1.6.1 is finally ready to see the light of day.  This
+            release is mostly a bug fix with a few minor feature additions
+            for runtime security.  Version 1.7 is a few months behind in 
+            development due to my busy schedule at Hiverworld where I'm 
+            putting together a completely new (not Snort-based) IDS.
+
+            Version 1.7 is in development and you can check the latest
+            beta functionality by checking it out from the CVS repository.
+            The features that have or are going to be added include dynamic
+            rules (rules that turn on other rules), variable alert levels,
+            port and IP sets for rules, and a few other goodies, plus
+            a slew of new plugins.
+
+            Additionally, the snort.org web site has gone live since the
+            last release, and it's pretty much a one-stop-shop for all 
+            things Snort related (that and www.whitehats.com).
+
+            I hope to have version 1.7 available by the October SANS 
+            Network Security 2000 conference.
+
+03-20-00    Bang!  Here's version 1.6, marvel at its glory! :) I'm going
+            to keep this short since it's 3AM, but I think that everyone
+            is going to like the changes and additions since version 1.5.
+            Be sure to check out the new rules writing document at 
+            http://www.clark.net/~roesch/snort_rules.html! 
+
+02-26-00    1.6 is still in the works, but this one fixes a few problems
+            with people trying to compile on SunOS/Solaris/HP-UX boxes.
+            This release really falls more into the "tweak" category, but I
+            think it's important enough to put out.  Version 1.6 is coming
+            RSN, but will probably be a couple more weeks!
+
+01-03-00    This one is a minor bug fix in preparation for the impending
+            release of version 1.6.  Version 1.6 is in beta, but I couldn't
+            hold back doing a release of this bug fix version any longer.
+            Speaking of 1.6, it should be out in about two weeks, and will
+            incorporate a bunch of cool new functionality.  Stay tuned!
+
+12-8-99     Wow, almost two months since the last major release.  Well, if
+            you thought the last one was big, this one is HUGE!  There are
+            nine major additions to this release, including plugins, 
+            session recording, improved flexibility in the rules files,
+            better packet content analysis, and a bunch of other stuff.
+            Snort is faster, more efficient, more flexible, and more 
+            powerful than 1.3.1.  Not bad for two month's work, eh? :)
+
+            What's down the road from here?  Well, the Token Ring decoder
+            needs to get finished, and then there are three big topics that
+            Snort needs to address: IP defragmentation, TCP stream 
+            reassembly, and port scan detection.  Fortunately, the new
+            plugin architecture implemented in this version of Snort
+            makes the addition of these huge features relatively painless
+            from a development standpoint.  The modules can simpley be
+            developed and then dropped right into every copy of Snort
+            out there.
+
+            The really cool functional (user level) things about version 
+            1.5 are session logging with the new "session" keyword, 
+            multiple content tests per rule, rules file variables, and the
+            IP options inspection keyword "ipopts".  Check out the 
+            RULES.SAMPLE file (at the bottom) for more info on the new
+            stuff.
+
+10-13-99    Welp, here's the bug fix release.  There was one really big
+            stupid bug in this one plus some other minor annoying stuff, 
+            so here's a patch to clean things up a bit.  I also added some
+            functionality to the dsize option keyword, you can specify
+            ">" or "<" now to select ranges.
+
+            2.0 is progressing slowly in the face of various conference 
+            activity I have over the next few months.  I'm looking at a late
+            November or mid-December release now, but hang in there, it's 
+            coming.
+
+09-18-99    This is probably the last 1.x release of Snort (barring a 
+            possible bugfix release).  The next planned version is 2.0
+            and it will be radically changed for the better.  It will 
+            include a faster, more flexible detection engine, plug-in 
+            support for detection, output, and monitoring modules, and
+            a plethora of other options.  Look for it in late October or
+            early November!
+
+            This version includes an enhanced logging/alerting engine that
+            is several times faster than the Snort 1.2.1.  The logging
+            and alerting command line options are also more streamlined
+            so that people may have the flexibility to choose how they log.
+
+            Enjoy!
+
+08-06-99    This is the official "mea culpa" version of Snort.
+
+            Version 1.2 wasn't exactly a high quality release for 
+            non-Linux platforms, and so here we are five days later with
+            version 1.2.1.  Thanks to everyone's bug reports and a small
+            band of volunteers, this release is much more stable than
+            version 1.2 and should configure and build cleanly on
+            all platforms and architectures, including Sparcs and OpenBSD.
+
+            While all of the bug fixing was taking place, I actually found
+            time to integrate some patches that people generously sent in
+            during the week.  That kind of makes this release value added,
+            it's not just a bug fix there's actually some new stuff in 
+            here! 
+
+            If this version proves to be stable and everyone is pretty much
+            happy with the way things are working, this will be the last 
+            release for a month or so.  I'm writing a paper for the LISA
+            '99 conference about Snort, and I need to concentrate on 
+            finishing it and getting some facts and figures about the 
+            software together.  After that is done, I've got some 
+            enhancements for the detection engine thought up that are
+            truly radical, stay tuned..... :)
+
+08-03-99    Oops!
+
+08-01-99    Well, here it finally is, the big performance release.  This
+            version has a slick new packet decoder and a brand spankin'
+            new, fully recursive, detection engine.  It kicks ass! :)  
+            Large sections of the code have been restructured to eliminate
+            global data structures and streamline how much real data has
+            to be passed around.  Two major global data structures have
+            been eliminated to make the code more thread friendly in case
+            I ever get motivated enough to multi-thread this beast.  The
+            SMB alerting code is now an option, use the 
+            "--enable-smbalerts" switch to the configure script if you're 
+            interested in using it.  Preliminary performance testing has
+            shown this version to be about twice as fast as version 1.1
+            in most cases, sometimes up to 500% faster than 1.1!  There's
+            a lot of new code in this release, so if anyone finds any
+            bugs I'd appreciate hearing about it.  Thanks! 
+
+06-21-99    Tons of new and improved stuff this release.  Three new command
+            line options, six new rule options, eight big bugs squashed, and
+            a shiny new content parser.  The WinPopup stuff was donated by 
+            Damien Daspit.  It breaks one of my cardinal rules of security
+            software coding (thou shalt not exec a program from within
+            another), but it was so I cool I put it in pretty much 
+            unmodified.  Probably in the next version I'll rig something up
+            so that it will be a compile time define where you have to 
+            specify a switch when you ./configure, but for now it's in.  It
+            shouldn't be too much of a problem since you have to be root to
+            run Snort anyway.  Trinux users can rejoice a bit, I hardcoded
+            the netmasks into the program, so it no longer needs to be
+            linked against libm, which was quite large to be putting on 
+            floppy disks.  The new tcpdump file read option is cool, and as
+            soon as I get my tcpdump file defragmenter working, Snort will 
+            have the ability to decode and alert based on fragments.  C'est
+            cool, no?
+
+05-18-99    This release is primarily to fix some bugs that made it out in
+            version 1.0.  At the time of release, my Sparc was broken and I
+            didn't have a good way of testing the big endian/non-x86 stuff,
+            so some little bugs made it out the door.  This version has 
+             been tested on a real live SPARCstation 10 (Sol 2.5.1) and
+            seems to work as advertised, so I'm putting it out the door.  
+            This release also features support for HP-UX and S/Linux thanks
+            to Chris Sylvain's nice work.  (Thanks Chris!)  There are some
+            other small additions, like the packet counter statistics on 
+            exit and the "-x" command line switch which allows you to 
+            specifically turn on IPX packet notification (since I still 
+            haven't written a IPX decoder).  The next release is going to 
+            have a new and improved content parser, I've discoverd that the
+            current one, uh, sucks.  See the Changelog for specifics on 
+            what's fixed in this version.
+
+04-28-99    Woohoo!  One point oh baby!  New stuff: now does SLIP and 
+            RAW (PPP) packets, so all you people out there with modems can
+            use Snort now too.  I also added in options to send alerts to 
+            syslog.  The stability/functionality of the last release was 
+            good enough for me to decide that 1.0 was ready to ship, so 
+            here it is.  Enjoy!
+        
+04-17-99    Well, I guess I decided to change things around a bit.  I have
+            rewritten about half of the rules parser so that future 
+            addition of rule types people find generally interesting will be
+            much easier to do.  I also totally rewrote the logging section
+            so that it was more sane to write follow on code with.  Those
+            are the major big changes.  I'm finally happy with the way this
+            software is laid out and operates, so if this one works pretty
+            well, I'll slap whatever bug fixes need to be made onto it and
+            it'll really truly be version 1.0.
+
+04-06-99    Ok, this is the big one, I think everything is stable enough 
+            now for a general release.  If this one doesn't do anything 
+            bizzare once it gets out into the real world, it's going to be
+            version 1.0, and this time I mean it! :) Note that I'm 
+            including the snort-lib template file, which has some useful
+            patterns and rules that people may want to use.  Also note that
+            this is version 0.99 rc5, there was no version rc4!  Ok, that's
+            it for now, if anyone has any problems with this version, let
+            me know!
+
+03-24-99    Let me just say that I think I might need to implement some
+            sort of formalized testing regimen before making major 
+            releases.  Please pardon the last two crap releases, not enough
+            time and too much work for one person to do. (lets all have a 
+            pity party...)  Anyway, I beat the crap out of this version 
+            with iptest and nmap, and I think it works pretty damn good 
+            now.  Lets hope it continues to work well tomorrow...
+
+03-21-99    Ok, good size update, I think this may turn out to be 1.0, but
+            I'm done thinking that seriously for the time being.  Added
+            TCP flag-based rules, port range rules, IP and TCP option 
+            decoding, truncated packet handling, improved fragmented packet
+            handling, and some bug fixing.  I'm not quite sure what else I'd
+            like to put in before the 1.0 release, so I thinking this is
+            going to be it.  If there's any big feature you've been wishing
+            for, now's the time to ask!
+
+03-08-99    Got a request to do more precise timestamping, so I ripped off
+            the TCPDump timestamp routine and stuffed it in Snort.  You
+            can now see which particular millisecond packet XYZ showed up
+            in.  I'm working on the rest of the stuff....
+
+03-06-99    Well, no new rules yet, but this program is a lot faster than
+            the last release.  The two biggest bottleneck routines have been
+            rewritten and are now faster and more efficient.  I've also
+            started doing more complete decoding of the IP header, starting
+            with the fragment data.   For those of you not using Linux, 
+            collected/dropped packet statistics are now being generated
+            when Snort is exited.
+
+            The next release will (hopefully) decode the fragments and be 
+            able to apply the rules set to them.  I'm also planning on 
+            having IP Option decoding in the next release, plus the new 
+            rules set.  Stay tuned!
+
+02-18-99    I've started a new job and gotten one of those ergonomic 
+            keyboards, so development has slowed a bit.  This release 
+            focuses on minor bug fixes and code cleanup.  I'm thinking about
+            changing the rules format to something with one rule argument
+            per line.  This will make for larger, more readable rules files
+            at the cost of more typing for the user.  It sorta sucks,
+            but this is the best way I can think of to do it...
+
+01-28-99    Content based logging is done.  With this addition, this thing
+            can finally be used for light duty IDS tasks and catch most 
+            things.  There still needs to be some additional work done to
+            add rules for things like TCP flags, fragments, and IP options,
+            but the base structure is there.
+
+            Automatic rules sorting is implemented now too, so you can make
+            your rules look as disorganized as you want.
+
+            If nobody finds any show stopper bugs in this release, this is
+            going to be 1.0!
+
+01-19-99    Rules based packet capture is a reality now.  Added it pretty
+            much all in a day or so of serious hacking.  The code is
+            modularized now into excitingly chunky files.  I did this to
+            avoid insanity, and I highly recommend it.  Look at the README
+            file or the "RULES.SAMPLE" file to see how rules work.  I also
+            fixed the seriously porked logging code, now all conversations
+            end up in single files based upon the homenet address command
+            line parameter, or in its absense, hi port/lo port.  I highly
+            recommend using the homenet capability (-h option).
+
+            Coming soon: Content based logging!
+
+01-08-99    I'm thinking about putting in some "capture/pass" logic into 
+            the program to facilitate rules/content based traffic capture.  
+            In other words, make some kind of light intrusion detection 
+            capability.  Look for it by version 1.0.
+
+
+
+ 

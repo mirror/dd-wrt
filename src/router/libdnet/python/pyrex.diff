@@ -1,0 +1,50 @@
+--- PyrexTypes.py.orig	Sat Oct  4 00:45:39 2003
++++ PyrexTypes.py	Wed May 12 01:54:44 2004
+@@ -296,6 +296,12 @@
+ 		self.is_returncode = is_returncode
+ 
+ 
++class CULongType(CIntType):
++
++	to_py_function = "PyLong_FromUnsignedLong"
++	from_py_function = "PyLong_AsUnsignedLong"
++
++
+ class CLongLongType(CIntType):
+ 
+ 	to_py_function = "PyLong_FromLongLong"
+@@ -636,7 +642,7 @@
+ c_uchar_type =     CIntType(0, 0, "T_UBYTE")
+ c_ushort_type =    CIntType(1, 0, "T_USHORT")
+ c_uint_type =      CIntType(2, 0, "T_UINT")
+-c_ulong_type =     CIntType(3, 0, "T_ULONG")
++c_ulong_type =     CULongType(3, 0, "T_ULONG")
+ c_ulonglong_type = CULongLongType(4, 0)
+ 
+ c_float_type =      CFloatType(5, "T_FLOAT")
+--- TypeSlots.py.orig	Wed May 12 01:55:19 2004
++++ TypeSlots.py	Thu May 13 23:22:51 2004
+@@ -359,10 +359,10 @@
+ intintargproc = Signature("Tii", 'r')
+ objargfunc = Signature("TO", "O")
+ objobjargproc = Signature("TOO", 'r')      # typedef int (*objobjargproc)(PyObject *, PyObject *, PyObject *);
+-getreadbufferproc = Signature("TiP", 'r')  # typedef int (*getreadbufferproc)(PyObject *, int, void **);
+-getwritebufferproc = Signature("TiP", 'r') # typedef int (*getwritebufferproc)(PyObject *, int, void **);
+-getsegcountproc = Signature("TI", 'r')     # typedef int (*getsegcountproc)(PyObject *, int *);
+-getcharbufferproc = Signature("TiS", 'r')  # typedef int (*getcharbufferproc)(PyObject *, int, const char **);
++getreadbufferproc = Signature("TiP", 'i')  # typedef int (*getreadbufferproc)(PyObject *, int, void **);
++getwritebufferproc = Signature("TiP", 'i') # typedef int (*getwritebufferproc)(PyObject *, int, void **);
++getsegcountproc = Signature("TI", 'i')     # typedef int (*getsegcountproc)(PyObject *, int *);
++getcharbufferproc = Signature("TiS", 'i')  # typedef int (*getcharbufferproc)(PyObject *, int, const char **);
+ objargproc = Signature("TO", 'r')          # typedef int (*objobjproc)(PyObject *, PyObject *);
+                                            # typedef int (*visitproc)(PyObject *, void *);
+                                            # typedef int (*traverseproc)(PyObject *, visitproc, void *);
+@@ -461,7 +461,7 @@
+ 	MethodSlot(intintargfunc, "sq_slice", "__getslice__"),
+ 	EmptySlot("sq_ass_item"), # mp_ass_subscript used instead
+ 	SyntheticSlot("sq_ass_slice", ["__setslice__", "__delslice__"], "0"),
+-	MethodSlot(objargproc, "sq_contains", "__contains__"),
++	MethodSlot(cmpfunc, "sq_contains", "__contains__"),
+ 	EmptySlot("sq_inplace_concat"), # nb_inplace_add used instead
+ 	EmptySlot("sq_inplace_repeat"), # nb_inplace_multiply used instead
+ )

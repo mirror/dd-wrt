@@ -1,0 +1,130 @@
+Reading pcaps in Snort
+======================
+
+Any of the below can be specified multiple times on the command line
+(-r included) and in addition to other Snort command line options.
+Note, however, that specifying --pcap-reset and --pcap-show multiple times
+has the same effect as specifying them once.
+
+Command line arguments
+----------------------
+
+-r <file>               Read a single pcap.
+--pcap-single=<file>    Same as -r.  Added for completeness.
+--pcap-file=<file>      File that contains a list of pcaps to read.  Can
+                        specify path to pcap or directory to recurse to
+                        get pcaps.
+--pcap-list="<list>"    A space separated list of pcaps to read.
+--pcap-dir=<dir>        A directory to recurse to look for pcaps.  Sorted
+                        in ascii order.
+--pcap-filter=<filter>  Shell style filter to apply when getting pcaps from
+                        file or directory.  This filter will apply to any
+                        --pcap-file or --pcap-dir args following.  Use
+                        --pcap-no-filter to delete filter for following 
+                        --pcap-file or --pcap-dir args or specify
+                        --pcap-filter again to forget previous filter and
+                        to apply to following --pcap-file or --pcap-dir args.
+--pcap-no-filter        Reset to use no filter when getting pcaps from file
+                        or directory.
+--pcap-reset            If reading multiple pcaps, reset snort to
+                        post-configuration state before reading next pcap. 
+                        The default, i.e. without this option, is not to 
+                        reset state.
+--pcap-show             Print a line saying what pcap is currently being read.
+
+
+Examples
+--------
+
+Read a single pcap:
+
+$ snort -r foo.pcap
+$ snort --pcap-single=foo.pcap
+
+
+Read pcaps from a file:
+
+$ cat foo.txt
+foo1.pcap
+foo2.pcap
+/home/foo/pcaps
+
+$ snort --pcap-file=foo.txt
+
+This will read foo1.pcap, foo2.pcap and all files under /home/foo/pcaps.
+Note that Snort will not try to determine whether the files under that 
+directory are really pcap files or not.
+
+
+Read pcaps from a command line list:
+
+$ snort --pcap-list="foo1.pcap foo2.pcap foo3.pcap"
+
+This will read foo1.pcap, foo2.pcap and foo3.pcap
+
+
+Read pcaps under a directory:
+
+$ snort --pcap-dir="/home/foo/pcaps"
+
+This will include all of the files under /home/foo/pcaps.
+
+
+Using filters:
+
+$ cat foo.txt
+foo1.pcap
+foo2.pcap
+/home/foo/pcaps
+
+$ snort --pcap-filter="*.pcap" --pcap-file=foo.txt
+$ snort --pcap-filter="*.pcap" --pcap-dir=/home/foo/pcaps
+
+The above will only include files that match the shell pattern "*.pcap",
+in other words, any file ending in ".pcap".
+
+$ snort --pcap-filter="*.pcap --pcap-file=foo.txt \
+> --pcap-filter="*.cap" --pcap-dir=/home/foo/pcaps
+
+In the above, the first filter "*.pcap" will only be applied to the
+pcaps in the file "foo.txt" (and any directories that are recursed
+in that file).  The addition of the second filter "*.cap" will cause
+the first filter to be forgotten and then applied to the directory
+/home/foo/pcaps, so only files ending in ".cap" will be included from
+that directory.
+
+$ snort --pcap-filter="*.pcap --pcap-file=foo.txt \
+> --pcap-no-filter --pcap-dir=/home/foo/pcaps
+
+In this example, the first filter will be applied to foo.txt, then
+no filter will be applied to the files found under /home/foo/pcaps,
+so all files found under /home/foo/pcaps will be included. 
+
+$ snort --pcap-filter="*.pcap --pcap-file=foo.txt \
+> --pcap-no-filter --pcap-dir=/home/foo/pcaps \
+> --pcap-filter="*.cap" --pcap-dir=/home/foo/pcaps2
+
+In this example, the first filter will be applied to foo.txt, then
+no filter will be applied to the files found under /home/foo/pcaps,
+so all files found under /home/foo/pcaps will be included, then the
+filter "*.cap" will be applied to files found under /home/foo/pcaps2. 
+
+
+Resetting state:
+
+$ snort --pcap-dir=/home/foo/pcaps --pcap-reset
+
+The above example will read all of the files under /home/foo/pcaps, but 
+after each pcap is read, Snort will be reset to a post-configuration 
+state, meaning all buffers will be flushed, statistics reset, etc.  For
+each pcap, it will be like Snort is seeing traffic for the first time.
+
+
+Printing the pcap:
+
+$ snort --pcap-dir=/home/foo/pcaps --pcap-show
+
+The above example will read all of the files under /home/foo/pcaps and
+will print a line indicating which pcap is currently being read.
+
+

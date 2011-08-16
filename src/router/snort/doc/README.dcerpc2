@@ -1,0 +1,845 @@
+DCE/RPC 2 Preprocessor
+================================================================================
+The main purpose of the preprocessor is to perform SMB desegmentation and
+DCE/RPC defragmentation to avoid rule evasion using these techniques.  SMB
+desegmentation is performed for the following commands that can be used to
+transport DCE/RPC requests and responses: Write, Write Block Raw,
+Write and Close, Write AndX, Transaction, Transaction Secondary, Read,
+Read Block Raw and Read AndX.  The following transports are supported for
+DCE/RPC: SMB, TCP, UDP and RPC over HTTP v.1 proxy and server.  New rule
+options have been implemented to improve performance, reduce false
+positives and reduce the count and complexity of DCE/RPC based rules.
+
+Sections:
+    Dependency Requirements
+    Target Based
+    Configuration
+    Events
+    Rule Options
+
+
+Dependency Requirements
+================================================================================
+For proper functioning of the preprocessor:
+    The dcerpc preprocessor (the initial iteration) must be disabled.
+    Stream session tracking must be enabled, i.e. stream5. The preprocessor
+      requires a session tracker to keep its data.
+    Stream reassembly must be performed for TCP sessions. If it is decided that
+      a session is SMB or DCE/RPC, either through configured ports, servers or
+      autodetecting, the dcerpc2 preprocessor will enable stream reassembly for
+      that session if necessary.
+    IP defragmentation should be enabled, i.e. the frag3 preprocessor should be
+      enabled and configured.
+
+
+Target Based
+================================================================================
+There are enough important differences between Windows and Samba versions that
+a target based approach has been implemented. Some important differences:
+
+Named pipe instance tracking
+    A combination of valid login handle or UID, share handle or TID and
+    file/named pipe handle or FID must be used to write data to a named pipe.
+    The binding between these is dependent on OS/software version.
+        Samba 3.0.22 and earlier
+            Any valid UID and TID, along with a valid FID can be used to make
+            a request, however, if the TID used in creating the FID is deleted
+            (via a tree disconnect), the FID that was created using this TID
+            becomes invalid, i.e. no more requests can be written to that named
+            pipe instance.
+        Samba greater than 3.0.22
+            Any valid TID, along with a valid FID can be used to make a
+            request. However, only the UID used in opening the named pipe can
+            be used to make a request using the FID handle to the named pipe
+            instance. If the TID used to create the FID is deleted (via a
+            Tree Disconnect), the FID that was created using this TID becomes
+            invalid, i.e. no more requests can be written to that named pipe
+            instance. If the UID used to create the named pipe instance is
+            deleted (via a Logoff AndX), since it is necessary in making a
+            request to the named pipe, the FID becomes invalid.
+        Windows 2003
+        Windows XP
+        Windows Vista
+            These Windows versions require strict binding between the UID, TID
+            and FID used to make a request to a named pipe instance. Both the
+            UID and TID used to open the named pipe instance must be used when
+            writing data to the same named pipe instance. Therefore, deleting
+            either the UID or TID invalidates the FID.
+        Windows 2000
+            Windows 2000 is interesting in that the first request to a named
+            pipe must use the same binding as that of the other Windows
+            versions. However, requests after that follow the same binding as
+            Samba 3.0.22 and earlier, i.e. no binding. It also follows Samba
+            greater than 3.0.22 in that deleting the UID or TID used to create
+            the named pipe instance also invalidates it.
+Accepted SMB commands
+    Samba in particular does not recognize certain commands under an IPC$ tree.
+        Samba (all versions)
+           Under an IPC$ tree, does not accept:
+               Open
+               Write And Close
+               Read
+               Read Block Raw
+               Write Block Raw
+        Windows (all versions)
+           Accepts all of the above commands under an IPC$ tree.
+AndX command chaining
+    Windows is very strict in what command combinations it allows to be
+    chained. Samba, on the other hand, is very lax and allows some nonsensical
+    combinations, e.g. multiple logins and tree connects (only one place to
+    return handles for these), login/logoff and tree connect/tree disconnect.
+    Ultimately, we don't want to keep track of data that the server won't
+    accept. An evasion possibility would be accepting a fragment in a request
+    that the server won't accept that gets sandwiched between an exploit.
+Transaction tracking
+    The differences between a Transaction request and using one of the Write*
+    commands to write data to a named pipe are that (1) a Transaction performs
+    the operations of a write and a read from the named pipe, whereas in using
+    the Write* commands, the client has to explicitly send one of the Read*
+    requests to tell the server to send the response and (2) a Transaction
+    request is not written to the named pipe until all of the data is received
+    (via potential Transaction Secondary requests) whereas with the Write*
+    commands, data is written to the named pipe as it is received by the
+    server. Multiple Transaction requests can be made simultaneously to the
+    same named pipe. These requests can also be segmented with
+    Transaction Secondary commands. What distinguishes them (when the same
+    named pipe is being written to, i.e. having the same FID) are fields in the
+    SMB header representing a process id (PID) and multiplex id (MID).  The PID
+    represents the process this request is a part of.  An MID represents
+    different sub-processes within a process (or under a PID). Segments for
+    each "thread" are stored separately and written to the named pipe when all
+    segments are received. It is necessary to track this so as not to munge
+    these requests together (which would be a potential evasion opportunity).
+        Windows (all versions)
+            Uses a combination of PID and MID to define a "thread".
+        Samba (all versions)
+            Uses just the MID to define a "thread".
+Multliple Bind requests
+    A Bind request is the first request that must be made in a
+    connection-oriented DCE/RPC session in order to specify the
+    interface/interfaces that one wants to communicate with.
+        Windows (all versions)
+            For all of the Windows versions, only one Bind can ever be made on
+            a session whether or not it succeeds or fails. Any binding after
+            that must use the Alter Context request.  If another Bind is made,
+            all previous interface bindings are invalidated.
+        Samba 3.0.20 and earlier
+            Any amount of Bind requests can be made.
+        Samba later than 3.0.20
+            Another Bind request can be made if the first failed and no
+            interfaces were successfully bound to. If a Bind after a
+            successful Bind is made, all previous interface bindings are
+            invalidated.
+DCE/RPC Fragmented requests - Context ID
+    Each fragment in a fragmented request carries the context id of the bound
+    interface it wants to make the request to.
+        Windows (all versions)
+            The context id that is ultimately used for the request is contained
+            in the first fragment.  The context id field in any other fragment
+            can contain any value.
+        Samba (all versions)
+            The context id that is ultimately used for the request is contained
+            in the last fragment.  The context id field in any other fragment
+            can contain any value.
+DCE/RPC Fragmented requests - Operation number
+    Each fragment in a fragmented request carries an operation number (opnum)
+    which is more or less a handle to a function offered by the interface.
+        Samba (all versions)
+        Windows 2000
+        Windows 2003
+        Windows XP
+            The opnum that is ultimately used for the request is contained in
+            the last fragment.  The opnum field in any other fragment can
+            contain any value.
+        Windows Vista
+            The opnum that is ultimately used for the request is contained in
+            the first fragment.  The opnum field in any other fragment can
+            contain any value.
+DCE/RPC Stub data byte order
+    The byte order of the stub data is determined differently for Windows and
+    Samba.
+        Windows (all versions)
+            The byte order of the stub data is that which was used in the Bind
+            request.
+        Samba (all versions)
+            The byte order of the stub data is that which is used in the
+            request carrying the stub data.
+
+
+Configuration
+================================================================================
+The dcerpc2 preprocessor has a global configuration and one or more server
+configurations.  The global preprocessor configuration name is dcerpc2 and the
+server preprocessor configuration name is dcerpc2_server.
+
+Global configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+preprocessor dcerpc2
+
+The global dcerpc2 configuration is required.
+Only one global dcerpc2 configuration can be specified.
+
+Option syntax
+    Option                  Argument        Required      Default
+    ----------------------------------------------------------------------------
+    memcap                  <memcap>              NO      memcap 102400
+    disable_defrag          NONE                  NO      OFF
+    max_frag_len            <max-frag-len>        NO      OFF
+    events                  <events>              NO      OFF
+    reassemble_threshold    <re-thresh>           NO      OFF
+    disabled                NONE		  NO	  OFF
+
+    memcap           = 1024-4194303 (kilobytes)
+    max-frag-len     = 1514-65535
+    events           = pseudo-event | event | '[' event-list ']'
+    pseudo-event     = "none" | "all"
+    event-list       = event | event ',' event-list
+    event            = "memcap" | "smb" | "co" | "cl"
+    re-thresh        = 0-65535
+
+Option explanations
+    memcap
+        Specifies the maximum amount of run-time memory that can be allocated.
+        Run-time memory includes any memory allocated after configuration.
+        Default is 100 MB.
+    disabled
+        This optional keyword is allowed with any policy to avoid packet processing. 
+	This option disables the preprocessor. When the preprocessor is disabled
+        only the memcap option is applied when specified with the configuration.
+        The other options are parsed but not used. Any valid configuration may have
+        "disabled" added to it.
+    disable_defrag
+        Tells the preprocessor not to do DCE/RPC defragmentation.  Default is
+        to do defragmentation.
+    max_frag_len
+        Specifies the maximum fragment size that will be added to the
+        defragmention module. If a fragment is greater than this size, it is
+        truncated before being added to the defragmentation module.  Default is
+        set to -1. The allowed ranges for this option are 1514 - 65535.
+    events
+        Specifies the classes of events to enable.  (See Events section for an
+        enumeration and explanation of events.)
+             memcap
+                 Only one event. If the memcap is reached or exceeded, alert.
+             smb
+                 Alert on events related to SMB processing.
+             co
+                 Stands for connection-oriented DCE/RPC. Alert on events
+                 related to connection-oriented DCE/RPC processing.
+             cl
+                 Stands for connectionless DCE/RPC. Alert on events related
+                 to connectionless DCE/RPC processing.
+    reassemble_threshold
+        Specifies a minimum number of bytes in the DCE/RPC desegmentation and
+        defragmentation buffers before creating a reassembly packet to send to
+        the detection engine. This option is useful in inline mode so as to
+        potentially catch an exploit early before full defragmentation is done.
+        A value of 0 supplied as an argument to this option will, in effect,
+        disable this option.  Default is disabled.
+
+Option examples
+     memcap 30000
+     max_frag_len 16840
+     events none
+     events all
+     events smb
+     events co
+     events [co]
+     events [smb, co]
+     events [memcap, smb, co, cl]
+     reassemble_threshold 500
+
+Configuration examples
+     preprocessor dcerpc2
+     preprocessor dcerpc2: memcap 500000
+     preprocessor dcerpc2: max_frag_len 16840, memcap 300000, events smb
+     preprocessor dcerpc2: memcap 50000, events [memcap, smb, co, cl], \
+                           max_frag_len 14440
+     preprocessor dcerpc2: disable_defrag, events [memcap, smb]
+     preprocessor dcerpc2: reassemble_threshold 500
+
+Default configuration
+     preprocessor dcerpc2: memcap 102400
+
+Server Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+preprocessor dcerpc2_server
+
+The dcerpc2_server configuration is optional.
+A dcerpc2_server configuration must start with default or net options.
+The default and net options are mutually exclusive.
+At most one default configuration can be specified. If no default
+    configuration is specified, default values will be used for the default
+    configuration.
+Zero or more net configurations can be specified.
+For any dcerpc2_server configuration, if non-required options are not
+    specified, the defaults will be used.
+When processing DCE/RPC traffic, the default configuration is used if no net
+    configurations match.
+If a net configuration matches, it will override the default configuration. A
+    net configuration matches if the packet's server IP address matches an IP
+    address or net specified in the net configuration.
+The net option supports IPv6 addresses.
+Note that port and ip variables defined in snort.conf CANNOT be used.
+
+Option syntax
+    Option                 Argument  Required  Default
+    ----------------------------------------------------------------------------
+    default                    NONE       YES  NONE
+    net                       <net>       YES  NONE
+    policy                 <policy>        NO  policy WinXP
+    detect                 <detect>        NO  detect \
+                                                 [smb [139,445], \
+                                                  tcp 135, udp 135, \
+                                                  rpc-over-http-server 593]
+    autodetect             <detect>        NO  autodetect \
+                                                 [tcp 1025:, udp 1025:, \
+                                                  rpc-over-http-server 1025:]
+    no_autodetect_http_proxy_ports
+                               NONE        NO  DISABLED (The preprocessor
+                                                 autodetects on all proxy ports
+                                                 by default)
+    smb_invalid_shares     <shares>        NO  NONE
+    smb_max_chain       <max-chain>        NO  smb_max_chain 3
+
+    net          = ip | '[' ip-list ']'
+    ip-list      = ip | ip ',' ip-list
+    ip           = ip-addr | ip-addr '/' prefix | ip4-addr '/' netmask
+    ip-addr      = ip4-addr | ip6-addr
+    ip4-addr     = a valid IPv4 address
+    ip6-addr     = a valid IPv6 address (can be compressed)
+    prefix       = a valid CIDR
+    netmask      = a valid netmask
+    policy       = "Win2000" | "Win2003" | "WinXP" | "WinVista" |
+                   "Samba" | "Samba-3.0.22" | "Samba-3.0.20"
+    detect       = "none" | detect-opt | '[' detect-list ']'
+    detect-list  = detect-opt | detect-opt ',' detect-list
+    detect-opt   = transport | transport port-item | 
+                   transport '[' port-list ']'
+    transport    = "smb" | "tcp" | "udp" | "rpc-over-http-proxy" | 
+                   "rpc-over-http-server"
+    port-list    = port-item | port-item ',' port-list
+    port-item    = port | port-range
+    port-range   = ':' port | port ':' | port ':' port
+    port         = 0-65535
+    shares       = share | '[' share-list ']'
+    share-list   = share | share ',' share-list
+    share        = word | '"' word '"' | '"' var-word '"'
+    word         = graphical ascii characters except ',' '"' ']' '[' '$'
+    var-word     = graphical ascii characters except ',' '"' ']' '['
+
+    Because the Snort main parser treats '$' as the start of a variable and
+    tries to expand it, shares with '$' must be enclosed quotes.
+
+    max-chain    = 0-255
+
+Option explanations
+   default
+        Specifies that this configuration is for the default server
+        configuration.
+   net
+        Specifies that this configuration is an IP or net specific
+        configuration. The configuration will only apply to the IP addresses
+        and nets supplied as an argument.
+   policy
+        Specifies the target-based policy to use when processing.  Default is
+        "WinXP".
+   detect
+        Specifies the DCE/RPC transport and server ports that should be
+        detected on for the transport.  Defaults are ports 139 and 445 for SMB,
+        135 for TCP and UDP, 593 for RPC over HTTP server and 80 for RPC over
+        HTTP proxy. 
+   autodetect
+        Specifies the DCE/RPC transport and server ports that the preprocessor
+        should attempt to autodetect on for the transport. The autodetect ports
+        are only queried if no detect transport/ports match the packet. The
+        order in which the preprocessor will attempt to autodetect will be -
+        TCP/UDP, RPC over HTTP server, RPC over HTTP proxy and lastly SMB.
+        Note that most dynamic DCE/RPC ports are above 1024 and ride directly
+        over TCP or UDP.  It would be very uncommon to see SMB on anything
+        other than ports 139 and 445.  Defaults are 1025-65535 for TCP, UDP and
+        RPC over HTTP server.
+   no_autodetect_http_proxy_ports
+        By default, the preprocessor will always attempt to autodetect for
+        ports specified in the detect configuration for rpc-over-http-proxy.
+        This is because the proxy is likely a web server and the preprocessor
+        should not look at all web traffic. This option is useful if the RPC
+        over HTTP proxy configured with the detect option is only used to proxy
+        DCE/RPC traffic.  Default is to autodetect on RPC over HTTP proxy
+        detect ports.
+   smb_invalid_shares
+        Specifies SMB shares that the preprocessor should alert on if an
+        attempt is made to connect to them via a Tree Connect or
+        Tree Connect AndX.  Default is empty.
+   smb_max_chain
+        Specifies the maximum amount of AndX command chaining that is allowed
+        before an alert is generated.  Default maximum is 3 chained commands.
+        A value of 0 disables this option.
+
+Option examples
+   net 192.168.0.10
+   net 192.168.0.0/24
+   net [192.168.0.0/24]
+   net 192.168.0.0/255.255.255.0
+   net feab:45b3:ab92:8ac4:d322:007f:e5aa:7845
+   net feab:45b3:ab92:8ac4:d322:007f:e5aa:7845/128
+   net feab:45b3::/32
+   net [192.168.0.10, feab:45b3::/32]
+   net [192.168.0.0/24, feab:45b3:ab92:8ac4:d322:007f:e5aa:7845]
+   policy Win2000
+   policy Samba-3.0.22
+   detect none
+   detect smb
+   detect [smb]
+   detect smb 445
+   detect [smb 445]
+   detect smb [139,445]
+   detect [smb [139,445]]
+   detect [smb, tcp]
+   detect [smb 139, tcp [135,2103]]
+   detect [smb [139,445], tcp 135, udp 135, \
+           rpc-over-http-server [593,6002:6004]]
+   autodetect none
+   autodetect tcp
+   autodetect [tcp]
+   autodetect tcp 2025:
+   autodetect [tcp 2025:]
+   autodetect tcp [2025:3001,3003:]
+   autodetect [tcp [2025:3001,3003:]]
+   autodetect [tcp, udp]
+   autodetect [tcp 2025:, udp 2025:]
+   autodetect [tcp 2025:, udp, rpc-over-http-server [1025:6001,6005:]]
+   smb_invalid_shares private
+   smb_invalid_shares "private"
+   smb_invalid_shares "C$"
+   smb_invalid_shares [private, "C$"]
+   smb_invalid_shares ["private", "C$"]
+   smb_max_chain 1
+
+Configuration examples
+   preprocessor dcerpc2_server: default
+   preprocessor dcerpc2_server: default, policy Win2000
+   preprocessor dcerpc2_server: default, policy Win2000, detect [smb, tcp], \
+     autodetect tcp 1025:, smb_invalid_shares ["C$", "D$", "ADMIN$"]
+   preprocessor dcerpc2_server: net 10.4.10.0/24, policy Win2000
+   preprocessor dcerpc2_server: net [10.4.10.0/24,feab:45b3::/126], \
+     policy WinVista, smb_max_chain 1
+   preprocessor dcerpc2_server: net [10.4.10.0/24,feab:45b3::/126], \
+     policy WinVista, detect [smb, tcp, rpc-over-http-proxy 8081], \
+     autodetect [tcp, rpc-over-http-proxy [1025:6001,6005:]], \
+     smb_invalid_shares ["C$", "ADMIN$"], no_autodetect_http_proxy_ports
+   preprocessor dcerpc2_server: net [10.4.11.56,10.4.11.57], policy Samba, \
+     detect smb, autodetect none
+
+Default configuration
+   preprocessor dcerpc2_server: default, policy WinXP, \
+     detect [smb [139,445], tcp 135, udp 135, rpc-over-http-server 593], \
+     autodetect [tcp 1025:, udp 1025:, rpc-over-http-server 1025:], \
+     smb_max_chain 3
+
+Complete dcerpc2 default configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   preprocessor dcerpc2: memcap 102400
+   preprocessor dcerpc2_server: default, policy WinXP, \
+     detect [smb [139,445], tcp 135, udp 135, rpc-over-http-server 593], \
+     autodetect [tcp 1025:, udp 1025:, rpc-over-http-server 1025:], \
+     smb_max_chain 3
+
+
+Events
+================================================================================
+The preprocessor uses GID 133 to register events.
+
+Memcap events
+ SID   Description 
+--------------------------------------------------------------------------------
+   1   If the memory cap is reached and the preprocessor is configured to
+       alert.
+
+SMB events
+ SID   Description 
+--------------------------------------------------------------------------------
+   2   An invalid NetBIOS Session Service type was specified in the header.
+       Valid types are: Message, Request (only from client), Positive Response
+       (only from server), Negative Response (only from server), Retarget
+       Response (only from server) and Keep Alive.
+   3   An SMB message type was specified in the header. Either a request was
+       made by the server or a response was given by the client.
+   4   The SMB id does not equal "\xffSMB". Note that since the preprocessor
+       does not yet support SMB2, id of "\xfeSMB" is turned away before an
+       eventable point is reached.
+   5   The word count of the command header is invalid. SMB commands have
+       pretty specific word counts and if the preprocessor sees a command with
+       a word count that doesn't jive with that command, the preprocessor will
+       alert.
+   6   Some commands require a minimum number of bytes after the command
+       header. If a command requires this and the byte count is less than the
+       minimum required byte count for that command, the preprocessor will
+       alert.
+   7   Some commands, especially the commands from the SMB Core implementation
+       require a data format field that specifies the kind of data that will be
+       coming next. Some commands require a specific format for the data. The
+       preprocessor will alert if the format is not that which is expected for
+       that command.
+   8   Many SMB commands have a field containing an offset from the beginning
+       of the SMB header to where the data the command is carrying starts. If
+       this offset puts us before data that has already been processed or after
+       the end of payload, the preprocessor will alert.
+   9   Some SMB commands, such as Transaction, have a field containing the
+       total amount of data to be transmitted. If this field is zero, the
+       preprocessor will alert.
+  10   The preprocessor will alert if the NetBIOS Session Service length field
+       contains a value less than the size of an SMB header.
+  11   The preprocessor will alert if the remaining NetBIOS packet length is
+       less than the size of the SMB command header to be decoded.
+  12   The preprocessor will alert if the remaining NetBIOS packet length is
+       less than the size of the SMB command byte count specified in the
+       command header.
+  13   The preprocessor will alert if the remaining NetBIOS packet length is
+       less than the size of the SMB command data size specified in the command
+       header.
+  14   The preprocessor will alert if the total data count specified in the
+       SMB command header is less than the data size specified in the SMB
+       command header. (Total data count must always be greater than or equal
+       to current data size.)
+  15   The preprocessor will alert if the total amount of data sent in a
+       transaction is greater than the total data count specified in the SMB
+       command header.
+  16   The preprocessor will alert if the byte count specified in the SMB
+       command header is less than the data size specified in the SMB command.
+       (The byte count must always be greater than or equal to the data size.)
+  17   Some of the Core Protocol commands (from the initial SMB implementation)
+       require that the byte count be some value greater than the data size
+       exactly. The preprocessor will alert if the byte count minus a
+       predetermined amount based on the SMB command is not equal to the data
+       size.
+  18   For the Tree Connect command (and not the Tree Connect AndX command),
+       the preprocessor has to queue the requests up and wait for a server
+       response to determine whether or not an IPC share was successfully
+       connected to (which is what the preprocessor is interested in). Unlike
+       the Tree Connect AndX response, there is no indication in the
+       Tree Connect response as to whether the share is IPC or not. There
+       should be under normal circumstances no more than a few pending tree
+       connects at a time and the preprocessor will alert if this number is
+       excessive.
+  19   After a client is done writing data using the Write* commands, it issues
+       a Read* command to the server to tell it to send a response to the data
+       it has written. In this case the preprocessor is concerned with the
+       server response. The Read* request contains the file id associated with
+       a named pipe instance that the preprocessor will ultimately send the
+       data to. The server response, however, does not contain this file id, so
+       it need to be queued with the request and dequeued with the response. If
+       multiple Read* requests are sent to the server, they are responded to in
+       the order they were sent. There should be under normal circumstances no
+       more than a few pending Read* requests at a time and the preprocessor
+       will alert if this number is excessive.
+  20   The preprocessor will alert if the number of chained commands in a
+       single request is greater than or equal to the configured amount
+       (default is 3).
+  21   With AndX command chaining it is possible to chain multiple
+       Session Setup AndX commands within the same request. There is, however,
+       only one place in the SMB header to return a login handle (or Uid).
+       Windows does not allow this behavior, however Samba does. This is
+       anomalous behavior and the preprocessor will alert if it happens.
+  22   With AndX command chaining it is possible to chain multiple
+       Tree Connect AndX commands within the same request. There is, however,
+       only one place in the SMB header to return a tree handle (or Tid).
+       Windows does not allow this behavior, however Samba does. This is
+       anomalous behavior and the preprocessor will alert if it happens.
+  23   When a Session Setup AndX request is sent to the server, the server
+       responds (if the client successfully authenticates) which a user id or
+       login handle. This is used by the client in subsequent requests to
+       indicate that it has authenticated. A Logoff AndX request is sent by the
+       client to indicate it wants to end the session and invalidate the login
+       handle. With commands that are chained after a Session Setup AndX
+       request, the login handle returned by the server is used for the
+       subsequent chained commands. The combination of a Session Setup AndX
+       command with a chained Logoff AndX command, essentially logins in and
+       logs off in the same request and is anomalous behavior. The preprocessor
+       will alert if it sees this.
+  24   A Tree Connect AndX command is used to connect to a share. The
+       Tree Disconnect command is used to disconnect from that share. The
+       combination of a Tree Connect AndX command with a chained
+       Tree Disconnect command, essentially connects to a share and disconnects
+       from the same share in the same request and is anomalous behavior. The
+       preprocessor will alert if it sees this.
+  25   An Open AndX or Nt Create AndX command is used to open/create a file or
+       named pipe. (The preprocessor is only interested in named pipes as this
+       is where DCE/RPC requests are written to.) The Close command is used to
+       close that file or named pipe. The combination of a Open AndX or
+       Nt Create AndX command with a chained Close command, essentially opens
+       and closes the named pipe in the same request and is anomalous behavior.
+       The preprocessor will alert if it sees this.
+  26   The preprocessor will alert if it sees any of the invalid SMB shares
+       configured. It looks for a Tree Connect or Tree Connect AndX to the
+       share.
+
+Connection-oriented DCE/RPC events
+ SID   Description 
+--------------------------------------------------------------------------------
+  27   The preprocessor will alert if the connection-oriented DCE/RPC major
+       version contained in the header is not equal to 5.
+  28   The preprocessor will alert if the connection-oriented DCE/RPC minor
+       version contained in the header is not equal to 0.
+  29   The preprocessor will alert if the connection-oriented DCE/RPC PDU type
+       contained in the header is not a valid PDU type.
+  30   The preprocessor will alert if the fragment length defined in the header
+       is less than the size of the header.
+  31   The preprocessor will alert if the remaining fragment length is less
+       than the remaining packet size.
+  32   The preprocessor will alert if in a Bind or Alter Context request, there
+       are no context items specified.
+  33   The preprocessor will alert if in a Bind or Alter Context request, there
+       are no transfer syntaxes to go with the requested interface.
+  34   The preprocessor will alert if a non-last fragment is less than the size
+       of the negotiated maximum fragment length. Most evasion techniques try
+       to fragment the data as much as possible and usually each fragment comes
+       well below the negotiated transmit size.
+  35   The preprocessor will alert if a fragment is larger than the maximum
+       negotiated fragment length.
+  36   The byte order of the request data is determined by the Bind in
+       connection-oriented DCE/RPC for Windows.  It is anomalous behavior to 
+       attempt to change the byte order mid-session.
+  37   The call id for a set of fragments in a fragmented request should stay
+       the same (it is incremented for each complete request). The preprocessor
+       will alert if it changes in a fragment mid-request.
+  38   The operation number specifies which function the request is calling on
+       the bound interface. If a request is fragmented, this number should stay
+       the same for all fragments.  The preprocessor will alert if the opnum
+       changes in a fragment mid-request.
+  39   The context id is a handle to a interface that was bound to. If a
+       request if fragmented, this number should stay the same for all
+       fragments. The preprocessor will alert if the context id changes in a
+       fragment mid-request.
+
+Connectionless DCE/RPC events
+ SID   Description 
+--------------------------------------------------------------------------------
+  40   The preprocessor will alert if the connectionless DCE/RPC major version
+       is not equal to 4.
+  41   The preprocessor will alert if the connectionless DCE/RPC pdu type is
+       not a valid pdu type.
+  42   The preprocessor will alert if the packet data length is less than the
+       size of the connectionless header.
+  43   The preprocessor will alert if the sequence number uses in a request is
+       the same or less than a previously used sequence number on the session.
+       In testing, wrapping the sequence number space produces strange behavior
+       from the server, so this should be considered anomalous behavior.
+
+
+Rule Options
+================================================================================
+New rule options are supported by enabling the dcerpc2 preprocessor:
+
+dce_iface
+dce_opnum
+dce_stub_data
+
+New modifiers to existing byte_test and byte_jump rule options:
+
+byte_test: dce
+byte_jump: dce
+
+
+dce_iface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For DCE/RPC based rules it has been necessary to set flow-bits based on a client
+bind to a service to avoid false positives. It is necessary for a client to bind
+to a service before being able to make a call to it. When a client sendsa bind
+request to the server, it can, however, specify one or more service interfaces
+to bind to.  Each interface is represented by a UUID. Each interface UUID is
+paired with a unique index (or context id) that future requests can use to
+reference the service that the client is making a call to. The server will
+respond with the interface UUIDs it accepts as valid and will allow the client
+to make requests to those services.  When a client makes a request, it will
+specify the context id so the server knows what service the client is making a
+request to. Instead of using flow-bits, a rule can simply ask the preprocessor,
+using this rule option, whether or not the client has bound to a specific
+interface UUID and whether or not this client request is making a request to it.
+This can eliminate false positives where more than one service is bound to
+successfully since the preprocessor can correlate the bind UUID to the context
+id used in the request.  A DCE/RPC request can specify whether numbers are
+represented as big endian or little endian. The representation of the interface
+UUID is different depending on the endianness specified in the DCE/RPC
+previously requiring two rules - one for big endian and one for little endian.
+The preprocessor eliminates the need for two rules by normalizing the UUID.
+An interface contains a version. Some versions of an interface may not be
+vulnerable to a certain exploit.  Also, a DCE/RPC request can be broken up into
+1 or more fragments. Flags (and a field in the connectionless header) are set in
+the DCE/RPC header to indicate whether the fragment is the first, a middle or
+the last fragment. Many checks for data in the DCE/RPC request are only relevant
+if the DCE/RPC request is a first fragment (or full request), since subsequent
+fragments will contain data deeper into the DCE/RPC request. A rule which is
+looking for data, say 5 bytes into the request (maybe it's a length field), will
+be looking at the wrong data on a fragment other than the first, since the
+beginning of subsequent fragments are already offset some length from the
+beginning of the request. This can be a source of false positives in fragmented
+DCE/RPC traffic. By default it is reasonable to only evaluate if the request is
+a first fragment (or full request). However, if the "any_frag" option is used to
+specify evaluating on all fragments.
+
+Syntax
+    <uuid> [ ',' <operator> <version> ] [ ',' "any_frag" ]
+
+    uuid       = hexlong '-' hexshort '-' hexshort '-' 2hexbyte '-' 6hexbyte
+    hexlong    = 4hexbyte
+    hexshort   = 2hexbyte
+    hexbyte    = 2HEXDIGIT
+    operator   = '<' | '>' | '=' | '!'
+    version    = 0-65535
+
+Examples
+    dce_iface: 4b324fc8-1670-01d3-1278-5a47bf6ee188;
+    dce_iface: 4b324fc8-1670-01d3-1278-5a47bf6ee188,<2;
+    dce_iface: 4b324fc8-1670-01d3-1278-5a47bf6ee188,any_frag;
+    dce_iface: 4b324fc8-1670-01d3-1278-5a47bf6ee188,=1,any_frag;
+
+This option is used to specify an interface UUID. Optional arguments are an
+interface version and operator to specify that the version be less than ('<'),
+greater than ('>'), equal to ('=') or not equal to ('!') the version specified.
+Also, by default the rule will only be evaluated for a first fragment (or full
+request, i.e. not a fragment) since most rules are written to start at the
+beginning of a request. The "any_frag" argument says to evaluate for middle and
+last fragments as well.  This option requires tracking client Bind and
+Alter Context requests as well as server Bind Ack and Alter Context responses
+for connection-oriented DCE/RPC in the preprocessor. For each Bind and
+Alter Context request, the client specifies a list of interface UUIDs along
+with a handle (or context id) for each interface UUID that will be used during
+the DCE/RPC session to reference the interface.  The server response indicates
+which interfaces it will allow the client to make requests to - it either
+accepts or rejects the client's wish to bind to a certain interface. This
+tracking is required so that when a request is processed, the context id used
+in the request can be correlated with the interface UUID it is a handle for.
+
+hexlong and hexshort will be specified and interpreted to be in big endian
+order (this is usually the default way an interface UUID will be seen and
+represented). As an example, the following Messenger interface UUID as taken
+off the wire from a little endian Bind request:
+    |f8 91 7b 5a 00 ff d0 11 a9 b2 00 c0 4f b6 e6 fc|
+must be written as:
+    5a7b91f8-ff00-11d0-a9b2-00c04fb6e6fc
+The same UUID taken off the wire from a big endian Bind request:
+    |5a 7b 91 f8 ff 00 11 d0 a9 b2 00 c0 4f b6 e6 fc|
+must be written the same way:
+    5a7b91f8-ff00-11d0-a9b2-00c04fb6e6fc
+
+This option matches if the specified interface UUID matches the interface UUID
+(as referred to by the context id) of the DCE/RPC request and if supplied, the
+version operation is true. This option will not match if the fragment is not a
+first fragment (or full request) unless the "any_frag" option is supplied in
+which case only the interface UUID and version need match.  Note that a
+defragmented DCE/RPC request will be considered a full request.
+
+Using this rule option will automatically insert fast pattern contents into
+the fast pattern matcher.  For UDP rules, the interface UUID, in both big and
+little endian format will be inserted into the fast pattern matcher.  For TCP
+rules, (1) if the rule option "flow:to_server|from_client" is used, |05 00 00|
+will be inserted into the fast pattern matcher, (2) if the rule option
+"flow:from_server|to_client" is used, |05 00 02| will be inserted into the
+fast pattern matcher and (3) if the flow isn't known, |05 00| will be inserted
+into the fast pattern matcher.  Note that if the rule already has content rule
+options in it, the best (meaning longest) pattern will be used.  If a content
+in the rule uses the fast_pattern rule option, it will unequivocally be used
+over the above mentioned patterns.
+
+dce_opnum
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The opnum represents a specific function call to an interface. After is has
+been determined that a client has bound to a specific interface and is making
+a request to it (see above - dce_iface) usually we want to know what function
+call it is making to that service. It is likely that an exploit lies in the
+particular DCE/RPC function call.
+
+Syntax
+    <opnum-list>
+
+    opnum-list   = opnum-item | opnum-item ',' opnum-list
+    opnum-item   = opnum | opnum-range
+    opnum-range  = opnum '-' opnum
+    opnum        = 0-65535
+
+Examples
+    dce_opnum: 15;
+    dce_opnum: 15-18;
+    dce_opnum: 15,18-20;
+    dce_opnum: 15,17,20-22;
+
+This option is used to specify an opnum (or operation number), opnum range or
+list containing either or both opnum and/or opnum-range. The opnum of a
+DCE/RPC request will be matched against the opnums specified with this option.
+This option matches if any one of the opnums specified match the opnum of the
+DCE/RPC request.
+
+dce_stub_data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Since most DCE/RPC based rules had to do protocol decoding only to get to the
+DCE/RPC stub data, i.e. the remote procedure call or function call data, this
+option will alleviate this need and place the cursor at the beginning of the
+DCE/RPC stub data. This reduces the number of rule option checks and the
+complexity of the rule.
+
+This option takes no arguments.
+
+Example:
+    dce_stub_data;
+
+This option is used to place the cursor (used to walk the packet payload in
+rules processing) at the beginning of the DCE/RPC stub data, regardless of
+preceding rule options. There are no arguments to this option.  This option
+matches if there is DCE/RPC stub data.
+
+byte_test and byte_jump
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A DCE/RPC request can specify whether numbers are represented in big or little
+endian. These rule options will take as a new argument "dce" and will work
+basically the same as the normal byte_test/byte_jump, but since the DCE/RPC
+preprocessor will know the endianness of the request, it will be able to do
+the correct conversion.
+
+byte_test
+---------
+Syntax
+    <convert> ',' [ '!' ] <operator> ',' <value> \
+        [ ',' <offset> [ ',' "relative" ]] ',' "dce"
+
+    convert    = 1 | 2 | 4
+    operator   = '<' | '=' | '>' | '&' | '^'
+    value      = 0-4294967295
+    offset     = -65535 to 65535
+
+Examples
+    byte_test: 4,>,35000,0,relative,dce;
+    byte_test: 2,!=,2280,-10,relative,dce;
+
+When using the "dce" argument to a byte_test, the following normal byte_test
+arguments will not be allowed: "big", "little", "string", "hex", "dec" and
+"oct".
+
+byte_jump
+---------
+Syntax
+    <convert> ',' <offset> [ ',' "relative" ] \
+        [ ',' "multiplier" <mult-value> ] [ ',' "align" ] \
+        [ ',' "post_offset" <adjustment-value> ] ',' "dce"
+
+    convert           = 1 | 2 | 4
+    offset            = -65535 to 65535
+    mult-value        = 0-65535
+    adjustment-value  = -65535 to 65535
+
+Examples
+    byte_jump:4,-4,relative,align,multiplier 2,post_offset -4,dce;
+
+When using the dce argument to a byte_jump, the following normal byte_jump
+arguments will not be allowed: "big", "little", "string", "hex", "dec", "oct"
+and "from_beginning".
+
+Example of rule complexity reduction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The following two rules using the new rule options replace 64 (set and isset
+flowbit) rules that are necessary if the new rule options are not used:
+
+alert tcp $EXTERNAL_NET any -> $HOME_NET [135,139,445,593,1024:] (msg:"dns R_Dnssrv funcs2 overflow attempt"; flow:established,to_server; dce_iface:50abc2a4-574d-40b3-9d66-ee4fd5fba076; dce_opnum:0-11; dce_stub_data; pcre:"/^.{12}(\x00\x00\x00\x00|.{12})/sR"; byte_jump:4,-4,relative,align,dce; byte_test:4,>,256,4,relative,dce; reference:bugtraq,23470; reference:cve,2007-1748; classtype:attempted-admin; sid:1000068;)
+
+alert udp $EXTERNAL_NET any -> $HOME_NET [135,1024:] (msg:"dns R_Dnssrv funcs2 overflow attempt"; flow:established,to_server; dce_iface:50abc2a4-574d-40b3-9d66-ee4fd5fba076; dce_opnum:0-11; dce_stub_data; pcre:"/^.{12}(\x00\x00\x00\x00|.{12})/sR"; byte_jump:4,-4,relative,align,dce; byte_test:4,>,256,4,relative,dce; reference:bugtraq,23470; reference:cve,2007-1748; classtype:attempted-admin; sid:1000069;)
+

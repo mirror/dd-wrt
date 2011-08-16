@@ -1,0 +1,174 @@
+IP and Port lists
+-----------------
+
+Adam Keeton <akeeton@sourcefire.com>
+
+Documentation last update 2007-08-08
+
+Overview
+========
+
+The Snort configuration file allows a user to declare and use variables for 
+configuring Snort.  Variables may contain a string (such as to be used in 
+a path), IPs, or ports.
+
+The IP variable and list behavior documented below is only enabled with IPv6 
+support.  The port variable and list behavior is hardcoded to be on by default.
+
+NOTE: The behavior for negating IP, IP lists, and CIDR blocks has changed!
+This new behavior is enabled by default regardless of whether or not IPv6
+support is enabled.  See the IP Variables and IP Lists section below for 
+more information.
+
+
+IP Variables and IP Lists
+=========================
+
+IPs may be specified individually, in a list, as a CIDR block, or any
+combination of the three.  IP variables should be specified using 'ipvar' 
+instead of 'var'.  Using 'var' for an IP variable is still allowed for 
+backward compatibility, but it will be deprecated in a future release.
+
+Lists of IPs or CIDR blocks must be enclosed in square brackets.
+
+IPs, IP lists, and CIDR blocks may be negated with '!'.  Negation is handled
+differently compared with Snort versions 2.7.x and earlier.  Previously, each
+element in a list was logically OR'ed together.  IP lists now OR non-negated
+elements and AND the result with the OR'ed negated elements.  For example:
+
+    The list: 
+        
+        [1.1.1.1,2.2.2.0/24,![2.2.2.2,2.2.2.3]] 
+
+    Will match the IP 1.1.1.1 and IP from 2.2.2.0 to 
+    2.2.2.255, with the exception of 2.2.2.2 and 2.2.2.3.
+
+The order of elements in the list does not matter.  The element 'any' can be 
+used to match all IPs, although '!any' is not allowed.  Also, negated IP ranges
+that are more general than non-negated IP ranges are not allowed.
+
+
+Examples of valid uses of IP variables and lists:
+
+        ipvar EXAMPLE [1.1.1.1,2.2.2.0/24,![2.2.2.2,2.2.2.3]] 
+    
+        alert tcp $EXAMPLE any -> any any (msg:"Example"; sid:1;)
+
+        alert tcp [1.0.0.0/8,!1.1.1.0/24] any -> any any (msg:"Example";sid:2;)
+
+
+Examples of invalid uses of IP variables and lists:
+
+        Use of !any:
+
+            ipvar EXAMPLE any
+            alert tcp !$EXAMPLE any -> any any (msg:"Example";sid:3;)
+
+        Or:
+
+            ipvar EXAMPLE !any
+            alert tcp $EXAMPLE any -> any any (msg:"Example";sid:3;)
+        
+        Logical contradictions:
+
+            ipvar EXAMPLE [1.1.1.1,!1.1.1.1]
+
+        Nonsensical negations:
+
+            ipvar EXAMPLE [1.1.1.0/24,!1.1.0.0/16]
+
+
+
+Port Variables and Port Lists
+=============================
+
+Portlists supports the declaration and lookup of ports and the representation
+of lists and ranges of ports.  Variables, ranges, or lists may all be negated
+with '!'.  Also, 'any' will specify any ports, but '!any' is not allowed.  
+Valid port ranges are from 0 to 65535.
+
+Lists of ports must be enclosed in brackets and port ranges may be specified 
+with a ':', such as in:
+     
+        [80:90,888:900]
+
+Port variables should be specified using 'portvar'.  The use of 'var' to 
+declare a port variable will be deprecated in a future release.  For 
+backwards compatibility, a 'var' can still be used to declare a port variable,
+provided the variable name either ends with '_PORT' or begins with 'PORT_'. 
+
+Examples of valid uses of port variables and port lists:
+
+        portvar EXAMPLE1 80
+
+        var EXAMPLE2_PORT [80:90]
+
+        var PORT_EXAMPLE2 [1]
+
+        portvar EXAMPLE3 any
+
+        portvar EXAMPLE4 [!70:90]
+
+        portvar EXAMPLE5 [80,91:95,100:200]
+
+        alert tcp any $EXAMPLE1 -> any $EXAMPLE2_PORT (msg:"Example"; sid:1;)
+
+        alert tcp any $PORT_EXAMPLE2 -> any any (msg:"Example"; sid:2;)
+
+        alert tcp any 90 -> any [100:1000,9999:20000] (msg:"Example"; sid:3;)
+
+        
+Invalid uses port variables and port lists:
+        
+        Use of !any:
+
+            portvar EXAMPLE5 !any
+            var EXAMPLE5 !any
+
+        Logical contradictions:
+
+            portvar EXAMPLE6 [80,!80]
+
+        Ports out of range:
+
+            portvar EXAMPLE7 [65536]
+        
+        Incorrect declaration and use of a port variable:
+
+            var EXAMPLE8 80 
+            alert tcp any $EXAMPLE8 -> any any (msg:"Example"; sid:4;)
+    
+        Port variable used as an IP:
+
+            alert tcp $EXAMPLE1 any -> any any (msg:"Example"; sid:5;)
+
+
+Limitations
+===========
+
+When embedding variables, types can not be mixed.  For instance, port 
+variables can be defined in terms of other port variables, but old-style 
+variables (with the 'var' keyword) can not be embedded inside a 'portvar'.
+
+    Valid embedded variable:
+
+        portvar pvar1 80
+        portvar pvar2 [$pvar1,90]
+
+    Invalid embedded variable:
+        
+        var pvar1 80
+        portvar pvar2 [$pvar,90]
+
+Likewise, variables can not be redefined if they were previously defined as 
+a different type.  Instead, a different name should be used.
+
+When defining a port variable or an IP variable, do not use a regular variable
+in the definition:
+
+    Invalid definition:
+
+        var regularvar 80
+        portvar pvar $regularvar
+
+

@@ -1,0 +1,152 @@
+$Id$
+
+It is possible to send alert messages and some packet relevant data
+from snort through a unix socket, to perform additional separate
+processing of alert data. 
+Snort has to be built with spo_unsock.c/h output plugin is built in and
+-A unsock (or its equivalent through the config file) is
+used. The unix socket file should be created in /dev/snort_alert. Your
+'client' code should act as 'server' listening to this unix socket.
+Snort will be sending you Alertpkt structures which contain alert
+message, event id. Original datagram, libpcap pkthdr, and offsets to
+datalink, netlayer, and transport layer headers.
+
+Below is an example how unix sockets could be used. If you have any
+comments bug reports, and feature requests, please contact
+snort-devel@lists.sourceforge.net or drop me an email to fygrave at
+tigerteam dot net.
+
+-Fyodor
+
+[for copyright notice, see snort distribution code]
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <signal.h>
+#include "snort.h"
+
+int sockfd;
+
+void
+sig_term (int sig)
+{
+  printf ("Exiting!\n");
+  close (sockfd);
+  unlink (UNSOCK_FILE);
+  exit (1);
+}
+
+int
+main (void)
+{
+  struct sockaddr_un snortaddr;
+  struct sockaddr_un bogus;
+  Alertpkt alert;
+  Packet *p;
+  int recv;
+  socklen_t len = sizeof (struct sockaddr_un);
+
+  if ((sockfd = socket (AF_UNIX, SOCK_DGRAM, 0)) < 0)
+    {
+      perror ("socket");
+      exit (1);
+    }
+
+  bzero (&snortaddr, sizeof (snortaddr));
+  snortaddr.sun_family = AF_UNIX;
+  strcpy (snortaddr.sun_path, UNSOCK_FILE);
+
+
+  if (bind (sockfd, (struct sockaddr *) &snortaddr, sizeof (snortaddr)) < 0)
+    {
+      perror ("bind");
+      exit (1);
+    }
+
+  signal(SIGINT, sig_term);
+
+  while ((recv = recvfrom (sockfd, (void *) &alert, sizeof (alert),
+                   0, (struct sockaddr *) &bogus, &len)) > 0)
+    {
+
+ /* do validation of recv if you care */
+
+      if (!(alert.val & NOPACKET_STRUCT))
+        {
+          if ((p = calloc (1, sizeof (Packet))) == NULL)
+            {
+              perror ("calloc");
+              exit (1);
+            }
+
+          p->pkt = alert.pkt;
+          p->pkth = &alert.pkth;
+          if (alert.dlthdr)
+            p->eh = (EtherHdr *) (alert.pkt + alert.dlthdr);
+          if (alert.nethdr)
+            {
+              p->iph = (IPHdr *) (alert.pkt + alert.nethdr);
+              if (alert.transhdr)
+                {
+                  switch (p->iph->ip_proto)
+                    {
+                    case IPPROTO_TCP:
+                      p->tcph = (TCPHdr *) (alert.pkt + alert.transhdr);
+                      break;
+                    case IPPROTO_UDP:
+                      p->udph = (UDPHdr *) (alert.pkt + alert.transhdr);
+                      break;
+                    case IPPROTO_ICMP:
+                      p->icmph = (ICMPHdr *) (alert.pkt + alert.transhdr);
+                      break;
+                    default:
+	              printf ("My, that's interesting.\n");
+                    }                /* case */
+                }                /* thanshdr */
+            }                        /* nethdr */
+          if (alert.data)
+            p->data = alert.pkt + alert.data;
+
+          /*  now  do whatever you want with these packet structures */
+        }                        /* if (!NOPACKET_STRUCT) */
+
+      printf ("%s [%d]\n", alert.alertmsg, alert.event.event_id);
+      if (!(alert.val & NOPACKET_STRUCT))
+        if (p->iph && (p->tcph || p->udph || p->icmph))
+          {
+            switch (p->iph->ip_proto)
+              {
+              case IPPROTO_TCP:
+                printf ("TCP from: %s:%d ",
+                        inet_ntoa (p->iph->ip_src),
+                        ntohs (p->tcph->th_sport));
+                printf ("to: %s:%d\n", inet_ntoa (p->iph->ip_dst),
+                        ntohs (p->tcph->th_dport));
+                break;
+              case IPPROTO_UDP:
+                printf ("UDP from: %s:%d ",
+                        inet_ntoa (p->iph->ip_src),
+                        ntohs (p->udph->uh_sport));
+                printf ("to: %s:%d\n", inet_ntoa (p->iph->ip_dst),
+                        ntohs (p->udph->uh_dport));
+                break;
+              case IPPROTO_ICMP:
+                printf ("ICMP type: %d code: %d from: %s ",
+                        p->icmph->type,
+                        p->icmph->code, inet_ntoa (p->iph->ip_src));
+                printf ("to: %s\n", inet_ntoa (p->iph->ip_dst));
+                break;
+              }
+          }
+
+    }
+
+  perror ("recvfrom");
+  close (sockfd);
+  unlink (UNSOCK_FILE);
+
+  return 0;
+}

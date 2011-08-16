@@ -1,0 +1,43 @@
+# Master Registry of Snort Generator Ids
+#
+#
+# This file is used to maintain unique generator ids for files even if
+# the default snort configuration doesn't include some patch that is
+# required for a specific preprocessor to work
+#
+
+rules_subsystem              1 # Snort Rules Engine
+tag_subsystem                2 # Tagging Subsystem
+portscan                   100 # Portscan1 [ removed ]
+minfrag                    101 # Minfrag [ removed ]
+http_decode                102 # HTTP decode 1/2 [ removed ]
+defrag                     103 # First defragmenter [ removed ]
+spade                      104 # SPADE [ removed ]
+bo                         105 # Back Orifice 
+rpc_decode                 106 # RPC Preprocessor
+stream2                    107 # 2nd stream preprocessor [ removed ] 
+stream3                    108 # 3rd stream preprocessor (AVL nightmare) [ removed ] 
+telnet_neg                 109 # telnet option decoder [ removed ]
+unidecode                  110 # unicode decoder [ removed ]
+stream4                    111 # Stream4 preprocessor
+arpspoof                   112 # Arp Spoof detector
+frag2                      113 # 2nd fragment preprocessor [ removed ]
+fnord                      114 # NOP detector [ removed ]
+asn1                       115 # ASN.1 Validator [ removed ]
+decode                     116 # Snort Internal Decoder
+scan2                      117 # portscan2 [ removed ]
+conversation               118 # conversation [ removed ]
+http inspect client        119 # HTTP Inspect
+http inspect anon server   120 # HTTP Inspect
+flow portscan              121 # flow portscan
+sfportscan                 122 # portscan
+frag3                      123 # ip frag reassembler
+smtp                       124 # SMTP decoder/normalizer
+ftp                        125 # FTP decoder
+telnet                     126 # telnet decoder/normalizer
+isakmp                     127 # ISAKMP
+ssh                        128 # SSH
+stream5                    129 # Stream5
+dcerpc                     130 # DCE/RPC
+dns                        131 # DNS
+

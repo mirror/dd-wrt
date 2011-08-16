@@ -226,6 +226,15 @@ include rules/l2tpv3tun.mk
 include rules/rt3062.mk
 include rules/usbip.mk
 include rules/glib.mk
+#include rules/xtables-addons.mk
+#snort
+include rules/libnfnetlink.mk
+include rules/libnetfilter_queue.mk
+include rules/libdnet.mk
+include rules/daq.mk
+include rules/pcre.mk
+include rules/snort.mk
+#
 # Generic rules
 #
 

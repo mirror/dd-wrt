@@ -1,0 +1,38 @@
+#! /bin/sh
+
+#
+# Script to give the appropriate compiler flags and linker flags
+# to use when building code that uses LibDAQ modules.
+#
+
+LIBDIR=@LIBDIR@
+STATIC_LIBS=@STATIC_LIBS@
+
+static=0
+show_libs=0
+while [ "$#" != 0 ]
+do
+	case "$1" in
+
+	--static)
+		static=1
+		;;
+
+	--libs)
+		show_libs=1
+		;;
+
+	esac
+	shift
+done
+
+if [ "$static" = 1 ]
+then
+	#
+	# Include LIBS so that the flags include libraries containing
+	# routines that LibDAQ uses.
+	#
+	if [ "$show_libs" = 1 ] ; then
+		echo "-L$LIBDIR -ldaq_static_modules $STATIC_LIBS"
+	fi
+fi
