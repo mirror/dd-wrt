@@ -7,6 +7,7 @@ daq-configure: libpcap libdnet libnetfilter_queue
 		--disable-ipfw-module \
 		--enable-nfq-module \
 		--enable-ipq-module \
+		--enable-pcap-module \
 		--enable-static \
 		--prefix=$(TOP)/daq/install \
 		--with-libpcap-includes="$(TOP)/libpcap_noring" \
@@ -27,4 +28,7 @@ daq-clean:
 	$(MAKE) -C daq clean  CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc"
 
 daq-install:
-	install -D daq/sfbpf/.libs/libsfbpf.so.0 $(INSTALLDIR)/daq/usr/lib/libsfbpf.so.0
+	install -D daq/install/lib/libsfbpf.so.0 $(INSTALLDIR)/daq/usr/lib/libsfbpf.so.0
+	install -D daq/install/lib/daq/daq_ipq.so $(INSTALLDIR)/daq/usr/lib/daq/daq_ipq.so
+	install -D daq/install/lib/daq/daq_nfq.so $(INSTALLDIR)/daq/usr/lib/daq/daq_nfq.so
+	install -D daq/install/lib/daq/daq_pcap.so $(INSTALLDIR)/daq/usr/lib/daq/daq_pcap.so
