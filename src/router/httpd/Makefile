@@ -159,6 +159,7 @@ endif
 
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
+VISOBJS += bfwireless.o
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
@@ -900,7 +901,7 @@ endif
 
 
 
-vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals
+vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals ../private/buffalo
 
 all: validate.so visuals.so httpd cert
 

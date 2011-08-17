@@ -198,6 +198,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("wl_basic.TXpower"); %></div>
 									<span id="wl_xmit"><% get_txpower(); %></span>&nbsp;
 								</div>
+								<% get_more_txinfo(); %>
 								<div class="setting">
 									<div class="label"><% tran("share.rates"); %></div>
 									<span id="wl_rate"><% get_currate(); %></span>&nbsp;
