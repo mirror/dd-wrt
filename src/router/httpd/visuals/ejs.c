@@ -2428,6 +2428,8 @@ static void showencstatus(webs_t wp, char *prefix)
 	return;
 }
 
+int txpower_display;
+
 void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 {
 	char txpwr[32];
@@ -2437,11 +2439,26 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	m[4] = 0;
 	sprintf(txpwr, "%s_txpwr", m);
 #ifdef HAVE_MADWIFI
-	websWrite(wp, "%d dBm", wifi_gettxpower(m));
+	txpower_display = wifi_gettxpower(m);
 #elif HAVE_RT2880
-	websWrite(wp, "%s mW", nvram_safe_get(txpwr));
+	txpower_display = atoi(nvram_safe_get(txpwr));
 #else				//broadcom
-	websWrite(wp, "%d mW", bcm_gettxpower(m));
+	txpower_display =  bcm_gettxpower(m);
+#endif
+#ifdef HAVE_BUFFALO
+	websWrite(wp, "%d dBm", adjust_txpower_display(txpower_display, ""));
+#else
+	websWrite(wp, "%d dBm", txpower_display);
+#endif
+}
+
+
+void ej_get_more_txinfo(webs_t wp, int argc, char_t ** argv) {
+#ifdef HAVE_BUFFALO
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp, "  <div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpowerFcc);</script></div>\n" );
+	websWrite( wp, "  <span id=\"wl_xmitfcc\">%d dBm</span>\n", adjust_txpower_display(txpower_display, "fcc") );
+	websWrite( wp, "</div>\n" );
 #endif
 }
 
