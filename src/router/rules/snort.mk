@@ -12,6 +12,12 @@ snort-configure: daq pcre
 		--host=$(ARCH)-linux-gnu \
 		--without-mysql \
 		--without-postgresql \
+		--enable-pthread \
+		--enable-gre \
+		--enable-dynamicplugin \
+		--enable-react \
+		--enable-active-response \
+		--enable-flexresp3 \
 		--with-libpcre-includes="$(TOP)/pcre" \
 		--with-libpcre_libraries="$(TOP)/pcre/.libs" \
 		--with-libpcap-includes="$(TOP)/libpcap_noring" \
@@ -31,3 +37,7 @@ snort-clean:
 snort-install:
 	$(MAKE) -C snort install DESTDIR=$(INSTALLDIR)/snort CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/librpc"
 	rm -rf $(INSTALLDIR)/snort/usr/src
+	rm -rf $(INSTALLDIR)/snort/usr/share
+	rm -rf $(INSTALLDIR)/snort/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/snort/usr/lib/snort_dynamicengine/*.la
+	rm -f $(INSTALLDIR)/snort/usr/lib/snort_dynamicpreprocessor/*.la
