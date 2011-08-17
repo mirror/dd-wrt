@@ -64,7 +64,11 @@ static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = { .type = NLA_U64 },
 };
 
+#ifdef HAVE_BUFFALO
+static const int bias_2g[] = { 85, 50, 75, 75, 50, 100, 50, 75, 75, 50, 85, 50, 75 };
+#else
 static const int bias_2g[] = { 100, 50, 75, 75, 50, 100, 50, 75, 75, 50, 100, 50, 75 };
+#endif
 
 static bool in_range(unsigned long freq)
 {
