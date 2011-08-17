@@ -449,6 +449,7 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
+bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="Milkfish SIP Router";
 bmenu.servicesAnchorFree="My Ad Network";
 
@@ -1861,6 +1862,13 @@ aoss.wpsstatus="WPS Status";
 aoss.externalregistrar="External Registrar";
 aoss.release="Release";
 
+var nintendo = new Object();
+nintendo.titl="Nintendo";
+nintendo.spotpass = new Object();
+nintendo.spotpass.titl="Nintendo SpotPass";
+nintendo.spotpass.enable="Enable Nintendo SpotPass";
+nintendo.spotpass.servers="Allow Servers";
+
 var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Public Server Certificate";
@@ -2109,6 +2117,7 @@ wl_basic.h2_v24="Wireless Physical Interface";
 wl_basic.h2_vi="Virtual Interfaces";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="TX Power";
+wl_basic.TXpowerFcc="TX Peak Power (FCC)";
 wl_basic.AntGain="Antenna Gain";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primary";
