@@ -57,11 +57,11 @@ fi
 # Checks for libraries.
 AC_ARG_WITH(libpcap_includes,
             [  --with-libpcap-includes=DIR    libpcap include directory],
-            [with_pcap_includes="$withval"], [with_pcap_includes="no"])
+            [with_pcap_includes="$withval"], [with_pcap_includes="yes"])
 
 AC_ARG_WITH(libpcap_libraries,
             [  --with-libpcap-libraries=DIR   libpcap library directory],
-            [with_pcap_libraries="$withval"], [with_pcap_libraries="no"])
+            [with_pcap_libraries="$withval"], [with_pcap_libraries="yes"])
 
 if test "x$with_pcap_includes" != "xno"; then
     CPPFLAGS="${CPPFLAGS} -I${with_pcap_includes}"
@@ -129,8 +129,8 @@ AC_ARG_ENABLE(ipq-module,
               AC_HELP_STRING([--disable-ipq-module],[don't build the bundled IPQ module]),
               [enable_ipq_module="$enableval"], [enable_ipq_module="$DEFAULT_ENABLE"])
 if test "$enable_ipq_module" = yes; then
-    AC_CHECK_HEADERS([dnet.h netinet/in.h libipq.h], [], [enable_ipq_module=no])
-    AC_CHECK_HEADER([linux/netfilter.h], [], [enable_ipq_module=no],
+    AC_CHECK_HEADERS([dnet.h netinet/in.h libipq.h], [], [enable_ipq_module=yes])
+    AC_CHECK_HEADER([linux/netfilter.h], [], [enable_ipq_module=yes],
                     [
                         #include <netinet/in.h>
                     ])
@@ -142,8 +142,8 @@ AC_ARG_ENABLE(nfq-module,
               AC_HELP_STRING([--disable-nfq-module],[don't build the bundled NFQ module]),
               [enable_nfq_module="$enableval"], [enable_nfq_module="$DEFAULT_ENABLE"])
 if test "$enable_nfq_module" = yes; then
-    AC_CHECK_HEADERS([dnet.h netinet/in.h libnetfilter_queue/libnetfilter_queue.h], [], [enable_nfq_module=no])
-    AC_CHECK_HEADER([linux/netfilter.h], [], [enable_nfq_module=no],
+    AC_CHECK_HEADERS([dnet.h netinet/in.h libnetfilter_queue/libnetfilter_queue.h], [], [enable_nfq_module=yes])
+    AC_CHECK_HEADER([linux/netfilter.h], [], [enable_nfq_module=yes],
                     [
                         #include <netinet/in.h>
                     ])
@@ -155,7 +155,7 @@ AC_ARG_ENABLE(pcap-module,
               AC_HELP_STRING([--disable-pcap-module],[don't build the bundled PCAP module]),
               [enable_pcap_module="$enableval"], [enable_pcap_module="$DEFAULT_ENABLE"])
 if test "$enable_pcap_module" = yes; then
-    AC_CHECK_HEADER([pcap.h], [], [enable_pcap_module=no])
+    AC_CHECK_HEADER([pcap.h], [], [enable_pcap_module=yes])
 #    AC_CHECK_PCAP_VER("1.0.0")
 fi
 AM_CONDITIONAL([BUILD_PCAP_MODULE], [test "$enable_pcap_module" = yes])
@@ -174,7 +174,7 @@ AC_CHECK_HEADERS([inttypes.h memory.h netdb.h netinet/in.h stdint.h stdlib.h str
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
-AC_TYPE_SIZE_T
+#AC_TYPE_SIZE_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
