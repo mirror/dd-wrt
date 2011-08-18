@@ -1,17 +1,17 @@
-libnetfilter_queue-configure: libnfnetlink
+libnetfilter_queue-configure: libnfnetlink-configure libnfnetlink
 	export LIBNFNETLINK_CFLAGS="-I$(TOP)/libnfnetlink/include" ;\
 	export LIBNFNETLINK_LIBS="-L$(TOP)/libnfnetlink/src/.libs" ; \
 	cd libnetfilter_queue && ./configure \
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
+		--libdir=$(TOP)/libnetfilter_queue/src/.libs \
 		--prefix=/usr \
 		--disable-shared \
-		--enable-static
-		#CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/libnfnetlink/include/libnfnetlink" LDFLAGS="-L$(TOP)/libnfnetlink/src/.libs"
+		--enable-static 
 
 
 libnetfilter_queue: libnfnetlink
-	$(MAKE) -C libnetfilter_queue CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/libnfnetlink/include" LDFLAGS="-L$(TOP)/libnfnetlink/src/.libs"
+	$(MAKE) -C libnetfilter_queue CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/libnfnetlink/include" LDFLAGS="-L$(TOP)/libnfnetlink/src/.libs"
 
 libnetfilter_queue-install:
 	@true	
