@@ -1,4 +1,4 @@
-daq-configure: libpcap libdnet libnetfilter_queue
+daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet libnetfilter_queue
 	cd daq && autoconf
 	export ac_cv_header_linux_netfilter_h=yes ; \
 	cd daq && ./configure \
@@ -16,7 +16,7 @@ daq-configure: libpcap libdnet libnetfilter_queue
 		--with-dnet-libraries="$(TOP)/libdnet/src/.libs" \
 		CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
 		CPPFLAGS="$(COPTS) -fPIC -DNEED_PRINTF  -Drpl_malloc=malloc -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnetfilter_queue/include -I$(TOP)/libnfnetlink/include" \
-		LDFLAGS="-L$(TOP)/iptables/libipq -L$(TOP)/libnetfilter_queue/src/.libs -L$(TOP)/libnfnetlink/src/.libs"
+		LDFLAGS="-L$(TOP)/iptables/libipq -L$(TOP)/libnetfilter_queue/src/.libs -L$(TOP)/libnfnetlink/src/.libs -fPIC"
 
 daq: libpcap libdnet 
 	-mkdir daq/install

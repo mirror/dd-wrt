@@ -1,5 +1,6 @@
 pcre-configure:
-	cd pcre && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline
+	cd pcre && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre/.libs \
+
 
 pcre:
 	$(MAKE) -C pcre CFLAGS="$(COPTS) -DNEED_PRINTF" CXXFLAGS="$(COPTS) -DNEED_PRINTF" CPPFLAGS="$(COPTS) -DNEED_PRINTF"
