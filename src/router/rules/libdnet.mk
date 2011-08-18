@@ -3,6 +3,7 @@ libdnet-configure:
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
 		--prefix=/usr \
+		--libdir=$(TOP)/libdnet/src/.libs/ \
 		--disable-shared \
 		--enable-static \
 		CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
