@@ -6,7 +6,7 @@
 its pattern matching. On a Unix or Win32 system it can recurse into
 directories.
 
-           Copyright (c) 1997-2010 University of Cambridge
+           Copyright (c) 1997-2011 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -186,8 +186,8 @@ static BOOL utf8 = FALSE;
 
 /* Structure for options and list of them */
 
-enum { OP_NODATA, OP_STRING, OP_OP_STRING, OP_NUMBER, OP_OP_NUMBER,
-       OP_PATLIST };
+enum { OP_NODATA, OP_STRING, OP_OP_STRING, OP_NUMBER, OP_LONGNUMBER,
+       OP_OP_NUMBER, OP_PATLIST };
 
 typedef struct option_item {
   int type;
@@ -216,41 +216,41 @@ used to identify them. */
 #define N_M_LIMIT_REC  (-14)
 
 static option_item optionlist[] = {
-  { OP_NODATA,    N_NULL,   NULL,              "",              "  terminate options" },
-  { OP_NODATA,    N_HELP,   NULL,              "help",          "display this help and exit" },
-  { OP_NUMBER,    'A',      &after_context,    "after-context=number", "set number of following context lines" },
-  { OP_NUMBER,    'B',      &before_context,   "before-context=number", "set number of prior context lines" },
-  { OP_OP_STRING, N_COLOUR, &colour_option,    "color=option",  "matched text color option" },
-  { OP_OP_STRING, N_COLOUR, &colour_option,    "colour=option", "matched text colour option" },
-  { OP_NUMBER,    'C',      &both_context,     "context=number", "set number of context lines, before & after" },
-  { OP_NODATA,    'c',      NULL,              "count",         "print only a count of matching lines per FILE" },
-  { OP_STRING,    'D',      &DEE_option,       "devices=action","how to handle devices, FIFOs, and sockets" },
-  { OP_STRING,    'd',      &dee_option,       "directories=action", "how to handle directories" },
-  { OP_PATLIST,   'e',      NULL,              "regex(p)=pattern", "specify pattern (may be used more than once)" },
-  { OP_NODATA,    'F',      NULL,              "fixed-strings", "patterns are sets of newline-separated strings" },
-  { OP_STRING,    'f',      &pattern_filename, "file=path",     "read patterns from file" },
-  { OP_NODATA,    N_FOFFSETS, NULL,            "file-offsets",  "output file offsets, not text" },
-  { OP_NODATA,    'H',      NULL,              "with-filename", "force the prefixing filename on output" },
-  { OP_NODATA,    'h',      NULL,              "no-filename",   "suppress the prefixing filename on output" },
-  { OP_NODATA,    'i',      NULL,              "ignore-case",   "ignore case distinctions" },
-  { OP_NODATA,    'l',      NULL,              "files-with-matches", "print only FILE names containing matches" },
-  { OP_NODATA,    'L',      NULL,              "files-without-match","print only FILE names not containing matches" },
-  { OP_STRING,    N_LABEL,  &stdin_name,       "label=name",    "set name for standard input" },
-  { OP_NODATA,    N_LBUFFER, NULL,             "line-buffered", "use line buffering" },
-  { OP_NODATA,    N_LOFFSETS, NULL,            "line-offsets",  "output line numbers and offsets, not text" },
-  { OP_STRING,    N_LOCALE, &locale,           "locale=locale", "use the named locale" },
-  { OP_NUMBER,    N_M_LIMIT,&match_limit,      "match-limit=number", "set PCRE match limit option" },
-  { OP_NUMBER,    N_M_LIMIT_REC,&match_limit_recursion, "recursion-limit=number", "set PCRE match recursion limit option" },
-  { OP_NODATA,    'M',      NULL,              "multiline",     "run in multiline mode" },
-  { OP_STRING,    'N',      &newline,          "newline=type",  "set newline type (CR, LF, CRLF, ANYCRLF or ANY)" },
-  { OP_NODATA,    'n',      NULL,              "line-number",   "print line number with output lines" },
-  { OP_OP_NUMBER, 'o',      &only_matching,    "only-matching=n", "show only the part of the line that matched" },
-  { OP_NODATA,    'q',      NULL,              "quiet",         "suppress output, just set return code" },
-  { OP_NODATA,    'r',      NULL,              "recursive",     "recursively scan sub-directories" },
-  { OP_STRING,    N_EXCLUDE,&exclude_pattern,  "exclude=pattern","exclude matching files when recursing" },
-  { OP_STRING,    N_INCLUDE,&include_pattern,  "include=pattern","include matching files when recursing" },
-  { OP_STRING,    N_EXCLUDE_DIR,&exclude_dir_pattern, "exclude-dir=pattern","exclude matching directories when recursing" },
-  { OP_STRING,    N_INCLUDE_DIR,&include_dir_pattern, "include-dir=pattern","include matching directories when recursing" },
+  { OP_NODATA,     N_NULL,   NULL,              "",              "  terminate options" },
+  { OP_NODATA,     N_HELP,   NULL,              "help",          "display this help and exit" },
+  { OP_NUMBER,     'A',      &after_context,    "after-context=number", "set number of following context lines" },
+  { OP_NUMBER,     'B',      &before_context,   "before-context=number", "set number of prior context lines" },
+  { OP_OP_STRING,  N_COLOUR, &colour_option,    "color=option",  "matched text color option" },
+  { OP_OP_STRING,  N_COLOUR, &colour_option,    "colour=option", "matched text colour option" },
+  { OP_NUMBER,     'C',      &both_context,     "context=number", "set number of context lines, before & after" },
+  { OP_NODATA,     'c',      NULL,              "count",         "print only a count of matching lines per FILE" },
+  { OP_STRING,     'D',      &DEE_option,       "devices=action","how to handle devices, FIFOs, and sockets" },
+  { OP_STRING,     'd',      &dee_option,       "directories=action", "how to handle directories" },
+  { OP_PATLIST,    'e',      NULL,              "regex(p)=pattern", "specify pattern (may be used more than once)" },
+  { OP_NODATA,     'F',      NULL,              "fixed-strings", "patterns are sets of newline-separated strings" },
+  { OP_STRING,     'f',      &pattern_filename, "file=path",     "read patterns from file" },
+  { OP_NODATA,     N_FOFFSETS, NULL,            "file-offsets",  "output file offsets, not text" },
+  { OP_NODATA,     'H',      NULL,              "with-filename", "force the prefixing filename on output" },
+  { OP_NODATA,     'h',      NULL,              "no-filename",   "suppress the prefixing filename on output" },
+  { OP_NODATA,     'i',      NULL,              "ignore-case",   "ignore case distinctions" },
+  { OP_NODATA,     'l',      NULL,              "files-with-matches", "print only FILE names containing matches" },
+  { OP_NODATA,     'L',      NULL,              "files-without-match","print only FILE names not containing matches" },
+  { OP_STRING,     N_LABEL,  &stdin_name,       "label=name",    "set name for standard input" },
+  { OP_NODATA,     N_LBUFFER, NULL,             "line-buffered", "use line buffering" },
+  { OP_NODATA,     N_LOFFSETS, NULL,            "line-offsets",  "output line numbers and offsets, not text" },
+  { OP_STRING,     N_LOCALE, &locale,           "locale=locale", "use the named locale" },
+  { OP_LONGNUMBER, N_M_LIMIT, &match_limit,     "match-limit=number", "set PCRE match limit option" },
+  { OP_LONGNUMBER, N_M_LIMIT_REC, &match_limit_recursion, "recursion-limit=number", "set PCRE match recursion limit option" },
+  { OP_NODATA,     'M',      NULL,              "multiline",     "run in multiline mode" },
+  { OP_STRING,     'N',      &newline,          "newline=type",  "set newline type (CR, LF, CRLF, ANYCRLF or ANY)" },
+  { OP_NODATA,     'n',      NULL,              "line-number",   "print line number with output lines" },
+  { OP_OP_NUMBER,  'o',      &only_matching,    "only-matching=n", "show only the part of the line that matched" },
+  { OP_NODATA,     'q',      NULL,              "quiet",         "suppress output, just set return code" },
+  { OP_NODATA,     'r',      NULL,              "recursive",     "recursively scan sub-directories" },
+  { OP_STRING,     N_EXCLUDE,&exclude_pattern,  "exclude=pattern","exclude matching files when recursing" },
+  { OP_STRING,     N_INCLUDE,&include_pattern,  "include=pattern","include matching files when recursing" },
+  { OP_STRING,     N_EXCLUDE_DIR,&exclude_dir_pattern, "exclude-dir=pattern","exclude matching directories when recursing" },
+  { OP_STRING,     N_INCLUDE_DIR,&include_dir_pattern, "include-dir=pattern","include matching directories when recursing" },
 
   /* These two were accidentally implemented with underscores instead of
   hyphens in the option names. As this was not discovered for several releases,
@@ -293,6 +293,30 @@ const char utf8_table4[] = {
   2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
   3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5 };
 
+
+
+/*************************************************
+*         Exit from the program                  *
+*************************************************/
+
+/* If there has been a resource error, give a suitable message.
+
+Argument:  the return code
+Returns:   does not return
+*/
+
+static void
+pcregrep_exit(int rc)
+{
+if (resource_error)
+  {
+  fprintf(stderr, "pcregrep: Error %d or %d means that a resource limit "
+    "was exceeded.\n", PCRE_ERROR_MATCHLIMIT, PCRE_ERROR_RECURSIONLIMIT);
+  fprintf(stderr, "pcregrep: Check your regex for nested unlimited loops.\n");
+  }
+
+exit(rc);
+}
 
 
 /*************************************************
@@ -565,31 +589,6 @@ return sys_errlist[n];
 
 
 /*************************************************
-*         Exit from the program                  *
-*************************************************/
-
-/* If there has been a resource error, give a suitable message.
-
-Argument:  the return code
-Returns:   does not return
-*/
-
-static void
-pcregrep_exit(int rc)
-{
-if (resource_error)
-  {
-  fprintf(stderr, "pcregrep: Error %d or %d means that a resource limit "
-    "was exceeded.\n", PCRE_ERROR_MATCHLIMIT, PCRE_ERROR_RECURSIONLIMIT);
-  fprintf(stderr, "pcregrep: Check your regex for nested unlimited loops.\n");
-  }
-
-exit(rc);
-}
-
-
-
-/*************************************************
 *            Read one line of input              *
 *************************************************/
 
@@ -635,7 +634,7 @@ Arguments:
   endptr    end of available data
   lenptr    where to put the length of the eol sequence
 
-Returns:    pointer to the last byte of the line
+Returns:    pointer to the last byte of the line, including the newline byte(s)
 */
 
 static char *
@@ -1317,22 +1316,16 @@ while (ptr < endptr)
       (invert not set). Because the PCRE_FIRSTLINE option is set, the start of
       the match will always be before the first newline sequence. */
 
-      if (multiline)
+      if (multiline & !invert)
         {
-        int ellength;
-        char *endmatch = ptr;
-        if (!invert)
+        char *endmatch = ptr + offsets[1];
+        t = ptr;
+        while (t < endmatch)
           {
-          endmatch += offsets[1];
-          t = ptr;
-          while (t < endmatch)
-            {
-            t = end_of_line(t, endptr, &ellength);
-            if (t <= endmatch) linenumber++; else break;
-            }
+          t = end_of_line(t, endptr, &endlinelength);
+          if (t < endmatch) linenumber++; else break;
           }
-        endmatch = end_of_line(endmatch, endptr, &ellength);
-        linelength = endmatch - ptr - ellength;
+        linelength = t - ptr - endlinelength;
         }
 
       /*** NOTE: Use only fwrite() to output the data line, so that binary
@@ -1355,10 +1348,11 @@ while (ptr < endptr)
 #endif
 
       /* We have to split the line(s) up if colouring, and search for further
-      matches. */
+      matches, but not of course if the line is a non-match. */
 
-      if (do_colour)
+      if (do_colour && !invert)
         {
+        int plength;
         int last_offset = 0;
         FWRITE(ptr, 1, offsets[0], stdout);
         fprintf(stdout, "%c[%sm", 0x1b, colour_string);
@@ -1369,14 +1363,21 @@ while (ptr < endptr)
           last_offset += offsets[1];
           matchptr += offsets[1];
           length -= offsets[1];
-          if (!match_patterns(matchptr, length, offsets, &mrc)) break;
+          if (last_offset >= linelength + endlinelength ||
+              !match_patterns(matchptr, length, offsets, &mrc)) break;
           FWRITE(matchptr, 1, offsets[0], stdout);
           fprintf(stdout, "%c[%sm", 0x1b, colour_string);
           FWRITE(matchptr + offsets[0], 1, offsets[1] - offsets[0], stdout);
           fprintf(stdout, "%c[00m", 0x1b);
           }
-        FWRITE(ptr + last_offset, 1,
-          (linelength + endlinelength) - last_offset, stdout);
+
+        /* In multiline mode, we may have already printed the complete line
+        and its line-ending characters (if they matched the pattern), so there
+        may be no more to print. */
+
+        plength = (linelength + endlinelength) - last_offset;
+        if (plength > 0)
+          FWRITE(ptr + last_offset, 1, plength, stdout);
         }
 
       /* Not colouring; no need to search for further matches */
@@ -2278,7 +2279,8 @@ for (i = 1; i < argc; i++)
 
   /* Otherwise, deal with single string or numeric data values. */
 
-  else if (op->type != OP_NUMBER && op->type != OP_OP_NUMBER)
+  else if (op->type != OP_NUMBER && op->type != OP_LONGNUMBER &&
+           op->type != OP_OP_NUMBER)
     {
     *((char **)op->dataptr) = option_data;
     }
@@ -2308,7 +2310,10 @@ for (i = 1; i < argc; i++)
           option_data, op->one_char);
       pcregrep_exit(usage(2));
       }
-    *((int *)op->dataptr) = n;
+    if (op->type == OP_LONGNUMBER)
+        *((unsigned long int *)op->dataptr) = n;
+    else
+        *((int *)op->dataptr) = n;
     }
   }
 

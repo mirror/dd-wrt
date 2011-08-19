@@ -20,12 +20,12 @@ This function compiles a regular expression into an internal form. It is the
 same as \fBpcre_compile2()\fP, except for the absence of the \fIerrorcodeptr\fP
 argument. Its arguments are:
 .sp
-  \fIpattern\fR       A zero-terminated string containing the
+  \fIpattern\fP       A zero-terminated string containing the
                   regular expression to be compiled
-  \fIoptions\fR       Zero or more option bits
-  \fIerrptr\fR        Where to put an error message
-  \fIerroffset\fR     Offset in pattern where error was found
-  \fItableptr\fR      Pointer to character tables, or NULL to
+  \fIoptions\fP       Zero or more option bits
+  \fIerrptr\fP        Where to put an error message
+  \fIerroffset\fP     Offset in pattern where error was found
+  \fItableptr\fP      Pointer to character tables, or NULL to
                   use the built-in default
 .sp
 The option bits are:
@@ -69,10 +69,10 @@ version is not guaranteed to work and may cause crashes.
 .P
 There is a complete description of the PCRE native API in the
 .\" HREF
-\fBpcreapi\fR
+\fBpcreapi\fP
 .\"
 page and a description of the POSIX API in the
 .\" HREF
-\fBpcreposix\fR
+\fBpcreposix\fP
 .\"
 page.
