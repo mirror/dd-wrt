@@ -282,10 +282,7 @@ is defined in the pcrecpp namespace.
   Example: read lines of the form "var = value" from a string.
      string contents = ...;                 // Fill string somehow
      pcrecpp::StringPiece input(contents);  // Wrap in a StringPiece
-</PRE>
-</P>
-<P>
-<pre>
+
      string var;
      int value;
      pcrecpp::RE re("(\\w+) = (\\d+)\n");

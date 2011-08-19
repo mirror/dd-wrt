@@ -373,6 +373,7 @@ RC=2
 ./testdata/grepinputx
 RC=0
 ---------------------------- Test 36 -----------------------------
+./testdata/grepinput3
 ./testdata/grepinput8
 ./testdata/grepinputx
 RC=0
@@ -477,6 +478,7 @@ This line contains [1;31mpattern[00m not on a [1;31mline by itself[00m.
 RC=0
 ---------------------------- Test 56 -----------------------------
 ./testdata/grepinput:456
+./testdata/grepinput3:0
 ./testdata/grepinput8:0
 ./testdata/grepinputv:1
 ./testdata/grepinputx:0
@@ -538,3 +540,56 @@ RC=0
 ---------------------------- Test 68 ------------------------------
 pear
 RC=0
+---------------------------- Test 69 -----------------------------
+1:This is a second file of input for the pcregrep tests.
+2:
+4:
+5:Pattern
+6:That time it was on a line by itself.
+7:
+8:To pat or not to pat, that is the question.
+9:
+10:complete pair
+11:of lines
+12:
+13:That was a complete pair
+14:of lines all by themselves.
+15:
+16:complete pair
+17:of lines
+18:
+19:And there they were again, to check line numbers.
+20:
+21:one
+22:two
+23:three
+24:four
+25:five
+26:six
+27:seven
+28:eight
+29:nine
+30:ten
+31:eleven
+32:twelve
+33:thirteen
+34:fourteen
+35:fifteen
+36:sixteen
+37:seventeen
+38:eighteen
+39:nineteen
+40:twenty
+41:
+43:This is the last line of this file.
+RC=0
+---------------------------- Test 70 -----------------------------
+[1;31mtriple:	t1_txt	s1_tag	s_txt	p_tag	p_txt	o_tag	o_txt
+
+[00m[1;31mtriple:	t3_txt	s2_tag	s_txt	p_tag	p_txt	o_tag	o_txt
+
+[00m[1;31mtriple:	t4_txt	s1_tag	s_txt	p_tag	p_txt	o_tag	o_txt
+
+[00m[1;31mtriple:	t6_txt	s2_tag	s_txt	p_tag	p_txt	o_tag	o_txt
+
+[00mRC=0
