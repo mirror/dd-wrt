@@ -60,18 +60,20 @@ void radeon_connector_hotplug(struct drm_connector *connector)
 
 	radeon_hpd_set_polarity(rdev, radeon_connector->hpd.hpd);
 
-	/* powering up/down the eDP panel generates hpd events which
-	 * can interfere with modesetting.
-	 */
-	if (connector->connector_type == DRM_MODE_CONNECTOR_eDP)
+	/* if the connector is already off, don't turn it back on */
+	if (connector->dpms != DRM_MODE_DPMS_ON)
 		return;
 
-	/* pre-r600 did not always have the hpd pins mapped accurately to connectors */
-	if (rdev->family >= CHIP_R600) {
-		if (radeon_hpd_sense(rdev, radeon_connector->hpd.hpd))
+	/* just deal with DP (not eDP) here. */
+	if (connector->connector_type == DRM_MODE_CONNECTOR_DisplayPort) {
+		int saved_dpms = connector->dpms;
+
+		if (radeon_hpd_sense(rdev, radeon_connector->hpd.hpd) &&
+		    radeon_dp_needs_link_train(radeon_connector))
 			drm_helper_connector_dpms(connector, DRM_MODE_DPMS_ON);
 		else
 			drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
+		connector->dpms = saved_dpms;
 	}
 }
 
