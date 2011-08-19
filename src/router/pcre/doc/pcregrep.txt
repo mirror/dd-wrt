@@ -383,7 +383,11 @@ OPTIONS
                  Allow  patterns to match more than one line. When this option
                  is given, patterns may usefully contain literal newline char-
                  acters  and  internal  occurrences of ^ and $ characters. The
-                 output for any one match may consist of more than  one  line.
+                 output for a successful match may consist of  more  than  one
+                 line,  the last of which is the one in which the match ended.
+                 If the matched string ends with a newline sequence the output
+                 ends at the end of that line.
+
                  When  this option is set, the PCRE library is called in "mul-
                  tiline" mode.  There is a limit to the number of  lines  that
                  can  be matched, imposed by the way that pcregrep buffers the
@@ -603,5 +607,5 @@ AUTHOR
 
 REVISION
 
-       Last updated: 16 November 2010
-       Copyright (c) 1997-2010 University of Cambridge.
+       Last updated: 14 January 2011
+       Copyright (c) 1997-2011 University of Cambridge.

@@ -24,10 +24,6 @@ case `uname -s` in
   libR=" -Wl,-R@libdir@"
   ;;
 esac
-libS=
-if test @libdir@ != /usr/lib ; then
-  libS=-L@libdir@
-fi
 
 while test $# -gt 0; do
   case "$1" in
@@ -62,10 +58,10 @@ while test $# -gt 0; do
       echo $includes @PCRE_STATIC_CFLAG@
       ;;
     --libs-posix)
-      echo $libS$libR -lpcreposix -lpcre
+      echo -L@libdir@$libR -lpcreposix -lpcre
       ;;
     --libs)
-      echo $libS$libR -lpcre
+      echo -L@libdir@$libR -lpcre
       ;;
     --libs-cpp)
       if test @enable_cpp@ = yes ; then

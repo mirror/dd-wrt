@@ -464,20 +464,20 @@ EXTRA_DIST = doc/perltest.txt NON-UNIX-USE HACKING PrepareRelease \
 	CleanTxt Detrail 132html doc/index.html.src makevp.bat \
 	makevp_c.txt makevp_l.txt pcregexp.pas pcre.h.generic \
 	config.h.generic pcre_printint.src pcre_chartables.c.dist \
-	RunTest.bat testdata/grepinput testdata/grepinput8 \
-	testdata/grepinputv testdata/grepinputx testdata/greplist \
-	testdata/grepoutput testdata/grepoutput8 testdata/grepoutputN \
-	testdata/testinput1 testdata/testinput2 testdata/testinput3 \
-	testdata/testinput4 testdata/testinput5 testdata/testinput6 \
-	testdata/testinput7 testdata/testinput8 testdata/testinput9 \
-	testdata/testinput10 testdata/testinput11 testdata/testinput12 \
-	testdata/testoutput1 testdata/testoutput2 testdata/testoutput3 \
-	testdata/testoutput4 testdata/testoutput5 testdata/testoutput6 \
-	testdata/testoutput7 testdata/testoutput8 testdata/testoutput9 \
-	testdata/testoutput10 testdata/testoutput11 \
-	testdata/testoutput12 testdata/wintestinput3 \
-	testdata/wintestoutput3 perltest.pl pcredemo.c $(pcrecpp_man) \
-	cmake/COPYING-CMAKE-SCRIPTS \
+	RunTest.bat testdata/grepinput testdata/grepinput3 \
+	testdata/grepinput8 testdata/grepinputv testdata/grepinputx \
+	testdata/greplist testdata/grepoutput testdata/grepoutput8 \
+	testdata/grepoutputN testdata/testinput1 testdata/testinput2 \
+	testdata/testinput3 testdata/testinput4 testdata/testinput5 \
+	testdata/testinput6 testdata/testinput7 testdata/testinput8 \
+	testdata/testinput9 testdata/testinput10 testdata/testinput11 \
+	testdata/testinput12 testdata/testoutput1 testdata/testoutput2 \
+	testdata/testoutput3 testdata/testoutput4 testdata/testoutput5 \
+	testdata/testoutput6 testdata/testoutput7 testdata/testoutput8 \
+	testdata/testoutput9 testdata/testoutput10 \
+	testdata/testoutput11 testdata/testoutput12 \
+	testdata/wintestinput3 testdata/wintestoutput3 perltest.pl \
+	pcredemo.c $(pcrecpp_man) cmake/COPYING-CMAKE-SCRIPTS \
 	cmake/FindPackageHandleStandardArgs.cmake \
 	cmake/FindReadline.cmake CMakeLists.txt config-cmake.h.in
 

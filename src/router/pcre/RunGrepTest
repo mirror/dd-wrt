@@ -10,18 +10,23 @@ export LC_ALL
 
 pcregrep=`pwd`/pcregrep
 
-echo " "
-echo "Testing pcregrep"
-$pcregrep -V
-
 valgrind=
 while [ $# -gt 0 ] ; do
   case $1 in
     valgrind) valgrind="valgrind -q --leak-check=no";;
-    *) echo "Unknown argument $1"; exit 1;;
+    *) echo "RunGrepTest: Unknown argument $1"; exit 1;;
   esac
   shift
 done
+
+echo " "
+if [ "$valgrind" = "" ] ; then
+  echo "Testing pcregrep"
+else
+  echo "Testing pcregrep using valgrind"
+fi
+
+$pcregrep -V
 
 cf="diff -ub"
 
@@ -325,6 +330,14 @@ echo "RC=$?" >>testtry
 
 echo "---------------------------- Test 68 ------------------------------" >>testtry
 (cd $srcdir; $valgrind $pcregrep --only-matching=2 '(?<=PAT)TERN (ap(pear)s)' ./testdata/grepinput) >>testtry
+echo "RC=$?" >>testtry
+
+echo "---------------------------- Test 69 -----------------------------" >>testtry
+(cd $srcdir; $valgrind $pcregrep -vn --colour=always pattern ./testdata/grepinputx) >>testtry
+echo "RC=$?" >>testtry
+
+echo "---------------------------- Test 70 -----------------------------" >>testtry
+(cd $srcdir; $valgrind $pcregrep --color=always -M "triple:\t.*\n\n" ./testdata/grepinput3) >>testtry
 echo "RC=$?" >>testtry
 
 # Now compare the results.
