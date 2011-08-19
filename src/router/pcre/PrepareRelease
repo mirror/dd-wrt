@@ -12,6 +12,8 @@
 #             "knows" the relevant troff constructs that are used in the PCRE
 #             man pages.
 
+# CheckMan    A Perl script that checks man pages for typos in the mark up.
+
 # CleanTxt    A Perl script that cleans up the output of "nroff -man" by
 #             removing backspaces and other redundant text so as to produce
 #             a readable .txt file.
@@ -24,10 +26,19 @@
 #             doc/html can be deleted and re-created from scratch.
 
 
-# First, sort out the documentation
+# First, sort out the documentation. Remove pcredemo.3 first because it won't
+# pass the markup check (it is created below, using markup that none of the
+# other pages use).
 
 cd doc
 echo Processing documentation
+
+/bin/rm -f pcredemo.3
+
+# Check the remaining man pages
+
+../CheckMan *.1 *.3
+if [ $? != 0 ] ; then exit 1; fi
 
 # Make Text form of the documentation. It needs some mangling to make it
 # tidy for online reading. Concatenate all the .3 stuff, but omit the
