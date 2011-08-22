@@ -31,7 +31,7 @@
 
 /* Get definitions of 'struct sched_param' and 'sigset_t'.
    But avoid namespace pollution on glibc systems.  */
-#ifndef __GLIBC__
+#if !defined __GLIBC__ || defined __UCLIBC__
 # include <sched.h>
 # include <signal.h>
 #endif

@@ -2607,7 +2607,7 @@ gl_locale_name_thread_unsafe (int category, const char *categoryname)
     locale_t thread_locale = uselocale (NULL);
     if (thread_locale != LC_GLOBAL_LOCALE)
       {
-#  if __GLIBC__ >= 2
+#  if __GLIBC__ >= 2 && !defined __UCLIBC__
         /* Work around an incorrect definition of the _NL_LOCALE_NAME macro in
            glibc < 2.12.
            See <http://sourceware.org/bugzilla/show_bug.cgi?id=10968>.  */
