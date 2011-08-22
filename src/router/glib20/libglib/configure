@@ -28192,6 +28192,7 @@ fi
     pkg_failed=untried
 fi
 
+ have_dbus1=no
 
 
 if test $pkg_failed = yes; then
@@ -28222,8 +28223,8 @@ else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_DBUS1 1" >>confdefs.h
- have_dbus1=yes
+$as_echo "#undef HAVE_DBUS1 " >>confdefs.h
+ have_dbus1=no
 fi
 
 

@@ -279,8 +279,6 @@ giowin32include_HEADERS = \
 
 endif
 
-SUBDIRS += tests
-
 libgio_2_0_la_SOURCES =		\
 	gappinfo.c 		\
 	gasynchelper.c 		\
