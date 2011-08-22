@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 include $(top_srcdir)/Makefile.decl
 
-SUBDIRS = . tests
-DIST_SUBDIRS = tests
+SUBDIRS = .
+DIST_SUBDIRS = 
 
 AM_CPPFLAGS = 				\
 	$(glib_INCLUDES) 		\

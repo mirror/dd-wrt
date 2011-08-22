@@ -48,9 +48,9 @@ else
 gatomic_c = gatomic.c
 endif
 
-SUBDIRS = libcharset $(PRINTF_SUBDIR) $(MAYBE_PCRE) update-pcre . tests
+SUBDIRS = libcharset $(PRINTF_SUBDIR) $(MAYBE_PCRE) update-pcre .
 
-DIST_SUBDIRS = libcharset gnulib pcre update-pcre tests
+DIST_SUBDIRS = libcharset gnulib pcre update-pcre
 
 AM_CPPFLAGS = 				\
 	$(glib_INCLUDES) 		\
