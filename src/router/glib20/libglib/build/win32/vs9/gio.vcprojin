@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="gio"
+	ProjectGUID="{F3D1583C-5613-4809-BD98-7CC1C1276F92}"
+	RootNamespace="gio"
+	TargetFrameworkVersion="131072"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			InheritedPropertySheets=".\glib.vsprops"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="4"
+				CompileAs="1"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
+				LinkIncremental="2"
+				ModuleDefinitionFile="$(IntDir)\gio.def"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(TargetDir)$(ProjectName)-2.0.lib"
+				TargetMachine="1"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			InheritedPropertySheets=".\glib.vsprops"
+			ConfigurationType="2"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="1"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
+				LinkIncremental="1"
+				ModuleDefinitionFile="$(IntDir)\gio.def"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(TargetDir)$(ProjectName)-2.0.lib"
+				TargetMachine="1"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			InheritedPropertySheets=".\glib.vsprops"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="1"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
+				LinkIncremental="2"
+				ModuleDefinitionFile="$(IntDir)\gio.def"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(TargetDir)$(ProjectName)-2.0.lib"
+				TargetMachine="17"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			InheritedPropertySheets=".\glib.vsprops"
+			ConfigurationType="2"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="../../../gio,../../../gmodule"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G_LOG_DOMAIN=\&quot;GLib-GIO\&quot;;G_DISABLE_DEPRECATED;GIO_COMPILATION;GIO_MODULE_DIR=\&quot;gio/modules\&quot;"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				CompileAs="1"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="zdll.lib ws2_32.lib shlwapi.lib dnsapi.lib"
+				OutputFile="$(OutDir)\$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll"
+				LinkIncremental="1"
+				ModuleDefinitionFile="$(IntDir)\gio.def"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(TargetDir)$(ProjectName)-2.0.lib"
+				TargetMachine="17"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			>
+#include "libgio.sourcefiles"
+			<File RelativePath="..\..\..\gio\gregistrysettingsbackend.c" />
+			<File RelativePath="..\..\..\gio\gwin32appinfo.c" />
+			<File RelativePath="..\..\..\gio\win32\gwin32directorymonitor.c" />
+			<File RelativePath="..\..\..\gio\win32\gwinhttpfile.c" />
+			<File RelativePath="..\..\..\gio\win32\gwinhttpfileinputstream.c" />
+			<File RelativePath="..\..\..\gio\win32\gwinhttpfileoutputstream.c" />
+			<File RelativePath="..\..\..\gio\win32\gwinhttpvfs.c" />
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;inc;xsd"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			>
+			<File
+				RelativePath="..\..\..\gio\gio.rc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gio\gio.symbols"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating gio.def"
+						CommandLine="$(GlibGenerateGioDef)"
+						Outputs="$(IntDir)/gio.def"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating gio.def"
+						CommandLine="$(GlibGenerateGioDef)"
+						Outputs="$(IntDir)/gio.def"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating gio.def"
+						CommandLine="$(GlibGenerateGioDef)"
+						Outputs="$(IntDir)/gio.def"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating gio.def"
+						CommandLine="$(GlibGenerateGioDef)"
+						Outputs="$(IntDir)/gio.def"
+					/>
+				</FileConfiguration>
+			</File>
+		</Filter>
+	</Files>
+</VisualStudioProject>
