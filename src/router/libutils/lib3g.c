@@ -223,6 +223,8 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x12d1 -p 0x1557 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1c0b -M 55534243123456780000000000000011062000000100000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1c24 -M 55534243123456780000000000000011060000000100000000000000000000");
 	sleep(2);
 }
 
@@ -406,6 +408,8 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1c0b, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173s CDROM Mode"},	//
 	{0x12d1, 0x1c05, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
 	{0x12d1, 0x1c08, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
+	{0x12d1, 0x1c23, "option", "2", "2", 2, NULL, "Huawei E173 Modem Mode"},	//
+	{0x12d1, 0x1c24, "option", "2", "2", 2, &modeswitch_huawei, "Huawei E173 CDROM Mode"},	//
 
 	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
 
