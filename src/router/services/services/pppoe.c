@@ -183,14 +183,14 @@ void start_pppoe(int pppoe_num)
 		wan_ifname,
 		"-u", username,
 		"-p", passwd,
-		"-r", nvram_safe_get("wan_mtu"),	// del by honor, add by
-		// tallest.
+		"-r", nvram_safe_get("wan_mtu"),  // del by honor, add by tallest.
 		"-t", nvram_safe_get("wan_mtu"),
 		"-i", nvram_match(ppp_demand[pppoe_num], "1") ? idletime : "0",
-		"-I", "30",	// Send an LCP echo-request frame to the
-		// server every 30 seconds
-		"-T", "3",	// pppd will presume the server to be dead if 
-		// 5 LCP echo-requests are sent without
+		"-I", "3",	// Send an LCP echo-request frame to the
+				// server every 3 seconds
+		"-T", "20",	// pppd will presume the server to be dead if 
+				// 20 LCP echo-requests are sent without
+				//-> timeout 1 min
 		// receiving a valid LCP echo-reply
 		"-P", param,	// PPPOE session number.
 		"-N", retry_num,	// To avoid kill pppd when pppd has been
