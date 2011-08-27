@@ -3405,15 +3405,15 @@ void start_wan(int status)
 				"idle %s\n"
 				"10.112.112.112:10.112.112.113\n"
 				"lcp-echo-interval %d\n"
-				"lcp-echo-failure 3\n"
+				"lcp-echo-failure 10\n"
 				"ipcp-accept-remote\n"
 				"ipcp-accept-local\n"
 				"connect true\n" "ktune\n", idletime,
 				atoi(idletime) * 2);
 		else
 			fprintf(fp, "persist\n"
-				"lcp-echo-interval 5\n"
-				"lcp-echo-failure 10\n");
+				"lcp-echo-interval 3\n"
+				"lcp-echo-failure 20\n");
 
 		fclose(fp);
 
@@ -3585,15 +3585,15 @@ void start_wan(int status)
 				"idle %s\n"
 				"10.112.112.112:10.112.112.113\n"
 				"lcp-echo-interval %d\n"
-				"lcp-echo-failure 3\n"
+				"lcp-echo-failure 10\n"
 				"ipcp-accept-remote\n"
 				"ipcp-accept-local\n"
 				"connect true\n" "ktune\n", idletime,
 				atoi(idletime) * 2);
 		else
 			fprintf(fp, "persist\n"
-				"lcp-echo-interval 5\n"
-				"lcp-echo-failure 10\n");
+				"lcp-echo-interval 3\n"
+				"lcp-echo-failure 20\n");
 
 		fclose(fp);
 
