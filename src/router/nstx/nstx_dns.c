@@ -400,11 +400,10 @@ dns_getpktsize(const struct dnspkt *pkt)
 unsigned char *dns_constructpacket (struct dnspkt *pkt, int *l)
 {
    static unsigned char *buf, *ptr;
-   int len, *offsets, qdcount, ancount, i;
+   int len, *offsets, qdcount, i;
    struct rr *list;
    
    qdcount = _get_listlen(pkt->query);
-   ancount = _get_listlen(pkt->answer);
 
    len = dns_getpktsize(pkt);
    ptr = buf = malloc(len);
