@@ -105,6 +105,7 @@ int compareNet(char *ip, char *net, char *dest)
 	strcpy(dest2, dest);
 	ip = ips2;
 	dest = dest2;
+
 	unsigned int ip1 = atoi(strsep(&ip, "."));
 	unsigned int ip2 = atoi(strsep(&ip, "."));
 	unsigned int ip3 = atoi(strsep(&ip, "."));
@@ -173,14 +174,26 @@ static int qosidx = 1000;
 
 int containsMAC(char *ip)
 {
+	
 	FILE *in;
 	char buf_ip[32];
-
+	int x;
+	
 	in = fopen("/tmp/aqos_macs", "rb");
 	if (in == NULL)
 		return 0;
-	while (feof(in) == 0 && fscanf(in, "%s", buf_ip) == 1) {
-		if (!strcmp(buf_ip, ip)) {
+	
+	// convert to upper-case
+	for (x=0;x<strlen(ip);x++)
+		ip[x] = toupper(ip[x]);
+	
+	while (feof(in) == 0 && fscanf(in, "%s", buf_ip) == 1) 
+	{
+		// convert to upper-case
+		for (x=0;x<strlen(buf_ip);x++)
+			buf_ip[x] = toupper(buf_ip[x]);
+		
+		if (!strcmp(buf_ip, toupper(ip))) {
 			fclose(in);
 			return 1;
 		}
@@ -194,6 +207,8 @@ static void do_aqos_check(void)
 	if (!nvram_invmatch("wshaper_enable", "0"))
 		return;
 	if (nvram_match("qos_done", "0"))
+		return;
+	if (!nvram_invmatch("svqos_defaults", "0"))
 		return;
 
 	FILE *arp = fopen("/proc/net/arp", "rb");
@@ -224,7 +239,7 @@ static void do_aqos_check(void)
 	}
 	while (fgetc(arp) != '\n') ;
 
-	while (!feof(arp) && fscanf
+	while (!feof(arp) && fscanf			// loop throug the arp-table
 	       (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf,
 		mask_buf, dev_buf) == 6) {
 		char *wan = get_wan_face();
@@ -232,13 +247,13 @@ static void do_aqos_check(void)
 		if (wan && strlen(wan) > 0 && !strcmp(dev_buf, wan))
 			continue;
 
-		cmac = containsMAC(mac_buf);
-		cip = containsIP(ip_buf);
+		cmac = containsMAC(mac_buf);	// returns 1 if found mac is also defined in nvram for qos 
+		cip = containsIP(ip_buf);		// returns 1 if found ip is also defined in nvram for qos
 
 		if (cip || cmac) {
 			continue;
 		}
-
+			
 		if (!cip && strlen(ip_buf) > 0) {
 			char ipnet[32];
 
@@ -247,9 +262,10 @@ static void do_aqos_check(void)
 			if (strlen(mac_buf))
 				sysprintf("echo \"%s\" >>/tmp/aqos_macs",
 					  mac_buf);
+			
 			// create default rule for ip
 			add_userip(ipnet, qosidx, defaulup, defauldown);
-			qosidx += 2;
+			qosidx += 1;
 			memset(ip_buf, 0, 32);
 			memset(mac_buf, 0, 32);
 			continue;
@@ -262,9 +278,10 @@ static void do_aqos_check(void)
 			sysprintf("echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 			if (strlen(ip_buf))
 				sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
+			
 			// create default rule for mac
 			add_usermac(mac_buf, qosidx, defaulup, defauldown);
-			qosidx += 2;
+			qosidx += 1;
 		}
 		memset(ip_buf, 0, 32);
 		memset(mac_buf, 0, 32);
