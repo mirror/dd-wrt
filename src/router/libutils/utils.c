@@ -137,206 +137,123 @@ unsigned int daysformonth(unsigned int month, unsigned int year)
 
 static char *get_wshaper_dev(void)
 {
-	if (nvram_match("wshaper_dev", "WAN"))
+//	if (nvram_match("wshaper_dev", "WAN"))
 		return get_wan_face();
-	else
-		return "br0";
+//	else
+//		return "br0";
 }
 
 void add_userip(char *ip, int idx, char *upstream, char *downstream)
 {
-	int base = 120 + idx;
-	char up[32];
-	char down[32];
-	char ups[32];
-	char downs[32];
-
-	if (nvram_match("qos_type", "1")) {
-		sprintf(up, "1:%d", base);
-		sprintf(down, "1:%d", base + 1);
-		sprintf(ups, "%skbit", upstream);
-		sprintf(downs, "%skbit", downstream);
+	
+	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
+	system2("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2("iptables -t mangle -D FILTER_IN -j RETURN");
+	
+	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
+	system2("iptables -t mangle -D FILTER_OUT -j RETURN");	
+	
+	int base = 1200 + idx;
+	char *dev = get_wshaper_dev();
+	
+	/* egress */		
+	if (nvram_match("qos_type", "0"))
 		sysprintf
-		    ("tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
-		     "imq0", base, upstream, upstream);
+			("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit quantum 1514 prio 5",
+			 dev, base, upstream, upstream);
+	else
 		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-		     "imq0", base);
+			("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+			dev, base, upstream, upstream);
+	
+	sysprintf
+		("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+		 dev, base, base);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		 dev, base, base);
+		
+		/* ingress */		
+	if (nvram_match("qos_type", "0"))
 		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
-		     "imq0", ip, base);
-
+			("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit quantum 1514 prio 5",
+			 "imq0", base, downstream, downstream);
+	else
 		sysprintf
-		    ("tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
-		     base + 1, downstream, downstream);
-		sysprintf
-		    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-		     base + 1, base + 1);
-		sysprintf
-		    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
-		     ip, base + 1);
-
-	} else {
-		sprintf(up, "1:%d", base);
-		sprintf(down, "1:%d", base + 1);
-		sprintf(ups, "%skbit", upstream);
-		sprintf(downs, "%skbit", downstream);
-		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-		     "imq0", base, upstream, upstream);
-		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-		     "imq0", base);
-		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
-		     "imq0", ip, base);
-
-		sysprintf
-		    ("tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-		     base + 1, downstream, downstream);
-		sysprintf
-		    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-		     base + 1, base + 1);
-		sysprintf
-		    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
-		     ip, base + 1);
-	}
+			("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+			 "imq0", base, downstream, downstream);
+	
+	sysprintf
+		("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+		 "imq0", base, base);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		 "imq0", base, base);
+		
+	sysprintf
+		("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 1 -j MARK --set-mark %d",
+		 ip, base);
+	sysprintf
+		("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 1 -j MARK --set-mark %d",
+		 ip, base);
+	sysprintf
+		("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
+		 ip, base);
+	sysprintf
+		("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
+		 ip, base);
+	
+	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
+	system2("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2("iptables -t mangle -A FILTER_IN -j RETURN");
+	
+	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
+	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
 }
 
 void add_usermac(char *mac, int idx, char *upstream, char *downstream)
 {
-	unsigned char octet[6];
-
-	ether_atoe(mac, octet);
-	int base = 120 + idx;
-	char up[32];
-	char down[32];
-	char ups[32];
-	char downs[32];
-	char oct2[32];
-	char oct4[32];
-	char doct2[32];
-	char doct4[32];
-
-	sprintf(up, "1:%d", base);
-	sprintf(down, "1:%d", base + 1);
-	sprintf(ups, "%skbit", upstream);
-	sprintf(downs, "%skbit", downstream);
-
-	sprintf(oct2, "%02X%02X", octet[4], octet[5]);
-	sprintf(oct4, "%02X%02X%02X%02X", octet[0], octet[1], octet[2],
-		octet[3]);
-
-	sprintf(doct4, "%02X%02X%02X%02X", octet[2], octet[3], octet[4],
-		octet[5]);
-	sprintf(doct2, "%02X%02X", octet[0], octet[1]);
-
-	if (nvram_match("qos_type", "1")) {
-		// up
-		sysprintf("tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream);	// 
+	
+	int base = 1200 + idx;
+	char *dev = get_wshaper_dev();
+		
+	/* egress */		
+	if (nvram_match("qos_type", "0"))	
 		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-		     "imq0", base);
+			("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit quantum 1514 prio 5",
+			 dev, base, upstream, upstream);
+	else
 		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
-		     "imq0", oct2, oct4, base);
+			("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+			 dev, base, upstream, upstream);		
 
-		// down
-		if (strcmp(get_wshaper_dev(), "br0")) {
-			/*
-			 * use separate root class, since no other class is created for br0
-			 * if qos is wan based 
-			 */
-			sysprintf
-			    ("tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-			     base + 1, downstream, downstream);
-			sysprintf
-			    ("tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
-			     base + 1, base + 1);
-			sysprintf
-			    ("tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-			     doct4, doct2, base + 1);
-		} else {
-			/*
-			 * use root class of br0 interface which was created by the wshaper 
-			 */
-			// br0 -> imq0 changed, in lan-briding, we need to use IMQ
-			sysprintf
-			    ("tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
-			     base + 1, downstream, downstream);
-			sysprintf
-			    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-			     base + 1, base + 1);
-			sysprintf
-			    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-			     doct4, doct2, base + 1);
-		}
-
-	} else {
-		// up
-		sysprintf("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream);	// 
+	sysprintf
+		("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+		 dev, base, base);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		 dev, base, base);
+		
+	/* ingress */		
+	if (nvram_match("qos_type", "0"))
 		sysprintf
-		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-		     "imq0", base);
+			("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit quantum 1514 prio 5",
+			 "imq0", base, downstream, downstream);
+	else
 		sysprintf
-		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
-		     "imq0", oct2, oct4, base);
-
-		// down
-		if (strcmp(get_wshaper_dev(), "br0")) {
-			/*
-			 * use separate root class, since no other class is created for br0
-			 * if qos is wan based 
-			 */
-			sysprintf
-			    ("tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-			     base + 1, downstream, downstream);
-			sysprintf
-			    ("tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
-			     base + 1, base + 1);
-			sysprintf
-			    ("tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-			     doct4, doct2, base + 1);
-		} else {
-			/*
-			 * use root class of br0 interface which was created by the wshaper 
-			 */
-			// br0 -> imq0 changed, in lan-briding, we need to use IMQ
-			sysprintf
-			    ("tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-			     base + 1, downstream, downstream);
-			sysprintf
-			    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-			     base + 1, base + 1);
-			sysprintf
-			    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-			     doct4, doct2, base + 1);
-		}
-	}
-	/*
-	 * mac downstream matching can only be made directly on the connected
-	 * interface 
-	 */
-	char iflist[256];
-
-	getIfList(iflist, NULL);
-	static char word[256];
-	char *next, *wordlist;
-
-	foreach(word, iflist, next) {
-		if (nvram_nmatch("0", "%s_bridged", word)) {
-			sysprintf
-			    ("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-			     word, base + 1, downstream, downstream);
-			sysprintf
-			    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-			     word, base + 1, base + 1);
-			sysprintf
-			    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-			     word, doct4, doct2, base + 1);
-		}
-	}
-
+			("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+			 "imq0", base, downstream, downstream);	
+	
+	sysprintf
+		("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+		 "imq0", base, base);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		 "imq0", base, base);
+		
+	sysprintf
+		("iptables -t mangle -I FILTER_IN 2 -m mac --mac-source %s -m mark --mark 1 -j MARK --set-mark %d",
+		 mac, base);			
 }
 
 #endif
