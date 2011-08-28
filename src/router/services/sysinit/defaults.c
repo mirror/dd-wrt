@@ -1349,7 +1349,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
-	{"remote_management", "0", 0},	/* Remote Management [1|0] */
+	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #ifndef HAVE_MICRO
 //	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
@@ -1413,7 +1413,7 @@ struct nvram_tuple srouter_defaults[] = {
 //	{"limit_http", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
-	{"limit_pptp", "1", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif	
 #ifdef HAVE_DDLAN
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
