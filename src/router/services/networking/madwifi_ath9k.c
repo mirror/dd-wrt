@@ -47,8 +47,8 @@
 #include <services.h>
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,int aoss);
-
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
+			       int aoss);
 
 void delete_ath9k_devices(char *physical_iface)
 {
@@ -71,7 +71,6 @@ void delete_ath9k_devices(char *physical_iface)
 		eval("iw", ifname + 1, "del");
 	}
 }
-
 
 void deconfigure_single_ath9k(int count)
 {
@@ -265,10 +264,10 @@ void configure_single_ath9k(int count)
 
 		}
 
-
 }
 
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
+			       int aoss)
 {
 	struct wifi_channels *chan;
 	int channel = 0;
@@ -416,7 +415,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			channel = ieee80211_mhz2ieee(freq);
 		}
 	}
-	caps=mac80211_get_caps(prefix);
+	caps = mac80211_get_caps(prefix);
 	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, caps);
 	free(caps);
 	if (chan)
@@ -492,13 +491,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		isrepeater = 1;
 	}
 #ifdef HAVE_WZRHPAG300NH
-	if (aoss)
-		{
-		if (!strncmp(ifname,"ath0",4))
-		    sprintf(ifname, "aossg");
+	if (aoss) {
+		if (!strncmp(ifname, "ath0", 4))
+			sprintf(ifname, "aossg");
 		else
-		    sprintf(ifname, "aossa");
-		}
+			sprintf(ifname, "aossa");
+	}
 #else
 	if (aoss)
 		sprintf(ifname, "aoss");
@@ -511,7 +509,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
-		setupHostAP_generic_ath9k(maininterface, fp, isrepeater,aoss);
+		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
 		fprintf(fp, "interface=%s\n", ifname);
 	} else {
 		fp = fopen(fstr, "ab");
@@ -549,14 +547,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(maxassoc, "%s_maxassoc", ifname);
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 
-	if (aoss)
-	{
-	if (!strncmp(ifname,"ath1",4))
-		ssid = "ESSID-AOSS-1";
+	if (aoss) {
+		if (!strncmp(ifname, "ath1", 4))
+			ssid = "ESSID-AOSS-1";
 		else
-		ssid = "ESSID-AOSS";
-	}
-	else {
+			ssid = "ESSID-AOSS";
+	} else {
 		sprintf(nssid, "%s_ssid", ifname);
 		ssid = nvram_default_get(nssid, "dd-wrt");
 	}
@@ -570,9 +566,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname));
 		if (!aoss) {
-			if (!strncmp(ifname, "ath0",4))
+			if (!strncmp(ifname, "ath0", 4))
 				led_control(LED_SEC0, LED_ON);
-			if (!strncmp(ifname, "ath1",4))
+			if (!strncmp(ifname, "ath1", 4))
 				led_control(LED_SEC1, LED_ON);
 
 		}
@@ -617,9 +613,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		   nvram_match(akm, "psk psk2") ||
 		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
 		   || nvram_match(akm, "wpa wpa2")) {
-		if (!strncmp(ifname, "ath0",4))
+		if (!strncmp(ifname, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
-		if (!strncmp(ifname, "ath1",4))
+		if (!strncmp(ifname, "ath1", 4))
 			led_control(LED_SEC1, LED_ON);
 
 		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
@@ -661,8 +657,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "ieee8021x=1\n");
 			// fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 			// fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
-			fprintf(fp, "own_ip_addr=%s\n",
-				nvram_safe_get("lan_ipaddr"));
+			if (nvram_match("wan_proto", "disabled"))
+				fprintf(fp, "own_ip_addr=%s\n",
+					nvram_safe_get("lan_ipaddr"));
+			else
+				fprintf(fp, "own_ip_addr=%s\n",
+					get_wan_ipaddr());
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");
@@ -1227,7 +1227,6 @@ void ath9k_start_supplicant(int count)
 			}
 		}
 	}
-
 
 }
 #endif
