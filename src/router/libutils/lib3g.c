@@ -292,10 +292,8 @@ static void modeswitch_nokia(int needreset, char *controldev)
 	sleep(2);
 }
 
-static void hsoinit_icon225(int needreset, char *controldev)
+static void hsoinit(int needreset, char *controldev)
 {
-	system("ozerocdoff -wi 0x6971");
-	sleep(10);
 	system("insmod hso");
 	FILE *out = fopen("/tmp/conninfo.ini", "wb");
 	fprintf(out, "APN=%s\n", nvram_safe_get("wan_apn"));
@@ -305,6 +303,20 @@ static void hsoinit_icon225(int needreset, char *controldev)
 	fclose(out);
 	nvram_set("3gdata", "hso");
 	system("/etc/hso/hso_connect.sh restart");
+}
+
+static void hsoinit_icon225(int needreset, char *controldev)
+{
+	system("ozerocdoff -wi 0x6971");
+	sleep(10);
+	hsoinit(needreset, controldev);
+}
+
+static void hsoinit_icon505(int needreset, char *controldev)
+{
+	system("ozerocdoff -wi 0xd055");
+	sleep(10);
+	hsoinit(needreset, controldev);
 }
 
 struct DEVICES {
@@ -431,6 +443,7 @@ static struct DEVICES devicelist[] = {
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
+	{0x0af0, 0xd055, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
 //ericsson
 	{0x0bdb, 0x1900, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
 	{0x0bdb, 0x1902, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
@@ -562,11 +575,13 @@ char *get3GControlDevice(void)
 						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%s",
 							devicelist
-							[devicecount].datadevice);
+							[devicecount].
+							datadevice);
 					} else
 						sprintf(data, "/dev/usb/tts/%s",
 							devicelist
-							[devicecount].datadevice);
+							[devicecount].
+							datadevice);
 
 				}
 				nvram_set("3gdata", data);
@@ -583,8 +598,7 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].
-								    controldevice);
+								    [devicecount].controldevice);
 			}
 			static char control[32];
 			if (!strcmp
