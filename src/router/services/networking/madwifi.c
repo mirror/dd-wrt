@@ -142,7 +142,7 @@ void deconfigure_wifi(void)
 	stop_process("wrt-radauth", "Radius daemon");
 	stop_process("hostapd", "hostapd daemon");
 	stop_process("wpa_supplicant", "wpa_supplicant daemon");
-	sysprintf("rm -f /var/run/ath*"); // delete pid files
+	sysprintf("rm -f /var/run/ath*");	// delete pid files
 	int c = getdevicecount();
 	int i;
 
@@ -619,7 +619,7 @@ static void checkhostapd(char *ifname)
 {
 	int pid;
 	char fname[32];
-	    {
+	{
 		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
 		FILE *fp;
 		fp = fopen(fname, "rb");
@@ -764,14 +764,11 @@ void addWPS(FILE * fp, char *prefix, int configured)
 				}
 			}
 
-			if (nvram_match("wps_status", "0"))
-			{
-				nvram_set("wps_status","0");
+			if (nvram_match("wps_status", "0")) {
+				nvram_set("wps_status", "0");
 				fprintf(fp, "wps_state=1\n");
-			}
-			else
-			{
-				nvram_set("wps_status","1");
+			} else {
+				nvram_set("wps_status", "1");
 				fprintf(fp, "wps_state=2\n");
 			}
 		}
@@ -976,8 +973,13 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			fprintf(fp, "ieee8021x=1\n");
 			// fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 			// fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
-			fprintf(fp, "own_ip_addr=%s\n",
-				nvram_safe_get("lan_ipaddr"));
+			if (nvram_match("wan_proto", "disabled"))
+				fprintf(fp, "own_ip_addr=%s\n",
+					nvram_safe_get("lan_ipaddr"));
+			else
+				fprintf(fp, "own_ip_addr=%s\n",
+					get_wan_ipaddr());
+
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");
