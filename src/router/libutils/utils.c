@@ -1134,6 +1134,8 @@ int internal_getRouterBrand()
 #else
 	setRouter("Buffalo WZR-HP-G300NH");
 #endif
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRHPAG300NH
 #ifdef HAVE_BUFFALO
