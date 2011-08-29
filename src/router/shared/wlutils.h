@@ -107,6 +107,11 @@ extern char *mac80211_get_caps(char *interface);
 extern int mac80211_check_band(char *interface,int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface,char *country,int max_bandwidth_khz, unsigned char checkband);
 extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive);
+extern void mac80211_set_antennas(int phy,uint32_t tx_ant,uint32_t rx_ant );
+extern int mac80211_get_avail_tx_antenna(int phy);
+extern int mac80211_get_avail_rx_antenna(int phy);
+extern int mac80211_get_configured_tx_antenna(int phy);
+extern int mac80211_get_configured_rx_antenna(int phy);
 
 struct wifi_channels {
 	int channel;
