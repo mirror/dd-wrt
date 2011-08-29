@@ -30,18 +30,18 @@ fi
 $TQA $3 root handle 1: htb default 30
 $TCA $3 parent 1: classid 1:1 htb rate ${UL}kbit burst 6k prio 3
 
-$TCA $3 parent 1:1 classid 1:100 htb rate ${UL}kbit burst 6k prio 3 
+$TCA $3 parent 1:1 classid 1:100 htb rate ${UL}kbit burst 6k prio 1 
 $TCA $3 parent 1:1 classid 1:2 htb rate ${UL}kbit burst 6k prio 5
-$TCA $3 parent 1:2 classid 1:10 htb rate $((75*${2}/100))kbit ceil $2kbit burst 6k prio 4 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:20 htb rate $((15*${2}/100))kbit ceil $2kbit burst 6k prio 5 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:30 htb rate $((10*${2}/100))kbit ceil $2kbit burst 6k prio 6 quantum $((${4}+18))
-$TCA $3 parent 1:2 classid 1:40 htb rate 1kbit ceil $2kbit burst 6k prio 7 quantum $((${4}+18))
+$TCA $3 parent 1:2 classid 1:10 htb rate $((75*${UL}/100))kbit ceil ${UL}kbit burst 6k prio 2 quantum $((${4}+18))
+$TCA $3 parent 1:2 classid 1:20 htb rate $((15*${UL}/100))kbit ceil ${UL}kbit burst 6k prio 5 quantum $((${4}+18))
+$TCA $3 parent 1:2 classid 1:30 htb rate $((10*${UL}/100))kbit ceil ${UL}kbit burst 6k prio 7 quantum $((${4}+18))
+$TCA $3 parent 1:2 classid 1:40 htb rate 1kbit ceil ${UL}kbit burst 6k prio 10 quantum $((${4}+18))
 
-$TQA $3 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:20 handle 20: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:30 handle 30: sfq quantum $((${4}+18)) perturb 10
-$TQA $3 parent 1:40 handle 40: sfq quantum $((${4}+18)) perturb 10
+$TQA $3 parent 1:100 handle 100: sfq perturb 10
+$TQA $3 parent 1:10 handle 10: sfq perturb 10
+$TQA $3 parent 1:20 handle 20: sfq perturb 10
+$TQA $3 parent 1:30 handle 30: sfq perturb 10
+$TQA $3 parent 1:40 handle 40: sfq perturb 10
 $TFA $3 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $3 protocol ip pref 6 handle 0x0A fw classid 1:10        
 $TFA $3 protocol ip pref 7 handle 0x14 fw classid 1:20        
@@ -54,17 +54,17 @@ $IP link set imq$5 up
 
 $TQA imq$5 root handle 1: htb default 30
 $TCA imq$5 parent 1: classid 1:1 htb rate ${DL}kbit burst 6k prio 3
-$TCA imq$5 parent 1:1 classid 1:100 htb rate ${DL}kbit burst 6k prio 3
+$TCA imq$5 parent 1:1 classid 1:100 htb rate ${DL}kbit burst 6k prio 1
 $TCA imq$5 parent 1:1 classid 1:2 htb rate ${DL}kbit burst 6k prio 5
-$TCA imq$5 parent 1:2 classid 1:10 htb rate $((75*${2}/100))kbit ceil $2kbit burst 6k prio 4 quantum $((${4}+18))
-$TCA imq$5 parent 1:2 classid 1:20 htb rate $((15*${2}/100))kbit ceil $2kbit burst 6k prio 5 quantum $((${4}+18))
-$TCA imq$5 parent 1:2 classid 1:30 htb rate $((10*${2}/100))kbit ceil $2kbit burst 6k prio 6 quantum $((${4}+18))
-$TCA imq$5 parent 1:2 classid 1:40 htb rate 1kbit ceil $2kbit burst 6k prio 7 quantum $((${4}+18))
+$TCA imq$5 parent 1:2 classid 1:10 htb rate $((75*${DL}/100))kbit ceil ${DL}kbit burst 6k prio 2 quantum $((${4}+18))
+$TCA imq$5 parent 1:2 classid 1:20 htb rate $((15*${DL}/100))kbit ceil ${DL}kbit burst 6k prio 5 quantum $((${4}+18))
+$TCA imq$5 parent 1:2 classid 1:30 htb rate $((10*${DL}/100))kbit ceil ${DL}kbit burst 6k prio 7 quantum $((${4}+18))
+$TCA imq$5 parent 1:2 classid 1:40 htb rate 1kbit ceil ${DL}kbit burst 6k prio 10 quantum $((${4}+18))
 
-$TQA imq$5 parent 1:100 handle 100: sfq quantum $((${4}+18)) perturb 10
-$TQA imq$5 parent 1:10 handle 10: sfq quantum $((${4}+18)) perturb 10
-$TQA imq$5 parent 1:20 handle 20: red bandwidth $((8*${1}/10))kbit limit 1000000 min 5000 max 100000 avpkt 1000 burst 50 ecn
-$TQA imq$5 parent 1:30 handle 30: red bandwidth $((7*${1}/10))kbit limit  500000 min 2500 max  50000 avpkt  500 burst 25 ecn
+$TQA imq$5 parent 1:100 handle 100: sfq perturb 10
+$TQA imq$5 parent 1:10 handle 10: sfq perturb 10
+$TQA imq$5 parent 1:20 handle 20: red bandwidth $((8*${DL}/10))kbit limit 1000000 min 5000 max 100000 avpkt 1000 burst 50 ecn
+$TQA imq$5 parent 1:30 handle 30: red bandwidth $((7*${DL}/10))kbit limit  500000 min 2500 max  50000 avpkt  500 burst 25 ecn
 $TQA imq$5 parent 1:40 handle 40: red limit 250000 min 1250 max 25000 avpkt 250 burst 10 ecn
 $TFA imq$5 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA imq$5 protocol ip pref 6 handle 0x0A fw classid 1:10        
