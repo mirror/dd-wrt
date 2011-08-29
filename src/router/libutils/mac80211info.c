@@ -737,3 +737,83 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return 0;
 }
+
+void mac80211_set_antennas(int phy,uint32_t tx_ant,uint32_t rx_ant ) {
+	struct nl_msg *msg;
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_SET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+#ifdef HAVE_AP83
+	if (tx_ant == 5) tx_ant=3;
+#endif
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
+	unl_genl_request(&unl, msg, NULL, NULL);
+	return;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	return;
+}
+
+static int mac80211_get_antennas(int phy,int which,int direction) {
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct genlmsghdr *gnlh;
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, true);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+	gnlh=nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+	if (which == 0 && direction == 0) {
+		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX])
+		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX]));
+	}
+
+	if (which == 0 && direction == 1) {
+		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX])
+		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX]));
+	}
+
+	if (which == 1 && direction == 0) {
+		if (tb[NL80211_ATTR_WIPHY_ANTENNA_TX])
+		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_TX]));
+	}
+
+	if (which == 1 && direction == 1) {
+		if (tb[NL80211_ATTR_WIPHY_ANTENNA_RX])
+		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_RX]));
+	}
+	nlmsg_free(msg);
+	return 0;
+nla_put_failure:
+	nlmsg_free(msg);
+	return 0;
+}
+
+int mac80211_get_avail_tx_antenna(int phy) {
+	int ret=mac80211_get_antennas(phy,0,0);
+#ifdef HAVE_AP83
+	if (ret == 3) ret=5;
+#endif
+	return(ret);
+	}
+
+int mac80211_get_avail_rx_antenna(int phy) {
+	return(mac80211_get_antennas(phy,0,1));
+	}
+
+int mac80211_get_configured_tx_antenna(int phy) {
+	int ret=mac80211_get_antennas(phy,1,0);
+#ifdef HAVE_AP83
+	if (ret == 3) ret=5;
+#endif
+	return(ret);
+	}
+
+int mac80211_get_configured_rx_antenna(int phy) {
+	return(mac80211_get_antennas(phy,1,1));
+	}
