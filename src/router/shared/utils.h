@@ -550,7 +550,7 @@
 #define ROUTER_ASUS_RTN66 0xaf0f
 
 // Netgear WNDR3400 (dual radio, BCM5325E switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Netgear PY309300116) >_64K nvram_<
-#define ROUTER_NETGEAR_WNDR3400 0xb00f
+#define ROUTER_NETGEAR_WNDR3400 0xb014
 
 
 #define NVROUTER "DD_BOARD"
