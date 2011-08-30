@@ -565,8 +565,6 @@ void start_wshaper(void)
 		return;
 	
 	dev_val = get_wshaper_dev();
-	if (!strcmp(dev_val, "br0"))
-		return;
 	
 	if ((dl_val = nvram_safe_get("wshaper_downlink")) == NULL &&
 	    atoi(dl_val) > 0)
