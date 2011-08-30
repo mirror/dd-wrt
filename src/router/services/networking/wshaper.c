@@ -414,10 +414,10 @@ int svqos_iptables(void)
 		if (strstr(type, "dpi")) {
 			insmod("/lib/opendpi/xt_opendpi.ko");
 			sysprintf
-				("iptables -t mangle -A FILTER_OUT -m opendpi --%s -m mark --mark 0 -j MARK --set-mark %s",
+				("iptables -t mangle -A FILTER_OUT -m mark --mark 0 -m opendpi --%s -j MARK --set-mark %s",
 				 name, level);
 			sysprintf
-				("iptables -t mangle -A FILTER_IN -m opendpi --%s -m mark --mark 1 -j MARK --set-mark %s",
+				("iptables -t mangle -A FILTER_IN -m mark --mark 1 -m opendpi --%s -j MARK --set-mark %s",
 				 name, level);
 		}
 #endif
