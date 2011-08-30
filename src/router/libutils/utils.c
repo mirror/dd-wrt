@@ -3108,7 +3108,7 @@ char *cpustring(void)
 #endif
 }
 
-#ifdef HAVE_MADWIFI_MIMO
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 
 int isap8x(void)
 {
