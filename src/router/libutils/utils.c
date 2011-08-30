@@ -1319,6 +1319,8 @@ int internal_getRouterBrand()
 	setRouter("TP-Link TL-WR741ND v1");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR1043
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
 	setRouter("TP-Link TL-WR1043ND");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_AP83
