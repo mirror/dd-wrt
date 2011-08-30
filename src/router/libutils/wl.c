@@ -741,19 +741,9 @@ float wifi_getrate(char *ifname)
 			return 54.0;
 		if (nvram_nmatch("2040", "%s_channelbw", ifname)
 		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
-			if (nvram_nmatch("7", "%s_txantenna", ifname))
-				return (float)(HTTxRate40_400(23)) * MEGA;
-			else if (nvram_nmatch("3", "%s_txantenna", ifname) || nvram_nmatch("5", "%s_txantenna", ifname))
-				return (float)(HTTxRate40_400(15)) * MEGA;
-			else
-				return (float)(HTTxRate40_400(7)) * MEGA;
+				return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
 		} else {
-			if (nvram_nmatch("7", "%s_txantenna", ifname))
-				return (float)(HTTxRate20_400(23)) * MEGA;
-			else if (nvram_nmatch("3", "%s_txantenna", ifname) || nvram_nmatch("5", "%s_txantenna", ifname))
-				return (float)(HTTxRate20_400(15)) * MEGA;
-			else
-				return (float)(HTTxRate20_400(7)) * MEGA;
+				return (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
 		}
 	} else
 #endif
@@ -1123,27 +1113,25 @@ int get_wififreq(char *ifname, int freq)
 	return freq;
 }
 
-#ifdef WILLAM
-#define OFFSET 0
-#else
-#define OFFSET 0
-#endif
-u_int ieee80211_mhz2ieee(u_int freq)
+u_int ieee80211_mhz2ieee(int freq)
 {
-	if (freq == 2484 + OFFSET)
+	if (freq == 2484)
 		return 14;
-	if (freq < 2484 + OFFSET) {
-		int chan = (freq - (2407 + OFFSET)) / 5;
-		if (chan < 0)
-			chan += 256;
-		return chan;
-	}
+	if (freq < 2484 && freq > 2407 )
+		return (freq - 2407) / 5;
+	if (freq < 2412 )
+		return (freq - 2412) / 5 + 256;
+	if (freq > 2484 && freq < 4000 )
+		return (freq - 2407) / 5;
 	if (freq < 4990 && freq > 4940)
 		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+	// 5000 will become  channel 200
+	if (freq > 4910 && freq < 5005)
+		return (freq - 4000) / 5;
 	if (freq < 5000)
-		return 15 + ((freq - (2512 + OFFSET)) / 20);
+		return 15 + ((freq - 2512) / 20);
 
-	return (freq - (5000 + OFFSET)) / 5;
+	return (freq - 5000 ) / 5;
 }
 
 int wifi_getchannel(char *ifname)
