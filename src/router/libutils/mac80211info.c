@@ -743,9 +743,8 @@ void mac80211_set_antennas(int phy,uint32_t tx_ant,uint32_t rx_ant ) {
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_SET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-#ifdef HAVE_AP83
-	if (tx_ant == 5) tx_ant=3;
-#endif
+	if (isap8x() && tx_ant == 5) 
+		tx_ant=3;
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
@@ -796,9 +795,8 @@ nla_put_failure:
 
 int mac80211_get_avail_tx_antenna(int phy) {
 	int ret=mac80211_get_antennas(phy,0,0);
-#ifdef HAVE_AP83
-	if (ret == 3) ret=5;
-#endif
+	if (isap8x() && ret == 3) 
+		ret=5;
 	return(ret);
 	}
 
@@ -808,9 +806,8 @@ int mac80211_get_avail_rx_antenna(int phy) {
 
 int mac80211_get_configured_tx_antenna(int phy) {
 	int ret=mac80211_get_antennas(phy,1,0);
-#ifdef HAVE_AP83
-	if (mac80211_get_avail_tx_antenna(phy) == 3) ret=5;
-#endif
+	if (isap8x() && mac80211_get_avail_tx_antenna(phy) == 3) 
+		ret=5;
 	return(ret);
 	}
 
