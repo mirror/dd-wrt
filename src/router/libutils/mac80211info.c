@@ -809,7 +809,7 @@ int mac80211_get_avail_rx_antenna(int phy) {
 int mac80211_get_configured_tx_antenna(int phy) {
 	int ret=mac80211_get_antennas(phy,1,0);
 #ifdef HAVE_AP83
-	if (ret == 3) ret=5;
+	if (mac80211_get_avail_tx_antenna(phy) == 3) ret=5;
 #endif
 	return(ret);
 	}
