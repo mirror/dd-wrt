@@ -1879,7 +1879,7 @@ sec80211x.options="Additional Network Options";
 
 //help container
 var hwpa = new Object();
-hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode.";
+hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES";
 
 
 // ** WL_FilterTable.asp **//
