@@ -346,7 +346,6 @@ static void __init ar724x_pci_irq_init(void)
 
 	for (i = AR71XX_PCI_IRQ_BASE;
 	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++) {
-		irq_desc[i].status = IRQ_DISABLED;
 		set_irq_chip_and_handler(i, &ar724x_pci_irq_chip,
 					 handle_level_irq);
 	}
