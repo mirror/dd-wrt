@@ -89,6 +89,7 @@ void configure_single_ath9k(int count)
 	int cnt = 0;
 	static char dev[10];
 	static char wif[10];
+	int phy_idx=get_ath9k_phy_idx(count);
 	static char mtikie[32];
 	static char wl[16];
 	static char channel[16];
@@ -136,59 +137,17 @@ void configure_single_ath9k(int count)
 #endif
 	if (strlen(nvram_safe_get(rxantenna)) == 0
 	    || strlen(nvram_safe_get(txantenna)) == 0) {
-		char rxchainmask[64];
-		char txchainmask[64];
-		sprintf(rxchainmask,
-			"/sys/kernel/debug/ieee80211/%s/ath9k/rx_chainmask",
-			wif);
-		sprintf(txchainmask,
-			"/sys/kernel/debug/ieee80211/%s/ath9k/tx_chainmask",
-			wif);
-		int rxdef = 7;
-		int txdef = 5;
-		FILE *fp = fopen(rxchainmask, "rb");
-		if (fp) {
-			fscanf(fp, "0x%08X", &rxdef);
-			fclose(fp);
-		}
-		fp = fopen(txchainmask, "rb");
-		if (fp) {
-			fscanf(fp, "0x%08X", &txdef);
-			fclose(fp);
-		}
-		//older versions
-		sprintf(rxchainmask, "/sys/kernel/debug/ath9k/%s/rx_chainmask",
-			wif);
-		sprintf(txchainmask, "/sys/kernel/debug/ath9k/%s/tx_chainmask",
-			wif);
-		fp = fopen(rxchainmask, "rb");
-		if (fp) {
-			fscanf(fp, "0x%08X", &rxdef);
-			fclose(fp);
-		}
-		fp = fopen(txchainmask, "rb");
-		if (fp) {
-			fscanf(fp, "0x%08X", &txdef);
-			fclose(fp);
-		}
-
 		char rxdefstr[32];
 		char txdefstr[32];
-		sprintf(rxdefstr, "%d", rxdef);
-		sprintf(txdefstr, "%d", txdef);
-		nvram_default_get(rxantenna, rxdefstr);
+		sprintf(txdefstr, "%d", mac80211_get_avail_tx_antenna(phy_idx));
+		sprintf(rxdefstr, "%d", mac80211_get_avail_rx_antenna(phy_idx));
 		nvram_default_get(txantenna, txdefstr);
+		nvram_default_get(rxantenna, rxdefstr);
 	}
-	// before 2010-12-09
-	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/rx_chainmask",
-		  nvram_safe_get(rxantenna), wif);
-	sysprintf("echo %s > /sys/kernel/debug/ath9k/%s/tx_chainmask",
-		  nvram_safe_get(txantenna), wif);
-	// after 2010-12-09
-	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/rx_chainmask",
-		  nvram_safe_get(rxantenna), wif);
-	sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/tx_chainmask",
-		  nvram_safe_get(txantenna), wif);
+	mac80211_set_antennas(phy_idx,
+		atoi(nvram_safe_get(txantenna)),
+		atoi(nvram_safe_get(rxantenna))
+		);
 
 	sprintf(wl, "ath%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
