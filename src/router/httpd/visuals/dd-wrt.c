@@ -3584,7 +3584,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
-#ifdef HAVE_MADWIFI_MIMO
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (count == 4 && isap8x()) {
 			websWrite(wp, "<div class=\"warning\">\n");
 			websWrite(wp,
