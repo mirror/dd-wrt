@@ -437,11 +437,13 @@ BCMNMIATTACHFN(_ipxotp_init)(otpinfo_t *oi, chipcregs_t *cc)
 		(CHIPID(oi->sih->chip) == BCM4331_CHIP_ID) ||
 		(CHIPID(oi->sih->chip) == BCM43431_CHIP_ID) ||
 	0) {
-		if (nvram_match("boardtype", "0xa4cf") && 
-			(nvram_match("boardrev", "0x1100") || nvram_match("boardrev", "0x1102"))) {
-			// skip this on Netgear wndr3400 (0x1100) - crashes 2nd radio, reason unknown
-			// skip this on Belkin f7d4302 (0x1102) - crashes 2nd radio, reason unknown
-			printk (KERN_EMERG "Boardtype=0xa4cf temp 2nd radio crash fix - dirty!\n");
+		if (nvram_match("boardtype", "0xa4cf") && nvram_match("boardrev", "0x1102")) {
+			// skip this on Belkin f7d4302 - crashes 2nd radio, reason unknown
+			printk (KERN_EMERG "f7d4302 temp 2nd radio crash fix - dirty!\n");
+		}
+		else if (nvram_match("boardtype", "0xb4cf") && nvram_match("boardrev", "0x1100")) {
+			// skip this on Netgear wndr3400 - crashes 2nd radio, reason unknown
+			printk (KERN_EMERG "wndr3400 temp 2nd radio crash fix - dirty!\n");
 		}
 		else {
 			uint32 p_bits;
