@@ -297,8 +297,7 @@ void start_setup_vlans(void)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-	} else if (nvram_match("vlan1ports", "1 5"))	// Linksys WTR54GS
-	{
+	} else if (nvram_match("vlan1ports", "1 5")) {	// Linksys WTR54GS
 		vlanmap[5] = 5;
 		vlanmap[0] = 1;
 		vlanmap[1] = 0;
@@ -330,6 +329,15 @@ void start_setup_vlans(void)
 		vlanmap[0] = 4;
 		vlanmap[5] = 8;
 		if (nvram_match("vlan2ports", "0 1 2 3 8*")) {
+			vlanmap[1] = 0;
+			vlanmap[2] = 1;
+			vlanmap[3] = 2;
+			vlanmap[4] = 3;
+		}
+	} else if (nvram_match("vlan2ports", "4 5")) {
+		vlanmap[0] = 4;
+		vlanmap[5] = 5;
+		if (nvram_match("vlan1ports", "0 1 2 3 5*")) {
 			vlanmap[1] = 0;
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
