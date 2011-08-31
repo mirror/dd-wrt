@@ -342,7 +342,14 @@ void start_setup_vlans(void)
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
+		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
+		{
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
 		}
+		
 	}
 	// else ....
 
