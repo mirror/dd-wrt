@@ -1119,8 +1119,10 @@ u_int ieee80211_mhz2ieee(u_int freq)
 		return 14;
 	if (freq < 2484 && freq > 2407 )
 		return (freq - 2407) / 5;
-	if (freq < 2412 )
-		return (freq - 2412) / 5 + 256;
+	if (freq < 2412 ){
+		int d = ((((int)freq) - 2412) / 5) + 256;
+		return d;
+		}
 	if (freq > 2484 && freq < 4000 )
 		return (freq - 2407) / 5;
 	if (freq < 4990 && freq > 4940)
