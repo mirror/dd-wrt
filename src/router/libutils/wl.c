@@ -1113,7 +1113,7 @@ int get_wififreq(char *ifname, int freq)
 	return freq;
 }
 
-u_int ieee80211_mhz2ieee(int freq)
+u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
 		return 14;
