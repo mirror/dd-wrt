@@ -1862,6 +1862,14 @@ aoss.wpsstatus="WPS Status";
 aoss.externalregistrar="External Registrar";
 aoss.release="Release";
 
+var olupgrade = new Object();
+olupgrade.avail_updates="Available Updates";
+olupgrade.version="Version";
+olupgrade.release="Release";
+olupgrade.readme="Readme";
+olupgrade.choose="Choose";
+olupgrade.retrieve_error="Error retrieving update information";
+
 var nintendo = new Object();
 nintendo.titl="Nintendo";
 nintendo.spotpass = new Object();

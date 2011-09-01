@@ -11,7 +11,19 @@ function process_aborted(F) {
 
 
 function upgrade(F,id) {
-	if (F.file.value == "")	{
+	var upgrade_file = '';
+	if (F.upgrade_files) {
+		for(i = 0; i < F.upgrade_files.length; i++) {
+			if( F.upgrade_files[i].checked == true) {
+				upgrade_file = F.upgrade_files[i].value;
+			}
+		}
+	}
+	if(upgrade_file) {
+		F.upgrade_file.value = upgrade_file;
+		$(F.id).setAttribute('action', 'olupgrade.cgi');
+		$(F.id).setAttribute('enctype', '');
+	} else if (F.file.value == "")	{
 		alert(errmsg.err60);
 		return false;
 	}
@@ -22,6 +34,16 @@ function upgrade(F,id) {
 	F.Upgrade_b.value = sbutton.upgrading;
 	applyupdate(F, errmsg.err102,share.secondcharacter, <% nvram_get("upgrade_delay"); %>);
 	return true;
+}
+
+function getUpgrades(F) {
+	$(F.id).setAttribute('action', 'apply.cgi');
+	$(F.id).setAttribute('enctype', '');
+	F.action.value = 'Apply';
+	F.change_action.value = 'gozila_cgi';
+	F.submit_button.value = 'Upgrade';
+	F.submit_type.value = 'get_upgrades';
+	F.submit();
 }
 
 var update;
@@ -52,7 +74,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
+						<form name="firmware" id="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
 							<input type="hidden" name="submit_button" value="Upgrade" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
@@ -78,6 +100,8 @@ addEvent(window, "unload", function() {
 									<input type="file" name="file" size="40"/>
 								</div>
 							</fieldset><br />
+							
+							<% show_upgrade_options(); %>
 							
 							<div class="warning">
 								<div id="warning_text"><p><b><% tran("upgrad.warning"); %></b></p></div>
