@@ -160,6 +160,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
 VISOBJS += bfwireless.o
+VISOBJS += onlineupdateejs.o
+WEBSOBJS += onlineupdatewebs.o
+OBJS += onlineupdatecgi.o
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
