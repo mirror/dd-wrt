@@ -118,15 +118,23 @@ void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro
 	int oldstate0 = -1;
 	int radiostate1 = -1;
 	int oldstate1 = -1;
+	
+#ifdef HAVE_MADWIFI
+	int cnt = getdevicecount();
+#else
+	int cnt = get_wl_instances();
+#endif
 
 #ifdef HAVE_MADWIFI
 		if (!nvram_match("flash_active", "1")) {
 			radiostate0 = get_radiostate("ath0");
-			radiostate1 = get_radiostate("ath1");
+			if (cnt == 2)
+				radiostate1 = get_radiostate("ath1");
 		}
 #else
 		wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
-		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+		if (cnt == 2)
+			wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 #endif
 
 		if (radiostate0 != oldstate0) {

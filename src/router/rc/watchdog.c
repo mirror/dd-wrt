@@ -24,6 +24,14 @@ static void watchdog(void)
 	if (fd == -1) {
 		return;
 	}
+	
+#ifdef HAVE_MADWIFI
+	int cnt = getdevicecount();
+#else
+	int cnt = get_wl_instances();
+#endif
+	
+	
 	while (1) {
 		write(fd, "\0", 1);
 		fsync(fd);
@@ -48,11 +56,13 @@ static void watchdog(void)
 #ifdef HAVE_MADWIFI
 		if (!nvram_match("flash_active", "1")) {
 			radiostate0 = get_radiostate("ath0");
-			radiostate1 = get_radiostate("ath1");
+			if (cnt == 2)
+				radiostate1 = get_radiostate("ath1");
 		}
 #else
 		wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
-		wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+		if (cnt == 2)
+			wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
 #endif
 
 		if (radiostate0 != oldstate0) {
