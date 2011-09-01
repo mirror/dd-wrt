@@ -3815,6 +3815,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x007;	// power led amber
 		connected_gpio = 0x001;	//wan led green
 		usb_gpio = 0x102;	//usb led green
+		wlan1_gpio = 0x000;	// radio 1 led blue
 		break;
 	case ROUTER_NETGEAR_WNDR4000:
 		power_gpio = 0x000;	//power led green
