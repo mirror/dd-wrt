@@ -89,7 +89,7 @@ void configure_single_ath9k(int count)
 	int cnt = 0;
 	static char dev[10];
 	static char wif[10];
-	int phy_idx=get_ath9k_phy_idx(count);
+	int phy_idx = get_ath9k_phy_idx(count);
 	static char mtikie[32];
 	static char wl[16];
 	static char channel[16];
@@ -145,9 +145,9 @@ void configure_single_ath9k(int count)
 		nvram_default_get(rxantenna, rxdefstr);
 	}
 	mac80211_set_antennas(phy_idx,
-		atoi(nvram_safe_get(txantenna)),
-		atoi(nvram_safe_get(rxantenna))
-		);
+			      atoi(nvram_safe_get(txantenna)),
+			      atoi(nvram_safe_get(rxantenna))
+	    );
 
 	sprintf(wl, "ath%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
@@ -722,6 +722,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 	    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
 		char fstr[32];
 		char psk[16];
+		if (!strncmp(ifname, "ath0", 4))
+			led_control(LED_SEC0, LED_ON);
+		if (!strncmp(ifname, "ath1", 4))
+			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -780,6 +784,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		char fstr[32];
 		char psk[64];
 		char ath[64];
+		if (!strncmp(ifname, "ath0", 4))
+			led_control(LED_SEC0, LED_ON);
+		if (!strncmp(ifname, "ath1", 4))
+			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -873,6 +881,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "ttls")) {
+			if (!strncmp(ifname, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(ifname, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
 			fprintf(fp, "\teap=TTLS\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
@@ -909,6 +921,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "leap")) {
+			if (!strncmp(ifname, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(ifname, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
 			fprintf(fp, "\teap=LEAP\n");
 			fprintf(fp, "\tauth_alg=LEAP\n");
@@ -952,7 +968,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
 		char fstr[32];
 		char psk[16];
-
+		if (nvram_match(akm, "wep")) {
+			if (!strncmp(ifname, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(ifname, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
+		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 
