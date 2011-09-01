@@ -241,6 +241,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
 		char fstr[32];
 		char psk[16];
+		if (!strncmp(prefix, "ath0", 4))
+			led_control(LED_SEC0, LED_ON);
+		if (!strncmp(prefix, "ath1", 4))
+			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -317,6 +321,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		char fstr[32];
 		char psk[64];
 		char ath[64];
+		if (!strncmp(prefix, "ath0", 4))
+			led_control(LED_SEC0, LED_ON);
+		if (!strncmp(prefix, "ath1", 4))
+			led_control(LED_SEC1, LED_ON);
 
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
@@ -373,6 +381,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "peap")) {
+			if (!strncmp(prefix, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(prefix, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
 			fprintf(fp, "\teap=PEAP\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
@@ -410,6 +422,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "ttls")) {
+			if (!strncmp(prefix, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(prefix, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
 			fprintf(fp, "\teap=TTLS\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
@@ -446,6 +462,10 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "leap")) {
+			if (!strncmp(prefix, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(prefix, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
 			fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
 			fprintf(fp, "\teap=LEAP\n");
 			fprintf(fp, "\tauth_alg=LEAP\n");
@@ -512,7 +532,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	} else if (nvram_match(akm, "disabled") || nvram_match(akm, "wep")) {
 		char fstr[32];
 		char psk[16];
-
+		if (nvram_match(akm, "wep")) {
+			if (!strncmp(prefix, "ath0", 4))
+				led_control(LED_SEC0, LED_ON);
+			if (!strncmp(prefix, "ath1", 4))
+				led_control(LED_SEC1, LED_ON);
+		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 
