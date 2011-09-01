@@ -352,6 +352,13 @@ if (nvram_match("boot_hw_model", "E4200")
 		gpios = 1 << 3 | 1 << 5;
 }
 
+if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
+	    && nvram_match("boardrev", "0x1100"))
+{
+		printk(KERN_EMERG "WNDR3400 GPIO Init\n");
+		gpios = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 7;
+}
+
 if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101"))
 {
