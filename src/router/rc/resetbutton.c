@@ -819,7 +819,6 @@ void period_check(int sig)
 	case ROUTER_BELKIN_F7D4302:
 	case ROUTER_BELKIN_F5D8235V3:
 	case ROUTER_LINKSYS_E3200:
-	case ROUTER_NETGEAR_WNDR3400:
 		sesgpio = 0x108;	// gpio 8, inversed
 		break;
 	case ROUTER_ASUS_WL500W:
@@ -841,6 +840,7 @@ void period_check(int sig)
 	case ROUTER_WRT54G_V81:
 	case ROUTER_DLINK_DIR320:
 	case ROUTER_WRT600N:
+	case ROUTER_NETGEAR_WNDR3400:
 	case ROUTER_NETGEAR_WNR3500L:
 		sesgpio = 0x106;	// gpio 6, inversed
 		break;
