@@ -791,7 +791,7 @@ void start_sysinit(void)
 			{"ledbh2", "11", 0},
 			{"ledbh3", "11", 0},
 			{"ledbh9", "8", 0}, 
-			{"leddc", "0xffff", 0}, */
+			{"leddc", "0xffff", 0},
 			{"txchain", "3", 0},
 			{"rxchain", "3", 0},
 			{"antswitch", "0", 0},
@@ -849,7 +849,7 @@ void start_sysinit(void)
 			{"ledbh1", "0x11", 0},
 			{"ledbh2", "0x11", 0},
 			{"ledbh3", "0x11", 0},
-			{"leddc", "0xffff", 0}, */
+			{"leddc", "0xffff", 0},
 			{"txchain", "3", 0},
 			{"rxchain", "3", 0},
 			{"antswitch", "0", 0},
