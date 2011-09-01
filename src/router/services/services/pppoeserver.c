@@ -137,23 +137,32 @@ static void do_pppoeconfig(FILE * fp)
 		fprintf(fp, "nomppc\n");
 	else
 		fprintf(fp, "mppc\n");
-	fprintf(fp, "nopcomp\n");
-	fprintf(fp, "idle %s\n", nvram_safe_get("pppoeserver_idle"));
 	if (nvram_default_match("pppoeserver_encryption", "1", "0")) {
-		fprintf(fp, "mppe required,no56,no40,stateless\n" "refuse-eap\n"	//
-			"refuse-pap\n"	//
-			"refuse-chap\n"	//
-			"refuse-mschap\n"	//
-			"require-mschap-v2\n");
+		fprintf(fp, "mppe required,no56,no40,stateless\n");
 	} else
 		fprintf(fp, "nomppe\n");
 	fprintf(fp, "auth\n"
+		"refuse-eap\n"	// be sure using best auth methode
+		"refuse-pap\n"	//
+		"refuse-chap\n"	//
+		"refuse-mschap\n"	//
+		"require-mschap-v2\n"
+		"nopcomp\n"	// what comp methode is this? we need no switch?
 		"default-mru\n"
 		"default-asyncmap\n"
+		"noipdefault\n"
+		"nodefaultroute\n"
+		"noproxyarp\n"	//
+		"noktune\n"	//
+		"netmask 255.255.255.255\n"	//
+		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
+		"ip-down-script /tmp/pppoeserver/ip-down\n"
 		"lcp-echo-interval %s\n"
-		"lcp-echo-failure %s\n",
+		"lcp-echo-failure %s\n"
+		"idle %s\n",
 		nvram_safe_get("pppoeserver_lcpechoint"),
-		nvram_safe_get("pppoeserver_lcpechofail"));
+		nvram_safe_get("pppoeserver_lcpechofail"),
+		nvram_safe_get("pppoeserver_idle"));
 	if (!nowins) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
 	}
@@ -215,14 +224,7 @@ void start_pppoeserver(void)
 			    fopen("/tmp/pppoeserver/pppoe-server-options",
 				  "wb");
 			do_pppoeconfig(fp);
-			fprintf(fp, "noipdefault\n"
-				"nodefaultroute\n"
-				"noproxyarp\n"
-				"noktune\n"
-				"netmask 255.255.255.255\n"
-				"chap-secrets /tmp/pppoeserver/chap-secrets\n"
-				"ip-up-script /tmp/pppoeserver/ip-up\n"
-				"ip-down-script /tmp/pppoeserver/ip-down\n");
+			fprintf(fp, "chap-secrets /tmp/pppoeserver/chap-secrets\n");
 			fclose(fp);
 
 			// parse chaps from nvram to file
@@ -264,27 +266,12 @@ void start_pppoeserver(void)
 
 			mkdir("/tmp/pppoeserver", 0777);
 			fp =
-			    fopen("/tmp/pppoeserver/pppoe-server-options",
-				  "wb");
+			    fopen("/tmp/pppoeserver/pppoe-server-options", "wb");
 			do_pppoeconfig(fp);
-			fprintf(fp, "login\n"	//
-				"require-mschap-v2\n"	// 
-				"default-mru\n"	//
-				"default-asyncmap\n"	// 
-				"lcp-echo-interval %s\n"	//
-				"lcp-echo-failure %s\n"	//
-				"noipdefault\n"	//
-				"nodefaultroute\n"	// 
-				"noproxyarp\n"	//
-				"noktune\n"	//
-				"netmask 255.255.255.255\n"	//
+			fprintf(fp, "login\n"	//  
 				"plugin radius.so\n"	//
 				"plugin radattr.so\n"	//
-				"radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n"	//
-				"ip-up-script /tmp/pppoeserver/ip-up\n"	//
-				"ip-down-script /tmp/pppoeserver/ip-down\n",	//
-				nvram_safe_get("pppoeserver_lcpechoint"),
-				nvram_safe_get("pppoeserver_lcpechofail"));
+				"radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n");
 			fclose(fp);
 			mkdir("/tmp/pppoeserver/radius", 0777);
 			fp = fopen("/tmp/pppoeserver/radius/radiusclient.conf",
