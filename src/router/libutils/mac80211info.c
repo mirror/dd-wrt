@@ -745,6 +745,8 @@ void mac80211_set_antennas(int phy,uint32_t tx_ant,uint32_t rx_ant ) {
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (isap8x() && tx_ant == 5) 
 		tx_ant=3;
+	if (isap8x() && tx_ant == 4) 
+		tx_ant=2;
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
@@ -806,8 +808,11 @@ int mac80211_get_avail_rx_antenna(int phy) {
 
 int mac80211_get_configured_tx_antenna(int phy) {
 	int ret=mac80211_get_antennas(phy,1,0);
-	if (isap8x() && mac80211_get_avail_tx_antenna(phy) == 3) 
+	int avail=mac80211_get_antennas(phy,0,0);
+	if (isap8x() && avail == 3 && ret == 3) 
 		ret=5;
+	if (isap8x() && avail == 3 && ret == 2) 
+		ret=4;
 	return(ret);
 	}
 
