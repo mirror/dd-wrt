@@ -154,7 +154,7 @@ addEvent(window, "unload", function() {
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvram_get("pppoeserver_lcpechoint"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 60)");
+				document.write("(" + share.deflt + ": 5)");
 				//]]>
 				</script></span>
 			</div>	
@@ -163,7 +163,7 @@ addEvent(window, "unload", function() {
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechofail" value="<% nvram_get("pppoeserver_lcpechofail"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 5)");
+				document.write("(" + share.deflt + ": 20)");
 				//]]>
 				</script></span>
 			</div>
@@ -172,7 +172,7 @@ addEvent(window, "unload", function() {
 				<input size="5" maxlength="5" class="num" name="pppoeserver_idle" value="<% nvram_get("pppoeserver_idle"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 600)");
+				document.write("(" + share.deflt + ": 0 = Deaktivate)");
 				//]]>
 				</script></span>
 			</div>
