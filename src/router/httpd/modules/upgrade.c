@@ -31,6 +31,13 @@
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
+void set_upgrade_ret(int result) {
+	fprintf( stderr, "[UPGRADE] set upgrade_ret %i\n", result);
+	if( result != 0) {
+		upgrade_ret = result;
+	}
+}
+
 void
 // do_upgrade_cgi(char *url, FILE *stream)
 do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *query)	// jimmy, https,

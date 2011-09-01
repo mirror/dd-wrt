@@ -1295,6 +1295,7 @@ static struct gozila_action gozila_actions[] = {
 	 "security_save"},
 	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
 	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
+	{"Upgrade","get_upgrades", "firmware", 1, REFRESH, "get_airstation_upgrades" },
 #ifdef HAVE_WPS
 	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
 	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},

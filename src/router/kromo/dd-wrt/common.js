@@ -1439,14 +1439,16 @@ function removeTableEntry( tableId, button ) {
 							var cell = rows[i].childElements()[j];
 							// rename fields
 							for(k = 0; k < cell.childElements().length; k++) {
-								var label = cell.childElements()[k].name;
-								label = label.substr(0, label.length - index.length);
-								cell.childElements()[k].name = label + (index - 1);
-								
+								if(cell.childElements()[k].name) {
+									var label = cell.childElements()[k].name;
+									label = label.substr(0, label.length - String(index).length);
+									cell.childElements()[k].name = label + String(index - 1);
+								}
+
 								if(cell.childElements()[k].id) {
 									var id = cell.childElements()[k].id;
-									id = id.substr(0, id.length - index.length);
-									cell.childElements()[k].id = id + (index - 1);
+									id = id.substr(0, id.length - String(index).length);
+									cell.childElements()[k].id = id + String(index - 1);
 								}
 							}
 						}
