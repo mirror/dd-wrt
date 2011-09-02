@@ -381,7 +381,7 @@ static int cns3xxx_pcie_abort_handler(unsigned long addr, unsigned int fsr,
 	return 0;
 }
 
-int cns3xxx_pcie_init(u8 bitmap)
+static int __init cns3xxx_pcie_init(void)
 {
 	int i;
 
@@ -389,19 +389,19 @@ int cns3xxx_pcie_init(u8 bitmap)
 			"imprecise external abort");
 
 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
-		if (!(bitmap & (1 << i)))
-			continue;
 
 		iotable_init(cns3xxx_pcie[i].cfg_bases,
 			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
-//		cns3xxx_pwr_clk_en(0x1 << PM_CLK_GATE_REG_OFFSET_PCIE(i));
-//		cns3xxx_pwr_soft_rst(0x1 << PM_SOFT_RST_REG_OFFST_PCIE(i));
 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
-		cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
-		pci_common_init(&cns3xxx_pcie[i].hw_pci);
+		if (cns3xxx_pcie[i].linked) {
+			cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
+			pci_common_init(&cns3xxx_pcie[i].hw_pci);
+		}
 	}
 
 	pci_assign_unassigned_resources();
 
 	return 0;
 }
+
+device_initcall(cns3xxx_pcie_init);

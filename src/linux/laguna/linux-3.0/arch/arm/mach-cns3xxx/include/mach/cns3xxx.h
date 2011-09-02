@@ -295,6 +295,7 @@
 #define MISC_PCIE_INT_MASK(x)			MISC_MEM_MAP(0x978 + (x) * 0x100)
 #define MISC_PCIE_INT_STATUS(x)			MISC_MEM_MAP(0x97C + (x) * 0x100)
 
+#define MISC_FIQ_CPU(x)				MISC_MEM_MAP(0xA58 - (x) * 0x4)
 /*
  * Power management and clock control
  */

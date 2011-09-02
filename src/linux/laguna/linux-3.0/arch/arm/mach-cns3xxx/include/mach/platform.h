@@ -22,7 +22,5 @@ struct cns3xxx_plat_info {
 	u32 phy[3];
 };
 
-extern int cns3xxx_pcie_init(u8 bitmap);
-
 #endif /* __ASM_ARCH_PLATFORM_H */
 #endif
