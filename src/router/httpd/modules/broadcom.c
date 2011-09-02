@@ -1880,7 +1880,7 @@ char ezc_version[128];
 extern int post;
 
 static char *post_buf = NULL;
-static void			// support GET and POST 2003-08-22
+void			// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	unsigned char buf[1024];
@@ -2684,6 +2684,10 @@ struct mime_handler mime_handlers[] = {
 	{"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
 	 do_auth, 1},
 	{"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
+	 do_auth, 1},
+#endif
+#ifdef HAVE_BUFFALO
+	{"olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi,
 	 do_auth, 1},
 #endif
 	// {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard,
