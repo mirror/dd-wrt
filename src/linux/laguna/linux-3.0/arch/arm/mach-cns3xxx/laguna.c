@@ -608,7 +608,7 @@ static struct i2c_board_info __initdata laguna_i2c_devices[] = {
 static struct resource laguna_watchdog_resource[] = {
 	{
 		.start = CNS3XXX_TC11MP_TWD_BASE,
-		.end = CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
+		.end = CNS3XXX_TC11MP_TWD_BASE + 0x100 - 1,
 		.flags = IORESOURCE_MEM,
 	},{
 		.start = IRQ_LOCALWDOG,
@@ -696,7 +696,6 @@ static int __init laguna_model_setup(void)
 {
 	u32 __iomem *mem;
 	u32 reg;
-	u8 pcie_bitmap = 0;
 
 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
 
@@ -717,13 +716,6 @@ static int __init laguna_model_setup(void)
 		if (laguna_info.config_bitmap & (SATA0_LOAD | SATA1_LOAD))
 			cns3xxx_ahci_init();
 
-		if (laguna_info.config_bitmap & (PCIE0_LOAD))
-			pcie_bitmap |= 0x1;
-
-		if (laguna_info.config_bitmap & (PCIE1_LOAD))
-			pcie_bitmap |= 0x2;
-
-		cns3xxx_pcie_init(pcie_bitmap);
 
 		gpio_line_set(3, 1);
 		gpio_line_config(3, CNS3XXX_GPIO_OUT);

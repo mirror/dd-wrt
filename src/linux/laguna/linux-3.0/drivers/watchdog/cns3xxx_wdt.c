@@ -368,7 +368,7 @@ static int __devinit cns3xxx_wdt_probe(struct platform_device *dev)
 		ret = -ENXIO;
 		goto err_free;
 	}
-	wdt->base = ioremap(res->start, res->end - res->start + 1);
+	wdt->base = ioremap(res->start + 0x100, res->end - res->start + 1);
 	printk("watchdog start_regs  = 0x%8X\n", (unsigned int)wdt->base);
 	if (!wdt->base) {
 		ret = -ENOMEM;
