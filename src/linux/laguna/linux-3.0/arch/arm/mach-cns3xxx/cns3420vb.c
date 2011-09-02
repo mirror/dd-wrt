@@ -174,9 +174,7 @@ static void __init cns3420_init(void)
 
 	cns3xxx_ahci_init();
 	cns3xxx_sdhci_init();
-
-	cns3xxx_pcie_init(0x3);
-
+	
 	pm_power_off = cns3xxx_power_off;
 }
 

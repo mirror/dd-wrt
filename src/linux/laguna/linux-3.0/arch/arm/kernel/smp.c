@@ -412,13 +412,13 @@ void show_ipi_list(struct seq_file *p, int prec)
 	unsigned int cpu, i;
 
 	for (i = 0; i < NR_IPI; i++) {
-		seq_printf(p, "%*s%u: ", prec - 1, "IPI", i);
+		seq_printf(p, "%*s%u:", prec - 1, "IPI", i);
 
 		for_each_present_cpu(cpu)
 			seq_printf(p, "%10u ",
 				   __get_irq_stat(cpu, ipi_irqs[i]));
 
-		seq_printf(p, " %s\n", ipi_types[i]);
+		seq_printf(p, "      %s\n", ipi_types[i]);
 	}
 }
 
@@ -473,7 +473,7 @@ void show_local_irqs(struct seq_file *p, int prec)
 	for_each_present_cpu(cpu)
 		seq_printf(p, "%10u ", __get_irq_stat(cpu, local_timer_irqs));
 
-	seq_printf(p, " Local timer interrupts\n");
+	seq_printf(p, "      Local timer interrupts\n");
 }
 #endif
 

@@ -26,15 +26,68 @@
 #include <mach/hardware.h>
 #include <mach/cns3xxx.h>
 
+#include <asm/fiq.h>
+
 #include "core.h"
 
-extern void cns3xxx_secondary_startup(void);
+static struct fiq_handler fh = {
+	.name = "cns3xxx-fiq"
+};
 
+static unsigned int fiq_buffer[8];
+
+#define FIQ_ENABLED         0x80000000
+#define FIQ_GENERATE				0x00010000
+#define CNS3XXX_MAP_AREA    0x01000000
+#define CNS3XXX_UNMAP_AREA  0x02000000
+#define CNS3XXX_FLUSH_RANGE 0x03000000
+
+extern void cns3xxx_secondary_startup(void);
+extern unsigned char cns3xxx_fiq_start, cns3xxx_fiq_end;
+extern unsigned int fiq_number[2];
 /*
  * control for which core is the next to come out of the secondary
  * boot "holding pen"
  */
 volatile int __cpuinitdata pen_release = -1;
+
+static void __init cns3xxx_set_fiq_regs(void)
+{
+	struct pt_regs FIQ_regs;
+	unsigned int cpu = smp_processor_id();
+
+	if (cpu) {
+		FIQ_regs.ARM_ip = (unsigned int)&fiq_buffer[4];
+		FIQ_regs.ARM_sp = (unsigned int)MISC_FIQ_CPU(0);
+	} else {
+		FIQ_regs.ARM_ip = (unsigned int)&fiq_buffer[0];
+		FIQ_regs.ARM_sp = (unsigned int)MISC_FIQ_CPU(1);
+	}
+	set_fiq_regs(&FIQ_regs);
+}
+
+static void __init cns3xxx_init_fiq(void)
+{
+	void *fiqhandler_start;
+	unsigned int fiqhandler_length;
+	int ret;
+
+	fiqhandler_start = &cns3xxx_fiq_start;
+	fiqhandler_length = &cns3xxx_fiq_end - &cns3xxx_fiq_start;
+
+	ret = claim_fiq(&fh);
+
+	if (ret) {
+		return;
+	}
+
+	set_fiq_handler(fiqhandler_start, fiqhandler_length);
+	fiq_buffer[0] = (unsigned int)&fiq_number[0];
+	fiq_buffer[3] = 0;
+	fiq_buffer[4] = (unsigned int)&fiq_number[1];
+	fiq_buffer[7] = 0;
+}
+
 
 /*
  * Write pen_release in a way that is guaranteed to be visible to all
@@ -64,6 +117,11 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * for us: do so
 	 */
 	gic_secondary_init(0);
+
+	/*
+	 * Setup Secondary Core FIQ regs
+	 */
+	cns3xxx_set_fiq_regs();
 
 	/*
 	 * let the primary processor know we're out of the
@@ -169,4 +227,112 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 */
 	__raw_writel(virt_to_phys(cns3xxx_secondary_startup),
 			(void __iomem *)(0xFFF07000 + 0x0600));
+
+	/*
+	 * Setup FIQ's for main cpu
+	 */
+	cns3xxx_init_fiq();
+	cns3xxx_set_fiq_regs();
+}
+
+extern struct cpu_cache_fns cpu_cache;
+
+static inline unsigned long cns3xxx_cpu_id(void)
+{
+	unsigned long cpu;
+
+	asm volatile(
+		" mrc p15, 0, %0, c0, c0, 5  @ cns3xxx_cpu_id\n"
+		: "=r" (cpu) : : "memory", "cc");
+	return (cpu & 0xf);
+}
+
+void smp_dma_map_area(const void *addr, size_t size, int dir)
+{
+	unsigned int cpu;
+	unsigned long flags;
+	raw_local_irq_save(flags);
+	cpu = cns3xxx_cpu_id();
+	if (cpu) {
+		fiq_buffer[1] = (unsigned int)addr;
+		fiq_buffer[2] = size;
+		fiq_buffer[3] = dir | CNS3XXX_MAP_AREA | FIQ_ENABLED;
+		smp_mb();
+		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(1));
+
+		cpu_cache.dma_map_area(addr, size, dir);
+		while ((fiq_buffer[3]) & FIQ_ENABLED) { barrier(); }
+	} else {
+
+		fiq_buffer[5] = (unsigned int)addr;
+		fiq_buffer[6] = size;
+		fiq_buffer[7] = dir | CNS3XXX_MAP_AREA | FIQ_ENABLED;
+		smp_mb();
+		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(0));
+
+		cpu_cache.dma_map_area(addr, size, dir);
+		while ((fiq_buffer[7]) & FIQ_ENABLED) { barrier(); }
+	}
+	raw_local_irq_restore(flags);
+}
+
+void smp_dma_unmap_area(const void *addr, size_t size, int dir)
+{
+	unsigned int cpu;
+	unsigned long flags;
+
+	raw_local_irq_save(flags);
+	cpu = cns3xxx_cpu_id();
+	if (cpu) {
+
+		fiq_buffer[1] = (unsigned int)addr;
+		fiq_buffer[2] = size;
+		fiq_buffer[3] = dir | CNS3XXX_UNMAP_AREA | FIQ_ENABLED;
+		smp_mb();
+		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(1));
+
+		cpu_cache.dma_unmap_area(addr, size, dir);
+		while ((fiq_buffer[3]) & FIQ_ENABLED) { barrier(); }
+	} else {
+
+		fiq_buffer[5] = (unsigned int)addr;
+		fiq_buffer[6] = size;
+		fiq_buffer[7] = dir | CNS3XXX_UNMAP_AREA | FIQ_ENABLED;
+		smp_mb();
+		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(0));
+
+		cpu_cache.dma_unmap_area(addr, size, dir);
+		while ((fiq_buffer[7]) & FIQ_ENABLED) { barrier(); }
+	}
+	raw_local_irq_restore(flags);
+}
+
+void smp_dma_flush_range(const void *start, const void *end)
+{
+	unsigned int cpu;
+	unsigned long flags;
+	raw_local_irq_save(flags);
+	cpu = cns3xxx_cpu_id();
+	if (cpu) {
+
+		fiq_buffer[1] = (unsigned int)start;
+		fiq_buffer[2] = (unsigned int)end;
+		fiq_buffer[3] = CNS3XXX_FLUSH_RANGE | FIQ_ENABLED;
+		smp_mb();
+		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(1));
+
+		cpu_cache.dma_flush_range(start, end);
+		while ((fiq_buffer[3]) & FIQ_ENABLED) { barrier(); }
+	} else {
+
+		fiq_buffer[5] = (unsigned int)start;
+		fiq_buffer[6] = (unsigned int)end;
+		fiq_buffer[7] = CNS3XXX_FLUSH_RANGE | FIQ_ENABLED;
+		smp_mb();
+		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(0));
+
+		cpu_cache.dma_flush_range(start, end);
+		while ((fiq_buffer[7]) & FIQ_ENABLED) { barrier(); }
+	}
+	raw_local_irq_restore(flags);
 }
