@@ -125,6 +125,8 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	eval("hwclock", "-s");
+	if (getRouterBrand() == ROUTER_BOARD_GW2388)
+		sysprintf("gsp_updater /etc/gsp_update.txt");
 
 	return;
 }
