@@ -1978,8 +1978,8 @@ static void filter_input(void)
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
 	    || nvram_match("wan_proto", "pptp")) {
-		save2file("-A INPUT -p tcp --dport %d -j logaccept\n",
-			  PPTP_PORT);
+		save2file("-A INPUT -p tcp --dport %d -j %s\n",
+			  PPTP_PORT,log_accept);
 		save2file("-A INPUT -p 47 -j %s\n",log_accept);
 		if (nvram_match("pptpd_lockdown", "1")) {
 			save2file
@@ -2094,8 +2094,8 @@ static void filter_input(void)
 	 */
 	if (remotemanage) {
 		save2file
-		    ("-A INPUT -p tcp -d %s --dport %d -j logaccept\n",
-		     nvram_safe_get("lan_ipaddr"), web_lanport);
+		    ("-A INPUT -p tcp -d %s --dport %d -j %s\n",
+		     nvram_safe_get("lan_ipaddr"), web_lanport,log_accept);
 	}
 #ifdef HAVE_SSHD
 	/*
@@ -2114,8 +2114,8 @@ static void filter_input(void)
 	 */
 	if (remotessh) {
 		save2file
-		    ("-A INPUT -d %s -p tcp --dport %s -j logaccept\n",
-		     nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
+		    ("-A INPUT -d %s -p tcp --dport %s -j %s\n",
+		     nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"),log_accept);
 	}
 #endif
 
@@ -2131,8 +2131,8 @@ static void filter_input(void)
 #endif
 	if (remotetelnet) {
 		save2file
-		    ("-A INPUT -p tcp -d %s --dport 23 -j logaccept\n",
-		     nvram_safe_get("lan_ipaddr"));
+		    ("-A INPUT -p tcp -d %s --dport 23 -j %s\n",
+		     nvram_safe_get("lan_ipaddr"),log_accept);
 	}
 #endif
 	/*
@@ -2195,16 +2195,16 @@ static void filter_input(void)
 	// removed first rule: -A INPUT -m state --state INVALID -j DROP
 	// (wolfiR)
 	save2file("-A INPUT -i lo -m state --state NEW -j ACCEPT\n");
-	save2file("-A INPUT -i %s -m state --state NEW -j logaccept\n",
-		  lanface);
+	save2file("-A INPUT -i %s -m state --state NEW -j %s\n",
+		  lanface,log_accept);
 
 	/*
 	 * lonewolf mods for extra VLANs / interfaces 
 	 */
 	iflist = nvram_safe_get("no_firewall_if");
 	foreach(buff, iflist, next) {
-		save2file("-A INPUT -i %s -m state --state NEW -j logaccept\n",
-			  buff);
+		save2file("-A INPUT -i %s -m state --state NEW -j %s\n",
+			  buff,log_accept);
 	}
 	char dev[16];
 	char var[80];
@@ -2297,7 +2297,7 @@ static void filter_forward(void)
 	 * Sveasoft add - log invalid packets 
 	 */
 	if (!has_gateway())
-		save2file("-A FORWARD -m state --state INVALID -j logdrop\n");
+		save2file("-A FORWARD -m state --state INVALID -j %s\n",log_drop);
 
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
