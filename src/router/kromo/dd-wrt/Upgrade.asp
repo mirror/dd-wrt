@@ -13,10 +13,14 @@ function process_aborted(F) {
 function upgrade(F,id) {
 	var upgrade_file = '';
 	if (F.upgrade_files) {
-		for(i = 0; i < F.upgrade_files.length; i++) {
-			if( F.upgrade_files[i].checked == true) {
-				upgrade_file = F.upgrade_files[i].value;
+		if( !F.upgrade_files.value ) {
+			for(i = 0; i < F.upgrade_files.length; i++) {
+				if( F.upgrade_files[i].checked == true) {
+					upgrade_file = F.upgrade_files[i].value;
+				}
 			}
+		} else {
+			upgrade_file = F.upgrade_files.value;
 		}
 	}
 	if(upgrade_file) {
