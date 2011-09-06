@@ -1302,13 +1302,15 @@ _8f[i].id=_90+(_91-1);
 for(j=0;j<_8f[i].childElements().length;j++){
 var _92=_8f[i].childElements()[j];
 for(k=0;k<_92.childElements().length;k++){
+if(_92.childElements()[k].name){
 var _93=_92.childElements()[k].name;
-_93=_93.substr(0,_93.length-_91.length);
-_92.childElements()[k].name=_93+(_91-1);
+_93=_93.substr(0,_93.length-String(_91).length);
+_92.childElements()[k].name=_93+String(_91-1);
+}
 if(_92.childElements()[k].id){
 var id=_92.childElements()[k].id;
-id=id.substr(0,id.length-_91.length);
-_92.childElements()[k].id=id+(_91-1);
+id=id.substr(0,id.length-String(_91).length);
+_92.childElements()[k].id=id+String(_91-1);
 }
 }
 }
