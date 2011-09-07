@@ -32,9 +32,10 @@
 static int upgrade_ret;
 
 void set_upgrade_ret(int result) {
-	fprintf( stderr, "[UPGRADE] set upgrade_ret %i\n", result);
 	if( result != 0) {
 		upgrade_ret = result;
+	} else {
+		upgrade_ret = NULL;
 	}
 }
 
@@ -45,6 +46,7 @@ do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *que
 {
 #ifndef ANTI_FLASH
 
+fprintf(stderr, "[UPGRADE] ret: %d\n", upgrade_ret);
 	if (upgrade_ret) {
 		do_ej(handler, "Fail_u_s.asp", stream, NULL);
 		killall("ledtool",SIGTERM);
