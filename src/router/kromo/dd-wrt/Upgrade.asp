@@ -19,7 +19,7 @@ function upgrade(F,id) {
 					upgrade_file = F.upgrade_files[i].value;
 				}
 			}
-		} else {
+		} else if( F.upgrade_files.checked ) {
 			upgrade_file = F.upgrade_files.value;
 		}
 	}
@@ -27,6 +27,7 @@ function upgrade(F,id) {
 		F.upgrade_file.value = upgrade_file;
 		$(F.id).setAttribute('action', 'olupgrade.cgi');
 		$(F.id).setAttribute('enctype', '');
+		$('submit_button').remove();
 	} else if (F.file.value == "")	{
 		alert(errmsg.err60);
 		return false;
@@ -79,7 +80,7 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="firmware" id="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
-							<input type="hidden" name="submit_button" value="Upgrade" />
+							<input type="hidden" name="submit_button" id="submit_button" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
