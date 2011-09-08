@@ -341,6 +341,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 			fprintf(stderr,
 				"call mac80211autochannel for interface: %s\n",
 				prefix);
+			sysprintf("ifconfig %s up", prefix);
 			acs = mac80211autochannel(prefix, NULL, 2, 1, 0);
 			if (acs != NULL) {
 				freq = acs->freq;

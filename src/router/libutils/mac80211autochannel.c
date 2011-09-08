@@ -65,7 +65,7 @@ static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 };
 
 #ifdef HAVE_BUFFALO
-static const int bias_2g[] = { 85, 50, 75, 75, 50, 100, 50, 75, 75, 50, 85, 50, 75 };
+static const int bias_2g[] = { 80, 50, 70, 70, 50, 100, 50, 70, 70, 50, 80, 50, 70 };
 #else
 static const int bias_2g[] = { 100, 50, 75, 75, 50, 100, 50, 75, 75, 50, 100, 50, 75 };
 #endif
@@ -345,7 +345,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 
 	unsigned int count = ammount;
 
-	if (scans=0) scans=2;
+	if (scans==0) scans=2;
 
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
@@ -380,8 +380,10 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		}
 	}
 
-	list_for_each_entry(f, &frequencies, list)
+	list_for_each_entry(f, &frequencies, list) {
 		f->quality = freq_quality(f, &sdata);
+		fprintf(stderr, "freq:%d qual:%d noise:%d\n", f->freq, f->quality, f->noise);
+	}
 
 	list_sort(&sdata, &frequencies, sort_cmp);
 
