@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 08.Aug.2011, svn 17457	//
+//				Slovenian translation DD-WRT by Eko, last revision: 08.Sep.2011, svn 17592	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -449,6 +449,7 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
+bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="Milkfish SIP usmerjevalnik";
 bmenu.servicesAnchorFree="Moja Ad mreža";
 
@@ -645,6 +646,7 @@ firewall.ping="Prepreči anonimno WAN zahtevo (ping)";
 firewall.muticast="Filter za multicast";
 firewall.ssh="Omeji SSH dostop";
 firewall.telnet="Omeji Telnet dostop";
+firewall.pptp="Omeji dostop PPTP strežnika";
 firewall.http="Omeji HTTP dostop";
 filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
@@ -1861,6 +1863,21 @@ aoss.externalregistrar="Zunanji registrator";
 aoss.release="Razreši";
 
 
+olupgrade.avail_updates="Razpoložljive posodobitve";
+olupgrade.version="Verzija";
+olupgrade.release="Izdaja";
+olupgrade.readme="Preberi";
+olupgrade.choose="Izberi";
+olupgrade.retrieve_error="Napaka pri pridobivanju informacij o posodobitvah";
+
+
+nintendo.titl="Nintendo";
+
+nintendo.spotpass.titl="Nintendo SpotPass";
+nintendo.spotpass.enable="Omogoči Nintendo SpotPass";
+nintendo.spotpass.servers="Dovoli strežnike";
+
+
 sec80211x.xsuptype="Tip XSupplicanta";
 sec80211x.servercertif="Certifikat javnega strežnika";
 sec80211x.clientcertif="Certifikat odjemalca";
@@ -1870,7 +1887,7 @@ sec80211x.options="Dodatne mrežne možnosti";
 
 //help container
 
-hwpa.right2="Izberete lahko med: Onemogočeno, WEP, WPA Personal, WPA Enterprise ali RADIUS. Vse naprave v vaši mreži morajo uporabljanti isti način.";
+hwpa.right2="Izberete lahko med: Onemogočeno, WEP, WPA Personal, WPA Enterprise ali RADIUS. Vse naprave v vaši mreži morajo uporabljanti isti način. V načinu N morate uporabiti WPA2/AES";
 
 
 // ** WL_FilterTable.asp **//
