@@ -617,7 +617,6 @@ static void handle_request(void)
 	bzero(line, sizeof line);
 
 	memset(line, 0, LINE_LEN);
-
 	/* Parse the first line of the request. */
 	if (wfgets(line, LINE_LEN, conn_fp) == (char *)0) {	//jimmy,https,8/4/2003
 		send_error(400, "Bad Request", (char *)0, "No request found.");
@@ -708,7 +707,6 @@ static void handle_request(void)
 		nodetect = 1;
 	if (nvram_match("no_crossdetect","1"))
 		nodetect = 1;
-		
 
 	if (referer && host && nodetect == 0) {
 		int i;
@@ -923,6 +921,8 @@ static void handle_request(void)
 				}
 			}
 		}
+		FILE *fp, *web;
+		int file_found = 1;
 		for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 			if (match(handler->pattern, file)) {
 #ifdef HAVE_REGISTER
@@ -1003,20 +1003,36 @@ memdebug_enter();
 					auth_fail = 0;
 					return;
 				} else {
-					if (handler->send_headers)
-						send_headers(200, "Ok",
-							     handler->extra_header,
-							     handler->mime_type,
-							     0, NULL);
+					if(handler->output != do_file)
+						if (handler->send_headers)
+							send_headers(200, "Ok",
+								     handler->extra_header,
+								     handler->mime_type,
+								     0, NULL);
 				}
 memdebug_leave_info("auth_output");
 }
 
 {
 memdebug_enter();
-				if (handler->output) {
+				// check for do_file handler and check if file exists
+				file_found = 1;
+				if(handler->output == do_file) {
+					web = getWebsFile(file);
+					if(web == NULL) {
+						if (!(fp = fopen(file, "rb"))) {
+							file_found = 0;
+						} else {
+							fclose(fp);
+						}
+					}
+				} 
+				if (handler->output && file_found) {
 					handler->output(handler, file, conn_fp,
 							query);
+				} else {
+					send_error(404, "Not Found", (char *)0,
+						   "File not found.");
 				}
 				break;
 memdebug_leave_info("output");
@@ -1027,7 +1043,6 @@ memdebug_leave_info("output");
 				send_error(404, "Not Found", (char *)0,
 					   "File not found.");
 		}
-
 	}
 }
 
