@@ -258,7 +258,7 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_3G
 #ifdef HAVE_BUFFALO
 	char *region = getUEnv("region");
-	if (region == NULL) {
+	if (!region) {
 		region = "US";
 	}
 	if (!strcmp(region, "EU") || !strcmp(region, "DE")
