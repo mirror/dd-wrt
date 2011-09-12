@@ -1561,8 +1561,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "",
 	 "", ""},
 	{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp",
-	 "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", 
-         "AnchorFree.asp", "", ""},
+	 "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp",
+	 "AnchorFree.asp", "", ""},
 	{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},
 	{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},
 	{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
@@ -1593,7 +1593,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"services", "servicesServices", "servicesRadius",
 		 "servicesPppoesrv", "servicesPptp", "servicesUSB",
 		 "servicesNAS", "servicesHotspot", "servicesNintendo",
-		 "servicesMilkfish","servicesAnchorFree", "", ""},
+		 "servicesMilkfish", "servicesAnchorFree", "", ""},
 		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "",
 		 "", ""},
 		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "",
@@ -2433,22 +2433,29 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	char txpwr[32];
 	char m[32];
 	int txpower;
+	char mode[32];
 
 	strncpy(m, nvram_safe_get("wifi_display"), 4);
 	m[4] = 0;
-	sprintf(txpwr, "%s_txpwr", m);
+	sprintf(mode, "%s_net_mode", m);
+	if (nvram_match(mode, "disabled")) {
+		txpower = 0;
+	} else {
+
+		sprintf(txpwr, "%s_txpwr", m);
 #ifdef HAVE_MADWIFI
-	txpower = wifi_gettxpower(m);
+		txpower = wifi_gettxpower(m);
 #elif HAVE_RT2880
-	txpower = atoi(nvram_safe_get(txpwr));
+		txpower = atoi(nvram_safe_get(txpwr));
 #else				//broadcom
-	txpower = bcm_gettxpower(m);
+		txpower = bcm_gettxpower(m);
 #endif
 #ifdef HAVE_BUFFALO
-	get_txpower_extended(wp, txpower, m);
+		get_txpower_extended(wp, txpower, m);
 #else
-	websWrite(wp, "%d dBm", txpower);
+		websWrite(wp, "%d dBm", txpower);
 #endif
+	}
 }
 
 void ej_getencryptionstatus(webs_t wp, int argc, char_t ** argv)
@@ -3536,32 +3543,41 @@ void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
 
 //extern void show_onlineupdates(webs_t wp, int argc, char_t ** argv);
 
-void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv) {
+void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
+{
 #ifdef HAVE_BUFFALO
 	show_onlineupdates(wp, argc, argv);
 #endif
 }
 
 #ifdef HAVE_SPOTPASS
-void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv) {
-	char url[128],proto[8],ports[64];
+void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
+{
+	char url[128], proto[8], ports[64];
 	char dummy1[1], dummy2[8];
 	int port1, port2;
 	char *ptr;
-	char *serverlist = (char *)safe_malloc(strlen(nvram_default_get("spotpass_servers", "")) + 1);
-	
+	char *serverlist =
+	    (char *)
+	    safe_malloc(strlen(nvram_default_get("spotpass_servers", "")) + 1);
+
 	strcpy(serverlist, nvram_get("spotpass_servers"));
 	ptr = strtok(serverlist, "|");
-	while(ptr != NULL) {
-		if(sscanf(ptr, "%s %s %s %s %d %d", &dummy1, &url, &proto, &dummy2, &port1, &port2) == 6) {
+	while (ptr != NULL) {
+		if (sscanf
+		    (ptr, "%s %s %s %s %d %d", &dummy1, &url, &proto, &dummy2,
+		     &port1, &port2) == 6) {
 			websWrite(wp, "%s %s %d,%d", url, proto, port1, port2);
-		} else if(sscanf(ptr, "%s %s %s %d %d", &dummy1, &url, &proto, &port1, &port2) == 5) {
+		} else
+		    if (sscanf
+			(ptr, "%s %s %s %d %d", &dummy1, &url, &proto, &port1,
+			 &port2) == 5) {
 			websWrite(wp, "%s %s %d,%d", url, proto, port1, port2);
-		} else if(sscanf(ptr, "%s %s %s", &url, &proto, &ports) == 3) {
+		} else if (sscanf(ptr, "%s %s %s", &url, &proto, &ports) == 3) {
 			websWrite(wp, "%s %s %s", url, proto, ports);
 		}
 		ptr = strtok(NULL, "|");
-		if(ptr != NULL) {
+		if (ptr != NULL) {
 			websWrite(wp, "\n");
 		}
 	}
