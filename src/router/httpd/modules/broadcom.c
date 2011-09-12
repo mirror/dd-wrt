@@ -2901,7 +2901,10 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 	websWrite(stream, "DEVICE_MODEL=%s DDWRT\n",
 		  nvram_safe_get("DD_BOARD"));
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
-	websWrite(stream, "DEVICE_REGION=%s\n", getUEnv("region"));
+	char *reg = getUEnv("region");
+	if (!reg)
+	    reg = "US";
+	websWrite(stream, "DEVICE_REGION=%s\n", reg);
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1\n");
 //      websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
 //      websWrite(stream, "WIRELESS_1_PRESET_ENCRYPT=%s\n", encrypt);
