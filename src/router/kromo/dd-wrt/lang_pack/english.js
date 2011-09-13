@@ -1059,6 +1059,7 @@ management.lang_english="English";
 management.lang_polish="Polish";
 management.lang_french="French";
 management.lang_german="German";
+management.lang_turkish="Turkish";
 management.lang_italian="Italian";
 management.lang_brazilian="Brazilian";
 management.lang_russian="Russian";
