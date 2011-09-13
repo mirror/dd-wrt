@@ -5,6 +5,8 @@
 function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
 	var val = arguments;
+	if (!table)
+	    return;
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
