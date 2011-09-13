@@ -2453,7 +2453,13 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_BUFFALO
 		get_txpower_extended(wp, txpower, m);
 #else
+#ifdef HAVE_MADWIFI
 		websWrite(wp, "%d dBm", txpower);
+#elif HAVE_RT2880
+		websWrite(wp, "%d mW", txpower);
+#else  //broadcom
+		websWrite(wp, "%d mW", txpower);
+#endif
 #endif
 	}
 }
