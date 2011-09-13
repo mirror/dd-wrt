@@ -178,6 +178,11 @@ static char *directories[] = {
 	"/mmc/etc/config"
 };
 
+struct SIMPLEVAL {
+	char *name;
+	char *validator;
+};
+
 struct variable **variables;
 void Initnvramtab()
 {
@@ -187,6 +192,58 @@ void Initnvramtab()
 	int varcount = 0, len, i;
 	char *tmpstr;
 	struct variable *tmp;
+	static struct SIMPLEVAL simpleval[] = {
+		{"WMEPARAM", "validate_wl_wme_params"},
+		{"WMETXPARAM", "validate_wl_wme_tx_params"},
+		{"WANIPADDR", "validate_wan_ipaddr"},
+		{"MERGEREMOTEIP", "validate_remote_ip"},
+		{"MERGEIPADDRS", "validate_merge_ipaddrs"},
+		{"DNS", "validate_dns"},
+		{"SAVEWDS", "save_wds"},
+		{"DHCP", "dhcp_check"},
+		{"STATICS", "validate_statics"},
+#ifdef HAVE_PORTSETUP
+		{"PORTSETUP", "validate_portsetup"},
+#endif
+		{"REBOOT", "validate_reboot"},
+		{"IPADDR", "validate_ipaddr"},
+		{"STATICLEASES", "validate_staticleases"},
+#ifdef HAVE_CHILLILOCAL
+		{"USERLIST", "validate_userlist"},
+#endif
+#ifdef HAVE_RADLOCAL
+		{"IRADIUSUSERLIST", "validate_iradius"},
+#endif
+		{"IPADDRS", "validate_ipaddrs"},
+		{"NETMASK", "validate_netmask"},
+		{"MERGENETMASK", "validate_merge_netmask"},
+		{"WDS", "validate_wds"},
+		{"STATICROUTE", "validate_static_route"},
+		{"MERGEMAC", "validate_merge_mac"},
+		{"FILTERPOLICY", "validate_filter_policy"},
+		{"FILTERIPGRP", "validate_filter_ip_grp"},
+		{"FILTERPORT", "validate_filter_port"},
+		{"FILTERDPORTGRP", "validate_filter_dport_grp"},
+		{"BLOCKEDSERVICE", "validate_blocked_service"},
+		{"FILTERP2P", "validate_catchall"},
+		{"FILTERMACGRP", "validate_filter_mac_grp"},
+		{"FILTERWEB", "validate_filter_web"},
+		{"WLHWADDRS", "validate_wl_hwaddrs"},
+		{"FORWARDPROTO", "validate_forward_proto"},
+		{"FORWARDSPEC", "validate_forward_spec"},
+		{"PORTTRIGGER", "validate_port_trigger"},
+		{"HWADDR", "validate_hwaddr"},
+		{"HWADDRS", "validate_hwaddrs"},
+		{"WLWEPKEY", "validate_wl_wep_key"},
+#ifdef HAVE_PPPOESERVER
+		{"CHAPTABLE", "validate_chaps"},
+#endif
+#ifdef HAVE_MILKFISH
+		{"MFSUBSCRIBERS", "validate_subscribers"},
+		{"MFALIASES", "validate_aliases"},
+		{NULL, NULL},
+#endif
+	};
 
 	variables = NULL;
 	char buf[1024];
@@ -289,14 +346,7 @@ void Initnvramtab()
 					}
 					if (!stricmp(tmpstr, "NULL")) {
 					}
-					if (!stricmp(tmpstr, "WMEPARAM")) {
-						tmp->validatename =
-						    "validate_wl_wme_params";
-					}
-					if (!stricmp(tmpstr, "WMETXPARAM")) {
-						tmp->validatename =
-						    "validate_wl_wme_tx_params";
-					}
+
 					if (!stricmp(tmpstr, "PASSWORD")) {
 						tmp->validatename =
 						    "validate_password";
@@ -327,29 +377,6 @@ void Initnvramtab()
 						    getFileString(in);
 						tmp->argv[1] = NULL;
 					}
-					if (!stricmp(tmpstr, "WANIPADDR")) {
-						tmp->validatename =
-						    "validate_wan_ipaddr";
-					}
-					if (!stricmp(tmpstr, "MERGEREMOTEIP")) {
-						tmp->validatename =
-						    "validate_remote_ip";
-					}
-					if (!stricmp(tmpstr, "MERGEIPADDRS")) {
-						tmp->validatename =
-						    "validate_merge_ipaddrs";
-					}
-					if (!stricmp(tmpstr, "DNS")) {
-						tmp->validatename =
-						    "validate_dns";
-					}
-					if (!stricmp(tmpstr, "SAVEWDS")) {
-						tmp->validate2name = "save_wds";
-					}
-					if (!stricmp(tmpstr, "DHCP")) {
-						tmp->validatename =
-						    "dhcp_check";
-					}
 					if (!stricmp(tmpstr, "WPAPSK")) {
 						tmp->validatename =
 						    "validate_wpa_psk";
@@ -360,131 +387,12 @@ void Initnvramtab()
 						    getFileString(in);
 						tmp->argv[1] = NULL;
 					}
-					if (!stricmp(tmpstr, "STATICS")) {
-						tmp->validatename =
-						    "validate_statics";
-					}
-#ifdef HAVE_PORTSETUP
-					if (!stricmp(tmpstr, "PORTSETUP")) {
-						tmp->validatename =
-						    "validate_portsetup";
-					}
-#endif
-					if (!stricmp(tmpstr, "REBOOT")) {
-						tmp->validatename =
-						    "validate_reboot";
-					}
-					if (!stricmp(tmpstr, "IPADDR")) {
-						tmp->validatename =
-						    "validate_ipaddr";
-					}
-					if (!stricmp(tmpstr, "STATICLEASES")) {
-						tmp->validatename =
-						    "validate_staticleases";
-					}
-#ifdef HAVE_CHILLILOCAL
-					if (!stricmp(tmpstr, "USERLIST")) {
-						tmp->validatename =
-						    "validate_userlist";
-					}
-#endif
-#ifdef HAVE_RADLOCAL
-					if (!stricmp(tmpstr, "IRADIUSUSERLIST")) {
-						tmp->validatename =
-						    "validate_iradius";
-					}
-#endif
-					if (!stricmp(tmpstr, "IPADDRS")) {
-						tmp->validatename =
-						    "validate_ipaddrs";
-					}
-					if (!stricmp(tmpstr, "NETMASK")) {
-						tmp->validatename =
-						    "validate_netmask";
-					}
-					if (!stricmp(tmpstr, "MERGENETMASK")) {
-						tmp->validatename =
-						    "validate_merge_netmask";
-					}
-					if (!stricmp(tmpstr, "WDS")) {
-						tmp->validatename =
-						    "validate_wds";
-					}
-					if (!stricmp(tmpstr, "STATICROUTE")) {
-						tmp->validatename =
-						    "validate_static_route";
-					}
-					if (!stricmp(tmpstr, "MERGEMAC")) {
-						tmp->validatename =
-						    "validate_merge_mac";
-					}
-					if (!stricmp(tmpstr, "FILTERPOLICY")) {
-						tmp->validatename =
-						    "validate_filter_policy";
-					}
-					if (!stricmp(tmpstr, "FILTERIPGRP")) {
-						tmp->validatename =
-						    "validate_filter_ip_grp";
-					}
-					if (!stricmp(tmpstr, "FILTERPORT")) {
-						tmp->validatename =
-						    "validate_filter_port";
-					}
-					if (!stricmp(tmpstr, "FILTERDPORTGRP")) {
-						tmp->validatename =
-						    "validate_filter_dport_grp";
-					}
-					if (!stricmp(tmpstr, "BLOCKEDSERVICE")) {
-						tmp->validatename =
-						    "validate_blocked_service";
-					}
-					if (!stricmp(tmpstr, "FILTERP2P")) {
-						tmp->validatename =
-						    "validate_catchall";
-					}
-					if (!stricmp(tmpstr, "FILTERMACGRP")) {
-						tmp->validatename =
-						    "validate_filter_mac_grp";
-					}
-					if (!stricmp(tmpstr, "FILTERWEB")) {
-						tmp->validatename =
-						    "validate_filter_web";
-					}
-					if (!stricmp(tmpstr, "WLHWADDRS")) {
-						tmp->validatename =
-						    "validate_wl_hwaddrs";
-					}
-					if (!stricmp(tmpstr, "FORWARDPROTO")) {
-						tmp->validatename =
-						    "validate_forward_proto";
-					}
-					if (!stricmp(tmpstr, "FORWARDSPEC")) {
-						tmp->validatename =
-						    "validate_forward_spec";
-					}
 					// changed by steve
 					/*
 					 * if (!stricmp (tmpstr, "FORWARDUPNP")) { tmp->validate
 					 * = validate_forward_upnp; } 
 					 */
 					// end changed by steve
-					if (!stricmp(tmpstr, "PORTTRIGGER")) {
-						tmp->validatename =
-						    "validate_port_trigger";
-					}
-					if (!stricmp(tmpstr, "HWADDR")) {
-						tmp->validatename =
-						    "validate_hwaddr";
-					}
-					if (!stricmp(tmpstr, "HWADDRS")) {
-						tmp->validatename =
-						    "validate_hwaddrs";
-					}
-					if (!stricmp(tmpstr, "WLWEPKEY")) {
-						tmp->validatename =
-						    "validate_wl_wep_key";
-					}
-
 					if (!stricmp(tmpstr, "WLAUTH")) {
 						tmp->validatename =
 						    "validate_wl_auth";
@@ -573,24 +481,29 @@ void Initnvramtab()
 						}
 						tmp->argv[i] = NULL;
 					}
-#ifdef HAVE_PPPOESERVER
-					if (!stricmp(tmpstr, "CHAPTABLE")) {
-						tmp->validatename =
-						    "validate_chaps";
+					if (tmp->validatename == NULL) {
+						int scount = 0;
+						while (simpleval[scount].name !=
+						       NULL) {
+							if (!stricmp
+							    (tmpstr,
+							     simpleval[scount].
+							     name)) {
+								tmp->
+								    validatename
+								    =
+								    simpleval
+								    [scount].
+								    validator;
+								break;
+							}
+							scount++;
+						}
+//                                      if (simpleval[scount].name == NULL)
+//                                          {
+//                                          fprintf(stderr,"danger %s is missing\n",tmpstr);
+//                                          }
 					}
-#endif
-
-#ifdef HAVE_MILKFISH
-					if (!stricmp(tmpstr, "MFSUBSCRIBERS")) {
-						tmp->validatename =
-						    "validate_subscribers";
-					}
-					if (!stricmp(tmpstr, "MFALIASES")) {
-						tmp->validatename =
-						    "validate_aliases";
-					}
-#endif
-
 					free(tmpstr);
 					tmpstr = getFileString(in);
 					if (!stricmp(tmpstr, "TRUE")) {
@@ -1295,7 +1208,8 @@ static struct gozila_action gozila_actions[] = {
 	 "security_save"},
 	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
 	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
-	{"Upgrade","get_upgrades", "firmware", 1, REFRESH, "get_airstation_upgrades" },
+	{"Upgrade", "get_upgrades", "firmware", 1, REFRESH,
+	 "get_airstation_upgrades"},
 #ifdef HAVE_WPS
 	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
 	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
@@ -1305,7 +1219,7 @@ static struct gozila_action gozila_actions[] = {
 	{"Nintendo", "save", "spotpass", 1, REFRESH, "nintendo_save"},
 #endif
 #endif
-	{"Join", "Join", "wireless",1, REFRESH, "wireless_join"},
+	{"Join", "Join", "wireless", 1, REFRESH, "wireless_join"},
 	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
 };
 
@@ -1535,7 +1449,9 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
+	unsigned char *disks[] =
+	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+"sdi2" };
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
@@ -1552,7 +1468,7 @@ static char *getdisc(void)	// works only for squashfs
 		    && buf[3] == 't') {
 			fclose(in);
 			// filesystem detected
-			strncpy(ret,disks[i],3);
+			strncpy(ret, disks[i], 3);
 			return ret;
 		}
 		fclose(in);
@@ -1656,12 +1572,12 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		sys_commit();
 #ifdef HAVE_X86
 #ifdef HAVE_ERC
-		eval("nvram","restore","/etc/defaults/x86ree.backup");
+		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
 		eval("reboot");
 		eval("event", "5", "1", "15");
 #endif
 		char drive[64];
-		sprintf(drive,"/dev/%s",getdisc());
+		sprintf(drive, "/dev/%s", getdisc());
 		FILE *in = fopen64(drive, "r+b");
 		fseeko64(in, 0, SEEK_END);
 		__off64_t mtdlen = ftell(in);
@@ -1880,7 +1796,7 @@ char ezc_version[128];
 extern int post;
 
 static char *post_buf = NULL;
-void			// support GET and POST 2003-08-22
+void				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	unsigned char buf[1024];
@@ -2687,7 +2603,8 @@ struct mime_handler mime_handlers[] = {
 	 do_auth, 1},
 #endif
 #ifdef HAVE_BUFFALO
-	{"olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post, do_upgrade_cgi,
+	{"olupgrade.cgi*", "text/html", no_cache, do_olupgrade_post,
+	 do_upgrade_cgi,
 	 do_auth, 1},
 #endif
 	// {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard,
@@ -2903,7 +2820,7 @@ void do_vsp_page(struct mime_handler *handler, char *url,
 	websWrite(stream, "DEVICE_FIRMWARE_VERSION=1.00\n");
 	char *reg = getUEnv("region");
 	if (!reg)
-	    reg = "US";
+		reg = "US";
 	websWrite(stream, "DEVICE_REGION=%s\n", reg);
 	websWrite(stream, "WIRELESS_DEVICE_NUMBER=1\n");
 //      websWrite(stream, "WIRELESS_1_PRESET_AUTHMODE=%s\n", authmode);
