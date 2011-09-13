@@ -745,7 +745,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			free(serial);
 		}
 		sprintf(exec,
-			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 			expiration_days,
 			nvram_safe_get("radius_country"),
 			nvram_safe_get("radius_state"),
