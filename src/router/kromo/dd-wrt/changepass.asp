@@ -11,6 +11,13 @@ function valid_password(F) {
 		F.http_passwdConfirm.select();
 		return false;
 	}
+	
+	if (!F.http_passwd.value || F.http_passwd.value == "" || F.http_passwd.value.length == 0) {
+		alert(errmsg.err6);
+		F.http_passwdConfirm.focus();
+		F.http_passwdConfirm.select();
+		return false;
+	}
 
 	return true;
 }
