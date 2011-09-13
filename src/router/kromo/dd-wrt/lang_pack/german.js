@@ -1021,6 +1021,7 @@ management.lang_english="Englisch";
 management.lang_portuguese_braz="Portugiesisch (Brasil.)";
 management.lang_french="Französisch";
 management.lang_german="Deutsch";
+management.lang_turkish="Türkisch";
 management.lang_polish="Polnisch";
 management.lang_latvian="Lettisch";
 management.lang_italian="Italienisch";
