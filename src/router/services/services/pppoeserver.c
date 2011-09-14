@@ -107,7 +107,7 @@ static void makeipup(void)
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"grep -v $PEERNAME /tmp/pppoe_data > /tmp/pppoe_data.tmp\n"
 		"mv /tmp/pppoe_data.tmp /tmp/pppoe_data\n"
-		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_data\n");
+		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_data\n"
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
