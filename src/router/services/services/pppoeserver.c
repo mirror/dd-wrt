@@ -99,15 +99,14 @@ static void makeipup(void)
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" "grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
-		"CONTIME=`grep $PEERNAME /tmp/pppoe_data | awk '{print $2}'`\n"
-		"SENT=`grep $PEERNAME /tmp/pppoe_data | awk '{print $3}'`\n"
-		"RCVD=`grep $PEERNAME /tmp/pppoe_data | awk '{print $4}'`\n"
-		"CONTIME=$(($CONTIME+$CONNECT_TIME))\n"
-		"SENT=$(($SENT+$BYTES_SENT))\n"
-		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
-		"grep -v $PEERNAME /tmp/pppoe_data > /tmp/pppoe_data.tmp\n"
-		"mv /tmp/pppoe_data.tmp /tmp/pppoe_data\n"
-		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_data\n"
+		//calc connected time and volume per peer
+		"CONTIME=$(($CONNECT_TIME+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $2}'`))\n"
+		"SENT=$((($BYTES_SENT /1024)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $3}'`))\n"	//volume in Mbytes
+		"RCVD=$((($BYTES_RCVD /1024)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $4}'`))\n"
+		"grep -v $PEERNAME /tmp/pppoe_data > /tmp/pppoe_peer_data.tmp\n"
+		"mv /tmp/pppoe_data.tmp /tmp/pppoe_peer_data\n"
+		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_peer_data\n"
+		//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
@@ -117,7 +116,6 @@ static void makeipup(void)
 
 	chmod("/tmp/pppoeserver/ip-up", 0744);
 	chmod("/tmp/pppoeserver/ip-down", 0744);
-
 }
 
 static void do_pppoeconfig(FILE * fp)
