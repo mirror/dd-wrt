@@ -101,8 +101,8 @@ static void makeipup(void)
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
 		//calc connected time and volume per peer
 		"CONTIME=$(($CONNECT_TIME+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $2}'`))\n"
-		"SENT=$((($BYTES_SENT /1024)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $3}'`))\n"	//volume in Mbytes
-		"RCVD=$((($BYTES_RCVD /1024)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $4}'`))\n"
+		"SENT=$((($BYTES_SENT /1048576)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $3}'`))\n"	//volume in Mbytes
+		"RCVD=$((($BYTES_RCVD /1048576)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $4}'`))\n"
 		"grep -v $PEERNAME /tmp/pppoe_data > /tmp/pppoe_peer_data.tmp\n"
 		"mv /tmp/pppoe_data.tmp /tmp/pppoe_peer_data\n"
 		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_peer_data\n"
