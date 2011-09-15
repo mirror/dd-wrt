@@ -81,11 +81,13 @@ static void makeipup(void)
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
 		"echo \"$PPPD_PID $1 $5 $PEERNAME\" >> /tmp/pppoe_connected\n"	//
-//"echo \"$PPPD_PID $1 $5 $PEERNAME \'date +%s\'\n" >> /tmp/pppoe_connected\n"	//
+		//	just an uptime test
+		"echo \"$PEERNAME \'date +%s\'\" >> /tmp/pppoe_uptime\n"	//
 //->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+		//	per peer shaping
 		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"	//
 		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
 		"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//only if Speed limit !=0 and !empty
@@ -99,13 +101,16 @@ static void makeipup(void)
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" "grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
-		//calc connected time and volume per peer
-		"CONTIME=$(($CONNECT_TIME+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $2}'`))\n"
-		"SENT=$((($BYTES_SENT /1048576)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $3}'`))\n"	//volume in Mbytes
-		"RCVD=$((($BYTES_RCVD /1048576)+`grep $PEERNAME /tmp/pppoe_peer_data | awk '{print $4}'`))\n"
-		"grep -v $PEERNAME /tmp/pppoe_data > /tmp/pppoe_peer_data.tmp\n"
-		"mv /tmp/pppoe_data.tmp /tmp/pppoe_peer_data\n"
-		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_peer_data\n"
+		//	just an uptime test
+		"grep -v $PEERNAME /tmp/pppoe_connected > /tmp/pppoe_uptime.tmp\n"	//
+		"mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime\n"	//
+		//	calc connected time and volume per peer
+		"CONTIME=$(($CONNECT_TIME+`grep \"PPPoE $PEERNAME\" /tmp/ppp_peer.db | awk '{print $3}'`))\n"
+		"SENT=$((($BYTES_SENT /1048576)+`grep \"PPPoE $PEERNAME\" /tmp/ppp_peer.db | awk '{print $4}'`))\n"	//volume in Mbytes
+		"RCVD=$((($BYTES_RCVD /1048576)+`grep \"PPPoE $PEERNAME\" /tmp/ppp_peer.db | awk '{print $5}'`))\n"
+		"grep -v \"PPPoE $PEERNAME\" /tmp/ppp_peer.db > /tmp/ppp_peer.db.tmp\n"
+		"mv /tmp/ppp_peer.db.tmp /tmp/ppp_peer.db\n"
+		"echo \"PPPoE $PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/ppp_peer.db\n"
 		//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
@@ -155,7 +160,7 @@ static void do_pppoeconfig(FILE * fp)
 		"refuse-chap\n"	//
 		"refuse-mschap\n"	//
 		"require-mschap-v2\n"
-		"nopcomp\n"	// what comp methode is this? we need no switch?
+		"nopcomp\n"	// no protocol field compression
 		"default-mru\n"
 		"default-asyncmap\n"
 		"noipdefault\n"
@@ -217,6 +222,9 @@ static void do_pppoeconfig(FILE * fp)
 
 	if (dns_list)
 		free(dns_list);
+	//	copy existing peer data to ram
+	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		system("cp /jffs/etc/freeradius/ppp_peer.db /tmp/");
 
 }
 
@@ -228,9 +236,7 @@ void start_pppoeserver(void)
 		if (nvram_default_match("pppoeradius_enabled", "0", "0")) {
 
 			mkdir("/tmp/pppoeserver", 0777);
-			fp =
-			    fopen("/tmp/pppoeserver/pppoe-server-options",
-				  "wb");
+			fp = fopen("/tmp/pppoeserver/pppoe-server-options", "wb");
 			do_pppoeconfig(fp);
 			fprintf(fp, "chap-secrets /tmp/pppoeserver/chap-secrets\n");
 			fclose(fp);
@@ -305,7 +311,8 @@ void start_pppoeserver(void)
 				nvram_safe_get("pppoeserver_acctserverport"));
 			fclose(fp);
 			fp = fopen("/tmp/pppoeserver/radius/servers", "wb");
-			fprintf(fp, "%s %s\n", nvram_safe_get("pppoeserver_authserverip"), nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
+			fprintf(fp, "%s %s\n", nvram_safe_get("pppoeserver_authserverip"), 
+				nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
 			fclose(fp);
 			makeipup();
 		}
@@ -315,7 +322,9 @@ void start_pppoeserver(void)
 		fprintf(fp, "%s\n", nvram_safe_get("pppoeserver_pool"));
 		fclose(fp);
 
-		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), "-L", getifip(), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-p", "/tmp/pppoeserver/pool");	
+		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
+			"-L", getifip(), "-x", nvram_safe_get("pppoeserver_sessionlimit"), "-p", 
+			"/tmp/pppoeserver/pool");	
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
 	}
@@ -326,6 +335,8 @@ void stop_pppoeserver(void)
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
 	}
+	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		system("cp /tmp/ppp_peer.db /jffs/etc/freeradius/");
 
 }
 
