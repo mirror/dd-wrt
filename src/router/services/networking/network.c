@@ -2895,15 +2895,14 @@ void start_wan(int status)
 
 		if (wlifname && !strcmp(wan_ifname, wlifname))
 			eval("wl", "-i", wan_ifname, "down");
-		else
+		else if (strcmp(wan_ifname, "br0"))
 			eval("ifconfig", wan_ifname, "down");
 
 		ioctl(s, SIOCSIFHWADDR, &ifr);
 #else
-		if (!wlifname) {
+		if (!wlifname && strcmp(wan_ifname, "br0")) {
 			eval("ifconfig", wan_ifname, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
-			eval("ifconfig", wan_ifname, "up");
 		}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
