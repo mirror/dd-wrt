@@ -105,7 +105,16 @@ void start_cron(void)
 			nvram_safe_get("schedule_weekdays"));
 		fclose(fp);
 	}
+	/*
+	 * ppp_peer.db backup
+	 */
+	unlink("/tmp/cron.d/ppp_peer_backup"); // 
+	if (nvram_default_match("sys_enable_jffs2", "1", "0")){
 
+		fp = fopen("/tmp/cron.d/ppp_peer_backup", "w");
+		fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/ppp_peer.db /jffs/etc/freeradius/\n");
+		fclose(fp);
+	}
 	/*
 	 * Additional cron jobs 
 	 */
