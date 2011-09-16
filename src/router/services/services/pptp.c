@@ -43,6 +43,10 @@ void start_pptpd(void)
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
 
+	//	copy existing peer data to /tmp
+	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		system("/bin/cp /jffs/etc/freeradius/pptp_peer.db /tmp/");
+
 	// Create directory for use by pptpd daemon and its supporting files
 	mkdir("/tmp/pptpd", 0744);
 	cprintf("open options file\n");
@@ -225,8 +229,9 @@ void start_pptpd(void)
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n" "iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"	// rule for wake on lan over pptp tunnel
-		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"		//
-		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
+		//	per peer shaping		
+		"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"		//
+		"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 		"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//Speed limit !=0 and !empty
 		"then	tc qdisc del root dev $1\n"	//
 		"	tc qdisc del dev $1 ingress\n"	//
@@ -241,6 +246,14 @@ void start_pptpd(void)
 	fp = fopen("/tmp/pptpd/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" "grep -v $PPPD_PID /tmp/pptp_connected > /tmp/pptp_connected.tmp\n"	//
 		"mv /tmp/pptp_connected.tmp /tmp/pptp_connected\n"	//
+		//	calc connected time and volume per peer
+		"CONTIME=$(($CONNECT_TIME+`grep $PEERNAME /tmp/pptp_peer.db | awk '{print $3}'`))\n"
+		"SENT=$(($BYTES_SENT+`grep $PEERNAME /tmp/pptp_peer.db | awk '{print $4}'`))\n"	//
+		"RCVD=$(($BYTES_RCVD+`grep $PEERNAME /tmp/pptp_peer.db | awk '{print $5}'`))\n"
+		"grep -v $PEERNAME /tmp/ppp_peer.db > /tmp/pptp_peer.db.tmp\n"
+		"mv /tmp/pptp_peer.db.tmp /tmp/pptp_peer.db\n"
+		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pptp_peer.db\n"
+		//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n" "iptables -D FORWARD -i $1 -j ACCEPT\n"	//
 		"iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"	// rule for wake on lan over pptp tunnel
@@ -278,6 +291,8 @@ void stop_pptpd(void)
 
 	stop_process("pptpd", "pptp server");
 	stop_process("bcrelay", "pptp broadcast relay");
+	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/freeradius/");
 	return;
 }
 #endif
