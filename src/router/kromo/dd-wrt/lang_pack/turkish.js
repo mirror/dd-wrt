@@ -1009,6 +1009,7 @@ management.lang_english="İngilizce";
 management.lang_polish="Lehçe";
 management.lang_french="Fransızca";
 management.lang_german="Almanca";
+management.lang_turkish="Türkçe";
 management.lang_italian="İtalyanca";
 management.lang_brazilian="Brezilya Dili";
 management.lang_russian="Rusça";

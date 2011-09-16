@@ -1059,6 +1059,7 @@ management.lang_english="angleščina";
 management.lang_polish="poljščina";
 management.lang_french="francoščina";
 management.lang_german="nemščina";
+management.lang_turkish="turščina";
 management.lang_italian="italijanščina";
 management.lang_brazilian="brazilska portugalščina";
 management.lang_russian="rusčina";
