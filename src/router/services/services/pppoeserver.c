@@ -82,35 +82,40 @@ static void makeipup(void)
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
 		"echo \"$PPPD_PID $1 $5 $PEERNAME\" >> /tmp/pppoe_connected\n"	//
 		//	just an uptime test
-		"echo \"$PEERNAME \'date +%s\'\" >> /tmp/pppoe_uptime\n"	//
-//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
+		"echo \"$PEERNAME `date +%s`\" >> /tmp/pppoe_uptime\n"	//
+		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		//	per peer shaping
-		"IN=`cat /var/run/radattr.$1 | grep -i RP-Upstream-Speed-Limit | awk '{print $2}'`\n"	//
-		"OUT=`cat /var/run/radattr.$1 | grep -i RP-Downstream-Speed-Limit | awk '{print $2}'`\n"	//
+		"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
+		"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 		"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//only if Speed limit !=0 and !empty
 		"then	tc qdisc del root dev $1\n"	//
 		"	tc qdisc del dev $1 ingress\n"	//
 		" 	tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
 		" 	tc qdisc add dev $1 handle ffff: ingress\n"	//
 		" 	tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
+//tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
+//eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
+//burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
+
 		"fi\n");
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
-	fprintf(fp, "#!/bin/sh\n" "grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
+	fprintf(fp, "#!/bin/sh\n" 
+		"grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
 		//	just an uptime test
 		"grep -v $PEERNAME /tmp/pppoe_connected > /tmp/pppoe_uptime.tmp\n"	//
 		"mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime\n"	//
 		//	calc connected time and volume per peer
-		"CONTIME=$(($CONNECT_TIME+`grep \"PPPoE $PEERNAME\" /tmp/ppp_peer.db | awk '{print $3}'`))\n"
-		"SENT=$((($BYTES_SENT /1048576)+`grep \"PPPoE $PEERNAME\" /tmp/ppp_peer.db | awk '{print $4}'`))\n"	//volume in Mbytes
-		"RCVD=$((($BYTES_RCVD /1048576)+`grep \"PPPoE $PEERNAME\" /tmp/ppp_peer.db | awk '{print $5}'`))\n"
-		"grep -v \"PPPoE $PEERNAME\" /tmp/ppp_peer.db > /tmp/ppp_peer.db.tmp\n"
-		"mv /tmp/ppp_peer.db.tmp /tmp/ppp_peer.db\n"
-		"echo \"PPPoE $PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/ppp_peer.db\n"
+		"CONTIME=$(($CONNECT_TIME+`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`))\n"
+		"SENT=$(($BYTES_SENT+`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $4}'`))\n"	//
+		"RCVD=$(($BYTES_RCVD+`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $5}'`))\n"
+		"grep -v $PEERNAME /tmp/ppp_peer.db > /tmp/pppoe_peer.db.tmp\n"
+		"mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db\n"
+		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_peer.db\n"
 		//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
@@ -121,6 +126,10 @@ static void makeipup(void)
 
 	chmod("/tmp/pppoeserver/ip-up", 0744);
 	chmod("/tmp/pppoeserver/ip-down", 0744);
+
+	//	copy existing peer data to /tmp
+	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		system("/bin/cp /jffs/etc/freeradius/pppoe_peer.db /tmp/");
 }
 
 static void do_pppoeconfig(FILE * fp)
@@ -222,9 +231,6 @@ static void do_pppoeconfig(FILE * fp)
 
 	if (dns_list)
 		free(dns_list);
-	//	copy existing peer data to ram
-	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("cp /jffs/etc/freeradius/ppp_peer.db /tmp/");
 
 }
 
@@ -336,7 +342,7 @@ void stop_pppoeserver(void)
 		del_pppoe_natrule();
 	}
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("cp /tmp/ppp_peer.db /jffs/etc/freeradius/");
+		system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
 
 }
 
