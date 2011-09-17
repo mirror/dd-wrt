@@ -31,8 +31,9 @@
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
-void set_upgrade_ret(int result) {
-	if( result != 0) {
+void set_upgrade_ret(int result)
+{
+	if (result != 0) {
 		upgrade_ret = result;
 	} else {
 		upgrade_ret = NULL;
@@ -46,11 +47,11 @@ do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t stream, char *que
 {
 #ifndef ANTI_FLASH
 
-fprintf(stderr, "[UPGRADE] ret: %d\n", upgrade_ret);
+	fprintf(stderr, "[UPGRADE] ret: %d\n", upgrade_ret);
 	if (upgrade_ret) {
 		do_ej(handler, "Fail_u_s.asp", stream, NULL);
-		killall("ledtool",SIGTERM);
-		led_control(LED_DIAG,LED_OFF);
+		killall("ledtool", SIGTERM);
+		led_control(LED_DIAG, LED_OFF);
 	} else {
 		do_ej(handler, "Success_u_s.asp", stream, NULL);
 	}
@@ -77,7 +78,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 								// https,
 								// 8/6/2003
 {
-	
+
 	int brand = getRouterBrand();
 
 #ifndef ANTI_FLASH
@@ -90,139 +91,19 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	long flags = -1;
 	int size = BUFSIZ;
 	int i = 0;
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_USR5453) && !defined(HAVE_DIR400)
+#define WRITEPART "rootfs"
+#else
+#define WRITEPART "linux"
+#endif
 
-	{
-		write_argv[0] = "write";
-		write_argv[1] = upload_fifo;
-#ifdef HAVE_EOC5610
-		write_argv[2] = "linux";
-#elif HAVE_DIR400
-		write_argv[2] = "linux";
-#elif HAVE_LAGUNA
-		write_argv[2] = "linux";
-#elif HAVE_RTG32
-		write_argv[2] = "linux";
-#elif HAVE_SOLO51
-		write_argv[2] = "linux";
-#elif HAVE_MERAKI
-		write_argv[2] = "linux";
-#elif HAVE_DLM101
-		write_argv[2] = "linux";
-#elif HAVE_WRT54G2
-		write_argv[2] = "linux";
-#elif HAVE_DIR300
-		write_argv[2] = "linux";
-#elif HAVE_ADM5120
-		write_argv[2] = "linux";
-#elif HAVE_WRK54G
-		write_argv[2] = "linux";
-#elif HAVE_LS2
-		write_argv[2] = "linux";
-#elif HAVE_RT2880
-		write_argv[2] = "linux";
-#elif HAVE_USR5453
-		write_argv[2] = "rootfs";
-#elif HAVE_CA8
-		write_argv[2] = "linux";
-#elif HAVE_CA8PRO
-		write_argv[2] = "linux";
-#elif HAVE_MR3202A
-		write_argv[2] = "linux";
-#elif HAVE_FONERA2200
-		write_argv[2] = "linux";
-#elif HAVE_GWMF54G2
-		write_argv[2] = "linux";
-#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
-		write_argv[2] = "rootfs";
-#else
-		write_argv[2] = "linux";
-#endif
-		write_argv[3] = NULL;
-	}
-#ifdef HAVE_EOC5610
+	write_argv[0] = "write";
+	write_argv[1] = upload_fifo;
+	write_argv[2] = WRITEPART;
+	write_argv[3] = NULL;
 	eval("fischecksum");
 	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_DIR400
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_LAGUNA
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_RTG32
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_MERAKI
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_WRT54G2
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_DIR300
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_ADM5120
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_WRK54G
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_MR3202A
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_USR5453
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "rootfs");
-#elif HAVE_CA8PRO
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_CA8
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_DLM101
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_GWMF54G2
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_SOLO51
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_FONERA2200
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_LS2
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_RT2880
-	if (url)
-		return eval("write", url, "linux");
-#elif HAVE_LSX
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) && !defined(HAVE_DIR400)
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "rootfs");
-#else
-	eval("fischecksum");
-	if (url)
-		return eval("write", url, "linux");
-#endif
+		return eval("write", url, WRITEPART);
 	// diag_led(DIAG, START_LED); // blink the diag led
 	C_led(1);
 #ifdef HAVE_HTTPS
@@ -232,7 +113,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 		ACTION("ACT_WEB_UPGRADE");
 	int uploadcount = 0;
-
 
 	/*
 	 * Set nonblock on the socket so we can timeout 
@@ -292,7 +172,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_BUFFALO
-			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3) || !strncmp(buf, "WHR", 3) || !strncmp(buf, "WLA", 3) ) {
+			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3)
+			    || !strncmp(buf, "WHR", 3)
+			    || !strncmp(buf, "WLA", 3)) {
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
@@ -370,7 +252,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (memcmp(&buf[0], V, 4)) {
 				fprintf(stderr, "code pattern error!\n");
 				goto write_data;	// must be there, otherwise fail here
-				//goto err;	// must be there, otherwise fail here
+				//goto err;     // must be there, otherwise fail here
 			}
 #undef V
 #endif
@@ -378,36 +260,39 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #if defined(HAVE_WIKINGS) || defined(HAVE_ESPOD)
 #else
 #ifdef HAVE_WRT160NL
-			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
+			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
 				cprintf("code pattern error!\n");
 				goto err;	// must be there, otherwise fail here
 			}
 #else
 
-			if ((brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307")) //E2000
-			 || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300")) //E3000
-			 || brand == ROUTER_LINKSYS_E3200
-			 || brand == ROUTER_LINKSYS_E4200) {
-			    if (memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
-				cprintf("image not compatible with nv60k router!\n");
-				goto err;	// must be there, otherwise fail here
+			if ((brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307"))	//E2000
+			    || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300"))	//E3000
+			    || brand == ROUTER_LINKSYS_E3200
+			    || brand == ROUTER_LINKSYS_E4200) {
+				if (memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)) {
+					cprintf
+					    ("image not compatible with nv60k router!\n");
+					goto err;	// must be there, otherwise fail here
 				}
-			}
-			else if (brand == ROUTER_NETGEAR_WNDR4000
-			 || brand == ROUTER_NETGEAR_WNDR3400) {
-			    if (memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
-				cprintf("image not compatible with nv64k router!\n");
-				goto err;	// must be there, otherwise fail here
+			} else if (brand == ROUTER_NETGEAR_WNDR4000
+				   || brand == ROUTER_NETGEAR_WNDR3400) {
+				if (memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
+					cprintf
+					    ("image not compatible with nv64k router!\n");
+					goto err;	// must be there, otherwise fail here
 				}
-			}
-			else {
-			    if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0) {
-				cprintf("image not compatible with your router!\n");
-				goto err;	// fail here				
+			} else {
+				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) ==
+				    0) {
+					cprintf
+					    ("image not compatible with your router!\n");
+					goto err;	// fail here                            
 				}
 			}
 
@@ -431,15 +316,13 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			    && memcmp(&buf[0], &CODE_PATTERN_E1000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
-			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)			    
+			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_NV60K, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
 				cprintf("code pattern error!\n");
 				goto write_data;
 			}
-			
-		
 #endif
 #endif
 
@@ -463,8 +346,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			i++;
 			continue;
 		}
-		
-write_data:
+
+	      write_data:
 		*total -= count;
 		safe_fwrite(buf, 1, count, fifo);
 		// safe_fwrite(buf, 1, size, fifo);
