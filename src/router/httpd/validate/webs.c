@@ -3482,6 +3482,7 @@ void tf_upnp(webs_t wp)
 
 }
 
+#ifdef HAVE_NAS_SERVER
 void nassrv_save(webs_t wp)
 {
 #ifdef HAVE_SAMBA_SERVER
@@ -3552,6 +3553,7 @@ void nassrv_save(webs_t wp)
 	addAction("nassrv");
 	applytake(value);
 }
+#endif
 
 #ifdef HAVE_SPOTPASS
 void nintendo_save(webs_t wp) {
