@@ -1063,7 +1063,9 @@ static struct gozila_action gozila_actions[] = {
 #endif
 #endif
 	{"Join", "Join", "wireless", 1, REFRESH, "wireless_join"},
+#ifdef HAVE_NAS_SERVER
 	{"NAS", "save", "nassrv", 1, REFRESH, "nassrv_save"},
+#endif
 };
 
 struct gozila_action *handle_gozila_action(char *name, char *type)
