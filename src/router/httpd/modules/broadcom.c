@@ -194,15 +194,15 @@ void Initnvramtab()
 	char *tmpstr;
 	struct variable *tmp;
 	static struct SIMPLEVAL simpleval[] = {
-		{"WMEPARAM", "validate_wl_wme_params", 0},
-		{"WMETXPARAM", "validate_wl_wme_tx_params", 0},
-		{"WANIPADDR", "validate_wan_ipaddr", 0},
-		{"MERGEREMOTEIP", "validate_remote_ip", 0},
-		{"MERGEIPADDRS", "validate_merge_ipaddrs", 0},
-		{"DNS", "validate_dns", 0},
-		{"SAVEWDS", "save_wds", 0},
-		{"DHCP", "dhcp_check", 0},
-		{"STATICS", "validate_statics", 0},
+		{"WMEPARAM", "validate_wl_wme_params"},
+		{"WMETXPARAM", "validate_wl_wme_tx_params"},
+		{"WANIPADDR", "validate_wan_ipaddr"},
+		{"MERGEREMOTEIP", "validate_remote_ip"},
+		{"MERGEIPADDRS", "validate_merge_ipaddrs"},
+		{"DNS", "validate_dns"},
+		{"SAVEWDS", "save_wds"},
+		{"DHCP", "dhcp_check"},
+		{"STATICS", "validate_statics"},
 #ifdef HAVE_PORTSETUP
 		{"PORTSETUP", "validate_portsetup"},
 #endif
