@@ -181,6 +181,7 @@ static char *directories[] = {
 struct SIMPLEVAL {
 	char *name;
 	char *validator;
+	int args;
 };
 
 struct variable **variables;
@@ -193,15 +194,15 @@ void Initnvramtab()
 	char *tmpstr;
 	struct variable *tmp;
 	static struct SIMPLEVAL simpleval[] = {
-		{"WMEPARAM", "validate_wl_wme_params"},
-		{"WMETXPARAM", "validate_wl_wme_tx_params"},
-		{"WANIPADDR", "validate_wan_ipaddr"},
-		{"MERGEREMOTEIP", "validate_remote_ip"},
-		{"MERGEIPADDRS", "validate_merge_ipaddrs"},
-		{"DNS", "validate_dns"},
-		{"SAVEWDS", "save_wds"},
-		{"DHCP", "dhcp_check"},
-		{"STATICS", "validate_statics"},
+		{"WMEPARAM", "validate_wl_wme_params", 0},
+		{"WMETXPARAM", "validate_wl_wme_tx_params", 0},
+		{"WANIPADDR", "validate_wan_ipaddr", 0},
+		{"MERGEREMOTEIP", "validate_remote_ip", 0},
+		{"MERGEIPADDRS", "validate_merge_ipaddrs", 0},
+		{"DNS", "validate_dns", 0},
+		{"SAVEWDS", "save_wds", 0},
+		{"DHCP", "dhcp_check", 0},
+		{"STATICS", "validate_statics", 0},
 #ifdef HAVE_PORTSETUP
 		{"PORTSETUP", "validate_portsetup"},
 #endif
@@ -241,8 +242,22 @@ void Initnvramtab()
 #ifdef HAVE_MILKFISH
 		{"MFSUBSCRIBERS", "validate_subscribers"},
 		{"MFALIASES", "validate_aliases"},
-		{NULL, NULL},
+		{"RANGE", "validate_range", 2},
 #endif
+		{"CHOICE", "validate_choice", -1},
+		{"NOACK", "validate_noack", 2},
+		{"NAME", "validate_name", 1},
+		{"PASSWORD", "validate_password", 1},
+		{"PASSWORD2", "validate_password2", 1},
+		{"LANIPADDR", "validate_lan_ipaddr", 1},
+		{"WPAPSK", "validate_wpa_psk", 1},
+		{"WLAUTH", "validate_wl_auth", 2},
+		{"WLWEP", "validate_wl_wep", -1},
+		{"DYNAMICROUTE", "validate_dynamic_route", -1},
+		{"WLGMODE", "validate_wl_gmode", -1},
+		{"WLNETMODE", "validate_wl_net_mode", -1},
+		{"AUTHMODE", "validate_auth_mode", -1},
+		{NULL, NULL},
 	};
 
 	variables = NULL;
@@ -276,32 +291,7 @@ void Initnvramtab()
 					skipFileString(in);	// long string
 					tmpstr = getFileString(in);
 					tmp->argv = NULL;
-					if (!stricmp(tmpstr, "RANGE")) {
-						tmp->validatename =
-						    "validate_range";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 3);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] =
-						    getFileString(in);
-						tmp->argv[2] = NULL;
-					}
-					if (!stricmp(tmpstr, "CHOICE")) {
-						tmp->validatename =
-						    "validate_choice";
-						free(tmpstr);
-						tmpstr = getFileString(in);
-						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
+					if (!stricmp(tmpstr, "NULL")) {
 					}
 #ifdef HAVE_SPUTNIK_APD
 					if (!stricmp(tmpstr, "MJIDTYPE")) {
@@ -321,188 +311,41 @@ void Initnvramtab()
 						nvram_set("sputnik_rereg", "1");
 					}
 #endif
-					if (!stricmp(tmpstr, "NOACK")) {
-						tmp->validatename =
-						    "validate_noack";
-						len = 2;
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
-					}
-					if (!stricmp(tmpstr, "NAME")) {
-						tmp->validatename =
-						    "validate_name";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 2);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] = NULL;
-					}
-					if (!stricmp(tmpstr, "NULL")) {
-					}
-
-					if (!stricmp(tmpstr, "PASSWORD")) {
-						tmp->validatename =
-						    "validate_password";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 2);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] = NULL;
-					}
-					if (!stricmp(tmpstr, "PASSWORD2")) {
-						tmp->validatename =
-						    "validate_password2";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 2);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] = NULL;
-					}
-					if (!stricmp(tmpstr, "LANIPADDR")) {
-						tmp->validatename =
-						    "validate_lan_ipaddr";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 2);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] = NULL;
-					}
-					if (!stricmp(tmpstr, "WPAPSK")) {
-						tmp->validatename =
-						    "validate_wpa_psk";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 2);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] = NULL;
-					}
-					// changed by steve
-					/*
-					 * if (!stricmp (tmpstr, "FORWARDUPNP")) { tmp->validate
-					 * = validate_forward_upnp; } 
-					 */
-					// end changed by steve
-					if (!stricmp(tmpstr, "WLAUTH")) {
-						tmp->validatename =
-						    "validate_wl_auth";
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* 3);
-						tmp->argv[0] =
-						    getFileString(in);
-						tmp->argv[1] =
-						    getFileString(in);
-						tmp->argv[2] = NULL;
-					}
-					if (!stricmp(tmpstr, "WLWEP")) {
-						tmp->validatename =
-						    "validate_wl_wep";
-						free(tmpstr);
-						tmpstr = getFileString(in);
-						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
-					}
-
-					if (!stricmp(tmpstr, "DYNAMICROUTE")) {
-						tmp->validatename =
-						    "validate_dynamic_route";
-						free(tmpstr);
-						tmpstr = getFileString(in);
-						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
-					}
-					if (!stricmp(tmpstr, "WLGMODE")) {
-						tmp->validatename =
-						    "validate_wl_gmode";
-						free(tmpstr);
-						tmpstr = getFileString(in);
-						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
-					}
-					if (!stricmp(tmpstr, "WLNETMODE")) {
-						tmp->validatename =
-						    "validate_wl_net_mode";
-						free(tmpstr);
-						tmpstr = getFileString(in);
-						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
-					}
-					if (!stricmp(tmpstr, "AUTHMODE")) {
-						tmp->validatename =
-						    "validate_auth_mode";
-						free(tmpstr);
-						tmpstr = getFileString(in);
-						len = atoi(tmpstr);
-						tmp->argv = (char **)
-						    safe_malloc(sizeof(char **)
-								* (len + 1));
-						for (i = 0; i < len; i++) {
-							tmp->argv[i] =
-							    getFileString(in);
-						}
-						tmp->argv[i] = NULL;
-					}
 					if (tmp->validatename == NULL) {
 						int scount = 0;
-						while (simpleval[scount].name !=
-						       NULL) {
-							if (!stricmp
-							    (tmpstr,
-							     simpleval[scount].
-							     name)) {
-								tmp->
-								    validatename
-								    =
-								    simpleval
-								    [scount].
-								    validator;
+						while (simpleval[scount].name != NULL) {	//
+							if (!stricmp(tmpstr, simpleval[scount].name)) {	//
+								tmp->validatename = simpleval[scount].validator;	//
+								int arglen = 0;
+								if (simpleval[scount].args == -1) {	//
+									free(tmpstr);
+									tmpstr = getFileString(in);	//
+									arglen = atoi(tmpstr);	//
+								}
+								if (simpleval[scount].args > 0) {	//
+									arglen = simpleval[scount].args;	//
+								}
+								if (arglen) {	//
+									tmp->argv = (char **)safe_malloc(sizeof(char **) * (arglen + 1));	//
+									for (i = 0; i < arglen; i++) {	//
+										tmp->argv = (char **)safe_malloc(sizeof(char **) * (arglen + 1));	//
+										for (i = 0; i < arglen; i++) {	//
+											tmp->argv[i] = getFileString(in);	//
+										}
+										tmp->argv[arglen] = NULL;	//
+
+									}
+								}
 								break;
 							}
 							scount++;
 						}
-//                                      if (simpleval[scount].name == NULL)
-//                                          {
-//                                          fprintf(stderr,"danger %s is missing\n",tmpstr);
-//                                          }
+//                                              if (simpleval[scount].name ==
+//                                                  NULL) {
+//                                                      fprintf(stderr,
+//                                                              "danger %s is missing\n",
+//                                                              tmpstr);
+//                                              }
 					}
 					free(tmpstr);
 					tmpstr = getFileString(in);
@@ -1451,7 +1294,8 @@ static char *getdisc(void)	// works only for squashfs
 	static char ret[4];
 	unsigned char *disks[] =
 	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-"sdi2" };
+		"sdi2"
+	};
 	for (i = 0; i < 9; i++) {
 		char dev[64];
 
