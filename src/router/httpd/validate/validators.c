@@ -52,6 +52,7 @@ int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
 char *(*websGetVar) (webs_t wp, char *var, char *d);
 int (*websWrite) (webs_t wp, char *fmt, ...);
 struct wl_client_mac *wl_client_macs;
+void (*validate_cgi) (webs_t fp) = NULL;
 
 void initWeb(struct Webenvironment *env)
 {
@@ -61,6 +62,7 @@ void initWeb(struct Webenvironment *env)
 	wl_client_macs = env->Pwl_client_macs;
 	websWrite = env->PwebsWrite;
 	do_ej_buffer = env->Pdo_ej_buffer;
+	validate_cgi = env->Pvalidate_cgi;
 }
 
 /*
