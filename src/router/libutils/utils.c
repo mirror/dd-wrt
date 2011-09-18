@@ -109,6 +109,11 @@ int count_processes(char *pidName)
 	cprintf("Search for %s\n", pidName);
 	if ((fp = popen("ps", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
+			int len = strlen(line);
+			if (len > 254)
+				len = 254;
+			line[len - 1] = ' ';
+			line[len] = 0;
 			if (strstr(line, safename) && !strstr(line, zombie)) {
 				i++;
 			}
@@ -552,12 +557,10 @@ int internal_getRouterBrand()
 		if (!strncmp(gwid, "GW2388", 6)) {
 			setRouter("Gateworks Laguna GW2388");
 			return ROUTER_BOARD_GW2388;
-		} else 
-		if (!strncmp(gwid, "GW2380", 6)) {
+		} else if (!strncmp(gwid, "GW2380", 6)) {
 			setRouter("Gateworks Laguna GW2380");
 			return ROUTER_BOARD_GW2380;
-		} else 
-		{
+		} else {
 			setRouter("Gateworks Laguna GWXXXX");
 			return ROUTER_BOARD_GW2388;
 		}
@@ -1471,7 +1474,6 @@ int internal_getRouterBrand()
 		return ROUTER_NETCORE_NW715P;
 	}
 
-
 	if (boardnum == 45 && nvram_match("boardtype", "0x04CD")
 	    && nvram_match("boardrev", "0x1201")) {
 		setRouter("Asus RT-N12");
@@ -1920,7 +1922,7 @@ int internal_getRouterBrand()
 		} else if (nvram_match("boot_hw_model", "E3200")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E3200");
-			return ROUTER_LINKSYS_E3200;			
+			return ROUTER_LINKSYS_E3200;
 		} else if (nvram_match("boot_hw_model", "E4200")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E4200");
@@ -2202,13 +2204,13 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNR3500v2/U/L");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
-	
+
 	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
 	    && nvram_match("boardrev", "0x1100")) {
 		setRouter("Netgear WNDR3400");
 		return ROUTER_NETGEAR_WNDR3400;
 	}
-	
+
 	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear WNDR4000");
@@ -2693,7 +2695,7 @@ char *getSTA(void)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("sta", "ath%d_mode", i) 
+		if (nvram_nmatch("sta", "ath%d_mode", i)
 		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 			return stalist[i];
 		}
@@ -3248,8 +3250,8 @@ int led_control(int type, int act)
 	{
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_UNIFI:
-	    diag_gpio=0x001;
-	break;
+		diag_gpio = 0x001;
+		break;
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH
 		diag_gpio = 0x105;
