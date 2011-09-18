@@ -1,0 +1,13 @@
+# DO NOT EDIT. This file is generated from Kbuild.src
+# Makefile for busybox
+#
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
+#
+# Licensed under GPLv2, see file LICENSE in this source tree.
+
+lib-y:=
+
+lib-$(CONFIG_BOOTCHARTD) += bootchartd.o
+lib-$(CONFIG_HALT) += halt.o
+lib-$(CONFIG_INIT) += init.o
+lib-$(CONFIG_MESG) += mesg.o
