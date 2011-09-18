@@ -1,4 +1,0 @@
-echo "\\"
-echo a"\\"b
-echo '\\'
-echo c'\\'d
