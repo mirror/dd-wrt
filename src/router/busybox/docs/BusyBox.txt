@@ -80,16 +80,16 @@ COMMANDS
             chmod, chown, chroot, clear, cmp, cp, cut, date, dc, dd, df,
             dirname, dmesg, dnsdomainname, du, echo, egrep, env, expr, false,
             fgrep, find, free, ftpget, ftpput, getopt, grep, gunzip, gzip, halt,
-            head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
+            hdparm, head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
             install, kill, killall, klogd, less, ln, logger, login, logread, ls,
             lsmod, md5sum, mesg, mkdir, mke2fs, mkfifo, mkfs.ext2, more, mount,
-            mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, pivot_root,
-            poweroff, printf, ps, pwd, reboot, reset, rm, rmdir, rmmod, route,
-            run-parts, rx, sed, sendmail, sh, sleep, sort, strings, stty, sync,
-            syslogd, tail, tar, tee, telnet, telnetd, test, time, top, touch,
-            tr, traceroute, true, tty, umount, uname, uniq, uptime, usleep,
-            uudecode, uuencode, vconfig, vi, watch, wc, wget, which, whoami,
-            xargs, yes, zcat
+            mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, ping6,
+            pivot_root, poweroff, printf, ps, pwd, reboot, reset, rm, rmdir,
+            rmmod, route, run-parts, rx, sed, sendmail, sh, sleep, sort,
+            strings, stty, sync, syslogd, tail, tar, tee, telnet, telnetd, test,
+            time, top, touch, tr, traceroute, traceroute6, true, tty, umount,
+            uname, uniq, uptime, usleep, uudecode, uuencode, vconfig, vi, watch,
+            wc, wget, which, whoami, xargs, yes, zcat
 
 COMMAND DESCRIPTIONS
     adjtimex
@@ -194,6 +194,9 @@ COMMAND DESCRIPTIONS
     halt
         halt [-d DELAY] [-n] [-f]
 
+    hdparm
+        hdparm [OPTIONS] [DEVICE]
+
     head
         head [OPTIONS] [FILE]...
 
@@ -296,6 +299,9 @@ COMMAND DESCRIPTIONS
     ping
         ping [OPTIONS] HOST
 
+    ping6
+        ping6 [OPTIONS] HOST
+
     pivot_root
         pivot_root NEW_ROOT PUT_OLD
 
@@ -385,9 +391,13 @@ COMMAND DESCRIPTIONS
     tr  tr [-cds] STRING1 [STRING2]
 
     traceroute
-        traceroute [-FIldnrv] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]
-        [-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE] [-z
-        PAUSE_MSEC] HOST [BYTES]
+        traceroute [-46FIldnrv] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q
+        PROBES] [-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE]
+        [-z PAUSE_MSEC] HOST [BYTES]
+
+    traceroute6
+        traceroute6 [-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES] [-s SRC_IP]
+        [-t TOS] [-w WAIT_SEC] [-i IFACE] HOST [BYTES]
 
     true
         true
