@@ -215,16 +215,16 @@ Currently available applets include:
 \&        chmod, chown, chroot, clear, cmp, cp, cut, date, dc, dd, df,
 \&        dirname, dmesg, dnsdomainname, du, echo, egrep, env, expr, false,
 \&        fgrep, find, free, ftpget, ftpput, getopt, grep, gunzip, gzip, halt,
-\&        head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
+\&        hdparm, head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
 \&        install, kill, killall, klogd, less, ln, logger, login, logread, ls,
 \&        lsmod, md5sum, mesg, mkdir, mke2fs, mkfifo, mkfs.ext2, more, mount,
-\&        mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, pivot_root,
-\&        poweroff, printf, ps, pwd, reboot, reset, rm, rmdir, rmmod, route,
-\&        run\-parts, rx, sed, sendmail, sh, sleep, sort, strings, stty, sync,
-\&        syslogd, tail, tar, tee, telnet, telnetd, test, time, top, touch,
-\&        tr, traceroute, true, tty, umount, uname, uniq, uptime, usleep,
-\&        uudecode, uuencode, vconfig, vi, watch, wc, wget, which, whoami,
-\&        xargs, yes, zcat
+\&        mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, ping6,
+\&        pivot_root, poweroff, printf, ps, pwd, reboot, reset, rm, rmdir,
+\&        rmmod, route, run\-parts, rx, sed, sendmail, sh, sleep, sort,
+\&        strings, stty, sync, syslogd, tail, tar, tee, telnet, telnetd, test,
+\&        time, top, touch, tr, traceroute, traceroute6, true, tty, umount,
+\&        uname, uniq, uptime, usleep, uudecode, uuencode, vconfig, vi, watch,
+\&        wc, wget, which, whoami, xargs, yes, zcat
 .Ve
 .SH "COMMAND DESCRIPTIONS"
 .IX Header "COMMAND DESCRIPTIONS"
@@ -342,6 +342,9 @@ gzip [\-cfd] [\s-1FILE\s0]...
 .IP "\fBhalt\fR" 4
 .IX Item "halt"
 halt [\-d \s-1DELAY\s0] [\-n] [\-f]
+.IP "\fBhdparm\fR" 4
+.IX Item "hdparm"
+hdparm [\s-1OPTIONS\s0] [\s-1DEVICE\s0]
 .IP "\fBhead\fR" 4
 .IX Item "head"
 head [\s-1OPTIONS\s0] [\s-1FILE\s0]...
@@ -448,6 +451,9 @@ pidof [\s-1OPTIONS\s0] [\s-1NAME\s0]...
 .IP "\fBping\fR" 4
 .IX Item "ping"
 ping [\s-1OPTIONS\s0] \s-1HOST\s0
+.IP "\fBping6\fR" 4
+.IX Item "ping6"
+ping6 [\s-1OPTIONS\s0] \s-1HOST\s0
 .IP "\fBpivot_root\fR" 4
 .IX Item "pivot_root"
 pivot_root \s-1NEW_ROOT\s0 \s-1PUT_OLD\s0
@@ -546,9 +552,14 @@ touch [\-c] \s-1FILE\s0 [\s-1FILE\s0]...
 tr [\-cds] \s-1STRING1\s0 [\s-1STRING2\s0]
 .IP "\fBtraceroute\fR" 4
 .IX Item "traceroute"
-traceroute [\-FIldnrv] [\-f 1ST_TTL] [\-m \s-1MAXTTL\s0] [\-p \s-1PORT\s0] [\-q \s-1PROBES\s0]
+traceroute [\-46FIldnrv] [\-f 1ST_TTL] [\-m \s-1MAXTTL\s0] [\-p \s-1PORT\s0] [\-q \s-1PROBES\s0]
 	[\-s \s-1SRC_IP\s0] [\-t \s-1TOS\s0] [\-w \s-1WAIT_SEC\s0] [\-g \s-1GATEWAY\s0] [\-i \s-1IFACE\s0]
 	[\-z \s-1PAUSE_MSEC\s0] \s-1HOST\s0 [\s-1BYTES\s0]
+.IP "\fBtraceroute6\fR" 4
+.IX Item "traceroute6"
+traceroute6 [\-dnrv] [\-m \s-1MAXTTL\s0] [\-p \s-1PORT\s0] [\-q \s-1PROBES\s0]
+	[\-s \s-1SRC_IP\s0] [\-t \s-1TOS\s0] [\-w \s-1WAIT_SEC\s0] [\-i \s-1IFACE\s0]
+	\s-1HOST\s0 [\s-1BYTES\s0]
 .IP "\fBtrue\fR" 4
 .IX Item "true"
 true
