@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "BUSYBOX 1"
-.TH BUSYBOX 1 "2011-09-18" "version 1.19.2" "busybox"
+.TH BUSYBOX 1 "2011-09-19" "version 1.19.2" "busybox"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -210,168 +210,54 @@ been enabled, more detailed usage information will also be available.
 .IX Header "COMMANDS"
 Currently available applets include:
 .PP
-.Vb 10
-\&        [, [[, adjtimex, arp, arping, ash, awk, basename, bash, cat, chgrp,
-\&        chmod, chown, chroot, clear, cmp, cp, cut, date, dc, dd, df,
-\&        dirname, dmesg, dnsdomainname, du, echo, egrep, env, expr, false,
-\&        fgrep, find, free, ftpget, ftpput, getopt, grep, gunzip, gzip, halt,
-\&        hdparm, head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
-\&        install, kill, killall, klogd, less, ln, logger, login, logread, ls,
-\&        lsmod, md5sum, mesg, mkdir, mke2fs, mkfifo, mkfs.ext2, more, mount,
-\&        mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, ping6,
-\&        pivot_root, poweroff, printf, ps, pwd, reboot, reset, rm, rmdir,
-\&        rmmod, route, run\-parts, rx, sed, sendmail, sh, sleep, sort,
-\&        strings, stty, sync, syslogd, tail, tar, tee, telnet, telnetd, test,
-\&        time, top, touch, tr, traceroute, traceroute6, true, tty, umount,
-\&        uname, uniq, uptime, usleep, uudecode, uuencode, vconfig, vi, watch,
-\&        wc, wget, which, whoami, xargs, yes, zcat
+.Vb 5
+\&        [, [[, ash, bash, cat, chmod, cp, date, dnsdomainname, echo, egrep,
+\&        fgrep, free, grep, halt, hostname, ifconfig, insmod, kill, killall,
+\&        klogd, logger, login, logread, mkdir, pidof, ping, poweroff, ps,
+\&        reboot, rm, rmmod, route, sh, sleep, sort, syslogd, telnetd, test,
+\&        touch, uptime, vconfig, wc, wget
 .Ve
 .SH "COMMAND DESCRIPTIONS"
 .IX Header "COMMAND DESCRIPTIONS"
-.IP "\fBadjtimex\fR" 4
-.IX Item "adjtimex"
-adjtimex [\-q] [\-o \s-1OFF\s0] [\-f \s-1FREQ\s0] [\-p \s-1TCONST\s0] [\-t \s-1TICK\s0]
-.IP "\fBarp\fR" 4
-.IX Item "arp"
-arp 
-[\-vn]	[\-H \s-1HWTYPE\s0] [\-i \s-1IF\s0] \-a [\s-1HOSTNAME\s0]
-[\-v]		    [\-i \s-1IF\s0] \-d \s-1HOSTNAME\s0 [pub]
-[\-v]	[\-H \s-1HWTYPE\s0] [\-i \s-1IF\s0] \-s \s-1HOSTNAME\s0 \s-1HWADDR\s0 [temp]
-[\-v]	[\-H \s-1HWTYPE\s0] [\-i \s-1IF\s0] \-s \s-1HOSTNAME\s0 \s-1HWADDR\s0 [netmask \s-1MASK\s0] pub
-[\-v]	[\-H \s-1HWTYPE\s0] [\-i \s-1IF\s0] \-Ds \s-1HOSTNAME\s0 \s-1IFACE\s0 [netmask \s-1MASK\s0] pub
-.IP "\fBarping\fR" 4
-.IX Item "arping"
-arping [\-fqbDUA] [\-c \s-1CNT\s0] [\-w \s-1TIMEOUT\s0] [\-I \s-1IFACE\s0] [\-s \s-1SRC_IP\s0] \s-1DST_IP\s0
 .IP "\fBash\fR" 4
 .IX Item "ash"
 ash [\-/+OPTIONS] [\-/+o \s-1OPT\s0]... [\-c '\s-1SCRIPT\s0' [\s-1ARG0\s0 [\s-1ARGS\s0]] / \s-1FILE\s0 [\s-1ARGS\s0]]
-.IP "\fBawk\fR" 4
-.IX Item "awk"
-awk [\s-1OPTIONS\s0] [\s-1AWK_PROGRAM\s0] [\s-1FILE\s0]...
-.IP "\fBbasename\fR" 4
-.IX Item "basename"
-basename \s-1FILE\s0 [\s-1SUFFIX\s0]
 .IP "\fBbash\fR" 4
 .IX Item "bash"
 bash [\-/+OPTIONS] [\-/+o \s-1OPT\s0]... [\-c '\s-1SCRIPT\s0' [\s-1ARG0\s0 [\s-1ARGS\s0]] / \s-1FILE\s0 [\s-1ARGS\s0]]
 .IP "\fBcat\fR" 4
 .IX Item "cat"
 cat [\s-1FILE\s0]...
-.IP "\fBchgrp\fR" 4
-.IX Item "chgrp"
-chgrp [\-RhLHP]... \s-1GROUP\s0 \s-1FILE\s0...
 .IP "\fBchmod\fR" 4
 .IX Item "chmod"
 chmod [\-R] MODE[,MODE]... \s-1FILE\s0...
-.IP "\fBchown\fR" 4
-.IX Item "chown"
-chown [\-RhLHP]... OWNER[<.|:>[\s-1GROUP\s0]] \s-1FILE\s0...
-.IP "\fBchroot\fR" 4
-.IX Item "chroot"
-chroot \s-1NEWROOT\s0 [\s-1PROG\s0 \s-1ARGS\s0]
-.IP "\fBclear\fR" 4
-.IX Item "clear"
-clear
-.IP "\fBcmp\fR" 4
-.IX Item "cmp"
-cmp [\-l] [\-s] \s-1FILE1\s0 [\s-1FILE2\s0]
 .IP "\fBcp\fR" 4
 .IX Item "cp"
 cp [\s-1OPTIONS\s0] \s-1SOURCE\s0 \s-1DEST\s0
-.IP "\fBcut\fR" 4
-.IX Item "cut"
-cut [\s-1OPTIONS\s0] [\s-1FILE\s0]...
 .IP "\fBdate\fR" 4
 .IX Item "date"
 date [\s-1OPTIONS\s0] [+FMT] [\s-1TIME\s0]
-.IP "\fBdc\fR" 4
-.IX Item "dc"
-dc \s-1EXPRESSION\s0...
-.IP "\fBdd\fR" 4
-.IX Item "dd"
-dd [if=FILE] [of=FILE] [bs=N] [count=N] [skip=N]
-	[seek=N]
-.IP "\fBdf\fR" 4
-.IX Item "df"
-df [\-Pkmhai] [\-B \s-1SIZE\s0] [\s-1FILESYSTEM\s0]...
-.IP "\fBdirname\fR" 4
-.IX Item "dirname"
-dirname \s-1FILENAME\s0
-.IP "\fBdmesg\fR" 4
-.IX Item "dmesg"
-dmesg [\-c] [\-n \s-1LEVEL\s0] [\-s \s-1SIZE\s0]
-.IP "\fBdu\fR" 4
-.IX Item "du"
-du [\-aHLdclsxhmk] [\s-1FILE\s0]...
 .IP "\fBecho\fR" 4
 .IX Item "echo"
 echo [\-neE] [\s-1ARG\s0]...
-.IP "\fBenv\fR" 4
-.IX Item "env"
-env [\-iu] [\-] [name=value]... [\s-1PROG\s0 \s-1ARGS\s0]
-.IP "\fBexpr\fR" 4
-.IX Item "expr"
-expr \s-1EXPRESSION\s0
-.IP "\fBfalse\fR" 4
-.IX Item "false"
-false
-.IP "\fBfind\fR" 4
-.IX Item "find"
-find [\s-1PATH\s0]... [\s-1OPTIONS\s0] [\s-1ACTIONS\s0]
 .IP "\fBfree\fR" 4
 .IX Item "free"
 free
-.IP "\fBftpget\fR" 4
-.IX Item "ftpget"
-ftpget [\s-1OPTIONS\s0] \s-1HOST\s0 [\s-1LOCAL_FILE\s0] \s-1REMOTE_FILE\s0
-.IP "\fBftpput\fR" 4
-.IX Item "ftpput"
-ftpput [\s-1OPTIONS\s0] \s-1HOST\s0 [\s-1REMOTE_FILE\s0] \s-1LOCAL_FILE\s0
-.IP "\fBgetopt\fR" 4
-.IX Item "getopt"
-getopt [\s-1OPTIONS\s0]
 .IP "\fBgrep\fR" 4
 .IX Item "grep"
 grep [\-HhnlLoqvsriwFE] [\-m N] [\-A/B/C N] PATTERN/\-e \s-1PATTERN\s0.../\-f \s-1FILE\s0 [\s-1FILE\s0]...
-.IP "\fBgunzip\fR" 4
-.IX Item "gunzip"
-gunzip [\-cft] [\s-1FILE\s0]...
-.IP "\fBgzip\fR" 4
-.IX Item "gzip"
-gzip [\-cfd] [\s-1FILE\s0]...
 .IP "\fBhalt\fR" 4
 .IX Item "halt"
 halt [\-d \s-1DELAY\s0] [\-n] [\-f]
-.IP "\fBhdparm\fR" 4
-.IX Item "hdparm"
-hdparm [\s-1OPTIONS\s0] [\s-1DEVICE\s0]
-.IP "\fBhead\fR" 4
-.IX Item "head"
-head [\s-1OPTIONS\s0] [\s-1FILE\s0]...
-.IP "\fBhexdump\fR" 4
-.IX Item "hexdump"
-hexdump [\-bcCdefnosvx] [\s-1FILE\s0]...
 .IP "\fBhostname\fR" 4
 .IX Item "hostname"
 hostname [\s-1OPTIONS\s0] [\s-1HOSTNAME\s0 | \-F \s-1FILE\s0]
-.IP "\fBid\fR" 4
-.IX Item "id"
-id [\s-1OPTIONS\s0] [\s-1USER\s0]
 .IP "\fBifconfig\fR" 4
 .IX Item "ifconfig"
 ifconfig [\-a] interface [address]
-.IP "\fBifdown\fR" 4
-.IX Item "ifdown"
-ifdown [\-anvf] [\-i \s-1FILE\s0] \s-1IFACE\s0...
-.IP "\fBifup\fR" 4
-.IX Item "ifup"
-ifup [\-anvf] [\-i \s-1FILE\s0] \s-1IFACE\s0...
 .IP "\fBinsmod\fR" 4
 .IX Item "insmod"
 insmod [\s-1OPTIONS\s0] \s-1MODULE\s0 [SYMBOL=VALUE]...
-.IP "\fBinstall\fR" 4
-.IX Item "install"
-install [\-cdDsp] [\-o \s-1USER\s0] [\-g \s-1GRP\s0] [\-m \s-1MODE\s0] [\s-1SOURCE\s0]... \s-1DEST\s0
 .IP "\fBkill\fR" 4
 .IX Item "kill"
 kill [\-l] [\-SIG] \s-1PID\s0...
@@ -381,12 +267,6 @@ killall [\-l] [\-q] [\-SIG] \s-1PROCESS_NAME\s0...
 .IP "\fBklogd\fR" 4
 .IX Item "klogd"
 klogd [\-c N] [\-n]
-.IP "\fBless\fR" 4
-.IX Item "less"
-less [\-EMNmh~I?] [\s-1FILE\s0]...
-.IP "\fBln\fR" 4
-.IX Item "ln"
-ln [\s-1OPTIONS\s0] \s-1TARGET\s0... LINK|DIR
 .IP "\fBlogger\fR" 4
 .IX Item "logger"
 logger [\s-1OPTIONS\s0] [\s-1MESSAGE\s0]
@@ -396,227 +276,66 @@ login [\-p] [\-h \s-1HOST\s0] [[\-f] \s-1USER\s0]
 .IP "\fBlogread\fR" 4
 .IX Item "logread"
 logread [\-f]
-.IP "\fBls\fR" 4
-.IX Item "ls"
-ls [\-1AaCxdLHRFplinsehrSXvctu] [\-w \s-1WIDTH\s0] [\s-1FILE\s0]...
-.IP "\fBlsmod\fR" 4
-.IX Item "lsmod"
-lsmod
-.IP "\fBmd5sum\fR" 4
-.IX Item "md5sum"
-md5sum [\s-1FILE\s0]...
-.IP "\fBmesg\fR" 4
-.IX Item "mesg"
-mesg [y|n]
 .IP "\fBmkdir\fR" 4
 .IX Item "mkdir"
 mkdir [\s-1OPTIONS\s0] \s-1DIRECTORY\s0...
-.IP "\fBmke2fs\fR" 4
-.IX Item "mke2fs"
-mke2fs [\-Fn] [\-b \s-1BLK_SIZE\s0] [\-i \s-1INODE_RATIO\s0] [\-I \s-1INODE_SIZE\s0] [\-m \s-1RESERVED_PERCENT\s0] [\-L \s-1LABEL\s0] \s-1BLOCKDEV\s0 [\s-1KBYTES\s0]
-.IP "\fBmkfifo\fR" 4
-.IX Item "mkfifo"
-mkfifo [\-m \s-1MODE\s0] \s-1NAME\s0
-.IP "\fBmkfs.ext2\fR" 4
-.IX Item "mkfs.ext2"
-mkfs.ext2 [\-Fn] [\-b \s-1BLK_SIZE\s0] [\-i \s-1INODE_RATIO\s0] [\-I \s-1INODE_SIZE\s0] [\-m \s-1RESERVED_PERCENT\s0] [\-L \s-1LABEL\s0] \s-1BLOCKDEV\s0 [\s-1KBYTES\s0]
-.IP "\fBmore\fR" 4
-.IX Item "more"
-more [\s-1FILE\s0]...
-.IP "\fBmount\fR" 4
-.IX Item "mount"
-mount [\s-1OPTIONS\s0] [\-o \s-1OPTS\s0] \s-1DEVICE\s0 \s-1NODE\s0
-.IP "\fBmv\fR" 4
-.IX Item "mv"
-mv [\-fin] \s-1SOURCE\s0 \s-1DEST\s0
-or: mv [\-fin] \s-1SOURCE\s0... \s-1DIRECTORY\s0
-.IP "\fBnameif\fR" 4
-.IX Item "nameif"
-nameif [\-s] [\-c \s-1FILE\s0] [\s-1IFNAME\s0 \s-1HWADDR\s0]...
-.IP "\fBnc\fR" 4
-.IX Item "nc"
-nc [\-iN] [\-wN] [\-l] [\-p \s-1PORT\s0] [\-f FILE|IPADDR \s-1PORT\s0] [\-e \s-1PROG\s0]
-.IP "\fBnetstat\fR" 4
-.IX Item "netstat"
-netstat [\-ral] [\-tuwx] [\-en]
-.IP "\fBnohup\fR" 4
-.IX Item "nohup"
-nohup \s-1PROG\s0 \s-1ARGS\s0
-.IP "\fBnslookup\fR" 4
-.IX Item "nslookup"
-nslookup [\s-1HOST\s0] [\s-1SERVER\s0]
 .IP "\fBpidof\fR" 4
 .IX Item "pidof"
-pidof [\s-1OPTIONS\s0] [\s-1NAME\s0]...
+pidof [\s-1NAME\s0]...
 .IP "\fBping\fR" 4
 .IX Item "ping"
-ping [\s-1OPTIONS\s0] \s-1HOST\s0
-.IP "\fBping6\fR" 4
-.IX Item "ping6"
-ping6 [\s-1OPTIONS\s0] \s-1HOST\s0
-.IP "\fBpivot_root\fR" 4
-.IX Item "pivot_root"
-pivot_root \s-1NEW_ROOT\s0 \s-1PUT_OLD\s0
+ping \s-1HOST\s0
 .IP "\fBpoweroff\fR" 4
 .IX Item "poweroff"
 poweroff [\-d \s-1DELAY\s0] [\-n] [\-f]
-.IP "\fBprintf\fR" 4
-.IX Item "printf"
-printf \s-1FORMAT\s0 [\s-1ARGUMENT\s0]...
 .IP "\fBps\fR" 4
 .IX Item "ps"
 ps
-.IP "\fBpwd\fR" 4
-.IX Item "pwd"
-pwd
 .IP "\fBreboot\fR" 4
 .IX Item "reboot"
 reboot [\-d \s-1DELAY\s0] [\-n] [\-f]
-.IP "\fBreset\fR" 4
-.IX Item "reset"
-reset
 .IP "\fBrm\fR" 4
 .IX Item "rm"
 rm [\-irf] \s-1FILE\s0...
-.IP "\fBrmdir\fR" 4
-.IX Item "rmdir"
-rmdir [\s-1OPTIONS\s0] \s-1DIRECTORY\s0...
 .IP "\fBrmmod\fR" 4
 .IX Item "rmmod"
 rmmod [\-wfa] [\s-1MODULE\s0]...
 .IP "\fBroute\fR" 4
 .IX Item "route"
 route [{add|del|delete}]
-.IP "\fBrun-parts\fR" 4
-.IX Item "run-parts"
-run-parts [\-t] [\-a \s-1ARG\s0] [\-u \s-1MASK\s0] \s-1DIRECTORY\s0
-.IP "\fBrx\fR" 4
-.IX Item "rx"
-rx \s-1FILE\s0
-.IP "\fBsed\fR" 4
-.IX Item "sed"
-sed [\-efinr] \s-1SED_CMD\s0 [\s-1FILE\s0]...
-.IP "\fBsendmail\fR" 4
-.IX Item "sendmail"
-sendmail [\s-1OPTIONS\s0] [\s-1RECIPIENT_EMAIL\s0]...
 .IP "\fBsh\fR" 4
 .IX Item "sh"
 sh [\-/+OPTIONS] [\-/+o \s-1OPT\s0]... [\-c '\s-1SCRIPT\s0' [\s-1ARG0\s0 [\s-1ARGS\s0]] / \s-1FILE\s0 [\s-1ARGS\s0]]
 .IP "\fBsleep\fR" 4
 .IX Item "sleep"
-sleep [N]...
+sleep N
 .IP "\fBsort\fR" 4
 .IX Item "sort"
-sort [\-nrugMcszbdfimSTokt] [\-o \s-1FILE\s0] [\-k start[.offset][opts][,end[.offset][opts]] [\-t \s-1CHAR\s0] [\s-1FILE\s0]...
-.IP "\fBstrings\fR" 4
-.IX Item "strings"
-strings [\-afo] [\-n \s-1LEN\s0] [\s-1FILE\s0]...
-.IP "\fBstty\fR" 4
-.IX Item "stty"
-stty [\-a|g] [\-F \s-1DEVICE\s0] [\s-1SETTING\s0]...
-.IP "\fBsync\fR" 4
-.IX Item "sync"
-sync
+sort [\-nru] [\s-1FILE\s0]...
 .IP "\fBsyslogd\fR" 4
 .IX Item "syslogd"
 syslogd [\s-1OPTIONS\s0]
-.IP "\fBtail\fR" 4
-.IX Item "tail"
-tail [\s-1OPTIONS\s0] [\s-1FILE\s0]...
-.IP "\fBtar\fR" 4
-.IX Item "tar"
-tar \-[cxtzhvO] [\-f \s-1TARFILE\s0] [\-C \s-1DIR\s0] [\s-1FILE\s0]...
-.IP "\fBtee\fR" 4
-.IX Item "tee"
-tee [\-ai] [\s-1FILE\s0]...
-.IP "\fBtelnet\fR" 4
-.IX Item "telnet"
-telnet [\-a] [\-l \s-1USER\s0] \s-1HOST\s0 [\s-1PORT\s0]
 .IP "\fBtelnetd\fR" 4
 .IX Item "telnetd"
 telnetd [\s-1OPTIONS\s0]
 .IP "\fBtest\fR" 4
 .IX Item "test"
 test \s-1EXPRESSION\s0 ]
-.IP "\fBtime\fR" 4
-.IX Item "time"
-time [\-v] \s-1PROG\s0 \s-1ARGS\s0
-.IP "\fBtop\fR" 4
-.IX Item "top"
-top [\-b] [\-nCOUNT] [\-dSECONDS] [\-m]
 .IP "\fBtouch\fR" 4
 .IX Item "touch"
 touch [\-c] \s-1FILE\s0 [\s-1FILE\s0]...
-.IP "\fBtr\fR" 4
-.IX Item "tr"
-tr [\-cds] \s-1STRING1\s0 [\s-1STRING2\s0]
-.IP "\fBtraceroute\fR" 4
-.IX Item "traceroute"
-traceroute [\-46FIldnrv] [\-f 1ST_TTL] [\-m \s-1MAXTTL\s0] [\-p \s-1PORT\s0] [\-q \s-1PROBES\s0]
-	[\-s \s-1SRC_IP\s0] [\-t \s-1TOS\s0] [\-w \s-1WAIT_SEC\s0] [\-g \s-1GATEWAY\s0] [\-i \s-1IFACE\s0]
-	[\-z \s-1PAUSE_MSEC\s0] \s-1HOST\s0 [\s-1BYTES\s0]
-.IP "\fBtraceroute6\fR" 4
-.IX Item "traceroute6"
-traceroute6 [\-dnrv] [\-m \s-1MAXTTL\s0] [\-p \s-1PORT\s0] [\-q \s-1PROBES\s0]
-	[\-s \s-1SRC_IP\s0] [\-t \s-1TOS\s0] [\-w \s-1WAIT_SEC\s0] [\-i \s-1IFACE\s0]
-	\s-1HOST\s0 [\s-1BYTES\s0]
-.IP "\fBtrue\fR" 4
-.IX Item "true"
-true
-.IP "\fBtty\fR" 4
-.IX Item "tty"
-tty
-.IP "\fBumount\fR" 4
-.IX Item "umount"
-umount [\s-1OPTIONS\s0] FILESYSTEM|DIRECTORY
-.IP "\fBuname\fR" 4
-.IX Item "uname"
-uname [\-amnrspv]
-.IP "\fBuniq\fR" 4
-.IX Item "uniq"
-uniq [\-cdu][\-f,s,w N] [\s-1INPUT\s0 [\s-1OUTPUT\s0]]
 .IP "\fBuptime\fR" 4
 .IX Item "uptime"
 uptime
-.IP "\fBusleep\fR" 4
-.IX Item "usleep"
-usleep N
-.IP "\fBuudecode\fR" 4
-.IX Item "uudecode"
-uudecode [\-o \s-1OUTFILE\s0] [\s-1INFILE\s0]
-.IP "\fBuuencode\fR" 4
-.IX Item "uuencode"
-uuencode [\-m] [\s-1INFILE\s0] \s-1STORED_FILENAME\s0
 .IP "\fBvconfig\fR" 4
 .IX Item "vconfig"
 vconfig \s-1COMMAND\s0 [\s-1OPTIONS\s0]
-.IP "\fBvi\fR" 4
-.IX Item "vi"
-vi [\s-1OPTIONS\s0] [\s-1FILE\s0]...
-.IP "\fBwatch\fR" 4
-.IX Item "watch"
-watch [\-n \s-1SEC\s0] [\-t] \s-1PROG\s0 \s-1ARGS\s0
 .IP "\fBwc\fR" 4
 .IX Item "wc"
 wc [\-clwL] [\s-1FILE\s0]...
 .IP "\fBwget\fR" 4
 .IX Item "wget"
 wget [\-csq] [\-O \s-1FILE\s0] [\-Y on/off] [\-P \s-1DIR\s0] [\-U \s-1AGENT\s0] \s-1URL\s0...
-.IP "\fBwhich\fR" 4
-.IX Item "which"
-which [\s-1COMMAND\s0]...
-.IP "\fBwhoami\fR" 4
-.IX Item "whoami"
-whoami
-.IP "\fBxargs\fR" 4
-.IX Item "xargs"
-xargs [\s-1OPTIONS\s0] [\s-1PROG\s0 \s-1ARGS\s0]
-.IP "\fByes\fR" 4
-.IX Item "yes"
-yes [\s-1STRING\s0]
-.IP "\fBzcat\fR" 4
-.IX Item "zcat"
-zcat \s-1FILE\s0
 .SH "LIBC NSS"
 .IX Header "LIBC NSS"
 \&\s-1GNU\s0 Libc (glibc) uses the Name Service Switch (\s-1NSS\s0) to configure the behavior

@@ -51,7 +51,8 @@ endif
 # gcc 3.x emits bogus "old style proto" warning on find.c:alloc_action()
 CFLAGS += $(call cc-ifversion, -ge, 0400, -Wold-style-definition)
 
-CFLAGS += $(call cc-option,-fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
+CFLAGS += $(call cc-option,-Os -fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
+#CFLAGS += $(call cc-option,-fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
 # -fno-guess-branch-probability: prohibit pseudo-random guessing
 # of branch probabilities (hopefully makes bloatcheck more stable):
 CFLAGS += $(call cc-option,-fno-guess-branch-probability,)
