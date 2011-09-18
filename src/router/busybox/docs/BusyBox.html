@@ -118,16 +118,16 @@ been enabled, more detailed usage information will also be available.</p>
         chmod, chown, chroot, clear, cmp, cp, cut, date, dc, dd, df,
         dirname, dmesg, dnsdomainname, du, echo, egrep, env, expr, false,
         fgrep, find, free, ftpget, ftpput, getopt, grep, gunzip, gzip, halt,
-        head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
+        hdparm, head, hexdump, hostname, id, ifconfig, ifdown, ifup, insmod,
         install, kill, killall, klogd, less, ln, logger, login, logread, ls,
         lsmod, md5sum, mesg, mkdir, mke2fs, mkfifo, mkfs.ext2, more, mount,
-        mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, pivot_root,
-        poweroff, printf, ps, pwd, reboot, reset, rm, rmdir, rmmod, route,
-        run-parts, rx, sed, sendmail, sh, sleep, sort, strings, stty, sync,
-        syslogd, tail, tar, tee, telnet, telnetd, test, time, top, touch,
-        tr, traceroute, true, tty, umount, uname, uniq, uptime, usleep,
-        uudecode, uuencode, vconfig, vi, watch, wc, wget, which, whoami,
-        xargs, yes, zcat</pre>
+        mv, nameif, nc, netstat, nohup, nslookup, pidof, ping, ping6,
+        pivot_root, poweroff, printf, ps, pwd, reboot, reset, rm, rmdir,
+        rmmod, route, run-parts, rx, sed, sendmail, sh, sleep, sort,
+        strings, stty, sync, syslogd, tail, tar, tee, telnet, telnetd, test,
+        time, top, touch, tr, traceroute, traceroute6, true, tty, umount,
+        uname, uniq, uptime, usleep, uudecode, uuencode, vconfig, vi, watch,
+        wc, wget, which, whoami, xargs, yes, zcat</pre>
 <p>
 </p>
 <hr />
@@ -319,6 +319,11 @@ been enabled, more detailed usage information will also be available.</p>
 <dd>
 <p>halt [-d DELAY] [-n] [-f]</p>
 </dd>
+<dt><strong><a name="hdparm" class="item"><strong>hdparm</strong></a></strong></dt>
+
+<dd>
+<p>hdparm [OPTIONS] [DEVICE]</p>
+</dd>
 <dt><strong><a name="head" class="item"><strong>head</strong></a></strong></dt>
 
 <dd>
@@ -495,6 +500,11 @@ or: mv [-fin] SOURCE... DIRECTORY</p>
 <dd>
 <p>ping [OPTIONS] HOST</p>
 </dd>
+<dt><strong><a name="ping6" class="item"><strong>ping6</strong></a></strong></dt>
+
+<dd>
+<p>ping6 [OPTIONS] HOST</p>
+</dd>
 <dt><strong><a name="pivot_root" class="item"><strong>pivot_root</strong></a></strong></dt>
 
 <dd>
@@ -658,9 +668,16 @@ or: mv [-fin] SOURCE... DIRECTORY</p>
 <dt><strong><a name="traceroute" class="item"><strong>traceroute</strong></a></strong></dt>
 
 <dd>
-<p><table cellspacing="0" cellpadding="0"><tr><td>traceroute [-FIldnrv] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]
+<p><table cellspacing="0" cellpadding="0"><tr><td>traceroute [-46FIldnrv] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]
 <tr><td><td>[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE]
 <tr><td><td>[-z PAUSE_MSEC] HOST [BYTES]</table></p>
+</dd>
+<dt><strong><a name="traceroute6" class="item"><strong>traceroute6</strong></a></strong></dt>
+
+<dd>
+<p><table cellspacing="0" cellpadding="0"><tr><td>traceroute6 [-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES]
+<tr><td><td>[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-i IFACE]
+<tr><td><td>HOST [BYTES]</table></p>
 </dd>
 <dt><strong><a name="true" class="item"><strong>true</strong></a></strong></dt>
 
