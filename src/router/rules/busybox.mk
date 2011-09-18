@@ -5,9 +5,9 @@ busybox: busybox-config net-tools bird dhcpforwarder
 ifeq ($(ARCH),mipsel)
 	cp busybox/.config_std busybox/.config
 ifeq ($(CONFIG_MMC),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
+	echo CONFIG_MKFS_EXT2=y >> busybox/.config
 else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 
 ifeq ($(CONFIG_DIST),"micro")
@@ -21,9 +21,9 @@ endif
 ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_mini busybox/.config
 ifeq ($(CONFIG_MMC),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
+	echo CONFIG_MKFS_EXT2=y >> busybox/.config
 else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 else
 ifeq ($(CONFIG_BBOX),"mini")
@@ -49,17 +49,17 @@ else
 	cp busybox/.config_fonera busybox/.config
 endif
 ifeq ($(CONFIG_MMC),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
+	echo CONFIG_MKFS_EXT2=y >> busybox/.config
 else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 endif
 ifeq ($(ARCHITECTURE),rt2880)
 	cp busybox/.config_fonera busybox/.config
 ifeq ($(CONFIG_USB),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
+	echo CONFIG_MKFS_EXT2=y >> busybox/.config
 else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 endif
 endif
@@ -75,9 +75,9 @@ ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),fonera)
 	cp busybox/.config_fonera busybox/.config
 ifeq ($(CONFIG_MMC),y)
-	echo CONFIG_MKE2FS=y >> busybox/.config
+	echo CONFIG_MKFS_EXT2=y >> busybox/.config
 else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 else
 ifeq ($(ARCHITECTURE),mr3202a)
@@ -86,115 +86,115 @@ ifeq ($(CONFIG_DIST),"micro")
 else
 	cp busybox/.config_fonera busybox/.config
 endif
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),dir300)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),whrag108)
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro_atheros busybox/.config
 else
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 else
 ifeq ($(ARCHITECTURE),ca8)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),rcaa01)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),ls5)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),eoc5610)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),eoc2610)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),ls2)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),wrt54g2v11)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),bs2)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),bwrg1000)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),eoc2610)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),lsx)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),ja76pf)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),ap83)
 	cp busybox/.config_ap83 busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),dir825)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),wrt400)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),wndr3700)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),wzrag300nh)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),wzrg450)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),ubntm)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),unifi)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),whrhpgn)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),dir615e)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),wr741)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),danube)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 	cp busybox/.config_3com busybox/.config
 endif
@@ -231,24 +231,24 @@ ifeq ($(ARCH),arm)
 ifeq ($(ARCHITECTURE),storm)
 	cp busybox/.config_storm busybox/.config
 ifeq ($(CONFIG_WBD222),y)
-	echo "CONFIG_MKE2FS=y" >> busybox/.config
+	echo "CONFIG_MKFS_EXT2=y" >> busybox/.config
 else
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 endif
 ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 ifeq ($(ARCHITECTURE),openrisc)
 	cp busybox/.config_storm busybox/.config
-	echo "CONFIG_MKE2FS=y" >> busybox/.config
+	echo "CONFIG_MKFS_EXT2=y" >> busybox/.config
 endif
 endif
 ifeq ($(ARCH),armeb)
 ifeq ($(ARCHITECTURE),wrt300nv2)
 	cp busybox/.config_fonera busybox/.config
-	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 ifneq ($(CONFIG_WP18),y)
 	cp busybox/.config_xscale busybox/.config
