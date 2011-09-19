@@ -87,6 +87,8 @@ static void makeipup(void)
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+		//	enable proxy arp per peer
+		"echo 1 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
 		//	per peer shaping
 		"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 		"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
@@ -110,9 +112,12 @@ static void makeipup(void)
 		"grep -v $PEERNAME /tmp/pppoe_connected > /tmp/pppoe_uptime.tmp\n"	//
 		"mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime\n"	//
 		//	calc connected time and volume per peer
-		"CONTIME=$(($CONNECT_TIME+`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`))\n"
-		"SENT=$(($BYTES_SENT+`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $4}'`))\n"	//
-		"RCVD=$(($BYTES_RCVD+`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $5}'`))\n"
+		"CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
+		"SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $4}'`\n"
+		"RCVD=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $5}'`\n"
+		"CONTIME=$(($CONTIME+$CONNECT_TIME))\n"
+		"SENT=$(($SENT+$BYTES_SENT))\n"
+		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"grep -v $PEERNAME /tmp/ppp_peer.db > /tmp/pppoe_peer.db.tmp\n"
 		"mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db\n"
 		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_peer.db\n"
@@ -120,6 +125,8 @@ static void makeipup(void)
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
+		//	disable proxy arp per peer
+		"echo 0 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
 		"tc qdisc del root dev $1\n"	//
 		"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
@@ -333,6 +340,10 @@ void start_pppoeserver(void)
 			"/tmp/pppoeserver/pool");	
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
+
+		//	enable proxyarp for the pppoe server iface
+		system("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
+			nvram_safe_get("pppoeserver_interface"));
 	}
 }
 
@@ -343,6 +354,9 @@ void stop_pppoeserver(void)
 	}
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
+	//	disable proxyarp for the pppoe server iface
+	system("echo 0 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
+		nvram_safe_get("pppoeserver_interface"));
 
 }
 
