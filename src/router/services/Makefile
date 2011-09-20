@@ -326,6 +326,7 @@ CFLAGS_EXTRA += -DHAVE_WZRG450
 endif
 ifeq ($(CONFIG_WZRG300NH2),y)
 CFLAGS_EXTRA += -DHAVE_WZRG300NH2
+OBJS += $(TOP)/private/buffalo/boot_check.o
 endif
 ifeq ($(CONFIG_WLAEAG300N),y)
 CFLAGS_EXTRA += -DHAVE_WLAEAG300N
@@ -1155,6 +1156,10 @@ ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
 	install switch $(INSTALLDIR)/services/sbin
 	install mii_mgr $(INSTALLDIR)/services/sbin
+endif
+ifeq ($(CONFIG_WZRG300NH2),y)
+	install -d $(INSTALLDIR)/services/etc
+	install $(TOP)/private/buffalo/WZRG300NH2/boot.bin $(INSTALLDIR)/services/etc
 endif
 
 services.so: $(OBJS)
