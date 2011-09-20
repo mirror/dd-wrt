@@ -748,6 +748,10 @@ extern char *(*UGOZILA_GET) (webs_t wp, char *name);
 extern struct wl_client_mac *Uwl_client_macs;
 
 #define wl_client_macs Uwl_client_macs
+extern void (*Uvalidate_cgi) (webs_t wp);
+
+#define validate_cgi Uvalidate_cgi
+
 extern int *Uclone_wan_mac;
 
 #define clone_wan_mac Uclone_wan_mac
