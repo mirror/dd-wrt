@@ -328,13 +328,10 @@ void Initnvramtab()
 								if (arglen) {	//
 									tmp->argv = (char **)safe_malloc(sizeof(char **) * (arglen + 1));	//
 									for (i = 0; i < arglen; i++) {	//
-										tmp->argv = (char **)safe_malloc(sizeof(char **) * (arglen + 1));	//
-										for (i = 0; i < arglen; i++) {	//
-											tmp->argv[i] = getFileString(in);	//
-										}
-										tmp->argv[arglen] = NULL;	//
-
+										tmp->argv[i] = getFileString(in);	//
 									}
+									tmp->argv[arglen] = NULL;	//
+
 								}
 								break;
 							}
