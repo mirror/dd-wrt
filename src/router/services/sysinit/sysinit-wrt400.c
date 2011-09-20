@@ -124,6 +124,7 @@ void start_sysinit(void)
 		MAC_ADD(mac2);
 //		eval("gpio","enable","2");
 #elif HAVE_WZRG300NH2
+//		sysprintf("startservice bootloader_check");
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
