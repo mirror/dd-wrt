@@ -194,56 +194,56 @@ void Initnvramtab()
 	char *tmpstr;
 	struct variable *tmp;
 	static struct SIMPLEVAL simpleval[] = {
-		{"WMEPARAM", "validate_wl_wme_params"},
-		{"WMETXPARAM", "validate_wl_wme_tx_params"},
-		{"WANIPADDR", "validate_wan_ipaddr"},
-		{"MERGEREMOTEIP", "validate_remote_ip"},
-		{"MERGEIPADDRS", "validate_merge_ipaddrs"},
-		{"DNS", "validate_dns"},
-		{"SAVEWDS", "save_wds"},
-		{"DHCP", "dhcp_check"},
-		{"STATICS", "validate_statics"},
+		{"WMEPARAM", "validate_wl_wme_params",0},
+		{"WMETXPARAM", "validate_wl_wme_tx_params",0},
+		{"WANIPADDR", "validate_wan_ipaddr",0},
+		{"MERGEREMOTEIP", "validate_remote_ip",0},
+		{"MERGEIPADDRS", "validate_merge_ipaddrs",0},
+		{"DNS", "validate_dns",0},
+		{"SAVEWDS", "save_wds",0},
+		{"DHCP", "dhcp_check",0},
+		{"STATICS", "validate_statics",0},
 #ifdef HAVE_PORTSETUP
-		{"PORTSETUP", "validate_portsetup"},
+		{"PORTSETUP", "validate_portsetup",0},
 #endif
-		{"REBOOT", "validate_reboot"},
-		{"IPADDR", "validate_ipaddr"},
-		{"STATICLEASES", "validate_staticleases"},
+		{"REBOOT", "validate_reboot",0},
+		{"IPADDR", "validate_ipaddr",0},
+		{"STATICLEASES", "validate_staticleases",0},
 #ifdef HAVE_CHILLILOCAL
-		{"USERLIST", "validate_userlist"},
+		{"USERLIST", "validate_userlist",0},
 #endif
 #ifdef HAVE_RADLOCAL
-		{"IRADIUSUSERLIST", "validate_iradius"},
+		{"IRADIUSUSERLIST", "validate_iradius",0},
 #endif
-		{"IPADDRS", "validate_ipaddrs"},
-		{"NETMASK", "validate_netmask"},
-		{"MERGENETMASK", "validate_merge_netmask"},
-		{"WDS", "validate_wds"},
-		{"STATICROUTE", "validate_static_route"},
-		{"MERGEMAC", "validate_merge_mac"},
-		{"FILTERPOLICY", "validate_filter_policy"},
-		{"FILTERIPGRP", "validate_filter_ip_grp"},
-		{"FILTERPORT", "validate_filter_port"},
-		{"FILTERDPORTGRP", "validate_filter_dport_grp"},
-		{"BLOCKEDSERVICE", "validate_blocked_service"},
-		{"FILTERP2P", "validate_catchall"},
-		{"FILTERMACGRP", "validate_filter_mac_grp"},
-		{"FILTERWEB", "validate_filter_web"},
-		{"WLHWADDRS", "validate_wl_hwaddrs"},
-		{"FORWARDPROTO", "validate_forward_proto"},
-		{"FORWARDSPEC", "validate_forward_spec"},
-		{"PORTTRIGGER", "validate_port_trigger"},
-		{"HWADDR", "validate_hwaddr"},
-		{"HWADDRS", "validate_hwaddrs"},
-		{"WLWEPKEY", "validate_wl_wep_key"},
+		{"IPADDRS", "validate_ipaddrs",0},
+		{"NETMASK", "validate_netmask",0},
+		{"MERGENETMASK", "validate_merge_netmask",0},
+		{"WDS", "validate_wds",0},
+		{"STATICROUTE", "validate_static_route",0},
+		{"MERGEMAC", "validate_merge_mac",0},
+		{"FILTERPOLICY", "validate_filter_policy",0},
+		{"FILTERIPGRP", "validate_filter_ip_grp",0},
+		{"FILTERPORT", "validate_filter_port",0},
+		{"FILTERDPORTGRP", "validate_filter_dport_grp",0},
+		{"BLOCKEDSERVICE", "validate_blocked_service",0},
+		{"FILTERP2P", "validate_catchall",0},
+		{"FILTERMACGRP", "validate_filter_mac_grp",0},
+		{"FILTERWEB", "validate_filter_web",0},
+		{"WLHWADDRS", "validate_wl_hwaddrs",0},
+		{"FORWARDPROTO", "validate_forward_proto",0},
+		{"FORWARDSPEC", "validate_forward_spec",0},
+		{"PORTTRIGGER", "validate_port_trigger",0},
+		{"HWADDR", "validate_hwaddr",0},
+		{"HWADDRS", "validate_hwaddrs",0},
+		{"WLWEPKEY", "validate_wl_wep_key",0},
 #ifdef HAVE_PPPOESERVER
-		{"CHAPTABLE", "validate_chaps"},
+		{"CHAPTABLE", "validate_chaps",0},
 #endif
 #ifdef HAVE_MILKFISH
-		{"MFSUBSCRIBERS", "validate_subscribers"},
-		{"MFALIASES", "validate_aliases"},
-		{"RANGE", "validate_range", 2},
+		{"MFSUBSCRIBERS", "validate_subscribers",0},
+		{"MFALIASES", "validate_aliases",0},
 #endif
+		{"RANGE", "validate_range", 2},
 		{"CHOICE", "validate_choice", -1},
 		{"NOACK", "validate_noack", 2},
 		{"NAME", "validate_name", 1},
@@ -315,6 +315,7 @@ void Initnvramtab()
 						int scount = 0;
 						while (simpleval[scount].name != NULL) {	//
 							if (!stricmp(tmpstr, simpleval[scount].name)) {	//
+								fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
 								tmp->validatename = simpleval[scount].validator;	//
 								int arglen = 0;
 								if (simpleval[scount].args == -1) {	//
@@ -337,12 +338,12 @@ void Initnvramtab()
 							}
 							scount++;
 						}
-//                                              if (simpleval[scount].name ==
-//                                                  NULL) {
-//                                                      fprintf(stderr,
-//                                                              "danger %s is missing\n",
-//                                                              tmpstr);
-//                                              }
+                                              if (simpleval[scount].name ==
+                                                  NULL) {
+                                                      fprintf(stderr,
+                                                              "danger %s is missing\n",
+                                                              tmpstr);
+                                              }
 					}
 					free(tmpstr);
 					tmpstr = getFileString(in);
