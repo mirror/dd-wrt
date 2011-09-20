@@ -315,7 +315,7 @@ void Initnvramtab()
 						int scount = 0;
 						while (simpleval[scount].name != NULL) {	//
 							if (!stricmp(tmpstr, simpleval[scount].name)) {	//
-								fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
+//								fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
 								tmp->validatename = simpleval[scount].validator;	//
 								int arglen = 0;
 								if (simpleval[scount].args == -1) {	//
@@ -338,12 +338,12 @@ void Initnvramtab()
 							}
 							scount++;
 						}
-                                              if (simpleval[scount].name ==
-                                                  NULL) {
-                                                      fprintf(stderr,
-                                                              "danger %s is missing\n",
-                                                              tmpstr);
-                                              }
+//                                              if (simpleval[scount].name ==
+//                                                  NULL) {
+//                                                      fprintf(stderr,
+//                                                              "danger %s is missing\n",
+//                                                              tmpstr);
+//                                              }
 					}
 					free(tmpstr);
 					tmpstr = getFileString(in);
