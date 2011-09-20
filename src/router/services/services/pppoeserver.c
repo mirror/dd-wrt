@@ -342,7 +342,7 @@ void start_pppoeserver(void)
 			  "rp-pppoe : pppoe server successfully started\n");
 
 		//	enable proxyarp for the pppoe server iface
-		system("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
+		sysprintf("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
 			nvram_safe_get("pppoeserver_interface"));
 	}
 }
@@ -351,12 +351,11 @@ void stop_pppoeserver(void)
 {
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
-	}
-	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
 	//	disable proxyarp for the pppoe server iface
-	system("echo 0 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
-		nvram_safe_get("pppoeserver_interface"));
+		if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
+		sysprintf("echo 0 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",nvram_safe_get("pppoeserver_interface"));
+	}
 
 }
 
