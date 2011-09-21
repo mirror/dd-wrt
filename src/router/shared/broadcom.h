@@ -417,6 +417,7 @@ extern void ping_onload(webs_t wp, char *arg);
  */
 extern void do_logout(void);
 extern void ej_statfs(webs_t wp, int argc, char_t ** argv);
+extern void ej_statnv(webs_t wp, int argc, char_t ** argv);
 
 /*
  * for all 
