@@ -219,11 +219,11 @@ typedef signed long long int64;
 /*----------------------- define float32/64, float_t -----------------------*/
 
 #ifndef TYPEDEF_FLOAT32
-typedef float		float32;
+//typedef float		float32;
 #endif
 
 #ifndef TYPEDEF_FLOAT64
-typedef double		float64;
+//typedef double		float64;
 #endif
 
 /*
@@ -235,9 +235,9 @@ typedef double		float64;
 #ifndef TYPEDEF_FLOAT_T
 
 #if defined(FLOAT32)
-typedef float32 float_t;
+//typedef float32 float_t;
 #else /* default to double precision floating point */
-typedef float64 float_t;
+//typedef float64 float_t;
 #endif
 
 #endif /* TYPEDEF_FLOAT_T */
