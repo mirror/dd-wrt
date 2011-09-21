@@ -291,6 +291,7 @@ endif
 
 busybox-install:
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
+	ln -sf ../../bin/busybox $(INSTALLDIR)/busybox/usr/sbin/ip
 
 busybox-clean: busybox-config
 	$(MAKE) -j 4  -C busybox clean PREFIX=$(INSTALLDIR)/busybox 
