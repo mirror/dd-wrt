@@ -1821,3 +1821,21 @@ void addAction(char *action)
 
 }
 
+int nvram_used(void)
+{
+	char *name, buf[NVRAM_SPACE];
+
+	nvram_getall(buf, sizeof(buf));
+	
+	name = buf;
+	
+	while (*name)
+	{
+		name += strlen(name) + 1;
+	}
+
+	return (sizeof(struct nvram_header) + (int)name - (int)buf);
+	
+}
+
+
