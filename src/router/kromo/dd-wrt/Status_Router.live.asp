@@ -6,3 +6,4 @@
 {cpu_temp::<% get_cputemp(); %>}
 {voltage::<% get_voltage(); %>}
 {ipinfo::<% show_wanipinfo(); %>}
+{nvram::<% statnv(); %>}
