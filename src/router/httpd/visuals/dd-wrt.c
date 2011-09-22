@@ -7577,19 +7577,8 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 
 void ej_statnv(webs_t wp, int argc, char_t ** argv)
 {
-	char *name, buf[NVRAM_SPACE];
-	int size;
 
-	nvram_getall(buf, sizeof(buf));
-	name = buf;
-	while (*name)
-	{
-		name += strlen(name) + 1;
-	}
-
-	size = sizeof(struct nvram_header) + (int)name - (int)buf;
-
-	websWrite(wp, "%d B / %d B", NVRAM_SPACE, NVRAM_SPACE - size);
+	websWrite(wp, "%d B / %d B", NVRAM_SPACE, NVRAM_SPACE - nvram_used());
 	
 }
 
