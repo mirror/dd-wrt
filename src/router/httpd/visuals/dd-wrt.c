@@ -7570,15 +7570,15 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 		memset(&sizefs, 0, sizeof(sizefs));
 
 	websWrite(wp, "var %s = {\n\
-  	size: %llu,\n\
-  	free: %llu\n\
-  	};\n", argv[1], ((uint64_t) sizefs.f_bsize * sizefs.f_blocks), ((uint64_t) sizefs.f_bsize * sizefs.f_bfree));
+  	used: %llu,\n\
+  	size: %llu\n\
+  	};\n", argv[1], ((uint64_t) sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)), ((uint64_t) sizefs.f_bsize * sizefs.f_blocks));
 }
 
 void ej_statnv(webs_t wp, int argc, char_t ** argv)
 {
 
-	websWrite(wp, "%d B / %d B", NVRAM_SPACE, NVRAM_SPACE - nvram_used());
+	websWrite(wp, "%.2f KB / %d KB", (float)nvram_used() / 1024, NVRAM_SPACE / 1024);
 	
 }
 
