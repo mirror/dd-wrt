@@ -27,7 +27,7 @@ function to_submit(F) {
 if (valid_password(F))
     {
 	F.change_action.value = "gozila_cgi";
-	F.next_page.value = "Info.htm";
+	F.next_page.value = <% getsetuppage(); %>;
 	F.submit_button.value = "index";
 	F.submit_type.value = "changepass";
 	F.changepassword.value = "Changing Password";
