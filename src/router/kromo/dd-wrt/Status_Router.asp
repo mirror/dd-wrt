@@ -184,13 +184,17 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("status_router.legend6"); %></legend>
+									<div class="setting">
+										<div class="label">NVRAM</div>
+										<span id="nvram"><% statnv(); %></span>&nbsp;
+									</div>
 				<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
 										<div class="label">CIFS</div>
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/tmp/smbshare", "samba"); %>
-										document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+										document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 										//]]>
 										</script>
 									</div>
@@ -201,7 +205,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/jffs", "my_jffs"); %>
-									document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.size) + ' / ' + scaleSize(my_jffs.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 									//]]>
 									</script>
 								</div>
@@ -212,7 +216,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/mmc", "mmc"); %>
-									document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.size) + ' / ' + scaleSize(mmc.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 									//]]>
 									</script>
 								</div>
