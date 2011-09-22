@@ -2398,7 +2398,7 @@ void start_lan(void)
 	 * Sveasoft - set default IP gateway defined 
 	 */
 	if (strcmp(nvram_safe_get("lan_gateway"), "0.0.0.0"))
-		eval("ip", "ro", "add", "default", "via",
+		eval("ip", "route", "add", "default", "via",
 		     nvram_safe_get("lan_gateway"), "dev", "br0");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
