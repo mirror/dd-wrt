@@ -2457,7 +2457,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d dBm", txpower);
 #elif HAVE_RT2880
 		websWrite(wp, "%d mW", txpower);
-#else  //broadcom
+#else				//broadcom
 		websWrite(wp, "%d mW", txpower);
 #endif
 #endif
@@ -3556,6 +3556,15 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
+{
+#ifdef HAVE_BUFFALO
+	websWrite(wp, "SetupAssistant.asp");
+#else
+	websWrite(wp, "Info.htm");
+#endif
+}
+
 #ifdef HAVE_SPOTPASS
 void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 {
@@ -3563,8 +3572,7 @@ void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 	char dummy1[1], dummy2[8];
 	int port1, port2;
 	char *ptr;
-	char *serverlist =
-	    (char *)
+	char *serverlist = (char *)
 	    safe_malloc(strlen(nvram_default_get("spotpass_servers", "")) + 1);
 
 	strcpy(serverlist, nvram_get("spotpass_servers"));
