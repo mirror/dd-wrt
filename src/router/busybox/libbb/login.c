@@ -95,14 +95,14 @@ void FAST_FUNC print_login_prompt(void)
   FILE *fp = fopen ("/tmp/loginprompt", "rb");
   if (fp)
     {    
-      while (!feof (fp))
+      int d;
+      while ((d=getc(fp))!=EOF)
 	{
-	  putc (getc (fp), stdout);
+	  putc (d, stdout);
 	}
       fclose (fp);
     }
-  fputs("\n",stdout);
-
+	fprintf(stdout,"\n");
  	char *hostname = safe_gethostname(); 	
 	fputs(hostname, stdout);
 	fputs(LOGIN, stdout);
