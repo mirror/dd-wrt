@@ -198,7 +198,7 @@ char *ej_get_sas_stage(webs_t wp, int argc, char_t ** argv)
 	stage = GOZILA_GET(wp, "sas_stage");
 
 	if (stage == NULL)
-		return "";
+		stage = "0";
 
 	if (atoi(stage) == 0) {
 		stage = "1";
