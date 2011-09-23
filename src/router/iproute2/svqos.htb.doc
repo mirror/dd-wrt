@@ -9,7 +9,7 @@
 
 TC=/usr/sbin/tc
 IPTABLES=/usr/sbin/iptables
-IP=/usr/sbin/ip
+IP=/bin/ip
 
 if [ "$1" = "status" ]
 then
