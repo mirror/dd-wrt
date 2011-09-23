@@ -81,7 +81,7 @@ void start_sysinit(void)
 
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
-	insmod("cns3xxx");
+	insmod("cns3xxx_eth");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
 
