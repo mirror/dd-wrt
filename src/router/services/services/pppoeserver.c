@@ -88,7 +88,7 @@ static void makeipup(void)
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		//	enable proxy arp per peer
-		"echo 1 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
+		//"echo 1 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
 		//	per peer shaping
 		"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 		"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
@@ -126,7 +126,7 @@ static void makeipup(void)
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
 		//	disable proxy arp per peer
-		"echo 0 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
+		//"echo 0 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
 		"tc qdisc del root dev $1\n"	//
 		"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
@@ -180,8 +180,8 @@ static void do_pppoeconfig(FILE * fp)
 		"default-mru\n"
 		"default-asyncmap\n"
 		"noipdefault\n"
-		"nodefaultroute\n"
-		"noproxyarp\n"	//
+		"defaultroute\n"
+		"proxyarp\n"	//
 		"noktune\n"	//
 		"netmask 255.255.255.255\n"	//
 		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
@@ -342,7 +342,7 @@ void start_pppoeserver(void)
 			  "rp-pppoe : pppoe server successfully started\n");
 
 		//	enable proxyarp for the pppoe server iface
-		sysprintf("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
+		//sysprintf("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
 			nvram_safe_get("pppoeserver_interface"));
 	}
 }
@@ -354,7 +354,7 @@ void stop_pppoeserver(void)
 	//	disable proxyarp for the pppoe server iface
 		if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
-		sysprintf("echo 0 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",nvram_safe_get("pppoeserver_interface"));
+		//sysprintf("echo 0 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",nvram_safe_get("pppoeserver_interface"));
 	}
 
 }
