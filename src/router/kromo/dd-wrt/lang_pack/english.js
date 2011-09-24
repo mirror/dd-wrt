@@ -1263,7 +1263,7 @@ service.dnsmasq_opt="Additional DNSMasq Options";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Server";
-service.pptp_forcemppe="Force MPPE Encryption";
+service.pptp_forcemppe="MPPE Encryption";
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1359,7 +1359,7 @@ service.vpn_srv="Start OpenVPN Client";
 service.vpn_ipname="Server IP/Name";
 service.vpn_mtu="TUN MTU Setting";
 service.vpn_mss="MSS-Fix/Fragment across the tunnel";
-service.vpn_compress="Use LZO Compression";
+service.vpn_compress="LZO Compression";
 service.vpn_cl2cl="Allow Client to Client";
 service.vpn_tunnel="Tunnel Protocol";
 service.vpn_tuntap="Tunnel Device";
