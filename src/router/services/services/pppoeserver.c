@@ -109,7 +109,7 @@ static void makeipup(void)
 		"grep -v $PPPD_PID /tmp/pppoe_connected > /tmp/pppoe_connected.tmp\n"	//
 		"mv /tmp/pppoe_connected.tmp /tmp/pppoe_connected\n"	//
 		//	just an uptime test
-		"grep -v $PEERNAME /tmp/pppoe_connected > /tmp/pppoe_uptime.tmp\n"	//
+		"grep -v $PEERNAME /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp\n"	//
 		"mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime\n"	//
 		//	calc connected time and volume per peer
 		"CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
