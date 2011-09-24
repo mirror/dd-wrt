@@ -343,7 +343,7 @@ void start_pppoeserver(void)
 
 		//	enable proxyarp for the pppoe server iface
 		//sysprintf("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
-			nvram_safe_get("pppoeserver_interface"));
+		//	nvram_safe_get("pppoeserver_interface"));
 	}
 }
 
