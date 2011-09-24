@@ -69,7 +69,7 @@ void start_openvpnserver(void)
 			"management-log-cache 50\n"
 			"mtu-disc yes\n"
 			"topology subnet\n"
-			"client-config-dir /tmp/openvpn/peers\n"
+			"client-config-dir /tmp/openvpn/ccd\n"
 			"script-security 2\n"
 			"port %s\n"
 			"proto %s\n"
