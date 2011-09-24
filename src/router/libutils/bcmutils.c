@@ -1821,9 +1821,11 @@ void addAction(char *action)
 
 }
 
-int nvram_used(void)
+int nvram_used(int *space)
 {
 	char *name, buf[NVRAM_SPACE];
+	
+	*space = NVRAM_SPACE;
 
 	nvram_getall(buf, sizeof(buf));
 	
