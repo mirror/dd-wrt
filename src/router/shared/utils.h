@@ -566,7 +566,7 @@ extern char *getSTA(void);
 extern char *getWET(void);
 extern int contains(const char *string, char value);
 extern int getcpurev(void);
-extern int nvram_used(void);
+extern int nvram_used(int *space);
 extern int cpu_plltype(void);
 extern int check_vlan_support(void);
 
