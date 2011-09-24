@@ -7577,8 +7577,10 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 
 void ej_statnv(webs_t wp, int argc, char_t ** argv)
 {
-
-	websWrite(wp, "%.2f KB / %d KB", (float)nvram_used() / 1024, NVRAM_SPACE / 1024);
+	int space = 0;
+	int used = nvram_used(&space);
+	
+	websWrite(wp, "%.2f KB / %d KB", (float)used / 1024, space / 1024);
 	
 }
 
