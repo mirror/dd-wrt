@@ -87,7 +87,7 @@ addEvent(window, "unload", function() {
 			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="0" <% nvram_checked("pptpd_bcrelay", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.pptp_forcemppe"); %></div>
+			<div class="label"><% tran("service.pptpd_encry"); %></div>
 			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="1" <% nvram_checked("pptpd_forcemppe", "1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="0" <% nvram_checked("pptpd_forcemppe", "0"); %> /><% tran("share.disable"); %>
 		</div>
