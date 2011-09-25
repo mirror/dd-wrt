@@ -80,9 +80,9 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		"echo \"$PPPD_PID $1 $5 $PEERNAME\" >> /tmp/pppoe_connected\n"	//
+		"echo \"$PPPD_PID$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"	//
 		//	just an uptime test
-		"echo \"$PEERNAME `date +%\"s\"`\" >> /tmp/pppoe_uptime\n"	//
+		"echo \"$PEERNAME\t`date +%\"s\"`\" >> /tmp/pppoe_uptime\n"	//
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
@@ -120,7 +120,7 @@ static void makeipup(void)
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"grep -v $PEERNAME /tmp/ppp_peer.db > /tmp/pppoe_peer.db.tmp\n"
 		"mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db\n"
-		"echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pppoe_peer.db\n"
+		"echo \"$PEERNAME\t$CONTIME\t$SENT\t$RCVD\" >> /tmp/pppoe_peer.db\n"
 		//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
