@@ -82,7 +82,7 @@ static void makeipup(void)
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
 		"echo \"$PPPD_PID $1 $5 $PEERNAME\" >> /tmp/pppoe_connected\n"	//
 		//	just an uptime test
-		"echo \"$PEERNAME `date +\"%s\"`\" >> /tmp/pppoe_uptime\n"	//
+		"echo \"$PEERNAME `date +%\"s\"`\" >> /tmp/pppoe_uptime\n"	//
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
