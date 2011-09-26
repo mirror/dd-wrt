@@ -803,6 +803,9 @@ int main(int argc, char **argv)
 			start_service("httpd");
 			led_control(LED_DIAG, LED_OFF);
 			lcdmessage("System Ready");
+#ifndef HAVE_RB500
+			startstop_f("resetbutton");
+#endif
 			/* 
 			 * Fall through 
 			 */
