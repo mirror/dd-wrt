@@ -76,7 +76,6 @@ void start_samba3(void)
 			"syslog = 10\n"
 			"encrypt passwords = true\n"
 			"obey pam restrictions = yes\n"
-			"unix charset = ISO-8859-1\n"
 			"preferred master = yes\n"
 			"os level = 20\n"
 			"security = user\n"
