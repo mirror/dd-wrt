@@ -89,6 +89,8 @@ void start_openvpnserver(void)
 			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
 			fprintf(fp, "comp-lzo yes\n");	//yes/no/adaptive
+		else
+			fprintf(fp, "comp-lzo no\n");
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
