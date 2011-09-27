@@ -17,7 +17,7 @@ test_audio: test_audio.o
 install: gsp_updater
 	install -d $(INSTDIR)
 	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_updater $(INSTDIR)
-	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_update.txt $(INSTALLDIR)/etc
+	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_update.txt $(INSTALLDIR)/etc/gsp_update.txt
 
 clean:
 	rm -f gsp_updater *.o core
