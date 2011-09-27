@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include "i2c.h"
 #include "i2c_upgrader.h"
 
@@ -24,16 +26,16 @@
 #define GSP2_WORD			0x4
 #define GSP2_PROG			0x5
 
-void parse_data_file(char *filename, unsigned char data[16][16384], short *address, short *length);
+static bool parse_data_file(char *filename, unsigned char data[16][16384], short *address, short *length);
 
-void print_banner(void)
+static void print_banner(void)
 {
 	printf("Gateworks GSP Updater Rev: %i\n", GSP_UPDATER_REV);
 	printf("Copyright (C) 2004-2010, Gateworks Corporation, All Rights Reserved\n");
 	printf("Built %s, %s\n", __TIME__, __DATE__);
 }
 
-void print_help(void)
+static void print_help(void)
 {
 	print_banner();
 	printf("\nUsage:\n");
@@ -47,37 +49,34 @@ int main(int argc, char **argv)
 	unsigned char data[16][16384] = {0};
 	unsigned short address[16];
 	unsigned short length[16];
-	char prog_filename[255];
+	char *prog_filename=NULL;
 	unsigned char buffer[16];
 	signed char ret;
 
-	int i, j, k;
+	int i, j, k, opt;
 	int file;
 
-	if (argc == 1) {
-		print_help();
-		exit(1);
-	}
+	print_banner();
 
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch(argv[i][1]) {
+	while ((opt = getopt(argc, argv, "hf:")) != -1) {
+		switch (opt) {
+               case 'h':
+					print_help();
+					exit(-1);
+					break;
 				case 'f':
-					if ((i+1 < argc) && (argv[i+1][0] != '-'))
-					{
-						i++;
-						strcpy(prog_filename, argv[i]);
-					}
-					else
-					{
-						print_help();
-					}
-				break;
-			}
+					prog_filename=optarg;
+					break;
+               default: /* '?' */
+					print_help();
+					exit(-1);
 		}
 	}
 
-	print_banner();
+	if (!prog_filename) {
+		print_help();
+		exit(-1);
+	}
 
 	file = open("/dev/i2c-0", O_RDWR);
 	if (file < 0 && errno == ENOENT) {
@@ -115,7 +114,10 @@ int main(int argc, char **argv)
 	i2c_smbus_write_byte_data(file, 0, GSP_PASSWORD | GSP_UNLOCK);
 	ret = i2c_smbus_read_byte_data(file, 0);
 
-	parse_data_file(prog_filename, data, address, length);
+	if (!parse_data_file(prog_filename, data, address, length)) {
+	    printf("problem with the file\n");
+		exit -1;
+		}
 
 	/* ##### Stage 1 Upgrader ##### */
 	// Erase all of main flash
@@ -221,7 +223,7 @@ int main(int argc, char **argv)
 	exit(0);
 }
 
-void parse_data_file(char *filename, unsigned char data[16][16384], short *address, short *length)
+static bool parse_data_file(char *filename, unsigned char data[16][16384], short *address, short *length)
 {
 	FILE *fd;
 	char line[1024];
@@ -235,6 +237,7 @@ void parse_data_file(char *filename, unsigned char data[16][16384], short *addre
 	memset(length, 0, 16*2);
 
 	fd = fopen(filename, "r");
+	if (!fd) return false;
 	while (fgets(line, 1024, fd)) {
 		if (strncmp(line, "@", 1) == 0) {
 			j = 0;
@@ -251,4 +254,5 @@ void parse_data_file(char *filename, unsigned char data[16][16384], short *addre
 			}
 		}
 	}
+return true;
 }
