@@ -66,6 +66,35 @@ static void __attribute__((constructor)) mac80211_init(void) {
 	}
 }
 
+static int phy_lookup_by_number(int idx)
+{
+	char buf[200];
+	int fd, pos;
+
+	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/phy%d/index", idx);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0)
+		return -1;
+	pos = read(fd, buf, sizeof(buf) - 1);
+	if (pos < 0) {
+		close(fd);
+		return -1;
+	}
+	buf[pos] = '\0';
+	close(fd);
+	return atoi(buf);
+}
+
+int mac80211_get_phyidx_by_vifname(char *vif) {
+	int phynum=0;
+    if (!sscanf(vif, "ath%d", &phynum)) {
+		return -1;
+		}
+	return(phy_lookup_by_number(get_ath9k_phy_idx(phynum)));
+	}
+
+
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = { .type = NLA_U32 },
 	[NL80211_SURVEY_INFO_NOISE] = { .type = NLA_U8 },
@@ -162,11 +191,11 @@ int mac80211_get_coverageclass(char *interface) {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
-	int wdev,phy;
+	int phy;
 	unsigned char coverage=0;
 
-	wdev = if_nametoindex(interface);
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) return 0;
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -363,11 +392,11 @@ char *mac80211_get_caps(char *interface) {
 	int rem;
 	u16 cap;
 	char *capstring=NULL;
-	int wdev,phy;
-	wdev = if_nametoindex(interface);
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
-
-
+	int phy;
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) {
+		return strdup("");
+	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
@@ -403,16 +432,18 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
 };
 
+
 int mac80211_check_band(char *interface,int checkband) {
 	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band,*freqlist,*freq;
 	int rem, rem2, freq_mhz;
-	int wdev,phy;
+	int phy=0;
 	int bandfound=0;
-	wdev = if_nametoindex(interface);
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
-
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) {
+		return 0;
+	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -437,7 +468,9 @@ int mac80211_check_band(char *interface,int checkband) {
 				continue;
 
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
-			if ((int) (freq_mhz / 1000) == checkband)
+			if (checkband == 2 && freq_mhz < 3000 )
+				bandfound=1;
+			if (checkband == 5 && freq_mhz > 3000 )
 				bandfound=1;
 		}
 	}
@@ -457,14 +490,14 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 	struct ieee80211_freq_range regfreq;
 	struct ieee80211_power_rule regpower;
 	struct wifi_channels *list = NULL;
-	int rem, rem2, freq_mhz,wdev,phy,rrc,startfreq,stopfreq,range,regmaxbw,run;
+	int rem, rem2, freq_mhz,phy,rrc,startfreq,stopfreq,range,regmaxbw,run;
 	int regfound=0;
 	int htrange=30;
 	int chancount=0;
 	int count=0;
 
-	wdev = if_nametoindex(interface);
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) return NULL;
 
 	rd=mac80211_get_regdomain(country);
 
@@ -662,15 +695,14 @@ int mac80211_get_maxrate(char *interface) {
 	struct nl_msg *msg;
 	struct nlattr *bands, *band,*ratelist,*rate;
 	int rem, rem2;
-	int wdev,phy;
+	int phy;
 	int maxrate=0;
 	static struct nla_policy rate_policy[NL80211_BITRATE_ATTR_MAX + 1] = {
 		[NL80211_BITRATE_ATTR_RATE] = { .type = NLA_U32 },
 		[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = { .type = NLA_FLAG },
 	};
-	wdev = if_nametoindex(interface);
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
-
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) return 0;
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -707,11 +739,11 @@ int mac80211_get_maxmcs(char *interface) {
 	struct nl_msg *msg;
 	struct nlattr *bands, *band;
 	int rem;
-	int wdev,phy;
+	int phy;
 	int maxmcs=0;
 
-	wdev = if_nametoindex(interface);
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) return 0;
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -761,6 +793,7 @@ static int mac80211_get_antennas(int phy,int which,int direction) {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
+	int ret=0;
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -771,25 +804,25 @@ static int mac80211_get_antennas(int phy,int which,int direction) {
 		  genlmsg_attrlen(gnlh, 0), NULL);
 	if (which == 0 && direction == 0) {
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX])
-		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX]));
+		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_TX]));
 	}
 
 	if (which == 0 && direction == 1) {
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX])
-		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX]));
+		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_AVAIL_RX]));
 	}
 
 	if (which == 1 && direction == 0) {
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_TX])
-		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_TX]));
+		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_TX]));
 	}
 
 	if (which == 1 && direction == 1) {
 		if (tb[NL80211_ATTR_WIPHY_ANTENNA_RX])
-		     return((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_RX]));
+		     ret = ((int) nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_RX]));
 	}
 	nlmsg_free(msg);
-	return 0;
+	return ret;
 nla_put_failure:
 	nlmsg_free(msg);
 	return 0;
@@ -797,7 +830,7 @@ nla_put_failure:
 
 int mac80211_get_avail_tx_antenna(int phy) {
 	int ret=mac80211_get_antennas(phy,0,0);
-	if (isap8x() && ret == 3) 
+	if (isap8x() && ret == 3)
 		ret=5;
 	return(ret);
 	}
@@ -809,9 +842,9 @@ int mac80211_get_avail_rx_antenna(int phy) {
 int mac80211_get_configured_tx_antenna(int phy) {
 	int ret=mac80211_get_antennas(phy,1,0);
 	int avail=mac80211_get_antennas(phy,0,0);
-	if (isap8x() && avail == 3 && ret == 3) 
+	if (isap8x() && avail == 3 && ret == 3)
 		ret=5;
-	if (isap8x() && avail == 3 && ret == 2) 
+	if (isap8x() && avail == 3 && ret == 2)
 		ret=4;
 	return(ret);
 	}
