@@ -109,10 +109,16 @@ void configure_single_ath9k(int count)
 	char *apm;
 	char isolate[32];
 	char primary[32] = { 0 };
+	char regdomain[16];
+	char *country;
+	sprintf(dev, "ath%d", count);
+	sprintf(regdomain, "%s_regdomain", dev);
+	country = nvram_default_get(regdomain, "US");
+	sysprintf("iw reg set %s", getIsoName(country));
+	sleep(3);
 	if (count == 0)
 		vapcount = 0;
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
-	sprintf(dev, "ath%d", count);
 	sprintf(wifivifs, "ath%d_vifs", count);
 	fprintf(stderr, "ath9k configure_single: phy%d ath%d\n",
 		get_ath9k_phy_idx(count), count);
@@ -127,8 +133,9 @@ void configure_single_ath9k(int count)
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
 	char *netmode = nvram_default_get(net, "mixed");
-	if (!strcmp(netmode, "disabled"))
+	if (!strcmp(netmode, "disabled")) {
 		return;
+	}
 
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
@@ -170,11 +177,6 @@ void configure_single_ath9k(int count)
 		// iw dev ath0 ibss join AdHocNetworkName 2412
 	}
 
-	char regdomain[16];
-	char *country;
-	sprintf(regdomain, "%s_regdomain", dev);
-	country = nvram_default_get(regdomain, "US");
-	sysprintf("iw reg set %s", getIsoName(country));
 
 	char macaddr[32];
 	// interface is created at this point, so that should work
