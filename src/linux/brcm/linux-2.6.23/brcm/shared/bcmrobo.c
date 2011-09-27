@@ -586,7 +586,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	robo->page = -1;
 	char *boothwmodel = nvram_get("boot_hw_model");
 	char *boothwver = nvram_get("boot_hw_ver");
-	if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))rreset = GPIO_PIN_NOTDEFINED;
+	if (boothwmodel == NULL || strcmp(boothwmodel, "WRT300N")) rreset = GPIO_PIN_NOTDEFINED;
 
 	/* Trigger external reset by nvram variable existance */
 	if ((reset = getgpiopin(robo->vars, "robo_reset", rreset)) !=
@@ -642,13 +642,12 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		 * a write to bit 0 of pseudo phy register 16 is done we are
 		 * unable to talk to the switch on a customer ref design.
 		 */
-		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N")
-			&& boothwver!=NULL && !strcmp(boothwver,"1.0"))
-		{
-		if (tmp == 0xffff) {
-			miiwr(h, PSEUDO_PHYAD, 16, 1);
-			tmp = miird(h, PSEUDO_PHYAD, 2);
-		}
+		if (boothwmodel != NULL && !strcmp(boothwmodel, "WRT610N")
+			&& boothwver != NULL && !strcmp(boothwver, "1.0")) {
+			if (tmp == 0xffff) {
+				miiwr(h, PSEUDO_PHYAD, 16, 1);
+				tmp = miird(h, PSEUDO_PHYAD, 2);
+			}
 		}
 
 		if (tmp != 0xffff) {
@@ -684,8 +683,8 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 			nvram_set("switch_type", "BCM53125");
 		else
 			nvram_set("switch_type", "unknown");						
-		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N")
-			&& boothwver!=NULL && !strcmp(boothwver,"1.0"))
+		if (boothwmodel != NULL && !strcmp(boothwmodel, "WRT610N")
+			&& boothwver != NULL && !strcmp(boothwver, "1.0"))
 		iswrt610nv1=1;
 
 	if (!iswrt610nv1)
@@ -707,11 +706,11 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	/* Enable switch leds */
 	if (sih->chip == BCM5356_CHIP_ID) {
 		si_pmu_chipcontrol(sih, 2, (1 << 25), (1 << 25));
-	} else if (sih->chip == BCM5357_CHIP_ID) {
+	} else if ((sih->chip == BCM5357_CHIP_ID) || (sih->chip == BCM53572_CHIP_ID)) {
 		uint32 led_gpios = 0;
 		unsigned char *var;
 
-		if (sih->chippkg != BCM47186_PKG_ID)
+		if ((sih->chippkg != BCM47186_PKG_ID) && (sih->chippkg != BCM47188_PKG_ID))
 			led_gpios = 0x1f;
 		var = getvar(vars, "et_swleds");
 		if (var)
@@ -1220,8 +1219,12 @@ bcm_robo_enable_switch(robo_info_t *robo)
 {
 	int i, max_port_ind, ret = 0;
 	uint8 val8;
-	uint16 mode16;
-	char *boot=nvram_get("boot_hw_model");
+	uint16 val16 = 0;
+	char *boothwmodel = nvram_get("boot_hw_model");
+	char *boothwver = nvram_get("boot_hw_ver");
+	char *boardnum = nvram_get("boardnum");
+	char *boardtype = nvram_get("boardtype");
+	char *cardbus = nvram_get("cardbus");
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -1256,19 +1259,37 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		/* No spanning tree on IMP port too */
 		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_IMP, &val8, sizeof(val8));
 	}
+	
+	if ((robo->devid == DEVID53115) || (robo->devid == DEVID53125)) {
+		/* Over ride IMP port status to make it link by default */
+		val8 = 0;
+		robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_MIIPO, &val8, sizeof(val8));
+		val8 |= 0x81;	/* Make Link pass and override it. */
+		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_MIIPO, &val8, sizeof(val8));
+	}
 
-char *boardnum=nvram_get("boardnum");
-char *boardtype=nvram_get("boardtype");
-char *cardbus=nvram_get("cardbus");
+	if (boothwmodel != NULL && !strcmp(boothwmodel, "E4200") && boothwver != NULL && !strcmp(boothwver, "1.0")) {
+		printk(KERN_EMERG "E4200 switch LEDs fix\n");
+		/* Taken from cfe */
+		val16 = 0x8008;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val16, sizeof(val16));
+		
+		uint phy;
+		for (phy = 0; phy < MAX_NO_PHYS; phy++) {
+			robo->miiwr(robo->h, phy, 0x1c, 0xb8aa);
+			robo->miiwr(robo->h, phy, 0x17, 0x0f04);
+			robo->miiwr(robo->h, phy, 0x15, 0x0088);
+		}
+	}
 
-if (boardnum!=NULL && boardtype!=NULL && cardbus!=NULL)
-if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1") && (!boot || (strcmp(boot, "WRT300N") && strcmp(boot, "WRT610N"))))
-    {
-        printk(KERN_EMERG "Enable WRT350 LED fix\n");
-	/* WAN port LED */
-	mode16 = 0x1f;
-	robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &mode16, 2);    
-    }
+
+	if (boardnum != NULL && boardtype != NULL && cardbus != NULL)
+	if (!strcmp(boardnum, "42") && !strcmp(boardtype, "0x478") && !strcmp(cardbus, "1") && (!boothwmodel || (strcmp(boothwmodel, "WRT300N") && strcmp(boothwmodel, "WRT610N")))) {
+		printk(KERN_EMERG "Enable WRT350 LED fix\n");
+		/* WAN port LED */
+		val16 = 0x1F;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &val16, sizeof(val16));    
+	}
 
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
