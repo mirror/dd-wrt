@@ -328,82 +328,82 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 		.name		= "wireless_generic_0",
 		.gpio		= 32,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_1",
 		.gpio		= 33,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_2",
 		.gpio		= 34,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_3",
 		.gpio		= 35,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_4",
 		.gpio		= 36,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_5",
 		.gpio		= 37,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_6",
 		.gpio		= 38,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_7",
 		.gpio		= 39,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_8",
 		.gpio		= 40,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_9",
 		.gpio		= 41,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_10",
 		.gpio		= 42,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_11",
 		.gpio		= 43,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_12",
 		.gpio		= 44,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_13",
 		.gpio		= 45,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_14",
 		.gpio		= 46,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 	{
 		.name		= "wireless_generic_15",
 		.gpio		= 47,
-		.active_low	= 0,
+		.active_low	= 1,
 	}, 
 #if 0
 	{
