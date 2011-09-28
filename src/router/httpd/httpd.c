@@ -925,7 +925,7 @@ static void handle_request(void)
 				}
 			}
 		}
-		FILE *fp, *web;
+		FILE *fp;
 		int file_found = 1;
 		for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 			if (match(handler->pattern, file)) {
@@ -1022,8 +1022,7 @@ memdebug_enter();
 				// check for do_file handler and check if file exists
 				file_found = 1;
 				if(handler->output == do_file) {
-					web = getWebsFile(file);
-					if(web == NULL) {
+					if(getWebsFileLen(file) == 0) {
 						if (!(fp = fopen(file, "rb"))) {
 							file_found = 0;
 						} else {
