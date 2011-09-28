@@ -596,7 +596,7 @@ int containsstring(char *source, char *cmp)
 static char *last_log_ip = NULL;
 static int registered = -1;
 static int registered_real = -1;
-char *request_url;
+char *request_url=NULL;
 
 #define LINE_LEN 10000
 static void handle_request(void)
