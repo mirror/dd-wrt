@@ -168,6 +168,7 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 	db = mmap(NULL, dblen, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (db == MAP_FAILED) {
 		perror("failed to mmap db file");
+		if (fd) close(fd);
 		return rd;
 	}
 
@@ -176,12 +177,12 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 
 	if (ntohl(header->magic) != REGDB_MAGIC) {
 		fprintf(stderr, "Invalid database magic\n");
-		return rd;
+		goto out;
 	}
 
 	if (ntohl(header->version) != REGDB_VERSION) {
 		fprintf(stderr, "Invalid database version\n");
-		return rd;
+		goto out;
 	}
 
 	siglen = ntohl(header->signature_length);
@@ -190,7 +191,7 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 
 	if (dblen <= (int)sizeof(*header)) {
 		fprintf(stderr, "Invalid signature length %d\n", siglen);
-		return rd;
+		goto out;
 	}
 
 	num_countries = ntohl(header->reg_country_num);
@@ -208,8 +209,13 @@ struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry) {
 
 	if (!found_country) {
 		fprintf(stderr, "No country match in regulatory database.\n");
-		return rd;
+		goto out;
 	}
 	rd = country2rd(db, dblen, country);
+out:
+	if (munmap(db, dblen+siglen) == -1) {
+		fprintf(stderr, "mac80211regulatory failed to munmap crda database\n");
+		}
+	if (fd) close(fd);
 	return rd;
 }
