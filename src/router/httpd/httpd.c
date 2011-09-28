@@ -596,6 +596,7 @@ int containsstring(char *source, char *cmp)
 static char *last_log_ip = NULL;
 static int registered = -1;
 static int registered_real = -1;
+char *request_url;
 
 #define LINE_LEN 10000
 static void handle_request(void)
@@ -876,6 +877,9 @@ static void handle_request(void)
 	} else
 #endif
 	{
+		free(request_url);
+		request_url = safe_malloc(sizeof(file));
+		strcpy(request_url, file);
 		/* extract url args if present */
 		query = strchr(file, '?');
 		if (query) {

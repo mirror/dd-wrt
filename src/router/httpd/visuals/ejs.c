@@ -3556,13 +3556,15 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+extern char *request_url;
 void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
-	websWrite(wp, "SetupAssistant.asp");
-#else
-	websWrite(wp, "Info.htm");
+	if(endswith(request_url, ".asp") || endswith(request_url, ".htm") || endswith(request_url, ".html"))
+		websWrite(wp, "%s", request_url);
+	else
 #endif
+		websWrite(wp, "Info.htm");
 }
 
 #ifdef HAVE_SPOTPASS
