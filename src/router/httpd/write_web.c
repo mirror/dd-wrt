@@ -1,7 +1,6 @@
 #include <stdio.h>
 typedef struct {
 	char *path;		/* Web page URL path */
-	unsigned int offset;	/* Web page data */
 	int size;		/* Size of web page in bytes */
 //  int csize;                  /* Size of web page in bytes */
 } websRomPageIndexType;
