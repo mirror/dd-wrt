@@ -769,6 +769,11 @@ static void handle_request(void)
 		registered = registered_real;
 #endif
 
+	// save the originally requested url
+	free(request_url);
+	request_url = safe_malloc(sizeof(file));
+	strcpy(request_url, file);
+
 #ifdef HAVE_SKYTRON
 	if (file[0] == '\0' || file[len - 1] == '/') {
 		file = "setupindex.asp";
@@ -877,9 +882,6 @@ static void handle_request(void)
 	} else
 #endif
 	{
-		free(request_url);
-		request_url = safe_malloc(sizeof(file));
-		strcpy(request_url, file);
 		/* extract url args if present */
 		query = strchr(file, '?');
 		if (query) {
