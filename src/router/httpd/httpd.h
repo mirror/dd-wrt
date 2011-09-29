@@ -79,7 +79,6 @@ struct mime_handler {
 							     *authorisation));
 	unsigned char send_headers;
 };
-#include "webs.h"
 
 typedef struct {
 	char *path;		/* Web page URL path */
