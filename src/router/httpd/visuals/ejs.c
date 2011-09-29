@@ -3560,11 +3560,16 @@ extern char *request_url;
 void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
-	if(endswith(request_url, ".asp") || endswith(request_url, ".htm") || endswith(request_url, ".html"))
+	if(endswith(request_url, ".asp") || endswith(request_url, ".htm") || endswith(request_url, ".html")) {
+fprintf(stderr, "[EJS] request_url: %s", request_url);
 		websWrite(wp, "%s", request_url);
-	else
-#endif
+	} else {
+fprintf(stderr, "[EJS] request_url: %s => SetupAssistant.aps", request_url);
+		websWrite(wp, "SetupAssistant.asp");
+	}
+#else
 		websWrite(wp, "Info.htm");
+#endif
 }
 
 #ifdef HAVE_SPOTPASS
