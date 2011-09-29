@@ -19,73 +19,7 @@
 
 /******************************* Per O/S Includes *****************************/
 
-#ifdef WIN
-	#include	<direct.h>
-	#include	<io.h>
-	#include	<sys/stat.h>
-	#include	<limits.h>
-	#include	<tchar.h>
-	#include	<windows.h>
-	#include	<winnls.h>
-	#include	<time.h>
-	#include	<sys/types.h>
 	#include	<stdio.h>
-	#include	<stdlib.h>
-	#include	<fcntl.h>
-	#include	<errno.h>
-#endif /* WIN */
-
-#ifdef CE
-	#include	<errno.h>
-	#include	<limits.h>
-	#include	<tchar.h>
-	#include	<windows.h>
-	#include	<winsock.h>
-	#include	<winnls.h>
-	#include	"CE/wincompat.h"
-	#include	<winsock.h>
-#endif /* CE */
-
-#ifdef NW
-	#include	<direct.h>
-	#include	<io.h>
-	#include	<sys/stat.h>
-	#include	<time.h>
-	#include	<sys/types.h>
-	#include	<stdio.h>
-	#include	<stdlib.h>
-	#include	<fcntl.h>
-	#include	<errno.h>
-	#include	<niterror.h>
-	#define		EINTR EINUSE
-	#define		 WEBS	1
-	#include	<limits.h>
-	#include	<netdb.h>
-	#include	<process.h>
-	#include	<tiuser.h>
-	#include	<sys/time.h>
-	#include	<arpa/inet.h>
-	#include	<sys/types.h>
-	#include	<sys/socket.h>
-	#include	<sys/filio.h>
-	#include	<netinet/in.h>
-#endif /* NW */
-
-#ifdef SCOV5 
-	#include	<sys/types.h>
-	#include	<stdio.h>
-	#include	"sys/socket.h"
-	#include	"sys/select.h"
-	#include	"netinet/in.h"
-	#include 	"arpa/inet.h"
-	#include 	"netdb.h"
-#endif /* SCOV5 */
-
-#ifdef UNIX
-	#include	<stdio.h>
-#endif /* UNIX */
-
-#if LINUX || __rtems__
 	#include	<sys/types.h>
 	#include	<sys/stat.h>
 	#include	<sys/param.h>
@@ -101,92 +35,6 @@
 	#include	<time.h>
 	#include	<fcntl.h>
 	#include	<errno.h>
-#endif /* LINUX */
-
-#ifdef LYNX
-	#include	<limits.h>
-	#include	<stdarg.h>
-	#include	<stdio.h>
-	#include	<stdlib.h>
-	#include	<unistd.h>
-	#include	<socket.h>
-	#include	<netinet/in.h>
-	#include 	<arpa/inet.h>
-	#include 	<netdb.h>
-	#include	<time.h>
-	#include	<fcntl.h>
-	#include	<errno.h>
-#endif /* LYNX */
-
-#ifdef MACOSX
-	#include	<sys/stat.h>
-	#include	<stdio.h>
-	#include	<stdlib.h>
-	#include	<unistd.h>
-	#include	<sys/socket.h>
-	#include	<netinet/in.h>
-	#include 	<arpa/inet.h>
-	#include 	<netdb.h>
-	#include	<fcntl.h>
-	#include	<errno.h>
-#endif /* MACOSX */
-
-#ifdef UW
-	#include	<stdio.h>
-#endif /* UW */
-
-#ifdef VXWORKS
-	#include	<vxWorks.h>
-	#include	<sockLib.h>
-	#include	<selectLib.h>
-	#include	<inetLib.h>
-	#include	<ioLib.h>
-	#include	<stdio.h>
-	#include	<stat.h>
-	#include	<time.h>
-	#include	<usrLib.h>
-	#include	<fcntl.h>
-	#include	<errno.h>
-#endif /* VXWORKS */
-
-#ifdef SOLARIS
-	#include	<sys/types.h>
-	#include	<limits.h>
-	#include	<stdio.h>
-	#include	<stdlib.h>
-	#include	<unistd.h>
-	#include	<socket.h>
-	#include	<sys/select.h>
-	#include	<netinet/in.h>
-	#include 	<arpa/inet.h>
-	#include 	<netdb.h>
-	#include	<time.h>
-	#include	<fcntl.h>
-	#include	<errno.h>
-#endif /* SOLARIS */
-
-#ifdef QNX4
-	#include	<sys/types.h>
-	#include	<stdio.h>
-	#include	<sys/socket.h>
-	#include	<sys/select.h>
-	#include	<netinet/in.h>
-	#include 	<arpa/inet.h>
-	#include 	<netdb.h>
-    #include    <stdlib.h>
-    #include    <unistd.h>
-    #include    <sys/uio.h>
-    #include    <sys/wait.h>
-#endif /* QNX4 */
-
-#ifdef ECOS
-	#include	<limits.h>
-	#include	<cyg/infra/cyg_type.h>
-	#include	<cyg/kernel/kapi.h>
-	#include	<time.h>
-	#include	<network.h>
-	#include	<errno.h>
-#endif /* ECOS */
 
 /********************************** Includes **********************************/
 
@@ -194,9 +42,6 @@
 #include	<stdarg.h>
 #include	<string.h>
 
-#ifndef WEBS
-#include	"messages.h"
-#endif /* ! WEBS */
 
 /******************************* Per O/S Defines *****************************/
 
@@ -208,10 +53,8 @@
 	#define		__NO_PACK		1
 #endif /* UW */
 
-#if (defined (SCOV5) || defined (VXWORKS) || defined (LINUX) || defined (LYNX) || defined (MACOSX) || defined (__rtems__))
 #ifndef O_BINARY
 #define O_BINARY 		0
-#endif /* O_BINARY */
 #define	SOCKET_ERROR	-1
 #endif /* SCOV5 || VXWORKS || LINUX || LYNX || MACOSX */
 
