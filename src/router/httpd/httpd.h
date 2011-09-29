@@ -79,9 +79,10 @@ struct mime_handler {
 							     *authorisation));
 	unsigned char send_headers;
 };
+#include "webs.h"
+
 typedef struct {
 	char *path;		/* Web page URL path */
-	unsigned int offset;	/* Web page data */
 	unsigned int size;	/* Size of web page in bytes */
 } websRomPageIndexType;
 

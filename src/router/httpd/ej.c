@@ -264,17 +264,20 @@ FILE *getWebsFile(char *path)
 {
 	cprintf("opening %s\n", path);
 	int i = 0;
+	int curoffset=0;
 	while (websRomPageIndex[i].path != NULL) {
+		
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			FILE *web = fopen("/tmp/www.debug", "rb");
 			if (!web)
 			    web = fopen("/etc/www", "rb");
 			if (web == NULL)
 				return NULL;
-			fseek(web, websRomPageIndex[i].offset, 0);
+			fseek(web, curoffset, 0);
 			cprintf("found %s\n", path);
 			return web;
 		}
+		curoffset+=websRomPageIndex[i].size;
 		i++;
 	}
 	cprintf("not found %s\n", path);
@@ -305,15 +308,17 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 
 	i = 0;
 	len = 0;
+	int curoffset=0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			fp = fopen("/tmp/www.debug", "rb");
 			if (!fp)
 			fp = fopen("/etc/www", "rb");
-			fseek(fp, websRomPageIndex[i].offset, SEEK_SET);
+			fseek(fp, curoffset, SEEK_SET);
 			len = websRomPageIndex[i].size;
 			break;
 		}
+		curoffset+=websRomPageIndex[i].size;
 		i++;
 	}
 	if (fp == NULL) {
