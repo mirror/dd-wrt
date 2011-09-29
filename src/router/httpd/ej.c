@@ -258,6 +258,7 @@ void do_ej_file(FILE *fp,int len, webs_t stream)
 
 #define WEBS_PAGE_ROM
 
+#include "webs.h"
 #include "html.c"
 
 FILE *getWebsFile(char *path)
