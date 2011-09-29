@@ -906,7 +906,12 @@ endif
 
 vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals ../private/buffalo
 
-all: validate.so visuals.so httpd cert
+
+all: generate validate.so visuals.so httpd cert
+
+generate:
+	gcc -o gen gen.c
+	./gen > webs.h
 
 clean:
 	cd xyssl && make clean
