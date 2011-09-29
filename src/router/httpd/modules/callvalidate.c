@@ -58,6 +58,7 @@
 
 #include <dlfcn.h>
 #include <stdio.h>
+#include "webs.h"
 // #include <shutils.h>
 
 #if defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
