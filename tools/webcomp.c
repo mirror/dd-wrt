@@ -20,6 +20,7 @@
 
 /********************************* Includes ***********************************/
 
+#include <fcntl.h>
 #include	"wsIntrn.h"
 
 /**************************** Forward Declarations ****************************/
@@ -102,9 +103,10 @@ static int compile(char_t *fileList, char_t *prefix)
 	fprintf(stdout, " * Compiled by GoAhead WebCompile: %s */\n\n", 
 		gctime(&now));
 //	fprintf(stdout, "#include \"wsIntrn.h\"\n\n");
+
 	fprintf(stdout, "#ifndef WEBS_PAGE_ROM\n");
 	fprintf(stdout, "websRomPageIndexType websRomPageIndex[] = {\n");
-	fprintf(stdout, "    { 0, 0, 0 },\n};\n");
+	fprintf(stdout, "    { 0, 0 },\n};\n");
 	fprintf(stdout, "#else\n");
 
 /*
@@ -156,7 +158,7 @@ static int compile(char_t *fileList, char_t *prefix)
 /*
  *	Now output the page index
  */
-	fprintf(stdout, "websRomPageIndexType websRomPageIndex[] = {\n");
+	fprintf(stdout, "const websRomPageIndexType websRomPageIndex[] = {\n");
 
 	if ((lp = fopen(fileList, "r")) == NULL) {
 		fprintf(stderr, "Can't open file list %s\n", fileList);
@@ -202,14 +204,14 @@ static int compile(char_t *fileList, char_t *prefix)
 			continue;
 		}*/
 		
-		fprintf(stdout, "    { \"%s\", %ld, %d },\n", cp, offset, 
+		fprintf(stdout, "    { \"%s\", %d },\n", cp, 
 			sbuf.st_size);
 		offset+=sbuf.st_size;
 		nFile++;
 	}
 	fclose(lp); 
 	
-	fprintf(stdout, "    { 0, 0, 0 },\n");
+	fprintf(stdout, "    { 0, 0 },\n");
 	fprintf(stdout, "};\n");
 	fprintf(stdout, "#endif /* WEBS_PAGE_ROM */\n");
 

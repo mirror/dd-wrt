@@ -20,12 +20,7 @@
 
 /********************************* Includes ***********************************/
 
-#ifndef UEMF
-	#include	"basic/basic.h"
-	#include	"emf/emf.h"
-#else
 	#include	"uemf.h"
-#endif
 
 /********************************** Defines ***********************************/
 
