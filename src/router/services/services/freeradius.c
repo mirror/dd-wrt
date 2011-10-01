@@ -69,7 +69,7 @@ void start_freeradius(void)
 	FILE *fp = NULL;
 	stop_freeradius();
 	nvram_default_get("radius_country", "DE");
-	nvram_default_get("radius_state", "Saxon");
+	nvram_default_get("radius_state", "Saxony");
 	nvram_default_get("radius_locality", "none");
 	nvram_default_get("radius_expiration", "365");
 	nvram_default_get("radius_passphrase", "changeme");
