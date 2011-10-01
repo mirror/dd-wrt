@@ -80,15 +80,13 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		"echo \"$PPPD_PID$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"	//
+		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"	//
 		//	just an uptime test
 		"echo \"$PEERNAME\t`date +%%s`\" >> /tmp/pppoe_uptime\n"	//
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
-		//	enable proxy arp per peer
-		//"echo 1 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
 		//	per peer shaping
 		"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 		"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
@@ -125,8 +123,6 @@ static void makeipup(void)
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
-		//	disable proxy arp per peer
-		//"echo 0 > /proc/sys/net/ipv4/conf/\"$1\"/proxy_arp\n"
 		"tc qdisc del root dev $1\n"	//
 		"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
@@ -340,10 +336,6 @@ void start_pppoeserver(void)
 			"-N", "512", "-p", "/tmp/pppoeserver/pool");	
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
-
-		//	enable proxyarp for the pppoe server iface
-		//sysprintf("echo 1 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",
-		//	nvram_safe_get("pppoeserver_interface"));
 	}
 }
 
@@ -351,10 +343,9 @@ void stop_pppoeserver(void)
 {
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
-	//	disable proxyarp for the pppoe server iface
+	//	backup peer data
 		if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
-		//sysprintf("echo 0 > /proc/sys/net/ipv4/conf/\"%s\"/proxy_arp",nvram_safe_get("pppoeserver_interface"));
 	}
 
 }
