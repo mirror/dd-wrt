@@ -1751,6 +1751,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// Nintendo
 					j++;
 #endif
+#ifdef HAVE_CORENET
+				if (!strcmp(menu[i][j], "Firewall.asp") ||
+				    !strcmp(menu[i][j], "Filters.asp") || 
+				    !strcmp(menu[i][j], "ForwardSpec.asp"))	// jump over
+					// Corenet
+					j++;
+#endif
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strcmp(menu[i][j], "WL_WPATable.asp"))	// jump 
 					// over 
