@@ -1847,14 +1847,15 @@ static void serial8250_backup_timeout(unsigned long data)
 		iir |= UART_IIR_THRI;
 	}
 
+	if (!(iir & UART_IIR_NO_INT))
+		transmit_chars(up);
+
 
 	if (is_real_interrupt(up->port.irq))
 		serial_out(up, UART_IER, ier);
 
 	spin_unlock_irqrestore(&up->port.lock, flags);
 
-	if (!(iir & UART_IIR_NO_INT))
-		serial8250_handle_port(up);
 
 	/* Standard timer interval plus 0.2s to keep the port running */
 	mod_timer(&up->timer,
