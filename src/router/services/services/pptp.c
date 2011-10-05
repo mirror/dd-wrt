@@ -291,6 +291,7 @@ void stop_pptpd(void)
 
 	stop_process("pptpd", "pptp server");
 	stop_process("bcrelay", "pptp broadcast relay");
+	system("/bin/rm /tmp/pptp_connected");
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/freeradius/");
 	return;
