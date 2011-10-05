@@ -343,6 +343,7 @@ void stop_pppoeserver(void)
 {
 	if (stop_process("pppoe-server", "pppoe server")) {
 		del_pppoe_natrule();
+	system("/bin/rm /tmp/pppoe_connected");
 	//	backup peer data
 		if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
