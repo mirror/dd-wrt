@@ -45,7 +45,7 @@ int (*wfflush) (webs_t fp) = NULL;
 int (*wfputc) (char c, webs_t fp) = NULL;
 int (*wfputs) (char *buf, webs_t fp) = NULL;
 char *(*live_translate) (char *tran) = NULL;
-websRomPageIndexType *websRomPageIndex = NULL;
+websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
 
@@ -70,7 +70,7 @@ void initWeb(struct Webenvironment *env)
 	wfflush = env->Pwfflush;
 	wfputc = env->Pwfputc;
 	wfputs = env->Pwfputs;
-	websRomPageIndex = env->PwebsRomPageIndex;
+	PwebsRomPageIndex = env->PwebsRomPageIndex;
 	live_translate = env->Plive_translate;
 	GOZILA_GET = env->PGOZILA_GET;
 	validate_cgi = env->Pvalidate_cgi;
@@ -1184,15 +1184,15 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	int i = 0;
 
-	while (websRomPageIndex[i].path != NULL) {
-		cprintf("checking %s\n", websRomPageIndex[i].path);
+	while (PwebsRomPageIndex[i].path != NULL) {
+		cprintf("checking %s\n", PwebsRomPageIndex[i].path);
 		if (!strncmp
-		    (websRomPageIndex[i].path, "lang_pack/",
+		    (PwebsRomPageIndex[i].path, "lang_pack/",
 		     strlen("lang_pack/"))) {
 			cprintf("found language\n");
-			if (strlen(websRomPageIndex[i].path) < 14)
+			if (strlen(PwebsRomPageIndex[i].path) < 14)
 				continue;
-			strcpy(buf, websRomPageIndex[i].path);
+			strcpy(buf, PwebsRomPageIndex[i].path);
 			char *mybuf = &buf[strlen("lang_pack/")];
 
 			mybuf[strlen(mybuf) - 3] = 0;	// strip .js
