@@ -81,7 +81,7 @@ struct mime_handler {
 };
 
 typedef struct {
-	char *path;		/* Web page URL path */
+	const char *path;		/* Web page URL path */
 	unsigned int size;	/* Size of web page in bytes */
 } websRomPageIndexType;
 
