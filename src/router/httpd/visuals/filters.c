@@ -900,8 +900,11 @@ void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv)
 		if (!strcmp(type, "all_list"))
 			services = get_filter_services();
 		else		// user_list only
-		{	
-			services = malloc(strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1")) + 1);
+		{
+			int servicelen=strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1"));
+			if (servicelen == 0) return;
+			services = malloc(servicelen + 1);
+			(void)memset(services, 0, servicelen + 1);
 			strcat(services, nvram_safe_get("filter_services"));	// this 
 			// is 
 			// user 
