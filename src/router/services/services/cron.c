@@ -85,7 +85,7 @@ void start_cron(void)
 	if (nvram_match("reconnect_enable", "1")) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
-		fprintf(fp, "%s %s * * * root /usr/bin/killall pppd\n",
+		fprintf(fp, "%s %s * * * root /sbin/stopservice wan; /sbin/startservice wan\n",
 			nvram_safe_get("reconnect_minutes"),
 			nvram_safe_get("reconnect_hours"));
 		fclose(fp);
