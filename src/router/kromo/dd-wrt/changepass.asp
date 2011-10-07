@@ -78,7 +78,10 @@ if (valid_password(F))
 					
 			<h2><% tran("management.h2"); %></h2>
 			<div class="warning">
-				<div id="warning_text"><p><b><% tran("management.changepassword"); %></script></b></p></div>
+				<div id="warning_text">
+                                    <p><b><% tran("management.changepassword"); %></script></b></p>
+                                    <% show_init_warnings(); %>
+                                </div>
 			</div>
 			<br />
 

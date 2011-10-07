@@ -404,6 +404,9 @@ static void buffalo_defaults(int force)
 			nvram_set("ath1_regdomain", "KOREA_REPUBLIC");
 		}
 #endif
+#ifdef HAVE_WZRG300NH2
+		nvram_set("ath0_wpa_gtk_rekey", "0");
+#endif
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif

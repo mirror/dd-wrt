@@ -1091,6 +1091,7 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP Port";
 management.SIPatH_domain="SIP Domain";
 management.gui_style="Router GUI Style";
+management.warning_rekeying="Note: The WPA/WPA2 rekeying (group key) was disabled due to compatibility issues with some client devices. This setting reduces the security of  wireless connections. To reach standard security for WPA/WPA2 wireless connections it is recommended to set the &quot;Key Renewal Interval&quot; at &quot;Wireless &raquo; Wireless Security&quot; to 3600 seconds."
 
 //help container
 var hmanagement = new Object();
