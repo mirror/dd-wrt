@@ -148,11 +148,7 @@ int ipup_main(int argc, char **argv)
 		value = getenvs("IPREMOTE");
 
 		if (nvram_match("wan_proto", "pptp")) {
-			if (nvram_match("pptp_use_dhcp", "1")) {
-				nvram_set("wan_gateway", value);
-			}else{
-				nvram_set("pptp_wan_gateway", value);			
-			}
+			nvram_set("wan_gateway", value);
 			eval("route", "del", "default");
 			route_add(wan_ifname, 0, "0.0.0.0", value, "0.0.0.0");
 		} else {
@@ -215,12 +211,10 @@ int ipdown_main(int argc, char **argv)
 	}
 	if (nvram_match("wan_proto", "pptp")) {
 		eval("route", "del", "default");
-		if (nvram_match("pptp_use_dhcp", "1")) {
 			nvram_set("wan_gateway",
 				  nvram_safe_get("wan_gateway_buf"));
 			eval("route", "add", "default", "gw",
 			     nvram_safe_get("wan_gateway"));
-		}
 		sysprintf
 		    ("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n",
 		     nvram_safe_get("pptp_ifname"));

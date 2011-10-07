@@ -16,7 +16,7 @@
 <div class="setting">
 	<div class="label"><% tran("share.gateway"); %></div>
 	<input type="hidden" name="wan_gateway" value="4" />
-	<input class="num" maxlength="3" size="3" name="wan_gateway_0" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("wan_gateway","0"); %>" />.<input class="num" maxlength="3" size="3" name="wan_gateway_1" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("wan_gateway","1"); %>" />.<input class="num" maxlength="3" name="wan_gateway_2" size="3" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("wan_gateway","2"); %>" />.<input class="num" maxlength="3" name="wan_gateway_3" size="3" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("wan_gateway","3"); %>" />
+	<input class="num" maxlength="3" size="3" name="pptp_wan_gateway_0" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("pptp_wan_gateway","0"); %>" />.<input class="num" maxlength="3" size="3" name="pptp_wan_gateway_1" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("pptp_wan_gateway","1"); %>" />.<input class="num" maxlength="3" name="pptp_wan_gateway_2" size="3" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("pptp_wan_gateway","2"); %>" />.<input class="num" maxlength="3" name="pptp_wan_gateway_3" size="3" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("pptp_wan_gateway","3"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.gateway"); %></div>
