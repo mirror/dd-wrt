@@ -111,13 +111,8 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_netmask =
 		    wan_link ? nvram_safe_get("wan_netmask") :
 		    nvram_safe_get("wan_netmask");
-		if (nvram_match("pptp_use_dhcp", "1"))
 			wan_gateway =
 			    wan_link ? nvram_safe_get("wan_gateway") :
-			    nvram_safe_get("pptp_server_ip");
-		else
-			wan_gateway =
-			    wan_link ? nvram_safe_get("pptp_wan_gateway") :
 			    nvram_safe_get("pptp_server_ip");
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
