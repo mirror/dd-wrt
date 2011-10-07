@@ -557,7 +557,6 @@ char *get_complete_lan_ip(char *ip)
 	return ipaddr;
 }
 
-
 /*
  * =====================================================================================
  * by tallest
@@ -1415,11 +1414,17 @@ route_manip(int cmd, char *name, int metric, char *dst, char *gateway,
 
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "route_add: if:%s dst:%s gw: %s mask: %s \n",
+			name, dst, gateway, genmask);
 	return route_manip(SIOCADDRT, name, metric, dst, gateway, genmask);
 }
 
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "route_del: if:%s dst:%s gw: %s mask: %s \n",
+			name, dst, gateway, genmask);
 	return route_manip(SIOCDELRT, name, metric, dst, gateway, genmask);
 }
 
@@ -1445,7 +1450,7 @@ void getIfLists(char *eths, int size)
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ath");
 	sprintf(eths, "%s %s", eths, eths2);
-#elif defined(HAVE_RT2880) || defined(HAVE_RT61) 
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ra");
 	sprintf(eths, "%s %s", eths, eths2);
@@ -1493,12 +1498,12 @@ int contains(const char *string, char value)
 
 int haswifi(void)
 {
-	int count=0;
+	int count = 0;
 #ifdef HAVE_NOWIFI
 	return 0;
 #elif defined(HAVE_ATH9K) || defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
-	count+=getdevicecount();
-	return(count);
+	count += getdevicecount();
+	return (count);
 #else
 	return 1;
 #endif
@@ -1550,7 +1555,6 @@ int softkill(char *name)
 	killall(name, SIGKILL);
 	return 0;
 }
-
 
 int getmask(char *nmask)
 {
@@ -1729,29 +1733,37 @@ char *get_filter_services(void)
 
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char *proto[]= {"l7","p2p","dpi"};
-	char *services=NULL;
+	char *proto[] = { "l7", "p2p", "dpi" };
+	char *services = NULL;
 
 	while (filters->name)	// add l7 and p2p filters
 	{
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
 			strlen(filters->name), filters->name,
-			    filters->protocol == 0 ? 2 : 3,proto[filters->protocol]);
-		if (!services)
-		{
-		    services = malloc(strlen(temp)+1);
-		    services[0]=0;
-		}else
-		    services = realloc(services,strlen(services)+strlen(temp)+1);
+			filters->protocol == 0 ? 2 : 3,
+			proto[filters->protocol]);
+		if (!services) {
+			services = malloc(strlen(temp) + 1);
+			services[0] = 0;
+		} else
+			services =
+			    realloc(services,
+				    strlen(services) + strlen(temp) + 1);
 		strcat(services, temp);
 		filters++;
 	}
-	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services"))+1);
+	services =
+	    realloc(services,
+		    strlen(services) +
+		    strlen(nvram_safe_get("filter_services")) + 1);
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
 	// filters
-	services = realloc(services, strlen(services)+strlen(nvram_safe_get("filter_services_1"))+1);
+	services =
+	    realloc(services,
+		    strlen(services) +
+		    strlen(nvram_safe_get("filter_services_1")) + 1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
 	return services;
@@ -1808,7 +1820,8 @@ void addAction(char *action)
 		}
 	}
 	if (strlen(services) > 0) {
-		actionstack = safe_malloc(strlen(services) + strlen(action) + 2);
+		actionstack =
+		    safe_malloc(strlen(services) + strlen(action) + 2);
 		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
 		strcpy(actionstack, action);
 		strcat(actionstack, " ");
@@ -1824,20 +1837,17 @@ void addAction(char *action)
 int nvram_used(int *space)
 {
 	char *name, buf[NVRAM_SPACE];
-	
+
 	*space = NVRAM_SPACE;
 
 	nvram_getall(buf, sizeof(buf));
-	
+
 	name = buf;
-	
-	while (*name)
-	{
+
+	while (*name) {
 		name += strlen(name) + 1;
 	}
 
 	return (sizeof(struct nvram_header) + (int)name - (int)buf);
-	
+
 }
-
-
