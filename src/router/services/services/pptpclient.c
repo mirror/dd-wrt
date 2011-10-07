@@ -232,6 +232,9 @@ void start_pptp(int status)
 	} else {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
 			 nvram_safe_get("wan_netmask"));
+		char pptpip[64];
+		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
+		nvram_set("pptp_server_ip", pptpip);
 		if (!nvram_match("wan_gateway", "0.0.0.0"))
 			route_add(wan_ifname, 0,
 				  nvram_safe_get("pptp_server_ip"),
