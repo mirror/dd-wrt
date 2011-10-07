@@ -241,19 +241,19 @@ void start_pptp(int status)
 			for (i = 0; i < dns_list->num_servers; i++)
 				route_add(wan_ifname, 0,
 					  dns_list->dns_server[i],
-					  nvram_safe_get("wan_gateway"),
+					  nvram_safe_get("pptp_wan_gateway"),
 					  "255.255.255.255");
 			free(dns_list);
 		}
 		route_add(wan_ifname, 0, "0.0.0.0",
-			  nvram_safe_get("wan_gateway"), "0.0.0.0");
+			  nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
 		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
 		nvram_set("pptp_server_ip", pptpip);
-		if (!nvram_match("wan_gateway", "0.0.0.0"))
+		if (!nvram_match("pptp_wan_gateway", "0.0.0.0"))
 			route_add(wan_ifname, 0,
 				  nvram_safe_get("pptp_server_ip"),
-				  nvram_safe_get("wan_gateway"),
+				  nvram_safe_get("pptp_wan_gateway"),
 				  "255.255.255.255");
 	}
 	ret = _evalpid(pptp_argv, NULL, 0, NULL);

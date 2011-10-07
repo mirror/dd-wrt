@@ -687,7 +687,7 @@ void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
 
 void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
-	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20];
+	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20], pptp_wan_gateway[20];
 	char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 	char *pptp_use_dhcp = websGetVar(wp, "pptp_use_dhcp", NULL);
 
@@ -704,6 +704,7 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	get_merge_ipaddr(wp, "wan_ipaddr", wan_ipaddr);
 	get_merge_ipaddr(wp, "wan_netmask", wan_netmask);
 	get_merge_ipaddr(wp, "wan_gateway", wan_gateway);
+	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway);
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_set("pptp_pass", "0");	// disable pptp passthrough
 	}
@@ -731,6 +732,10 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 		return;
 
 	nvram_set("wan_gateway", wan_gateway);
+
+	if (!strcmp(pptp_wan_gateway, "0.0.0.0"))
+		return;
+	nvram_set("pptp_wan_gateway", pptp_wan_gateway);
 }
 
 #ifdef HAVE_PORTSETUP
