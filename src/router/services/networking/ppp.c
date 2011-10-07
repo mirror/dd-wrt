@@ -51,7 +51,7 @@ char *getenvs(char *env)
 	static unsigned char r[64];
 	char *e = getenv(env);
 	if (!e)
-	    return NULL;	
+		return NULL;
 	int c = 0;
 	int i;
 	for (i = 0; i < strlen(e); i++) {
@@ -146,10 +146,16 @@ int ipup_main(int argc, char **argv)
 
 	if (getenv("IPREMOTE")) {
 		value = getenvs("IPREMOTE");
-		nvram_set("wan_gateway", value);
+
 		if (nvram_match("wan_proto", "pptp")) {
+			if (nvram_match("pptp_use_dhcp", "1")) {
+				nvram_set("wan_gateway", value);
+			}
 			eval("route", "del", "default");
 			route_add(wan_ifname, 0, "0.0.0.0", value, "0.0.0.0");
+		} else {
+			nvram_set("wan_gateway", value);
+
 		}
 	}
 	strcpy(buf, "");
@@ -207,9 +213,12 @@ int ipdown_main(int argc, char **argv)
 	}
 	if (nvram_match("wan_proto", "pptp")) {
 		eval("route", "del", "default");
-		nvram_set("wan_gateway", nvram_safe_get("wan_gateway_buf"));
-		eval("route", "add", "default", "gw",
-		     nvram_safe_get("wan_gateway"));
+		if (nvram_match("pptp_use_dhcp", "1")) {
+			nvram_set("wan_gateway",
+				  nvram_safe_get("wan_gateway_buf"));
+			eval("route", "add", "default", "gw",
+			     nvram_safe_get("wan_gateway"));
+		}
 		sysprintf
 		    ("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n",
 		     nvram_safe_get("pptp_ifname"));
