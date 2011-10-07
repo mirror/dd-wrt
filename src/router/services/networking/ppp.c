@@ -150,6 +150,8 @@ int ipup_main(int argc, char **argv)
 		if (nvram_match("wan_proto", "pptp")) {
 			if (nvram_match("pptp_use_dhcp", "1")) {
 				nvram_set("wan_gateway", value);
+			}else{
+				nvram_set("pptp_wan_gateway", value);			
 			}
 			eval("route", "del", "default");
 			route_add(wan_ifname, 0, "0.0.0.0", value, "0.0.0.0");

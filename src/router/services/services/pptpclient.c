@@ -232,6 +232,21 @@ void start_pptp(int status)
 	} else {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"),
 			 nvram_safe_get("wan_netmask"));
+		struct dns_lists *dns_list = NULL;
+		dns_to_resolv();
+		dns_list = get_dns_list();
+		int i = 0;
+
+		if (dns_list) {
+			for (i = 0; i < dns_list->num_servers; i++)
+				route_add(wan_ifname, 0,
+					  dns_list->dns_server[i],
+					  nvram_safe_get("wan_gateway"),
+					  "255.255.255.255");
+			free(dns_list);
+		}
+		route_add(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("wan_gateway"), "0.0.0.0");
 		char pptpip[64];
 		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
 		nvram_set("pptp_server_ip", pptpip);
