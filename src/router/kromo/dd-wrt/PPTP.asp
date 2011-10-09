@@ -101,7 +101,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.wins1"); %></div>
-			<input size="25" name="pptpd_wins1" value="<% nvram_get("pptpd_dns1"); %>" />
+			<input size="25" name="pptpd_wins1" value="<% nvram_get("pptpd_wins1"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.wins2"); %></div>
