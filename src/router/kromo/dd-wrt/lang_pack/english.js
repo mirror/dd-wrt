@@ -1264,7 +1264,7 @@ service.dnsmasq_opt="Additional DNSMasq Options";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Server";
-service.pptp_forcemppe="MPPE Encryption";
+//service.pptp_forcemppe="MPPE Encryption";
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
