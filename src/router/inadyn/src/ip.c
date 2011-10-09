@@ -84,7 +84,7 @@ RC_TYPE ip_initialize(IP_SOCKET *p_self)
 
 	do
 	{
-		res_init();
+//		res_init();
 		rc = os_ip_support_startup();
 		if (rc != RC_OK)
 		{
