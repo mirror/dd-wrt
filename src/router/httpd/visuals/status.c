@@ -247,6 +247,17 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 	int wan_link = 0;
 	char buf[254];
 
+#ifdef HAVE_DSL_CPE_CONTROL
+	if( argc > 0 ) {
+		if( !strcmp(argv[0], "adsl") ) {
+			websWrite(wp, "{dsl_iface_status::%s}\n", nvram_get("dsl_iface_status"));
+			websWrite(wp, "{dsl_datarate_ds::%11.2f}\n",atof(nvram_get("dsl_datarate_ds")));
+			websWrite(wp, "{dsl_datarate_us::%11.2f}\n",atof(nvram_get("dsl_datarate_us")));
+			websWrite(wp, "{dsl_snr_down::%d}\n",atoi(nvram_get("dsl_snr_down")));
+			websWrite(wp, "{dsl_snr_up::%d}\n",atoi(nvram_get("dsl_snr_up")));
+		}
+	}
+#endif
 	if (!strcmp(wan_proto, "pppoe")
 	    || !strcmp(wan_proto, "pptp")
 #ifdef HAVE_3G

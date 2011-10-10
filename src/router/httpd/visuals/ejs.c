@@ -3578,6 +3578,27 @@ void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+void ej_wan_if_status(webs_t wp, int argc, char_t ** argv) {
+#ifdef HAVE_DSL_CPE_CONTROL
+	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "  <legend>DSL Status</legend>\n");
+	websWrite(wp, "  <div class=\"setting\">\n");
+	websWrite(wp, "    <div class=\"label\">Connection Status</div>\n");
+	websWrite(wp, "    <span id=\"dsl_iface_status\">%s</span>\n", nvram_safe_get("dsl_iface_status"));
+	websWrite(wp, "  </div>\n");
+	websWrite(wp, "  <div class=\"setting\">\n");
+	websWrite(wp, "    <div class=\"label\">Connection Speed (up/down)</div>\n");
+	websWrite(wp, "    <span id=\"dsl_datarate_ds\">%11.2f</span> MBit / <span id=\"dsl_datarate_us\">%11.2f</span> MBit\n", atof(nvram_safe_get("dsl_datarate_ds")), atof(nvram_safe_get("dsl_datarate_ds")));
+	websWrite(wp, "  </div>\n");
+	websWrite(wp, "  <div class=\"setting\">\n");
+	websWrite(wp, "    <div class=\"label\">DSL Signal (up/down)</div>\n");
+	websWrite(wp, "    <span id=\"dsl_snr_up\">%d</span> dB / <span id=\"dsl_snr_down\">%d</span> dB\n", atoi(nvram_safe_get("dsl_snr_up")), atoi(nvram_safe_get("dsl_snr_down")));
+	websWrite(wp, "  </div>\n");
+	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "<br />\n");
+#endif
+}
+
 #ifdef HAVE_SPOTPASS
 void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 {
