@@ -3703,7 +3703,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4 GHz]");
 	} else {
-		sprintf(frequencies, "");
+		frequencies[0]=0;
 	}
 
 	// wireless mode
