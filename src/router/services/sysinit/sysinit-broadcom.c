@@ -1964,6 +1964,7 @@ void start_sysinit(void)
 				break;
 			case ROUTER_ASUS_RTN10:
 			case ROUTER_ASUS_RTN10U:
+			case ROUTER_ASUS_RTN53:
 			case ROUTER_NETCORE_NW715P:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
@@ -2045,6 +2046,7 @@ void start_sysinit(void)
 				break;
 			case ROUTER_ASUS_RTN10:
 			case ROUTER_ASUS_RTN10U:
+			case ROUTER_ASUS_RTN53:
 			case ROUTER_NETCORE_NW715P:
 			case ROUTER_ASUS_RTN12B:
 			case ROUTER_LINKSYS_E1000V2:
