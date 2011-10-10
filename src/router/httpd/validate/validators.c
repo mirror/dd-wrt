@@ -3226,7 +3226,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	page = websGetVar(wp, "route_page", NULL);
 	ifname = websGetVar(wp, "route_ifname", NULL);
 
-	if (!page || !ipaddr || !netmask || !gateway || !metric || !ifname)
+	if (!page || !metric || !ifname)
 		return;
 
 	// Allow Defaultroute here
