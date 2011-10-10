@@ -2033,7 +2033,7 @@ void start_restore_defaults(void)
 
 	if (restore_defaults &&
 	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN12
-	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN12B
+	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN12B
 	     || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}

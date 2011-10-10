@@ -548,6 +548,8 @@
 #define ROUTER_BOARD_UNIFI 0xae1c	//bullet 2m
 
 #define ROUTER_ASUS_RTN66 0xaf0f
+				    
+#define ROUTER_ASUS_RTN53 0xb013	//rtn53
 
 // Netgear WNDR3400 (dual radio, BCM5325E switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Netgear PY309300116) >_64K nvram_<
 #define ROUTER_NETGEAR_WNDR3400 0xb014
