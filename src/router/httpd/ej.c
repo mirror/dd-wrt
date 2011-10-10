@@ -99,7 +99,7 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 
 static int decompress(webs_t stream, char *pattern, int len)
 {
-	typedef struct DECODE {
+	struct DECODE {
 		char *src;
 		char *dst;
 	};
@@ -171,7 +171,7 @@ static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
 	int len = 0;
 	memdebug_enter();
 	FILE *backup_fp = s_fp;
-	unsigned char *backup_filecount = s_filecount;
+	int backup_filecount = s_filecount;
 	unsigned char *backup_filebuffer = s_filebuffer;
 	unsigned int backup_filelen = s_filelen;
 	
@@ -244,7 +244,7 @@ static void do_ej_s(int (*get)(void), webs_t stream)	// jimmy, https, 8/4/2003
 void do_ej_buffer(char *buffer, webs_t stream)
 {
     s_filecount = 0;
-    s_filebuffer = buffer;
+    s_filebuffer = (unsigned char*)buffer;
     do_ej_s(&buffer_get,stream);
 }
 
@@ -263,18 +263,18 @@ void do_ej_file(FILE *fp,int len, webs_t stream)
 
 FILE *getWebsFile(char *path)
 {
+static FILE *web = NULL;
 	cprintf("opening %s\n", path);
 	int i = 0;
 	int curoffset=0;
 	while (websRomPageIndex[i].path != NULL) {
 		
 		if (!strcmp(websRomPageIndex[i].path, path)) {
-			FILE *web = fopen("/tmp/www.debug", "rb");
-			if (!web)
-			    web = fopen("/etc/www", "rb");
+			/* to prevent stack overwrite problems */
+			web = fopen("/etc/www", "rb");
 			if (web == NULL)
 				return NULL;
-			fseek(web, curoffset, 0);
+			fseek(web, curoffset, SEEK_SET);
 			cprintf("found %s\n", path);
 			return web;
 		}
@@ -312,9 +312,9 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 	int curoffset=0;
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
-			fp = fopen("/tmp/www.debug", "rb");
-			if (!fp)
 			fp = fopen("/etc/www", "rb");
+			if (fp == NULL)
+			    return;
 			fseek(fp, curoffset, SEEK_SET);
 			len = websRomPageIndex[i].size;
 			break;
@@ -328,7 +328,7 @@ void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)
 			return;
 		fseek(fp, 0, SEEK_END);
 		len = ftell(fp);
-		rewind(fp);
+		fseek(fp, 0, SEEK_SET);
 		do_ej_file(fp, len, stream);
 	} else {
 		do_ej_file(fp, len, stream);
