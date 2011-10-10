@@ -105,6 +105,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							
 							<h2><% tran("status_inet.h11"); %></h2>
+							<% wan_if_status(); %>
 							<fieldset>
 								<legend><% tran("status_inet.conft"); %></legend>
 								<div class="setting" id="wan_showdisabled">
