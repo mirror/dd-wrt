@@ -1462,6 +1462,12 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN10U;
 	}
 
+	if (boardnum == 45 && nvram_match("boardtype", "0x0550")
+	    && nvram_match("boardrev", "0x1442")) {
+		setRouter("Asus RT-N53");
+		return ROUTER_ASUS_RTN53;
+	}
+
 	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")) {
 		setRouter("Asus RT-N66U");
