@@ -13,3 +13,4 @@
 {ttraff_out::<% get_totaltraff("out"); %>}
 {uptime::<% get_uptime(); %>}
 {ipinfo::<% show_wanipinfo(); %>}
+<% show_status("adsl"); %>
