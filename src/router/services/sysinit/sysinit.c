@@ -1172,6 +1172,16 @@ void start_restore_defaults(void)
 		{0, 0, 0}
 	};
 
+	struct nvram_tuple rt53nvlan[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "vlan2 eth1 eth2", 0},
+		{"wan_ifname", "vlan1", 0},
+		{"wan_ifname2", "vlan1", 0},
+		{"wan_ifnames", "vlan1", 0},
+		{"wan_default", "vlan1", 0},
+		{0, 0, 0}
+	};
+
 	struct nvram_tuple wzr144nhvlan[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "vlan2 eth0", 0},
@@ -1554,6 +1564,9 @@ void start_restore_defaults(void)
 	case ROUTER_ASUS_RTN66:
 		linux_overrides = wrt6102vlan;
 		break;
+	case ROUTER_ASUS_RTN53:
+		linux_overrides = rt53nvlan;
+		break;
 #endif
 	case ROUTER_BUFFALO_WZRG144NH:
 		linux_overrides = wzr144nhvlan;
@@ -1881,6 +1894,17 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8u");
+		}
+
+	} else if (brand == ROUTER_ASUS_RTN53) {
+
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+			nvram_set("vlan1ports", "0 5");
+			nvram_set("vlan2ports", "1 2 3 4 5*");
+		}
+		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "0 5");
+			nvram_set("vlan2ports", "1 2 3 4 5*");
 		}
 
 	} else if (brand == ROUTER_BUFFALO_WZRG144NH) {
