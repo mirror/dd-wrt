@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <bcmnvram.h>
@@ -15,6 +16,33 @@
 #include <shutils.h>
 #include <syslog.h>
 #include <utils.h>
+
+
+void
+remove_oldest_entry(int cur_month, int cur_year)
+{
+	char old[32];
+	int month, year;
+	int len = 0;
+
+	for (year = 2008; year <= cur_year; year++) {
+		for (month = 1; month <= 12; month++) {
+			if (month == cur_month && year == cur_year) {
+				return;
+			}
+			sprintf(old, "traff-%02u-%u", month, year);
+			len = strlen(nvram_safe_get(old));
+			if (len > 0) {
+				dd_syslog(LOG_DEBUG, 
+					"ttraff: old data for %d-%d removed, freeing %d bytes of nvram\n", month, year, len + 15);
+				nvram_unset(old);
+				return;
+			}		
+		}
+	}
+
+	return;
+}
 
 void
 write_to_nvram(int day, int month, int year, unsigned long rcvd,
@@ -36,6 +64,14 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	buffer = (char *)malloc(2048);
 	memset(buffer, 0, 2048);
 	sprintf(tq, "traff-%02u-%u", month, year);
+
+	/* keep some nvram free by removing oldest traf data */		
+	int space = 0;
+	int used = nvram_used(&space);
+	if ((space - used) < 2048) { /* 2048 bytes to be on a safe side */
+		remove_oldest_entry(month, year);
+	}
+	
 	tdata = nvram_safe_get(tq);
 	
 	if (strlen(tdata) == 0) {
@@ -88,6 +124,7 @@ write_to_nvram(int day, int month, int year, unsigned long rcvd,
 	free(buffer);
 	return;
 }
+
 
 int main(int argc, char **argv)
 {
