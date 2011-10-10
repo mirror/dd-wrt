@@ -312,7 +312,7 @@ void start_pppoeserver(void)
 				"radius_timeout\t10\n"	//
 				"radius_retries\t3\n"	//
 				"login_local\t/bin/login\n");	//
-				if nvram_match("pppoeserver_authserverip_backup", "0.0.0.0") {
+				if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0")) {
 					fprintf(fp, "authserver %s:%s\n"	//
 						"acctserver %s:%s\n",	//
 						nvram_safe_get("pppoeserver_authserverip"),
@@ -333,12 +333,12 @@ void start_pppoeserver(void)
 				}
 			fclose(fp);
 			fp = fopen("/tmp/pppoeserver/radius/servers", "wb");
-			if nvram_match("pppoeserver_authserverip_backup", "0.0.0.0") {			
+			if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0")) {			
 				fprintf(fp, "%s %s\n", 
 				nvram_safe_get("pppoeserver_authserverip"), 
 				nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
 			}
-			else {	fprintf(fp, "%s %s\n" "%s %s\n",
+			else {	fprintf(fp, "%s %s\n%s %s\n",
 				nvram_safe_get("pppoeserver_authserverip"), 
 				nvram_safe_get("pppoeserver_sharedkey"),
 				nvram_safe_get("pppoeserver_authserverip_backup"), 
