@@ -118,7 +118,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pptp_client"); %></div>
-				<input maxlength="19" size="19" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_pool"); %>" />
+				<input maxlength="19" size="20" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_pool"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
@@ -172,7 +172,7 @@ addEvent(window, "unload", function() {
 				<input size="5" maxlength="5" class="num" name="pppoeserver_idle" value="<% nvram_get("pppoeserver_idle"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 0 = Deaktivate)");
+				document.write("(" + share.deflt + ": 0 = Disable)");
 				//]]>
 				</script></span>
 			</div>
@@ -188,7 +188,7 @@ addEvent(window, "unload", function() {
 		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
-				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
+				<input maxlength="15" size="20" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
@@ -211,6 +211,34 @@ addEvent(window, "unload", function() {
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
 				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
+			</div>
+
+
+			<div class="setting">
+				<div class="label"><% tran("radius.label23"); %></div>
+				<input maxlength="15" size="20" name="pppoeserver_authserverip_backup" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip_backup"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("radius.label24"); %></div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport_backup" value="<% nvram_get("pppoeserver_authserverport_backup"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1812)");
+				//]]>
+				</script></span>
+			</div>			
+			<div class="setting">
+				<div class="label"><% tran("radius.label14"); %></div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport_backup" value="<% nvram_get("pppoeserver_acctserverport_backup"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1813)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("radius.label27"); %></div>
+				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey_backup" value="d6nw5v1x2pc7st9m" />
 			</div>
 	</fieldset>
 </div>
