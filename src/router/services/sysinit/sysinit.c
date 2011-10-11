@@ -491,6 +491,7 @@ int create_rc_file(char *name)
 	unlink(tmp_file);
 
 	fp = fopen(tmp_file, "w");
+	fprintf(fp,"#!/bin/sh\n");
 	if (fp) {
 		// filter Windows <cr>ud
 		while (*p) {
