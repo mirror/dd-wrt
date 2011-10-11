@@ -493,6 +493,8 @@ int create_rc_file(char *name)
 	fp = fopen(tmp_file, "w");
 	fprintf(fp,"#!/bin/sh\n");
 	if (fp) {
+		if (strlen(p) <= 2 || memcmp("#!",p,2) )
+			fprintf(fp, "#!/bin/sh\n");
 		// filter Windows <cr>ud
 		while (*p) {
 			if (*p != 0x0d)
