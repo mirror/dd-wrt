@@ -118,7 +118,13 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pptp_client"); %></div>
-				<input maxlength="19" size="20" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_pool"); %>" />
+				<textarea cols="20" rows="2" id="pppoeserver_pool" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)"></textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+					var pppoeserver_pool = fix_cr( '<% nvram_get("pppoeserver_pool"); %>' );
+					document.getElementById("pppoeserver_pool").value = pppoeserver_pool;
+				//]]>
+				</script>
 			</div>
 			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
@@ -238,7 +244,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label27"); %></div>
-				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey_backup" value="d6nw5v1x2pc7st9m" />
+				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey_backup" value="<% nvram_get("pppoeserver_sharedkey_backup"); %>" />
 			</div>
 	</fieldset>
 </div>
