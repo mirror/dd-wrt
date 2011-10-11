@@ -215,6 +215,9 @@ static int usb_process_path(char *path, char *fs, char *target)
 #endif
 	if (!strcmp(fs, "vfat")) {
 		insmod("nls_base");
+		insmod("nls_cp932");
+		insmod("nls_cp936");
+		insmod("nls_cp950");
 		insmod("nls_cp437");
 		insmod("nls_iso8859-1");
 		insmod("nls_iso8859-2");
