@@ -194,54 +194,54 @@ void Initnvramtab()
 	char *tmpstr;
 	struct variable *tmp;
 	static struct SIMPLEVAL simpleval[] = {
-		{"WMEPARAM", "validate_wl_wme_params",0},
-		{"WMETXPARAM", "validate_wl_wme_tx_params",0},
-		{"WANIPADDR", "validate_wan_ipaddr",0},
-		{"MERGEREMOTEIP", "validate_remote_ip",0},
-		{"MERGEIPADDRS", "validate_merge_ipaddrs",0},
-		{"DNS", "validate_dns",0},
-		{"SAVEWDS", "save_wds",0},
-		{"DHCP", "dhcp_check",0},
-		{"STATICS", "validate_statics",0},
+		{"WMEPARAM", "validate_wl_wme_params", 0},
+		{"WMETXPARAM", "validate_wl_wme_tx_params", 0},
+		{"WANIPADDR", "validate_wan_ipaddr", 0},
+		{"MERGEREMOTEIP", "validate_remote_ip", 0},
+		{"MERGEIPADDRS", "validate_merge_ipaddrs", 0},
+		{"DNS", "validate_dns", 0},
+		{"SAVEWDS", "save_wds", 0},
+		{"DHCP", "dhcp_check", 0},
+		{"STATICS", "validate_statics", 0},
 #ifdef HAVE_PORTSETUP
-		{"PORTSETUP", "validate_portsetup",0},
+		{"PORTSETUP", "validate_portsetup", 0},
 #endif
-		{"REBOOT", "validate_reboot",0},
-		{"IPADDR", "validate_ipaddr",0},
-		{"STATICLEASES", "validate_staticleases",0},
+		{"REBOOT", "validate_reboot", 0},
+		{"IPADDR", "validate_ipaddr", 0},
+		{"STATICLEASES", "validate_staticleases", 0},
 #ifdef HAVE_CHILLILOCAL
-		{"USERLIST", "validate_userlist",0},
+		{"USERLIST", "validate_userlist", 0},
 #endif
 #ifdef HAVE_RADLOCAL
-		{"IRADIUSUSERLIST", "validate_iradius",0},
+		{"IRADIUSUSERLIST", "validate_iradius", 0},
 #endif
-		{"IPADDRS", "validate_ipaddrs",0},
-		{"NETMASK", "validate_netmask",0},
-		{"MERGENETMASK", "validate_merge_netmask",0},
-		{"WDS", "validate_wds",0},
-		{"STATICROUTE", "validate_static_route",0},
-		{"MERGEMAC", "validate_merge_mac",0},
-		{"FILTERPOLICY", "validate_filter_policy",0},
-		{"FILTERIPGRP", "validate_filter_ip_grp",0},
-		{"FILTERPORT", "validate_filter_port",0},
-		{"FILTERDPORTGRP", "validate_filter_dport_grp",0},
-		{"BLOCKEDSERVICE", "validate_blocked_service",0},
-		{"FILTERP2P", "validate_catchall",0},
-		{"FILTERMACGRP", "validate_filter_mac_grp",0},
-		{"FILTERWEB", "validate_filter_web",0},
-		{"WLHWADDRS", "validate_wl_hwaddrs",0},
-		{"FORWARDPROTO", "validate_forward_proto",0},
-		{"FORWARDSPEC", "validate_forward_spec",0},
-		{"PORTTRIGGER", "validate_port_trigger",0},
-		{"HWADDR", "validate_hwaddr",0},
-		{"HWADDRS", "validate_hwaddrs",0},
-		{"WLWEPKEY", "validate_wl_wep_key",0},
+		{"IPADDRS", "validate_ipaddrs", 0},
+		{"NETMASK", "validate_netmask", 0},
+		{"MERGENETMASK", "validate_merge_netmask", 0},
+		{"WDS", "validate_wds", 0},
+		{"STATICROUTE", "validate_static_route", 0},
+		{"MERGEMAC", "validate_merge_mac", 0},
+		{"FILTERPOLICY", "validate_filter_policy", 0},
+		{"FILTERIPGRP", "validate_filter_ip_grp", 0},
+		{"FILTERPORT", "validate_filter_port", 0},
+		{"FILTERDPORTGRP", "validate_filter_dport_grp", 0},
+		{"BLOCKEDSERVICE", "validate_blocked_service", 0},
+		{"FILTERP2P", "validate_catchall", 0},
+		{"FILTERMACGRP", "validate_filter_mac_grp", 0},
+		{"FILTERWEB", "validate_filter_web", 0},
+		{"WLHWADDRS", "validate_wl_hwaddrs", 0},
+		{"FORWARDPROTO", "validate_forward_proto", 0},
+		{"FORWARDSPEC", "validate_forward_spec", 0},
+		{"PORTTRIGGER", "validate_port_trigger", 0},
+		{"HWADDR", "validate_hwaddr", 0},
+		{"HWADDRS", "validate_hwaddrs", 0},
+		{"WLWEPKEY", "validate_wl_wep_key", 0},
 #ifdef HAVE_PPPOESERVER
-		{"CHAPTABLE", "validate_chaps",0},
+		{"CHAPTABLE", "validate_chaps", 0},
 #endif
 #ifdef HAVE_MILKFISH
-		{"MFSUBSCRIBERS", "validate_subscribers",0},
-		{"MFALIASES", "validate_aliases",0},
+		{"MFSUBSCRIBERS", "validate_subscribers", 0},
+		{"MFALIASES", "validate_aliases", 0},
 #endif
 		{"RANGE", "validate_range", 2},
 		{"CHOICE", "validate_choice", -1},
@@ -315,7 +315,7 @@ void Initnvramtab()
 						int scount = 0;
 						while (simpleval[scount].name != NULL) {	//
 							if (!stricmp(tmpstr, simpleval[scount].name)) {	//
-//								fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
+//                                                              fprintf(stderr,"match %s %s\n",tmpstr,tmp->name);
 								tmp->validatename = simpleval[scount].validator;	//
 								int arglen = 0;
 								if (simpleval[scount].args == -1) {	//
@@ -475,25 +475,22 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 		//define username fail
 		char *argv[] = { "freeradius.clientcert" };
 		call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-		websWrite(wp, "</head>\n");
-		websWrite(wp, "<body>\n");
-		websWrite(wp, "<div id=\"main\">\n");
-		websWrite(wp, "<div id=\"contentsInfo\">\n");
-		websWrite(wp, "<h2>%s</h2>\n",
-			  live_translate("freeradius.clientcert"));
-		websWrite(wp,
-			  "Error: please specify a value username and password\n");
-		websWrite(wp, "<div class=\"submitFooter\">\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n");
-		websWrite(wp, "//<![CDATA[\n");
-		websWrite(wp, "submitFooterButton(0,0,0,0,0,1);\n");
-		websWrite(wp, "//]]>\n");
-		websWrite(wp, "</script>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</div>\n");
-		websWrite(wp, "</body>\n");
-		websWrite(wp, "</html>\n");
+		websWrite(wp, "</head>\n"
+			  "<body>\n"
+			  "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n"
+			  "<h2>%s</h2>\n"
+			  "Error: please specify a value username and password\n"
+			  "<div class=\"submitFooter\">\n"
+			  "<script type=\"text/javascript\">\n"
+			  "//<![CDATA[\n"
+			  "submitFooterButton(0,0,0,0,0,1);\n"
+			  "//]]>\n"
+			  "</script>\n"
+			  "</div>\n"
+			  "</div>\n"
+			  "</div>\n"
+			  "</body>\n"
+			  "</html>\n", live_translate("freeradius.clientcert"));
 		goto out;
 	}
 	char filename[128];
@@ -598,13 +595,15 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 			nvram_safe_get("radius_passphrase"));
 		system(exec);
 	}
-	char *argv[] = { "freeradius.clientcert" };
+	char *argv[] = {
+		"freeradius.clientcert"
+	};
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-	websWrite(wp, "</head>\n");
-	websWrite(wp, "<body>\n");
-	websWrite(wp, "<div id=\"main\">\n");
-	websWrite(wp, "<div id=\"contentsInfo\">\n");
-	websWrite(wp, "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
+	websWrite(wp, "</head>\n"
+		  "<body>\n"
+		  "<div id=\"main\">\n"
+		  "<div id=\"contentsInfo\">\n"
+		  "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Certificate PEM", filename);
 	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
@@ -613,17 +612,13 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream,
 	show_certfield(wp, "Certificate Request", filename);
 	sprintf(filename, "%s-key.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Private Key PEM", filename);
-	websWrite(wp, "<div class=\"submitFooter\">\n");
-	websWrite(wp, "<script type=\"text/javascript\">\n");
-	websWrite(wp, "//<![CDATA[\n");
-	websWrite(wp, "submitFooterButton(0,0,0,0,0,1);\n");
-	websWrite(wp, "//]]>\n");
-	websWrite(wp, "</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</body>\n");
-	websWrite(wp, "</html>\n");
+	websWrite(wp, "<div class=\"submitFooter\">\n"
+		  "<script type=\"text/javascript\">\n"
+		  "//<![CDATA[\n"
+		  "submitFooterButton(0,0,0,0,0,1);\n"
+		  "//]]>\n"
+		  "</script>\n"
+		  "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n");
 
 	//make certificates
       out:;
@@ -840,7 +835,6 @@ enum {
 	SYS_RESTART,
 	REFRESH,
 };
-
 static struct gozila_action gozila_actions[] = {
 	/*
 	 * SETUP 
@@ -1083,9 +1077,8 @@ struct gozila_action *handle_gozila_action(char *name, char *type)
 }
 
 char my_next_page[30] = "";
-int
-gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
-	   char_t * url, char_t * path, char_t * query)
+int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
+	       char_t * url, char_t * path, char_t * query)
 {
 	char *submit_button, *submit_type, *next_page;
 	int action = REFRESH;
@@ -1268,7 +1261,6 @@ struct apply_action *handle_apply_action(char *name)
 			return v;
 		}
 	}
-
 	return NULL;
 }
 
@@ -1286,14 +1278,12 @@ void do_logout(void)		// static functions are not exportable,
 				// additionally this is no ej function
 {
 	send_authenticate(auth_realm);
-}
-
-static char *getdisc(void)	// works only for squashfs 
+} static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[] =
-	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+	unsigned char *disks[] = {
+		"sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
 		"sdi2"
 	};
 	for (i = 0; i < 9; i++) {
@@ -1346,7 +1336,6 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	}
 
   /***************************************************************************/
-
 	if (!query) {
 		goto footer;
 	}
@@ -1686,7 +1675,6 @@ static void do_cfebackup(struct mime_handler *handler, char *url,
 	unlink("/tmp/cfe.bin");
 }
 #endif
-
 #ifdef HAVE_ROUTERSTYLE
 static void do_stylecss(struct mime_handler *handler, char *url,
 			webs_t stream, char *query)
@@ -1697,148 +1685,121 @@ static void do_stylecss(struct mime_handler *handler, char *url,
 		style = query;
 
 	long sdata[30];
-
-	long blue[30] =
-	    { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f,
+	memset(sdata,0, sizeof(sdata));
+	long blue[30] = {
+		0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f,
 		0x35d,
 		0x35c, 0x78f,
-		0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff,
-		0x69f,
-		0xfff, 0xfff,
-		0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff
+		0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f,
+		0xccf, 0xfff, 0x69f, 0xfff, 0xfff, 0x999, 0x69f,
+		0x69f, 0xccf, 0x78f, 0xfff
 	};
 
-	long cyan[30] =
-	    { 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc,
+	long cyan[30] = {
+		0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc,
 		0x1aa,
 		0x1aa, 0x4cc,
-		0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff,
-		0x3bb,
-		0xfff, 0xfff,
-		0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff
+		0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099,
+		0xcff, 0xfff, 0x3bb, 0xfff, 0xfff, 0x999, 0x3bb,
+		0x3bb, 0xcff, 0x6cc, 0xfff
 	};
 
-	long elegant[30] =
-	    { 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
-		0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
-		0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9,
-		0x30519c,
-		0xfff,
-		0xfff, 0x496fc7, 0xfff, 0xfff,
-		0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff
+	long elegant[30] = {
+		0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
+		0x496fc7, 0xfff, 0x6384cf, 0x6384cf, 0x6384cf,
+		0x6384cf, 0x6384cf, 0xfff, 0x849dd9, 0x849dd9,
+		0x849dd9, 0x849dd9, 0x30519c, 0xfff, 0xfff,
+		0x496fc7, 0xfff, 0xfff, 0x999, 0x496fc7, 0x496fc7,
+		0xfff, 0x6384cf, 0xfff
 	};
 
-	long green[30] =
-	    { 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4,
+	long green[30] = {
+		0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4,
 		0x1a1,
 		0x1a1, 0x4c4,
-		0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff,
-		0x3b3,
-		0xfff, 0xfff,
-		0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff
+		0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090,
+		0xcfc, 0xfff, 0x3b3, 0xfff, 0xfff, 0x999, 0x3b3,
+		0x3b3, 0xcfc, 0x6c6, 0xfff
 	};
 
-	long orange[30] =
-	    { 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
-		0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
-		0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200,
-		0xf26522,
-		0xfff,
-		0xfff, 0xff8400, 0xfff, 0xfff,
-		0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff
+	long orange[30] = {
+		0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
+		0xff8400, 0xfff, 0xfeb311, 0xfeb311, 0xfeb311,
+		0xfeb311, 0xff9000, 0xfff, 0xffa200, 0xffa200,
+		0xffa200, 0xffa200, 0xf26522, 0xfff, 0xfff,
+		0xff8400, 0xfff, 0xfff, 0x999, 0xff8400, 0xff8400,
+		0xfff, 0xff9000, 0xfff
 	};
 
-	long red[30] =
-	    { 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77,
+	long red[30] = {
+		0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77,
 		0xc44,
 		0xc44, 0xe77,
-		0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff,
-		0xd55,
-		0xfff, 0xfff,
-		0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff
+		0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00,
+		0xfcc, 0xfff, 0xd55, 0xfff, 0xfff, 0x999, 0xd55,
+		0xd55, 0xfcc, 0xe77, 0xfff
 	};
 
-	long yellow[30] =
-	    { 0xeec900, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xffd700, 0x660,
+	long yellow[30] = {
+		0xeec900, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xffd700, 0x660,
 		0xee7,
 		0xbb4,
 		0xbb4, 0xee7,
-		0xeec900, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0xeec900, 0x660,
-		0x000,
-		0xffd700,
-		0x000, 0xfff,
+		0xeec900, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9,
+		0xeec900, 0x660, 0x000, 0xffd700, 0x000, 0xfff,
 		0x999, 0xffd700, 0xeec900, 0x660, 0xffd700, 0x000
 	};
 
 	if (!strcmp(style, "blue"))
-		memcpy(sdata, blue, 30 * sizeof(long));
+		memcpy(sdata, blue, sizeof(blue));
 	else if (!strcmp(style, "cyan"))
-		memcpy(sdata, cyan, 30 * sizeof(long));
+		memcpy(sdata, cyan, sizeof(cyan));
 	else if (!strcmp(style, "yellow"))
-		memcpy(sdata, yellow, 30 * sizeof(long));
+		memcpy(sdata, yellow, sizeof(yellow));
 	else if (!strcmp(style, "green"))
-		memcpy(sdata, green, 30 * sizeof(long));
+		memcpy(sdata, green, sizeof(green));
 	else if (!strcmp(style, "orange"))
-		memcpy(sdata, orange, 30 * sizeof(long));
+		memcpy(sdata, orange, sizeof(orange));
 	else if (!strcmp(style, "red"))
-		memcpy(sdata, red, 30 * sizeof(long));
+		memcpy(sdata, red, sizeof(red));
 	else			// default to elegant
-		memcpy(sdata, elegant, 30 * sizeof(long));
+		memcpy(sdata, elegant, sizeof(elegant));
 
-	websWrite(stream, "@import url(../common.css);\n");
-	websWrite(stream, "#menuSub,\n");
-	websWrite(stream, "#menuMainList li span,\n");
-	websWrite(stream, "#help h2 {\n");
-	websWrite(stream, "background:#%03x;\n", sdata[0]);
+	websWrite(stream,
+		  "@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n",
+		  sdata[0]);
 	websWrite(stream, "color:#%03x;\n", sdata[1]);
-	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[2],
-		  sdata[3], sdata[4], sdata[5]);
-	websWrite(stream, "}\n");
-	websWrite(stream, "#menuSubList li a {\n");
+	websWrite(stream,
+		  "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n",
+		  sdata[2], sdata[3], sdata[4], sdata[5]);
 	websWrite(stream, "background:#%03x;\n", sdata[6]);
 	websWrite(stream, "color:#%03x;\n", sdata[7]);
-	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[8],
-		  sdata[9], sdata[10], sdata[11]);
-	websWrite(stream, "}\n");
-	websWrite(stream, "#menuSubList li a:hover {\n");
+	websWrite(stream,
+		  "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a:hover {\n",
+		  sdata[8], sdata[9], sdata[10], sdata[11]);
 	websWrite(stream, "background:#%03x;\n", sdata[12]);
 	websWrite(stream, "color:#%03x;\n", sdata[13]);
-	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[14],
-		  sdata[15], sdata[16], sdata[17]);
-	websWrite(stream, "}\n");
-	websWrite(stream, "fieldset legend {\n");
-	websWrite(stream, "color:#%03x;\n", sdata[18]);
-	websWrite(stream, "}\n");
-	websWrite(stream, "#help a {\n");
-	websWrite(stream, "color:#%03x;\n", sdata[19]);
-	websWrite(stream, "}\n");
-	websWrite(stream, "#help a:hover {\n");
-	websWrite(stream, "color:#%03x;\n", sdata[20]);
-	websWrite(stream, "}\n");
-	websWrite(stream, ".meter .bar {\n");
-	websWrite(stream, "background-color: #%03x;\n", sdata[21]);
-	websWrite(stream, "}\n");
-	websWrite(stream, ".meter .text {\n");
-	websWrite(stream, "color:#%03x;\n", sdata[22]);
-	websWrite(stream, "}\n");
-	websWrite(stream, ".progressbar {\n");
+	websWrite(stream,
+		  "border-color:#%03x #%03x #%03x #%03x;\n}\nfieldset legend {\n",
+		  sdata[14], sdata[15], sdata[16], sdata[17]);
+	websWrite(stream, "color:#%03x;\n}\n#help a {\n", sdata[18]);
+	websWrite(stream, "color:#%03x;\n}\n#help a:hover {\n", sdata[19]);
+	websWrite(stream, "color:#%03x;\n}\n.meter .bar {\n", sdata[20]);
+	websWrite(stream, "background-color: #%03x;\n}\n.meter .text {\n",
+		  sdata[21]);
+	websWrite(stream, "color:#%03x;\n}\n.progressbar {\n", sdata[22]);
 	websWrite(stream, "background-color: #%03x;\n", sdata[23]);
-	websWrite(stream, "border-color: #%03x;\n", sdata[24]);
-	websWrite(stream, "font-size:.09em;\n");
-	websWrite(stream, "border-width:.09em;\n");
-	websWrite(stream, "}\n");
-	websWrite(stream, ".progressbarblock {\n");
-	websWrite(stream, "background-color: #%03x;\n", sdata[25]);
-	websWrite(stream, "font-size:.09em;\n");
-	websWrite(stream, "}\n");
-	websWrite(stream, "input.button {\n");
+	websWrite(stream,
+		  "border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n.progressbarblock {\n",
+		  sdata[24]);
+	websWrite(stream,
+		  "background-color: #%03x;\nfont-size:.09em;\n}\ninput.button {\n",
+		  sdata[25]);
 	websWrite(stream, "background: #%03x;\n", sdata[26]);
-	websWrite(stream, "color: #%03x;\n", sdata[27]);
-	websWrite(stream, "}\n");
-	websWrite(stream, "input.button:hover {\n");
+	websWrite(stream, "color: #%03x;\n}\ninput.button:hover {\n",
+		  sdata[27]);
 	websWrite(stream, "background: #%03x;\n", sdata[28]);
-	websWrite(stream, "color: #%03x;\n", sdata[29]);
-	websWrite(stream, "}\n");
+	websWrite(stream, "color: #%03x;\n}\n", sdata[29]);
 
 }
 
@@ -1856,7 +1817,6 @@ static void do_stylecss_ie(struct mime_handler *handler, char *url,
 		  "margin-bottom:8px;\n" "padding:0 .09em;\n" "}\n");
 }
 #endif
-
 #ifdef HAVE_REGISTER
 static void do_trial_logo(struct mime_handler *handler, char *url,
 			  webs_t stream, char *query)
@@ -2062,23 +2022,19 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 	unsigned int year;
 	int wd;
 	int i = 0;
-	char months[12][12] =
-	    { "share.jan", "share.feb", "share.mar", "share.apr", "share.may",
+	char months[12][12] = {
+		"share.jan", "share.feb", "share.mar", "share.apr", "share.may",
 		"share.jun",
-		"share.jul", "share.aug", "share.sep", "share.oct", "share.nov",
-		"share.dec"
+		"share.jul", "share.aug", "share.sep", "share.oct",
+		"share.nov", "share.dec"
 	};
-	unsigned long rcvd[31] =
-	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0,
-		0,
-		0, 0, 0, 0, 0, 0, 0
+	unsigned long rcvd[31] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	};
-	unsigned long sent[31] =
-	    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0,
-		0,
-		0, 0, 0, 0, 0, 0, 0
+	unsigned long sent[31] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	};
 	unsigned long max = 5, smax = 5, f = 1;
 	unsigned long totin = 0;
@@ -2136,56 +2092,37 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 	snprintf(monthname, 32, "%s", live_translate(months[month - 1]));
 
 	websWrite(stream,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-	websWrite(stream, "<html>\n");
-	websWrite(stream, "<head>\n");
-	websWrite(stream,
+		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
+		  "<html>\n"
+		  "<head>\n"
 		  "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		  live_translate("lang_charset.set"));
-	websWrite(stream, "<title>dd-wrt traffic graph</title>\n");
 
-	websWrite(stream, "<script type=\"text/javascript\">\n");
-	websWrite(stream, "//<![CDATA[\n");
-	websWrite(stream, "function Show(label) {\n");
-	websWrite(stream,
-		  "document.getElementById(\"label\").innerHTML = label;\n");
-	websWrite(stream, "}\n");
-	websWrite(stream, "//]]>\n");
-	websWrite(stream, "</script>\n");
-
-	websWrite(stream, "<style type=\"text/css\">\n\n");
-	websWrite(stream,
+	websWrite(stream, "<title>dd-wrt traffic graph</title>\n"
+		  "<script type=\"text/javascript\">\n"
+		  "//<![CDATA[\n"
+		  "function Show(label) {\n"
+		  "document.getElementById(\"label\").innerHTML = label;\n"
+		  "}\n"
+		  "//]]>\n"
+		  "</script>\n"
+		  "<style type=\"text/css\">\n\n"
 		  "#t-graph {position: relative; width: %upx; height: 300px;\n",
 		  days * COL_WIDTH);
-	websWrite(stream, "  margin: 1.1em 0 3.5em; padding: 0;\n");
-	websWrite(stream, "  border: 1px solid gray; list-style: none;\n");
-	websWrite(stream, "  font: 9px Tahoma, Arial, sans-serif;}\n");
-	websWrite(stream,
-		  "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n");
-	websWrite(stream,
+	websWrite(stream, "  margin: 1.1em 0 3.5em; padding: 0;\n"
+		  "  border: 1px solid gray; list-style: none;\n"
+		  "  font: 9px Tahoma, Arial, sans-serif;}\n"
+		  "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n"
 		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n",
 		  COL_WIDTH);
-	websWrite(stream, "  margin: 0; padding: 0;\n");
-	websWrite(stream, "  text-align: center; list-style: none;}\n");
-	websWrite(stream,
-		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
-	websWrite(stream,
-		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n");
-	websWrite(stream,
-		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
-	websWrite(stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n");
-	websWrite(stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");	// set 
-	// rcvd 
-	// bar 
-	// colour 
-	// here 
-	// (green)
-	websWrite(stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");	// set 
-	// sent 
-	// bar 
-	// colour 
-	// here 
-	// (red)
+	websWrite(stream, "  margin: 0; padding: 0;\n"
+		  "  text-align: center; list-style: none;}\n"
+		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
+		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"
+		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
+		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n"
+		  "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"
+		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
 
 	for (i = 0; i < days - 1; i++) {
 		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1,
@@ -2201,13 +2138,10 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n",
 		  days * COL_WIDTH);
 	websWrite(stream,
-		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
-	websWrite(stream,
-		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n");
-	websWrite(stream, "</style>\n");
-	websWrite(stream, "</head>\n\n");
-	websWrite(stream, "<body>\n");
-	websWrite(stream, "<ul id=\"t-graph\">\n");
+		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"
+		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"
+		  "</style>\n"
+		  "</head>\n\n" "<body>\n" "<ul id=\"t-graph\">\n");
 
 	for (i = 0; i < days; i++) {
 		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ",
@@ -2244,11 +2178,7 @@ static void do_ttgraph(struct mime_handler *handler, char *url,
 	websWrite(stream, "<li id=\"label\">\n");
 	websWrite(stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year,
 		  incom, totin, outcom, totout);
-	websWrite(stream, "</li>\n");
-
-	websWrite(stream, "</ul>\n\n");
-	websWrite(stream, "</body>\n");
-	websWrite(stream, "</html>\n");
+	websWrite(stream, "</li>\n" "</ul>\n\n" "</body>\n" "</html>\n");
 
 }
 
@@ -2260,10 +2190,8 @@ static void ttraff_backup(struct mime_handler *handler, char *url,
 	do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL,
 		       "traffdata.bak");
 	unlink("/tmp/traffdata.bak");
-}
-
-static void do_apply_cgi(struct mime_handler *handler, char *url,
-			 webs_t stream, char *q)
+} static void do_apply_cgi(struct mime_handler *handler, char *url,
+			   webs_t stream, char *q)
 {
 	char *path, *query;
 
@@ -2299,7 +2227,6 @@ static void do_language(struct mime_handler *handler, char *path, webs_t stream,
 	return;
 }
 #endif
-
 extern int issuperchannel(void);
 
 static char no_cache[] =
