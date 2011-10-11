@@ -19,10 +19,13 @@
 * modify it under the terms of the GNU General Public License
 * as published by the Free Software Foundation; either version
 * 2 of the License, or (at your option) any later version.
+*
+* LIC: GPL
+*
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: plugin.c,v 1.15 2006/05/29 23:29:16 paulus Exp $";
+"$Id$";
 
 #define _GNU_SOURCE 1
 #include "pppoe.h"
@@ -32,7 +35,7 @@ static char const RCSID[] =
 #include "pppd/lcp.h"
 #include "pppd/ipcp.h"
 #include "pppd/ccp.h"
-#include "pppd/pathnames.h"
+/* #include "pppd/pathnames.h" */
 
 #include <linux/types.h>
 #include <syslog.h>
@@ -48,9 +51,12 @@ static char const RCSID[] =
 #include <signal.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
-#include "ppp_defs.h"
-#include "if_ppp.h"
-#include "if_pppox.h"
+#include <linux/ppp_defs.h>
+#include <linux/if_pppox.h>
+
+#ifndef _ROOT_PATH
+#define _ROOT_PATH ""
+#endif
 
 #define _PATH_ETHOPT         _ROOT_PATH "/etc/ppp/options."
 
@@ -80,7 +86,7 @@ static option_t Options[] = {
       "Be verbose about discovered access concentrators"},
     { NULL }
 };
-
+int (*OldDevnameHook)(char *cmd, char **argv, int doit) = NULL;
 static PPPoEConnection *conn = NULL;
 
 /**********************************************************************
@@ -111,89 +117,9 @@ PPPOEInitDevice(void)
     conn->sessionSocket = -1;
     conn->useHostUniq = 1;
     conn->printACNames = printACNames;
+    conn->discoveryTimeout = PADI_TIMEOUT;
     return 1;
 }
-
-#ifdef HAVE_AQOS
-int stricmp(char *a,char *b)
-{
-int l1 = strlen(a);
-int l2 = strlen(b);
-if (l2>l1)
-    return -1;
-int i;
-int i2=0;
-for (i=0;i<l2;i++)
-    {
-    if (i2==strlen(b))
-	{
-	return -1;
-	break;
-	}
-    if (a[i]==' ')
-	continue;
-    if (b[i2]==' ')
-	{
-	i2++;
-	i--;
-	continue;
-	}
-    if (toupper(a[i])!=toupper(b[i2]))
-	return -1;
-    i2++;
-    }
-return 0;
-}
-extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream );
-extern char *nvram_safe_get(const char *name);
-
-int addrule(char *mac, char *upstream, char *downstream)
-{
-    char *qos_mac = nvram_safe_get( "svqos_macs" );
-    int ret = 0;
-    if (strlen(qos_mac)>0)
-    {
-    char *newqos = malloc(strlen(qos_mac)*2);
-    memset(newqos,0,strlen(qos_mac)*2);
-    char level[32], level2[32], data[32], type[32];
-    do
-    {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
-	    break;
-	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
-	    {
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
-	    ret |=1;
-	    }
-	    else
-	    {
-	    if (!stricmp(data,mac))
-	    {
-	    ret |=2;
-	    }
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"pppd");	    
-//	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
-	    }
-    }
-    while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
-    nvram_set("svqos_macs",newqos);
-    free(newqos);
-    }else
-    {
-    char newqos[128];
-    sprintf(newqos,"%s %s %s %s |",mac,upstream,downstream,"pppd");	    
-    nvram_set("svqos_macs",newqos);    
-    }
-return ret;
-
-}
-#endif
-
-#ifndef MAC2STR
-#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
-#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
-#endif
 
 /**********************************************************************
  * %FUNCTION: PPPOEConnectDevice
@@ -208,7 +134,17 @@ static int
 PPPOEConnectDevice(void)
 {
     struct sockaddr_pppox sp;
-    static int qosidx=500;
+
+    /* Open session socket before discovery phase, to avoid losing session */
+    /* packets sent by peer just after PADS packet (noted on some Cisco    */
+    /* server equipment).                                                  */
+    /* Opening this socket just before waitForPADS in the discovery()      */
+    /* function would be more appropriate, but it would mess-up the code   */
+    conn->sessionSocket = socket(AF_PPPOX, SOCK_STREAM, PX_PROTO_OE);
+    if (conn->sessionSocket < 0) {
+	error("Failed to create PPPoE socket: %m");
+	return -1;
+    }
 
     strlcpy(ppp_devnam, devnam, sizeof(ppp_devnam));
     if (existingSession) {
@@ -224,7 +160,9 @@ PPPOEConnectDevice(void)
 	    conn->peerEth[i] = (unsigned char) mac[i];
 	}
     } else {
-	discovery(conn);
+        conn->discoverySocket =
+            openInterface(conn->ifName, Eth_PPPOE_Discovery, conn->myEth);
+        discovery(conn);
 	if (conn->discoveryState != STATE_SESSION) {
 	    error("Unable to complete PPPoE Discovery");
 	    return -1;
@@ -234,11 +172,6 @@ PPPOEConnectDevice(void)
     /* Set PPPoE session-number for further consumption */
     ppp_session_number = ntohs(conn->session);
 
-    /* Make the session socket */
-    conn->sessionSocket = socket(AF_PPPOX, SOCK_STREAM, PX_PROTO_OE);
-    if (conn->sessionSocket < 0) {
-	fatal("Failed to create PPPoE socket: %m");
-    }
     sp.sa_family = AF_PPPOX;
     sp.sa_protocol = PX_PROTO_OE;
     sp.sa_addr.pppoe.sid = conn->session;
@@ -254,39 +187,27 @@ PPPOEConnectDevice(void)
 	    (unsigned) conn->peerEth[4],
 	    (unsigned) conn->peerEth[5]);
 
+    warn("Connected to %02X:%02X:%02X:%02X:%02X:%02X via interface %s",
+	 (unsigned) conn->peerEth[0],
+	 (unsigned) conn->peerEth[1],
+	 (unsigned) conn->peerEth[2],
+	 (unsigned) conn->peerEth[3],
+	 (unsigned) conn->peerEth[4],
+	 (unsigned) conn->peerEth[5],
+	 conn->ifName);
+
+    script_setenv("MACREMOTE", remote_number, 0);
+
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
 		sizeof(struct sockaddr_pppox)) < 0) {
-	fatal("Failed to connect PPPoE socket: %d %m", errno);
+	error("Failed to connect PPPoE socket: %d %m", errno);
 	return -1;
     }
-#ifdef HAVE_AQOS
-    if (bandwidthup!=0 && bandwidthdown!=0)
-	{
-	char uplevel[64];
-	char downlevel[64];
-	char mac[64];
-	sprintf(mac, MACSTR, MAC2STR(conn->myEth));
-	sprintf(uplevel,"%d",bandwidthup/1000);
-	sprintf(downlevel,"%d",bandwidthdown/1000);
-	fprintf(stderr,"use bandwidth down value to %d\n",bandwidthdown);
-	fprintf(stderr,"use bandwidth up value to %d\n",bandwidthdown);
-	int ret = addrule(mac,uplevel,downlevel);
-		    if (!ret)
-			{
-			qosidx+=2;
-			if (qosidx>500)
-			    qosidx=0;
-			add_usermac(mac, qosidx, uplevel,downlevel );
-			}else if (ret>1)
-			{
-			system("startstop_f wshaper");
-			}	    
-	}
-#endif
+
     return conn->sessionSocket;
 }
 
-/*static void
+static void
 PPPOESendConfig(int mtu,
 		u_int32_t asyncmap,
 		int pcomp,
@@ -301,29 +222,28 @@ PPPOESendConfig(int mtu,
     }
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
-	error("Couldn't create IP socket: %m");
+	warn("Couldn't create IP socket: %m");
 	return;
     }
     strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-//    info("set mtu rp-pppoe to %s (%d)\n",ifname,mtu);
     ifr.ifr_mtu = mtu;
     if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
-	error("Couldn't set interface MTU to %d: %m", mtu);
+	warn("ioctl(SIOCSIFMTU): %m");
 	return;
     }
     (void) close (sock);
 }
-*/
+
+
 static void
 PPPOERecvConfig(int mru,
 		u_int32_t asyncmap,
 		int pcomp,
 		int accomp)
 {
-#if 0 /* broken protocol, but no point harrassing the users I guess... */
-    if (mru > MAX_PPPOE_MTU)
+    if (mru > MAX_PPPOE_MTU) {
 	warn("Couldn't increase MRU to %d", mru);
-#endif
+    }
 }
 
 /**********************************************************************
@@ -351,8 +271,8 @@ PPPOEDisconnectDevice(void)
 	return;
     }
     close(conn->sessionSocket);
-    /* don't send PADT?? */
     close(conn->discoverySocket);
+
 }
 
 static void
@@ -386,14 +306,31 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
     int fd;
     struct ifreq ifr;
 
-    /*
-     * Take any otherwise-unrecognized option as a possible device name,
-     * and test if it is the name of a network interface with a
-     * hardware address whose sa_family is ARPHRD_ETHER.
-     */
-    if (strlen(cmd) > 4 && !strncmp(cmd, "nic-", 4)) {
-	/* Strip off "nic-" */
+    /* If "devnam" has already been set, ignore.
+       This prevents kernel from doing modprobes against random
+       pppd arguments that happen to begin with "nic-", "eth" or "br"
+
+       Ideally, "nix-ethXXX" should be supplied immediately after
+       "plugin rp-pppoe.so"
+
+       Patch based on suggestion from Mike Ireton.
+    */
+    if (devnam[0]) {
+	if (OldDevnameHook) return OldDevnameHook(cmd, argv, doit);
+	return 0;
+    }
+
+    /* Only do it if name is "ethXXX" or "brXXX" or what was specified
+       by rp_pppoe_dev option (ugh). */
+    /* Can also specify nic-XXXX in which case the nic- is stripped off. */
+    if (!strncmp(cmd, "nic-", 4)) {
 	cmd += 4;
+    } else {
+	if (strncmp(cmd, "eth", 3) &&
+	    strncmp(cmd, "br", 2)) {
+	    if (OldDevnameHook) return OldDevnameHook(cmd, argv, doit);
+	    return 0;
+	}
     }
 
     /* Open a socket */
@@ -403,7 +340,7 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 
     /* Try getting interface index */
     if (r) {
-	strncpy(ifr.ifr_name, cmd, sizeof(ifr.ifr_name));
+	strncpy(ifr.ifr_name, cmd, IFNAMSIZ);
 	if (ioctl(fd, SIOCGIFINDEX, &ifr) < 0) {
 	    r = 0;
 	} else {
@@ -411,9 +348,8 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 		r = 0;
 	    } else {
 		if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER) {
-		    if (doit)
-			error("Interface %s not Ethernet", cmd);
-		    r = 0;
+		    error("Interface %s not Ethernet", cmd);
+		    r=0;
 		}
 	    }
 	}
@@ -421,18 +357,38 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 
     /* Close socket */
     close(fd);
-    if (r && doit) {
+    if (r) {
 	strncpy(devnam, cmd, sizeof(devnam));
 	if (the_channel != &pppoe_channel) {
 
 	    the_channel = &pppoe_channel;
 	    modem = 0;
 
+	    lcp_allowoptions[0].neg_accompression = 0;
+	    lcp_wantoptions[0].neg_accompression = 0;
+
+	    lcp_allowoptions[0].neg_asyncmap = 0;
+	    lcp_wantoptions[0].neg_asyncmap = 0;
+
+	    lcp_allowoptions[0].neg_pcompression = 0;
+	    lcp_wantoptions[0].neg_pcompression = 0;
+
+	    ipcp_allowoptions[0].neg_vj=0;
+	    ipcp_wantoptions[0].neg_vj=0;
+
+	    ccp_allowoptions[0].deflate = 0 ;
+	    ccp_wantoptions[0].deflate = 0 ;
+
+	    ccp_allowoptions[0].bsd_compress = 0;
+	    ccp_wantoptions[0].bsd_compress = 0;
+
+
 	    PPPOEInitDevice();
 	}
 	return 1;
     }
 
+    if (OldDevnameHook) r = OldDevnameHook(cmd, argv, doit);
     return r;
 }
 
@@ -491,12 +447,11 @@ fatalSys(char const *str)
 void
 rp_fatal(char const *str)
 {
-    char buf[1024];
     printErr(str);
-    sprintf(buf, "RP-PPPoE: %.256s", str);
-    sendPADT(conn, buf);
+    sendPADTf(conn, "RP-PPPoE: %.256s", str);
     exit(1);
 }
+
 /**********************************************************************
 *%FUNCTION: sysErr
 *%ARGUMENTS:
@@ -512,42 +467,17 @@ sysErr(char const *str)
     rp_fatal(str);
 }
 
-void pppoe_check_options(void)
-{
-    lcp_allowoptions[0].neg_accompression = 0;
-    lcp_wantoptions[0].neg_accompression = 0;
-
-    lcp_allowoptions[0].neg_asyncmap = 0;
-    lcp_wantoptions[0].neg_asyncmap = 0;
-
-    lcp_allowoptions[0].neg_pcompression = 0;
-    lcp_wantoptions[0].neg_pcompression = 0;
-
-    if (lcp_allowoptions[0].mru > MAX_PPPOE_MTU)
-	lcp_allowoptions[0].mru = MAX_PPPOE_MTU;
-    if (lcp_wantoptions[0].mru > MAX_PPPOE_MTU)
-	lcp_wantoptions[0].mru = MAX_PPPOE_MTU;
-
-    ccp_allowoptions[0].deflate = 0;
-    ccp_wantoptions[0].deflate = 0;
-
-    ipcp_allowoptions[0].neg_vj = 0;
-    ipcp_wantoptions[0].neg_vj = 0;
-
-    ccp_allowoptions[0].bsd_compress = 0;
-    ccp_wantoptions[0].bsd_compress = 0;
-}
 
 struct channel pppoe_channel = {
-    options: Options,
-    process_extra_options: &PPPOEDeviceOptions,
-    check_options: pppoe_check_options,
-    connect: &PPPOEConnectDevice,
-    disconnect: &PPPOEDisconnectDevice,
-    establish_ppp: &generic_establish_ppp,
-    disestablish_ppp: &generic_disestablish_ppp,
-    send_config: NULL,
-    recv_config: &PPPOERecvConfig,
-    close: NULL,
-    cleanup: NULL
+    .options = Options,
+    .process_extra_options = &PPPOEDeviceOptions,
+    .check_options = NULL,
+    .connect = &PPPOEConnectDevice,
+    .disconnect = &PPPOEDisconnectDevice,
+    .establish_ppp = &generic_establish_ppp,
+    .disestablish_ppp = &generic_disestablish_ppp,
+    .send_config = &PPPOESendConfig,
+    .recv_config = &PPPOERecvConfig,
+    .close = NULL,
+    .cleanup = NULL
 };
