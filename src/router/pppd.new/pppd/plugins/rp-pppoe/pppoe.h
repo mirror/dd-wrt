@@ -9,15 +9,15 @@
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
-* $Id: pppoe.h,v 1.2 2004/11/04 10:07:37 paulus Exp $
+* LIC: GPL
+*
+* $Id$
 *
 ***********************************************************************/
 
-#ifdef __sun__
-#define __EXTENSIONS__
-#endif
-
 #include "config.h"
+
+extern int IsSetID;
 
 #if defined(HAVE_NETPACKET_PACKET_H) || defined(HAVE_LINUX_IF_PACKET_H)
 #define _POSIX_SOURCE 1 /* For sigaction defines */
@@ -124,7 +124,7 @@ typedef unsigned int UINT32_t;
 #elif SIZEOF_UNSIGNED_LONG == 4
 typedef unsigned long UINT32_t;
 #else
-#error Could not find a 16-bit integer type
+#error Could not find a 32-bit integer type
 #endif
 
 #ifdef HAVE_LINUX_IF_ETHER_H
@@ -154,12 +154,22 @@ typedef unsigned long UINT32_t;
 extern UINT16_t Eth_PPPOE_Discovery;
 extern UINT16_t Eth_PPPOE_Session;
 
+extern void switchToRealID(void);
+extern void switchToEffectiveID(void);
+extern void dropPrivs(void);
+
 /* PPPoE codes */
 #define CODE_PADI           0x09
 #define CODE_PADO           0x07
 #define CODE_PADR           0x19
 #define CODE_PADS           0x65
 #define CODE_PADT           0xA7
+
+/* Extensions from draft-carrel-info-pppoe-ext-00 */
+/* I do NOT like PADM or PADN, but they are here for completeness */
+#define CODE_PADM           0xD3
+#define CODE_PADN           0xD4
+
 #define CODE_SESS           0x00
 
 /* PPPoE Tags */
@@ -173,6 +183,12 @@ extern UINT16_t Eth_PPPOE_Session;
 #define TAG_SERVICE_NAME_ERROR 0x0201
 #define TAG_AC_SYSTEM_ERROR    0x0202
 #define TAG_GENERIC_ERROR      0x0203
+
+/* Extensions from draft-carrel-info-pppoe-ext-00 */
+/* I do NOT like these tags one little bit */
+#define TAG_HURL               0x111
+#define TAG_MOTM               0x112
+#define TAG_IP_ROUTE_ADD       0x121
 
 /* Discovery phase states */
 #define STATE_SENT_PADI     0
@@ -263,10 +279,13 @@ typedef struct PPPoEConnectionStruct {
     int printACNames;		/* Just print AC names */
     int skipDiscovery;		/* Skip discovery */
     int noDiscoverySocket;	/* Don't even open discovery socket */
+    int killSession;		/* Kill session and exit */
     FILE *debugFile;		/* Debug file for dumping packets */
     int numPADOs;		/* Number of PADO packets received */
     PPPoETag cookie;		/* We have to send this if we get it */
     PPPoETag relayId;		/* Ditto */
+    int PADSHadError;           /* If PADS had an error tag */
+    int discoveryTimeout;       /* Timeout for discovery packets */
 } PPPoEConnection;
 
 /* Structure used to determine acceptable PADO or PADS packet */
@@ -287,16 +306,21 @@ void fatalSys(char const *str);
 void rp_fatal(char const *str);
 void printErr(char const *str);
 void sysErr(char const *str);
+#ifdef DEBUGGING_ENABLED
 void dumpPacket(FILE *fp, PPPoEPacket *packet, char const *dir);
 void dumpHex(FILE *fp, unsigned char const *buf, int len);
+#endif
 int parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra);
 void parseLogErrs(UINT16_t typ, UINT16_t len, unsigned char *data, void *xtra);
+void pktLogErrs(char const *pkt, UINT16_t typ, UINT16_t len, unsigned char *data, void *xtra);
 void syncReadFromPPP(PPPoEConnection *conn, PPPoEPacket *packet);
 void asyncReadFromPPP(PPPoEConnection *conn, PPPoEPacket *packet);
 void asyncReadFromEth(PPPoEConnection *conn, int sock, int clampMss);
 void syncReadFromEth(PPPoEConnection *conn, int sock, int clampMss);
 char *strDup(char const *str);
 void sendPADT(PPPoEConnection *conn, char const *msg);
+void sendPADTf(PPPoEConnection *conn, char const *fmt, ...);
+
 void sendSessionPacket(PPPoEConnection *conn,
 		       PPPoEPacket *packet, int len);
 void initPPP(void);

@@ -6,10 +6,12 @@
 *
 * Copyright (C) 1999 by Roaring Penguin Software Inc.
 *
+* LIC: GPL
+*
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: discovery.c,v 1.4 2005/03/22 10:22:32 paulus Exp $";
+"$Id$";
 
 #include "pppoe.h"
 
@@ -24,6 +26,7 @@ static char const RCSID[] =
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#include <time.h>
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
@@ -40,6 +43,9 @@ static char const RCSID[] =
 
 #include <signal.h>
 
+/* Supplied by pppd if we're a plugin */
+extern int persist;
+
 /**********************************************************************
 *%FUNCTION: parseForHostUniq
 *%ARGUMENTS:
@@ -52,7 +58,7 @@ static char const RCSID[] =
 *%DESCRIPTION:
 * If a HostUnique tag is found which matches our PID, sets *extra to 1.
 ***********************************************************************/
-void
+static void
 parseForHostUniq(UINT16_t type, UINT16_t len, unsigned char *data,
 		 void *extra)
 {
@@ -77,7 +83,7 @@ parseForHostUniq(UINT16_t type, UINT16_t len, unsigned char *data,
 * If we are using the Host-Unique tag, verifies that packet contains
 * our unique identifier.
 ***********************************************************************/
-int
+static int
 packetIsForMe(PPPoEConnection *conn, PPPoEPacket *packet)
 {
     int forMe = 0;
@@ -106,7 +112,7 @@ packetIsForMe(PPPoEConnection *conn, PPPoEPacket *packet)
 *%DESCRIPTION:
 * Picks interesting tags out of a PADO packet
 ***********************************************************************/
-void
+static void
 parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	      void *extra)
 {
@@ -167,7 +173,7 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	if (conn->printACNames) {
 	    printf("Got a Service-Name-Error tag: %.*s\n", (int) len, data);
 	} else {
-	    syslog(LOG_ERR, "PADO: Service-Name-Error: %.*s", (int) len, data);
+	    pktLogErrs("PADO", type, len, data, extra);
 	    exit(1);
 	}
 	break;
@@ -175,7 +181,7 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	if (conn->printACNames) {
 	    printf("Got a System-Error tag: %.*s\n", (int) len, data);
 	} else {
-	    syslog(LOG_ERR, "PADO: System-Error: %.*s", (int) len, data);
+	    pktLogErrs("PADO", type, len, data, extra);
 	    exit(1);
 	}
 	break;
@@ -183,7 +189,7 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	if (conn->printACNames) {
 	    printf("Got a Generic-Error tag: %.*s\n", (int) len, data);
 	} else {
-	    syslog(LOG_ERR, "PADO: Generic-Error: %.*s", (int) len, data);
+	    pktLogErrs("PADO", type, len, data, extra);
 	    exit(1);
 	}
 	break;
@@ -202,7 +208,7 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 *%DESCRIPTION:
 * Picks interesting tags out of a PADS packet
 ***********************************************************************/
-void
+static void
 parsePADSTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	      void *extra)
 {
@@ -211,18 +217,12 @@ parsePADSTags(UINT16_t type, UINT16_t len, unsigned char *data,
     case TAG_SERVICE_NAME:
 	syslog(LOG_DEBUG, "PADS: Service-Name: '%.*s'", (int) len, data);
 	break;
-    case TAG_SERVICE_NAME_ERROR:
-	syslog(LOG_ERR, "PADS: Service-Name-Error: %.*s", (int) len, data);
-	printf( "PADS: Service-Name-Error: %.*s\n", (int) len, data);
-	exit(1);
-    case TAG_AC_SYSTEM_ERROR:
-	syslog(LOG_ERR, "PADS: System-Error: %.*s", (int) len, data);
-	printf( "PADS: System-Error: %.*s\n", (int) len, data);
-	exit(1);
     case TAG_GENERIC_ERROR:
-	syslog(LOG_ERR, "PADS: Generic-Error: %.*s", (int) len, data);
-	printf( "PADS: Generic-Error: %.*s\n", (int) len, data);
-	exit(1);
+    case TAG_AC_SYSTEM_ERROR:
+    case TAG_SERVICE_NAME_ERROR:
+	pktLogErrs("PADS", type, len, data, extra);
+	conn->PADSHadError = 1;
+	break;
     case TAG_RELAY_SESSION_ID:
 	conn->relayId.type = htons(type);
 	conn->relayId.length = htons(len);
@@ -240,7 +240,7 @@ parsePADSTags(UINT16_t type, UINT16_t len, unsigned char *data,
 *%DESCRIPTION:
 * Sends a PADI packet
 ***********************************************************************/
-void
+static void
 sendPADI(PPPoEConnection *conn)
 {
     PPPoEPacket packet;
@@ -248,12 +248,14 @@ sendPADI(PPPoEConnection *conn)
     PPPoETag *svc = (PPPoETag *) (&packet.payload);
     UINT16_t namelen = 0;
     UINT16_t plen;
+    int omit_service_name = 0;
 
     if (conn->serviceName) {
 	namelen = (UINT16_t) strlen(conn->serviceName);
+	if (!strcmp(conn->serviceName, "NO-SERVICE-NAME-NON-RFC-COMPLIANT")) {
+	    omit_service_name = 1;
+	}
     }
-    plen = TAG_HDR_SIZE + namelen;
-    CHECK_ROOM(cursor, packet.payload, plen);
 
     /* Set destination to Ethernet broadcast address */
     memset(packet.ethHdr.h_dest, 0xFF, ETH_ALEN);
@@ -265,14 +267,20 @@ sendPADI(PPPoEConnection *conn)
     packet.code = CODE_PADI;
     packet.session = 0;
 
-    svc->type = TAG_SERVICE_NAME;
-    svc->length = htons(namelen);
-    CHECK_ROOM(cursor, packet.payload, namelen+TAG_HDR_SIZE);
+    if (!omit_service_name) {
+	plen = TAG_HDR_SIZE + namelen;
+	CHECK_ROOM(cursor, packet.payload, plen);
 
-    if (conn->serviceName) {
-	memcpy(svc->payload, conn->serviceName, strlen(conn->serviceName));
+	svc->type = TAG_SERVICE_NAME;
+	svc->length = htons(namelen);
+
+	if (conn->serviceName) {
+	    memcpy(svc->payload, conn->serviceName, strlen(conn->serviceName));
+	}
+	cursor += namelen + TAG_HDR_SIZE;
+    } else {
+	plen = 0;
     }
-    cursor += namelen + TAG_HDR_SIZE;
 
     /* If we're using Host-Uniq, copy it over */
     if (conn->useHostUniq) {
@@ -290,11 +298,13 @@ sendPADI(PPPoEConnection *conn)
     packet.length = htons(plen);
 
     sendPacket(conn, conn->discoverySocket, &packet, (int) (plen + HDR_SIZE));
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "SENT");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
 }
 
 /**********************************************************************
@@ -307,12 +317,15 @@ sendPADI(PPPoEConnection *conn)
 *%DESCRIPTION:
 * Waits for a PADO packet and copies useful information
 ***********************************************************************/
-void
+static void
 waitForPADO(PPPoEConnection *conn, int timeout)
 {
     fd_set readable;
     int r;
     struct timeval tv;
+    struct timeval expire_at;
+    struct timeval now;
+
     PPPoEPacket packet;
     int len;
 
@@ -322,12 +335,33 @@ waitForPADO(PPPoEConnection *conn, int timeout)
     pc.serviceNameOK = (conn->serviceName) ? 0 : 1;
     pc.seenACName    = 0;
     pc.seenServiceName = 0;
-	
+
+    if (gettimeofday(&expire_at, NULL) < 0) {
+	fatalSys("gettimeofday (waitForPADO)");
+    }
+    expire_at.tv_sec += timeout;
+
     do {
 	if (BPF_BUFFER_IS_EMPTY) {
-	    tv.tv_sec = timeout;
-	    tv.tv_usec = 0;
-	
+	    if (gettimeofday(&now, NULL) < 0) {
+		fatalSys("gettimeofday (waitForPADO)");
+	    }
+	    tv.tv_sec = expire_at.tv_sec - now.tv_sec;
+	    tv.tv_usec = expire_at.tv_usec - now.tv_usec;
+	    if (tv.tv_usec < 0) {
+		tv.tv_usec += 1000000;
+		if (tv.tv_sec) {
+		    tv.tv_sec--;
+		} else {
+		    /* Timed out */
+		    return;
+		}
+	    }
+	    if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
+		/* Timed out */
+		return;
+	    }
+
 	    FD_ZERO(&readable);
 	    FD_SET(conn->discoverySocket, &readable);
 
@@ -338,9 +372,12 @@ waitForPADO(PPPoEConnection *conn, int timeout)
 	    if (r < 0) {
 		fatalSys("select (waitForPADO)");
 	    }
-	    if (r == 0) return;        /* Timed out */
+	    if (r == 0) {
+		/* Timed out */
+		return;
+	    }
 	}
-	
+
 	/* Get the packet */
 	receivePacket(conn->discoverySocket, &packet, &len);
 
@@ -356,17 +393,19 @@ waitForPADO(PPPoEConnection *conn, int timeout)
 	if (etherType(&packet) != Eth_PPPOE_Discovery) continue;
 #endif
 
+#ifdef DEBUGGING_ENABLED
 	if (conn->debugFile) {
 	    dumpPacket(conn->debugFile, &packet, "RCVD");
 	    fprintf(conn->debugFile, "\n");
 	    fflush(conn->debugFile);
 	}
+#endif
 	/* If it's not for us, loop again */
 	if (!packetIsForMe(conn, &packet)) continue;
 
 	if (packet.code == CODE_PADO) {
-	    if (BROADCAST(packet.ethHdr.h_source)) {
-		printErr("Ignoring PADO packet from broadcast MAC address");
+	    if (NOT_UNICAST(packet.ethHdr.h_source)) {
+		printErr("Ignoring PADO packet from non-unicast MAC address");
 		continue;
 	    }
 	    parsePacket(&packet, parsePADOTags, &pc);
@@ -379,19 +418,17 @@ waitForPADO(PPPoEConnection *conn, int timeout)
 		continue;
 	    }
 	    conn->numPADOs++;
-	    if (conn->printACNames) {
-		printf("--------------------------------------------------\n");
-	    }
 	    if (pc.acNameOK && pc.serviceNameOK) {
 		memcpy(conn->peerEth, packet.ethHdr.h_source, ETH_ALEN);
 		if (conn->printACNames) {
 		    printf("AC-Ethernet-Address: %02x:%02x:%02x:%02x:%02x:%02x\n",
-			   (unsigned) conn->peerEth[0], 
+			   (unsigned) conn->peerEth[0],
 			   (unsigned) conn->peerEth[1],
 			   (unsigned) conn->peerEth[2],
 			   (unsigned) conn->peerEth[3],
 			   (unsigned) conn->peerEth[4],
 			   (unsigned) conn->peerEth[5]);
+		    printf("--------------------------------------------------\n");
 		    continue;
 		}
 		conn->discoveryState = STATE_RECEIVED_PADO;
@@ -410,7 +447,7 @@ waitForPADO(PPPoEConnection *conn, int timeout)
 *%DESCRIPTION:
 * Sends a PADR packet
 ***********************************************************************/
-void
+static void
 sendPADR(PPPoEConnection *conn)
 {
     PPPoEPacket packet;
@@ -474,11 +511,13 @@ sendPADR(PPPoEConnection *conn)
 
     packet.length = htons(plen);
     sendPacket(conn, conn->discoverySocket, &packet, (int) (plen + HDR_SIZE));
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "SENT");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
 }
 
 /**********************************************************************
@@ -491,23 +530,47 @@ sendPADR(PPPoEConnection *conn)
 *%DESCRIPTION:
 * Waits for a PADS packet and copies useful information
 ***********************************************************************/
-void
+static void
 waitForPADS(PPPoEConnection *conn, int timeout)
 {
     fd_set readable;
     int r;
     struct timeval tv;
+    struct timeval expire_at;
+    struct timeval now;
+
     PPPoEPacket packet;
     int len;
 
+    if (gettimeofday(&expire_at, NULL) < 0) {
+	fatalSys("gettimeofday (waitForPADS)");
+    }
+    expire_at.tv_sec += timeout;
+
     do {
 	if (BPF_BUFFER_IS_EMPTY) {
-	    tv.tv_sec = timeout;
-	    tv.tv_usec = 0;
-	    
+	    if (gettimeofday(&now, NULL) < 0) {
+		fatalSys("gettimeofday (waitForPADS)");
+	    }
+	    tv.tv_sec = expire_at.tv_sec - now.tv_sec;
+	    tv.tv_usec = expire_at.tv_usec - now.tv_usec;
+	    if (tv.tv_usec < 0) {
+		tv.tv_usec += 1000000;
+		if (tv.tv_sec) {
+		    tv.tv_sec--;
+		} else {
+		    /* Timed out */
+		    return;
+		}
+	    }
+	    if (tv.tv_sec <= 0 && tv.tv_usec <= 0) {
+		/* Timed out */
+		return;
+	    }
+
 	    FD_ZERO(&readable);
 	    FD_SET(conn->discoverySocket, &readable);
-	    
+
 	    while(1) {
 		r = select(conn->discoverySocket+1, &readable, NULL, NULL, &tv);
 		if (r >= 0 || errno != EINTR) break;
@@ -515,7 +578,10 @@ waitForPADS(PPPoEConnection *conn, int timeout)
 	    if (r < 0) {
 		fatalSys("select (waitForPADS)");
 	    }
-	    if (r == 0) return;
+	    if (r == 0) {
+		/* Timed out */
+		return;
+	    }
 	}
 
 	/* Get the packet */
@@ -532,12 +598,13 @@ waitForPADS(PPPoEConnection *conn, int timeout)
 	/* If it's not a Discovery packet, loop again */
 	if (etherType(&packet) != Eth_PPPOE_Discovery) continue;
 #endif
+#ifdef DEBUGGING_ENABLED
 	if (conn->debugFile) {
 	    dumpPacket(conn->debugFile, &packet, "RCVD");
 	    fprintf(conn->debugFile, "\n");
 	    fflush(conn->debugFile);
 	}
-
+#endif
 	/* If it's not from the AC, it's not for me */
 	if (memcmp(packet.ethHdr.h_source, conn->peerEth, ETH_ALEN)) continue;
 
@@ -547,16 +614,20 @@ waitForPADS(PPPoEConnection *conn, int timeout)
 	/* Is it PADS?  */
 	if (packet.code == CODE_PADS) {
 	    /* Parse for goodies */
+	    conn->PADSHadError = 0;
 	    parsePacket(&packet, parsePADSTags, conn);
-	    conn->discoveryState = STATE_SESSION;
-	    break;
+	    if (!conn->PADSHadError) {
+		conn->discoveryState = STATE_SESSION;
+		break;
+	    }
 	}
     } while (conn->discoveryState != STATE_SESSION);
 
     /* Don't bother with ntohs; we'll just end up converting it back... */
     conn->session = packet.session;
 
-    syslog(LOG_INFO, "PPP session is %d", (int) ntohs(conn->session));
+    syslog(LOG_INFO, "PPP session is %d (0x%x)", (int) ntohs(conn->session),
+	   (unsigned int) ntohs(conn->session));
 
     /* RFC 2516 says session id MUST NOT be zero or 0xFFFF */
     if (ntohs(conn->session) == 0 || ntohs(conn->session) == 0xFFFF) {
@@ -578,30 +649,28 @@ discovery(PPPoEConnection *conn)
 {
     int padiAttempts = 0;
     int padrAttempts = 0;
-    int timeout = PADI_TIMEOUT;
-
-    /* Skip discovery and don't open discovery socket? */
-    if (conn->skipDiscovery && conn->noDiscoverySocket) {
-	conn->discoveryState = STATE_SESSION;
-	return;
-    }
-
-    conn->discoverySocket =
-	openInterface(conn->ifName, Eth_PPPOE_Discovery, conn->myEth);
+    int timeout = conn->discoveryTimeout;
 
     /* Skip discovery? */
     if (conn->skipDiscovery) {
 	conn->discoveryState = STATE_SESSION;
+	if (conn->killSession) {
+	    sendPADT(conn, "RP-PPPoE: Session killed manually");
+	    exit(0);
+	}
 	return;
     }
 
     do {
 	padiAttempts++;
 	if (padiAttempts > MAX_PADI_ATTEMPTS) {
-	    warn("Timeout waiting for PADO packets");
-	    close(conn->discoverySocket);
-	    conn->discoverySocket = -1;
-	    return;
+	    if (persist) {
+		padiAttempts = 0;
+		timeout = conn->discoveryTimeout;
+		printErr("Timeout waiting for PADO packets");
+	    } else {
+		rp_fatal("Timeout waiting for PADO packets");
+	    }
 	}
 	sendPADI(conn);
 	conn->discoveryState = STATE_SENT_PADI;
@@ -620,17 +689,20 @@ discovery(PPPoEConnection *conn)
 
     /* If we're only printing access concentrator names, we're done */
     if (conn->printACNames) {
-	die(0);
+	exit(0);
     }
 
-    timeout = PADI_TIMEOUT;
+    timeout = conn->discoveryTimeout;
     do {
 	padrAttempts++;
 	if (padrAttempts > MAX_PADI_ATTEMPTS) {
-	    warn("Timeout waiting for PADS packets");
-	    close(conn->discoverySocket);
-	    conn->discoverySocket = -1;
-	    return;
+	    if (persist) {
+		padrAttempts = 0;
+		timeout = conn->discoveryTimeout;
+		printErr("Timeout waiting for PADS packets");
+	    } else {
+		rp_fatal("Timeout waiting for PADS packets");
+	    }
 	}
 	sendPADR(conn);
 	conn->discoveryState = STATE_SENT_PADR;
@@ -642,4 +714,3 @@ discovery(PPPoEConnection *conn)
     conn->discoveryState = STATE_SESSION;
     return;
 }
-
