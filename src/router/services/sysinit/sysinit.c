@@ -192,9 +192,11 @@ static void buffalo_defaults(int force)
 	}
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
-		if (!region || (strcmp(region, "AP") && strcmp(region, "TW") && strcmp(region, "RU")
-				&& strcmp(region, "KR")
-				&& strcmp(region, "CH"))) {
+		if (!region
+		    || (strcmp(region, "AP") && strcmp(region, "TW")
+			&& strcmp(region, "RU")
+			&& strcmp(region, "KR")
+			&& strcmp(region, "CH"))) {
 			{
 				char *mode_ex =
 				    getUEnv
@@ -492,7 +494,7 @@ int create_rc_file(char *name)
 
 	fp = fopen(tmp_file, "w");
 	if (fp) {
-		if (strlen(p) <= 2 || memcmp("#!",p,2) )
+		if (strlen(p) <= 2 || memcmp("#!", p, 2))
 			fprintf(fp, "#!/bin/sh\n");
 		// filter Windows <cr>ud
 		while (*p) {
@@ -500,7 +502,7 @@ int create_rc_file(char *name)
 				fprintf(fp, "%c", *p);
 			p++;
 		}
-	fclose(fp);
+		fclose(fp);
 	}
 	chmod(tmp_file, 0700);
 
@@ -2059,8 +2061,8 @@ void start_restore_defaults(void)
 
 	if (restore_defaults &&
 	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN12
-	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN12B
-	     || brand == ROUTER_ASUS_RTN16)) {
+	     || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN53
+	     || brand == ROUTER_ASUS_RTN12B || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
 
@@ -2214,7 +2216,6 @@ void start_drivers(void)
 		insmod("usb-ohci");
 		insmod("ohci-hcd");
 
-
 		insmod("xhci-hcd");
 #ifdef HAVE_DANUBE
 		insmod("dwc_otg");	// usb
@@ -2239,7 +2240,6 @@ void start_drivers(void)
 			insmod("printer");
 			insmod("usblp");
 		}
-
 #ifdef HAVE_USBIP
 		if (nvram_match("usb_ip", "1")) {
 			cprintf("loading usb over ip drivers\n");
@@ -2248,7 +2248,7 @@ void start_drivers(void)
 
 			insmod("usbip-core");
 			insmod("usbip-host");
-			eval("usbipd","-D");
+			eval("usbipd", "-D");
 		}
 #endif
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
