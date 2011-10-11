@@ -606,7 +606,7 @@ static void handle_request(void)
 	char *method, *path, *protocol, *authorization, *boundary, *referer,
 	    *host;
 	char *cp;
-	char *file;
+	char *file=NULL;
 	FILE *exec;
 	int len;
 	struct mime_handler *handler;
@@ -770,8 +770,9 @@ static void handle_request(void)
 #endif
 
 	// save the originally requested url
-	free(request_url);
-	request_url = safe_malloc(sizeof(file));
+	if (request_url) // ahm, we should check for null
+	    free(request_url);
+	request_url = safe_malloc(len+1);
 	strcpy(request_url, file);
 
 #ifdef HAVE_SKYTRON
