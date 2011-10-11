@@ -162,9 +162,9 @@ static void do_pppoeconfig(FILE * fp)
 		fprintf(fp, "nomppc\n");
 	else
 		fprintf(fp, "mppc\n");
-	if (nvram_default_match("pppoeserver_encryption", "1", "0")) {
+	if (nvram_default_match("pppoeserver_encryption", "1", "0"))
 		fprintf(fp, "mppe required,no56,no40,stateless\n");
-	} else
+	else
 		fprintf(fp, "nomppe\n");
 	fprintf(fp, "auth\n"
 		"refuse-eap\n"	// be sure using best auth methode
@@ -312,7 +312,8 @@ void start_pppoeserver(void)
 				"radius_timeout\t10\n"	//
 				"radius_retries\t3\n"	//
 				"login_local\t/bin/login\n");	//
-				if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0")) {
+				if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0")
+				    || strlen(nvram_safe_get("pppoeserver_authserverip_backup")) = 0 ) {
 					fprintf(fp, "authserver %s:%s\n"	//
 						"acctserver %s:%s\n",	//
 						nvram_safe_get("pppoeserver_authserverip"),
@@ -332,18 +333,15 @@ void start_pppoeserver(void)
 						nvram_safe_get("pppoeserver_acctserverport_backup"));
 				}
 			fclose(fp);
-			fp = fopen("/tmp/pppoeserver/radius/servers", "wb");
-			if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0")) {			
-				fprintf(fp, "%s %s\n", 
-				nvram_safe_get("pppoeserver_authserverip"), 
-				nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
-			}
-			else {	fprintf(fp, "%s %s\n%s %s\n",
-				nvram_safe_get("pppoeserver_authserverip"), 
-				nvram_safe_get("pppoeserver_sharedkey"),
+			fp = fopen("/tmp/pppoeserver/radius/servers", "wb");			
+			fprintf(fp, "%s %s\n", 
+			nvram_safe_get("pppoeserver_authserverip"), 
+			nvram_safe_get("pppoeserver_sharedkey"));	// todo, 
+			if (nvram_invmatch("pppoeserver_authserverip_backup", "0.0.0.0")
+			    || strlen(nvram_safe_get("pppoeserver_authserverip_backup")) != 0 )
+				fprintf(fp, "%s %s\n",
 				nvram_safe_get("pppoeserver_authserverip_backup"), 
 				nvram_safe_get("pppoeserver_sharedkey_backup"));
-			}
 			fclose(fp);
 			makeipup();
 		}
