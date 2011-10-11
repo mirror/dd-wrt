@@ -2285,6 +2285,9 @@ void start_drivers(void)
 		eval("rmmod", "nls_iso8859-2");
 		eval("rmmod", "nls_iso8859-1");
 		eval("rmmod", "nls_cp437");
+		eval("rmmod", "nls_cp932");
+		eval("rmmod", "nls_cp936");
+		eval("rmmod", "nls_cp950");
 		eval("rmmod", "nls_base");
 //
 /* ext3 */
