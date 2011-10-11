@@ -325,7 +325,7 @@ void start_pppoeserver(void)
 						nvram_safe_get("pppoeserver_authserverip"),
 						nvram_safe_get("pppoeserver_authserverport"),
 						nvram_safe_get("pppoeserver_authserverip_backup"),
-						nvram_safe_get("pppoeserver_acctserverport_backup"),
+						nvram_safe_get("pppoeserver_authserverport_backup"),
 						nvram_safe_get("pppoeserver_authserverip"),
 						nvram_safe_get("pppoeserver_acctserverport"),
 						nvram_safe_get("pppoeserver_authserverip_backup"),
