@@ -11,20 +11,12 @@
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
-* LIC: GPL
-*
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id$";
-/* For vsnprintf prototype */
-#define _ISOC99_SOURCE 1
-
-/* For seteuid prototype */
-#define _BSD_SOURCE 1
+"$Id: common.c,v 1.2 2004/01/13 04:03:58 paulus Exp $";
 
 #include "pppoe.h"
-
 
 #ifdef HAVE_SYSLOG_H
 #include <syslog.h>
@@ -33,20 +25,10 @@ static char const RCSID[] =
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <stdarg.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
-#include <sys/types.h>
-#include <pwd.h>
-
-/* Are we running SUID or SGID? */
-int IsSetID = 0;
-
-static uid_t saved_uid = -2;
-static uid_t saved_gid = -2;
 
 /**********************************************************************
 *%FUNCTION: parsePacket
@@ -111,7 +93,7 @@ parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra)
 * tag -- will be filled in with tag contents
 *%RETURNS:
 * A pointer to the tag if one of the specified type is found; NULL
-* otherwise.
+* otherwise. 
 *%DESCRIPTION:
 * Looks for a specific tag type.
 ***********************************************************************/
@@ -162,82 +144,6 @@ findTag(PPPoEPacket *packet, UINT16_t type, PPPoETag *tag)
 }
 
 /**********************************************************************
-*%FUNCTION: switchToRealID
-*%ARGUMENTS:
-* None
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Sets effective user-ID and group-ID to real ones.  Aborts on failure
-***********************************************************************/
-void
-switchToRealID (void) {
-    if (IsSetID) {
-	if (saved_uid < 0) saved_uid = geteuid();
-	if (saved_gid < 0) saved_gid = getegid();
-	if (setegid(getgid()) < 0) {
-	    printErr("setgid failed");
-	    exit(EXIT_FAILURE);
-	}
-	if (seteuid(getuid()) < 0) {
-	    printErr("seteuid failed");
-	    exit(EXIT_FAILURE);
-	}
-    }
-}
-
-/**********************************************************************
-*%FUNCTION: switchToEffectiveID
-*%ARGUMENTS:
-* None
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Sets effective user-ID and group-ID back to saved gid/uid
-***********************************************************************/
-void
-switchToEffectiveID (void) {
-    if (IsSetID) {
-	if (setegid(saved_gid) < 0) {
-	    printErr("setgid failed");
-	    exit(EXIT_FAILURE);
-	}
-	if (seteuid(saved_uid) < 0) {
-	    printErr("seteuid failed");
-	    exit(EXIT_FAILURE);
-	}
-    }
-}
-
-/**********************************************************************
-*%FUNCTION: dropPrivs
-*%ARGUMENTS:
-* None
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* If effective ID is root, try to become "nobody".  If that fails and
-* we're SUID, switch to real user-ID
-***********************************************************************/
-void
-dropPrivs(void)
-{
-    struct passwd *pw = NULL;
-    int ok = 0;
-    if (geteuid() == 0) {
-	pw = getpwnam("nobody");
-	if (pw) {
-	    if (setgid(pw->pw_gid) < 0) ok++;
-	    if (setuid(pw->pw_uid) < 0) ok++;
-	}
-    }
-    if (ok < 2 && IsSetID) {
-	setegid(getgid());
-	seteuid(getuid());
-    }
-}
-
-/**********************************************************************
 *%FUNCTION: printErr
 *%ARGUMENTS:
 * str -- error message
@@ -249,7 +155,7 @@ dropPrivs(void)
 void
 printErr(char const *str)
 {
-    fprintf(stderr, "pppoe: %s\n", str);
+    printf( "pppoe: %s\n", str);
     syslog(LOG_ERR, "%s", str);
 }
 
@@ -272,6 +178,7 @@ strDup(char const *str)
     return copy;
 }
 
+#ifdef PPPOE_STANDALONE
 /**********************************************************************
 *%FUNCTION: computeTCPChecksum
 *%ARGUMENTS:
@@ -285,8 +192,6 @@ computeTCPChecksum(unsigned char *ipHdr, unsigned char *tcpHdr)
 {
     UINT32_t sum = 0;
     UINT16_t count = ipHdr[2] * 256 + ipHdr[3];
-    UINT16_t tmp;
-
     unsigned char *addr = tcpHdr;
     unsigned char pseudoHeader[12];
 
@@ -309,19 +214,18 @@ computeTCPChecksum(unsigned char *ipHdr, unsigned char *tcpHdr)
 
     /* Checksum the TCP header and data */
     while (count > 1) {
-	memcpy(&tmp, addr, sizeof(tmp));
-	sum += (UINT32_t) tmp;
-	addr += sizeof(tmp);
-	count -= sizeof(tmp);
+	sum += * (UINT16_t *) addr;
+	addr += 2;
+	count -= 2;
     }
     if (count > 0) {
-	sum += (unsigned char) *addr;
+	sum += *addr;
     }
 
     while(sum >> 16) {
 	sum = (sum & 0xffff) + (sum >> 16);
     }
-    return (UINT16_t) ((~sum) & 0xFFFF);
+    return (UINT16_t) (~sum & 0xFFFF);
 }
 
 /**********************************************************************
@@ -476,6 +380,7 @@ clampMSS(PPPoEPacket *packet, char const *dir, int clampMss)
     csum = computeTCPChecksum(ipHdr, tcpHdr);
     (* (UINT16_t *) (tcpHdr+16)) = csum;
 }
+#endif /* PPPOE_STANDALONE */
 
 /***********************************************************************
 *%FUNCTION: sendPADT
@@ -532,12 +437,12 @@ sendPADT(PPPoEConnection *conn, char const *msg)
 	size_t elen = strlen(msg);
 	err.type = htons(TAG_GENERIC_ERROR);
 	err.length = htons(elen);
-	strcpy((char *) err.payload, msg);
+	strcpy(err.payload, msg);
 	memcpy(cursor, &err, elen + TAG_HDR_SIZE);
 	cursor += elen + TAG_HDR_SIZE;
 	plen += elen + TAG_HDR_SIZE;
     }
-
+	    
     /* Copy cookie and relay-ID if needed */
     if (conn->cookie.type) {
 	CHECK_ROOM(cursor, packet.payload,
@@ -557,75 +462,12 @@ sendPADT(PPPoEConnection *conn, char const *msg)
 
     packet.length = htons(plen);
     sendPacket(conn, conn->discoverySocket, &packet, (int) (plen + HDR_SIZE));
-#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "SENT");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
-#endif
     syslog(LOG_INFO,"Sent PADT");
-}
-
-/***********************************************************************
-*%FUNCTION: sendPADTf
-*%ARGUMENTS:
-* conn -- PPPoE connection
-* msg -- printf-style format string
-* args -- arguments for msg
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Sends a PADT packet with a formatted message
-***********************************************************************/
-void
-sendPADTf(PPPoEConnection *conn, char const *fmt, ...)
-{
-    char msg[512];
-    va_list ap;
-
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
-    va_end(ap);
-    msg[511] = 0;
-
-    sendPADT(conn, msg);
-}
-
-/**********************************************************************
-*%FUNCTION: pktLogErrs
-*%ARGUMENTS:
-* pkt -- packet type (a string)
-* type -- tag type
-* len -- tag length
-* data -- tag data
-* extra -- extra user data
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Logs error tags
-***********************************************************************/
-void
-pktLogErrs(char const *pkt,
-	   UINT16_t type, UINT16_t len, unsigned char *data,
-	   void *extra)
-{
-    char const *str;
-    char const *fmt = "%s: %s: %.*s";
-    switch(type) {
-    case TAG_SERVICE_NAME_ERROR:
-	str = "Service-Name-Error";
-	break;
-    case TAG_AC_SYSTEM_ERROR:
-	str = "System-Error";
-	break;
-    default:
-	str = "Generic-Error";
-    }
-
-    syslog(LOG_ERR, fmt, pkt, str, (int) len, data);
-    fprintf(stderr, fmt, pkt, str, (int) len, data);
-    fprintf(stderr, "\n");
 }
 
 /**********************************************************************
@@ -644,5 +486,19 @@ void
 parseLogErrs(UINT16_t type, UINT16_t len, unsigned char *data,
 	     void *extra)
 {
-    pktLogErrs("PADT", type, len, data, extra);
+    switch(type) {
+    case TAG_SERVICE_NAME_ERROR:
+	syslog(LOG_ERR, "PADT: Service-Name-Error: %.*s", (int) len, data);
+	printf( "PADT: Service-Name-Error: %.*s\n", (int) len, data);
+	break;
+    case TAG_AC_SYSTEM_ERROR:
+	syslog(LOG_ERR, "PADT: System-Error: %.*s", (int) len, data);
+	printf( "PADT: System-Error: %.*s\n", (int) len, data);
+	break;
+    case TAG_GENERIC_ERROR:
+	syslog(LOG_ERR, "PADT: Generic-Error: %.*s", (int) len, data);
+	printf( "PADT: Generic-Error: %.*s\n", (int) len, data);
+	break;
+    }
 }
+
