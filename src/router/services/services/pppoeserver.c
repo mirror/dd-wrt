@@ -313,7 +313,7 @@ void start_pppoeserver(void)
 				"radius_retries\t3\n"	//
 				"login_local\t/bin/login\n");	//
 				if (nvram_match("pppoeserver_authserverip_backup", "0.0.0.0")
-				    || strlen(nvram_safe_get("pppoeserver_authserverip_backup")) = 0 ) {
+				    || strlen(nvram_safe_get("pppoeserver_authserverip_backup")) == 0 ) {
 					fprintf(fp, "authserver %s:%s\n"	//
 						"acctserver %s:%s\n",	//
 						nvram_safe_get("pppoeserver_authserverip"),
