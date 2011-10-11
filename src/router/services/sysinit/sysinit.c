@@ -491,7 +491,6 @@ int create_rc_file(char *name)
 	unlink(tmp_file);
 
 	fp = fopen(tmp_file, "w");
-	fprintf(fp,"#!/bin/sh\n");
 	if (fp) {
 		if (strlen(p) <= 2 || memcmp("#!",p,2) )
 			fprintf(fp, "#!/bin/sh\n");
