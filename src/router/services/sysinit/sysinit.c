@@ -500,8 +500,8 @@ int create_rc_file(char *name)
 				fprintf(fp, "%c", *p);
 			p++;
 		}
-	}
 	fclose(fp);
+	}
 	chmod(tmp_file, 0700);
 
 	return 0;
