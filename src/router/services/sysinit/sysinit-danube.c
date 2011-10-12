@@ -134,22 +134,35 @@ void start_sysinit(void)
 	insmod("lantiq_mei");
 	insmod("lantiq_atm");
 	insmod("drv_dsl_cpe_api");
+#ifdef HAVE_TELCOM
+	nvram_default_get("annex", "a");
+	nvram_default_get("vpi", "0");
+	nvram_default_get("vci", "35");
+#else
+	nvram_default_get("vpi", "1");
+	nvram_default_get("vci", "32");
+#endif
+	nvram_set("dsl_iface_status", "DOWN");
+	nvram_set("dsl_snr_down", "");
+	nvram_set("dsl_snr_up", "");
+	nvram_set("dsl_datarate_ds", "");
+	nvram_set("dsl_datarate_us", "");
+	nvram_set("dsl_xtu_status", "");
+	nvram_set("dsl_tcl_status", "");
 #ifdef HAVE_ANNEXB
 	sysprintf
-	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin -n /usr/sbin/dsl_notification.sh &");
 #elif HAVE_ANNEXA
 	sysprintf
-	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
+	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
 #else
 	if (nvram_match("annex", "a"))
 		sysprintf
-		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin &");
+		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
 	else
 		sysprintf
-		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin &");
+		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin -n /usr/sbin/dsl_notification.sh &");
 #endif
-	nvram_default_get("vpi", "1");
-	nvram_default_get("vci", "32");
 	eval("ifconfig", "eth0", "up");
 	detect_wireless_devices();
 	struct ifreq ifr;
