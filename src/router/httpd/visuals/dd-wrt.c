@@ -5555,7 +5555,11 @@ void show_preshared(webs_t wp, char *prefix)
 			  "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n",
 			  prefix, nvram_default_get(var, "3600"));
 		websWrite(wp,
+#ifdef HAVE_BUFFALO
+			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 0 - 99999)\");\n//]]>\n</script></span>\n");
+#else
 			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
+#endif
 		websWrite(wp, "</div>\n");
 	}
 	websWrite(wp, "</div>\n");
