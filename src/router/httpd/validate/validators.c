@@ -687,7 +687,8 @@ void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
 
 void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
-	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20], pptp_wan_gateway[20];
+	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20],
+	    pptp_wan_gateway[20];
 	char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 	char *pptp_use_dhcp = websGetVar(wp, "pptp_use_dhcp", NULL);
 
@@ -708,7 +709,7 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_set("pptp_pass", "0");	// disable pptp passthrough
 	}
-	
+
 	if (!strcmp(wan_proto, "pptp") && !strcmp("0.0.0.0", wan_ipaddr)) {	// Sveasoft: allow 0.0.0.0 for pptp IP addr
 		pptp_skip_check = TRUE;
 		nvram_set("pptp_use_dhcp", "1");
@@ -786,7 +787,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			if (get_merge_ipaddr(wp, val, netmask))
 				nvram_set(val, netmask);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
-			if(1) {
+			if (1) {
 				sprintf(val, "nld_%s_enable", var);
 				char *nld_enable = websGetVar(wp, val, "0");
 				nvram_set(val, nld_enable);
@@ -797,7 +798,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			}
 #endif
 #if defined(HAVE_BATMANADV)
-			if(1) {
+			if (1) {
 				sprintf(val, "bat_%s_enable", var);
 				char *bat_enable = websGetVar(wp, val, "0");
 				nvram_set(val, bat_enable);
@@ -1271,9 +1272,8 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		free(buf);
 		return;
 	}
-
 #ifdef HAVE_SPOTPASS
-		int count, wildcard, wildcard_valid;
+	int count, wildcard, wildcard_valid;
 #endif
 	for (i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++) {
 		char filter_mac[] = "ath10.99_macXXX";
@@ -1288,7 +1288,6 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		if (!mac || !strcmp(mac, "0") || !strcmp(mac, "")) {
 			continue;
 		}
-
 #ifdef HAVE_SPOTPASS
 		count = strlen(mac) - 1;
 		wildcard = 0;
@@ -1296,23 +1295,23 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 
 		for (count; count >= 0; count--) {
 			if (mac[count] == '*') {
-				if( count == strlen(mac) - 1 ) {
+				if (count == strlen(mac) - 1) {
 					wildcard_valid = 1;
 					wildcard++;
 					mac[count] = '0';
-				} else if( wildcard_valid == 0 ) {
+				} else if (wildcard_valid == 0) {
 					wildcard_valid = -1;
 					break;
 				} else {
 					wildcard++;
 					mac[count] = '0';
 				}
-			} else if( mac[count] != ':' && wildcard_valid == 1 ) {
+			} else if (mac[count] != ':' && wildcard_valid == 1) {
 				wildcard_valid = 0;
 			}
 		}
 
-		if(wildcard_valid == -1 ) {
+		if (wildcard_valid == -1) {
 			// validation error - skip MAC
 			continue;
 		}
@@ -1335,16 +1334,16 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 			error_value = 1;
 			continue;
 		}
-
 #ifdef HAVE_SPOTPASS
-		if( wildcard_valid == 0 && wildcard > 0 ) {
-			sprintf( mac1, "%s\/%d", mac1, wildcard * 4 );
+		if (wildcard_valid == 0 && wildcard > 0) {
+			sprintf(mac1, "%s\/%d", mac1, wildcard * 4);
 		}
 #endif
 		cur +=
 		    snprintf(cur,
 			     buf +
-			     ((strlen(mac1) + 1) * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) -
+			     ((strlen(mac1) +
+			       1) * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) -
 			     cur, "%s%s", cur == buf ? "" : " ", mac1);
 
 	}
@@ -1818,7 +1817,7 @@ void convert_wl_gmode(char *value, char *prefix)
 		nvram_nset("0", "%s_nreqd", prefix);
 		if (has_5ghz(prefix) && !has_2ghz(prefix))
 			nvram_nset("1", "%s_nband", prefix);
-		else		
+		else
 			nvram_nset("2", "%s_nband", prefix);
 /* bg-mixed */
 	} else if (!strcmp(value, "bg-mixed")) {
@@ -3149,10 +3148,6 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 
 	int i, tmp = 1;
 	char word[256], *next;
-	char buf[2500] = "", *cur = buf;
-	char buf_name[2500] = "", *cur_name = buf_name;
-	char old[STATIC_ROUTE_PAGE][60];
-	char old_name[STATIC_ROUTE_PAGE][60];
 	char backuproute[256];
 	struct variable static_route_variables[] = {
 	      {argv:NULL},
@@ -3160,11 +3155,29 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	      {argv:NULL},
 	      {argv:ARGV("lan", "wan")},
 	};
+	char *old;
+	char *old_name;
+	char *buf;
+	char *buf_name;
+
+	char *cur;
+	char *cur_name;
 
 	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname,
 	    *page;
 	char new_name[80];
 	char temp[60], *val = NULL;
+
+	buf = safe_malloc(2500);
+	buf_name = safe_malloc(2500);
+	old = safe_malloc(STATIC_ROUTE_PAGE * 60);
+	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60);
+	buf[0] = 0;
+	buf_name[0] = 0;
+	memset(old, 0, STATIC_ROUTE_PAGE * 60);
+	memset(old_name, 0, STATIC_ROUTE_PAGE * 60);
+	cur = buf;
+	cur_name = buf_name;
 
 	name = websGetVar(wp, "route_name", "");	// default empty if no find
 	// route_name
@@ -3182,6 +3195,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 				strcat(ipaddr, ".");
 		} else {
 			// free (ipaddr);
+			free(old_name);
+			free(old);
+			free(buf_name);
+			free(buf);
 			return;
 		}
 	}
@@ -3200,6 +3217,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 		} else {
 			// free (netmask);
 			// free (ipaddr);
+			free(old_name);
+			free(old);
+			free(buf_name);
+			free(buf);
 			return;
 		}
 	}
@@ -3219,6 +3240,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 			// free (gateway);
 			// free (netmask);
 			// free (ipaddr);
+			free(old_name);
+			free(old);
+			free(buf_name);
+			free(buf);
 			return;
 		}
 	}
@@ -3226,9 +3251,13 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	page = websGetVar(wp, "route_page", NULL);
 	ifname = websGetVar(wp, "route_ifname", NULL);
 
-	if (!page || !metric || !ifname)
+	if (!page || !metric || !ifname) {
+		free(old_name);
+		free(old);
+		free(buf_name);
+		free(buf);
 		return;
-
+	}
 	// Allow Defaultroute here
 
 	if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(netmask, "0.0.0.0")
@@ -3258,6 +3287,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
+		free(old_name);
+		free(old);
+		free(buf_name);
+		free(buf);
 
 		return;
 	}
@@ -3268,6 +3301,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
+		free(old_name);
+		free(old);
+		free(buf_name);
+		free(buf);
 
 		return;
 	}
@@ -3277,6 +3314,10 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 		// free (gateway);
 		// free (netmask);
 		// free (ipaddr);
+		free(old_name);
+		free(old);
+		free(buf_name);
+		free(buf);
 
 		return;
 	}
@@ -3298,42 +3339,44 @@ write_nvram:
 	}
 
 	for (i = 0; i < STATIC_ROUTE_PAGE; i++) {
-		strcpy(old[i], "");
-		strcpy(old_name[i], "");
+		strcpy(&old[i * STATIC_ROUTE_PAGE], "");
+		strcpy(&old_name[i * STATIC_ROUTE_PAGE], "");
 	}
 	i = 0;
 	foreach(word, nvram_safe_get("static_route"), next) {
-		strcpy(old[i], word);
+		strcpy(&old[i * STATIC_ROUTE_PAGE], word);
 		i++;
 	}
 	i = 0;
 	foreach(word, nvram_safe_get("static_route_name"), next) {
-		strcpy(old_name[i], word);
+		strcpy(&old_name[i * STATIC_ROUTE_PAGE], word);
 		i++;
 	}
 
-	strcpy(backuproute, old[atoi(page)]);
+	strcpy(backuproute, &old[atoi(page)]);
 	if (!tmp) {
 		char met[16];
 		char ifn[16];
 
-		sscanf(old[atoi(page)], "%s:%s:%s:%s:%s", ipaddr, netmask,
+		sscanf(&old[atoi(page)], "%s:%s:%s:%s:%s", ipaddr, netmask,
 		       gateway, met, ifn);
 		// fprintf (stderr, "deleting %s %s %s %s %s\n", ipaddr, netmask,
 		// gateway,
 		// met, ifn);
 		route_del(ifn, atoi(met) + 1, ipaddr, gateway, netmask);
 
-		snprintf(old[atoi(page)], sizeof(old[0]), "%s", "");
-		snprintf(old_name[atoi(page)], sizeof(old_name[0]), "%s", "");
+		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
+		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s",
+			 "");
 	} else {
-		snprintf(old[atoi(page)], sizeof(old[0]), "%s:%s:%s:%s:%s",
-			 ipaddr, netmask, gateway, metric, ifname);
+		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60,
+			 "%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric,
+			 ifname);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
-		snprintf(old_name[atoi(page)], sizeof(old_name[0]),
+		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60,
 			 "$NAME:%s$$", new_name);
 	}
-	if (strcmp(backuproute, old[atoi(page)])) {
+	if (strcmp(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE])) {
 		if (strlen(backuproute) > 0) {
 			addAction("static_route_del");
 			addDeletion(backuproute);
@@ -3344,19 +3387,25 @@ write_nvram:
 		//if (strcmp(old[i], ""))
 		//      cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
 		//                      cur == buf ? "" : " ", old[i]);
-		if (strcmp(old_name[i], "")) {
-			cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s",
-					cur == buf ? "" : " ", old[i]);
+		if (strcmp(&old_name[i * STATIC_ROUTE_PAGE], "")) {
+			cur += snprintf(cur, buf + 2500 - cur, "%s%s",
+					cur == buf ? "" : " ",
+					&old[i * STATIC_ROUTE_PAGE]);
 			cur_name +=
-			    snprintf(cur_name,
-				     buf_name + sizeof(buf_name) - cur_name,
+			    snprintf(cur_name, buf_name + 2500 - cur_name,
 				     "%s%s", cur_name == buf_name ? "" : " ",
-				     old_name[i]);
+				     &old_name[i * STATIC_ROUTE_PAGE]);
 		}
 	}
 
 	nvram_set(v->name, buf);
 	nvram_set("static_route_name", buf_name);
+	nvram_commit();
+
+	free(old_name);
+	free(old);
+	free(buf_name);
+	free(buf);
 
 	// if (ipaddr)
 	// free (ipaddr);
