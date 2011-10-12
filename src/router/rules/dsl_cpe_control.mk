@@ -37,6 +37,8 @@ dsl_cpe_control:
 
 dsl_cpe_control-install:
 	install -D dsl_cpe_control/src/dsl_cpe_control $(INSTALLDIR)/dsl_cpe_control/usr/sbin/dsl_cpe_control
+	install -D dsl_cpe_control/scripts/dsl_cpe_pipe.sh $(INSTALLDIR)/dsl_cpe_control/usr/sbin/dsl_cpe_pipe.sh
+	install -D dsl_cpe_control/scripts/dsl_notification.sh $(INSTALLDIR)/dsl_cpe_control/usr/sbin/dsl_notification.sh
 
 
 ifneq ($(CONFIG_AR9),y)
