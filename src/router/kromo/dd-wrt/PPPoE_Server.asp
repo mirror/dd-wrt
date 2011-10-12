@@ -222,7 +222,7 @@ addEvent(window, "unload", function() {
 
 			<div class="setting">
 				<div class="label"><% tran("radius.label23"); %></div>
-				<input maxlength="15" size="20" name="pppoeserver_authserverip_backup" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip_backup"); %>" />
+				<input maxlength="15" size="20" name="pppoeserver_authserverip_backup" value="<% nvram_get("pppoeserver_authserverip_backup"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label24"); %></div>
