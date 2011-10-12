@@ -136,7 +136,6 @@ void configure_single_ath9k(int count)
 	if (!strcmp(netmode, "disabled")) {
 		return;
 	}
-
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
 #else
@@ -176,7 +175,6 @@ void configure_single_ath9k(int count)
 		// ifconfig ath0 up
 		// iw dev ath0 ibss join AdHocNetworkName 2412
 	}
-
 
 	char macaddr[32];
 	// interface is created at this point, so that should work
@@ -382,9 +380,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	free(caps);
 	if (chan)
 		free(chan);
-	if (channel < 36)
-		fprintf(fp, "hw_mode=g\n");
-	else
+	if (channel < 36) {
+		if (!strcmp(netmode, "b-only")) {
+			fprintf(fp, "hw_mode=b\n");
+			fprintf(fp, "supported_rates=10 20 55 110\n");
+		} else {
+			fprintf(fp, "hw_mode=g\n");
+		}
+
+	} else
 		fprintf(fp, "hw_mode=a\n");
 	fprintf(fp, "channel=%d\n", channel);
 	fprintf(fp, "\n");
