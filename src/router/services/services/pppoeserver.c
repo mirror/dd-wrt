@@ -353,7 +353,8 @@ void start_pppoeserver(void)
 
 		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
 			"-L", getifip(), "-x", nvram_safe_get("pppoeserver_sessionlimit"), 
-			"-N", "512", "-p", "/tmp/pppoeserver/pool");	
+			"-N", "512", "-p", "/tmp/pppoeserver/pool", 
+			"-X", "/var/run/pppoeserver.pid");	
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
 	}
