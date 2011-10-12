@@ -110,15 +110,15 @@ static void makeipup(void)
 		"grep -v $PEERNAME /tmp/pppoe_uptime > /tmp/pppoe_uptime.tmp\n"	//
 		"mv /tmp/pppoe_uptime.tmp /tmp/pppoe_uptime\n"	//
 		//	calc connected time and volume per peer
-		"CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $2}'`\n"
-		"SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
-		"RCVD=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $4}'`\n"
+		"CONTIME=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $1}'`\n"
+		"SENT=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $2}'`\n"
+		"RCVD=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
 		"CONTIME=$(($CONTIME+$CONNECT_TIME))\n"
 		"SENT=$(($SENT+$BYTES_SENT))\n"
 		"RCVD=$(($RCVD+$BYTES_RCVD))\n"
 		"grep -v $PEERNAME /tmp/pppoe_peer.db > /tmp/pppoe_peer.db.tmp\n"
 		"mv /tmp/pppoe_peer.db.tmp /tmp/pppoe_peer.db\n"
-		"echo \"$PEERNAME\t$CONTIME\t$SENT\t$RCVD\" >> /tmp/pppoe_peer.db\n"
+		"echo \"$CONTIME\t\t$SENT\t\t$RCVD\t\t$PEERNAME\" >> /tmp/pppoe_peer.db\n"
 		//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
@@ -131,7 +131,7 @@ static void makeipup(void)
 	chmod("/tmp/pppoeserver/ip-down", 0744);
 
 	//	copy existing peer data to /tmp
-	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+	if (nvram_match("sys_enable_jffs2", "1"))
 		system("/bin/cp /jffs/etc/freeradius/pppoe_peer.db /tmp/");
 }
 
@@ -365,7 +365,7 @@ void stop_pppoeserver(void)
 		del_pppoe_natrule();
 		unlink("/tmp/pppoe_connected");
 	//	backup peer data
-		if (nvram_default_match("sys_enable_jffs2", "1", "0"))
+		if (nvram_match("sys_enable_jffs2", "1"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
 	}
 
