@@ -2447,6 +2447,8 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	sprintf(mode, "%s_net_mode", m);
 	if (nvram_match(mode, "disabled")) {
 		txpower = 0;
+		websWrite(wp, "%s",
+				  live_translate("wl_basic.radio_off"));
 	} else {
 
 		sprintf(txpwr, "%s_txpwr", m);
