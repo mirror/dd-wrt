@@ -1,3 +1,37 @@
+Version 4.7.5.5
+
+- Fixes
+
+    * ctrl-x shortcut for extended keybindings mode doesn't work out of box (#2609)
+    * Viewer: cursor position is not restored in hex mode (#2543)
+    * FISH: broken panels drawing after entering password (#2611) 
+
+Version 4.7.5.4
+
+- Core
+
+    * Added -g/--oldmouse option to support of NORMAL/BUTTON_EVENT mouse type (useful for screen/tmux) (#2601) 
+
+- Misc
+
+    * New file bindings:
+        - .3gp - video (#2583) 
+
+- Fixes
+
+    * Cannot compile 4.8.0-pre1 and 4.7.5.3 on Solaris (#2587)
+    * Recent autoconf displays warnings about missing AC_LANG_SOURCE (#2589)
+    * Incorrect TTY layer initialization (#2601)
+    * M-o works unexpectedly on symlink shortcuts (#2590)
+    * Panelize doesn't honour current sorting (#2175)
+    * Hintbar jumps to the top of the screen and overwrites main menu (#2593)
+    * File size column is bogus for widths above 9 (#2580)
+    * Editor: mouse clicks are ignored on the bottom line (#2591)
+    * Editor: extended keybingings are broken (#2586)
+    * File name length is limited in tar archive (#2201)
+    * Ftp failures - leading white space in file name (#2594)
+    * FISH hangs while copiyng a lot of small files (#2605) 
+
 Version 4.7.5.3
 
 - Core
@@ -252,7 +286,7 @@ Version 4.7.3
 
 - Core
 
-    * Mult-screen feature: support of many opened editors and viewers (#1490)
+    * Multi-screen feature: support of many opened editors and viewers (#1490)
     * Reorganization of menu and configuration dialogs. More options are available in UI (#320)
     * Mark of text in input fields is available now, DEL removes selected/unchanged text (#2161, #2228)
     * Now copy/move dialog shows the full path with file name in the field "to:" (#1907)

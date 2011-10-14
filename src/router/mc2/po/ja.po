@@ -2,13 +2,14 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 #
-# Yoshitaka Yamashita <drum@magic-touch.org>, 2011.
+# Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011.
+# Yoshitaka Yamashita <drum@magic-touch.org>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-07-18 14:29+0000\n"
 "Last-Translator: yoshitakayamashita <drum@magic-touch.org>\n"
 "Language-Team: Japanese (http://www.transifex.net/projects/p/mc/team/ja/)\n"
@@ -362,6 +363,9 @@ msgstr ""
 msgid "Shift"
 msgstr ""
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "環境変数 TERM がセットされていません\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -653,6 +657,12 @@ msgid ""
 "Remove password or correct mode"
 msgstr ""
 
+msgid "Cannot parse:"
+msgstr "構文解析が出来ません:"
+
+msgid "More parsing errors will be ignored."
+msgstr "多くの構文解析エラーがでましたが無視します"
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "警告: ファイル %s は見つかりませんでした\n"
@@ -790,12 +800,6 @@ msgstr ""
 msgid "Ext2lib error"
 msgstr ""
 
-msgid "Cannot parse:"
-msgstr "構文解析が出来ません:"
-
-msgid "More parsing errors will be ignored."
-msgstr "多くの構文解析エラーがでましたが無視します"
-
 msgid "Internal error:"
 msgstr "内部エラー:"
 
@@ -865,6 +869,9 @@ msgstr "ファイルを編集"
 
 msgid "Forces xterm features"
 msgstr "強制的に xterm 機能を使う"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "テキスト版でのマウスのサポートを無効化"
@@ -3093,9 +3100,6 @@ msgstr "仮想FS(&V)..."
 
 msgid "Panels:"
 msgstr ""
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "環境変数 TERM がセットされていません\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

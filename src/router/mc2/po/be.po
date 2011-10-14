@@ -2,12 +2,13 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-07-06 14:55+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: Belarusian (http://www.transifex.net/projects/p/mc/team/be/)\n"
@@ -362,6 +363,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Shift"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "Пераменная асяродку TERM не вызначана!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -658,6 +662,12 @@ msgstr ""
 "Файл ~/.netrc  мае няправільныя правы доступу.\n"
 "Выдаліце пароль ці выпраўце правы"
 
+msgid "Cannot parse:"
+msgstr "Немагчыма прааналізаваць:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Астатнія памылкі аналізу будуць праігнараваныя."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Увага: файл %s адсутнічае\n"
@@ -801,12 +811,6 @@ msgstr "Не ўдаецца адкрыць файл \"%s\""
 msgid "Ext2lib error"
 msgstr "Памылка Ext2lib"
 
-msgid "Cannot parse:"
-msgstr "Немагчыма прааналізаваць:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Астатнія памылкі аналізу будуць праігнараваныя."
-
 msgid "Internal error:"
 msgstr "Унутраная памылка:"
 
@@ -876,6 +880,9 @@ msgstr "Рэдагуе адзін файл"
 
 msgid "Forces xterm features"
 msgstr "Навязвае ўласцівасці xterm"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Адключыць падтрымку мышы ў тэкставай вэрсіі"
@@ -3256,9 +3263,6 @@ msgstr "Віртуальныя &ФС..."
 
 msgid "Panels:"
 msgstr "Панелi:"
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "Пераменная асяродку TERM не вызначана!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

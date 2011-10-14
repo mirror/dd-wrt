@@ -494,7 +494,7 @@
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
 
-/* Define if you have the 'uintmax_t' type in <stdint.h> or <inttypes.h>. */
+/* Define to 1 if the system has the type `uintmax_t'. */
 #undef HAVE_UINTMAX_T
 
 /* Define if you have the `uintptr_t' type. */
@@ -505,6 +505,9 @@
 
 /* Define if you have the 'unsigned long long' type. */
 #undef HAVE_UNSIGNED_LONG_LONG
+
+/* Define to 1 if the system has the type `unsigned long long int'. */
+#undef HAVE_UNSIGNED_LONG_LONG_INT
 
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
@@ -642,11 +645,11 @@
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `long long', as computed by sizeof. */
-#undef SIZEOF_LONG_LONG
-
 /* The size of `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
+
+/* The size of `uintmax_t', as computed by sizeof. */
+#undef SIZEOF_UINTMAX_T
 
 /* Define as the maximum value of type 'size_t', if the system doesn't define
    it. */
@@ -808,6 +811,6 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
 
-/* Define to unsigned long or unsigned long long if <stdint.h> and
-   <inttypes.h> don't define. */
+/* Define to the widest unsigned integer type if <stdint.h> and <inttypes.h>
+   do not define. */
 #undef uintmax_t

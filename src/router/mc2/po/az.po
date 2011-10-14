@@ -1,13 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-04 07:37+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,6 +355,9 @@ msgstr ""
 msgid "Shift"
 msgstr ""
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "TERM dəyişəni bildirilməyib!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -647,6 +651,12 @@ msgid ""
 "Remove password or correct mode"
 msgstr ""
 
+msgid "Cannot parse:"
+msgstr "Daraya bilmədim :"
+
+msgid "More parsing errors will be ignored."
+msgstr "Bundan sonrakı darama xətalarına fikir verməyəcəm"
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Xəbərdarlıq: %s faylı tapılmadı\n"
@@ -784,12 +794,6 @@ msgstr ""
 msgid "Ext2lib error"
 msgstr ""
 
-msgid "Cannot parse:"
-msgstr "Daraya bilmədim :"
-
-msgid "More parsing errors will be ignored."
-msgstr "Bundan sonrakı darama xətalarına fikir verməyəcəm"
-
 msgid "Internal error:"
 msgstr "Daxili xəta :"
 
@@ -859,6 +863,9 @@ msgstr "Faylı düzəldər"
 
 msgid "Forces xterm features"
 msgstr "Xterm qabiliyyətlərini zorlayar"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Mətn modunda siçan dəstəyini passivləşdir"
@@ -3087,9 +3094,6 @@ msgstr "&Virtual DYS (VFS) ..."
 
 msgid "Panels:"
 msgstr ""
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "TERM dəyişəni bildirilməyib!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

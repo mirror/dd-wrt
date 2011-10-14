@@ -99,10 +99,12 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libvfs_mc_la_LIBADD =
 am__libvfs_mc_la_SOURCES_DIST = vfs.c vfs.h vfs-impl.h direntry.c \
-	xdirentry.h utilvfs.c utilvfs.h gc.c gc.h local.c local.h \
-	cpio.c tar.c sfs.c extfs.c undelfs.c netutil.c netutil.h \
-	ftpfs.c ftpfs.h fish.c fish.h fishdef.h smbfs.c smbfs.h
-am__objects_1 = vfs.lo direntry.lo utilvfs.lo gc.lo local.lo
+	xdirentry.h parse_ls_vga.c utilvfs.c utilvfs.h gc.c gc.h \
+	local.c local.h cpio.c tar.c sfs.c extfs.c undelfs.c netutil.c \
+	netutil.h ftpfs.c ftpfs.h fish.c fish.h fishdef.h smbfs.c \
+	smbfs.h
+am__objects_1 = vfs.lo direntry.lo parse_ls_vga.lo utilvfs.lo gc.lo \
+	local.lo
 am__objects_2 = cpio.lo
 @ENABLE_VFS_CPIO_TRUE@am__objects_3 = $(am__objects_2)
 am__objects_4 = tar.lo
@@ -406,6 +408,7 @@ AM_CPPFLAGS = -DLIBEXECDIR=\""$(libexecdir)/@PACKAGE@/"\"
 BASICFILES = \
 	vfs.c vfs.h vfs-impl.h	\
 	direntry.c xdirentry.h	\
+	parse_ls_vga.c \
 	utilvfs.c utilvfs.h	\
 	gc.c gc.h		\
 	local.c local.h
@@ -543,6 +546,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netutil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_ls_vga.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smbfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tar.Plo@am__quote@
