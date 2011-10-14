@@ -23,6 +23,7 @@
 
 #include "devices.h"
 #include "dev-dwc_otg.h"
+#include <linux/ath9k_platform.h>
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wmbr_partitions[] =
@@ -88,6 +89,10 @@ static struct lq_pci_data lq_pci_data = {
 static struct lq_eth_data lq_eth_data = {
 	.mii_mode = REV_MII_MODE,
 	.mac		= "\xff\xff\xff\xff\xff\xff",
+};
+
+struct ath9k_platform_data wmac_data = {
+	.led_pin = -1,
 };
 
 static void __init
