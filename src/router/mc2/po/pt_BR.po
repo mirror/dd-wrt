@@ -2,13 +2,14 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Translators:
 # Delphine  <cgdelnet@hotmail.com>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-08 07:09+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: Portuguese (Brazilian) (http://www.transifex.net/projects/p/"
@@ -359,6 +360,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Shift"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "A variável de ambiente TERM não foi definida!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -655,6 +659,12 @@ msgstr ""
 "arquivo ~/.netrc contém um modo incorrecto\n"
 "Remova a senha ou corrija o modo"
 
+msgid "Cannot parse:"
+msgstr "Impossível verificar:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Mais erros de verificação serão ignorados."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Aviso: arquivo %s não foi encontrado\n"
@@ -794,12 +804,6 @@ msgstr "Impossível abrir arquivo \"%s\""
 msgid "Ext2lib error"
 msgstr "Erro ext2lib"
 
-msgid "Cannot parse:"
-msgstr "Impossível verificar:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Mais erros de verificação serão ignorados."
-
 msgid "Internal error:"
 msgstr "Erro interno:"
 
@@ -869,6 +873,9 @@ msgstr "Edita um arquivo"
 
 msgid "Forces xterm features"
 msgstr "Força recursos do xterm"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Desabilita suporte à mouse em modo texto"
@@ -3145,9 +3152,6 @@ msgstr "Sistema de Arquivos &Virtual..."
 
 msgid "Panels:"
 msgstr ""
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "A variável de ambiente TERM não foi definida!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

@@ -1,16 +1,17 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-04 07:37+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: Korean <None>\n"
+"Language-Team: Korean (http://www.transifex.net/projects/p/mc/team/ko/)\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -358,6 +359,9 @@ msgstr "알트"
 msgid "Shift"
 msgstr "쉬프트"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "TERM 환경변수가 설정되어있지 않습니다!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -651,6 +655,12 @@ msgid ""
 "Remove password or correct mode"
 msgstr ""
 
+msgid "Cannot parse:"
+msgstr "분석 할 수 없습니다:"
+
+msgid "More parsing errors will be ignored."
+msgstr "더 많은 구문 분석 오류가 무시됩니다."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "경고: 파일 %s을(를) 찾을 수 없습니다\n"
@@ -788,12 +798,6 @@ msgstr ""
 msgid "Ext2lib error"
 msgstr ""
 
-msgid "Cannot parse:"
-msgstr "분석 할 수 없습니다:"
-
-msgid "More parsing errors will be ignored."
-msgstr "더 많은 구문 분석 오류가 무시됩니다."
-
 msgid "Internal error:"
 msgstr "내부 오류:"
 
@@ -863,6 +867,9 @@ msgstr "한 파일 편집"
 
 msgid "Forces xterm features"
 msgstr "xterm 기능을 무조건 사용"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "텍스트 버전에서 마우스 사용안함"
@@ -3091,9 +3098,6 @@ msgstr "가상 파일체계(&V)..."
 
 msgid "Panels:"
 msgstr ""
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "TERM 환경변수가 설정되어있지 않습니다!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

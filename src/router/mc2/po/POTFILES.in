@@ -4,6 +4,7 @@ lib/search/lib.c
 lib/search/search.c
 lib/skin/common.c
 lib/tty/key.c
+lib/tty/tty.c
 lib/tty/tty-slang.c
 lib/utilunix.c
 lib/vfs/mc-vfs/cpio.c
@@ -11,6 +12,7 @@ lib/vfs/mc-vfs/direntry.c
 lib/vfs/mc-vfs/extfs.c
 lib/vfs/mc-vfs/fish.c
 lib/vfs/mc-vfs/ftpfs.c
+lib/vfs/mc-vfs/parse_ls_vga.c
 lib/vfs/mc-vfs/sfs.c
 lib/vfs/mc-vfs/smbfs.c
 lib/vfs/mc-vfs/tar.c

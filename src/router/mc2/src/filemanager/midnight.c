@@ -37,14 +37,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #include <pwd.h>                /* for username in xterm title */
 
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"
-#include "lib/tty/key.h"        /* For init_key() */
-#include "lib/tty/mouse.h"
+#include "lib/tty/key.h"        /* KEY_M_* masks */
 #include "lib/tty/win.h"        /* xterm_flag */
 #include "lib/skin.h"
 #include "lib/util.h"
@@ -719,69 +717,6 @@ ctl_x_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-init_xterm_support (void)
-{
-    const char *termvalue;
-
-    termvalue = getenv ("TERM");
-    if (!termvalue || !(*termvalue))
-    {
-        fputs (_("The TERM environment variable is unset!\n"), stderr);
-        exit (EXIT_FAILURE);
-    }
-
-    /* Check mouse capabilities */
-    xmouse_seq = tty_tgetstr ("Km");
-
-    if (strcmp (termvalue, "cygwin") == 0)
-    {
-        mc_args__force_xterm = 1;
-        use_mouse_p = MOUSE_DISABLED;
-    }
-
-    if (mc_args__force_xterm || strncmp (termvalue, "xterm", 5) == 0
-        || strncmp (termvalue, "konsole", 7) == 0
-        || strncmp (termvalue, "rxvt", 4) == 0
-        || strcmp (termvalue, "Eterm") == 0 || strcmp (termvalue, "dtterm") == 0)
-    {
-        xterm_flag = 1;
-
-#ifdef HAVE_SLANG
-        /* For 8-bit locales, NCurses handles 154 (0x9A) symbol properly, while S-Lang
-         * requires SLsmg_Display_Eight_Bit >= 154 (OR manual filtering if xterm display
-         * detected - but checking TERM would fail under screen, OR running xterm
-         * with allowC1Printable).
-         */
-        tty_display_8bit (FALSE);
-#endif
-
-        /* Default to the standard xterm sequence */
-        if (!xmouse_seq)
-        {
-            xmouse_seq = ESC_STR "[M";
-        }
-
-        /* Enable mouse unless explicitly disabled by --nomouse */
-        if (use_mouse_p != MOUSE_DISABLED)
-        {
-            const char *color_term = getenv ("COLORTERM");
-            if (strncmp (termvalue, "rxvt", 4) == 0 ||
-                (color_term != NULL && strncmp (color_term, "rxvt", 4) == 0) ||
-                strcmp (termvalue, "Eterm") == 0)
-            {
-                use_mouse_p = MOUSE_XTERM_NORMAL_TRACKING;
-            }
-            else
-            {
-                use_mouse_p = MOUSE_XTERM_BUTTON_EVENT_TRACKING;
-            }
-        }
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
 setup_mc (void)
 {
 #ifdef HAVE_SLANG
@@ -799,9 +734,6 @@ setup_mc (void)
 
     if ((tty_baudrate () < 9600) || tty_is_slow ())
         verbose = 0;
-
-    init_xterm_support ();
-    init_mouse ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -820,22 +752,8 @@ setup_dummy_mc (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-done_screen (void)
-{
-    if ((quit & SUBSHELL_EXIT) == 0)
-        clr_scr ();
-    tty_reset_shell_mode ();
-    tty_noraw_mode ();
-    tty_keypad (FALSE);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
 done_mc (void)
 {
-    disable_mouse ();
-
     /* Setup shutdown
      *
      * We sync the profiles since the hotlist may have changed, while
@@ -843,7 +761,6 @@ done_mc (void)
      */
 
     save_setup (auto_save_setup, panels_options.auto_save_setup);
-    done_screen ();
 
     vfs_stamp_path (vfs_get_current_dir ());
 
@@ -1640,6 +1557,9 @@ do_nc (void)
 #ifdef USE_INTERNAL_EDIT
     edit_stack_free ();
 #endif
+
+    if ((quit & SUBSHELL_EXIT) == 0)
+        clr_scr ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
