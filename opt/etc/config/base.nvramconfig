@@ -171,6 +171,7 @@
  "filter_web"  "Website Filter"  "FILTERWEB"  "FALSE" "0"
  "block_wan"  "Block WAN Request"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "block_ident"  "Block IDENT Pass Through"  "CHOICE" "2" "0"  "1"  "TRUE" "0"
+ "block_snmp"  "Block SNMP Access"  "CHOICE" "2" "0"  "1"  "TRUE" "0"
  "block_loopback"  "Filter Internet NAT redirection"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "block_proxy"  "Block Proxy"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "block_java"  "Block Java"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
