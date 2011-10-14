@@ -159,6 +159,7 @@
  "block_java"  "Block Java"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "block_activex"  "Block ActiveX"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "block_cookie"  "Block Cookie"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "block_snmp"  "Block SNMP Access"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "block_multicast"  "Block Multicast Pass Through"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "ipsec_pass"  "IPSec Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "pptp_pass"  "PPTP Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
