@@ -1,16 +1,17 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
-"PO-Revision-Date: 2011-07-25 16:45+0400\n"
-"Last-Translator: Andrew Borodin <aborodin@vmail.ru>\n"
-"Language-Team: Russian <>\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
+"PO-Revision-Date: 2011-09-28 17:23+0000\n"
+"Last-Translator: slavazanko <slavazanko@gmail.com>\n"
+"Language-Team: Russian (http://www.transifex.net/projects/p/mc/team/ru/)\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -363,6 +364,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Shift"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "Переменная среды TERM не определена!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -659,6 +663,12 @@ msgstr ""
 "Файл ~/.netrc имеет неверный режим доступа/владения.\n"
 "Удалите пароль или исправьте режим доступа/владения"
 
+msgid "Cannot parse:"
+msgstr "Невозможно проанализировать:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Остальные ошибки анализа будут проигнорированы."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Предупреждение: файл %s не найден\n"
@@ -802,12 +812,6 @@ msgstr "Невозможно открыть файл %s"
 msgid "Ext2lib error"
 msgstr "Сбой Ext2lib"
 
-msgid "Cannot parse:"
-msgstr "Невозможно проанализировать:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Остальные ошибки анализа будут проигнорированы."
-
 msgid "Internal error:"
 msgstr "Внутренняя ошибка:"
 
@@ -877,6 +881,9 @@ msgstr "Редактировать файл"
 
 msgid "Forces xterm features"
 msgstr "Подразумевать свойства xterm"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Отключить поддержку мыши в текстовой версии"
@@ -1767,7 +1774,7 @@ msgid "ButtonBar|Delete"
 msgstr "Удалить"
 
 msgid "ButtonBar|PullDn"
-msgstr "МенюMC"
+msgstr "Меню"
 
 msgid "Load syntax file"
 msgstr "Загрузить файл синтаксиса"
@@ -2045,17 +2052,21 @@ msgstr "присв. GID при выполнении"
 msgid "set user ID on execution"
 msgstr "присв. UID при выполнении"
 
+#, fuzzy
 msgid "Name:"
-msgstr "Имя:"
+msgstr "Имя"
 
+#, fuzzy
 msgid "Permissions (octal):"
-msgstr "Доступ (восьмеричный):"
+msgstr "Доступ (восьмеричный)"
 
+#, fuzzy
 msgid "Owner name:"
-msgstr "Владелец:"
+msgstr "Имя владельца"
 
+#, fuzzy
 msgid "Group name:"
-msgstr "Группа:"
+msgstr "Имя группы"
 
 msgid "C&lear marked"
 msgstr "&Очистить помеченное"
@@ -2258,9 +2269,9 @@ msgstr "Настройка"
 msgid "Setup saved to ~/%s"
 msgstr "Параметры сохранены в ~/%s"
 
-#, c-format
+#, fuzzy, c-format
 msgid "Unable to save setup to ~/%s"
-msgstr "Невозможно сохранить установки в ~/%s"
+msgstr "Невозможно сохранить в файл"
 
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "Невозможно выполнять команды на нелокальных файловых системах"
@@ -2691,15 +2702,15 @@ msgstr "ETA %s"
 
 #, c-format
 msgid "%.2f MB/s"
-msgstr "%.2f Мб/с"
+msgstr "%.2f МБ/с"
 
 #, c-format
 msgid "%.2f KB/s"
-msgstr "%.2f кб/с"
+msgstr "%.2f кБ/с"
 
 #, c-format
 msgid "%ld B/s"
-msgstr "%ld б/с"
+msgstr "%ld Б/с"
 
 msgid "Target file already exists!"
 msgstr "Целевой файл уже существует!"
@@ -3025,9 +3036,9 @@ msgstr "Размер: %s"
 #, c-format
 msgid " (%ld block)"
 msgid_plural " (%ld blocks)"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "(%ld блок)"
+msgstr[1] "(%ld блока)"
+msgstr[2] "(%ld блоков)"
 
 #, c-format
 msgid "Owner:     %s/%s"
@@ -3255,15 +3266,12 @@ msgstr "Виртуальные &ФС..."
 msgid "Panels:"
 msgstr "Панели:"
 
-msgid "The TERM environment variable is unset!\n"
-msgstr "Переменная среды TERM не определена!\n"
-
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"
 msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "У вас %zd открытый экран. Всё равно выйти?"
+msgstr[1] "У вас %zd открытых экрана. Всё равно выйти?"
+msgstr[2] "У вас %zd открытых экранов. Всё равно выйти?"
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3552,16 +3560,16 @@ msgstr "<сбой чтения ссылки>"
 #, c-format
 msgid "%s byte"
 msgid_plural "%s bytes"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%s байт"
+msgstr[1] "%s байта"
+msgstr[2] "%s байт"
 
 #, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "%s в %d файле"
+msgstr[1] "%s в %d файлах"
+msgstr[2] "%s в %d файлах"
 
 msgid "Unknown tag on display format:"
 msgstr "Неизвестный тег в формате отображения:"
@@ -3985,3 +3993,15 @@ msgstr "Поиск закончен"
 
 msgid "Continue from beginning?"
 msgstr "Продолжить с начала?"
+
+#~ msgid "Use SPACE to change"
+#~ msgstr "ПРОБЕЛ - для изменений"
+
+#~ msgid "an option, ARROW KEYS"
+#~ msgstr "опций, КЛАВИШИ-СТРЕЛКИ -"
+
+#~ msgid "to move between options"
+#~ msgstr "перемещения между настройками"
+
+#~ msgid "and T or INS to mark"
+#~ msgstr "и T или INS для пометки"

@@ -1,16 +1,17 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Keith Bowes <zooplah@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
-"PO-Revision-Date: 2011-04-04 07:37+0000\n"
-"Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: Esperanto <None>\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
+"PO-Revision-Date: 2011-07-31 03:00+0000\n"
+"Last-Translator: zooplah <zooplah@gmail.com>\n"
+"Language-Team: Esperanto (http://www.transifex.net/projects/p/mc/team/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -361,6 +362,9 @@ msgstr "Alternativo"
 msgid "Shift"
 msgstr "Uskleca inversigilo"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "La medivarablo TERM ne estas valorizita!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -657,6 +661,12 @@ msgstr ""
 "~/.netrc havas neĝustan reĝimon\n"
 "Forigi pasvorton aŭ alĝustigi reĝimon"
 
+msgid "Cannot parse:"
+msgstr "Ne povas analizi:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Pli da analizaj eraroj estos ignorotaj."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Averto: dosiero %s ne trovita\n"
@@ -800,12 +810,6 @@ msgstr "Ne povas malfermi dosieron \"%s\""
 msgid "Ext2lib error"
 msgstr "Ext2lib: eraro"
 
-msgid "Cannot parse:"
-msgstr "Ne povas analizi:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Pli da analizaj eraroj estos ignorotaj."
-
 msgid "Internal error:"
 msgstr "Interna eraro:"
 
@@ -876,6 +880,9 @@ msgstr "Redaktas unuopan dosieron"
 msgid "Forces xterm features"
 msgstr "Devigas xterm-trajtojn"
 
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
+
 msgid "Disable mouse support in text version"
 msgstr "Malebligi musan regon en teksta variaĵo"
 
@@ -926,6 +933,23 @@ msgid ""
 "   Viewer:       viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors Ŝlosilvorton={TEKSTO},{FONO}\n"
+"\n"
+"{TEKSTO} kaj {FONO} povas esti preterlasitaj; la aŭtomataj valoroj estos "
+"uzataj\n"
+" Ŝlosilvortoj:\n"
+"   Universala:       errors, disabled, reverse, gauge, header\n"
+"                     input, inputmark, inputunchanged, commandlinemark\n"
+"                     bbarhotkey, bbarbutton, statusbar\n"
+"   Dosiera elektilo: normal, selected, marked, markselect\n"
+"   Dialogujoj:       dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                     errdhotfocus\n"
+"   Menuoj:           menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Ŝprucmenuoj:      pmenunormal, pmenusel, pmenutitle\n"
+"   Tekstoredaktilo:  editnormal, editbold, editmarked, editwhitespace,\n"
+"                     editlinestate\n"
+"   Legilo:           viewbold, viewunderline, viewselected\n"
+"   Helpo:            helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names
 msgid ""
@@ -3236,9 +3260,6 @@ msgstr "&Virtualaj dosiersistemoj..."
 
 msgid "Panels:"
 msgstr "Flankoj:"
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "La medivarablo TERM ne estas valorizita!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

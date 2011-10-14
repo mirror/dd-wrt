@@ -2,6 +2,7 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Translators:
 # Richard E. van der Luit <nippur@fedoraproject.org>, 2011.
 # Richard E. van der Luit <zuma@xs4all.nl>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
@@ -9,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-06-05 16:10+0000\n"
 "Last-Translator: nippur <nippur@fedoraproject.org>\n"
 "Language-Team: Dutch (http://www.transifex.net/projects/p/mc/team/nl/)\n"
@@ -363,6 +364,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Shift"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "De TERM omgevingsvariabele is niet gezet!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -660,6 +664,12 @@ msgstr ""
 "~ /. Netrc-bestand heeft verkeerde modus \n"
 "Verwijder het wachtwoord of corrigeer modus"
 
+msgid "Cannot parse:"
+msgstr "Kon niet interpreteren:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Verdere parse-fouten worden genegeerd."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Waarschuwing: bestand %s niet gevonden\n"
@@ -803,12 +813,6 @@ msgstr "Openen mislukt van bestand %s "
 msgid "Ext2lib error"
 msgstr "Ext2lib fout"
 
-msgid "Cannot parse:"
-msgstr "Kon niet interpreteren:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Verdere parse-fouten worden genegeerd."
-
 msgid "Internal error:"
 msgstr "Interne fout:"
 
@@ -878,6 +882,9 @@ msgstr "Bewerkt een bestand"
 
 msgid "Forces xterm features"
 msgstr "Dwingt xterm features"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Muisondersteuning uitschakelen in de tekstversie"
@@ -3257,9 +3264,6 @@ msgstr "&Virtueel FS..."
 
 msgid "Panels:"
 msgstr "Vensters:"
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "De TERM omgevingsvariabele is niet gezet!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

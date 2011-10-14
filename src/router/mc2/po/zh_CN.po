@@ -2,13 +2,14 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Translators:
 # Jake Li <gnozil@gmail.com>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-08 07:11+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.net/projects/p/mc/team/"
@@ -363,6 +364,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Shift"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "没有设置 TERM 环境变量！\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -660,6 +664,12 @@ msgstr ""
 "~/.netrc 文件权限不正确。\n"
 "删除口令或者改正权限。"
 
+msgid "Cannot parse:"
+msgstr "无法解析："
+
+msgid "More parsing errors will be ignored."
+msgstr "以后的解析错误将被忽略。"
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "警告：没有找到文件 %s\n"
@@ -803,12 +813,6 @@ msgstr "无法打开文件\"%s\""
 msgid "Ext2lib error"
 msgstr "Ext2lib 错误"
 
-msgid "Cannot parse:"
-msgstr "无法解析："
-
-msgid "More parsing errors will be ignored."
-msgstr "以后的解析错误将被忽略。"
-
 msgid "Internal error:"
 msgstr "内部错误："
 
@@ -878,6 +882,9 @@ msgstr "编辑一个文件"
 
 msgid "Forces xterm features"
 msgstr "强制使用 xterm 特性"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "在文本模式下禁用鼠标支持"
@@ -3233,9 +3240,6 @@ msgstr "虚拟文件系统(&V)..."
 
 msgid "Panels:"
 msgstr "面板："
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "没有设置 TERM 环境变量！\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

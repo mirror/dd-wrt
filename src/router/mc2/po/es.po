@@ -2,14 +2,15 @@
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Translators:
 # David Martin <dmartina@excite.com>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
-"PO-Revision-Date: 2011-04-28 19:01+0000\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
+"PO-Revision-Date: 2011-08-12 10:01+0000\n"
 "Last-Translator: dmartina <dmartina@excite.com>\n"
 "Language-Team: Spanish (Castilian) (http://www.transifex.net/projects/p/mc/"
 "team/es/)\n"
@@ -363,6 +364,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Mayús"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "¡La variable de entorno TERM está sin definir!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -659,6 +663,12 @@ msgstr ""
 "Los permisos de ~/.netrc no son los apropiados.\n"
 "Elimine la contraseña o cambie los permisos."
 
+msgid "Cannot parse:"
+msgstr "Imposible analizar:"
+
+msgid "More parsing errors will be ignored."
+msgstr "El resto de errores de análisis serán ignorados."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Atención: no se encuentra el archivo %s\n"
@@ -802,12 +812,6 @@ msgstr "Imposible abrir el archivo \"%s\""
 msgid "Ext2lib error"
 msgstr "error Ext2lib"
 
-msgid "Cannot parse:"
-msgstr "Imposible analizar:"
-
-msgid "More parsing errors will be ignored."
-msgstr "El resto de errores de análisis serán ignorados."
-
 msgid "Internal error:"
 msgstr "Error interno:"
 
@@ -877,6 +881,9 @@ msgstr "Editar un archivo"
 
 msgid "Forces xterm features"
 msgstr "Utilizar las posibilidades de xterm"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Desactivar ratón en la versión texto"
@@ -3261,9 +3268,6 @@ msgstr "sistema de archivos &Virtual (VFS)..."
 
 msgid "Panels:"
 msgstr "Paneles:"
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "¡La variable de entorno TERM está sin definir!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

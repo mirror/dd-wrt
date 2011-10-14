@@ -1,13 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-04 07:37+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -361,6 +362,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Maiusc"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "La variabile TERM non è definita!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -657,6 +661,12 @@ msgstr ""
 "il file ~/.netrc è impostato male.\n"
 "Rimuovere la password o correggere i permessi."
 
+msgid "Cannot parse:"
+msgstr "Non riesco ad analizzare:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Più errori di analisi saranno ignorati."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Attenzione: file %s non trovato\n"
@@ -800,12 +810,6 @@ msgstr "Impossibile aprire il file \"%s\""
 msgid "Ext2lib error"
 msgstr "Errore ext2lib"
 
-msgid "Cannot parse:"
-msgstr "Non riesco ad analizzare:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Più errori di analisi saranno ignorati."
-
 msgid "Internal error:"
 msgstr " Errore interno:"
 
@@ -875,6 +879,9 @@ msgstr "Modifica un file"
 
 msgid "Forces xterm features"
 msgstr "Forza il comportamento xterm"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Disabilita il supporto del mouse nella modalità testo"
@@ -3226,9 +3233,6 @@ msgstr "FS &virtuale..."
 
 msgid "Panels:"
 msgstr "Pannelli:"
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "La variabile TERM non è definita!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"
