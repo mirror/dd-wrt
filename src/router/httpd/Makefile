@@ -92,6 +92,9 @@ endif
 ifeq ($(CONFIG_NEPTUNE),y)
 CFLAGS += -DHAVE_NEPTUNE
 endif
+ifeq ($(CONFIG_SNMP),y)
+CFLAGS += -DHAVE_SNMP
+endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
