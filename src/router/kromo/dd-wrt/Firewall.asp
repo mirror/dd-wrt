@@ -157,9 +157,11 @@ addEvent(window, "unload", function() {
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_block_ident" <% nvram_checked("block_ident", "1"); %> /><% tran("filter.port113"); %>
 										</div>
+										<% ifndef("SNMP", "<!--"); %>
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvram_checked("block_snmp", "1"); %> /><% tran("filter.snmp"); %>
 										</div>
+										<% ifndef("SNMP", "-->"); %>
 									</fieldset>
 								<% ifdef("MICRO", "<!--"); %>								
 								<br />
