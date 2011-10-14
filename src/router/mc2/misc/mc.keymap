@@ -161,6 +161,10 @@ EditLoadNextFile = alt-plus
 
 SelectCodepage = alt-e
 
+EditExtMode =
+
+[edit:xmap]
+
 [viewer]
 ViewHelp = f1
 ViewToggleWrapMode = f2
@@ -408,7 +412,6 @@ DialogRefresh = ctrl-l
 CmdDialogList = alt-prime
 CmdDialogNext = alt-rbrace
 CmdDialogPrev = alt-lbrace
-
 
 [diffviewer]
 DiffDisplaySymbols = alt-s; s

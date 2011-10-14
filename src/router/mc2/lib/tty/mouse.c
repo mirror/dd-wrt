@@ -43,6 +43,7 @@
 Mouse_Type use_mouse_p = MOUSE_NONE;
 gboolean mouse_enabled = FALSE;
 const char *xmouse_seq;
+gboolean old_mouse = FALSE;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -121,7 +122,7 @@ enable_mouse (void)
                 use_mouse_p = MOUSE_NONE;
                 return;
             }
-            mouse_enabled = 1;
+            mouse_enabled = TRUE;
         }
         break;
 #endif /* HAVE_LIBGPM */

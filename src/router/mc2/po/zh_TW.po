@@ -1,13 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-04 07:37+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,6 +355,9 @@ msgstr ""
 msgid "Shift"
 msgstr ""
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "環境變數 TERM 並未設定！ \n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -648,6 +652,12 @@ msgid ""
 "Remove password or correct mode"
 msgstr ""
 
+msgid "Cannot parse:"
+msgstr "無法分析:"
+
+msgid "More parsing errors will be ignored."
+msgstr "更多的分析錯誤將會被忽略"
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "警告：找不到檔案 %s\n"
@@ -785,12 +795,6 @@ msgstr ""
 msgid "Ext2lib error"
 msgstr ""
 
-msgid "Cannot parse:"
-msgstr "無法分析:"
-
-msgid "More parsing errors will be ignored."
-msgstr "更多的分析錯誤將會被忽略"
-
 msgid "Internal error:"
 msgstr "內部錯誤:"
 
@@ -860,6 +864,9 @@ msgstr "編輯一個檔案"
 
 msgid "Forces xterm features"
 msgstr "強迫使用 xterm 特性"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "文字模式下不使用滑鼠支援"
@@ -3088,9 +3095,6 @@ msgstr "虛擬檔案系統..."
 
 msgid "Panels:"
 msgstr ""
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "環境變數 TERM 並未設定！ \n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

@@ -1,16 +1,17 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-07-26 15:59+0300\n"
+"POT-Creation-Date: 2011-09-28 21:31+0300\n"
 "PO-Revision-Date: 2011-04-04 07:37+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: German <None>\n"
+"Language-Team: German (http://www.transifex.net/projects/p/mc/team/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -363,6 +364,9 @@ msgstr "Alt"
 msgid "Shift"
 msgstr "Shift"
 
+msgid "The TERM environment variable is unset!\n"
+msgstr "Die TERM-Variable ist nicht gesetzt!\n"
+
 #, c-format
 msgid ""
 "Screen size %dx%d is not supported.\n"
@@ -662,6 +666,12 @@ msgstr ""
 "~/.netrc hat ungültigen Dateimodus.\n"
 "Bitte Passwort entfernen oder den Modus korrigieren"
 
+msgid "Cannot parse:"
+msgstr "Konnte nicht verarbeiten:"
+
+msgid "More parsing errors will be ignored."
+msgstr "Weitere Verarbeitungsfehler werden ignoriert."
+
 #, c-format
 msgid "Warning: file %s not found\n"
 msgstr "Warnung: Datei %s nicht gefunden\n"
@@ -805,12 +815,6 @@ msgstr "Kann Datei \"%s\" nicht öffnen"
 msgid "Ext2lib error"
 msgstr "Ext2lib-Fehler"
 
-msgid "Cannot parse:"
-msgstr "Konnte nicht verarbeiten:"
-
-msgid "More parsing errors will be ignored."
-msgstr "Weitere Verarbeitungsfehler werden ignoriert."
-
 msgid "Internal error:"
 msgstr "Interner Fehler:"
 
@@ -880,6 +884,9 @@ msgstr "Bearbeitet eine Datei"
 
 msgid "Forces xterm features"
 msgstr "Erzwingt xterm-Funktionen"
+
+msgid "Tries to use an old highlight mouse tracking"
+msgstr ""
 
 msgid "Disable mouse support in text version"
 msgstr "Mausunterstützung in der Textversion abschalten"
@@ -3238,9 +3245,6 @@ msgstr "&Virtuelle FS..."
 
 msgid "Panels:"
 msgstr "Panels:"
-
-msgid "The TERM environment variable is unset!\n"
-msgstr "Die TERM-Variable ist nicht gesetzt!\n"
 
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"

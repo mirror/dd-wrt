@@ -34,6 +34,7 @@
 
 #include "lib/global.h"
 #include "lib/util.h"           /* is_printable() */
+#include "tty-internal.h"
 #include "tty.h"                /* tty_gotoyx, tty_print_char */
 #include "win.h"
 #include "src/consaver/cons.saver.h"    /* console_flag */
@@ -42,9 +43,11 @@
 
 /* This flag is set by xterm detection routine in function main() */
 /* It is used by function view_other_cmd() */
-int xterm_flag = 0;
+gboolean xterm_flag = FALSE;
 
 extern int keybar_visible;
+char *smcup = NULL;
+char *rmcup = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -95,7 +98,7 @@ anything_ready (void)
 void
 do_enter_ca_mode (void)
 {
-    if (xterm_flag)
+    if (xterm_flag && smcup != NULL)
     {
         fprintf (stdout, /* ESC_STR ")0" */ ESC_STR "7" ESC_STR "[?47h");
         fflush (stdout);
@@ -107,7 +110,7 @@ do_enter_ca_mode (void)
 void
 do_exit_ca_mode (void)
 {
-    if (xterm_flag)
+    if (xterm_flag && rmcup != NULL)
     {
         fprintf (stdout, ESC_STR "[?47l" ESC_STR "8" ESC_STR "[m");
         fflush (stdout);
@@ -128,7 +131,7 @@ show_rxvt_contents (int starty, unsigned char y1, unsigned char y2)
         tty_lowlevel_getch ();
 
     /* my own wierd protocol base 26 - paul */
-    printf ("\033CL%c%c%c%c\n", (y1 / 26) + 'A', (y1 % 26) + 'A', (y2 / 26) + 'A', (y2 % 26) + 'A');
+    printf (ESC_STR "CL%c%c%c%c\n", (y1 / 26) + 'A', (y1 % 26) + 'A', (y2 / 26) + 'A', (y2 % 26) + 'A');
 
     bytes = (y2 - y1) * (COLS + 1) + 1; /* *should* be the number of bytes read */
     j = 0;
