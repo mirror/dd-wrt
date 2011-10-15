@@ -500,11 +500,14 @@ void start_sysinit(void)
 	char *modelname = nvram_get("DD_BOARD2");
 	if (!modelname || strncmp(modelname, "Gateworks", 9))
 		modelname = nvram_safe_get("DD_BOARD");
-	if (!strncmp(modelname, "Gateworks Avila GW2348", 22)
+	if (!strcmp(modelname, "Gateworks Avila GW2348-4")
 	    || !strcmp(modelname, "Gateworks Cambria GW2358-4")
 	    || !strcmp(modelname, "Gateworks Avila GW2355")
 	    || !strcmp(modelname, "Gateworks Avila GW2345")) {
 		fprintf(stderr, "Load CF Card Driver\n");
+		insmod("scsi_mod");
+		insmod("scsi_wait_scan");
+		insmod("sd_mod");
 		insmod("libata");
 		insmod("pata_ixp4xx_cf");
 	}
