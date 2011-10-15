@@ -77,7 +77,7 @@ static void create_pptp_config(char *servername, char *username)
 	// system routing tables, using the peer as the gateway
 	fprintf(fp, "usepeerdns\n");	// Ask the peer for up to 2 DNS
 	// server addresses
-	fprintf(fp, "pty 'pptp %s --nolaunchpppd", servername);
+	fprintf(fp, "pty 'pptp %s --localbind %s --nolaunchpppd", servername,nvram_safe_get("wan_ipaddr"));
 
 	if (nvram_match("pptp_reorder", "1"))
 		fprintf(fp, " --nobuffer");
