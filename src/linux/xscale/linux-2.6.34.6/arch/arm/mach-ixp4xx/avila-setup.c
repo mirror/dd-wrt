@@ -430,7 +430,7 @@ static void __init avila_init(void)
 	eeprom_read(0x120, model, 16);
 	printk(KERN_INFO "Gateworks Model %s detected!\n",model);
 	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-	if (!strncmp(model,"GW2369",6))
+	if (!strncmp(model,"GW2369",6) || !strncmp(model,"GW2373",6))
 	{
 	/* required for 32 mb flash access. do not enable cf driver here, this will collide with each other */
 	avila_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
