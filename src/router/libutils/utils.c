@@ -1293,6 +1293,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("TP-Link TL-WR841ND v5");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR840v1
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("TP-Link TL-WR840N v1");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841v7
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
