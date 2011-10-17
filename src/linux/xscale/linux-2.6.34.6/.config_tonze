@@ -1,3 +1,4 @@
+CONFIG_IXP4XX_LEGACY_DMABOUNCE=y
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.34.8
