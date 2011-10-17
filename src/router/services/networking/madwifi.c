@@ -788,7 +788,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		if (nvram_match("wps_registrar", "1")) {
 			fprintf(fp, "ap_setup_locked=0\n");
 //# In case of external registrar add conf for non-conforming Windows 7 / Vista Clients
-			fprintf(fp, "pbc_in_m1=1");
+			fprintf(fp, "pbc_in_m1=1\n");
 		}
 		else
 			fprintf(fp, "ap_setup_locked=1\n");
