@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.34.10
-# Fri Oct 14 23:58:54 2011
+# Mon Oct 17 15:46:37 2011
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -259,6 +259,7 @@ CONFIG_CPU_IXP43X=y
 CONFIG_DMABOUNCE=y
 CONFIG_DMABOUNCE_DEBUG=y
 # CONFIG_IXP4XX_INDIRECT_PCI is not set
+CONFIG_IXP4XX_LEGACY_DMABOUNCE=y
 CONFIG_IXP400_LIB=y
 
 #
