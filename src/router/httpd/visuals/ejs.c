@@ -525,7 +525,7 @@ static char *s_conditions[] = {
 	"MULTICAST",
 #endif
 #ifdef HAVE_SNMP
-	"MULTICAST",
+	"SNMP",
 #endif
 #ifdef HAVE_WIVIZ
 	"WIVIZ",
