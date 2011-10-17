@@ -296,6 +296,47 @@ config IXP4XX_INDIRECT_PCI
 	  need to use the indirect method instead. If you don't know
 	  what you need, leave this option unselected.
 
+config IXP4XX_LEGACY_DMABOUNCE
+	bool "legacy PCI DMA bounce support"
+	depends on PCI
+	default n
+	select DMABOUNCE
+	help
+	  The IXP4xx is limited to a 64MB window for PCI DMA, which
+	  requires that PCI accesses above 64MB are bounced via buffers
+	  below 64MB. Furthermore the IXP4xx has an erratum where PCI
+	  read prefetches just below the 64MB limit can trigger lockups.
+
+	  The kernel has traditionally handled these two issue by using
+	  ARM specific DMA bounce support code for all accesses >= 64MB.
+	  That code causes problems of its own, so it is desirable to
+	  disable it. As the kernel now has a workaround for the PCI read
+	  prefetch erratum, it no longer requires the ARM bounce code.
+
+	  Enabling this option makes IXP4xx continue to use the problematic
+	  ARM DMA bounce code. Disabling this option makes IXP4xx use the
+	  kernel's generic bounce code.
+
+	  Say 'N'.
+
+config IXP4XX_ZONE_DMA
+	bool "Support > 64MB RAM"
+	depends on !IXP4XX_LEGACY_DMABOUNCE
+	default y
+	select ZONE_DMA
+	help
+	  The IXP4xx is limited to a 64MB window for PCI DMA, which
+	  requires that PCI accesses above 64MB are bounced via buffers
+	  below 64MB.
+
+	  Disabling this option allows you to omit the support code for
+	  DMA-able memory allocations and DMA bouncing, but the kernel
+	  will then not work properly if more than 64MB of RAM is present.
+
+	  Say 'Y' unless your platform is limited to <= 64MB of RAM.
+
+
+
 config IXP400_LIB
 	tristate 'Build IXP400 Access Library' 
 	depends on ARCH_IXP4XX

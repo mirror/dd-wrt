@@ -22,7 +22,7 @@
 #define PCIBIOS_MIN_MEM		0x10000000 /* 1 GB of indirect PCI MMIO space */
 #define PCIBIOS_MAX_MEM		0x4FFFFFFF
 #else
-#define PCIBIOS_MIN_MEM		(cpu_is_ixp43x() ? 0x48000000 : 0x48000000)
+#define PCIBIOS_MIN_MEM		0x48000000
 #define PCIBIOS_MAX_MEM		0x4BFFFFFF
 #endif
 
