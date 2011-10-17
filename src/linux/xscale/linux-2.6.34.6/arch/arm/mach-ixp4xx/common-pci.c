@@ -324,23 +324,38 @@ static int ixp4xx_pci_platform_notify(struct device *dev)
 	if(dev->bus == &pci_bus_type) {
 		*dev->dma_mask =  SZ_64M - 1;
 		dev->coherent_dma_mask = SZ_64M - 1;
+#ifdef CONFIG_DMABOUNCE
 		dmabounce_register_dev(dev, 2048, 4096);
+#endif
 	}
 	return 0;
 }
 
 static int ixp4xx_pci_platform_notify_remove(struct device *dev)
 {
+#ifdef CONFIG_DMABOUNCE
 	if(dev->bus == &pci_bus_type) {
 		dmabounce_unregister_dev(dev);
 	}
+#endif
 	return 0;
 }
+#ifdef CONFIG_DMABOUNCE
 
 int dma_needs_bounce(struct device *dev, dma_addr_t dma_addr, size_t size)
 {
+	/* Note that this returns true for the last page below 64M due to
+	 * IXP4xx erratum 15 (SCR 1289), which states that PCI prefetches
+	 * can cross the boundary between valid memory and a reserved region
+	 * causing AHB bus errors and a lock-up.
+	 */
+
 	return (dev->bus == &pci_bus_type ) && ((dma_addr + size) >= SZ_64M);
 }
+#endif
+
+ 
+#ifdef CONFIG_ZONE_DMA
 
 /*
  * Only first 64MB of memory can be accessed via PCI.
@@ -364,7 +379,7 @@ void __init ixp4xx_adjust_zones(int node, unsigned long *zone_size,
 	zhole_size[1] = zhole_size[0];
 	zhole_size[0] = 0;
 }
-
+#endif
 void __init ixp4xx_pci_preinit(void)
 {
 	unsigned long cpuid = read_cpuid_id();

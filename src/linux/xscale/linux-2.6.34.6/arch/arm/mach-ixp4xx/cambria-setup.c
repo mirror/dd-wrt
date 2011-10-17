@@ -227,8 +227,7 @@ static void __init cambria_init(void)
 	ixp4xx_sys_init();
 
 	cambria_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
-	cambria_flash_resource.end =
-		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size + ixp4xx_exp_bus_size - 1;
+	cambria_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size + ixp4xx_exp_bus_size - 1;
 
 
   platform_add_devices(cambria_devices, ARRAY_SIZE(cambria_devices));
