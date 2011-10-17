@@ -409,6 +409,13 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_WZRG300NH2
 		nvram_set("ath0_wpa_gtk_rekey", "0");
 #endif
+		if (!strcmp(region, "AP") || !strcmp(region, "CH")
+			|| !strcmp(region, "KR")
+			|| !strcmp(region, "TW")
+			|| !strcmp(region, "RU"))
+			nvram_set("wps_status", "0");
+		else
+			nvram_set("wps_status", "1");
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
