@@ -3635,12 +3635,3 @@ void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
-
-void ej_show_init_warnings(webs_t wp, int argc, char_t ** argv) {
-#ifdef HAVE_WZRG300NH2
-fprintf(stderr, "[PASSWD] show warnings wpa_rekey: %s\n", nvram_safe_get("ath0_wpa_gtk_rekey"));
-	if(!strcmp(nvram_safe_get("ath0_wpa_gtk_rekey"), "0") ) {
-		websWrite(wp, "<p style=\"color: #900;\"><b><script type=\"text/javascript\">Capture(management.warning_rekeying)</script></b></p>");
-	}
-#endif
-}
