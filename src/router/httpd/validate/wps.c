@@ -74,4 +74,10 @@ void wps_forcerelease(webs_t wp)
 	service_restart();
 }
 
+void wps_configure(webs_t wp)
+{
+	nvram_set("wps_status", "1");
+	addAction("wireless");
+	service_restart();
+}
 #endif
