@@ -73,6 +73,12 @@ function to_forcerelease(F) {
   apply(F);
 }
 
+function to_configure(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "wps_configure";
+  apply(F);
+}
+
 function to_ap_register(F) {
 	if (!wps_pin_valid(F.wps_ap_pin.value)) {
 	    alert(aoss.pinnotvalid);
@@ -259,7 +265,10 @@ document.write("<\/tr>");
 						<span id="wpsstatus"><% get_wpsstatus(); %></span>
 						<script type="text/javascript">
 						//<![CDATA[
-						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.release + "\" onclick=\"to_forcerelease(this.form);\" />");
+						if(!parseInt(<% nvram_get("wps_status"); %>))
+							document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.configure + "\" onclick=\"to_configure(this.form);\" />");
+						else
+							document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.release + "\" onclick=\"to_forcerelease(this.form);\" />");
 						//]]>
 						</script>
 					</div>

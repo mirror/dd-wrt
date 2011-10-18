@@ -787,6 +787,12 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		}
 		if (nvram_match("wps_registrar", "1")) {
 			fprintf(fp, "ap_setup_locked=0\n");
+			fprintf(fp, "upnp_iface=%s\n", nvram_safe_get("lan_ifname"));
+			fprintf(fp, "model_description=Wireless Access Point\n");
+//# If UUID is not configured, it will be generated based on local MAC address. 
+			char uuid[64];
+			get_uuid(uuid);
+			fprintf(fp, "uuid=%s\n", uuid);
 //# In case of external registrar add conf for non-conforming Windows 7 / Vista Clients
 			fprintf(fp, "pbc_in_m1=1\n");
 		}
@@ -796,10 +802,6 @@ void addWPS(FILE * fp, char *prefix, int configured)
 #ifdef HAVE_WZRHPAG300NH
 		fprintf(fp, "dualband=1\n");
 #endif
-//# If UUID is not configured, it will be generated based on local MAC address. 
-		char uuid[64];
-		get_uuid(uuid);
-		fprintf(fp, "uuid=%s\n", uuid);
 		fprintf(fp, "wps_pin_requests=/var/run/hostapd.pin-req\n");
 		fprintf(fp, "device_name=%s\n", nvram_safe_get("router_name"));
 		fprintf(fp, "manufacturer=DD-WRT\n");
@@ -808,7 +810,6 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "serial_number=12345\n");
 		fprintf(fp, "device_type=6-0050F204-1\n");
 		fprintf(fp, "os_version=01020300\n");
-		fprintf(fp, "upnp_iface=%s\n", nvram_safe_get("lan_ifname"));
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
 		fprintf(fp,
 			"config_methods=label display push_button keypad\n");
