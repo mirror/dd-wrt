@@ -1049,6 +1049,7 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
 	{"AOSS", "wps_ap_register", "aoss", 1, REFRESH, "wps_ap_register"},
 	{"AOSS", "wps_forcerelease", "aoss", 1, REFRESH, "wps_forcerelease"},
+	{"AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure"},
 #endif
 #ifdef HAVE_SPOTPASS
 	{"Nintendo", "save", "spotpass", 1, REFRESH, "nintendo_save"},
