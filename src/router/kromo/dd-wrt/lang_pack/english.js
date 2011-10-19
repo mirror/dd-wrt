@@ -743,6 +743,8 @@ hotspot.dhcp="DHCP Interface";
 hotspot.radnas="Radius NAS ID";
 hotspot.net="Remote Network";
 hotspot.uam="UAM Secret";
+hotspot.uamserver="UAM Server";
+hotspot.uamport="UAM Port";
 hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Allowed";
 hotspot.macauth="MACauth";
@@ -1140,12 +1142,14 @@ qos.prio_b="Bulk";
 qos.legend3="Netmask Priority";
 qos.ipmask="IP/Mask";
 qos.maxrate_b="Max kbits";
-qos.maxuprate_b="Max kbits Up";
-qos.maxdownrate_b="Max kbits Down";
+qos.maxuprate_b="WAN Max Up";
+qos.maxdownrate_b="WAN Max Down";
+qos.maxlanrate_b="LAN Max";
 qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
 qos.legend6="Default Bandwidth Level";
+qos.enabledefaultlvls="Enable Per User Default Limits";
 qos.bandwidth="Bandwidth in kbits";
 
 //help container
