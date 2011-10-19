@@ -905,13 +905,31 @@ void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 		  "<legend><script type=\"text/javascript\">Capture(qos.legend6)</script></legend>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.bandwidth)</script> Up</div>\n");
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.enabledefaultlvls)</script></div>\n");
 	websWrite(wp,
-		  "<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" /> Down\n",
+		  "<input type=\"checkbox\" name=\"svqos_defaults\"value=\"1\" %s\ />\n",
+		  nvram_match("svqos_defaults", "1") ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\">WAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script> Up</div>\n");
+	websWrite(wp,
+		  "<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" />\n",
 		  nvram_safe_get("default_uplevel"));
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\">WAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script> Down</div>\n");
 	websWrite(wp,
 		  "<input type=\"num\" name=\"default_downlevel\" size=\"6\" value=\"%s\" />\n",
 		  nvram_safe_get("default_downlevel"));
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp,
+		  "<div class=\"label\">LAN <script type=\"text/javascript\">Capture(qos.bandwidth)</script></div>\n");
+	websWrite(wp,
+		  "<input type=\"num\" name=\"default_lanlevel\" size=\"6\" value=\"%s\" />\n",
+		  nvram_default_get("default_lanlevel", "100000"));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</fieldset><br />\n");
 	return;
@@ -7051,7 +7069,7 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_ips = nvram_safe_get("svqos_ips");
-	char ip[32], level[32], level2[32];
+	char ip[32], level[32], level2[32], lanlevel[32];
 	int no_ips = 0, i = 0;
 
 	// calc # of ips
@@ -7064,6 +7082,7 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
   					<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n\
   				</tr>\n");
 
 	// write HTML data
@@ -7077,22 +7096,26 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * IP format is "data level | data level |" ..etc 
 	 */
+	lanlevel[0] = '\0';
 	for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++) {
-		if (sscanf(qos_ips, "%31s %31s %31s ", ip, level, level2) < 3)
+		if (sscanf(qos_ips, "%31s %31s %31s %31s", ip, level, level2, lanlevel) < 3)
 			break;
 		websWrite(wp, "<tr>\n\
-					<td>\n\
+					<td align=\"center\">\n\
 						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
 					</td>\n\
 					<td><em>%s</em></td>\n\
-					<td>\n\
-						<input name=\"svqos_ipup%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+					<td nowrap>\n\
+						<input name=\"svqos_ipup%d\" class=\"num\" size=\"4\" maxlength=\"5\" value=\"%s\" style=\"text-align: right;\" /> kBits\n\
 					</td>\n\
-					<td>\n\
-						<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+					<td nowrap>\n\
+						<input name=\"svqos_ipdown%d\" class=\"num\" size=\"4\" maxlength=\"5\" value=\"%s\"  style=\"text-align:right;\" /> kBits\n\
 					</td>\n\
-				</tr>\n", i, i, ip, ip, i, level, i, level2);
+					<td nowrap>\n\
+						<input name=\"svqos_iplanlvl%d\" class=\"num\" size=\"4\" maxlength=\"5\" value=\"%d\"  style=\"text-align:right;\" /> kBits\n\
+					</td>\n\
+				</tr>\n", i, i, ip, ip, i, level, i, level2, i, atoi(lanlevel));
 
 		qos_ips = strpbrk(++qos_ips, "|");
 		qos_ips++;
@@ -7164,7 +7187,7 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 {
 	char *qos_macs = nvram_safe_get("svqos_macs");
-	char mac[32], level[32], level2[32];
+	char mac[32], level[32], level2[32], lanlevel[32], user[32];
 	int no_macs = 0, i = 0;
 
 	// calc # of ips
@@ -7177,6 +7200,7 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
   					<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxlanrate_b)</script></th>\n\
   				</tr>\n");
 
 	// write HTML data
@@ -7190,21 +7214,28 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 	 * IP format is "data level | data level |" ..etc 
 	 */
 	for (i = 0; i < no_macs && qos_macs && qos_macs[0]; i++) {
-		if (sscanf(qos_macs, "%31s %31s %31s ", mac, level, level2) < 3)
+		if (sscanf(qos_macs, "%31s %31s %31s %31s ", mac, level, level2, lanlevel) < 3)
 			break;
+		if (sscanf(qos_macs, "%31s %31s %31s %31s %32s ", mac, level, level2, user, lanlevel) < 5)
+			sprintf(lanlevel, "0");
+//		if( lanlevel[0] == '|')
+//			sprintf(lanlevel, "0");
 		websWrite(wp, "<tr>\n\
-					<td>\n\
+					<td align=\"center\">\n\
 						<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n\
 					</td>\n\
 					<td><em>%s</em></td>\n\
-					<td>\n\
-						<input name=\"svqos_macup%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+					<td nowrap>\n\
+						<input name=\"svqos_macup%d\" class=\"num\" size=\"4\" maxlength=\"5\" value=\"%s\" style=\"text-align:right;\" /> kBits\n\
 					</td>\n\
-					<td>\n\
-						<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+					<td nowrap>\n\
+						<input name=\"svqos_macdown%d\" class=\"num\" size=\"4\" maxlength=\"5\" value=\"%s\" style=\"text-align:right;\"/> kBits\n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, level, i, level2);
+					<td nowrap>\n\
+						<input name=\"svqos_maclanlvl%d\" class=\"num\" size=\"4\" maxlength=\"5\" value=\"%s\" style=\"text-align:right;\" /> kBits\n\
+					</td>\n\
+				</tr>\n", i, i, mac, mac, i, level, i, level2, i, lanlevel);
 
 		qos_macs = strpbrk(++qos_macs, "|");
 		qos_macs++;

@@ -41,6 +41,7 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
+/* obsolete
 static char *get_wshaper_dev(void)
 {
 	if (nvram_match("wshaper_dev", "WAN"))
@@ -48,6 +49,7 @@ static char *get_wshaper_dev(void)
 	else
 		return "br0";
 }
+*/
 
 static int do_ap_watchdog(void)
 {
@@ -100,11 +102,11 @@ int compareNet(char *ip, char *net, char *dest)
 	// fprintf(stderr,"compare ip%s/net%s with %s\n",ip,net,dest);
 	char ips2[32];
 	char dest2[32];
-
 	strcpy(ips2, ip);
 	strcpy(dest2, dest);
 	ip = ips2;
 	dest = dest2;
+
 	unsigned int ip1 = atoi(strsep(&ip, "."));
 	unsigned int ip2 = atoi(strsep(&ip, "."));
 	unsigned int ip3 = atoi(strsep(&ip, "."));
@@ -173,13 +175,23 @@ static int qosidx = 1000;
 
 int containsMAC(char *ip)
 {
+	
 	FILE *in;
 	char buf_ip[32];
-
+	int x;
+	
 	in = fopen("/tmp/aqos_macs", "rb");
 	if (in == NULL)
 		return 0;
-	while (feof(in) == 0 && fscanf(in, "%s", buf_ip) == 1) {
+	
+	for (x=0;x<strlen(ip);x++)
+		ip[x] = toupper(ip[x]);
+	
+	while (feof(in) == 0 && fscanf(in, "%s", buf_ip) == 1) 
+	{
+		for (x=0;x<strlen(buf_ip);x++)
+			buf_ip[x] = toupper(buf_ip[x]);
+		
 		if (!strcmp(buf_ip, ip)) {
 			fclose(in);
 			return 1;
@@ -195,6 +207,8 @@ static void do_aqos_check(void)
 		return;
 	if (nvram_match("qos_done", "0"))
 		return;
+	if (!nvram_invmatch("svqos_defaults", "0"))
+		return;
 
 	FILE *arp = fopen("/proc/net/arp", "rb");
 	char ip_buf[32];
@@ -206,6 +220,7 @@ static void do_aqos_check(void)
 	int cmac;
 	char *defaulup;
 	char *defauldown;
+	char *defaultlan;
 	int cip;
 
 	if (arp == NULL) {
@@ -214,6 +229,8 @@ static void do_aqos_check(void)
 	}
 	defaulup = nvram_safe_get("default_uplevel");
 	defauldown = nvram_safe_get("default_downlevel");
+	defaultlan = nvram_safe_get("default_lanlevel");
+	
 	if (defaulup == NULL || strlen(defaulup) == 0) {
 		fclose(arp);
 		return;
@@ -221,6 +238,9 @@ static void do_aqos_check(void)
 	if (defauldown == NULL || strlen(defauldown) == 0) {
 		fclose(arp);
 		return;
+	}
+	if (defaultlan == NULL || strlen(defaultlan) == 0) {
+		defaultlan = "0";
 	}
 	while (fgetc(arp) != '\n') ;
 
@@ -232,13 +252,13 @@ static void do_aqos_check(void)
 		if (wan && strlen(wan) > 0 && !strcmp(dev_buf, wan))
 			continue;
 
-		cmac = containsMAC(mac_buf);
+		cmac = containsMAC(mac_buf); 
 		cip = containsIP(ip_buf);
 
 		if (cip || cmac) {
 			continue;
 		}
-
+			
 		if (!cip && strlen(ip_buf) > 0) {
 			char ipnet[32];
 
@@ -247,9 +267,10 @@ static void do_aqos_check(void)
 			if (strlen(mac_buf))
 				sysprintf("echo \"%s\" >>/tmp/aqos_macs",
 					  mac_buf);
+			
 			// create default rule for ip
-			add_userip(ipnet, qosidx, defaulup, defauldown);
-			qosidx += 2;
+			add_userip(ipnet, qosidx, defaulup, defauldown, defaultlan);
+			qosidx += 1;
 			memset(ip_buf, 0, 32);
 			memset(mac_buf, 0, 32);
 			continue;
@@ -262,9 +283,10 @@ static void do_aqos_check(void)
 			sysprintf("echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 			if (strlen(ip_buf))
 				sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
+			
 			// create default rule for mac
-			add_usermac(mac_buf, qosidx, defaulup, defauldown);
-			qosidx += 2;
+			add_usermac(mac_buf, qosidx, defaulup, defauldown, defaultlan);
+			qosidx += 1;
 		}
 		memset(ip_buf, 0, 32);
 		memset(mac_buf, 0, 32);

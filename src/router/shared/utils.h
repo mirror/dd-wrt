@@ -794,8 +794,8 @@ void lcdmessaged(char *dual, char *message);
 #endif
 
 #ifdef HAVE_AQOS
-extern void add_usermac(char *mac, int idx, char *upstream, char *downstream);
-extern void add_userip(char *ip, int idx, char *upstream, char *downstream);
+extern void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream);
+extern void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream);
 #endif
 
 void getHostName(char *buf, char *ip);
