@@ -754,11 +754,17 @@ void get_uuid(char *uuid_str)
 void addWPS(FILE * fp, char *prefix, int configured)
 {
 #ifdef HAVE_WPS
+	char *config_methods = safe_malloc(sizeof("label display keypad") + 1);
+	memset(config_methods, 0, strlen(config_methods));
+	strcpy(config_methods, "label display keypad");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
 	if (!strcmp(prefix, "ath0")
 	    || !strcmp(prefix, "ath1")) {
 		fprintf(fp, "eap_server=1\n");
-
+		if (nvram_match("wps_enabled", "1")) {
+			config_methods = (char *)realloc(config_methods, strlen(config_methods) + sizeof(" push_button") + 1);
+			strcat(config_methods, " push_button");
+		}
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 		if (nvram_match("wps_forcerelease", "1")) {
 			nvram_set("wps_status", "0");
@@ -811,9 +817,10 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "device_type=6-0050F204-1\n");
 		fprintf(fp, "os_version=01020300\n");
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
-		fprintf(fp,
-			"config_methods=label display push_button keypad\n");
+		fprintf(fp, "config_methods=%s\n", config_methods);
+		//	"config_methods=label display push_button keypad\n");
 	}
+	free(config_methods);
 #endif
 
 }
