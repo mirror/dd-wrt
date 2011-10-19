@@ -1319,7 +1319,7 @@ void qos_add_ip(webs_t wp)
 	if (strstr(svqos_ips, add_ip))
 		return;
 #ifdef HAVE_AQOS
-	snprintf(new_ip, 4095, "%s %s 100 100 |", svqos_ips, add_ip);
+	snprintf(new_ip, 4095, "%s %s 100 100 0 |", svqos_ips, add_ip);
 #else
 	snprintf(new_ip, 4095, "%s %s 30 |", svqos_ips, add_ip);
 #endif
@@ -1359,7 +1359,7 @@ void qos_add_mac(webs_t wp)
 	if (strstr(svqos_macs, add_mac))
 		return;
 #ifdef HAVE_AQOS
-	snprintf(new_mac, 4095, "%s %s 100 100 user |", svqos_macs, add_mac);
+	snprintf(new_mac, 4095, "%s %s 100 100 user 0 |", svqos_macs, add_mac);
 #else
 	snprintf(new_mac, 4095, "%s %s 30 |", svqos_macs, add_mac);
 #endif
@@ -1376,7 +1376,7 @@ void qos_save(webs_t wp)
 	char *value = websGetVar(wp, "action", "");
 	char svqos_var[4096] = { 0 };
 	char field[32] = { 0 };
-	char *name, *data, *level, *level2, *delete;
+	char *name, *data, *level, *level2, *lanlevel, *delete;
 	int no_svcs = atoi(websGetVar(wp, "svqos_nosvcs", NULL));
 	int no_ips = atoi(websGetVar(wp, "svqos_noips", NULL));
 	int no_macs = atoi(websGetVar(wp, "svqos_nomacs", NULL));
@@ -1396,9 +1396,12 @@ void qos_save(webs_t wp)
 	}
 
 	nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
+	nvram_set("svqos_defaults", websGetVar(wp, "svqos_defaults", NULL));
 	nvram_set("default_uplevel", websGetVar(wp, "default_uplevel", NULL));
 	nvram_set("default_downlevel",
 		  websGetVar(wp, "default_downlevel", NULL));
+	nvram_set("default_lanlevel",
+		  websGetVar(wp, "default_lanlevel", NULL));
 	nvram_set("wshaper_downlink", websGetVar(wp, "wshaper_downlink", NULL));
 	nvram_set("wshaper_uplink", websGetVar(wp, "wshaper_uplink", NULL));
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", NULL));
@@ -1487,11 +1490,13 @@ void qos_save(webs_t wp)
 		level = websGetVar(wp, field, NULL);
 		snprintf(field, 31, "svqos_ipdown%d", i);
 		level2 = websGetVar(wp, field, NULL);
+		snprintf(field, 31, "svqos_iplanlvl%d", i);
+		lanlevel = websGetVar(wp, field, NULL);
 		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s |", svqos_var, data,
-				level, level2);
+			sprintf(svqos_var, "%s %s %s %s %s |", svqos_var, data,
+				level, level2, lanlevel);
 		else
-			sprintf(svqos_var, "%s %s %s |", data, level, level2);
+			sprintf(svqos_var, "%s %s %s %s |", data, level, level2, lanlevel);
 
 #endif
 
@@ -1529,13 +1534,15 @@ void qos_save(webs_t wp)
 		level = websGetVar(wp, field, NULL);
 		snprintf(field, 31, "svqos_macdown%d", i);
 		level2 = websGetVar(wp, field, NULL);
+		snprintf(field, 31, "svqos_maclanlvl%d", i);
+		lanlevel = websGetVar(wp, field, NULL);
 
 		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s user |", svqos_var,
-				data, level, level2);
+			sprintf(svqos_var, "%s %s %s %s user %s |", svqos_var,
+				data, level, level2, lanlevel);
 		else
-			sprintf(svqos_var, "%s %s %s user |", data, level,
-				level2);
+			sprintf(svqos_var, "%s %s %s user %s |", data, level,
+				level2, lanlevel);
 #endif
 
 	}
