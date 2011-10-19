@@ -145,7 +145,7 @@ for (i=0;i<l2;i++)
 return 0;
 }
 extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream );
+			 char *downstream, char *lanstream );
 extern char *nvram_safe_get(const char *name);
 
 int addrule(char *mac, char *upstream, char *downstream)
@@ -156,14 +156,14 @@ int addrule(char *mac, char *upstream, char *downstream)
     {
     char *newqos = malloc(strlen(qos_mac)*2);
     memset(newqos,0,strlen(qos_mac)*2);
-    char level[32], level2[32], data[32], type[32];
+    char level[32], level2[32], level3[32], data[32], type[32];
     do
     {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
+	if( sscanf( qos_mac, "%31s %31s %31s %31s %31s |", data, level, level2 , type, level3) < 4 )
 	    break;
 	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
 	    {
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
+	    sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,level,level2,type,level3);	    
 	    ret |=1;
 	    }
 	    else
@@ -172,7 +172,7 @@ int addrule(char *mac, char *upstream, char *downstream)
 	    {
 	    ret |=2;
 	    }
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"pppd");	    
+	    sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,upstream,downstream,"pppd",level3);	    
 //	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
 	    }
     }
@@ -182,7 +182,7 @@ int addrule(char *mac, char *upstream, char *downstream)
     }else
     {
     char newqos[128];
-    sprintf(newqos,"%s %s %s %s |",mac,upstream,downstream,"pppd");	    
+    sprintf(newqos,"%s %s %s %s %s |",mac,upstream,downstream,"pppd",level3);	    
     nvram_set("svqos_macs",newqos);    
     }
 return ret;
@@ -276,7 +276,7 @@ PPPOEConnectDevice(void)
 			qosidx+=2;
 			if (qosidx>500)
 			    qosidx=0;
-			add_usermac(mac, qosidx, uplevel,downlevel );
+			add_usermac(mac, qosidx, uplevel,downlevel,"0" );
 			}else if (ret>1)
 			{
 			system("startstop_f wshaper");

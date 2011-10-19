@@ -1220,7 +1220,7 @@ ieee802_1x_search_radius_identifier(struct hostapd_data *hapd, u8 identifier)
 
 #ifdef HAVE_AQOS
 extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream );
+			 char *downstream, char *lanstream );
 extern char *nvram_safe_get(const char *name);
 
 int addrule(char *mac, char *upstream, char *downstream)
@@ -1232,24 +1232,25 @@ int addrule(char *mac, char *upstream, char *downstream)
 
 	newqos = malloc(len + 128);
 	memset(newqos, 0, len + 128);
+
+	char level[32], level2[32], level3[32], data[32], type[32];
 	if (len > 0) {
-		char level[32], level2[32], data[32], type[32];
 		do {
-			if(sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2, type) < 4)
+			if(sscanf( qos_mac, "%31s %31s %31s %31s %31s |", data, level, level2, type, level3) < 5)
 				break;
 			if (!strcasecmp(data,mac)) {
-				sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");
+				sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3);
 				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
 					ret = 1;
 				else
 					ret = 2;
 			} else
-				sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);
+				sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,level,level2,type,level3);
 		} while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
 	}
 
 	if (!ret)
-		sprintf(newqos,"%s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd");
+		sprintf(newqos,"%s %s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3);
 
 	nvram_set("svqos_macs",newqos);
 	free(newqos);
@@ -1375,7 +1376,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 			if (qosidx>500)
 			    qosidx=0;
 			wpa_printf(MSG_DEBUG, "bandwidth rule is new, no flush required!\n");			
-			add_usermac(mac, qosidx, uplevel,downlevel );
+			add_usermac(mac, qosidx, uplevel,downlevel,"0" );
 			}else if (ret>1)
 			{
 			wpa_printf(MSG_DEBUG, "bandwidth rule change detected, flush table and reset it to new values! (status %d)\n",ret);			

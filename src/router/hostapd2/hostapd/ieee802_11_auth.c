@@ -349,7 +349,7 @@ static void hostapd_acl_expire(void *eloop_ctx, void *timeout_ctx)
 	eloop_register_timeout(10, 0, hostapd_acl_expire, hapd, NULL);
 }
 extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream );
+			 char *downstream, char *lanstream );
 
 
 /* Return 0 if RADIUS message was a reply to ACL query (and was processed here)
@@ -437,7 +437,7 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 		    char downlevel[64];
 		    sprintf(uplevel,"%d",*up);
 		    sprintf(downlevel,"%d",*down);
-		    add_usermac(mac, qosidx, uplevel,downlevel );
+		    add_usermac(mac, qosidx, uplevel,downlevel, "0" );
 		    os_free(up);
 		    os_free(down);
 		    qosidx+=2;
