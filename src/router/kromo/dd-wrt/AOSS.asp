@@ -263,14 +263,7 @@ document.write("<\/tr>");
 					<div class="setting">
 						<div class="label"><% tran("aoss.wpsstatus"); %></div>
 						<span id="wpsstatus"><% get_wpsstatus(); %></span>
-						<script type="text/javascript">
-						//<![CDATA[
-						if(!parseInt(<% nvram_get("wps_status"); %>))
-							document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.configure + "\" onclick=\"to_configure(this.form);\" />");
-						else
-							document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.release + "\" onclick=\"to_forcerelease(this.form);\" />");
-						//]]>
-						</script>
+						<span id="wpsconfigure"><% get_wpsconfigure(); %></span>
 					</div>
 				</fieldset>
 				<br />
