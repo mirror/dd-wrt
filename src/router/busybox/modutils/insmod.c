@@ -458,11 +458,13 @@ enum {
 };
 
 int init_module(const char *name, const struct new_module *);
+#if ENABLE_FEATURE_2_4_MODULES && ENABLE_FEATURE_2_6_MODULES
 int query_module(const char *name, int which,
 				 void *buf, size_t bufsize, size_t * ret)
 {
 	return -1;
 }
+#endif
 
 /* Values for query_module's which.  */
 enum {
