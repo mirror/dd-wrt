@@ -28,6 +28,7 @@ typedef u8 macaddr[ETH_ALEN];
 struct mac_acl_entry {
 	macaddr addr;
 	int vlan_id;
+	int mask;
 };
 
 struct hostapd_radius_servers;
