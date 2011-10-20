@@ -836,11 +836,9 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 
 		if (conf->rsn_pairwise & WPA_CIPHER_CCMP)
 			wps->encr_types |= WPS_ENCR_AES;
-		if (conf->rsn_pairwise & WPA_CIPHER_TKIP)
+		else if (conf->rsn_pairwise & WPA_CIPHER_TKIP)
 			wps->encr_types |= WPS_ENCR_TKIP;
-	}
-
-	if (conf->wpa & WPA_PROTO_WPA) {
+	} else if (conf->wpa & WPA_PROTO_WPA) {
 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK)
 			wps->auth_types |= WPS_AUTH_WPAPSK;
 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_IEEE8021X)
@@ -848,7 +846,7 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 
 		if (conf->wpa_pairwise & WPA_CIPHER_CCMP)
 			wps->encr_types |= WPS_ENCR_AES;
-		if (conf->wpa_pairwise & WPA_CIPHER_TKIP)
+		else if (conf->wpa_pairwise & WPA_CIPHER_TKIP)
 			wps->encr_types |= WPS_ENCR_TKIP;
 	}
 

@@ -491,6 +491,17 @@ void hostapd_config_free(struct hostapd_config *conf)
 }
 
 
+static void clear_mac_bytes(u8 *addr, int mask)
+{
+	int clr_bytes = mask / 8;
+
+	if (clr_bytes > 0)
+		memset(addr + ETH_ALEN - clr_bytes, 0, clr_bytes);
+
+	if (mask % 8)
+		addr[ETH_ALEN + clr_bytes - 1] &= ~((1 << (mask % 8)) - 1);
+}
+
 /**
  * hostapd_maclist_found - Find a MAC address from a list
  * @list: MAC address list
@@ -505,9 +516,22 @@ int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
 			  const u8 *addr, int *vlan_id)
 {
 	int start, end, middle, res;
+	u8 addr1[ETH_ALEN], addr2[ETH_ALEN];
 
 	start = 0;
 	end = num_entries - 1;
+
+	while (end >= 0 && list[end].mask) {
+		memcpy(addr1, addr, ETH_ALEN);
+		memcpy(addr2, list[end].addr, ETH_ALEN);
+		clear_mac_bytes(addr1, list[end].mask);
+		clear_mac_bytes(addr2, list[end].mask);
+
+		if (!memcmp(addr1, addr2, ETH_ALEN))
+			return 1;
+
+		end--;
+	}
 
 	while (start <= end) {
 		middle = (start + end) / 2;
