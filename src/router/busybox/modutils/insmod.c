@@ -4164,7 +4164,11 @@ int insmod_main(int argc, char **argv)
 	/* Find current size of the module */
 	m_size = obj_load_size(f);
 
-	m_addr = -1;//create_module(m_name, m_size);
+#if ENABLE_FEATURE_2_4_MODULES && ENABLE_FEATURE_2_6_MODULES
+	m_addr = -1;
+#else
+	m_addr = create_module(m_name, m_size);
+#endif
 	if (m_addr == (ElfW(Addr))(-1)) switch (errno) {
 		case EEXIST:
 			bb_error_msg_and_die("a module named %s already exists", m_name);
