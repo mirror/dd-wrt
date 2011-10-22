@@ -509,8 +509,12 @@ int internal_getRouterBrand()
 	setRouter("SuperGerry");
 	return ROUTER_SUPERGERRY;
 #elif HAVE_LAGUNA
-	char *filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-adapter/i2c-0/0-0050/eeprom";	/* bank2=0x100                                                                                           */
+	char *filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-0/0-0050/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
+	if (!file) {
+	    filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-adapter/i2c-0/0-0050/eeprom";	/* bank2=0x100 older kernel */
+		file = fopen(filename, "r");
+	}
 	if (file) {
 		fseek(file, 0x130, SEEK_SET);
 		char gwid[9];
@@ -527,7 +531,7 @@ int internal_getRouterBrand()
 			return ROUTER_BOARD_GW2388;
 		}
 	} else {
-		setRouter("Gateworks Laguna");
+		setRouter("Gateworks Laguna UNKNOWN");
 		return ROUTER_BOARD_GW2388;
 
 	}
