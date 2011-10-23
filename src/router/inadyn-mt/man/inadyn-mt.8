@@ -1,0 +1,336 @@
+.\"
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.\" Copyright 2004, by Shaul Karl. You may modify and distribute 
+.\" this document for any purpose as long as this copyright notice
+.\" remains intact.
+.\"
+
+.TH inadyn-mt 8 "September, 2009" "Linux applications" "System management commands"
+.SH NAME
+inadyn-mt \- a client for open DNS servers.
+.SH SYNOPSIS
+.B inadyn-mt
+[\-h | \-\-help] 
+[\-u | \-\-username 
+.I username] 
+[\-p | \-\- password 
+.I password] 
+[\-a | \-\-alias 
+.I alias[,hash] [dual | coupled | ip4 | ip6 | auto]]
+[\-\-input_file 
+.I path/name] 
+[\-\-ip_server_name
+.I server[:port] url]
+[\-\-dyndns_server_name
+.I server[:port]]
+[\-\-dyndns_server_url
+.I url]
+[\-\-dyndns_system
+.I service] 
+[\-\-proxy_server[:port]
+.I proxy[:port]] 
+[\-\-update_period
+.I ms] 
+[\-\-update_period_sec
+.I sec] 
+[\-\-forced_update_period
+.I sec] 
+[\-\-log_file
+.I path/name] 
+[\-\-background] 
+[\-\-verbose
+.I level] 
+[\-\-iterations
+.I iterations] 
+[\-\-syslog]
+[\-\-change_persona 
+.I uid[:gid]]
+
+.SH DESCRIPTION
+.B inadyn-mt
+is a client for `open' name servers. That is, it allows the user's
+machine to have an Internet recognized name by transferring some
+control over a name server not managed by the user. Some of the 
+services that are offered by those open name servers are free of 
+charge, and work even when the client machine does not have a static
+IP.  Supports both IPv4, and IPv6 addresses.
+
+Supported name servers are:
+.TP
+http://www.dyndns.org
+.TP
+http://freedns.afraid.org,
+.TP
+http://www.zoneedit.com,
+.TP
+http://www.no-ip.com,
+.TP
+http://www.easydns.com,
+.TP
+http://www.3322.org,
+.TP
+http://www.sitelutions.com,
+.TP
+http://www.tzo.com,
+.TP
+http://www.dnsomatic.com,
+.TP
+http://www.tunnelbroker.net,
+.TP
+http://www.dynsip.org
+.TP
+http://www.dhis.org
+.TP
+http://www.majimoto.net
+.TP
+http://www.zerigo.com
+
+.PP
+Its basic operation is to periodically check whether the actual IP
+of the client machine is the same one that is recorded in the name
+server, and update the name server records when there is a mismatch.
+
+For IPv6 addresses, see below, alias, and ip_server_name options.
+
+Also, network status can be checked at a user specified interval,
+and audible alerts issued in event of network status down.
+
+.SS OPTIONS
+.TP
+.I "\-h, \-\-help"
+Print a summary of the options to
+.B inadyn-mt
+and exit.
+.TP
+.I "\-u, \-\-username"
+The username, if applicable. This might be referred to as hash.
+.TP
+.I "\-p, \-\-password"
+The password, if applicable.
+.TP
+.I "\-a, \-\-alias[,hash] [dual | coupled | ip4 | ip6 | auto]"
+A host name alias, optional comma delimited hash, and optional ip version, default auto. This option
+can appear multiple times, for each domain that has the same IP.
+
+For alias ip type, it may often suffice to use either dual, for dual stack clients updating a given alias to both 
+IPv4, and IPv6 addresses, or ip4 when the client is dual stack and requires at least one IPv4 only address update.  
+Leaving ip type up to the ip server (see ip_server_name option, below) may be also, in many instances, sufficient 
+(auto alias ip type, which is the default).
+
+Use ip type coupled instead of dual in cases where ip server update specification requires dual stack updates in a single
+update request, i.e., both ip address types may be sent in a comma delimited list fashion.
+
+.TP
+.I \-\-input_file
+The file name that contains inadyn-mt command options exactly as specified in
+the command line syntax (adds to those already present in the cmd
+line). The default configuration file name is '/etc/inadyn.conf'. It is
+looked at automatically if
+.B inadyn-mt
+is called without any command line options. The format is as expected
+for a **NIX config   the hash character is used to comment entire
+lines. Spaces are ingored. The long options may be specified without 
+\-\- if placed at the beginning of the line.
+.TP
+.I \-\-ip_server_name[:port] url
+The client IP is detected by calling 'url' from this 'ip_server_name:port'.
+
+Choice of ip server name parameter option can determine what type of address is updated.
+To update an IPv6 address, simply choose an ip server that supports IPv6, such as, ip6.me /, 
+myip.dk /, dhis.org /, among others.  And, of course, dynamic dns server should be
+set to one that supports IPv6.
+.TP
+.I \-\-dyndns_server_name[:port]
+The server that receives the update DNS requests. When no proxy is specified it is sufficient to set the
+dyndns_system so that the default servers will be taken. The option is useful for generic DynDNS services that support HTTP update.
+.TP
+.I \-\-dyndns_server_url name
+The update path inside the DynDNS server. 
+.TP
+.I \-\-dyndns_system
+An optional DNS service. For 
+
+http://www.dyndns.org
+
+the acceptable services are one of dyndns@dyndns.org, statdns@dyndns.org
+or custom@dyndns.org. 
+
+There is only one acceptable service for http://freedns.afraid.org, which is default@freedns.afraid.org. 
+
+Other services are: default@zoneedit.com, default@no-ip.com, default@easydns.com, dyndns@3322.org, default@sitelutions.com, default@dnsomatic.com, ipv6tb@he.net, default@tzo.com, default@dynsip.org, default@dhis.org, default@majimoto.net, default@zerigo.com, custom@http_svr_basic_auth. The default service is dyndns@dyndns.org, which is believed to be used by most users, at least initially.
+.TP
+.I \-\-proxy_server[:port]
+An http proxy server name and port. The default is none.
+.TP
+.I \-\-update_period
+How often the IP is checked. This value denotes millisecond (There are
+1000 milliseconds in one second). 30000..864000000.  Default is about 10 min.
+maximum is 10 days.
+.TP
+.I \-\-update_period_sec
+How often the IP is checked. Here the value denotes seconds. 30..864000.  The default is about 10 min.
+The maximum value is 10 days.
+.TP
+.I \-\-forced_update_period
+How often the IP should be updated even if it is not changed. The time should be given in seconds.
+30 sec..30 days.  Default, 30 days.
+.TP
+.I \-\-forced_update_adjust
+Fine timer control.  Slow, or speed timer between -4..5.  Default, 0.
+.TP
+.I \-\-log_file
+The name, including the full path, of a log file.
+.TP
+.I \-\-cache_dir
+Directory to which ip, and time update files are written.  Defaults to /tmp on **NIX systems.
+.TP
+.I \-\-background
+run in background. Output is sent to the UNIX syslog facilities or to a log file, if one was specified.
+.TP
+.I \-\-verbose
+Set the debug level, which is an integer between 0 to 5.
+.TP
+.I \-\-iterations
+Set the number of DNS updates. The default is 0, which means infinity.
+.TP
+.I \-\-syslog
+Explicitly sending the output to a syslog like file, such as /var/log/messages.
+.TP
+.I \-\-change_persona uid[:gid]
+After init changes user ID and group ID to the provided ones. This allows dropping unneeded [root] privileges after startup.
+.TP
+.I \-\-retries
+Network comm retry attempts.  0 to 100, default 0.
+.TP
+.I \-\-retry_interval
+Network comm miliseconds retry interval, 0 to 30,000, default 1,000.
+.TP
+.I \-\-retry_pending
+Retry ip update even after network comm retries exhausted,  default on.
+.TP
+.I \-\-retry_pending_interval
+Network comm seconds update retry interval, after retries exhausted.  5 to 3600, default 300.
+.TP
+.I \-\-lang_file
+Language file path, and file name, defaults to either ../inadyn-mt/lang/en.lng, or etc/inadyn-mt/en.lng.  No parameter option gives hard coded defaults.
+.TP
+.I \-\-online_check_url
+srv_name[:port] local_url - URL to reach to confirm online status.
+.TP
+.I \-\-status_interval
+Seconds [30..864000] interval at which to check online status, defaults to 600.
+.TP
+.I \-\-alert_retries
+Network retries before audible network status alerts. [0..100], default 0.
+.TP
+.I \-\-status_offline_interval
+Seconds [0..864000] interval at which to check online status, after offline detected, defaults to 15.
+.TP
+.I \-\-audible
+Audible network status alerts toggle (log output only), default off.
+.TP
+.I \-\-wave_file
+Audible network status alerts wave file path, and file name. defaults to either ../inadyn-mt/extra/wav/alarm.wav, or etc/inadyn-mt/extra/wav/alarm.wav.  [wave loops: 0..100; -1 for infinite] same as wave_loops below -- optional number of times per wave play call to repeat wave file play, default 0.
+.TP
+.I \-\-wave_loops
+Same as wave_file parameter optional parameter -- 0..100; -1 for infinite number of times per wave play call to play wave file.
+.TP
+.I \-\-wave_buff
+Wave file output buffer size control -- integer or float multiple of wave file bytes per sec. [.25..10], default .25.
+.TP
+.I \-\-wave_gain
+gain (amplitude adjust) at which to play audible alert (beware clipping), integer or float. [-10..10], default 10 (0db, no attenuation).
+.TP
+.I \-\-alert_interval
+Time in miliseconds between consecutive audible network status alerts, [0..3600000], default 0.
+.SH "TYPICAL USAGE"
+.SS
+
+http://www.dyndns.org
+
+.TP
+.B inadyn-mt
+ \-u username \-p password \-a my.registered.name
+.TP
+.B inadyn-mt
+\-\-username test \-\-password test \-\-update_period 60000 
+\-\-alias test.homeip.net \-\-alias my.second.domain
+.TP
+.B inadyn-mt
+\-\-background \-u test \-p test \-\-update_period 60000 
+\-\-alias inarcis.homeip.net \-\-alias my.second.domain 
+\-\-log_file inadyn-mt.log
+.SS
+
+http://freedns.afraid.org
+
+.TP
+.B inadyn-mt
+\-\-dyndns_system default@freedns.afraid.org \-a my.registrated.name,hash_from_freedns
+.TP
+.B inadyn-mt
+\-\-update_period 60000 \-\-alias test.homeip.net,hash_for_host1 
+\-a my.second.domain,hash2 \-\-dyndns_system default@freedns.afraid.org
+.PP
+The 'hash' should be extracted from the grab url batch file that can be
+downloaded from the site. A single hashed (base64 encoded) string is 
+preferred upon a username and password pair, apparently to reduce the 
+computational resources that is required on their side. Unfortunately
+the hash can not be computed by inadyn-mt because it requires the index to
+the username record in the freedns database, which is not known. The
+simplest solution seems to be a copy&paste action from the grab url batch
+file offered on their website. When the batch file looks is like
+
+graburl http://freedns.afraid.org/dynamic/update.php?YUGIUGSEIUFGOUIHEOIFEOIHJFEIO=
+
+the hash string, which is what the user should copy and paste, is the 
+string that begins right after the '?' character and ends with the end
+of line. This string shell be used as the username in inadyn-mt command.
+When the user has several names then each name should be followed with
+that name hash string.
+.SH OUTPUT
+.B
+inadyn-mt
+prints a message when the IP is updated.  When the connection goes down it could be that 
+.B inadyn-mt 
+will print some error messages. Those are harmless and should be 
+followed by 'OK' messages after the connection is back up.
+
+.SH Signals
+Any of the SIG_HUP, SIG_INT, SIG_QUIT will cause inadyn-mt to terminate gracefully.
+SIG_USR1 will cause inadyn-mt to update ip, if changed.
+
+.SH "SEE ALSO"
+.SS "Other manual pages"
+The syntax of the optional configuration file is given by
+.BR inadyn-mt.conf(5).
+.SS "Internet resources"
+.B inadyn:
+
+http://www.inatech.eu/inadyn/
+
+
+.B inadyn-advanced:
+
+http://sourceforge.net/projects/inadyn-advanced/
+
+
+.B inadyn-mt:
+
+http://sourceforge.net/projects/inadyn-mt/
+
+
+.SH AUTHOR
+.B inadyn
+was written by Narcis Ilisei, <inarcis2002@hotpop.com>;
+inadyn-advanced, Steve Horbachuk;
+inadyn-mt unicode, other augmentations, Bryan Hoover <bhoover@wecs.com>
+
+This manual page was written by Shaul Karl, <shaul@debian.org>, for the
+.B Debian GNU/Linux
+system, based on the readme.html file that is found in the source.
+
+
+
