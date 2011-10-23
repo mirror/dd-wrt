@@ -1,0 +1,247 @@
+inadyn-mt (02.24.36-1) unstable; urgency=low
+
+  * fixed debug output out of bounds array index bug
+  
+  * fail on partial "coupled" address update attempt
+
+  * default debug output level
+
+  * some minor housekeeping
+
+  * ip type, coupled, cache related update state bug fixed
+
+  * *nix broken pipe signal trapped
+
+  * added ip type, coupled, for comma delimited ip updates
+
+  * option status_interval default changed to 10 minutes
+
+  * changed default ip server
+
+  * changed default online status check url
+
+  * ip type change, cache related update state fixed
+
+  * readme.html IPv6 section Teredo clients comment
+
+  * short version parameters hyphen/defaults parse bug fixed
+
+  * dual ip type max alias increase bug fixed
+
+  * afraid.org update results detection improvements
+
+  * afraid.org dual ip type null hash bug fix/refactor
+
+  * afraid.org update ip address parameter implemented
+
+  * zerigo.com specific return codes, default ip server
+
+  * uninitialized ip type flag fixed
+
+  * reverted command loop design/branching logic restored
+
+  * ip buffer initialization fixed
+
+  * increased max alias to accomodate type, dual
+
+  * added more ip type flow control/bullet proofing
+
+  * dual stack ip4 without ip6 updates allowed
+
+  * forced update triggered on program start-up
+
+  * allow no user, password, as well neither or both
+
+  * ip version related refactoring, improvements
+
+  * some documentation additions
+
+  * added alias option ip type parameters
+
+  * Windows version socket layer start/stop bug fixed
+
+  * one off utf file type check memory error fixed
+
+  * abstracted invalid socket value check, Windows version
+
+  * restored invalid socket checks on object shutdown
+
+  * fixed ip parser fail mode (potential) memory leak
+
+  * man file updates
+
+  * "custom" IPv4 updates to dual stack auto detecting servers
+
+  * zerigo.com dynamic dns server added
+
+  * fixed manimoto.com update request format
+
+  * some minor "class" hierarchy balancing
+
+  * IPv6 fallback to IPv4 failure corrected
+
+  * some more "class" hierarchy cleanup/improvement
+
+  * some default option parameter values changes
+
+  * man files, online help, readme.html updates, sync
+
+  * added missing OOP superclass defines
+
+  * completed IPv6 architectural shift
+
+  * added dhis.org dynamic dns server
+
+  * added majimoto.net dynamic dns server
+
+  * added ip parameter to sitelutions.com updates
+
+  * changed status, and update interval defaults to more server friendly 10 minutes
+
+  * IPv6 dynamic dns updates
+
+  * zoneedit.com config invalid user, pass detected
+
+  * uninitialized timer structure fixed
+
+  * unicode user, pass, dynamic allocation
+
+  * main loop clean-up
+
+  * minor forced update period improvements
+
+  * added SIG_USR1 to man file
+
+  * corrected man file, system_service reference
+
+  * libao data structure future proofing
+
+  * potential libao, main init bug fixed
+
+  * ALL aliases update on forced update
+
+  * faulty *nix audio library parameter init fixed
+
+  * several faulty type safe variable inits fixed
+
+  * fixed multiple alias forced update
+
+  * some formatting, and minor code clean up
+
+  * TIME_WAIT socket linger removed
+
+  * added v.02.20.32 server support additions to help file
+
+  * man file formatting
+
+  * corrections to present (changelog) file
+
+  * fixed zoneedit.com bad config false positive
+
+  * added troglobit.com's ipv6tb, dnsomatic, tzo.com, milkfish sip
+
+  * implemented tzo.com's update okay response detect
+
+  * implemented tzo.com's update config error detect
+
+  * implemented milkfish sip update config error detect
+
+  * some minor code clean up
+
+  * multiple alias ip cache update correctly
+
+  * cvs updated supporting multiple accounts
+
+  * online status check socket resource leak fixed
+
+  * status offline interval help output entry corrected
+
+  * successful updates repeated with pendings bug fixed
+
+  * unchanged ip forced update succeeds on first alias update
+
+  * no configure/restart on multi alias single config fail
+
+  * pending update ip change not detected fixed
+
+  * stray ip cache file update removed
+
+  * freedns.org client config fail false positive fixed
+
+  * multi alias related forced update period reset bug fixed
+
+  * intiial update bounded forced update if pending off
+
+  * fixed multiple alias update break on first alias update fail
+
+  * ip update files cache updated on all alias success only
+
+  * no command loop forced update break for bad config
+
+  * forced update failure fallback to update period retry
+
+  * retry_pending_interval changed to seconds, default 900
+
+  * man, readme.html, help screen updates, corrections
+
+  * update, forced update, pending update coordinated
+
+  * unsigned integer overflow checked
+
+  * readme.html changes log version entry fixed
+
+  * --disable-threads related compiler error fixed
+
+  * update period cache file ignored bug fixed
+
+  * update failure config implicit inverted to explicit
+
+  * forced_update_period checked inside update loop
+
+  * forced_update_period input parameter range check
+
+  * fixed freedns.afraid.org fail on user id params bug
+
+  * added support for Windows processed console output
+
+  * repeated config error log priority treated lower
+
+  * improperly initialized timer fixed
+
+  * several pending update logic errors fixed
+
+  * retry_interval param set to retries param fixed
+
+  * --retry_pending parameter added
+
+  * --retry_pending_interval added
+
+  * ip update debug output
+
+  * too many net retries before fail bug fix
+
+  * iterations/config response iterations fixed
+
+  * more update loop fail safety
+
+  * quoted option parameters
+
+  * --online_check_url parameter
+
+  * better audible alert exit condition reponsiveness
+
+  * iterations over counting fixed
+
+  * --wave_gain parameter changed to float
+
+  * minor maintenance
+
+  * updated present changelog file
+
+  * threads_wrapper_init undefined reference compile error fixed
+
+  * Improved mutex creation in threads_wrapper.c
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- bhoover <bhoover@wecs.com>  Fri, 04 Jun 2010 20:23:01 -0400
