@@ -1,0 +1,1274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>inadyn-mt - Dynamic DNS client based on inadyn, and inadyn Advanced</title>
+</head>
+<body>
+<p><b>inadyn-mt - Simple DYNAMIC DNS client.<br>
+</b></p>
+<p><b>Version 02.24.36, March 2011<br>
+</b></p>
+<p><b>INADYN Advanced Help<br>
+</b></p>
+<p>INADYN Advanced is a dynamic DNS client. That is, it maintains the IP address
+of a host name. It
+periodically checks whether the IP address stored by the DNS server is
+the real current address of the machine that is running INADYN Advanced.<br><br>
+
+<b>inadyn-mt</b> contains some substantive bug fixes, and feature additions, including built in 
+Windows service installation and management, connection event trapping, unicode, additional dynamic dns servers support, 
+IPv6, and a few other things.<br><br>
+
+inadyn-mt source, and binaries can be found at 
+<a href=http://sourceforge.net/projects/inadyn-mt/ target=_blank>http://sourceforge.net/projects/inadyn-mt/</a><br>
+
+</p>
+
+<p><b>Download</b></p>
+
+<table>
+<tr>
+    <td>
+
+<p><a href=http://sourceforge.net/projects/inadyn-mt/ target=_blank>http://sourceforge.net/projects/inadyn-mt/</a><br><br>
+
+Older versions:<br>
+
+<p><a href="http://www.inatech.eu/inadyn/">Original Inadyn</a><br>
+
+
+</p>
+  
+    </td>        
+
+</tr>
+</table> 
+
+
+<p><b>Features:</b></p>
+<ul>
+  <li>supports the following dynamic DNS services:</li>
+  <li><a href=http://www.dyndns.org>dyndns.org</a> (in all three flavors: dynamic, static, custom)</li>
+  <li><a href=http://freedns.afraid.org>freedns.afraid.org</a></li>
+  <li><a href=http://www.zoneedit.com>zoneedit.com</a></li>
+  <li><a href=http://www.no-ip.com>no-ip.com</a></li>
+  <li><a href="http://www.3322.org">3322.org</a></li>
+  <li><a href="http://www.easydns.com">easydns.com</a></li>
+  <li><a href="http://www.sitelutions.com">sitelutions.com</a></li>
+  <li><a href="http://www.dnsomatic.com">dnsomatic.com</a></li>
+  <li><a href="http://ipv6tb.he.net">ipv6tb.he.net</a></li>
+  <li><a href="http://www.tzo.com">tzo.com</a></li>
+  <li><a href="http://www.dynsip.org">dynsip.org</a></li>
+  <li><a href="http://www.dhis.org">dhis.org</a></li>
+  <li><a href="http://www.majimoto.net">majimoto.net</a></li>
+  <li><a href="http://www.zerigo.com">zerigo.com</a></li>
+  <li>maintains multiple aliases of the same IP address</li>
+  <li>supports multiple dynamic dns servers on Windows as well as Linux, BSD</li>
+  <li>supports access via http proxy</li>
+  <li>does not perform unnecessary updates</li>
+  <li>runs as a service (*nix, Windows 2000/XP sans MS utilities)</li>
+  <li>runs as a console application</li>
+  <li>Separate Windows service log file parameter option</li>
+  <li>updates the correct IP address even behind a NAT router</li>
+  <li>Windows RAS event trapping ip update trigger</li>
+  <li>SIGUSR1 network status event trapping ip update trigger</li>
+  <li>unicode</li>
+  <li>separate configurable network status test thread</li>
+  <li>audible alert on network status down</li>
+  <li>compiler options for sound, threads, debug output, or use ./makefile-deprecated</li>
+  <li>IPv6 dynamic dns updates</li>
+</ul>
+
+<i>Thanks to:<br>
+Thomas Morgan of zerigo.com for IPv6 parameter suggestions, and IPv6 related testing.<br>
+Roman, for prompting me to continue working on the project after having set aside a while.<br>
+Sander Jonkers for helping to track down afraid.org null hash, IPv6 address parameter bugs, and prompting update results detection improvements.<br>
+And everyone else who has taken the time to report bugs, make feature requests, suggestions.</i><br><br>
+
+<b>Installation</b><br><br>
+
+<b>&nbsp;&nbsp;&nbsp; For Windows:</b><br>
+
+<ol>
+
+<li>
+As of version 02.00.00 inadyn-mt, MS service related files aren't needed (but, still work if desired).  The 
+program can be started as a service (Windows NT) without these files, either from the command line, or the Windows service interface 
+after command line installation.  The service is named 'inadyn-mt'.<br><br>
+
+<b>Install</b><br><br>
+
+inadyn-mt -i ["My Service Description"]<br><br>
+
+Optionally, a service may be installed with a specified name (defaults to inadyn-mt), providing for multiple service instances, useful 
+for multiple dynamic dns server accounts (just point AppParamerters registry entry to corresponding configuration file,
+with the --input_file (see inadyn-mt program parameters below) parameter):<br><br>
+
+inadyn-mt -i ["My Service Description"] -n &#60;service_name&#62;<br><br>
+
+Installation gives a default registry setup.  The registry entry can be found at:<br><br>
+
+HKEY_LOCAL_MACHINE\CurrentControlSet\Control\Services\inadyn-mt<br><br>
+
+Edit the Parameters\AppParameters default string value to customize to your dynamic dns system, and preferences.  See below
+for a full list of parameters, or simply type the program name, with no commands to see a listing.<br><br>
+
+Post installation configuration can also be done using the registry files method listed in step 2 below (edit the "mt" registry 
+file for inadyn-mt -i install method).<br><br>
+
+<b>Start</b><br><br>
+
+inadyn-mt -s<br><br>
+
+Or:<br><br>
+
+inadyn-mt -s -n &#60;service_name&#62;<br><br>
+
+(The service name (-n) parameter may be similarly applied to all service commands.)<br><br>
+
+Assuming a configuration file of say, d:\inadyn-mt\inadyn-mt.cfg, the service can be installed, and started 
+from the command line, with:<br><br>
+
+inadyn-mt -i ["My Service Description"] -s --input_file d:\inadyn-mt\inadyn-mt.cfg<br><br>
+
+The optional service description command option is commited to Windows registry.  Other parameters are not commited to 
+the Windows registry, and still need setting up as listed in step 2 (edit the "mt" registry file for inadyn-mt -i install 
+method), or by editing installation registry defaults directly, as described in Install section above.<br><br>
+
+Command line parameters override registry, parameters.  Configuration file parameters are inserted
+at point configuration file command appears.<br><br>
+
+<b>Exit</b><br><br>
+
+inadyn-mt -e<br><br>
+
+<b>Uninstall</b><br><br>
+
+inadyn-mt -x<br><br>
+
+<b>Restart</b> (if the service is not running, this command will start it):<br><br>
+
+inadyn-mt -r<br><br>
+
+If it appears commands are not carried out according to parameters given on command line, try closing other service 
+related programs such as the Windows Services interface.<br><br>
+
+See inadyn-mt\bin\win32 for registry, and batch files named corresponding to the present program version, and function
+corresponding to registry, and batch files mentioned in the present html page.  The batch files are convenient for service
+installation, or removal without the command line -- just double click.<br><br>
+
+<b>Windows 95/98</b><br><br>
+
+This program runs on Windows 95/98 with no need of recompilation.<br><br>
+
+For unicode compatibility on Windows 95/98, in MS VC6 Project Settings, C/C++ tab, define 
+preprocessor definition, UNICOWS, link with unicows.lib, and place the dll, unicows.dll in 
+program executable directory.<br><br>
+
+  </li>
+  <li>Edit the registry file with the <span style="font-weight: bold;">correct
+name for your service </span>(e.g. 'configure_inadyn-mt_service_<span
+ style="font-weight: bold;">dyndns</span>.reg') in order to pass your
+username,
+password, aliases, and other params to inadyn-mt. After you have finished
+double click on the reg
+file.
+    <p>Notes:</p>
+    <ul>
+      <li>The correct path to inadyn-mt binary has to be entered in the
+config file.</li>
+      <li>The log file is located in %System%\system32 by default</li>
+      <li>Beware of the double backslashes '\\' and the correct paths!<br>
+      </li>
+    </ul>
+    <p>After you have finished double click on the reg file.</p>
+  </li>
+  <li>Go to ControlPanel/AdministrativeTools/Services/inadyn-mt and START the service. Also make sure that the startup 
+	mode is 'automatic'.</li>
+</ol>
+&nbsp;&nbsp;&nbsp;<b>For Linux:</b><br>
+</b>
+
+<pre>
+	(As of inadyn-mt version 02.16.01-beta, regular makefile is deprecated for automake.  makefile is still maintained, 
+	but must be copied from makefile-deprecated to makefile in order to use.)
+</pre>
+
+<ol>
+  <li><b><span style="font-weight: bold;"><span
+ style="font-weight: bold;"><span style="font-weight: bold;"></span></span></span></b><b><span
+ style="font-weight: bold;"><span style="font-weight: bold;"><span
+ style="font-weight: bold;"></span></span> </span></b>No
+installation necessary. The inadyn-mt executable found in <span
+ style="font-style: italic;">bin/linux/inadyn-mt</span> is self contained
+and can be launched at any time<br>
+  </li>
+</ol>
+<b>&nbsp;&nbsp;&nbsp;  For MAC </b> (thanks to Rob.S) <br>
+<ol><li>
+Put the binary somewhere in path (e.g. ~/bin), <br>
+Start it with the following AppleScript saved as an Application and dragged to <br>
+System Preferences -> Accounts -> Login Items:<br>
+
+<p>    do shell script "~/bin/inadyn-mt -a HOST.dyndns.org -u USER -p PASSWORD"</p><br>
+
+Alternatively, one can put it in the system startup scripts. </p>
+</li>
+</ol>
+
+
+<b>&nbsp;&nbsp;&nbsp; For other operating systems:<br>
+</b>
+<ol>
+  <li><b><span style="font-weight: bold;"><span
+ style="font-weight: bold;"><span style="font-weight: bold;"></span></span></span></b><b><span
+ style="font-weight: bold;"><span style="font-weight: bold;"><span
+ style="font-weight: bold;"></span></span></span></b>Adjust the
+makefile - change the architecture to yours. (e.g. solaris)</li>
+  <li>Recompile&nbsp; - make clean all<br>
+  </li>
+</ol>
+
+<p><b>Command line options</b></p>
+<p>They are automatically printed if inadyn-mt gets wrong parameters or if
+--help option is
+used.<br>
+</p>
+<p><i>Typical usage</i>:</p>
+<p style="margin-left: 0pt;">-for dyndns.org system:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;inadyn-mt -u username -p password -a my.registered.name<br>
+-for freedns.afraid.org:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;inadyn-mt --dyndns_system
+default@freedns.afraid.org -a my.registered.name,hash -a
+anothername,hash2<br>
+&nbsp;&nbsp;&nbsp;&nbsp;'hash' is extracted from the grab url batch
+file that is downloaded
+from freedns.afraid.org<br>
+</p>
+<p><i>Parameters</i>:<br>
+</p>
+<p style="margin-left: 20px;">'--help': help<br>
+'-h': help<br>
+</p>
+<p style="margin-left: 20px;">'--username &#60;name&#62;': your membername/hash<br>
+'-u &#60;name&#62;': your membername/hash<br>
+</p>
+<p style="margin-left: 20px;">'--password &#60;password&#62;': your password. Optional.<br>
+'-p &#60;password&#62;': your password. Optional.<br>
+</p>
+<p style="margin-left: 20px;">'--alias &#60;alias host name&#62;[,hash] [dual | coupled | ip4 | ip6 | auto]': alias host name, optional comma delimted hash, and optional ip version, default auto. This option
+can appear multiple times.<br>
+'-a &#60;alias host name&#62;[,hash] [dual | coupled | ip4 | ip6 | auto]': alias host name, optional comma delimited hash, and optional ip version, default auto. This option
+can appear multiple times.<br>
+
+<p style="margin-left: 40px;">For alias ip type, it may often suffice to use either dual, for dual stack clients updating a given alias to both 
+IPv4, and IPv6 addresses, or ip4 when the client is dual stack and requires at least one IPv4 only address update.  
+Leaving ip type up to the ip server (see ip_server_name option, below) may be also, in many instances, sufficient 
+(auto alias ip type, which is the default).<br><br>
+
+Use ip type coupled instead of dual in cases where ip server update specification requires dual stack updates in a single
+update request, i.e., both ip address types may be sent in a comma delimited list fashion.</p>
+
+</p>
+<p style="margin-left: 20px;">'--debug': &#60;#&#62; - debug level 1..7 (higher = more output)<br>
+'-d': debug level 1..7 (higher = more output).<br>
+</p>
+<p style="margin-left: 20px;">'-i [quoted service description] [-n &#60;service name&#62;]': install service<br>
+</p>
+<p style="margin-left: 20px;">'-s [-n &#60;service name&#62;]': start service<br>
+</p>
+<p style="margin-left: 20px;">'-e [-n &#60;service name&#62;]': exit service<br>
+</p>
+<p style="margin-left: 20px;">'-r [-n &#60;service name&#62;]': restart service<br>
+</p>
+<p style="margin-left: 20px;">'-x [-n &#60;service name&#62;]': remove service<br>
+</p>
+<p style="margin-left: 20px;">'--input_file &#60;path/file&#62;': input file name that
+contains inadyn-mt command options (adds to those already present in the cmd line).
+The default configuration file name is '/etc/inadyn-mt.conf'. It is only
+used if inadyn-mt is called without any command line options. This allows
+inadyn-mt to be called without any arguments. The format is as expected
+for a **NIX config&nbsp; file. See below for details.<br>
+</p>
+<p style="margin-left: 20px;">'--ip_server_name &#60;name&#62;[:port] &#60;url&#62;': The client
+IP is detected by calling 'url' from this 'ip_server_name:port'.<br>
+
+<p style="margin-left: 40px;">Choice of ip server name parameter option can determine what type of address is updated.
+To update an IPv6 address, simply choose an ip server that supports IPv6, such as, ip6.me /, myip.dk /, dhis.org /, among 
+others.  And, of course, dynamic dns server should be set to one that supports IPv6.  See IPv6 section below for more 
+information.<br>
+</p>
+
+</p>
+<p style="margin-left: 20px;">'--dyndns_server_name &#60;name&#62;[:port]': dynamic dns server name, and optional port.</name>
+</p>
+<p style="margin-left: 40px;">The server that receives the update DNS
+request.<br>
+If no proxy is wanted, then it is enough to set the dyndns system. The default servers will be taken.<br>
+</p>
+<p style="margin-left: 20px;">'--dyndns_server_url &#60;url&#62;': full URL relative to DynDNS server root.
+</p>
+<p style="margin-left: 20px;">'--dyndns_system &#60;NAME&#62;': optional DYNDNS service type. SHOULD be one of the following:</p>
+<p style="margin-left: 40px;">-For dyndns.org DNS system: dyndns@dyndns.org OR statdns@dyndns.org OR custom@dyndns.org.<br>
+-For freedns.afraid.org DNS system: default@freedns.afraid.org .<br>
+-For the servcie ofered by zoneedit.com: default@zoneedit.com. .<br>
+-For no-ip.com: default@no-ip.com<br>
+-For easydns.com: default@easydns.com<br>
+-For 3322.org: dyndns@3322.org<br>
+-For sitelutions.com:  default@sitelutions.com<br>
+-For dnsomatic.com:  default@dnsomatic.com<br>
+-For tunnelbroker.net:  ipv6tb@he.net<br>
+-For tzo.com:  default@tzo.com<br>
+-For dynsip.org:  default@dynsip.org<br>
+-For dhis.org:  default@dhis.org<br>
+-For majimoto.net:  default@majimoto.net<br>
+-For zerigo.com:  default@zerigo.com<br>
+-For generic DNS system: custom@http_svr_basic_auth<br>
+DEFAULT value is intended for default service at dyndns.org: dyndns@dyndns.org<br>
+</p>
+
+<p style="margin-left: 20px;">
+'--proxy_server &#60;name[:port]&#62;': the http proxy server name and port. Default is none.<br>
+'--update_period &#60;#&#62;': how often the IP is checked. The period is in [ms]. 30000..864000000.  Default is about 10 min. Max is 10 days<br>
+'--update_period_sec &#60;#&#62;': how often the IP is checked. The period is in [sec]. 30..864000.  Default is about 10 min. Max is 10 days<br>
+'--forced_update_period &#60;#&#62;': how often, in seconds, the IP is updated even if it is not changed. 30 sec..30 days, default, 30 days.<br>
+'--log_file &#60;path/file&#62;': log file path and name<br>
+'--background': runs in background.&nbsp; Output to syslog or to log file [if specified].<br>
+'--verbose &#60;#&#62;': set dbg level. 0 to 5<br>
+'--iterations &#60;#&#62;': set the number of DNS updates. Default is 0, which means infinity.<br>
+'--syslog': explicit set output to syslog. (e.g. /var/log/messages). Works on **NIX systems only.<br>
+'--change_persona &#60uid[:gid]&#62;': After init changes user ID and group ID to the provided ones. This allows dropping unneeded [root] privileges after startup. Works for **NIX only.<br>
+'--exec &#60;command&#62;': external command to exec after an IP update. Include the full path.<br> 
+'--cache_dir &#60;path&#62;': cache directory name. (e.g. /tmp/ddns). Defaults to /tmp on **NIX systems.<br>
+'--wildcard': enable domain wildcarding  for dyndns.org, 3322.org, or easydns.com.<br>
+'--retries &#60;#&#62;': network comm retry attempts.  0 to 100, default 0.<br>
+'--retry_interval &#60;#&#62;': network comm miliseconds retry interval.  0 to 30,000, default 1,000.<br>
+'--retry_pending': retry ip update even after network comm retries exhausted,  default on.<br>
+'--retry_pending_interval &#60;#&#62;': network comm seconds update retry interval, after retries exhausted,  5 to 3600, default 300.<br>
+'--lang_file &#60;path/file&#62;':  [language file path, and file name]. defaults to either ../inadyn-mt/lang/en.lng, or /etc/inadyn-mt/en.lng.  No parameter option gives hard coded defaults<br>
+'--online_check_url &#60;srv_name[:port] url&#62;': server name, optional port, and url to reach to confirm online status.<br>
+'--status_interval &#60;#&#62;': seconds [30..864000] interval at which to check online status, default 600.<br>
+'--alert_retries &#60;#&#62;':  network retries before audible network status alerts. [0..100], default 0.<br>
+'--status_offline_interval &#60;#&#62;': seconds [5..864000] interval at which to check online status, after offline detected, default 15.<br>
+'--audible':  audible network status alerts toggle.  default off.<br> 
+'--wave_file &#60;file/path&#62;':  audible network status alerts wave file path, and file name. defaults to either ../inadyn-mt/extra/wav/alarm.wav, or etc/inadyn-mt/extra/wav/alarm.wav [wave loops: 0..100; -1 for infinite] same as wave_loops below -- optional number of times per wave play call to repeat wave file play, default 0.<br>
+'--wave_loops &#60;#&#62;': same as wave_file parameter optional parameter -- 0..100 or -1 for infinite number of times per wave play call to repeat wave file play, default 0.<br>
+'--wave_buff &#60;#&#62;':  wave file output buffer size control -- integer or float multiple of wave file bytes per sec. [.25..10], default .25.<br>
+'--wave_gain &#60;#&#62;':  gain (amplitude adjust) at which to play audible alert (beware clipping), integer or float. [-10..10], default 10 (0db, no attenuation).<br>
+'--alert_interval &#60;#&#62;':  time in miliseconds between consecutive audible network status alerts. [0..3600000], default 0.<br>
+
+</p>
+<p style="margin-left: 0pt;"> <b><i>SPECIAL NOTE: Cache file :</i></b><br>
+  There are two cache files: inadyn_time.cache and inadyn_ip.cache. They store the time and IP address when an update last occurred. Under **NIX systems, the cache directory defaults to /tmp, under windows it defaults to the directory where inadyn-mt.exe was launched. Both of these cache files must be maunally deleted if you ever change your dyndns provider. </p>
+
+<p style="margin-left: 0pt;"><b><i>Example usage:</i></b><br>
+  
+  1. Update every minute, in console mode, for a dyndns.org system. <br>
+  inadyn-mt --username test --password test --update_period 60000 --alias
+  test.homeip.net --alias my.second.domain<br>
+  <br>
+  
+  2. Update every minute, in demon mode (background task), with log file, of an dyndns.org address: <br>
+  inadyn-mt --background -u test -p test --update_period 60000 --alias
+  inarcis.homeip.net --alias my.second.domain --log_file
+  inadyn_srv.log<br>
+  <br>
+  
+  
+  3. Update every minute, in daemon mode, with configuration read from file of an address from freedns.afraid.org <br>
+  
+  Config file (can be placed anywhere, but in linux is convenient in default location: /etc/inadyn-mt.conf<br>
+  Content of cfg file:<br>
+  
+  --update_period 60000 <br>
+  --alias test.homeip.net,hash_for_host1  <br>
+  --log_file /var/log/inadyn.log <br>
+  --change_persona 10012 #to change to another user id after init. (less rights, more secure)
+  <br>
+  Launching of inadyn-mt does not need any params. It looks for /etc/inadyn.config
+  <br>
+  <br>
+  4. Freedns update in console <br>
+  inadyn-mt --update_period 60000 --alias test.homeip.net,hash_for_host1 -a
+  my.second.domain,hash2 --dyndns_system default@freedns.afraid.org</p>
+
+<span style="font-weight: bold;">Configuration file</span><br>
+inadyn-mt can read the very same options which can be present in the
+command line from a configuration file. This feature allows the user to
+write the options only once, and avoids frequent retyping.<br>
+<i>Default configuration file</i> is /etc/inadyn.conf under Unix systems. <br>
+The location of the config file can be given to inadyn-mt via --input_file option <br><br>
+<i>The format</i> :<br>
+- '#' is a comment sign. <br>
+- the long options (those with '--' in front) can also be placed at the
+beginning of the line <span style="font-style: italic;">without</span>
+'--' signs<br>
+</p>
+<p style="margin-left: 0pt;">Examples:<br>
+1.<br>
+#Some comment about&nbsp; inadyn-mt&nbsp; cfg file<br>
+--username test --password test --update_period 60000 --alias
+test.homeip.net --alias my.second.domain<br>
+</p>
+<p style="margin-left: 0pt;">2.<br>
+--username test #user<br>
+--password test <br>
+update_period 60000&nbsp; #some other param without '--'<br>
+alias test.homeip.net <br>
+</p>
+
+<b>LOG Output</b><br><br>
+
+inadyn-mt prints some messages when the ip is updated.<br><br>
+
+When the connection goes down it is possible that inadyn-mt displays some errors. But they should
+be followed by 'OK' messages after the connection is up again.<br><br>
+
+<b>IPv6</b><br><br>
+
+If you wish to update an IPv6 address, choose an ip server that is IPv6 capable -- that is, will 
+return your IPv6 address.  And, you'll need a dynamic dns service that honors IPv6 addresses (you may need to use this 
+program's "custom" type dynamic dns server option -- see preceding documentation).<br><br>
+
+If your IPv6 ip server gives an IPv4 address, it may be because of ip server preference for IPv4.  Choose an IPv6 ip server 
+that gives IPv6 addresses preference.  Some Teredo clients may require precedence adjustment.<br><br>
+
+A few IPv6 --ip_server_name parameter options values known to work with inadyn-mt are ip6.me /, dhis.org /,
+myip.dk /.<br><br>
+
+At this writing, recent inadyn-mt dual stack dynamic dns server support additions are zerigo.com, majimoto.net, and 
+dhis.org.<br><br>
+
+If updating an IPv6 tunnel broker, your selected ip server should <b>not</b> prefer IPv6 addresses (alternatively,
+see alias option, and associated ip type parameters above).  ip4.me, and default ip server, checkip.dyndns.org, at 
+this writing, are two ip servers that return IPv4 addresses.<br><br>
+
+Note that, ideally, ip server response should be relatively small.  At least one, is upwards of 3.5 killobytes.  This program 
+allocates 4.5 killobytes for the response.  Any beyond that, and the program may not be able to parse the ip address 
+contained in the ip server response.<br><br>
+
+<b>Special notes for freedns.afraid.org</b><br><br>
+
+They prefer to get as parameter a single hashed (base64 encoded) value instead username, password.<br><br>
+
+This saves some computing resources apparently. The hash cannot be computed by inadyn-mt because it involves the 
+database index of your username in freedns database which is not known.<br><br>
+
+The simplest solution seems to be the copy-paste action from the graburl batch file offered on their website.<br><br>
+
+<i>Example</i>: The batch file looks like this:<br>
+graburl
+http://freedns.afraid.org/dynamic/update.php?YUGIUGSEIUFGOUIHEOIFEOIHJFEIO=<br>
+The user has to copy and paste the hash value after the '?' until the
+end of line.<br>
+The hash will be used as additional param in --alias option. (see
+typical usage above)<br><br>
+
+<b>Support and Bug reports</b><br>
+<br>
+Since this is free software the support [for free] is quite thin.
+However, the bugs are usually
+fixed very fast if they are reported.<br>
+No active testing is performed so without user feedback the bugs won't
+get discovered and
+fixed.<br>
+<br>
+<i>Contact info</i>:<br>
+Original Inadyn Web: www.inatech.eu/inadyn/<br>
+Inadyn Advanced Web: stevehorbachuk.com<br>
+inadyn-mt: bhoover@wecs.com<br>
+<br>
+<b>HISTORY<br>
+<br>
+</b>
+
+Ver.&nbsp; inadyn-mt 2.24.36 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fix debug output out of bounds array index bug<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fail on partial "coupled" address update attempt<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.34 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - default debug output level<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some minor housekeeping<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.32 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ip type, coupled, cache related update state bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.30 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - *nix broken pipe signal trapped<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.28 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added ip type, coupled, for comma delimited ip updates<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - option status_interval default changed to 10 minutes<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed default ip server<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed default online status check url<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.26 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ip type change, cache related update state bug fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - readme.html IPv6 section Teredo clients comment<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - short version parameters hyphen/defaults parse bug fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - dual ip type max alias increase bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.24 - March 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - afraid.org update results detection improvements<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - afraid.org dual ip type null hash bug fixed/refactored<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - afraid.org update ip address parameter implemented<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.22 - February 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - zerigo.com specific return codes, default ip server<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.20 - February 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - uninitialized ip type flag fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.14 - February 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - reverted command loop design/branching logic restored<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.12 - February 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ip buffer initialization fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - increased max alias to accomodate type, dual<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added more ip type flow control/bullet proofing<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - dual stack ip4 without ip6 updates allowed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - forced update triggered on program start-up<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - allow no user name, password, as well as neither or both<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ip version related refactoring, improvements<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some documentation additions<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added alias option ip type parameters<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows version socket layer start/stop bug fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - one off utf file type check memory error fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.10 - January 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - abstracted invalid socket value check, Windows version<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - restored invalid socket checks on object shutdown<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed ip parser fail mode (potential) memory leak<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - man file updates<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.08 - January 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - "custom" IPv4 updates to dual stack auto detecting servers<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - zerigo.com dynamic dns server added<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed majimoto.com update request format<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.06 - January 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some minor "class" hierarchy balancing<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.04 - January 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - IPv6 fallback to IPv4 failure corrected<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some more "class" hierarchy cleanup/improvment<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some default option parameter values changes<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - man files, online help, readme.html updates, sync<br><br>
+
+Ver.&nbsp; inadyn-mt 2.24.02 - January 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added missing OOP superclass defines<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - completed IPv6 architectural shift<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added dhis.org dynamic dns server<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added majimoto.net dynamic dns server<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added ip parameter to sitelutions.com updates<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed status, and update interval defaults to more server friendly 10 minutes<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - IPv6 dynamic dns updates<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.46 - January 2011<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - zoneedit.com config invalid user, pass detected<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.44 - December 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - uninitialized timer structure fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - unicode user, pass, dynamic allocation<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - main loop clean-up<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.42 - December 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - minor forced update period improvements<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added SIG_USR1 to man file<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - corrected man file, system_service reference<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.40 - December 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - libao data structure future proofing<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - potential libao, main init bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.38 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ALL aliases updated on forced update<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.36 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - faulty *nix audio library parameter init fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - several faulty type safe variable inits fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed mutiple alias forced update<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some formatting, and minor code clean up<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.34 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - TIME_WAIT socket linger removed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added v.02.20.32 server support additions to help output<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - man file formatting<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - corrections to present (readme.html) file<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.32 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed zoneedit.com bad config false positive<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added troglobit.com's ipv6tb, dnsomatic, tzo, milkfish sip<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - implemented tzo.com's update okay response detect<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - implemented tzo.com's update config error response detect<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - implemented milkfish sip update config error response detect<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some minor code clean up<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.28 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added multiple Windows service instance support<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - multiple aliases ip cache updated correctly<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.27 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - cvs updated supporting multiple accounts<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.22 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - online status check socket resource leak fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - status_offline_interval help output entry corrected<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.20 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - successful updates repeated with pendings bug fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - unchanged ip forced update succeeds on first alias update<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - no configure/restart on multi alias single config fail<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.18 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - pending update ip change not detected fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.16 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - stray ip cache file update remove<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.14 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - freedns.org client config fail false positive fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.12 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - multi alias related forced update period reset bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.10 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - initial update bounded forced update if pendings off<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed multiple alias update break on first alias update fail<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ip update files cache updated on all alias success only<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - no command loop forced update break for bad config<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.08 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - forced update failure fallback to update period retry<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - --retry_pending_interval changed to seconds, default 900<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - man, readme.html, help screen updates, corrections<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.06 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - updates, forced updates, pending updates coordinated<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - unsigned integer overflow checked<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - readme.html wrong version changes log entry fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.04 - November 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - --disable-threads related compiler error fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - update period cache file ignored bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.20.02 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - update failure config implicit inverted to explicit<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - forced_update_period checked inside update period<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - forced_update_period input parameter range check<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - simplified RAS trigger to only signaling update need<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed freedns.afraid.org fail on user id params bug<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added support for Windows processed console output<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - repeated config error log priority treated lower<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.50 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improperly initialized timer fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.48 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - several pending update logic errors fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.46 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - parameter retry_interval set to net_retries fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - more specific ip update debug output<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added --retry_pending toggle parameter<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added --retry_pending_interval parameter<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved --forced_update_period timing accuracy<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - timer loop command response time adjust bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.42 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - too many net retries before fail bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.40 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ver. 02.18.38 --net_retries iterations fail/config response bug fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - yet more update loop fail safety<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.38 - October 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added support for quoted option parameters, and spaces in file/directory paths<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added online_check_url parameter, decoupling ip server from online status checks url<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved audible alert exit condition responsiveness<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed Windows version iterations over counting bug<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added more specific dynamic dns server error return code client response<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.36 - July 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - socket handle value of 0, error detected as NULL, fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - a couple thread stack data sharing moved to global<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave file output, --wave_gain parameter changed to float<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - option file parse error aborts config file search<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.34 - July 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - corrected previous changelog entry, Win32s reference<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some wave_util.c refactoring<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some readme.html formatting<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.32 - July 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - 32 bit Windows pre WAVE_FORMAT_EXTENSIBLE wave output<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved Windows wave output error checking<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - updated debian changelog<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.30 - June 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - threads_wrapper_init undefined reference fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.28 - June 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved mutex create in threads_wrapper.c<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - automake cleaned<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.26 - June 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - inadyn man files updated to inadyn-mt<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - *nix inadyn-mt.conf moved to /etc<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added debian dpkg-buildpackage directory, et al<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - moved *nix meta files to /usr/share<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.24 - May 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - removed bird-calls-32.wav from NOTICE license file<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.22 - May 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - *nix meta files search root /etc, /usr/share, /usr/local/etc<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - too many params compiler warning fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.20 - May 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - update server fatal error shutdown more readable debug<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - downstream Fedora patch, lang file default, and install path<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - autoconf reflects lang file, path patch<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - empty --lang_file parameter option gives hard coded output strings defaults<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.18 - May 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - broken update server fatal error shutdown fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.16 - May 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - downstream Fedora patch, gethostbyname size_t crash fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved ip update loop reliability<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - downstream Fedora patch, src/Makefile.am improvements<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.14 - Feb. 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave_file parameter options documentation corrections to present readme.html<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - *nix manual files updated for parameter, wave_buff<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some comments removed form ./src/tcp.c<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.12 - Feb. 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - --wave_buff [.25..10], option added for controlling wave file output buffer size<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some configure.ac variable assignments syntax changes<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.10 - Feb. 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Restored distribution archive, FreeBSD version binary<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - --cache_dir parameter option pointer check<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - stray dyndns.h version constant, linefeed removed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.08 - Feb. 2010<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - logfile pointer check error fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - FreeBSD version source compile required<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.06 - Dec. 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - no libao compile errors fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.04 - Dec. 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave output attenuation range check<br><br>
+
+Ver.&nbsp; inadyn-mt 2.18.02 - Dec. 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - removed Makefile.am 32 bit wave files install<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.14 - Dec. 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - shutdown/destroy global http client in test_connect fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.12-beta - Dec 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave_gain parameter default to 10<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave_gain parameter range check<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.10-beta - Dec 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - remaining legacy string storage changed to heap<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.09-beta - Dec 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - async connect test initialization bug fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - sans ip_server_name parameter default ip server bug fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.08-beta - Dec 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ip, time cache directory parameter handler refactored, error checked<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave_gain parameter documentation updated<br><br>
+
+
+Ver.&nbsp; inadyn-mt 2.17.07-beta - Nov 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added wave format 32 bit ieee float support<br>
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - gain attenuation extended for 8, 16, 24 bit depths<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed wave_gain option parameter gain parameter range to [-10..10]<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - gain mapped to [0..120] decibels<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved wave file parsing code<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - cache dir, log file updated to unicode<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - removed 32 bit ./extra/wav wave files<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.06-beta - Nov 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - source file, wave_util.c amplitude attenuation<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed option parameter, wave_volume to wave_gain<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.05-beta - Nov 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave audio output --wave_gain option parameter added<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave structure destroy null ptr check<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave format error debug output format fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added inadyn-mt/extra/wav 32 bit wav files<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - updated wav files copyright NOTICE file<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.03-beta - Nov 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - zero wait mutex release ownership test<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - null terminated wave error table<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - modularized exit testing sleep timer routine<br><br>
+
+Ver.&nbsp; inadyn-mt 2.17.02-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - libao dynamic loading<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - --disable-dynamic configure option<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated NO_DYN_LOAD preproc option<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated NO_LIBDL preproc option<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated GETHOSTBYNAME_PARAMS preproc option<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated non-reentrant ASYNC_LOOKUP preproc option<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - archive *nix executables audible support as Windows version<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.38-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - linux version libao audible alerts requires recompile<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - no gethostbyname_r gethostname.c compile exclusion<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - threads disabled gethostname.c compile exclusion<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.36-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - configure script syntax error fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - config.h source includes<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated config.h preprocessor option<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows config.h preprocessor option<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.34-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - gethostbyname_r detection<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - reentrant, async dns lookup<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - non-reentrant asynchronous dns lookup mutex protection<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - autotools macros clean up<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated preprocessor lookup options<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - *nix automake compile sound, network status checks default on<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - option parameter, --audible-off changed to --audible toggle, defaults to off<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.32-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - debug level global for os.c<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.31-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows, pthreads threads wrapper<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.29-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed tcp.c mutexes' storage class<br>
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - null ptr assignment compiler error fixed<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.27-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved connection synchronization<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.25-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - improved connection testing synchronization<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.23-beta - Oct 2009<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - src/Makefile.am lib path to include /usr/lib<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - limit number of threads in async connect test<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.21-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - status_offline_interval documentation, man file correction<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.19-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - socket create fail debug output level quiet<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - configure.ac version update<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.17-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - async connect test not based solely on successful socket create<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.15-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - non-blocking network socket connect<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - consistent windows socket layer shutdown per startup<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile-deprecated preprocessor option, USE_THREADS changed to DISABLE_THREADS<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - configure --enable-threads option when --enable-sound not used<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed possible allocation error in Windows version cross_platform_cwd<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - removed unused mythreads.c, mythreads.h from archive<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - more reliable Windows version connection test<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.13-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - small man file edit<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - sound entry/exit debug level downgraded<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - unneccessary wave file read sign conversion removed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - --wave_loops option added<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wave loops optional option parameter added to --wave_file option parameter<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.12-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - retro fix for 8 bit sample sized wave files format<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.09-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - ./extra/wav/bird-calls.wav, and corresponding copyright notice included<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - waveout.c accomodation for 8 bit sample sized wave files format<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some refactoring<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.07-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - updated man file<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.05-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - waveout.c refactor<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - destroy wave data structure call for Linux/FreeBSD play_wave<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - init dyndns.c main data structure defaults only once<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.03-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - control flow so as not to overwrite --wave_file option with default<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.02-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - configure, make install, dist improvements<br><br>
+
+Ver.&nbsp; inadyn-mt 2.16.01-beta - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Audible alerts if offline -- *nix/BSD requires recompile with ./configure --enable-sound; libao, and libao dev installed.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Audible alerts options -- run:  inadyn-mt --help<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Deprecated make <makefile> (copy from makefile-deprecated), for autoconf, make <Makefile><br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Added configure options:  --disable-threads to disable concurrent online status checks;
+--enable-sound; --enable-debug<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Added to old makefile <makefile> (copy from makefile-deprecated), preprocessor options, USE_SNDFILE, USE_THREADS<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.28 - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - corrected release notes/changes log error<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.26 - Sept 2009<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed possible string truncation in cross_platform_cwd<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - <strike>Windows version: fixed possible invalid ptr in dyn_dns_update_ip</strike> (no invalid ptr)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added FreeBSD binary in bin/freebsd<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.24 - July 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - program abort flag check fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - GNU GPL related issues addressed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - calloc safe_mem wrap<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.22 - July 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows log file pointer check<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added sitelutions.com dynamic dns server<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - simplified Windows service installation default registry parameters<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - memory alloc error abort wrapper potential stack overflow
+because of error log output memory alloc, changed to printf string literal output<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added to program root directory, gpl.txt, GNU GPL license text file<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.20 - June 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - default configuration backward compatible with inadyn<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - usage help restored<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.18 - June 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows version latent ras/main thread synchronization details completed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - forced update period adjusted accordingly in event of USR1<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.16 - June 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed obscure Windows RAS thread orphaning potential
+(iterations condition true) in main program loop<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - obscure Windows RAS thread, and main loop race condition fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - main loop iterations condition rendered so increment,
+and related exit, on success only, as in original inadyn<br><br>
+Ver.&nbsp; inadyn-mt 2.12.06 - May 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows service shutdown on client initiated exit<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - RAS thread initialization to separate function<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows ip update retries exited on network down<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added ip update trigger, via SIGUSR1<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows Unicode ip cache file dir<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.04 - May 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - removed old MSVC project files, replaced
+with fixed new inadyn-mt version project files<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.02 - May 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - executable, and related output changed from inadyn to 
+inadyn-mt<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - updated inadyn-mt man files' original inadyn homepage
+to http://www.inatech.eu/inadyn/<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - changed default config file from /etc/inadyn.conf to 
+/etc/inadyn-mt/inadyn-mt.conf<br><br>
+
+Ver.&nbsp; inadyn-mt 2.12.01 - May 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - safer memory, with program abort on allocation error<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - couple unchecked pointers, checked<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - language strings file default override parameter, --lang_file<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - fixed program version parameter output<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.98 - March, April 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added network communication --retries parameter, and 
+--retry_interval parameter<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - centralized dns update routine relative to main loop,
+and RAS events trapping<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - linux, unix DEBUG startup output conditional compile added<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows QUIET debug startup output conditional compile added<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.96 - March 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - cwd/root path search overshoot fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - default Unix locale/lang file fixed<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - some minor refactoring<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.94 - Feb 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - wrong version number reported fixed.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - minor control flow logic error fixed.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.93 - Feb 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - bad program root directory fault fixed.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.92 - Feb 2008<br>
+&nbsp;&nbsp;&nbsp; Changes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - linux lang file search seg fault fixed.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - lang strings hash table key computation fixed.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - lang, path routines factored to modules.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.89 - Feb 2008<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - tighter memory management, buffer checking.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Win Service language strings.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.88 - Feb 2008<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - indexed language strings.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.87 - Feb 2008<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - language strings files support.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.11.80 - Jan 2008<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Unicode.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.01.02 - Dec 2007<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - registry string value for separate service server log file.<br><br>
+
+Ver.&nbsp; inadyn-mt 2.01.00 - Nov/Dec 2007<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - options file commands/parameters inserted "in place" in command line.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - built in Windows service management.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - Windows RAS events (modem connection) trapping.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - debug level command option.<br><br>
+
+Ver.&nbsp; 1.96 - 09 September 2005<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - zoneedit.com supported.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - no-ip.com supported.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - support for generic DNS services that support HTTP updates<br>
+&nbsp;&nbsp;&nbsp;Fixes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - immediate exit in case of --iterations=1 (not after a sleep period)<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - added missing option for specifying the path in the DNS server<br><br>
+
+Ver.&nbsp; 1.95 - 20 July 2005<br>
+&nbsp;&nbsp;&nbsp; New features:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - UNIX signals supported - inadyn will
+stop gracefully in case of&nbsp; ALRM, HUP, INT, ...<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - new dynamic dns service supported -
+www.zoneedit.com - Not tested!<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - makefile adjusted for Solaris -
+compilable under Solaris.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - support for generic DYNDNS service
+that supports update via HTTP with basic authentication<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; - not&nbsp; yet fully
+complete. Not known where might be applicable.<br>
+<br>
+Ver. 1.90 - 24 February 2005<br>
+&nbsp;&nbsp;&nbsp; New features/enhancements:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - new option '--change_persona uid:gid'
+- inadyn can switch the user after launch. Typical feature for daemons.<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - addition to '--ip_server_name'
+feature,&nbsp; now it has another parameter: the URL to read from the
+given server name.<br>
+&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; -&nbsp; reduced&nbsp; some error
+messages <br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - manual pages updated. (thanks to
+Shaul Karl)<br>
+&nbsp;&nbsp;&nbsp; Bugfixes:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - typo fixed (--ip_server_name option)<br>
+<br>
+Ver. 1.86 - 30 January 2005<br>
+&nbsp;&nbsp;&nbsp; Updated UNIX man pages for inadyn. Even a page for
+inadyn.conf! (thanks to Shaul Karl)<br>
+&nbsp;&nbsp;&nbsp; Enhancement: - Inadyn doesn't print anything (e.g.
+ver. number) anymore when goes to background.<br>
+&nbsp;&nbsp;&nbsp; Enhancement: - new config file parser. Accepts
+ESCAPE character: '\'.<br>
+&nbsp;&nbsp;&nbsp; Bugfix: - Corrected check of the return code from
+socket() call.<br>
+<br>
+Ver. 1.85 - 10 January 2005<br>
+&nbsp;&nbsp;&nbsp; Config file related enhancements:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - a default location for the config
+file in case of no arguments for inadyn<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - a more **NIX like format for the
+config file. Thanks to Jerome Benoit. <br>
+<br>
+&nbsp;&nbsp;&nbsp; Small bugfix:<br>
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; - in case when 'iterations' option is
+specified as being '1', inadyn exits immediately after first update,
+not after the sleep period as before. <br>
+<span style="font-weight: bold;"><br>
+</span><b> </b>Ver. 1.81&nbsp;- 23 November 2004 <br>
+&nbsp;&nbsp; &nbsp;No new features. Just a better integration with
+Linux OS:<br>
+Reviewed usage of syslog and fork to background in 'daemon mode',
+thanks to Shaul Karl. <br>
+<br>
+Ver. 1.80&nbsp; - 16 October 2004<br>
+&nbsp;&nbsp; &nbsp;New feature:<br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;--syslog: output to syslog for
+Linux (should work for all **nix systems)<br>
+&nbsp;&nbsp; &nbsp;New feature:<br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;run in background for Linux
+(should work for all **nix systems)<br>
+<br>
+&nbsp;&nbsp; &nbsp;Minor compile warnings removed.<br>
+<br>
+Ver. 1.70&nbsp; - 5 July 2004<br>
+&nbsp;&nbsp; &nbsp;Bugfix: <br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;custom dns from dyndns option was
+not accepted by the cmd line parser. "Copy-paste" error :-( !<br>
+<br>
+&nbsp;&nbsp; &nbsp;New option: (not tested. It was a debug option now
+made accessible via cmd line. It should work)<br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;--iterations. Now one can run
+inadyn with only one iteration. <br>
+<br>
+Ver. 1.60&nbsp; - 5 June 2004<br>
+&nbsp;&nbsp; &nbsp;On users' request the inadyn can read the options
+from file. Ver. 1.5 - 1 May 2004<br>
+- Support for dynamic DNS service offered by freedns.afraid.org<br>
+- support for http proxy<br>
+- GPL Copyright notice added.<br>
+<p>Ver. 1.4 - 1 March 2004<br>
+- Support for custom DNS and static DNS services offered by dyndns.org.<br>
+- support for forced IP update (so the account will not expire even
+though the IP never
+changes)<br>
+<br>
+Ver. 1.35 - 04 february, 2004<br>
+- Bugfixes: - It supports AGAIN the multiple aliases for the same IP
+address<br>
+- Under Windows the OS signal handler is installed only once no matter
+if IP update errors
+occur<br>
+<br>
+Ver. 1.34 - 6 Novemeber 2003<br>
+- first port *NIX (Linux)<br>
+- Linux version running as console app<br>
+- bugfixes<br>
+<br>
+</p>
+<p>Ver. 1.2 - June 2003<br>
+- port to embedded system pSOS. Runs on the Remote management card.<br>
+Note:<br>
+No DNS support under pSOS -&gt; input params are the IP addresses of
+the servers used (DynDNS,
+CGI)<br>
+</p>
+<p>Ver. 1.0 - 20 May 2003 - first stable version.<br>
+main features ready:</p>
+<p>- DYNDNS client</p>
+<p>- free<br>
+- works fine behind a NAT router<br>
+- runs fine as a service<br>
+- has a nice log file<br>
+- it is MINE ;)
+</p>
+<p><b>Future plans:<br>
+</b></p>
+<p>- port to some other DNS services.<br>
+</p>
+<br>
+<br>
+<br>
+</body>
+</html>
