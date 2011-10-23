@@ -122,20 +122,20 @@ static RC_TYPE get_status_offline_interval_handler(CMD_DATA *p_cmd, int current_
 
 static CMD_DESCRIPTION_TYPE cmd_options_table[] =
     {
-        {"--help",		0,	{help_handler, NULL,0},	"help" },
-        {"-h",			0,	{help_handler, NULL,0},	"help" },
+        {"--help",		0,	{help_handler, NULL,0},	NULL },
+        {"-h",			0,	{help_handler, NULL,0},	NULL },
 
-        {"--username",	1,	{get_username_handler, NULL,0},	"<name or hash> - your  membername/hash"},
-        {"-u",			1,	{get_username_handler, NULL,0},	"<name or hash> - your membername/hash"},
+        {"--username",	1,	{get_username_handler, NULL,0},	NULL},
+        {"-u",			1,	{get_username_handler, NULL,0},	NULL},
 
-        {"--password",	1,	{get_password_handler, NULL,0},	"<password> - your password. Optional."},
-        {"-p",			1,	{get_password_handler, NULL,0},	"<password> - your password"},
+        {"--password",	1,	{get_password_handler, NULL,0},	NULL},
+        {"-p",			1,	{get_password_handler, NULL,0},	NULL},
 
-        {"--alias",		3,	{get_alias_handler, NULL,2},	"<alias host name>[,hash] [dual | " DUAL_LIST " | ip4 | ip6 | auto] - alias host name, optional comma delimted hash, and optional ip version, default auto. This option can appear multiple times." },
-        {"-a",			3,	{get_alias_handler, NULL,2},	"<alias host name>[,hash] [dual | " DUAL_LIST " | ip4 | ip6 | auto] - alias host name, optional comma delimited hash, and optional ip version, default auto. This option can appear multiple times." },
+        {"--alias",		3,	{get_alias_handler, NULL,2},	NULL},
+        {"-a",			3,	{get_alias_handler, NULL,2},	NULL},
 
-        {"--debug",     1,  {get_debug_level_handler, NULL,0}, "<#> - debug level 0..7; higher number, more log debug messages."},
-        {"-d",          1,  {get_debug_level_handler, NULL,0}, "<#> - debug level 0..7; higher number, more log debug messages."},
+        {"--debug",     1,  {get_debug_level_handler, NULL,0}, NULL},
+        {"-d",          1,  {get_debug_level_handler, NULL,0}, NULL},
 
         /*
         for help display only -- service_main takes care of these handlers
@@ -152,73 +152,51 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 #endif
 
 
-        {DYNDNS_INPUT_FILE_OPT_STRING, 1, {get_options_from_file_handler, NULL,0}, "<path/file> - the file containing [further] inadyn options.  "
-         "The default config file, '" DYNDNS_MT_DEFAULT_CONFIG_FILE "' is used if inadyn is called without any cmd line options.  "\
-         "Input file options are inserted at point of this option's appearance." },
+        {DYNDNS_INPUT_FILE_OPT_STRING, 1, {get_options_from_file_handler, NULL,0}, NULL},
 
         {"--ip_server_name",	2,	{get_ip_server_name_handler, NULL,0},
-         "<srv_name[:port] local_url> - local IP is detected by parsing the response after returned by this server and URL.  "\
-         "The first IP in found http response is considered 'my IP'."},
+         NULL},
 
         {"--online_check_url",	2,	{get_online_check_url_handler, NULL,0},
-         "<srv_name[:port] local_url> - URL to reach to confirm online status.  "\
-         "Default value:  " DYNDNS_MY_ONLINE_CHECK " /"},
+         NULL},
 
         {"--dyndns_server_name", 1,	{get_dns_server_name_handler, NULL,0},
-         "<NAME>[:port] - The server that receives the update DNS request.  Allows the use of unknown DNS services that "\
-		 "accept HTTP updates.  If no proxy is wanted, then it is enough to set the dyndns system. The default servers "\
-		 "will be taken."},
+         NULL},
 
         {"--dyndns_server_url", 1, {get_dns_server_url_handler, NULL,0},
-         "<name> - full URL relative to DynDNS server root.  Ex: /some_script.php?hostname="},
+         NULL},
 
         {"--dyndns_system",	1,	{get_dyndns_system_handler, NULL,0},
-         "[NAME] - optional DYNDNS service type. SHOULD be one of the following: \n"
-         "\t\t-For dyndns.org:  dyndns@dyndns.org OR statdns@dyndns.org OR customdns@dyndns.org.\n"
-         "\t\t-For freedns.afraid.org:  default@freedns.afraid.org\n"
-         "\t\t-For zoneedit.com:  default@zoneedit.com\n"
-         "\t\t-For no-ip.com:  default@no-ip.com\n"
-         "\t\t-For easydns.com:  default@easydns.com\n"
-         "\t\t-For 3322.org:  dyndns@3322.org\n"
-		 "\t\t-For sitelutions.com:  default@sitelutions.com\n"
-		 "\t\t-For dnsomatic.com:  default@dnsomatic.com\n"
-		 "\t\t-For tunnelbroker.net:  ipv6tb@he.net\n"
-		 "\t\t-For tzo.com:  default@tzo.com\n"
-		 "\t\t-For dynsip.org:  default@dynsip.org\n"
-		 "\t\t-For dhis.org:  default@dhis.org\n"
-		 "\t\t-For majimoto.net:  default@majimoto.net\n"
-		 "\t\t-For zerigo.com:  default@zerigo.com\n"
-         "\t\t-For generic:  custom@http_svr_basic_auth\n"
-         "\t\tDEFAULT value: dyndns@dyndns.org\n"},
+         NULL},
 
         {"--proxy_server", 1, {get_proxy_server_handler, NULL,0},
-         "[NAME[:port]]  - the http proxy server name and port. Default is none."},
-        {"--update_period",	1,	{get_update_period_handler, NULL,0},"<#> - how often the IP is checked. The period is in [ms]. 30000..864000000.  Default is about 10 min. Max is 10 days"},
-        {"--update_period_sec",	1, {get_update_period_sec_handler, NULL,0},"<#> - how often the IP is checked. The period is in [sec]. 30..864000.  Default is about 10 min. Max is 10 days"},
-        {"--forced_update_period", 1, {get_forced_update_period_handler, NULL,0},"<#> - how often, in seconds, the IP is updated even if it is not changed. 30 sec..30 days, default, 30 days."},
+         NULL},
+        {"--update_period",	1,	{get_update_period_handler, NULL,0}, NULL},
+        {"--update_period_sec",	1, {get_update_period_sec_handler, NULL,0}, NULL},
+        {"--forced_update_period", 1, {get_forced_update_period_handler, NULL,0}, NULL},
 
 #ifdef USE_THREADS
 
-		{"--forced_update_adjust", 1,   {get_forced_update_adjust_handler, NULL,0},"<#> - fine timer control.  Slow, or speed timer between -4..5.  Default, 0."},
+		{"--forced_update_adjust", 1,   {get_forced_update_adjust_handler, NULL,0}, NULL},
 #endif
 
-        {"--log_file",	1,	{get_logfile_name, NULL,0},		"<path/file> - log file path and name"},
-        {"--background", 0,	{set_silent_handler, NULL,0},		"run in background. output to log file or to syslog"},
+        {"--log_file",	1,	{get_logfile_name, NULL,0}, NULL},
+        {"--background", 0,	{set_silent_handler, NULL,0}, NULL},
 
-		{"--verbose",	1,	{set_verbose_handler, NULL,0},	"<#> - set dbg level. 0 to 5"},
+		{"--verbose",	1,	{set_verbose_handler, NULL,0},NULL},
 
-		{"--iterations",	1,	{set_iterations_handler, NULL,0},	"<#> - set the number of DNS updates. Default is 0, which means infinity."},
-        {"--syslog",	0,	{set_syslog_handler, NULL,0},	"force logging to syslog . (e.g. /var/log/messages). Works on **NIX systems only."},
-        {"--change_persona", 1, {set_change_persona_handler, NULL,0}, "<uid[:gid]> - after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
-        {"--version", 0, {print_version_handler, NULL,0}, "print the version number\n"},
-        {"--exec", 1, {get_exec_handler, NULL,0}, "<command> - external command to exec after an IP update. Include the full path."},
-        {"--cache_dir", 1, {get_cache_dir, NULL,0}, "<path> - cache directory name. (e.g. /tmp/ddns). Defaults to /tmp on **NIX systems."},
-        {"--wildcard", 0, {wildcard_handler, NULL,0}, "enable domain wildcarding for dyndns.org, 3322.org, or easydns.com."},
-        {"--retries", 1, {get_retries_handler, NULL,0}, "<#> - network comm retry attempts.  0 to 100, default 0"},
-        {"--retry_interval", 1, {get_retry_interval_handler, NULL,0}, "<#> - network comm miliseconds retry interval.  0 to 30,000, default 1,000"},
-		{"--retry_pending", 0, {get_retry_pending_off_handler, NULL,0}, "<#> - retry ip update even after network comm retries exhausted,  default on"},
-		{"--retry_pending_interval", 1, {get_retry_pending_interval_handler, NULL,0}, "<#> - network comm seconds update retry interval, after retries exhausted.  5..3600, default 300"},
-        {"--lang_file", 1, {get_lang_file_handler, NULL,1}, "[path/file] - language file path, and file name, defaults to either ../inadyn-mt/lang/en.lng, or etc/inadyn-mt/en.lng.  Empty parameter option gives hard coded english defaults."},
+		{"--iterations",	1,	{set_iterations_handler, NULL,0},	NULL},
+        {"--syslog",	0,	{set_syslog_handler, NULL,0},	NULL},
+        {"--change_persona", 1, {set_change_persona_handler, NULL,0}, NULL},
+        {"--version", 0, {print_version_handler, NULL,0}, NULL},
+        {"--exec", 1, {get_exec_handler, NULL,0}, NULL},
+        {"--cache_dir", 1, {get_cache_dir, NULL,0}, NULL},
+        {"--wildcard", 0, {wildcard_handler, NULL,0}, NULL},
+        {"--retries", 1, {get_retries_handler, NULL,0}, NULL},
+        {"--retry_interval", 1, {get_retry_interval_handler, NULL,0}, NULL},
+		{"--retry_pending", 0, {get_retry_pending_off_handler, NULL,0}, NULL},
+		{"--retry_pending_interval", 1, {get_retry_pending_interval_handler, NULL,0}, NULL},
+        {"--lang_file", 1, {get_lang_file_handler, NULL,1}, NULL},
 
 #ifdef USE_SNDFILE
 		{"--audible", 0, {get_audible_on_handler, NULL,0}, "audible network status alerts toggle.  default off"},
@@ -249,8 +227,8 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 
 #ifdef USE_THREADS
 
-		{"--status_interval", 1, {get_status_interval_handler, NULL,0}, "<#> - seconds [30..864000] interval at which to check online status.  defaults to 600"},
-		{"--status_offline_interval", 1, {get_status_offline_interval_handler, NULL,0}, "<#> - seconds [0..864000] interval at which to check online status, after offline detected.  defaults to 15"},
+		{"--status_interval", 1, {get_status_interval_handler, NULL,0}, NULL},
+		{"--status_offline_interval", 1, {get_status_offline_interval_handler, NULL,0}, NULL},
 
 #endif
 #endif
@@ -260,6 +238,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 
 void print_help_page(void)
 {
+/*
 	printf("\n\n\n" \
 	       "			INADYN-MT Help\n\n" \
 	       "	INADYN-MT is a dynamic DNS client. That is, it maintains the IP address\n" \
@@ -286,6 +265,7 @@ void print_help_page(void)
 		}
 	}
 	printf("\n\n\n");
+*/
 }
 
 static RC_TYPE help_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
