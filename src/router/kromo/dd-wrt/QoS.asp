@@ -502,16 +502,16 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dt class="term"><% tran("hqos.right1"); %></dt>
+							<dt class="term"><% tran("qos.legend"); %></dt>
 							<dd class="definition"><% tran("hqos.right2"); %></dd>
-							<dt class="term"><% tran("hqos.right3"); %></dt>
-							<dd class="definition"><% tran("hqos.right4"); %></dd>
 							<dt class="term"><% tran("qos.legend2"); %>:</dt>
 							<dd class="definition"><% tran("hqos.right6"); %></dd>
 							<dt class="term"><% tran("qos.legend3"); %>:</dt>
 							<dd class="definition"><% tran("hqos.right8"); %></dd>
 							<dt class="term"><% tran("qos.legend4"); %>:</dt>
 							<dd class="definition"><% tran("hqos.right10"); %></dd>
+							<dt class="term"><% tran("qos.legend6"); %></dt>
+							<dd class="definition"><% tran("hqos.right4"); %></dd>
 							<!--dt class="term"><% tran("qos.legend5"); %>:</dt>
 							<dd class="definition"><% tran("hqos.right12"); %></dd-->
 						</dl>
