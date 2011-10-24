@@ -150,7 +150,7 @@ addEvent(window, "unload", function() {
 							<div class="center">
 							<script type="text/javascript">
 							//<![CDATA[
-							document.write("<input class=\"button\" type=\"button\" name=\"generate_button\" value=\"" + freeradius.generate + "\" onclick=\"generate_submit(this.form);\" />");
+							document.write("<input class=\"button\" type=\"button\" name=\"generate_button\" value=\"" + freeradius.cert + "\" onclick=\"generate_submit(this.form);\" />");
 							//]]>
 							</script>
 							</div>
