@@ -1689,6 +1689,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		    && !strcmp(menu[i][0], "Wireless_Basic.asp"))
 			i++;
 #endif
+#ifdef HAVE_CORENET
+		if (!strcmp(menu[i][0], "Firewall.asp") ||
+		    !strcmp(menu[i][0], "Filters.asp") || 
+		    !strcmp(menu[i][0], "ForwardSpec.asp"))	// jump over
+			// Corenet
+			i++;
+#endif
 //fprintf(stderr,"generate menu %s\n",menu[i][0]);
 		if (!strcmp(menu[i][0], mainmenu)) {
 #ifdef HAVE_MADWIFI
@@ -1751,13 +1758,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_SPOTPASS
 				if (!strcmp(menu[i][j], "Nintendo.asp"))	// jump over
 					// Nintendo
-					j++;
-#endif
-#ifdef HAVE_CORENET
-				if (!strcmp(menu[i][j], "Firewall.asp") ||
-				    !strcmp(menu[i][j], "Filters.asp") || 
-				    !strcmp(menu[i][j], "ForwardSpec.asp"))	// jump over
-					// Corenet
 					j++;
 #endif
 #ifdef HAVE_MADWIFI
