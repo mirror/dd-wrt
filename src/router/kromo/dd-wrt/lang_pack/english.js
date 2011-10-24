@@ -1154,9 +1154,9 @@ qos.bandwidth="Bandwidth in kbits";
 
 //help container
 var hqos = new Object();
-hqos.right1=;
+hqos.right1="";
 hqos.right2="Uplink:<br>Set this to 80%-95% (max) of your total upload limit.<br>Downlink:<br>Set this to 80%-100% (max) of your total download limit.";
-hqos.right3=;
+hqos.right3="";
 hqos.right4="Enable Per User Default Limits:<br>Enable the Default Level per user, else set the level for all users.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
