@@ -1154,10 +1154,10 @@ qos.bandwidth="Bandwidth in kbits";
 
 //help container
 var hqos = new Object();
-hqos.right1="Uplink:";
-hqos.right2="Set this to 80%-95% (max) of your total upload limit.";
-hqos.right3="Downlink:";
-hqos.right4="Set this to 80%-100% (max) of your total download limit.";
+hqos.right1=;
+hqos.right2="Uplink:<br>Set this to 80%-95% (max) of your total upload limit.<br>Downlink:<br>Set this to 80%-100% (max) of your total download limit.";
+hqos.right3=;
+hqos.right4="Enable Per User Default Limits:<br>Enable the Default Level per user, else set the level for all users.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
 hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, specifying priority and entering its MAC address.";
@@ -1983,15 +1983,15 @@ var freeradius = new Object();
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Server Certificate";
-freeradius.cert="Make Cert";
+freeradius.cert="Gen Cert";
 freeradius.clientcert="Client Certificates";
 freeradius.settings="Settings";
 freeradius.users="Users";
 freeradius.clients="Clients";
 freeradius.username="Username";
 freeradius.password="Password";
-freeradius.downstream="Downstream";
-freeradius.upstream="Upstream";
+freeradius.downstream="Downspeed";
+freeradius.upstream="Upspeed";
 freeradius.sharedkey="Shared key";
 
 
@@ -2001,9 +2001,9 @@ freeradius.locality="Locality";
 freeradius.organisation="Organisation / Company";
 freeradius.email="Email Address";
 freeradius.common="Common Certificate Name";
-freeradius.expiration="Expiration (Days)";
+freeradius.expiration="Expires (Days)";
 freeradius.passphrase="Passphrase";
-freeradius.generate="Generate Certificate";
+//freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
 freeradius.port="Radius Port";
 
