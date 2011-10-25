@@ -517,7 +517,7 @@ dropped:
 out:
 	return;
 }
-
+#define HAVE_NET_DEVICE_OPS
 #ifdef HAVE_NET_DEVICE_OPS
 static const struct net_device_ops bat_netdev_ops = {
 	.ndo_open = interface_open,
