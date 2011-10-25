@@ -80,6 +80,7 @@ static int is_valid_iface(struct net_device *net_dev)
 	if (net_dev->addr_len != ETH_ALEN)
 		return 0;
 
+#define HAVE_NET_DEVICE_OPS
 	/* no batman over batman */
 #ifdef HAVE_NET_DEVICE_OPS
 	if (net_dev->netdev_ops->ndo_start_xmit == interface_tx)
