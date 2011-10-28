@@ -116,6 +116,9 @@ There's no unicows.lib debug info, so this should be release target compile only
 #include "numbers.h"
 #include "ip.h"
 
+extern int nvram_match(char *name, char *match);
+extern char *nvram_safe_get(const char *name);
+
 typedef struct CB_ALERT_DATA {
 
 
@@ -2156,6 +2159,42 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 	do
 	{
 
+		if (nvram_match("ddns_wan_ip","1"))
+		{
+		char new_ip_str[32];
+		int wan_link = check_wan_link(0);
+		char *wan_ipaddr = NULL;
+		if (nvram_match("wan_proto", "pptp")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("pptp_get_ip") :
+			    nvram_safe_get("wan_ipaddr");
+		} else if (!strcmp(nvram_safe_get("wan_proto"), "pppoe")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		} else if (!strcmp(nvram_safe_get("wan_proto"), "3g")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
+		} else if (nvram_match("wan_proto", "l2tp")) {
+			wan_ipaddr =
+			    wan_link ? nvram_safe_get("l2tp_get_ip") :
+			    nvram_safe_get("wan_ipaddr");
+		} else if (nvram_match("wan_proto", "disabled")) {
+			wan_ipaddr = "0.0.0.0";
+		} else {
+			wan_ipaddr = nvram_safe_get("wan_ipaddr");
+		}
+		if (!strcmp(wan_ipaddr,"0.0.0.0")) {
+			DBG_PRINTF((LOG_WARNING,"W:DYNDNS: Error: device has no WAN Address...\n"));
+			rc = RC_ERROR; 
+			is_exit=true;
+			break;
+		    }
+		strcpy(new_ip_str,wan_ipaddr);
+		p_self->info.my_ip_has_changed[ip_store] = (strcmp(new_ip_str, p_self->info.my_ip_address.name[ip_store]) != 0);
+		strcpy(p_self->info.my_ip_address.name[ip_store], new_ip_str);
+		rc = RC_OK;
+		}else{
+
 		DBG_PRINTF((LOG_INFO,"I:DYNDNS: dyn_dns_update_ip entering connect loop...\n"));
 
 		while (!(is_exit=(is_exit_requested(p_self)))) {
@@ -2194,7 +2233,7 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 
 			sleep_lightly_ms(p_self->retry_interval,&is_exit_requested_void,p_self);
 		}
-
+		}
 		if (is_exit) {
 
 			DBG_PRINTF((LOG_INFO,"I:DYNDNS: Exit requested or not online in dyn_dns_update_ip...\n"));
@@ -3345,21 +3384,21 @@ RC_TYPE init_update_loop(DYN_DNS_CLIENT *p_dyndns,int argc, char* argv[],void **
 	if (p_dyndns->lang_hard_coded) {
 
 		/*use hard coded defaults -- don't use default locale file*/
-		dealloc_lang_strings();
+//		dealloc_lang_strings();
 
 		DBG_PRINTF((LOG_INFO, "I:" MODULE_TAG "Empty --lang_file parameter.  Deallocated language strings, using hard coded english defaults...\n"));
 	}
-	else {
-
-		/*if opt around default language strings, use that*/
-		if (p_dyndns->lang_file) {
-
-			if (!(re_init_lang_strings(p_dyndns->lang_file)==RC_OK)) {
-
-				DBG_PRINTF((LOG_WARNING, "W:" MODULE_TAG "Failed using default override language strings file, %s...\n",p_dyndns->lang_file));
-			}
-		}
-	}
+//	else {
+//
+//		/*if opt around default language strings, use that*/
+//		if (p_dyndns->lang_file) {
+//
+//			if (!(re_init_lang_strings(p_dyndns->lang_file)==RC_OK)) {
+//
+//				DBG_PRINTF((LOG_WARNING, "W:" MODULE_TAG "Failed using default override language strings file, %s...\n",p_dyndns->lang_file));
+//			}
+//		}
+//	}
 
 	/*if logfile provided, redirect output to log file*/
 	if (p_dyndns->dbg.p_logfilename)

@@ -221,13 +221,13 @@ int main(int argc, char* argv[])
 	int retVal=0;
 
 
-	init_lang_strings(NULL,setlocale(LC_ALL, ""));
+//	init_lang_strings(NULL,setlocale(LC_ALL, ""));
 
 
 	retVal=inadyn_main(argc, argv);
 
 
-	dealloc_lang_strings();
+//	dealloc_lang_strings();
 
 
 	return retVal;
