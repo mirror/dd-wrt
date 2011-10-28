@@ -15,7 +15,6 @@
 
 @SET_MAKE@
 
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -88,11 +87,9 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 man8dir = $(mandir)/man8
-am__installdirs = "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(pkgdatadir)" \
-	"$(DESTDIR)$(includedir)"
+am__installdirs = "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(includedir)"
 NROFF = nroff
 MANS = $(dist_man_MANS)
-DATA = $(pkgdata_DATA)
 HEADERS = $(include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -235,7 +232,7 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = @htmldir@
-includedir := @includedir@/usbip
+includedir = @includedir@/usbip
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
@@ -260,11 +257,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS := libsrc src
 include_HEADERS := $(addprefix libsrc/, \
-		     usbip.h usbip_common.h vhci_driver.h stub_driver.h)
+		     usbip_common.h vhci_driver.h usbip_host_driver.h)
 
 dist_man_MANS := $(addprefix doc/, usbip.8 usbipd.8 usbip_bind_driver.8)
-@INSTALL_USBIDS_TRUE@pkgdata_DATA := usb.ids
-@INSTALL_USBIDS_TRUE@EXTRA_DIST := $(pkgdata_DATA)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -367,26 +362,6 @@ uninstall-man8:
 	test -z "$$files" || { \
 	  echo " ( cd '$(DESTDIR)$(man8dir)' && rm -f" $$files ")"; \
 	  cd "$(DESTDIR)$(man8dir)" && rm -f $$files; }
-install-pkgdataDATA: $(pkgdata_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(pkgdatadir)" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)"
-	@list='$(pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgdatadir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgdatadir)" || exit $$?; \
-	done
-
-uninstall-pkgdataDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(pkgdatadir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(pkgdatadir)" && rm -f $$files
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
@@ -733,10 +708,10 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(MANS) $(DATA) $(HEADERS) config.h
+all-am: Makefile $(MANS) $(HEADERS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -786,8 +761,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-includeHEADERS install-man \
-	install-pkgdataDATA
+install-data-am: install-includeHEADERS install-man
 
 install-dvi: install-dvi-recursive
 
@@ -833,8 +807,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-man \
-	uninstall-pkgdataDATA
+uninstall-am: uninstall-includeHEADERS uninstall-man
 
 uninstall-man: uninstall-man8
 
@@ -852,13 +825,12 @@ uninstall-man: uninstall-man8
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-includeHEADERS install-info \
 	install-info-am install-man install-man8 install-pdf \
-	install-pdf-am install-pkgdataDATA install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am tags tags-recursive uninstall uninstall-am \
-	uninstall-includeHEADERS uninstall-man uninstall-man8 \
-	uninstall-pkgdataDATA
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am \
+	uninstall-includeHEADERS uninstall-man uninstall-man8
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
