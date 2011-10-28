@@ -16,9 +16,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UTILS_H
-#define __UTILS_H
+#ifndef __USBIP_H
+#define __USBIP_H
 
-int modify_match_busid(char *busid, int add);
+#ifdef HAVE_CONFIG_H
+#include "../config.h"
+#endif
 
-#endif /* __UTILS_H */
+/* usbip commands */
+int usbip_attach(int argc, char *argv[]);
+int usbip_detach(int argc, char *argv[]);
+int usbip_list(int argc, char *argv[]);
+int usbip_bind(int argc, char *argv[]);
+int usbip_unbind(int argc, char *argv[]);
+
+void usbip_attach_usage(void);
+void usbip_detach_usage(void);
+void usbip_list_usage(void);
+void usbip_bind_usage(void);
+void usbip_unbind_usage(void);
+
+#endif /* __USBIP_H */
