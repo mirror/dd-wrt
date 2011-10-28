@@ -69,7 +69,7 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libusbip_la_LIBADD =
 am_libusbip_la_OBJECTS = libusbip_la-names.lo \
-	libusbip_la-stub_driver.lo libusbip_la-usbip_common.lo \
+	libusbip_la-usbip_host_driver.lo libusbip_la-usbip_common.lo \
 	libusbip_la-vhci_driver.lo
 libusbip_la_OBJECTS = $(am_libusbip_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -229,11 +229,11 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-libusbip_la_CPPFLAGS := -DUSBIDS_FILE='"@USBIDS_DIR@/usb.ids"'
-libusbip_la_CFLAGS := @EXTRA_CFLAGS@
-libusbip_la_LDFLAGS := -version-info @LIBUSBIP_VERSION@
+libusbip_la_CPPFLAGS = -DUSBIDS_FILE='"@USBIDS_DIR@/usb.ids"'
+libusbip_la_CFLAGS = @EXTRA_CFLAGS@
+libusbip_la_LDFLAGS = -version-info @LIBUSBIP_VERSION@
 lib_LTLIBRARIES := libusbip.la
-libusbip_la_SOURCES := names.c names.h stub_driver.c stub_driver.h usbip.h \
+libusbip_la_SOURCES := names.c names.h usbip_host_driver.c usbip_host_driver.h \
 		       usbip_common.c usbip_common.h vhci_driver.c vhci_driver.h
 
 all: all-am
@@ -311,8 +311,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-names.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-stub_driver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-usbip_common.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-usbip_host_driver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-vhci_driver.Plo@am__quote@
 
 .c.o:
@@ -347,13 +347,13 @@ libusbip_la-names.lo: names.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-names.lo `test -f 'names.c' || echo '$(srcdir)/'`names.c
 
-libusbip_la-stub_driver.lo: stub_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-stub_driver.lo -MD -MP -MF $(DEPDIR)/libusbip_la-stub_driver.Tpo -c -o libusbip_la-stub_driver.lo `test -f 'stub_driver.c' || echo '$(srcdir)/'`stub_driver.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-stub_driver.Tpo $(DEPDIR)/libusbip_la-stub_driver.Plo
+libusbip_la-usbip_host_driver.lo: usbip_host_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-usbip_host_driver.lo -MD -MP -MF $(DEPDIR)/libusbip_la-usbip_host_driver.Tpo -c -o libusbip_la-usbip_host_driver.lo `test -f 'usbip_host_driver.c' || echo '$(srcdir)/'`usbip_host_driver.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-usbip_host_driver.Tpo $(DEPDIR)/libusbip_la-usbip_host_driver.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='stub_driver.c' object='libusbip_la-stub_driver.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='usbip_host_driver.c' object='libusbip_la-usbip_host_driver.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-stub_driver.lo `test -f 'stub_driver.c' || echo '$(srcdir)/'`stub_driver.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-usbip_host_driver.lo `test -f 'usbip_host_driver.c' || echo '$(srcdir)/'`usbip_host_driver.c
 
 libusbip_la-usbip_common.lo: usbip_common.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-usbip_common.lo -MD -MP -MF $(DEPDIR)/libusbip_la-usbip_common.Tpo -c -o libusbip_la-usbip_common.lo `test -f 'usbip_common.c' || echo '$(srcdir)/'`usbip_common.c
