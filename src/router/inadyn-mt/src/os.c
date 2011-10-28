@@ -273,7 +273,8 @@ static char *formatted_message(char *message,char *fmt,va_list args,int *is_wide
 	tmp_buff[MAXSTRING-1]='\0';
 
 
-	vsnprintf(message, buff_size-1, langStr(szLangStr,tmp_buff,MAXSTRING), args);
+//	vsnprintf(message, buff_size-1, langStr(szLangStr,tmp_buff,MAXSTRING), args);
+	vsnprintf(message, buff_size-1, tmp_buff, args);
 
 	return message;
 }
