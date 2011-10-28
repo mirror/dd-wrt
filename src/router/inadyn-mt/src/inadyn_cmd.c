@@ -1164,47 +1164,46 @@ static RC_TYPE get_lang_file_handler(CMD_DATA *p_cmd, int current_nr, void *p_co
 		return RC_INVALID_POINTER;
 
 	p_self->lang_hard_coded=1;
-
-
-	if (current_nr>=p_cmd->argc) /*no parameter -- means use hard coded*/
-
-		return RC_OK;
-
-	if (!(strncmp(p_cmd->argv[current_nr],"-",1))) /*no parameter -- means use hard coded*/
-
-		return RC_OK;
-
-
-	p_self->lang_hard_coded=0;
-
-
-	if ((is_file(p_cmd->argv[current_nr]))) { /*ignore if invalid*/
-
-		DBG_PRINTF((LOG_INFO,"I:" MODULE_TAG "Using default override language strings file, %s...\n",p_cmd->argv[current_nr]));
-	}
-	else {
-
-		DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Could not open default override language strings file, %s...\n",p_cmd->argv[current_nr]));
-
-		return RC_OK;
-	}
-
-	if (p_self->lang_file)
-
-		free(p_self->lang_file);
-
-#ifdef _WIN32
-
-	nt_console_name2(&(p_self->lang_file),p_cmd->argv[current_nr]);
-
-#else
-
-	p_self->lang_file=safe_malloc(strlen(p_cmd->argv[current_nr])+1);
-
-	strcpy(p_self->lang_file,p_cmd->argv[current_nr]);
-
-#endif
-
+	
+//dd-wrt - always use hardcoded language
+//	if (current_nr>=p_cmd->argc) /*no parameter -- means use hard coded*/
+//
+//		return RC_OK;
+//
+//	if (!(strncmp(p_cmd->argv[current_nr],"-",1))) /*no parameter -- means use hard coded*/
+//
+//		return RC_OK;
+//
+//
+//	p_self->lang_hard_coded=0;
+//
+//
+//	if ((is_file(p_cmd->argv[current_nr]))) { /*ignore if invalid*/
+//
+//		DBG_PRINTF((LOG_INFO,"I:" MODULE_TAG "Using default override language strings file, %s...\n",p_cmd->argv[current_nr]));
+//	}
+//	else {
+//
+//		DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Could not open default override language strings file, %s...\n",p_cmd->argv[current_nr]));
+//
+//		return RC_OK;
+//	}
+//
+//	if (p_self->lang_file)
+//
+//		free(p_self->lang_file);
+//
+//#ifdef _WIN32
+//
+//	nt_console_name2(&(p_self->lang_file),p_cmd->argv[current_nr]);
+//
+//#else
+//
+//	p_self->lang_file=safe_malloc(strlen(p_cmd->argv[current_nr])+1);
+//
+//	strcpy(p_self->lang_file,p_cmd->argv[current_nr]);
+//
+//#endif
 
 	return RC_OK;
 }

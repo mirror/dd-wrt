@@ -109,7 +109,9 @@ COMMON_OBJ=$(OUTDIR)/base64utils.o $(OUTDIR)/dyndns.o \
 	$(OUTDIR)/ip.o $(OUTDIR)/main.o $(OUTDIR)/os.o $(OUTDIR)/os_psos.o \
 	$(OUTDIR)/os_unix.o $(OUTDIR)/os_windows.o $(OUTDIR)/tcp.o \
 	$(OUTDIR)/inadyn_cmd.o $(OUTDIR)/unicode_util.o $(OUTDIR)/numbers.o \
-	$(OUTDIR)/dblhash.o $(OUTDIR)/lang.o $(OUTDIR)/path.o $(OUTDIR)/safe_mem.o \
+	$(OUTDIR)/dblhash.o
+#	$(OUTDIR)/lang.o 
+	$(OUTDIR)/path.o $(OUTDIR)/safe_mem.o \
 	$(OUTDIR)/md5.o	$(ARCH_SPECIFIC_OBJS)
 
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
