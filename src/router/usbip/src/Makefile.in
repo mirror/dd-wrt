@@ -34,8 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-sbin_PROGRAMS = usbip$(EXEEXT) usbipd$(EXEEXT) \
-	usbip_bind_driver$(EXEEXT)
+sbin_PROGRAMS = usbip$(EXEEXT) usbipd$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -48,22 +47,20 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_usbip_OBJECTS = usbip.$(OBJEXT) usbip_network.$(OBJEXT)
+am_usbip_OBJECTS = usbip.$(OBJEXT) utils.$(OBJEXT) \
+	usbip_network.$(OBJEXT) usbip_attach.$(OBJEXT) \
+	usbip_detach.$(OBJEXT) usbip_list.$(OBJEXT) \
+	usbip_bind.$(OBJEXT) usbip_unbind.$(OBJEXT)
 usbip_OBJECTS = $(am_usbip_OBJECTS)
 usbip_LDADD = $(LDADD)
-usbip_DEPENDENCIES = $(top_srcdir)/libsrc/libusbip.la
+usbip_DEPENDENCIES = $(top_builddir)/libsrc/libusbip.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
-am_usbip_bind_driver_OBJECTS = bind-driver.$(OBJEXT) utils.$(OBJEXT) \
-	usbip_network.$(OBJEXT)
-usbip_bind_driver_OBJECTS = $(am_usbip_bind_driver_OBJECTS)
-usbip_bind_driver_LDADD = $(LDADD)
-usbip_bind_driver_DEPENDENCIES = $(top_srcdir)/libsrc/libusbip.la
 am_usbipd_OBJECTS = usbipd.$(OBJEXT) usbip_network.$(OBJEXT)
 usbipd_OBJECTS = $(am_usbipd_OBJECTS)
 usbipd_LDADD = $(LDADD)
-usbipd_DEPENDENCIES = $(top_srcdir)/libsrc/libusbip.la
+usbipd_DEPENDENCIES = $(top_builddir)/libsrc/libusbip.la
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -90,10 +87,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(usbip_SOURCES) $(usbip_bind_driver_SOURCES) \
-	$(usbipd_SOURCES)
-DIST_SOURCES = $(usbip_SOURCES) $(usbip_bind_driver_SOURCES) \
-	$(usbipd_SOURCES)
+SOURCES = $(usbip_SOURCES) $(usbipd_SOURCES)
+DIST_SOURCES = $(usbip_SOURCES) $(usbipd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -217,14 +212,14 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS := -I$(top_srcdir)/libsrc -DUSBIDS_FILE='"@USBIDS_DIR@/usb.ids"'
-AM_CFLAGS := @EXTRA_CFLAGS@ @PACKAGE_CFLAGS@
-LDADD := $(top_srcdir)/libsrc/libusbip.la @PACKAGE_LIBS@
-usbip_SOURCES := usbip.c usbip_network.c usbip_network.h
-usbipd_SOURCES := usbipd.c usbip_network.c usbip_network.h
-usbip_bind_driver_SOURCES := bind-driver.c utils.c utils.h \
-			     usbip_network.h usbip_network.c
+AM_CPPFLAGS = -I$(top_srcdir)/libsrc -DUSBIDS_FILE='"@USBIDS_DIR@/usb.ids"'
+AM_CFLAGS = @EXTRA_CFLAGS@ @PACKAGE_CFLAGS@
+LDADD = $(top_builddir)/libsrc/libusbip.la @PACKAGE_LIBS@
+usbip_SOURCES := usbip.c utils.c usbip_network.c \
+		 usbip_attach.c usbip_detach.c usbip_list.c \
+		 usbip_bind.c usbip_unbind.c
 
+usbipd_SOURCES := usbipd.c usbip_network.c
 all: all-am
 
 .SUFFIXES:
@@ -305,9 +300,6 @@ clean-sbinPROGRAMS:
 usbip$(EXEEXT): $(usbip_OBJECTS) $(usbip_DEPENDENCIES) 
 	@rm -f usbip$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(usbip_OBJECTS) $(usbip_LDADD) $(LIBS)
-usbip_bind_driver$(EXEEXT): $(usbip_bind_driver_OBJECTS) $(usbip_bind_driver_DEPENDENCIES) 
-	@rm -f usbip_bind_driver$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(usbip_bind_driver_OBJECTS) $(usbip_bind_driver_LDADD) $(LIBS)
 usbipd$(EXEEXT): $(usbipd_OBJECTS) $(usbipd_DEPENDENCIES) 
 	@rm -f usbipd$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(usbipd_OBJECTS) $(usbipd_LDADD) $(LIBS)
@@ -318,9 +310,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bind-driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip_attach.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip_bind.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip_detach.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip_network.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbip_unbind.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbipd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 

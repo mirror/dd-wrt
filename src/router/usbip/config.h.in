@@ -3,9 +3,6 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Define to 1 if you have the `bzero' function. */
-#undef HAVE_BZERO
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -128,7 +125,7 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* numeric version number */
+/* binary-coded decimal version number */
 #undef USBIP_VERSION
 
 /* Version number of package */
