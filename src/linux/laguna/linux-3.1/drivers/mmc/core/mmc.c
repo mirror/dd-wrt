@@ -299,10 +299,10 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 		card->ext_csd.card_type = EXT_CSD_CARD_TYPE_DDR_1_8V;
 		break;
 	case EXT_CSD_CARD_TYPE_52 | EXT_CSD_CARD_TYPE_26:
-		card->ext_csd.hs_max_dtr = 52000000;
+		card->ext_csd.hs_max_dtr = 50000000;
 		break;
 	case EXT_CSD_CARD_TYPE_26:
-		card->ext_csd.hs_max_dtr = 26000000;
+		card->ext_csd.hs_max_dtr = 25000000;
 		break;
 	default:
 		/* MMC v4 spec says this cannot happen */
@@ -557,7 +557,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 	mmc_go_idle(host);
 
 	/* The extra bit indicates that we support high capacity */
-	err = mmc_send_op_cond(host, ocr | (1 << 30), &rocr);
+	err = mmc_send_op_cond(host, ocr , &rocr);
 	if (err)
 		goto err;
 
@@ -1021,6 +1021,11 @@ int mmc_attach_mmc(struct mmc_host *host)
 		return err;
 
 	mmc_attach_bus_ops(host);
+
+//Jacky for eMMC capabilities
+	host->caps   |= (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA);
+        host->caps   |= MMC_CAP_MMC_HIGHSPEED;
+
 	if (host->ocr_avail_mmc)
 		host->ocr_avail = host->ocr_avail_mmc;
 
