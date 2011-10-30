@@ -1217,6 +1217,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_txantenna", "3");
 	setRouter("Dlink DIR-825");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_TEW673GRU
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	setRouter("Trendnet TEW-673GRU");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WRT400
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");

@@ -245,6 +245,9 @@ endif
 ifeq ($(CONFIG_WZRG300NH2),y)
 	cp $(LINUXDIR)/.config_wzrg300nh2 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
+	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
@@ -703,6 +706,10 @@ ifeq ($(CONFIG_DIR825),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/dir825tw-uimage.bin
 	cat tools/dir825tw.tag >> $(ARCH)-uclibc/dir825tw-uimage.bin
 	
+endif
+ifeq ($(CONFIG_TEW673GRU),y)
+	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/tew673gru-uimage.bin
+	cat tools/tew673gru.tag >> $(ARCH)-uclibc/tew673gru-uimage.bin
 endif
 ifeq ($(CONFIG_WNDR3700),y)
 	mkdir -p $(ARCH)-uclibc/wndr3700/image
