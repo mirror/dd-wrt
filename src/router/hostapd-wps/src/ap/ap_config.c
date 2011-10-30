@@ -499,7 +499,7 @@ static void clear_mac_bytes(u8 *addr, int mask)
 		memset(addr + ETH_ALEN - clr_bytes, 0, clr_bytes);
 
 	if (mask % 8)
-		addr[ETH_ALEN + clr_bytes - 1] &= ~((1 << (mask % 8)) - 1);
+		addr[ETH_ALEN - clr_bytes - 1] &= ~((1 << (mask % 8)) - 1);
 }
 
 /**

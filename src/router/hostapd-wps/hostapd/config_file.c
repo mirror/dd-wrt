@@ -177,6 +177,9 @@ static int hostapd_config_read_maclist(const char *fname,
 				return -1;
 			}
 		}
+		else {
+			mask = 0;
+		}
 
 		if (hwaddr_aton(buf, addr)) {
 			wpa_printf(MSG_ERROR, "Invalid MAC address '%s' at "
