@@ -1080,6 +1080,8 @@ void mmc_set_timing(struct mmc_host *host, unsigned int timing)
 {
 	mmc_host_clk_hold(host);
 	host->ios.timing = timing;
+	if (host->ios.timing&MMC_TIMING_MMC_HS)
+	 host->ios.clock = 50000000;//jacky
 	mmc_set_ios(host);
 	mmc_host_clk_release(host);
 }

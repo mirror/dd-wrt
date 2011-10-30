@@ -3200,9 +3200,13 @@ int pcie_set_readrq(struct pci_dev *dev, int rq)
 	int cap, err = -EINVAL;
 	u16 ctl, v;
 
+#ifdef	CONFIG_ARCH_CNS3XXX
+	if (rq != 128)
+		rq = 128;
+#else
 	if (rq < 128 || rq > 4096 || !is_power_of_2(rq))
 		goto out;
-
+#endif
 	v = (ffs(rq) - 8) << 12;
 
 	cap = pci_pcie_cap(dev);
