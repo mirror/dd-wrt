@@ -443,9 +443,9 @@ int main(int argc, char **argv)
 	start_service("devinit");	//init /dev /proc etc.
 	start_service("sysinit");
 #ifndef HAVE_MICRO
-#ifndef HAVE_LAGUNA
+//#ifndef HAVE_LAGUNA
 	if (console_init())
-#endif
+//#endif
 		noconsole = 1;
 #endif				//HAVE_MICRO
 	start_service("drivers");
