@@ -25,8 +25,10 @@ function upgrade(F,id) {
 	}
 	if(upgrade_file) {
 		F.upgrade_file.value = upgrade_file;
-		$(F.id).setAttribute('action', 'olupgrade.cgi');
-		$(F.id).setAttribute('enctype', '');
+		//$(F.id).setAttribute('action', 'olupgrade.cgi');
+		//$(F.id).setAttribute('enctype', '');
+		F.action = 'olupgrade.cgi';
+		F.removeAttribute('enctype');
 		$('submit_button').remove();
 	} else if (F.file.value == "")	{
 		alert(errmsg.err60);
@@ -42,9 +44,13 @@ function upgrade(F,id) {
 }
 
 function getUpgrades(F) {
-	$(F.id).setAttribute('action', 'apply.cgi');
-	$(F.id).setAttribute('enctype', '');
-	F.action.value = 'Apply';
+	//$(F.id).setAttribute('action', 'apply.cgi');
+	//$(F.id).setAttribute('enctype', '');
+	F.action = 'apply.cgi';
+	F.removeAttribute('enctype');
+	//F.action.value = 'Apply';
+	$('submit_action').value = 'Apply';
+	$('submit_action').name = 'action';
 	F.change_action.value = 'gozila_cgi';
 	F.submit_button.value = 'Upgrade';
 	F.submit_type.value = 'get_upgrades';
@@ -81,7 +87,7 @@ addEvent(window, "unload", function() {
 					<div id="contents">
 						<form name="firmware" id="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
 							<input type="hidden" name="submit_button" id="submit_button" />
-							<input type="hidden" name="action" />
+							<input type="hidden" name="_action" id="submit_action" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							
