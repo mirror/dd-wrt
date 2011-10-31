@@ -911,7 +911,7 @@ int addrule( char *mac, char *upstream, char *downstream )
 
 	memset( newqos, 0, strlen( qos_mac ) );
 	char level[32], level2[32], level3[32], data[32], type[32];
-
+	strcpy(level3, "0");
 	do
 	{
 	    if( sscanf

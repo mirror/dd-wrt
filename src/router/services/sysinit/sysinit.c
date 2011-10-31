@@ -2541,7 +2541,7 @@ void start_nvram(void)
 				break;
 
 			if(!strcmp(level3, "|")) 
-				strcpy(level3, "0\0");
+				strcpy(level3, "0");
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
 				if (strlen(newqos) > 0)
@@ -2572,7 +2572,7 @@ void start_nvram(void)
 				break;
 			
 			if (!strcmp(level3, "|"))
-				strcpy(level3, "0\0");
+				strcpy(level3, "0");
 			
 			if (strlen(newip) > 0)
 				sprintf(newip, "%s %s %s %s %s |", newip, data, level, level2, level3);

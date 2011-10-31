@@ -157,7 +157,8 @@ int addrule(char *mac, char *upstream, char *downstream)
     char *newqos = malloc(strlen(qos_mac)*2);
     memset(newqos,0,strlen(qos_mac)*2);
     char level[32], level2[32], level3[32], data[32], type[32];
-    do
+    strcpy(level3, "0");
+	do
     {
 	if( sscanf( qos_mac, "%31s %31s %31s %31s %31s |", data, level, level2 , type, level3) < 4 )
 	    break;
