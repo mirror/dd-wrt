@@ -45,7 +45,12 @@ nodeflate
 
 # http://polbox.com/h/hs001/ fork from PPP project by Jan Dubiec
 # ppp-2.4.2 or later with MPPE and MPPC, kernel module ppp_mppe_mppc.o
-# {{{
+#    required - make MPPE obligatory, disconnect if peer doesn't support MPPE
+#    stateless - try to negotiate stateless mode
+#    no40 - disable 40 bit keys
+#    no56 - disable 56 bit keys
+#    no128 - disable 128 bit keys
+#{{{
 # Require MPPE 128-bit encryption
 #mppe required,stateless
 # }}}

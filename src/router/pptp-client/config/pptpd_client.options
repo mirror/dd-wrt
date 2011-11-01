@@ -1,9 +1,21 @@
+#debug stuff
+logfd2
+debug
+dump
+#
 defaultroute
 lock
 noauth
 nodetach
 refuse-eap
-lcp-echo-failure 3
+#refuse-pap
+#refuse-chap
+#refuse-mschap
+nobsdcomp
+nodeflate
+#mppe required,stateless	#,no40,no56
+mppc
+lcp-echo-failure 30
 lcp-echo-interval 2
 persist
 usepeerdns
