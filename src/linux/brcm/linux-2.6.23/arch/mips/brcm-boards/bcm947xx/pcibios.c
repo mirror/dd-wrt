@@ -324,6 +324,39 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 				udelay(1);
 			}
 		}
+		
+		/* Broadcom suggested to add this block to improve
+		 *  USB stability and performance.
+		 */
+		/* War for 4716 failures. */
+		if (sih->chip == BCM4716_CHIP_ID) {
+			uint32 tmp;
+			uint32 delay = 500;
+			uint32 val = 0;
+			uint32 clk_freq;
+			
+			clk_freq = si_cpu_clock(sih);
+			if(clk_freq >= 480000000)
+				val = 0x1846b; /* set CDR to 0x11(fast) */
+			else if (clk_freq == 453000000)
+				val = 0x1046b; /* set CDR to 0x10(slow) */
+
+			/* Change Shim mdio control reg to fix host not acking at high frequencies
+			*/
+			if (val) {
+				writel(0x1, (uintptr)regs + 0x524); /* write sel to enable */
+				udelay(delay);
+
+				writel(val, (uintptr)regs + 0x524);
+				udelay(delay);
+				writel(0x4ab, (uintptr)regs + 0x524);
+				udelay(delay);
+				tmp = readl((uintptr)regs + 0x528);
+				printk("USB20H mdio control register : 0x%x\n", tmp);
+				writel(0x80000000, (uintptr)regs + 0x528);
+			}
+		}
+
 		/* PRxxxx: War for 5354 failures. */
 		if (si_corerev(sih) == 1) {
 			uint32 tmp;
