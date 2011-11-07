@@ -113,8 +113,8 @@ void start_hotplug_block(void)
 	if (!(devpath = getenv("DEVPATH")))
 		return;
 	char *slash = strrchr(devpath, '/');
-	//sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
-	//        devpath);
+	sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
+	        devpath);
 
 	char devname[64];
 	sprintf(devname, "/dev/%s", slash + 1);
@@ -134,7 +134,7 @@ void start_hotplug_block(void)
 		sysprintf("mknod %s b %d %d\n", devname, major, minor);
 		fclose(fp);	// skip partitions
 	}
-//      sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
+      sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
 	if (!strcmp(action, "add"))
 		usb_add_ufd(devname);
 	if (!strcmp(action, "remove"))
@@ -211,6 +211,11 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("ext2");
 		insmod("jbd");
 		insmod("ext3");
+	}
+	if (!strcmp(fs, "ext4")) {
+		insmod("mbcache");
+		insmod("jbd2");
+		insmod("ext4");
 	}
 #endif
 	if (!strcmp(fs, "vfat")) {
@@ -308,7 +313,7 @@ int usb_add_ufd(char *devpath)
 			rcnt++;
 			goto retry;
 		}
-//              sysprintf("echo open devname %s fp %d>> /tmp/hotplugs", devpath,fp);
+              sysprintf("echo open devname %s>> /tmp/hotplugs", devpath);
 	} else {
 		for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 			if ((dir = opendir("/dev/discs")) != NULL
@@ -371,8 +376,7 @@ int usb_add_ufd(char *devpath)
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			if (new && (strncmp(entry->d_name, "sd", 2))
-			    && (strncmp(entry->d_name, "sr", 2)))
+			if (new && (strncmp(entry->d_name, "sd", 2)) && (strncmp(entry->d_name, "sr", 2)) && (strncmp(entry->d_name, "mmc", 3)))
 				continue;
 			mounted[i] = 1;
 
@@ -440,7 +444,13 @@ int usb_add_ufd(char *devpath)
 							fs = "ext2";
 #endif
 							break;
+						} 
+#ifdef HAVE_USB_ADVANCED
+						else if (strstr(line, "Ext4")) {
+							fs = "ext4";
+							break;
 						}
+#endif
 #ifdef HAVE_NTFS3G
 						else if (strstr(line, "NTFS")) {
 							fs = "ntfs";
