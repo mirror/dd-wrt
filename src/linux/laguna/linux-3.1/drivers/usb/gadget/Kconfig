@@ -96,6 +96,9 @@ config USB_GADGET_VBUS_DRAW
 	   This value will be used except for system-specific gadget
 	   drivers that have more specific information.
 
+config	USB_GADGET_SELECTED
+	boolean
+
 #
 # USB Peripheral Controller Support
 #
