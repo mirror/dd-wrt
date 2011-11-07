@@ -775,8 +775,10 @@ static int __init laguna_model_setup(void)
 
 
 		if (laguna_info.config_bitmap & (SD_LOAD))
+		{
+			printk(KERN_EMERG "init sdhci\n");
 			cns3xxx_sdhci_init();
-
+		}
 		if (laguna_info.config_bitmap & (UART0_LOAD))
 			laguna_uart.num_resources = 1;
 		if (laguna_info.config_bitmap & (UART1_LOAD))

@@ -99,8 +99,6 @@ static struct platform_device cns3xxx_sdhci_pdev = {
 void __init cns3xxx_sdhci_init(void)
 {
 	u32 __iomem *gpioa = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0014);
-	u32 __iomem *iocdb_io = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0020);
-	unsigned long iocdb = 0;
 	u32 gpioa_pins = __raw_readl(gpioa);
 
 	/* MMC/SD pins share with GPIOA */
@@ -109,12 +107,6 @@ void __init cns3xxx_sdhci_init(void)
 
 	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SDIO));
 	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SDIO));
-
-
-	iocdb = __raw_readl(iocdb_io);;
-	iocdb &= (~(3 << 10));
-	iocdb |= (2 << 10);
-	__raw_writel(iocdb, iocdb_io);
 
 	platform_device_register(&cns3xxx_sdhci_pdev);
 }
