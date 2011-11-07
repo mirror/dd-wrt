@@ -113,8 +113,8 @@ void start_hotplug_block(void)
 	if (!(devpath = getenv("DEVPATH")))
 		return;
 	char *slash = strrchr(devpath, '/');
-	sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
-	        devpath);
+	//sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
+	//        devpath);
 
 	char devname[64];
 	sprintf(devname, "/dev/%s", slash + 1);
@@ -134,7 +134,7 @@ void start_hotplug_block(void)
 		sysprintf("mknod %s b %d %d\n", devname, major, minor);
 		fclose(fp);	// skip partitions
 	}
-      sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
+      //sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
 	if (!strcmp(action, "add"))
 		usb_add_ufd(devname);
 	if (!strcmp(action, "remove"))
@@ -314,7 +314,7 @@ int usb_add_ufd(char *devpath)
 			rcnt++;
 			goto retry;
 		}
-              sysprintf("echo open devname %s>> /tmp/hotplugs", devpath);
+//              sysprintf("echo open devname %s>> /tmp/hotplugs", devpath);
 	} else {
 		for (i = 1; i < 16; i++) {	//it needs some time for disk to settle down and /dev/discs is created
 			if ((dir = opendir("/dev/discs")) != NULL
@@ -366,14 +366,14 @@ int usb_add_ufd(char *devpath)
 			if (devpath) {
 				char devname[64];
 				sprintf(devname, "/dev/%s", entry->d_name);
-//                              sysprintf
-//                                  ("echo cmp devname %s >> /tmp/hotplugs"
-//                                   ,entry->d_name);
+                              //sysprintf
+                                //  ("echo cmp devname %s >> /tmp/hotplugs"
+                                //   ,entry->d_name);
 				if (strcmp(devname, devpath))
 					continue;	// skip all non matching devices
-//                              sysprintf
-//                                  ("echo take devname %s >> /tmp/hotplugs",
-//                                   devname);
+                            //  sysprintf
+                            //      ("echo take devname %s >> /tmp/hotplugs",
+                            //       devname);
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
@@ -388,7 +388,7 @@ int usb_add_ufd(char *devpath)
 			 */
 			if (new) {
 				//everything else would cause a memory fault
-				if (usb_ufd_connected(entry->d_name) == FALSE)
+				if ((strncmp(entry->d_name, "mmcblk", 6)) && usb_ufd_connected(entry->d_name) == FALSE)
 					continue;
 			} else {
 				if (usb_ufd_connected(entry->d_name + 4) ==
@@ -396,10 +396,12 @@ int usb_add_ufd(char *devpath)
 					continue;
 			}
 			if (new) {
+		//		sysprintf("echo test %s >> /tmp/hotplugs",entry->d_name);
 				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
 				if (strlen(entry->d_name) != 7 && !(strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
+		//		sysprintf("echo test success %s >> /tmp/hotplugs",entry->d_name);
 				sprintf(path, "/dev/%s", entry->d_name);
 			} else {
 				sprintf(path, "/dev/discs/%s/disc",
