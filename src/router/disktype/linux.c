@@ -28,13 +28,14 @@
 #include "global.h"
 
 /*
- * ext2/ext3 file system
+ * ext2/ext3/ext4 file system
  */
 
-void detect_ext23(SECTION *section, int level)
+void detect_ext234(SECTION *section, int level)
 {
   unsigned char *buf;
   char s[256];
+  int fslevel, is_journal, is_dev;
   u4 blocksize;
   u8 blockcount;
 
@@ -42,12 +43,32 @@ void detect_ext23(SECTION *section, int level)
     return;
 
   if (get_le_short(buf + 56) == 0xEF53) {
-    if (get_le_long(buf + 96) & 0x0008)       /* JOURNAL_DEV flag */
-      print_line(level, "Ext3 external journal");
-    else if (get_le_long(buf + 92) & 0x0004)  /* HAS_JOURNAL flag */
-      print_line(level, "Ext3 file system");
-    else
-      print_line(level, "Ext2 file system");
+    fslevel = 2;
+    is_journal = 0;
+    is_dev = 0;
+    /* Ext3/4 external journal: INCOMPAT feature JOURNAL_DEV */
+    if (get_le_long(buf + 96) & 0x0008) {
+      is_journal = 1;
+      fslevel = 3;  /* at least ext3, ext2 has no journalling */
+    }
+    /* Ext3/4 COMPAT feature: HAS_JOURNAL */
+    if (get_le_long(buf + 92) & 0x0004)
+      fslevel = 3;
+    /* Ext4 INCOMPAT features: EXTENTS, 64BIT, FLEX_BG */
+    if (get_le_long(buf + 96) & 0x02C0)
+      fslevel = 4;
+    /* Ext4 RO_COMPAT features: HUGE_FILE, GDT_CSUM, DIR_NLINK, EXTRA_ISIZE */
+    if (get_le_long(buf + 100) & 0x0078)
+      fslevel = 4;
+    /* Ext4 sets min_extra_isize even on external journals */
+    if (get_le_short(buf + 348) >= 0x1c)
+      fslevel = 4;
+    /* Ext4dev TEST_FILESYS flag */
+    if (get_le_long(buf + 352) & 0x0004)
+      is_dev = 1;
+
+    print_line(level, "Ext%d%s %s", fslevel, is_dev ? "dev" : "",
+               is_journal ? "external journal" : "file system");
 
     get_string(buf + 120, 16, s);
     if (s[0])
@@ -69,6 +90,33 @@ void detect_ext23(SECTION *section, int level)
     /* 62 2 s_minor_rev_level */
     /* 72 4 s_creator_os */
     /* 92 3x4 s_feature_compat, s_feature_incompat, s_feature_ro_compat */
+  }
+}
+
+/*
+ * btrfs file system
+ */
+
+void detect_btrfs(SECTION *section, int level)
+{
+  unsigned char *buf;
+  char s[258];
+
+  if (get_buffer(section, 64 * 1024, 1024, (void **)&buf) < 1024)
+    return;
+
+  if (memcmp(buf + 64, "_BHRfS_M", 8) == 0) {
+    print_line(level, "Btrfs file system");
+
+    get_string(buf + 299, 256, s);
+    if (s[0])
+      print_line(level + 1, "Volume name \"%s\"", s);
+
+    format_uuid(buf + 32, s);
+    print_line(level + 1, "UUID %s", s);
+
+    format_size(s, get_le_quad(buf + 0x70));
+    print_line(level + 1, "Volume size %s", s);
   }
 }
 
