@@ -1685,7 +1685,12 @@ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
 # CONFIG_USB_R8A66597_HCD is not set
 # CONFIG_USB_WHCI_HCD is not set
 # CONFIG_USB_HWA_HCD is not set
-# CONFIG_USB_DWC_OTG is not set
+# CONFIG_USB_MUSB_HDRC is not set
+CONFIG_USB_DWC_OTG=y
+# CONFIG_DWC_DEBUG is not set
+# CONFIG_DWC_HOST_ONLY is not set
+CONFIG_DWC_OTG_MODE=y
+# CONFIG_DWC_DEVICE_ONLY is not set
 
 #
 # USB Device Class drivers
@@ -1805,7 +1810,24 @@ CONFIG_USB_SERIAL_OPTION=m
 # CONFIG_USB_TEST is not set
 # CONFIG_USB_ISIGHTFW is not set
 # CONFIG_USB_YUREX is not set
-# CONFIG_USB_GADGET is not set
+CONFIG_USB_GADGET=y
+# CONFIG_USB_GADGET_DEBUG is not set
+# CONFIG_USB_GADGET_DEBUG_FILES is not set
+# CONFIG_USB_GADGET_DEBUG_FS is not set
+CONFIG_USB_GADGET_VBUS_DRAW=2
+# CONFIG_USB_ZERO is not set
+# CONFIG_USB_ETH is not set
+# CONFIG_USB_G_NCM is not set
+# CONFIG_USB_GADGETFS is not set
+# CONFIG_USB_FUNCTIONFS is not set
+# CONFIG_USB_FILE_STORAGE is not set
+# CONFIG_USB_MASS_STORAGE is not set
+# CONFIG_USB_G_SERIAL is not set
+# CONFIG_USB_G_PRINTER is not set
+# CONFIG_USB_CDC_COMPOSITE is not set
+# CONFIG_USB_G_MULTI is not set
+# CONFIG_USB_G_HID is not set
+# CONFIG_USB_G_DBGP is not set
 
 #
 # OTG and related infrastructure
