@@ -213,6 +213,7 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("ext3");
 	}
 	if (!strcmp(fs, "ext4")) {
+		insmod("crc16");
 		insmod("mbcache");
 		insmod("jbd2");
 		insmod("ext4");
@@ -376,7 +377,7 @@ int usb_add_ufd(char *devpath)
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			if (new && (strncmp(entry->d_name, "sd", 2)) && (strncmp(entry->d_name, "sr", 2)) && (strncmp(entry->d_name, "mmc", 3)))
+			if (new && (strncmp(entry->d_name, "sd", 2)) && (strncmp(entry->d_name, "sr", 2)) && (strncmp(entry->d_name, "mmcblk", 6)))
 				continue;
 			mounted[i] = 1;
 
@@ -395,7 +396,9 @@ int usb_add_ufd(char *devpath)
 					continue;
 			}
 			if (new) {
-				if (strlen(entry->d_name) != 3)
+				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6)))
+					continue;
+				if (strlen(entry->d_name) != 7 && !(strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
 				sprintf(path, "/dev/%s", entry->d_name);
 			} else {
