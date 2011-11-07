@@ -564,6 +564,7 @@ char *get3GControlDevice(void)
 				devicelist[devicecount].name);
 			if (devicelist[devicecount].driver) {
 				insmod("usbserial");
+				insmod("usb_wwan");
 				insmod(devicelist[devicecount].driver);
 			}
 			if (devicelist[devicecount].datadevice) {
@@ -645,6 +646,7 @@ char *get3GControlDevice(void)
 	//not found, use generic implementation (tts0, all drivers)
 	insmod("cdc-acm");
 	insmod("usbserial");
+	insmod("usb_wwan");
 	insmod("sierra");
 	insmod("option");
 	return ttsdevice;
