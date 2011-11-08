@@ -496,6 +496,7 @@ static void alarm_handler(int i)
 		event = event_queue;
 		event_queue = event_queue->next;
 		event->next = NULL;
+		event->flags &= ~TFLAG_QUEUED;
 
 #ifdef TIMER_PROFILE
 		end = uclock();
@@ -526,8 +527,8 @@ static void alarm_handler(int i)
 		 * allocated timer), which results in queueing the same pointer once
 		 * more. And this way, loop in event queue is created. 
 		 */
-		if (!(event->flags & TFLAG_CANCELLED)
-		    && (!(event->flags & TFLAG_QUEUED)
+		if (!( (event->flags & TFLAG_CANCELLED)
+		    || (event->flags & TFLAG_QUEUED)
 			|| (event->flags & TFLAG_NOQ))) {
 
 			// if the event is a recurring event, reset the timer and
