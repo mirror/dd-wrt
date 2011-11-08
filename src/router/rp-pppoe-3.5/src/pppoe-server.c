@@ -6,7 +6,7 @@
 *
 * Implementation of a user-space PPPoE server
 *
-* Copyright (C) 2000-2009 Roaring Penguin Software Inc.
+* Copyright (C) 2000 Roaring Penguin Software Inc.
 *
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
@@ -39,7 +39,6 @@ static char const RCSID[] =
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <sys/file.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -143,12 +142,6 @@ static int CheckPoolSyntax = 0;
 
 /* Synchronous mode */
 static int Synchronous = 0;
-
-/* Ignore PADI if no free sessions */
-static int IgnorePADIIfNoFreeSessions = 0;
-
-static int KidPipe[2] = {-1, -1};
-static int LockFD = -1;
 
 /* Random seed for cookie generation */
 #define SEED_LEN 16
@@ -553,12 +546,6 @@ processPADI(Interface *ethif, PPPoEPacket *packet, int len)
 	return;
     }
 
-    /* If no free sessions and "-i" flag given, ignore */
-    if (IgnorePADIIfNoFreeSessions && !FreeSessions) {
-	syslog(LOG_INFO, "PADI ignored - No free session slots available");
-	return;
-    }
-
     /* If number of sessions per MAC is limited, check here and don't
        send PADO if already max number of sessions. */
     if (MaxSessionsPerMac) {
@@ -904,15 +891,10 @@ processPADR(Interface *ethif, PPPoEPacket *packet, int len)
 	return;
     }
 
-    /* In the child process */
-
-    /* Reset signal handlers to default */
-    signal(SIGTERM, SIG_DFL);
-    signal(SIGINT, SIG_DFL);
+    /* In the child process.  */
 
     /* Close all file descriptors except for socket */
     closelog();
-    if (LockFD >= 0) close(LockFD);
     for (i=0; i<CLOSEFD; i++) {
 	if (i != sock) {
 	    close(i);
@@ -1020,7 +1002,6 @@ usage(char const *argv0)
     printf( "   -o offset      -- Assign session numbers starting at offset+1.\n");
     printf( "   -f disc:sess   -- Set Ethernet frame types (hex).\n");
     printf( "   -s             -- Use synchronous PPP mode.\n");
-    printf( "   -X pidfile     -- Write PID and lock pidfile.\n");
 #ifdef HAVE_LINUX_KERNEL_PPPOE
     printf( "   -k             -- Use kernel-mode PPPoE.\n");
 #endif
@@ -1034,9 +1015,8 @@ usage(char const *argv0)
     printf( "   -1             -- Allow only one session per user.\n");
 #endif
 
-    printf( "   -i             -- Ignore PADI if no free sessions.\n");
     printf( "   -h             -- Print usage information.\n\n");
-    printf( "PPPoE-Server Version %s, Copyright (C) 2001-2009 Roaring Penguin Software Inc.\n", VERSION);
+    printf( "PPPoE-Server Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
 
 #ifndef HAVE_LICENSE
     printf( "PPPoE-Server comes with ABSOLUTELY NO WARRANTY.\n");
@@ -1068,17 +1048,14 @@ pppoeserver_main(int argc, char **argv)
     int found;
     unsigned int discoveryType, sessionType;
     char *addressPoolFname = NULL;
-    char *pidfile = NULL;
-    char c;
-
 #ifdef HAVE_LICENSE
     int use_clustering = 0;
 #endif
 
 #ifndef HAVE_LINUX_KERNEL_PPPOE
-    char *options = "X:ix:hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1";
+    char *options = "x:hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1";
 #else
-    char *options = "X:ix:hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1";
+    char *options = "x:hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1";
 #endif
 
     if (getuid() != geteuid() ||
@@ -1100,9 +1077,6 @@ pppoeserver_main(int argc, char **argv)
     /* Parse command-line options */
     while((opt = getopt(argc, argv, options)) != -1) {
 	switch(opt) {
-	case 'i':
-	    IgnorePADIIfNoFreeSessions = 1;
-	    break;
 	case 'x':
 	    if (sscanf(optarg, "%d", &MaxSessionsPerMac) != 1) {
 		usage(argv[0]);
@@ -1163,9 +1137,6 @@ pppoeserver_main(int argc, char **argv)
 	    SET_STRING(addressPoolFname, optarg);
 	    break;
 
-	case 'X':
-	    SET_STRING(pidfile, optarg);
-	    break;
 	case 's':
 	    Synchronous = 1;
 	    /* Pass the Synchronous option on to pppoe */
@@ -1504,45 +1475,12 @@ pppoeserver_main(int argc, char **argv)
 
     /* Daemonize -- UNIX Network Programming, Vol. 1, Stevens */
     if (beDaemon) {
-	if (pipe(KidPipe) < 0) {
-	    fatalSys("pipe");
-	}
 	i = fork();
 	if (i < 0) {
 	    fatalSys("fork");
 	} else if (i != 0) {
 	    /* parent */
-	    close(KidPipe[1]);
-	    KidPipe[1] = -1;
-	    /* Wait for child to give the go-ahead */
-	    while(1) {
-		int r = read(KidPipe[0], &c, 1);
-		if (r == 0) {
-		    fprintf(stderr, "EOF from child - something went wrong; please check logs.\n");
-		    exit(EXIT_FAILURE);
-		}
-		if (r < 0) {
-		    if (errno == EINTR) continue;
-		    fatalSys("read");
-		}
-		break;
-	    }
-
-	    if (c == 'X') {
-		exit(EXIT_SUCCESS);
-	    }
-
-	    /* Read error message from child */
-	    while (1) {
-		int r = read(KidPipe[0], &c, 1);
-		if (r == 0) exit(EXIT_FAILURE);
-		if (r < 0) {
-		    if (errno == EINTR) continue;
-		    fatalSys("read");
-		}
-		fprintf(stderr, "%c", c);
-	    }
-	    exit(EXIT_FAILURE);
+	    exit(EXIT_SUCCESS);
 	}
 	setsid();
 	signal(SIGHUP, SIG_IGN);
@@ -1555,11 +1493,6 @@ pppoeserver_main(int argc, char **argv)
 
 	chdir("/");
 
-	if (KidPipe[0] >= 0) {
-	    close(KidPipe[0]);
-	    KidPipe[0] = -1;
-	}
-
 	/* Point stdin/stdout/stderr to /dev/null */
 	for (i=0; i<3; i++) {
 	    close(i);
@@ -1571,39 +1504,6 @@ pppoeserver_main(int argc, char **argv)
 	    dup2(i, 2);
 	    if (i > 2) close(i);
 	}
-    }
-
-    if (pidfile) {
-	FILE *foo = NULL;
-	if (KidPipe[1] >= 0) foo = fdopen(KidPipe[1], "w");
-	struct flock fl;
-	char buf[64];
-	fl.l_type = F_WRLCK;
-	fl.l_whence = SEEK_SET;
-	fl.l_start = 0;
-	fl.l_len = 0;
-	LockFD = open(pidfile, O_RDWR|O_CREAT, 0666);
-	if (LockFD < 0) {
-	    syslog(LOG_INFO, "Could not open PID file %s: %s", pidfile, strerror(errno));
-	    if (foo) fprintf(foo, "ECould not open PID file %s: %s\n", pidfile, strerror(errno));
-	    exit(1);
-	}
-	if (fcntl(LockFD, F_SETLK, &fl) < 0) {
-	    syslog(LOG_INFO, "Could not lock PID file %s: Is another process running?", pidfile);
-	    if (foo) fprintf(foo, "ECould not lock PID file %s: Is another process running?\n", pidfile);
-	    exit(1);
-	}
-	ftruncate(LockFD, 0);
-	snprintf(buf, sizeof(buf), "%lu\n", (unsigned long) getpid());
-	write(LockFD, buf, strlen(buf));
-	/* Do not close fd... use it to retain lock */
-    }
-
-    /* Tell parent all is cool */
-    if (KidPipe[1] >= 0) {
-	write(KidPipe[1], "X", 1);
-	close(KidPipe[1]);
-	KidPipe[1] = -1;
     }
 
     for(;;) {
@@ -1789,7 +1689,11 @@ startPPPDUserMode(ClientSession *session)
     }
     argv[c++] = "nodetach";
     argv[c++] = "noaccomp";
+    argv[c++] = "nobsdcomp";
+    argv[c++] = "nodeflate";
     argv[c++] = "nopcomp";
+    argv[c++] = "novj";
+    argv[c++] = "novjccomp";
     argv[c++] = "default-asyncmap";
     if (Synchronous) {
 	argv[c++] = "sync";
@@ -1870,7 +1774,11 @@ startPPPDLinuxKernelMode(ClientSession *session)
     }
     argv[c++] = "nodetach";
     argv[c++] = "noaccomp";
+    argv[c++] = "nobsdcomp";
+    argv[c++] = "nodeflate";
     argv[c++] = "nopcomp";
+    argv[c++] = "novj";
+    argv[c++] = "novjccomp";
     argv[c++] = "default-asyncmap";
     if (PassUnitOptionToPPPD) {
 	argv[c++] = "unit";
@@ -2101,7 +2009,6 @@ pppoe_free_session(ClientSession *ses)
     /* Initialize fields to sane values */
     ses->funcs = &DefaultSessionFunctionTable;
     ses->pid = 0;
-    memset(ses->eth, 0, ETH_ALEN);
     ses->flags = 0;
 #ifdef HAVE_L2TP
     ses->l2tp_ses = NULL;
