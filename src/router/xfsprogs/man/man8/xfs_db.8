@@ -1,0 +1,1874 @@
+.TH xfs_db 8
+.SH NAME
+xfs_db \- debug an XFS filesystem
+.SH SYNOPSIS
+.B xfs_db
+[
+.B \-c
+.I cmd
+] ... [
+.BR \-i | r | x | F
+] [
+.B \-f
+] [
+.B \-l
+.I logdev
+] [
+.B \-p
+.I progname
+]
+.I device
+.br
+.B xfs_db \-V
+.SH DESCRIPTION
+.B xfs_db
+is used to examine an XFS filesystem. Under rare circumstances it can also
+be used to modify an XFS filesystem, but that task is normally left to
+.BR xfs_repair (8)
+or to scripts such as
+.BR xfs_admin (8)
+that run
+.BR xfs_db .
+.PP
+.SH OPTIONS
+.TP
+.BI \-c " cmd"
+.B xfs_db
+commands may be run interactively (the default) or as arguments
+on the command line. Multiple
+.B \-c
+arguments may be given. The commands are run in the sequence given,
+then the program exits. This is the mechanism used to implement
+.BR xfs_check (8).
+.TP
+.B \-f
+Specifies that the filesystem image to be processed is stored in a
+regular file at
+.I device
+(see the
+.BR mkfs.xfs "(8) " -d
+.I file
+option).
+This might happen if an image copy of a filesystem has been made into
+an ordinary file with
+.BR xfs_copy (8).
+.TP
+.B \-F
+Specifies that we want to continue even if the superblock magic is not
+correct.  For use in
+.BR xfs_check
+and
+.BR xfs_metadump .
+.TP
+.B \-i
+Allows execution on a mounted filesystem, provided it is mounted read-only.
+Useful for shell scripts such as
+.BR xfs_check (8),
+which must only operate on filesystems in a guarenteed consistent state
+(either unmounted or mounted read-only). These semantics are slightly
+different to that of the
+.B -r
+option.
+.TP
+.BI \-l " logdev"
+Specifies the device where the filesystems external log resides.
+Only for those filesystems which use an external log. See the
+.BR mkfs.xfs "(8) " \-l
+option, and refer to
+.BR xfs (5)
+for a detailed description of the XFS log.
+.TP
+.BI \-p " progname"
+Set the program name to
+.I progname
+for prompts and some error messages, the default value is
+.BR xfs_db .
+.TP
+.B -r
+Open
+.I device
+or
+.I filename
+read-only. This option is required if the filesystem is mounted.
+It is only necessary to omit this flag if a command that changes data
+.RB ( write ", " blocktrash )
+is to be used.
+.TP
+.B \-x
+Specifies expert mode.
+This enables the
+.B write
+and
+.B blocktrash
+commands.
+.TP
+.B \-V
+Prints out the current version number and exits.
+.SH CONCEPTS
+.B xfs_db
+commands can be broken up into two classes. Most commands are for
+the navigation and display of data structures in the filesystem.
+Other commands are for scanning the filesystem in some way.
+.PP
+Commands which are used to navigate the filesystem structure take arguments
+which reflect the names of filesystem structure fields.
+There can be multiple field names separated by dots when the underlying
+structures are nested, as in C.
+The field names can be indexed (as an array index)
+if the underlying field is an array.
+The array indices can be specified as a range, two numbers separated by a dash.
+.PP
+.B xfs_db
+maintains a current address in the filesystem.
+The granularity of the address is a filesystem structure.
+This can be a filesystem block,
+an inode or quota (smaller than a filesystem block),
+or a directory block (could be larger than a filesystem block).
+There are a variety of commands to set the current address.
+Associated with the current address is the current data type,
+which is the structural type of this data.
+Commands which follow the structure of the filesystem always set the type
+as well as the address.
+Commands which examine pieces of an individual file (inode) need the current
+inode to be set, this is done with the
+.B inode
+command.
+.PP
+The current address/type information is actually maintained in a
+stack that can be explicitly manipulated with the
+.BR push ", " pop ", and " stack
+commands.
+This allows for easy examination of a nested filesystem structure.
+Also, the last several locations visited are stored in a ring buffer
+which can be manipulated with the
+.BR forward ", " back ", and " ring
+commands.
+.PP
+XFS filesystems are divided into a small number of allocation groups.
+.B xfs_db
+maintains a notion of the current allocation group which is
+manipulated by some commands. The initial allocation group is 0.
+.SH COMMANDS
+.PP
+Many commands have extensive online help. Use the
+.B help
+command for more details on any command.
+.TP
+.B a
+See the
+.B addr
+command.
+.TP
+.BI ablock " filoff"
+Set current address to the offset
+.I filoff
+(a filesystem block number) in the attribute area of the current inode.
+.TP
+.BI "addr [" field-expression ]
+Set current address to the value of the
+.IR field-expression .
+This is used to "follow" a reference in one structure to the object
+being referred to. If no argument is given, the current address is printed.
+.TP
+.BI "agf [" agno ]
+Set current address to the AGF block for allocation group
+.IR agno .
+If no argument is given, use the current allocation group.
+.TP
+.BI "agfl [" agno ]
+Set current address to the AGFL block for allocation group
+.IR agno .
+If no argument is given, use the current allocation group.
+.TP
+.BI "agi [" agno ]
+Set current address to the AGI block for allocation group
+.IR agno .
+If no argument is given, use the current allocation group.
+.TP
+.B b
+See the
+.B back
+command.
+.TP
+.B back
+Move to the previous location in the position ring.
+.TP
+.B blockfree
+Free block usage information collected by the last execution of the
+.B blockget
+command. This must be done before another
+.B blockget
+command can be given, presumably with different arguments than the previous one.
+.TP
+.BI "blockget [\-npvs] [\-b " bno "] ... [\-i " ino "] ..."
+Get block usage and check filesystem consistency.
+The information is saved for use by a subsequent
+.BR blockuse ", " ncheck ", or " blocktrash
+command. See
+.BR xfs_check (8)
+for more information.
+.RS 1.0i
+.TP 0.4i
+.B \-b
+is used to specify filesystem block numbers about which verbose
+information should be printed.
+.TP
+.B \-i
+is used to specify inode numbers about which verbose information
+should be printed.
+.TP
+.B \-n
+is used to save pathnames for inodes visited, this is used to support the
+.BR xfs_ncheck (8)
+command. It also means that pathnames will be printed for inodes that have
+problems. This option uses a lot of memory so is not enabled by default.
+.TP
+.B \-p
+causes error messages to be prefixed with the filesystem name being
+processed. This is useful if several copies of
+.B xfs_db
+are run in parallel.
+.TP
+.B \-s
+restricts output to severe errors only. This is useful if the output is
+too long otherwise.
+.TP
+.B \-v
+enables verbose output. Messages will be printed for every block and
+inode processed.
+.RE
+.TP
+.BI "blocktrash [\-n " count "] [\-x " min "] [\-y " max "] [\-s " seed "] [\-0|1|2|3] [\-t " type "] ..."
+Trash randomly selected filesystem metadata blocks.
+Trashing occurs to randomly selected bits in the chosen blocks.
+This command is available only in debugging versions of
+.BR xfs_db .
+It is useful for testing
+.BR xfs_repair "(8) and " xfs_check (8).
+.RS 1.0i
+.TP 0.4i
+.BR \-0 " | " -1 " | " -2 " | " -3
+These are used to set the operating mode for
+.BR blocktrash .
+Only one can be used:
+.B \-0
+changed bits are cleared;
+.B \-1
+changed bits are set;
+.B -2
+changed bits are inverted;
+.B -3
+changed bits are randomized.
+.TP
+.B \-n
+supplies the
+.I count
+of block-trashings to perform (default 1).
+.TP
+.B \-s
+supplies a
+.I seed
+to the random processing.
+.TP
+.B \-t
+gives a
+.I type
+of blocks to be selected for trashing. Multiple
+.B \-t
+options may be given. If no
+.B \-t
+options are given then all metadata types can be trashed.
+.TP
+.B \-x
+sets the
+.I minimum
+size of bit range to be trashed. The default value is 1.
+.TP
+.B \-y
+sets the
+.I maximum
+size of bit range to be trashed. The default value is 1024.
+.RE
+.TP
+.BI "blockuse [\-n] [\-c " count ]
+Print usage for current filesystem block(s).
+For each block, the type and (if any) inode are printed.
+.RS 1.0i
+.TP 0.4i
+.B \-c
+specifies a
+.I count
+of blocks to process. The default value is 1 (the current block only).
+.TP
+.B \-n
+specifies that file names should be printed. The prior
+.B blockget
+command must have also specified the
+.B \-n
+option.
+.RE
+.TP
+.BI "bmap [\-a\] [\-d] [" block " [" len ]]
+Show the block map for the current inode.
+The map display can be restricted to an area of the file with the
+.I block
+and
+.I len
+arguments. If
+.I block
+is given and
+.I len
+is omitted then 1 is assumed for len.
+.IP
+The
+.B \-a
+and
+.B \-d
+options are used to select the attribute or data
+area of the inode, if neither option is given then both areas are shown.
+.TP
+.B check
+See the
+.B blockget
+command.
+.TP
+.BI "convert " "type number" " [" "type number" "] ... " type
+Convert from one address form to another.
+The known
+.IR type s,
+with alternate names, are:
+.RS 1.0i
+.PD 0
+.HP
+.B agblock
+or
+.B agbno
+(filesystem block within an allocation group)
+.HP
+.B agino
+or
+.B aginode
+(inode number within an allocation group)
+.HP
+.B agnumber
+or
+.B agno
+(allocation group number)
+.HP
+.B bboff
+or
+.B daddroff
+(byte offset in a
+.BR daddr )
+.HP
+.B blkoff
+or
+.B fsboff or
+.B agboff
+(byte offset in a
+.B agblock
+or
+.BR fsblock )
+.HP
+.B byte
+or
+.B fsbyte
+(byte address in filesystem)
+.HP
+.B daddr
+or
+.B bb
+(disk address, 512-byte blocks)
+.HP
+.B fsblock
+or
+.B fsb
+or
+.B fsbno
+(filesystem block, see the
+.B fsblock
+command)
+.HP
+.B ino
+or
+.B inode
+(inode number)
+.HP
+.B inoidx
+or
+.B offset
+(index of inode in filesystem block)
+.HP
+.B inooff
+or
+.B inodeoff
+(byte offset in inode)
+.PD
+.RE
+.IP
+Only conversions that "make sense" are allowed.
+The compound form (with more than three arguments) is useful for
+conversions such as
+.B convert agno
+.I ag
+.B agbno
+.I agb
+.BR fsblock .
+.TP
+.BI "daddr [" d ]
+Set current address to the daddr (512 byte block) given by
+.IR d .
+If no value for
+.I d
+is given, the current address is printed, expressed as a daddr.
+The type is set to
+.B data
+(uninterpreted).
+.TP
+.BI dblock " filoff"
+Set current address to the offset
+.I filoff
+(a filesystem block number) in the data area of the current inode.
+.TP
+.BI "debug [" flagbits ]
+Set debug option bits. These are used for debugging
+.BR xfs_db .
+If no value is given for
+.IR flagbits ,
+print the current debug option bits. These are for the use of the implementor.
+.TP
+.BI "dquot [" projectid_or_userid ]
+Set current address to a project or user quota block.
+.TP
+.BI "echo [" arg "] ..."
+Echo the arguments to the output.
+.TP
+.B f
+See the
+.B forward
+command.
+.TP
+.B forward
+Move forward to the next entry in the position ring.
+.TP
+.B frag [\-adflqRrv]
+Get file fragmentation data. This prints information about fragmentation
+of file data in the filesystem (as opposed to fragmentation of freespace,
+for which see the
+.B freesp
+command). Every file in the filesystem is examined to see how far from ideal
+its extent mappings are. A summary is printed giving the totals.
+.RS 1.0i
+.TP 0.4i
+.B \-v
+sets verbosity, every inode has information printed for it.
+The remaining options select which inodes and extents are examined.
+If no options are given then all are assumed set,
+otherwise just those given are enabled.
+.TP
+.B \-a
+enables processing of attribute data.
+.TP
+.B \-d
+enables processing of directory data.
+.TP
+.B \-f
+enables processing of regular file data.
+.TP
+.B \-l
+enables processing of symbolic link data.
+.TP
+.B \-q
+enables processing of quota file data.
+.TP
+.B \-R
+enables processing of realtime control file data.
+.TP
+.B \-r
+enables processing of realtime file data.
+.RE
+.TP
+.BI "freesp [\-bcds] [\-a " ag "] ... [\-e " i "] [\-h " h1 "] ... [\-m " m ]
+Summarize free space for the filesystem. The free blocks are examined
+and totalled, and displayed in the form of a histogram, with a count
+of extents in each range of free extent sizes.
+.RS 1.0i
+.TP 0.4i
+.B \-a
+adds
+.I ag
+to the list of allocation groups to be processed. If no
+.B \-a
+options are given then all allocation groups are processed.
+.TP
+.B \-b
+specifies that the histogram buckets are binary-sized, with the starting
+sizes being the powers of 2.
+.TP
+.B \-c
+specifies that
+.B freesp
+will search the by-size (cnt) space Btree instead of the default
+by-block (bno) space Btree.
+.TP
+.B \-d
+specifies that every free extent will be displayed.
+.TP
+.B \-e
+specifies that the histogram buckets are
+equal-sized, with the size specified as
+.IR i .
+.TP
+.B \-h
+specifies a starting block number for a histogram bucket as
+.IR h1 .
+Multiple
+.BR \-h 's
+are given to specify the complete set of buckets.
+.TP
+.B \-m
+specifies that the histogram starting block numbers are powers of
+.IR m .
+This is the general case of
+.BR \-b .
+.TP
+.B \-s
+specifies that a final summary of total free extents,
+free blocks, and the average free extent size is printed.
+.RE
+.TP
+.B fsb
+See the
+.B fsblock
+command.
+.TP
+.BI "fsblock [" fsb ]
+Set current address to the fsblock value given by
+.IR fsb .
+If no value for
+.I fsb
+is given the current address is printed, expressed as an fsb.
+The type is set to
+.B data
+(uninterpreted). XFS filesystem block numbers are computed
+.RI (( agno " << " agshift ") | " agblock )
+where
+.I agshift
+depends on the size of an allocation group. Use the
+.B convert
+command to convert to and from this form. Block numbers given for file blocks
+(for instance from the
+.B bmap
+command) are in this form.
+.TP
+.BI hash " string
+Prints the hash value of
+.I string
+using the hash function of the XFS directory and attribute implementation.
+.TP
+.BI "help [" command ]
+Print help for one or all commands.
+.TP
+.BI "inode [" inode# ]
+Set the current inode number. If no
+.I inode#
+is given, print the current inode number.
+.TP
+.BI "label [" label ]
+Set the filesystem label. The filesystem label can be used by
+.BR mount (8)
+instead of using a device special file.
+The maximum length of an XFS label is 12 characters \- use of a longer
+.I label
+will result in truncation and a warning will be issued. If no
+.I label
+is given, the current filesystem label is printed.
+.TP
+.BI "log [stop | start " filename ]
+Start logging output to
+.IR filename ,
+stop logging, or print the current logging status.
+.TP
+.BI "metadump [\-egow] " filename
+Dumps metadata to a file. See
+.BR xfs_metadump (8)
+for more information.
+.TP
+.BI "ncheck [\-s] [\-i " ino "] ..."
+Print name-inode pairs. A
+.B blockget \-n
+command must be run first to gather the information.
+.RS 1.0i
+.TP 0.4i
+.B \-i
+specifies an inode number to be printed. If no
+.B \-i
+options are given then all inodes are printed.
+.TP
+.B \-s
+specifies that only setuid and setgid files are printed.
+.RE
+.TP
+.B p
+See the
+.B print
+command.
+.TP
+.B pop
+Pop location from the stack.
+.TP
+.BI "print [" field-expression "] ..."
+Print field values.
+If no argument is given, print all fields in the current structure.
+.TP
+.BI "push [" command ]
+Push location to the stack. If
+.I command
+is supplied, set the current location to the results of
+.I command
+after pushing the old location.
+.TP
+.B q
+See the
+.B quit
+command.
+.TP
+.B quit
+Exit
+.BR xfs_db .
+.TP
+.BI "ring [" index ]
+Show position ring (if no
+.I index
+argument is given), or move to a specific entry in the position ring given by
+.IR index .
+.TP
+.BI "sb [" agno ]
+Set current address to SB header in allocation group
+.IR agno .
+If no
+.I agno
+is given, use the current allocation group number.
+.TP
+.BI "source " source-file
+Process commands from
+.IR source-file .
+.B source
+commands can be nested.
+.TP
+.B stack
+View the location stack.
+.TP
+.BI "type [" type ]
+Set the current data type to
+.IR type .
+If no argument is given, show the current data type.
+The possible data types are:
+.BR agf ", " agfl ", " agi ", " attr ", " bmapbta ", " bmapbtd ,
+.BR bnobt ", " cntbt ", " data ", " dir ", " dir2 ", " dqblk ,
+.BR inobt ", " inode ", " log ", " rtbitmap ", " rtsummary ,
+.BR sb ", " symlink " and " text .
+See the TYPES section below for more information on these data types.
+.TP
+.BI "uuid [" uuid " | " generate " | " rewrite ]
+Set the filesystem universally unique identifier (UUID).
+The filesystem UUID can be used by
+.BR mount (8)
+instead of using a device special file.
+The
+.I uuid
+can be set directly to the desired UUID, or it can
+be automatically generated using the
+.B generate
+option. These options will both write the UUID into every copy of the
+superblock in the filesystem.
+.B rewrite
+copies the current UUID from the primary superblock
+to all secondary copies of the superblock.
+If no argument is given, the current filesystem UUID is printed.
+.TP
+.BI "version [" feature " | " "versionnum features2" ]
+Enable selected features for a filesystem (certain features can
+be enabled on an unmounted filesystem, after
+.BR mkfs.xfs (8)
+has created the filesystem).
+Support for unwritten extents can be enabled using the
+.B extflg
+option. Support for version 2 log format can be enabled using the
+.B log2
+option. Support for extended attributes can be enabled using the
+.B attr1
+or
+.B attr2
+option. Once enabled, extended attributes cannot be disabled, but the user
+may toggle between
+.B attr1
+and
+.B attr2
+at will (older kernels may not support the newer version).
+.IP
+If no argument is given, the current version and feature bits are printed.
+With one argument, this command will write the updated version number
+into every copy of the superblock in the filesystem.
+If two arguments are given, they will be used as numeric values for the
+.I versionnum
+and
+.I features2
+bits respectively, and their string equivalent reported
+(but no modifications are made).
+.TP
+.BI "write [" "field value" "] ..."
+Write a value to disk.
+Specific fields can be set in structures (struct mode),
+or a block can be set to data values (data mode),
+or a block can be set to string values (string mode, for symlink blocks).
+The operation happens immediately: there is no buffering.
+.IP
+Struct mode is in effect when the current type is structural,
+i.e. not data. For struct mode, the syntax is "\c
+.B write
+.I field value\c
+".
+.IP
+Data mode is in effect when the current type is data. In this case the
+contents of the block can be shifted or rotated left or right, or filled
+with a sequence, a constant value, or a random value. In this mode
+.B write
+with no arguments gives more information on the allowed commands.
+.SH TYPES
+This section gives the fields in each structure type and their meanings.
+Note that some types of block cover multiple actual structures,
+for instance directory blocks.
+.TP 1.0i
+.B agf
+The AGF block is the header for block allocation information;
+it is in the second 512-byte block of each allocation group.
+The following fields are defined:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magicnum
+AGF block magic number, 0x58414746 ('XAGF').
+.TP
+.B versionnum
+version number, currently 1.
+.TP
+.B seqno
+sequence number starting from 0.
+.TP
+.B length
+size in filesystem blocks of the allocation group. All allocation
+groups except the last one of the filesystem have the superblock's
+.B agblocks
+value here.
+.TP
+.B bnoroot
+block number of the root of the Btree holding free space
+information sorted by block number.
+.TP
+.B cntroot
+block number of the root of the Btree holding free space
+information sorted by block count.
+.TP
+.B bnolevel
+number of levels in the by-block-number Btree.
+.TP
+.B cntlevel
+number of levels in the by-block-count Btree.
+.TP
+.B flfirst
+index into the AGFL block of the first active entry.
+.TP
+.B fllast
+index into the AGFL block of the last active entry.
+.TP
+.B flcount
+count of active entries in the AGFL block.
+.TP
+.B freeblks
+count of blocks represented in the freespace Btrees.
+.TP
+.B longest
+longest free space represented in the freespace Btrees.
+.TP
+.B btreeblks
+number of blocks held in the AGF Btrees.
+.PD
+.RE
+.TP
+.B agfl
+The AGFL block contains block numbers for use of the block allocator;
+it is in the fourth 512-byte block of each allocation group.
+Each entry in the active list is a block number within the allocation group
+that can be used for any purpose if space runs low.
+The AGF block fields
+.BR flfirst ", " fllast ", and " flcount
+designate which entries are currently active.
+Entry space is allocated in a circular manner within the AGFL block.
+Fields defined:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B bno
+array of all block numbers. Even those which are not active are printed.
+.PD
+.RE
+.TP
+.B agi
+The AGI block is the header for inode allocation information;
+it is in the third 512-byte block of each allocation group.
+Fields defined:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magicnum
+AGI block magic number, 0x58414749 ('XAGI').
+.TP
+.B versionnum
+version number, currently 1.
+.TP
+.B seqno
+sequence number starting from 0.
+.TP
+.B length
+size in filesystem blocks of the allocation group.
+.TP
+.B count
+count of inodes allocated.
+.TP
+.B root
+block number of the root of the Btree holding inode allocation information.
+.TP
+.B level
+number of levels in the inode allocation Btree.
+.TP
+.B freecount
+count of allocated inodes that are not in use.
+.TP
+.B newino
+last inode number allocated.
+.TP
+.B dirino
+unused.
+.TP
+.B unlinked
+an array of inode numbers within the allocation group. The entries
+in the AGI block are the heads of lists which run through the inode
+.B next_unlinked
+field. These inodes are to be unlinked the next time the filesystem is mounted.
+.PD
+.RE
+.TP
+.B attr
+An attribute fork is organized as a Btree with the actual data embedded
+in the leaf blocks. The root of the Btree is found in block 0 of the fork.
+The index (sort order) of the Btree is the hash value of the attribute name.
+All the blocks contain a
+.B blkinfo
+structure at the beginning, see type
+.B dir
+for a description. Nonleaf blocks are identical in format to those for
+version 1 and version 2 directories, see type
+.B dir
+for a description. Leaf blocks can refer to "local" or "remote" attribute
+values. Local values are stored directly in the leaf block.
+Remote values are stored in an independent block in the attribute fork
+(with no structure). Leaf blocks contain the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B hdr
+header containing a
+.B blkinfo
+structure
+.B info
+(magic number 0xfbee), a
+.B count
+of active entries,
+.B usedbytes
+total bytes of names and values, the
+.B firstused
+byte in the name area,
+.B holes
+set if the block needs compaction, and array
+.B freemap
+as for
+.B dir
+leaf blocks.
+.TP
+.B entries
+array of structures containing a
+.BR hashval ,
+.B nameidx
+(index into the block of the name), and flags
+.BR incomplete ,
+.BR root ,
+and
+.BR local .
+.TP
+.B nvlist
+array of structures describing the attribute names and values. Fields
+always present:
+.B valuelen
+(length of value in bytes),
+.BR namelen ,
+and
+.BR name .
+Fields present for local values:
+.B value
+(value string). Fields present for remote values:
+.B valueblk
+(fork block number of containing the value).
+.PD
+.RE
+.TP
+.B bmapbt
+Files with many extents in their data or attribute fork will have the
+extents described by the contents of a Btree for that fork,
+instead of being stored directly in the inode.
+Each bmap Btree starts with a root block contained within the inode.
+The other levels of the Btree are stored in filesystem blocks.
+The blocks are linked to sibling left and right blocks at each level,
+as well as by pointers from parent to child blocks.
+Each block contains the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+bmap Btree block magic number, 0x424d4150 ('BMAP').
+.TP
+.B level
+level of this block above the leaf level.
+.TP
+.B numrecs
+number of records or keys in the block.
+.TP
+.B leftsib
+left (logically lower) sibling block, 0 if none.
+.TP
+.B rightsib
+right (logically higher) sibling block, 0 if none.
+.TP
+.B recs
+[leaf blocks only] array of extent records.
+Each record contains
+.BR startoff ,
+.BR startblock ,
+.BR blockcount ,
+and
+.B extentflag
+(1 if the extent is unwritten).
+.TP
+.B keys
+[nonleaf blocks only] array of key records. These are the first key
+value of each block in the level below this one. Each record contains
+.BR startoff .
+.TP
+.B ptrs
+[nonleaf blocks only] array of child block pointers.
+Each pointer is a filesystem block number to the next level in the Btree.
+.PD
+.RE
+.TP
+.B bnobt
+There is one set of filesystem blocks forming the by-block-number
+allocation Btree for each allocation group. The root block of this
+Btree is designated by the
+.B bnoroot
+field in the coresponding AGF block.
+The blocks are linked to sibling left and right blocks at each level,
+as well as by pointers from parent to child blocks.
+Each block has the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+BNOBT block magic number, 0x41425442 ('ABTB').
+.TP
+.B level
+level number of this block, 0 is a leaf.
+.TP
+.B numrecs
+number of data entries in the block.
+.TP
+.B leftsib
+left (logically lower) sibling block, 0 if none.
+.TP
+.B rightsib
+right (logically higher) sibling block, 0 if none.
+.TP
+.B recs
+[leaf blocks only] array of freespace records. Each record contains
+.B startblock
+and
+.BR blockcount .
+.TP
+.B keys
+[nonleaf blocks only] array of key records. These are the first value
+of each block in the level below this one. Each record contains
+.B startblock
+and
+.BR blockcount .
+.TP
+.B ptrs
+[nonleaf blocks only] array of child block pointers. Each pointer is a
+block number within the allocation group to the next level in the Btree.
+.PD
+.RE
+.TP
+.B cntbt
+There is one set of filesystem blocks forming the by-block-count
+allocation Btree for each allocation group. The root block of this
+Btree is designated by the
+.B cntroot
+field in the coresponding AGF block. The blocks are linked to sibling
+left and right blocks at each level, as well as by pointers from parent
+to child blocks. Each block has the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+CNTBT block magic number, 0x41425443 ('ABTC').
+.TP
+.B level
+level number of this block, 0 is a leaf.
+.TP
+.B numrecs
+number of data entries in the block.
+.TP
+.B leftsib
+left (logically lower) sibling block, 0 if none.
+.TP
+.B rightsib
+right (logically higher) sibling block, 0 if none.
+.TP
+.B recs
+[leaf blocks only] array of freespace records. Each record contains
+.B startblock
+and
+.BR blockcount .
+.TP
+.B keys
+[nonleaf blocks only] array of key records. These are the first value
+of each block in the level below this one. Each record contains
+.B blockcount
+and
+.BR startblock .
+.TP
+.B ptrs
+[nonleaf blocks only] array of child block pointers. Each pointer is a
+block number within the allocation group to the next level in the Btree.
+.PD
+.RE
+.TP
+.B data
+User file blocks, and other blocks whose type is unknown, have this
+type for display purposes in
+.BR xfs_db .
+The block data is displayed in hexadecimal format.
+.TP
+.B dir
+A version 1 directory is organized as a Btree with the directory data
+embedded in the leaf blocks. The root of the Btree is found in block 0
+of the file. The index (sort order) of the Btree is the hash value of
+the entry name. All the blocks contain a
+.B blkinfo
+structure at the beginning with the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B forw
+next sibling block.
+.TP
+.B back
+previous sibling block.
+.TP
+.B magic
+magic number for this block type.
+.RE
+.IP
+
+The non-leaf (node) blocks have the following fields:
+.RS 1.4i
+.TP 1.2i
+.B hdr
+header containing a
+.B blkinfo
+structure
+.B info
+(magic number 0xfebe), the
+.B count
+of active entries, and the
+.B level
+of this block above the leaves.
+.TP
+.B btree
+array of entries containing
+.B hashval
+and
+.B before
+fields. The
+.B before
+value is a block number within the directory file to the child block, the
+.B hashval
+is the last hash value in that block.
+.RE
+.IP
+
+The leaf blocks have the following fields:
+.RS 1.4i
+.TP 1.2i
+.B hdr
+header containing a
+.B blkinfo
+structure
+.B info
+(magic number 0xfeeb), the
+.B count
+of active entries,
+.B namebytes
+(total name string bytes),
+.B holes
+flag (block needs compaction), and
+.B freemap
+(array of
+.BR base ", " size
+entries for free regions).
+.TP
+.B entries
+array of structures containing
+.BR hashval ,
+.B nameidx
+(byte index into the block of the name string), and
+.BR namelen .
+.TP
+.B namelist
+array of structures containing
+.B inumber
+and
+.BR name .
+.RE
+.PD
+.TP
+.B dir2
+A version 2 directory has four kinds of blocks.
+Data blocks start at offset 0 in the file.
+There are two kinds of data blocks: single-block directories have
+the leaf information embedded at the end of the block, data blocks
+in multi-block directories do not.
+Node and leaf blocks start at offset 32GiB (with either a single
+leaf block or the root node block).
+Freespace blocks start at offset 64GiB.
+The node and leaf blocks form a Btree, with references to the data
+in the data blocks.
+The freespace blocks form an index of longest free spaces within the
+data blocks.
+.IP
+A single-block directory block contains the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B bhdr
+header containing
+.B magic
+number 0x58443242 ('XD2B') and an array
+.B bestfree
+of the longest 3 free spaces in the block
+.RB ( offset ", " length ).
+.TP
+.B bu
+array of union structures. Each element is either an entry or a freespace.
+For entries, there are the following fields:
+.BR inumber ,
+.BR namelen ,
+.BR name ,
+and
+.BR tag .
+For freespace, there are the following fields:
+.B freetag
+(0xffff),
+.BR length ,
+and
+.BR tag .
+The
+.B tag
+value is the byte offset in the block of the start of the entry it
+is contained in.
+.TP
+.B bleaf
+array of leaf entries containing
+.B hashval
+and
+.BR address .
+The
+.B address
+is a 64-bit word offset into the file.
+.TP
+.B btail
+tail structure containing the total
+.B count
+of leaf entries and
+.B stale
+count of unused leaf entries.
+.RE
+.IP
+
+A data block contains the following fields:
+.RS 1.4i
+.TP 1.2i
+.B dhdr
+header containing
+.B magic
+number 0x58443244 ('XD2D') and an array
+.B bestfree
+of the longest 3 free spaces in the block
+.RB ( offset ", " length ).
+.TP
+.B du
+array of union structures as for
+.BR bu .
+.RE
+.IP
+
+Leaf blocks have two possible forms. If the Btree consists of a single
+leaf then the freespace information is in the leaf block,
+otherwise it is in separate blocks and the root of the Btree is
+a node block. A leaf block contains the following fields:
+.RS 1.4i
+.TP 1.2i
+.B lhdr
+header containing a
+.B blkinfo
+structure
+.B info
+(magic number 0xd2f1 for the single leaf case, 0xd2ff for the true
+Btree case), the total
+.B count
+of leaf entries, and
+.B stale
+count of unused leaf entries.
+.TP
+.B lents
+leaf entries, as for
+.BR bleaf .
+.TP
+.B lbests
+[single leaf only] array of values which represent the longest freespace
+in each data block in the directory.
+.TP
+.B ltail
+[single leaf only] tail structure containing
+.B bestcount
+count of
+.BR lbests .
+.RE
+.IP
+
+A node block is identical to that for types
+.B attr
+and
+.BR dir .
+
+A freespace block contains the following fields:
+.RS 1.4i
+.TP 1.2i
+.B fhdr
+header containing
+.B magic
+number 0x58443246 ('XD2F'),
+.B firstdb
+first data block number covered by this freespace block,
+.B nvalid
+number of valid entries, and
+.B nused
+number of entries representing real data blocks.
+.TP
+.B fbests
+array of values as for
+.BR lbests .
+.PD
+.RE
+.TP
+.B dqblk
+The quota information is stored in files referred to by the superblock
+.B uquotino
+and
+.B pquotino
+fields. Each filesystem block in a quota file contains a constant number of
+quota entries. The quota entry size is currently 136 bytes, so with a 4KiB
+filesystem block size there are 30 quota entries per block. The
+.B dquot
+command is used to locate these entries in the filesystem.
+The file entries are indexed by the user or project identifier
+to determine the block and offset.
+Each quota entry has the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.5i
+.B magic
+magic number, 0x4451 ('DQ').
+.TP
+.B version
+version number, currently 1.
+.TP
+.B flags
+flags, values include 0x01 for user quota, 0x02 for project quota.
+.TP
+.B id
+user or project identifier.
+.TP
+.B blk_hardlimit
+absolute limit on blocks in use.
+.TP
+.B blk_softlimit
+preferred limit on blocks in use.
+.TP
+.B ino_hardlimit
+absolute limit on inodes in use.
+.TP
+.B ino_softlimit
+preferred limit on inodes in use.
+.TP
+.B bcount
+blocks actually in use.
+.TP
+.B icount
+inodes actually in use.
+.TP
+.B itimer
+time when service will be refused if soft limit is violated for inodes.
+.TP
+.B btimer
+time when service will be refused if soft limit is violated for blocks.
+.TP
+.B iwarns
+number of warnings issued about inode limit violations.
+.TP
+.B bwarns
+number of warnings issued about block limit violations.
+.TP
+.B rtb_hardlimit
+absolute limit on realtime blocks in use.
+.TP
+.B rtb_softlimit
+preferred limit on realtime blocks in use.
+.TP
+.B rtbcount
+realtime blocks actually in use.
+.TP
+.B rtbtimer
+time when service will be refused if soft limit is violated for realtime blocks.
+.TP
+.B rtbwarns
+number of warnings issued about realtime block limit violations.
+.PD
+.RE
+.TP
+.B inobt
+There is one set of filesystem blocks forming the inode allocation Btree for
+each allocation group. The root block of this Btree is designated by the
+.B root
+field in the coresponding AGI block.
+The blocks are linked to sibling left and right blocks at each level,
+as well as by pointers from parent to child blocks.
+Each block has the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+INOBT block magic number, 0x49414254 ('IABT').
+.TP
+.B level
+level number of this block, 0 is a leaf.
+.TP
+.B numrecs
+number of data entries in the block.
+.TP
+.B leftsib
+left (logically lower) sibling block, 0 if none.
+.TP
+.B rightsib
+right (logically higher) sibling block, 0 if none.
+.TP
+.B recs
+[leaf blocks only] array of inode records. Each record contains
+.B startino
+allocation-group relative inode number,
+.B freecount
+count of free inodes in this chunk, and
+.B free
+bitmap, LSB corresponds to inode 0.
+.TP
+.B keys
+[nonleaf blocks only] array of key records. These are the first value of each
+block in the level below this one. Each record contains
+.BR startino .
+.TP
+.B ptrs
+[nonleaf blocks only] array of child block pointers. Each pointer is a
+block number within the allocation group to the next level in the Btree.
+.PD
+.RE
+.TP
+.B inode
+Inodes are allocated in "chunks" of 64 inodes each. Usually a chunk is
+multiple filesystem blocks, although there are cases with large filesystem
+blocks where a chunk is less than one block. The inode Btree (see
+.B inobt
+above) refers to the inode numbers per allocation group. The inode numbers
+directly reflect the location of the inode block on disk. Use the
+.B inode
+command to point
+.B xfs_db
+to a specific inode. Each inode contains four regions:
+.BR core ,
+.BR next_unlinked ,
+.BR u ", and "
+.BR a .
+.B core
+contains the fixed information.
+.B next_unlinked
+is separated from the core due to journaling considerations, see type
+.B agi
+field
+.BR unlinked .
+.B u
+is a union structure that is different in size and format depending
+on the type and representation of the file data ("data fork").
+.B a
+is an optional union structure to describe attribute data,
+that is different in size, format, and location depending on the presence
+and representation of attribute data, and the size of the
+.B u
+data ("attribute fork").
+.B xfs_db
+automatically selects the proper union members based on information
+in the inode.
+.IP
+The following are fields in the inode core:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+inode magic number, 0x494e ('IN').
+.TP
+.B mode
+mode and type of file, as described in
+.BR chmod (2),
+.BR mknod (2),
+and
+.BR stat (2).
+.TP
+.B version
+inode version, 1 or 2.
+.TP
+.B format
+format of
+.B u
+union data (0: xfs_dev_t, 1: local file \- in-inode directory or symlink,
+2: extent list, 3: Btree root, 4: unique id [unused]).
+.TP
+.B nlinkv1
+number of links to the file in a version 1 inode.
+.TP
+.B nlinkv2
+number of links to the file in a version 2 inode.
+.TP
+.B projid_lo
+owner's project id (low word; version 2 inode only).
+.B projid_hi
+owner's project id (high word; version 2 inode only).
+.TP
+.B uid
+owner's user id.
+.TP
+.B gid
+owner's group id.
+.TP
+.B atime
+time last accessed (seconds and nanoseconds).
+.TP
+.B mtime
+time last modified.
+.TP
+.B ctime
+time created or inode last modified.
+.TP
+.B size
+number of bytes in the file.
+.TP
+.B nblocks
+total number of blocks in the file including indirect and attribute.
+.TP
+.B extsize
+basic/minimum extent size for the file.
+.TP
+.B nextents
+number of extents in the data fork.
+.TP
+.B naextents
+number of extents in the attribute fork.
+.TP
+.B forkoff
+attribute fork offset in the inode, in 64-bit words from the start of
+.BR u .
+.TP
+.B aformat
+format of
+.B a
+data (1: local attribute data, 2: extent list, 3: Btree root).
+.TP
+.B dmevmask
+DMAPI event mask.
+.TP
+.B dmstate
+DMAPI state information.
+.TP
+.B newrtbm
+file is the realtime bitmap and is "new" format.
+.TP
+.B prealloc
+file has preallocated data space after EOF.
+.TP
+.B realtime
+file data is in the realtime subvolume.
+.TP
+.B gen
+inode generation number.
+.RE
+.IP
+
+The following fields are in the
+.B u
+data fork union:
+.RS 1.4i
+.TP 1.2i
+.B bmbt
+bmap Btree root. This looks like a
+.B bmapbtd
+block with redundant information removed.
+.TP
+.B bmx
+array of extent descriptors.
+.TP
+.B dev
+dev_t for the block or character device.
+.TP
+.B sfdir
+shortform (in-inode) version 1 directory. This consists of a
+.B hdr
+containing the
+.B parent
+inode number and a
+.B count
+of active entries in the directory, followed by an array
+.B list
+of
+.B hdr.count
+entries. Each such entry contains
+.BR inumber ,
+.BR namelen ,
+and
+.B name
+string.
+.TP
+.B sfdir2
+shortform (in-inode) version 2 directory. This consists of a
+.B hdr
+containing a
+.B count
+of active entries in the directory, an
+.B i8count
+of entries with inumbers that don't fit in a 32-bit value, and the
+.B parent
+inode number, followed by an array
+.B list
+of
+.B hdr.count
+entries. Each such entry contains
+.BR namelen ,
+a saved
+.B offset
+used when the directory is converted to a larger form, a
+.B name
+string, and the
+.BR inumber .
+.TP
+.B symlink
+symbolic link string value.
+.RE
+.IP
+
+The following fields are in the
+.B a
+attribute fork union if it exists:
+.RS 1.4i
+.TP 1.2i
+.B bmbt
+bmap Btree root, as above.
+.TP
+.B bmx
+array of extent descriptors.
+.TP
+.B sfattr
+shortform (in-inode) attribute values. This consists of a
+.B hdr
+containing a
+.B totsize
+(total size in bytes) and a
+.B count
+of active entries, followed by an array
+.B list
+of
+.B hdr.count
+entries. Each such entry contains
+.BR namelen ,
+.BR valuelen ,
+.BR root
+flag,
+.BR name ,
+and
+.BR value .
+.PD
+.RE
+.TP
+.B log
+Log blocks contain the journal entries for XFS.
+It's not useful to examine these with
+.BR xfs_db ,
+use
+.BR xfs_logprint (8)
+instead.
+.TP
+.B rtbitmap
+If the filesystem has a realtime subvolume, then the
+.B rbmino
+field in the superblock refers to a file that contains the realtime bitmap.
+Each bit in the bitmap file controls the allocation of a single realtime extent
+(set == free). The bitmap is processed in 32-bit words, the LSB of a word is
+used for the first extent controlled by that bitmap word. The
+.B atime
+field of the realtime bitmap inode contains a counter
+that is used to control where the next new realtime file will start.
+.TP
+.B rtsummary
+If the filesystem has a realtime subvolume, then the
+.B rsumino
+field in the superblock refers to a file that contains the realtime summary
+data. The summary file contains a two-dimensional array of 16-bit values.
+Each value counts the number of free extent runs
+(consecutive free realtime extents)
+of a given range of sizes that starts in a given bitmap block.
+The size ranges are binary buckets (low size in the bucket is a power of 2).
+There are as many size ranges as are necessary given the size of the
+realtime subvolume.
+The first dimension is the size range,
+the second dimension is the starting bitmap block number
+(adjacent entries are for the same size, adjacent bitmap blocks).
+.TP
+.B sb
+There is one sb (superblock) structure per allocation group.
+It is the first disk block in the allocation group.
+Only the first one (block 0 of the filesystem) is actually used;
+the other blocks are redundant information for
+.BR xfs_repair (8)
+to use if the first superblock is damaged. Fields defined:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magicnum
+superblock magic number, 0x58465342 ('XFSB').
+.TP
+.B blocksize
+filesystem block size in bytes.
+.TP
+.B dblocks
+number of filesystem blocks present in the data subvolume.
+.TP
+.B rblocks
+number of filesystem blocks present in the realtime subvolume.
+.TP
+.B rextents
+number of realtime extents that
+.B rblocks
+contain.
+.TP
+.B uuid
+unique identifier of the filesystem.
+.TP
+.B logstart
+starting filesystem block number of the log (journal).
+If this value is 0 the log is "external".
+.TP
+.B rootino
+root inode number.
+.TP
+.B rbmino
+realtime bitmap inode number.
+.TP
+.B rsumino
+realtime summary data inode number.
+.TP
+.B rextsize
+realtime extent size in filesystem blocks.
+.TP
+.B agblocks
+size of an allocation group in filesystem blocks.
+.TP
+.B agcount
+number of allocation groups.
+.TP
+.B rbmblocks
+number of realtime bitmap blocks.
+.TP
+.B logblocks
+number of log blocks (filesystem blocks).
+.TP
+.B versionnum
+filesystem version information.
+This value is currently 1, 2, 3, or 4 in the low 4 bits.
+If the low bits are 4 then the other bits have additional meanings.
+1 is the original value.
+2 means that attributes were used.
+3 means that version 2 inodes (large link counts) were used.
+4 is the bitmask version of the version number.
+In this case, the other bits are used as flags
+(0x0010: attributes were used,
+0x0020: version 2 inodes were used,
+0x0040: quotas were used,
+0x0080: inode cluster alignment is in force,
+0x0100: data stripe alignment is in force,
+0x0200: the
+.B shared_vn
+field is used,
+0x1000: unwritten extent tracking is on,
+0x2000: version 2 directories are in use).
+.TP
+.B sectsize
+sector size in bytes, currently always 512.
+This is the size of the superblock and the other header blocks.
+.TP
+.B inodesize
+inode size in bytes.
+.TP
+.B inopblock
+number of inodes per filesystem block.
+.TP
+.B fname
+obsolete, filesystem name.
+.TP
+.B fpack
+obsolete, filesystem pack name.
+.TP
+.B blocklog
+log2 of
+.BR blocksize .
+.TP
+.B sectlog
+log2 of
+.BR sectsize .
+.TP
+.B inodelog
+log2 of
+.BR inodesize .
+.TP
+.B inopblog
+log2 of
+.BR inopblock .
+.TP
+.B agblklog
+log2 of
+.B agblocks
+(rounded up).
+.TP
+.B rextslog
+log2 of
+.BR rextents .
+.TP
+.B inprogress
+.BR mkfs.xfs (8)
+or
+.BR xfs_copy (8)
+aborted before completing this filesystem.
+.TP
+.B imax_pct
+maximum percentage of filesystem space used for inode blocks.
+.TP
+.B icount
+number of allocated inodes.
+.TP
+.B ifree
+number of allocated inodes that are not in use.
+.TP
+.B fdblocks
+number of free data blocks.
+.TP
+.B frextents
+number of free realtime extents.
+.TP
+.B uquotino
+user quota inode number.
+.TP
+.B pquotino
+project quota inode number; this is currently unused.
+.TP
+.B qflags
+quota status flags
+(0x01: user quota accounting is on,
+0x02: user quota limits are enforced,
+0x04: quotacheck has been run on user quotas,
+0x08: project quota accounting is on,
+0x10: project quota limits are enforced,
+0x20: quotacheck has been run on project quotas).
+.TP
+.B flags
+random flags. 0x01: only read-only mounts are allowed.
+.TP
+.B shared_vn
+shared version number (shared readonly filesystems).
+.TP
+.B inoalignmt
+inode chunk alignment in filesystem blocks.
+.TP
+.B unit
+stripe or RAID unit.
+.TP
+.B width
+stripe or RAID width.
+.TP
+.B dirblklog
+log2 of directory block size (filesystem blocks).
+.PD
+.RE
+.TP
+.B symlink
+Symbolic link blocks are used only when the symbolic link value does
+not fit inside the inode. The block content is just the string value.
+Bytes past the logical end of the symbolic link value have arbitrary values.
+.TP
+.B text
+User file blocks, and other blocks whose type is unknown,
+have this type for display purposes in
+.BR xfs_db .
+The block data is displayed in two columns: Hexadecimal format
+and printable ASCII chars.
+.SH DIAGNOSTICS
+Many messages can come from the
+.B check
+.RB ( blockget )
+command; these are documented in
+.BR xfs_check (8).
+.SH SEE ALSO
+.BR mkfs.xfs (8),
+.BR xfs_admin (8),
+.BR xfs_check (8),
+.BR xfs_copy (8),
+.BR xfs_logprint (8),
+.BR xfs_metadump (8),
+.BR xfs_ncheck (8),
+.BR xfs_repair (8),
+.BR mount (8),
+.BR chmod (2),
+.BR mknod (2),
+.BR stat (2),
+.BR xfs (5).

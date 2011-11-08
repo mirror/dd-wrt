@@ -1,0 +1,31 @@
+.TH projects 5
+.SH NAME
+projects \- persistent project root defintion
+.SH DESCRIPTION
+The
+.I /etc/projects
+file provides a mapping between numeric project identifiers and those directories
+which are the roots of the quota tree.  Its format is simply:
+
+.nf
+.sp
+.in +5
+# comments are hash-prefixed
+# ...
+10:/export/cage
+42:/var/log
+.in -5
+.fi
+.PP
+The
+.I /etc/projects
+file is optional, instead
+.BR xfs_quota (8)
+can be used with the
+.B \-p
+argument to specify a project root directly for each operation.
+
+.SH SEE ALSO
+.BR xfs_quota (8),
+.BR xfsctl (3),
+.BR projid (5).

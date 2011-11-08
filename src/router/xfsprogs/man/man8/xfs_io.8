@@ -1,0 +1,557 @@
+.TH xfs_io 8
+.SH NAME
+xfs_io \- debug the I/O path of an XFS filesystem
+.SH SYNOPSIS
+.B xfs_io
+[
+.B \-adFfmrRstx
+] [
+.B \-c
+.I cmd
+] ... [
+.B \-p
+.I prog
+]
+.I file
+.SH DESCRIPTION
+.B xfs_io
+is a debugging tool like
+.BR xfs_db (8),
+but is aimed at examining the regular file I/O paths rather than the
+raw XFS volume itself.
+These code paths include not only the obvious read/write/mmap interfaces
+for manipulating files, but also cover all of the XFS extensions (such
+as space preallocation, additional inode flags, etc).
+.SH OPTIONS
+.TP 1.0i
+.BI \-c " cmd"
+.B xfs_io
+commands may be run interactively (the default) or as arguments on
+the command line. Multiple
+.B \-c
+arguments may be given. The commands are run in the sequence given,
+then the program exits.
+.TP
+.BI \-p " prog"
+Set the program name for prompts and some error messages,
+the default value is
+.BR xfs_io .
+.TP
+.B \-F
+Allow
+.I file
+to reside in non-XFS (foreign) filesystems.
+This mode has a restricted set of commands.
+.TP
+.B \-f
+Create
+.I file
+if it does not already exist.
+.TP
+.B \-r
+Open
+.I file
+read-only, initially. This is required if
+.I file
+is immutable or append-only.
+.TP
+.B \-x
+Expert mode. Dangerous commands are only available in this mode.
+These commands also tend to require additional privileges.
+.PP
+The other
+.BR open (2)
+options described below are also available from the command line.
+.SH CONCEPTS
+.B xfs_io
+maintains a number of open files and memory mappings.
+Files can be initially opened on the command line (optionally),
+and additional files can also be opened later.
+.PP
+.B xfs_io
+commands can be broken up into three groups.
+Some commands are aimed at doing regular file I/O - read, write,
+sync, space preallocation, etc.
+.PP
+The second set of commands exist for manipulating memory mapped regions
+of a file - mapping, accessing, storing, unmapping, flushing, etc.
+.PP
+The remaining commands are for the navigation and display of data
+structures relating to the open files, mappings, and the filesystems
+where they reside.
+.PP
+Many commands have extensive online help. Use the
+.B help
+command for more details on any command.
+.SH FILE I/O COMMANDS
+.TP
+.BI "file [ " N " ]"
+Display a list of all open files and (optionally) switch to an alternate
+current open file.
+.TP
+.BI "open [[ \-FacdfrstR ] " path " ]"
+Closes the current file, and opens the file specified by
+.I path
+instead. Without any arguments, displays statistics about the current
+file \- see the
+.B stat
+command.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-F
+allows non-XFS (foreign) files to be opened and
+operated on with a restricted command set.
+.TP
+.B \-a
+opens append-only (O_APPEND).
+.TP
+.B \-d
+opens for direct I/O (O_DIRECT).
+.TP
+.B \-f
+creates the file if it doesn't already exist (O_CREAT).
+.TP
+.B \-r
+opens read-only (O_RDONLY).
+.TP
+.B \-s
+opens for synchronous I/O (O_SYNC).
+.TP
+.B \-t
+truncates on open (O_TRUNC).
+.TP
+.B \-R
+marks the file as a realtime XFS file after
+opening it, if it is not already marked as such.
+.PD
+.RE
+.TP
+.B o
+See the
+.B open
+command.
+.TP
+.B close
+Closes the current open file, marking the next open file as current
+(if one exists).
+.TP
+.B c
+See the
+.B close
+command.
+.TP
+.BI "pread [ \-b " bsize " ] [ \-v ] " "offset length"
+Reads a range of bytes in a specified blocksize from the given
+.IR offset .
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-b
+can be used to set the blocksize into which the
+.BR read (2)
+requests will be split. The default blocksize is 4096 bytes.
+.TP
+.B \-v
+dump the contents of the buffer after reading,
+by default only the count of bytes actually read is dumped.
+.PD
+.RE
+.TP
+.B r
+See the
+.B pread
+command.
+.TP
+.BI "pwrite [ \-i " file " ] [ \-d ] [ \-s " skip " ] [ \-b " size " ] [ \-S " seed " ] " "offset length"
+Writes a range of bytes in a specified blocksize from the given
+.IR offset .
+The bytes written can be either a set pattern or read in from another
+file before writing.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-i
+allows an input
+.I file
+to be specified as the source of the data to be written.
+.TP
+.B \-d
+causes direct I/O, rather than the usual buffered
+I/O, to be used when reading the input file.
+.TP
+.B \-s
+specifies the number of bytes to
+.I skip
+from the start of the input file before starting to read.
+.TP
+.B \-b
+used to set the blocksize into which the
+.BR write (2)
+requests will be split. The default blocksize is 4096 bytes.
+.TP
+.B \-S
+used to set the (repeated) fill pattern which
+is used when the data to write is not coming from a file.
+The default buffer fill pattern value is 0xcdcdcdcd.
+.RE
+.PD
+.TP
+.B w
+See the
+.B pwrite
+command.
+.TP
+.BI "bmap [ \-adlpv ] [ \-n " nx " ]"
+Prints the block mapping for the current open file. Refer to the
+.BR xfs_bmap (8)
+manual page for complete documentation.
+.TP
+.BI "extsize [ \-R | \-D ] [ " value " ]"
+Display and/or modify the preferred extent size used when allocating
+space for the currently open file. If the
+.B \-R
+option is specified, a recursive descent is performed
+for all directory entries below the currently open file
+.RB ( \-D
+can be used to restrict the output to directories only).
+If the target file is a directory, then the inherited extent size
+is set for that directory (new files created in that directory
+inherit that extent size).
+The
+.I value
+should be specified in bytes, or using one of the usual units suffixes
+(k, m, g, b, etc). The extent size is always reported in units of bytes.
+.TP
+.BI "allocsp " size " 0"
+Sets the size of the file to
+.I size
+and zeroes any additional space allocated using the
+XFS_IOC_ALLOCSP/XFS_IOC_FREESP system call described in the
+.BR xfsctl (3)
+manual page.
+.B allocsp
+and
+.B freesp
+do exactly the same thing.
+.TP
+.BI "freesp " size " 0"
+See the
+.B allocsp
+command.
+.TP
+.BI "fadvise [ \-r | \-s | [[ \-d | \-n | \-w ] " "offset length " ]]
+On platforms which support it, allows hints be given to the system
+regarding the expected I/O patterns on the file.
+The range arguments are required by some advise commands ([*] below), and
+the others must have no range arguments.
+With no arguments, the POSIX_FADV_NORMAL advice is implied (default readahead).
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-d
+the data will not be accessed again in the near future (POSIX_FADV_DONTNEED[*]).
+.TP
+.B \-n
+data will be accessed once and not be reused (POSIX_FADV_NOREUSE[*]).
+.TP
+.B \-r
+expect access to data in random order (POSIX_FADV_RANDOM), which sets readahead to zero.
+.TP
+.B \-s
+expect access to data in sequential order (POSIX_FADV_SEQUENTIAL),
+which doubles the default readahead on the file.
+.TP
+.B \-w
+advises the specified data will be needed again (POSIX_FADV_WILLNEED[*])
+which forces the maximum readahead.
+.RE
+.PD
+.TP
+.B fdatasync
+Calls
+.BR fdatasync (2)
+to flush the file's in-core data to disk.
+.TP
+.B fsync
+Calls
+.BR fsync (2)
+to flush all in-core file state to disk.
+.TP
+.B s
+See the
+.B fsync
+command.
+.TP
+.BI resvsp " offset length"
+Allocates reserved, unwritten space for part of a file using the
+XFS_IOC_RESVSP system call described in the
+.BR xfsctl (3)
+manual page.
+.TP
+.BI unresvsp " offset length"
+Frees reserved space for part of a file using the XFS_IOC_UNRESVSP
+system call described in the
+.BR xfsctl (3)
+manual page.
+.TP
+.BI "falloc [ \-k ]" " offset length"
+Allocates reserved, unwritten space for part of a file using the
+fallocate routine as described in the
+.BR fallocate (3)
+manual page.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-k
+will set the FALLOC_FL_KEEP_SIZE flag as described in
+.BR fallocate (3).
+.PD
+.RE
+.TP
+.BI truncate " offset"
+Truncates the current file at the given offset using
+.BR ftruncate (2).
+.TP
+.BI "sendfile \-i " srcfile " | \-f " N " [ " "offset length " ]
+On platforms which support it, allows a direct in-kernel copy between
+two file descriptors. The current open file is the target, the source
+must be specified as another open file
+.RB ( \-f )
+or by path
+.RB ( \-i ).
+
+.SH MEMORY MAPPED I/O COMMANDS
+.TP
+.BI "mmap [ " N " | [[ \-rwx ] " "offset length " ]]
+With no arguments,
+.B mmap
+shows the current mappings. Specifying a single numeric argument
+.I N
+sets the current mapping. If two arguments are specified (a range specified by
+.I offset
+and
+.IR length ),
+a new mapping is created spanning the range, and the protection mode can
+be given as a combination of PROT_READ
+.RB ( \-r ),
+PROT_WRITE
+.RB ( \-w ),
+and PROT_EXEC
+.RB ( \-x ).
+.TP
+.B mm
+See the
+.B mmap
+command.
+.TP
+.B munmap
+Unmaps the current memory mapping.
+.TP
+.B mu
+See the
+.B munmap
+command.
+.TP
+.BI "mread [ \-f | \-v ] [ \-r ] [" " offset length " ]
+Accesses a segment of the current memory mapping, optionally dumping it to
+the standard output stream (with
+.B \-v
+or
+.B \-f
+option) for inspection. The accesses are performed sequentially from the start
+.I offset
+by default, but can also be done from the end backwards through the
+mapping if the
+.B \-r
+option in specified.
+The two verbose modes differ only in the relative offsets they display, the
+.B \-f
+option is relative to file start, whereas
+.B \-v
+shows offsets relative to the start of the mapping.
+.TP
+.B mr
+See the
+.B mread
+command.
+.TP
+.BI "mwrite [ \-r ] [ \-S " seed " ] [ " "offset length " ]
+Stores a byte into memory for a range within a mapping.
+The default stored value is 'X', repeated to fill the range specified,
+but this can be changed using the
+.B \-S
+option.
+The memory stores are performed sequentially from the start offset by default,
+but can also be done from the end backwards through the mapping if the
+.B \-r
+option in specified.
+.TP
+.B mw
+See the
+.B mwrite
+command.
+.TP
+.BI "msync [ \-i ] [ \-a | \-s ] [ " "offset length " ]
+Writes all modified copies of pages over the specified range (or entire
+mapping if no range specified) to their backing storage locations.
+Also, optionally invalidates
+.RB ( \-i )
+so that subsequent references to the pages will be obtained from their
+backing storage locations (instead of cached copies).
+The flush can be done synchronously
+.RB ( \-s)
+or asynchronously
+.RB ( \-a ).
+.TP
+.B ms
+See the
+.B msync
+command.
+.TP
+.BI "madvise [ \-d | \-r | \-s | \-w ] [ " "offset length " ]
+Modifies page cache behavior when operating on the current mapping.
+The range arguments are required by some advise commands ([*] below).
+With no arguments, the POSIX_MADV_NORMAL advice is implied (default readahead).
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-d
+the pages will not be needed (POSIX_MADV_DONTNEED[*]).
+.TP
+.B \-r
+expect random page references (POSIX_MADV_RANDOM), which sets readahead to zero.
+.TP
+.B \-s
+expect sequential page references (POSIX_MADV_SEQUENTIAL),
+which doubles the default readahead on the file.
+.TP
+.B \-w
+advises the specified pages will be needed again (POSIX_MADV_WILLNEED[*])
+which forces the maximum readahead.
+.RE
+.PD
+.TP
+.B mincore
+Dumps a list of pages or ranges of pages that are currently in core,
+for the current memory mapping.
+
+.SH OTHER COMMANDS
+.TP
+.B print
+Display a list of all open files and memory mapped regions.
+The current file and current mapping are distinguishable from
+any others.
+.TP
+.B p
+See the
+.B print
+command.
+.TP
+.B quit
+Exit
+.BR xfs_io .
+.TP
+.B q
+See the
+.B quit
+command.
+.TP
+.BR lsattr " [ " \-R " | " \-D " | " \-a " | " \-v " ]"
+List extended inode flags on the currently open file. If the
+.B \-R
+option is specified, a recursive descent is performed
+for all directory entries below the currently open file
+.RB ( \-D
+can be used to restrict the output to directories only).
+This is a depth first descent, it does not follow symlinks and
+it also does not cross mount points.
+.TP
+.BR chattr " [ " \-R " | " \-D " ] [ " + / \-riasAdtPneEfS " ]"
+Change extended inode flags on the currently open file. The
+.B \-R
+and
+.B \-D
+options have the same meaning as above. The mapping between each
+letter and the inode flags (refer to
+.BR xfsctl (3)
+for the full list) is available via the
+.B help
+command.
+.TP
+.B freeze
+Suspend all write I/O requests to the filesystem of the current file.
+Only available in expert mode and requires privileges.
+.TP
+.B thaw
+Undo the effects of a filesystem freeze operation.
+Only available in expert mode and requires privileges.
+.TP
+.BI "inject [ " tag " ]"
+Inject errors into a filesystem to observe filesystem behavior at
+specific points under adverse conditions. Without the
+.I tag
+argument, displays the list of error tags available.
+Only available in expert mode and requires privileges.
+.TP
+.BI "resblks [ " blocks " ]"
+Get and/or set count of reserved filesystem blocks using the
+XFS_IOC_GET_RESBLKS or XFS_IOC_SET_RESBLKS system calls.
+Note \-\- this can be useful for exercising out of space behavior.
+Only available in expert mode and requires privileges.
+.TP
+.BR shutdown " [ " \-f " ]"
+Force the filesystem to shutdown (with or without flushing the log).
+Only available in expert mode and requires privileges.
+.TP
+.BR stat " [ " \-v " ]"
+Selected statistics from
+.BR stat (2)
+and the XFS_IOC_GETXATTR system call on the current file. If the
+.B \-v
+option is specified, the atime (last access), mtime
+(last modify), and ctime (last change) timestamps are also displayed.
+.TP
+.B statfs
+Selected statistics from
+.BR statfs (2)
+and the XFS_IOC_FSGEOMETRY
+system call on the filesystem where the current file resides.
+.TP
+.BR parent " [ " \-cpv " ]"
+By default this command prints out the parent inode numbers,
+inode generation numbers and basenames of all the hardlinks which
+point to the inode of the current file.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-p
+the output is similar to the default output except pathnames up to
+the mount-point are printed out instead of the component name.
+.TP
+.B \-c
+the file's filesystem will check all the parent attributes for consistency.
+.TP
+.B \-v
+verbose output will be printed.
+.RE
+.IP
+.B [NOTE: Not currently operational on Linux.]
+.PD
+
+.SH SEE ALSO
+.BR mkfs.xfs (8),
+.BR xfsctl (3),
+.BR xfs_bmap (8),
+.BR xfs_db (8),
+.BR xfs (5),
+.BR fdatasync (2),
+.BR fstat (2),
+.BR fstatfs (2),
+.BR fsync (2),
+.BR ftruncate (2),
+.BR mmap (2),
+.BR msync (2),
+.BR open (2),
+.BR pread (2),
+.BR pwrite (2).

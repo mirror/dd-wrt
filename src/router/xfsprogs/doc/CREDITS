@@ -1,0 +1,85 @@
+
+	This is a credits-file of people that have contributed to
+	the Linux/XFS project.  It is sorted by name and formatted
+	to allow easy grepping and beautification by scripts (i.e.
+	it follows the same format Linus has used in the kernel).
+	The fields are: name (N), email (E), web-address (W), PGP
+	key ID and fingerprint (P), description (D), and snail-mail
+	address (S).
+
+----------
+
+N: Jens Axboe
+E: axboe@suse.de
+D: Block/elevator/kiobuf hacking, IDE kiobuf support
+S: Peter Bangs Vej 258, 2TH
+S: 2500 Valby
+S: Denmark
+
+N: Ethan Benson
+E: erbenson@alaska.net
+D: Additional inode flags (immutable, append-only, etc)
+S: P.O. Box 770525
+S: Eagle River, AK 99577
+S: Alaska
+
+N: Nicolas Boullis
+E: nboullis@debian.org
+D: fix XFS recovery on 64-bit big-endian architectures
+
+N: Danny Cox
+E: danscox@mindspring.com
+D: ACL port to Linux
+
+N: Thomas Graichen
+E: tgr@spoiled.org
+D: Original XFS FAQ maintainer
+D: PowerPC and Alpha porting
+S: Berlin, Germany
+
+N: Juergen Hasch
+E: hasch@t-online.de
+D: libacl fixes
+S: Meisenstr. 23, 73066 Uhingen, Germany
+
+N: Bill Jones
+E: jones@hpc.utexas.edu
+D: fsr port to Linux
+S: Austin, Texas, USA
+
+N: Jan Kara
+E: jack@atrey.karlin.mff.cuni.cz
+E: jack@suse.cz
+D: Quota 3.01 user tools, allowing different forms of quota to coexist
+D: Merging XFS support into quota user tools
+W: http://atrey.karlin.mff.cuni.cz/~jack/
+S: Krosenska' 543
+S: 181 00 Praha 8
+S: Czech Republic
+
+N: Andi Kleen
+E: ak@muc.de
+D: Most recently, fine-tuning default mkfs/mount logsize/logbufs values
+S: Schwalbenstr. 96
+S: 85551 Ottobrunn
+S: Germany
+
+N: Seth Mos
+E: seth@arosa.nl
+D: XFS FAQ ( http://oss.sgi.com/projects/xfs/faq.html ) maintainer
+W: http://iserv.nl/
+S: Den Helder, The Netherlands
+
+N: Bart Samwel
+E: bart@samwel.tk
+W: http://www.xs4all.nl/~bsamwel/laptop_mode/
+D: Laptop mode for XFS
+
+N: Robert Stickel
+E: previously: rstickel@connex.com
+D: libacl port to Linux
+
+N: John Trostel
+E: john.trostel@gtri.gatech.edu
+D: libacl extensions for Linux
+S: GTRI/EOEML, Georgia Institute of Technology, Atlanta, GA 30332, USA

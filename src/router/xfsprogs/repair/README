@@ -1,0 +1,717 @@
+A living document.  The basic algorithm.
+
+TODO: (D == DONE)
+
+0)	Need to bring some sanity into the case of flags that can
+	be set in the secondaries at mkfs time but reset or cleared
+	in the primary later in the filesystem's life.
+
+0)	Clear the persistent read-only bit if set.  Clear the
+	shared bit if set and the version number is zero.  This
+	brings the filesystem back to a known state.
+
+0)	make sure that superblock geometry code checks the logstart
+	value against whether or not we have an internal log.
+	If we have an internal log and a logdev, that's ok.
+	(Maybe we just aren't using it).  If we have an external
+	log (logstart == 0) but no logdev, that's right out.
+
+0)	write secondary superblock search code.  Rewrite initial
+	superblock parsing code to be less complicated.  Just
+	use variables to indicate primary, secondary, etc.,
+	and use a function to get the SB given a specific location
+	or something.
+
+2)	For inode alignment, if the SB bit is set and the
+	inode alignment size field in the SB is set, then
+	believe that the fs inodes MUST be aligned and
+	disallow any non-aligned inodes.  Likewise, if
+	the SB bit isn't set (or earlier version) and
+	the inode alignment size field is zero, then
+	never set the bit even if the inodes are aligned.
+	Note that the bits and alignment values are
+	replicated in the secondary superblocks.
+
+0)  add feature specification options to parse_arguments
+
+0)	add logic to add_inode_ref(), add_inode_reached()
+	to detect nlink overflows in cases where the fs
+	(or user had indicated fs) doesn't support new nlinks.
+
+6) check to make sure that the inodes containing btree blocks
+	with # recs < minrecs aren't legit -- e.g. the only
+	descendant of a root block.
+
+7)  inode di_size value sanity checking -- should always be less than
+	the biggest filebno offset mentioned in the bmaps.  Doesn't
+	have to be equal though since we're allowed to overallocate
+	(it just wastes a little space).  This is for both regular
+	files and directories (have to modify the existing directory
+	check).
+
+	Add tracking of largest offset in bmap scanning code.  Compare
+	value against di_size.  Should be >= di_size.
+
+	Alternatively, you could pass the inode into down through
+	the extent record processing layer and make the checks
+	there.
+
+	Add knowledge of quota inodes.  size of quota inode is
+	always zero.  We should maintain that.
+
+8)  Basic quota stuff.
+
+	Invariants
+		if quota feature bit is set, the quota inodes
+		if set, should point to disconnected, 0 len inodes.
+
+D -		if quota inodes exist, the quota bits must be
+		turned on.  It's ok for the quota flags to be
+		zeroed but they should be in a legal state
+		(see xfs_quota.h).
+
+D -		if the quota flags are non-zero, the corresponding
+		quota inodes must exist.
+
+		quota inodes are never deleted, only their space
+		is freed.
+
+	if quotas are being downgraded, then check quota inodes
+	at the end of phase 3.  If they haven't been cleared yet,
+	clear them.  Regardless, then clear sb flags (quota inode
+	fields, quota flags, and quota bit).
+
+
+5) look at verify_inode_chunk().  it's probably really broken.
+
+
+9)  Complicated quota stuff.  Add code to bmap scan code to
+	track used blocks.  Add another pair of AVL trees
+	to track user and project quota limits.  Set AVL
+	trees up at the beginning of phase 3.  Quota inodes
+	can be rebuilt or corrected later if damaged.
+
+
+D - 0)	fix directory processing.  phase 3, if an entry references
+	a free inode, *don't* mark it used.  wait for the rest of
+	phase 3 processing to hit that inode.  If it looks like it's
+	in use, we'll mark in use then.  If not, we'll clear it and
+	mark the inode map.  then in phase 4, you can depend on the
+	inode map.  should probably set the parent info in phase 4.
+	So we have a check_dups flag.  Maybe we should change the
+	name of check_dir to discover_inodes.  During phase 3
+	(discover_inodes == 1), uncertain inodes are added to list.
+	During phase 4 (discover_inodes == 0), they aren't.  And
+	we never mark inodes in use from the directory code.
+	During phase 4, we shouldn't complain about names with
+	a leading '/' since we made those names in phase 3.
+
+	Have to change dino_chunks.c (parent setting), dinode.c
+	and dir.c.
+
+D - 0)	make sure we don't screw up filesystems with real-time inodes.
+	remember to initialize real-time map with all blocks XR_E_FREE.
+
+D - 4) check contents of symlinks as well as lengths in process_symlinks()
+	in dinode.c.  Right now, we only check lengths.
+
+
+D - 1)	Feature mismatches -- for quotas and attributes,
+	if the stuff exists in the filesystem, set the
+	superblock version bits.
+
+D - 0)	rewrite directory leaf block holemap comparison code.
+	probably should just check the leaf block hole info
+	against our incore bitmap.  If the hole flag is not
+	set, then we know that there can only be one hole and
+	it has to be between the entry table and the top of heap.
+	If the hole flag is set, then it's ok if the on-disk
+	holemap doesn't describe everything as long as what
+	it does describe doesn't conflict with reality.
+
+D - 0)	rewrite setting nlinks handling -- for version 1
+	inodes, set both nlinks and onlinks (zero projid_lo/hi
+	and pad) if we have to change anything.  For
+	version 2, I think we're ok.
+
+D - 0)	Put awareness of quota inode into mark_standalone_inodes.
+
+
+D - 8) redo handling of superblocks with bad version numbers.  need
+	to bail out (without harming) fs's that have sbs that
+	are newer than we are.
+
+D - 0)  How do we handle feature mismatches between fs and
+	superblock?  For nlink, check each inode after you
+	know it's good.  If onlinks is 0 and nlinks is > 0
+	and it's a version 2 inode, then it really is a version
+	2 inode and the nlinks flag in the SB needs to be set.
+	If it's a version 2 inode and the SB agrees but onlink
+	is non-zero, then clear onlink.
+
+D - 3)  keep cumulative counts of freeblocks, inodes, etc. to set in
+	the superblock at the end of phase 5.  Remember that
+	agf freeblock counters don't include blocks used by
+	the non-root levels of the freespace trees but that
+	the sb free block counters include those.
+
+D - 0)  Do parent setting in directory code (called by phase 3).
+	actually, I put it in process_inode_set and propagated
+	the parent up to it from the process_dinode/process_dir
+	routines.  seemed cleaner than pushing the irec down
+	and letting them bang on it.
+
+D - 0)  If we clear a file in phase 4, make sure that if it's
+	a directory that the parent info is cleared also.
+
+D - 0) put inode tree flashover (call to add_ino_backptrs) into phase 5.
+
+D - 0) do set/get_inode_parent functions in incore_ino.c.
+	also do is/set/ inode_processed.
+
+D - 0) do a versions.c to extract feature info and set global vars
+	from the superblock version number and possibly feature bits
+
+D - 0) change longform_dir_entry_check + shortform_dir_entry_check
+	to return a count of how many illegal '/' entries exist.
+	if > 0, then process_dirstack needs to call prune_dir_entry
+	with a hash value of 0 to delete the entries.
+
+D - 0)  add the "processed" bitfield
+	to the backptrs_t struct that gets attached after
+	phase 4.
+
+D- )  Phase 6 !!!
+
+D - 0) look at usage of XFS_MAKE_IPTR().  It does the right
+	arithmetic assuming you count your offsets from the
+	beginning of the buffer.
+
+
+D - 0) look at references to XFS_INODES_PER_CHUNK.  change the
+	ones that really mean sizeof(__uint64_t)*NBBY to
+	something else (like that only defined as a constant
+	INOS_PER_IREC. this isn't as important since
+	XFS_INODES_PER_CHUNK will never chang
+
+
+D - 0) look at junk_zerolen_dir_leaf_entries() to make sure it isn't hosing
+	the freemap since it assumed that bytes between the
+	end of the table and firstused didn't show up in the
+	freemap when they actually do.
+
+D - 0) track down XFS_INO_TO_OFFSET() usage.  I don't think I'm
+	using it right.  (e.g. I think
+	it gives you the offset of an inode into a block but
+	on small block filesystems, I may be reading in inodes
+	in multiblock buffers and working from the start of
+	the buffer plus I'm using it to get offsets into
+	my ino_rec's which may not be a good idea since I
+	use 64-inode ino_rec's whereas the offset macro
+	works off blocksize).
+
+D - 0.0) put buffer -> dirblock conversion macros into xfs kernel code
+
+D - 0.2) put in sibling pointer checking and path fixup into
+	bmap (long form) scan routines in scan.c
+D - 0.3) find out if bmap btrees with only root blocks are legal.  I'm
+	betting that they're not because they'd be extent inodes
+	instead.  If that's the case, rip some code out of
+	process_btinode()
+
+
+Algorithm (XXX means not done yet):
+
+Phase 1 -- get a superblock and zero log
+
+	get a superblock -- either read in primary or
+		find a secondary (ag header), check ag headers
+
+		To find secondary:
+
+			Go for brute force and read in the filesystem N meg
+				at a time looking for a superblock.  as a
+				slight optimization, we could maybe skip
+				ahead some number of blocks to try and get
+				towards the end of the first ag.
+
+			After you find a secondary, try and find at least
+				other ags as a verification that the
+				secondary is a good superblock.
+
+XXX -		Ugh.  Have to take growfs'ed filesystems into account.
+		The root superblock geometry info may not be right if
+		recovery hasn't run or it's been trashed.  The old ag's
+		may or may not be right since the system could have crashed
+		during growfs or the bwrite() to the superblocks could have
+		failed and the buffer been reused.  So we need to check
+		to see if another ag exists beyond the "last" ag
+		to see if a growfs happened.  If not, then we know that
+		the geometry info is good and treat the fs as a non-growfs'ed
+		fs.  If we do have inconsistencies, then the smaller geometry
+		is the old fs and the larger the new.  We can check the
+		new superblocks to see if they're good.  If not, then we
+		know the system crashed at or soon after the growfs and
+		we can choose to either accept the new geometry info or
+		trash it and truncate the fs back to the old geometry
+		parameters.
+
+	Cross-check geometry information in secondary sb's with
+	primary to ensure that it's correct.
+
+	Use sim code to allow mount filesystems *without* reading
+	in root inode.  This sets up the xfs_mount_t structure
+	and allows us to use XFS_* macros that we wouldn't
+	otherwise be able to use.
+
+	Note, I split phase 1 and 2 into separate pieces because I want
+	to initialize the xfs_repair incore data structures after phase 1.
+
+	parse superblock version and feature flags and set appropriate
+		global vars to reflect the flags (attributes, quotas, etc.)
+
+	Workaround for the mkfs "not zeroing the superblock buffer" bug.
+	Determine what field is the last valid non-zero field in
+	the superblock.  The trick here is to be able to differentiate
+	the last valid non-zero field in the primary superblock and
+	secondaries because they may not be the same.  Fields in
+	the primary can be set as the filesystem gets upgraded but
+	the upgrades won't touch the secondaries.  This means that
+	we need to find some number of secondaries and check them.
+	So we do the checking here and the setting in phase2.
+
+Phase 2 -- check integrity of allocation group allocation structures
+
+	zero the log if in no modify mode
+
+	sanity check ag headers -- superblocks match, agi isn't
+				trashed -- the agf and agfl
+				don't really matter because we can
+				just recreate them later.
+
+		Zero part of the superblock buffer if necessary
+
+		Walk the freeblock trees to get an
+			initial idea of what the fs thinks is free.
+			Files that disagree (claim free'd blocks)
+			can be salvaged or deleted.  If the btree is
+			internally inconsistent, when in doubt, mark
+			blocks free.  If they're used, they'll be stolen
+			back later.  don't have to check sibling pointers
+			for each level since we're going to regenerate
+			all the trees anyway.
+		Walk the inode allocation trees and
+			make sure they're ok, otherwise the sim
+			inode routines will probably just barf.
+			mark inode allocation tree blocks and ag header
+			blocks as used blocks.  If the trees are
+			corrupted, this phase will generate "uncertain"
+			inode chunks.  Those chunks go on a list and
+			will have to verified later.  Record the blocks
+			that are used to detect corruption and multiply
+			claimed blocks.  These trees will be regenerated
+			later.  Mark the blocks containing inodes referenced
+			by uncorrupted inode trees as being used by inodes.
+			The other blocks will get marked when/if the inodes
+			are verified.
+
+	calculate root and realtime inode numbers from the
+		filesystem geometry, fix up mount structure's
+		incore superblock if they're wrong.
+
+ASSUMPTION:  at end of phase 2, we've got superblocks and ag headers
+	that are not garbage (some data in them like counters and the
+	freeblock and inode trees may be inconsistent but the header
+	is readable and otherwise makes sense).
+
+XXX	if in no_modify mode, check for blocks claimed by one freespace
+	btree and not the other
+
+Phase 3 -- traverse inodes to make the inodes, bmaps and freespace maps
+		consistent.  For each ag, use either the incore inode map or
+		scan the ag for inodes.
+		Let's use the incore inode map, now that we've made one
+		up in phase2.  If we lose the maps, we'll locate inodes
+		when we traverse the directory heirarchy.  If we lose both,
+		we could scan the disk.  Ugh.  Maybe make that a command-line
+		option that we support later.
+
+	ASSUMPTION: we know if the ag allocation btrees are intact (phase 2)
+
+	First - Walk and clear the ag unlinked lists.  We'll process
+		the inodes later.  Check and make sure that the unlinked
+		lists reference known inodes.  If not, add to the list
+		of uncertain inodes.
+
+	Second, check the uncertain inode list generated in phase2 and
+		above and get them into the inode tree if they're good.
+		The incore inode cluster tree *always* has good
+		clusters (alignment, etc.) in it.
+
+	Third, make sure that the root inode is known.  If not,
+		and we know the inode number from the superblock,
+		discover that inode and its chunk.
+
+	Then, walk the incore inode-cluster tree.
+
+	Maintain an in-core bitmap over the entire fs for block allocation.
+
+	traverse each inode, make sure inode mode field matches free/allocated
+		bit in the incore inode allocation tree.  If there's a mismatch,
+		assume that the inode is in use.
+
+		- for each in-use inode, traverse each bmap/dir/attribute
+			map or tree.  Maintain a map (extent list?) for the
+			current inode.
+
+		- For each block marked as used, check to see if already known
+			(referenced by another file or directory) and sanity
+			check the contents of the block as well if possible
+			(in the case of meta-blocks).
+
+		- if the inode claims already used blocks, mark the blocks
+			as multiply claimed (duplicate) and go on.  the inode
+			will be cleared in phase 4.
+
+		- if metablocks are garbaged, clear the inode after
+			traversing what you can of the bmap and
+			proceed to next inode.  We don't have to worry
+			about trashing the maps or trees in cleared inodes
+			because the blocks will show up as free in the
+			ag freespace trees that we set up in phase 5.
+
+		- clear the di_next_unlinked pointer -- all unlinked
+			but active files go bye-bye.
+
+		- All blocks start out unknown.  We need the last state
+			in case we run into a case where we need to step
+			on a block to store filesystem meta-data and it
+			turns out later that it's referenced by some inode's
+			bmap.  In that case, the inode loses because we've
+			already trashed the block.  This shouldn't happen
+			in the first version unless some inode has a bogus
+			bmap referencing blocks in the ag header but the
+			4th state will keep us from inadvertently doing
+			something stupid in that case.
+
+		- If inode is allocated, mark all blocks allocated to the
+			current inode as allocated in the incore freespace
+			bitmap.
+
+		- If inode is good and a directory, scan through it to
+			find leaf entries and discover any unknown inodes.
+
+			For shortform, we correct what we can.
+
+			If the directory is corrupt, we try and fix it in
+			place.  If it has zero good entries, then we blast it.
+
+			All unknown inodes get put onto the uncertain inode
+			list.  This is safe because we only put inodes onto
+			the list when we're processing known inodes so the
+			uncertain inode list isn't in use.
+
+			We fix only one problem -- an entry that has
+			a mathematically invalid inode numbers in them.
+			If that's the case, we replace the inode number
+			with NULLFSINO and we'll fix up the entry in
+			phase 6.
+
+			That info may conflict with the inode information,
+			but we'll straighten out any inconsistencies there
+			in phase4 when we process the inodes again.
+
+			Errors involving bogus forward/back links,
+			zero-length entries make the directory get
+			trashed.
+
+			if an entry references a free inode, ignore that
+			fact for now.  wait for the rest of phase 3
+			processing to hit that inode.  If it looks like it's
+			in use, we'll mark in use then.  If not, we'll
+			clear it and mark the inode map.  then in phase
+			4, you can depend on the inode map.
+
+			Entries that point to non-existent or free
+			inodes, and extra blocks in the directory
+			will get fixed in place in a later pass.
+
+			Entries that point to a quota inode are
+			marked TBD.
+
+			If the directory internally points to the same
+			block twice, the directory gets blown away.
+
+	Note that processing uncertain inodes can add more inodes
+	to the uncertain list if they're directories.  So we loop
+	until the uncertain list is empty.
+
+	During inode verification, if the inode blocks are unknown,
+	mark then as in-use by inodes.
+
+XXX	HEURISTIC -- if we blow an inode away that has space,
+	assume that the freespace btree is now out of wack.
+	If it was ok earlier, it's certain to be wrong now.
+	And the odds of this space free cancelling out the
+	existing error is so small I'm willing to ignore it.
+	Should probably do this via a global var and complain
+	about this later.
+
+Assumption:  All known inodes are now marked as in-use or free.  Any
+	inodes that we haven't found by now are hosed (lost) since
+	we can't reach them via either the inode btrees or via directory
+	entries.
+
+	Directories are semi-clean.  All '.' entries are good.
+	Root '..' entry is good if root inode exists.  All entries
+	referencing non-existent inodes, free inodes, etc.
+
+XXX	verify that either quota inode is 0 or NULLFSINO or
+	if sb quota flag is non zero, verify that quota inode
+	is NULLFSINO or is referencing a used, but disconnected
+	inode.
+
+XXX	if in no_modify mode, check for unclaimed blocks
+
+- Phase 4 - Check for inodes referencing duplicate blocks
+
+	At this point, all known duplicate blocks are marked in
+	the block map.  However, some of the claimed blocks in
+	the bmap may in fact be free because they belong to inodes
+	that have to be cleared either due to being a trashed
+	directory or because it's the first inode to claim a
+	block that was then claimed later.  There's a similar
+	problem with meta-data blocks that are referenced by
+	inode bmaps that are going to be freed once the inode
+	(or directory) gets cleared.
+
+	So at this point, we collect the duplicate blocks into
+	extents and put them into the duplicate extent list.
+
+	Mark the ag header blocks as in use.
+
+	We then process each inode twice -- the first time
+	we check to see if the inode claims a duplicate extent
+	and we do NOT set the block bitmap.  If the inode claims
+	a duplicate extent, we clear the inode.  Since the bitmap
+	hasn't been set, that automatically frees all blocks associated
+	with the cleared inode.  If the inode is ok, process it a second
+	time and set the bitmap since we know that this inode will live.
+
+	The unlinked list gets cleared in every inode at this point as
+	well.  We no longer need to preserve it since we've discovered
+	every inode we're going to find from it.
+
+	verify existence of root inode.  if it exists, check for
+	existence of "lost+found".  If it exists, mark the entry
+	to be deleted, and clear the inode.  All the inodes that
+	were connected to the lost+found will be reconnected later.
+
+XXX	HEURISTIC -- if we blow an inode away that has space,
+	assume that the freespace btree is now out of wack.
+	If it was ok earlier, it's certain to be wrong now.
+	And the odds of this space free cancelling out the
+	existing error is so small I'm willing to ignore it.
+	Should probably do this via a global var and complain
+	about this later.
+
+	Clear the quota inodes if the inode btree says that
+	they're not in use.  The space freed will get picked
+	up by phase 5.
+
+XXX	Clear the quota inodes if the filesystem is being downgraded.
+
+- Phase 5 - Build inode allocation trees, freespace trees and
+		agfl's for each ag.  After this, we should be able to
+		unmount the filesystem and remount it for real.
+
+	For each ag: (if no in no_modify mode)
+
+	scan bitmap first to figure out number of extents.
+
+	calculate space required for all trees.  Start with inode trees.
+	Setup the btree cursor which includes the list of preallocated
+	blocks.  As a by-product, this will delete the extents required
+	for the inode tree from the incore extent tree.
+
+	Calculate how many extents will be required to represent the
+	remaining free extent tree on disk (twice, one for bybno and
+	one for bycnt).  You have to iterate on this because consuming
+	extents can alter the number of blocks required to represent
+	the remaining extents.  If there's slop left over, you can
+	put it in the agfl though.
+
+	Then, manually build the trees, agi, agfs, and agfls.
+
+XXX	if in no_modify mode, scan the on-disk inode allocation
+	trees and compare against the incore versions.  Don't have
+	to scan the freespace trees because we caught the problems
+	there in phase2 and phase3.  But if we cleared any inodes
+	with space during phases 3 or 4, now is the time to complain.
+
+XXX -	Free duplicate extent lists. ???
+
+Assumptions:  at this point, sim code having to do with inode
+		creation/modification/deletion and space allocation
+		work because the inode maps, space maps, and bmaps
+		for all files in the filesystem are good.  The only
+		structures that are screwed up are the directory contents,
+		which means that lookup may not work for beans, the
+		root inode which exists but may be completely bogus and
+		the link counts on all inodes which may also be bogus.
+
+	Free the bitmap, the freespace tree.
+
+	Flash the incore inode tree over from parent list to having
+	full backpointers.
+
+	realtime processing, if any --
+
+		(Skip to below if running in no_modify mode).
+
+		Generate the realtime bitmap from the incore realtime
+		extent map and slam the info into the realtime bitmap
+		inode.  Generate summary info from the realtime extent map.
+
+XXX		if in no_modify mode, compare contents of realtime bitmap
+		inode to the incore realtime extent map.  generate the
+		summary info from the incore realtime extent map.
+		compare against the contents of the realtime summary inode.
+		complain if bad.
+
+	reset superblock counters, sync version numbers
+
+- Phase 6 - directory traversal -- check reference counts,
+		attach disconnected inodes, fix up bogus directories
+
+	Assumptions:  all on-disk space and inode trees are structurally
+		sound.  Incore and on-disk inode trees agree on whether
+		an inode is in use.
+
+		Directories are structurally sound.  All hashvalues
+		are monotonically increasing and interior nodes are
+		correct so lookups work.  All legal directory entries
+		point to inodes that are in use and exist.  Shortform
+		directories are fine except that the links haven't been
+		checked for conflicts (cycles, ".." being correct, etc.).
+		Longform directories haven't been checked for those problems
+		either PLUS longform directories may still contain
+		entries beginning with '/'.  No zero-length entries
+		exist (they've been deleted or converted to '/').
+
+		Root directory may or may not exist.  orphange may
+		or may not exist.  Contents of either may be completely
+		bogus.
+
+		Entries may point to free or non-existent inodes.
+
+	At this we point, we may need new incore structures and
+		may be able to trash an old one (like the filesystem
+		block map)
+
+	If '/' is trashed, then reinitialize it.
+
+	If no realtime inodes, make them and if necessary, slam the
+		summary info into the realtime summary
+		inode.  Ditto with the realtime bitmap inode.
+
+	Make orphanage (lost+found ???).
+
+	Traverse each directory from '/' (unless it was created).
+		Check directory structure and each directory entry.
+		If the entry is bogus (points to a non-existent or
+		free inode, for example), mark that entry TBD.  Maintain
+		link counts on all inodes.  Currently, traversal is
+		depth-first.
+
+		Mark every inode reached as "reached" (includes
+		bumping up link counts).
+
+		If a entry points to a directory but the parent (..)
+		disagrees, then blow away the entry.  if the directory
+		being pointed to winds up disconnected, it'll be moved
+		to the orphanage (and the link count incremented to
+		account for the link and the reached bit set then).
+
+		If an entry points to a directory that we've already
+		reached, then some entry is bad and should be blown
+		away.  It's easiest to blow away the current entry
+		plus since presumably the parent entry in the
+		reached directory points to another directory,
+		then it's far more likely that the current
+		entry is bogus (otherwise the parent should point
+		at it).
+
+		If an entry points to a non-existent of free inode,
+		blow the entry away.
+
+		Every time a good entry is encountered update the
+		link count for the inode that the entry points to.
+
+	After traversal, scan incore inode map for directories not
+		reached.  Go to first one and try and find its root
+		by following .. entries.  Once at root, run traversal
+		algorithm.  When algorithm terminates, move subtree
+		root inode to the orphanage.  Repeat as necessary
+		until all disconnected directories are attached.
+
+	Move all disconnected inodes to orphanage.
+
+- Phase 7:  reset reference counts if required.
+
+	Now traverse the on-disk inodes again, and make sure on-disk
+		reference counts are correct.  Reset if necessary.
+
+		SKIP all unused inodes -- that also makes us
+		skip the orphanage inode which we think is
+		unused but is really used.  However, the ref counts
+		on that should be right so that's ok.
+
+---
+
+multiple TB xfs_repair
+
+modify above to work in a couple of AGs at a time.  The bitmaps
+should span only the current set of AGs.
+
+The key it scan the inode bmaps and keep a list of inodes
+that span multiple AG sets and keep the list in a data structure
+that's keyed off AG set # as well as inode # and also has a bit
+to indicate whether or not the inode will be cleared.
+
+Then in each AG set, when doing duplicate extent processing,
+you have to process all multi-AG-set inodes that claim blocks in
+the current AG set.  If there's a conflict, you mark clear the
+inode in the current AG and you mark the multi-AG inode as
+"to be cleared".
+
+After going through all AGs, you can clear the to-be-cleared
+multi-AG-set inodes and pull them off the list.
+
+When building up the AG freespace trees, you walk the bmaps
+of all multi-AG-set inodes that are in the AG-set and include
+blocks claimed in the AG by the inode as used.
+
+This probably involves adding a phase 3-0 which would have to
+check all the inodes to see which ones are multi-AG-set inodes
+and set up the multi-AG-set inode data structure.  Plus the
+process_dinode routines may have to be altered just a bit
+to do the right thing if running in tera-byte mode (call
+out to routines that check the multi-AG-set inodes when
+appropriate).
+
+To make things go faster, phase 3-0 could probably run
+in parallel.  It should be possible to run phases 2-5
+in parallel as well once the appropriate synchronization
+is added to the incore routines and the static directory
+leaf block bitmap is changed to be on the stack.
+
+Phase 7 probably can be in parallel as well.
+
+By in parallel, I mean that assuming that an AG-set
+contains 4 AGs, you could run 4 threads, 1 per AG
+in parallel to process the AG set.
+
+I don't see how phase 6 can be run in parallel though.
+
+And running Phase 8 in parallel is just silly.

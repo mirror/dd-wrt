@@ -1,0 +1,96 @@
+.TH xfs_bmap 8
+.SH NAME
+xfs_bmap \- print block mapping for an XFS file
+.SH SYNOPSIS
+.B xfs_bmap
+[
+.B \-adlpv
+] [
+.B \-n
+.I num_extents
+]
+.I file
+.SH DESCRIPTION
+.B xfs_bmap
+prints the map of disk blocks used by files in an XFS filesystem.
+The map lists each
+.I extent
+used by the file, as well as regions
+in the file that do not have any corresponding blocks (holes).
+Each line of the listings takes the following form:
+.PP
+.RS
+.IR extent ": [" startoffset .. endoffset "]: " startblock .. endblock
+.RE
+.PP
+Holes are marked by replacing the
+.IR startblock .. endblock " with " hole .
+All the file offsets and disk blocks are in units of 512-byte blocks,
+no matter what the filesystem's block size is.
+.PP
+.SH OPTIONS
+.TP
+.B \-a
+If this option is specified, information about the file's
+attribute fork is printed instead of the default data fork.
+.TP
+.B \-d
+If portions of the file have been migrated offline by
+a DMAPI application, a DMAPI read event will be generated to
+bring those portions back online before the disk block map is
+printed.  However if the
+.B \-d
+option is used, no DMAPI read event will be generated for a
+DMAPI file and offline portions will be reported as holes.
+.TP
+.B \-l
+If this option is used, then
+.IP
+.RS 1.2i
+.RI < nblocks ">  blocks"
+.RE
+.IP
+will be appended to each line.
+.I nblocks
+is the length of the extent described on the line in units of 512-byte blocks.
+.IP
+This flag has no effect if the
+.B \-v
+option is used.
+.TP
+.BI \-n " num_extents"
+If this option is given,
+.B xfs_bmap
+obtains the extent list of the file in groups of
+.I num_extents
+extents. In the absence of
+.BR \-n ", " xfs_bmap
+queries the system for the number of extents in the file and uses that
+value to compute the group size.
+.TP
+.B \-p
+If this option is used,
+.B xfs_bmap
+obtains all unwritten (preallocated) extents that do not contain written
+data. With the
+.B \-v
+option, the
+.I flags
+column will show which extents are preallocated/unwritten.
+.TP
+.B \-v
+Shows verbose information. When this flag is specified, additional AG
+specific information is appended to each line in the following form:
+.IP
+.RS 1.2i
+.IR agno " (" startagoffset .. endagoffset ") " nblocks " " flags
+.RE
+.IP
+A second
+.B \-v
+option will print out the
+.I flags
+legend.
+.SH SEE ALSO
+.BR xfs_fsr (8),
+.BR xfs (5).
