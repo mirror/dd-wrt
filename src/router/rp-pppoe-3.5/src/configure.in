@@ -221,7 +221,6 @@ esac
 
 dnl Figure out packing order of structures
 AC_MSG_CHECKING([packing order of bit fields])
-if test "${rpppoe_cv_pack_bitfields+set}" != set ; then
 AC_TRY_RUN([
 union foo {
     struct bar {
@@ -246,7 +245,6 @@ main(void)
     }
 }], rpppoe_cv_pack_bitfields=normal, rpppoe_cv_pack_bitfields=rev,
 $ECHO "no defaults for cross-compiling"; exit 0)
-fi
 
 if test "$rpppoe_cv_pack_bitfields" = "rev" ; then
 	AC_MSG_RESULT(reversed)
@@ -314,7 +312,6 @@ AC_SUBST(PPPOE_SERVER_DEPS)
 AC_SUBST(RDYNAMIC)
 AC_SUBST(LIBEVENT)
 AC_SUBST(ECHO)
-AC_SUBST(LDFLAGS)
 
 datadir_evaluated=`eval echo $datadir`
 AC_SUBST(datadir_evaluated)
