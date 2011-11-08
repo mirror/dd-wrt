@@ -916,11 +916,6 @@ relayHandlePADT(PPPoEInterface const *iface,
     SessionHash *sh;
     PPPoESession *ses;
 
-    /* Destination address must be interface's MAC address */
-    if (memcmp(packet->ethHdr.h_dest, iface->mac, ETH_ALEN)) {
-	return;
-    }
-
     sh = findSession(packet->ethHdr.h_source, packet->session);
     if (!sh) {
 	return;
