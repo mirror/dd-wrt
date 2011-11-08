@@ -44,10 +44,12 @@ int main(int argc, char **argv)
 
 	if (nvram_invmatch("dhcp_dnsmasq", "1")) {
 		leasetime = atol(nvram_safe_get("dhcp_lease")) * 60;
-
+		
 		if (leasetime <= 0)
 			leasetime = 86400;
 
+		dd_syslog(LOG_INFO, "set timer: %d seconds, callback: check_udhcpd()", leasetime);
+		
 		memset(&t1, 0, sizeof(t1));
 		t1.it_interval.tv_sec = (int)leasetime;
 		t1.it_value.tv_sec = (int)leasetime;
@@ -75,7 +77,9 @@ int main(int argc, char **argv)
 			memset(&t4, 0, sizeof(t4));
 			t4.it_interval.tv_sec = time;
 			t4.it_value.tv_sec = time;
-
+			
+			dd_syslog(LOG_INFO, "set timer: %d seconds, callback: ntp_main()", time);
+			
 			dd_timer_create(CLOCK_REALTIME, NULL,
 					(timer_t *) & ntp1_id);
 			dd_timer_connect(ntp1_id, ntp_main, FIRST);
@@ -131,6 +135,8 @@ int main(int argc, char **argv)
 		memset(&t5, 0, sizeof(t5));
 		t5.it_interval.tv_sec = time;
 		t5.it_value.tv_sec = time;
+
+		dd_syslog(LOG_INFO, "set timer: %d seconds, callback: ntp_main()", time);
 
 		dd_timer_create(CLOCK_REALTIME, NULL, (timer_t *) & ntp2_id);
 		dd_timer_connect(ntp2_id, ntp_main, SECOND);

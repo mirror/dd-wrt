@@ -36,6 +36,8 @@ int isRunning(char *name)
 
 void check_udhcpd(timer_t t, int arg)
 {
+	dd_syslog(LOG_INFO, "call check_udhcpd(): relaunch udhcpd/dnsmasq initialised\n");
+	
 	if (nvram_invmatch("router_disable", "1")
 	    || nvram_match("lan_proto", "dhcp")) {
 		if (nvram_match("dhcp_dnsmasq", "1")) {
@@ -64,7 +66,7 @@ void check_udhcpd(timer_t t, int arg)
 
 // <<tofu
 int do_ntp(void)		// called from ntp_main and
-				// process_monitor_main; called every hour!
+				// process_monitor_main; (now really) called every hour!
 {
 	struct timeval tv;
 	float fofs;
@@ -156,12 +158,14 @@ int do_ntp(void)		// called from ntp_main and
 
 void ntp_main(timer_t t, int arg)
 {
+	dd_syslog(LOG_INFO, "call ntp_main(): ntp update initialised\n");
+
 	if (check_action() != ACT_IDLE)
 		return;		// don't execute while upgrading
 	if (!check_wan_link(0) && nvram_invmatch("wan_proto", "disabled"))
 		return;		// don't execute if not online
 
-	// dd_syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
+	//dd_syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
 	eval("stopservice", "ntpc");
 	if (do_ntp() == 0) {
 		if (arg == FIRST)
