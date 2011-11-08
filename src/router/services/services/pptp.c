@@ -45,7 +45,7 @@ void start_pptpd(void)
 
 	//	copy existing peer data to /tmp
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("/bin/cp /jffs/etc/freeradius/pptp_peer.db /tmp/");
+		system("/bin/cp /jffs/etc/pptp_peer.db /tmp/");
 
 	// Create directory for use by pptpd daemon and its supporting files
 	mkdir("/tmp/pptpd", 0744);
@@ -293,7 +293,7 @@ void stop_pptpd(void)
 	stop_process("bcrelay", "pptp broadcast relay");
 	unlink("/tmp/pptp_connected");
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
-		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/freeradius/");
+		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/");
 	return;
 }
 #endif
