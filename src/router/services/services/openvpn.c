@@ -313,15 +313,10 @@ void start_openvpn(void)
 			"ifconfig tap1 0.0.0.0 promisc up\n");
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tap")
-		    && strlen(nvram_safe_get("openvpncl_ip")) > 0) {
+		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
 			fprintf(fp, "ifconfig tap1 %s up\n",
 				nvram_safe_get("openvpncl_ip"));
-		} else {
-//			if (nvram_match("openvpncl_tuntap", "tap"))	//else only bring up tap
-//				fprintf(fp, "ifconfig tap1 0.0.0.0 up\n"); 
-
-			}
-	}
+	 }
 	if (nvram_match("openvpncl_nat", "1")) {
 		fprintf(fp,
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
@@ -352,14 +347,6 @@ void start_openvpn(void)
 		fprintf(fp,
 			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
-/*	else {
-		fprintf(fp, "iptables -D INPUT -i %s1 -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -D FORWARD -i %s1 -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp, "iptables -D FORWARD -o %s1 -j ACCEPT\n",
-			nvram_safe_get("openvpncl_tuntap"));
-	}							*/
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route del default via %s table 10\n",
