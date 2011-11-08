@@ -40,7 +40,9 @@
 #include "utils.h"
 #include "volumes.h"
 #include "ioctl.h"
-
+#ifndef BLKGETSIZE64
+#define BLKGETSIZE64 _IOR(0x12,114,size_t) /* return device size.  */
+#endif
 #ifdef __CHECKER__
 #define BLKGETSIZE64 0
 static inline int ioctl(int fd, int define, u64 *size) { return 0; }
