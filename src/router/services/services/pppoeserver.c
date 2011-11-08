@@ -132,7 +132,7 @@ static void makeipup(void)
 
 	//	copy existing peer data to /tmp
 	if (nvram_match("sys_enable_jffs2", "1"))
-		system("/bin/cp /jffs/etc/freeradius/pppoe_peer.db /tmp/");
+		system("/bin/cp /jffs/etc/pppoe_peer.db /tmp/");
 }
 
 static void do_pppoeconfig(FILE * fp)
@@ -352,7 +352,7 @@ void start_pppoeserver(void)
 		fclose(fp);
 
 		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
-			"-L", getifip(), "-x", nvram_safe_get("pppoeserver_sessionlimit"), 
+			"-L", getifip(), "-i", "-x", nvram_safe_get("pppoeserver_sessionlimit"), 
 			"-N", "512", "-p", "/tmp/pppoeserver/pool", 
 			"-X", "/var/run/pppoeserver.pid");	
 		dd_syslog(LOG_INFO,
@@ -367,7 +367,7 @@ void stop_pppoeserver(void)
 		unlink("/tmp/pppoe_connected");
 	//	backup peer data
 		if (nvram_match("sys_enable_jffs2", "1"))
-		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/");
+		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/");
 	}
 
 }
