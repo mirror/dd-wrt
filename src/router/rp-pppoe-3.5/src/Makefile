@@ -21,7 +21,7 @@ include $(TOP)/.config
 
 
 
-VERSION=3.8
+VERSION=3.11
 
 DEFINES=
 prefix=/usr
