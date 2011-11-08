@@ -1,0 +1,717 @@
+.TH xfs_quota 8
+.SH NAME
+xfs_quota \- manage use of quota on XFS filesystems
+.SH SYNOPSIS
+.B xfs_quota
+[
+.B \-x
+] [
+.B \-p
+.I prog
+] [
+.B \-c
+.I cmd
+] ... [
+.B \-d
+.I project
+] ... [
+.IR path " ... ]"
+.SH DESCRIPTION
+.B xfs_quota
+is a utility for reporting and editing various aspects of filesystem quota.
+.PP
+The options to
+.B xfs_quota
+are:
+.TP 1.0i
+.BI \-c " cmd"
+.B xfs_quota
+commands may be run interactively (the default) or as arguments on
+the command line. Multiple
+.B \-c
+arguments may be given.
+The commands are run in the sequence given, then the program exits.
+.TP
+.BI \-p " prog"
+Set the program name for prompts and some error messages,
+the default value is
+.BR xfs_quota .
+.TP
+.B \-x
+Enable expert mode.
+All of the administrative commands (see the ADMINISTRATOR COMMANDS
+section below) which allow modifications to the quota system are
+available only in expert mode.
+.TP
+.BI \-d " project"
+Project names or numeric identifiers may be specified with this option,
+which restricts the output of the individual
+.B xfs_quota
+commands to the set of projects specified. Multiple
+.B \-d
+arguments may be given.
+.PP
+The optional
+.I path
+argument(s) can be used to specify mount points or device files
+which identify XFS filesystems. The output of the individual
+.B xfs_quota
+commands will then be restricted to the set of filesystems specified.
+.PP
+This manual page is divided into two sections \- firstly,
+information for users of filesystems with quota enabled, and the
+.B xfs_quota
+commands of interest to such users; and then information which is
+useful only to administrators of XFS filesystems using quota and the
+quota commands which allow modifications to the quota system.
+.PP
+Note that common to almost all of the individual commands described
+below are the options for specifying which quota types are of interest
+\- user quota
+.RB ( \-u ),
+group quota
+.RB ( \-g ),
+and/or project quota
+.RB ( \-p ).
+Also, several commands provide options to operate on "blocks used"
+.RB ( \-b ),
+"inodes used"
+.RB ( \-i ),
+and/or "realtime blocks used"
+.RB ( \-r ).
+.PP
+Many commands also have extensive online help. Use the
+.B help
+command for more details on any command.
+.SH QUOTA OVERVIEW
+.PP
+In most computing environments, disk space is not infinite.
+The quota subsystem provides a mechanism to control usage of disk space.
+Quotas can be set for each individual user on any/all of the local
+filesystems.
+The quota subsystem warns users when they exceed their allotted limit,
+but allows some extra space for current work (hard limit/soft limit).
+In addition, XFS filesystems with limit enforcement turned off can be
+used as an effective disk usage accounting system.
+.SS Users' View of Disk Quotas
+To most users, disk quotas are either of no concern or a fact of life
+that cannot be avoided.
+There are two possible quotas that can be imposed \- a limit can be set
+on the amount of space a user can occupy, and there may be a limit on
+the number of files (inodes) he can own.
+.PP
+The
+.B quota
+command provides information on the quotas that have been
+set by the system administrators and current usage.
+.PP
+There are four numbers for each limit:  current usage, soft limit
+(quota), hard limit, and time limit.
+The soft limit is the number of 1K-blocks (or files) that the user is
+expected to remain below.
+The hard limit cannot be exceeded.
+If a user's usage reaches the hard limit, further requests for space
+(or attempts to create a file) fail with the "Quota exceeded" (EDQUOT)
+error.
+.PP
+When a user exceeds the soft limit, the timer is enabled.
+Any time the quota drops below the soft limits, the timer is disabled.
+If the timer pops, the particular limit that has been exceeded is treated
+as if the hard limit has been reached, and no more resources are allocated
+to the user.
+The only way to reset this condition, short of turning off limit
+enforcement or increasing the limit, is to reduce usage below quota.
+Only the superuser (i.e. a sufficiently capable process) can set the
+time limits and this is done on a per filesystem basis.
+.SS Surviving When the Quota Limit Is Reached
+In most cases, the only way for a user to recover from over-quota
+conditions is to abort whatever activity is in progress on the filesystem
+that has reached its limit, remove sufficient files to bring the limit
+back below quota, and retry the failed program.
+.br
+However, if a user is in the editor and a write fails because of an over
+quota situation, that is not a suitable course of action.
+It is most likely that initially attempting to write the file has truncated
+its previous contents, so if the editor is aborted without correctly writing
+the file, not only are the recent changes lost, but possibly much, or even
+all, of the contents that previously existed.
+.br
+There are several possible safe exits for a user caught in this situation.
+He can use the editor shell escape command to examine his file space
+and remove surplus files.  Alternatively, using
+.BR sh (1),
+he can suspend
+the editor, remove some files, then resume it.
+A third possibility is to write the file to some other filesystem (perhaps
+to a file on
+.IR /tmp )
+where the user's quota has not been exceeded.
+Then after rectifying the quota situation, the file can be moved back to the
+filesystem it belongs on.
+.SH USER COMMANDS
+.TP
+.B print
+Lists all paths with devices/project identifiers.
+The path list can come from several places \- the command line,
+the mount table, and the
+.I /etc/projects
+file.
+.TP
+.B df
+See the
+.B free
+command.
+.HP
+.B quota
+[
+.B \-gpu
+] [
+.B \-bir
+] [
+.B \-hnNv
+] [
+.B \-f
+.I file
+] [
+.I ID
+|
+.I name
+] ...
+.br
+Show individual usage and limits, for a single user
+.I name
+or numeric user
+.IR ID .
+The
+.B \-h
+option reports in a "human-readable" format similar to the
+.BR df (1)
+command. The
+.B \-n
+option reports the numeric IDs rather than the name. The
+.B \-N
+option omits the header. The
+.B \-v
+option outputs verbose information. The
+.B \-f
+option sends the output to
+.I file
+instead of stdout.
+.HP
+.B
+free
+[
+.B \-bir
+] [
+.B \-hN
+] [
+.B \-f
+.I file
+]
+.br
+Reports filesystem usage, much like the
+.BR df (1)
+utility.
+It can show usage for
+.BR b locks,
+.BR i node,
+and/or
+.BR r ealtime
+block space, and shows used, free, and total available.
+If project quota are in use (see the DIRECTORY TREE QUOTA section below),
+it will also report utilisation for those projects (directory trees). The
+.B \-h
+option reports in a "human-readable" format. The
+.B \-N
+option omits the header. The
+.B \-f
+option outputs the report to
+.I file
+instead of stdout.
+.HP
+.B help
+[
+.I command
+]
+.br
+Online help for all commands, or one specific
+.IR command .
+.TP
+.B quit
+Exit
+.BR xfs_quota .
+.TP
+.B q
+See the
+.B quit
+command.
+.SH QUOTA ADMINISTRATION
+The XFS quota system differs to that of other filesystems
+in a number of ways.
+Most importantly, XFS considers quota information as
+filesystem metadata and uses journaling to provide a higher level
+guarantee of consistency.
+As such, it is administered differently, in particular:
+.IP 1.
+The
+.B quotacheck
+command has no effect on XFS filesystems.
+The first time quota accounting is turned on (at mount time), XFS does
+an automatic quotacheck internally; afterwards, the quota system will
+always be completely consistent until quotas are manually turned off.
+.IP 2.
+There is no need for quota file(s) in the root of the XFS filesystem.
+.IP 3.
+XFS distinguishes between quota accounting and limit enforcement.
+Quota accounting must be turned on at the time of mounting the XFS
+filesystem.
+However, it is possible to turn on/off limit enforcement any time
+quota accounting is turned on.
+The "quota" option to the
+.B mount
+command turns on both (user) quota accounting and enforcement.
+The "uqnoenforce" option must be used to turn on user accounting with
+limit enforcement disabled.
+.IP 4.
+Turning on quotas on the root filesystem is slightly different from
+the above.
+For IRIX XFS, refer to
+.BR quotaon (1M).
+For Linux XFS, the quota mount flags must be passed in with the
+"rootflags=" boot parameter.
+.IP 5.
+It is useful to use the
+.B state
+to monitor the XFS quota subsystem
+at various stages \- it can be used to see if quotas are turned on,
+and also to monitor the space occupied by the quota system itself..
+.IP 6.
+There is a mechanism built into
+.B xfsdump
+that allows quota limit information to be backed up for later
+restoration, should the need arise.
+.IP 7.
+Quota limits cannot be set before turning on quotas on.
+.IP 8.
+XFS filesystems keep quota accounting on the superuser (user ID zero),
+and the tool will display the superuser's usage information.
+However, limits are never enforced on the superuser (nor are they
+enforced for group and project ID zero).
+.IP 9.
+XFS filesystems perform quota accounting whether the user has quota
+limits or not.
+.IP 10.
+XFS supports the notion of project quota, which can be used to
+implement a form of directory tree quota (i.e. to restrict a
+directory tree to only being able to use up a component of the
+filesystems available space; or simply to keep track of the
+amount of space used, or number of inodes, within the tree).
+.SH ADMINISTRATOR COMMANDS
+.HP
+.B path
+[
+.I N
+]
+.br
+Lists all paths with devices/project identifiers or set the current
+path to the
+.IR N th
+list entry (the current path is used by many
+of the commands described here, it identifies the filesystem toward
+which a command is directed).
+The patch list can come from several places \- the command line,
+the mount table, and the
+.I /etc/projects
+file.
+.HP
+.B report
+[
+.B \-gpu
+] [
+.B \-bir
+] [
+.B \-ahntLNU
+] [
+.B \-f
+.I file
+]
+.br
+Report filesystem quota information.
+This reports all quota usage for a filesystem, for the specified
+quota type
+.RB ( u / g / p
+and/or
+.BR b locks/ i nodes/ r ealtime).
+It reports blocks in 1KB units by default. The
+.B \-h
+option reports in a "human-readable" format similar to the
+.BR df (1)
+command. The
+.B \-f
+option outputs the report to
+.I file
+instead of stdout. The
+.B \-a
+option reports on all filesystems. The
+.B \-n
+option outputs the numeric ID instead of the name. The
+.B \-L
+and
+.B \-U
+options specify lower and upper ID bounds to report on. The
+.B \-N
+option reports information without the header line. The
+.B \-t
+option performs a terse report.
+.HP
+.B
+state
+[
+.B \-gpu
+] [
+.B \-av
+] [
+.B \-f
+.I file
+]
+.br
+Report overall quota state information.
+This reports on the state of quota accounting, quota enforcement,
+and the number of extents being used by quota metadata within the
+filesystem. The
+.B \-f
+option outputs state information to
+.I file
+instead of stdout. The
+.B \-a
+option reports state on all filesystems and not just the current path.
+.HP
+.B
+limit
+[
+.B \-gpu
+]
+.BI bsoft= N
+|
+.BI bhard= N
+|
+.BI isoft= N
+|
+.BI ihard= N
+|
+.BI rtbsoft= N
+|
+.BI rtbhard= N
+.B \-d
+|
+.I id
+|
+.I name
+.br
+Set quota block limits (bhard/bsoft), inode count limits (ihard/isoft)
+and/or realtime block limits (rtbhard/rtbsoft). The
+.B \-d
+option (defaults) can be used to set the default value
+that will be used, otherwise a specific
+.BR u ser/ g roup/ p roject
+.I name
+or numeric
+.IR id entifier
+must be specified.
+.HP
+.B timer
+[
+.B \-gpu
+] [
+.B \-bir
+]
+.I value
+.br
+Allows the quota enforcement timeout (i.e. the amount of time allowed
+to pass before the soft limits are enforced as the hard limits) to
+be modified. The current timeout setting can be displayed using the
+.B state
+command. The value argument is a number of seconds, but units of
+\&'minutes', 'hours', 'days', and 'weeks' are also understood
+(as are their abbreviations 'm', 'h', 'd', and 'w').
+.HP
+.B warn
+[
+.B \-gpu
+] [
+.B \-bir
+]
+.I value
+.B -d
+|
+.I id
+|
+.I name
+.br
+Allows the quota warnings limit (i.e. the number of times a warning
+will be send to someone over quota) to be viewed and modified. The
+.B \-d
+option (defaults) can be used to set the default time
+that will be used, otherwise a specific
+.BR u ser/ g roup/ p roject
+.I name
+or numeric
+.IR id entifier
+must be specified.
+.B NOTE: this feature is not currently implemented.
+.TP
+.BR enable " [ " \-gpu " ] [ " \-v " ]"
+Switches on quota enforcement for the filesystem identified by the
+current path.
+This requires the filesystem to have been mounted with quota enabled,
+and for accounting to be currently active. The
+.B \-v
+option (verbose) displays the state after the operation has completed.
+.TP
+.BR disable " [ " \-gpu " ] [ " \-v " ]"
+Disables quota enforcement, while leaving quota accounting active. The
+.B \-v
+option (verbose) displays the state after the operation has completed.
+.TP
+.BR off " [ " \-gpu " ] [ " \-v " ]"
+Permanently switches quota off for the filesystem identified by the
+current path.
+Quota can only be switched back on subsequently by unmounting and
+then mounting again.
+.TP
+.BR remove " [ " \-gpu " ] [ " \-v " ]"
+Remove any space allocated to quota metadata from the filesystem
+identified by the current path.
+Quota must not be enabled on the filesystem, else this operation will
+report an error.
+.HP
+.B
+dump
+[
+.B \-gpu
+] [
+.B \-f
+.I file
+]
+.br
+Dump out quota limit information for backup utilities, either to
+standard output (default) or to a
+.IR file .
+This is only the limits, not the usage information, of course.
+.HP
+.B restore
+[
+.B \-gpu
+] [
+.B \-f
+.I file
+]
+.br
+Restore quota limits from a backup
+.IR file .
+The file must be in the format produced by the
+.B dump
+command.
+.HP
+.B
+quot
+[
+.B \-gpu
+] [
+.B \-bir
+] [
+.B \-acnv
+] [
+.B \-f
+.I file
+]
+.br
+Summarize filesystem ownership, by user, group or project.
+This command uses a special XFS "bulkstat" interface to quickly scan
+an entire filesystem and report usage information.
+This command can be used even when filesystem quota are not enabled,
+as it is a full-filesystem scan (it may also take a long time...). The
+.B \-a
+option displays information on all filesystems. The
+.B \-c
+option displays a histogram instead of a report. The
+.B \-n
+option displays numeric IDs rather than names. The
+.B \-v
+option displays verbose information. The
+.B \-f
+option send the output to
+.I file
+instead of stdout.
+.HP
+.B project
+[
+.B \-cCs
+[
+.B \-d
+.I depth
+]
+[
+.B \-p
+.I path
+]
+.I id
+|
+.I name
+]
+.br
+Without arguments, this command lists known project names and identifiers
+(based on entries in the
+.I /etc/projects
+and
+.I /etc/projid
+files). The
+.BR \-c ,
+.BR \-C ,
+and
+.B \-s
+options allow the directory tree quota mechanism to be maintained.
+.BR \-d
+allows to limit recursion level when processing project directories
+and
+.BR \-p
+allows to specify project paths at command line ( instead of
+.I /etc/projects
+). All options are discussed in detail below.
+.SH DIRECTORY TREE QUOTA
+The project quota mechanism in XFS can be used to implement a form of
+directory tree quota, where a specified directory and all of the files
+and subdirectories below it (i.e. a tree) can be restricted to using
+a subset of the available space in the filesystem.
+.PP
+A managed tree must be setup initially using the
+.B \-s
+option to the
+.B project
+command. The specified project name or identifier is matched to one
+or more trees defined in
+.IR /etc/projects ,
+and these trees are then recursively descended
+to mark the affected inodes as being part of that tree.
+This process sets an inode flag and the project identifier on every file
+in the affected tree.
+Once this has been done, new files created in the tree will automatically
+be accounted to the tree based on their project identifier.
+An attempt to create a hard link to a file in the tree will only succeed
+if the project identifier matches the project identifier for the tree.
+The
+.B xfs_io
+utility can be used to set the project ID for an arbitrary file, but this
+can only be done by a privileged user.
+.PP
+A previously setup tree can be cleared from project quota control through
+use of the
+.B project \-C
+option, which will recursively descend
+the tree, clearing the affected inodes from project quota control.
+.PP
+Finally, the
+.B project \-c
+option can be used to check whether a
+tree is setup, it reports nothing if the tree is correct, otherwise it
+reports the paths of inodes which do not have the project ID of the rest
+of the tree, or if the inode flag is not set.
+.PP
+Option
+.B \-d
+can be used to limit recursion level (\-1 is infinite, 0 is top level only,
+1 is first level ... ).
+Option
+.B \-p
+adds posibility to specify project paths in command line without a need
+for
+.I /etc/projects
+to exist. Note that if projects file exists then it is also used.
+
+.SH EXAMPLES
+Enabling quota enforcement on an XFS filesystem (restrict a user
+to a set amount of space).
+.nf
+.sp
+.in +5
+# mount \-o uquota /dev/xvm/home /home
+# xfs_quota \-x \-c 'limit bsoft=500m bhard=550m tanya' /home
+# xfs_quota \-x \-c report /home
+.in -5
+.fi
+.PP
+Enabling project quota on an XFS filesystem (restrict files in
+log file directories to only using 1 gigabyte of space).
+.nf
+.sp
+.in +5
+# mount \-o prjquota /dev/xvm/var /var
+# echo 42:/var/log >> /etc/projects
+# echo logfiles:42 >> /etc/projid
+# xfs_quota \-x \-c 'project \-s logfiles' /var
+# xfs_quota \-x \-c 'limit \-p bhard=1g logfiles' /var
+.in -5
+.fi
+.PP
+Same as above without a need for configuration files.
+.nf
+.sp
+.in +5
+# rm \-f /etc/projects /etc/projid
+# mount \-o prjquota /dev/xvm/var /var
+# xfs_quota \-x \-c 'project \-s \-p /var/log 42' /var
+# xfs_quota \-x \-c 'limit \-p bhard=1g 42' /var
+.in -5
+.fi
+.SH CAVEATS
+XFS implements delayed allocation (aka. allocate-on-flush) and this
+has implications for the quota subsystem.
+Since quota accounting can only be done when blocks are actually
+allocated, it is possible to issue (buffered) writes into a file
+and not see the usage immediately updated.
+Only when the data is actually written out, either via one of the
+kernels flushing mechanisms, or via a manual
+.BR sync (2),
+will the usage reported reflect what has actually been written.
+.PP
+In addition, the XFS allocation mechanism will always reserve the
+maximum amount of space required before proceeding with an allocation.
+If insufficient space for this reservation is available, due to the
+block quota limit being reached for example, this may result in the
+allocation failing even though there is sufficient space.
+Quota enforcement can thus sometimes happen in situations where the
+user is under quota and the end result of some operation would still
+have left the user under quota had the operation been allowed to run
+its course.
+This additional overhead is typically in the range of tens of blocks.
+.PP
+Both of these properties are unavoidable side effects of the way XFS
+operates, so should be kept in mind when assigning block limits.
+.SH BUGS
+Quota support for filesystems with realtime subvolumes is not yet
+implemented, nor is the quota warning mechanism (the Linux
+.BR warnquota (8)
+tool can be used to provide similar functionality on that platform).
+.SH FILES
+.PD 0
+.TP 20
+.I /etc/projects
+Mapping of numeric project identifiers to directories trees.
+.TP
+.I /etc/projid
+Mapping of numeric project identifiers to project names.
+.PD
+.SH IRIX SEE ALSO
+.BR quotaon (1M),
+.BR xfs (4).
+
+.SH LINUX SEE ALSO
+.BR warnquota (8),
+.BR xfs (5).
+
+.SH SEE ALSO
+.BR df (1),
+.BR mount (1),
+.BR sync (2),
+.BR projid (5),
+.BR projects (5).

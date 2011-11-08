@@ -1,0 +1,720 @@
+xfsprogs (3.1.6) unstable; urgency=low
+
+  * New upstream release
+  * Handle upcoming libreadline5-dev removal (closes: #553875)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 11 Oct 2011 16:47:10 +1100
+
+xfsprogs (3.1.5) unstable; urgency=low
+
+  * New upstream release
+  * No more xfsquota error message for non-quota mounts (closes: #618730)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 31 Mar 2011 09:00:00 +1100
+
+xfsprogs (3.1.4) unstable; urgency=low
+
+  * New upstream release (32 projid resolution, fsr uses /proc/mounts)
+  * Annotate Debian packages as being team maintained now.
+  * Resolve Lenny upgrade issue with xfsdump (closes: #601988, #601710)
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 09 Nov 2010 22:39:04 +1100
+
+xfsprogs (3.1.3) unstable; urgency=low
+
+  * New upstream release
+  * Enforce building with libblkid (closes: #593320)
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 26 Aug 2010 23:06:46 +1000
+
+xfsprogs (3.1.2) unstable; urgency=low
+
+  * New upstream release
+  * Allow for building on GNU/kFreeBSD (closes: #485796)
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 3 May 2010 14:25:43 +1100
+
+xfsprogs (3.1.1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 28 Jan 2010 20:54:22 +1100
+
+xfsprogs (3.1.0) unstable; urgency=low
+
+  * New upstream release
+  * Merged German translation (closes: #521389)
+  * Merged German translation update (closes: #557100)
+  * Uptodate po file is provided now (closes: #538962)
+  * Fixed typos in xfs_quota man page (closes: #481715)
+  * Tighten permissions on temp fsr files (closes: #559490)
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 10 Dec 2009 09:19:37 +1100
+
+xfsprogs (3.0.4) unstable; urgency=low
+
+  * New bugfix release
+  * Resolve a libxfs unaligned access (closes: #517553)
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 17 Sep 2009 14:32:48 +1000
+
+xfsprogs (3.0.2) unstable; urgency=low
+
+  * New bugfix release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 06 May 2009 11:29:18 +1000
+
+xfsprogs (3.0.0-1) unstable; urgency=low
+
+  * New upstream release (closes: #263170)
+  * Remove watch file, xfsprogs is native
+  * Updated dependencies as this requires xfsdump 3 also
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 28 Jan 2009 21:15:07 +1100
+
+xfsprogs (2.10.2-1) unstable; urgency=low
+
+  * New upstream release
+  * No longer ignore -i maxpct option in mkfs.xfs (closes: #500593)
+  * Correct features2 superblock field handling (closes: #473135)
+  * 32 bit emulation on 64 bit kernels works (closes: #485020)
+  * Fix up large sector handling in mkfs (closes: #489421)
+
+ -- Nathan Scott <nathans@debian.org>  Sat, 20 Dec 2008 10:14:27 +1100
+
+xfsprogs (2.9.10-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Anibal Monsalve Salazar <anibal@debian.org>  Fri, 05 Sep 2008 14:02:20 +1000
+
+xfsprogs (2.9.8-1) unstable; urgency=low
+
+  * New upstream release
+  * xfsprogs and xfsprogs-udeb depend on ${misc:Depends}
+  * Add Homepage control header
+  * Add watch file
+  * Fix the following lintian issues:
+    W: xfsprogs source: package-uses-deprecated-debhelper-compat-version 1
+    W: xfsprogs source: ancient-standards-version 3.5.9 (current is 3.7.3)
+    W: xfslibs-dev: package-contains-empty-directory usr/share/doc/xfsprogs/
+
+ -- Anibal Monsalve Salazar <anibal@debian.org>  Tue, 22 Apr 2008 13:04:05 +1000
+
+xfsprogs (2.9.7-1) unstable; urgency=high
+
+  * New upstream release.
+  * Add -y fsck option (closes: #463810)
+  * Lazy superblock counters not yet mkfs default (closes: #465737, #468184)
+  * xfs_repair memory requirements significantly reduced (closes: #289665)
+
+ -- Nathan Scott <nathans@debian.org>  Sat, 01 Mar 2008 06:24:21 +1100
+
+xfsprogs (2.9.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 22 Jan 2008 16:46:18 +1100
+
+xfsprogs (2.9.0-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 12 Jun 2007 07:22:21 +1000
+
+xfsprogs (2.8.20-1) unstable; urgency=low
+
+  * New upstream release (closes: #414079)
+  * Fixed up autoconf version dependency (closes: #414073)
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 16 Mar 2007 08:24:33 +1100
+
+xfsprogs (2.8.19-1) unstable; urgency=low
+
+  * New upstream release (closes: #409063)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 31 Jan 2007 08:53:32 +1100
+
+xfsprogs (2.8.18-1) unstable; urgency=low
+
+  * New upstream release (closes: #399888)
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 08 Dec 2006 08:30:29 +1100
+
+xfsprogs (2.8.12-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 29 Aug 2006 14:28:05 +1000
+
+xfsprogs (2.8.11-1) unstable; urgency=low
+
+  * New upstream release.
+  * More efficient use of buffer cache memory (closes: #382935)
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 08 Aug 2006 17:06:58 +1000
+
+xfsprogs (2.8.10-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 02 Aug 2006 11:17:07 +1000
+
+xfsprogs (2.8.4-1) unstable; urgency=low
+
+  * New upstream release.
+  * Improved udeb packaging, thanks to Frans Pop (closes: #375439)
+  * Fix filesystem-from-path detection logic (closes: #374687)
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 26 Jun 2006 10:04:18 +1000
+
+xfsprogs (2.8.3-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix segv in xfs_growfs command (closes: #374686)
+  * Ensure source tarball in correct location (closes: #374696)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 21 Jun 2006 15:19:56 +1000
+
+xfsprogs (2.7.16-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 05 Apr 2006 11:45:58 +1000
+
+xfsprogs (2.7.14-1) unstable; urgency=low
+
+  * New upstream release.
+  * Switch from debmake to debhelper
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 15 Feb 2006 20:04:55 +1100
+
+xfsprogs (2.7.12-1) unstable; urgency=low
+
+  * New upstream release.
+  * Includes polish translation from Jakub Bogusz.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 31 Jan 2006 13:35:39 +1100
+
+xfsprogs (2.7.7-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add support for (optional) ATTR2 format extension (closes: #336350)
+  * Allow gcc -pedantic option for C++ <xfs.h> users (closes: #249429)
+  * Fix segv in xfs_db frag command (closes: #338207)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 16 Nov 2005 16:32:35 +1100
+
+xfsprogs (2.7.4-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Sat, 08 Oct 2005 10:34:10 +1000
+
+xfsprogs (2.6.36-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix xfs_repair secondary SB search 32 bit wrap (closes: #320081)
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 28 Jul 2005 14:01:50 +1000
+
+xfsprogs (2.6.28-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix compilation with gcc version 4 (closes: #300544)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 30 Mar 2005 10:52:07 +1000
+
+xfsprogs (2.6.26-2) unstable; urgency=low
+
+  * No code differences, recompiled with a more recent gcc version.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 29 Mar 2005 11:57:57 +1000
+
+xfsprogs (2.6.26-1) unstable; urgency=low
+
+  * New upstream release.
+  * Man page updates (closes: #295397)
+  * Fix compilation with gcc version 4 (closes: #297876)
+  * Switch build dependency from readline4 to readline5.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 08 Mar 2005 16:56:35 +1100
+
+xfsprogs (2.6.23-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 17 Sep 2004 17:04:45 +1000
+
+xfsprogs (2.6.21-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix xfs_io build for older glibc versions (current stable).
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 09 Aug 2004 16:09:42 +1000
+
+xfsprogs (2.6.20-1) unstable; urgency=low
+
+  * New upstream release.
+  * Fix xfs_io segfault on non-XFS files.  (closes: #260470)
+  * Fix packaging botch, deleted files included.  (closes: #260491)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 28 Jul 2004 21:11:38 +1000
+
+xfsprogs (2.6.19-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Sat, 17 Jul 2004 11:28:39 +1000
+
+xfsprogs (2.6.18-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 25 Jun 2004 16:57:09 +1000
+
+xfsprogs (2.6.15-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 09 Jun 2004 21:10:14 +1000
+
+xfsprogs (2.6.14-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add a Provides: fsck-backend clause as requested in the context
+    of bug number 111651.
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 13 May 2004 09:56:19 +1000
+
+xfsprogs (2.6.11-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 16 Apr 2004 11:50:56 +1000
+
+xfsprogs (2.6.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 26 Feb 2004 14:44:41 +1100
+
+xfsprogs (2.6.3-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add support for debian-installer.  (closes: #225444)
+    Author: Steve Langasek.
+  * Use debhelper instead of debmake, for proper udeb building.
+    Author: Steve Langasek.
+  * Drop boot-floppies support.  (closes: #112715)
+    Author: Steve Langasek.
+  * Add support for the security attribute namespace.
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 19 Jan 2004 10:08:59 +1100
+
+xfsprogs (2.6.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Note: change in the mkfs algorithm for sizing allocation groups.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 28 Oct 2003 15:23:48 +1100
+
+xfsprogs (2.5.11-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 10 Oct 2003 09:37:57 +1000
+
+xfsprogs (2.5.6-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 19 Aug 2003 09:44:48 +1000
+
+xfsprogs (2.5.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 07 Aug 2003 12:58:36 +1000
+
+xfsprogs (2.5.4-1) unstable; urgency=low
+
+  * New upstream release, includes xfs_copy command
+  * Fix shell quoting in xfs_bmap, from Kai S. Juse (closes: #202588)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 23 Jul 2003 10:36:28 +1000
+
+xfsprogs (2.5.3-1) unstable; urgency=low
+
+  * New upstream release
+  * Changed mkfs.xfs default log size scaling algorithm slightly, to
+    create larger logs at smaller filesystem sizes by default
+  * Enable support for sector sizes larger than 512 bytes
+
+ -- Nathan Scott <nathans@debian.org>  Mon,  7 Jul 2003 16:06:21 +1000
+
+xfsprogs (2.4.12-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon,  2 Jun 2003 13:51:06 +1000
+
+xfsprogs (2.4.10-1) unstable; urgency=low
+
+  * New upstream release
+  * Add missing xfslibs-dev dependency on uuid-dev (closes: #193309)
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 15 May 2003 08:50:22 +1000
+
+xfsprogs (2.4.9-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri,  2 May 2003 09:34:17 +1000
+
+xfsprogs (2.4.4-1) unstable; urgency=low
+
+  * New upstream release
+  * Dependencies on libreadline4 and libreadline4-dev added
+
+ -- Nathan Scott <nathans@debian.org>  Sun, 30 Mar 2003 10:30:18 +1000
+
+xfsprogs (2.4.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Updated policy version to which this package conforms
+  * Note: unwritten extents are now enabled by default in mkfs.xfs
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 18 Mar 2003 16:16:43 +1100
+
+xfsprogs (2.3.11-1) unstable; urgency=low
+
+  * Add missing build dependency on gettext (closes: #181331)
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 18 Feb 2003 08:57:46 +1100
+
+xfsprogs (2.3.10-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 17 Feb 2003 14:52:20 +1100
+
+xfsprogs (2.3.6-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 31 Oct 2002 17:26:44 +1100
+
+xfsprogs (2.3.5-1) unstable; urgency=low
+
+  * New upstream release
+  * Fix mkfs bug, patch from Anton Blanchard (closes: #163897)
+
+ -- Nathan Scott <nathans@debian.org>  Mon,  7 Oct 2002 05:19:51 +1000
+
+xfsprogs (2.3.4-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon,  7 Oct 2002 05:19:51 +1000
+
+xfsprogs (2.3.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Improve backwards compatibility of tools using the XFS geometry
+    ioctl for older kernel versions which don't support the new ioctl
+
+ -- Nathan Scott <nathans@debian.org>  Tue,  3 Sep 2002 09:55:48 +1000
+
+xfsprogs (2.2.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Default mkfs.xfs blocksize is now 4096 bytes, not getpagesize(2)
+  * Fix to allow install process to work for newer autoconf versions
+
+ -- Nathan Scott <nathans@debian.org>  Wed,  7 Aug 2002 11:37:23 +1000
+
+xfsprogs (2.1.2-1) unstable; urgency=low
+
+  * New upstream release
+  * Support for the XFS version 2 log format
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 30 Jul 2002 09:49:08 +1000
+
+xfsprogs (2.0.6-2) unstable; urgency=low
+
+  * Fix a problem in xfs_repair's handling of ACLs
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 30 May 2002 17:22:05 +1000
+
+xfsprogs (2.0.6-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 30 May 2002 14:31:30 +1000
+
+xfsprogs (2.0.4-1) unstable; urgency=low
+
+  * New upstream release, minor changes only
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 17 Apr 2002 15:30:52 +1000
+
+xfsprogs (2.0.3-1) unstable; urgency=low
+
+  * New upstream bugfix release
+
+ -- Nathan Scott <nathans@debian.org>  Sat, 13 Apr 2002 09:45:06 +1000
+
+xfsprogs (2.0.2-1) unstable; urgency=low
+
+  * New upstream bugfix release
+
+ -- Nathan Scott <nathans@debian.org>  Thu,  4 Apr 2002 12:11:01 +1100
+
+xfsprogs (2.0.1-1) unstable; urgency=low
+
+  * New upstream bugfix (minor) release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 12 Mar 2002 13:25:32 +1100
+
+xfsprogs (2.0.0-1) unstable; urgency=low
+
+  * New upstream release with support for new libhandle interfaces
+  * Major release for switch to official extended attributes syscalls
+
+ -- Nathan Scott <nathans@debian.org>  Thu,  7 Feb 2002 13:25:26 +1100
+
+xfsprogs (1.3.18-1) unstable; urgency=low
+
+  * New upstream bugfix (minor) release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 17 Jan 2002 11:13:19 +1100
+
+xfsprogs (1.3.17-1) unstable; urgency=low
+
+  * New upstream release
+  * mkfs.xfs overwrites other filesystem signatures
+  * xfs_repair fix for "avl_insert: duplicate range" bug
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 14 Jan 2002 10:59:50 +1100
+
+xfsprogs (1.3.16-1) unstable; urgency=low
+
+  * Remove temporary file use in xfs_db
+  * Add "type text" command into xfs_db
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 17 Dec 2001 12:17:54 +1100
+
+xfsprogs (1.3.15-1) unstable; urgency=low
+
+  * Fix minor package version numbering issue (closes: #117545)
+  * Fix bug in mkfs.xfs device size cross-check for realtime device
+  * Reenable use of the BLKBSZSET ioctl in libxfs
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 12 Dec 2001 09:25:42 +1100
+
+xfsprogs (1.3.14-1) unstable; urgency=low
+
+  * Fix minor package version numbering issue (closes: #117545)
+  * Fix bug in mkfs.xfs device size cross-check for realtime device
+
+ -- Nathan Scott <nathans@debian.org>  Wed,  5 Dec 2001 17:13:06 +1100
+
+xfsprogs (1.3.13-0) unstable; urgency=low
+
+  * New upstream release
+  * Fixes an important mkfs.xfs bug for >1TB filesystems
+  * xfs_repair will no longer blindly zero a dirty log
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 26 Oct 2001 10:42:26 +1000
+
+xfsprogs (1.3.11-0) unstable; urgency=low
+
+  * Upstream release fixing several issues on 64 bit platforms
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 17 Oct 2001 10:00:35 +1000
+
+xfsprogs (1.3.10-0) unstable; urgency=low
+
+  * New upstream release
+  * Fix up some issues building the bootfloppies package
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 12 Oct 2001 17:43:20 +1000
+
+xfsprogs (1.3.9-0) unstable; urgency=low
+
+  * Upstream bug fix release
+  * Additional and updated manual page entries
+
+ -- Nathan Scott <nathans@debian.org>  Fri,  5 Oct 2001 14:39:47 +1000
+
+xfsprogs (1.3.8-0) unstable; urgency=low
+
+  * New upstream release
+  * Fix inclusion of mkfs man page in boot floppies package (closes: #112634)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 19 Sep 2001 14:49:30 +1000
+
+xfsprogs (1.3.7-0) unstable; urgency=low
+
+  * New upstream release
+  * Change to libhandle licensing (was GPL, now LGPL-2.1)
+  * Create a boot-floppies package with smaller mkfs.xfs (closes: #111426)
+  * Make install-sh posix compliant so ash as /bin/sh works (closes: #111985)
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 10 Sep 2001 10:52:04 +1000
+
+xfsprogs (1.3.5-0) unstable; urgency=low
+
+  * Upstream bugfix release; fixes listed below
+  * Fix bug in xfs_db bit handling on big endian platforms
+  * Fix mkfs.xfs bug related to too-small final allocation group
+  * Fix signedness bug in DMAPI ioctl structure definition
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 13 Aug 2001 09:38:27 +1000
+
+xfsprogs (1.3.4-0) unstable; urgency=low
+
+  * Upstream bugfix release; fixes listed below
+  * Fix endian bug in xfs_db "frag" command
+  * Several man pages updated to document external log usage
+  * IA64 build issues fixed (use -fno-strict-aliasing for libraries)
+  * Fixed several minor compiler warnings when building on IA64
+  * Added a Suggests entry for dvhtool (for those using SGI disks)
+  * configure.in changes to allow cross compilation
+
+ -- Nathan Scott <nathans@debian.org>  Sat,  4 Aug 2001 10:32:00 +1000
+
+xfsprogs (1.3.3-0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 27 Jul 2001 07:59:49 +1000
+
+xfsprogs (1.3.2-0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 23 Jul 2001 10:27:37 +1000
+
+xfsprogs (1.3.1-0) unstable; urgency=low
+
+  * Reworked package slightly so that it's not Debian native
+  * Debian-specific changes now documented in changelog.Debian.gz
+  * New upstream release (see /usr/share/doc/xfsprogs/changelog.gz)
+  * Checked standards compliance - update standards version to 3.5.5
+
+ -- Nathan Scott <nathans@debian.org>  Sat, 15 Jul 2001 16:34:43 +1000
+
+xfsprogs (1.3.0) unstable; urgency=low
+
+  * Reworked Makefiles to use libtool
+  * New libdisk to allow sharing of generic mount/disk code and
+  * Also abstracts individual driver support (LVM, MD, XVM..)
+  * Partition table detection so mkfs.xfs doesn't blindly overwrite
+  * Small xfs_repair bug fix from Steve
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 19 Jul 2001 10:12:03 +1000
+
+xfsprogs (1.2.8) unstable; urgency=low
+
+  * Fixed a bug in libxfs /etc/mtab read-only mount detection
+  * First try procfs, fall back to /etc/mtab, for read-only mounts
+  * Sync with recent mount code changes for reiserfs and ext3 probes
+  * Fix logprint build problem under gcc 3.0
+
+ -- Nathan Scott <nathans@debian.org>  Mon,  2 Jul 2001 13:59:08 +1000
+
+xfsprogs (1.2.7) unstable; urgency=low
+
+  * New xfs_freeze(8) command - volume manager snapshot helper
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 22 May 2001 17:22:32 +1000
+
+xfsprogs (1.2.6) unstable; urgency=low
+
+  * Merge support for -d agsize=/su=/sw= (AG, stripe unit/width size)
+  * Merge support for dynamic configuration of default log size
+  * Document these updates, and fix a couple of man page typos too
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 15 May 2001 12:34:17 +1000
+
+xfsprogs (1.2.5) unstable; urgency=low
+
+  * Fix missing Makefile include entries for LVM headers
+  * Add experimental xfs_rtcp (realtime copy) command
+  * PowerPC build failure fixups - thanks to Robert Ramiega
+  * Cleanup arch-specific code, esp. the byteswab routines
+  * Suggests xfsdump and attr packages
+
+ -- Nathan Scott <nathans@debian.org>  Tue,  8 May 2001 15:50:27 +1000
+
+xfsprogs (1.2.4) unstable; urgency=low
+
+  * Add -L option to mkfs.xfs (filesystem label)
+
+ -- Nathan Scott <nathans@debian.org>  Tue,  1 May 2001 14:03:14 +1000
+
+xfsprogs (1.2.3) unstable; urgency=low
+
+  * Add dquot and quotaoff log item support into xfs_logprint
+  * Fix logprint core dump reporting AGI in "continue"'d transactions
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 27 Apr 2001 10:17:25 +1000
+
+xfsprogs (1.2.2) unstable; urgency=low
+
+  * Fix problem in xfs_db (check) group quota logic
+  * Fixes to warnings from recent gcc and/or 64-bit builds
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 13 Apr 2001 09:50:37 +1000
+
+xfsprogs (1.2.1) unstable; urgency=low
+
+  * Support for group quota added
+  * Stripe unit/stripe width extraction for MD devices
+  * Added mkfs.xfs heuristics for size of internal log
+  * Sync up with recent changes to XFS kernel headers
+
+ -- Nathan Scott <nathans@debian.org>  Wed,  4 Apr 2001 13:54:00 +1000
+
+xfsprogs (1.1.6) unstable; urgency=low
+
+  * Fix sparc build failure - fcntl.h missing O_DIRECT (closes: #90211)
+  * Added README.quota describing the use of quota with XFS
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 20 Mar 2001 11:25:03 +1100
+
+xfsprogs (1.1.5) unstable; urgency=low
+
+  * Upgraded LVM stripe unit/width support to 0.9beta2 (IOP 10)
+  * Kernel now supports O_DIRECT - re-enable its use in xfs_mkfile
+  * BLKSETSIZE ioctl replaced by BLKBSZSET ioctl in libxfs
+  * libxfs_init extended so only mkfs and xfs_repair use BLKBSZSET
+  * NOTE: this requires an XFS kernel from 9 March '01 or later
+
+ -- Nathan Scott <nathans@debian.org>  Sun, 18 Mar 2001 14:31:17 +1100
+
+xfsprogs (1.1.3) unstable; urgency=low
+
+  * Minor changes to xfs_logprint tail verification
+  * Update build Makefile to pick up extra dirt before packaging
+
+ -- Nathan Scott <nathans@debian.org>  Thu,  1 Mar 2001 12:24:28 +1100
+
+xfsprogs (1.1.2) unstable; urgency=low
+
+  * Fix stdarg.h issue causing build failure with glibc 2.2.2
+  * Changes to libhandle for supporting extended attributes
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 20 Feb 2001 08:29:36 +1100
+
+xfsprogs (1.1.0) unstable; urgency=low
+
+  * Initial release (closes: #83829)
+
+ -- Nathan Scott <nathans@debian.org>  Thu,  4 Jan 2001 11:15:11 -0500
+
+Local variables:
+mode: debian-changelog
+End:

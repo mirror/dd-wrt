@@ -1,0 +1,111 @@
+.TH xfs_admin 8
+.SH NAME
+xfs_admin \- change parameters of an XFS filesystem
+.SH SYNOPSIS
+.B xfs_admin
+[
+.B \-eflpu
+] [
+.BR "\-c 0" | 1
+] [
+.B \-L
+.I label
+] [
+.B \-U
+.I uuid
+]
+.I device
+.SH DESCRIPTION
+.B xfs_admin
+uses the
+.BR xfs_db (8)
+command to modify various parameters of a filesystem.
+.PP
+Devices that are mounted cannot be modified.
+Administrators must unmount filesystems before
+.BR xfs_admin " or " xfs_db (8)
+can convert parameters.
+A number of parameters of a mounted filesystem can be examined
+and modified using the
+.BR xfs_growfs (8)
+command.
+.SH OPTIONS
+.TP
+.B \-e
+Enables unwritten extent support on a filesystem that does not
+already have this enabled (for legacy filesystems, it can't be
+disabled anymore at mkfs time).
+.TP
+.B \-f
+Specifies that the filesystem image to be processed is stored in a
+regular file at
+.I device
+(see the
+.B mkfs.xfs \-d
+.I file
+option).
+.TP
+.B \-j
+Enables version 2 log format (journal format supporting larger
+log buffers).
+.TP
+.B \-l
+Print the current filesystem label.
+.TP
+.B \-p
+Enable 32bit project identifier support (PROJID32BIT feature).
+.TP
+.B \-u
+Print the current filesystem UUID (Universally Unique IDentifier).
+.TP
+.BR "\-c 0" | 1
+Enable (1) or disable (0) lazy-counters in the filesystem.
+This operation may take quite a bit of time on large filesystems as the
+entire filesystem needs to be scanned when this option is changed.
+.IP
+With lazy-counters enabled, the superblock is not modified or logged on
+every change of the free-space and inode counters. Instead, enough
+information is kept in other parts of the filesystem to be able to
+maintain the counter values without needing to keep them in the
+superblock. This gives significant improvements in performance on some
+configurations and metadata intensive workloads.
+.TP
+.BI \-L " label"
+Set the filesystem label to
+.IR label .
+XFS filesystem labels can be at most 12 characters long; if
+.I label
+is longer than 12 characters,
+.B xfs_admin
+will truncate it and print a warning message.
+The filesystem label can be cleared using the special "\c
+.B \-\-\c
+" value for
+.IR label .
+.TP
+.BI \-U " uuid"
+Set the UUID of the filesystem to
+.IR uuid .
+A sample UUID looks like this: "c1b9d5a2-f162-11cf-9ece-0020afc76f16".
+The
+.I uuid
+may also be
+.BR nil ,
+which will set the filesystem UUID to the null UUID.
+The
+.I uuid
+may also be
+.BR generate ,
+which will generate a new UUID for the filesystem.
+.PP
+The
+.BR mount (8)
+manual entry describes how to mount a filesystem using its label or UUID,
+rather than its block special device name.
+.SH SEE ALSO
+.BR mkfs.xfs (8),
+.BR mount (8),
+.BR xfs_db (8),
+.BR xfs_growfs (8),
+.BR xfs_repair (8),
+.BR xfs (5).

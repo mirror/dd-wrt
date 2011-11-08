@@ -1,0 +1,12 @@
+XFS User Tools README
+_____________________
+
+See the file doc/INSTALL for build, installation and post-
+install configuration steps.
+
+Refer to the xfs(5) manual page for general XFS information
+and references to other XFS manual pages.
+
+For more information and details on how to contribute to the
+XFS project see the web pages at:
+	http://oss.sgi.com/projects/xfs/
