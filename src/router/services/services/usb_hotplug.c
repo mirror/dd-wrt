@@ -218,6 +218,12 @@ static int usb_process_path(char *path, char *fs, char *target)
 		insmod("jbd2");
 		insmod("ext4");
 	}
+	if (!strcmp(fs, "btrfs")) {
+		insmod("libcrc32c");
+		insmod("lzo_compress");
+		insmod("lzo_decompress");
+		insmod("btrfs");
+	}
 #endif
 	if (!strcmp(fs, "vfat")) {
 		insmod("nls_base");
@@ -453,6 +459,10 @@ int usb_add_ufd(char *devpath)
 #ifdef HAVE_USB_ADVANCED
 						else if (strstr(line, "Ext4")) {
 							fs = "ext4";
+							break;
+						}
+						else if (strstr(line, "Btrfs")) {
+							fs = "btrfs";
 							break;
 						}
 #endif
