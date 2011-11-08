@@ -306,6 +306,20 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
     int fd;
     struct ifreq ifr;
 
+    /* If "devnam" has already been set, ignore.
+       This prevents kernel from doing modprobes against random
+       pppd arguments that happen to begin with "nic-", "eth" or "br"
+
+       Ideally, "nix-ethXXX" should be supplied immediately after
+       "plugin rp-pppoe.so"
+
+       Patch based on suggestion from Mike Ireton.
+    */
+    if (devnam[0]) {
+	if (OldDevnameHook) return OldDevnameHook(cmd, argv, doit);
+	return 0;
+    }
+
     /* Only do it if name is "ethXXX" or "brXXX" or what was specified
        by rp_pppoe_dev option (ugh). */
     /* Can also specify nic-XXXX in which case the nic- is stripped off. */
