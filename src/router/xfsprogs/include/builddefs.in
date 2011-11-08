@@ -1,0 +1,150 @@
+#
+# Copyright (c) 2004-2006 Silicon Graphics, Inc.
+# All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it would be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write the Free Software Foundation,
+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
+# @configure_input@
+#
+
+ifndef _BUILDDEFS_INCLUDED_
+_BUILDDEFS_INCLUDED_ = 1
+
+SHELL = @SHELL@
+
+DEBUG = @debug_build@
+OPTIMIZER = @opt_build@
+MALLOCLIB = @malloc_lib@
+LOADERFLAGS = @LDFLAGS@
+LTLDFLAGS = @LDFLAGS@
+CFLAGS = @CFLAGS@
+
+LIBRT = @librt@
+LIBUUID = @libuuid@
+LIBPTHREAD = @libpthread@
+LIBTERMCAP = @libtermcap@
+LIBEDITLINE = @libeditline@
+LIBREADLINE = @libreadline@
+LIBBLKID = @libblkid@
+LIBXFS = $(TOPDIR)/libxfs/libxfs.la
+LIBXCMD = $(TOPDIR)/libxcmd/libxcmd.la
+LIBXLOG = $(TOPDIR)/libxlog/libxlog.la
+LIBDISK = $(TOPDIR)/libdisk/libdisk.la
+LIBHANDLE = $(TOPDIR)/libhandle/libhandle.la
+
+PKG_NAME	= @pkg_name@
+PKG_USER	= @pkg_user@
+PKG_GROUP	= @pkg_group@
+PKG_RELEASE	= @pkg_release@
+PKG_VERSION	= @pkg_version@
+PKG_PLATFORM	= @pkg_platform@
+PKG_DISTRIBUTION= @pkg_distribution@
+
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+datarootdir	= @datarootdir@
+top_builddir	= @top_builddir@
+
+PKG_SBIN_DIR	= @sbindir@
+PKG_ROOT_SBIN_DIR = @root_sbindir@
+PKG_ROOT_LIB_DIR= @root_libdir@@libdirsuffix@
+PKG_LIB_DIR	= @libdir@@libdirsuffix@
+PKG_INC_DIR	= @includedir@/xfs
+DK_INC_DIR	= @includedir@/disk
+PKG_MAN_DIR	= @mandir@
+PKG_DOC_DIR	= @datadir@/doc/@pkg_name@
+PKG_LOCALE_DIR	= @datadir@/locale
+
+CC		= @cc@
+AWK		= @awk@
+SED		= @sed@
+TAR		= @tar@
+ZIP		= @zip@
+MAKE		= @make@
+ECHO		= @echo@
+SORT		= @sort@
+LN_S		= @LN_S@
+SHELL		= @SHELL@
+LIBTOOL		= @LIBTOOL@
+MAKEDEPEND	= @makedepend@
+
+MSGFMT		= @msgfmt@
+MSGMERGE	= @msgmerge@
+XGETTEXT	= @xgettext@
+LOCALIZED_FILES	= @LOCALIZED_FILES@
+
+RPM		= @rpm@
+RPMBUILD	= @rpmbuild@
+RPM_VERSION	= @rpm_version@
+
+ENABLE_SHARED	= @enable_shared@
+ENABLE_GETTEXT	= @enable_gettext@
+ENABLE_EDITLINE	= @enable_editline@
+ENABLE_READLINE	= @enable_readline@
+ENABLE_BLKID	= @enable_blkid@
+
+HAVE_ZIPPED_MANPAGES = @have_zipped_manpages@
+
+HAVE_FADVISE = @have_fadvise@
+HAVE_MADVISE = @have_madvise@
+HAVE_MINCORE = @have_mincore@
+HAVE_SENDFILE = @have_sendfile@
+HAVE_GETMNTENT = @have_getmntent@
+HAVE_GETMNTINFO = @have_getmntinfo@
+HAVE_FALLOCATE = @have_fallocate@
+HAVE_FIEMAP = @have_fiemap@
+
+GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall 
+#	   -Wbitwise -Wno-transparent-union -Wno-old-initializer -Wno-decl
+
+ifeq ($(PKG_PLATFORM),linux)
+PCFLAGS = -D_GNU_SOURCE -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 $(GCCFLAGS)
+DEPENDFLAGS = -D__linux__
+endif
+ifeq ($(PKG_PLATFORM),gnukfreebsd)
+PCFLAGS = -D_GNU_SOURCE $(GCCFLAGS)
+endif
+ifeq ($(PKG_PLATFORM),darwin)
+PCFLAGS = -traditional-cpp $(GCCFLAGS)
+DEPENDFLAGS = -D__APPLE__
+endif
+ifeq ($(PKG_PLATFORM),irix)
+PLDLIBS = -ldisk -lgen
+DEPENDFLAGS = -D__sgi__
+endif
+ifeq ($(PKG_PLATFORM),freebsd)
+PLDLIBS = -L/usr/local/lib -lintl
+PCFLAGS = -I/usr/local/include $(GCCFLAGS)
+DEPENDFLAGS = -D__FreeBSD__
+endif
+
+GCFLAGS = $(OPTIMIZER) $(DEBUG) \
+	  -DVERSION=\"$(PKG_VERSION)\" -DLOCALEDIR=\"$(PKG_LOCALE_DIR)\"  \
+	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include
+
+ifeq ($(ENABLE_GETTEXT),yes)
+GCFLAGS += -DENABLE_GETTEXT
+endif
+
+# First, Global, Platform, Local CFLAGS
+CFLAGS += $(FCFLAGS) $(GCFLAGS) $(PCFLAGS) $(LCFLAGS)
+
+include $(TOPDIR)/include/buildmacros
+
+endif
+
+#
+# For targets that should always be rebuilt,
+# define a target that is never up-to-date.
+# Targets needing this should depend on $(_FORCE)
+_FORCE = __force_build

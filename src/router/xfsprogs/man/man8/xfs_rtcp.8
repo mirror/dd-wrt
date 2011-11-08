@@ -1,0 +1,48 @@
+.TH xfs_rtcp 8
+.SH NAME
+xfs_rtcp \- XFS realtime copy command
+.SH SYNOPSIS
+.B xfs_rtcp
+[
+.B \-e
+.I extsize
+] [
+.B -p
+]
+.IR source " ... " target
+.SH DESCRIPTION
+.B xfs_rtcp
+copies a file to the realtime partition on an XFS filesystem.
+If there is more than one
+.I source
+and
+.IR target ,
+the final argument (the
+.IR target )
+must be a directory which already exists.
+.SH OPTIONS
+.TP
+.BI \-e " extsize"
+Sets the extent size of the destination realtime file.
+.TP
+.B \-p
+Use if the size of the source file is not an even multiple of
+the block size of the destination filesystem. When
+.B \-p
+is specified
+.B xfs_rtcp
+will pad the destination file to a size which is an even multiple
+of the filesystem block size.
+This is necessary since the realtime file is created using
+direct I/O and the minimum I/O is the filesystem block size.
+.SH SEE ALSO
+.BR xfs (5),
+.BR mkfs.xfs (8),
+.BR mount (8).
+.SH CAVEATS
+Currently, realtime partitions are not supported under the Linux
+version of XFS, and use of a realtime partition
+.B WILL CAUSE CORRUPTION
+on the data partition. As such, this command is made available for curious
+.B DEVELOPERS ONLY
+at this point in time.

@@ -1,0 +1,71 @@
+.TH xfs_freeze 8
+.SH NAME
+xfs_freeze \- suspend access to an XFS filesystem
+.SH SYNOPSIS
+.B xfs_freeze \-f
+|
+.B \-u
+.I mount-point
+.fi
+.SH DESCRIPTION
+.B xfs_freeze
+suspends and resumes access to an XFS filesystem (see
+.BR xfs (5)).
+.PP
+.B xfs_freeze
+halts new access to the filesystem and creates a stable image on disk.
+.B xfs_freeze
+is intended to be used with volume managers and hardware RAID devices
+that support the creation of snapshots.
+.PP
+The
+.I mount-point
+argument is the pathname of the directory where the filesystem
+is mounted.
+The filesystem must be mounted to be frozen (see
+.BR mount (8)).
+.PP
+The
+.B \-f
+flag requests the specified XFS filesystem to be
+frozen from new modifications.
+When this is selected, all ongoing transactions in the filesystem
+are allowed to complete, new write system calls are halted, other
+calls which modify the filesystem are halted, and all dirty data,
+metadata, and log information are written to disk.
+Any process attempting to write to the frozen filesystem will block
+waiting for the filesystem to be unfrozen.
+.PP
+Note that even after freezing, the on-disk filesystem can contain
+information on files that are still in the process of unlinking.
+These files will not be unlinked until the filesystem is unfrozen
+or a clean mount of the snapshot is complete.
+.PP
+The
+.B \-u
+flag is used to un-freeze the filesystem and allow
+operations to continue.
+Any filesystem modifications that were blocked by the freeze are
+unblocked and allowed to complete.
+.PP
+One of
+.B \-f
+or
+.B \-u
+must be supplied to
+.BR xfs_freeze .
+.SH NOTES
+A copy of a frozen XFS filesystem will usually have the same universally
+unique identifier (UUID) as the original, and thus may be prevented from
+being mounted.
+The XFS
+.B nouuid
+mount option can be used to circumvent this issue.
+.PP
+In Linux kernel version 2.6.29, the interface which XFS uses to freeze
+and unfreeze was elevated to the VFS, so that this tool can now be
+used on many other Linux filesystems.
+.SH SEE ALSO
+.BR xfs (5),
+.BR lvm (8),
+.BR mount (8).

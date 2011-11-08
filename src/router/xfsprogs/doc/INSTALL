@@ -1,0 +1,137 @@
+This document describes how to configure and build the open source XFS
+commands and utilites ("xfsprogs") from source, and how to install and
+run them.
+
+See the README file in the top level directory for details about how
+to contribute to the XFS project.
+
+
+Linux Instructions
+==================
+
+0. If you have the binary rpm, simply install it and skip to step 2 (below).
+   The rpm command to do this is:
+	# rpm -Uvh xfsprogs-*.rpm
+	[and optionally, for the development libraries and headers]
+	# rpm -Uvh xfsprogs-devel-*.rpm
+
+   The Debian command to do this is:
+	# apt-get install xfsprogs
+	[and optionally, for the development libraries and headers]
+	# apt-get install xfslibs-dev
+
+1. Configure, build and install the package
+
+   The xfsprogs package uses autoconf/configure and expects a GNU build
+   environment (your platform must at least have both autoconf and gmake). 
+   You will also need to have installed either the e2fsprogs-devel package
+   (on an RPM based system) or the uuid-dev package (on a Debian system)
+   as some of the commands make use of the UUID library provided by these.
+
+   To build the package and install it manually, use the following steps:
+
+	# make
+	# su root
+	# make install
+	[and optionally, for the development libraries and headers]
+	# make install-dev
+
+   Note that there are so many "install" variants out there that we
+   wrote our own script (see "install-sh" in the top level directory).
+
+   If you wish to turn off debugging asserts in the command build and
+   turn on the optimizer then set the shell environment variables:
+
+	OPTIMIZER=-O1
+	DEBUG=-DNDEBUG
+
+   before running make or Makepkgs.
+
+
+Mac OS X Instructions
+=====================
+
+0. Note:  since there is no XFS implementation on Mac OS X, you are
+   severely limited in what you can do.  mkfs.xfs(8), xfs_db(8) and 
+   xfs_repair(8) are the only functional tools on this platform, as
+   they do not interact with the XFS kernel code at all.  Still, it
+   can be useful to have access to these utilities from Mac OS X in
+   a dual boot configuration, for example.
+
+1. Configure, build and install the package
+
+   The xfsprogs package uses autoconf/configure and expects a GNU build
+   environment (your platform must at least have both autoconf, make,
+   and glibtool). 
+
+   You will also need to have built and installed the UUID library which
+   is provided by the e2fsprogs source package.
+
+   Building libuuid:
+
+	[download; unzip/untar e2fsprogs; cd e2fsprogs]
+	$ ./configure --prefix=/usr --mandir=/usr/share/man
+	$ make lib/ext2fs/ext2_types.h
+	$ cd lib/uuid
+	$ make
+	$ su root
+	# make install
+	[verify that you now have a /usr/lib/libuuid.a]
+
+   Building xfsprogs:
+
+	[firstly set these environment variables to these values]
+	TAR=/usr/bin/gnutar
+	LIBTOOL=/usr/bin/glibtool
+	INSTALL_GROUP=wheel
+	LOCAL_CONFIGURE_OPTIONS="--enable-gettext=no"
+
+	$ make
+	$ su root
+	# make install
+	[and optionally, for the development libraries and headers]
+	# make install-dev
+
+
+IRIX Instructions
+=================
+
+0. Note: building this package on IRIX is mainly useful for the
+   XFS developers who want to run purify on some of the tools.
+   Most tools are not functional due to incomplete support for
+   the syssgi and fcntl interfaces that XFS provides and which
+   these tools make extensive use of.
+
+1. Configure, build and install the package
+
+   The xfsprogs package uses autoconf/configure and expects a GNU build
+   environment which can be obtained by installing a number of freeware
+   packages (gcc, autoconf, libtool, gmake).
+
+   Even though IRIX provides a set of UUID functions via libc, you
+   still need to have built and installed the UUID library which is
+   provided by the e2fsprogs source package.  This is because some
+   difficult to resolve differences exist between the UUID functions
+   and data types, which makes co-existence of these more trouble
+   than its worth at the moment.  Follow the instructions above for
+   building and installing libuuid.
+
+   Building xfsprogs:
+
+	[firstly set these environment variables to these values]
+	INSTALL_GROUP=sys
+	CC=/usr/freeware/bin/gcc
+	TAR=/usr/freeware/bin/tar
+	MAKE=/usr/freeware/bin/gmake
+	LIBTOOL=/usr/freeware/bin/libtool
+	MSGFMT=/usr/freeware/bin/msgfmt
+	MSGMERGE=/usr/freeware/bin/msgmerge
+	XGETTEXT=/usr/freeware/bin/xgettext
+
+	$ make
+	$ su root
+	# make install
+	[and optionally, for the development libraries and headers]
+	# make install-dev
+
+

@@ -1,0 +1,32 @@
+.TH xfs_mkfile 8
+.SH NAME
+xfs_mkfile \- create an XFS file
+.SH SYNOPSIS
+.B xfs_mkfile
+[
+.B \-v
+] [
+.B \-n
+]
+.I size\c
+.RB [ k | b | m | g ]
+.IR filename " ..."
+.SH DESCRIPTION
+.B xfs_mkfile
+creates one or more files. The file is padded with zeroes by default.
+The default size is in bytes, but it can be
+flagged as kilobytes, blocks, megabytes, or gigabytes with the
+.BR k ,
+.BR b ,
+.BR m ,
+or
+.B g
+suffixes, respectively.
+.SH OPTIONS
+.TP
+.B \-v
+Verbose. Report the names and sizes of created files.
+.TP
+.B \-n
+No bytes. Create a holey file - that is, do not write out any data, just
+seek to end of file and write a block.

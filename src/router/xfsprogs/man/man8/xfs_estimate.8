@@ -1,0 +1,103 @@
+.TH xfs_estimate 8
+.SH NAME
+xfs_estimate \- estimate the space that an XFS filesystem will take
+.SH SYNOPSIS
+.nf
+\f3xfs_estimate\f1 [ \f3\-h?\f1 ] [ \f3\-b\f1 blocksize ] [ \f3\-i\f1 logsize ]
+		   [ \f3\-e\f1 logsize ] [ \f3\-v\f1 ] directory ...
+.fi
+.SH DESCRIPTION
+For each \f2directory\f1 argument,
+.I xfs_estimate
+estimates the space that directory would take if it were copied to an XFS
+filesystem.
+.I xfs_estimate
+does not cross mount points.
+The following definitions
+are used:
+.PD 0
+.IP
+KB = *1024
+.IP
+MB = *1024*1024
+.IP
+GB = *1024*1024*1024
+.PD
+.PP
+The
+.I xfs_estimate
+options are:
+.TP
+\f3\-b\f1 \f2blocksize\f1
+Use
+.I blocksize
+instead of the default blocksize of 4096 bytes.
+The modifier
+.B k
+can be used
+after the number to indicate multiplication by 1024.
+For example,
+.sp .8v
+.RS
+	\f4xfs_estimate \-b 64k /\f1
+.RE
+.IP
+requests an estimate of the space required by the directory / on an
+XFS filesystem using a blocksize of 64K (65536) bytes.
+.TP
+.B \-v
+Display more information, formatted.
+.TP
+.B \-h
+Display usage message.
+.TP
+.B \-?
+Display usage message.
+.TP
+\f3\-i, \-e\f1 \f2logsize\f1
+Use
+.I logsize
+instead of the default log size of 1000 blocks.
+.B \-i
+refers to an internal log, while
+.B \-e
+refers to an external log.
+The modifiers
+.B k
+or
+.B m
+can be used
+after the number to indicate multiplication by 1024 or 1048576, respectively.
+.IP
+For example,
+.sp .8v
+.RS
+	\f4xfs_estimate \-i 1m /\f1
+.RE
+.IP
+requests an estimate of the space required by the directory / on an
+XFS filesystem using an internal log of 1 megabyte.
+.SH EXAMPLES
+.nf
+.sp 8v
+% \f4xfs_estimate \-e 10m /var/tmp\f1\f7
+/var/tmp will take about 4.2 megabytes
+        with the external log using 2560 blocks or about 10.0 megabytes
+.fi
+.nf
+.sp .8v
+% \f4xfs_estimate \-v \-e 10m /var/tmp\f1\f7
+directory                     bsize   blocks    megabytes    logsize
+/var/tmp                       4096      792        4.0MB   10485760
+.fi
+.nf
+.sp .8v
+% \f4xfs_estimate \-v /var/tmp\f1\f7
+directory                     bsize   blocks    megabytes    logsize
+/var/tmp                       4096     3352       14.0MB   10485760
+.fi
+.nf
+.sp .8v
+% \f4xfs_estimate /var/tmp\f1\f7
+/var/tmp will take about 14.0 megabytes
+.fi

@@ -1,0 +1,34 @@
+.TH fsck.xfs 8
+.SH NAME
+fsck.xfs \- do nothing, successfully
+.SH SYNOPSIS
+.B fsck.xfs
+[
+.I filesys
+\&... ]
+.SH DESCRIPTION
+.B fsck.xfs
+is called by the generic Linux
+.BR fsck (8)
+program at startup to check and repair an XFS filesystem.
+XFS is a journaling filesystem and performs recovery at
+.BR mount (8)
+time if necessary, so
+.B fsck.xfs
+simply exits with a zero exit status.
+.PP
+If you wish to check the consistency of an XFS filesystem,
+or repair a damaged or corrupt XFS filesystem,
+see
+.BR xfs_check (8)
+and
+.BR xfs_repair (8).
+.
+.SH FILES
+.IR /etc/fstab .
+.SH SEE ALSO
+.BR fsck (8),
+.BR fstab (5),
+.BR xfs (5),
+.BR xfs_check (8),
+.BR xfs_repair (8).

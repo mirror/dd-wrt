@@ -1,0 +1,146 @@
+.TH xfs_copy 8
+.SH NAME
+xfs_copy \- copy the contents of an XFS filesystem
+.SH SYNOPSIS
+.B xfs_copy
+[
+.B \-bd
+] [
+.B \-L
+.I log
+]
+.I source target1
+[
+.I target2
+\&... ]
+.SH DESCRIPTION
+.B xfs_copy
+copies an XFS filesystem to one or more targets in parallel (see
+.BR xfs (5)).
+The first
+.RI ( source )
+argument must be the pathname of the device or file containing the
+XFS filesystem. The remaining arguments specify one or more
+.I target
+devices or file names. If the pathnames specify devices, a
+copy of the source XFS filesystem is created on each device. The
+.I target
+can also be the name of a regular file, in which case an image of the
+source XFS filesystem is created in that file. If the file does not exist,
+.B xfs_copy
+creates the file. The length of the resulting file is equal to the size
+of the source filesystem. However, if the file is created on an XFS
+filesystem, the file consumes roughly the amount of space actually
+used in the source filesystem by the filesystem and the XFS log.
+The space saving is because
+.B xfs_copy
+seeks over free blocks instead of copying them and the XFS filesystem
+supports sparse files efficiently.
+.PP
+.B xfs_copy
+should only be used to copy unmounted filesystems, read-only mounted
+filesystems, or frozen filesystems (see
+.BR xfs_freeze (8)).
+Otherwise, the generated filesystem(s) would be inconsistent or corrupt.
+.PP
+.B xfs_copy
+does not alter the source filesystem in any way. Each new (target)
+filesystem is identical to the original filesystem except that new
+filesystems each have a new unique filesystem identifier (UUID).
+Therefore, if both the old and new filesystems will be used as
+separate distinct filesystems,
+.B xfs_copy
+or
+.BR xfsdump (8)/ xfsrestore (8)
+should be used to generate the new filesystem(s) instead of
+.BR dd (1)
+or other programs that do block-by-block disk copying.
+.PP
+.B xfs_copy
+uses synchronous writes to ensure that write errors are
+detected.
+.PP
+.B xfs_copy
+uses
+.BR pthreads (7)
+to perform simultaneous parallel writes.
+.B xfs_copy
+creates one additional thread for each target to be written.
+All threads die if
+.B xfs_copy
+terminates or aborts.
+.SH OPTIONS
+.TP
+.B \-d
+Create a duplicate (true clone) filesystem. This should be done only
+if the new filesystem will be used as a replacement for the original
+filesystem (such as in the case of disk replacement).
+.TP
+.B \-b
+The buffered option can be used to ensure direct IO is not attempted
+to any of the target files. This is useful when the filesystem holding
+the target file does not support direct IO.
+.TP
+.BI \-L " log"
+Specifies the location of the
+.I log
+if the default location of
+.I /var/tmp/xfs_copy.log.XXXXXX
+is not desired.
+.SH DIAGNOSTICS
+.B xfs_copy
+reports errors to both
+.B stderr
+and in more detailed form to a generated log file whose name is of the form
+.I /var/tmp/xfs_copy.log.XXXXXX
+or a log file specified by the
+.B \-L
+option. If
+.B xfs_copy
+detects a write error on a target, the copy of that one target is aborted
+and an error message is issued to both stderr and the log file, but
+the rest of the copies continue. When
+.B xfs_copy
+terminates, all aborted targets are reported to both
+.B stderr
+and the log file.
+.PP
+If all targets abort or if there is an error reading the source filesystem,
+.B xfs_copy
+immediately aborts.
+.PP
+.B xfs_copy
+returns an exit code of 0 if all targets are successfully
+copied and an exit code of 1 if any target fails.
+.SH NOTES
+When moving filesystems from one disk to another, if the original
+filesystem is significantly smaller than the new filesystem, and will
+be made larger, we recommend that
+.BR mkfs.xfs "(8) and " xfsdump (8)/ xfsrestore (8)
+be used instead of using
+.B xfs_copy
+and
+.BR xfs_growfs (8).
+The filesystem layout resulting from using
+.BR xfs_copy / xfs_growfs
+is almost always worse than the result of using
+.BR mkfs.xfs / xfsdump / xfsrestore
+but in the case of small filesystems, the differences can have a
+significant performance impact. This is due to the way
+.BR xfs_growfs (8)
+works, and not due to any shortcoming in
+.B xfs_copy
+itself.
+.SH CAVEATS
+.B xfs_copy
+does not copy XFS filesystems that have a real-time section
+or XFS filesystems with external logs. In both cases,
+.B xfs_copy
+aborts with an error message.
+.SH SEE ALSO
+.BR mkfs.xfs (8),
+.BR xfsdump (8),
+.BR xfsrestore (8),
+.BR xfs_freeze (8),
+.BR xfs_growfs (8),
+.BR xfs (5).
