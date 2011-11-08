@@ -18,21 +18,28 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.vdsl"); %></div>
-	<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
-	<div id="idvlan8">
-		<div class="setting">
-		    <div class="label"><% tran("share.vdslvlan8"); %></div>
-		    <input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvram_checked("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
-		    <input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvram_checked("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
-		</div>
+	<input class="spaceradio" type="radio" name="wan_vlan" value="1" <% nvram_checked("wan_vlan","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="wan_vlan" value="0" <% nvram_checked("wan_vlan","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
+</div>
+<div id="idvlan8">
+	<div class="setting">
+		<div class="label"><% tran("share.vdslvlan7"); %></div>
+		<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> /><% tran("share.disable"); %> 
+	</div>		
+	<div class="setting">
+		<div class="label"><% tran("share.vdslvlan8"); %></div>
+		<input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvram_checked("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvram_checked("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
 	</div>
 </div>
+	
 <script>
 //<![CDATA
 	show_layer_ext(document.setup.wan_vdsl, 'idvlan8', <% nvram_else_match("wan_vdsl", "1", "1", "0"); %> == 1);
 //]]>
 </script>
+
 <div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
 	<input size="27" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />

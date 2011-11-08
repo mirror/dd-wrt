@@ -29,8 +29,9 @@ share.disabled="Disabled";
 share.usrname="User Name";
 share.passwd="Password";
 share.hostname="Host Name";
-share.vdsl="T-Home VDSL VLAN 7/8 Tagging";
-share.vdslvlan8="VLAN 8 support";
+share.vdsl="Advanced VLAN Tagging";
+share.vdslvlan7="T-Home VLAN 7 support";
+share.vdslvlan8="T-Home VLAN 8 support";
 share.wan_vlantag="VLAN Tag ID";
 share.compression="PPP Compression (MPPC)";
 share.mlppp="Single Line Multi Link";
@@ -1312,7 +1313,7 @@ service.pppoesrv_compr="Compression";
 service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_limit="Session Limit per MAC";
-service.pppoesrv_idlet="Idle Time";
+service.pppoesrv_idlet="Client Idle Time";
 service.pppoesrv_auth="Authentication";
 service.pppoesrv_radip="Radius Server IP";
 service.pppoesrv_radauthport="Radius Authentication Port";
@@ -1380,8 +1381,8 @@ service.vpn_route="Policy based Routing";
 
 //help container
 var hstatus_vpn = new Object();
-hstatus_vpn.right1="Policy based Routing:<br>Add IPs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP. Redirect Gateway MUST be off.";
-hstatus_vpn.right2="Additional Config:<br>To push routes to clients add \'push \"route IP mask gateway`\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
+hstatus_vpn.right1="Policy based Routing:<br>Add IPs/NETs in the form 0.0.0.0/0 to force clients NOT to use the tunnel as default gateway. One line per IP/NET. Redirect Gateway MUST be on.";
+hstatus_vpn.right2="Additional Config:<br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
