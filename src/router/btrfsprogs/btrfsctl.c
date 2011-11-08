@@ -35,6 +35,10 @@
 #include "utils.h"
 #include "version.h"
 
+#ifndef BLKGETSIZE64
+#define BLKGETSIZE64 _IOR(0x12,114,size_t) /* return device size.  */
+#endif
+
 #ifdef __CHECKER__
 #define BLKGETSIZE64 0
 #define BTRFS_IOC_SNAP_CREATE 0
