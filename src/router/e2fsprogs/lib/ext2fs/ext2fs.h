@@ -1212,11 +1212,31 @@ _INLINE_ errcode_t ext2fs_get_memalign(unsigned long size,
 
 	if (align == 0)
 		align = 8;
-	if (retval = posix_memalign((void **) ptr, align, size)) {
+
+#ifdef HAVE_POSIX_MEMALIGN
+	if ((retval=posix_memalign((void**)ptr, align, size)))
+	{
 		if (retval == ENOMEM)
 			return EXT2_ET_NO_MEMORY;
-		return retval;
+		return retval;	
 	}
+	return 0;
+#else
+#ifdef HAVE_MEMALIGN
+	ptr = (void *)memalign(align, size);
+	if (!ptr)
+		return EXT2_ET_NO_MEMORY;
+	return 0;
+#else
+#ifdef HAVE_VALLOC
+	ptr = (void *)valloc(size);
+	if (!ptr)
+		return EXT2_ET_NO_MEMORY;
+	return 0;
+#endif /* HAVE_VALLOC */
+#endif /* HAVE_MEMALIGN */
+#endif /* HAVE_POSIX_MEMALIGN */
+
 	return 0;
 }
 
