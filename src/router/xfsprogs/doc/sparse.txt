@@ -1,0 +1,24 @@
+This document describes how to use the sparse source code checking tool
+to check the source code of the open source XFS commands and utilites
+("xfsprogs").
+
+First you need to install sparse, either from your distribution or from
+source as provided at http://www.kernel.org/pub/software/devel/sparse/.
+
+To simply build the xfsprogs source code while checking the source using
+sparse just set the compiler to cgcc, which is a wrapper that calls both
+sparse and gcc using:
+
+	CC=cgcc ./configure
+
+Now that default warnings from sparse are a little bit verbose checking
+for various not that important things and also complaining about the
+glibc system headers.  It does however not check for bitwise annotation
+which are very important for xfsprogs to verify the endianess handling
+of the on-disk structures is correct.  To get a more reasonable set
+of warnings build xfsprogs using:
+
+	LCFLAGS="-Wbitwise -Wno-transparent-union -Wno-old-initializer -Wno-decl" make
+
+You are of course free to experiment with the warnings flags documented
+in the sparse manpage to check xfsprogs for other issues.

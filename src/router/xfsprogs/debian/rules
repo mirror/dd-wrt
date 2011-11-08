@@ -1,0 +1,89 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+
+package = xfsprogs
+develop = xfslibs-dev
+bootpkg = xfsprogs-udeb
+
+version = $(shell dpkg-parsechangelog | grep ^Version: | cut -d ' ' -f 2)
+target ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+udebpkg = $(bootpkg)_$(version)_$(target).udeb
+
+dirme  = debian/$(package)
+dirdev = debian/$(develop)
+dirdi  = debian/$(bootpkg)
+pkgme  = DIST_ROOT=`pwd`/$(dirme);  export DIST_ROOT;
+pkgdev = DIST_ROOT=`pwd`/$(dirdev); export DIST_ROOT;
+pkgdi  = DIST_ROOT=`pwd`/$(dirdi); export DIST_ROOT;
+stdenv = @GZIP=-q; export GZIP;
+
+options = export DEBUG=-DNDEBUG DISTRIBUTION=debian \
+	  INSTALL_USER=root INSTALL_GROUP=root \
+	  LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes --enable-blkid=yes" ;
+diopts  = $(options) \
+	  export OPTIMIZER=-Os LOCAL_CONFIGURE_OPTIONS="--enable-gettext=no" ;
+checkdir = test -f debian/rules
+
+build: built
+built: dibuild config
+	@echo "== dpkg-buildpackage: build" 1>&2
+	$(MAKE) default
+	touch built
+
+config: .census
+.census:
+	@echo "== dpkg-buildpackage: configure" 1>&2
+	$(checkdir)
+	$(options) $(MAKE) include/platform_defs.h
+	touch .census
+
+dibuild:
+	$(checkdir)
+	@echo "== dpkg-buildpackage: installer" 1>&2
+	if [ ! -f mkfs/mkfs.xfs-$(bootpkg) ]; then \
+		$(diopts) $(MAKE) include/platform_defs.h; \
+		for dir in include libxfs libdisk mkfs; do \
+			$(MAKE) -C $$dir; \
+		done; \
+		mv mkfs/mkfs.xfs mkfs/mkfs.xfs-$(bootpkg); \
+		$(MAKE) distclean; \
+	fi
+
+clean:
+	@echo "== dpkg-buildpackage: clean" 1>&2
+	$(checkdir)
+	-rm -f built .census mkfs/mkfs.xfs-$(bootpkg)
+	$(MAKE) distclean
+	-rm -rf $(dirme) $(dirdev) $(dirdi)
+	-rm -f debian/*substvars debian/files* debian/*.debhelper
+
+binary-indep:
+
+binary-arch: checkroot built
+	@echo "== dpkg-buildpackage: binary-arch" 1>&2
+	$(checkdir)
+	-rm -rf $(dirme) $(dirdev) $(dirdi)
+	$(pkgme)  $(MAKE) -C . install
+	$(pkgdev) $(MAKE) -C . install-dev
+	$(pkgdi)  $(MAKE) -C debian install-d-i
+	$(pkgme)  $(MAKE) dist
+	rmdir debian/xfslibs-dev/usr/share/doc/xfsprogs
+	dh_installdocs
+	dh_installchangelogs
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+
+checkroot:
+	test 0 -eq `id -u`
+
+.PHONY: binary binary-arch binary-indep clean checkroot

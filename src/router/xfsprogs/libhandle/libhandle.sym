@@ -1,0 +1,36 @@
+/*
+ * The symbol versioning ensures that a new application requiring symbol foo()
+ * can't run with old libhandle.so not providing foo() - the global SONAME
+ * version info can't enforce this since we never change the SONAME.
+ *
+ * Older versions of libhandle (<= 1.0.3) do not to use symbol versioning --
+ * all the original symbols are in LIBHANDLE_1.0.3 now.
+ */
+
+LIBHANDLE_1.0.3 {
+global:
+	/* handle.h APIs */
+	path_to_handle;
+	path_to_fshandle;
+	handle_to_fshandle;
+	free_handle;
+	open_by_fshandle;
+	open_by_handle;
+	readlink_by_handle;
+	attr_multi_by_handle;
+	attr_list_by_handle;
+	parents_by_handle;
+	parentpaths_by_handle;
+	fssetdm_by_handle;
+
+	/* jdm.h APIs */
+	jdm_getfshandle;
+	jdm_new_filehandle;
+	jdm_delete_filehandle;
+	jdm_open;
+	jdm_readlink;
+	jdm_attr_multi;
+	jdm_attr_list;
+	jdm_parents;
+	jdm_parentpaths;
+};

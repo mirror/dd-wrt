@@ -1,0 +1,60 @@
+Source: xfsprogs
+Section: admin
+Priority: optional
+Maintainer: XFS Development Team <xfs@oss.sgi.com>
+Uploaders: Nathan Scott <nathans@debian.org>, Anibal Monsalve Salazar <anibal@debian.org>
+Build-Depends: uuid-dev, autoconf, debhelper (>= 5), gettext, libtool, libreadline5-dev | libreadline-gplv2-dev, libblkid-dev (>= 2.17)
+Standards-Version: 3.9.1
+Homepage: http://oss.sgi.com/projects/xfs/
+
+Package: xfsprogs
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: fsck-backend
+Suggests: xfsdump, acl, attr, quota
+Breaks: xfsdump (<< 3.0.0)
+Replaces: xfsdump (<< 3.0.0)
+Architecture: any
+Description: Utilities for managing the XFS filesystem
+ A set of commands to use the XFS filesystem, including mkfs.xfs.
+ .
+ XFS is a high performance journaling filesystem which originated
+ on the SGI IRIX platform.  It is completely multi-threaded, can
+ support large files and large filesystems, extended attributes,
+ variable block sizes, is extent based, and makes extensive use of
+ Btrees (directories, extents, free space) to aid both performance
+ and scalability.
+ .
+ Refer to the documentation at http://oss.sgi.com/projects/xfs/
+ for complete details.
+
+Package: xfslibs-dev
+Section: libdevel
+Priority: extra
+Depends: libc6-dev | libc-dev, uuid-dev, xfsprogs (>= 3.0.0), ${misc:Depends}
+Breaks: xfsprogs (<< 3.0.0)
+Architecture: any
+Description: XFS filesystem-specific static libraries and headers
+ xfslibs-dev contains the libraries and header files needed to
+ develop XFS filesystem-specific programs.
+ .
+ XFS is a high performance journaling filesystem which originated
+ on the SGI IRIX platform.  It is completely multi-threaded, can
+ support large files and large filesystems, extended attributes,
+ variable block sizes, is extent based, and makes extensive use of
+ Btrees (directories, extents, free space) to aid both performance
+ and scalability.
+ .
+ Refer to the documentation at http://oss.sgi.com/projects/xfs/
+ for complete details.
+
+Package: xfsprogs-udeb
+XC-Package-Type: udeb
+Section: debian-installer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A stripped-down version of xfsprogs, for debian-installer
+ This package is an xfsprogs package built for reduced size, so that it
+ can help to save space in debian-installer.
+ .
+ Don't attempt to install this package, it has no support for a couple of
+ features you surely want.  Anyway, it should fail to install.

@@ -1,0 +1,559 @@
+.TH xfs_repair 8
+.SH NAME
+xfs_repair \- repair an XFS filesystem
+.SH SYNOPSIS
+.B xfs_repair
+[
+.B \-dfLnPv
+] [
+.B \-m
+.I maxmem
+] [
+.BI \-c " subopt" = value
+] [
+.B \-o
+.I subopt\c
+[\c
+.B =\c
+.IR value ]
+] [
+.B \-t
+.I interval
+] [
+.B \-l
+.I logdev
+] [
+.B \-r
+.I rtdev
+]
+.I device
+.br
+.B xfs_repair \-V
+.SH DESCRIPTION
+.B xfs_repair
+repairs corrupt or damaged XFS filesystems
+(see
+.BR xfs (5)).
+The filesystem is specified using the
+.I device
+argument which should be the device name of the disk partition or
+volume containing the filesystem. If given the name of a block device,
+.B xfs_repair
+will attempt to find the raw device associated
+with the specified block device and will use the raw device instead.
+.PP
+Regardless, the filesystem to be repaired
+must be unmounted,
+otherwise, the resulting filesystem may be inconsistent or corrupt.
+.SH OPTIONS
+.TP
+.B \-f
+Specifies that the filesystem image to be processed is stored in a
+regular file at
+.I device
+(see the
+.B mkfs.xfs \-d
+.I file
+option). This might happen if an image copy
+of a filesystem has been copied or written into an ordinary file.
+This option implies that any external log or realtime section
+is also in an ordinary file.
+.TP
+.B \-L
+Force Log Zeroing.
+Forces
+.B xfs_repair
+to zero the log even if it is dirty (contains metadata changes).
+When using this option the filesystem will likely appear to be corrupt,
+and can cause the loss of user files and/or data.
+.TP
+.BI \-l " logdev"
+Specifies the device special file where the filesystem's external
+log resides. Only for those filesystems which use an external log.
+See the
+.B mkfs.xfs \-l
+option, and refer to
+.BR xfs (5)
+for a detailed description of the XFS log.
+.TP
+.BI \-r " rtdev"
+Specifies the device special file where the filesystem's realtime
+section resides. Only for those filesystems which use a realtime section.
+See the
+.B mkfs.xfs \-r
+option, and refer to
+.BR xfs (5)
+for a detailed description of the XFS realtime section.
+.TP
+.B \-n
+No modify mode. Specifies that
+.B xfs_repair
+should not modify the filesystem but should only scan the
+filesystem and indicate what repairs would have been made.
+.TP
+.B \-P
+Disable prefetching of inode and directory blocks. Use this option if
+you find
+.B xfs_repair
+gets stuck and stops proceeding. Interrupting a stuck
+.B xfs_repair
+is safe.
+.TP
+.BI \-m " maxmem"
+Specifies the approximate maximum amount of memory, in megabytes, to use for
+.BR xfs_repair .
+.B xfs_repair
+has its own internal block cache which will scale out up to the lesser of the
+process's virtual address limit or about 75% of the system's physical RAM.
+This option overrides these limits.
+.IP
+.B NOTE:
+These memory limits are only approximate and may use more than the specified
+limit.
+.TP
+.BI \-c " subopt" = value
+Change filesystem parameters. Refer to
+.BR xfs_admin (8)
+for information on changing filesystem parameters.
+.HP
+.B \-o
+.I subopt\c
+[\c
+.B =\c
+.IR value ]
+.br
+Override what the program might conclude about the filesystem
+if left to its own devices.
+.IP
+The
+.IR subopt ions
+supported are:
+.RS 1.0i
+.TP
+.BI ihash= ihashsize
+overrides the default inode cache hash size. The total number of
+inode cache entries are limited to 8 times this amount. The default
+.I ihashsize
+is 1024 (for a total of 8192 entries).
+.TP
+.BI bhash= bhashsize
+overrides the default buffer cache hash size. The total number of
+buffer cache entries are limited to 8 times this amount. The default
+size is set to use up the remainder of 75% of the system's physical
+RAM size.
+.TP
+.BI ag_stride= ags_per_concat_unit
+This creates additional processing threads to parallel process
+AGs that span multiple concat units. This can significantly
+reduce repair times on concat based filesystems.
+.TP
+.BI force_geometry
+Check the filesystem even if geometry information could not be validated.
+Geometry information can not be validated if only a single allocation
+group and exist and thus we do not have a backup superblock available, or
+if there are two allocation groups and the two superblocks do not
+agree on the filesystem geometry.  Only use this option if you validated
+the geometry yourself and know what you are doing.  If In doubt run
+in no modify mode first.
+.RE
+.TP
+.B \-t " interval"
+Modify reporting interval. During long runs
+.B xfs_repair
+outputs its progress every 15 minutes. Reporting is only activated when
+ag_stride is enabled.
+.TP
+.B \-v
+Verbose output.
+.TP
+.B \-d
+Repair dangerously. Allow
+.B xfs_repair
+to repair an XFS filesystem mounted read only. This is typically done
+on a root fileystem from single user mode, immediately followed by a reboot.
+.TP
+.B \-V
+Prints out the current version number and exits.
+.SS Checks Performed
+Inconsistencies corrected include the following:
+.IP 1.
+Inode and inode blockmap (addressing) checks:
+bad magic number in inode,
+bad magic numbers in inode blockmap blocks,
+extents out of order,
+incorrect number of records in inode blockmap blocks,
+blocks claimed that are not in a legal data area of the filesystem,
+blocks that are claimed by more than one inode.
+.IP 2.
+Inode allocation map checks:
+bad magic number in inode map blocks,
+inode state as indicated by map (free or in-use) inconsistent
+with state indicated by the inode,
+inodes referenced by the filesystem that do not appear in
+the inode allocation map,
+inode allocation map referencing blocks that do not appear
+to contain inodes.
+.IP 3.
+Size checks:
+number of blocks claimed by inode inconsistent with inode size,
+directory size not block aligned,
+inode size not consistent with inode format.
+.IP 4.
+Directory checks:
+bad magic numbers in directory blocks,
+incorrect number of entries in a directory block,
+bad freespace information in a directory leaf block,
+entry pointing to an unallocated (free) or out
+of range inode,
+overlapping entries,
+missing or incorrect dot and dotdot entries,
+entries out of hashvalue order,
+incorrect internal directory pointers,
+directory type not consistent with inode format and size.
+.IP 5.
+Pathname checks:
+files or directories not referenced by a pathname starting from
+the filesystem root,
+illegal pathname components.
+.IP 6.
+Link count checks:
+link counts that do not agree with the number of
+directory references to the inode.
+.IP 7.
+Freemap checks:
+blocks claimed free by the freemap but also claimed by an inode,
+blocks unclaimed by any inode but not appearing in the freemap.
+.IP 8.
+Super Block checks:
+total free block and/or free i-node count incorrect,
+filesystem geometry inconsistent,
+secondary and primary superblocks contradictory.
+.PP
+Orphaned files and directories (allocated, in-use but unreferenced) are
+reconnected by placing them in the
+.I lost+found
+directory.
+The name assigned is the inode number.
+.SS Disk Errors
+.B xfs_repair
+aborts on most disk I/O errors. Therefore, if you are trying
+to repair a filesystem that was damaged due to a disk drive failure,
+steps should be taken to ensure that all blocks in the filesystem are
+readable and writeable before attempting to use
+.B xfs_repair
+to repair the filesystem. A possible method is using
+.BR dd (8)
+to copy the data onto a good disk.
+.SS lost+found
+The directory
+.I lost+found
+does not have to already exist in the filesystem being repaired.
+If the directory does not exist, it is automatically created if required.
+If it already exists, it will be checked for consistency and if valid
+will be used for additional orphaned files. Invalid
+.I lost+found
+directories are removed and recreated. Existing files in a valid
+.I lost+found
+are not removed or renamed.
+.SS Corrupted Superblocks
+XFS has both primary and secondary superblocks.
+.B xfs_repair
+uses information in the primary superblock
+to automatically find and validate the primary superblock
+against the secondary superblocks before proceeding.
+Should the primary be too corrupted to be useful in locating
+the secondary superblocks, the program scans the filesystem
+until it finds and validates some secondary superblocks.
+At that point, it generates a primary superblock.
+.SS Quotas
+If quotas are in use, it is possible that
+.B xfs_repair
+will clear some or all of the filesystem quota information.
+If so, the program issues a warning just before it terminates.
+If all quota information is lost, quotas are disabled and the
+program issues a warning to that effect.
+.PP
+Note that
+.B xfs_repair
+does not check the validity of quota limits. It is recommended
+that you check the quota limit information manually after
+.BR xfs_repair .
+Also, space usage information is automatically regenerated the
+next time the filesystem is mounted with quotas turned on, so the
+next quota mount of the filesystem may take some time.
+.SH DIAGNOSTICS
+.B xfs_repair
+issues informative messages as it proceeds
+indicating what it has found that is abnormal or any corrective
+action that it has taken.
+Most of the messages are completely understandable only to those
+who are knowledgeable about the structure of the filesystem.
+Some of the more common messages are explained here.
+Note that the language of the messages is slightly different if
+.B xfs_repair
+is run in no-modify mode because the program is not changing anything on disk.
+No-modify mode indicates what it would do to repair the filesystem
+if run without the no-modify flag.
+.PP
+.B disconnected inode
+.IB ino ,
+.B moving to lost+found
+.IP
+An inode numbered
+.I ino
+was not connected to the filesystem
+directory tree and was reconnected to the
+.I lost+found
+directory. The inode is assigned the name of its inode number
+.RI ( ino ).
+If a
+.I lost+found
+directory does not exist, it is automatically created.
+.PP
+.B disconnected dir inode
+.IB ino ,
+.B moving to lost+found
+.IP
+As above only the inode is a directory inode.
+If a directory inode is attached to
+.IR lost+found ,
+all of its children (if any) stay attached to the directory and therefore
+get automatically reconnected when the directory is reconnected.
+.PP
+.B imap claims in-use inode
+.I ino
+.B is free, correcting imap
+.IP
+The inode allocation map thinks that inode
+.I ino
+is free whereas examination of the inode indicates that the
+inode may be in use (although it may be disconnected).
+The program updates the inode allocation map.
+.PP
+.B imap claims free inode
+.I ino
+.B is in use, correcting imap
+.IP
+The inode allocation map thinks that inode
+.I ino
+is in use whereas examination of the inode indicates that the
+inode is not in use and therefore is free.
+The program updates the inode allocation map.
+.PP
+.B resetting inode
+.I ino
+.B nlinks from
+.I x
+.B to
+.I y
+.IP
+The program detected a mismatch between the
+number of valid directory entries referencing inode
+.I ino
+and the number of references recorded in the inode and corrected the
+the number in the inode.
+.PP
+.I fork-type
+.B fork in ino
+.I ino
+.B claims used block
+.I bno
+.IP
+Inode
+.I ino
+claims a block
+.I bno
+that is used (claimed) by either another inode or the filesystem
+itself for metadata storage. The
+.I fork-type
+is either
+.B data
+or
+.B attr
+indicating whether the problem lies in the portion of the
+inode that tracks regular data or the portion of the inode
+that stores XFS attributes.
+If the inode is a real-time (rt) inode, the message says so.
+Any inode that claims blocks used by the filesystem is deleted.
+If two or more inodes claim the same block, they are both deleted.
+.PP
+.I fork-type
+.B fork in ino
+.I ino
+.B claims dup extent ...
+.IP
+Inode
+.I ino
+claims a block in an extent known to be claimed more than once.
+The offset in the inode, start and length of the extent is given.
+The message is slightly different
+if the inode is a real-time (rt) inode and the extent is therefore
+a real-time (rt) extent.
+.PP
+.B inode
+.I ino
+.B \- bad extent ...
+.IP
+An extent record in the blockmap of inode
+.I ino
+claims blocks that are out of the legal range of the filesystem.
+The message supplies the start, end, and file offset of the extent.
+The message is slightly different if the extent is a real-time (rt) extent.
+.PP
+.B bad
+.I fork-type
+.B fork in inode
+.I ino
+.IP
+There was something structurally wrong or inconsistent with the
+data structures that map offsets to filesystem blocks.
+.PP
+.B cleared inode
+.I ino
+.IP
+There was something wrong with the inode that
+was uncorrectable so the program freed the inode.
+This usually happens because the inode claims
+blocks that are used by something else or the inode itself
+is badly corrupted. Typically, this message
+is preceded by one or more messages indicating why the
+inode needed to be cleared.
+.PP
+.B bad attribute fork in inode
+.IR ino ,
+.B clearing attr fork
+.IP
+There was something wrong with the portion of the inode that
+stores XFS attributes (the attribute fork) so the program reset
+the attribute fork.
+As a result of this, all attributes on that inode are lost.
+.PP
+.B correcting nextents for inode
+.IR ino ,
+.B was
+.I x
+.B \- counted
+.I y
+.IP
+The program found that the number of extents used to store
+the data in the inode is wrong and corrected the number.
+The message refers to nextents if the count is wrong
+on the number of extents used to store attribute information.
+.PP
+.B entry
+.I name
+.B in dir
+.I dir_ino
+.B not consistent with .. value
+.BI ( xxxx )
+.B in dir ino
+.IB ino ,
+.B junking entry
+.I name
+.B in directory inode
+.I dir_ino
+.IP
+The entry
+.I name
+in directory inode
+.I dir_ino
+references a directory inode
+.IR ino .
+However, the ..\& entry in directory
+.I ino
+does not point back to directory
+.IR dir_ino ,
+so the program deletes the entry
+.I name
+in directory inode
+.IR dir_ino .
+If the directory inode
+.I ino
+winds up becoming a disconnected inode as a result of this, it is moved to
+.I lost+found
+later.
+.PP
+.B entry
+.I name
+.B in dir
+.I dir_ino
+.B references already connected dir ino
+.IB ino ,
+.B junking entry
+.I name
+.B in directory inode
+.I dir_ino
+.IP
+The entry
+.I name
+in directory inode
+.I dir_ino
+points to a directory inode
+.I ino
+that is known to be a child of another directory.
+Therefore, the entry is invalid and is deleted.
+This message refers to an entry in a small directory.
+If this were a large directory, the last phrase would read
+"will clear entry".
+.PP
+.B entry references free inode
+.I ino
+.B in directory
+.IB dir_ino ,
+.B will clear entry
+.IP
+An entry in directory inode
+.I dir_ino
+references an inode
+.I ino
+that is known to be free. The entry is therefore invalid and is deleted.
+This message refers to a large directory.
+If the directory were small, the message would read "junking entry ...".
+.SH EXIT STATUS
+.B xfs_repair \-n
+(no modify node)
+will return a status of 1 if filesystem corruption was detected and
+0 if no filesystem corruption was detected.
+.B xfs_repair
+run without the \-n option will always return a status code of 0.
+.SH BUGS
+The filesystem to be checked and repaired must have been
+unmounted cleanly using normal system administration procedures
+(the
+.BR umount (8)
+command or system shutdown), not as a result of a crash or system reset.
+If the filesystem has not been unmounted cleanly, mount it and unmount
+it cleanly before running
+.BR xfs_repair .
+.PP
+.B xfs_repair
+does not do a thorough job on XFS extended attributes.
+The structure of the attribute fork will be consistent,
+but only the contents of attribute forks that will fit into
+an inode are checked.
+This limitation will be fixed in the future.
+.PP
+The no-modify mode
+.RB ( \-n
+option) is not completely accurate.
+It does not catch inconsistencies in the freespace and inode
+maps, particularly lost blocks or subtly corrupted maps (trees).
+.PP
+The no-modify mode can generate repeated warnings about
+the same problems because it cannot fix the problems as they
+are encountered.
+.PP
+If a filesystem fails to be repaired, a metadump image can be generated
+with
+.BR xfs_metadump (8)
+and be sent to an XFS maintainer to be analysed and
+.B xfs_repair
+fixed and/or improved.
+.SH SEE ALSO
+.BR dd (1),
+.BR mkfs.xfs (8),
+.BR umount (8),
+.BR xfs_admin (8),
+.BR xfs_check (8),
+.BR xfs_metadump (8),
+.BR xfs (5).

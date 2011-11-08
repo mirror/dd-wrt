@@ -1,0 +1,102 @@
+.TH xfs_logprint 8
+.SH NAME
+xfs_logprint \- print the log of an XFS filesystem
+.SH SYNOPSIS
+.B xfs_logprint
+[
+.I options
+]
+.I device
+.SH DESCRIPTION
+.B xfs_logprint
+prints the log of an XFS filesystem (see
+.BR xfs (5)).
+The
+.I device
+argument is the pathname of the partition or logical volume
+containing the filesystem. The
+.I device
+can be a regular file if the
+.B \-f
+option is used. The contents of the filesystem remain undisturbed.
+There are two major modes of operation in
+.BR xfs_logprint .
+.PP
+One mode is better for filesystem operation debugging.
+It is called the transactional view and is enabled through the
+.B \-t
+option. The transactional view prints only the portion of the log that
+pertains to recovery. In other words, it prints out complete transactions
+between the tail and the head. This view tries to display each transaction
+without regard to how they are split across log records.
+.PP
+The second mode starts printing out information from the beginning of the log.
+Some error blocks might print out in the beginning because the last log
+record usually overlaps the oldest log record. A message is
+printed when the physical end of the log is reached and when the
+logical end of the log is reached. A log record view is displayed
+one record at a time. Transactions that span log records may not be
+decoded fully.
+.SH OPTIONS
+.TP
+.B \-b
+Extract and print buffer information. Only used in transactional view.
+.TP
+.B \-c
+Attempt to continue when an error is detected.
+.TP
+.BI \-C " filename"
+Copy the log from the filesystem to the file
+.IR filename .
+The log itself is not printed.
+.TP
+.B \-d
+Dump the log from front to end, printing where each log record is located
+on disk.
+.TP
+.B \-D
+Do not decode anything; just print data.
+.TP
+.B \-e
+Exit when an error is found in the log. Normally,
+.B xfs_logprint
+tries to continue and unwind from bad logs.
+However, sometimes it just dies in bad ways.
+Using this option prevents core dumps.
+.TP
+.B \-f
+Specifies that the filesystem image to be processed is stored in a
+regular file at
+.I device
+(see the
+.BR mkfs.xfs "(8) " -d
+.I file
+option).
+This might happen if an image copy of a filesystem has been made into
+an ordinary file with
+.BR xfs_copy (8).
+.TP
+.BI \-l " logdev"
+External log device. Only for those filesystems which use an external log.
+.TP
+.B \-i
+Extract and print inode information. Only used in transactional view.
+.TP
+.B \-q
+Extract and print quota information. Only used in transactional view.
+.TP
+.B \-n
+Do not try and interpret log data; just interpret log header information.
+.TP
+.B \-o
+Also print buffer data in hex.
+Normally, buffer data is just decoded, so better information can be printed.
+.TP
+.BI \-s " start-block"
+Override any notion of where to start printing.
+.TP
+.B \-t
+Print out the transactional view.
+.SH SEE ALSO
+.BR mkfs.xfs (8),
+.BR mount (8).

@@ -1,0 +1,107 @@
+#
+# Copyright (c) 1999, 2001-2003 Silicon Graphics, Inc.  All Rights Reserved.
+#
+ifndef _BUILDRULES_INCLUDED_
+_BUILDRULES_INCLUDED_ = 1
+
+include $(TOPDIR)/include/builddefs
+
+clean clobber : $(addsuffix -clean,$(SUBDIRS))
+	@rm -f $(DIRT) .ltdep .dep
+	@rm -fr $(DIRDIRT)
+%-clean:
+	@echo "Cleaning $*"
+	$(Q)$(MAKE) $(MAKEOPTS) -C $* clean
+
+# Never blow away subdirs
+ifdef SUBDIRS
+.PRECIOUS: $(SUBDIRS)
+.PHONY: $(SUBDIRS)
+
+$(SUBDIRS):
+	@echo "Building $@"
+	$(Q)$(MAKE) $(MAKEOPTS) -q -C $@ || $(MAKE) $(MAKEOPTS) -C $@
+endif
+
+source-link: 
+	@test -z "$$DIR" && DIR="."; \
+	for f in `echo $(SRCFILES) $(SUBDIRS) $(POTHEAD)`; do \
+	    if test -d $$f ; then \
+		mkdir $(TOPDIR)/$(PKG_NAME)-$(PKG_VERSION)/$$DIR/$$f || exit $$?; \
+		$(MAKEF) DIR=$$DIR/$$f -C $$f $@ || exit $$?; \
+	    else \
+		ln $$f $(TOPDIR)/$(PKG_NAME)-$(PKG_VERSION)/$$DIR/$$f || exit $$?; \
+	    fi; \
+	done
+
+#
+# Standard targets
+#
+
+ifdef LTCOMMAND
+$(LTCOMMAND) : $(SUBDIRS) $(OBJECTS) $(LTDEPENDENCIES)
+	@echo "    [LD]     $@"
+	$(Q)$(LTLINK) -o $@ $(LDFLAGS) $(OBJECTS) $(LDLIBS)
+endif
+
+ifdef LTLIBRARY
+$(LTLIBRARY) : $(SUBDIRS) $(LTOBJECTS)
+	@echo "    [LD]     $@"
+	$(Q)$(LTLINK) $(LTLDFLAGS) -o $(LTLIBRARY) $(LTOBJECTS) $(LTLIBS)
+
+%.lo: %.c
+	@echo "    [CC]     $@"
+	$(Q)$(LTCOMPILE) -c $<
+else
+%.o: %.c
+	@echo "    [CC]     $@"
+	$(Q)$(CC) $(CFLAGS) -c $<
+
+endif
+
+ifdef POTHEAD
+$(POTHEAD): $(XGETTEXTFILES)
+	@echo "    [GETTXT] $@"
+	$(Q)$(XGETTEXT) --language=C --keyword=_ --keyword=N_ -o $@ $(XGETTEXTFILES)
+
+# Update translations
+update-po: $(POTHEAD) $(wildcard $(TOPDIR)/po/*.po)
+	catalogs="$(wildcard $(TOPDIR)/po/*.po)"; \
+	for cat in $$catalogs; do \
+	  lang=`basename $$cat .po`; \
+	  mv $$lang.po $$lang.old.po; \
+	  echo "$$lang:"; \
+	  if $(MSGMERGE) $$lang.old.po $(POTHEAD) -o $$lang.po; then \
+	    rm -f $$lang.old.po; \
+	  else \
+	    echo "msgmerge for $$lang failed!"; \
+	    rm -f $$lang.po; \
+	    mv $$lang.old.po $$lang.po; \
+	  fi; \
+	done
+
+%.mo: %.po
+	@echo "    [MSGFMT] $@"
+	$(Q)$(MSGFMT) -c --statistics -o $@ $<
+endif
+
+endif # _BUILDRULES_INCLUDED_
+
+$(_FORCE):
+
+# dependency build is automatic, relies on gcc -MM to generate.
+.PHONY : depend ltdepend install-qa
+
+MAKEDEP := $(MAKEDEPEND) $(CFLAGS)
+
+ltdepend: .ltdep
+
+.ltdep: $(CFILES) $(HFILES)
+	@echo "    [LTDEP]"
+	$(Q)$(MAKEDEP) $(CFILES) | $(SED) -e 's,^\([^:]*\)\.o,\1.lo,' > .ltdep
+
+depend: .dep
+
+.dep: $(CFILES) $(HFILES)
+	@echo "    [DEP]"
+	$(Q)$(MAKEDEP) $(CFILES) > .dep

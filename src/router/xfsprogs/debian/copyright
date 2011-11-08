@@ -1,0 +1,19 @@
+This package was debianized by Nathan Scott nathans@debian.org on
+Sun, 19 Nov 2000 07:37:09 -0500.
+
+It can be downloaded from ftp://oss.sgi.com/projects/xfs/download/
+
+Copyright:
+
+Copyright (c) 2000-2002 Silicon Graphics, Inc.  All Rights Reserved.
+
+You are free to distribute this software under the terms of
+the GNU General Public License.
+On Debian systems, the complete text of the GNU General Public
+License can be found in /usr/share/common-licenses/GPL file.
+
+The library named "libhandle" is licensed under Version 2.1
+of the GNU Lesser General Public License.
+On Debian systems, refer to /usr/share/common-licenses/LGPL-2.1
+for the complete text of the GNU Lesser General Public License.
+

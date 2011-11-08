@@ -1,0 +1,738 @@
+.TH mkfs.xfs 8
+.SH NAME
+mkfs.xfs \- construct an XFS filesystem
+.SH SYNOPSIS
+.B mkfs.xfs
+[
+.B \-b
+.I block_size
+] [
+.B \-d
+.I data_section_options
+] [
+.B \-f
+] [
+.B \-i
+.I inode_options
+] [
+.B \-l
+.I log_section_options
+] [
+.B \-n
+.I naming_options
+] [
+.B \-p
+.I protofile
+] [
+.B \-q
+] [
+.B \-r
+.I realtime_section_options
+] [
+.B \-s
+.I sector_size
+] [
+.B \-L
+.I label
+] [
+.B \-N
+] [
+.B \-K
+]
+.I device
+.SH DESCRIPTION
+.B mkfs.xfs
+constructs an XFS filesystem by writing on a special
+file using the values found in the arguments of the command line.
+It is invoked automatically by
+.BR mkfs (8)
+when it is given the
+.B \-t xfs
+option.
+.PP
+In its simplest (and most commonly used form), the size of the
+filesystem is determined from the disk driver.  As an example, to make
+a filesystem with an internal log on the first partition on the first
+SCSI disk, use:
+.IP
+.B mkfs.xfs /dev/sda1
+.PP
+The metadata log can be placed on another device to reduce the number
+of disk seeks.  To create a filesystem on the first partition on the
+first SCSI disk with a 10000 block log located on the first partition
+on the second SCSI disk, use:
+.RS
+.HP
+.B mkfs.xfs\ \-l\ logdev=/dev/sdb1,size=10000b /dev/sda1
+.RE
+.PP
+Each of the
+.I option
+elements in the argument list above can be given as multiple comma-separated
+suboptions if multiple suboptions apply to the same option.
+Equivalently, each main option can be given multiple times with
+different suboptions.
+For example,
+.B \-l internal,size=10000b
+and
+.B \-l internal \-l size=10000b
+are equivalent.
+.PP
+In the descriptions below, sizes are given in sectors, bytes, blocks,
+kilobytes, megabytes, gigabytes, etc.
+Sizes are treated as hexadecimal if prefixed by 0x or 0X,
+octal if prefixed by 0, or decimal otherwise.
+The following lists possible multiplication suffixes:
+.RS
+.PD 0
+.HP
+.BR s "\ \-\ multiply by sector size (default = 512, see " \-s
+option below).
+.HP
+.BR b "\ \-\ multiply by filesystem block size (default = 4K, see " \-b
+option below).
+.HP
+.BR k "\ \-\ multiply by one kilobyte (1,024 bytes)."
+.HP
+.BR m "\ \-\ multiply by one megabyte (1,048,576 bytes)."
+.HP
+.BR g "\ \-\ multiply by one gigabyte (1,073,741,824 bytes)."
+.HP
+.BR t "\ \-\ multiply by one terabyte (1,099,511,627,776 bytes)."
+.HP
+.BR p "\ \-\ multiply by one petabyte (1,024 terabytes)."
+.HP
+.BR e "\ \-\ multiply by one exabyte (1,048,576 terabytes)."
+.PD
+.SH OPTIONS
+.TP
+.BI \-b " block_size_options"
+This option specifies the fundamental block size of the filesystem.
+The valid
+.I block_size_options
+are:
+.BI log= value
+or
+.BI size= value
+and only one can be supplied.
+The block size is specified either as a base two logarithm value with
+.BR log= ,
+or in bytes with
+.BR size= .
+The default value is 4096 bytes (4 KiB), the minimum is 512, and the
+maximum is 65536 (64 KiB).
+XFS on Linux currently only supports pagesize or smaller blocks.
+.TP
+.BI \-d " data_section_options"
+These options specify the location, size, and other parameters of the
+data section of the filesystem. The valid
+.I data_section_options
+are:
+.RS 1.2i
+.TP
+.BI agcount= value
+This is used to specify the number of allocation groups. The data section
+of the filesystem is divided into allocation groups to improve the
+performance of XFS. More allocation groups imply that more parallelism
+can be achieved when allocating blocks and inodes. The minimum
+allocation group size is 16 MiB; the maximum size is just under 1 TiB.
+The data section of the filesystem is divided into
+.I value
+allocation groups (default value is scaled automatically based
+on the underlying device size).
+.TP
+.BI agsize= value
+This is an alternative to using the
+.B agcount
+suboption. The
+.I value
+is the desired size of the allocation group expressed in bytes
+(usually using the
+.BR m " or " g
+suffixes).
+This value must be a multiple of the filesystem block size, and
+must be at least 16MiB, and no more than 1TiB, and may
+be automatically adjusted to properly align with the stripe geometry.
+The
+.B agcount
+and
+.B agsize
+suboptions are mutually exclusive.
+.TP
+.BI name= value
+This can be used to specify the name of the special file containing
+the filesystem. In this case, the log section must be specified as
+.B internal
+(with a size, see the
+.B \-l
+option below) and there can be no real-time section.
+.TP
+.BI file[= value ]
+This is used to specify that the file given by the
+.B name
+suboption is a regular file. The
+.I value
+is either 0 or 1, with 1 signifying that the file is regular. This
+suboption is used only to make a filesystem image. If the
+.I value
+is omitted then 1 is assumed.
+.TP
+.BI size= value
+This is used to specify the size of the data section. This suboption
+is required if
+.B \-d file[=1]
+is given. Otherwise, it is only needed if the filesystem should occupy
+less space than the size of the special file.
+.TP
+.BI sunit= value
+This is used to specify the stripe unit for a RAID device or a
+logical volume. The
+.I value
+has to be specified in 512-byte block units. Use the
+.B su
+suboption to specify the stripe unit size in bytes. This suboption
+ensures that data allocations will be stripe unit aligned when the
+current end of file is being extended and the file size is larger
+than 512KiB. Also inode allocations and the internal log will be
+stripe unit aligned.
+.TP
+.BI su= value
+This is an alternative to using
+.B sunit.
+The
+.B su
+suboption is used to specify the stripe unit for a RAID device or a
+striped logical volume. The
+.I value
+has to be specified in bytes, (usually using the
+.BR m " or " g
+suffixes). This
+.I value
+must be a multiple of the filesystem block size.
+.TP
+.BI swidth= value
+This is used to specify the stripe width for a RAID device or a
+striped logical volume. The
+.I value
+has to be specified in 512-byte block units. Use the
+.B sw
+suboption to specify the stripe width size in bytes.
+This suboption is required if
+.B \-d sunit
+has been specified and it has to be a multiple of the
+.B \-d sunit
+suboption.
+.TP
+.BI sw= value
+suboption is an alternative to using
+.B swidth.
+The
+.B sw
+suboption is used to specify the stripe width for a RAID device or
+striped logical volume. The
+.I value
+is expressed as a multiplier of the stripe unit,
+usually the same as the number of stripe members in the logical
+volume configuration, or data disks in a RAID device.
+.IP
+When a filesystem is created on a logical volume device,
+.B mkfs.xfs
+will automatically query the logical volume for appropriate
+.B sunit
+and
+.B swidth
+values.
+.RE
+.TP
+.B \-f
+Force overwrite when an existing filesystem is detected on the device.
+By default,
+.B mkfs.xfs
+will not write to the device if it suspects that there is a filesystem
+or partition table on the device already.
+.TP
+.BI \-i " inode_options"
+This option specifies the inode size of the filesystem, and other
+inode allocation parameters.
+The XFS inode contains a fixed-size part and a variable-size part.
+The variable-size part, whose size is affected by this option, can contain:
+directory data, for small directories;
+attribute data, for small attribute sets;
+symbolic link data, for small symbolic links;
+the extent list for the file, for files with a small number of extents;
+and the root of a tree describing the location of extents for the file,
+for files with a large number of extents.
+.IP
+The valid
+.I inode_options
+are:
+.RS 1.2i
+.TP
+.BI size= value " | log=" value " | perblock=" value
+The inode size is specified either as a
+.I value
+in bytes with
+.BR size= ,
+a base two logarithm
+.I value
+with
+.BR log= ,
+or as the number fitting in a filesystem block with
+.BR perblock= .
+The mininum (and default)
+.I value
+is 256 bytes.
+The maximum
+.I value
+is 2048 (2 KiB) subject to the restriction that
+the inode size cannot exceed one half of the filesystem block size.
+.IP
+XFS uses 64-bit inode numbers internally; however, the number of
+significant bits in an inode number
+is affected by filesystem geometry.  In
+practice, filesystem size and inode size are the predominant factors.
+The Linux kernel (on 32 bit hardware platforms) and most applications
+cannot currently handle inode numbers greater than 32 significant bits,
+so if no inode size is given on the command line,
+.B mkfs.xfs
+will attempt to choose a size
+such that inode numbers will be < 32 bits.  If an inode size
+is specified, or if a filesystem is sufficently large,
+.B mkfs.xfs
+will warn if this will create inode numbers > 32 significant
+bits.
+.TP
+.BI maxpct= value
+This specifies the maximum percentage of space in the filesystem that
+can be allocated to inodes. The default
+.I value
+is 25% for filesystems under 1TB, 5% for filesystems under 50TB and 1%
+for filesystems over 50TB.
+.IP
+In the default inode allocation mode, inode blocks are chosen such
+that inode numbers will not exceed 32 bits, which restricts the inode
+blocks to the lower portion of the filesystem. The data block
+allocator will avoid these low blocks to accommodate the specified
+maxpct, so a high value may result in a filesystem with nothing but
+inodes in a significant portion of the lower blocks of the filesystem.
+(This restriction is not present when the filesystem is mounted with
+the
+.I "inode64"
+option on 64-bit platforms).
+.IP
+Setting the value to 0 means that essentially all of the filesystem
+can become inode blocks, subject to inode32 restrictions.
+.IP
+This value can be modified with
+.IR xfs_growfs(8) .
+.TP
+.BI align[= value ]
+This is used to specify that inode allocation is or is not aligned. The
+.I value
+is either 0 or 1, with 1 signifying that inodes are allocated aligned.
+If the
+.I value
+is omitted, 1 is assumed. The default is that inodes are aligned.
+Aligned inode access is normally more efficient than unaligned access;
+alignment must be established at the time the filesystem is created,
+since inodes are allocated at that time.
+This option can be used to turn off inode alignment when the
+filesystem needs to be mountable by a version of IRIX
+that does not have the inode alignment feature
+(any release of IRIX before 6.2, and IRIX 6.2 without XFS patches).
+.TP
+.BI attr= value
+This is used to specify the version of extended attribute inline
+allocation policy to be used.  By default, this is 2, which uses an
+efficient algorithm for managing the available inline inode space
+between attribute and extent data.
+.IP
+The previous version 1, which has fixed regions for attribute and
+extent data, is kept for backwards compatibility with kernels older
+than version 2.6.16.
+.TP
+.BI projid32bit[= value ]
+This is used to enable 32bit quota project identifiers. The
+.I value
+is either 0 or 1, with 1 signifying that 32bit projid are to be enabled.
+If the value is omitted, 0 is assumed.
+.RE
+.TP
+.BI \-l " log_section_options"
+These options specify the location, size, and other parameters of the
+log section of the filesystem. The valid
+.I log_section_options
+are:
+.RS 1.2i
+.TP
+.BI internal[= value ]
+This is used to specify that the log section is a piece of the data
+section instead of being another device or logical volume. The
+.I value
+is either 0 or 1, with 1 signifying that the log is internal. If the
+.I value
+is omitted, 1 is assumed.
+.TP
+.BI logdev= device
+This is used to specify that the log section should reside on the
+.I device
+separate from the data section. The
+.B internal=1
+and
+.B logdev
+options are mutually exclusive.
+.TP
+.BI size= value
+This is used to specify the size of the log section.
+.IP
+If the log is contained within the data section and
+.B size
+isn't specified,
+.B mkfs.xfs
+will try to select a suitable log size depending
+on the size of the filesystem.  The actual logsize depends on the
+filesystem block size and the directory block size.
+.IP
+Otherwise, the
+.B size
+suboption is only needed if the log section of the filesystem
+should occupy less space than the size of the special file. The
+.I value
+is specified in bytes or blocks, with a
+.B b
+suffix meaning multiplication by the filesystem block size, as
+described above. The overriding minimum value for size is 512 blocks.
+With some combinations of filesystem block size, inode size,
+and directory block size, the minimum log size is larger than 512 blocks.
+.TP
+.BI version= value
+This specifies the version of the log. The current default is 2,
+which allows for larger log buffer sizes, as well as supporting
+stripe-aligned log writes (see the sunit and su options, below).
+.IP
+The previous version 1, which is limited to 32k log buffers and does
+not support stripe-aligned writes, is kept for backwards compatibility
+with very old 2.4 kernels.
+.TP
+.BI sunit= value
+This specifies the alignment to be used for log writes. The
+.I value
+has to be specified in 512-byte block units. Use the
+.B su
+suboption to specify the log stripe unit size in bytes.
+Log writes will be aligned on this boundary,
+and rounded up to this boundary.
+This gives major improvements in performance on some configurations
+such as software RAID5 when the
+.B sunit
+is specified as the filesystem block size.
+The equivalent byte value must be a multiple of the filesystem block
+size. Version 2 logs are automatically selected if the log
+.B sunit
+suboption is specified.
+.IP
+The
+.B su
+suboption is an alternative to using
+.B sunit.
+.TP
+.BI su= value
+This is used to specify the log stripe. The
+.I value
+has to be specified in bytes, (usually using the
+.BR s " or " b
+suffixes). This value must be a multiple of the filesystem block size.
+Version 2 logs are automatically selected if the log
+.B su
+suboption is specified.
+.TP
+.BI lazy-count= value
+This changes the method of logging various persistent counters
+in the superblock.  Under metadata intensive workloads, these
+counters are updated and logged frequently enough that the superblock
+updates become a serialisation point in the filesystem. The
+.I value
+can be either 0 or 1.
+.IP
+With
+.BR lazy-count=1 ,
+the superblock is not modified or logged on every change of the
+persistent counters. Instead, enough information is kept in
+other parts of the filesystem to be able to maintain the persistent
+counter values without needed to keep them in the superblock.
+This gives significant improvements in performance on some configurations.
+The default
+.I value
+is 1 (on) so you must specify
+.B lazy-count=0
+if you want to disable this feature for older kernels which don't support
+it.
+.RE
+.TP
+.BI \-n " naming_options"
+These options specify the version and size parameters for the naming
+(directory) area of the filesystem. The valid
+.I naming_options
+are:
+.RS 1.2i
+.TP
+.BI size= value " | log=" value
+The block size is specified either as a
+.I value
+in bytes with
+.BR size= ,
+or as a base two logarithm
+.I value
+.RB "with " log= .
+The block size must be a power of 2 and cannot be less than the
+filesystem block size.
+The default size
+.I value
+for version 2 directories is 4096 bytes (4 KiB),
+unless the filesystem block size is larger than 4096,
+in which case the default
+.I value
+is the filesystem block size.
+For version 1 directories the block size is the same as the
+filesystem block size.
+.TP
+.BI version= value
+The naming (directory) version
+.I value
+can be either 2 or 'ci', defaulting to 2 if unspecified.
+With version 2 directories, the directory block size can be
+any power of 2 size from the filesystem block size up to 65536.
+.IP
+The
+.B version=ci
+option enables ASCII only case-insensitive filename lookup and version
+2 directories. Filenames are case-preserving, that is, the names
+are stored in directories using the case they were created with.
+.IP
+Note: Version 1 directories are not supported.
+.RE
+.TP
+.BI \-p " protofile"
+If the optional
+.BI \-p " protofile"
+argument is given,
+.B mkfs.xfs
+uses
+.I protofile
+as a prototype file and takes its directions from that file.
+The blocks and inodes specifiers in the
+.I protofile
+are provided for backwards compatibility, but are otherwise unused.
+The syntax of the protofile is defined by a number of tokens separated
+by spaces or newlines. Note that the line numbers are not part of the
+syntax but are meant to help you in the following discussion of the file
+contents.
+.nf
+.sp .8v
+.in +5
+\f71       /stand/\f1\f2diskboot\f1\f7
+2       4872 110
+3       d\-\-777 3 1
+4       usr     d\-\-777 3 1
+5       sh      \-\-\-755 3 1 /bin/sh
+6       ken     d\-\-755 6 1
+7               $
+8       b0      b\-\-644 3 1 0 0
+9       c0      c\-\-644 3 1 0 0
+10      fifo    p\-\-644 3 1
+11      slink   l\-\-644 3 1 /a/symbolic/link
+12      :  This is a comment line
+13      $
+14      $\f1
+.in -5
+.fi
+.IP
+Line 1 is a dummy string.
+(It was formerly the bootfilename.)
+It is present for backward
+compatibility; boot blocks are not used on SGI systems.
+.IP
+Note that some string of characters must be present as the first line of
+the proto file to cause it to be parsed correctly; the value
+of this string is immaterial since it is ignored.
+.IP
+Line 2 contains two numeric values (formerly the numbers of blocks and inodes).
+These are also merely for backward compatibility: two numeric values must
+appear at this point for the proto file to be correctly parsed,
+but their values are immaterial since they are ignored.
+.IP
+The lines 3 through 11 specify the files and directories you want to
+include in this filesystem. Line 3 defines the
+root directory. Other directories and
+files that you want in the filesystem
+are indicated by lines 4 through 6 and
+lines 8 through 10. Line 11 contains
+symbolic link syntax.
+.IP
+Notice the dollar sign
+.RB ( $ )
+syntax on line 7. This syntax directs the
+.B mkfs.xfs
+command to terminate the branch of the filesystem it
+is currently on and then continue
+from the directory specified by
+the next line, in this case line 8.
+It must be the last character
+on a line.
+The colon
+on line 12 introduces a comment; all characters up until the
+following newline are ignored.
+Note that this means you cannot
+have a file in a prototype file whose name contains a colon.
+The
+.B $
+on lines 13 and 14 end the process, since no additional
+specifications follow.
+.IP
+File specifications provide the following:
+.IP
+  * file mode
+.br
+  * user ID
+.br
+  * group ID
+.br
+  * the file's beginning contents
+.P
+.IP
+A 6-character string defines the mode for
+a file. The first character of this string
+defines the file type. The character range
+for this first character is
+.B \-bcdpl.
+A file may be a regular file, a block special file,
+a character special file, directory files, named
+pipes (first-in, first out files), and symbolic
+links.
+The second character of the mode string is
+used to specify setuserID mode, in which case
+it is
+.BR u .
+If setuserID mode is not specified, the second character is
+.BR \- .
+The third character of the mode string is
+used to specify the setgroupID mode, in which
+case it is
+.BR g .
+If setgroupID mode is not specified, the third character is
+.BR \- .
+The remaining characters of the mode string are
+a three digit octal number. This octal number
+defines the owner, group, and other read, write,
+and execute permissions for the file, respectively.
+For more information on file permissions, see the
+.BR chmod (1)
+command.
+.IP
+Following the mode character string are two
+decimal number tokens that specify the user and group IDs
+of the file's owner.
+.IP
+In a regular file, the next token specifies the
+pathname from which the contents and size of the
+file are copied.
+In a block or character special file, the next token
+are two decimal numbers that specify the major and minor
+device numbers.
+When a file is a symbolic link, the next token
+specifies the contents of the link.
+
+When the file is a directory, the
+.B mkfs.xfs
+command creates the entries
+.B dot
+(.) and
+.B dot-dot
+(..) and then reads the list of names and file specifications
+in a recursive manner for all of the entries
+in the directory. A scan of the protofile is
+always terminated with the dollar (
+.B $
+) token.
+.TP
+.B \-q
+Quiet option. Normally
+.B mkfs.xfs
+prints the parameters of the filesystem
+to be constructed;
+the
+.B \-q
+flag suppresses this.
+.TP
+.BI \-r " realtime_section_options"
+These options specify the location, size, and other parameters of the
+real-time section of the filesystem. The valid
+.I realtime_section_options
+are:
+.RS 1.2i
+.TP
+.BI rtdev= device
+This is used to specify the
+.I device
+which should contain the real-time section of the filesystem.
+The suboption value is the name of a block device.
+.TP
+.BI extsize= value
+This is used to specify the size of the blocks in the real-time
+section of the filesystem. This
+.I value
+must be a multiple of the filesystem block size. The minimum allowed
+size is the filesystem block size or 4 KiB (whichever is larger); the
+default size is the stripe width for striped volumes or 64 KiB for
+non-striped volumes; the maximum allowed size is 1 GiB. The real-time
+extent size should be carefully chosen to match the parameters of the
+physical media used.
+.TP
+.BI size= value
+This is used to specify the size of the real-time section.
+This suboption is only needed if the real-time section of the
+filesystem should occupy less space than the size of the partition
+or logical volume containing the section.
+.RE
+.TP
+.BI \-s " sector_size"
+This option specifies the fundamental sector size of the filesystem.
+The
+.I sector_size
+is specified either as a value in bytes with
+.BI size= value
+or as a base two logarithm value with
+.BI log= value.
+The default
+.I sector_size
+is 512 bytes. The minimum value for sector size is
+512; the maximum is 32768 (32 KiB). The
+.I sector_size
+must be a power of 2 size and cannot be made larger than the
+filesystem block size.
+.TP
+.BI \-L " label"
+Set the filesystem
+.IR label .
+XFS filesystem labels can be at most 12 characters long; if
+.I label
+is longer than 12 characters,
+.B mkfs.xfs
+will not proceed with creating the filesystem.  Refer to the
+.BR mount "(8) and " xfs_admin (8)
+manual entries for additional information.
+.TP
+.B \-N
+Causes the file system parameters to be printed out without really
+creating the file system.
+.TP
+.B \-K
+Do not attempt to discard blocks at mkfs time.
+.SH SEE ALSO
+.BR xfs (5),
+.BR mkfs (8),
+.BR mount (8),
+.BR xfs_info (8),
+.BR xfs_admin (8).
+.SH BUGS
+With a prototype file, it is not possible to specify hard links.

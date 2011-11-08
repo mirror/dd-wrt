@@ -1,0 +1,201 @@
+.TH HANDLE 3
+.SH NAME
+path_to_handle, path_to_fshandle, fd_to_handle, handle_to_fshandle, open_by_handle, readlink_by_handle, attr_multi_by_handle, attr_list_by_handle, fssetdm_by_handle, free_handle, getparents_by_handle, getparentpaths_by_handle \- file handle operations
+.SH C SYNOPSIS
+.B #include <sys/types.h>
+.br
+.B #include <xfs/handle.h>
+.HP
+.BI "int\ path_to_handle(char *" path ", void **" hanp ", size_t *" hlen );
+.HP
+.BI "int\ path_to_fshandle(char *" path ", void **" hanp ", size_t *" hlen );
+.HP
+.BI "int\ fd_to_handle(int " fd ", void **" hanp ", size_t *" hlen );
+.HP
+.BI "int\ handle_to_fshandle(void *" hanp ", size_t " hlen ", void **" fshanp ,
+.BI "size_t *" fshlen );
+.HP
+.BI "int\ open_by_handle(void *" hanp ", size_t " hlen ", int " oflag );
+.HP
+.BI "int\ readlink_by_handle(void *" hanp ", size_t " hlen ", void *" buf ,
+.BI "size_t " bs );
+.HP
+.BI "int\ attr_multi_by_handle(void *" hanp ", size_t " hlen ", void *" buf ,
+.BI "int " rtrvcnt ", int " flags );
+.HP
+.BI "int\ attr_list_by_handle(void *" hanp ", size_t " hlen ", char *" buf ,
+.BI "size_t " bufsiz ", int " flags ", struct attrlist_cursor *" cursor );
+.HP
+.BI "int\ fssetdm_by_handle(void *" hanp ", size_t " hlen ", struct fsdmidata"
+.BI * fssetdm );
+.HP
+.BI "void\ free_handle(void *" hanp ", size_t " hlen );
+.HP
+.BI "int\ getparents_by_handle(void *" hanp ", size_t " hlen ", parent_t *" buf ,
+.BI "size_t " bufsiz ", parent_cursor_t *" cursor ", unsigned int *" count ,
+.BI "unsigned int *" more );
+.HP
+.BI "int\ getparentpaths_by_handle(void *" hanp ", size_t " hlen ", parent_t"
+.BI * buf ", size_t " bufsiz ", parent_cursor_t *" cursor ", unsigned int "
+.BI * count ", unsigned int *" more );
+.SH DESCRIPTION
+These functions provide a way to perform certain filesystem operations
+without using a file descriptor to access filesystem objects. They are
+intended for use by a limited set of system utilities such as backup
+programs. They are supported only by the XFS filesystem.
+Link with the
+.B libhandle
+library to access these functions.
+.PP
+A handle,
+.IR hanp ,
+uniquely identifies a filesystem object or an entire filesystem.
+There is one and only one handle per filesystem or filesystem object.
+Handles consist of some number of bytes. The size of a handle
+(i.e. the number of bytes comprising it) varies by the type of handle
+and may vary for different objects of the same type.
+The content of a handle is opaque to applications.
+Since handle sizes vary and their contents are opaque,
+handles are described by two quantities, a pointer
+.RI ( hanp ") and a size (" hlen ).
+The size,
+.IR hlen ,
+indicates the number of bytes in the handle which are pointed to by the pointer.
+.PP
+The
+.BR path_to_handle ()
+function returns the handle for the object given by the
+.I path
+argument. If the final component of the path name is a symbolic link,
+the handle returned is that of the link itself.
+.PP
+The
+.BR path_to_fshandle ()
+function returns the handle for the filesystem in which the object given by the
+.I path
+argument resides.
+.PP
+The
+.BR fd_to_handle ()
+function returns the handle for the object referenced by the
+.I fd
+argument, which must be a valid file descriptor.
+.PP
+The
+.BR handle_to_fshandle ()
+function returns the handle for the filesystem in which the object
+referenced by the handle given by the
+.I hanp
+and
+.I hlen
+arguments resides.
+.PP
+The
+.BR open_by_handle ()
+function opens a file descriptor for the object referenced by a handle.
+It is analogous and identical to
+.BR open (2)
+with the exception of accepting handles instead of path names.
+.PP
+The
+.BR readlink_by_handle ()
+function returns the contents of a symbolic link referenced by a handle.
+.PP
+The
+.BR attr_multi_by_handle ()
+function manipulates multiple user attributes on a filesystem object.
+It is analogous and identical to
+.BR attr_multif (3)
+except that a handle is specified instead of a file descriptor.
+.PP
+The
+.BR attr_list_by_handle ()
+function returns the names of the user attributes of a filesystem object.
+It is analogous and identical to
+.BR attr_listf (3)
+except that a handle is specified instead of a file descriptor.
+.PP
+The
+.BR fssetdm_by_handle ()
+function sets the
+.B di_dmevmask
+and
+.B di_dmstate
+fields in an XFS on-disk inode. It is analogous to the
+.BR "XFS_IOC_FSSETDM xfsctl" (3)
+command, except that a handle is specified instead of a file.
+.PP
+The
+.BR free_handle ()
+function frees the storage allocated for handles returned by the following
+functions:
+.BR path_to_handle (),
+.BR path_to_fshandle (),
+.BR fd_to_handle (),
+and
+.BR handle_to_fshandle ().
+.PP
+The
+.BR getparents_by_handle ()
+function returns an array of
+.B parent_t
+structures for each hardlink to the inode represented by the given handle.
+The parent structure encodes the parent inode number, generation number and
+the basename of the link.
+.B This function is not operational on Linux.
+.PP
+The
+.BR getparentpaths_by_handle ()
+function is identical to the
+.BR getparents_by_handle ()
+function except that instead of returning the basename it returns the path
+of the link up to the mount point.
+.B This function is also not operational on Linux.
+.SH RETURN VALUE
+The function
+.BR free_handle ()
+has no failure indication. The other functions return the value 0 to the
+calling process if they succeed; otherwise, they return the value \-1 and set
+.I errno
+to indicate the error.
+.SH ERRORS
+.TP
+.B EACCES
+Search permission was denied for a component of
+.IR path .
+.TP
+.B EBADF
+.I fd
+is not a valid and open file descriptor.
+.TP
+.B EFAULT
+An argument pointed to an invalid address.
+.TP
+.B EINVAL
+.I path
+is in a filesystem that does not support these functions.
+.TP
+.B ELOOP
+Too many symbolic links were encountered in translating the path name.
+.TP
+.B ENAMETOOLONG
+A component of
+.I path
+or the entire length of
+.I path
+exceeds filesystem limits.
+.TP
+.B ENOENT
+A component of
+.I path
+does not exist.
+.TP
+.B EPERM
+The caller does not have sufficient privileges.
+.SH SEE ALSO
+.BR open (2),
+.BR readlink (2),
+.BR attr_multi (3),
+.BR attr_list (3),
+.BR xfsctl (3),
+.BR xfs (5).

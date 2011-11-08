@@ -1,0 +1,111 @@
+.TH xfs 5
+.SH NAME
+xfs \- layout of the XFS filesystem
+.SH DESCRIPTION
+An XFS filesystem can reside on a regular disk partition or on a
+logical volume.
+An XFS filesystem has up to three parts:
+a data section, a log section, and a realtime section.
+Using the default
+.BR mkfs.xfs (8)
+options, the realtime section is absent, and
+the log area is contained within the data section.
+The log section can be either separate from the data section
+or contained within it.
+The filesystem sections are divided into a certain number of
+.IR blocks ,
+whose size is specified at
+.BR mkfs.xfs (8)
+time with the
+.B \-b
+option.
+.PP
+The data section contains all the filesystem metadata
+(inodes, directories, indirect blocks)
+as well as the user file data for ordinary (non-realtime) files
+and the log area if the log is
+.I internal
+to the data section.
+The data section is divided into a number of
+.IR "allocation groups" .
+The number and size of the allocation groups are chosen by
+.BR mkfs.xfs (8)
+so that there is normally a small number of equal-sized groups.
+The number of allocation groups controls the amount of parallelism
+available in file and block allocation.
+It should be increased from
+the default if there is sufficient memory and a lot of allocation
+activity.
+The number of allocation groups should not be set very high,
+since this can cause large amounts of CPU time to be used by
+the filesystem, especially when the filesystem is nearly full.
+More allocation groups are added (of the original size) when
+.BR xfs_growfs (8)
+is run.
+.PP
+The log section (or area, if it is internal to the data section)
+is used to store changes to filesystem metadata while the
+filesystem is running until those changes are made to the data
+section.
+It is written sequentially during normal operation and read only
+during mount.
+When mounting a filesystem after a crash, the log
+is read to complete operations that were
+in progress at the time of the crash.
+.PP
+The realtime section is used to store the data of realtime files.
+These files had an attribute bit set through
+.BR xfsctl (3)
+after file creation, before any data was written to the file.
+The realtime section is divided into a number of
+.I extents
+of fixed size (specified at
+.BR mkfs.xfs (8)
+time).
+Each file in the realtime section has an extent size that
+is a multiple of the realtime section extent size.
+.PP
+Each allocation group contains several data structures.
+The first sector contains the superblock.
+For allocation groups after the first,
+the superblock is just a copy and is not updated after
+.BR mkfs.xfs (8).
+The next three sectors contain information for block and inode
+allocation within the allocation group.
+Also contained within each allocation group are data structures
+to locate free blocks and inodes;
+these are located through the header structures.
+.PP
+Each XFS filesystem is labeled with a Universal Unique
+Identifier (UUID).
+The UUID is stored in every allocation group header and
+is used to help distinguish one XFS filesystem from another,
+therefore you should avoid using
+.BR dd (1)
+or other block-by-block copying programs to copy XFS filesystems.
+If two XFS filesystems on the same machine have the same UUID,
+.BR xfsdump (8)
+may become confused when doing incremental and resumed dumps.
+.BR xfsdump (8)
+and
+.BR xfsrestore (8)
+are recommended for making copies of XFS filesystems.
+.SH OPERATIONS
+Some functionality specific to the XFS filesystem is accessible to
+applications through the
+.BR xfsctl (3)
+and by-handle (see
+.BR open_by_handle (3))
+interfaces.
+.SH MOUNT OPTIONS
+Refer to the
+.BR mount (8)
+manual entry for descriptions of the individual XFS mount options.
+.SH SEE ALSO
+.BR xfsctl (3),
+.BR mount (8),
+.BR mkfs.xfs (8),
+.BR xfs_info (8),
+.BR xfs_admin (8),
+.BR xfsdump (8),
+.BR xfsrestore (8).
