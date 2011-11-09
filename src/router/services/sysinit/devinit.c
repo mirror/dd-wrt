@@ -152,7 +152,7 @@ fprintf(stderr,"starting hotplug\n");
 
 	sprintf(dev, "/dev/%s3", disc);
 	if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL)) {
-		eval("/sbin/mke2fs", "-F", "-b", "1024", dev);
+		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", dev);
 		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
 //		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
