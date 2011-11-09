@@ -16,6 +16,8 @@ ifeq ($(CONFIG_E2FSPROGS_ADV),y)
 		PKG_LOCALE_DIR=$(INSTALLDIR)/e2fsprogs/usr/share/locale \
 		PKG_DOC_DIR=$(INSTALLDIR)/e2fsprogs/usr/share/doc/xfsprogs
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs prefix=/usr
+else
+	-rm -f $(INSTALLDIR)/e2fsprogs/sbin/*fschk*
 endif
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
