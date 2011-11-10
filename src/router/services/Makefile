@@ -385,10 +385,12 @@ NFILES += tools/site_survey_madwifi_11n.c
 NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 endif
 ifeq ($(CONFIG_ATH9K),y)
+ifneq ($(CONFIG_NOWIFI),y)
 ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KOBJS += madwifi_ath9k.o site_survey_mac80211.o
 ATH9KFILES += networking/madwifi_ath9k.c tools/site_survey_mac80211.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+endif
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -1168,7 +1170,9 @@ ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) --shared -c $(NCFLAGS) -o $(NOBJS) $(NFILES)
 endif
 ifeq ($(CONFIG_ATH9K),y)
+ifneq ($(CONFIG_NOWIFI),y)
 	$(CC) -shared -c $(ATH9KCFLAGS) $(ATH9KFILES)
+endif
 endif
 	$(CC) --shared $(CFLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
