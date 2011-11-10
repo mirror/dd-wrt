@@ -51,34 +51,40 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 
-
 #ifdef HAVE_X86
 
 static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[]={"sda2","sdb2","sdc2","sdd2","sde2","sdf2","sdg2","sdh2","sdi2"};
-	for (i = 0; i < 9; i++) {
-		char dev[64];
+	unsigned char *disks[] =
+	    { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+"sdi2" };
+	int a;
 
-		sprintf(dev, "/dev/%s", disks[i]);
-		FILE *in = fopen(dev, "rb");
+	for (a = 0; a < 10; a++) {
+		for (i = 0; i < 9; i++) {
+			char dev[64];
 
-		if (in == NULL)
-			continue;	// no second partition or disc does not
-		// exist, skipping
-		char buf[4];
+			sprintf(dev, "/dev/%s", disks[i]);
+			FILE *in = fopen(dev, "rb");
 
-		fread(buf, 4, 1, in);
-		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
-		    && buf[3] == 't') {
+			if (in == NULL)
+				continue;	// no second partition or disc does not
+			// exist, skipping
+			char buf[4];
+
+			fread(buf, 4, 1, in);
+			if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q'
+			    && buf[3] == 't') {
+				fclose(in);
+				// filesystem detected
+				strncpy(ret, disks[i], 3);
+				return ret;
+			}
 			fclose(in);
-			// filesystem detected
-			strncpy(ret,disks[i],3);
-			return ret;
 		}
-		fclose(in);
+		sleep(1);
 	}
 	return NULL;
 }
@@ -133,12 +139,12 @@ void start_devinit(void)
 	mkdir("/var/log", 0777);
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
-fprintf(stderr,"starting hotplug\n");
+	fprintf(stderr, "starting hotplug\n");
 #ifdef HAVE_HOTPLUG2
 	system("/etc/hotplug2.startup");
 #endif
 #ifdef HAVE_X86
-	fprintf(stderr,"waiting for hotplug\n");
+	fprintf(stderr, "waiting for hotplug\n");
 	char dev[64];
 	char *disc = getdisc();
 
@@ -154,9 +160,9 @@ fprintf(stderr,"starting hotplug\n");
 	if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL)) {
 		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", dev);
 		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
-//		eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+//              eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
 	eval("mkdir", "-p", "/usr/local/nvram");
 #endif
-fprintf(stderr,"done\n");
+	fprintf(stderr, "done\n");
 }
