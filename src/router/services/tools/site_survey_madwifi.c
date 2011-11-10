@@ -203,14 +203,18 @@ int site_survey_main(int argc, char *argv[])
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
 #ifdef HAVE_ATH9K
+#ifndef HAVE_NOWIFI
 	if (is_ath9k(sta)) {
 	    return site_survey_main_mac802211(argc,argv);
 	}
 #endif
+#endif
 #ifdef HAVE_MADWIFI_MIMO
+#ifndef HAVE_NOWIFI
 	if (is_ar5008(sta)) {
 	    return site_survey_main_11n(argc,argv);
 	    }
+#endif
 #endif
 	unsigned char *buf = malloc(24 * 1024);
 
