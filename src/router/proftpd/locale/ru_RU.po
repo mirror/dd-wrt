@@ -682,7 +682,7 @@ msgstr "Передача отменена. %s"
 
 #: ../src/data.c:898
 #, c-format
-msgid "%s: data tranfer in progress"
+msgid "%s: data transfer in progress"
 msgstr "%s: передача данных выполняется"
 
 #: ../src/data.c:941

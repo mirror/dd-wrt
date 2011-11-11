@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project
+ * Copyright (c) 2001-2011 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -26,17 +26,13 @@
 
 /* ProFTPD virtual/modular filesystem support.
  *
- * $Id: fsio.h,v 1.24 2009/11/05 17:46:54 castaglia Exp $
+ * $Id: fsio.h,v 1.28 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_FSIO_H
 #define PR_FSIO_H
 
 #include "conf.h"
-
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
 
 /* This is a Tru64-specific hack, to work around some macro funkiness
  * in their /usr/include/sys/mount.h header.
@@ -197,8 +193,7 @@ struct fh_rec {
  */
 #define PR_FH_FD(f)	((f)->fh_fd)
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-#ifdef PR_FS_MATCH
+#if defined(PR_USE_REGEX) && defined(PR_FS_MATCH)
 typedef struct fs_match_rec pr_fs_match_t;
 struct fs_match_rec {
 
@@ -230,8 +225,7 @@ struct fs_match_rec {
    */
   array_header *fsm_fs_objs;
 };
-#endif /* PR_FS_MATCH */
-#endif /* HAVE_REGEX_H && HAVE_REGCOMP */
+#endif /* PR_USE_REGEX and PR_FS_MATCH */
 
 int pr_fsio_stat(const char *, struct stat *);
 int pr_fsio_stat_canon(const char *, struct stat *);
@@ -293,8 +287,7 @@ pr_fs_t *pr_remove_fs(const char *);
 pr_fs_t *pr_unmount_fs(const char *, const char *);
 int pr_unregister_fs(const char *);
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_RECOMP)
-#ifdef PR_FS_MATCH
+#if defined(PR_USE_REGEX) && defined(PR_FS_MATCH)
 pr_fs_match_t *pr_register_fs_match(pool *, const char *, const char *, int);
 void pr_associate_fs(pr_fs_match_t *, pr_fs_t *);
 pr_fs_match_t *pr_create_fs_match(pool *, const char *, const char *, int);
@@ -302,8 +295,7 @@ pr_fs_match_t *pr_get_fs_match(const char *, int);
 pr_fs_match_t *pr_get_next_fs_match(pr_fs_match_t *, const char *, int);
 int pr_insert_fs_match(pr_fs_match_t *);
 int pr_unregister_fs_match(const char *);
-#endif /* PR_FS_MATCH */
-#endif /* HAVE_REGEX_H && HAVE_REGCOMP */
+#endif /* PR_USE_REGEX and PR_FS_MATCH */
 
 void pr_fs_clear_cache(void);
 int pr_fs_copy_file(const char *, const char *);
@@ -334,6 +326,12 @@ int pr_fs_get_usable_fd(int);
   defined(HAVE_SYS_VFS_H)
 off_t pr_fs_getsize(char *);
 #endif
+
+/* Unlike pr_fs_getsize(), this function is always present, and is also
+ * capable of returning an error when there is a problem checking the
+ * filesystem stats.
+ */
+int pr_fs_getsize2(char *, off_t *);
 
 /* For internal use only. */
 int init_fs(void);

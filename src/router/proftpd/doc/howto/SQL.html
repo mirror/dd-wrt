@@ -1,4 +1,4 @@
-<!-- $Id: SQL.html,v 1.14 2010/02/15 23:28:59 castaglia Exp $ -->
+<!-- $Id: SQL.html,v 1.15 2011/03/16 19:07:48 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/SQL.html,v $ -->
 
 <html>
@@ -265,10 +265,8 @@ The key configuration directives for <code>mod_sql</code> are:
   <li><code>SQLGroupInfo</code>, for modifying the names of the columns using
     which the module will lookup values from the group table
 </ul>
-A list of <code>mod_sql</code> configuration directives can be found here:
-<pre>
-  <a href="http://www.proftpd.org/doc/contrib/mod_sql.html">http://www.proftpd.org/doc/contrib/mod_sql.html</a>
-</pre>
+A list of <code>mod_sql</code> configuration directives can be found
+<a href="../contrib/mod_sql.html">here</a>.
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
@@ -435,11 +433,16 @@ Or if you're using Python, you might try the following:
   password = "{md5}" + base64.b64encode(md5.new("password").digest())
 </pre>
 
+<p>
+If this prefixed format is not sufficient for your needs, you can also
+use the <a href="../contrib/mod_sql_passwd.html"><code>mod_sql_passwd</code></a>
+module, which knows how to handle "raw" MD5, SHA1, and other encoding schemes.
+
 <p><a name="SQLScoreboardError"></a>
-<font color=red>Question</font>: Why do I see &quot;error deleting scoreboard entry: Invalid argument&quot?<br>
+<font color=red>Question</font>: Why do I see &quot;error deleting scoreboard entry: Invalid argument&quot;?<br>
 <font color=blue>Answer</font>: This log message almost always denotes use
 of <code>mod_sql</code>, and a problem in the <code>mod_sql</code>
-configuration.  To debug the problem, define an <a href="http://www.proftpd.org/doc/contrib/mod_sql.html#SQLLogFile"><code>SQLLogFile</code></a>
+configuration.  To debug the problem, define an <a href="../contrib/mod_sql.html#SQLLogFile"><code>SQLLogFile</code></a>
 (making sure the path is <b>not</b> in a world-writable directory), to which
 <code>mod_sql</code> will write debugging information.
 
@@ -537,7 +540,7 @@ compiled with SSL support.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2010/02/15 23:28:59 $</i><br>
+Last Updated: <i>$Date: 2011/03/16 19:07:48 $</i><br>
 <hr>
 
 </body>

@@ -927,7 +927,7 @@ msgstr "전송 중단. %s"
 
 #: ../src/data.c:898
 #, c-format
-msgid "%s: data tranfer in progress"
+msgid "%s: data transfer in progress"
 msgstr "%s: 데이터 전송 진행"
 
 #: ../src/data.c:941 ../src/main.c:821

@@ -1,4 +1,4 @@
-<!-- $Id: mod_radius.html,v 1.5 2007/02/20 22:01:40 castaglia Exp $ -->
+<!-- $Id: mod_radius.html,v 1.7 2011/08/04 22:34:30 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_radius.html,v $ -->
 
 <html>
@@ -208,7 +208,8 @@ a <code>&lt;Global&gt;</code> context.
 <p>
 The <code>RadiusNASIdentifier</code> directive configures an NAS
 <em>identifier</em> string that will be in the constructed RADIUS packets.
-By default, the NAS identifier is &quot;ftp&quot;.
+By default, the NAS identifier is &quot;ftp&quot; for FTP sessions, and
+&quot;ssh2&quot; for SFTP/SCP sessions (via the <code>mod_sftp</code> module).
 
 <p>
 Example:
@@ -445,15 +446,15 @@ by <code>mod_radius</code>:
   </li>
   <br>
 
-  <li><b>NAS-Identifier</b>: Always &quot;ftp&quot;<br>
+  <li><b>NAS-Identifier</b>: &quot;ftp&quot; (or &quot;ssh2&quot; for SFTP/SCP sessions)<br>
   </li>
   <br>
 
-  <li><b>NAS-IP-Address</b>: IP address of FTP server<br>
+  <li><b>NAS-IP-Address</b> <i>or</i> <b>NAS-IPv6-Address</b>: IP address of server<br>
   </li>
   <br>
 
-  <li><b>NAS-Port</b>: Port of FTP server<br>
+  <li><b>NAS-Port</b>: Port of server<br>
   </li>
   <br>
 
@@ -461,7 +462,7 @@ by <code>mod_radius</code>:
   </li>
   <br>
 
-  <li><b>Calling-Station-Id</b>: IP address of connecting FTP client<br>
+  <li><b>Calling-Station-Id</b>: IP address of connecting client<br>
   </li>
   <br>
 </ul>
@@ -481,12 +482,12 @@ the normal steps for using third-party modules in proftpd:
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2007/02/20 22:01:40 $</i><br>
+Last Updated: <i>$Date: 2011/08/04 22:34:30 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2005 TJ Saunders<br>
+&copy; Copyright 2000-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

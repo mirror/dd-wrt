@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2009 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD xferlog(5) logging support.
- * $Id: xferlog.c,v 1.6 2009/11/05 17:46:55 castaglia Exp $
+ * $Id: xferlog.c,v 1.11 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -63,15 +63,19 @@ int xferlog_open(const char *path) {
 
 int xferlog_write(long xfertime, const char *remhost, off_t fsize, char *fname,
     char xfertype, char direction, char access_mode, char *user,
-    char abort_flag) {
+    char abort_flag, const char *action_flags) {
   const char *xfer_proto;
   char buf[LOGBUFFER_SIZE] = {'\0'}, fbuf[LOGBUFFER_SIZE] = {'\0'};
-  int have_ident = FALSE;
+  int have_ident = FALSE, len;
   char *rfc1413_ident = NULL;
   register unsigned int i = 0;
 
-  if (xferlogfd == -1 || !remhost || !user || !fname)
+  if (xferlogfd == -1 ||
+      remhost == NULL ||
+      user == NULL ||
+      fname == NULL) {
     return 0;
+  }
 
   for (i = 0; (i + 1 < sizeof(fbuf)) && fname[i] != '\0'; i++) {
     fbuf[i] = (isspace((int) fname[i]) || iscntrl((int) fname[i])) ? '_' :
@@ -87,7 +91,7 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize, char *fname,
      * "*", since "*" is to be logged in the xferlog, as per the doc, when
      * the authenticated user ID is not available.
      */
-    if (strcmp(rfc1413_ident, "UNKNOWN") == 0)
+    if (strncmp(rfc1413_ident, "UNKNOWN", 8) == 0)
       rfc1413_ident = "*";
 
   } else {
@@ -99,14 +103,15 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize, char *fname,
 
   xfer_proto = pr_session_get_protocol(0);
 
-  snprintf(buf, sizeof(buf),
-    "%s %ld %s %" PR_LU " %s %c _ %c %c %s %s %c %s %c\n",
+  len = snprintf(buf, sizeof(buf),
+    "%s %ld %s %" PR_LU " %s %c %s %c %c %s %s %c %s %c\n",
       pr_strtime(time(NULL)),
       xfertime,
       remhost,
       (pr_off_t) fsize,
       fbuf,
       xfertype,
+      action_flags,
       direction,
       access_mode,
       user,
@@ -117,5 +122,6 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize, char *fname,
 
   buf[sizeof(buf)-1] = '\0';
 
-  return write(xferlogfd, buf, strlen(buf));
+  pr_log_event_generate(PR_LOG_TYPE_XFERLOG, xferlogfd, -1, buf, len);
+  return write(xferlogfd, buf, len);
 }

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2003-2010 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, the copyright holders give permission to link
  * this program with OpenSSL and distribute the resulting executable without
@@ -31,7 +31,7 @@
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -L$(top_srcdir)/lib/libcap -lcap$
  * $Directories: $(top_srcdir)/lib/libcap$
- * $Id: mod_cap.c,v 1.21.2.1 2010/10/07 00:10:43 castaglia Exp $
+ * $Id: mod_cap.c,v 1.27 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include <stdio.h>
@@ -55,7 +55,7 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_CAP_VERSION	"mod_cap/1.0"
+#define MOD_CAP_VERSION		"mod_cap/1.1"
 
 static cap_t capabilities = 0;
 static unsigned char have_capabilities = FALSE;
@@ -68,6 +68,8 @@ static unsigned int cap_flags = 0;
 #define CAP_USE_SETUID		0x0008
 #define CAP_USE_AUDIT_WRITE	0x0010
 #define CAP_USE_FOWNER		0x0020
+
+module cap_module;
 
 /* log current capabilities */
 static void lp_debug(void) {
@@ -200,6 +202,11 @@ MODRET set_caps(cmd_rec *cmd) {
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = flags;
 
+  /* Make sure to set this flag, so that mod_ifsession handles these
+   * config_recs properly.
+   */
+  c->flags |= CF_MULTI;
+
   return PR_HANDLED(cmd);
 }
 
@@ -230,9 +237,36 @@ MODRET set_capengine(cmd_rec *cmd) {
  */
 MODRET cap_post_pass(cmd_rec *cmd) {
   int res;
+  config_rec *c;
 
   if (!use_capabilities)
     return PR_DECLINED(cmd);
+
+  /* Check for which specific capabilities to include/exclude. */
+  c = find_config(main_server->conf, CONF_PARAM, "CapabilitiesSet", FALSE);
+  if (c != NULL) {
+    cap_flags |= *((unsigned int *) c->argv[0]);
+
+    if (!(cap_flags & CAP_USE_CHOWN)) {
+      pr_log_debug(DEBUG3, MOD_CAP_VERSION
+        ": removing CAP_CHOWN capability");
+    }
+
+    if (cap_flags & CAP_USE_DAC_OVERRIDE) {
+      pr_log_debug(DEBUG3, MOD_CAP_VERSION
+        ": adding CAP_DAC_OVERRIDE capability"); 
+    }
+
+    if (cap_flags & CAP_USE_DAC_READ_SEARCH) {
+      pr_log_debug(DEBUG3, MOD_CAP_VERSION
+        ": adding CAP_DAC_READ_SEARCH capability");
+    }
+
+    if (cap_flags & CAP_USE_FOWNER) {
+      pr_log_debug(DEBUG3, MOD_CAP_VERSION
+        ": adding CAP_FOWNER capability");
+    }
+  }
 
   pr_signals_block();
 
@@ -273,14 +307,20 @@ MODRET cap_post_pass(cmd_rec *cmd) {
     res = lp_add_cap(CAP_NET_BIND_SERVICE, CAP_PERMITTED);
 
   /* Add the CAP_CHOWN capability, unless explicitly configured not to. */
-  if (res != -1 && (cap_flags & CAP_USE_CHOWN))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_CHOWN)) {
     res = lp_add_cap(CAP_CHOWN, CAP_PERMITTED);
+  }
 
-  if (res != -1 && (cap_flags & CAP_USE_DAC_OVERRIDE))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_DAC_OVERRIDE)) {
     res = lp_add_cap(CAP_DAC_OVERRIDE, CAP_PERMITTED);
+  }
 
-  if (res != -1 && (cap_flags & CAP_USE_DAC_READ_SEARCH))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_DAC_READ_SEARCH)) {
     res = lp_add_cap(CAP_DAC_READ_SEARCH, CAP_PERMITTED);
+  }
 
   if (res != -1 && (cap_flags & CAP_USE_SETUID)) {
     res = lp_add_cap(CAP_SETUID, CAP_PERMITTED);
@@ -290,12 +330,16 @@ MODRET cap_post_pass(cmd_rec *cmd) {
   }
 
 #ifdef CAP_AUDIT_WRITE
-  if (res != -1 && (cap_flags & CAP_USE_AUDIT_WRITE))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_AUDIT_WRITE)) {
     res = lp_add_cap(CAP_AUDIT_WRITE, CAP_PERMITTED);
+  }
 #endif
 
-  if (res != -1 && (cap_flags & CAP_USE_FOWNER))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_FOWNER)) {
     res = lp_add_cap(CAP_FOWNER, CAP_PERMITTED);
+  }
 
   if (res != -1)
     res = lp_set_cap();
@@ -304,7 +348,7 @@ MODRET cap_post_pass(cmd_rec *cmd) {
     pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid: %s", strerror(errno));
     lp_free_cap();
     pr_signals_unblock();
-    end_login(1);
+    pr_session_disconnect(&cap_module, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
   }
   pr_signals_unblock();
 
@@ -317,16 +361,23 @@ MODRET cap_post_pass(cmd_rec *cmd) {
     res = lp_add_cap(CAP_NET_BIND_SERVICE, CAP_EFFECTIVE);
 
   /* Add the CAP_CHOWN capability, unless explicitly configured not to. */
-  if (res != -1 && (cap_flags & CAP_USE_CHOWN))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_CHOWN)) {
     res = lp_add_cap(CAP_CHOWN, CAP_EFFECTIVE);
+  }
 
-  if (res != -1 && (cap_flags & CAP_USE_DAC_OVERRIDE))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_DAC_OVERRIDE)) {
     res = lp_add_cap(CAP_DAC_OVERRIDE, CAP_EFFECTIVE);
+  }
 
-  if (res != -1 && (cap_flags & CAP_USE_DAC_READ_SEARCH))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_DAC_READ_SEARCH)) {
     res = lp_add_cap(CAP_DAC_READ_SEARCH, CAP_EFFECTIVE);
+  }
 
-  if (res != -1 && (cap_flags & CAP_USE_SETUID)) {
+  if (res != -1
+      && (cap_flags & CAP_USE_SETUID)) {
     res = lp_add_cap(CAP_SETUID, CAP_EFFECTIVE);
     if (res != -1) {
       res = lp_add_cap(CAP_SETGID, CAP_EFFECTIVE);
@@ -334,12 +385,16 @@ MODRET cap_post_pass(cmd_rec *cmd) {
   }
 
 #ifdef CAP_AUDIT_WRITE
-  if (res != -1 && (cap_flags & CAP_USE_AUDIT_WRITE))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_AUDIT_WRITE)) {
     res = lp_add_cap(CAP_AUDIT_WRITE, CAP_EFFECTIVE);
+  }
 #endif
 
-  if (res != -1 && (cap_flags & CAP_USE_FOWNER))
+  if (res != -1 &&
+      (cap_flags & CAP_USE_FOWNER)) {
     res = lp_add_cap(CAP_FOWNER, CAP_EFFECTIVE);
+  }
 
   if (res != -1)
     res = lp_set_cap();
@@ -378,44 +433,18 @@ static int cap_sess_init(void) {
     }
   }
 
-  /* Check for which specific capabilities to include/exclude. */
   if (use_capabilities) {
     int use_setuid = FALSE;
-    config_rec *c;
 
-    c = find_config(main_server->conf, CONF_PARAM, "CapabilitiesSet", FALSE);
-    if (c != NULL) {
-      cap_flags = *((unsigned int *) c->argv[0]);
-
-      if (!(cap_flags & CAP_USE_CHOWN)) {
-        pr_log_debug(DEBUG3, MOD_CAP_VERSION
-          ": removing CAP_CHOWN capability");
-      }
-
-      if (cap_flags & CAP_USE_DAC_OVERRIDE) {
-        pr_log_debug(DEBUG3, MOD_CAP_VERSION
-          ": adding CAP_DAC_OVERRIDE capability"); 
-      }
-
-      if (cap_flags & CAP_USE_DAC_READ_SEARCH) {
-        pr_log_debug(DEBUG3, MOD_CAP_VERSION
-          ": adding CAP_DAC_READ_SEARCH capability");
-      }
-
-      if (cap_flags & CAP_USE_FOWNER) {
-        pr_log_debug(DEBUG3, MOD_CAP_VERSION
-          ": adding CAP_FOWNER capability");
-      }
-    }
-
-    /* We also need to check for things which want to revoke root privs
-     * altogether: mod_exec, mod_sftp, and the RootRevoke directive.
-     * Revoking root privs completely requires the SETUID/SETGID
-     * capabilities.
+    /* We need to check for things which want to revoke root privs altogether:
+     * mod_exec, mod_sftp, and the RootRevoke directive.  Revoking root privs
+     * completely requires the SETUID/SETGID capabilities.
      */
 
     if (use_setuid == FALSE &&
         pr_module_exists("mod_sftp.c")) {
+      config_rec *c;
+
       c = find_config(main_server->conf, CONF_PARAM, "SFTPEngine", FALSE);
       if (c &&
           *((int *) c->argv[0]) == TRUE) {
@@ -425,6 +454,8 @@ static int cap_sess_init(void) {
 
     if (use_setuid == FALSE &&
         pr_module_exists("mod_exec.c")) {
+      config_rec *c;
+
       c = find_config(main_server->conf, CONF_PARAM, "ExecEngine", FALSE);
       if (c &&
           *((unsigned char *) c->argv[0]) == TRUE) {
@@ -433,6 +464,8 @@ static int cap_sess_init(void) {
     }
 
     if (use_setuid == FALSE) {
+      config_rec *c;
+
       c = find_config(main_server->conf, CONF_PARAM, "RootRevoke", FALSE);
       if (c &&
           *((unsigned char *) c->argv[0]) == TRUE) {
@@ -466,15 +499,18 @@ static int cap_module_init(void) {
    * even if it may not work.
    */
   res = cap_get_proc();
-  if (res == NULL && errno == ENOSYS) {
+  if (res == NULL &&
+      errno == ENOSYS) {
     pr_log_debug(DEBUG2, MOD_CAP_VERSION
-              ": kernel does not support capabilities, disabling module");
+      ": kernel does not support capabilities, disabling module");
     use_capabilities = FALSE;
   }
 
-  if (res && cap_free(res) < 0)
+  if (res != 0 &&
+      cap_free(res) < 0) {
     pr_log_pri(PR_LOG_NOTICE, MOD_CAP_VERSION
       ": error freeing cap at line %d: %s", __LINE__ - 2, strerror(errno));
+  }
 
   return 0;
 }

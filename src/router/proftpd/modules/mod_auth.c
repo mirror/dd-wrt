@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,15 +25,11 @@
  */
 
 /* Authentication module for ProFTPD
- * $Id: mod_auth.c,v 1.273.2.4 2011/02/21 02:36:38 castaglia Exp $
+ * $Id: mod_auth.c,v 1.295 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
-
-#ifdef HAVE_REGEX_H
-# include <regex.h>
-#endif /* HAVE_REGEX_H */
 
 extern pid_t mpid;
 
@@ -70,10 +66,6 @@ static int auth_cmd_chk_cb(cmd_rec *cmd) {
   return TRUE;
 }
 
-/* As for 1.2.0, timer callbacks are now non-reentrant, so it's
- * safe to call session_exit().
- */
-
 static int auth_login_timeout_cb(CALLBACK_FRAME) {
   pr_response_send_async(R_421,
     _("Login timeout (%d seconds): closing control connection"), TimeoutLogin);
@@ -83,10 +75,12 @@ static int auth_login_timeout_cb(CALLBACK_FRAME) {
    * TimeoutLogin has been exceeded to the log here, in addition to the
    * scheduled session exit message.
    */
-  pr_log_pri(PR_LOG_NOTICE, "Login timeout exceeded, disconnected");
+  pr_log_pri(PR_LOG_NOTICE, "%s", "Login timeout exceeded, disconnected");
   pr_event_generate("core.timeout-login", NULL);
 
-  session_exit(PR_LOG_NOTICE, "Session timed out, disconnected", 0, NULL);
+  pr_log_pri(PR_LOG_NOTICE, "%s", "Session timed out, disconnected");
+  pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_TIMEOUT,
+    "TimeoutLogin");
 
   /* Do not restart the timer (should never be reached). */
   return 0;
@@ -98,7 +92,9 @@ static int auth_session_timeout_cb(CALLBACK_FRAME) {
     _("Session Timeout (%u seconds): closing control connection"),
     TimeoutSession);
 
-  session_exit(PR_LOG_NOTICE, "FTP session timed out, disconnected", 0, NULL);
+  pr_log_pri(PR_LOG_NOTICE, "%s", "FTP session timed out, disconnected");
+  pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_TIMEOUT,
+    "TimeoutSession");
 
   /* no need to restart the timer -- session's over */
   return 0;
@@ -202,10 +198,10 @@ static int auth_sess_init(void) {
 static int auth_init(void) {
 
   /* Add the commands handled by this module to the HELP list. */ 
-  pr_help_add(C_USER, "<sp> username", TRUE);
-  pr_help_add(C_PASS, "<sp> password", TRUE);
-  pr_help_add(C_ACCT, "is not implemented", FALSE);
-  pr_help_add(C_REIN, "is not implemented", FALSE);
+  pr_help_add(C_USER, _("<sp> username"), TRUE);
+  pr_help_add(C_PASS, _("<sp> password"), TRUE);
+  pr_help_add(C_ACCT, _("is not implemented"), FALSE);
+  pr_help_add(C_REIN, _("is not implemented"), FALSE);
 
   /* By default, enable auth checking */
   set_auth_check(auth_cmd_chk_cb);
@@ -259,13 +255,19 @@ MODRET auth_err_pass(cmd_rec *cmd) {
 }
 
 MODRET auth_log_pass(cmd_rec *cmd) {
+  size_t passwd_len;
 
   /* Only log, to the syslog, that the login has succeeded here, where we
    * know that the login has definitely succeeded.
    */
-
   pr_log_auth(PR_LOG_NOTICE, "%s %s: Login successful.",
     (session.anon_config != NULL) ? "ANON" : C_USER, session.user);
+
+  /* And scrub the memory holding the password sent by the client, for
+   * safety/security.
+   */
+  passwd_len = strlen(cmd->arg);
+  pr_memscrub(cmd->arg, passwd_len);
 
   return PR_DECLINED(cmd);
 }
@@ -275,11 +277,65 @@ MODRET auth_post_pass(cmd_rec *cmd) {
   char *grantmsg = NULL, *user;
   unsigned int ctxt_precedence = 0;
   unsigned char have_user_timeout, have_group_timeout, have_class_timeout,
-    have_all_timeout, *privsdrop = NULL;
+    have_all_timeout, *privsdrop = NULL, *authenticated;
   struct stat st;
+
+  /* Was there a precending USER command? Was the client successfully
+   * authenticated?
+   */
+  authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
 
   /* Clear the list of auth-only modules. */
   pr_auth_clear_auth_only_modules();
+
+  if (authenticated != NULL &&
+      *authenticated == TRUE) {
+
+    /* At this point, we can look up the Protocols config if the client
+     * has been authenticated, which may have been tweaked via mod_ifsession's
+     * user/group/class-specific sections.
+     */
+    c = find_config(main_server->conf, CONF_PARAM, "Protocols", FALSE);
+    if (c) {
+      register unsigned int i;
+      array_header *protocols;
+      char **elts;
+      const char *protocol;
+
+      protocols = c->argv[0];
+      elts = protocols->elts;
+
+      protocol = pr_session_get_protocol(PR_SESS_PROTO_FL_LOGOUT);
+
+      /* We only want to check for 'ftp' in the configured Protocols list
+       * if a) a RFC2228 mechanism (e.g. SSL or GSS) is not in use, and
+       *    b) an SSH protocol is not in use.
+       */
+      if (session.rfc2228_mech == NULL &&
+          strncmp(protocol, "SSH2", 5) != 0) {
+        int allow_ftp = FALSE;
+
+        for (i = 0; i < protocols->nelts; i++) {
+          char *proto;
+
+          proto = elts[i];
+          if (proto != NULL) {
+            if (strncasecmp(proto, "ftp", 4) == 0) {
+              allow_ftp = TRUE;
+              break;
+            }
+          }
+        }
+
+        if (!allow_ftp) {
+          pr_log_debug(DEBUG0, "%s", "ftp protocol denied by Protocols config");
+          pr_response_send(R_530, "%s", _("Login incorrect."));
+          pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+            "Denied by Protocols setting");
+        }
+      }
+    }
+  }
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
 
@@ -304,7 +360,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
     pr_signals_handle();
 
     if (c->argc == 3) {
-      if (strcmp(c->argv[1], "user") == 0) {
+      if (strncmp(c->argv[1], "user", 5) == 0) {
         if (pr_expr_eval_user_or((char **) &c->argv[2]) == TRUE) {
 
           if (*((unsigned int *) c->argv[1]) > ctxt_precedence) {
@@ -319,7 +375,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
           }
         }
 
-      } else if (strcmp(c->argv[1], "group") == 0) {
+      } else if (strncmp(c->argv[1], "group", 6) == 0) {
         if (pr_expr_eval_group_and((char **) &c->argv[2]) == TRUE) {
 
           if (*((unsigned int *) c->argv[1]) > ctxt_precedence) {
@@ -334,7 +390,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
           }
         }
 
-      } else if (strcmp(c->argv[1], "class") == 0) {
+      } else if (strncmp(c->argv[1], "class", 6) == 0) {
         if (session.class &&
             strcmp(session.class->cls_name, c->argv[2]) == 0) {
 
@@ -585,10 +641,15 @@ static char *get_default_root(pool *p) {
   }
 
   if (dir) {
-    /* Check for any expandable variables. */
-    dir = path_subst_uservar(p, &dir);
+    char *new_dir;
 
-    if (strcmp(dir, "/") == 0) {
+    /* Check for any expandable variables. */
+    new_dir = path_subst_uservar(p, &dir);
+    if (new_dir != NULL) {
+      dir = new_dir;
+    }
+
+    if (strncmp(dir, "/", 2) == 0) {
       dir = NULL;
 
     } else {
@@ -615,7 +676,7 @@ static char *get_default_root(pool *p) {
         char interp_dir[PR_TUNABLE_PATH_MAX + 1];
 
         memset(interp_dir, '\0', sizeof(interp_dir));
-        ret = pr_fs_interpolate(dir, interp_dir, sizeof(interp_dir)-1); 
+        (void) pr_fs_interpolate(dir, interp_dir, sizeof(interp_dir)-1); 
 
         pr_log_pri(PR_LOG_NOTICE,
           "notice: unable to use '%s' [resolved to '%s']: %s", dir, interp_dir,
@@ -770,17 +831,17 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
     /* Check for configured AnonRejectPasswords regex here, and fail the login
      * if the given password matches the regex.
      */
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
     if ((tmpc = find_config(c->subset, CONF_PARAM, "AnonRejectPasswords",
         FALSE)) != NULL) {
       int re_res;
-      regex_t *pw_regex = (regex_t *) tmpc->argv[0];
+      pr_regex_t *pw_regex = (pr_regex_t *) tmpc->argv[0];
 
       if (pw_regex && pass &&
-          ((re_res = regexec(pw_regex, pass, 0, NULL, 0)) == 0)) {
+          ((re_res = pr_regexp_exec(pw_regex, pass, 0, NULL, 0, 0, 0)) == 0)) {
         char errstr[200] = {'\0'};
 
-        regerror(re_res, pw_regex, errstr, sizeof(errstr));
+        pr_regexp_error(re_res, pw_regex, errstr, sizeof(errstr));
         pr_log_auth(PR_LOG_NOTICE, "ANON %s: AnonRejectPasswords denies login",
           origuser);
  
@@ -797,7 +858,8 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
     }
   }
 
-  if (!c && !aclp) {
+  if (c == NULL &&
+      aclp == 0) {
     pr_log_auth(PR_LOG_NOTICE,
       "USER %s (Login failed): Limit access denies login", origuser);
     goto auth_failure;
@@ -1024,8 +1086,8 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
 
       pr_log_pri(PR_LOG_ERR, "changing from %s back to daemon uid/gid: %s",
             session.user, strerror(errno));
-
-      end_login(1);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_BY_APPLICATION,
+        NULL);
     }
 #endif /* HAVE_GETEUID */
 
@@ -1208,7 +1270,7 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
     if (pr_auth_chroot(defroot) == -1) {
       pr_log_pri(PR_LOG_ERR, "error: unable to set default root directory");
       pr_response_send(R_530, _("Login incorrect."));
-      end_login(1);
+      pr_session_end(0);
     }
 
     /* Re-calc the new cwd based on this root dir.  If not applicable
@@ -1232,7 +1294,7 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
       pr_auth_chroot(session.chroot_path) == -1) {
     pr_log_pri(PR_LOG_ERR, "error: unable to set anonymous privileges");
     pr_response_send(R_530, _("Login incorrect."));
-    end_login(1);
+    pr_session_end(0);
   }
 
   /* new in 1.1.x, I gave in and we don't give up root permanently..
@@ -1261,17 +1323,17 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
     pr_log_pri(PR_LOG_ERR, "error: %s setregid() or setreuid(): %s",
       session.user, strerror(errno));
     pr_response_send(R_530, _("Login incorrect."));
-    end_login(1);
+    pr_session_end(0);
   }
 #endif
 
   /* If the home directory is NULL or "", reject the login. */
   if (pw->pw_dir == NULL ||
-      strcmp(pw->pw_dir, "") == 0) {
+      strncmp(pw->pw_dir, "", 1) == 0) {
     pr_log_pri(PR_LOG_ERR, "error: user %s home directory is NULL or \"\"",
       session.user);
     pr_response_send(R_530, _("Login incorrect."));
-    end_login(1);
+    pr_session_end(0);
   }
 
   {
@@ -1307,7 +1369,7 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
         pr_log_pri(PR_LOG_ERR, "%s chdir(\"/\"): %s", session.user,
           strerror(errno));
         pr_response_send(R_530, _("Login incorrect."));
-        end_login(1);
+        pr_session_end(0);
       }
 
     } else if (defchdir) {
@@ -1322,7 +1384,7 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
         pr_log_pri(PR_LOG_ERR, "%s chdir(\"%s\"): %s", session.user,
           session.cwd, strerror(errno));
         pr_response_send(R_530, _("Login incorrect."));
-        end_login(1);
+        pr_session_end(0);
       }
 
     } else {
@@ -1333,7 +1395,7 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
       pr_log_pri(PR_LOG_ERR, "%s chdir(\"%s\"): %s", session.user, session.cwd,
         strerror(errno));
       pr_response_send(R_530, _("Login incorrect."));
-      end_login(1);
+      pr_session_end(0);
     }
   }
 
@@ -1344,13 +1406,14 @@ static int setup_env(pool *p, cmd_rec *cmd, char *user, char *pass) {
   dir_check_full(p, cmd, G_NONE, session.cwd, NULL);
 
   if (c) {
-    if (!session.hide_password)
+    if (!session.hide_password) {
       session.proc_prefix = pstrcat(session.pool, session.c->remote_name,
         ": anonymous/", pass, NULL);
 
-    else
+    } else {
       session.proc_prefix = pstrcat(session.pool, session.c->remote_name,
         ": anonymous", NULL);
+    }
 
     session.sf_flags = SF_ANON;
 
@@ -1459,7 +1522,7 @@ static int auth_scan_scoreboard(void) {
         hcur++;
 
       /* Only count up authenticated clients, as per the documentation. */
-      if (strcmp(score->sce_user, "(none)") == 0)
+      if (strncmp(score->sce_user, "(none)", 7) == 0)
         continue;
 
       /* Note: the class member of the scoreboard entry will never be
@@ -1522,7 +1585,8 @@ static int auth_scan_scoreboard(void) {
 
       pr_log_auth(PR_LOG_NOTICE,
         "Connection refused (MaxConnectionsPerHost %u)", *max);
-      end_login(1);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxConnectionsPerHost");
     }
   }
 
@@ -1573,7 +1637,7 @@ static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
               cur = 1;
 
           /* Only count authenticated clients, as per the documentation. */
-          if (strcmp(score->sce_user, "(none)") == 0)
+          if (strncmp(score->sce_user, "(none)", 7) == 0)
             continue;
 
           cur++;
@@ -1670,7 +1734,8 @@ static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
       pr_log_auth(PR_LOG_NOTICE,
         "Connection refused (max clients %u per class %s).", *max,
         session.class->cls_name);
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxClientsPerClass");
     }
 
     break;
@@ -1695,7 +1760,8 @@ static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
         NULL));
       pr_log_auth(PR_LOG_NOTICE,
         "Connection refused (max clients per host %u).", *max);
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxClientsPerHost");
     }
   }
 
@@ -1719,7 +1785,8 @@ static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
         NULL));
       pr_log_auth(PR_LOG_NOTICE,
         "Connection refused (max clients per user %u).", *max);
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxClientsPerUser");
     }
   }
 
@@ -1741,7 +1808,8 @@ static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
       pr_response_send(R_530, "%s", sreplace(cmd->tmp_pool, maxstr, "%m", maxn,
         NULL));
       pr_log_auth(PR_LOG_NOTICE, "Connection refused (max clients %u).", *max);
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxClients");
     }
   }
 
@@ -1764,7 +1832,8 @@ static int auth_count_scoreboard(cmd_rec *cmd, char *user) {
         NULL));
       pr_log_auth(PR_LOG_NOTICE, "Connection refused (max hosts per host %u).",
         *max);
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxHostsPerUser");
     }
   }
 
@@ -1855,7 +1924,7 @@ MODRET auth_user(cmd_rec *cmd) {
         pr_response_send(R_530, _("Login incorrect."));
       }
 
-      end_login(0);
+      pr_session_end(0);
     }
 
     aclp = login_check_limits(main_server->conf, FALSE, TRUE, &i);
@@ -1883,11 +1952,13 @@ MODRET auth_user(cmd_rec *cmd) {
           pr_response_send(R_530, _("Login incorrect."));
         }
 
-        end_login(0);
+        pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+          "Denied by <Limit LOGIN>");
       }
     }
 
-    if (!c && !aclp) {
+    if (c == NULL &&
+        aclp == 0) {
       (void) pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
       (void) pr_table_remove(session.notes, "mod_auth.anon-passwd", NULL);
 
@@ -1901,7 +1972,8 @@ MODRET auth_user(cmd_rec *cmd) {
         pr_response_send(R_530, "%s", _("Login incorrect."));
       }
 
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by <Limit LOGIN>");
     }
   }
 
@@ -2062,7 +2134,8 @@ MODRET auth_pass(cmd_rec *cmd) {
       /* Generate an event about this limit being exceeded. */
       pr_event_generate("mod_auth.max-login-attempts", session.c);
 
-      end_login(0);
+      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "Denied by MaxLoginAttempts");
     }
 
     return PR_ERROR_MSG(cmd, R_530, denymsg ? denymsg : _("Login incorrect."));
@@ -2127,28 +2200,27 @@ MODRET set_anonrequirepassword(cmd_rec *cmd) {
 }
 
 MODRET set_anonrejectpasswords(cmd_rec *cmd) {
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  config_rec *c = NULL;
-  regex_t *preg = NULL;
+#ifdef PR_USE_REGEX
+  pr_regex_t *pre = NULL;
   int res;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ANON);
 
-  preg = pr_regexp_alloc();
+  pre = pr_regexp_alloc(&auth_module);
 
-  res = regcomp(preg, cmd->argv[1], REG_EXTENDED|REG_NOSUB);
+  res = pr_regexp_compile(pre, cmd->argv[1], REG_EXTENDED|REG_NOSUB);
   if (res != 0) {
     char errstr[200] = {'\0'};
 
-    regerror(res, preg, errstr, 200);
-    pr_regexp_free(preg);
+    pr_regexp_error(res, pre, errstr, 200);
+    pr_regexp_free(NULL, pre);
 
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "Unable to compile regex '",
       cmd->argv[1], "': ", errstr, NULL));
   }
 
-  c = add_config_param(cmd->argv[0], 1, (void *) preg);
+  (void) add_config_param(cmd->argv[0], 1, (void *) pre);
   return PR_HANDLED(cmd);
 
 #else
@@ -2201,7 +2273,7 @@ MODRET set_createhome(cmd_rec *cmd) {
   char *skel_path = NULL;
   config_rec *c = NULL;
   uid_t cuid = 0;
-  gid_t cgid = 0;
+  gid_t cgid = 0, hgid = -1;
 
   if (cmd->argc-1 < 1)
     CONF_ERROR(cmd, "wrong number of parameters");
@@ -2285,7 +2357,7 @@ MODRET set_createhome(cmd_rec *cmd) {
       } else if (strcasecmp(cmd->argv[i], "uid") == 0) {
 
         /* Check for a "~" parameter. */
-        if (strcmp(cmd->argv[i+1], "~") != 0) {
+        if (strncmp(cmd->argv[i+1], "~", 2) != 0) {
           char *tmp = NULL;
           uid_t uid;
 
@@ -2309,7 +2381,7 @@ MODRET set_createhome(cmd_rec *cmd) {
       } else if (strcasecmp(cmd->argv[i], "gid") == 0) {
 
         /* Check for a "~" parameter. */
-        if (strcmp(cmd->argv[i+1], "~") != 0) {
+        if (strncmp(cmd->argv[i+1], "~", 2) != 0) {
           char *tmp = NULL;
           gid_t gid;
 
@@ -2330,6 +2402,22 @@ MODRET set_createhome(cmd_rec *cmd) {
         /* Move the index past the gid parameter */
         i++;
 
+      } else if (strcasecmp(cmd->argv[i], "homegid") == 0) {
+        char *tmp = NULL;
+        gid_t gid;
+
+        gid = strtol(cmd->argv[++i], &tmp, 10);
+
+        if (tmp && *tmp) {
+          CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad GID parameter: '",
+            cmd->argv[i], "'", NULL));
+        }
+
+        hgid = gid;
+
+        /* Move the index past the homegid parameter */
+        i++;
+
       } else {
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown parameter: '",
           cmd->argv[i], "'", NULL));
@@ -2337,8 +2425,8 @@ MODRET set_createhome(cmd_rec *cmd) {
     }
   }
 
-  c = add_config_param(cmd->argv[0], 6, NULL, NULL, NULL, NULL,
-    NULL, NULL);
+  c = add_config_param(cmd->argv[0], 7, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL);
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
   *((unsigned char *) c->argv[0]) = bool;
@@ -2354,6 +2442,8 @@ MODRET set_createhome(cmd_rec *cmd) {
   *((uid_t *) c->argv[4]) = cuid;
   c->argv[5] = pcalloc(c->pool, sizeof(gid_t));
   *((gid_t *) c->argv[5]) = cgid;
+  c->argv[6] = pcalloc(c->pool, sizeof(gid_t));
+  *((gid_t *) c->argv[6]) = hgid;
  
   return PR_HANDLED(cmd);
 }
@@ -2859,36 +2949,39 @@ MODRET set_timeoutsession(cmd_rec *cmd) {
   /* Set the precedence for this config_rec based on its configuration
    * context.
    */
-  if (ctxt & CONF_GLOBAL)
+  if (ctxt & CONF_GLOBAL) {
     precedence = 1;
 
-  /* these will never appear simultaneously */
-  else if (ctxt & CONF_ROOT || ctxt & CONF_VIRTUAL)
+  /* These will never appear simultaneously */
+  } else if ((ctxt & CONF_ROOT) ||
+             (ctxt & CONF_VIRTUAL)) {
     precedence = 2;
 
-  else if (ctxt & CONF_ANON)
+  } else if (ctxt & CONF_ANON) {
     precedence = 3;
+  }
 
-  if ((seconds = atoi(cmd->argv[1])) < 0) {
+  seconds = atoi(cmd->argv[1]);
+  if (seconds < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
       "seconds must be greater than or equal to 0", NULL));
 
   } else if (seconds == 0) {
-
     /* do nothing */
     return PR_HANDLED(cmd);
   }
 
   if (cmd->argc-1 == 3) {
-    if (!strcmp(cmd->argv[2], "user") ||
-        !strcmp(cmd->argv[2], "group") ||
-        !strcmp(cmd->argv[2], "class")) {
+    if (strncmp(cmd->argv[2], "user", 5) == 0 ||
+        strncmp(cmd->argv[2], "group", 6) == 0 ||
+        strncmp(cmd->argv[2], "class", 6) == 0) {
 
        /* no op */
 
-     } else
+     } else {
        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[0],
          ": unknown classifier used: '", cmd->argv[2], "'", NULL));
+    }
   }
 
   if (cmd->argc-1 == 1) {
@@ -2940,6 +3033,10 @@ MODRET set_timeoutsession(cmd_rec *cmd) {
 
     /* don't forget the terminating NULL */
     *argv = NULL;
+
+  } else {
+    /* Should never reach here. */
+    CONF_ERROR(cmd, "wrong number of parameters");
   }
 
   c->flags |= CF_MERGEDOWN_MULTI;

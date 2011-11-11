@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project and other respective copyright
  * holders give permission to link this program with OpenSSL, and distribute
@@ -23,11 +23,10 @@
  */
 
 /* TransferRate throttling
- * $Id: throttle.c,v 1.5.4.1 2011/03/23 16:22:54 castaglia Exp $
+ * $Id: throttle.c,v 1.11 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
-#include <signal.h>
 
 /* Transfer rate variables */
 static long double xfer_rate_kbps = 0.0, xfer_rate_bps = 0.0;
@@ -97,7 +96,7 @@ void pr_throttle_init(cmd_rec *cmd) {
   config_rec *c = NULL;
   char *xfer_cmd = NULL;
   unsigned char have_user_rate = FALSE, have_group_rate = FALSE,
-    have_class_rate = FALSE, have_all_rate = FALSE;
+    have_class_rate = FALSE;
   unsigned int precedence = 0;
 
   /* Make sure the variables are (re)initialized */
@@ -117,6 +116,8 @@ void pr_throttle_init(cmd_rec *cmd) {
     char **cmdlist = (char **) c->argv[0];
     int matched_cmd = FALSE;
 
+    pr_signals_handle();
+
     /* Does this TransferRate apply to the current command?  Note: this
      * could be made more efficient by using bitmasks rather than string
      * comparisons.
@@ -135,7 +136,7 @@ void pr_throttle_init(cmd_rec *cmd) {
     }
 
     if (c->argc > 4) {
-      if (strcmp(c->argv[4], "user") == 0) {
+      if (strncmp(c->argv[4], "user", 5) == 0) {
 
         if (pr_expr_eval_user_or((char **) &c->argv[5]) == TRUE &&
             *((unsigned int *) c->argv[3]) > precedence) {
@@ -147,10 +148,10 @@ void pr_throttle_init(cmd_rec *cmd) {
           xfer_rate_freebytes = *((off_t *) c->argv[2]);
           have_xfer_rate = TRUE;
           have_user_rate = TRUE;
-          have_group_rate = have_class_rate = have_all_rate = FALSE;
+          have_group_rate = have_class_rate = FALSE;
         }
 
-      } else if (strcmp(c->argv[4], "group") == 0) {
+      } else if (strncmp(c->argv[4], "group", 6) == 0) {
 
         if (pr_expr_eval_group_and((char **) &c->argv[5]) == TRUE &&
             *((unsigned int *) c->argv[3]) > precedence) {
@@ -162,10 +163,10 @@ void pr_throttle_init(cmd_rec *cmd) {
           xfer_rate_freebytes = *((off_t *) c->argv[2]);
           have_xfer_rate = TRUE;
           have_group_rate = TRUE;
-          have_user_rate = have_class_rate = have_all_rate = FALSE;
+          have_user_rate = have_class_rate = FALSE;
         }
 
-      } else if (strcmp(c->argv[4], "class") == 0) {
+      } else if (strncmp(c->argv[4], "class", 6) == 0) {
 
         if (pr_expr_eval_class_or((char **) &c->argv[5]) == TRUE &&
           *((unsigned int *) c->argv[3]) > precedence) {
@@ -177,7 +178,7 @@ void pr_throttle_init(cmd_rec *cmd) {
           xfer_rate_freebytes = *((off_t *) c->argv[2]);
           have_xfer_rate = TRUE;
           have_class_rate = TRUE;
-          have_user_rate = have_group_rate = have_all_rate = FALSE;
+          have_user_rate = have_group_rate = FALSE;
         }
       }
 
@@ -191,7 +192,6 @@ void pr_throttle_init(cmd_rec *cmd) {
         xfer_rate_kbps = *((long double *) c->argv[1]);
         xfer_rate_freebytes = *((off_t *) c->argv[2]);
         have_xfer_rate = TRUE;
-        have_all_rate = TRUE;
         have_user_rate = have_group_rate = have_class_rate = FALSE;
       }
     }

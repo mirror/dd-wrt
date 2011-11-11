@@ -1,4 +1,4 @@
-<!-- $Id: CreateHome.html,v 1.4 2008/12/07 03:38:30 castaglia Exp $ -->
+<!-- $Id: CreateHome.html,v 1.6 2010/09/03 18:51:14 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/CreateHome.html,v $ -->
 
 <html>
@@ -41,7 +41,7 @@ configuration directive.
 <b>How to use <code>CreateHome</code></b><br>
 The description for this configuration directive shows its parameters to be:
 <pre>
-  CreateHome off|on [&lt;mode&gt;] [skel &lt;path&gt;] [dirmode &lt;mode&gt;] [uid &lt;uid&gt;] [gid &lt;gid&gt;]
+  CreateHome off|on [&lt;mode&gt;] [skel &lt;path&gt;] [dirmode &lt;mode&gt;] [uid &lt;uid&gt;] [gid &lt;gid&gt;] [homegid &lt;gid&gt;]
 </pre>
 The first parameter is a simple Boolean, enabling or disabling the
 <code>proftpd</code> daemon's run-time support for home directory creation.
@@ -82,7 +82,8 @@ that have been created:
 </pre>
 Notice how <code>/home/users/d</code> and <code>/home/users/d/da</code> have
 <code>dirmode</code> mode of 711 (<code>rwx--x--x</code>) while
-<code>/home/users/d/da/david</code> has the mode of 700 (<code>rwx------</code>).
+<code>/home/users/d/da/david</code> has the mode of 700
+(<code>rwx------</code>).
 
 <p>
 As an added feature, <code>CreateHome</code> also supports the ability to
@@ -99,9 +100,14 @@ and <code>skel</code> parameters.
 
 <p>
 The <code>uid</code> and <code>gid</code> parameters can be used to set the
-ownership of the newly created parent directories, up to be <b>not</b>
-including the home directory.  By default, those created parent directories
+ownership of the newly created parent directories, up to <b>but not
+including</b> the home directory.  By default, those created parent directories
 are owned by root (UID 0 and GID 0).
+
+<p>
+The <code>homegid</code> parameter can be used to specify the group ownerhsip
+of the target home directory itself.  By default, this home directory will
+be owned by the user's primary GID.
 
 <p>
 Here are some examples (from the documentation) to help illustrate how one
@@ -166,7 +172,7 @@ For example:
 
 <p>
 <hr>
-<i>$Date: 2008/12/07 03:38:30 $</i><br>
+<i>$Date: 2010/09/03 18:51:14 $</i><br>
 
 </body>
 </html>

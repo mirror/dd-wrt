@@ -1,4 +1,4 @@
-<!-- $Id: ConfigurationTricks.html,v 1.2 2007/10/11 18:08:35 castaglia Exp $ -->
+<!-- $Id: ConfigurationTricks.html,v 1.4 2011/03/30 22:27:20 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ConfigurationTricks.html,v $ -->
 
 <html>
@@ -59,6 +59,50 @@ directives:
 </ul>
 
 <p>
+<b>Simple Per-User Directory Hashing</b><br>
+Some sites find that they might have large number of users (on the order of
+hundreds to thousands), each with their own home directory.  You might start
+off using a directory layout such as <code>/home/<i>user</i>/</code> for each
+user, but this quickly leads to such a large number of subdirectories in the
+<code>/home/</code>.  With that number of entries, simple commands like
+<code>ls(1)</code> may never complete, or take minutes to hours.
+
+<p>
+To reduce the number of entries within a given directory, such large sites
+often look to use some form of <i>directory hashing</i>.  The simplest form
+is to change from <i>e.g.</i> <code>/home/<i>user</i>/</code> to <code>/home/<i>u</i>/<i>us</i>/<i>user</i>/</code>.  For example, if you had user "bobsmith",
+the home directory would be <code>/home/b/bo/bobsmith</code>.
+
+<p>
+The question then is: can <code>proftpd</code> be configured to use a
+directory hashing scheme like this, without having to change the home directory
+attribute for those thousands of users (which might be stored in an LDAP
+directory used by applications as well)?  Answer: yes.  The <code>%u</code>
+variable above supports way to handle simple directory hashing.
+
+<p>
+To use it, you would use something like the following in your
+<code>proftpd.conf</code>:
+<pre>
+  DefaultRoot /home/%u[0]/%u
+</pre>
+where the <code>%u</code> variable is the user name, and
+<code>%u[<i>index</i>]</code> can be used to reference the letters in the user
+name, at that <em>index</em> position.  The above configuration would
+use a single level of directory hashing, resulting in <i>e.g.</i>
+<code>/home/b/bobsmith</code>.  If your directory hashing gets more complex,
+using more levels, you can still use this syntax:
+<pre>
+  DefaultRoot /home/%u[0]/%u[0]%u[1]/%u[0]%u[1]%u[2]/%u
+</pre>
+which would result in <code>/home/b/bo/bob/bobsmith</code>.
+
+<p>
+Of course, more <a href="http://michaelandrews.typepad.com/the_technical_times/2009/10/creating-a-hashed-directory-structure.html">complex hashing schemes</a>
+can be used, but <code>proftpd</code> does not currently implement them.
+
+<p>
+<b>Environment Variables</b><br>
 Did you know that you can also substitute environment variables into your
 <code>proftpd.conf</code> as well?  It's true!  ProFTPD started supporting
 using environment variables in configuration files in the 1.2.10rc1 release.
@@ -303,8 +347,30 @@ option on the command-line will cause <code>proftpd</code> to use the
 production configuration.
 
 <p>
+<b>Reducing FTP Traffic Impact on Host System</b><br>
+Some sites run <code>proftpd</code> on a system which is used to host other
+services as well (<i>e.g.</i> Apache, a file server, <i>etc</i>).  These
+sites might notice that when many FTP downloads or uploads are happening,
+the other services start to be impacted: slower/stuttering web pages or
+streaming video/music, for example.
+
+<p>
+Wouldn't it be nice if you could somehow tell <code>proftpd</code> to use
+a lower priority, <i>i.e.</i> in the manner of the <code>nice(1)</code>
+command, for such data transfers?  Fortunately, you can do exactly this using
+the <a href="../modules/mod_xfer.html#TransferPriority"><code>TransferPriority</code></a> directive.  For example, a good default configuration to use is:
+<pre>
+  # Use a low process priority during all data transfers
+  TransferPriority APPE,RETR,STOR,STOU low
+</pre>
+One user reporting always having stuttering streaming video when FTP data
+transfers were happening.  After using the <code>TransferPriority</code>
+directive, that user saw no more video stream stuttering while still
+approaching full LAN network speed for the FTP data transfer.
+
+<p>
 <hr>
-<i>$Date: 2007/10/11 18:08:35 $</i><br>
+<i>$Date: 2011/03/30 22:27:20 $</i><br>
 
 </body>
 </html>

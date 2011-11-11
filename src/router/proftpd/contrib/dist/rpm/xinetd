@@ -6,7 +6,9 @@ service ftp
 	socket_type     = stream
 	wait            = no
 	user            = root
-	server          = /usr/sbin/proftpd
+	server          = /usr/sbin/in.proftpd
+	log_on_success  += DURATION
 	log_on_failure  += USERID
-	disable         = no
+	nice		= 10
+	disable         = yes
 }

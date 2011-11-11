@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,7 +25,7 @@
  */
 
 /* Generic configuration and standard header file includes.
- * $Id: conf.h,v 1.80.2.2 2010/08/31 18:09:15 castaglia Exp $
+ * $Id: conf.h,v 1.87 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_CONF_H
@@ -73,6 +73,10 @@
 
 #ifdef HAVE_LIMITS_H
 # include <limits.h>
+#endif
+
+#ifdef HAVE_SIGNAL_H
+# include <signal.h>
 #endif
 
 #ifdef HAVE_SYS_ACL_H
@@ -416,7 +420,6 @@ typedef struct {
 
 #include "pool.h"
 #include "str.h"
-#include "regexp.h"
 #include "table.h"
 #include "proftpd.h"
 #include "support.h"
@@ -427,6 +430,8 @@ typedef struct {
 #include "filter.h"
 #include "netio.h"
 #include "modules.h"
+#include "regexp.h"
+#include "stash.h"
 #include "auth.h"
 #include "response.h"
 #include "timers.h"
@@ -461,6 +466,7 @@ typedef struct {
 #include "pidfile.h"
 #include "env.h"
 #include "pr-syslog.h"
+#include "memcache.h"
 
 # ifdef HAVE_SETPASSENT
 #  define setpwent()	setpassent(1)

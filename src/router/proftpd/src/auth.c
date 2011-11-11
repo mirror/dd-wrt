@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,7 +25,7 @@
  */
 
 /* Authentication front-end for ProFTPD
- * $Id: auth.c,v 1.80.2.1 2010/08/30 17:37:39 castaglia Exp $
+ * $Id: auth.c,v 1.88 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -115,6 +115,10 @@ static void uidcache_create(void) {
 }
 
 static void uidcache_add(uid_t uid, const char *name) {
+  if (!(auth_caching & PR_AUTH_CACHE_FL_UID2NAME)) {
+    return;
+  }
+
   uidcache_create();
 
   if (uid_tab) {
@@ -179,6 +183,10 @@ static void gidcache_create(void) {
 }
 
 static void gidcache_add(gid_t gid, const char *name) {
+  if (!(auth_caching & PR_AUTH_CACHE_FL_GID2NAME)) {
+    return;
+  }
+
   gidcache_create();
 
   if (gid_tab) {
@@ -272,18 +280,29 @@ static modret_t *dispatch_auth(cmd_rec *cmd, char *match, module **m) {
 
     mr = pr_module_call(iter_tab->m, iter_tab->handler, cmd);
 
-    if (iter_tab->auth_flags & PR_AUTH_FL_REQUIRED)
+    /* Return a pointer, if requested, to the module which answered the
+     * auth request.  This is used, for example, by auth_getpwnam() for
+     * associating the answering auth module with the data looked up.
+     */
+
+    if (iter_tab->auth_flags & PR_AUTH_FL_REQUIRED) {
+      pr_trace_msg(trace_channel, 6,
+        "\"%s\" response from module mod_%s is authoritative", match,
+        iter_tab->m->name);
+
+      if (m) {
+        *m = iter_tab->m;
+      }
+
       break;
+    }
 
     if (MODRET_ISHANDLED(mr) ||
         MODRET_ISERROR(mr)) {
 
-      /* Return a pointer, if requested, to the module which answered the
-       * auth request.  This is used, for example, by auth_getpwnam() for
-       * associating the answering auth module with the data looked up.
-       */
-      if (m)
+      if (m) {
         *m = iter_tab->m;
+      }
 
       break;
     }
@@ -306,10 +325,9 @@ static modret_t *dispatch_auth(cmd_rec *cmd, char *match, module **m) {
 
 void pr_auth_setpwent(pool *p) {
   cmd_rec *cmd = NULL;
-  modret_t *mr = NULL;
 
   cmd = make_cmd(p, 0);
-  mr = dispatch_auth(cmd, "setpwent", NULL);
+  (void) dispatch_auth(cmd, "setpwent", NULL);
 
   if (cmd->tmp_pool) {
     destroy_pool(cmd->tmp_pool);
@@ -321,10 +339,9 @@ void pr_auth_setpwent(pool *p) {
 
 void pr_auth_endpwent(pool *p) {
   cmd_rec *cmd = NULL;
-  modret_t *mr = NULL;
 
   cmd = make_cmd(p, 0);
-  mr = dispatch_auth(cmd, "endpwent", NULL);
+  (void) dispatch_auth(cmd, "endpwent", NULL);
 
   if (cmd->tmp_pool) {
     destroy_pool(cmd->tmp_pool);
@@ -343,10 +360,9 @@ void pr_auth_endpwent(pool *p) {
 
 void pr_auth_setgrent(pool *p) {
   cmd_rec *cmd = NULL;
-  modret_t *mr = NULL;
 
   cmd = make_cmd(p, 0);
-  mr = dispatch_auth(cmd, "setgrent", NULL);
+  (void) dispatch_auth(cmd, "setgrent", NULL);
 
   if (cmd->tmp_pool) {
     destroy_pool(cmd->tmp_pool);
@@ -358,10 +374,9 @@ void pr_auth_setgrent(pool *p) {
 
 void pr_auth_endgrent(pool *p) {
   cmd_rec *cmd = NULL;
-  modret_t *mr = NULL;
 
   cmd = make_cmd(p, 0);
-  mr = dispatch_auth(cmd, "endgrent", NULL);
+  (void) dispatch_auth(cmd, "endgrent", NULL);
 
   if (cmd->tmp_pool) {
     destroy_pool(cmd->tmp_pool);
@@ -865,7 +880,8 @@ const char *pr_auth_uid2name(pool *p, uid_t uid) {
 
   uidcache_create();
 
-  if (uid_tab) {
+  if ((auth_caching & PR_AUTH_CACHE_FL_UID2NAME) &&
+      uid_tab) {
     void *v = NULL;
 
     v = pr_table_kget(uid_tab, (const void *) &uid, sizeof(uid_t), NULL);
@@ -923,7 +939,8 @@ const char *pr_auth_gid2name(pool *p, gid_t gid) {
 
   gidcache_create();
 
-  if (gid_tab) {
+  if ((auth_caching & PR_AUTH_CACHE_FL_GID2NAME) &&
+       gid_tab) {
     void *v = NULL;
  
     v = pr_table_kget(gid_tab, (const void *) &gid, sizeof(gid_t), NULL);
@@ -1115,7 +1132,7 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
     do {
       pr_signals_handle();
 
-      if (strcmp(c->argv[0], "*") == 0 ||
+      if (strncmp(c->argv[0], "*", 2) == 0 ||
           strcmp(c->argv[0], *login_name) == 0) {
         is_alias = TRUE;
         break;
@@ -1152,7 +1169,7 @@ config_rec *pr_auth_get_anon_config(pool *p, char **login_name,
     c = find_config_next(c, c->next, CONF_PARAM, "UserAlias", TRUE);
 
     if (c &&
-        (strcmp(c->argv[0], "*") == 0 ||
+        (strncmp(c->argv[0], "*", 2) == 0 ||
          strcmp(c->argv[0], *login_name) == 0)) {
       is_alias = TRUE;
     }
@@ -1333,6 +1350,7 @@ int pr_auth_is_valid_shell(xaset_t *ctx, const char *shell) {
 
 int pr_auth_chroot(const char *path) {
   int res;
+  time_t now;
 
 #if defined(HAVE_SETENV) && defined(__GLIBC__) && defined(__GLIBC_MINOR__) && \
   __GLIBC__ == 2 && __GLIBC_MINOR__ >= 3
@@ -1352,6 +1370,15 @@ int pr_auth_chroot(const char *path) {
 #endif
 
   pr_log_pri(PR_LOG_INFO, "Preparing to chroot to directory '%s'", path);
+
+  /* Prepare for chroots and the ensuing timezone chicanery by calling
+   * our pr_localtime() routine now, which will cause libc (via localtime(2))
+   * to load the tzinfo data into memory, and hopefully retain it (Bug#3431).
+   */
+  now = time(NULL);
+  (void) pr_localtime(NULL, &now);
+
+  pr_event_generate("core.chroot", NULL);
 
   PRIVS_ROOT
   res = pr_fsio_chroot(path);
@@ -1378,28 +1405,43 @@ int set_groups(pool *p, gid_t primary_gid, array_header *suppl_gids) {
   char *strgids = "";
 
   /* sanity check */
-  if (!p || !suppl_gids)
-    return 0;
+  if (p == NULL ||
+      suppl_gids == NULL) {
+
+# ifndef PR_DEVEL_COREDUMP
+    /* Set the primary GID of the process. */
+    res = setgid(primary_gid);
+# endif /* PR_DEVEL_COREDUMP */
+
+    return res;
+  }
+
+  ngids = suppl_gids->nelts;
+  gids = suppl_gids->elts;
+
+  if (ngids == 0 ||
+      gids == NULL) {
+    /* No supplemental GIDs to process. */
+
+# ifndef PR_DEVEL_COREDUMP
+    /* Set the primary GID of the process. */
+    res = setgid(primary_gid);
+# endif /* PR_DEVEL_COREDUMP */
+
+    return res;
+  }
 
   tmp_pool = make_sub_pool(p);
   pr_pool_tag(tmp_pool, "set_groups() tmp pool");
 
-  /* Check for a NULL supplemental group ID list. */
-  if (suppl_gids) {
-    ngids = suppl_gids->nelts;
-    gids = suppl_gids->elts;
+  proc_gids = pcalloc(tmp_pool, sizeof(gid_t) * (ngids));
 
-    if (ngids && gids) {
-      proc_gids = pcalloc(tmp_pool, sizeof(gid_t) * (ngids));
-
-      /* Note: the list of supplemental GIDs may contain duplicates.  Sort
-       * through the list and keep only the unique IDs - this should help avoid
-       * running into the NGROUPS limit when possible.  This algorithm may slow
-       * things down some; optimize it if/when possible.
-       */
-      proc_gids[nproc_gids++] = gids[0];
-    }
-  }
+  /* Note: the list of supplemental GIDs may contain duplicates.  Sort
+   * through the list and keep only the unique IDs - this should help avoid
+   * running into the NGROUPS limit when possible.  This algorithm may slow
+   * things down some; optimize it if/when possible.
+   */
+  proc_gids[nproc_gids++] = gids[0];
 
   for (i = 1; i < ngids; i++) {
     register unsigned int j = 0;

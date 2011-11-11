@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp user authentication (auth)
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth.h,v 1.5 2009/11/05 17:40:45 castaglia Exp $
+ * $Id: auth.h,v 1.7 2011/08/04 21:15:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -41,19 +41,19 @@ int sftp_auth_handle(struct ssh2_packet *);
 int sftp_auth_init(void);
 
 /* Handles 'hostbased' user authentication. */
-int sftp_auth_hostbased(struct ssh2_packet *, const char *, const char *,
-  const char *, char **, uint32_t *, int *);
+int sftp_auth_hostbased(struct ssh2_packet *, cmd_rec *,
+  const char *, const char *, const char *, char **, uint32_t *, int *);
 
 /* Handles 'keyboard-interactive' user authentication. */
-int sftp_auth_kbdint(struct ssh2_packet *, const char *, const char *,
-  const char *, char **, uint32_t *, int *);
+int sftp_auth_kbdint(struct ssh2_packet *, cmd_rec *,
+  const char *, const char *, const char *, char **, uint32_t *, int *);
 
 /* Handles 'password' user authentication. */
-int sftp_auth_password(struct ssh2_packet *, const char *, const char *,
-  const char *, char **, uint32_t *, int *);
+int sftp_auth_password(struct ssh2_packet *, cmd_rec *,
+  const char *, const char *, const char *, char **, uint32_t *, int *);
 
 /* Handles 'publickey' user authentication. */
-int sftp_auth_publickey(struct ssh2_packet *, const char *, const char *,
-  const char *, char **, uint32_t *, int *);
+int sftp_auth_publickey(struct ssh2_packet *, cmd_rec *,
+  const char *, const char *, const char *, char **, uint32_t *, int *);
 
 #endif

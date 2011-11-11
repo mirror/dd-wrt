@@ -1,4 +1,4 @@
-<!-- $Id: ListOptions.html,v 1.4 2009/05/01 15:47:33 castaglia Exp $ -->
+<!-- $Id: ListOptions.html,v 1.5 2010/06/19 20:45:21 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ListOptions.html,v $ -->
 
 <html>
@@ -30,6 +30,8 @@ The <code>ListOptions</code> directive supports the following options:
       <dd>Force printing of non-printable filename characters as \<i>xxx</i>, where <i>xxx</i> is the octal value of the character</dd>
   <li><dt>-C</dt>
       <dd>List entries by columns</dd>
+  <li><dt>-c<dt>
+      <dd>Sort by file status change time when <code>-t</code> is also used</dd>
   <li><dt>-d</dt>
       <dd>List directory entries instead of directory contents</dd>
   <li><dt>-F</dt>
@@ -49,7 +51,9 @@ The <code>ListOptions</code> directive supports the following options:
   <li><dt>-S</dt>
       <dd>Sort by file size</dd>
   <li><dt>-t</dt>
-      <dd>Sort by modification time</dd>
+      <dd>Sort by file modification time</dd>
+  <li><dt>-u<dt>
+      <dd>Sort by file access time when <code>-t</code> is also used</dd>
 </ul>
 
 <p>
@@ -130,7 +134,7 @@ used to block the <code>LIST</code> and <code>NLST</code> commands altogether.
 
 <p>
 <hr>
-<i>$Date: 2009/05/01 15:47:33 $</i><br>
+<i>$Date: 2010/06/19 20:45:21 $</i><br>
 
 </body>
 </html>

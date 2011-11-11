@@ -1,11 +1,11 @@
 package ProFTPD::Tests::Commands::DELE;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
 use Cwd;
-use File::Path qw(mkpath rmtree);
+use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
 
@@ -51,29 +51,6 @@ sub new {
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
 }
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
-};
 
 sub dele_file_ok {
   my $self = shift;
@@ -163,7 +140,6 @@ sub dele_file_ok {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "DELE command successful";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -286,7 +262,6 @@ sub dele_fails_enoent {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "$test_file: No such file or directory";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -545,7 +520,6 @@ sub dele_fails_eisdir {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "$test_dir: Is a directory";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -683,7 +657,6 @@ sub dele_symlink_ok {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "DELE command successful";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 

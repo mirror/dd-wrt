@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2008 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,11 +23,13 @@
  */
 
 /* Home-on-demand support
- * $Id: mkhome.c,v 1.12 2008/12/07 03:29:55 castaglia Exp $
+ * $Id: mkhome.c,v 1.17 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
+
+static const char *trace_channel = "mkhome";
 
 static int create_dir(const char *dir, uid_t uid, gid_t gid,
     mode_t mode) {
@@ -38,7 +40,8 @@ static int create_dir(const char *dir, uid_t uid, gid_t gid,
   pr_fs_clear_cache();
   res = pr_fsio_stat(dir, &st);
 
-  if (res == -1 && errno != ENOENT) {
+  if (res == -1 &&
+      errno != ENOENT) {
     pr_log_pri(PR_LOG_WARNING, "error checking '%s': %s", dir,
       strerror(errno));
     return -1;
@@ -46,6 +49,7 @@ static int create_dir(const char *dir, uid_t uid, gid_t gid,
 
   /* The directory already exists. */
   if (res == 0) {
+    pr_trace_msg(trace_channel, 8, "'%s' already exists", dir);
     pr_log_debug(DEBUG3, "CreateHome: '%s' already exists", dir);
     return 0;
   }
@@ -68,6 +72,7 @@ static int create_dir(const char *dir, uid_t uid, gid_t gid,
     return -1;
   }
 
+  pr_trace_msg(trace_channel, 8, "directory '%s' created", dir);
   pr_log_debug(DEBUG6, "CreateHome: directory '%s' created", dir);
   return 0;
 }
@@ -102,6 +107,8 @@ static int create_path(pool *p, const char *path, const char *user,
     dir_gid = dst_gid;
   }
 
+  pr_trace_msg(trace_channel, 5, "creating home directory '%s' for user '%s'",
+    path, user);
   pr_log_debug(DEBUG3, "creating home directory '%s' for user '%s'", path,
     user);
   tmppath = pstrdup(p, path);
@@ -114,14 +121,18 @@ static int create_path(pool *p, const char *path, const char *user,
     /* If tmppath is NULL, we are creating the last part of the path, so we
      * use the configured mode, and chown it to the given UID and GID.
      */
-    if ((tmppath == NULL) || (*tmppath == '\0'))
+    if (tmppath == NULL ||
+        (*tmppath == '\0')) {
       create_dir(currpath, dst_uid, dst_gid, dst_mode);
-    else
+
+    } else { 
       create_dir(currpath, dir_uid, dir_gid, dir_mode);
+    }
 
     pr_signals_handle();
   }
 
+  pr_trace_msg(trace_channel, 5, "home directory '%s' created", path);
   pr_log_debug(DEBUG3, "home directory '%s' created", path);
   return 0;
 }
@@ -142,8 +153,9 @@ static int copy_symlink(pool *p, const char *src_dir, const char *src_path,
   /* If the target of the link lies within the src path, rename that portion
    * of the link to be the corresponding part of the dst path.
    */
-  if (strncmp(link_path, src_dir, strlen(src_dir)) == 0)
+  if (strncmp(link_path, src_dir, strlen(src_dir)) == 0) {
     link_path = pdircat(p, dst_dir, link_path + strlen(src_dir), NULL);
+  }
 
   if (pr_fsio_symlink(link_path, dst_path) < 0) {
     pr_log_pri(PR_LOG_WARNING, "CreateHome: error symlinking '%s' to '%s': %s",
@@ -183,9 +195,10 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
     pr_signals_handle();
 
     /* Skip "." and ".." */
-    if (strcmp(dent->d_name, ".") == 0 ||
-        strcmp(dent->d_name, "..") == 0)
+    if (strncmp(dent->d_name, ".", 2) == 0 ||
+        strncmp(dent->d_name, "..", 3) == 0) {
       continue;
+    }
 
     src_path = pdircat(p, src_dir, dent->d_name, NULL);
     dst_path = pdircat(p, dst_dir, dent->d_name, NULL);
@@ -198,11 +211,9 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
 
     /* Is this path to a directory? */
     if (S_ISDIR(st.st_mode)) {
-
       create_dir(dst_path, uid, gid, st.st_mode);
       copy_dir(p, src_path, dst_path, uid, gid);
       continue;
-
 
     /* Is this path to a regular file? */
     } else if (S_ISREG(st.st_mode)) {
@@ -219,14 +230,16 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
       (void) pr_fs_copy_file(src_path, dst_path);
 
       /* Make sure the destination file has the proper ownership and mode. */
-      if (pr_fsio_chown(dst_path, uid, gid) < 0)
+      if (pr_fsio_chown(dst_path, uid, gid) < 0) {
         pr_log_pri(PR_LOG_WARNING, "CreateHome: error chown'ing '%s' "
           "to %u/%u: %s", dst_path, (unsigned int) uid, (unsigned int) gid,
           strerror(errno));
+      }
 
-      if (pr_fsio_chmod(dst_path, dst_mode) < 0)
+      if (pr_fsio_chmod(dst_path, dst_mode) < 0) {
         pr_log_pri(PR_LOG_WARNING, "CreateHome: error chmod'ing '%s' to "
           "%04o: %s", dst_path, (unsigned int) dst_mode, strerror(errno));
+      }
 
       continue;
 
@@ -253,19 +266,33 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
 int create_home(pool *p, const char *home, const char *user, uid_t uid,
     gid_t gid) {
   int res;
-  config_rec *c = find_config(main_server->conf, CONF_PARAM, "CreateHome",
-    FALSE);
+  config_rec *c;
+  mode_t dir_mode, dst_mode;
+  uid_t dir_uid, dst_uid;
+  gid_t dir_gid, dst_gid, home_gid;
 
-  if (!c ||
-      (c && *((unsigned char *) c->argv[0]) == FALSE))
+  c = find_config(main_server->conf, CONF_PARAM, "CreateHome", FALSE);
+  if (c == NULL ||
+      (c && *((unsigned char *) c->argv[0]) == FALSE)) {
     return 0;
+  }
+
+  /* Create the configured path. */
+
+  dir_uid = *((uid_t *) c->argv[4]);
+  dir_gid = *((gid_t *) c->argv[5]);
+  dir_mode = *((mode_t *) c->argv[2]);
+  home_gid = *((gid_t *) c->argv[6]);
+
+  dst_uid = uid;
+  dst_gid = (home_gid == -1) ? gid : home_gid;
+
+  dst_mode = *((mode_t *) c->argv[1]);
 
   PRIVS_ROOT
 
-  /* Create the configured path. */
-  res = create_path(p, home, user,
-    *((uid_t *) c->argv[4]), *((gid_t *) c->argv[5]), *((mode_t *) c->argv[2]),
-    uid, gid, *((mode_t *) c->argv[1]));
+  res = create_path(p, home, user, dir_uid, dir_gid, dir_mode,
+    dst_uid, dst_gid, dst_mode);
 
   if (res < 0 &&
       errno != EEXIST) {
@@ -281,10 +308,13 @@ int create_home(pool *p, const char *home, const char *user, uid_t uid,
      * skeleton (a la /etc/skel) directory.
      */
 
+    pr_trace_msg(trace_channel, 9, "copying skel files from '%s' into '%s'",
+      skel_dir, home);
     pr_log_debug(DEBUG4, "CreateHome: copying skel files from '%s' into '%s'",
       skel_dir, home);
-    if (copy_dir(p, skel_dir, home, uid, gid) < 0)
+    if (copy_dir(p, skel_dir, home, uid, gid) < 0) {
       pr_log_debug(DEBUG4, "CreateHome: error copying skel files");
+    }
   }
 
   PRIVS_RELINQUISH

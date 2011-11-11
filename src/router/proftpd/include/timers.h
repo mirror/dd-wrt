@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2007 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,14 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: timers.h,v 1.15 2007/10/22 18:09:17 castaglia Exp $
+ * $Id: timers.h,v 1.18 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_TIMERS_H
@@ -45,9 +45,13 @@ int pr_timer_add(int secs, int timerno, module *m, callback_t cb,
 
 /* Remove the timer indicated by the timerno parameter, and owned by the
  * given module.  Note that if the caller does not know the module,
- * the value ANY_MODULE can be given.
+ * the value ANY_MODULE can be given.  Return 0 on success, -1 on failure.
  *
- * Return 0 on success, -1 on failure.
+ * If the timerno parameter is less than zero, then ALL timers associated
+ * with the given module will be removed.  The return value for this
+ * situation will be the number of timers removed.  These semantics can be
+ * used when removing all timers for a module, e.g. when the module is
+ * being unloaded.
  */
 int pr_timer_remove(int timerno, module *m);
 
@@ -59,12 +63,17 @@ int pr_timer_remove(int timerno, module *m);
  */
 int pr_timer_reset(int timerno, module *m);
 
-/* This is a convenience function that can be used to "sleep" for the
- * given number of seconds.  This function can be used instead of
- * the sleep(3) function, for it cannot be interrupted by signals or
- * other timers.
+/* This is a convenience function that can be used to "sleep" for the given
+ * number of seconds.  This function can be used instead of the sleep(3)
+ * function, for it cannot be interrupted by signals or other timers.
  */
 int pr_timer_sleep(int secs);
+
+/* This is a convenience function that can be used to "sleep" for the given
+ * number of microseconds.  This function can be used instead of the usleep(3)
+ * function, for it cannot be interrupted by signals or other timers.
+ */
+int pr_timer_usleep(unsigned long usecs);
 
 /* For internal use only. */
 void handle_alarm(void);

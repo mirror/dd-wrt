@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -23,7 +23,7 @@
  */
 
 /* Command response routines
- * $Id: response.c,v 1.12.4.4 2011/02/23 02:51:31 castaglia Exp $
+ * $Id: response.c,v 1.22 2011/08/13 19:24:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -35,7 +35,6 @@ static int resp_blocked = FALSE;
 static pool *resp_pool = NULL;
 
 static char resp_buf[PR_RESPONSE_BUFFER_SIZE] = {'\0'};
-static char resp_ml_numeric[4] = {'\0'};
 
 static char *resp_last_response_code = NULL;
 static char *resp_last_response_msg = NULL;
@@ -149,6 +148,13 @@ void pr_response_flush(pr_response_t **head) {
     return;
   }
 
+  if (session.c == NULL) {
+    /* Not sure what happened to the control connection, but since it's gone,
+     * there's no need to flush any messages.
+     */
+    return;
+  }
+
   for (resp = *head; resp; resp = resp->next) {
     if (ml) {
       /* Look for end of multiline */
@@ -161,7 +167,7 @@ void pr_response_flush(pr_response_t **head) {
 
       } else {
         /* RFC2228's multiline responses are required for protected sessions. */
-	if (MultilineRFC2228 || session.sp_flags) {
+	if (session.multiline_rfc2228 || session.sp_flags) {
           RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s-%s\r\n", last_numeric,
             resp->msg)
 
@@ -285,8 +291,16 @@ void pr_response_send_async(const char *resp_numeric, const char *fmt, ...) {
   va_list msg;
   int maxlen;
 
-  if (resp_blocked)
+  if (resp_blocked) {
     return;
+  }
+
+  if (session.c == NULL) {
+    /* Not sure what happened to the control connection, but since it's gone,
+     * there's no need to flush any messages.
+     */
+    return;
+  }
 
   sstrncpy(buf, resp_numeric, sizeof(buf));
   sstrcat(buf, " ", sizeof(buf));
@@ -309,8 +323,16 @@ void pr_response_send_async(const char *resp_numeric, const char *fmt, ...) {
 void pr_response_send(const char *resp_numeric, const char *fmt, ...) {
   va_list msg;
 
-  if (resp_blocked)
+  if (resp_blocked) {
     return;
+  }
+
+  if (session.c == NULL) {
+    /* Not sure what happened to the control connection, but since it's gone,
+     * there's no need to flush any messages.
+     */
+    return;
+  }
 
   va_start(msg, fmt);
   vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
@@ -325,59 +347,19 @@ void pr_response_send(const char *resp_numeric, const char *fmt, ...) {
     resp_buf)
 }
 
-void pr_response_send_ml_start(const char *resp_numeric, const char *fmt, ...) {
-  va_list msg;
-
-  if (resp_blocked)
-    return;
-
-  va_start(msg, fmt);
-  vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
-  va_end(msg);
-
-  resp_buf[sizeof(resp_buf) - 1] = '\0';
-  sstrncpy(resp_ml_numeric, resp_numeric, sizeof(resp_ml_numeric));
-
-  RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s-%s\r\n", resp_ml_numeric,
-    resp_buf)
-}
-
-void pr_response_send_ml(const char *fmt, ...) {
-  va_list msg;
-
-  if (resp_blocked)
-    return;
-
-  va_start(msg, fmt);
-  vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
-  va_end(msg);
-
-  resp_buf[sizeof(resp_buf) - 1] = '\0';
-
-  RESPONSE_WRITE_STR(session.c->outstrm, " %s\r\n", resp_buf)
-}
-
-void pr_response_send_ml_end(const char *fmt, ...) {
-  va_list msg;
-
-  if (resp_blocked)
-    return;
- 
-  va_start(msg, fmt);
-  vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
-  va_end(msg);
-
-  resp_buf[sizeof(resp_buf) - 1] = '\0';
-
-  RESPONSE_WRITE_NUM_STR(session.c->outstrm, "%s %s\r\n", resp_ml_numeric,
-    resp_buf)
-}
-
 void pr_response_send_raw(const char *fmt, ...) {
   va_list msg;
 
-  if (resp_blocked)
+  if (resp_blocked) {
     return;
+  }
+
+  if (session.c == NULL) {
+    /* Not sure what happened to the control connection, but since it's gone,
+     * there's no need to flush any messages.
+     */
+    return;
+  }
 
   va_start(msg, fmt);
   vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);

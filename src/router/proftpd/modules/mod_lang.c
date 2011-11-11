@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_lang -- a module for handling the LANG command [RFC2640]
  *
- * Copyright (c) 2006-2009 The ProFTPD Project
+ * Copyright (c) 2006-2011 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +15,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_lang.c,v 1.31 2009/10/12 23:11:54 castaglia Exp $
+ * $Id: mod_lang.c,v 1.36 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -384,6 +384,8 @@ MODRET lang_lang(cmd_rec *cmd) {
   authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
   if (authenticated &&
       *authenticated == TRUE) {
+    pr_log_debug(DEBUG7, MOD_LANG_VERSION ": assuming language files are "
+      "unavailable after login, denying LANG command");
     pr_response_add_err(R_500, _("Unable to handle command"));
     return PR_ERROR(cmd);
   }
@@ -428,7 +430,7 @@ MODRET lang_lang(cmd_rec *cmd) {
     if (lang_set_lang(cmd->tmp_pool, lang_default) < 0) {
       pr_log_pri(PR_LOG_WARNING, MOD_LANG_VERSION
         ": unable to use LangDefault '%s': %s", lang_default, strerror(errno));
-      end_login(1);
+      pr_session_disconnect(&lang_module, PR_SESS_DISCONNECT_BAD_CONFIG, NULL);
     }
   }
 
@@ -619,8 +621,8 @@ static void lang_postparse_ev(const void *event_data, void *user_data) {
 
       pr_signals_handle();
 
-      if (strcmp(dent->d_name, ".") == 0 ||
-          strcmp(dent->d_name, "..") == 0) {
+      if (strncmp(dent->d_name, ".", 2) == 0 ||
+          strncmp(dent->d_name, "..", 3) == 0) {
         continue;
       }
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_sftp.h.in,v 1.10 2009/11/08 03:28:53 castaglia Exp $
+ * $Id: mod_sftp.h.in,v 1.22 2011/10/12 17:15:56 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_H
@@ -54,11 +54,11 @@
 /* Define if you have OpenSSL with SHA512 support. */
 #undef HAVE_SHA512_OPENSSL
 
-#define MOD_SFTP_VERSION	"mod_sftp/0.9.7"
+#define MOD_SFTP_VERSION	"mod_sftp/0.9.8"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030202
-# error "ProFTPD 1.3.2rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030402
+# error "ProFTPD 1.3.4rc2 or later required"
 #endif
 
 #include <openssl/bio.h>
@@ -92,6 +92,19 @@
 /* mod_sftp option flags */
 #define SFTP_OPT_IGNORE_SFTP_UPLOAD_PERMS	0x0001
 #define SFTP_OPT_IGNORE_SCP_UPLOAD_PERMS	0x0002
+#define SFTP_OPT_PESSIMISTIC_KEXINIT		0x0004
+#define SFTP_OPT_OLD_PROTO_COMPAT		0x0008
+#define SFTP_OPT_MATCH_KEY_SUBJECT		0x0010
+#define SFTP_OPT_IGNORE_SFTP_SET_PERMS		0x0020
+#define SFTP_OPT_IGNORE_SFTP_SET_TIMES		0x0040
+
+/* mod_sftp service flags */
+#define SFTP_SERVICE_FL_SFTP		0x0001
+#define SFTP_SERVICE_FL_SCP		0x0002
+#define SFTP_SERVICE_FL_DATE		0x0004
+
+#define SFTP_SERVICE_DEFAULT \
+	(SFTP_SERVICE_FL_SFTP|SFTP_SERVICE_FL_SCP)
 
 /* Miscellaneous */
 extern int sftp_logfd;
@@ -100,6 +113,7 @@ extern pool *sftp_pool;
 extern conn_t *sftp_conn;
 extern unsigned int sftp_sess_state;
 extern unsigned long sftp_opts;
+extern unsigned int sftp_services;
 
 /* Used by other SFTP modules (e.g. mod_sftp_pam) for sending USERAUTH_BANNER
  * messages to the client.
@@ -213,10 +227,15 @@ int sftp_keys_compare_keys(pool *, char *, uint32_t, char *, uint32_t);
 const char *sftp_crypto_get_errors(void);
 
 /* For use by other modules to register 'exec' channel request handlers.
+ *
+ * Note that the implementation currently assumes that the registering module
+ * is registering its callbacks from a session process, i.e. post-fork(2).
+ * That is why there is no corresponding unregister function at present.
  */
 int sftp_channel_register_exec_handler(module *, const char *,
   int (*set_params)(pool *, uint32_t, array_header *),
   int (*prep_chan)(uint32_t),
+  int (*postopen_chan)(uint32_t),
   int (*handle_pkt)(pool *, void *, uint32_t, char *, uint32_t),
   int (*finish_chan)(uint32_t),
   int (**write_data)(pool *, uint32_t, char *, uint32_t));

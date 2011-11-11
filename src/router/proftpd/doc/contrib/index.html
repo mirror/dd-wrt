@@ -1,15 +1,15 @@
-<!-- $Id: index.html,v 1.7 2008/08/15 22:16:54 castaglia Exp $ -->
+<!-- $Id: index.html,v 1.11 2011/02/23 07:04:54 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/index.html,v $ -->
 
 <html>
 <head>
-<title>ProFTPD Contrib Documentation Index</title>
+<title>ProFTPD Contrib Module Documentation</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD Contrib Documentation Index</b></h2></center>
+<center><h2><b>ProFTPD Contrib Module Documentation</b></h2></center>
 <hr>
 
 <p>
@@ -30,22 +30,30 @@ distribution.
   </dd>
 
   <p>
-  <dt>The <a href="mod_ban.html"><code>mod_ban</code> module
-  <dd>Used for "greylisting" clients based on configurable bad behavior
-      policies
+  <dt>The <a href="ftpmail.html"><code>ftpmail</code></a> script
+  <dd>Used for automatically sending emails whenever a file is uploaded
   </dd>
 
   <p>
-  <dt>The <a href="mod_ctrls_admin.html"><code>mod_ctrls_admin</code> module
+  <dt>The <a href="mod_ban.html"><code>mod_ban</code></a> module
+  <dd>For supporting automatic bans based on configurable thresholds
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_ctrls_admin.html"><code>mod_ctrls_admin</code></a> module
   <dd>Adds administrative controls actions for the <code>ftpdctl</code>
       program.  Controls are covered in more detail in the
       <a href="../howto/Controls.html">Controls</a> mini-HOWTO
   </dd>
 
   <p>
-  <dt>The <a href="mod_dynmasq.html"><code>mod_dynmasq</code> module
-  <dd>For automatically refreshing the IP address of the FTP daemon, for
-      those sites which use dynamic DNS services
+  <dt>The <a href="mod_dynmasq.html"><code>mod_dynmasq</code></a> module
+  <dd>For automatically refreshing IP addresses of dynamic DNS names
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_exec.html"><code>mod_exec</code></a> module
+  <dd>For executing external commands based on configurable criteria
   </dd>
 
   <p>
@@ -55,8 +63,9 @@ distribution.
   </dd>
 
   <p>
-  <dt>The <a href="mod_ldap.html"><code>mod_ldap</code></a> module
-  <dd>Provides support for authenticating users using LDAP directories
+  <dt>The <a href="mod_ifversion.html"><code>mod_ifversion</code></a> module
+  <dd>For adding version-specific sections to your
+      <code>proftpd.conf</code> file
   </dd>
 
   <p>
@@ -97,9 +106,35 @@ distribution.
   </dd>
 
   <p>
+  <dt>The <a href="mod_readme.html"><code>mod_readme</code></a> module
+  <dd>Displays messages reminding users to read README files
+  </dd>
+
+  <p>
   <dt>The <a href="mod_rewrite.html"><code>mod_rewrite</code></a> module
   <dd>Adds the ability to rewrite FTP commands sent by clients on-the-fly,
       using regular expression matching and substitution
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_sftp.html"><code>mod_sftp</code></a> module
+  <dd>Supports SSH2 authentication, SFTP and SCP transfers
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_sftp_pam.html"><code>mod_sftp_pam</code></a> module
+  <dd>Supports SSH2 authentication via PAM
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_sftp_sql.html"><code>mod_sftp_sql</code></a> module
+  <dd>Supports storage/retrieval of authorized SSH keys using SQL databases
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_shaper.html"><code>mod_shaper</code></a> module
+  <dd>Adds dynamic traffic shaping based on number of concurrent sessions
+      and transfers
   </dd>
 
   <p>
@@ -117,16 +152,31 @@ distribution.
   </dd>
 
   <p>
+  <dt>The <a href="mod_sql_passwd.html"><code>mod_sql_passwd</code></a> module
+  <dd>Supports MD5, SHA1, SHA256, SHA512 encoded passwords in SQL databases
+  </dd>
+
+  <p>
   <dt>The <a href="mod_tls.html"><code>mod_tls</code></a> module
   <dd>Adds the ability to encrypt the control and data connections using
       SSL/TLS
   </dd>
 
   <p>
-  <dt>The <a href="mod_unique_id.html"><code>mod_unique_id</code> module
-  <dd>Creates a unique ID for every FTP session, which can be used in log
-      files and database tables for tracking all activity associated with
-      a given FTP session
+  <dt>The <a href="mod_tls_memcache.html"><code>mod_tls_memcache</code></a> module
+  <dd>Provides SSL session caching, for faster SSL session negotiation, using
+      a memcached servers for the shared cache
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_tls_shmcache.html"><code>mod_tls_shmcache</code></a> module
+  <dd>Provides SSL session caching, for faster SSL session negotiation, using
+      a shared memory cache
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_unique_id.html"><code>mod_unique_id</code></a> module
+  <dd>For generating a unique ID for every FTP session
   </dd>
 
   <p>
@@ -175,7 +225,7 @@ all of the directives to see everything that ProFTPD is capable of supporting.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2008/08/15 22:16:54 $</i><br>
+Last Updated: <i>$Date: 2011/02/23 07:04:54 $</i><br>
 <hr>
 
 </body>

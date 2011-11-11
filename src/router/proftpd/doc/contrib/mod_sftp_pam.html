@@ -1,4 +1,4 @@
-<!-- $Id: mod_sftp_pam.html,v 1.1 2009/02/13 21:45:12 castaglia Exp $ -->
+<!-- $Id: mod_sftp_pam.html,v 1.3 2011/01/19 01:59:08 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sftp_pam.html,v $ -->
 
 <html>
@@ -30,10 +30,8 @@ instructions are discussed <a href="#Installation">here</a>; a discussion
 on <a href="#Usage">usage</a> is also available.
 
 <p>
-The most current version of <code>mod_sftp_pam</code> can be found at:
-<pre>
-  <a href="http://www.castaglia.org/proftpd/">http://www.castaglia.org/proftpd/</a>
-</pre>
+The most current version of <code>mod_sftp</code> is distributed with the
+ProFTPD source code.
 
 <h2>Author</h2>
 <p>
@@ -50,7 +48,7 @@ questions, concerns, or suggestions regarding this module.
 <hr>
 <h2><a name="SFTPPAMEngine">SFTPPAMEngine</a></h2>
 <strong>Syntax:</strong> SFTPPAMEngine <em>on|off</em><br>
-<strong>Default:</strong> Off<br>
+<strong>Default:</strong> On<br>
 <strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
 <strong>Module:</strong> mod_sftp_pam<br>
 <strong>Compatibility:</strong> 1.3.2rc2 and later
@@ -58,8 +56,7 @@ questions, concerns, or suggestions regarding this module.
 <p>
 The <code>SFTPPAMEngine</code> directive toggles the use of the PAM library
 for supporting a keyboard-interactive authentication mechanism for SSH2 logins.
-By default <code>mod_sftp_pam</code> is disabled for both the main server and
-all configured virtual hosts.
+By default <code>mod_sftp_pam</code> is enabled.
 
 <p>
 <hr>
@@ -73,9 +70,22 @@ all configured virtual hosts.
 <p>
 The <code>SFTPPAMOptions</code> directive is used to configure various
 optional behaviors of <code>mod_sftp_pam</code>; it is directly analogous
-to <code>mod_auth_pam</code>'s <code>AuthPAMOptions</code> directive, and
-supports the exact same range of options.  See the <code>mod_auth_pam</code>
-documentation for more information.
+to <code>mod_auth_pam</code>'s <code>AuthPAMOptions</code> directive.
+
+<p>
+The currently supported options are:
+<ul>
+  <li><code>NoTTY</code>
+  </li>
+
+  <p>
+  <li><code>NoInfoMsgs</code>
+    <p>
+    Disables the sending of information messages from PAM to the connecting
+    SSH client.  This option is usually used for compatibility with
+    OpenSSH's behavior.
+  </li>
+</ul>
 
 <p>
 <hr>
@@ -124,13 +134,13 @@ the <code>mod_sftp</code> module, which <code>mod_sftp_pam</code> requires:
 <p>
 <hr><br>
 <h2><a name="Usage">Usage</a></h2>
-To use <code>mod_sftp_pam</code>, simply enable the module, and configure
-it to use the correct PAM service name, <i>e.g.</i>:
+To use <code>mod_sftp_pam</code>, simply configure it to use the correct PAM
+service name, <i>e.g.</i>:
 <pre>
   &lt;IfModule mod_sftp_pam.c&gt;
     SFTPPAMEngine on
     SFTPPAMServiceName sftp
-  &lt;/IfModule>
+  &lt;/IfModule&gt;
 </pre>
 There is no requirement that <code>mod_sftp_pam</code> use the same PAM
 service name as the <code>mod_auth_pam</code> module; this allows you to have
@@ -140,12 +150,12 @@ different PAM configurations for FTP versus SSH2 logins.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/02/13 21:45:12 $</i><br>
+Last Updated: <i>$Date: 2011/01/19 01:59:08 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2008 TJ Saunders<br>
+&copy; Copyright 2008-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

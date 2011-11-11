@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2009 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Network address API
- * $Id: netaddr.h,v 1.23 2009/02/12 22:32:01 castaglia Exp $
+ * $Id: netaddr.h,v 1.28 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_NETADDR_H
@@ -329,6 +329,12 @@ int pr_netaddr_set_reverse_dns(int);
  */
 const char *pr_netaddr_get_dnsstr(pr_netaddr_t *);
 
+/* Returns the list of DNS names associated with the given pr_netaddr_t.
+ * If DNS lookups have been disabled, an empty list will be returned.
+ * NULL is returned if there is an error.
+ */
+array_header *pr_netaddr_get_dnsstr_list(pool *, pr_netaddr_t *);
+
 /* Returns the IP address associated with the given pr_netaddr_t.  Returns
  * NULL if there was an error.
  */
@@ -348,7 +354,7 @@ const char *pr_netaddr_get_localaddr_str(pool *);
  */
 int pr_netaddr_set_localaddr_str(const char *);
 
-unsigned int pr_netaddr_get_addrno(const pr_netaddr_t *);
+uint32_t pr_netaddr_get_addrno(const pr_netaddr_t *);
 
 /* Returns TRUE if the given pr_netaddr_t contains a loopback address,
  * FALSE otherwise.
@@ -360,6 +366,12 @@ int pr_netaddr_is_loopback(const pr_netaddr_t *);
  * return value of -1 is used to indicate an error.
  */
 int pr_netaddr_is_v4mappedv6(const pr_netaddr_t *);
+
+/* Given an IPv4-mapped IPv6 netaddr, returns an IPv4 netaddr allocated from
+ * the given pool.  Returns -1 if the given netaddr is not an IPv4-mapped
+ * IPv6 address.
+ */
+pr_netaddr_t *pr_netaddr_v6tov4(pool *p, const pr_netaddr_t *);
 
 /* Returns TRUE if IPv6 support is enabled, FALSE otherwise. */
 unsigned char pr_netaddr_use_ipv6(void);

@@ -1,4 +1,4 @@
-<!-- $Id: Chroot.html,v 1.7 2009/11/04 20:27:56 castaglia Exp $ -->
+<!-- $Id: Chroot.html,v 1.8 2011/04/06 20:52:58 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Chroot.html,v $ -->
 
 <html>
@@ -291,9 +291,41 @@ used for the chroot.  It's always a good idea of have a "applies to everyone"
 <code>DefaultRoot</code> directive in your proftpd.conf, at the
 <i>end of the list</i> of <code>DefaultRoot</code>s, as a catch-all.
 
+<p><a name="Symlinks">
+<font color=red>Question</font>: Does <code>DefaultRoot</code> work properly if
+the path/home directory is a symlink?<br>
+<font color=blue>Answer</font>: Yes.
+
+<p><a name="ChrootNotWorking">
+<font color=red>Question</font>: I have configured <code>DefaultRoot</code> in my proftpd.conf, but my clients still see the root directory.  Is it a bug?<br>
+<cont color=blue>Answer</font>.  Usually not.
+
+<p>
+First, make sure that you have restarted <code>proftpd</code>, so that the
+config changes you made (<i>e.g.</i> adding/modifying your
+<code>DefaultRoot</code> settings) are picked up by the running daemon.
+
+<p>
+Second, make sure that you have cleared any client cache.  Many FTP clients
+(especially browsers) will cache the directory listings that they have obtained
+from an FTP server.  Thus once you have restarted <code>proftpd</code> and
+you still see the root filesystem displayed by your client, you need to make
+sure that that client is actually getting that listing from the FTP server,
+rather than showing you a stale/cached copy.  The command-line
+<code>ftp(1)</code> client is good for testing this situation, as it is very
+simplistic and does not cache such things.
+
+<p>
+Last, double-check the proftpd <a href="Debugging.html">debug logging</a>.
+It could be that <code>proftpd</code> is not using the configuration like you
+assume it is.  Maybe a different config file is being used than the one you
+edited, or maybe the <code>DefaultRoot</code> directive is not in a
+<code>&lt;Global&gt;</code> section and you are using
+<code>&lt;VirtualHost&gt;</code> sections, <i>etc</i>.
+
 <p>
 <hr>
-Last Updated: $Date: 2009/11/04 20:27:56 $<br>
+Last Updated: $Date: 2011/04/06 20:52:58 $<br>
 <hr>
 
 </body>

@@ -1,4 +1,4 @@
-AC_INIT(./mod_load.c.in)
+AC_INIT(./mod_load.c)
 
 AC_CANONICAL_SYSTEM
 
@@ -27,4 +27,4 @@ AC_CHECK_FUNCS(pstat_getdynamic)
 AC_FUNC_GETLOADAVG
 
 AC_CONFIG_HEADER(mod_load.h)
-AC_OUTPUT(Makefile mod_load.c)
+AC_OUTPUT(Makefile)

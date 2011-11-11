@@ -1,4 +1,4 @@
-<!-- $Id: Rewrite.html,v 1.6 2009/05/27 23:09:18 castaglia Exp $ -->
+<!-- $Id: Rewrite.html,v 1.7 2011/10/17 18:25:59 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Rewrite.html,v $ -->
 
 <html>
@@ -139,6 +139,30 @@ ID (PID), to ensure some sort of file name uniqueness.  Enter
 </pre>
 This appends the PID of the current session process to any uploaded filename.
 For more variables like <code>%P</code>, see the <a href="../contrib/mod_rewrite.html#RewriteCondition"><code>RewriteCondition</code></a> and <a href="../contrib/mod_rewrite.html#RewriteRule"><code>RewriteRule</code></a> descriptions.
+
+<p>
+<b>Replacing Backslashes With Slashes</b><br>
+Some sites have FTP clients which seem to send <code>CWD</code> and
+<code>RETR</code>/<code>STOR</code> commands which use Windows-style
+backslashes, <i>e.g.</i> "path\to\file".  And ideally, these sites would like
+to work seamlessly with such clients, without having to get the clients to
+change.  Can <code>mod_rewrite</code> be used to change those backslashes
+into more Unix-friendly regular slashes?  Absolutely.
+
+The following <code>mod_rewrite</code> configuration should do the trick:
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+
+    # Use the replaceall internal RewriteMap
+    RewriteMap replace int:replaceall
+
+    RewriteRule (.*) "${replace:!$1!\\\\!/}"'
+  &lt;/IfModule&gt;
+</pre>
+Yes, you will need the four consecutive backslashes there, in order to make it
+past proftpd's config file parser (which thinks backslashes are escape
+sequences) as well as the regular expression compiler.
 
 <p>
 <b>Modifying User Names</b><br>

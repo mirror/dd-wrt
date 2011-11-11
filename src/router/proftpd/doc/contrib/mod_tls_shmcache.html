@@ -1,4 +1,4 @@
-<!-- $Id: mod_tls_shmcache.html,v 1.1 2009/03/10 07:00:22 castaglia Exp $ -->
+<!-- $Id: mod_tls_shmcache.html,v 1.2 2010/12/21 00:30:01 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_tls_shmcache.html,v $ -->
 
 <html>
@@ -43,7 +43,7 @@ for the <em>type</em> parameter of the
 configuration directive.  The <em>info</em> parameter for
 <code>mod_tls_shmcache</code> must be formatted like:
 <pre>
-  /file=<i>/path/to/cache/file</i>[&size=<i>bytes</i>]
+  /file=<i>/path/to/cache/file</i>[&amp;size=<i>bytes</i>]
 </pre>
 The configured path is used for synchronizing access to the shared memory
 segment among the various server processes.  The default shared memory
@@ -74,7 +74,7 @@ Use a larger shared memory segment size:
     ...
 
     &lt;IfModule mod_tls_shmcache.c&gt;
-      TLSSessionCache shm:/file=/var/ftpd/sesscache&size=2097152
+      TLSSessionCache shm:/file=/var/ftpd/sesscache&amp;size=2097152
     &lt;/IfModule&gt;
   &lt;/IfModule&gt;
 </pre>
@@ -86,7 +86,7 @@ Use a smaller shared memory size, and a shorter timeout:
     ...
 
     &lt;IfModule mod_tls_shmcache.c&gt;
-      TLSSessionCache shm:/file=/var/ftpd/sesscache&size=512000 600
+      TLSSessionCache shm:/file=/var/ftpd/sesscache&amp;size=512000 600
     &lt;/IfModule&gt;
   &lt;/IfModule&gt;
 </pre>
@@ -114,12 +114,29 @@ a shared module:
 
 <p>
 <hr>
+<h2><a name="Usage">Usage</a></h2>
+
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="TLSShmcacheEmptyFile">
+<font color=red>Question</font>: I configured a <code>TLSSessionCache</code> file, but it is empty.  Is <code>mod_tls_shmcache</code> not working properly?<br>
+<font color=blue>Answer</font>: Yes, <code>mod_tls_shmcache</code> is working
+properly.  The actual cache of SSL/TLS session data is stored in shared memory,
+not on the filesystem.  Storing data in system shared memory requires a unique
+key; the <code>mod_tls_shmcache</code> uses the configured file to create
+this unique key.  The module also uses the configured
+<code>TLSSessionCache</code> file for locking, as when handling a
+<code>ftpdctl</code> request to clear the cache.
+
+<p>
+<hr>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/03/10 07:00:22 $</i><br>
+Last Updated: <i>$Date: 2010/12/21 00:30:01 $</i><br>
 
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2009 TJ Saunders<br>
+&copy; Copyright 2009-2010 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

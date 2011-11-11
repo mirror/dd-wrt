@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -26,7 +26,7 @@
  * This is mod_shaper, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_shaper.c,v 1.5.2.1 2011/02/15 21:31:32 castaglia Exp $
+ * $Id: mod_shaper.c,v 1.13 2011/05/23 20:56:40 castaglia Exp $
  */
 
 #include "conf.h"
@@ -41,8 +41,8 @@
 #define MOD_SHAPER_VERSION		"mod_shaper/0.6.6"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030202
-# error "ProFTPD 1.3.2rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030402
+# error "ProFTPD 1.3.4rc2 or later required"
 #endif
 
 #ifndef PR_USE_CTRLS
@@ -214,7 +214,7 @@ static int shaper_msg_recv(void) {
   msg = malloc(sizeof(struct shaper_msg) + msgsz - sizeof(msg->mtext));
   if (msg == NULL) {
     pr_log_pri(PR_LOG_CRIT, "Out of memory!");
-    end_login(1);
+    pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_NOMEM, NULL);
   }
 
   msglen = msgrcv(shaper_qid, msg, msgsz, getpid(), IPC_NOWAIT|MSG_NOERROR);
@@ -265,7 +265,7 @@ static int shaper_msg_send(pid_t dst_pid, unsigned int prio,
   msg = malloc(sizeof(struct shaper_msg) + msgsz - sizeof(msg->mtext));
   if (msg == NULL) {
     pr_log_pri(PR_LOG_CRIT, "Out of memory!");
-    end_login(1);
+    pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_NOMEM, NULL);
   }
 
   msg->mtype = dst_pid;
@@ -362,7 +362,7 @@ static void shaper_msg_clear(pid_t dst_pid) {
   msg = malloc(sizeof(struct shaper_msg) + msgsz - sizeof(msg->mtext));
   if (msg == NULL) {
     pr_log_pri(PR_LOG_CRIT, "Out of memory!");
-    end_login(1);
+    pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_NOMEM, NULL);
   }
 
   (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
@@ -556,6 +556,31 @@ static int shaper_table_flush(void) {
   return 0;
 }
 
+#ifndef HAVE_FLOCK
+static const char *get_lock_type(struct flock *lock) {
+  const char *lock_type;
+
+  switch (lock->l_type) {
+    case F_RDLCK:
+      lock_type = "read";
+      break;
+
+    case F_WRLCK:
+      lock_type = "write";
+      break;
+
+    case F_UNLCK:
+      lock_type = "unlock";
+      break;
+
+    default:
+      lock_type = "[unknown]";
+  }
+
+  return lock_type;
+}
+#endif /* !HAVE_FLOCK */
+
 static int shaper_table_lock(int op) {
   static int have_lock = FALSE;
 
@@ -565,29 +590,43 @@ static int shaper_table_lock(int op) {
 #endif /* !HAVE_FLOCK */
 
   if (have_lock &&
-      ((op & LOCK_SH) || (op & LOCK_EX)))
+      ((op & LOCK_SH) || (op & LOCK_EX))) {
     return 0;
+  }
 
   if (!have_lock &&
-      (op & LOCK_UN))
+      (op & LOCK_UN)) {
     return 0;
+  }
 
 #ifdef HAVE_FLOCK
+  pr_trace_msg("lock", 9, "attempting to %s ShaperTable fd %d via flock(2)",
+    op == LOCK_UN ? "unlock" : "lock", shaper_tabfd);
   while (flock(shaper_tabfd, op) < 0) {
-    if (errno == EINTR) {
+    int xerrno = errno;
+
+    if (xerrno == EINTR) {
       pr_signals_handle();
       continue;
     }
 
+    pr_trace_msg("lock", 9, "%s of ShaperTable fd %d failed: %s",
+      op == LOCK_UN ? "unlock" : "lock", shaper_tabfd, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
+  pr_trace_msg("lock", 9, "%s of ShaperTable fd %d successful",
+    op == LOCK_UN ? "unlock" : "lock", shaper_tabfd);
+
   if ((op & LOCK_SH) ||
-      (op & LOCK_EX))
+      (op & LOCK_EX)) {
     have_lock = TRUE;
 
-  else if (op & LOCK_UN)
+  } else if (op & LOCK_UN) {
     have_lock = FALSE;
+  }
 
   return 0;
 #else
@@ -603,7 +642,7 @@ static int shaper_table_lock(int op) {
     lock.l_type = F_WRLCK;
 
   } else if (op & LOCK_UN) {
-    lock.l_type= F_UNLCK;
+    lock.l_type = F_UNLCK;
 
   } else {
     errno = EINVAL;
@@ -613,21 +652,42 @@ static int shaper_table_lock(int op) {
   if (op & LOCK_NB)
     flag = F_SETLK;
 
+  pr_trace_msg("lock", 9, "attempting to %s ShaperTable fd %d via fcntl(2)",
+    op == LOCK_UN ? "unlock" : "lock", shaper_tabfd);
   while (fcntl(shaper_tabfd, flag, &lock) < 0) {
-    if (errno == EINTR) {
+    int xerrno = errno;
+
+    if (xerrno == EINTR) {
       pr_signals_handle();
       continue;
     }
 
+    pr_trace_msg("lock", 9, "%s of ShaperTable fd %d failed: %s",
+      op == LOCK_UN ? "unlock" : "lock", shaper_tabfd, strerror(xerrno));
+
+    if (xerrno == EACCES) {
+      /* Get the PID of the process blocking this lock. */
+      if (fcntl(shaper_tabfd, F_GETLK, &lock) == 0) {
+        pr_trace_msg("lock", 3, "process ID %lu has blocking %s lock on "
+          "ShaperTable fd %d", (unsigned long) lock.l_pid, get_lock_type(&lock),
+          shaper_tabfd);
+      }
+    }
+
+    errno = xerrno;
     return -1;
   }
 
+  pr_trace_msg("lock", 9, "%s of ShaperTable fd %d successful",
+    op == LOCK_UN ? "unlock" : "lock", shaper_tabfd);
+
   if ((op & LOCK_SH) ||
-      (op & LOCK_EX))
+      (op & LOCK_EX)) {
     have_lock = TRUE;
 
-  else if (op & LOCK_UN)
+  } else if (op & LOCK_UN) {
     have_lock = FALSE;
+  }
 
   return 0;
 #endif /* HAVE_FLOCK */
@@ -677,10 +737,13 @@ static int shaper_table_init(pr_fh_t *fh) {
   tab_iov[5].iov_base = SHAPER_IOV_BASE &nsessions;
   tab_iov[5].iov_len = sizeof(nsessions);
 
-  lseek(fh->fh_fd, 0, SEEK_SET);
- 
-  if (writev(fh->fh_fd, tab_iov, 6) < 0)
+  if (lseek(fh->fh_fd, 0, SEEK_SET) < 0) {
     return -1;
+  }
+ 
+  if (writev(fh->fh_fd, tab_iov, 6) < 0) {
+    return -1;
+  }
 
   (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
     "initialized ShaperTable with rate %3.2Lf KB/s (down), %3.2Lf KB/s (up), "
@@ -2095,7 +2158,8 @@ static void shaper_postparse_ev(const void *event_data, void *user_data) {
       pr_log_debug(DEBUG0, MOD_SHAPER_VERSION
         ": error opening ShaperTable '%s': %s", shaper_tab_path,
         strerror(errno));
-      end_login(1);
+      pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_BAD_CONFIG,
+        NULL);
     }
 
     /* Initialize ShaperTable */
@@ -2248,7 +2312,6 @@ static int shaper_init(void) {
     }
   }
 
-  pr_event_register(&shaper_module, "core.exit", shaper_shutdown_ev, NULL);
 #if defined(PR_SHARED_MODULE)
   pr_event_register(&shaper_module, "core.module-unload", shaper_mod_unload_ev,
     NULL);
@@ -2256,12 +2319,12 @@ static int shaper_init(void) {
   pr_event_register(&shaper_module, "core.postparse", shaper_postparse_ev,
     NULL);
   pr_event_register(&shaper_module, "core.restart", shaper_restart_ev, NULL);
+  pr_event_register(&shaper_module, "core.shutdown", shaper_shutdown_ev, NULL);
 
   return 0;
 }
 
 static int shaper_sess_init(void) {
-  pr_event_unregister(&shaper_module, "core.exit", shaper_shutdown_ev);
 
   /* The ShaperTable scrubbing timer should only run in the daemon. */
   pr_timer_remove(shaper_scrub_timer_id, &shaper_module);

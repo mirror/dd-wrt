@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: interop.c,v 1.5.2.1 2010/07/06 15:50:50 castaglia Exp $
+ * $Id: interop.c,v 1.14 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -30,6 +30,10 @@
 #include "disconnect.h"
 #include "interop.h"
 #include "fxp.h"
+
+extern module sftp_module;
+
+extern module sftp_module;
 
 /* By default, each client is assumed to support all of the features in
  * which we are interested.
@@ -48,7 +52,7 @@ static unsigned int interop_flags =
 struct sftp_version_pattern {
   const char *pattern;
   int interop_flags;
-  regex_t *preg;
+  pr_regex_t *pre;
 };
 
 static struct sftp_version_pattern known_versions[] = {
@@ -111,7 +115,8 @@ static struct sftp_version_pattern known_versions[] = {
     "^1\\.2\\.20.*|"
     "^1\\.2\\.21.*|"
     "^1\\.2\\.22.*|"
-    "^1\\.3\\.2.*",		SFTP_SSH2_FEAT_IGNORE_MSG,		NULL },
+    "^1\\.3\\.2.*|"		
+    "^3\\.2\\.9.*",		SFTP_SSH2_FEAT_IGNORE_MSG,		NULL },
 
   { ".*SSH_Version_Mapper.*",	SFTP_SSH2_FEAT_SCANNER,			NULL },
 
@@ -125,7 +130,7 @@ static const char *trace_channel = "ssh2";
 int sftp_interop_handle_version(const char *client_version) {
   register unsigned int i;
   size_t version_len;
-  const char *version;
+  const char *version = NULL;
   int is_probe = FALSE, is_scan = FALSE;
   config_rec *c;
 
@@ -158,8 +163,15 @@ int sftp_interop_handle_version(const char *client_version) {
     }
   }
 
-  /* Skip past the leading "SSH-2.0-" to get the actual client info. */
-  version = client_version + strlen("SSH-2.0-");
+  /* Skip past the leading "SSH-2.0-" (or "SSH-1.99-") to get the actual
+   * client info.
+   */
+  if (strncmp(client_version, "SSH-2.0-", 8) == 0) {
+    version = client_version + 8;
+
+  } else if (strncmp(client_version, "SSH-1.99-", 9) == 0) {
+    version = client_version + 9;
+  }
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
     "handling connection from SSH2 client '%s'", version);
@@ -176,8 +188,12 @@ int sftp_interop_handle_version(const char *client_version) {
       "checking client version '%s' against regex '%s'", version,
       known_versions[i].pattern);
 
-    res = regexec(known_versions[i].preg, version, 0, NULL, 0);
+    res = pr_regexp_exec(known_versions[i].pre, version, 0, NULL, 0, 0, 0);
     if (res == 0) {
+      pr_trace_msg(trace_channel, 18,
+        "client version '%s' matched against regex '%s'", version,
+        known_versions[i].pattern);
+
       /* We have a match. */
       interop_flags &= ~(known_versions[i].interop_flags);
 
@@ -206,7 +222,8 @@ int sftp_interop_handle_version(const char *client_version) {
     /* We should use the PROTOCOL_VERSION_NOT_SUPPORTED disconnect code,
      * but for probes/scans, simply hanging up on the client seems better.
      */
-    end_login(0);
+    pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BY_APPLICATION,
+      NULL);
   }
 
   if (is_scan) {
@@ -216,7 +233,8 @@ int sftp_interop_handle_version(const char *client_version) {
     /* We should use the PROTOCOL_VERSION_NOT_SUPPORTED disconnect code,
      * but for probes/scans, simply hanging up on the client seems better.
      */
-    end_login(0);
+    pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BY_APPLICATION,
+      NULL);
   }
 
   /* Now iterate through any SFTPClientMatch rules. */
@@ -225,18 +243,18 @@ int sftp_interop_handle_version(const char *client_version) {
   while (c) {
     int res;
     char *pattern;
-    regex_t *preg;
+    pr_regex_t *pre;
 
     pr_signals_handle();
 
     pattern = c->argv[0];
-    preg = c->argv[1];
+    pre = c->argv[1];
 
     pr_trace_msg(trace_channel, 18,
       "checking client version '%s' against SFTPClientMatch regex '%s'",
       version, pattern);
 
-    res = regexec(preg, version, 0, NULL, 0);
+    res = pr_regexp_exec(pre, version, 0, NULL, 0, 0, 0);
     if (res == 0) {
       pr_table_t *tab;
       void *v, *v2;
@@ -249,6 +267,7 @@ int sftp_interop_handle_version(const char *client_version) {
        *
        *  channelWindowSize
        *  channelPacketSize
+       *  pessimisticNewkeys
        *  sftpMinProtocolVersion
        *  sftpMaxProtocolVersion
        *  sftpUTF8ProtocolVersion (only if NLS support is enabled)
@@ -279,7 +298,22 @@ int sftp_interop_handle_version(const char *client_version) {
 
         sftp_channel_set_max_packetsz(packet_size);
       }
-      
+
+      v = pr_table_get(tab, "pessimisticNewkeys", NULL);
+      if (v) {
+        int pessimistic_newkeys;
+
+        pessimistic_newkeys = *((int *) v);
+
+        pr_trace_msg(trace_channel, 16,
+          "setting pessimistic NEWKEYS behavior to %s, as per SFTPClientMatch",
+          pessimistic_newkeys ? "true" : "false");
+
+        if (pessimistic_newkeys) {
+          interop_flags |= SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS;
+        } 
+      }
+
       v = pr_table_get(tab, "sftpMinProtocolVersion", NULL);
       v2 = pr_table_get(tab, "sftpMaxProtocolVersion", NULL);
       if (v && v2) {
@@ -353,20 +387,21 @@ int sftp_interop_init(void) {
    * time when a client connects.
    */
   for (i = 0; known_versions[i].pattern; i++) {
-    regex_t *preg;
+    pr_regex_t *pre;
     int res;
 
     pr_signals_handle();
 
-    preg = pr_regexp_alloc();
+    pre = pr_regexp_alloc(&sftp_module);
 
-    res = regcomp(preg, known_versions[i].pattern, REG_EXTENDED|REG_NOSUB);
+    res = pr_regexp_compile(pre, known_versions[i].pattern,
+      REG_EXTENDED|REG_NOSUB);
     if (res != 0) {
       char errmsg[256];
 
       memset(errmsg, '\0', sizeof(errmsg));
-      regerror(res, preg, errmsg, sizeof(errmsg));
-      pr_regexp_free(preg);
+      pr_regexp_error(res, pre, errmsg, sizeof(errmsg));
+      pr_regexp_free(NULL, pre);
 
       pr_log_debug(DEBUG0, MOD_SFTP_VERSION
         ": error compiling regex pattern '%s' (known_versions[%u]): %s",
@@ -374,7 +409,7 @@ int sftp_interop_init(void) {
       continue;
     }
 
-    known_versions[i].preg = preg;
+    known_versions[i].pre = pre;
   }
 
   return 0;
@@ -383,8 +418,8 @@ int sftp_interop_init(void) {
 int sftp_interop_free(void) {
   register unsigned int i;
 
-  for (i = 0; known_versions[i].preg; i++) {
-    pr_regexp_free(known_versions[i].preg);
+  for (i = 0; known_versions[i].pre; i++) {
+    pr_regexp_free(NULL, known_versions[i].pre);
   }
 
   return 0;

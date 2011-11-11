@@ -1,26 +1,28 @@
-/* Copyright (C) 1991-1993, 1996-1999, 2000 Free Software Foundation, Inc.
+/* Copyright (C) 1991,1992,1993,1996,1997,1998,1999,2000,2001,2002,2003,2007
+	Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
 
-   This library is distributed in the hope that it will be useful,
+   The GNU C Library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
-   License along with this library; see the file COPYING.LIB.  If not,
-   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.  */
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, write to the Free
+   Software Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA
+   02110-1335, USA.  */
 
 /* This file comes from the GNU C Library and has been modified for use in
  * ProFTPD.
  *
  * Changes are released under the GNU Public License, version 2.
  * Copyright (C) 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
+ * Copyright (C) 2010 The ProFTPD Project
  */
 
 #if 0 /* Not used in ProFTPD */
@@ -73,10 +75,19 @@
 #ifdef _LIBC
 # include "../locale/localeinfo.h"
 # include "../locale/elem-hash.h"
+# include "../locale/coll-lookup.h"
+# include <shlib-compat.h>
 
 # define CONCAT(a,b) __CONCAT(a,b)
+# define mbsrtowcs __mbsrtowcs
+# define fnmatch __fnmatch
+extern int fnmatch (const char *pattern, const char *string, int flags);
 #endif
 #endif /* Not used in ProFTPD */
+
+/* We often have to test for FNM_FILE_NAME and FNM_PERIOD being both set.  */
+#define NO_LEADING_PERIOD(flags) \
+  ((flags & (PR_FNM_FILE_NAME | PR_FNM_PERIOD)) == (PR_FNM_FILE_NAME | PR_FNM_PERIOD))
 
 /* Comment out all this code if we are using the GNU C Library, and are not
    actually compiling the library itself.  This code is part of the GNU C
@@ -91,6 +102,13 @@
  */
 #undef _LIBC
 #undef __GNU_LIBRARY__
+
+/* Provide an implementation of the gcc-specific __builtin_expect macro,
+ * for the non-gcc compilers out there.
+ */
+#ifndef __builtin_expect
+# define __builtin_expect(e, n)	(e)
+#endif /* __builtin_expect */
 
 #if defined _LIBC || !defined __GNU_LIBRARY__
 
@@ -125,7 +143,7 @@
 
 # define STREQ(s1, s2) ((strcmp (s1, s2) == 0))
 
-# define HANDLE_MULTIBYTE	0
+# define HANDLE_MULTIBYTE       0
 
 # if defined _LIBC || (defined HAVE_WCTYPE_H && defined HAVE_WCHAR_H)
 /* The GNU C library provides support for user-defined character classes
@@ -152,7 +170,6 @@
 
 #  if (HAVE_MBSTATE_T && HAVE_MBSRTOWCS) || _LIBC
 /* In this case we are implementing the multibyte character handling.  */
-#   undef HANDLE_MULTIBYTE
 #   define HANDLE_MULTIBYTE	1
 #  endif
 
@@ -171,37 +188,16 @@
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
 
-# if !defined _LIBC && !defined getenv
-extern char *getenv (const char *);
-# endif
-
 # ifndef errno
 extern int errno;
 # endif
 
-/* This function doesn't exist on most systems.  */
-
-# if !defined HAVE___STRCHRNUL && !defined _LIBC
-
-static char * __strchrnul (const char *s, int c);
-
-static char *
-__strchrnul (s, c)
-     const char *s;
-     int c;
-{
-  char *result = strchr (s, c);
-  if (result == NULL)
-    result = strchr (s, '\0');
-  return result;
-}
-# endif
+/* Global variable.  */
+static int posixly_correct;
 
 # if HANDLE_MULTIBYTE && !defined HAVE___STRCHRNUL && !defined _LIBC
 static wchar_t *
-__wcschrnul (s, c)
-     const wchar_t *s;
-     wint_t c;
+__wcschrnul (const wchar_t *s, wint_t c)
 {
   wchar_t *result = wcschr (s, c);
   if (result == NULL)
@@ -224,17 +220,22 @@ __wcschrnul (s, c)
 # endif
 # define CHAR	char
 # define UCHAR	unsigned char
+# define INT	int
 # define FCT	internal_fnmatch
+# define EXT	ext_match
+# define END	end_pattern
+# define STRUCT	fnmatch_struct
 # define L(CS)	CS
 # ifdef _LIBC
 #  define BTOWC(C)	__btowc (C)
 # else
 #  define BTOWC(C)	btowc (C)
 # endif
-# define STRCHR(S, C)	strchr (S, C)
-# define STRCHRNUL(S, C) __strchrnul (S, C)
+# define STRLEN(S) strlen (S)
+# define STRCAT(D, S) strcat (D, S)
+# define MEMPCPY(D, S, N) __mempcpy (D, S, N)
+# define MEMCHR(S, C, N) memchr (S, C, N)
 # define STRCOLL(S1, S2) strcoll (S1, S2)
-# define SUFFIX MB
 # include "pr_fnmatch_loop.c"
 
 
@@ -247,13 +248,18 @@ __wcschrnul (s, c)
 #  endif
 #  define CHAR	wchar_t
 #  define UCHAR	wint_t
+#  define INT	wint_t
 #  define FCT	internal_fnwmatch
+#  define EXT	ext_wmatch
+#  define END	end_wpattern
+#  define STRUCT fnwmatch_struct
 #  define L(CS)	L##CS
 #  define BTOWC(C)	(C)
-#  define STRCHR(S, C)	wcschr (S, C)
-#  define STRCHRNUL(S, C) __wcschrnul (S, C)
+#  define STRLEN(S) __wcslen (S)
+#  define STRCAT(D, S) __wcscat (D, S)
+#  define MEMPCPY(D, S, N) __wmempcpy (D, S, N)
+#  define MEMCHR(S, C, N) wmemchr (S, C, N)
 #  define STRCOLL(S1, S2) wcscoll (S1, S2)
-#  define SUFFIX WC
 #  define WIDE_CHAR_VERSION 1
 
 #  undef IS_CHAR_CLASS
@@ -334,42 +340,94 @@ pr_fnmatch (pattern, string, flags)
      int flags;
 {
 # if HANDLE_MULTIBYTE
-  mbstate_t ps;
-  size_t n;
-  wchar_t *wpattern;
-  wchar_t *wstring;
+  if (__builtin_expect (MB_CUR_MAX, 1) != 1)
+    {
+      mbstate_t ps;
+      size_t n;
+      const char *p;
+      wchar_t *wpattern;
+      wchar_t *wstring;
 
-  if (MB_CUR_MAX == 1)
-    /* This is an optimization for 8-bit character set.  */
-    return internal_fnmatch (pattern, string, flags & PR_FNM_PERIOD, flags);
+      /* Convert the strings into wide characters.  */
+      memset (&ps, '\0', sizeof (ps));
+      p = pattern;
+#ifdef _LIBC
+      n = strnlen (pattern, 1024);
+#else
+      n = strlen (pattern);
+#endif
+      if (__builtin_expect (n < 1024, 1))
+	{
+	  wpattern = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+	  n = mbsrtowcs (wpattern, &p, n + 1, &ps);
+	  if (__builtin_expect (n == (size_t) -1, 0))
+	    /* Something wrong.
+	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+	       already done?  */
+	    return -1;
+	  if (p)
+	    {
+	      memset (&ps, '\0', sizeof (ps));
+	      goto prepare_wpattern;
+	    }
+	}
+      else
+	{
+	prepare_wpattern:
+	  n = mbsrtowcs (NULL, &pattern, 0, &ps);
+	  if (__builtin_expect (n == (size_t) -1, 0))
+	    /* Something wrong.
+	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+	       already done?  */
+	    return -1;
+	  wpattern = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+	  assert (mbsinit (&ps));
+	  (void) mbsrtowcs (wpattern, &pattern, n + 1, &ps);
+	}
 
-  /* Convert the strings into wide characters.  */
-  memset (&ps, '\0', sizeof (ps));
-  n = mbsrtowcs (NULL, &pattern, 0, &ps);
-  if (n == (size_t) -1)
-    /* Something wrong.
-       XXX Do we have to set `errno' to something which mbsrtows hasn't
-       already done?  */
-    return -1;
-  wpattern = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
-  assert (mbsinit (&ps));
-  (void) mbsrtowcs (wpattern, &pattern, n + 1, &ps);
+      assert (mbsinit (&ps));
+#ifdef _LIBC
+      n = strnlen (string, 1024);
+#else
+      n = strlen (string);
+#endif
+      p = string;
+      if (__builtin_expect (n < 1024, 1))
+	{
+	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+	  n = mbsrtowcs (wstring, &p, n + 1, &ps);
+	  if (__builtin_expect (n == (size_t) -1, 0))
+	    /* Something wrong.
+	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+	       already done?  */
+	    return -1;
+	  if (p)
+	    {
+	      memset (&ps, '\0', sizeof (ps));
+	      goto prepare_wstring;
+	    }
+	}
+      else
+	{
+	prepare_wstring:
+	  n = mbsrtowcs (NULL, &string, 0, &ps);
+	  if (__builtin_expect (n == (size_t) -1, 0))
+	    /* Something wrong.
+	       XXX Do we have to set `errno' to something which mbsrtows hasn't
+	       already done?  */
+	    return -1;
+	  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
+	  assert (mbsinit (&ps));
+	  (void) mbsrtowcs (wstring, &string, n + 1, &ps);
+	}
 
-  assert (mbsinit (&ps));
-  n = mbsrtowcs (NULL, &string, 0, &ps);
-  if (n == (size_t) -1)
-    /* Something wrong.
-       XXX Do we have to set `errno' to something which mbsrtows hasn't
-       already done?  */
-    return -1;
-  wstring = (wchar_t *) alloca ((n + 1) * sizeof (wchar_t));
-  assert (mbsinit (&ps));
-  (void) mbsrtowcs (wstring, &string, n + 1, &ps);
-
-  return internal_fnwmatch (wpattern, wstring, flags & PR_FNM_PERIOD, flags);
-# else
-  return internal_fnmatch (pattern, string, flags & PR_FNM_PERIOD, flags);
+      return internal_fnwmatch (wpattern, wstring, wstring + n,
+				flags & PR_FNM_PERIOD, flags, NULL);
+    }
 # endif  /* mbstate_t and mbsrtowcs or _LIBC.  */
+
+  return internal_fnmatch (pattern, string, string + strlen (string),
+			   flags & PR_FNM_PERIOD, flags, NULL);
 }
 
 #endif	/* _LIBC or not __GNU_LIBRARY__.  */

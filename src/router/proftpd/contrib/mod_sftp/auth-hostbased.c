@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'hostbased' user authentication
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-hostbased.c,v 1.4 2009/03/19 06:04:08 castaglia Exp $
+ * $Id: auth-hostbased.c,v 1.7 2011/08/04 21:15:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -38,9 +38,9 @@
 
 static const char *trace_channel = "ssh2";
 
-int sftp_auth_hostbased(struct ssh2_packet *pkt, const char *orig_user,
-    const char *user, const char *service, char **buf, uint32_t *buflen,
-    int *send_userauth_fail) {
+int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
+    const char *orig_user, const char *user, const char *service, char **buf,
+    uint32_t *buflen, int *send_userauth_fail) {
   struct passwd *pw;
   char *hostkey_algo, *host_fqdn, *host_user, *host_user_utf8;
   char *hostkey_data, *signature_data;
@@ -48,6 +48,19 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, const char *orig_user,
   const unsigned char *id;
   uint32_t buflen2, bufsz2, hostkey_datalen, id_len, signature_len;
   int pubkey_type;
+
+  if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "authentication request for user '%s' blocked by '%s' handler",
+      orig_user, pass_cmd->argv[0]);
+
+    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+    *send_userauth_fail = TRUE;
+    errno = EPERM;
+    return 0;
+  }
 
   hostkey_algo = sftp_msg_read_string(pkt->pool, buf, buflen);
 
@@ -66,10 +79,10 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, const char *orig_user,
     "client sent '%s' host key, FQDN %s, and remote user '%s'",
     hostkey_algo, host_fqdn, host_user);
 
-  if (strcmp(hostkey_algo, "ssh-rsa") == 0) {
+  if (strncmp(hostkey_algo, "ssh-rsa", 8) == 0) {
     pubkey_type = EVP_PKEY_RSA;
 
-  } else if (strcmp(hostkey_algo, "ssh-dss") == 0) {
+  } else if (strncmp(hostkey_algo, "ssh-dss", 8) == 0) {
     pubkey_type = EVP_PKEY_DSA;
 
   /* XXX Need to support X509v3 certs here */

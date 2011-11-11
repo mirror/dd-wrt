@@ -15,9 +15,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+# Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
 #
-#  $Id: prxs.in,v 1.5.2.1 2011/02/15 20:07:48 castaglia Exp $
+#  $Id: prxs.in,v 1.7 2011/05/23 21:25:44 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
