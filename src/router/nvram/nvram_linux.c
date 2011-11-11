@@ -305,6 +305,7 @@ int file2nvram(char *filename, char *varname)
 	buf[i] = 0;
 	//fprintf(stderr,"================ > file2nvram %s = [%s] \n",varname,buf); 
 	nvram_set(varname, buf);
+	return 0;
 
 }
 
