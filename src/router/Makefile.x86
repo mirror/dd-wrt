@@ -42,7 +42,7 @@ export ATH_RATE=ath_rate/sample
 #
 
 # Build platform
-export BUILD := i386-pc-linux-gnu
+export BUILD := i486-pc-linux-gnu
 export HOSTCC := gcc
 
 # uClibc wrapper
@@ -55,9 +55,9 @@ endif
 ifeq ($(ARCH),mips)
 export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
 endif
-ifeq ($(ARCH),i386)
-export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.23
-endif
+#ifeq ($(ARCH),i386)
+#export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.29
+#endif
 ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
 endif
@@ -75,7 +75,7 @@ export KRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/
 #endif
 
 #ifeq ($(PLATFORM),mipsel-uclibc)
-export CROSS_COMPILE := $(ARCH)-linux-uclibc-
+export CROSS_COMPILE := i486-linux-uclibc-
 export CONFIGURE := ./configure $(ARCH)-linux --build=$(BUILD)
 export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
 #endif
@@ -97,7 +97,7 @@ ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),i386)
-export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -funit-at-a-time 
+export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 
 endif
 
 export CC := $(CROSS_COMPILE)gcc
@@ -157,10 +157,10 @@ else
 endif
 	make -C $(LINUXDIR) oldconfig
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE=i486-linux-uclibc- ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=i486-linux-uclibc- ; \
 	fi
 	#armeb-linux-uclibc-strip --remove-section=.note --remove-section=.comment $(LINUXDIR)/vmlinux
 	#armeb-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux vmlinux.bin 
@@ -181,7 +181,7 @@ realclean: $(obj-clean)
 	-rm -f $(ARCH)-uclibc/*
 
 	
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean	
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean pppd-clean
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
@@ -205,15 +205,74 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-#	../../tools/optimize_lib.sh netconf/ libnetconf.so libnetconf.a libnetconf_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libnetconf.so
-#	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
-#	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
-	../../tools/optimize_lib.sh lib.i386/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
-#	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
-#  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
+	make -f Makefile.x86 lib.i486-install
+	cp lib.i486/pics/* $(TARGETDIR)/lib
+	cp lib.i486/libgcc_s.so.1 $(TARGETDIR)/lib
 
 
-install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"lib.i486/libc_so.a" \
+		"lib.i486/libc_so.a" \
+		"$(ARCH)-uclibc/target/lib/libc.so.0" \
+		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
+		lib.i486/libgcc_s.so.*
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"$(wildcard lib.i486/libcrypt-*.so)" \
+		"lib.i486/libcrypt_pic.a" \
+		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
+		lib.i486/libgcc_s.so.* \
+		-Wl,-soname=libcrypt.so.0
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"$(wildcard lib.i486/libm-*.so)" \
+		"lib.i486/libm_pic.a" \
+		"$(ARCH)-uclibc/target/lib/libm.so.0" \
+		lib.i486/libgcc_s.so.* \
+		-Wl,-soname=libm.so.0
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"$(wildcard lib.i486/libpthread-*.so)" \
+		"lib.i486/libpthread_so.a" \
+		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
+		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
+		lib.i486/libgcc_s.so.* \
+		-Wl,-soname=libpthread.so.0
+
+ifneq ($(CONFIG_NOOPT),y)
+	rm -rf $(ARCH)-uclibc/tmp/mklibs-out
+	rm -f $(ARCH)-uclibc/tmp/mklibs-progs
+	mkdir -p $(ARCH)-uclibc/tmp/mklibs-out
+	find $(TARGETDIR) -type f -perm +100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > $(ARCH)-uclibc/tmp/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> $(ARCH)-uclibc/tmp/mklibs-progs
+
+	mkdir -p $(ARCH)-uclibc/tmp/mklibs-out
+	mklibs.py -D \
+		-d $(ARCH)-uclibc/tmp/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat $(ARCH)-uclibc/tmp/mklibs-progs` 2>&1
+	cp $(ARCH)-uclibc/tmp/mklibs-out/* $(TARGETDIR)/lib
+endif
+	rm -f $(TARGETDIR)/lib/*.a
+	rm -f $(TARGETDIR)/lib/*.map
+#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+
+
+install package: clean_target $(filter-out lib.i486-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
 	# Install binaries into target directory
 #	make -C viarhine clean
@@ -250,7 +309,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.x86 lib.$(ARCH)-install
+	$(MAKE) -f Makefile.x86 lib.i486-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.x86 optimize-lib
 	# Install modules into filesystem
@@ -270,7 +329,7 @@ endif
 
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	cp lib.i486/libgcc_s.so.1 $(TARGETDIR)/lib
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	
@@ -295,6 +354,49 @@ endif
 #else	
 #	cp adm6996/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
 #endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/class
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/core
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd2	
+endif
+ifneq ($(CONFIG_NTFS3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fuse
+endif
+ifneq ($(CONFIG_USB),y)
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
+endif
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
+endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/source
@@ -320,7 +422,7 @@ endif
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	#cd $(TARGETDIR)
-	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
+#	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
 ifeq ($(CONFIG_KAID),y)
@@ -329,11 +431,13 @@ endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	./strip_libs.sh $(ARCH)
 
+	cd grub && ./configure --host=i386-linux --target=i386-linux CC="/xfs/toolchains/staging_dir_i386.4.2.1/bin/i386-linux-gcc" LDFLAGS="-static" CFLAGS="-Os -DNEED_PRINTF"
+	make -C grub clean DESTDIR=$(INSTALLDIR)/grub	
+	make -C grub DESTDIR=$(INSTALLDIR)/grub	
+	make -C grub install DESTDIR=$(INSTALLDIR)/grub	
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -le
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 262144 -nopad
 	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
-	cd grub && ./configure --host=i386-linux --target=i386-linux LDFLAGS="-static" CFLAGS="-O2"
-	make -C grub install DESTDIR=$(INSTALLDIR)/grub	
 	mkdir -p $(ARCH)-uclibc/root.grub/boot/grub
 	cp \
 		$(INSTALLDIR)/grub/usr/local/lib/grub/i386-pc/stage1 \
@@ -342,9 +446,16 @@ endif
 		$(ARCH)-uclibc/root.grub/boot/grub/
 	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	cp $(LINUXDIR)/arch/i386/boot/bzImage $(ARCH)-uclibc/root.grub/boot/vmlinuz
-	PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image 3 $(ARCH)-uclibc/root.grub 9 $(ARCH)-uclibc/root.fs 16
+
+ifeq ($(CONFIG_FULL),y)
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image 3 $(ARCH)-uclibc/root.grub 32 $(ARCH)-uclibc/root.fs 32
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
-	PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image 3 $(ARCH)-uclibc/root.grub 9 $(ARCH)-uclibc/root.fs 16
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image 3 $(ARCH)-uclibc/root.grub 32 $(ARCH)-uclibc/root.fs 32
+else
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image 3 $(ARCH)-uclibc/root.grub 9 $(ARCH)-uclibc/root.fs 16
+	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
+	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image 3 $(ARCH)-uclibc/root.grub 9 $(ARCH)-uclibc/root.fs 16
+endif
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
 
