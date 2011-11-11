@@ -20,6 +20,20 @@ ifeq ($(CONFIG_E2FSPROGS_ADV),y)
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs prefix=/usr
 else
 	-rm -f $(INSTALLDIR)/e2fsprogs/sbin/*fsck*
+	rm -rf $(INSTALLDIR)/e2fsprogs/usr/bin
+	rm -rf $(INSTALLDIR)/e2fsprogs/usr/sbin
+	rm -rf $(INSTALLDIR)/e2fsprogs/usr/lib
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/debugfs
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/dumpe2fs
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2image
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/badblocks
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/blkid
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/logsave
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/resize2fs
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/tune2fs
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2undo
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2label
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/findfs
 endif
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
