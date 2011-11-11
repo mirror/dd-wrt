@@ -1,0 +1,174 @@
+<!-- $Id: mod_auth_unix.html,v 1.4 2011/02/20 18:20:26 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth_unix.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_auth_unix</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_auth_unix</code></b></h2>
+</center>
+<hr><br>
+
+This module is contained in the <code>mod_auth_unix.c</code> file for
+ProFTPD 1.3.<i>x</i>, and is compiled by default.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#AuthUnixOptions">AuthUnixOptions</a>
+  <li><a href="#PersistentPasswd">PersistentPasswd</a>
+</ul>
+
+<hr>
+<h2><a name="AuthUnixOptions">AuthUnixOptions</a></h2>
+<strong>Syntax:</strong> AuthUnixOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_unix<br>
+<strong>Compatibility:</strong> 1.3.3rc2
+
+<p>
+The <code>AuthUnixOptions</code> directive is used to tweak various
+Unix-specific authentication behaviors in <code>mod_auth_unix</code>.  The
+currently implemented options are:
+<ul>
+  <li><code>aixNoRLogin</code><br>
+    <p>
+    In <a href="http://bugs.proftpd.org/show_bug.cgi?id=1896">Bug#1896</a>,
+    support for checking some AIX-specific functions for whether a login
+    should be accepted was added; this happens only on AIX servers, of course.
+
+    <p>
+    However, some AIX admins like to configure "rlogin=false", yet still want
+    to allow FTP logins.  To enable this specific behavior, a new
+    <code>AuthUnixOptions</code> setting (only honored on AIX) was added:
+<pre>
+        AuthUnixOptions aixNoRLogin
+</pre>
+    If this setting is used on any other server, it is silently ignored.
+    <a href="http://bugs.proftpd.org/show_bug.cgi?id=3300">Bug#3300</a> has
+    the full details.
+  </li>
+
+  <p>
+  <li><code>magicTokenChroot</code><br>
+    <p>
+    This option causes <code>mod_auth_unix</code> to examine the home
+    directory retrieved for a user for the magic "/./" token.  If found,
+    the portion of the directory before the token will be used for the
+    <code>chroot()</code> for the process; the portion after the token
+    will be the default directory for the process.
+
+    <p>
+    <b>Note</b> that this will override any configured <code>DefaultRoot</code>
+    and <code>DefaultChdir</code> directives.
+
+    <p>
+    This option is intended for use for sites which are migrating from
+    old <code>wuftpd</code>-based installations.
+  </li>
+
+  <p>
+  <li><code>noGetgrouplist</code><br>
+    <p>
+    On systems which support it, the <code>getgrouplist(3)</code> function
+    can be used to get the group membership list of a user in a <i>much</i>
+    faster way.  However, use of this function can have strange interactions
+    with NSS modules, depending on the NSS modules used (see
+    <a href="http://bugs.proftpd.org/show_bug.cgi?id=3475">Bug#3475</a>).
+    Use this option to disable use of the <code>getgrouplist(3)</code>
+    function, <i>e.g.</i>:
+<pre>
+        AuthUnixOptions noGetgrouplist
+</pre>
+    This setting has no effect on systems which do not support the
+    <code>getgrouplist(3)</code> function.
+</ul>
+
+<p>
+<hr>
+<h2><a name="PersistentPasswd">PersistentPasswd</a></h2>
+<strong>Syntax:</strong> PersistentPasswd <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_unix<br>
+<strong>Compatibility:</strong> 1.2.0
+
+<p>
+The <code>PersistentPasswd</code> directive controls how
+<code>mod_auth_unix</code> handles authentication, user/group lookups, and
+user/group to name mapping.  If set to <em>on</em>, <code>mod_auth_unix</code>
+will attempt to open the system-wide <code>/etc/passwd</code>,
+<code>/etc/group</code> (and potentially <code>/etc/shadow</code>) files
+itself, holding them open even during a <code>chroot()</code>ed login.  (Note
+that <code>/etc/shadow</code> is never held open, for security reasons).
+
+<p>
+On some platforms, you <b>must</b> turn this option on, as the libc functions
+are incapable of accessing these databases from inside of a
+<code>chroot()</code>.  At compile-time, the <code>configure</code> script
+will attempt to detect whether or not you need this support, and set the
+default accordingly..  However, such "guessing" may fail, and you will have to
+manually enable/disable the feature.  If you cannot see user or group names
+when performing a directory listing inside a <code>chroot()</code>ed login,
+this indicates you must enable the directive.  Use of the
+<code>AuthUserFile</code> or <code>AuthGroupFile</code> directives will force
+partial support for persistent user or group database files, regardless of
+<code>PersistentPasswd</code>'s setting.
+
+<p>
+Note: <code>NIS</code>/<code>NIS+</code> and <code>NSS</code> users will most
+likely want to disable this feature, regardless of <code>proftpd</code>'s
+detected configuration defaults.  Failure to disable this will make your
+<code>NIS</code>/<code>NIS+</code> maps and <code>NSS</code> lookups not work!
+On certain systems, you may also need to use the
+<code>--enable-autoshadow</code> option in order to authenticate both users
+from <code>NIS</code> maps or <code>NSS</code> lookups, and local users.
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_auth_unix</code> module is compiled by default.
+
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="ExpiredPasswords">
+<font color=red>Question</font>: It appears that the handling of expired
+passwords by <code>mod_auth_unix</code> is wrong.  Is this a bug?<br>
+<font color=blue>Answer</font>: Not really.  Different implementations
+have implemented expired passwords differently.  One particular implementation
+even has special values, <i>e.g.</i> for the date of last password change:
+<blockquote>
+  The value 0 has a special meaning, which is that the user should
+  change her pasword the next time she will log in the system.
+</blockquote>
+
+<p>
+These special cases vary from implementation to implementation; in the end,
+it is better to use the
+<a href="mod_auth_pam.html"><code>mod_auth_pam</code></a> module and a PAM
+configuration which can better handle password expiration according to your
+site's needs.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2011/02/20 18:20:26 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2010-2011<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
