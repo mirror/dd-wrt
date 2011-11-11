@@ -1,4 +1,4 @@
-<!-- $Id: Compiling.html,v 1.6 2010/02/10 19:39:50 castaglia Exp $ -->
+<!-- $Id: Compiling.html,v 1.8 2011/04/05 22:20:40 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Compiling.html,v $ -->
 
 <html>
@@ -220,11 +220,25 @@ about the more common of these feature options:
   </li>
 
   <p>
-  <li>--enable-nls</code><br>
+  <li><code>--enable-memcache</code><br>
+    Enables support for using <a href="http://memcached.org/"><code>memcached</code></a> for caching by including the
+    <a href="../modules/mod_memcache.html"><code>mod_memcache</code></a>
+    module in the build.  This is not enabled by default.
+  </li>
+
+  <p>
+  <li><code>--enable-nls</code><br>
     Enables support for different character sets and encodings, for translated
     response messages, and for the <code>LANG</code> FTP command via the
     <a href="../modules/mod_lang.html"><code>mod_lang</code></a> module.  This
     is not enabled by default.
+  </li>
+
+  <p>
+  <li><code>--enable-pcre</code><br>
+    Enable use of <a href="http://www.pcre.org/">PCRE</a> for POSIX regular
+    expressions, rather than the system library.  This is not enabled by
+    default.  Note that pcre-7.0 or later is <b>required</b>.
   </li>
 
   <p>
@@ -751,7 +765,7 @@ is the way to get a statically linked <code>proftpd</code> executable:
 
 <p>
 <hr>
-<i>$Date: 2010/02/10 19:39:50 $</i><br>
+<i>$Date: 2011/04/05 22:20:40 $</i><br>
 
 </body>
 </html>

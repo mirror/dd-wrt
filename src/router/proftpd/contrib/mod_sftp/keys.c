@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key mgmt (keys)
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: keys.c,v 1.10.2.1 2011/03/31 22:17:51 castaglia Exp $
+ * $Id: keys.c,v 1.16 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -33,6 +33,7 @@
 #include "interop.h"
 
 extern xaset_t *server_list;
+extern module sftp_module;
 
 #define SFTP_DEFAULT_HOSTKEY_SZ		4096
 #define SFTP_MAX_SIG_SZ			4096
@@ -120,7 +121,7 @@ static void prepare_provider_fds(int stdout_fd, int stderr_fd) {
   /* Appears that on some platforms (e.g. Solaris, Mac OSX), having too
    * high of an fd value can lead to undesirable behavior for some reason.
    * Need to track down why; the behavior I saw was the inability of
-   * select() to work property on the stdout/stderr fds attached to the
+   * select() to work properly on the stdout/stderr fds attached to the
    * exec'd script.
    */
   if (nfiles > 255) {
@@ -746,7 +747,7 @@ static EVP_PKEY *get_pkey_from_data(pool *p, char *pkey_data,
 
   pkey_type = sftp_msg_read_string(p, &pkey_data, &pkey_datalen);
 
-  if (strcmp(pkey_type, "ssh-rsa") == 0) {
+  if (strncmp(pkey_type, "ssh-rsa", 8) == 0) {
     RSA *rsa;
 
     pkey = EVP_PKEY_new();
@@ -775,7 +776,7 @@ static EVP_PKEY *get_pkey_from_data(pool *p, char *pkey_data,
       return NULL;
     }
 
-  } else if (strcmp(pkey_type, "ssh-dss") == 0) {
+  } else if (strncmp(pkey_type, "ssh-dss", 8) == 0) {
     DSA *dsa;
 
     pkey = EVP_PKEY_new();
@@ -1458,7 +1459,7 @@ int sftp_keys_verify_signed_data(pool *p, const char *pubkey_algo,
     return -1;
   }
 
-  if (strcmp(pubkey_algo, "ssh-dss") == 0) {
+  if (strncmp(pubkey_algo, "ssh-dss", 8) == 0) {
     if (sftp_interop_supports_feature(SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG)) {
       sig_type = sftp_msg_read_string(p, &signature, &signaturelen);
 
@@ -1481,7 +1482,7 @@ int sftp_keys_verify_signed_data(pool *p, const char *pubkey_algo,
   EVP_DigestUpdate(&ctx, sig_data, sig_datalen);
   EVP_DigestFinal(&ctx, digest, &digestlen);
 
-  if (strcmp(sig_type, "ssh-rsa") == 0) {
+  if (strncmp(sig_type, "ssh-rsa", 8) == 0) {
     RSA *rsa;
     int ok;
 
@@ -1503,7 +1504,7 @@ int sftp_keys_verify_signed_data(pool *p, const char *pubkey_algo,
 
     RSA_free(rsa);
 
-  } else if (strcmp(sig_type, "ssh-dss") == 0) {
+  } else if (strncmp(sig_type, "ssh-dss", 8) == 0) {
     DSA *dsa;
     DSA_SIG *dsa_sig;
     int ok;
@@ -1601,7 +1602,8 @@ void sftp_keys_get_passphrases(void) {
         pr_log_pri(PR_LOG_ERR, MOD_SFTP_VERSION
           ": unable to use key in SFTPHostKey '%s', exiting",
           (const char *) c->argv[0]);
-        end_login(1);
+        pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BAD_CONFIG,
+          NULL);
       }
 
       k->next = sftp_pkey_list;

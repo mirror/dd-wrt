@@ -1,4 +1,4 @@
-<!-- $Id: mod_ban.html,v 1.8 2009/12/08 00:24:42 castaglia Exp $ -->
+<!-- $Id: mod_ban.html,v 1.12 2011/02/20 02:21:50 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_ban.html,v $ -->
 
 <html>
@@ -40,6 +40,8 @@ questions, concerns, or suggestions regarding this module.
 
 <h2>Directives</h2>
 <ul>
+  <li><a href="#BanCache">BanCache</a>
+  <li><a href="#BanCacheOptions">BanCacheOptions</a>
   <li><a href="#BanControlsACLs">BanControlsACLs</a>
   <li><a href="#BanEngine">BanEngine</a>
   <li><a href="#BanLog">BanLog</a>
@@ -53,6 +55,24 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#ban"><code>ban</code></a>
   <li><a href="#permit"><code>permit</code></a>
 </ul>
+
+<p>
+<hr>
+<h3><a name="BanCache">BanCache</a></h3>
+<strong>Syntax:</strong> BanCache <em>driver</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ban<br>
+<strong>Compatibility:</strong> 1.3.4rc2 and later
+
+<p>
+<hr>
+<h3><a name="BanCacheOptions">BanCacheOptions</a></h3>
+<strong>Syntax:</strong> BanCacheOptions <em>opt1 ... optN</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ban<br>
+<strong>Compatibility:</strong> 1.3.4rc2 and later
 
 <p>
 <hr>
@@ -168,12 +188,14 @@ supported events are:
   MaxClientsPerClass
   MaxClientsPerHost
   MaxClientsPerUser
+  MaxCommandRate
   MaxConnectionsPerHost
   MaxHostsPerUser
   MaxLoginAttempts
   TimeoutIdle
   TimeoutLogin
   TimeoutNoTransfer
+  UnhandledCommand
 </pre>
 An event is generated whenever one of these limits is reached by a client.
 
@@ -187,10 +209,11 @@ specifies a number of hours, minutes, and seconds.  This parameter says
 that if <i>N</i> occurrences of <em>event</em> happen within the given
 time interval, then a ban is automatically added.  The IP address of
 the connecting client is banned when the following event rules are
-triggered: <code>AnonRejectPasswords</code>, <code>MaxClientsPerHost</code>,
-<code>MaxConnectionsPerHost</code>, <code>MaxLoginAttempts</code>,
-<code>TimeoutIdle</code>, and <code>TimeoutNoTransfer</code>.  The class of
-the connected client, if any, is banned when a rule for
+triggered: <code>AnonRejectPasswords</code>, <code>MaxCommandRate</code>,
+<code>MaxClientsPerHost</code>, <code>MaxConnectionsPerHost</code>,
+<code>MaxLoginAttempts</code>, <code>TimeoutIdle</code>,
+<code>TimeoutNoTransfer</code>, and <code>UnhandledCommand</code>.  The class
+of the connected client, if any, is banned when a rule for
 <code>MaxClientsPerClass</code> is triggered.  Rules for
 <code>MaxClientsPerUser</code> and <code>MaxHostsPerUser</code> will cause
 the connected username to be banned.
@@ -253,7 +276,7 @@ once <code>proftpd</code> is shutdown, all current ban data is lost.
 <p>
 <hr>
 <h3><a name="ban"><code>ban</code></a></h3>
-<strong>Syntax:</strong> ftpdctl ban <em>class|host|info|user name1 [name2 ...]</em><br>
+<strong>Syntax:</strong> ftpdctl ban <em>class|host|info|user [-s address#port] name1 [name2 ...]</em><br>
 <strong>Purpose:</strong> Add a ban or display ban information<br>
 
 <p>
@@ -262,6 +285,19 @@ lists.  For example, to ban a user:
 <pre>
   ftpdctl ban user dave
 </pre>
+This will create a ban rule for user 'dave' for <i>all</i> virtual servers in
+your <code>proftpd.conf</code>.  If you want to create such a ban rule, but
+only for one specific <code>&lt;VirtualHost&gt;</code>, use the <code>-s</code>
+command-line option, <i>e.g.</i>:
+<pre>
+  ftpdctl ban user -s 1.2.3.4#21 dave
+</pre>
+This example will create the user 'dave' ban rule for the
+<code>&lt;VirtualHost&gt;</code> handling IP address 1.2.3.4, port 21.
+The <code>-s</code> command-line option applies to <em>host</em> and
+<em>class</em> bans as well.
+
+<p>
 To ban specific hosts, you can use either IP addresses or DNS names:
 <pre>
   ftpdctl ban host 1.2.3.4 5.6.7.8
@@ -287,6 +323,7 @@ Or, if you wish to see more information, use the <code>-v</code> option:
   ftpdctl:   127.0.0.1
   ftpdctl:     Reason: MaxLoginAttempts autoban at Wed May 19 14:59:25 2004
   ftpdctl:     Expires: Wed May 19 14:59:55 2004 (in 24 seconds)
+  ftpdctl:     &lt;VirtualHost&gt; <i>ServerName</i> (1.2.3.4#21)
 </pre>
 It is also possible to see the state of ban event rules, using the
 <code>-e</code> option:
@@ -312,16 +349,17 @@ See also: <a href="#permit"><code>permit</code></a>
 <p>
 <hr>
 <h3><a name="permit"><code>permit</code></a></h3>
-<strong>Syntax:</strong> ftpdctl permit <em>class|host|user name1 [name2 ...]</em><br>
+<strong>Syntax:</strong> ftpdctl permit <em>class|host|user [-s address#port] name1 [name2 ...]</em><br>
 <strong>Purpose:</strong> Permit banned clients to connect<br>
 
 <p>
 The <code>permit</code> action is used to remove a ban for users, hosts,
 and classes:
 <pre>
-  ftpdctl permit user dave
-  ftpdctl permit host 1.2.3.4 gw.evil.com
-  ftpdctl permit class anonftp
+  # ftpdctl permit user dave
+  # ftpdctl permit user -s 1.2.3.4#21 dave
+  # ftpdctl permit host 1.2.3.4 gw.evil.com
+  # ftpdctl permit class anonftp
 </pre>
 
 <p>
@@ -454,12 +492,12 @@ Note that it is <b>important</b> to have <i>both</i>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/12/08 00:24:42 $</i><br>
+Last Updated: <i>$Date: 2011/02/20 02:21:50 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2009 TJ Saunders<br>
+&copy; Copyright 2004-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

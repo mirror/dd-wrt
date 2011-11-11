@@ -1,135 +1,154 @@
-# $Id: proftpd.spec,v 1.73.2.5 2011/04/01 16:43:48 castaglia Exp $
+# $Id: proftpd.spec,v 1.79 2011/11/09 22:35:48 castaglia Exp $
 
-# You can specify additional modules on the RPM build line by specifying
-# flags like:
+# Module List:
 #
-#   --with mod_tls
-#
-# The following modules/support can be added in this manner:
-#
-#   mod_tls
-#   mod_sftp
-#   mod_radius
-#   mod_ldap
-#   mod_wrap
-#   mod_wrap2
-#   mod_wrap2_file
-#   mod_wrap2_sql
-#   mod_sql
-#   mod_sql_mysql
-#   mod_sql_postgres
-#   mod_rewrite
-#   mod_ifsession
-#   mod_facl
-#   mod_quotatab
-#   mod_quotatab_file
-#   mod_quotatab_sql
+# Dynamic modules with no/minimal additional build or runtime dependencies, always built
+#   mod_auth_pam
 #   mod_ban
 #   mod_ctrls_admin
+#   mod_exec
+#   mod_facl
+#   mod_ifsession
+#   mod_load
+#   mod_quotatab
+#   mod_quotatab_file
+#   mod_quotatab_radius
+#   mod_quotatab_sql
+#   mod_radius
+#   mod_ratio
+#   mod_readme
+#   mod_rewrite
+#   mod_shaper
 #   mod_site_misc
-#   ipv6
-#   ctrls
-#   dso
-#   lastlog
-#   nls
+#   mod_sql
+#   mod_sql_passwd
 #
-# note that the following are equivalent:
+# Dynamic modules with additional build or runtime dependencies, not built by default
 #
-#	--enable-nls		--with-mod_lang
-#	--enable-dso		--with-mod_dso
-#	--enable-ctrls		--with-mod_ctrls
+#   mod_ldap (needs openldap [--with ldap])
+#   mod_quotatab_ldap (needs openldap [--with ldap])
+#   mod_sftp (needs openssl [--with ssl])
+#   mod_sftp_pam (needs openssl [--with ssl])
+#   mod_sftp_sql (needs openssl [--with ssl])
+#   mod_sql_mysql (needs mysql client libraries [--with mysql])
+#   mod_sql_postgres (needs postgresql client libraries [--with postgresql])
+#   mod_tls (needs openssl [--with ssl])
+#   mod_tls_shmcache (needs openssl [--with ssl])
+#   mod_wrap (needs tcp_wrappers [--with wrap])
+#   mod_wrap2 (needs tcp_wrappers [--with wrap])
+#   mod_wrap2_file (needs tcp_wrappers [--with wrap])
+#   mod_wrap2_sql (needs tcp_wrappers [--with wrap])
 #
-# to turn everything on, build as:
-#
-# rpmbuild -ba --with ctrls --with mod_facl --with mod_tls --with nls \
-#	--with ipv6 --with dso proftpd.spec
-#
-# If the /home directory is a network mount (e.g. NFS) which squashes
-# root privileges, then rpm will fail at the install step.  To avoid this,
-# use:
-#
-#  rpmbuild --define 'nohome 1' ...
-%{!?nohome:%define nohome 0}
+# Note: ALL optional features can be enabled using --with everything
+# RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
+# so use --with rhel5 to inhibit those features when using --with everything
 
-%define proftpd_version 1.3.3e
-%define usecvsversion             0%{?_with_cvs:1}
-%define proftpd_cvs_version_main  1.2
-%define proftpd_cvs_version_date  20070929
+%global proftpd_version           1.3.4
+%global release_cand_version      stable
+%global usecvsversion             0%{?_with_cvs:1}
+%global proftpd_cvs_version_main  1.3.4
+%global proftpd_cvs_version_date  20110525
 
-# define static_modules only if mod_facl has been requested
-%if 0%{?_with_mod_facl:1}
-%define static_modules	mod_facl
+# Handle optional functionality
+#
+# --with everything (for all optional functionality)
+# --with rhel5 inhibits features not available on RHEL5 and clones
+# --with rhel6 inhibits features not available on RHEL6 and clones
+%if 0%{?_with_everything:1}
+%global _with_ldap 1
+%if 0%{!?_with_rhel5:1} && 0%{!?_with_rhel6:1}
+%global _with_memcache 1
+%endif
+%global _with_mysql 1
+%if 0%{!?_with_rhel5:1}
+%global _with_pcre 1
+%endif
+%global _with_postgresql 1
+%global _with_ssl 1
+%global _with_wrap 1
+%endif
+#
+# --with ldap (for mod_ldap, mod_quotatab_ldap)
+%if 0%{?_with_ldap:1}
+BuildRequires: openldap-devel
+%endif
+#
+# --with memcache (for mod_memcache, mod_tls_memcache)
+%if 0%{?_with_memcache:1}
+BuildRequires: libmemcached-devel >= 0.41
+%endif
+#
+# --with mysql (for mod_sql_mysql)
+%if 0%{?_with_mysql:1}
+BuildRequires: mysql-devel
+%endif
+#
+# --with pcre (to use pcre rather than glibc regex engine)
+%if 0%{?_with_pcre:1}
+BuildRequires: pcre-devel >= 7.0
+%endif
+#
+# --with postgresql (for mod_sql_postgres)
+%if 0%{?_with_postgresql:1}
+BuildRequires: postgresql-devel
+%endif
+#
+# --with ssl (for mod_sftp, mod_sftp_pam, mod_sftp_sql, mod_sql_passwd, mod_tls, mod_tls_shmcache)
+%if 0%{?_with_ssl:1}
+BuildRequires: openssl-devel
+%endif
+#
+# --with wrap (for mod_wrap, mod_wrap2, mod_wrap2_file, mod_wrap2_sql)
+%if 0%{?_with_wrap:1}
+# This header file might be in package tcp_wrappers or tcp_wrappers-devel
+BuildRequires: /usr/include/tcpd.h
+%endif
+
+# Assume init is systemd if /run/lock exists, else SysV
+%global use_systemd %([ -d /run/lock ] && echo 1 || echo 0)
+
+# rundir is /run/proftpd under systemd, else %%{_localstatedir}/run/proftpd
+%if %{use_systemd}
+%global rundir /run/proftpd
 %else
-%undefine static_modules
+%global rundir %{_localstatedir}/run/proftpd
 %endif
 
-# put mod_ifsession at the end of the list (always)
-%define shared_modules	%{?_with_mod_tls:mod_tls:}%{?_with_mod_sftp:mod_sftp:}mod_sql:mod_radius:mod_ban:mod_ctrls_admin:mod_load:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_ratio:mod_readme:mod_rewrite:mod_site_misc:mod_wrap2:mod_wrap2_file:mod_wrap2_sql%{?_with_nls::mod_lang}:mod_ifsession
-
-%define unbundled_modules mod_ldap:mod_sql_mysql:mod_sql_postgres:mod_wrap
-
-%if ! %([ -n '%{shared_modules}' -o -n '%{unbundled_modules}' ] ; echo $?)
-%define _with_dso 	1
-%endif
-
-# avoid confusion and redundancy
-%if 0%{?_with_mod_dso:1}
-%define _with_dso	1
-%undefine _with_mod_dso
-%endif
-
-# we don't actually pass this list into configure... we just use it to
-# generate the manifest of modules for the %description section of the
-# resulting package.
-%define builtin_modules	mod_core:mod_xfer:mod_auth_unix:mod_auth_file:mod_auth:mod_ls:mod_log:mod_site:mod_delay:mod_facts%{?_with_dso::mod_dso}:mod_cap:mod_auth_pam%{?_with_ctrls::mod_ctrls}
-
-Summary:		ProFTPD -- Professional FTP Server.
-Name:			proftpd
-Release:		1%{?dist}
-License:		GPL
-Group:			System Environment/Daemons
-Packager:		The ProFTPD Project <core@proftpd.org>
-Vendor:			The ProFTPD Project
-URL:			http://www.proftpd.org/
+Summary:                ProFTPD - Professional FTP Server
+Name:                   proftpd
+License:                GPLv2+
+Group:                  System Environment/Daemons
+Packager:               The ProFTPD Project <core@proftpd.org>
+Vendor:                 The ProFTPD Project
+URL:                    http://www.proftpd.org/
 %if %{usecvsversion}
-Source:			ftp://ftp.proftpd.org/devel/source/proftpd-%{proftpd_cvs_version_main}-cvs-%{proftpd_cvs_version_date}.tgz
-Version:		%{proftpd_cvs_version_main}cvs%{proftpd_cvs_version_date}
+Version:                %{proftpd_cvs_version_main}
+Release:                0.1.cvs%{proftpd_cvs_version_date}%{?dist}
+Source0:                ftp://ftp.proftpd.org/devel/source/proftpd-cvs-%{proftpd_cvs_version_date}.tar.gz
 %else
-Source:			ftp://ftp.proftpd.org/distrib/%{name}-%{version}.tar.bz2
-Version:		%{proftpd_version}
+Version:                %{proftpd_version}
+Release:                %{?release_cand_version:0.}1%{?release_cand_version:.%{release_cand_version}}%{?dist}
+Source0:                ftp://ftp.proftpd.org/distrib/source/proftpd-%{version}%{?release_cand_version}.tar.bz2
 %endif
-Prefix:			%{_prefix}
-BuildRoot:		%{_tmppath}/%{name}-%{version}-root
-Requires:		pam >= 0.99, /sbin/chkconfig
-BuildRequires:		pkgconfig, pam-devel, ncurses-devel, zlib-devel
-BuildRequires:		rpm-build >= 4.2
-# For mod_sftp:
-%if 0%{?_with_mod_sftp:1}
-%define _with_openssl   1
-Requires:               zlib
-BuildRequires:          zlib-devel
+BuildRoot:              %{_tmppath}/%{name}-%{version}-root
+Requires:               pam >= 0.99, /sbin/chkconfig
+Requires(preun):        coreutils, findutils
+%if %{use_systemd}
+BuildRequires:          systemd-units
+Requires:               systemd-units
+Requires(post):         systemd-units
+Requires(preun):        systemd-units
+Requires(postun):       systemd-units
+%else
+Requires(post):         /sbin/chkconfig
+Requires(preun):        /sbin/service, /sbin/chkconfig
+Requires(postun):       /sbin/service
 %endif
-# For mod_tls:
-%if 0%{?_with_mod_tls:1}
-%define _with_openssl	1
-Requires:		krb5-libs, zlib
-BuildRequires:		krb5-devel, zlib-devel
-%endif
-%if 0%{?_with_openssl:1}
-Requires:		openssl
-BuildRequires:		openssl-devel
-%endif
-%if 0%{?_with_mod_facl:1}
-# For mod_facl
-Requires:		libacl
-BuildRequires:		libacl-devel
-%endif
-# For mod_cap
-Requires:		libcap
-BuildRequires:		libcap-devel
-Provides:		ftpserver
-Prereq:			fileutils
-Obsoletes:		proftpd-core, proftpd-standalone
+BuildRequires:          pkgconfig, pam-devel, ncurses-devel, zlib-devel
+BuildRequires:          libacl-devel, libcap-devel
+Provides:               ftpserver
+Obsoletes:              proftpd-core < %{version}-%{release}, proftpd-standalone < %{version}-%{release}, proftpd-inetd < %{version}-%{release}
+Provides:               proftpd-core = %{version}-%{release}, proftpd-standalone = %{version}-%{release}, proftpd-inetd = %{version}-%{release}
 
 %description
 ProFTPD is an enhanced FTP server with a focus toward simplicity, security,
@@ -138,272 +157,397 @@ syntax, and a highly customizable server infrastructure, including support for
 multiple 'virtual' FTP servers, anonymous FTP, and permission-based directory
 visibility.
 
-The base proftpd package installs standalone support. You can install the
-proftpd-inetd package to enable inetd/xinetd support.
+This package defaults to the standalone behavior of ProFTPD, but all the
+needed scripts to have it run by xinetd instead are included.
 
-Likewise, mod_sql_mysql, mod_ldap, etc. can be installed separately to avoid
-unnecessary dependencies.
+Modules requiring additional dependencies such as mod_sql_mysql, mod_ldap,
+etc. are in separate sub-packages so as not to inconvenience users that
+do not need that functionality.
 
-%{?_with_dso:This package supports DSO (shared) modules.}
-
-Intrinsic static modules: %(echo "%{builtin_modules}" | sed -e 's/\:/, /g')
-
-Optional static modules: %(echo "%{static_modules}" | sed -e 's/\:/, /g')
-
-Bundled shared modules: %(echo "%{shared_modules}" | sed -e 's/\:/, /g')
-
-Unbundled (optional) shared modules: %(echo "%{unbundled_modules}" | sed -e 's/\:/, /g')
-
-%package inetd
-Summary:	ProFTPD -- Setup for inetd/xinetd operation.
-Group:		System Environment/Daemons
-Requires:	proftpd, inetd
-Obsoletes:	proftpd-standalone
-
-%description inetd
-This package is neccesary to setup ProFTPD to run from inetd/xinetd.
-
+%if 0%{?_with_ldap:1}
 %package ldap
-Summary:	ProFTPD -- Modules relying on LDAP.
-Group:		Development/Libraries
-Requires:	proftpd, openldap, krb5-libs, openssl
-BuildRequires:	openldap-devel, krb5-devel, openssl-devel
+Summary:        ProFTPD - Modules relying on LDAP
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
 
 %description ldap 
 This optional package contains the modules using LDAP.
+%endif
 
+%if 0%{?_with_mysql:1}
 %package mysql
-Summary:	ProFTPD -- Modules relying on SQL.
-Group:		Development/Libraries
-Requires:	proftpd, mysql, krb5-libs
-BuildRequires:	mysql-devel, krb5-devel
+Summary:        ProFTPD - Modules relying on MySQL
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
 
 %description mysql
 This optional package contains the modules using MySQL.
+%endif
 
-%package postgres
-Summary:	ProFTPD -- Modules relying on Postgres.
-Group:		Development/Libraries
-Requires:	proftpd, postgresql, krb5-libs, openssl
-BuildRequires:	postgresql-devel, krb5-devel, openssl-devel
+%if 0%{?_with_postgresql:1}
+%package postgresql
+Summary:        ProFTPD - Modules relying on PostgreSQL
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
 
-%description postgres
-This optional package contains the modules using Postgres.
+%description postgresql
+This optional package contains the modules using PostgreSQL.
+%endif
 
+%if 0%{?_with_wrap:1}
 %package wrap
-Summary:	ProFTPD -- Modules relying on TCP Wrappers.
-Group:		Development/Libraries
-Requires:	proftpd, tcp_wrappers
-BuildRequires:	tcp_wrappers
+Summary:        ProFTPD - Modules relying on TCP Wrappers
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
 
 %description wrap
 This optional package contains the modules using tcpwrappers/libwrap.
+%endif
 
 %package devel
-Summary:	ProFTPD -- Header files for developers.
-Group:		Development/Libraries
-Requires:	proftpd
+Summary:        ProFTPD - Tools and header files for developers
+Group:          Development/Libraries
+Requires:       proftpd = %{version}-%{release}
+# devel package requires the same devel packages as were build-required
+# for the main package
+Requires:       libacl-devel
+Requires:       libcap-devel
+Requires:       pkgconfig
+Requires:       pam-devel
+Requires:       ncurses-devel
+Requires:       zlib-devel
+%{?_with_ldap:Requires:       openldap-devel}
+%{?_with_memcache:Requires:   libmemcached-devel >= 0.41}
+%{?_with_mysql:Requires:      mysql-devel}
+%{?_with_pcre:Requires:       pcre-devel >= 7.0}
+%{?_with_postgresql:Requires: postgresql-devel}
+%{?_with_ssl:Requires:        openssl-devel}
+%{?_with_wrap:Requires:       /usr/include/tcpd.h}
 
 %description devel
 This package is required to develop additional modules for ProFTPD.
+
+%package utils
+Summary:        ProFTPD - Additional utilities
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
+
+%description utils
+This package contains additional utilities for monitoring and configuring the
+ProFTPD server:
+
+* ftpasswd: generate passwd(5) files for use with AuthUserFile
+* ftpcount: show the current number of connections per server/virtualhost
+* ftpmail: monitor transfer log and send email when files uploaded
+* ftpquota: manipulate quota tables
+* ftptop: show the current status of FTP sessions
+* ftpwho: show the current process information for each FTP session
 
 %prep
 %if %{usecvsversion}
 %setup -q -n %{name}-%{proftpd_cvs_version_main}
 %else
-%setup -q
+%setup -q -n %{name}-%{version}%{?release_cand_version}
 %endif
-CFLAGS="$RPM_OPT_FLAGS" ./configure \
-	--prefix=%{prefix} \
-	--sysconfdir=%{_sysconfdir} \
-	--localstatedir=%{_localstatedir}/run \
-	--mandir=%{_mandir} \
-	%{?_with_ipv6:--enable-ipv6} \
-	%{?_with_ctrls:--enable-ctrls} \
-	%{?_with_dso:--enable-dso} \
-	%{?_with_lastlog:--with-lastlog} \
-	%{?_with_openssl:--enable-openssl} \
-	--with-libraries=%{_libdir}/mysql \
-	--with-includes=%{_includedir}/mysql \
-	%{?static_modules:--with-modules=%{static_modules}} \
-	%{?shared_modules:--with-shared=%{?unbundled_modules:%{unbundled_modules}:}%{shared_modules}}
+
+# Avoid documentation name conflicts
+mv contrib/README contrib/README.contrib
+
+# Prefer documentation to be UTF-8 encoded
+iconv -f iso-8859-1 -t utf-8 < ChangeLog > ChangeLog.utf-8
+mv ChangeLog ChangeLog.iso-8859-1
+mv ChangeLog.utf-8 ChangeLog
+
+# Default PAM configuration file uses password-auth common config;
+# revert to system-auth if password-auth is not available
+if [ ! -f /etc/pam.d/password-auth ]; then
+    sed -i -e s/password-auth/system-auth/ contrib/dist/rpm/proftpd.pam
+fi
+
+# Compile the module list (note: mod_ifsession is always included - last)
+STANDARD_MODULE_LIST="  mod_auth_pam            \
+                        mod_ban                 \
+                        mod_ctrls_admin         \
+                        mod_exec                \
+                        mod_facl                \
+                        mod_load                \
+                        mod_quotatab            \
+                        mod_quotatab_file       \
+                        mod_quotatab_radius     \
+                        mod_quotatab_sql        \
+                        mod_radius              \
+                        mod_ratio               \
+                        mod_readme              \
+                        mod_rewrite             \
+                        mod_shaper              \
+                        mod_site_misc           \
+                        mod_sql                 "
+
+OPTIONAL_MODULE_LIST="                          \
+%{?_with_ldap:          mod_ldap}               \
+%{?_with_ldap:          mod_quotatab_ldap}      \
+%{?_with_ssl:           mod_sftp}               \
+%{?_with_ssl:           mod_sftp_pam}           \
+%{?_with_ssl:           mod_sftp_sql}           \
+%{?_with_mysql:         mod_sql_mysql}          \
+%{?_with_ssl:           mod_sql_passwd}         \
+%{?_with_postgresql:    mod_sql_postgres}       \
+%{?_with_ssl:           mod_tls}                \
+%{?_with_ssl:           mod_tls_shmcache}       \
+%{?_with_ssl:%{?_with_memcache:mod_tls_memcache}} \
+%{?_with_wrap:          mod_wrap}               \
+%{?_with_wrap:          mod_wrap2}              \
+%{?_with_wrap:          mod_wrap2_file}         \
+%{?_with_wrap:          mod_wrap2_sql}          "
+
+MODULE_LIST=$(echo ${STANDARD_MODULE_LIST} ${OPTIONAL_MODULE_LIST} mod_ifsession | tr -s '[:space:]' ':' | sed 's/:$//')
+
+%configure \
+        --libexecdir=%{_libexecdir}/proftpd \
+        --localstatedir=%{rundir} \
+        --disable-strip \
+        --enable-ctrls \
+        --enable-dso \
+        --enable-facl \
+        --enable-ipv6 \
+        --enable-nls \
+        %{?_with_memcache:--enable-memcache} \
+        %{?_with_pcre:--enable-pcre} \
+        %{?_with_ssl:--enable-openssl} \
+        --enable-shadow \
+        --with-lastlog \
+        --with-libraries=%{_libdir}/mysql \
+        --with-includes=%{_includedir}/mysql \
+        --with-pkgconfig=%{_lib}/pkgconfig \
+        --with-shared=${MODULE_LIST}
 
 %build
-  make
+make
 
 %install
-  rm -rf $RPM_BUILD_ROOT
-  make DESTDIR=$RPM_BUILD_ROOT \
-	libdir=%{_libdir} \
-	prefix=%{prefix} \
-	exec_prefix=%{_exec_prefix} \
-	sysconfdir=%{_sysconfdir} \
-	mandir=%{_mandir} \
-	localstatedir=%{_localstatedir}/run \
-	rundir=%{_localstatedir}/run \
-	INSTALL_USER=`id -un` INSTALL_GROUP=`id -gn` \
-    install
-%if !%{nohome}
-  mkdir -p $RPM_BUILD_ROOT/home/ftp
+rm -rf %{buildroot}
+make DESTDIR=%{buildroot} rundir=%{rundir} \
+     INSTALL_USER=`id -un` INSTALL_GROUP=`id -gn` \
+     INSTALL="install -p" \
+     install
+
+# Red Hat style distributions use PAM so install a PAM configuration
+mkdir -p %{buildroot}/etc/pam.d
+install -p -m 644 contrib/dist/rpm/proftpd.pam %{buildroot}/etc/pam.d/proftpd
+
+# Use the basic-pam config as a default
+install -m 644 contrib/dist/rpm/basic-pam.conf %{buildroot}/etc/proftpd.conf
+
+%if %{use_systemd}
+# Systemd unit file
+mkdir -p %{buildroot}%{_unitdir}
+install -p -m 644 contrib/dist/rpm/proftpd.service \
+    %{buildroot}%{_unitdir}/proftpd.service
+# Ensure /run/proftpd exists
+mkdir -p %{buildroot}%{_sysconfdir}/tmpfiles.d
+install -p -m 644 contrib/dist/rpm/proftpd-tmpfs.conf \
+    %{buildroot}%{_sysconfdir}/tmpfiles.d/proftpd.conf
+%else
+# SysV initscript
+mkdir -p %{buildroot}/etc/rc.d/init.d
+install -p -m 755 contrib/dist/rpm/proftpd.init.d \
+    %{buildroot}/etc/rc.d/init.d/proftpd
 %endif
-  mkdir -p $RPM_BUILD_ROOT/etc/pam.d
-  install -m 644 contrib/dist/rpm/ftp.pamd $RPM_BUILD_ROOT/etc/pam.d/ftp
-  install -m 644 sample-configurations/basic.conf $RPM_BUILD_ROOT/etc/proftpd.conf
-  mkdir -p $RPM_BUILD_ROOT/etc/rc.d/init.d
-  sed -e '/FTPSHUT=/c\' \
-	  -e 'FTPSHUT=%{prefix}/sbin/ftpshut' \
-	contrib/dist/rpm/proftpd.init.d >contrib/dist/rpm/proftpd.init.d.tmp
-  mv --force contrib/dist/rpm/proftpd.init.d.tmp contrib/dist/rpm/proftpd.init.d
-  install -m 755 contrib/dist/rpm/proftpd.init.d $RPM_BUILD_ROOT/etc/rc.d/init.d/proftpd
-  mkdir -p $RPM_BUILD_ROOT/etc/logrotate.d/
-  install -m 644 contrib/dist/rpm/proftpd.logrotate $RPM_BUILD_ROOT/etc/logrotate.d/proftpd
-  mkdir -p $RPM_BUILD_ROOT/etc/xinetd.d/
-  install -m 644 contrib/dist/rpm/xinetd $RPM_BUILD_ROOT/etc/xinetd.d/proftpd
-  # We don't want this dangling symlinks to make it into the RPM
-  rm -f contrib/README.mod_sql
 
-%pre
-  if [ ! -f /etc/ftpusers ]; then
-  	touch /etc/ftpusers
-  	IFS=":"
-	while { read username nu nu gid nu; }; do
-		if [ $gid -le 100 -a "$username" != "ftp" ]; then
-			echo $username
-		fi
-  	done </etc/passwd >/etc/ftpusers
-  fi
+# xinetd configuration for socket-based activation (not used by default)
+mkdir -p %{buildroot}/etc/xinetd.d/
+install -p -m 644 contrib/dist/rpm/xinetd %{buildroot}/etc/xinetd.d/proftpd
 
-%preun
-  if [ "$1" = 0 ]; then
-    if [ -d /var/run/proftpd ]; then
-		rm -rf /var/run/proftpd/*
-    fi
-    /sbin/chkconfig --del proftpd
-  fi
+# Rotate the logs periodically
+mkdir -p %{buildroot}/etc/logrotate.d/
+install -p -m 644 contrib/dist/rpm/proftpd.logrotate %{buildroot}/etc/logrotate.d/proftpd
+
+# Create anonymous ftp area
+mkdir -p %{buildroot}%{_localstatedir}/ftp/pub/
+
+# We do not want this dangling symlink to make it into the RPM
+rm -f contrib/README.mod_sql
 
 %post
-  /sbin/chkconfig --add proftpd
-  if [ $1 = 1 ]; then
-    # Force the "ServerType" directive for this operation type.
-    tmpfile=/tmp/proftpd-conf.$$
-    sed -e '/ServerType/c\' \
-      -e 'ServerType	standalone' \
-      /etc/proftpd.conf >$tmpfile
-    mv $tmpfile /etc/proftpd.conf
-  fi
+%if %{use_systemd}
+/bin/systemctl daemon-reload &>/dev/null || :
+%endif
+if [ $1 -eq 1 ]; then
+    # Initial installation
+%if ! %{use_systemd}
+    /sbin/chkconfig --add proftpd || :
+%endif
+    IFS=":"; cat /etc/passwd | \
+    while { read username nu nu gid nu nu nu nu; }; do \
+        if [ $gid -lt 500 -a "$username" != "ftp" ]; then
+            echo $username >> %{_sysconfdir}/ftpusers
+        fi
+    done
+fi
 
-%post inetd
-  # Force the "ServerType" directive for this operation type.
-  tmpfile=/tmp/proftpd-conf.$$
-  sed	-e '/ServerType/c\' \
-	-e 'ServerType	inetd' \
-	/etc/proftpd.conf >$tmpfile
-  mv $tmpfile /etc/proftpd.conf
+%preun
+if [ $1 -eq 0 ]; then
+    # Package removal, not upgrade
+%if %{use_systemd}
+    /bin/systemctl --no-reload disable proftpd.service &>/dev/null || :
+    /bin/systemctl stop proftpd.service &>/dev/null || :
+%else
+    /sbin/service proftpd stop &>/dev/null || :
+    /sbin/chkconfig --del proftpd || :
+%endif
+    find %{rundir} -depth -mindepth 1 | xargs rm -rf &>/dev/null || :
+fi
 
-  if [ -f /etc/inetd.conf ]; then
-    # Look if there is already an entry for 'ftp' service even when commented.
-    grep '^[#[:space:]]*ftp' /etc/inetd.conf >/dev/null
-    errcode=$?
-    if [ $errcode -eq 0 ]; then
-      # Found, replace the 'in.ftpd' with 'in.proftpd'
-      tmpfile=/tmp/proftpd-inetd.$$
-      sed -e '/^[#[:space:]]*ftp/{' \
-          -e 's^in.ftpd.*$^in.proftpd^' \
-          -e '}' \
-          /etc/inetd.conf >$tmpfile
-      mv $tmpfile /etc/inetd.conf
-    else
-    # Not found, append a new entry.
-      echo 'ftp      stream  tcp     nowait  root    /usr/sbin/tcpd  in.proftpd' >>/etc/inetd.conf
-    fi
-    # Reread 'inetd.conf' file.
-    killall -HUP inetd || :
-  else
-    killall -HUP xinetd || :
-  fi
-
-%postun inetd
-  if [ "$1" = 0 ]; then
-	# Return the ServerType to standalone when the inetd subpackage is
-    # uninstalled.
-    tmpfile=/tmp/proftpd-conf.$$
-    sed -e '/ServerType/c\' \
-      -e 'ServerType	standalone' \
-      /etc/proftpd.conf >$tmpfile
-    mv $tmpfile /etc/proftpd.conf
-
-    if [ -f /etc/inetd.conf ]; then
-      # Remove ProFTPD entry from /etc/inetd.conf
-      tmpfile=/tmp/proftpd-inetd.$$
-      sed -e '/^.*proftpd.*$/d' /etc/inetd.conf >$tmpfile
-      mv $tmpfile /etc/inetd.conf
-      killall -HUP inetd || :
-    fi
-  fi
+%postun
+%if %{use_systemd}
+/bin/systemctl daemon-reload &>/dev/null || :
+%endif
+if [ $1 -ge 1 ]; then
+    # Package upgrade, not uninstall
+%if %{use_systemd}
+    /bin/systemctl try-restart proftpd.service &>/dev/null || :
+%else
+    /sbin/service proftpd condrestart &>/dev/null || :
+%endif
+else
+    # Package removal, not upgrade
+%if %{use_systemd}
+    /bin/systemctl reload xinetd.service &>/dev/null || :
+%else
+    /sbin/service xinetd reload &>/dev/null || :
+%endif
+fi
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 rm -rf %{_builddir}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_sbindir}/*
-%{_bindir}/*
-%if 0%{?_with_mod_sftp:1}
-%{_sysconfdir}/blacklist.dat
-%{_sysconfdir}/dhparams.pem
+%{_bindir}/ftpdctl
+%{_sbindir}/ftpscrub
+%{_sbindir}/ftpshut
+%{_sbindir}/in.proftpd
+%{_sbindir}/proftpd
+%dir %{_libexecdir}/proftpd/
+%{_libexecdir}/proftpd/mod_auth_pam.so
+%{_libexecdir}/proftpd/mod_ban.so
+%{_libexecdir}/proftpd/mod_ctrls_admin.so
+%{_libexecdir}/proftpd/mod_exec.so
+%{_libexecdir}/proftpd/mod_facl.so
+%{_libexecdir}/proftpd/mod_ifsession.so
+%{_libexecdir}/proftpd/mod_load.so
+%{_libexecdir}/proftpd/mod_quotatab.so
+%{_libexecdir}/proftpd/mod_quotatab_file.so
+%{_libexecdir}/proftpd/mod_quotatab_radius.so
+%{_libexecdir}/proftpd/mod_quotatab_sql.so
+%{_libexecdir}/proftpd/mod_radius.so
+%{_libexecdir}/proftpd/mod_ratio.so
+%{_libexecdir}/proftpd/mod_readme.so
+%{_libexecdir}/proftpd/mod_rewrite.so
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_sftp.so}
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_sftp_pam.so}
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_sftp_sql.so}
+%{_libexecdir}/proftpd/mod_shaper.so
+%{_libexecdir}/proftpd/mod_site_misc.so
+%{_libexecdir}/proftpd/mod_sql.so
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_sql_passwd.so}
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_tls.so}
+%{?_with_ssl:%{?_with_memcache:%{_libexecdir}/proftpd/mod_tls_memcache.so}}
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_tls_shmcache.so}
+%exclude %{_libexecdir}/proftpd/*.a
+%exclude %{_libexecdir}/proftpd/*.la
+%dir %{rundir}/
+%dir %{_localstatedir}/ftp/
+%dir %{_localstatedir}/ftp/pub/
+%if %{use_systemd}
+%{_unitdir}/proftpd.service
+%{_sysconfdir}/tmpfiles.d/proftpd.conf
+%else
+%{_sysconfdir}/rc.d/init.d/proftpd
 %endif
-# need to figure out how to exclude from this list...
-%exclude %{_libexecdir}/*.a
-%exclude %{_libexecdir}/*.la
-%exclude %{_libexecdir}/mod_ldap.so
-%exclude %{_libexecdir}/mod_sql_mysql.so
-%exclude %{_libexecdir}/mod_sql_postgres.so
-%exclude %{_libexecdir}/mod_wrap.so
-%{_libdir}/pkgconfig/*.pc
-%{_libexecdir}/*.a
-%{_libexecdir}/*.so
-%dir %{_localstatedir}/run
-%if !%{nohome}
-%dir /home/ftp
-%endif
-%{_initrddir}/proftpd
+%{?_with_ssl:%config(noreplace) %{_sysconfdir}/blacklist.dat}
+%{?_with_ssl:%config(noreplace) %{_sysconfdir}/dhparams.pem}
 %config(noreplace) %{_sysconfdir}/proftpd.conf
-%config(noreplace) %{_sysconfdir}/pam.d/ftp
+%config(noreplace) %{_sysconfdir}/pam.d/proftpd
 %config(noreplace) %{_sysconfdir}/logrotate.d/proftpd
-
-%doc COPYING CREDITS ChangeLog NEWS
-%doc README* doc/*
-%doc contrib/README* contrib/xferstats.holger-preiss
-%doc sample-configurations
-%_mandir/*/*
-
-%files inetd
-%defattr(-,root,root)
-%config(noreplace) %{_sysconfdir}/proftpd.conf
 %config(noreplace) %{_sysconfdir}/xinetd.d/proftpd
 
+%doc COPYING CREDITS ChangeLog NEWS README RELEASE_NOTES
+%doc README.DSO README.modules README.IPv6 README.PAM
+%doc README.capabilities README.classes README.controls README.facl
+%doc contrib/README.contrib contrib/README.ratio
+%doc doc/* sample-configurations/
+%{_mandir}/man5/xferlog.5*
+%{_mandir}/man8/ftpdctl.8*
+%{_mandir}/man8/ftpscrub.8*
+%{_mandir}/man8/ftpshut.8*
+%{_mandir}/man8/proftpd.8*
+
+%if 0%{?_with_ldap:1}
 %files ldap
 %defattr(-,root,root)
-%{_libexecdir}/mod_ldap.so
+%doc README.LDAP contrib/mod_quotatab_ldap.ldif contrib/mod_quotatab_ldap.schema
+%{_libexecdir}/proftpd/mod_ldap.so
+%{_libexecdir}/proftpd/mod_quotatab_ldap.so
+%endif
 
+%if 0%{?_with_mysql:1}
 %files mysql
 %defattr(-,root,root)
-%{_libexecdir}/mod_sql_mysql.so
+%{_libexecdir}/proftpd/mod_sql_mysql.so
+%endif
 
-%files postgres
+%if 0%{?_with_postgresql:1}
+%files postgresql
 %defattr(-,root,root)
-%{_libexecdir}/mod_sql_postgres.so
+%{_libexecdir}/proftpd/mod_sql_postgres.so
+%endif
 
+%if 0%{?_with_wrap:1}
 %files wrap
 %defattr(-,root,root)
-%{_libexecdir}/mod_wrap.so
+%{_libexecdir}/proftpd/mod_wrap.so
+%{_libexecdir}/proftpd/mod_wrap2.so
+%{_libexecdir}/proftpd/mod_wrap2_file.so
+%{_libexecdir}/proftpd/mod_wrap2_sql.so
+%endif
 
 %files devel
 %defattr(-,root,root)
-%{_includedir}/proftpd/*.h
+%{_bindir}/prxs
+%{_includedir}/proftpd/
+%{_libdir}/pkgconfig/proftpd.pc
+
+%files utils
+%defattr(-,root,root)
+%doc contrib/xferstats.holger-preiss
+%{_bindir}/ftpquota
+%{_bindir}/ftpasswd
+%{_bindir}/ftpcount
+%{_bindir}/ftpmail
+%{_bindir}/ftptop
+%{_bindir}/ftpwho
+%{_mandir}/man1/ftpasswd.1*
+%{_mandir}/man1/ftpcount.1*
+%{_mandir}/man1/ftpmail.1*
+%{_mandir}/man1/ftpquota.1*
+%{_mandir}/man1/ftptop.1*
+%{_mandir}/man1/ftpwho.1*
 
 %changelog
+* Tue Oct  4 2011 Paul Howarth <paul@city-fan.org>
+- Upstream RPM package refactored to support Red Hat/Fedora based distributions
+  from EL-5 onwards:
+  - Fix build failure on CentOS 5 (bug 3640)
+  - Build all modules that don't require additional dependencies by default
+  - Optionally build other modules (use --with everything for all modules)
+  - Use PAM-based configuration by default
+  - Add systemd support
+  - Merge inetd subpackage back into main package
+  - Create new utils subpackage
+  - Lots of minor fixes
+
 * Mon Sep 11 2007 Philip Prindeville <philipp_subx@redfish-solutions.com>
 - Cleaned up the .spec file to work with more recent releases of RPM.  Moved
   header files into separate component.
@@ -427,7 +571,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 - logrotate for xferlog
 
 * Wed Aug 14 2002 John Morrissey <jwm@horde.net>
-- Added removal of build leftover directory in %clean.
+- Added removal of build leftover directory in %%clean.
   Submitted by: Christian Pelealu <kurisu@mweb.co.id>
 
 * Wed Jul  3 2002 John Morrissey <jwm@horde.net> 1.2.6rc1-1
@@ -437,7 +581,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 - 1.2.5 release.
 
 * Fri May 10 2002 TJ Saunders <tj@castaglia.org>
-- Added use of %defattr to allow build of RPMs by non-root users
+- Added use of %%defattr to allow build of RPMs by non-root users
   For details see http://bugs.proftpd.org/show_bug.cgi?id=1580
 
 * Mon Mar 05 2001 Daniel Roesen <droesen@entire-systems.com>
@@ -454,7 +598,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 
 * Wed Feb 27 2001 Daniel Roesen <droesen@entire-systems.com>
 - added "Obsoletes: proftpd-core" to make migration to new RPMs easier.
-  Thanks to Sébastien Prud'homme <prudhomme@easy-flying.com> for the hint.
+  Thanks to SÃ©bastien Prud'homme <prudhomme@easy-flying.com> for the hint.
 - release: 1.2.0-3
 
 * Wed Feb 26 2001 Daniel Roesen <droesen@entire-systems.com>
@@ -466,7 +610,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 
 * Wed Feb 14 2001 Daniel Roesen <droesen@entire-systems.com>
 - moved Changelog to bottom
-- fixed %pre script /etc/ftpusers generator
+- fixed %%pre script /etc/ftpusers generator
 - removed /ftp/ftpusers from package management. Deinstalling ProFTPD
   should _not_ result in removal of this file.
 

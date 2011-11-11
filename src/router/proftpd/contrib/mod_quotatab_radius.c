@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_radius -- a mod_quotatab sub-module for obtaining
  *                                 quota information from RADIUS servers.
  *
- * Copyright (c) 2005-2009 TJ Saunders
+ * Copyright (c) 2005-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, the respective copyright holders give permission
  * to link this program with OpenSSL, and distribute the resulting

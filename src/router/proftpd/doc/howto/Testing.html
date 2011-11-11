@@ -1,4 +1,4 @@
-<!-- $Id: Testing.html,v 1.5 2008/11/07 19:35:59 castaglia Exp $ -->
+<!-- $Id: Testing.html,v 1.6 2011/05/19 18:26:42 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Testing.html,v $ -->
 
 <html>
@@ -100,6 +100,32 @@ Please do follow those instructions; you will be helping in proftpd
 development!
 
 <p>
+<b>Expected Failures</b><br>
+Unfortunately, due to variations in system configurations, it's possible
+that some of the API tests will fail, without it necessarily being an
+indication of a regression or problem.
+
+<p>
+Most notably, some of the most brittle tests make assumptions about the
+host's <code>/etc/hosts</code> file, particularly the list of names
+associated with the address <code>127.0.0.1</code>.  If the
+<code>/etc/hosts</code> file has a name other than "localhost" or
+"localhost.localdomain" immediately after the 127.0.0.1 address, <i>e.g.</i>:
+<pre>
+  127.0.0.1	some.other.name localhost
+</pre>
+Then the API tests may fail with errors like this:
+<pre>
+  98%: Checks: 152, Failures: 2, Errors: 0
+  api/netaddr.c:344:F:base:netaddr_get_dnsstr_test:0: Expected 'localhost or localhost.localdomain', got '<i>some.other.name</i>'
+  api/netacl.c:535:F:base:netacl_match_test:0: Failed to positively match ACL to addr: No such file or directory
+</pre>
+If this is the case, it is an <i>expected failure</i>; please do not report
+the issue as a bug.  (Unfortunately, I have not been able to think of a good
+solution/workaround for these situations other than ignoring the test failure,
+but I would rather not do that if possible.)
+
+<p>
 <b>Integration Tests</b><br>
 The current integration tests are written in Perl, and rely on the
 <code>Test-Unit</code> Perl package.  Specifically, you <b>must</b> use
@@ -189,7 +215,7 @@ to run your changes.
 
 <p>
 <hr>
-Last updated: <i>$Date: 2008/11/07 19:35:59 $</i><br>
+Last updated: <i>$Date: 2011/05/19 18:26:42 $</i><br>
 <hr>
 
 </body>

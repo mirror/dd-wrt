@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sftp_sql -- SQL backend module for retrieving authorized keys
  *
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -25,7 +25,7 @@
  * This is mod_sftp_sql, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_sql.c,v 1.4 2010/01/19 16:37:13 castaglia Exp $
+ * $Id: mod_sftp_sql.c,v 1.6 2011/05/23 20:56:40 castaglia Exp $
  */
 
 #include "conf.h"
@@ -106,7 +106,7 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
   if (chunklen < 0 &&
       !BIO_should_retry(bio)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "unable to base64-decode data from database: %s",
+      "unable to base64-decode raw key data from database: %s",
       sftp_crypto_get_errors());
     BIO_free_all(bio);
     BIO_free_all(bmem);
@@ -143,7 +143,7 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "error base64-decoding key data from database");
+      "error base64-decoding raw key data from database");
   }
 
   BIO_free_all(bio);
@@ -177,7 +177,7 @@ static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char *blob) {
 
     if (BIO_write(bio, tok, strlen(tok)) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error buffering base64 data");
+        "error buffering RFC4716 base64 data");
       BIO_free_all(bio);
       return NULL;
     }
@@ -198,7 +198,7 @@ static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char *blob) {
   if (chunklen < 0 &&
       !BIO_should_retry(bio)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "unable to base64-decode data from database: %s",
+      "unable to base64-decode RFC4716 data from database: %s",
       sftp_crypto_get_errors());
     BIO_free_all(bio);
     BIO_free_all(bmem);
@@ -235,7 +235,7 @@ static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char *blob) {
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "error base64-decoding key data from database");
+      "error base64-decoding RFC4716 key data from database");
   }
 
   BIO_free_all(bio);
@@ -338,9 +338,11 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
   for (i = 0; i < sql_data->nelts; i++) {
     pr_signals_handle();
 
-    key = sqlstore_get_key_raw(p, values[i]);
+    key = sqlstore_get_key_rfc4716(p, values[i]);
     if (key == NULL) {
-      key = sqlstore_get_key_rfc4716(p, values[i]);
+      pr_trace_msg(trace_channel, 10, "unable to parse data (row %u) as "
+        "RFC4716 data, retrying data as raw key data", i+1);
+      key = sqlstore_get_key_raw(p, values[i]);
     }
 
     if (key == NULL) {
@@ -438,9 +440,11 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
   for (i = 0; i < sql_data->nelts; i++) {
     pr_signals_handle();
 
-    key = sqlstore_get_key_raw(p, values[i]);
+    key = sqlstore_get_key_rfc4716(p, values[i]);
     if (key == NULL) {
-      key = sqlstore_get_key_rfc4716(p, values[i]);
+      pr_trace_msg(trace_channel, 10, "unable to parse data (row %u) as "
+        "RFC4716 data, retrying data as raw key data", i+1);
+      key = sqlstore_get_key_raw(p, values[i]);
     }
 
     if (key == NULL) {

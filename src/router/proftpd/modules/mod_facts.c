@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
  *
- * Copyright (c) 2007-2009 The ProFTPD Project
+ * Copyright (c) 2007-2011 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,19 +15,20 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.26.2.2 2011/02/26 02:46:45 castaglia Exp $
+ * $Id: mod_facts.c,v 1.45 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
+#include "privs.h"
 
-#define MOD_FACTS_VERSION		"mod_facts/0.1"
+#define MOD_FACTS_VERSION		"mod_facts/0.3"
 
 #if PROFTPD_VERSION_NUMBER < 0x0001030101
 # error "ProFTPD 1.3.1rc1 or later required"
@@ -45,6 +46,8 @@ static unsigned long facts_opts = 0;
 #define FACTS_OPT_SHOW_UNIX_MODE	0x00040
 #define FACTS_OPT_SHOW_UNIX_OWNER	0x00080
 
+#define FACTS_MLINFO_FL_SHOW_SYMLINKS	0x00001
+
 struct mlinfo {
   pool *pool;
   struct stat st;
@@ -61,20 +64,18 @@ static void facts_mlinfobuf_flush(void);
  */
 
 static int facts_filters_allow_path(cmd_rec *cmd, const char *path) {
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  regex_t *preg = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, path, 0, NULL, 0) != 0) {
+#ifdef PR_USE_REGEX
+  pr_regex_t *pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) != 0) {
     pr_log_debug(DEBUG2, MOD_FACTS_VERSION
       ": %s denied by PathAllowFilter on '%s'", cmd->argv[0], cmd->arg);
     return -1;
   }
 
-  preg = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, path, 0, NULL, 0) == 0) {
+  pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) == 0) {
     pr_log_debug(DEBUG2, MOD_FACTS_VERSION
       ": %s denied by PathDenyFilter on '%s'", cmd->argv[0], cmd->arg);
     return -1;
@@ -161,10 +162,10 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz) {
 
   memset(buf, '\0', bufsz);
 
-  ptr = buf + buflen;
+  ptr = buf;
 
   if (facts_opts & FACTS_OPT_SHOW_MODIFY) {
-    snprintf(ptr, bufsz - buflen, "modify=%04d%02d%02d%02d%02d%02d;",
+    snprintf(ptr, bufsz, "modify=%04d%02d%02d%02d%02d%02d;",
       info->tm->tm_year+1900, info->tm->tm_mon+1, info->tm->tm_mday,
       info->tm->tm_hour, info->tm->tm_min, info->tm->tm_sec);
     buflen = strlen(buf);
@@ -295,19 +296,61 @@ static void facts_mlinfobuf_flush(void) {
 }
 
 static int facts_mlinfo_get(struct mlinfo *info, const char *path,
-    const char *dent_name) {
+    const char *dent_name, int flags, uid_t uid, gid_t gid, mode_t *mode) {
   char *perm = "";
+  int res;
 
-  if (pr_fsio_stat(path, &(info->st)) < 0) {
-    pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": error stat'ing '%s': %s",
+  res = pr_fsio_lstat(path, &(info->st));
+  if (res < 0) {
+    pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": error lstat'ing '%s': %s",
       path, strerror(errno));
     return -1;
+  }
+
+  if (uid != (uid_t) -1) {
+    info->st.st_uid = uid;
+  }
+
+  if (gid != (gid_t) -1) {
+    info->st.st_gid = gid;
   }
 
   info->tm = pr_gmtime(info->pool, &(info->st.st_mtime));
 
   if (!S_ISDIR(info->st.st_mode)) {
+#ifdef S_ISLNK
+    if (S_ISLNK(info->st.st_mode)) {
+      struct stat target_st;
+
+      /* Now we need to use stat(2) on the path (versus lstat(2)) to get the
+       * info for the target, and copy its st_dev and st_ino values to our
+       * stat in order to ensure that the unique fact values are the same.
+       */
+
+      pr_fs_clear_cache();
+      res = pr_fsio_stat(path, &target_st);
+      if (res < 0) {
+        pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": error stat'ing '%s': %s",
+          path, strerror(errno));
+        return -1;
+      }
+
+      info->st.st_dev = target_st.st_dev;
+      info->st.st_ino = target_st.st_ino;
+
+      if (flags & FACTS_MLINFO_FL_SHOW_SYMLINKS) {
+        info->type = "OS.unix=symlink";
+
+      } else {
+        info->type = "file";
+      }
+
+    } else {
+      info->type = "file";
+    }
+#else
     info->type = "file";
+#endif
 
     if (pr_fsio_access(path, R_OK, session.uid, session.gid,
         session.gids) == 0) {
@@ -364,6 +407,15 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
   }
 
   info->perm = perm;
+
+  if (mode != NULL) {
+    /* We cheat here by simply overwriting the entire st.st_mode value with
+     * the DirFakeMode.  This works because later operations on this data
+     * don't pay attention to the file type.
+     */
+    info->st.st_mode = *mode;
+  }
+
   return 0;
 }
 
@@ -470,6 +522,7 @@ static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
   char c, *ptr;
   unsigned int year, month, day, hour, min, sec;
   struct timeval tvs[2];
+  int res;
 
   (void) p;
 
@@ -550,10 +603,81 @@ static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
   tvs[0].tv_sec = tvs[1].tv_sec = facts_mktime(year, month, day, hour, min,
     sec);
 
-  if (pr_fsio_utimes(path, tvs) < 0) {
-    pr_log_debug(DEBUG2, MOD_FACTS_VERSION
-      ": error modifying modify fact for '%s': %s", path, strerror(errno));
-    return -1;
+  res = pr_fsio_utimes(path, tvs);
+  if (res < 0) {
+    int xerrno = errno;
+
+    if (xerrno == EPERM) {
+      struct stat st;
+      int matching_gid = FALSE;
+
+      /* If the utimes(2) call failed because the process UID doesn't
+       * match the file UID, then check to see if the GIDs match (and that
+       * the file has group write permissions).
+       *
+       * This can be alleviated in two ways: a) if mod_cap is present,
+       * enable the CAP_FOWNER capability for the session, or b) use root
+       * privs.
+       */
+      pr_fs_clear_cache();
+      if (pr_fsio_stat(path, &st) < 0) {
+        errno = xerrno;
+        return -1;
+      }
+
+      /* Be sure to check the primary and all the supplemental groups to
+       * which this session belongs.
+       */
+      if (st.st_gid == session.gid) {
+        matching_gid = TRUE;
+
+      } else {
+        register unsigned int i;
+        gid_t *gids;
+
+        gids = session.gids->elts;
+        for (i = 0; i < session.gids->nelts; i++) {
+          if (st.st_gid == gids[i]) {
+            matching_gid = TRUE;
+            break;
+          }
+        }
+      }
+
+      if (matching_gid == TRUE &&
+          (st.st_mode & S_IWGRP)) {
+        int merrno = 0;
+
+        /* Try the utimes(2) call again, this time with root privs. */
+
+        pr_signals_block();
+        PRIVS_ROOT
+        res = pr_fsio_utimes(path, tvs);
+        if (res < 0) {
+          merrno = errno;
+        }
+        PRIVS_RELINQUISH
+        pr_signals_unblock();
+
+        if (res == 0)
+          return 0;
+
+        pr_log_debug(DEBUG2, MOD_FACTS_VERSION
+          ": error modifying modify fact for '%s': %s", path,
+          strerror(merrno));
+        errno = xerrno;
+        return -1;
+      }
+
+      errno = xerrno;
+      return -1;
+
+    } else {
+      pr_log_debug(DEBUG2, MOD_FACTS_VERSION
+        ": error modifying modify fact for '%s': %s", path, strerror(xerrno));
+      errno = xerrno;
+      return -1;
+    }
   }
 
   return 0;
@@ -610,7 +734,7 @@ static int facts_modify_unix_mode(pool *p, const char *path, char *mode_str) {
  */
 
 MODRET facts_mff(cmd_rec *cmd) {
-  const char *path, *decoded_path;
+  const char *path, *canon_path, *decoded_path;
   char *facts, *ptr;
 
   if (cmd->argc < 3) {
@@ -629,7 +753,13 @@ MODRET facts_mff(cmd_rec *cmd) {
 
   decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
 
-  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path, NULL)) {
+  canon_path = dir_canonical_path(cmd->tmp_pool, decoded_path);
+  if (canon_path == NULL) {
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+    return PR_ERROR(cmd);
+  }
+
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, canon_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
       cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
@@ -679,8 +809,12 @@ MODRET facts_mff(cmd_rec *cmd) {
       }
 
       if (facts_modify_mtime(cmd->tmp_pool, decoded_path, timestamp) < 0) {
-        pr_response_add_err(errno == ENOENT ? R_550 : R_501, "%s: %s", path,
-          strerror(errno));
+        int xerrno = errno;
+
+        pr_response_add_err(xerrno == ENOENT ? R_550 : R_501, "%s: %s", path,
+          strerror(xerrno));
+
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
@@ -751,7 +885,7 @@ MODRET facts_mff(cmd_rec *cmd) {
 }
 
 MODRET facts_mfmt(cmd_rec *cmd) {
-  const char *path, *decoded_path;
+  const char *path, *canon_path, *decoded_path;
   char *timestamp, *ptr;
   int res;
 
@@ -771,7 +905,13 @@ MODRET facts_mfmt(cmd_rec *cmd) {
 
   decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
 
-  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path, NULL)) {
+  canon_path = dir_canonical_path(cmd->tmp_pool, decoded_path);
+  if (canon_path == NULL) {
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+    return PR_ERROR(cmd);
+  }
+
+  if (!dir_check(cmd->tmp_pool, cmd, cmd->group, canon_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
       cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
@@ -798,12 +938,16 @@ MODRET facts_mfmt(cmd_rec *cmd) {
 
   res = facts_modify_mtime(cmd->tmp_pool, decoded_path, timestamp);
   if (res < 0) {
+    int xerrno = errno;
+
     if (ptr) {
       *ptr = '.';
     }
 
-    pr_response_add_err(errno == ENOENT ? R_550 : R_501, "%s: %s", path,
-      strerror(errno));
+    pr_response_add_err(xerrno == ENOENT ? R_550 : R_501, "%s: %s", path,
+      strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
@@ -825,7 +969,13 @@ MODRET facts_mfmt(cmd_rec *cmd) {
 
 MODRET facts_mlsd(cmd_rec *cmd) {
   const char *path, *decoded_path, *best_path;
+  config_rec *c;
+  uid_t fake_uid = -1;
+  gid_t fake_gid = -1;
+  mode_t *fake_mode = NULL;
   struct mlinfo info;
+  unsigned char *ptr;
+  int flags = 0;
   DIR *dirh;
   struct dirent *dent;
 
@@ -869,7 +1019,45 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
+  /* Determine whether to display symlinks as such. */
+  ptr = get_param_ptr(TOPLEVEL_CONF, "ShowSymlinks", FALSE);
+  if (ptr &&
+      *ptr == TRUE) {
+    flags |= FACTS_MLINFO_FL_SHOW_SYMLINKS;
+  }
+
   best_path = dir_best_path(cmd->tmp_pool, decoded_path);
+
+  fake_mode = get_param_ptr(get_dir_ctxt(cmd->tmp_pool, (char *) best_path),
+    "DirFakeMode", FALSE);
+ 
+  c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) best_path), CONF_PARAM,
+    "DirFakeUser", FALSE);
+  if (c) {
+    const char *fake_user;
+
+    fake_user = c->argv[0];
+    if (strncmp(fake_user, "~", 2) != 0) {
+      fake_uid = pr_auth_name2uid(cmd->tmp_pool, fake_user);
+
+    } else {
+      fake_uid = session.uid;
+    }
+  }
+
+  c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) best_path), CONF_PARAM,
+    "DirFakeGroup", FALSE);
+  if (c) {
+    const char *fake_group;
+
+    fake_group = c->argv[0];
+    if (strncmp(fake_group, "~", 2) != 0) {
+      fake_gid = pr_auth_name2gid(cmd->tmp_pool, fake_group);
+
+    } else {
+      fake_gid = session.gid;
+    }
+  }
 
   dirh = pr_fsio_opendir(best_path);
   if (dirh == NULL) {
@@ -922,7 +1110,8 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     memset(&info, 0, sizeof(struct mlinfo));
 
     info.pool = cmd->tmp_pool;
-    if (facts_mlinfo_get(&info, rel_path, dent->d_name) < 0) {
+    if (facts_mlinfo_get(&info, rel_path, dent->d_name, flags,
+        fake_uid, fake_gid, fake_mode) < 0) {
       pr_log_debug(DEBUG3, MOD_FACTS_VERSION
         ": MLSD: unable to get info for '%s': %s", abs_path, strerror(errno));
       continue;
@@ -964,7 +1153,12 @@ MODRET facts_mlsd_cleanup(cmd_rec *cmd) {
 }
 
 MODRET facts_mlst(cmd_rec *cmd) {
-  int hidden = FALSE;
+  int flags = 0, hidden = FALSE;
+  config_rec *c;
+  uid_t fake_uid = -1;
+  gid_t fake_gid = -1;
+  mode_t *fake_mode = NULL;
+  unsigned char *ptr;
   const char *path, *decoded_path;
   struct mlinfo info;
 
@@ -994,18 +1188,72 @@ MODRET facts_mlst(cmd_rec *cmd) {
     return PR_HANDLED(cmd);
   }
 
+  /* Determine whether to display symlinks as such. */
+  ptr = get_param_ptr(TOPLEVEL_CONF, "ShowSymlinks", FALSE);
+  if (ptr &&
+      *ptr == TRUE) {
+    flags |= FACTS_MLINFO_FL_SHOW_SYMLINKS;
+  }
+
+  fake_mode = get_param_ptr(get_dir_ctxt(cmd->tmp_pool, (char *) decoded_path),
+    "DirFakeMode", FALSE);
+
+  c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) decoded_path),
+    CONF_PARAM, "DirFakeUser", FALSE);
+  if (c) {
+    const char *fake_user;
+
+    fake_user = c->argv[0];
+    if (strncmp(fake_user, "~", 2) != 0) {
+      fake_uid = pr_auth_name2uid(cmd->tmp_pool, fake_user);
+
+    } else {
+      fake_uid = session.uid;
+    }
+  }
+
+  c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) decoded_path),
+    CONF_PARAM, "DirFakeGroup", FALSE);
+  if (c) {
+    const char *fake_group;
+
+    fake_group = c->argv[0];
+    if (strncmp(fake_group, "~", 2) != 0) {
+      fake_gid = pr_auth_name2gid(cmd->tmp_pool, fake_group);
+
+    } else {
+      fake_gid = session.gid;
+    }
+  }
+
   info.pool = cmd->tmp_pool;
 
   pr_fs_clear_cache();
-  if (facts_mlinfo_get(&info, decoded_path, decoded_path) < 0) {
+  if (facts_mlinfo_get(&info, decoded_path, decoded_path, flags, fake_uid,
+      fake_gid, fake_mode) < 0) {
     pr_response_add_err(R_550, _("'%s' cannot be listed"), path);
     return PR_ERROR(cmd);
   }
 
   /* No need to re-encode the path here as UTF8, since 'path' is the
    * original parameter as sent by the client.
+   *
+   * However, as per RFC3659 Section 7.3.1, since we advertise TVFS in our
+   * FEAT output, the path here should be the full path (as seen by the
+   * client).
    */
-  info.path = path;
+
+  /* XXX What about chroots? */
+
+  if (flags & FACTS_MLINFO_FL_SHOW_SYMLINKS) {
+    /* If we are supposed to symlinks, then use dir_best_path() to get the
+     * full path, including dereferencing the symlink.
+     */
+    info.path = dir_best_path(cmd->tmp_pool, path);
+
+  } else {
+    info.path = dir_canonical_path(cmd->tmp_pool, path);
+  }
 
   pr_response_add(R_250, _("Start of list for %s"), path);
   facts_mlinfo_add(&info);
@@ -1135,8 +1383,8 @@ MODRET set_factsadvertise(cmd_rec *cmd) {
  */
 
 static int facts_init(void) {
-  pr_help_add("MLSD", "[<sp> pathname]", TRUE);
-  pr_help_add("MLST", "[<sp> pathname]", TRUE);
+  pr_help_add(C_MLSD, _("[<sp> pathname]"), TRUE);
+  pr_help_add(C_MLST, _("[<sp> pathname]"), TRUE);
 
   return 0;
 }
@@ -1179,8 +1427,8 @@ static conftable facts_conftab[] = {
 };
 
 static cmdtable facts_cmdtab[] = {
-  { CMD,	"MFF",		G_WRITE,facts_mff,  TRUE, FALSE, CL_WRITE },
-  { CMD,	"MFMT",		G_WRITE,facts_mfmt, TRUE, FALSE, CL_WRITE },
+  { CMD,	C_MFF,		G_WRITE,facts_mff,  TRUE, FALSE, CL_WRITE },
+  { CMD,	C_MFMT,		G_WRITE,facts_mfmt, TRUE, FALSE, CL_WRITE },
   { CMD,	C_MLSD,		G_DIRS,	facts_mlsd, TRUE, FALSE, CL_DIRS },
   { LOG_CMD,	C_MLSD,		G_NONE,	facts_mlsd_cleanup, FALSE, FALSE },
   { LOG_CMD_ERR,C_MLSD,		G_NONE,	facts_mlsd_cleanup, FALSE, FALSE },

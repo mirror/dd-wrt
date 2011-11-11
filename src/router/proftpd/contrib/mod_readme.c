@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -30,100 +30,115 @@
  *   DisplayReadme <file-or-pattern>
  *
  * "DisplayReadme Readme" will tell the user when "Readme" on the current 
- * working directory was last changed. When cwd is changed (cd, cdup, ...)
- * it'll seach for Readme agin in it and also display it's last changing dates.
- * if found.
+ * working directory was last changed.  When the current working directory is
+ * changed (i.e. CWD, CDUP, etc), mod_readme will search for Readme again
+ * in that directory and also display its last changing dates if found.
  */
 
 #include "conf.h"
 
-/* Flood: Nov 1, 1998
- *
- * The original logic was slightly off, using find_config in recursive mode
- * starting from the server root, which caused all DisplayReadme entries
- * to be evaluated, even if not actually part of the "closest" context
- * (i.e. picking up ALL Anonymous blocks)
- */
+#define MOD_README_VERSION		"mod_readme/1.0"
 
-static void add_readme_response(pool *p, const char *file) {
-  int days;
-  time_t clock;
+static void readme_add_path(pool *p, const char *path) {
+  struct stat st;
   
-  struct stat buf;
-  struct tm *tp;
-  
-  char *tptr;
-  char ctime_str[28] = {'\0'};
-  
-  if (pr_fsio_stat(file, &buf) == 0) {
-    (void) time(&clock);
+  if (pr_fsio_stat(path, &st) == 0) {
+    int days;
+    time_t now;
+    struct tm *tm = NULL;
+    char *ptr = NULL;
+    char time_str[32] = {'\0'};
 
-    tp = pr_gmtime(p, &clock);
-    days = (int)(365.25 * tp->tm_year) + tp->tm_yday;
+    (void) time(&now);
 
-    tp = pr_gmtime(p, &buf.st_mtime);
-    days -= (int)(365.25 * tp->tm_year) + tp->tm_yday;
+    tm = pr_gmtime(p, &now);
+    days = (int) (365.25 * tm->tm_year) + tm->tm_yday;
 
-    memset(ctime_str, '\0', sizeof(ctime_str));
-    snprintf(ctime_str, sizeof(ctime_str), "%.26s", ctime(&buf.st_mtime));
+    tm = pr_gmtime(p, &st.st_mtime);
+    days -= (int) (365.25 * tm->tm_year) + tm->tm_yday;
+
+    memset(time_str, '\0', sizeof(time_str));
+    snprintf(time_str, sizeof(time_str)-1, "%.26s", ctime(&st.st_mtime));
     
-    if ((tptr = strchr(ctime_str, '\n')) != NULL) {
-      *tptr = '\0';
+    ptr = strchr(time_str, '\n');
+    if (ptr != NULL) {
+      *ptr = '\0';
     }
-    
-    pr_response_add(R_DUP, _("Please read the file %s"), file);
+
+    /* As a format nicety, if we're handling the PASS command, automatically
+     * add a blank line before this message, so as to separate the
+     * login message that mod_auth's POST_CMD handler for PASS will add from
+     * our message (see Bug#3605).
+     */
+    if (strcmp(session.curr_cmd, C_PASS) == 0) {
+      pr_response_add(R_DUP, "%s", "");
+    }
+
+    pr_response_add(R_DUP, _("Please read the file %s"), path);
     pr_response_add(R_DUP, _("   it was last modified on %.26s - %i %s ago"),
-		 ctime_str, days, days == 1 ? _("day") : _("days"));
+      time_str, days, days == 1 ? _("day") : _("days"));
   }
 }
 
-static void add_pattern_response(pool *p, const char *pattern) {
+static void readme_add_pattern(pool *p, const char *pattern) {
   glob_t g;
-  int    a;
+  int a;
   char **path;
   
-  if (!(a = pr_fs_glob(pattern, 0, NULL, &g))) {
+  a = pr_fs_glob(pattern, 0, NULL, &g);
+  if (!a) {
     path = g.gl_pathv;
     while (path && *path) {
-      add_readme_response(p, *path);
+      pr_signals_handle();
+      readme_add_path(p, *path);
       path++;
     }
-  } else if (a == GLOB_NOSPACE)
-    pr_response_add(R_226, _("Out of memory during globbing of %s"), pattern);
 
-  else if (a == GLOB_ABORTED)
-    pr_response_add(R_226, _("Read error during globbing of %s"), pattern);
+  } else if (a == GLOB_NOSPACE) {
+    pr_log_debug(DEBUG3, MOD_README_VERSION
+      ": out of memory during globbing of '%s'", pattern);
 
-  else if (a != GLOB_NOMATCH)
-    pr_response_add(R_226, _("Unknown error during globbing of %s"), pattern);
-  
+  } else if (a == GLOB_ABORTED) {
+    pr_log_debug(DEBUG3, MOD_README_VERSION
+      ": read error during globbing of '%s'", pattern);
+
+  } else if (a != GLOB_NOMATCH) {
+    pr_log_debug(DEBUG3, MOD_README_VERSION
+      ": unknown error during globbing of '%s'", pattern);
+  }
+ 
   pr_fs_globfree(&g);
 }
 
-MODRET show_readme(cmd_rec *cmd) {
+/* Command handlers
+ */
+
+MODRET readme_post_cmd(cmd_rec *cmd) {
   config_rec *c;
-  char *file;
   
   c = find_config(CURRENT_CONF, CONF_PARAM, "DisplayReadme", FALSE);
   while (c) {
-    file = c->argv[0];
+    char *path;
+
+    path = c->argv[0];
     
-    pr_log_debug(DEBUG5, "Checking for display pattern %s", file);
-    add_pattern_response(cmd->tmp_pool, file);
+    pr_log_debug(DEBUG5, "Checking for display pattern %s", path);
+    readme_add_pattern(cmd->tmp_pool, path);
     
     c = find_config_next(c, c->next, CONF_PARAM, "DisplayReadme",FALSE);
   }
-  
-  /* Originally this returned HANDLED, which was incorrect, and
-   * could cause other POST_CMD handlers to not run
-   */
+
   return PR_DECLINED(cmd);
 }
 
-MODRET readme_add_entry(cmd_rec *cmd) {
+/* Configuration handlers
+ */
+
+/* usage: DisplayReadme path|pattern */
+MODRET set_displayreadme(cmd_rec *cmd) {
   config_rec *c;
   
-  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_ANON|CONF_GLOBAL);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
   
   if (cmd->argc != 2) {
     CONF_ERROR(cmd, "syntax: DisplayReadme <filename-or-pattern>");
@@ -136,30 +151,54 @@ MODRET readme_add_entry(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-static conftable readme_config[] = {
-  { "DisplayReadme",		readme_add_entry,	},
+/* Module API tables
+ */
+
+static conftable readme_conftab[] = {
+  { "DisplayReadme", set_displayreadme, NULL },
   { NULL }
 };
 
-static cmdtable readme_commands[] = {
-	{ POST_CMD,	C_CWD,	G_NONE,	show_readme,	FALSE,	FALSE },
-	{ POST_CMD,	C_CDUP,	G_NONE,	show_readme,	FALSE,	FALSE },
-	{ POST_CMD,	C_XCWD,	G_NONE,	show_readme,	FALSE,	FALSE },
-	{ POST_CMD,	C_XCUP,	G_NONE,	show_readme,	FALSE,	FALSE },
+static cmdtable readme_cmdtab[] = {
+  { POST_CMD,	C_CWD,	G_NONE,	readme_post_cmd, FALSE,	FALSE },
+  { POST_CMD,	C_CDUP,	G_NONE,	readme_post_cmd, FALSE,	FALSE },
+  { POST_CMD,	C_XCWD,	G_NONE,	readme_post_cmd, FALSE,	FALSE },
+  { POST_CMD,	C_XCUP,	G_NONE,	readme_post_cmd, FALSE,	FALSE },
 
-	{ POST_CMD,	C_PASS,	G_NONE, show_readme,	FALSE,	FALSE },
+  /* We specifically use a LOG_CMD handler here, so that any DisplayReadme
+   * output is append after any possible DisplayLogin data (see Bug#3605).
+   */
+  { LOG_CMD,	C_PASS,	G_NONE, readme_post_cmd, FALSE,	FALSE },
 
-	{ 0,		NULL }
+  { 0, NULL }
 };
 
 module readme_module = {
-	NULL, NULL,		/* Always NULL */
-	0x20,			/* API Version 2.0 */
-	"readme",
-	readme_config,		/* configuration table */
-	readme_commands,	/* command table is for local use only */
-	NULL,			/* No authentication handlers */
-	NULL,			/* Initialization function */
-	NULL			/* Post-fork "child mode" init */
+  /* Always NULL */
+  NULL, NULL,
+
+  /* Module API version */
+  0x20,
+
+  /* Module name */
+  "readme",
+
+  /* Module configuration directive table */
+  readme_conftab,
+
+  /* Module command handler table */
+  readme_cmdtab,
+
+  /* Module auth handler table */
+  NULL,
+
+  /* Module initialization */
+  NULL,
+
+  /* Session initialization */
+  NULL,
+
+  /* Module version */
+  MOD_README_VERSION
 };
 

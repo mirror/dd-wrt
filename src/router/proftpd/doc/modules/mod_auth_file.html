@@ -1,3 +1,6 @@
+<!-- $Id: mod_auth_file.html,v 1.2 2011/02/20 18:18:44 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth_file.html,v $ -->
+
 <html>
 <head>
 <title>ProFTPD module mod_auth_file</title>
@@ -12,7 +15,7 @@
 <hr><br>
 
 This module is contained in the <code>mod_auth_file.c</code> file for
-ProFTPD 1.2, and is compiled by default.
+ProFTPD 1.3.<i>x</i>, and is compiled by default.
 
 <h2>Directives</h2>
 <ul>
@@ -21,7 +24,7 @@ ProFTPD 1.2, and is compiled by default.
 </ul>
 
 <hr>
-<h2><a name="AuthGroupFile"></a></h2>
+<h2><a name="AuthGroupFile">AuthGroupFile</a></h2>
 <strong>Syntax:</strong> AuthGroupFile <em>path [id min-max] [name regex]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -29,14 +32,14 @@ ProFTPD 1.2, and is compiled by default.
 <strong>Compatibility:</strong> 1.2.7rc2
 
 <p>
-The <code>AuthGroupFile</code> configures an alternate group file for providing
-group membership information; the specified file must have the same format as
-the system <code>/etc/group</code> file, and if specified is used during
-authentication and group lookups for directory/access control operations. The
-<em>path</em> argument should be the full path to the specified file. This
-directive can be configured on a per-server basis, so that virtual FTP servers
-can each have their own authentication file, often in conjunction with an
-<a href="#AuthUserFile"><code>AuthUserFile</code></a>.
+The <code>AuthGroupFile</code> directive configures an alternate group file for
+providing group membership information; the specified file must have the same
+format as the system <code>/etc/group</code> file, and if specified is used
+during authentication and group lookups for directory/access control
+operations. The <em>path</em> argument should be the full path to the specified
+file. This directive can be configured on a per-server basis, so that virtual
+FTP servers can each have their own authentication file, often in conjunction
+with an <a href="#AuthUserFile"><code>AuthUserFile</code></a>.
 
 <p>
 Note that this file does <i>not</i> need to reside inside a
@@ -65,7 +68,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="AuthUserFile"></a></h2>
+<h2><a name="AuthUserFile">AuthUserFile</a></h2>
 <strong>Syntax:</strong> AuthUserFile <em>path [id min-max] [home regex] [name regex]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -73,11 +76,11 @@ Example:
 <strong>Compatibility:</strong> 1.2.7rc2
 
 <p>
-The <code>AuthUserFile</code> configures an alternate passwd file for providing
-user account information; the specified file must have the same format as the
-system <code>/etc/passwd</code> file, and if specified is used during
-authentication and user lookups for directory/access control operations. The
-<em>path</em> argument should be the full path to the specified file. This
+The <code>AuthUserFile</code> directive configures an alternate passwd file for
+providing user account information; the specified file must have the same
+format as the system <code>/etc/passwd</code> file, and if specified is used
+during authentication and user lookups for directory/access control operations.
+The <em>path</em> argument should be the full path to the specified file. This
 directive can be configured on a per-server basis, so that virtual FTP servers
 can each have their own authentication file, often in conjunction with an
 <a href="#AuthGroupFile"><code>AuthGroupFile</code></a>.
@@ -119,12 +122,12 @@ The <code>mod_auth_file</code> module is compiled by default.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2004/04/16 00:36:57 $</i><br>
+Last Updated: <i>$Date: 2011/02/20 18:18:44 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2002<br>
+&copy; Copyright 2002-2011<br>
  All Rights Reserved<br>
 </i></b></font>
 

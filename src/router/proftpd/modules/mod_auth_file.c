@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_file - file-based authentication module that supports
  *                          restrictions on the file contents
  *
- * Copyright (c) 2002-2007 The ProFTPD Project team
+ * Copyright (c) 2002-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,14 +16,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, the ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_auth_file.c,v 1.34 2009/12/10 17:40:01 castaglia Exp $
+ * $Id: mod_auth_file.c,v 1.40 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -35,7 +35,7 @@
 # include <crypt.h>
 #endif
 
-#define MOD_AUTH_FILE_VERSION	"mod_auth_file/0.8.3"
+#define MOD_AUTH_FILE_VERSION	"mod_auth_file/0.9"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001020702
@@ -45,6 +45,10 @@
 #ifndef BUFSIZ
 # define BUFSIZ          PR_TUNABLE_BUFFER_SIZE
 #endif /* !BUFSIZ */
+
+extern unsigned char persistent_passwd;
+
+module auth_file_module;
 
 typedef union {
   uid_t uid;
@@ -60,27 +64,25 @@ typedef struct file_rec {
   authfile_id_t af_min_id;
   authfile_id_t af_max_id;
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
   unsigned char af_restricted_names;
   char *af_name_filter;
-  regex_t *af_name_regex;
+  pr_regex_t *af_name_regex;
   unsigned char af_name_regex_inverted;
 
   /* These are AuthUserFile-specific */
   unsigned char af_restricted_homes;
   char *af_home_filter;
-  regex_t *af_home_regex;
+  pr_regex_t *af_home_regex;
   unsigned char af_home_regex_inverted;
 
-#endif /* !HAVE_REGEX_H and !HAVE_REGCOMP */
+#endif /* regex support */
 
 } authfile_file_t;
 
 /* List of server-specific Authiles */
 static authfile_file_t *af_user_file = NULL;
 static authfile_file_t *af_group_file = NULL;
-
-extern unsigned char persistent_passwd;
 
 static int af_setpwent(void);
 static int af_setgrent(void);
@@ -268,27 +270,30 @@ static int af_allow_grent(struct group *grp) {
 
     if (grp->gr_gid < af_group_file->af_min_id.gid) {
       pr_log_debug(DEBUG3, MOD_AUTH_FILE_VERSION ": skipping group '%s': "
-        "GID (%u) below the minimum allowed (%u)", grp->gr_name,
-        (unsigned int) grp->gr_gid,
-        (unsigned int) af_group_file->af_min_id.gid);
+        "GID %lu below the minimum allowed (%lu)", grp->gr_name,
+        (unsigned long) grp->gr_gid,
+        (unsigned long) af_group_file->af_min_id.gid);
       errno = EINVAL;
       return -1;
     }
 
     if (grp->gr_gid > af_group_file->af_max_id.gid) {
       pr_log_debug(DEBUG3, MOD_AUTH_FILE_VERSION ": skipping group '%s': "
-        "GID (%u) above the maximum allowed (%u)", grp->gr_name,
-        (unsigned int) grp->gr_gid,
-        (unsigned int) af_group_file->af_max_id.gid);
+        "GID %lu above the maximum allowed (%lu)", grp->gr_name,
+        (unsigned long) grp->gr_gid,
+        (unsigned long) af_group_file->af_max_id.gid);
       errno = EINVAL;
       return -1;
     }
   }
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
   /* Check if the grent has an acceptable name. */
   if (af_group_file->af_restricted_names) {
-    int res = regexec(af_group_file->af_name_regex, grp->gr_name, 0, NULL, 0);
+    int res;
+
+    res = pr_regexp_exec(af_group_file->af_name_regex, grp->gr_name, 0,
+      NULL, 0, 0, 0);
 
     if ((res != 0 && !af_group_file->af_name_regex_inverted) ||
         (res == 0 && af_group_file->af_name_regex_inverted)) {
@@ -299,7 +304,7 @@ static int af_allow_grent(struct group *grp) {
       return -1;
     }
   }
-#endif /* !HAVE_REGEX_H and !HAVE_REGCOMP */
+#endif /* regex support */
 
   return 0;
 }
@@ -315,7 +320,7 @@ static void af_endgrent(void) {
 }
 
 static struct group *af_getgrent(void) {
-  struct group *grp = NULL;
+  struct group *grp = NULL, *res = NULL;
 
   if (!af_group_file ||
       !af_group_file->af_file) {
@@ -334,14 +339,19 @@ static struct group *af_getgrent(void) {
     pr_signals_handle();
 
     buf = malloc(BUFSIZ);
-    if (!buf)
-      return NULL;
+    if (buf == NULL) {
+      pr_log_pri(PR_LOG_CRIT, "%s", "Out of memory!");
+      _exit(1);
+    }
+    grp = NULL;
 
     while (af_getgrentline(&buf, &buflen, af_group_file->af_file) != NULL) {
 
       /* Ignore comment and empty lines */
-      if (buf[0] == '\0' || buf[0] == '#')
+      if (buf[0] == '\0' ||
+          buf[0] == '#') {
         continue;
+      }
 
       cp = strchr(buf, '\n');
       if (cp != NULL)
@@ -355,16 +365,19 @@ static struct group *af_getgrent(void) {
 #endif /* !HAVE_FGETGRENT */
 
     /* If grp is NULL now, the file is empty - nothing more to be read. */
-    if (!grp)
+    if (grp == NULL) {
       break;
+    }
 
-    if (af_allow_grent(grp) < 0)
+    if (af_allow_grent(grp) < 0) {
       continue;
+    }
 
+    res = grp;
     break;
   }
 
-  return grp;
+  return res;
 }
 
 static struct group *af_getgrnam(const char *name) {
@@ -438,25 +451,30 @@ static int af_allow_pwent(struct passwd *pwd) {
 
     if (pwd->pw_uid < af_user_file->af_min_id.uid) {
       pr_log_debug(DEBUG3, MOD_AUTH_FILE_VERSION ": skipping user '%s': "
-        "UID (%u) below the minimum allowed (%u)", pwd->pw_name,
-        (unsigned int) pwd->pw_uid, (unsigned int) af_user_file->af_min_id.uid);
+        "UID %lu below the minimum allowed (%lu)", pwd->pw_name,
+        (unsigned long) pwd->pw_uid,
+        (unsigned long) af_user_file->af_min_id.uid);
       errno = EINVAL;
       return -1;
     }
 
     if (pwd->pw_uid > af_user_file->af_max_id.gid) {
       pr_log_debug(DEBUG3, MOD_AUTH_FILE_VERSION ": skipping user '%s': "
-        "UID (%u) above the maximum allowed (%u)", pwd->pw_name,
-        (unsigned int) pwd->pw_uid, (unsigned int) af_user_file->af_max_id.uid);
+        "UID %lu above the maximum allowed (%lu)", pwd->pw_name,
+        (unsigned long) pwd->pw_uid,
+        (unsigned long) af_user_file->af_max_id.uid);
       errno = EINVAL;
       return -1;
     }
   }
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
   /* Check if the pwent has an acceptable name. */
   if (af_user_file->af_restricted_names) {
-    int res = regexec(af_user_file->af_name_regex, pwd->pw_name, 0, NULL, 0);
+    int res;
+
+    res = pr_regexp_exec(af_user_file->af_name_regex, pwd->pw_name, 0, NULL,
+      0, 0, 0);
 
     if ((res != 0 && !af_user_file->af_name_regex_inverted) ||
         (res == 0 && af_user_file->af_name_regex_inverted)) {
@@ -470,8 +488,10 @@ static int af_allow_pwent(struct passwd *pwd) {
 
   /* Check if the pwent has an acceptable home directory. */
   if (af_user_file->af_restricted_homes) {
+    int res;
 
-    int res = regexec(af_user_file->af_home_regex, pwd->pw_dir, 0, NULL, 0);
+    res = pr_regexp_exec(af_user_file->af_home_regex, pwd->pw_dir, 0, NULL,
+      0, 0, 0);
 
     if ((res != 0 && !af_user_file->af_home_regex_inverted) ||
         (res == 0 && af_user_file->af_home_regex_inverted)) {
@@ -482,7 +502,7 @@ static int af_allow_pwent(struct passwd *pwd) {
       return -1;
     }
   }
-#endif /* !HAVE_REGEX_H and !HAVE_REGCOMP */
+#endif /* regex support */
 
   return 0;
 }
@@ -498,10 +518,10 @@ static void af_endpwent(void) {
 }
 
 static struct passwd *af_getpwent(void) {
-  struct passwd *pwd = NULL;
+  struct passwd *pwd = NULL, *res = NULL;
 
-  if (!af_user_file ||
-      !af_user_file->af_file) {
+  if (af_user_file == NULL ||
+      af_user_file->af_file == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -511,15 +531,22 @@ static struct passwd *af_getpwent(void) {
     pr_signals_handle();
     pwd = fgetpwent(af_user_file->af_file);
 #else
-    char buf[BUFSIZ] = {'\0'};
+    char buf[BUFSIZ+1] = {'\0'};
 
     pr_signals_handle();
-    while (fgets(buf, sizeof(buf), af_user_file->af_file) != (char*) 0) {
+
+    memset(buf, '\0', sizeof(buf));
+    pwd = NULL;
+
+    while (fgets(buf, sizeof(buf)-1, af_user_file->af_file) != NULL) {
       pr_signals_handle();
 
       /* Ignore empty and comment lines */
-      if (buf[0] == '\0' || buf[0] == '#')
+      if (buf[0] == '\0' ||
+          buf[0] == '#') {
+        memset(buf, '\0', sizeof(buf));
         continue;
+      }
 
       buf[strlen(buf)-1] = '\0';
       pwd = af_getpasswd(buf);
@@ -528,16 +555,22 @@ static struct passwd *af_getpwent(void) {
 #endif /* !HAVE_FGETPWENT */
 
     /* If pwd is NULL now, the file is empty - nothing more to be read. */
-    if (!pwd)
+    if (pwd == NULL) {
       break;
+    }
 
-    if (af_allow_pwent(pwd) < 0)
+    if (af_allow_pwent(pwd) < 0) {
+#ifndef HAVE_FGETPWENT
+      memset(buf, '\0', sizeof(buf));
+#endif
       continue;
+    }
 
+    res = pwd;
     break;
   }
 
-  return pwd;
+  return res;
 }
 
 static struct passwd *af_getpwnam(const char *name) {
@@ -547,6 +580,8 @@ static struct passwd *af_getpwnam(const char *name) {
     return NULL;
 
   while ((pwd = af_getpwent()) != NULL) {
+    pr_signals_handle();
+
     if (strcmp(name, pwd->pw_name) == 0) {
 
       /* Found the requested user */
@@ -914,11 +949,11 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
   config_rec *c = NULL;
   authfile_file_t *file = NULL;
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
   if (cmd->argc-1 < 1 || cmd->argc-1 > 5)
 #else
   if (cmd->argc-1 < 1 || cmd->argc-1 > 2)
-#endif /* !HAVE_REGEX_H and !HAVE_REGCOMP */
+#endif /* regex support */
     CONF_ERROR(cmd, "wrong number of parameters");
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -972,13 +1007,13 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
         file->af_max_id.gid = max;
         file->af_restricted_ids = TRUE;
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
       } else if (strcmp(cmd->argv[i], "name") == 0) {
         char *filter = cmd->argv[++i];
-        regex_t *preg = NULL;
+        pr_regex_t *pre = NULL;
         int res = 0;
 
-        preg = pr_regexp_alloc();
+        pre = pr_regexp_alloc(&auth_file_module);
 
         /* Check for a ! negation/inversion filter prefix. */
         if (*filter == '!') {
@@ -986,26 +1021,26 @@ MODRET set_authgroupfile(cmd_rec *cmd) {
           file->af_name_regex_inverted = TRUE;
         }
 
-        res = regcomp(preg, filter, REG_EXTENDED|REG_NOSUB);
+        res = pr_regexp_compile(pre, filter, REG_EXTENDED|REG_NOSUB);
         if (res != 0) {
           char errstr[200] = {'\0'};
 
-          regerror(res, preg, errstr, sizeof(errstr));
-          pr_regexp_free(preg);
+          pr_regexp_error(res, pre, errstr, sizeof(errstr));
+          pr_regexp_free(NULL, pre);
 
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", filter, "' failed "
             "regex compilation: ", errstr, NULL));
         }
 
         file->af_name_filter = pstrdup(c->pool, cmd->argv[i]);
-        file->af_name_regex = preg;
+        file->af_name_regex = pre;
         file->af_restricted_names = TRUE;
+#endif /* regex support */
 
-#endif /* !HAVE_REGEX_H && !HAVE_REGCOMP */
-
-      } else
+      } else {
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown restriction '",
           cmd->argv[i], "'", NULL));
+      }
     }
   }
 
@@ -1017,11 +1052,11 @@ MODRET set_authuserfile(cmd_rec *cmd) {
   config_rec *c = NULL;
   authfile_file_t *file = NULL;
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
   if (cmd->argc-1 < 1 || cmd->argc-1 > 7)
 #else
   if (cmd->argc-1 < 1 || cmd->argc-1 > 2)
-#endif /* !HAVE_REGEX_H and !HAVE_REGCOMP */
+#endif /* regex support */
     CONF_ERROR(cmd, "wrong number of parameters");
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -1075,13 +1110,13 @@ MODRET set_authuserfile(cmd_rec *cmd) {
         file->af_max_id.uid = max;
         file->af_restricted_ids = TRUE;
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
+#ifdef PR_USE_REGEX
       } else if (strcmp(cmd->argv[i], "home") == 0) {
         char *filter = cmd->argv[++i];
-        regex_t *preg = NULL;
+        pr_regex_t *pre = NULL;
         int res = 0;
 
-        preg = pr_regexp_alloc();
+        pre = pr_regexp_alloc(&auth_file_module);
 
         /* Check for a ! negation/inversion filter prefix. */
         if (*filter == '!') {
@@ -1089,27 +1124,27 @@ MODRET set_authuserfile(cmd_rec *cmd) {
           file->af_home_regex_inverted = TRUE;
         }
 
-        res = regcomp(preg, filter, REG_EXTENDED|REG_NOSUB);
+        res = pr_regexp_compile(pre, filter, REG_EXTENDED|REG_NOSUB);
         if (res != 0) {
           char errstr[200] = {'\0'};
 
-          regerror(res, preg, errstr, sizeof(errstr));
-          pr_regexp_free(preg);
+          pr_regexp_error(res, pre, errstr, sizeof(errstr));
+          pr_regexp_free(NULL, pre);
 
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", filter, "' failed "
             "regex compilation: ", errstr, NULL));
         }
 
         file->af_home_filter = pstrdup(c->pool, cmd->argv[i]);
-        file->af_home_regex = preg;
+        file->af_home_regex = pre;
         file->af_restricted_homes = TRUE;
 
       } else if (strcmp(cmd->argv[i], "name") == 0) {
         char *filter = cmd->argv[++i];
-        regex_t *preg = NULL;
+        pr_regex_t *pre = NULL;
         int res = 0;
 
-        preg = pr_regexp_alloc();
+        pre = pr_regexp_alloc(&auth_file_module);
 
         /* Check for a ! negation/inversion filter prefix. */
         if (*filter == '!') {
@@ -1117,26 +1152,26 @@ MODRET set_authuserfile(cmd_rec *cmd) {
           file->af_name_regex_inverted = TRUE;
         }
 
-        res = regcomp(preg, filter, REG_EXTENDED|REG_NOSUB);
+        res = pr_regexp_compile(pre, filter, REG_EXTENDED|REG_NOSUB);
         if (res != 0) {
           char errstr[200] = {'\0'};
 
-          regerror(res, preg, errstr, sizeof(errstr));
-          pr_regexp_free(preg);
+          pr_regexp_error(res, pre, errstr, sizeof(errstr));
+          pr_regexp_free(NULL, pre);
 
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", filter, "' failed "
             "regex compilation: ", errstr, NULL));
         }
 
         file->af_name_filter = pstrdup(c->pool, cmd->argv[i]);
-        file->af_name_regex = preg;
+        file->af_name_regex = pre;
         file->af_restricted_names = TRUE;
+#endif /* regex support */
 
-#endif /* !HAVE_REGEX_H && !HAVE_REGCOMP */
-
-      } else
+      } else {
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown restriction '",
           cmd->argv[i], "'", NULL));
+      }
     }
   }
 

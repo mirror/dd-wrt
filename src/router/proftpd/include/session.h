@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009 The ProFTPD Project team
+ * Copyright (c) 2009-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,18 +14,69 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: session.h,v 1.2 2009/09/02 17:58:54 castaglia Exp $
+ * $Id: session.h,v 1.7 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_SESSION_H
 #define PR_SESSION_H
+
+/* List of disconnect/end-of-session reason codes.
+ */
+
+/* Unknown/unspecified reason for disconnection */
+#define PR_SESS_DISCONNECT_UNSPECIFIED		0
+
+/* Disconnected gracefully */
+#define PR_SESS_DISCONNECT_CLIENT_QUIT		1
+
+/* Disconnected because of EOF on read connection */
+#define PR_SESS_DISCONNECT_CLIENT_EOF		2
+
+/* Disconnected because of session initialization failure */
+#define PR_SESS_DISCONNECT_SESSION_INIT_FAILED	3
+
+/* Disconnected by signal */
+#define PR_SESS_DISCONNECT_SIGNAL		4
+
+/* Disconnected because of out-of-memory issues */
+#define PR_SESS_DISCONNECT_NOMEM		5
+
+/* Disconnected because server shutdown */
+#define PR_SESS_DISCONNECT_SERVER_SHUTDOWN	6
+
+/* Disconnected due to a timeout of some sort */
+#define PR_SESS_DISCONNECT_TIMEOUT		7
+
+/* Disconnected because client is banned */
+#define PR_SESS_DISCONNECT_BANNED		8
+
+/* Disconnected because of configured policy, e.g. <Limit LOGIN> */
+#define PR_SESS_DISCONNECT_CONFIG_ACL		9
+
+/* Disconnected because of module-specific policy, e.g. allow/deny files */
+#define PR_SESS_DISCONNECT_MODULE_ACL		10
+
+/* Disconnected due to module misconfiguration, bad config syntax, etc */
+#define PR_SESS_DISCONNECT_BAD_CONFIG		11
+
+/* Disconnected by application (general purpose code). */
+#define PR_SESS_DISCONNECT_BY_APPLICATION	12
+
+/* Disconnected due to snprintf(3) buffer truncation. */
+#define PR_SESS_DISCONNECT_SNPRINTF_TRUNCATED	13
+
+/* Returns a string describing the reason the client was disconnected or
+ * the session ended.  If a pointer to a char * was provided, any extra
+ * disconnect details will be provided.
+ */
+const char *pr_session_get_disconnect_reason(char **details);
 
 /* Returns the current protocol name in use.
  *
@@ -34,6 +85,20 @@
  */
 const char *pr_session_get_protocol(int);
 #define PR_SESS_PROTO_FL_LOGOUT		0x01
+
+/* Ends the current session but records the reason for the disconnection
+ * via the reason code, the module which disconnected the client, and any
+ * extra details the caller may provide.
+ */
+void pr_session_disconnect(module *m, int reason_code, const char *details);
+
+/* Ends the current session process, unless the PR_SESS_END_FL_NOEXIT
+ * flag value is set.  (This flag is really only used by signal handlers
+ * which are going to use abort(2) rather than _exit(2) to end the process.)
+ */
+void pr_session_end(int flags);
+#define PR_SESS_END_FL_NOEXIT		0x01
+#define PR_SESS_END_FL_SYNTAX_CHECK	0x02
 
 /* Returns a so-called "tty name" suitable for use via PAM, and in WtmpLog
  * logging.

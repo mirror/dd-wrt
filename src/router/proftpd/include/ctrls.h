@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -23,7 +23,7 @@
  */
 
 /* Controls API definitions
- * $Id: ctrls.h,v 1.6 2009/03/10 16:59:23 castaglia Exp $
+ * $Id: ctrls.h,v 1.8 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_CTRLS_H
@@ -147,6 +147,10 @@ int pr_ctrls_register(const module *mod, const char *action,
   const char *desc, int (*ctrls_cb)(pr_ctrls_t *, int, char **));
 
 /* Unregisters any control handlers that match the given module/action pair.
+ * If the module argument is null, then the specified action for all modules
+ * is unregistered.  If the action argument is null, then all actions for the
+ * specified module are unregistered.
+ *
  * Returns 0 on success, -1 on failure.
  */
 int pr_ctrls_unregister(module *mod, const char *action);

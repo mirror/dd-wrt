@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -22,15 +22,11 @@
  * OpenSSL in the source distribution.
  */
 
-/*
- * ProFTPD scoreboard support (modified for use by external utilities).
- *
- * $Id: scoreboard.c,v 1.13 2009/12/03 21:45:24 castaglia Exp $
+/* ProFTPD scoreboard support (modified for use by external utilities).
+ * $Id: scoreboard.c,v 1.17 2011/05/23 20:46:20 castaglia Exp $
  */
 
 #include "utils.h"
-
-#include <signal.h>
 
 static int util_scoreboard_fd = -1;
 static char util_scoreboard_file[PR_TUNABLE_PATH_MAX] = PR_RUN_DIR "/proftpd.scoreboard";
@@ -302,7 +298,7 @@ int util_scoreboard_scrub(int verbose) {
   }
 
   /* Skip past the scoreboard header. */
-  curr_offset = lseek(fd, sizeof(pr_scoreboard_header_t), SEEK_SET);
+  curr_offset = lseek(fd, (off_t) sizeof(pr_scoreboard_header_t), SEEK_SET);
 
   memset(&sce, 0, sizeof(sce));
 
@@ -322,7 +318,12 @@ int util_scoreboard_scrub(int verbose) {
       }
 
       /* Rewind to the start of this slot. */
-      lseek(fd, curr_offset, SEEK_SET);
+      if (lseek(fd, curr_offset, SEEK_SET) < 0) {
+        if (verbose) {
+          fprintf(stdout, "error scrubbing scoreboard: %s",
+            strerror(errno));
+        }
+      }
 
       memset(&sce, 0, sizeof(sce));
       while (write(fd, &sce, sizeof(sce)) != sizeof(sce)) {
@@ -338,7 +339,7 @@ int util_scoreboard_scrub(int verbose) {
     }
 
     /* Mark the current offset. */
-    curr_offset = lseek(fd, 0, SEEK_CUR);
+    curr_offset = lseek(fd, (off_t) 0, SEEK_CUR);
   }
 
   /* Release the scoreboard. */

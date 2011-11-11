@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2010 The ProFTPD Project team
+ * Copyright (c) 2004-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Table API implementation
- * $Id: table.c,v 1.16.2.1 2010/03/30 21:17:56 castaglia Exp $
+ * $Id: table.c,v 1.24 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -65,12 +65,38 @@ struct table_rec {
 
 static int handling_signal = FALSE;
 
+static const char *trace_channel = "table";
+
 /* Default table callbacks
  */
 
 static int key_cmp(const void *key1, size_t keysz1, const void *key2,
     size_t keysz2) {
-  return strcmp((const char *) key1, (const char *) key2);
+  const char *k1, *k2;
+
+  if (keysz1 != keysz2) {
+    return keysz1 < keysz2 ? -1 : 1;
+  }
+
+  k1 = key1;
+  k2 = key2;
+
+  if (keysz1 >= 1) {
+    /* Basic check of the first character in each key, trying to reduce
+     * the chances of calling strncmp(3) if not needed.
+     */
+
+    if (k1[0] != k2[0]) {
+      return k1[0] < k2[0] ? -1 : 1;
+    }
+
+    /* Special case (unlikely, but possible). */
+    if (keysz1 == 1) {
+      return 0;
+    }
+  }
+
+  return strncmp((const char *) key1, (const char *) key2, keysz1);
 }
 
 /* Use Perl's hashing algorithm by default. */
@@ -81,7 +107,6 @@ static unsigned int key_hash(const void *key, size_t keysz) {
   while (sz--) {
     const char *k = key;
     unsigned int c = *k;
-    k++;
 
     if (!handling_signal) {
       /* Always handle signals in potentially long-running while loops. */
@@ -100,7 +125,10 @@ static unsigned int key_hash(const void *key, size_t keysz) {
 static void entry_insert(pr_table_entry_t **h, pr_table_entry_t *e) {
   pr_table_entry_t *ei;
 
-  for (ei = *h; ei && ei->next; ei = ei->next);
+  if (*h == NULL)
+    return;
+
+  for (ei = *h; ei != NULL && ei->next; ei = ei->next);
 
   /* Now, ei points to the last entry in the chain. */
   ei->next = e;
@@ -341,7 +369,8 @@ int pr_table_kadd(pr_table_t *tab, const void *key_data, size_t key_datasz,
        * is identical.  If so, we have multiple values for the same key.
        */
 
-      if (tab->keycmp(ei->key->key_data, 0, key_data, 0) == 0) {
+      if (tab->keycmp(ei->key->key_data, ei->key->key_datasz,
+          key_data, key_datasz) == 0) {
 
         /* Check if this table allows multivalues. */
         if (!(tab->flags & PR_TABLE_FL_MULTI_VALUE)) {
@@ -1024,17 +1053,34 @@ void *pr_table_pcalloc(pr_table_t *tab, size_t sz) {
   return pcalloc(tab->pool, sz);
 }
 
+static void table_printf(const char *fmt, ...) {
+  char buf[PR_TUNABLE_BUFFER_SIZE+1];
+  va_list msg;
+
+  memset(buf, '\0', sizeof(buf));
+  va_start(msg, fmt);
+  vsnprintf(buf, sizeof(buf)-1, fmt, msg);
+  va_end(msg);
+
+  buf[sizeof(buf)-1] = '\0';
+  pr_trace_msg(trace_channel, 19, "dump: %s", buf);
+}
+
 void pr_table_dump(void (*dumpf)(const char *fmt, ...), pr_table_t *tab) {
   register unsigned int i;
 
-  if (tab == NULL ||
-      dumpf == NULL)
+  if (tab == NULL) {
     return;
+  }
 
-  if (tab->flags == 0)
+  if (dumpf == NULL) {
+    dumpf = table_printf;
+  }
+
+  if (tab->flags == 0) {
     dumpf("%s", "[table flags]: None");
 
-  else {
+  } else {
     if ((tab->flags & PR_TABLE_FL_MULTI_VALUE) &&
         (tab->flags & PR_TABLE_FL_USE_CACHE)) {
       dumpf("%s", "[table flags]: MultiValue, UseCache");
@@ -1064,7 +1110,8 @@ void pr_table_dump(void (*dumpf)(const char *fmt, ...), pr_table_t *tab) {
         pr_signals_handle();
       }
 
-      dumpf("[chain %u#%u] '%s' => '%s' (%u)", i, j++, ent->key->key_data,
+      dumpf("[hash %u (%u chains) chain %u#%u] '%s' => '%s' (%u)",
+        ent->key->hash, tab->nchains, i, j++, ent->key->key_data,
         ent->value_data, ent->value_datasz);
       ent = ent->next;
     }

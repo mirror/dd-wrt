@@ -5,17 +5,22 @@ use strict;
 use Cwd qw(abs_path);
 use File::Spec;
 use Getopt::Long;
-use Test::Harness;
+use Test::Harness qw(&runtests $verbose);
 
 my $opts = {};
-GetOptions($opts, 'h|help', 'C|class=s@', 'V|verbose');
+GetOptions($opts, 'h|help', 'C|class=s@', 'K|keep-tmpfiles', 'V|verbose');
 
 if ($opts->{h}) {
   usage();
 }
 
+if ($opts->{K}) {
+  $ENV{KEEP_TMPFILES} = 1;
+}
+
 if ($opts->{V}) {
   $ENV{TEST_VERBOSE} = 1;
+  $verbose = 1;
 }
 
 # We use this, rather than use(), since use() is equivalent to a BEGIN
@@ -87,16 +92,26 @@ if (scalar(@ARGV) > 0) {
     t/commands/mlst.t
     t/commands/mff.t
     t/commands/mfmt.t
+    t/commands/site/chmod.t
     t/config/accessdenymsg.t
     t/config/accessgrantmsg.t
     t/config/allowoverwrite.t
+    t/config/anonrejectpasswords.t
+    t/config/anonrequirepassword.t
     t/config/authaliasonly.t
     t/config/authgroupfile.t
+    t/config/authorder.t
     t/config/authusingalias.t
     t/config/classes.t
+    t/config/commandbuffersize.t
     t/config/createhome.t
+    t/config/defaultchdir.t
+    t/config/defaultroot.t
     t/config/deleteabortedstores.t
+    t/config/dirfakegroup.t
     t/config/dirfakemode.t
+    t/config/dirfakeuser.t
+    t/config/displaychdir.t
     t/config/displayconnect.t
     t/config/displayfiletransfer.t 
     t/config/displaylogin.t
@@ -107,27 +122,43 @@ if (scalar(@ARGV) > 0) {
     t/config/hidegroup.t
     t/config/hidenoaccess.t
     t/config/hideuser.t
+    t/config/include.t
+    t/config/listoptions.t
+    t/config/maxclients.t
+    t/config/maxclientsperhost.t
+    t/config/maxcommandrate.t
+    t/config/maxconnectionsperhost.t
     t/config/maxinstances.t
     t/config/maxloginattempts.t
     t/config/maxretrievefilesize.t
     t/config/maxstorefilesize.t
+    t/config/multilinerfc2228.t
     t/config/order.t
     t/config/pathallowfilter.t
     t/config/pathdenyfilter.t
+    t/config/protocols.t
     t/config/requirevalidshell.t
     t/config/rewritehome.t
+    t/config/rlimitmemory.t
+    t/config/serveradmin.t
     t/config/serverident.t
+    t/config/showsymlinks.t
+    t/config/socketoptions.t
     t/config/storeuniqueprefix.t
     t/config/timeoutidle.t
     t/config/timeoutlogin.t
     t/config/timeoutnotransfer.t
     t/config/timeoutsession.t
     t/config/timeoutstalled.t
+    t/config/trace.t
+    t/config/traceoptions.t
+    t/config/transferrate.t
     t/config/useftpusers.t
     t/config/useglobbing.t
     t/config/useralias.t
     t/config/userowner.t
     t/config/userpassword.t
+    t/config/usesendfile.t
     t/config/directory/limits.t
     t/config/directory/umask.t
     t/config/ftpaccess/dele.t
@@ -135,6 +166,9 @@ if (scalar(@ARGV) > 0) {
     t/config/ftpaccess/merging.t
     t/config/ftpaccess/retr.t
     t/config/limit/anonymous.t
+    t/config/limit/login.t
+    t/config/limit/mfmt.t
+    t/config/limit/opts.t
     t/config/limit/rmd.t
     t/config/limit/xmkd.t
     t/config/limit/filters.t
@@ -145,6 +179,7 @@ if (scalar(@ARGV) > 0) {
     t/signals/hup.t
     t/signals/segv.t
     t/signals/abrt.t
+    t/telnet.t
     t/utils/ftpcount.t
     t/utils/ftpwho.t
   )];
@@ -154,9 +189,19 @@ if (scalar(@ARGV) > 0) {
   my $order = 0;
 
   my $FEATURE_TESTS = {
+    't/modules/mod_auth_file.t' => {
+      order => ++$order,
+      test_class => [qw(mod_auth_file)],
+    },
+
     't/modules/mod_ban.t' => {
       order => ++$order,
       test_class => [qw(mod_ban)],
+    },
+
+    't/modules/mod_ban/memcache.t' => {
+      order => ++$order,
+      test_class => [qw(mod_ban mod_memcache)],
     },
 
     't/modules/mod_cap.t' => {
@@ -164,14 +209,34 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_cap)],
     },
 
+    't/modules/mod_copy.t' => {
+      order => ++$order,
+      test_class => [qw(mod_copy)],
+    },
+
     't/modules/mod_ctrls.t' => {
       order => ++$order,
       test_class => [qw(mod_ctrls)],
     },
 
+    't/modules/mod_deflate.t' => {
+      order => ++$order,
+      test_class => [qw(mod_deflate)],
+    },
+
+    't/modules/mod_delay.t' => {
+      order => ++$order,
+      test_class => [qw(mod_delay)],
+    },
+
     't/modules/mod_exec.t' => {
       order => ++$order,
       test_class => [qw(mod_exec)],
+    },
+
+    't/modules/mod_ifversion.t' => {
+      order => ++$order,
+      test_class => [qw(mod_ifversion)],
     },
 
     't/modules/mod_lang.t' => {
@@ -189,6 +254,32 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_quotatab mod_quotatab_sql mod_sql_sqlite)],
     },
 
+    't/modules/mod_quotatab/copy.t' => {
+      order => ++$order,
+      test_class => [qw(mod_copy mod_quotatab mod_quotatab_sql mod_sql_sqlite)],
+    },
+
+    't/modules/mod_quotatab/site_misc.t' => {
+      order => ++$order,
+      test_class => [qw(
+        mod_copy
+        mod_quotatab
+        mod_quotatab_sql
+        mod_sql_sqlite
+        mod_site_misc
+      )],
+    },
+
+    't/modules/mod_ratio.t' => {
+      order => ++$order,
+      test_class => [qw(mod_ratio)],
+    },
+
+    't/modules/mod_readme.t' => {
+      order => ++$order,
+      test_class => [qw(mod_readme)],
+    },
+
     't/modules/mod_rewrite.t' => {
       order => ++$order,
       test_class => [qw(mod_rewrite)],
@@ -199,14 +290,39 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_sftp)],
     },
 
+    't/modules/mod_sftp/ban.t' => {
+      order => ++$order,
+      test_class => [qw(mod_ban mod_sftp)],
+    },
+
+    't/modules/mod_sftp/exec.t' => {
+      order => ++$order,
+      test_class => [qw(mod_exec mod_sftp)],
+    },
+
+    't/modules/mod_sftp/rewrite.t' => {
+      order => ++$order,
+      test_class => [qw(mod_rewrite mod_sftp)],
+    },
+
+    't/modules/mod_sftp/wrap2.t' => {
+      order => ++$order,
+      test_class => [qw(mod_sftp mod_wrap2)],
+    },
+
     't/modules/mod_sftp_sql.t' => {
       order => ++$order,
-      test_class => [qw(mod_sftp mod_sql_sqlite)],
+      test_class => [qw(mod_sftp mod_sftp_sql mod_sql_sqlite)],
     },
 
     't/modules/mod_shaper.t' => {
       order => ++$order,
       test_class => [qw(mod_shaper)],
+    },
+
+    't/modules/mod_site.t' => {
+      order => ++$order,
+      test_class => [qw(mod_site)],
     },
 
     't/modules/mod_site_misc.t' => {
@@ -224,6 +340,11 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_sql_passwd mod_sql_sqlite)],
     },
 
+    't/modules/mod_sql_odbc.t' => {
+      order => ++$order,
+      test_class => [qw(mod_sql_odbc)],
+    },
+
     't/modules/mod_sql_sqlite.t' => {
       order => ++$order,
       test_class => [qw(mod_sql_sqlite)],
@@ -232,6 +353,16 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_tls.t' => {
       order => ++$order,
       test_class => [qw(mod_tls)],
+    },
+
+    't/modules/mod_tls_memcache.t' => {
+      order => ++$order,
+      test_class => [qw(mod_tls_memcache)],
+    },
+
+    't/modules/mod_tls_shmcache.t' => {
+      order => ++$order,
+      test_class => [qw(mod_tls_shmcache)],
     },
 
     't/modules/mod_unique_id.t' => {

@@ -2,7 +2,7 @@
  * ProFTPD: mod_ctrls -- a module implementing the ftpdctl local socket
  *                       server
  *
- * Copyright (c) 2000-2009 TJ Saunders
+ * Copyright (c) 2000-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -26,7 +26,7 @@
  * This is mod_ctrls, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ctrls.h,v 1.4 2009/03/10 16:59:23 castaglia Exp $
+ * $Id: mod_ctrls.h,v 1.5 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef MOD_CTRLS_H

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp disconnect msgs
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: disconnect.c,v 1.4.2.1 2010/10/29 22:28:52 castaglia Exp $
+ * $Id: disconnect.c,v 1.9 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -29,6 +29,8 @@
 #include "msg.h"
 #include "packet.h"
 #include "disconnect.h"
+
+extern module sftp_module;
 
 struct disconnect_reason {
   uint32_t code;
@@ -131,7 +133,16 @@ void sftp_disconnect_send(uint32_t reason, const char *explain,
     sockfd = session.c->wfd;
   }
 
-  (void) sftp_ssh2_packet_write(sockfd, pkt);
+  /* Explicitly set a short poll timeout of 5 secs. */
+  sftp_ssh2_packet_set_poll_timeout(5);
+
+  if (sftp_ssh2_packet_write(sockfd, pkt) < 0) {
+    int xerrno = errno;
+
+    pr_trace_msg(trace_channel, 12,
+      "error writing DISCONNECT message: %s", strerror(xerrno));
+  }
+
   destroy_pool(pkt->pool);
 }
 
@@ -140,9 +151,10 @@ void sftp_disconnect_conn(uint32_t reason, const char *explain,
   sftp_disconnect_send(reason, explain, file, lineno, func);
 
 #ifdef PR_DEVEL_COREDUMP
+  pr_session_end(PR_SESS_END_FL_NOEXIT);
   abort();
 
 #else
-  end_login(1);
+  pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
 #endif /* PR_DEVEL_COREDUMP */
 }

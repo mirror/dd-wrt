@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: interop.h,v 1.3 2010/02/10 18:34:34 castaglia Exp $
+ * $Id: interop.h,v 1.6 2011/05/23 20:40:13 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -70,6 +70,11 @@
  * USERAUTH_REQUEST packet.
  */
 #define SFTP_SSH2_FEAT_SERVICE_IN_HOST_SIG		0x0100
+
+/* For clients that want the server to pessimistically send its NEWKEYS message
+ * after they send their NEWKEYS message.
+ */
+#define SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS		0x0200
 
 /* For scanners. */
 #define SFTP_SSH2_FEAT_SCANNER				0xfffe

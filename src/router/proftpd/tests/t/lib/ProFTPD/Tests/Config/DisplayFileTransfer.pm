@@ -1,10 +1,10 @@
 package ProFTPD::Tests::Config::DisplayFileTransfer;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
+use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
 
@@ -45,29 +45,6 @@ sub new {
 
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
-}
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub displayfilexfer_abs_path {
@@ -148,7 +125,7 @@ sub displayfilexfer_abs_path {
       }
 
       my $buf;
-      $conn->read($buf, 32768);
+      $conn->read($buf, 32768, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);
@@ -275,7 +252,7 @@ sub displayfilexfer_rel_path {
       }
 
       my $buf;
-      $conn->read($buf, 32768);
+      $conn->read($buf, 32768, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);
@@ -425,7 +402,7 @@ sub displayfilexfer_chrooted {
       }
 
       my $buf;
-      $conn->read($buf, 32768);
+      $conn->read($buf, 32768, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);
@@ -551,7 +528,7 @@ sub displayfilexfer_multiline {
       }
 
       my $buf;
-      $conn->read($buf, 32768);
+      $conn->read($buf, 32768, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2008 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2008-2011 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,10 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+# Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
 #
-#  $Id: ftpmail,v 1.4 2008/08/18 20:55:17 castaglia Exp $
-#
+#  $Id: ftpmail,v 1.6 2011/05/23 21:25:44 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
@@ -33,7 +32,7 @@ my $program = basename($0);
 my $opts = {};
 GetOptions($opts, 'attach-file', 'fifo=s', 'from=s', 'help', 'ignore-users=s',
   'log=s', 'recipient=s@', 'sleep=s', 'smtp-server=s', 'subject=s',
-  'watch-users=s');
+  'watch-users=s', 'auth=s');
 
 if ($opts->{help}) {
   usage();
@@ -63,6 +62,16 @@ unless ($opts->{'smtp-server'}) {
   exit 1;
 }
 my $smtp_server = $opts->{'smtp-server'};
+
+my $smtp_auth;
+if ($opts->{'auth'}) {
+  eval { $smtp_auth = get_auth_info($opts->{'auth'}) };
+  if ($@) {
+    my $ex = $@;
+    print STDERR "$program: unable to obtain SMTP auth info: $ex\n";
+    exit 1;
+  }
+}
 
 my $delay = 0.5;
 if ($opts->{sleep}) {
@@ -183,6 +192,59 @@ if (open($fifoh, "< $fifo")) {
   die "$program: unable to read FIFO '$fifo': $!\n";
 }
 
+sub get_auth_info {
+  my $path = shift;
+
+  my $info = {};
+
+  if (open(my $fh, "< $path")) {
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      # Skip comments and blank lines
+      if ($line =~ /^(\s+)?#/) {
+        next;
+      }
+
+      if ($line =~ /^\s+$/) {
+        next;
+      }
+
+      if ($line =~ /^(\s+)?(\S+)(\s+)?=(\s+)?(.*)$/) {
+        my $key = $2;
+        my $val = $5;
+
+        # Ignore any keys other than 'user' and 'password'.
+
+        if (lc($key) eq 'user') {
+          $info->{'user'} = $val;
+
+        } elsif (lc($key) eq 'password' ||
+                 lc($key) eq 'pass') {
+          $info->{'password'} = $val;
+        }
+      }
+    }
+
+    close($fh);
+
+  } else {
+    die("Can't read '$path': $!\n");
+  }
+
+  # Make sure that we have the required values
+
+  my $reqs = [qw(user password)];
+
+  foreach my $req (@$reqs) {
+    unless (exists($info->{$req})) {
+      die("Missing required '$req' value\n");
+    }
+  }
+
+  return $info;
+}
+
 sub send_email {
   my $upload_info = shift;
 
@@ -244,6 +306,10 @@ EOT
     To => join(', ', @$recipients),
     Subject => $subject,
   };
+
+  if ($opts->{'auth'}) {
+    $email_info->{'auth'} = $smtp_auth;
+  }
 
   if ($opts->{'attach-file'}) {
     if (-e $file) {
@@ -328,6 +394,14 @@ Command-line options:
   --attach-file		If used, this will cause a copy of the uploaded file
 			to be included, as an attachment, in the generated
 			email.
+
+  --auth \$path         Configures the path to a file containing SMTP
+			authentication information.
+
+			The configured file should look like this:
+
+				user = \$user
+				password = \$password
 
   --fifo \$path		Indicates the path to the FIFO to which proftpd is
 			writing its TransferLog.  That is, this is the path

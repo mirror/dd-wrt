@@ -74,6 +74,9 @@ Modules included upon request:
     mod_lang
         Handles the LANG command (see README.NLS)
 
+    mod_memcache
+        Handles Memcache support
+
 Contributed ProFTPD Modules (contrib/ subdirectory)
 --------------------------------------------------
 
@@ -86,7 +89,7 @@ Security/encryption modules:
         See doc/contrib/mod_sftp.html
         Contributed by TJ Saunders <tj@castaglia.org>
 
-    mod_tls
+    mod_tls, mod_tls_memcache, mod_tls_shmcache
         SSL/TLS authentication/encryption
         See doc/contrib/mod_tls.html
         Originally by Peter Runestig
@@ -142,6 +145,11 @@ Feature modules:
         Reject connections based on system load
         See doc/contrib/mod_load.html
         Contributed by TJ Saunders <tj@castaglia.org>
+
+    mod_qos
+        Tweak the network TCP QoS bits for better routing
+        See doc/contrib/mod_qos.html
+        Contributed by Philip Prindeville
 
     mod_quotatab, mod_quotatab_file, mod_quotatab_ldap, mod_quotatab_radius,
       mod_quotatab_sql

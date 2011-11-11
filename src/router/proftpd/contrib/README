@@ -12,6 +12,15 @@ xferstats.holger-preiss (BSD license, I think)
   and some modifications. Useful for analyzing your /var/log/xferlog files. 
   See xferlog(5).
 
+mod_quotatab_ldap.ldif
+
+  LDIF version of mod_quotatab_ldap schema (for supporting Fedora directory
+  server).
+
+mod_quotatab_ldap.schema
+
+  LDAP schema for LDAP-based mod_quotatab quotas via mod_ldap.
+
 mod_ratio.c (GPL license)
 
   A third-party module which implements file/byte ratios in proftpd.

@@ -1,6 +1,6 @@
 /*
- * ProFTPD - mod_sftp sftp (fxp)
- * Copyright (c) 2008-2009 TJ Saunders
+ * ProFTPD - mod_sftp SFTP
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: fxp.h,v 1.7 2009/11/13 02:29:16 castaglia Exp $
+ * $Id: fxp.h,v 1.10 2011/05/23 20:40:13 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -72,15 +72,17 @@
 #define SFTP_FXP_EXT_POSIX_RENAME	0x0008
 #define SFTP_FXP_EXT_STATVFS		0x0010
 #define SFTP_FXP_EXT_VENDOR_ID		0x0020
+#define SFTP_FXP_EXT_SPACE_AVAIL	0x0040
 
 #define SFTP_FXP_EXT_DEFAULT \
-  (SFTP_FXP_EXT_CHECK_FILE|SFTP_FXP_EXT_COPY_FILE|SFTP_FXP_EXT_VERSION_SELECT|SFTP_FXP_EXT_POSIX_RENAME|SFTP_FXP_EXT_STATVFS)
+  (SFTP_FXP_EXT_CHECK_FILE|SFTP_FXP_EXT_COPY_FILE|SFTP_FXP_EXT_VERSION_SELECT|SFTP_FXP_EXT_POSIX_RENAME|SFTP_FXP_EXT_SPACE_AVAIL|SFTP_FXP_EXT_STATVFS)
 
 int sftp_fxp_handle_packet(pool *, void *, uint32_t, char *, uint32_t);
 
 int sftp_fxp_open_session(uint32_t);
 int sftp_fxp_close_session(uint32_t);
 
+int sftp_fxp_set_displaylogin(const char *);
 int sftp_fxp_set_extensions(unsigned long);
 
 int sftp_fxp_set_protocol_version(unsigned int, unsigned int);

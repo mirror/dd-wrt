@@ -3,7 +3,7 @@
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2002-2009 The ProFTPD Project
+ * Copyright (c) 2002-2011 The ProFTPD Project
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,14 +17,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Andrew Houghton and other respective copyright
  * holders give permission to link this program with OpenSSL, and distribute
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql.h,v 1.10 2009/10/02 21:22:56 castaglia Exp $
+ * $Id: mod_sql.h,v 1.11 2011/05/23 20:44:41 castaglia Exp $
  */
 
 #ifndef MOD_SQL_H

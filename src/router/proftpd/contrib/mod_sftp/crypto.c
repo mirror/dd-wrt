@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp OpenSSL interface
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: crypto.c,v 1.14.2.2 2010/05/18 21:43:35 castaglia Exp $
+ * $Id: crypto.c,v 1.20 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -582,20 +582,20 @@ const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
     if (strcmp(ciphers[i].name, name) == 0) {
       const EVP_CIPHER *cipher;
 
-      if (strcmp(name, "blowfish-ctr") == 0) {
+      if (strncmp(name, "blowfish-ctr", 13) == 0) {
         cipher = get_bf_ctr_cipher();
 
-      } else if (strcmp(name, "3des-ctr") == 0) {
+      } else if (strncmp(name, "3des-ctr", 9) == 0) {
         cipher = get_des3_ctr_cipher();
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
-      } else if (strcmp(name, "aes256-ctr") == 0) {
+      } else if (strncmp(name, "aes256-ctr", 11) == 0) {
         cipher = get_aes_ctr_cipher(32);
 
-      } else if (strcmp(name, "aes192-ctr") == 0) {
+      } else if (strncmp(name, "aes192-ctr", 11) == 0) {
         cipher = get_aes_ctr_cipher(24);
 
-      } else if (strcmp(name, "aes128-ctr") == 0) {
+      } else if (strncmp(name, "aes128-ctr", 11) == 0) {
         cipher = get_aes_ctr_cipher(16);
 #endif /* OpenSSL older than 0.9.7 */
 
@@ -604,7 +604,7 @@ const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
       }
 
       if (key_len) {
-        if (strcmp(name, "arcfour256") != 0) {
+        if (strncmp(name, "arcfour256", 11) != 0) {
           *key_len = 0;
 
         } else {
@@ -665,7 +665,7 @@ const char *sftp_crypto_get_kexinit_cipher_list(pool *p) {
 
       for (j = 0; ciphers[j].name; j++) {
         if (strcmp(c->argv[i], ciphers[j].name) == 0) {
-          if (strcmp(c->argv[i], "none") != 0) {
+          if (strncmp(c->argv[i], "none", 5) != 0) {
             if (EVP_get_cipherbyname(ciphers[j].openssl_name) != NULL) {
               res = pstrcat(p, res, *res ? "," : "",
                 pstrdup(p, ciphers[j].name), NULL);
@@ -673,12 +673,12 @@ const char *sftp_crypto_get_kexinit_cipher_list(pool *p) {
             } else {
               /* The CTR modes are special cases. */
 
-              if (strcmp(ciphers[j].name, "blowfish-ctr") == 0 ||
-                  strcmp(ciphers[j].name, "3des-ctr") == 0
+              if (strncmp(ciphers[j].name, "blowfish-ctr", 13) == 0 ||
+                  strncmp(ciphers[j].name, "3des-ctr", 9) == 0
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
-                  || strcmp(ciphers[j].name, "aes256-ctr") == 0 ||
-                  strcmp(ciphers[j].name, "aes192-ctr") == 0 ||
-                  strcmp(ciphers[j].name, "aes128-ctr") == 0
+                  || strncmp(ciphers[j].name, "aes256-ctr", 11) == 0 ||
+                  strncmp(ciphers[j].name, "aes192-ctr", 11) == 0 ||
+                  strncmp(ciphers[j].name, "aes128-ctr", 11) == 0
 #endif
                   ) {
                 res = pstrcat(p, res, *res ? "," : "",
@@ -704,7 +704,7 @@ const char *sftp_crypto_get_kexinit_cipher_list(pool *p) {
 
     for (i = 0; ciphers[i].name; i++) {
       if (ciphers[i].enabled) {
-        if (strcmp(ciphers[i].name, "none") != 0) {
+        if (strncmp(ciphers[i].name, "none", 5) != 0) {
           if (EVP_get_cipherbyname(ciphers[i].openssl_name) != NULL) {
             res = pstrcat(p, res, *res ? "," : "",
               pstrdup(p, ciphers[i].name), NULL);
@@ -712,12 +712,12 @@ const char *sftp_crypto_get_kexinit_cipher_list(pool *p) {
           } else {
             /* The CTR modes are special cases. */
 
-            if (strcmp(ciphers[i].name, "blowfish-ctr") == 0 ||
-                strcmp(ciphers[i].name, "3des-ctr") == 0
+            if (strncmp(ciphers[i].name, "blowfish-ctr", 13) == 0 ||
+                strncmp(ciphers[i].name, "3des-ctr", 9) == 0
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
-                || strcmp(ciphers[i].name, "aes256-ctr") == 0 ||
-                strcmp(ciphers[i].name, "aes192-ctr") == 0 ||
-                strcmp(ciphers[i].name, "aes128-ctr") == 0
+                || strncmp(ciphers[i].name, "aes256-ctr", 11) == 0 ||
+                strncmp(ciphers[i].name, "aes192-ctr", 11) == 0 ||
+                strncmp(ciphers[i].name, "aes128-ctr", 11) == 0
 #endif
                 ) {
               res = pstrcat(p, res, *res ? "," : "",
@@ -763,7 +763,7 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 
       for (j = 0; digests[j].name; j++) {
         if (strcmp(c->argv[i], digests[j].name) == 0) {
-          if (strcmp(c->argv[i], "none") != 0) {
+          if (strncmp(c->argv[i], "none", 5) != 0) {
             if (EVP_get_digestbyname(digests[j].openssl_name) != NULL) {
               res = pstrcat(p, res, *res ? "," : "",
                 pstrdup(p, digests[j].name), NULL);
@@ -787,7 +787,7 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 
     for (i = 0; digests[i].name; i++) {
       if (digests[i].enabled) {
-        if (strcmp(digests[i].name, "none") != 0) {
+        if (strncmp(digests[i].name, "none", 5) != 0) {
           if (EVP_get_digestbyname(digests[i].openssl_name) != NULL) {
             res = pstrcat(p, res, *res ? "," : "",
               pstrdup(p, digests[i].name), NULL);
@@ -880,7 +880,18 @@ void sftp_crypto_free(int flags) {
 #endif
 
     ERR_free_strings();
+
+#if OPENSSL_VERSION_NUMBER >= 0x10000001L
+    /* The ERR_remove_state(0) usage is deprecated due to thread ID
+     * differences among platforms; see the OpenSSL-1.0.0c CHANGES file
+     * for details.  So for new enough OpenSSL installations, use the
+     * proper way to clear the error queue state.
+     */
+    ERR_remove_thread_state(NULL);
+#else
     ERR_remove_state(0);
+#endif /* OpenSSL prior to 1.0.0-beta1 */
+
     EVP_cleanup();
     RAND_cleanup();
   }
@@ -895,7 +906,7 @@ int sftp_crypto_set_driver(const char *driver) {
 
   crypto_engine = driver;
 
-  if (strcasecmp(driver, "ALL") == 0) {
+  if (strncasecmp(driver, "ALL", 4) == 0) {
     /* Load all ENGINE implementations bundled with OpenSSL. */
     ENGINE_load_builtin_engines();
     ENGINE_register_all_complete();

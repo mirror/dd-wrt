@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2009 The ProFTPD Project
+ * Copyright 2000-2011 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -24,8 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/*
- * PAM module from ProFTPD
+/* PAM module from ProFTPD
  *
  * This module should work equally well under all Linux distributions (which
  * have PAM support), as well as Solaris 2.5 and above.
@@ -36,7 +35,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lpam$
- * $Id: mod_auth_pam.c,v 1.24 2009/03/05 05:24:06 castaglia Exp $
+ * $Id: mod_auth_pam.c,v 1.26 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
@@ -182,7 +181,7 @@ static void auth_pam_exit_ev(const void *event_data, void *user_data) {
 #endif /* !PAM_CRED_DELETE */
   if (pam_error != PAM_SUCCESS) {
     pr_trace_msg(trace_channel, 1,
-      "error setting PDM_DELETE_CRED credential: %s",
+      "error setting PAM_DELETE_CRED credential: %s",
       pam_strerror(pamh, pam_error));
   }
 

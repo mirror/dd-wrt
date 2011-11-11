@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'password' user authentication
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-password.c,v 1.3 2009/03/19 06:04:08 castaglia Exp $
+ * $Id: auth-password.c,v 1.6 2011/08/04 21:15:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -32,34 +32,19 @@
 #include "mac.h"
 #include "utf8.h"
 
-int sftp_auth_password(struct ssh2_packet *pkt, const char *orig_user,
-    const char *user, const char *service, char **buf, uint32_t *buflen,
-    int *send_userauth_fail) {
+int sftp_auth_password(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
+    const char *orig_user, const char *user, const char *service, char **buf,
+    uint32_t *buflen, int *send_userauth_fail) {
   const char *cipher_algo, *mac_algo;
   char *passwd;
   int have_new_passwd, res;
   struct passwd *pw;
 
-  pw = pr_auth_getpwnam(pkt->pool, user);
-  if (pw == NULL) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "no account for user '%s' found", user);
-
-    pr_log_auth(PR_LOG_NOTICE,
-      "USER %s: no such user found from %s [%s] to %s:%d", user,
-      session.c->remote_name, pr_netaddr_get_ipstr(session.c->remote_addr),
-      pr_netaddr_get_ipstr(session.c->local_addr), session.c->local_port);
-
-    *send_userauth_fail = TRUE;
-    errno = ENOENT;
-    return 0;
-  }
-
   cipher_algo = sftp_cipher_get_read_algo();
   mac_algo = sftp_mac_get_read_algo();
 
-  if (strcmp(cipher_algo, "none") == 0 ||
-      strcmp(mac_algo, "none") == 0) {
+  if (strncmp(cipher_algo, "none", 5) == 0 ||
+      strncmp(mac_algo, "none", 5) == 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "cipher algorithm '%s' or MAC algorithm '%s' unacceptable for "
       "password authentication, denying password authentication request",
@@ -74,6 +59,40 @@ int sftp_auth_password(struct ssh2_packet *pkt, const char *orig_user,
 
   passwd = sftp_msg_read_string(pkt->pool, buf, buflen);
   passwd = sftp_utf8_decode_str(pkt->pool, passwd);
+
+  pass_cmd->arg = passwd;
+
+  if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "authentication request for user '%s' blocked by '%s' handler",
+      orig_user, pass_cmd->argv[0]);
+
+    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
+
+    pr_memscrub(passwd, strlen(passwd));
+
+    *send_userauth_fail = TRUE;
+    errno = EPERM;
+    return 0;
+  }
+
+  pw = pr_auth_getpwnam(pkt->pool, user);
+  if (pw == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "no account for user '%s' found", user);
+
+    pr_log_auth(PR_LOG_NOTICE,
+      "USER %s: no such user found from %s [%s] to %s:%d", user,
+      session.c->remote_name, pr_netaddr_get_ipstr(session.c->remote_addr),
+      pr_netaddr_get_ipstr(session.c->local_addr), session.c->local_port);
+
+    pr_memscrub(passwd, strlen(passwd));
+
+    *send_userauth_fail = TRUE;
+    errno = ENOENT;
+    return 0;
+  }
 
   res = pr_auth_authenticate(pkt->pool, user, passwd);
   pr_memscrub(passwd, strlen(passwd));

@@ -1,10 +1,9 @@
 package ProFTPD::Tests::Config::HideUser;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
 use File::Spec;
 use IO::Handle;
 
@@ -28,7 +27,7 @@ my $TESTS = {
 
   hideuser_not_session_user => {
     order => ++$order,
-    test_class => [qw(forking)],
+    test_class => [qw(forking rootprivs)],
   },
 
 };
@@ -39,29 +38,6 @@ sub new {
 
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
-}
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub hideuser_explicit_user {
@@ -161,7 +137,7 @@ sub hideuser_explicit_user {
       }
 
       my $buf;
-      $conn->read($buf, 8192);
+      $conn->read($buf, 8192, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);
@@ -341,7 +317,7 @@ sub hideuser_session_user {
       }
 
       my $buf;
-      $conn->read($buf, 8192);
+      $conn->read($buf, 8192, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);
@@ -525,7 +501,7 @@ sub hideuser_not_session_user {
       }
 
       my $buf;
-      $conn->read($buf, 8192);
+      $conn->read($buf, 8192, 30);
       $conn->close();
 
       my ($resp_code, $resp_msg);

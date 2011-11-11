@@ -2,7 +2,7 @@
  * ProFTPD: mod_unique_id -- a module for generating a unique ID for each
  *                           FTP session.
  *
- * Copyright (c) 2006-2007 TJ Saunders
+ * Copyright (c) 2006-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -26,7 +26,7 @@
  * This is mod_unique_id, contrib software for proftpd 1.2.x/1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_unique_id.c,v 1.1 2007/10/11 17:02:15 castaglia Exp $
+ * $Id: mod_unique_id.c,v 1.6 2011/05/23 20:56:40 castaglia Exp $
  */
 
 #include "conf.h"
@@ -35,11 +35,11 @@
  * module for Apache.
  */
 
-#define MOD_UNIQUE_ID_VERSION		"mod_unique_id/0.1"
+#define MOD_UNIQUE_ID_VERSION		"mod_unique_id/0.2"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030102
-# error "ProFTPD 1.3.1rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030402
+# error "ProFTPD 1.3.4rc2 or later required"
 #endif
 
 module unique_id_module;
@@ -99,7 +99,8 @@ static void uniqid_postparse_ev(const void *event_data, void *user_data) {
     pr_log_pri(PR_LOG_WARNING, MOD_UNIQUE_ID_VERSION
       ": unable to determine hostname");
     destroy_pool(tmp_pool);
-    end_login(1);
+    pr_session_disconnect(&unique_id_module, PR_SESS_DISCONNECT_BY_APPLICATION,
+      NULL);
   }
 
   host_addr = pr_netaddr_get_addr(tmp_pool, host_name, NULL);
@@ -107,7 +108,8 @@ static void uniqid_postparse_ev(const void *event_data, void *user_data) {
     pr_log_pri(PR_LOG_WARNING, MOD_UNIQUE_ID_VERSION
       ": unable to resolve '%s' to an IP address", host_name);
     destroy_pool(tmp_pool);
-    end_login(1);
+    pr_session_disconnect(&unique_id_module, PR_SESS_DISCONNECT_BY_APPLICATION,
+      NULL);
   }
 
   addr_data = pr_netaddr_get_inaddr(host_addr);
@@ -148,7 +150,7 @@ static int uniqid_sess_init(void) {
   unsigned short counter;
   struct timeval tv;
   struct timezone tz;
-  char *id = NULL;
+  char *key = "UNIQUE_ID", *id = NULL;
   unsigned char *x, *y;
   register unsigned int i, j;
 
@@ -254,13 +256,18 @@ static int uniqid_sess_init(void) {
     j = id_encoded_sz;
   id[j] = '\0';
 
-  if (pr_env_set(session.pool, "UNIQUE_ID", id) < 0) {
+  if (pr_env_set(session.pool, key, id) < 0) {
     pr_log_debug(DEBUG0, MOD_UNIQUE_ID_VERSION
       ": error setting UNIQUE_ID environment variable: %s", strerror(errno));
 
   } else {
     pr_log_debug(DEBUG8, MOD_UNIQUE_ID_VERSION
       ": unique session ID is '%s'", id);
+  }
+
+  if (pr_table_add_dup(session.notes, pstrdup(session.pool, key), id, 0) < 0) {
+    pr_log_debug(DEBUG0, MOD_UNIQUE_ID_VERSION
+      ": error adding %s session note: %s", key, strerror(errno));
   }
 
   return 0;

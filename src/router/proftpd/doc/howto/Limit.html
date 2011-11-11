@@ -1,4 +1,4 @@
-<!-- $Id: Limit.html,v 1.18 2010/02/17 16:07:11 castaglia Exp $ -->
+<!-- $Id: Limit.html,v 1.20 2010/11/09 19:30:28 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Limit.html,v $ -->
 
 <html>
@@ -255,8 +255,20 @@ being able to login from a specific range of IP addresses?&quot;  The
     &lt;/Limit&gt;
   &lt;/IfUser&gt;
 </pre>
+
+<p>
+Or if you want to have a specific IP address, rather than a range, you can
+do this without classes (but still requiring <code>mod_ifsession</code>):
+<pre>
+  &lt;IfUser dave&gt;
+    &lt;Limit LOGIN&gt;
+      Deny from 1.2.3.4
+    &lt;/Limit&gt;
+  &lt;/IfUser&gt;
+</pre>
+
 Note that the same effect can be achieved by using the
-<a href="../../contrib/mod_wrap.html">mod_wrap</a> module to configure
+<a href="../../contrib/mod_wrap2.html">mod_wrap2</a> module to configure
 user-specific allow/deny files.
 
 <p>
@@ -360,8 +372,20 @@ directory itself (which is covered by the first <code>&lt;Directory&gt;</code>
 section).
 
 <p>
+What if you want to make sure the directory cannot be renamed, in addition to
+ensuring that it cannot be deleted?  Simply include the <code>RNFR</code> and
+<code>RNTO</code> FTP commands in the list of denied commands, <i>e.g.</i>:
+<pre>
+  &lt;Directory /path/to/dir&gt;
+    &lt;Limit RMD RNFR RNTO XRMD&gt;
+      DenyAll
+    &lt;/Limit&gt;
+  &lt;/Directory&gt;
+</pre>
+
+<p>
 <hr>
-Last Updated: <i>$Date: 2010/02/17 16:07:11 $</i><br>
+Last Updated: <i>$Date: 2010/11/09 19:30:28 $</i><br>
 <hr>
 
 </body>

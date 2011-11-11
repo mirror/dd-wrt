@@ -1,7 +1,10 @@
-/var/log/xferlog {
-	missingok
-	notifempty
-	postrotate
-		kill -HUP `cat /var/run/proftpd.pid 2>/dev/null` 2>/dev/null || true
-	endscript
+/var/log/proftpd/*.log /var/log/xferlog {
+    compress
+    missingok
+    notifempty
+    sharedscripts
+    postrotate
+        test -f /var/lock/subsys/proftpd && /usr/bin/killall -HUP proftpd || :
+    endscript
 }
+

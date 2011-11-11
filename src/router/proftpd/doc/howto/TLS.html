@@ -1,4 +1,4 @@
-<!-- $Id: TLS.html,v 1.26 2009/12/28 20:12:29 castaglia Exp $ -->
+<!-- $Id: TLS.html,v 1.30 2011/05/11 16:09:24 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/TLS.html,v $ -->
 
 <html>
@@ -26,8 +26,13 @@ such RFC 2228 implementation is the <code>mod_gss</code> module, available
 from SourceForge.
 
 <p>
-Example <a href="http://www.castaglia.org/proftpd/modules/mod_tls.html"><code>mod_tls</code></a> configuration:
+Example <a href="../contrib/mod_tls.html"><code>mod_tls</code></a> configuration:
 <pre>
+  &lt;IfModule mod_dso.c&gt;
+    <font color=green># If mod_tls was built as a shared/DSO module, load it
+    LoadModule mod_tls.c
+  &lt;/IfModule&gt;
+
   &lt;IfModule mod_tls.c&gt;
     TLSEngine on
     TLSLog /var/ftpd/tls.log
@@ -327,7 +332,7 @@ are used, and how to generate your own:
 
 <p><a name="TLSProtection">
 <font color=red>Question</font>: Does FTPS protect both the control connection
-<i>and</i> the data connections?<br>
+<b>and</b> the data connections?<br>
 <font color=blue>Question</font>: Short answer: yes.
 
 <p>
@@ -581,6 +586,16 @@ for data it can read.  Make sure your client is prepared to handle the
 security requirements you have configured on the server.
 
 <p>
+The following may also appear in the <code>TLS</code> for any data
+transfers (which include directory listings):
+<pre>
+  client did not reuse SSL session, rejecting data connection (see the NoSessionReuseRequired TLSOptions parameter
+</pre>
+This message appears because an additional security restriction that was
+added in ProFTPD 1.3.3rc1.  The <a href="../contrib/mod_tls.html#TLSOptions"><code>TLSOptions</code></a> documentation for this "NoSessionReuseRequired" option
+describes the situation in more detail.
+
+<p>
 You may also see the following appear in the <code>TLSLog</code> on occasion:
 <pre>
   PROT: unwilling to accept security parameter (C), declining
@@ -590,10 +605,87 @@ be used for data transfers.  Some clients send a <code>PROT</code> command
 with a security parameter of <code>C</code>, meaning &quot;Clear&quot;,
 which effectively tells the server not to protect data transfers.  The
 <code>mod_tls</code> module will refuse the <code>C</code> security parameter
-if, like above, there is &quot;TLSRequired on&quot in your
+if, like above, there is &quot;TLSRequired on&quot; in your
 <code>proftpd.conf</code>.  This case also indicates a disagreement between
 the client's security expectations and the security policy you have configured
 on the server.
+
+<p><a name="TLSErrorAfterLargeUpload">
+<font color=red>Question</font>: Using FTPS, after uploading a very large file,
+my next directory listing fails:
+<pre>
+  425 Unable to build data connection: Operation not permitted
+</pre>
+The <code>TLSLog</code> contains:
+<pre>
+  client did not reuse SSL session, rejecting data connection (see the NoSessionReuseRequired TLSOptions parameter
+</pre>
+but I do <i>not</i> want to use that option, and would like to rely on the
+additional security protection provided by requring SSL session reuse.
+And my FTPS client is correctly reusing SSL session IDs (as earlier data
+transfers were working properly).  So why is my data transfer failing after
+the upload of a very large file?<br>
+<font color=blue>Answer</font>: The answer involves SSL session caching
+on the server side (<i>i.e.</i> <code>mod_tls</code>), cache timeouts, and
+session renegotiations.
+
+<p>
+By default, <code>mod_tls</code> uses OpenSSL's "internal" session cache,
+which is an in-memory caching of SSL session IDs.  And by default, OpenSSL's
+internal session cache has a cache timeout of 5 minutes; after that amount
+of time in the internal session cache, a cached SSL session ID is considered
+stale and is available for reuse.
+
+<p>
+This means that 5 minutes or more into an FTPS session, even if your FTPS
+client reused an SSL session ID, the OpenSSL internal session cache will
+time out that SSL session ID.  The next time your FTPS client goes to reuse
+that session ID for a data transfer, <code>mod_tls</code> won't find it in
+the OpenSSL internal session cache, and will think that your FTPS client is
+not reusing the SSL session ID as is required, and fail the transfer.
+
+<p>
+Fixing this situation requires two parts: <i>a)</i> the ability to change
+the cache timeout used for the OpenSSL internal session cache, and <i>b)</i>
+renegotiating the SSL session ID with the FTPS client periodically, to keep
+the SSL session ID up-to-date in the session cache.
+
+<p>
+The first part, configuring the session cache timeout for the OpenSSL internal
+session cache, is only possible in ProFTPD 1.3.4rc2 and later (see
+<a href="http://bugs.proftpd.org/show_bug.cgi?id=3580">Bug#3580</a>).  The
+<a href="../contrib/mod_tls.html#TLSSessionCache"><code>TLSSessionCache</code></a> directive was modified to allow a configuration such as:
+<pre>
+  TLSSessionCache internal: 1800
+</pre>
+(Unfortunately, the ':' after "internal" <i>is</i> necessary.)  This configures
+<code>mod_tls</code> such that the OpenSSL internal session cache uses
+a cache timeout of 1800 seconds (30 minutes), rather than the default of 300
+seconds (5 minutes).
+
+<p>
+No matter how long you configure the cache timeout, eventually you will have
+a session which lasts longer than that timeout.  Which brings us to the second
+part of the solution: renegotiating a new SSL session ID periodically, which
+keeps it fresh in the session cache.  The
+<a href="../contrib/mod_tls.html#TLSRenegotiate"><code>TLSRenegotiate</code></a>
+directive is needed for this.  For example, the following configuration
+should address the issue of failed data transfers after very large uploads:
+<pre>
+  TLSRenegotiate ctrl 1500 timeout 300
+  TLSSessionCache internal: 1800
+</pre>
+This tells <code>mod_tls</code> to request a renegotiation of the SSL session
+on the control channel every 1500 seconds (25 minutes), and to allow
+300 seconds (5 minutes) for the client to perform the renegotiation.  It also
+tells <code>mod_tls</code> to cache the SSL session data for 1800 seconds
+(30 minutes), <i>i.e.</i> longer than the renegotiation time of 1500 seconds.
+
+<p>
+This way, as long as your client supports renegotiations and is updating the
+SSL session ID properly for data transfers, when a data transfer is requested,
+the SSL session ID presented by the client should always be fresh and in the
+session cache.
 
 <p><a name="TLSBuildErrors">
 <font color=red>Question</font>: Why would I see the following errors while attempting to build <code>proftpd</code> with <code>mod_tls</code>?
@@ -821,11 +913,26 @@ I start <code>proftpd</code> using <code>mod_tls</code>?
  - mod_tls/2.2: compiled using OpenSSL version 'OpenSSL 0.9.7i 14 Oct 2005'
 headers, but linked to OpenSSL version 'OpenSSL 0.9.7l 28 Sep 2006' library
 </pre>
-<font color=blue>Answer</font>: That message is a warning, not an error.  It
-is telling you that the OpenSSL headers on your system don't match the OpenSSL
-library version.  In most cases, this is not a problem.  However, there
-can be inexplicable errors if the difference in header versus library versions
-is too large.
+What does this mean?<br>
+<font color=blue>Answer</font>: That is an informational/warning message.
+
+<p>
+Some systems are badly maintained by their admins (and/or by the packages
+installed on the systems), such that the OpenSSL headers can become quite badly
+out of sync with the OpenSSL libraries.  If this discrepancy becomes bad
+enough, you can see strange behavior from OpenSSL, ranging from random behavior
+to segfaults.  So <code>mod_tls</code> tries to let the admin know about the
+system's mismatched OpenSSL header/library versions.
+
+<p>
+Usually a minor OpenSSL version difference like the example above is OK,
+but it really depends on exactly what changed in OpenSSL, and how.
+
+<p>
+If you see the above message, it is not a <i>requirement</i> that you recompile
+<code>proftpd</code> against the OpenSSL headers of the same version as the
+OpenSSL libraries.  However, the version discrepancy <em>is</em> a possible
+source of trouble.
 
 <p>
 This header/library version check was added recently, hence why older
@@ -909,8 +1016,41 @@ file configured for the server certificate might also be badly formatted,
 which would result in the same error.
 
 <p>
+<font color=red>Question</font>: Is there a way to require TLS (FTPS) for
+remote clients <b>only</b>, and allow simple FTP (without TLS) for local
+clients (<i>i.e.</i> for clients in networks which we will be able to define
+as "local")?<br>
+<font color=blue>Answer</font>: Yes.
+
+<p>
+To do this, you would use a combination of
+<a href="Classes.html"><code>&lt;Class&gt;</code></a> sections and
+<a href="../contrib/mod_ifsession.html">mod_ifsession</a>'s
+<code>&lt;IfClass&gt;</code>, <i>e.g.</i>:
+<pre>
+  &lt;Class local&gt;
+    From ...
+  &lt;/Class&gt;
+
+  &lt;IfModule mod_tls.c&gt;
+    # Normal mod_tls configuration here
+
+    &lt;IfClass local&gt;
+      # Don't require FTPS from local clients
+      TLSRequired off
+    &lt;/IfClass&gt;
+
+    &lt;IfClass !local&gt;
+      # Require FTPS from remote/non-local clients
+      TLSRequired on
+    &lt;/IfClass&gt;
+
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
 <hr>
-Last Updated: <i>$Date: 2009/12/28 20:12:29 $</i><br>
+Last Updated: <i>$Date: 2011/05/11 16:09:24 $</i><br>
 <hr>
 
 </body>

@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -23,29 +23,29 @@
  */
 
 /* String manipulation functions
- * $Id: str.c,v 1.6.4.1 2011/03/09 22:15:12 castaglia Exp $
+ * $Id: str.c,v 1.11 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
 
 /* Maximum number of replacements that we will do in a given string. */
-#define PR_STR_MAX_REPLACEMENTS                       128
+#define PR_STR_MAX_REPLACEMENTS			128
 
 char *sreplace(pool *p, char *s, ...) {
   va_list args;
-  char *m,*r,*src = s,*cp;
-  char **mptr,**rptr;
+  char *m, *r, *src, *cp;
   char *matches[PR_STR_MAX_REPLACEMENTS+1], *replaces[PR_STR_MAX_REPLACEMENTS+1];
   char buf[PR_TUNABLE_PATH_MAX] = {'\0'}, *pbuf = NULL;
   size_t nmatches = 0, rlen = 0;
-  int blen;
-  int dyn = TRUE;
+  int blen = 0;
 
-  if (!p || !s) {
+  if (p == NULL ||
+      s == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
+  src = s;
   cp = buf;
   *cp = '\0';
 
@@ -61,8 +61,10 @@ char *sreplace(pool *p, char *s, ...) {
     char *tmp = NULL;
     int count = 0;
 
-    if ((r = va_arg(args, char *)) == NULL)
+    r = va_arg(args, char *);
+    if (r == NULL) {
       break;
+    }
 
     /* Increase the length of the needed buffer by the difference between
      * the given match and replacement strings, multiplied by the number
@@ -123,16 +125,16 @@ char *sreplace(pool *p, char *s, ...) {
 # define BUFSIZ 8192
 #endif
 
-  if (blen < BUFSIZ)
-    cp = pbuf = (char *) pcalloc(p, ++blen);
-
-  if (!pbuf) {
-    cp = pbuf = buf;
-    dyn = FALSE;
-    blen = sizeof(buf);
+  if (blen >= BUFSIZ) {
+    errno = ENOSPC;
+    return NULL;
   }
 
+  cp = pbuf = (char *) pcalloc(p, ++blen);
+
   while (*src) {
+    char **mptr, **rptr;
+
     for (mptr = matches, rptr = replaces; *mptr; mptr++, rptr++) {
       size_t mlen;
 
@@ -146,9 +148,6 @@ char *sreplace(pool *p, char *s, ...) {
           pr_log_pri(PR_LOG_ERR,
             "WARNING: attempt to overflow internal ProFTPD buffers");
           cp = pbuf;
-
-          if (blen >= BUFSIZ)
-            blen = BUFSIZ;
 
           cp += (blen - 1);
           goto done;
@@ -168,9 +167,6 @@ char *sreplace(pool *p, char *s, ...) {
           "WARNING: attempt to overflow internal ProFTPD buffers");
         cp = pbuf;
 
-        if (blen >= BUFSIZ)
-          blen = BUFSIZ;
-
         cp += (blen - 1);
         goto done;
       }
@@ -182,10 +178,7 @@ char *sreplace(pool *p, char *s, ...) {
  done:
   *cp = '\0';
 
-  if (dyn)
-    return pbuf;
-
-  return pstrdup(p, buf);
+  return pbuf;
 }
 
 /* "safe" strcat, saves room for NUL at end of dst, and refuses to copy more
@@ -458,31 +451,77 @@ int pr_str_is_boolean(const char *str) {
     return -1;
   }
 
-  if (strcasecmp(str, "on") == 0)
+  if (strncasecmp(str, "on", 3) == 0) {
     return TRUE;
+  }
 
-  if (strcasecmp(str, "off") == 0)
+  if (strncasecmp(str, "off", 4) == 0) {
     return FALSE;
+  }
 
-  if (strcasecmp(str, "yes") == 0)
+  if (strncasecmp(str, "yes", 4) == 0) {
     return TRUE;
+  }
  
-  if (strcasecmp(str, "no") == 0) 
+  if (strncasecmp(str, "no", 3) == 0) {
     return FALSE;
+  }
 
-  if (strcasecmp(str, "true") == 0)
+  if (strncasecmp(str, "true", 5) == 0) {
     return TRUE;
+  }
 
-  if (strcasecmp(str, "false") == 0)
+  if (strncasecmp(str, "false", 6) == 0) {
     return FALSE;
+  }
 
-  if (strcasecmp(str, "1") == 0)
+  if (strncasecmp(str, "1", 2) == 0) {
     return TRUE;
+  }
 
-  if (strcasecmp(str, "0") == 0)
+  if (strncasecmp(str, "0", 2) == 0) {
     return FALSE;
+  }
 
   errno = EINVAL;
   return -1;
+}
+
+/* Return true if str contains any of the glob(7) characters. */
+int pr_str_is_fnmatch(const char *str) {
+  int have_bracket = 0;
+
+  while (*str) {
+    switch (*str) {
+      case '?':
+      case '*':
+        return TRUE;
+
+      case '\\':
+        /* If the next character is NUL, we've reached the end of the string. */
+        if (*(str+1) == '\0')
+          return FALSE;
+
+        /* Skip past the escaped character, i.e. the next character. */
+        str++;
+        break;
+
+      case '[':
+        have_bracket++;
+        break;
+
+      case ']':
+        if (have_bracket)
+          return TRUE;
+        break;
+
+      default:
+        break;
+    }
+
+    str++;
+  }
+
+  return FALSE;
 }
 

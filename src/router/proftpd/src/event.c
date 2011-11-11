@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2010 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Event management code
- * $Id: event.c,v 1.18.2.2 2011/03/19 18:33:38 castaglia Exp $
+ * $Id: event.c,v 1.23 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -158,6 +158,8 @@ int pr_event_unregister(module *m, const char *event,
    */
 
   for (evl = events; evl; evl = evl->next) {
+    pr_signals_handle();
+
     if (!event || strcmp(evl->event, event) == 0) {
       struct event_handler *evh;
 
@@ -208,6 +210,42 @@ int pr_event_unregister(module *m, const char *event,
   }
 
   return 0;
+}
+
+int pr_event_listening(const char *event) {
+  struct event_list *evl;
+  int count = 0;
+
+  if (event == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (events == NULL) {
+    /* No registered listeners at all. */
+    return 0;
+  }
+
+  /* Lookup callbacks for this event. */
+  for (evl = events; evl; evl = evl->next) {
+
+    if (strcmp(evl->event, event) == 0) {
+      struct event_handler *evh;
+
+      /* If there are no registered callbacks for this event, be done. */
+      if (evl->handlers == NULL) {
+        return 0;
+      }
+ 
+      for (evh = evl->handlers; evh; evh = evh->next) {
+        count++;
+      }
+
+      break;
+    }
+  }
+
+  return count; 
 }
 
 void pr_event_generate(const char *event, const void *event_data) {
@@ -289,20 +327,23 @@ void pr_event_dump(void (*dumpf)(const char *, ...)) {
   }
 
   for (evl = events; evl; evl = evl->next) {
+    pr_signals_handle();
 
-    if (!evl->handlers)
+    if (!evl->handlers) {
       dumpf("No handlers registered for '%s'", evl->event);
 
-    else { 
+    } else { 
       struct event_handler *evh;
 
       dumpf("Registered for '%s':", evl->event);
-      for (evh = evl->handlers; evh; evh = evh->next)
-        if (evh->module)
+      for (evh = evl->handlers; evh; evh = evh->next) {
+        if (evh->module) {
           dumpf("  mod_%s.c", evh->module->name);
 
-        else
+        } else {
           dumpf("  (core)");
+        }
+      }
     }
   }
 
