@@ -37,7 +37,7 @@ static char *nvram_buf = NULL;
 int nvram_init(void *unused)
 {
 #ifdef HAVE_X86
-	FILE *in = fopen("/usr/local/nvram/nvram.db", "rb");
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in==NULL)
 	    return -1;
 	fclose(in);
