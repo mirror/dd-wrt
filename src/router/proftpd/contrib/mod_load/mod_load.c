@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_load -- a module for refusing connections based on system load
  *
- * Copyright (c) 2001-2008 TJ Saunders
+ * Copyright (c) 2001-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -31,8 +31,7 @@
  *   Copyright (C) 1985, 86, 87, 88, 89, 91, 92, 93, 1994, 1995, 1997
  *     Free Software Foundation, Inc.
  * 
- * $Id: mod_load.c.in,v 1.6 2008/06/12 17:05:33 castaglia Exp $
- * $Libraries: @MODULE_LIBS@ $
+ * $Id: mod_load.c,v 1.7 2011/11/06 22:16:16 castaglia Exp $
  */
 
 #include "conf.h"
@@ -42,8 +41,8 @@
 #define MOD_LOAD_VERSION		"mod_load/1.0.1"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030001
-# error "ProFTPD 1.3.0rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030402
+# error "ProFTPD 1.3.4rc2 or later required"
 #endif
 
 /* Support code.  Most of this is from getloadavg.c
@@ -935,6 +934,8 @@ static int getloadavg(double *loadavg, int nelem) {
 
 #endif /* !HAVE_GETLOADAVG */
 
+module load_module;
+
 static double load_get_system_load(void) {
   int res;
   double loadavg = -1.0;
@@ -1026,12 +1027,15 @@ static int load_sess_init(void) {
     pr_log_pri(PR_LOG_INFO, "MaxLoad (%.2f) reached: connection denied",
       max_load);
 
-    if (c->argc == 2)
+    if (c->argc == 2) {
       pr_response_send(R_421, "%s", (const char *) c->argv[1]);
-    else
-      pr_response_send(R_421, _("System busy, try again later"));
 
-    end_login(1);
+    } else {
+      pr_response_send(R_421, _("System busy, try again later"));
+    }
+
+    pr_session_disconnect(&load_module, PR_SESS_DISCONNECT_MODULE_ACL,
+      "MaxLoad");
   }
 
   /* Register some Variable entries for showing the system load. */
