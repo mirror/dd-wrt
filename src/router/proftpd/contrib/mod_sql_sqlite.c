@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_sqlite -- Support for connecting to SQLite databases
  *
- * Copyright (c) 2004-2010 TJ Saunders
+ * Copyright (c) 2004-2011 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,13 +15,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_sqlite.c,v 1.16.2.3 2010/12/03 23:00:22 castaglia Exp $
+ * $Id: mod_sql_sqlite.c,v 1.23 2011/05/23 20:56:40 castaglia Exp $
  * $Libraries: -lsqlite3 $
  */
 
@@ -1022,7 +1022,7 @@ static void sql_sqlite_mod_load_ev(const void *event_data, void *user_data) {
     if (sql_register_backend("sqlite3", sql_sqlite_cmdtable) < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_SQL_SQLITE_VERSION
         ": notice: error registering backend: %s", strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
   }
 }
@@ -1033,7 +1033,7 @@ static void sql_sqlite_mod_unload_ev(const void *event_data, void *user_data) {
     if (sql_unregister_backend("sqlite3") < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_SQL_SQLITE_VERSION
         ": notice: error unregistering backend: %s", strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
 
     pr_event_unregister(&sql_sqlite_module, NULL, NULL);

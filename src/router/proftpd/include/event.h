@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Event management
- * $Id: event.h,v 1.4 2004/12/16 03:01:21 castaglia Exp $
+ * $Id: event.h,v 1.6 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_EVENT_H
@@ -76,6 +76,11 @@ int pr_event_unregister(module *m, const char *event,
  * data is sent to the registered handlers.
  */
 void pr_event_generate(const char *event, const void *event_data);
+
+/* Returns the number of registered listeners for the given event,
+ * or -1 (with errno set appropriately) if there was an error.
+ */
+int pr_event_listening(const char *event);
 
 /* Dump Events information. */
 void pr_event_dump(void (*)(const char *, ...));

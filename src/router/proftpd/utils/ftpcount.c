@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -26,7 +26,7 @@
 
 /* Shows a count of "who" is online via proftpd.  Uses the scoreboard file.
  *
- * $Id: ftpcount.c,v 1.17.4.1 2010/03/25 17:37:49 castaglia Exp $
+ * $Id: ftpcount.c,v 1.21 2011/05/23 20:46:20 castaglia Exp $
  */
 
 #include "utils.h"
@@ -90,7 +90,6 @@ static void show_usage(const char *progname, int exit_code) {
 int main(int argc, char **argv) {
   pr_scoreboard_entry_t *score = NULL;
   pid_t oldpid = 0, mpid;
-  time_t uptime = 0;
   unsigned int count = 0, total = 0;
   int c = 0, res = 0;
   char *server_name = NULL;
@@ -130,8 +129,8 @@ int main(int argc, char **argv) {
         break;
 
       case '?':
-        fprintf(stderr, "unknown option: %c\n", (char)optopt);
-        show_usage(progname,1);
+        fprintf(stderr, "unknown option: %c\n", (char) optopt);
+        show_usage(progname, 1);
     }
   }
 
@@ -156,7 +155,8 @@ int main(int argc, char **argv) {
   }
 
   count = 0;
-  if ((res = util_open_scoreboard(O_RDONLY)) < 0) {
+  res = util_open_scoreboard(O_RDONLY);
+  if (res < 0) {
     switch (res) {
       case UTIL_SCORE_ERR_BAD_MAGIC:
         fprintf(stderr, "error opening scoreboard: bad/corrupted file\n");
@@ -177,11 +177,9 @@ int main(int argc, char **argv) {
   }
 
   mpid = util_scoreboard_get_daemon_pid();
-  uptime = util_scoreboard_get_daemon_uptime();
 
   errno = 0;
   while ((score = util_scoreboard_entry_read()) != NULL) {
-    i = 0;
 
     if (errno)
       break;
@@ -191,10 +189,12 @@ int main(int argc, char **argv) {
       if (total)
         printf("   -  %d user%s\n\n", total, total > 1 ? "s" : "");
 
-      if (!mpid)
+      if (!mpid) {
         printf("inetd FTP connections:\n");
-      else
+
+      } else {
         printf("Master proftpd process %u:\n", (unsigned int) mpid);
+      }
 
       if (server_name)
         printf("ProFTPD Server '%s'\n", server_name);
@@ -204,8 +204,10 @@ int main(int argc, char **argv) {
     }
 
     /* If a ServerName was given, skip unless the scoreboard entry matches. */
-    if (server_name && strcmp(server_name, score->sce_server_label) != 0)
+    if (server_name &&
+        strcmp(server_name, score->sce_server_label) != 0) {
       continue;
+    }
 
     for (i = 0; i != MAX_CLASSES; i++) {
       if (classes[i].score_class == 0) {
@@ -235,12 +237,18 @@ int main(int argc, char **argv) {
     }
 
   } else {
-    if (!mpid)
+    if (!mpid) {
       printf("inetd FTP connections:\n");
-    else
+
+    } else {
       printf("Master proftpd process %u:\n", (unsigned int) mpid);
+    }
 
     printf("0 users\n");
+  }
+
+  if (server_name) {
+    free(server_name);
   }
 
   return 0;

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,7 +25,7 @@
  */
 
 /* Resource allocation code
- * $Id: pool.c,v 1.56 2010/02/04 17:24:16 castaglia Exp $
+ * $Id: pool.c,v 1.58 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -87,10 +87,20 @@ static void oom_printf(const char *fmt, ...) {
  */
 
 static void *null_alloc(size_t size) {
-  void *ret = 0;
+  void *ret = NULL;
 
-  if (size == 0)
+  if (size == 0) {
+    /* Yes, this code is correct.
+     *
+     * The size argument is the originally requested amount of memory.
+     * null_alloc() is called because smalloc() returned NULL.  But why,
+     * exactly?  If the requested size is zero, then it may not have been
+     * an error -- or it may be because the system is actually out of memory.
+     * To differentiate, we do a malloc(0) call here if the requested size is
+     * zero.  If malloc(0) returns NULL, then we really do have an error.
+     */
     ret = malloc(size);
+  }
 
   if (ret == NULL) {
     pr_log_pri(PR_LOG_ERR, "fatal: Memory exhausted");

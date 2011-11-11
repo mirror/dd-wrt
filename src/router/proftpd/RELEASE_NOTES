@@ -34,6 +34,13 @@ ChangeLog files.
   + Fixed directory traversal bug in mod_site_misc
   + Fixed SQLite authentications using "SQLAuthType Backend"
 
+1.3.3c
+---------
+
+  + Fixed Telnet IAC stack overflow vulnerability (ZDI-CAN-925)
+  + Fixed directory traversal bug in mod_site_misc
+  + Fixed SQLite authentications using "SQLAuthType Backend"
+
 1.3.3b
 ---------
 

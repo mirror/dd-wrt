@@ -2,7 +2,7 @@
  * ProFTPD: mod_sftp_pam -- a module which provides an SSH2
  *                          "keyboard-interactive" driver using PAM
  *
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -26,7 +26,7 @@
  * This is mod_sftp_pam, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_pam.c,v 1.6.2.1 2011/01/19 00:36:28 castaglia Exp $
+ * $Id: mod_sftp_pam.c,v 1.10 2011/05/23 20:56:40 castaglia Exp $
  * $Libraries: -lpam $
  */
 
@@ -38,7 +38,7 @@
 # error "mod_sftp_pam requires PAM support on your system"
 #endif
 
-#define MOD_SFTP_PAM_VERSION		"mod_sftp_pam/0.1"
+#define MOD_SFTP_PAM_VERSION		"mod_sftp_pam/0.2"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030202
@@ -87,8 +87,8 @@
 # define PR_PAM_CONST 
 #endif 
 
-/* Same as from mod_auth_pam.c */
-#define SFTP_PAM_OPT_NO_TTY	0x001
+#define SFTP_PAM_OPT_NO_TTY		0x001
+#define SFTP_PAM_OPT_NO_INFO_MSGS	0x002
 
 module sftp_pam_module;
 
@@ -104,6 +104,7 @@ static const char *sftppam_service = "sshd";
 static int sftppam_authoritative = FALSE;
 static int sftppam_auth_code = PR_AUTH_OK;
 static int sftppam_handle_auth = FALSE;
+static unsigned long sftppam_opts = 0UL;
 static char *sftppam_user = NULL;
 static size_t sftppam_userlen = 0;
 static char sftppam_tty[32];
@@ -134,16 +135,25 @@ static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
 
   list = make_array(sftppam_driver.driver_pool, 1,
     sizeof(sftp_kbdint_challenge_t));
+
   for (i = 0; i < nmsgs; i++) {
     sftp_kbdint_challenge_t *challenge;
 
     /* Skip PAM_ERROR_MSG messages; we don't want to send these to the client.
      */
     if (SFTP_PAM_MSG_MEMBER(msgs, i, msg_style) == PAM_TEXT_INFO) {
-      pr_trace_msg(trace_channel, 9, "sending PAM_TEXT_INFO '%s' to client",
-        SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+      if (sftppam_opts & SFTP_PAM_OPT_NO_INFO_MSGS) {
+        pr_trace_msg(trace_channel, 9,
+          "skipping sending of PAM_TEXT_INFO '%s' to client",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
 
-      sftp_auth_send_banner(SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+      } else {
+        pr_trace_msg(trace_channel, 9, "sending PAM_TEXT_INFO '%s' to client",
+          SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+
+        sftp_auth_send_banner(SFTP_PAM_MSG_MEMBER(msgs, i, msg));
+      }
+
       continue;
 
     } else if (SFTP_PAM_MSG_MEMBER(msgs, i, msg_style) == PAM_ERROR_MSG) {
@@ -238,8 +248,14 @@ static const struct pam_conv sftppam_conv = { &sftppam_converse, NULL };
 
 static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
   int res;
-  unsigned long opts = 0;
   config_rec *c;
+
+  /* XXX Should we pay attention to AuthOrder here?  I.e. if AuthOrder
+   * does not include mod_sftp_pam or mod_auth_pam, should we fail to
+   * open this driver, since the AuthOrder indicates that no PAM check is
+   * desired?  For this to work, AuthOrder needs to have been processed
+   * prior to this callback being invoked...
+   */
 
   /* Figure out our default return style: whether or not PAM should allow
    * other auth modules a shot at this user or not is controlled by adding
@@ -283,7 +299,7 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPPAMOptions", FALSE);
   if (c != NULL) {
-    opts = *((unsigned long *) c->argv[0]);
+    sftppam_opts = *((unsigned long *) c->argv[0]);
   }
  
 #ifdef SOLARIS2
@@ -293,7 +309,7 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
    * set, and the PAM_TTY setting is at least greater than the length of
    * the string "/dev/".
    */
-  opts &= ~SFTP_PAM_OPT_NO_TTY;
+  sftppam_opts &= ~SFTP_PAM_OPT_NO_TTY;
 #endif /* SOLARIS2 */
  
   pr_signals_block();
@@ -326,7 +342,7 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
   pam_set_item(sftppam_pamh, PAM_RUSER, sftppam_user);
   pam_set_item(sftppam_pamh, PAM_RHOST, session.c->remote_name);
 
-  if (!(opts & SFTP_PAM_OPT_NO_TTY)) {
+  if (!(sftppam_opts & SFTP_PAM_OPT_NO_TTY)) {
     memset(sftppam_tty, '\0', sizeof(sftppam_tty));
     snprintf(sftppam_tty, sizeof(sftppam_tty), "/dev/ftpd%02lu",
       (unsigned long) (session.pid ? session.pid : getpid()));
@@ -342,6 +358,7 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
   /* We need to disable mod_auth_pam, since both mod_auth_pam and us want
    * to talk to the PAM API, just in different fashions.
    */
+
   c = add_config_param_set(&(main_server->conf), "AuthPAM", 1, NULL);
   c->argv[0] = palloc(c->pool, sizeof(unsigned char));
   *((unsigned char *) c->argv[0]) = FALSE;
@@ -580,6 +597,9 @@ MODRET set_sftppamoptions(cmd_rec *cmd) {
   for (i = 1; i < cmd->argc; i++) {
     if (strcmp(cmd->argv[i], "NoTTY") == 0) {
       opts |= SFTP_PAM_OPT_NO_TTY;
+
+    } else if (strcmp(cmd->argv[i], "NoInfoMsgs") == 0) {
+      opts |= SFTP_PAM_OPT_NO_INFO_MSGS;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPPAMOption: '",

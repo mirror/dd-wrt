@@ -5,6 +5,7 @@ use strict;
 use Carp;
 use File::Path;
 use File::Spec;
+use File::Temp qw(tempdir);
 use IO::Socket::INET;
 
 require Exporter;
@@ -325,6 +326,10 @@ sub config_write {
     $config->{TimeoutIdle} = '10';
   }
 
+  unless (defined($config->{TimeoutLinger})) {
+    $config->{TimeoutLinger} = '1';
+  }
+
   unless (defined($config->{TransferLog})) {
     $config->{TransferLog} = 'none';
   }
@@ -356,7 +361,6 @@ sub config_write {
     print $fh "# Written on: $timestamp\n\n";
 
     while (my ($k, $v) = each(%$config)) {
-
       if ($k eq 'IfModules') {
         my $modules = $v;
 
@@ -485,6 +489,15 @@ sub config_write {
           print $fh "</Class>\n";
         }
 
+      } elsif ($k eq 'Global') {
+        print $fh "<Global>\n";
+
+        foreach my $name (keys(%$v)) {
+          print $fh "  $name $v->{$name}\n";
+        }
+
+        print $fh "</Global>\n";
+ 
       } else {
         print $fh "$k $v\n";
       }
@@ -946,23 +959,16 @@ sub testsuite_get_runnable_tests {
 }
 
 sub testsuite_get_tmp_dir {
-  my $use_global_dir = shift;
-  $use_global_dir = 0 unless defined($use_global_dir);
+  ++$testno;
 
-  my $tmpdir;
-  unless ($use_global_dir) {
-    # Construct a local tmp dir, using the PID in the name in order to
-    # prevent collisions between processes, and a counter to prevent collisions
-    # between tests within the same process.
-    my $num = ++$testno;
-    $tmpdir = "tmp-pid$$-test$num";
+  my $tmpdir = tempdir(
+    "proftpd-test-$$-test$testno-XXXXXXXXXX",
+    TMPDIR => 1,
+    CLEANUP => 0,
+  );
 
-  } else {
-    $tmpdir = '/tmp';
-
-    if (defined($ENV{TMPDIR})) {
-      $tmpdir = $ENV{TMPDIR};
-    }
+  unless (chmod(0755, $tmpdir)) {
+    croak("Can't chmod tmp directory $tmpdir: $!");
   }
 
   return $tmpdir;

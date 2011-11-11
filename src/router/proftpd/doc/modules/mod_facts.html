@@ -1,4 +1,4 @@
-<!-- $Id: mod_facts.html,v 1.3 2008/12/03 08:06:07 castaglia Exp $ -->
+<!-- $Id: mod_facts.html,v 1.5 2011/07/06 17:14:35 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_facts.html,v $ -->
 
 <html>
@@ -74,15 +74,52 @@ you can disable the advertising of support for those commands using
   &lt;/IfModule&gt;
 </pre>
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="FactsListOptions">
+<font color=red>Question</font>: Why does <code>MLSD</code> list all of the
+files in a directory, including the "hidden" files, where the <code>LIST</code>
+command does not?<br>
+<font color=blue>Answer</code>: The <code>MLSD</code> and <code>MLST</code>
+commands do not have any notions of "options" like the <code>LIST</code> and
+<code>NLST</code> commands do; there is no way for a client, in the request
+to list the files in a directory, to ask the server to filter the list of
+files somehow.  Instead, <code>MLSD</code> contains a list of "facts" for
+each file in its list; the client then has to to decide how to filter the
+list of files based on those facts.  This is why the <code>ListOptions</code>
+directive has no influence over the <code>MLSD</code> and <code>MLST</code>
+commands.
+
+<p><a name="FactsUIDs">
+<font color=red>Question</font>: Why does <code>MLST</code> show the UIDs/GIDs
+for listed files, where <code>LIST</code>/<code>NLST</code> show the user/group
+names?<br>
+<font color=blue>Answer</code>: The list of "facts" defined by RFC 3659 does
+<b>not</b> include a fact for the stringified version of user/group owner
+names, unfortunately.  This means that the <code>MLSD</code>/<code>MLST</code>
+commands don't have a good way of obtaining the user/group names.
+
+<p>
+To work around this issue, you can add the following to your
+<code>proftpd.conf</code>:
+<pre>
+  &lt;IfModule mod_facts.c&gt;
+    FactsAdvertise off
+  &lt;/IfModule&gt;
+</pre>
+This tells <code>proftpd</code> to not advertise to the client that it can
+support the <code>MLSD</code/<code>MLST</code> commands.
+
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/12/03 08:06:07 $</i><br>
+Last Updated: <i>$Date: 2011/07/06 17:14:35 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2007-2008 TJ Saunders<br>
+&copy; Copyright 2007-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

@@ -1033,7 +1033,7 @@ msgstr "Trasferimento interrotto. %s"
 
 #: ../src/data.c:898
 #, c-format
-msgid "%s: data tranfer in progress"
+msgid "%s: data transfer in progress"
 msgstr "%s: trasferimento dati in corso"
 
 #: ../src/data.c:941

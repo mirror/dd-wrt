@@ -1,4 +1,4 @@
-<!-- $Id: mod_sql.html,v 1.23 2010/02/01 22:14:14 castaglia Exp $ -->
+<!-- $Id: mod_sql.html,v 1.27 2011/09/05 20:07:15 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sql.html,v $ -->
 
 <html>
@@ -16,16 +16,17 @@
 
 This module is contained in the <code>contrib/mod_sql.c</code>,
 <code>contrib/mod_sql.h</code>, <code>contrib/mod_sql_mysql.c</code>, and
-<code>contrib/mod_sql_postgres.c</code> files for ProFTPD
-1.2.<i>x</i>/1.3.<i>x</i>, and is not compiled by default.  Installation
-instructions are discussed <a href="#Installation">here</a>.
+<code>contrib/mod_sql_postgres.c</code> files for ProFTPD 1.3.<i>x</i>, and is
+not compiled by default.  Installation instructions are discussed
+<a href="#Installation">here</a>.
 
 <p>
 The <code>mod_sql</code> module is an authentication and logging module
 for ProFTPD.  It is comprised of a front end module (<code>mod_sql</code>)
 and backend database-specific modules (<code>mod_sql_mysql</code>,
-<code>mod_sql_postgres</code>).  The front end module leaves the specifics
-of handling database connections to the backend modules.
+<code>mod_sql_postgres</code>, <code>mod_sql_sqlite</code>, <i>etc</i>).  The
+front end module leaves the specifics of handling database connections to the
+backend modules.
 
 <p>
 This product includes software developed by the OpenSSL Project for use in the
@@ -69,6 +70,7 @@ The most current version of <code>mod_sql</code> is distributed with ProFTPD.
   <li><a href="#SQLMinID">SQLMinID</a>
   <li><a href="#SQLMinUserGID">SQLMinUserGID</a>
   <li><a href="#SQLMinUserUID">SQLMinUserUID</a>
+  <li><a href="#SQLNamedConnectInfo">SQLNamedConnectInfo</a>
   <li><a href="#SQLNamedQuery">SQLNamedQuery</a>
   <li><a href="#SQLNegativeCache">SQLNegativeCache</a>
   <li><a href="#SQLOptions">SQLOptions</a>
@@ -277,6 +279,10 @@ using the Unix <code>crypt(3)</code> function, then, if that fails, determine
 if the password in the database is empty (thus matching <i>any</i> given
 password).  If all of the configured authentication methods fail,
 <code>mod_sql</code> will fail to authenticate the user.
+
+<p>
+Note that the <a href="mod_sql_passwd.html"><code>mod_sql_passwd</code></a>
+module also provides other <code>SQLAuthTypes</code> values.
 
 <p>
 <hr>
@@ -590,21 +596,28 @@ need to specify <b>all</b> of them.
 As of <code>1.3.3rc1</code>, the <code>SQLGroupInfo</code> directive accepts
 an alternate syntax:
 <pre>
-  SQLGroupInfo custom:/<i>group-by-name</i>/<i>group-by-id</i>/<i>group-by-member</i>
+  SQLGroupInfo custom:/<i>get-group-by-name</i>/<i>get-group-by-id</i>/<i>get-group-by-member</i>
 </pre>
-where <i>group-by-name</i> refers to a configured SELECT
+where <i>get-group-by-name</i> refers to a configured SELECT
 <code>SQLNamedQuery</code>.  This named query <b>must</b> return one row, and
 return the following columns, in this order: <code>groupname, gid,
 members</code>.  The configured query may make use of the variables mentioned
 in the <code>SQLLog</code> description.  The <code>%{0}</code> variable will
 be populated with the group name for which info is being retrieved.  The
-<i>group-by-id</i> here refers to a <code>SQLNamedQuery</code> which is
-<i>just</i> like the lookup given a group name, only the <i>group-by-id</i>
+<i>get-group-by-id</i> here refers to a <code>SQLNamedQuery</code> which is
+<i>just</i> like the lookup given a group name, only the <i>get-group-by-id</i>
 query needs to return group information given a GID.  For the
-<i>group-by-id</i> query, the <code>%{0}</code> variable is populated with
-the GID in question.  Last, the <i>group-by-member</i> query returns group
+<i>get-group-by-id</i> query, the <code>%{0}</code> variable is populated with
+the GID in question.  Last, the <i>get-group-by-member</i> query returns group
 information given a user member; again, the <code>%{0}</code> will contain
 the member/user name by which to look up the group information.
+
+<p>
+<b><i>If</i></b> your custom <em>get-group-by-name</em> query references a table
+other than the default groups table, then you <b>must</b> also supply a
+custom <em>get-group-by-id</em> query as well.  Otherwise, <code>mod_sql</code>
+will fail with a "Table not found" error, and disconnect the client, whenever
+the client asks for a directory listing.
 
 <p>
 <b>Note</b>, however, that if you use the <em>groupset</em> or
@@ -852,8 +865,41 @@ See also: <a href="#SQLDefaultUID"><code>SQLDefaultUID</code></a>
 
 <p>
 <hr>
+<h2><a name="SQLNamedConnectInfo">SQLNamedConnectInfo</a></h2>
+<strong>Syntax:</strong> SQLConnectInfo <em>connection-name</em> <em>sql-backend</em> <em>connection-info [username] [password] [policy]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_sql<br>
+<strong>Compatibility:</strong> 1.3.4rc2 and later
+
+<p>
+The <code>SQLNamedConnectInfo</code> directive configures the information
+necessary to connect to the backend database.  This connection will be given
+the name <em>connection-name</em>; this named connection can then be referenced
+by that name in <i>e.g.</i> a <code>SQLNamedQuery</code>.  The
+<em>sql-backend</em> name configures the backend SQL module to use for this
+connection; see <a href="#SQLBackend"><code>SQLBackend</code></a>.  The
+<em>connection-info</em> parameter specifies the database, host, port, and
+other backend-specific information.  The optional <em>username</em> and
+<em>password</em> parameters specify a username and password to use when
+connecting to the database.  Both default to <code>NULL</code>, which the
+backend will treat in some backend-specific manner. If you specify a password,
+you <b>must</b> specify a username.  Multiple <code>SQLNamedConnectInfo</code>
+directives can be configured.
+
+<p>
+<b>Note</b> that <code>SQLNamedConnectInfo</code> directives will only be
+honored if a <a href="#SQLConnectInfo"><code>SQLConnectInfo</code></a>
+directive is configured.
+
+<p>
+See also: <a href="#SQLBackend"><code>SQLBackend</code></a>,
+<a href="#SQLConnectInfo"><code>SQLConnectInfo</code></a>
+
+<p>
+<hr>
 <h2><a name="SQLNamedQuery">SQLNamedQuery</a></h2>
-<strong>Syntax:</strong> SQLNamedQuery <em>name type query-string [table]</em><br>
+<strong>Syntax:</strong> SQLNamedQuery <em>name type query-string [table] [connection-name]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_sql<br>
@@ -930,6 +976,12 @@ arguments.
 The fourth parameter, <em>table</em>, is only necessary for
 <code>UPDATE</code> or <code>INSERT</code> type queries, but is
 <b><i>required</i></b> for those types.
+
+<p>
+The last parameter, <em>connection-name</em>, is only necessary for telling
+<code>mod_sql</code> to use the specified connection name (from
+<a href="#SQLNamedConnectInfo"><code>SQLNamedConnectInfo</code></a>), rather
+than the default connection, for executing the query/statement.
 
 <p>
 <i>Note</i>: <code>FREEFORM</code> queries are a necessary evil; the
@@ -1243,6 +1295,11 @@ a user name.  For example:
 
   SQLUserInfo custom:/get-user-by-name/get-user-by-id
 </pre>
+<b><i>If</i></b> your custom <em>get-user-by-name</em> query references a table
+other than the default users table, then you <b>must</b> also supply a
+custom <em>get-user-by-id</em> query as well.  Otherwise, <code>mod_sql</code>
+will fail with a "Table not found" error, and disconnect the client, whenever
+the client asks for a directory listing.
 
 <p>
 <b>Note</b>, however, that if you use the <em>userset</em> or
@@ -1346,12 +1403,12 @@ Complete the build with the following standard commands:
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/02/01 22:14:14 $</i><br>
+Last Updated: <i>$Date: 2011/09/05 20:07:15 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2010 The ProFTPD Project<br>
+&copy; Copyright 2000-2011 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

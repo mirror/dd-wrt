@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -24,14 +24,11 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/*
- * House initialization and main program loop
- * $Id: main.c,v 1.391.2.5 2011/02/26 02:46:45 castaglia Exp $
+/* House initialization and main program loop
+ * $Id: main.c,v 1.437 2011/11/09 17:32:35 castaglia Exp $
  */
 
 #include "conf.h"
-
-#include <signal.h>
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
@@ -40,14 +37,6 @@
 #ifdef HAVE_LIBUTIL_H
 # include <libutil.h>
 #endif /* HAVE_LIBUTIL_H */
-
-#ifdef HAVE_REGEX_H
-# include <regex.h>
-#endif
-
-#ifdef HAVE_REGEXP_H
-# include <regexp.h>
-#endif /* HAVE_REGEXP_H */
 
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
@@ -121,7 +110,7 @@ static RETSIGTYPE sig_disconnect(int);
 static RETSIGTYPE sig_evnt(int);
 static RETSIGTYPE sig_terminate(int);
 #ifdef PR_DEVEL_STACK_TRACE
-static void install_segv_handler(void);
+static void install_stacktrace_handler(void);
 #endif /* PR_DEVEL_STACK_TRACE */
 
 volatile unsigned int recvd_signal_flags = 0;
@@ -134,7 +123,7 @@ static void handle_abort(void);
 static void handle_chld(void);
 static void handle_evnt(void);
 #ifdef PR_DEVEL_STACK_TRACE
-static void handle_segv(int, siginfo_t *, void *);
+static void handle_stacktrace_signal(int, siginfo_t *, void *);
 #endif /* PR_DEVEL_STACK_TRACE */
 static void handle_xcpu(void);
 static void handle_terminate(void);
@@ -176,96 +165,6 @@ void pr_cmd_set_handler(void (*handler)(server_rec *, conn_t *)) {
   }
 }
 
-static void end_login_noexit(void) {
-
-  /* Clear the scoreboard entry. */
-  if (ServerType == SERVER_STANDALONE) {
-
-    /* For standalone daemons, we only clear the scoreboard slot if we are
-     * an exiting child process.
-     */
-
-    if (!is_master) {
-      if (pr_scoreboard_entry_del(TRUE) < 0 &&
-          errno != EINVAL &&
-          errno != ENOENT) {
-        pr_log_debug(DEBUG1, "error deleting scoreboard entry: %s",
-          strerror(errno));
-      }
-    }
-
-  } else if (ServerType == SERVER_INETD) {
-    /* For inetd-spawned daemons, we always clear the scoreboard slot. */
-    if (pr_scoreboard_entry_del(TRUE) < 0 &&
-        errno != EINVAL &&
-        errno != ENOENT) {
-      pr_log_debug(DEBUG1, "error deleting scoreboard entry: %s",
-        strerror(errno));
-    }
-  }
-
-  /* If session.user is set, we have a valid login. */
-  if (session.user &&
-      session.wtmp_log) {
-    const char *sess_ttyname;
-
-    sess_ttyname = pr_session_get_ttyname(session.pool);
-    log_wtmp(sess_ttyname, "", pr_netaddr_get_sess_remote_name(),
-      pr_netaddr_get_sess_remote_addr());
-  }
-
-  /* These are necessary in order that cleanups associated with these pools
-   * (and their subpools) are properly run.
-   */
-  if (session.d) {
-    pr_inet_close(session.pool, session.d);
-    session.d = NULL;
-  }
-
-  if (session.c) {
-    pr_inet_close(session.pool, session.c);
-    session.c = NULL;
-  }
-
-  /* Run all the exit handlers */
-  pr_event_generate("core.exit", NULL);
-
-  if (!is_master ||
-      (ServerType == SERVER_INETD && !syntax_check)) {
-    pr_log_pri(PR_LOG_INFO, "%s session closed.",
-      pr_session_get_protocol(PR_SESS_PROTO_FL_LOGOUT));
-  }
-
-  log_closesyslog();
-}
-
-/* Finish any cleaning up, mark utmp as closed and exit without flushing
- * buffers
- */
-void end_login(int exitcode) {
-  end_login_noexit();
-
-#ifdef PR_USE_DEVEL
-  destroy_pool(session.pool);
-
-  if (is_master) {
-    main_server = NULL;
-    free_pools();
-    pr_proctitle_free();
-  }
-#endif /* PR_USE_DEVEL */
-
-#ifdef PR_DEVEL_PROFILE
-  /* Populating the gmon.out gprof file requires that the process exit
-   * via exit(2) or by returning from main().  Using _exit(2) doesn't allow
-   * the process the time to write its profile data out.
-   */
-  exit(exitcode);
-#else
-  _exit(exitcode);
-#endif /* PR_DEVEL_PROFILE */
-}
-
 void session_exit(int pri, void *lv, int exitval, void *dummy) {
   char *msg = (char *) lv;
 
@@ -283,7 +182,7 @@ void session_exit(int pri, void *lv, int exitval, void *dummy) {
     PRIVS_RELINQUISH
   }
 
-  end_login(exitval);
+  pr_session_end(0);
 }
 
 static void shutdown_exit(void *d1, void *d2, void *d3, void *d4) {
@@ -329,10 +228,16 @@ static void shutdown_exit(void *d1, void *d2, void *d3, void *d4) {
                    NULL );
 
     pr_response_send_async(R_421, _("FTP server shutting down - %s"), msg);
-    session_exit(PR_LOG_NOTICE, msg, 0, NULL);
+
+    pr_log_pri(PR_LOG_NOTICE, "%s", msg);
+    pr_session_disconnect(NULL, PR_SESS_DISCONNECT_SERVER_SHUTDOWN, NULL);
   }
 
-  signal(SIGUSR1, sig_disconnect);
+  if (signal(SIGUSR1, sig_disconnect) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGUSR1 (signal %d) handler: %s", SIGUSR1,
+      strerror(errno));
+  }
 }
 
 static int get_command_class(const char *name) {
@@ -354,7 +259,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
   char *cmdargstr = NULL;
   cmdtable *c;
   modret_t *mr;
-  int success = 0;
+  int success = 0, xerrno = 0;
   int send_error = 0;
   static int match_index_cache = -1;
   static char *last_match = NULL;
@@ -379,9 +284,13 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
   c = pr_stash_get_symbol(PR_SYM_CMD, match, NULL, index_cache);
 
   while (c && !success) {
+    size_t cmdargstrlen = 0;
+
     pr_signals_handle();
 
     session.curr_cmd = cmd->argv[0];
+    session.curr_cmd_id = cmd->cmd_id;
+    session.curr_cmd_rec = cmd;
     session.curr_phase = cmd_type;
 
     if (c->cmd_type == cmd_type) {
@@ -394,6 +303,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
         pr_trace_msg("command", 8,
           "command '%s' failed 'requires_auth' check for mod_%s.c",
           cmd->argv[0], c->m->name);
+        errno = EACCES;
         return -1;
       }
 
@@ -402,13 +312,13 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
         pr_pool_tag(cmd->tmp_pool, "cmd_rec tmp pool");
       }
 
-      cmdargstr = pr_cmd_get_displayable_str(cmd);
+      cmdargstr = pr_cmd_get_displayable_str(cmd, &cmdargstrlen);
 
       if (cmd_type == CMD) {
 
         /* The client has successfully authenticated... */
         if (session.user) {
-          char *args = strchr(cmdargstr, ' ');
+          char *args = memchr(cmdargstr, ' ', cmdargstrlen);
 
           pr_scoreboard_entry_update(session.pid,
             PR_SCORE_CMD, "%s", cmd->argv[0], NULL, NULL);
@@ -462,11 +372,28 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
         success = 1;
 
       } else if (MODRET_ISERROR(mr)) {
+        xerrno = errno;
+        success = -1;
+
         if (cmd_type == POST_CMD ||
             cmd_type == LOG_CMD ||
             cmd_type == LOG_CMD_ERR) {
-          if (MODRET_ERRMSG(mr))
+          if (MODRET_ERRMSG(mr)) {
             pr_log_pri(PR_LOG_NOTICE, "%s", MODRET_ERRMSG(mr));
+          }
+
+          /* Even though we normally want to return a negative value
+           * for success (indicating lack of success), for
+           * LOG_CMD/LOG_CMD_ERR handlers, we always want to handle
+           * errors as a success value of zero (meaning "keep looking").
+           *
+           * This will allow the cmd_rec to continue to be dispatched to
+           * the other interested handlers (Bug#3633).
+           */
+          if (cmd_type == LOG_CMD || 
+              cmd_type == LOG_CMD_ERR) {
+            success = 0;
+          }
 
         } else if (send_error) {
           if (MODRET_ERRNUM(mr) &&
@@ -478,7 +405,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
           }
         }
 
-        success = -1;
+        errno = xerrno;
       }
 
       if (session.user &&
@@ -495,6 +422,10 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
       c = pr_stash_get_symbol(PR_SYM_CMD, match, c, index_cache);
     }
   }
+
+  /* Note: validate is only TRUE for the CMD phase, for specific handlers
+   * (as opposed to any C_ANY handlers).
+   */
 
   if (!c &&
       !success &&
@@ -514,6 +445,8 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
           method[i] = ' ';
       }
     }
+
+    pr_event_generate("core.unhandled-command", cmd);
 
     pr_response_add_err(R_500, _("%s not understood"), method);
     success = -1;
@@ -658,13 +591,21 @@ int pr_cmd_read(cmd_rec **res) {
 
 int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
   char *cp = NULL;
-  int success = 0;
+  int success = 0, xerrno = 0;
   pool *resp_pool = NULL;
+
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   cmd->server = main_server;
 
   if (flags & PR_CMD_DISPATCH_FL_CLEAR_RESPONSE) {
-    resp_list = resp_err_list = NULL;
+    pr_trace_msg("response", 9,
+      "clearing response lists before dispatching command '%s'", cmd->argv[0]);
+    pr_response_clear(&resp_list);
+    pr_response_clear(&resp_err_list);
   }
 
   /* Get any previous pool that may be being used by the Response API.
@@ -684,8 +625,13 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
   for (cp = cmd->argv[0]; *cp; cp++)
     *cp = toupper(*cp);
 
-  if (!cmd->class)
+  if (cmd->class == 0) {
     cmd->class = get_command_class(cmd->argv[0]);
+  }
+
+  if (cmd->cmd_id == 0) {
+    cmd->cmd_id = pr_cmd_get_id(cmd->argv[0]);
+  }
 
   if (phase == 0) {
         
@@ -696,7 +642,6 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       success = _dispatch(cmd, PRE_CMD, FALSE, NULL);
 
     if (success < 0) {
-
       /* Dispatch to POST_CMD_ERR handlers as well. */
 
       _dispatch(cmd, POST_CMD_ERR, FALSE, C_ANY);
@@ -705,12 +650,19 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       _dispatch(cmd, LOG_CMD_ERR, FALSE, C_ANY);
       _dispatch(cmd, LOG_CMD_ERR, FALSE, NULL);
 
+      xerrno = errno;
+      pr_trace_msg("response", 9, "flushing error response list for '%s'",
+        cmd->argv[0]);
       pr_response_flush(&resp_err_list);
+
+      /* Restore any previous pool to the Response API. */
+      pr_response_set_pool(resp_pool);
+
+      errno = xerrno;
       return success;
     }
 
     success = _dispatch(cmd, CMD, FALSE, C_ANY);
-
     if (!success)
       success = _dispatch(cmd, CMD, TRUE, NULL);
 
@@ -722,7 +674,12 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       _dispatch(cmd, LOG_CMD, FALSE, C_ANY);
       _dispatch(cmd, LOG_CMD, FALSE, NULL);
 
+      xerrno = errno;
+      pr_trace_msg("response", 9, "flushing response list for '%s'",
+        cmd->argv[0]);
       pr_response_flush(&resp_list);
+
+      errno = xerrno;
 
     } else if (success < 0) {
 
@@ -735,7 +692,12 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       _dispatch(cmd, LOG_CMD_ERR, FALSE, C_ANY);
       _dispatch(cmd, LOG_CMD_ERR, FALSE, NULL);
 
+      xerrno = errno;
+      pr_trace_msg("response", 9, "flushing error response list for '%s'",
+        cmd->argv[0]);
       pr_response_flush(&resp_err_list);
+
+      errno = xerrno;
     }
 
   } else {
@@ -744,8 +706,10 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
       case POST_CMD:
       case POST_CMD_ERR:
         success = _dispatch(cmd, phase, FALSE, C_ANY);
-        if (!success)
+        if (!success) {
           success = _dispatch(cmd, phase, FALSE, NULL);
+          xerrno = errno;
+        }
         break;
 
       case CMD:
@@ -761,23 +725,35 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
         break;
 
       default:
+        /* Restore any previous pool to the Response API. */
+        pr_response_set_pool(resp_pool);
+
         errno = EINVAL;
         return -1;
     }
 
     if (flags & PR_CMD_DISPATCH_FL_SEND_RESPONSE) {
+      xerrno = errno;
+
       if (success == 1) {
+        pr_trace_msg("response", 9, "flushing response list for '%s'",
+          cmd->argv[0]);
         pr_response_flush(&resp_list);
 
       } else if (success < 0) {
+        pr_trace_msg("response", 9, "flushing error response list for '%s'",
+          cmd->argv[0]);
         pr_response_flush(&resp_err_list);
       }
+
+      errno = xerrno;
     }
   }
 
   /* Restore any previous pool to the Response API. */
   pr_response_set_pool(resp_pool);
 
+  errno = xerrno;
   return success;
 }
 
@@ -907,13 +883,14 @@ static void cmd_loop(server_rec *server, conn_t *c) {
 
     res = pr_cmd_read(&cmd);
     if (res < 0) {
-      if (PR_NETIO_ERRNO(session.c->instrm) == EINTR)
+      if (PR_NETIO_ERRNO(session.c->instrm) == EINTR) {
         /* Simple interrupted syscall */
         continue;
+      }
 
 #ifndef PR_DEVEL_NO_DAEMON
       /* Otherwise, EOF */
-      end_login(0);
+      pr_session_disconnect(NULL, PR_SESS_DISCONNECT_CLIENT_EOF, NULL);
 #else
       return;
 #endif /* PR_DEVEL_NO_DAEMON */
@@ -929,6 +906,7 @@ static void cmd_loop(server_rec *server, conn_t *c) {
       destroy_pool(cmd->pool);
 
     } else {
+      pr_event_generate("core.invalid-command", NULL);
       pr_response_send(R_500, _("Invalid command: try being more creative"));
     }
 
@@ -941,9 +919,13 @@ static void core_restart_cb(void *d1, void *d2, void *d3, void *d4) {
   if (is_master && mpid) {
     int maxfd;
     fd_set childfds;
+    struct timeval restart_start, restart_finish;
+    long restart_elapsed = 0;
 
     pr_log_pri(PR_LOG_NOTICE, "received SIGHUP -- master server reparsing "
       "configuration file");
+
+    gettimeofday(&restart_start, NULL);
 
     /* Make sure none of our children haven't completed start up */
     FD_ZERO(&childfds);
@@ -1001,14 +983,14 @@ static void core_restart_cb(void *d1, void *d2, void *d3, void *d4) {
       pr_log_pri(PR_LOG_ERR,
         "Fatal: unable to read configuration file '%s': %s",
         config_filename, strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
     PRIVS_RELINQUISH
 
     if (pr_parser_cleanup() < 0) {
       pr_log_pri(PR_LOG_ERR, "Fatal: error processing configuration file '%s': "
        "unclosed configuration section", config_filename);
-      end_login(1);
+      pr_session_end(0);
     }
 
 #ifdef PR_USE_NLS
@@ -1027,7 +1009,7 @@ static void core_restart_cb(void *d1, void *d2, void *d3, void *d4) {
     if (fixup_servers(server_list) < 0) {
       pr_log_pri(PR_LOG_ERR, "Fatal: error processing configuration file '%s'",
         config_filename);
-      end_login(1);
+      pr_session_end(0);
     }
 
     pr_event_generate("core.postparse", NULL);
@@ -1037,6 +1019,12 @@ static void core_restart_cb(void *d1, void *d2, void *d3, void *d4) {
      */
     init_bindings();
 
+    gettimeofday(&restart_finish, NULL);
+
+    restart_elapsed = ((restart_finish.tv_sec - restart_start.tv_sec) * 1000L) +
+      ((restart_finish.tv_usec - restart_start.tv_usec) / 1000L);
+    pr_trace_msg("config", 12, "restart took %ld millisecs", restart_elapsed);
+      
   } else {
 
     /* Child process -- cannot restart, log error */
@@ -1137,27 +1125,38 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
     sigaddset(&sig_set, SIGUSR1);
     sigaddset(&sig_set, SIGUSR2);
 
-    sigprocmask(SIG_BLOCK, &sig_set, NULL);
+    if (sigprocmask(SIG_BLOCK, &sig_set, NULL) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "unable to block signal set: %s", strerror(errno));
+    }
 
     switch ((pid = fork())) {
+
     case 0: /* child */
 
       /* No longer the master process. */
       is_master = FALSE;
-      sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+      if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "unable to unblock signal set: %s", strerror(errno));
+      }
 
       /* No longer need the read side of the semaphore pipe. */
-      close(semfds[0]);
+      (void) close(semfds[0]);
       break;
 
     case -1:
-      sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+      if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "unable to unblock signal set: %s", strerror(errno));
+      }
+
       pr_log_pri(PR_LOG_ERR, "fork(): %s", strerror(errno));
 
       /* The parent doesn't need the socket open. */
-      close(fd);
-      close(semfds[0]);
-      close(semfds[1]);
+      (void) close(fd);
+      (void) close(semfds[0]);
+      (void) close(semfds[1]);
 
       return;
 
@@ -1171,7 +1170,11 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
       /* Unblock the signals now as sig_child() will catch
        * an "immediate" death and remove the pid from the children list
        */
-      sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+      if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "unable to unblock signal set: %s", strerror(errno));
+      }
+
       return;
     }
   }
@@ -1205,11 +1208,29 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
 #endif /* PR_DEVEL_NO_FORK */
 
   /* Child is running here */
-  signal(SIGUSR1, sig_disconnect);
-  signal(SIGUSR2, sig_evnt);
+  if (signal(SIGUSR1, sig_disconnect) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGUSR1 (signal %d) handler: %s", SIGUSR1,
+      strerror(errno));
+  }
 
-  signal(SIGCHLD, SIG_DFL);
-  signal(SIGHUP, SIG_IGN);
+  if (signal(SIGUSR2, sig_evnt) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGUSR2 (signal %d) handler: %s", SIGUSR2,
+      strerror(errno));
+  }
+
+  if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGCHLD (signal %d) handler: %s", SIGCHLD,
+      strerror(errno));
+  }
+
+  if (signal(SIGHUP, SIG_IGN) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGHUP (signal %d) handler: %s", SIGHUP,
+      strerror(errno));
+  }
 
   /* From this point on, syslog stays open. We close it first so that the
    * logger will pick up our new PID.
@@ -1250,47 +1271,14 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
     exit(1);
   }
 
-  pr_inet_set_proto_opts(permanent_pool, conn, 0, 1, 1, 0, 0);
-
   pr_event_generate("core.connect", conn);
 
   /* Find the server for this connection. */
   main_server = pr_ipbind_get_server(conn->local_addr, conn->local_port);
 
-  /* The follow code was ostensibly used to conserve memory, to free all other
-   * servers and associated configurations.  However, when large numbers of
-   * servers are configured, this process adds significant time to the
-   * establishment of a session.  More importantly, I do not think it is
-   * really necessary; copy-on-write semantics mean that those portions of
-   * memory won't actually be in this process' space until changed.  And if
-   * those configurations will never be reached, the only time the associated
-   * memory would change is now, when it is attempted to be freed.
-   *
-   * s = main_server;
-   * while (s) {
-   *   s_saved = s->next;
-   *   if (s != serv) {
-   *     if (s->listen && s->listen != l) {
-   *       if (s->listen->listen_fd == conn->rfd ||
-   *           s->listen->listen_fd == conn->wfd)
-   *         s->listen->listen_fd = -1;
-   *       else
-   *         inet_close(s->pool,s->listen);
-   *     }
-   *
-   *     if (s->listen) {
-   *       if (s->listen->listen_fd == conn->rfd ||
-   *          s->listen->listen_fd == conn->wfd)
-   *            s->listen->listen_fd = -1;
-   *     }
-   *
-   *     xaset_remove(server_list,(xasetmember_t*)s);
-   *     destroy_pool(s->pool);
-   *   }
-   *   s = s_saved;
-   * }
+  /* Make sure we allocate a session pool, even if this connection will
+   * dropped soon.
    */
-
   session.pool = make_sub_pool(permanent_pool);
   pr_pool_tag(session.pool, "Session Pool");
 
@@ -1299,6 +1287,23 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
   session.sf_flags = 0;
   session.sp_flags = 0;
   session.proc_prefix = "(connecting)";
+
+  /* If no server is configured to handle the addr the user is connected to,
+   * drop them.
+   */
+  if (main_server == NULL) {
+    pr_log_debug(DEBUG2, "No server configuration found for IP address %s",
+      pr_netaddr_get_ipstr(conn->local_addr));
+    pr_log_debug(DEBUG2, "Use the DefaultServer directive to designate "
+      "a default server configuration to handle requests like this");
+
+    pr_response_send(R_500,
+      _("Sorry, no server available to handle request on %s"),
+      pr_netaddr_get_dnsstr(conn->local_addr));
+    exit(0);
+  }
+
+  pr_inet_set_proto_opts(permanent_pool, conn, 0, 1, IPTOS_LOWDELAY, 0);
 
   /* Close the write side of the semaphore pipe to tell the parent
    * we are all grown up and have finished housekeeping (closing
@@ -1332,9 +1337,9 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
         pr_netaddr_get_ipstr(session.c->local_addr) :
         main_server->ServerAddress;
 
-      if ((c = find_config(main_server->conf, CONF_PARAM, "MasqueradeAddress",
-        FALSE)) != NULL) {
-
+      c = find_config(main_server->conf, CONF_PARAM, "MasqueradeAddress",
+        FALSE);
+      if (c != NULL) {
         pr_netaddr_t *masq_addr = (pr_netaddr_t *) c->argv[0];
         serveraddress = pr_netaddr_get_ipstr(masq_addr);
       }
@@ -1360,21 +1365,6 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
         _("FTP server shut down (%s) -- please try again later"), reason);
       exit(0);
     }
-  }
-
-  /* If no server is configured to handle the addr the user is
-   * connected to, drop them.
-   */
-  if (!main_server) {
-    pr_log_debug(DEBUG2, "No server configuration found for IP address %s",
-      pr_netaddr_get_ipstr(conn->local_addr));
-    pr_log_debug(DEBUG2, "Use the DefaultServer directive to designate "
-      "a default server configuration to handle requests like this");
-
-    pr_response_send(R_500,
-      _("Sorry, no server available to handle request on %s"),
-      pr_netaddr_get_dnsstr(conn->local_addr));
-    exit(0);
   }
 
   if (main_server->listen) {
@@ -1426,8 +1416,9 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
 
   /* Inform all the modules that we are now a child */
   pr_log_debug(DEBUG7, "performing module session initializations");
-  if (modules_session_init() < 0)
-    end_login(1);
+  if (modules_session_init() < 0) {
+    pr_session_disconnect(NULL, PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
 
   pr_log_debug(DEBUG4, "connected - local  : %s:%d",
     pr_netaddr_get_ipstr(session.c->local_addr), session.c->local_port);
@@ -1451,7 +1442,7 @@ static void fork_server(int fd, conn_t *l, unsigned char nofork) {
 
 #ifdef PR_DEVEL_NO_DAEMON
   /* Cleanup */
-  end_login_noexit();
+  pr_session_end(PR_SESS_END_FL_NOEXIT);
   main_server = NULL;
   free_pools();
   pr_proctitle_free();
@@ -1469,13 +1460,19 @@ static void disc_children(void) {
     sigaddset(&sig_set, SIGUSR1);
     sigaddset(&sig_set, SIGUSR2);
 
-    sigprocmask(SIG_BLOCK, &sig_set, NULL);
+    if (sigprocmask(SIG_BLOCK, &sig_set, NULL) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "unable to block signal set: %s", strerror(errno));
+    }
 
     PRIVS_ROOT
     child_signal(SIGUSR1);
     PRIVS_RELINQUISH
 
-    sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+    if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "unable to unblock signal set: %s", strerror(errno));
+    }
   }
 }
 
@@ -1497,7 +1494,6 @@ static void daemon_loop(void) {
     run_schedule();
 
     FD_ZERO(&listenfds);
-    maxfd = 0;
     maxfd = pr_ipbind_listen(&listenfds);
 
     /* Monitor children pipes */
@@ -1552,7 +1548,7 @@ static void daemon_loop(void) {
 
     running = 1;
 
-    i = select(maxfd + 1, &listenfds, NULL, NULL, &tv);
+    PR_DEVEL_CLOCK(i = select(maxfd + 1, &listenfds, NULL, NULL, &tv));
     if (i < 0) {
       xerrno = errno;
     }
@@ -1569,12 +1565,19 @@ static void daemon_loop(void) {
       sigaddset(&sig_set, SIGCHLD);
       sigaddset(&sig_set, SIGTERM);
       pr_alarms_block();
-      sigprocmask(SIG_BLOCK, &sig_set, NULL);
+      if (sigprocmask(SIG_BLOCK, &sig_set, NULL) < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "unable to block signal set: %s", strerror(errno));
+      }
 
       have_dead_child = FALSE;
       child_update();
 
-      sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+      if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "unable to unblock signal set: %s", strerror(errno));
+      }
+
       pr_alarms_unblock();
     }
 
@@ -1661,7 +1664,7 @@ static void daemon_loop(void) {
 
       /* Fork off a child to handle the connection. */
       } else {
-        fork_server(fd, listen_conn, FALSE);
+        PR_DEVEL_CLOCK(fork_server(fd, listen_conn, FALSE));
       }
     }
 #ifdef PR_DEVEL_NO_DAEMON
@@ -1687,14 +1690,12 @@ void pr_signals_handle(void) {
     tv.tv_sec = (interval_usecs / 1000000);
     tv.tv_usec = (interval_usecs - (tv.tv_sec * 1000000));
 
-    pr_trace_msg("signal", 8, "interrupted system call, "
+    pr_trace_msg("signal", 18, "interrupted system call, "
       "delaying for %lu %s, %lu %s",
       (unsigned long) tv.tv_sec, tv.tv_sec != 1 ? "secs" : "sec",
       (unsigned long) tv.tv_usec, tv.tv_usec != 1 ? "microsecs" : "microsec");
 
-    pr_signals_block();
-    (void) select(0, NULL, NULL, NULL, &tv);
-    pr_signals_unblock();
+    pr_timer_usleep(interval_usecs);
   }
 
   while (recvd_signal_flags) {
@@ -1760,7 +1761,8 @@ void pr_signals_handle(void) {
     if (recvd_signal_flags & RECEIVED_SIG_EXIT) {
       recvd_signal_flags &= ~RECEIVED_SIG_EXIT;
       pr_trace_msg("signal", 9, "handling SIGUSR1 (signal %d)", SIGUSR1);
-      session_exit(PR_LOG_NOTICE, "Parent process requested shutdown", 0, NULL);
+      pr_log_pri(PR_LOG_NOTICE, "%s", "Parent process requested shutdown");
+      pr_session_disconnect(NULL, PR_SESS_DISCONNECT_SERVER_SHUTDOWN, NULL);
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_SHUTDOWN) {
@@ -1781,12 +1783,22 @@ void pr_signals_handle(void) {
  */
 static RETSIGTYPE sig_restart(int signo) {
   recvd_signal_flags |= RECEIVED_SIG_RESTART;
-  signal(SIGHUP, sig_restart);
+
+  if (signal(SIGHUP, sig_restart) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGHUP (signal %d) handler: %s", SIGHUP,
+      strerror(errno));
+  }
 }
 
 static RETSIGTYPE sig_evnt(int signo) {
   recvd_signal_flags |= RECEIVED_SIG_EVENT;
-  signal(SIGUSR2, sig_evnt);
+
+  if (signal(SIGUSR2, sig_evnt) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGUSR2 (signal %d) handler: %s", SIGUSR2,
+      strerror(errno));
+  }
 }
 
 /* sig_disconnect is called in children when the parent daemon
@@ -1801,12 +1813,18 @@ static RETSIGTYPE sig_disconnect(int signo) {
    * perform the exit a little later...
    */
   if ((session.sf_flags & SF_ANON) ||
-      (session.sf_flags & SF_XFER))
+      (session.sf_flags & SF_XFER)) {
     recvd_signal_flags |= RECEIVED_SIG_EXIT;
-  else
-    recvd_signal_flags |= RECEIVED_SIG_SHUTDOWN;
 
-  signal(SIGUSR1, SIG_IGN);
+  } else {
+    recvd_signal_flags |= RECEIVED_SIG_SHUTDOWN;
+  }
+
+  if (signal(SIGUSR1, SIG_IGN) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGUSR1 (signal %d) handler: %s", SIGUSR1,
+      strerror(errno));
+  }
 }
 
 static RETSIGTYPE sig_child(int signo) {
@@ -1839,33 +1857,46 @@ static RETSIGTYPE sig_child(int signo) {
    */
 
   handle_chld();
-  signal(SIGCHLD, sig_child);
+
+  if (signal(SIGCHLD, sig_child) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGCHLD (signal %d) handler: %s", SIGCHLD,
+      strerror(errno));
+  }
 }
 
 #ifdef PR_DEVEL_COREDUMP
 static char *prepare_core(void) {
-  static char dir[256] = {'\0'};
+  static char dir[256];
 
-  snprintf(dir, sizeof(dir), "%s/proftpd-core-%lu", PR_CORE_DIR,
+  memset(dir, '\0', sizeof(dir));
+  snprintf(dir, sizeof(dir)-1, "%s/proftpd-core-%lu", PR_CORE_DIR,
     (unsigned long) getpid());
 
-  if (mkdir(dir, 0700) != -1)
-    chdir(dir);
-
-  else
+  if (mkdir(dir, 0700) < 0) {
     pr_log_pri(PR_LOG_ERR, "unable to create '%s': %s", dir, strerror(errno));
+
+  } else {
+    chdir(dir);
+  }
+
   return dir;
 }
 #endif /* PR_DEVEL_COREDUMP */
 
 static RETSIGTYPE sig_abort(int signo) {
   recvd_signal_flags |= RECEIVED_SIG_ABORT;
-  signal(SIGABRT, SIG_DFL);
+
+  if (signal(SIGABRT, SIG_DFL) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGABRT (signal %d) handler: %s", SIGABRT,
+      strerror(errno));
+  }
 
 #ifdef PR_DEVEL_COREDUMP
   pr_log_pri(PR_LOG_NOTICE, "ProFTPD received SIGABRT signal, generating core "
     "file in %s", prepare_core());
-  end_login_noexit();
+  pr_session_end(PR_SESS_END_FL_NOEXIT);
   abort();
 #endif /* PR_DEVEL_COREDUMP */
 }
@@ -1876,14 +1907,14 @@ static void handle_abort(void) {
 }
 
 #ifdef PR_DEVEL_STACK_TRACE
-static void handle_segv(int signo, siginfo_t *info, void *ptr) {
+static void handle_stacktrace_signal(int signo, siginfo_t *info, void *ptr) {
   register unsigned i;
   ucontext_t *uc = (ucontext_t *) ptr;
   void *trace[PR_TUNABLE_CALLER_DEPTH];
   char **strings;
   size_t tracesz;
 
-  /* Call the "normal" SIGSEGV handler. */
+  /* Call the "normal" signal handler. */
   table_handling_signal(TRUE);
   sig_terminate(signo);
 
@@ -1907,49 +1938,58 @@ static void handle_segv(int signo, siginfo_t *info, void *ptr) {
 
   pr_log_pri(PR_LOG_ERR, "-----END STACK TRACE-----");
 
-  exit(0);
+  finish_terminate();
 }
 #endif /* PR_DEVEL_STACK_TRACE */
 
 static RETSIGTYPE sig_terminate(int signo) {
 
-  /* Make sure the scoreboard slot is properly cleared.  Note that this is
-   * possibly redundant, as it should already be handled properly in
-   * end_login_noexit().
-   */
-  pr_scoreboard_entry_del(FALSE);
-
   /* Capture the signal number for later display purposes. */
   term_signo = signo;
 
-  if (signo == SIGSEGV) {
-    recvd_signal_flags |= RECEIVED_SIG_SEGV;
+  if (signo == SIGSEGV ||
+      signo == SIGXCPU
+#ifdef SIGBUS
+      || signo == SIGBUS) {
+#else
+     ) {
+#endif /* SIGBUS */
+
+    if (signo == SIGXCPU) {
+      recvd_signal_flags |= RECEIVED_SIG_XCPU;
+
+    } else {
+      recvd_signal_flags |= RECEIVED_SIG_SEGV;
+    }
 
     /* This is probably not the safest thing to be doing, but since the
      * process is terminating anyway, why not?  It helps when knowing/logging
      * that a segfault happened...
      */
-    pr_trace_msg("signal", 9, "handling SIGSEGV (signal %d)", signo);
+    pr_trace_msg("signal", 9, "handling %s (signal %d)",
+      signo == SIGSEGV ? "SIGSEGV" : 
+        signo == SIGXCPU ? "SIGXCPU" : "SIGBUS", signo);
     pr_log_pri(PR_LOG_NOTICE, "ProFTPD terminating (signal %d)", signo);
 
     pr_log_pri(PR_LOG_INFO, "%s session closed.",
       pr_session_get_protocol(PR_SESS_PROTO_FL_LOGOUT));
 
-    /* Restore the default signal handler. */
 #ifdef PR_DEVEL_STACK_TRACE
-    install_segv_handler();
-#else
-    signal(SIGSEGV, SIG_DFL);
+    install_stacktrace_handler();
 #endif /* PR_DEVEL_STACK_TRACE */
 
   } else if (signo == SIGTERM) {
     recvd_signal_flags |= RECEIVED_SIG_TERMINATE;
 
-  } else if (signo == SIGXCPU) {
-    recvd_signal_flags |= RECEIVED_SIG_XCPU;
-
   } else {
     recvd_signal_flags |= RECEIVED_SIG_TERM_OTHER;
+  }
+
+  /* Ignore future occurrences of this signal; we'll be terminating anyway. */
+
+  if (signal(signo, SIG_IGN) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install handler for signal %d: %s", signo, strerror(errno));
   }
 }
 
@@ -1966,14 +2006,21 @@ static void handle_chld(void) {
   /* Block SIGTERM in here, so we don't create havoc with the child list
    * while modifying it.
    */
-  sigprocmask(SIG_BLOCK, &sig_set, NULL);
+  if (sigprocmask(SIG_BLOCK, &sig_set, NULL) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to block signal set: %s", strerror(errno));
+  }
 
   while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
     if (child_remove(pid) == 0)
       have_dead_child = TRUE;
   }
 
-  sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+  if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to unblock signal set: %s", strerror(errno));
+  }
+
   pr_alarms_unblock();
 }
 
@@ -2023,17 +2070,20 @@ static void finish_terminate(void) {
     /* Run any exit handlers registered in the master process here, so that
      * they may have the benefit of root privs.  More than likely these
      * exit handlers were registered by modules' module initialization
-     * functions, which also occur under root priv conditions. (If an
-     * exit handler is registered after the fork(), it won't be run here --
+     * functions, which also occur under root priv conditions.
+     *
+     * If an exit handler is registered after the fork(), it won't be run here;
      * that registration occurs in a different process space.
      */
     pr_event_generate("core.exit", NULL);
+    pr_event_generate("core.shutdown", NULL);
 
     /* Remove the registered exit handlers now, so that the ensuing
-     * end_login() call (outside the root privs condition) does not call
+     * pr_session_end() call (outside the root privs condition) does not call
      * the exit handlers for the master process again.
      */
     pr_event_unregister(NULL, "core.exit", NULL);
+    pr_event_unregister(NULL, "core.shutdown", NULL);
 
     PRIVS_RELINQUISH
 
@@ -2048,19 +2098,23 @@ static void finish_terminate(void) {
     }
   }
 
-  end_login(1);
+  pr_session_disconnect(NULL, PR_SESS_DISCONNECT_SIGNAL, "Killed by signal");
 }
 
 #ifdef PR_DEVEL_STACK_TRACE
-static void install_segv_handler(void) {
+static void install_stacktrace_handler(void) {
   struct sigaction action;
 
   memset(&action, 0, sizeof(action));
-  action.sa_sigaction = handle_segv;
+  action.sa_sigaction = handle_stacktrace_signal;
   action.sa_flags = SA_SIGINFO;
 
   /* Ideally we would check the return value here. */
   sigaction(SIGSEGV, &action, NULL);
+# ifdef SIGBUS
+  sigaction(SIGBUS, &action, NULL);
+# endif /* SIGBUS */
+  sigaction(SIGXCPU, &action, NULL);
 }
 #endif /* PR_DEVEL_STACK_TRACE */
 
@@ -2103,36 +2157,124 @@ static void install_signal_handlers(void) {
   sigaddset(&sig_set, SIGBUS);
 #endif /* SIGBUS */
 
-  signal(SIGCHLD, sig_child);
-  signal(SIGHUP, sig_restart);
-  signal(SIGINT, sig_terminate);
-  signal(SIGQUIT, sig_terminate);
-  signal(SIGILL, sig_terminate);
-  signal(SIGABRT, sig_abort);
-  signal(SIGFPE, sig_terminate);
+  if (signal(SIGCHLD, sig_child) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGCHLD (signal %d) handler: %s", SIGCHLD,
+      strerror(errno));
+  }
+
+  if (signal(SIGHUP, sig_restart) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGHUP (signal %d) handler: %s", SIGHUP,
+      strerror(errno));
+  }
+
+  if (signal(SIGINT, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGINT (signal %d) handler: %s", SIGINT,
+      strerror(errno));
+  }
+
+  if (signal(SIGQUIT, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGQUIT (signal %d) handler: %s", SIGQUIT,
+      strerror(errno));
+  }
+
+  if (signal(SIGILL, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGILL (signal %d) handler: %s", SIGILL,
+      strerror(errno));
+  }
+
+  if (signal(SIGFPE, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGFPE (signal %d) handler: %s", SIGFPE,
+      strerror(errno));
+  }
+
+  if (signal(SIGABRT, sig_abort) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGABRT (signal %d) handler: %s", SIGABRT,
+      strerror(errno));
+  }
+
 #ifdef PR_DEVEL_STACK_TRACE
-  install_segv_handler();
+  /* Installs stacktrace handlers for SIGSEGV, SIGXCPU, and SIGBUS. */
+  install_stacktrace_handler();
 #else
-  signal(SIGSEGV, sig_terminate);
+  if (signal(SIGSEGV, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGSEGV (signal %d) handler: %s", SIGSEGV,
+      strerror(errno));
+  }
+
+  if (signal(SIGXCPU, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGXCPU (signal %d) handler: %s", SIGXCPU,
+      strerror(errno));
+  }
+
+# ifdef SIGBUS
+  if (signal(SIGBUS, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGBUS (signal %d) handler: %s", SIGBUS,
+      strerror(errno));
+  }
+# endif /* SIGBUS */
 #endif /* PR_DEVEL_STACK_TRACE */
-  signal(SIGTERM, sig_terminate);
-  signal(SIGXCPU, sig_terminate);
-  signal(SIGURG, SIG_IGN);
+
+  /* Ignore SIGALRM; this will be changed when a timer is registered. But
+   * this will prevent SIGALRMs from killing us if we don't currently have
+   * any timers registered.
+    */
+  if (signal(SIGALRM, SIG_IGN) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGALRM (signal %d) handler: %s", SIGALRM,
+      strerror(errno));
+  }
+
+  if (signal(SIGTERM, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGTERM (signal %d) handler: %s", SIGTERM,
+      strerror(errno));
+  }
+
+  if (signal(SIGURG, SIG_IGN) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGURG (signal %d) handler: %s", SIGURG,
+      strerror(errno));
+  }
+
 #ifdef SIGSTKFLT
-  signal(SIGSTKFLT, sig_terminate);
+  if (signal(SIGSTKFLT, sig_terminate) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGSTKFLT (signal %d) handler: %s", SIGSTKFLT,
+      strerror(errno));
+  }
 #endif /* SIGSTKFLT */
+
 #ifdef SIGIO
-  signal(SIGIO, SIG_IGN);
+  if (signal(SIGIO, SIG_IGN) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGIO (signal %d) handler: %s", SIGIO,
+      strerror(errno));
+  }
 #endif /* SIGIO */
-#ifdef SIGBUS
-  signal(SIGBUS, sig_terminate);
-#endif /* SIGBUS */
-  signal(SIGUSR2, sig_evnt);
+
+  if (signal(SIGUSR2, sig_evnt) == SIG_ERR) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGUSR2 (signal %d) handler: %s", SIGUSR2,
+      strerror(errno));
+  }
 
   /* In case our parent left signals blocked (as happens under some
    * poor inetd implementations)
    */
-  sigprocmask(SIG_UNBLOCK, &sig_set, NULL);
+  if (sigprocmask(SIG_UNBLOCK, &sig_set, NULL) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to block signal set: %s", strerror(errno));
+  }
 }
 
 void set_daemon_rlimits(void) {
@@ -2152,9 +2294,11 @@ void set_daemon_rlimits(void) {
 
     PRIVS_ROOT
     if (setrlimit(RLIMIT_CORE, &rlim) < 0) {
+      int xerrno = errno;
+
       PRIVS_RELINQUISH
       pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_CORE): %s",
-        strerror(errno));
+        strerror(xerrno));
       return;
     }
     PRIVS_RELINQUISH
@@ -2166,14 +2310,17 @@ void set_daemon_rlimits(void) {
 #ifdef RLIMIT_CPU
   while (c) {
     /* Does this limit apply to the daemon? */
-    if (c->argv[1] == NULL || !strcmp(c->argv[1], "daemon")) {
+    if (c->argv[1] == NULL ||
+        strncmp(c->argv[1], "daemon", 7) == 0) {
       struct rlimit *cpu_rlimit = (struct rlimit *) c->argv[0];
 
       PRIVS_ROOT
       if (setrlimit(RLIMIT_CPU, cpu_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_CPU): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
       PRIVS_RELINQUISH
@@ -2190,29 +2337,36 @@ void set_daemon_rlimits(void) {
 #if defined(RLIMIT_DATA) || defined(RLIMIT_AS) || defined(RLIMIT_VMEM)
   while (c) {
     /* Does this limit apply to the daemon? */
-    if (c->argv[1] == NULL || !strcmp(c->argv[1], "daemon")) {
+    if (c->argv[1] == NULL ||
+        strncmp(c->argv[1], "daemon", 7) == 0) {
       struct rlimit *memory_rlimit = (struct rlimit *) c->argv[0];
 
       PRIVS_ROOT
 #  if defined(RLIMIT_DATA)
       if (setrlimit(RLIMIT_DATA, memory_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_DATA): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  elif defined(RLIMIT_AS)
       if (setrlimit(RLIMIT_AS, memory_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_AS): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  elif defined(RLIMIT_VMEM)
       if (setrlimit(RLIMIT_VMEM, memory_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_VMEM): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  endif
@@ -2230,22 +2384,27 @@ void set_daemon_rlimits(void) {
 #if defined(RLIMIT_NOFILE) || defined(RLIMIT_OFILE)
   while (c) {
     /* Does this limit apply to the daemon? */
-    if (c->argv[1] == NULL || !strcmp(c->argv[1], "daemon")) {
+    if (c->argv[1] == NULL ||
+        strncmp(c->argv[1], "daemon", 7) == 0) {
       struct rlimit *nofile_rlimit = (struct rlimit *) c->argv[0];
 
       PRIVS_ROOT
 #  if defined(RLIMIT_NOFILE)
       if (setrlimit(RLIMIT_NOFILE, nofile_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_NOFILE): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  elif defined(RLIMIT_OFILE)
       if (setrlimit(RLIMIT_OFILE, nofile_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_OFILE): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  endif
@@ -2268,14 +2427,17 @@ void set_session_rlimits(void) {
 #ifdef RLIMIT_CPU
   while (c) {
     /* Does this limit apply to the session? */
-    if (c->argv[1] == NULL || !strcmp(c->argv[1], "session")) {
+    if (c->argv[1] == NULL ||
+        strncmp(c->argv[1], "session", 8) == 0) {
       struct rlimit *cpu_rlimit = (struct rlimit *) c->argv[0];
 
       PRIVS_ROOT
       if (setrlimit(RLIMIT_CPU, cpu_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_CPU): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
       PRIVS_RELINQUISH
@@ -2292,29 +2454,36 @@ void set_session_rlimits(void) {
 #if defined(RLIMIT_DATA) || defined(RLIMIT_AS) || defined(RLIMIT_VMEM)
   while (c) {
     /* Does this limit apply to the session? */
-    if (c->argv[1] == NULL || !strcmp(c->argv[1], "session")) {
+    if (c->argv[1] == NULL ||
+        strncmp(c->argv[1], "session", 8) == 0) {
       struct rlimit *memory_rlimit = (struct rlimit *) c->argv[0];
 
       PRIVS_ROOT
 #  if defined(RLIMIT_DATA)
       if (setrlimit(RLIMIT_DATA, memory_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_DATA): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  elif defined(RLIMIT_AS)
       if (setrlimit(RLIMIT_AS, memory_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_AS): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  elif defined(RLIMIT_VMEM)
       if (setrlimit(RLIMIT_VMEM, memory_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_VMEM): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  endif
@@ -2332,22 +2501,27 @@ void set_session_rlimits(void) {
 #if defined(RLIMIT_NOFILE) || defined(RLIMIT_OFILE)
   while (c) {
     /* Does this limit apply to the session? */
-    if (c->argv[1] == NULL || !strcmp(c->argv[1], "session")) {
+    if (c->argv[1] == NULL ||
+        strncmp(c->argv[1], "session", 8) == 0) {
       struct rlimit *nofile_rlimit = (struct rlimit *) c->argv[0];
 
       PRIVS_ROOT
 #  if defined(RLIMIT_NOFILE)
       if (setrlimit(RLIMIT_NOFILE, nofile_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_NOFILE): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  elif defined(RLIMIT_OFILE)
       if (setrlimit(RLIMIT_OFILE, nofile_rlimit) < 0) {
+        int xerrno = errno;
+
         PRIVS_RELINQUISH
         pr_log_pri(PR_LOG_ERR, "error: setrlimit(RLIMIT_OFILE): %s",
-          strerror(errno));
+          strerror(xerrno));
         return;
       }
 #  endif /* defined RLIMIT_OFILE */
@@ -2555,8 +2729,8 @@ static void show_settings(void) {
   struct utsname uts;
 #endif /* !HAVE_UNAME */
 
-  printf("Compile-time Settings:\n");
-  printf("  Version: " PROFTPD_VERSION_TEXT " " PR_STATUS "\n");
+  printf("%s", "Compile-time Settings:\n");
+  printf("%s", "  Version: " PROFTPD_VERSION_TEXT " " PR_STATUS "\n");
 
 #ifdef HAVE_UNAME
   /* We use uname(2) to get the 'machine', which will tell us whether
@@ -2568,129 +2742,145 @@ static void show_settings(void) {
       uts.release, uts.machine);
 
   } else {
-    printf("  Platform: " PR_PLATFORM " [unavailable]\n");
+    printf("%s", "  Platform: " PR_PLATFORM " [unavailable]\n");
   }
 #else
-  printf("  Platform: " PR_PLATFORM " [unknown]\n");
+  printf("%s", "  Platform: " PR_PLATFORM " [unknown]\n");
 #endif /* !HAVE_UNAME */
 
-  printf("  Built: " BUILD_STAMP "\n");
-  printf("  Built With:\n    configure " PR_BUILD_OPTS "\n\n");
+  printf("%s", "  Built: " BUILD_STAMP "\n");
+  printf("%s", "  Built With:\n    configure " PR_BUILD_OPTS "\n\n");
 
-  printf("  CFLAGS: " PR_BUILD_CFLAGS "\n");
-  printf("  LDFLAGS: " PR_BUILD_LDFLAGS "\n");
-  printf("  LIBS: " PR_BUILD_LIBS "\n");
+  printf("%s", "  CFLAGS: " PR_BUILD_CFLAGS "\n");
+  printf("%s", "  LDFLAGS: " PR_BUILD_LDFLAGS "\n");
+  printf("%s", "  LIBS: " PR_BUILD_LIBS "\n");
 
-  printf("\n  Files:\n");
-  printf("    Configuration File:\n");
-  printf("      " PR_CONFIG_FILE_PATH "\n");
-  printf("    Pid File:\n");
-  printf("      " PR_PID_FILE_PATH "\n");
-  printf("    Scoreboard File:\n");
-  printf("      " PR_RUN_DIR "/proftpd.scoreboard\n");
+  printf("%s", "\n  Files:\n");
+  printf("%s", "    Configuration File:\n");
+  printf("%s", "      " PR_CONFIG_FILE_PATH "\n");
+  printf("%s", "    Pid File:\n");
+  printf("%s", "      " PR_PID_FILE_PATH "\n");
+  printf("%s", "    Scoreboard File:\n");
+  printf("%s", "      " PR_RUN_DIR "/proftpd.scoreboard\n");
 #ifdef PR_USE_DSO
-  printf("    Header Directory:\n");
-  printf("      " PR_INCLUDE_DIR "/proftpd\n");
-  printf("    Shared Module Directory:\n");
-  printf("      " PR_LIBEXEC_DIR "\n");
+  printf("%s", "    Header Directory:\n");
+  printf("%s", "      " PR_INCLUDE_DIR "/proftpd\n");
+  printf("%s", "    Shared Module Directory:\n");
+  printf("%s", "      " PR_LIBEXEC_DIR "\n");
 #endif /* PR_USE_DSO */
 
   /* Feature settings */
-  printf("\n  Features:\n");
+  printf("%s", "\n  Features:\n");
 #ifdef PR_USE_AUTO_SHADOW
-  printf("    + Autoshadow support\n");
+  printf("%s", "    + Autoshadow support\n");
 #else
-  printf("    - Autoshadow support\n");
+  printf("%s", "    - Autoshadow support\n");
 #endif /* PR_USE_AUTO_SHADOW */
 
 #ifdef PR_USE_CTRLS
-  printf("    + Controls support\n");
+  printf("%s", "    + Controls support\n");
 #else
-  printf("    - Controls support\n");
+  printf("%s", "    - Controls support\n");
 #endif /* PR_USE_CTRLS */
 
 #if defined(PR_USE_CURSES) && defined(HAVE_LIBCURSES)
-  printf("    + curses support\n");
+  printf("%s", "    + curses support\n");
 #else
-  printf("    - curses support\n");
+  printf("%s", "    - curses support\n");
 #endif /* PR_USE_CURSES && HAVE_LIBCURSES */
 
 #ifdef PR_USE_DEVEL
-  printf("    + Developer support\n");
+  printf("%s", "    + Developer support\n");
 #else
-  printf("    - Developer support\n");
+  printf("%s", "    - Developer support\n");
 #endif /* PR_USE_DEVEL */
 
 #ifdef PR_USE_DSO
-  printf("    + DSO support\n");
+  printf("%s", "    + DSO support\n");
 #else
-  printf("    - DSO support\n");
+  printf("%s", "    - DSO support\n");
 #endif /* PR_USE_DSO */
 
 #ifdef PR_USE_IPV6
-  printf("    + IPv6 support\n");
+  printf("%s", "    + IPv6 support\n");
 #else
-  printf("    - IPv6 support\n");
+  printf("%s", "    - IPv6 support\n");
 #endif /* PR_USE_IPV6 */
 
 #ifdef PR_USE_LARGEFILES
-  printf("    + Largefile support\n");
+  printf("%s", "    + Largefile support\n");
 #else
-  printf("    - Largefile support\n");
+  printf("%s", "    - Largefile support\n");
 #endif /* PR_USE_LARGEFILES */
 
 #ifdef PR_USE_LASTLOG
-  printf("    + Lastlog support\n");
+  printf("%s", "    + Lastlog support\n");
 #else
-  printf("    - Lastlog support\n");
+  printf("%s", "    - Lastlog support\n");
 #endif /* PR_USE_LASTLOG */
 
-#if defined(PR_USE_NCURSESW) && defined(HAVE_LIBNCURSESW)
-  printf("    + ncursesw support\n");
-#elif defined(PR_USE_NCURSES) && defined(HAVE_LIBNCURSES)
-  printf("    + ncurses support\n");
+#ifdef PR_USE_MEMCACHE
+  printf("%s", "    + Memcache support\n");
 #else
-  printf("    - ncurses support\n");
+  printf("%s", "    - Memcache support\n");
+#endif /* PR_USE_MEMCACHE */
+
+#if defined(PR_USE_NCURSESW) && defined(HAVE_LIBNCURSESW)
+  printf("%s", "    + ncursesw support\n");
+#elif defined(PR_USE_NCURSES) && defined(HAVE_LIBNCURSES)
+  printf("%s", "    + ncurses support\n");
+#else
+  printf("%s", "    - ncurses support\n");
 #endif
 
 #ifdef PR_USE_NLS
-  printf("    + NLS support\n");
+  printf("%s", "    + NLS support\n");
 #else
-  printf("    - NLS support\n");
+  printf("%s", "    - NLS support\n");
 #endif /* PR_USE_NLS */
 
 #ifdef PR_USE_OPENSSL
-  printf("    + OpenSSL support\n");
+# ifdef PR_USE_OPENSSL_FIPS
+    printf("%s", "    + OpenSSL support (FIPS enabled)\n");
+# else
+    printf("%s", "    + OpenSSL support\n");
+# endif /* PR_USE_OPENSSL_FIPS */
 #else
-  printf("    - OpenSSL support\n");
+  printf("%s", "    - OpenSSL support\n");
 #endif /* PR_USE_OPENSSL */
 
-#ifdef PR_USE_FACL
-  printf("    + POSIX ACL support\n");
+#ifdef PR_USE_PCRE
+  printf("%s", "    + PCRE support\n");
 #else
-  printf("    - POSIX ACL support\n");
+  printf("%s", "    - PCRE support\n");
+#endif /* PR_USE_PCRE */
+
+#ifdef PR_USE_FACL
+  printf("%s", "    + POSIX ACL support\n");
+#else
+  printf("%s", "    - POSIX ACL support\n");
 #endif /* PR_USE_FACL */
 
 #ifdef PR_USE_SHADOW
-  printf("    + Shadow file support\n");
+  printf("%s", "    + Shadow file support\n");
 #else
-  printf("    - Shadow file suppport\n");
+  printf("%s", "    - Shadow file suppport\n");
 #endif /* PR_USE_SHADOW */
 
 #ifdef PR_USE_SENDFILE
-  printf("    + Sendfile support\n");
+  printf("%s", "    + Sendfile support\n");
 #else
-  printf("    - Sendfile support\n");
+  printf("%s", "    - Sendfile support\n");
 #endif /* PR_USE_SENDFILE */
 
 #ifdef PR_USE_TRACE
-  printf("    + Trace support\n");
+  printf("%s", "    + Trace support\n");
 #else
-  printf("    - Trace support\n");
+  printf("%s", "    - Trace support\n");
 #endif /* PR_USE_TRACE */
 
   /* Tunable settings */
-  printf("\n  Tunable Options:\n");
+  printf("%s", "\n  Tunable Options:\n");
   printf("    PR_TUNABLE_BUFFER_SIZE = %u\n", PR_TUNABLE_BUFFER_SIZE);
   printf("    PR_TUNABLE_DEFAULT_RCVBUFSZ = %u\n", PR_TUNABLE_DEFAULT_RCVBUFSZ);
   printf("    PR_TUNABLE_DEFAULT_SNDBUFSZ = %u\n", PR_TUNABLE_DEFAULT_SNDBUFSZ);
@@ -2771,7 +2961,7 @@ static struct option_help {
 static void show_usage(int exit_code) {
   struct option_help *h;
 
-  printf("usage: proftpd [options]\n");
+  printf("%s", "usage: proftpd [options]\n");
   for (h = opts_help; h->long_opt; h++) {
 #ifdef HAVE_GETOPT_LONG
     printf(" %s, %s\n ", h->short_opt, h->long_opt);
@@ -2930,7 +3120,7 @@ int main(int argc, char *argv[], char **envp) {
 
     case 't':
       syntax_check = 1;
-      printf("Checking syntax of configuration file\n");
+      printf("%s", "Checking syntax of configuration file\n");
       fflush(stdout);
       break;
 
@@ -2979,7 +3169,7 @@ int main(int argc, char *argv[], char **envp) {
 
   if (show_version &&
       show_version == 1) {
-    printf("ProFTPD Version " PROFTPD_VERSION_TEXT "\n");
+    printf("%s", "ProFTPD Version " PROFTPD_VERSION_TEXT "\n");
     exit(0);
   }
 
@@ -2990,8 +3180,8 @@ int main(int argc, char *argv[], char **envp) {
 
   /* Initialize sub-systems */
   init_pools();
-  init_regexp();
   init_log();
+  init_regexp();
   init_inet();
   init_netio();
   init_netaddr();
@@ -3029,7 +3219,7 @@ int main(int argc, char *argv[], char **envp) {
   }
 # endif /* !HAVE_LOCALE_H */
 
- encode_init();
+  encode_init();
 #endif /* PR_USE_NLS */
 
   /* Now, once the modules have had a chance to initialize themselves
@@ -3078,8 +3268,8 @@ int main(int argc, char *argv[], char **envp) {
 
   /* We're only doing a syntax check of the configuration file. */
   if (syntax_check) {
-    printf("Syntax check complete.\n");
-    end_login(0);
+    printf("%s", "Syntax check complete.\n");
+    pr_session_end(PR_SESS_END_FL_SYNTAX_CHECK);
   }
 
   /* After configuration is complete, make sure that passwd, group
@@ -3109,19 +3299,23 @@ int main(int argc, char *argv[], char **envp) {
     daemon_gids = make_array(permanent_pool, 2, sizeof(gid_t));
 
     if (pr_auth_getgroups(permanent_pool, (const char *) get_param_ptr(
-        main_server->conf, "UserName", FALSE), &daemon_gids, NULL) < 0)
+        main_server->conf, "UserName", FALSE), &daemon_gids, NULL) < 0) {
       pr_log_debug(DEBUG2, "unable to retrieve daemon supplemental groups");
+    }
 
-    if (set_groups(permanent_pool, daemon_gid, daemon_gids) < 0)
+    if (set_groups(permanent_pool, daemon_gid, daemon_gids) < 0) {
       pr_log_pri(PR_LOG_ERR, "unable to set daemon groups: %s",
         strerror(errno));
+    }
   }
 
-   if ((main_umask = (mode_t *) get_param_ptr(main_server->conf, "Umask",
-       FALSE)) == NULL)
-     umask((mode_t) 0022);
-   else
-     umask(*main_umask);
+  main_umask = get_param_ptr(main_server->conf, "Umask", FALSE);
+  if (main_umask == NULL) {
+    umask((mode_t) 0022);
+
+  } else {
+    umask(*main_umask);
+  }
 
   /* Give up root and save our uid/gid for later use (if supported)
    * If we aren't currently root, PRIVS_SETUP will get rid of setuid
@@ -3137,13 +3331,13 @@ int main(int argc, char *argv[], char **envp) {
 
   if (geteuid() != daemon_uid) {
     pr_log_pri(PR_LOG_ERR, "unable to set uid to %lu, current uid: %lu",
-		    (unsigned long)daemon_uid,(unsigned long)geteuid());
+      (unsigned long) daemon_uid, (unsigned long) geteuid());
     exit(1);
   }
 
   if (getegid() != daemon_gid) {
     pr_log_pri(PR_LOG_ERR, "unable to set gid to %lu, current gid: %lu",
-		    (unsigned long)daemon_gid,(unsigned long)getegid());
+      (unsigned long) daemon_gid, (unsigned long) getegid());
     exit(1);
   }
 #endif /* PR_DEVEL_COREDUMP */

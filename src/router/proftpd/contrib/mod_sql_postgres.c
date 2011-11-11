@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql_postgres -- Support for connecting to Postgres databases.
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2009 TJ Saunders
+ * Copyright (c) 2004-2011 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,22 +16,18 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Andrew Houghton and other respective copyright
  * holders give permission to link this program with OpenSSL, and distribute
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_postgres.c,v 1.51 2009/10/20 01:11:18 castaglia Exp $
- */
-
-/*
+ * $Id: mod_sql_postgres.c,v 1.54 2011/10/06 15:56:46 castaglia Exp $
  * $Libraries: -lm -lpq $
  */
 
-/* 
- * Internal define used for debug and logging.  All backends are encouraged
+/* Internal define used for debug and logging.  All backends are encouraged
  * to use the same format.
  */
 #define MOD_SQL_POSTGRES_VERSION	"mod_sql_postgres/4.0.4"
@@ -181,7 +177,7 @@ static void _sql_check_cmd(cmd_rec *cmd, char *msg) {
       ": '%s' was passed an invalid cmd_rec. Shutting down.", msg);
     sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec. Shutting down.",
       msg);
-    end_login(1);
+    pr_session_end(0);
   }    
 
   return;
@@ -1312,7 +1308,7 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
   char *escaped = NULL;
   cmd_rec *close_cmd;
   size_t unescaped_len = 0;
-#ifdef PG_VERSION_NUM
+#ifdef HAVE_POSTGRES_PQESCAPESTRINGCONN
   int pgerr = 0;
 #endif
 
@@ -1342,19 +1338,12 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
     return cmr;
   }
 
-  /* Note: I think PQescapeStringConn() appears in the C API as of
-   * Postgres-7.3, but I'm not sure.  The PQescapeString() function appeared
-   * in the C API as of Postgres-7.2.  The PG_VERSION_NUM macro appeared
-   * as of Postgres-8.2, hence why that is used as the proxy indicator of
-   * whether to use PQescapeString() or PQescapeStringConn().
-   */
-
   unescaped = cmd->argv[1];
   unescaped_len = strlen(unescaped);
   escaped = (char *) pcalloc(cmd->tmp_pool, sizeof(char) *
     (unescaped_len * 2) + 1);
 
-#ifdef PG_VERSION_NUM
+#ifdef HAVE_POSTGRES_PQESCAPESTRINGCONN
   PQescapeStringConn(conn->postgres, escaped, unescaped, unescaped_len, &pgerr);
   if (pgerr != 0) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_escapestring");
@@ -1522,7 +1511,7 @@ static void sql_postgres_mod_load_ev(const void *event_data,
     if (sql_register_backend("postgres", sql_postgres_cmdtable) < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_SQL_POSTGRES_VERSION
         ": notice: error registering backend: %s", strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
   }
 }
@@ -1535,7 +1524,7 @@ static void sql_postgres_mod_unload_ev(const void *event_data,
     if (sql_unregister_backend("postgres") < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_SQL_POSTGRES_VERSION
         ": notice: error unregistering backend: %s", strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
 
     /* Unregister ourselves from all events. */

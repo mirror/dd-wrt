@@ -1,4 +1,4 @@
-<!-- $Id: mod_lang.html,v 1.7 2009/12/11 01:06:18 castaglia Exp $ -->
+<!-- $Id: mod_lang.html,v 1.8 2010/08/10 17:39:08 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_lang.html,v $ -->
 
 <html>
@@ -218,14 +218,50 @@ is listed below; the names are <b>not</b> case-sensitive:
   <li>windows-1251
 </ul>
 
+<p><a name="FAQ"></a>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="SpecialCharacters">
+<font color=red>Question</font>: When I upload a file with special characters
+(<i>e.g.</i> umlauts, accents, cedillas, <i>etc</i>), the special characters
+are turned into '?' on the server.  What's wrong?<br>
+<font color=blue>Answer</font>: There are a couple of things to check when
+this happens.
+
+<p>
+First, make sure that your <code>proftpd</code> has been compiled with NLS
+support.  Type <code>proftpd -V</code>, and make sure you see:
+<pre>
+  + NLS support
+</pre>
+appear in the output.
+
+<p>
+Next, make sure that the <code>LANG</code> environment variable is set before
+starting the server.  Special characters require that UTF8 or ISO-8859-1 be
+used, thus you might use things like:
+<pre>
+  # export LANG=de_DE.utf8
+  # export LANG=fr_FR.ISO8859-1
+</pre>
+
+<p>
+Last, check that any routers/firewalls/NAT between the clients and the server
+are not interfering.  ProFTPD lists "UTF8" in its <code>FEAT</code> response
+data; many FTP clients use the <code>OPTS UTF8 ON</code> command to inform the
+server that UTF8 filenames will be sent.  Some routers, firewalls, and NATs
+have been known to filter both the <code>FEAT</code> response and/or block
+commands like <code>OPTS UTF8</code>, thus interfering with the protocol and
+causing encoding problems.
+
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/12/11 01:06:18 $</i><br>
+Last Updated: <i>$Date: 2010/08/10 17:39:08 $</i><br>
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2006-2008 TJ Saunders<br>
+&copy; Copyright 2006-2010 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

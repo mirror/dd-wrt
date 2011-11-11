@@ -20,7 +20,6 @@ all:
 Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
-
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
@@ -68,6 +67,7 @@ sstrncpy.o: ../config.h ../include/libsupp.h ../include/glibc-glob.h
 strsep.o: ../include/conf.h ../include/version.h ../config.h
 strsep.o: ../include/default_paths.h ../include/options.h
 strsep.o: ../include/libsupp.h ../include/glibc-glob.h
+tpl.o: ../include/tpl.h
 vsnprintf.o: ../include/conf.h ../include/version.h ../config.h
 vsnprintf.o: ../include/default_paths.h ../include/options.h
 vsnprintf.o: ../include/libsupp.h ../include/glibc-glob.h

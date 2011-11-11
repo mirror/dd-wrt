@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -27,7 +27,7 @@
 /* Logging, either to syslog or stderr, as well as debug logging
  * and debug levels.
  *
- * $Id: log.h,v 1.32 2009/11/04 20:19:05 castaglia Exp $
+ * $Id: log.h,v 1.34 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_LOG_H
@@ -166,5 +166,45 @@ void log_discard(void);
 void init_log(void);
 
 int pr_log_str2sysloglevel(const char *);
+
+/* Define a struct, and some constants, for logging events and any listeners
+ * for those events.
+ */
+typedef struct log_event {
+
+  /* Type of log event/message; the values are defined below */
+  unsigned int log_type;
+
+  /* Log fd associated with this log for this event */
+  int log_fd;
+
+  /* Log level of this message; the semantics of the log level depend on
+   * on the log type.
+   */
+  int log_level;
+
+  /* The message being logged. */
+  const char *log_msg;
+  size_t log_msglen;
+
+} pr_log_event_t;
+
+#define PR_LOG_TYPE_UNSPEC	0
+#define PR_LOG_TYPE_XFERLOG	1
+#define PR_LOG_TYPE_SYSLOG	2
+#define PR_LOG_TYPE_SYSTEMLOG	3
+#define PR_LOG_TYPE_EXTLOG	4
+#define PR_LOG_TYPE_TRACELOG	5
+
+/* Helper function to generate the necessary log event, passing along the
+ * log event context data.
+ */
+int pr_log_event_generate(unsigned int log_type, int log_fd, int log_level,
+  const char *log_msg, size_t log_msglen);
+
+/* Returns TRUE if there are listeners for the specified log type, FALSE
+ * otherwise.
+ */
+int pr_log_event_listening(unsigned int log_type);
 
 #endif /* PR_LOG_H */

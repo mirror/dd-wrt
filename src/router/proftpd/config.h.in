@@ -186,8 +186,14 @@
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 
-/* Define if the `setpgrp' function takes no argument.  */
-#undef SETPGRP_VOID
+/* Define if the `setpgrp' function takes no argument.  This is the default
+ * POSIX signature, so assume that the host system uses the POSIX
+ * signature.  This avoids cross-compilation errors; the Autoconf macro
+ * AC_FUNC_SETPGRP causes the configure script to fail when cross-compiling.
+ * Thus we always assume the POSIX signature.  If this is incorrect,
+ * the generated config.h file can be updated manually.
+ */
+#define SETPGRP_VOID 1
 
 /* Define if the `setgrent` function returns void.  */
 #undef SETGRENT_VOID
@@ -236,6 +242,18 @@
 
 /* The number of bytes in a time_t.  */
 #undef SIZEOF_TIME_T
+
+/* The number of bytes in a pointer to a char.  */
+#undef SIZEOF_CHAR_P
+
+/* The number of bytes in a pointer to a void.  */
+#undef SIZEOF_VOID_P
+
+/* Define if you have the backtrace function.  */
+#undef HAVE_BACKTRACE
+
+/* Define if you have the backtrace_symbols function.  */
+#undef HAVE_BACKTRACE_SYMBOLS
 
 /* Define if you have the bcopy function.  */
 #undef HAVE_BCOPY
@@ -372,6 +390,9 @@
 /* Define if you have the munlockall function.  */
 #undef HAVE_MUNLOCKALL
 
+/* Define if you have the MySQL make_scrambled_password_323 function.  */
+#undef HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323
+
 /* Define if you have the nl_langinfo function.  */
 #undef HAVE_NL_LANGINFO
 
@@ -380,6 +401,9 @@
 
 /* Define if you have the perm_copy_fd function.  */
 #undef HAVE_PERM_COPY_FD
+
+/* Define if you have the Postgres PQescapeStringConn function.  */
+#undef HAVE_POSTGRES_PQESCAPESTRINGCONN
 
 /* Define if you have the pstat function.  */
 #undef HAVE_PSTAT
@@ -449,6 +473,12 @@
 
 /* Define if you have the strsep function.  */
 #undef HAVE_STRSEP
+
+/* Define if you have the strtod function.  */
+#undef HAVE_STRTOD
+
+/* Define if you have the strtof function.  */
+#undef HAVE_STRTOF
 
 /* Define if you have the strtol function.  */
 #undef HAVE_STRTOL
@@ -593,6 +623,9 @@
 
 /* Define if you have the <siad.h> header file.  */
 #undef HAVE_SIAD_H
+
+/* Define if you have the <signal.h> header file.  */
+#undef HAVE_SIGNAL_H
 
 /* Define if you have the <string.h> header file.  */
 #undef HAVE_STRING_H
@@ -861,6 +894,9 @@
 /* Define if largefile support is desired.  */
 #undef PR_USE_LARGEFILES
 
+/* Define if memcache support is desired.. */
+#undef PR_USE_MEMCACHE
+
 /* Define if the %llu format should be used.  */
 #undef HAVE_LLU
 
@@ -884,6 +920,14 @@
 
 /* Define if OpenSSL support, if available, should be used.  */
 #undef PR_USE_OPENSSL
+
+/* Define if OpenSSL support (with FIPS enabled), if available, should be
+ * used.
+ */
+#undef PR_USE_OPENSSL_FIPS
+
+/* Define if using PCRE support.  */
+#undef PR_USE_PCRE
 
 /* Define if sendfile support, if available, should be used.  */
 #undef PR_USE_SENDFILE

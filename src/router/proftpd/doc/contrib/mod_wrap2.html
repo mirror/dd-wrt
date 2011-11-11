@@ -1,4 +1,4 @@
-<!-- $Id: mod_wrap2.html,v 1.1 2006/09/06 23:09:58 castaglia Exp $ -->
+<!-- $Id: mod_wrap2.html,v 1.5 2011/05/18 05:46:15 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_wrap2.html,v $ -->
 
 <html>
@@ -66,6 +66,7 @@ the module code.
   <li><a href="#WrapEngine">WrapEngine</a>
   <li><a href="#WrapGroupTables">WrapGroupTables</a>
   <li><a href="#WrapLog">WrapLog</a>
+  <li><a href="#WrapOptions">WrapOptions</a>
   <li><a href="#WrapServiceName">WrapServiceName</a>
   <li><a href="#WrapTables">WrapTables</a>
   <li><a href="#WrapUserTables">WrapUserTables</a>
@@ -159,7 +160,7 @@ Please consult the relevant <a href="#submodule">submodule</a> documentation
 for details on that module's syntax for specifying tables.  The service name
 for which <code>mod_wrap2</code> will look in the indicated access tables is
 &quot;proftpd&quot; by default; this can be configured via the
-<a href="#WrapServiceName><code>WrapServiceName</code></a> directive.
+<a href="#WrapServiceName"><code>WrapServiceName</code></a> directive.
 
 <p>
 See also:
@@ -189,6 +190,67 @@ link.
 If <em>file</em> is &quot;none&quot;, no logging will be done at all; this
 setting can be used to override a <code>WrapLog</code> setting inherited from
 a <code>&lt;Global&gt;</code> context.
+
+<p>
+<hr>
+<h2><a name="WrapOptions">WrapOptions</a></h2>
+<strong>Syntax:</strong> WrapOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_wrap2<br>
+<strong>Compatibility:</strong> 1.3.4rc1 and later
+
+<p>
+The <code>WrapOptions</code> directive is used to configure various optional
+behavior of <code>mod_wrap2</code>.  <b>Note</b>: all of the configured
+<code>WrapOptions</code> parameters <b>must</b> appear on the same line in the
+configuration; only the first <code>WrapOptions</code> directive that appears
+in the configuration is used.
+
+<p>
+Example:
+<pre>
+  WrapOptions CheckOnConnect
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>CheckAllNames</code><br>
+  <p>
+  This causes <code>mod_wrap2</code> to check <b>all</b> of the known
+  DNS names for the client IP address against the DNS names/patterns
+  in the access rules, rather than just checking the first DNS name
+  returned for the client IP address.
+  </li>
+
+  <li><code>CheckOnConnect</code><br>
+  <p>
+  This causes <code>mod_wrap2</code> to check the allow/deny tables when
+  the client first connects, rather than waiting until the client has
+  authenticated before checking the access rules.  This means that
+  per-user/group allow/deny tables, and the use of the tilde (~) notation
+  in table paths, is <b>not</b> supported when this option is used.
+
+  <p>
+  In addition, <i>if <code>mod_wrap2_sql</code> is used</i>, the order in
+  which that module is loaded is very important.  The <code>mod_sql</code>
+  module <b>must</b> appear <b>after</b> the <code>mod_wrap2</code> module
+  in the <code>--with-modules</code> configure option, <i>e.g.</i>:
+<pre>
+    --with-modules=mod_wrap2:mod_wrap2_sql:mod_sql:mod_sql_mysql
+</pre>
+  You will also need to ensure that <code>mod_sql</code> creates a
+  database connection at connect time, using the PERCONNECTION
+  connection policy; see
+  <a href="mod_sql.html#SQLConnectInfo"><code>SQLConnectInfo</code></a> for
+  more details.
+
+  Without this, the database connection will not be created at connect
+  time, and the <code>mod_wrap2</code> module will be unable to check
+  any allow/deny rules stored in SQL tables when the client connects.
+  </li>
+</ul>
 
 <p>
 <hr>
@@ -277,7 +339,7 @@ See also:
  <a href="#WrapTables">WrapTables</a>
 
 <p>
-<hr><br>
+<hr>
 <h2><a name="Usage">Usage</a></h2>
 To use <code>mod_wrap2</code>'s functionality, you must first define the tables
 that together contain the access rules.  Access rules are composed of
@@ -288,7 +350,7 @@ configured for <code>proftpd</code>.  <b>client lists</b> are the heart of
 the access rules, specifying the host names, IP addresses, <i>etc</i> to
 be allowed or denied.  The handling of <b>options lists</b> is done only if
 <code>mod_wrap2</code> is configured with the
-<code>--enable-wrapper-options</b> option.
+<code>--enable-wrapper-options</code> option.
 
 <p>
 There is a built-in precedence to the <code>WrapUserTables</code>,
@@ -360,12 +422,19 @@ The access control language implements the following patterns:
     support for netgroup lookups to occur.
 
   <p>
-  <li>An expression of the form <i>n.n.n.n/m.m.m.m</i> is interpreted as a
-    <code>net/mask</code> pair.  An IPv4 address is matched if the
+  <li>An expression of the form <i>n.n.n.n/m.m.m.m</i> is interpreted as
+    an IPv4 <code>net/mask</code> pair.  An IPv4 address is matched if the
     <code>net</code> portion is equal to the bitwise AND of the address and the
     <code>mask</code> portion. For example, the <code>net/mask</code> pattern
     <code>131.155.72.0/255.255.254.0</code> matches every address in the range
     <code>131.155.72.0</code> through <code>131.155.73.255</code>.
+
+  <p>
+  <li>An expression of the form <i>[address]/number</i> is interpreted as
+    an IPv6 <code>net/mask</code> pair.  An IPv6 address is matched if the
+    first <em>number</em> bits match the rule <em>address</em>.  For example,
+    <code>[3ffe:505:2:1::]/64</code> matches every address in the range
+    <code>3ffe:505:2:1::</code> through <code>3ffe:505:2:1:ffff:ffff:ffff:ffff:</code>.
 
   <p>
   <li>Wildcards `*' and `?' can be used to match hostnames or IP addresses.
@@ -526,7 +595,7 @@ When a syntax error is found in an options list, the error is reported in the
 <code>WrapLog</code> and the access option will be ignored.
 
 <p>
-<hr><br>
+<hr>
 <h2><a name="Installation">Installation</a></h2>
 After unpacking the latest proftpd-1.3.<i>x</i> source code, follow the usual
 steps for using third-party modules in <code>proftpd</code>:
@@ -558,15 +627,13 @@ Note that SQL tables require that a correct installation of <code>mod_sql</code>
 documentation for installation instructions for that module.
 
 <p>
-<hr><br>
-
+<hr>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2006/09/06 23:09:58 $</i><br>
-
-<br><hr>
+Last Updated: <i>$Date: 2011/05/18 05:46:15 $</i><br>
+<hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2006 TJ Saunders<br>
+&copy; Copyright 2000-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

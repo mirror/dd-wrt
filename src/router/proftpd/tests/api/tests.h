@@ -1,6 +1,6 @@
 /*
- * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * ProFTPD - FTP server API testsuite
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -22,9 +22,8 @@
  * OpenSSL in the source distribution.
  */
 
-/*
- * Testsuite management
- * $Id: tests.h,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+/* Testsuite management
+ * $Id: tests.h,v 1.5 2011/10/31 18:38:51 castaglia Exp $
  */
 
 #ifndef PR_TESTS_H
@@ -56,7 +55,10 @@ Suite *tests_get_class_suite(void);
 Suite *tests_get_regexp_suite(void);
 Suite *tests_get_expr_suite(void);
 Suite *tests_get_scoreboard_suite(void);
+Suite *tests_get_stash_suite(void);
 Suite *tests_get_modules_suite(void);
+Suite *tests_get_cmd_suite(void);
+Suite *tests_get_response_suite(void);
 
 /* Temporary hack/placement for this variable, until we get to testing
  * the Signals API.

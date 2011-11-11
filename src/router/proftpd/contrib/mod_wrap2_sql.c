@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap2_sql -- a mod_wrap2 sub-module for supplying IP-based
  *                           access control data via SQL tables
  *
- * Copyright (c) 2002-2010 TJ Saunders
+ * Copyright (c) 2002-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_wrap2_sql.c,v 1.9.2.1 2010/06/22 13:59:23 castaglia Exp $
+ * $Id: mod_wrap2_sql.c,v 1.11 2011/05/23 20:56:40 castaglia Exp $
  */
 
 #include "mod_wrap2.h"

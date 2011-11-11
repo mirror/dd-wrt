@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
  *
- * Copyright (c) 2004-2009 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2011 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
@@ -25,7 +25,7 @@
  * This is mod_dso, contrib software for proftpd 1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dso.c,v 1.21 2009/11/17 18:27:46 castaglia Exp $
+ * $Id: mod_dso.c,v 1.22 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"

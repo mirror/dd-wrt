@@ -1,7 +1,7 @@
 package ProFTPD::Tests::Modules::mod_sftp;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
 use Digest::MD5;
@@ -9,6 +9,7 @@ use File::Copy;
 use File::Path qw(mkpath rmtree);
 use File::Spec;
 use IO::Handle;
+use IPC::Open3;
 use POSIX qw(:fcntl_h);
 use Socket;
 
@@ -63,6 +64,11 @@ my $TESTS = {
   ssh2_hostkey_dss_only => {
     order => ++$order,
     test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_hostkey_dss_bug3634 => {
+    order => ++$order,
+    test_class => [qw(bug forking slow ssh2)],
   },
 
   ssh2_cipher_c2s_aes256_cbc => {
@@ -226,17 +232,62 @@ my $TESTS = {
     test_class => [qw(forking ssh2 inprogress)],
   },
 
-  # XXX Need more auth method tests: hostbased, keyboard-interactive
+  # XXX Need more auth method tests: keyboard-interactive
   # (the password method is used in other tests, so is covered).
-  #
-  # Note that libssh2 has bugs in its hostbased authentication code.
 
-  ssh2_auth_publickey_rsa => {
+  # Note: this test requires libssh2-1.2.7 (when released), and thus is
+  # currently disabled
+  ssh2_auth_hostbased => {
+    order => ++$order,
+    test_class => [qw(forking ssh2 inprogress)],
+  },
+
+  ssh2_auth_publickey_rsa_no_match_bug3493 => {
+    order => ++$order,
+    test_class => [qw(bug forking ssh2)],
+  },
+
+  ssh2_auth_publickey_rsa_with_match_bug3493 => {
+    order => ++$order,
+    test_class => [qw(bug forking ssh2)],
+  },
+
+  ssh2_auth_publickey_rsa2048 => {
     order => ++$order,
     test_class => [qw(forking ssh2)],
   },
 
-  ssh2_auth_publickey_dsa => {
+  ssh2_auth_publickey_rsa4096 => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_auth_publickey_rsa8192 => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_auth_publickey_rsa16384 => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_auth_publickey_dsa1024 => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_auth_publickey_dsa2048 => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_auth_publickey_dsa4096 => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_auth_publickey_dsa8192 => {
     order => ++$order,
     test_class => [qw(forking ssh2)],
   },
@@ -261,9 +312,14 @@ my $TESTS = {
     test_class => [qw(bug forking mod_sftp_pam ssh2)],
   },
 
-  ssh2_rewrite_auth => {
+  ssh2_interop_scanner => {
     order => ++$order,
-    test_class => [qw(forking mod_rewrite ssh2)],
+    test_class => [qw(forking ssh2)],
+  },
+
+  ssh2_interop_probe => {
+    order => ++$order,
+    test_class => [qw(forking ssh2)],
   },
 
   ssh2_channel_failed_ptyreq => {
@@ -351,9 +407,50 @@ my $TESTS = {
     test_class => [qw(bug forking sftp ssh2)],
   },
 
+  sftp_open_trunc_bug3449 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_open_creat => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_open_creat_excl => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_open_append_bug3450 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_open_rdonly => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_open_wronly => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_open_rdwr => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
   sftp_upload => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
+  },
+
+  # Requires libssh2-1.2.8 or later, with fixed compression
+  sftp_upload_with_compression => {
+    order => ++$order,
+    test_class => [qw(forking inprogress sftp ssh2)],
   },
 
   sftp_upload_zero_len_file => {
@@ -381,9 +478,20 @@ my $TESTS = {
     test_class => [qw(forking inprogress sftp ssh2)],
   },
 
+  sftp_ext_upload_bug3550 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
   sftp_download => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
+  },
+
+  # Requires libssh2-1.2.8 or later, with fixed compression
+  sftp_download_with_compression => {
+    order => ++$order,
+    test_class => [qw(forking inprogress sftp ssh2)],
   },
 
   sftp_download_zero_len_file => {
@@ -401,6 +509,11 @@ my $TESTS = {
     test_class => [qw(forking inprogress sftp ssh2)],
   },
 
+  sftp_ext_download_bug3550 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
   sftp_readdir => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
@@ -416,7 +529,17 @@ my $TESTS = {
     test_class => [qw(forking sftp ssh2)],
   },
 
+  sftp_mkdir_readdir_bug3481 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
   sftp_rmdir => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_rmdir_dir_not_empty => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
   },
@@ -436,9 +559,29 @@ my $TESTS = {
     test_class => [qw(forking sftp ssh2)],
   },
 
+  sftp_symlink_dst_already_exists => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_symlink_src_does_not_exist => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
   sftp_readlink => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_client_alive => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_createhome => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs sftp ssh2)],
   },
 
   sftp_config_max_login_attempts => {
@@ -446,7 +589,22 @@ my $TESTS = {
     test_class => [qw(forking sftp ssh2)],
   },
 
-  sftp_config_ignore_upload_perms => {
+  sftp_config_ignore_upload_perms_upload => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_ignore_upload_perms_mkdir_bug3680 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_config_ignore_set_perms_bug3599 => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_ignore_set_times_bug3706 => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
   },
@@ -457,6 +615,11 @@ my $TESTS = {
   },
 
   sftp_config_allowoverwrite => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_allowstorerestart => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
   },
@@ -481,9 +644,19 @@ my $TESTS = {
     test_class => [qw(forking sftp ssh2)],
   },
 
-  sftp_config_hidefiles => {
+  sftp_config_hidefiles_abs_path => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_hidefiles_deferred_path_bug3470 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_config_hidefiles_deferred_path_chroot_bug3470 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs sftp ssh2)],
   },
 
   sftp_config_hidenoaccess => {
@@ -491,7 +664,22 @@ my $TESTS = {
     test_class => [qw(forking sftp ssh2)],
   },
 
+  sftp_config_max_clients_per_host_bug3630 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
   sftp_config_pathdenyfilter => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_rekey_short_timeout_failed => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_rekey_long_timeout_ok => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
   },
@@ -499,6 +687,66 @@ my $TESTS = {
   sftp_config_rootlogin => {
     order => ++$order,
     test_class => [qw(forking rootprivs sftp ssh2)],
+  },
+
+  sftp_config_protocols => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_timeoutidle => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_timeoutlogin => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_timeoutnotransfer_download => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_timeoutnotransfer_readdir => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_timeoutnotransfer_upload => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_timeoutstalled => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
+  sftp_config_userowner => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs sftp ssh2)],
+  },
+
+  sftp_config_groupowner => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs sftp ssh2)],
+  },
+
+  sftp_config_groupowner_suppl_group_norootprivs => {
+    order => ++$order,
+    test_class => [qw(forking norootprivs sftp ssh2)],
+  },
+
+  sftp_config_ftpaccess_bug3460 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_config_limit_appe => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
   },
 
   sftp_config_limit_chmod => {
@@ -571,14 +819,44 @@ my $TESTS = {
     test_class => [qw(forking sftp ssh2)],
   },
 
+  sftp_log_extlog_retr_file_size => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_log_extlog_putty_mget_retr_file_size_bug3560 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_log_extlog_file_modified_bug3457 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_log_extlog_var_F_mkdir_rmdir_bug3591 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs sftp ssh2)],
+  },
+
+  sftp_log_extlog_var_w_rename_bug3029 => {
+    order => ++$order,
+    test_class => [qw(bug forking sftp ssh2)],
+  },
+
+  sftp_log_extlog_var_f_remove => {
+    order => ++$order,
+    test_class => [qw(forking sftp ssh2)],
+  },
+
   sftp_sighup => {
     order => ++$order,
     test_class => [qw(forking sftp ssh2)],
   },
 
-  sftp_ban_max_login_attempts => {
+  sftp_ifsess_protocols => {
     order => ++$order,
-    test_class => [qw(bug forking mod_ban sftp ssh2)],
+    test_class => [qw(forking mod_ifsession sftp ssh2)],
   },
 
   sftp_wrap_login_allowed_bug3352 => {
@@ -589,11 +867,6 @@ my $TESTS = {
   sftp_wrap_login_denied_bug3352 => {
     order => ++$order,
     test_class => [qw(bug forking mod_wrap sftp ssh2)],
-  },
-
-  sftp_wrap2_login => {
-    order => ++$order,
-    test_class => [qw(bug forking mod_wrap2_file sftp ssh2)],
   },
 
   scp_upload => {
@@ -631,6 +904,21 @@ my $TESTS = {
     test_class => [qw(forking inprogress scp ssh2)],
   },
 
+  scp_ext_upload_recursive_dir_bug3447 => {
+    order => ++$order,
+    test_class => [qw(bug forking scp ssh2)],
+  },
+
+  scp_ext_upload_different_name_bug3425 => {
+    order => ++$order,
+    test_class => [qw(bug forking scp ssh2)],
+  },
+
+  scp_ext_upload_recursive_empty_dir => {
+    order => ++$order,
+    test_class => [qw(forking scp ssh2)],
+  },
+
   scp_download => {
     order => ++$order,
     test_class => [qw(forking scp ssh2)],
@@ -651,6 +939,21 @@ my $TESTS = {
     test_class => [qw(forking inprogress scp ssh2)],
   },
 
+  scp_ext_download_bug3544 => {
+    order => ++$order,
+    test_class => [qw(bug forking scp ssh2)],
+  },
+
+  scp_ext_download_recursive_dir_bug3456 => {
+    order => ++$order,
+    test_class => [qw(bug forking scp ssh2)],
+  },
+
+  scp_ext_download_recursive_empty_dir => {
+    order => ++$order,
+    test_class => [qw(forking scp ssh2)],
+  },
+
   scp_config_ignore_upload_perms => {
     order => ++$order,
     test_class => [qw(forking scp ssh2)],
@@ -666,9 +969,34 @@ my $TESTS = {
     test_class => [qw(forking scp ssh2)],
   },
 
+  scp_config_protocols => {
+    order => ++$order,
+    test_class => [qw(forking scp ssh2)],
+  },
+
+  scp_config_userowner => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs scp ssh2)],
+  },
+
+  scp_config_groupowner => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs scp ssh2)],
+  },
+
+  scp_config_groupowner_suppl_group_norootprivs => {
+    order => ++$order,
+    test_class => [qw(forking norootprivs scp ssh2)],
+  },
+
   scp_log_extlog_var_f_upload => {
     order => ++$order,
     test_class => [qw(forking scp ssh2)],
+  },
+
+  scp_log_extlog_file_modified_bug3457 => {
+    order => ++$order,
+    test_class => [qw(bug forking scp ssh2)],
   },
 
   scp_log_xferlog_download => {
@@ -681,69 +1009,14 @@ my $TESTS = {
     test_class => [qw(forking scp ssh2)],
   },
 
-  sftp_rewrite_stat => {
+  sftp_quotatab_upload_bytes_in_exceeded_soft_limit => {
     order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
+    test_class => [qw(forking mod_quotatab_sql mod_sql_sqlite sftp ssh2)],
   },
 
-  sftp_rewrite_lstat => {
+  sftp_sql_custom_user_info => {
     order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_setstat => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_realpath => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_upload => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_download => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_readdir => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_mkdir => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_rmdir => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_remove => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_rename => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_symlink => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
-  },
-
-  sftp_rewrite_readlink => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite sftp ssh2)],
+    test_class => [qw(forking mod_sql mod_sql_sqlite sftp ssh2)],
   },
 
   sftp_sql_log_retr_vars => {
@@ -776,14 +1049,9 @@ my $TESTS = {
     test_class => [qw(forking mod_sql mod_sql_sqlite sftp ssh2)],
   },
 
-  scp_rewrite_upload => {
+  scp_ifsess_protocols => {
     order => ++$order,
-    test_class => [qw(forking mod_rewrite scp ssh2)],
-  },
-
-  scp_rewrite_download => {
-    order => ++$order,
-    test_class => [qw(forking mod_rewrite scp ssh2)],
+    test_class => [qw(forking mod_ifsession scp ssh2)],
   },
 
 };
@@ -803,7 +1071,6 @@ sub get_sftplog {
 
   # The default sqlite3 delimiter is '|'
   return split(/\|/, $res);
-
 }
 
 sub new {
@@ -839,14 +1106,7 @@ sub list_tests {
 
 sub set_up {
   my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-  
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
+  $self->SUPER::set_up(@_);
 
   # Make sure that mod_sftp does not complain about permissions on the hostkey
   # files.
@@ -857,17 +1117,6 @@ sub set_up {
   unless (chmod(0400, $rsa_host_key, $dsa_host_key)) {
     die("Can't set perms on $rsa_host_key, $dsa_host_key: $!");
   }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub ssh2_connect_bad_version {
@@ -1754,8 +2003,11 @@ sub ssh2_hostkey_rsa_only {
 
       my ($err_code, $err_name, $err_str) = $ssh2->error();
 
-      $self->assert($err_name eq 'LIBSSH2_ERROR_KEX_FAILURE',
-        test_msg("Expected 'LIBSSH2_ERROR_KEX_FAILURE', got '$err_name'"));
+      # The expected error messages depend on the version of libssh2 being
+      # used.
+      $self->assert($err_name eq 'LIBSSH2_ERROR_KEX_FAILURE' or
+                    $err_name eq 'LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE',
+        test_msg("Expected 'LIBSSH2_ERROR_KEX_FAILURE' or 'LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE', got '$err_name'"));
     };
 
     if ($@) {
@@ -2022,8 +2274,12 @@ sub ssh2_hostkey_dss_only {
       }
 
       my ($err_code, $err_name, $err_str) = $ssh2->error();
-      $self->assert($err_name eq 'LIBSSH2_ERROR_KEX_FAILURE',
-        test_msg("Expected 'LIBSSH2_ERROR_KEX_FAILURE', got '$err_name'"));
+
+      # The expected error messages depend on the version of libssh2 being
+      # used.
+      $self->assert($err_name eq 'LIBSSH2_ERROR_KEX_FAILURE' or
+                    $err_name eq 'LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE',
+        test_msg("Expected 'LIBSSH2_ERROR_KEX_FAILURE' or 'LIBSSH2_ERROR_KEY_EXCHANGE_FAILURE', got '$err_name'"));
     };
 
     if ($@) {
@@ -2035,6 +2291,212 @@ sub ssh2_hostkey_dss_only {
 
   } else {
     eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_hostkey_dss_bug3634 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $dsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa_key');
+  my $dsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa_key.pub');
+  my $dsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_dsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($dsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $dsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $batch_file = File::Spec->rel2abs("$tmpdir/sftp-batch.txt");
+  if (open(my $fh, "> $batch_file")) {
+    print $fh "pwd\n";
+
+    unless (close($fh)) {
+      die("Can't write $batch_file: $!");
+    }
+
+  } else {
+    die("Can't open $batch_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+
+      my @cmd = (
+        'sftp',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        '-oCompression=yes',
+        "-oPort=$port",
+        '-oHostKeyAlgorithms=ssh-dss',
+        "-oIdentityFile=$dsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        '-vvv',
+        '-b',
+        "$batch_file",
+        "$user\@127.0.0.1",
+      );
+
+      my $count = 250;
+
+      for (my $i = 0; $i < $count; $i++) {
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Connect #", $i + 1, "\n";
+        }
+
+        my $sftp_rh = IO::Handle->new();
+        my $sftp_wh = IO::Handle->new();
+        my $sftp_eh = IO::Handle->new();
+
+        $sftp_wh->autoflush(1);
+
+        sleep(1);
+
+        local $SIG{CHLD} = 'DEFAULT';
+
+        # Make sure that the perms on the priv key are what OpenSSH wants
+        unless (chmod(0400, $dsa_priv_key)) {
+          die("Can't set perms on $dsa_priv_key to 0400: $!");
+        }
+
+        if ($ENV{TEST_VERBOSE}) {
+            print STDERR "Executing: ", join(' ', @cmd), "\n";
+        }
+
+        my $sftp_pid = open3($sftp_wh, $sftp_rh, $sftp_eh, @cmd);
+        waitpid($sftp_pid, 0);
+
+        # Restore the perms on the priv key
+        unless (chmod(0644, $dsa_priv_key)) {
+          die("Can't set perms on $dsa_priv_key to 0644: $!");
+        }
+
+        my ($res, $errstr);
+        if ($? >> 8) {
+          $errstr = join('', <$sftp_eh>);
+          $res = 0;
+
+        } else {
+          if ($ENV{TEST_VERBOSE}) {
+            $errstr = join('', <$sftp_eh>);
+            print STDERR "Stderr: $errstr\n";
+          }
+
+          $res = 1;
+        }
+
+        $self->assert($res == 1, test_msg("Can't pwd on server: $errstr"));
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 300) };
     if ($@) {
       warn($@);
       exit 1;
@@ -6197,7 +6659,422 @@ sub ssh2_compress_s2c_zlib {
   unlink($log_file);
 }
 
-sub ssh2_auth_publickey_rsa {
+sub ssh2_auth_hostbased {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedHostKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_hostbased($user, $rsa_pub_key, $rsa_priv_key,
+          '127.0.0.1', $user)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("RSA hostbased authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_rsa_no_match_bug3493 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_subj_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("RSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_rsa_with_match_bug3493 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_subj_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+        "SFTPOptions MatchKeySubject",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      if ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
+        die("RSA publickey authentication succeeded unexpectly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_PUBLICKEY_UNVERIFIED';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_rsa2048 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -6333,7 +7210,422 @@ sub ssh2_auth_publickey_rsa {
   unlink($log_file);
 }
 
-sub ssh2_auth_publickey_dsa {
+sub ssh2_auth_publickey_rsa4096 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa4096_key');
+  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa4096_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa4096_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("RSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_rsa8192 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa8192_key');
+  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa8192_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa8192_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("RSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_rsa16384 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa16384_key');
+  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa16384_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa16384_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $timeout_idle = 15;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("RSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 5) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_dsa1024 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -6373,6 +7665,417 @@ sub ssh2_auth_publickey_dsa {
 
   my $dsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa_key');  my $dsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa_key.pub');
   my $dsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_dsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($dsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $dsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $dsa_pub_key, $dsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("DSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_dsa2048 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $dsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa2048_key');
+  my $dsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa2048_key.pub');
+  my $dsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_dsa2048_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($dsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $dsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $dsa_pub_key, $dsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("DSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_dsa4096 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $dsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa4096_key');
+  my $dsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa4096_key.pub');
+  my $dsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_dsa4096_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($dsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $dsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_publickey($user, $dsa_pub_key, $dsa_priv_key)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("DSA publickey authentication failed: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ssh2_auth_publickey_dsa8192 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $dsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa8192_key');
+  my $dsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_dsa8192_key.pub');
+  my $dsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_dsa8192_keys');
 
   my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
   unless (copy($dsa_rfc4716_key, $authorized_keys)) {
@@ -6912,7 +8615,7 @@ sub ssh2_auth_kbdint_failed_password_ok {
   unlink($log_file);
 }
 
-sub ssh2_rewrite_auth {
+sub ssh2_interop_scanner {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -6950,6 +8653,8 @@ sub ssh2_rewrite_auth {
   my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
   my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
 
+  my $banner = "SSH_Version_Mapper";
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
@@ -6964,15 +8669,6 @@ sub ssh2_rewrite_auth {
       'mod_delay.c' => {
         DelayEngine => 'off',
       },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap lowercase int:tolower',
-        'RewriteCondition %m USER',
-        'RewriteRule ^(.*)$ ${lowercase:$1}',
-      ],
 
       'mod_sftp.c' => [
         "SFTPEngine on",
@@ -7003,20 +8699,13 @@ sub ssh2_rewrite_auth {
   if ($pid) {
     eval {
       my $ssh2 = Net::SSH2->new();
+      $ssh2->banner($banner);
 
       sleep(1);
 
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      if ($ssh2->connect('127.0.0.1', $port)) {
+        die("Connect to SSH2 server succeeded unexpectedly");
       }
-
-      unless ($ssh2->auth_password(uc($user), $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      $ssh2->disconnect();
     };
 
     if ($@) {
@@ -7044,6 +8733,182 @@ sub ssh2_rewrite_auth {
   if ($ex) {
     die($ex);
   }
+
+  if (open(my $fh, "< $log_file")) {
+    my $ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /SSH2 scan from '(\S+)',/) {
+          my $text = $1;
+
+          if ($text eq $banner) {
+            $ok = 1;
+            last;
+          }
+      }
+    }
+
+    close($fh);
+
+    unless ($ok) {
+      die("SFTPLog message about scanner unexpectedly missing");
+    }
+
+  } else {
+    die("Can't read $log_file: $!");
+  }
+
+
+  unlink($log_file);
+}
+
+sub ssh2_interop_probe {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $banner = "Probe-Me";
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+      $ssh2->banner($banner);
+
+      sleep(1);
+
+      if ($ssh2->connect('127.0.0.1', $port)) {
+        die("Connect to SSH2 server succeeded unexpectedly");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $log_file")) {
+    my $ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /SSH2 probe from '(\S+)',/) {
+          my $text = $1;
+
+          if ($text eq $banner) {
+            $ok = 1;
+            last;
+          }
+      }
+    }
+
+    close($fh);
+
+    unless ($ok) {
+      die("SFTPLog message about scanner unexpectedly missing");
+    }
+
+  } else {
+    die("Can't read $log_file: $!");
+  }
+
 
   unlink($log_file);
 }
@@ -8338,10 +10203,12 @@ sub sftp_without_auth {
 
       my $expected;
 
-      $expected = 'LIBSSH2_ERROR_CHANNEL_FAILURE';
-      $self->assert($expected eq $err_name,
-        test_msg("Expected '$expected', got '$err_name'"));
-      
+      # The expected error messages depend on the version of libssh2 being
+      # used.
+      $self->assert($err_name eq 'LIBSSH2_ERROR_INVAL' or
+                    $err_name eq 'LIBSSH2_ERROR_CHANNEL_FAILURE',
+        test_msg("Expected 'LIBSSH2_ERROR_INVAL' or 'LIBSSH2_ERROR_CHANNEL_FAILURE', got '$err_name'"));
+
       $ssh2->disconnect();
     };
 
@@ -8500,6 +10367,7 @@ sub sftp_stat {
       $self->assert($expected == $file_gid,
         test_msg("Expected '$expected', got '$file_gid'"));
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -8667,6 +10535,7 @@ sub sftp_fstat {
       $self->assert($expected == $file_gid,
         test_msg("Expected '$expected', got '$file_gid'"));
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -8781,6 +10650,8 @@ sub sftp_lstat {
     die("Can't symlink $test_symlink to $test_file: $!");
   }
 
+  my $test_symlink_size = (lstat($test_symlink))[7];
+
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
   # to the parent.
@@ -8826,7 +10697,7 @@ sub sftp_lstat {
 
       my $expected;
 
-      $expected = $test_size;
+      $expected = $test_symlink_size;
       my $file_size = $attrs->{size};
       $self->assert($expected == $file_size,
         test_msg("Expected '$expected', got '$file_size'"));
@@ -8841,6 +10712,7 @@ sub sftp_lstat {
       $self->assert($expected == $file_gid,
         test_msg("Expected '$expected', got '$file_gid'"));
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -8989,6 +10861,7 @@ sub sftp_setstat {
         die("FXP_STAT sftp.conf failed: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       my $expected;
@@ -9152,6 +11025,7 @@ sub sftp_setstat_sgid {
       $self->assert($expected eq $file_mode,
         test_msg("Expected '$expected', got '$file_mode'"));
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -9309,6 +11183,7 @@ sub sftp_fsetstat {
         die("FXP_STAT sftp.conf failed: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       my $expected;
@@ -9465,6 +11340,7 @@ sub sftp_realpath {
       $self->assert($expected eq $cwd,
         test_msg("Expected '$expected', got '$cwd'"));
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -9620,6 +11496,1208 @@ sub sftp_open_enoent_bug3345 {
       $self->assert($expected == $err_code,
         test_msg("Expected $expected, got $err_code"));
 
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_trunc_bug3449 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD" x 1024;
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_size = (stat($test_file))[7];
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $attrs = $sftp->stat('test.txt', 0);
+      unless ($attrs) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("LSTAT test.txt failed: [$err_name] ($err_code)");
+      }
+
+      my $expected;
+
+      $expected = $test_size;
+      my $file_size = $attrs->{size};
+      $self->assert($expected == $file_size,
+        test_msg("Expected '$expected', got '$file_size'"));
+
+      $expected = $<;
+      my $file_uid = $attrs->{uid};
+      $self->assert($expected == $file_uid,
+        test_msg("Expected '$expected', got '$file_uid'"));
+
+      $expected = $(;
+      my $file_gid = $attrs->{gid};
+      $self->assert($expected == $file_gid,
+        test_msg("Expected '$expected', got '$file_gid'"));
+
+      my $orig_size = $attrs->{size};
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_TRUNC);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("OPEN test.txt failed: [$err_name] ($err_code)");
+      }
+
+      $attrs = $sftp->stat('test.txt', 0);
+      unless ($attrs) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("LSTAT test.txt failed: [$err_name] ($err_code)");
+      }
+
+      $expected = 0;
+      $file_size = $attrs->{size};
+      $self->assert($expected == $file_size,
+        test_msg("Expected '$expected', got '$file_size'"));
+
+      # To issue a CLOSE, we need to destroy the filehandle
+      $fh = undef;
+
+      $attrs = $sftp->stat('test.txt', 0);
+      unless ($attrs) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("LSTAT test.txt failed: [$err_name] ($err_code)");
+      }
+
+      $expected = 0;
+      $file_size = $attrs->{size};
+      $self->assert($expected == $file_size,
+        test_msg("Expected '$expected', got '$file_size'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_creat {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_CREAT, 0640);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("OPEN test.txt failed: [$err_name] ($err_code)");
+      }
+
+      # To issue a CLOSE, we need to destroy the filehandle
+      $fh = undef;
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_creat_excl {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # This should fail, since the file already exists
+      my $fh = $sftp->open('test.txt', O_CREAT|O_EXCL, 0640);
+      if ($fh) {
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      my $expected;
+
+      $expected = 'SSH_FX_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      # Now remove that file, and try again.
+      unlink($test_file);
+
+      $fh = $sftp->open('test.txt', O_CREAT|O_EXCL, 0640);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("OPEN test.txt failed: [$err_name] ($err_code)");
+      }
+
+      # To issue a CLOSE, we need to destroy the filehandle
+      $fh = undef;
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_append_bug3450 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+    AllowStoreRestart => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_size = (stat($test_file))[7];
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_APPEND);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("OPEN test.txt failed: [$err_name] ($err_code)");
+      }
+
+      unless ($fh->write("ABCD")) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("WRITE test.txt failed: [$err_name] ($err_code)");
+      }
+
+      # To issue a CLOSE, we need to destroy the filehandle
+      $fh = undef;
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file does not exist as expected");
+      }
+
+      my $new_size = (stat($test_file))[7];
+      my $expected_size = $test_size + 4;
+
+      $self->assert($expected_size == $new_size,
+        test_msg("Expected $expected_size, got $new_size"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_rdonly {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+    AllowStoreRestart => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Set write-only permissions
+  unless (chmod(0222, $test_file)) {
+    die("Can't set perms on $test_file to 0222: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      if ($fh) {
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      my $expected;
+
+      $expected = 'SSH_FX_PERMISSION_DENIED';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_wronly {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+    AllowStoreRestart => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Set read-only permissions
+  unless (chmod(0444, $test_file)) {
+    die("Can't set perms on $test_file to 0444: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY);
+      if ($fh) {
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      my $expected;
+
+      $expected = 'SSH_FX_PERMISSION_DENIED';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_open_rdwr {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    AllowOverwrite => 'on',
+    AllowStoreRestart => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Set execute-only permissions
+  unless (chmod(0111, $test_file)) {
+    die("Can't set perms on $test_file to 0111: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDWR);
+      if ($fh) {
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      my $expected;
+
+      $expected = 'SSH_FX_PERMISSION_DENIED';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -9767,8 +12845,168 @@ sub sftp_upload {
         print $fh "ABCD" x 8192;
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_upload_with_compression {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPCompression on",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      my $comp = 'zlib';
+      $ssh2->method('comp_cs', $comp);
+      $ssh2->method('comp_sc', $comp);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_CREAT|O_TRUNC, 0644);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $count = 20;
+      for (my $i = 0; $i < $count; $i++) {
+        print $fh "ABCD" x 8192;
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -9914,8 +13152,11 @@ sub sftp_upload_zero_len_file {
         die("Can't open test.txt: [$err_name] ($err_code)");
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -10112,8 +13353,11 @@ sub sftp_upload_largefile {
 
       close($test_rfh);
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $test_wfh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -10297,8 +13541,11 @@ sub sftp_upload_device_full {
       # This means that, for now, you have to double-check the generated
       # logs to make sure that mod_sftp is sending the correct error/response.
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -10453,6 +13700,7 @@ sub sftp_upload_fifo_bug3312 {
       $self->assert($expected eq $err_name,
         test_msg("Expected '$expected', got '$err_name'"));
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -10614,8 +13862,256 @@ sub sftp_upload_fifo_bug3313 {
       }
 
       $fh = undef;
-
+      $sftp = undef;
       $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_ext_upload_bug3550 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $src_file = File::Spec->rel2abs('t/etc/modules/mod_sftp/bug3550.php');
+
+  # Calculate the MD5 checksum of this file, for comparison with the uploaded
+  # file.
+  my $ctx = Digest::MD5->new();
+  my $expected_md5;
+
+  if (open(my $fh, "< $src_file")) {
+    binmode($fh);
+    $ctx->addfile($fh);
+    $expected_md5 = $ctx->hexdigest();
+    close($fh);
+
+  } else {
+    die("Can't read $src_file: $!");
+  }
+
+  my $expected_sz = (stat($src_file))[7];
+ 
+  my $dst_file = File::Spec->rel2abs("$tmpdir/test.dat");
+
+  my $batch_file = File::Spec->rel2abs("$tmpdir/sftp-batch.txt");
+  if (open(my $fh, "> $batch_file")) {
+    print $fh "put -P $src_file $dst_file\n";
+
+    unless (close($fh)) {
+      die("Can't write $batch_file: $!");
+    }
+
+  } else {
+    die("Can't open $batch_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+
+        "SFTPCiphers aes256-ctr aes192-ctr aes128-ctr",
+        "SFTPDigests hmac-sha1 hmac-ripemd160",
+
+        # Bug#3551 requires that mod_sftp support compression, and that
+        # the client use compression for the uploads.
+        "SFTPCompression delayed",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'sftp',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        '-oCompression=yes',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        '-vvv',
+        '-b',
+        "$batch_file",
+        "$user\@127.0.0.1",
+      );
+
+      my $sftp_rh = IO::Handle->new();
+      my $sftp_wh = IO::Handle->new();
+      my $sftp_eh = IO::Handle->new();
+
+      $sftp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $sftp_pid = open3($sftp_wh, $sftp_rh, $sftp_eh, @cmd);
+      waitpid($sftp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$sftp_eh>);
+        $res = 0;
+
+      } else {
+        if ($ENV{TEST_VERBOSE}) {
+          $errstr = join('', <$sftp_eh>);
+          print STDERR "Stderr: $errstr\n";
+        }
+
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't upload $src_file to server: $errstr");
+      }
+
+      unless (-f $dst_file) {
+        die("File '$dst_file' does not exist as expected");
+      }
+
+      $ctx->reset();
+      my $md5;
+
+      if (open(my $fh, "< $dst_file")) {
+        binmode($fh);
+        $ctx->addfile($fh);
+        $md5 = $ctx->hexdigest();
+        close($fh);
+
+      } else {
+        die("Can't read $dst_file: $!");
+      }
+
+      my $sz = (stat($dst_file))[7];
+
+      $self->assert($expected_sz == $sz,
+        test_msg("Expected $expected_sz, got $sz"));
+
+      $self->assert($expected_md5 eq $md5,
+        test_msg("Expected '$expected_md5', got '$md5'"));
     };
 
     if ($@) {
@@ -10784,8 +14280,204 @@ sub sftp_download {
         $res = $fh->read($buf, 8192);
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $self->assert($test_sz == $size,
+        test_msg("Expected $test_sz, got $size"));
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_download_with_compression {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    my $count = 20;
+    for (my $i = 0; $i < $count; $i++) {
+      print $fh "ABCD" x 8192;
+    }
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_sz = (stat($test_file))[7];
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPCompression on",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      my $comp = 'zlib';
+      $ssh2->method('comp_cs', $comp);
+      $ssh2->method('comp_sc', $comp);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf;
+      my $size = 0;
+
+      my $res = $fh->read($buf, 8192);
+      if ($res < 0) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't read test.txt: [$err_name] ($err_code)");
+      }
+
+      while ($res) {
+        $size += $res;
+
+        $res = $fh->read($buf, 8192);
+        if ($res < 0) {
+          my ($err_code, $err_name) = $sftp->error();
+          die("Can't read test.txt: [$err_name] ($err_code)");
+        }
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $self->assert($test_sz == $size,
         test_msg("Expected $test_sz, got $size"));
@@ -10954,8 +14646,11 @@ sub sftp_download_zero_len_file {
         $res = $fh->read($buf, 8192);
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $self->assert($test_sz == $size,
         test_msg("Expected $test_sz, got $size"));
@@ -11156,8 +14851,11 @@ sub sftp_download_largefile {
         die("Can't write $test_file2: $!");
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $test_rfh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -11331,10 +15029,266 @@ sub sftp_download_fifo_bug3314 {
         $res = $fh->read($buf, 8192);
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
 
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
       $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_ext_download_bug3550 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $orig_file = File::Spec->rel2abs('t/etc/modules/mod_sftp/bug3550.php');
+
+  # Calculate the MD5 checksum of this file, for comparison with the downloaded
+  # file.
+  my $ctx = Digest::MD5->new();
+  my $expected_md5;
+
+  if (open(my $fh, "< $orig_file")) {
+    binmode($fh);
+    $ctx->addfile($fh);
+    $expected_md5 = $ctx->hexdigest();
+    close($fh);
+
+  } else {
+    die("Can't read $orig_file: $!");
+  }
+
+  my $expected_sz = (stat($orig_file))[7];
+ 
+  my $src_file = File::Spec->rel2abs("$tmpdir/test.dat");
+  unless (copy($orig_file, $src_file)) {
+    die("Can't copy $orig_file to $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/test2.dat");
+
+  my $batch_file = File::Spec->rel2abs("$tmpdir/sftp-batch.txt");
+  if (open(my $fh, "> $batch_file")) {
+    print $fh "get -P $src_file $dst_file\n";
+
+    unless (close($fh)) {
+      die("Can't write $batch_file: $!");
+    }
+
+  } else {
+    die("Can't open $batch_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+
+        "SFTPCiphers aes256-ctr aes192-ctr aes128-ctr",
+        "SFTPDigests hmac-sha1 hmac-ripemd160",
+
+        # Bug#3551 requires that mod_sftp support compression, and that
+        # the client use compression for the uploads.
+        "SFTPCompression delayed",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'sftp',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        '-oCompression=yes',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        '-vvv',
+        '-b',
+        "$batch_file",
+        "$user\@127.0.0.1",
+      );
+
+      my $sftp_rh = IO::Handle->new();
+      my $sftp_wh = IO::Handle->new();
+      my $sftp_eh = IO::Handle->new();
+
+      $sftp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $sftp_pid = open3($sftp_wh, $sftp_rh, $sftp_eh, @cmd);
+      waitpid($sftp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$sftp_eh>);
+        $res = 0;
+
+      } else {
+        if ($ENV{TEST_VERBOSE}) {
+          $errstr = join('', <$sftp_eh>);
+          print STDERR "Stderr: $errstr\n";
+        }
+
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't download $src_file from server: $errstr");
+      }
+
+      unless (-f $dst_file) {
+        die("File '$dst_file' does not exist as expected");
+      }
+
+      $ctx->reset();
+      my $md5;
+
+      if (open(my $fh, "< $dst_file")) {
+        binmode($fh);
+        $ctx->addfile($fh);
+        $md5 = $ctx->hexdigest();
+        close($fh);
+
+      } else {
+        die("Can't read $dst_file: $!");
+      }
+
+      my $sz = (stat($dst_file))[7];
+
+      $self->assert($expected_sz == $sz,
+        test_msg("Expected $expected_sz, got $sz"));
+
+      $self->assert($expected_md5 eq $md5,
+        test_msg("Expected '$expected_md5', got '$md5'"));
     };
 
     if ($@) {
@@ -11489,10 +15443,14 @@ sub sftp_readdir {
         'sftp.passwd' => 1,
         'sftp.pid' => 1,
         'sftp.scoreboard' => 1,
+        'sftp.scoreboard.lck' => 1,
       };
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -11695,8 +15653,11 @@ sub sftp_readdir_symlink_dir {
         '..' => 1,
       };
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -11867,11 +15828,218 @@ sub sftp_mkdir {
         die("Can't mkdir testdir: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       unless (-d $test_dir) {
         die("$test_dir directory does not exist as expected");
       }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_mkdir_readdir_bug3481 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/testdir");
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # See http://forums.proftpd.org/smf/index.php/topic,4759.0.html
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->mkdir('testdir');
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't mkdir testdir: [$err_name] ($err_code)");
+      }
+
+      # Create 10 files in the sub directory
+      my $count = 10;
+      for (my $i = 0; $i < $count; $i++) {
+        my $test_file = 'testdir/test_' . sprintf("%03s", $i);
+
+        my $fh = $sftp->open($test_file, O_CREAT, 0644); 
+        unless ($fh) {
+          my ($err_code, $err_name) = $sftp->error();
+          die("OPEN $test_file failed: [$err_name] ($err_code)");
+        }
+
+        $fh = undef;
+      }
+
+      # Now read the test directory twice
+      my $dir = $sftp->opendir('testdir');
+      unless ($dir) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("OPENDIR testdir failed: [$err_name] ($err_code)");
+      }
+
+      my $files1 = {};
+
+      my $file = $dir->read();
+      while ($file) {
+        $files1->{$file->{name}} = $file;
+        $file = $dir->read();
+      }
+
+      $dir = undef;
+
+      $dir = $sftp->opendir('testdir');
+      unless ($dir) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("OPENDIR testdir failed: [$err_name] ($err_code)");
+      }
+
+      my $files2 = {};
+
+      $file = $dir->read();
+      while ($file) {
+        $files2->{$file->{name}} = $file;
+        $file = $dir->read();
+      }
+
+      $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      # Make sure that the same paths were returned in the directory listings
+      foreach my $file (keys(%$files1)) {
+        unless (defined($files2->{$file})) {
+          die("File $file unexpectedly missing from second READDIR");
+        }
+      }
+
+      foreach my $file (keys(%$files2)) {
+        unless (defined($files1->{$file})) {
+          die("File $file unexpectedly missing from first READDIR");
+        }
+      }
+
+      $ssh2->disconnect();
     };
 
     if ($@) {
@@ -12013,10 +16181,175 @@ sub sftp_rmdir {
         die("Can't rmdir testdir: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       if (-d $test_dir) {
         die("$test_dir directory exists unexpectedly");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_rmdir_dir_not_empty {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/testdir");
+  mkpath($test_dir);
+
+  my $test_file = File::Spec->rel2abs("$test_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->rmdir('testdir');
+      if ($res) {
+        die("RMDIR testdir succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      my $expected = 'SSH_FX_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      unless (-d $test_dir) {
+        die("$test_dir directory does not exist as expected");
       }
     };
 
@@ -12168,6 +16501,7 @@ sub sftp_remove {
         die("Can't remove test.txt: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       if (-f $test_file) {
@@ -12325,6 +16659,7 @@ sub sftp_rename {
         die("Can't rename test.txt to test2.txt: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       if (-f $test_file) {
@@ -12486,11 +16821,329 @@ sub sftp_symlink {
         die("Can't symlink test.lnk to test.txt: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       unless (-l $test_symlink) {
         die("$test_symlink symlink does not exist as expected");
       }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_symlink_dst_already_exists {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD" x 8192;
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_symlink = File::Spec->rel2abs("$tmpdir/test.lnk");
+  if (open(my $fh, "> $test_symlink")) {
+    close($fh);
+
+  } else {
+    die("Can't open $test_symlink: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->symlink('test.txt', 'test.lnk');
+      if ($res) {
+        die("Symlink test.lnk to test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      my $expected = 'SSH_FX_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $self->assert(!-l $test_symlink,
+        test_msg("$test_symlink symlink exists unexpectedly"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_symlink_src_does_not_exist {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  my $test_symlink = File::Spec->rel2abs("$tmpdir/test.lnk");
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->symlink('test.txt', 'test.lnk');
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Symlink test.lnk to test.txt failed: [$err_name] ($err_code)");
+      }
+
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      $self->assert(-l $test_symlink,
+        test_msg("$test_symlink symlink does not exist as expected"));
     };
 
     if ($@) {
@@ -12646,6 +17299,7 @@ sub sftp_readlink {
         die("Can't readlink test.lnk: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       $self->assert($test_file eq $path,
@@ -12806,6 +17460,7 @@ sub sftp_config_allowoverwrite {
       }
 
       my ($err_code, $err_name) = $sftp->error();
+      $sftp = undef;
       $ssh2->disconnect();
 
       my $expected = 'SSH_FX_PERMISSION_DENIED';
@@ -12822,6 +17477,327 @@ sub sftp_config_allowoverwrite {
 
   } else {
     eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_allowstorerestart {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    Directory => {
+      '~' => {
+        AllowOverwrite => 'on',
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_APPEND);
+      if ($fh) {
+        $fh = undef;
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      my $expected = 'SSH_FX_PERMISSION_DENIED';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_client_alive {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_idle = 30;
+
+  my $client_alive_max = 5;
+  my $client_alive_interval = 1;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPClientAlive $client_alive_max $client_alive_interval",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # We have to tell Net::SSH2 to actually _do_ something, in order to have
+      # it process any messages it may have received from mod_sftp, like
+      # the client alive checks.
+
+      for (my $i = 0; $i < 10; $i++) {
+        $sftp->realpath('.');
+
+        my $delay = $client_alive_interval + 1;
+        sleep($delay);
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 2) };
     if ($@) {
       warn($@);
       exit 1;
@@ -12956,6 +17932,7 @@ sub sftp_config_client_match {
       # via the Net::SSH2 methods (yet).  So we have to rely on the
       # generated TraceLog.
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -12980,6 +17957,150 @@ sub sftp_config_client_match {
   server_stop($pid_file);
 
   $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_createhome {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
+  my $uid = 500;
+  my $gid = 500;
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $home_gid = 777;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    CreateHome => "on 711 homegid $home_gid",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  # Check that the home directory exists, and that the parent directory
+  # of $tmpdir/foo is owned by UID/GID root.
+  $self->assert(-d $home_dir,
+    test_msg("Expected $home_dir directory to exist"));
+
+  my ($uid_owner, $gid_owner) = (stat($home_dir))[4,5];
+
+  my $expected = $uid;
+  $self->assert($expected == $uid_owner,
+    test_msg("Expected $expected, got $uid_owner"));
+
+  $expected = $home_gid;
+  $self->assert($expected == $gid_owner,
+    test_msg("Expected $expected, got $gid_owner"));
 
   if ($ex) {
     die($ex);
@@ -13127,8 +18248,11 @@ sub sftp_config_defaultchdir {
         'test.txt' => 1,
       };
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -13236,7 +18360,7 @@ sub sftp_config_deleteabortedstores {
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
     TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+    Trace => 'DEFAULT:20 ssh2:20 sftp:20 scp:20',
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
@@ -13315,21 +18439,11 @@ sub sftp_config_deleteabortedstores {
 
       # Explicitly close the channel before we have closed the file, to
       # simulate an "aborted" transfer.
+      $sftp = undef;
       $ssh2->disconnect();
 
       # Give the server a little time to do its end-of-session thing.
       sleep(1);
-
-      # Check that the HiddenStores file is gone, and the requested
-      # file does NOT exist.
-
-      if (-f $hidden_file) {
-        die("File $hidden_file exists unexpectedly");
-      }
-
-      if (-f $test_file) {
-        die("File $test_file does not exist as expected");
-      }
     };
 
     if ($@) {
@@ -13349,14 +18463,23 @@ sub sftp_config_deleteabortedstores {
     exit 0;
   }
 
+  if ($ex) {
+    die($ex);
+  }
+
   # Stop server
   server_stop($pid_file);
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
+  # Check that the HiddenStores file is gone, and the requested
+  # file does NOT exist.
+
+  $self->assert(!-f $hidden_file,
+    test_msg("File $hidden_file exists unexpectedly"));
+
+  $self->assert(!-f $test_file,
+    test_msg("File $test_file does not exist as expected"));
 
   unlink($log_file);
 }
@@ -13489,10 +18612,14 @@ sub sftp_config_dirfakemode {
         'sftp.passwd' => '0310',
         'sftp.pid' => '0310',
         'sftp.scoreboard' => '0310',
+        'sftp.scoreboard.lck' => '0310',
       };
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -13687,13 +18814,16 @@ sub sftp_config_hiddenstores {
 
       print $fh "ABCD\n" x 32;
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
 
       # Check that the HiddenStores file is gone, and the requested
       # file exists.
-
-      $ssh2->disconnect();
 
       if (-f $hidden_file) {
         die("File $hidden_file exists unexpectedly");
@@ -13733,7 +18863,7 @@ sub sftp_config_hiddenstores {
   unlink($log_file);
 }
 
-sub sftp_config_hidefiles {
+sub sftp_config_hidefiles_abs_path {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -13877,8 +19007,432 @@ sub sftp_config_hidefiles {
         'test.txt' => 1,
       };
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      my $ok = 1;
+      my $mismatch;
+
+      my $seen = [];
+      foreach my $name (keys(%$res)) {
+        push(@$seen, $name);
+
+        unless (defined($expected->{$name})) {
+          $mismatch = $name;
+          $ok = 0;
+          last;
+        }
+      }
+
+      unless ($ok) {
+        die("Unexpected name '$mismatch' appeared in READDIR data")
+      }
+
+      # Now remove from $expected all of the paths we saw; if there are
+      # any entries remaining in $expected, something went wrong.
+      foreach my $name (@$seen) {
+        delete($expected->{$name});
+      }
+
+      my $remaining = scalar(keys(%$expected));
+      $self->assert(0 == $remaining,
+        test_msg("Expected 0, got $remaining"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_hidefiles_deferred_path_bug3470 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make the perms on the file such that the user can't read it
+  unless (chmod(0311, $test_file)) {
+    die("Can't chmod $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20 directory:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    Directory => {
+      '~' => {
+        HideFiles => '^(\.|sftp)',
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # Issue a READDIR.  Due to HideFiles, we should only see
+      # the 'test.txt' file in the list.
+
+      my $dir = $sftp->opendir('.');
+      unless ($dir) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open directory '.': [$err_name] ($err_code)");
+      }
+
+      my $res = {};
+
+      my $file = $dir->read();
+      while ($file) {
+        $res->{$file->{name}} = $file;
+        $file = $dir->read();
+      }
+
+      my $expected = {
+        'test.txt' => 1,
+      };
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
+      $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      my $ok = 1;
+      my $mismatch;
+
+      my $seen = [];
+      foreach my $name (keys(%$res)) {
+        push(@$seen, $name);
+
+        unless (defined($expected->{$name})) {
+          $mismatch = $name;
+          $ok = 0;
+          last;
+        }
+      }
+
+      unless ($ok) {
+        die("Unexpected name '$mismatch' appeared in READDIR data")
+      }
+
+      # Now remove from $expected all of the paths we saw; if there are
+      # any entries remaining in $expected, something went wrong.
+      foreach my $name (@$seen) {
+        delete($expected->{$name});
+      }
+
+      my $remaining = scalar(keys(%$expected));
+      $self->assert(0 == $remaining,
+        test_msg("Expected 0, got $remaining"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_hidefiles_deferred_path_chroot_bug3470 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make the perms on the file such that the user can't read it
+  unless (chmod(0311, $test_file)) {
+    die("Can't chmod $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20 directory:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    DefaultRoot => '~',
+
+    Directory => {
+      '~' => {
+        HideFiles => '^(\.|sftp)',
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # Issue a READDIR.  Due to HideFiles, we should only see
+      # the 'test.txt' file in the list.
+
+      my $dir = $sftp->opendir('.');
+      unless ($dir) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open directory '.': [$err_name] ($err_code)");
+      }
+
+      my $res = {};
+
+      my $file = $dir->read();
+      while ($file) {
+        $res->{$file->{name}} = $file;
+        $file = $dir->read();
+      }
+
+      my $expected = {
+        'test.txt' => 1,
+      };
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
+      $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -14096,10 +19650,14 @@ sub sftp_config_hidenoaccess {
         'sftp.passwd' => 1,
         'sftp.pid' => 1,
         'sftp.scoreboard' => 1,
+        'sftp.scoreboard.lck' => 1,
       };
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -14130,6 +19688,157 @@ sub sftp_config_hidenoaccess {
       my $remaining = scalar(keys(%$expected));
       $self->assert(0 == $remaining,
         test_msg("Expected 0, got $remaining"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_max_clients_per_host_bug3630 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+
+  my $max_clients_per_host = 1;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    MaxClientsPerHost => $max_clients_per_host,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  if (open(my $fh, ">> $config_file")) {
+    my $sftp_port = $port + 2;
+
+    print $fh <<EOC;
+<IfModule mod_sftp.c>
+ <VirtualHost 0.0.0.0>
+    SFTPEngine on
+    SFTPLog $log_file
+    SFTPHostKey $rsa_host_key
+    SFTPHostKey $dsa_host_key
+
+    Port $sftp_port
+  </VirtualHost>
+</IfModule>
+EOC
+    unless (close($fh)) {
+      die("Can't write $config_file: $!");
+    }
+
+  } else {
+    die("Can't open $config_file: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # First client should be able to connect and log in...
+      my $client1 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client1->login($user, $passwd);
+
+      # ...but the second client should be able to connect, but not login.
+      my $client2 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      eval { $client2->login($user, $passwd) };
+      unless ($@) {
+        die("Login succeeded unexpectedly");
+      }
+
+      my $resp_code = $client2->response_code();
+
+      my $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
+
+      $client1->quit();
     };
 
     if ($@) {
@@ -14429,6 +20138,9 @@ sub sftp_config_pathdenyfilter {
       my $expected = 'SSH_FX_PERMISSION_DENIED';
       $self->assert($expected eq $err_name,
         test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
     };
 
     if ($@) {
@@ -14440,6 +20152,384 @@ sub sftp_config_pathdenyfilter {
 
   } else {
     eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_rekey_short_timeout_failed {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD" x (1024 * 1024);
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_sz = (stat($test_file))[7];
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_idle = 20;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPRekey required 3600 1 1",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf;
+      my $size = 0;
+      my $buflen = (1024 * 250);
+
+      my $res = $fh->read($buf, $buflen);
+      while ($res) {
+        $size += $res;
+        sleep(1);
+
+        $res = $fh->read($buf, $buflen);
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      # The only way we really have, given Net::SSH2's API, to detect
+      # whether the server disconnected us in mid-download is to check the
+      # number of bytes we downloaded, to see if it's the full size.
+      #
+      # With such a short rekey timeout (1 sec), it's not expected that we
+      # have all of the bytes.
+      $self->assert($test_sz != $size,
+        test_msg("Expected !$test_sz, got $size"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 3) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_rekey_long_timeout_ok {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD" x (1024 * 1024);
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_sz = (stat($test_file))[7];
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_idle = 20;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPRekey required 3600 1 15",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf;
+      my $size = 0;
+      my $buflen = (1024 * 250);
+
+      my $res = $fh->read($buf, $buflen);
+      while ($res) {
+        $size += $res;
+        sleep(1);
+
+        $res = $fh->read($buf, $buflen);
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      # The only way we really have, given Net::SSH2's API, to detect
+      # whether the server disconnected us in mid-download is to check the
+      # number of bytes we downloaded, to see if it's the full size.
+      #
+      # With such long rekey timeout (15 sec), it is expected that we have
+      # all of the bytes.
+      $self->assert($test_sz == $size,
+        test_msg("Expected $test_sz, got $size"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 3) };
     if ($@) {
       warn($@);
       exit 1;
@@ -14589,7 +20679,1132 @@ sub sftp_config_rootlogin {
   unlink($log_file);
 }
 
-sub sftp_config_ignore_upload_perms {
+sub sftp_config_protocols {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "Protocols scp",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      if ($sftp) {
+        die("SFTP subsystem started unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_CHANNEL_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_timeoutidle {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_idle = 5;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutIdle => $timeout_idle,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(2);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # Wait for more than the idle period
+      sleep($timeout_idle + 2);
+
+      my $sftp = $ssh2->sftp();
+      if ($sftp) {
+        die("SFTP subsystem started unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_CHANNEL_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      # Try again, this time hitting the TimeoutIdle in the middle of an
+      # SFTP session
+
+      $ssh2 = Net::SSH2->new();
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # Wait for more than the idle period
+      sleep($timeout_idle + 2);
+
+      my $cwd = $sftp->realpath('.');
+      if ($cwd) {
+        die("FXP_REALPATH succeeded unexpectedly");
+      }
+
+      ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      $expected = 'LIBSSH2_ERROR_SOCKET_TIMEOUT';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_timeoutlogin {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_login = 2;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutLogin => $timeout_login,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # Wait for more than the login period
+      sleep($timeout_login + 2);
+
+      if ($ssh2->auth_password($user, $passwd)) {
+        die("SSH2 login succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_TIMEOUT';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_timeoutnotransfer_download {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_noxfer = 2;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutNoTransfer => $timeout_noxfer,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $cwd = $sftp->realpath('.');
+      unless ($cwd) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't get real path for '.': [$err_name] ($err_code)");
+      }
+
+      # Wait for more than the no-transfer period
+      sleep($timeout_noxfer + 2);
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      if ($fh) {
+        die("FXP_OPEN succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_SOCKET_NONE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_timeoutnotransfer_readdir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_noxfer = 2;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutNoTransfer => $timeout_noxfer,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $cwd = $sftp->realpath('.');
+      unless ($cwd) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't get real path for '.': [$err_name] ($err_code)");
+      }
+
+      # Wait for more than the no-transfer period
+      sleep($timeout_noxfer + 2);
+
+      my $dir = $sftp->opendir('.');
+      if ($dir) {
+        die("FXP_OPENDIR succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_SOCKET_NONE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_timeoutnotransfer_upload {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_noxfer = 2;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutNoTransfer => $timeout_noxfer,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $cwd = $sftp->realpath('.');
+      unless ($cwd) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't get real path for '.': [$err_name] ($err_code)");
+      }
+
+      # Wait for more than the no-transfer period
+      sleep($timeout_noxfer + 2);
+
+      my $fh = $sftp->open('test.txt', O_CREAT|O_WRONLY);
+      if ($fh) {
+        die("FXP_OPEN succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_SOCKET_NONE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_timeoutstalled {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $timeout_stalled = 2;
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCDefgh" x 32768;
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutStalled => $timeout_stalled,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf;
+      my $size = 0;
+
+      my $res = $fh->read($buf, 8192);
+      while ($res) {
+        $size += $res;
+
+        # Sleep for longer than the TimeoutStalled period
+        sleep($timeout_stalled + 2);
+
+        $res = $fh->read($buf, 8192);
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_SOCKET_NONE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_ignore_upload_perms_upload {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -14708,8 +21923,11 @@ sub sftp_config_ignore_upload_perms {
         print $fh "ABCD" x 8192;
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -14746,6 +21964,1487 @@ sub sftp_config_ignore_upload_perms {
   $self->assert($expected == $perms,
     test_msg("Expected '$expected', got '$perms'"));
   
+  unlink($log_file);
+}
+
+sub sftp_config_ignore_upload_perms_mkdir_bug3680 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/testdir");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPOptions IgnoreSFTPUploadPerms",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->mkdir('testdir', 0511);
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't mkdir testdir: [$err_name] ($err_code)");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unless (-d $test_dir) {
+    die("$test_dir directory does not exist as expected");
+  }
+
+  my $perms = ((stat($test_dir))[2] & 07777);
+
+  my $expected = 0755;
+  $self->assert($expected == $perms,
+    test_msg("Expected '$expected', got '$perms'"));
+  
+  unlink($log_file);
+}
+
+sub sftp_config_ignore_set_perms_bug3599 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+ 
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPOptions IgnoreSFTPSetPerms",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->setstat('test.txt',
+        mode => 0666,
+      );
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't setstat sftp.conf: [$err_name] ($err_code)");
+      }
+
+      my $attrs = $sftp->stat('test.txt');
+      unless ($attrs) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_STAT test.txt failed: [$err_name] ($err_code)");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  my $perms = ((stat($test_file))[2] & 07777);
+
+  my $expected = 0644;
+  $self->assert($expected == $perms,
+    test_msg("Expected '$expected', got '$perms'"));
+  
+  unlink($log_file);
+}
+
+sub sftp_config_ignore_set_times_bug3706 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+ 
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my ($test_atime, $test_mtime) = (stat($test_file))[8, 9];
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+
+        "SFTPOptions IgnoreSFTPSetTimes",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->setstat('test.txt',
+        atime => 0,
+        mtime => 0,
+      );
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't setstat test.txt: [$err_name] ($err_code)");
+      }
+
+      my $attrs = $sftp->stat('test.txt');
+      unless ($attrs) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_STAT test.txt failed: [$err_name] ($err_code)");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  my ($new_atime, $new_mtime) = (stat($test_file))[8, 9];
+
+  my $expected = $test_atime;
+  $self->assert($expected == $new_atime,
+    test_msg("Expected atime $expected, got $new_atime"));
+
+  $expected = $test_mtime;
+  $self->assert($expected == $new_mtime,
+    test_msg("Expected mtime $expected, got $new_mtime"));
+  
+  unlink($log_file);
+}
+
+sub sftp_config_userowner {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $owner = 'proftpd2';
+  my $owner_uid = 7777;
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_user_write($auth_user_file, $owner, 'none', $owner_uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    RootRevoke => 'off',
+
+    Directory => {
+      '~' => {
+        UserOwner => $owner,
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_CREAT|O_TRUNC, 0644);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $count = 20;
+      for (my $i = 0; $i < $count; $i++) {
+        print $fh "ABCD" x 8192;
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file does not exist as expected");
+      }
+
+      my $owning_uid = (stat($test_file))[4];
+      $self->assert($owner_uid == $owning_uid,
+        test_msg("Expected $owner_uid, got $owning_uid"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_groupowner {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $owner = 'proftpd2';
+  my $owner_gid = 7777;
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $owner, $owner_gid, 'foo');
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    RootRevoke => 'off',
+
+    Directory => {
+      '~' => {
+        GroupOwner => $owner,
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_CREAT|O_TRUNC, 0644);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $count = 20;
+      for (my $i = 0; $i < $count; $i++) {
+        print $fh "ABCD" x 8192;
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file does not exist as expected");
+      }
+
+      my $owning_gid = (stat($test_file))[5];
+      $self->assert($owner_gid == $owning_gid,
+        test_msg("Expected $owner_gid, got $owning_gid"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_groupowner_suppl_group_norootprivs {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my ($config_user, $config_group) = config_get_identity();
+ 
+  my $members = [split(' ', (getgrnam($config_group))[3])];
+  if (scalar(@$members) < 2) {
+    print STDERR " + unable to run 'sftp_config_groupowner_suppl_group_norootprivs' test without current user belonging to multiple groups, skipping\n";
+    return;
+  }
+
+  my ($uid, $gid) = (getpwnam($members->[0]))[2,3];
+
+  my $root_login = 'off';
+  if ($uid == 0) {
+    $root_login = 'on';
+  }
+
+  my $owner = 'proftpd2';
+  my $owner_gid = (getpwnam($members->[1]))[3];
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $owner, $owner_gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    RootLogin => $root_login,
+
+    Directory => {
+      '~' => {
+        GroupOwner => $owner,
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my $port;
+  ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_CREAT|O_TRUNC, 0644);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $count = 20;
+      for (my $i = 0; $i < $count; $i++) {
+        print $fh "ABCD" x 8192;
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file does not exist as expected");
+      }
+
+      my $owning_gid = (stat($test_file))[5];
+      $self->assert($owner_gid == $owning_gid,
+        test_msg("Expected $owner_gid, got $owning_gid"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_ftpaccess_bug3460 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $data_dir = File::Spec->rel2abs("$home_dir/data");
+  mkpath($data_dir);
+
+  my $ftpaccess_file = File::Spec->rel2abs("$data_dir/.ftpaccess");
+  if (open(my $fh, "> $ftpaccess_file")) {
+    print $fh <<EOF;
+<Limit READ WRITE>
+  IgnoreHidden on
+  DenyAll
+</Limit>
+EOF
+    unless (close($fh)) {
+      die("Can't write $ftpaccess_file: $!");
+    }
+
+  } else {
+    die("Can't open $ftpaccess_file: $!");
+  }
+
+  my $neither_dir = File::Spec->rel2abs("$data_dir/neither");
+  mkpath($neither_dir);
+
+  my $readable_dir = File::Spec->rel2abs("$data_dir/readable");
+  mkpath($readable_dir);
+
+  $ftpaccess_file = File::Spec->rel2abs("$readable_dir/.ftpaccess");
+  if (open(my $fh, "> $ftpaccess_file")) {
+    print $fh <<EOF;
+<Limit READ>
+  AllowUser $user
+  AllowUser foo
+  DenyAll
+</Limit>
+EOF
+    unless (close($fh)) {
+      die("Can't write $ftpaccess_file: $!");
+    }
+
+  } else {
+    die("Can't open $ftpaccess_file: $!");
+  }
+
+  my $writable_dir = File::Spec->rel2abs("$data_dir/writable");
+  mkpath($writable_dir);
+
+  $ftpaccess_file = File::Spec->rel2abs("$writable_dir/.ftpaccess");
+  if (open(my $fh, "> $ftpaccess_file")) {
+    print $fh <<EOF;
+<Limit WRITE READ>
+  AllowUser $user
+  AllowUser foo
+  DenyAll
+</Limit>
+EOF
+    unless (close($fh)) {
+      die("Can't write $ftpaccess_file: $!");
+    }
+
+  } else {
+    die("Can't open $ftpaccess_file: $!");
+  }
+
+  my $sub_writable_dir = File::Spec->rel2abs("$writable_dir/subwritable");
+  mkpath($sub_writable_dir);
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir, $data_dir, $neither_dir, $readable_dir,
+        $writable_dir, $sub_writable_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir, $data_dir, $neither_dir,
+        $readable_dir, $writable_dir, $sub_writable_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $data_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20 directory:20 ftpaccess:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    AllowOverride => 'on',
+    PathDenyFilter => '"\\\\.ftpaccess$"',
+
+    Directory => {
+      '/*' => {
+        AllowOverwrite => 'on',
+        HideUser => 'nobody',
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+
+    Limit => {
+      'LOCK SYMLINK' => {
+        DenyAll => '',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $base_path = $sftp->realpath('.');
+      unless ($base_path) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_REALPATH failed: [$err_name] ($err_code)");
+      }
+
+      my $path = $sftp->realpath("$base_path/writable/subwritable");
+      unless ($path) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_REALPATH failed: [$err_name] ($err_code)");
+      }
+
+      my $dirh = $sftp->opendir($path);
+      unless ($dirh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_OPENDIR failed: [$err_name] ($err_code)");
+      }
+
+      $dirh = undef;
+
+      $path = $sftp->realpath("$path/test.txt");
+      unless ($path) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_REALPATH failed: [$err_name] ($err_code)");
+      }
+
+      my $fh = $sftp->open($path, O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("FXP_OPEN failed: [$err_name] ($err_code)");
+      }
+
+      $fh = undef;
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_config_limit_appe {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    Directory => {
+      '~' => {
+        AllowOverwrite => 'on',
+        AllowStoreRestart => 'on',
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+
+    Limit => {
+      APPE => {
+        DenyAll => '',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_APPEND);
+      if ($fh) {
+        $fh = undef;
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      my $expected = 'SSH_FX_PERMISSION_DENIED';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
   unlink($log_file);
 }
 
@@ -14869,6 +23568,7 @@ sub sftp_config_limit_chmod {
         die("FXP_STAT sftp.conf failed: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       my $expected;
@@ -15033,6 +23733,7 @@ sub sftp_config_limit_list {
       # To close the dirhandle, we explicitly destroy it.
       $dir = undef;
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       my $expected = {};
@@ -15220,6 +23921,7 @@ sub sftp_config_limit_nlst {
       # To close the dirhandle, we explicitly destroy it.
       $dir = undef;
 
+      $sftp = undef;
       $ssh2->disconnect();
 
       my $expected = {};
@@ -15841,8 +24543,11 @@ sub sftp_log_xferlog_download {
         $res = $fh->read($buf, 8192);
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $self->assert($test_sz == $size,
         test_msg("Expected $test_sz, got $size"));
@@ -16326,6 +25031,7 @@ sub sftp_log_xferlog_delete {
         die("Can't delete test.txt: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -16555,6 +25261,7 @@ sub sftp_log_xferlog_delete_chrooted {
         die("Can't delete test.txt: [$err_name] ($err_code)");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -16777,8 +25484,11 @@ sub sftp_log_xferlog_upload {
       my $buf = ("ABCD" x 256);
       print $fh $buf;
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -17447,7 +26157,7 @@ sub sftp_log_extlog_var_s_reads {
         $file = $dir->read();
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the dirhandle
       $dir = undef;
 
       foreach my $file (keys(%$files)) {
@@ -17790,6 +26500,1294 @@ EOC
   unlink($log_file);
 }
 
+sub sftp_log_extlog_file_modified_bug3457 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    AllowOverwrite => 'on',
+    LogFormat => 'custom "%{file-modified}"',
+    ExtendedLog => "$extlog_file WRITE custom",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_CREAT, 0644);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open 'test.txt': [$err_name] ($err_code)");
+      }
+
+      $fh = undef;
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      # Give a little time for the server to do its end-of-session thing.
+      sleep(1);
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      my $expected = 'true';
+      $self->assert($expected eq $line,
+        test_msg("Expected '$expected', got '$line'"));
+    }
+
+    close($fh);
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_log_extlog_retr_file_size {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  my $test_sz = 32;
+
+  if (open(my $fh, "> $test_file")) {
+    print $fh "A" x $test_sz;
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    LogFormat => 'transfer "%m %b',
+    ExtendedLog => "$extlog_file READ transfer",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf;
+      my $size = 0;
+
+      my $res = $fh->read($buf, 8192);
+      while ($res) {
+        $size += $res;
+
+        $res = $fh->read($buf, 8192);
+      }
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      $self->assert($test_sz == $size,
+        test_msg("Expected $test_sz, got $size"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    my $ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /^RETR (\d+)/) {
+        my $xfer_sz = $1;
+
+        if ($xfer_sz == $test_sz) {
+          $ok = 1;
+          last;
+        }
+      }
+    }
+
+    close($fh);
+
+    unless ($ok) {
+      die("Missing expected RETR file size ($test_sz) in $extlog_file");
+    }
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_log_extlog_putty_mget_retr_file_size_bug3560 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file1 = File::Spec->rel2abs("$tmpdir/test.txt");
+  my $test_sz1 = 32;
+
+  if (open(my $fh, "> $test_file1")) {
+    print $fh "A" x $test_sz1;
+    unless (close($fh)) {
+      die("Can't write $test_file1: $!");
+    }
+
+  } else {
+    die("Can't open $test_file1: $!");
+  }
+
+  my $test_file2 = File::Spec->rel2abs("$tmpdir/test2.txt");
+  my $test_sz2 = 64;
+
+  if (open(my $fh, "> $test_file2")) {
+    print $fh "A" x $test_sz2;
+    unless (close($fh)) {
+      die("Can't write $test_file2: $!");
+    }
+
+  } else {
+    die("Can't open $test_file2: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    LogFormat => 'transfer "%m %b',
+    ExtendedLog => "$extlog_file READ transfer",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # PuTTy's 'mget' does:
+      #
+      # OPENDIR
+      # READDIR
+      # <check for matching names>
+      # OPEN matching name
+      # READ
+      # CLOSE
+      # READDIR
+      # OPEN matching name
+      # READ
+      # CLOSE
+      # CLOSE <dirhandle>
+
+      # OPENDIR
+      my $dir = $sftp->opendir('.');
+      unless ($dir) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open directory '.': [$err_name] ($err_code)");
+      }
+
+      my $res = {};
+
+      # READDIR
+      my $file = $dir->read();
+      while ($file) {
+        $res->{$file->{name}} = $file;
+        $file = $dir->read();
+      }
+
+      # OPEN file1
+      my $fh = $sftp->open('test.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf;
+      my $size = 0;
+
+      # READ file1
+      $res = $fh->read($buf, 8192);
+      while ($res) {
+        $size += $res;
+
+        $res = $fh->read($buf, 8192);
+      }
+
+      # CLOSE file1
+      $fh = undef;
+
+      # OPEN file2
+      $fh = $sftp->open('test2.txt', O_RDONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test2.txt: [$err_name] ($err_code)");
+      }
+
+      $buf = '';
+      $size = 0;
+
+      # READ file2
+      $res = $fh->read($buf, 8192);
+      while ($res) {
+        $size += $res;
+
+        $res = $fh->read($buf, 8192);
+      }
+
+      # CLOSE file2
+      $fh = undef;
+
+      # CLOSEDIR
+      $dir = undef;
+
+      # CHANNEL_CLOSE
+      $sftp = undef;
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    my $test_ok = 0;
+    my $test2_ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /^RETR (\d+)/) {
+        my $xfer_sz = $1;
+
+        if ($xfer_sz == $test_sz1) {
+          $test_ok = 1;
+          next;
+        }
+
+        if ($xfer_sz == $test_sz2) {
+          $test2_ok = 1;
+          last;
+        }
+      }
+    }
+
+    close($fh);
+
+    unless ($test_ok) {
+      die("Missing expected RETR file size ($test_sz1) in $extlog_file");
+    }
+
+    unless ($test2_ok) {
+      die("Missing expected RETR file size ($test_sz2) in $extlog_file");
+    }
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_log_extlog_var_F_mkdir_rmdir_bug3591 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/testdir");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    DefaultRoot => '~',
+
+    LogFormat => 'dirlog "%m %F"',
+    ExtendedLog => "$extlog_file WRITE dirlog",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->mkdir('testdir');
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't mkdir testdir: [$err_name] ($err_code)");
+      }
+
+      $res = $sftp->rmdir('testdir');
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't rmdir testdir: [$err_name] ($err_code)");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      if (-d $test_dir) {
+        die("$test_dir directory exists unexpectedly");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    my $mkdir_ok = 0;
+    my $rmdir_ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /(\S+)\s+(\S+)$/) {
+        my $cmd = $1;
+        my $dir_path = $2;
+
+        if ($cmd eq 'MKD' ||
+            $cmd eq 'RMD') {
+            my $expected = '/testdir';
+
+            $self->assert($expected eq $dir_path,
+              test_msg("Expected '$expected', got '$dir_path'"));
+
+        } elsif ($cmd eq 'MKDIR') {
+          $mkdir_ok = 1;
+
+        } elsif ($cmd eq 'RMDIR') {
+          $rmdir_ok = 1;
+
+        } else {
+          die("Unexpected command '$cmd' in $extlog_file");
+        }
+
+      } else {
+        die("Unexpected line '$line' in $extlog_file");
+      }
+    }
+
+    close($fh);
+
+    $self->assert($mkdir_ok == 1,
+      test_msg("Expected to see 'MKDIR' command but it was missing"));
+    $self->assert($rmdir_ok == 1,
+      test_msg("Expected to see 'RMDIR' command but it was missing"));
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_log_extlog_var_w_rename_bug3029 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $test_file1 = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file1")) {
+    print $fh "ABCD" x 8192;
+
+    unless (close($fh)) {
+      die("Can't write $test_file1: $!");
+    }
+
+  } else {
+    die("Can't open $test_file1: $!");
+  }
+
+  my $test_file2 = File::Spec->rel2abs("$tmpdir/test2.txt");
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    LogFormat => 'rename "%m: %w %f"',
+    ExtendedLog => "$extlog_file ALL rename",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->rename('test.txt', 'test2.txt');
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't rename test.txt to test2.txt: [$err_name] ($err_code)");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      if (-f $test_file1) {
+        die("$test_file1 file exists unexpectedly");
+      }
+
+      unless (-f $test_file2) {
+        die("$test_file2 file does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    my $ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /(\S+):\s+(\S+)\s+(\S+)$/) {
+        my $cmd = $1;
+        my $whence = $2;
+        my $whither = $3;
+
+        my $expected;
+
+        if ($cmd eq 'RNFR') {
+          $expected = '-';
+
+          $self->assert($expected eq $whence,
+            test_msg("Expected '$expected', got '$whence'"));
+          $self->assert($expected eq $whither,
+            test_msg("Expected '$expected', got '$whither'"));
+
+        } elsif ($cmd eq 'RNTO') {
+          $expected = $test_file1;
+
+          $self->assert($expected eq $whence,
+            test_msg("Expected '$expected', got '$whence'"));
+
+          $expected = $test_file2;
+          $self->assert($expected eq $whither,
+            test_msg("Expected '$expected', got '$whither'"));
+
+        } elsif ($cmd eq 'RENAME') {
+          $expected = '-';
+
+          $self->assert($expected eq $whence,
+            test_msg("Expected '$expected', got '$whence'"));
+          $self->assert($expected eq $whither,
+            test_msg("Expected '$expected', got '$whither'"));
+
+          $ok = 1;
+
+        } else {
+          next;
+        }
+
+      } else {
+        die("Unexpected line '$line' in $extlog_file");
+      }
+    }
+
+    close($fh);
+
+    $self->assert($ok, test_msg("Did not find expected ExtendedLog lines"));
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_log_extlog_var_f_remove {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $write_sz = 32;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $test_file = File::Spec->rel2abs("$home_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "ABCD\n" x 64;
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    LogFormat => 'delete "%m %f"',
+    ExtendedLog => "$extlog_file WRITE delete",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $sftp->unlink('test.txt');
+      unless ($res) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't remove test.txt: [$err_name] ($err_code)");
+      }
+
+      $sftp = undef;
+      $ssh2->disconnect();
+
+      if (-f $test_file) {
+        die("$test_file file exists unexpectedly");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    my $ok = 0;
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /(\S+) (.*)$/) {
+        my $cmd = $1;
+        my $path = $2;
+
+        next unless $cmd eq 'DELE';
+
+        $self->assert($test_file eq $path,
+          test_msg("Expected '$test_file', got '$path'"));
+
+        $ok = 1;
+        last;
+      }
+    }
+
+    close($fh);
+
+    $self->assert($ok,
+      test_msg("Expected ExtendedLog lines did not appear as expected"));
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
 sub sftp_sighup {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -17900,6 +27898,7 @@ sub sftp_sighup {
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -17935,7 +27934,7 @@ sub sftp_sighup {
   unlink($log_file);
 }
 
-sub sftp_ban_max_login_attempts {
+sub sftp_ifsess_protocols {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -17948,10 +27947,9 @@ sub sftp_ban_max_login_attempts {
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
 
-  my $ban_tab = File::Spec->rel2abs("$tmpdir/sftp-ban.tab");
-
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -17970,12 +27968,10 @@ sub sftp_ban_max_login_attempts {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
   my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
 
   my $config = {
     PidFile => $pid_file,
@@ -17986,20 +27982,8 @@ sub sftp_ban_max_login_attempts {
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
-    MaxLoginAttempts => 1,
 
     IfModules => {
-      'mod_ban.c' => {
-        BanEngine => 'on',
-        BanLog => $log_file,
-
-        # This says to ban a client which exceeds the MaxLoginAttempts
-        # limit once within the last 1 minute will be banned for 10 secs
-        BanOnEvent => 'MaxLoginAttempts 1/00:01:00 00:00:10',
-
-        BanTable => $ban_tab,
-      },
-
       'mod_delay.c' => {
         DelayEngine => 'off',
       },
@@ -18015,6 +27999,26 @@ sub sftp_ban_max_login_attempts {
 
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
+  if (open(my $fh, ">> $config_file")) {
+    print $fh <<EOC;
+<IfModule mod_ifsession.c>
+  <IfUser foo>
+    Protocols sftp scp
+  </IfUser>
+
+  <IfUser $user>
+    Protocols scp
+  </IfUser>
+</IfModule>
+EOC
+    unless (close($fh)) {
+      die("Can't write $config_file: $!");
+    }
+
+  } else {
+    die("Can't open $config_file: $!");
+  }
+
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
   # to the parent.
@@ -18026,6 +28030,9 @@ sub sftp_ban_max_login_attempts {
   require Net::SSH2;
 
   my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
 
   # Fork child
   $self->handle_sigchld();
@@ -18041,29 +28048,23 @@ sub sftp_ban_max_login_attempts {
         die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
-      # Try to authenticate twice using 'publickey'; we know this will not
-      # succeed.  The first attempt will hit the MaxLoginAttempts limit, the
-      # second attempt will *exceed* the MaxLoginAttempts limit, and thus
-      # trigger the mod_ban rule.
-      if ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
-        die("Publickey auth succeeded unexpectedly");
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
-      if ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
-        die("Publickey auth succeeded unexpectedly");
+      my $sftp = $ssh2->sftp();
+      if ($sftp) {
+        die("SFTP subsystem started unexpectedly");
       }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      my $expected = 'LIBSSH2_ERROR_CHANNEL_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
 
       $ssh2->disconnect();
-
-      # Now try 'password' authentication, which would succeed -- except that
-      # mod_ban should now have a ban in place, and prevent us from doing this.
-      # Note that we need to create a new connection to test the mod_ban
-      # rules.
-
-      $ssh2 = Net::SSH2->new();
-      if ($ssh2->connect('127.0.0.1', $port)) {
-        die("Connecting to SSH2 server succeeded unexpectedly");
-      }
     };
 
     if ($@) {
@@ -18231,6 +28232,7 @@ sub sftp_wrap_login_allowed_bug3352 {
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
       
+      $sftp = undef;
       $ssh2->disconnect();
     };
 
@@ -18387,178 +28389,6 @@ sub sftp_wrap_login_denied_bug3352 {
       if ($ssh2->auth_password($user, $passwd)) {
         die("Logged in to SSH2 server unexpectedly");
       }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_wrap2_login {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $fh;
-  my $allow_file = File::Spec->rel2abs("$tmpdir/sftp.allow");
-  if (open($fh, "> $allow_file")) {
-    print $fh "proftpd: ALL\n";
-
-    unless (close($fh)) {
-      die("Can't write $allow_file: $!");
-    }
-
-  } else {
-    die("Can't open $allow_file: $!");
-  }
-
-  my $deny_file = File::Spec->rel2abs("$tmpdir/sftp.deny");
-  if (open($fh, "> $deny_file")) {
-    print $fh "ALL: ALL\n";
-
-    unless (close($fh)) {
-      die("Can't write $deny_file: $!");
-    }
-
-  } else {
-    die("Can't open $deny_file: $!");
-  }
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-
-      'mod_wrap2.c' => {
-        WrapEngine => 'on',
-        WrapLog => $log_file,
-        WrapTables => "file:$allow_file file:$deny_file",
-        WrapDenyMsg => "User '%u' denied by access rules",
-        WrapAllowMsg => "User '%u' allowed by access rules",
-      },
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      if ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
-        die("Publickey auth succeeded unexpectedly");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-      
-      $ssh2->disconnect();
     };
 
     if ($@) {
@@ -19497,19 +29327,19 @@ sub scp_upload_fifo_bug3312 {
         die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
-      my $res = $ssh2->scp_put($config_file, 'test.fifo');
-      if ($res) {
+      if ($ssh2->scp_put($config_file, 'test.fifo')) {
         die("Upload of $config_file to server succeeded unexpectedly");
       }
 
       my ($err_code, $err_name, $err_str) = $ssh2->error();
       chomp($err_str);
 
-      my $expected = "$fifo: (No such device or address|Device not configured)";
+      $ssh2->disconnect();
+
+      my $expected = 'test.fifo: (No such device or address|Device not configured)$';
+
       $self->assert(qr/$expected/, $err_str,
         test_msg("Expected '$expected', got '$err_str'"));
-
-      $ssh2->disconnect();
     };
 
     if ($@) {
@@ -19649,6 +29479,684 @@ sub scp_upload_fifo_bug3313 {
       }
 
       $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_ext_upload_recursive_dir_bug3447 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  # For this test, we need the following directory structure:
+  #
+  #  src/
+  #    files
+  #    subdir1/
+  #      files
+  #    subdir2
+  #      files
+  #
+  # The bug happened because mod_sftp was expecting the end-of-directory
+  # marker under the wrong conditions.  The triggering of the bug depends
+  # on the order in which the client sends its control messages, which in
+  # turn (in the case of OpenSSH) is depending on the order of directory
+  # entries returned by readdir(2).
+
+  my $src_dir = File::Spec->rel2abs("$tmpdir/src.d");
+  mkpath($src_dir);
+
+  my $count = 25;
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = (chr(97 + $i)) . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_dir/$filename");
+
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 7891;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = (chr(65 + $i)) . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_dir/$filename");
+
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 6458;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  my $src_subdir = File::Spec->rel2abs("$src_dir/cd.d");
+  mkpath($src_subdir);
+
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = 'aa' . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_subdir/$filename");
+
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 9802;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  $src_subdir = File::Spec->rel2abs("$src_dir/wx.d");
+  mkpath($src_subdir);
+
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = 'aa' . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_subdir/$filename");
+    
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 8192;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/dst.d"); 
+  mkpath($dst_dir);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'scp',
+        '-r',
+        '-v',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        "$src_dir/",
+        "$user\@127.0.0.1:dst.d/",
+      );
+
+      my $scp_rh = IO::Handle->new();
+      my $scp_wh = IO::Handle->new();
+      my $scp_eh = IO::Handle->new();
+
+      $scp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $scp_pid = open3($scp_wh, $scp_rh, $scp_eh, @cmd);
+      waitpid($scp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$scp_eh>);
+        $res = 0;
+
+      } else {
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't upload $src_dir to server: $errstr");
+      }
+
+      unless (-d "$dst_dir/src.d") {
+        die("Directory '$dst_dir/src.d' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/y024") {
+        die("File '$dst_dir/src.d/y024' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/Y024") {
+        die("File '$dst_dir/src.d/Y024' does not exist as expected");
+      }
+
+      unless (-d "$dst_dir/src.d/cd.d") {
+        die("Directory '$dst_dir/src.d/cd.d' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/cd.d/aa024") {
+        die("File '$dst_dir/src.d/cd.d/aa024' does not exist as expected");
+      }
+
+      unless (-d "$dst_dir/src.d/wx.d") {
+        die("Directory '$dst_dir/src.d/wx.d' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/wx.d/aa024") {
+        die("File '$dst_dir/src.d/wx.d/aa024' does not exist as expected");
+      }
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_ext_upload_different_name_bug3425 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $src_file = File::Spec->rel2abs("$tmpdir/foo.txt");
+  if (open(my $fh, "> $src_file")) {
+    print $fh "Hello, world!\n";
+    unless (close($fh)) {
+      die("Can't write $src_file: $!");
+    }
+
+  } else {
+    die("Can't open $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/bar.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'scp',
+        '-v',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        "$src_file",
+        "$user\@127.0.0.1:bar.txt",
+      );
+
+      my $scp_rh = IO::Handle->new();
+      my $scp_wh = IO::Handle->new();
+      my $scp_eh = IO::Handle->new();
+
+      $scp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $scp_pid = open3($scp_wh, $scp_rh, $scp_eh, @cmd);
+      waitpid($scp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$scp_eh>);
+        $res = 0;
+
+      } else {
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't upload $src_file to server: $errstr");
+      }
+
+      unless (-f $dst_file) {
+        die("File '$dst_file' does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_ext_upload_recursive_empty_dir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $src_dir = File::Spec->rel2abs("$tmpdir/src.d");
+  mkpath($src_dir);
+
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/dst.d"); 
+  mkpath($dst_dir);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'scp',
+        '-r',
+        '-v',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        "$src_dir/",
+        "$user\@127.0.0.1:dst.d/",
+      );
+
+      my $scp_rh = IO::Handle->new();
+      my $scp_wh = IO::Handle->new();
+      my $scp_eh = IO::Handle->new();
+
+      $scp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $scp_pid = open3($scp_wh, $scp_rh, $scp_eh, @cmd);
+      waitpid($scp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$scp_eh>);
+        $res = 0;
+
+      } else {
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't upload $src_dir to server: $errstr");
+      }
+
+      unless (-d "$dst_dir/src.d") {
+        die("Directory '$dst_dir/src.d' does not exist as expected");
+      }
     };
 
     if ($@) {
@@ -20311,6 +30819,678 @@ sub scp_download_fifo_bug3314 {
   unlink($log_file);
 }
 
+sub scp_ext_download_bug3544 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $timeout_idle = 60;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'scp',
+        '-vvv',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        "$user\@127.0.0.1:$config_file",
+        "$dst_file",
+      );
+
+      my $scp_rh = IO::Handle->new();
+      my $scp_wh = IO::Handle->new();
+      my $scp_eh = IO::Handle->new();
+
+      $scp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $scp_pid = open3($scp_wh, $scp_rh, $scp_eh, @cmd);
+      waitpid($scp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$scp_eh>);
+        $res = 0;
+
+      } else {
+        if ($ENV{TEST_VERBOSE}) {
+          $errstr = join('', <$scp_eh>);
+          print STDERR "Stderr: $errstr\n";
+        }
+
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't download $config_file from server: $errstr");
+      }
+
+      unless (-f "$dst_file") {
+        die("File '$dst_file' does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 2) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_ext_download_recursive_dir_bug3456 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  # For this test, we need the following directory structure:
+  #
+  #  src/
+  #    files
+  #    subdir1/
+  #      files
+  #    subdir2
+  #      files
+
+  my $src_dir = File::Spec->rel2abs("$tmpdir/src.d");
+  mkpath($src_dir);
+
+  my $count = 25;
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = (chr(97 + $i)) . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_dir/$filename");
+
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 7891;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = (chr(65 + $i)) . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_dir/$filename");
+
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 6458;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  my $src_subdir = File::Spec->rel2abs("$src_dir/cd.d");
+  mkpath($src_subdir);
+
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = 'aa' . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_subdir/$filename");
+
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 9802;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  $src_subdir = File::Spec->rel2abs("$src_dir/wx.d");
+  mkpath($src_subdir);
+
+  for (my $i = 0; $i < $count; $i++) {
+    my $filename = 'aa' . sprintf("%03s", $i);
+    my $src_file = File::Spec->rel2abs("$src_subdir/$filename");
+    
+    if (open(my $fh, "> $src_file")) {
+      print $fh "ABCDefgh" x 8192;
+
+      unless (close($fh)) {
+        die("Can't write $src_file: $!");
+    }
+
+    } else {
+      die("Can't open $src_file: $!");
+    }
+  }
+
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/dst.d"); 
+  mkpath($dst_dir);
+
+  my $timeout_idle = 60;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'scp',
+        '-r',
+        '-vvv',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        "$user\@127.0.0.1:src.d/",
+        "$dst_dir",
+      );
+
+      my $scp_rh = IO::Handle->new();
+      my $scp_wh = IO::Handle->new();
+      my $scp_eh = IO::Handle->new();
+
+      $scp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $scp_pid = open3($scp_wh, $scp_rh, $scp_eh, @cmd);
+      waitpid($scp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$scp_eh>);
+        $res = 0;
+
+      } else {
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't download $src_dir from server: $errstr");
+      }
+
+      unless (-d "$dst_dir/src.d") {
+        die("Directory '$dst_dir/src.d' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/y024") {
+        die("File '$dst_dir/src.d/y024' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/Y024") {
+        die("File '$dst_dir/src.d/Y024' does not exist as expected");
+      }
+
+      unless (-d "$dst_dir/src.d/cd.d") {
+        die("Directory '$dst_dir/src.d/cd.d' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/cd.d/aa024") {
+        die("File '$dst_dir/src.d/cd.d/aa024' does not exist as expected");
+      }
+
+      unless (-d "$dst_dir/src.d/wx.d") {
+        die("Directory '$dst_dir/src.d/wx.d' does not exist as expected");
+      }
+
+      unless (-f "$dst_dir/src.d/wx.d/aa024") {
+        die("File '$dst_dir/src.d/wx.d/aa024' does not exist as expected");
+      }
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 2) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_ext_download_recursive_empty_dir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+  my $rsa_rfc4716_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/authorized_rsa_keys');
+
+  my $authorized_keys = File::Spec->rel2abs("$tmpdir/.authorized_keys");
+  unless (copy($rsa_rfc4716_key, $authorized_keys)) {
+    die("Can't copy $rsa_rfc4716_key to $authorized_keys: $!");
+  }
+
+  my $src_dir = File::Spec->rel2abs("$tmpdir/src.d");
+  mkpath($src_dir);
+
+  my $dst_dir = File::Spec->rel2abs("$tmpdir/dst.d"); 
+  mkpath($dst_dir);
+
+  my $timeout_idle = 60;
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "SFTPAuthorizedUserKeys file:~/.authorized_keys",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my @cmd = (
+        'scp',
+        '-r',
+        '-v',
+        '-oBatchMode=yes',
+        '-oCheckHostIP=no',
+        "-oPort=$port",
+        "-oIdentityFile=$rsa_priv_key",
+        '-oPubkeyAuthentication=yes',
+        '-oStrictHostKeyChecking=no',
+        "$user\@127.0.0.1:src.d/",
+        "$dst_dir",
+      );
+
+      my $scp_rh = IO::Handle->new();
+      my $scp_wh = IO::Handle->new();
+      my $scp_eh = IO::Handle->new();
+
+      $scp_wh->autoflush(1);
+
+      sleep(1);
+
+      local $SIG{CHLD} = 'DEFAULT';
+
+      # Make sure that the perms on the priv key are what OpenSSH wants
+      unless (chmod(0400, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0400: $!");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+          print STDERR "Executing: ", join(' ', @cmd), "\n";
+      }
+
+      my $scp_pid = open3($scp_wh, $scp_rh, $scp_eh, @cmd);
+      waitpid($scp_pid, 0);
+
+      # Restore the perms on the priv key
+      unless (chmod(0644, $rsa_priv_key)) {
+        die("Can't set perms on $rsa_priv_key to 0644: $!");
+      }
+
+      my ($res, $errstr);
+      if ($? >> 8) {
+        $errstr = join('', <$scp_eh>);
+        $res = 0;
+
+      } else {
+        $res = 1;
+      }
+
+      unless ($res) {
+        die("Can't download $src_dir from server: $errstr");
+      }
+
+      unless (-d "$dst_dir/src.d") {
+        die("Directory '$dst_dir/src.d' does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh, $timeout_idle + 2) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
 sub scp_config_ignore_upload_perms {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -20771,6 +31951,637 @@ sub scp_config_subdir_upload_allowed {
   unlink($log_file);
 }
 
+sub scp_config_protocols {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+        "Protocols sftp",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $ssh2->scp_put($config_file, 'test.txt');
+      if ($res) {
+        die("SCP upload succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      $ssh2->disconnect();
+
+      if (-f $test_file) {
+        die("File $test_file exists unexpectedly");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_config_userowner {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $owner = 'proftpd2';
+  my $owner_uid = 7777;
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_user_write($auth_user_file, $owner, 'none', $owner_uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    RootRevoke => 'off',
+
+    Directory => {
+      '~' => {
+        UserOwner => $owner,
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $ssh2->scp_put($config_file, 'test.txt');
+      unless ($res) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't upload $config_file to server: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file file does not exist as expected");
+      }
+
+      my $owning_uid = (stat($test_file))[4];
+      $self->assert($owner_uid == $owning_uid,
+        test_msg("Expected $owner_uid, got $owning_uid"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_config_groupowner {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $owner = 'proftpd2';
+  my $owner_gid = 7777;
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $owner, $owner_gid, 'foo');
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    RootRevoke => 'off',
+
+    Directory => {
+      '~' => {
+        GroupOwner => $owner,
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $ssh2->scp_put($config_file, 'test.txt');
+      unless ($res) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't upload $config_file to server: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file file does not exist as expected");
+      }
+
+      my $owning_gid = (stat($test_file))[5];
+      $self->assert($owner_gid == $owning_gid,
+        test_msg("Expected $owner_gid, got $owning_gid"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub scp_config_groupowner_suppl_group_norootprivs {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my ($config_user, $config_group) = config_get_identity();
+ 
+  my $members = [split(' ', (getgrnam($config_group))[3])];
+  if (scalar(@$members) < 2) {
+    print STDERR " + unable to run 'scp_config_groupowner_suppl_group_norootprivs' test without current user belonging to multiple groups, skipping\n";
+    return;
+  }
+
+  my ($uid, $gid) = (getpwnam($members->[0]))[2,3];
+
+  my $root_login = 'off';
+  if ($uid == 0) {
+    $root_login = 'on';
+  }
+
+  my $owner = 'proftpd2';
+  my $owner_gid = (getpwnam($members->[1]))[3];
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $owner, $owner_gid, 'foo');
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    RootLogin => $root_login,
+
+    Directory => {
+      '~' => {
+        GroupOwner => $owner,
+      },
+    },
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my $port;
+  ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $ssh2->scp_put($config_file, 'test.txt');
+      unless ($res) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't upload $config_file to server: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+
+      unless (-f $test_file) {
+        die("File $test_file file does not exist as expected");
+      }
+
+      my $owning_gid = (stat($test_file))[5];
+      $self->assert($owner_gid == $owning_gid,
+        test_msg("Expected $owner_gid, got $owning_gid"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
 sub scp_log_extlog_var_f_upload {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -20947,6 +32758,185 @@ sub scp_log_extlog_var_f_upload {
     unless ($ok) {
       die("No lines found in $extlog_file");
     }
+
+  } else {
+    die("Can't read $extlog_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub scp_log_extlog_file_modified_bug3457 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $src_file = File::Spec->rel2abs("$tmpdir/src.txt");
+  if (open(my $fh, "> $src_file")) {
+    print $fh "ABCD" x 32;
+
+    unless (close($fh)) {
+      die("Can't write $src_file: $!");
+    }
+
+  } else {
+    die("Can't open $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/dst.txt");
+  if (open(my $fh, "> $dst_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $dst_file: $!");
+    }
+
+  } else {
+    die("Can't open $dst_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    AllowOverwrite => 'on',
+    LogFormat => 'custom "%{file-modified}"',
+    ExtendedLog => "$extlog_file WRITE custom",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $res = $ssh2->scp_put($src_file, 'dst.txt'); 
+      unless ($res) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't upload $src_file to server: [$err_name] ($err_code) $err_str");
+      }
+
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  if (open(my $fh, "< $extlog_file")) {
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      my $expected = 'true';
+      $self->assert($expected eq $line,
+        test_msg("Expected '$expected', got '$line'"));
+    }
+
+    close($fh);
 
   } else {
     die("Can't read $extlog_file: $!");
@@ -21412,7 +33402,7 @@ sub scp_log_xferlog_upload {
   unlink($log_file);
 }
 
-sub sftp_rewrite_stat {
+sub sftp_quotatab_upload_bytes_in_exceeded_soft_limit {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -21431,7 +33421,62 @@ sub sftp_rewrite_stat {
   my $uid = 500;
   my $gid = 500;
 
-  my $test_file = 'test_file_here.txt';
+  my $db_file = File::Spec->rel2abs("$tmpdir/sftp.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 5, 0, 0, 3, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+INSERT INTO quotatallies (name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used) VALUES ('$user', 'user',  32, 0, 0, 2, 0, 0);
+
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $test_file = 'test.txt';
   my $test_path = File::Spec->rel2abs("$tmpdir/$test_file");
 
   if (open(my $fh, "> $test_path")) {
@@ -21471,6 +33516,8 @@ sub sftp_rewrite_stat {
     TraceLog => $log_file,
     Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
 
+    AllowOverwrite => 'on',
+    AllowStoreRestart => 'on',
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
 
@@ -21479,13 +33526,15 @@ sub sftp_rewrite_stat {
         DelayEngine => 'off',
       },
 
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m STAT',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
       ],
 
       'mod_sftp.c' => [
@@ -21494,6 +33543,252 @@ sub sftp_rewrite_stat {
         "SFTPHostKey $rsa_host_key",
         "SFTPHostKey $dsa_host_key",
       ],
+
+      'mod_sql.c' => {
+        SQLEngine => 'log',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($user, $passwd)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY, 0644);
+      if ($fh) {
+        die("OPEN test.txt succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name) = $sftp->error();
+
+      my $expected = 'SSH_FX_FAILURE';
+      $self->assert($expected eq $err_name,
+        test_msg("Expected '$expected', got '$err_name'"));
+
+      $expected = 4;
+      $self->assert($expected == $err_code,
+        test_msg("Expected $expected, got $err_code"));
+
+      $sftp = undef;
+      $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_sql_custom_user_info {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE ftpusers (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO ftpusers (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', $gid, '$user');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE sftplog (
+  user TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  full_path TEXT NOT NULL,
+  filesize INTEGER NOT NULL,
+  xfertime INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  @output = `$cmd`;
+  if (scalar(@output) > 0 &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLEngine => 'on',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+
+        SQLNamedQuery => 'get-sql-user SELECT "userid, passwd, uid, gid, homedir, shell FROM ftpusers WHERE userid = \'%U\'"',
+        SQLUserInfo => 'custom:/get-sql-user',
+      },
     },
   };
 
@@ -21513,699 +33808,6 @@ sub sftp_rewrite_stat {
 
   my $ex;
 
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $attrs = $sftp->stat('test file here.txt', 1);
-      unless ($attrs) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_STAT failed: [$err_name] ($err_code)");
-      }
-
-      my $expected;
-
-      $expected = 14;
-      my $file_size = $attrs->{size};
-      $self->assert($expected == $file_size,
-        test_msg("Expected '$expected', got '$file_size'"));
-
-      $expected = $<;
-      my $file_uid = $attrs->{uid};
-      $self->assert($expected == $file_uid,
-        test_msg("Expected '$expected', got '$file_uid'"));
-
-      $expected = $(;
-      my $file_gid = $attrs->{gid};
-      $self->assert($expected == $file_gid,
-        test_msg("Expected '$expected', got '$file_gid'"));
-
-      $ssh2->disconnect();
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_lstat {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m LSTAT',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "ABCD" x 1024;
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  my $test_size = (stat($test_file))[7];
-
-  my $test_symlink = File::Spec->rel2abs("$tmpdir/test_link");
-  unless (symlink($test_file, $test_symlink)) {
-    die("Can't symlink $test_symlink to $test_file: $!");
-  }
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-     
-      my $attrs = $sftp->stat('test link', 0);
-      unless ($attrs) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_LSTAT failed: [$err_name] ($err_code)");
-      }
-
-      my $expected;
-
-      $expected = $test_size;
-      my $file_size = $attrs->{size};
-      $self->assert($expected == $file_size,
-        test_msg("Expected '$expected', got '$file_size'"));
-
-      $expected = $<;
-      my $file_uid = $attrs->{uid};
-      $self->assert($expected == $file_uid,
-        test_msg("Expected '$expected', got '$file_uid'"));
-
-      $expected = $(;
-      my $file_gid = $attrs->{gid};
-      $self->assert($expected == $file_gid,
-        test_msg("Expected '$expected', got '$file_gid'"));
-
-      $ssh2->disconnect();
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_setstat {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m ^(STAT|SETSTAT)$',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "ABCD" x 1024;
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-     
-      my $res = $sftp->setstat('test file.txt',
-        atime => 0,
-        mtime => 0,
-      ); 
-      unless ($res) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_SETSTAT failed: [$err_name] ($err_code)");
-      }
-
-      my $attrs = $sftp->stat('test file.txt');
-      unless ($attrs) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_STAT failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      my $expected;
-
-      $expected = 0;
-      my $file_atime = $attrs->{atime};
-      $self->assert($expected == $file_atime,
-        test_msg("Expected '$expected', got '$file_atime'"));
-
-      my $file_mtime = $attrs->{mtime};
-      $self->assert($expected == $file_mtime,
-        test_msg("Expected '$expected', got '$file_mtime'"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_realpath {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m REALPATH',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $resolved = $sftp->realpath('test file.txt');
-      unless ($resolved) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_REALPATH failed: [$err_name] ($err_code)");
-      }
-
-      my $expected;
-
-      $expected = $test_file;
-      $self->assert($expected eq $resolved,
-        test_msg("Expected '$expected', got '$resolved'"));
-
-      $ssh2->disconnect();
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_upload {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m STOR',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
   # Ignore SIGPIPE
   local $SIG{PIPE} = sub { };
 
@@ -22234,1389 +33836,24 @@ sub sftp_rewrite_upload {
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
-      my $fh = $sftp->open('test file.txt', O_WRONLY|O_CREAT|O_TRUNC, 0644);
+      my $fh = $sftp->open('sftp.conf', O_RDONLY, 0644);
       unless ($fh) {
         my ($err_code, $err_name) = $sftp->error();
-        die("FXP_OPEN failed: [$err_name] ($err_code)");
-      }
-
-      my $count = 20;
-      for (my $i = 0; $i < $count; $i++) {
-        print $fh "ABCD" x 8192;
-      }
-
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
-      $fh = undef;
-
-      $ssh2->disconnect();
-
-      # Make sure that the rewritten file is present
-      $self->assert(-f $test_file, test_msg("File $test_file unexpectedly missing"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_download {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    my $count = 20;
-    for (my $i = 0; $i < $count; $i++) {
-      print $fh "ABCD" x 8192;
-    }
-
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  my $test_sz = (stat($test_file))[7];
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m RETR',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Ignore SIGPIPE
-  local $SIG{PIPE} = sub { };
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $fh = $sftp->open('test file.txt', O_RDONLY);
-      unless ($fh) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_OPEN failed: [$err_name] ($err_code)");
+        die("Can't open sftp.conf: [$err_name] ($err_code)");
       }
 
       my $buf;
       my $size = 0;
 
       my $res = $fh->read($buf, 8192);
-      while ($res) {
-        $size += $res;
 
-        $res = $fh->read($buf, 8192);
-      }
-
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
 
-      $self->assert($test_sz == $size,
-        test_msg("Expected $test_sz, got $size"));
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_readdir {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $sub_dir = File::Spec->rel2abs("$tmpdir/sub_dir");
-  mkpath($sub_dir);
-
-  my $test_file = File::Spec->rel2abs("$sub_dir/subfile.txt");
-  if (open(my $fh, "> $test_file")) {
-    close($fh);
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'auth:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m OPENDIR',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $dir = $sftp->opendir('sub dir');
-      unless ($dir) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_OPENDIR failed: [$err_name] ($err_code)");
-      }
-
-      my $res = {};
-
-      my $file = $dir->read();
-      while ($file) {
-        $res->{$file->{name}} = $file;
-        $file = $dir->read();
-      }
-
-      my $expected = {
-        '.' => 1,
-        '..' => 1,
-        'subfile.txt' => 1,
-      };
-
-      # To issue the FXP_CLOSE, we have to explicit destroy the dirhandle
-      $dir = undef;
-
-      $ssh2->disconnect();
-
-      my $ok = 1;
-      my $mismatch;
-
-      my $seen = [];
-      foreach my $name (keys(%$res)) {
-        push(@$seen, $name);
-
-        unless (defined($expected->{$name})) {
-          $mismatch = $name;
-          $ok = 0;
-          last;
-        }
-      }
-
-      unless ($ok) {
-        die("Unexpected name '$mismatch' appeared in READDIR data")
-      }
-
-      # Now remove from $expected all of the paths we saw; if there are
-      # any entries remaining in $expected, something went wrong.
-      foreach my $name (@$seen) {
-        delete($expected->{$name});
-      }
-
-      my $remaining = scalar(keys(%$expected));
-      $self->assert(0 == $remaining,
-        test_msg("Expected 0, got $remaining"));
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_mkdir {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_dir = File::Spec->rel2abs("$tmpdir/test_dir");
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m MKDIR',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $res = $sftp->mkdir('test dir');
-      unless ($res) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_MKDIR failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      unless (-d $test_dir) {
-        die("$test_dir directory does not exist as expected");
-      }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_rmdir {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_dir = File::Spec->rel2abs("$tmpdir/test_dir");
-  mkpath($test_dir);
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m RMDIR',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $res = $sftp->rmdir('test dir');
-      unless ($res) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_RMDIR failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      if (-d $test_dir) {
-        die("$test_dir directory exists unexpectedly");
-      }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_remove {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "ABCD" x 8192;
-
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m REMOVE',
-        'RewriteRule ^(.*) "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $res = $sftp->unlink('test file.txt');
-      unless ($res) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_REMOVE failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      if (-f $test_file) {
-        die("$test_file file exists unexpectedly");
-      }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_rename {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "ABCD" x 8192;
-
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  my $test_file2 = File::Spec->rel2abs("$tmpdir/test_file2.txt");
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m ^(RNFR|RNTO)$',
-        'RewriteRule ^(.*)$ "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $res = $sftp->rename('test file.txt', 'test file2.txt');
-      unless ($res) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_RENAME failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      if (-f $test_file) {
-        die("$test_file file exists unexpectedly");
-      }
-
-      unless (-f $test_file2) {
-        die("$test_file2 file does not exist as expected");
-      }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_symlink {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "ABCD" x 8192;
-
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  my $test_symlink = File::Spec->rel2abs("$tmpdir/test_link");
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m SYMLINK',
-        'RewriteRule ^(.*)$ "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $res = $sftp->symlink('test file.txt', 'test link');
-      unless ($res) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_SYMLINK failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      unless (-l $test_symlink) {
-        die("$test_symlink symlink does not exist as expected");
-      }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub sftp_rewrite_readlink {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "ABCD" x 8192;
-
-    unless (close($fh)) {
-      die("Can't write $test_file: $!");
-    }
-
-  } else {
-    die("Can't open $test_file: $!");
-  }
-
-  my $test_symlink = File::Spec->rel2abs("$tmpdir/test_link");
-  unless (symlink($test_file, $test_symlink)) {
-    die("Can't symlink $test_symlink to $test_file: $!");
-  }
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m READLINK',
-        'RewriteRule ^(.*)$ "${replace:!$1! !_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
-
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
-
-  require Net::SSH2;
-
-  my $ex;
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $sftp = $ssh2->sftp();
-      unless ($sftp) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $path = $sftp->readlink('test link');
-      unless ($path) {
-        my ($err_code, $err_name) = $sftp->error();
-        die("FXP_READLINK failed: [$err_name] ($err_code)");
-      }
-
-      $ssh2->disconnect();
-
-      $self->assert($test_file eq $path,
-        test_msg("Expected '$test_file', got '$path'"));
     };
 
     if ($@) {
@@ -23812,8 +34049,11 @@ EOS
 
       my $res = $fh->read($buf, 8192);
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -24026,8 +34266,11 @@ EOS
 
       print $fh "ABCD" x 8192;
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -24251,8 +34494,11 @@ EOS
 
       print $fh "ABCD" x 8192;
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -24471,8 +34717,11 @@ EOS
         die("Can't open sftp.conf: [$err_name] ($err_code)");
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -24695,8 +34944,11 @@ EOS
         die("Can't open sftp.conf: [$err_name] ($err_code)");
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
     };
@@ -24919,8 +35171,11 @@ EOS
         die("Can't open sftp.conf: [$err_name] ($err_code)");
       }
 
-      # To issue the FXP_CLOSE, we have to explicit destroy the filehandle
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
       $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
 
       $ssh2->disconnect();
 
@@ -24984,7 +35239,7 @@ EOS
   unlink($log_file);
 }
 
-sub scp_rewrite_upload {
+sub scp_ifsess_protocols {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -24999,6 +35254,7 @@ sub scp_rewrite_upload {
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -25017,12 +35273,12 @@ sub scp_rewrite_upload {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
   my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
 
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
 
   my $config = {
     PidFile => $pid_file,
@@ -25039,15 +35295,6 @@ sub scp_rewrite_upload {
         DelayEngine => 'off',
       },
 
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m STOR',
-        'RewriteRule ^(.*)$ "${replace:!$1!&!_}"',
-      ],
-
       'mod_sftp.c' => [
         "SFTPEngine on",
         "SFTPLog $log_file",
@@ -25059,168 +35306,26 @@ sub scp_rewrite_upload {
 
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
-  # Open pipes, for use between the parent and child processes.  Specifically,
-  # the child will indicate when it's done with its test by writing a message
-  # to the parent.
-  my ($rfh, $wfh);
-  unless (pipe($rfh, $wfh)) {
-    die("Can't open pipe: $!");
-  }
+  if (open(my $fh, ">> $config_file")) {
+    print $fh <<EOC;
+<IfModule mod_ifsession.c>
+  <IfUser foo>
+    Protocols sftp scp
+  </IfUser>
 
-  require Net::SSH2;
+  <IfUser $user>
+    Protocols sftp
+  </IfUser>
+</IfModule>
+EOC
 
-  my $ex;
-
-  # Ignore SIGPIPE
-  local $SIG{PIPE} = sub { };
-
-  # Fork child
-  $self->handle_sigchld();
-  defined(my $pid = fork()) or die("Can't fork: $!");
-  if ($pid) {
-    eval {
-      my $ssh2 = Net::SSH2->new();
-
-      sleep(1);
-
-      unless ($ssh2->connect('127.0.0.1', $port)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      unless ($ssh2->auth_password($user, $passwd)) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      }
-
-      my $res = $ssh2->scp_put($config_file, 'test&file.txt');
-      unless ($res) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't upload $config_file to server: [$err_name] ($err_code) $err_str");
-      }
-
-      $ssh2->disconnect();
-
-      unless (-f $test_file) {
-        die("$test_file file does not exist as expected");
-      }
-    };
-
-    if ($@) {
-      $ex = $@;
-    }
-
-    $wfh->print("done\n");
-    $wfh->flush();
-
-  } else {
-    eval { server_wait($config_file, $rfh) };
-    if ($@) {
-      warn($@);
-      exit 1;
-    }
-
-    exit 0;
-  }
-
-  # Stop server
-  server_stop($pid_file);
-
-  $self->assert_child_ok($pid);
-
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
-}
-
-sub scp_rewrite_download {
-  my $self = shift;
-  my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/sftp.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
-  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
-  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
-
-  my $test_file = File::Spec->rel2abs("$tmpdir/test_file.txt");
-  if (open(my $fh, "> $test_file")) {
-    print $fh "Hello, World!\n";
     unless (close($fh)) {
-      die("Can't write $test_file: $!");
+      die("Can't write $config_file: $!");
     }
 
   } else {
-    die("Can't open $test_file: $!");
+    die("Can't open $config_file: $!");
   }
-
-  my $output_file = File::Spec->rel2abs("$tmpdir/retrieved.txt");
-
-  my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
-    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
-
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-
-    IfModules => {
-      'mod_delay.c' => {
-        DelayEngine => 'off',
-      },
-
-      'mod_rewrite.c' => [
-        'RewriteEngine on',
-        "RewriteLog $log_file",
-
-        'RewriteMap replace int:replaceall',
-        'RewriteCondition %m RETR',
-        'RewriteCondition %F &',
-        'RewriteRule ^(.*)$ "${replace:!$1!&!_}"',
-      ],
-
-      'mod_sftp.c' => [
-        "SFTPEngine on",
-        "SFTPLog $log_file",
-        "SFTPHostKey $rsa_host_key",
-        "SFTPHostKey $dsa_host_key",
-      ],
-    },
-  };
-
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -25256,16 +35361,17 @@ sub scp_rewrite_download {
         die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
-      my $res = $ssh2->scp_get('test&file.txt', $output_file);
-      unless ($res) {
-        my ($err_code, $err_name, $err_str) = $ssh2->error();
-        die("Can't download sftp.conf from server: [$err_name] ($err_code) $err_str");
+      my $res = $ssh2->scp_put($config_file, 'test.txt');
+      if ($res) {
+        die("SCP upload succeeded unexpectedly");
       }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
 
       $ssh2->disconnect();
 
-      unless (-f $output_file) {
-        die("$output_file file does not exist as expected");
+      if (-f $test_file) {
+        die("File $test_file exists unexpectedly");
       }
     };
 

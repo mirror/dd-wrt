@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mac.c,v 1.5.2.2 2010/04/05 23:13:44 castaglia Exp $
+ * $Id: mac.c,v 1.9 2011/09/09 18:13:53 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -381,11 +381,24 @@ int sftp_mac_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
   HMAC_CTX_init(mac_ctx);
+
+# if OPENSSL_VERSION_NUMBER >= 0x10000001L
+  if (HMAC_Init_ex(mac_ctx, mac->key, mac->key_len, mac->digest, NULL) != 1) {
+    pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error initializing HMAC: %s", sftp_crypto_get_errors());
+    errno = EPERM;
+    return -1;
+  }
+
+# else
+  HMAC_Init_ex(mac_ctx, mac->key, mac->key_len, mac->digest, NULL);
+# endif /* OpenSSL-1.0.0 and later */
+
 #else
   /* Reset the HMAC context. */
   HMAC_Init(mac_ctx, NULL, 0, NULL);
-#endif
   HMAC_Init(mac_ctx, mac->key, mac->key_len, mac->digest);
+#endif
 
   if (mac->mac_len == 0) {
     blocksz = EVP_MD_size(mac->digest);
@@ -423,9 +436,41 @@ int sftp_mac_read_data(struct ssh2_packet *pkt) {
     sftp_msg_write_data(&buf, &buflen, pkt->payload, pkt->payload_len, FALSE);
     sftp_msg_write_data(&buf, &buflen, pkt->padding, pkt->padding_len, FALSE);
 
+#if OPENSSL_VERSION_NUMBER > 0x000907000L
+# if OPENSSL_VERSION_NUMBER >= 0x10000001L
+    if (HMAC_Init_ex(mac_ctx, NULL, 0, NULL, NULL) != 1) {
+      pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error resetting HMAC context: %s", sftp_crypto_get_errors());
+      errno = EPERM;
+      return -1;
+    }
+# else
+    HMAC_Init_ex(mac_ctx, NULL, 0, NULL, NULL);
+# endif /* OpenSSL-1.0.0 and later */
+
+#else
     HMAC_Init(mac_ctx, NULL, 0, NULL);
+#endif /* OpenSSL-0.9.7 and later */
+
+#if OPENSSL_VERSION_NUMBER >= 0x10000001L
+    if (HMAC_Update(mac_ctx, (unsigned char *) ptr, (bufsz - buflen)) != 1) {
+      pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error adding %lu bytes of data to  HMAC context: %s",
+        (unsigned long) (bufsz - buflen), sftp_crypto_get_errors());
+      errno = EPERM;
+      return -1;
+    }
+
+    if (HMAC_Final(mac_ctx, mac_data, &mac_len) != 1) {
+      pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error finalizing HMAC context: %s", sftp_crypto_get_errors());
+      errno = EPERM;
+      return -1;
+    }
+#else
     HMAC_Update(mac_ctx, (unsigned char *) ptr, (bufsz - buflen));
     HMAC_Final(mac_ctx, mac_data, &mac_len);
+#endif /* OpenSSL-1.0.0 and later */
 
     if (mac_len == 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -575,9 +620,41 @@ int sftp_mac_write_data(struct ssh2_packet *pkt) {
     sftp_msg_write_data(&buf, &buflen, pkt->payload, pkt->payload_len, FALSE);
     sftp_msg_write_data(&buf, &buflen, pkt->padding, pkt->padding_len, FALSE);
 
+#if OPENSSL_VERSION_NUMBER > 0x000907000L
+# if OPENSSL_VERSION_NUMBER >= 0x10000001L
+    if (HMAC_Init_ex(mac_ctx, NULL, 0, NULL, NULL) != 1) {
+      pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error resetting HMAC context: %s", sftp_crypto_get_errors());
+      errno = EPERM;
+      return -1;
+    }
+# else
+    HMAC_Init_ex(mac_ctx, NULL, 0, NULL, NULL);
+# endif /* OpenSSL-1.0.0 and later */
+
+#else
     HMAC_Init(mac_ctx, NULL, 0, NULL);
+#endif /* OpenSSL-0.9.7 and later */
+
+#if OPENSSL_VERSION_NUMBER >= 0x10000001L
+    if (HMAC_Update(mac_ctx, (unsigned char *) ptr, (bufsz - buflen)) != 1) {
+      pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error adding %lu bytes of data to  HMAC context: %s",
+        (unsigned long) (bufsz - buflen), sftp_crypto_get_errors());
+      errno = EPERM;
+      return -1;
+    }
+
+    if (HMAC_Final(mac_ctx, mac_data, &mac_len) != 1) {
+      pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error finalizing HMAC context: %s", sftp_crypto_get_errors());
+      errno = EPERM;
+      return -1;
+    }
+#else
     HMAC_Update(mac_ctx, (unsigned char *) ptr, (bufsz - buflen));
     HMAC_Final(mac_ctx, mac_data, &mac_len);
+#endif /* OpenSSL-1.0.0 and later */
 
     if (mac_len == 0) {
       pkt->mac = NULL;

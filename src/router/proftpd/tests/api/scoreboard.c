@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Scoreboard API tests
- * $Id: scoreboard.c,v 1.2 2009/05/11 18:07:36 castaglia Exp $
+ * $Id: scoreboard.c,v 1.6 2011/09/23 16:54:03 castaglia Exp $
  */
 
 #include "tests.h"
@@ -131,6 +131,7 @@ END_TEST
 START_TEST (scoreboard_open_close_test) {
   int res;
   const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck",
     *symlink_path = "/tmp/prt-scoreboard/symlink";
 
   res = mkdir(dir, 0775);
@@ -154,12 +155,14 @@ START_TEST (scoreboard_open_close_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   if (symlink(symlink_path, path) == 0) {
 
     res = pr_open_scoreboard(O_RDWR);
     if (res == 0) {
       (void) unlink(path);
+      (void) unlink(mutex_path);
       (void) unlink(symlink_path);
       (void) rmdir(dir);
 
@@ -170,6 +173,7 @@ START_TEST (scoreboard_open_close_test) {
       int xerrno = errno;
 
       (void) unlink(symlink_path);
+      (void) unlink(mutex_path);
       (void) unlink(path);
       (void) rmdir(dir);
 
@@ -177,12 +181,14 @@ START_TEST (scoreboard_open_close_test) {
     }
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) unlink(symlink_path);
   }
 
   res = pr_open_scoreboard(O_RDONLY);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly opened scoreboard using O_RDONLY");
@@ -192,6 +198,7 @@ START_TEST (scoreboard_open_close_test) {
     int xerrno = errno;
 
     (void) unlink(symlink_path);
+    (void) unlink(mutex_path);
     (void) unlink(path);
     (void) rmdir(dir);
 
@@ -202,6 +209,7 @@ START_TEST (scoreboard_open_close_test) {
   if (res < 0) {
     int xerrno = errno;
 
+    (void) unlink(mutex_path);
     (void) unlink(path);
     (void) rmdir(dir);
 
@@ -213,6 +221,7 @@ START_TEST (scoreboard_open_close_test) {
 
   res = pr_open_scoreboard(O_RDONLY);
   if (res == 0) {
+    (void) unlink(mutex_path);
     (void) unlink(path);
     (void) rmdir(dir);
 
@@ -222,12 +231,14 @@ START_TEST (scoreboard_open_close_test) {
   if (errno != EINVAL) {
     int xerrno = errno;
 
+    (void) unlink(mutex_path);
     (void) unlink(path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
   }
 
+  (void) unlink(mutex_path);
   (void) unlink(path);
   (void) rmdir(dir);
 }
@@ -235,7 +246,8 @@ END_TEST
 
 START_TEST (scoreboard_delete_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
   struct stat st;
 
   res = mkdir(dir, 0775);
@@ -259,11 +271,13 @@ START_TEST (scoreboard_delete_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_open_scoreboard(O_RDWR);
   if (res < 0) {
     int xerrno = errno;
 
+    (void) unlink(mutex_path);
     (void) unlink(path);
     (void) rmdir(dir);
 
@@ -274,6 +288,7 @@ START_TEST (scoreboard_delete_test) {
   if (res < 0) {
     int xerrno = errno;
 
+    (void) unlink(mutex_path);
     (void) unlink(path);
     (void) rmdir(dir);
 
@@ -285,19 +300,31 @@ START_TEST (scoreboard_delete_test) {
   res = stat(pr_get_scoreboard(), &st);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly found deleted scoreboard");
   }
 
+  res = stat(pr_get_scoreboard_mutex(), &st);
+  if (res == 0) {
+    (void) unlink(path);
+    (void) unlink(mutex_path);
+    (void) rmdir(dir);
+
+    fail("Unexpectedly found deleted scoreboard mutex");
+  }
+
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_restore_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
 
   res = mkdir(dir, 0775);
   fail_unless(res == 0, "Failed to create directory '%s': %s", dir,
@@ -320,10 +347,12 @@ START_TEST (scoreboard_restore_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_restore_scoreboard();
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly restored scoreboard");
@@ -333,6 +362,7 @@ START_TEST (scoreboard_restore_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -343,6 +373,7 @@ START_TEST (scoreboard_restore_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -353,19 +384,22 @@ START_TEST (scoreboard_restore_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to restore scoreboard: %s", strerror(xerrno));
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_rewind_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
 
   res = mkdir(dir, 0775);
   fail_unless(res == 0, "Failed to create directory '%s': %s", dir,
@@ -388,10 +422,12 @@ START_TEST (scoreboard_rewind_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_rewind_scoreboard();
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly rewound scoreboard");
@@ -401,6 +437,7 @@ START_TEST (scoreboard_rewind_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -411,6 +448,7 @@ START_TEST (scoreboard_rewind_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -421,12 +459,14 @@ START_TEST (scoreboard_rewind_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to rewind scoreboard: %s", strerror(xerrno));
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
@@ -434,7 +474,8 @@ END_TEST
 START_TEST (scoreboard_scrub_test) {
   uid_t euid;
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
 
   res = mkdir(dir, 0775);
   fail_unless(res == 0, "Failed to create directory '%s': %s", dir,
@@ -457,10 +498,12 @@ START_TEST (scoreboard_scrub_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_scoreboard_scrub();
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly scrubbed scoreboard");
@@ -468,14 +511,16 @@ START_TEST (scoreboard_scrub_test) {
 
   euid = geteuid();
   if (euid != 0) {
-    if (errno != EPERM) {
+    if (errno != EPERM &&
+        errno != ENOENT) {
       int xerrno = errno;
 
       (void) unlink(path);
+      (void) unlink(mutex_path);
       (void) rmdir(dir);
 
-      fail("Failed to set errno to EPERM, got %d (euid = %lu)", xerrno,
-        (unsigned long) euid);
+      fail("Failed to set errno to EPERM/ENOENT, got %d [%s] (euid = %lu)",
+        xerrno, strerror(xerrno), (unsigned long) euid);
     }
 
   } else {
@@ -483,10 +528,11 @@ START_TEST (scoreboard_scrub_test) {
       int xerrno = errno;
 
       (void) unlink(path);
+      (void) unlink(mutex_path);
       (void) rmdir(dir);
 
-      fail("Failed to set errno to ENOENT, got %d (euid = %lu)", xerrno,
-        (unsigned long) euid);
+      fail("Failed to set errno to ENOENT, got %d [%s] (euid = %lu)", xerrno,
+        strerror(xerrno), (unsigned long) euid);
     }
   }
 
@@ -495,6 +541,7 @@ START_TEST (scoreboard_scrub_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -505,19 +552,22 @@ START_TEST (scoreboard_scrub_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to scrub scoreboard: %s", strerror(xerrno));
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_get_daemon_pid_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
   pid_t daemon_pid;
 
   res = mkdir(dir, 0775);
@@ -541,12 +591,14 @@ START_TEST (scoreboard_get_daemon_pid_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_open_scoreboard(O_RDWR);
   if (res < 0) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -555,6 +607,7 @@ START_TEST (scoreboard_get_daemon_pid_test) {
   daemon_pid = pr_scoreboard_get_daemon_pid();
   if (daemon_pid != getpid()) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Expected %lu, got %lu", (unsigned long) getpid(),
@@ -570,6 +623,7 @@ START_TEST (scoreboard_get_daemon_pid_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -578,6 +632,7 @@ START_TEST (scoreboard_get_daemon_pid_test) {
   daemon_pid = pr_scoreboard_get_daemon_pid();
   if (daemon_pid != 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Expected %lu, got %lu", (unsigned long) 0,
@@ -585,13 +640,15 @@ START_TEST (scoreboard_get_daemon_pid_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_get_daemon_uptime_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
   time_t daemon_uptime, now;
 
   res = mkdir(dir, 0775);
@@ -615,12 +672,14 @@ START_TEST (scoreboard_get_daemon_uptime_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_open_scoreboard(O_RDWR);
   if (res < 0) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -631,6 +690,7 @@ START_TEST (scoreboard_get_daemon_uptime_test) {
 
   if (daemon_uptime > now) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Expected %lu, got %lu", (unsigned long) now,
@@ -646,6 +706,7 @@ START_TEST (scoreboard_get_daemon_uptime_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -654,6 +715,7 @@ START_TEST (scoreboard_get_daemon_uptime_test) {
   daemon_uptime = pr_scoreboard_get_daemon_uptime();
   if (daemon_uptime != 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Expected %lu, got %lu", (unsigned long) 0,
@@ -661,13 +723,15 @@ START_TEST (scoreboard_get_daemon_uptime_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_entry_add_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
 
   res = mkdir(dir, 0775);
   fail_unless(res == 0, "Failed to create directory '%s': %s", dir,
@@ -690,10 +754,12 @@ START_TEST (scoreboard_entry_add_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_scoreboard_entry_add();
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly added entry to scoreboard");
@@ -703,6 +769,7 @@ START_TEST (scoreboard_entry_add_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -713,6 +780,7 @@ START_TEST (scoreboard_entry_add_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -723,6 +791,7 @@ START_TEST (scoreboard_entry_add_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to add entry to scoreboard: %s", strerror(xerrno));
@@ -731,6 +800,7 @@ START_TEST (scoreboard_entry_add_test) {
   res = pr_scoreboard_entry_add();
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly added entry to scoreboard");
@@ -740,19 +810,22 @@ START_TEST (scoreboard_entry_add_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EPERM (got %d)", xerrno);
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_entry_del_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
 
   res = mkdir(dir, 0775);
   fail_unless(res == 0, "Failed to create directory '%s': %s", dir,
@@ -775,10 +848,12 @@ START_TEST (scoreboard_entry_del_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_scoreboard_entry_del(FALSE);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly deleted entry from scoreboard");
@@ -788,6 +863,7 @@ START_TEST (scoreboard_entry_del_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -798,6 +874,7 @@ START_TEST (scoreboard_entry_del_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -806,18 +883,20 @@ START_TEST (scoreboard_entry_del_test) {
   res = pr_scoreboard_entry_del(FALSE);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly deleted entry from scoreboard");
   }
 
-  if (errno != EPERM) {
+  if (errno != ENOENT) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
-    fail("Failed to set errno to EPERM (got %d)", xerrno);
+    fail("Failed to set errno to ENOENT (got %d)", xerrno);
   }
 
   res = pr_scoreboard_entry_add();
@@ -825,6 +904,7 @@ START_TEST (scoreboard_entry_del_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to add entry to scoreboard: %s", strerror(xerrno));
@@ -835,6 +915,7 @@ START_TEST (scoreboard_entry_del_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to delete entry from scoreboard: %s", strerror(xerrno));
@@ -843,28 +924,32 @@ START_TEST (scoreboard_entry_del_test) {
   res = pr_scoreboard_entry_del(FALSE);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly deleted entry from scoreboard");
   }
 
-  if (errno != EPERM) {
+  if (errno != ENOENT) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
-    fail("Failed to set errno to EPERM (got %d)", xerrno);
+    fail("Failed to set errno to ENOENT (got %d)", xerrno);
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_entry_read_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
   pr_scoreboard_entry_t *score;
 
   res = mkdir(dir, 0775);
@@ -888,10 +973,12 @@ START_TEST (scoreboard_entry_read_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   score = pr_scoreboard_entry_read();
   if (score != NULL) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly read scoreboard entry");
@@ -901,6 +988,7 @@ START_TEST (scoreboard_entry_read_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -911,6 +999,7 @@ START_TEST (scoreboard_entry_read_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -920,6 +1009,7 @@ START_TEST (scoreboard_entry_read_test) {
   score = pr_scoreboard_entry_read();
   if (score != NULL) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly read scoreboard entry");
@@ -930,6 +1020,7 @@ START_TEST (scoreboard_entry_read_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to add entry to scoreboard: %s", strerror(xerrno));
@@ -940,6 +1031,7 @@ START_TEST (scoreboard_entry_read_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to read scoreboard entry: %s", strerror(xerrno));
@@ -947,6 +1039,7 @@ START_TEST (scoreboard_entry_read_test) {
 
   if (score->sce_pid != getpid()) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to read expected scoreboard entry (expected PID %lu, got %lu)",
@@ -956,19 +1049,22 @@ START_TEST (scoreboard_entry_read_test) {
   score = pr_scoreboard_entry_read();
   if (score != NULL) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly read scoreboard entry");
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
 
 START_TEST (scoreboard_entry_get_test) {
   int res;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
   const char *val;
 
   res = mkdir(dir, 0775);
@@ -992,10 +1088,12 @@ START_TEST (scoreboard_entry_get_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   val = pr_scoreboard_entry_get(-1);
   if (val != NULL) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly read value from scoreboard entry");
@@ -1005,6 +1103,7 @@ START_TEST (scoreboard_entry_get_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -1015,6 +1114,7 @@ START_TEST (scoreboard_entry_get_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -1023,6 +1123,7 @@ START_TEST (scoreboard_entry_get_test) {
   val = pr_scoreboard_entry_get(-1);
   if (val != NULL) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly read value from scoreboard entry");
@@ -1032,6 +1133,7 @@ START_TEST (scoreboard_entry_get_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EPERM (got %d)", xerrno);
@@ -1042,6 +1144,7 @@ START_TEST (scoreboard_entry_get_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to add entry to scoreboard: %s", strerror(xerrno));
@@ -1050,6 +1153,7 @@ START_TEST (scoreboard_entry_get_test) {
   val = pr_scoreboard_entry_get(-1);
   if (val != NULL) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly read value from scoreboard entry");
@@ -1059,12 +1163,14 @@ START_TEST (scoreboard_entry_get_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to ENOENT (got %d)", xerrno);
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST
@@ -1072,7 +1178,8 @@ END_TEST
 START_TEST (scoreboard_entry_update_test) {
   int res;
   const char *val;
-  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test";
+  const char *dir = "/tmp/prt-scoreboard/", *path = "/tmp/prt-scoreboard/test",
+    *mutex_path = "/tmp/prt-scoreboard/test.lck";
   pid_t pid = getpid();
 
   res = mkdir(dir, 0775);
@@ -1096,10 +1203,12 @@ START_TEST (scoreboard_entry_update_test) {
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
 
   res = pr_scoreboard_entry_update(pid, 0);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly updated scoreboard entry");
@@ -1109,6 +1218,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EINVAL (got %d)", xerrno);
@@ -1119,6 +1229,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
@@ -1127,6 +1238,7 @@ START_TEST (scoreboard_entry_update_test) {
   res = pr_scoreboard_entry_update(pid, 0);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly updated scoreboard entry");
@@ -1136,6 +1248,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to EPERM (got %d)", xerrno);
@@ -1146,6 +1259,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to add entry to scoreboard: %s", strerror(xerrno));
@@ -1154,6 +1268,7 @@ START_TEST (scoreboard_entry_update_test) {
   res = pr_scoreboard_entry_update(pid, -1);
   if (res == 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Unexpectedly updated scoreboard entry");
@@ -1163,6 +1278,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to set errno to ENOENT (got %d)", xerrno);
@@ -1174,6 +1290,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to update PR_SCORE_CWD: %s", strerror(xerrno));
@@ -1184,6 +1301,7 @@ START_TEST (scoreboard_entry_update_test) {
     int xerrno = errno;
 
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Failed to get entry PR_SCORE_CWD: %s", strerror(xerrno));
@@ -1191,12 +1309,14 @@ START_TEST (scoreboard_entry_update_test) {
 
   if (strcmp(val, "cwd") != 0) {
     (void) unlink(path);
+    (void) unlink(mutex_path);
     (void) rmdir(dir);
 
     fail("Expected '%s', got '%s'", "cwd", val);
   }
 
   (void) unlink(path);
+  (void) unlink(mutex_path);
   (void) rmdir(dir);
 }
 END_TEST

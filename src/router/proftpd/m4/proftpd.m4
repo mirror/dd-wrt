@@ -15,7 +15,8 @@ AC_DEFUN([PR_FUNC_SETGRENT_VOID],
     }
   ],
   [ac_cv_func_setgrent_void=no],
-  [ac_cv_func_setgrent_void=yes],,
+  [ac_cv_func_setgrent_void=yes],
+  [ac_cv_func_setgrent_void=yes],
 )])
 
 if test $ac_cv_func_setgrent_void = yes; then

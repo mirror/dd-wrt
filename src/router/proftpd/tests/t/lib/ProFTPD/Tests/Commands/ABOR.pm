@@ -1,10 +1,9 @@
 package ProFTPD::Tests::Commands::ABOR;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
 use File::Spec;
 use IO::Handle;
 use Socket;
@@ -64,29 +63,6 @@ sub new {
 
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
-}
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub abor_retr_binary_ok {
@@ -176,7 +152,7 @@ sub abor_retr_binary_ok {
 
       # Read 1KB of the file, then abort the download
       my $buf;
-      $conn->read($buf, 1024);
+      $conn->read($buf, 1024, 30);
 
       $conn->abort();
 
@@ -323,7 +299,7 @@ sub abor_retr_ascii_ok {
 
       # Read 1KB of the file, then abort the download
       my $buf;
-      $conn->read($buf, 1024);
+      $conn->read($buf, 1024, 30);
 
       $conn->abort();
 
@@ -480,7 +456,7 @@ sub abor_retr_ascii_largefile_ok {
 
       # Read 1KB of the file, then abort the download
       my $buf;
-      $conn->read($buf, 1024);
+      $conn->read($buf, 1024, 30);
 
       $conn->abort();
 
@@ -637,7 +613,7 @@ sub abor_retr_ascii_largefile_followed_by_list_ok {
 
       # Read 1KB of the file, then abort the download
       my $buf;
-      $conn->read($buf, 1024);
+      $conn->read($buf, 1024, 30);
 
       $conn->abort();
 
@@ -665,7 +641,7 @@ sub abor_retr_ascii_largefile_followed_by_list_ok {
 
       $buf = '';
       my $info;
-      while ($conn->read($info, 8192)) {
+      while ($conn->read($info, 8192, 30)) {
         $buf .= $info;
       }
 
@@ -687,6 +663,7 @@ sub abor_retr_ascii_largefile_followed_by_list_ok {
         'cmds.passwd' => 1,
         'cmds.pid' => 1,
         'cmds.scoreboard' => 1,
+        'cmds.scoreboard.lck' => 1,
         'largefile.txt' => 1,
       };
 
@@ -850,7 +827,7 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
       my $buf;
       my $count = 0;
       while ($count != $test_filesz) {
-        $count += $conn->read($buf, 8192);
+        $count += $conn->read($buf, 8192, 30);
 
         if ($count > ($test_filesz - 8192)) {
           $conn->abort();
@@ -884,7 +861,7 @@ sub abor_retr_binary_largefile_followed_by_retr_ok {
           $client->response_msg());
       }
 
-      while ($conn->read($buf, 8192)) {
+      while ($conn->read($buf, 8192, 30)) {
       }
 
       $conn->close();
@@ -1324,7 +1301,7 @@ sub abor_with_cyrillic_encoding_ok {
 
       # Read one byte of the file, then abort the download
       my $buf;
-      $conn->read($buf, 1);
+      $conn->read($buf, 1, 30);
 
       $conn->abort();
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'keyboard-interactive' user authentication
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-kbdint.c,v 1.3 2009/03/19 06:04:08 castaglia Exp $
+ * $Id: auth-kbdint.c,v 1.6 2011/08/04 21:15:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -36,9 +36,9 @@
 
 static const char *trace_channel = "ssh2";
 
-int sftp_auth_kbdint(struct ssh2_packet *pkt, const char *orig_user,
-    const char *user, const char *service, char **buf, uint32_t *buflen,
-    int *send_userauth_fail) {
+int sftp_auth_kbdint(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
+    const char *orig_user, const char *user, const char *service, char **buf,
+    uint32_t *buflen, int *send_userauth_fail) {
   const char *cipher_algo, *mac_algo;
   struct passwd *pw;
   char *submethods;
@@ -49,6 +49,19 @@ int sftp_auth_kbdint(struct ssh2_packet *pkt, const char *orig_user,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "no 'keyboard-interactive' drivers currently registered, unable to "
       "authenticate user '%s' via 'keyboard-interactive' method", user);
+
+    *send_userauth_fail = TRUE;
+    errno = EPERM;
+    return 0;
+  }
+
+  if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "authentication request for user '%s' blocked by '%s' handler",
+      orig_user, pass_cmd->argv[0]);
+
+    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
 
     *send_userauth_fail = TRUE;
     errno = EPERM;
@@ -76,8 +89,8 @@ int sftp_auth_kbdint(struct ssh2_packet *pkt, const char *orig_user,
   /* XXX Is this too strict?  For PAM authentication, no -- but for S/Key or
    * one-time password authencation, maybe yes.
    */
-  if (strcmp(cipher_algo, "none") == 0 ||
-      strcmp(mac_algo, "none") == 0) {
+  if (strncmp(cipher_algo, "none", 5) == 0 ||
+      strncmp(mac_algo, "none", 5) == 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "cipher algorithm '%s' or MAC algorithm '%s' unacceptable for "
       "keyboard-interactive authentication, denying authentication request",

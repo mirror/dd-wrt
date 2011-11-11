@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth.c,v 1.23.2.3 2011/01/24 17:53:26 castaglia Exp $
+ * $Id: auth.c,v 1.38 2011/08/04 21:15:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -40,6 +40,7 @@
 #include "keystore.h"
 #include "kbdint.h"
 #include "utf8.h"
+#include "display.h"
 
 /* This value of 6 is the same default as OpenSSH's MaxAuthTries. */
 static unsigned int auth_attempts_max = 6;
@@ -145,7 +146,7 @@ static char *get_default_root(pool *p) {
   if (path) {
     path = path_subst_uservar(p, &path);
 
-    if (strcmp(path, "/") == 0) {
+    if (strncmp(path, "/", 2) == 0) {
       path = NULL;
 
     } else {
@@ -163,11 +164,10 @@ static char *get_default_root(pool *p) {
         path = real_path;
 
       } else {
-        int res;
         char interp_path[PR_TUNABLE_PATH_MAX + 1];
 
         memset(interp_path, '\0', sizeof(interp_path));
-        res = pr_fs_interpolate(path, interp_path, sizeof(interp_path) - 1);
+        (void) pr_fs_interpolate(path, interp_path, sizeof(interp_path) - 1);
 
         pr_log_pri(PR_LOG_NOTICE,
           "notice: unable to use %s (resolved to '%s'): %s", path, interp_path,
@@ -440,7 +440,7 @@ static int setup_env(pool *p, char *user) {
     xferlog = c->argv[0];
   }
 
-  if (strcasecmp(xferlog, "none") == 0) {
+  if (strncasecmp(xferlog, "none", 5) == 0) {
     xferlog_open(NULL);
 
   } else {
@@ -484,8 +484,16 @@ static int setup_env(pool *p, char *user) {
   pr_signals_unblock();
 
   /* Should we give up root privs completely here? */
-  PRIVS_REVOKE
-  session.disable_id_switching = TRUE;
+  c = find_config(main_server->conf, CONF_PARAM, "RootRevoke", FALSE);
+  if (c != NULL &&
+      *((int *) c->argv[0]) == FALSE) {
+    pr_log_debug(DEBUG8, MOD_SFTP_VERSION
+      ": retaining root privileges per RootRevoke setting");
+
+  } else {
+    PRIVS_REVOKE
+    session.disable_id_switching = TRUE;
+  }
 
 #ifdef HAVE_GETEUID
   if (getegid() != pw->pw_gid ||
@@ -496,7 +504,7 @@ static int setup_env(pool *p, char *user) {
 #endif
 
   if (pw->pw_dir == NULL ||
-      strcmp(pw->pw_dir, "") == 0) {
+      strncmp(pw->pw_dir, "", 1) == 0) {
     pr_log_pri(PR_LOG_ERR, "Home directory for user '%s' is NULL/empty",
       session.user);
     return -1;
@@ -587,10 +595,10 @@ static int setup_env(pool *p, char *user) {
 
 static int send_userauth_banner_file(void) {
   struct ssh2_packet *pkt;
-  char *buf, *ptr, *mesg = "", *path;
-  char data[PR_TUNABLE_BUFFER_SIZE];
-  uint32_t buflen, bufsz;
+  char *path, *buf, *ptr;
+  const char *msg;
   int res;
+  uint32_t buflen, bufsz;
   config_rec *c;
   pr_fh_t *fh;
   pool *sub_pool;
@@ -622,36 +630,24 @@ static int send_userauth_banner_file(void) {
   sub_pool = make_sub_pool(auth_pool);
   pr_pool_tag(sub_pool, "SSH2 auth banner pool");
 
-  while (pr_fsio_gets(data, sizeof(data), fh) != NULL) {
-    size_t datalen;
-
-    pr_signals_handle();
-
-    data[sizeof(data)-1] = '\0';
-    datalen = strlen(data);
-
-    while (datalen &&
-           (data[datalen-1] == '\r' ||
-            data[datalen-1] == '\n')) {
-      data[datalen-1] = '\0';
-      datalen--;
-    }
-
-    /* XXX Add handling of Variables, etc here. */
-
-    /* We have to separate lines using CRLF, as per RFC 4252 Section 5.4. */
-    mesg = pstrcat(sub_pool, mesg, *mesg ? "\r\n" : "", data, NULL);
-  }
-
+  msg = sftp_display_fh_get_msg(sub_pool, fh);
   pr_fsio_close(fh);
 
-  pkt = sftp_ssh2_packet_create(auth_pool);
+  if (msg == NULL) {
+    destroy_pool(sub_pool);
+    return -1;
+  }
 
-  buflen = bufsz = strlen(mesg) + 32;
+  pr_trace_msg(trace_channel, 3,
+    "sending userauth banner from SFTPDisplayBanner file '%s'", path);
+
+  pkt = sftp_ssh2_packet_create(sub_pool);
+
+  buflen = bufsz = strlen(msg) + 32;
   ptr = buf = palloc(pkt->pool, bufsz);
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_USER_AUTH_BANNER);
-  sftp_msg_write_string(&buf, &buflen, mesg);
+  sftp_msg_write_string(&buf, &buflen, msg);
 
   /* XXX locale of banner */
   sftp_msg_write_string(&buf, &buflen, "");
@@ -659,22 +655,16 @@ static int send_userauth_banner_file(void) {
   pkt->payload = ptr;
   pkt->payload_len = (bufsz - buflen);
 
-  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-    "sending userauth banner");
-
   res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
-  if (res < 0) {
-    destroy_pool(pkt->pool);
-    destroy_pool(sub_pool);
+  destroy_pool(pkt->pool);
 
+  if (res < 0) {
+    destroy_pool(sub_pool);
     return -1;
   }
 
   auth_sent_userauth_banner_file = TRUE;
-
-  destroy_pool(pkt->pool);
   destroy_pool(sub_pool);
-
   return 0;
 }
 
@@ -702,16 +692,16 @@ static int send_userauth_failure(char *failed_meth) {
       meths = sreplace(pkt->pool, meths, ",,", ",", NULL);
     }
 
-    if (strcmp(failed_meth, "publickey") == 0) {
+    if (strncmp(failed_meth, "publickey", 10) == 0) {
       auth_meths_enabled &= ~SFTP_AUTH_FL_METH_PUBLICKEY;
 
-    } else if (strcmp(failed_meth, "hostbased") == 0) {
+    } else if (strncmp(failed_meth, "hostbased", 10) == 0) {
       auth_meths_enabled &= ~SFTP_AUTH_FL_METH_HOSTBASED;
 
-    } else if (strcmp(failed_meth, "password") == 0) {
+    } else if (strncmp(failed_meth, "password", 9) == 0) {
       auth_meths_enabled &= ~SFTP_AUTH_FL_METH_PASSWORD;
 
-    } else if (strcmp(failed_meth, "keyboard-interactive") == 0) {
+    } else if (strncmp(failed_meth, "keyboard-interactive", 21) == 0) {
       auth_meths_enabled &= ~SFTP_AUTH_FL_METH_KBDINT;
     }
 
@@ -849,6 +839,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   uint32_t buflen;
   cmd_rec *cmd, *user_cmd, *pass_cmd;
   int res, send_userauth_fail = FALSE;
+  config_rec *c;
 
   buf = pkt->payload;
   buflen = pkt->payload_len;
@@ -859,7 +850,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   user_cmd->arg = orig_user;
 
   pass_cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, C_PASS));
-  pass_cmd->arg = "(hidden)";
+  pass_cmd->arg = pstrdup(pkt->pool, "(hidden)");
 
   /* Dispatch these as a PRE_CMDs, so that mod_delay's tactics can be used
    * to ameliorate any timing-based attacks.
@@ -954,18 +945,17 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
 
   set_userauth_methods();
 
-  if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "authentication request for user '%s' blocked by '%s' handler",
-      orig_user, pass_cmd->argv[0]);
+  /* In order for the actual user password (if any) to be populated properly
+   * in the PRE_CMD PASS dispatch (e.g. this is needed for modules like
+   * mod_radius; see Bug#3676), the PRE_CMD PASS dispatch needs to happen
+   * in the method-specific auth functions, not here.
+   *
+   * Thus this code will look a little strange; the PRE_CMD PASS dispatching
+   * happens in the auth-specific functions, but the POST/LOG_CMD PASS
+   * dispatching will happen here.
+   */
 
-    pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
-    pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
-
-    return -1;
-  }
-
-  if (strcmp(method, "none") == 0) {
+  if (strncmp(method, "none", 5) == 0) {
     /* If the client requested the "none" auth method at this point, then
      * the list of authentication methods supported by the server is being
      * queried.
@@ -985,10 +975,10 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
 
     return 0;
 
-  } else if (strcmp(method, "publickey") == 0) {
+  } else if (strncmp(method, "publickey", 10) == 0) {
     if (auth_meths_enabled & SFTP_AUTH_FL_METH_PUBLICKEY) {
-      res = sftp_auth_publickey(pkt, orig_user, user, *service, &buf, &buflen,
-        &send_userauth_fail);
+      res = sftp_auth_publickey(pkt, pass_cmd, orig_user, user, *service,
+        &buf, &buflen, &send_userauth_fail);
 
     } else {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
@@ -1010,10 +1000,10 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       return 0;
     }
 
-  } else if (strcmp(method, "keyboard-interactive") == 0) {
+  } else if (strncmp(method, "keyboard-interactive", 21) == 0) {
     if (auth_meths_enabled & SFTP_AUTH_FL_METH_KBDINT) {
-      res = sftp_auth_kbdint(pkt, orig_user, user, *service, &buf, &buflen,
-        &send_userauth_fail);
+      res = sftp_auth_kbdint(pkt, pass_cmd, orig_user, user, *service,
+        &buf, &buflen, &send_userauth_fail);
 
     } else {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
@@ -1035,10 +1025,10 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       return 0;
     }
 
-  } else if (strcmp(method, "password") == 0) {
+  } else if (strncmp(method, "password", 9) == 0) {
     if (auth_meths_enabled & SFTP_AUTH_FL_METH_PASSWORD) {
-      res = sftp_auth_password(pkt, orig_user, user, *service, &buf, &buflen,
-        &send_userauth_fail);
+      res = sftp_auth_password(pkt, pass_cmd, orig_user, user, *service,
+        &buf, &buflen, &send_userauth_fail);
 
     } else {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
@@ -1060,10 +1050,10 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       return 0;
     }
 
-  } else if (strcmp(method, "hostbased") == 0) {
+  } else if (strncmp(method, "hostbased", 10) == 0) {
     if (auth_meths_enabled & SFTP_AUTH_FL_METH_HOSTBASED) {
-      res = sftp_auth_hostbased(pkt, orig_user, user, *service, &buf, &buflen,
-        &send_userauth_fail);
+      res = sftp_auth_hostbased(pkt, pass_cmd, orig_user, user, *service,
+        &buf, &buflen, &send_userauth_fail);
 
     } else {
       pr_trace_msg(trace_channel, 10, "auth method '%s' not enabled", method);
@@ -1161,6 +1151,39 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
 
   pr_cmd_dispatch_phase(pass_cmd, POST_CMD, 0);
   pr_cmd_dispatch_phase(pass_cmd, LOG_CMD, PR_CMD_DISPATCH_FL_CLEAR_RESPONSE);
+
+  /* At this point, we can look up the Protocols config, which may have
+   * been tweaked via mod_ifsession's user/group/class-specific sections.
+   */
+  c = find_config(main_server->conf, CONF_PARAM, "Protocols", FALSE);
+  if (c) {
+    register unsigned int i;
+    unsigned int services = 0UL;
+    array_header *protocols;
+    char **elts; 
+
+    protocols = c->argv[0];
+    elts = protocols->elts;
+
+    for (i = 0; i < protocols->nelts; i++) {
+      char *protocol;
+
+      protocol = elts[i];
+      if (protocol != NULL) {
+        if (strncasecmp(protocol, "sftp", 5) == 0) {
+          services |= SFTP_SERVICE_FL_SFTP;
+
+        } else if (strncasecmp(protocol, "scp", 4) == 0) {
+          services |= SFTP_SERVICE_FL_SCP;
+
+        } else if (strncasecmp(protocol, "date", 5) == 0) {
+          services |= SFTP_SERVICE_FL_SCP;
+        }
+      }
+    }
+
+    sftp_services = services;
+  }
 
   return 1;
 }

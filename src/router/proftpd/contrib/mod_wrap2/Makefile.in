@@ -1,5 +1,5 @@
 top_builddir=../..
-top_srcdir=../../
+top_srcdir=../..
 srcdir=@srcdir@
 
 include $(top_srcdir)/Make.rules
@@ -11,7 +11,8 @@ SHARED_LDFLAGS=-avoid-version -export-dynamic -module
 VPATH=@srcdir@
 
 MODULE_NAME=mod_wrap2
-MODULE_INCLUDES=-I. -I../.. $(INCLUDES)
+MODULE_INCLUDES=-I. -I$(top_srcdir)/.. $(INCLUDES)
+MODULE_LIBS=@MODULE_LIBS@
 
 # Necessary redefinitions
 CPPFLAGS= -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(MODULE_INCLUDES)
@@ -27,6 +28,7 @@ LDFLAGS=-L../../lib
 shared: $(MODULE_NAME).la
 
 static: $(MODULE_NAME).o
+	test -z "$(MODULE_LIBS)" || echo "$(MODULE_LIBS)" >> $(MODULE_LIBS_FILE)
 
 install:
 	if [ -f $(MODULE_NAME).la ] ; then \

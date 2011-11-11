@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_site_misc -- a module implementing miscellaneous SITE commands
  *
- * Copyright (c) 2004-2010 The ProFTPD Project
+ * Copyright (c) 2004-2011 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,37 +15,37 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_site_misc.c,v 1.12.2.2 2010/10/22 00:06:04 castaglia Exp $
+ * $Id: mod_site_misc.c,v 1.20 2011/05/26 23:14:01 castaglia Exp $
  */
 
 #include "conf.h"
 
-#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.4"
+#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.5"
+
+extern pr_response_t *resp_list, *resp_err_list;
 
 static unsigned int site_misc_engine = TRUE;
 
 static int site_misc_check_filters(cmd_rec *cmd, const char *path) {
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  regex_t *preg = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, path, 0, NULL, 0) != 0) {
+#ifdef PR_USE_REGEX
+  pr_regex_t *pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) != 0) {
     pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
       ": 'SITE %s' denied by PathAllowFilter", cmd->arg);
     return -1;
   }
 
-  preg = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, path, 0, NULL, 0) == 0) {
+  pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) == 0) {
     pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
       ": 'SITE %s' denied by PathDenyFilter", cmd->arg);
     return -1;
@@ -62,19 +62,29 @@ static int site_misc_create_dir(const char *dir) {
   pr_fs_clear_cache();
 
   res = pr_fsio_stat(dir, &st);
-  if (res == -1 &&
+  if (res < 0 &&
       errno != ENOENT) {
+    int xerrno = errno;
+
     pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION ": error checking '%s': %s",
-      dir, strerror(errno));
+      dir, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
-  if (res == 0)
-    return 0;
+  if (res == 0) {
+    /* Directory already exists */
+    return 1;
+  }
 
   if (pr_fsio_mkdir(dir, 0777) < 0) {
+    int xerrno = errno;
+
     pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION ": error creating '%s': %s",
-      dir, strerror(errno));
+      dir, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -100,15 +110,65 @@ static int site_misc_create_path(pool *p, const char *path) {
   while (tmp_path &&
          *tmp_path) {
     char *curr_dir;
+    int res;
+    cmd_rec *cmd;
+    pool *sub_pool;
 
     pr_signals_handle();
 
     curr_dir = strsep(&tmp_path, "/");
     curr_path = pdircat(p, curr_path, curr_dir, NULL);
 
-    if (site_misc_create_dir(curr_path) < 0) {
+    /* Dispatch the fake C_MKD command, e.g. for mod_quotatab. */
+    sub_pool = pr_pool_create_sz(p, 64);
+    cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_MKD),
+      pstrdup(sub_pool, curr_path));
+    cmd->arg = pstrdup(cmd->pool, curr_path);
+    cmd->class = CL_DIRS|CL_WRITE;
+
+    res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
+    if (res < 0) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG3, MOD_SITE_MISC_VERSION
+        ": creating directory '%s' blocked by MKD handler: %s", curr_path,
+        strerror(xerrno));
+
+      pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+      pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+      pr_response_clear(&resp_err_list);
+
+      destroy_pool(sub_pool);
+      sub_pool = NULL;
+      cmd = NULL;
+
+      errno = xerrno;
       return -1;
     }
+
+    res = site_misc_create_dir(curr_path);
+    if (res < 0) {
+      int xerrno = errno;
+
+      pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+      pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+      pr_response_clear(&resp_err_list);
+
+      destroy_pool(sub_pool);
+      sub_pool = NULL;
+      cmd = NULL;
+
+      errno = xerrno;
+      return -1;
+    }
+
+    pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
+    pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+    pr_response_clear(&resp_list);
+
+    destroy_pool(sub_pool);
+    sub_pool = NULL;
+    cmd = NULL;
   }
  
   return 0;
@@ -117,9 +177,12 @@ static int site_misc_create_path(pool *p, const char *path) {
 static int site_misc_delete_dir(pool *p, const char *dir) {
   void *dirh;
   struct dirent *dent;
+  int res;
+  cmd_rec *cmd;
+  pool *sub_pool;
 
   dirh = pr_fsio_opendir(dir);
-  if (!dirh)
+  if (dirh == NULL)
     return -1;
 
   while ((dent = pr_fsio_readdir(dirh)) != NULL) {
@@ -128,8 +191,8 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
 
     pr_signals_handle();
 
-    if (strcmp(dent->d_name, ".") == 0 ||
-        strcmp(dent->d_name, "..") == 0)
+    if (strncmp(dent->d_name, ".", 2) == 0 ||
+        strncmp(dent->d_name, "..", 3) == 0)
       continue;
 
     file = pdircat(p, dir, dent->d_name, NULL);
@@ -138,7 +201,8 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
       continue;
     
     if (S_ISDIR(st.st_mode)) {
-      if (site_misc_delete_dir(p, file) < 0) {
+      res = site_misc_delete_dir(p, file);
+      if (res < 0) {
         int xerrno = errno;
 
         pr_fsio_closedir(dirh);
@@ -147,20 +211,102 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
         return -1;
       }
 
-    } else if (pr_fsio_unlink(file) < 0) {
-      int xerrno = errno;
+    } else {
 
-      pr_fsio_closedir(dirh);
+      /* Dispatch fake C_DELE command, e.g. for mod_quotatab */
+      sub_pool = pr_pool_create_sz(p, 64);
+      cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_DELE),
+        pstrdup(sub_pool, file));
+      cmd->arg = pstrdup(cmd->pool, file);
+      cmd->class = CL_WRITE;
 
-      errno = xerrno;
-      return -1;
+      res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
+      if (res < 0) {
+        int xerrno = errno;
+
+        pr_log_debug(DEBUG3, MOD_SITE_MISC_VERSION
+          ": deleting file '%s' blocked by DELE handler: %s", file,
+          strerror(xerrno));
+
+        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+        pr_response_clear(&resp_err_list);
+
+        destroy_pool(sub_pool);
+        pr_fsio_closedir(dirh);
+
+        errno = xerrno;
+        return -1;
+      }
+
+      res = pr_fsio_unlink(file);
+      if (res < 0) {
+        int xerrno = errno;
+
+        pr_fsio_closedir(dirh);
+
+        pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+        pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+        pr_response_clear(&resp_err_list);
+
+        destroy_pool(sub_pool);
+        pr_fsio_closedir(dirh);
+
+        errno = xerrno;
+        return -1;
+      }
+
+      pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
+      pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+      pr_response_clear(&resp_list);
+      destroy_pool(sub_pool);
     }
   }
 
   pr_fsio_closedir(dirh);
 
-  if (pr_fsio_rmdir(dir) < 0)
+  /* Dispatch fake C_RMD command, e.g. for mod_quotatab */
+  sub_pool = pr_pool_create_sz(p, 64);
+  cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_RMD),
+    pstrdup(sub_pool, dir));
+  cmd->arg = pstrdup(cmd->pool, dir);
+  cmd->class = CL_DIRS|CL_WRITE;
+
+  res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
+  if (res < 0) {
+    int xerrno = errno;
+
+    pr_log_debug(DEBUG3, MOD_SITE_MISC_VERSION
+      ": removing directory '%s' blocked by RMD handler: %s", dir,
+      strerror(xerrno));
+
+    pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+    pr_response_clear(&resp_err_list);
+
+    destroy_pool(sub_pool);
+
+    errno = xerrno;
     return -1;
+  }
+
+  res = pr_fsio_rmdir(dir);
+  if (res < 0) {
+    int xerrno = errno;
+
+    pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
+    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+    pr_response_clear(&resp_err_list);
+
+    destroy_pool(sub_pool);
+    errno = xerrno;
+    return -1;
+  }
+
+  pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
+  pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+  pr_response_clear(&resp_list);
+  destroy_pool(sub_pool);
 
   return 0;
 }
@@ -288,7 +434,7 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
-  if (strcasecmp(cmd->argv[1], "MKDIR") == 0) {
+  if (strncasecmp(cmd->argv[1], "MKDIR", 6) == 0) {
     register unsigned int i;
     char *cmd_name, *path = "";
     unsigned char *authenticated;
@@ -298,8 +444,10 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
 
     authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
 
-    if (!authenticated || *authenticated == FALSE) {
+    if (!authenticated ||
+        *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
+      errno = EACCES;
       return PR_ERROR(cmd);
     }
 
@@ -309,30 +457,46 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
     path = pr_fs_decode_path(cmd->tmp_pool, path);
 
     if (site_misc_check_filters(cmd, path) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      int xerrno = EPERM;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     path = dir_canonical_path(cmd->tmp_pool, path);
     if (path == NULL) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      int xerrno = EINVAL;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_MKDIR";
     if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+      int xerrno = EPERM;
+
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
         ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
     cmd->argv[0] = cmd_name;
 
     if (site_misc_create_path(cmd->tmp_pool, path) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      int xerrno = errno;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -340,8 +504,9 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
     return PR_HANDLED(cmd);
   }
 
-  if (strcasecmp(cmd->argv[1], "HELP") == 0)
+  if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
     pr_response_add(R_214, "MKDIR <sp> path");
+  }
 
   return PR_DECLINED(cmd);
 }
@@ -357,7 +522,7 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
-  if (strcasecmp(cmd->argv[1], "RMDIR") == 0) {
+  if (strncasecmp(cmd->argv[1], "RMDIR", 6) == 0) {
     register unsigned int i;
     char *cmd_name, *path = "";
     unsigned char *authenticated;
@@ -367,8 +532,10 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
     authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
 
-    if (!authenticated || *authenticated == FALSE) {
+    if (!authenticated ||
+        *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
+      errno = EACCES;
       return PR_ERROR(cmd);
     }
 
@@ -379,24 +546,36 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
     path = dir_canonical_path(cmd->tmp_pool, path);
     if (path == NULL) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      int xerrno = EINVAL;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_RMDIR";
     if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+      int xerrno = EPERM;
+
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
         ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
     cmd->argv[0] = cmd_name;
 
     if (site_misc_delete_path(cmd->tmp_pool, path) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      int xerrno = errno;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -404,8 +583,9 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
     return PR_HANDLED(cmd);
   } 
 
-  if (strcasecmp(cmd->argv[1], "HELP") == 0)
+  if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
     pr_response_add(R_214, "RMDIR <sp> path");
+  }
 
   return PR_DECLINED(cmd);
 }
@@ -421,7 +601,7 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
-  if (strcasecmp(cmd->argv[1], "SYMLINK") == 0) {
+  if (strncasecmp(cmd->argv[1], "SYMLINK", 8) == 0) {
     struct stat st;
     int res;
     char *cmd_name, *src, *dst;
@@ -432,48 +612,70 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
 
     authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
 
-    if (!authenticated || *authenticated == FALSE) {
+    if (!authenticated ||
+        *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
+      errno = EACCES;
       return PR_ERROR(cmd);
     }
 
     src = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[2]);
     src = dir_canonical_path(cmd->tmp_pool, src);
     if (src == NULL) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      int xerrno = EINVAL;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_SYMLINK";
     if (!dir_check_canon(cmd->tmp_pool, cmd, G_READ, src, NULL)) {
+      int xerrno = EPERM;
+
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
         ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[2], strerror(EPERM));
+      pr_response_add_err(R_550, "%s: %s", cmd->argv[2], strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     dst = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[3]);
     dst = dir_canonical_path(cmd->tmp_pool, dst);
     if (dst == NULL) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      int xerrno = EINVAL;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, dst, NULL)) {
+      int xerrno = EPERM;
+
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
         ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(EPERM));
+      pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
     cmd->argv[0] = cmd_name;
 
     if (site_misc_check_filters(cmd, dst) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      int xerrno = EPERM;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -486,12 +688,20 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     pr_fs_clear_cache();
     res = pr_fsio_stat(src, &st);
     if (res < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      int xerrno = errno;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     if (pr_fsio_symlink(src, dst) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      int xerrno = errno;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -499,8 +709,9 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     return PR_HANDLED(cmd);
   } 
 
-  if (strcasecmp(cmd->argv[1], "HELP") == 0)
+  if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
     pr_response_add(R_214, "SYMLINK <sp> source <sp> destination");
+  }
 
   return PR_DECLINED(cmd);
 }
@@ -516,7 +727,7 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
-  if (strcasecmp(cmd->argv[1], "UTIME") == 0) {
+  if (strncasecmp(cmd->argv[1], "UTIME", 6) == 0) {
     register unsigned int i;
     char c, *cmd_name, *p, *path = "";
     unsigned int year, month, day, hour, min, sec = 0;
@@ -532,16 +743,21 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     if (!authenticated ||
         *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
+      errno = EACCES;
       return PR_ERROR(cmd);
     }
 
     /* Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss' formats. */
     if (strlen(cmd->argv[2]) != 12 &&
         strlen(cmd->argv[2]) != 14) {
+      int xerrno = EINVAL;
+
       pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
         ": wrong number of digits in timestamp argument '%s' (%lu)",
         cmd->argv[2], (unsigned long) strlen(cmd->argv[2]));
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(EINVAL));
+      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -556,24 +772,36 @@ MODRET site_misc_utime(cmd_rec *cmd) {
 
     path = dir_canonical_path(cmd->tmp_pool, path);
     if (path == NULL) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+      int xerrno = EINVAL;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
     cmd_name = cmd->argv[0];
     cmd->argv[0] = "SITE_UTIME";
     if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+      int xerrno = EPERM;
+
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
         ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
     cmd->argv[0] = cmd_name;
 
     if (site_misc_check_filters(cmd, path) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EPERM));
+      int xerrno = EPERM;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -589,9 +817,13 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     month = atoi(p);
 
     if (month > 12) {
+      int xerrno = EINVAL;
+
       pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
         ": bad number of months in '%s' (%d)", cmd->argv[2], month);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(EINVAL));
+      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -602,9 +834,13 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     day = atoi(p);
 
     if (day > 31) {
+      int xerrno = EINVAL;
+
       pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
         ": bad number of days in '%s' (%d)", cmd->argv[2], day);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(EINVAL));
+      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -615,9 +851,13 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     hour = atoi(p);
 
     if (hour > 24) {
+      int xerrno = EINVAL;
+
       pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
         ": bad number of hours in '%s' (%d)", cmd->argv[2], hour);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(EINVAL));
+      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -633,9 +873,13 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     min = atoi(p);
 
     if (min > 60) {
+      int xerrno = EINVAL;
+
       pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
         ": bad number of minutes in '%s' (%d)", cmd->argv[2], min);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(EINVAL));
+      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -645,9 +889,13 @@ MODRET site_misc_utime(cmd_rec *cmd) {
       sec = atoi(p);
 
       if (sec > 60) {
+        int xerrno = EINVAL;
+
         pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
           ": bad number of seconds in '%s' (%d)", cmd->argv[2], sec);
-        pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(EINVAL));
+        pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
     }
@@ -657,7 +905,11 @@ MODRET site_misc_utime(cmd_rec *cmd) {
       min, sec);
 
     if (pr_fsio_utimes(path, tvs) < 0) {
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+      int xerrno = errno;
+
+      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
  
@@ -665,8 +917,9 @@ MODRET site_misc_utime(cmd_rec *cmd) {
     return PR_HANDLED(cmd);
   }
 
-  if (strcasecmp(cmd->argv[1], "HELP") == 0)
+  if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
     pr_response_add(R_214, "UTIME <sp> YYYYMMDDhhmm[ss] <sp> path");
+  }
 
   return PR_DECLINED(cmd);
 }

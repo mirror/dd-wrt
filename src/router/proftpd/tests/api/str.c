@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -22,9 +22,8 @@
  * OpenSSL in the source distribution.
  */
 
-/*
- * String API tests
- * $Id: str.c,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+/* String API tests
+ * $Id: str.c,v 1.5 2011/05/23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"
@@ -59,8 +58,7 @@ START_TEST (sstrncpy_test) {
   memset(dst, 'A', sz);
 
   res = sstrncpy(dst, NULL, 1);
-  fail_unless(res == dst, "Expected %p, got %p", dst, res);
-  fail_unless(*res == '\0', "Expected NUL, got '%c'", *res);
+  fail_unless(res == NULL, "Failed to handle null arguments");
 
   ok = "Therefore, all progress depends on the unreasonable man";
 
@@ -196,8 +194,9 @@ START_TEST (sreplace_test) {
   fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
 
   fmt = "foo %a";
+  ok = "foo bar";
   res = sreplace(p, fmt, "%a", "bar", NULL);
-  fail_unless(strcmp(res, "foo bar") == 0, "Expected '%s', got '%s'", fmt, res);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
   fmt = "foo %a %a";
   ok = "foo bar bar";
@@ -206,7 +205,6 @@ START_TEST (sreplace_test) {
 
   fmt = "foo %a %a %a %a %a %a %a %a";
   ok = "foo bar bar bar bar bar bar bar bar";
-  
   res = sreplace(p, fmt, "%a", "bar", NULL);
   fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
@@ -215,9 +213,83 @@ START_TEST (sreplace_test) {
    */
   fmt = "foo %a %a %a %a %a %a %a %a %a";
   ok = "foo bar bar bar bar bar bar bar bar bar";
-
   res = sreplace(p, fmt, "%a", "bar", NULL);
   fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+}
+END_TEST
+
+START_TEST (sreplace_enospc_test) {
+  char *fmt = NULL, *res;
+  size_t bufsz = 8192;
+
+  fmt = palloc(p, bufsz);
+  memset(fmt, ' ', bufsz);
+  fmt[bufsz-2] = '%';
+  fmt[bufsz-1] = 'a';
+
+  res = sreplace(p, fmt, "%a", "foo", NULL);
+  fail_unless(res == NULL, "Failed to reject too-long buffer");
+  fail_unless(errno == ENOSPC, "Failed to set errno to ENOSPC");
+}
+END_TEST
+
+START_TEST (sreplace_bug3614_test) {
+  char *fmt = NULL, *res, *ok;
+
+  fmt = "%a %b %c %d %e %f %g %h %i %j %k %l %m "
+        "%n %o %p %q %r %s %t %u %v %w %x %y %z "
+        "%A %B %C %D %E %F %G %H %I %J %K %L %M "
+        "%N %O %P %Q %R %S %T %U %V %W %X %Y %Z "
+        "%0 %1 %2 %3 %4 %5 %6 %7 %8 %9 "
+        "%{a} %{b} %{c} %{d} %{e} %{f} %{g} %{h} %{i} %{j} %{k} %{l} %{m} "
+        "%{n} %{o} %{p} %{q} %{r} %{s} %{t} %{u} %{v} %{w} %{x} %{y} %{z} "
+        "%{A} %{B} %{C} %{D} %{E} %{F} %{G} %{H} %{I} %{J} %{K} %{L} %{M} "
+        "%{N} %{O} %{P} %{Q} %{R} %{S} %{T} %{U} %{V} %{W} %{X} %{Y} %{Z} "
+        "%{aa} %{bb} %{cc} %{dd} %{ee} %{ff} %{gg} %{hh} %{ii} %{jj} "
+        "%{kk} %{ll} %{mm} %{nn} %{oo} %{pp} %{qq} %{rr} %{ss} %{tt} "
+        "%{uu} %{vv} %{ww} %{xx} %{yy} %{zz}";
+
+  /* We put a limit on the maximum number of replacements that sreplace()
+   * will perform on a given string, per Bug#3614.
+   */
+  ok = "bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar bar %{oo} %{pp} %{qq} %{rr} %{ss} %{tt} %{uu} %{vv} %{ww} %{xx} %{yy} %{zz}";
+
+  res = sreplace(p, fmt,
+    "%a", "bar", "%b", "bar", "%c", "bar", "%d", "bar", "%e", "bar",
+    "%f", "bar", "%g", "bar", "%h", "bar", "%i", "bar", "%j", "bar",
+    "%k", "bar", "%l", "bar", "%m", "bar", "%n", "bar", "%o", "bar",
+    "%p", "bar", "%q", "bar", "%r", "bar", "%s", "bar", "%t", "bar",
+    "%u", "bar", "%v", "bar", "%w", "bar", "%x", "bar", "%y", "bar",
+    "%z", "bar",
+    "%A", "bar", "%B", "bar", "%C", "bar", "%D", "bar", "%E", "bar",
+    "%F", "bar", "%G", "bar", "%H", "bar", "%I", "bar", "%J", "bar",
+    "%K", "bar", "%L", "bar", "%M", "bar", "%N", "bar", "%O", "bar",
+    "%P", "bar", "%Q", "bar", "%R", "bar", "%S", "bar", "%T", "bar",
+    "%U", "bar", "%V", "bar", "%W", "bar", "%X", "bar", "%Y", "bar",
+    "%Z", "bar",
+    "%0", "bar", "%1", "bar", "%2", "bar", "%3", "bar", "%4", "bar",
+    "%5", "bar", "%6", "bar", "%7", "bar", "%8", "bar", "%9", "bar",
+    "%{a}", "bar", "%{b}", "bar", "%{c}", "bar", "%{d}", "bar", "%{e}", "bar",
+    "%{f}", "bar", "%{g}", "bar", "%{h}", "bar", "%{i}", "bar", "%{j}", "bar",
+    "%{k}", "bar", "%{l}", "bar", "%{m}", "bar", "%{n}", "bar", "%{o}", "bar",
+    "%{p}", "bar", "%{q}", "bar", "%{r}", "bar", "%{s}", "bar", "%{t}", "bar",
+    "%{u}", "bar", "%{v}", "bar", "%{w}", "bar", "%{x}", "bar", "%{y}", "bar",
+    "%{z}", "bar",
+    "%{A}", "bar", "%{B}", "bar", "%{C}", "bar", "%{D}", "bar", "%{E}", "bar",
+    "%{F}", "bar", "%{G}", "bar", "%{H}", "bar", "%{I}", "bar", "%{J}", "bar",
+    "%{K}", "bar", "%{L}", "bar", "%{M}", "bar", "%{N}", "bar", "%{O}", "bar",
+    "%{P}", "bar", "%{Q}", "bar", "%{R}", "bar", "%{S}", "bar", "%{T}", "bar",
+    "%{U}", "bar", "%{V}", "bar", "%{W}", "bar", "%{X}", "bar", "%{Y}", "bar",
+    "%{Z}", "bar",
+    "%{aa}", "bar", "%{bb}", "bar", "%{cc}", "bar", "%{dd}", "bar",
+    "%{ee}", "bar", "%{ff}", "bar", "%{gg}", "bar", "%{hh}", "bar",
+    "%{ii}", "bar", "%{jj}", "bar", "%{kk}", "bar", "%{ll}", "bar",
+    "%{mm}", "bar", "%{nn}", "bar", "%{oo}", "bar", "%{pp}", "bar",
+    "%{qq}", "bar", "%{rr}", "bar", "%{ss}", "bar", "%{tt}", "bar",
+    "%{uu}", "bar", "%{vv}", "bar", "%{ww}", "bar", "%{xx}", "bar",
+    "%{yy}", "bar", "%{zz}", "bar",
+    NULL);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -599,6 +671,54 @@ START_TEST (is_boolean_test) {
 }
 END_TEST
 
+START_TEST (is_fnmatch_test) {
+  int res;
+  char *str;
+
+  str = "foo";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != FALSE, "Expected false for string '%s'", str);
+
+  str = "foo?";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != TRUE, "Expected true for string '%s'", str);
+
+  str = "foo*";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != TRUE, "Expected true for string '%s'", str);
+
+  str = "foo[";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != FALSE, "Expected false for string '%s'", str);
+
+  str = "foo]";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != FALSE, "Expected false for string '%s'", str);
+
+  str = "foo[]";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != TRUE, "Expected true for string '%s'", str);
+
+  /* Now the fun cases using the escape character. */
+
+  str = "f\\oo";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != FALSE, "Expected false for string '%s'", str);
+
+  str = "foo\\";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != FALSE, "Expected false for string '%s'", str);
+
+  str = "foo\\?";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != FALSE, "Expected false for string '%s'", str);
+
+  str = "foo\\??";
+  res = pr_str_is_fnmatch(str);
+  fail_if(res != TRUE, "Expected true for string '%s'", str);
+}
+END_TEST
+
 Suite *tests_get_str_suite(void) {
   Suite *suite;
   TCase *testcase;
@@ -612,6 +732,8 @@ Suite *tests_get_str_suite(void) {
   tcase_add_test(testcase, sstrncpy_test);
   tcase_add_test(testcase, sstrcat_test);
   tcase_add_test(testcase, sreplace_test);
+  tcase_add_test(testcase, sreplace_enospc_test);
+  tcase_add_test(testcase, sreplace_bug3614_test);
   tcase_add_test(testcase, pdircat_test);
   tcase_add_test(testcase, pstrcat_test);
   tcase_add_test(testcase, pstrdup_test);
@@ -621,6 +743,7 @@ Suite *tests_get_str_suite(void) {
   tcase_add_test(testcase, get_token_test);
   tcase_add_test(testcase, get_word_test);
   tcase_add_test(testcase, is_boolean_test);
+  tcase_add_test(testcase, is_fnmatch_test);
 
   suite_add_tcase(suite, testcase);
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project and other respective copyright
  * holders give permission to link this program with OpenSSL, and distribute
@@ -23,7 +23,7 @@
  */
 
 /* "Scrubs" the scoreboard file, clearing it of old/stale entries.
- * $Id: ftpscrub.c,v 1.1.2.1 2010/03/25 17:37:49 castaglia Exp $
+ * $Id: ftpscrub.c,v 1.3 2011/05/23 20:46:20 castaglia Exp $
  */
 
 #include "utils.h"

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -23,15 +23,11 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/*
- * "SITE" commands module for ProFTPD
- * $Id: mod_site.c,v 1.51 2008/06/12 22:57:01 castaglia Exp $
+/* "SITE" commands module for ProFTPD
+ * $Id: mod_site.c,v 1.57 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
 
 /* From mod_core.c */
 extern int core_chmod(cmd_rec *cmd, char *dir, mode_t mode);
@@ -69,11 +65,12 @@ static char *_get_full_cmd(cmd_rec *cmd) {
 }
 
 MODRET site_chgrp(cmd_rec *cmd) {
+  int res;
   gid_t gid;
   char *path = NULL, *tmp = NULL, *arg = "";
   register unsigned int i = 0;
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  regex_t *preg;
+#ifdef PR_USE_REGEX
+  pr_regex_t *pre;
 #endif
 
   if (cmd->argc < 3) {
@@ -89,21 +86,19 @@ MODRET site_chgrp(cmd_rec *cmd) {
     arg = pstrcat(cmd->tmp_pool, arg, *arg ? " " : "",
       pr_fs_decode_path(cmd->tmp_pool, cmd->argv[i]), NULL);
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  preg = (regex_t *) get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, arg, 0, NULL, 0) != 0) {
+#ifdef PR_USE_REGEX
+  pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) != 0) {
     pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter", cmd->argv[0],
       arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
     return PR_ERROR(cmd);
   }
 
-  preg = (regex_t *) get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, arg, 0, NULL, 0) == 0) {
+  pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) == 0) {
     pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter", cmd->argv[0],
       arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
@@ -125,30 +120,44 @@ MODRET site_chgrp(cmd_rec *cmd) {
 
   if (tmp && *tmp) {
 
-    /* Try the parameter as a user name. */
+    /* Try the parameter as a group name. */
     gid = pr_auth_name2gid(cmd->tmp_pool, cmd->argv[1]);
     if (gid == (gid_t) -1) {
+      pr_log_debug(DEBUG9,
+        "SITE CHGRP: Unable to resolve group name '%s' to GID", cmd->argv[1]);
       pr_response_add_err(R_550, "%s: %s", arg, strerror(EINVAL));
       return PR_ERROR(cmd);
     }
   }
 
-  if (core_chgrp(cmd, path, (uid_t) -1, gid) == -1) {
-    pr_response_add_err(R_550, "%s: %s", arg, strerror(errno));
+  res = core_chgrp(cmd, path, (uid_t) -1, gid);
+  if (res < 0) {
+    int xerrno = errno;
+
+    (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
+      "error chown'ing '%s' to GID %lu: %s", cmd->argv[0], session.user,
+      (unsigned long) session.uid, (unsigned long) session.gid,
+      path, (unsigned long) gid, strerror(xerrno));
+
+    pr_response_add_err(R_550, "%s: %s", arg, strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
 
-  } else
+  } else {
     pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[0]);
+  }
 
   return PR_HANDLED(cmd);
 }
 
 MODRET site_chmod(cmd_rec *cmd) {
+  int res;
   mode_t mode = 0;
   char *dir, *endp, *tmp, *arg = "";
   register unsigned int i = 0;
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  regex_t *preg;
+#ifdef PR_USE_REGEX
+  pr_regex_t *pre;
 #endif
 
   if (cmd->argc < 3) {
@@ -164,21 +173,19 @@ MODRET site_chmod(cmd_rec *cmd) {
     arg = pstrcat(cmd->tmp_pool, arg, *arg ? " " : "",
       pr_fs_decode_path(cmd->tmp_pool, cmd->argv[i]), NULL);
 
-#if defined(HAVE_REGEX_H) && defined(HAVE_REGCOMP)
-  preg = (regex_t *) get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, arg, 0, NULL, 0) != 0) {
+#ifdef PR_USE_REGEX
+  pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) != 0) {
     pr_log_debug(DEBUG2, "'%s %s %s' denied by PathAllowFilter", cmd->argv[0],
       cmd->argv[1], arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
     return PR_ERROR(cmd);
   }
 
-  preg = (regex_t *) get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
-
-  if (preg &&
-      regexec(preg, arg, 0, NULL, 0) == 0) {
+  pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
+  if (pre != NULL &&
+      pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) == 0) {
     pr_log_debug(DEBUG2, "'%s %s %s' denied by PathDenyFilter", cmd->argv[0],
       cmd->argv[1], arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
@@ -198,10 +205,12 @@ MODRET site_chmod(cmd_rec *cmd) {
    * case where an octal number is sent without the leading '0'.
    */
 
-  if (cmd->argv[1][0] != '0')
+  if (cmd->argv[1][0] != '0') {
     tmp = pstrcat(cmd->tmp_pool, "0", cmd->argv[1], NULL);
-  else
+
+  } else {
     tmp = cmd->argv[1];
+  }
 
   mode = strtol(tmp,&endp,0);
   if (endp && *endp) {
@@ -372,12 +381,23 @@ MODRET site_chmod(cmd_rec *cmd) {
     }
   }
 
-  if (core_chmod(cmd, dir, mode) == -1) {
-    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(errno));
+  res = core_chmod(cmd, dir, mode);
+  if (res < 0) {
+    int xerrno = errno;
+
+    (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %lu, GID %lu): "
+      "error chmod'ing '%s' to %04o: %s", cmd->argv[0], session.user,
+      (unsigned long) session.uid, (unsigned long) session.gid,
+      dir, (unsigned int) mode, strerror(xerrno));
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
 
-  } else
+  } else {
     pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[0]);
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -505,7 +525,7 @@ MODRET site_post_cmd(cmd_rec *cmd) {
 static int site_init(void) {
 
   /* Add the commands handled by this module to the HELP list. */ 
-  pr_help_add(C_SITE, "<sp> string", TRUE);
+  pr_help_add(C_SITE, _("<sp> string"), TRUE);
 
   return 0;
 }

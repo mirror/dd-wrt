@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap -- use Wietse Venema's TCP wrappers library for
  *                      access control
  *
- * Copyright (c) 2000-2009 TJ Saunders
+ * Copyright (c) 2000-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
@@ -24,10 +24,10 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lwrap -lnsl$
- * $Id: mod_wrap.c,v 1.23 2009/12/10 17:59:14 castaglia Exp $
+ * $Id: mod_wrap.c,v 1.26 2011/05/23 20:56:40 castaglia Exp $
  */
 
-#define MOD_WRAP_VERSION "mod_wrap/1.2.3"
+#define MOD_WRAP_VERSION "mod_wrap/1.2.4"
 
 #include "conf.h"
 #include "privs.h"
@@ -157,13 +157,12 @@ static int wrap_is_usable_file(char *filename) {
   return TRUE;
 }
 
-static void wrap_log_request_allowed(int priority,
+static void wrap_log_request_allowed(int severity,
     struct request_info *request) {
-  int facility;
+  int priority;
 
-  /* Mask off the facility bit. */
-  facility = log_getfacility();
-  priority &= ~facility;
+  /* Mask off the facility bits. */
+  priority = (severity & PR_LOG_PRIMASK);
 
   pr_log_pri(priority, MOD_WRAP_VERSION ": allowed connection from %s",
     eval_client(request));
@@ -172,13 +171,12 @@ static void wrap_log_request_allowed(int priority,
   return;
 }
 
-static void wrap_log_request_denied(int priority,
+static void wrap_log_request_denied(int severity,
     struct request_info *request) {
-  int facility;
+  int priority;
 
-  /* Mask off the facility bit. */
-  facility = log_getfacility();
-  priority &= ~facility;
+  /* Mask off the facility bits. */
+  priority = (severity & PR_LOG_PRIMASK);
 
   pr_log_pri(priority, MOD_WRAP_VERSION ": refused connection from %s",
     eval_client(request));
@@ -911,9 +909,13 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
    *
    *  "The priority argument is formed by ORing the facility and the level
    *   values..."
+   *
+   * Note that we do this OR here because the allow_severity/deny_severity
+   * values are ALSO used by the libwrap library; it is also why we need
+   * to mask off some bits later, when using proftpd's logging functions.
    */
   allow_severity = log_getfacility() | allow_severity;
-  deny_severity = log_getfacility() | deny_severity ;
+  deny_severity = log_getfacility() | deny_severity;
 
   pr_log_debug(DEBUG4, MOD_WRAP_VERSION ": checking under service name '%s'",
     wrap_service_name);

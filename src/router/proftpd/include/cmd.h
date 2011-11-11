@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009 The ProFTPD Project team
+ * Copyright (c) 2009-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: cmd.h,v 1.2 2009/02/16 03:14:02 castaglia Exp $
+ * $Id: cmd.h,v 1.6 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_CMD_H
@@ -29,7 +29,82 @@
 
 cmd_rec *pr_cmd_alloc(pool *, int, ...);
 int pr_cmd_clear_cache(cmd_rec *);
-char *pr_cmd_get_displayable_str(cmd_rec *);
+char *pr_cmd_get_displayable_str(cmd_rec *, size_t *);
+
+int pr_cmd_cmp(cmd_rec *cmd, int cmd_id);
+int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name);
+
+/* Returns the cmd ID for the given command string, or -1 if there was an
+ * error (with errno set appropriately).  NOTE: the given command name
+ * MUST be all uppercased before being passed in for the proper ID to be
+ * be returned.
+ *
+ * A return value of 0 means "unknown command".
+ */
+int pr_cmd_get_id(const char *name_name);
+
+/* These IDs are indices into a static list in the Command API. */
+#define	PR_CMD_USER_ID		1
+#define PR_CMD_PASS_ID		2
+#define PR_CMD_ACCT_ID		3
+#define PR_CMD_CWD_ID		4
+#define PR_CMD_XCWD_ID		5
+#define PR_CMD_CDUP_ID		6
+#define PR_CMD_XCUP_ID		7
+#define PR_CMD_SMNT_ID		8
+#define PR_CMD_REIN_ID		9
+#define PR_CMD_QUIT_ID		10
+#define PR_CMD_PORT_ID		11
+#define PR_CMD_EPRT_ID		12
+#define PR_CMD_PASV_ID		13
+#define PR_CMD_EPSV_ID		14
+#define PR_CMD_TYPE_ID		15
+#define PR_CMD_STRU_ID		16
+#define PR_CMD_MODE_ID		17
+#define PR_CMD_RETR_ID		18
+#define PR_CMD_STOR_ID		19
+#define PR_CMD_STOU_ID		20
+#define PR_CMD_APPE_ID		21
+#define PR_CMD_ALLO_ID		22
+#define PR_CMD_REST_ID		23
+#define PR_CMD_RNFR_ID		24
+#define PR_CMD_RNTO_ID		25
+#define PR_CMD_ABOR_ID		26
+#define PR_CMD_DELE_ID		27
+#define PR_CMD_MDTM_ID		28
+#define PR_CMD_RMD_ID		29
+#define PR_CMD_XRMD_ID		30
+#define PR_CMD_MKD_ID		31
+#define PR_CMD_MLSD_ID		32
+#define PR_CMD_MLST_ID		33
+#define PR_CMD_XMKD_ID		34
+#define PR_CMD_PWD_ID		35
+#define PR_CMD_XPWD_ID		36
+#define PR_CMD_SIZE_ID		37
+#define PR_CMD_LIST_ID		38
+#define PR_CMD_NLST_ID		39
+#define PR_CMD_SITE_ID		40
+#define PR_CMD_SYST_ID		41
+#define PR_CMD_STAT_ID		42
+#define PR_CMD_HELP_ID		43
+#define PR_CMD_NOOP_ID		44
+#define PR_CMD_FEAT_ID		45
+#define PR_CMD_OPTS_ID		46
+#define PR_CMD_LANG_ID		47
+#define PR_CMD_ADAT_ID		48
+#define PR_CMD_AUTH_ID		49
+#define PR_CMD_CCC_ID		50
+#define PR_CMD_CONF_ID		51
+#define PR_CMD_ENC_ID		52
+#define PR_CMD_MIC_ID		53
+#define PR_CMD_PBSZ_ID		54
+#define PR_CMD_PROT_ID		55
+#define PR_CMD_MFF_ID		56
+#define PR_CMD_MFMT_ID		57
+
+/* The minimum and maximum command name lengths. */
+#define PR_CMD_MIN_NAMELEN	3
+#define PR_CMD_MAX_NAMELEN	4
 
 /* Implemented in main.c */
 int pr_cmd_read(cmd_rec **);

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,8 +25,7 @@
  */
 
 /* ProFTPD module definitions.
- *
- * $Id: modules.h,v 1.53 2009/02/15 00:27:34 castaglia Exp $
+ * $Id: modules.h,v 1.56 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_MODULES_H
@@ -87,7 +86,11 @@ typedef struct {
 #define CL_WRITE			(1 << 4) /* Writing commands (STOR, MKD, etc) */
 #define CL_MISC				(1 << 5) /* Miscellaneous (RNFR/RNTO, SITE, etc) */
 #define CL_SEC				(1 << 6) /* RFC2228 Security commands */
+#define CL_EXIT				(1 << 7) /* Session exit */
 
+/* Note that CL_ALL explicitly does NOT include CL_EXIT; this is to preserve
+ * backward compatible behavior.
+ */
 #define CL_ALL				(CL_AUTH|CL_INFO|CL_DIRS|CL_READ| \
 					CL_WRITE|CL_MISC|CL_SEC)
 
@@ -168,19 +171,6 @@ int pr_module_load(module *m);
 int pr_module_unload(module *m);
 
 modret_t *pr_module_call(module *, modret_t *(*)(cmd_rec *), cmd_rec *);
-
-/* Symbol table hash ("stash") support. */
-typedef enum {
-  PR_SYM_CONF = 1,
-  PR_SYM_CMD,
-  PR_SYM_AUTH,
-  PR_SYM_HOOK
-} pr_stash_type_t;
-
-int init_stash(void);
-int pr_stash_add_symbol(pr_stash_type_t, void *);
-void *pr_stash_get_symbol(pr_stash_type_t, const char *, void *, int *);
-int pr_stash_remove_symbol(pr_stash_type_t, const char *, module *);
 
 /* This function is in main.c, but is prototyped here */
 void set_auth_check(int (*ck)(cmd_rec *));

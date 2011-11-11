@@ -941,8 +941,8 @@ msgstr "Transfer aborted. %s"
 
 #: ../src/data.c:916 ../src/data.c:942
 #, c-format
-msgid "%s: data tranfer in progress"
-msgstr "%s: data tranfer in progress"
+msgid "%s: data transfer in progress"
+msgstr "%s: data transfer in progress"
 
 #: ../src/data.c:985 ../src/main.c:911
 msgid "Invalid command: try being more creative"

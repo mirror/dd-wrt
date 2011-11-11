@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001, 2002, 2003 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * Parts Copyright (C) 1991, 1992, 1993, 1999, 2000 Free Software
  *   Foundation, Inc.
@@ -19,7 +19,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -28,8 +28,7 @@
  */
 
 /* ProFTPD support library definitions.
- *
- * $Id: libsupp.h,v 1.14 2003/10/13 07:25:32 castaglia Exp $
+ * $Id: libsupp.h,v 1.16 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #include <glibc-glob.h>
@@ -42,6 +41,7 @@
 #define	PR_FNM_FILE_NAME	PR_FNM_PATHNAME /* Preferred GNU name.  */
 #define	PR_FNM_LEADING_DIR	(1 << 3) /* Ignore `/...' after a match.  */
 #define	PR_FNM_CASEFOLD		(1 << 4) /* Compare without regard to case.  */
+#define PR_FNM_EXTMATCH         (1 << 5) /* Use ksh-like extended matching. */
 
 /* Value returned by `pr_fnmatch' if STRING does not match PATTERN.  */
 #define	PR_FNM_NOMATCH	1
