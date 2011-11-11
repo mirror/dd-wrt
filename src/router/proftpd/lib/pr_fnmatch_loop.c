@@ -47,7 +47,7 @@ static const CHAR *END (const CHAR *patternp) internal_function;
 /* Copy N bytes of SRC to DEST, return pointer to bytes after the
    last written byte.  */
 static void *
-__mempcpy (void *dest, const void *src, size_t n)
+__mempcpy2 (void *dest, const void *src, size_t n)
 {
   return (char *) memcpy (dest, src, n) + n;
 }
