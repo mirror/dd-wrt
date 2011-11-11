@@ -370,7 +370,7 @@
 #undef HAVE_MEMCPY
 
 /* Define if you have the mempcpy function.  */
-#undef HAVE_MEMPCPY
+//#undef HAVE_MEMPCPY
 
 /* Define if you have the mkdir function.  */
 #undef HAVE_MKDIR
