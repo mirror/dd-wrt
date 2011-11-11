@@ -1,10 +1,10 @@
 package ProFTPD::Tests::Commands::STOR;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
+use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
 
@@ -69,29 +69,6 @@ sub new {
 
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
-}
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub stor_ok_raw_active {
@@ -173,7 +150,7 @@ sub stor_ok_raw_active {
 
       my $buf = "Foo!\n";
       $conn->write($buf, length($buf));
-      $conn->close();
+      eval { $conn->close() };
 
       my ($resp_code, $resp_msg);
       $resp_code = $client->response_code();
@@ -186,7 +163,6 @@ sub stor_ok_raw_active {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Transfer complete";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -299,7 +275,7 @@ sub stor_ok_raw_passive {
 
       my $buf = "Foo!\n";
       $conn->write($buf, length($buf));
-      $conn->close();
+      eval { $conn->close() };
 
       my ($resp_code, $resp_msg);
       $resp_code = $client->response_code();
@@ -312,7 +288,6 @@ sub stor_ok_raw_passive {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Transfer complete";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -427,7 +402,7 @@ sub stor_ok_file {
 
       my $buf = "Foo!\n";
       $conn->write($buf, length($buf));
-      $conn->close();
+      eval { $conn->close() };
 
       my ($resp_code, $resp_msg);
       $resp_code = $client->response_code();
@@ -440,7 +415,6 @@ sub stor_ok_file {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Transfer complete";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -569,7 +543,6 @@ sub stor_fails_not_reg {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "$home_dir: Not a regular file";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -661,7 +634,6 @@ sub stor_fails_login_required {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Please login with USER and PASS";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -784,7 +756,6 @@ sub stor_fails_no_path {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "'STOR' not understood";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -921,7 +892,6 @@ sub stor_fails_eperm {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "$dst_file: Permission denied";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -1036,7 +1006,7 @@ sub stor_leading_whitespace {
 
       my $buf = "Foo!\n";
       $conn->write($buf, length($buf));
-      $conn->close();
+      eval { $conn->close() };
 
       my ($resp_code, $resp_msg);
       $resp_code = $client->response_code();
@@ -1049,7 +1019,6 @@ sub stor_leading_whitespace {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Transfer complete";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -1168,7 +1137,7 @@ sub stor_multiple_periods {
 
       my $buf = "Foo!\n";
       $conn->write($buf, length($buf));
-      $conn->close();
+      eval { $conn->close() };
 
       my ($resp_code, $resp_msg);
       $resp_code = $client->response_code();
@@ -1181,7 +1150,6 @@ sub stor_multiple_periods {
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Transfer complete";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 

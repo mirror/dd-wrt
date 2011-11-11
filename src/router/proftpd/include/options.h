@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,8 +25,7 @@
  */
 
 /* User configurable defaults and tunable parameters.
- *
- * $Id: options.h,v 1.29 2009/03/22 01:30:10 castaglia Exp $
+ * $Id: options.h,v 1.33 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_OPTIONS_H
@@ -74,6 +73,13 @@
 /* The default TCP send/receive buffer sizes, should explicit sizes not
  * be defined at compile time, or should the runtime determination process
  * fail.
+ *
+ * Note that these default buffer sizes are only used if the service cannot
+ * determine the platform's favored network buffer sizes using getsockopt(2).
+ * If you wish to override the use of getsockopt(2) to determine the network
+ * buffer sizes to use, you can use the PR_TUNABLE_RCVBUFSZ and
+ * PR_TUNABLE_SNDBUFSZ macros to define, at compile-time, the network buffer
+ * sizes to use.
  */
 
 #ifndef PR_TUNABLE_DEFAULT_RCVBUFSZ
@@ -192,6 +198,11 @@
 #ifndef PR_TUNABLE_CALLER_DEPTH
 /* Max depth of call stack if stacktrace support is enabled. */
 # define PR_TUNABLE_CALLER_DEPTH	32
+#endif
+
+#ifndef PR_TUNABLE_ENV_MAX
+/* Max length of environment variable values allowed by proftpd. */
+# define PR_TUNABLE_ENV_MAX			2048
 #endif
 
 #ifndef PR_TUNABLE_GLOBBING_MAX_RECURSION

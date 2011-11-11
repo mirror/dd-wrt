@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,7 +25,7 @@
  */
 
 /* Non-specific support functions.
- * $Id: support.h,v 1.34 2010/02/07 18:36:53 castaglia Exp $
+ * $Id: support.h,v 1.38 2011/05/23 23:23:44 castaglia Exp $
  */
 
 #ifndef PR_SUPPORT_H
@@ -76,16 +76,17 @@ void run_schedule(void);
 
 int get_name_max(char *, int);
 
-mode_t file_mode(char *);
-int file_exists(char *);
-int dir_exists(char *);
-int exists(char *);
+mode_t file_mode(const char *);
+int file_exists(const char *);
+int dir_exists(const char *);
+int exists(const char *);
 
 char *safe_token(char **);
 int check_shutmsg(time_t *, time_t *, time_t *, char *, size_t);
 
 void pr_memscrub(void *, size_t);
 
+void pr_getopt_reset(void);
 struct tm *pr_gmtime(pool *, const time_t *);
 struct tm *pr_localtime(pool *, const time_t *);
 const char *pr_strtime(time_t);

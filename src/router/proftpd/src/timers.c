@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -23,14 +23,11 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/*
- * Timer system, based on alarm() and SIGALRM
- * $Id: timers.c,v 1.32 2010/02/09 20:08:09 castaglia Exp $
+/* Timer system, based on alarm() and SIGALRM
+ * $Id: timers.c,v 1.38 2011/10/04 20:59:57 castaglia Exp $
  */
 
 #include "conf.h"
-
-#include <signal.h>
 
 /* From src/main.c */
 volatile extern unsigned int recvd_signal_flags;
@@ -49,6 +46,8 @@ struct timer {
   const char *desc;		/* Description of timer, provided by caller */
 };
 
+#define PR_TIMER_DYNAMIC_TIMERNO	1024
+
 static int _current_timeout = 0;
 static int _total_time = 0;
 static int _sleep_sem = 0;
@@ -57,7 +56,7 @@ static xaset_t *timers = NULL;
 static xaset_t *recycled = NULL;
 static xaset_t *free_timers = NULL;
 static int _indispatch = 0;
-static int dynamic_timerno = 1024;
+static int dynamic_timerno = PR_TIMER_DYNAMIC_TIMERNO;
 static unsigned int nalarms = 0;
 static time_t _alarmed_time = 0;
 
@@ -171,10 +170,17 @@ static RETSIGTYPE sig_alarm(int signo) {
 #endif
 
   /* Install this handler for SIGALRM. */
-  sigaction(SIGALRM, &act, NULL);
+  if (sigaction(SIGALRM, &act, NULL) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGALRM handler via sigaction(2): %s",
+      strerror(errno));
+  }
 
 #ifdef HAVE_SIGINTERRUPT
-  siginterrupt(SIGALRM, 1);
+  if (siginterrupt(SIGALRM, 1) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to allow SIGALRM to interrupt system calls: %s", strerror(errno));
+  }
 #endif
 
   recvd_signal_flags |= RECEIVED_SIG_ALRM;
@@ -199,10 +205,17 @@ static void set_sig_alarm(void) {
 #endif
 
   /* Install this handler for SIGALRM. */
-  sigaction(SIGALRM, &act, NULL);
+  if (sigaction(SIGALRM, &act, NULL) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to install SIGALRM handler via sigaction(2): %s",
+      strerror(errno));
+  }
 
 #ifdef HAVE_SIGINTERRUPT
-  siginterrupt(SIGALRM, 1);
+  if (siginterrupt(SIGALRM, 1) < 0) {
+    pr_log_pri(PR_LOG_NOTICE,
+      "unable to allow SIGALRM to interrupt system calls: %s", strerror(errno));
+  }
 #endif
 }
 
@@ -287,7 +300,8 @@ int pr_timer_reset(int timerno, module *mod) {
 }
 
 int pr_timer_remove(int timerno, module *mod) {
-  struct timer *t = NULL;
+  struct timer *t = NULL, *tnext = NULL;
+  int nremoved = 0;
 
   /* If there are no timers currently registered, do nothing. */
   if (!timers)
@@ -295,9 +309,13 @@ int pr_timer_remove(int timerno, module *mod) {
 
   pr_alarms_block();
 
-  for (t = (struct timer *) timers->xas_list; t; t = t->next) {
-    if (t->timerno == timerno &&
-        (t->mod == mod || mod == ANY_MODULE)) {
+  for (t = (struct timer *) timers->xas_list; t; t = tnext) {
+    tnext = t->next;
+
+    if ((timerno < 0 || t->timerno == timerno) &&
+        (mod == ANY_MODULE || t->mod == mod)) {
+      nremoved++;
+
       if (_indispatch) {
         t->remove++;
 
@@ -312,20 +330,35 @@ int pr_timer_remove(int timerno, module *mod) {
          */
         handle_alarm();
       }
+
+      pr_trace_msg("timer", 7, "removed timer ID %d ('%s', for module '%s')",
+        t->timerno, t->desc, t->mod ? t->mod->name : "[none]");
+    }
+
+    /* If we are removing a specific timer, break out of the loop now.
+     * Otherwise, keep removing any matching timers.
+     */
+    if (nremoved > 0 &&
+        timerno >= 0) {
       break;
     }
   }
 
   pr_alarms_unblock();
 
-  if (t) {
-    pr_trace_msg("timer", 7, "removed timer ID %d ('%s', for module '%s')",
-      t->timerno, t->desc, t->mod ? t->mod->name : "[none]");
-    return t->timerno;
+  if (nremoved == 0) {
+    errno = ENOENT;
+    return -1;
   }
 
-  errno = ENOENT;
-  return -1;
+  /* If we removed a specific timer because of the given timerno, return
+   * that timerno value.
+   */
+  if (timerno >= 0) {
+    return timerno;
+  }
+
+  return nremoved;
 }
 
 int pr_timer_add(int seconds, int timerno, module *mod, callback_t cb,
@@ -343,7 +376,7 @@ int pr_timer_add(int seconds, int timerno, module *mod, callback_t cb,
     timers = xaset_create(timer_pool, (XASET_COMPARE) timer_cmp);
 
   /* Check to see that, if specified, the timerno is not already in use. */
-  if (timerno != -1) {
+  if (timerno >= 0) {
     for (t = (struct timer *) timers->xas_list; t; t = t->next) {
       if (t->timerno == timerno) {
         errno = EPERM;
@@ -372,10 +405,12 @@ int pr_timer_add(int seconds, int timerno, module *mod, callback_t cb,
     t = palloc(timer_pool, sizeof(struct timer));
   }
 
-  if (timerno == -1) {
+  if (timerno < 0) {
     /* Dynamic timer */
-    if (dynamic_timerno < 1024)
-      dynamic_timerno = 1024;
+    if (dynamic_timerno < PR_TIMER_DYNAMIC_TIMERNO) {
+      dynamic_timerno = PR_TIMER_DYNAMIC_TIMERNO;
+    }
+
     timerno = dynamic_timerno++;
   }
 
@@ -464,6 +499,24 @@ int pr_timer_sleep(int seconds) {
   return 0;
 }
 
+int pr_timer_usleep(unsigned long usecs) {
+  struct timeval tv;
+
+  if (usecs == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  tv.tv_sec = (usecs / 1000000);
+  tv.tv_usec = (usecs - (tv.tv_sec * 1000000));
+
+  pr_signals_block();
+  (void) select(0, NULL, NULL, NULL, &tv);
+  pr_signals_unblock();
+
+  return 0;
+}
+
 void timers_init(void) {
 
   /* Reset some of the key static variables. */
@@ -471,6 +524,7 @@ void timers_init(void) {
   _total_time = 0;
   nalarms = 0;
   _alarmed_time = 0;
+  dynamic_timerno = PR_TIMER_DYNAMIC_TIMERNO;
 
   /* Don't inherit the parent's timer lists. */
   timers = NULL;

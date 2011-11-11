@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.27 2009/12/11 04:44:10 castaglia Exp $ -->
+<!-- $Id: index.html,v 1.28 2011/01/05 19:11:10 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/index.html,v $ -->
 
 <html>
@@ -71,11 +71,6 @@ Recommended order of reading:
   <dd>Covers the version naming convention used for ProFTPD releases</dd>
 
   <p>
-  <dt>On <a href="Upgrade.html">upgrading</a>
-  <dd>Covers the best way to perform an upgrade of ProFTPD
-  </dd>
-
-  <p>
   <dt>On <a href="Vhost.html"><code>&lt;VirtualHost&gt;</code> sections</a>
   <dd>Covers how to configure virtual servers, listening on only one IP
       address, and how the daemon handles client connections to its
@@ -87,6 +82,18 @@ Recommended order of reading:
   <dd>Covers what virtual users are, how <code>proftpd</code> can be
       configured to handle virtual users from various sources
       (<i>i.e.</i> SQL, flat files, LDAP, <i>etc</i>).
+  </dd>
+
+  <p>
+  <dt>On <a href="Directory.html"><code>&lt;Directory&gt;</code> sections</a>
+  <dd>Covers how <code>&lt;Directory&gt;</code> sections should be configured,
+      and how the configured paths are matched
+  </dd>
+
+  <p>
+  <dt>On <a href="Limit.html"><code>&lt;Limit&gt;</code> sections</a>
+  <dd>Covers how <code>&lt;Limit&gt;</code> sections should be configured,
+      and how different <code>&lt;Limit&gt;</code>s interact
   </dd>
 
   <p>
@@ -115,8 +122,19 @@ Recommended order of reading:
   </dd>
 
   <p>
+  <dt>On <a href="Upgrade.html">upgrading</a>
+  <dd>Covers the best way to perform an upgrade of ProFTPD
+  </dd>
+
+  <p>
   <dt>On <a href="DSO.html">DSO modules</a>
   <dd>Covers what DSO modules are, and how to use them properly
+  </dd>
+
+  <p>
+  <dt>On <a href="ConnectionACLs.html">connection ACLs</a>
+  <dd>Covers implementing connection ACLs, and some of the performance
+      concerns related to the different mechanisms
   </dd>
 
   <p>
@@ -133,18 +151,6 @@ Recommended order of reading:
   <p>
   <dt>On <a href="DNS.html">DNS</a> usage
   <dd>Covers when and how <code>proftpd</code> uses the DNS
-  </dd>
-
-  <p>
-  <dt>On <a href="Directory.html"><code>&lt;Directory&gt;</code> sections</a>
-  <dd>Covers how <code>&lt;Directory&gt;</code> sections should be configured,
-      and how the configured paths are matched
-  </dd>
-
-  <p>
-  <dt>On <a href="Limit.html"><code>&lt;Limit&gt;</code> sections</a>
-  <dd>Covers how <code>&lt;Limit&gt;</code> sections should be configured,
-      and how different <code>&lt;Limit&gt;</code>s interact
   </dd>
 
   <p>
@@ -288,7 +294,7 @@ all of the directives to see everything that ProFTPD is capable of supporting.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2009/12/11 04:44:10 $</i><br>
+Last Updated: <i>$Date: 2011/01/05 19:11:10 $</i><br>
 <hr>
 
 </body>

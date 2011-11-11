@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2009 The ProFTPD Project team
+ * Copyright (c) 2004-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Configuration parser
- * $Id: parser.c,v 1.19 2009/03/05 06:01:51 castaglia Exp $
+ * $Id: parser.c,v 1.25 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -38,7 +38,7 @@ static config_rec **parser_curr_config = NULL;
 
 static array_header *parser_servstack = NULL;
 static server_rec **parser_curr_server = NULL;
-static unsigned int parser_sid = 0;
+static unsigned int parser_sid = 1;
 
 static xaset_t **parser_server_list = NULL;
 
@@ -102,17 +102,66 @@ static char *get_config_word(pool *p, char *word) {
    * contain a string duped from the given pool.
    */
 
-  /* Does the given word use the environment syntax? */
-  if (strlen(word) > 7 &&
-      strncmp(word, "%{env:", 6) == 0 &&
-      word[strlen(word)-1] == '}') {
-    char *env;
+  if (strlen(word) > 7) {
+    char *ptr = NULL;
 
-    word[strlen(word)-1] = '\0';
+    /* Does the given word use the environment syntax?
+     *
+     * In the simple (and most common) case, the entire word is the variable
+     * syntax.  But we also need to check for cases where the environment
+     * variable syntax is embedded within the word string.
+     */
 
-    env = pr_env_get(p, word + 6);
+    if (strncmp(word, "%{env:", 6) == 0 &&
+        word[strlen(word)-1] == '}') {
+      char *env;
 
-    return env ? pstrdup(p, env) : "";
+      word[strlen(word)-1] = '\0';
+
+      env = pr_env_get(p, word + 6);
+
+      return env ? pstrdup(p, env) : "";
+    }
+
+    /* This is in a while loop in order to handle a) multiple different
+     * variables, and b) cases where the substituted value is itself a
+     * variable.   (Hopefully no one is so clever as to want to actually
+     * _use_ the latter approach.)
+     */
+    ptr = strstr(word, "%{env:");
+    while (ptr != NULL) {
+      char *env, *key, *ptr2, *var;
+      unsigned int keylen;
+
+      pr_signals_handle();
+
+      ptr2 = strchr(ptr + 6, '}');
+      if (ptr2 == NULL) {
+        /* No terminating marker; continue on to the next potential
+         * variable in the word.
+         */
+        ptr2 = ptr + 6;
+        ptr = strstr(ptr2, "%{env:");
+        continue;
+      }
+
+      keylen = (ptr2 - ptr - 6);
+      var = pstrndup(p, ptr, (ptr2 - ptr) + 1);
+
+      key = pstrndup(p, ptr + 6, keylen);
+
+      env = pr_env_get(p, key);
+      if (env == NULL) {
+        /* No value in the environment; continue on to the next potential
+         * variable in the word.
+         */
+        ptr = strstr(ptr2, "%{env:");
+        continue;
+      }
+
+      word = sreplace(p, word, var, env, NULL);
+      ptr = strstr(word, "%{env:");
+    }
   }
 
   return pstrdup(p, word);
@@ -151,7 +200,7 @@ int pr_parser_cleanup(void) {
   parser_curr_config = NULL;
 
   /* Reset the SID counter. */
-  parser_sid = 0;
+  parser_sid = 1;
 
   return 0;
 }
@@ -227,7 +276,7 @@ config_rec *pr_parser_config_ctxt_open(const char *name) {
    * parent server.  This keeps <Global> config recs from being freed
    * prematurely, and helps to avoid memory leaks.
    */
-  if (strcmp(name, "<Global>") == 0) {
+  if (strncmp(name, "<Global>", 9) == 0) {
     if (!global_config_pool) {
       global_config_pool = make_sub_pool(permanent_pool);
       pr_pool_tag(global_config_pool, "<Global> Pool");
@@ -387,18 +436,19 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
 }
 
 cmd_rec *pr_parser_parse_line(pool *p) {
-  char buf[PR_TUNABLE_BUFFER_SIZE], *word = NULL;
+  register unsigned int i;
+  char buf[PR_TUNABLE_BUFFER_SIZE+1], *arg = "", *word = NULL;
   cmd_rec *cmd = NULL;
   pool *sub_pool = NULL;
   array_header *arr = NULL;
 
-  if (!p) {
+  if (p == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
   memset(buf, '\0', sizeof(buf));
-
+  
   while (pr_parser_read_line(buf, sizeof(buf)-1) != NULL) {
     char *bufp = buf;
 
@@ -415,7 +465,9 @@ cmd_rec *pr_parser_parse_line(pool *p) {
     /* Add each word to the array */
     arr = make_array(cmd->pool, 4, sizeof(char **));
     while ((word = pr_str_get_word(&bufp, 0)) != NULL) {
-      char *tmp = get_config_word(cmd->pool, word);
+      char *tmp;
+
+      tmp = get_config_word(cmd->pool, word);
 
       *((char **) push_array(arr)) = tmp;
       cmd->argc++;
@@ -448,19 +500,30 @@ cmd_rec *pr_parser_parse_line(pool *p) {
       if (*(cp + strlen(cp)-1) == '>' &&
           cmd->argc > 1) {
 
-        if (strcmp(cp, ">") == 0) {
+        if (strncmp(cp, ">", 2) == 0) {
           cmd->argv[cmd->argc-1] = NULL;
           cmd->argc--;
 
-        } else
+        } else {
           *(cp + strlen(cp)-1) = '\0';
+        }
 
         cp = cmd->argv[0];
-        if (*(cp + strlen(cp)-1) != '>')
+        if (*(cp + strlen(cp)-1) != '>') {
           cmd->argv[0] = pstrcat(cmd->pool, cp, ">", NULL);
+        }
       }
     }
 
+    if (cmd->argc < 2) {
+      arg = pstrdup(cmd->pool, arg);
+    }
+
+    for (i = 1; i < cmd->argc; i++) {
+      arg = pstrcat(cmd->pool, arg, *arg ? " " : "", cmd->argv[i], NULL);
+    }
+
+    cmd->arg = arg;
     return cmd;
   }
 

@@ -1,4 +1,4 @@
-<!-- $Id: DisplayFiles.html,v 1.5 2008/08/23 02:57:46 castaglia Exp $ -->
+<!-- $Id: DisplayFiles.html,v 1.7 2010/04/17 18:52:35 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/DisplayFiles.html,v $ -->
 
 <html>
@@ -32,13 +32,6 @@ whose contents should be displayed to connected clients at various times:
   <li>
     <dt><code>DisplayChdir</code>
     <dd>Displayed to a client whenever it changes into a directory</dd>
-  </li>
-
-  <p>
-  <li>
-    <dt><code>DisplayGoAway</code>
-    <dd>Displayed to a client when it cannot connect because the maximum
-        number of connections from its <code>Class</code> has been reached</dd>
   </li>
 
   <p>
@@ -233,9 +226,23 @@ as well; please consult their documentation for more information.
   </tr>
 </table>
 
+<p><a name="FAQ"></a>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="DisplayPathsWithSpaces">
+<font color=red>Question</font>: I configured path which contains spaces for
+<code>DisplayLogin</code>, and it doesn't work.  Why not?<br>
+<font color=blue>Answer</font>: If using paths/files which contains spaces,
+make sure that you enclose the path in quotation marks, <i>e.g.</i>:
+<pre>
+  DisplayLogin "/path/to/display login.txt"
+</pre>
+Otherwise, the configuration file parser will treat the space-separated
+portions of the path as separate directive parameters.
+
 <p>
 <hr>
-<i>$Date: 2008/08/23 02:57:46 $</i><br>
+<i>$Date: 2010/04/17 18:52:35 $</i><br>
 
 </body>
 </html>

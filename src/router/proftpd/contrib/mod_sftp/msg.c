@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp message format
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: msg.c,v 1.2 2009/02/13 23:41:19 castaglia Exp $
+ * $Id: msg.c,v 1.7 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -30,11 +30,49 @@
 #include "crypto.h"
 #include "disconnect.h"
 
+#ifdef HAVE_EXECINFO_H
+# include <execinfo.h>
+#endif
+
 /* The scratch buffer used by getbuf() is a constant 8KB.  If the caller
  * requests a larger size than that, the request is fulfilled using the
  * caller-provided pool.
  */
 static char msg_buf[8 * 1024];
+
+static void log_stacktrace(void) {
+#if defined(HAVE_EXECINFO_H) && \
+    defined(HAVE_BACKTRACE) && \
+    defined(HAVE_BACKTRACE_SYMBOLS)
+  void *trace[PR_TUNABLE_CALLER_DEPTH];
+  char **strings;
+  size_t tracesz;
+
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+    "-----BEGIN STACK TRACE-----");
+
+  tracesz = backtrace(trace, PR_TUNABLE_CALLER_DEPTH);
+  strings = backtrace_symbols(trace, tracesz);
+  if (strings != NULL) {
+    register unsigned int i;
+
+    for (i = 1; i < tracesz; i++) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "[%u] %s", i-1, strings[i]);
+    }
+
+    /* Prevent memory leaks. */
+    free(strings);
+
+  } else {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error obtaining stacktrace symbols: %s", strerror(errno));
+  }
+ 
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+    "-----END STACK TRACE-----");
+#endif
+}
 
 char *sftp_msg_getbuf(pool *p, size_t sz) {
   if (sz <= sizeof(msg_buf)) {
@@ -45,7 +83,7 @@ char *sftp_msg_getbuf(pool *p, size_t sz) {
 }
 
 char sftp_msg_read_byte(pool *p, char **buf, uint32_t *buflen) {
-  char byte;
+  char byte = 0;
 
   (void) p;
 
@@ -53,6 +91,7 @@ char sftp_msg_read_byte(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read byte (buflen = %lu)",
       (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -64,7 +103,7 @@ char sftp_msg_read_byte(pool *p, char **buf, uint32_t *buflen) {
 }
 
 int sftp_msg_read_bool(pool *p, char **buf, uint32_t *buflen) {
-  char bool;
+  char bool = 0;
 
   (void) p;
 
@@ -77,12 +116,13 @@ int sftp_msg_read_bool(pool *p, char **buf, uint32_t *buflen) {
 
 char *sftp_msg_read_data(pool *p, char **buf, uint32_t *buflen,
     size_t datalen) {
-  char *data;
+  char *data = NULL;
 
   if (*buflen < datalen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "message format error: unable to read %u bytes of raw data "
-      "(buflen = %lu)", (unsigned int) datalen, (unsigned long) *buflen);
+      "message format error: unable to read %lu bytes of raw data "
+      "(buflen = %lu)", (unsigned long) datalen, (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -96,7 +136,7 @@ char *sftp_msg_read_data(pool *p, char **buf, uint32_t *buflen,
 }
 
 uint32_t sftp_msg_read_int(pool *p, char **buf, uint32_t *buflen) {
-  uint32_t val;
+  uint32_t val = 0;
 
   (void) p;
 
@@ -104,6 +144,7 @@ uint32_t sftp_msg_read_int(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read int (buflen = %lu)",
       (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -118,7 +159,7 @@ uint32_t sftp_msg_read_int(pool *p, char **buf, uint32_t *buflen) {
 BIGNUM *sftp_msg_read_mpint(pool *p, char **buf, uint32_t *buflen) {
   BIGNUM *mpint = NULL;
   const unsigned char *data = NULL;
-  uint32_t datalen;
+  uint32_t datalen = 0;
 
   datalen = sftp_msg_read_int(p, buf, buflen);
 
@@ -126,6 +167,7 @@ BIGNUM *sftp_msg_read_mpint(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of mpint (buflen = %lu)",
       (unsigned long) datalen, (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -133,6 +175,7 @@ BIGNUM *sftp_msg_read_mpint(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to handle mpint of %lu bytes",
       (unsigned long) datalen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -141,12 +184,14 @@ BIGNUM *sftp_msg_read_mpint(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of mpint data",
       (unsigned long) datalen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
   if (data[0] & 0x80) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: negative mpint numbers not supported");
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -155,6 +200,7 @@ BIGNUM *sftp_msg_read_mpint(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to convert binary mpint: %s",
       sftp_crypto_get_errors());
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -162,8 +208,8 @@ BIGNUM *sftp_msg_read_mpint(pool *p, char **buf, uint32_t *buflen) {
 }
 
 char *sftp_msg_read_string(pool *p, char **buf, uint32_t *buflen) {
-  uint32_t len;
-  char *str;
+  uint32_t len = 0;
+  char *str = NULL;
 
   len = sftp_msg_read_int(p, buf, buflen);
 
@@ -176,6 +222,7 @@ char *sftp_msg_read_string(pool *p, char **buf, uint32_t *buflen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of string data "
       "(buflen = %lu)", (unsigned long) len, (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -194,6 +241,7 @@ void sftp_msg_write_byte(char **buf, uint32_t *buflen, char byte) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to write byte (buflen = %lu)",
       (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -214,8 +262,9 @@ void sftp_msg_write_data(char **buf, uint32_t *buflen, const char *data,
 
   if (*buflen < datalen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "message format error: unable to write %u bytes of raw data "
-      "(buflen = %lu)", (unsigned int) datalen, (unsigned long) *buflen);
+      "message format error: unable to write %lu bytes of raw data "
+      "(buflen = %lu)", (unsigned long) datalen, (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -231,6 +280,7 @@ void sftp_msg_write_int(char **buf, uint32_t *buflen, uint32_t val) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to write int (buflen = %lu)",
       (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -242,9 +292,9 @@ void sftp_msg_write_int(char **buf, uint32_t *buflen, uint32_t val) {
 
 void sftp_msg_write_mpint(char **buf, uint32_t *buflen,
     const BIGNUM *mpint) {
-  unsigned char *data;
-  size_t datalen;
-  int res;
+  unsigned char *data = NULL;
+  size_t datalen = 0;
+  int res = 0;
 
   if (BN_is_zero(mpint)) {
     sftp_msg_write_int(buf, buflen, 0);
@@ -255,6 +305,7 @@ void sftp_msg_write_mpint(char **buf, uint32_t *buflen,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to write mpint (negative numbers not "
       "supported)");
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -262,8 +313,9 @@ void sftp_msg_write_mpint(char **buf, uint32_t *buflen,
 
   if (*buflen < datalen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "message format error: unable to write %u bytes of mpint (buflen = %lu)",
-      (unsigned int) datalen, (unsigned long) *buflen);
+      "message format error: unable to write %lu bytes of mpint (buflen = %lu)",
+      (unsigned long) datalen, (unsigned long) *buflen);
+    log_stacktrace();
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
@@ -299,7 +351,7 @@ void sftp_msg_write_mpint(char **buf, uint32_t *buflen,
 }
 
 void sftp_msg_write_string(char **buf, uint32_t *buflen, const char *str) {
-  uint32_t len;
+  uint32_t len = 0;
 
   len = strlen(str);
   sftp_msg_write_data(buf, buflen, str, len, TRUE);

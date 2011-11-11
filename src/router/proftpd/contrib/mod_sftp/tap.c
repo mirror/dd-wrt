@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp traffic analysis protection
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: tap.c,v 1.6 2010/02/03 23:42:30 castaglia Exp $
+ * $Id: tap.c,v 1.11 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -173,27 +173,12 @@ int sftp_tap_have_policy(const char *policy) {
   return -1;
 }
 
-static int sending_tap_packet = FALSE;
-
 int sftp_tap_send_packet(void) {
   int chance;
 
   if (!sftp_interop_supports_feature(SFTP_SSH2_FEAT_IGNORE_MSG)) {
     pr_trace_msg(trace_channel, 3,
       "unable to send TAP packet: IGNORE not supported by client");
-    return 0;
-  }
-
-  /* ssh2_packet_write() calls tap_send_packet(), which calls
-   * ssh2_packet_write(), which calls tap_send_packet(), etc.
-   *
-   * To prevent an endless loop, we need to keep state.  If we end up
-   * calling ssh2_packet_write(), set a flag prior to doing so.  If that flag
-   * is set when we are called again, clear the flag and return 0.
-   */
-
-  if (sending_tap_packet) {
-    sending_tap_packet = FALSE;
     return 0;
   }
 
@@ -247,8 +232,12 @@ int sftp_tap_send_packet(void) {
     pkt->payload = ptr;
     pkt->payload_len = (bufsz - buflen);
 
-    sending_tap_packet = TRUE;
-    (void) sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
+    if (sftp_ssh2_packet_send(sftp_conn->wfd, pkt) < 0) {
+      int xerrno = errno;
+
+      pr_trace_msg(trace_channel, 12,
+        "error writing TAP packet: %s", strerror(xerrno));
+    }
 
     destroy_pool(pkt->pool);
   }
@@ -266,8 +255,8 @@ int sftp_tap_set_policy(const char *policy) {
      * explicitly configured, and it should override the automatic use of
      * the 'rogaway' policy.
      */
-    if (strcmp(curr_policy.policy, "none") == 0 &&
-        strcasecmp(policy, "rogaway") == 0) {
+    if (strncmp(curr_policy.policy, "none", 5) == 0 &&
+        strncasecmp(policy, "rogaway", 8) == 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "'none' traffic policy explicitly configured, ignoring '%s' policy",
         policy);

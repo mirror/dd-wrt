@@ -1,10 +1,9 @@
 package ProFTPD::Tests::Config::RewriteHome;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
 use File::Spec;
 use IO::Handle;
 
@@ -41,29 +40,6 @@ sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
 }
 
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
-}
-
 sub rewritehome_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -79,6 +55,7 @@ sub rewritehome_ok {
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -97,7 +74,7 @@ sub rewritehome_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, '/foo/bar/baz',
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -151,7 +128,6 @@ sub rewritehome_ok {
         test_msg("Expected $expected, got $resp_code"));
   
       $expected = "\"$home_dir\" is the current directory";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -200,6 +176,7 @@ sub rewritehome_bad_home {
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -218,7 +195,7 @@ sub rewritehome_bad_home {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -314,6 +291,7 @@ sub rewritehome_chroot_bug3348 {
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -332,7 +310,7 @@ sub rewritehome_chroot_bug3348 {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, '/foo/bar/baz',
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -387,7 +365,6 @@ sub rewritehome_chroot_bug3348 {
         test_msg("Expected $expected, got $resp_code"));
   
       $expected = "\"/\" is the current directory";
-      chomp($resp_msg);
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -22,9 +22,8 @@
  * OpenSSL in the source distribution.
  */
 
-/*
- * NetACL API tests
- * $Id: netacl.c,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+/* NetACL API tests
+ * $Id: netacl.c,v 1.4 2011/05/23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"
@@ -205,8 +204,8 @@ START_TEST (netacl_create_test) {
     strerror(errno));
 
   acl_type = pr_netacl_get_type(res);
-  fail_unless(acl_type == PR_NETACL_TYPE_DNSGLOB,
-    "Failed to have DNSGLOB type for ACL string '%s'", acl_str);
+  fail_unless(acl_type == PR_NETACL_TYPE_IPGLOB,
+    "Failed to have IPGLOB type for ACL string '%s'", acl_str);
 
   acl_str = pstrdup(p, ".edu");
   res = pr_netacl_create(p, acl_str);
@@ -404,7 +403,7 @@ START_TEST (netacl_match_test) {
   pr_netacl_t *acl;
   pr_netaddr_t *addr;
   char *acl_str;
-  int res;
+  int have_localdomain = FALSE, res;
 
   res = pr_netacl_match(NULL, NULL);
   fail_unless(res == -2, "Failed to handle NULL arguments");
@@ -422,6 +421,14 @@ START_TEST (netacl_match_test) {
   addr = pr_netaddr_get_addr(p, "localhost", NULL);
   fail_unless(addr != NULL, "Failed to get addr for '%s': %s", "localhost",
     strerror(errno));
+
+  /* It's possible that the DNS name for 'localhost' that is used will
+   * actually be 'localhost.localdomain', depending on the contents of
+   * the host's /etc/hosts file.
+   */
+  if (strcmp(pr_netaddr_get_dnsstr(addr), "localhost.localdomain") == 0) {
+    have_localdomain = TRUE;
+  }
 
   res = pr_netacl_match(NULL, addr);
   fail_unless(res == -2, "Failed to handle NULL ACL");
@@ -511,7 +518,13 @@ START_TEST (netacl_match_test) {
   fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
     strerror(errno));
 
-  acl_str = pstrdup(p, "localhost");
+  if (!have_localdomain) {
+    acl_str = pstrdup(p, "localhost");
+
+  } else {
+    acl_str = pstrdup(p, "localhost.localdomain");
+  }
+
   acl = pr_netacl_create(p, acl_str);
   fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
     strerror(errno));
@@ -520,7 +533,13 @@ START_TEST (netacl_match_test) {
   fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
     strerror(errno));
 
-  acl_str = pstrdup(p, "!localhost");
+  if (!have_localdomain) {
+    acl_str = pstrdup(p, "!localhost");
+
+  } else {
+    acl_str = pstrdup(p, "!localhost.localdomain");
+  }
+
   acl = pr_netacl_create(p, acl_str);
   fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
     strerror(errno));
@@ -529,7 +548,13 @@ START_TEST (netacl_match_test) {
   fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
     strerror(errno));
 
-  acl_str = pstrdup(p, "loc*st");
+  if (!have_localdomain) {
+    acl_str = pstrdup(p, "loc*st");
+
+  } else {
+    acl_str = pstrdup(p, "loc*st.loc*in");
+  }
+
   acl = pr_netacl_create(p, acl_str);
   fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
     strerror(errno));
@@ -538,7 +563,13 @@ START_TEST (netacl_match_test) {
   fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
     strerror(errno));
 
-  acl_str = pstrdup(p, "!loc*st");
+  if (!have_localdomain) {
+    acl_str = pstrdup(p, "!loc*st");
+
+  } else {
+    acl_str = pstrdup(p, "!loc*st.loc*in");
+  }
+
   acl = pr_netacl_create(p, acl_str);
   fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
     strerror(errno));

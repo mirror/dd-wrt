@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,8 +23,7 @@
  */
 
 /* Routines to work with ProFTPD bindings
- *
- * $Id: bindings.c,v 1.41 2010/02/22 16:55:11 castaglia Exp $
+ * $Id: bindings.c,v 1.44 2011/09/21 05:03:05 castaglia Exp $
  */
 
 #include "conf.h"
@@ -93,7 +92,8 @@ struct listener_rec {
   int claimed;
 };
 
-static conn_t *get_listening_conn(pr_netaddr_t *addr, unsigned int port) {
+conn_t *pr_ipbind_get_listening_conn(server_rec *server, pr_netaddr_t *addr,
+    unsigned int port) {
   conn_t *l;
   pool *p;
   struct listener_rec *lr;
@@ -153,7 +153,11 @@ static conn_t *get_listening_conn(pr_netaddr_t *addr, unsigned int port) {
   p = make_sub_pool(listening_conn_pool); 
   pr_pool_tag(p, "Listening conn subpool");
 
-  l = pr_inet_create_conn(p, server_list, -1, addr, port, FALSE);
+  l = pr_inet_create_conn(p, -1, addr, port, FALSE);
+
+  /* Inform any interested listeners that this socket was opened. */
+  pr_inet_generate_socket_event("core.ctrl-listen", server, l->local_addr,
+    l->listen_fd);
 
   lr = pcalloc(p, sizeof(struct listener_rec));
   lr->pool = p;
@@ -249,7 +253,7 @@ int pr_ipbind_add_binds(server_rec *serv) {
      */
     if (SocketBindTight &&
         serv->ServerPort) {
-      listen_conn = get_listening_conn(addr, serv->ServerPort);
+      listen_conn = pr_ipbind_get_listening_conn(serv, addr, serv->ServerPort);
 
       PR_CREATE_IPBIND(serv, addr, serv->ServerPort);
       PR_OPEN_IPBIND(addr, serv->ServerPort, listen_conn, FALSE, FALSE, TRUE);
@@ -604,7 +608,7 @@ server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
 }
 
 int pr_ipbind_listen(fd_set *readfds) {
-  int maxfd = 0;
+  int listen_flags = PR_INET_LISTEN_FL_FATAL_ON_ERROR, maxfd = 0;
   register unsigned int i = 0;
 
   /* sanity check */
@@ -619,14 +623,15 @@ int pr_ipbind_listen(fd_set *readfds) {
   }
 
   /* Reset the listener list. */
-  if (!listener_list)
+  if (!listener_list) {
     listener_list = make_array(binding_pool, 1, sizeof(conn_t *));
 
-  else
+  } else {
     /* Nasty hack to "clear" the list by making it think it has no
      * elements.
      */
     listener_list->nelts = 0;
+  }
 
   /* Slower than the hash lookup, but...we have to check each and every
    * ipbind in the table.
@@ -643,12 +648,14 @@ int pr_ipbind_listen(fd_set *readfds) {
 
       if (ipbind->ib_listener) {
 
-        if (ipbind->ib_listener->mode == CM_NONE)
+        if (ipbind->ib_listener->mode == CM_NONE) {
           pr_inet_listen(ipbind->ib_listener->pool, ipbind->ib_listener,
-            tcpBackLog);
+            tcpBackLog, listen_flags);
+        }
 
-        if (ipbind->ib_listener->mode == CM_ACCEPT)
+        if (ipbind->ib_listener->mode == CM_ACCEPT) {
           pr_inet_resetlisten(ipbind->ib_listener->pool, ipbind->ib_listener);
+        }
 
         if (ipbind->ib_listener->mode == CM_LISTEN) {
           FD_SET(ipbind->ib_listener->listen_fd, readfds);
@@ -942,8 +949,14 @@ static void init_inetd_bindings(void) {
    * already-open connections to choose from.
    */
 
-  main_server->listen = pr_inet_create_conn(main_server->pool,
-    server_list, STDIN_FILENO, NULL, INPORT_ANY, FALSE);
+  main_server->listen = pr_inet_create_conn(main_server->pool, STDIN_FILENO,
+    NULL, INPORT_ANY, FALSE);
+
+  /* Note: Since we are being called via inetd/xinetd, any socket options
+   * which may be attempted by listeners for this event may not work.
+   */
+  pr_inet_generate_socket_event("core.ctrl-listen", main_server,
+    main_server->addr, main_server->listen->listen_fd);
 
   /* Fill in all the important connection information. */
   if (pr_inet_get_conn_info(main_server->listen, STDIN_FILENO) == -1) {
@@ -1022,7 +1035,7 @@ static void init_standalone_bindings(void) {
 #endif /* PR_USE_IPV6 */
     }
 
-    main_server->listen = get_listening_conn(
+    main_server->listen = pr_ipbind_get_listening_conn(main_server,
       (SocketBindTight ? main_server->addr : NULL), main_server->ServerPort);
 
   } else
@@ -1065,8 +1078,8 @@ static void init_standalone_bindings(void) {
 #endif /* PR_USE_IPV6 */
         }
 
-        serv->listen = get_listening_conn((SocketBindTight ? serv->addr : NULL),
-          serv->ServerPort);
+        serv->listen = pr_ipbind_get_listening_conn(serv,
+          (SocketBindTight ? serv->addr : NULL), serv->ServerPort);
 
         PR_CREATE_IPBIND(serv, serv->addr, serv->ServerPort);
         PR_OPEN_IPBIND(serv->addr, serv->ServerPort, serv->listen, is_default,

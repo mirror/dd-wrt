@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2009 The ProFTPD Project team
+ * Copyright (c) 2001-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Public Flood Software/MacGyver aka Habeeb J. Dihu
  * and other respective copyright holders give permission to link this program
@@ -25,7 +25,7 @@
  */
 
 /* BSD socket manipulation tools.
- * $Id: inet.h,v 1.32 2009/02/15 00:27:34 castaglia Exp $
+ * $Id: inet.h,v 1.37 2011/09/21 05:03:05 castaglia Exp $
  */
 
 #ifndef PR_INET_H
@@ -128,15 +128,21 @@ typedef struct conn_struc {
 
 } conn_t;
 
+/* Used for event data for events related to opening of sockets */
+struct socket_ctx {
+  server_rec *server;
+  pr_netaddr_t *addr;
+  int sockfd;
+};
+
 /* Prototypes */
 void pr_inet_clear(void);
 int pr_inet_reverse_dns(pool *, int);
 int pr_inet_getservport(pool *, const char *, const char *);
 pr_netaddr_t *pr_inet_getaddr(pool *, const char *, array_header **);
 conn_t *pr_inet_copy_conn(pool *, conn_t*);
-conn_t *pr_inet_create_conn(pool *, xaset_t *, int, pr_netaddr_t *, int, int);
-conn_t *pr_inet_create_conn_portrange(pool *, xaset_t *, pr_netaddr_t *,
-  int, int);
+conn_t *pr_inet_create_conn(pool *, int, pr_netaddr_t *, int, int);
+conn_t *pr_inet_create_conn_portrange(pool *, pr_netaddr_t *, int, int);
 void pr_inet_close(pool *, conn_t *);
 void pr_inet_lingering_abort(pool *, conn_t *, long);
 void pr_inet_lingering_close(pool *, conn_t *, long);
@@ -144,9 +150,13 @@ int pr_inet_set_default_family(pool *, int);
 int pr_inet_set_async(pool *, conn_t *);
 int pr_inet_set_block(pool *, conn_t *);
 int pr_inet_set_nonblock(pool *, conn_t *);
-int pr_inet_set_proto_opts(pool *, conn_t *, int, int, int, int, int);
+int pr_inet_set_proto_cork(int, int);
+int pr_inet_set_proto_opts(pool *, conn_t *, int, int, int, int);
 int pr_inet_set_socket_opts(pool *, conn_t *, int, int);
-int pr_inet_listen(pool *, conn_t *, int);
+
+int pr_inet_listen(pool *p, conn_t *conn, int backlog, int flags);
+#define PR_INET_LISTEN_FL_FATAL_ON_ERROR		0x0001
+
 int pr_inet_resetlisten(pool *, conn_t *);
 int pr_inet_accept_nowait(pool *, conn_t *);
 int pr_inet_connect(pool *, conn_t *, pr_netaddr_t *, int);
@@ -155,6 +165,8 @@ int pr_inet_get_conn_info(conn_t *, int);
 conn_t *pr_inet_accept(pool *, conn_t *, conn_t *, int, int, unsigned char);
 conn_t *pr_inet_openrw(pool *, conn_t *, pr_netaddr_t *, int, int, int,
   int, int);
+int pr_inet_generate_socket_event(const char *, server_rec *, pr_netaddr_t *,
+  int);
 
 void init_inet(void);
 

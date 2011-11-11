@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -22,9 +22,8 @@
  * OpenSSL in the source distribution.
  */
 
-/*
- * Timers API tests
- * $Id: timers.c,v 1.1 2008/10/06 18:16:50 castaglia Exp $
+/* Timers API tests
+ * $Id: timers.c,v 1.6 2011/05/23 20:50:31 castaglia Exp $
  */
 
 #include "tests.h"
@@ -120,8 +119,12 @@ START_TEST (timer_add_test) {
   sleep(1);
   timers_handle_signals();
 
+  /* Allow for races between timers and testsuite. Aren't timing-based
+   * unit tests fun?
+   */
+
   ok = 2;
-  fail_unless(timer_triggered_count == ok,
+  fail_unless(timer_triggered_count == ok || timer_triggered_count == (ok + 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
     timer_triggered_count);
 
@@ -129,7 +132,7 @@ START_TEST (timer_add_test) {
   timers_handle_signals();
 
   ok = 3;
-  fail_unless(timer_triggered_count == ok,
+  fail_unless(timer_triggered_count == ok || timer_triggered_count == (ok + 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
     timer_triggered_count);
 }
@@ -142,17 +145,44 @@ START_TEST (timer_remove_test) {
   fail_unless(res == 0);
 
   res = pr_timer_add(1, 0, NULL, timers_test_cb, "test");
-  fail_unless(res == 0, "Failed to add timer: %s", strerror(errno));
+  fail_unless(res == 0, "Failed to add timer (%d): %s", res, strerror(errno));
 
   res = pr_timer_remove(1, NULL);
   fail_unless(res == -1, "Failed to return -1 for non-matching timer ID");
   fail_unless(errno == ENOENT, "Failed to set errno to ENOENT");
 
   res = pr_timer_remove(0, NULL);
-  fail_unless(res == 0, "Failed to remove timer: %s", strerror(errno));
+  fail_unless(res == 0, "Failed to remove timer (%d): %s", res,
+    strerror(errno));
 
   fail_unless(timer_triggered_count == 0,
     "Expected trigger count of 0, got %u", timer_triggered_count);
+}
+END_TEST
+
+START_TEST (timer_remove_multi_test) {
+  int res;
+  module m;
+
+  /* By providing a negative timerno, the return value should be the
+   * dynamically generated timerno, which is greater than or equal to
+   * 1024.
+   */
+  res = pr_timer_add(3, -1, &m, timers_test_cb, "test1");
+  fail_unless(res >= 1024, "Failed to add timer (%d): %s", res,
+    strerror(errno));
+
+  res = pr_timer_add(3, -1, &m, timers_test_cb, "test2");
+  fail_unless(res >= 1024, "Failed to add timer (%d): %s", res,
+    strerror(errno));
+
+  res = pr_timer_add(3, -1, &m, timers_test_cb, "test3");
+  fail_unless(res >= 1024, "Failed to add timer (%d): %s", res,
+    strerror(errno));
+
+  res = pr_timer_remove(-1, &m);
+  fail_unless(res == 3, "Failed to remove timers (%d): %s", res,
+    strerror(errno));
 }
 END_TEST
 
@@ -221,6 +251,18 @@ START_TEST (timer_sleep_test) {
 }
 END_TEST
 
+START_TEST (timer_usleep_test) {
+  int res;
+
+  res = pr_timer_usleep(0);
+  fail_unless(res == -1, "Failed to handle sleep len of zero");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_timer_usleep(500000);
+  fail_unless(res == 0, "Failed to sleep: %s", strerror(errno));
+}
+END_TEST
+
 Suite *tests_get_timers_suite(void) {
   Suite *suite;
   TCase *testcase;
@@ -233,8 +275,10 @@ Suite *tests_get_timers_suite(void) {
 
   tcase_add_test(testcase, timer_add_test);
   tcase_add_test(testcase, timer_remove_test);
+  tcase_add_test(testcase, timer_remove_multi_test);
   tcase_add_test(testcase, timer_reset_test);
   tcase_add_test(testcase, timer_sleep_test);
+  tcase_add_test(testcase, timer_usleep_test);
 
   /* Allow a longer timeout on these tests, as they will need a second or
    * two to actually run through the test itself, plus overhead.

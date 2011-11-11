@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-/* $Id: pr-syslog.c,v 1.23 2009/10/23 16:28:00 castaglia Exp $
+/* $Id: pr-syslog.c,v 1.24 2011/05/01 04:32:27 castaglia Exp $
  */
 
 #include "conf.h"
@@ -295,7 +295,7 @@ static struct sockaddr syslog_addr;
 #endif
 
 int pr_openlog(const char *ident, int opts, int facility) {
-  int sockfd = -1;
+  int sockfd;
 
   if (ident != NULL)
     log_ident = ident;
@@ -306,13 +306,15 @@ int pr_openlog(const char *ident, int opts, int facility) {
     log_facility = facility;
 
 #ifndef HAVE_DEV_LOG_STREAMS
+  sockfd = -1;
   while (1) {
     socklen_t addrlen = 0;
 
     if (sockfd == -1) {
       syslog_addr.sa_family = AF_UNIX;
 
-# if defined(DARWIN8) || defined(DARWIN9)
+# if defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
+     defined(DARWIN11)
       /* On Mac OSX, the sockaddr.sa_data field is 14 bytes.  It is possible
        * that PR_PATH_LOG exceeds that field length (which would truncate
        * the field, and ensure that proftpd cannot log via syslog).

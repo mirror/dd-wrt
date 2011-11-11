@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2009 The ProFTPD Project team
+ * Copyright (c) 2006-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.20.2.4 2010/04/14 21:04:27 castaglia Exp $
+ * $Id: encode.c,v 1.31 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -52,6 +52,9 @@ static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
     char *outbuf, size_t *outbuflen) {
 # ifdef HAVE_ICONV
 
+  /* Reset the state machine before each conversion. */
+  (void) iconv(conv, NULL, NULL, NULL, NULL);
+
   while (*inbuflen > 0) {
     size_t nconv;
 
@@ -61,7 +64,8 @@ static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
      * whereas Linux/Mac OSX iconv(3) use char ** for the input buffer.
      */
 #if defined(LINUX) || defined(DARWIN6) || defined(DARWIN7) || \
-    defined(DARWIN8) || defined(DARWIN9)
+    defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
+    defined(DARWIN11)
 
     nconv = iconv(conv, (char **) &inbuf, inbuflen, &outbuf, outbuflen);
 #else
@@ -69,11 +73,24 @@ static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
 #endif
 
     if (nconv == (size_t) -1) {
+
+      /* Note: an errno of EILSEQ here can indicate badly encoded strings OR
+       * (more likely) that the source character set used in the iconv_open(3)
+       * call for this iconv_t descriptor does not accurately describe the
+       * character encoding of the given string.  E.g. a filename may use
+       * the ISO8859-1 character set, but iconv_open(3) was called using
+       * US-ASCII.
+       */
+
       return -1;
     }
 
+    /* XXX We should let the loop condition work, rather than breaking out
+     * of the loop here.
+     */
     break;
   }
+
   return 0;
 # else
   errno = ENOSYS;
@@ -90,11 +107,11 @@ static void set_supports_telnet_iac(const char *codeset) {
    * commonly used character sets.
    */
 
-  if (strcasecmp(codeset, "CP1251") == 0 ||
-      strcasecmp(codeset, "CP866") == 0 ||
-      strcasecmp(codeset, "ISO-8859-1") == 0 ||
-      strcasecmp(codeset, "KOI8-R") == 0 ||
-      strcasecmp(codeset, "WINDOWS-1251") == 0) {
+  if (strncasecmp(codeset, "CP1251", 7) == 0 ||
+      strncasecmp(codeset, "CP866", 6) == 0 ||
+      strncasecmp(codeset, "ISO-8859-1", 11) == 0 ||
+      strncasecmp(codeset, "KOI8-R", 7) == 0 ||
+      strncasecmp(codeset, "WINDOWS-1251", 13) == 0) {
     supports_telnet_iac = FALSE;
     return;
   }
@@ -363,7 +380,7 @@ const char *pr_encode_get_local_charset(void) {
      * returns "646" to mean "US-ASCII".  The problem is that iconv_open(3)
      * doesn't accept "646" as an acceptable encoding.
      */
-    if (strcmp(charset, "646") == 0) {
+    if (strncmp(charset, "646", 4) == 0) {
       charset = "US-ASCII";
     }
 
@@ -456,8 +473,8 @@ int pr_encode_is_utf8(const char *codeset) {
     return -1;
   }
 
-  if (strcasecmp(codeset, "UTF8") == 0 ||
-      strcasecmp(codeset, "UTF-8") == 0) {
+  if (strncasecmp(codeset, "UTF8", 5) == 0 ||
+      strncasecmp(codeset, "UTF-8", 6) == 0) {
     return TRUE;
   }
 

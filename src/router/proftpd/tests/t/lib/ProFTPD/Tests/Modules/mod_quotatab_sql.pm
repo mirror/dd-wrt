@@ -1,10 +1,10 @@
 package ProFTPD::Tests::Modules::mod_quotatab_sql;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
+use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
 
@@ -151,6 +151,46 @@ my $TESTS = {
     test_class => [qw(bug forking rootprivs)],
   },
 
+  quotatab_config_opt_scanonlogin => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  quotatab_config_opt_scanonlogin_chrooted => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs)],
+  },
+
+  quotatab_config_opt_scanonlogin_new_tally_bug3440 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  quotatab_site_bug3483 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  quotatab_dele_failed_bug3517 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  quotatab_sql_dele_bug3524 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  quotatab_stor_deleteabortedstores_conn_abor_bug3621 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  quotatab_stor_deleteabortedstores_cmd_abor_bug3621 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -159,29 +199,6 @@ sub new {
 
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
-}
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub get_tally {
@@ -401,8 +418,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -639,8 +656,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -864,8 +881,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -1068,7 +1085,6 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1);
-
       $client->login($user, $passwd);
 
       my $conn = $client->retr_raw('test.txt');
@@ -1078,11 +1094,11 @@ EOS
       }
 
       my $buf;
-      $conn->read($buf, 8192);
-      $conn->close();
+      $conn->read($buf, 8192, 25);
+      eval { $conn->close() };
 
-      my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg();
+      my $resp_code = $client->response_code(1);
+      my $resp_msg = $client->response_msg(1);
 
       my $expected;
 
@@ -1305,8 +1321,8 @@ EOS
       }
 
       my $buf;
-      $conn->read($buf, 8192);
-      $conn->close();
+      $conn->read($buf, 8192, 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -1519,8 +1535,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -1735,8 +1751,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -1938,8 +1954,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -2160,8 +2176,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -2190,8 +2206,8 @@ EOS
       }
 
       $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -2428,8 +2444,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -2661,8 +2677,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -2691,8 +2707,8 @@ EOS
       }
 
       $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -2901,8 +2917,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -3138,8 +3154,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -3168,8 +3184,8 @@ EOS
       }
 
       $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -3414,8 +3430,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -3655,8 +3671,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -3685,8 +3701,8 @@ EOS
       }
 
       $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -3905,8 +3921,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -4134,8 +4150,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -4164,8 +4180,8 @@ EOS
       }
 
       $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -4402,8 +4418,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -4635,8 +4651,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -4665,8 +4681,8 @@ EOS
       }
 
       $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -4877,8 +4893,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -5093,26 +5109,23 @@ EOS
 
       sleep(1);
 
+      # This STOR should fail, since the out-of-band update filled up the
+      # available file upload slots.
       my $conn = $client->stor_raw('test.txt');
-      unless ($conn) {
-        die("Failed to STOR test.txt: " . $client->response_code() . " " .
-          $client->response_msg());
+      if ($conn) {
+        die("STOR test.txt succeeded unexpectedly"); 
       }
-
-      my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 
       my $expected;
 
-      $expected = 226;
+      $expected = 552;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = "Transfer complete";
+      $expected = "STOR: notice: quota reached: used 2 of 2 upload files";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -5147,29 +5160,29 @@ EOS
   $self->assert($expected eq $quota_type,
     test_msg("Expected '$expected', got '$quota_type'"));
 
-  $expected = '^(23.0|23)$';
+  $expected = '^(10.0|10)$';
   $self->assert(qr/$expected/, $bytes_in_used,
-    test_msg("Expected $expected, got $bytes_in_used"));
+    test_msg("Expected $expected bytes_in_used, got $bytes_in_used"));
 
   $expected = '^(10.0|10)$';
   $self->assert(qr/$expected/, $bytes_out_used,
-    test_msg("Expected $expected, got $bytes_out_used"));
+    test_msg("Expected $expected bytes_out_used, got $bytes_out_used"));
 
   $expected = '^(10.0|10)$';
   $self->assert(qr/$expected/, $bytes_xfer_used,
-    test_msg("Expected $expected, got $bytes_xfer_used"));
+    test_msg("Expected $expected bytes_xfer_used, got $bytes_xfer_used"));
 
-  $expected = 3;
+  $expected = 2;
   $self->assert($expected == $files_in_used,
-    test_msg("Expected $expected, got $files_in_used"));
+    test_msg("Expected $expected files_in_used, got $files_in_used"));
 
   $expected = 2;
   $self->assert($expected == $files_out_used,
-    test_msg("Expected $expected, got $files_out_used"));
+    test_msg("Expected $expected files_out_used, got $files_out_used"));
 
   $expected = 2;
   $self->assert($expected == $files_xfer_used,
-    test_msg("Expected $expected, got $files_xfer_used"));
+    test_msg("Expected $expected files_xfer_used, got $files_xfer_used"));
 
   if ($ex) {
     die($ex);
@@ -5243,7 +5256,7 @@ CREATE TABLE quotalimits (
   files_out_avail INTEGER NOT NULL,
   files_xfer_avail INTEGER NOT NULL
 );
-INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 0, 0, 0);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 32, 3, 0, 3);
 
 CREATE TABLE quotatallies (
   name TEXT NOT NULL,
@@ -5255,6 +5268,7 @@ CREATE TABLE quotatallies (
   files_out_used INTEGER NOT NULL,
   files_xfer_used INTEGER NOT NULL
 );
+
 EOS
 
     unless (close($fh)) {
@@ -5288,6 +5302,8 @@ EOS
   } else {
     die("Can't open $test_file: $!");
   }
+
+  my $test_sz = (stat($test_file))[7];
 
   my $config = {
     PidFile => $pid_file,
@@ -5341,8 +5357,8 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+
       $client->dele('test.txt');
 
       my $resp_code = $client->response_code();
@@ -5407,7 +5423,7 @@ EOS
   $self->assert(qr/$expected/, $bytes_xfer_used,
     test_msg("Expected $expected, got $bytes_xfer_used"));
 
-  $expected = 0;
+  $expected = -1;
   $self->assert($expected == $files_in_used,
     test_msg("Expected $expected, got $files_in_used"));
 
@@ -6368,8 +6384,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -6609,8 +6625,8 @@ EOS
       }
 
       my $buf = "Hello, World\n";
-      $conn->write($buf, length($buf));
-      $conn->close();
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
@@ -6622,6 +6638,1932 @@ EOS
         test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Transfer complete";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected '$expected', got '$resp_msg'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_config_opt_scanonlogin {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs("$tmpdir/home/$user");
+  mkpath($home_dir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+INSERT INTO quotatallies (name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used) VALUES ('$user', 'user',  0, 0, 0, 0, 0, 0);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $test_file = File::Spec->rel2abs("$home_dir/welcome.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh <<EOH;
+Hello, World.  This is a simple text file used in a regression
+test of proftpd mod_quotatab's ScanOnLogin feature.
+EOH
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $sub_dir = File::Spec->rel2abs("$home_dir/subdir");
+  mkpath($sub_dir);
+
+  my $test_file2 = File::Spec->rel2abs("$sub_dir/test.txt");
+  if (open(my $fh, "> $test_file2")) {
+    print $fh "Just another test file.\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file2: $!");
+    }
+
+  } else {
+    die("Can't open $test_file2: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir, $sub_dir, $test_file, $test_file2)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir, $sub_dir, $test_file, $test_file2)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        "QuotaOptions ScanOnLogin",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(139.0|139)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 2;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_config_opt_scanonlogin_chrooted {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs("$tmpdir/home/$user");
+  mkpath($home_dir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+INSERT INTO quotatallies (name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used) VALUES ('$user', 'user',  0, 0, 0, 0, 0, 0);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $test_file = File::Spec->rel2abs("$home_dir/welcome.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh <<EOH;
+Hello, World.  This is a simple text file used in a regression
+test of proftpd mod_quotatab's ScanOnLogin feature.
+EOH
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $sub_dir = File::Spec->rel2abs("$home_dir/subdir");
+  mkpath($sub_dir);
+
+  my $test_file2 = File::Spec->rel2abs("$sub_dir/test.txt");
+  if (open(my $fh, "> $test_file2")) {
+    print $fh "Just another test file.\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file2: $!");
+    }
+
+  } else {
+    die("Can't open $test_file2: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir, $sub_dir, $test_file, $test_file2)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir, $sub_dir, $test_file, $test_file2)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        "QuotaOptions ScanOnLogin",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(139.0|139)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 2;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_config_opt_scanonlogin_new_tally_bug3440 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs("$tmpdir/home/$user");
+  mkpath($home_dir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $test_file = File::Spec->rel2abs("$home_dir/welcome.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh <<EOH;
+Hello, World.  This is a simple text file used in a regression
+test of proftpd mod_quotatab's ScanOnLogin feature.
+EOH
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $sub_dir = File::Spec->rel2abs("$home_dir/subdir");
+  mkpath($sub_dir);
+
+  my $test_file2 = File::Spec->rel2abs("$sub_dir/test.txt");
+  if (open(my $fh, "> $test_file2")) {
+    print $fh "Just another test file.\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file2: $!");
+    }
+
+  } else {
+    die("Can't open $test_file2: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir, $sub_dir, $test_file, $test_file2)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir, $sub_dir, $test_file, $test_file2)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        "QuotaOptions ScanOnLogin",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(139.0|139)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 2;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_site_bug3483 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs("$tmpdir/home/$user");
+  mkpath($home_dir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      eval { $client->site("") };
+      unless ($@) {
+        die("SITE command succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected;
+
+      $expected = 500;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
+
+      $expected = "'SITE' requires parameters";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected '$expected', got '$resp_msg'"));
+
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_dele_failed_bug3517 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0775, $home_dir)) {
+      die("Can't set perms on $home_dir to 0775: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+INSERT INTO quotatallies (name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used) VALUES ('$user', 'user',  32, 0, 0, 2, 0, 0);
+
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      $client->login($user, $passwd);
+
+      my $test_file = 'test.txt';
+
+      eval { $client->dele($test_file) };
+      unless ($@) {
+        die("DELE $test_file succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      $client->quit();
+
+      my $expected;
+
+      $expected = 550;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
+
+      $expected = "$test_file: No such file or directory";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected '$expected', got '$resp_msg'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(32.0|32)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 2;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  unlink($log_file);
+}
+
+sub quotatab_sql_dele_bug3524 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0775, $home_dir)) {
+      die("Can't set perms on $home_dir to 0775: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 32, 3, 0, 3);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+INSERT INTO quotatallies (name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used) VALUES ('$user', 'user',  30, 0, 30, 2, 0, 2);
+
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_sz = (stat($test_file))[7];
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      $client->login($user, $passwd);
+
+      $client->site('QUOTA');
+      my $resp_msgs = $client->response_msgs();
+
+      my $expected;
+
+      $expected = '\s+?Uploaded bytes:\s+?30.00/32.00';
+      my $line = $resp_msgs->[5];
+      chomp($line);
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
+
+      $expected = '\s+?Uploaded files:\s+?2/3';
+      $line = $resp_msgs->[8];
+      chomp($line);
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
+
+      $client->dele('test.txt');
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      $expected = 250;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
+
+      $expected = "DELE command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected '$expected', got '$resp_msg'"));
+
+      $client->site('QUOTA');
+      $resp_msgs = $client->response_msgs();
+
+      $expected = '\s+?Uploaded bytes:\s+?16.00/32.00';
+      $line = $resp_msgs->[5];
+      chomp($line);
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line"));
+
+      $expected = '\s+?Uploaded files:\s+?1/3';
+      $line = $resp_msgs->[8];
+      chomp($line);
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
+
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(16.0|16)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected bytes_in_used, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected bytes_out_used, got $bytes_out_used"));
+
+  $expected = '^(30.0|30)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected bytes_xfer_used, got $bytes_xfer_used"));
+
+  $expected = 1;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected files_in_used, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected files_out_used, got $files_out_used"));
+
+  $expected = 2;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected files_xfer_used, got $files_xfer_used"));
+
+  unlink($log_file);
+}
+
+sub quotatab_stor_deleteabortedstores_conn_abor_bug3621 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+    DeleteAbortedStores => 'on',
+    TimeoutLinger => 0,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my $conn = $client->stor_raw('test.txt');
+      unless ($conn) {
+        die("Failed to STOR test.txt: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+      $conn->abort();
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected;
+
+      $expected = 226;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
+
+      $expected = "Abort successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected '$expected', got '$resp_msg'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user\'");
+
+  my $expected;
+
+  $expected = 'user';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_stor_deleteabortedstores_cmd_abor_bug3621 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+    DeleteAbortedStores => 'on',
+    TimeoutLinger => 0,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my $conn = $client->stor_raw('test.txt');
+      unless ($conn) {
+        die("Failed to STOR test.txt: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+
+      $client->quote('ABOR');
+
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected;
+
+      $expected = 426;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected $expected, got $resp_code"));
+
+      $expected = "Transfer aborted. Data connection closed";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };

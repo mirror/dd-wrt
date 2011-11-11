@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_rewrite -- a module for rewriting FTP commands
  *
- * Copyright (c) 2001-2010 TJ Saunders
+ * Copyright (c) 2001-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
@@ -24,21 +24,20 @@
  * This is mod_rewrite, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_rewrite.c,v 1.51 2010/02/10 17:29:33 castaglia Exp $
+ * $Id: mod_rewrite.c,v 1.64 2011/09/24 05:33:59 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_REWRITE_VERSION "mod_rewrite/0.8"
+#define MOD_REWRITE_VERSION "mod_rewrite/0.9"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001021001
-# error "ProFTPD 1.2.10rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030402
+# error "ProFTPD 1.3.4rc2 or later required"
 #endif
 
-#ifdef HAVE_REGEX_H
-# include <regex.h>
+#ifdef PR_USE_REGEX
 
 #define REWRITE_FIFO_MAXLEN		256
 #define REWRITE_LOG_MODE		0640
@@ -98,9 +97,11 @@ static pool *rewrite_pool = NULL;
 static pool *rewrite_cond_pool = NULL;
 
 static unsigned int rewrite_nrules = 0;
-static array_header *rewrite_conds = NULL, *rewrite_regexes = NULL;
+static array_header *rewrite_conds = NULL;
 static rewrite_match_t rewrite_cond_matches;
 static rewrite_match_t rewrite_rule_matches;
+
+static const char *trace_channel = "rewrite";
 
 #define REWRITE_MAX_VARS		15
 
@@ -122,8 +123,7 @@ static char rewrite_vars[REWRITE_MAX_VARS][3] = {
   "%w"		/* Rename from (whence) */
 };
 
-/* Necessary prototypes
- */
+/* Necessary prototypes */
 static char *rewrite_argsep(char **);
 static void rewrite_closelog(void);
 static char *rewrite_expand_var(cmd_rec *, const char *, const char *);
@@ -131,14 +131,13 @@ static char *rewrite_get_cmd_name(cmd_rec *);
 static void rewrite_log(char *format, ...);
 static unsigned char rewrite_match_cond(cmd_rec *, config_rec *);
 static void rewrite_openlog(void);
-static unsigned char rewrite_open_fifo(config_rec *);
+static int rewrite_open_fifo(config_rec *);
 static unsigned int rewrite_parse_cond_flags(pool *, const char *);
 static unsigned char rewrite_parse_map_str(char *, rewrite_map_t *);
 static unsigned char rewrite_parse_map_txt(rewrite_map_txt_t *);
 static unsigned int rewrite_parse_rule_flags(pool *, const char *);
 static int rewrite_read_fifo(int, char *, size_t);
-static regex_t *rewrite_regalloc(void);
-static unsigned char rewrite_regexec(const char *, regex_t *, unsigned char,
+static unsigned char rewrite_regexec(const char *, pr_regex_t *, unsigned char,
     rewrite_match_t *);
 static void rewrite_replace_cmd_arg(cmd_rec *, char *);
 static char *rewrite_subst(cmd_rec *c, char *);
@@ -339,7 +338,7 @@ static char *rewrite_argsep(char **arg) {
 }
 
 static char *rewrite_get_cmd_name(cmd_rec *cmd) {
-  if (strcmp(cmd->argv[0], C_SITE) != 0) {
+  if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) != 0) {
     return cmd->argv[0];
 
   } else {
@@ -466,18 +465,20 @@ static unsigned char rewrite_match_cond(cmd_rec *cmd, config_rec *cond) {
     }
 
     case REWRITE_COND_OP_REGEX: {
-      rewrite_log("rewrite_match_cond(): checking regex cond");
+      rewrite_log("rewrite_match_cond(): checking regex cond against '%s'",
+        cond_str);
 
       memset(&rewrite_cond_matches, '\0', sizeof(rewrite_cond_matches));
       rewrite_cond_matches.match_string = cond_str;
-      return rewrite_regexec(cond_str, (regex_t *) cond->argv[1], negated,
+      return rewrite_regexec(cond_str, cond->argv[1], negated,
         &rewrite_cond_matches);
     }
 
     case REWRITE_COND_OP_TEST_DIR: {
       int res = FALSE;
       struct stat st;
-      rewrite_log("rewrite_match_cond(): checking dir test cond");
+      rewrite_log("rewrite_match_cond(): checking dir test cond against "
+        "path '%s'", cond_str);
 
       pr_fs_clear_cache();
       if (pr_fsio_lstat(cond_str, &st) >= 0 &&
@@ -493,7 +494,8 @@ static unsigned char rewrite_match_cond(cmd_rec *cmd, config_rec *cond) {
     case REWRITE_COND_OP_TEST_FILE: {
       int res = FALSE;
       struct stat st;
-      rewrite_log("rewrite_match_cond(): checking file test cond");
+      rewrite_log("rewrite_match_cond(): checking file test cond against "
+        "path '%s'", cond_str);
 
       pr_fs_clear_cache();
       if (pr_fsio_lstat(cond_str, &st) >= 0 &&
@@ -509,7 +511,8 @@ static unsigned char rewrite_match_cond(cmd_rec *cmd, config_rec *cond) {
     case REWRITE_COND_OP_TEST_SYMLINK: {
       int res = FALSE;
       struct stat st;
-      rewrite_log("rewrite_match_cond(): checking symlink test cond");
+      rewrite_log("rewrite_match_cond(): checking symlink test cond against "
+        "path '%s'", cond_str);
 
       pr_fs_clear_cache();
       if (pr_fsio_lstat(cond_str, &st) >= 0 &&
@@ -525,7 +528,8 @@ static unsigned char rewrite_match_cond(cmd_rec *cmd, config_rec *cond) {
     case REWRITE_COND_OP_TEST_SIZE: {
       int res = FALSE;
       struct stat st;
-      rewrite_log("rewrite_match_cond(): checking size test cond");
+      rewrite_log("rewrite_match_cond(): checking size test cond against "
+        "path '%s'", cond_str);
 
       pr_fs_clear_cache();
       if (pr_fsio_lstat(cond_str, &st) >= 0 &&
@@ -727,44 +731,24 @@ static unsigned char rewrite_parse_map_txt(rewrite_map_txt_t *txtmap) {
   return TRUE;
 }
 
-static regex_t *rewrite_regalloc(void) {
-  regex_t *preg = NULL;
-
-  /* If no regex-tracking array has been allocated, create one.  Register
-   * a cleanup handler for this pool, to call regfree(3) on all
-   * regex_t pointers in the array.
-   */
-  if (!rewrite_regexes)
-    rewrite_regexes = make_array(rewrite_pool, 0, sizeof(regex_t *));
-
-  preg = calloc(1, sizeof(regex_t));
-  if (preg == NULL) {
-    rewrite_log("fatal: memory exhausted during regex_t allocation");
-    exit(1);
-  }
-
-  /* Add the regex_t pointer to the array. */
-  *((regex_t **) push_array(rewrite_regexes)) = preg;
-
-  return preg;
-}
-
-static unsigned char rewrite_regexec(const char *string, regex_t *regbuf,
+static unsigned char rewrite_regexec(const char *string, pr_regex_t *pre,
     unsigned char negated, rewrite_match_t *matches) {
   int res = -1;
   char *tmpstr = (char *) string;
   unsigned char have_match = FALSE;
 
   /* Sanity checks */
-  if (!string || !regbuf)
+  if (string == NULL ||
+      pre == NULL) {
     return FALSE;
+  }
 
   /* Prepare the given match group array. */
   memset(matches->match_groups, '\0', sizeof(regmatch_t) * REWRITE_MAX_MATCHES);
 
   /* Execute the given regex. */
-  while ((res = regexec(regbuf, tmpstr, REWRITE_MAX_MATCHES,
-      matches->match_groups, 0)) == 0) {
+  while ((res = pr_regexp_exec(pre, tmpstr, REWRITE_MAX_MATCHES,
+      matches->match_groups, 0, 0, 0)) == 0) {
     have_match = TRUE;
     break;
   }
@@ -777,7 +761,7 @@ static unsigned char rewrite_regexec(const char *string, regex_t *regbuf,
 }
 
 static void rewrite_replace_cmd_arg(cmd_rec *cmd, char *new_arg) {
-  if (strcmp(cmd->argv[0], C_SITE) != 0) {
+  if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) != 0) {
     cmd->arg = new_arg;
 
   } else {
@@ -857,6 +841,15 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
     rewrite_match_t *matches) {
   register unsigned int i = 0;
   char *replacement_pattern = NULL;
+  int use_notes = TRUE;
+
+  /* We do NOT stash the backrefs in the cmd->notes table for sensitive
+   * data, e.g. PASS or ADAT commands.
+   */
+  if (pr_cmd_cmp(cmd, PR_CMD_PASS_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_ADAT_ID) == 0) {
+    use_notes = FALSE;
+  }
 
   for (i = 0; i < REWRITE_MAX_MATCHES; i++) {
     char buf[3] = {'\0'}, *ptr;
@@ -876,11 +869,42 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
       replacement_pattern = pstrdup(cmd->pool, pattern);
 
     /* Make sure there's a backreference for this in the substitution
-     * pattern.  Otherwise, just continue on.
+     * pattern.
      */
     ptr = strstr(replacement_pattern, buf);
-    if (ptr == NULL)
+    if (ptr == NULL) {
+
+      /* Even if there is no backref in the substitution pattern, we
+       * want to stash the backrefs in the cmd->notes table.
+       */
+      if (use_notes == TRUE &&
+          matches->match_groups[i].rm_so != -1) {
+        char *key, *value, tmp;
+
+        tmp = (matches->match_string)[matches->match_groups[i].rm_eo];
+        (matches->match_string)[matches->match_groups[i].rm_eo] = '\0';
+
+        value = &(matches->match_string)[matches->match_groups[i].rm_so];
+        key = pstrcat(cmd->pool, "mod_rewrite.", buf, NULL);
+
+        if (pr_table_add_dup(cmd->notes, key, value, 0) < 0) {
+          /* Ignore dups. */
+          if (errno != EEXIST) {
+            pr_trace_msg(trace_channel, 3,
+              "error stashing '%s' in cmd->notes: %s", key, strerror(errno));
+          }
+
+        } else {
+          pr_trace_msg(trace_channel, 9,
+            "stashing value '%s' under key '%s' in cmd->notes", value, key);
+        }
+
+        /* Undo the twiddling of the NUL character. */
+        (matches->match_string)[matches->match_groups[i].rm_eo] = tmp;
+      }
+
       continue;
+    }
 
     /* Check for escaped backrefs. */ 
     if (ptr > replacement_pattern) {
@@ -925,7 +949,7 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
     }
 
     if (matches->match_groups[i].rm_so != -1) {
-      char tmp;
+      char *value, tmp;
 
       /* There's a match for the backref in the string, substitute in
        * the backreferenced value.
@@ -934,15 +958,41 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
       tmp = (matches->match_string)[matches->match_groups[i].rm_eo];
       (matches->match_string)[matches->match_groups[i].rm_eo] = '\0';
 
+      value = &(matches->match_string)[matches->match_groups[i].rm_so];
+
       rewrite_log("rewrite_subst_backrefs(): replacing backref '%s' with '%s'",
-        buf, &(matches->match_string)[matches->match_groups[i].rm_so]);
+        buf, value);
+
+      if (use_notes) {
+        char *key;
+
+        /* Stash the backref in the cmd->notes table, for use by other
+         * modules, e.g. mod_sql.
+         */
+
+        key = pstrcat(cmd->pool, "mod_rewrite.", buf, NULL);
+
+        if (pr_table_add_dup(cmd->notes, key, value, 0) < 0) {
+          /* Ignore dups. */
+          if (errno != EEXIST) {
+            pr_trace_msg(trace_channel, 3,
+              "error stashing '%s' in cmd->notes: %s", key, strerror(errno));
+          }
+
+        } else {
+          pr_trace_msg(trace_channel, 9,
+            "stashing value '%s' under key '%s' in cmd->notes", value, key);
+        }
+      }
+
       replacement_pattern = sreplace(cmd->pool, replacement_pattern, buf,
-        &(matches->match_string)[matches->match_groups[i].rm_so], NULL);
+        value, NULL);
    
       /* Undo the twiddling of the NUL character. */ 
       (matches->match_string)[matches->match_groups[i].rm_eo] = tmp;
 
     } else {
+
       /* There's backreference in the string, but there no matching
        * group (i.e. backreferenced value).  Substitute in an empty string
        * for the backref.
@@ -950,6 +1000,29 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
 
       rewrite_log("rewrite_subst_backrefs(): replacing backref '%s' with "
         "empty string", buf);
+
+      if (use_notes) {
+        char *key;
+
+        /* Stash the backref in the cmd->notes table, for use by other
+         * modules, e.g. mod_sql.
+         */
+
+        key = pstrcat(cmd->pool, "mod_rewrite.", buf, NULL);
+
+        if (pr_table_add_dup(cmd->notes, key, "", 0) < 0) {
+          /* Ignore dups. */
+          if (errno != EEXIST) {
+            pr_trace_msg(trace_channel, 3,
+              "error stashing '%s' in cmd->notes: %s", key, strerror(errno));
+          }
+
+        } else {
+          pr_trace_msg(trace_channel, 9,
+            "stashing empty string under key '%s' in cmd->notes", key);
+        }
+      }
+
       replacement_pattern = sreplace(cmd->pool, replacement_pattern, buf,
         "", NULL);
     }
@@ -1020,6 +1093,7 @@ static char *rewrite_subst_maps(cmd_rec *cmd, char *pattern) {
     c = find_config(main_server->conf, CONF_PARAM, "RewriteMap", FALSE);
 
     while (c) {
+      pr_signals_handle();
 
       if (strcmp(c->argv[0], map.map_name) == 0) { 
         char *lookup_value = NULL;
@@ -1186,7 +1260,15 @@ static char *rewrite_subst_maps_fifo(cmd_rec *cmd, config_rec *c,
   pr_signals_block();
 
   /* Make sure the data in the write buffer has been flushed into the FIFO. */
-  fsync(fifo_fd);
+  if (fsync(fifo_fd) < 0) {
+    rewrite_log("rewrite_subst_maps_fifo(): error flushing data to FIFO %d: %s",
+      fifo_fd, strerror(errno));
+  }
+
+  /* And make sure that the data has been read from the buffer by the other
+   * end.
+   */
+  rewrite_wait_fifo(fifo_fd);
 
   /* Allocate memory into which to read the lookup value. */
   value = pcalloc(cmd->pool, sizeof(char) * REWRITE_FIFO_MAXLEN);
@@ -1221,10 +1303,11 @@ static char *rewrite_subst_maps_fifo(cmd_rec *cmd, config_rec *c,
   }
   pr_signals_block();
 
-  rewrite_wait_fifo(fifo_fd);
-
   /* Make sure the data from the read buffer is completely flushed. */
-  fsync(fifo_fd);
+  if (fsync(fifo_fd) < 0) {
+    rewrite_log("rewrite_subst_maps_fifo(): error flushing data to FIFO %d: %s",
+      fifo_fd, strerror(errno));
+  }
 
   if (fifo_lockfd != -1) {
 #ifdef HAVE_FLOCK
@@ -1281,12 +1364,15 @@ static char *rewrite_subst_maps_txt(cmd_rec *cmd, config_rec *c,
   txt_keys = (char **) txtmap->txt_keys;
   txt_vals = (char **) txtmap->txt_values;
 
-  for (i = 0; i < txtmap->txt_nents; i++)
-    if (strcmp(txtmap->txt_keys[i], map->map_lookup_key) == 0)
-      value = txtmap->txt_values[i];
+  for (i = 0; i < txtmap->txt_nents; i++) {
+    if (strcmp(txt_keys[i], map->map_lookup_key) == 0) {
+      value = txt_vals[i];
+    }
+  }
 
-  if (!value)
+  if (value == NULL) {
     value = map->map_default_value;
+  }
 
   return value;
 }
@@ -1343,6 +1429,7 @@ static int rewrite_utf8_to_ucs4(unsigned long *ucs4_buf,
   int ucs_len = 0;
 
   while (utf8_buf != utf8_endbuf) {
+    pr_signals_handle();
 
     /* ASCII chars - no conversion needed */
     if ((*utf8_buf & 0x80) == 0x00) {
@@ -1555,8 +1642,8 @@ static char *rewrite_map_int_unescape(pool *map_pool, char *key) {
   return value;
 }
 
-static unsigned char rewrite_open_fifo(config_rec *c) {
-  int fd = -1;
+static int rewrite_open_fifo(config_rec *c) {
+  int fd = -1, flags = -1;
   char *fifo = c->argv[2];
 
   /* No interruptions, please. */
@@ -1564,25 +1651,23 @@ static unsigned char rewrite_open_fifo(config_rec *c) {
 
   fd = open(fifo, O_RDWR|O_NONBLOCK);
   if (fd < 0) {
-    rewrite_log("rewrite_rdopen_fifo(): unable to open FIFO '%s': %s", fifo,
+    rewrite_log("rewrite_open_fifo(): unable to open FIFO '%s': %s", fifo,
       strerror(errno));
     pr_signals_unblock();
-    return FALSE;
+    return -1;
+  }
 
-  } else {
-    int flags = -1;
-
-    /* Set this descriptor for blocking. */
-    flags = fcntl(fd, F_GETFL);
-    if (fcntl(fd, F_SETFL, flags & (REWRITE_U32_BITS^O_NONBLOCK)) < 0)
-      rewrite_log("rewrite_open_fifo(): error setting FIFO "
-        "blocking mode: %s", strerror(errno));
+  /* Set this descriptor for blocking. */
+  flags = fcntl(fd, F_GETFL);
+  if (fcntl(fd, F_SETFL, flags & (REWRITE_U32_BITS^O_NONBLOCK)) < 0) {
+    rewrite_log("rewrite_open_fifo(): error setting FIFO "
+      "blocking mode: %s", strerror(errno));
   }
 
   /* Add the file descriptor into the config_rec. */
   *((int *) c->argv[3]) = fd;
 
-  return TRUE;
+  return 0;
 }
 
 static int rewrite_read_fifo(int fd, char *buf, size_t buflen) {
@@ -1615,9 +1700,14 @@ static int rewrite_read_fifo(int fd, char *buf, size_t buflen) {
   return res;
 }
 
+#define REWRITE_WAIT_MAX_ATTEMPTS	10
+
 static void rewrite_wait_fifo(int fd) {
+  unsigned int nattempts = 0;
   int size = 0;
   struct timeval tv;
+
+  rewrite_log("rewrite_wait_fifo: waiting on FIFO (fd %d)", fd);
 
   /* Wait for the data written to the FIFO buffer to be read.  Use
    * ioctl(2) (yuck) to poll the buffer, waiting for the number of bytes
@@ -1627,11 +1717,19 @@ static void rewrite_wait_fifo(int fd) {
    * the FIFO, so we won't need to poll the buffer similarly there.
    */
 
-  if (ioctl(fd, FIONREAD, &size) < 0)
+  if (ioctl(fd, FIONREAD, &size) < 0) {
     rewrite_log("rewrite_wait_fifo(): ioctl error: %s", strerror(errno));
+    return;
+  }
+
+  if (size == 0) {
+    rewrite_log("rewrite_wait_fifo(): found %d bytes waiting in FIFO (fd %d)",
+      size, fd);
+  }
 
   while (size != 0) {
-    rewrite_log("rewrite_wait_fifo(): waiting for buffer to be read");
+    rewrite_log("rewrite_wait_fifo(): waiting for buffer to be read "
+      "(%d bytes remaining)", size);
 
     /* Handling signals is always a Good Thing in a while() loop. */
     pr_signals_handle();
@@ -1642,8 +1740,16 @@ static void rewrite_wait_fifo(int fd) {
  
     select(0, NULL, NULL, NULL, &tv);
 
-    if (ioctl(fd, FIONREAD, &size) < 0)
+    if (ioctl(fd, FIONREAD, &size) < 0) {
       rewrite_log("rewrite_wait_fifo(): ioctl error: %s", strerror(errno));
+    }
+
+    nattempts++;
+    if (nattempts >= REWRITE_WAIT_MAX_ATTEMPTS) {
+      rewrite_log("rewrite_wait_fifo(): exceeded max poll attempts (%d), "
+        "returning", REWRITE_WAIT_MAX_ATTEMPTS);
+      break;
+    }
   }
 }
 
@@ -1771,10 +1877,9 @@ static void rewrite_closelog(void) {
 
 static void rewrite_log(char *fmt, ...) {
   va_list msg;
-  int res;
 
   va_start(msg, fmt);
-  res = pr_log_vwritefile(rewrite_logfd, MOD_REWRITE_VERSION, fmt, msg);
+  (void) pr_log_vwritefile(rewrite_logfd, MOD_REWRITE_VERSION, fmt, msg);
   va_end(msg);
 
   return;
@@ -1867,13 +1972,13 @@ MODRET set_rewritecondition(cmd_rec *cmd) {
 
   } else {
     cond_op = REWRITE_COND_OP_REGEX;
-    cond_data = rewrite_regalloc();
+    cond_data = pr_regexp_alloc(&rewrite_module);
 
-    res = regcomp(cond_data, cmd->argv[2], regex_flags);
+    res = pr_regexp_compile(cond_data, cmd->argv[2], regex_flags);
     if (res != 0) {
       char errstr[200] = {'\0'};
 
-      regerror(res, cond_data, errstr, sizeof(errstr));
+      pr_regexp_error(res, cond_data, errstr, sizeof(errstr));
       regfree(cond_data);
 
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to compile '",
@@ -2104,7 +2209,7 @@ MODRET set_rewritemap(cmd_rec *cmd) {
 /* usage: RewriteRule pattern substitution [flags] */
 MODRET set_rewriterule(cmd_rec *cmd) {
   config_rec *c = NULL;
-  regex_t *preg = NULL;
+  pr_regex_t *pre = NULL;
   unsigned int rule_flags = 0;
   unsigned char negated = FALSE;
   int regex_flags = REG_EXTENDED, res = -1;
@@ -2131,7 +2236,7 @@ MODRET set_rewriterule(cmd_rec *cmd) {
       regex_flags |= REG_ICASE;
   }
 
-  preg = rewrite_regalloc();
+  pre = pr_regexp_alloc(&rewrite_module);
 
   /* Check for a leading '!' prefix, signifying regex negation */
   if (*cmd->argv[1] == '!') {
@@ -2139,12 +2244,12 @@ MODRET set_rewriterule(cmd_rec *cmd) {
     cmd->argv[1]++;
   }
 
-  res = regcomp(preg, cmd->argv[1], regex_flags);
+  res = pr_regexp_compile_posix(pre, cmd->argv[1], regex_flags);
   if (res != 0) {
     char errstr[200] = {'\0'};
 
-    regerror(res, preg, errstr, sizeof(errstr));
-    regfree(preg);
+    pr_regexp_error(res, pre, errstr, sizeof(errstr));
+    pr_regexp_free(NULL, pre);
 
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to compile '",
       cmd->argv[1], "' regex: ", errstr, NULL));
@@ -2155,7 +2260,7 @@ MODRET set_rewriterule(cmd_rec *cmd) {
    */
   tmp = NULL;
 
-  c = add_config_param(cmd->argv[0], 6, preg, NULL, NULL, NULL, NULL, NULL);
+  c = add_config_param(cmd->argv[0], 6, pre, NULL, NULL, NULL, NULL, NULL);
 
   /* Note: how to handle the substitution expression? Later? */
   c->argv[1] = pstrdup(c->pool, cmd->argv[2]);
@@ -2187,8 +2292,9 @@ MODRET set_rewriterule(cmd_rec *cmd) {
     rewrite_cond_pool = NULL;
     rewrite_conds = NULL;
 
-  } else
+  } else {
     c->argv[3] = NULL;
+  }
 
   c->argv[4] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[4]) = rule_flags;
@@ -2226,7 +2332,7 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
   /* If this is a SITE command, handle things a little differently, so that
    * the rest of the rewrite machinery works properly.
    */
-  if (strcmp(cmd->argv[0], C_SITE) != 0) {
+  if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) != 0) {
     cmd_name = cmd->argv[0];
     cmd_arg = cmd->arg;
 
@@ -2262,6 +2368,8 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
     unsigned char exec_rule = FALSE;
     rewrite_log("rewrite_fixup(): found RewriteRule");
 
+    pr_signals_handle();
+
     /* If we've already seen this Rule, skip on to the next Rule. */
     if (seen_rules->nelts > 0) {
       register unsigned int i = 0;
@@ -2288,7 +2396,7 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
     /* Make sure the given RewriteRule regex matches the command argument. */
     memset(&rewrite_rule_matches, '\0', sizeof(rewrite_rule_matches));
     rewrite_rule_matches.match_string = cmd_arg;
-    if (!rewrite_regexec(cmd_arg, (regex_t *) c->argv[0],
+    if (!rewrite_regexec(cmd_arg, c->argv[0],
         *((unsigned char *) c->argv[2]), &rewrite_rule_matches)) {
       rewrite_log("rewrite_fixup(): %s arg '%s' does not match RewriteRule "
         "regex", cmd_name, cmd_arg);
@@ -2378,8 +2486,8 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
         /* Note: The "SYMLINK" test is for handling the SFTP SYMLINK request
          * e.g from mod_sftp.  There is no SYMLINK FTP command.
          */
-        if (strcmp(cmd->argv[0], C_SITE) == 0 ||
-            strcmp(cmd->argv[0], "SYMLINK") == 0) {
+        if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) == 0 ||
+            pr_cmd_strcmp(cmd, "SYMLINK") == 0) {
           flags |= PR_STR_FL_PRESERVE_WHITESPACE;
 
           if (strcasecmp(cmd->argv[1], "CHGRP") == 0 ||
@@ -2404,8 +2512,9 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
 
         pr_cmd_clear_cache(cmd);
 
-      } else
+      } else {
         rewrite_log("rewrite_fixup(): error processing RewriteRule");
+      }
 
       /* If this Rule is marked as "last", break out of the loop. */
       if (rule_flags & REWRITE_RULE_FLAG_LAST) {
@@ -2438,17 +2547,7 @@ static void rewrite_exit_ev(const void *event_data, void *user_data) {
 static void rewrite_mod_unload_ev(const void *event_data, void *user_data) {
   if (strcmp("mod_rewrite.c", (const char *) event_data) == 0) {
     pr_event_unregister(&rewrite_module, NULL, NULL);
-
-    if (rewrite_regexes) {
-      register unsigned int i = 0;
-      regex_t **regexes = (regex_t **) rewrite_regexes->elts;
-
-      for (i = 0; i < rewrite_regexes->nelts && regexes[i]; i++) {
-        regfree(regexes[i]);
-        free(regexes[i]);
-      }
-    }
-
+    pr_regexp_free(&rewrite_module, NULL);
     if (rewrite_pool) {
       destroy_pool(rewrite_pool);
       rewrite_pool = NULL;
@@ -2458,21 +2557,12 @@ static void rewrite_mod_unload_ev(const void *event_data, void *user_data) {
 #endif /* PR_SHARED_MODULE */
 
 static void rewrite_restart_ev(const void *event_data, void *user_data) {
-  if (rewrite_regexes) {
-    register unsigned int i = 0;
-    regex_t **regexes = (regex_t **) rewrite_regexes->elts;
-
-    for (i = 0; i < rewrite_regexes->nelts && regexes[i]; i++) {
-      regfree(regexes[i]);
-      free(regexes[i]);
-    }
-  }
+  pr_regexp_free(&rewrite_module, NULL);
 
   if (rewrite_pool) {
     destroy_pool(rewrite_pool);
     rewrite_cond_pool = NULL;
     rewrite_conds = NULL;
-    rewrite_regexes = NULL;
 
     /* Re-allocate a pool for this module's use. */
     rewrite_pool = make_sub_pool(permanent_pool);
@@ -2505,18 +2595,29 @@ static void rewrite_rewrite_home_ev(const void *event_data, void *user_data) {
    * command dispatch mechanism.
    */
   mr = rewrite_fixup(cmd);
-
-  rewrite_log("rewrote home to be '%s'", cmd->arg);
-
-  /* Make sure to use a pool whose lifetime is longer/outside of the pools
-   * used here.
-   */
-  if (pr_table_set(session.notes, "mod_auth.home-dir",
-      pstrdup(session.pool, cmd->arg), 0) < 0) {
-    pr_trace_msg("auth", 3, MOD_REWRITE_VERSION
-      ": error stashing home directory in session.notes: %s", strerror(errno));
+  if (MODRET_ISERROR(mr)) {
+    rewrite_log("unable to rewrite home '%s'", pw_dir);
     destroy_pool(tmp_pool);
     return;
+  }
+
+  if (strcmp(pw_dir, cmd->arg) != 0) {
+    rewrite_log("rewrote home to be '%s'", cmd->arg);
+
+    /* Make sure to use a pool whose lifetime is longer/outside of the pools
+     * used here.
+     */
+    if (pr_table_set(session.notes, "mod_auth.home-dir",
+        pstrdup(session.pool, cmd->arg), 0) < 0) {
+      pr_trace_msg("auth", 3, MOD_REWRITE_VERSION
+        ": error stashing home directory in session.notes: %s",
+        strerror(errno));
+      destroy_pool(tmp_pool);
+      return;
+    }
+
+  } else {
+    rewrite_log("home directory '%s' not changed by RewriteHome", pw_dir);
   }
 
   destroy_pool(tmp_pool);
@@ -2555,8 +2656,9 @@ static int rewrite_sess_init(void) {
 
     if (strcmp(c->argv[1], "fifo") == 0) {
       PRIVS_ROOT
-      if (!rewrite_open_fifo(c))
+      if (rewrite_open_fifo(c) < 0) {
         rewrite_log("error preparing FIFO RewriteMap");
+      }
       PRIVS_RELINQUISH
     }
 
@@ -2642,4 +2744,4 @@ module rewrite_module = {
   MOD_REWRITE_VERSION
 };
 
-#endif /* HAVE_REGEX_H */
+#endif /* regex support */

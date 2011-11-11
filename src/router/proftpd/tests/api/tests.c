@@ -1,6 +1,6 @@
 /*
- * ProFTPD - FTP server testsuite
- * Copyright (c) 2008 The ProFTPD Project team
+ * ProFTPD - FTP server API testsuite
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -30,24 +30,27 @@ struct testsuite_info {
 };
 
 static struct testsuite_info suites[] = {
-  { "pool", 	tests_get_pool_suite },
-  { "array", 	tests_get_array_suite },
-  { "str", 	tests_get_str_suite },
-  { "sets", 	tests_get_sets_suite },
-  { "timers", 	tests_get_timers_suite },
-  { "table", 	tests_get_table_suite },
-  { "var", 	tests_get_var_suite },
-  { "event", 	tests_get_event_suite },
-  { "env", 	tests_get_env_suite },
-  { "version", 	tests_get_version_suite },
-  { "feat", 	tests_get_feat_suite },
-  { "netaddr", 	tests_get_netaddr_suite },
-  { "netacl",	tests_get_netacl_suite },
-  { "class",	tests_get_class_suite },
-  { "regexp",	tests_get_regexp_suite },
-  { "expr",	tests_get_expr_suite },
+  { "pool", 		tests_get_pool_suite },
+  { "array", 		tests_get_array_suite },
+  { "str", 		tests_get_str_suite },
+  { "sets", 		tests_get_sets_suite },
+  { "timers", 		tests_get_timers_suite },
+  { "table", 		tests_get_table_suite },
+  { "var", 		tests_get_var_suite },
+  { "event", 		tests_get_event_suite },
+  { "env", 		tests_get_env_suite },
+  { "version", 		tests_get_version_suite },
+  { "feat", 		tests_get_feat_suite },
+  { "netaddr", 		tests_get_netaddr_suite },
+  { "netacl",		tests_get_netacl_suite },
+  { "class",		tests_get_class_suite },
+  { "regexp",		tests_get_regexp_suite },
+  { "expr",		tests_get_expr_suite },
   { "scoreboard",	tests_get_scoreboard_suite },
-  { "modules",	tests_get_modules_suite },
+  { "stash",		tests_get_stash_suite },
+  { "modules",		tests_get_modules_suite },
+  { "cmd",		tests_get_cmd_suite },
+  { "response",		tests_get_response_suite },
 
   { NULL, NULL }
 };
@@ -104,8 +107,17 @@ static Suite *tests_get_suite(const char *suite) {
   } else if (strcmp(suite, "scoreboard") == 0) {
     return tests_get_scoreboard_suite();
 
+  } else if (strcmp(suite, "stash") == 0) {
+    return tests_get_stash_suite();
+
   } else if (strcmp(suite, "modules") == 0) {
     return tests_get_modules_suite();
+
+  } else if (strcmp(suite, "cmd") == 0) {
+    return tests_get_cmd_suite();
+
+  } else if (strcmp(suite, "response") == 0) {
+    return tests_get_response_suite();
   }
 
   return NULL;

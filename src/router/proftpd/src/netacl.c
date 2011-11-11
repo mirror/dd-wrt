@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2010 The ProFTPD Project team
+ * Copyright (c) 2003-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, the ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Network ACL routines
- * $Id: netacl.c,v 1.21 2010/02/11 22:35:32 castaglia Exp $
+ * $Id: netacl.c,v 1.25 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -174,7 +174,7 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
       if (ServerUseReverseDNS) {
         pr_trace_msg(trace_channel, 10,
           "checking addr '%s' against DNS glob rule '%s'",
-          pr_netaddr_get_ipstr(addr), acl->pattern);
+          pr_netaddr_get_dnsstr(addr), acl->pattern);
 
         if (pr_netaddr_fnmatch(addr, acl->pattern,
             PR_NETADDR_MATCH_DNS) == TRUE) {
@@ -229,11 +229,11 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
 
   aclstr_dup = pstrdup(p, aclstr);
 
-  if (strcasecmp(aclstr, "all") == 0) {
+  if (strncasecmp(aclstr, "all", 4) == 0) {
     aclstr_dup = pstrdup(p, "all");
     acl->type = PR_NETACL_TYPE_ALL;
 
-  } else if (strcasecmp(aclstr, "none") == 0) {
+  } else if (strncasecmp(aclstr, "none", 5) == 0) {
     aclstr_dup = pstrdup(p, "none");
     acl->type = PR_NETACL_TYPE_NONE;
 
@@ -330,7 +330,42 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
      * first character is a '.', then treat the rule as a glob.
      */
     if (strpbrk(aclstr, "{[*?")) {
-      acl->type = PR_NETACL_TYPE_DNSGLOB;
+      register unsigned int i;
+      size_t aclstr_len = strlen(aclstr);
+      pr_netacl_type_t acl_type = PR_NETACL_TYPE_IPGLOB;
+
+      /* Is this a DNS glob, or an IP address glob?  To find out, see if there
+       * are any non-IP characters (i.e. alphabetical characters, taking IPv6
+       * into account).
+       */
+      for (i = 0; i < aclstr_len; i++) {
+        if (isalpha((int) aclstr[i])) {
+#ifdef PR_USE_IPV6
+          if (pr_netaddr_use_ipv6()) {
+            if (aclstr[i] == 'A' || aclstr[i] == 'a' ||
+                aclstr[i] == 'B' || aclstr[i] == 'b' ||
+                aclstr[i] == 'C' || aclstr[i] == 'c' ||
+                aclstr[i] == 'D' || aclstr[i] == 'd' ||
+                aclstr[i] == 'E' || aclstr[i] == 'e' ||
+                aclstr[i] == 'F' || aclstr[i] == 'f') {
+              continue;
+            }
+
+            acl_type = PR_NETACL_TYPE_DNSGLOB;
+            break;
+
+          } else {
+            acl_type = PR_NETACL_TYPE_DNSGLOB;
+            break;
+          }
+#else
+          acl_type = PR_NETACL_TYPE_DNSGLOB;
+          break;
+#endif /* PR_USE_IPV6 */
+        }
+      }
+
+      acl->type = acl_type;
       acl->pattern = pstrdup(p, aclstr);
 
     } else if (*aclstr == '.') {
@@ -381,36 +416,58 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
 
     } else {
       register unsigned int i;
-      int use_dns = FALSE;
+      int use_glob = FALSE, use_dns = FALSE;
+      size_t aclstr_len;
 
-      /* If there are only digits and periods, it's an IP match.  Otherwise,
-       * it is a DNS glob (if there are glob characters) or a DNS match.
+      /* Is this a DNS glob, DNS match, IP glob, or IP match?
+       *
+       * First, check for any glob characters.  After that, determine whether
+       * it's a DNS or IP type ACL.
        */
-      for (i = 0; i < strlen(aclstr); i++) {
-        if (aclstr[i] == '.') {
-          continue;
-        }
 
-        if (isdigit((int) aclstr[i]) == 0) {
-          /* Not a digit. */
+      /* If there are any glob characters (e.g. '{', '[', '*', or '?'), or
+       * if the first character is a '.', then treat the rule as a glob.
+       */
+      use_glob = (strpbrk(aclstr, "{[*?") != NULL);
+
+      aclstr_len = strlen(aclstr);
+      for (i = 0; i < aclstr_len; i++) {
+        if (isalpha((int) aclstr[i])) {
+#ifdef PR_USE_IPV6
+          if (pr_netaddr_use_ipv6()) {
+            if (aclstr[i] == 'A' || aclstr[i] == 'a' ||
+                aclstr[i] == 'B' || aclstr[i] == 'b' ||
+                aclstr[i] == 'C' || aclstr[i] == 'c' ||
+                aclstr[i] == 'D' || aclstr[i] == 'd' ||
+                aclstr[i] == 'E' || aclstr[i] == 'e' ||
+                aclstr[i] == 'F' || aclstr[i] == 'f') {
+              continue;
+            }
+
+            use_dns = TRUE;
+            break;
+
+          } else {
+            use_dns = TRUE;
+            break;
+          }
+#else
           use_dns = TRUE;
           break;
+#endif /* PR_USE_IPV6 */
         }
       }
 
       if (!use_dns) {
-        acl->type = PR_NETACL_TYPE_IPMATCH;
+        acl->type = use_glob ? PR_NETACL_TYPE_IPGLOB : PR_NETACL_TYPE_IPMATCH;
         acl->addr = pr_netaddr_get_addr(p, aclstr, NULL);
 
-        if (!acl->addr) 
+        if (acl->addr == NULL) {
            return NULL;
+        }
 
       } else {
-
-        /* If there are any glob characters (e.g. '{', '[', '*', or '?'), or
-         * if the first character is a '.', then treat the rule as a glob.
-         */
-        if (strpbrk(aclstr, "{[*?")) {
+        if (use_glob) {
           acl->type = PR_NETACL_TYPE_DNSGLOB;
           acl->pattern = pstrdup(p, aclstr);
 

@@ -1,10 +1,14 @@
 ../contrib/mod_ban.c
+../contrib/mod_copy.c
 ../contrib/mod_ctrls_admin.c
+../contrib/mod_deflate.c
 ../contrib/mod_dynmasq.c
 ../contrib/mod_exec.c
 ../contrib/mod_ifsession.c
+../contrib/mod_ifversion.c
 ../contrib/mod_ldap.c
 ../contrib/mod_load/getloadavg.c
+../contrib/mod_qos.c
 ../contrib/mod_quotatab.c
 ../contrib/mod_quotatab_file.c
 ../contrib/mod_quotatab.h
@@ -33,6 +37,8 @@
 ../contrib/mod_sftp/crypto.h
 ../contrib/mod_sftp/disconnect.c
 ../contrib/mod_sftp/disconnect.h
+../contrib/mod_sftp/display.c
+../contrib/mod_sftp/display.h
 ../contrib/mod_sftp/fxp.c
 ../contrib/mod_sftp/fxp.h
 ../contrib/mod_sftp/interop.c
@@ -47,8 +53,9 @@
 ../contrib/mod_sftp/keystore.h
 ../contrib/mod_sftp/mac.c
 ../contrib/mod_sftp/mac.h
+../contrib/mod_sftp/misc.c
+../contrib/mod_sftp/misc.h
 ../contrib/mod_sftp/mod_sftp.c
-../contrib/mod_sftp/mod_sftp.h
 ../contrib/mod_sftp/msg.c
 ../contrib/mod_sftp/msg.h
 ../contrib/mod_sftp/packet.c
@@ -79,6 +86,7 @@
 ../contrib/mod_sql_sqlite.c
 ../contrib/mod_tls.c
 ../contrib/mod_tls.h
+../contrib/mod_tls_memcache.c
 ../contrib/mod_tls_shmcache.c
 ../contrib/mod_unique_id.c
 ../contrib/mod_wrap2_file.c
@@ -87,7 +95,6 @@
 ../contrib/mod_wrap.c
 ../include/auth.h
 ../include/bindings.h
-../include/buildstamp.h
 ../include/child.h
 ../include/class.h
 ../include/cmd.h
@@ -111,11 +118,9 @@
 ../include/inet.h
 ../include/libsupp.h
 ../include/log.h
+../include/memcache.h
 ../include/mkhome.h
 ../include/mod_ctrls.h
-../include/mod_quotatab.h
-../include/mod_sftp.h
-../include/mod_sql.h
 ../include/modules.h
 ../include/netacl.h
 ../include/netaddr.h
@@ -133,11 +138,13 @@
 ../include/scoreboard.h
 ../include/session.h
 ../include/sets.h
+../include/stash.h
 ../include/str.h
 ../include/support.h
 ../include/table.h
 ../include/throttle.h
 ../include/timers.h
+../include/tpl.h
 ../include/trace.h
 ../include/var.h
 ../include/version.h
@@ -158,8 +165,8 @@
 ../modules/mod_lang.c
 ../modules/mod_log.c
 ../modules/mod_ls.c
+../modules/mod_memcache.c
 ../modules/mod_site.c
-../modules/module_glue.c
 ../modules/mod_xfer.c
 ../src/auth.c
 ../src/bindings.c
@@ -183,6 +190,7 @@
 ../src/lastlog.c
 ../src/log.c
 ../src/main.c
+../src/memcache.c
 ../src/mkhome.c
 ../src/modules.c
 ../src/netacl.c
@@ -198,6 +206,7 @@
 ../src/scoreboard.c
 ../src/session.c
 ../src/sets.c
+../src/stash.c
 ../src/str.c
 ../src/support.c
 ../src/table.c

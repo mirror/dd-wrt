@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_mysql -- Support for connecting to MySQL databases.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2009 TJ Saunders
+ * Copyright (c) 2004-2011 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,14 +15,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, Andrew Houghton and other respective copyright
  * holders give permission to link this program with OpenSSL, and distribute
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_mysql.c,v 1.60 2009/11/13 18:29:42 castaglia Exp $
+ * $Id: mod_sql_mysql.c,v 1.64 2011/10/06 15:27:08 castaglia Exp $
  */
 
 /*
@@ -266,7 +266,7 @@ static void _sql_check_cmd(cmd_rec *cmd, char *msg) {
       ": '%s' was passed an invalid cmd_rec. Shutting down.", msg);
     sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec. Shutting down.",
       msg);
-    end_login(1);
+    pr_session_end(0);
   }    
 
   return;
@@ -468,7 +468,7 @@ MODRET cmd_open(cmd_rec *cmd) {
       ": failed to allocate memory for MYSQL structure.  Shutting down.");
     sql_log(DEBUG_WARN, "%s", "failed to allocate memory for MYSQL structure. "
       "Shutting down.");
-    end_login(1);
+    pr_session_end(0);
   }
 
   /* Make sure the MySQL config files are read in.  This will read in
@@ -558,7 +558,7 @@ MODRET cmd_open(cmd_rec *cmd) {
       sql_log(DEBUG_WARN, "local character set '%s' does not match MySQL "
         "character set '%s', SQL injection possible, shutting down",
         local_charset, mysql_charset);
-      end_login(1);
+      pr_session_end(0);
     }
 # endif /* older MySQL */
   }
@@ -914,7 +914,7 @@ MODRET cmd_select(cmd_rec *cmd) {
   int cnt = 0;
   cmd_rec *close_cmd;
 
-  sql_log(DEBUG_FUNC, "%s", ": entering \tmysql cmd_select");
+  sql_log(DEBUG_FUNC, "%s", "entering \tmysql cmd_select");
 
   _sql_check_cmd(cmd, "cmd_select");
 
@@ -1485,7 +1485,7 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
 
   if (!success) {
 
-#if MYSQL_VERSION_ID >= 40101
+#ifdef HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323
     /* Try to work around MySQL's stupid handling of password length
      * changes in 4.1, and the stupidity and whining of admins who
      * cannot deal with those changes.
@@ -1495,12 +1495,14 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
 
     sql_log(DEBUG_FUNC, "%s",
       "checking again using deprecated legacy MySQL password algorithm");
+    sql_log(DEBUG_FUNC, "%s",
+      "warning: support for this legacy MySQ-3.xL password algorithm will be dropped from MySQL in the future");
     success = !strcmp(scrambled, c_hash);
     if (!success)
       sql_log(DEBUG_FUNC, "%s", "password mismatch");
 #else
     sql_log(DEBUG_FUNC, "%s", "password mismatch");
-#endif
+#endif /* No MySQL make_scrambled_password_323() function */
   }
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_checkauth");
@@ -1621,7 +1623,7 @@ static void sql_mysql_mod_load_ev(const void *event_data, void *user_data) {
     if (sql_register_backend("mysql", sql_mysql_cmdtable) < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_SQL_MYSQL_VERSION
         ": notice: error registering backend: %s", strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
   }
 }
@@ -1633,7 +1635,7 @@ static void sql_mysql_mod_unload_ev(const void *event_data, void *user_data) {
     if (sql_unregister_backend("mysql") < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_SQL_MYSQL_VERSION
         ": notice: error unregistering backend: %s", strerror(errno));
-      end_login(1);
+      pr_session_end(0);
     }
 
     /* Unregister ourselves from all events. */

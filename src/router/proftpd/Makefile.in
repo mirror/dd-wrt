@@ -52,7 +52,8 @@ dirs: include/buildstamp.h dummy
 	done
 
 proftpd$(EXEEXT): lib src modules dirs locale
-	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) $(MAIN_LDFLAGS) -o $@ $(BUILD_PROFTPD_OBJS) $(BUILD_PROFTPD_ARCHIVES) $(LIBS) $(MAIN_LIBS)
+	test -f $(MODULE_LIBS_FILE) || touch $(MODULE_LIBS_FILE)
+	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) $(MAIN_LDFLAGS) -o $@ $(BUILD_PROFTPD_OBJS) $(BUILD_PROFTPD_ARCHIVES) $(LIBS) $(MAIN_LIBS) `uniq $(MODULE_LIBS_FILE) | tr '\n' ' '`
 
 ftpcount$(EXEEXT): lib utils
 	$(CC) $(LDFLAGS) -o $@ $(BUILD_FTPCOUNT_OBJS) $(UTILS_LIBS)
@@ -119,6 +120,7 @@ install-modules: $(DESTDIR)$(libexecdir) $(DESTDIR)$(sysconfdir)
 	test -z "$(SHARED_MODULE_OBJS)" -a -z "$(SHARED_MODULE_DIRS)" -a -z "$(STATIC_MODULE_DIRS)" || (cd modules/ && $(MAKE) install)
 
 install-utils: $(DESTDIR)$(sbindir) $(DESTDIR)$(bindir)
+	cd contrib/ && $(MAKE) install-utils
 	$(INSTALL_BIN)  ftpcount $(DESTDIR)$(bindir)/ftpcount
 	$(INSTALL_BIN)  ftpdctl  $(DESTDIR)$(bindir)/ftpdctl
 	$(INSTALL_SBIN) ftpscrub $(DESTDIR)$(sbindir)/ftpscrub
@@ -140,6 +142,9 @@ install-libltdl:
 install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/src/ftpdctl.8    $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/src/proftpd.8    $(DESTDIR)$(mandir)/man8
+	$(INSTALL_MAN) $(top_srcdir)/utils/ftpasswd.1 $(DESTDIR)$(mandir)/man1
+	$(INSTALL_MAN) $(top_srcdir)/utils/ftpmail.1  $(DESTDIR)$(mandir)/man1
+	$(INSTALL_MAN) $(top_srcdir)/utils/ftpquota.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpscrub.8 $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpshut.8  $(DESTDIR)$(mandir)/man8
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpcount.1 $(DESTDIR)$(mandir)/man1
@@ -158,11 +163,12 @@ depend:
 	cd utils/   && $(MAKE) depend
 
 clean:
-	cd src/     && $(MAKE) clean
-	cd modules/ && $(MAKE) clean
 	cd lib/     && $(MAKE) clean
-	cd utils/   && $(MAKE) clean
 	cd locale/  && $(MAKE) clean
+	cd modules/ && $(MAKE) clean
+	cd src/     && $(MAKE) clean
+	cd tests/   && $(MAKE) clean
+	cd utils/   && $(MAKE) clean
 	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) clean)
 
 	@dirs="$(DIRS)"; \
@@ -171,13 +177,14 @@ clean:
 	done
 
 	rm -f proftpd.pc include/buildstamp.h
-	rm -f $(BUILD_BIN)
+	rm -f $(BUILD_BIN) $(MODULE_LIBS_FILE)
 
 distclean: clean
 	cd lib/ && $(MAKE) distclean
 	rm -f Makefile Make.modules Make.rules \
-	      lib/Makefile locale/Makefile modules/Makefile src/Makefile \
-              utils/Makefile
+	      contrib/Makefile include/Makefile lib/Makefile \
+	      locale/Makefile modules/Makefile src/Makefile \
+	      tests/Makefile utils/Makefile
 	rm -f config.h config.status config.cache config.log libtool stamp-h
 	rm -f include/buildstamp.h
 	rm -rf .libs/

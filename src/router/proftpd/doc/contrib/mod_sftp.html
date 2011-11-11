@@ -1,4 +1,4 @@
-<!-- $Id: mod_sftp.html,v 1.31 2010/01/06 00:41:06 castaglia Exp $ -->
+<!-- $Id: mod_sftp.html,v 1.57 2011/10/18 14:52:24 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sftp.html,v $ -->
 
 <html>
@@ -87,14 +87,15 @@ subsystem, for secure file transfer over an SSH2 connection.  The
   <li>Passphrase-protected host keys
   <li>SFTP extensions: check-file, copy-file, vendor-id, version-select, posix-rename@openssh.com, statvfs@openssh.com, fstatvfs@openssh.com
 </ul>
+This module supports the SFTP and SCP file transfer protocols; it does
+<b>not</b> support shell access.
 
 <p>
 The <code>mod_sftp</code> module does <b>not</b> currently support:
 <ul>
   <li><code>&lt;Anonymous&gt;</code>
-  <li><code>DirFakeUser/DirFakeGroup</code>
+  <li><code>ListOptions</code>
   <li><code>MaxRetrieveFileSize/MaxStoreFileSize</code>
-  <li><code>UserOwner</code>, <code>GroupOwner</code>
 </ul>
 
 <p>
@@ -124,6 +125,7 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#SFTPAuthorizedHostKeys">SFTPAuthorizedHostKeys</a>
   <li><a href="#SFTPAuthorizedUserKeys">SFTPAuthorizedUserKeys</a>
   <li><a href="#SFTPCiphers">SFTPCiphers</a>
+  <li><a href="#SFTPClientAlive">SFTPClientAlive</a>
   <li><a href="#SFTPClientMatch">SFTPClientMatch</a>
   <li><a href="#SFTPCompression">SFTPCompression</a>
   <li><a href="#SFTPCryptoDevice">SFTPCryptoDevice</a>
@@ -329,6 +331,55 @@ In general, there is no need to use this directive unless only one specific
 cipher must be used.
 
 <p>
+For comparison, the cipher algorithms used by OpenSSH by default are:
+<ul>
+  <li>aes128-cbc
+  <li>3des-cbc
+  <li>blowfish-cbc
+  <li>cast128-cbc
+  <li>arcfour128
+  <li>arcfour256
+  <li>aes192-cbc
+  <li>aes256-cbc
+  <li>aes128-ctr
+  <li>aes192-ctr
+  <li>aes256-ctr
+</ul>
+Thus if you wanted to configure <code>mod_sftp</code> to present the same
+cipher algorithms as OpenSSH, you would use:
+<pre>
+  # Make mod_sftp present the same ciphers as OpenSSH
+  SFTPCiphers aes128-cbc 3des-cbc blowfish-cbc cast128-cbc arcfour128 \
+              arcfour256 aes192-cbc aes256-cbc aes128-ctr aes192-ctr aes256-ctr
+</pre>
+
+<p>
+<hr>
+<h2><a name="SFTPClientAlive">SFTPClientAlive</a></h2>
+<strong>Syntax:</strong> SFTPClientAlive <em>count</em> <em>interval</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.4rc1 and later
+
+<p>
+The <code>SFTPClientAlive</code> directive configured <code>mod_sftp</code>
+to send messages to a client, through the encrypted channel, to request a
+response from the client.  If <em>count</em> client alive messages are sent
+without receiving any response messages from the client, the client will
+be disconnected.  The <em>interval</em> indicates how much time, in seconds,
+that <code>mod_sftp</code> waits for data from the client before sending a
+client alive message.
+
+<p>
+For example, using:
+<pre>
+  SFTPClientAlive 3 15
+</pre>
+will cause an unresponsive client to be disconnected after approximately 45
+seconds.
+
+<p>
 <hr>
 <h2><a name="SFTPClientMatch">SFTPClientMatch</a></h2>
 <strong>Syntax:</strong> SFTPClientMatch <em>pattern key1 val1 ...</em><br>
@@ -526,6 +577,22 @@ In general, there is no need to use this directive unless only one specific
 MAC algorithm must be used.
 
 <p>
+For comparison, the MAC algorithms used by OpenSSH by default are:
+<ul>
+  <li>hmac-md5
+  <li>hmac-sha1
+  <li>hmac-ripemd160
+  <li>hmac-sha1-96
+  <li>hmac-md5-96
+</ul>
+Thus if you wanted to configure <code>mod_sftp</code> to present the same
+MAC algorithms as OpenSSH, you would use:
+<pre>
+  # Make mod_sftp present the MAC ciphers as OpenSSH
+  SFTPDigests hmac-md5 hmac-sha1 hmac-ripemd160 hmac-sha1-96 hmac-md5-96
+</pre>
+
+<p>
 <hr>
 <h2><a name="SFTPDisplayBanner">SFTPDisplayBanner</a></h2>
 <strong>Syntax:</strong> SFTPDisplayBanner <em>path</em><br>
@@ -575,6 +642,7 @@ The extension names used for the <code>SFTPExtensions</code> directive are:
   <li>vendorID
   <li>versionSelect
   <li>posixRename
+  <li>spaceAvailable
   <li>statvfs
 </ul>
 All extensions <i>except</i> <code>vendorID</code> are enabled by default.
@@ -639,7 +707,7 @@ posting, and further information, see:
 </pre>
 
 <p>
-These known weak public keys arose because a vulnerability in the OpenSSL
+These known weak public keys arose because of a vulnerability in the OpenSSL
 packages distributed by Debian:
 <pre>
   <a href="http://www.debian.org/security/2008/dsa-1571">http://www.debian.org/security/2008/dsa-1571</a>
@@ -727,19 +795,54 @@ SSH2 clients only ever open one channel.
 
 <p>
 The <code>SFTPOptions</code> directive is used to configure various optional
-behavior of <code>mod_sftp</code>.
+behavior of <code>mod_sftp</code>.  <b>Note</b>: all of the configured
+<code>SFTPOptions</code> parameters <b>must</b> appear on the same line in the
+configuration; only the first <code>SFTPOptions</code> directive that
+appears in the configuration is used.
+
+<p>
+For example:
+<pre>
+  SFTPOptions IgnoreSFTPUploadPerms IgnoreSCPUploadPerms PessimisticKexinit
+</pre>
 
 <p>
 The currently implemented options are:
 <ul>
+  <li><code>IgnoreSFTPSetPerms</code><br>
+    <p>
+    Use this option to have <code>mod_sftp</code> silently ignore any
+    permissions sent by SFTP clients via the <code>SETSTAT</code> or
+    <code>FSETSTAT</code> SFTP requests; these are equivlant to
+    an FTP <code>SITE CHMOD</code> command.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.4rc2</code>.
+  </li>
+
+  <p>
+  <li><code>IgnoreSFTPSetTimes</code><br>
+    <p>
+    Use this option to have <code>mod_sftp</code> silently ignore any
+    timestamps sent by SFTP clients via the <code>SETSTAT</code> or
+    <code>FSETSTAT</code> SFTP requests; these are equivlant to
+    an FTP <code>SITE UTIMES</code> command.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.4rc4</code>.
+  </li>
+
+  <p>
   <li><code>IgnoreSFTPUploadPerms</code><br>
     <p>
-    When an SFTP client uploads a file, the desired permissions on the file
-    are sent to the server as part of the upload.  (This is different from
-    FTP, which does <b>not</b> include the file permissions in an upload.)
-    If you need more FTP-like functionality for any reason and wish to
-    have <code>mod_sftp</code> silently ignore any permissions sent by the
-    SFTP client, use this option.
+    When an SFTP client uploads a file or creates a directory, the desired
+    permissions on the path are sent to the server as part of the upload.
+    (This is different from FTP, which does <b>not</b> include the file
+    permissions in an upload.) If you need more FTP-like functionality for any
+    reason and wish to have <code>mod_sftp</code> silently ignore any
+    permissions sent by the SFTP client, use this option.
 
   <p>
   <li><code>IgnoreSCPUploadPerms</code><br>
@@ -750,6 +853,50 @@ The currently implemented options are:
     If you need more FTP-like functionality for any reason and wish to
     have <code>mod_sftp</code> silently ignore any permissions sent by the
     SCP client, use this option.
+
+  <p>
+  <li><code>MatchKeySubject</code><br>
+    <p>
+    When this option is used, if public key authentication is used, the
+    <code>mod_sftp</code> module will check if the public key has a "Subject"
+    header.  If so, that the value of that header <b>must</b> match the
+    name of the authenticating user/host.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.4rc1</code>.
+  </li>
+
+  <p>
+  <li><code>OldProtocolCompat</code><br>
+    <p>
+    Older clients identity their protocol versions as "1.99", rather than as
+    "2.0".  By default, <code>mod_sftp</code> will refuse to handle connections
+    from such clients.  To enable compatibility with these clients (which
+    tend to be derived from ssh.com/Tectia code), use this option.
+
+    <p>
+    Note that this option automatically enables the
+    <code>PessimisticKexinit</code> SFTPOption as well.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.4rc1</code>.
+  </li>
+
+  <p>
+  <li><code>PessimisticKexinit</code><br>
+    <p>
+    As described <a href="#SFTPTelnetBanner">here</a>, the <code>mod_sftp</code>
+    module tries to reduce the connection latency by optimistically sending
+    the <code>KEXINIT</code> key exchange message.  However, some SSH clients
+    cannot handle this behavior.  Use this option to disable the optimistic
+    sending of the <code>KEXINIT</code> message.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.4rc1</code>.
+  </li>
 </ul>
 
 <p>
@@ -1144,6 +1291,72 @@ The output from this command can be added to the
 ".pub" public equivalents, host keys are different from the per-user keys
 that are used for authentication.
 
+<p><a name="ClientIssues"></a>
+<b>Known Client Issues</b><br>
+The following lists some of the various client interoperability issues that
+have been encountered, and how to address them.
+
+<p>
+<i>SSH Channel Window Sizes</i><br>
+Some SFTP client implementations do not support the large SSH channel window
+size that the <code>mod_sftp</code> module uses by default.  These clients
+include:
+<ul>
+  <li><a href="http://www.ipswitch.com/WS_FTP">WS_FTP Pro</a>
+  <li>OpenSSH 3.0 and older
+  <li><a href="http://www.axway.com">Axway</a>
+</ul>
+This <a href="#SFTPBadWindowSize">FAQ</a> describes the configuration to use
+for such clients.
+
+<p>
+<i>SSH Protocol Version</i><br>
+If you are using an old ssh.com client, or perhaps a client which derives
+from the ssh.com (or Tectia) code, you may see the following error in the
+<code>SFTPLog</code> when trying to connect to <code>mod_sftp</code>:
+<pre>
+  Bad protocol version 'SSH-1.99-3.2.9.1 SSH Secure Shell (non-commercial)' from <i>x.x.x.x</i>
+</pre>
+To support such clients in <code>mod_sftp</code>, use
+<a href="#SFTPOptions"><code>SFTPOptions</code></a> to enable compatibility with
+older protocol versions, <i>e.g.</i>:
+<pre>
+  <font color=green># Support old ssh.com/Tectia clients</font>
+  SFTPOptions OldProtocolCompat
+</pre>
+
+<p> 
+<i>SFTP Protocol Versions</i><br>
+Some SFTP clients do not properly handle some of the newer SFTP protocol
+versions.  These clients include:
+<ul>
+  <li><a href="http://winscp.net/">WinSCP</a>
+  <li><a href="http://www.cuteftp.com/products/ftp_clients.aspx">CuteFTP</a>
+</ul>
+For these clients, use a
+<a href="#SFTPClientMatch"><code>SFTPClientMatch</code></a> rule to restrict
+the SFTP protocol versions offered by the <code>mod_sftp</code> module,
+<i>e.g.</i>:
+<pre>
+  <font color=green># Only support SFTP protocol version 1 through 3 for WinSCP and CuteFTP</font>
+  SFTPClientMatch WinSCP|ClientSftp sftpProtocolVersion 1-3
+</pre>
+
+<p>
+<i><code>KEXINIT</code> Optimization</i><br>
+Some SFTP clients do not like this
+<a href="#SFTPTelnetBanner">KEXINIT optimization</a> that the
+<code>mod_sftp</code> module uses.  These clients include:
+<ul>
+  <li><code>Net::SSH::Perl</code>, <code>Net::SFTP</code> Perl modules
+  <li><a href="http://www.enterprisedt.com/products/edtftpj/">edtFTPj</a>
+</ul>
+For these clients, use this configuration to disable the optimization:
+<pre>
+  <font color=green># Disable the KEXINIT optimization at the cost of latency</font>
+  SFTPOptions PessimisticKexinit
+</pre>
+
 <p>
 <b>FIPS Compliance</b><br>
 FIPS stands for "Federal Information Processing Standard", and refers to
@@ -1356,7 +1569,8 @@ or
   debug1: channel 0: open confirm rwindow -1 rmax 32768 (<i>from OpenSSH_3.0.2p1</i>)
 </pre>
 <font color=blue>Answer</font>: The issue, in short, involves that "-1" value
-you see, and the particular client implementation in question.
+you see, and the particular client implementation in question.  (The example
+error above is from an old OpenSSH client.)
 
 <p>
 The SSH2 protocol specifications say that implementations must encode
@@ -1369,16 +1583,28 @@ sends to the client becomes a negative signed number to the client (the
 large value "wraps around" to the negative value), and the client chokes.
 
 <p>
+As another example, the <a href="http://www.ipswitch.com/WS_FTP">WS_FTP Pro</a>
+client has this same problem; in the client, you will see something like
+the following error:
+<pre>
+  Started subsystem "sftp" on channel 0760a2ce
+  error 84350000 initializing sftp protocol
+  Sending channel close message for channel 0760a2ce
+  SSH Transport closed.
+</pre>
+
+<p>
 There are two approaches for handling such cases.  You can use the
 <a href="#SFTPClientMatch"><code>SFTPClientMatch</code></a> directive to
 set a smaller channel window size for that particular client, <i>e.g.</i>:
 <pre>
-  SFTPClientMatch ".*WS_FTP.*" channelWindowSize 32MB
+  SFTPClientMatch ".*WS_FTP.*" channelWindowSize 256MB
+  SFTPClientMatch ".*Axway" channelWindowSize 256MB
 </pre>
 or you can use <code>SFTPClientMatch</code> to set a general channel window
 size for all clients:
 <pre>
-  SFTPClientMatch .* channelWindowSize 64MB
+  SFTPClientMatch .* channelWindowSize 256MB
 </pre>
 
 <p>
@@ -1410,6 +1636,28 @@ the session than is provided to OpenSSH subsystems.  ProFTPD needs to know all
 of the information about the authenticated user, the SSH2 channel IDs being
 used for the SFTP/SCP sessions, <i>etc</i>.
 
+<p><a name="SFTPAndFTP">
+<font color=red>Question</font>: How can I configure <code>proftpd</code>
+so that it can handle both FTP and SFTP at the same time?<br>
+<font color=blue>Answer</font>:  The key to doing this is to create a
+<code>&lt;VirtualHost&gt;</code> section just for the <code>mod_sftp</code>
+configuration, listening on the address and port that you wish, <i>e.g.</i>:
+<pre>
+  # The FTP configuration
+  DefaultAddress <i>a.b.c.d</i>
+  Port 21
+
+  &lt;IfModule mod_sftp.c&gt;
+    &lt;VirtualHost <i>a.b.c.d</i>&gt;
+      # The SFTP configuration
+      Port 22
+
+      SFTPEngine on
+      ...
+    &lt;/VirtualHost&gt;
+  &lt;/IfModule&gt;
+</pre>
+
 <p><a name="SFTPOnly">
 <font color=red>Question</font>: How can I configure <code>proftpd</code>
 so that it only accepts SFTP connections (via <code>mod_sftp</code>), and no
@@ -1433,6 +1681,24 @@ FTP connections?<br>
 The idea is to use the <code>&lt;Limit LOGIN&gt;</code> to deny all logins to
 any/all virtual host sections <i>except</i> for the <code>mod_sftp</code>
 section.
+
+<p><a name="SFTPAuthorizedKeyTooLong">
+<font color=red>Question</font>: I followed the instructions to convert
+my authorized keys from OpenSSH to RFC4716 format, yet I see the following
+error in my <code>SFTPLog</code>:
+<pre>
+  mod_sftp/0.9.7[31050]: line too long (74) on line 1 of '<i>authorized_keys</i>'
+</pre>
+What can I do to fix this?<br><br>
+<font color=blue>Answer</font>: OpenSSH's <code>ssh-keygen</code> tool had a
+bug where the RFC4716 keys it would generate might not comply to the RFC; see
+the <a href="https://bugzilla.mindrot.org/show_bug.cgi?id=1630">OpenSSH bug</a>
+filed for this issue.
+
+<p>
+Chances are that the offending line in the RFC4716 key is a "Comment: " header
+that is too long.  Simply delete that "Comment: " line; the
+<code>mod_sftp</code> ignores this header.
 
 <p><a name="SFTPPCBCModeAttacks">
 <font color=red>Question</font>: Is it true that using CBC mode ciphers in
@@ -1487,16 +1753,126 @@ your SFTP uploads to be more like your FTP uploads, then you should use:
 </pre>
 in your <code>mod_sftp</code> configuration.
 
+<p><a name="SFTPOwner">
+<font color=red>Question</font>: I use <code>UserOwner</code> and
+<code>GroupOwner</code> in my <code>mod_sftp</code> configuration, but they
+are not being applied properly.  Is this a bug?<br>
+<font color=blue>Answer</font>: No.
+
+<p>
+By default, the <code>mod_sftp</code> module drops root privileges as soon
+as it can, which is just after the user has been authenticated.  Without
+root privileges, <code>mod_sftp</code> cannot change the ownership of files
+uploaded via SFTP/SCP as per <code>UserOwner</code>/<code>GroupOwner</code>
+settings.
+
+<p>
+In ProFTPD 1.3.4rc1, honoring of the <code>UserOwner</code> and
+<code>GroupOwner</code> directives was added to the <code>mod_sftp</code>
+module.  <b>However</b>, you will <i>also</i> need to add the following to your
+<code>mod_sftp</code> configuration to make them work properly:
+<pre>
+  RootRevoke off
+</pre>
+This explicitly tells the <code>mod_sftp</code> to <b>not</b> drop root
+privileges after authentication, and instead to keep them for the duration
+of the session.
+
+<p><a name="SFTPShell">
+<font color=red>Question</font>: Why can't I use <code>ssh</code> to connect
+to my proftpd+mod_sftp server?  When I try, I see:
+<pre>
+  # ssh <i>user</i>@<i>host</i>
+  Enter passphrase for key '/home/<i>user</i>/.ssh/id_rsa': 
+  PTY allocation request failed on channel 0
+  shell request failed on channel 0
+</pre>
+<font color=blue>Answer</font>: The <code>mod_sftp</code> module supports
+file transfers via SFTP and SCP.  It does <b>not</b> support shell access,
+which is what the <code>ssh</code> command-line client tries to use.  The
+above error messages from <code>ssh</code> show that <code>mod_sftp</code>
+refused the shell access requests.
+
+<p><a name="SFTPTectiaHostKey">
+<font color=red>Question</font>: When I try to start proftpd with
+<code>mod_sftp</code> configured to use my existing host key, it fails with
+one of the following error messages:
+<pre>
+  error reading passphrase for SFTPHostKey '<i>hostkey</i>': Invalid argument
+  error reading passphrase for SFTPHostKey '<i>hostkey</i>': (unknown)
+</pre>
+The permissions on my hostkey are fine, and it is not passphrase-protected.
+Is this a bug?<br><br>
+<font color=blue>Answer</font>: You are probably trying to use a host key
+generated by Tectia's SSH software (or an older <code>ssh.com</code> host key).
+
+<p>
+The <code>mod_sftp</code> module expects the configured
+<code>SFTPHostKey</code> file to be in the same format as used by OpenSSH.
+To check the format, run this command:
+<pre>
+  # grep BEGIN <i>hostkey</i>
+</pre>
+If you see either of the following lines:
+<pre>
+  -----BEGIN RSA PRIVATE KEY-----
+  -----BEGIN DSA PRIVATE KEY-----
+</pre>
+then the format should be correct.  If instead you see:
+<pre>
+  ---- BEGIN SSH2 ENCRYPTED PRIVATE KEY ----
+</pre>
+then the format is incorrect.  The above line indicates that your host key
+was generated by Tectia (<i>nee</i> <code>ssh.com</code>), and needs to
+be converted to a different format.
+
+<p>
+To convert the format of your Tectia host key, use OpenSSH's
+<code>ssh-keygen</code> (<b>not</b> Tectia's <code>ssh-keygen</code>) and
+do the following:
+<pre>
+  # ssh-keygen -i -f <i>hostkey</i> &gt; /path/to/new-file
+</pre>
+The configure your <code>SFTPHostKey</code> directive with the path to the
+new file.
+
+<p><a name="SFTPOpenSSLVersionMismatch">
+<font color=red>Question</font>: When I start <code>proftpd</code>, I
+see warnings that look like this:
+<pre>
+  - mod_sftp/0.9.7: compiled using OpenSSL version 'OpenSSL 0.9.8n 24 Mar 2010' headers, but linked to OpenSSL version 'OpenSSL 0.9.8q 2 Dec 2010' library
+</pre>
+What does this mean?<br>
+<font color=blue>Answer</font>: That is an informational/warning message.
+
+<p>
+Some systems are badly maintained by their admins (and/or by the packages
+installed on the systems), such that the OpenSSL headers can become quite badly
+out of sync with the OpenSSL libraries.  If this discrepancy becomes bad
+enough, you can see strange behavior from OpenSSL, ranging from random behavior
+to segfaults.  So <code>mod_sftp</code> tries to let the admin know about the
+system's mismatched OpenSSL header/library versions.
+
+<p>
+Usually a minor OpenSSL version difference like the example above is OK,
+but it really depends on exactly what changed in OpenSSL, and how.
+
+<p>
+If you see the above message, it is not a <i>requirement</i> that you recompile
+<code>proftpd</code> against the OpenSSL headers of the same version as the
+OpenSSL libraries.  However, the version discrepancy <em>is</em> a possible
+source of trouble.  
+
 <p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/01/06 00:41:06 $</i><br>
+Last Updated: <i>$Date: 2011/10/18 14:52:24 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2008-2010 TJ Saunders<br>
+&copy; Copyright 2008-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

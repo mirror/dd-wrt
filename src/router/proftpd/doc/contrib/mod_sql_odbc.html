@@ -1,4 +1,4 @@
-<!-- $Id: mod_sql_odbc.html,v 1.3 2008/03/13 17:27:28 castaglia Exp $ -->
+<!-- $Id: mod_sql_odbc.html,v 1.4 2011/04/19 22:23:12 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sql_odbc.html,v $ -->
 
 <html>
@@ -162,8 +162,7 @@ The following lists some commonly used driver managers:
 
   <p>
   <dt>Microsoft Windows ODBC Driver Manager</dt>
-  <dd><a href="http://www.microsoft.com/data/">http://www.microsoft.com/data/</a
-></dd>
+  <dd><a href="http://www.microsoft.com/data/">http://www.microsoft.com/data/</a></dd>
 </dl>
 
 <p>
@@ -226,7 +225,20 @@ For the most part, <code>mod_sql_odbc</code> requires little configuration.
 It relies on the ODBC driver managers, which in turn use the above
 environment variables.  This means that <code>ODBCINI</code> and
 <code>LD_LIBRARY_PATH</code> can be set in the environment, before starting
-<code>proftpd</code>, and <code>mod_sql_odbc</code> would then just work.
+<code>proftpd</code>, and <code>mod_sql_odbc</code> would then work.  The
+one required bit of information is the
+<a href="mod_sql.html#SQLConnectInfo"><code>SQLConnectInfo</code></a> directive.
+This directive needs to contain the name of the stanza in your
+<code>odbc.ini</code> file which holds the configuration.  Using the example
+<code>odbc.ini</code> files above, you would need the following in your
+<code>proftpd.conf</code>:
+<pre>
+  # Tells mod_sql to use mod_sql_odbc
+  SQLBackend odbc
+
+  # Tells mod_sql_odbc which odbc.ini stanza to use
+  SQLConnectInfo mysql
+</pre>
 
 <p>
 Starting with proftpd 1.2.10rc1, it is possible to use the <code>SetEnv</code>
@@ -248,12 +260,12 @@ Please contact the author directly with any questions or comments.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/03/13 17:27:28 $</i><br>
+Last Updated: <i>$Date: 2011/04/19 22:23:12 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2003-2008 TJ Saunders<br>
+&copy; Copyright 2003-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

@@ -1,4 +1,4 @@
-<!-- $Id: mod_tls.html,v 1.26 2009/12/28 20:32:03 castaglia Exp $ -->
+<!-- $Id: mod_tls.html,v 1.32 2011/10/10 21:02:09 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_tls.html,v $ -->
 
 <html>
@@ -556,12 +556,15 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 
 <p>
 The <code>TLSOptions</code> directive is used to configure various optional
-behavior of <code>mod_tls</code>.
+behavior of <code>mod_tls</code>.  <b>Note</b>: all of the configured
+<code>TLSOptions</code> parameters <b>must</b> appear on the same line in
+the configuration; only the first <code>TLSOptions</code> directive that
+appears in the configuration is used.
 
 <p>
 Example:
 <pre>
-  TLSOptions iPAddressRequired StdEnvVars
+  TLSOptions iPAddressRequired StdEnvVars NoSessionReuseRequired
 </pre>
 
 <p>
@@ -571,10 +574,11 @@ The currently implemented options are:
     <p>
     The <code>mod_tls</code> will reject any SSL/TLS session renegotiation
     attempts by the client, in order to mitigate any issues arising from the
-    <a href="http://www.educatedguesswork.org/2009/11/understanding_the_tls_renegoti.html">SSL/TLS session renegotiation vulnerability</a> (CVE-2009-3555).
-    If, however, your particular site or clients absolutely require support
-    for client-initiated SSL/TLS session renegotiations, then this option
-    can be used.  <b>Not recommended.</b>
+    <a href="http://www.educatedguesswork.org/2009/11/understanding_the_tls_renegoti.html">SSL/TLS session renegotiation vulnerability</a> (CVE-2009-3555)
+    or <a href="http://www.ietf.org/mail-archive/web/tls/current/msg07553.html">SSL/TLS session renegotiation DoS</a> (CVE-2011-1473).  If, however, your
+    particular site or clients absolutely require support for client-initiated
+    SSL/TLS session renegotiations, then this option can be used.
+    <b>Not recommended.</b>
 
     <p>
     Note, however, that SSL/TLS session renegotiation requests that are
@@ -627,6 +631,19 @@ The currently implemented options are:
     <code>AllowPerUser</code> option.
 
   <p>
+  <li><code>CommonNameRequired</code><br>
+    <p>
+    This option will cause <code>mod_tls</code> to perform checks on a client's
+    certificate once the SSL handshake has been completed: the client's
+    certificate will be searched for the <code>CommonName</code> (CN) X509v3
+    value.  Unless a <code>CommonName</code> value is present, and the
+    value matches the DNS name to which the client's IP address resolves,
+    the SSL session is closed.  This check is only performed during
+    SSL handshakes on the control channel.  Note that if
+    <code>UseReverseDNS</code> is <em>off</em>, this option is automatically
+    disabled.
+
+  <p>
   <li><code>EnableDiags</code><br>
     Sets callbacks in the OpenSSL library such that <b>a lot</b> of
     SSL/TLS protcol information is logged to the
@@ -661,6 +678,24 @@ The currently implemented options are:
     Some FTP clients are known to be buggy when handling a server's certificate
     request.  This option causes the server to <b>not</b> send such a request
     during an SSL handshake.
+
+  <p>
+  <li><code>NoEmptyFragments</code><br>
+    <p>
+    In order to prevent certain attacks (<i>e.g.</i> the so-called
+    <a href="http://www.kb.cert.org/vuls/id/864643">&quotBEAST&quot;
+    attack</a>), the <code>mod_tls/code> module was changed to use OpenSSL's
+    builtin countermeasure of inserting <a href="http://www.openssl.org/~bodo/tls-cbc.txt">empty fragments</a>.  However, some browsers/clients may not handle
+    such empty fragments well.  Use this <code>NoEmptyFragaments</code>
+    TLSOption in order to interoperate with such clients, with risk of losing
+    the protective countermeasure.
+   
+    <p>
+    Note that this protective countermeasure only applies to SSLv3 and TLSv1
+    sessions; it does not affect TLSv1.1 or TLSv1.2 sessions. 
+
+    <p>
+    Added in ProFTPD 1.3.4rc4.
 
   <p>
   <li><code>NoSessionReuseRequired</code><br>
@@ -1274,6 +1309,13 @@ OpenSSL's default internal SSL session caching will be used.  Thus multiple
 SSL sessions to the same server process (<i>e.g.</i> for FTP data transfers)
 will benefit from the speedup, but parallel simultaneous FTP connections from
 the same FTPS client will each need to perform the full SSL/TLS handshake.
+By default, OpenSSL caches SSL sessions for 300 seconds (5 minutes).  If
+your FTP sessions last longer than this (<i>e.g.</i> for downloading large
+files), you may need to configure a longer cache lifetime using:
+<pre>
+  # Configure OpenSSL's internal caching to be 1800 seconds (30 minutes)
+  TLSSessionCache internal: 1800
+</pre>
 
 <p>
 The <em>type</em> and <em>info</em> parameters all depend on the module
@@ -1524,6 +1566,17 @@ the normal steps for using third-party modules in proftpd:
   make
   make install
 </pre>
+Alternatively, <code>mod_tls</code> can be built as a DSO module:
+<pre>
+  ./configure --enable-dso --with-shared=mod_tls ...
+</pre>
+Then follow the usual steps:
+<pre>
+  make
+  make install
+</pre>
+
+<p>
 You may need to specify the location of the OpenSSL header and library files
 in your <code>configure</i> command, <i>e.g.</i>:
 <pre>
@@ -1535,11 +1588,11 @@ in your <code>configure</i> command, <i>e.g.</i>:
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/12/28 20:32:03 $</i><br>
+Last Updated: <i>$Date: 2011/10/10 21:02:09 $</i><br>
 
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2009 TJ Saunders<br>
+&copy; Copyright 2002-2011 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

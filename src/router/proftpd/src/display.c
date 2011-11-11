@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Display of files
- * $Id: display.c,v 1.16.2.6 2011/02/21 02:36:38 castaglia Exp $
+ * $Id: display.c,v 1.26 2011/05/23 21:22:24 castaglia Exp $
  */
 
 #include "conf.h"
@@ -67,7 +67,7 @@ static int display_add_line(pool *p, const char *resp_code,
   }
 
   if (prev_msg != NULL) {
-    if (MultilineRFC2228) {
+    if (session.multiline_rfc2228) {
       pr_response_send_raw("%s-%s", resp_code, prev_msg);
 
     } else {
@@ -100,7 +100,7 @@ static int display_flush_lines(pool *p, const char *resp_code, int flags) {
 
   } else {
     if (prev_msg) {
-      if (MultilineRFC2228) {
+      if (session.multiline_rfc2228) {
         pr_response_send_raw("%s-%s", resp_code, prev_msg);
 
       } else {
@@ -126,7 +126,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
     int flags) {
   struct stat st;
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
-  int len;
+  int len, res;
   unsigned int *current_clients = NULL;
   unsigned int *max_clients = NULL;
   off_t fs_size = 0;
@@ -150,15 +150,16 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   pr_fsio_fstat(fh, &st);
   fh->fh_iosz = st.st_blksize;
 
-#if defined(HAVE_STATFS) || defined(HAVE_SYS_STATVFS_H) || \
-   defined(HAVE_SYS_VFS_H)
-  fs_size = pr_fs_getsize((fs ? (char *) fs : (char *) fh->fh_path));
+  res = pr_fs_getsize2(fh->fh_path, &fs_size);
+  if (res < 0 &&
+      errno != ENOSYS) {
+    (void) pr_log_debug(DEBUG7, "error getting filesystem size for '%s': %s",
+      fh->fh_path, strerror(errno));
+    fs_size = 0;
+  }
+
   snprintf(mg_size, sizeof(mg_size), "%" PR_LU, (pr_off_t) fs_size);
   format_size_str(mg_size_units, sizeof(mg_size_units), fs_size);
-#else
-  snprintf(mg_size, sizeof(mg_size), "%" PR_LU, (pr_off_t) fs_size);
-  format_size_str(mg_size_units, sizeof(mg_size_units), fs_size);
-#endif
 
   p = make_sub_pool(session.pool);
   pr_pool_tag(p, "Display Pool");
@@ -198,6 +199,8 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
       FALSE);
 
     while (maxc) {
+      pr_signals_handle();
+
       if (strcmp(maxc->argv[0], session.class->cls_name) != 0) {
         maxc = find_config_next(maxc, maxc->next, CONF_PARAM,
           "MaxClientsPerClass", FALSE);

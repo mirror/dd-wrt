@@ -54,23 +54,28 @@ ADDL_CPPFLAGS=@ADDL_CPPFLAGS@
 CFLAGS=@CFLAGS@
 DEFINES=$(PLATFORM)
 
+# Module-specific libraries to link against.  These libraries may be
+# conditional, i.e. depending on the module-specific configure script and
+# options.
+MODULE_LIBS_FILE=$(top_builddir)/module-libs.txt
+
 OBJS=main.o timers.o sets.o pool.o privs.o str.o table.o regexp.o dirtree.o \
      expr.o support.o netaddr.o inet.o child.o parser.o log.o lastlog.o \
      xferlog.o bindings.o netacl.o class.o scoreboard.o help.o feat.o netio.o \
-     cmd.o response.o data.o modules.o display.o auth.o fsio.o mkhome.o \
-     ctrls.o event.o var.o throttle.o session.o trace.o encode.o proctitle.o \
-     filter.o pidfile.o env.o version.o wtmp.o
+     cmd.o response.o data.o modules.o stash.o display.o auth.o fsio.o \
+     mkhome.o ctrls.o event.o var.o throttle.o session.o trace.o encode.o \
+     proctitle.o filter.o pidfile.o env.o version.o wtmp.o memcache.o
 
 BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
            src/table.o src/regexp.o src/dirtree.o src/expr.o src/support.o \
            src/netaddr.o src/inet.o src/child.o src/parser.o src/log.o \
            src/lastlog.o src/xferlog.o src/bindings.o src/netacl.o src/class.o \
            src/scoreboard.o src/help.o src/feat.o src/netio.o src/cmd.o \
-           src/response.o src/data.o src/modules.o src/display.o src/auth.o \
-           src/fsio.o src/mkhome.o src/ctrls.o src/event.o src/var.o \
-           src/throttle.o src/session.o src/trace.o src/encode.o \
+           src/response.o src/data.o src/modules.o src/stash.o src/display.o \
+           src/auth.o src/fsio.o src/mkhome.o src/ctrls.o src/event.o \
+           src/var.o src/throttle.o src/session.o src/trace.o src/encode.o \
            src/proctitle.o src/filter.o src/pidfile.o src/env.o src/version.o \
-           src/wtmp.o
+           src/wtmp.o src/memcache.o
 
 SHARED_MODULE_DIRS=@SHARED_MODULE_DIRS@
 SHARED_MODULE_LIBS=@SHARED_MODULE_LIBS@

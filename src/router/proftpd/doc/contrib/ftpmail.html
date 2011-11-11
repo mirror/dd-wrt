@@ -1,4 +1,4 @@
-<!-- $Id: ftpmail.html,v 1.2 2008/08/18 20:50:51 castaglia Exp $ -->
+<!-- $Id: ftpmail.html,v 1.3 2010/08/10 21:22:24 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/ftpmail.html,v $ -->
 
 <html>
@@ -113,6 +113,14 @@ can also be obtained by running:
                           to be included, as an attachment, in the generated
                           email.
 
+    --auth $path          Configures the path to a file containing SMTP
+                          authentication information.
+
+                          The configured file should look like this:
+
+                              user = $user
+                              password = $password
+
     --fifo $path          Indicates the path to the FIFO to which proftpd is
                           writing its TransferLog.  That is, this is the path
                           that you used for the TransferLog directive in your
@@ -189,12 +197,12 @@ Then start instances of <code>ftpmail</code> running, but only for the
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/08/18 20:50:51 $</i><br>
+Last Updated: <i>$Date: 2010/08/10 21:22:24 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2008 TJ Saunders<br>
+&copy; Copyright 2008-2010 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

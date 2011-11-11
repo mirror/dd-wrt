@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2005-2009 The ProFTPD Project team
+ * Copyright (c) 2005-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, The ProFTPD Project team and other respective
  * copyright holders give permission to link this program with OpenSSL, and
@@ -23,7 +23,7 @@
  */
 
 /* Compatibility
- * $Id: compat.h,v 1.13 2009/03/10 16:59:23 castaglia Exp $
+ * $Id: compat.h,v 1.17 2011/05/23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_COMPAT_H
@@ -78,10 +78,6 @@
 #define call_module			pr_module_call
 
 /* The following macros first appeared in 1.3.3rc1. */
-#define pr_inet_copy_connection		pr_inet_copy_conn
-#define pr_inet_create_connection	pr_inet_create_conn
-#define pr_inet_create_conn_portrange	pr_inet_create_conn_portrange
-
 #define ctrls_check_acl			pr_ctrls_check_acl
 #define ctrls_check_group_acl		pr_ctrls_check_group_acl
 #define ctrls_check_user_acl		pr_ctrls_check_user_acl
@@ -92,5 +88,11 @@
 #define ctrls_set_user_acl		pr_ctrls_set_user_acl
 #define ctrls_unregister_module_actions	pr_ctrls_unregister_module_actions
 #define ctrls_log			pr_ctrls_log
+
+/* The following macros first appeared in 1.3.4rc1. */
+#define is_fnmatch			pr_str_is_fnmatch
+
+/* The following macros first appeared in 1.3.4rc2. */
+#define end_login			pr_session_end
 
 #endif /* PR_COMPAT_H */

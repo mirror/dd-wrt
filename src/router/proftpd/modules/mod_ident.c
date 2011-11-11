@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_ident -- a module for performing identd lookups [RFC1413]
  *
- * Copyright (c) 2008-2009 The ProFTPD Project
+ * Copyright (c) 2008-2011 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +15,22 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_ident.c,v 1.4 2009/02/12 20:13:41 castaglia Exp $
+ * $Id: mod_ident.c,v 1.9 2011/05/23 21:11:56 castaglia Exp $
  */
 
 #include "conf.h"
 
 #define MOD_IDENT_VERSION		"mod_ident/1.0"
 
-#if PROFTPD_VERSION_NUMBER < 0x0001030101
-# error "ProFTPD 1.3.1rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030401
+# error "ProFTPD 1.3.4rc1 or later required"
 #endif
 
 module ident_module;
@@ -63,6 +63,7 @@ static char *ident_lookup(pool *p, conn_t *conn) {
   char buf[256], *ident = NULL;
   int timerno, res = 0;
   int ident_port = pr_inet_getservport(p, "ident", "tcp");
+  pr_netaddr_t *bind_addr;
 
   ident_nstrm = NULL;
   ident_timeout_triggered = FALSE;
@@ -78,18 +79,28 @@ static char *ident_lookup(pool *p, conn_t *conn) {
     return NULL;
   }
 
-  ident_conn = pr_inet_create_conn(p, NULL, -1, conn->local_addr, INPORT_ANY,
-    FALSE);
+  if (pr_netaddr_get_family(conn->local_addr) == pr_netaddr_get_family(conn->remote_addr)) {
+    bind_addr = conn->local_addr;
+
+  } else {
+    /* In this scenario, the server has an IPv6 socket, but the remote client
+     * is an IPv4 (or IPv4-mapped IPv6) peer.
+     */
+    bind_addr = pr_netaddr_v6tov4(p, session.c->local_addr);
+  }
+
+  ident_conn = pr_inet_create_conn(p, -1, bind_addr, INPORT_ANY, FALSE);
   if (ident_conn == NULL) {
     pr_trace_msg(trace_channel, 3, "error creating connection: %s",
       strerror(errno));
     return NULL;
   }
 
-  pr_inet_set_nonblock(p, ident_conn);
+  /* We explicitly do NOT generate a socket event for this socket; there's
+   * really no need for it.
+   */
 
-  res = pr_inet_connect_nowait(p, ident_conn, conn->remote_addr,
-    ident_port);
+  res = pr_inet_connect_nowait(p, ident_conn, conn->remote_addr, ident_port);
   if (res < 0) {
     int xerrno = errno;
 
@@ -108,8 +119,15 @@ static char *ident_lookup(pool *p, conn_t *conn) {
     ident_nstrm = pr_netio_open(p, PR_NETIO_STRM_OTHR,
       ident_conn->listen_fd, PR_NETIO_IO_RD);
     if (ident_nstrm == NULL) {
+      int xerrno = errno;
+
+      pr_timer_remove(timerno, &ident_module);
+      pr_inet_close(p, ident_conn);
+
       pr_trace_msg(trace_channel, 5, "error opening NetIO stream: %s",
-        strerror(errno));
+        strerror(xerrno));
+
+      errno = xerrno;
       return NULL;
     }
 
@@ -199,8 +217,12 @@ static char *ident_lookup(pool *p, conn_t *conn) {
   pr_netio_set_poll_interval(ident_io->instrm, 1);
   pr_netio_set_poll_interval(ident_io->outstrm, 1);
 
-  pr_netio_printf(ident_io->outstrm, "%d, %d\r\n", conn->remote_port,
+  res = pr_netio_printf(ident_io->outstrm, "%d, %d\r\n", conn->remote_port,
     conn->local_port);
+  if (res < 0) {
+    pr_trace_msg(trace_channel, 1, "error writing command to ident server: %s",
+      strerror(errno));
+  }
 
   pr_trace_msg(trace_channel, 4, "reading response from ident server at %s",
     pr_netaddr_get_ipstr(conn->remote_addr));

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp UTF8 encoding
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: utf8.c,v 1.7.2.3 2010/04/13 16:39:16 castaglia Exp $
+ * $Id: utf8.c,v 1.16 2011/05/23 21:03:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -45,6 +45,9 @@ static int utf8_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
     char *outbuf, size_t *outbuflen) {
 # ifdef HAVE_ICONV
 
+  /* Reset the state machine before each conversion. */
+  (void) iconv(conv, NULL, NULL, NULL, NULL);
+
   while (*inbuflen > 0) {
     size_t nconv;
 
@@ -54,7 +57,8 @@ static int utf8_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
      * whereas Linux/Mac OSX iconv(3) use char ** for the input buffer.
      */
 #if defined(LINUX) || defined(DARWIN6) || defined(DARWIN7) || \
-    defined(DARWIN8) || defined(DARWIN9)
+    defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
+    defined(DARWIN11)
  
     nconv = iconv(conv, (char **) &inbuf, inbuflen, &outbuf, outbuflen);
 #else
@@ -62,9 +66,21 @@ static int utf8_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
 #endif
 
     if (nconv == (size_t) -1) {
+
+      /* Note: an errno of EILSEQ here can indicate badly encoded strings OR
+       * (more likely) that the source character set used in the iconv_open(3)
+       * call for this iconv_t descriptor does not accurately describe the
+       * character encoding of the given string.  E.g. a filename may use
+       * the ISO8859-1 character set, but iconv_open(3) was called using
+       * US-ASCII.
+       */
+
       return -1;
     }
 
+    /* XXX We should let the loop condition work, rather than breaking out
+     * of the loop here.
+     */
     break;
   }
 
@@ -208,7 +224,7 @@ char *sftp_utf8_decode_str(pool *p, const char *str) {
    * convert between the same charsets results in a tightly spinning CPU
    * (see Bug#3272).
    */
-  if (strcasecmp(local_charset, "UTF-8") == 0) {
+  if (strncasecmp(local_charset, "UTF-8", 6) == 0) {
     return (char *) str;
   }
 

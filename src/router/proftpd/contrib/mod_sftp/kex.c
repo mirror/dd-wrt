@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key exchange (kex)
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2011 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
  *
  * As a special exemption, TJ Saunders and other respective copyright holders
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: kex.c,v 1.14.2.1 2010/09/08 19:01:41 castaglia Exp $
+ * $Id: kex.c,v 1.26 2011/07/09 17:44:59 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -739,11 +739,36 @@ static int create_kexrsa(struct sftp_kex *kex, int type) {
   }
 
   if (type == SFTP_KEXRSA_SHA1) {
+    BIGNUM *e = NULL;
+
+#if OPENSSL_VERSION_NUMBER > 0x000908000L
+    e = BN_new();
+    if (e == NULL) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error allocated BIGNUM: %s", sftp_crypto_get_errors());
+      return -1;
+    }
+
+    if (BN_set_word(e, 17) != 1) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error setting BIGNUM word: %s", sftp_crypto_get_errors());
+      BN_free(e);
+      return -1;
+    }
+
+    if (RSA_generate_key_ex(rsa, SFTP_KEXRSA_SHA1_SIZE, e, NULL) != 1) {
+#else
     rsa = RSA_generate_key(SFTP_KEXRSA_SHA1_SIZE, 17, NULL, NULL);
-    if (!rsa) {
+    if (rsa == NULL) {
+#endif /* OpenSSL version 0.9.8 and later */
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error generating %u-bit RSA key: %s", SFTP_KEXRSA_SHA1_SIZE,
         sftp_crypto_get_errors());
+
+      if (e != NULL) {
+        BN_free(e);
+      }
+
       return -1;
     }
 
@@ -752,11 +777,36 @@ static int create_kexrsa(struct sftp_kex *kex, int type) {
 #if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
     (OPENSSL_VERSION_NUMBER > 0x000908000L)
   } else if (type == SFTP_KEXRSA_SHA256) {
+    BIGNUM *e = NULL;
+
+#if OPENSSL_VERSION_NUMBER > 0x000908000L
+    e = BN_new();
+    if (e == NULL) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error allocated BIGNUM: %s", sftp_crypto_get_errors());
+      return -1;
+    }
+
+    if (BN_set_word(e, 65537) != 1) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error setting BIGNUM word: %s", sftp_crypto_get_errors());
+      BN_free(e);
+      return -1;
+    }
+
+    if (RSA_generate_key_ex(rsa, SFTP_KEXRSA_SHA256_SIZE, e, NULL) != 1) {
+#else
     rsa = RSA_generate_key(SFTP_KEXRSA_SHA256_SIZE, 65537, NULL, NULL);
-    if (!rsa) {
+    if (rsa == NULL) {
+#endif /* OpenSSL version 0.9.8 and later */
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error generating %u-bit RSA key: %s", SFTP_KEXRSA_SHA256_SIZE,
         sftp_crypto_get_errors());
+
+      if (e != NULL) {
+        BN_free(e);
+      }
+
       return -1;
     }
 
@@ -786,22 +836,30 @@ static int create_kexrsa(struct sftp_kex *kex, int type) {
 static array_header *parse_namelist(pool *p, const char *names) {
   char *ptr;
   array_header *list;
+  size_t names_len;
 
   list = make_array(p, 0, sizeof(const char *));
 
-  ptr = strchr(names, ',');
+  names_len = strlen(names);
+
+  ptr = memchr(names, ',', names_len);
   while (ptr) {
     char *elt;
+    size_t elt_len;
 
     pr_signals_handle();
 
-    elt = pcalloc(p, (ptr - names) + 1);
-    memcpy(elt, names, (ptr - names));
+    elt_len = ptr - names;
+
+    elt = palloc(p, elt_len + 1);
+    memcpy(elt, names, elt_len);
+    elt[elt_len] = '\0';
 
     *((const char **) push_array(list)) = elt;
     names = ++ptr;
+    names_len -= elt_len;
 
-    ptr = strchr(names, ',');
+    ptr = memchr(names, ',', names_len);
   }
   *((const char **) push_array(list)) = pstrdup(p, names);
 
@@ -1059,7 +1117,7 @@ static void destroy_kex(struct sftp_kex *kex) {
 
 static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
-  if (strcmp(algo, "diffie-hellman-group1-sha1") == 0) {
+  if (strncmp(algo, "diffie-hellman-group1-sha1", 27) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP1_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1070,7 +1128,7 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     return 0;
 
-  } else if (strcmp(algo, "diffie-hellman-group14-sha1") == 0) {
+  } else if (strncmp(algo, "diffie-hellman-group14-sha1", 28) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP14_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1081,7 +1139,7 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     return 0;
 
-  } else if (strcmp(algo, "diffie-hellman-group-exchange-sha1") == 0) {
+  } else if (strncmp(algo, "diffie-hellman-group-exchange-sha1", 35) == 0) {
     if (prepare_dh(kex, SFTP_DH_GEX_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1093,7 +1151,7 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->use_gex = TRUE;
     return 0;
 
-  } else if (strcmp(algo, "rsa1024-sha1") == 0) {
+  } else if (strncmp(algo, "rsa1024-sha1", 13) == 0) {
     if (create_kexrsa(kex, SFTP_KEXRSA_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1107,7 +1165,7 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
 #if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
     (OPENSSL_VERSION_NUMBER > 0x000908000L)
-  } else if (strcmp(algo, "diffie-hellman-group-exchange-sha256") == 0) {
+  } else if (strncmp(algo, "diffie-hellman-group-exchange-sha256", 37) == 0) {
     if (prepare_dh(kex, SFTP_DH_GEX_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1119,7 +1177,7 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->use_gex = TRUE;
     return 0;
 
-  } else if (strcmp(algo, "rsa2048-sha256") == 0) {
+  } else if (strncmp(algo, "rsa2048-sha256", 15) == 0) {
     if (create_kexrsa(kex, SFTP_KEXRSA_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1142,15 +1200,19 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 static int setup_hostkey_algo(struct sftp_kex *kex, const char *algo) {
   kex->session_names->server_hostkey_algo = (char *) algo;
 
-  if (strcmp(algo, "ssh-dss") == 0) {
+  if (strncmp(algo, "ssh-dss", 8) == 0) {
     kex->use_hostkey_type = EVP_PKEY_DSA;
     return 0;
   }
 
-  if (strcmp(algo, "ssh-rsa") == 0) {
+  if (strncmp(algo, "ssh-rsa", 8) == 0) {
     kex->use_hostkey_type = EVP_PKEY_RSA;
     return 0;
   }
+
+  /* XXX Need to handle "x509v3-ssh-dss", "x509v3-ssh-rsa", "x509v3-sign"
+   * algorithms here.
+   */
 
   errno = EINVAL;
   return -1;
@@ -1258,6 +1320,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session key exchange: %s", shared);
+    pr_trace_msg(trace_channel, 20, "session key exchange algorithm: %s",
+      shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1292,6 +1356,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session server hostkey: %s", shared);
+    pr_trace_msg(trace_channel, 20, "session server hostkey algorithm: %s",
+      shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1326,6 +1392,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session client-to-server encryption: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session client-to-server encryption algorithm: %s", shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1360,6 +1428,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session server-to-client encryption: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session server-to-client encryption algorithm: %s", shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1394,6 +1464,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session client-to-server MAC: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session client-to-server MAC algorithm: %s", shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1428,6 +1500,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session server-to-client MAC: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session server-to-client MAC algorithm: %s", shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1462,6 +1536,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session client-to-server compression: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session client-to-server compression algorithm: %s", shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1496,6 +1572,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session server-to-client compression: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session server-to-client compression algorithm: %s", shared);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1530,6 +1608,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session client-to-server language: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session client-to-server language: %s", shared);
 
 /* XXX Do not error out if there are no shared languages yet. */
 #if 0
@@ -1567,6 +1647,8 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       " + Session server-to-client language: %s", shared);
+    pr_trace_msg(trace_channel, 20,
+      "session server-to-client language: %s", shared);
 
 /* XXX Do not error out if there are no shared languages yet. */
 #if 0
@@ -1584,7 +1666,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
 }
 
 static int read_kexinit(struct ssh2_packet *pkt, struct sftp_kex *kex) {
-  char *buf, *cookie, *list;
+  char *buf, *list;
   uint32_t buflen;
 
   buf = pkt->payload;
@@ -1596,7 +1678,7 @@ static int read_kexinit(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   memcpy(kex->client_kexinit_payload, pkt->payload, pkt->payload_len);
 
   /* Read the cookie, which is a mandated length of 16 bytes. */
-  cookie = sftp_msg_read_data(pkt->pool, &buf, &buflen, 16);
+  (void) sftp_msg_read_data(pkt->pool, &buf, &buflen, 16);
 
   list = sftp_msg_read_string(kex_pool, &buf, &buflen);
   kex->client_names->kex_algo = list;
@@ -1813,9 +1895,14 @@ static int set_session_keys(struct sftp_kex *kex) {
       &sftp_module, kex_rekey_timer_cb, "SFTP KEX Rekey timer");
   }
 
-  if (kex_rekey_timeout > 0) {
+  if (kex_rekey_timeout > 0 &&
+      kex_rekey_timeout_timerno > 0) {
     pr_timer_remove(kex_rekey_timeout_timerno, &sftp_module);
     kex_rekey_timeout_timerno = -1;
+  }
+
+  if (kex_rekey_kex != NULL) {
+    pr_trace_msg("ssh2", 3, "rekey KEX completed");
   }
 
   sftp_ssh2_packet_rekey_reset();
@@ -2802,7 +2889,7 @@ static int handle_kex_rsa(struct sftp_kex *kex) {
 }
 
 int sftp_kex_handle(struct ssh2_packet *pkt) {
-  int correct_guess = TRUE, res;
+  int correct_guess = TRUE, res, sent_newkeys = FALSE;
   char mesg_type;
   struct sftp_kex *kex;
   cmd_rec *cmd;
@@ -2996,6 +3083,29 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
     }
   }
 
+  if (!sftp_interop_supports_feature(SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS)) {
+    pr_trace_msg(trace_channel, 9, "sending NEWKEYS message to client");
+
+    /* Send our NEWKEYS reply. */
+    pkt = sftp_ssh2_packet_create(kex_pool);
+    res = write_newkeys_reply(pkt);
+    if (res < 0) {
+      destroy_kex(kex);
+      destroy_pool(pkt->pool);
+      return -1;
+    }
+
+    res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
+    if (res < 0) {
+      destroy_kex(kex);
+      destroy_pool(pkt->pool);
+      return -1;
+    }
+
+    destroy_pool(pkt->pool);
+    sent_newkeys = TRUE;
+  }
+
   pr_trace_msg(trace_channel, 9, "reading NEWKEYS message from client");
 
   /* Read the client NEWKEYS mesg. */
@@ -3024,25 +3134,28 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
 
   pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
 
-  pr_trace_msg(trace_channel, 9, "sending NEWKEYS message to client");
+  /* If we didn't send our NEWKEYS message earlier, do it now. */
+  if (!sent_newkeys) {
+    pr_trace_msg(trace_channel, 9, "sending NEWKEYS message to client");
 
-  /* Send our NEWKEYS reply. */
-  pkt = sftp_ssh2_packet_create(kex_pool);
-  res = write_newkeys_reply(pkt);
-  if (res < 0) {
-    destroy_kex(kex);
+    /* Send our NEWKEYS reply. */
+    pkt = sftp_ssh2_packet_create(kex_pool);
+    res = write_newkeys_reply(pkt);
+    if (res < 0) {
+      destroy_kex(kex);
+      destroy_pool(pkt->pool);
+      return -1;
+    }
+
+    res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
+    if (res < 0) {
+      destroy_kex(kex);
+      destroy_pool(pkt->pool);
+      return -1;
+    }
+
     destroy_pool(pkt->pool);
-    return -1;
   }
-
-  res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
-  if (res < 0) {
-    destroy_kex(kex);
-    destroy_pool(pkt->pool);
-    return -1;
-  }
-
-  destroy_pool(pkt->pool);
 
   /* Last but certainly not least, set up the keys for encryption and
    * authentication, based on H and K.
@@ -3118,7 +3231,7 @@ int sftp_kex_rekey(void) {
   /* We cannot perform a rekey if we have not even finished the first kex. */ 
   if (!(sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX)) {
     pr_trace_msg(trace_channel, 3,
-      "unable to request rekey: Initial KEX not completed");
+      "unable to request rekey: KEX not completed");
 
     /* If this was triggered by a rekey timer, register a new timer and
      * try the rekey request in another 5 seconds.
@@ -3126,8 +3239,8 @@ int sftp_kex_rekey(void) {
     if (kex_rekey_interval > 0 &&
         kex_rekey_timerno == -1) {
       pr_trace_msg(trace_channel, 3,
-        "trying rekey request in another 15 seconds");
-      kex_rekey_timerno = pr_timer_add(15, -1, &sftp_module, kex_rekey_timer_cb,
+        "trying rekey request in another 5 seconds");
+      kex_rekey_timerno = pr_timer_add(5, -1, &sftp_module, kex_rekey_timer_cb,
         "SFTP KEX Rekey timer");
     }
 
@@ -3184,8 +3297,8 @@ int sftp_kex_rekey(void) {
   kex_sent_kexinit = TRUE;
 
   if (kex_rekey_timeout > 0) {
-    pr_trace_msg(trace_channel, 17, "client has %d secs to rekey",
-      kex_rekey_timeout);
+    pr_trace_msg(trace_channel, 17, "client has %d %s to rekey",
+      kex_rekey_timeout, kex_rekey_timeout != 1 ? "secs" : "sec");
     kex_rekey_timeout_timerno = pr_timer_add(kex_rekey_timeout, -1,
       &sftp_module, kex_rekey_timeout_cb, "SFTP KEX Rekey Timeout timer");
   }

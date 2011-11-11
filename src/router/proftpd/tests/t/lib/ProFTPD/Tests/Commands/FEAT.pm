@@ -1,10 +1,9 @@
 package ProFTPD::Tests::Commands::FEAT;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
-use File::Path qw(mkpath rmtree);
 use File::Spec;
 use IO::Handle;
 
@@ -29,29 +28,6 @@ sub new {
 
 sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
-}
-
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
 }
 
 sub feat_ok {
@@ -104,7 +80,26 @@ sub feat_ok {
     },
   };
 
+  # By default, we expect to see 9 lines in the FEAT response
+  my $expected_nfeat = 9;
+
   my $have_nls = feature_have_feature_enabled('nls');
+  if ($have_nls) {
+    $expected_nfeat += 2;
+  }
+
+  my $have_site_misc = feature_have_module_compiled('mod_site_misc.c');
+  if ($have_site_misc) {
+    # For the following SITE commands added by mod_site_misc: MKDIR,
+    #  RMDIR, UTIME, and SYMLINK.
+    $expected_nfeat += 4;
+  }
+
+  my $have_copy = feature_have_module_compiled('mod_copy.c');
+  if ($have_copy) {
+    # For the following SITE commands added by mod_copy: COPY.
+    $expected_nfeat += 1;
+  }
 
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
@@ -135,14 +130,9 @@ sub feat_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 9;
-      if ($have_nls) {
-        $expected += 2;
-      }
-
       my $nfeat = scalar(@$resp_msgs);
-      $self->assert($expected == $nfeat,
-        test_msg("Expected $expected, got $nfeat"));
+      $self->assert($expected_nfeat == $nfeat,
+        test_msg("Expected $expected_nfeat features, got $nfeat"));
 
       my $feats = { 
         'Features:' => 1,
@@ -167,6 +157,17 @@ sub feat_ok {
         $feats->{' LANG en_US.UTF-8'} = 1;
         $feats->{' LANG en-US.UTF-8'} = 1;
         $feats->{' LANG en-US.UTF-8*'} = 1;
+      }
+
+      if ($have_site_misc) {
+        $feats->{' SITE MKDIR'} = 1;
+        $feats->{' SITE RMDIR'} = 1;
+        $feats->{' SITE SYMLINK'} = 1;
+        $feats->{' SITE UTIME'} = 1;
+      }
+
+      if ($have_copy) {
+        $feats->{' SITE COPY'} = 1;
       }
 
       for (my $i = 0; $i < $nfeat; $i++) {
