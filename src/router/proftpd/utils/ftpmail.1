@@ -1,0 +1,148 @@
+.TH ftpmail 1 "March 2011"
+.\" Process with
+.\" groff -man -Tascii ftpmail.1 
+.\"
+.SH NAME
+ftpmail \- FIFO-based Perl script for sending email based on proftpd TransferLog
+.SH SYNOPSIS
+.B ftpmail
+[
+.B \--help
+] [
+.B \--fifo
+.I "fifo-path"
+] [
+.B \--from
+.I "email-address"
+] [
+.B \--log
+.I "xferlog-file"
+] [
+.B \--recipient
+.I "email-address"
+] [
+.B \--subject
+.I "email-subject"
+] [
+.B \--smtp-server
+.I "server-address"
+] [
+.B \--attach-file
+] [
+.B \--auth
+.I "smtp-auth-info-file"
+] [
+.B \--ignore-users
+.I "regex-pattern"
+] [
+.B \--watch-users
+.I "regex-pattern"
+]
+.SH DESCRIPTION
+.B ftpmail
+is a Perl script designed to read ProFTPD's \fITransferLog\fP log entries,
+watching for uploads, and to send an automatic email notification when uploads
+occur.  To use
+.B ftpmail
+, you configure your
+.B proftpd
+daemon to write its \fITransferLog\fP to a FIFO; the
+.B ftpmail
+program is a FIFO reading program which then processes those log messages.
+.SH OPTIONS
+.TP 12
+.B \--help
+Display a short usage description, including all available options.
+.TP
+.B \--attach-file
+If used, this will cause a copy of the uploaded file to be included, as an
+attachment, in the generated email.
+.TP
+.BI \--auth " smtp-auth-info-file"
+Configures the path to a file containing SMTP authentication information.
+The configured file should look like this:
+.RS
+.RS
+.PD 0
+.TP 10
+.B user
+username
+.TP
+.B password
+password
+.PD
+.RE
+.RE
+.TP
+.BI \--fifo " fifo-path"
+Indicates the path to the FIFO to which
+.B proftpd
+is writing its \fBTransferLog\fP.  That is, this is the path that you used for
+the \fBTransferLog\fP directive in your \fIproftpd.conf\fP.  This parameter is
+.B REQUIRED.
+.TP
+.BI \--from " email-address"
+Specifies the email address to use in the
+.I From
+email header.  This parameter is
+.B REQUIRED.
+.TP
+.BI \--ignore-users " regex-pattern"
+Specifies a Perl regular expression.  If the uploading user name matches this
+regular expression, then an email notification is \fBNOT\fP sent; otherwise,
+an email is sent.
+.TP
+.BI \--log " xferlog-path"
+Since this script reads the \fBTransferLog\fP using FIFOs, the actual
+\fBTransferLog\fP file is not written by default.  Use this option to write the
+normal \fBTransferLog\fP file, in addition to watching for uploads.
+.TP
+.BI \--recipient " email-address"
+Specifies an email address to which to send an email notification of the upload.
+This option can be used multiple times to specify multiple recipients.
+.B AT LEAST ONE
+recipient is
+.B REQUIRED.
+.TP
+.BI \--smtp-server " server-address"
+Specifies the SMTP server to which to send the email.  This parameter is
+.B REQUIRED.
+.TP
+.BI \--subject " subject"
+Specify a custom \fISubject\fP email header for the email sent.  The default
+\fISubject\fP is:
+.RS
+.RS
+.PD 0
+.TP 10
+User '\fI$user\fP' uploaded file '\fI$file\fP' via FTP
+.PD
+.RE
+.RE
+.TP
+.BI \--watch-users " regex-pattern"
+Specifies a Perl regular expression.  If the uploading user name matches this
+regular expression, then an email notification is sent; otherwise, no email is
+sent.
+.SH FILES
+.PD 0
+.B /var/log/xferlog
+.PD
+.SH AUTHORS
+.PP
+ProFTPD is written and maintained by a number of people, full credits
+can be found on
+.BR http://www.proftpd.org/credits.html
+.PD
+.SH SEE ALSO
+.BR proftpd(8),
+.BR xferlog(5)
+.PP
+Full documentation on ProFTPD, including configuration and FAQs, is available at
+.BR http://www.proftpd.org/
+.PP 
+For help/support, try the ProFTPD mailing lists, detailed on
+.BR http://www.proftpd.org/lists.html
+.PP
+Report bugs at
+.BR http://bugs.proftpd.org/

@@ -1,0 +1,155 @@
+<!-- $Id: mod_ls.html,v 1.1 2011/02/16 06:32:17 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_ls.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_ls</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_ls</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+The <code>mod_ls</code> module handles the <code>LIST</code>,
+<code>NLST</code>, and <code>STAT</code> FTP commands.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#DirFakeGroup">DirFakeGroup</a>
+  <li><a href="#DirFakeMode">DirFakeMode</a>
+  <li><a href="#DirFakeUser">DirFakeUser</a>
+  <li><a href="#ListOptions">ListOptions</a>
+  <li><a href="#ShowSymlinks">ShowSymlinks</a>
+  <li><a href="#UseGlobbing">UseGlobbing</a>
+</ul>
+
+<hr>
+<h2><a name="DirFakeGroup">DirFakeGroup</a></h2>
+<strong>Syntax:</strong> DirFakeGroup <em>off|on display-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> All versions
+
+<p>
+The <code>DirFakeGroup</code> directive
+
+<p>
+Examples:
+<pre>
+</pre>
+
+<p>
+<hr>
+<h2><a name="DirFakeMode">DirFakeMode</a></h2>
+<strong>Syntax:</strong> DirFakeMode <em>display-mode</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> All versions
+
+<p>
+The <code>DirFakeMode</code> directive
+
+<p>
+Examples:
+<pre>
+  # Display everything as read-only
+  DirFakeMode 0444
+</pre>
+
+<p>
+<hr>
+<h2><a name="DirFakeUser">DirFakeUser</a></h2>
+<strong>Syntax:</strong> DirFakeUser <em>off|on display-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> All versions
+
+<p>
+The <code>DirFakeUser</code> directive
+
+<p>
+Examples:
+<pre>
+</pre>
+
+<p>
+<hr>
+<h2><a name="ListOptions">ListOptions</a></h2>
+<strong>Syntax:</strong> ListOptions <em>options [strict [maxdepth depth] [maxfiles count] [maxdirs count] [NoErrorIfAbsent]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> 1.2.8rc1 and later
+
+<p>
+The <code>ListOptions</code> directive
+
+<p>
+See also: <a href="../howto/ListOptions.html">ListOptions</a>
+
+<p>
+<hr>
+<h2><a name="ShowSymlinks">ShowSymlinks</a></h2>
+<strong>Syntax:</strong> ShowSymlinks <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> All versions
+
+<p>
+The <code>ShowSymlinks</code> directive
+
+<p>
+Examples:
+<pre>
+</pre>
+
+<p>
+<hr>
+<h2><a name="UseGlobbing">UseGlobbing</a></h2>
+<strong>Syntax:</strong> UseGlobbing <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_ls<br>
+<strong>Compatibility:</strong> All versions
+
+<p>
+The <code>UseGlobbing</code> directive
+
+<p>
+Examples:
+<pre>
+  # Turn off support for globs in LIST/NLST commands
+  UseGlobbing off
+</pre>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_ls</code>module is <b>always</b> installed.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2011/02/16 06:32:17 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2000-2011 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+</body>
+</html>
+

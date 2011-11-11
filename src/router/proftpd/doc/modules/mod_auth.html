@@ -1,0 +1,98 @@
+<!-- $Id: mod_auth.html,v 1.2 2011/04/06 17:54:27 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_auth</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_auth</code></b></h2>
+</center>
+<hr><br>
+
+This module is contained in the <code>mod_auth.c</code> file for
+ProFTPD 1.3.<i>x</i>, and is compiled by default.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#DefaultRoot">DefaultRoot</a>
+  <li><a href="#UserPassword">UserPassword</a>
+</ul>
+
+<hr>
+<h2><a name="DefaultRoot">DefaultRoot</a></h2>
+<strong>Syntax:</strong> DefaultRoot <em>path [group-expression]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.2.0rc1
+
+<p>
+The <code>DefaultRoot</code> directive is used to <code>chroot()</code> the
+session process for the connecting client.  A fuller explanation can be
+found in the <a href="../howto/Chroot.html">Chroot</a> howto.
+
+<p>
+<hr>
+<h2><a name="UserPassword">UserPassword</a></h2>
+<strong>Syntax:</strong> UserPassword <em>user encrypted-password</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 0.99.0pl5 and later
+
+<p>
+The <code>UserPassword</code> directive creates a password for a particular
+<em>user</em>; this configured password will <i>override</i> the user's normal
+password in <code>/etc/passwd</code> (or whichever auth module handles that
+user).  <b>Note</b> that the <em>user</em> configured is a real user, and
+<b>not</b> a <code>UserAlias</code>.
+
+<p>
+The <em>encrypted-password</em> parameter is a string which has been passed
+through the standard Unix <code>crypt(3)</code> function.  <b>Do not use a
+cleartext password</b>.  To obtain this <em>encrypted-password</em> value,
+you can use the <a href="../utils/ftpasswd.html"><code>ftpasswd</code></a>
+script's <code>--hash</code> option, <i>e.g.</i>:
+<pre>
+  # ftpasswd --hash
+
+  Password: 
+  Re-type password: 
+
+  ftpasswd: $1$EsnXxyD6$tsO2YwTAT/Tl5u1NYPHIw1
+</pre>
+
+<p>
+Example configuration:
+<pre>
+  # Override user bob's password with a hash version of "password"
+  UserPassword bob $1$EsnXxyD6$tsO2YwTAT/Tl5u1NYPHIw1
+</pre>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_auth</code> module is compiled by default.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2011/04/06 17:54:27 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2002-2011<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
