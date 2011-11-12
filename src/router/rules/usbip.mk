@@ -1,7 +1,7 @@
 usbip-configure:
-	cd usbip/libsysfs && ./configure --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
+	cd usbip/libsysfs && ./configure --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
 	make -C usbip/libsysfs clean all
-	cd usbip && ./configure --disable-static --enable-shared --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/usbip/libsysfs/include -I$(TOP)/glib20/libglib/glib -L$(TOP)/usbip/libsysfs/lib/.libs -L$(TOP)/glib20/libglib/glib/.libs"
+	cd usbip && ./configure --disable-static --enable-shared --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/usbip/libsysfs/include -I$(TOP)/glib20/libglib/glib -L$(TOP)/usbip/libsysfs/lib/.libs -L$(TOP)/glib20/libglib/glib/.libs"
 
 usbip:
 	$(MAKE) -C usbip
