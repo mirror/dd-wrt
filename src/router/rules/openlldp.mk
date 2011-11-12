@@ -1,5 +1,5 @@
 openlldp-configure:
-	cd openlldp && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+	cd openlldp && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS)"
 
 openlldp:
 	$(MAKE) -C openlldp

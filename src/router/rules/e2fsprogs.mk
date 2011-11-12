@@ -1,13 +1,13 @@
 e2fsprogs-configure:
-	cd e2fsprogs && ./configure --host=$(ARCH)-linux CFLAGS="-Os" CC="$(CROSS_COMPILE)gcc $(COPTS)  -DNEED_PRINTF" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls root_prefix=$(INSTALLDIR)/e2fsprogs
+	cd e2fsprogs && ./configure --host=$(ARCH)-linux CFLAGS="-Os" CC="$(CC) $(COPTS)  -DNEED_PRINTF" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls root_prefix=$(INSTALLDIR)/e2fsprogs
 	make -C e2fsprogs
-	cd xfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="-Os -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid" CC="$(CROSS_COMPILE)gcc $(COPTS)" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-gettext=no --enable-lib64=no root_prefix=$(INSTALLDIR)/e2fsprogs
+	cd xfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="-Os -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid" CC="$(CC) $(COPTS)" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-gettext=no --enable-lib64=no root_prefix=$(INSTALLDIR)/e2fsprogs
 
 e2fsprogs:
 	make -C e2fsprogs
 ifeq ($(CONFIG_E2FSPROGS_ADV),y)
 	make -C xfsprogs DEBUG= Q=
-	make -C btrfsprogs CC="$(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid  -ffunction-sections -fdata-sections -Wl,--gc-sections" prefix=/usr
+	make -C btrfsprogs CC="$(CC)" CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid  -ffunction-sections -fdata-sections -Wl,--gc-sections" prefix=/usr
 endif
 
 e2fsprogs-install:

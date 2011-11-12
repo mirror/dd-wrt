@@ -1,5 +1,5 @@
 gcom:
-	$(MAKE) -C gcom CC=$(CC)  
+	$(MAKE) -C gcom CC="$(CC)"  
 	$(STRIP) $(INSTALLDIR)/gcom/usr/sbin/gcom
 
 gcom-install:
