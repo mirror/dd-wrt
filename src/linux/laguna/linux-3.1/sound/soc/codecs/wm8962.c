@@ -1959,7 +1959,13 @@ static int wm8962_readable_register(struct snd_soc_codec *codec, unsigned int re
 
 static int wm8962_reset(struct snd_soc_codec *codec)
 {
-	return snd_soc_write(codec, WM8962_SOFTWARE_RESET, 0x6243);
+	int ret;
+
+	ret = snd_soc_write(codec, WM8962_SOFTWARE_RESET, 0x6243);
+	if (ret != 0)
+		return ret;
+
+	return snd_soc_write(codec, WM8962_PLL_SOFTWARE_RESET, 0);
 }
 
 static const DECLARE_TLV_DB_SCALE(inpga_tlv, -2325, 75, 0);
@@ -2021,7 +2027,6 @@ static int wm8962_put_spk_sw(struct snd_kcontrol *kcontrol,
 			    struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
-	u16 *reg_cache = codec->reg_cache;
 	int ret;
 
 	/* Apply the update (if any) */
@@ -2030,16 +2035,19 @@ static int wm8962_put_spk_sw(struct snd_kcontrol *kcontrol,
 		return 0;
 
 	/* If the left PGA is enabled hit that VU bit... */
-	if (reg_cache[WM8962_PWR_MGMT_2] & WM8962_SPKOUTL_PGA_ENA)
-		return snd_soc_write(codec, WM8962_SPKOUTL_VOLUME,
-				     reg_cache[WM8962_SPKOUTL_VOLUME]);
+	ret = snd_soc_read(codec, WM8962_PWR_MGMT_2);
+	if (ret & WM8962_SPKOUTL_PGA_ENA) {
+		snd_soc_write(codec, WM8962_SPKOUTL_VOLUME,
+			      snd_soc_read(codec, WM8962_SPKOUTL_VOLUME));
+		return 1;
+	}
 
 	/* ...otherwise the right.  The VU is stereo. */
-	if (reg_cache[WM8962_PWR_MGMT_2] & WM8962_SPKOUTR_PGA_ENA)
-		return snd_soc_write(codec, WM8962_SPKOUTR_VOLUME,
-				     reg_cache[WM8962_SPKOUTR_VOLUME]);
+	if (ret & WM8962_SPKOUTR_PGA_ENA)
+		snd_soc_write(codec, WM8962_SPKOUTR_VOLUME,
+			      snd_soc_read(codec, WM8962_SPKOUTR_VOLUME));
 
-	return 0;
+	return 1;
 }
 
 static const char *cap_hpf_mode_text[] = {
@@ -2225,15 +2233,14 @@ static int sysclk_event(struct snd_soc_dapm_widget *w,
 
 			snd_soc_update_bits(codec, WM8962_FLL_CONTROL_1,
 					    WM8962_FLL_ENA, WM8962_FLL_ENA);
-			if (wm8962->irq) {
-				timeout = msecs_to_jiffies(5);
-				timeout = wait_for_completion_timeout(&wm8962->fll_lock,
-								      timeout);
 
-				if (timeout == 0)
-					dev_err(codec->dev,
-						"Timed out starting FLL\n");
-			}
+			timeout = msecs_to_jiffies(5);
+			timeout = wait_for_completion_timeout(&wm8962->fll_lock,
+							      timeout);
+
+			if (wm8962->irq && timeout == 0)
+				dev_err(codec->dev,
+					"Timed out starting FLL\n");
 		}
 		break;
 
@@ -2365,7 +2372,6 @@ static int out_pga_event(struct snd_soc_dapm_widget *w,
 			 struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_codec *codec = w->codec;
-	u16 *reg_cache = codec->reg_cache;
 	int reg;
 
 	switch (w->shift) {
@@ -2388,7 +2394,7 @@ static int out_pga_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
-		return snd_soc_write(codec, reg, reg_cache[reg]);
+		return snd_soc_write(codec, reg, snd_soc_read(codec, reg));
 	default:
 		BUG();
 		return -EINVAL;
@@ -3058,9 +3064,9 @@ static int wm8962_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 	int aif0 = 0;
 
 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
-	case SND_SOC_DAIFMT_DSP_A:
-		aif0 |= WM8962_LRCLK_INV;
 	case SND_SOC_DAIFMT_DSP_B:
+		aif0 |= WM8962_LRCLK_INV | 3;
+	case SND_SOC_DAIFMT_DSP_A:
 		aif0 |= 3;
 
 		switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
@@ -3846,6 +3852,11 @@ static int wm8962_probe(struct snd_soc_codec *codec)
 	/* Ensure we have soft control over all registers */
 	snd_soc_update_bits(codec, WM8962_CLOCKING2,
 			    WM8962_CLKREG_OVD, WM8962_CLKREG_OVD);
+
+	/* Ensure that the oscillator and PLLs are disabled */
+	snd_soc_update_bits(codec, WM8962_PLL2,
+			    WM8962_OSC_ENA | WM8962_PLL2_ENA | WM8962_PLL3_ENA,
+			    0);
 
 	regulator_bulk_disable(ARRAY_SIZE(wm8962->supplies), wm8962->supplies);
 
