@@ -4,13 +4,13 @@ endif
 
 
 samba3:
-	CC="$(ARCH)-linux-uclibc-gcc" \
+	CC="$(CC)" \
 	CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" \
 	CPPFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" \
 	LDFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" \
 	$(MAKE) -C samba3/source all bin/smbpasswd WITH_LFS=yes
 
-	CC="$(ARCH)-linux-uclibc-gcc" \
+	CC="$(CC)" \
 	CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC $(LTO) $(SAMBA3_EXTRA)" \
 	CPPFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC $(LTO) $(SAMBA3_EXTRA)" \
 	LDFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC $(LTO) $(SAMBA3_EXTRA)" \

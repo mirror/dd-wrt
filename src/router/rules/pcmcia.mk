@@ -1,9 +1,9 @@
 pcmcia-clean:
-	$(MAKE) -C pcmcia-cs-3.2.8 CC=$(CC) LINUXDIR=$(LINUXDIR) clean
+	$(MAKE) -C pcmcia-cs-3.2.8 CC="$(CC)" LINUXDIR=$(LINUXDIR) clean
 
 pcmcia:
 #	cd pcmcia-cs-3.2.8 && ./Configure
-	$(MAKE) -C pcmcia-cs-3.2.8 CC=$(CC) LINUXDIR=$(LINUXDIR) all 
+	$(MAKE) -C pcmcia-cs-3.2.8 CC="$(CC)" LINUXDIR=$(LINUXDIR) all 
 
 pcmcia-install:
 	install -D pcmcia-cs-3.2.8/cardmgr/cardmgr $(INSTALLDIR)/pcmcia/usr/sbin/cardmgr

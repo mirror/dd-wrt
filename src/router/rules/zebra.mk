@@ -1,6 +1,6 @@
 zebra:
 ifeq ($(CONFIG_ZEBRA),y)
-	$(MAKE) -C quagga CC=$(CC)
+	$(MAKE) -C quagga CC="$(CC)"
 endif
 
 zebra-install:

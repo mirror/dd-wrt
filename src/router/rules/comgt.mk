@@ -8,7 +8,7 @@ comgt-clean:
 
 comgt:
 	$(MAKE) -C usb_modeswitch
-	$(MAKE) -C comgt CC=$(CC)  
+	$(MAKE) -C comgt CC="$(CC)"  
 #	$(STRIP) $(INSTALLDIR)/comgt/usr/sbin/comgt
 
 comgt-install:
