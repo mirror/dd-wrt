@@ -38,8 +38,8 @@ int nvram_init(void *unused)
 {
 #ifdef HAVE_X86
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-	if (in==NULL)
-	    return -1;
+	if (in == NULL)
+		return -1;
 	fclose(in);
 #endif
 	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)
@@ -90,11 +90,18 @@ char *nvram_get(const char *name)
 	char tmp[100], *value;
 	unsigned long *off = (unsigned long *)tmp;
 
-	if (nvram_fd < 0)
+	if (nvram_fd < 0) {
+#ifdef HAVE_X86
+		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+		if (in == NULL)
+			return NULL;
+		fclose(in);
+#endif
 		if (nvram_init(NULL)) {
 			//unlock();
 			return NULL;
 		}
+	}
 	if (count > sizeof(tmp)) {
 		if (!(off = malloc(count))) {
 			//unlock();
@@ -111,10 +118,10 @@ char *nvram_get(const char *name)
 		value = &nvram_buf[*off];
 	else
 		value = NULL;
-	
+
 #ifndef HAVE_MICRO
 	if (value)
-	    msync(nvram_buf, NVRAM_SPACE, MS_INVALIDATE);
+		msync(nvram_buf, NVRAM_SPACE, MS_INVALIDATE);
 #endif
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
@@ -122,7 +129,6 @@ char *nvram_get(const char *name)
 	if (off != (unsigned long *)tmp)
 		free(off);
 	//unlock();
-
 
 	return value;
 }
@@ -132,11 +138,18 @@ int nvram_getall(char *buf, int count)
 //lock();
 	int ret;
 
-	if (nvram_fd < 0)
+	if (nvram_fd < 0) {
+#ifdef HAVE_X86
+		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+		if (in == NULL)
+			return 0;
+		fclose(in);
+#endif
 		if ((ret = nvram_init(NULL))) {
 			//unlock();
 			return ret;
 		}
+	}
 	if (count == 0) {
 		//unlock();
 		return 0;
@@ -243,8 +256,8 @@ int nvram_commit(void)
 		fprintf(stderr, "not allowed, flash process in progress");
 		exit(1);
 	}
-#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043)  || defined(HAVE_WRT400) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) 
-	system("/sbin/ledtool 1"); 
+#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043)  || defined(HAVE_WRT400) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE)
+	system("/sbin/ledtool 1");
 #elif HAVE_LSX
 	//nothing
 #else
