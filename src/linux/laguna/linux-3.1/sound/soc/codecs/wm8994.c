@@ -1282,7 +1282,7 @@ SND_SOC_DAPM_MUX("AIF2DAC Mux", SND_SOC_NOPM, 0, 0, &aif2dac_mux),
 SND_SOC_DAPM_MUX("AIF2ADC Mux", SND_SOC_NOPM, 0, 0, &aif2adc_mux),
 
 SND_SOC_DAPM_AIF_IN("AIF3DACDAT", "AIF3 Playback", 0, SND_SOC_NOPM, 0, 0),
-SND_SOC_DAPM_AIF_IN("AIF3ADCDAT", "AIF3 Capture", 0, SND_SOC_NOPM, 0, 0),
+SND_SOC_DAPM_AIF_OUT("AIF3ADCDAT", "AIF3 Capture", 0, SND_SOC_NOPM, 0, 0),
 
 SND_SOC_DAPM_SUPPLY("TOCLK", WM8994_CLOCKING_1, 4, 0, NULL, 0),
 
@@ -2311,7 +2311,7 @@ static void wm8994_aif_shutdown(struct snd_pcm_substream *substream,
 		rate_reg = WM8994_AIF1_RATE;
 		break;
 	case 2:
-		rate_reg = WM8994_AIF1_RATE;
+		rate_reg = WM8994_AIF2_RATE;
 		break;
 	default:
 		break;

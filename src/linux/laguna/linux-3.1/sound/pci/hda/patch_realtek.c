@@ -1566,27 +1566,29 @@ static void alc_auto_init_digital(struct hda_codec *codec)
 static void alc_auto_parse_digital(struct hda_codec *codec)
 {
 	struct alc_spec *spec = codec->spec;
-	int i, err;
+	int i, err, nums;
 	hda_nid_t dig_nid;
 
 	/* support multiple SPDIFs; the secondary is set up as a slave */
+	nums = 0;
 	for (i = 0; i < spec->autocfg.dig_outs; i++) {
 		hda_nid_t conn[4];
 		err = snd_hda_get_connections(codec,
 					      spec->autocfg.dig_out_pins[i],
 					      conn, ARRAY_SIZE(conn));
-		if (err < 0)
+		if (err <= 0)
 			continue;
 		dig_nid = conn[0]; /* assume the first element is audio-out */
-		if (!i) {
+		if (!nums) {
 			spec->multiout.dig_out_nid = dig_nid;
 			spec->dig_out_type = spec->autocfg.dig_out_type[0];
 		} else {
 			spec->multiout.slave_dig_outs = spec->slave_dig_outs;
-			if (i >= ARRAY_SIZE(spec->slave_dig_outs) - 1)
+			if (nums >= ARRAY_SIZE(spec->slave_dig_outs) - 1)
 				break;
-			spec->slave_dig_outs[i - 1] = dig_nid;
+			spec->slave_dig_outs[nums - 1] = dig_nid;
 		}
+		nums++;
 	}
 
 	if (spec->autocfg.dig_in_pin) {
@@ -2232,6 +2234,7 @@ static int alc_build_pcms(struct hda_codec *codec)
 	struct alc_spec *spec = codec->spec;
 	struct hda_pcm *info = spec->pcm_rec;
 	const struct hda_pcm_stream *p;
+	bool have_multi_adcs;
 	int i;
 
 	codec->num_pcms = 1;
@@ -2310,8 +2313,11 @@ static int alc_build_pcms(struct hda_codec *codec)
 	/* If the use of more than one ADC is requested for the current
 	 * model, configure a second analog capture-only PCM.
 	 */
+	have_multi_adcs = (spec->num_adc_nids > 1) &&
+		!spec->dyn_adc_switch && !spec->auto_mic &&
+		(!spec->input_mux || spec->input_mux->num_items > 1);
 	/* Additional Analaog capture for index #2 */
-	if (spec->alt_dac_nid || spec->num_adc_nids > 1) {
+	if (spec->alt_dac_nid || have_multi_adcs) {
 		codec->num_pcms = 3;
 		info = spec->pcm_rec + 2;
 		info->name = spec->stream_name_analog;
@@ -2327,7 +2333,7 @@ static int alc_build_pcms(struct hda_codec *codec)
 				alc_pcm_null_stream;
 			info->stream[SNDRV_PCM_STREAM_PLAYBACK].nid = 0;
 		}
-		if (spec->num_adc_nids > 1) {
+		if (have_multi_adcs) {
 			p = spec->stream_analog_alt_capture;
 			if (!p)
 				p = &alc_pcm_analog_alt_capture;
@@ -3070,6 +3076,12 @@ static void alc_auto_set_output_and_unmute(struct hda_codec *codec,
 	nid = alc_look_for_out_vol_nid(codec, pin, dac);
 	if (nid)
 		snd_hda_codec_write(codec, nid, 0, AC_VERB_SET_AMP_GAIN_MUTE,
+				    AMP_OUT_ZERO);
+
+	/* unmute DAC if it's not assigned to a mixer */
+	nid = alc_look_for_out_mute_nid(codec, pin, dac);
+	if (nid == mix && nid_has_mute(codec, dac, HDA_OUTPUT))
+		snd_hda_codec_write(codec, dac, 0, AC_VERB_SET_AMP_GAIN_MUTE,
 				    AMP_OUT_ZERO);
 }
 
@@ -5420,6 +5432,8 @@ static const struct hda_codec_preset snd_hda_preset_realtek[] = {
 	{ .id = 0x10ec0662, .rev = 0x100002, .name = "ALC662 rev2",
 	  .patch = patch_alc882 },
 	{ .id = 0x10ec0662, .rev = 0x100101, .name = "ALC662 rev1",
+	  .patch = patch_alc662 },
+	{ .id = 0x10ec0662, .rev = 0x100300, .name = "ALC662 rev3",
 	  .patch = patch_alc662 },
 	{ .id = 0x10ec0663, .name = "ALC663", .patch = patch_alc662 },
 	{ .id = 0x10ec0665, .name = "ALC665", .patch = patch_alc662 },
