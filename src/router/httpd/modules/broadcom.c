@@ -1412,10 +1412,10 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 #endif
 		char drive[64];
 		sprintf(drive, "/dev/%s", getdisc());
-		FILE *in = fopen64(drive, "r+b");
-		fseeko64(in, 0, SEEK_END);
-		__off64_t mtdlen = ftell(in);
-		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
+		FILE *in = fopen(drive, "r+b");
+		fseeko(in, 0, SEEK_END);
+		__off_t mtdlen = ftell(in);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
 			putc(0, in);	// erase backup area
@@ -1430,10 +1430,10 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 #elif HAVE_RB600
 		char drive[64];
 		sprintf(drive, "/dev/sda");
-		FILE *in = fopen64(drive, "r+b");
-		fseeko64(in, 0, SEEK_END);
-		__off64_t mtdlen = ftell(in);
-		fseeko64(in, mtdlen - (65536 * 2), SEEK_SET);
+		FILE *in = fopen(drive, "r+b");
+		fseeko(in, 0, SEEK_END);
+		__off_t mtdlen = ftell(in);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		int i;
 		for (i = 0; i < 65536; i++)
 			putc(0, in);	// erase backup area
