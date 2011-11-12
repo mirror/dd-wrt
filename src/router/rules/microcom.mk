@@ -3,7 +3,7 @@ microcom-clean:
 
 
 microcom:
-	$(MAKE) -C microcom102 microcom CC=$(CC)  
+	$(MAKE) -C microcom102 microcom CC="$(CC)"  
 	$(STRIP) $(INSTALLDIR)/microcom/usr/sbin/microcom
 
 microcom-install:
