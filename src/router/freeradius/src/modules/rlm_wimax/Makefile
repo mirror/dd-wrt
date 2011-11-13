@@ -1,7 +1,7 @@
-TARGET		= rlm_wimax
+TARGET		= 
 SRCS		= rlm_wimax.c
 HEADERS		= 
-RLM_CFLAGS	= $(OPENSSL_INCLUDE)
+RLM_CFLAGS	=
 RLM_LIBS	= $(OPENSSL_LIBS)
 
 include ../rules.mak

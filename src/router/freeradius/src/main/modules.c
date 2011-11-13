@@ -822,6 +822,7 @@ static int define_type(const DICT_ATTR *dattr, const char *name)
 		value = fr_rand() & 0x00ffffff;
 	} while (dict_valbyattr(dattr->attr, value));
 
+	DEBUG2("  Module: Creating %s = %s", dattr->name, name);
 	if (dict_addvalue(name, dattr->name, value) < 0) {
 		radlog(L_ERR, "%s", fr_strerror());
 		return 0;
@@ -1219,13 +1220,15 @@ int virtual_servers_load(CONF_SECTION *config)
 	 *	In either case, load the "default" virtual server first.
 	 *	this matches better iwth users expectations.
 	 */
-	cs = cf_section_find_name2(config, "server", NULL);
-	if (!cs) {
-		if (load_byserver(config) < 0) {
+	cs = cf_section_find_name2(cf_subsection_find_next(config, NULL,
+							   "server"),
+				   "server", NULL);
+	if (cs) {
+		if (load_byserver(cs) < 0) {
 			return -1;
 		}
 	} else {
-		if (load_byserver(cs) < 0) {
+		if (load_byserver(config) < 0) {
 			return -1;
 		}
 	}
@@ -1243,7 +1246,8 @@ int virtual_servers_load(CONF_SECTION *config)
 		if (!name2) continue; /* handled above */
 
 		server = virtual_server_find(name2);
-		if (server) {
+		if (server &&
+		    (cf_top_section(server->cs) == config)) {
 			radlog(L_ERR, "Duplicate virtual server \"%s\" in file %s:%d and file %s:%d",
 			       server->name,
 			       cf_section_filename(server->cs),

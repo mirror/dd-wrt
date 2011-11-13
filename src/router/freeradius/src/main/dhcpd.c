@@ -59,33 +59,28 @@ static int dhcp_process(REQUEST *request)
 	}
 
 	/*
-	 *	Look for Relay attribute, and forward it if necessary.
+	 *	For messages from a client, look for Relay attribute,
+	 *	and forward it if necessary.
 	 */
-	vp = pairfind(request->config_items, DHCP2ATTR(270));
+	vp = NULL;
+	if (request->packet->data[0] == 1) {
+		vp = pairfind(request->config_items, DHCP2ATTR(270));
+	}
 	if (vp) {
 		VALUE_PAIR *giaddr;
-		RADIUS_PACKET relayed;
 		
-		request->reply->code = 0; /* don't reply to the client */
-
 		/*
 		 *	Find the original giaddr.
 		 *	FIXME: Maybe look in the original packet?
 		 *
 		 *	It's invalid to have giaddr=0 AND a relay option
 		 */
-		giaddr = pairfind(request->packet->vps, 266);
+		giaddr = pairfind(request->packet->vps, DHCP2ATTR(266));
 		if (giaddr && (giaddr->vp_ipaddr == htonl(INADDR_ANY))) {
 			if (pairfind(request->packet->vps, DHCP2ATTR(82))) {
 				RDEBUG("DHCP: Received packet with giaddr = 0 and containing relay option: Discarding packet");
 				return 1;
 			}
-
-			/*
-			 *	FIXME: Add cache by XID.
-			 */
-			RDEBUG("DHCP: Cannot yet relay packets with giaddr = 0");
-			return 1;
 		}
 
 		if (request->packet->data[3] > 10) {
@@ -94,34 +89,77 @@ static int dhcp_process(REQUEST *request)
 		}
 
 		/*
-		 *	Forward it VERBATIM to the next server, rather
-		 *	than to the client.
+		 *	Forward a reply...
 		 */
-		memcpy(&relayed, request->packet, sizeof(relayed));
-
-		relayed.dst_ipaddr.af = AF_INET;
-		relayed.dst_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
-		relayed.dst_port = request->packet->dst_port;
-
-		relayed.src_ipaddr = request->packet->dst_ipaddr;
-		relayed.src_port = request->packet->dst_port;
-
-		relayed.data = rad_malloc(relayed.data_len);
-		memcpy(relayed.data, request->packet->data, request->packet->data_len);
-		relayed.vps = NULL;
+		pairfree(&request->reply->vps);
+		request->reply->vps = paircopy(request->packet->vps);
+		request->reply->code = request->packet->code;
+		request->reply->id = request->packet->id;
+		request->reply->src_ipaddr = request->packet->dst_ipaddr;
+		request->reply->src_port = request->packet->dst_port;
+		request->reply->dst_ipaddr.af = AF_INET;
+		request->reply->dst_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
+		/*
+		 *	Don't change the destination port.  It's the
+		 *	server port.
+		 */
 
 		/*
-		 *	The only field that changes is the number of hops
+		 *	Hop count goes up.
 		 */
-		relayed.data[3]++; /* number of hops */
+		vp = pairfind(request->reply->vps, DHCP2ATTR(259));
+		if (vp) vp->vp_integer++;
 		
+		return 1;
+	}
+
+	/*
+	 *	Responses from a server.  Handle them differently.
+	 */
+	if (request->packet->data[0] == 2) {
+		pairfree(&request->reply->vps);
+		request->reply->vps = paircopy(request->packet->vps);
+		request->reply->code = request->packet->code;
+		request->reply->id = request->packet->id;
+
 		/*
-		 *	Forward the relayed packet VERBATIM, don't
-		 *	respond to the client, and forget completely
-		 *	about this request.
+		 *	Delete any existing giaddr.  If we received a
+		 *	message from the server, then we're NOT the
+		 *	server.  So we must be the destination of the
+		 *	giaddr field.
 		 */
-		fr_dhcp_send(&relayed);
-		free(relayed.data);
+		pairdelete(&request->reply->vps, DHCP2ATTR(266));
+
+		/*
+		 *	Search for client IP address.
+		 */
+		vp = pairfind(request->reply->vps, DHCP2ATTR(264));
+		if (!vp) {
+			request->reply->code = 0;
+			RDEBUG("DHCP: No YIAddr in the reply. Discarding packet");
+			return 1;
+		}
+
+		/*
+		 *	FROM us, TO the client's IP, OUR port + 1.
+		 */
+		request->reply->src_ipaddr = request->packet->dst_ipaddr;
+		request->reply->src_port = request->packet->dst_port;
+		request->reply->dst_ipaddr.af = AF_INET;
+		request->reply->dst_ipaddr.ipaddr.ip4addr.s_addr = vp->vp_ipaddr;
+		request->reply->dst_port = request->packet->dst_port + 1;
+
+		/*
+		 *	Hop count goes down.
+		 */
+		vp = pairfind(request->reply->vps, DHCP2ATTR(259));
+		if (vp && (vp->vp_integer > 0)) vp->vp_integer--;
+
+		/*
+		 *	FIXME: Keep original somewhere?  If the
+		 *	broadcast flags are set, use them here?
+		 */
+		
 		return 1;
 	}
 
@@ -288,16 +326,19 @@ static int dhcp_socket_send(rad_listen_t *listener, REQUEST *request)
 
 	if (request->reply->code == 0) return 0; /* don't reply */
 
-	if (fr_dhcp_encode(request->reply, request->packet) < 0) {
-		return -1;
+	if (request->packet->code != request->reply->code) {
+		if (fr_dhcp_encode(request->reply, request->packet) < 0) {
+			return -1;
+		}
+	} else {
+		if (fr_dhcp_encode(request->reply, NULL) < 0) {
+			return -1;
+		}
 	}
 
 	sock = listener->data;
 	if (sock->suppress_responses) return 0;
 
-	/*
-	 *	Don't send anything
-	 */
 	return fr_dhcp_send(request->reply);
 }
 

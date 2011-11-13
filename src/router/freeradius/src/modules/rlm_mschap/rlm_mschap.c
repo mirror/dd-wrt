@@ -196,7 +196,6 @@ static size_t mschap_xlat(void *instance, REQUEST *request,
 			VALUE_PAIR *name_attr, *response_name;
 			char *username_string;
 
-			RDEBUG2(" mschap2: %02x", chap_challenge->vp_octets[0]);
 			response = pairfind(request->packet->vps,
 					    PW_MSCHAP2_RESPONSE);
 			if (!response) {
@@ -1251,10 +1250,10 @@ static int mschap_authenticate(void * instance, REQUEST *request)
 				 inst->allow_retry);
 
 			if (inst->retry_msg) {
-				snprintf(buffer + 9, sizeof(buffer), " C=");
+				snprintf(buffer + 9, sizeof(buffer) - 9, " C=");
 				for (i = 0; i < 16; i++) {
 					snprintf(buffer + 12 + i*2,
-						 sizeof(buffer), "%02x",
+						 sizeof(buffer) - 12 - i*2, "%02x",
 						 fr_rand() & 0xff);
 				}
 				snprintf(buffer + 12 + 32, sizeof(buffer) - 45,
