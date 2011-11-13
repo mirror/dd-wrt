@@ -123,6 +123,13 @@ static CONF_PARSER module_config[] = {
 	{ "make_cert_command", PW_TYPE_STRING_PTR,
 	  offsetof(EAP_TLS_CONF, make_cert_command), NULL, NULL},
 
+#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+#ifndef OPENSSL_NO_ECDH
+	{ "ecdh_curve", PW_TYPE_STRING_PTR,
+	  offsetof(EAP_TLS_CONF, ecdh_curve), NULL, "prime256v1"},
+#endif
+#endif
+
 	{ "cache", PW_TYPE_SUBSECTION, 0, NULL, (const void *) cache_config },
 
 	{ "verify", PW_TYPE_SUBSECTION, 0, NULL, (const void *) verify_config },
@@ -277,6 +284,10 @@ static int ocsp_parse_cert_url(X509 *cert, char **phost, char **pport,
  * This function sends a OCSP request to a defined OCSP responder
  * and checks the OCSP response for correctness.
  */
+
+/* Maximum leeway in validity period: default 5 minutes */
+#define MAX_VALIDITY_PERIOD     (5 * 60)
+
 static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 		      EAP_TLS_CONF *conf)
 {
@@ -288,9 +299,12 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	char *port = NULL;
 	char *path = NULL;
 	int use_ssl = -1;
-	BIO *cbio;
-	int ocsp_ok;
-	int status;
+	long nsec = MAX_VALIDITY_PERIOD, maxage = -1;
+	BIO *cbio, *bio_out;
+	int ocsp_ok = 0;
+	int status ;
+	ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
+	int reason;
 
 	/* 
 	 * Create OCSP Request 
@@ -299,7 +313,7 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	req = OCSP_REQUEST_new();
 	OCSP_request_add0_id(req, certid);
 	OCSP_request_add1_nonce(req, NULL, 8);
-
+	
 	/* 
 	 * Send OCSP Request and get OCSP Response
 	 */
@@ -316,6 +330,9 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 
 	/* Setup BIO socket to OCSP responder */
 	cbio = BIO_new_connect(host);
+
+	bio_out = BIO_new_fp(stdout, BIO_NOCLOSE);
+
 	BIO_set_conn_port(cbio, port);
 	BIO_do_connect(cbio);
 
@@ -323,30 +340,60 @@ static int ocsp_check(X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
 	resp = OCSP_sendreq_bio(cbio, path, req);
 	if(resp==0) {
 		radlog(L_ERR, "Error: Couldn't get OCSP response");
-		ocsp_ok = 0;
 		goto ocsp_end;
 	}
 
-	/* Verify OCSP response */
+	/* Verify OCSP response status */
 	status = OCSP_response_status(resp);
+	DEBUG2("[ocsp] --> Response status: %s",OCSP_response_status_str(status));
 	if(status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
 		radlog(L_ERR, "Error: OCSP response status: %s", OCSP_response_status_str(status));
-		ocsp_ok = 0;
 		goto ocsp_end;
 	}
 	bresp = OCSP_response_get1_basic(resp);
 	if(OCSP_check_nonce(req, bresp)!=1) {
 		radlog(L_ERR, "Error: OCSP response has wrong nonce value");
-		ocsp_ok = 0;
 		goto ocsp_end;
 	}
 	if(OCSP_basic_verify(bresp, NULL, store, 0)!=1){
 		radlog(L_ERR, "Error: Couldn't verify OCSP basic response");
-		ocsp_ok = 0;
 		goto ocsp_end;
 	}
-	
-	ocsp_ok = 1; 
+	/*	Verify OCSP cert status */
+	if(!OCSP_resp_find_status(bresp, certid, &status, &reason,
+				                      &rev, &thisupd, &nextupd)) {
+		radlog(L_ERR, "ERROR: No Status found.\n");
+		goto ocsp_end;
+	}
+
+	if (!OCSP_check_validity(thisupd, nextupd, nsec, maxage)) {
+		BIO_puts(bio_out, "WARNING: Status times invalid.\n");
+		ERR_print_errors(bio_out);
+		goto ocsp_end;
+	}
+	BIO_puts(bio_out, "\tThis Update: ");
+        ASN1_GENERALIZEDTIME_print(bio_out, thisupd);
+        BIO_puts(bio_out, "\n");
+	BIO_puts(bio_out, "\tNext Update: ");
+        ASN1_GENERALIZEDTIME_print(bio_out, nextupd);
+        BIO_puts(bio_out, "\n");
+
+	switch (status) {
+	case V_OCSP_CERTSTATUS_GOOD:
+		DEBUG2("[oscp] --> Cert status: good");
+		ocsp_ok = 1; 
+		break;
+
+	default:
+		/* REVOKED / UNKNOWN */
+		DEBUG2("[ocsp] --> Cert status: %s",OCSP_cert_status_str(status));
+                if (reason != -1)
+			DEBUG2("[ocsp] --> Reason: %s", OCSP_crl_reason_str(reason));
+                BIO_puts(bio_out, "\tRevocation Time: ");
+                ASN1_GENERALIZEDTIME_print(bio_out, rev);
+                BIO_puts(bio_out, "\n"); 
+		break;
+	}
 
 ocsp_end:
 	/* Free OCSP Stuff */
@@ -720,6 +767,38 @@ static X509_STORE *init_revocation_store(EAP_TLS_CONF *conf)
 }
 #endif	/* HAVE_OPENSSL_OCSP_H */
 
+#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+#ifndef OPENSSL_NO_ECDH
+static int set_ecdh_curve(SSL_CTX *ctx, const char *ecdh_curve)
+{
+	int      nid; 
+	EC_KEY  *ecdh; 
+
+	if (!ecdh_curve || !*ecdh_curve) return 0;
+
+	nid = OBJ_sn2nid(ecdh_curve); 
+	if (!nid) { 
+		radlog(L_ERR, "Unknown ecdh_curve \"%s\"", ecdh_curve);
+		return -1;
+	}
+
+	ecdh = EC_KEY_new_by_curve_name(nid); 
+	if (!ecdh) { 
+		radlog(L_ERR, "Unable to create new curve \"%s\"", ecdh_curve);
+		return -1;
+	} 
+
+	SSL_CTX_set_tmp_ecdh(ctx, ecdh); 
+
+	SSL_CTX_set_options(ctx, SSL_OP_SINGLE_ECDH_USE); 
+
+	EC_KEY_free(ecdh);
+
+	return 0;
+}
+#endif
+#endif
+
 /*
  *	Create Global context SSL and use it in every new session
  *
@@ -895,6 +974,17 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	 *	SSL_CTX_set_tmp_rsa_callback(ctx, cbtls_rsa);
 	 *	SSL_CTX_set_tmp_dh_callback(ctx, cbtls_dh);
 	 */
+
+	/*
+	 *	Set eliptical curve crypto configuration.
+	 */
+#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+#ifndef OPENSSL_NO_ECDH
+	if (set_ecdh_curve(ctx, conf->ecdh_curve) < 0) {
+		return NULL;
+	}
+#endif
+#endif
 
 	/*
 	 *	set the message callback to identify the type of
@@ -1170,7 +1260,7 @@ static int eaptls_attach(CONF_SECTION *cs, void **instance)
 		  return -1;
 		}
 	}
-#endif HAVE_OPENSSL_OCSP_H
+#endif /*HAVE_OPENSSL_OCSP_H*/
 
 	if (load_dh_params(inst->ctx, conf->dh_file) < 0) {
 		eaptls_detach(inst);

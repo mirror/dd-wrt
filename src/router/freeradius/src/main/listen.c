@@ -705,7 +705,7 @@ static int proxy_socket_send(rad_listen_t *listener, REQUEST *request)
 	request->proxy->src_ipaddr = sock->ipaddr;
 	request->proxy->src_port = sock->port;
 
-	return rad_send(request->proxy, request->packet,
+	return rad_send(request->proxy, NULL,
 			request->home_server->secret);
 }
 #endif
@@ -1500,6 +1500,14 @@ static int listen_bind(rad_listen_t *this)
 			DEBUG("WARNING: Internal sanity check failed in binding to socket.  Ignoring problem.");
 			return -1;
 		}
+	}
+
+	/*
+	 *	Don't open sockets if we're checking the config.
+	 */
+	if (check_config) {
+		this->fd = -1;
+		return 0;
 	}
 
 	/*
