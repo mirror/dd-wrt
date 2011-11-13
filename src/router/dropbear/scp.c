@@ -343,7 +343,7 @@ main(int argc, char **argv)
 			addargs(&args, "-p%s", optarg);
 			break;
 		case 'B':
-			addargs(&args, "-oBatchmode yes");
+			fprintf(stderr, "Note: -B option is disabled in this version of scp");
 			break;
 		case 'l':
 			speed = strtod(optarg, &endp);
@@ -492,9 +492,13 @@ toremote(char *targ, int argc, char **argv)
 			addargs(&alist, "%s", ssh_program);
 			if (verbose_mode)
 				addargs(&alist, "-v");
+#if 0
+			// Disabled since dbclient won't understand them
+			// and scp works fine without them.
 			addargs(&alist, "-x");
 			addargs(&alist, "-oClearAllForwardings yes");
 			addargs(&alist, "-n");
+#endif
 
 			*src++ = 0;
 			if (*src == 0)
@@ -769,7 +773,7 @@ bwlimit(int amount)
 {
 	static struct timeval bwstart, bwend;
 	static int lamt, thresh = 16384;
-	u_int64_t waitlen;
+	uint64_t waitlen;
 	struct timespec ts, rm;
 
 	if (!timerisset(&bwstart)) {
