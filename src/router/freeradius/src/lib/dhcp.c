@@ -1074,6 +1074,15 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 				 &packet->dst_ipaddr.ipaddr,
 				 dst_ip_buf, sizeof(dst_ip_buf)),
 		       packet->dst_port);
+
+		if (fr_debug_flag) {
+			for (i = 256; i < 269; i++) {
+				vp = pairfind(packet->vps, DHCP2ATTR(i));
+				if (!vp) continue;
+
+				debug_pair(vp);
+			}
+		}
 	}
 
 	p = packet->data;
@@ -1141,14 +1150,25 @@ int fr_dhcp_encode(RADIUS_PACKET *packet, RADIUS_PACKET *original)
 		}
 	}
 
-	if (!original) {
-		*p++ = 1;	/* client message */
+	vp = pairfind(packet->vps, DHCP2ATTR(256));
+	if (vp) {
+		*p++ = vp->vp_integer & 0xff;
 	} else {
-		*p++ = 2;	/* server message */
+		if (!original) {
+			*p++ = 1;	/* client message */
+		} else {
+			*p++ = 2;	/* server message */
+		}
 	}
 	*p++ = 1;		/* hardware type = ethernet */
 	*p++ = 6;		/* 6 bytes of ethernet */
-	*p++ = 0;		/* hops */
+
+	vp = pairfind(packet->vps, DHCP2ATTR(259));
+	if (vp) {
+		*p++ = vp->vp_integer & 0xff;
+	} else {
+		*p++ = 0;		/* hops */
+	}
 
 	if (original) {	/* Xid */
 		memcpy(p, original->data + 4, 4);
