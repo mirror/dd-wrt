@@ -82,7 +82,7 @@ static int detect_ethernet_devices(void)
 	else if (detect("Ethernet Pro 100"))	// intel 100 mbit 
 		returncode = try_module("e100");
 	else if (detect("8255"))	// intel 100 mbit 
-		returncode = try_module("eepro100");
+		returncode = try_module("e100");
 
 	if (detect("PRO/1000"))	// Intel Gigabit 
 	{
