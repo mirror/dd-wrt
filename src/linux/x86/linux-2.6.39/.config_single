@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux/i386 2.6.39.2 Kernel Configuration
-# Sun Jul  3 18:16:28 2011
+# Linux/i386 2.6.39.4 Kernel Configuration
+# Fri Nov 11 02:07:04 2011
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1369,7 +1369,7 @@ CONFIG_PPP_DEFLATE=y
 CONFIG_PPP_BSDCOMP=y
 CONFIG_PPP_MPPE=y
 CONFIG_PPPOE=y
-CONFIG_PPTP=y
+CONFIG_PPTP=m
 # CONFIG_PPPOL2TP is not set
 # CONFIG_SLIP is not set
 CONFIG_SLHC=y
@@ -2388,23 +2388,6 @@ CONFIG_X86_PLATFORM_DEVICES=y
 # CONFIG_DMI_SYSFS is not set
 # CONFIG_ISCSI_IBFT_FIND is not set
 # CONFIG_SIGMA is not set
-CONFIG_X86_PLATFORM_DEVICES=y
-# CONFIG_SENSORS_HDAPS is not set
-# CONFIG_IBM_RTL is not set
-# CONFIG_XO1_RFKILL is not set
-# CONFIG_SAMSUNG_LAPTOP is not set
-
-#
-# Firmware Drivers
-#
-# CONFIG_EDD is not set
-# CONFIG_FIRMWARE_MEMMAP is not set
-# CONFIG_DELL_RBU is not set
-# CONFIG_DCDBAS is not set
-# CONFIG_DMIID is not set
-# CONFIG_DMI_SYSFS is not set
-# CONFIG_ISCSI_IBFT_FIND is not set
-# CONFIG_SIGMA is not set
 
 #
 # File systems
@@ -2419,10 +2402,14 @@ CONFIG_EXT3_FS=m
 CONFIG_EXT3_FS_XATTR=y
 # CONFIG_EXT3_FS_POSIX_ACL is not set
 # CONFIG_EXT3_FS_SECURITY is not set
-# CONFIG_EXT4_FS is not set
+CONFIG_EXT4_FS=m
+# CONFIG_EXT4_FS_XATTR is not set
+# CONFIG_EXT4_DEBUG is not set
 CONFIG_FS_XIP=y
 CONFIG_JBD=m
 # CONFIG_JBD_DEBUG is not set
+CONFIG_JBD2=m
+# CONFIG_JBD2_DEBUG is not set
 CONFIG_FS_MBCACHE=y
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
@@ -2433,7 +2420,8 @@ CONFIG_XFS_POSIX_ACL=y
 # CONFIG_XFS_DEBUG is not set
 # CONFIG_GFS2_FS is not set
 # CONFIG_OCFS2_FS is not set
-# CONFIG_BTRFS_FS is not set
+CONFIG_BTRFS_FS=m
+# CONFIG_BTRFS_FS_POSIX_ACL is not set
 # CONFIG_NILFS2_FS is not set
 CONFIG_FS_POSIX_ACL=y
 CONFIG_EXPORTFS=m
@@ -2826,6 +2814,8 @@ CONFIG_CRC32=y
 CONFIG_LIBCRC32C=y
 CONFIG_ZLIB_INFLATE=y
 CONFIG_ZLIB_DEFLATE=y
+CONFIG_LZO_COMPRESS=m
+CONFIG_LZO_DECOMPRESS=m
 # CONFIG_XZ_DEC is not set
 # CONFIG_XZ_DEC_BCJ is not set
 CONFIG_TEXTSEARCH=y
