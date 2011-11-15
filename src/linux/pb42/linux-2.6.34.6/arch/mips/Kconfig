@@ -737,6 +737,11 @@ config DIR615E
     depends on MACH_AR7240
     default n
 
+config WR741
+    bool "wr741 wireless mac?"
+    depends on MACH_AR7240
+    default n
+
 config AR7240_EMULATION
     bool "build system for AR7240 emulation board?"
     depends on MACH_AR7240
