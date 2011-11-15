@@ -154,6 +154,11 @@ int __init ar7240_platform_init(void)
 {
 	int ret;
 	void *ee;
+#ifdef CONFIG_WR741
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+#else
+	u8 *mac = NULL;
+#endif
         /* need to set clock appropriately */
 #ifdef CONFIG_WASP_SUPPORT
 	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
@@ -176,7 +181,7 @@ int __init ar7240_platform_init(void)
         }
         
 	ee = getCalData(0);
-	ap91_pci_init(ee, NULL);
+	ap91_pci_init(ee, mac);
 return ret;
 }
 
