@@ -91,7 +91,9 @@ void start_sysinit(void)
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
+#ifndef HAVE_ATH9K
 		MAC_SUB(mac);
+#endif
 	}
 
 	eval("ifconfig", "eth0", "up");
@@ -113,8 +115,10 @@ void start_sysinit(void)
 		close(s);
 	}
 	detect_wireless_devices();
+#ifndef HAVE_ATH9K
 	fprintf(stderr, "configure wifi0 to %s\n", mac);
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
+#endif
 	//enable wlan led (card gpio based)
 	setWirelessLedPhy0(1);
 
