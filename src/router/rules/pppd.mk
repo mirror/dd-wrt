@@ -28,6 +28,9 @@ ifeq ($(CONFIG_PPPSTATS),y)
 	$(MAKE) -j 4 -C pppd.new/pppstats
 endif
 	$(MAKE) -j 4 -C pppd.new/pppd/plugins/rp-pppoe
+ifeq ($(CONFIG_PPTP_ACCEL),y)
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/pptp
+endif
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
 	$(MAKE) -j 4 -C pppd.new/pppd/plugins/radius
 endif
@@ -48,6 +51,11 @@ ifeq ($(CONFIG_3G),y)
 	install -D pppd.new/chat/chat $(INSTALLDIR)/pppd/usr/sbin/chat
 endif
 	install -D pppd.new/pppd/plugins/rp-pppoe/rp-pppoe.so $(INSTALLDIR)/pppd/usr/lib/rp-pppoe.so
+ifeq ($(CONFIG_PPTP_ACCEL),y)
+	install -D pppd.new/pppd/plugins/pptp/pptp.so $(INSTALLDIR)/pppd/usr/lib/pptp.so
+endif
+
+
 ifeq ($(CONFIG_PPPOATM),y)
 	install -D pppd.new/pppd/plugins/pppoatm/pppoatm.so $(INSTALLDIR)/pppd/usr/lib/pppoatm.so
 endif
