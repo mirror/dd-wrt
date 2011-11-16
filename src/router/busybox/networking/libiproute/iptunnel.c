@@ -168,14 +168,14 @@ static int do_del_ioctl(const char *basedev, struct ip_tunnel_parm *p)
 static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 {
 	static const char keywords[] ALIGN1 =
-		"mode\0""ipip\0""ip/ip\0""gre\0""gre/ip\0""sit\0""ipv6/ip\0"
+		"mode\0""ipip\0""ip/ip\0""gre\0""gre/ip\0""sit\0""ipv6/ip\0""etherip\0""ether/ip\0"
 		"key\0""ikey\0""okey\0""seq\0""iseq\0""oseq\0"
 		"csum\0""icsum\0""ocsum\0""nopmtudisc\0""pmtudisc\0"
 		"remote\0""any\0""local\0""dev\0"
 		"ttl\0""inherit\0""tos\0""dsfield\0"
 		"name\0";
 	enum {
-		ARG_mode, ARG_ipip, ARG_ip_ip, ARG_gre, ARG_gre_ip, ARG_sit, ARG_ip6_ip,
+		ARG_mode, ARG_ipip, ARG_ip_ip, ARG_gre, ARG_gre_ip, ARG_sit, ARG_ip6_ip, ARG_etherip, ARG_ether_ip,
 		ARG_key, ARG_ikey, ARG_okey, ARG_seq, ARG_iseq, ARG_oseq,
 		ARG_csum, ARG_icsum, ARG_ocsum, ARG_nopmtudisc, ARG_pmtudisc,
 		ARG_remote, ARG_any, ARG_local, ARG_dev,
@@ -222,6 +222,12 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 					bb_error_msg_and_die("%s tunnel mode", "you managed to ask for more than one");
 				}
 				p->iph.protocol = IPPROTO_IPV6;
+			} else if (key == ARG_etherip ||
+				   key == ARG_ether_ip) {
+				if (p->iph.protocol && p->iph.protocol != IPPROTO_ETHERIP) {
+					bb_error_msg_and_die("%s tunnel mode", "you managed to ask for more than one");
+				}
+				p->iph.protocol = IPPROTO_ETHERIP;
 			} else {
 				bb_error_msg_and_die("%s tunnel mode", "can't guess");
 			}
@@ -335,9 +341,11 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 			p->iph.protocol = IPPROTO_IPIP;
 		else if (memcmp(p->name, "sit", 3) == 0)
 			p->iph.protocol = IPPROTO_IPV6;
+ 		else if (memcmp(p->name, "etherip", 7) == 0)
+ 			p->iph.protocol = IPPROTO_ETHERIP;
 	}
 
-	if (p->iph.protocol == IPPROTO_IPIP || p->iph.protocol == IPPROTO_IPV6) {
+	if (p->iph.protocol == IPPROTO_IPIP || p->iph.protocol == IPPROTO_IPV6 || p->iph.protocol == IPPROTO_ETHERIP) {
 		if ((p->i_flags & GRE_KEY) || (p->o_flags & GRE_KEY)) {
 			bb_error_msg_and_die("keys are not allowed with ipip and sit");
 		}
@@ -378,6 +386,8 @@ static int do_add(int cmd, char **argv)
 		return do_add_ioctl(cmd, "gre0", &p);
 	case IPPROTO_IPV6:
 		return do_add_ioctl(cmd, "sit0", &p);
+ 	case IPPROTO_ETHERIP:
+ 		return do_add_ioctl(cmd, "etherip0", &p);
 	default:
 		bb_error_msg_and_die("can't determine tunnel mode (ipip, gre or sit)");
 	}
@@ -397,6 +407,8 @@ static int do_del(char **argv)
 		return do_del_ioctl("gre0", &p);
 	case IPPROTO_IPV6:
 		return do_del_ioctl("sit0", &p);
+	case IPPROTO_ETHERIP:
+		return do_del_ioctl("etherip0", &p);
 	default:
 		return do_del_ioctl(p.name, &p);
 	}
@@ -418,7 +430,8 @@ static void print_tunnel(struct ip_tunnel_parm *p)
 	       p->name,
 	       p->iph.protocol == IPPROTO_IPIP ? "ip" :
 	       (p->iph.protocol == IPPROTO_GRE ? "gre" :
-		(p->iph.protocol == IPPROTO_IPV6 ? "ipv6" : "unknown")),
+		(p->iph.protocol == IPPROTO_IPV6 ? "ipv6" : 
+		(p->iph.protocol == IPPROTO_ETHERIP ? "etherip" : "unknown"))),
 	       p->iph.daddr ? s1 : "any", p->iph.saddr ? s2 : "any");
 	if (p->link) {
 		char *n = do_ioctl_get_ifname(p->link);
@@ -540,6 +553,9 @@ static int do_show(char **argv)
 		break;
 	case IPPROTO_IPV6:
 		err = do_get_ioctl(p.name[0] ? p.name : "sit0", &p);
+		break;
+	case IPPROTO_ETHERIP:
+		err = do_get_ioctl(p.name[0] ? p.name : "etherip0", &p);
 		break;
 	default:
 		do_tunnels_list(&p);
