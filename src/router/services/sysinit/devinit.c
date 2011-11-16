@@ -70,7 +70,7 @@ static char *getdisc(void)	// works only for squashfs
 			FILE *in = fopen(dev, "rb");
 
 			if (in == NULL)
-				continue;	// no second partition or disc does not
+				goto skip;
 			// exist, skipping
 			char buf[4];
 
@@ -79,10 +79,12 @@ static char *getdisc(void)	// works only for squashfs
 			    && buf[3] == 't') {
 				fclose(in);
 				// filesystem detected
+				fprintf(stderr,"file system detected at %s\n",disks[i]);
 				strncpy(ret, disks[i], 3);
 				return ret;
 			}
 			fclose(in);
+			skip:;
 		}
 		sleep(1);
 	}
@@ -139,8 +141,8 @@ void start_devinit(void)
 	mkdir("/var/log", 0777);
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
-	fprintf(stderr, "starting hotplug\n");
 #ifdef HAVE_HOTPLUG2
+	fprintf(stderr, "starting hotplug\n");
 	system("/etc/hotplug2.startup");
 #endif
 #ifdef HAVE_X86
@@ -150,7 +152,7 @@ void start_devinit(void)
 
 	if (disc == NULL) {
 		fprintf(stderr,
-			"no valid dd-wrt partition found, calling shell");
+			"no valid dd-wrt partition found, calling shell\n");
 		eval("/bin/sh");
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);

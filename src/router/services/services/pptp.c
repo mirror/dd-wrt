@@ -40,6 +40,9 @@ void start_pptpd(void)
 		stop_pptpd();
 		return;
 	}
+#ifdef HAVE_PPTP_ACCEL
+	insmod("pptp");
+#endif
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
 
@@ -294,6 +297,9 @@ void stop_pptpd(void)
 	unlink("/tmp/pptp_connected");
 	if (nvram_default_match("sys_enable_jffs2", "1", "0"))
 		system("/bin/cp /tmp/pptp_peer.db /jffs/etc/");
+#ifdef HAVE_PPTP_ACCEL
+	eval("rmmod","pptp");
+#endif
 	return;
 }
 #endif
