@@ -2242,7 +2242,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char EOP[32];
 
 		if (nvram_nmatch("1", "oet%d_en", i)
-		    && nvram_nmatch("0", "oet%d_bridged", i)) {
+		    && nvram_nmatch("1", "oet%d_bridged", i)) {
 			sprintf(EOP, "oet%d", i);
 			sprintf(bufferif, "%s %s", bufferif, EOP);
 		}
