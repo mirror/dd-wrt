@@ -22,6 +22,9 @@ extern char _SL_;
 #ifndef IPPROTO_AH
 #define IPPROTO_AH  51
 #endif
+#ifndef IPPROTO_ETHERIP
+#define IPPROTO_ETHERIP	97
+#endif
 
 #define SPRINT_BSIZE 64
 #define SPRINT_BUF(x)  char x[SPRINT_BSIZE]
