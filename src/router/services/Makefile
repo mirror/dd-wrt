@@ -954,6 +954,10 @@ endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS_EXTRA += -DHAVE_PPTP
 endif
+
+ifeq ($(CONFIG_PPTP_ACCEL),y)
+CFLAGS_EXTRA += -DHAVE_PPTP_ACCEL
+endif
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS_EXTRA += -DHAVE_PPTPD
 OBJS += pptp.o
