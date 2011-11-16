@@ -1,3 +1,4 @@
+#!/bin/sh
 rm -rf /tmp/tvrouting
 # Configure static routes
 if [[ "${cidrroute}" ]]; then
