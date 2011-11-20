@@ -59,7 +59,7 @@ struct samba3_user *getsamba3users(void) {
 	current = list;
 	
 	//json = json_loads( "[{\"user\":\"peter\",\"pass\":\"test\"},{\"user\":\"chris\",\"pass\":\"test\"}]", &error );
-	json = json_loads( nvram_default_get( "samba3_users", "[]"), &error);
+	json = json_loads( nvram_default_get( "samba3_users", "[]"), 0, &error);
 	if( !json ) {
 		fprintf( stderr, "[JASON] ERROR\n");
 	} else {
@@ -132,7 +132,7 @@ struct samba3_share *getsamba3shares(void) {
 	current = list;
 	
 //	json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
-	json = json_loads( nvram_default_get( "samba3_shares", "[]"), &error);
+	json = json_loads( nvram_default_get( "samba3_shares", "[]"), 0, &error);
 	if( !json ) {
 		fprintf( stderr, "[JASON] ERROR\n");
 	} else {
