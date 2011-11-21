@@ -876,23 +876,23 @@ static void nat_postrouting(void)
 						     (nvram_nget
 						      ("%s_netmask",
 						       var)), wanface, wanaddr);
-						save2file
-						    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
-						     var,
-						     nvram_nget
-						     ("%s_ipaddr",
-						      var),
-						     getmask
-						     (nvram_nget
-						      ("%s_netmask",
-						       var)),
-						     nvram_nget
-						     ("%s_ipaddr",
-						      var),
-						     getmask
-						     (nvram_nget
-						      ("%s_netmask",
-						       var)), method);
+						if (nvram_match
+						    ("block_loopback", "1")) {
+							save2file
+							    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
+							     var,
+							     nvram_nget
+							     ("%s_ipaddr", var),
+							     getmask(nvram_nget
+								     ("%s_netmask",
+								      var)),
+							     nvram_nget
+							     ("%s_ipaddr", var),
+							     getmask(nvram_nget
+								     ("%s_netmask",
+								      var)),
+							     method);
+						}
 					}
 
 				}
