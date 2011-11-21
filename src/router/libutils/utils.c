@@ -3240,6 +3240,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WMBR_G300NH
 		diag_gpio = 0x105;
 		ses_gpio = 0x10e;
+		sec0_gpio = 0x10e;
 		connected_gpio = 111;
 		disconnected_gpio = 112;
 		power_gpio = 101;
