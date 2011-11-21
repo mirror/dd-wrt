@@ -199,8 +199,12 @@ void start_sysinit(void)
 		eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	}
 
+#ifdef HAVE_ATH9K
+	sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio.0/leds/soc:green:wlan/trigger");
+#else
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+#endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
