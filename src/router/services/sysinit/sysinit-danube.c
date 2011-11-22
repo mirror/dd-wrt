@@ -120,6 +120,7 @@ void start_sysinit(void)
 	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
+	char *annex;
 
 	/*
 	 * Modules 
@@ -156,7 +157,13 @@ void start_sysinit(void)
 	sysprintf
 	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
 #else
-	if (nvram_match("annex", "a"))
+#ifdef HAVE_WMBR_G300NH
+	if( !strcmp( getUEnv("region"), "DE" ))
+		annex = nvram_default_get("annex", "b");
+	else
+#endif
+	annex = nvram_default_get("annex", "a");
+	if (!strcmp(annex, "a"))
 		sysprintf
 		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
 	else

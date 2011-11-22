@@ -968,6 +968,13 @@ hidx.right16="You may limit the number of addresses your router hands out. 0 mea
 hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
 hidx.sas="The Setup Assistant guides you through the basic setup steps to configure your router.";
 
+// ** DSL ** //
+var dsl = new Object();
+dsl.status="DSL Status";
+dsl.annex=" DSL Annex";
+dsl.iface_status="Connection Status";
+dsl.datarate="Connection Speed (up/down)";
+dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
 var join = new Object();
