@@ -1017,7 +1017,7 @@ copy_entries_to_user(unsigned int total_size,
 		unsigned int i;
 		const struct xt_entry_match *m;
 		const struct xt_entry_target *t;
-
+		
 		e = (struct ipt_entry *)(loc_cpu_entry + off);
 		if (copy_to_user(userptr + off
 				 + offsetof(struct ipt_entry, counters),
