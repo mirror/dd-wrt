@@ -2313,7 +2313,7 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH)
 void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
@@ -3241,9 +3241,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x105;
 		ses_gpio = 0x10e;
 		sec0_gpio = 0x10e;
-		connected_gpio = 111;
-		disconnected_gpio = 112;
-		power_gpio = 101;
+		connected_gpio = 0x111;
+		disconnected_gpio = 0x112;
+		power_gpio = 0x101;
 #endif
 		break;
 	case ROUTER_BOARD_PB42:
