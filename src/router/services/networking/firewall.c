@@ -858,10 +858,6 @@ static void nat_postrouting(void)
 			if (strcmp(get_wan_face(), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("0", "%s_bridged", var)) {
-					if (nvram_match("block_loopback", "0"))
-						save2file
-						    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-						     var);
 
 					char nat[32];
 					sprintf(nat, "%s_nat", var);
@@ -877,7 +873,11 @@ static void nat_postrouting(void)
 						      ("%s_netmask",
 						       var)), wanface, wanaddr);
 						if (nvram_match
-						    ("block_loopback", "1")) {
+						    ("block_loopback", "0")) {
+							save2file
+							    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+							     var)
+						} else {
 							save2file
 							    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
 							     var,
