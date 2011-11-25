@@ -876,7 +876,7 @@ static void nat_postrouting(void)
 						    ("block_loopback", "0")) {
 							save2file
 							    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-							     var)
+							     var);
 						} else {
 							save2file
 							    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
