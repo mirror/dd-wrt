@@ -334,12 +334,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% show_index_setting(); %>
 				<% ifdef("WET", "-->"); %>
-				
-								<div class="setting">
-									<div class="label"><% tran("idx.stp"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp", "0"); %> /><% tran("share.disable"); %>
-								</div>
 							</fieldset><br />
 				
 							
@@ -371,6 +365,12 @@ addEvent(window, "unload", function() {
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
+								<div class="setting">
+									<div class="label"><% tran("idx.stp"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp", "0"); %> /><% tran("share.disable"); %>
+								</div>
+								
 				<% ifdef("WET", "-->"); %>
 							</fieldset><br />
 							
