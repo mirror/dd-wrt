@@ -308,7 +308,7 @@ int usb_add_ufd(char *devpath)
 	struct stat tmp_stat;
 	int i, found = 0;
 	int mounted[16];
-	memset(mounted, sizeof(mounted), 0);
+	memset(mounted, 0, sizeof(mounted));
 
 	if (devpath) {
 		int rcnt = 0;
