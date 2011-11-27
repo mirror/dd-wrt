@@ -35,7 +35,11 @@
 #define BCM_RPC_TP_DNGL_AGG_TEST	0x00000010	/* DNGL->HOST test agg */
 
 #define BCM_RPC_TP_DNGL_AGG_MAX_SFRAME	3       /* max agg subframes, must be <= USB_NTXD */
+#if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY)
+#define BCM_RPC_TP_DNGL_AGG_MAX_BYTE	2100    /* max agg bytes, we only do either agg or nocopy */
+#else
 #define BCM_RPC_TP_DNGL_AGG_MAX_BYTE	4000    /* max agg bytes */
+#endif /* BCM_RPC_NOCOPY || BCM_RPC_RXNOCOPY */
 /* rxbufsize for dbus_attach, linux only for now */
 #define DBUS_RX_BUFFER_SIZE_RPC	(BCM_RPC_TP_DNGL_AGG_MAX_BYTE)
 
@@ -53,8 +57,12 @@
 #define BCM_RPC_TP_HOST_AGG_DEFAULT_43236	(((BCM_RPC_TP_HOST_AGG_DEFAULT_SFRAME_43236)\
 	 << BCM_RPC_TP_HOST_AGG_SHIFT) | BCM_RPC_TP_HOST_AGG_DEFAULT_BYTE_43236)
 /* TP-DBUS pkts flowcontrol */
+#ifndef BCM_RPC_TP_DBUS_NTXQ
 #define BCM_RPC_TP_DBUS_NTXQ	50	/* queue size for TX on bulk OUT, aggregation possible */
+#endif
+#ifndef BCM_RPC_TP_DBUS_NRXQ
 #define BCM_RPC_TP_DBUS_NRXQ	50	/* queue size for RX on bulk IN, aggregation possible */
+#endif
 #define BCM_RPC_TP_DBUS_NRXQ_CTRL	1	/* queue size for RX on ctl EP0 */
 
 #define BCM_RPC_TP_DBUS_NRXQ_PKT	(BCM_RPC_TP_DBUS_NRXQ * BCM_RPC_TP_DNGL_AGG_MAX_SFRAME)

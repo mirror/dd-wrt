@@ -83,6 +83,10 @@ struct robo_info_s {
 	uint32	pwrsave_mode_auto; 	/* bitmap of ports in auto power save mode */
 	uint8	pwrsave_phys; 		/* Phys that can be put into power save mode */
 	uint8	pwrsave_mode_phys[MAX_NO_PHYS];         /* Power save mode on the switch */   
+#ifdef PLC
+	/* PLC */
+	bool	plc_hw;			/* PLC chip */
+#endif /* PLC */
 };
 
 /* Power Save mode related functions */
@@ -101,5 +105,9 @@ extern int bcm_robo_enable_switch(robo_info_t *robo);
 #ifdef BCMDBG
 extern void robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b);
 #endif /* BCMDBG */
+
+#ifdef PLC
+extern void robo_plc_hw_init(robo_info_t *robo);
+#endif /* PLC */
 
 #endif /* _bcm_robo_h_ */

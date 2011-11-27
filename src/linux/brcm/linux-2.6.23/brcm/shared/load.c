@@ -28,7 +28,7 @@
 #include <siutils.h>
 #include <sbchipc.h>
 #include <bcmnvram.h>
-#ifdef NANDBOOT
+#ifdef NFLASH_SUPPORT
 #include <nflash.h>
 #endif
 
@@ -243,7 +243,7 @@ static void
 load(si_t *sih)
 {
 	int inoff, ret = 0;
-#ifdef NANDBOOT
+#ifdef NFLASH_SUPPORT
 	chipcregs_t *cc;
 	struct nflash *nfl_info;
 	uchar *copy_buf, *nand_ptr;
@@ -256,8 +256,8 @@ load(si_t *sih)
 #else
 	inoff = (ulong)input_data - (ulong)text_start;
 #endif /* CONFIG_XIP */
-#ifdef NANDBOOT
-	if ((sih->ccrev >= 38) && ((sih->chipst & (1 << 4)) != 0)) {
+#ifdef NFLASH_SUPPORT
+	if ((sih->ccrev == 38) && ((sih->chipst & (1 << 4)) != 0)) {
 		cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
 		nfl_info = nflash_init(sih, cc);
 		if (nfl_info) {
@@ -281,7 +281,7 @@ load(si_t *sih)
 			}
 		}
 	} else
-#endif /* NANDBOOT */
+#endif /* NFLASH_SUPPORT */
 	if (sih->ccrev == 12)
 		inbase = OSL_UNCACHED(SI_FLASH2 + inoff);
 	else
@@ -332,10 +332,10 @@ set_sflash_div(si_t *sih)
 	cc = si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
-#ifdef NANDBOOT
-	if ((sih->ccrev >= 38) && ((sih->chipst & (1 << 4)) != 0))
+#ifdef NFLASH_SUPPORT
+	if ((sih->ccrev == 38) && ((sih->chipst & (1 << 4)) != 0))
 		goto out;
-#endif /* NANDBOOT */
+#endif /* NFLASH_SUPPORT */
 	fltype = sih->cccaps & CC_CAP_FLASH_MASK;
 	if ((fltype != SFLASH_ST) && (fltype != SFLASH_AT))
 		goto out;

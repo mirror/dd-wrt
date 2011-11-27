@@ -2711,6 +2711,8 @@ BCMATTACHFN(initvars_flash)(si_t *sih, osl_t *osh, char **base, uint len)
 	char *s;
 	uint l, dl, copy_len;
 	char devpath[SI_DEVPATH_BUFSZ];
+	char coded_name[SI_DEVPATH_BUFSZ] = {0};
+	int path_len, coded_len, devid_len;
 
 	/* allocate memory and read in flash */
 	if (!(flash = MALLOC(osh, NVRAM_SPACE)))
@@ -2718,15 +2720,34 @@ BCMATTACHFN(initvars_flash)(si_t *sih, osl_t *osh, char **base, uint len)
 	if ((err = nvram_getall(flash, NVRAM_SPACE)))
 		goto exit;
 
+	/* create legacy devpath prefix */
 	si_devpath(sih, devpath, sizeof(devpath));
+	path_len = strlen(devpath);
 
-	/* grab vars with the <devpath> prefix in name */
-	dl = strlen(devpath);
+	/* create coded devpath prefix */
+	si_coded_devpathvar(sih, coded_name, sizeof(coded_name), "devid");
+
+	/* coded_name now is 'xx:devid, eat ending 'devid' */
+	/* to be 'xx:' */
+	devid_len = strlen("devid");
+	coded_len = strlen(coded_name);
+	if (coded_len > devid_len) {
+		coded_name[coded_len - devid_len] = '\0';
+		coded_len -= devid_len;
+	}
+	else
+		coded_len = 0;
+
+	/* grab vars with the <devpath> prefix or <coded_name> previx in name */
 	for (s = flash; s && *s; s += l + 1) {
 		l = strlen(s);
 
 		/* skip non-matching variable */
-		if (strncmp(s, devpath, dl))
+		if (strncmp(s, devpath, path_len) == 0)
+			dl = path_len;
+		else if (coded_len && strncmp(s, coded_name, coded_len) == 0)
+			dl = coded_len;
+		else
 			continue;
 
 		/* is there enough room to copy? */

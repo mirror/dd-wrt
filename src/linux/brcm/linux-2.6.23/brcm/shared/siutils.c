@@ -578,11 +578,13 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 	}
 
 	if (bustype == PCI_BUS) {
-	  if ((CHIPID(sih->chip) == BCM4331_CHIP_ID) ||
-	      (CHIPID(sih->chip) == BCM43431_CHIP_ID)) {
-	    /* set default mux pin to SROM */
-	    si_chipcontrl_epa4331(sih, FALSE);
-	  }
+		if ((CHIPID(sih->chip) == BCM4331_CHIP_ID) ||
+		    (CHIPID(sih->chip) == BCM43431_CHIP_ID)) {
+			/* set default mux pin to SROM */
+			si_chipcontrl_epa4331(sih, FALSE);
+			si_corereg(sih, SI_CC_IDX, OFFSETOF(chipcregs_t, watchdog), ~0, 100);
+			OSL_DELAY(20000);	/* Srom read takes ~12mS */
+		}
 	}
 #endif /* !_CFE_ || CFG_WL */
 #ifdef SI_SPROM_PROBE
@@ -2103,13 +2105,49 @@ BCMNMIATTACHFN(si_devpath)(si_t *sih, char *path, int size)
 	return 0;
 }
 
+char *
+BCMATTACHFN(si_coded_devpathvar)(si_t *sih, char *varname, int var_len, const char *name)
+{
+	char pathname[SI_DEVPATH_BUFSZ + 32];
+	char devpath[SI_DEVPATH_BUFSZ + 32];
+	char *p;
+	int idx;
+	int len;
+
+	/* try to get compact devpath if it exist */
+	if (si_devpath(sih, devpath, SI_DEVPATH_BUFSZ) == 0) {
+		len = strlen(devpath);
+		devpath[len - 1] = '\0';
+		for (idx = 0; idx < SI_MAXCORES; idx++) {
+			snprintf(pathname, SI_DEVPATH_BUFSZ, "devpath%d", idx);
+			if ((p = getvar(NULL, pathname)) == NULL)
+				continue;
+
+			if (strncmp(p, devpath, len) == 0) {
+				snprintf(varname, var_len, "%d:%s", idx, name);
+				return varname;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 /* Get a variable, but only if it has a devpath prefix */
 char *
 BCMATTACHFN(si_getdevpathvar)(si_t *sih, const char *name)
 {
 	char varname[SI_DEVPATH_BUFSZ + 32];
+	char *val;
 
 	si_devpathvar(sih, varname, sizeof(varname), name);
+
+	if ((val = getvar(NULL, varname)) != NULL)
+		return val;
+
+	/* try to get compact devpath if it exist */
+	if (si_coded_devpathvar(sih, varname, sizeof(varname), name) == NULL)
+		return NULL;
 
 	return (getvar(NULL, varname));
 }
@@ -2122,11 +2160,19 @@ BCMATTACHFN(si_getdevpathintvar)(si_t *sih, const char *name)
 	return (getintvar(NULL, name));
 #else
 	char varname[SI_DEVPATH_BUFSZ + 32];
+	int val;
 
 	si_devpathvar(sih, varname, sizeof(varname), name);
 
+	if ((val = getintvar(NULL, varname)) != 0)
+		return val;
+
+	/* try to get compact devpath if it exist */
+	if (si_coded_devpathvar(sih, varname, sizeof(varname), name) == NULL)
+		return 0;
+
 	return (getintvar(NULL, varname));
-#endif
+#endif /* BCMBUSTYPE && BCMBUSTYPE == SI_BUS */
 }
 
 #ifndef DONGLEBUILD
@@ -3443,11 +3489,10 @@ si_eci_notify_bt(si_t *sih, uint32 mask, uint32 val, bool interrupt)
 
 	/* Clear interrupt bit by default */
 	if (interrupt)
-		si_corereg(sih, SI_CC_IDX,
-			   (sih->ccrev < 35 ?
-			    OFFSETOF(chipcregs_t, eci.lt35.eci_output) :
-			    OFFSETOF(chipcregs_t, eci.ge35.eci_outputlo)),
-			   (1 << 30), 0);
+		si_corereg(sih, SI_CC_IDX, (sih->ccrev < 35 ?
+			OFFSETOF(chipcregs_t, eci.lt35.eci_output) :
+			OFFSETOF(chipcregs_t, eci.ge35.eci_outputlo)),
+			(1 << 30), 0);
 
 	if (sih->ccrev >= 35) {
 		if ((mask & 0xFFFF0000) == ECI48_OUT_MASKMAGIC_HIWORD) {
@@ -4150,4 +4195,15 @@ BCMINITFN(si_otp_fabid)(si_t *sih, uint16 *fabid, bool rw)
 	}
 
 	return error;
+}
+
+uint16 BCMINITFN(si_fabid)(si_t *sih)
+{
+	uint16 fabid = 0;
+	if (si_otp_fabid(sih, &fabid, TRUE) != BCME_OK)
+	{
+		SI_ERROR(("si_fabid: reading fabid from otp failed.\n"));
+	}
+
+	return fabid;
 }

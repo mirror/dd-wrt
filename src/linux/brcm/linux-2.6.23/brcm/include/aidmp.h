@@ -184,7 +184,7 @@ typedef volatile struct _aidmp {
 	uint32	errlogflags;	/* 0x91c */
 	uint32	PAD[56];
 	uint32	intstatus;	/* 0xa00 */
-	uint32	PAD[127];
+	uint32	PAD[255];
 	uint32	config;		/* 0xe00 */
 	uint32	PAD[63];
 	uint32	itcr;		/* 0xf00 */
@@ -375,5 +375,9 @@ typedef volatile struct _aidmp {
 #define	AICFG_TO		0x00000004
 #define	AICFG_ERRL		0x00000002
 #define	AICFG_RST		0x00000001
+
+/* bit defines for AI_OOBSELOUTB74 reg */
+#define OOB_SEL_OUTEN_B_5	15
+#define OOB_SEL_OUTEN_B_6	23
 
 #endif	/* _AIDMP_H */

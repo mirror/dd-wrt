@@ -583,8 +583,18 @@ dma_attach(osl_t *osh, char *name, si_t *sih, void *dmaregstx, void *dmaregsrx,
 			}
 		} else
 			di->dmadesc_align = D32RINGALIGN_BITS;
-	} else
+	} else {
+		/* The start address of descriptor table should be algined to cache line size, 
+		 * or other structure may share a cache line with it, which can lead to memory 
+		 * overlapping due to cache write-back operation. In the case of MIPS 74k, the 
+		 * cache line size is 32 bytes.
+		 */
+#ifdef __mips__
+		di->dmadesc_align = 5;	/* 32 byte alignment */
+#else
 		di->dmadesc_align = 4;	/* 16 byte alignment */
+#endif
+	}
 
 	DMA_NONE(("DMA descriptor align_needed %d, align %d\n",
 		di->aligndesc_4k, di->dmadesc_align));

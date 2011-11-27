@@ -78,6 +78,12 @@ typedef struct eci_rev35 {
 	uint32	eci_uartfifolevel;
 } eci_rev35_t;
 
+typedef struct flash_config {
+	uint32	PAD[19];
+	/* Flash struct configuration registers (0x18c) for BCM4706 (corerev = 31) */
+	uint32 flashstrconfig;
+} flash_config_t;
+
 typedef volatile struct {
 	uint32	chipid;			/* 0x0 */
 	uint32	capabilities;
@@ -192,17 +198,29 @@ typedef volatile struct {
 	uint32	SECI_statusmask;
 	uint32	SECI_rxnibchanged;
 
-	/* Enhanced Coexistence Interface (ECI) registers (corerev >= 21) */
 	union {				/* 0x140 */
+		/* Enhanced Coexistence Interface (ECI) registers (corerev >= 21) */
 		struct eci_prerev35	lt35;
 		struct eci_rev35	ge35;
+		/* Other interfaces */
+		struct flash_config	flashconf;
+		uint32	PAD[20];
 	} eci;
 
 	/* SROM interface (corerev >= 32) */
 	uint32	sromcontrol;		/* 0x190 */
 	uint32	sromaddress;
 	uint32	sromdata;
-	uint32	PAD[9];		/* 0x19C - 0x1BC */
+	uint32	PAD[1];				/* 0x19C */
+	/* NAND flash registers for BCM4706 (corerev = 31) */
+    uint32  nflashctrl;         /* 0x1a0 */
+    uint32  nflashconf;
+    uint32  nflashcoladdr;
+    uint32  nflashrowaddr;
+    uint32  nflashdata;
+    uint32  nflashwaitcnt0;		/* 0x1b4 */
+    uint32  PAD[2];
+
 	uint32  seci_uart_data;		/* 0x1C0 */
 	uint32  seci_uart_bauddiv;
 	uint32  seci_uart_fcr;
@@ -389,7 +407,7 @@ typedef volatile struct {
 #define PMU_PLL_CONTROL_DATA 	0x664
 #define	CC_SROM_OTP		0x800		/* SROM/OTP address space */
 
-#ifdef NANDBOOT
+#ifdef NFLASH_SUPPORT
 /* NAND flash support */
 #define CC_NAND_REVISION	0xC00
 #define CC_NAND_CMD_START	0xC04
@@ -402,7 +420,7 @@ typedef volatile struct {
 #define CC_NAND_DEVID		0xC60
 #define CC_NAND_DEVID_EXT	0xC64
 #define CC_NAND_INTFC_STATUS	0xC6C
-#endif /* NANDBOOT */
+#endif /* NFLASH_SUPPORT */
 
 /* chipid */
 #define	CID_ID_MASK		0x0000ffff	/* Chip Id mask */
@@ -1251,6 +1269,7 @@ typedef volatile struct {
 /* 5357 Chip specific ChipControl register bits */
 #define CCTRL5357_EXTPA                 (1<<14) /* extPA in ChipControl 1, bit 14 */ 
 #define CCTRL5357_ANT_MUX_2o3		(1<<15) /* 2o3 in ChipControl 1, bit 15 */ 
+#define CCTRL5357_NFLASH		(1<<16) /* Nandflash in ChipControl 1, bit 16 */
 
 /* 4328 resources */
 #define RES4328_EXT_SWITCHER_PWM	0	/* 0x00001 */
@@ -1742,10 +1761,27 @@ typedef volatile struct {
 #define	CST43228_SDIO_RESET		0x20
 
 /* 4706 chipstatus reg bits */
-#define	CST4706_PCIE1_SFLASH	(1<<1) /* 0: parallel, 1: serial flash is present */
-#define	CST4706_PCIE1_FLASH_TYPE	(1<<2) /* 0: 8b-p/ST-s flash, 1: 16b-p/Atmal-s flash */
-#define	CST4706_PCIE1_MIPS_BENDIAN	(1<<3) /* 0: little,  1: big endian */
+#define	CST4706_PKG_OPTION		(1<<0) /* 0: full-featured package 1: low-cost package */
+#define	CST4706_SFLASH_PRESENT	(1<<1) /* 0: parallel, 1: serial flash is present */
+#define	CST4706_SFLASH_TYPE		(1<<2) /* 0: 8b-p/ST-s flash, 1: 16b-p/Atmal-s flash */
+#define	CST4706_MIPS_BENDIAN	(1<<3) /* 0: little,  1: big endian */
 #define	CST4706_PCIE1_DISABLE	(1<<5) /* PCIE1 enable strap pin */
+
+/* 4706 flashstrconfig reg bits */
+#define FLSTRCF4706_MASK		0x000000ff
+#define FLSTRCF4706_SF1			0x00000001	/* 2nd serial flash present */
+#define FLSTRCF4706_PF1			0x00000002	/* 2nd parallel flash present */
+#define FLSTRCF4706_SF1_TYPE	0x00000004	/* 2nd serial flash type : 0 : ST, 1 : Atmel */
+#define FLSTRCF4706_NF1			0x00000008	/* 2nd NAND flash present */
+#define FLSTRCF4706_1ST_MADDR_SEG_MASK		0x000000f0	/* Valid value mask */
+#define FLSTRCF4706_1ST_MADDR_SEG_4MB		0x00000010	/* 4MB */
+#define FLSTRCF4706_1ST_MADDR_SEG_8MB		0x00000020	/* 8MB */
+#define FLSTRCF4706_1ST_MADDR_SEG_16MB		0x00000030	/* 16MB */
+#define FLSTRCF4706_1ST_MADDR_SEG_32MB		0x00000040	/* 32MB */
+#define FLSTRCF4706_1ST_MADDR_SEG_64MB		0x00000050	/* 64MB */
+#define FLSTRCF4706_1ST_MADDR_SEG_128MB		0x00000060	/* 128MB */
+#define FLSTRCF4706_1ST_MADDR_SEG_256MB		0x00000070	/* 256MB */
+
 
 /*
 * Maximum delay for the PMU state transition in us.

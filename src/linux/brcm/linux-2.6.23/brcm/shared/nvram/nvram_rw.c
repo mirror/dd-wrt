@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nvram_rw.c 241224 2011-02-17 22:04:33Z gmo $
+ * $Id: nvram_rw.c 258972 2011-05-11 08:57:26Z simonk $
  */
 
 #include <bcm_cfg.h>
@@ -31,9 +31,9 @@
 #include <hndsoc.h>
 #include <sbchipc.h>
 
-#ifdef NANDBOOT
+#ifdef NFLASH_SUPPORT
 #include <nflash.h>
-#endif	/* NANDBOOT */
+#endif	/* NFLASH_SUPPORT */
 
 struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name, const char *value);
 void  _nvram_free(struct nvram_tuple *t);
@@ -53,6 +53,11 @@ extern int kernel_initial;
 
 static struct nvram_header *nvram_header = NULL;
 static int nvram_do_reset = FALSE;
+
+#ifdef _CFE_
+/* For NAND boot, flash0.nvram will be changed to nflash0.nvram */
+char *flashdrv_nvram = "flash0.nvram";
+#endif
 
 #define NVRAM_LOCK()	do {} while (0)
 #define NVRAM_UNLOCK()	do {} while (0)
@@ -166,20 +171,20 @@ BCMINITFN(find_nvram)(si_t *sih, bool embonly, bool *isemb)
 	struct nvram_header *nvh;
 	uint32 off, lim;
 	uint32 flbase = SI_FLASH2;
-#ifdef NANDBOOT
+#ifdef NFLASH_SUPPORT
 	int nandboot = 0;
 	chipcregs_t *cc = NULL;
 	struct nflash *nfl_info;
 
-	if ((sih->ccrev >= 38) && ((sih->chipst & (1 << 4)) != 0)) {
+	if ((sih->ccrev == 38) && ((sih->chipst & (1 << 4)) != 0)) {
 		flbase = SI_FLASH1;
 		nandboot = 1;
 	}
-#endif
+#endif /* NFLASH_SUPPORT */
 
 	if (!embonly) {
 		*isemb = FALSE;
-#ifdef NANDBOOT
+#ifdef NFLASH_SUPPORT
 		if (nandboot) {
 			if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
 				nfl_info = nflash_init(sih, cc);
@@ -195,7 +200,7 @@ BCMINITFN(find_nvram)(si_t *sih, bool embonly, bool *isemb)
 				}
 			}
 		} else
-#endif /* NANDBOOT */
+#endif /* NFLASH_SUPPORT */
 		{
 			lim = SI_FLASH2_SZ;
 			off = FLASH_MIN;
@@ -371,7 +376,7 @@ BCMINITFN(nvram_commit)(void)
 		*dst++ = htol32(*src++);
 
 #ifdef _CFE_
-	if ((ret = cfe_open("flash0.nvram")) >= 0) {
+	if ((ret = cfe_open(flashdrv_nvram)) >= 0) {
 		cfe_writeblk(ret, 0, (unsigned char *) header, header->len);
 		cfe_close(ret);
 	}

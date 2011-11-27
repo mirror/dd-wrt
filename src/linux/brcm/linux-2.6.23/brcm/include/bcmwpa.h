@@ -252,7 +252,7 @@ extern bool BCMROMFN(bcmwpa_akm2WPAauth)(uint8 *akm, uint32 *auth, bool sta_iswp
 
 extern bool BCMROMFN(bcmwpa_cipher2wsec)(uint8 *cipher, uint32 *wsec);
 
-#ifdef MFP
+#if defined(MFP) || defined(WLFBT)
 /* Calculate PMKID */
 extern void kdf_calc_pmkid(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 	uint8 *pmk, uint pmk_len, uint8 *pmkid, uint8 *data, uint8 *digest);

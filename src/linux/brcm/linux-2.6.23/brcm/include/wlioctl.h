@@ -719,6 +719,7 @@ typedef enum sup_auth_status {
 #ifdef BCMWAPI_WPI
 #define CRYPTO_ALGO_SMS4		11
 #endif /* BCMWAPI_WPI */
+#define CRYPTO_ALGO_PMK			12	/* for 802.1x supp to set PMK before 4-way */
 
 #define WSEC_GEN_MIC_ERROR	0x0001
 #define WSEC_GEN_REPLAY		0x0002
@@ -1513,6 +1514,18 @@ typedef struct {
 
 
 #define WL_PHY_PAVARS_LEN	6	/* Phy type, Band range, chain, a1, b0, b1 */
+
+#define WL_PHY_PAVARS2_NUM      3       /* a1, b0, b1 */
+#define WL_PHY_PAVAR_VER        1       /* pavars version */
+typedef struct wl_pavars2 {
+	uint16 ver;             /* version of this struct */
+	uint16 len;             /* len of this structure */
+	uint16 inuse;           /* driver return 1 for a1,b0,b1 in current band range */
+	uint16 phy_type;        /* phy type */
+	uint16 bandrange;
+	uint16 chain;
+	uint16 inpa[WL_PHY_PAVARS2_NUM];        /* phy pavars for one band range */
+} wl_pavars2_t;
 
 typedef struct wl_po {
 	uint16	phy_type;	/* Phy type */
@@ -2317,6 +2330,7 @@ typedef struct wl_txchain_pwr_offsets {
 #define WL_JOIN_PREF_WPA	2	/* by akm and ciphers */
 #define WL_JOIN_PREF_BAND	3	/* by 802.11 band */
 #define WL_JOIN_PREF_RSSI_DELTA	4	/* by 802.11 band only if RSSI delta condition matches */
+#define WL_JOIN_PREF_TRANS_PREF	5	/* defined by requesting AP */
 
 /* band preference */
 #define WLJP_BAND_ASSOC_PREF	255	/* use what WLC_SET_ASSOC_PREFER ioctl specifies */

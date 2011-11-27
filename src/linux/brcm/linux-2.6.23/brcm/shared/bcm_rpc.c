@@ -1415,11 +1415,14 @@ bcm_rpc_buf_recv_inorder(rpc_info_t *rpci, rpc_buf_t *rpc_buf, mbool hdr_invalid
 		         header, hdr_invalid));
 #if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC)
 		if (RPC_HDR_TYPE(header) != RPC_TYPE_RTN) {
+#if defined(USBAP)
+			PKTFRMNATIVE(rpci->osh, rpc_buf);
+#endif
 			PKTFREE(rpci->osh, rpc_buf, FALSE);
 		}
 #else
 		bcm_rpc_tp_buf_free(rpci->rpc_th, rpc_buf);
-#endif
+#endif /* defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC) */
 		RPC_OSL_UNLOCK(rpci->rpc_osh);
 		return FALSE;
 	}
@@ -1582,11 +1585,14 @@ bcm_rpc_buf_recv_high(struct rpc_info *rpci, rpc_type_t type, rpc_acn_t acn, rpc
 	case RPC_TYPE_MGN:
 #if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC)
 		bcm_rpc_buf_recv_mgn_high(rpci, acn, rpc_buf);
+#if defined(USBAP)
+		PKTFRMNATIVE(rpci->osh, rpc_buf);
+#endif
 		PKTFREE(rpci->osh, rpc_buf, FALSE);
 		rpc_buf = NULL;
 #else
 		bcm_rpc_buf_recv_mgn_high(rpci, acn, rpc_buf);
-#endif
+#endif /* defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC) */
 		break;
 
 	case RPC_TYPE_DATA:
@@ -1601,9 +1607,11 @@ bcm_rpc_buf_recv_high(struct rpc_info *rpci, rpc_type_t type, rpc_acn_t acn, rpc
 		}
 #endif /* BCMDBG_RPC */
 		if (rpci->dispatchcb) {
+#if !defined(USBAP)
 #if defined(BCM_RPC_NOCOPY) || defined(BCM_RPC_RXNOCOPY) || defined(BCM_RPC_ROC)
 			PKTTONATIVE(rpci->osh, rpc_buf);
 #endif /* BCM_RPC_NOCOPY || BCM_RPC_RXNOCOPY || BCM_RPC_ROC */
+#endif /* !USBAP */
 			(rpci->dispatchcb)(rpci->ctx, rpc_buf);
 			/* The dispatch routine will free the buffer */
 			rpc_buf = NULL;

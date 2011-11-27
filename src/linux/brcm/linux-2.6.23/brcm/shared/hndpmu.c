@@ -285,6 +285,18 @@ BCMATTACHFN(si_pmu_set_ldo_voltage)(si_t *sih, osl_t *osh, uint8 ldo, uint8 volt
 			break;
 		}
 		break;
+	case BCM4331_CHIP_ID:
+		switch (ldo) {
+		case  SET_LDO_VOLTAGE_PAREF:
+			addr = 1;
+			rc_shift = 0;
+			mask = 0xf;
+			break;
+		default:
+			ASSERT(FALSE);
+			break;
+		}
+		break;
 	default:
 		ASSERT(FALSE);
 		return;

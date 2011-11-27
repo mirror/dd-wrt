@@ -396,6 +396,14 @@ static inline void tasklet_init(struct tasklet_struct *tasklet,
 
 #endif /* SoftNet */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22))
+#define	skb_reset_mac_header(skb)	(skb)->mac.raw = (skb)->data
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 3) */
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 9))
+#define	eth_hdr(skb)	((struct ethhdr *)((skb)->mac.raw))
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 9) */
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 3))
 
 /*
