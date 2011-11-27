@@ -2480,9 +2480,11 @@ static void __init serial8250_isa_init_ports(void)
 			up->port.epld.port = (unsigned long)up->port.membase - (0x08 << 2);
 			up->port.epld.value = inb(up->port.epld.port);
 
+#if 0
 			/* set EPLD to rs232 mode */
 			if (!strstr(saved_command_line, "rsoff"))
 				outb(EPLD_RS232, (unsigned long)(up->port.membase - (0x08 << 2)));
+#endif
 
 			/* set up /proc entries and read/write functions */
 			sprintf(proc_name_epld, PROC_NAME_EPLD"%d", up->port.line);
