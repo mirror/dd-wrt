@@ -751,7 +751,7 @@ void __init proc_misc_init(void)
 #ifdef CONFIG_ARCH_KS8695_VSOPENRISC
 	proc_mkdir("vsopenrisc", 0);
 #endif
-#ifdef CONFIG_ARCH_KS8695_VSOPENRISC
-	proc_mkdir("vsopenrisc", 0);
-#endif
+// #ifdef CONFIG_ARCH_KS8695_VSOPENRISC
+	// proc_mkdir("vsopenrisc", 0);
+// #endif
 }

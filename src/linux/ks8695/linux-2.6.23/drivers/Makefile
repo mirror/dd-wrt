@@ -89,3 +89,4 @@ obj-$(CONFIG_HID)		+= hid/
 obj-$(CONFIG_PPC_PS3)		+= ps3/
 obj-$(CONFIG_OF)		+= of/
 obj-$(CONFIG_IXP400_LIB)	+= ixp400/
+obj-m	+= usbip/
