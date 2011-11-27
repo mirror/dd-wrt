@@ -238,7 +238,7 @@ configs-checkout:
 		
 
 configs-update:
-#	svn commit -m "automatic repository sync" $(LINUXDIR)
+	svn commit -m "faster hand optimized mksquashfs-lzma tool" $(LINUXDIR)
 	svn update $(LINUXDIR)
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP)
