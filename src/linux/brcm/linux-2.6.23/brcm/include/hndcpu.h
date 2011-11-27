@@ -33,6 +33,7 @@ extern uint32 si_mem_clock(si_t *sih);
 extern void hnd_cpu_wait(si_t *sih);
 extern void hnd_cpu_jumpto(void *addr);
 extern void hnd_cpu_reset(si_t *sih);
+extern void si_router_coma(si_t *sih, int reset, int delay);
 extern void si_dmc_phyctl(si_t *sih, uint32 phyctl_val);
 
 #endif /* _hndcpu_h_ */

@@ -367,6 +367,10 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 			ET_ERROR(("et%d: chipattach: robo_enable_switch failed\n", etc->unit));
 			goto fail;
 		}
+#ifdef PLC
+		/* Configure the switch port connected to PLC chipset */
+		robo_plc_hw_init(etc->robo);
+#endif /* PLC */
 	}
 #endif /* ETROBO */
 

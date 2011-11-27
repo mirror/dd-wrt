@@ -332,7 +332,7 @@ rpc_dbus_send_complete(void *handle, void *pktinfo, int status)
 	RPC_TP_UNLOCK(rpcb);
 
 	if (status)
-		printf("%s: tx failed=%d\n", __FUNCTION__, status);
+		RPC_TP_ERR(("%s: tx failed=%d\n", __FUNCTION__, status));
 }
 
 static void
@@ -378,7 +378,7 @@ rpc_dbus_recv_buf(void *handle, uint8 *buf, int len)
 #else
 		if ((pkt = bcm_rpc_tp_pktget(rpcb, rpc_len, FALSE)) == NULL) {
 #endif
-			printf("%s: bcm_rpc_tp_pktget failed (len %d)\n", __FUNCTION__, len);
+			RPC_TP_ERR(("%s: bcm_rpc_tp_pktget failed (len %d)\n", __FUNCTION__, len));
 			goto error;
 		}
 		/* RPC_BUFFER_RX: BYTE_COPY from dbus buffer */
@@ -396,7 +396,7 @@ rpc_dbus_recv_buf(void *handle, uint8 *buf, int len)
 				rpc_len, len));
 		} else {
 			if (len != 0) {
-				printf("%s: deagg, remaining len %d is not 0\n", __FUNCTION__, len);
+				RPC_TP_ERR(("%s: deagg, remaining len %d is not 0\n", __FUNCTION__, len));
 			}
 			rpcb->tp_host_deagg_cnt_pass++;
 		}
@@ -504,7 +504,7 @@ rpc_dbus_state_change(void *handle, int state)
 
 	/* FIX: DBUS is down, need to do something? */
 	if (state == DBUS_STATE_DOWN) {
-		printf("%s: DBUS is down\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: DBUS is down\n", __FUNCTION__));
 	}
 }
 
@@ -518,7 +518,7 @@ rpc_dbus_pktget(void *handle, uint len, bool send)
 		return NULL;
 
 	if ((p = bcm_rpc_tp_pktget(rpcb, len, send)) == NULL) {
-		printf("%s: bcm_rpc_tp_pktget failed (len %d) %d\n", __FUNCTION__, len, send);
+		RPC_TP_ERR(("%s: bcm_rpc_tp_pktget failed (len %d) %d\n", __FUNCTION__, len, send));
 		return NULL;
 	}
 
@@ -568,7 +568,7 @@ bcm_rpc_tp_attach(osl_t * osh, shared_info_t *shared, void *bus)
 
 	rpcb = (rpc_tp_info_t*)MALLOC(osh, sizeof(rpc_tp_info_t));
 	if (rpcb == NULL) {
-		printf("%s: rpc_tp_info_t malloc failed\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: rpc_tp_info_t malloc failed\n", __FUNCTION__));
 		return NULL;
 	}
 	memset(rpcb, 0, sizeof(rpc_tp_info_t));
@@ -587,7 +587,7 @@ bcm_rpc_tp_attach(osl_t * osh, shared_info_t *shared, void *bus)
 		BCM_RPC_TP_DBUS_NTXQ, rpcb /* info */, &rpc_dbus_cbs, shared);
 
 	if (dbus == NULL) {
-		printf("%s: dbus_attach failed\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: dbus_attach failed\n", __FUNCTION__));
 		goto error;
 	}
 
@@ -632,8 +632,9 @@ bcm_rpc_tp_detach(rpc_tp_info_t * rpcb)
 #if defined(NDIS)
 		NdisFreeSpinLock(&rpcb->lock);
 #endif
-		if (rpcb->bus != NULL)
+		if (rpcb->bus != NULL) {
 			dbus_detach(rpcb->bus);
+		}
 		rpcb->bus = NULL;
 	}
 
@@ -663,7 +664,7 @@ bcm_rpc_tp_rx(rpc_tp_info_t *rpcb, void *p)
 	RPC_TP_UNLOCK(rpcb);
 
 	if (rpcb->rx_pkt == NULL) {
-		printf("%s: no rpc rx fn, dropping\n", __FUNCTION__);
+		RPC_TP_ERR(("%s: no rpc rx fn, dropping\n", __FUNCTION__));
 		RPC_TP_LOCK(rpcb);
 		rpcb->rxdrop_cnt++;
 		RPC_TP_UNLOCK(rpcb);
@@ -767,8 +768,8 @@ bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 	if (rpcb->tx_flowctl || rpcb->tx_flowctl_override) {
 		err = RPC_OSL_WAIT(rpcb->rpc_osh, timeout, &timedout);
 		if (timedout) {
-			printf("%s: RPC_OSL_WAIT error %d timeout %d(ms)\n", __FUNCTION__, err,
-			       RPC_BUS_SEND_WAIT_TIMEOUT_MSEC);
+			RPC_TP_ERR(("%s: RPC_OSL_WAIT error %d timeout %d(ms)\n", __FUNCTION__, err,
+			       RPC_BUS_SEND_WAIT_TIMEOUT_MSEC));
 			RPC_TP_LOCK(rpcb);
 			rpcb->txerr_cnt++;
 			rpcb->bus_txpending--;
@@ -777,7 +778,6 @@ bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 		}
 	}
 
-#ifdef BCMUSB
 	if (rpcb->tp_tx_agg_bytes != 0) {
 		ASSERT(rpcb->tp_tx_agg_p == b);
 		ASSERT(rpcb->tp_tx_agg_ptail != NULL);
@@ -815,13 +815,18 @@ bcm_rpc_tp_buf_send_internal(rpc_tp_info_t * rpcb, rpc_buf_t *b)
 			bcm_rpc_buf_len_set(rpcb, b, pktlen);
 		}
 	}
-#endif /* BCMUSB */
 
-	err = dbus_send_pkt(rpcb->bus, b, b);
-
+#ifdef EHCI_FASTPATH_TX
+	/* With optimization, submit code is lockless, use RPC_TP_LOCK */
 	RPC_TP_LOCK(rpcb);
+	err = dbus_send_pkt(rpcb->bus, b, b);
+#else
+	err = dbus_send_pkt(rpcb->bus, b, b);
+	RPC_TP_LOCK(rpcb);
+#endif	/* EHCI_FASTPATH_TX */
+
 	if (err != 0) {
-		printf("%s: dbus_send_pkt failed pending %d\n", __FUNCTION__, rpcb->bus_txpending);
+		RPC_TP_ERR(("%s: dbus_send_pkt failed pending %d\n", __FUNCTION__, rpcb->bus_txpending));
 		rpcb->txerr_cnt++;
 		rpcb->bus_txpending--;
 	} else {
@@ -865,6 +870,7 @@ static rpc_buf_t *
 bcm_rpc_tp_pktget(rpc_tp_info_t * rpcb, int len, bool send)
 {
 	rpc_buf_t* b;
+	int ret = 0;
 
 #if defined(NDIS)
 	struct lbuf *lb;
@@ -897,7 +903,8 @@ bcm_rpc_tp_pktget(rpc_tp_info_t * rpcb, int len, bool send)
 	uint maxchunks = 1;
 	mbuf_t m = NULL;
 
-	(void)mbuf_allocpacket(MBUF_WAITOK, len, &maxchunks, &m);
+
+	ret = mbuf_allocpacket(MBUF_WAITOK, len, &maxchunks, &m);
 	if (m != NULL)
 		mbuf_setlen(m, len);
 
@@ -922,8 +929,8 @@ bcm_rpc_tp_pktget(rpc_tp_info_t * rpcb, int len, bool send)
 
 		RPC_TP_UNLOCK(rpcb);
 	} else {
-		printf("%s: buf alloc failed buf_cnt_inuse %d rxflowctrl:%d\n",
-		       __FUNCTION__, rpcb->buf_cnt_inuse, rpcb->rxflowctrl);
+		RPC_TP_ERR(("%s: buf alloc failed buf_cnt_inuse %d rxflowctrl:%d len=%d ret=%d\n",
+		       __FUNCTION__, rpcb->buf_cnt_inuse, rpcb->rxflowctrl, len, ret));
 		ASSERT(0);
 	}
 
@@ -980,6 +987,7 @@ bcm_rpc_tp_pktfree(rpc_tp_info_t * rpcb, rpc_buf_t *b, bool send)
 	rpcb->buf_cnt_inuse -= free_cnt;
 
 #elif defined(MACOSX)
+	rpcb->buf_cnt_inuse--;
 	mbuf_t m = (mbuf_t)b;
 
 	while (m) {

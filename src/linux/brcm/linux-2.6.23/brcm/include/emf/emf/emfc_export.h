@@ -24,6 +24,7 @@
 #define EMF_TAKEN                   2
 #define EMF_FLOOD                   10
 #define EMF_SENDUP                  11
+#define EMF_CONVERT_QUERY           12
 
 #ifdef EMFDBG
 

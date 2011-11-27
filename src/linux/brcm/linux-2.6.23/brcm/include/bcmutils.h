@@ -89,9 +89,6 @@ struct bcmstrbuf {
 
 
 /* osl multi-precedence packet queue */
-#ifndef PKTQ_LEN_DEFAULT
-#define PKTQ_LEN_DEFAULT        128	/* Max 128 packets */
-#endif
 #ifndef PKTQ_MAX_PREC
 #define PKTQ_MAX_PREC           16	/* Maximum precedence levels */
 #endif

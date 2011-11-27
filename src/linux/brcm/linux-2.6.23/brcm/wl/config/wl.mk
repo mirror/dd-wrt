@@ -114,7 +114,13 @@ ifeq ($(WL_HIGH),1)
 			WLFLAGS += -DBMAC_ENABLE_LINUX_HOST_RPCAGG
 		endif
 		ifeq ($(DBUS_LINUX_RXDPC),1)
-			WLFLAGS += -DDBUS_LINUX_DPC
+			WLFLAGS += -DDBUS_LINUX_RXDPC
+		endif
+		ifneq ($(BCM_RPC_TP_DBUS_NTXQ),)
+			WLFLAGS += -DBCM_RPC_TP_DBUS_NTXQ=$(BCM_RPC_TP_DBUS_NTXQ)
+		endif
+		ifneq ($(BCM_RPC_TP_DBUS_NRXQ),)
+			WLFLAGS += -DBCM_RPC_TP_DBUS_NRXQ=$(BCM_RPC_TP_DBUS_NRXQ)
 		endif
 		ifeq ($(BCMUSBDEV_EP_FOR_RPCRETURN),1)
 			WLFLAGS += -DBCMUSBDEV_EP_FOR_RPCRETURN
@@ -124,6 +130,11 @@ endif
 
 ifeq ($(WL_LOW),1)
 	WLFLAGS += -DWLC_LOW
+	ifneq ($(WL_HIGH),1)
+		ifneq ($(BCM_RPC_TP_FLOWCTL_QWM_HIGH),)
+			WLFLAGS += -DBCM_RPC_TP_FLOWCTL_QWM_HIGH=$(BCM_RPC_TP_FLOWCTL_QWM_HIGH)
+		endif
+	endif
 endif
 
 ifeq ($(WL_HIGH),1)
@@ -136,6 +147,7 @@ endif
 
 ifeq ($(USBAP),1)
 	WLFLAGS += -DUSBAP
+	WLFLAGS += -DEHCI_FASTPATH_TX -DEHCI_FASTPATH_RX
 endif
 
 # split driver infrastructure files
@@ -219,8 +231,13 @@ ifeq ($(WL),1)
 	WLFILES_SRC_HI += src/wl/sys/wlc_antsel.c
 	WLFILES_SRC_HI += src/wl/sys/wlc_bsscfg.c
 	WLFILES_SRC_HI += src/wl/sys/wlc_scan.c
-	WLFILES_SRC_HI += src/wl/sys/wlc_phy_iovar.c
+	WLFILES_SRC_HI += src/wl/phy/wlc_phy_iovar.c
 	WLFILES_SRC_HI += src/wl/sys/wlc_rm.c
+	# tpc module is shared by 11h tpc and wl tx power control */
+	WLTPC := 1
+	ifeq ($(WLTPC),1)
+		WLFLAGS += -DWLTPC
+	endif
 	ifeq ($(WLLMAC),1)
 		WLFILES_SRC += src/wl/sys/wlc_lmac.c
 		ifeq ($(STA), 1)
@@ -247,7 +264,7 @@ ifeq ($(WL),1)
 		endif
 	endif
 	WLFILES_SRC_HI += src/shared/bcmwpa.c
-#ifndef LINUX_CRYPTO		   
+#ifndef LINUX_CRYPTO
 	ifneq ($(LINUX_CRYPTO),1)
 		WLFILES_SRC_HI += src/bcmcrypto/rc4.c
 		WLFILES_SRC_HI += src/bcmcrypto/tkhash.c
@@ -657,32 +674,41 @@ endif
 #ifdef RXCHAIN_PWRSAVE
 ifeq ($(RXCHAIN_PWRSAVE), 1)
 	WLFLAGS += -DRXCHAIN_PWRSAVE
-endif 
+endif
 #endif
 
 #ifdef RADIO_PWRSAVE
 ifeq ($(RADIO_PWRSAVE), 1)
 	WLFLAGS += -DRADIO_PWRSAVE
-endif 
+endif
 #endif
 
 #ifdef WMF
 ifeq ($(WMF), 1)
 	WLFILES_SRC_HI += src/wl/sys/wlc_wmf.c
 	WLFLAGS += -DWMF
-endif 
+endif
 #endif
 
-#ifdef MCAST_REGEN 
+#ifdef MCAST_REGEN
 ifeq ($(MCAST_REGEN), 1)
 	WLFLAGS += -DMCAST_REGEN
-endif 
+endif
 #endif
+
+#ifdef  ROUTER_COMA
+ifeq ($(ROUTER_COMA), 1)
+	WLFILES_SRC_HI += src/shared/hndmips.c
+	WLFILES_SRC_HI += src/shared/hndchipc.c
+	WLFLAGS += -DROUTER_COMA
+endif
+#endif
+
 
 #ifdef WLOVERTHRUSTER
 ifeq ($(WLOVERTHRUSTER), 1)
 	WLFLAGS += -DWLOVERTHRUSTER
-endif 
+endif
 #endif
 
 #ifdef MAC_SPOOF
@@ -807,14 +833,14 @@ endif
 #endif
 
 #ifdef WL11H
-# 11H 
+# 11H
 ifeq ($(WL11H),1)
 	WLFLAGS += -DWL11H
 endif
 #endif
 
 #ifdef WL11D
-# 11D 
+# 11D
 ifeq ($(WL11D),1)
 	WLFLAGS += -DWL11D
 endif
@@ -852,13 +878,6 @@ endif
 # WLCHANIM
 ifeq ($(WLCHANIM),1)
 	WLFLAGS += -DWLCHANIM
-endif
-#endif
-
-# WL_AP_TPC
-#ifdef WL_AP_TPC
-ifeq ($(WL_AP_TPC),1)
-	WLFLAGS += -DWL_AP_TPC
 endif
 #endif
 
@@ -902,6 +921,14 @@ ifeq ($(LINUX_CRYPTO), 1)
 endif
 #endif
 
+ifeq ($(WLFBT),1)
+	WLFLAGS += -DWLFBT
+endif
+
+ifeq ($(WLWNM),1)
+	WLFLAGS += -DWLWNM
+endif
+
 #ifdef BCMSUP_PSK
 # in-driver supplicant
 ifeq ($(BCMSUP_PSK),1)
@@ -912,6 +939,10 @@ ifeq ($(BCMSUP_PSK),1)
 	WLFILES_SRC_HI += src/bcmcrypto/hmac.c
 	WLFILES_SRC_HI += src/bcmcrypto/prf.c
 	WLFILES_SRC_HI += src/bcmcrypto/sha1.c
+	ifeq ($(WLFBT),1)
+	WLFILES_SRC_HI += src/bcmcrypto/hmac_sha256.c
+	WLFILES_SRC_HI += src/bcmcrypto/sha256.c
+	endif
 	# NetBSD 2.0 has MD5 and AES built in
 	ifneq ($(OSLBSD),1)
 		WLFILES_SRC_HI += src/bcmcrypto/md5.c
@@ -1030,8 +1061,8 @@ ifeq ($(WLAMPDU),1)
 	ifeq ($(WLAMPDU_HW),1)
 		WLFLAGS += -DWLAMPDU_HW -DWLAMPDU_MAC
 	endif
-	ifeq ($(WLAMPDU_IMPORTANCE),1)
-		WLFLAGS += -DWLAMPDU_IMPORTANCE
+	ifeq ($(WLAMPDU_PRECEDENCE),1)
+		WLFLAGS += -DWLAMPDU_PRECEDENCE
 	endif
 endif
 #endif
@@ -1150,7 +1181,7 @@ endif
 
 ifeq ($(SOCI_SB),1)
 	WLFLAGS += -DBCMCHIPTYPE=SOCI_SB
-else 
+else
 	ifeq ($(SOCI_AI),1)
 		WLFLAGS += -DBCMCHIPTYPE=SOCI_AI
 	endif
@@ -1200,7 +1231,7 @@ endif
 
 #ifdef MSGTRACE
 ifeq ($(MSGTRACE),1)
-	WLFILES_SRC += src/shared/msgtrace.c	
+	WLFILES_SRC += src/shared/msgtrace.c
 	WLFLAGS += -DMSGTRACE
 endif
 #endif
@@ -1428,6 +1459,13 @@ ifeq ($(ARPOE),1)
 endif
 #endif
 
+#ifdef PLC
+ifeq ($(PLC),1)
+	WLFLAGS += -DPLC
+	WLFILES_SRC += src/wl/sys/wl_plc_linux.c
+endif
+#endif
+
 #ifdef PCOEM_LINUXSTA
 ifeq ($(PCOEM_LINUXSTA),1)
 	WLFLAGS += -DPCOEM_LINUXSTA
@@ -1473,6 +1511,10 @@ endif
 ifeq ($(WL11K),1)
 	WLFLAGS += -DWL11K
 	WLFILES_SRC += src/wl/sys/wlc_rrm.c
+endif
+ifeq ($(WLWNM),1)
+	WLFLAGS += -DWLWNM
+	WLFILES_SRC += src/wl/sys/wlc_wnm.c
 endif
 #endif
 

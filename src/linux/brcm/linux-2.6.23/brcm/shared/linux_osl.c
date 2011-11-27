@@ -85,7 +85,9 @@ struct osl_info {
 #if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
 struct pcmcia_dev {
 	dev_link_t link;	/* PCMCIA device pointer */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	dev_node_t node;	/* PCMCIA node structure */
+#endif
 	void *base;		/* Mapped attribute memory window */
 	size_t size;		/* Size of window */
 	void *drv;		/* Driver data */

@@ -37,6 +37,7 @@
 #include <linux/ethtool.h>
 #endif /* SIOCETHTOOL */
 #include <linux/ip.h>
+#include <linux/if_vlan.h>
 
 #include <asm/system.h>
 #include <asm/io.h>
@@ -74,6 +75,19 @@
 
 MODULE_LICENSE("Proprietary");
 
+#ifdef PLC
+typedef struct et_plc {
+	bool	hw;			/* plc hardware present */
+	int32	txvid;			/* vlan used to send to plc */
+	int32	rxvid1;			/* frames rx'd on this will be sent to br */
+	int32	rxvid2;			/* frames rx'd on this will be sent to wds */
+	int32	rxvid3;			/* frames rx'd on this will be sent to plc */
+	struct net_device *txdev;	/* plc device (vid 3) for tx */ 
+	struct net_device *rxdev1;	/* plc device (vid 4) for rx */ 
+	struct net_device *rxdev2;	/* plc device (vid 5) for tx & rx */ 
+	struct net_device *rxdev3;	/* plc device (vid 6) for tx & rx */ 
+} et_plc_t;
+#endif /* PLC */
 
 /* In 2.6.20 kernels work functions get passed a pointer to the 
  * struct work, so things will continue to work as long as the work
@@ -110,6 +124,9 @@ typedef struct et_info {
 	bool		all_dispatch_mode;	/* dispatch mode: tasklets or passive */
 #endif /* ET_ALL_PASSIVE */
 	bool resched;			/* dpc was rescheduled */
+#ifdef PLC
+	et_plc_t	plc;		/* plc interface info */
+#endif /* PLC */
 } et_info_t;
 
 static int et_found = 0;
@@ -240,6 +257,111 @@ et_ctf_detach(ctf_t *ci, void *arg)
 }
 #endif /* HNDCTF */
 
+#ifdef PLC
+#define PLC_VIDTODEV(et, vid)	\
+	(((vid) == (et)->plc.rxvid2) ? (et)->plc.rxdev2 : \
+	 ((vid) == (et)->plc.rxvid1) ? (et)->plc.rxdev1 : \
+	 ((vid) == (et)->plc.rxvid3) ? (et)->plc.rxdev3 : \
+	 ((vid) == (et)->plc.txvid)  ? (et)->plc.txdev : NULL)
+static int
+et_plc_netdev_event(struct notifier_block *this, unsigned long event, void *ptr)
+{
+	struct net_device *real_dev, *vl_dev;
+	et_info_t *et;
+	uint16 vid;
+
+	/* we are only interested in plc vifs */
+	vl_dev = (struct net_device *)ptr;
+	if ((vl_dev->priv_flags & IFF_802_1Q_VLAN) == 0)
+		return NOTIFY_DONE;
+
+	/* get the pointer to real device */
+	real_dev = VLAN_DEV_INFO(vl_dev)->real_dev;
+	vid = VLAN_DEV_INFO(vl_dev)->vlan_id;
+
+	et = ET_INFO(real_dev);
+	if (et == NULL) {
+		ET_ERROR(("%s: not an ethernet vlan\n", __FUNCTION__));
+		return NOTIFY_DONE;
+	}
+
+	ET_TRACE(("et%d: %s: event %ld for %s\n", et->etc->unit, __FUNCTION__,
+	          event, vl_dev->name));
+
+	if (event == NETDEV_REGISTER) {
+		/* save the netdev pointers of plc vifs when corresponding
+		 * interface register event is received.
+		 */
+		if (vid == et->plc.txvid)
+			et->plc.txdev = vl_dev;
+		else if (vid == et->plc.rxvid1)
+			et->plc.rxdev1 = vl_dev;
+		else if (vid == et->plc.rxvid2)
+			et->plc.rxdev2 = vl_dev;
+		else if (vid == et->plc.rxvid3)
+			et->plc.rxdev3 = vl_dev;
+		else
+			;
+	} else if (event == NETDEV_UNREGISTER) {
+		/* clear the netdev pointers of plc vifs when corresponding
+		 * interface unregister event is received.
+		 */
+		if (vid == et->plc.txvid)
+			et->plc.txdev = NULL;
+		else if (vid == et->plc.rxvid1)
+			et->plc.rxdev1 = NULL;
+		else if (vid == et->plc.rxvid2)
+			et->plc.rxdev2 = NULL;
+		else if (vid == et->plc.rxvid3)
+			et->plc.rxdev3 = NULL;
+		else
+			;
+	}
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block et_plc_netdev_notifier = {
+	.notifier_call = et_plc_netdev_event
+};
+
+static inline int32
+et_plc_recv(et_info_t *et, struct sk_buff *skb)
+{
+	struct net_device *plc_dev;
+	struct ethervlan_header *evh;
+
+	evh = (struct ethervlan_header *)PKTDATA(et->osh, skb);
+
+	/* all incoming frames from plc are vlan tagged */
+	if (evh->vlan_type != HTON16(ETHER_TYPE_8021Q))
+		return -1;
+
+	ASSERT((NTOH16(evh->vlan_tag) & VLAN_VID_MASK) != 3);
+
+	plc_dev = PLC_VIDTODEV(et, NTOH16(evh->vlan_tag) & VLAN_VID_MASK);
+	if (plc_dev == NULL)
+		return -1;
+
+	/* call the master hook function to route frames to appropriate
+	 * transmit interface.
+	 */
+	if (plc_dev->master_hook != NULL) {
+		PKTSETPRIO(skb, (NTOH16(evh->vlan_tag) & VLAN_PRI_MASK) >> VLAN_PRI_SHIFT);
+		if (plc_dev->master_hook(skb, plc_dev, plc_dev->master_hook_arg) == 0) {
+			struct net_device_stats *stats;
+			stats = vlan_dev_get_stats(plc_dev);
+			stats->rx_packets++;
+			stats->rx_bytes += skb->len;
+			return 0;
+		}
+		skb->dev = plc_dev->master;
+	}
+
+	return -1;
+}
+#endif /* PLC */
+
 static int __devinit
 et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
@@ -248,6 +370,9 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	osl_t *osh;
 	char name[128];
 	int i, unit = et_found, err;
+#ifdef PLC
+	int8 *var;
+#endif /* PLC */
 
 	ET_TRACE(("et%d: et_probe: bus %d slot %d func %d irq %d\n", unit,
 	          pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), pdev->irq));
@@ -399,6 +524,29 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* print hello string */
 	(*et->etc->chops->longname)(et->etc->ch, name, sizeof(name));
 	printf("%s: %s %s\n", dev->name, name, EPI_VERSION_STR);
+
+#ifdef PLC
+	/* read plc_vifs to initialize the vids to use for receiving
+	 * and forwarding the frames.
+	 */
+	var = getvar(NULL, "plc_vifs");
+
+	if (var == NULL) {
+		ET_ERROR(("et%d: %s: PLC vifs not configured\n", unit, __FUNCTION__));
+		return (0);
+	}
+
+	et->plc.hw = TRUE;
+
+	/* initialize the vids to use for plc rx and tx */
+	sscanf(var, "vlan%d vlan%d vlan%d vlan%d",
+	       &et->plc.txvid, &et->plc.rxvid1, &et->plc.rxvid2, &et->plc.rxvid3);
+
+	ET_ERROR(("et%d: %s: PLC vifs %s\n", unit, __FUNCTION__, var));
+
+	/* register a callback to be called on plc dev create event */
+	register_netdevice_notifier(&et_plc_netdev_notifier);
+#endif /* PLC */
 
 	return (0);
 
@@ -784,7 +932,17 @@ et_sendnext(et_info_t *et)
 		else if (netif_queue_stopped(et->dev) &&
 		         (skb_queue_len(&et->txq[TX_Q0]) < (DATAHIWAT/2)))
 			netif_wake_queue(et->dev);
+	} else {
+		/* drop the frame if corresponding prec txq len exceeds hiwat
+		 * when qos is enabled.
+		 */
+		if ((priq != TC_NONE) && (skb_queue_len(&et->txq[priq]) > DATAHIWAT)) {
+			skb = __skb_dequeue_tail(&et->txq[priq]);
+			PKTFREE(et->osh, skb, TRUE);
+			etc->txnobuf++;
+		}
 	}
+
 	ET_TXQ_UNLOCK(et);
 }
 
@@ -1585,6 +1743,11 @@ et_sendup(et_info_t *et, struct sk_buff *skb)
 
 	skb->dev = et->dev;
 
+#ifdef PLC
+	if (et->plc.hw && (et_plc_recv(et, skb) == 0))
+		return;
+#endif /* PLC */
+
 #ifdef HNDCTF
 	/* try cut thru' before sending up */
 	if (et_ctf_forward(et, skb) != BCME_ERROR)
@@ -1597,7 +1760,7 @@ et_sendup(et_info_t *et, struct sk_buff *skb)
 	if (et->etc->qos)
 		pktsetprio(skb, TRUE);
 
-	skb->protocol = eth_type_trans(skb, et->dev);
+	skb->protocol = eth_type_trans(skb, skb->dev);
 
 	/* send it up */
 #ifdef BCM_NAPI

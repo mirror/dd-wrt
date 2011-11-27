@@ -403,6 +403,390 @@ BCMINITFN(si_mem_clock)(si_t *sih)
 
 #define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4)
 
+static void __attribute__((__noinline__))
+ephy_poll_phyaccess(void)
+{
+	asm("phypoll: \tlui  $8, 0xb800\n\t"
+		"lw   $9, 0x2180($8)\n\t"
+		"lui  $8, 0x4000\n\t"
+		"and $9, $9, $8\n\t"
+		"bnez $9, phypoll\n\t"
+		"nop");
+}
+
+static void __attribute__((__noinline__))
+do_router_coma(si_t *sih, void *dmem, int delay)
+{
+	uint8 phy;
+	volatile _dmemcregs_t *dmc = (volatile _dmemcregs_t *)dmem;
+	dmemsregs_t *dms = (dmemsregs_t *)dmem;
+
+	/* SDRAM refresh */
+	if (((CHIPID(sih->chip)) == BCM53572_CHIP_ID)) {
+		SET_REG(osh, &dms->control[9], DMC09_SREFRESH, DMC09_SREFRESH);
+		SET_REG(osh, &dms->control[9], DMC09_START, 0);
+	} else {
+		SET_REG(osh, &dmc->control[9], DMC09_SREFRESH, DMC09_SREFRESH);
+		SET_REG(osh, &dmc->control[9], DMC09_START, 0);
+	}
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set jtag user reg 0 = 0x80 to set DDR pad power saving mode */
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0xff03ff3a");   /* (16 + addr) << 20 | 0xfe03ff3a */
+	asm("sw   $9, 0x0034($8)");
+	asm("li   $9, 0x80");      /* data */
+	asm("sw   $9, 0x0038($8)");
+	asm("li   $9, 0x80071f1f");
+	asm("sw   $9, 0x0030($8)");
+	asm("sync");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* ephy ports powerdown */
+
+	/* robo_wreg 0x0 0xf 0x1f 0x2 */
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x0090001e");
+	asm("sw   $9, 0x2188($8)");
+	asm("sync");
+	asm("nop");
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x701e0001");
+	asm("sw   $9, 0x2180($8)");
+	asm("sync");
+	asm("nop");
+
+	ephy_poll_phyaccess();
+
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x0090001e");
+	asm("sw   $9, 0x2188($8)");
+	asm("sync");
+	asm("nop");
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x781e001f");
+	asm("sw   $9, 0x2180($8)");
+	asm("sync");
+	asm("nop");
+
+	ephy_poll_phyaccess();
+
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x0090001e");
+	asm("sw   $9, 0x2188($8)");
+	asm("sync");
+	asm("nop");
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x711e0f01");
+	asm("sw   $9, 0x2180($8)");
+	asm("sync");
+	asm("nop");
+
+	ephy_poll_phyaccess();
+
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x0090001e");
+	asm("sw   $9, 0x2188($8)");
+	asm("sync");
+	asm("nop");
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x511e0000");
+	asm("sw   $9, 0x2180($8)");
+	asm("sync");
+	asm("nop");
+
+	ephy_poll_phyaccess();
+
+	/* ports 0-5 writes start */
+
+	asm("li  $10, 0");
+
+	for (phy = 0; phy < 5; phy++) {
+
+		asm("sll  $11, $10, 16");
+
+		asm("li   $9, 0x00900000");
+		asm("or   $9, $9, $10");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2188($8)");
+		asm("sync");
+		asm("nop");
+		asm("li   $9, 0x7f00008b");
+		asm("or   $9, $9, $11");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2180($8)");
+		asm("sync");
+		asm("nop");
+
+		ephy_poll_phyaccess();
+
+		asm("li   $9, 0x00900000");
+		asm("or   $9, $9, $10");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2188($8)");
+		asm("sync");
+		asm("nop");
+		asm("li   $9, 0x74006000");
+		asm("or   $9, $9, $11");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2180($8)");
+		asm("sync");
+		asm("nop");
+
+		ephy_poll_phyaccess();
+
+		asm("li   $9, 0x00900000");
+		asm("or   $9, $9, $10");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2188($8)");
+		asm("sync");
+		asm("nop");
+		asm("li   $9, 0x70000700");
+		asm("or   $9, $9, $11");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2180($8)");
+		asm("sync");
+		asm("nop");
+
+		ephy_poll_phyaccess();
+
+		asm("li   $9, 0x00900000");
+		asm("or   $9, $9, $10");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2188($8)");
+		asm("sync");
+		asm("nop");
+		asm("li   $9, 0x71001000");
+		asm("or   $9, $9, $11");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2180($8)");
+		asm("sync");
+		asm("nop");
+
+		ephy_poll_phyaccess();
+
+		asm("li   $9, 0x00900000");
+		asm("or   $9, $9, $10");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2188($8)");
+		asm("sync");
+		asm("nop");
+		asm("li   $9, 0x7f00000b");
+		asm("or   $9, $9, $11");
+		asm("lui  $8, 0xb800");
+		asm("sw   $9, 0x2180($8)");
+		asm("sync");
+		asm("nop");
+
+		ephy_poll_phyaccess();
+
+		asm("addi $10, $10, 1");
+	}
+
+	OSL_DELAY(delay * 1000000);
+	/* ports 0-5 writes end */
+
+	if (((CHIPID(sih->chip)) == BCM53572_CHIP_ID)) {
+		/* set ephy pll and bias power power save through chipc registers */
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0x4");
+		asm("sw   $9, 0x0650($8)");
+		asm("li   $9, 0x8a60e001");
+		asm("sw   $9, 0x0654($8)");
+		asm("sync");
+		asm("nop");
+
+		OSL_DELAY(delay * 1000000);
+
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0x2");
+		asm("sw   $9, 0x0650($8)");
+		asm("li   $9, 0xcad0000f");
+		asm("sw   $9, 0x0654($8)");
+		asm("sync");
+		asm("nop");
+
+		OSL_DELAY(delay * 1000000);
+	}
+	else {
+		/* A0 vs B0 steps */
+		if (sih->chiprev == 0) {
+
+			/* set jtag user reg 3 = 0x60000 to turn off ephy pll and bias power */
+			asm("lui  $8, 0xb800");
+			asm("li   $9, 0xff33ff3a");   /* (16 + addr) << 20 | 0xfe03ff3a */
+			asm("sw   $9, 0x0034($8)");
+			asm("li   $9, 0x60000");      /* data */
+			asm("sw   $9, 0x0038($8)");
+			asm("li   $9, 0x80071f1f");
+			asm("sw   $9, 0x0030($8)");
+			asm("sync");
+
+			OSL_DELAY(delay * 1000000);
+		} else {
+
+			/* set ephy pll and bias power power save through chipc registers */
+			asm("lui  $8, 0xb800");
+			asm("li   $9, 0x4");
+			asm("sw   $9, 0x0650($8)");
+			asm("li   $9, 0x8a60e001");
+			asm("sw   $9, 0x0654($8)");
+			asm("sync");
+			asm("nop");
+
+			OSL_DELAY(delay * 1000000);
+
+			asm("lui  $8, 0xb800");
+			asm("li   $9, 0x2");
+			asm("sw   $9, 0x0650($8)");
+			asm("li   $9, 0xcad0000f");
+			asm("sw   $9, 0x0654($8)");
+			asm("sync");
+			asm("nop");
+
+			OSL_DELAY(delay * 1000000);
+		}
+	}
+
+	/* set jtag user reg 7 = 0xc0 to turn off the pll and bias power of ephy */
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0xff73ff3a");
+	asm("sw   $9, 0x0034($8)");
+	asm("li   $9, 0xc0");      /* data */
+	asm("sw   $9, 0x0038($8)");
+	asm("li   $9, 0x80071f1f");
+	asm("sw   $9, 0x0030($8)");
+	asm("sync");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set gmac dmp io control = 0 */
+	asm("lui  $8, 0xb810");
+	asm("li   $9, 0x0");
+	asm("sw   $9, 0x2408($8)");
+	asm("sync");
+	asm("nop");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set ddr dmp io control = 0 */
+	asm("lui  $8, 0xb810");
+	asm("li   $9, 0x0");
+	asm("sw   $9, 0x5408($8)");
+	asm("sync");
+	asm("nop");
+
+	OSL_DELAY(delay * 1000000);
+
+	/* set PMU control = 1 */
+	asm("lui  $8, 0xb800");
+	asm("li   $9, 0x1");
+	asm("sw   $9, 0x0600($8)");
+	asm("sync");
+	asm("nop");
+
+	OSL_DELAY(delay * 1000000);
+
+	if (((CHIPID(sih->chip)) != BCM53572_CHIP_ID)) {
+		/* Set switching freq of internal 12V regulator to 600kHz */
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0x1");
+		asm("sw   $9, 0x0658($8)");
+		asm("sync");
+		asm("nop");
+		asm("lui  $8, 0xb800");
+		asm("li   $9, 0x00018000");
+		asm("sw   $9, 0x065c($8)");
+		asm("sync");
+		asm("nop");
+
+		OSL_DELAY(delay * 1000000);
+	}
+
+	/* set mips dmp io control = 0 */
+	asm("lui  $8, 0xb810");
+	asm("li   $9, 0x0");
+	asm("sw   $9, 0x3408($8)");
+	asm("sync");
+	asm("nop");
+
+	/* wait for watch dog timer done */
+	__asm__(
+		".set\tmips3\n\t"
+		"sync\n\t"
+		"wait\n\t"
+		".set\tmips0");
+
+	asm("nop");
+	asm("nop");
+}
+
+static void __attribute__((__noinline__))
+BCMINITFN(aftercoma)(void)
+{
+
+}
+
+void
+si_router_coma(si_t *sih, int reset, int delay)
+{
+	void *dmem = NULL;
+	chipcregs_t *cc;
+	uint ic_size, ic_lsize;
+	ulong start, end;
+	uint32 c0reg;
+	uint32 tmp;
+	int i;
+
+	/* Disable interrupts */
+
+	c0reg = MFC0(C0_STATUS, 0);
+	tmp = (c0reg & ~(ALLINTS | ST0_IE));
+	MTC0(C0_STATUS, 0, tmp);
+
+	icache_probe(MFC0(C0_CONFIG, 1), &ic_size, &ic_lsize);
+
+	/* Put coma routine into the icache */
+	start = (ulong)&ephy_poll_phyaccess;
+	end = (ulong)&aftercoma;
+	for (i = 0; i < (end - start); i += ic_lsize)
+		cache_op(start + i, Fill_I);
+
+	/* d11:  aidmp(resetctrl) = 1, aidmp(ioctrl) = 0 */
+	si_setcore(sih, D11_CORE_ID, 0);
+	si_core_disable(sih, 0);
+
+	OSL_DELAY(delay * 1000000);
+
+	/* Prepare JTAG registers */ 
+	si_setcore(sih, CC_CORE_ID, 0);
+	cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX);
+
+	W_REG(osh, &cc->jtagctrl, 0x01);
+	W_REG(osh, &cc->jtagcmd, 0x80030000);
+	W_REG(osh, &cc->gpioouten, 0x0);
+
+	/* disable gpios */
+	W_REG(osh, &cc->gpioouten, 0x0);
+	W_REG(osh, &cc->chipcontrol_addr, 0x2);
+	W_REG(osh, &cc->chipcontrol_data, 0x04000600);
+
+	/* Set the watchdog */
+	if (sih->chiprev == 0) {
+		W_REG(osh, &cc->watchdog, reset*ILP_CLOCK);
+	} else {
+		si_watchdog_ms(sih, reset*1000);
+	}
+	if (((CHIPID(sih->chip)) == BCM53572_CHIP_ID))
+		dmem = (void *)si_setcore(sih, DMEMS_CORE_ID, 0);
+	else
+		dmem = (void *)si_setcore(sih, DMEMC_CORE_ID, 0);
+
+	do_router_coma(sih, dmem, delay);
+}
+
 static void
 BCMINITFN(dmc_phyctl)(osl_t *osh, dmemcregs_t *dmc0, uint32 phyctl_val)
 {

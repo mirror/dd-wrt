@@ -25,6 +25,10 @@
 #include "sbchipc.h"
 #include "bcmdevs.h"
 
+#if	defined(NFLASH_SUPPORT)
+#include <nflash.h>
+#endif
+
 
 /* Debug macro - write a number to a chipc reg - use it with caution,
  *  it changes k0 and k1 registers.
@@ -449,6 +453,108 @@ copy2ram:
 	and	a2,a2,t0
 	or	a2,a2,t1
 #endif
+
+#if	defined(NFLASH_SUPPORT)
+	/* Take care of BCM5357 NAND boot (CFE in nand flash) */
+	li	t4,CID_ID_MASK
+	and	t4,t4,s6			# s6 = ChipId reg
+	bne	t4,BCM5357_CHIP_ID,copydata2
+	nop
+
+	lw	t5,CC_CHIPST(s2)
+	li	t4,0x10
+	and	t4,t4,t5
+	beqz	t4,copydata2			# not BCM5357 NAND boot
+	nop
+
+	move	t1,a0				# save a0
+	move	t2,v0				# save v0
+	move	t3,v1				# save v1
+
+	la	t0,nfl_size_block		# a0, t8, t9 are corrupted
+	add	t0,t0,s5			# relocate address
+	jalr	t0				# v0: block size, v1: page size
+	nop
+
+	move	a0,t1				# restore a0
+	move	t0,v0				# get block size from v0
+	move	t1,v1				# get page size from v1
+	
+	move	v0,t2				# restore v0
+	move	v1,t3				# restore v1
+
+	move	t2,t0				# save block size
+
+	li	t0,1
+	subu	t2,t2,t0			# block address mask
+
+	li	t3,KSEG0ADDR(SI_FLASH1)
+	subu	t3,a0,t3			# block bus address
+
+	/* t1: page size
+	 * t2: block size - 1
+	 * t3: block bus address
+	 * v0: must be saved and restored when using it
+	 */
+checkalign:
+	and	t5,t3,t2			# check block bus address alignment
+	bnez	t5,copydata
+	nop
+
+	move	t4,a0				# save a0
+	move	t6,a1				# save a1
+	move	a3,v0				# save v0
+
+	move	a0,t3				# set block bus address, and
+	move	a1,t1				# set page size for nfl_check_badb
+
+	/* Wait until nflash controller interface ready */
+	li	t9,NIST_CTRL_READY
+	li	t8,NIST_FLASH_READY
+	or	t9,t9,t8
+1:	lw	t8,CC_NAND_INTFC_STATUS(s2)
+	and	t7,t8,t9
+	bne	t7,t9,1b
+	nop
+
+	la	t0,nfl_check_badb		# a0: block bus address, a1: page size
+	add	t0,t0,s5			# relocate address
+	jalr	t0
+	nop
+
+	move	t7,v0				# get v0 after calling nfl_check_badb
+						# v0 = 1: bad block, v0 = 0: good block
+	move	a0,t4				# restore a0
+	move	a1,t6				# restore a1
+	move	v0,a3				# restore v0
+
+	beqz	t7,copydata			# go on data copy for good block
+	nop
+
+bypassbadb:
+	add	t3,t3,t2			# increased by one block size
+	addiu	t3,t3,1				# t2 = block size - 1
+
+	add	a0,a0,t2			# increased by one block size
+	addiu	a0,a0,1				# t2 = block size - 1
+
+	blt	a1,a2,checkalign
+	nop
+
+copydata:
+	lw	t0,0(a0)
+	sw	t0,0(a1)
+	add	a0,4
+	add	a1,4
+	add	t3,4
+	blt	a1,a2,checkalign
+	nop
+
+	b	copydone			# bypass copydata2 since data
+	nop					# copy is done
+#endif /* NFLASH_SUPPORT */
+
+copydata2:
 1:	lw	t0,0(a0)
 	sw	t0,0(a1)
 	add	a0,4
@@ -456,6 +562,7 @@ copy2ram:
 	blt	a1,a2,1b
 	nop
 
+copydone:
 	/* Go execute from ram now */
 	la	t0,inram
 	jr	t0

@@ -132,6 +132,8 @@
 #define BCM43362_D11N_ID	0x4363		/* 43362 802.11n 2.4GHz device */
 #define BCM43239_D11N_ID	0x4370		/* 43239 802.11n dualband device */
 
+#define BCM4314_D11N2G_ID       0x4364          /* 4314 802.11n 2.4G device */
+#define BCM43142_D11N2G_ID      0x4365          /* 43142 802.11n 2.4G device */
 
 #define	BCMGPRS_UART_ID		0x4333		/* Uart id used by 4306/gprs card */
 #define	BCMGPRS2_UART_ID	0x4344		/* Uart id used by 4306/gprs card */
@@ -219,6 +221,8 @@
 #define BCM43362_CHIP_ID	43362		/* 43362 chipcommon chipid */
 #define BCM4330_CHIP_ID		0x4330		/* 4330 chipcommon chipid */
 #define BCM6362_CHIP_ID		0x6362		/* 6362 chipcommon chipid */
+#define BCM4314_CHIP_ID         0x4314          /* 4314 chipcommon chipid */
+#define BCM43142_CHIP_ID        43142           /* 43142 chipcommon chipid */
 
 #define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
@@ -275,6 +279,12 @@
 #define BCM43224_FAB_SMIC	0xa		/* the chip is manufactured by SMIC */
 #define BCM4336_WLBGA_PKG_ID	0x8
 #define BCM4330_WLBGA_PKG_ID	0x0
+#define BCM4314PCIE_ARM_PKG_ID          (8 | 0) /* 4314 QFN PCI package id, bit 3 tie high */
+#define BCM4314SDIO_PKG_ID              (8 | 1) /* 4314 QFN SDIO package id */
+#define BCM4314PCIE_PKG_ID              (8 | 2) /* 4314 QFN PCI (ARM-less) package id */
+#define BCM4314SDIO_ARM_PKG_ID          (8 | 3) /* 4314 QFN SDIO (ARM-less) package id */
+#define BCM4314SDIO_FPBGA_PKG_ID        (8 | 4) /* 4314 FpBGA SDIO package id */
+#define BCM4314DEV_PKG_ID               (8 | 6) /* 4314 Developement package id */
 
 #define PCIXX21_FLASHMEDIA0_ID	0x8033		/* TI PCI xx21 Standard Host Controller */
 #define PCIXX21_SDIOH0_ID	0x8034		/* TI PCI xx21 Standard Host Controller */
@@ -601,15 +611,15 @@
 #define BCM94716NR2_SSID	0x04cd
 
 /* 4319 boards */
-#define BCM94319DEVBU_SSID	0X04e5
+#define BCM94319DEVBU_SSID	    0X04e5
 #define BCM94319USBNP4L_SSID	0X04e6
 #define BCM94319WLUSBN4L_SSID	0X04e7
-#define BCM94319SDG_SSID	0X04ea
+#define BCM94319SDG_SSID	    0X04ea
 #define BCM94319LCUSBSDN4L_SSID	0X04eb
 #define BCM94319USBB_SSID       0x04ee
 #define BCM94319LCSDN4L_SSID	0X0507
 #define BCM94319LSUSBN4L_SSID	0X0508
-#define BCM94319SDNA4L_SSID	0X0517
+#define BCM94319SDNA4L_SSID	    0X0517
 #define BCM94319SDELNA4L_SSID	0X0518
 #define BCM94319SDELNA6L_SSID	0X0539
 #define BCM94319ARCADYAN_SSID	0X0546
@@ -617,6 +627,8 @@
 #define BCM94319MLAP_SSID       0x0562
 #define BCM94319SDNA_SSID       0x058b
 #define BCM94319BHEMU3_SSID     0x0563
+#define BCM94319SDHMB_SSID     0x058c
+#define BCM94319SDBREF_SSID     0x05a1
 
 /* 4329 boards */
 #define BCM94329AGB_SSID	0X04b9
@@ -693,6 +705,7 @@
 
 /* 43236 boards */
 #define BCM943236OLYMPICSULLEY_SSID 0x594
+#define BCM943236PREPROTOBLU2O3_SSID 0x5b9
 
 /* # of GPIO pins */
 #define GPIO_NUMPINS		32
@@ -708,5 +721,9 @@
 #define RDL_RAM_BASE_4328 0x80000000
 #define RDL_RAM_SIZE_4322 0x60000
 #define RDL_RAM_BASE_4322 0x60000000
+
+/* Boot flags */
+#define FLASH_KERNEL_NFLASH	0x00000001
+#define FLASH_BOOT_NFLASH	0x00000002
 
 #endif /* _BCMDEVS_H */
