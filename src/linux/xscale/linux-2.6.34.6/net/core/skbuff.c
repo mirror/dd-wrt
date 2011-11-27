@@ -357,6 +357,10 @@ struct page *__netdev_alloc_page(struct net_device *dev, gfp_t gfp_mask)
 	int node = dev->dev.parent ? dev_to_node(dev->dev.parent) : -1;
 	struct page *page;
 
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
+
 	page = alloc_pages_node(node, gfp_mask, 0);
 	return page;
 }
@@ -749,7 +753,7 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
 		atomic_inc(fclone_ref);
 	} else {
 		n = kmem_cache_alloc(skbuff_head_cache, gfp_mask);
-		if (!n)
+    		if (!n)
 			return NULL;
 
 		kmemcheck_annotate_bitfield(n, flags1);
