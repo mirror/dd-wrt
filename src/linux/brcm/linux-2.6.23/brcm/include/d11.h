@@ -1491,6 +1491,7 @@ BWL_PRE_PACKED_STRUCT struct tx_status {
 #define	M_RT_BBRSMAP_A		(0xf0 * 2)
 #define	M_RT_DIRMAP_B		(0x100 * 2)
 #define	M_RT_BBRSMAP_B		(0x110 * 2)
+#define	D11_RT_DIRMAP_SIZE	16
 
 /* Rate table entry offsets */
 #define	M_RT_PRS_PLCP_POS	10

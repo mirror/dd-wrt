@@ -276,6 +276,7 @@ extern int si_cis_source(si_t *sih);
 #define	TSMC_FAB12	0x2	/* TSMC Fab12/Fab14 chip */
 #define	SMIC_FAB4	0x3	/* SMIC Fab4 chip */
 extern int BCMINITFN(si_otp_fabid)(si_t *sih, uint16 *fabid, bool rw);
+extern uint16 BCMINITFN(si_fabid)(si_t *sih);
 
 /*
  * Build device path. Path size must be >= SI_DEVPATH_BUFSZ.
@@ -286,6 +287,7 @@ extern int si_devpath(si_t *sih, char *path, int size);
 /* Read variable with prepending the devpath to the name */
 extern char *si_getdevpathvar(si_t *sih, const char *name);
 extern int si_getdevpathintvar(si_t *sih, const char *name);
+extern char *si_coded_devpathvar(si_t *sih, char *varname, int var_len, const char *name);
 
 
 extern uint8 si_pcieclkreq(si_t *sih, uint32 mask, uint32 val);

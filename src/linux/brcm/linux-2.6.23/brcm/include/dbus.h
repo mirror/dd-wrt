@@ -280,6 +280,7 @@ extern int dbus_set_errmask(const dbus_pub_t *pub, uint32 mask);
 extern int dbus_pnp_sleep(const dbus_pub_t *pub);
 extern int dbus_pnp_resume(const dbus_pub_t *pub, int *fw_reload);
 extern int dbus_pnp_disconnect(const dbus_pub_t *pub);
+extern void *dbus_get_sdh(void);
 
 extern int dbus_iovar_op(const dbus_pub_t *pub, const char *name,
 	void *params, int plen, void *arg, int len, bool set);
@@ -364,4 +365,182 @@ extern int dbus_bus_osl_hw_register(int vid, int pid, probe_cb_t prcb, disconnec
 extern int dbus_bus_osl_hw_deregister(void);
 
 extern uint usbdev_bulkin_eps(void);
+
+#if defined(EHCI_FASTPATH_TX) || defined(EHCI_FASTPATH_RX)
+/*
+ * Include file for the ECHI fastpath optimized USB 
+ * Practically all the lines below have equivalent in some structures in other include (or even
+ * source) files This violates all kind of structure and layering, but cutting through layers is
+ * what the optimization is about. The definitions are NOT literally borrowed from any GPLd code;
+ * the file is intended to be GPL-clean
+ *
+ * Note that while some resemblance between this code and GPLd code in Linux might exist, it is
+ * due to the common sibling. See FreeBSD: head/sys/dev/usb/controller/ehci.h for the source of
+ * inspiration :-) 
+ *
+ * The code assumes little endian throughout
+ */
+
+#if !defined(linux)
+#error "EHCI fastpath is for Linux only."
+#endif
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0))
+	/* Backward compatibility */
+	typedef unsigned int gfp_t;
+
+	#define dma_pool pci_pool
+	#define dma_pool_create(name, dev, size, align, alloc) \
+		pci_pool_create(name, dev, size, align, alloc, GFP_DMA | GFP_ATOMIC)
+	#define dma_pool_destroy(pool) pci_pool_destroy(pool)
+	#define dma_pool_alloc(pool, flags, handle) pci_pool_alloc(pool, flags, handle)
+	#define dma_pool_free(pool, vaddr, addr) pci_pool_free(pool, vaddr, addr)
+
+	#define dma_map_single(dev, addr, size, dir)	pci_map_single(dev, addr, size, dir)
+	#define dma_unmap_single(dev, hnd, size, dir)	pci_unmap_single(dev, hnd, size, dir)
+	#define DMA_FROM_DEVICE PCI_DMA_FROMDEVICE
+	#define DMA_TO_DEVICE PCI_DMA_TODEVICE
+#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)) */
+
+/* Availability of these functions varies (when present, they have two arguments) */
+#ifndef hc32_to_cpu
+	#define hc32_to_cpu(x)	le32_to_cpu(x)
+	#define cpu_to_hc32(x)	cpu_to_le32(x)
+	typedef unsigned int __hc32;
+#else
+	#error Two-argument functions needed
+#endif
+
+/* Private USB opcode base */
+#define EHCI_FASTPATH		0x31
+#define	EHCI_SET_EP_BYPASS	EHCI_FASTPATH
+#define	EHCI_SET_BYPASS_CB	(EHCI_FASTPATH + 1)
+#define	EHCI_SET_BYPASS_DEV	(EHCI_FASTPATH + 2)
+#define	EHCI_DUMP_STATE		(EHCI_FASTPATH + 3)
+#define	EHCI_SET_BYPASS_POOL	(EHCI_FASTPATH + 4)
+#define	EHCI_CLR_EP_BYPASS	(EHCI_FASTPATH + 5)
+
+/*
+ * EHCI QTD structure (hardware and extension)
+ * NOTE that is does not need to (and does not) match its kernel counterpart
+ */
+#define EHCI_QTD_NBUFFERS       5
+#define EHCI_QTD_ALIGN  	32
+#define EHCI_BULK_PACKET_SIZE	512
+
+struct ehci_qtd {
+	/* Hardware map */
+	volatile uint32_t	qtd_next;
+	volatile uint32_t	qtd_altnext;
+	volatile uint32_t	qtd_status;
+#define	EHCI_QTD_GET_BYTES(x)	(((x)>>16) & 0x7fff)
+#define	EHCI_QTD_IOC            0x00008000
+#define	EHCI_QTD_GET_CERR(x)	(((x)>>10) & 0x3)
+#define EHCI_QTD_SET_CERR(x)    ((x) << 10)
+#define	EHCI_QTD_GET_PID(x)	(((x)>>8) & 0x3)
+#define EHCI_QTD_SET_PID(x)     ((x) <<  8)
+#define EHCI_QTD_ACTIVE         0x80
+#define EHCI_QTD_HALTED         0x40
+#define EHCI_QTD_BUFERR         0x20
+#define EHCI_QTD_BABBLE         0x10
+#define EHCI_QTD_XACTERR        0x08
+#define EHCI_QTD_MISSEDMICRO    0x04
+	volatile uint32_t 	qtd_buffer[EHCI_QTD_NBUFFERS];
+	volatile uint32_t 	qtd_buffer_hi[EHCI_QTD_NBUFFERS];
+
+	/* Implementation extension */
+	dma_addr_t		qtd_self;		/* own hardware address */
+	struct ehci_qtd		*obj_next;		/* software link to the next QTD */
+	void			*rpc;			/* pointer to the rpc buffer */
+	size_t			length;			/* length of the data in the buffer */
+	void			*buff;			/* pointer to the reassembly buffer */
+} __attribute__((aligned(EHCI_QTD_ALIGN)));
+
+#define	EHCI_NULL	__constant_cpu_to_le32(1) /* HW null pointer shall be odd */
+
+#define SHORT_READ_Q(token) (EHCI_QTD_GET_BYTES(token) != 0 && EHCI_QTD_GET_PID(token) == 1)
+
+/* Queue Head */
+/* NOTE This structure is slightly different from the one in the kernel; but needs to stay
+ * compatible
+ */
+struct ehci_qh {
+	/* Hardware map */
+	volatile uint32_t 	qh_link;
+	volatile uint32_t 	qh_endp;
+	volatile uint32_t 	qh_endphub;
+	volatile uint32_t 	qh_curqtd;
+
+	/* QTD overlay */
+	volatile uint32_t	ow_next;
+	volatile uint32_t	ow_altnext;
+	volatile uint32_t	ow_status;
+	volatile uint32_t	ow_buffer [EHCI_QTD_NBUFFERS];
+	volatile uint32_t	ow_buffer_hi [EHCI_QTD_NBUFFERS];
+
+	/* Extension (should match the kernel layout) */
+	dma_addr_t		unused0;
+	void 			*unused1;
+	struct list_head	unused2;
+	struct ehci_qtd		*dummy;
+	struct ehci_qh		*unused3;
+
+	struct ehci_hcd		*unused4;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+	struct kref		unused5;
+	unsigned		unused6;
+
+	uint8_t			unused7;
+
+	/* periodic schedule info */
+	uint8_t			unused8;
+	uint8_t			unused9;
+	uint8_t			unused10;
+	uint16_t		unused11;
+	uint16_t		unused12;
+	uint16_t		unused13;
+	struct usb_device	*unused14;
+#else
+	unsigned		unused5;
+
+	u8			unused6;
+
+	/* periodic schedule info */
+	u8			unused7;
+	u8			unused8;
+	u8			unused9;
+	unsigned short		unused10;
+	unsigned short		unused11;
+#define NO_FRAME ((unsigned short)~0)
+#ifdef EHCI_QUIRK_FIX
+	struct usb_device	*unused12;
+#endif /* EHCI_QUIRK_FIX */
+#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)) */
+	struct ehci_qtd		*first_qtd;
+		/* Link to the first QTD; this is an optimized equivalent of the qtd_list field */
+		/* NOTE that ehci_qh in ehci.h shall reserve this word */
+} __attribute__((aligned(EHCI_QTD_ALIGN)));
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0))
+/* The corresponding structure in the kernel is used to get the QH */
+struct hcd_dev {	/* usb_device.hcpriv points to this */
+	struct list_head	unused0;
+	struct list_head	unused1;
+
+	/* array of QH pointers */
+	void			*ep[32];
+};
+#endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)) */
+
+int optimize_qtd_fill_with_rpc(const dbus_pub_t *pub,  int epn, struct ehci_qtd *qtd, void *rpc,
+	int token, int len);
+int optimize_qtd_fill_with_data(const dbus_pub_t *pub, int epn, struct ehci_qtd *qtd, void *data,
+	int token, int len);
+int optimize_submit_async(struct ehci_qtd *qtd, int epn);
+void inline optimize_ehci_qtd_init(struct ehci_qtd *qtd, dma_addr_t dma);
+struct ehci_qtd *optimize_ehci_qtd_alloc(gfp_t flags);
+void optimize_ehci_qtd_free(struct ehci_qtd *qtd);
+void optimize_submit_rx_request(const dbus_pub_t *pub, int epn, struct ehci_qtd *qtd_in, void *buf);
+#endif /* EHCI_FASTPATH_TX || EHCI_FASTPATH_RX */
+
 #endif /* __DBUS_H__ */

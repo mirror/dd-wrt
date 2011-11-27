@@ -174,7 +174,7 @@ static struct _coreid_entry bcm4706_coreid_table[] = {
 	{	CC_4706_CORE_ID, CC_CORE_ID },
 	{	SOCRAM_4706_CORE_ID, SOCRAM_CORE_ID },
 	{	GMAC_4706_CORE_ID, GMAC_CORE_ID },
-	{ 0, 0 },
+	{ 0, 0 }
 };
 
 static uint
@@ -715,6 +715,7 @@ ai_core_disable(si_t *sih, uint32 bits)
 	OSL_DELAY(10);
 
 	W_REG(sii->osh, &ai->resetctrl, AIRC_RESET);
+	dummy = R_REG(sii->osh, &ai->resetctrl);
 	OSL_DELAY(1);
 }
 
@@ -877,64 +878,65 @@ ai_dumpregs(si_t *sih, struct bcmstrbuf *b)
 		}
 
 		bcm_bprintf(b, "ioctrlset 0x%x ioctrlclear 0x%x ioctrl 0x%x iostatus 0x%x"
-					"ioctrlwidth 0x%x iostatuswidth 0x%x\n"
-					"resetctrl 0x%x resetstatus 0x%x resetreadid 0x%x resetwriteid 0x%x\n"
-					"errlogctrl 0x%x errlogdone 0x%x errlogstatus 0x%x"
-					"errlogaddrlo 0x%x errlogaddrhi 0x%x\n"
-					"errlogid 0x%x errloguser 0x%x errlogflags 0x%x\n"
-					"intstatus 0x%x config 0x%x itcr 0x%x\n",
-					R_REG(osh, &ai->ioctrlset),
-					R_REG(osh, &ai->ioctrlclear),
-					R_REG(osh, &ai->ioctrl),
-					R_REG(osh, &ai->iostatus),
-					R_REG(osh, &ai->ioctrlwidth),
-					R_REG(osh, &ai->iostatuswidth),
-					R_REG(osh, &ai->resetctrl),
-					R_REG(osh, &ai->resetstatus),
-					R_REG(osh, &ai->resetreadid),
-					R_REG(osh, &ai->resetwriteid),
-					R_REG(osh, &ai->errlogctrl),
-					R_REG(osh, &ai->errlogdone),
-					R_REG(osh, &ai->errlogstatus),
-					R_REG(osh, &ai->errlogaddrlo),
-					R_REG(osh, &ai->errlogaddrhi),
-					R_REG(osh, &ai->errlogid),
-					R_REG(osh, &ai->errloguser),
-					R_REG(osh, &ai->errlogflags),
-					R_REG(osh, &ai->intstatus),
-					R_REG(osh, &ai->config),
-					R_REG(osh, &ai->itcr));
+			    "ioctrlwidth 0x%x iostatuswidth 0x%x\n"
+			    "resetctrl 0x%x resetstatus 0x%x resetreadid 0x%x resetwriteid 0x%x\n"
+			    "errlogctrl 0x%x errlogdone 0x%x errlogstatus 0x%x"
+			    "errlogaddrlo 0x%x errlogaddrhi 0x%x\n"
+			    "errlogid 0x%x errloguser 0x%x errlogflags 0x%x\n"
+			    "intstatus 0x%x config 0x%x itcr 0x%x\n",
+			    R_REG(osh, &ai->ioctrlset),
+			    R_REG(osh, &ai->ioctrlclear),
+			    R_REG(osh, &ai->ioctrl),
+			    R_REG(osh, &ai->iostatus),
+			    R_REG(osh, &ai->ioctrlwidth),
+			    R_REG(osh, &ai->iostatuswidth),
+			    R_REG(osh, &ai->resetctrl),
+			    R_REG(osh, &ai->resetstatus),
+			    R_REG(osh, &ai->resetreadid),
+			    R_REG(osh, &ai->resetwriteid),
+			    R_REG(osh, &ai->errlogctrl),
+			    R_REG(osh, &ai->errlogdone),
+			    R_REG(osh, &ai->errlogstatus),
+			    R_REG(osh, &ai->errlogaddrlo),
+			    R_REG(osh, &ai->errlogaddrhi),
+			    R_REG(osh, &ai->errlogid),
+			    R_REG(osh, &ai->errloguser),
+			    R_REG(osh, &ai->errlogflags),
+			    R_REG(osh, &ai->intstatus),
+			    R_REG(osh, &ai->config),
+			    R_REG(osh, &ai->itcr));
 		if ((sih->chip == BCM4331_CHIP_ID) && (sii->coreid[i] == PCIE_CORE_ID)) {
 			/* point bar0 2nd 4KB window */
 			OSL_PCI_WRITE_CONFIG(sii->osh, PCI_BAR0_WIN2, 4, 0x18103000);
 			bcm_bprintf(b, "ioctrlset 0x%x ioctrlclear 0x%x ioctrl 0x%x iostatus 0x%x"
-						"ioctrlwidth 0x%x iostatuswidth 0x%x\n"
-						"resetctrl 0x%x resetstatus 0x%x resetreadid 0x%x resetwriteid 0x%x\n"
-						"errlogctrl 0x%x errlogdone 0x%x errlogstatus 0x%x"
-						"errlogaddrlo 0x%x errlogaddrhi 0x%x\n"
-						"errlogid 0x%x errloguser 0x%x errlogflags 0x%x\n"
-						"intstatus 0x%x config 0x%x itcr 0x%x\n",
-						R_REG(osh, &ai->ioctrlset),
-						R_REG(osh, &ai->ioctrlclear),
-						R_REG(osh, &ai->ioctrl),
-						R_REG(osh, &ai->iostatus),
-						R_REG(osh, &ai->ioctrlwidth),
-						R_REG(osh, &ai->iostatuswidth),
-						R_REG(osh, &ai->resetctrl),
-						R_REG(osh, &ai->resetstatus),
-						R_REG(osh, &ai->resetreadid),
-						R_REG(osh, &ai->resetwriteid),
-						R_REG(osh, &ai->errlogctrl),
-						R_REG(osh, &ai->errlogdone),
-						R_REG(osh, &ai->errlogstatus),
-						R_REG(osh, &ai->errlogaddrlo),
-						R_REG(osh, &ai->errlogaddrhi),
-						R_REG(osh, &ai->errlogid),
-						R_REG(osh, &ai->errloguser),
-						R_REG(osh, &ai->errlogflags),
-						R_REG(osh, &ai->intstatus),
-						R_REG(osh, &ai->config),
-						R_REG(osh, &ai->itcr));
+				    "ioctrlwidth 0x%x iostatuswidth 0x%x\n"
+				    "resetctrl 0x%x resetstatus 0x%x resetreadid 0x%x"
+				    " resetwriteid 0x%x\n"
+				    "errlogctrl 0x%x errlogdone 0x%x errlogstatus 0x%x"
+				    "errlogaddrlo 0x%x errlogaddrhi 0x%x\n"
+				    "errlogid 0x%x errloguser 0x%x errlogflags 0x%x\n"
+				    "intstatus 0x%x config 0x%x itcr 0x%x\n",
+				    R_REG(osh, &ai->ioctrlset),
+				    R_REG(osh, &ai->ioctrlclear),
+				    R_REG(osh, &ai->ioctrl),
+				    R_REG(osh, &ai->iostatus),
+				    R_REG(osh, &ai->ioctrlwidth),
+				    R_REG(osh, &ai->iostatuswidth),
+				    R_REG(osh, &ai->resetctrl),
+				    R_REG(osh, &ai->resetstatus),
+				    R_REG(osh, &ai->resetreadid),
+				    R_REG(osh, &ai->resetwriteid),
+				    R_REG(osh, &ai->errlogctrl),
+				    R_REG(osh, &ai->errlogdone),
+				    R_REG(osh, &ai->errlogstatus),
+				    R_REG(osh, &ai->errlogaddrlo),
+				    R_REG(osh, &ai->errlogaddrhi),
+				    R_REG(osh, &ai->errlogid),
+				    R_REG(osh, &ai->errloguser),
+				    R_REG(osh, &ai->errlogflags),
+				    R_REG(osh, &ai->intstatus),
+				    R_REG(osh, &ai->config),
+				    R_REG(osh, &ai->itcr));
 			/* bar0 2nd 4KB window will be fixed in the next setcore */
 		}
 	}

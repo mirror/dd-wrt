@@ -218,6 +218,8 @@ extern const int		bcmevent_names_size;
 #define WLC_E_REASON_TSPEC_REJECTED	7	/* roamed due to TSPEC rejection */
 #define WLC_E_REASON_BETTER_AP		8	/* roamed due to finding better AP */
 
+#define WLC_E_REASON_REQUESTED_ROAM 11	/* roamed due to BSS Mgmt Transition request by AP */
+
 /* prune reason codes */
 #define WLC_E_PRUNE_ENCR_MISMATCH	1	/* encryption mismatch */
 #define WLC_E_PRUNE_BCAST_BSSID		2	/* AP uses a broadcast BSSID */

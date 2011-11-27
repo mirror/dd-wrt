@@ -102,7 +102,9 @@ struct rpc_transport_info {
 					 * expect it to get full. If the memory gets low, we
 					 * just stop processing wlc_dpc
 					 */
+#ifndef BCM_RPC_TP_FLOWCTL_QWM_HIGH
 #define BCM_RPC_TP_FLOWCTL_QWM_HIGH	24	/* high watermark for tp queue */
+#endif
 #define BCM_RPC_TP_FLOWCTL_QWM_LOW	4	/* low watermark for tp queue */
 
 /* no. of aggregated subframes per second to activate/deactivate lazy agg(delay release)

@@ -36,9 +36,9 @@ extern void bzero(void *b, uint len);
 
 #include <wlioctl.h>
 #include <proto/802.11.h>
-#if defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP)
+#if defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP) || defined(WLFBT)
 #include <proto/eapol.h>
-#endif	/* defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP) */
+#endif	/* defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP) || defined(WLFBT) */
 #include <bcmutils.h>
 #include <bcmwpa.h>
 
@@ -46,7 +46,7 @@ extern void bzero(void *b, uint len);
 
 #include <bcmcrypto/prf.h>
 #include <bcmcrypto/rc4.h>
-#ifdef MFP
+#if defined(MFP) || defined(WLFBT)
 #include <bcmcrypto/hmac_sha256.h>
 #endif
 
@@ -55,7 +55,7 @@ BCMROMFN(wpa_calc_pmkid)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
                          uint8 *pmk, uint pmk_len, uint8 *pmkid, uint8 *data, uint8 *digest)
 {
 	/* PMKID = HMAC-SHA1-128(PMK, "PMK Name" | AA | SPA) */
-	char prefix[] = "PMK Name";
+	const char prefix[] = "PMK Name";
 	int data_len = 0;
 
 	/* create the the data portion */
@@ -70,10 +70,10 @@ BCMROMFN(wpa_calc_pmkid)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 	hmac_sha1(data, data_len, pmk, pmk_len, digest);
 	bcopy(digest, pmkid, WPA2_PMKID_LEN);
 }
-#ifdef MFP
+#if defined(MFP) || defined(WLFBT)
 void
 kdf_calc_pmkid(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
-                         uint8 *pmk, uint pmk_len, uint8 *pmkid, uint8 *data, uint8 *digest)
+	uint8 *pmk, uint pmk_len, uint8 *pmkid, uint8 *data, uint8 *digest)
 {
 	/* PMKID = Truncate-128(HMAC-SHA-256(PMK, "PMK Name" | AA | SPA)) */
 	char prefix[] = "PMK Name";
@@ -92,25 +92,28 @@ kdf_calc_pmkid(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 	bcopy(digest, pmkid, WPA2_PMKID_LEN);
 }
 
+#endif /* defined(MFP) || defined(WLFBT) */
 
+
+#if defined(WLFBT)
 void
 wpa_calc_pmkR0(uchar *ssid, int ssid_len, uint16 mdid, uint8 *r0kh,
 	uint r0kh_len, struct ether_addr *sta_ea,
-    uint8 *pmk, uint pmk_len, uint8 *pmkr0, uint8 *pmkr0name)
+	uint8 *pmk, uint pmk_len, uint8 *pmkr0, uint8 *pmkr0name)
 {
 	uint8 data[128], digest[PRF_OUTBUF_LEN];
-	char prefix[] = "FT-R0";
-	char prefix1[] = "FT-R0N";
+	const char prefix[] = "FT-R0";
+	const char prefix1[] = "FT-R0N";
 	int data_len = 0;
 
 	bcopy(prefix, data, strlen(prefix));
 	data_len += strlen(prefix);
-	data[data_len++] = ssid_len;
+	data[data_len++] = (uint8)ssid_len;
 	bcopy(ssid, &data[data_len], ssid_len);
 	data_len += ssid_len;
 	htol16_ua_store(mdid, &data[data_len]);
 	data_len += sizeof(uint16);
-	data[data_len++] = r0kh_len;	/* ROKHlength */
+	data[data_len++] = (uint8)r0kh_len;	/* ROKHlength */
 	bcopy(r0kh, &data[data_len], r0kh_len);
 	data_len += r0kh_len;
 	bcopy(sta_ea, &data[data_len], ETHER_ADDR_LEN);
@@ -133,8 +136,8 @@ wpa_calc_pmkR1(struct ether_addr *r1kh, struct ether_addr *sta_ea, uint8 *pmk,
 	uint pmk_len, uint8 *pmkr0name, uint8 *pmkr1, uint8 *pmkr1name)
 {
 	uint8 data[128], digest[PRF_OUTBUF_LEN];
-	char prefix[] = "FT-R1";
-	char prefix1[] = "FT-R1N";
+	const char prefix[] = "FT-R1";
+	const char prefix1[] = "FT-R1N";
 	int data_len = 0;
 
 	bcopy(prefix, data, strlen(prefix));
@@ -166,7 +169,7 @@ wpa_calc_ft_ptk(struct ether_addr *bssid, struct ether_addr *sta_ea,
 	uint8 *ptk, uint ptk_len)
 {
 	uchar data[128], prf_buff[PRF_OUTBUF_LEN];
-	char prefix[] = "FT-PTK";
+	const char prefix[] = "FT-PTK";
 	uint data_len = 0;
 
 	bcopy(prefix, data, strlen(prefix));
@@ -185,8 +188,7 @@ wpa_calc_ft_ptk(struct ether_addr *bssid, struct ether_addr *sta_ea,
 	hmac_sha256_n(pmk, pmk_len, data, data_len, prf_buff, ptk_len);
 	bcopy(prf_buff, (char*)ptk, ptk_len);
 }
-
-#endif /* MFP */
+#endif /* WLFBT */
 
 bool
 wpa_encr_key_data(eapol_wpa_key_header_t *body, uint16 key_info, uint8 *ekey,
@@ -280,7 +282,7 @@ BCMROMFN(wpa_calc_ptk)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
                        uint8 *ptk, uint ptk_len)
 {
 	uchar data[128], prf_buff[PRF_OUTBUF_LEN];
-	char prefix[] = "Pairwise key expansion";
+	const char prefix[] = "Pairwise key expansion";
 	uint data_len = 0;
 
 	/* Create the the data portion:
@@ -312,7 +314,7 @@ BCMROMFN(wpa_calc_ptk)(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 	bcopy(prf_buff, (char*)ptk, ptk_len);
 }
 
-#ifdef MFP
+#if defined(MFP) || defined(WLFBT)
 void
 kdf_calc_ptk(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
                        uint8 *anonce, uint8* snonce, uint8 *pmk, uint pmk_len,
@@ -350,7 +352,7 @@ kdf_calc_ptk(struct ether_addr *auth_ea, struct ether_addr *sta_ea,
 	     prf_buff, (int)ptk_len);
 	bcopy(prf_buff, (char*)ptk, ptk_len);
 }
-#endif /* MFP */
+#endif /* defined(MFP) || defined(WLFBT) */
 /* Decrypt a group transient key from a WPA key message */
 bool
 BCMROMFN(wpa_decr_gtk)(eapol_wpa_key_header_t *body, uint16 key_info, uint8 *ekey,
@@ -378,7 +380,7 @@ BCMROMFN(wpa_make_mic)(eapol_header_t *eapol, uint key_desc, uint8 *mic_key, uch
 		hmac_sha1(&eapol->version, mic_length, mic_key,
 		          EAPOL_WPA_KEY_MIC_LEN, mic);
 		break;
-#ifdef MFP
+#if defined(MFP) || defined(WLFBT)
 	case WPA_KEY_DESC_V3:
 		aes_cmac_calc(&eapol->version, mic_length, mic_key,
 		          EAPOL_WPA_KEY_MIC_LEN, mic);
@@ -555,7 +557,7 @@ bcm_find_p2pie(uint8 *parse, uint len)
 }
 #endif
 
-#if defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP)
+#if defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP) || defined(WLFBT)
 #define wpa_is_kde(ie, tlvs, len, type)	bcm_has_ie(ie, tlvs, len, \
 	(const uint8 *)WPA2_OUI, WPA2_OUI_LEN, type)
 
@@ -583,7 +585,7 @@ BCMROMFN(wpa_find_gtk_encap)(uint8 *parse, uint len)
 {
 	return wpa_find_kde(parse, len, WPA2_KEY_DATA_SUBTYPE_GTK);
 }
-#endif /* defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP) */
+#endif /* defined(BCMSUP_PSK) || defined(BCMSUPPL) || defined(MFP) || defined(WLFBT) */
 
 #ifdef MFP
 eapol_wpa2_encap_data_t *
@@ -641,6 +643,14 @@ BCMROMFN(bcmwpa_akm2WPAauth)(uint8 *akm, uint32 *auth, bool sta_iswpa)
 		case RSN_AKM_PSK:
 			*auth = WPA2_AUTH_PSK;
 			break;
+#ifdef WLFBT
+		case RSN_AKM_FBT_1X:
+			*auth = WPA2_AUTH_UNSPECIFIED;
+			break;
+		case RSN_AKM_FBT_PSK:
+			*auth = WPA2_AUTH_PSK;
+			break;
+#endif
 #ifdef MFP
 		case RSN_AKM_MFP_1X:
 			*auth = WPA2_AUTH_UNSPECIFIED;
