@@ -29,6 +29,10 @@
 #ifdef CONFIG_AR7242_S16_PHY
 #include "athrs16_phy.h"
 #endif
+
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+#include "rtl8309g_phy.h"
+#endif
 extern ag7240_mac_t *ag7240_macs[2];
 #define ag7240_phy_is_up(unit)          athrs26_phy_is_up (unit)
 #define ag7240_phy_speed(unit,phyUnit)  athrs26_phy_speed (unit,phyUnit)
@@ -70,6 +74,11 @@ static inline int athrs_do_ioctl(struct net_device *dev,struct ifreq *ifr, int c
 
 static inline void ag7240_phy_reg_init(int unit)
 {
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+  if (unit == 0 && is_ar7242())
+    rtl8309g_reg_init(unit);
+  else
+#else
 #ifndef CONFIG_AR7242_S16_PHY
   if (unit == 0)
     athrs26_reg_init(unit);
@@ -78,11 +87,18 @@ static inline void ag7240_phy_reg_init(int unit)
     athrs16_reg_init(unit);
 #endif
   else
+#endif
     athrs26_reg_init_lan(unit);
 } 
 
 static inline void ag7240_phy_setup(int unit)
 {
+
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+    if (is_ar7242() && (unit==0)) {
+    	 rtl8309g_phy_setup(unit);
+    } else 
+#endif 
   if (is_ar7241() || is_ar7240())
     athrs26_phy_setup (unit);
   else if (is_ar7242() && unit == 1) 
@@ -100,6 +116,16 @@ static inline void ag7240_phy_setup(int unit)
 static inline unsigned int 
 ag7240_get_link_status(int unit, int *link, int *fdx, ag7240_phy_speed_t *speed,int phyUnit)
 {
+
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+    if (is_ar7242() && (unit==0)) {
+    *link=rtl8309g_phy_is_up(unit);
+    *fdx=rtl8309g_phy_is_fdx(unit);
+    *speed=rtl8309g_phy_speed(unit);
+    }
+    else
+#endif
+
   if (is_ar7240() || is_ar7241() || (is_ar7242() && unit == 1)) {
     *link=ag7240_phy_is_up(unit);
     *fdx=ag7240_phy_is_fdx(unit, phyUnit);
