@@ -2202,6 +2202,9 @@ config WZRG450
 config AR7242_VIR_PHY
     bool "AR7242 Vitual Switch"
 
+config AR7242_RTL8309G_PHY
+    bool "Realtek RTL8309G Switch"
+
 endchoice
 
 config  ATHRS_QOS
