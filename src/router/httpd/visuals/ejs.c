@@ -1622,6 +1622,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		memcpy(menuname, menuname_s, 8 * 13 * 32);
 	}
 #endif
+#ifdef HAVE_CORENET
+	sprintf(&menuname[0][0][0], "setupnetw");
+	sprintf(&menuname[6][0][0], "adminman");
+#endif
 //fprintf(stderr,"generate menu content\n");
 #ifdef HAVE_MADWIFI
 #if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
@@ -1712,7 +1716,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "     <ul id=\"menuSubList\">\n");
 
 			for (j = 0; j < 12; j++) {
-
 #ifdef HAVE_MADWIFI
 				if (!wifi
 				    && !strncmp(menu[i][j],
