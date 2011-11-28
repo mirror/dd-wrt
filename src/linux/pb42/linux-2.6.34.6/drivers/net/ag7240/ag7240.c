@@ -251,7 +251,7 @@ ag7240_open(struct net_device *dev)
 #endif
 
     mac->mac_speed = -1;
-
+    printk(KERN_INFO "reg init for %d\n",mac->mac_unit);
     ag7240_phy_reg_init(mac->mac_unit);
 
 
@@ -296,7 +296,7 @@ ag7240_open(struct net_device *dev)
 
         ag7240_intr_enable_rxovf(mac);
 
-#if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY)   
+#if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY) || defined(CONFIG_AR7242_RTL8309G_PHY)
     
     if(is_ar7242() && mac->mac_unit == 0) {
 
@@ -441,6 +441,10 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     uint32_t mgmt_cfg_val,ac;
     u32 check_cnt;
 
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+    ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN | AG7240_MAC_CFG1_TX_EN));
+    ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN | AG7240_MAC_CFG2_LEN_CHECK | AG7240_MAC_CFG2_IF_10_100));
+#else
     if(mac->mac_unit)
     {
         ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN | AG7240_MAC_CFG1_TX_EN));
@@ -452,7 +456,7 @@ ag7240_hw_setup(ag7240_mac_t *mac)
 //        ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN | AG7240_MAC_CFG1_TX_EN));
         ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, (AG7240_MAC_CFG2_PAD_CRC_EN | AG7240_MAC_CFG2_LEN_CHECK));
     }
-
+#endif
     ag7240_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
     ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_0, 0x1f00);
@@ -490,6 +494,19 @@ ag7240_hw_setup(ag7240_mac_t *mac)
             default:
                      mgmt_cfg_val = 0x7;
         }
+
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+		mgmt_cfg_val = 0x4;
+     if ( is_ar7242() && (mac->mac_unit == 0)) {
+		ar7240_reg_rmw_set(AG7240_ETH_CFG, AG7240_ETH_CFG_MII_GE0 | AG7240_ETH_CFG_MII_GE0_SLAVE);
+		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+	} else if(is_ar7242() && mac->mac_unit == 1) {
+		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+		ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+	}
+#else
+
         if ((is_ar7241() || is_ar7242())) {
 
             /* External MII mode */
@@ -510,6 +527,7 @@ ag7240_hw_setup(ag7240_mac_t *mac)
             ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
             printk("Virian MDC CFG Value ==> %x\n",mgmt_cfg_val);
         }
+#endif
         else { /* Python 1.0 & 1.1 */
             if (mac->mac_unit == 0) {
                 check_cnt = 0;
@@ -538,6 +556,16 @@ ag7240_hw_setup(ag7240_mac_t *mac)
      * dribble nibble and rxdv error frames.
      */
     DPRINTF("Setting Drop CRC Errors, Pause Frames and Length Error frames \n");
+
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+	if(is_ar7242() && (mac->mac_unit == 0)) {
+		ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 18));
+		ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+	} else {
+		ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 18));
+
+	}
+#else
     if(mac_has_flag(mac,ATHR_S26_HEADER)){
         ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6bc0);
     } else if (mac->mac_unit == 0 && is_ar7242()){
@@ -548,7 +576,7 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     if (mac->mac_unit == 0 && is_ar7242()){
        ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_5, 0xe6be2);
     }
-    
+#endif    
     if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
     /* Enable Fixed priority */
 #if 1
@@ -635,6 +663,33 @@ ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)
     ag7240_set_mac_duplex(mac, fdx);
     ag7240_reg_wr(mac, AG7240_MAC_FIFO_CFG_3, fifo_3);
 
+#ifdef CONFIG_AR7242_RTL8309G_PHY
+    switch (speed)
+	{
+		case AG7240_PHY_SPEED_1000T:
+		case AG7240_PHY_SPEED_100TX:
+//			printf("Speed is 100 or 100M \n");
+			if(mac->mac_unit == 0) { //RTL8309G 100M only 
+				ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+				ar7240_reg_wr(AR7242_ETH_XMII_CONFIG,0x0101);
+			} else {
+			    ag7240_reg_rmw_set(mac, AG7240_MAC_CFG2, AG7240_MAC_CFG2_IF_1000);
+			}
+			break;
+		case AG7240_PHY_SPEED_10T:
+//		    printf("Spped is 10M \n");
+			ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+			if(mac->mac_unit == 0) { //RTL8309G 10M only
+				ag7240_reg_rmw_clear(mac, AG7240_MAC_FIFO_CFG_5, (1 << 19));
+				ar7240_reg_wr(AR7242_ETH_XMII_CONFIG,0x1616);
+			}
+			break;
+		default:
+			printk(KERN_INFO "Invalid speed detected\n");
+			return 0;
+
+	}
+#else
     switch (speed)
     {
     case AG7240_PHY_SPEED_1000T:
@@ -663,6 +718,7 @@ ag7240_set_mac_from_link(ag7240_mac_t *mac, ag7240_phy_speed_t speed, int fdx)
     default:
         assert(0);
     }
+#endif
     DPRINTF(MODULE_NAME ": cfg_1: %#x\n", ag7240_reg_rd(mac, AG7240_MAC_FIFO_CFG_1));
     DPRINTF(MODULE_NAME ": cfg_2: %#x\n", ag7240_reg_rd(mac, AG7240_MAC_FIFO_CFG_2));
     DPRINTF(MODULE_NAME ": cfg_3: %#x\n", ag7240_reg_rd(mac, AG7240_MAC_FIFO_CFG_3));
@@ -1021,7 +1077,7 @@ done:
     return 0;
 }
 
-#if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY)   
+#if defined(CONFIG_AR7242_RGMII_PHY)||defined(CONFIG_AR7242_S16_PHY)||defined(CONFIG_AR7242_VIR_PHY) || defined(CONFIG_AR7242_RTL8309G_PHY)
 /*
  * phy link state management
  */
