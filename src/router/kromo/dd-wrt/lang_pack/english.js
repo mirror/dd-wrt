@@ -467,6 +467,9 @@ bmenu.statuActivate="Activate";
 bmenu.statuMyPage="My Page";
 bmenu.statuGpio="GPIO I/O";
 
+bmenu.setupnetw="Network";
+bmenu.adminman="Management";
+
 // ** Alive.asp **//
 var alive = new Object();
 alive.titl="Keep Alive";
