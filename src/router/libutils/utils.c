@@ -2200,6 +2200,12 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNDR4000");
 		return ROUTER_NETGEAR_WNDR4000;
 	}
+	
+	if (nvram_match("boardnum", "4536") && nvram_match("boardtype", "0xf52e")
+	    && nvram_match("boardrev", "0x1102")) {
+		setRouter("Netgear WNDR4500");
+		return ROUTER_NETGEAR_WNDR4500;
+	}
 
 	if ((boardnum == 42 || boardnum == 66)
 	    && nvram_match("boardtype", "0x04EF")
