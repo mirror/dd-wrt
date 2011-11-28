@@ -137,10 +137,22 @@ static void tt_local_entry_free_ref(struct tt_local_entry *tt_local_entry)
 		kfree_rcu(tt_local_entry, rcu);
 }
 
+static void tt_global_entry_free_rcu(struct rcu_head *rcu)
+{
+	struct tt_global_entry *tt_global_entry;
+
+	tt_global_entry = container_of(rcu, struct tt_global_entry, rcu);
+
+	if (tt_global_entry->orig_node)
+		orig_node_free_ref(tt_global_entry->orig_node);
+
+	kfree(tt_global_entry);
+}
+
 static void tt_global_entry_free_ref(struct tt_global_entry *tt_global_entry)
 {
 	if (atomic_dec_and_test(&tt_global_entry->refcount))
-		kfree_rcu(tt_global_entry, rcu);
+		call_rcu(&tt_global_entry->rcu, tt_global_entry_free_rcu);
 }
 
 static void tt_local_event(struct bat_priv *bat_priv, const uint8_t *addr,
@@ -686,6 +698,9 @@ void tt_global_del_orig(struct bat_priv *bat_priv,
 	struct hlist_head *head;
 	spinlock_t *list_lock; /* protects write access to the hash lists */
 
+	if (!hash)
+		return;
+
 	for (i = 0; i < hash->size; i++) {
 		head = &hash->table[i];
 		list_lock = &hash->list_locks[i];
@@ -999,7 +1014,6 @@ static struct sk_buff *tt_response_fill_table(uint16_t tt_len, uint8_t ttvn,
 	tt_response = (struct tt_query_packet *)skb_put(skb,
 						     tt_query_size + tt_len);
 	tt_response->ttvn = ttvn;
-	tt_response->tt_data = htons(tt_tot);
 
 	tt_change = (struct tt_change *)(skb->data + tt_query_size);
 	tt_count = 0;
@@ -1024,6 +1038,10 @@ static struct sk_buff *tt_response_fill_table(uint16_t tt_len, uint8_t ttvn,
 		}
 	}
 	rcu_read_unlock();
+
+	/* store in the message the number of entries we have successfully
+	 * copied */
+	tt_response->tt_data = htons(tt_count);
 
 out:
 	return skb;
@@ -1668,6 +1686,8 @@ static void tt_local_reset_flags(struct bat_priv *bat_priv, uint16_t flags)
 		rcu_read_lock();
 		hlist_for_each_entry_rcu(tt_local_entry, node,
 					 head, hash_entry) {
+			if (!(tt_local_entry->flags & flags))
+				continue;
 			tt_local_entry->flags &= ~flags;
 			atomic_inc(&bat_priv->num_local_tt);
 		}
