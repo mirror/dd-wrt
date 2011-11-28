@@ -2554,9 +2554,17 @@
 #define _CURBBASE		0x700c4
 #define _CURBPOS			0x700c8
 
+#define _CURBCNTR_IVB		0x71080
+#define _CURBBASE_IVB		0x71084
+#define _CURBPOS_IVB		0x71088
+
 #define CURCNTR(pipe) _PIPE(pipe, _CURACNTR, _CURBCNTR)
 #define CURBASE(pipe) _PIPE(pipe, _CURABASE, _CURBBASE)
 #define CURPOS(pipe) _PIPE(pipe, _CURAPOS, _CURBPOS)
+
+#define CURCNTR_IVB(pipe) _PIPE(pipe, _CURACNTR, _CURBCNTR_IVB)
+#define CURBASE_IVB(pipe) _PIPE(pipe, _CURABASE, _CURBBASE_IVB)
+#define CURPOS_IVB(pipe) _PIPE(pipe, _CURAPOS, _CURBPOS_IVB)
 
 /* Display A control */
 #define _DSPACNTR                0x70180
@@ -3167,6 +3175,7 @@
 #define  FDI_LINK_TRAIN_NONE_IVB            (3<<8)
 
 /* both Tx and Rx */
+#define  FDI_COMPOSITE_SYNC		(1<<11)
 #define  FDI_LINK_TRAIN_AUTO		(1<<10)
 #define  FDI_SCRAMBLING_ENABLE          (0<<7)
 #define  FDI_SCRAMBLING_DISABLE         (1<<7)
