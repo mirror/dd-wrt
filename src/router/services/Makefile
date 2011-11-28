@@ -324,6 +324,9 @@ endif
 ifeq ($(CONFIG_WZRG450),y)
 CFLAGS_EXTRA += -DHAVE_WZRG450
 endif
+ifeq ($(CONFIG_DIR632),y)
+CFLAGS_EXTRA += -DHAVE_DIR632
+endif
 ifeq ($(CONFIG_WZRG300NH2),y)
 CFLAGS_EXTRA += -DHAVE_WZRG300NH2
 OBJS += $(TOP)/private/buffalo/boot_check.o
