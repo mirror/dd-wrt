@@ -108,8 +108,8 @@ ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
 endif
 
-export CC := $(CROSS_COMPILE)gcc
-export CXX := $(CROSS_COMPILE)g++
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -245,6 +245,9 @@ endif
 ifeq ($(CONFIG_WZRG300NH2),y)
 	cp $(LINUXDIR)/.config_wzrg300nh2 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIR632),y)
+	cp $(LINUXDIR)/.config_dir632 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
@@ -255,10 +258,10 @@ else
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 
@@ -449,6 +452,14 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
 endif
 
 
@@ -782,6 +793,11 @@ ifeq ($(CONFIG_DIR615C1),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/dir615c1-uimage.bin
 	cat tools/dir615c2.tag >> $(ARCH)-uclibc/dir615c1-uimage.bin
 	
+endif
+ifeq ($(CONFIG_DIR632),y)
+	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir632-uimage.bin bs=7667712 conv=sync
+	cat tools/dir632na.tag >> $(ARCH)-uclibc/dir632-uimage.bin
+	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/dir632-firmware.bin $(ARCH)-uclibc/dir632-uimage.bin	
 endif
 ifeq ($(CONFIG_DIR615E),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
