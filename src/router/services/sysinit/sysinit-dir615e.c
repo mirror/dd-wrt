@@ -72,12 +72,17 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
+//#ifndef HAVE_DIR632
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
 	FILE *in = fopen("/dev/mtdblock/6", "rb");
 	char *lanmac = NULL;
 	if (in != NULL) {
+#ifdef HAVE_DIR632
+		fseek(in, 0x40000, SEEK_SET);
+#else
 		fseek(in, 0x30000, SEEK_SET);
+#endif
 		unsigned char *config = malloc(65536);
 		memset(config, 0, 65536);
 		fread(config, 65536, 1, in);
@@ -94,7 +99,11 @@ void start_sysinit(void)
 				mac[17] = 0;
 				lanmac = malloc(32);
 				strcpy(lanmac, mac);
+#ifdef HAVE_DIR632
+				eval("ifconfig", "eth0", "hw", "ether", mac);
+#else
 				eval("ifconfig", "eth1", "hw", "ether", mac);
+#endif
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				if (haswan)
@@ -106,7 +115,11 @@ void start_sysinit(void)
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
+#ifdef HAVE_DIR632
+				eval("ifconfig", "eth1", "hw", "ether", mac);
+#else
 				eval("ifconfig", "eth0", "hw", "ether", mac);
+#endif
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				if (haslan)
@@ -116,6 +129,7 @@ void start_sysinit(void)
 		free(config);
 		fclose(in);
 	}
+//#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
@@ -135,12 +149,16 @@ void start_sysinit(void)
 		close(s);
 	}
 	detect_wireless_devices();
+#ifndef HAVE_ATH9K
 	if (lanmac != NULL) {
 		fprintf(stderr, "configure wifi0 to %s\n", lanmac);
 		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
 		free(lanmac);
 	}
-
+#endif
+#ifdef HAVE_DIR632
+	setWirelessLedPhy0(0);
+#endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);

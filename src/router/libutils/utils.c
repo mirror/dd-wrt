@@ -1196,6 +1196,11 @@ int internal_getRouterBrand()
 	setRouter("Buffalo WZR-HP-AG300H");
 #endif
 	return ROUTER_BOARD_PB42;
+#elif HAVE_DIR632
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("Dlink-DIR-632A");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WNDR3700V2
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
@@ -3304,6 +3309,12 @@ int led_control(int type, int act)
 		connected_gpio = 0x112;
 		ses_gpio = 0x111;
 		sec0_gpio = 0x111;
+#endif
+#ifdef HAVE_DIR632
+		power_gpio = 0x001;
+		diag_gpio = 0x100;
+		connected_gpio = 0x111;
+		usb_gpio = 0x10b;
 #endif
 #ifdef HAVE_WZRG450
 		diag_gpio = 0x10e;
