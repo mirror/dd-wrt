@@ -983,8 +983,8 @@ int
 ag7240_check_link(ag7240_mac_t *mac,int phyUnit)
 {
     struct net_device  *dev     = mac->mac_dev;
-    int                 carrier = netif_carrier_ok(dev), fdx, phy_up;
-    ag7240_phy_speed_t  speed;
+    int                 carrier = netif_carrier_ok(dev), fdx=0, phy_up=0;
+    ag7240_phy_speed_t  speed = 0;
     int                 rc;
 
     /* The vitesse switch uses an indirect method to communicate phy status
@@ -1085,8 +1085,8 @@ int
 ag7242_check_link(ag7240_mac_t *mac)
 {
     struct net_device  *dev     = mac->mac_dev;
-    int                 carrier = netif_carrier_ok(dev), fdx, phy_up;
-    ag7240_phy_speed_t  speed;
+    int                 carrier = netif_carrier_ok(dev), fdx = 0, phy_up = 0;
+    ag7240_phy_speed_t  speed = 0;
     int                 rc,phyUnit = 0;
 
 

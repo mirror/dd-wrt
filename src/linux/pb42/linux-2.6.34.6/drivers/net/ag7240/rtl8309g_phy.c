@@ -17,9 +17,7 @@
 #include <linux/etherdevice.h>
 #include <linux/delay.h>
 #include "ag7240_phy.h"
-/*#include "ag7240.h"
-#include "eth_diag.h"*/
-#include "rtl8309g_phy.h" 
+#include "rtl8309g_phy.h"
 
 static int rtl8309g_init_flag = 0;
 
@@ -31,10 +29,9 @@ static int rtl8309g_init_flag = 0;
 #define RTK_8309G_PHY5_ADDR   0x5
 #define RTK_8309G_PHY6_ADDR   0x6
 #define RTK_8309G_PHY7_ADDR   0x7
-#define RTK_8309G_UNIT_LAN	    1  
+#define RTK_8309G_UNIT_LAN	    1
 #define RTK_LAN_PORT_VLAN       1
 #define RTK_8309G_PHY_MAX		8
-
 
 #define TRUE    1
 #define FALSE   0
@@ -51,127 +48,120 @@ static int rtl8309g_init_flag = 0;
  * Track per-PHY port information.
  */
 typedef struct {
-    BOOL   isEnetPort;         /* normal enet port */
-    BOOL   isPhyAlive;         /* last known state of link */
-    int    ethUnit;            /* MAC associated with this phy port */
-    uint32_t phyBase;
-    uint32_t phyAddr;          /* PHY registers associated with this phy port */
-    uint32_t VLANTableSetting; /* Value to be written to VLAN table */
+	BOOL isEnetPort;	/* normal enet port */
+	BOOL isPhyAlive;	/* last known state of link */
+	int ethUnit;		/* MAC associated with this phy port */
+	uint32_t phyBase;
+	uint32_t phyAddr;	/* PHY registers associated with this phy port */
+	uint32_t VLANTableSetting;	/* Value to be written to VLAN table */
 } RTK8309PhyInfo_t;
 
 /*
  * Per-PHY information, indexed by PHY unit number.
  */
 static RTK8309PhyInfo_t RTKPhyInfo[] = {
-    {TRUE,							/* phy port 0 -- LAN port 0 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY0_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 1 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY1_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 2 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY2_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 3 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY3_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 4 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY4_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 5 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY5_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 6 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY6_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
-	{TRUE,							/* phy port 0 -- LAN port 7 */
-     FALSE,
-     RTK_8309G_UNIT_LAN,
-     0,
-     RTK_8309G_PHY7_ADDR,
-     RTK_LAN_PORT_VLAN
-    },
+	{TRUE,			/* phy port 0 -- LAN port 0 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY0_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 1 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY1_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 2 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY2_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 3 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY3_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 4 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY4_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 5 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY5_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 6 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY6_ADDR,
+	 RTK_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 0 -- LAN port 7 */
+	 FALSE,
+	 RTK_8309G_UNIT_LAN,
+	 0,
+	 RTK_8309G_PHY7_ADDR,
+	 RTK_LAN_PORT_VLAN},
 };
-
 
 int rtl8309g_phy_is_fdx(int ethUnit)
 {
-	return 1; //Full Duplex.
+	return 1;		//Full Duplex.
 }
-int rtl8309g_phy_speed(int ethUnit) 
+
+int rtl8309g_phy_speed(int ethUnit)
 {
 	return AG7240_PHY_SPEED_100TX;
 }
 
 int rtl8309g_phy_is_up(int ethUnit)
 {
-	int           phyUnit;
-	uint16_t      phyHwStatus, phyHwControl;
+	int phyUnit;
+	uint16_t phyHwStatus;
 	RTK8309PhyInfo_t *lastStatus;
-	int           linkCount   = 0;
-	uint32_t      phyBase;
-	uint32_t      phyAddr;
-	
-	if(!rtl8309g_init_flag) {
-		printk(KERN_INFO "RTL 8309G don't initial \n");
-	    return 0;
-	}
-	if(ethUnit) {
-		printk(KERN_INFO "Not WAN Physical !!\n");
+	int linkCount = 0;
+	uint32_t phyBase;
+	uint32_t phyAddr;
+
+	if (!rtl8309g_init_flag) {
 		return 0;
 	}
-    for (phyUnit=0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
+	if (ethUnit) {
+		return 0;
+	}
+	for (phyUnit = 0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
 		phyBase = RTK_8309G_PHYBASE(phyUnit);
-      	phyAddr = RTK_8309G_PHYADDR(phyUnit);
-      	lastStatus = &RTKPhyInfo[phyUnit];
-        if (lastStatus->isPhyAlive) { /* last known link status was ALIVE */
-            phyHwStatus = phy_reg_read(phyBase, phyAddr, RTL_8309G_PHY_SPEC_STATUS);
-            /* See if we've lost link */
-            if ((phyHwStatus & RTL_AUTO_NEG_CHECK) && (phyHwStatus & RTL_8309G_STATUS_LINK_PASS)) {
-//				printk(KERN_INFO "MAC %d, Port %d, link is up \n",ethUnit,phyUnit);
+		phyAddr = RTK_8309G_PHYADDR(phyUnit);
+		lastStatus = &RTKPhyInfo[phyUnit];
+		if (lastStatus->isPhyAlive) {	/* last known link status was ALIVE */
+			phyHwStatus =
+			    phy_reg_read(phyBase, phyAddr,
+					 RTL_8309G_PHY_SPEC_STATUS);
+			/* See if we've lost link */
+			if ((phyHwStatus & RTL_AUTO_NEG_CHECK)
+			    && (phyHwStatus & RTL_8309G_STATUS_LINK_PASS)) {
 				linkCount++;
-            } else {
-//                printk(KERN_INFO "MAC %d, Port %d, link is down \n",ethUnit,phyUnit);
-                lastStatus->isPhyAlive = FALSE;
-            }
-        } else { /* last known link status was DEAD */
-            phyHwStatus = phy_reg_read(phyBase, phyAddr, RTL_8309G_PHY_SPEC_STATUS);
-			if((phyHwStatus & RTL_AUTO_NEG_CHECK) && (phyHwStatus & RTL_8309G_STATUS_LINK_PASS)) {
-					linkCount++;
-					lastStatus->isPhyAlive = TRUE;
-//					printk(KERN_INFO "MAC %d, Port %d, link is up \n",ethUnit,phyUnit);
+			} else {
+				lastStatus->isPhyAlive = FALSE;
+			}
+		} else {	/* last known link status was DEAD */
+			phyHwStatus =
+			    phy_reg_read(phyBase, phyAddr,
+					 RTL_8309G_PHY_SPEC_STATUS);
+			if ((phyHwStatus & RTL_AUTO_NEG_CHECK)
+			    && (phyHwStatus & RTL_8309G_STATUS_LINK_PASS)) {
+				linkCount++;
+				lastStatus->isPhyAlive = TRUE;
 			}
 		}
 	}
-    return (linkCount);
+	return (linkCount);
 }
 
 BOOL rtl8309g_phy_is_link_alive(int phyUnit)
@@ -181,65 +171,63 @@ BOOL rtl8309g_phy_is_link_alive(int phyUnit)
 
 BOOL rtl8309g_phy_setup(int ethUnit)
 {
-    int       phyUnit;
-    uint16_t  phyHwStatus;
-    uint16_t  timeout;
-    int       liveLinks = 0;
-    uint32_t  phyBase = 0;
-    BOOL      foundPhy = FALSE;
-    uint32_t  phyAddr = 0;
-    uint32_t  regData;
+	int phyUnit;
+	uint16_t phyHwStatus;
+	uint16_t timeout;
+	uint32_t phyBase = 0;
+	BOOL foundPhy = FALSE;
+	uint32_t phyAddr = 0;
 
-    if(!rtl8309g_init_flag) {
-		printk(KERN_INFO "rtl8309g_phy_setup () : RTL 8309G don't initial \n");
+	if (!rtl8309g_init_flag) {
 		return FALSE;
-    }
-    if(ethUnit) {
-		printk(KERN_INFO "rtl8309g_phy_setup () : Not WAN Physical !!\n");
+	}
+	if (ethUnit) {
 		return 0;
-    }
-    /* See if there's any configuration data for this enet */
-    /* start auto negogiation on each phy */
-    for (phyUnit=0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
-        foundPhy = TRUE;
-        phyBase = RTK_8309G_PHYBASE(phyUnit);
-        phyAddr = RTK_8309G_PHYADDR(phyUnit);
-        /* Reset PHYs*/
-        phy_reg_write(phyBase, phyAddr, RTL_8309G_PHY_CTRL_REG, 1 << 15);
-    }
+	}
+	/* See if there's any configuration data for this enet */
+	/* start auto negogiation on each phy */
+	for (phyUnit = 0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
+		foundPhy = TRUE;
+		phyBase = RTK_8309G_PHYBASE(phyUnit);
+		phyAddr = RTK_8309G_PHYADDR(phyUnit);
+		/* Reset PHYs */
+		phy_reg_write(phyBase, phyAddr, RTL_8309G_PHY_CTRL_REG,
+			      1 << 15);
+	}
 	/*
-     * After the phy is reset, it takes a little while before
-     * it can respond properly.
-     */
-    mdelay(2000);
-	for (phyUnit=0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
-		timeout=20;
-        for (;;) {
-            phyHwStatus = phy_reg_read(phyBase, phyAddr, RTL_8309G_PHY_SPEC_STATUS);
-            if (RTL_RESET_DONE(phyHwStatus)) {
-//                printk(KERN_EMERG "Port %d, Neg Success\n", phyUnit);
-                break;
-            }
-            if (timeout == 0) {
-//                printk(KERN_EMERG "Port %d, Negogiation timeout\n", phyUnit);
-                break;
-            }
-            if (--timeout == 0) {
-//                printk(KERN_EMERG "Port %d, Negogiation timeout\n", phyUnit);
-                break;
-            }
-            mdelay(150);
-        }
-    }
+	 * After the phy is reset, it takes a little while before
+	 * it can respond properly.
+	 */
+	mdelay(2000);
+	for (phyUnit = 0; phyUnit < RTK_8309G_PHY_MAX; phyUnit++) {
+		timeout = 20;
+		for (;;) {
+			phyHwStatus =
+			    phy_reg_read(phyBase, phyAddr,
+					 RTL_8309G_PHY_SPEC_STATUS);
+			if (RTL_RESET_DONE(phyHwStatus)) {
+				break;
+			}
+			if (timeout == 0) {
+				break;
+			}
+			if (--timeout == 0) {
+				break;
+			}
+			mdelay(150);
+		}
+	}
 	return TRUE;
 }
 
-void rtl8309g_reg_init()
+void rtl8309g_reg_init(int ethUnit)
 {
-	printk(KERN_INFO "init RTL8309\n");
-	if(rtl8309g_init_flag) {
-	    return;
-	}	
+	if (ethUnit) {
+		return;
+	}
+	if (rtl8309g_init_flag) {
+		return;
+	}
 	rtl8309g_init_flag = 1;
 	return;
 }
