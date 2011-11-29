@@ -14,6 +14,7 @@
 
 #include <asm/mach-ar7240/ar7240.h>
 #include <asm/mach-ar71xx/ar71xx.h>
+#include "nvram.h"
 
 #ifdef CONFIG_WASP_SUPPORT
 extern uint32_t ath_ref_clk_freq;
@@ -159,6 +160,21 @@ int __init ar7240_platform_init(void)
 #else
 	u8 *mac = NULL;
 #endif
+
+#if defined(CONFIG_AR7242_RTL8309G_PHY) || defined(CONFIG_DIR615E)
+#ifdef CONFIG_DIR615E
+	const char *config = (char *) KSEG1ADDR(0x1f030000);
+#else
+	const char *config = (char *) KSEG1ADDR(0x1f040000);
+#endif
+	u8 wlan_mac[6];
+	if (nvram_parse_mac_addr(config, 0x10000,"lan_mac=", wlan_mac) == 0) {
+		mac = wlan_mac;
+	}
+#endif
+
+
+
         /* need to set clock appropriately */
 #ifdef CONFIG_WASP_SUPPORT
 	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
