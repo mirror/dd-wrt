@@ -45,6 +45,8 @@ static unsigned int fiq_buffer[8];
 extern void cns3xxx_secondary_startup(void);
 extern unsigned char cns3xxx_fiq_start, cns3xxx_fiq_end;
 extern unsigned int fiq_number[2];
+extern struct cpu_cache_fns cpu_cache;
+struct cpu_cache_fns cpu_cache_save;
 /*
  * control for which core is the next to come out of the secondary
  * boot "holding pen"
@@ -128,6 +130,10 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	 * pen, then head off into the C entry point
 	 */
 	write_pen_release(-1);
+	
+	cpu_cache.dma_map_area = (void*)smp_dma_map_area;
+	cpu_cache.dma_unmap_area = (void*)smp_dma_unmap_area;
+	cpu_cache.dma_flush_range = (void*)smp_dma_flush_range;
 
 	/*
 	 * Synchronise with the boot thread.
@@ -233,9 +239,9 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 	 */
 	cns3xxx_init_fiq();
 	cns3xxx_set_fiq_regs();
+	memcpy((void*)&cpu_cache_save, (void*)&cpu_cache, sizeof(struct cpu_cache_fns));
 }
 
-extern struct cpu_cache_fns cpu_cache;
 
 static inline unsigned long cns3xxx_cpu_id(void)
 {
@@ -260,7 +266,7 @@ void smp_dma_map_area(const void *addr, size_t size, int dir)
 		smp_mb();
 		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(1));
 
-		cpu_cache.dma_map_area(addr, size, dir);
+		cpu_cache_save.dma_map_area(addr, size, dir);
 		while ((fiq_buffer[3]) & FIQ_ENABLED) { barrier(); }
 	} else {
 
@@ -270,7 +276,7 @@ void smp_dma_map_area(const void *addr, size_t size, int dir)
 		smp_mb();
 		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(0));
 
-		cpu_cache.dma_map_area(addr, size, dir);
+		cpu_cache_save.dma_map_area(addr, size, dir);
 		while ((fiq_buffer[7]) & FIQ_ENABLED) { barrier(); }
 	}
 	raw_local_irq_restore(flags);
@@ -291,7 +297,7 @@ void smp_dma_unmap_area(const void *addr, size_t size, int dir)
 		smp_mb();
 		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(1));
 
-		cpu_cache.dma_unmap_area(addr, size, dir);
+		cpu_cache_save.dma_unmap_area(addr, size, dir);
 		while ((fiq_buffer[3]) & FIQ_ENABLED) { barrier(); }
 	} else {
 
@@ -301,7 +307,7 @@ void smp_dma_unmap_area(const void *addr, size_t size, int dir)
 		smp_mb();
 		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(0));
 
-		cpu_cache.dma_unmap_area(addr, size, dir);
+		cpu_cache_save.dma_unmap_area(addr, size, dir);
 		while ((fiq_buffer[7]) & FIQ_ENABLED) { barrier(); }
 	}
 	raw_local_irq_restore(flags);
@@ -321,7 +327,7 @@ void smp_dma_flush_range(const void *start, const void *end)
 		smp_mb();
 		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(1));
 
-		cpu_cache.dma_flush_range(start, end);
+		cpu_cache_save.dma_flush_range(start, end);
 		while ((fiq_buffer[3]) & FIQ_ENABLED) { barrier(); }
 	} else {
 
@@ -331,7 +337,7 @@ void smp_dma_flush_range(const void *start, const void *end)
 		smp_mb();
 		__raw_writel(FIQ_GENERATE, MISC_FIQ_CPU(0));
 
-		cpu_cache.dma_flush_range(start, end);
+		cpu_cache_save.dma_flush_range(start, end);
 		while ((fiq_buffer[7]) & FIQ_ENABLED) { barrier(); }
 	}
 	raw_local_irq_restore(flags);
