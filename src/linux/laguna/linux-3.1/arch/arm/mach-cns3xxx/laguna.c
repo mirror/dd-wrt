@@ -541,7 +541,7 @@ static struct memory_accessor *at24_mem_acc;
 
 static void at24_setup(struct memory_accessor *mem_acc, void *context)
 {
-	char buf[8];
+	char buf[16];
 
 	at24_mem_acc = mem_acc;
 
