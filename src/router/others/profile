@@ -7,6 +7,7 @@ reboot() {
     [ -x "$f" ] && "$f" stop
   done
   echo "$(nvram get rc_shutdown)" > /tmp/.rc_shutdown
+  echo "#!/bin/sh" >> /tmp/.rc_shutdown
   if [ -f /tmp/.rc_shutdown ]; then
     chmod +x /tmp/.rc_shutdown
     /tmp/.rc_shutdown
