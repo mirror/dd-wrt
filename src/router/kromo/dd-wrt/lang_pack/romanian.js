@@ -850,7 +850,7 @@ idx_pptp.srv="Folosește DHCP";
 idx_pptp.wan_ip="Adresă IP WAN";
 idx_pptp.gateway="Gateway (server PPTP)";
 idx_pptp.encrypt="Criptare PPTP";
-idx_pptp.reorder="Dezactivează reordonare pachete";
+idx_pptp.reorder="reordonare pachete";
 idx_pptp.addopt="Opțiuni PPTP adiționale";
 
 // ** index_static.asp **//

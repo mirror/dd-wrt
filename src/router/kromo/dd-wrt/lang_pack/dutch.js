@@ -859,7 +859,7 @@ idx_pptp.srv="DHCP Gebruiken";
 idx_pptp.wan_ip="WAN IP-Adres";
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Encryptie";
-idx_pptp.reorder="Uitschakelen Pakket Reordering";
+idx_pptp.reorder="Pakket Reordering";
 idx_pptp.addopt="Extra PPTP Opties"; 
 
 

@@ -863,7 +863,7 @@ idx_pptp.srv="DHCPサーバーを使用する";
 idx_pptp.wan_ip="インターネット側IPアドレス";
 idx_pptp.gateway="ゲートウェイ (PPTPサーバー)";
 idx_pptp.encrypt="PPTP暗号化";
-idx_pptp.reorder="Disable Packet Reordering";
+idx_pptp.reorder="Packet Reordering";
 idx_pptp.addopt="Additional PPTP Options";
 
 
