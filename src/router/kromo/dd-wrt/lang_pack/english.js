@@ -903,7 +903,7 @@ idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="WAN IP Address";
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Encryption";
-idx_pptp.reorder="Disable Packet Reordering";
+idx_pptp.reorder="Packet Reordering";
 idx_pptp.addopt="Additional PPTP Options";
 
 

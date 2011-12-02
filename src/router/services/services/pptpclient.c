@@ -79,7 +79,7 @@ static void create_pptp_config(char *servername, char *username)
 	// server addresses
 	fprintf(fp, "pty 'pptp %s --localbind %s --nolaunchpppd", servername,nvram_safe_get("wan_ipaddr"));
 
-	if (nvram_match("pptp_reorder", "1"))
+	if (nvram_match("pptp_reorder", "0"))
 		fprintf(fp, " --nobuffer");
 
 	// PPTP client also supports synchronous mode.
