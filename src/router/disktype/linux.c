@@ -61,8 +61,8 @@ void detect_ext234(SECTION *section, int level)
     if (get_le_long(buf + 100) & 0x0078)
       fslevel = 4;
     /* Ext4 sets min_extra_isize even on external journals */
-    if (get_le_short(buf + 348) >= 0x1c)
-      fslevel = 4;
+//    if (get_le_short(buf + 348) >= 0x1c)
+//      fslevel = 4;
     /* Ext4dev TEST_FILESYS flag */
     if (get_le_long(buf + 352) & 0x0004)
       is_dev = 1;
