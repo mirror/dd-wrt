@@ -855,7 +855,7 @@ idx_pptp.srv="DHCP kullan";
 idx_pptp.wan_ip="WAN IP Adresi";
 idx_pptp.gateway="Ağ geçidi (PPTP Sunucu)";
 idx_pptp.encrypt="PPTP Şifreleme";
-idx_pptp.reorder="Tekrar Paket Siparişini Devre Dışı Bırak";
+idx_pptp.reorder="Paket Siparişini Devre Dışı Bırak";
 idx_pptp.addopt="Ek PPTP Seçenekleri";
 
 
