@@ -893,7 +893,7 @@ idx_pptp.srv="Koristiti DHCP";
 idx_pptp.wan_ip="WAN IP Adresa";
 idx_pptp.gateway="Poveznik (PPTP Poslužitelj)";
 idx_pptp.encrypt="PPTP Enkripcija";
-idx_pptp.reorder="Onemogući Paketno Preslaganje";
+idx_pptp.reorder="Paketno Preslaganje";
 idx_pptp.addopt="Dodatne PPTP Opcije";
 
 
