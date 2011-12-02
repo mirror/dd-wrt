@@ -832,7 +832,7 @@ idx_pptp.srv="Använd DHCP";
 idx_pptp.wan_ip="WAN IP Adress";
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Kryptering";
-idx_pptp.reorder="Inaktivera Packet Omnumreringen";
+idx_pptp.reorder="Packet Omnumreringen";
 idx_pptp.addopt="Extra PPTP Alternativ";
 
 

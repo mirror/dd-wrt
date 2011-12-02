@@ -1,4 +1,4 @@
-ï»¿//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 //				Slovenian translation DD-WRT by Eko, last revision: 08.Sep.2011, svn 17592	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -10,7 +10,7 @@ lang_charset.set="utf-8";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Klicni niz";
-share.mode_3g="NaÄin zveze";
+share.mode_3g="Na?in zveze";
 share.mode_3g_auto="Avtomatsko 3G/2G";
 share.mode_3g_3g="Prisili 3G";
 share.mode_3g_2g="Prisili 2G";
@@ -18,27 +18,27 @@ share.mode_3g_prefer_3g="Prednost 3G";
 share.mode_3g_prefer_2g="Prednost 2G";
 share.mode_3g_3g2g="Najprej 3G, ob napaki 2G";
 share.firmware="Strojna programska oprema";
-share.time="ÄŒas";
+share.time="?as";
 share.interipaddr="WAN IP naslov";
-share.more="VeÄ...";
-share.help="PomoÄ";
-share.enable="OmogoÄi";
-share.enabled="OmogoÄeno";
-share.disable="OnemogoÄi";
-share.disabled="OnemogoÄeno";
-share.usrname="UporabniÅ¡ko ime";
+share.more="Ve?...";
+share.help="Pomo?";
+share.enable="Omogo?i";
+share.enabled="Omogo?eno";
+share.disable="Onemogo?i";
+share.disabled="Onemogo?eno";
+share.usrname="Uporabniško ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
-share.vdsl="T-Home VDSL 7 VLAN oznaÄevanje";
+share.vdsl="T-Home VDSL 7 VLAN ozna?evanje";
 share.vdslvlan8="VLAN 8 podpora";
-share.wan_vlantag="ID VLAN znaÄke";
+share.wan_vlantag="ID VLAN zna?ke";
 share.compression="PPP kompresija (MPPC)";
 share.mlppp="Multi Link";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
 share.landomainname="LAN domensko ime";
 share.statu="Status";
-share.start="ZaÄetek";
+share.start="Za?etek";
 share.end="Konec";
 share.proto="Protokol";
 share.ip="IP naslov";
@@ -46,10 +46,10 @@ share.localip="Lokalni IP";
 share.remoteip="Oddaljeni IP";
 share.mac="MAC naslov";
 share.none="Noben";
-share.none2="niÄ";
+share.none2="ni?";
 share.both="Oba";
 share.add="Dodaj";
-share.del="IzbriÅ¡i";
+share.del="Izbriši";
 share.remove="Odstrani";
 share.descr="Opis";
 share.from="Od";
@@ -68,9 +68,9 @@ share.tue_s1="T";
 share.wed="Sreda";
 share.wed_s="Sre";
 share.wed_s1="S";
-share.thu="ÄŒetrtek";
-share.thu_s="ÄŒet";
-share.thu_s1="ÄŒ";
+share.thu="?etrtek";
+share.thu_s="?et";
+share.thu_s1="?";
 share.fri="Petek";
 share.fri_s="Pet";
 share.fri_s1="P";
@@ -89,23 +89,23 @@ share.sep="September";
 share.oct="Oktober";
 share.nov="November";
 share.dec="December";
-share.expires="PoteÄe";
+share.expires="Pote?e";
 share.yes="Da";
 share.no="Ne";
 share.filter="Filtriraj";
-share.deny="PrepreÄi";
+share.deny="Prepre?i";
 share.range="Obseg";
 share.use="Uporabi";
 share.mins="Min.";
 share.secs="Sek.";
 share.routername="Ime usmerjevalnika";
-share.manual="RoÄno";
+share.manual="Ro?no";
 share.port="Vrata";
 share.ssid="SSID";
 share.channel="Kanal";
 share.rssi="Rssi";
 share.signal="Signal";
-share.noise="Å um";
+share.noise="Šum";
 share.beacon="beacon";
 share.openn="Odprto";
 share.dtim="dtim";
@@ -116,19 +116,19 @@ share.rxrate="RX hitrost";
 share.low="Nizek";
 share.medium="Srednji";
 share.high="Visok";
-share.option="MoÅ¾nosti";
+share.option="Monosti";
 share.rule="Pravilo";
 share.lan="LAN";
-share.point2point="Povezava med toÄkama";
+share.point2point="Povezava med to?kama";
 share.nat="NAT";
-share.subnet="PodmreÅ¾na maska";
+share.subnet="Podmrena maska";
 share.unmask="Odkrij";
 share.deflt="Privzeto";  //don't use share.default !!!
 share.all="Vse";
 share.auto="Samodejno";
 share.right="Dasna";
 share.left="Leva";
-share.share_key="Skupni kljuÄ";
+share.share_key="Skupni klju?";
 share.inter="Interval (v sekundah)";
 share.srv="Ime storitve";
 share.port_range="Obseg vrat";
@@ -136,16 +136,16 @@ share.priority="Prioriteta";
 share.gateway="Prehod";
 share.intrface="Vmesnik";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
-share.pintrface="FiziÄni vmesnik";
+share.pintrface="Fizi?ni vmesnik";
 share.vintrface="Navidezni vmesniki";
 share.router="Usmerjevalnik";
-share.static_lease="StatiÄni zakupi";
-share.srvip="IP streÅ¾nika";
-share.srvipname="IP ali ime streÅ¾nika";
+share.static_lease="Stati?ni zakupi";
+share.srvip="IP strenika";
+share.srvipname="IP ali ime strenika";
 share.localdns="Lokalni DNS";
 share.minutes="minut";
 share.oui="Iskanje OUI";
-share.sttic="StatiÄno";
+share.sttic="Stati?no";
 share.connecting="Povezujem";
 share.connect="Povezati";
 share.connected="Povezano";
@@ -153,22 +153,22 @@ share.disconnect="Prekini";
 share.disconnected="Prekinjeno";
 share.info="Informacija";
 share.state="Status";
-share.mode="NaÄin";
-share.encrypt="Å ifriranje";
-share.key="KljuÄ";
-share.wireless="BrezÅ¾iÄno";
+share.mode="Na?in";
+share.encrypt="Šifriranje";
+share.key="Klju?";
+share.wireless="Brezi?no";
 share.dhcp="DHCP";
 share.styl="Stil";
 share.err="napak";
 share.errs="napak";
 share.meters="metrov";
-share.ht40="Å iroki HT40 (20+20 MHz)";
+share.ht40="Široki HT40 (20+20 MHz)";
 share.ht20="Polni HT20 (20 MHz)";
-share.dynamicturbo="DinamiÄno (20/40 MHz)";
+share.dynamicturbo="Dinami?no (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
 share.full="Polni (20 MHz)";
-share.half="PoloviÄni (10 MHz)";
-share.quarter="ÄŒetrtinski (5 MHz)";
+share.half="Polovi?ni (10 MHz)";
+share.quarter="?etrtinski (5 MHz)";
 share.subquarter="Osminski (2.5 MHz)";
 share.seealso="Glej tudi";
 share.never="nikoli";
@@ -179,10 +179,10 @@ share.nmounted="Ni prikljopljeno";
 share.fssize="Skupaj / prosto";
 share.src="Izvorni naslov";
 share.dst="Oddaljeni naslov";
-share.name_resolution="RazreÅ¡itev imena";
-share.timeout="ÄŒasovna omejitev (s)";
+share.name_resolution="Razrešitev imena";
+share.timeout="?asovna omejitev (s)";
 share.detail="Glej podrobnost";
-share.tmpmem="ZaÄasni spomin";
+share.tmpmem="Za?asni spomin";
 share._1h="Vsako uro";
 share._2h="Vsaki 2 uri";
 share._3h="Vsake 3 ure";
@@ -198,15 +198,15 @@ share.from2=share.from;
 share.to2=share.to;
 share.days_genetive=share.days;
 share.standard="Standard";
-share.execscript="ZaÅ¾eni script";
+share.execscript="Zaeni script";
 share.user="Uporabnik";
-share.privatekey="Osebni kljuÄ";
+share.privatekey="Osebni klju?";
 share.bytes="bajtov";
 share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Predkup";
-share.acktiming="ACK uÄasenje";
+share.acktiming="ACK u?asenje";
 share.broadcast="Broadcast podpora";
 share.secondcharacter="s";
 share.change="Sprememba uporabnikovega gesla";
@@ -218,165 +218,165 @@ sbutton.apply="Uporabi";
 sbutton.applytitle="Takoj shrani in uporabi nastavitve";
 sbutton.saving="Shranjeno";
 sbutton.cmd="Izvajam";
-sbutton.cancel="PrekliÄi spremembe";
-sbutton.canceltitle="PrekliÄi spremembe na tej strani";
-sbutton.refres="OsveÅ¾i";
+sbutton.cancel="Prekli?i spremembe";
+sbutton.canceltitle="Prekli?i spremembe na tej strani";
+sbutton.refres="Osvei";
 sbutton.clos="Zapri";
-sbutton.del="IzbriÅ¡i";
+sbutton.del="Izbriši";
 sbutton.continu="Nadaljuj";
 sbutton.add="Dodaj";
 sbutton.remove="Odstrani";
 sbutton.modify="Spremeni";
 sbutton.deleted="Izbrisano";
-sbutton.delall="IzbriÅ¡i vse";
-sbutton.autorefresh="Samodejno osveÅ¾evanje je vkljuÄeno";
+sbutton.delall="Izbriši vse";
+sbutton.autorefresh="Samodejno osveevanje je vklju?eno";
 sbutton.backup="Varnostna kop.";
 sbutton.restore="Obnovitev";
 sbutton.cptotext="Kopiraj v polje z besedilom";
-sbutton.runcmd="ZaÅ¾eni ukaze";
+sbutton.runcmd="Zaeni ukaze";
 sbutton.startup="Shrani zagon";
 sbutton.shutdown="Shrani zaustavitev";
-sbutton.firewall="Shrani poÅ¾arni zid";
+sbutton.firewall="Shrani poarni zid";
 sbutton.custom="Shrani skript po meri";
 sbutton.wol="Zbujanje";
 sbutton.add_wol="Dodaj gostitelja";
-sbutton.manual_wol="RoÄno zbujanje";
+sbutton.manual_wol="Ro?no zbujanje";
 sbutton.summary="Povzetek";
 sbutton.filterIP="Uredi seznam odjemalcev";
 sbutton.filterMac="Uredi seznam filtra MAC";
 sbutton.filterSer="Dodaj/uredi storitev";
 sbutton.reboot="Ponovni zagon usmerjevalnika";
-sbutton.help="   PomoÄ  ";
-sbutton.wl_client_mac="Seznam MAC brezÅ¾iÄnih odjamalcev";
+sbutton.help="   Pomo?  ";
+sbutton.wl_client_mac="Seznam MAC brezi?nih odjamalcev";
 sbutton.update_filter="Posodobi seznam filtra";
-sbutton.join="PoveÅ¾i";
+sbutton.join="Povei";
 sbutton.log_in="Vhodni dnevnik";
 sbutton.log_out="Izhodni dnevnik";
 sbutton.edit_srv="Dodaj/uredi storitev";
-sbutton.routingtab="PokaÅ¾i usmerjevalno tabelo";
-sbutton.wanmac="PrikaÅ¾i trenutni PCjev MAC naslov";
+sbutton.routingtab="Pokai usmerjevalno tabelo";
+sbutton.wanmac="Prikai trenutni PCjev MAC naslov";
 sbutton.dhcprel="Sprosti DHCP";
 sbutton.dhcpren="Obnovi DHCP";
-sbutton.survey="Pregled podroÄja";
+sbutton.survey="Pregled podro?ja";
 sbutton.upgrading="Posodabljanje";
 sbutton.upgrade="Posodobi";
 sbutton.preview="Predogled";
-sbutton.allways_on="Vedno vkljuÄeno";
-sbutton.allways_off="Vedno izkljuÄeno";
+sbutton.allways_on="Vedno vklju?eno";
+sbutton.allways_off="Vedno izklju?eno";
 sbutton.download="Prenos";
 sbutton.next="Naslednji &raquo;";
-sbutton.prev="&laquo; PrejÅ¡nji";
+sbutton.prev="&laquo; Prejšnji";
 
 
 // ** COMMON ERROR MESSAGES  **//
 
-errmsg.err0="Vnesti morate uporabniÅ¡ko ime.";
+errmsg.err0="Vnesti morate uporabniško ime.";
 errmsg.err1="Vnesti morate ime usmerjevalnika.";
-errmsg.err2="Izven dovoljenega obmoÄja. Prosimo, do popravite zaÄetni IP naslov ali Å¡tevilo uporabnikov.";
+errmsg.err2="Izven dovoljenega obmo?ja. Prosimo, do popravite za?etni IP naslov ali število uporabnikov.";
 errmsg.err3="Izbrati morate vsaj dan.";
-errmsg.err4="KonÄni Äas mora biti kasnejÅ¡i od zaÄetnega Äasa.";
-errmsg.err5="DolÅ¾ina naslova MAC ni pravilna.";
+errmsg.err4="Kon?ni ?as mora biti kasnejši od za?etnega ?asa.";
+errmsg.err5="Dolina naslova MAC ni pravilna.";
 errmsg.err6="Vnesti morate geslo.";
 errmsg.err7="Vnesti morate ime gostitelja.";
 errmsg.err8="Vnesti morate IP naslov ali domensko ime.";
 errmsg.err9="Nepravilni DMZ IP naslov.";
-errmsg.err10="Potrditveno geslo se ne ujema z vneÅ¡enim geslom. Prosimo, da ponovite vnos.";
+errmsg.err10="Potrditveno geslo se ne ujema z vnešenim geslom. Prosimo, da ponovite vnos.";
 errmsg.err11="V geslu presledki niso dovoljeni";
 errmsg.err12="Vnesti morate ukaz.";
 errmsg.err13="Posodabljanje ni uspelo.";
-errmsg.err45="Ni na voljo v naÄinu HTTPS! Prosimo, da uporabite naÄin HTTP.";
-errmsg.err46="Ni na voljo v naÄinu HTTPS";
+errmsg.err45="Ni na voljo v na?inu HTTPS! Prosimo, da uporabite na?in HTTP.";
+errmsg.err46="Ni na voljo v na?inu HTTPS";
 
 //common.js error messages
 errmsg.err14=" vrednost je izven dovoljenih meja [";
 errmsg.err15="WAN MAC je izven dovoljenih meja [00 - FF].";
-errmsg.err16="drugi znak v MAC mora biti sodo Å¡tevilo : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err16="drugi znak v MAC mora biti sodo število : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="MAC naslov ni pravilen.";
-errmsg.err18="DolÅ¾ina MAC naslova ni pravilna.";
+errmsg.err18="Dolina MAC naslova ni pravilna.";
 errmsg.err19="MAC naslov ne more biti broadcast naslov.";
 errmsg.err20="Vnesite MAC naslov v (xx:xx:xx:xx:xx:xx) formatu.";
 errmsg.err21="Nepravilni format MAC naslova.";
 errmsg.err22="WAN MAC naslov ni pravilen.";
-errmsg.err23="Nepravilna Å¡estnajstiÅ¡ka vrednost ";
+errmsg.err23="Nepravilna šestnajstiška vrednost ";
 errmsg.err24=" najdena v MAC naslovu ";
-errmsg.err25="Vrednost kljuÄa ni pravilna.";
-errmsg.err26="DoÅ¾ina kljuÄa ni pravilna.";
-errmsg.err27="Nepravina podmreÅ¾na maska.";
+errmsg.err25="Vrednost klju?a ni pravilna.";
+errmsg.err26="Doina klju?a ni pravilna.";
+errmsg.err27="Nepravina podmrena maska.";
 errmsg.err28=" ima nepravilni znak, biti mora [ 0 - 9 ].";
 errmsg.err29=" ima nepravilno ASCII kodo.";
-errmsg.err30=" ima nepravino Å¡estnajstiÅ¡ko Å¡tevilko.";
+errmsg.err30=" ima nepravino šestnajstiško številko.";
 errmsg.err31=" vrednost je nepravilna.";
-errmsg.err32="IP naslov in prehod nista v isti podmreÅ¾i.";
+errmsg.err32="IP naslov in prehod nista v isti podmrei.";
 errmsg.err33="IP naslov in prehod ne moreta biti enaka.";
 errmsg.err34=" ne sme vsebovati presledka.";
-errmsg.err110="KonÄna Å¡tevilka mora biti veÄja kot zaÄetna Å¡tevilka";
+errmsg.err110="Kon?na številka mora biti ve?ja kot za?etna številka";
 errmsg.err111="Napravilen IP naslov";
 
 //Wol.asp error messages
 errmsg.err35="Vnesti morate MAC naslov za zagon.";
-errmsg.err36="Vnesti morate mreÅ¾ni broadcast naslov za zagon.";
+errmsg.err36="Vnesti morate mreni broadcast naslov za zagon.";
 errmsg.err37="Vnesti morate UDP vrata za zagon.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Prosimo, da vnesete skupni kljuÄ!";
-errmsg.err39="Nepravilen kljuÄ. Biti mora med 8 in 63 ASCII znaki ali 64 Å¡estnajstiÅ¡kih znakov";
-errmsg.err40="Vnesti morate kljuÄ za KljuÄ ";
-errmsg.err41="Nepravilna dolÅ¾ina kljuÄa ";
-errmsg.err43="Interval za izmenjavo kljuÄa";
+errmsg.err38="Prosimo, da vnesete skupni klju?!";
+errmsg.err39="Nepravilen klju?. Biti mora med 8 in 63 ASCII znaki ali 64 šestnajstiških znakov";
+errmsg.err40="Vnesti morate klju? za Klju? ";
+errmsg.err41="Nepravilna dolina klju?a ";
+errmsg.err43="Interval za izmenjavo klju?a";
 
 //config.asp error messages
 errmsg.err42="Prosimo, da izberete datoteko za obnovitev.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Skupno Å¡tevilo je preseglo 128.";
+errmsg.err44="Skupno število je preseglo 128.";
 
 //Site_Survey.asp error messages
 errmsg.err47="nepravilen SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS ni zdruÅ¾ljiv s trenutno konfiguracijo usmerjevalnika. Prosimo, da preverite naslednje :\n * BrezÅ¾iÄni naÄin mora biti AP \n * WPA2 ni podprta pod WDS \n * BreÅ¾iÄno omreÅ¾je v naÄinu samo-B ni podprto pod WDS";
+errmsg.err48="WDS ni zdruljiv s trenutno konfiguracijo usmerjevalnika. Prosimo, da preverite naslednje :\n * Brezi?ni na?in mora biti AP \n * WPA2 ni podprta pod WDS \n * Brei?no omreje v na?inu samo-B ni podprto pod WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius je na volju samo v naÄinu AP.";
+errmsg.err49="Radius je na volju samo v na?inu AP.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Vnesti morate SSID.";
 
 // Management.asp error messages
-errmsg.err51="Usmerjevalnik trenutno uporablja privzeto geslo. Zaradi varnosti morate spremeniti geslo preden omogoÄite oddaljeni dostop. Kliknite gumb OK za spremembo gesla. Kliknite gumb PrekliÄi za onemogoÄen oddaljeni dostop.";
+errmsg.err51="Usmerjevalnik trenutno uporablja privzeto geslo. Zaradi varnosti morate spremeniti geslo preden omogo?ite oddaljeni dostop. Kliknite gumb OK za spremembo gesla. Kliknite gumb Prekli?i za onemogo?en oddaljeni dostop.";
 errmsg.err52="Geslo se ne ujema.";
 
 // Port_Services.asp error messages
-errmsg.err53="Ko konÄate, kliknite gumb Uporabi, da shranite nastavitve.";
+errmsg.err53="Ko kon?ate, kliknite gumb Uporabi, da shranite nastavitve.";
 errmsg.err54="Vnesti morate ime storitve.";
-errmsg.err55="Ime storitve Å¾e obstaja.";
+errmsg.err55="Ime storitve e obstaja.";
 
 // QoS.asp error messages
-errmsg.err56="Vrednost vrat je izven obmoÄja [0 - 65535]";
+errmsg.err56="Vrednost vrat je izven obmo?ja [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="ZbriÅ¡em vnos ?";
-errmsg.err103=" mora biti manjÅ¡i kot ";
+errmsg.err57="Zbrišem vnos ?";
+errmsg.err103=" mora biti manjši kot ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Kliknite za brisanje zakupa";
 errmsg.err581="Kliknite za prekinitev pptp odjemalca";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Ni na voljo! Prosimo, da omogoÄite brezÅ¾iÄno omreÅ¾je.";
+errmsg.err59="Ni na voljo! Prosimo, da omogo?ite brezi?no omreje.";
 
 //Upgrade.asp error messages
 errmsg.err60="Prosimo, da izberete datoteko za posodobitev.";
 errmsg.err61="Nepravilna datoteka.";
 
 //Services.asp error messages
-errmsg.err62=" je Å¾e doloÄen kot statiÄni zakup.";
+errmsg.err62=" je e dolo?en kot stati?ni zakup.";
 
 //Saving message
-errmsg.err100="Obdelujem...<br/>Prosimo poÄakajte.";
-errmsg.err101="Obnavljam nastavitve...<br/>Prosimo poÄakajte.";
-errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo poÄakajte";
+errmsg.err100="Obdelujem...<br/>Prosimo po?akajte.";
+errmsg.err101="Obnavljam nastavitve...<br/>Prosimo po?akajte.";
+errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo po?akajte";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -387,14 +387,14 @@ bmenu.setupmacclone="Kloniranje MAC naslova";
 bmenu.setuprouting="Napredno usmerjevanje";
 bmenu.setupvlan="VLAN";
 bmenu.setupeop="EoIP tunel";
-bmenu.networking="OmreÅ¾enje";
+bmenu.networking="Omreenje";
 
-bmenu.wireless="BrezÅ¾iÄno";
+bmenu.wireless="Brezi?no";
 bmenu.wirelessBasic="Osnovne nastavitve";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperKanal";
 bmenu.wimax="WiMAX";
-bmenu.wirelessSecurity="BrezÅ¾iÄna zaÅ¡Äita";
+bmenu.wirelessSecurity="Brezi?na zaš?ita";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
 bmenu.wirelessMac="Filter MAC";
@@ -409,8 +409,8 @@ bmenu.wirelessWds3="Ath3-WDS";
 bmenu.wirelessWdswl0="WL0-WDS";
 bmenu.wirelessWdswl1="WL1-WDS";
 
-bmenu.security="ZaÅ¡Äita";
-bmenu.firwall="PoÅ¾arni zid";
+bmenu.security="Zaš?ita";
+bmenu.firwall="Poarni zid";
 bmenu.vpn="VPN prehajanje";
 
 bmenu.accrestriction="Omejitve dostopa";
@@ -420,7 +420,7 @@ bmenu.webaccess="WAN dostop";
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Posredovanje obsega vrat";
 bmenu.applicationspforwarding="Posredovanje vrat";
-bmenu.applicationsptriggering="ProÅ¾enje vrat";
+bmenu.applicationsptriggering="Proenje vrat";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
@@ -433,7 +433,7 @@ bmenu.sipathstatus="Status";
 
 bmenu.admin="Administracija";
 bmenu.adminManagement="Upravljanje";
-bmenu.adminAlive="Ohrani Å¾ivo";
+bmenu.adminAlive="Ohrani ivo";
 bmenu.adminLog="Dnevnik";
 bmenu.adminDiag="Diagnostika";
 bmenu.adminWol="WOL";
@@ -444,23 +444,23 @@ bmenu.adminBackup="Varnostna kop.";
 bmenu.services="Storitve";
 bmenu.servicesServices="Storitve";
 bmenu.servicesRadius="FreeRadius"
-bmenu.servicesPppoesrv="PPPoE streÅ¾nik";
+bmenu.servicesPppoesrv="PPPoE strenik";
 bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="Milkfish SIP usmerjevalnik";
-bmenu.servicesAnchorFree="Moja Ad mreÅ¾a";
+bmenu.servicesAnchorFree="Moja Ad mrea";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjevalnik";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
-bmenu.statuWLAN="BrezÅ¾iÄno";
+bmenu.statuWLAN="Brezi?no";
 bmenu.statuVPN="OpenVPN";
-bmenu.statuBand="Pasovna Å¡irina";
+bmenu.statuBand="Pasovna širina";
 bmenu.statuSysInfo="Info stran";
 bmenu.statuActivate="Aktiviraj";
 bmenu.statuMyPage="Moja stran";
@@ -468,23 +468,23 @@ bmenu.statuGpio="GPIO I/O";
 
 // ** Alive.asp **//
 
-alive.titl="Ohrani Å¾ivo";
-alive.h2="Ohrani Å¾ivo";
+alive.titl="Ohrani ivo";
+alive.h2="Ohrani ivo";
 alive.legend="Razpored ponovnega zagona";
 alive.sevr1="Razpored ponovnega zagona";
-alive.hour="Ob nastavljenem Äasu";
-alive.legend2="WDS/straÅ¾ni mehanizem";
-alive.sevr2="OmogoÄi straÅ¾ni mehanizem";
+alive.hour="Ob nastavljenem ?asu";
+alive.legend2="WDS/strani mehanizem";
+alive.sevr2="Omogo?i strani mehanizem";
 alive.IP="IP naslovi";
-alive.legend3="Proksi/straÅ¾ni mehanizem";
-alive.sevr3="OmogoÄi proksi straÅ¾ni mehanizem";
+alive.legend3="Proksi/strani mehanizem";
+alive.sevr3="Omogo?i proksi strani mehanizem";
 alive.IP2="Proksi IP naslov";
 alive.port="Proksi vrata";
 
 //help container
 
-halive.right2="Izbira ponovnega zagona usmerjevalnika. Cron mora biti omogoÄen pod zavihkom Upravljanje.";
-halive.right4="Dovoljeni so najveÄ trije IP naslovi loÄeni s presledkom.<br />Format IP je xxx.xxx.xxx.xxx .";
+halive.right2="Izbira ponovnega zagona usmerjevalnika. Cron mora biti omogo?en pod zavihkom Upravljanje.";
+halive.right4="Dovoljeni so najve? trije IP naslovi lo?eni s presledkom.<br />Format IP je xxx.xxx.xxx.xxx .";
 
 
 // ** config.asp **//
@@ -492,49 +492,49 @@ halive.right4="Dovoljeni so najveÄ trije IP naslovi loÄeni s presledkom.<br />
 config.titl="Varnostna kopija & Obnovitev";
 config.h2="Konfiguracija varnostnega kopiranja";
 config.legend="Varnostna kopija";
-config.mess1="Kliknite na gumb \"" + sbutton.backup + "\" za pronos varnostne kopije na vaÅ¡ raÄunalnik.";
+config.mess1="Kliknite na gumb \"" + sbutton.backup + "\" za pronos varnostne kopije na vaš ra?unalnik.";
 config.h22="Obnovi konfiguracijo";
 config.legend2="Obnovi nastavitve";
 config.mess2="Izberite datoteko za obnovitev";
 config.mess3="O P O Z O R I L O";
-config.mess4="Obnovitev je moÅ¾na samo z datoteko ustvarjeno na istem modelu usmerjevalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene s tem uporabniÅ¡kim vmesnikom!";
+config.mess4="Obnovitev je mona samo z datoteko ustvarjeno na istem modelu usmerjevalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene s tem uporabniškim vmesnikom!";
 
 //help container
 
-hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjevalnik ponastaviti na tovarniÅ¡ko privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
-hconfig.right4="Kliknite gumb <em>Browse... (Prebrskaj...)</em> za iskanje varnostne kopije, ki je trenutno na vaÅ¡em PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
+hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjevalnik ponastaviti na tovarniško privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
+hconfig.right4="Kliknite gumb <em>Browse... (Prebrskaj...)</em> za iskanje varnostne kopije, ki je trenutno na vašem PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
 
 
 // ** DDNS.asp **/
 
-ddns.titl="DinamiÄni DNS";
+ddns.titl="Dinami?ni DNS";
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS servis";
 ddns.emailaddr="Email naslov";
 ddns.typ="Tip";
-ddns.dynamic="DinamiÄni";
+ddns.dynamic="Dinami?ni";
 ddns.custom="Prirejen";
 ddns.wildcard="Nadomestni znak";
 ddns.statu="DDNS status";
 ddns.system="DNS sistem";
-ddns.options="Dodatne DDNS moÅ¾nosti";
+ddns.options="Dodatne DDNS monosti";
 ddns.forceupd="Interval prisiljene posodobitve";
 ddns.wanip="Ne uporabi zunanjega preverjanja IPja";
 
 
-ddnsm.all_closed="DDNS streÅ¾nik je trenutno zaprt";
-ddnsm.all_resolving="RezreÅ¡evanje domenskega imena";
-ddnsm.all_errresolv="RezreÅ¡evanje domenskega imena ni uspelo";
-ddnsm.all_connecting="PrikljuÄevanje na streÅ¾nik";
-ddnsm.all_connectfail="PrikljuÄevanje na streÅ¾nik ni uspelo";
-ddnsm.all_disabled="DDNS funkcija je onemogoÄena";
+ddnsm.all_closed="DDNS strenik je trenutno zaprt";
+ddnsm.all_resolving="Rezreševanje domenskega imena";
+ddnsm.all_errresolv="Rezreševanje domenskega imena ni uspelo";
+ddnsm.all_connecting="Priklju?evanje na strenik";
+ddnsm.all_connectfail="Priklju?evanje na strenik ni uspelo";
+ddnsm.all_disabled="DDNS funkcija je onemogo?ena";
 ddnsm.all_noip="Ni WAN povezave";
 
 //help container
 
-hddns.right2="DDNS omogoÄa dostop do vaÅ¡e mreÅ¾e z domenskim imenom namesto z IP naslovom. Ta storitev upravlja s spremembami vaÅ¡ega IP naslova in dinamiÄno posodobi podatke o vaÅ¡i domeni. Prijaviti se morate pri DynDNS.org, TZO.com, ZoneEdit.com ali Prirejeno.";
-hddns.right4="Vnesite celo Å¡tevilo, ki predstavja interval prisilne posodobitve (v dnevih). Posodobitem mora biti opravljena samo, Äe se je spremenil vaÅ¡ IP naslov. Pazite na pravila vaÅ¡ega DDNS ponudnika glede posodobitev, da prepreÄite blokado vaÅ¡ega IP and vaÅ¡e domene.";
+hddns.right2="DDNS omogo?a dostop do vaše mree z domenskim imenom namesto z IP naslovom. Ta storitev upravlja s spremembami vašega IP naslova in dinami?no posodobi podatke o vaši domeni. Prijaviti se morate pri DynDNS.org, TZO.com, ZoneEdit.com ali Prirejeno.";
+hddns.right4="Vnesite celo število, ki predstavja interval prisilne posodobitve (v dnevih). Posodobitem mora biti opravljena samo, ?e se je spremenil vaš IP naslov. Pazite na pravila vašega DDNS ponudnika glede posodobitev, da prepre?ite blokado vašega IP and vaše domene.";
 
 
 // ** Diagnostics.asp **//
@@ -545,25 +545,25 @@ diag.legend="Ukazna lupina";
 diag.cmd="Ukazi";
 diag.startup="Zagon";
 diag.shutdown="Zaustavitev";
-diag.firewall="PoÅ¾arni zid";
+diag.firewall="Poarni zid";
 diag.custom="Skript po meri";
 
 //help container
 
-hdiag.right2="Ukaze lahko zaÅ¾enete preko uporabniÅ¡kega vmesnika. Vnesite ukaze v tekstovno polje in kliknite <em>" + sbutton.runcmd + "</em>.";
+hdiag.right2="Ukaze lahko zaenete preko uporabniškega vmesnika. Vnesite ukaze v tekstovno polje in kliknite <em>" + sbutton.runcmd + "</em>.";
 
 
 // ** DMZ.asp **//
 
 dmz.titl="DMZ";
-dmz.h2="Demilitarizirano obmoÄje (DMZ)";
+dmz.h2="Demilitarizirano obmo?je (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="Uporabi DMZ";
 dmz.host="DMZ gostiteljev IP naslov";
 
 //help container
 
-hdmz.right2="OmogoÄanje te moÅ¾nosti bo izpostavilo gostitelja internetu. Vsa vrata bodo dostopna z interneta.";
+hdmz.right2="Omogo?anje te monosti bo izpostavilo gostitelja internetu. Vsa vrata bodo dostopna z interneta.";
 
 
 // ** Factory_Defaults.asp **//
@@ -572,11 +572,11 @@ factdef.titl="Privzete nastavitve";
 factdef.h2="Privzete nastavitve";
 factdef.legend="Ponastavi nastavitve usmerjevalnika";
 factdef.restore="Obnovi privzete nastavitve";
-factdef.mess1="Opozorilo! ÄŒe kliknete OK, bodo nastavljene privzete nastavitve in vse prejÅ¡nje nastavitve bodo izbrisane.";
+factdef.mess1="Opozorilo! ?e kliknete OK, bodo nastavljene privzete nastavitve in vse prejšnje nastavitve bodo izbrisane.";
 
 //help container
 
-hfactdef.right1="To bo ponastavilo privzete nastavitve. Vse vaÅ¡e nastavitve bodo izbrisane.";
+hfactdef.right1="To bo ponastavilo privzete nastavitve. Vse vaše nastavitve bodo izbrisane.";
 
 
 // ** FilterIPMAC.asp **//
@@ -603,50 +603,50 @@ filter.time="Ure";
 filter.h24="24 ur";
 filter.legend3="Zaprte storitve ";
 filter.catchall="Ujemi vse protokole P2P";
-filter.legend4="Zapiranje spletiÅ¡Ä z URL naslovom";
-filter.legend5="Zapiranje spletiÅ¡Ä s kljuÄno besedo";
-filter.mess1="IzbriÅ¡i smernico?";
+filter.legend4="Zapiranje spletiš? z URL naslovom";
+filter.legend5="Zapiranje spletiš? s klju?no besedo";
+filter.mess1="Izbriši smernico?";
 filter.mess2="Izbrati morate vsaj dan.";
-filter.mess3="KonÄni Äas mora biti veÄji od zaÄetnega.";
+filter.mess3="Kon?ni ?as mora biti ve?ji od za?etnega.";
 
 //help container
 
-hfilter.right2="DoloÄite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da izbriÅ¡ete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
-hfilter.right4="OmogoÄi ali onemogoÄi smernico.";
-hfilter.right6="Smernici lahko doloÄite ime.";
-hfilter.right8="DoloÄite dan v tednu, ko bo smernica uporabljena.";
-hfilter.right10="Vnesite Äas, ko bo smernica uporabljena.";
-hfilter.right12="Zaprete lahko doloÄene storitve. Kliknite <em>" + sbutton.filterSer + "</em> za spremembo nastavitev.";
-hfilter.right14="Zaprete lahko doloÄena spletiÅ¡Äa tako, da vnesete njihov URL.";
-hfilter.right16="Zaprete lahko doloÄena spletiÅ¡Äa tako, da vnesete kljuÄno besedo vsebovano v njihovi spletni strani.";
+hfilter.right2="Dolo?ite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da izbrišete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
+hfilter.right4="Omogo?i ali onemogo?i smernico.";
+hfilter.right6="Smernici lahko dolo?ite ime.";
+hfilter.right8="Dolo?ite dan v tednu, ko bo smernica uporabljena.";
+hfilter.right10="Vnesite ?as, ko bo smernica uporabljena.";
+hfilter.right12="Zaprete lahko dolo?ene storitve. Kliknite <em>" + sbutton.filterSer + "</em> za spremembo nastavitev.";
+hfilter.right14="Zaprete lahko dolo?ena spletiš?a tako, da vnesete njihov URL.";
+hfilter.right16="Zaprete lahko dolo?ena spletiš?a tako, da vnesete klju?no besedo vsebovano v njihovi spletni strani.";
 
 
 // ** FilterSummary.asp **//
 
 filterSum.titl="Povzetek omejitev dostopa";
 filterSum.h2="Povzetek smernic WAN dostopa";
-filterSum.polnum="Å t.";
-filterSum.polday="ÄŒas dneva";
+filterSum.polnum="Št.";
+filterSum.polday="?as dneva";
 
 
 // ** Firewall.asp **//
 
-firewall.titl="PoÅ¾arni zid";
+firewall.titl="Poarni zid";
 firewall.h2="Varnost";
-firewall.legend="ZaÅ¡Äita s poÅ¾arnim zidom";
-firewall.firewall="SPI poÅ¾arni zid";
+firewall.legend="Zaš?ita s poarnim zidom";
+firewall.firewall="SPI poarni zid";
 firewall.legend2="Dodatni filtri";
 firewall.proxy="Filter za proksi";
-firewall.cookies="Filter za piÅ¡kotke";
+firewall.cookies="Filter za piškotke";
 firewall.applet="Filter za Java aplete";
 firewall.activex="Filter za ActiveX";
-firewall.legend3="PrepreÄi WAN zahteve";
-firewall.legend4="PrepreÄi napad z grobo silo / DoS";
-firewall.ping="PrepreÄi anonimno WAN zahtevo (ping)";
+firewall.legend3="Prepre?i WAN zahteve";
+firewall.legend4="Prepre?i napad z grobo silo / DoS";
+firewall.ping="Prepre?i anonimno WAN zahtevo (ping)";
 firewall.muticast="Filter za multicast";
 firewall.ssh="Omeji SSH dostop";
 firewall.telnet="Omeji Telnet dostop";
-firewall.pptp="Omeji dostop PPTP streÅ¾nika";
+firewall.pptp="Omeji dostop PPTP strenika";
 firewall.http="Omeji HTTP dostop";
 filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
@@ -654,7 +654,7 @@ filter.snmp="Block WAN SNMP access";
 
 //help container
 
-hfirewall.right2="OmogoÄi ali onemogoÄi zaÅ¡Äito s SPI poÅ¾arnim zidom.";
+hfirewall.right2="Omogo?i ali onemogo?i zaš?ito s SPI poarnim zidom.";
 
 
 // ** Forward.asp **//
@@ -666,7 +666,7 @@ prforward.app="Aplikacija";
 
 //help container
 
-hprforward.right2="Nekatere aplikacije zahtevajo, da so doloÄena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so streÅ¾niki in nekatere igre. Ko z WAN pride zahteva za doloÄena vrata, bo usmerjevalnik usmeril podatke do doloÄenega raÄunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+hprforward.right2="Nekatere aplikacije zahtevajo, da so dolo?ena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so streniki in nekatere igre. Ko z WAN pride zahteva za dolo?ena vrata, bo usmerjevalnik usmeril podatke do dolo?enega ra?unalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 // ** P2P.asp **//
@@ -688,13 +688,13 @@ pforward.titl="Posredovanje vrat";
 pforward.h2="Posredovanje vrat";
 pforward.legend="Posredovanje";
 pforward.app="Aplikacija";
-pforward.src="Izvorna mreÅ¾a";
+pforward.src="Izvorna mrea";
 pforward.from="Od vrat";
 pforward.to="Do vrat";
 
 //help container
 
-hpforward.right2="Nekatere aplikacije zahtevajo, da so doloÄena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so streÅ¾niki in nekatere igre. Ko z WAN pride zahteva za doloÄena vrata, bo usmerjevalnik usmeril podatke do doloÄenega raÄunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+hpforward.right2="Nekatere aplikacije zahtevajo, da so dolo?ena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so streniki in nekatere igre. Ko z WAN pride zahteva za dolo?ena vrata, bo usmerjevalnik usmeril podatke do dolo?enega ra?unalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 // ** USB.asp **//
 
@@ -708,16 +708,16 @@ usb.usb_storage="USB podpora za shranjevanje datotek";
 usb.usb_ip="USB preko IP";
 usb.usb_printer="USB tiskalnik";
 usb.usb_automnt="Samodejni priklop diska";
-usb.usb_mntpoint="Priklopna toÄka";
+usb.usb_mntpoint="Priklopna to?ka";
 usb.usb_runonmount="Run-on-mount ime skripta";
 usb.usb_diskinfo="Disk info";
 
 // ** NAS.asp **//
 
 nas.titl="NAS";
-nas.proftpd_legend="FTP streÅ¾nik";
+nas.proftpd_legend="FTP strenik";
 nas.proftpd_srv="ProFTPD";
-nas.proftpd_port="Vrata streÅ¾nika";
+nas.proftpd_port="Vrata strenika";
 nas.proftpd_dir="Mapa za datoteke";
 nas.proftpd_passw="Lista Uporabnik Geslo";
 nas.proftpd_writeen="Dovoli pisanje";
@@ -733,93 +733,93 @@ hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Gesl
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot portal";
 hotspot.legend="Chillispot";
-hotspot.nowifibridge="LoÄi WiFi od LAN mosta";
+hotspot.nowifibridge="Lo?i WiFi od LAN mosta";
 hotspot.hotspot="Chillispot";
-hotspot.pserver="IP/DNS glavnega Radius streÅ¾nika";
-hotspot.bserver="IP/DNS nadomestnega Radius streÅ¾nika";
+hotspot.pserver="IP/DNS glavnega Radius strenika";
+hotspot.bserver="IP/DNS nadomestnega Radius strenika";
 hotspot.dns="DNS IP";
 hotspot.url="Preusmerjeni URL";
 hotspot.dhcp="DHCP vmesnik";
 hotspot.radnas="Radius NAS ID";
-hotspot.net="Oddaljena mreÅ¾a";
+hotspot.net="Oddaljena mrea";
 hotspot.uam="UAM skrivnost";
 hotspot.uamdns="UAM vsak DNS";
-hotspot.allowuam="UAM dopuÅ¡Äeni";
+hotspot.allowuam="UAM dopuš?eni";
 hotspot.macauth="MACauth";
-hotspot.option="Dodatne Chillispot moÅ¾nosti";
-hotspot.fon_chilli="Chillispot lokalno uporabniÅ¡ko upravljanje";
+hotspot.option="Dodatne Chillispot monosti";
+hotspot.fon_chilli="Chillispot lokalno uporabniško upravljanje";
 hotspot.fon_user="Seznam uporabnikov";
 hotspot.http_legend="HTTP preusmeritev";
 hotspot.http_srv="HTTP preusmeritev";
 hotspot.http_ip="HTTP ciljni IP";
 hotspot.http_port="HTTP ciljna vrata";
-hotspot.http_net="HTTP izvorna mreÅ¾a";
+hotspot.http_net="HTTP izvorna mrea";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Ime prehoda";
 hotspot.nocat_gatewayaddr="IP naslov prehoda";
-hotspot.nocat_home="DomaÄa stran";
+hotspot.nocat_home="Doma?a stran";
 hotspot.nocat_extifname="Zunanji vmesnik";
 hotspot.nocat_ifname="Notranji vmesnik";
-hotspot.nocat_redirect="Preusmerjanje domaÄe strani";
+hotspot.nocat_redirect="Preusmerjanje doma?e strani";
 hotspot.nocat_allowweb="Dovoljeni spletni gostitelji";
 hotspot.nocat_docroot="Korenski imenik dokumenta";
 hotspot.nocat_splash="Splash URL";
-hotspot.nocat_port="IzloÄi vrata";
-hotspot.nocat_timeout="ÄŒasovna omejitev prijave";
-hotspot.nocat_verbose="ObÅ¡irnost";
+hotspot.nocat_port="Izlo?i vrata";
+hotspot.nocat_timeout="?asovna omejitev prijave";
+hotspot.nocat_verbose="Obširnost";
 hotspot.nocat_route="Samo usmerjevanje";
 hotspot.nocat_MAClist="Seznam dovoljenih MAC naslovov";
 hotspot.smtp_legend="Preusmeritev SMTP";
 hotspot.smtp_srv="Preusmeritev SMTP";
 hotspot.smtp_ip="SMTP ciljni IP";
-hotspot.smtp_net="SMTP izvorna mreÅ¾a";
+hotspot.smtp_net="SMTP izvorna mrea";
 hotspot.shat_legend="Zero IP nastavitev";
 hotspot.shat_srv="Zero IP nastavitev";
-hotspot.shat_srv2="Zero IP nastavitev omogoÄena";
+hotspot.shat_srv2="Zero IP nastavitev omogo?ena";
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnikov zastopnik";
-hotspot.sputnik_mode="Sputnik naÄin";
-hotspot.sputnik_id="Sputnik streÅ¾nikov ID";
+hotspot.sputnik_mode="Sputnik na?in";
+hotspot.sputnik_id="Sputnik strenikov ID";
 hotspot.sputnik_instant="Uporabi Sputnik Instant Setup";
 hotspot.sputnik_express="Uporabi SputnikNet Express";
 hotspot.sputnik_about="o Sputniku";
-hotspot.sputnik_learn="VeÄ podatkov";
+hotspot.sputnik_learn="Ve? podatkov";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog demon";
 hotspot.wifidog_id="ID prehoda";
 hotspot.wifidog_url="URL portala";
 hotspot.wifidog_port="Vrata";
-hotspot.wifidog_httpdname="Ime spletnega streÅ¾nika";
-hotspot.wifidog_httpdconn="NajveÄje Å¡t. uporabnikov";
+hotspot.wifidog_httpdname="Ime spletnega strenika";
+hotspot.wifidog_httpdconn="Najve?je št. uporabnikov";
 hotspot.wifidog_checkinter="Interval preverbe (v sek.)";
-hotspot.wifidog_checktimeout="ÄŒasovna omejitev klienta";
+hotspot.wifidog_checktimeout="?asovna omejitev klienta";
 hotspot.wifidog_tmaclist="Poverjeni MAC naslovi";
-hotspot.wifidog_authsrv="AuthServer uporabniÅ¡ko ime";
+hotspot.wifidog_authsrv="AuthServer uporabniško ime";
 hotspot.wifidog_authsrvssl="AuthServer SSL na voljo";
 hotspot.wifidog_authsrvsslport="AuthServer SSL vrata";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP vrata";
 hotspot.wifidog_authsrvpath="AuthServer pot";
-hotspot.wifidog_config="Pravila poÅ¾arnega zidu";
-hotspot.wifidog_messagefile="HTML datoteka s sporoÄilom za Wifidog";
-hotspot.wifidog_realm="PodroÄje HTTP streÅ¾nika";
-hotspot.wifidog_username="HTTP streÅ¾nik: uporabniÅ¡ko ime";
-hotspot.wifidog_password="HTTP streÅ¾nik: geslo";
-hotspot.wifidog_auth="HTTP streÅ¾nik: podpora overjanju";
+hotspot.wifidog_config="Pravila poarnega zidu";
+hotspot.wifidog_messagefile="HTML datoteka s sporo?ilom za Wifidog";
+hotspot.wifidog_realm="Podro?je HTTP strenika";
+hotspot.wifidog_username="HTTP strenik: uporabniško ime";
+hotspot.wifidog_password="HTTP strenik: geslo";
+hotspot.wifidog_auth="HTTP strenik: podpora overjanju";
 
 // ** Hotspotsystem **//
 
 hotspotsys.legend="Hotspot System";
-hotspotsys.nobridge="LoÄi WiFi od LAN mosta";
+hotspotsys.nobridge="Lo?i WiFi od LAN mosta";
 hotspotsys.uamenable="Posebne domene";
 hotspotsys.loginonsplash="Prijava na splash strani";
-hotspotsys.allowuam="UAM dopuÅ¡Äeni";
+hotspotsys.allowuam="UAM dopuš?eni";
 hotspotsys.whitelabelproto="White label protokol";
 hotspotsys.whitelabel="White label domena";
 hotspotsys.operatorid="ID operaterja";
 hotspotsys.locationid="ID lokacije";
 hotspotsys.dhcp="DHCP vmesnik";
-hotspotsys.net="Oddaljena mreÅ¾a";
+hotspotsys.net="Oddaljena mrea";
 hotspotsys.customsplash="Splash stran po meri (Walled Garden)";
 
 
@@ -864,23 +864,23 @@ hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
 info.titl="Info";
 info.h2="Sistemske informacije";
-info.wlanmac="BrezÅ¾iÄni MAC";
+info.wlanmac="Brezi?ni MAC";
 info.srv="Storitve";
-info.ap="Dostopna toÄka";
+info.ap="Dostopna to?ka";
 
 
 // ** index_heartbeat.asp **//
 
-idx_h.srv="HeartBeat streÅ¾nik";
+idx_h.srv="HeartBeat strenik";
 idx_h.con_strgy="Strategija povezovanja";
-idx_h.max_idle="PoveÅ¾i po potrebi: najveÄji nedejavni Äas";
-idx_h.alive="Ohrani zvezo: Äas ponovnega klicanja";
+idx_h.max_idle="Povei po potrebi: najve?ji nedejavni ?as";
+idx_h.alive="Ohrani zvezo: ?as ponovnega klicanja";
 idx_h.reconnect="Prisili ponovno povezovanje";
 
 
 // ** index_l2tp.asp **//
 
-idx_l.srv="Prehod (L2TP streÅ¾nik)";
+idx_l.srv="Prehod (L2TP strenik)";
 idx_l.req_chap="Zahtevaj CHAP";
 idx_l.ref_pap="Odkloni PAP";
 idx_l.req_auth="Zahtevaj overjanje";
@@ -895,46 +895,46 @@ idx_pppoe.use_rp="Uporabi RP PPPoE";
 
 idx_pptp.srv="Uporabi DHCP";
 idx_pptp.wan_ip="WAN IP naslov";
-idx_pptp.gateway="Prehod (PPTP streÅ¾nik)";
-idx_pptp.encrypt="PPTP Å¡ifrirnje";
-idx_pptp.reorder="OnemogoÄi prerazporejanje paketov";
-idx_pptp.addopt="Dodatne PPTP moÅ¾nosti";
+idx_pptp.gateway="Prehod (PPTP strenik)";
+idx_pptp.encrypt="PPTP šifrirnje";
+idx_pptp.reorder="prerazporejanje paketov";
+idx_pptp.addopt="Dodatne PPTP monosti";
 
 
 // ** index_static.asp **//
 
-idx_static.dns="StatiÄni DNS";
+idx_static.dns="Stati?ni DNS";
 
 
 // ** index.asp **//
 
 idx.titl="Namestitev";
 idx.h2="WAN namestitev";
-idx.h22="Namestitev brezÅ¾iÄnega omreÅ¾ja";
-idx.legend="NaÄin WAN dostopa";
-idx.conn_type="NaÄin dostopa";
+idx.h22="Namestitev brezi?nega omreja";
+idx.legend="Na?in WAN dostopa";
+idx.conn_type="Na?in dostopa";
 idx.stp="STP";
-idx.stp_mess="(onemogoÄi za COMCAST ISP)";
+idx.stp_mess="(onemogo?i za COMCAST ISP)";
 idx.optional="Dodatne nastavitve";
 idx.mtu="MTU";
-idx.h23="Nastavitev mreÅ¾e";
+idx.h23="Nastavitev mree";
 idx.routerip="IP naslov usmerjevalnika";
 idx.lanip="Lokalni IP naslov";
 idx.legend2="WAN vrata";
 idx.wantoswitch="dodeli WAN vrata k stikalu";
-idx.legend3="Nastavitev Äasa";
-idx.timeset="ÄŒasovna cona";
-idx.dsttime="Poletni Äas";
-idx.static_ip="StatiÄni IP";
+idx.legend3="Nastavitev ?asa";
+idx.timeset="?asovna cona";
+idx.dsttime="Poletni ?as";
+idx.static_ip="Stati?ni IP";
 idx.dhcp="Samodejna namestitev - DHCP";
-idx.dhcp_legend="Nastavitev streÅ¾nika mreÅ¾nih naslovov (DHCP)";
+idx.dhcp_legend="Nastavitev strenika mrenih naslovov (DHCP)";
 idx.dhcp_type="Tip DHCP";
-idx.dhcp_srv="DHCP streÅ¾nik";
+idx.dhcp_srv="DHCP strenik";
 idx.dhcp_fwd="DHCP posredovalnik";
-idx.dhcp_start="ZaÄetni IP naslov";
-idx.dhcp_end="KonÄni IP naslov";		//used in Status_Lan.asp
-idx.dhcp_maxusers="NajveÄje Å¡t. DHCP uporabnikov";
-idx.dhcp_lease="OdjemalÄev Äas zakupa";
+idx.dhcp_start="Za?etni IP naslov";
+idx.dhcp_end="Kon?ni IP naslov";		//used in Status_Lan.asp
+idx.dhcp_maxusers="Najve?je št. DHCP uporabnikov";
+idx.dhcp_lease="Odjemal?ev ?as zakupa";
 idx.dhcp_dnsmasq="Uporabi DNSMasq za DHCP";
 idx.dns_dnsmasq="Uporabi DNSMasq za DNS";
 idx.auth_dnsmasq="DHCP-avtoritativno";
@@ -955,23 +955,23 @@ idx.ntp_client="NTP odjemalec";
 //help container
 
 hidx.right2="Ta nastavitev se pogosto uporablja za kabelske ponudnike (ISP).";
-hidx.right4="Vnesi uporabniÅ¡ko ime dodeljeno s strani vaÅ¡ega ISP.";
-hidx.right6="Vnesi domensko ime dodeljeno s strani vaÅ¡ega ISP.";
+hidx.right4="Vnesi uporabniško ime dodeljeno s strani vašega ISP.";
+hidx.right6="Vnesi domensko ime dodeljeno s strani vašega ISP.";
 hidx.right8="To je naslov usmerjevalnika.";
-hidx.right10="To je maska podmreÅ¾e usmerjevalnika.";
-hidx.right12="Dovoli usmerjevalniku, da upravlja z vaÅ¡imi IP naslovi.";
-hidx.right14="Å½eljeni zaÄetni naslov.";
-hidx.right16="Omejite lahko Å¡tevilo naslovov, ki jih dodeli vaÅ¡ usmerjevalnik. 0 pomeni, da bo usmerjevalnik dodelil le vnaprej doloÄene statiÄne zakupe.";
-hidx.right18="Izberite vaÅ¡o Äasovno cono in obdobje poletnega Äasa. Usmerjevalnik lahko uparablja lokalni Äas ali Äas UTC.";
-hidx.sas="Nastavitveni pomoÄnik vas vodi po osnovnih korakih konfiguracije usmerjevalnika.";
+hidx.right10="To je maska podmree usmerjevalnika.";
+hidx.right12="Dovoli usmerjevalniku, da upravlja z vašimi IP naslovi.";
+hidx.right14="eljeni za?etni naslov.";
+hidx.right16="Omejite lahko število naslovov, ki jih dodeli vaš usmerjevalnik. 0 pomeni, da bo usmerjevalnik dodelil le vnaprej dolo?ene stati?ne zakupe.";
+hidx.right18="Izberite vašo ?asovno cono in obdobje poletnega ?asa. Usmerjevalnik lahko uparablja lokalni ?as ali ?as UTC.";
+hidx.sas="Nastavitveni pomo?nik vas vodi po osnovnih korakih konfiguracije usmerjevalnika.";
 
 
 // ** Join.asp **//
 
 
 //sshd.webservices
-join.titl="PoveÅ¾i";
-join.mess1="Kot odjemalec ste se uspeÅ¡no povezali s sledeÄo mreÅ¾o: ";
+join.titl="Povei";
+join.mess1="Kot odjemalec ste se uspešno povezali s slede?o mreo: ";
 
 
 // ** Log_incoming.asp **//
@@ -979,7 +979,7 @@ join.mess1="Kot odjemalec ste se uspeÅ¡no povezali s sledeÄo mreÅ¾o: ";
 log_in.titl="Tabela vhodnega dnevnika";
 log_in.h2="Tabela vhodnega dnevnika";
 log_in.th_ip="Izvorni IP";
-log_in.th_port="Å t. naslovnih vrat";
+log_in.th_port="Št. naslovnih vrat";
 
 
 // ** Log_outgoing.asp **//
@@ -988,7 +988,7 @@ log_out.titl="Tabela izhodnega dnevnika";
 log_out.h2="Tabela izhodnega dnevnika";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="Naslovni URL/IP";
-log_out.th_port="Storitev/Å¡t. vrat";
+log_out.th_port="Storitev/št. vrat";
 
 
 // ** Log.asp **//
@@ -997,7 +997,7 @@ log.titl="Dnevnik";
 log.h2="Upravljanje dnevnika";
 log.legend="Dnevnik";
 log.lvl="Nivo dnevnika";
-log.drop="IzvrÅ¾eni";
+log.drop="Izvreni";
 log.reject="Zavrnjeni";
 log.accept="Sprejeti";
 
@@ -1006,25 +1006,25 @@ log.accept="Sprejeti";
 
 management.titl="Administracija";
 management.h2="Upravljanje usmerjevalnika";
-management.changepassword="VaÅ¡ usmerjevalnik trenutno uprablja privzeto uporabniÅ¡ko ime in geslo, kar ni varno. Prosimo, da ju Äimprej spremenite!";
+management.changepassword="Vaš usmerjevalnik trenutno uprablja privzeto uporabniško ime in geslo, kar ni varno. Prosimo, da ju ?imprej spremenite!";
 management.psswd_legend="Geslo usmerjevalnika";
-management.psswd_user="UporabniÅ¡ko ime usmerjevalnika";
+management.psswd_user="Uporabniško ime usmerjevalnika";
 management.psswd_pass="Geslo usmerjevalnika";
 management.pass_conf="Ponovno vnesi za potrditev";
 management.remote_legend="Oddaljeni dostop";
-management.remote_gui="Upravljanje uporabniÅ¡kega vmesnika";
+management.remote_gui="Upravljanje uporabniškega vmesnika";
 management.remote_https="Uporabi HTTPS";
-management.remote_guiport="Vrata uporabniÅ¡kega vmesnika";
+management.remote_guiport="Vrata uporabniškega vmesnika";
 management.remote_ssh="Upravljanje SSH";
 management.remote_sshport="SSH vrata";
 management.remote_telnet="Telnet upravljanje";
 management.remote_telnetport="Telnet vrata";
 management.remote_allowanyip="Dovoli vse oddaljene IPje";
 management.remote_ip="Dovoljeni oddaljeni IPji";
-management.web_legend="Dostop do uporabniÅ¡kega vmesnika";
-management.web_refresh="Samodejno osveÅ¾evanje (v sekundah)";
-management.web_sysinfo="OmogoÄi Info stran";
-management.web_sysinfopass="Info stran zaÅ¡Äitena z geslom";
+management.web_legend="Dostop do uporabniškega vmesnika";
+management.web_refresh="Samodejno osveevanje (v sekundah)";
+management.web_sysinfo="Omogo?i Info stran";
+management.web_sysinfopass="Info stran zaš?itena z geslom";
 management.web_sysinfomasq="Info stran: skrij MAC naslove";
 management.boot_legend="Zagonska pavza";
 management.boot_srv="Zagonska pavza";
@@ -1041,61 +1041,61 @@ management.routing_legend="Usmerjevanje";
 management.routing_srv="Usmerjevanje";
 management.ipv6_legend="IPv6 podpora";
 management.ipv6_srv="IPv6";
-management.ipv6_rad="Radvd omogoÄen";
+management.ipv6_rad="Radvd omogo?en";
 management.ipv6_radconf="Radvd nastavitev";
 management.jffs_legend="JFFS2 podpora";
 management.jffs_srv="JFFS2";
-management.jffs_clean="OÄisti JFFS2";
+management.jffs_clean="O?isti JFFS2";
 management.lang_legend="Izbira jezika";
 management.lang_srv="Jezik";
-management.lang_bulgarian="bulgarÅ¡Äina";
-management.lang_chinese_traditional="tradicionalna kitajÅ¡Äina";
-management.lang_chinese_simplified="poenostavljena kitajÅ¡Äina";
-management.lang_croatian="hrvaÅ¡Äina";
-management.lang_czech="ÄeÅ¡Äina";
-management.lang_dutch="nizozemÅ¡Äina";
-management.lang_portuguese_braz="brazilska portugalÅ¡Äina";
-management.lang_english="angleÅ¡Äina";
-management.lang_polish="poljÅ¡Äina";
-management.lang_french="francoÅ¡Äina";
-management.lang_german="nemÅ¡Äina";
-management.lang_turkish="turÅ¡Äina";
-management.lang_italian="italijanÅ¡Äina";
-management.lang_brazilian="brazilska portugalÅ¡Äina";
-management.lang_russian="rusÄina";
-management.lang_romanian="romunÅ¡Äina";
-management.lang_slovenian="slovenÅ¡Äina";
-management.lang_spanish="Å¡panÅ¡Äina";
-management.lang_swedish="Å¡vedÅ¡Äina";
-management.lang_japanese="japonÅ¡Äina";
-management.lang_hungarian="madÅ¾arÅ¡Äina";
-management.lang_latvian="LatvijÅ¡Äina";
+management.lang_bulgarian="bulgarš?ina";
+management.lang_chinese_traditional="tradicionalna kitajš?ina";
+management.lang_chinese_simplified="poenostavljena kitajš?ina";
+management.lang_croatian="hrvaš?ina";
+management.lang_czech="?eš?ina";
+management.lang_dutch="nizozemš?ina";
+management.lang_portuguese_braz="brazilska portugalš?ina";
+management.lang_english="angleš?ina";
+management.lang_polish="poljš?ina";
+management.lang_french="francoš?ina";
+management.lang_german="nemš?ina";
+management.lang_turkish="turš?ina";
+management.lang_italian="italijanš?ina";
+management.lang_brazilian="brazilska portugalš?ina";
+management.lang_russian="rus?ina";
+management.lang_romanian="romunš?ina";
+management.lang_slovenian="slovenš?ina";
+management.lang_spanish="španš?ina";
+management.lang_swedish="švedš?ina";
+management.lang_japanese="japonš?ina";
+management.lang_hungarian="madarš?ina";
+management.lang_latvian="Latvijš?ina";
 management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
 management.net_conctrl="TCP nadzor zgostitve";
-management.net_port="NajveÄje Å¡t. vrat";
-management.net_tcptimeout="TCP Äasovna omejitev (v sekundah)";
-management.net_udptimeout="UDP Äasovna omejitev (v sekundah)";
+management.net_port="Najve?je št. vrat";
+management.net_tcptimeout="TCP ?asovna omejitev (v sekundah)";
+management.net_udptimeout="UDP ?asovna omejitev (v sekundah)";
 management.clock_legend="Overclocking";
 management.clock_frq="Frekvenca";
 management.clock_support="Ni podprto";
 management.mmc_legend="Podpora za MMC/SD kartice";
 management.mmc_srv="MMC naprava";
-management.mmc_gpiosel="Izbira GPIO noÅ¾ic";
-management.mmc_gpiopins="GPIO noÅ¾ice";
+management.mmc_gpiosel="Izbira GPIO noic";
+management.mmc_gpiopins="GPIO noice";
 management.mmc_cardinfo="Info o kartici";
 management.samba_legend="CIFS samodejni priklop";
-management.samba_srv="CIFS datoteÄni sistem";
+management.samba_srv="CIFS datote?ni sistem";
 management.samba_share="Skupni imenik";
-management.samba_stscript="ZaÄetni skript";
+management.samba_stscript="Za?etni skript";
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP vrata";
 management.SIPatH_domain="SIP domena";
-management.gui_style="Stil usmerjevalnikovega uporabniÅ¡kega vmesnika";
+management.gui_style="Stil usmerjevalnikovega uporabniškega vmesnika";
 
 //help container
 
-hmanagement.right1="Samodejno osveÅ¾evanje:";
-hmanagement.right2="Nastavite interval samodejnega osveÅ¾evanja. 0 (niÄ) popolnoma onemogoÄi samodejno osveÅ¾evanje.";
+hmanagement.right1="Samodejno osveevanje:";
+hmanagement.right2="Nastavite interval samodejnega osveevanja. 0 (ni?) popolnoma onemogo?i samodejno osveevanje.";
 
 // ** Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) **//
 
@@ -1105,30 +1105,30 @@ portserv.h2="Storitve vrat";
 
 // ** Networking.asp **//
 
-networking.h2="VLAN oznaÄevanje";
-networking.legend="OznaÄevanje";
-networking.h22="PremoÅ¡Äanje";
+networking.h2="VLAN ozna?evanje";
+networking.legend="Ozna?evanje";
+networking.h22="Premoš?anje";
 networking.legend2="Ustvari most";
 networking.legend3="Dodeli k mostu";
 networking.legend4="Trenutna tabela mostov";
 networking.brname="Ime mosta";
-networking.stp="STP omogoÄen";
+networking.stp="STP omogo?en";
 networking.iface="Vmesniki";
 networking.h5="DHCPD";
-networking.legend5="Mnogokraten DHCP streÅ¾nik";
+networking.legend5="Mnogokraten DHCP strenik";
 
 //help container
 
 hnetworking.right1="Mnogokraten DHCPD";
-hnetworking.right2="Za uporabo DHCPD omogoÄite DNSMasq kot DHCP streÅ¾nik";
+hnetworking.right2="Za uporabo DHCPD omogo?ite DNSMasq kot DHCP strenik";
 
 // ** QoS.asp **//
 
 qos.titl="Kakovost storitev (QoS)";
 qos.h2="Kakovost storitev (QoS)";
 qos.legend="QoS nastavitve";
-qos.srv="ZaÅ¾eni QoS";
-qos.type="Paketni naÄrt";
+qos.srv="Zaeni QoS";
+qos.type="Paketni na?rt";
 qos.uplink="Hitrost prenosa od vas (kbit/s)";
 qos.dnlink="Hitrost prenosa k vam (kbit/s)";
 qos.gaming="Optimiziraj za igre";
@@ -1137,34 +1137,34 @@ qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
 qos.prio_b="Bulk";
-qos.legend3="Prioriteta maske omreÅ¾ja";
+qos.legend3="Prioriteta maske omreja";
 qos.ipmask="IP/maska";
 qos.maxrate_b="Maks. kbit/s";
 qos.maxuprate_b="Maks. kbit/s od vas";
 qos.maxdownrate_b="Maks. kbit/s k vam";
-qos.maxrate_o="NajveÄja hitrost";
+qos.maxrate_o="Najve?ja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
-qos.legend6="Privzeti nivo pasovne Å¡irine";
-qos.bandwidth="Pasovna Å¡irina v kbit/s";
+qos.legend6="Privzeti nivo pasovne širine";
+qos.bandwidth="Pasovna širina v kbit/s";
 
 //help container
 
 hqos.right1="Hitrost prenosa od vas:";
-hqos.right2="Nastavite na 80%-95% (maks.) vaÅ¡e skupne hitrosti prenosa od vas.";
+hqos.right2="Nastavite na 80%-95% (maks.) vaše skupne hitrosti prenosa od vas.";
 hqos.right3="Hitrost prenosa k vam:";
-hqos.right4="Nastavite na 80%-100% (maks.) vaÅ¡e skupne hitrosti prenosa k vam.";
-hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno Å¡irino.";
-hqos.right8="DoloÄite lahko prioriteto za ves promet z doloÄenega IPja ali obsega IPjev.";
-hqos.right10="DoloÄite lahko hitrost za ves promet z doloÄene naprave na vaÅ¡i mreÅ¾i tako, da doloÄite ime naprave, doloÄite prioriteto in vnesete MAC naslov.";
-hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na katera fiÅ¾iÄna vrata je vaÅ¡a naprava prikljuÄena. DoloÄite lahko prioriteto za naprave prikljuÄene na LAN vrata 1 do 4";
+hqos.right4="Nastavite na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
+hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno širino.";
+hqos.right8="Dolo?ite lahko prioriteto za ves promet z dolo?enega IPja ali obsega IPjev.";
+hqos.right10="Dolo?ite lahko hitrost za ves promet z dolo?ene naprave na vaši mrei tako, da dolo?ite ime naprave, dolo?ite prioriteto in vnesete MAC naslov.";
+hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na katera fii?na vrata je vaša naprava priklju?ena. Dolo?ite lahko prioriteto za naprave priklju?ene na LAN vrata 1 do 4";
 
 
 // ** RouteTable.asp **//
 
 routetbl.titl="Usmerjevalna tabela";
 routetbl.h2="Seznam vnosov v usmerjevalno tabelo";
-routetbl.th1="Ciljna LAN mreÅ¾a";
+routetbl.th1="Ciljna LAN mrea";
 
 
 // ** Routing.asp **//
@@ -1172,7 +1172,7 @@ routetbl.th1="Ciljna LAN mreÅ¾a";
 route.titl="Usmerjevanje";
 route.h2="Napredno usmerjevanje";
 route.metric="Metrika";
-route.mod="NaÄin";
+route.mod="Na?in";
 route.bgp_legend="BGP nastavitve";
 route.bgp_ip="Sosednji IP";
 route.bgp_own_as="BGP lasten AS#";
@@ -1181,7 +1181,7 @@ route.rip2_mod="RIP2 usmerjevalnik";
 route.olsrd_mod="OLSR usmerjevalnik";
 route.olsrd_legend="OLSR usmerjevanje (Optimized Link State Routing)";
 route.olsrd_poll="Poll Rate";
-route.olsrd_gateway="NaÄin Prehod";
+route.olsrd_gateway="Na?in Prehod";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Redundancy";
 route.olsrd_mpr="MPR Coverage";
@@ -1195,36 +1195,36 @@ route.olsrd_newiface="Nov vmesnik";
 route.olsrd_smartgw="Pametni prehod";
 route.zebra_legend="Zebra konfiguracija";
 route.zebra_log="Zebra dnevnik";
-route.zebra_copt="Zebra naÄin konfiguracije";
+route.zebra_copt="Zebra na?in konfiguracije";
 route.bird_legend="Bird konfiguracija";
 route.bird_log="Bird dnevnik";
-route.bird_copt="Bird naÄin konfiguracije";
+route.bird_copt="Bird na?in konfiguracije";
 route.ospf_mod="OSPF usmerjevalnik";
 route.ospf_legend="OSPF usmerjevanje";
 route.ospf_conf="OSPF konfiguracija";
-route.ospf_copt="OSPF naÄin konfiguracije";
+route.ospf_copt="OSPF na?in konfiguracije";
 route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
-route.gateway_legend="DinamiÄno usmerjevanje";
-route.static_legend="StatiÄno usmerjevanje";
-route.static_setno="Izberi Å¡t. niza";
+route.gateway_legend="Dinami?no usmerjevanje";
+route.static_legend="Stati?no usmerjevanje";
+route.static_setno="Izberi št. niza";
 route.static_name="Ime smeri";
-route.static_ip="Ciljna LAN mreÅ¾a";
+route.static_ip="Ciljna LAN mrea";
 
 //help container
 
-hroute.right2="ÄŒe usmerjevalnik gosti vaÅ¡o povezavo v internet, izberite naÄin <em>Prehod</em>. ÄŒe na vaÅ¡i mreÅ¾i obstaja kak drug usmerjevalnik, izberite naÄin <em>Usmerjevalnik</em>.";
-hroute.right4="To je edinstvena Å¡tevilka; doloÄite lahko do 50 smeri.";
-hroute.right6="Vnesite ime, ki ga doloÄite za smer.";
-hroute.right8="To je oddaljeni gostitelj do katerage doloÄate statiÄno smer.";
-hroute.right10="DoloÄi gostitelja in mreÅ¾o.";
+hroute.right2="?e usmerjevalnik gosti vašo povezavo v internet, izberite na?in <em>Prehod</em>. ?e na vaši mrei obstaja kak drug usmerjevalnik, izberite na?in <em>Usmerjevalnik</em>.";
+hroute.right4="To je edinstvena številka; dolo?ite lahko do 50 smeri.";
+hroute.right6="Vnesite ime, ki ga dolo?ite za smer.";
+hroute.right8="To je oddaljeni gostitelj do katerage dolo?ate stati?no smer.";
+hroute.right10="Dolo?i gostitelja in mreo.";
 
 
 // ** Site_Survey.asp **//
 
-survey.titl="Pregled podroÄja";
-survey.h2="Sosednja brezÅ¾iÄna omreÅ¾ja";
-survey.thjoin="PoveÅ¾i";
+survey.titl="Pregled podro?ja";
+survey.h2="Sosednja brezi?na omreja";
+survey.thjoin="Povei";
 
 
 // ** Services.asp **//
@@ -1237,8 +1237,8 @@ service.apserv="APServ";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
-service.kaid_srv="ZaÄni Kaid";
-service.kaid_locdevnum="Å tevilo lokalnih naprav";
+service.kaid_srv="Za?ni Kaid";
+service.kaid_locdevnum="Število lokalnih naprav";
 service.kaid_uibind="Vrata upor. vmesnika";
 service.kaid_orbport="ORB vrata";
 service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
@@ -1247,30 +1247,30 @@ service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
 service.dhcp_legend="DHCP odjemalec";
 service.dhcp_vendor="Nastavitev Vendorclass";
 service.dhcp_reqip="Zahtevaj IP";
-service.dhcp_legend2="DHCP streÅ¾nik";
+service.dhcp_legend2="DHCP strenik";
 service.dhcp_srv="DHCP demon";
 service.dhcp_jffs2="Uporabi JFFS2 za bazo zakupov";
 service.dhcp_nvramlease="Uporabi NVRAM za bazo zakupov";
 service.dhcp_domain="Uporabljena domena";
 service.dhcp_landomain="LAN domena";
-service.dhcp_option="Dodatne DHCPd moÅ¾nosti";
+service.dhcp_option="Dodatne DHCPd monosti";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokalni DNS";
 service.dnsmasq_no_dns_rebind="Brez DNS ponovnega vezanja";
-service.dnsmasq_opt="Dodatne DNSMasq moÅ¾nosti";
+service.dnsmasq_opt="Dodatne DNSMasq monosti";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP streÅ¾nik";
-service.pptp_forcemppe="Prisili MPPE Å¡ifriranje";
+service.pptp_srv="PPTP strenik";
+service.pptp_forcemppe="Prisili MPPE šifriranje";
 service.pptp_client="IPji odjemalcev";
 service.pptp_chap="CHAP-skrivnosti";
 
 //syslog.webservices
 service.syslog_legend="Sistemski dnevnik";
 service.syslog_srv="Syslogd";
-service.syslog_ip="Oddaljeni streÅ¾nik";
+service.syslog_ip="Oddaljeni strenik";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
@@ -1278,11 +1278,11 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP odjemalec";
-service.pptpd_option="PPTP moÅ¾nosti odjemalca";
-service.pptpd_ipdns="StreÅ¾nikov IP ali ime DNS";
-service.pptpd_subnet="Oddaljena podmreÅ¾a";
-service.pptpd_subnetmask="Oddaljena maska podmreÅ¾e";
-service.pptpd_encry="MPPE Å¡ifriranje";
+service.pptpd_option="PPTP monosti odjemalca";
+service.pptpd_ipdns="Strenikov IP ali ime DNS";
+service.pptpd_subnet="Oddaljena podmrea";
+service.pptpd_subnetmask="Oddaljena maska podmree";
+service.pptpd_encry="MPPE šifriranje";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
@@ -1301,21 +1301,21 @@ service.pppoe_legend="PPPOE posredovanje";
 service.pppoe_srv="Posredovanje";
 
 //pppoe-server.webservices
-service.pppoesrv_legend="PPPoE streÅ¾nik";
-service.pppoesrv_srv="Demon RP-PPPoE streÅ¾nik";
-service.pppoesrv_interface="RP-PPPoE streÅ¾nik: vmesnik";
-service.pppoesrv_srvopt="RP-PPPoE streÅ¾nik: moÅ¾nosti";
+service.pppoesrv_legend="PPPoE strenik";
+service.pppoesrv_srv="Demon RP-PPPoE strenik";
+service.pppoesrv_interface="RP-PPPoE strenik: vmesnik";
+service.pppoesrv_srvopt="RP-PPPoE strenik: monosti";
 service.pppoesrv_compr="Kompresija";
 service.pppoesrv_lcpei="LCP Echo interval";
 service.pppoesrv_lcpef="LCP Echo neuspeh";
 service.pppoesrv_limit="Meja seje po MACu"
-service.pppoesrv_idlet="Nedejavni Äas";
+service.pppoesrv_idlet="Nedejavni ?as";
 service.pppoesrv_auth="Overjanje";
-service.pppoesrv_radip="Radius streÅ¾nikov IP";
+service.pppoesrv_radip="Radius strenikov IP";
 service.pppoesrv_radauthport="Radius vrata za overjanje";
-service.pppoesrv_radaccport="Radius vrata za raÄune";
-service.pppoesrv_radkey="Radius deljeni kljuÄ";
-service.pppoesrv_chaps="Lokalno upr. raÄunov (CHAP skrivnosti)";
+service.pppoesrv_radaccport="Radius vrata za ra?une";
+service.pppoesrv_radkey="Radius deljeni klju?";
+service.pppoesrv_chaps="Lokalno upr. ra?unov (CHAP skrivnosti)";
 
 //help container
 
@@ -1331,54 +1331,54 @@ service.snmp_read="RO skupnost";
 service.snmp_write="RW skupnost";
 
 //openvpn.webvpn
-service.vpnd_legend="OpenVPN streÅ¾nik/demon";
-service.vpnd_srv="ZaÄni OpenVPN demon";
-service.vpnd_starttype="ZaÄni ob";
+service.vpnd_legend="OpenVPN strenik/demon";
+service.vpnd_srv="Za?ni OpenVPN demon";
+service.vpnd_starttype="Za?ni ob";
 service.vpnd_startWanup="WAN vzpostavljen";
 service.vpnd_startSystem="Sistem";
 service.vpnd_crl="Seznam preklicanih certifikatov";
 service.vpnd_config="OpenVPN konfiguracija";
 service.vpnd_dhpem="DH PEM";
 service.vpnd_tlsauth="OpenVPN TLS Auth";
-service.vpnd_cert="Javno streÅ¾niÅ¡ko potrdilo";
-service.vpnd_key="Zasebni streÅ¾niÅ¡ki kljuÄ";
-service.vpnd_mode="NaÄin streÅ¾nika";
-service.vpnd_net="MreÅ¾a";
-service.vpnd_mask="MreÅ¾na maska";
-service.vpnd_startip="Pool zaÄetni IP";
-service.vpnd_endip="Pool konÄni IP";
+service.vpnd_cert="Javno streniško potrdilo";
+service.vpnd_key="Zasebni streniški klju?";
+service.vpnd_mode="Na?in strenika";
+service.vpnd_net="Mrea";
+service.vpnd_mask="Mrena maska";
+service.vpnd_startip="Pool za?etni IP";
+service.vpnd_endip="Pool kon?ni IP";
 service.vpnd_cl2cl="Dovoli zvezo odjemalec-odjemalec";
-service.vpnd_switch="Konfiguracija stikala steÅ¾nika";
+service.vpnd_switch="Konfiguracija stikala stenika";
 service.vpnd_dupcn="Dovoli podvojeni cn";
-service.vpnd_proxy="DHCP-Proxy naÄin";
+service.vpnd_proxy="DHCP-Proxy na?in";
 service.vpnd_clcon="Skripta za priklop odjemalca";
 service.vpnd_ccddef="CCD-Dir DEFAULT datoteka";
 service.vpn_redirgate="Preusmeri privzeti prehod";
 service.vpn_legend="OpenVPN odjemalec";
-service.vpn_srv="ZaÄni OpenVPN";
-service.vpn_ipname="StreÅ¾nikov IP/ime";
+service.vpn_srv="Za?ni OpenVPN";
+service.vpn_ipname="Strenikov IP/ime";
 service.vpn_mtu="TUN MTU nastavitev";
 service.vpn_mss="MSS-fiksiranje/fragmentiranje preko tunela";
 service.vpn_compress="Uporabi LZO stiskanje";
 service.vpn_cl2cl="Dovoli odjemalec-odjemalec";
 service.vpn_tunnel="Tunelski protokol";
 service.vpn_tuntap="Tunelska naprava";
-service.vpn_srvcert="Javno streÅ¾niÅ¡ko potrdilo";
-service.vpn_clicert="Javno odjemalÄevo potrdilo";
+service.vpn_srvcert="Javno streniško potrdilo";
+service.vpn_clicert="Javno odjemal?evo potrdilo";
 service.vpn_certtype="nsCertType";
-service.vpn_clikey="Zasebni odjemalÄev kljuÄ";
+service.vpn_clikey="Zasebni odjemal?ev klju?";
 service.vpn_nat="NAT";
-service.vpn_cipher="Å ifra za Å¡ifriranje";
+service.vpn_cipher="Šifra za šifriranje";
 service.vpn_auth="Hash algoritem";
 service.vpn_bridge="Most TAP - br0";
-service.vpn_adv="Napredne moÅ¾nosti";
-service.vpn_tlscip="Å ifra TLS";
+service.vpn_adv="Napredne monosti";
+service.vpn_tlscip="Šifra TLS";
 service.vpn_route="Usmerjanje po politiki";
 
 //help container
 
-hstatus_vpn.right1="Dodaj IPje v obliki 0.0.0.0/0 da prisiliÅ¡ odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izkljuÄen.";
-hstatus_vpn.right2="Da prisiliÅ¡ poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliÅ¡ DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.";
+hstatus_vpn.right1="Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izklju?en.";
+hstatus_vpn.right2="Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1388,30 +1388,30 @@ service.vncrepeater="VNC prenosnik";
 service.ssh_legend="Varna ukazna lupina";
 service.ssh_srv="SSHd";
 service.ssh_password="Prijava z geslom";
-service.ssh_key="PooblaÅ¡Äeni kljuÄi";
+service.ssh_key="Pooblaš?eni klju?i";
 service.ssh_forwarding="SSH TCP posredovanje";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS gumb";
 service.radiooff_legend_aoss="Funkcija AOSS gumba";
-service.radiooff_srv="Uporabi ta gumb za izkljuÄitev radia";
+service.radiooff_srv="Uporabi ta gumb za izklju?itev radia";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Neuporabljeno";
-service.radiooff_bootoff="Ob zagonu izkljuÄi radio";
+service.radiooff_bootoff="Ob zagonu izklju?i radio";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP / WPS gumb";
 service.ses_srv="Akcija";
-service.ses_toggleradio="VkljuÄi/izkljuÄi brezÅ¾iÄno";
+service.ses_toggleradio="Vklju?i/izklju?i brezi?no";
 service.ses_script="Prirejeni skript";
 
 //hwmon.webservices
 service.hwmon_legend="Nadzor strojne opreme";
-service.hwmon_critemp="KritiÄna temperatura (vkljuÄi ventilator)";
-service.hwmon_hystemp="Histerezna temperatura (izkljuÄi ventilator)";
+service.hwmon_critemp="Kriti?na temperatura (vklju?i ventilator)";
+service.hwmon_hystemp="Histerezna temperatura (izklju?i ventilator)";
 
 //rstat.webservices
-service.rstats_legend="Nadzor pasovne Å¡irine";
+service.rstats_legend="Nadzor pasovne širine";
 service.rstats_srv="Rstats demon";
 service.rstats_path="Shrani podatke na";
 service.rstats_time="Interval shranjevanja";
@@ -1420,23 +1420,23 @@ service.rstats_usrdir="Uporabnikov imenik";
 //nstx.webservices
 service.nstx_legend="IP preko DNS tuneliranje";
 service.nstx_srv="nstx demon";
-service.nstx_ipenable="VeÅ¾i samo na ta IP";
-service.nstx_log="SporoÄila za razhroÅ¡Äevanje";
+service.nstx_ipenable="Vei samo na ta IP";
+service.nstx_log="Sporo?ila za razhroš?evanje";
 
 //ttraff.webservices
-service.ttraff_legend="Å tevec WAN prometa";
+service.ttraff_legend="Števec WAN prometa";
 service.ttraff_daemon="ttraff demon";
 
 //notifier.webservices
 service.warn_legend="Javljalnik svaril zveze";
 service.warn="Javljalnik svaril";
 service.warn_limit="Meja zvez";
-service.warn_server="Email SMTP streÅ¾nik";
-service.warn_from="PoÅ¡iljateljev email naslov";
-service.warn_fromfull="Polno ime poÅ¡iljatelja";
+service.warn_server="Email SMTP strenik";
+service.warn_from="Pošiljateljev email naslov";
+service.warn_fromfull="Polno ime pošiljatelja";
 service.warn_to="Prejemnikov email naslov";
 service.warn_domain="Prejemnikovo domensko ime";
-service.warn_user="UporabniÅ¡ko ime za SMTP overjanje";
+service.warn_user="Uporabniško ime za SMTP overjanje";
 service.warn_pass="Geslo za SMTP overjanje";
 
 //milkfish.webservices
@@ -1483,7 +1483,7 @@ service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
 
 service.samba3_srv="Samba";
-service.samba3_srvstr="Niz streÅ¾nika";
+service.samba3_srvstr="Niz strenika";
 service.samba3_pub="Javna souporaba";
 service.samba3_config="Konfiguracija po meri";
 service.samba3_workgrp="Delovna skupina";
@@ -1501,7 +1501,7 @@ service.samba3_share_label="Ime";
 service.samba3_share_public="Javno";
 service.samba3_share_access="Dostop";
 service.samba3_users="Uporabniki";
-service.samba3_username="UporabniÅ¡ko ime";
+service.samba3_username="Uporabniško ime";
 service.samba3_password="Geslo";
 service.samba3_user_shares="Dostop do souporabe";
 
@@ -1518,7 +1518,7 @@ eoip.passtos="TOS prehajanje";
 eoip.frag="fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="oblikovanje";
-eoip.bridging="premoÅ¡Äanje";
+eoip.bridging="premoš?anje";
 
 
 // ** Sipath.asp + cgi **//
@@ -1531,34 +1531,34 @@ sipath.status_titl="Status";
 // ** Status_Lan.asp **//
 
 status_lan.titl="LAN status";
-status_lan.h2="Lokalna mreÅ¾a";
+status_lan.h2="Lokalna mrea";
 status_lan.legend="LAN status";
-status_lan.h22="DHCP - Protokol za dinamicÄnego konfiguracijo gostitelja";
+status_lan.h22="DHCP - Protokol za dinamic?nego konfiguracijo gostitelja";
 status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
 status_lan.legend4="Aktivni odjemalci";
-status_lan.legend5="prikljuÄeni PPTP odjemalci";
-status_lan.legend6="PrikljuÄeni PPPOE odjemalci";
-status_lan.concount="Å t. zvez";
-status_lan.conratio="DeleÅ¾";
+status_lan.legend5="priklju?eni PPTP odjemalci";
+status_lan.legend6="Priklju?eni PPPOE odjemalci";
+status_lan.concount="Št. zvez";
+status_lan.conratio="Dele";
 
 //help container
 
-hstatus_lan.right2="To je usmerjevalnikov MAC naslov, kot je viden v vaÅ¡i lokalni mreÅ¾i.";
-hstatus_lan.right4="To je usmerjevalnikov IP naslov, kot je viden v vaÅ¡i lokalni mreÅ¾i.";
-hstatus_lan.right6="To je maska podmreÅ¾e, kadar jo usmerjevalnik uporablja.";
-hstatus_lan.right8="Kadar uporabljate usmerjevalnik kot DHCP streÅ¾nik, je to vidno tukaj.";
+hstatus_lan.right2="To je usmerjevalnikov MAC naslov, kot je viden v vaši lokalni mrei.";
+hstatus_lan.right4="To je usmerjevalnikov IP naslov, kot je viden v vaši lokalni mrei.";
+hstatus_lan.right6="To je maska podmree, kadar jo usmerjevalnik uporablja.";
+hstatus_lan.right8="Kadar uporabljate usmerjevalnik kot DHCP strenik, je to vidno tukaj.";
 hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally Unique Identifier of the network interface (IEEE Standards OUI baze podatkov).";
 
 
 // ** Status_Bandwidth.asp **//
 
-status_band.titl="Nadzor pasovne Å¡irine";
-status_band.h2="Nadzor pasovne Å¡irine";
+status_band.titl="Nadzor pasovne širine";
+status_band.h2="Nadzor pasovne širine";
 status_band.chg_unit="Preklopi na ";
 status_band.chg_scale="Samodejno merilo";
 status_band.chg_error="Ne morem zbrati podatkov o vmesniku";
-status_band.chg_collect_initial="Zbiram zaÄetne podatke, prosimo poÄakajte...";
+status_band.chg_collect_initial="Zbiram za?etne podatke, prosimo po?akajte...";
 status_band.strin="Noter";
 status_band.strout="Ven";
 status_band.follow="sledi";
@@ -1566,7 +1566,7 @@ status_band.up="gor";
 
 //help container
 
-hstatus_band.svg="Za prikaz grafov pasovne Å¡irine je potreben dodatek Adobe SVG.";
+hstatus_band.svg="Za prikaz grafov pasovne širine je potreben dodatek Adobe SVG.";
 hstatus_band.right1="Klikni na oznako za preklop enote (bytes/s ali bits/s).";
 hstatus_band.right2="Klikni na oznako za izbiro merila.";
 
@@ -1577,9 +1577,9 @@ status_router.h2="Informacije usmerjevalnika";
 status_router.legend="Sistem";
 status_router.sys_model="Model usmerjevalnika";
 status_router.sys_firmver="Verzija strojne programske opreme";
-status_router.sys_time="Trenutni Äas";
+status_router.sys_time="Trenutni ?as";
 status_router.sys_up="Neprekinjeno delovanje";
-status_router.sys_load="PovpreÄna obremenitev";
+status_router.sys_load="Povpre?na obremenitev";
 status_router.legend2="Procesor";
 status_router.cpu="Model procesorja";
 status_router.clock="Ura procesorja";
@@ -1592,8 +1592,8 @@ status_router.mem_cached="Predpomnilnik";
 status_router.mem_active="Dejavno";
 status_router.mem_inactive="Nedejavno";
 status_router.mem_hidden="Hidden";
-status_router.legend4="MreÅ¾a";
-status_router.net_maxports="IP filter: najveÄje Å¡tevilo vrat";
+status_router.legend4="Mrea";
+status_router.net_maxports="IP filter: najve?je število vrat";
 status_router.net_conntrack="Aktivne IP povezave";
 status_router.notavail="Ni na voljo";
 status_router.legend6="Uporaba prostora";
@@ -1602,27 +1602,27 @@ status_router.cputemp="Temperatura procesorja";
 
 //help container
 
-hstatus_router.right2="To je ime usmerjevalnika, kot ste ga doloÄili v zavihku <i>Nemestitev</i>.";
-hstatus_router.right4="To je usmerjevalnikov MAC naslov, kot ga vidi vaÅ¡ ponudnik interneta.";
+hstatus_router.right2="To je ime usmerjevalnika, kot ste ga dolo?ili v zavihku <i>Nemestitev</i>.";
+hstatus_router.right4="To je usmerjevalnikov MAC naslov, kot ga vidi vaš ponudnik interneta.";
 hstatus_router.right6="To je usmerjevalnikova trenutna verzija strojne programske opreme.";
-hstatus_router.right8="To je trenutni Äas prejet z ntp streÅ¾nika nastavljenega v zavihku <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
-hstatus_router.right10="To je Äas neprekinjenega delovanja.";
-hstatus_router.right12="To so povpreÄne obremenitve v zadnji 1, 5 in 15 minutah.";
+hstatus_router.right8="To je trenutni ?as prejet z ntp strenika nastavljenega v zavihku <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
+hstatus_router.right10="To je ?as neprekinjenega delovanja.";
+hstatus_router.right12="To so povpre?ne obremenitve v zadnji 1, 5 in 15 minutah.";
 
 // ** Status_Internet.asp **//
 
 status_inet.titl="WAN status";
 status_inet.h11="WAN";
-status_inet.conft="NaÄin povezave";
+status_inet.conft="Na?in povezave";
 status_inet.www_loginstatus="Status prijave";
 status_inet.wanuptime="Trajanje povezave";
-status_inet.leasetime="Preostali Äas zakupa";
+status_inet.leasetime="Preostali ?as zakupa";
 status_inet.traff="Promet";
 status_inet.traff_tot="Skupni romet";
-status_inet.traff_mon="MeseÄni promet";
+status_inet.traff_mon="Mese?ni promet";
 status_inet.traffin="Vhodni promet";
 status_inet.traffout="Izhodni promet";
-status_inet.previous="PrejÅ¡nji mesec";
+status_inet.previous="Prejšnji mesec";
 status_inet.next="Naslednji mesec";
 status_inet.dataadmin="Upravljanje podatkov";
 status_inet.delete_confirm="POZOR! Vsi podaki bodo izbrisani. Nadaljujem?";
@@ -1630,9 +1630,9 @@ status_inet.delete_confirm="POZOR! Vsi podaki bodo izbrisani. Nadaljujem?";
 
 //help container
 
-hstatus_inet.right2="To kaÅ¾e podatke, potrebne za prikljuÄitev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>PoveÅ¾i</em> ali <em>Prekini</em> poveÅ¾ete ali prekinete vaÅ¡o povezavo.";
-hstatus_inet.right4="To kaÅ¾e koliÄino preneÅ¡enih podatkov od zadnjega zagona usmerjevalnika.";
-hstatus_inet.right6="To kaÅ¾e koliÄino preneÅ¡enih podatkov po mesecih. Za prikaz dnevnih podatkov se zapeljite z miÅ¡ko po grafu. Podatki so spravljeni v nvramu.";
+hstatus_inet.right2="To kae podatke, potrebne za priklju?itev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Povei</em> ali <em>Prekini</em> poveete ali prekinete vašo povezavo.";
+hstatus_inet.right4="To kae koli?ino prenešenih podatkov od zadnjega zagona usmerjevalnika.";
+hstatus_inet.right6="To kae koli?ino prenešenih podatkov po mesecih. Za prikaz dnevnih podatkov se zapeljite z miško po grafu. Podatki so spravljeni v nvramu.";
 
 
 // ** Status_Conntrack.asp **//
@@ -1646,7 +1646,7 @@ status_conn.h2="Aktivne IP povezave";
 status_sputnik.titl="Status Sputnik agenta";
 status_sputnik.h2="Sputnik&reg; agent&trade;";
 status_sputnik.manage="Upravljan od";
-status_sputnik.license="SCC Å¡t. licence.";
+status_sputnik.license="SCC št. licence.";
 
 //help container
 
@@ -1654,37 +1654,37 @@ hstatus_sputnik.right1="Status Sputnik agenta";
 hstatus_sputnik.right2="Ta zaslon prikazuje status Sputnik agenta.";
 hstatus_sputnik.right4="Sputnikov kontrolni center na katerega je ta usmerjevalnik povezan.";
 hstatus_sputnik.right6="Trenutni status Sputnik agenta.";
-hstatus_sputnik.right8="Å t. licence vaÅ¡ega Sputnik kontrolnega centra.";
+hstatus_sputnik.right8="Št. licence vašega Sputnik kontrolnega centra.";
 
 
 // ** Status_Wireless.asp **//
 
-status_wireless.titl="BrezÅ¾iÄni status";
-status_wireless.h2="BrezÅ¾iÄno";
-status_wireless.legend="BrezÅ¾iÄni status";
-status_wireless.net="MreÅ¾a";
+status_wireless.titl="Brezi?ni status";
+status_wireless.h2="Brezi?no";
+status_wireless.legend="Brezi?ni status";
+status_wireless.net="Mrea";
 status_wireless.pptp="PPTP status";
-status_wireless.legend2="Info o brezÅ¾iÄnih paketih";
+status_wireless.legend2="Info o brezi?nih paketih";
 status_wireless.rx="Sprejeti (RX)";
 status_wireless.tx="Oddani (TX)";
-status_wireless.h22="BrezÅ¾iÄna vozliÅ¡Äa";
-status_wireless.legend3="BrezÅ¾iÄni odjemalci";
+status_wireless.h22="Brezi?na vozliš?a";
+status_wireless.legend3="Brezi?ni odjemalci";
 status_wireless.signal_qual="Kakovost signala";
-status_wireless.wds="WDS vozliÅ¡Äa";
+status_wireless.wds="WDS vozliš?a";
 
 // ** GPS info **//
 
 status_gpsi.legend="GPS info";
 status_gpsi.status="Status";
-status_gpsi.lon="Zemljepisna dolÅ¾ina";
-status_gpsi.lat="Zemljepisna Å¡irina";
-status_gpsi.alt="Nadmorska viÅ¡ina";
+status_gpsi.lon="Zemljepisna dolina";
+status_gpsi.lat="Zemljepisna širina";
+status_gpsi.alt="Nadmorska višina";
 status_gpsi.sat="Vidni sateliti";
 
 //help container
 
-hstatus_wireless.right2="To je usmerjevalnikov MAC naslov, kot je viden v vaÅ¡i lokalni brezÅ¾iÄni mreÅ¾i..";
-hstatus_wireless.right4="Tu je prikazan uporabljeni brezÅ¾iÄni naÄin, kot je izbran v zavihku BrezÅ¾iÄno (MeÅ¡ano, Samo-G, Samo-B ali OnemogoÄeno).";
+hstatus_wireless.right2="To je usmerjevalnikov MAC naslov, kot je viden v vaši lokalni brezi?ni mrei..";
+hstatus_wireless.right4="Tu je prikazan uporabljeni brezi?ni na?in, kot je izbran v zavihku Brezi?no (Mešano, Samo-G, Samo-B ali Onemogo?eno).";
 
 
 // ** Status_OpenVPN.asp **//
@@ -1694,20 +1694,20 @@ status_openvpn.titl="OpenVPN status";
 
 // ** Triggering.asp **//
 
-trforward.titl="ProÅ¾enje vrat";
-trforward.h2="ProÅ¾enje vrat";
+trforward.titl="Proenje vrat";
+trforward.h2="Proenje vrat";
 trforward.legend="Posredovanja";
-trforward.trrange="Obseg proÅ¾enja vrat";
+trforward.trrange="Obseg proenja vrat";
 trforward.fwdrange="Obseg posredovanja vrat";
 trforward.app="Aplikacija";
 
 //help container
 
-htrforward.right2="Vnesite ime aplikacije za proÅ¾enje.";
-htrforward.right4="Za vsako aplikacijo vnesite obseg proÅ¾enja vrat. Preverite dokumentacijo za potrebne Å¡tevilke vrat.";
-htrforward.right6="Za vsako aplikacijo vnesite obseg posredovanja vrat. Preverite dokumentacijo za potrebne Å¡tevilke vrat.";
-htrforward.right8="Vnesite zaÄetna vrata za obseg proÅ¾enja ali posredovanja vrat.";
-htrforward.right10="Vnesite konÄna vrata za obseg proÅ¾enja ali posredovanja vrat.";
+htrforward.right2="Vnesite ime aplikacije za proenje.";
+htrforward.right4="Za vsako aplikacijo vnesite obseg proenja vrat. Preverite dokumentacijo za potrebne številke vrat.";
+htrforward.right6="Za vsako aplikacijo vnesite obseg posredovanja vrat. Preverite dokumentacijo za potrebne številke vrat.";
+htrforward.right8="Vnesite za?etna vrata za obseg proenja ali posredovanja vrat.";
+htrforward.right10="Vnesite kon?na vrata za obseg proenja ali posredovanja vrat.";
 
 
 // ** Upgrade.asp **//
@@ -1720,11 +1720,11 @@ upgrad.resetOff="Brez ponastavitve";
 upgrad.resetOn="Privzete nastavitve";
 upgrad.file="Izberite datoteko za posodobitev";
 upgrad.warning="O P O Z O R I L O";
-upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izkljuÄujte usmerjevalnika in ne pritiskajte na gumb za ponastavitev!";
+upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izklju?ujte usmerjevalnika in ne pritiskajte na gumb za ponastavitev!";
 
 //help container
 
-hupgrad.right2="Kliknite na gumb <em>Browse... (Prebrskaj...)</em> za izbiro datoteke za posodobitev.<br /><br /> Kliknite na gumb <em>Posodobi</em> za zaÄetek posodabljanja. Posodobitve ne smete prekiniti.";
+hupgrad.right2="Kliknite na gumb <em>Browse... (Prebrskaj...)</em> za izbiro datoteke za posodobitev.<br /><br /> Kliknite na gumb <em>Posodobi</em> za za?etek posodabljanja. Posodobitve ne smete prekiniti.";
 
 
 // ** UPnP.asp **//
@@ -1734,21 +1734,21 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Posredovanja";
 upnp.legend2="Konfiguracija UPnP";
 upnp.serv="UPnP storitev";
-upnp.clear="Ob zagonu izbriÅ¡i posredovanja";
-upnp.url="PoÅ¡lji predstavitveni URL";
+upnp.clear="Ob zagonu izbriši posredovanja";
+upnp.url="Pošlji predstavitveni URL";
 upnp.msg1="Kliknite za izbris vnosa";
-upnp.msg2="IzbriÅ¡em vse vnose?";
+upnp.msg2="Izbrišem vse vnose?";
 
 //help container
 
-hupnp.right2="Kliknite na koÅ¡ za izbris posameznega vnosa.";
+hupnp.right2="Kliknite na koš za izbris posameznega vnosa.";
 hupnp.right4="Dovoli aplikacijam, da samostojno nastavijo posredovanja.";
 
 
 // ** VPN.asp **//
 
 vpn.titl="VPN prehajanje";
-vpn.h2="Navidezno zasebno omreÅ¾je (VPN)";
+vpn.h2="Navidezno zasebno omreje (VPN)";
 vpn.legend="VPN prehajanje";
 vpn.ipsec="IPSec prehajanje";
 vpn.pptp="PPTP prehajanje";
@@ -1756,24 +1756,24 @@ vpn.l2tp="L2TP prehajanje";
 
 //help container
 
-hvpn.right1="Izberete lahko IPSec, PPTP in/ali L2TP prehajanje, da se lahko vaÅ¡e naprave poveÅ¾ejo v VPN.";
+hvpn.right1="Izberete lahko IPSec, PPTP in/ali L2TP prehajanje, da se lahko vaše naprave poveejo v VPN.";
 
 
 // ** Vlan.asp **//
 
 vlan.titl="Navidezni LAN";
-vlan.h2="Navidezno lokalno omreÅ¾je (VLAN)";
+vlan.h2="Navidezno lokalno omreje (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Dodeli k<br />mostu";
 vlan.tagged="Oznaka";
 vlan.negociate="Samodejno pogajanje";
-vlan.aggregation="ZdruÅ¾itev zveze<br>na vratih 3 & 4";
+vlan.aggregation="Zdruitev zveze<br>na vratih 3 & 4";
 vlan.trunk="Povezava";
 
 
 // ** WEP.asp **//
 
-wep.defkey="Privzeti oddajni kljuÄ";
+wep.defkey="Privzeti oddajni klju?";
 wep.passphrase="Geslo";
 
 
@@ -1781,13 +1781,13 @@ wep.passphrase="Geslo";
 
 wol.titl="WOL";
 wol.h2="Wake-On-LAN";
-wol.legend="RazpoloÅ¾ljivi gostitelji";
+wol.legend="Razpololjivi gostitelji";
 wol.legend2="WOL naslovi";
 wol.legend3="Izhod";
-wol.legend4="RoÄni WOL";
-wol.enable="OmogoÄi WOL?";
+wol.legend4="Ro?ni WOL";
+wol.enable="Omogo?i WOL?";
 wol.mac="MAC naslov(i)";
-wol.broadcast="MreÅ¾ni broadcast";
+wol.broadcast="Mreni broadcast";
 wol.udp="UDP vrata";
 wol.msg1="Kliknite za odstranitev WOL gostitelja";
 wol.h22="Samodejni Wake-On-LAN";
@@ -1797,9 +1797,9 @@ wol.pass="SecureOn geslo";
 
 //help container
 
-hwol.right2="Ta stran omogoÄa, da <em>zbudite</em> raÄunalnike na vaÅ¡i lokalni mreÅ¾i (t.j. prikljuÄene na vaÅ¡ usmerjevalnik).";
+hwol.right2="Ta stran omogo?a, da <em>zbudite</em> ra?unalnike na vaši lokalni mrei (t.j. priklju?ene na vaš usmerjevalnik).";
 hwol.right4="MAC naslove vnesite v formatu xx:xx:xx:xx:xx:xx (t.j. 01:23:45:67:89:AB)";
-hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mreÅ¾o. Lahko pa je oddaljeni naslov, Äe gostitelj ni prikljuÄenj na vaÅ¡o lokalno mreÅ¾o.";
+hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mreo. Lahko pa je oddaljeni naslov, ?e gostitelj ni priklju?enj na vašo lokalno mreo.";
 
 
 // ** WanMAC.asp **//
@@ -1808,38 +1808,38 @@ wanmac.titl="Kloniranje MAC naslova";
 wanmac.h2="Kloniranje MAC naslova";
 wanmac.legend="Kloniranje MAC";
 wanmac.wan="Kloniraj WAN MAC";
-wanmac.wlan="Kloniraj brezÅ¾iÄni MAC";
+wanmac.wlan="Kloniraj brezi?ni MAC";
 
 //help container
 
-hwanmac.right2="Nekateri ponudniki interneta zahtevajo, da prijavite vaÅ¡ MAC naslov. ÄŒe ne Å¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je Å¾e prijavljen pri vaÅ¡em ponudniku interneta.";
+hwanmac.right2="Nekateri ponudniki interneta zahtevajo, da prijavite vaš MAC naslov. ?e ne elite prijaviti novega MAC naslova lahko klonirate naslov, ki je e prijavljen pri vašem ponudniku interneta.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 
-wpa.titl="BrezÅ¾iÄna zaÅ¡Äita";
-wpa.h2="BrezÅ¾iÄna zaÅ¡Äita";
-wpa.secmode="NaÄin zaÅ¡Äite";
-wpa.legend="BrezÅ¾iÄno Å¡ifriranje";
-wpa.auth_mode="MreÅ¾no overjanje";
+wpa.titl="Brezi?na zaš?ita";
+wpa.h2="Brezi?na zaš?ita";
+wpa.secmode="Na?in zaš?ite";
+wpa.legend="Brezi?no šifriranje";
+wpa.auth_mode="Mreno overjanje";
 wpa.wpa="WPA";
 wpa.radius="Radius";
-wpa.gtk_rekey="WPA interval izmenjave kljuÄev";
-wpa.rekey="Interval izmenjave kljuÄev (v sekundah)";
-wpa.radius_ipaddr="RADIUS naslov streÅ¾nika";
-wpa.radius_port="RADIUS vrata streÅ¾nika";
-wpa.radius_key="RADIUS kljuÄ";
+wpa.gtk_rekey="WPA interval izmenjave klju?ev";
+wpa.rekey="Interval izmenjave klju?ev (v sekundah)";
+wpa.radius_ipaddr="RADIUS naslov strenika";
+wpa.radius_port="RADIUS vrata strenika";
+wpa.radius_key="RADIUS klju?";
 wpa.algorithms="WPA algoritm";
-wpa.shared_key="WPA deljeni kljuÄ";
+wpa.shared_key="WPA deljeni klju?";
 
 
 
 aoss.titl="AOSS varnost";
 aoss.aoss="AOSS";
 aoss.service="Storitev AOSS";
-aoss.enable="OmogoÄi AOSS";
-aoss.start="ZaÄni AOSS pogajanje";
-aoss.securitymodes="Varnostni naÄini";
+aoss.enable="Omogo?i AOSS";
+aoss.start="Za?ni AOSS pogajanje";
+aoss.securitymodes="Varnostni na?ini";
 aoss.wpaaes="WPA AES";
 aoss.wpatkip="WPA TKIP";
 aoss.wep="WEP64 / 128";
@@ -1848,12 +1848,12 @@ aoss.security="Varnost";
 aoss.connectivity="Povezovanje";
 aoss.clients="AOSS odjemalci";
 aoss.notice="OBVESTILO";
-aoss.ap_mode_notice="OBVESTILO: AOSS se lahko uporablja samo kadar je brezÅ¾iÄno (prvi radio) v naÄinu AP ali WDS AP..";
-aoss.wep_notice="naÄin WEP ni dovolj varen, zato ga ne priporoÄamo.";
-aoss.wep_info="(potrebno za veÄino igralnih konzol, ki podpirajo AOSS)";
+aoss.ap_mode_notice="OBVESTILO: AOSS se lahko uporablja samo kadar je brezi?no (prvi radio) v na?inu AP ali WDS AP..";
+aoss.wep_notice="na?in WEP ni dovolj varen, zato ga ne priporo?amo.";
+aoss.wep_info="(potrebno za ve?ino igralnih konzol, ki podpirajo AOSS)";
 aoss.wps="Namestitev WPS";
 aoss.wps_ap_pin="WPS PIN prehoda (nalepka)";
-aoss.wpspin="WPS odjemalÄev PIN";
+aoss.wpspin="WPS odjemal?ev PIN";
 aoss.wpsactivate="Aktiviraj PIN";
 aoss.wpsregister="Registriraj PIN";
 aoss.wpsgenerate="Generiraj PIN";
@@ -1861,10 +1861,10 @@ aoss.pinnotvalid="Neveljaven PIN, kontrolna vsota ni pravilna!";
 aoss.wpsenable="WPS gumb";
 aoss.wpsstatus="WPS status";
 aoss.externalregistrar="Zunanji registrator";
-aoss.release="RazreÅ¡i";
+aoss.release="Razreši";
 
 
-olupgrade.avail_updates="RazpoloÅ¾ljive posodobitve";
+olupgrade.avail_updates="Razpololjive posodobitve";
 olupgrade.version="Verzija";
 olupgrade.release="Izdaja";
 olupgrade.readme="Preberi";
@@ -1875,20 +1875,20 @@ olupgrade.retrieve_error="Napaka pri pridobivanju informacij o posodobitvah";
 nintendo.titl="Nintendo";
 
 nintendo.spotpass.titl="Nintendo SpotPass";
-nintendo.spotpass.enable="OmogoÄi Nintendo SpotPass";
-nintendo.spotpass.servers="Dovoli streÅ¾nike";
+nintendo.spotpass.enable="Omogo?i Nintendo SpotPass";
+nintendo.spotpass.servers="Dovoli strenike";
 
 
 sec80211x.xsuptype="Tip XSupplicanta";
-sec80211x.servercertif="Certifikat javnega streÅ¾nika";
+sec80211x.servercertif="Certifikat javnega strenika";
 sec80211x.clientcertif="Certifikat odjemalca";
 sec80211x.phase2="Phase2";
 sec80211x.anon="Anonimna identiteta";
-sec80211x.options="Dodatne mreÅ¾ne moÅ¾nosti";
+sec80211x.options="Dodatne mrene monosti";
 
 //help container
 
-hwpa.right2="Izberete lahko med: OnemogoÄeno, WEP, WPA Personal, WPA Enterprise ali RADIUS. Vse naprave v vaÅ¡i mreÅ¾i morajo uporabljanti isti naÄin. V naÄinu N morate uporabiti WPA2/AES";
+hwpa.right2="Izberete lahko med: Onemogo?eno, WEP, WPA Personal, WPA Enterprise ali RADIUS. Vse naprave v vaši mrei morajo uporabljanti isti na?in. V na?inu N morate uporabiti WPA2/AES";
 
 
 // ** WL_FilterTable.asp **//
@@ -1901,9 +1901,9 @@ wl_filter.h3="Vnesi MAC naslov v tem formatu&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx
 
 // ** WL_ActiveTable.asp **//
 
-wl_active.titl="Seznam MAC aktivnih brezÅ¾iÄnih odjemalcev";
-wl_active.h2="Seznam MAC brezÅ¾iÄnih odjemalcev";
-wl_active.h3="OmogoÄi MAC filter";
+wl_active.titl="Seznam MAC aktivnih brezi?nih odjemalcev";
+wl_active.h2="Seznam MAC brezi?nih odjemalcev";
+wl_active.h3="Omogo?i MAC filter";
 wl_active.active="Aktivni odjemalci";
 wl_active.inactive="Neaktivni odjemalci";
 
@@ -1911,16 +1911,16 @@ wl_active.inactive="Neaktivni odjemalci";
 // ** Wireless_WDS.asp **//
 
 wds.titl="WDS";
-wds.h2="BrezÅ¾iÄni distribucijski sistem (WDS)";
+wds.h2="Brezi?ni distribucijski sistem (WDS)";
 wds.legend="WDS nastavitve";
 wds.label="Leni WDS";
-wds.label2="WDS podmreÅ¾a";
-wds.wl_mac="BrezÅ¾iÄni MAC";
-wds.lazy_default="Privzeto: onemogoÄi";
+wds.label2="WDS podmrea";
+wds.wl_mac="Brezi?ni MAC";
+wds.lazy_default="Privzeto: onemogo?i";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
-wds.subnet="PodmreÅ¾a";
-wds.legend2="Dodatne moÅ¾nosti";
+wds.subnet="Podmrea";
+wds.legend2="Dodatne monosti";
 
 
 // ** Wireless_radauth.asp **//
@@ -1930,31 +1930,31 @@ radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
 radius.label="MAC Radius odjemalec";
 radius.label2="MAC format";
-radius.label3="Radius Auth streÅ¾nikov naslov";
-radius.label4="Radius Auth streÅ¾nikova vrata";
+radius.label3="Radius Auth strenikov naslov";
+radius.label4="Radius Auth strenikova vrata";
 radius.label7="Radius Auth deljena skrivnost";
 
-radius.label23="Radius Auth naslov rezervnega streÅ¾nika";
-radius.label24="Radius Auth vrata rezervnega streÅ¾nika";
-radius.label27="Radius Auth deljena skrivnost rezervnega streÅ¾nika";
+radius.label23="Radius Auth naslov rezervnega strenika";
+radius.label24="Radius Auth vrata rezervnega strenika";
+radius.label27="Radius Auth deljena skrivnost rezervnega strenika";
 
-radius.label5="NajveÄje Å¡t. neoverjenih uporabnikov";
+radius.label5="Najve?je št. neoverjenih uporabnikov";
 radius.label6="Format gesla";
-radius.label8="Razveljavi Radius, Äe streÅ¾nik ni na voljo";
-radius.label13="Radius Acct streÅ¾nikov naslov";
-radius.label14="Radius Acct streÅ¾nikova vrata";
+radius.label8="Razveljavi Radius, ?e strenik ni na voljo";
+radius.label13="Radius Acct strenikov naslov";
+radius.label14="Radius Acct strenikova vrata";
 radius.label17="Radius Acct deljena skrivnost";
 radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
 
 wl_mac.titl="Filter MAC";
-wl_mac.h2="BrezÅ¾iÄni filter MAC";
+wl_mac.h2="Brezi?ni filter MAC";
 wl_mac.legend="filter MAC";
 wl_mac.label="Uporabi filter";
-wl_mac.label2="NaÄin filtra";
-wl_mac.deny="PrepreÄi odjemalcem na seznamu dostop do brezÅ¾iÄnega omreÅ¾ja";
-wl_mac.allow="Dovoli odjemalcem na seznamu dostop do brezÅ¾iÄnega omreÅ¾ja";
+wl_mac.label2="Na?in filtra";
+wl_mac.deny="Prepre?i odjemalcem na seznamu dostop do brezi?nega omreja";
+wl_mac.allow="Dovoli odjemalcem na seznamu dostop do brezi?nega omreja";
 
 // ** WiMAX
 
@@ -1962,10 +1962,10 @@ wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
 wl_wimax.downstream="Downstream frekvenca";
 wl_wimax.upstream="Upstream frekvenca";
-wl_wimax.width="Å irina kanala";
-wl_wimax.duplex="Duplex naÄin";
-wl_wimax.mode="NaÄin delovanja";
-wl_wimax.mac="NaroÄnikov MAC naslov";
+wl_wimax.width="Širina kanala";
+wl_wimax.duplex="Duplex na?in";
+wl_wimax.mode="Na?in delovanja";
+wl_wimax.mac="Naro?nikov MAC naslov";
 
 // ** Gpio **//
 
@@ -1978,23 +1978,23 @@ gpio.iplegend="Gpio vhodi";
 
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
-freeradius.certificate="Certifikat streÅ¾nika";
+freeradius.certificate="Certifikat strenika";
 freeradius.cert="Naredi certifikate";
-freeradius.clientcert="OdjemalÄevi certifikati";
+freeradius.clientcert="Odjemal?evi certifikati";
 freeradius.settings="Nastavitve";
 freeradius.users="Uporabniki";
 freeradius.clients="Odjemalci";
-freeradius.username="UporabniÅ¡ko ime";
+freeradius.username="Uporabniško ime";
 freeradius.password="Geslo";
 freeradius.downstream="Downstream";
 freeradius.upstream="Upstream";
-freeradius.sharedkey="Deljeni kjluÄ";
+freeradius.sharedkey="Deljeni kjlu?";
 
 
-freeradius.countrycode="Koda drÅ¾ave";
-freeradius.state="DrÅ¾ava ali deÅ¾ela";
+freeradius.countrycode="Koda drave";
+freeradius.state="Drava ali deela";
 freeradius.locality="Kraj";
-freeradius.organisation="Organizacija / druÅ¾ba";
+freeradius.organisation="Organizacija / druba";
 freeradius.email="Email naslov";
 freeradius.common="Skupno ime certifikata";
 freeradius.expiration="Rok veljavnosti (dni)";
@@ -2005,37 +2005,37 @@ freeradius.port="Radius vrata";
 
 //help container
 
-hfreeradius.right2="Preden zaÅ¾enete FreeRadius morate omogoÄiti JFFS.";
+hfreeradius.right2="Preden zaenete FreeRadius morate omogo?iti JFFS.";
 
 // ** Wireless_Advanced.asp **//
 
-wl_adv.titl="Napredne brezÅ¾iÄne nastavitve";
-wl_adv.h2="Napredne brezÅ¾iÄne nastavitve";
+wl_adv.titl="Napredne brezi?ne nastavitve";
+wl_adv.h2="Napredne brezi?ne nastavitve";
 wl_adv.legend="Napredne nastavitve";
-wl_adv.legend2="Nastavitve za podporo brezÅ¾iÄnim multimedijem";
-wl_adv.label="NaÄin overjanja";
+wl_adv.legend2="Nastavitve za podporo brezi?nim multimedijem";
+wl_adv.label="Na?in overjanja";
 wl_adv.label2="Osnovna hitrost";
 wl_adv.label3="Hitrost oddajanja";
-wl_adv.label4="CTS naÄin zaÅ¡Äite";
+wl_adv.label4="CTS na?in zaš?ite";
 wl_adv.label5="Frame Burst";
 wl_adv.label6="Signalni interval";
 wl_adv.label7="DTIM interval";
 wl_adv.label8="Prag drobitve";
 wl_adv.label9="RTS prag";
-wl_adv.label10="NajveÄje Å¡t. pridruÅ¾enih odjemalcev";
+wl_adv.label10="Najve?je št. pridruenih odjemalcev";
 wl_adv.label11="AP osamitev";
 wl_adv.label12="Oddajna antena";
 wl_adv.label13="Sprejemna antena";
 wl_adv.label14="Preambula";
-wl_adv.reference="Referenca Å¡uma";
+wl_adv.reference="Referenca šuma";
 wl_adv.label16="Afterburner";
-wl_adv.label17="BrezÅ¾iÄni dostop do uporabniÅ¡kega vmesnika";
+wl_adv.label17="Brezi?ni dostop do uporabniškega vmesnika";
 wl_adv.label18="WMM podpora";
 wl_adv.label19="Brez potrditve";
 wl_adv.label20="Razveljavi Shortslot";
-wl_adv.label21="NajveÄja hitrost oddajanja";
-wl_adv.label23="NajmanjÅ¡a hitrost oddajanja";
-wl_adv.label22="NaÄin koeksistenca z Bluetoothom";
+wl_adv.label21="Najve?ja hitrost oddajanja";
+wl_adv.label23="Najmanjša hitrost oddajanja";
+wl_adv.label22="Na?in koeksistenca z Bluetoothom";
 wl_adv.label24="Orientacija antene";
 wl_adv.label25="Izhod antene";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
@@ -2062,9 +2062,9 @@ wl_adv.txprow2="AC BK TX parameteri";
 wl_adv.txprow3="AC VI TX parameteri";
 wl_adv.txprow4="AC VO TX parameteri";
 
-wl_adv.col6="UpravniÅ¡ko prisiljen";
+wl_adv.col6="Upravniško prisiljen";
 wl_adv.row1="Ozadje";
-wl_adv.row2="NajboljÅ¡i trud";
+wl_adv.row2="Najboljši trud";
 wl_adv.row3="Slika";
 wl_adv.row4="Glas";
 wl_adv.table2="EDCA STA parametri (odjemalec do AP)";
@@ -2073,26 +2073,26 @@ wl_adv.shrt="Kratka";
 
 //help container
 
-hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuÄ. Overjanje z deljenim kljuÄem je bolj varno, toda vse naprave na vaÅ¡i mreÅ¾i morajo podpirati ta naÄin.";
+hwl_adv.right2="Izberete lahko med Avto ali Deljeni klju?. Overjanje z deljenim klju?em je bolj varno, toda vse naprave na vaši mrei morajo podpirati ta na?in.";
 
 // ** Wireless_Basic.asp **//
 
-wl_basic.titl="BrezÅ¾iÄno";
-wl_basic.h2="BrezÅ¾iÄno";
+wl_basic.titl="Brezi?no";
+wl_basic.h2="Brezi?no";
 wl_basic.cardtype="Tip kartice";
 wl_basic.legend="Osnovne nastavitve";
-wl_basic.label="BrezÅ¾iÄni naÄin";
-wl_basic.label2="NaÄin brezÅ¾iÄne mreÅ¾e";
-wl_basic.label3="Ime brezÅ¾iÄne mreÅ¾e (SSID)";
-wl_basic.label4="BrezÅ¾iÄni kanal";
+wl_basic.label="Brezi?ni na?in";
+wl_basic.label2="Na?in brezi?ne mree";
+wl_basic.label3="Ime brezi?ne mree (SSID)";
+wl_basic.label4="Brezi?ni kanal";
 wl_basic.label5="Oddajanje SSID";
-wl_basic.label6="ObmoÄje obÄutljivosti (ACK uÄasenje)";
-wl_basic.label7="NaÄin oddajanja 802.11n";
+wl_basic.label6="Obmo?je ob?utljivosti (ACK u?asenje)";
+wl_basic.label7="Na?in oddajanja 802.11n";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dvojni link";
 wl_basic.parent="Glavni IP";
 wl_basic.masquerade="Maskiranje / NAT";
-wl_basic.ap="Dostopna toÄka";
+wl_basic.ap="Dostopna to?ka";
 wl_basic.client="Odjemalec";
 wl_basic.repeater="Prenosnik";
 wl_basic.repeaterbridge="Prenosnik-most";
@@ -2100,140 +2100,140 @@ wl_basic.clientBridge="Odjemalec-most";
 wl_basic.clientRelayd="Odjemalec-most (usmerjan)";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS postaja";
-wl_basic.wdsap="WDS toÄka";
-wl_basic.mixed="MeÅ¡ano";
+wl_basic.wdsap="WDS to?ka";
+wl_basic.mixed="Mešano";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Kratka preambula";
-wl_basic.clientRelaydDefaultGwMode="Privzeti naÄin prehoda";
+wl_basic.clientRelaydDefaultGwMode="Privzeti na?in prehoda";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
-wl_basic.na="NA meÅ¡ano";
-wl_basic.ng="NG meÅ¡ano";
+wl_basic.na="NA mešano";
+wl_basic.ng="NG mešano";
 wl_basic.n5="Samo N (5 GHz)";
 wl_basic.n2="Samo N (2.4 GHz)";
 wl_basic.g="Samo G";
-wl_basic.bg="BG meÅ¡ano";
+wl_basic.bg="BG mešano";
 wl_basic.n="Samo N";
 wl_basic.rts="RTS prag";
 wl_basic.rtsvalue="Prag";
-wl_basic.protmode="ZaÅ¡Äitni naÄin";
+wl_basic.protmode="Zaš?itni na?in";
 wl_basic.legend2="Omejitev radijskega signala";
 wl_basic.radio="Radio";
-wl_basic.radiotimer="Radijska Äasovnica";
-wl_basic.radio_on="Radio je vkljuÄen";
-wl_basic.radio_off="Radio je izkljuÄen";
-wl_basic.h2_v24="BrezÅ¾iÄni fiziÄni vmesnik";
+wl_basic.radiotimer="Radijska ?asovnica";
+wl_basic.radio_on="Radio je vklju?en";
+wl_basic.radio_off="Radio je izklju?en";
+wl_basic.h2_v24="Brezi?ni fizi?ni vmesnik";
 wl_basic.h2_vi="Navidezni vmesniki";
 wl_basic.regdom="Regulatorska domena";
-wl_basic.TXpower="Oddajna (TX) moÄ";
-wl_basic.AntGain="OjaÄanje antene";
+wl_basic.TXpower="Oddajna (TX) mo?";
+wl_basic.AntGain="Oja?anje antene";
 wl_basic.diversity="Diverziteta";
 wl_basic.primary="Prva";
 wl_basic.secondary="Druga";
-wl_basic.vertical="NavpiÄno";
+wl_basic.vertical="Navpi?no";
 wl_basic.horizontal="Vodoravno";
 wl_basic.adaptive="Prilagodljivo";
 wl_basic.internal="Notranja";
 wl_basic.external="Zunanja";
 wl_basic.ghz24="2.4 GHz izhod";
 wl_basic.ghz5="5 GHz izhod";
-wl_basic.network="Konfiguracija mreÅ¾e";
-wl_basic.unbridged="NepremoÅ¡Äeno";
-wl_basic.bridged="PremoÅ¡Äeno";
-wl_basic.turbo="Turbo naÄin";
-wl_basic.extrange="RazÅ¡irjeno obmoÄje";
+wl_basic.network="Konfiguracija mree";
+wl_basic.unbridged="Nepremoš?eno";
+wl_basic.bridged="Premoš?eno";
+wl_basic.turbo="Turbo na?in";
+wl_basic.extrange="Razširjeno obmo?je";
 wl_basic.supergcomp="Super G kompresija";
 wl_basic.supergff="Super G Fast Framing";
-wl_basic.extchannel="RazÅ¡irjeni naÄin kanala";
+wl_basic.extchannel="Razširjeni na?in kanala";
 wl_basic.outband="Zunanji pas";
-wl_basic.channel_width="Å irina kanala";
+wl_basic.channel_width="Širina kanala";
 wl_basic.channel_wide="Kontrolni kanal";
 wl_basic.regulatory="SuperKanal";
 wl_basic.chanshift="Premikanje kanala";
-wl_basic.specialmode="2.3 GHz naÄin";
+wl_basic.specialmode="2.3 GHz na?in";
 wl_basic.wifi_bonding="Wifi vezanje";
-wl_basic.sifstime="OFDM SIFS Äas";
-wl_basic.preambletime="OFDM Preamble Äas";
+wl_basic.sifstime="OFDM SIFS ?as";
+wl_basic.preambletime="OFDM Preamble ?as";
 wl_basic.multicast="Posredovanje multicast paketov";
-wl_basic.intmit="Odpornost na Å¡um";
-wl_basic.noise_immunity="Nivo odpornosti na Å¡um";
-wl_basic.ofdm_weak_det="Å ibko zaznavanje OFDM";
+wl_basic.intmit="Odpornost na šum";
+wl_basic.noise_immunity="Nivo odpornosti na šum";
+wl_basic.ofdm_weak_det="Šibko zaznavanje OFDM";
 wl_basic.radar="Zaznavanje radarja";
-wl_basic.mtikie="ZdruÅ¾ljivojst z MTik";
+wl_basic.mtikie="Zdruljivojst z MTik";
 wl_basic.csma="Zaznavanje nosilca";
-wl_basic.if_label="OznaÄba (opcijsko)";
+wl_basic.if_label="Ozna?ba (opcijsko)";
 wl_basic.if_info="Info (opcijsko)";
 wl_basic.advanced_options="Napredne nastavitve";
 wl_basic.rate_control="Algoritem nadzora hitrosti";
-wl_basic.ap83_vap_note="Dodajanje veÄ kot treh virtualnih vmesnikov lahko vpliva na slabÅ¡i uÄinek nekaterih doloÄenih priklopljenih odjemalcev na teh dodatnih vmesnikih.";
+wl_basic.ap83_vap_note="Dodajanje ve? kot treh virtualnih vmesnikov lahko vpliva na slabši u?inek nekaterih dolo?enih priklopljenih odjemalcev na teh dodatnih vmesnikih.";
 
 //help container
 
-hwl_basic.right2="ÄŒe Å¾elite onemogoÄiti dostop odjemalcem G, izberite <em>Samo-B</em> naÄin. ÄŒe Å¾elite izkljuÄiti brezÅ¾iÄno omreÅ¾je, izberite <em>OnemogoÄi</em>.";
-hwl_basic.right3="ObmoÄje obÄutljivosti: ";
-hwl_basic.right4="Prilagodi ACK uÄasenje. 0 onemogoÄi ACK uÄasenje na Broadcomovi strojni programski opremi, na Atherosovi pa 0 vkljuÄi samodejno ACK uÄasenje";
-hwl_basic.right6="Klikni na uro za omogoÄenje ali onemogoÄenje radijskega signala (<em>zeleno</em> pomeni dovoljen brezÅ¾iÄni dostop, <em>rdeÄe</em> pomeni nedovoljen brezÅ¾iÄni dostop)";
+hwl_basic.right2="?e elite onemogo?iti dostop odjemalcem G, izberite <em>Samo-B</em> na?in. ?e elite izklju?iti brezi?no omreje, izberite <em>Onemogo?i</em>.";
+hwl_basic.right3="Obmo?je ob?utljivosti: ";
+hwl_basic.right4="Prilagodi ACK u?asenje. 0 onemogo?i ACK u?asenje na Broadcomovi strojni programski opremi, na Atherosovi pa 0 vklju?i samodejno ACK u?asenje";
+hwl_basic.right6="Klikni na uro za omogo?enje ali onemogo?enje radijskega signala (<em>zeleno</em> pomeni dovoljen brezi?ni dostop, <em>rde?e</em> pomeni nedovoljen brezi?ni dostop)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 
-fail.mess1="VneÅ¡ene vrednosti so neveljavne. Prosimo, da poskusite znova.";
+fail.mess1="Vnešene vrednosti so neveljavne. Prosimo, da poskusite znova.";
 fail.mess2="Posodabljanje ni uspelo.";
 
 
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="Nastavitve so shranjene.";
-success.restore="Nastavitve so obnovljene.<br/>Ponovni zagon naprave. Prosimo, da poÄakate trenutek...";
-success.upgrade="Posodabljanje je uspelo.<br/>Ponovni zagon naprave. Prosimo, da poÄakate trenutek...";
+success.restore="Nastavitve so obnovljene.<br/>Ponovni zagon naprave. Prosimo, da po?akate trenutek...";
+success.upgrade="Posodabljanje je uspelo.<br/>Ponovni zagon naprave. Prosimo, da po?akate trenutek...";
 success.success_noreboot="Nastavitve so uspele.";
-success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. Prosimo, da poÄakate trenutek...";
+success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. Prosimo, da po?akate trenutek...";
 
 success.alert_reset="Vse nastavitve so bile nastavljene na privezete vrednosti.<br /><br />";
 success.alert1="Pred ponovnim priklopom, prosimo, da preverite naslednje:";
-success.alert2="ÄŒe ste spremenili usmerjevalnikov IP naslov, morate tudi sprostiti/obnoviti odjemalÄeve IP naslove.";
-success.alert3="ÄŒe ste povezani brezÅ¾iÄno, se morate ponovno povezati v omreÅ¾je, in nato klikniti <em>Nadaljuj</em>.";
+success.alert2="?e ste spremenili usmerjevalnikov IP naslov, morate tudi sprostiti/obnoviti odjemal?eve IP naslove.";
+success.alert3="?e ste povezani brezi?no, se morate ponovno povezati v omreje, in nato klikniti <em>Nadaljuj</em>.";
 
 // ** Logout.asp  **//
 
-logout.message="UspeÅ¡no ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
+logout.message="Uspešno ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
 
 // ** Setup Assistant **//
 
-sas.title="Namestitveni pomoÄnik";
-sas.internet_connection="NaÄin dostopa do interneta";
-sas.network_settings="MreÅ¾ne nastavitve";
-sas.wireless_settings="BrezÅ¾iÄne nastavitve";
+sas.title="Namestitveni pomo?nik";
+sas.internet_connection="Na?in dostopa do interneta";
+sas.network_settings="Mrene nastavitve";
+sas.wireless_settings="Brezi?ne nastavitve";
 sas.other_settings="Druge nastavitve";
 sas.hwan="Internet (WAN) nastavitev";
 
 
-hsas.wan="WAN vmesnik poveÅ¾e vaÅ¡ usmerjevalnik v internet ali druge mreÅ¾e. ÄŒe je vaÅ¡a mreÅ¾a povezana v internet in potrebujete le dostopno toÄko, nastavite WAN naÄin na \"OnemogoÄeno\".";
+hsas.wan="WAN vmesnik povee vaš usmerjevalnik v internet ali druge mree. ?e je vaša mrea povezana v internet in potrebujete le dostopno to?ko, nastavite WAN na?in na \"Onemogo?eno\".";
 hsas.h_routerip="Usmerjevalnikov IP";
-hsas.routerip="To je IP naslov dodeljen vaÅ¡emu usmerjevalniku v lokalni mreÅ¾i. Po spremembi tega naslova, morate za dostop do usmerjevalnikovega uporabniÅ¡kega vmesnika uporabljati nov IP naslov.";
+hsas.routerip="To je IP naslov dodeljen vašemu usmerjevalniku v lokalni mrei. Po spremembi tega naslova, morate za dostop do usmerjevalnikovega uporabniškega vmesnika uporabljati nov IP naslov.";
 hsas.h_dhcp="DHCP";
-hsas.dhcp="RaÄunalniki in druge mreÅ¾ne naprave v vaÅ¡i mreÅ¾i lahko preko DHCP pridobijo IP naslove brez potrebe po roÄnih nastavitvah. ÄŒe v vaÅ¡i mreÅ¾i Å¾e obstaja drug DHCP streÅ¾nik, prosimo, da onemogoÄite to opcijo, da se izognete konfliktom.";
-hsas.h_wireless_physical="BrezÅ¾iÄni vmesnik (radio)";
-hsas.wireless_physical="To so nastavitve brezÅ¾iÄnega vmesnika. Tukaj nastavite naÄin delovanja (Dostopna toÄka, Odjemalec ali Prenosnik), spremenite ime mreÅ¾e in napredne nastavitve kot npr. Å¡irina kanala. ÄŒe ste spremenili Å¡irino kanala s standardnih 20 MHz, morajo tudi vaÅ¡i odjemalci podpirati novo Å¡irino kanala in biti ustrezno konfigurirani.";
-hsas.h_wireless_security="BrezÅ¾iÄna zaÅ¡Äita";
-hsas.wireless_security="Za laÅ¾jo konfiguracijo odjemalcev lahko spremenite geslo brezÅ¾iÄne mreze. Uporaba odprte mreÅ¾e ali WEP se ne priporoÄa zaradi varnostnih razlogov.";
+hsas.dhcp="Ra?unalniki in druge mrene naprave v vaši mrei lahko preko DHCP pridobijo IP naslove brez potrebe po ro?nih nastavitvah. ?e v vaši mrei e obstaja drug DHCP strenik, prosimo, da onemogo?ite to opcijo, da se izognete konfliktom.";
+hsas.h_wireless_physical="Brezi?ni vmesnik (radio)";
+hsas.wireless_physical="To so nastavitve brezi?nega vmesnika. Tukaj nastavite na?in delovanja (Dostopna to?ka, Odjemalec ali Prenosnik), spremenite ime mree in napredne nastavitve kot npr. širina kanala. ?e ste spremenili širino kanala s standardnih 20 MHz, morajo tudi vaši odjemalci podpirati novo širino kanala in biti ustrezno konfigurirani.";
+hsas.h_wireless_security="Brezi?na zaš?ita";
+hsas.wireless_security="Za lajo konfiguracijo odjemalcev lahko spremenite geslo brezi?ne mreze. Uporaba odprte mree ali WEP se ne priporo?a zaradi varnostnih razlogov.";
 hsas.h_routername="Ime usmerjevalnika";
-hsas.routername="To ime je posredovano drugim napravam v vaÅ¡i mreÅ¾i za laÅ¾je razpoznavanje.";
-hsas.networking="OmreÅ¾enje: pomoÄ";
-hsas.wireless="BrezÅ¾iÄno: pomoÄ";
-hsas.other="Druge nastavitve: pomoÄ";
+hsas.routername="To ime je posredovano drugim napravam v vaši mrei za laje razpoznavanje.";
+hsas.networking="Omreenje: pomo?";
+hsas.wireless="Brezi?no: pomo?";
+hsas.other="Druge nastavitve: pomo?";
 
 // ** AOSS **//
 
-haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogoÄa, da poveÅ¾ete AOSS sposobne odjemalce na vaÅ¡o dostopno toÄko brez potrebe po roÄni nastavitvi.";
-haoss.securitymodes="AOSS varnostni naÄini doloÄajo, kateri naÄini so sprejeti za AOSS pogajanje. ÄŒe odjemalec podpira samo naÄine, ki niso omogoÄeni, se ne more povezati.";
-haoss.wps="WPS omogoÄi podporo za Wifi Protected Setup z uporabo gumba na vaÅ¡em usmerjevalniku ali s PIN kodo natisnjeno na vaÅ¡em odjemalcu ali aplikaciji";
+haoss.basic="\"AirStation One-Touch Secure System\" (AOSS) vam omogo?a, da poveete AOSS sposobne odjemalce na vašo dostopno to?ko brez potrebe po ro?ni nastavitvi.";
+haoss.securitymodes="AOSS varnostni na?ini dolo?ajo, kateri na?ini so sprejeti za AOSS pogajanje. ?e odjemalec podpira samo na?ine, ki niso omogo?eni, se ne more povezati.";
+haoss.wps="WPS omogo?i podporo za Wifi Protected Setup z uporabo gumba na vašem usmerjevalniku ali s PIN kodo natisnjeno na vašem odjemalcu ali aplikaciji";
 // *******************		OLD PAGES 	****************//
 // ********************** DHCPTable.asp ****************//
 
 dhcp.titl="DHCP: tabela aktivnih IP";
 dhcp.h2="DHCP: tabela aktivnih IP";
-dhcp.server="IP naslov DHCP streÅ¾nika :";
-dhcp.tclient="OdjemalÄevo gostiteljevo ime";
+dhcp.server="IP naslov DHCP strenika :";
+dhcp.tclient="Odjemal?evo gostiteljevo ime";
 
 
-donate.mb="Darujete lahko tudi preko Moneybookerjevega raÄuna mb@dd-wrt.com";
+donate.mb="Darujete lahko tudi preko Moneybookerjevega ra?una mb@dd-wrt.com";

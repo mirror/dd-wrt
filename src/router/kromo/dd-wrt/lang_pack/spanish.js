@@ -855,7 +855,7 @@ idx_pptp.srv="Usar DHCP";
 idx_pptp.wan_ip="Dirección IP de Internet";
 idx_pptp.gateway="Puerta de Enlace (Servidor PPTP)";
 idx_pptp.encrypt="Encriptación PPTP";
-idx_pptp.reorder="Deshabilitar reordenación de paquetes";
+idx_pptp.reorder="reordenación de paquetes";
 idx_pptp.addopt="Opciones PPTP adicionales";
 
 
