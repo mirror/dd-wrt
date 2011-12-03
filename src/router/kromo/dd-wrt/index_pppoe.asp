@@ -8,10 +8,6 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
-	<div class="label"><% tran("share.srv"); %></div>
-	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvram_get("ppp_service"); %>" />
-</div>
-<div class="setting">
 	<div class="label"><% tran("share.vdsl"); %></div>
 	<input class="spaceradio" type="radio" name="wan_vlan" value="1" <% nvram_checked("wan_vlan","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
 	<input class="spaceradio" type="radio" name="wan_vlan" value="0" <% nvram_checked("wan_vlan","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
@@ -26,6 +22,10 @@
 		<div class="label"><% tran("share.vdslvlan8"); %></div>
 		<input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvram_checked("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvram_checked("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
+	</div>
+	<div class="setting">
+	<div class="label"><% tran("share.srv"); %></div>
+	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvram_get("ppp_service"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.compression"); %></div>
