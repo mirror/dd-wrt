@@ -80,7 +80,7 @@ static void makeipup(void)
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
 	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"	//
+		"echo \"$PPPD_PID\t$1\t$5\t`date \"+%F %T\"`\t$PEERNAME\" >> /tmp/pppoe_connected\n"	//
 		//	just an uptime test
 		"echo \"$PEERNAME\t`date +%%s`\" >> /tmp/pppoe_uptime\n"	//
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
@@ -166,7 +166,8 @@ static void do_pppoeconfig(FILE * fp)
 		fprintf(fp, "mppe required,no56,no40,stateless\n");
 	else
 		fprintf(fp, "nomppe\n");
-	fprintf(fp, "auth\n"
+	fprintf(fp, "auth\n" 
+		"logfile /tmp/log/pppd.log\n" //logfile for testing
 		"refuse-eap\n"	// be sure using best auth methode
 		"refuse-pap\n"	//
 		"refuse-chap\n"	//
@@ -182,6 +183,7 @@ static void do_pppoeconfig(FILE * fp)
 		"netmask 255.255.255.255\n"	//
 		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
 		"ip-down-script /tmp/pppoeserver/ip-down\n"
+		"lcp-echo-adaptive\n"
 		"lcp-echo-interval %s\n"
 		"lcp-echo-failure %s\n"
 		"idle %s\n",
