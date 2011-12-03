@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 03.Nov.2011, svn 17618	//
+//				Slovenian translation DD-WRT by Eko, last revision: 03.Dec.2011, svn 17960	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -29,11 +29,12 @@ share.disabled="Onemogočeno";
 share.usrname="Uporabniško ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
-share.vdsl="T-Home VDSL 7 VLAN označevanje";
-share.vdslvlan8="VLAN 8 podpora";
+share.vdsl="Napredne nastavitve";
+share.vdslvlan7="T-Home VLAN 7 podpora";
+share.vdslvlan8="T-Home VLAN 8 podpora";
 share.wan_vlantag="ID VLAN značke";
 share.compression="PPP kompresija (MPPC)";
-share.mlppp="Multi Link";
+share.mlppp="Mnogokratna zveza na enem vodu";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
 share.landomainname="LAN domensko ime";
@@ -144,7 +145,7 @@ share.srvip="IP strežnika";
 share.srvipname="IP ali ime strežnika";
 share.localdns="Lokalni DNS";
 share.minutes="minut";
-share.oui="Iskanje OUI";
+share.oui="Iskanje po OUI";
 share.sttic="Statično";
 share.connecting="Povezujem";
 share.connect="Povezati";
@@ -466,6 +467,9 @@ bmenu.statuActivate="Aktiviraj";
 bmenu.statuMyPage="Moja stran";
 bmenu.statuGpio="GPIO I/O";
 
+bmenu.setupnetw="Mreža";
+bmenu.adminman="Upravljanje";
+
 // ** Alive.asp **//
 
 alive.titl="Ohrani živo";
@@ -502,7 +506,7 @@ config.mess4="Obnovitev je možna samo z datoteko ustvarjeno na istem modelu usm
 //help container
 
 hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjevalnik ponastaviti na tovarniško privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
-hconfig.right4="Kliknite gumb <em>Browse... (Prebrskaj...)</em> za iskanje varnostne kopije, ki je trenutno na vašem PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
+hconfig.right4="Kliknite gumb <em>Prebrskaj... (Browse...)</em> za iskanje varnostne kopije, ki je trenutno na vašem PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
 
 
 // ** DDNS.asp **/
@@ -743,6 +747,8 @@ hotspot.dhcp="DHCP vmesnik";
 hotspot.radnas="Radius NAS ID";
 hotspot.net="Oddaljena mreža";
 hotspot.uam="UAM skrivnost";
+hotspot.uamserver="UAM strežnik";
+hotspot.uamport="UAM vrata";
 hotspot.uamdns="UAM vsak DNS";
 hotspot.allowuam="UAM dopuščeni";
 hotspot.macauth="MACauth";
@@ -809,7 +815,7 @@ hotspot.wifidog_auth="HTTP strežnik: podpora overjanju";
 
 // ** Hotspotsystem **//
 
-hotspotsys.legend="Hotspot System";
+hotspotsys.legend="Sistem Hotspot";
 hotspotsys.nobridge="Loči WiFi od LAN mosta";
 hotspotsys.uamenable="Posebne domene";
 hotspotsys.loginonsplash="Prijava na splash strani";
@@ -965,6 +971,13 @@ hidx.right16="Omejite lahko število naslovov, ki jih dodeli vaš usmerjevalnik.
 hidx.right18="Izberite vašo časovno cono in obdobje poletnega časa. Usmerjevalnik lahko uparablja lokalni čas ali čas UTC.";
 hidx.sas="Nastavitveni pomočnik vas vodi po osnovnih korakih konfiguracije usmerjevalnika.";
 
+// ** DSL ** //
+
+dsl.status="DSL status";
+dsl.annex=" DSL Annex";
+dsl.iface_status="Status zveze";
+dsl.datarate="Hitrost zveze (gor/dol)";
+dsl.snr="DSL signal (gor/dol)";
 
 // ** Join.asp **//
 
@@ -1142,10 +1155,12 @@ qos.ipmask="IP/maska";
 qos.maxrate_b="Maks. kbit/s";
 qos.maxuprate_b="Maks. kbit/s od vas";
 qos.maxdownrate_b="Maks. kbit/s k vam";
+qos.maxlanrate_b="LAN maks.";
 qos.maxrate_o="Največja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
 qos.legend6="Privzeti nivo pasovne širine";
+qos.enabledefaultlvls="Omogoči privzete omejitve po uporabniku";
 qos.bandwidth="Pasovna širina v kbit/s";
 
 //help container
@@ -1263,7 +1278,6 @@ service.dnsmasq_opt="Dodatne DNSMasq možnosti";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP strežnik";
-service.pptp_forcemppe="Prisili MPPE šifriranje";
 service.pptp_client="IPji odjemalcev";
 service.pptp_chap="CHAP-skrivnosti";
 
@@ -1646,7 +1660,7 @@ status_conn.h2="Aktivne IP povezave";
 status_sputnik.titl="Status Sputnik agenta";
 status_sputnik.h2="Sputnik&reg; agent&trade;";
 status_sputnik.manage="Upravljan od";
-status_sputnik.license="SCC št. licence.";
+status_sputnik.license="SCC št. licence";
 
 //help container
 
@@ -1862,6 +1876,7 @@ aoss.wpsenable="WPS gumb";
 aoss.wpsstatus="WPS status";
 aoss.externalregistrar="Zunanji registrator";
 aoss.release="Razreši";
+aoss.configure="Nastavi";
 
 
 olupgrade.avail_updates="Razpoložljive posodobitve";
@@ -2126,6 +2141,7 @@ wl_basic.h2_v24="Brezžični fizični vmesnik";
 wl_basic.h2_vi="Navidezni vmesniki";
 wl_basic.regdom="Regulatorska domena";
 wl_basic.TXpower="Oddajna (TX) moč";
+wl_basic.TXpowerFcc="Oddajna (TX) konična moč (FCC)";
 wl_basic.AntGain="Ojačanje antene";
 wl_basic.diversity="Diverziteta";
 wl_basic.primary="Prva";
