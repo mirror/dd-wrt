@@ -1346,7 +1346,7 @@ service.snmp_write="RW Community";
 
 //openvpn.webvpn
 service.vpnd_legend="OpenVPN Server/Daemon";
-service.vpnd_srv="Start OpenVPN Server";
+service.vpnd_srv="OpenVPN Server";
 service.vpnd_starttype="Start Type";
 service.vpnd_startWanup="WAN Up";
 service.vpnd_startSystem="System";
