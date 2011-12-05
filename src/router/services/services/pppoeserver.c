@@ -169,7 +169,6 @@ static void do_pppoeconfig(FILE * fp)
 	else
 		fprintf(fp, "nomppe\n");
 	fprintf(fp, "auth\n" 
-		"logfile /tmp/log/pppd.log\n" //logfile for testing
 		"refuse-eap\n"	// be sure using best auth methode
 		"refuse-pap\n"	//
 		"refuse-chap\n"	//
@@ -185,7 +184,7 @@ static void do_pppoeconfig(FILE * fp)
 		"netmask 255.255.255.255\n"	//
 		"ip-up-script /tmp/pppoeserver/ip-up\n"	//
 		"ip-down-script /tmp/pppoeserver/ip-down\n"
-		"lcp-echo-adaptive\n"
+		//"lcp-echo-adaptive\n"
 		"lcp-echo-interval %s\n"
 		"lcp-echo-failure %s\n"
 		"idle %s\n",
