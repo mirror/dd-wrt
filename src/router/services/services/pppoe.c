@@ -186,8 +186,8 @@ void start_pppoe(int pppoe_num)
 		"-r", nvram_safe_get("wan_mtu"),  // del by honor, add by tallest.
 		"-t", nvram_safe_get("wan_mtu"),
 		"-i", nvram_match(ppp_demand[pppoe_num], "1") ? idletime : "0",
-		"-I", "3",	// Send an LCP echo-request frame to the
-				// server every 3 seconds
+		"-I", "10",	// Send an LCP echo-request frame to the
+				// server every 10 seconds
 		"-T", "20",	// pppd will presume the server to be dead if 
 				// 20 LCP echo-requests are sent without
 				//-> timeout 1 min

@@ -72,6 +72,7 @@ static void makeipup(void)
 {
 	int mss;
 
+	//WHY is this? we dont use the MSS?!
 	if (nvram_match("mtu_enable", "1"))
 		mss = atoi(nvram_safe_get("wan_mtu")) - 40 - 108;
 	else
@@ -196,9 +197,12 @@ static void do_pppoeconfig(FILE * fp)
 	}
 	struct dns_lists *dns_list = get_dns_list();
 
-	if (nvram_match("dnsmasq_enable", "1")) {
-		if (strcmp(getifip(), ""))
+/*	if (nvram_match("dnsmasq_enable", "1")) {
+		if (strcmp(getifip(), "")) {
 			fprintf(fp, "ms-dns %s\n", getifip());
+			fprintf(fp, "ms-dns %s\n",
+					dns_list->dns_server[0]);
+		}
 	} else if (nvram_match("local_dns", "1")) {
 		if (dns_list && (strcmp(getifip(), "")
 				 || strlen(dns_list->dns_server[0]) > 0
@@ -221,7 +225,7 @@ static void do_pppoeconfig(FILE * fp)
 		if (dns_list
 		    && (strlen(dns_list->dns_server[0]) > 0
 			|| strlen(dns_list->dns_server[1]) > 0
-			|| strlen(dns_list->dns_server[2]) > 0)) {
+			|| strlen(dns_list->dns_server[2]) > 0)) {	*/
 			if (strlen(dns_list->dns_server[0]) > 0)
 				fprintf(fp, "ms-dns  %s\n",
 					dns_list->dns_server[0]);
@@ -232,8 +236,8 @@ static void do_pppoeconfig(FILE * fp)
 				fprintf(fp, "ms-dns  %s\n",
 					dns_list->dns_server[2]);
 
-		}
-	}
+//		}
+//	}
 
 	if (dns_list)
 		free(dns_list);
