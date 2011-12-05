@@ -5,7 +5,7 @@
 		<div class="label"><% tran("service.vpn_srv"); %></div>
 		<input class="spaceradio" type="radio" name="openvpncl_enable" value="1" <% nvram_checked("openvpncl_enable", "1"); %> onclick="show_layer_ext(this, 'idvpncl', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="openvpncl_enable" value="0" <% nvram_checked("openvpncl_enable", "0"); %> onclick="show_layer_ext(this, 'idvpncl', false)" /><% tran("share.disable"); %>
-		</div>
+	</div>
 	<div id="idvpncl">
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_ipname"); %></div>
