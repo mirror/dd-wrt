@@ -42,19 +42,18 @@
 #define BRIC_VERSION         11
 #define SK_VERSION           12
 
-
 #define WLAN_REGION          WW_VERSION
 #define FW_REGION            WW_VERSION   /* true f/w region */
 
 /*formal version control*/
-#define AMBIT_HARDWARE_VERSION     "U12H18100"
-#define AMBIT_SOFTWARE_VERSION     "V1.0.0.60"
-#define AMBIT_UI_VERSION           "8.0.49"
-#define STRING_TBL_VERSION         "1.0.0.60_2.1.13.1"
+#define AMBIT_HARDWARE_VERSION     "U12H189T00"
+#define AMBIT_SOFTWARE_VERSION     "V1.0.0.58"
+#define AMBIT_UI_VERSION           "1.0.13"
+#define STRING_TBL_VERSION         "1.0.0.50_2.1.15.7"
 
-#define AMBIT_PRODUCT_NAME          "WNDR4000"
-#define AMBIT_PRODUCT_DESCRIPTION   "Netgear Wireless Router WNDR4000"
-#define UPnP_MODEL_URL              "WNDR4000.aspx"
-#define UPnP_MODEL_DESCRIPTION      "NETGEAR WNDR4000 N750 Wireless Dual Band Gigabit Router"
+#define AMBIT_PRODUCT_NAME          "WNDR4500"
+#define AMBIT_PRODUCT_DESCRIPTION   "Netgear Wireless Router WNDR4500"
+#define UPnP_MODEL_URL              "WNDR4500.aspx"
+#define UPnP_MODEL_DESCRIPTION      "N900"
 
 #endif /*_AMBITCFG_H*/
