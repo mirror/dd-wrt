@@ -1,4 +1,3 @@
-                ${OPENDPI_PRO}/crossfire.o ${OPENDPI_PRO}/fiesta.o
 
 
 /*
