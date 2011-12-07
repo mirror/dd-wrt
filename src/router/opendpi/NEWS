@@ -1,0 +1,32 @@
+=== OpenDPI 1.3 (2011/06/09) ===
+
+  * added IPv6 support
+  * new protocols: DHCPv6, ICMPv6, Activesync, Armagetron, Crossfire, Dofus, Fiesta Online, Florensia, Guildwars, Kerberos,
+                   LDAP, Maplestory, MSSQL, PPTP, Warcraft 3, World of Kung Fu
+  * improved protocols: Aimini, Battlefield, Bittorrent, DirectDownloadLink, eDonkey, FTP, GaduGadu, Gnutella, HTTP, Icecast,
+                        Imesh, IRC, Jabber, IMAP, POP, SMTP, MDNS, Meebo, MSN, Netbios, Oscar, PPLive, QQ, Quake, RTP,
+                        Secondlive, Shoutcast, SIP, SSL, STUN, Syslog, TVUplayer, Veohtv, World of Warcraft, Yahoo
+  * added protocol history/real protocol feature
+  * various improvements and fixes
+
+=== OpenDPI 1.2 (2010/04/07) ===
+
+  * added new protocol Meebo
+  * various improvements and fixes
+
+=== OpenDPI 1.1.1 (2009/11/11) ===
+
+  * fixed a compilation error that occurred when debug messages were enabled
+
+=== OpenDPI 1.1 (2009/11/10) ===
+
+  * OpenDPI is now built using autotools
+  * OpenDPI now compiles on BSD-like systems
+  * added 4 new protocols (AFP, Aimini, Stealthnet, TFTP)
+  * Bittorrent detection has been fixed
+  * FTP detection has been fixed
+  * various small improvements and fixes
+
+=== OpenDPI 1.0 (2009/09/07) ===
+
+  * initial release
