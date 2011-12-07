@@ -166,6 +166,7 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 EXPORT_SYMBOL(ar71xx_gpio_function_setup);
 
 static struct gpio_led generic_leds_gpio[] __initdata = {
+#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_0",
 		.gpio		= 0,
@@ -211,11 +212,13 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 8,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_9",
 		.gpio		= 9,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_10",
 		.gpio		= 10,
@@ -328,7 +331,6 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	}, 
 
 //wl gpios
-#ifndef CONFIG_AR9100
 
 	{
 		.name		= "wireless_generic_0",
