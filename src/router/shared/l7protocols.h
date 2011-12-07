@@ -1,3 +1,6 @@
+                ${OPENDPI_PRO}/crossfire.o ${OPENDPI_PRO}/fiesta.o
+
+
 /*
  * L7-filter Supported Protocols 
  */
@@ -51,7 +54,7 @@ l7filters filters_list[] = {
 	 "ares", 1},		// Ares - P2P filesharing -
 	// http://aresgalaxy.sf.net
 	{
-	 "armagetron", 0},	// Armagetron Advanced - open source
+	 "armagetron", DPI},	// Armagetron Advanced - open source
 	// Tron/snake based multiplayer game
 	{
 	 "audiogalaxy", 0},	// Audiogalaxy - (defunct) Peer to Peer
@@ -105,6 +108,10 @@ l7filters filters_list[] = {
 	{
 	 "counterstrike-source", 0},	// Counterstrike (using the new
 	// "Source" engine) - network game
+#ifdef HAVE_OPENDPI
+	{
+	 "crossfire", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+#endif
 	{
 	 "cvs", 0},		// CVS - Concurrent Versions System
 	{
@@ -119,12 +126,20 @@ l7filters filters_list[] = {
 #endif
 	{
 	 "dhcp", DPI},		// DHCP - Dynamic Host Configuration Protocol 
+#ifdef HAVE_OPENDPI
+	{
+	 "dhcpv6", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+#endif
 	// - RFC 1541
 	{
 	 "directconnect", PDPI},	// Direct Connect - P2P filesharing -
 	// http://www.neo-modus.com
 	{
 	 "dns", DPI},		// DNS - Domain Name System - RFC 1035
+#ifdef HAVE_OPENDPI
+	{
+	 "dofus", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+#endif
 	{
 	 "doom3", 0},		// Doom 3 - computer game
 	{
@@ -143,13 +158,19 @@ l7filters filters_list[] = {
 	{
 	 "feidian", 2},
 	{
-	 "filetopia", 0},	// FastTrack - P2P filesharing (Kazaa,
+	 "fiesta", 2},	// FastTrack - P2P filesharing (Kazaa,
 #endif
+	{
+	 "filetopia", DPI},	// FastTrack - P2P filesharing (Kazaa,
 	{
 	 "finger", 0},		// Finger - User information server - RFC
 	// 1288
 	{
 	 "flash", 0},		// Flash - Macromedia Flash.
+#ifdef HAVE_OPENDPI
+	{
+	 "florensia", 2},
+#endif
 	{
 	 "freenet", 0},		// Freenet - Anonymous information retrieval
 	// - http://freenetproject.org
@@ -195,7 +216,7 @@ l7filters filters_list[] = {
 	{
 	 "gtalk_vista", 0},
 	{
-	 "guildwars", 0},	// Guild Wars - online game - http://guildwars.com
+	 "guildwars", DPI},	// Guild Wars - online game - http://guildwars.com
 	{
 	 "h323", 0},		// H.323 - Voice over IP.
 	{
@@ -221,7 +242,11 @@ l7filters filters_list[] = {
 	 "http-rtsp", 0},	// RTSP tunneled within HTTP
 	{
 	 "http", DPI},		// HTTP - HyperText Transfer Protocol - RFC
+#ifdef HAVE_OPENDPI
+	{
+	 "httpactivesync", 2},		// HTTP - HyperText Transfer Protocol - RFC
 	// 2616
+#endif
 	{
 	 "http-dap", 0},	// HTTP by Download Accelerator Plus -
 	// http://www.speedbit.com
@@ -295,11 +320,17 @@ l7filters filters_list[] = {
 	{
 	 "jpeg", 0},		// JPEG - Joint Picture Expert Group image
 	// format.
+#ifdef HAVE_OPENDPI
+	{
+	 "kerberos", 2},
+#endif
 	{
 	 "kugoo", 0},		// KuGoo - a Chinese P2P program -
 #ifdef HAVE_OPENDPI
 	{
 	 "kontiki", 2},
+	{
+	 "ldap", 2},
 #endif
 
 	// http://www.kugoo.com
@@ -314,6 +345,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "manolito", 2},		// Medal of Honor Allied Assault - an
+	{
+	 "maplestory", 2},		// Medal of Honor Allied Assault - an
 	{
 	 "mdns", 2},		// Medal of Honor Allied Assault - an
 	{
@@ -347,6 +380,10 @@ l7filters filters_list[] = {
 	{
 	 "msnmessenger", 0},	// MSN Messenger - Microsoft Network chat
 	// client
+#ifdef HAVE_OPENDPI
+	{
+	 "mssql", 2},
+#endif
 	{
 	 "mute", 1},		// MUTE - P2P filesharing -
 	// http://mute-net.sourceforge.net
@@ -424,6 +461,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "ppstream", 2},
+	{
+	 "pptp", 2},
 #endif
 	{
 	 "pre_icq_login", 0},
@@ -649,6 +688,10 @@ l7filters filters_list[] = {
 	{
 	 "vnc", DPI},		// VNC - Virtual Network Computing. Also
 	// known as RFB - Remote Frame Buffer
+#ifdef HAVE_OPENDPI
+	{
+	 "warcraft3", 2},
+#endif
 	{
 	 "webmail_163", 0},
 	{
@@ -684,6 +727,10 @@ l7filters filters_list[] = {
 #endif
 	{
 	 "winmx", PDPI},		// Whois - query/response system, usually
+#ifdef HAVE_OPENDPI
+	{
+	 "wokf", 2},
+#endif
 	{
 	 "worldofwarcraft", DPI},	// World of Warcraft - popular network game - 
 	// http://blizzard.com/
