@@ -620,8 +620,7 @@ static int get_chip(struct map_info *map, struct flchip *chip, unsigned long adr
 		return 0;
 
 	case FL_ERASING:
-//		if (1 /* no suspend */ || !cfip || !(cfip->EraseSuspend & (0x1|0x2)) ||
-		if (!cfip || !(cfip->EraseSuspend & (0x1|0x2)) ||
+		if (1 /* no suspend */ || !cfip || !(cfip->EraseSuspend & (0x1|0x2)) ||
 		    !(mode == FL_READY || mode == FL_POINT ||
 		    (mode == FL_WRITING && (cfip->EraseSuspend & 0x2))))
 			goto sleep;
