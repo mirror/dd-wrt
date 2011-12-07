@@ -1,6 +1,6 @@
 /*
  * msn.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -21,133 +21,75 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ipq_utils.h"
 
 #ifdef IPOQUE_PROTOCOL_MSN
 
 #define MAX_PACKETS_FOR_MSN 100
-
-static u16 ipoque_check_for_email_address(struct ipoque_detection_module_struct *ipoque_struct, u16 counter)
+static void ipoque_int_msn_add_connection(struct ipoque_detection_module_struct
+										  *ipoque_struct, ipoque_protocol_type_t protocol_type)
 {
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MSN, protocol_type);
+}
 
+static u8 ipoque_int_find_xmsn(struct ipoque_detection_module_struct *ipoque_struct)
+{
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "called ipoque_check_for_email_address\n");
-
-	if (packet->payload_packet_len > counter && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-												 || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-												 || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-												 || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
-		IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "first letter\n");
-		counter++;
-		while (packet->payload_packet_len > counter
-			   && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-				   || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-				   || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-				   || packet->payload[counter] == '-' || packet->payload[counter] == '_'
-				   || packet->payload[counter] == '.')) {
-			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "further letter\n");
-			counter++;
-			if (packet->payload_packet_len > counter && packet->payload[counter] == '@') {
-				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "@\n");
-				counter++;
-				while (packet->payload_packet_len > counter
-					   && ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-						   || (packet->payload[counter] >= 'A' && packet->payload[counter] <= 'Z')
-						   || (packet->payload[counter] >= '0' && packet->payload[counter] <= '9')
-						   || packet->payload[counter] == '-' || packet->payload[counter] == '_')) {
-					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "letter\n");
-					counter++;
-					if (packet->payload_packet_len > counter && packet->payload[counter] == '.') {
-						IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, ".\n");
-						counter++;
-						if (packet->payload_packet_len > counter + 1
-							&& ((packet->payload[counter] >= 'a' && packet->payload[counter] <= 'z')
-								&& (packet->payload[counter + 1] >= 'a' && packet->payload[counter + 1] <= 'z'))) {
-							IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "two letters\n");
-							counter += 2;
-							if (packet->payload_packet_len > counter
-								&& (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {
-								IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "whitespace1\n");
-								return counter;
-							} else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
-									   && packet->payload[counter] <= 'z') {
-								IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "one letter\n");
-								counter++;
-								if (packet->payload_packet_len > counter
-									&& (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {
-									IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "whitespace2\n");
-									return counter;
-								} else if (packet->payload_packet_len > counter && packet->payload[counter] >= 'a'
-										   && packet->payload[counter] <= 'z') {
-									counter++;
-									if (packet->payload_packet_len > counter
-										&& (packet->payload[counter] == ' ' || packet->payload[counter] == ';')) {
-										IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "whitespace3\n");
-										return counter;
-									} else {
-										return 0;
-									}
-								} else {
-									return 0;
-								}
-							} else {
-								return 0;
-							}
-						} else {
-							return 0;
-						}
-					}
-				}
-				return 0;
+	if (packet->parsed_lines > 3) {
+		u16 i;
+		for (i = 2; i < packet->parsed_lines; i++) {
+			if (packet->line[i].ptr != NULL && packet->line[i].len > IPQ_STATICSTRING_LEN("X-MSN") &&
+				memcmp(packet->line[i].ptr, "X-MSN", IPQ_STATICSTRING_LEN("X-MSN")) == 0) {
+				return 1;
 			}
 		}
 	}
 	return 0;
 }
 
+
 static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
-	struct ipoque_parse_data pd;
-	const u8 *p, *end, *line;
-	int len;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
 	u16 plen;
 	u16 status = 0;
 
-	IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "search msn.\n");
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MSN, &src, &dst);
+	IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "search msn tcp.\n");
 #ifdef IPOQUE_PROTOCOL_SSL
-	if (packet->detected_protocol == IPOQUE_PROTOCOL_SSL) {
-		if (flow->packet_counter < 7) {
-		} else if (flow->packet_counter == 7 && packet->payload_packet_len > 300) {
+	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_SSL) {
+		IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "msn ssl ft test\n");
+		if (flow->packet_counter < 10) {
+		}
+
+		if (flow->packet_counter == 7 && packet->payload_packet_len > 300) {
 			if (memcmp(packet->payload + 24, "MSNSLP", 6) == 0
 				|| (get_u32(packet->payload, 0) == htonl(0x30000000) && get_u32(packet->payload, 4) == 0x00000000)) {
-				if (0) {
-
-				}
 				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "detected MSN File Transfer, ifdef ssl.\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 				return;
 			}
 		}
-		if ((flow->packet_counter == 5 || flow->packet_counter == 6)
-			&& (get_u32(packet->payload, 0) == htonl(0x18000000)
-				&& get_u32(packet->payload, 4) == 0x00000000)) {
-			flow->msn_ssl_ft++;
-			if (flow->msn_ssl_ft == 2) {
+		if (flow->packet_counter >= 5 && flow->packet_counter <= 10 && (get_u32(packet->payload, 0) == htonl(0x18000000)
+																		&& get_u32(packet->payload, 4) == 0x00000000)) {
+			flow->l4.tcp.msn_ssl_ft++;
+			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
+					"increased msn ft ssl stage to: %u at packet nr: %u\n", flow->l4.tcp.msn_ssl_ft,
+					flow->packet_counter);
+			if (flow->l4.tcp.msn_ssl_ft == 2) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 						"detected MSN File Transfer, ifdef ssl 2.\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			}
 			return;
 		}
 	}
 #endif
+
 
 
 	/* we detect the initial connection only ! */
@@ -158,18 +100,27 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 	/* now we have a look at the first packet only. */
 	if (flow->packet_counter == 1
 #ifdef IPOQUE_PROTOCOL_SSL
-		|| ((packet->detected_protocol == IPOQUE_PROTOCOL_SSL) && flow->packet_counter <= 3)
+		|| ((packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_SSL) && flow->packet_counter <= 3)
 #endif
 		) {
 
 		/* this part is working asymmetrically */
-		if (packet->payload_packet_len > 32
-			&& packet->payload[0] == 0x02
-			&& ntohl(get_u32(packet->payload, 8)) == 0x2112a442
-			&& ntohl(get_u32(packet->payload, 24)) == 0x000f0004 && ntohl(get_u32(packet->payload, 28)) == 0x72c64bc6) {
+		if (packet->payload_packet_len > 32 && (packet->payload[0] == 0x02 || packet->payload[0] == 0x00)
+			&& (ntohl(get_u32(packet->payload, 8)) == 0x2112a442 || ntohl(get_u32(packet->payload, 4)) == 0x2112a442)
+			&& ((ntohl(get_u32(packet->payload, 24)) == 0x000f0004 && ntohl(get_u32(packet->payload, 28)) == 0x72c64bc6)
+				|| (ntohl(get_u32(packet->payload, 20)) == 0x000f0004
+					&& ntohl(get_u32(packet->payload, 24)) == 0x72c64bc6))) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 					"found MSN in packets that also contain voice.messenger.live.com.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+
+			/* TODO this is an alternative pattern for video detection */
+			/*          if (packet->payload_packet_len > 100 &&
+			   get_u16(packet->payload, 86) == htons(0x05dc)) { */
+			if (packet->payload_packet_len > 101 && packet->payload[101] == 0x02) {
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+			} else {
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+			}
 
 			return;
 		}
@@ -185,21 +136,36 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 							   3) == 0 || memcmp(&packet->payload[packet->payload_packet_len - 8], "MSNP", 4) == 0) {
 						IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 								"found MSN by pattern VER...CVR/MSNP ODOA.\n");
-						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+						ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 						return;
 					}
 					if (memcmp(&packet->payload[4], "MSNFT", 5) == 0) {
 						IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 								"found MSN FT by pattern VER MSNFT...0d0a.\n");
-						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+						ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 						return;
 					}
 				}
 			}
 		}
+
+		if (
+#ifdef IPOQUE_PROTOCOL_HTTP
+			   packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP ||
+#endif
+			   memcmp(packet->payload, "GET ", IPQ_STATICSTRING_LEN("GET ")) == 0 ||
+			   memcmp(packet->payload, "POST ", IPQ_STATICSTRING_LEN("POST ")) == 0) {
+			ipq_parse_packet_line_info(ipoque_struct);
+			if (packet->user_agent_line.ptr != NULL &&
+				packet->user_agent_line.len > IPQ_STATICSTRING_LEN("Messenger/") &&
+				memcmp(packet->user_agent_line.ptr, "Messenger/", IPQ_STATICSTRING_LEN("Messenger/")) == 0) {
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				return;
+			}
+		}
 #ifdef IPOQUE_PROTOCOL_HTTP
 		/* we have to examine two http packets */
-		if (packet->detected_protocol == IPOQUE_PROTOCOL_HTTP) {
+		if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP) {
 		}
 #endif
 		/* not seen this pattern in any trace */
@@ -207,18 +173,22 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 		if (packet->payload_packet_len > 100) {
 			if (
 #ifdef IPOQUE_PROTOCOL_HTTP
-				   packet->detected_protocol == IPOQUE_PROTOCOL_HTTP ||
+				   packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP ||
 #endif
 				   memcmp(packet->payload, "POST http://", 12) == 0) {
 				/* scan packet if not already done... */
-				ipq_parse_packet_line_info(ipoque_struct, &pd);
+				ipq_parse_packet_line_info(ipoque_struct);
 
-				if (pd.content_line.ptr != NULL
-					&& pd.content_line.len == 27
-					&& memcmp(pd.content_line.ptr, "application/x-msn-messenger", 27) == 0) {
+				if (packet->content_line.ptr != NULL &&
+					((packet->content_line.len == IPQ_STATICSTRING_LEN("application/x-msn-messenger") &&
+					  memcmp(packet->content_line.ptr, "application/x-msn-messenger",
+							 IPQ_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
+					 (packet->content_line.len >= IPQ_STATICSTRING_LEN("text/x-msnmsgr") &&
+					  memcmp(packet->content_line.ptr, "text/x-msnmsgr",
+							 IPQ_STATICSTRING_LEN("text/x-msnmsgr")) == 0))) {
 					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 							"found MSN by pattern POST http:// .... application/x-msn-messenger.\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+					ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 					return;
 				}
 			}
@@ -229,7 +199,7 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 		if (packet->payload_packet_len > 400) {
 			if ((
 #ifdef IPOQUE_PROTOCOL_HTTP
-					packet->detected_protocol == IPOQUE_PROTOCOL_HTTP ||
+					packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP ||
 #endif
 					(memcmp(packet->payload, "POST ", 5) == 0))) {
 				u16 c;
@@ -256,52 +226,78 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 				}
 			}
 			if (status) {
-				for (p = packet->payload, end = p + packet->payload_packet_len;
-				     get_next_line(&p, end, &line, &len);) {
-					if (LINE_HEADER_MATCH_I(line, len, "Content-Type: text/xml; charset=utf-8")) {
-						if ((src != NULL
-							 && IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MSN)
-							 != 0) || (dst != NULL
-									   && IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
-																			 IPOQUE_PROTOCOL_MSN)
-									   != 0)) {
+				u16 a;
+
+				ipq_parse_packet_line_info(ipoque_struct);
+
+				if (packet->content_line.ptr != NULL
+					&&
+					((packet->content_line.len == 23
+					  && memcmp(packet->content_line.ptr, "text/xml; charset=utf-8", 23) == 0)
+					 ||
+					 (packet->content_line.len == 24
+					  && memcmp(packet->content_line.ptr, "text/html; charset=utf-8", 24) == 0)
+					 ||
+					 (packet->content_line.len == 33
+					  && memcmp(packet->content_line.ptr, "application/x-www-form-urlencoded", 33) == 0)
+					)) {
+					if ((src != NULL
+						 && IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MSN)
+						 != 0) || (dst != NULL
+								   && IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask,
+																		 IPOQUE_PROTOCOL_MSN)
+								   != 0)) {
+						IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
+								"found MSN with pattern text/xml; charset=utf-8.\n");
+						ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+						return;
+					}
+					for (a = 0; a < packet->parsed_lines; a++) {
+						if (packet->line[a].len >= 4 &&
+							(memcmp(packet->line[a].ptr, "CVR ", 4) == 0
+							 || memcmp(packet->line[a].ptr, "VER ",
+									   4) == 0 || memcmp(packet->line[a].ptr, "ANS ", 4) == 0)) {
 							IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
-									"found MSN with pattern text/xml; charset=utf-8.\n");
-							ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+									"found MSN with pattern text/sml; charset0utf-8.\n");
+							IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct,
+									IPQ_LOG_TRACE, "MSN xml CVS / VER / ANS found\n");
+							ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 							return;
 						}
-					}
-					if (len >= 4 &&
-						(memcmp(line, "CVR ", 4) == 0
-						 || memcmp(line, "VER ", 4) == 0
-						 || memcmp(line, "ANS ", 4) == 0)) {
-						IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct,
-								IPQ_LOG_TRACE, "MSN xml CVS / VER / ANS found\n");
-						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
-						return;
 					}
 				}
 			}
 		}
 		/* asym (1) ; possibly occurs in symmetric cases also. */
-		if (flow->packet_counter <= 2 && packet->payload_packet_len > 100) {
+		if (flow->packet_counter <= 10 &&
+			(flow->packet_direction_counter[0] <= 2 || flow->packet_direction_counter[1] <= 2)
+			&& packet->payload_packet_len > 100) {
 			/* not necessary to check the length, because this has been done : >400. */
 			if (
 #ifdef IPOQUE_PROTOCOL_HTTP
-				   packet->detected_protocol == IPOQUE_PROTOCOL_HTTP ||
+				   packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP ||
 #endif
 				   (memcmp(packet->payload, "HTTP/1.0 200 OK", 15) == 0) ||
 				   (memcmp(packet->payload, "HTTP/1.1 200 OK", 15) == 0)
 				) {
 
-				ipq_parse_packet_line_info(ipoque_struct, &pd);
+				ipq_parse_packet_line_info(ipoque_struct);
 
-				if (pd.content_line.ptr != NULL
-					&& pd.content_line.len == 27
-					&& memcmp(pd.content_line.ptr, "application/x-msn-messenger", 27) == 0) {
+				if (packet->content_line.ptr != NULL &&
+					((packet->content_line.len == IPQ_STATICSTRING_LEN("application/x-msn-messenger") &&
+					  memcmp(packet->content_line.ptr, "application/x-msn-messenger",
+							 IPQ_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
+					 (packet->content_line.len >= IPQ_STATICSTRING_LEN("text/x-msnmsgr") &&
+					  memcmp(packet->content_line.ptr, "text/x-msnmsgr",
+							 IPQ_STATICSTRING_LEN("text/x-msnmsgr")) == 0))) {
 					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 							"HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+					ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+					return;
+				}
+				if (ipoque_int_find_xmsn(ipoque_struct) == 1) {
+					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "HTTP/1.0 200 OK .... X-MSN.\n");
+					ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 					return;
 				}
 			}
@@ -314,7 +310,7 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 			if (memcmp(packet->payload, "CONNECT messenger.hotmail.com:1863 HTTP/1.", 42) == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 						"found MSN  with pattern CONNECT messenger.hotmail.com:1863 HTTP/1..\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 				return;
 			}
 		}
@@ -355,7 +351,7 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 				}
 				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 						"found MSN  with pattern USR/ANS ...mail_address.\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 				return;
 			}
 		}
@@ -365,24 +361,34 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 
 
 	/* asym (1) ; possibly occurs in symmetric cases also. */
-	if (flow->packet_counter <= 2 && packet->payload_packet_len > 100) {
+	if (flow->packet_counter <= 10 &&
+		(flow->packet_direction_counter[0] <= 2 || flow->packet_direction_counter[1] <= 2) &&
+		packet->payload_packet_len > 100) {
 		/* not necessary to check the length, because this has been done : >400. */
 		if (
 #ifdef IPOQUE_PROTOCOL_HTTP
-			   packet->detected_protocol == IPOQUE_PROTOCOL_HTTP ||
+			   packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP ||
 #endif
 			   (memcmp(packet->payload, "HTTP/1.0 200 OK", 15) == 0) ||
 			   (memcmp(packet->payload, "HTTP/1.1 200 OK", 15) == 0)
 			) {
 
-			ipq_parse_packet_line_info(ipoque_struct, &pd);
+			ipq_parse_packet_line_info(ipoque_struct);
 
-			if (pd.content_line.ptr != NULL
-				&& pd.content_line.len == 27
-				&& memcmp(pd.content_line.ptr, "application/x-msn-messenger", 27) == 0) {
+			if (packet->content_line.ptr != NULL &&
+				((packet->content_line.len == IPQ_STATICSTRING_LEN("application/x-msn-messenger") &&
+				  memcmp(packet->content_line.ptr, "application/x-msn-messenger",
+						 IPQ_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
+				 (packet->content_line.len >= IPQ_STATICSTRING_LEN("text/x-msnmsgr") &&
+				  memcmp(packet->content_line.ptr, "text/x-msnmsgr", IPQ_STATICSTRING_LEN("text/x-msnmsgr")) == 0))) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE,
 						"HTTP/1.0 200 OK .... application/x-msn-messenger.\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				return;
+			}
+			if (ipoque_int_find_xmsn(ipoque_struct) == 1) {
+				IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "HTTP/1.0 200 OK .... X-MSN.\n");
+				ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 				return;
 			}
 		}
@@ -400,7 +406,7 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 		if (flow->packet_counter == 1 &&
 			packet->payload_packet_len > 12 && memcmp(packet->payload, "recipientid=", 12) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "detected file transfer.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+			ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 	}
@@ -410,36 +416,58 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 	 * second packet (in the same direction), with length 56 and pattern 0x00000000 from payload[16]
 	 * third packet (in the opposite direction to 1 & 2), with length 4 and pattern 0x30000000
 	 */
-	if (flow->msn_stage == 0) {
+	if (flow->l4.tcp.msn_stage == 0) {
 		/* asymmetric detection to this pattern is asym (2) */
-		if (packet->payload_packet_len == 4 && get_u32(packet->payload, 0) == htonl(0x04000000)) {
+		if ((packet->payload_packet_len == 4 || packet->payload_packet_len == 8)
+			&& get_u32(packet->payload, 0) == htonl(0x04000000)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "maybe first TCP MSN detected\n");
-			flow->msn_stage = 1 + packet->packet_direction;
+
+			if (packet->payload_packet_len == 8 && get_u32(packet->payload, 4) == htonl(0x666f6f00)) {
+				flow->l4.tcp.msn_stage = 5 + packet->packet_direction;
+				return;
+			}
+
+			flow->l4.tcp.msn_stage = 1 + packet->packet_direction;
 			return;
 		}
 		/* asymmetric detection to this pattern is asym (2) */
-	} else if (flow->msn_stage == 1 + packet->packet_direction) {
+	} else if (flow->l4.tcp.msn_stage == 1 + packet->packet_direction) {
 		if (packet->payload_packet_len > 10 && get_u32(packet->payload, 0) == htonl(0x666f6f00)) {
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
-			if (0) {
-
-			}
+			ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "MSN File Transfer detected 1\n");
 			return;
 		}
 		/* did not see this pattern in any trace */
 		if (packet->payload_packet_len == 56 && get_u32(packet->payload, 16) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_DEBUG, "maybe Second TCP MSN detected\n");
-			flow->msn_stage = 3 + packet->packet_direction;
+			flow->l4.tcp.msn_stage = 3 + packet->packet_direction;
 			return;
 		}
 
 
-	} else if ((flow->msn_stage == 3 + packet->packet_direction)
-			   || (flow->msn_stage == 4 - packet->packet_direction)) {
+	} else if (flow->l4.tcp.msn_stage == 2 - packet->packet_direction
+			   && packet->payload_packet_len == 4 && get_u32(packet->payload, 0) == htonl(0x30000000)) {
+		ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+		IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "MSN File Transfer detected 2\n");
+		return;
+	} else if ((flow->l4.tcp.msn_stage == 3 + packet->packet_direction)
+			   || (flow->l4.tcp.msn_stage == 4 - packet->packet_direction)) {
 		if (packet->payload_packet_len == 4 && get_u32(packet->payload, 0) == htonl(0x30000000)) {
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+			ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "MSN File Transfer detected 2\n");
+			return;
+		}
+	} else if (flow->l4.tcp.msn_stage == 6 - packet->packet_direction) {
+		if ((packet->payload_packet_len == 4) &&
+			(get_u32(packet->payload, 0) == htonl(0x10000000) || get_u32(packet->payload, 0) == htonl(0x30000000))) {
+			ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "MSN File Transfer detected 3\n");
+			return;
+		}
+	} else if (flow->l4.tcp.msn_stage == 5 + packet->packet_direction) {
+		if ((packet->payload_packet_len == 20) && get_u32(packet->payload, 0) == htonl(0x10000000)) {
+			ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
+			IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "MSN File Transfer detected 3\n");
 			return;
 		}
 	}
@@ -448,9 +476,10 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 		if (packet->tcp->source == htons(443)
 			|| packet->tcp->dest == htons(443)) {
 			if (packet->payload_packet_len > 300) {
-				if (memcmp(&packet->payload[56], "INVITE MSNMSGR", 14) == 0
+				if (memcmp(&packet->payload[40], "INVITE MSNMSGR", 14) == 0
+					|| memcmp(&packet->payload[56], "INVITE MSNMSGR", 14) == 0
 					|| memcmp(&packet->payload[172], "INVITE MSNMSGR", 14) == 0) {
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+					ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 
 					IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "MSN File Transfer detected 3\n");
 					return;
@@ -468,15 +497,15 @@ static void ipoque_search_msn_tcp(struct ipoque_detection_module_struct *ipoque_
 
 
 
-static inline void ipoque_search_udp_msn_misc(struct ipoque_detection_module_struct
-											  *ipoque_struct)
+static void ipoque_search_udp_msn_misc(struct ipoque_detection_module_struct
+									   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MSN, &src, &dst);
+
 	/* do we have an msn login ? */
 	if ((src == NULL || IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_MSN) == 0)
 		&& (dst == NULL
@@ -490,7 +519,7 @@ static inline void ipoque_search_udp_msn_misc(struct ipoque_detection_module_str
 		&& get_u32(packet->payload, 4) == 0 && packet->payload[9] == 0
 		&& get_u16(packet->payload, 10) == htons(0x0100)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_MSN, ipoque_struct, IPQ_LOG_TRACE, "msn udp misc data connection detected\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MSN);
+		ipoque_int_msn_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 	}
 
 	/* asymmetric detection working. */
@@ -499,7 +528,7 @@ static inline void ipoque_search_udp_msn_misc(struct ipoque_detection_module_str
 }
 
 
-static void ipoque_search_msn(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_msn(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -510,20 +539,17 @@ static void ipoque_search_msn(struct ipoque_detection_module_struct *ipoque_stru
 			/* msn can use http or ssl for connection. That's why every http, ssl and ukn packet must enter in the msn detection */
 			/* the detection can swich out the http or the ssl detection. In this case we need not check those protocols */
 			// need to do the ceck when protocol == http too (POST /gateway ...)
-#if defined(IPOQUE_PROTOCOL_HTTP) && defined(IPOQUE_PROTOCOL_SSL)
-			if (packet->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN
-				|| packet->detected_protocol == IPOQUE_PROTOCOL_HTTP
-				|| packet->detected_protocol == IPOQUE_PROTOCOL_SSL)
-#elif defined(IPOQUE_PROTOCOL_HTTP)
-			if (packet->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN
-				|| packet->detected_protocol == IPOQUE_PROTOCOL_HTTP)
-#elif defined(IPOQUE_PROTOCOL_SSL)
-			if (packet->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN
-				|| packet->detected_protocol == IPOQUE_PROTOCOL_SSL)
-#else
-			if (packet->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN)
+			if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_UNKNOWN
+#if defined(IPOQUE_PROTOCOL_HTTP)
+				|| packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_HTTP
 #endif
-			{
+#if defined(IPOQUE_PROTOCOL_SSL)
+				|| packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_SSL
+#endif
+#if defined(IPOQUE_PROTOCOL_STUN)
+				|| packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_STUN
+#endif
+				) {
 				ipoque_search_msn_tcp(ipoque_struct);
 			}
 		} else if (packet->udp != NULL) {

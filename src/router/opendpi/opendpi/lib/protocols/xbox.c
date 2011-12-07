@@ -1,6 +1,6 @@
 /*
  * xbox.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,10 +24,19 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_XBOX
 
-static void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_int_xbox_add_connection(struct ipoque_detection_module_struct
+										   *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_XBOX, IPOQUE_REAL_PROTOCOL);
+}
+
+
+void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	//  struct ipoque_id_struct *src = ipoque_struct->src;
+	//  struct ipoque_id_struct *dst = ipoque_struct->dst;
 
 	/*
 	 * THIS IS TH XBOX UDP DETCTION ONLY !!!
@@ -53,7 +62,7 @@ static void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_str
 				(packet->payload[4] == 0x03 && packet->payload[6] == 0x40) ||
 				(packet->payload[4] == 0x06 && packet->payload[6] == 0x4e)) {
 
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_XBOX);
+				ipoque_int_xbox_add_connection(ipoque_struct);
 				IPQ_LOG(IPOQUE_PROTOCOL_XBOX, ipoque_struct, IPQ_LOG_DEBUG, "xbox udp connection detected\n");
 				return;
 			}
@@ -66,13 +75,13 @@ static void ipoque_search_xbox(struct ipoque_detection_module_struct *ipoque_str
 				|| (packet->payload_packet_len == 40 && ntohl(get_u32(packet->payload, 0)) == 0xcf5f3202)
 				|| (packet->payload_packet_len == 38 && ntohl(get_u32(packet->payload, 0)) == 0xc1457f03)
 				|| (packet->payload_packet_len == 28 && ntohl(get_u32(packet->payload, 0)) == 0x015f2c00))) {
-			if (flow->xbox_stage == 1) {
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_XBOX);
+			if (flow->l4.udp.xbox_stage == 1) {
+				ipoque_int_xbox_add_connection(ipoque_struct);
 				IPQ_LOG(IPOQUE_PROTOCOL_XBOX, ipoque_struct, IPQ_LOG_DEBUG, "xbox udp connection detected\n");
 				return;
 			}
 			IPQ_LOG(IPOQUE_PROTOCOL_XBOX, ipoque_struct, IPQ_LOG_DEBUG, "maybe xbox.\n");
-			flow->xbox_stage++;
+			flow->l4.udp.xbox_stage++;
 			return;
 		}
 

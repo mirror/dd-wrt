@@ -1,6 +1,6 @@
 /*
  * ntp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,12 +24,20 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_NTP
 
+static void ipoque_int_ntp_add_connection(struct ipoque_detection_module_struct
+										  *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_NTP, IPOQUE_REAL_PROTOCOL);
+}
+
 /* detection also works asymmetrically */
 
-static void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (!(packet->udp->dest == htons(123) || packet->udp->source == htons(123)))
 		goto exclude_ntp;
@@ -44,7 +52,7 @@ static void ipoque_search_ntp_udp(struct ipoque_detection_module_struct *ipoque_
 
 	if ((((packet->payload[0] & 0x38) >> 3) <= 4)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_NTP, ipoque_struct, IPQ_LOG_DEBUG, "detected NTP.");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_NTP);
+		ipoque_int_ntp_add_connection(ipoque_struct);
 		return;
 	}
 

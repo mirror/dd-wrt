@@ -1,6 +1,6 @@
 /*
  * tvants.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -25,11 +25,24 @@
 
 #ifdef IPOQUE_PROTOCOL_TVANTS
 
-static void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
+static void ipoque_int_tvants_add_connection(struct ipoque_detection_module_struct
+											 *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_TVANTS, IPOQUE_REAL_PROTOCOL);
+}
+
+
+
+
+void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+
 
 	IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "search tvants.  \n");
 
@@ -43,7 +56,7 @@ static void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
 			|| memcmp(&packet->payload[49], "TVANTS", 6) == 0 || memcmp(&packet->payload[51], "TVANTS", 6) == 0)) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "found tvants over udp.  \n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVANTS);
+		ipoque_int_tvants_add_connection(ipoque_struct);
 
 	} else if (packet->tcp != NULL && packet->payload_packet_len > 15
 			   && packet->payload[0] == 0x04 && packet->payload[1] == 0x00
@@ -53,7 +66,7 @@ static void ipoque_search_tvants_udp(struct ipoque_detection_module_struct
 			   && memcmp(&packet->payload[8], "TVANTS", 6) == 0) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "found tvants over tcp.  \n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVANTS);
+		ipoque_int_tvants_add_connection(ipoque_struct);
 
 	}
 	IPQ_LOG(IPOQUE_PROTOCOL_TVANTS, ipoque_struct, IPQ_LOG_DEBUG, "exclude tvants.  \n");
