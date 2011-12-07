@@ -17,49 +17,28 @@ head=16
 sect=63
 cyl=$(( ($part1s + $part2s + $part3s + $part4s) * 1024 * 1024 / ($head * $sect * 512)))
 
-dd if=/dev/zero of="$file" bs=1M count=$(($part1s + $part2s - 1))  2>/dev/null || exit
-fdisk -u -C $cyl -H $head -S $sect "$file" > /dev/null 2>/dev/null <<EOF
-n
-p
-1
+#dd if=/dev/zero of="$file" bs=1M count=$(($part1s + $part2s - 1))  2>/dev/null || exit
+# create partition table
+rm -f $file
+which ptgen
+set `ptgen -o "$file" -h $head -s $sect -p ${part1s}m -p ${part2s}m -p ${part3s}m -p ${part4s}m`
 
-+${part1s}M
-n
-p
-2
+KERNELOFFSET="$(($1 / 512))"
+KERNELSIZE="$(($2 / 512))"
+ROOTFSOFFSET="$(($3 / 512))"
+ROOTFSSIZE="$(($4 / 512))"
+BLOCKS="$((($KERNELSIZE / 2) - 1))"
 
-+${part2s}M
-n
-p
-3
-
-+${part3s}M
-n
-p
-4
-
-+${part4s}M
-w
-q
-EOF
-
-block() {
-	echo -e 'p\nq' | fdisk -u -C $cyl -H $head -S $sect "$file" | awk -v file="$file$1" -v n="$(($2 + 2))" '
-$1 == file {
-	print $n * 512
-}'
+[ $# == 8 ] || {
+	echo "gen_image.sh: wrong/old ptgen version ABORT"
+	exit 1
 }
 
-start="$(block 1 0)"
-end="$(block 1 1)"
-blocks="$(( ($end - $start) / 1024 ))"
-
-genext2fs -d "$part1d" -b "$blocks" "$file.kernel"
-dd if="$file.kernel" of="$file" bs=512 seek="$(($start / 512))" conv=notrunc
+genext2fs -d "$part1d" -b "$BLOCKS" "$file.kernel"
+dd if="$file.kernel" of="$file" bs=512 seek="${KERNELOFFSET}" conv=notrunc
 rm -f "$file.kernel"
 
-start="$(block 2 0)"
-dd if="$part2f" of="$file" bs=512 seek="$(($start / 512))" conv=notrunc
+dd if="$part2f" of="$file" bs=512 seek="${ROOTFSOFFSET}" conv=notrunc
 
 which chpax >/dev/null && chpax -zp $(which grub)
 grub --device-map=/dev/null <<EOF
