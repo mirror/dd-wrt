@@ -328,7 +328,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	}, 
 
 //wl gpios
-
+#ifndef CONFIG_AR9100
 
 	{
 		.name		= "wireless_generic_0",
@@ -490,16 +490,14 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 63,
 		.active_low	= 1,
 	}, 
-
-
-
+#endif
 };
 
 
 void __init ar71xx_gpio_init(void)
 {
 	int err;
-
+	printk(KERN_INFO "Register LED Device\n");
 	if (!request_mem_region(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE,
 				"AR71xx GPIO controller"))
 		panic("cannot allocate AR71xx GPIO registers page");
