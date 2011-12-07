@@ -1,6 +1,6 @@
 /*
  * non_tcp_udp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -42,23 +42,32 @@
 
 #define IPQ_IPIP_PROTOCOL_TYPE  0x04
 
+#define IPQ_ICMPV6_PROTOCOL_TYPE  0x3a
+
+
 #define set_protocol_and_bmask(nprot)	\
-do {													\
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->sd->detection_bitmask,nprot) != 0)		\
-		ipq_connection_detected(ipoque_struct, nprot);						\
-} while(0)
+{													\
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask,nprot) != 0)		\
+	{												\
+	    ipoque_int_add_connection(ipoque_struct,    \
+                                  nprot,                \
+							      IPOQUE_REAL_PROTOCOL); \
+	}												\
+}
 
 
-static void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
+void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
 								  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	const struct iphdr *decaps_iph = ipoque_struct->packet.iph;
 
 	if (packet->iph == NULL) {
-		return;
+#ifdef IPOQUE_DETECTION_SUPPORT_IPV6
+		if (packet->iphv6 == NULL)
+#endif
+			return;
 	}
-	switch (decaps_iph->protocol) {
+	switch (packet->l4_protocol) {
 #ifdef IPOQUE_PROTOCOL_IPSEC
 	case IPQ_IPSEC_PROTOCOL_ESP:
 	case IPQ_IPSEC_PROTOCOL_AH:
@@ -100,6 +109,11 @@ static void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
 		set_protocol_and_bmask(IPOQUE_PROTOCOL_IP_IN_IP);
 		break;
 #endif							/* IPOQUE_PROTOCOL_IP_IN_IP */
+#ifdef IPOQUE_PROTOCOL_ICMPV6
+	case IPQ_ICMPV6_PROTOCOL_TYPE:
+		set_protocol_and_bmask(IPOQUE_PROTOCOL_ICMPV6);
+		break;
+#endif							/* IPOQUE_PROTOCOL_ICMPV6 */
 	}
 }
 

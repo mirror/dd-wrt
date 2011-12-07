@@ -1,6 +1,6 @@
 /*
  * ssl.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -21,37 +21,48 @@
  */
 
 
-#include "ipq_protocols.h"
+#include "ipq_utils.h"
 
 #ifdef IPOQUE_PROTOCOL_SSL
 
 #define IPOQUE_MAX_SSL_REQUEST_SIZE 10000
 
+static void ipoque_int_ssl_add_connection(struct ipoque_detection_module_struct
+										  *ipoque_struct, u32 protocol)
+{
+	if (protocol != IPOQUE_PROTOCOL_SSL) {
+		ipoque_int_add_connection(ipoque_struct, protocol, IPOQUE_CORRELATED_PROTOCOL);
+	} else {
+		ipoque_int_add_connection(ipoque_struct, protocol, IPOQUE_REAL_PROTOCOL);
+	}
+}
+
 static void ssl_mark_and_payload_search_for_other_protocols(struct
 															ipoque_detection_module_struct
 															*ipoque_struct)
 {
-#if defined(IPOQUE_PROTOCOL_SOFTETHER) || defined(IPOQUE_PROTOCOL_MEEBO)|| defined(IPOQUE_PROTOCOL_TOR) || defined(IPOQUE_PROTOCOL_VPN_X) || defined(IPOQUE_PROTOCOL_UNENCRYPED_JABBER) || defined (IPOQUE_PROTOCOL_OOVOO) || defined (IPOQUE_PROTOCOL_ISKOOT) || defined (IPOQUE_PROTOCOL_OSCAR)
+#if defined(IPOQUE_PROTOCOL_SOFTETHER) || defined(IPOQUE_PROTOCOL_MEEBO)|| defined(IPOQUE_PROTOCOL_TOR) || defined(IPOQUE_PROTOCOL_VPN_X) || defined(IPOQUE_PROTOCOL_UNENCRYPED_JABBER) || defined (IPOQUE_PROTOCOL_OOVOO) || defined (IPOQUE_PROTOCOL_ISKOOT) || defined (IPOQUE_PROTOCOL_OSCAR) || defined (IPOQUE_PROTOCOL_ITUNES) || defined (IPOQUE_PROTOCOL_GMAIL)
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 #ifdef IPOQUE_PROTOCOL_ISKOOT
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
 #endif
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 	u32 a;
-#if defined ( IPOQUE_PROTOCOL_TOR) || defined (IPOQUE_PROTOCOL_ISKOOT)
-	u32 b;
-#endif
-
 	u32 end;
 #if defined(IPOQUE_PROTOCOL_UNENCRYPED_JABBER)
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->sd->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0)
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0)
 		goto check_for_ssl_payload;
 #endif
 #if defined(IPOQUE_PROTOCOL_OSCAR)
-	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->sd->detection_bitmask, IPOQUE_PROTOCOL_OSCAR) != 0)
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_OSCAR) != 0)
 		goto check_for_ssl_payload;
 #endif
-
+#if defined(IPOQUE_PROTOCOL_GADUGADU)
+	if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_GADUGADU) != 0)
+		goto check_for_ssl_payload;
+#endif
 	goto no_check_for_ssl_payload;
 
   check_for_ssl_payload:
@@ -62,8 +73,8 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 			if (memcmp(&packet->payload[a], "talk.google.com", 15) == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_UNENCRYPED_JABBER, ipoque_struct, IPQ_LOG_DEBUG, "ssl jabber packet match\n");
 				if (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK
-					(ipoque_struct->sd->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0) {
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
+					(ipoque_struct->detection_bitmask, IPOQUE_PROTOCOL_UNENCRYPED_JABBER) != 0) {
+					ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_UNENCRYPED_JABBER);
 					return;
 				}
 			}
@@ -88,9 +99,10 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 				if (ipoque_struct->dst != NULL && packet->payload_packet_len > 75) {
 					memcpy(ipoque_struct->dst->oscar_ssl_session_id, &packet->payload[44], 32);
 					ipoque_struct->dst->oscar_ssl_session_id[32] = '\0';
+					ipoque_struct->dst->oscar_last_safe_access_time = packet->tick_timestamp;
 				}
 
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+				ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
 				return;
 			}
 		}
@@ -100,16 +112,19 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 				(memcmp(&packet->payload[a], "my.screenname.aol.com", 21) == 0
 				 || memcmp(&packet->payload[a], "sns-static.aolcdn.com", 21) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR SERVER SSL DETECTED\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+				ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
 				return;
 			}
 		}
 #endif
+
+
+
 	}
   no_check_for_ssl_payload:
 #endif
 	IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "found ssl connection.\n");
-	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SSL);
+	ipoque_int_ssl_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SSL);
 }
 
 
@@ -117,6 +132,10 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+//  struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+
 
 	if (packet->payload_packet_len >= 5 && packet->payload[0] == 0x16 && packet->payload[1] == 0x03
 		&& (packet->payload[2] == 0x00 || packet->payload[2] == 0x01 || packet->payload[2] == 0x02)) {
@@ -134,11 +153,11 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 		}
 
 		if (packet->payload_packet_len < temp && temp < 5000 && packet->payload_packet_len > 9) {
-			/* the server hello maybe split into small packets */
+			/* the server hello may be split into small packets */
 			u32 cert_start;
 
 			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG,
-					"maybe SSLv3 server hello split into smaller packets\n", temp);
+					"maybe SSLv3 server hello split into smaller packets\n");
 
 			/* lets hope at least the server hello and the start of the certificate block are in the first packet */
 			cert_start = ntohs(get_u16(packet->payload, 7)) + 5 + 4;
@@ -147,8 +166,28 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 
 			if (cert_start < packet->payload_packet_len && packet->payload[cert_start] == 0x0b) {
 				IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG,
-						"found 0x0b at suspected start of certificate block\n", cert_start);
-				return 1;
+						"found 0x0b at suspected start of certificate block\n");
+				return 2;
+			}
+		}
+
+		if ((packet->payload_packet_len > temp && packet->payload_packet_len > 100) && packet->payload_packet_len > 9) {
+			/* the server hello may be split into small packets and the certificate has its own SSL Record
+			 * so temp contains only the length for the first ServerHello block */
+			u32 cert_start;
+
+			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG,
+					"maybe SSLv3 server hello split into smaller packets but with seperate record for the certificate\n");
+
+			/* lets hope at least the server hello record and the start of the certificate record are in the first packet */
+			cert_start = ntohs(get_u16(packet->payload, 7)) + 5 + 5 + 4;
+			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "suspected start of certificate: %u\n",
+					cert_start);
+
+			if (cert_start < packet->payload_packet_len && packet->payload[cert_start] == 0x0b) {
+				IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG,
+						"found 0x0b at suspected start of certificate block\n");
+				return 2;
 			}
 		}
 
@@ -198,21 +237,44 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 
 }
 
-static void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+
+	u8 ret;
+
+	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_SSL) {
+		if (flow->l4.tcp.ssl_stage == 3 && packet->payload_packet_len > 20 && flow->packet_counter < 5) {
+			/* this should only happen, when we detected SSL with a packet that had parts of the certificate in subsequent packets
+			 * so go on checking for certificate patterns for a couple more packets
+			 */
+			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG,
+					"ssl flow but check another packet for patterns\n");
+			ssl_mark_and_payload_search_for_other_protocols(ipoque_struct);
+			if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_SSL) {
+				/* still ssl so check another packet */
+				return;
+			} else {
+				/* protocol has changed so we are done */
+				return;
+			}
+		}
+		return;
+	}
 
 	IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "search ssl\n");
 
-	if (packet->payload_packet_len > 40 && flow->ssl_stage == 0) {
+	if (packet->payload_packet_len > 40 && flow->l4.tcp.ssl_stage == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "first ssl packet\n");
 		// SSLv2 Record
 		if (packet->payload[2] == 0x01 && packet->payload[3] == 0x03
 			&& (packet->payload[4] == 0x00 || packet->payload[4] == 0x01 || packet->payload[4] == 0x02)
 			&& (packet->payload_packet_len - packet->payload[1] == 2)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "sslv2 len match\n");
-			flow->ssl_stage = 1 + packet->packet_direction;
+			flow->l4.tcp.ssl_stage = 1 + packet->packet_direction;
 			return;
 		}
 
@@ -221,18 +283,18 @@ static void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_
 			&& (packet->payload_packet_len - ntohs(get_u16(packet->payload, 3)) == 5)) {
 			// SSLv3 Record
 			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "sslv3 len match\n");
-			flow->ssl_stage = 1 + packet->packet_direction;
+			flow->l4.tcp.ssl_stage = 1 + packet->packet_direction;
 			return;
 		}
 	}
 
 	if (packet->payload_packet_len > 40 &&
-		flow->ssl_stage == 1 + packet->packet_direction
+		flow->l4.tcp.ssl_stage == 1 + packet->packet_direction
 		&& flow->packet_direction_counter[packet->packet_direction] < 5) {
 		return;
 	}
 
-	if (packet->payload_packet_len > 40 && flow->ssl_stage == 2 - packet->packet_direction) {
+	if (packet->payload_packet_len > 40 && flow->l4.tcp.ssl_stage == 2 - packet->packet_direction) {
 		IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "second ssl packet\n");
 		// SSLv2 Record
 		if (packet->payload[2] == 0x01 && packet->payload[3] == 0x03
@@ -243,9 +305,18 @@ static void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_
 			return;
 		}
 
-		if (1 == ipoque_search_sslv3_direction1(ipoque_struct)) {
+		ret = ipoque_search_sslv3_direction1(ipoque_struct);
+		if (ret == 1) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG, "sslv3 server len match\n");
 			ssl_mark_and_payload_search_for_other_protocols(ipoque_struct);
+			return;
+		} else if (ret == 2) {
+			IPQ_LOG(IPOQUE_PROTOCOL_SSL, ipoque_struct, IPQ_LOG_DEBUG,
+					"sslv3 server len match with split packet -> check some more packets for SSL patterns\n");
+			ssl_mark_and_payload_search_for_other_protocols(ipoque_struct);
+			if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_SSL) {
+				flow->l4.tcp.ssl_stage = 3;
+			}
 			return;
 		}
 

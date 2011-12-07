@@ -1,6 +1,6 @@
 /*
  * mail_smtp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -40,13 +40,19 @@
 #define SMTP_BIT_RSET		0x1000
 #define SMTP_BIT_TlRM		0x2000
 
-static void ipoque_search_mail_smtp_tcp(struct ipoque_detection_module_struct
+static void ipoque_int_mail_smtp_add_connection(struct ipoque_detection_module_struct
+												*ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MAIL_SMTP, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_mail_smtp_tcp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	const u8 *p, *end, *line;
-	int len;
+//  struct ipoque_id_struct         *src=ipoque_struct->src;
+//  struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 
 	IPQ_LOG(IPOQUE_PROTOCOL_MAIL_SMTP, ipoque_struct, IPQ_LOG_DEBUG, "search mail_smtp.\n");
@@ -57,92 +63,92 @@ static void ipoque_search_mail_smtp_tcp(struct ipoque_detection_module_struct
 		u8 a;
 		u8 bit_count = 0;
 
-		for (p = packet->payload, end = p + packet->payload_packet_len;
-		     get_next_line(&p, end, &line, &len);) {
+		IPQ_PARSE_PACKET_LINE_INFO(ipoque_struct, packet);
+		for (a = 0; a < packet->parsed_lines; a++) {
 
 			// expected server responses
-			if (len >= 3) {
-				if (memcmp(line, "220", 3) == 0) {
-					flow->smtp_command_bitmask |= SMTP_BIT_220;
-				} else if (memcmp(line, "250", 3) == 0) {
-					flow->smtp_command_bitmask |= SMTP_BIT_250;
-				} else if (memcmp(line, "235", 3) == 0) {
-					flow->smtp_command_bitmask |= SMTP_BIT_235;
-				} else if (memcmp(line, "334", 3) == 0) {
-					flow->smtp_command_bitmask |= SMTP_BIT_334;
-				} else if (memcmp(line, "354", 3) == 0) {
-					flow->smtp_command_bitmask |= SMTP_BIT_354;
+			if (packet->line[a].len >= 3) {
+				if (memcmp(packet->line[a].ptr, "220", 3) == 0) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_220;
+				} else if (memcmp(packet->line[a].ptr, "250", 3) == 0) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_250;
+				} else if (memcmp(packet->line[a].ptr, "235", 3) == 0) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_235;
+				} else if (memcmp(packet->line[a].ptr, "334", 3) == 0) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_334;
+				} else if (memcmp(packet->line[a].ptr, "354", 3) == 0) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_354;
 				}
 			}
 			// expected client requests
-			if (len >= 5) {
-				if ((((line[0] == 'H' || line[0] == 'h')
-					  && (line[1] == 'E' || line[1] == 'e'))
-					 || ((line[0] == 'E' || line[0] == 'e')
-						 && (line[1] == 'H' || line[1] == 'h')))
-					&& (line[2] == 'L' || line[2] == 'l')
-					&& (line[3] == 'O' || line[3] == 'o')
-					&& line[4] == ' ') {
-					flow->smtp_command_bitmask |= SMTP_BIT_HELO_EHLO;
-				} else if ((line[0] == 'M' || line[0] == 'm')
-						   && (line[1] == 'A' || line[1] == 'a')
-						   && (line[2] == 'I' || line[2] == 'i')
-						   && (line[3] == 'L' || line[3] == 'l')
-						   && line[4] == ' ') {
-					flow->smtp_command_bitmask |= SMTP_BIT_MAIL;
-				} else if ((line[0] == 'R' || line[0] == 'r')
-						   && (line[1] == 'C' || line[1] == 'c')
-						   && (line[2] == 'P' || line[2] == 'p')
-						   && (line[3] == 'T' || line[3] == 't')
-						   && line[4] == ' ') {
-					flow->smtp_command_bitmask |= SMTP_BIT_RCPT;
-				} else if ((line[0] == 'A' || line[0] == 'a')
-						   && (line[1] == 'U' || line[1] == 'u')
-						   && (line[2] == 'T' || line[2] == 't')
-						   && (line[3] == 'H' || line[3] == 'h')
-						   && line[4] == ' ') {
-					flow->smtp_command_bitmask |= SMTP_BIT_AUTH;
+			if (packet->line[a].len >= 5) {
+				if ((((packet->line[a].ptr[0] == 'H' || packet->line[a].ptr[0] == 'h')
+					  && (packet->line[a].ptr[1] == 'E' || packet->line[a].ptr[1] == 'e'))
+					 || ((packet->line[a].ptr[0] == 'E' || packet->line[a].ptr[0] == 'e')
+						 && (packet->line[a].ptr[1] == 'H' || packet->line[a].ptr[1] == 'h')))
+					&& (packet->line[a].ptr[2] == 'L' || packet->line[a].ptr[2] == 'l')
+					&& (packet->line[a].ptr[3] == 'O' || packet->line[a].ptr[3] == 'o')
+					&& packet->line[a].ptr[4] == ' ') {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_HELO_EHLO;
+				} else if ((packet->line[a].ptr[0] == 'M' || packet->line[a].ptr[0] == 'm')
+						   && (packet->line[a].ptr[1] == 'A' || packet->line[a].ptr[1] == 'a')
+						   && (packet->line[a].ptr[2] == 'I' || packet->line[a].ptr[2] == 'i')
+						   && (packet->line[a].ptr[3] == 'L' || packet->line[a].ptr[3] == 'l')
+						   && packet->line[a].ptr[4] == ' ') {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_MAIL;
+				} else if ((packet->line[a].ptr[0] == 'R' || packet->line[a].ptr[0] == 'r')
+						   && (packet->line[a].ptr[1] == 'C' || packet->line[a].ptr[1] == 'c')
+						   && (packet->line[a].ptr[2] == 'P' || packet->line[a].ptr[2] == 'p')
+						   && (packet->line[a].ptr[3] == 'T' || packet->line[a].ptr[3] == 't')
+						   && packet->line[a].ptr[4] == ' ') {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_RCPT;
+				} else if ((packet->line[a].ptr[0] == 'A' || packet->line[a].ptr[0] == 'a')
+						   && (packet->line[a].ptr[1] == 'U' || packet->line[a].ptr[1] == 'u')
+						   && (packet->line[a].ptr[2] == 'T' || packet->line[a].ptr[2] == 't')
+						   && (packet->line[a].ptr[3] == 'H' || packet->line[a].ptr[3] == 'h')
+						   && packet->line[a].ptr[4] == ' ') {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_AUTH;
 				}
 			}
 
-			if (len >= 8) {
-				if ((line[0] == 'S' || line[0] == 's')
-					&& (line[1] == 'T' || line[1] == 't')
-					&& (line[2] == 'A' || line[2] == 'a')
-					&& (line[3] == 'R' || line[3] == 'r')
-					&& (line[4] == 'T' || line[0] == 't')
-					&& (line[5] == 'T' || line[1] == 't')
-					&& (line[6] == 'L' || line[2] == 'l')
-					&& (line[7] == 'S' || line[3] == 's')) {
-					flow->smtp_command_bitmask |= SMTP_BIT_STARTTLS;
+			if (packet->line[a].len >= 8) {
+				if ((packet->line[a].ptr[0] == 'S' || packet->line[a].ptr[0] == 's')
+					&& (packet->line[a].ptr[1] == 'T' || packet->line[a].ptr[1] == 't')
+					&& (packet->line[a].ptr[2] == 'A' || packet->line[a].ptr[2] == 'a')
+					&& (packet->line[a].ptr[3] == 'R' || packet->line[a].ptr[3] == 'r')
+					&& (packet->line[a].ptr[4] == 'T' || packet->line[a].ptr[0] == 't')
+					&& (packet->line[a].ptr[5] == 'T' || packet->line[a].ptr[1] == 't')
+					&& (packet->line[a].ptr[6] == 'L' || packet->line[a].ptr[2] == 'l')
+					&& (packet->line[a].ptr[7] == 'S' || packet->line[a].ptr[3] == 's')) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_STARTTLS;
 				}
 			}
 
-			if (len >= 4) {
-				if ((line[0] == 'D' || line[0] == 'd')
-					&& (line[1] == 'A' || line[1] == 'a')
-					&& (line[2] == 'T' || line[2] == 't')
-					&& (line[3] == 'A' || line[3] == 'a')) {
-					flow->smtp_command_bitmask |= SMTP_BIT_DATA;
-				} else if ((line[0] == 'N' || line[0] == 'n')
-						   && (line[1] == 'O' || line[1] == 'o')
-						   && (line[2] == 'O' || line[2] == 'o')
-						   && (line[3] == 'P' || line[3] == 'p')) {
-					flow->smtp_command_bitmask |= SMTP_BIT_NOOP;
-				} else if ((line[0] == 'R' || line[0] == 'r')
-						   && (line[1] == 'S' || line[1] == 's')
-						   && (line[2] == 'E' || line[2] == 'e')
-						   && (line[3] == 'T' || line[3] == 't')) {
-					flow->smtp_command_bitmask |= SMTP_BIT_RSET;
+			if (packet->line[a].len >= 4) {
+				if ((packet->line[a].ptr[0] == 'D' || packet->line[a].ptr[0] == 'd')
+					&& (packet->line[a].ptr[1] == 'A' || packet->line[a].ptr[1] == 'a')
+					&& (packet->line[a].ptr[2] == 'T' || packet->line[a].ptr[2] == 't')
+					&& (packet->line[a].ptr[3] == 'A' || packet->line[a].ptr[3] == 'a')) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_DATA;
+				} else if ((packet->line[a].ptr[0] == 'N' || packet->line[a].ptr[0] == 'n')
+						   && (packet->line[a].ptr[1] == 'O' || packet->line[a].ptr[1] == 'o')
+						   && (packet->line[a].ptr[2] == 'O' || packet->line[a].ptr[2] == 'o')
+						   && (packet->line[a].ptr[3] == 'P' || packet->line[a].ptr[3] == 'p')) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_NOOP;
+				} else if ((packet->line[a].ptr[0] == 'R' || packet->line[a].ptr[0] == 'r')
+						   && (packet->line[a].ptr[1] == 'S' || packet->line[a].ptr[1] == 's')
+						   && (packet->line[a].ptr[2] == 'E' || packet->line[a].ptr[2] == 'e')
+						   && (packet->line[a].ptr[3] == 'T' || packet->line[a].ptr[3] == 't')) {
+					flow->l4.tcp.smtp_command_bitmask |= SMTP_BIT_RSET;
 				}
 			}
 
 		}
 
 		// now count the bits set in the bitmask
-		if (flow->smtp_command_bitmask != 0) {
+		if (flow->l4.tcp.smtp_command_bitmask != 0) {
 			for (a = 0; a < 16; a++) {
-				bit_count += (flow->smtp_command_bitmask >> a) & 0x01;
+				bit_count += (flow->l4.tcp.smtp_command_bitmask >> a) & 0x01;
 			}
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_MAIL_SMTP, ipoque_struct, IPQ_LOG_DEBUG, "seen smtp commands and responses: %u.\n",
@@ -150,13 +156,22 @@ static void ipoque_search_mail_smtp_tcp(struct ipoque_detection_module_struct
 
 		if (bit_count >= 3) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MAIL_SMTP, ipoque_struct, IPQ_LOG_DEBUG, "mail smtp identified\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MAIL_SMTP);
+			ipoque_int_mail_smtp_add_connection(ipoque_struct);
 			return;
 		}
 		if (bit_count >= 1 && flow->packet_counter < 12) {
 			return;
 		}
 	}
+	/* when the first or second packets are split into two packets, those packets are ignored. */
+	if (flow->packet_counter <= 4 &&
+		packet->payload_packet_len >= 4 &&
+		(ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0d0a
+		 || memcmp(packet->payload, "220", 3) == 0 || memcmp(packet->payload, "EHLO", 4) == 0)) {
+		IPQ_LOG(IPOQUE_PROTOCOL_MAIL_SMTP, ipoque_struct, IPQ_LOG_DEBUG, "maybe SMTP, need next packet.\n");
+		return;
+	}
+
 	IPQ_LOG(IPOQUE_PROTOCOL_MAIL_SMTP, ipoque_struct, IPQ_LOG_DEBUG, "exclude smtp\n");
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_MAIL_SMTP);
 

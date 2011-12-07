@@ -1,6 +1,6 @@
 /*
  * thunder.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,20 +24,37 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_THUNDER
 
+static void ipoque_int_thunder_add_connection(struct ipoque_detection_module_struct
+											  *ipoque_struct, ipoque_protocol_type_t protocol_type)
+{
+	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
+
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_THUNDER, protocol_type);
+
+	if (src != NULL) {
+		src->thunder_ts = packet->tick_timestamp;
+	}
+	if (dst != NULL) {
+		dst->thunder_ts = packet->tick_timestamp;
+	}
+}
+
 
 static inline void ipoque_int_search_thunder_udp(struct ipoque_detection_module_struct
 												 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_THUNDER, NULL, NULL);
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30
 		&& packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
 		if (flow->thunder_stage == 3) {
 			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG, "THUNDER udp detected\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_THUNDER);
+			ipoque_int_thunder_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 
@@ -58,13 +75,14 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_parse_data pd;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30
 		&& packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
 		if (flow->thunder_stage == 3) {
 			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG, "THUNDER tcp detected\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_THUNDER);
+			ipoque_int_thunder_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 
@@ -76,25 +94,25 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 
 	if (flow->thunder_stage == 0 && packet->payload_packet_len > 17
 		&& ipq_mem_cmp(packet->payload, "POST / HTTP/1.1\r\n", 17) == 0) {
-		ipq_parse_packet_line_info(ipoque_struct, &pd);
+		ipq_parse_packet_line_info(ipoque_struct);
 
 		IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
 				"maybe thunder http POST packet detected, parsed packet lines: %u, empty line set %u (at: %u)\n",
 				packet->parsed_lines, packet->empty_line_position_set, packet->empty_line_position);
 
-		if (pd.empty_line_position_set != 0 &&
-			pd.content_line.ptr != NULL &&
-			pd.content_line.len == 24 &&
-			ipq_mem_cmp(pd.content_line.ptr, "application/octet-stream",
-						24) == 0 && pd.empty_line_position_set < (packet->payload_packet_len - 8)
-			&& packet->payload[pd.empty_line_position + 2] >= 0x30
-			&& packet->payload[pd.empty_line_position + 2] < 0x40
-			&& packet->payload[pd.empty_line_position + 3] == 0x00
-			&& packet->payload[pd.empty_line_position + 4] == 0x00
-			&& packet->payload[pd.empty_line_position + 5] == 0x00) {
+		if (packet->empty_line_position_set != 0 &&
+			packet->content_line.ptr != NULL &&
+			packet->content_line.len == 24 &&
+			ipq_mem_cmp(packet->content_line.ptr, "application/octet-stream",
+						24) == 0 && packet->empty_line_position_set < (packet->payload_packet_len - 8)
+			&& packet->payload[packet->empty_line_position + 2] >= 0x30
+			&& packet->payload[packet->empty_line_position + 2] < 0x40
+			&& packet->payload[packet->empty_line_position + 3] == 0x00
+			&& packet->payload[packet->empty_line_position + 4] == 0x00
+			&& packet->payload[packet->empty_line_position + 5] == 0x00) {
 			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
 					"maybe thunder http POST packet application does match\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_THUNDER);
+			ipoque_int_thunder_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		}
 	}
@@ -104,69 +122,63 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_THUNDER);
 }
 
-static void ipoque_int_search_thunder_http(struct ipoque_detection_module_struct *ipoque_struct)
+static inline void ipoque_int_search_thunder_http(struct ipoque_detection_module_struct
+												  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
-	const u8 *p, *end, *line;
-	bool ua_found = false;
-	int i, len;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_THUNDER, &src, &dst);
+
+	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_THUNDER) {
+		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
+							(packet->tick_timestamp - src->thunder_ts) < ipoque_struct->thunder_timeout)) {
+			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
+					"thunder : save src connection packet detected\n");
+			src->thunder_ts = packet->tick_timestamp;
+		} else if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
+								   (packet->tick_timestamp - dst->thunder_ts) < ipoque_struct->thunder_timeout)) {
+			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
+					"thunder : save dst connection packet detected\n");
+			dst->thunder_ts = packet->tick_timestamp;
+		}
+		return;
+	}
+
 	if (packet->payload_packet_len > 5
 		&& memcmp(packet->payload, "GET /", 5) == 0 && IPQ_SRC_OR_DST_HAS_PROTOCOL(src, dst, IPOQUE_PROTOCOL_THUNDER)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG, "HTTP packet detected.\n");
+		ipq_parse_packet_line_info(ipoque_struct);
 
-		for (p = packet->payload, end = p + packet->payload_packet_len, i = 0;
-		     get_next_line(&p, end, &line, &len); i++) {
-
-			switch(i) {
-			case 1:
-				if (!LINE_HEADER_MATCH(line, len, "Accept: */*"))
-					return;
-				break;
-			case 2:
-				if (!LINE_HEADER_MATCH(line, len, "Cache-Control: no-cache"))
-					return;
-				break;
-			case 3:
-				if (!LINE_HEADER_MATCH(line, len, "Connection: close"))
-					return;
-				break;
-			case 4:
-				if (!LINE_HEADER_MATCH(line, len, "Host: "))
-					return;
-				break;
-			case 5:
-				if (!LINE_HEADER_MATCH(line, len, "Pragma: no-cache"))
-					return;
-				break;
-			}
-
-			if (LINE_HEADER_MATCH_I(line, len, "User-Agent: ")) {
-				line += 12;
-				len -= 12;
-				if (!LINE_HEADER_MATCH(line, len, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"))
-					return;
-				ua_found = true;
-			}
-
-			if (i > 10)
-				return;
+		if (packet->parsed_lines > 7
+			&& packet->parsed_lines < 11
+			&& packet->line[1].len > 10
+			&& ipq_mem_cmp(packet->line[1].ptr, "Accept: */*", 11) == 0
+			&& packet->line[2].len > 22
+			&& ipq_mem_cmp(packet->line[2].ptr, "Cache-Control: no-cache",
+						   23) == 0 && packet->line[3].len > 16
+			&& ipq_mem_cmp(packet->line[3].ptr, "Connection: close", 17) == 0
+			&& packet->line[4].len > 6
+			&& ipq_mem_cmp(packet->line[4].ptr, "Host: ", 6) == 0
+			&& packet->line[5].len > 15
+			&& ipq_mem_cmp(packet->line[5].ptr, "Pragma: no-cache", 16) == 0
+			&& packet->user_agent_line.ptr != NULL
+			&& packet->user_agent_line.len > 49
+			&& ipq_mem_cmp(packet->user_agent_line.ptr,
+						   "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)", 50) == 0) {
+			IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
+					"Thunder HTTP download detected, adding flow.\n");
+			ipoque_int_thunder_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 		}
-		if (!ua_found)
-			return;
-
-		IPQ_LOG(IPOQUE_PROTOCOL_THUNDER, ipoque_struct, IPQ_LOG_DEBUG,
-				"Thunder HTTP download detected, adding flow.\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_THUNDER);
 	}
 }
 
-static void ipoque_search_thunder(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_thunder(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	//struct ipoque_flow_struct *flow = ipoque_struct->flow;
+	//struct ipoque_id_struct *src = ipoque_struct->src;
+	//struct ipoque_id_struct *dst = ipoque_struct->dst;
 
 	if (packet->tcp != NULL) {
 		ipoque_int_search_thunder_http(ipoque_struct);

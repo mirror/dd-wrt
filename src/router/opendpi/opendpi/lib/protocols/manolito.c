@@ -1,6 +1,6 @@
 /*
  * manolito.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -30,11 +30,11 @@ static void ipoque_int_manolito_add_connection(struct
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO);
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO, &src, &dst);
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO, IPOQUE_REAL_PROTOCOL);
+
 
 	if (src != NULL) {
 		if (packet->udp != NULL) {
@@ -52,44 +52,47 @@ static void ipoque_int_manolito_add_connection(struct
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
 */
+u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct);
 u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//  struct ipoque_id_struct *src = ipoque_struct->src;
+//  struct ipoque_id_struct *dst = ipoque_struct->dst;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO TCP DETECTION\n");
 
-	if (flow->manolito_stage == 0 && packet->payload_packet_len > 6) {
+	if (flow->l4.tcp.manolito_stage == 0 && packet->payload_packet_len > 6) {
 		if (ipq_mem_cmp(packet->payload, "SIZ ", 4) != 0)
 			goto end_manolito_nothing_found;
 
-		flow->manolito_stage = 1 + packet->packet_direction;
+		flow->l4.tcp.manolito_stage = 1 + packet->packet_direction;
 		IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO Stage 1.\n");
 		goto end_manolito_maybe_hit;
 
-	} else if ((flow->manolito_stage == 2 - packet->packet_direction)
+	} else if ((flow->l4.tcp.manolito_stage == 2 - packet->packet_direction)
 			   && packet->payload_packet_len > 4) {
 		if (ipq_mem_cmp(packet->payload, "STR ", 4) != 0)
 			goto end_manolito_nothing_found;
 		IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO Stage 2.\n");
-		flow->manolito_stage = 3 + packet->packet_direction;
+		flow->l4.tcp.manolito_stage = 3 + packet->packet_direction;
 		goto end_manolito_maybe_hit;
 
-	} else if ((flow->manolito_stage == 4 - packet->packet_direction) && packet->payload_packet_len > 5) {
+	} else if ((flow->l4.tcp.manolito_stage == 4 - packet->packet_direction) && packet->payload_packet_len > 5) {
 		if (ipq_mem_cmp(packet->payload, "MD5 ", 4) != 0)
 			goto end_manolito_nothing_found;
 		IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO Stage 3.\n");
-		flow->manolito_stage = 5 + packet->packet_direction;
+		flow->l4.tcp.manolito_stage = 5 + packet->packet_direction;
 		goto end_manolito_maybe_hit;
 
-	} else if ((flow->manolito_stage == 6 - packet->packet_direction) && packet->payload_packet_len == 4) {
+	} else if ((flow->l4.tcp.manolito_stage == 6 - packet->packet_direction) && packet->payload_packet_len == 4) {
 
 		if (ipq_mem_cmp(packet->payload, "GO!!", 4) != 0)
 			goto end_manolito_nothing_found;
 		IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO Stage 4.\n");
 		goto end_manolito_found;
 	}
-	//IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO,ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO FLOW STAGE %d\n", flow->manolito_stage);
+	//IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO,ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO FLOW STAGE %d\n", flow->l4.tcp.manolito_stage);
 	goto end_manolito_nothing_found;
 
   end_manolito_found:
@@ -106,21 +109,21 @@ u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 	return 0;
 }
 
-static void ipoque_search_manolito_tcp_udp(struct
+void ipoque_search_manolito_tcp_udp(struct
 									ipoque_detection_module_struct
 									*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_MANOLITO, &src, &dst);
+
 	if (packet->tcp != NULL) {
 		if (search_manolito_tcp(ipoque_struct) != 0)
 			return;
 	} else if (packet->udp != NULL) {
-		if (flow->detected_protocol == IPOQUE_PROTOCOL_MANOLITO) {
+		if (flow->detected_protocol_stack[0] == IPOQUE_PROTOCOL_MANOLITO) {
 			if (src != NULL) {
 				src->manolito_last_pkt_arrival_time = packet->tick_timestamp;
 			}
@@ -132,25 +135,25 @@ static void ipoque_search_manolito_tcp_udp(struct
 				   || packet->udp->dest == htons(41170)) {
 			if (src != NULL && src->manolito_last_pkt_arrival_time != 0
 				&& (packet->tick_timestamp - src->manolito_last_pkt_arrival_time <
-					ipoque_struct->sd->manolito_subscriber_timeout)) {
+					ipoque_struct->manolito_subscriber_timeout)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO: UDP detected \n");
 				ipoque_int_manolito_add_connection(ipoque_struct);
 				return;
 			} else if (src != NULL
 					   && (packet->tick_timestamp - src->manolito_last_pkt_arrival_time) >=
-					   ipoque_struct->sd->manolito_subscriber_timeout) {
+					   ipoque_struct->manolito_subscriber_timeout) {
 				src->manolito_last_pkt_arrival_time = 0;
 			}
 
 			if (dst != NULL && dst->manolito_last_pkt_arrival_time != 0
 				&& (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time <
-					ipoque_struct->sd->manolito_subscriber_timeout)) {
+					ipoque_struct->manolito_subscriber_timeout)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_MANOLITO, ipoque_struct, IPQ_LOG_DEBUG, "MANOLITO: UDP detected \n");
 				ipoque_int_manolito_add_connection(ipoque_struct);
 				return;
 			} else if (dst != NULL
 					   && (packet->tick_timestamp - dst->manolito_last_pkt_arrival_time) >=
-					   ipoque_struct->sd->manolito_subscriber_timeout) {
+					   ipoque_struct->manolito_subscriber_timeout) {
 				dst->manolito_last_pkt_arrival_time = 0;
 			}
 

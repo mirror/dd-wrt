@@ -1,6 +1,6 @@
 /*
  * afp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,10 +24,20 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_AFP
 
-static void ipoque_search_afp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_int_afp_add_connection(struct ipoque_detection_module_struct
+										  *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_AFP, IPOQUE_REAL_PROTOCOL);
+}
+
+
+void ipoque_search_afp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//  struct ipoque_id_struct *src = ipoque_struct->src;
+//  struct ipoque_id_struct *dst = ipoque_struct->dst;
+
 
 	/*
 	 * this will detect the OpenSession command of the Data Stream Interface (DSI) protocol
@@ -39,7 +49,7 @@ static void ipoque_search_afp(struct ipoque_detection_module_struct *ipoque_stru
 		get_u32(packet->payload, 12) == 0 && get_u16(packet->payload, 16) == htons(0x0104)) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_AFP, ipoque_struct, IPQ_LOG_DEBUG, "AFP: DSI OpenSession detected.\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AFP);
+		ipoque_int_afp_add_connection(ipoque_struct);
 		return;
 	}
 
@@ -52,7 +62,7 @@ static void ipoque_search_afp(struct ipoque_detection_module_struct *ipoque_stru
 		get_u32(packet->payload, 12) == 0 && get_u16(packet->payload, 16) == htons(0x0f00)) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_AFP, ipoque_struct, IPQ_LOG_DEBUG, "AFP: DSI GetStatus detected.\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_AFP);
+		ipoque_int_afp_add_connection(ipoque_struct);
 		return;
 	}
 

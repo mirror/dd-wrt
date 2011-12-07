@@ -1,6 +1,6 @@
 /*
  * directconnect.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -75,13 +75,12 @@ static void ipoque_int_directconnect_add_connection(struct ipoque_detection_modu
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT);
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, &src, NULL);
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, IPOQUE_REAL_PROTOCOL);
 
 	if (src != NULL) {
-		IPOQUE_ADD_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_DIRECTCONNECT);
 		src->directconnect_last_safe_access_time = packet->tick_timestamp;
 		if (connection_type == DIRECT_CONNECT_TYPE_PEER) {
 			if (packet->tcp != NULL
@@ -97,6 +96,26 @@ static void ipoque_int_directconnect_add_connection(struct ipoque_detection_modu
 
 			}
 		}
+
+	}
+	if (dst != NULL) {
+		dst->directconnect_last_safe_access_time = packet->tick_timestamp;
+		if (connection_type == DIRECT_CONNECT_TYPE_PEER) {
+			if (packet->tcp != NULL
+				&& flow->setup_packet_direction == packet->packet_direction && dst->detected_directconnect_port == 0) {
+				/* DST PORT MARKING CAN LEAD TO PORT MISSDETECTIONS
+				 * seen at large customer http servers, where someone has send faked DC tcp packets
+				 * to the server
+				 */
+
+				/*
+				   dst->detected_directconnect_port = packet->tcp->dest;
+				   IPQ_LOG (IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
+				   IPQ_LOG_DEBUG, "directconnect tcp PORT %u for dst\n",
+				   ntohs (dst->detected_directconnect_port));
+				 */
+			}
+		}
 	}
 }
 
@@ -105,58 +124,49 @@ static void ipoque_search_directconnect_tcp(struct ipoque_detection_module_struc
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, &src, &dst);
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	if (flow->detected_protocol == IPOQUE_PROTOCOL_DIRECTCONNECT) {
-		if (0) {
-			if (packet->payload_packet_len >= 40 && memcmp(&packet->payload[0], "BINF", 4) == 0) {
-				u16 ssl_port = 0;
-				ssl_port = parse_binf_message(ipoque_struct, &packet->payload[4], packet->payload_packet_len - 4);
-				if (dst != NULL && ssl_port) {
-					dst->detected_directconnect_ssl_port = ssl_port;
-				}
-				if (src != NULL && ssl_port) {
-					src->detected_directconnect_ssl_port = ssl_port;
-				}
-
-
+	if (flow->detected_protocol_stack[0] == IPOQUE_PROTOCOL_DIRECTCONNECT) {
+		if (packet->payload_packet_len >= 40 && memcmp(&packet->payload[0], "BINF", 4) == 0) {
+			u16 ssl_port = 0;
+			ssl_port = parse_binf_message(ipoque_struct, &packet->payload[4], packet->payload_packet_len - 4);
+			if (dst != NULL && ssl_port) {
+				dst->detected_directconnect_ssl_port = ssl_port;
 			}
-			if ((packet->payload_packet_len >= 38 && packet->payload_packet_len <= 42)
-				&& memcmp(&packet->payload[0], "DCTM", 4) == 0 && memcmp(&packet->payload[15], "ADCS", 4) == 0) {
-				u16 bytes_read = 0;
-				if (dst != NULL) {
-					dst->detected_directconnect_ssl_port =
-						ntohs_ipq_bytestream_to_number(&packet->payload[25], 5, &bytes_read);
-					IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
-							IPQ_LOG_DEBUG, "directconnect ssl port parsed %d",
-							ntohs(dst->detected_directconnect_ssl_port));
-				}
-				if (src != NULL) {
-					src->detected_directconnect_ssl_port =
-						ntohs_ipq_bytestream_to_number(&packet->payload[25], 5, &bytes_read);
-					IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
-							IPQ_LOG_DEBUG, "directconnect ssl port parsed %d",
-							ntohs(src->detected_directconnect_ssl_port));
-				}
-
-
+			if (src != NULL && ssl_port) {
+				src->detected_directconnect_ssl_port = ssl_port;
 			}
-			return;
 
 
 		}
+		if ((packet->payload_packet_len >= 38 && packet->payload_packet_len <= 42)
+			&& memcmp(&packet->payload[0], "DCTM", 4) == 0 && memcmp(&packet->payload[15], "ADCS", 4) == 0) {
+			u16 bytes_read = 0;
+			if (dst != NULL) {
+				dst->detected_directconnect_ssl_port =
+					ntohs_ipq_bytestream_to_number(&packet->payload[25], 5, &bytes_read);
+				IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
+						IPQ_LOG_DEBUG, "directconnect ssl port parsed %d", ntohs(dst->detected_directconnect_ssl_port));
+			}
+			if (src != NULL) {
+				src->detected_directconnect_ssl_port =
+					ntohs_ipq_bytestream_to_number(&packet->payload[25], 5, &bytes_read);
+				IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
+						IPQ_LOG_DEBUG, "directconnect ssl port parsed %d", ntohs(src->detected_directconnect_ssl_port));
+			}
 
+
+		}
+		return;
 
 	}
 	if (src != NULL) {
 		if (src->detected_directconnect_port == packet->tcp->source) {
 			if ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 				(packet->tick_timestamp -
-				 src->directconnect_last_safe_access_time) < ipoque_struct->sd->directconnect_connection_ip_tick_timeout) {
-				flow->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
-				packet->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
+				 src->directconnect_last_safe_access_time) < ipoque_struct->directconnect_connection_ip_tick_timeout) {
+				ipoque_int_change_protocol(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, IPOQUE_REAL_PROTOCOL);
 				src->directconnect_last_safe_access_time = packet->tick_timestamp;
 				IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
 						IPQ_LOG_DEBUG, "marking using dc port\n %d", ntohs(src->detected_directconnect_port));
@@ -171,9 +181,8 @@ static void ipoque_search_directconnect_tcp(struct ipoque_detection_module_struc
 		if (src->detected_directconnect_ssl_port == packet->tcp->dest) {
 			if ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 				(packet->tick_timestamp -
-				 src->directconnect_last_safe_access_time) < ipoque_struct->sd->directconnect_connection_ip_tick_timeout) {
-				flow->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
-				packet->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
+				 src->directconnect_last_safe_access_time) < ipoque_struct->directconnect_connection_ip_tick_timeout) {
+				ipoque_int_change_protocol(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, IPOQUE_REAL_PROTOCOL);
 				src->directconnect_last_safe_access_time = packet->tick_timestamp;
 				IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
 						IPQ_LOG_DEBUG, "marking using dc port\n %d", ntohs(src->detected_directconnect_ssl_port));
@@ -192,9 +201,8 @@ static void ipoque_search_directconnect_tcp(struct ipoque_detection_module_struc
 		if (dst->detected_directconnect_port == packet->tcp->dest) {
 			if ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 				(packet->tick_timestamp -
-				 dst->directconnect_last_safe_access_time) < ipoque_struct->sd->directconnect_connection_ip_tick_timeout) {
-				flow->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
-				packet->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
+				 dst->directconnect_last_safe_access_time) < ipoque_struct->directconnect_connection_ip_tick_timeout) {
+				ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, IPOQUE_REAL_PROTOCOL);
 				dst->directconnect_last_safe_access_time = packet->tick_timestamp;
 				IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
 						IPQ_LOG_DEBUG, "marking using dc port\n %d", ntohs(dst->detected_directconnect_port));
@@ -209,9 +217,8 @@ static void ipoque_search_directconnect_tcp(struct ipoque_detection_module_struc
 		if (dst->detected_directconnect_ssl_port == packet->tcp->dest) {
 			if ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 				(packet->tick_timestamp -
-				 dst->directconnect_last_safe_access_time) < ipoque_struct->sd->directconnect_connection_ip_tick_timeout) {
-				flow->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
-				packet->detected_protocol = IPOQUE_PROTOCOL_DIRECTCONNECT;
+				 dst->directconnect_last_safe_access_time) < ipoque_struct->directconnect_connection_ip_tick_timeout) {
+				ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, IPOQUE_REAL_PROTOCOL);
 				dst->directconnect_last_safe_access_time = packet->tick_timestamp;
 				IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
 						IPQ_LOG_DEBUG, "marking using dc port\n %d", ntohs(dst->detected_directconnect_ssl_port));
@@ -333,17 +340,17 @@ static void ipoque_search_directconnect_udp(struct ipoque_detection_module_struc
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 	int pos, count = 0;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, &src, &dst);
 
 	if (dst != NULL && dst->detected_directconnect_udp_port == packet->udp->dest) {
 		if ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 			(packet->tick_timestamp -
-			 dst->directconnect_last_safe_access_time) < ipoque_struct->sd->directconnect_connection_ip_tick_timeout) {
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT);
+			 dst->directconnect_last_safe_access_time) < ipoque_struct->directconnect_connection_ip_tick_timeout) {
+
+			ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, IPOQUE_REAL_PROTOCOL);
 			dst->directconnect_last_safe_access_time = packet->tick_timestamp;
 			IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
 					IPQ_LOG_DEBUG, "marking using dc udp port\n %d", ntohs(dst->detected_directconnect_udp_port));
@@ -379,8 +386,12 @@ static void ipoque_search_directconnect_udp(struct ipoque_detection_module_struc
 				}
 				flow->directconnect_stage++;
 
-				if (flow->directconnect_stage < 3)
+				if (flow->directconnect_stage < 3) {
+
+
 					return;
+				}
+
 			}
 
 		}
@@ -422,28 +433,29 @@ static void ipoque_search_directconnect_udp(struct ipoque_detection_module_struc
 
 }
 
-static void ipoque_search_directconnect(struct ipoque_detection_module_struct
+void ipoque_search_directconnect(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_DIRECTCONNECT, &src, &dst);
-	if (packet->detected_protocol == IPOQUE_PROTOCOL_DIRECTCONNECT) {
+
+
+	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_DIRECTCONNECT) {
 		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 							(packet->tick_timestamp -
 							 src->directconnect_last_safe_access_time) <
-							ipoque_struct->sd->directconnect_connection_ip_tick_timeout)) {
+							ipoque_struct->directconnect_connection_ip_tick_timeout)) {
 			src->directconnect_last_safe_access_time = packet->tick_timestamp;
 
 		} else if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 								   (packet->tick_timestamp -
 									dst->directconnect_last_safe_access_time) <
-								   ipoque_struct->sd->directconnect_connection_ip_tick_timeout)) {
+								   ipoque_struct->directconnect_connection_ip_tick_timeout)) {
 			dst->directconnect_last_safe_access_time = packet->tick_timestamp;
 		} else {
-			packet->detected_protocol = IPOQUE_PROTOCOL_UNKNOWN;
+			packet->detected_protocol_stack[0] = IPOQUE_PROTOCOL_UNKNOWN;
 			IPQ_LOG(IPOQUE_PROTOCOL_DIRECTCONNECT, ipoque_struct,
 					IPQ_LOG_DEBUG, "directconnect: skipping as unknown due to timeout\n");
 		}

@@ -1,6 +1,6 @@
 /*
  * zattoo.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -22,102 +22,104 @@
 
 
 #include "ipq_protocols.h"
+#include "ipq_utils.h"
 
 #ifdef IPOQUE_PROTOCOL_ZATTOO
 
-static u32 ipq_bytestream_to_ipv4(const u8 * str, u16 max_chars_to_read, u16 * bytes_read)
+static void ipoque_int_zattoo_add_connection(struct ipoque_detection_module_struct
+											 *ipoque_struct, ipoque_protocol_type_t protocol_type)
 {
-	u32 val;
-	u16 read = 0;
-	u16 oldread;
-	u32 c;
-	/* ip address must be X.X.X.X with each X between 0 and 255 */
-	oldread = read;
-	c = ipq_bytestream_to_number(str, max_chars_to_read, &read);
-	if (c > 255 || oldread == read || max_chars_to_read == read || str[read] != '.')
-		return 0;
-	read++;
-	val = c << 24;
-	oldread = read;
-	c = ipq_bytestream_to_number(&str[read], max_chars_to_read - read, &read);
-	if (c > 255 || oldread == read || max_chars_to_read == read || str[read] != '.')
-		return 0;
-	read++;
-	val = val + (c << 16);
-	oldread = read;
-	c = ipq_bytestream_to_number(&str[read], max_chars_to_read - read, &read);
-	if (c > 255 || oldread == read || max_chars_to_read == read || str[read] != '.')
-		return 0;
-	read++;
-	val = val + (c << 8);
-	oldread = read;
-	c = ipq_bytestream_to_number(&str[read], max_chars_to_read - read, &read);
-	if (c > 255 || oldread == read || max_chars_to_read == read)
-		return 0;
-	val = val + c;
 
-	*bytes_read = *bytes_read + read;
+	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	return htonl(val);
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO, protocol_type);
+
+	if (src != NULL) {
+		src->zattoo_ts = packet->tick_timestamp;
+	}
+	if (dst != NULL) {
+		dst->zattoo_ts = packet->tick_timestamp;
+	}
 }
 
 
-static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
-							  *ipoque_struct)
+static inline u8 ipoque_int_zattoo_user_agent_set(struct ipoque_detection_module_struct *ipoque_struct)
+{
+	if (ipoque_struct->packet.user_agent_line.ptr != NULL && ipoque_struct->packet.user_agent_line.len == 111) {
+		if (memcmp(ipoque_struct->packet.user_agent_line.ptr +
+				   ipoque_struct->packet.user_agent_line.len - 25, "Zattoo/4", sizeof("Zattoo/4") - 1) == 0) {
+			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "found zattoo useragent\n");
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void ipoque_search_zattoo(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
-	struct ipoque_parse_data pd;
-	const u8 *p, *end, *line;
-	int len;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO, &src, &dst);
-	if (packet->detected_protocol == IPOQUE_PROTOCOL_ZATTOO) {
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
+
+	u16 i;
+
+	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_ZATTOO) {
 		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - src->zattoo_ts) < ipoque_struct->sd->zattoo_connection_timeout)) {
+							(packet->tick_timestamp - src->zattoo_ts) < ipoque_struct->zattoo_connection_timeout)) {
 			src->zattoo_ts = packet->tick_timestamp;
 		}
 		if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - dst->zattoo_ts) < ipoque_struct->sd->zattoo_connection_timeout)) {
+							(packet->tick_timestamp - dst->zattoo_ts) < ipoque_struct->zattoo_connection_timeout)) {
 			dst->zattoo_ts = packet->tick_timestamp;
 		}
 		return;
 	}
 
 	if (packet->tcp != NULL) {
-
 		if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /frontdoor/fd?brand=Zattoo&v=", 33) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct,
 					IPQ_LOG_DEBUG, "add connection over tcp with pattern GET /frontdoor/fd?brand=Zattoo&v=\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+			ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len > 50
 			&& memcmp(packet->payload, "GET /ZattooAdRedirect/redirect.jsp?user=", 40) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct,
 					IPQ_LOG_DEBUG, "add connection over tcp with pattern GET /ZattooAdRedirect/redirect.jsp?user=\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+			ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len > 50
 			&& (memcmp(packet->payload, "POST /channelserver/player/channel/update HTTP/1.1", 50) == 0
 				|| memcmp(packet->payload, "GET /epg/query", 14) == 0)) {
-			for (p = packet->payload, end = p + packet->payload_packet_len;
-			     get_next_line(&p, end, &line, &len);) {
-				if (len >= 18 && (ipq_mem_cmp(line, "User-Agent: Zattoo", 18) == 0)) {
+			ipq_parse_packet_line_info(ipoque_struct);
+			for (i = 0; i < packet->parsed_lines; i++) {
+				if (packet->line[i].len >= 18 && (ipq_mem_cmp(packet->line[i].ptr, "User-Agent: Zattoo", 18) == 0)) {
 					IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct,
 							IPQ_LOG_DEBUG,
 							"add connection over tcp with pattern POST /channelserver/player/channel/update HTTP/1.1\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+					ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 					return;
 				}
 			}
+		} else if (packet->payload_packet_len > 50
+				   && (memcmp(packet->payload, "GET /", 5) == 0
+					   || memcmp(packet->payload, "POST /", IPQ_STATICSTRING_LEN("POST /")) == 0)) {
+			/* TODO to avoid searching currently only a specific length and offset is used
+			 * that might be changed later */
+			ipq_parse_packet_line_info(ipoque_struct);
+			if (ipoque_int_zattoo_user_agent_set(ipoque_struct)) {
+				ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				return;
+			}
 		} else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "POST http://", 12) == 0) {
-			ipq_parse_packet_line_info(ipoque_struct, &pd);
+			ipq_parse_packet_line_info(ipoque_struct);
 			// test for unique character of the zattoo header
-			if (pd.parsed_lines == 4 && pd.host_line.ptr != NULL) {
+			if (packet->parsed_lines == 4 && packet->host_line.ptr != NULL) {
 				u32 ip;
 				u16 bytes_read = 0;
 
@@ -125,23 +127,25 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 
 				// and now test the firt 5 bytes of the payload for zattoo pattern
 				if (ip == packet->iph->daddr
-					&& pd.empty_line_position_set != 0
-					&& ((packet->payload_packet_len - pd.empty_line_position) > 10)
-					&& packet->payload[pd.empty_line_position + 2] == 0x03
-					&& packet->payload[pd.empty_line_position + 3] == 0x04
-					&& packet->payload[pd.empty_line_position + 4] == 0x00
-					&& packet->payload[pd.empty_line_position + 5] == 0x04
-					&& packet->payload[pd.empty_line_position + 6] == 0x0a
-					&& packet->payload[pd.empty_line_position + 7] == 0x00) {
+					&& packet->empty_line_position_set != 0
+					&& ((packet->payload_packet_len - packet->empty_line_position) > 10)
+					&& packet->payload[packet->empty_line_position + 2] ==
+					0x03
+					&& packet->payload[packet->empty_line_position + 3] ==
+					0x04
+					&& packet->payload[packet->empty_line_position + 4] ==
+					0x00
+					&& packet->payload[packet->empty_line_position + 5] ==
+					0x04
+					&& packet->payload[packet->empty_line_position + 6] ==
+					0x0a && packet->payload[packet->empty_line_position + 7] == 0x00) {
 					IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct,
 							IPQ_LOG_DEBUG, "add connection over tcp with pattern POST http://\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+					ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 					return;
 				}
 			}
-		}
-
-		else if (flow->zattoo_stage == 0) {
+		} else if (flow->zattoo_stage == 0) {
 
 			if (packet->payload_packet_len > 50
 				&& packet->payload[0] == 0x03
@@ -157,7 +161,7 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 		} else if (flow->zattoo_stage == 2 - packet->packet_direction
 				   && packet->payload_packet_len > 50 && packet->payload[0] == 0x03 && packet->payload[1] == 0x04) {
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "add connection over tcp with 0x0304.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+			ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		} else if (flow->zattoo_stage == 1 + packet->packet_direction) {
 			if (packet->payload_packet_len > 500 && packet->payload[0] == 0x00 && packet->payload[1] == 0x00) {
@@ -178,22 +182,21 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 		} else if (flow->zattoo_stage == 4 - packet->packet_direction
 				   && packet->payload_packet_len > 50 && packet->payload[0] == 0x03 && packet->payload[1] == 0x04) {
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "add connection over tcp with 0x0304.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+			ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		} else if (flow->zattoo_stage == 5 + packet->packet_direction && (packet->payload_packet_len == 125)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "detected zattoo.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+			ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		} else if (flow->zattoo_stage == 6 - packet->packet_direction && packet->payload_packet_len == 1412) {
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "found zattoo.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+			ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 			return;
 		}
 		IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG,
 				"ZATTOO: discarted the flow (TCP): packet_size: %u; Flowstage: %u\n",
 				packet->payload_packet_len, flow->zattoo_stage);
 
-#endif
 	} else if (packet->udp != NULL) {
 
 		if (packet->payload_packet_len > 20 && (packet->udp->dest == htons(5003)
@@ -205,7 +208,7 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 				|| get_u32(packet->payload, 0) == htonl(0x03010005))) {
 			if (++flow->zattoo_stage == 2) {
 				IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "add connection over udp.\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_ZATTOO);
+				ipoque_int_zattoo_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 				return;
 			}
 			IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "need next packet udp.\n");
@@ -217,7 +220,8 @@ static void ipoque_search_zattoo_tcp(struct ipoque_detection_module_struct
 				packet->payload_packet_len, flow->zattoo_stage);
 
 	}
+
 	IPQ_LOG(IPOQUE_PROTOCOL_ZATTOO, ipoque_struct, IPQ_LOG_DEBUG, "exclude zattoo.\n");
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_ZATTOO);
-
 }
+#endif

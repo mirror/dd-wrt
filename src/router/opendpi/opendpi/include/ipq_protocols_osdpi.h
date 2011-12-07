@@ -1,23 +1,23 @@
 /*
  * ipq_protocols_osdpi.h
- * Copyright (C) 2009-2010 by ipoque GmbH
- *
+ * Copyright (C) 2009-2011 by ipoque GmbH
+ * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
- *
+ * 
  * OpenDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * 
  * OpenDPI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with OpenDPI.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  */
 
 
@@ -28,7 +28,14 @@
 #ifndef __IPQ_PROTOCOLS_DEFAULT_H__
 #define __IPQ_PROTOCOLS_DEFAULT_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //  #define IPOQUE_ENABLE_DEBUG_MESSAGES
+
+#define IPOQUE_DETECTION_SUPPORT_IPV6
+#define IPOQUE_PROTOCOL_HISTORY_SIZE 3
 
 #define IPOQUE_PROTOCOL_UNKNOWN                 0
 #define IPOQUE_PROTOCOL_FTP                     1
@@ -90,7 +97,7 @@
 #define IPOQUE_PROTOCOL_SOPCAST					57
 #define IPOQUE_PROTOCOL_TVANTS					58
 #define IPOQUE_PROTOCOL_TVUPLAYER				59
-#define IPOQUE_PROTOCOL_VEOHTV					60
+#define IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV 60
 #define IPOQUE_PROTOCOL_QQLIVE					61
 #define IPOQUE_PROTOCOL_THUNDER					62
 #define IPOQUE_PROTOCOL_SOULSEEK				63
@@ -132,8 +139,26 @@
 #define IPOQUE_PROTOCOL_AIMINI					99
 #define IPOQUE_PROTOCOL_SIP						100
 #define IPOQUE_PROTOCOL_TRUPHONE				101
+#define IPOQUE_PROTOCOL_ICMPV6					102
+#define IPOQUE_PROTOCOL_DHCPV6					103
+#define IPOQUE_PROTOCOL_ARMAGETRON				104
+#define IPOQUE_PROTOCOL_CROSSFIRE				105
+#define IPOQUE_PROTOCOL_DOFUS					106
+#define IPOQUE_PROTOCOL_FIESTA					107
+#define IPOQUE_PROTOCOL_FLORENSIA				108
+#define IPOQUE_PROTOCOL_GUILDWARS				109
+#define IPOQUE_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC		110
+#define IPOQUE_PROTOCOL_KERBEROS				111
+#define IPOQUE_PROTOCOL_LDAP					112
+#define IPOQUE_PROTOCOL_MAPLESTORY				113
+#define IPOQUE_PROTOCOL_MSSQL					114
+#define IPOQUE_PROTOCOL_PPTP					115
+#define IPOQUE_PROTOCOL_WARCRAFT3				116
+#define IPOQUE_PROTOCOL_WORLD_OF_KUNG_FU		117
+#define IPOQUE_PROTOCOL_MEEBO					118
 
-#define IPOQUE_LAST_IMPLEMENTED_PROTOCOL        101
+
+#define IPOQUE_LAST_IMPLEMENTED_PROTOCOL        118
 
 
 #define IPOQUE_MAX_SUPPORTED_PROTOCOLS IPOQUE_LAST_IMPLEMENTED_PROTOCOL
@@ -146,7 +171,9 @@
 	"MOVE","RTSP","Feidian","Icecast","PPLive","PPStream","Zattoo","SHOUTCast","SopCast","TVAnts","TVUplayer","VeohTV",\
 	"QQLive","Thunder/Webthunder","Soulseek","GaduGadu","IRC","Popo","Jabber","MSN","Oscar","Yahoo","Battlefield","Quake",\
 	"Second Life","Steam","Halflife2","World of Warcraft","Telnet","STUN","IPSEC","GRE","ICMP","IGMP","EGP","SCTP","OSPF",\
-	"IP in IP","RTP","RDP","VNC","PCAnywhere","SSL","SSH","USENET","MGCP","IAX","TFTP","AFP","StealthNet","Aimini","SIP","Truphone"
+	"IP in IP","RTP","RDP","VNC","PCAnywhere","SSL","SSH","USENET","MGCP","IAX","TFTP","AFP","StealthNet","Aimini","SIP","Truphone",\
+	"ICMPv6","DHCPv6","Armagetron","CrossFire","Dofus","Fiesta","Florensia","Guildwars","HTTP Application Activesync","Kerberos",\
+	"LDAP","MapleStory","msSQL","PPTP","WARCRAFT3","World of Kung Fu","MEEBO"
 #define IPOQUE_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp",\
 	"bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx",\
 	"manolito","pando","filetopia","iMESH","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi",\
@@ -154,6 +181,10 @@
 	"ppstream","zattoo","shoutcast","sopcast","tvants","tvuplayer","veohtv","qqlive","thunder","soulseek","gadugadu","irc",\
 	"popo","jabber","msn","oscar","yahoo","battlefield","quake","secondlife","steam","hl2","worldofwarcraft","telnet","stun",\
 	"ipsec","gre","icmp","igmp","egp","sctp","ospf","ipip","rtp","rdp","vnc","pcanywhere","ssl","ssh","usenet","mgcp","iax",\
-	"tftp","afp","stealthnet","aimini","sip","truphone"
+	"tftp","afp","stealthnet","aimini","sip","truphone","icmpv6","dhcpv6","armagetron","crossfire","dofus","fiesta","florensia",\
+	"guildwars","httpactivesync","kerberos","ldap","maplestory","mssql","pptp","warcraft3","wokf","meebo"
 
+#ifdef __cplusplus
+}
+#endif
 #endif

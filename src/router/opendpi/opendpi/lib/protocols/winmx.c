@@ -1,6 +1,6 @@
 /*
  * winmx.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -25,12 +25,26 @@
 
 #ifdef IPOQUE_PROTOCOL_WINMX
 
-static void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+
+static void ipoque_int_winmx_add_connection(struct ipoque_detection_module_struct
+											*ipoque_struct);
+
+static void ipoque_int_winmx_add_connection(struct ipoque_detection_module_struct
+											*ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_WINMX, IPOQUE_REAL_PROTOCOL);
+}
+
+
+void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
-	if (flow->winmx_stage == 0) {
+
+	if (flow->l4.tcp.winmx_stage == 0) {
 		if (packet->payload_packet_len == 1 || (packet->payload_packet_len > 1 && packet->payload[0] == 0x31)) {
 			return;
 		}
@@ -39,14 +53,14 @@ static void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoqu
 			&& (memcmp(packet->payload, "SEND", 4) == 0)) {
 
 			IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG, "maybe WinMX Send\n");
-			flow->winmx_stage = 1;
+			flow->l4.tcp.winmx_stage = 1;
 			return;
 		}
 
 		if (((packet->payload_packet_len) == 3)
 			&& (memcmp(packet->payload, "GET", 3) == 0)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG, "found winmx by GET\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_WINMX);
+			ipoque_int_winmx_add_connection(ipoque_struct);
 			return;
 		}
 
@@ -61,18 +75,18 @@ static void ipoque_search_winmx_tcp(struct ipoque_detection_module_struct *ipoqu
 
 				IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG,
 						"found winmx by pattern in first packet\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_WINMX);
+				ipoque_int_winmx_add_connection(ipoque_struct);
 				return;
 			}
 		}
 		/* did not see this pattern in any trace that we have */
-	} else if (flow->winmx_stage == 1) {
+	} else if (flow->l4.tcp.winmx_stage == 1) {
 		if (packet->payload_packet_len > 10 && packet->payload_packet_len < 1000) {
 			u16 left = packet->payload_packet_len - 1;
 			while (left > 0) {
 				if (packet->payload[left] == ' ') {
 					IPQ_LOG(IPOQUE_PROTOCOL_WINMX, ipoque_struct, IPQ_LOG_DEBUG, "found winmx in second packet\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_WINMX);
+					ipoque_int_winmx_add_connection(ipoque_struct);
 					return;
 				} else if (packet->payload[left] < '0' || packet->payload[left] > '9') {
 					break;

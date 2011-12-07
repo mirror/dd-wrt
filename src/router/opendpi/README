@@ -1,52 +1,45 @@
-OpenDPI module README
----------------------
+README for OpenDPI
+==================
 
-This package is a GPL implementation of an iptables and netfilter module for
-OpenDPI integration into the Linux kernel.
+OpenDPI is a software component for traffic classification based on deep packet inspection. 
 
-The prerequisites are:
-
-- OpenDPI source package 
-
-- Linux sources (it's been tested for versions 2.6.26 and 2.6.34)
-
-- Iptables header files (called "iptables-dev" in Debian distributions, it's
-  been tested for version 1.4.2)
+Visit http://opendpi.org/ or http://code.google.com/p/opendpi/ for more information.
 
 
-Compiled kernel features
-------------------------
 
-In order to use OpenDPI as a kernel module notice that:
+Building OpenDPI
+================
 
-- You should ENABLE Netfilter conntrack events (and also enable Advanced
-  netfilter features to see it).
+OpenDPI is built using autotools and a gnu compatible C compiler like gcc.
+To build the OpenDPI_demo application an installation of libpcap and the libpcap developer files are required.
 
-In kernel 2.6.34 its defined as:
+Building an OpenDPI release from the command line:
+	
+	$ tar xvfz opendpi-1.1.0.tar.gz
+	$ cd opendpi-1.1.0
+	$ ./configure
+	$ make
+	$ su (if necessary for the next line)
+	$ make install
+	
 
-Connection tracking events
-Symbol: NF_CONNTRACK_EVENTS
-Location:
--> Networking support
- -> Networking options
-  -> Network packet filtering framework (Netfilter)
-   -> Core Netfilter Configuration
-    -> Netfilter connection tracking support
+Building OpenDPI from SVN (First Time):
 
-- If your kernel version is 2.6.31 or greater, then you should DISABLE
-  Netfilter conntrack for the Netlink protocol.
+	$ svn checkout http://opendpi.googlecode.com/svn/trunk/ opendpi
+	$ cd opendpi
+	$ ./autogen.sh
+	$ make
+	$ su (if necessary for the next line)
+	$ make install
+	
 
-In kernel 2.6.34 its defined as:
-
-Connection tracking netlink interface
-Symbol: NF_CT_NETLINK
-Location:
--> Networking support
- -> Networking options
-  -> Network packet filtering framework (Netfilter)
-   -> Core Netfilter Configuration
-    -> Netfilter connection tracking support
-
-
-Once you have downloaded/installed each package and checked for the above
-kernel features you can read the INSTALL file.
+Building OpenDPI from SVN (Updating):
+	
+	$ cd opendpi
+	$ make clean
+	$ svn up
+	$ make
+	$ su (if necessary for the next line)
+	$ make install
+	
+	
