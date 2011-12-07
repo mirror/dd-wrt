@@ -1,6 +1,6 @@
 /*
  * ppstream.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,18 +24,29 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_PPSTREAM
 
-static void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
-								*ipoque_struct)
+static void ipoque_int_ppstream_add_connection(struct ipoque_detection_module_struct
+											   *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_ppstream(struct ipoque_detection_module_struct
+							*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+
+	// struct ipoque_id_struct *src=ipoque_struct->src;
+	// struct ipoque_id_struct *dst=ipoque_struct->dst;
+
+
 
 	/* check TCP Connections -> Videodata */
 	if (packet->tcp != NULL) {
 		if (packet->payload_packet_len >= 60 && get_u32(packet->payload, 52) == 0
 			&& memcmp(packet->payload, "PSProtocol\x0", 11) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG, "found ppstream over tcp.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM);
+			ipoque_int_ppstream_add_connection(ipoque_struct);
 			return;
 		}
 	}
@@ -45,17 +56,17 @@ static void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 			&& ((packet->payload_packet_len - 4 == get_l16(packet->payload, 0))
 				|| (packet->payload_packet_len == get_l16(packet->payload, 0))
 				|| (packet->payload_packet_len >= 6 && packet->payload_packet_len - 6 == get_l16(packet->payload, 0)))) {
-			flow->ppstream_stage++;
-			if (flow->ppstream_stage == 5) {
+			flow->l4.udp.ppstream_stage++;
+			if (flow->l4.udp.ppstream_stage == 5) {
 				IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG,
 						"found ppstream over udp pattern len, 43.\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM);
+				ipoque_int_ppstream_add_connection(ipoque_struct);
 				return;
 			}
 			return;
 		}
 
-		if (flow->ppstream_stage == 0
+		if (flow->l4.udp.ppstream_stage == 0
 			&& packet->payload_packet_len > 4 && ((packet->payload_packet_len - 4 == get_l16(packet->payload, 0))
 												  || (packet->payload_packet_len == get_l16(packet->payload, 0))
 												  || (packet->payload_packet_len >= 6
@@ -63,13 +74,13 @@ static void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 																								   0)))) {
 
 			if (packet->payload[2] == 0x00 && packet->payload[3] == 0x00 && packet->payload[4] == 0x03) {
-				flow->ppstream_stage = 7;
+				flow->l4.udp.ppstream_stage = 7;
 				IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG, "need next packet I.\n");
 				return;
 			}
 		}
 
-		if (flow->ppstream_stage == 7
+		if (flow->l4.udp.ppstream_stage == 7
 			&& packet->payload_packet_len > 4 && packet->payload[3] == 0x00
 			&& ((packet->payload_packet_len - 4 == get_l16(packet->payload, 0))
 				|| (packet->payload_packet_len == get_l16(packet->payload, 0))
@@ -77,7 +88,7 @@ static void ipoque_search_ppstream_tcp(struct ipoque_detection_module_struct
 			&& (packet->payload[2] == 0x00 && packet->payload[4] == 0x03)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_PPSTREAM, ipoque_struct, IPQ_LOG_DEBUG,
 					"found ppstream over udp with pattern Vb.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM);
+			ipoque_int_ppstream_add_connection(ipoque_struct);
 			return;
 		}
 

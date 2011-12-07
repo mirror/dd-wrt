@@ -1,6 +1,6 @@
 /*
  * tvuplayer.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,11 +24,21 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_TVUPLAYER
 
-static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
+
+static void ipoque_int_tvuplayer_add_connection(struct ipoque_detection_module_struct
+												*ipoque_struct, ipoque_protocol_type_t protocol_type)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER, protocol_type);
+}
+
+void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 							 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "search tvuplayer.  \n");
 
@@ -40,10 +50,22 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			&& ntohl(get_u32(packet->payload, 2)) == 0x31323334
 			&& ntohl(get_u32(packet->payload, 6)) == 0x35363837 && packet->payload[10] == 0x01) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer over tcp.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 
+		if (packet->payload_packet_len >= 50) {
+
+			if (memcmp(packet->payload, "POST", 4) || memcmp(packet->payload, "GET", 3)) {
+				IPQ_PARSE_PACKET_LINE_INFO(ipoque_struct, packet);
+				if (packet->user_agent_line.ptr != NULL &&
+					packet->user_agent_line.len >= 8 && (memcmp(packet->user_agent_line.ptr, "MacTVUP", 7) == 0)) {
+					IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "Found user agent as MacTVUP.\n");
+					ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+					return;
+				}
+			}
+		}
 	}
 
 	if (packet->udp != NULL) {
@@ -52,12 +74,11 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			packet->payload[0] == 0xff
 			&& packet->payload[1] == 0xff && packet->payload[2] == 0x00
 			&& packet->payload[3] == 0x01
-			&& packet->payload[10] == 0x00 && packet->payload[11] == 0x00
 			&& packet->payload[12] == 0x02 && packet->payload[13] == 0xff
 			&& packet->payload[19] == 0x2c && ((packet->payload[26] == 0x05 && packet->payload[27] == 0x14)
 											   || (packet->payload[26] == 0x14 && packet->payload[27] == 0x05))) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type I.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len == 82
@@ -69,16 +90,19 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			&& packet->payload[39] == 0x32 && ((packet->payload[46] == 0x05 && packet->payload[47] == 0x14)
 											   || (packet->payload[46] == 0x14 && packet->payload[47] == 0x05))) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type II.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len == 32
 			&& packet->payload[0] == 0x00 && packet->payload[2] == 0x00
-			&& packet->payload[10] == 0x00 && packet->payload[11] == 0x00
+			&& (packet->payload[10] == 0x00 || packet->payload[10] == 0x65
+				|| packet->payload[10] == 0x7e || packet->payload[10] == 0x49)
+			&& (packet->payload[11] == 0x00 || packet->payload[11] == 0x57
+				|| packet->payload[11] == 0x06 || packet->payload[11] == 0x22)
 			&& packet->payload[12] == 0x01 && (packet->payload[13] == 0xff || packet->payload[13] == 0x01)
 			&& packet->payload[19] == 0x14) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type III.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len == 84
@@ -88,7 +112,7 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			&& packet->payload[19] == 0x14 && packet->payload[32] == 0x03
 			&& packet->payload[33] == 0xff && packet->payload[34] == 0x01 && packet->payload[39] == 0x34) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type IV.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len == 102
@@ -97,7 +121,7 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			&& packet->payload[12] == 0x01 && packet->payload[13] == 0xff
 			&& packet->payload[19] == 0x14 && packet->payload[33] == 0xff && packet->payload[39] == 0x14) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type V.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 		if (packet->payload_packet_len == 62 && packet->payload[0] == 0x00 && packet->payload[2] == 0x00
@@ -106,7 +130,7 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			&& packet->payload[19] == 0x32 && ((packet->payload[26] == 0x05 && packet->payload[27] == 0x14)
 											   || (packet->payload[26] == 0x14 && packet->payload[27] == 0x05))) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type VI.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 		// to check, if byte 26, 27, 33,39 match
@@ -115,7 +139,7 @@ static void ipoque_search_tvuplayer(struct ipoque_detection_module_struct
 			&& packet->payload[10] == 0x00 && packet->payload[11] == 0x00
 			&& packet->payload[12] == 0x06 && packet->payload[13] == 0x00 && packet->payload[19] == 0x30) {
 			IPQ_LOG(IPOQUE_PROTOCOL_TVUPLAYER, ipoque_struct, IPQ_LOG_DEBUG, "found tvuplayer pattern type VII.  \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TVUPLAYER);
+			ipoque_int_tvuplayer_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 	}

@@ -1,6 +1,6 @@
 /*
  * mgcp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -25,12 +25,21 @@
 
 #ifdef IPOQUE_PROTOCOL_MGCP
 
+static void ipoque_int_mgcp_add_connection(struct ipoque_detection_module_struct
+										   *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_MGCP, IPOQUE_REAL_PROTOCOL);
+}
+
+
 static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_struct
 												 *ipoque_struct)
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	/* information about MGCP taken from http://en.wikipedia.org/wiki/MGCP */
 
@@ -64,7 +73,7 @@ static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_
 	while ((pos + 5) < packet->payload_packet_len) {
 		if (memcmp(&packet->payload[pos], "MGCP ", 5) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_MGCP, ipoque_struct, IPQ_LOG_DEBUG, "MGCP match.\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_MGCP);
+			ipoque_int_mgcp_add_connection(ipoque_struct);
 			return;
 		}
 		pos++;
@@ -76,7 +85,7 @@ static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_
 }
 
 
-static void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 
 	ipoque_search_mgcp_connection(ipoque_struct);

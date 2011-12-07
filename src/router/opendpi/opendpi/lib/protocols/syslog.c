@@ -1,6 +1,6 @@
 /*
  * syslog.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,11 +24,20 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_SYSLOG
 
-static void ipoque_search_syslog(struct ipoque_detection_module_struct
+static void ipoque_int_syslog_add_connection(struct ipoque_detection_module_struct
+											 *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SYSLOG, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_syslog(struct ipoque_detection_module_struct
 						  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
+
 	u8 i;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_SYSLOG, ipoque_struct, IPQ_LOG_DEBUG, "search syslog\n");
@@ -60,6 +69,27 @@ static void ipoque_search_syslog(struct ipoque_detection_module_struct
 			IPQ_LOG(IPOQUE_PROTOCOL_SYSLOG, ipoque_struct, IPQ_LOG_DEBUG, "no blank following the >: do nothing.\n");
 		}
 
+		/* check for "last message repeated" */
+		if (i + sizeof("last message") - 1 <= packet->payload_packet_len &&
+			memcmp(packet->payload + i, "last message", sizeof("last message") - 1) == 0) {
+
+			IPQ_LOG(IPOQUE_PROTOCOL_SYSLOG, ipoque_struct, IPQ_LOG_DEBUG, "found syslog by 'last message' string.\n");
+
+			ipoque_int_syslog_add_connection(ipoque_struct);
+
+			return;
+		} else if (i + sizeof("snort: ") - 1 <= packet->payload_packet_len &&
+				   memcmp(packet->payload + i, "snort: ", sizeof("snort: ") - 1) == 0) {
+
+			/* snort events */
+
+			IPQ_LOG(IPOQUE_PROTOCOL_SYSLOG, ipoque_struct, IPQ_LOG_DEBUG, "found syslog by 'snort: ' string.\n");
+
+			ipoque_int_syslog_add_connection(ipoque_struct);
+
+			return;
+		}
+
 		if (ipq_mem_cmp(&packet->payload[i], "Jan", 3) != 0
 			&& ipq_mem_cmp(&packet->payload[i], "Feb", 3) != 0
 			&& ipq_mem_cmp(&packet->payload[i], "Mar", 3) != 0
@@ -85,7 +115,7 @@ static void ipoque_search_syslog(struct ipoque_detection_module_struct
 			IPQ_LOG(IPOQUE_PROTOCOL_SYSLOG, ipoque_struct, IPQ_LOG_DEBUG,
 					"a month-shortname following: syslog detected.\n");
 
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SYSLOG);
+			ipoque_int_syslog_add_connection(ipoque_struct);
 
 			return;
 		}

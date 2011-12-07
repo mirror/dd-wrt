@@ -1,6 +1,6 @@
 /*
  * popo.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,15 +24,20 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_POPO
 
-static void ipoque_search_popo_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_int_popo_add_connection(struct ipoque_detection_module_struct
+										   *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_POPO, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_popo_tcp_udp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_POPO, &src, &dst);
 	if (packet->tcp != NULL) {
 		if ((packet->payload_packet_len == 20)
 			&& get_u32(packet->payload, 0) == htonl(0x0c000000)
@@ -40,7 +45,7 @@ static void ipoque_search_popo_tcp_udp(struct ipoque_detection_module_struct
 			&& get_u32(packet->payload, 8) == htonl(0x06000000)
 			&& get_u32(packet->payload, 12) == 0 && get_u32(packet->payload, 16) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_POPO, ipoque_struct, IPQ_LOG_DEBUG, "POPO detected\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POPO);
+			ipoque_int_popo_add_connection(ipoque_struct);
 			return;
 		}
 
@@ -53,7 +58,7 @@ static void ipoque_search_popo_tcp_udp(struct ipoque_detection_module_struct
 			if (ntohl(packet->iph->daddr) >= IPOQUE_POPO_IP_SUBNET_START
 				&& ntohl(packet->iph->daddr) <= IPOQUE_POPO_IP_SUBNET_END) {
 				IPQ_LOG(IPOQUE_PROTOCOL_POPO, ipoque_struct, IPQ_LOG_DEBUG, "POPO ip subnet detected\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POPO);
+				ipoque_int_popo_add_connection(ipoque_struct);
 				return;
 			}
 		}
@@ -67,7 +72,7 @@ static void ipoque_search_popo_tcp_udp(struct ipoque_detection_module_struct
 				if (!memcmp(&packet->payload[ii + 1], "163.com", 7)
 					|| (ii <= packet->payload_packet_len - 13 && !memcmp(&packet->payload[ii + 1], "popo.163.com", 12))) {
 					IPQ_LOG(IPOQUE_PROTOCOL_POPO, ipoque_struct, IPQ_LOG_DEBUG, "POPO  detected.\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_POPO);
+					ipoque_int_popo_add_connection(ipoque_struct);
 					return;
 				}
 		}

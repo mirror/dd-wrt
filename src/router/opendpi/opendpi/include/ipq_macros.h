@@ -1,6 +1,6 @@
 /*
  * ipq_macros.h
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -27,6 +27,11 @@
 
 #ifndef __IPQ_MACROS_H__
 #define __IPQ_MACROS_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #if IPOQUE_MAX_SUPPORTED_PROTOCOLS >= 128
 	typedef struct ipoque_protocol_bitmask_struct {
@@ -183,4 +188,7 @@
                                 ipq_parse_packet_line_info(ipoque_struct);      \
                         }                                                       \
 
+#ifdef __cplusplus
+}
+#endif
 #endif
