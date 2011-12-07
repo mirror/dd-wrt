@@ -1,6 +1,6 @@
 /*
  * ssh.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,23 +24,33 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_SSH
 
-static void ipoque_search_ssh_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_int_ssh_add_connection(struct ipoque_detection_module_struct
+										  *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SSH, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_ssh_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
-	if (flow->ssh_stage == 0) {
+
+
+	if (flow->l4.tcp.ssh_stage == 0) {
 		if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100
 			&& memcmp(packet->payload, "SSH-", 4) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SSH, ipoque_struct, IPQ_LOG_DEBUG, "ssh stage 0 passed\n");
-			flow->ssh_stage = 1 + packet->packet_direction;
+			flow->l4.tcp.ssh_stage = 1 + packet->packet_direction;
 			return;
 		}
-	} else if (flow->ssh_stage == (2 - packet->packet_direction)) {
+	} else if (flow->l4.tcp.ssh_stage == (2 - packet->packet_direction)) {
 		if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100
 			&& memcmp(packet->payload, "SSH-", 4) == 0) {
 			IPQ_LOG(IPOQUE_PROTOCOL_SSH, ipoque_struct, IPQ_LOG_DEBUG, "found ssh\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_SSH);
+			ipoque_int_ssh_add_connection(ipoque_struct);
 			return;
 
 		}
@@ -48,7 +58,7 @@ static void ipoque_search_ssh_tcp(struct ipoque_detection_module_struct *ipoque_
 
 	}
 
-	IPQ_LOG(IPOQUE_PROTOCOL_SSH, ipoque_struct, IPQ_LOG_DEBUG, "excluding ssh at stage %d\n", flow->ssh_stage);
+	IPQ_LOG(IPOQUE_PROTOCOL_SSH, ipoque_struct, IPQ_LOG_DEBUG, "excluding ssh at stage %d\n", flow->l4.tcp.ssh_stage);
 
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_SSH);
 }

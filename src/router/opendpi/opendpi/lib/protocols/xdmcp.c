@@ -1,6 +1,6 @@
 /*
  * xdmcp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,11 +24,20 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_XDMCP
 
-static void ipoque_search_xdmcp(struct ipoque_detection_module_struct
+
+static void ipoque_int_xdmcp_add_connection(struct ipoque_detection_module_struct
+											*ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_XDMCP, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_xdmcp(struct ipoque_detection_module_struct
 						 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
+//      struct ipoque_id_struct         *src=ipoque_struct->src;
+//      struct ipoque_id_struct         *dst=ipoque_struct->dst;
 
 	IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "search xdmcp.\n");
 
@@ -38,7 +47,7 @@ static void ipoque_search_xdmcp(struct ipoque_detection_module_struct
 		&& ntohs(get_u16(packet->payload, 6)) == 0x1200 && ntohs(get_u16(packet->payload, 8)) == 0x1000) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "found xdmcp over tcp.\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_XDMCP);
+		ipoque_int_xdmcp_add_connection(ipoque_struct);
 		return;
 	}
 	if (packet->udp != NULL && ntohs(packet->udp->dest) == 177
@@ -46,7 +55,7 @@ static void ipoque_search_xdmcp(struct ipoque_detection_module_struct
 		&& ntohs(get_u16(packet->payload, 0)) == 0x0001 && ntohs(get_u16(packet->payload, 2)) == 0x0002) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_XDMCP, ipoque_struct, IPQ_LOG_DEBUG, "found xdmcp over udp.\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_XDMCP);
+		ipoque_int_xdmcp_add_connection(ipoque_struct);
 		return;
 	}
 

@@ -1,6 +1,6 @@
 /*
  * irc.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -30,6 +30,12 @@
                                               if(timestamp > time_err[t1]) {\
                                                 timestamp = time_err[t1];\
                                                 less = t1;}}}
+
+static void ipoque_int_irc_add_connection(struct ipoque_detection_module_struct
+										  *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_IRC, IPOQUE_REAL_PROTOCOL);
+}
 
 static inline u8 ipoque_is_duplicate(struct ipoque_id_struct *id_t, u16 port)
 {
@@ -67,6 +73,66 @@ static u8 ipq_check_for_NOTICE_or_PRIVMSG(struct ipoque_detection_module_struct 
 
 }
 
+static u8 ipq_check_for_Nickname(struct ipoque_detection_module_struct *ipoque_struct)
+{
+	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	u16 i, packetl = packet->payload_packet_len;
+
+	if (packetl < 4) {
+		return 0;
+	}
+
+	for (i = 0; i < (packetl - 4); i++) {
+		if (packet->payload[i] == 'N' || packet->payload[i] == 'n') {
+			if ((((packetl - (i + 1)) >= 4) && memcmp(&packet->payload[i + 1], "ick=", 4) == 0)
+				|| (((packetl - (i + 1)) >= 8) && (memcmp(&packet->payload[i + 1], "ickname=", 8) == 0))
+				|| (((packetl - (i + 1)) >= 8) && (memcmp(&packet->payload[i + 1], "ickName=", 8) == 0))) {
+				IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "found HTTP IRC Nickname pattern\n");
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static u8 ipq_check_for_cmd(struct ipoque_detection_module_struct *ipoque_struct)
+{
+	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	u16 i;
+
+	if (packet->payload_packet_len < 4) {
+		return 0;
+	}
+
+	for (i = 0; i < packet->payload_packet_len - 4; i++) {
+		if (packet->payload[i] == 'c') {
+			if (memcmp(&packet->payload[i + 1], "md=", 3) == 0) {
+				IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "found HTTP IRC cmd pattern  \n");
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static u8 ipq_check_for_IRC_traces(const u8 * ptr, u16 len)
+{
+	u16 i;
+
+	if (len < 4) {
+		return 0;
+	}
+
+	for (i = 0; i < len - 4; i++) {
+		if (ptr[i] == 'i') {
+			if (memcmp(&ptr[i + 1], "rc.", 3) == 0) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 
 u8 ipoque_search_irc_ssl_detect_ninty_percent_but_very_fast(struct ipoque_detection_module_struct * ipoque_struct);
 
@@ -81,201 +147,209 @@ u8 ipoque_search_irc_ssl_detect_ninty_percent_but_very_fast(struct ipoque_detect
 
 	/* case 1: len 1460, len 1460, len 1176 several times in one direction, than len = 4, 4096, 8192 in the other direction */
 	if (packet->payload_packet_len == 1460
-		&& ((flow->irc_stage2 == 0 && flow->irc_direction == 0) || (flow->irc_stage2 == 3
-																	&& flow->irc_direction ==
-																	1 + packet->packet_direction))) {
-		flow->irc_stage2 = 1;
-		flow->irc_direction = 1 + packet->packet_direction;
+		&& ((flow->l4.tcp.irc_stage2 == 0 && flow->l4.tcp.irc_direction == 0) || (flow->l4.tcp.irc_stage2 == 3
+																				  && flow->l4.tcp.irc_direction ==
+																				  1 + packet->packet_direction))) {
+		flow->l4.tcp.irc_stage2 = 1;
+		flow->l4.tcp.irc_direction = 1 + packet->packet_direction;
 		return 1;
 	}
-	if (packet->payload_packet_len == 1460 && flow->irc_stage2 == 1
-		&& flow->irc_direction == 1 + packet->packet_direction) {
-		flow->irc_stage2 = 2;
+	if (packet->payload_packet_len == 1460 && flow->l4.tcp.irc_stage2 == 1
+		&& flow->l4.tcp.irc_direction == 1 + packet->packet_direction) {
+		flow->l4.tcp.irc_stage2 = 2;
 		return 1;
 	}
-	if (packet->payload_packet_len == 1176 && flow->irc_stage2 == 2
-		&& flow->irc_direction == 1 + packet->packet_direction) {
-		flow->irc_stage2 = 3;
-		flow->irc_0x1000_full = 1;
+	if (packet->payload_packet_len == 1176 && flow->l4.tcp.irc_stage2 == 2
+		&& flow->l4.tcp.irc_direction == 1 + packet->packet_direction) {
+		flow->l4.tcp.irc_stage2 = 3;
+		flow->l4.tcp.irc_0x1000_full = 1;
 		return 1;
 	}
-	if (packet->payload_packet_len == 4 && (flow->irc_stage2 == 3 || flow->irc_0x1000_full == 1)
-		&& flow->irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 0x1000
-																   || ntohs(get_u16(packet->payload, 2)) == 0x2000)) {
+	if (packet->payload_packet_len == 4 && (flow->l4.tcp.irc_stage2 == 3 || flow->l4.tcp.irc_0x1000_full == 1)
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 0x1000
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  0x2000)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1460,1460,1176,<-4096||8192");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
 	/* case 2: len 1448, len 1448, len 1200 several times in one direction, than len = 4, 4096, 8192 in the other direction */
 	if (packet->payload_packet_len == 1448
-		&& ((flow->irc_stage2 == 0 && flow->irc_direction == 0) || (flow->irc_stage2 == 6
-																	&& flow->irc_direction ==
-																	1 + packet->packet_direction))) {
-		flow->irc_stage2 = 4;
-		flow->irc_direction = 1 + packet->packet_direction;
+		&& ((flow->l4.tcp.irc_stage2 == 0 && flow->l4.tcp.irc_direction == 0) || (flow->l4.tcp.irc_stage2 == 6
+																				  && flow->l4.tcp.irc_direction ==
+																				  1 + packet->packet_direction))) {
+		flow->l4.tcp.irc_stage2 = 4;
+		flow->l4.tcp.irc_direction = 1 + packet->packet_direction;
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "len = 1448 first\n");
 		return 1;
 	}
-	if (packet->payload_packet_len == 1448 && flow->irc_stage2 == 4
-		&& flow->irc_direction == 1 + packet->packet_direction) {
-		flow->irc_stage2 = 5;
+	if (packet->payload_packet_len == 1448 && flow->l4.tcp.irc_stage2 == 4
+		&& flow->l4.tcp.irc_direction == 1 + packet->packet_direction) {
+		flow->l4.tcp.irc_stage2 = 5;
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "len = 1448 second \n");
 		return 1;
 	}
-	if (packet->payload_packet_len == 1200 && flow->irc_stage2 == 5
-		&& flow->irc_direction == 1 + packet->packet_direction) {
-		flow->irc_stage2 = 6;
-		flow->irc_0x1000_full = 1;
+	if (packet->payload_packet_len == 1200 && flow->l4.tcp.irc_stage2 == 5
+		&& flow->l4.tcp.irc_direction == 1 + packet->packet_direction) {
+		flow->l4.tcp.irc_stage2 = 6;
+		flow->l4.tcp.irc_0x1000_full = 1;
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "len = 1200  \n");
 		return 1;
 	}
-	if (packet->payload_packet_len == 4 && (flow->irc_stage2 == 6 || flow->irc_0x1000_full == 1)
-		&& flow->irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 0x1000
-																   || ntohs(get_u16(packet->payload, 2)) == 0x2000)) {
+	if (packet->payload_packet_len == 4 && (flow->l4.tcp.irc_stage2 == 6 || flow->l4.tcp.irc_0x1000_full == 1)
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 0x1000
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  0x2000)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1448,1448,1200,<-4096||8192");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
 	/* case 3: several packets with len 1380, 1200, 1024, 1448, 1248,
 	 * than one packet in the other direction with the len or two times the len. */
-	if (packet->payload_packet_len == 1380 && ((flow->irc_stage2 == 0 && flow->irc_direction == 0)
-											   || (flow->irc_stage2 == 7
-												   && flow->irc_direction == 1 + packet->packet_direction))) {
-		flow->irc_stage2 = 7;
-		flow->irc_direction = 1 + packet->packet_direction;
+	if (packet->payload_packet_len == 1380 && ((flow->l4.tcp.irc_stage2 == 0 && flow->l4.tcp.irc_direction == 0)
+											   || (flow->l4.tcp.irc_stage2 == 7
+												   && flow->l4.tcp.irc_direction == 1 + packet->packet_direction))) {
+		flow->l4.tcp.irc_stage2 = 7;
+		flow->l4.tcp.irc_direction = 1 + packet->packet_direction;
 		return 1;
 	}
-	if (packet->payload_packet_len == 4 && flow->irc_stage2 == 7
-		&& flow->irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1380
-																   || ntohs(get_u16(packet->payload, 2)) == 2760)) {
+	if (packet->payload_packet_len == 4 && flow->l4.tcp.irc_stage2 == 7
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1380
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  2760)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1380,<-1380||2760");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
-	if (packet->payload_packet_len == 1200 && ((flow->irc_stage2 == 0 && flow->irc_direction == 0)
-											   || (flow->irc_stage2 == 8
-												   && flow->irc_direction == 1 + packet->packet_direction))) {
-		flow->irc_stage2 = 8;
-		flow->irc_direction = 1 + packet->packet_direction;
+	if (packet->payload_packet_len == 1200 && ((flow->l4.tcp.irc_stage2 == 0 && flow->l4.tcp.irc_direction == 0)
+											   || (flow->l4.tcp.irc_stage2 == 8
+												   && flow->l4.tcp.irc_direction == 1 + packet->packet_direction))) {
+		flow->l4.tcp.irc_stage2 = 8;
+		flow->l4.tcp.irc_direction = 1 + packet->packet_direction;
 		return 1;
 	}
-	if (packet->payload_packet_len == 4 && flow->irc_stage2 == 8
-		&& flow->irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1200
-																   || ntohs(get_u16(packet->payload, 2)) == 2400)) {
+	if (packet->payload_packet_len == 4 && flow->l4.tcp.irc_stage2 == 8
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1200
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  2400)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1200,<-1200||2400");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
-	if (packet->payload_packet_len == 1024 && ((flow->irc_stage2 == 0 && flow->irc_direction == 0)
-											   || (flow->irc_stage2 == 9
-												   && flow->irc_direction == 1 + packet->packet_direction))) {
-		flow->irc_stage2 = 9;
-		flow->irc_direction = 1 + packet->packet_direction;
+	if (packet->payload_packet_len == 1024 && ((flow->l4.tcp.irc_stage2 == 0 && flow->l4.tcp.irc_direction == 0)
+											   || (flow->l4.tcp.irc_stage2 == 9
+												   && flow->l4.tcp.irc_direction == 1 + packet->packet_direction))) {
+		flow->l4.tcp.irc_stage2 = 9;
+		flow->l4.tcp.irc_direction = 1 + packet->packet_direction;
 		return 1;
 	}
-	if (packet->payload_packet_len == 4 && (flow->irc_stage2 == 9 || flow->irc_stage2 == 15)
-		&& flow->irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1024
-																   || ntohs(get_u16(packet->payload, 2)) == 2048)) {
+	if (packet->payload_packet_len == 4 && (flow->l4.tcp.irc_stage2 == 9 || flow->l4.tcp.irc_stage2 == 15)
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1024
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  2048)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1024,<-1024||2048");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
-	if (packet->payload_packet_len == 1248 && ((flow->irc_stage2 == 0 && flow->irc_direction == 0)
-											   || (flow->irc_stage2 == 10
-												   && flow->irc_direction == 1 + packet->packet_direction))) {
-		flow->irc_stage2 = 10;
-		flow->irc_direction = 1 + packet->packet_direction;
+	if (packet->payload_packet_len == 1248 && ((flow->l4.tcp.irc_stage2 == 0 && flow->l4.tcp.irc_direction == 0)
+											   || (flow->l4.tcp.irc_stage2 == 10
+												   && flow->l4.tcp.irc_direction == 1 + packet->packet_direction))) {
+		flow->l4.tcp.irc_stage2 = 10;
+		flow->l4.tcp.irc_direction = 1 + packet->packet_direction;
 		return 1;
 	}
-	if (packet->payload_packet_len == 4 && flow->irc_stage2 == 10
-		&& flow->irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1248
-																   || ntohs(get_u16(packet->payload, 2)) == 2496)) {
+	if (packet->payload_packet_len == 4 && flow->l4.tcp.irc_stage2 == 10
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1248
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  2496)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1248,<-1248||2496");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
 	if (packet->payload_packet_len == 1448
-		&& (flow->irc_stage2 == 5 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 11;
+		&& (flow->l4.tcp.irc_stage2 == 5 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 11;
 		return 1;
 	}
 	if (packet->payload_packet_len == 4
-		&& (flow->irc_stage2 == 4 || flow->irc_stage2 == 5 || flow->irc_stage2 == 11 || flow->irc_stage2 == 13)
-		&& flow->irc_direction == 2 - packet->packet_direction
-		&& (ntohs(get_u16(packet->payload, 2)) == 1448 || ntohs(get_u16(packet->payload, 2)) == 2896)) {
+		&& (flow->l4.tcp.irc_stage2 == 4 || flow->l4.tcp.irc_stage2 == 5 || flow->l4.tcp.irc_stage2 == 11
+			|| flow->l4.tcp.irc_stage2 == 13)
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && (ntohs(get_u16(packet->payload, 2)) == 1448
+																		  || ntohs(get_u16(packet->payload, 2)) ==
+																		  2896)) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1448,<-1448||2896");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
 	/* case 4 : five packets with len = 1448, one with len 952, than one packet from other direction len = 8192 */
 	if (packet->payload_packet_len == 1448
-		&& (flow->irc_stage2 == 11 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 12;
+		&& (flow->l4.tcp.irc_stage2 == 11 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 12;
 		return 1;
 	}
 	if (packet->payload_packet_len == 1448
-		&& (flow->irc_stage2 == 12 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 13;
+		&& (flow->l4.tcp.irc_stage2 == 12 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 13;
 		return 1;
 	}
 	if (packet->payload_packet_len == 952
-		&& (flow->irc_stage2 == 13 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 14;
+		&& (flow->l4.tcp.irc_stage2 == 13 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 14;
 		return 1;
 	}
 	if (packet->payload_packet_len == 4
-		&& flow->irc_stage2 == 14
-		&& flow->irc_direction == 2 - packet->packet_direction && ntohs(get_u16(packet->payload, 2)) == 8192) {
+		&& flow->l4.tcp.irc_stage2 == 14
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && ntohs(get_u16(packet->payload, 2)) == 8192) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 				"IRC SSL detected: ->1448,1448,1448,1448,1448,952,<-8192");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
 	/* case 5: len 1024, len 1448, len 1448, len 1200, len 1448, len 600 */
 	if (packet->payload_packet_len == 1448
-		&& (flow->irc_stage2 == 9 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 15;
+		&& (flow->l4.tcp.irc_stage2 == 9 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 15;
 		return 1;
 	}
 	if (packet->payload_packet_len == 1448
-		&& (flow->irc_stage2 == 15 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 16;
+		&& (flow->l4.tcp.irc_stage2 == 15 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 16;
 		return 1;
 	}
 	if (packet->payload_packet_len == 1200
-		&& (flow->irc_stage2 == 16 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 17;
+		&& (flow->l4.tcp.irc_stage2 == 16 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 17;
 		return 1;
 	}
 	if (packet->payload_packet_len == 1448
-		&& (flow->irc_stage2 == 17 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 18;
+		&& (flow->l4.tcp.irc_stage2 == 17 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 18;
 		return 1;
 	}
 	if (packet->payload_packet_len == 600
-		&& (flow->irc_stage2 == 18 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 19;
+		&& (flow->l4.tcp.irc_stage2 == 18 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 19;
 		return 1;
 	}
 	if (packet->payload_packet_len == 4
-		&& flow->irc_stage2 == 19
-		&& flow->irc_direction == 2 - packet->packet_direction && ntohs(get_u16(packet->payload, 2)) == 7168) {
+		&& flow->l4.tcp.irc_stage2 == 19
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && ntohs(get_u16(packet->payload, 2)) == 7168) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 				"IRC SSL detected: ->1024,1448,1448,1200,1448,600,<-7168");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 	}
 	/* -> 1024, 1380, -> 2404    */
 	if (packet->payload_packet_len == 1380
-		&& (flow->irc_stage2 == 9 && flow->irc_direction == 1 + packet->packet_direction)) {
-		flow->irc_stage2 = 20;
+		&& (flow->l4.tcp.irc_stage2 == 9 && flow->l4.tcp.irc_direction == 1 + packet->packet_direction)) {
+		flow->l4.tcp.irc_stage2 = 20;
 		return 1;
 	}
 	if (packet->payload_packet_len == 4
-		&& flow->irc_stage2 == 20
-		&& flow->irc_direction == 2 - packet->packet_direction && ntohs(get_u16(packet->payload, 2)) == 2404) {
+		&& flow->l4.tcp.irc_stage2 == 20
+		&& flow->l4.tcp.irc_direction == 2 - packet->packet_direction && ntohs(get_u16(packet->payload, 2)) == 2404) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC SSL detected: ->1024,1380 <-2404");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+		ipoque_int_irc_add_connection(ipoque_struct);
 		return 1;
 
 	}
@@ -283,46 +357,45 @@ u8 ipoque_search_irc_ssl_detect_ninty_percent_but_very_fast(struct ipoque_detect
 }
 
 
-static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 	int less;
+	u16 c = 0;
 	u16 c1 = 0;
 	u16 port = 0;
 	u16 sport = 0;
 	u16 dport = 0;
 	u16 counter = 0;
+	u16 i = 0;
 	u16 j = 0;
 	u16 k = 0;
 	u16 h;
+	u16 http_content_ptr_len = 0;
 	u8 space = 0;
-	const u8 *p, *end, *line;
-	int len;
-
-
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_IRC, &src, &dst);
 
 	IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "irc : search irc\n");
-	if (flow->detected_protocol != IPOQUE_PROTOCOL_IRC && flow->packet_counter > 70) {
+	if (flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC && flow->packet_counter > 70) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "exclude irc, packet_counter > 70\n");
 		IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_IRC);
 		return;
 	}
-	if (flow->detected_protocol != IPOQUE_PROTOCOL_IRC && flow->packet_counter > 30 && flow->irc_stage2 == 0) {
+	if (flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC && flow->packet_counter > 30 &&
+		flow->l4.tcp.irc_stage2 == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "packet_counter > 30, exclude irc.\n");
 		IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_IRC);
 		return;
 	}
-	if (packet->detected_protocol == IPOQUE_PROTOCOL_IRC) {
+	if (packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_IRC) {
 		if (src != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-							(packet->tick_timestamp - src->irc_ts) < ipoque_struct->sd->irc_timeout)) {
+							(packet->tick_timestamp - src->irc_ts) < ipoque_struct->irc_timeout)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "irc : save src connection packet detected\n");
 			src->irc_ts = packet->tick_timestamp;
 		} else if (dst != NULL && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-								   (packet->tick_timestamp - dst->irc_ts) < ipoque_struct->sd->irc_timeout)) {
+								   (packet->tick_timestamp - dst->irc_ts) < ipoque_struct->irc_timeout)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "irc : save dst connection packet detected\n");
 			dst->irc_ts = packet->tick_timestamp;
 		}
@@ -331,12 +404,12 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 	if (((dst != NULL && IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, IPOQUE_PROTOCOL_IRC)
 		  && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
 			  (packet->tick_timestamp - dst->irc_ts)) <
-		  ipoque_struct->sd->irc_timeout)) || (src != NULL
+		  ipoque_struct->irc_timeout)) || (src != NULL
 										   &&
 										   IPOQUE_COMPARE_PROTOCOL_TO_BITMASK
 										   (src->detected_protocol_bitmask, IPOQUE_PROTOCOL_IRC)
 										   && ((IPOQUE_TIMESTAMP_COUNTER_SIZE)
-											   (packet->tick_timestamp - src->irc_ts)) < ipoque_struct->sd->irc_timeout)) {
+											   (packet->tick_timestamp - src->irc_ts)) < ipoque_struct->irc_timeout)) {
 		if (packet->tcp != NULL) {
 			sport = packet->tcp->source;
 			dport = packet->tcp->dest;
@@ -347,7 +420,7 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 					dst->last_time_port_used[counter] = packet->tick_timestamp;
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 							"dest port matched with the DCC port and the flow is marked as IRC");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+					ipoque_int_irc_add_connection(ipoque_struct);
 					return;
 				}
 			}
@@ -356,7 +429,7 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 			for (counter = 0; counter < src->irc_number_of_port; counter++) {
 				if (src->irc_port[counter] == sport || src->irc_port[counter] == dport) {
 					src->last_time_port_used[counter] = packet->tick_timestamp;
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+					ipoque_int_irc_add_connection(ipoque_struct);
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 							"Source port matched with the DCC port and the flow is marked as IRC");
 					return;
@@ -367,7 +440,7 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 
 
 
-	if (flow->detected_protocol != IPOQUE_PROTOCOL_IRC
+	if (flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC
 		&& flow->packet_counter == 2 && (packet->payload_packet_len > 400 && packet->payload_packet_len < 1381)) {
 		for (c1 = 50; c1 < packet->payload_packet_len - 23; c1++) {
 			if (packet->payload[c1] == 'i' || packet->payload[c1] == 'd') {
@@ -390,39 +463,49 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 							"IRC SSL detected with :- irc.hackthissite.org0 | irc.gamepad.ca1 | dungeon.axenet.org0 "
 							"| dazed.nuggethaus.net | irc.indymedia.org | irc.discostars.de1 ");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+					ipoque_int_irc_add_connection(ipoque_struct);
 					break;
 				}
 			}
 		}
 	}
-	if (flow->detected_protocol != IPOQUE_PROTOCOL_IRC &&
+	if (flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC &&
 		ipoque_search_irc_ssl_detect_ninty_percent_but_very_fast(ipoque_struct) != 0) {
 		return;
 	}
 
-	if (flow->detected_protocol != IPOQUE_PROTOCOL_IRC && flow->packet_counter < 20 && packet->payload_packet_len >= 8) {
-		if (get_u8(packet->payload, packet->payload_packet_len - 1) == 0x0a) {
-			int lines = 0;
-
+	if (flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC && flow->packet_counter < 20
+		&& packet->payload_packet_len >= 8) {
+		if (get_u8(packet->payload, packet->payload_packet_len - 1) == 0x0a
+			|| (ntohs(get_u16(packet->payload, packet->payload_packet_len - 2)) == 0x0a00)) {
 			if (memcmp(packet->payload, ":", 1) == 0) {
-				for (p = packet->payload, end = p + packet->payload_packet_len;
-				     get_next_line(&p, end, &line, &len);) {
-
-					lines++;
-					if (line[0] != ':')
-						continue;
-
-					flow->irc_3a_counter++;
-					if (flow->irc_3a_counter == 7) {	/* ':' == 0x3a */
-						IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "0x3a. seven times. found irc.");
-						ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
-						goto detected_irc;
+				if (packet->payload[packet->payload_packet_len - 2] != 0x0d
+					&& packet->payload[packet->payload_packet_len - 1] == 0x0a) {
+					ipq_parse_packet_line_info_unix(ipoque_struct);
+					packet->parsed_lines = packet->parsed_unix_lines;
+					for (i = 0; i < packet->parsed_lines; i++) {
+						packet->line[i] = packet->unix_line[i];
+						packet->line[i].ptr = packet->unix_line[i].ptr;
+						packet->line[i].len = packet->unix_line[i].len;
+					}
+				} else if (packet->payload[packet->payload_packet_len - 2] == 0x0d) {
+					ipq_parse_packet_line_info(ipoque_struct);
+				} else {
+					flow->l4.tcp.irc_3a_counter++;
+				}
+				for (i = 0; i < packet->parsed_lines; i++) {
+					if (packet->line[i].ptr[0] == ':') {
+						flow->l4.tcp.irc_3a_counter++;
+						if (flow->l4.tcp.irc_3a_counter == 7) {	/* ':' == 0x3a */
+							IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "0x3a. seven times. found irc.");
+							ipoque_int_irc_add_connection(ipoque_struct);
+							goto detected_irc;
+						}
 					}
 				}
-				if (flow->irc_3a_counter == 7) {	/* ':' == 0x3a */
+				if (flow->l4.tcp.irc_3a_counter == 7) {	/* ':' == 0x3a */
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "0x3a. seven times. found irc.");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
+					ipoque_int_irc_add_connection(ipoque_struct);
 					goto detected_irc;
 				}
 			}
@@ -432,36 +515,59 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 				|| (memcmp(packet->payload, ":", 1) == 0 && ipq_check_for_NOTICE_or_PRIVMSG(ipoque_struct) != 0)
 				|| (memcmp(packet->payload, "PONG ", 5) == 0)
 				|| (memcmp(packet->payload, "PING ", 5) == 0)
+				|| (memcmp(packet->payload, "JOIN ", 5) == 0)
 				|| (memcmp(packet->payload, "NOTICE ", 7) == 0)
-				|| (memcmp(packet->payload, "PRIVMSG ", 8) == 0)) {
+				|| (memcmp(packet->payload, "PRIVMSG ", 8) == 0)
+				|| (memcmp(packet->payload, "VERSION ", 8) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 						"USER, NICK, PASS, NOTICE, PRIVMSG one time");
-				if (flow->irc_stage == 2) {
+				if (flow->l4.tcp.irc_stage == 2) {
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "found irc");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
-					flow->irc_stage = 3;
+					ipoque_int_irc_add_connection(ipoque_struct);
+					flow->l4.tcp.irc_stage = 3;
 				}
-				if (flow->irc_stage == 1) {
+				if (flow->l4.tcp.irc_stage == 1) {
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "second time, stage=2");
-					flow->irc_stage = 2;
+					flow->l4.tcp.irc_stage = 2;
 				}
-				if (flow->irc_stage == 0) {
+				if (flow->l4.tcp.irc_stage == 0) {
 					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "first time, stage=1");
-					flow->irc_stage = 1;
+					flow->l4.tcp.irc_stage = 1;
 				}
 				/* irc packets can have either windows line breaks (0d0a) or unix line breaks (0a) */
-				if (packet->payload[packet->payload_packet_len - 1] == 0x0a && lines > 1) {
-					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
-							"packet contains more than one line");
-					for (p = packet->payload, end = p + packet->payload_packet_len;
-					     get_next_line(&p, end, &line, &len);) {
-						if (len > 4 && (memcmp(line, "NICK ", 5) == 0 ||
-								memcmp(line, "USER ", 5) == 0)) {
-							IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct,
-									IPQ_LOG_TRACE, "two icq signal words in the same packet");
-							ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_IRC);
-							flow->irc_stage = 3;
-							return;
+				if (packet->payload[packet->payload_packet_len - 2] == 0x0d
+					&& packet->payload[packet->payload_packet_len - 1] == 0x0a) {
+					ipq_parse_packet_line_info(ipoque_struct);
+					if (packet->parsed_lines > 1) {
+						IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
+								"packet contains more than one line");
+						for (c = 1; c < packet->parsed_lines; c++) {
+							if (packet->line[c].len > 4 && (memcmp(packet->line[c].ptr, "NICK ", 5) == 0
+															|| memcmp(packet->line[c].ptr, "USER ", 5) == 0)) {
+								IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct,
+										IPQ_LOG_TRACE, "two icq signal words in the same packet");
+								ipoque_int_irc_add_connection(ipoque_struct);
+								flow->l4.tcp.irc_stage = 3;
+								return;
+							}
+						}
+					}
+
+				} else if (packet->payload[packet->payload_packet_len - 1] == 0x0a) {
+					ipq_parse_packet_line_info_unix(ipoque_struct);
+					if (packet->parsed_unix_lines > 1) {
+						IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
+								"packet contains more than one line");
+						for (c = 1; c < packet->parsed_unix_lines; c++) {
+							if (packet->unix_line[c].len > 4 && (memcmp(packet->unix_line[c].ptr, "NICK ", 5) == 0
+																 || memcmp(packet->unix_line[c].ptr, "USER ",
+																		   5) == 0)) {
+								IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
+										"two icq signal words in the same packet");
+								ipoque_int_irc_add_connection(ipoque_struct);
+								flow->l4.tcp.irc_stage = 3;
+								return;
+							}
 						}
 					}
 				}
@@ -469,23 +575,80 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 		}
 	}
 
+ /**
+ * Trying to primarily detect the HTTP Web based IRC chat patterns based on the HTTP headers
+ * during the User login time.When the HTTP data gets posted using the POST method ,patterns
+ * will be searched in the HTTP content.
+ */
+	if ((flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC) && (flow->l4.tcp.irc_stage == 0)
+		&& (packet->payload_packet_len > 5)) {
+		//HTTP POST Method being employed
+		if (memcmp(packet->payload, "POST ", 5) == 0) {
+			ipq_parse_packet_line_info(ipoque_struct);
+			if (packet->parsed_lines) {
+				u16 http_header_len = (packet->line[packet->parsed_lines - 1].ptr - packet->payload) + 2;
+				if (packet->payload_packet_len > http_header_len) {
+					http_content_ptr_len = packet->payload_packet_len - http_header_len;
+				}
+				if ((ipq_check_for_IRC_traces(packet->line[0].ptr, packet->line[0].len))
+					|| ((packet->http_url_name.ptr)
+						&& (ipq_check_for_IRC_traces(packet->http_url_name.ptr, packet->http_url_name.len)))
+					|| ((packet->referer_line.ptr)
+						&& (ipq_check_for_IRC_traces(packet->referer_line.ptr, packet->referer_line.len)))) {
+					IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
+							"IRC detected from the Http URL/ Referer header ");
+					flow->l4.tcp.irc_stage = 1;
+					// HTTP POST Request body is not in the same packet.
+					if (!http_content_ptr_len) {
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	if ((flow->detected_protocol_stack[0] != IPOQUE_PROTOCOL_IRC) && (flow->l4.tcp.irc_stage == 1)) {
+		if ((((packet->payload_packet_len - http_content_ptr_len) > 10)
+			 && (memcmp(packet->payload + http_content_ptr_len, "interface=", 10) == 0)
+			 && (ipq_check_for_Nickname(ipoque_struct) != 0))
+			|| (((packet->payload_packet_len - http_content_ptr_len) > 5)
+				&& (memcmp(packet->payload + http_content_ptr_len, "item=", 5) == 0)
+				&& (ipq_check_for_cmd(ipoque_struct) != 0))) {
+			IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "IRC Nickname, cmd,  one time");
+			ipoque_int_irc_add_connection(ipoque_struct);
+			return;
+		}
+	}
+
   detected_irc:
 	IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "detected_irc:");
 
-	if (flow->detected_protocol == IPOQUE_PROTOCOL_IRC) {
+	if (flow->detected_protocol_stack[0] == IPOQUE_PROTOCOL_IRC) {
 		/* maybe this can be deleted at the end */
 
-		if (packet->payload[packet->payload_packet_len - 1] != 0x0a)
+		if (packet->payload[packet->payload_packet_len - 2] != 0x0d
+			&& packet->payload[packet->payload_packet_len - 1] == 0x0a) {
+			IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG,
+					"ipq_parse_packet_line_info_unix(ipoque_struct);");
+			ipq_parse_packet_line_info_unix(ipoque_struct);
+			packet->parsed_lines = packet->parsed_unix_lines;
+			for (i = 0; i < packet->parsed_lines; i++) {
+				packet->line[i] = packet->unix_line[i];
+				packet->line[i].ptr = packet->unix_line[i].ptr;
+				packet->line[i].len = packet->unix_line[i].len;
+			}
+		} else if (packet->payload[packet->payload_packet_len - 2] == 0x0d) {
+			ipq_parse_packet_line_info(ipoque_struct);
+		} else {
 			return;
-
-		for (p = packet->payload, end = p + packet->payload_packet_len;
-		     get_next_line(&p, end, &line, &len);) {
-			if (len > 6 && memcmp(line, "NOTICE ", 7) == 0) {
+		}
+		for (i = 0; i < packet->parsed_lines; i++) {
+			if (packet->line[i].len > 6 && memcmp(packet->line[i].ptr, "NOTICE ", 7) == 0) {
 				IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "NOTICE");
-				for (j = 7; j < len - 8; j++) {
-					if (line[j] == ':') {
-						if (memcmp(&line[j + 1], "DCC SEND ", 9) == 0
-							|| memcmp(&line[j + 1], "DCC CHAT ", 9) == 0) {
+				for (j = 7; j < packet->line[i].len - 8; j++) {
+					if (packet->line[i].ptr[j] == ':') {
+						if (memcmp(&packet->line[i].ptr[j + 1], "DCC SEND ", 9) == 0
+							|| memcmp(&packet->line[i].ptr[j + 1], "DCC CHAT ", 9) == 0) {
 							IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 									"found NOTICE and DCC CHAT or DCC SEND.");
 						}
@@ -494,13 +657,13 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 			}
 			if (packet->payload_packet_len > 0 && packet->payload[0] == 0x3a /* 0x3a = ':' */ ) {
 				IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "3a");
-				for (j = 1; j < len - 9; j++) {
-					if (line[j] == ' ') {
+				for (j = 1; j < packet->line[i].len - 9; j++) {
+					if (packet->line[i].ptr[j] == ' ') {
 						j++;
-						if (line[j] == 'P') {
+						if (packet->line[i].ptr[j] == 'P') {
 							IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "P");
 							j++;
-							if (memcmp(&line[j], "RIVMSG ", 7) == 0)
+							if (memcmp(&packet->line[i].ptr[j], "RIVMSG ", 7) == 0)
 								IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "RIVMSG");
 							h = j + 7;
 							goto read_privmsg;
@@ -508,37 +671,37 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 					}
 				}
 			}
-			if (len > 7 && (memcmp(line, "PRIVMSG ", 8) == 0)) {
+			if (packet->line[i].len > 7 && (memcmp(packet->line[i].ptr, "PRIVMSG ", 8) == 0)) {
 				IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_DEBUG, "PRIVMSG	");
 				h = 7;
 			  read_privmsg:
-				for (j = h; j < len - 9; j++) {
-					if (line[j] == ':') {
-						if (memcmp(&line[j + 1], "xdcc ", 5) == 0) {
+				for (j = h; j < packet->line[i].len - 9; j++) {
+					if (packet->line[i].ptr[j] == ':') {
+						if (memcmp(&packet->line[i].ptr[j + 1], "xdcc ", 5) == 0) {
 							IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "xdcc should match.");
 						}
 						j += 2;
-						if (memcmp(&line[j], "DCC ", 4) == 0) {
+						if (memcmp(&packet->line[i].ptr[j], "DCC ", 4) == 0) {
 							j += 4;
 							IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "found DCC.");
-							if (memcmp(&line[j], "SEND ", 5) == 0
-								|| (memcmp(&line[j], "CHAT", 4) == 0)
-								|| (memcmp(&line[j], "chat", 4) == 0)
-								|| (memcmp(&line[j], "sslchat", 7) == 0)
-								|| (memcmp(&line[j], "TSEND", 5) == 0)) {
+							if (memcmp(&packet->line[i].ptr[j], "SEND ", 5) == 0
+								|| (memcmp(&packet->line[i].ptr[j], "CHAT", 4) == 0)
+								|| (memcmp(&packet->line[i].ptr[j], "chat", 4) == 0)
+								|| (memcmp(&packet->line[i].ptr[j], "sslchat", 7) == 0)
+								|| (memcmp(&packet->line[i].ptr[j], "TSEND", 5) == 0)) {
 								IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE,
 										"found CHAT,chat,sslchat,TSEND.");
 								j += 4;
 
-								while (len > j &&
-									   ((line[j] >= 'a' && line[j] <= 'z')
-										|| (line[j] >= 'A' && line[j] <= 'Z')
-										|| (line[j] >= '0' && line[j] <= '9')
-										|| (line[j] >= ' ')
-										|| (line[j] >= '.')
-										|| (line[j] >= '-'))) {
+								while (packet->line[i].len > j &&
+									   ((packet->line[i].ptr[j] >= 'a' && packet->line[i].ptr[j] <= 'z')
+										|| (packet->line[i].ptr[j] >= 'A' && packet->line[i].ptr[j] <= 'Z')
+										|| (packet->line[i].ptr[j] >= '0' && packet->line[i].ptr[j] <= '9')
+										|| (packet->line[i].ptr[j] >= ' ')
+										|| (packet->line[i].ptr[j] >= '.')
+										|| (packet->line[i].ptr[j] >= '-'))) {
 
-									if (line[j] == ' ') {
+									if (packet->line[i].ptr[j] == ' ') {
 										space++;
 										IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "space %u.", space);
 									}
@@ -549,7 +712,7 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 											k = j;
 											port =
 												ntohs_ipq_bytestream_to_number
-												(&line[j], packet->payload_packet_len - j, &j);
+												(&packet->line[i].ptr[j], packet->payload_packet_len - j, &j);
 											IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "port %u.",
 													port);
 											j = k;
@@ -590,7 +753,7 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 										}
 										if (dst != NULL) {
 											port = ntohs_ipq_bytestream_to_number
-												(&line[j], packet->payload_packet_len - j, &j);
+												(&packet->line[i].ptr[j], packet->payload_packet_len - j, &j);
 											IPQ_LOG(IPOQUE_PROTOCOL_IRC, ipoque_struct, IPQ_LOG_TRACE, "port %u.",
 													port);
 											// hier das gleiche wie oben.
@@ -644,7 +807,5 @@ static void ipoque_search_irc_tcp(struct ipoque_detection_module_struct *ipoque_
 		}
 	}
 }
-
-
 
 #endif

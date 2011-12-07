@@ -1,6 +1,6 @@
 /*
  * tftp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -24,7 +24,13 @@
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_TFTP
 
-static void ipoque_search_tftp(struct ipoque_detection_module_struct
+static void ipoque_int_tftp_add_connection(struct ipoque_detection_module_struct
+										   *ipoque_struct)
+{
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_TFTP, IPOQUE_REAL_PROTOCOL);
+}
+
+void ipoque_search_tftp(struct ipoque_detection_module_struct
 						*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -36,16 +42,17 @@ static void ipoque_search_tftp(struct ipoque_detection_module_struct
 
 
 
-	if (packet->payload_packet_len > 3 && flow->tftp_stage == 0 && ntohl(get_u32(packet->payload, 0)) == 0x00030001) {
+	if (packet->payload_packet_len > 3 && flow->l4.udp.tftp_stage == 0
+		&& ntohl(get_u32(packet->payload, 0)) == 0x00030001) {
 		IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "maybe tftp. need next packet.\n");
-		flow->tftp_stage = 1;
+		flow->l4.udp.tftp_stage = 1;
 		return;
 	}
-	if (packet->payload_packet_len > 3 && (flow->tftp_stage == 1)
+	if (packet->payload_packet_len > 3 && (flow->l4.udp.tftp_stage == 1)
 		&& ntohl(get_u32(packet->payload, 0)) == 0x00040001) {
 
 		IPQ_LOG(IPOQUE_PROTOCOL_TFTP, ipoque_struct, IPQ_LOG_DEBUG, "found tftp.\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_TFTP);
+		ipoque_int_tftp_add_connection(ipoque_struct);
 		return;
 	}
 	if (packet->payload_packet_len > 1

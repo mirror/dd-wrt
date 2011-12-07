@@ -1,6 +1,6 @@
 /*
  * rtsp.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -34,79 +34,32 @@
 #error RTSP requires RDP detection to work correctly
 #endif
 
-/* this function deals with UDP connections */
-static void ipoque_search_rdt_connection(struct ipoque_detection_module_struct
-										 *ipoque_struct)
+static void ipoque_int_rtsp_add_connection(struct ipoque_detection_module_struct
+										   *ipoque_struct, ipoque_protocol_type_t protocol_type)
 {
-	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	struct ipoque_id_struct *src;
-
-
-	IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found UDP\n");
-
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_RTSP, &src, NULL);
-
-	if (src != NULL) {
-		// UDP packets, check in case of timeout, bitmask, packet length and payload -> search the RDT Request which has the type 0xff03
-		if (src->rtsp_ts_set == 1
-			&& ((IPOQUE_TIMESTAMP_COUNTER_SIZE) (packet->tick_timestamp - src->rtsp_timer)) <
-			ipoque_struct->sd->rtsp_connection_timeout) {
-			if (ipq_packet_dst_ip_eql(packet, &src->rtsp_ip_address)
-				&& IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, IPOQUE_PROTOCOL_RTSP) != 0) {
-				if (packet->payload_packet_len == 3 && packet->payload[0] == 0x00 && packet->payload[1] == 0xff
-					&& packet->payload[2] == 0x03) {
-					IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found RTSP RDT.\n");
-					ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_RTSP);
-					return;
-				}
-			}
-		} else {
-			src->rtsp_ts_set = 0;
-		}
-	}
-
-	IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "didn't find RDT stream.\n");
-	return;
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_RTSP, protocol_type);
 }
 
 /* this function searches for a rtsp-"handshake" over tcp or udp. */
-static void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
+void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 
-	// in case of rtsp control flow, update timestamp from time to time
-	if (flow->detected_protocol == IPOQUE_PROTOCOL_RTSP && flow->rtsp_control_flow == 1) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "RTSP control flow update timestamp.\n");
-		ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_RTSP, &src, &dst);
-		if (dst != NULL) {
-			ipq_packet_src_ip_get(packet, &dst->rtsp_ip_address);
-			dst->rtsp_timer = packet->tick_timestamp;
-			dst->rtsp_ts_set = 1;
-		}
-		if (src != NULL) {
-			ipq_packet_dst_ip_get(packet, &src->rtsp_ip_address);
-			src->rtsp_timer = packet->tick_timestamp;
-			src->rtsp_ts_set = 1;
-		}
-		return;
-	}
+	IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "calling ipoque_search_rtsp_tcp_udp.\n");
 
-	if (flow->rtsprdt_stage == 0) {
+
+	if (flow->rtsprdt_stage == 0
+#ifdef IPOQUE_PROTOCOL_RTCP
+		&& !(packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_RTCP)
+#endif
+		) {
 		flow->rtsprdt_stage = 1 + packet->packet_direction;
 
-		if (packet->udp != NULL) {
-			/*this function checks if it concerns a rtsp-data-transfer over udp. */
-			ipoque_search_rdt_connection(ipoque_struct);
-			if (packet->detected_protocol == IPOQUE_PROTOCOL_RTSP && flow->rtsp_control_flow == 0) {
-				return;
-			}
-		}
-
-		IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "maybe handshake 1; need next packet.\n");
+		IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "maybe handshake 1; need next packet, return.\n");
 		return;
 	}
 
@@ -123,9 +76,7 @@ static void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
 
 
 			IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found RTSP/1.0 .\n");
-			flow->rtsp_control_flow = 1;
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_RTSP);
-			ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_RTSP, &src, &dst);
+
 			if (dst != NULL) {
 				IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found dst.\n");
 				ipq_packet_src_ip_get(packet, &dst->rtsp_ip_address);
@@ -139,13 +90,22 @@ static void ipoque_search_rtsp_tcp_udp(struct ipoque_detection_module_struct
 				src->rtsp_ts_set = 1;
 			}
 			IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "found RTSP.\n");
+			flow->rtsp_control_flow = 1;
+			ipoque_int_rtsp_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 	}
-	if (packet->udp != NULL && packet->detected_protocol == IPOQUE_PROTOCOL_UNKNOWN && flow->packet_counter < 5) {
-		IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "maybe RTSP RTP; need next packet.\n");
+	if (packet->udp != NULL && packet->detected_protocol_stack[0] == IPOQUE_PROTOCOL_UNKNOWN
+		&& ((IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTP) == 0)
+#ifdef IPOQUE_PROTOCOL_RTCP
+			|| (IPOQUE_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTCP) == 0)
+#endif
+		)) {
+		IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG,
+				"maybe RTSP RTP, RTSP RTCP, RDT; need next packet.\n");
 		return;
 	}
+
 
 	IPQ_LOG(IPOQUE_PROTOCOL_RTSP, ipoque_struct, IPQ_LOG_DEBUG, "didn't find handshake, exclude.\n");
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_RTSP);

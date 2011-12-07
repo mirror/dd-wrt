@@ -1,6 +1,6 @@
 /*
  * oscar.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -22,19 +22,35 @@
 
 
 #include "ipq_protocols.h"
+#include "ipq_utils.h"
 
 #ifdef IPOQUE_PROTOCOL_OSCAR
+
+static void ipoque_int_oscar_add_connection(struct ipoque_detection_module_struct
+											*ipoque_struct, ipoque_protocol_type_t protocol_type)
+{
+
+	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
+
+	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OSCAR, protocol_type);
+
+	if (src != NULL) {
+		src->oscar_last_safe_access_time = packet->tick_timestamp;
+	}
+	if (dst != NULL) {
+		dst->oscar_last_safe_access_time = packet->tick_timestamp;
+	}
+}
 
 static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struct
 											*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;
-	struct ipoque_id_struct *src;
-	struct ipoque_id_struct *dst;
-	struct ipoque_parse_data pd;
-
-	ipq_lookup_flow_addr(ipoque_struct, IPOQUE_PROTOCOL_OSCAR, &src, &dst);
+	struct ipoque_id_struct *src = ipoque_struct->src;
+	struct ipoque_id_struct *dst = ipoque_struct->dst;
 	if (packet->payload_packet_len >= 10 && packet->payload[0] == 0x2a) {
 
 		/* if is a oscar connection, 10 bytes long */
@@ -49,7 +65,7 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 		if (get_u8(packet->payload, 1) == 0x01 && get_u16(packet->payload, 4) == htons(packet->payload_packet_len - 6)
 			&& get_u32(packet->payload, 6) == htonl(0x0000000001)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR Connection FOUND \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+			ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 
@@ -68,48 +84,115 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 			&& (get_u16(packet->payload, 8) == htons(0x0006)
 				|| get_u16(packet->payload, 8) == htons(0x000c))) {
 			IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR IM Detected \n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+			ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			return;
 		}
 	}
 
 
 	/* detect http connections */
-	if (packet->payload_packet_len > 40
-		&& ((memcmp(packet->payload, "GET /aim", 8) == 0) || (memcmp(packet->payload, "GET /im", 7) == 0))) {
-		ipq_parse_packet_line_info(ipoque_struct, &pd);
-		if (pd.user_agent_line.len > 15 && pd.user_agent_line.ptr != NULL &&
-			((memcmp(pd.user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
-			 memcmp(pd.user_agent_line.ptr, "mobileICQ/", 10) == 0)) {
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
-			return;
+	if (packet->payload_packet_len >= 18) {
+		if ((packet->payload[0] == 'P') && (memcmp(packet->payload, "POST /photo/upload", 18) == 0)) {
+			IPQ_PARSE_PACKET_LINE_INFO(ipoque_struct, packet);
+			if (packet->host_line.len >= 18 && packet->host_line.ptr != NULL) {
+				if (memcmp(packet->host_line.ptr, "lifestream.aol.com", 18) == 0) {
+					IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG,
+							"OSCAR over HTTP found, POST method\n");
+					ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+					return;
+				}
+			}
 		}
 	}
-	if (packet->payload_packet_len > 40 && memcmp(packet->payload, "CONNECT ", 8) == 0) {
-		if (memcmp(packet->payload, "CONNECT login.icq.com:443 HTTP/1.", 33) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR ICQ-HTTP FOUND\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
-			return;
-		}
-		if (memcmp(packet->payload, "CONNECT login.oscar.aol.com:5190 HTTP/1.", 40) == 0) {
-			IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR AIM-HTTP FOUND\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
-			return;
-		}
+	if (packet->payload_packet_len > 40) {
+		if ((packet->payload[0] == 'G') && (memcmp(packet->payload, "GET /", 5) == 0)) {
+			if ((memcmp(&packet->payload[5], "aim/fetchEvents?aimsid=", 23) == 0) ||
+				(memcmp(&packet->payload[5], "aim/startSession?", 17) == 0) ||
+				(memcmp(&packet->payload[5], "aim/gromit/aim_express", 22) == 0) ||
+				(memcmp(&packet->payload[5], "b/ss/aolwpaim", 13) == 0) ||
+				(memcmp(&packet->payload[5], "hss/storage/aimtmpshare", 23) == 0)) {
+				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR over HTTP found, GET /aim/\n");
+				ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				return;
+			}
 
+			if ((memcmp(&packet->payload[5], "aim", 3) == 0) || (memcmp(&packet->payload[5], "im", 2) == 0)) {
+				IPQ_PARSE_PACKET_LINE_INFO(ipoque_struct, packet);
+				if (packet->user_agent_line.len > 15 && packet->user_agent_line.ptr != NULL &&
+					((memcmp(packet->user_agent_line.ptr, "mobileAIM/", 10) == 0) ||
+					 (memcmp(packet->user_agent_line.ptr, "ICQ/", 4) == 0) ||
+					 (memcmp(packet->user_agent_line.ptr, "mobileICQ/", 10) == 0) ||
+					 (memcmp(packet->user_agent_line.ptr, "AIM%20Free/", IPQ_STATICSTRING_LEN("AIM%20Free/")) == 0) ||
+					 (memcmp(packet->user_agent_line.ptr, "AIM/", 4) == 0))) {
+					IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR over HTTP found\n");
+					ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+					return;
+				}
+			}
+			IPQ_PARSE_PACKET_LINE_INFO(ipoque_struct, packet);
+			if (packet->referer_line.ptr != NULL && packet->referer_line.len >= 22) {
+
+				if (memcmp(&packet->referer_line.ptr[packet->referer_line.len - IPQ_STATICSTRING_LEN("WidgetMain.swf")],
+						   "WidgetMain.swf", IPQ_STATICSTRING_LEN("WidgetMain.swf")) == 0) {
+					u16 i;
+					for (i = 0; i < (packet->referer_line.len - 22); i++) {
+						if (packet->referer_line.ptr[i] == 'a') {
+							if (memcmp(&packet->referer_line.ptr[i + 1], "im/gromit/aim_express", 21) == 0) {
+								IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG,
+										"OSCAR over HTTP found : aim/gromit/aim_express\n");
+								ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (memcmp(packet->payload, "CONNECT ", 8) == 0) {
+			if (memcmp(packet->payload, "CONNECT login.icq.com:443 HTTP/1.", 33) == 0) {
+				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR ICQ-HTTP FOUND\n");
+				ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				return;
+			}
+			if (memcmp(packet->payload, "CONNECT login.oscar.aol.com:5190 HTTP/1.", 40) == 0) {
+				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR AIM-HTTP FOUND\n");
+				ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+				return;
+			}
+
+		}
 	}
 
 	if (packet->payload_packet_len > 43
 		&& memcmp(packet->payload, "GET http://http.proxy.icq.com/hello HTTP/1.", 43) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR ICQ-HTTP PROXY FOUND\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+		ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
 		return;
 	}
 
 	if (packet->payload_packet_len > 46
 		&& memcmp(packet->payload, "GET http://aimhttp.oscar.aol.com/hello HTTP/1.", 46) == 0) {
 		IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR AIM-HTTP PROXY FOUND\n");
-		ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+		ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_CORRELATED_PROTOCOL);
+		return;
+	}
+
+	if (packet->payload_packet_len > 5 && get_u32(packet->payload, 0) == htonl(0x05010003)) {
+		IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "Maybe OSCAR Picturetransfer\n");
+		return;
+	}
+
+	if (packet->payload_packet_len == 10 && get_u32(packet->payload, 0) == htonl(0x05000001) &&
+		get_u32(packet->payload, 4) == 0) {
+		IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "Maybe OSCAR Picturetransfer\n");
+		return;
+	}
+
+	if (packet->payload_packet_len >= 70 &&
+		memcmp(&packet->payload[packet->payload_packet_len - 26],
+			   "\x67\x00\x65\x00\x74\x00\x43\x00\x61\x00\x74\x00\x61\x00\x6c\x00\x6f\x00\x67", 19) == 0) {
+		IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR PICTURE TRANSFER\n");
+		ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 		return;
 	}
 
@@ -126,7 +209,6 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 		}
 		if (flow->oscar_video_voice && ntohs(get_u16(packet->payload, 0)) == packet->payload_packet_len
 			&& packet->payload[2] == 0x00 && packet->payload[3] == 0x00) {
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
 		}
 
 		if (packet->payload_packet_len >= 70 && ntohs(get_u16(packet->payload, 4)) == packet->payload_packet_len) {
@@ -138,7 +220,7 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 					 )))) {
 				// FILE TRANSFER PATTERN:: OFT3 or OFT2
 				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR FILE TRANSFER\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+				ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 				return;
 			}
 
@@ -146,7 +228,7 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 				//PICTURE TRANSFER PATTERN EXMAPLE::
 				//4f 44 43 32 00 4c 00 01 00 06 00 00 00 00 00 00  ODC2.L..........
 				IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR PICTURE TRANSFER\n");
-				ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+				ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 				return;
 			}
 		}
@@ -157,7 +239,7 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 			&& (memcmp(&packet->payload[packet->payload_packet_len - 6], "DEST", 4) == 0)
 			&& (memcmp(&packet->payload[packet->payload_packet_len - 2], "\x00\x00", 2) == 0)) {
 			IPQ_LOG(IPOQUE_PROTOCOL_OSCAR, ipoque_struct, IPQ_LOG_DEBUG, "OSCAR PICTURE TRANSFER\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_OSCAR);
+			ipoque_int_oscar_add_connection(ipoque_struct, IPOQUE_REAL_PROTOCOL);
 			if (ntohs(packet->tcp->dest) == 443 || ntohs(packet->tcp->source) == 443) {
 				flow->oscar_ssl_voice_stage = 1;
 			}
@@ -170,12 +252,15 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 																				  4))) {
 		return;
 	}
-	if (packet->detected_protocol != IPOQUE_PROTOCOL_OSCAR) {
+
+
+	if (packet->detected_protocol_stack[0] != IPOQUE_PROTOCOL_OSCAR) {
 		IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_OSCAR);
+		return;
 	}
 }
 
-static void ipoque_search_oscar(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_oscar(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	if (packet->tcp != NULL) {

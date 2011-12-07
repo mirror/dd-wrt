@@ -1,6 +1,6 @@
 /*
  * edonkey.c
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -23,6 +23,15 @@
 
 #include "ipq_protocols.h"
 #ifdef IPOQUE_PROTOCOL_EDONKEY
+/* debug defines */
+#define IPOQUE_PROTOCOL_SAFE_DETECTION 		1
+
+#define IPOQUE_PROTOCOL_PLAIN_DETECTION 	0
+static void ipoque_add_connection_as_edonkey(struct ipoque_detection_module_struct
+											 *ipoque_struct, const u8 save_detection, const u8 encrypted_connection)
+{
+	ipoque_int_change_protocol(ipoque_struct, IPOQUE_PROTOCOL_EDONKEY, IPOQUE_REAL_PROTOCOL);
+}
 
 static inline u8 check_edk_len(const u8 * payload, u16 payload_packet_len)
 {
@@ -57,9 +66,9 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 	int edk_stage2_len;
 
 	/*len range increase if safe mode and also only once */
-	if (ipoque_struct->sd->edonkey_safe_mode == 0)
+	if (ipoque_struct->edonkey_safe_mode == 0)
 		edk_stage2_len = 140;
-	else if (!flow->edk_ext) {
+	else if (!flow->l4.tcp.edk_ext || packet->payload_packet_len == 212) {
 		edk_stage2_len = 300;
 
 	} else
@@ -71,7 +80,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 		return;
 
 	/* source and dst port must be 80 443 or > 1024 */
-	if (ipoque_struct->sd->edonkey_upper_ports_only != 0) {
+	if (ipoque_struct->edonkey_upper_ports_only != 0) {
 		u16 port;
 		port = ntohs(packet->tcp->source);
 		/* source and dst port must be 80 443 or > 1024 */
@@ -88,7 +97,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 		return;
 
 	/* skip marked packets */
-	if (flow->edk_stage == 0 && packet->detected_protocol != IPOQUE_PROTOCOL_UNKNOWN)
+	if (flow->edk_stage == 0 && packet->detected_protocol_stack[0] != IPOQUE_PROTOCOL_UNKNOWN)
 		return;
 
 	/* first: check for unencrypted traffic */
@@ -126,7 +135,8 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 				&& packet->payload[5] == 0x01)) {
 			IPQ_LOG_EDONKEY(IPOQUE_PROTOCOL_EDONKEY, ipoque_struct,
 							IPQ_LOG_DEBUG, "edk 17: detected plain detection\n");
-			ipq_connection_detected(ipoque_struct, IPOQUE_PROTOCOL_EDONKEY);
+			ipoque_add_connection_as_edonkey(ipoque_struct,
+											 IPOQUE_PROTOCOL_SAFE_DETECTION, IPOQUE_PROTOCOL_PLAIN_DETECTION);
 			return;
 		}
 
@@ -142,10 +152,10 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 }
 
 
-static void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
+void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
-	if (packet->detected_protocol != IPOQUE_PROTOCOL_EDONKEY) {
+	if (packet->detected_protocol_stack[0] != IPOQUE_PROTOCOL_EDONKEY) {
 		/* check for retransmission here */
 		if (packet->tcp != NULL && packet->tcp_retransmission == 0)
 			ipoque_int_edonkey_tcp(ipoque_struct);

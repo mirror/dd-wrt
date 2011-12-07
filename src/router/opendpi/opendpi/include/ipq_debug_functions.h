@@ -1,6 +1,6 @@
 /*
  * ipq_debug_functions.h
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -28,10 +28,15 @@
 #ifndef __IPQ_DEBUG_FUNCTIONS_H__
 #define __IPQ_DEBUG_FUNCTIONS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef IPOQUE_ENABLE_DEBUG_MESSAGES
 	void ipoque_debug_get_last_log_function_line(struct
 												 ipoque_detection_module_struct
 												 *ipoque_struct, const char **file, const char **func, u32 * line);
 #endif
-
+#ifdef __cplusplus
+}
+#endif
 #endif
