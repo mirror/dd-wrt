@@ -1,0 +1,372 @@
+#
+# Broadcom Linux Router Makefile
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: Makefile,v 1.2 2005/09/26 11:06:58 seg Exp $
+#
+
+include .config
+ifneq ($(wildcard ../cy_conf.mak),)
+  include ../cy_conf.mak
+endif
+
+#
+# Paths
+#
+OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
+OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
+OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic
+
+# Source bases
+
+export PLATFORM LINUXDIR LIBDIR USRLIBDIR
+export TOP := $(shell pwd)
+export SRCBASE := $(shell (cd $(TOP)/.. && pwd -P))
+
+
+# Set the HAL directory if you have the HAL sources
+
+# Set the Atheros Rate Control directory if you have the proprietary rate control
+export ATH_RATE=ath_rate/sample
+
+#
+# Cross-compile environment variables
+#
+
+# Build platform
+export BUILD := i386-pc-linux-gnu
+export HOSTCC := gcc
+
+# uClibc wrapper
+export ARCH:=$(PLATFORM)
+ifeq ($(CONFIG_UCLIBC),y)
+export PLATFORM := $(PLATFORM)-uclibc
+endif
+
+#export LINUXDIR := $(SRCBASE)/linux/linux.v24
+ifeq ($(ARCH),mips)
+export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
+endif
+#ifeq ($(ARCH),armeb)
+#export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.23
+#endif
+#ifeq ($(ARCH),mipsel)
+#export LINUXDIR := $(SRCBASE)/kernel/rb500/linux-2.6.17-rc5
+#endif
+ifeq ($(ARCH),i386)
+export LINUXDIR := $(SRCBASE)/kernel/wrap/linux-2.6.16.7
+endif
+
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+
+#export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
+
+#ifeq ($(PLATFORM),mipsel)
+#export CROSS_COMPILE := mipsel-linux-
+#export CONFIGURE := ./configure mipsel-linux --build=$(BUILD)
+#export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/../mipsel-linux && pwd -P)
+#endif
+
+#ifeq ($(PLATFORM),mipsel-uclibc)
+export CROSS_COMPILE := $(ARCH)-linux-uclibc-
+export CONFIGURE := ./configure $(ARCH)-linux --build=$(BUILD)
+export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
+#endif
+
+#ifeq ($(CONFIG_BCMWPA2),y)
+#export CFLAGS += -DBCMWPA2 
+#endif
+
+export BASEOPT:=-Os
+#export ARCH:= mipsel
+
+ifeq ($(ARCH),mipsel)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
+ifeq ($(ARCH),arm)
+export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
+endif
+ifeq ($(ARCH),mips)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
+ifeq ($(ARCH),i386)
+export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
+endif
+
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
+export AR := $(CROSS_COMPILE)ar
+export AS := $(CROSS_COMPILE)as
+export LD := $(CROSS_COMPILE)ld
+export NM := $(CROSS_COMPILE)nm
+export RANLIB := $(CROSS_COMPILE)ranlib
+export STRIP := $(CROSS_COMPILE)strip
+export SIZE := $(CROSS_COMPILE)size
+
+export CFLAGS := $(COPTS)
+
+#
+# Install and target directories
+#
+
+export PLATFORMDIR := $(TOP)/$(PLATFORM)
+export INSTALLDIR := $(PLATFORMDIR)/install
+export TARGETDIR := $(PLATFORMDIR)/target
+
+ifeq ($(PLATFORM),mipsel)
+obj-y += libcrypto
+endif
+#
+# Configuration
+#
+CONFIG_IPTABLES=y
+
+include rules/configs.mk
+
+obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
+obj-install := $(foreach obj,$(obj-y),$(obj)-install)
+obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
+
+all: build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
+
+build_date:
+	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+
+
+kernel:
+	# Also build kernel
+ifeq ($(CONFIG_WP54G),y)
+	cp $(LINUXDIR)/.config_full $(LINUXDIR)/.config
+else
+ifeq ($(CONFIG_NP28G),y)
+	cp $(LINUXDIR)/.config_np28g $(LINUXDIR)/.config
+else
+	cp $(LINUXDIR)/.config_lite $(LINUXDIR)/.config
+endif
+endif
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
+endif
+	$(MAKE) -C $(LINUXDIR) oldconfig	
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux vmlinux CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	fi
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	fi
+
+	
+realclean: $(obj-clean)
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+	
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+clean_target:
+	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+
+distclean mrproper: $(obj-distclean) clean_target
+	rm -rf $(INSTALLDIR)
+	$(MAKE) -C $(LINUXDIR) distclean
+	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
+	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
+	$(MAKE) -C config clean
+	rm -f .config $(LINUXDIR)/.config
+	rm -f .config.old .config.cmd
+
+optimize-lib:
+#	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
+	../../tools/optimize_lib.sh libutils/ libutils.so libutils.a libutils_min.so $(TARGETDIR) $(TARGETDIR)/lib/libutils.so
+#	../../tools/optimize_lib.sh lib.$(ARCH)/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+	@true
+
+
+install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
+        # Install binaries into target directory
+	install -d $(TARGETDIR)
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	mkdir -p $(ARCH)-uclibc/target/etc/config
+	mkdir -p $(ARCH)-uclibc/target/etc/kaid
+	mkdir -p $(ARCH)-uclibc/target/etc/langpack
+	cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
+	cd  $(ARCH)-uclibc/target/lib
+	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
+	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
+	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
+	# optimize the crypto library by removing unneeded symbols
+	# Install (and possibly optimize) C library
+	$(MAKE) -f Makefile.adm5120 lib.$(ARCH)-install
+	# optimize the others library by removing unneeded symbols
+	$(MAKE) -f Makefile.adm5120 optimize-lib
+	# Install modules into filesystem
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	fi
+ifeq ($(CONFIG_MADWIFI),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
+endif
+ifeq ($(CONFIG_WAVESAT),y)
+	make -f Makefile.adm5120 wavesat-install
+endif
+	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+        # Prepare filesystem
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+        # Make sure mksquashfs-2.0 is used
+	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
+	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+#	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
+#	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
+	rm -rf $(TARGETDIR)/usr/local
+	rm -f $(TARGETDIR)/bin/ipkg
+	rm -f $(TARGETDIR)/usr/lib/smb.conf
+#	mkdir $(TARGETDIR)/usr/local
+ifeq ($(CONFIG_KAID),y)
+	cp kaid/kaid $(TARGETDIR)/usr/sbin
+endif
+	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+ifneq ($(CONFIG_WP54G),y)
+ifneq ($(CONFIG_NP28G),y)
+	cd $(TARGETDIR) && find . -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +
+	-mv $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/*.ko $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/ 
+	-mv $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net/*.ko $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/ 
+	-mv $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/bridge/netfilter/*.ko $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/ 
+	-mv $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv4/netfilter/*.ko $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/ 
+	-mv $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/netfilter/*.ko $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/ 
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
+	-mv $(TARGETDIR)/usr/lib/*.so $(TARGETDIR)/lib
+	rm -rf $(TARGETDIR)/usr/lib
+endif
+endif
+#	mipsel-linux-strip $(TARGETDIR)/lib/modules/$(LINUXVER)/*.ko		
+	./strip_libs.sh $(ARCH)
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 1048576 -nopad
+ifneq ($(CONFIG_WP54G),y)
+ifneq ($(CONFIG_NP28G),y)
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -b 524288 -nopad
+else
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
+endif
+else
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
+endif
+#	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
+	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
+	mipsel-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinus
+	lzma e -lc1 -lp2 -pb2 -d25 mipsel-uclibc/vmlinus mipsel-uclibc/vmlinus.lzma
+	make -C lzma-loader/adm5120 all
+	gzip -9 lzma-loader/adm5120/loader.bin
+	mv lzma-loader/adm5120/loader.bin.gz mipsel-uclibc/vmlinus.gz_na
+	trx -o mipsel-uclibc/vmlinux.trx mipsel-uclibc/vmlinus.lzma
+	cat mipsel-uclibc/vmlinux.trx  >> mipsel-uclibc/vmlinus.gz_na
+#	./tools/makeos mipsel-uclibc/vmlinus.gz_na mipsel-uclibc/vmlinus.na_csys
+	dd if=mipsel-uclibc/vmlinus.gz_na of=mipsel-uclibc/vmlinus.gz bs=4096 conv=sync
+	dd if=mipsel-uclibc/vmlinus.gz_na of=mipsel-uclibc/vmlinus.csys bs=4096 conv=sync
+	dd if=mipsel-uclibc/vmlinus.gz_na of=mipsel-uclibc/vmlinus.cpx bs=65536 conv=sync
+
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/vmlinus.gz
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/vmlinus.gz_na	
+	./tools/subfile mipsel-uclibc/vmlinus.csys mipsel-uclibc/vmlinus.csyssub 12
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/vmlinus.csyssub
+#	dd if=mipsel-uclibc/vmlinus.csyssub of=mipsel-uclibc/vmlinus.gz_na bs=65536 conv=sync
+#	./tools/osbridge-fix mipsel-uclibc/vmlinus.csys
+	-./tools/mkcsysimg -B 5GXi -d \
+		-r mipsel-uclibc/vmlinus.csyssub::0x10000 \
+		mipsel-uclibc/vmlinus.csys
+
+#		-x mipsel-uclibc/root.fs:0x1000 \
+
+	tools/compex/mkmylofw -B WP54G \
+		-p0x20000:0x3d0000:ap:0x80001000 \
+		-b0x20000:0x3d0000::mipsel-uclibc/vmlinus.gz \
+		$(ARCH)-uclibc/compex-firmware-wp54g.bin
+
+
+	tools/compex/mkmylofw -B WP54AG \
+		-p0x20000:0x3d0000:ap:0x80001000 \
+		-b0x20000:0x3d0000::mipsel-uclibc/vmlinus.gz \
+		$(ARCH)-uclibc/compex-firmware-wp54ag.bin
+
+	tools/compex/mkmylofw -B NP28G \
+		-p0x20000:0x3d0000:ap:0x80001000 \
+		-b0x20000:0x3d0000::mipsel-uclibc/vmlinus.gz \
+		$(ARCH)-uclibc/compex-firmware-np28g.bin
+
+	tools/compex/mkmylofw -B NP27G \
+		-p0x20000:0x3d0000:ap:0x80001000 \
+		-b0x20000:0x3d0000::mipsel-uclibc/vmlinus.gz \
+		$(ARCH)-uclibc/compex-firmware-np27g.bin
+
+#	tools/compex/mkmylofw -B WP54Gv1C \
+#		-p0x20000:$(/usr/bin/filesize mipsel-uclibc/vmlinus.gz):ahp:0x80001000 \
+#		-b0x20000:$(/usr/bin/filesize mipsel-uclibc/vmlinus.gz):h:mipsel-uclibc/vmlinus.gz \
+#		$(ARCH)-uclibc/compex-firmware-wp54gv1c.bin
+
+#	$(shell tools/compex/mkmylofw -B WP54AG \
+#		-p0x20000:$(/usr/bin/filesize mipsel-uclibc/vmlinus.cpx):ahp:0x80001000 \
+#		-p$(($(/usr/bin/filesize mipsel-uclibc/vmlinus.cpx)+65536+65536)):0 \
+#		-b0x20000:$(/usr/bin/filesize mipsel-uclibc/vmlinus.cpx):h:mipsel-uclibc/vmlinus.cpx \
+#		-b$(($(/usr/bin/filesize mipsel-uclibc/vmlinus.cpx)+65536+65536)):0::mipsel-uclibc/root.fs \
+#		mipsel-uclibc/compex-firmware-wp54ag.bin)
+	cp $(ARCH)-uclibc/compex-firmware-wp54ag.bin /GruppenLW/releases
+
+	tools/compex/mkmylofw -B WPP54G \
+		-p0x20000:0x3d0000:ap:0x80001000 \
+		-b0x20000:0x3d0000::mipsel-uclibc/vmlinus.gz \
+		$(ARCH)-uclibc/compex-firmware-wpp54g.bin
+
+	tools/compex/mkmylofw -B WPP54AG \
+		-p0x20000:0x3d0000:ap:0x80001000 \
+		-b0x20000:0x3d0000::mipsel-uclibc/vmlinus.gz \
+		$(ARCH)-uclibc/compex-firmware-wpp54ag.bin
+
+
+	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/adm5120-webflash.bin mipsel-uclibc/vmlinus.gz
+	./tools/osbridge-crc -i mipsel-uclibc/vmlinus.csys -o mipsel-uclibc/vmlinus.oscrc
+	./tools/pc1crypt -i mipsel-uclibc/vmlinus.oscrc -o mipsel-uclibc/vmlinus.osbridge
+	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/adm5120-webflash-osbridge.bin mipsel-uclibc/vmlinus.csys
+	
+
+
+include rules/all.mk
+
+.PHONY: all clean distclean mrproper install package
+.PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
+.PHONY: dummy fixkc libnet libpcap
+
+
+
