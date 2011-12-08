@@ -79,7 +79,8 @@ export ARCH:= mipsel
 export ARCHEXT: = .brcm24
 export ARCHITECTURE:= broadcom
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
-export CC := $(CROSS_COMPILE)gcc
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -159,7 +160,7 @@ endif
 	    $(MAKE) -C $(LINUXDIR) modules ; \
 	fi
 	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	dd if=lzma-loader/broadcom/lzma.elf of=$(ARCH)-uclibc/lzma_vmlinux bs=65536 conv=sync
@@ -174,7 +175,7 @@ bootloader:
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
 	fi
 	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	cp lzma-loader/broadcom/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
@@ -190,7 +191,7 @@ realclean: $(obj-clean)
 	-rm -f $(ARCH)-uclibc/*
 
 	
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
+clean:  rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
@@ -406,7 +407,7 @@ endif
 	
 #	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux_opt mipsel-uclibc/vmlinux
 #	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinux2
-	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
 #	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/target.squashfs -noappend -root-owned -le
 #endif
