@@ -1865,6 +1865,7 @@ static int cfi_jedec_setup(struct cfi_private *p_cfi, int index)
 	p_cfi->cfiq->NumEraseRegions = jedec_table[index].NumEraseRegions;
 	p_cfi->cfiq->DevSize = jedec_table[index].DevSize;
 	p_cfi->cfi_mode = CFI_MODE_JEDEC;
+	p_cfi->sector_erase_cmd = CMD(0x30);
 
 	for (i=0; i<num_erase_regions; i++){
 		p_cfi->cfiq->EraseRegionInfo[i] = jedec_table[index].regions[i];
