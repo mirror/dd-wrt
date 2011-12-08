@@ -71,7 +71,8 @@ endif
 export ARCH:= mipsel
 export ARCHITECTURE:= broadcom
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves
-export CC := $(CROSS_COMPILE)gcc
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -166,7 +167,7 @@ endif
 	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) modules
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) -g $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	dd if=lzma-loader/broadcom/lzma.elf of=$(ARCH)-uclibc/lzma_vmlinux bs=65536 conv=sync
@@ -181,7 +182,7 @@ bootloader:
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
 	fi
 	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	cp lzma-loader/broadcom/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
@@ -534,7 +535,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux.bin 
-	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e -lc3 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux.bin mipsel-uclibc/vmlinuz
 	cp ../../opt/etc/preinit mipsel-uclibc/target/etc
 	cp ../../opt/etc/postinit mipsel-uclibc/target/etc
 ifneq ($(CONFIG_DIST),"micro")
@@ -559,6 +560,14 @@ ifneq ($(CONFIG_NVRAM_64K),y)
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N16
+# Asus RT-N53
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N53 1.00 1.05 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 16000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N53.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N53
 # Asus RT-N12
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N12 1.00 1.05 $(ARCH)-uclibc/vmlinuz
@@ -684,7 +693,7 @@ endif
 	
 #	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux_opt mipsel-uclibc/vmlinux
 #	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinux2
-#	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
+#	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d25 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/target.squashfs -noappend -root-owned -le
 #endif
 #
