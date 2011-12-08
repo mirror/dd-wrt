@@ -44,14 +44,10 @@
 
 #define MAX_WORD_RETRIES 3
 
-#define MANUFACTURER_AMD	0x0001
-#define MANUFACTURER_ATMEL	0x001F
-#define MANUFACTURER_SST	0x00BF
 #define SST49LF004B	        0x0060
 #define SST49LF040B	        0x0050
 #define SST49LF008A		0x005a
 #define AT49BV6416		0x00d6
-#define MANUFACTURER_SAMSUNG    0x00ec
 
 static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
 static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
@@ -217,6 +213,94 @@ static void fixup_use_atmel_lock(struct mtd_info *mtd, void *param)
 	mtd->flags |= MTD_STUPID_LOCK;
 }
 
+static void fixup_old_sst_eraseregion(struct mtd_info *mtd)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	/*
+	 * These flashes report two separate eraseblock regions based on the
+	 * sector_erase-size and block_erase-size, although they both operate on the
+	 * same memory. This is not allowed according to CFI, so we just pick the
+	 * sector_erase-size.
+	 */
+	cfi->cfiq->NumEraseRegions = 1;
+}
+
+static void fixup_sst39vf(struct mtd_info *mtd)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	fixup_old_sst_eraseregion(mtd);
+
+	cfi->addr_unlock1 = 0x5555;
+	cfi->addr_unlock2 = 0x2AAA;
+}
+
+static void fixup_sst39vf_rev_b(struct mtd_info *mtd)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	fixup_old_sst_eraseregion(mtd);
+
+	cfi->addr_unlock1 = 0x555;
+	cfi->addr_unlock2 = 0x2AA;
+
+	cfi->sector_erase_cmd = CMD(0x50);
+}
+
+static void fixup_sst38vf640x_sectorsize(struct mtd_info *mtd)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	fixup_sst39vf_rev_b(mtd);
+
+	/*
+	 * CFI reports 1024 sectors (0x03ff+1) of 64KBytes (0x0100*256) where
+	 * it should report a size of 8KBytes (0x0020*256).
+	 */
+	cfi->cfiq->EraseRegionInfo[0] = 0x002003ff;
+	printk(KERN_WARNING "%s: Bad 38VF640x CFI data; adjusting sector size from 64 to 8KiB\n", mtd->name);
+}
+
+static void fixup_s29gl064n_sectors(struct mtd_info *mtd)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	if ((cfi->cfiq->EraseRegionInfo[0] & 0xffff) == 0x003f) {
+		cfi->cfiq->EraseRegionInfo[0] |= 0x0040;
+		printk(KERN_WARNING "%s: Bad S29GL064N CFI data, adjust from 64 to 128 sectors\n", mtd->name);
+	}
+}
+
+static void fixup_s29gl032n_sectors(struct mtd_info *mtd)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	if ((cfi->cfiq->EraseRegionInfo[1] & 0xffff) == 0x007e) {
+		cfi->cfiq->EraseRegionInfo[1] &= ~0x0040;
+		printk(KERN_WARNING "%s: Bad S29GL032N CFI data, adjust from 127 to 63 sectors\n", mtd->name);
+	}
+}
+
+/* Used to fix CFI-Tables of chips without Extended Query Tables */
+static struct cfi_fixup cfi_nopri_fixup_table[] = {
+	{ CFI_MFR_SST, 0x234a, fixup_sst39vf }, /* SST39VF1602 */
+	{ CFI_MFR_SST, 0x234b, fixup_sst39vf }, /* SST39VF1601 */
+	{ CFI_MFR_SST, 0x235a, fixup_sst39vf }, /* SST39VF3202 */
+	{ CFI_MFR_SST, 0x235b, fixup_sst39vf }, /* SST39VF3201 */
+	{ CFI_MFR_SST, 0x235c, fixup_sst39vf_rev_b }, /* SST39VF3202B */
+	{ CFI_MFR_SST, 0x235d, fixup_sst39vf_rev_b }, /* SST39VF3201B */
+	{ CFI_MFR_SST, 0x236c, fixup_sst39vf_rev_b }, /* SST39VF6402B */
+	{ CFI_MFR_SST, 0x236d, fixup_sst39vf_rev_b }, /* SST39VF6401B */
+	{ 0, 0, NULL }
+};
+
 static struct cfi_fixup cfi_fixup_table[] = {
 #ifdef AMD_BOOTLOC_BUG
 	{ CFI_MFR_AMD, CFI_ID_ANY, fixup_amd_bootblock, NULL },
@@ -227,6 +311,14 @@ static struct cfi_fixup cfi_fixup_table[] = {
 	{ CFI_MFR_AMD, 0x0056, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x005C, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x005F, fixup_use_secsi, NULL, },
+	{ CFI_MFR_AMD, 0x0c01, fixup_s29gl064n_sectors },
+	{ CFI_MFR_AMD, 0x1301, fixup_s29gl064n_sectors },
+	{ CFI_MFR_AMD, 0x1a00, fixup_s29gl032n_sectors },
+	{ CFI_MFR_AMD, 0x1a01, fixup_s29gl032n_sectors },
+	{ CFI_MFR_SST, 0x536a, fixup_sst38vf640x_sectorsize }, /* SST38VF6402 */
+	{ CFI_MFR_SST, 0x536b, fixup_sst38vf640x_sectorsize }, /* SST38VF6401 */
+	{ CFI_MFR_SST, 0x536c, fixup_sst38vf640x_sectorsize }, /* SST38VF6404 */
+	{ CFI_MFR_SST, 0x536d, fixup_sst38vf640x_sectorsize }, /* SST38VF6403 */
 #if !FORCE_WORD_WRITE
 	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers, NULL, },
 #endif
@@ -234,9 +326,9 @@ static struct cfi_fixup cfi_fixup_table[] = {
 	{ 0, 0, NULL, NULL }
 };
 static struct cfi_fixup jedec_fixup_table[] = {
-	{ MANUFACTURER_SST, SST49LF004B, fixup_use_fwh_lock, NULL, },
-	{ MANUFACTURER_SST, SST49LF040B, fixup_use_fwh_lock, NULL, },
-	{ MANUFACTURER_SST, SST49LF008A, fixup_use_fwh_lock, NULL, },
+	{ CFI_MFR_SST, SST49LF004B, fixup_use_fwh_lock, NULL, },
+	{ CFI_MFR_SST, SST49LF040B, fixup_use_fwh_lock, NULL, },
+	{ CFI_MFR_SST, SST49LF008A, fixup_use_fwh_lock, NULL, },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -295,12 +387,12 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 
 		if (extp->MajorVersion != '1' ||
 		  (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
-				if (cfi->mfr == MANUFACTURER_SAMSUNG &&
+				if (cfi->mfr == CFI_MFR_SAMSUNG &&
 				  (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
 					printk(KERN_NOTICE "  Newer Samsung flash detected, "
 					       "should be compatibile with Amd/Fujitsu.\n");
 				}
-				else if (cfi->mfr == MANUFACTURER_SAMSUNG && extp->MajorVersion == '0') {
+				else if (cfi->mfr == CFI_MFR_SAMSUNG && extp->MajorVersion == '0') {
 					printk(KERN_NOTICE "  Newer Samsung flash detected, "
 					       "should be compatibile with Amd/Fujitsu.\n");
 					switch (cfi->id) {
@@ -569,7 +661,7 @@ static int get_chip(struct map_info *map, struct flchip *chip, unsigned long adr
 				 * there was an error (so leave the erase
 				 * routine to recover from it) or we trying to
 				 * use the erase-in-progress sector. */
-				map_write(map, CMD(0x30), chip->in_progress_block_addr);
+				map_write(map, cfi->sector_erase_cmd, chip->in_progress_block_addr);
 				chip->state = FL_ERASING;
 				chip->oldstate = FL_READY;
 				printk(KERN_ERR "MTD %s(): chip not ready after erase suspend\n", __func__);
@@ -618,7 +710,7 @@ static void put_chip(struct map_info *map, struct flchip *chip, unsigned long ad
 	switch(chip->oldstate) {
 	case FL_ERASING:
 		chip->state = chip->oldstate;
-		map_write(map, CMD(0x30), chip->in_progress_block_addr);
+		map_write(map, cfi->sector_erase_cmd, chip->in_progress_block_addr);
 		chip->oldstate = FL_READY;
 		chip->state = FL_ERASING;
 		break;
@@ -761,7 +853,7 @@ static void __xipram xip_udelay(struct map_info *map, struct flchip *chip,
 			local_irq_disable();
 
 			/* Resume the write or erase operation */
-			map_write(map, CMD(0x30), adr);
+			map_write(map, cfi->sector_erase_cmd, adr);
 			chip->state = oldstate;
 			start = xip_currtime();
 		} else if (usec >= 1000000/HZ) {
@@ -1566,7 +1658,7 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
 	cfi_send_gen_cmd(0x80, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
 	cfi_send_gen_cmd(0xAA, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
 	cfi_send_gen_cmd(0x55, cfi->addr_unlock2, chip->start, map, cfi, cfi->device_type, NULL);
-	map_write(map, CMD(0x30), adr);
+	map_write(map, cfi->sector_erase_cmd, adr);
 
 	chip->state = FL_ERASING;
 	chip->erase_suspended = 0;
