@@ -166,4 +166,4 @@ cmd_gzip = gzip -f -9 < $< > $@
 # LZMA
 #
 quiet_cmd_lzma = LZMA    $@
-cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 2>/dev/null
+cmd_lzma = lzma e $< $@ -lc1 -lp2 -pb2 -d25 2>/dev/null
