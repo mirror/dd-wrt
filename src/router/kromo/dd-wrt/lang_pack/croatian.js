@@ -1,6 +1,6 @@
-﻿//////////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 / updated since svn17147 / by Silvio Peša / 2011-06-04 // 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+﻿///////////////////////////////////////////////////////////////////////////////////////////////
+// Croatian Translation / DD-WRT v24-sp2 / updated from r17172 / by Silvio Peša / 2011-12-08 // 
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 
@@ -29,8 +29,9 @@ share.disabled="Onemogućeno";
 share.usrname="Ime Korisnika";
 share.passwd="Zaporka";
 share.hostname="Ime Stroja";
-share.vdsl="T-Home VDSL VLAN 7/8 Tagging";
-share.vdslvlan8="VLAN 8 podrška";
+share.vdsl="Napredne postavke";
+share.vdslvlan7="T-Home VLAN 7 podrška";
+share.vdslvlan8="T-Home VLAN 8 podrška";
 share.wan_vlantag="VLAN Oznaka ID";
 share.compression="PPP Sažimanje (MPPC)";
 share.mlppp="Višestruka PPP Veza";
@@ -383,21 +384,21 @@ errmsg.err102="Nadograđujem strojni program...<br/>Molim, pričekajte.";
 bmenu.setup="Postavke";
 bmenu.setupbasic="WAN / LAN";
 bmenu.setupddns="DDNS";
-bmenu.setupmacclone="Kloniranje MAC Adresa";
+bmenu.setupmacclone="MAC Adrese";
 bmenu.setuprouting="Usmjerivanje";
 bmenu.setupvlan="VLAN-ovi";
 bmenu.setupeop="EoIP Tuneli";
 bmenu.networking="Mreža";
 
 bmenu.wireless="WiFi";
-bmenu.wirelessBasic="Osnovno";
+bmenu.wirelessBasic="WLAN";
 bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wimax="WiMAX";
-bmenu.wirelessSecurity="Sigurnost";
+bmenu.wirelessSecurity="Enkripcija";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
-bmenu.wirelessMac="MAC Filter";
+bmenu.wirelessMac="MAC Filteri";
 bmenu.wirelessAdvanced="Napredno";
 bmenu.wirelessAdvancedwl0="WL0-Napredno";
 bmenu.wirelessAdvancedwl1="WL1-Napredno";
@@ -449,6 +450,7 @@ bmenu.servicesPptp="VPN";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
+bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="Milkfish SIP";
 bmenu.servicesAnchorFree="Reklamna Mreža";
 
@@ -464,6 +466,9 @@ bmenu.statuSysInfo="Sustav";
 bmenu.statuActivate="Aktiviraj";
 bmenu.statuMyPage="Moja Stranica";
 bmenu.statuGpio="GPIO I/O";
+
+bmenu.setupnetw="Network";
+bmenu.adminman="Management";
 
 // ** Alive.asp **//
 
@@ -645,9 +650,11 @@ firewall.ping="Blokiranje Anonimnih WAN Zahtjeva (ping)";
 firewall.muticast="Filter Multicast";
 firewall.ssh="Limit SSH Access";
 firewall.telnet="Limit Telnet Access";
-firewall.http="Limit HTTP Access";
+firewall.pptp="Limit PPTP Server Access";
+//firewall.http="Limit HTTP Access";
 filter.nat="Filter WAN NAT Redirekciju";
 filter.port113="Filter IDENT (Vrata 113)";
+filter.snmp="Block WAN SNMP access";
 
 //help container
 
@@ -702,6 +709,7 @@ usb.usb_uhci="USB 1.1 Podrška (UHCI)";
 usb.usb_ohci="USB 1.1 Podrška (OHCI)";
 usb.usb_ehci="USB 2.0 Podrška";
 usb.usb_storage="Podrška USB Pohrani";
+usb.usb_ip="USB Over IP";
 usb.usb_printer="Podrška USB Pisača";
 usb.usb_automnt="Automatsko Montiranje Pogona";
 usb.usb_mntpoint="Točka Montiranja Diska";
@@ -739,6 +747,8 @@ hotspot.dhcp="DHCP Sučelje";
 hotspot.radnas="Radius NAS ID";
 hotspot.net="Remote Network";
 hotspot.uam="UAM Secret";
+hotspot.uamserver="UAM Server";
+hotspot.uamport="UAM Port";
 hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Allowed";
 hotspot.macauth="MACauth";
@@ -961,6 +971,13 @@ hidx.right16="Možete ograničiti broj adresa s kojima vaš usmjerivač upravlja
 hidx.right18="Postavi lokalnu vremensku zonu i upotrebu ljetnog računanja vremena. Usmjerivač može koristiti lokalno ili vrijeme po UTC standardu.";
 hidx.sas="Pomoćnik postavljanja vas vodi kroz korake osnovnog podešavanja za konfiguriranje usmjerivača.";
 
+// ** DSL ** //
+
+dsl.status="DSL Status";
+dsl.annex=" DSL Annex";
+dsl.iface_status="Connection Status";
+dsl.datarate="Connection Speed (up/down)";
+dsl.snr="DSL Signal (up/down)";
 
 // ** Join.asp **//
 
@@ -1055,6 +1072,7 @@ management.lang_english="Engleski";
 management.lang_polish="Poljski";
 management.lang_french="Francuski";
 management.lang_german="Njemački";
+management.lang_turkish="Turski";
 management.lang_italian="Talijanski";
 management.lang_brazilian="Brazilski";
 management.lang_russian="Ruski";
@@ -1135,20 +1153,22 @@ qos.prio_b="Bulk";
 qos.legend3="Netmask Priority";
 qos.ipmask="IP/Mask";
 qos.maxrate_b="Max kbits";
-qos.maxuprate_b="Max kbits Up";
-qos.maxdownrate_b="Max kbits Down";
+qos.maxuprate_b="WAN Max Up";
+qos.maxdownrate_b="WAN Max Down";
+qos.maxlanrate_b="LAN Max";
 qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Prioritet Ethernet Vrata";
 qos.legend6="Uobičajeni nivo Pojasne Širine";
+qos.enabledefaultlvls="Enable Per User Default Limits";
 qos.bandwidth="Bandwidth in kbits";
 
 //help container
 
-hqos.right1="Uplink:";
-hqos.right2="Set this to 80%-95% (max) of your total upload limit.";
-hqos.right3="Downlink:";
-hqos.right4="Set this to 80%-100% (max) of your total download limit.";
+hqos.right1="";
+hqos.right2="Uplink:<br>Set this to 80%-95% (max) of your total upload limit.<br>Downlink:<br>Set this to 80%-100% (max) of your total download limit.";
+hqos.right3="";
+hqos.right4="Enable Per User Default Limits:<br>Enable the Default Level per user, else set the level for all users.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
 hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, specifying priority and entering its MAC address.";
@@ -1258,7 +1278,6 @@ service.dnsmasq_opt="Dodatne DNSMasq Opcije";
 //pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP Poslužitelj";
-service.pptp_forcemppe="Nasilna MPPE Enkripcija";
 service.pptp_client="IP(s) Klijenata";
 service.pptp_chap="CHAP-Tajne";
 
@@ -1304,7 +1323,7 @@ service.pppoesrv_compr="Sažimanje";
 service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Pogreška";
 service.pppoesrv_limit="Session Limit per MAC";
-service.pppoesrv_idlet="Vrijeme Mirovanja";
+service.pppoesrv_idlet="Vrijeme Mirovanja Klijenta";
 service.pppoesrv_auth="Autentifikacija";
 service.pppoesrv_radip="IP Adresa Radius Poslužitelja";
 service.pppoesrv_radauthport="Vrata Radius Ovjere";
@@ -1327,7 +1346,7 @@ service.snmp_write="RW Zajednica";
 
 //openvpn.webvpn
 service.vpnd_legend="OpenVPN Poslužitelj (Daemon)";
-service.vpnd_srv="Pokreni OpenVPN uslugu";
+service.vpnd_srv="OpenVPN poslužitelj";
 service.vpnd_starttype="Način pokretanja";
 service.vpnd_startWanup="nakon WAN sučelja";
 service.vpnd_startSystem="Sustav";
@@ -1347,13 +1366,14 @@ service.vpnd_switch="Konf. preko";
 service.vpnd_dupcn="Dozvoli dvostruki CN";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client connect script";
+service.vpnd_ccddef="CCD-Dir DEFAULT file";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Klijent";
 service.vpn_srv="Pokreni OpenVPN Klijent";
 service.vpn_ipname="IP/Ime Poslužitelja";
 service.vpn_mtu="TUN MTU Postavka";
 service.vpn_mss="MSS-Fix/Fragment across the tunnel";
-service.vpn_compress="Koristi LZO Sažimanje";
+service.vpn_compress="LZO Sažimanje";
 service.vpn_cl2cl="Dozvoli Klijent do Klijenta";
 service.vpn_tunnel="Protokol Tunela";
 service.vpn_tuntap="Sučelje Tunela";
@@ -1371,8 +1391,8 @@ service.vpn_route="Policy based Routing";
 
 //help container
 
-hstatus_vpn.right1="Add IPs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP. Redirect Gateway MUST be off.";
-hstatus_vpn.right2="To push routes to clients add \'push \"route 0.0.0.0\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) 0.0.0.0\"\' to the config.";
+hstatus_vpn.right1="Policy based Routing:<br>Add IPs/NETs in the form 0.0.0.0/0 to force clients NOT to use the tunnel as default gateway. One line per IP/NET. Redirect Gateway MUST be on.";
+hstatus_vpn.right2="Additional Config:<br>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1501,7 +1521,7 @@ service.samba3_user_shares="Access Shares";
 
 // ** eop-tunnel.asp **//
 
-eoip.titl="EoIP Tunel";
+eoip.titl="EoIP";
 eoip.tunnel="Tunel";
 eoip.legend="Ethernet Over IP Tunneling";
 eoip.srv="EoIP Tunel";
@@ -1798,9 +1818,9 @@ hwol.right6="IP Address is typically the broadcast address for the local network
 
 // ** WanMAC.asp **//
 
-wanmac.titl="Kloniranje MAC Adresa";
-wanmac.h2="Kloniranje MAC Adresa";
-wanmac.legend="Kloniranje";
+wanmac.titl="MAC Adrese";
+wanmac.h2="Upravljanje MAC Adresama";
+wanmac.legend="Kloniranje MAC Adresa";
 wanmac.wan="Kloniraj WAN MAC Adresu";
 wanmac.wlan="Kloniraj Bežičnu MAC Adresu";
 
@@ -1852,10 +1872,26 @@ aoss.wpsactivate="Activate PIN";
 aoss.wpsregister="Register PIN";
 aoss.wpsgenerate="Generate PIN";
 aoss.pinnotvalid="Invalid PIN, checksum not correct!";
-aoss.wpsenable="WPS Button";
+aoss.wpsenable="WPS Push Button";
 aoss.wpsstatus="WPS Status";
 aoss.externalregistrar="External Registrar";
 aoss.release="Release";
+aoss.configure="Configure";
+
+
+olupgrade.avail_updates="Available Updates";
+olupgrade.version="Version";
+olupgrade.release="Release";
+olupgrade.readme="Readme";
+olupgrade.choose="Choose";
+olupgrade.retrieve_error="Error retrieving update information";
+
+
+nintendo.titl="Nintendo";
+
+nintendo.spotpass.titl="Nintendo SpotPass";
+nintendo.spotpass.enable="Enable Nintendo SpotPass";
+nintendo.spotpass.servers="Allow Servers";
 
 
 sec80211x.xsuptype="XSupplicant Type";
@@ -1867,7 +1903,7 @@ sec80211x.options="Additional Network Options";
 
 //help container
 
-hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode.";
+hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES";
 
 
 // ** WL_FilterTable.asp **//
@@ -1958,15 +1994,15 @@ gpio.iplegend="Gpio Inputs";
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="Certifikat Poslužitelja";
-freeradius.cert="Napravi Certifikat";
+freeradius.cert="Generiraj Certifikat";
 freeradius.clientcert="Certifikati Klijenata";
 freeradius.settings="Postavke";
 freeradius.users="Korisnici";
 freeradius.clients="Klijenti";
 freeradius.username="Korisničko Ime";
 freeradius.password="Zaporka";
-freeradius.downstream="Nizvodni Tok";
-freeradius.upstream="Uzvodno Tok";
+freeradius.downstream="Nizvodna Brzina";
+freeradius.upstream="Uzvodna Brzina";
 freeradius.sharedkey="Dijeljeni Ključ";
 
 
@@ -1976,9 +2012,9 @@ freeradius.locality="Locality";
 freeradius.organisation="Organisation / Company";
 freeradius.email="Email Address";
 freeradius.common="Common Certificate Name";
-freeradius.expiration="Expiration (Days)";
+freeradius.expiration="Expires (Days)";
 freeradius.passphrase="Passphrase";
-freeradius.generate="Generate Certificate";
+//freeradius.generate="Generate Certificate";
 freeradius.cert_status="Certificate Status";
 freeradius.port="Radius Port";
 
@@ -2105,6 +2141,7 @@ wl_basic.h2_v24="Bežično Fizičko Sučelje";
 wl_basic.h2_vi="Virtualna Sučelja";
 wl_basic.regdom="Regulatorna Domena";
 wl_basic.TXpower="TX Snaga";
+wl_basic.TXpowerFcc="TX Peak Power (FCC)";
 wl_basic.AntGain="Antenna Gain";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primary";
@@ -2130,7 +2167,7 @@ wl_basic.channel_wide="Rastezni Kanal";
 wl_basic.regulatory="SuperChannel";
 wl_basic.chanshift="Zamjena Kanala";
 wl_basic.specialmode="2.3 GHz Mode";
-wl_basic.wifi_bonding="Wifi Bonding";
+wl_basic.wifi_bonding="WiFi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 wl_basic.multicast="Multicast prosljeđivanje";
