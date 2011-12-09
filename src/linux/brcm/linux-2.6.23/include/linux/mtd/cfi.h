@@ -13,6 +13,7 @@
 #include <linux/mtd/flashchip.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/cfi_endian.h>
+#include <linux/mtd/xip.h>
 
 #ifdef CONFIG_MTD_CFI_I1
 #define cfi_interleave(cfi) 1
