@@ -72,7 +72,7 @@ static struct cfi_private *genprobe_ident_chips(struct map_info *map, struct chi
 	if (!genprobe_new_chip(map, cp, &cfi)) {
 		/* The probe didn't like it */
 		printk(KERN_DEBUG "%s: Found no %s device at location zero\n",
-		       cp->name, map->name);
+			 cp->name, map->name);
 		return NULL;
 	}
 
@@ -112,7 +112,7 @@ static struct cfi_private *genprobe_ident_chips(struct map_info *map, struct chi
 		max_chips = 1;
 	}
 
-	mapsize = (max_chips + BITS_PER_LONG-1) / BITS_PER_LONG;
+	mapsize = sizeof(long) * DIV_ROUND_UP(max_chips, BITS_PER_LONG);
 	chip_map = kzalloc(mapsize, GFP_KERNEL);
 	if (!chip_map) {
 		printk(KERN_WARNING "%s: kmalloc failed for CFI chip map\n", map->name);
@@ -243,17 +243,19 @@ static struct mtd_info *check_cmd_set(struct map_info *map, int primary)
 		/* We need these for the !CONFIG_MODULES case,
 		   because symbol_get() doesn't work there */
 #ifdef CONFIG_MTD_CFI_INTELEXT
-	case 0x0001:
-	case 0x0003:
-	case 0x0200:
+	case P_ID_INTEL_EXT:
+	case P_ID_INTEL_STD:
+	case P_ID_INTEL_PERFORMANCE:
 		return cfi_cmdset_0001(map, primary);
 #endif
 #ifdef CONFIG_MTD_CFI_AMDSTD
-	case 0x0002:
+	case P_ID_AMD_STD:
+	case P_ID_SST_OLD:
+	case P_ID_WINBOND:
 		return cfi_cmdset_0002(map, primary);
 #endif
 #ifdef CONFIG_MTD_CFI_STAA
-        case 0x0020:
+        case P_ID_ST_ADV:
 		return cfi_cmdset_0020(map, primary);
 #endif
 	default:
