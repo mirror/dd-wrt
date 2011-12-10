@@ -518,7 +518,7 @@ endif
 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	mips-linux-uclibc-objcopy -O binary $(strip-flags) -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
-	lzma e -lc2 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 #	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
 
@@ -835,12 +835,18 @@ ifeq ($(CONFIG_TG2521),y)
 endif
 
 ifeq ($(CONFIG_WR1043),y)
+	make -C lzma-loader/pb42 clean
+	make -C lzma-loader/pb42
+	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
 	./tools/tplink/mktplinkfw -B TL-WR1043NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-firmware.bin
 	./tools/trx_n  -m 30000000 -o $(ARCH)-uclibc/ap83-firmware.bin mips-uclibc/tplink-firmware.bin
 endif
 
 
 ifeq ($(CONFIG_WR941),y)
+	make -C lzma-loader/pb42 clean
+	make -C lzma-loader/pb42
+	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
 	./tools/tplink/mktplinkfw -B TL-WR941NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv2-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR941NDv2-firmware.bin mips-uclibc/tplink-WR941NDv2-firmware.bin
 
@@ -849,6 +855,9 @@ ifeq ($(CONFIG_WR941),y)
 
 endif
 ifeq ($(CONFIG_WR741),y)
+	make -C lzma-loader/pb42 clean
+	make -C lzma-loader/pb42
+	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
 	./tools/tplink/mktplinkfw -B TL-WR741NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv1-firmware.bin
 	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/WR741NDv1-firmware.bin mips-uclibc/tplink-WR741NDv1-firmware.bin
 
