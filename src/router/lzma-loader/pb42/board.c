@@ -31,6 +31,12 @@ void board_putc(int ch)
 	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
 }
 
+void puts(char *str)
+{
+int cnt=0;
+while(str[cnt])
+    board_putc(str[cnt++]);
+}
 void board_init(void)
 {
 }
