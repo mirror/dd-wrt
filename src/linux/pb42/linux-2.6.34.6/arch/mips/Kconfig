@@ -703,6 +703,11 @@ config AR9100
     bool "Support for Atheros ar9100 extenstions to ar7100"
     depends on MACH_AR7100
 
+config WR941
+    bool "wr941 wireless mac?"
+    depends on AR9100
+    default n
+
 config  AR7100_LOW 
     bool "Support for loading AR7100 in low memory"
     depends on MACH_AR7100
@@ -741,6 +746,7 @@ config WR741
     bool "wr741 wireless mac?"
     depends on MACH_AR7240
     default n
+
 
 config AR7240_EMULATION
     bool "build system for AR7240 emulation board?"
