@@ -24,7 +24,7 @@
 
 #include "config.h"
 #include "cache.h"
-#include "printf.h"
+void puts(char *str);
 #include "LzmaDecode.h"
 
 #define AR71XX_FLASH_START	0x1f000000
@@ -83,7 +83,7 @@ static const char *kernel_argv[] = {
 
 static void halt(void)
 {
-	printf("\nSystem halted!\n");
+	puts("\nSystem halted!\n");
 	for(;;);
 }
 
@@ -178,7 +178,7 @@ static void lzma_init_data(void)
 
 	flash_base = (unsigned char *) KSEG1ADDR(AR71XX_FLASH_START);
 
-	printf("Looking for OpenWrt image... ");
+	puts("Looking for OpenWrt image... ");
 
 	for (flash_ofs = CONFIG_FLASH_OFFS;
 	     flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX);
@@ -195,11 +195,11 @@ static void lzma_init_data(void)
 	}
 
 	if (hdr == NULL) {
-		printf("not found!\n");
+		puts("not found!\n");
 		halt();
 	}
 
-	printf("found at 0x%08x\n", flash_base + flash_ofs);
+	puts("found\n");
 
 	kernel_ofs = sizeof(struct image_header);
 	kernel_size = get_be32(&hdr->ih_size);
@@ -219,37 +219,37 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	board_init();
 
-	printf("\n\nOpenWrt kernel loader for AR7XXX/AR9XXX\n");
-	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
+	puts("\n\nOpenWrt kernel loader for AR7XXX/AR9XXX\n");
+	puts("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
 
 	lzma_init_data();
 
 	res = lzma_init_props();
 	if (res != LZMA_RESULT_OK) {
-		printf("Incorrect LZMA stream properties!\n");
+		puts("Incorrect LZMA stream properties!\n");
 		halt();
 	}
 
-	printf("Decompressing kernel... ");
+	puts("Decompressing kernel... ");
 
 	res = lzma_decompress((unsigned char *) kernel_la);
 	if (res != LZMA_RESULT_OK) {
-		printf("failed, ");
+		puts("failed, ");
 		switch (res) {
 		case LZMA_RESULT_DATA_ERROR:
-			printf("data error!\n");
+			puts("data error!\n");
 			break;
 		default:
-			printf("unknown error %d!\n", res);
+			puts("unknown error %d!\n", res);
 		}
 		halt();
 	} else {
-		printf("done!\n");
+		puts("done!\n");
 	}
 
 	flush_cache(kernel_la, lzma_outsize);
 
-	printf("Starting kernel at %08x...\n\n", kernel_la);
+	puts("Starting kernel...\n\n");
 
 #ifdef CONFIG_KERNEL_CMDLINE
 	reg_a0 = kernel_argc;

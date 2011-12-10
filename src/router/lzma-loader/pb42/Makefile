@@ -44,7 +44,7 @@ LDFLAGS		+= -e startup -T loader.lds -Ttext $(LZMA_TEXT_START)
 
 O_FORMAT 	= $(shell $(ARCH)-linux-objdump -i | head -2 | grep elf32)
 
-OBJECTS		:= head.o loader.o cache.o board.o printf.o LzmaDecode.o
+OBJECTS		:= head.o loader.o cache.o board.o LzmaDecode.o
 
 ifneq ($(strip $(LOADER_DATA)),)
 OBJECTS		+= data.o
