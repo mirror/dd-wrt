@@ -205,6 +205,7 @@ extern void ar7100_serial_setup(void);
 	| RESET_MODULE_USB_OHCI_DLL)
 
 
+static char wmac_mac[6];
 
 
 int __init ar7100_platform_init(void)
@@ -212,6 +213,12 @@ int __init ar7100_platform_init(void)
 #ifdef CONFIG_AR9100
 	memcpy(&ath9k_pdata.eeprom_data, (void *) KSEG1ADDR(0x1fff1000), sizeof(ath9k_pdata.eeprom_data));
 #endif
+#ifdef CONFIG_WR941
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+	memcpy(wmac_mac, mac, sizeof(wmac_mac));
+	ath9k_pdata.macaddr = wmac_mac;
+#endif
+
         /* need to set clock appropriately */
         ar7100_uart_data[0].uartclk = ar71xx_ahb_freq; 
 
