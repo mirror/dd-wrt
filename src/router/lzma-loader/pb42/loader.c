@@ -240,7 +240,7 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 			puts("data error!\n");
 			break;
 		default:
-			puts("unknown error %d!\n", res);
+			puts("unknown error!\n");
 		}
 		halt();
 	} else {
