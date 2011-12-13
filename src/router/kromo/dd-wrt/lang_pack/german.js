@@ -310,7 +310,7 @@ errmsg.err43="Rekey-Intervall";
 errmsg.err42="Bitte geben sie eine Konfiguration zum wiederherstellen an.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Die totale Anzahl der Checks überschreitet 128.";
+errmsg.err44="Die totale Anzahl der Checks überschreitet 256.";
 
 //Site_Survey.asp error messages
 errmsg.err47="Ungültige SSID.";

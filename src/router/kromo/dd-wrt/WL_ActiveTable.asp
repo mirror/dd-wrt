@@ -30,7 +30,7 @@ function valid_value(F)
 				count = count + 1;
 		}
 	}
-	if(count > 128){
+	if(count > 256){
 		alert(errmsg.err44);
 		return false;
 	}

@@ -327,7 +327,7 @@ errmsg.err43="Intervalo de cambio de clave";
 errmsg.err42="Por favor seleccione el archivo de config. a restaurar.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="La comprobación total excede los 128";
+errmsg.err44="La comprobación total excede los 256";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID incorrecta.";

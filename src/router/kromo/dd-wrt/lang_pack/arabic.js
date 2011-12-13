@@ -297,7 +297,7 @@ errmsg.err43="Rekey interval";
 errmsg.err42="Please select a configuration file to restore.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="The total checks exceed 128 counts.";
+errmsg.err44="The total checks exceed 256 counts.";
 
 //Site_Survey.asp error messages
 errmsg.err47="invalid SSID.";

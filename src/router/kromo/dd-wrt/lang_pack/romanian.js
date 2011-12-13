@@ -324,7 +324,7 @@ errmsg.err43="Interval auto-schimbare cheie";
 errmsg.err42="Alegeți un fișier de configurare pentru restabilire.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Verificările totale depășesc 128 de numărări.";
+errmsg.err44="Verificările totale depășesc 256 de numărări.";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID nepermis.";
