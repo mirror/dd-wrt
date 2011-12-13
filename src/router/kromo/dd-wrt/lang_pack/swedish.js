@@ -314,7 +314,7 @@ errmsg.err43="Rekey intervall";
 errmsg.err42="Ange konfig att återställa.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Totala testen överskrider 128 gånger.";
+errmsg.err44="Totala testen överskrider 256 gånger.";
 
 //Site_Survey.asp error messages
 errmsg.err47="Felaktigt SSID.";
