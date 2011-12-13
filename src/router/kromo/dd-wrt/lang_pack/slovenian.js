@@ -330,7 +330,7 @@ errmsg.err43="Interval za izmenjavo ključa";
 errmsg.err42="Prosimo, da izberete datoteko za obnovitev.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Skupno število je preseglo 1256";
+errmsg.err44="Skupno število je preseglo 256";
 
 //Site_Survey.asp error messages
 errmsg.err47="nepravilen SSID.";

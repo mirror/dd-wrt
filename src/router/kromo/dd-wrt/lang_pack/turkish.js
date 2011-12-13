@@ -325,7 +325,7 @@ errmsg.err43="Aralığı yeniden anahtarla";
 errmsg.err42="Lütfen geri yüklemek için bir yapılandırma dosyası seçin.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Toplam denetim sayısı 12256 aşıyor.";
+errmsg.err44="Toplam denetim sayısı 256'i aşıyor.";
 
 //Site_Survey.asp error messages
 errmsg.err47="Geçersiz SSID.";
