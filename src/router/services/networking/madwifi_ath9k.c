@@ -431,6 +431,25 @@ static void setMacFilter(FILE * fp, char *iface)
 
 }
 
+static int ieee80211_aton(char *str, unsigned char mac[6])
+{
+	unsigned int addr[IEEE80211_ADDR_LEN];
+	int i;
+
+	if (sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+		   &addr[0], &addr[1], &addr[2], &addr[3], &addr[4],
+		   &addr[5]) != 6)
+		return -1;
+
+	/*
+	 * sscanf needs an unsigned int, but mac address bytes cannot exceed 0xff
+	 */
+	for (i = 0; i < IEEE80211_ADDR_LEN; i++)
+		mac[i] = addr[i] & 0xff;
+
+	return 0;
+}
+
 extern void addWPS(FILE * fp, char *prefix, int configured);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
@@ -487,7 +506,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (!strcmp(mode, "wdsap"))
 		fprintf(fp, "wds_sta=1\n");
 	fprintf(fp, "wmm_enabled=1\n");
-	int i = wl_hwaddr(maininterface, hwbuff);
+	if (nvram_match("mac_clone_enable", "1")
+	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
+	    && nvram_invmatch("def_whwaddr", "")
+	    && !strcmp(maininterface, "ath0")) {
+		ieee80211_ntoa(nvram_safe_get("def_whwaddr"), hwbuff);
+	} else {
+		int i = wl_hwaddr(maininterface, hwbuff);
+	}
 	if (vapid > 0) {
 		hwbuff[0] |= 2;
 		hwbuff[0] ^= (vapid - 1) << 2;
