@@ -444,7 +444,7 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 	/*
 	 * sscanf needs an unsigned int, but mac address bytes cannot exceed 0xff
 	 */
-	for (i = 0; i < IEEE80211_ADDR_LEN; i++)
+	for (i = 0; i < 6; i++)
 		mac[i] = addr[i] & 0xff;
 
 	return 0;
