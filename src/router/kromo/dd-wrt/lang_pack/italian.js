@@ -297,7 +297,7 @@ errmsg.err43="Intervallo richiesta chiave";
 errmsg.err42="Selezionare un file di configurazione da ripristinare.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Il controllo totale supera 128.";
+errmsg.err44="Il controllo totale supera 256.";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID errato.";

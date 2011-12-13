@@ -314,7 +314,7 @@ errmsg.err43="Sleutel Vernieuwings interval";
 errmsg.err42="Gelieve het juiste configuratiebestand te selecteren om te herstellen.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Het totaal aantal controles overschrijd de 128.";
+errmsg.err44="Het totaal aantal controles overschrijd de 256.";
 
 //Site_Survey.asp error messages
 errmsg.err47="ongeldig SSID.";
