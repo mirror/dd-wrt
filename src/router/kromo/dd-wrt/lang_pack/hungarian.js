@@ -247,7 +247,7 @@ errmsg.err43="Rekey Intervallum";
 errmsg.err42="Kérem válasszon egy konfigurációs fájlt a visszaállításhoz.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Az összes ellenõrzés száma meghaladja a 128-at.";
+errmsg.err44="Az összes ellenõrzés száma meghaladja a 256-at.";
 
 //Site_Survey.asp error messages
 errmsg.err47="érvénytelen SSID.";

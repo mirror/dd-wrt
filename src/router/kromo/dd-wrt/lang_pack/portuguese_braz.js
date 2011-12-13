@@ -243,7 +243,7 @@ errmsg.err43="Intervalo de Renovação de Chave";
 errmsg.err42="Por favor selecione um arquivo de configuração para restaurar.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="As verificações totais excedem 128 contagens.";
+errmsg.err44="As verificações totais excedem 256 contagens.";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID Inválida.";

@@ -294,7 +294,7 @@ errmsg.err43="Saisissez de nouveau l\'intervalle.";
 errmsg.err42="Merci de sélectionner un fichier de configuration à restaurer.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="Le nombre total d\'adresses MAC filtrées ne peut pas dépasser 128.";
+errmsg.err44="Le nombre total d\'adresses MAC filtrées ne peut pas dépasser 256.";
 
 //Site_Survey.asp error messages
 errmsg.err47="SSID invalide.";
