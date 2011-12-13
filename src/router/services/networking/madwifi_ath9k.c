@@ -433,7 +433,7 @@ static void setMacFilter(FILE * fp, char *iface)
 
 static int ieee80211_aton(char *str, unsigned char mac[6])
 {
-	unsigned int addr[IEEE80211_ADDR_LEN];
+	unsigned int addr[6];
 	int i;
 
 	if (sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
