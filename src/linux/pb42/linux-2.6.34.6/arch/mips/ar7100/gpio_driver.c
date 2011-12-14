@@ -177,11 +177,13 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 1,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_2",
 		.gpio		= 2,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_3",
 		.gpio		= 3,
@@ -197,11 +199,13 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 5,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_6",
 		.gpio		= 6,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_7",
 		.gpio		= 7,
