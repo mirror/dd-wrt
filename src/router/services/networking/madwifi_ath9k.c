@@ -510,7 +510,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 	    && nvram_invmatch("def_whwaddr", "")
 	    && !strcmp(maininterface, "ath0")) {
-		ieee80211_ntoa(nvram_safe_get("def_whwaddr"), hwbuff);
+		ieee80211_aton(nvram_safe_get("def_whwaddr"), hwbuff);
 	} else {
 		int i = wl_hwaddr(maininterface, hwbuff);
 	}
