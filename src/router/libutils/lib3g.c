@@ -319,6 +319,23 @@ static void hsoinit_icon505(int needreset, char *controldev)
 	hsoinit(needreset, controldev);
 }
 
+static void modeswitch_4g_xsstick(int needreset, char *controldev)
+{
+    FILE *out;
+
+    out = fopen("/tmp/usb_modeswitch.conf", "wb");
+    fprintf(out, "DefaultVendor=0x1c9e\n");
+    fprintf(out, "DefaultProduct=0xf000\n");
+    fprintf(out, "TargetVendor=0x1c9e\n");
+    fprintf(out, "TargetProduct=0x9603\n");
+    fprintf(out, "CheckSuccess=20\n");
+    fprintf(out,
+        "MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
+    fclose(out);
+    system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
+    sleep(2);
+}
 struct DEVICES {
 	int vendor;
 	int product;
@@ -498,7 +515,8 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x0623, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-17 (modem mode)"},	//
 	{0x0421, 0x0627, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
 	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
-
+	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//
+	{0x1c9e, 0x9603, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14"},	//
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
