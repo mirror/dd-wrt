@@ -321,21 +321,22 @@ static void hsoinit_icon505(int needreset, char *controldev)
 
 static void modeswitch_4g_xsstick(int needreset, char *controldev)
 {
-    FILE *out;
+	FILE *out;
 
-    out = fopen("/tmp/usb_modeswitch.conf", "wb");
-    fprintf(out, "DefaultVendor=0x1c9e\n");
-    fprintf(out, "DefaultProduct=0xf000\n");
-    fprintf(out, "TargetVendor=0x1c9e\n");
-    fprintf(out, "TargetProduct=0x9603\n");
-    fprintf(out, "CheckSuccess=20\n");
-    fprintf(out,
-        "MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
-    fclose(out);
-    system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x1c9e\n");
+	fprintf(out, "DefaultProduct=0xf000\n");
+	fprintf(out, "TargetVendor=0x1c9e\n");
+	fprintf(out, "TargetProduct=0x9603\n");
+	fprintf(out, "CheckSuccess=20\n");
+	fprintf(out,
+		"MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
-    sleep(2);
+	sleep(2);
 }
+
 struct DEVICES {
 	int vendor;
 	int product;
@@ -516,7 +517,7 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x0627, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
 	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
 	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//
-	{0x1c9e, 0x9603, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14"},	//
+	{0x1c9e, 0x9603, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
@@ -591,28 +592,31 @@ char *get3GControlDevice(void)
 				    (devicelist[devicecount].datadevice, "hso"))
 					sprintf(data, "hso");
 				else {
-					if ((devicelist[devicecount].
-					     modeswitch & ACM)) {
+					if ((devicelist[devicecount].modeswitch
+					     & ACM)) {
 						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%s",
 							devicelist
-							[devicecount].datadevice);
+							[devicecount].
+							datadevice);
 					} else
-					    if ((devicelist[devicecount].
-						 modeswitch & GENERIC)) {
+					    if ((devicelist
+						 [devicecount].modeswitch &
+						 GENERIC)) {
 						sysprintf
 						    ("insmod usbserial vendor=0x%04X product=0x%04X",
-						     devicelist[devicecount].
-						     vendor,
-						     devicelist[devicecount].
-						     product);
+						     devicelist
+						     [devicecount].vendor,
+						     devicelist
+						     [devicecount].product);
 						sprintf(data, "/dev/usb/tts/%s",
-							devicelist
-							[devicecount].datadevice);
+							devicelist[devicecount].
+							datadevice);
 					} else
 						sprintf(data, "/dev/usb/tts/%s",
 							devicelist
-							[devicecount].datadevice);
+							[devicecount].
+							datadevice);
 
 				}
 				nvram_set("3gdata", data);
@@ -629,8 +633,7 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].
-								    controldevice);
+								    [devicecount].controldevice);
 			}
 			static char control[32];
 			if (!strcmp
@@ -643,15 +646,15 @@ char *get3GControlDevice(void)
 						devicelist
 						[devicecount].controldevice);
 				} else
-				    if ((devicelist[devicecount].
-					 modeswitch & GENERIC)) {
+				    if ((devicelist[devicecount].modeswitch &
+					 GENERIC)) {
 					sysprintf
 					    ("insmod usbserial vendor=0x%04X product=0x%04X",
 					     devicelist[devicecount].vendor,
 					     devicelist[devicecount].product);
 					sprintf(control, "/dev/usb/tts/%s",
-						devicelist[devicecount].
-						controldevice);
+						devicelist
+						[devicecount].controldevice);
 				} else
 					sprintf(control, "/dev/usb/tts/%s",
 						devicelist
