@@ -503,5 +503,9 @@ void __init ar71xx_gpio_init(void)
 	err = gpiochip_add(&ar71xx_gpio_chip);
 	if (err)
 		panic("cannot add AR71xx GPIO chip, error=%d", err);
-	ar71xx_add_device_leds_gpio(-1,48,generic_leds_gpio);
+	int i;
+	for (i=0;i<sizeof(generic_leds_gpio)/sizeof(struct gpio_led);i++) {
+		generic_leds_gpio[i].default_state = LEDS_GPIO_DEFSTATE_KEEP;
+	}
+	ar71xx_add_device_leds_gpio(-1,sizeof(generic_leds_gpio)/sizeof(struct gpio_led),generic_leds_gpio);
 }
