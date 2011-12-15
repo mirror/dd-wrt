@@ -166,7 +166,6 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 EXPORT_SYMBOL(ar71xx_gpio_function_setup);
 
 static struct gpio_led generic_leds_gpio[] __initdata = {
-#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_0",
 		.gpio		= 0,
@@ -176,14 +175,13 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.name		= "generic_1",
 		.gpio		= 1,
 		.active_low	= 0,
+		
 	}, 
-#endif
 	{
 		.name		= "generic_2",
 		.gpio		= 2,
 		.active_low	= 0,
 	}, 
-#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_3",
 		.gpio		= 3,
@@ -199,13 +197,11 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 5,
 		.active_low	= 0,
 	}, 
-#endif
 	{
 		.name		= "generic_6",
 		.gpio		= 6,
 		.active_low	= 0,
 	}, 
-#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_7",
 		.gpio		= 7,
@@ -216,13 +212,11 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 8,
 		.active_low	= 0,
 	}, 
-#endif
 	{
 		.name		= "generic_9",
 		.gpio		= 9,
 		.active_low	= 0,
 	}, 
-#ifndef CONFIG_AR9100
 	{
 		.name		= "generic_10",
 		.gpio		= 10,
@@ -335,7 +329,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	}, 
 
 //wl gpios
-
+#ifndef CONFIG_AR9100
 	{
 		.name		= "wireless_generic_0",
 		.gpio		= 32,
@@ -513,5 +507,10 @@ void __init ar71xx_gpio_init(void)
 	err = gpiochip_add(&ar71xx_gpio_chip);
 	if (err)
 		panic("cannot add AR71xx GPIO chip, error=%d", err);
-	ar71xx_add_device_leds_gpio(-1,64,generic_leds_gpio);
+	int i;
+	for (i=0;i<sizeof(generic_leds_gpio)/sizeof(struct gpio_led);i++) {
+		generic_leds_gpio[i].default_state = LEDS_GPIO_DEFSTATE_KEEP;
+	}
+
+	ar71xx_add_device_leds_gpio(-1,sizeof(generic_leds_gpio)/sizeof(struct gpio_led),generic_leds_gpio);
 }
