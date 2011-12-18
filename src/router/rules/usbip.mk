@@ -11,7 +11,7 @@ usbip-clean:
 	@true
 
 usbip-install:
-	install -D usbip/src/.libs/usbip_bind_driver $(INSTALLDIR)/usbip/usr/sbin/usbip_bind_driver
+#	install -D usbip/src/.libs/usbip_bind_driver $(INSTALLDIR)/usbip/usr/sbin/usbip_bind_driver
 	install -D usbip/src/.libs/usbip $(INSTALLDIR)/usbip/usr/sbin/usbip
 	install -D usbip/src/.libs/usbipd $(INSTALLDIR)/usbip/usr/sbin/usbipd
 	install -D usbip/libsrc/.libs/libusbip.so.0 $(INSTALLDIR)/usbip/usr/lib/libusbip.so.0
