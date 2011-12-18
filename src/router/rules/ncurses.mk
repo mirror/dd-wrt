@@ -1,6 +1,7 @@
 ncurses-configure:
 	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" \
 		--enable-echo \
+		--libdir=/usr/lib \
 		--enable-const \
 		--enable-overwrite \
 		--disable-rpath \
