@@ -97,7 +97,6 @@ void configure_single_ath9k(int count)
 	static char net[16];
 	static char wifivifs[16];
 	static char broadcast[16];
-	static char power[32];
 	static char sens[32];
 	static char basedev[16];
 	static char diversity[32];
@@ -123,7 +122,6 @@ void configure_single_ath9k(int count)
 	fprintf(stderr, "ath9k configure_single: phy%d ath%d\n",
 		get_ath9k_phy_idx(count), count);
 	sprintf(channel, "ath%d_channel", count);
-	sprintf(power, "ath%d_txpwrdbm", count);
 	sprintf(sens, "ath%d_distance", count);
 	sprintf(diversity, "ath%d_diversity", count);
 	sprintf(athmac, "ath%d_hwaddr", count);
@@ -1057,6 +1055,8 @@ void ath9k_start_supplicant(int count)
 	char bridged[32];
 	static char mode[80];
 	static char dev[10];
+	static char power[32];
+
 	char *apm, *vifs;
 	static char wl[16];
 	static char ctrliface[32] = "";
@@ -1072,6 +1072,7 @@ void ath9k_start_supplicant(int count)
 	sprintf(dev, "ath%d", count);
 	apm = nvram_safe_get(wl);
 	sprintf(wifivifs, "ath%d_vifs", count);
+	sprintf(power, "ath%d_txpwrdbm", count);
 	vifs = nvram_safe_get(wifivifs);
 	sprintf(psk, "-i%s", dev);
 	sprintf(wmode, "%s_mode", dev);
@@ -1230,7 +1231,6 @@ void ath9k_start_supplicant(int count)
 			}
 		}
 	}
-
 	int newpower = atoi(nvram_default_get(power, "16"));
 	sysprintf("iw phy %s set txpower fixed %d", wif, newpower * 100);
 
