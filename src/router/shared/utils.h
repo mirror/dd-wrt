@@ -559,7 +559,7 @@
 // Netgear WNDR4500 (dual radio, BCM53115 giga switch, BCM4706 @ 600MHz cpu, 2MB serial + 128MB NAND flash / 128MB ram, fccid: Netgear PY311200162) >_64K nvram_<
 #define ROUTER_NETGEAR_WNDR4500 0xb20f
 
-#define ROUTER_BOARD_WCRGN 0xb310
+#define ROUTER_BOARD_WCRGN 0xb31a
 
 #define NVROUTER "DD_BOARD"
 

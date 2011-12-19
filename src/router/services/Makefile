@@ -1104,6 +1104,9 @@ endif
 ifeq ($(CONFIG_RT61),y)
   CFLAGS_EXTRA += -DHAVE_RT61
 endif
+ifeq ($(CONFIG_WCRGN),y)
+  CFLAGS_EXTRA += -DHAVE_WCRGN
+endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS_EXTRA += -DHAVE_WHRG300N
 endif
