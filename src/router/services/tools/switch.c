@@ -6,8 +6,6 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 
-#include <linux/autoconf.h>
-
 #include "ra_ioctl.h"
 
 #ifdef CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION
