@@ -479,6 +479,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #elif HAVE_ESR9752
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
+#elif HAVE_WCRGN
+		fprintf(fp, "HT_TxStream=1\n");
+		fprintf(fp, "HT_RxStream=1\n");
 #elif HAVE_ACXNR22
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
