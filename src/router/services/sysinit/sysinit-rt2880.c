@@ -95,7 +95,7 @@ void start_sysinit(void)
 	sysprintf("echo \"write 2 0 0x3300\" > /proc/rt3052/mii/ctrl");
 	sysprintf("echo \"write 3 0 0x3300\" > /proc/rt3052/mii/ctrl");
 #endif
-#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N)
+#if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	unsigned char mac[32];
 	if (in != NULL) {
@@ -300,6 +300,10 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
+#ifdef HAVE_WCRGN
+	sysprintf("gpio enable 0"); // ses fixup
+	sysprintf("gpio enable 10"); // reset fixup
+#endif
 	return;
 }
 
