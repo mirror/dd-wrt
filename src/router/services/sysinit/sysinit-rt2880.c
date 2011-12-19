@@ -60,7 +60,6 @@ void start_sysinit(void)
 	char buf[PATH_MAX];
 	struct stat tmp_stat;
 	time_t tm = 0;
-
 	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
 	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
 	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
@@ -109,7 +108,10 @@ void start_sysinit(void)
 			copy[i] = mac[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
 			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		eval("ifconfig", "eth2", "hw", "ether", mac);
+		if (!strcmp(mac,"ff:ff:ff:ff:ff:ff"))
+		    eval("ifconfig", "eth2", "hw", "ether", "00:11:22:33:44:55");
+		else
+		    eval("ifconfig", "eth2", "hw", "ether", mac);
 	}
 
 #endif

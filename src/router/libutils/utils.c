@@ -750,6 +750,9 @@ int internal_getRouterBrand()
 #elif HAVE_F5D8235
 	setRouter("Belkin F5D8235-4 v2");
 	return ROUTER_BOARD_F5D8235;
+#elif HAVE_WCRGN
+	setRouter("Buffalo WCR-GN");
+	return ROUTER_BOARD_WCRGN;
 #elif HAVE_WHRG300N
 	setRouter("Buffalo WHR-G300N");
 	return ROUTER_BOARD_WHRG300N;
@@ -3515,6 +3518,11 @@ int led_control(int type, int act)
 #endif
 		break;
 #endif
+	case ROUTER_BOARD_WCRGN:
+		diag_gpio = 0x107;
+		connected_gpio = 0x10b;
+//		ses_gpio = 0x10e;
+		break;
 	case ROUTER_BOARD_WHRG300N:
 		diag_gpio = 0x107;
 		connected_gpio = 0x109;
