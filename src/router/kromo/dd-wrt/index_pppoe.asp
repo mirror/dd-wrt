@@ -8,24 +8,25 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
-	<div class="label"><% tran("share.vdsl"); %></div>
-	<input class="spaceradio" type="radio" name="wan_vlan" value="1" <% nvram_checked("wan_vlan","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="wan_vlan" value="0" <% nvram_checked("wan_vlan","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
+	<div class="label"><% tran("share.advanced"); %></div>
+	<input type="checkbox" name="pppoeadv" value="1" <% selchecked("pppoeadv","1"); %> onclick="toggle_layer(this, 'pppoe_advanced')" />
 </div>
-<div id="idvlan8">
-	<div class="setting">
-		<div class="label"><% tran("share.vdslvlan7"); %></div>
-		<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> /><% tran("share.disable"); %> 
-	</div>		
-	<div class="setting">
-		<div class="label"><% tran("share.vdslvlan8"); %></div>
-		<input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvram_checked("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvram_checked("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
-	</div>
+<div id="pppoe_advanced">
 	<div class="setting">
 	<div class="label"><% tran("share.srv"); %></div>
 	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvram_get("ppp_service"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.vdslvlan7"); %></div>
+		<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idvlan8">
+		<div class="setting">
+			<div class="label"><% tran("share.vdslvlan8"); %></div>
+			<input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvram_checked("dtag_vlan8","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvram_checked("dtag_vlan8","0"); %> /><% tran("share.disable"); %> 
+		</div>
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.compression"); %></div>
@@ -40,11 +41,13 @@
 		<div class="label"><% tran("share.mlppp"); %></div>
 		<input type="checkbox" value="1" name="_ppp_mlppp" <% nvram_checked("ppp_mlppp", "1"); %> />
 	</div>
+	<% atmsettings("pppoe"); %>
 </div>
 	
 <script>
 //<![CDATA
-	show_layer_ext(document.setup.wan_vdsl, 'idvlan8', <% nvram_else_match("wan_vdsl", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wan_vdsl, 'pppoe_advanced', <% else_selmatch("pppoeadv", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wan_vdsl, 'idvlan8', <% else_selmatch("wan_vdsl", "1", "1", "0"); %> == 1);
 //]]>
 </script>
 

@@ -475,6 +475,52 @@ void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+void ej_selchecked(webs_t wp, int argc, char_t ** argv)
+{
+	char *type;
+
+#ifndef FASTWEB
+	if (argc < 2) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
+	}
+#endif
+
+	type = websGetVar(wp, argv[0], "0");
+
+	if (type) {
+		if (!strcmp(type, argv[1])) 
+			websWrite(wp, "checked=\"checked\"");
+	}
+
+	return;
+}
+
+void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
+{
+	char *type;
+
+#ifndef FASTWEB
+	if (argc < 4) {
+		websError(wp, 400, "Insufficient args\n");
+		return;
+	}
+#endif
+
+	type = websGetVar(wp, argv[0], NULL);
+
+	if (type) {
+		if (!strcmp(type, argv[1])) {
+			websWrite(wp, argv[2]);
+		} else
+			websWrite(wp, argv[3]);
+	} else {
+		websWrite(wp, argv[3]);
+	}
+
+	return;
+}
+
 /*
  * Example:
  * wan_proto=dhcp

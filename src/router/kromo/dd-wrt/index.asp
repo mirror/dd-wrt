@@ -227,6 +227,13 @@ function submitcheck(F) {
 }
 
 
+function toggle_layer(checkbox, label) {
+	if(checkbox.checked) {
+		show_layer_ext(this,label,true);
+	} else {
+		show_layer_ext(this,label,false);
+	}
+}
 
 function to_submit(F) {
     submitcheck(F);
