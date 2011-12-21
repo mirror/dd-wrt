@@ -1488,6 +1488,9 @@ netlink_route_multipath (int cmd, struct prefix *p, struct rib *rib,
                         addattr_l (&req.n, sizeof req, RTA_PREFSRC,
 				 &nexthop->src.ipv4, bytelen);
 
+		      if (rib->type == ZEBRA_ROUTE_OLSR)
+			req.r.rtm_scope = RT_SCOPE_LINK;
+
 		      if (IS_ZEBRA_DEBUG_KERNEL)
 			zlog_debug("netlink_route_multipath() (single hop): "
 				   "nexthop via if %u", nexthop->ifindex);

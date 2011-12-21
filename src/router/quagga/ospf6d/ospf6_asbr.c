@@ -616,13 +616,16 @@ ospf6_asbr_redistribute_remove (int type, int ifindex, struct prefix *prefix)
 
 DEFUN (ospf6_redistribute,
        ospf6_redistribute_cmd,
-       "redistribute (static|kernel|connected|ripng|bgp)",
+       "redistribute (static|kernel|connected|ripng|bgp|hsls|olsr|batman)",
        "Redistribute\n"
        "Static route\n"
        "Kernel route\n"
        "Connected route\n"
        "RIPng route\n"
        "BGP route\n"
+       "HSLS route\n"
+       "OLSR route\n"
+       "BATMAN route\n"
       )
 {
   int type = 0;
@@ -637,6 +640,12 @@ DEFUN (ospf6_redistribute,
     type = ZEBRA_ROUTE_RIPNG;
   else if (strncmp (argv[0], "bgp", 3) == 0)
     type = ZEBRA_ROUTE_BGP;
+  else if (strncmp (argv[0], "h", 1) == 0)
+    type = ZEBRA_ROUTE_HSLS;
+  else if (strncmp (argv[0], "o", 1) == 0)
+    type = ZEBRA_ROUTE_OLSR;
+  else if (strncmp (argv[0], "ba", 2) == 0)
+    type = ZEBRA_ROUTE_BATMAN;
 
   ospf6_asbr_redistribute_unset (type);
   ospf6_asbr_routemap_unset (type);
@@ -646,13 +655,16 @@ DEFUN (ospf6_redistribute,
 
 DEFUN (ospf6_redistribute_routemap,
        ospf6_redistribute_routemap_cmd,
-       "redistribute (static|kernel|connected|ripng|bgp) route-map WORD",
+       "redistribute (static|kernel|connected|ripng|bgp|hsls|olsr|batman) route-map WORD",
        "Redistribute\n"
        "Static routes\n"
        "Kernel route\n"
        "Connected route\n"
        "RIPng route\n"
        "BGP route\n"
+       "HSLS route\n"
+       "OLSR route\n"
+       "BATMAN route\n"
        "Route map reference\n"
        "Route map name\n"
       )
@@ -669,6 +681,12 @@ DEFUN (ospf6_redistribute_routemap,
     type = ZEBRA_ROUTE_RIPNG;
   else if (strncmp (argv[0], "bgp", 3) == 0)
     type = ZEBRA_ROUTE_BGP;
+  else if (strncmp (argv[0], "h", 1) == 0)
+    type = ZEBRA_ROUTE_HSLS;
+  else if (strncmp (argv[0], "o", 1) == 0)
+    type = ZEBRA_ROUTE_OLSR;
+  else if (strncmp (argv[0], "ba", 2) == 0)
+    type = ZEBRA_ROUTE_BATMAN;
 
   ospf6_asbr_redistribute_unset (type);
   ospf6_asbr_routemap_set (type, argv[1]);
@@ -678,7 +696,7 @@ DEFUN (ospf6_redistribute_routemap,
 
 DEFUN (no_ospf6_redistribute,
        no_ospf6_redistribute_cmd,
-       "no redistribute (static|kernel|connected|ripng|bgp)",
+       "no redistribute (static|kernel|connected|ripng|bgp|hsls|olsr|batman)",
        NO_STR
        "Redistribute\n"
        "Static route\n"
@@ -686,6 +704,9 @@ DEFUN (no_ospf6_redistribute,
        "Connected route\n"
        "RIPng route\n"
        "BGP route\n"
+       "HSLS route\n"
+       "OLSR route\n"
+       "BATMAN route\n"
       )
 {
   int type = 0;
@@ -700,6 +721,12 @@ DEFUN (no_ospf6_redistribute,
     type = ZEBRA_ROUTE_RIPNG;
   else if (strncmp (argv[0], "bgp", 3) == 0)
     type = ZEBRA_ROUTE_BGP;
+  else if (strncmp (argv[0], "h", 1) == 0)
+    type = ZEBRA_ROUTE_HSLS;
+  else if (strncmp (argv[0], "o", 1) == 0)
+    type = ZEBRA_ROUTE_OLSR;
+  else if (strncmp (argv[0], "ba", 2) == 0)
+    type = ZEBRA_ROUTE_BATMAN;
 
   ospf6_asbr_redistribute_unset (type);
   ospf6_asbr_routemap_unset (type);
