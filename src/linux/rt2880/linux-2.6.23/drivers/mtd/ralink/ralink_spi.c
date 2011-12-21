@@ -787,8 +787,8 @@ static int __devinit raspi_prob(void)
 		uint32_t ih_ksz;
 	} hdr;
 #endif
-	
-	if(ra_check_flash_type()!=BOOT_FROM_SPI) { /* SPI */
+	printk(KERN_INFO "ralink spi driver\n");	
+    	if(ra_check_flash_type()!=BOOT_FROM_SPI) { /* SPI */
 	    return 0;
 	}
 
