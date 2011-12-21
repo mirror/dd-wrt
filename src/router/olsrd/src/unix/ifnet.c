@@ -68,6 +68,14 @@
 #include <netdb.h>
 #include <unistd.h>
 
+/**
+ * Fix bug in GLIBC, see https://bugzilla.redhat.com/show_bug.cgi?id=635260
+ */
+#ifdef IPTOS_CLASS
+#undef IPTOS_CLASS
+#endif
+#define IPTOS_CLASS(class)    ((class) & IPTOS_CLASS_MASK)
+
 #define BUFSPACE  (127*1024)    /* max. input buffer size to request */
 
 int
@@ -557,7 +565,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   size_t name_size;
 #ifdef linux
   int precedence = IPTOS_PREC(olsr_cnf->tos);
-  int tos_bits = IPTOS_TOS(olsr_cnf->tos);
+  int tos_bits = olsr_cnf->tos;
 #endif
 
   if (iface->host_emul)
@@ -807,11 +815,11 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
 #ifdef linux
   /* Set TOS */
 
-  if (setsockopt(ifp->olsr_socket, SOL_SOCKET, SO_PRIORITY, (char *)&precedence, sizeof(precedence)) < 0) {
+  if (setsockopt(ifp->send_socket, SOL_SOCKET, SO_PRIORITY, (char *)&precedence, sizeof(precedence)) < 0) {
     perror("setsockopt(SO_PRIORITY)");
     olsr_syslog(OLSR_LOG_ERR, "OLSRD: setsockopt(SO_PRIORITY) error %m");
   }
-  if (setsockopt(ifp->olsr_socket, SOL_IP, IP_TOS, (char *)&tos_bits, sizeof(tos_bits)) < 0) {
+  if (setsockopt(ifp->send_socket, IPPROTO_IP, IP_TOS, (char *)&tos_bits, sizeof(tos_bits)) < 0) {
     perror("setsockopt(IP_TOS)");
     olsr_syslog(OLSR_LOG_ERR, "setsockopt(IP_TOS) error %m");
   }

@@ -244,7 +244,7 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
       newIf->intAddr.v4.s_addr = inet_addr("0.0.0.0");
     } else {
       /* Downcast to correct sockaddr subtype */
-      newIf->intAddr.v4 = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
+      newIf->intAddr.v4 = ((struct sockaddr_in *) ARM_NOWARN_ALIGN(&ifr.ifr_addr))->sin_addr;
     }
 
     /* For a non-OLSR interface, retrieve the IP broadcast address ourselves */
@@ -257,7 +257,7 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
       newIf->broadAddr.v4.s_addr = inet_addr("0.0.0.0");
     } else {
       /* Downcast to correct sockaddr subtype */
-      newIf->broadAddr.v4 = ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr;
+      newIf->broadAddr.v4 = ((struct sockaddr_in *) ARM_NOWARN_ALIGN(&ifr.ifr_broadaddr))->sin_addr;
     }
   }
 
@@ -274,6 +274,7 @@ CreateInterface(const char *ifName, struct interface *olsrIntf)
    * added at the front of the list, non-OLSR interfaces at the back. */
   if (nonOlsrInterfaces == NULL) {
     /* First NonOlsrInterface object in list */
+    newIf->next = NULL;
     nonOlsrInterfaces = newIf;
     lastNonOlsrInterface = newIf;
   } else if (olsrIntf != NULL) {
@@ -364,7 +365,7 @@ CreateNonOlsrNetworkInterfaces(struct interface *skipThisIntf)
     //}
 
     /* ...find the OLSR interface structure, if any */
-    ipAddr.v4 = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr;
+    ipAddr.v4 = ((struct sockaddr_in *) ARM_NOWARN_ALIGN(&ifr->ifr_addr))->sin_addr;
     olsrIntf = if_ifwithaddr(&ipAddr);
 
     if (skipThisIntf != NULL && olsrIntf == skipThisIntf) {
@@ -409,11 +410,11 @@ CreateNonOlsrNetworkInterfaces(struct interface *skipThisIntf)
 void
 AddInterface(struct interface *newIntf)
 {
-  int nOpened;
+  /* int nOpened; */
 
   assert(newIntf != NULL);
 
-  nOpened = CreateInterface(newIntf->int_name, newIntf);
+  /* nOpened = */ (void)CreateInterface(newIntf->int_name, newIntf);
 
   //OLSR_PRINTF(1, "%s: opened %d sockets\n", PLUGIN_NAME, nOpened);
 }                               /* AddInterface */

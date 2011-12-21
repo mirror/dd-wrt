@@ -77,9 +77,9 @@
 
 # Activates the smartgateway ipip tunnel feature.
 # See README-Olsr-Extensions for a description of smartgateways.
-# (default is "yes")
+# (default is "no")
 
-# SmartGateway yes
+# SmartGateway no
 
 # Allows the selection of a smartgateway with NAT (only for IPv4)
 # (default is "yes")

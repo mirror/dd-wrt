@@ -324,7 +324,6 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
   struct sockaddr_in pin;
   struct autobuf body_abuf = { 0, 0, NULL };
   socklen_t addrlen;
-  char *addr;
   char header_buf[MAX_HTTPREQ_SIZE];
   char req_type[11];
   char filename[251];
@@ -366,8 +365,6 @@ parse_http_request(int fd, void *data __attribute__ ((unused)), unsigned int fla
                 olsr_ip_to_string(&strbuf, (union olsr_ip_addr *)&pin.sin_addr.s_addr));
     goto close_connection;
   }
-
-  addr = inet_ntoa(pin.sin_addr);
 
   memset(header_buf, 0, sizeof(header_buf));
 

@@ -32,8 +32,11 @@ CFLAGS +=	-fPIC
 LDFLAGS +=	-fPIC
 endif
 
+PLUGIN_SONAME ?= $(PLUGIN_NAME)
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
 INSTALL_LIB =	install -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig
+UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
 		/sbin/ldconfig
 
 OS_LIB_PTHREAD = -pthread

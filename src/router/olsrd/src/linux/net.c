@@ -40,8 +40,10 @@
  */
 
 /*
- * Linux spesific code
+ * Linux specific code
  */
+
+#define __BSD_SOURCE 1
 
 #include "../net_os.h"
 #include "../ipcalc.h"
@@ -59,6 +61,14 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <unistd.h>
+
+/**
+ * Fix bug in GLIBC, see https://bugzilla.redhat.com/show_bug.cgi?id=635260
+ */
+#ifdef IPTOS_CLASS
+#undef IPTOS_CLASS
+#endif
+#define IPTOS_CLASS(class)    ((class) & IPTOS_CLASS_MASK)
 
 #define IPV6_ADDR_LOOPBACK      0x0010U
 #define IPV6_ADDR_LINKLOCAL     0x0020U
@@ -155,6 +165,8 @@ static int writeToProc(const char *file, char *old, char value) {
 
 static bool is_at_least_linuxkernel_2_6_31(void) {
   struct utsname uts;
+  char *next;
+  int first = 0, second = 0, third = 0;
 
   memset(&uts, 0, sizeof(uts));
   if (uname(&uts)) {
@@ -162,10 +174,29 @@ static bool is_at_least_linuxkernel_2_6_31(void) {
     return false;
   }
 
-  if (strncmp(uts.release, "2.6.",4) != 0) {
-    return false;
+  first = strtol(uts.release, &next, 10);
+  /* check for linux 3.x */
+  if (first >= 3) {
+    return true;
   }
-  return atoi(&uts.release[4]) >= 31;
+
+  if (*next != '.') {
+    goto kernel_parse_error;
+  }
+
+  second = strtol(next+1, &next, 10);
+  if (*next != '.') {
+    goto kernel_parse_error;
+  }
+
+  third = strtol(next+1, NULL, 10);
+
+  /* better or equal than linux 2.6.31 ? */
+  return first == 2 && second == 6 && third >= 31;
+
+kernel_parse_error:
+  OLSR_PRINTF(1, "Error, cannot parse kernel version: %s\n", uts.release);
+  return false;
 }
 
 /**

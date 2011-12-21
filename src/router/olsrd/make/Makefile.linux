@@ -4,7 +4,7 @@
 
 ARCH := $(shell uname -m)
 DESTDIR ?=
-LIBDIR =	$(DESTDIR)$(shell if [ "$(ARCH)" = "x86_64" -a -d "/usr/lib64" ]; then echo "/usr/lib64"; else echo "/usr/lib"; fi)
+LIBDIR =	$(DESTDIR)/usr/lib
 
 SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
 HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
@@ -12,14 +12,17 @@ HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
 CPPFLAGS += 	-Dlinux -DLINUX_NETLINK_ROUTING
 LIBS +=		
 
+PLUGIN_SONAME ?= lib$(PLUGIN_NAME).so
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
 INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig -n $(LIBDIR)
+UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
 		/sbin/ldconfig -n $(LIBDIR)
 
 ifdef OLSRD_PLUGIN
 GENERATE_PIC = true
 endif
-ifeq ($(filter-out alpha x86_64 parisc64 ia64, $(ARCH)),)
+ifeq ($(filter-out mips mips64 alpha x86_64 parisc64 ia64, $(ARCH)),)
 GENERATE_PIC = true
 endif
 
