@@ -13,8 +13,10 @@ LIBS +=		-mno-cygwin -lws2_32 -liphlpapi
 CPPFLAGS += 	-I$(TOPDIR)/src/win32
 CFLAGS +=	-mno-cygwin
 
+PLUGIN_SONAME ?= $(PLUGIN_NAME)
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).dll
 INSTALL_LIB =	cp $(PLUGIN_FULLNAME) ../..
+UNINSTALL_LIB =	del /F ../../$(PLUGIN_FULLNAME)
 
 ifdef OLSRD_PLUGIN
 LDFLAGS +=	-L$(TOPDIR)

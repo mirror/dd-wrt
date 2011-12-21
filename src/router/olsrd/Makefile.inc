@@ -48,15 +48,17 @@ FLEX ?=		flex
 TAGCMD ?=	etags
 
 # target directories and names
-DESTDIR ?=
-SBINDIR ?= $(DESTDIR)/usr/sbin
-ETCDIR  ?= $(DESTDIR)/etc
-LIBDIR  ?= $(DESTDIR)/usr/lib
-DOCDIR  ?= $(DESTDIR)/usr/share/doc
-MANDIR  ?= $(DESTDIR)/usr/share/man
-EXENAME ?= olsrd
-CFGNAME ?= $(EXENAME).conf
-CFGFILE ?= $(ETCDIR)/$(CFGNAME)
+DESTDIR  ?=
+ETCDIR   ?= $(DESTDIR)/etc
+USRDIR   ?= $(DESTDIR)/usr
+LIBDIR   ?= $(USRDIR)/lib
+SBINDIR  ?= $(USRDIR)/sbin
+SHAREDIR ?= $(USRDIR)/share
+DOCDIR   ?= $(SHAREDIR)/doc
+MANDIR   ?= $(SHAREDIR)/man
+EXENAME  ?= olsrd
+CFGNAME  ?= $(EXENAME).conf
+CFGFILE  ?= $(ETCDIR)/$(CFGNAME)
 
 CPPFLAGS =	-Isrc
 ifneq ($(TOPDIR),.)
@@ -85,9 +87,8 @@ WARNINGS +=	-Wbad-function-cast
 WARNINGS +=	-Wpointer-arith
 WARNINGS +=	-Wcast-qual
 WARNINGS +=	-Wshadow
-WARNINGS +=	-Wformat-2
+WARNINGS +=	-Wformat
 WARNINGS +=	-Wsequence-point
-WARNINGS +=	-Wpointer-arith
 WARNINGS +=	-Wcast-align
 # the following 2 do not work yet and need more work on it
 #WARNINGS +=	-Wconversion
@@ -137,7 +138,7 @@ ifeq ($(OS),win32)
   LDFLAGS +=	-Wl,-export-all-symbols,--enable-auto-import
 endif
 LDFLAGS +=	-shared
-LDFLAGS +=	-Wl,-soname,$(PLUGIN_NAME)
+LDFLAGS +=	-Wl,-soname,$(PLUGIN_SONAME)
 LDFLAGS +=	-Wl,--version-script=version-script.txt 
 else
 # c and ld flags for main
@@ -205,6 +206,10 @@ quote = $(subst .,\.,$(subst /,\/,$1))
 # fully automatic and working dependency generation
 %.d: %.c
 	@$(filter-out $(CCACHE),$(CC)) -M $(strip $(CPPFLAGS)) "$<" | sed -e '1s/\($(call quote,$(*F))\.o\)[ :]*/$(call quote,$(*D)/\1 $@: Makefile $(TOPDIR)$(if $(TOPDIR),/)Makefile.inc) /g' >"$@"
+
+%.o: %.c
+	@echo "[CC] $<"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 # we always need the includes and defines
 # for legacy since now

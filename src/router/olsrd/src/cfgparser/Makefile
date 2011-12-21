@@ -89,7 +89,8 @@ endif
 default_target: $(NAME)
 
 $(NAME):	$(OBJS)
-		$(CC) $(LDFLAGS) -o "$@" $^ $(LIBS)
+		@echo "[LD] $@"
+		@$(CC) $(LDFLAGS) -o "$@" $^ $(LIBS)
 
 install:
 		install -D -m 755 $(NAME) $(LIBDIR)/$(NAME)

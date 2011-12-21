@@ -655,7 +655,6 @@ olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unuse
   union olsr_ip_addr originator;
   olsr_reltime vtime;
   int size;
-  uint16_t seqno;
 
   if (!nameservice_configured) {
     name_lazy_init();
@@ -667,10 +666,8 @@ olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unuse
   /* Fetch the originator of the messsage */
   if (olsr_cnf->ip_version == AF_INET) {
     memcpy(&originator, &m->v4.originator, olsr_cnf->ipsize);
-    seqno = ntohs(m->v4.seqno);
   } else {
     memcpy(&originator, &m->v6.originator, olsr_cnf->ipsize);
-    seqno = ntohs(m->v6.seqno);
   }
 
   /* Fetch the message based on IP version */

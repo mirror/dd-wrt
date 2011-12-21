@@ -39,7 +39,7 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.6.1
+VERS =		0.6.2
 
 TOPDIR = .
 include Makefile.inc
@@ -63,13 +63,14 @@ TAG_SRCS =	$(SRCS) $(HDRS) $(wildcard $(CFGDIR)/*.[ch] $(SWITCHDIR)/*.[ch])
 default_target: $(EXENAME)
 
 $(EXENAME):	$(OBJS) src/builddata.o
-		$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+		@echo "[LD] $@"
+		@$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 cfgparser:	$(CFGDEPS) src/builddata.o
 		$(MAKE) -C $(CFGDIR)
 
 switch:		
-	$(MAKECMD) -C $(SWITCHDIR)
+	@$(MAKECMD) -C $(SWITCHDIR)
 
 # generate it always
 .PHONY: src/builddata.c
@@ -81,7 +82,7 @@ src/builddata.c:
 	@echo "const char build_host[] = \"$(shell hostname)\";" >> "$@" 
 
 
-.PHONY: help libs clean_libs libs_clean clean uberclean install_libs libs_install install_bin install_olsrd install build_all install_all clean_all 
+.PHONY: help libs clean_libs libs_clean clean uberclean install_libs uninstall_libs libs_install libs_uninstall install_bin uninstall_bin install_olsrd uninstall_olsrd install uninstall build_all install_all uninstall_all clean_all 
 
 clean:
 	-rm -f $(OBJS) $(SRCS:%.c=%.d) $(EXENAME) $(EXENAME).exe src/builddata.c $(TMPFILES)
@@ -96,15 +97,21 @@ uberclean:	clean clean_libs
 	-rm -f $(TAGFILE)
 #	BSD-xargs has no "--no-run-if-empty" aka "-r"
 	find . \( -name '*.[od]' -o -name '*~' \) -not -path "*/.hg*" -print0 | xargs -0 rm -f
-	$(MAKECMD) -C $(SWITCHDIR) clean
-	$(MAKECMD) -C $(CFGDIR) clean
+	@$(MAKECMD) -C $(SWITCHDIR) clean
+	@$(MAKECMD) -C $(CFGDIR) clean
 
 install: install_olsrd
+
+uninstall: uninstall_olsrd
 
 install_bin:
 		mkdir -p $(SBINDIR)
 		install -m 755 $(EXENAME) $(SBINDIR)
 		$(STRIP) $(SBINDIR)/$(EXENAME)
+
+uninstall_bin:
+		rm -f $(SBINDIR)/$(EXENAME)
+		rmdir -p --ignore-fail-on-non-empty $(SBINDIR)
 
 install_olsrd:	install_bin
 		@echo ========= C O N F I G U R A T I O N - F I L E ============
@@ -128,6 +135,16 @@ ifneq ($(MANDIR),)
 		mkdir -p $(MANDIR)/man5/
 		cp files/olsrd.conf.5.gz $(MANDIR)/man5/$(CFGNAME).5.gz
 endif
+
+uninstall_olsrd:	uninstall_bin
+ifneq ($(MANDIR),)
+		rm -f $(MANDIR)/man5/$(CFGNAME).5.gz
+		rmdir -p --ignore-fail-on-non-empty $(MANDIR)/man5/
+		rm -f $(MANDIR)/man8/$(EXENAME).8.gz
+		rmdir -p --ignore-fail-on-non-empty $(MANDIR)/man8/
+endif
+		rm -f $(CFGFILE)
+		rmdir -p --ignore-fail-on-non-empty $(ETCDIR)
 
 tags:
 		$(TAGCMD) -o $(TAGFILE) $(TAG_SRCS)
@@ -158,83 +175,179 @@ endif
 endif
 
 libs:
-		set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR);done
+		@set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR);done
 
 libs_clean clean_libs:
 		-for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) clean;rm -f lib/$$dir/*.so lib/$$dir/*.dll;done
 
 libs_install install_libs:
-		set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) install;done
+		@set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) install;done
 
-httpinfo:
-		$(MAKECMD) -C lib/httpinfo clean
-		$(MAKECMD) -C lib/httpinfo 
-		$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) install 
+libs_uninstall uninstall_libs:
+		@set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) uninstall;done
+		rmdir -p --ignore-fail-on-non-empty $(LIBDIR)
 
-tas:
-		$(MAKECMD) -C lib/tas clean
-		$(MAKECMD) -C lib/tas
-		$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) install
-
-dot_draw:
-		$(MAKECMD) -C lib/dot_draw clean
-		$(MAKECMD) -C lib/dot_draw
-		$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) install
-
-nameservice:
-		$(MAKECMD) -C lib/nameservice clean
-		$(MAKECMD) -C lib/nameservice
-		$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) install
-
-dyn_gw:
-		$(MAKECMD) -C lib/dyn_gw clean
-		$(MAKECMD) -C lib/dyn_gw
-		$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) install
-
-dyn_gw_plain:
-		$(MAKECMD) -C lib/dyn_gw_plain clean
-		$(MAKECMD) -C lib/dyn_gw_plain
-		$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) install
-
-secure:
-		$(MAKECMD) -C lib/secure clean
-		$(MAKECMD) -C lib/secure
-		$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) install
-
-pgraph:
-		$(MAKECMD) -C lib/pgraph clean
-		$(MAKECMD) -C lib/pgraph 
-		$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) install 
-
-bmf:
-		$(MAKECMD) -C lib/bmf clean
-		$(MAKECMD) -C lib/bmf 
-		$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) install 
-
-quagga:
-		$(MAKECMD) -C lib/quagga clean
-		$(MAKECMD) -C lib/quagga 
-		$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) install 
-
-mdns:
-		$(MAKECMD) -C lib/mdns clean
-		$(MAKECMD) -C lib/mdns 
-		$(MAKECMD) -C lib/mdns DESTDIR=$(DESTDIR) install 
-txtinfo:
-		$(MAKECMD) -C lib/txtinfo clean
-		$(MAKECMD) -C lib/txtinfo 
-		$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) install 
+#
+# PLUGINS
+#
 
 arprefresh:
-		$(MAKECMD) -C lib/arprefresh clean
-		$(MAKECMD) -C lib/arprefresh
-		$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) install
+		@$(MAKECMD) -C lib/arprefresh clean
+		@$(MAKECMD) -C lib/arprefresh
+
+arprefresh_install:
+		@$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) install
+
+arprefresh_uninstall:
+		@$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) uninstall
+
+bmf:
+		@$(MAKECMD) -C lib/bmf clean
+		@$(MAKECMD) -C lib/bmf
+
+bmf_install:
+		@$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) install
+
+bmf_uninstall:
+		@$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) uninstall
+
+dot_draw:
+		@$(MAKECMD) -C lib/dot_draw clean
+		@$(MAKECMD) -C lib/dot_draw
+
+dot_draw_install:
+		@$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) install
+
+dot_draw_uninstall:
+		@$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) uninstall
+
+dyn_gw:
+		@$(MAKECMD) -C lib/dyn_gw clean
+		@$(MAKECMD) -C lib/dyn_gw
+
+dyn_gw_install:
+		@$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) install
+
+dyn_gw_uninstall:
+		@$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) uninstall
+
+dyn_gw_plain:
+		@$(MAKECMD) -C lib/dyn_gw_plain clean
+		@$(MAKECMD) -C lib/dyn_gw_plain
+
+dyn_gw_plain_install:
+		@$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) install
+
+dyn_gw_plain_uninstall:
+		@$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) uninstall
+
+httpinfo:
+		@$(MAKECMD) -C lib/httpinfo clean
+		@$(MAKECMD) -C lib/httpinfo
+
+httpinfo_install:
+		@$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) install
+
+httpinfo_uninstall:
+		@$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) uninstall
+
+mdns:
+		@$(MAKECMD) -C lib/mdns clean
+		@$(MAKECMD) -C lib/mdns
+
+mdns_install:
+		@$(MAKECMD) -C lib/mdns DESTDIR=$(DESTDIR) install
+
+mdns_uninstall:
+		@$(MAKECMD) -C lib/mdns DESTDIR=$(DESTDIR) uninstall
+
+#
+# no targets for mini: it's an example plugin
+#
+
+nameservice:
+		@$(MAKECMD) -C lib/nameservice clean
+		@$(MAKECMD) -C lib/nameservice
+
+nameservice_install:
+		@$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) install
+
+nameservice_uninstall:
+		@$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) uninstall
+
+p2pd:
+		@$(MAKECMD) -C lib/p2pd clean
+		@$(MAKECMD) -C lib/p2pd
+
+p2pd_install:
+		@$(MAKECMD) -C lib/p2pd DESTDIR=$(DESTDIR) install
+
+p2pd_uninstall:
+		@$(MAKECMD) -C lib/p2pd DESTDIR=$(DESTDIR) uninstall
+
+pgraph:
+		@$(MAKECMD) -C lib/pgraph clean
+		@$(MAKECMD) -C lib/pgraph
+
+pgraph_install:
+		@$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) install
+
+pgraph_uninstall:
+		@$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) uninstall
+
+quagga:
+		@$(MAKECMD) -C lib/quagga clean
+		@$(MAKECMD) -C lib/quagga
+
+quagga_install:
+		@$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) install
+
+quagga_uninstall:
+		@$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) uninstall
+
+secure:
+		@$(MAKECMD) -C lib/secure clean
+		@$(MAKECMD) -C lib/secure
+
+secure_install:
+		@$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) install
+
+secure_uninstall:
+		@$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) uninstall
+
+tas:
+		@$(MAKECMD) -C lib/tas clean
+		@$(MAKECMD) -C lib/tas
+
+tas_install:
+		@$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) install
+
+tas_uninstall:
+		@$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) uninstall
+
+txtinfo:
+		@$(MAKECMD) -C lib/txtinfo clean
+		@$(MAKECMD) -C lib/txtinfo
+
+txtinfo_install:
+		@$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) install
+
+txtinfo_uninstall:
+		@$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) uninstall
 
 watchdog:
-		$(MAKECMD) -C lib/watchdog clean
-		$(MAKECMD) -C lib/watchdog
-		$(MAKECMD) -C lib/watchdog DESTDIR=$(DESTDIR) install
+		@$(MAKECMD) -C lib/watchdog clean
+		@$(MAKECMD) -C lib/watchdog
+
+
+watchdog_install:
+		@$(MAKECMD) -C lib/watchdog DESTDIR=$(DESTDIR) install
+
+watchdog_uninstall:
+		@$(MAKECMD) -C lib/watchdog DESTDIR=$(DESTDIR) uninstall
+
 
 build_all:	all switch libs
 install_all:	install install_libs
+uninstall_all:	uninstall uninstall_libs
 clean_all:	uberclean clean_libs

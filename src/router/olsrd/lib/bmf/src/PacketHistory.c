@@ -180,7 +180,7 @@ u_int32_t PacketCrc32(unsigned char* ipPacket, ssize_t len)
 
   SaveTtlAndChecksum(ipPacket, &sttl);
 
-  ipHeader = (struct ip*)ipPacket;
+  ipHeader = (struct ip*) ARM_NOWARN_ALIGN(ipPacket);
   ipHeader->ip_ttl = 0xFF; /* fixed value of TTL for CRC-32 calculation */
   ipHeader->ip_sum = 0x5A5A; /* fixed value of IP header checksum for CRC-32 calculation */
 

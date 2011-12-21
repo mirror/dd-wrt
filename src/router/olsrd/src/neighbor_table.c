@@ -70,10 +70,8 @@ olsr_init_neighbor_table(void)
 static void
 olsr_del_nbr2_list(struct neighbor_2_list_entry *nbr2_list)
 {
-  struct neighbor_entry *nbr;
   struct neighbor_2_entry *nbr2;
 
-  nbr = nbr2_list->nbr2_nbr;
   nbr2 = nbr2_list->neighbor_2;
 
   if (nbr2->neighbor_2_pointer < 1) {
