@@ -1,0 +1,17 @@
+This is an OpenWrt package feed containing the olsrd-stable-git package.
+
+To use this package, add the following line to the feeds.conf
+in the OpenWrt buildroot:
+
+  src-git olsrd http://olsr.org/git/olsrd.git;stable
+  
+Update the feed:
+
+  ./scripts/feeds update olsrd
+  
+Activate the package:
+
+  ./scripts/feeds install olsrd-stable-git
+  
+The "olsrd-stable-git" package should now appear in menuconfig.
+
