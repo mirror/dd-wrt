@@ -75,10 +75,10 @@ $TCA $5 parent 1:1 classid 1:20 hfsc rt rate $(((${DL}*30)/100))kbit ls rate $((
 $TCA $5 parent 1:1 classid 1:30 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*55)/100))kbit ul rate ${DL}kbit
 $TCA $5 parent 1:1 classid 1:40 hfsc rt rate $(((${DL}*10)/100))kbit ls rate $(((${DL}*10)/100))kbit ul rate $(((${DL}*90)/100))kbit
 $TQA $5 parent 1:100 handle 100: sfq perturb 10 quantum $4
-$TQA $5 parent 1:10 handle 10: red bandwidth $(((8*${DL})/10))kbit limit 2000000 min 10000 max 200000 avpkt 2000 burst 100 ecn &> /dev/null
-$TQA $5 parent 1:20 handle 20: red bandwidth $(((8*${DL})/10))kbit limit 1000000 min 5000 max 100000 avpkt 1000 burst 50 ecn &> /dev/null
-$TQA $5 parent 1:30 handle 30: red bandwidth $(((7*${DL})/10))kbit limit 500000 min 2599 max 50000 avpkt 500 burst 25 ecn &> /dev/null
-$TQA $5 parent 1:40 handle 40: red limit 250000 min 1250 max 25000 avpkt 250 burst 10 ecn
+$TQA $5 parent 1:10 handle 10: sfq perturb 10 quantum $4
+$TQA $5 parent 1:20 handle 20: sfq perturb 10 quantum $4
+$TQA $5 parent 1:30 handle 30: sfq perturb 10 quantum $4
+$TQA $5 parent 1:40 handle 40: sfq perturb 10 quantum $4
 $TFA $5 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $5 protocol ip pref 6 handle 0x0A fw classid 1:10        
 $TFA $5 protocol ip pref 7 handle 0x14 fw classid 1:20        
@@ -96,11 +96,11 @@ $TCA $6 parent 1:1 classid 1:20 hfsc rt rate $(((1000000*30)/100))kbit ls rate $
 $TCA $6 parent 1:1 classid 1:30 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*55)/100))kbit ul rate 1000000kbit
 $TCA $6 parent 1:1 classid 1:40 hfsc rt rate $(((1000000*10)/100))kbit ls rate $(((1000000*10)/100))kbit ul rate $(((1000000*90)/100))kbit
 $TCA $6 parent 1:1 classid 1:2 hfsc ls rate 1000000kbit ul rate 1000000kbit
-$TCA $6 parent 1:1 classid 1:2 hfsc ls rate 1000000kbit ul rate 1000000kbit
-$TQA $6 parent 1:10 handle 10: red bandwidth $((9*${DL}/10))kbit limit 2000000 min 10000 max 200000 avpkt 2000 burst 100 ecn
-$TQA $6 parent 1:20 handle 20: red bandwidth $((8*${DL}/10))kbit limit 1000000 min 5000 max 100000 avpkt 1000 burst 50 ecn
-$TQA $6 parent 1:30 handle 30: red bandwidth $((7*${DL}/10))kbit limit  500000 min 2500 max  50000 avpkt  500 burst 25 ecn
-$TQA $6 parent 1:40 handle 40: red limit 250000 min 1250 max 25000 avpkt 250 burst 10 ecn
+$TQA $6 parent 1:100 handle 100: sfq perturb 10 quantum $4
+$TQA $6 parent 1:10 handle 10: sfq perturb 10 quantum $4
+$TQA $6 parent 1:20 handle 20: sfq perturb 10 quantum $4
+$TQA $6 parent 1:30 handle 30: sfq perturb 10 quantum $4
+$TQA $6 parent 1:40 handle 40: sfq perturb 10 quantum $4
 $TFA $6 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $6 protocol ip pref 6 handle 0x0A fw classid 1:10        
 $TFA $6 protocol ip pref 7 handle 0x14 fw classid 1:20        
