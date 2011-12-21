@@ -1,0 +1,40 @@
+Source: olsrd
+Section: net
+Priority: extra
+Maintainer: Holger Levsen <holger@debian.org>
+Build-Depends: debhelper (>= 5), quilt, bison, flex
+Standards-Version: 3.8.3
+Homepage: http://olsr.org/
+Vcs-Svn: svn://svn.debian.org/svn/collab-maint/deb-maint/olsrd/
+Vcs-Browser: http://svn.debian.org/wsvn/collab-maint/deb-maint/olsrd/
+
+Package: olsrd
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: optimized link-state routing daemon (unik-olsrd)
+ unik-olsrd is an implementation of the Optimized Link State Routing protocol 
+ for Mobile Ad-Hoc networks(MANET). The protocol is described in RFC3626. It 
+ is designed to be run as a standalone server process.
+ .
+ OLSR operates as a table driven, proactive protocol, i.e., it exchanges 
+ topology information with other nodes of the network regularly. It is 
+ developed to work independently from other protocols. Likewise, OLSR makes no
+ assumptions about the underlying link-layer.
+
+Package: olsrd-plugins
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, olsrd (= ${binary:Version})
+Description: various plugins to enhance olsrd
+ olsrd is an implementation of the Optimized Link State Routing protocol
+ for Mobile Ad-Hoc networks(MANET)
+ .
+ The following plugins are available:
+ .
+  * httpinfo      - tiny webserver for information purposes 
+  * dyn_gw        - dynamically announce uplinks
+  * dot_draw      - generates output (over a TCP socket) in the dot format
+  * secure        - secure OLSR routing with a shared key
+  * nameservice   - announce hostnames and dns servers
+  * bmf           - basic multicast forwarding
+  * quagga        - import external routes from quagga
+  * txtinfo       - display information about the OSLR node

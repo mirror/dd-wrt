@@ -1,0 +1,84 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          olsrd
+# Required-Start:    $network $remote_fs $syslog
+# Required-Stop:     $network $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: /etc/init.d/olsrd: start olsrd
+### END INIT INFO
+
+#		Based on skeleton script written by Miquel van Smoorenburg <miquels@cistron.nl>.
+#		Modified for Debian 
+#		by Ian Murdock <imurdock@gnu.ai.mit.edu>.
+#		Modified for olsrd
+#		by Holger Levsen <debian@layer-acht.org>
+# 
+# Version:	21-Dec-2006  
+# modified:     01-Aug-2007
+# 	        31-Jun-2008
+#		30-May-2009
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/olsrd
+NAME=olsrd
+DESC=olsrd
+
+PID_FILE=/var/run/$NAME.pid
+
+test -x $DAEMON || exit 0
+
+# Include olsrd defaults if available
+if [ -f /etc/default/olsrd ] ; then
+	. /etc/default/olsrd
+fi
+
+set -e
+
+case "$1" in
+  debug)
+	echo -n "Starting $DESC: "
+	start-stop-daemon --start --quiet --exec $DAEMON --pidfile $PID_FILE -- $DAEMON_OPTS &
+	# sleep til olsrd has been started
+	while ! pidof $NAME > /dev/null ; do 
+	  sleep 1
+	done
+	echo "$NAME."
+	echo $(pidof $NAME) > $PID_FILE
+	;;
+  start)
+	if [ "$START_OLSRD" != "YES" ] ; then exit 0 ; fi
+	if [ $(pidof $NAME) -eq 0 ] ; then 
+		echo "$NAME already running, doing nothing."
+		exit 0
+	fi
+	echo -n "Starting $DESC: "
+	start-stop-daemon --start --quiet --exec $DAEMON --pidfile $PID_FILE -- $DAEMON_OPTS &
+	# sleep til olsrd has been started
+	while ! pidof $NAME > /dev/null ; do 
+	  sleep 1
+	done
+	echo "$NAME."        
+	echo $(pidof $NAME) > $PID_FILE
+	;;
+  stop)
+	pidof $NAME || exit 0
+	echo -n "Stopping $DESC: "
+	start-stop-daemon --stop  --quiet --exec $DAEMON --pidfile $PID_FILE
+        rm -f $PID_FILE
+	echo "$NAME."
+	;;
+  restart|force-reload)
+	echo -n "Restarting $DESC: "
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

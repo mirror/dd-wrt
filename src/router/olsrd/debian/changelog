@@ -1,0 +1,227 @@
+olsrd (0.6.1-1) UNRELEASED; urgency=low
+
+  * New upstream version with quite some fixes and new features, see upstream
+    changelog for details. Quoting from there:
+     Change in version number system. No more -rcX for release candidates and
+     -rX for bugfix releases. In future bugfix releases or updates of plugins
+     will increase the third digit of the version string while feature 
+     releases will increase the first and/or the second one.
+   Removed the following patches from series trying to make it build again:
+   - 100-debug_level.patch
+   - 240-plugin-install-targets.patch
+   - 260-quagga-plugin-detect-protocol-version.patch
+   - 270-make-kfbsd.patch
+   
+  THIS IS WORK IN PROGRESS and needs checking whether those patches are still
+  needed. Also 0.6.1 is out.
+
+  * Update package description, OLSR is no experimental protocol anymore. 
+
+ -- Holger Levsen <holger@debian.org>  Fri, 21 May 2010 23:47:52 +0200
+
+olsrd (0.5.6-r8-1) unstable; urgency=low
+
+  * New upstream version, the eighth maintenance release of 0.5.6, introducing
+    options to set the source and destination IP of the OLSR packets and a 
+    more flexible handling config handling as well as some bug fixes including
+    memory leaks.
+
+ -- Holger Levsen <holger@debian.org>  Wed, 20 Jan 2010 01:13:43 +0000
+
+olsrd (0.5.6-r7-1) unstable; urgency=low
+
+  * New upstream version, the seventh maintenance release of 0.5.6, with some
+    improvements in the ETX-FFmetric and new stabilization patches for the 
+    route generation.
+
+ -- Holger Levsen <holger@debian.org>  Wed, 11 Nov 2009 17:53:26 +0100
+
+olsrd (0.5.6-r6-3) unstable; urgency=low
+
+  * Brown paper bag release: add 270-make-kfbsd.patch to debian/patches/series
+    so it actually gets applied. (Closes: #544758)
+
+ -- Holger Levsen <holger@debian.org>  Mon, 19 Oct 2009 11:31:38 +0200
+
+olsrd (0.5.6-r6-2) unstable; urgency=low
+
+  * Do not override the general setting in Makefile.kfbsd to "honor DESTDIR 
+    in make install". Thanks to Petr Salinger for the patch. (Closes: #544758)
+
+ -- Holger Levsen <holger@debian.org>  Sat, 17 Oct 2009 13:00:41 +0000
+
+olsrd (0.5.6-r6-1) unstable; urgency=low
+
+  * New upstream version, the sixth maintenance release of 0.5.6, adding
+    support for Debian kfreebsd (Closes: #544758) and including fixes for
+    httpinfo, txtinfo and dotdraw plugin to prevent them blocking in case of
+    timed out outgoing connections. 
+    Drop 250-dot-draw-plugin-honor-accept-parameter.patch as it has been
+    included in the new upstream release.
+  * Fix incorrect runlevels and dependencies in init.d LSB header, thanks to
+    Petter Reinholdtsen for spotting the issues and providing the patch.
+    (Closes: #548607)
+  * Bump standards version to 3.8.3, no changes necessary.
+
+ -- Holger Levsen <holger@debian.org>  Sat, 10 Oct 2009 14:55:37 +0200
+
+olsrd (0.5.6-r5-1) unstable; urgency=low
+
+  * New upstream version, the fifth maintenance release of 0.5.6.
+  * Add patch by Sebastian Harl to add a listen parameter to the dot_draw
+    plugin. (Closes: #532573) - Thanks, Sebastian! 
+  * Re-enable quagga plugin. Since olsrd is licenced under the 3 clause BSD 
+    licence and quagga is GPL-2 code, the resuling binary is GPL-2 licenced
+    too, and thats fine. (Closes: #532761)
+    Add patch by Florian Forster to determine quagga protocol version - thanks
+    Florian!
+  * Add descriptions of quagga, bmf and txtinfo plugins to package 
+    description. (Closes: #532765)
+  * Bump standards version to 3.8.2.
+  * Update years in debian/copyright.
+
+ -- Holger Levsen <holger@debian.org>  Tue, 04 Aug 2009 12:10:35 +0000
+
+olsrd (0.5.6-r4-1) unstable; urgency=low
+
+  * New upstream version, the fourth maintenance release of 0.5.6.
+  * olsrd.init: 
+    - do not write the pidfile until olsrd has actually been started
+      (Closes: #519842) - thanks to Sebastian Reichel for the bug report!
+    - only start olsrd if it is not already running. 
+  * Bump standards-version to 3.8.1.
+
+ -- Holger Levsen <holger@debian.org>  Sat, 30 May 2009 09:14:27 +0000
+
+olsrd (0.5.6-r3-1) unstable; urgency=low
+
+  * New upstream release, the third maintenance release of 0.5.6.
+  * Adopt debian/patches/200-etc-olsrd.patch to cope with the whitespace
+    changes in the new release.
+
+ -- Holger Levsen <holger@debian.org>  Sat, 14 Mar 2009 18:31:55 +0100
+
+olsrd (0.5.6~rc7-1) unstable; urgency=low
+
+  * New upstream release candidate.
+  * Use a PID file. (Closes: #484128)
+  * Bump standards-version to 3.8.0, no changes needed.
+  * Install the plugins into /usr/lib/olsrd/, to get rid off all the lintian
+    overrides. Adapted README.Debian to reflect that.
+  * Compile the source without DESTDIR, just install it to DESTDIR.
+  * Modify the plugin targets in the upstream Makefile to provide distinct
+    $pluginname_install targets, otherwise DESTDIR shows up in rpath. 
+  * Drop debian/patches/210-txtinfo-Makefile.patch as it has been adapted by
+    upstream.
+
+ -- Holger Levsen <holger@debian.org>  Sat, 12 Jul 2008 16:38:15 +0000
+
+olsrd (0.5.5-3) unstable; urgency=low
+
+  * No longer work around a bug in debhelper (#470913) in debian/rules,
+    which was introduced in 0.5.5-2 to fix #471627. Due to this, it's also not
+    necessary to manually uncompress and compress some manpages, as debhelper
+    now handles this as well.
+
+ -- Holger Levsen <holger@debian.org>  Wed,  2 Apr 2008 13:06:27 +0200
+
+olsrd (0.5.5-2) unstable; urgency=low
+
+  * update debian/copyright to clarify that src/cfgparser/oparse.(c|h)
+    has a special exception which allows distributing it under other
+    conditions than the GPL in special cases
+  * fix handling of zipped manpages (Closes: #471627)
+  * remove the quagga plugin from the binary package, as it is GPL licenced
+    and cannot be distributed together with the BSD licenced olsrd 
+  * remove linda overwrites as linda is deprecated
+  * updated lintian overwrites
+
+ -- Holger Levsen <holger@debian.org>  Mon, 31 Mar 2008 08:50:25 +0000
+
+olsrd (0.5.5-1) unstable; urgency=low
+
+  * new upstream version
+  * removed unused lintian overwrites
+  * upgraded to policy 3.7.3, no changes requiered
+  * made debian/copyright machine readable following
+    http://wiki.debian.org/Proposals/CopyrightFormat and converted it to utf8
+  * patch upstream Makefile to use /usr/lib on amd64
+    (Closes: #461604)
+
+ -- Holger Levsen <holger@debian.org>  Sat, 09 Feb 2008 09:39:28 +0000
+
+olsrd (0.5.4-2) unstable; urgency=low
+
+  * clean up olsrd makefile, fix a very annoying dependency bug in the olsrd
+    build system (Closes: #452100) - taken from OpenWRT, thanks to Felix
+    Fietkau 
+
+ -- Holger Levsen <holger@debian.org>  Tue, 20 Nov 2007 14:26:34 +0100
+
+olsrd (0.5.4-1) unstable; urgency=low
+
+  * new upstream version
+  * add Homepage and Vcs-* headers to debian/control
+  * olsrd.conf: small improvements as suggested by Jens Nachtigall - Thanks!
+
+ -- Holger Levsen <holger@debian.org>  Fri, 16 Nov 2007 12:02:21 +0000
+
+olsrd (0.5.3-3) unstable; urgency=low
+
+  * Undefine STRIP when running make install and instead use dh_strip so that 
+    DEB_BUILD_OPTIONS=nostrip can be used (Closes: #437676) 
+
+ -- Holger Levsen <holger@debian.org>  Sat, 18 Aug 2007 23:06:02 +0200
+
+olsrd (0.5.3-2) unstable; urgency=low
+
+  * improved olsrd.conf settings (Thanks elektra!) and made olsrd quiet on 
+    default
+
+ -- Holger Levsen <holger@debian.org>  Sun, 12 Aug 2007 19:38:19 +0200
+
+olsrd (0.5.3-1) unstable; urgency=low
+
+  * new upstream version (Closes: #404899, #405331)
+  * include bmf, quagga and txtinfo plugins in binary package
+
+ -- Holger Levsen <holger@debian.org>  Sun,  5 Aug 2007 01:49:19 +0200
+
+olsrd (0.5.2-1) unstable; urgency=low
+
+  * new upstream release (Closes: #426580)
+  * added build-dependency on bison and flex
+  * removed dependency on libpthread2 (Closes: #412752)
+  * maintainer address updated
+  * updated README.Debian
+  * cleaned up debian/patches/ (from openwrt) as they are included
+    upstream by now
+  * added debian/todo in source
+  * make init-script exit gracefully if stopping olsrd fails (Closes: #412936)
+
+ -- Holger Levsen <holger@debian.org>  Wed,  1 Aug 2007 00:58:23 +0200
+
+olsrd (0.4.10-3) unstable; urgency=low
+
+  * improved Makefile clean target to allow rebuilds
+  * fixed and improved broken /etc/default/olsrd and /etc/init.d/olsrd
+  * improved README.Debian and olsrd.conf
+
+ -- Holger Levsen <debian@layer-acht.org>  Wed, 20 Dec 2006 22:57:21 +0000
+
+olsrd (0.4.10-2) unstable; urgency=low
+
+  * fix debian/copyright (gui/linux-gtk is GPL licenced, not BSD like the rest)
+  * upgraded debian/compat debhelper source-depends version to 5 (as it's enough 
+    if 0.4.10-1 builds on sarge without changes)
+  * use ${binary:Version} format for olsrd-plugins depends on olsrd, for the
+    same reason
+
+ -- Holger Levsen <debian@layer-acht.org>  Sun, 17 Dec 2006 18:51:00 +0000
+
+olsrd (0.4.10-1) unstable; urgency=low
+
+  * Initial release (Closes: #401307, #243527)
+
+ -- Holger Levsen <debian@layer-acht.org>  Sat,  9 Dec 2006 17:04:26 +0000
+
