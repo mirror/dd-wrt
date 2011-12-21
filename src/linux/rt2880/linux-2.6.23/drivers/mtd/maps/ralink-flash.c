@@ -220,7 +220,7 @@ int ra_check_flash_type(void)
     memset(Id, 0, sizeof(Id));
     strncpy(Id, (char *)RALINK_SYSCTL_BASE, 6);
     syscfg = (*((int *)(RALINK_SYSCTL_BASE + 0x10)));
-
+    printk(KERN_INFO "system type: %s\n",Id);
     if((strcmp(Id,"RT3052")==0) || (strcmp(Id, "RT3350")==0)) {
 	boot_from = (syscfg >> 16) & 0x3; 
 	switch(boot_from)
@@ -265,7 +265,7 @@ int ra_check_flash_type(void)
     } else {
 	printk("%s: %s is not supported\n",__FUNCTION__, Id);
     }
-
+    printk(KERN_INFO "boot type: %d\n",boot_from);
     return boot_from;
 
 
