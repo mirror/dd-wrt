@@ -558,7 +558,7 @@ static u32 atombios_adjust_pll(struct drm_crtc *crtc,
 				bpc = connector->display_info.bpc;
 			encoder_mode = atombios_get_encoder_mode(encoder);
 			if ((radeon_encoder->devices & (ATOM_DEVICE_LCD_SUPPORT | ATOM_DEVICE_DFP_SUPPORT)) ||
-			    radeon_encoder_is_dp_bridge(encoder)) {
+			    (radeon_encoder_get_dp_bridge_encoder_id(encoder) != ENCODER_OBJECT_ID_NONE)) {
 				if (connector) {
 					struct radeon_connector *radeon_connector = to_radeon_connector(connector);
 					struct radeon_connector_atom_dig *dig_connector =
@@ -638,44 +638,29 @@ static u32 atombios_adjust_pll(struct drm_crtc *crtc,
 				if (ss_enabled && ss->percentage)
 					args.v3.sInput.ucDispPllConfig |=
 						DISPPLL_CONFIG_SS_ENABLE;
-				if (radeon_encoder->devices & (ATOM_DEVICE_DFP_SUPPORT) ||
-				    radeon_encoder_is_dp_bridge(encoder)) {
+				if (encoder_mode == ATOM_ENCODER_MODE_DP) {
+					args.v3.sInput.ucDispPllConfig |=
+						DISPPLL_CONFIG_COHERENT_MODE;
+					/* 16200 or 27000 */
+					args.v3.sInput.usPixelClock = cpu_to_le16(dp_clock / 10);
+				} else if (radeon_encoder->devices & (ATOM_DEVICE_DFP_SUPPORT)) {
 					struct radeon_encoder_atom_dig *dig = radeon_encoder->enc_priv;
-					if (encoder_mode == ATOM_ENCODER_MODE_DP) {
+					if (encoder_mode == ATOM_ENCODER_MODE_HDMI)
+						/* deep color support */
+						args.v3.sInput.usPixelClock =
+							cpu_to_le16((mode->clock * bpc / 8) / 10);
+					if (dig->coherent_mode)
 						args.v3.sInput.ucDispPllConfig |=
 							DISPPLL_CONFIG_COHERENT_MODE;
-						/* 16200 or 27000 */
-						args.v3.sInput.usPixelClock = cpu_to_le16(dp_clock / 10);
-					} else {
-						if (encoder_mode == ATOM_ENCODER_MODE_HDMI) {
-							/* deep color support */
-							args.v3.sInput.usPixelClock =
-								cpu_to_le16((mode->clock * bpc / 8) / 10);
-						}
-						if (dig->coherent_mode)
-							args.v3.sInput.ucDispPllConfig |=
-								DISPPLL_CONFIG_COHERENT_MODE;
-						if (mode->clock > 165000)
-							args.v3.sInput.ucDispPllConfig |=
-								DISPPLL_CONFIG_DUAL_LINK;
-					}
-				} else if (radeon_encoder->devices & (ATOM_DEVICE_LCD_SUPPORT)) {
-					if (encoder_mode == ATOM_ENCODER_MODE_DP) {
+					if (mode->clock > 165000)
 						args.v3.sInput.ucDispPllConfig |=
-							DISPPLL_CONFIG_COHERENT_MODE;
-						/* 16200 or 27000 */
-						args.v3.sInput.usPixelClock = cpu_to_le16(dp_clock / 10);
-					} else if (encoder_mode != ATOM_ENCODER_MODE_LVDS) {
-						if (mode->clock > 165000)
-							args.v3.sInput.ucDispPllConfig |=
-								DISPPLL_CONFIG_DUAL_LINK;
-					}
+							DISPPLL_CONFIG_DUAL_LINK;
 				}
-				if (radeon_encoder_is_dp_bridge(encoder)) {
-					struct drm_encoder *ext_encoder = radeon_atom_get_external_encoder(encoder);
-					struct radeon_encoder *ext_radeon_encoder = to_radeon_encoder(ext_encoder);
-					args.v3.sInput.ucExtTransmitterID = ext_radeon_encoder->encoder_id;
-				} else
+				if (radeon_encoder_get_dp_bridge_encoder_id(encoder) !=
+				    ENCODER_OBJECT_ID_NONE)
+					args.v3.sInput.ucExtTransmitterID =
+						radeon_encoder_get_dp_bridge_encoder_id(encoder);
+				else
 					args.v3.sInput.ucExtTransmitterID = 0;
 
 				atom_execute_table(rdev->mode_info.atom_context,
