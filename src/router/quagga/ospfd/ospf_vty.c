@@ -107,8 +107,14 @@ str2distribute_source (const char *str, int *source)
     *source = ZEBRA_ROUTE_STATIC;
   else if (strncmp (str, "r", 1) == 0)
     *source = ZEBRA_ROUTE_RIP;
-  else if (strncmp (str, "b", 1) == 0)
+  else if (strncmp (str, "bg", 2) == 0)
     *source = ZEBRA_ROUTE_BGP;
+  else if (strncmp (str, "h", 1) == 0)
+    *source = ZEBRA_ROUTE_HSLS;
+  else if (strncmp (str, "o", 1) == 0)
+    *source = ZEBRA_ROUTE_OLSR;
+  else if (strncmp (str, "ba", 2) == 0)
+    *source = ZEBRA_ROUTE_BATMAN;
   else
     return 0;
 
