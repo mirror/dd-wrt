@@ -351,12 +351,8 @@ static int
 ipc_send_net_info(int fd)
 {
   struct ipc_net_msg *net_msg;
-  //int x, i;
-  char *msg;
 
   net_msg = olsr_malloc(sizeof(struct ipc_net_msg), "send net info");
-
-  msg = (char *)net_msg;
 
   OLSR_PRINTF(1, "Sending net-info to front end...\n");
 
@@ -389,8 +385,10 @@ ipc_send_net_info(int fd)
   net_msg->main_addr = olsr_cnf->main_addr;
 
   /*
+  {
+     unsigned int x, i;
+
      printf("\t");
-     x = 0;
      for(i = 0; i < sizeof(struct ipc_net_msg);i++)
      {
      if(x == 4)
@@ -399,11 +397,12 @@ ipc_send_net_info(int fd)
      printf("\n\t");
      }
      x++;
-     printf(" %03i", (u_char) msg[i]);
+     printf(" %03i", ((u_char *)net_msg)[i]);
      }
 
      printf("\n");
-   */
+  }
+  */
 
   if (send(fd, (char *)net_msg, sizeof(struct ipc_net_msg), MSG_NOSIGNAL) < 0) {
     OLSR_PRINTF(1, "(NETINFO)IPC connection lost!\n");

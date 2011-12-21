@@ -156,16 +156,13 @@ olsr_parser(union olsr_message *m, struct interface *in_if __attribute__ ((unuse
 {
   union olsr_ip_addr originator;
   int size;
-  uint32_t vtime;
   //OLSR_DEBUG(LOG_PLUGINS, "MDNS PLUGIN: Received msg in parser\n");
   /* Fetch the originator of the messsage */
   if (olsr_cnf->ip_version == AF_INET) {
     memcpy(&originator, &m->v4.originator, olsr_cnf->ipsize);
-    vtime = me_to_reltime(m->v4.olsr_vtime);
     size = ntohs(m->v4.olsr_msgsize);
   } else {
     memcpy(&originator, &m->v6.originator, olsr_cnf->ipsize);
-    vtime = me_to_reltime(m->v6.olsr_vtime);
     size = ntohs(m->v6.olsr_msgsize);
   }
 
@@ -334,9 +331,7 @@ BmfPacketCaptured(
                    //unsigned char sllPkttype,
                    unsigned char *encapsulationUdpData, int nBytes)
 {
-  union olsr_ip_addr src;              /* Source IP address in captured packet */
   union olsr_ip_addr dst;              /* Destination IP address in captured packet */
-  union olsr_ip_addr *origIp;          /* Main OLSR address of source of captured packet */
   struct ip *ipHeader;                 /* The IP header inside the captured IP packet */
   struct ip6_hdr *ipHeader6;           /* The IP header inside the captured IP packet */
   struct udphdr *udpHeader;
@@ -391,10 +386,6 @@ BmfPacketCaptured(
 
   /* Check if the frame is captured on an OLSR-enabled interface */
   //isFromOlsrIntf = (intf->olsrIntf != NULL); TODO: put again this check
-
-
-  /* Lookup main address of source in the MID table of OLSR */
-  origIp = MainAddressOf(&src);
 
   // send the packet to OLSR forward mechanism
   olsr_mdns_gen(encapsulationUdpData, nBytes);

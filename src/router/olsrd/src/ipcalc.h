@@ -157,7 +157,7 @@ olsr_string_to_prefix(int ipversion, struct olsr_ip_prefix *dst, const char *buf
 static INLINE const char *
 sockaddr4_to_string(struct ipaddr_str *const buf, const struct sockaddr *const addr)
 {
-  const struct sockaddr_in *addr4 = (const struct sockaddr_in *)addr;
+  const struct sockaddr_in *addr4 = (const struct sockaddr_in *)CONST_ARM_NOWARN_ALIGN(addr);
   return ip4_to_string(buf, addr4->sin_addr);
 }
 

@@ -261,7 +261,7 @@ static int olsrd_sanity_check_rtpolicy(struct olsrd_config *cnf) {
     }
     else if (cnf->rt_table_pri == DEF_RT_AUTO) {
       /* choose default */
-      olsr_cnf->rt_table_pri = 0;
+      olsr_cnf->rt_table_pri = DEF_RT_NONE;
       fprintf(stderr, "No policy rule for rt_table_pri\n");
     }
 
@@ -425,9 +425,15 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     return -1;
   }
 
-  /* TOS */
+  /* TOS range */
   if (cnf->tos > MAX_TOS) {
     fprintf(stderr, "TOS %d is not allowed\n", cnf->tos);
+    return -1;
+  }
+
+  /* TOS ECN */
+  if (cnf->tos & 0x03) {
+    fprintf(stderr, "TOS %d has set ECN bits, not allowed\n", cnf->tos);
     return -1;
   }
 

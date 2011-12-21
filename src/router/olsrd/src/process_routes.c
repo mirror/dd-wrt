@@ -61,7 +61,6 @@ char *StrError(unsigned int ErrNo);
 #endif
 
 static struct list_node chg_kernel_list;
-static struct list_node del_kernel_list;
 
 /**
  *
@@ -100,7 +99,6 @@ olsr_init_export_route(void)
   /* the add/chg/del kernel queues */
   //list_head_init(&add_kernel_list);
   list_head_init(&chg_kernel_list);
-  list_head_init(&del_kernel_list);
 
   olsr_addroute_function = olsr_ioctl_add_route;
   olsr_addroute6_function = olsr_ioctl_add_route6;
@@ -155,28 +153,29 @@ olsr_enqueue_rt(struct list_node *head_node, struct rt_entry *rt)
 /**
  * Process a route from the kernel deletion list.
  *
- *@return nada
+ *@return -1 on error, else 0
  */
-static void
+static int
 olsr_delete_kernel_route(struct rt_entry *rt)
 {
   if (rt->rt_metric.hops > 1) {
     /* multihop route */
     if (ip_is_linklocal(&rt->rt_dst.prefix)) {
       /* do not delete a route with a LL IP as a destination */
-      return;
+      return 0;
     }
   }
 
   if (!olsr_cnf->host_emul) {
     int16_t error = olsr_cnf->ip_version == AF_INET ? olsr_delroute_function(rt) : olsr_delroute6_function(rt);
 
-    if (error < 0) {
+    if (error != 0) {
       const char *const err_msg = strerror(errno);
       const char *const routestr = olsr_rt_to_string(rt);
       OLSR_PRINTF(1, "KERN: ERROR deleting %s: %s\n", routestr, err_msg);
 
       olsr_syslog(OLSR_LOG_ERR, "Delete route %s: %s", routestr, err_msg);
+      return -1;
     }
 #ifdef LINUX_NETLINK_ROUTING
     /* call NIIT handler (always)*/
@@ -185,6 +184,7 @@ olsr_delete_kernel_route(struct rt_entry *rt)
     }
 #endif
   }
+  return 0;
 }
 
 /**
@@ -205,7 +205,7 @@ olsr_add_kernel_route(struct rt_entry *rt)
   if (!olsr_cnf->host_emul) {
     int16_t error = (olsr_cnf->ip_version == AF_INET) ? olsr_addroute_function(rt) : olsr_addroute6_function(rt);
 
-    if (error < 0) {
+    if (error != 0) {
       const char *const err_msg = strerror(errno);
       const char *const routestr = olsr_rtp_to_string(rt->rt_best);
       OLSR_PRINTF(1, "KERN: ERROR adding %s: %s\n", routestr, err_msg);
@@ -272,30 +272,6 @@ olsr_chg_kernel_routes(struct list_node *head_node)
 }
 
 /**
- * process the kernel delete list.
- * the routes are already ordered such that nexthop routes
- * are on the head of the queue.
- * non-nexthop routes need to be deleted first and therefore
- * the queue needs to be traversed from tail to head.
- */
-static void
-olsr_del_kernel_routes(struct list_node *head_node)
-{
-  struct rt_entry *rt;
-
-  while (!list_is_empty(head_node)) {
-    rt = changelist2rt(head_node->prev);
-#ifdef LINUX_NETLINK_ROUTING
-    if (rt->rt_nexthop.iif_index >= 0)
-#endif /*LINUX_NETLINK_ROUTING*/
-      olsr_delete_kernel_route(rt);
-
-    list_remove(&rt->rt_change_node);
-    olsr_cookie_free(rt_mem_cookie, rt);
-  }
-}
-
-/**
  * Check the version number of all route paths hanging off a route entry.
  * If a route does not match the current routing tree number, remove it
  * from the global originator tree for that rt_entry.
@@ -354,9 +330,13 @@ olsr_update_rib_routes(void)
     if (!rt->rt_path_tree.count) {
 
       /* oops, all routes are gone - flush the route head */
-      avl_delete(&routingtree, rt_tree_node);
+  
+      if (olsr_delete_kernel_route(rt) == 0) {
+        /*only remove if deletion was successful*/
+        avl_delete(&routingtree, &rt->rt_tree_node);
+        olsr_cookie_free(rt_mem_cookie, rt);
+      }
 
-      olsr_enqueue_rt(&del_kernel_list, rt);
       continue;
     }
 
@@ -430,10 +410,6 @@ olsr_delete_interface_routes(int if_index) {
 void
 olsr_update_kernel_routes(void)
 {
-
-  /* delete unreachable routes */
-  olsr_del_kernel_routes(&del_kernel_list);
-
   /* route changes */
   olsr_chg_kernel_routes(&chg_kernel_list);
 

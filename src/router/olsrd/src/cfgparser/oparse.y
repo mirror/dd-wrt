@@ -599,20 +599,44 @@ isetipv4src: TOK_IPV4SRC TOK_IPV4_ADDR
 }
 ;
 
-isetipv6src: TOK_IPV6SRC TOK_IPV6_ADDR
+isetipv6src: TOK_IPV6SRC TOK_IPV6_ADDR TOK_SLASH TOK_INTEGER
 {
   struct olsr_ip_prefix pr6;
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tIPv6 src prefix: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv6 src prefix: %s/%d\n", $2->string, $4->integer);
 
-  if (olsr_string_to_prefix(AF_INET6, &pr6, $2->string)) {
-    fprintf(stderr, "isetipv6src: Failed converting IP prefix %s\n", $2->string);
+  if (inet_pton(AF_INET6, $2->string, &pr6.prefix.v6) <= 0) {
+    fprintf(stderr, "isetipv6src: Failed converting IP address %s\n", $2->string);
     YYABORT;
   }
+  if ($4->integer > 128) {
+    fprintf(stderr, "isetipv6src: Illegal Prefixlength %d\n", $4->integer);
+    YYABORT;
+  }
+  pr6.prefix_len = $4->integer;
 
 	SET_IFS_CONF(ifs, ifcnt, ipv6_src, pr6);
+
+  free($2->string);
+  free($2);
+}
+        | TOK_IPV6SRC TOK_IPV6_ADDR
+{
+  struct olsr_ip_prefix pr6;
+  int ifcnt = ifs_in_curr_cfg;
+  struct olsr_if *ifs = olsr_cnf->interfaces;
+
+  PARSER_DEBUG_PRINTF("\tIPv6 src prefix: %s/%d\n", $2->string, 128);
+
+  if (inet_pton(AF_INET6, $2->string, &pr6.prefix.v6) <= 0) {
+    fprintf(stderr, "isetipv6src: Failed converting IP address %s\n", $2->string);
+    YYABORT;
+  }
+  pr6.prefix_len = 128;
+
+  SET_IFS_CONF(ifs, ifcnt, ipv6_src, pr6);
 
   free($2->string);
   free($2);
@@ -1268,7 +1292,7 @@ ssmart_gw_uplink: TOK_SMART_GW_UPLINK TOK_STRING
 	if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_NONE]) == 0) {
 		olsr_cnf->smart_gw_type = GW_UPLINK_NONE;
 	}
-	if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_IPV4]) == 0) {
+	else if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_IPV4]) == 0) {
 		olsr_cnf->smart_gw_type = GW_UPLINK_IPV4;
 	}
 	else if (strcasecmp($2->string, GW_UPLINK_TXT[GW_UPLINK_IPV6]) == 0) {

@@ -60,7 +60,7 @@
 #define DEF_WILL_AUTO        false
 #define DEF_WILLINGNESS      3
 #define DEF_ALLOW_NO_INTS    true
-#define DEF_TOS              16
+#define DEF_TOS              192
 #define DEF_DEBUGLVL         1
 #define DEF_IPC_CONNECTIONS  0
 #define DEF_USE_HYST         false
@@ -97,7 +97,7 @@
 #define MIN_NICCHGPOLLRT     1.0
 #define MAX_DEBUGLVL         9
 #define MIN_DEBUGLVL         0
-#define MAX_TOS              16
+#define MAX_TOS              252
 #define MIN_TOS              0
 #define MAX_WILLINGNESS      7
 #define MIN_WILLINGNESS      0
@@ -223,7 +223,7 @@ struct olsrd_config {
   bool host_emul;
   int ip_version;
   bool allow_no_interfaces;
-  uint16_t tos;
+  uint8_t tos;
   uint8_t rt_proto;
   uint8_t rt_table, rt_table_default, rt_table_tunnel;
   int32_t rt_table_pri, rt_table_tunnel_pri;

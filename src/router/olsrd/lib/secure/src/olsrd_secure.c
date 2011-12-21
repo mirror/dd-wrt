@@ -35,6 +35,12 @@
  *
  */
 
+/* Adjustments made to ensure data going out is converted to network
+ * byte ordering.  Also, to ensure incoming data is converted before
+ * it is used and before checksums are calculated as well.
+ * 06/06/2011 - Rusty Haddock AE5AE -- for the HSMM-MESH project.
+ */
+
 /*
  * Dynamic linked library for the olsr.org olsr daemon
  */
@@ -667,8 +673,13 @@ parse_cres(struct interface *olsr_if, char *in_msg)
 
   {
     uint8_t checksum_cache[512 + KEYLENGTH];
+    uint32_t netorder_challenge;
+
     /* First the challenge received */
-    memcpy(checksum_cache, &entry->challenge, 4);
+    /* But we have to calculate our hash with the challenge in
+     * network order just like the remote host did!  06/06/2011 AE5AE */
+    netorder_challenge = htonl(entry->challenge);
+    memcpy(checksum_cache, &netorder_challenge, sizeof(uint32_t));
     /* Then the local IP */
     memcpy(&checksum_cache[sizeof(uint32_t)], &msg->originator, olsr_cnf->ipsize);
 
@@ -688,7 +699,9 @@ parse_cres(struct interface *olsr_if, char *in_msg)
 
   entry->challenge = 0;
   entry->validated = 1;
-  entry->diff = now.tv_sec - msg->timestamp;
+
+  /* Bring timestamp to host order before arith. 05/31/2011  AE5AE */
+  entry->diff = now.tv_sec - ntohl(msg->timestamp);
 
   /* update validtime - validated entry */
   entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
@@ -697,7 +710,10 @@ parse_cres(struct interface *olsr_if, char *in_msg)
               entry->diff);
 
   /* Send response-response */
-  send_rres(olsr_if, (union olsr_ip_addr *)&msg->originator, (union olsr_ip_addr *)&msg->destination, ntohl(msg->challenge));
+  send_rres(olsr_if, (union olsr_ip_addr *)&msg->originator,
+	    (union olsr_ip_addr *)&msg->destination, msg->challenge);
+/* Don't give send_rres() the challenge in host order, the checksum needs to
+ * be calculated in network order.  06/06/2011  AE5AE */
 
   return 1;
 }
@@ -753,8 +769,13 @@ parse_rres(char *in_msg)
 
   {
     uint8_t checksum_cache[512 + KEYLENGTH];
+    uint32_t netorder_challenge;
+
     /* First the challenge received */
-    memcpy(checksum_cache, &entry->challenge, 4);
+    /* But we have to calculate our hash with the challenge in network order! 06/06/2011  AE5AE */
+    netorder_challenge = htonl(entry->challenge);
+    memcpy(checksum_cache, &netorder_challenge, sizeof(uint32_t));
+
     /* Then the local IP */
     memcpy(&checksum_cache[sizeof(uint32_t)], &msg->originator, olsr_cnf->ipsize);
 
@@ -774,7 +795,9 @@ parse_rres(char *in_msg)
 
   entry->challenge = 0;
   entry->validated = 1;
-  entry->diff = now.tv_sec - msg->timestamp;
+
+  /* Bring timestamp to host order before arith. 05/31/2011  AE5AE */
+  entry->diff = now.tv_sec - ntohl(msg->timestamp);
 
   /* update validtime - validated entry */
   entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
@@ -857,7 +880,10 @@ parse_challenge(struct interface *olsr_if, char *in_msg)
 
   /* Build and send response */
 
-  send_cres(olsr_if, (union olsr_ip_addr *)&msg->originator, (union olsr_ip_addr *)&msg->destination, ntohl(msg->challenge), entry);
+  send_cres(olsr_if, (union olsr_ip_addr *)&msg->originator,
+	    (union olsr_ip_addr *)&msg->destination, msg->challenge, entry);
+/* Don't give send_cres() the challenge in host order, as the checksum needs to
+ * be calculated with network order.   06/06/2011  AE5AE */
 
   return 1;
 }
@@ -893,9 +919,11 @@ send_cres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   crmsg.seqno = htons(get_msg_seqno());
 
   /* set timestamp */
-  crmsg.timestamp = now.tv_sec;
+  /* but swap the byte order to the network order before sending!  05/28/2011  AE5AE */
+  crmsg.timestamp = htonl(now.tv_sec);
 #ifndef WIN32
-  olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)crmsg.timestamp);
+  /* Don't print htonl()'d time, use original now.tv_sec.  05/31/2011  AE5AE */
+  olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)now.tv_sec);
 #endif
 
   /* Fill subheader */
@@ -963,10 +991,12 @@ send_rres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   rrmsg.seqno = htons(get_msg_seqno());
 
   /* set timestamp */
-  rrmsg.timestamp = now.tv_sec;
+  /* But swap the byte order to the network order!  05/28/2011  AE5AE */
+  rrmsg.timestamp = htonl(now.tv_sec);
 
 #ifndef WIN32
-  olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)rrmsg.timestamp);
+  /* don't print htonl()'d time, use original now.tv_sec.  05/31/2011  AE5AE */
+  olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)now.tv_sec);
 #endif
   /* Fill subheader */
   memcpy(&rrmsg.destination, to, olsr_cnf->ipsize);

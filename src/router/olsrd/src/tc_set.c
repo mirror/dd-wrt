@@ -418,8 +418,6 @@ olsr_expire_tc_edge_gc(void *context)
 bool
 olsr_calc_tc_edge_entry_etx(struct tc_edge_entry *tc_edge)
 {
-  olsr_linkcost old;
-
   /*
    * Some sanity check before recalculating the etx.
    */
@@ -427,7 +425,6 @@ olsr_calc_tc_edge_entry_etx(struct tc_edge_entry *tc_edge)
     return false;
   }
 
-  old = tc_edge->cost;
   tc_edge->cost = olsr_calc_tc_cost(tc_edge);
   return true;
 }
