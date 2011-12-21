@@ -838,6 +838,8 @@ static const struct zebra_desc_table route_types[] = {
   DESC_ENTRY	(ZEBRA_ROUTE_ISIS,	"isis",		'I' ),
   DESC_ENTRY	(ZEBRA_ROUTE_BGP,	"bgp",		'B' ),
   DESC_ENTRY	(ZEBRA_ROUTE_HSLS,	"hsls",		'H' ),
+  DESC_ENTRY	(ZEBRA_ROUTE_OLSR,	"olsr",		'o' ),
+  DESC_ENTRY	(ZEBRA_ROUTE_BATMAN,	"batman",	'b' ),
 };
 #undef DESC_ENTRY
 
