@@ -490,6 +490,12 @@ olsr_scheduler(void)
 
     /* Read incoming data and handle it immediiately */
     handle_fds(next_interval);
+
+#ifdef WIN32
+    if (olsr_win32_end_request) {
+      olsr_win32_end_flag = true;
+    }
+#endif
   }
 }
 

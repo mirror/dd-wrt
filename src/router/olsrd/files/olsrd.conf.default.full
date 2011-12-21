@@ -62,10 +62,11 @@
 
 # NicChgsPollInt  2.5
 
-# TOS(type of service) value for the IP header of control traffic.
-# (Default is 16)
+# TOS(type of service) byte value for the IP header of control traffic.
+# Must be multiple of 4, because OLSR doesn't use ECN
+# (Default is 192, CS6 - Network Control)
 
-# TosValue 16
+# TosValue 192
 
 # FIBMetric controls the metric value of the host-routes OLSRd sets.
 # - "flat" means that the metric value is always 2. This is the preferred value
@@ -139,9 +140,9 @@
 
 # Activates the smartgateway ipip tunnel feature.
 # See README-Olsr-Extensions for a description of smartgateways.
-# (default is "yes")
+# (default is "no")
 
-# SmartGateway yes
+# SmartGateway no
 
 # Allows the selection of a smartgateway with NAT (only for IPv4)
 # (default is "yes")

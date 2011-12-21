@@ -126,9 +126,9 @@ getsocket(int BuffSize, struct interface *ifp __attribute__ ((unused)))
     BuffSize -= 1024;
   }
 
-  if (BuffSize <= 8192)
-    fprintf(stderr, "Cannot set IPv4 socket receive buffer.\n");
-
+  if (BuffSize <= 8192) {
+    OLSR_PRINTF(1, "Cannot set IPv4 socket receive buffer.\n");
+  }
   memset(&Addr, 0, sizeof(Addr));
   Addr.sin_family = AF_INET;
   Addr.sin_port = htons(olsr_cnf->olsrport);
@@ -402,7 +402,19 @@ olsr_recvfrom(int s, void *buf, size_t len, int flags __attribute__ ((unused)), 
 int
 olsr_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, struct timeval *timeout)
 {
+#ifdef WIN32
+  if (nfds == 0) {
+    if (timeout) {
+      Sleep(timeout->tv_sec * 1000 + timeout->tv_usec / 1000);
+    }
+    return 0;
+  }
+  else {
+    return select(nfds, readfds, writefds, exceptfds, timeout);
+  }
+#else
   return select(nfds, readfds, writefds, exceptfds, timeout);
+#endif /*WIN32*/
 }
 
 /*

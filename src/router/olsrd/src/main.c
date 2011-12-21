@@ -128,9 +128,20 @@ struct olsr_cookie_info *def_timer_ci = NULL;
  */
 static int olsr_create_lock_file(bool noExitOnFail) {
 #ifdef WIN32
-  HANDLE lck = CreateEvent(NULL, TRUE, FALSE, lock_file_name);
-  if (NULL == lck || ERROR_ALREADY_EXISTS == GetLastError()) {
-    if (noenoExitOnFail) {
+    bool success;
+    HANDLE lck, lock;
+
+    lck = CreateFile(lock_file_name,
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL |
+            FILE_FLAG_DELETE_ON_CLOSE,
+            NULL);
+  lock = CreateEvent(NULL, TRUE, FALSE, lock_file_name);
+  if (INVALID_HANDLE_VALUE == lck || ERROR_ALREADY_EXISTS == GetLastError()) {
+    if (noExitOnFail) {
       return -1;
     }
     if (NULL == lck) {
@@ -146,6 +157,21 @@ static int olsr_create_lock_file(bool noExitOnFail) {
     }
     olsr_exit("", EXIT_FAILURE);
   }
+
+  success = LockFile( lck, 0, 0, 0, 0);
+
+  if (!success) {
+      CloseHandle(lck);
+      if (noExitOnFail) {
+          return -1;
+      }
+      fprintf(stderr,
+          "Error, cannot aquire OLSR lock '%s'.\n"
+          "Another OLSR instance might be running.\n",
+          lock_file_name);
+    olsr_exit("", EXIT_FAILURE);
+  }
+      
 #else
   struct flock lck;
 
@@ -432,10 +458,8 @@ int main(int argc, char *argv[]) {
   set_empty_tc_timer(GET_TIMESTAMP(0));
 
   /* enable ip forwarding on host */
-  /* Disable redirects globally */
-#ifndef WIN32
+  /* Disable redirects globally (not for WIN32) */
   net_os_set_global_ifoptions();
-#endif
 
   /* Initialize parser */
   olsr_init_parser();
@@ -520,7 +544,7 @@ int main(int argc, char *argv[]) {
    */
   for (i=5; i>=0; i--) {
     OLSR_PRINTF(3, "Trying to get olsrd lock...\n");
-    if (olsr_create_lock_file(i > 0) == 0) {
+    if (!olsr_cnf->host_emul && olsr_create_lock_file(i > 0) == 0) {
       /* lock sucessfully created */
       break;
     }
@@ -533,7 +557,7 @@ int main(int argc, char *argv[]) {
   OLSR_PRINTF(1, "Main address: %s\n\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
 
 #ifdef LINUX_NETLINK_ROUTING
-  /* create policy routing priorities if necessary */
+  /* create policy routing rules with priorities if necessary */
   if (DEF_RT_NONE != olsr_cnf->rt_table_pri) {
     olsr_os_policy_rule(olsr_cnf->ip_version,
         olsr_cnf->rt_table, olsr_cnf->rt_table_pri, NULL, true);
@@ -547,11 +571,11 @@ int main(int argc, char *argv[]) {
         olsr_cnf->rt_table_default, olsr_cnf->rt_table_default_pri, NULL, true);
   }
 
-  /* OLSR sockets */
+  /* rule to default table on all olsrd interfaces */
   if (DEF_RT_NONE != olsr_cnf->rt_table_defaultolsr_pri) {
     for (ifn = ifnet; ifn; ifn = ifn->int_next) {
-      olsr_os_policy_rule(olsr_cnf->ip_version, olsr_cnf->rt_table_default,
-          olsr_cnf->rt_table_defaultolsr_pri, ifn->int_name, true);
+      olsr_os_policy_rule(olsr_cnf->ip_version,
+          olsr_cnf->rt_table_default, olsr_cnf->rt_table_defaultolsr_pri, ifn->int_name, true);
     }
   }
 
@@ -686,7 +710,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
   olsr_win32_end_request = TRUE;
 
   while (!olsr_win32_end_flag)
-  Sleep(100);
+  sleep(1);
 
   OLSR_PRINTF(1, "Scheduler stopped.\n");
 #endif

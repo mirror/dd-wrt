@@ -38,6 +38,7 @@
  *
  */
 
+#include "olsr.h"
 #include "Packet.h"
 
 /* System includes */
@@ -62,7 +63,7 @@ int IsIpFragment(unsigned char* ipPacket)
 
   assert(ipPacket != NULL);
 
-  iph = (struct ip*) ipPacket;
+  iph = (struct ip*) ARM_NOWARN_ALIGN(ipPacket);
   if ((ntohs(iph->ip_off) & IP_OFFMASK) != 0)
   {
     return 1;
@@ -85,7 +86,7 @@ u_int16_t GetIpTotalLength(unsigned char* ipPacket)
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr*) ipPacket;
+  iph = (struct iphdr*) ARM_NOWARN_ALIGN(ipPacket);
   return ntohs(iph->tot_len);
 } /* GetIpTotalLength */
 
@@ -176,7 +177,7 @@ GetIpHeaderLength(unsigned char *ipPacket)
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr *)ipPacket;
+  iph = (struct iphdr *) ARM_NOWARN_ALIGN(ipPacket);
   return iph->ihl << 2;
 }                               /* GetIpHeaderLength */
 
@@ -209,7 +210,7 @@ u_int8_t GetTtl(unsigned char* ipPacket)
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr*) ipPacket;
+  iph = (struct iphdr*) ARM_NOWARN_ALIGN(ipPacket);
   return iph->ttl;
 } /* GetTtl */
 
@@ -228,7 +229,7 @@ void SaveTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl)
 
   assert(ipPacket != NULL && sttl != NULL);
 
-  iph = (struct iphdr*) ipPacket;
+  iph = (struct iphdr*) ARM_NOWARN_ALIGN(ipPacket);
   sttl->ttl = iph->ttl;
   sttl->check = ntohs(iph->check);
 } /* SaveTtlAndChecksum */
@@ -249,7 +250,7 @@ void RestoreTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl)
 
   assert(ipPacket != NULL && sttl != NULL);
 
-  iph = (struct iphdr*) ipPacket;
+  iph = (struct iphdr*) ARM_NOWARN_ALIGN(ipPacket);
   iph->ttl = sttl->ttl;
   iph->check = htons(sttl->check);
 } /* RestoreTtlAndChecksum */
@@ -271,7 +272,7 @@ void DecreaseTtlAndUpdateHeaderChecksum(unsigned char* ipPacket)
 
   assert(ipPacket != NULL);
 
-  iph = (struct iphdr*) ipPacket;
+  iph = (struct iphdr*) ARM_NOWARN_ALIGN(ipPacket);
 
   iph->ttl--; /* decrement ttl */
   sum = ntohs(iph->check) + 0x100; /* increment checksum high byte */

@@ -9,7 +9,8 @@ BINNAME = olsr_switch
 endif
 
 default_target:	$(OBJS)
-	$(CC) $(LDFLAGS) -o $(TOPDIR)/$(BINNAME) $(OBJS) $(LIBS)
+	@echo "[LD] $@"
+	@$(CC) $(LDFLAGS) -o $(TOPDIR)/$(BINNAME) $(OBJS) $(LIBS)
 
 ohs_cmd.o: CFLAGS += -Wno-cast-qual
 

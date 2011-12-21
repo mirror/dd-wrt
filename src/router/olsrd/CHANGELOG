@@ -1,5 +1,17 @@
 This file states changes as of version 0.2.4:
 
+0.6.2 --------------------------------------------------------------------
+
+Bugfix release for 0.6.1
+
+- Compatibility for Linux kernel 3.x
+- Lots of small fixes
+- reworked makefile output
+- updates for some plugins
+- repair for Smartgateway feature
+
+Read GIT changelog at http://olsr.org/git to see a complete history.
+
 0.6.1 --------------------------------------------------------------------
 
 Bugfix release for 0.6.0
