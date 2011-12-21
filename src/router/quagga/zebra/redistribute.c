@@ -255,6 +255,9 @@ zebra_redistribute_add (int command, struct zserv *client, int length)
     case ZEBRA_ROUTE_OSPF:
     case ZEBRA_ROUTE_OSPF6:
     case ZEBRA_ROUTE_BGP:
+    case ZEBRA_ROUTE_HSLS:
+    case ZEBRA_ROUTE_OLSR:
+    case ZEBRA_ROUTE_BATMAN:
       if (! client->redist[type])
 	{
 	  client->redist[type] = 1;
@@ -283,6 +286,9 @@ zebra_redistribute_delete (int command, struct zserv *client, int length)
     case ZEBRA_ROUTE_OSPF:
     case ZEBRA_ROUTE_OSPF6:
     case ZEBRA_ROUTE_BGP:
+    case ZEBRA_ROUTE_HSLS:
+    case ZEBRA_ROUTE_OLSR:
+    case ZEBRA_ROUTE_BATMAN:
       client->redist[type] = 0;
       break;
     default:

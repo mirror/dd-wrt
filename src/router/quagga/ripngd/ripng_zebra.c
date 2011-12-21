@@ -214,8 +214,11 @@ static struct {
   {ZEBRA_ROUTE_KERNEL,  1, "kernel"},
   {ZEBRA_ROUTE_CONNECT, 1, "connected"},
   {ZEBRA_ROUTE_STATIC,  1, "static"},
-  {ZEBRA_ROUTE_OSPF6,   1, "ospf6"},
-  {ZEBRA_ROUTE_BGP,     1, "bgp"},
+  {ZEBRA_ROUTE_OSPF6,   2, "ospf6"},
+  {ZEBRA_ROUTE_BGP,     2, "bgp"},
+  {ZEBRA_ROUTE_HSLS,    1, "hsls"},
+  {ZEBRA_ROUTE_OLSR,    2, "olsr"},
+  {ZEBRA_ROUTE_BATMAN,  2, "batman"},
   {0, 0, NULL}
 };
 
