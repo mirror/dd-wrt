@@ -85,8 +85,8 @@ void start_openvpnserver(void)
 		    && nvram_match("openvpn_proxy", "0"))
 			fprintf(fp,
 				"ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
-		if (nvram_match("openvpn_certtype", "1"))
-			fprintf(fp, "ns-cert-type server\n");
+//		if (nvram_match("openvpn_certtype", "1"))	//server doenst need this
+//			fprintf(fp, "ns-cert-type server\n");
 		if (nvram_match("openvpn_lzo", "1"))
 			fprintf(fp, "comp-lzo yes\n");	//yes/no/adaptive
 		else
@@ -288,7 +288,7 @@ void start_openvpn(void)
 	else
 		fprintf(fp, "comp-lzo no\n");
 	if (nvram_match("openvpncl_certtype", "1"))
-		fprintf(fp, "ns-cert-type server\n");
+		fprintf(fp, "remote-cert-tls server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 //	if (nvram_match("openvpncl_tuntap", "tun"))
