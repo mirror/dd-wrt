@@ -18,8 +18,11 @@ choice
 	default RT3052_ASIC
 
 config  RT3052_ASIC 
-        bool "RT3052-ASIC"
+        bool "RT305x/RT3350-ASIC"
 endchoice
+
+config RALINK_RT3350
+	bool "Ralink RT3350 chipset"
 
 endif
 
@@ -177,7 +180,7 @@ endchoice
 
 config  RT2880_FLASH_32M
         bool "Flash Size 32MB Support"
-	depends on RALINK_RT3052_MP2
+	depends on (RALINK_RT3052_MP2 || RALINK_RT3350) && !MTD_SPI_RALINK
 	select MTD_CONCAT if RT2880_FLASH_32M
 
 config  RALINK_RAM_SIZE

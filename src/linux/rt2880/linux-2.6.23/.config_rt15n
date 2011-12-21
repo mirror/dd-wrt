@@ -1,3 +1,5 @@
+# CONFIG_RALINK_RT3350 is not set
+# CONFIG_MTD_SPI_RALINK is not set
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17
