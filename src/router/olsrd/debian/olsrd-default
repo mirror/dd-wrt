@@ -1,0 +1,24 @@
+# Defaults for olsrd initscript
+# sourced by /etc/init.d/olsrd
+# installed at /etc/default/olsrd by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+#
+# uncomment the next line run olsrd automatically at startup
+#
+#START_OLSRD="YES"
+
+#
+# debuglevel from 1 (=quiet) to 9 (=max debug)
+# for running from init.d 0 is recommended
+#
+DEBUGLEVEL=0
+
+#
+# "command-line options"
+#
+DAEMON_OPTS="-f /etc/olsrd/olsrd.conf -d $DEBUGLEVEL"
+

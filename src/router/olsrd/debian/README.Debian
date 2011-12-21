@@ -1,0 +1,79 @@
+olsrd for Debian
+----------------
+
+
+Configuration
+-------------
+
+Before running olsrd you must edit the default configuration file
+/etc/olsrd/olsrd.conf (the location differs in the debian package from the 
+upstream default /etc/olsrd.conf). The one change you must make is to define
+on which interfaces olsrd is supposed to act on.
+
+If you want, you can run olsrd via init.d by editing /etc/default/olsrd - the
+default configuration is to not start olsrd on boot. It needs root privileges
+to run olsrd. 
+
+To debug olsrd you can start it with "/etc/init.d/olsrd start debug".
+
+You also need to configure your network interface. For example, for 
+freifunk.hamburg.net the following settings are used:
+
+	ifconfig eth1 $YOUR_IP broadcast 10.127.255.255
+	iwconfig eth1 essid hamburg.freifunk.net channel 10 mode ad-hoc enc off
+
+Options in the olsrd config file can also be overridden by command line
+options or in /etc/default/olsrd. See the manual pages olsrd(8) and 
+olsrd.conf(5) for details.
+
+If debug level is set to 0 olsrd will detach and run in the background (this 
+is the default in the debian package), if not it will keep running in your 
+shell.
+
+
+Plugins
+-------
+
+The following plugins are included in the olsrd-plugins package and are 
+explained in detail in /usr/share/doc/olsrd-plugins:
+
+- httpinfo	- tiny webserver for information purposes 
+- dyn_gw	- dynamically announce uplinks
+- dot_draw	- generates output (over a TCP socket) in the dot format
+- secure	- secure OLSR routing with a shared key
+- nameservice	- announce hostnames and dns servers
+- bmf 		- basic multicast forwarding plugin for olsrd
+- txtinfo
+
+The following plugins are not included in the olsrd-plugins binary package:
+
+- quagga	- quagga plugin
+- tas		- (not at all) tiny application server, no useful apps exist
+- powerinfo	- displays /proc/apm on 127.0.0.1:8888
+- pgraph	- obsoleted by httpinfo and dot-draw
+- mini		- minimal example plugin, useful as a howto for writing plugins
+
+If you need them, you can easily build them from the debian source package 
+yourself: define which (additional) plugins you want in debian/rules, and 
+rebuild the package. And if you tell me a good reason why they should be 
+included in the binary package, I'll be glad to add them :)
+
+
+About this package
+------------------
+
+This is actually the unik-olsrd implementation, but because it's the only 
+commonly used one (the other two, nrl- and inria-olsrd are mostly used 
+where they were written) and the one found on www.olsr.org, so I decided to 
+call the package olsrd.
+
+The config file shipped in /etc/olsrd/olsrd.conf is based on the one from
+http://olsrexperiment.de/sven-ola/nylon/packages/olsrd/files/olsrd.conf-sven-ola 
+and has been successfully used in the freifunk networks in Berlin and Hamburg
+(Germany).
+
+The plugins are installed in /usr/lib/olsrd/ which differs from the upstream 
+default /usr/lib/.
+
+
+ -- Holger Levsen <holger@debian.org>  Tue,  8 Jul 2008 18:09:15 +0200
