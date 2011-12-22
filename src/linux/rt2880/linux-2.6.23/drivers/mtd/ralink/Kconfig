@@ -11,6 +11,7 @@ config MTD_NAND_RALINK
 config MTD_SPI_RALINK
 	tristate "SPI Flash Support"
 	select MTD_PARTITIONS
+	depends on RALINK_RT3352 || RALINK_RT3350
 	help
 	  supoort Ralink 3052 serial spi controller with SPI flash.
 
