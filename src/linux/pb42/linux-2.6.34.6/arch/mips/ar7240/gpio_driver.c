@@ -69,10 +69,7 @@ static int ar71xx_gpio_direction_input(struct gpio_chip *chip,
 	void __iomem *base = ar71xx_gpio_base;
 	unsigned long flags;
 	if (offset>=32)
-	    {
-	    set_wl0_gpio(offset-32,value);
 	    return 0;
-	    }
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
@@ -90,7 +87,10 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip,
 	void __iomem *base = ar71xx_gpio_base;
 	unsigned long flags;
 	if (offset>=32)
+	    {
+	    set_wl0_gpio(offset-32,value);
 	    return 0;
+	    }
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
