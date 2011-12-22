@@ -34,26 +34,12 @@
 #include <bcmutils.h>
 
 #define sys_restart() kill(1, SIGHUP)
-#define SITE_SURVEY_DB	"/tmp/site_survey"
-#define SITE_SURVEY_NUM	256
 
 int write_site_survey(void);
 static int open_site_survey(void);
 int write_site_survey(void);
 
-struct site_survey_list {
-	uint8 SSID[33];
-	unsigned char BSSID[18];
-	uint8 channel;		/* Channel no. */
-	int16 RSSI;		/* receive signal strength (in dBm) */
-	int16 phy_noise;	/* noise (in dBm) */
-	uint16 beacon_period;	/* units are Kusec */
-	uint16 capability;	/* Capability information */
-	// unsigned char athcaps;
-	unsigned char ENCINFO[128];	/* encryption info */
-	uint rate_count;	/* # rates in this set */
-	uint8 dtim_period;	/* DTIM period */
-} site_survey_lists[SITE_SURVEY_NUM];
+struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
 
 /* 802.11i/WPA RSN IE parsing utilities */
 typedef struct {

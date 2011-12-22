@@ -38,23 +38,9 @@
 #include <utils.h>
 #include <wlutils.h>
 
-#define SITE_SURVEY_DB	"/tmp/site_survey"
-#define SITE_SURVEY_NUM	256
-
 static int open_site_survey(void);
 
-struct site_survey_list {
-	unsigned char SSID[33];
-	unsigned char BSSID[18];
-	unsigned char channel;	/* Channel no. */
-	short RSSI;		/* receive signal strength (in dBm) */
-	short phy_noise;	/* noise (in dBm) */
-	unsigned short beacon_period;	/* units are Kusec */
-	unsigned short capability;	/* Capability information */
-	unsigned char ENCINFO[128];	/* encryption info */
-	int rate_count;		/* # rates in this set */
-	unsigned char dtim_period;	/* DTIM period */
-} site_survey_lists[SITE_SURVEY_NUM];
+struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
 
 static int open_site_survey(void)
 {

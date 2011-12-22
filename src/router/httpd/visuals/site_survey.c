@@ -15,21 +15,9 @@
 #include <broadcom.h>
 #include <proto/802.11.h>
 
-#define SITE_SURVEY_DB  "/tmp/site_survey"
-#define SITE_SURVEY_NUM 256
+#include <wlutils.h>
 
-struct site_survey_list {
-	char SSID[33];
-	unsigned char BSSID[18];
-	uint8 channel;		/* Channel no. */
-	int16 RSSI;		/* receive signal strength (in dBm) */
-	int16 phy_noise;	/* noise (in dBm) */
-	uint16 beacon_period;	/* units are Kusec */
-	uint16 capability;	/* Capability information */
-	unsigned char ENCINFO[128];	/* encryption info */
-	uint rate_count;	/* # rates in this set */
-	uint8 dtim_period;	/* DTIM period */
-} site_survey_lists[SITE_SURVEY_NUM];
+static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
 
 static int open_site_survey(void)
 {
@@ -185,9 +173,10 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%c\"", i ? ',' : ' ');
 		tf_webWriteJS(wp, tssid);
 		websWrite(wp,
-			  "\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
+			  "\",\"%s\",\"%s\",\"%d (%d MHz)\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
 			  site_survey_lists[i].channel,
+			  site_survey_lists[i].frequency,
 			  site_survey_lists[i].RSSI,
 			  site_survey_lists[i].phy_noise,
 			  site_survey_lists[i].beacon_period, open,
