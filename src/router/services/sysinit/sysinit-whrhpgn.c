@@ -120,7 +120,7 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WLAEAG300N
-	setWirelessLed(14);
+	setWirelessLed(0,14);
 #else
 	setWirelessLedPhy0(1);
 #endif
