@@ -81,23 +81,10 @@ struct scan_params {
 static unsigned char wifi_oui[3]      = { 0x00, 0x50, 0xf2 };
 static unsigned char ieee80211_oui[3] = { 0x00, 0x0f, 0xac };
 
-#define SITE_SURVEY_DB  "/tmp/site_survey"
-#define SITE_SURVEY_NUM 256
 
 /* typedef unsigned char uint8;
 typedef short int16;
 typedef unsigned short uint16;
 */
 
-struct site_survey_list {
-	char SSID[33];
-	unsigned char BSSID[18];
-	uint8 channel;		/* Channel no. */
-	int16 RSSI;		/* receive signal strength (in dBm) */
-	int16 phy_noise;	/* noise (in dBm) */
-	uint16 beacon_period;	/* units are Kusec */
-	uint16 capability;	/* Capability information */
-	unsigned char ENCINFO[128];	/* encryption info */
-	uint rate_count;	/* # rates in this set */
-	uint8 dtim_period;	/* DTIM period */
-} site_survey_lists[SITE_SURVEY_NUM];
+struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
