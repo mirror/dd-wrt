@@ -94,6 +94,23 @@ extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 extern int has_2ghz(char *prefix);
 extern int has_5ghz(char *prefix);
 
+#define SITE_SURVEY_DB  "/tmp/site_survey"
+#define SITE_SURVEY_NUM 256
+
+struct site_survey_list {
+	char SSID[33];
+	unsigned char BSSID[18];
+	uint8 channel;		/* Channel no. */
+	uint16 frequency;		/* Frequency i.e. for superchannel */
+	int16 RSSI;		/* receive signal strength (in dBm) */
+	int16 phy_noise;	/* noise (in dBm) */
+	uint16 beacon_period;	/* units are Kusec */
+	uint16 capability;	/* Capability information */
+	unsigned char ENCINFO[128];	/* encryption info */
+	uint rate_count;	/* # rates in this set */
+	uint8 dtim_period;	/* DTIM period */
+};
+
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
@@ -112,6 +129,7 @@ extern int mac80211_get_avail_tx_antenna(int phy);
 extern int mac80211_get_avail_rx_antenna(int phy);
 extern int mac80211_get_configured_tx_antenna(int phy);
 extern int mac80211_get_configured_rx_antenna(int phy);
+extern int mac80211_check_valid_frequency(char *interface, char *country, int freq);
 
 struct wifi_channels {
 	int channel;
@@ -136,6 +154,9 @@ struct mac80211_info {
 	int8_t noise;
 	uint64_t channel_active_time;
 	uint64_t channel_busy_time;
+	uint64_t channel_receive_time;
+	uint64_t channel_transmit_time;
+	uint64_t extension_channel_busy_time;
 };
 
 struct wifi_client_info {

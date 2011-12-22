@@ -32,7 +32,7 @@ function do_join (F,SSID) {
 				   <th width="25%"><% tran("share.ssid"); %></th>
 				   <th width="7%">Mode</th>
 				   <th width="19%"><% tran("share.mac"); %></th>
-				   <th width="6%"><% tran("share.channel"); %></th>
+				   <th width="6%"><% tran("share.channel"); %>(<% tran("share.frequency"); %>)</th>
 				   <th width="6%"><% tran("share.rssi"); %></th>
 				   <th width="6%"><% tran("share.noise"); %></th>
 				   <th width="6%"><% tran("share.beacon"); %></th>
