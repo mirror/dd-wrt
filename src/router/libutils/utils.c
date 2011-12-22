@@ -3528,12 +3528,22 @@ int led_control(int type, int act)
 		connected_gpio = 0x109;
 		ses_gpio = 0x10e;
 		break;
+#ifdef HAVE_WLAEAG300N
+	case ROUTER_BOARD_WHRHPGN:
+		power_gpio = 0x110
+		diag_gpio = 0x111;
+		connected_gpio = 0x106;
+		ses_gpio = 0x10f;
+		sec0_gpio = 0x10f;
+		break;
+#else
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x101;
 		connected_gpio = 0x106;
 		ses_gpio = 0x100;
 		sec0_gpio = 0x100;
 		break;
+#endif
 	case ROUTER_BUFFALO_WBR54G:
 		diag_gpio = 0x107;
 		break;
