@@ -3530,7 +3530,7 @@ int led_control(int type, int act)
 		break;
 #ifdef HAVE_WLAEAG300N
 	case ROUTER_BOARD_WHRHPGN:
-		power_gpio = 0x110
+		power_gpio = 0x110;
 		diag_gpio = 0x111;
 		connected_gpio = 0x106;
 		ses_gpio = 0x10f;
