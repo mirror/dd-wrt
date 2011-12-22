@@ -69,7 +69,7 @@ static void __attribute__((constructor)) mac80211_init(void) {
 static int sscount=0;
 static int rate_count=0;
 
-static int noise[256];
+static int noise[6075];
 
 static struct scan_params scan_params;
 
@@ -162,8 +162,9 @@ static int cb_survey(struct nl_msg *msg, void *data)
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
 	if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
 		int8_t lnoise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
-		int channel=ieee80211_mhz2ieee(freq);
-		noise[channel] = lnoise;
+		noise[freq] = lnoise;
+		// int channel=ieee80211_mhz2ieee(freq);
+		// noise[channel] = lnoise;
 	}
 
 out:
@@ -660,9 +661,11 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 			tsf, tsf/1000/1000/60/60/24, (tsf/1000/1000/60/60) % 24,
 			(tsf/1000/1000/60) % 60, (tsf/1000/1000) % 60);
 	}
-	if (bss[NL80211_BSS_FREQUENCY])
+	if (bss[NL80211_BSS_FREQUENCY]) {
 		printf("\tfreq: %d\n",
 			nla_get_u32(bss[NL80211_BSS_FREQUENCY]));
+		site_survey_lists[sscount].frequency = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
+	}
 	if (bss[NL80211_BSS_BEACON_INTERVAL]) {
 		printf("\tbeacon interval: %d\n",
 			nla_get_u16(bss[NL80211_BSS_BEACON_INTERVAL]));
@@ -725,8 +728,11 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 			  params->unknown, params->type);
 	}
 	site_survey_lists[sscount].rate_count = rate_count;
-	int channel=site_survey_lists[sscount].channel;
-	site_survey_lists[sscount].phy_noise = noise[channel];
+	int freq=site_survey_lists[sscount].frequency;
+	site_survey_lists[sscount].phy_noise = noise[freq];
+	if (site_survey_lists[sscount].channel == 0) {
+		site_survey_lists[sscount].channel = ieee80211_mhz2ieee(site_survey_lists[sscount].frequency);
+		}
 	sscount++;
 
 	return NL_SKIP;
@@ -1410,13 +1416,14 @@ void mac80211_site_survey(char *interface, int isap) {
 	write_site_survey();
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
-	     && site_survey_lists[i].channel != 0; i++) {
+	     ; i++) {
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frquency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel,
+			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period,
@@ -1450,8 +1457,6 @@ static int open_site_survey(void)
 	}
 	return 0;
 }
-
-#define SITE_SURVEY_DB	"/tmp/site_survey"
 
 int site_survey_main_mac802211(int argc, char *argv[]) {
 	unlink(SITE_SURVEY_DB);
