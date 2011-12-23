@@ -1419,7 +1419,7 @@ void mac80211_site_survey(char *interface, int isap) {
 	     ; i++) {
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frquency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel,
