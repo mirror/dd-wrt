@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 03.Dec.2011, svn 17960	//
+//				Slovenian translation DD-WRT by Eko, last revision: 23.Dec.2011, svn 18043	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -29,12 +29,16 @@ share.disabled="Onemogočeno";
 share.usrname="Uporabniško ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
-share.vdsl="Napredne nastavitve";
+share.advanced="Napredne nastavitve";
+share.vdsl="Napredno VDSL označevanje";
 share.vdslvlan7="T-Home VLAN 7 podpora";
 share.vdslvlan8="T-Home VLAN 8 podpora";
 share.wan_vlantag="ID VLAN značke";
 share.compression="PPP kompresija (MPPC)";
 share.mlppp="Mnogokratna zveza na enem vodu";
+share.vpi_vci="VPI/VCI";
+share.encaps="Ovijanje";
+share.payload="Tip vsebine";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
 share.landomainname="LAN domensko ime";
@@ -104,6 +108,7 @@ share.manual="Ročno";
 share.port="Vrata";
 share.ssid="SSID";
 share.channel="Kanal";
+share.frequency="Frekvenca";
 share.rssi="Rssi";
 share.signal="Signal";
 share.noise="Šum";

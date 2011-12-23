@@ -98,6 +98,7 @@ share.manual="Manuell";
 share.port="Port";
 share.ssid="SSID";
 share.channel="Kanal";
+share.frequency="Frequenz";
 share.rssi="Signal";
 share.signal="Signal";
 share.noise="Rauschen";

@@ -104,6 +104,7 @@ share.manual="Ručno";
 share.port="Vrata";
 share.ssid="SSID";
 share.channel="Kanal";
+share.frequency="Frekvencija";
 share.rssi="Rssi";
 share.signal="Signal";
 share.noise="Šum";
