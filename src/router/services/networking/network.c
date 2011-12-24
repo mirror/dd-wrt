@@ -1092,6 +1092,76 @@ void start_lan(void)
 		nvram_set("et0macaddr",
 			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif CONFIG_JJAP93
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 ath0");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 ath0");
+		PORTSETUPWAN("eth0");
+	}
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_JJAP005
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("eth1");
+	}
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_JJAP501
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("eth1");
+	}
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_AC722
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("eth1");
+	}
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_AC622
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("");
+	} else {
+		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+		PORTSETUPWAN("eth1");
+	}
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr",
+			  ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_JA76PF
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		nvram_setz(lan_ifnames, "eth0 eth1 ath0");

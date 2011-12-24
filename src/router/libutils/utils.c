@@ -962,6 +962,31 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_JJAP93
+	setRouter("JJPLUS AP93");
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_JJAP005
+	setRouter("JJPLUS AP005");
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_JJAP501
+	setRouter("JJPLUS AP501");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_AC722
+	setRouter("ACCTON AC722");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_AC622
+	setRouter("ACCTON AC622");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_UBNTM
 	typedef struct UBNTDEV {
 		char *devicename;	// device name 

@@ -44,10 +44,12 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	char nb[32];
-	int bias,qual;
+	int bias,qual,it;
 
 	sprintf(nb, "%s_bias", ifname);
 	bias = atoi(nvram_default_get(nb, "0"));
+	// sprintf(it, "inactivity_time", ifname);
+	it = atoi(nvram_default_get("inacttime", "300000"));
 
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci ; wc ; wc = wc->next) {
@@ -67,7 +69,7 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 		}
 		qual = wc->signal * 124 + 11600;
 		qual /= 10;
-
+		if (wc->inactive_time < it)
 		 websWrite(wp,
 			"'%s','%s','%s','%dM','%dM','%d','%d','%d','%d'",
 			mac,

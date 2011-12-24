@@ -33,6 +33,7 @@
 #ifdef HAVE_QUAGGA
 
 int zebra_ospf_init(void);
+int zebra_ospf6_init(void);
 int zebra_bgp_init(void);
 int zebra_ripd_init(void);
 
@@ -50,6 +51,10 @@ int zebra_init(void)
 			zebra_ospf_init();
 			dd_syslog(LOG_INFO,
 				  "zebra : zebra (ospf) successfully initiated\n");
+		} else if (!strcmp(var, "ospf6")) {
+			zebra_ospf6_init();
+			dd_syslog(LOG_INFO,
+				  "zebra : zebra (ospf6) successfully initiated\n");
 		} else if (!strcmp(var, "bgp")) {
 			zebra_bgp_init();
 			dd_syslog(LOG_INFO,
@@ -102,6 +107,26 @@ void start_quagga_writememory(void)
 	} else {
 		nvram_set("ospfd_copt", "0");
 		nvram_unset("ospfd_conf");
+	}
+
+	in = fopen("/tmp/ospf6d.conf", "rb");
+
+	if (in != NULL) {
+		fseek(in, 0, SEEK_END);
+		int len = ftell(in);
+
+		rewind(in);
+		char *buf = malloc(len + 1);
+
+		fread(buf, len, 1, in);
+		buf[len] = 0;
+		fclose(in);
+		nvram_set("ospf6d_copt", "1");
+		nvram_set("ospf6d_conf", buf);
+		free(buf);
+	} else {
+		nvram_set("ospf6d_copt", "0");
+		nvram_unset("ospf6d_conf");
 	}
 
 	in = fopen("/tmp/bgpd.conf", "rb");
@@ -266,6 +291,129 @@ int zebra_ospf_init(void)
 
 	ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
 	ret2 = eval("ospfd", "-d", "-f", "/tmp/ospfd.conf");
+
+	return ret1 + ret2;
+}
+
+int zebra_ospf6_init(void)
+{
+	char *lf = nvram_safe_get("lan_ifname");
+	char *wf = get_wan_face();
+
+	FILE *fp;
+	int ret1, ret2, s = 0, i = 0;
+
+	/*
+	 * Write configuration file based on current information 
+	 */
+	if (!(fp = fopen("/tmp/zebra.conf", "w"))) {
+		perror("/tmp/zebra.conf");
+		return errno;
+	}
+
+	if (nvram_match("zebra_copt", "1")) {
+		if (nvram_match("zebra_log", "1")) {
+			fprintf(fp, "log file /var/log/zebra.log\n");
+		}
+	}
+
+	if (strlen(nvram_safe_get("zebra_conf")) > 0) {
+		fwritenvram("zebra_conf", fp);
+	}
+
+	fclose(fp);
+
+	if (!(fp = fopen("/tmp/ospf6d.conf", "w"))) {
+		perror("/tmp/ospf6d.conf");
+		return errno;
+	}
+
+	if (nvram_match("ospf6d_copt", "1")
+	    && strlen(nvram_safe_get("ospf6d_conf"))) {
+		fwritenvram("ospf6d_conf", fp);
+	} else {
+		fprintf(fp, "!\n");
+		// fprintf (fp, "password %s\n", nvram_safe_get ("http_passwd"));
+		// fprintf (fp, "enable password %s\n", nvram_safe_get
+		// ("http_passwd"));
+		fprintf(fp, "!\n!\n!\n");
+
+		fprintf(fp, "interface %s\n!\n", lf);
+		if (wf && strlen(wf) > 0)
+			fprintf(fp, "interface %s\n", wf);
+
+		int cnt = get_wl_instances();
+		int c;
+
+		for (c = 0; c < cnt; c++) {
+			if (nvram_nmatch("1", "wl%d_br1_enable", c)) {
+				fprintf(fp, "!\n! 'Subnet' WDS bridge\n");
+				fprintf(fp, "interface br1\n");
+			}
+			if (nvram_nmatch("ap", "wl%d_mode", c))
+				for (s = 1; s <= MAX_WDS_DEVS; s++) {
+					char wdsdevospf[32] = { 0 };
+					char *dev;
+
+					sprintf(wdsdevospf, "wl%d_wds%d_ospf",
+						c, s);
+					dev = nvram_nget("wl%d_wds%d_if", c, s);
+
+					if (nvram_nmatch
+					    ("1", "wl%d_wds%d_enable", c, s)) {
+						fprintf(fp, "!\n! WDS: %s\n",
+							nvram_nget
+							("wl%d_wds%d_desc", c,
+							 s));
+						fprintf(fp, "interface %s\n",
+							dev);
+
+						if (atoi
+						    (nvram_safe_get(wdsdevospf))
+						    > 0)
+							fprintf(fp,
+								" ip ospf cost %s\n",
+								nvram_safe_get
+								(wdsdevospf));
+					}
+				}
+			fprintf(fp, "!\n");
+		}
+		fprintf(fp, "router osp6f\n");
+		// fprintf(fp, " passive-interface lo\n");
+		// fprintf(fp, " ospf router-id %s\n",
+			// nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, " redistribute kernel\n");
+		fprintf(fp, " redistribute connected\n");
+		fprintf(fp, " redistribute static\n");
+		// fprintf(fp, " network 0.0.0.0/0 area 0\n");	// handle all routing
+		// fprintf(fp, " default-information originate\n");
+
+		for (s = 1; s <= MAX_WDS_DEVS; s++) {
+			char wdsdevospf[32] = { 0 };
+			sprintf(wdsdevospf, "wl_wds%d_ospf", s);
+
+			if (atoi(nvram_safe_get(wdsdevospf)) < 0)
+				fprintf(fp, " passive-interface %s\n",
+					nvram_nget("wl_wds%d_if", s));
+		}
+
+		if (nvram_match("zebra_log", "1")) {
+			fprintf(fp, "!\n");
+			fprintf(fp, "log file /var/log/ospf6.log\n");
+		}
+
+		fprintf(fp, "!\nline vty\n!\n");
+	}
+
+	fflush(fp);
+	fclose(fp);
+
+	// if (nvram_match("dyn_default", "1"))
+		// while (!eval("ip", "route", "del", "default")) ;
+
+	ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
+	ret2 = eval("ospf6d", "-d", "-f", "/tmp/ospf6d.conf");
 
 	return ret1 + ret2;
 }
@@ -596,6 +744,7 @@ void stop_zebra(void)
 	stop_process("zebra", "zebra daemon");
 	stop_process("ripd", "rip daemon");
 	stop_process("ospfd", "ospf daemon");
+	stop_process("ospf6d", "ospf6 daemon");
 	stop_process("bgpd", "bgp daemon");
 	return;
 

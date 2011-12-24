@@ -2364,6 +2364,15 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	int i;
 	int changed = 0;
 
+#ifdef HAVE_ATH9K
+	char regdomain[16];
+	char *country;
+	sprintf(regdomain, "ath0_regdomain");
+	country = nvram_default_get(regdomain, "UNITED_STATES");
+	sysprintf("iw reg set 00");
+	sysprintf("iw reg set %s", getIsoName(country));
+	sleep (4);
+#endif
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
 
