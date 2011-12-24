@@ -1759,6 +1759,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			}
 		} else if (os_strcmp(buf, "channel") == 0) {
 			conf->channel = atoi(pos);
+		} else if (os_strcmp(buf, "frequency") == 0) {
+			conf->frequency = atoi(pos);
 		} else if (os_strcmp(buf, "beacon_int") == 0) {
 			int val = atoi(pos);
 			/* MIB defines range as 1..65535, but very small values

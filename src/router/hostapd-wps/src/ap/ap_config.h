@@ -397,6 +397,7 @@ struct hostapd_config {
 	int secondary_channel;
 	int require_ht;
 	int dynamic_ht40;
+	u16 frequency;
 };
 
 

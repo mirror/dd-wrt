@@ -3225,6 +3225,25 @@ struct phy_info_arg {
 	struct hostapd_hw_modes *modes;
 };
 
+static int ieee80211_frequency_to_channel(int freq)
+{
+	/* see 802.11 17.3.8.3.2 and Annex J */
+	if (freq == 2484)
+		return 14;
+	else if (freq < 2412)
+		return (freq - 2412) / 5 + 256;
+	else if (freq < 2484)
+		return (freq - 2407) / 5;
+	else if (freq > 2484 && freq < 4000 )
+		return (freq - 2414) / 5;
+	else if (freq < 4990 && freq > 4940)
+		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+	else if (freq >= 4800 && freq < 5005)
+		return (freq - 4000) / 5;
+	else
+		return (freq - 5000) / 5;
+}
+
 static int phy_info_handler(struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
@@ -3333,15 +3352,32 @@ static int phy_info_handler(struct nl_msg *msg, void *arg)
 				mode_is_set = 1;
 			}
 
+			mode->channels[idx].chan = ieee80211_frequency_to_channel(mode->channels[idx].freq);
 			/* crude heuristic */
-			if (mode->channels[idx].freq < 4000)
+			/*
+			if (mode->channels[idx].freq < 4000) {
 				if (mode->channels[idx].freq == 2484)
 					mode->channels[idx].chan = 14;
+				else if (mode->channels[idx].freq < 2412) {
+					int tempfreq = mode->channels[idx].freq;
+					mode->channels[idx].chan = (tempfreq - 2412) / 5 + 256;
+					}
 				else
 					mode->channels[idx].chan = (mode->channels[idx].freq - 2407) / 5;
+				}
 			else
-				mode->channels[idx].chan = mode->channels[idx].freq/5 - 1000;
-
+				// 5000 = 200 ; 4915 = 183 double..
+				if (mode->channels[idx].freq < 5005) {
+					if (mode->channels[idx].freq < 4990 && mode->channels[idx].freq > 4940) {
+						int tempfreq = mode->channels[idx].freq;
+						mode->channels[idx].chan = ((tempfreq * 10) + (((tempfreq % 5) == 2) ? 5 : 0) - 49400) / 5;
+						}
+					else
+						mode->channels[idx].chan = (mode->channels[idx].freq - 4000) / 5;
+					}
+				else
+					mode->channels[idx].chan = (mode->channels[idx].freq - 5000) / 5 ;
+			*/
 			if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
 				mode->channels[idx].flag |=
 					HOSTAPD_CHAN_DISABLED;
