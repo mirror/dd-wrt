@@ -950,6 +950,56 @@ void start_restore_defaults(void)
 		{"wan_default", "eth1", 0},
 		{0, 0, 0}
 	};
+#elif CONFIG_JJAP93
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 ath0", 0},
+		{"wan_ifname", "", 0},
+		{"wan_ifname2", "", 0},
+		{"wan_ifnames", "", 0},
+		{"wan_default", "", 0},
+		{0, 0, 0}
+	};
+#elif CONFIG_JJAP005
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 eth1 ath0", 0},
+		{"wan_ifname", "eth1", 0},
+		{"wan_ifname2", "eth1", 0},
+		{"wan_ifnames", "eth1", 0},
+		{"wan_default", "eth1", 0},
+		{0, 0, 0}
+	};
+#elif CONFIG_JJAP501
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 eth1 ath0", 0},
+		{"wan_ifname", "eth1", 0},
+		{"wan_ifname2", "eth1", 0},
+		{"wan_ifnames", "eth1", 0},
+		{"wan_default", "eth1", 0},
+		{0, 0, 0}
+	};
+#elif CONFIG_AC722
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 eth1 ath0", 0},
+		{"wan_ifname", "eth1", 0},
+		{"wan_ifname2", "eth1", 0},
+		{"wan_ifnames", "eth1", 0},
+		{"wan_default", "eth1", 0},
+		{0, 0, 0}
+	};
+#elif CONFIG_AC622
+	struct nvram_tuple generic[] = {
+		{"lan_ifname", "br0", 0},
+		{"lan_ifnames", "eth0 eth1 ath0", 0},
+		{"wan_ifname", "eth1", 0},
+		{"wan_ifname2", "eth1", 0},
+		{"wan_ifnames", "eth1", 0},
+		{"wan_default", "eth1", 0},
+		{0, 0, 0}
+	};
 #elif HAVE_LSX
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},

@@ -51,10 +51,12 @@ CFLAGS += -fpic
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
+ATH9KCFLAGS += -DHAVE_SUPERCHANNEL
 OBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
+ATH9KCFLAGS += -DHAVE_REGISTER
 OBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_MADWIFI),y)
@@ -138,6 +140,12 @@ ifeq ($(CONFIG_SAMBA3),y)
   CFLAGS += -I$(TOP)/jansson/src
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
+  OBJS += $(TOP)/jansson/src/.libs/libjansson.a
+endif
+ifeq ($(CONFIG_TIEXTRA1),y)
+  OBJS += $(TOP)/private/telkom/mchillispot.o
+  CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom
+  CFLAGS += -DHAVE_TIEXTRA1
   OBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
 ifeq ($(CONFIG_GEMTEK),y)
@@ -782,6 +790,9 @@ endif
 ifeq ($(CONFIG_WR740v1),y)
 CFLAGS += -DHAVE_WR740v1
 endif
+ifeq ($(CONFIG_JJAP93),y)
+CFLAGS += -DHAVE_JJAP93
+endif
 
 ifeq ($(CONFIG_MACBIND),y)
 CFLAGS += -DHAVE_MACBIND
@@ -901,6 +912,9 @@ ifeq ($(CONFIG_SUBQUARTER),y)
   CFLAGS += -DHAVE_SUBQUARTER
 endif
 
+include $(TOP)/rules/generic.mk
+CFLAGS += $(DD_CFLAGS)
+
 ifeq ($(CONFIG_MATRIXSSL),y)
 #CFLAGS += -I$(TOP)/matrixssl
 #LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
@@ -927,9 +941,16 @@ clean:
 	rm -f *.a
 	rm -f *.h~
 	rm -f *.c~
+	rm -f $(TOP)/private/telkom/*.o
+
+
 
 libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram
+
+mchillispot.o: $(TOP)/private/telkom/mchillispot.c
+	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) -c -o $@ $^
+
 
 libwireless.so: $(WOBJS)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)

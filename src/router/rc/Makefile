@@ -284,6 +284,9 @@ endif
 ifeq ($(CONFIG_JA76PF),y)
 CFLAGS += -DHAVE_JA76PF
 endif
+ifeq ($(CONFIG_JA76PF2),y)
+CFLAGS += -DHAVE_JA76PF2
+endif
 ifeq ($(CONFIG_ALFAAP94),y)
 CFLAGS += -DHAVE_ALFAAP94
 endif
@@ -460,6 +463,9 @@ CFLAGS += -DHAVE_ALPHA
 endif
 ifeq ($(CONFIG_USR5453),y)
 CFLAGS += -DHAVE_USR5453
+endif
+ifeq ($(CONFIG_JJAP93),y)
+CFLAGS += -DHAVE_JJAP93
 endif
 ifeq ($(CONFIG_WIVIZ),y)
 OBJS += run_wiviz.o
@@ -714,6 +720,9 @@ LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 CFLAGS += -DHAVE_ATH9K
 endif
 
+include $(TOP)/rules/generic.mk
+CFLAGS += $(DD_CFLAGS)
+
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
 all: rc
@@ -782,6 +791,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc softwarerevision
 	cd $(INSTALLDIR)/sbin && ln -sf rc mtd
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
+	cd $(INSTALLDIR)/sbin && ln -sf rc ledtracking
 ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
 endif

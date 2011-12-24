@@ -365,6 +365,16 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #endif
+#elif CONFIG_JJAP93
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif CONFIG_JJAP005
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif CONFIG_JJAP501
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif CONFIG_AC722
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif CONFIG_AC622
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_JWAP003
 #ifdef HAVE_MAKSAT
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */

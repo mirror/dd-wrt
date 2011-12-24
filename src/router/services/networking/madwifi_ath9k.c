@@ -111,10 +111,10 @@ void configure_single_ath9k(int count)
 	char regdomain[16];
 	char *country;
 	sprintf(dev, "ath%d", count);
-	sprintf(regdomain, "%s_regdomain", dev);
-	country = nvram_default_get(regdomain, "US");
-	sysprintf("iw reg set %s", getIsoName(country));
-	sleep(3);
+	// sprintf(regdomain, "%s_regdomain", dev);
+	// country = nvram_default_get(regdomain, "US");
+	// sysprintf("iw reg set %s", getIsoName(country));
+	// // sleep(3);
 	if (count == 0)
 		vapcount = 0;
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
@@ -131,9 +131,20 @@ void configure_single_ath9k(int count)
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
 	char *netmode = nvram_default_get(net, "mixed");
-	if (!strcmp(netmode, "disabled")) {
+	if (!strcmp(netmode, "disabled"))
 		return;
-	}
+	char bw[32];
+
+	// set channelbw ht40 is also 20!
+
+	sprintf(bw, "%s_channelbw", dev);
+	if (nvram_match(bw, "5"))
+		sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+	else if (nvram_match(bw, "10"))
+		sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+	else
+		sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
 #else
@@ -226,6 +237,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 {
 	struct wifi_channels *chan;
 	int channel = 0;
+	int freq = 0;
 	static char nfreq[16];
 	int i = 0;
 	char *caps;
@@ -304,7 +316,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 				iht = -1;
 			}
 		}
-
+		else
+			sprintf(ht, "20");
 	} else {
 		sprintf(ht, "20");
 	}
@@ -331,7 +344,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	} else {
 		// also we still should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
-		int freq = atoi(nvram_default_get(nfreq, "0"));
+		freq = atoi(nvram_default_get(nfreq, "0"));
 		if (freq == 0) {
 			struct mac80211_ac *acs;
 			fprintf(stderr,
@@ -376,17 +389,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	free(caps);
 	if (chan)
 		free(chan);
-	if (channel < 36) {
-		if (!strcmp(netmode, "b-only")) {
-			fprintf(fp, "hw_mode=b\n");
-			fprintf(fp, "supported_rates=10 20 55 110\n");
-		} else {
-			fprintf(fp, "hw_mode=g\n");
-		}
-
-	} else
+	if (freq < 4000)
+		fprintf(fp, "hw_mode=g\n");
+	else
 		fprintf(fp, "hw_mode=a\n");
 	fprintf(fp, "channel=%d\n", channel);
+	fprintf(fp, "\n");
+	fprintf(fp, "frequency=%d\n", freq);
 	fprintf(fp, "\n");
 }
 
