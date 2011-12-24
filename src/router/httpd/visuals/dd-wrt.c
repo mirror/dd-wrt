@@ -2021,13 +2021,13 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			  bridge_name);
 		websWrite(wp, "&nbsp;MTU&nbsp;");
 		// Bridges are bridges, Ports are ports, show it again HERE          
-		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp,
-			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"1500\" />\n",
-			  bridge_name);
+			sprintf(bridge_name, "bridgemtu%d", count);
+			websWrite(wp,
+				"<input class=\"num\" name=\"%s\"size=\"5\" value=\"1500\" />\n",
+				bridge_name); 
 		websWrite(wp, "</div>\n");
 		// don't show that here, since that is under Basic Setup
-		// show_ipnetmask(wp, bridge);
+			// show_ipnetmask(wp, bridge);
 		count++;
 	}
 
@@ -2054,6 +2054,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		if (!bridge || !stp)
 			break;
 
+
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", count);
 		sprintf(bridge_name, "bridgename%d", count);
@@ -2070,16 +2071,16 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			  bridge_name, prio != NULL ? prio : "32768");
 		websWrite(wp, "&nbsp;MTU&nbsp;");
 		// Bridges are bridges, Ports are ports, show it again HERE          
-		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp,
-			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  bridge_name, mtu != NULL ? mtu : "1500");
+		   sprintf(bridge_name, "bridgemtu%d", count);
+		   websWrite(wp,
+		   "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+		   bridge_name, mtu != NULL ? mtu : "1500"); 
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
 		websWrite(wp, "</div>\n");
 		// don't show that here, since that is under Basic Setup
-		if (strcmp(bridge, "br0")) {
+		if (strcmp(bridge,"br0")) {
 			show_ipnetmask(wp, bridge);
 		}
 		count++;
@@ -2103,10 +2104,10 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 			  bridge_name, "32768");
 		websWrite(wp, "&nbsp;MTU&nbsp;");
-		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp,
-			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-			  bridge_name, "1500");
+                sprintf(bridge_name, "bridgemtu%d", count);
+                websWrite(wp,
+                        "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+                        bridge_name, "1500");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
@@ -3826,7 +3827,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "%s_regdomain", prefix);
-	if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
+	if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 		websWrite(wp,
 			  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 		char *list = getCountryList();
@@ -3871,15 +3872,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, " 	</div>\n");
 
 	}
-	int txpower = atoi(nvram_safe_get(power));
+	int txpower = atoi(nvram_safe_get(power)); 
 #ifdef HAVE_ESPOD
 #ifdef HAVE_SUB3
-	if (txpower > 28) {
+	if(txpower > 28 ) {
 		txpower = 28;
 		nvram_set(power, "28");
 	}
 #else
-	if (txpower > 30) {
+	if(txpower > 30 ) {
 		txpower = 28;
 		nvram_set(power, "30");
 	}
@@ -3888,7 +3889,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
-		  power, txpower + wifi_gettxpoweroffset(prefix));
+		  power,
+		  txpower + wifi_gettxpoweroffset(prefix));
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
@@ -4178,24 +4180,21 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 }
 #endif
 #ifdef HAVE_ATH9K
-if (!is_ath9k(prefix))
+if (is_ath9k(prefix))
 #endif
-{
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
-		  nvram_match(wl_width,
-			      "10") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp,
-		  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
-		  nvram_match(wl_width,
-			      "5") ? "selected=\\\"selected\\\"" : "");
+    {
+websWrite(wp,
+	  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
+	  nvram_match(wl_width, "10") ? "selected=\\\"selected\\\"" : "");
+websWrite(wp,
+	  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
+	  nvram_match(wl_width, "5") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_SUBQUARTER
 	if (registered_has_subquarter()) {
-		/* will be enabled once it is tested and the spectrum analyse is done */
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
-			  nvram_match(wl_width,
-				      "2") ? "selected=\\\"selected\\\"" : "");
+	/* will be enabled once it is tested and the spectrum analyse is done */
+websWrite(wp,
+	  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
+	  nvram_match(wl_width, "2") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 }
@@ -4825,25 +4824,25 @@ if (!strcmp(prefix, "wl1"))
 		  nvram_match(wl_width,
 			      "20") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_ATH9K
-	if (!is_ath9k(prefix))
+if (is_ath9k(prefix))
 #endif
-	{
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
-			  nvram_match(wl_width,
-				      "10") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
-			  nvram_match(wl_width,
-				      "5") ? "selected=\\\"selected\\\"" : "");
-	}
+    {
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
+		  nvram_match(wl_width,
+			      "10") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
+		  nvram_match(wl_width,
+			      "5") ? "selected=\\\"selected\\\"" : "");
+    }
 #ifdef HAVE_SUBQUARTER
-	if (registered_has_subquarter()) {
-		/* will be enabled once it is tested and the spectrum analyse is done */
-		websWrite(wp,
-			  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
-			  nvram_match(wl_width,
-				      "2") ? "selected=\\\"selected\\\"" : "");
+	if(registered_has_subquarter()) {
+	/* will be enabled once it is tested and the spectrum analyse is done */
+	websWrite(wp,
+		  "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n",
+		  nvram_match(wl_width,
+			      "2") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
@@ -5113,7 +5112,7 @@ if (!strcmp(prefix, "wl1"))
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "%s_regdomain", prefix);
-	if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
+	if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 		websWrite(wp,
 			  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 		char *list = getCountryList();
@@ -5153,12 +5152,12 @@ if (!strcmp(prefix, "wl1"))
 	int txpower = atoi(nvram_safe_get(power));
 #ifdef HAVE_ESPOD
 #ifdef HAVE_SUB3
-	if (txpower > 28) {
+	if (txpower > 28 ) {
 		txpower = 28;
 		nvram_set(power, "28");
 	}
 #else
-	if (txpower > 30) {
+	if (txpower > 30 ) {
 		txpower = 30;
 		nvram_set(power, "30");
 	}
@@ -5167,7 +5166,8 @@ if (!strcmp(prefix, "wl1"))
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
-		  power, txpower + wifi_gettxpoweroffset(prefix));
+		  power,
+		  txpower + wifi_gettxpoweroffset(prefix));
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
@@ -6566,10 +6566,10 @@ void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 		line[strlen(line) - 1] = '\0';	// replace new line with null
 #ifdef HAVE_ESPOD
 		char *p;
-		p = strtok(line, ",");
-		if (p != NULL) {
+		p = strtok( line, "," );
+		if( p != NULL ) {
 			websWrite(wp, "%s<br>\n", p);
-			p = strtok(NULL, "\0");
+			p = strtok( NULL, "\0");
 			websWrite(wp, "%s", p);
 		}
 #else
@@ -7702,25 +7702,23 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
 	foreach(var, eths, next) {
-		int skipip = 0;
 		if (!strcmp("etherip0", var))
 			continue;
-		if (strchr(var, '.') == NULL) {
+		if (strchr(var,'.') == NULL)  {
 			if (!strcmp(get_wan_face(), var))
 				continue;
-			if (!strcmp(nvram_safe_get("lan_ifname"), var)
-			    && !has_gateway())
+			if (!strcmp(nvram_safe_get("lan_ifname"), var))
 				continue;
 			foreach(bword, bufferif, bnext) {
-				if (!strcmp(bword, var)) {
-					skipip = 1;
+				if(!strcmp( bword, var) ) {
+					goto skip;
 				}
 			}
 		}
+
 		char layer[64];
 		strcpy(layer, var);
 		rep(layer, '.', 'X');
-
 		sprintf(ssid, "%s_bridged", var);
 		// nvram_nset("0", "%s_bridged", var);
 		websWrite(wp,
@@ -7740,17 +7738,16 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_idnet\">\n", layer);
 
-		if (!skipip) {
-			char mtu[32];
-			sprintf(mtu, "%s_mtu", var);
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\">%s</div>\n",
-				  live_translate("idx.mtu"));
-			websWrite(wp,
-				  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",
-				  var, nvram_default_get(mtu, "1500"));
-			websWrite(wp, "</div>\n");
-		}
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">%s</div>\n",
+			  live_translate("idx.mtu"));
+		char mtu[32];
+		sprintf(mtu, "%s_mtu", var);
+		websWrite(wp,
+			  "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",
+			  var, nvram_default_get(mtu, "1500"));
+		websWrite(wp, "</div>\n");
+
 		char mcast[32];
 
 		sprintf(mcast, "%s_multicast", var);
@@ -7762,28 +7759,26 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			nvram_default_get(mcast, "1");
 			showRadio(wp, "wl_basic.masquerade", mcast);
 		}
-		if (!skipip)
-			show_ipnetmask(wp, var);
+
+		show_ipnetmask(wp, var);
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 #ifdef HAVE_REGISTER
 		if (registered_has_cap(21))
 #endif
-		{
+		 {
 			char nld_enable[32], nld_bridge[32], bufferif[256];
 			static char word[256];
 			char *next;
 
 			sprintf(nld_enable, "nld_%s_enable", var);
 			websWrite(wp,
-				  "<div class=\"setting\">\n<div class=\"label\">ZCM enable</div>\n");
+				"<div class=\"setting\">\n<div class=\"label\">ZCM enable</div>\n");
 			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"checkbox\" name=\"nld_%s_enable\" value=\"1\" %s /></div>\n",
-				  var, nvram_match(nld_enable,
-						   "1") ? "checked=\"checked\""
-				  : "");
+				"<input class=\"spaceradio\" type=\"checkbox\" name=\"nld_%s_enable\" value=\"1\" %s /></div>\n", var,
+				nvram_match(nld_enable, "1") ? "checked=\"checked\"" : "");
 
 			sprintf(nld_bridge, "nld_%s_bridge", var);
-			nvram_default_get(nld_bridge, "br0");
+			nvram_default_get(nld_bridge,"br0");
 			websWrite(wp,
 				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>ZCM Bridge</div>\n");
 			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
@@ -7792,11 +7787,9 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			getIfList(bufferif, "br");
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
-				websWrite(wp,
-					  "<option value=\"%s\" %s >%s</option>\n",
-					  word, nvram_match(nld_bridge,
-							    word) ?
-					  "selected=\"selected\"" : "", word);
+					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
+						  word, nvram_match( nld_bridge, word ) ? "selected=\"selected\"" :
+						  "", word);
 				// }
 			}
 			websWrite(wp, "</select>\n</div>\n");
@@ -7804,7 +7797,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 #endif
 #if defined(HAVE_BATMANADV)
 #ifdef HAVE_REGISTER
-		if (registered_has_cap(19))
+		if (registered_has_cap(19)) 
 #endif
 		{
 			char bat_enable[32], bat_bridge[32], bufferif[256];
@@ -7813,15 +7806,13 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 			sprintf(bat_enable, "bat_%s_enable", var);
 			websWrite(wp,
-				  "<div class=\"setting\">\n<div class=\"label\">L2Mesh enable</div>\n");
+				"<div class=\"setting\">\n<div class=\"label\">L2Mesh enable</div>\n");
 			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"checkbox\" name=\"bat_%s_enable\" value=\"1\" %s /></div>\n",
-				  var, nvram_match(bat_enable,
-						   "1") ? "checked=\"checked\""
-				  : "");
+				"<input class=\"spaceradio\" type=\"checkbox\" name=\"bat_%s_enable\" value=\"1\" %s /></div>\n", var,
+				nvram_match(bat_enable, "1") ? "checked=\"checked\"" : "");
 
 			sprintf(bat_bridge, "bat_%s_bridge", var);
-			nvram_default_get(bat_bridge, "br0");
+			nvram_default_get(bat_bridge,"br0");
 			websWrite(wp,
 				  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>L2Mesh Bridge</div>\n");
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
@@ -7830,18 +7821,15 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			getIfList(bufferif, "br");
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
-				websWrite(wp,
-					  "<option value=\"%s\" %s >%s</option>\n",
-					  word, nvram_match(bat_bridge,
-							    word) ?
-					  "selected=\"selected\"" : "", word);
+					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n",
+						  word, nvram_match( bat_bridge, word ) ? "selected=\"selected\"" :
+						  "", word);
 				// }
 			}
 			websWrite(wp, "</select>\n</div>\n");
 		}
 #endif
-		websWrite(wp, "<br />\n");
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "<br />\n</div>\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 		websWrite(wp,
@@ -7849,6 +7837,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			  var, layer, nvram_match(ssid,
 						  "0") ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+		skip:;
 	}
 	websWrite(wp, "</fieldset><br />\n");
 }

@@ -2878,6 +2878,13 @@ void wireless_save(webs_t wp)
 	applytake(value);
 }
 
+void hotspot_save(webs_t wp) {
+#ifdef HAVE_TIEXTRA1
+	chillispot_save(wp);
+#endif
+	validate_cgi(wp);
+}
+
 #ifdef HAVE_WIVIZ
 void set_wiviz(webs_t wp)
 {

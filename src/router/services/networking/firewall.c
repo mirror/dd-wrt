@@ -2576,14 +2576,14 @@ static void filter_table(void)
 	if (nvram_match("chilli_enable", "1")) {
 		if (has_gateway()) {
 			save2file
-			    ("-I INPUT -m state --state NEW -i tun0 -j %s\n",
+			    ("-I INPUT -m state --state NEW -i tun+ -j %s\n",
 			     log_accept);
 			save2file
-			    ("-I FORWARD -m state --state NEW -i tun0 -j %s\n",
+			    ("-I FORWARD -m state --state NEW -i tun+ -j %s\n",
 			     log_accept);
 		} else {
-			save2file("-I INPUT -i tun0 -j %s\n", log_accept);
-			save2file("-I FORWARD -i tun0 -j %s\n", log_accept);
+			save2file("-I INPUT -i tun+ -j %s\n", log_accept);
+			save2file("-I FORWARD -i tun+ -j %s\n", log_accept);
 		}
 	}
 

@@ -278,6 +278,7 @@ enum CountryCode {
 	CTRY_HUNGARY = 348,	/* Hungary */
 	CTRY_ICELAND = 352,	/* Iceland */
 	CTRY_INDIA = 356,	/* India */
+	CTRY_INDIA_BFWA = 357,	/* India BFWA*/
 	CTRY_INDONESIA = 360,	/* Indonesia */
 	CTRY_IRAN = 364,	/* Iran */
 	CTRY_IRAQ = 368,	/* Iraq */
@@ -524,6 +525,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 //	{CTRY_INDIA, APL11_FCCA, "IN", "INDIA", YES, YES, YES, 5825},
 //#else
 	{CTRY_INDIA, APL11_WORLD, "IN", "INDIA", YES, YES, YES, 5825},
+	{CTRY_INDIA_BFWA, APL11_WORLD, "97", "INDIA_BFWA", YES, YES, YES, 5875},
 //#endif
 	{CTRY_INDONESIA, APL1_WORLD, "ID", "INDONESIA", YES, NO, YES, 7000},
 	{CTRY_IRAN, APL1_WORLD, "IR", "IRAN", YES, YES, YES, 7000},

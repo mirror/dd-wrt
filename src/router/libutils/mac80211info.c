@@ -94,7 +94,6 @@ int mac80211_get_phyidx_by_vifname(char *vif) {
 	return(phy_lookup_by_number(get_ath9k_phy_idx(phynum)));
 	}
 
-
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = { .type = NLA_U32 },
 	[NL80211_SURVEY_INFO_NOISE] = { .type = NLA_U8 },
@@ -146,9 +145,17 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 
 		}
 
-		if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
+		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX])
+			mac80211_info->channel_receive_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
+
+		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX])
+			mac80211_info->channel_transmit_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
+
+		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY])
+			mac80211_info->extension_channel_busy_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY]);
+
+		if (sinfo[NL80211_SURVEY_INFO_NOISE])
 			mac80211_info->noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
-		}
 	}
 
 out:
@@ -432,13 +439,12 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = { .type = NLA_U32 },
 };
 
-
 int mac80211_check_band(char *interface,int checkband) {
 	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band,*freqlist,*freq;
 	int rem, rem2, freq_mhz;
-	int phy=0;
+	int phy;
 	int bandfound=0;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
@@ -495,11 +501,23 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 	int htrange=30;
 	int chancount=0;
 	int count=0;
+	char sc[32];
+	int skip=1;
+	int rrdcount=0;
 
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) return NULL;
+/*
+#ifdef HAVE_SUPERCHANNEL
+	sprintf(sc, "%s_regulatory", interface);
+	if (issuperchannel() && atoi(nvram_default_get(sc, "1")) == 0) skip=0;
+#endif
+*/
+skip =0;
 
 	rd=mac80211_get_regdomain(country);
+	// for now just leave 
+	if (rd == NULL) return list;
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -525,7 +543,7 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 				if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
 					continue;
 
-				if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
+				if (skip && tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					continue;
 				regfound=0;
 				if (max_bandwidth_khz == 40)
@@ -534,12 +552,16 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 					// for 10/5mhz this should be fine 
 					range=max_bandwidth_khz/2;
 				freq_mhz = (int) nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
-				for (rrc = 0; rrc < rd->n_reg_rules; rrc++) {
+				if (skip == 0)
+					rrdcount=1;
+				else
+					rrdcount=rd->n_reg_rules;
+				for (rrc = 0; rrc < rrdcount; rrc++) {
 					regfreq  = rd->reg_rules[rrc].freq_range;
 					startfreq=(int)((float)(regfreq.start_freq_khz)/1000.0);
 					stopfreq=(int)((float)(regfreq.end_freq_khz)/1000.0);
 					regmaxbw=(int)((float)(regfreq.max_bandwidth_khz)/1000.0);
-					if ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq) {
+					if ( !skip || ( (freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq )) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
@@ -565,12 +587,18 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
-							if (max_bandwidth_khz == 40) {
-								if ((freq_mhz - htrange) >= startfreq ) {
-									list[count].ht40minus = 1;
-								}
-								if ((freq_mhz + htrange) <= stopfreq) {
-									list[count].ht40plus = 1;
+							if (!skip) {
+								list[count].ht40minus = 1;
+								list[count].ht40plus = 1;
+							}
+							else {
+								if (max_bandwidth_khz == 40) {
+									if ((freq_mhz - htrange) >= startfreq ) {
+										list[count].ht40minus = 1;
+									}
+									if ((freq_mhz + htrange) <= stopfreq) {
+										list[count].ht40plus = 1;
+									}
 								}
 							}
 							count++;
@@ -590,6 +618,27 @@ out:
 nla_put_failure:
 	nlmsg_free(msg);
 	return NULL;
+}
+
+int mac80211_check_valid_frequency(char *interface, char *country, int freq) {
+		struct wifi_channels *chan;
+		int found=0;
+		int i=0;
+		chan = mac80211_get_channels(interface, country, 40, 0xff);
+		if (chan != NULL)
+			while (chan[i].freq != -1) {
+				if (freq == chan[i].freq) {
+					found=1;
+					break;
+				}
+			i++;
+			}
+		if (chan != NULL)
+			free(chan);
+		if ( found )
+			return(freq);
+		else
+			return(0);
 }
 
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root){

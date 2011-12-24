@@ -112,6 +112,9 @@ void start_chilli(void)
 		dd_syslog(LOG_INFO,
 			  "chilli : chilli daemon successfully started\n");
 	}
+#ifdef HAVE_TIEXTRA1
+	start_mchilli();
+#endif
 
 	cprintf("done\n");
 	return;
