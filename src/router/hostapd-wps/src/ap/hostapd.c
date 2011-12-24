@@ -724,6 +724,7 @@ int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err)
 	struct hostapd_data *hapd = iface->bss[0];
 	size_t j;
 	u8 *prev_addr;
+	u16 freq;
 
 	if (err)
 		goto error;
@@ -736,7 +737,12 @@ int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err)
 			   hostapd_hw_mode_txt(hapd->iconf->hw_mode),
 			   hapd->iconf->channel, iface->freq);
 
-		if (hostapd_set_freq(hapd, hapd->iconf->hw_mode, iface->freq,
+	if (hapd->iconf->frequency)
+		freq=hapd->iconf->frequency;
+	else
+		freq=iface->freq;
+
+		if (hostapd_set_freq(hapd, hapd->iconf->hw_mode, freq,
 				     hapd->iconf->channel,
 				     hapd->iconf->ieee80211n,
 				     hapd->iconf->secondary_channel)) {
