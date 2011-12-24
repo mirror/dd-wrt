@@ -163,6 +163,9 @@ ifeq ($(CONFIG_SUBQUARTER),y)
   CFLAGS += -DHAVE_SUBQUARTER
 endif
 
+include $(TOP)/rules/generic.mk
+CFLAGS += $(DD_CFLAGS)
+
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
 VISOBJS += bfwireless.o
@@ -365,6 +368,9 @@ CFLAGS += -DHAVE_FONERA2200
 endif
 ifeq ($(CONFIG_DIR400),y)
 CFLAGS += -DHAVE_DIR400
+endif
+ifeq ($(CONFIG_DIR825),y)
+  CFLAGS += -DHAVE_DIR825
 endif
 ifeq ($(CONFIG_XR4SPECIAL),y)
 CFLAGS += -DHAVE_XR4SPECIAL
@@ -808,6 +814,16 @@ CFLAGS += -DHAVE_WP54G
 endif
 ifeq ($(CONFIG_ADM5120),y)
 CFLAGS += -DHAVE_ADM5120
+endif
+ifeq ($(CONFIG_JJAP93),y)
+CFLAGS += -DHAVE_JJAP93
+endif
+ifeq ($(CONFIG_TIEXTRA1),y)
+CFLAGS += -DHAVE_TIEXTRA1
+VISOBJS  += $(TOP)/private/telkom/mchillispotejs.o
+VISOBJS += $(TOP)/jansson/src/.libs/libjansson.a
+WEBSOBJS  += $(TOP)/private/telkom/mchillispotvalidate.o
+WEBSOBJS += $(TOP)/jansson/src/.libs/libjansson.a
 endif
 
 ifeq ($(SAMBA_SUPPORT),1)

@@ -106,8 +106,8 @@ void start_sysinit(void)
 //      eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");
 
 //#endif
-	eval("ifconfig", "eth0", "up");
-	eval("ifconfig", "eth1", "up");
+	// eval("ifconfig", "eth0", "up");
+	// eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
 	int s;
 

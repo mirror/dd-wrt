@@ -1211,6 +1211,7 @@ struct apply_action apply_actions[] = {
 	{"PPTP", "services", 0, SERVICE_RESTART, NULL},
 	{"USB", "usbdrivers", 0, SERVICE_RESTART, NULL},
 	{"NAS", "nassrv", 0, SERVICE_RESTART, NULL},
+	{"Hotspot", "hotspot", 0, SERVICE_RESTART, "hotspot_save"},
 	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
 	{"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
 	{"Nintendo", "nintendo", 0, SERVICE_RESTART, NULL},

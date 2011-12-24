@@ -101,12 +101,18 @@ endif
 ifeq ($(CONFIG_WR1043),y)
 CFLAGS += -DHAVE_WR1043
 endif
+ifeq ($(CONFIG_JJAP93),y)
+CFLAGS += -DHAVE_JJAP93
+endif
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
 endif
 ifeq ($(CONFIG_NVRAM_64K),y)
 CFLAGS += -DHAVE_NVRAM_64K
 endif
+
+include $(TOP)/rules/generic.mk
+CFLAGS += $(DD_CFLAGS)
 
 vpath %.c $(SRCBASE)/shared/nvram
 

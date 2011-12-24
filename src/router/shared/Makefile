@@ -106,6 +106,9 @@ endif
 ifeq ($(CONFIG_ESR6650),y)
   CFLAGS += -DHAVE_ESR6650
 endif
+ifeq ($(CONFIG_JJAP93),y)
+CFLAGS += -DHAVE_JJAP93
+endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
 endif
@@ -447,6 +450,9 @@ endif
 ifeq ($(CONFIG_NVRAM_64K),y)
 CFLAGS += -DHAVE_NVRAM_64K
 endif
+
+include $(TOP)/rules/generic.mk
+CFLAGS_EXTRA += $(DD_CFLAGS)
 
 ifeq ($(CONFIG_MATRIXSSL),y)
 #CFLAGS += -I$(TOP)/matrixssl
