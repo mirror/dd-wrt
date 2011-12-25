@@ -208,6 +208,7 @@ int mac80211_get_coverageclass(char *interface) {
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return 0;
+	if (!msg) return 0;
 	gnlh=nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
