@@ -3827,7 +3827,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "%s_regdomain", prefix);
-	if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
+	if (is_ath9k(prefix) || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 		websWrite(wp,
 			  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 		char *list = getCountryList();
