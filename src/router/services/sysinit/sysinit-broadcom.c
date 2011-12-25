@@ -1115,7 +1115,27 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-
+	case ROUTER_ASUS_RTN66:
+		nvram_unset("maxp2ga0");
+		nvram_unset("maxp2ga1");
+		nvram_unset("maxp2ga2");
+		nvram_unset("maxp5ga0");
+		nvram_unset("maxp5ga1");
+		nvram_unset("maxp5ga2");
+		nvram_unset("maxp5gha0");
+		nvram_unset("maxp5gha1");
+		nvram_unset("maxp5gha2");
+		nvram_set("pci/1/1/maxp2ga0",0x64);
+		nvram_set("pci/1/1/maxp2ga1",0x64);
+		nvram_set("pci/1/1/maxp2ga2",0x64);
+		nvram_set("pci/2/1/maxp5ga0",0x50);
+		nvram_set("pci/2/1/maxp5ga1",0x50);
+		nvram_set("pci/2/1/maxp5ga2",0x50);
+		nvram_set("pci/2/1/maxp5gha0",0x50);
+		nvram_set("pci/2/1/maxp5gha1",0x50);
+		nvram_set("pci/2/1/maxp5gha2",0x50);
+	
+		break;
 	case ROUTER_WRT310NV2:
 		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
