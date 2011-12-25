@@ -166,6 +166,7 @@ int site_survey_main(int argc, char *argv[])
 		else
 		    strncpy(b7,ext,31);
 		site_survey_lists[i].channel = atoi(b1);	// channel
+		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
 		site_survey_lists[i].phy_noise = -95;	// no way
@@ -198,15 +199,18 @@ int site_survey_main(int argc, char *argv[])
 	     && site_survey_lists[i].channel != 0; i++) {
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
-			site_survey_lists[i].channel, site_survey_lists[i].RSSI,
+			site_survey_lists[i].channel,
+			site_survey_lists[i].frequency,
+			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period,
 			site_survey_lists[i].capability,
 			site_survey_lists[i].dtim_period,
-			site_survey_lists[i].rate_count);
+			site_survey_lists[i].rate_count,
+			site_survey_lists[i].ENCINFO);
 	}
 
 	return 0;
