@@ -1125,15 +1125,19 @@ void start_sysinit(void)
 		nvram_unset("maxp5gha0");
 		nvram_unset("maxp5gha1");
 		nvram_unset("maxp5gha2");
-		nvram_set("pci/1/1/maxp2ga0",0x64);
-		nvram_set("pci/1/1/maxp2ga1",0x64);
-		nvram_set("pci/1/1/maxp2ga2",0x64);
-		nvram_set("pci/2/1/maxp5ga0",0x50);
-		nvram_set("pci/2/1/maxp5ga1",0x50);
-		nvram_set("pci/2/1/maxp5ga2",0x50);
-		nvram_set("pci/2/1/maxp5gha0",0x50);
-		nvram_set("pci/2/1/maxp5gha1",0x50);
-		nvram_set("pci/2/1/maxp5gha2",0x50);
+		nvram_set("pci/1/1/maxp2ga0","0x64");
+		nvram_set("pci/1/1/maxp2ga1","0x64");
+		nvram_set("pci/1/1/maxp2ga2","0x64");
+		nvram_set("pci/1/1/regrev","5");
+		nvram_set("pci/1/1/ccode","EU");
+		nvram_set("pci/2/1/maxp5ga0","0x5C");
+		nvram_set("pci/2/1/maxp5ga1","0x5C");
+		nvram_set("pci/2/1/maxp5ga2","0x5C");
+		nvram_set("pci/2/1/maxp5gha0","0x5C");
+		nvram_set("pci/2/1/maxp5gha1","0x5C");
+		nvram_set("pci/2/1/maxp5gha2","0x5C");
+		nvram_set("pci/2/1/regrev","3");
+		nvram_set("pci/2/1/ccode","EU");
 	
 		break;
 	case ROUTER_WRT310NV2:
