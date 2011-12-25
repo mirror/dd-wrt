@@ -230,6 +230,7 @@ int site_survey_main(int argc, char *argv[])
 		strcpy(site_survey_lists[i].BSSID,
 		       ieee80211_ntoa(sr->isr_bssid));
 		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);
+		site_survey_lists[i].frequency = sr->isr_freq;
 		int noise = 256;
 
 		noise -= (int)sr->isr_noise;
@@ -258,10 +259,12 @@ int site_survey_main(int argc, char *argv[])
 	     && site_survey_lists[i].channel != 0; i++) {
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
-			site_survey_lists[i].channel, site_survey_lists[i].RSSI,
+			site_survey_lists[i].channel,
+			site_survey_lists[i].frequency,
+			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period,
 			site_survey_lists[i].capability,
