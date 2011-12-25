@@ -34,6 +34,29 @@ struct nvram_tuple router_defaults[] = {
  */
 
 #ifndef HAVE_MADWIFI
+u_int ieee80211_mhz2ieee(u_int freq)
+{
+	if (freq == 2484)
+		return 14;
+	if (freq < 2484 && freq > 2407 )
+		return (freq - 2407) / 5;
+	if (freq < 2412 ){
+		int d = ((((int)freq) - 2412) / 5) + 256;
+		return d;
+		}
+	if (freq < 2502)
+		return 14;
+	if (freq < 2512)
+		return 15;
+	if (freq < 4990 && freq > 4940)
+		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+	else if (freq >= 4800 && freq < 5005)
+		return (freq - 4000) / 5;
+	if (freq < 5000)
+		return 15 + ((freq - (2512)) / 20);
+
+	return (freq - (5000)) / 5;
+}
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(char *prefix)
@@ -111,29 +134,6 @@ int getchannels(unsigned int *list, char *ifname)
 #define __user
 #include "wireless.h"
 
-u_int ieee80211_mhz2ieee(u_int freq)
-{
-	if (freq == 2484)
-		return 14;
-	if (freq < 2484 && freq > 2407 )
-		return (freq - 2407) / 5;
-	if (freq < 2412 ){
-		int d = ((((int)freq) - 2412) / 5) + 256;
-		return d;
-		}
-	if (freq < 2502)
-		return 14;
-	if (freq < 2512)
-		return 15;
-	if (freq < 4990 && freq > 4940)
-		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
-	else if (freq >= 4800 && freq < 5005)
-		return (freq - 4000) / 5;
-	if (freq < 5000)
-		return 15 + ((freq - (2512)) / 20);
-
-	return (freq - (5000)) / 5;
-}
 
 unsigned int ieee80211_ieee2mhz(unsigned int chan)
 {
