@@ -690,7 +690,7 @@ void start_sysinit(void)
 			{"aa2g", "7", 0},
 			{"pa2gw2a0", "0", 0},
 			{"pa2gw2a1", "0", 0},
-			{"ccode", "all", 0},
+			{"ccode", "ALL", 0},
 			{"regrev", "0", 0},
 			{"devid", "0x4329", 0},
 			{"cck2gpo", "0", 0},
@@ -784,8 +784,8 @@ void start_sysinit(void)
 		struct nvram_tuple wndr3400_sb_1_params[] = {
 			
 			{"sromrev", "8", 0},
-			{"ccode", "EU", 0},
-			{"regrev", "5", 0},
+			{"ccode", "ALL", 0},
+			{"regrev", "0", 0},
 			{"ledbh0", "11", 0},
 			{"ledbh1", "11", 0},
 			{"ledbh2", "11", 0},
@@ -843,8 +843,8 @@ void start_sysinit(void)
 		struct nvram_tuple wndr3400_pci_1_1_params[] = {
 			
 			{"sromrev", "8", 0},
-			{"ccode", "EU", 0},
-			{"regrev", "5", 0},
+			{"ccode", "ALL", 0},
+			{"regrev", "0", 0},
 			{"ledbh0", "8", 0},
 			{"ledbh1", "0x11", 0},
 			{"ledbh2", "0x11", 0},
@@ -1128,16 +1128,16 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/maxp2ga0","0x64");
 		nvram_set("pci/1/1/maxp2ga1","0x64");
 		nvram_set("pci/1/1/maxp2ga2","0x64");
-		nvram_set("pci/1/1/regrev","5");
-		nvram_set("pci/1/1/ccode","EU");
+		nvram_set("pci/1/1/regrev","0");
+		nvram_set("pci/1/1/ccode","ALL");
 		nvram_set("pci/2/1/maxp5ga0","0x5C");
 		nvram_set("pci/2/1/maxp5ga1","0x5C");
 		nvram_set("pci/2/1/maxp5ga2","0x5C");
 		nvram_set("pci/2/1/maxp5gha0","0x5C");
 		nvram_set("pci/2/1/maxp5gha1","0x5C");
 		nvram_set("pci/2/1/maxp5gha2","0x5C");
-		nvram_set("pci/2/1/regrev","3");
-		nvram_set("pci/2/1/ccode","EU");
+		nvram_set("pci/2/1/regrev","0");
+		nvram_set("pci/2/1/ccode","ALL");
 	
 		break;
 	case ROUTER_WRT310NV2:
