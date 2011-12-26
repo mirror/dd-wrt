@@ -715,8 +715,8 @@ static int __init ar7100_flash_init (void)
 	struct squashfs_super_block *sb;
 
 	char buf[512];
-	int retlen,len;
-	unsigned int rootsize;
+	int retlen;
+	unsigned int rootsize,len;
 
 		while ((offset + mtd->erasesize) < mtd->size) {
 			mtd->read(mtd,offset,512,&retlen,&buf[0]);
@@ -729,7 +729,7 @@ static int __init ar7100_flash_init (void)
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				dir_parts[2].size = (len & 0xffffff) - dir_parts[2].offset;
+				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
 				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
 				dir_parts[6].offset = mtd->size - mtd->erasesize;	// board config
 				dir_parts[6].size = mtd->erasesize;
