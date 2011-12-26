@@ -279,7 +279,7 @@ __init ar9100_flash_init(void)
 		len = dir_parts[2].offset + dir_parts[2].size;
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
-		dir_parts[2].size = (len&0xffffff) - dir_parts[2].offset;
+		dir_parts[2].size = (len&0x1ffffff) - dir_parts[2].offset;
 		dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size; 
 		dir_parts[5].offset = mtd->size-mtd->erasesize; // board config
 		dir_parts[5].size = mtd->erasesize;
