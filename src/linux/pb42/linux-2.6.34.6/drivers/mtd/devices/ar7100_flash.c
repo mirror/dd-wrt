@@ -391,7 +391,7 @@ static int __init ar7100_flash_init(void)
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
 				dir_parts[2].size =
-				    (len & 0xffffff) - dir_parts[2].offset;
+				    (len & 0x1ffffff) - dir_parts[2].offset;
 #if defined(CONFIG_DIR825)
 				dir_parts[3].offset = 0x670000;
 #else
@@ -437,7 +437,7 @@ static int __init ar7100_flash_init(void)
 				    len = dir_parts[2].offset + dir_parts[2].size;
 				    len += (mtd->erasesize - 1);
 				    len &= ~(mtd->erasesize - 1);
-				    dir_parts[2].size = (len & 0xffffff) - dir_parts[2].offset;
+				    dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
 				    dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
 				    dir_parts[3].size = 0x7d0000 - dir_parts[3].offset;
 				    dir_parts[6].offset = mtd->size - mtd->erasesize;	// board config

@@ -372,7 +372,7 @@ static int __init ar7240_flash_init(void)
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
 				dir_parts[2].size =
-				    (len & 0xffffff) - dir_parts[2].offset;
+				    (len & 0x1ffffff) - dir_parts[2].offset;
 				dir_parts[3].offset =
 				    dir_parts[2].offset + dir_parts[2].size;
 
