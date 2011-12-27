@@ -288,7 +288,7 @@ void start_openvpn(void)
 	else
 		fprintf(fp, "comp-lzo no\n");
 	if (nvram_match("openvpncl_certtype", "1"))
-		fprintf(fp, "remote-cert-tls server\n");
+		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 //	if (nvram_match("openvpncl_tuntap", "tun"))
