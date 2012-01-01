@@ -868,10 +868,11 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
     ag7100_ring_t   *r     = &mac->mac_txring;
     int              head  = r->ring_head, tail = r->ring_tail;
     ag7100_desc_t   *ds;
-#if 1//DMA tx hang
-    ag7100_buffer_t *bf;
-#endif
+    uint32_t rx_ds;
     ag7100_buffer_t *bp;
+    int flags,mask,int_mask;
+    unsigned int w1 = 0, w2 = 0;
+
 
     ar7100_flush_ge(mac->mac_unit);
 
@@ -881,16 +882,60 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
         bp   =  &r->ring_buffer[tail];
 
         if(ag7100_tx_owned_by_dma(ds)) {
-                        if ((jiffies - bp->trans_start) > (1 * HZ)) {
-//                printk(MODULE_NAME ": Tx Dma status : %s\n",
-//                ag7100_tx_stopped(mac) ? "inactive" : "active");
-#if 0
-//                printk(MODULE_NAME ": timestamp:%u jiffies:%u diff:%d\n",bp->trans_start,jiffies,
-//                             (jiffies - bp->trans_start));
-#endif
-               ag7100_dma_reset(mac);
-                           return 1;
-           }
+            if ((ag7100_get_diff(bp->trans_start,jiffies)) > ((1 * HZ/10))) {
+
+                 /*
+                  * If the DMA is in pause state reset kernel watchdog timer
+                  */
+        
+                printk(MODULE_NAME ": Tx Dma status eth%d : %s\n",mac->mac_unit,
+                            ag7100_tx_stopped(mac) ? "inactive" : "active");                               
+
+                spin_lock_irqsave(&mac->mac_lock, flags);
+                                                                                                
+                int_mask = ag7100_reg_rd(mac,AG7100_DMA_INTR_MASK);
+
+                ag7100_tx_stop(mac);
+                ag7100_rx_stop(mac);
+
+                rx_ds = ag7100_reg_rd(mac,AG7100_DMA_RX_DESC);
+                mask = ag7100_reset_mask(mac->mac_unit);
+
+                /*
+                 * put into reset, hold, pull out.
+                 */
+                ar7100_reg_rmw_set(AR7100_RESET, mask);
+                udelay(10);
+                ar7100_reg_rmw_clear(AR7100_RESET, mask);
+                udelay(10);
+
+                ag7100_hw_setup(mac);
+
+                ag7100_reg_wr(mac,AG7100_DMA_TX_DESC,ag7100_desc_dma_addr(r,ds));
+                ag7100_reg_wr(mac,AG7100_DMA_RX_DESC,rx_ds);
+                /*
+                 * set the mac addr
+                 */
+                 
+                addr_to_words(mac->mac_dev->dev_addr, w1, w2);
+                ag7100_reg_wr(mac, AG7100_GE_MAC_ADDR1, w1);
+                ag7100_reg_wr(mac, AG7100_GE_MAC_ADDR2, w2);
+
+                ag7100_set_mac_from_link(mac, mac->mac_speed, mac->mac_fdx);
+                
+
+                ag7100_tx_start(mac);
+
+                ag7100_rx_start(mac);
+               
+                /*
+                 * Restore interrupts
+                 */
+                ag7100_reg_wr(mac,AG7100_DMA_INTR_MASK,int_mask);
+
+                spin_unlock_irqrestore(&mac->mac_lock,flags);
+                break;
+            }
         }
         ag7100_ring_incr(tail);
     }
@@ -1262,6 +1307,10 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
         nds_this_pkt++;
         ag7100_tx_give_to_dma(ds);
     }
+    ds->res1           = 0;
+    ds->res2           = 0;
+    ds->ftpp_override  = 0;
+    ds->res3           = 0;
 
     ds->more        = 0;
     ag7100_tx_give_to_dma(fds);
@@ -1947,6 +1996,12 @@ ag7100_rx_alloc(ag7100_mac_t *mac)
         dma_cache_sync(NULL, (void *)bf->buf_pkt->data, AG7100_RX_BUF_SIZE, DMA_FROM_DEVICE);
         ds->pkt_start_addr  = virt_to_phys(bf->buf_pkt->data);
 
+	ds->res1           = 0;
+        ds->res2           = 0;
+	ds->ftpp_override  = 0;
+	ds->res3           = 0;
+	ds->more        = 0;
+
         ag7100_rx_give_to_dma(ds);
         ag7100_ring_incr(tail);
     }
@@ -2070,6 +2125,7 @@ ag7100_tx_timeout_task(struct work_struct *work)
 {
     ag7100_mac_t *mac = container_of(work, ag7100_mac_t, mac_tx_timeout);
     ag7100_trc(mac,"mac");
+    check_for_dma_hang(mac);
     ag7100_stop(mac->mac_dev);
     ag7100_open(mac->mac_dev);
 }
