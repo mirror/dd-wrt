@@ -1389,7 +1389,15 @@ ag7100_intr(int cpl, void *dev_id)
 
     assert(isr == (isr & imr));
 
-    if (likely(isr & (AG7100_INTR_RX | AG7100_INTR_RX_OVF)))
+    if (isr & (AG7240_INTR_RX_OVF))
+    {
+        handled = 1;
+
+        ag7100_reg_wr(mac,AG7100_MAC_CFG1,(ag7100_reg_rd(mac,AG7100_MAC_CFG1)&0xfffffff3));
+
+        ag7100_intr_ack_rxovf(mac);
+    }
+    if (likely(isr & (AG7100_INTR_RX)))
     {
         handled = 1;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -1866,6 +1874,9 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
     */
     wmb();
 
+ag7240_reg_wr(mac,AG7240_MAC_CFG1,(ag7240_reg_rd(mac,AG7240_MAC_CFG1)|0xc));
+ag7240_rx_start(mac);
+
     r->ring_tail = tail;
     ag7100_trc(refilled,"refilled");
 
@@ -2093,7 +2104,7 @@ ag7100_oom_timer(unsigned long data)
     int val;
 
     ag7100_trc(data,"data");
-//    ag7100_rx_replenish(mac);
+    ag7100_rx_replenish(mac);
     if (ag7100_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
