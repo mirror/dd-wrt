@@ -949,7 +949,6 @@ static int check_for_dma_status(ag7240_mac_t *mac,int ac) {
 
                 ag7240_set_mac_from_link(mac, mac->mac_speed, mac->mac_fdx);
                 
-                mac->dma_check = 1;
 
                 if (mac_has_flag(mac,WAN_QOS_SOFT_CLASS)) {
                     ag7240_tx_start_qos(mac,ac);

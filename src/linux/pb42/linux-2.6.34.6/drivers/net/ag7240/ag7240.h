@@ -152,7 +152,6 @@ typedef struct {
     struct napi_struct mac_napi;
 #endif
     uint16_t                mac_flags;
-    uint32_t		    dma_check;
 }ag7240_mac_t;
 
 #define net_rx_packets      mac_net_stats.rx_packets
@@ -225,7 +224,7 @@ typedef enum {
  */
 #define ETHERNET_FCS_SIZE            4
 #define AG71XX_TX_FIFO_LEN	2048
-#define AG71XX_TX_MTU_LEN	1544
+#define AG71XX_TX_MTU_LEN	1540
 #define AG7240_RX_RESERVE           (64)
 #define AG7240_RX_BUF_SIZE      \
     (AG7240_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE)
