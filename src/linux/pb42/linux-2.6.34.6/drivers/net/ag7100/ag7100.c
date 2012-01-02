@@ -307,7 +307,7 @@ static int
 ag7100_stop(struct net_device *dev)
 {
     ag7100_mac_t *mac = (ag7100_mac_t *)netdev_priv(dev);
-    int flags;
+    unsigned long flags;
 
     spin_lock_irqsave(&mac->mac_lock, flags);
     napi_disable(&mac->mac_napi);
@@ -848,7 +848,8 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
     ag7100_desc_t   *ds;
     uint32_t rx_ds;
     ag7100_buffer_t *bp;
-    int flags,mask,int_mask;
+    int mask,int_mask;
+    unsigned long flags;
     unsigned int w1 = 0, w2 = 0;
 
 
@@ -959,7 +960,7 @@ ag7100_check_link(ag7100_mac_t *mac)
     {
         if (carrier)
         {
-//            printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
+            printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
             netif_carrier_off(dev);
         }
         goto done;
@@ -979,16 +980,16 @@ ag7100_check_link(ag7100_mac_t *mac)
     if (carrier && (speed == mac->mac_speed) && (fdx == mac->mac_fdx)) 
         goto done;
 
-//    printk(MODULE_NAME ": unit %d phy is up...", mac->mac_unit);
-//    printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
-//        spd_str[speed], dup_str[fdx]);
+    printk(MODULE_NAME ": unit %d phy is up...", mac->mac_unit);
+    printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
+        spd_str[speed], dup_str[fdx]);
 
     ag7100_set_mac_from_link(mac, speed, fdx);
 
-//    printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl %#x \n", 
-//        ag7100_reg_rd(mac, AG7100_MAC_CFG2), 
-//        ag7100_reg_rd(mac, AG7100_MAC_IFCTL),
-//        ar7100_reg_rd(mii_reg(mac)));
+    printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl %#x \n", 
+        ag7100_reg_rd(mac, AG7100_MAC_CFG2), 
+        ag7100_reg_rd(mac, AG7100_MAC_IFCTL),
+        ar7100_reg_rd(mii_reg(mac)));
     /*
     * in business
     */
@@ -1129,7 +1130,7 @@ ag7100_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data)
 static void
 ag7100_handle_tx_full(ag7100_mac_t *mac)
 {
-    u32         flags;
+    unsigned long         flags;
 #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
     if(!mac->speed_10t)
 #endif
@@ -1475,7 +1476,7 @@ ag7100_poll(struct net_device *dev, int *budget)
 	int work_done=0,      max_work  = min(*budget, dev->quota), status = 0;
 #endif
     ag7100_rx_status_t  ret;
-    u32                 flags;
+    unsigned long                 flags;
     spin_lock_irqsave(&mac->mac_lock, flags);
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
@@ -1871,7 +1872,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
     int              head  = r->ring_head, tail = r->ring_tail, reaped = 0, i;
     ag7100_desc_t   *ds;
     ag7100_buffer_t *bf;
-    uint32_t    flags;
+    unsigned long    flags;
 
     ag7100_trc_new(head,"hd");
     ag7100_trc_new(tail,"tl");
@@ -2134,8 +2135,7 @@ ag7100_get_default_macaddr(ag7100_mac_t *mac, u8 *mac_addr)
 #ifdef CONFIG_AG7100_MAC_LOCATION
     u8 *eep_mac_addr = (u8 *)( CONFIG_AG7100_MAC_LOCATION + (mac->mac_unit)*6);
 #else
-    u8 *eep_mac_addr = (mac->mac_unit) ? AR7100_EEPROM_GE1_MAC_ADDR:
-        AR7100_EEPROM_GE0_MAC_ADDR;
+    u8 *eep_mac_addr = (mac->mac_unit) ? (u8*)AR7100_EEPROM_GE1_MAC_ADDR: (u8*)AR7100_EEPROM_GE0_MAC_ADDR;
 #endif
 
 //    printk(MODULE_NAME "CHH: Mac address for unit %d\n",mac->mac_unit);
