@@ -70,6 +70,10 @@ typedef enum {
 
 typedef struct {
     struct net_device      *mac_dev;
+    int (*rx)(struct sk_buff *skb);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
+    struct napi_struct mac_napi;
+#endif
     uint32_t                mac_unit;
     uint32_t                mac_base;
     int                     mac_irq;
@@ -83,15 +87,12 @@ typedef struct {
     ag7100_phy_speed_t      mac_speed;
     int                     mac_fdx;
     struct timer_list       mac_phy_timer;
+    struct timer_list       mac_dbg_timer;
     ag7100_ring_t           mac_txring_cache;
-    ag7100_trc_t            tb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
-    struct napi_struct mac_napi;
-#endif
 #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
     int                     speed_10t;
 #endif
-    int (*rx)(struct sk_buff *skb);
+    ag7100_trc_t            tb;
 }ag7100_mac_t;
 
 #define net_rx_packets      mac_net_stats.rx_packets
@@ -158,7 +159,7 @@ typedef enum {
  */
 #define ETHERNET_FCS_SIZE            4
 #define AG71XX_TX_FIFO_LEN	2048
-#define AG71XX_TX_MTU_LEN	1540
+#define AG71XX_TX_MTU_LEN	1544
 #define AG7100_RX_RESERVE           (64)
 #define AG7100_RX_BUF_SIZE      \
     (AG7100_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE)
@@ -249,9 +250,7 @@ typedef enum {
 #define AG7100_MAC_CFG1_TX_RST         (1 << 18)
 #define AG7100_MAC_CFG1_LOOPBACK       (1 << 8)
 #define AG7100_MAC_CFG1_RX_EN          (1 << 2)
-#define AG7100_MAC_CFG1_SRX            (1 << 3)
 #define AG7100_MAC_CFG1_TX_EN          (1 << 0)
-#define AG7100_MAC_CFG1_STX            (1 << 1)
 #define AG7100_MAC_CFG1_RX_FCTL        (1 << 5)
 #define AG7100_MAC_CFG1_TX_FCTL        (1 << 4)
 
@@ -377,12 +376,6 @@ ag7100_ndesc_unused(ag7100_mac_t *mac, ag7100_ring_t *ring)
     int head = ring->ring_head, tail = ring->ring_tail;
 
     return ((tail > head ? 0 : ring->ring_nelem) + tail - head);
-}
-
-static inline uint32_t
-ag7100_get_diff(uint32_t t1,uint32_t t2)
-{
-    return (t1 > t2 ? (0xffffffff - (t1 - t2)) : t2 - t1);
 }
 
 static inline int ag7100_rx_ring_full(ag7100_mac_t *mac)

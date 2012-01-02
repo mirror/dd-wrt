@@ -307,7 +307,7 @@ static int
 ag7100_stop(struct net_device *dev)
 {
     ag7100_mac_t *mac = (ag7100_mac_t *)netdev_priv(dev);
-    unsigned long flags;
+    int flags;
 
     spin_lock_irqsave(&mac->mac_lock, flags);
     napi_disable(&mac->mac_napi);
@@ -411,8 +411,30 @@ ag7100_hw_setup(ag7100_mac_t *mac)
 {
     ag7100_ring_t *tx = &mac->mac_txring, *rx = &mac->mac_rxring;
     ag7100_desc_t *r0, *t0;
-    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN | AG7100_MAC_CFG1_STX | AG7100_MAC_CFG1_SRX));
-
+#ifdef CONFIG_AR9100 
+#ifndef CONFIG_PORT0_AS_SWITCH
+    if(mac->mac_unit) {
+#ifdef CONFIG_DUAL_F1E_PHY
+    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
+#else
+    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
+#endif
+    }
+    else {
+	 ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
+   }
+#else
+   if(mac->mac_unit) {
+    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN |AG7100_MAC_CFG1_TX_EN));
+    }
+    else {
+         ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
+   }
+#endif
+#else
+	ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN |
+        AG7100_MAC_CFG1_TX_EN));
+#endif
     ag7100_reg_rmw_set(mac, AG7100_MAC_CFG2, (AG7100_MAC_CFG2_PAD_CRC_EN | AG7100_MAC_CFG2_LEN_CHECK));
     ag7100_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
@@ -428,8 +450,8 @@ ag7100_hw_setup(ag7100_mac_t *mac)
     ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_1, 0xfff0000);
     ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_2, 0x1fff);
 #else
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_1, 0x0fff0000);
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_2, 0x00001fff);
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_1, 0xfff0000);
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_2, 0x1fff);
     /*
     * Weed out junk frames (CRC errored, short collision'ed frames etc.)
     */
@@ -664,7 +686,7 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         (mac->mac_speed !=  speed || mac->mac_fdx !=  fdx)) 
     {   
        /* workaround for PHY4 port thru RGMII */
-//       phy_mode_setup();
+       phy_mode_setup();
        is_setup_done = 1;
     }
 #endif
@@ -846,12 +868,10 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
     ag7100_ring_t   *r     = &mac->mac_txring;
     int              head  = r->ring_head, tail = r->ring_tail;
     ag7100_desc_t   *ds;
-    uint32_t rx_ds;
+#if 1//DMA tx hang
+    ag7100_buffer_t *bf;
+#endif
     ag7100_buffer_t *bp;
-    int mask,int_mask;
-    unsigned long flags;
-    unsigned int w1 = 0, w2 = 0;
-
 
     ar7100_flush_ge(mac->mac_unit);
 
@@ -861,60 +881,16 @@ static int check_for_dma_hang(ag7100_mac_t *mac) {
         bp   =  &r->ring_buffer[tail];
 
         if(ag7100_tx_owned_by_dma(ds)) {
-            if ((ag7100_get_diff(bp->trans_start,jiffies)) > ((1 * HZ/10))) {
-
-                 /*
-                  * If the DMA is in pause state reset kernel watchdog timer
-                  */
-        
-                printk(MODULE_NAME ": Tx Dma status eth%d : %s\n",mac->mac_unit,
-                            ag7100_tx_stopped(mac) ? "inactive" : "active");                               
-
-                spin_lock_irqsave(&mac->mac_lock, flags);
-                                                                                                
-                int_mask = ag7100_reg_rd(mac,AG7100_DMA_INTR_MASK);
-
-                ag7100_tx_stop(mac);
-                ag7100_rx_stop(mac);
-
-                rx_ds = ag7100_reg_rd(mac,AG7100_DMA_RX_DESC);
-                mask = ag7100_reset_mask(mac->mac_unit);
-
-                /*
-                 * put into reset, hold, pull out.
-                 */
-                ar7100_reg_rmw_set(AR7100_RESET, mask);
-                udelay(10);
-                ar7100_reg_rmw_clear(AR7100_RESET, mask);
-                udelay(10);
-
-                ag7100_hw_setup(mac);
-
-                ag7100_reg_wr(mac,AG7100_DMA_TX_DESC,ag7100_desc_dma_addr(r,ds));
-                ag7100_reg_wr(mac,AG7100_DMA_RX_DESC,rx_ds);
-                /*
-                 * set the mac addr
-                 */
-                 
-                addr_to_words(mac->mac_dev->dev_addr, w1, w2);
-                ag7100_reg_wr(mac, AG7100_GE_MAC_ADDR1, w1);
-                ag7100_reg_wr(mac, AG7100_GE_MAC_ADDR2, w2);
-
-                ag7100_set_mac_from_link(mac, mac->mac_speed, mac->mac_fdx);
-                
-
-                ag7100_tx_start(mac);
-
-                ag7100_rx_start(mac);
-               
-                /*
-                 * Restore interrupts
-                 */
-                ag7100_reg_wr(mac,AG7100_DMA_INTR_MASK,int_mask);
-
-                spin_unlock_irqrestore(&mac->mac_lock,flags);
-                break;
-            }
+                        if ((jiffies - bp->trans_start) > (1 * HZ)) {
+//                printk(MODULE_NAME ": Tx Dma status : %s\n",
+//                ag7100_tx_stopped(mac) ? "inactive" : "active");
+#if 0
+//                printk(MODULE_NAME ": timestamp:%u jiffies:%u diff:%d\n",bp->trans_start,jiffies,
+//                             (jiffies - bp->trans_start));
+#endif
+               ag7100_dma_reset(mac);
+                           return 1;
+           }
         }
         ag7100_ring_incr(tail);
     }
@@ -960,7 +936,7 @@ ag7100_check_link(ag7100_mac_t *mac)
     {
         if (carrier)
         {
-            printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
+//            printk(MODULE_NAME ": unit %d: phy not up carrier %d\n", mac->mac_unit, carrier);
             netif_carrier_off(dev);
         }
         goto done;
@@ -980,16 +956,16 @@ ag7100_check_link(ag7100_mac_t *mac)
     if (carrier && (speed == mac->mac_speed) && (fdx == mac->mac_fdx)) 
         goto done;
 
-    printk(MODULE_NAME ": unit %d phy is up...", mac->mac_unit);
-    printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
-        spd_str[speed], dup_str[fdx]);
+//    printk(MODULE_NAME ": unit %d phy is up...", mac->mac_unit);
+//    printk("%s %s %s\n", mii_str[mac->mac_unit][mii_if(mac)], 
+//        spd_str[speed], dup_str[fdx]);
 
     ag7100_set_mac_from_link(mac, speed, fdx);
 
-    printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl %#x \n", 
-        ag7100_reg_rd(mac, AG7100_MAC_CFG2), 
-        ag7100_reg_rd(mac, AG7100_MAC_IFCTL),
-        ar7100_reg_rd(mii_reg(mac)));
+//    printk(MODULE_NAME ": done cfg2 %#x ifctl %#x miictrl %#x \n", 
+//        ag7100_reg_rd(mac, AG7100_MAC_CFG2), 
+//        ag7100_reg_rd(mac, AG7100_MAC_IFCTL),
+//        ar7100_reg_rd(mii_reg(mac)));
     /*
     * in business
     */
@@ -1130,7 +1106,7 @@ ag7100_mii_write(int unit, uint32_t phy_addr, uint8_t reg, uint16_t data)
 static void
 ag7100_handle_tx_full(ag7100_mac_t *mac)
 {
-    unsigned long         flags;
+    u32         flags;
 #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
     if(!mac->speed_10t)
 #endif
@@ -1162,7 +1138,7 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
 
     /* force extra pkt if remainder less than 4 bytes */
     if (*len > tx_len_per_ds)
-        if (*len < (tx_len_per_ds + 4))
+        if (*len <= (tx_len_per_ds + 4))
             len_this_ds = tx_len_per_ds - 4;
         else
             len_this_ds = tx_len_per_ds;
@@ -1286,10 +1262,6 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
         nds_this_pkt++;
         ag7100_tx_give_to_dma(ds);
     }
-    ds->res1           = 0;
-    ds->res2           = 0;
-    ds->ftpp_override  = 0;
-    ds->res3           = 0;
 
     ds->more        = 0;
     ag7100_tx_give_to_dma(fds);
@@ -1368,15 +1340,7 @@ ag7100_intr(int cpl, void *dev_id)
 
     assert(isr == (isr & imr));
 
-    if (isr & (AG7100_INTR_RX_OVF))
-    {
-        handled = 1;
-
-        ag7100_reg_wr(mac,AG7100_MAC_CFG1,(ag7100_reg_rd(mac,AG7100_MAC_CFG1)&0xfffffff3));
-
-        ag7100_intr_ack_rxovf(mac);
-    }
-    if (likely(isr & (AG7100_INTR_RX)))
+    if (likely(isr & (AG7100_INTR_RX | AG7100_INTR_RX_OVF)))
     {
         handled = 1;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
@@ -1476,7 +1440,7 @@ ag7100_poll(struct net_device *dev, int *budget)
 	int work_done=0,      max_work  = min(*budget, dev->quota), status = 0;
 #endif
     ag7100_rx_status_t  ret;
-    unsigned long                 flags;
+    u32                 flags;
     spin_lock_irqsave(&mac->mac_lock, flags);
 
     ret = ag7100_recv_packets(dev, mac, max_work, &work_done);
@@ -1853,9 +1817,6 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
     */
     wmb();
 
-ag7100_reg_wr(mac,AG7100_MAC_CFG1,(ag7100_reg_rd(mac,AG7100_MAC_CFG1)|0xc));
-ag7100_rx_start(mac);
-
     r->ring_tail = tail;
     ag7100_trc(refilled,"refilled");
 
@@ -1872,7 +1833,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
     int              head  = r->ring_head, tail = r->ring_tail, reaped = 0, i;
     ag7100_desc_t   *ds;
     ag7100_buffer_t *bf;
-    unsigned long    flags;
+    uint32_t    flags;
 
     ag7100_trc_new(head,"hd");
     ag7100_trc_new(tail,"tl");
@@ -1986,12 +1947,6 @@ ag7100_rx_alloc(ag7100_mac_t *mac)
         dma_cache_sync(NULL, (void *)bf->buf_pkt->data, AG7100_RX_BUF_SIZE, DMA_FROM_DEVICE);
         ds->pkt_start_addr  = virt_to_phys(bf->buf_pkt->data);
 
-	ds->res1           = 0;
-        ds->res2           = 0;
-	ds->ftpp_override  = 0;
-	ds->res3           = 0;
-	ds->more        = 0;
-
         ag7100_rx_give_to_dma(ds);
         ag7100_ring_incr(tail);
     }
@@ -2083,7 +2038,7 @@ ag7100_oom_timer(unsigned long data)
     int val;
 
     ag7100_trc(data,"data");
-    ag7100_rx_replenish(mac);
+//    ag7100_rx_replenish(mac);
     if (ag7100_rx_ring_full(mac))
     {
         val = mod_timer(&mac->mac_oom_timer, jiffies+1);
@@ -2115,7 +2070,6 @@ ag7100_tx_timeout_task(struct work_struct *work)
 {
     ag7100_mac_t *mac = container_of(work, ag7100_mac_t, mac_tx_timeout);
     ag7100_trc(mac,"mac");
-    check_for_dma_hang(mac);
     ag7100_stop(mac->mac_dev);
     ag7100_open(mac->mac_dev);
 }
@@ -2135,7 +2089,8 @@ ag7100_get_default_macaddr(ag7100_mac_t *mac, u8 *mac_addr)
 #ifdef CONFIG_AG7100_MAC_LOCATION
     u8 *eep_mac_addr = (u8 *)( CONFIG_AG7100_MAC_LOCATION + (mac->mac_unit)*6);
 #else
-    u8 *eep_mac_addr = (mac->mac_unit) ? (u8*)AR7100_EEPROM_GE1_MAC_ADDR: (u8*)AR7100_EEPROM_GE0_MAC_ADDR;
+    u8 *eep_mac_addr = (mac->mac_unit) ? AR7100_EEPROM_GE1_MAC_ADDR:
+        AR7100_EEPROM_GE0_MAC_ADDR;
 #endif
 
 //    printk(MODULE_NAME "CHH: Mac address for unit %d\n",mac->mac_unit);
@@ -2284,8 +2239,7 @@ ag7100_init(void)
     * Let hydra know how much to put into the fifo in words (for tx) 
     */
     if (0 == fifo_3)
-	fifo_3 = 0x008001ff;
-//        fifo_3 = 0x000001ff | ((AG7100_TX_FIFO_LEN-tx_len_per_ds)/4)<<16;
+        fifo_3 = 0x000001ff | ((AG7100_TX_FIFO_LEN-tx_len_per_ds)/4)<<16;
 
 //    printk(MODULE_NAME ": fifo cfg 3 %08x\n", fifo_3);
 
