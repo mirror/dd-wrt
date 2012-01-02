@@ -1183,7 +1183,7 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
 
     /* force extra pkt if remainder less than 4 bytes */
     if (*len > tx_len_per_ds)
-        if (*len <= (tx_len_per_ds + 4))
+        if (*len < (tx_len_per_ds + 4))
             len_this_ds = tx_len_per_ds - 4;
         else
             len_this_ds = tx_len_per_ds;
@@ -2292,8 +2292,8 @@ ag7100_init(void)
     * Compute the number of descriptors for an MTU 
     */
 #ifndef CONFIG_AR9100
-    tx_max_desc_per_ds_pkt = AG7100_TX_MAX_DS_LEN / tx_len_per_ds;
-    if (AG7100_TX_MAX_DS_LEN % tx_len_per_ds) tx_max_desc_per_ds_pkt++;
+//    tx_max_desc_per_ds_pkt = AG7100_TX_MAX_DS_LEN / tx_len_per_ds;
+//    if (AG7100_TX_MAX_DS_LEN % tx_len_per_ds) tx_max_desc_per_ds_pkt++;
 #else
     tx_max_desc_per_ds_pkt =1;
 #endif
