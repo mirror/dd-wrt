@@ -1138,7 +1138,7 @@ ag7100_get_tx_ds(ag7100_mac_t *mac, int *len, unsigned char **start)
 
     /* force extra pkt if remainder less than 4 bytes */
     if (*len > tx_len_per_ds)
-        if (*len <= (tx_len_per_ds + 4))
+        if (*len < (tx_len_per_ds + 4))
             len_this_ds = tx_len_per_ds - 4;
         else
             len_this_ds = tx_len_per_ds;
