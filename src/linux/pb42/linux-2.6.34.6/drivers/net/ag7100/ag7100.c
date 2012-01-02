@@ -411,30 +411,8 @@ ag7100_hw_setup(ag7100_mac_t *mac)
 {
     ag7100_ring_t *tx = &mac->mac_txring, *rx = &mac->mac_rxring;
     ag7100_desc_t *r0, *t0;
-#ifdef CONFIG_AR9100 
-#ifndef CONFIG_PORT0_AS_SWITCH
-    if(mac->mac_unit) {
-#ifdef CONFIG_DUAL_F1E_PHY
-    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
-#else
-    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
-#endif
-    }
-    else {
-	 ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
-   }
-#else
-   if(mac->mac_unit) {
-    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN |AG7100_MAC_CFG1_TX_EN));
-    }
-    else {
-         ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN));
-   }
-#endif
-#else
-	ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN |
-        AG7100_MAC_CFG1_TX_EN));
-#endif
+    ag7100_reg_wr(mac, AG7100_MAC_CFG1, (AG7100_MAC_CFG1_RX_EN | AG7100_MAC_CFG1_TX_EN | AG7100_MAC_CFG1_STX | AG7100_MAC_CFG1_SRX));
+
     ag7100_reg_rmw_set(mac, AG7100_MAC_CFG2, (AG7100_MAC_CFG2_PAD_CRC_EN | AG7100_MAC_CFG2_LEN_CHECK));
     ag7100_reg_wr(mac, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
@@ -450,8 +428,8 @@ ag7100_hw_setup(ag7100_mac_t *mac)
     ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_1, 0xfff0000);
     ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_2, 0x1fff);
 #else
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_1, 0xfff0000);
-    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_2, 0x1fff);
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_1, 0x0fff0000);
+    ag7100_reg_wr(mac, AG7100_MAC_FIFO_CFG_2, 0x00001fff);
     /*
     * Weed out junk frames (CRC errored, short collision'ed frames etc.)
     */
@@ -2306,7 +2284,8 @@ ag7100_init(void)
     * Let hydra know how much to put into the fifo in words (for tx) 
     */
     if (0 == fifo_3)
-        fifo_3 = 0x000001ff | ((AG7100_TX_FIFO_LEN-tx_len_per_ds)/4)<<16;
+	fifo_3 = 0x008001ff;
+//        fifo_3 = 0x000001ff | ((AG7100_TX_FIFO_LEN-tx_len_per_ds)/4)<<16;
 
 //    printk(MODULE_NAME ": fifo cfg 3 %08x\n", fifo_3);
 
