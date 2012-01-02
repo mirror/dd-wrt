@@ -321,10 +321,27 @@ typedef enum {
 #define AG7100_GE_MAC_ADDR2             0x44
 #define AG7100_MII0_CONTROL             0x18070000
 
+#define AG7100_RX_PKT_CNTR		0xa0
+#define AG7100_TX_PKT_CNTR		0xe4
+#define AG7100_RX_BYTES_CNTR		0x9c
+#define AG7100_TX_BYTES_CNTR		0xe0
+#define AG7100_RX_LEN_ERR_CNTR		0xc0
+#define AG7100_RX_OVL_ERR_CNTR		0xd0
+#define AG7100_RX_CRC_ERR_CNTR		0xa4
+#define AG7100_RX_FRM_ERR_CNTR		0xbc
+#define AG7100_RX_CODE_ERR_CNTR		0xc4
+#define AG7100_RX_CRS_ERR_CNTR		0xc8
+#define AG7100_RX_DROP_CNTR		0xdc
+#define AG7100_TX_DROP_CNTR		0x114
+#define AG7100_RX_MULT_CNTR		0xa8
+#define AG7100_TX_MULT_CNTR		0xe8
+#define AG7100_TOTAL_COL_CNTR		0x10c
+#define AG7100_TX_CRC_ERR_CNTR		0x11c
+
 /*
  * Everything but TX
  */
-#define AG7100_INTR_MASK    (AG7100_INTR_RX | AG7100_INTR_RX_OVF |  \
+#define AG7100_INTR_MASK    (AG7100_INTR_RX |  \
                              AG7100_INTR_RX_BUS_ERROR |             \
                              AG7100_INTR_TX_BUS_ERROR              \
                              /*| AG7100_INTR_TX_URN | AG7100_INTR_TX*/)
@@ -448,6 +465,13 @@ static inline int ag7100_rx_ring_full(ag7100_mac_t *mac)
 
 #define ag7100_intr_disable_tx(_mac)                                     \
     ag7100_reg_rmw_clear((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_TX);
+
+#define ag7100_intr_enable_rxovf(_mac)                                      \
+    ag7100_reg_rmw_set((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_RX_OVF);
+
+#define ag7100_intr_disable_rxovf(_mac)                                      \
+    ag7100_reg_rmw_clear(mac, AG7100_DMA_INTR_MASK,                         \
+                        (AG7100_INTR_RX_OVF));
 
 #define ag7100_intr_disable_recv(_mac)                                      \
     ag7100_reg_rmw_clear(mac, AG7100_DMA_INTR_MASK,                         \
