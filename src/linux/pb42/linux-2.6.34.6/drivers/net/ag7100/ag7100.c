@@ -686,7 +686,7 @@ ag7100_set_mac_from_link(ag7100_mac_t *mac, ag7100_phy_speed_t speed, int fdx)
         (mac->mac_speed !=  speed || mac->mac_fdx !=  fdx)) 
     {   
        /* workaround for PHY4 port thru RGMII */
-       phy_mode_setup();
+//       phy_mode_setup();
        is_setup_done = 1;
     }
 #endif
@@ -2291,12 +2291,12 @@ ag7100_init(void)
     /* 
     * Compute the number of descriptors for an MTU 
     */
-//#ifndef CONFIG_AR9100
-//    tx_max_desc_per_ds_pkt = AG7100_TX_MAX_DS_LEN / tx_len_per_ds;
-//    if (AG7100_TX_MAX_DS_LEN % tx_len_per_ds) tx_max_desc_per_ds_pkt++;
-//#else
+#ifndef CONFIG_AR9100
+    tx_max_desc_per_ds_pkt = AG7100_TX_MAX_DS_LEN / tx_len_per_ds;
+    if (AG7100_TX_MAX_DS_LEN % tx_len_per_ds) tx_max_desc_per_ds_pkt++;
+#else
     tx_max_desc_per_ds_pkt =1;
-//#endif
+#endif
 
 //    printk(MODULE_NAME ": Max segments per packet %d\n", tx_max_desc_per_ds_pkt);
 //    printk(MODULE_NAME ": Max tx descriptor count    %d\n", AG7100_TX_DESC_CNT);
