@@ -1216,6 +1216,11 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
         ag7100_tx_give_to_dma(ds);
     }
 
+    ds->res1           = 0;
+    ds->res2           = 0;
+    ds->ftpp_override  = 0;
+    ds->res3           = 0;
+
     ds->more        = 0;
     ag7100_tx_give_to_dma(fds);
 
@@ -1899,6 +1904,12 @@ ag7100_rx_alloc(ag7100_mac_t *mac)
 
         dma_cache_sync(NULL, (void *)bf->buf_pkt->data, AG7100_RX_BUF_SIZE, DMA_FROM_DEVICE);
         ds->pkt_start_addr  = virt_to_phys(bf->buf_pkt->data);
+
+        ds->res1           = 0;
+        ds->res2           = 0;
+        ds->ftpp_override  = 0;
+        ds->res3           = 0;
+	ds->more	= 0;
 
         ag7100_rx_give_to_dma(ds);
         ag7100_ring_incr(tail);
