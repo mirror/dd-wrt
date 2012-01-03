@@ -83,7 +83,6 @@ typedef struct {
     spinlock_t              mac_lock;
     struct timer_list       mac_oom_timer;
     struct work_struct      mac_tx_timeout;
-    struct net_device_stats mac_net_stats;
     ag7100_phy_speed_t      mac_speed;
     int                     mac_fdx;
     struct timer_list       mac_phy_timer;
@@ -95,13 +94,6 @@ typedef struct {
     ag7100_trc_t            tb;
 }ag7100_mac_t;
 
-#define net_rx_packets      mac_net_stats.rx_packets
-#define net_rx_fifo_errors  mac_net_stats.rx_fifo_errors
-#define net_tx_packets      mac_net_stats.tx_packets
-#define net_rx_bytes        mac_net_stats.rx_bytes
-#define net_tx_bytes        mac_net_stats.tx_bytes
-#define net_rx_over_errors  mac_net_stats.rx_over_errors
-#define net_tx_dropped      mac_net_stats.tx_dropped;
 
 #define ag7100_dev_up(_dev)                                     \
     (((_dev)->flags & (IFF_RUNNING|IFF_UP)) != (IFF_RUNNING|IFF_UP))
