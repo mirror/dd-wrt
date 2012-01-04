@@ -37,6 +37,7 @@
 
 #include <typedefs.h>
 #include <bcmnvram.h>
+#include "wlutils.h"
 
 #include "wireless_copy.h"
 #include "net80211/ieee80211.h"
