@@ -2119,7 +2119,7 @@ config AG7100
 
 choice
     prompt "port 0 interface"
-    depends on AG7100
+    depends on AG7100 || AG71XX
     
 config AG7100_GE0_MII
     bool "MII mode"
@@ -2137,7 +2137,7 @@ endchoice
 
 config  AG7100_GE1_IS_CONNECTED
     bool "port 1 is connected to a PHY"
-    depends on AG7100
+    depends on AG7100 || AG71XX
 
 choice
     prompt "port 1 interface (depends on port0)"
@@ -2243,7 +2243,7 @@ endchoice
 
 choice  
     prompt "PHY or switch used"
-    depends on AG7100
+    depends on AG7100 || AG71XX
 
 config ATHR_PHY
     bool "Atheros F1 GigE Phy"
@@ -2363,6 +2363,7 @@ config  AG7100_USE_TRC
 	default 0
 	depends on AG7100
 
+source "drivers/net/ag71xx/Kconfig"
 
 endif # NET_ETHERNET
 

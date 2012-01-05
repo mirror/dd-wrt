@@ -27,7 +27,7 @@
 
 #include <asm/mach-ar7100/ar7100.h>
 #include <asm/mips_machine.h>
-#include <linux/rtl8366rb_smi.h>
+#include <linux/rtl8366.h>
 #include <linux/ath9k_platform.h>
 
 extern uint32_t ar71xx_ahb_freq;
@@ -140,11 +140,13 @@ static struct platform_device ar7100_uart = {
 
 };
 
+#if !defined(CONFIG_AG71XX) && !defined(CONFIG_AG71XX_MODULE)
+
 #define TL_WR1043ND_GPIO_RTL8366_SDA    18
 #define TL_WR1043ND_GPIO_RTL8366_SCK    19
 
 
-static struct rtl8366rb_smi_platform_data tl_wr1043nd_rtl8366_smi_data = {
+static struct rtl8366_platform_data tl_wr1043nd_rtl8366_smi_data = {
 	.gpio_sda        = TL_WR1043ND_GPIO_RTL8366_SDA,
 	.gpio_sck        = TL_WR1043ND_GPIO_RTL8366_SCK,
 };
@@ -156,6 +158,8 @@ static struct platform_device tl_wr1043nd_rtl8366_smi_device = {
 		.platform_data	= &tl_wr1043nd_rtl8366_smi_data,
 	}
 };
+
+#endif
 
 #ifdef CONFIG_AR9100
 static struct ath9k_platform_data ath9k_pdata = {
@@ -224,13 +228,14 @@ int __init ar7100_platform_init(void)
 
 	platform_add_devices(ar7100_platform_devices,ARRAY_SIZE(ar7100_platform_devices));
 
+#if !defined(CONFIG_AG71XX) && !defined(CONFIG_AG71XX_MODULE)
 #ifdef CONFIG_RTL8366_SMI 
 	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
 #endif
 #ifdef CONFIG_RTL8366_SMI_MODULE
 	platform_device_register(&tl_wr1043nd_rtl8366_smi_device);
 #endif
-
+#endif
 
 //	mips_machine_setup();
 return 0;
