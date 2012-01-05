@@ -28,6 +28,7 @@
 
 #include <linux/types.h>
 #include <linux/netlink.h>
+#include "local_dd_compat.h"
 #include <linux/genetlink.h>
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
