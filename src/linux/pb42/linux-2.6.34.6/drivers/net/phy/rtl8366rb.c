@@ -1,5 +1,5 @@
 /*
- * Platform driver for the Realtek RTL8366S ethernet switch
+ * Platform driver for the Realtek RTL8366RB ethernet switch
  *
  * Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2010 Antti Seppälä <a.seppala@gmail.com>
@@ -16,17 +16,16 @@
 #include <linux/platform_device.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
-#include <linux/rtl8366rb.h>
+#include <linux/rtl8366.h>
 
 #include "rtl8366_smi.h"
 
 #define RTL8366RB_DRIVER_DESC	"Realtek RTL8366RB ethernet switch driver"
-#define RTL8366RB_DRIVER_VER	"0.2.2"
+#define RTL8366RB_DRIVER_VER	"0.2.3"
 
 #define RTL8366RB_PHY_NO_MAX	4
 #define RTL8366RB_PHY_PAGE_MAX	7
 #define RTL8366RB_PHY_ADDR_MAX	31
-#define RTL8366RB_PHY_WAN	4
 
 /* Switch Global Configuration register */
 #define RTL8366RB_SGCR				0x0000
@@ -182,7 +181,7 @@
 #define RTL8366RB_EB_PREIFG_MASK	(1 << RTL8366RB_EB_PREIFG_OFFSET)
 
 #define RTL8366RB_BDTH_SW_MAX		1048512
-#define RTL8366RB_BDTH_BASE		64
+#define RTL8366RB_BDTH_UNIT		64
 #define RTL8366RB_BDTH_REG_DEFAULT	16383
 
 /* QOS */
@@ -272,10 +271,7 @@ static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8366RB_SGCR, RTL8366RB_SGCR_MAX_LENGTH_MASK,
-		RTL8366RB_SGCR_MAX_LENGTH_9216);
-
-	/* enable all ports */
-	REG_WR(smi, RTL8366RB_PECR, 0);
+		RTL8366RB_SGCR_MAX_LENGTH_1536);
 
 	/* enable learning for all ports */
 	REG_WR(smi, RTL8366RB_SSCR0, 0);
@@ -458,8 +454,8 @@ static int rtl8366rb_set_vlan_4k(struct rtl8366_smi *smi,
 	int i;
 
 	if (vlan4k->vid >= RTL8366RB_NUM_VIDS ||
-	    vlan4k->member > RTL8366RB_PORT_ALL ||
-	    vlan4k->untag > RTL8366RB_PORT_ALL ||
+	    vlan4k->member > RTL8366RB_VLAN_MEMBER_MASK ||
+	    vlan4k->untag > RTL8366RB_VLAN_UNTAG_MASK ||
 	    vlan4k->fid > RTL8366RB_FIDMAX)
 		return -EINVAL;
 
@@ -525,8 +521,8 @@ static int rtl8366rb_set_vlan_mc(struct rtl8366_smi *smi, u32 index,
 	if (index >= RTL8366RB_NUM_VLANS ||
 	    vlanmc->vid >= RTL8366RB_NUM_VIDS ||
 	    vlanmc->priority > RTL8366RB_PRIORITYMAX ||
-	    vlanmc->member > RTL8366RB_PORT_ALL ||
-	    vlanmc->untag > RTL8366RB_PORT_ALL ||
+	    vlanmc->member > RTL8366RB_VLAN_MEMBER_MASK ||
+	    vlanmc->untag > RTL8366RB_VLAN_UNTAG_MASK ||
 	    vlanmc->fid > RTL8366RB_FIDMAX)
 		return -EINVAL;
 
@@ -605,6 +601,12 @@ static int rtl8366rb_enable_vlan4k(struct rtl8366_smi *smi, int enable)
 	return rtl8366_smi_rmwr(smi, RTL8366RB_SGCR,
 				RTL8366RB_SGCR_EN_VLAN_4KTB,
 				(enable) ? RTL8366RB_SGCR_EN_VLAN_4KTB : 0);
+}
+
+static int rtl8366rb_enable_port(struct rtl8366_smi *smi, int port, int enable)
+{
+	return rtl8366_smi_rmwr(smi, RTL8366RB_PECR, (1 << port),
+				(enable) ? 0 : (1 << port));
 }
 
 static int rtl8366rb_sw_reset_mibs(struct switch_dev *dev,
@@ -825,7 +827,7 @@ static int rtl8366rb_sw_set_port_rate_in(struct switch_dev *dev,
 		return -EINVAL;
 
 	if (val->value.i > 0 && val->value.i < RTL8366RB_BDTH_SW_MAX)
-		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_BASE;
+		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_UNIT;
 	else
 		val->value.i = RTL8366RB_BDTH_REG_DEFAULT;
 
@@ -851,7 +853,7 @@ static int rtl8366rb_sw_get_port_rate_in(struct switch_dev *dev,
 	if (data < RTL8366RB_IB_BDTH_MASK)
 		data += 1;
 
-	val->value.i = (int)data * RTL8366RB_BDTH_BASE;
+	val->value.i = (int)data * RTL8366RB_BDTH_UNIT;
 
 	return 0;
 }
@@ -870,7 +872,7 @@ static int rtl8366rb_sw_set_port_rate_out(struct switch_dev *dev,
 		(RTL8366RB_QOS_DEFAULT_PREIFG << RTL8366RB_EB_PREIFG_OFFSET));
 
 	if (val->value.i > 0 && val->value.i < RTL8366RB_BDTH_SW_MAX)
-		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_BASE;
+		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_UNIT;
 	else
 		val->value.i = RTL8366RB_BDTH_REG_DEFAULT;
 
@@ -894,7 +896,7 @@ static int rtl8366rb_sw_get_port_rate_out(struct switch_dev *dev,
 	if (data < RTL8366RB_EB_BDTH_MASK)
 		data += 1;
 
-	val->value.i = (int)data * RTL8366RB_BDTH_BASE;
+	val->value.i = (int)data * RTL8366RB_BDTH_UNIT;
 
 	return 0;
 }
@@ -956,7 +958,15 @@ static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 	if (err)
 		return err;
 
-	return rtl8366_reset_vlan(smi);
+	err = rtl8366_reset_vlan(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_enable_vlan(smi, 1);
+	if (err)
+		return err;
+
+	return rtl8366_enable_all_ports(smi, 1);
 }
 
 static struct switch_attr rtl8366rb_globals[] = {
@@ -969,7 +979,7 @@ static struct switch_attr rtl8366rb_globals[] = {
 		.max = 1
 	}, {
 		.type = SWITCH_TYPE_INT,
-		.name = "vlan",
+		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
 		.set = rtl8366_sw_set_vlan_enable,
 		.get = rtl8366_sw_get_vlan_enable,
@@ -1065,6 +1075,13 @@ static struct switch_attr rtl8366rb_vlan[] = {
 		.max = 1,
 		.set = NULL,
 		.get = rtl8366_sw_get_vlan_info,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "fid",
+		.description = "Get/Set vlan FID",
+		.max = RTL8366RB_FIDMAX,
+		.set = rtl8366_sw_set_vlan_fid,
+		.get = rtl8366_sw_get_vlan_fid,
 	},
 };
 
@@ -1139,12 +1156,6 @@ static int rtl8366rb_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	return err;
 }
 
-static int rtl8366rb_mii_bus_match(struct mii_bus *bus)
-{
-	return (bus->read == rtl8366rb_mii_read &&
-		bus->write == rtl8366rb_mii_write);
-}
-
 static int rtl8366rb_setup(struct rtl8366_smi *smi)
 {
 	int ret;
@@ -1207,12 +1218,13 @@ static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.is_vlan_valid	= rtl8366rb_is_vlan_valid,
 	.enable_vlan	= rtl8366rb_enable_vlan,
 	.enable_vlan4k	= rtl8366rb_enable_vlan4k,
+	.enable_port	= rtl8366rb_enable_port,
 };
 
 static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
-	struct rtl8366rb_platform_data *pdata;
+	struct rtl8366_platform_data *pdata;
 	struct rtl8366_smi *smi;
 	int err;
 
@@ -1263,36 +1275,6 @@ static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 	return err;
 }
 
-static int rtl8366rb_phy_config_init(struct phy_device *phydev)
-{
-	if (!rtl8366rb_mii_bus_match(phydev->bus))
-		return -EINVAL;
-
-	return 0;
-}
-
-static int rtl8366rb_phy_config_aneg(struct phy_device *phydev)
-{
-	/* phy 4 might be connected to a second mac, allow aneg config */
-	if (phydev->addr == RTL8366RB_PHY_WAN)
-		return genphy_config_aneg(phydev);
-
-	return 0;
-}
-
-static struct phy_driver rtl8366rb_phy_driver = {
-	.phy_id		= 0x001cc960,
-	.name		= "Realtek RTL8366RB",
-	.phy_id_mask	= 0x1ffffff0,
-	.features	= PHY_GBIT_FEATURES,
-	.config_aneg	= rtl8366rb_phy_config_aneg,
-	.config_init    = rtl8366rb_phy_config_init,
-	.read_status	= genphy_read_status,
-	.driver		= {
-		.owner = THIS_MODULE,
-	},
-};
-
 static int __devexit rtl8366rb_remove(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
@@ -1318,26 +1300,12 @@ static struct platform_driver rtl8366rb_driver = {
 
 static int __init rtl8366rb_module_init(void)
 {
-	int ret;
-	ret = platform_driver_register(&rtl8366rb_driver);
-	if (ret)
-		return ret;
-
-	ret = phy_driver_register(&rtl8366rb_phy_driver);
-	if (ret)
-		goto err_platform_unregister;
-
-	return 0;
-
- err_platform_unregister:
-	platform_driver_unregister(&rtl8366rb_driver);
-	return ret;
+	return platform_driver_register(&rtl8366rb_driver);
 }
 module_init(rtl8366rb_module_init);
 
 static void __exit rtl8366rb_module_exit(void)
 {
-	phy_driver_unregister(&rtl8366rb_phy_driver);
 	platform_driver_unregister(&rtl8366rb_driver);
 }
 module_exit(rtl8366rb_module_exit);
