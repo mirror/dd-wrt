@@ -22,6 +22,8 @@
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <linux/netlink.h>
+#include "local_dd_compat.h"
 #include <linux/switch.h>
 #include "swlib.h"
 #include <netlink/netlink.h>
