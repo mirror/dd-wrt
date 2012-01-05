@@ -368,11 +368,26 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		ptr = (char *)str;
 		while(ptr && *ptr)
 		{
+			while(*ptr && isspace(*ptr))
+				ptr++;
+
+			if (!*ptr)
+				break;
+
+			if (!isdigit(*ptr))
+				return -1;
+
+			if (val.len >= dev->ports)
+				return -1;
+
 			ports[val.len].flags = 0;
 			ports[val.len].id = strtoul(ptr, &ptr, 10);
 			while(*ptr && !isspace(*ptr)) {
 				if (*ptr == 't')
 					ports[val.len].flags |= SWLIB_PORT_FLAG_TAGGED;
+				else
+					return -1;
+
 				ptr++;
 			}
 			if (*ptr)
@@ -382,6 +397,9 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		val.value.ports = ports;
 		break;
 	case SWITCH_TYPE_NOVAL:
+		if (str && !strcmp(str, "0"))
+			return 0;
+
 		break;
 	default:
 		return -1;
@@ -562,6 +580,7 @@ add_switch(struct nl_msg *msg, void *arg)
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct switch_dev *dev;
 	const char *name;
+	// const char *alias;
 
 	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
 		goto done;
@@ -570,22 +589,30 @@ add_switch(struct nl_msg *msg, void *arg)
 		goto done;
 
 	name = nla_get_string(tb[SWITCH_ATTR_DEV_NAME]);
-	if (sa->name && (strcmp(name, sa->name) != 0))
-		goto done;
+	// alias = nla_get_string(tb[SWITCH_ATTR_ALIAS]);
+
+	// if (sa->name && (strcmp(name, sa->name) != 0) && (strcmp(alias, sa->name) != 0))
+	if (sa->name && (strcmp(name, sa->name) != 0) )
+	 	goto done;
 
 	dev = swlib_alloc(sizeof(struct switch_dev));
 	if (!dev)
 		goto done;
 
-	dev->dev_name = strdup(name);
+	strncpy(dev->dev_name, name, IFNAMSIZ - 1);
+	// dev->alias = strdup(alias);
+	dev->alias = strdup("");
+
 	if (tb[SWITCH_ATTR_ID])
 		dev->id = nla_get_u32(tb[SWITCH_ATTR_ID]);
 	if (tb[SWITCH_ATTR_NAME])
-		dev->name = strdup(nla_get_string(tb[SWITCH_ATTR_DEV_NAME]));
+		dev->name = strdup(nla_get_string(tb[SWITCH_ATTR_NAME]));
 	if (tb[SWITCH_ATTR_PORTS])
 		dev->ports = nla_get_u32(tb[SWITCH_ATTR_PORTS]);
 	if (tb[SWITCH_ATTR_VLANS])
 		dev->vlans = nla_get_u32(tb[SWITCH_ATTR_VLANS]);
+	if (tb[SWITCH_ATTR_CPU_PORT])
+		dev->cpu_port = nla_get_u32(tb[SWITCH_ATTR_CPU_PORT]);
 
 	if (!sa->head) {
 		sa->head = dev;
