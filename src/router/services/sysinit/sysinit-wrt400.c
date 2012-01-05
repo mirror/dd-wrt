@@ -70,8 +70,8 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7100_mod");
+	fprintf(stderr, "load ag71xx or ag7100_mod Ethernet Driver\n");
+	system("insmod ag71xx || insmod ag7100_mod");
 	char mac1[32];
 	char mac2[32];
 	char wmac[32];
