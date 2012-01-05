@@ -613,8 +613,11 @@ static void opendpi_cleanup(void)
 
         ipoque_exit_detection_module(ipoque_struct, free_wrapper);
         
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+        nf_conntrack_unregister_notifier (&init_net, &osdpi_notifier);
+#else
         nf_conntrack_unregister_notifier (&osdpi_notifier);
-        
+#endif        
         /* free all objects before destroying caches */
         next = rb_first(&osdpi_flow_root);
         while (next){
@@ -699,7 +702,11 @@ static int __init opendpi_mt_init(void)
                 goto err_flow;
         }
         
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+        ret = nf_conntrack_register_notifier(&init_net, &osdpi_notifier);
+#else
         ret = nf_conntrack_register_notifier(&osdpi_notifier);
+#endif
         if (ret < 0){
                 pr_err("xt_opendpi: error registering notifier.\n");
                 goto err_id;
