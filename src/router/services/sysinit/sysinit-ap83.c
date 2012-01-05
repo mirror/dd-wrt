@@ -74,12 +74,12 @@ void start_sysinit(void)
 #ifdef HAVE_WR1043
 	fprintf(stderr, "load RTL Switch Driver\n");
 	insmod("rtl8366rb_smi");
-	insmod("swconfig");
+//	insmod("swconfig");
 	insmod("rtl8366_smi");
 	insmod("rtl8366rb");
 #endif
-	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7100_mod");
+	fprintf(stderr, "load ag71xx or ag7100_mod Ethernet Driver\n");
+	system("insmod ag71xx || insmod ag7100_mod");
 #ifdef HAVE_WZRG300NH
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
