@@ -235,6 +235,8 @@ include rules/daq.mk
 include rules/pcre.mk
 include rules/snort.mk
 include rules/swconfig.mk
+include rules/dlna.mk
+
 #
 # Generic rules
 #
