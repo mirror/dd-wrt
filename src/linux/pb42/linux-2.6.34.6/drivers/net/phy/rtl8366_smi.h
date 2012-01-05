@@ -52,6 +52,7 @@ struct rtl8366_smi {
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 	struct dentry           *debugfs_root;
 	u16			dbg_reg;
+	u8			dbg_vlan_4k_page;
 #endif
 };
 
@@ -92,6 +93,7 @@ struct rtl8366_smi_ops {
 	int	(*is_vlan_valid)(struct rtl8366_smi *smi, unsigned vlan);
 	int	(*enable_vlan)(struct rtl8366_smi *smi, int enable);
 	int	(*enable_vlan4k)(struct rtl8366_smi *smi, int enable);
+	int	(*enable_port)(struct rtl8366_smi *smi, int port, int enable);
 };
 
 struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent);
@@ -102,6 +104,8 @@ int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data);
 int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data);
 
 int rtl8366_reset_vlan(struct rtl8366_smi *smi);
+int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable);
+int rtl8366_enable_all_ports(struct rtl8366_smi *smi, int enable);
 
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file);
@@ -118,6 +122,12 @@ int rtl8366_sw_get_port_mib(struct switch_dev *dev,
 			    const struct switch_attr *attr,
 			    struct switch_val *val);
 int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
+			     const struct switch_attr *attr,
+			     struct switch_val *val);
+int rtl8366_sw_get_vlan_fid(struct switch_dev *dev,
+			     const struct switch_attr *attr,
+			     struct switch_val *val);
+int rtl8366_sw_set_vlan_fid(struct switch_dev *dev,
 			     const struct switch_attr *attr,
 			     struct switch_val *val);
 int rtl8366_sw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val);
