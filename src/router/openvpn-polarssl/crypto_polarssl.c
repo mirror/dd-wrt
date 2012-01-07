@@ -170,9 +170,7 @@ rand_bytes (uint8_t *output, int len)
   while (len > 0)
     {
       const int blen 	= min_int (len, int_size);
-      const int rand_int 	= havege_rand(&hs);
-
-      memcpy (output, &rand_int, blen);
+      havege_random(&hs,output,blen);
       output += blen;
       len -= blen;
     }
