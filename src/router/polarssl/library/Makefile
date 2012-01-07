@@ -39,10 +39,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/seg/DEV/pb42/src/router/polarssl
+CMAKE_SOURCE_DIR = /home/seg/DEV/laguna/src/router/polarssl
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/seg/DEV/pb42/src/router/polarssl
+CMAKE_BINARY_DIR = /home/seg/DEV/laguna/src/router/polarssl
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -120,14 +120,14 @@ test/fast: test
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/pb42/src/router/polarssl/CMakeFiles /home/seg/DEV/pb42/src/router/polarssl/library/CMakeFiles/progress.marks
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/pb42/src/router/polarssl/CMakeFiles 0
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/laguna/src/router/polarssl/CMakeFiles /home/seg/DEV/laguna/src/router/polarssl/library/CMakeFiles/progress.marks
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/laguna/src/router/polarssl/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/clean
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/clean
 .PHONY : clean
 
 # The main clean target
@@ -136,22 +136,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/preinstall
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/preinstall
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 library/CMakeFiles/polarssl.dir/rule:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/CMakeFiles/polarssl.dir/rule
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f CMakeFiles/Makefile2 library/CMakeFiles/polarssl.dir/rule
 .PHONY : library/CMakeFiles/polarssl.dir/rule
 
 # Convenience name for target.
@@ -160,7 +160,7 @@ polarssl: library/CMakeFiles/polarssl.dir/rule
 
 # fast build rule for target.
 polarssl/fast:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/build
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/build
 .PHONY : polarssl/fast
 
 aes.o: aes.c.o
@@ -168,7 +168,7 @@ aes.o: aes.c.o
 
 # target to build an object file
 aes.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/aes.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/aes.c.o
 .PHONY : aes.c.o
 
 aes.i: aes.c.i
@@ -176,7 +176,7 @@ aes.i: aes.c.i
 
 # target to preprocess a source file
 aes.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/aes.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/aes.c.i
 .PHONY : aes.c.i
 
 aes.s: aes.c.s
@@ -184,7 +184,7 @@ aes.s: aes.c.s
 
 # target to generate assembly for a file
 aes.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/aes.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/aes.c.s
 .PHONY : aes.c.s
 
 arc4.o: arc4.c.o
@@ -192,7 +192,7 @@ arc4.o: arc4.c.o
 
 # target to build an object file
 arc4.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/arc4.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/arc4.c.o
 .PHONY : arc4.c.o
 
 arc4.i: arc4.c.i
@@ -200,7 +200,7 @@ arc4.i: arc4.c.i
 
 # target to preprocess a source file
 arc4.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/arc4.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/arc4.c.i
 .PHONY : arc4.c.i
 
 arc4.s: arc4.c.s
@@ -208,7 +208,7 @@ arc4.s: arc4.c.s
 
 # target to generate assembly for a file
 arc4.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/arc4.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/arc4.c.s
 .PHONY : arc4.c.s
 
 asn1parse.o: asn1parse.c.o
@@ -216,7 +216,7 @@ asn1parse.o: asn1parse.c.o
 
 # target to build an object file
 asn1parse.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/asn1parse.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/asn1parse.c.o
 .PHONY : asn1parse.c.o
 
 asn1parse.i: asn1parse.c.i
@@ -224,7 +224,7 @@ asn1parse.i: asn1parse.c.i
 
 # target to preprocess a source file
 asn1parse.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/asn1parse.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/asn1parse.c.i
 .PHONY : asn1parse.c.i
 
 asn1parse.s: asn1parse.c.s
@@ -232,7 +232,7 @@ asn1parse.s: asn1parse.c.s
 
 # target to generate assembly for a file
 asn1parse.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/asn1parse.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/asn1parse.c.s
 .PHONY : asn1parse.c.s
 
 base64.o: base64.c.o
@@ -240,7 +240,7 @@ base64.o: base64.c.o
 
 # target to build an object file
 base64.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/base64.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/base64.c.o
 .PHONY : base64.c.o
 
 base64.i: base64.c.i
@@ -248,7 +248,7 @@ base64.i: base64.c.i
 
 # target to preprocess a source file
 base64.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/base64.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/base64.c.i
 .PHONY : base64.c.i
 
 base64.s: base64.c.s
@@ -256,7 +256,7 @@ base64.s: base64.c.s
 
 # target to generate assembly for a file
 base64.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/base64.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/base64.c.s
 .PHONY : base64.c.s
 
 bignum.o: bignum.c.o
@@ -264,7 +264,7 @@ bignum.o: bignum.c.o
 
 # target to build an object file
 bignum.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/bignum.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/bignum.c.o
 .PHONY : bignum.c.o
 
 bignum.i: bignum.c.i
@@ -272,7 +272,7 @@ bignum.i: bignum.c.i
 
 # target to preprocess a source file
 bignum.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/bignum.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/bignum.c.i
 .PHONY : bignum.c.i
 
 bignum.s: bignum.c.s
@@ -280,7 +280,7 @@ bignum.s: bignum.c.s
 
 # target to generate assembly for a file
 bignum.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/bignum.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/bignum.c.s
 .PHONY : bignum.c.s
 
 camellia.o: camellia.c.o
@@ -288,7 +288,7 @@ camellia.o: camellia.c.o
 
 # target to build an object file
 camellia.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/camellia.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/camellia.c.o
 .PHONY : camellia.c.o
 
 camellia.i: camellia.c.i
@@ -296,7 +296,7 @@ camellia.i: camellia.c.i
 
 # target to preprocess a source file
 camellia.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/camellia.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/camellia.c.i
 .PHONY : camellia.c.i
 
 camellia.s: camellia.c.s
@@ -304,7 +304,7 @@ camellia.s: camellia.c.s
 
 # target to generate assembly for a file
 camellia.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/camellia.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/camellia.c.s
 .PHONY : camellia.c.s
 
 certs.o: certs.c.o
@@ -312,7 +312,7 @@ certs.o: certs.c.o
 
 # target to build an object file
 certs.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/certs.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/certs.c.o
 .PHONY : certs.c.o
 
 certs.i: certs.c.i
@@ -320,7 +320,7 @@ certs.i: certs.c.i
 
 # target to preprocess a source file
 certs.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/certs.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/certs.c.i
 .PHONY : certs.c.i
 
 certs.s: certs.c.s
@@ -328,7 +328,7 @@ certs.s: certs.c.s
 
 # target to generate assembly for a file
 certs.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/certs.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/certs.c.s
 .PHONY : certs.c.s
 
 cipher.o: cipher.c.o
@@ -336,7 +336,7 @@ cipher.o: cipher.c.o
 
 # target to build an object file
 cipher.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher.c.o
 .PHONY : cipher.c.o
 
 cipher.i: cipher.c.i
@@ -344,7 +344,7 @@ cipher.i: cipher.c.i
 
 # target to preprocess a source file
 cipher.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher.c.i
 .PHONY : cipher.c.i
 
 cipher.s: cipher.c.s
@@ -352,7 +352,7 @@ cipher.s: cipher.c.s
 
 # target to generate assembly for a file
 cipher.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher.c.s
 .PHONY : cipher.c.s
 
 cipher_wrap.o: cipher_wrap.c.o
@@ -360,7 +360,7 @@ cipher_wrap.o: cipher_wrap.c.o
 
 # target to build an object file
 cipher_wrap.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher_wrap.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher_wrap.c.o
 .PHONY : cipher_wrap.c.o
 
 cipher_wrap.i: cipher_wrap.c.i
@@ -368,7 +368,7 @@ cipher_wrap.i: cipher_wrap.c.i
 
 # target to preprocess a source file
 cipher_wrap.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher_wrap.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher_wrap.c.i
 .PHONY : cipher_wrap.c.i
 
 cipher_wrap.s: cipher_wrap.c.s
@@ -376,39 +376,15 @@ cipher_wrap.s: cipher_wrap.c.s
 
 # target to generate assembly for a file
 cipher_wrap.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher_wrap.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/cipher_wrap.c.s
 .PHONY : cipher_wrap.c.s
-
-ctr_drbg.o: ctr_drbg.c.o
-.PHONY : ctr_drbg.o
-
-# target to build an object file
-ctr_drbg.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ctr_drbg.c.o
-.PHONY : ctr_drbg.c.o
-
-ctr_drbg.i: ctr_drbg.c.i
-.PHONY : ctr_drbg.i
-
-# target to preprocess a source file
-ctr_drbg.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ctr_drbg.c.i
-.PHONY : ctr_drbg.c.i
-
-ctr_drbg.s: ctr_drbg.c.s
-.PHONY : ctr_drbg.s
-
-# target to generate assembly for a file
-ctr_drbg.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ctr_drbg.c.s
-.PHONY : ctr_drbg.c.s
 
 debug.o: debug.c.o
 .PHONY : debug.o
 
 # target to build an object file
 debug.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/debug.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/debug.c.o
 .PHONY : debug.c.o
 
 debug.i: debug.c.i
@@ -416,7 +392,7 @@ debug.i: debug.c.i
 
 # target to preprocess a source file
 debug.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/debug.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/debug.c.i
 .PHONY : debug.c.i
 
 debug.s: debug.c.s
@@ -424,7 +400,7 @@ debug.s: debug.c.s
 
 # target to generate assembly for a file
 debug.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/debug.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/debug.c.s
 .PHONY : debug.c.s
 
 des.o: des.c.o
@@ -432,7 +408,7 @@ des.o: des.c.o
 
 # target to build an object file
 des.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/des.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/des.c.o
 .PHONY : des.c.o
 
 des.i: des.c.i
@@ -440,7 +416,7 @@ des.i: des.c.i
 
 # target to preprocess a source file
 des.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/des.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/des.c.i
 .PHONY : des.c.i
 
 des.s: des.c.s
@@ -448,7 +424,7 @@ des.s: des.c.s
 
 # target to generate assembly for a file
 des.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/des.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/des.c.s
 .PHONY : des.c.s
 
 dhm.o: dhm.c.o
@@ -456,7 +432,7 @@ dhm.o: dhm.c.o
 
 # target to build an object file
 dhm.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/dhm.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/dhm.c.o
 .PHONY : dhm.c.o
 
 dhm.i: dhm.c.i
@@ -464,7 +440,7 @@ dhm.i: dhm.c.i
 
 # target to preprocess a source file
 dhm.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/dhm.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/dhm.c.i
 .PHONY : dhm.c.i
 
 dhm.s: dhm.c.s
@@ -472,63 +448,15 @@ dhm.s: dhm.c.s
 
 # target to generate assembly for a file
 dhm.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/dhm.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/dhm.c.s
 .PHONY : dhm.c.s
-
-entropy.o: entropy.c.o
-.PHONY : entropy.o
-
-# target to build an object file
-entropy.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/entropy.c.o
-.PHONY : entropy.c.o
-
-entropy.i: entropy.c.i
-.PHONY : entropy.i
-
-# target to preprocess a source file
-entropy.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/entropy.c.i
-.PHONY : entropy.c.i
-
-entropy.s: entropy.c.s
-.PHONY : entropy.s
-
-# target to generate assembly for a file
-entropy.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/entropy.c.s
-.PHONY : entropy.c.s
-
-entropy_poll.o: entropy_poll.c.o
-.PHONY : entropy_poll.o
-
-# target to build an object file
-entropy_poll.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/entropy_poll.c.o
-.PHONY : entropy_poll.c.o
-
-entropy_poll.i: entropy_poll.c.i
-.PHONY : entropy_poll.i
-
-# target to preprocess a source file
-entropy_poll.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/entropy_poll.c.i
-.PHONY : entropy_poll.c.i
-
-entropy_poll.s: entropy_poll.c.s
-.PHONY : entropy_poll.s
-
-# target to generate assembly for a file
-entropy_poll.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/entropy_poll.c.s
-.PHONY : entropy_poll.c.s
 
 error.o: error.c.o
 .PHONY : error.o
 
 # target to build an object file
 error.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/error.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/error.c.o
 .PHONY : error.c.o
 
 error.i: error.c.i
@@ -536,7 +464,7 @@ error.i: error.c.i
 
 # target to preprocess a source file
 error.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/error.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/error.c.i
 .PHONY : error.c.i
 
 error.s: error.c.s
@@ -544,7 +472,7 @@ error.s: error.c.s
 
 # target to generate assembly for a file
 error.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/error.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/error.c.s
 .PHONY : error.c.s
 
 havege.o: havege.c.o
@@ -552,7 +480,7 @@ havege.o: havege.c.o
 
 # target to build an object file
 havege.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/havege.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/havege.c.o
 .PHONY : havege.c.o
 
 havege.i: havege.c.i
@@ -560,7 +488,7 @@ havege.i: havege.c.i
 
 # target to preprocess a source file
 havege.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/havege.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/havege.c.i
 .PHONY : havege.c.i
 
 havege.s: havege.c.s
@@ -568,7 +496,7 @@ havege.s: havege.c.s
 
 # target to generate assembly for a file
 havege.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/havege.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/havege.c.s
 .PHONY : havege.c.s
 
 md.o: md.c.o
@@ -576,7 +504,7 @@ md.o: md.c.o
 
 # target to build an object file
 md.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md.c.o
 .PHONY : md.c.o
 
 md.i: md.c.i
@@ -584,7 +512,7 @@ md.i: md.c.i
 
 # target to preprocess a source file
 md.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md.c.i
 .PHONY : md.c.i
 
 md.s: md.c.s
@@ -592,7 +520,7 @@ md.s: md.c.s
 
 # target to generate assembly for a file
 md.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md.c.s
 .PHONY : md.c.s
 
 md2.o: md2.c.o
@@ -600,7 +528,7 @@ md2.o: md2.c.o
 
 # target to build an object file
 md2.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md2.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md2.c.o
 .PHONY : md2.c.o
 
 md2.i: md2.c.i
@@ -608,7 +536,7 @@ md2.i: md2.c.i
 
 # target to preprocess a source file
 md2.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md2.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md2.c.i
 .PHONY : md2.c.i
 
 md2.s: md2.c.s
@@ -616,7 +544,7 @@ md2.s: md2.c.s
 
 # target to generate assembly for a file
 md2.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md2.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md2.c.s
 .PHONY : md2.c.s
 
 md4.o: md4.c.o
@@ -624,7 +552,7 @@ md4.o: md4.c.o
 
 # target to build an object file
 md4.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md4.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md4.c.o
 .PHONY : md4.c.o
 
 md4.i: md4.c.i
@@ -632,7 +560,7 @@ md4.i: md4.c.i
 
 # target to preprocess a source file
 md4.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md4.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md4.c.i
 .PHONY : md4.c.i
 
 md4.s: md4.c.s
@@ -640,7 +568,7 @@ md4.s: md4.c.s
 
 # target to generate assembly for a file
 md4.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md4.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md4.c.s
 .PHONY : md4.c.s
 
 md5.o: md5.c.o
@@ -648,7 +576,7 @@ md5.o: md5.c.o
 
 # target to build an object file
 md5.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md5.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md5.c.o
 .PHONY : md5.c.o
 
 md5.i: md5.c.i
@@ -656,7 +584,7 @@ md5.i: md5.c.i
 
 # target to preprocess a source file
 md5.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md5.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md5.c.i
 .PHONY : md5.c.i
 
 md5.s: md5.c.s
@@ -664,7 +592,7 @@ md5.s: md5.c.s
 
 # target to generate assembly for a file
 md5.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md5.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md5.c.s
 .PHONY : md5.c.s
 
 md_wrap.o: md_wrap.c.o
@@ -672,7 +600,7 @@ md_wrap.o: md_wrap.c.o
 
 # target to build an object file
 md_wrap.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md_wrap.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md_wrap.c.o
 .PHONY : md_wrap.c.o
 
 md_wrap.i: md_wrap.c.i
@@ -680,7 +608,7 @@ md_wrap.i: md_wrap.c.i
 
 # target to preprocess a source file
 md_wrap.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md_wrap.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md_wrap.c.i
 .PHONY : md_wrap.c.i
 
 md_wrap.s: md_wrap.c.s
@@ -688,7 +616,7 @@ md_wrap.s: md_wrap.c.s
 
 # target to generate assembly for a file
 md_wrap.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md_wrap.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/md_wrap.c.s
 .PHONY : md_wrap.c.s
 
 net.o: net.c.o
@@ -696,7 +624,7 @@ net.o: net.c.o
 
 # target to build an object file
 net.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/net.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/net.c.o
 .PHONY : net.c.o
 
 net.i: net.c.i
@@ -704,7 +632,7 @@ net.i: net.c.i
 
 # target to preprocess a source file
 net.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/net.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/net.c.i
 .PHONY : net.c.i
 
 net.s: net.c.s
@@ -712,7 +640,7 @@ net.s: net.c.s
 
 # target to generate assembly for a file
 net.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/net.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/net.c.s
 .PHONY : net.c.s
 
 padlock.o: padlock.c.o
@@ -720,7 +648,7 @@ padlock.o: padlock.c.o
 
 # target to build an object file
 padlock.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/padlock.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/padlock.c.o
 .PHONY : padlock.c.o
 
 padlock.i: padlock.c.i
@@ -728,7 +656,7 @@ padlock.i: padlock.c.i
 
 # target to preprocess a source file
 padlock.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/padlock.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/padlock.c.i
 .PHONY : padlock.c.i
 
 padlock.s: padlock.c.s
@@ -736,7 +664,7 @@ padlock.s: padlock.c.s
 
 # target to generate assembly for a file
 padlock.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/padlock.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/padlock.c.s
 .PHONY : padlock.c.s
 
 pem.o: pem.c.o
@@ -744,7 +672,7 @@ pem.o: pem.c.o
 
 # target to build an object file
 pem.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pem.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pem.c.o
 .PHONY : pem.c.o
 
 pem.i: pem.c.i
@@ -752,7 +680,7 @@ pem.i: pem.c.i
 
 # target to preprocess a source file
 pem.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pem.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pem.c.i
 .PHONY : pem.c.i
 
 pem.s: pem.c.s
@@ -760,7 +688,7 @@ pem.s: pem.c.s
 
 # target to generate assembly for a file
 pem.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pem.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pem.c.s
 .PHONY : pem.c.s
 
 pkcs11.o: pkcs11.c.o
@@ -768,7 +696,7 @@ pkcs11.o: pkcs11.c.o
 
 # target to build an object file
 pkcs11.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pkcs11.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pkcs11.c.o
 .PHONY : pkcs11.c.o
 
 pkcs11.i: pkcs11.c.i
@@ -776,7 +704,7 @@ pkcs11.i: pkcs11.c.i
 
 # target to preprocess a source file
 pkcs11.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pkcs11.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pkcs11.c.i
 .PHONY : pkcs11.c.i
 
 pkcs11.s: pkcs11.c.s
@@ -784,7 +712,7 @@ pkcs11.s: pkcs11.c.s
 
 # target to generate assembly for a file
 pkcs11.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pkcs11.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/pkcs11.c.s
 .PHONY : pkcs11.c.s
 
 rsa.o: rsa.c.o
@@ -792,7 +720,7 @@ rsa.o: rsa.c.o
 
 # target to build an object file
 rsa.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/rsa.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/rsa.c.o
 .PHONY : rsa.c.o
 
 rsa.i: rsa.c.i
@@ -800,7 +728,7 @@ rsa.i: rsa.c.i
 
 # target to preprocess a source file
 rsa.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/rsa.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/rsa.c.i
 .PHONY : rsa.c.i
 
 rsa.s: rsa.c.s
@@ -808,7 +736,7 @@ rsa.s: rsa.c.s
 
 # target to generate assembly for a file
 rsa.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/rsa.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/rsa.c.s
 .PHONY : rsa.c.s
 
 sha1.o: sha1.c.o
@@ -816,7 +744,7 @@ sha1.o: sha1.c.o
 
 # target to build an object file
 sha1.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha1.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha1.c.o
 .PHONY : sha1.c.o
 
 sha1.i: sha1.c.i
@@ -824,7 +752,7 @@ sha1.i: sha1.c.i
 
 # target to preprocess a source file
 sha1.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha1.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha1.c.i
 .PHONY : sha1.c.i
 
 sha1.s: sha1.c.s
@@ -832,7 +760,7 @@ sha1.s: sha1.c.s
 
 # target to generate assembly for a file
 sha1.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha1.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha1.c.s
 .PHONY : sha1.c.s
 
 sha2.o: sha2.c.o
@@ -840,7 +768,7 @@ sha2.o: sha2.c.o
 
 # target to build an object file
 sha2.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha2.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha2.c.o
 .PHONY : sha2.c.o
 
 sha2.i: sha2.c.i
@@ -848,7 +776,7 @@ sha2.i: sha2.c.i
 
 # target to preprocess a source file
 sha2.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha2.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha2.c.i
 .PHONY : sha2.c.i
 
 sha2.s: sha2.c.s
@@ -856,7 +784,7 @@ sha2.s: sha2.c.s
 
 # target to generate assembly for a file
 sha2.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha2.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha2.c.s
 .PHONY : sha2.c.s
 
 sha4.o: sha4.c.o
@@ -864,7 +792,7 @@ sha4.o: sha4.c.o
 
 # target to build an object file
 sha4.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha4.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha4.c.o
 .PHONY : sha4.c.o
 
 sha4.i: sha4.c.i
@@ -872,7 +800,7 @@ sha4.i: sha4.c.i
 
 # target to preprocess a source file
 sha4.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha4.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha4.c.i
 .PHONY : sha4.c.i
 
 sha4.s: sha4.c.s
@@ -880,7 +808,7 @@ sha4.s: sha4.c.s
 
 # target to generate assembly for a file
 sha4.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha4.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/sha4.c.s
 .PHONY : sha4.c.s
 
 ssl_cli.o: ssl_cli.c.o
@@ -888,7 +816,7 @@ ssl_cli.o: ssl_cli.c.o
 
 # target to build an object file
 ssl_cli.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_cli.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_cli.c.o
 .PHONY : ssl_cli.c.o
 
 ssl_cli.i: ssl_cli.c.i
@@ -896,7 +824,7 @@ ssl_cli.i: ssl_cli.c.i
 
 # target to preprocess a source file
 ssl_cli.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_cli.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_cli.c.i
 .PHONY : ssl_cli.c.i
 
 ssl_cli.s: ssl_cli.c.s
@@ -904,7 +832,7 @@ ssl_cli.s: ssl_cli.c.s
 
 # target to generate assembly for a file
 ssl_cli.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_cli.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_cli.c.s
 .PHONY : ssl_cli.c.s
 
 ssl_srv.o: ssl_srv.c.o
@@ -912,7 +840,7 @@ ssl_srv.o: ssl_srv.c.o
 
 # target to build an object file
 ssl_srv.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_srv.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_srv.c.o
 .PHONY : ssl_srv.c.o
 
 ssl_srv.i: ssl_srv.c.i
@@ -920,7 +848,7 @@ ssl_srv.i: ssl_srv.c.i
 
 # target to preprocess a source file
 ssl_srv.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_srv.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_srv.c.i
 .PHONY : ssl_srv.c.i
 
 ssl_srv.s: ssl_srv.c.s
@@ -928,7 +856,7 @@ ssl_srv.s: ssl_srv.c.s
 
 # target to generate assembly for a file
 ssl_srv.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_srv.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_srv.c.s
 .PHONY : ssl_srv.c.s
 
 ssl_tls.o: ssl_tls.c.o
@@ -936,7 +864,7 @@ ssl_tls.o: ssl_tls.c.o
 
 # target to build an object file
 ssl_tls.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_tls.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_tls.c.o
 .PHONY : ssl_tls.c.o
 
 ssl_tls.i: ssl_tls.c.i
@@ -944,7 +872,7 @@ ssl_tls.i: ssl_tls.c.i
 
 # target to preprocess a source file
 ssl_tls.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_tls.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_tls.c.i
 .PHONY : ssl_tls.c.i
 
 ssl_tls.s: ssl_tls.c.s
@@ -952,7 +880,7 @@ ssl_tls.s: ssl_tls.c.s
 
 # target to generate assembly for a file
 ssl_tls.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_tls.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/ssl_tls.c.s
 .PHONY : ssl_tls.c.s
 
 timing.o: timing.c.o
@@ -960,7 +888,7 @@ timing.o: timing.c.o
 
 # target to build an object file
 timing.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/timing.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/timing.c.o
 .PHONY : timing.c.o
 
 timing.i: timing.c.i
@@ -968,7 +896,7 @@ timing.i: timing.c.i
 
 # target to preprocess a source file
 timing.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/timing.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/timing.c.i
 .PHONY : timing.c.i
 
 timing.s: timing.c.s
@@ -976,7 +904,7 @@ timing.s: timing.c.s
 
 # target to generate assembly for a file
 timing.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/timing.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/timing.c.s
 .PHONY : timing.c.s
 
 version.o: version.c.o
@@ -984,7 +912,7 @@ version.o: version.c.o
 
 # target to build an object file
 version.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/version.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/version.c.o
 .PHONY : version.c.o
 
 version.i: version.c.i
@@ -992,7 +920,7 @@ version.i: version.c.i
 
 # target to preprocess a source file
 version.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/version.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/version.c.i
 .PHONY : version.c.i
 
 version.s: version.c.s
@@ -1000,7 +928,7 @@ version.s: version.c.s
 
 # target to generate assembly for a file
 version.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/version.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/version.c.s
 .PHONY : version.c.s
 
 x509parse.o: x509parse.c.o
@@ -1008,7 +936,7 @@ x509parse.o: x509parse.c.o
 
 # target to build an object file
 x509parse.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/x509parse.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/x509parse.c.o
 .PHONY : x509parse.c.o
 
 x509parse.i: x509parse.c.i
@@ -1016,7 +944,7 @@ x509parse.i: x509parse.c.i
 
 # target to preprocess a source file
 x509parse.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/x509parse.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/x509parse.c.i
 .PHONY : x509parse.c.i
 
 x509parse.s: x509parse.c.s
@@ -1024,7 +952,7 @@ x509parse.s: x509parse.c.s
 
 # target to generate assembly for a file
 x509parse.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/x509parse.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/x509parse.c.s
 .PHONY : x509parse.c.s
 
 xtea.o: xtea.c.o
@@ -1032,7 +960,7 @@ xtea.o: xtea.c.o
 
 # target to build an object file
 xtea.c.o:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/xtea.c.o
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/xtea.c.o
 .PHONY : xtea.c.o
 
 xtea.i: xtea.c.i
@@ -1040,7 +968,7 @@ xtea.i: xtea.c.i
 
 # target to preprocess a source file
 xtea.c.i:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/xtea.c.i
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/xtea.c.i
 .PHONY : xtea.c.i
 
 xtea.s: xtea.c.s
@@ -1048,7 +976,7 @@ xtea.s: xtea.c.s
 
 # target to generate assembly for a file
 xtea.c.s:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/xtea.c.s
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(MAKE) -f library/CMakeFiles/polarssl.dir/build.make library/CMakeFiles/polarssl.dir/xtea.c.s
 .PHONY : xtea.c.s
 
 # Help Target
@@ -1092,9 +1020,6 @@ help:
 	@echo "... cipher_wrap.o"
 	@echo "... cipher_wrap.i"
 	@echo "... cipher_wrap.s"
-	@echo "... ctr_drbg.o"
-	@echo "... ctr_drbg.i"
-	@echo "... ctr_drbg.s"
 	@echo "... debug.o"
 	@echo "... debug.i"
 	@echo "... debug.s"
@@ -1104,12 +1029,6 @@ help:
 	@echo "... dhm.o"
 	@echo "... dhm.i"
 	@echo "... dhm.s"
-	@echo "... entropy.o"
-	@echo "... entropy.i"
-	@echo "... entropy.s"
-	@echo "... entropy_poll.o"
-	@echo "... entropy_poll.i"
-	@echo "... entropy_poll.s"
 	@echo "... error.o"
 	@echo "... error.i"
 	@echo "... error.s"
@@ -1187,6 +1106,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/seg/DEV/pb42/src/router/polarssl && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/seg/DEV/laguna/src/router/polarssl && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

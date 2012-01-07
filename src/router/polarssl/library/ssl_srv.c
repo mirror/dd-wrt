@@ -359,7 +359,7 @@ have_ciphersuite:
 static int ssl_write_server_hello( ssl_context *ssl )
 {
     time_t t;
-    int ret, n;
+    int ret, i, n;
     unsigned char *buf, *p;
 
     SSL_DEBUG_MSG( 2, ( "=> write server hello" ) );
@@ -388,10 +388,8 @@ static int ssl_write_server_hello( ssl_context *ssl )
 
     SSL_DEBUG_MSG( 3, ( "server hello, current time: %lu", t ) );
 
-    if( ( ret = ssl->f_rng( ssl->p_rng, p, 28 ) ) != 0 )
-        return( ret );
-
-    p += 28;
+    for( i = 28; i > 0; i-- )
+        *p++ = (unsigned char) ssl->f_rng( ssl->p_rng );
 
     memcpy( ssl->randbytes + 32, buf + 6, 32 );
 
@@ -415,14 +413,9 @@ static int ssl_write_server_hello( ssl_context *ssl )
         ssl->resume = 0;
         ssl->state++;
 
-        if( ssl->session == NULL )
-        {
-            SSL_DEBUG_MSG( 1, ( "No session struct set" ) );
-            return( POLARSSL_ERR_SSL_BAD_INPUT_DATA );
-        }
-
-        if( ( ret = ssl->f_rng( ssl->p_rng, ssl->session->id, n ) ) != 0 )
-            return( ret );
+        for( i = 0; i < n; i++ )
+            ssl->session->id[i] =
+                (unsigned char) ssl->f_rng( ssl->p_rng );
     }
     else
     {
@@ -830,9 +823,8 @@ static int ssl_parse_client_key_exchange( ssl_context *ssl )
              */
             ssl->pmslen = 48;
 
-            ret = ssl->f_rng( ssl->p_rng, ssl->premaster, ssl->pmslen );
-            if( ret != 0 )
-                return( ret );
+            for( i = 0; i < ssl->pmslen; i++ )
+                ssl->premaster[i] = (unsigned char) ssl->f_rng( ssl->p_rng );
         }
     }
 
