@@ -5,7 +5,7 @@
  *
  * \author Adriaan de Jong <dejong@fox-it.com>
  *
- *  Copyright (C) 2006-2010, Brainspark B.V.
+ *  Copyright (C) 2006-2011, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -88,6 +88,7 @@ typedef enum {
 } cipher_mode_t;
 
 typedef enum {
+    POLARSSL_OPERATION_NONE = -1,
     POLARSSL_DECRYPT = 0,
     POLARSSL_ENCRYPT,
 } operation_t;
@@ -95,12 +96,12 @@ typedef enum {
 enum {
     /** Undefined key length */
     POLARSSL_KEY_LENGTH_NONE = 0,
-    /** Key length, in bits, for DES keys */
-    POLARSSL_KEY_LENGTH_DES  = 56,
-    /** Key length, in bits, for DES in two key EDE */
-    POLARSSL_KEY_LENGTH_DES_EDE = 112,
-    /** Key length, in bits, for DES in three-key EDE */
-    POLARSSL_KEY_LENGTH_DES_EDE3 = 168,
+    /** Key length, in bits (including parity), for DES keys */
+    POLARSSL_KEY_LENGTH_DES  = 64,
+    /** Key length, in bits (including parity), for DES in two key EDE */
+    POLARSSL_KEY_LENGTH_DES_EDE = 128,
+    /** Key length, in bits (including parity), for DES in three-key EDE */
+    POLARSSL_KEY_LENGTH_DES_EDE3 = 192,
     /** Maximum length of any IV, in bytes */
     POLARSSL_MAX_IV_LENGTH = 16,
 };
@@ -146,10 +147,11 @@ typedef struct {
     /** Full cipher identifier (e.g. POLARSSL_CIPHER_AES_256_CBC) */
     cipher_type_t type;
 
-    /** Cipher mode (e.g. POLARSSL_CIPHER_MODE_CBC) */
+    /** Cipher mode (e.g. POLARSSL_MODE_CBC) */
     cipher_mode_t mode;
 
-    /** Cipher key length, in bits (default length for variable sized ciphers) */
+    /** Cipher key length, in bits (default length for variable sized ciphers)
+     *  (Includes parity bits for ciphers like DES) */
     unsigned int key_length;
 
     /** Name of the cipher */
@@ -167,7 +169,7 @@ typedef struct {
 } cipher_info_t;
 
 /**
- * Generic message digest context.
+ * Generic cipher context.
  */
 typedef struct {
     /** Information about the associated cipher */
@@ -268,6 +270,23 @@ static inline unsigned int cipher_get_block_size( const cipher_context_t *ctx )
 }
 
 /**
+ * \brief               Returns the mode of operation for the cipher.
+ *                      (e.g. POLARSSL_MODE_CBC)
+ *
+ * \param ctx           cipher's context. Must have been initialised.
+ *
+ * \return              mode of operation, or POLARSSL_MODE_NONE if ctx
+ *                      has not been initialised.
+ */
+static inline cipher_mode_t cipher_get_cipher_mode( const cipher_context_t *ctx )
+{
+    if( NULL == ctx || NULL == ctx->cipher_info )
+        return POLARSSL_MODE_NONE;
+
+    return ctx->cipher_info->mode;
+}
+
+/**
  * \brief               Returns the size of the cipher's IV.
  *
  * \param ctx           cipher's context. Must have been initialised.
@@ -332,6 +351,23 @@ static inline int cipher_get_key_size ( const cipher_context_t *ctx )
 }
 
 /**
+ * \brief               Returns the operation of the given cipher.
+ *
+ * \param ctx           cipher's context. Must have been initialised.
+ *
+ * \return              operation (POLARSSL_ENCRYPT or POLARSSL_DECRYPT),
+ *                      or POLARSSL_OPERATION_NONE if ctx has not been
+ *                      initialised.
+ */
+static inline operation_t cipher_get_operation( const cipher_context_t *ctx )
+{
+    if( NULL == ctx || NULL == ctx->cipher_info )
+        return POLARSSL_OPERATION_NONE;
+
+    return ctx->operation;
+}
+
+/**
  * \brief               Set the key to use with the given context.
  *
  * \param ctx           generic cipher context. May not be NULL. Must have been
@@ -392,7 +428,7 @@ int cipher_update( cipher_context_t *ctx, const unsigned char *input, size_t ile
  *                      contained within it will be padded with the size of
  *                      the last block, and written to the output buffer.
  *
- * \param ctx           Generic message digest context
+ * \param ctx           Generic cipher context
  * \param output        buffer to write data to. Needs block_size data available.
  * \param olen          length of the data written to the output buffer.
  *

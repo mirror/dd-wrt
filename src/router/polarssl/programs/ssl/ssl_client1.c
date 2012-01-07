@@ -1,7 +1,7 @@
 /*
  *  SSL client demonstration program
  *
- *  Copyright (C) 2006-2010, Brainspark B.V.
+ *  Copyright (C) 2006-2011, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -34,7 +34,9 @@
 
 #include "polarssl/net.h"
 #include "polarssl/ssl.h"
-#include "polarssl/havege.h"
+#include "polarssl/entropy.h"
+#include "polarssl/ctr_drbg.h"
+#include "polarssl/error.h"
 
 #define SERVER_PORT 4433
 #define SERVER_NAME "localhost"
@@ -51,37 +53,60 @@ void my_debug( void *ctx, int level, const char *str )
     }
 }
 
-#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_HAVEGE_C) ||   \
+#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_ENTROPY_C) ||  \
     !defined(POLARSSL_SSL_TLS_C) || !defined(POLARSSL_SSL_CLI_C) || \
-    !defined(POLARSSL_NET_C) || !defined(POLARSSL_RSA_C)
-int main( void )
+    !defined(POLARSSL_NET_C) || !defined(POLARSSL_RSA_C) ||         \
+    !defined(POLARSSL_CTR_DRBG_C)
+int main( int argc, char *argv[] )
 {
-    printf("POLARSSL_BIGNUM_C and/or POLARSSL_HAVEGE_C and/or "
+    ((void) argc);
+    ((void) argv);
+
+    printf("POLARSSL_BIGNUM_C and/or POLARSSL_ENTROPY_C and/or "
            "POLARSSL_SSL_TLS_C and/or POLARSSL_SSL_CLI_C and/or "
-           "POLARSSL_NET_C and/or POLARSSL_RSA_C not defined.\n");
+           "POLARSSL_NET_C and/or POLARSSL_RSA_C and/or "
+           "POLARSSL_CTR_DRBG_C not defined.\n");
     return( 0 );
 }
 #else
-int main( void )
+int main( int argc, char *argv[] )
 {
     int ret, len, server_fd;
     unsigned char buf[1024];
-    havege_state hs;
+    char *pers = "ssl_client1";
+
+    entropy_context entropy;
+    ctr_drbg_context ctr_drbg;
     ssl_context ssl;
     ssl_session ssn;
+
+    ((void) argc);
+    ((void) argv);
 
     /*
      * 0. Initialize the RNG and the session data
      */
-    havege_init( &hs );
     memset( &ssn, 0, sizeof( ssl_session ) );
     memset( &ssl, 0, sizeof( ssl_context ) );
+
+    printf( "\n  . Seeding the random number generator..." );
+    fflush( stdout );
+
+    entropy_init( &entropy );
+    if( ( ret = ctr_drbg_init( &ctr_drbg, entropy_func, &entropy,
+                               (unsigned char *) pers, strlen( pers ) ) ) != 0 )
+    {
+        printf( " failed\n  ! ctr_drbg_init returned %d\n", ret );
+        goto exit;
+    }
+
+    printf( " ok\n" );
 
     /*
      * 1. Start the connection
      */
-    printf( "\n  . Connecting to tcp/%s/%4d...", SERVER_NAME,
-                                                 SERVER_PORT );
+    printf( "  . Connecting to tcp/%s/%4d...", SERVER_NAME,
+                                               SERVER_PORT );
     fflush( stdout );
 
     if( ( ret = net_connect( &server_fd, SERVER_NAME,
@@ -110,7 +135,7 @@ int main( void )
     ssl_set_endpoint( &ssl, SSL_IS_CLIENT );
     ssl_set_authmode( &ssl, SSL_VERIFY_NONE );
 
-    ssl_set_rng( &ssl, havege_rand, &hs );
+    ssl_set_rng( &ssl, ctr_drbg_random, &ctr_drbg );
     ssl_set_dbg( &ssl, my_debug, stdout );
     ssl_set_bio( &ssl, net_recv, &server_fd,
                        net_send, &server_fd );
@@ -156,32 +181,48 @@ int main( void )
         if( ret == POLARSSL_ERR_SSL_PEER_CLOSE_NOTIFY )
             break;
 
-        if( ret <= 0 )
+        if( ret < 0 )
         {
             printf( "failed\n  ! ssl_read returned %d\n\n", ret );
+            break;
+        }
+
+        if( ret == 0 )
+        {
+            printf( "\n\nEOF\n\n" );
             break;
         }
 
         len = ret;
         printf( " %d bytes read\n\n%s", len, (char *) buf );
     }
-    while( 0 );
+    while( 1 );
 
     ssl_close_notify( &ssl );
 
 exit:
+
+#ifdef POLARSSL_ERROR_C
+    if( ret != 0 )
+    {
+        char error_buf[100];
+        error_strerror( ret, error_buf, 100 );
+        printf("Last error was: %d - %s\n\n", ret, error_buf );
+    }
+#endif
 
     net_close( server_fd );
     ssl_free( &ssl );
 
     memset( &ssl, 0, sizeof( ssl ) );
 
-#ifdef WIN32
+#if defined(_WIN32)
     printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
     return( ret );
 }
-#endif /* POLARSSL_BIGNUM_C && POLARSSL_HAVEGE_C && POLARSSL_SSL_TLS_C &&
-          POLARSSL_SSL_CLI_C && POLARSSL_NET_C && POLARSSL_RSA_C */
+#endif /* POLARSSL_BIGNUM_C && POLARSSL_ENTROPY_C && POLARSSL_SSL_TLS_C &&
+          POLARSSL_SSL_CLI_C && POLARSSL_NET_C && POLARSSL_RSA_C &&
+          POLARSSL_CTR_DRBG_C */
