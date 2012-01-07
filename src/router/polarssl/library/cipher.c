@@ -46,17 +46,20 @@ static const int supported_ciphers[] = {
         POLARSSL_CIPHER_AES_128_CBC,
         POLARSSL_CIPHER_AES_192_CBC,
         POLARSSL_CIPHER_AES_256_CBC,
+        POLARSSL_CIPHER_AES_512_CBC,
 
 #if defined(POLARSSL_CIPHER_MODE_CFB)
         POLARSSL_CIPHER_AES_128_CFB128,
         POLARSSL_CIPHER_AES_192_CFB128,
         POLARSSL_CIPHER_AES_256_CFB128,
+        POLARSSL_CIPHER_AES_512_CFB128,
 #endif /* defined(POLARSSL_CIPHER_MODE_CFB) */
 
 #if defined(POLARSSL_CIPHER_MODE_CTR)
         POLARSSL_CIPHER_AES_128_CTR,
         POLARSSL_CIPHER_AES_192_CTR,
         POLARSSL_CIPHER_AES_256_CTR,
+        POLARSSL_CIPHER_AES_512_CTR,
 #endif /* defined(POLARSSL_CIPHER_MODE_CTR) */
 
 #endif /* defined(POLARSSL_AES_C) */
@@ -106,6 +109,8 @@ const cipher_info_t *cipher_info_from_type( cipher_type_t cipher_type )
             return &aes_192_cbc_info;
         case POLARSSL_CIPHER_AES_256_CBC:
             return &aes_256_cbc_info;
+        case POLARSSL_CIPHER_AES_512_CBC:
+            return &aes_512_cbc_info;
 
 #if defined(POLARSSL_CIPHER_MODE_CFB)
         case POLARSSL_CIPHER_AES_128_CFB128:
@@ -114,6 +119,8 @@ const cipher_info_t *cipher_info_from_type( cipher_type_t cipher_type )
             return &aes_192_cfb128_info;
         case POLARSSL_CIPHER_AES_256_CFB128:
             return &aes_256_cfb128_info;
+        case POLARSSL_CIPHER_AES_512_CFB128:
+            return &aes_512_cfb128_info;
 #endif /* defined(POLARSSL_CIPHER_MODE_CFB) */
 
 #if defined(POLARSSL_CIPHER_MODE_CTR)
@@ -123,6 +130,8 @@ const cipher_info_t *cipher_info_from_type( cipher_type_t cipher_type )
             return &aes_192_ctr_info;
         case POLARSSL_CIPHER_AES_256_CTR:
             return &aes_256_ctr_info;
+        case POLARSSL_CIPHER_AES_512_CTR:
+            return &aes_512_ctr_info;
 #endif /* defined(POLARSSL_CIPHER_MODE_CTR) */
 
 #endif
@@ -209,6 +218,8 @@ const cipher_info_t *cipher_info_from_string( const char *cipher_name )
         return cipher_info_from_type( POLARSSL_CIPHER_AES_192_CBC );
     if( !strcasecmp( "AES-256-CBC", cipher_name ) )
         return cipher_info_from_type( POLARSSL_CIPHER_AES_256_CBC );
+    if( !strcasecmp( "AES-512-CBC", cipher_name ) )
+        return cipher_info_from_type( POLARSSL_CIPHER_AES_512_CBC );
 
 #if defined(POLARSSL_CIPHER_MODE_CFB)
     if( !strcasecmp( "AES-128-CFB128", cipher_name ) )
@@ -217,6 +228,8 @@ const cipher_info_t *cipher_info_from_string( const char *cipher_name )
         return cipher_info_from_type( POLARSSL_CIPHER_AES_192_CFB128 );
     if( !strcasecmp( "AES-256-CFB128", cipher_name ) )
         return cipher_info_from_type( POLARSSL_CIPHER_AES_256_CFB128 );
+    if( !strcasecmp( "AES-512-CFB128", cipher_name ) )
+        return cipher_info_from_type( POLARSSL_CIPHER_AES_512_CFB128 );
 #endif /* defined(POLARSSL_CIPHER_MODE_CFB) */
 
 #if defined(POLARSSL_CIPHER_MODE_CTR)
@@ -226,6 +239,8 @@ const cipher_info_t *cipher_info_from_string( const char *cipher_name )
         return cipher_info_from_type( POLARSSL_CIPHER_AES_192_CTR );
     if( !strcasecmp( "AES-256-CTR", cipher_name ) )
         return cipher_info_from_type( POLARSSL_CIPHER_AES_256_CTR );
+    if( !strcasecmp( "AES-512-CTR", cipher_name ) )
+        return cipher_info_from_type( POLARSSL_CIPHER_AES_512_CTR );
 #endif /* defined(POLARSSL_CIPHER_MODE_CTR) */
 #endif
 
