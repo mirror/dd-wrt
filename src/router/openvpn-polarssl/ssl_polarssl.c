@@ -509,7 +509,7 @@ void key_state_ssl_init(struct key_state_ssl *ks_ssl,
       /* Initialise SSL context */
       ssl_set_dbg (ks_ssl->ctx, my_debug, NULL);
       ssl_set_endpoint (ks_ssl->ctx, ssl_ctx->endpoint);
-      ssl_set_rng (ks_ssl->ctx, havege_random, ssl_ctx->hs);
+      ssl_set_rng (ks_ssl->ctx, havege_rand, ssl_ctx->hs);
       ALLOC_OBJ_CLEAR (ks_ssl->ssn, ssl_session);
       ssl_set_session (ks_ssl->ctx, 0, 0, ks_ssl->ssn );
       if (ssl_ctx->allowed_ciphers)
