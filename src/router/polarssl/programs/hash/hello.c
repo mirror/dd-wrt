@@ -1,7 +1,7 @@
 /*
  *  Classic "Hello, world" demonstration program
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -34,23 +34,17 @@
 #include "polarssl/md5.h"
 
 #if !defined(POLARSSL_MD5_C)
-int main( int argc, char *argv[] )
+int main( void )
 {
-    ((void) argc);
-    ((void) argv);
-
     printf("POLARSSL_MD5_C not defined.\n");
     return( 0 );
 }
 #else
-int main( int argc, char *argv[] )
+int main( void )
 {
     int i;
     unsigned char digest[16];
     char str[] = "Hello, world!";
-
-    ((void) argc);
-    ((void) argv);
 
     printf( "\n  MD5('%s') = ", str );
 
@@ -61,7 +55,7 @@ int main( int argc, char *argv[] )
 
     printf( "\n\n" );
 
-#if defined(_WIN32)
+#ifdef WIN32
     printf( "  Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif

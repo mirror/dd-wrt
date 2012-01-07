@@ -1,7 +1,7 @@
 /*
  *  CRL reading application
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -59,17 +59,14 @@ void my_debug( void *ctx, int level, const char *str )
 #define USAGE \
     "\n usage: crl_app param=<>...\n"                   \
     "\n acceptable parameters:\n"                       \
-    "    filename=%%s         default: crl.pem\n"      \
+    "    filename=%%s         default: cert.crt\n"      \
     "    debug_level=%%d      default: 0 (disabled)\n"  \
     "\n"
 
 #if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_RSA_C) ||  \
     !defined(POLARSSL_X509_PARSE_C) || !defined(POLARSSL_FS_IO)
-int main( int argc, char *argv[] )
+int main( void )
 {
-    ((void) argc);
-    ((void) argv);
-
     printf("POLARSSL_BIGNUM_C and/or POLARSSL_RSA_C and/or "
            "POLARSSL_X509_PARSE_C and/or POLARSSL_FS_IO not defined.\n");
     return( 0 );
@@ -78,7 +75,7 @@ int main( int argc, char *argv[] )
 int main( int argc, char *argv[] )
 {
     int ret = 0;
-    unsigned char buf[100000];
+    unsigned char buf[1024];
     x509_crl crl;
     int i, j, n;
     char *p, *q;
@@ -159,7 +156,7 @@ int main( int argc, char *argv[] )
 exit:
     x509_crl_free( &crl );
 
-#if defined(_WIN32)
+#ifdef WIN32
     printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif

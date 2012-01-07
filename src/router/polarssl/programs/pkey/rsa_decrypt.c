@@ -1,7 +1,7 @@
 /*
  *  RSA simple decryption program
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -36,11 +36,8 @@
 
 #if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_RSA_C) ||  \
     !defined(POLARSSL_FS_IO)
-int main( int argc, char *argv[] )
+int main( void )
 {
-    ((void) argc);
-    ((void) argv);
-
     printf("POLARSSL_BIGNUM_C and/or POLARSSL_RSA_C and/or "
            "POLARSSL_FS_IO not defined.\n");
     return( 0 );
@@ -56,40 +53,32 @@ int main( int argc, char *argv[] )
     unsigned char buf[512];
     ((void) argv);
 
-    memset(result, 0, sizeof( result ) );
     ret = 1;
-
     if( argc != 1 )
     {
         printf( "usage: rsa_decrypt\n" );
 
-#if defined(_WIN32)
+#ifdef WIN32
         printf( "\n" );
 #endif
 
         goto exit;
     }
 
-    printf( "\n  . Reading private key from rsa_priv.txt" );
+    printf( "\n  . Reading public key from rsa_pub.txt" );
     fflush( stdout );
 
-    if( ( f = fopen( "rsa_priv.txt", "rb" ) ) == NULL )
+    if( ( f = fopen( "rsa_pub.txt", "rb" ) ) == NULL )
     {
-        printf( " failed\n  ! Could not open rsa_priv.txt\n" \
+        printf( " failed\n  ! Could not open rsa_pub.txt\n" \
                 "  ! Please run rsa_genkey first\n\n" );
         goto exit;
     }
 
     rsa_init( &rsa, RSA_PKCS_V15, 0 );
 
-    if( ( ret = mpi_read_file( &rsa.N , 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.E , 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.D , 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.P , 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.Q , 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.DP, 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.DQ, 16, f ) ) != 0 ||
-        ( ret = mpi_read_file( &rsa.QP, 16, f ) ) != 0 )
+    if( ( ret = mpi_read_file( &rsa.N, 16, f ) ) != 0 ||
+        ( ret = mpi_read_file( &rsa.E, 16, f ) ) != 0 )
     {
         printf( " failed\n  ! mpi_read_file returned %d\n\n", ret );
         goto exit;
@@ -130,7 +119,7 @@ int main( int argc, char *argv[] )
     printf( "\n  . Decrypting the encrypted data" );
     fflush( stdout );
 
-    if( ( ret = rsa_pkcs1_decrypt( &rsa, RSA_PRIVATE, &i, buf, result,
+    if( ( ret = rsa_pkcs1_decrypt( &rsa, RSA_PUBLIC, &i, buf, result,
                                    1024 ) ) != 0 )
     {
         printf( " failed\n  ! rsa_pkcs1_decrypt returned %d\n\n", ret );
@@ -145,7 +134,7 @@ int main( int argc, char *argv[] )
 
 exit:
 
-#if defined(_WIN32)
+#ifdef WIN32
     printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif

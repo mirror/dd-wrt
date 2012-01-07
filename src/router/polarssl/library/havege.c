@@ -200,32 +200,18 @@ void havege_init( havege_state *hs )
 /*
  * HAVEGE rand function
  */
-int havege_random( void *p_rng, unsigned char *buf, size_t len )
+int havege_rand( void *p_rng )
 {
-    int val;
-    size_t use_len;
+    int ret;
     havege_state *hs = (havege_state *) p_rng;
-    unsigned char *p = buf;
 
-    while( len > 0 )
-    {
-        use_len = len;
-        if( use_len > sizeof(int) )
-            use_len = sizeof(int);
+    if( hs->offset[1] >= COLLECT_SIZE )
+        havege_fill( hs );
 
-        if( hs->offset[1] >= COLLECT_SIZE )
-            havege_fill( hs );
+    ret  = hs->pool[hs->offset[0]++];
+    ret ^= hs->pool[hs->offset[1]++];
 
-        val  = hs->pool[hs->offset[0]++];
-        val ^= hs->pool[hs->offset[1]++];
-
-        memcpy( p, &val, use_len );
-        
-        len -= use_len;
-        p += use_len;
-    }
-
-    return( 0 );
+    return( ret );
 }
 
 #endif

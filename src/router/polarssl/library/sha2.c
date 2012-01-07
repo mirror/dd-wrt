@@ -341,7 +341,7 @@ int sha2_file( const char *path, unsigned char output[32], int is224 )
     unsigned char buf[1024];
 
     if( ( f = fopen( path, "rb" ) ) == NULL )
-        return( POLARSSL_ERR_SHA2_FILE_IO_ERROR );
+        return( 1 );
 
     sha2_starts( &ctx, is224 );
 
@@ -355,7 +355,7 @@ int sha2_file( const char *path, unsigned char output[32], int is224 )
     if( ferror( f ) != 0 )
     {
         fclose( f );
-        return( POLARSSL_ERR_SHA2_FILE_IO_ERROR );
+        return( 2 );
     }
 
     fclose( f );

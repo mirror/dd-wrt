@@ -3,7 +3,7 @@
  *
  * \brief Configuration options (set of defines)
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -31,7 +31,7 @@
 #ifndef POLARSSL_CONFIG_H
 #define POLARSSL_CONFIG_H
 
-#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
+#ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
@@ -155,30 +155,6 @@
 #define POLARSSL_FS_IO
 
 /**
- * \def POLARSSL_NO_DEFAULT_ENTROPY_SOURCES
- *
- * Do not add default entropy sources. These are the platform specific,
- * hardclock and HAVEGE based poll functions.
- *
- * This is useful to have more control over the added entropy sources in an 
- * application.
- *
- * Uncomment this macro to prevent loading of default entropy functions.
-#define POLARSSL_NO_DEFAULT_ENTROPY_SOURCES
- */
-
-/**
- * \def POLARSSL_NO_PLATFORM_ENTROPY
- *
- * Do not use built-in platform entropy functions.
- * This is useful if your platform does not support
- * standards like the /dev/urandom or Windows CryptoAPI.
- *
- * Uncomment this macro to disable the built-in platform entropy functions.
-#define POLARSSL_NO_PLATFORM_ENTROPY
- */
-
-/**
  * \def POLARSSL_PKCS1_V21
  *
  * Requires: POLARSSL_MD_C, POLARSSL_RSA_C
@@ -232,7 +208,6 @@
  * Module:  library/aes.c
  * Caller:  library/ssl_tls.c
  *          library/pem.c
- *          library/ctr_drbg.c
  *
  * This module enables the following ciphersuites:
  *      SSL_RSA_AES_128_SHA
@@ -254,16 +229,6 @@
  *      SSL_RSA_RC4_128_SHA
  */
 #define POLARSSL_ARC4_C
-
-/**
- * \def POLARSSL_ASN1_PARSE_C
- *
- * Enable the generic ASN1 parser.
- *
- * Module:  library/asn1.c
- * Caller:  library/x509parse.c
- */
-#define POLARSSL_ASN1_PARSE_C
 
 /**
  * \def POLARSSL_BASE64_C
@@ -332,20 +297,6 @@
 #define POLARSSL_CIPHER_C
 
 /**
- * \def POLARSSL_CTR_DRBG_C
- *
- * Enable the CTR_DRBG AES-256-based random generator
- *
- * Module:  library/ctr_drbg.c
- * Caller:
- *
- * Requires: POLARSSL_AES_C
- *
- * This module provides the CTR_DRBG AES-256 random number generator.
- */
-#define POLARSSL_CTR_DRBG_C
-
-/**
  * \def POLARSSL_DEBUG_C
  *
  * Enable the debug functions.
@@ -388,20 +339,6 @@
  *      SSL_EDH_RSA_CAMELLIA_256_SHA
  */
 #define POLARSSL_DHM_C
-
-/**
- * \def POLARSSL_ENTROPY_C
- *
- * Enable the platform-specific entropy code.
- *
- * Module:  library/entropy.c
- * Caller:
- *
- * Requires: POLARSSL_SHA4_C
- *
- * This module provides a generic entropy pool
- */
-#define POLARSSL_ENTROPY_C
 
 /**
  * \def POLARSSL_ERROR_C
@@ -668,7 +605,7 @@
  *          library/ssl_srv.c
  *          library/ssl_tls.c
  *
- * Requires: POLARSSL_ASN1_PARSE_C, POLARSSL_BIGNUM_C, POLARSSL_RSA_C
+ * Requires: POLARSSL_BIGNUM_C, POLARSSL_RSA_C
  *
  * This module is required for X.509 certificate parsing.
  */

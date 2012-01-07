@@ -89,12 +89,12 @@ int mpi_grow( mpi *X, size_t nblimbs )
     t_uint *p;
 
     if( nblimbs > POLARSSL_MPI_MAX_LIMBS )
-        return( POLARSSL_ERR_MPI_MALLOC_FAILED );
+        return( 1 );
 
     if( X->n < nblimbs )
     {
         if( ( p = (t_uint *) malloc( nblimbs * ciL ) ) == NULL )
-            return( POLARSSL_ERR_MPI_MALLOC_FAILED );
+            return( 1 );
 
         memset( p, 0, nblimbs * ciL );
 
@@ -440,20 +440,13 @@ int mpi_read_file( mpi *X, int radix, FILE *fin )
     t_uint d;
     size_t slen;
     char *p;
-    /*
-     * Buffer should have space for (short) label and decimal formatted MPI,
-     * newline characters and '\0'
-     */
-    char s[ POLARSSL_MPI_READ_BUFFER_SIZE ];
+    char s[1024];
 
     memset( s, 0, sizeof( s ) );
     if( fgets( s, sizeof( s ) - 1, fin ) == NULL )
         return( POLARSSL_ERR_MPI_FILE_IO_ERROR );
 
     slen = strlen( s );
-    if( slen == sizeof( s ) - 2 )
-        return( POLARSSL_ERR_MPI_BUFFER_TOO_SMALL );
-
     if( s[slen - 1] == '\n' ) { slen--; s[slen] = '\0'; }
     if( s[slen - 1] == '\r' ) { slen--; s[slen] = '\0'; }
 
@@ -472,10 +465,7 @@ int mpi_write_file( const char *p, const mpi *X, int radix, FILE *fout )
 {
     int ret;
     size_t n, slen, plen;
-    /*
-     * Buffer should have space for minus sign, hexified MPI and '\0'
-     */
-    char s[ 2 * POLARSSL_MPI_MAX_SIZE + 2 ];
+    char s[2048];
 
     n = sizeof( s );
     memset( s, 0, n );
@@ -1102,13 +1092,13 @@ int mpi_div_mpi( mpi *Q, mpi *R, const mpi *A, const mpi *B )
         else
         {
 #if defined(POLARSSL_HAVE_LONGLONG)
-            t_udbl r;
+            t_dbl r;
 
-            r  = (t_udbl) X.p[i] << biL;
-            r |= (t_udbl) X.p[i - 1];
+            r  = (t_dbl) X.p[i] << biL;
+            r |= (t_dbl) X.p[i - 1];
             r /= Y.p[t];
-            if( r > ((t_udbl) 1 << biL) - 1)
-                r = ((t_udbl) 1 << biL) - 1;
+            if( r > ((t_dbl) 1 << biL) - 1)
+                r = ((t_dbl) 1 << biL) - 1;
 
             Z.p[i - t - 1] = (t_uint) r;
 #else
@@ -1387,7 +1377,7 @@ int mpi_exp_mod( mpi *X, const mpi *A, const mpi *E, const mpi *N, mpi *_RR )
     size_t i, j, nblimbs;
     size_t bufsize, nbits;
     t_uint ei, mm, state;
-    mpi RR, T, W[ 2 << POLARSSL_MPI_WINDOW_SIZE ];
+    mpi RR, T, W[64];
 
     if( mpi_cmp_int( N, 0 ) < 0 || ( N->p[0] & 1 ) == 0 )
         return( POLARSSL_ERR_MPI_BAD_INPUT_DATA );
@@ -1403,9 +1393,6 @@ int mpi_exp_mod( mpi *X, const mpi *A, const mpi *E, const mpi *N, mpi *_RR )
 
     wsize = ( i > 671 ) ? 6 : ( i > 239 ) ? 5 :
             ( i >  79 ) ? 4 : ( i >  23 ) ? 3 : 1;
-
-    if( wsize > POLARSSL_MPI_WINDOW_SIZE )
-        wsize = POLARSSL_MPI_WINDOW_SIZE;
 
     j = N->n + 1;
     MPI_CHK( mpi_grow( X, j ) );
@@ -1612,16 +1599,18 @@ cleanup:
     return( ret );
 }
 
-int mpi_fill_random( mpi *X, size_t size,
-                     int (*f_rng)(void *, unsigned char *, size_t),
-                     void *p_rng )
+int mpi_fill_random( mpi *X, size_t size, int (*f_rng)(void *), void *p_rng )
 {
     int ret;
+    size_t k;
+    unsigned char *p;
 
     MPI_CHK( mpi_grow( X, size ) );
     MPI_CHK( mpi_lset( X, 0 ) );
 
-    MPI_CHK( f_rng( p_rng, (unsigned char *) X->p, X->n * ciL ) );
+    p = (unsigned char *) X->p;
+    for( k = 0; k < X->n * ciL; k++ )
+        *p++ = (unsigned char) f_rng( p_rng );
 
 cleanup:
     return( ret );
@@ -1752,9 +1741,7 @@ static const int small_prime[] =
 /*
  * Miller-Rabin primality test  (HAC 4.24)
  */
-int mpi_is_prime( mpi *X,
-                  int (*f_rng)(void *, unsigned char *, size_t),
-                  void *p_rng )
+int mpi_is_prime( mpi *X, int (*f_rng)(void *), void *p_rng )
 {
     int ret, xs;
     size_t i, j, n, s;
@@ -1813,7 +1800,7 @@ int mpi_is_prime( mpi *X,
         /*
          * pick a random A, 1 < A < |X| - 1
          */
-        MPI_CHK( mpi_fill_random( &A, X->n, f_rng, p_rng ) );
+        mpi_fill_random( &A, X->n, f_rng, p_rng );
 
         if( mpi_cmp_mpi( &A, &W ) >= 0 )
         {
@@ -1871,21 +1858,20 @@ cleanup:
  * Prime number generation
  */
 int mpi_gen_prime( mpi *X, size_t nbits, int dh_flag,
-                   int (*f_rng)(void *, unsigned char *, size_t),
-                   void *p_rng )
+                   int (*f_rng)(void *), void *p_rng )
 {
     int ret;
     size_t k, n;
     mpi Y;
 
-    if( nbits < 3 || nbits > POLARSSL_MPI_MAX_BITS )
+    if( nbits < 3 || nbits > 4096 )
         return( POLARSSL_ERR_MPI_BAD_INPUT_DATA );
 
     mpi_init( &Y );
 
     n = BITS_TO_LIMBS( nbits );
 
-    MPI_CHK( mpi_fill_random( X, n, f_rng, p_rng ) );
+    mpi_fill_random( X, n, f_rng, p_rng );
 
     k = mpi_msb( X );
     if( k < nbits ) MPI_CHK( mpi_shift_l( X, nbits - k ) );
