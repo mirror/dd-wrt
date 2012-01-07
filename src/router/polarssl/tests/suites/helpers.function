@@ -1,0 +1,207 @@
+#include <polarssl/config.h>
+
+#ifdef _MSC_VER
+#include <basetsd.h>
+typedef UINT32 uint32_t;
+#else
+#include <inttypes.h>
+#endif
+
+/*
+ * 32-bit integer manipulation macros (big endian)
+ */
+#ifndef GET_ULONG_BE
+#define GET_ULONG_BE(n,b,i)                             \
+{                                                       \
+    (n) = ( (unsigned long) (b)[(i)    ] << 24 )        \
+        | ( (unsigned long) (b)[(i) + 1] << 16 )        \
+        | ( (unsigned long) (b)[(i) + 2] <<  8 )        \
+        | ( (unsigned long) (b)[(i) + 3]       );       \
+}
+#endif
+
+#ifndef PUT_ULONG_BE
+#define PUT_ULONG_BE(n,b,i)                             \
+{                                                       \
+    (b)[(i)    ] = (unsigned char) ( (n) >> 24 );       \
+    (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );       \
+    (b)[(i) + 2] = (unsigned char) ( (n) >>  8 );       \
+    (b)[(i) + 3] = (unsigned char) ( (n)       );       \
+}
+#endif
+
+int unhexify(unsigned char *obuf, const char *ibuf)
+{
+    unsigned char c, c2;
+    int len = strlen(ibuf) / 2;
+    assert(!(strlen(ibuf) %1)); // must be even number of bytes
+
+    while (*ibuf != 0)
+    {
+        c = *ibuf++;
+        if( c >= '0' && c <= '9' )
+            c -= '0';
+        else if( c >= 'a' && c <= 'f' )
+            c -= 'a' - 10;
+        else if( c >= 'A' && c <= 'F' )
+            c -= 'A' - 10;
+        else
+            assert( 0 );
+
+        c2 = *ibuf++;
+        if( c2 >= '0' && c2 <= '9' )
+            c2 -= '0';
+        else if( c2 >= 'a' && c2 <= 'f' )
+            c2 -= 'a' - 10;
+        else if( c2 >= 'A' && c2 <= 'F' )
+            c2 -= 'A' - 10;
+        else
+            assert( 0 );
+
+        *obuf++ = ( c << 4 ) | c2;
+    }
+
+    return len;
+}
+
+void hexify(unsigned char *obuf, const unsigned char *ibuf, int len)
+{
+    unsigned char l, h;
+
+    while (len != 0)
+    {
+        h = (*ibuf) / 16;
+        l = (*ibuf) % 16;
+
+        if( h < 10 )
+            *obuf++ = '0' + h;
+        else
+            *obuf++ = 'a' + h - 10;
+
+        if( l < 10 )
+            *obuf++ = '0' + l;
+        else
+            *obuf++ = 'a' + l - 10;
+
+        ++ibuf;
+        len--;
+    }
+}
+
+/**
+ * This function just returns data from rand().
+ * Although predictable and often similar on multiple
+ * runs, this does not result in identical random on
+ * each run. So do not use this if the results of a
+ * test depend on the random data that is generated.
+ *
+ * rng_state shall be NULL.
+ */
+static int rnd_std_rand( void *rng_state )
+{
+    if( rng_state != NULL )
+        rng_state  = NULL;
+
+    return( rand() );
+}
+
+/**
+ * This function only returns zeros
+ *
+ * rng_state shall be NULL.
+ */
+static int rnd_zero_rand( void *rng_state )
+{
+    if( rng_state != NULL )
+        rng_state  = NULL;
+
+    return( 0 );
+}
+
+typedef struct
+{
+    unsigned char *buf;
+    int length;
+    int per_call;
+} rnd_buf_info;
+
+/**
+ * This function returns random based on a buffer it receives.
+ *
+ * rng_state shall be a pointer to a rnd_buf_info structure.
+ * 
+ * The number of bytes released from the buffer on each call to
+ * the random function is specified by per_call. (Can be between
+ * 1 and 4)
+ *
+ * After the buffer is empty it will return rand();
+ */
+static int rnd_buffer_rand( void *rng_state )
+{
+    rnd_buf_info *info = (rnd_buf_info *) rng_state;
+    int res;
+
+    if( rng_state == NULL )
+        return( rand() );
+
+    if( info->per_call > 4 )
+        info->per_call = 4;
+    else if( info->per_call < 1 )
+        info->per_call = 1;
+
+    res = rand();
+
+    if( info->length >= info->per_call )
+    {
+        memcpy( &res, info->buf, info->per_call );
+        info->buf += info->per_call;
+        info->length -= info->per_call;
+    }
+    else if( info->length > 0 )
+    {
+        memcpy( &res, info->buf, info->length );
+        info->length = 0;
+    }
+
+    return( res );
+}
+
+/**
+ * Info structure for the pseudo random function
+ *
+ * Key should be set at the start to a test-unique value.
+ * Do not forget endianness!
+ * State( v0, v1 ) should be set to zero.
+ */
+typedef struct
+{
+    uint32_t key[16];
+    uint32_t v0, v1;
+} rnd_pseudo_info;
+
+/**
+ * This function returns random based on a pseudo random function.
+ * This means the results should be identical on all systems.
+ * Pseudo random is based on the XTEA encryption algorithm to
+ * generate pseudorandom.
+ *
+ * rng_state shall be a pointer to a rnd_pseudo_info structure.
+ */
+static int rnd_pseudo_rand( void *rng_state )
+{
+    rnd_pseudo_info *info = (rnd_pseudo_info *) rng_state;
+    uint32_t i, *k, sum = 0, delta=0x9E3779B9;
+
+    if( rng_state == NULL )
+        return( rand() );
+
+    k = info->key;
+    for( i = 0; i < 32; i++ )
+    {
+        info->v0 += (((info->v1 << 4) ^ (info->v1 >> 5)) + info->v1) ^ (sum + k[sum & 3]);
+        sum += delta;
+        info->v1 += (((info->v0 << 4) ^ (info->v0 >> 5)) + info->v0) ^ (sum + k[(sum>>11) & 3]);
+    }
+
+    return( info->v0 );
+}
