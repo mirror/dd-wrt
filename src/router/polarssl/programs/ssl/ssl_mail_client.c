@@ -1,7 +1,7 @@
 /*
  *  SSL client for SMTP servers
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -32,26 +32,13 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#if defined(_WIN32) || defined(_WIN32_WCE)
-
-#include <winsock2.h>
-#include <windows.h>
-
-#if defined(_WIN32_WCE)
-#pragma comment( lib, "ws2.lib" )
-#else
-#pragma comment( lib, "ws2_32.lib" )
-#endif
-#endif
-
 #include "polarssl/config.h"
 
 #include "polarssl/base64.h"
 #include "polarssl/error.h"
 #include "polarssl/net.h"
 #include "polarssl/ssl.h"
-#include "polarssl/entropy.h"
-#include "polarssl/ctr_drbg.h"
+#include "polarssl/havege.h"
 #include "polarssl/certs.h"
 #include "polarssl/x509.h"
 
@@ -101,19 +88,14 @@ void my_debug( void *ctx, int level, const char *str )
     }
 }
 
-#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_ENTROPY_C) ||  \
+#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_HAVEGE_C) ||   \
     !defined(POLARSSL_SSL_TLS_C) || !defined(POLARSSL_SSL_CLI_C) || \
-    !defined(POLARSSL_NET_C) || !defined(POLARSSL_RSA_C) ||         \
-    !defined(POLARSSL_CTR_DRBG_C)
-int main( int argc, char *argv[] )
+    !defined(POLARSSL_NET_C) || !defined(POLARSSL_RSA_C)
+int main( void )
 {
-    ((void) argc);
-    ((void) argv);
-
-    printf("POLARSSL_BIGNUM_C and/or POLARSSL_ENTROPY_C and/or "
+    printf("POLARSSL_BIGNUM_C and/or POLARSSL_HAVEGE_C and/or "
            "POLARSSL_SSL_TLS_C and/or POLARSSL_SSL_CLI_C and/or "
-           "POLARSSL_NET_C and/or POLARSSL_RSA_C and/or "
-           "POLARSSL_CTR_DRBG_C not defined.\n");
+           "POLARSSL_NET_C and/or POLARSSL_RSA_C not defined.\n");
     return( 0 );
 }
 #else
@@ -343,10 +325,7 @@ int main( int argc, char *argv[] )
     unsigned char base[1024];
 #endif
     char hostname[32];
-    char *pers = "ssl_mail_client";
-
-    entropy_context entropy;
-    ctr_drbg_context ctr_drbg;
+    havege_state hs;
     ssl_context ssl;
     ssl_session ssn;
     x509_cert cacert;
@@ -472,23 +451,12 @@ int main( int argc, char *argv[] )
     /*
      * 0. Initialize the RNG and the session data
      */
-    printf( "\n  . Seeding the random number generator..." );
-    fflush( stdout );
-
-    entropy_init( &entropy );
-    if( ( ret = ctr_drbg_init( &ctr_drbg, entropy_func, &entropy,
-                               (unsigned char *) pers, strlen( pers ) ) ) != 0 )
-    {
-        printf( " failed\n  ! ctr_drbg_init returned %d\n", ret );
-        goto exit;
-    }
-
-    printf( " ok\n" );
+    havege_init( &hs );
 
     /*
      * 1.1. Load the trusted CA
      */
-    printf( "  . Loading the CA root certificate ..." );
+    printf( "\n  . Loading the CA root certificate ..." );
     fflush( stdout );
 
 #if defined(POLARSSL_FS_IO)
@@ -531,7 +499,7 @@ int main( int argc, char *argv[] )
                 strlen( test_cli_crt ) );
 #else
     {
-        ret = -1;
+        ret = 1;
         printf("POLARSSL_CERTS_C not defined.");
     }
 #endif
@@ -551,7 +519,7 @@ int main( int argc, char *argv[] )
                 strlen( test_cli_key ), NULL, 0 );
 #else
     {
-        ret = -1;
+        ret = 1;
         printf("POLARSSL_CERTS_C not defined.");
     }
 #endif
@@ -585,6 +553,8 @@ int main( int argc, char *argv[] )
     printf( "  . Setting up the SSL/TLS structure..." );
     fflush( stdout );
 
+    havege_init( &hs );
+
     if( ( ret = ssl_init( &ssl ) ) != 0 )
     {
         printf( " failed\n  ! ssl_init returned %d\n\n", ret );
@@ -596,7 +566,7 @@ int main( int argc, char *argv[] )
     ssl_set_endpoint( &ssl, SSL_IS_CLIENT );
     ssl_set_authmode( &ssl, SSL_VERIFY_OPTIONAL );
 
-    ssl_set_rng( &ssl, ctr_drbg_random, &ctr_drbg );
+    ssl_set_rng( &ssl, havege_rand, &hs );
     ssl_set_dbg( &ssl, my_debug, stdout );
     ssl_set_bio( &ssl, net_recv, &server_fd,
             net_send, &server_fd );
@@ -807,13 +777,12 @@ exit:
 
     memset( &ssl, 0, sizeof( ssl ) );
 
-#if defined(_WIN32)
+#ifdef WIN32
     printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
     return( ret );
 }
-#endif /* POLARSSL_BIGNUM_C && POLARSSL_ENTROPY_C && POLARSSL_SSL_TLS_C &&
-          POLARSSL_SSL_CLI_C && POLARSSL_NET_C && POLARSSL_RSA_C **
-          POLARSSL_CTR_DRBG_C */
+#endif /* POLARSSL_BIGNUM_C && POLARSSL_HAVEGE_C && POLARSSL_SSL_TLS_C &&
+          POLARSSL_SSL_CLI_C && POLARSSL_NET_C && POLARSSL_RSA_C */

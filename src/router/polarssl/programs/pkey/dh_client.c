@@ -1,7 +1,7 @@
 /*
  *  Diffie-Hellman-Merkle key exchange (client side)
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -37,29 +37,24 @@
 #include "polarssl/dhm.h"
 #include "polarssl/rsa.h"
 #include "polarssl/sha1.h"
-#include "polarssl/entropy.h"
-#include "polarssl/ctr_drbg.h"
+#include "polarssl/havege.h"
 
 #define SERVER_NAME "localhost"
 #define SERVER_PORT 11999
 
 #if !defined(POLARSSL_AES_C) || !defined(POLARSSL_DHM_C) ||     \
-    !defined(POLARSSL_ENTROPY_C) || !defined(POLARSSL_NET_C) ||  \
+    !defined(POLARSSL_HAVEGE_C) || !defined(POLARSSL_NET_C) ||  \
     !defined(POLARSSL_RSA_C) || !defined(POLARSSL_SHA1_C) ||    \
-    !defined(POLARSSL_FS_IO) || !defined(POLARSSL_CTR_DRBG_C)
-int main( int argc, char *argv[] )
+    !defined(POLARSSL_FS_IO)
+int main( void )
 {
-    ((void) argc);
-    ((void) argv);
-
-    printf("POLARSSL_AES_C and/or POLARSSL_DHM_C and/or POLARSSL_ENTROPY_C "
+    printf("POLARSSL_AES_C and/or POLARSSL_DHM_C and/or POLARSSL_HAVEGE_C "
            "and/or POLARSSL_NET_C and/or POLARSSL_RSA_C and/or "
-           "POLARSSL_SHA1_C and/or POLARSSL_FS_IO and/or "
-           "POLARSSL_CTR_DRBG_C not defined.\n");
+           "POLARSSL_SHA1_C and/or POLARSSL_FS_IO not defined.\n");
     return( 0 );
 }
 #else
-int main( int argc, char *argv[] )
+int main( void )
 {
     FILE *f;
 
@@ -70,16 +65,11 @@ int main( int argc, char *argv[] )
     unsigned char *p, *end;
     unsigned char buf[1024];
     unsigned char hash[20];
-    char *pers = "dh_client";
 
-    entropy_context entropy;
-    ctr_drbg_context ctr_drbg;
+    havege_state hs;
     rsa_context rsa;
     dhm_context dhm;
     aes_context aes;
-
-    ((void) argc);
-    ((void) argv);
 
     memset( &rsa, 0, sizeof( rsa ) );
     memset( &dhm, 0, sizeof( dhm ) );
@@ -90,13 +80,7 @@ int main( int argc, char *argv[] )
     printf( "\n  . Seeding the random number generator" );
     fflush( stdout );
 
-    entropy_init( &entropy );
-    if( ( ret = ctr_drbg_init( &ctr_drbg, entropy_func, &entropy,
-                               (unsigned char *) pers, strlen( pers ) ) ) != 0 )
-    {
-        printf( " failed\n  ! ctr_drbg_init returned %d\n", ret );
-        goto exit;
-    }
+    havege_init( &hs );
 
     /*
      * 2. Read the server's public RSA key
@@ -217,7 +201,7 @@ int main( int argc, char *argv[] )
 
     n = dhm.len;
     if( ( ret = dhm_make_public( &dhm, 256, buf, n,
-                                 ctr_drbg_random, &ctr_drbg ) ) != 0 )
+                                 havege_rand, &hs ) ) != 0 )
     {
         printf( " failed\n  ! dhm_make_public returned %d\n\n", ret );
         goto exit;
@@ -276,13 +260,13 @@ exit:
     rsa_free( &rsa );
     dhm_free( &dhm );
 
-#if defined(_WIN32)
+#ifdef WIN32
     printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
     return( ret );
 }
-#endif /* POLARSSL_AES_C && POLARSSL_DHM_C && POLARSSL_ENTROPY_C &&
+#endif /* POLARSSL_AES_C && POLARSSL_DHM_C && POLARSSL_HAVEGE_C &&
           POLARSSL_NET_C && POLARSSL_RSA_C && POLARSSL_SHA1_C && 
-          POLARSSL_FS_IO && POLARSSL_CTR_DRBG_C */
+          POLARSSL_FS_IO */

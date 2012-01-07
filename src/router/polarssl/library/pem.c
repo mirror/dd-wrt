@@ -185,7 +185,7 @@ int pem_read_buffer( pem_context *ctx, char *header, char *footer, const unsigne
     unsigned char *buf;
     unsigned char *s1, *s2;
 #if defined(POLARSSL_MD5_C) && (defined(POLARSSL_DES_C) || defined(POLARSSL_AES_C))
-    unsigned char pem_iv[32];
+    unsigned char pem_iv[16];
     cipher_type_t enc_alg = POLARSSL_CIPHER_NONE;
 #else
     ((void) pwd);
@@ -255,8 +255,6 @@ int pem_read_buffer( pem_context *ctx, char *header, char *footer, const unsigne
                 enc_alg = POLARSSL_CIPHER_AES_192_CBC;
             else if( memcmp( s1, "DEK-Info: AES-256-CBC,", 22 ) == 0 )
                 enc_alg = POLARSSL_CIPHER_AES_256_CBC;
-            else if( memcmp( s1, "DEK-Info: AES-512-CBC,", 22 ) == 0 )
-                enc_alg = POLARSSL_CIPHER_AES_512_CBC;
             else
                 return( POLARSSL_ERR_PEM_UNKNOWN_ENC_ALG );
 
@@ -317,8 +315,6 @@ int pem_read_buffer( pem_context *ctx, char *header, char *footer, const unsigne
             pem_aes_decrypt( pem_iv, 24, buf, len, pwd, pwdlen );
         else if( enc_alg == POLARSSL_CIPHER_AES_256_CBC )
             pem_aes_decrypt( pem_iv, 32, buf, len, pwd, pwdlen );
-        else if( enc_alg == POLARSSL_CIPHER_AES_512_CBC )
-            pem_aes_decrypt( pem_iv, 64, buf, len, pwd, pwdlen );
 #endif /* POLARSSL_AES_C */
 
         if( buf[0] != 0x30 || buf[1] != 0x82 ||
@@ -349,8 +345,6 @@ void pem_free( pem_context *ctx )
 
     if( ctx->info )
         free( ctx->info );
-
-    memset( ctx, 0, sizeof( pem_context ) );
 }
 
 #endif

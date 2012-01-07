@@ -29,8 +29,6 @@
 
 #include <string.h>
 
-#define POLARSSL_ERR_MD4_FILE_IO_ERROR                 -0x0072  /**< Read/write error in file. */
-
 /**
  * \brief          MD4 context structure
  */
@@ -88,7 +86,8 @@ void md4( const unsigned char *input, size_t ilen, unsigned char output[16] );
  * \param path     input file name
  * \param output   MD4 checksum result
  *
- * \return         0 if successful, or POLARSSL_ERR_MD4_FILE_IO_ERROR
+ * \return         0 if successful, 1 if fopen failed,
+ *                 or 2 if fread failed
  */
 int md4_file( const char *path, unsigned char output[16] );
 

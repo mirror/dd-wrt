@@ -51,11 +51,8 @@ static int ssl_write_client_hello( ssl_context *ssl )
     ssl->major_ver = SSL_MAJOR_VERSION_3;
     ssl->minor_ver = SSL_MINOR_VERSION_0;
 
-    if( ssl->max_major_ver == 0 && ssl->max_minor_ver == 0 )
-    {
-        ssl->max_major_ver = SSL_MAJOR_VERSION_3;
-        ssl->max_minor_ver = SSL_MINOR_VERSION_2;
-    }
+    ssl->max_major_ver = SSL_MAJOR_VERSION_3;
+    ssl->max_minor_ver = SSL_MINOR_VERSION_2;
 
     /*
      *     0  .   0   handshake type
@@ -81,10 +78,8 @@ static int ssl_write_client_hello( ssl_context *ssl )
 
     SSL_DEBUG_MSG( 3, ( "client hello, current time: %lu", t ) );
 
-    if( ( ret = ssl->f_rng( ssl->p_rng, p, 28 ) ) != 0 )
-        return( ret );
-
-    p += 28;
+    for( i = 28; i > 0; i-- )
+        *p++ = (unsigned char) ssl->f_rng( ssl->p_rng );
 
     memcpy( ssl->randbytes, buf + 6, 32 );
 
@@ -395,7 +390,7 @@ static int ssl_parse_server_key_exchange( ssl_context *ssl )
         return( POLARSSL_ERR_SSL_BAD_HS_SERVER_KEY_EXCHANGE );
     }
 
-    if( ssl->dhm_ctx.len < 64 || ssl->dhm_ctx.len > 512 )
+    if( ssl->dhm_ctx.len < 64 || ssl->dhm_ctx.len > 256 )
     {
         SSL_DEBUG_MSG( 1, ( "bad server key exchange message" ) );
         return( POLARSSL_ERR_SSL_BAD_HS_SERVER_KEY_EXCHANGE );
@@ -585,9 +580,8 @@ static int ssl_write_client_key_exchange( ssl_context *ssl )
         ssl->premaster[1] = (unsigned char) ssl->max_minor_ver;
         ssl->pmslen = 48;
 
-        ret = ssl->f_rng( ssl->p_rng, ssl->premaster + 2, ssl->pmslen - 2 );
-        if( ret != 0 )
-            return( ret );
+        for( i = 2; i < ssl->pmslen; i++ )
+            ssl->premaster[i] = (unsigned char) ssl->f_rng( ssl->p_rng );
 
         i = 4;
         n = ssl->peer_cert->rsa.len;

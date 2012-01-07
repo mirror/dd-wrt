@@ -1,7 +1,7 @@
 /*
  *  Simple MPI demonstration program
  *
- *  Copyright (C) 2006-2011, Brainspark B.V.
+ *  Copyright (C) 2006-2010, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -33,21 +33,15 @@
 #include "polarssl/bignum.h"
 
 #if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_FS_IO)
-int main( int argc, char *argv[] )
+int main( void )
 {
-    ((void) argc);
-    ((void) argv);
-
     printf("POLARSSL_BIGNUM_C and/or POLARSSL_FS_IO not defined.\n");
     return( 0 );
 }
 #else
-int main( int argc, char *argv[] )
+int main( void )
 {
     mpi E, P, Q, N, H, D, X, Y, Z;
-
-    ((void) argc);
-    ((void) argv);
 
     mpi_init( &E ); mpi_init( &P ); mpi_init( &Q ); mpi_init( &N );
     mpi_init( &H ); mpi_init( &D ); mpi_init( &X ); mpi_init( &Y );
@@ -91,7 +85,7 @@ int main( int argc, char *argv[] )
     mpi_free( &H ); mpi_free( &D ); mpi_free( &X ); mpi_free( &Y );
     mpi_free( &Z );
 
-#if defined(_WIN32)
+#ifdef WIN32
     printf( "  Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif

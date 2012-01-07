@@ -29,14 +29,12 @@
 
 #include <string.h>
 
-#define POLARSSL_ERR_SHA4_FILE_IO_ERROR                -0x007A  /**< Read/write error in file. */
-
 #if defined(_MSC_VER) || defined(__WATCOMC__)
   #define UL64(x) x##ui64
-  #define long64 __int64
+  #define int64 __int64
 #else
   #define UL64(x) x##ULL
-  #define long64 long long
+  #define int64 long long
 #endif
 
 /**
@@ -44,8 +42,8 @@
  */
 typedef struct
 {
-    unsigned long64 total[2];    /*!< number of bytes processed  */
-    unsigned long64 state[8];    /*!< intermediate digest state  */
+    unsigned int64 total[2];    /*!< number of bytes processed  */
+    unsigned int64 state[8];    /*!< intermediate digest state  */
     unsigned char buffer[128];  /*!< data block being processed */
 
     unsigned char ipad[128];    /*!< HMAC: inner padding        */
@@ -101,7 +99,8 @@ void sha4( const unsigned char *input, size_t ilen,
  * \param output   SHA-384/512 checksum result
  * \param is384    0 = use SHA512, 1 = use SHA384
  *
- * \return         0 if successful, or POLARSSL_ERR_SHA4_FILE_IO_ERROR
+ * \return         0 if successful, 1 if fopen failed,
+ *                 or 2 if fread failed
  */
 int sha4_file( const char *path, unsigned char output[64], int is384 );
 

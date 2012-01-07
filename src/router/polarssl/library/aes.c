@@ -457,7 +457,6 @@ int aes_setkey_enc( aes_context *ctx, const unsigned char *key, unsigned int key
         case 128: ctx->nr = 10; break;
         case 192: ctx->nr = 12; break;
         case 256: ctx->nr = 14; break;
-        case 512: ctx->nr = 16; break;
         default : return( POLARSSL_ERR_AES_INVALID_KEY_LENGTH );
     }
 
@@ -532,53 +531,6 @@ int aes_setkey_enc( aes_context *ctx, const unsigned char *key, unsigned int key
                 RK[14] = RK[6] ^ RK[13];
                 RK[15] = RK[7] ^ RK[14];
             }
-
-
-        case 16:
-
-            for( i = 0; i < 7; i++, RK += 8 )
-            {
-                RK[16]  = RK[0] ^ RCON[i] ^
-                ( (unsigned long) FSb[ ( RK[15] >>  8 ) & 0xFF ]       ) ^
-                ( (unsigned long) FSb[ ( RK[15] >> 16 ) & 0xFF ] <<  8 ) ^
-                ( (unsigned long) FSb[ ( RK[15] >> 24 ) & 0xFF ] << 16 ) ^
-                ( (unsigned long) FSb[ ( RK[15]       ) & 0xFF ] << 24 );
-
-                RK[17]  = RK[1] ^ RK[16];
-                RK[18] = RK[2] ^ RK[17];
-                RK[19] = RK[3] ^ RK[18];
-
-                RK[20] = RK[4] ^
-                ( (unsigned long) FSb[ ( RK[19]       ) & 0xFF ]       ) ^
-                ( (unsigned long) FSb[ ( RK[19] >>  8 ) & 0xFF ] <<  8 ) ^
-                ( (unsigned long) FSb[ ( RK[19] >> 16 ) & 0xFF ] << 16 ) ^
-                ( (unsigned long) FSb[ ( RK[19] >> 24 ) & 0xFF ] << 24 );
-
-                RK[21] = RK[5] ^ RK[20];
-                RK[22] = RK[6] ^ RK[21];
-                RK[23] = RK[7] ^ RK[22];
-
-                RK[24] = RK[8] ^
-                ( (unsigned long) FSb[ ( RK[23]       ) & 0xFF ]       ) ^
-                ( (unsigned long) FSb[ ( RK[23] >>  8 ) & 0xFF ] <<  8 ) ^
-                ( (unsigned long) FSb[ ( RK[23] >> 16 ) & 0xFF ] << 16 ) ^
-                ( (unsigned long) FSb[ ( RK[23] >> 24 ) & 0xFF ] << 24 );
-
-                RK[25] = RK[9] ^ RK[24];
-                RK[26] = RK[10] ^ RK[25];
-                RK[27] = RK[11] ^ RK[26];
-
-                RK[28] = RK[12] ^
-                ( (unsigned long) FSb[ ( RK[27]       ) & 0xFF ]       ) ^
-                ( (unsigned long) FSb[ ( RK[27] >>  8 ) & 0xFF ] <<  8 ) ^
-                ( (unsigned long) FSb[ ( RK[27] >> 16 ) & 0xFF ] << 16 ) ^
-                ( (unsigned long) FSb[ ( RK[27] >> 24 ) & 0xFF ] << 24 );
-
-                RK[29] = RK[13] ^ RK[28];
-                RK[30] = RK[14] ^ RK[29];
-                RK[31] = RK[15] ^ RK[30];
-
-            }
             break;
 
         default:
@@ -605,7 +557,6 @@ int aes_setkey_dec( aes_context *ctx, const unsigned char *key, unsigned int key
         case 128: ctx->nr = 10; break;
         case 192: ctx->nr = 12; break;
         case 256: ctx->nr = 14; break;
-        case 512: ctx->nr = 16; break;
         default : return( POLARSSL_ERR_AES_INVALID_KEY_LENGTH );
     }
 
