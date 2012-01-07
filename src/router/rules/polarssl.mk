@@ -6,9 +6,7 @@ PKG_INSTALL:=1
 MAKE_FLAGS+=VERBOSE=1
 
 CMAKE_OPTIONS += \
-	-DCMAKE_BUILD_TYPE:String="Release" \
-	-DUSE_SHARED_POLARSSL_LIBRARY:BOOL=ON \
-
+	-DCMAKE_BUILD_TYPE:String="Release" 
 
 polarssl-configure: 
 	rm -f $(PKG_BUILD_DIR)/CMakeCache.txt
@@ -40,8 +38,8 @@ polarssl-configure:
 polarssl:
 	$(MAKE) -C $(POLAR_SSL_PATH) 
 	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so
-	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.0
-	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1.0.0
+	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1
+	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1.1.0
 
 polarssl-clean:
 	$(MAKE) -C $(POLAR_SSL_PATH) clean 
