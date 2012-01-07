@@ -1,7 +1,7 @@
 /*
  *  Certificate reading application
  *
- *  Copyright (C) 2006-2010, Brainspark B.V.
+ *  Copyright (C) 2006-2011, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -33,7 +33,8 @@
 
 #include "polarssl/config.h"
 
-#include "polarssl/havege.h"
+#include "polarssl/entropy.h"
+#include "polarssl/ctr_drbg.h"
 #include "polarssl/net.h"
 #include "polarssl/ssl.h"
 #include "polarssl/x509.h"
@@ -47,6 +48,7 @@
 #define DFL_SERVER_NAME         "localhost"
 #define DFL_SERVER_PORT         4433
 #define DFL_DEBUG_LEVEL         0
+#define DFL_PERMISSIVE          0
 
 /*
  * global options
@@ -58,6 +60,7 @@ struct options
     char *server_name;          /* hostname of the server (client only) */
     int server_port;            /* port on which the ssl service runs   */
     int debug_level;            /* level of debugging                   */
+    int permissive;             /* permissive parsing                   */
 } opt;
 
 void my_debug( void *ctx, int level, const char *str )
@@ -77,18 +80,24 @@ void my_debug( void *ctx, int level, const char *str )
     "    server_name=%%s      default: localhost\n"     \
     "    server_port=%%d      default: 4433\n"          \
     "    debug_level=%%d      default: 0 (disabled)\n"  \
+    "    permissive=%%d       default: 0 (disabled)\n"  \
     "\n"
 
-#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_HAVEGE_C) ||   \
+#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_ENTROPY_C) ||  \
     !defined(POLARSSL_SSL_TLS_C) || !defined(POLARSSL_SSL_CLI_C) || \
     !defined(POLARSSL_NET_C) || !defined(POLARSSL_RSA_C) ||         \
-    !defined(POLARSSL_X509_PARSE_C) || !defined(POLARSSL_FS_IO)
-int main( void )
+    !defined(POLARSSL_X509_PARSE_C) || !defined(POLARSSL_FS_IO) ||  \
+    !defined(POLARSSL_CTR_DRBG_C)
+int main( int argc, char *argv[] )
 {
-    printf("POLARSSL_BIGNUM_C and/or POLARSSL_HAVEGE_C and/or "
+    ((void) argc);
+    ((void) argv);
+
+    printf("POLARSSL_BIGNUM_C and/or POLARSSL_ENTROPY_C and/or "
            "POLARSSL_SSL_TLS_C and/or POLARSSL_SSL_CLI_C and/or "
            "POLARSSL_NET_C and/or POLARSSL_RSA_C and/or "
-           "POLARSSL_X509_PARSE_C and/or POLARSSL_FS_IO not defined.\n");
+           "POLARSSL_X509_PARSE_C and/or POLARSSL_FS_IO and/or "
+           "POLARSSL_CTR_DRBG_C not defined.\n");
     return( 0 );
 }
 #else
@@ -96,13 +105,15 @@ int main( int argc, char *argv[] )
 {
     int ret = 0, server_fd;
     unsigned char buf[1024];
-    havege_state hs;
+    entropy_context entropy;
+    ctr_drbg_context ctr_drbg;
     ssl_context ssl;
     ssl_session ssn;
     x509_cert clicert;
     rsa_context rsa;
     int i, j, n;
     char *p, *q;
+    char *pers = "cert_app";
 
     /*
      * Set to sane values
@@ -125,6 +136,7 @@ int main( int argc, char *argv[] )
     opt.server_name         = DFL_SERVER_NAME;
     opt.server_port         = DFL_SERVER_PORT;
     opt.debug_level         = DFL_DEBUG_LEVEL;
+    opt.permissive          = DFL_PERMISSIVE;
 
     for( i = 1; i < argc; i++ )
     {
@@ -166,6 +178,12 @@ int main( int argc, char *argv[] )
             if( opt.debug_level < 0 || opt.debug_level > 65535 )
                 goto usage;
         }
+        else if( strcmp( p, "permissive" ) == 0 )
+        {
+            opt.permissive = atoi( q );
+            if( opt.permissive < 0 || opt.permissive > 1 )
+                goto usage;
+        }
         else
             goto usage;
     }
@@ -173,38 +191,52 @@ int main( int argc, char *argv[] )
     if( opt.mode == MODE_FILE )
     {
         x509_cert crt;
+        x509_cert *cur = &crt;
         memset( &crt, 0, sizeof( x509_cert ) );
 
         /*
-         * 1.1. Load the certificate
+         * 1.1. Load the certificate(s)
          */
-        printf( "\n  . Loading the certificate ..." );
+        printf( "\n  . Loading the certificate(s) ..." );
         fflush( stdout );
 
         ret = x509parse_crtfile( &crt, opt.filename );
 
-        if( ret != 0 )
+        if( ret < 0 )
         {
             printf( " failed\n  !  x509parse_crt returned %d\n\n", ret );
             x509_free( &crt );
             goto exit;
         }
 
-        printf( " ok\n" );
-
-        /*
-         * 1.2 Print the certificate
-         */
-        printf( "  . Peer certificate information    ...\n" );
-        ret = x509parse_cert_info( (char *) buf, sizeof( buf ) - 1, "      ", &crt );
-        if( ret == -1 )
+        if( opt.permissive == 0 && ret > 0 )
         {
-            printf( " failed\n  !  x509parse_cert_info returned %d\n\n", ret );
+            printf( " failed\n  !  x509parse_crt failed to parse %d certificates\n\n", ret );
             x509_free( &crt );
             goto exit;
         }
 
-        printf( "%s\n", buf );
+        printf( " ok\n" );
+
+    
+        /*
+         * 1.2 Print the certificate(s)
+         */
+        while( cur != NULL )
+        {
+            printf( "  . Peer certificate information    ...\n" );
+            ret = x509parse_cert_info( (char *) buf, sizeof( buf ) - 1, "      ", cur );
+            if( ret == -1 )
+            {
+                printf( " failed\n  !  x509parse_cert_info returned %d\n\n", ret );
+                x509_free( &crt );
+                goto exit;
+            }
+
+            printf( "%s\n", buf );
+
+            cur = cur->next;
+        }
 
         x509_free( &crt );
     }
@@ -213,7 +245,16 @@ int main( int argc, char *argv[] )
         /*
          * 1. Initialize the RNG and the session data
          */
-        havege_init( &hs );
+        printf( "\n  . Seeding the random number generator..." );
+        fflush( stdout );
+
+        entropy_init( &entropy );
+        if( ( ret = ctr_drbg_init( &ctr_drbg, entropy_func, &entropy,
+                               (unsigned char *) pers, strlen( pers ) ) ) != 0 )
+        {
+            printf( " failed\n  ! ctr_drbg_init returned %d\n", ret );
+            goto exit;
+        }
 
         /*
          * 2. Start the connection
@@ -241,7 +282,7 @@ int main( int argc, char *argv[] )
         ssl_set_endpoint( &ssl, SSL_IS_CLIENT );
         ssl_set_authmode( &ssl, SSL_VERIFY_NONE );
 
-        ssl_set_rng( &ssl, havege_rand, &hs );
+        ssl_set_rng( &ssl, ctr_drbg_random, &ctr_drbg );
         ssl_set_dbg( &ssl, my_debug, stdout );
         ssl_set_bio( &ssl, net_recv, &server_fd,
                 net_send, &server_fd );
@@ -295,13 +336,13 @@ exit:
 
     memset( &ssl, 0, sizeof( ssl ) );
 
-#ifdef WIN32
+#if defined(_WIN32)
     printf( "  + Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
     return( ret );
 }
-#endif /* POLARSSL_BIGNUM_C && POLARSSL_HAVEGE_C && POLARSSL_SSL_TLS_C &&
+#endif /* POLARSSL_BIGNUM_C && POLARSSL_ENTROPY_C && POLARSSL_SSL_TLS_C &&
           POLARSSL_SSL_CLI_C && POLARSSL_NET_C && POLARSSL_RSA_C &&
-          POLARSSL_X509_PARSE_C && POLARSSL_FS_IO */
+          POLARSSL_X509_PARSE_C && POLARSSL_FS_IO && POLARSSL_CTR_DRBG_C */

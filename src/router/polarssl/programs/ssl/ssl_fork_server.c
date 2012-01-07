@@ -1,7 +1,7 @@
 /*
  *  SSL server demonstration program using fork() for handling multiple clients
  *
- *  Copyright (C) 2006-2010, Brainspark B.V.
+ *  Copyright (C) 2006-2011, Brainspark B.V.
  *
  *  This file is part of PolarSSL (http://www.polarssl.org)
  *  Lead Maintainer: Paul Bakker <polarssl_maintainer at polarssl.org>
@@ -27,7 +27,7 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#ifdef WIN32
+#if defined(_WIN32)
 #include <windows.h>
 #endif
 
@@ -39,7 +39,8 @@
 
 #include "polarssl/config.h"
 
-#include "polarssl/havege.h"
+#include "polarssl/entropy.h"
+#include "polarssl/ctr_drbg.h"
 #include "polarssl/certs.h"
 #include "polarssl/x509.h"
 #include "polarssl/ssl.h"
@@ -51,6 +52,32 @@
     "<h2>PolarSSL Test Server</h2>\r\n" \
     "<p>Successful connection using: %s</p>\r\n"
 
+#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_CERTS_C) ||    \
+    !defined(POLARSSL_ENTROPY_C) || !defined(POLARSSL_SSL_TLS_C) || \
+    !defined(POLARSSL_SSL_SRV_C) || !defined(POLARSSL_NET_C) ||     \
+    !defined(POLARSSL_RSA_C) || !defined(POLARSSL_CTR_DRBG_C)
+int main( int argc, char *argv[] )
+{
+    ((void) argc);
+    ((void) argv);
+
+    printf("POLARSSL_BIGNUM_C and/or POLARSSL_CERTS_C and/or POLARSSL_ENTROPY_C "
+           "and/or POLARSSL_SSL_TLS_C and/or POLARSSL_SSL_SRV_C and/or "
+           "POLARSSL_NET_C and/or POLARSSL_RSA_C and/or "
+           "POLARSSL_CTR_DRBG_C not defined.\n");
+    return( 0 );
+}
+#elif defined(_WIN32)
+int main( int argc, char *argv[] )
+{
+    ((void) argc);
+    ((void) argv);
+
+    printf("_WIN32 defined. This application requires fork() and signals "
+           "to work correctly.\n");
+    return( 0 );
+}
+#else
 /*
  * Computing a "safe" DH-1024 prime can take a very
  * long time, so a precomputed value is provided below.
@@ -173,37 +200,46 @@ static int my_set_session( ssl_context *ssl )
     return( 0 );
 }
 
-#if !defined(POLARSSL_BIGNUM_C) || !defined(POLARSSL_CERTS_C) ||    \
-    !defined(POLARSSL_HAVEGE_C) || !defined(POLARSSL_SSL_TLS_C) ||  \
-    !defined(POLARSSL_SSL_SRV_C) || !defined(POLARSSL_NET_C) ||     \
-    !defined(POLARSSL_RSA_C)
-int main( void )
-{
-    printf("POLARSSL_BIGNUM_C and/or POLARSSL_CERTS_C and/or POLARSSL_HAVEGE_C "
-           "and/or POLARSSL_SSL_TLS_C and/or POLARSSL_SSL_SRV_C and/or "
-           "POLARSSL_NET_C and/or POLARSSL_RSA_C not defined.\n");
-    return( 0 );
-}
-#else
-int main( void )
+int main( int argc, char *argv[] )
 {
     int ret, len, cnt = 0, pid;
     int listen_fd;
     int client_fd;
     unsigned char buf[1024];
+    char *pers = "ssl_fork_server";
 
-    havege_state hs;
+    entropy_context entropy;
+    ctr_drbg_context ctr_drbg;
     ssl_context ssl;
     ssl_session ssn;
     x509_cert srvcert;
     rsa_context rsa;
 
+    ((void) argc);
+    ((void) argv);
+
     signal( SIGCHLD, SIG_IGN );
+
+    /*
+     * 0. Initial seeding of the RNG
+     */
+    printf( "\n  . Initial seeding of the random generator..." );
+    fflush( stdout );
+
+    entropy_init( &entropy );
+    if( ( ret = ctr_drbg_init( &ctr_drbg, entropy_func, &entropy,
+                    (unsigned char *) pers, strlen( pers ) ) ) != 0 )
+    {
+        printf( " failed\n  ! ctr_drbg_init returned %d\n", ret );
+        goto exit;
+    }
+
+    printf( " ok\n" );
 
     /*
      * 1. Load the certificates and private RSA key
      */
-    printf( "\n  . Loading the server cert. and key..." );
+    printf( "  . Loading the server cert. and key..." );
     fflush( stdout );
 
     memset( &srvcert, 0, sizeof( x509_cert ) );
@@ -292,6 +328,13 @@ int main( void )
 
         if( pid != 0 )
         {
+            if( ( ret = ctr_drbg_reseed( &ctr_drbg,
+                                         (unsigned char* ) "parent", 6 ) ) != 0 )
+            {
+                printf( " failed\n  ! ctr_drbg_reseed returned %d\n", ret );
+                goto exit;
+            }
+
             close( client_fd );
             continue;
         }
@@ -301,11 +344,16 @@ int main( void )
         /*
          * 4. Setup stuff
          */
-        printf( "  . Setting up the RNG and SSL data...." );
+        printf( "  . Setting up the SSL data...." );
         fflush( stdout );
 
-        havege_init( &hs );
-
+        if( ( ret = ctr_drbg_reseed( &ctr_drbg,
+                                     (unsigned char *) "child", 5 ) ) != 0 )
+        {
+            printf( " failed\n  ! ctr_drbg_reseed returned %d\n", ret );
+            goto exit;
+        }
+        
         if( ( ret = ssl_init( &ssl ) ) != 0 )
         {
             printf( " failed\n  ! ssl_init returned %d\n\n", ret );
@@ -317,7 +365,7 @@ int main( void )
         ssl_set_endpoint( &ssl, SSL_IS_SERVER );
         ssl_set_authmode( &ssl, SSL_VERIFY_NONE );
 
-        ssl_set_rng( &ssl, havege_rand, &hs );
+        ssl_set_rng( &ssl, ctr_drbg_random, &ctr_drbg );
         ssl_set_dbg( &ssl, my_debug, stdout );
         ssl_set_bio( &ssl, net_recv, &client_fd,
                            net_send, &client_fd );
@@ -443,13 +491,13 @@ exit:
 
     memset( &ssl, 0, sizeof( ssl_context ) );
 
-#ifdef WIN32
+#if defined(_WIN32)
     printf( "  Press Enter to exit this program.\n" );
     fflush( stdout ); getchar();
 #endif
 
     return( ret );
 }
-#endif /* POLARSSL_BIGNUM_C && POLARSSL_CERTS_C && POLARSSL_HAVEGE_C &&
+#endif /* POLARSSL_BIGNUM_C && POLARSSL_CERTS_C && POLARSSL_ENTROPY_C &&
           POLARSSL_SSL_TLS_C && POLARSSL_SSL_SRV_C && POLARSSL_NET_C &&
-          POLARSSL_RSA_C */
+          POLARSSL_RSA_C && POLARSSL_CTR_DRBG_C */
