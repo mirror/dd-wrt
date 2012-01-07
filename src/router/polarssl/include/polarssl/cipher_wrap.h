@@ -41,17 +41,20 @@ extern "C" {
 extern const cipher_info_t aes_128_cbc_info;
 extern const cipher_info_t aes_192_cbc_info;
 extern const cipher_info_t aes_256_cbc_info;
+extern const cipher_info_t aes_512_cbc_info;
 
 #if defined(POLARSSL_CIPHER_MODE_CFB)
 extern const cipher_info_t aes_128_cfb128_info;
 extern const cipher_info_t aes_192_cfb128_info;
 extern const cipher_info_t aes_256_cfb128_info;
+extern const cipher_info_t aes_512_cfb128_info;
 #endif /* POLARSSL_CIPHER_MODE_CFB */
 
 #if defined(POLARSSL_CIPHER_MODE_CTR)
 extern const cipher_info_t aes_128_ctr_info;
 extern const cipher_info_t aes_192_ctr_info;
 extern const cipher_info_t aes_256_ctr_info;
+extern const cipher_info_t aes_512_ctr_info;
 #endif /* POLARSSL_CIPHER_MODE_CTR */
 
 #endif /* defined(POLARSSL_AES_C) */
