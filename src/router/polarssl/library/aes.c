@@ -564,9 +564,9 @@ int aes_setkey_enc( aes_context *ctx, const unsigned char *key, unsigned int key
                 ( (unsigned long) FSb[ ( RK[23] >> 16 ) & 0xFF ] << 16 ) ^
                 ( (unsigned long) FSb[ ( RK[23] >> 24 ) & 0xFF ] << 24 );
 
-                RK[25] = RK[9] ^ R4[24];
-                RK[26] = RK[10] ^ R5[25];
-                RK[27] = RK[11] ^ R6[26];
+                RK[25] = RK[9] ^ RK[24];
+                RK[26] = RK[10] ^ RK[25];
+                RK[27] = RK[11] ^ RK[26];
 
                 RK[28] = RK[12] ^
                 ( (unsigned long) FSb[ ( RK[27]       ) & 0xFF ]       ) ^
@@ -574,9 +574,9 @@ int aes_setkey_enc( aes_context *ctx, const unsigned char *key, unsigned int key
                 ( (unsigned long) FSb[ ( RK[27] >> 16 ) & 0xFF ] << 16 ) ^
                 ( (unsigned long) FSb[ ( RK[27] >> 24 ) & 0xFF ] << 24 );
 
-                RK[29] = RK[13] ^ R4[28];
-                RK[30] = RK[14] ^ R5[29];
-                RK[31] = RK[15] ^ R6[30];
+                RK[29] = RK[13] ^ RK[28];
+                RK[30] = RK[14] ^ RK[29];
+                RK[31] = RK[15] ^ RK[30];
 
             }
             break;
