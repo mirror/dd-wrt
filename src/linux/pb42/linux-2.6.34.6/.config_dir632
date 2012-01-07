@@ -903,6 +903,7 @@ CONFIG_MII=y
 # CONFIG_KS8842 is not set
 # CONFIG_KS8851_MLL is not set
 # CONFIG_ATL2 is not set
+# CONFIG_AG71XX is not set
 CONFIG_AG7240=y
 # CONFIG_AR7240_S26_VLAN_IGMP is not set
 # CONFIG_ATHEROS_HEADER_EN is not set
