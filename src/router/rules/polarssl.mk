@@ -39,11 +39,13 @@ polarssl-configure:
 
 polarssl:
 	$(MAKE) -C $(POLAR_SSL_PATH) 
-#	CFLAGS="$(COPTS) -I$(TOP)/$(POLAR_SSL_PATH)/include -DNEED_PRINTF"
-#	LDFLAGS="-L$(TOP)/$(POLAR_SSL_PATH)/library "
+	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so
+	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.0
+	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1.0.0
 
 polarssl-clean:
 	$(MAKE) -C $(POLAR_SSL_PATH) clean 
 
 polarssl-install:
-	install -D $(POLAR_SSL_PATH)/library/libpolarssl.so $(INSTALLDIR)/polarssl/usr/lib/libpolarssl.so.0
+#	install -D $(POLAR_SSL_PATH)/library/libpolarssl.so $(INSTALLDIR)/polarssl/usr/lib/libpolarssl.so.0
+	@true

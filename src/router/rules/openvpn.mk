@@ -1,15 +1,11 @@
-ifdef TESTOVPN
-   OVPN=$(TESTOVPN)
-else
-   OVPN=openvpn
-endif
-
-ifdef CONFIG_POLARSSL
-SSLPATH=$(TOP)/polarssl-1.0.0
+ifeq ($(CONFIG_POLARSSL),y)
+OVPN=openvpn-polarssl
+SSLPATH=$(TOP)/polarssl
 SSL_LIB_PATH=$(SSLPATH)/library
 SSL_TYPE=polarssl
 SSL_DEP=polarssl
 else
+OVPN=openvpn
 SSLPATH=$(TOP)/openssl
 SSL_LIB_PATH=openssl
 SSL_TYPE=openssl
