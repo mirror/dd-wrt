@@ -350,7 +350,7 @@
  *
  * This module enables err_strerror().
  */
-#define POLARSSL_ERROR_C
+//#define POLARSSL_ERROR_C
 
 /**
  * \def POLARSSL_HAVEGE_C
