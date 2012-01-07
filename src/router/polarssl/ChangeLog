@@ -1,5 +1,63 @@
 PolarSSL ChangeLog
 
+= Version 1.1.0 released on 2011-12-22
+Features
+   * Added ssl_session_reset() to allow better multi-connection pools of
+     SSL contexts without needing to set all non-connection-specific
+	 data and pointers again. Adapted ssl_server to use this functionality.
+   * Added ssl_set_max_version() to allow clients to offer a lower maximum
+     supported version to a server to help buggy server implementations.
+	 (Closes ticket #36)
+   * Added cipher_get_cipher_mode() and cipher_get_cipher_operation()
+     introspection functions (Closes ticket #40)
+   * Added CTR_DRBG based on AES-256-CTR (NIST SP 800-90) random generator
+   * Added a generic entropy accumulator that provides support for adding
+     custom entropy sources and added some generic and platform dependent
+	 entropy sources
+
+Changes
+   * Documentation for AES and Camellia in modes CTR and CFB128 clarified.
+   * Fixed rsa_encrypt and rsa_decrypt examples to use public key for
+     encryption and private key for decryption. (Closes ticket #34)
+   * Inceased maximum size of ASN1 length reads to 32-bits.
+   * Added an EXPLICIT tag number parameter to x509_get_ext()
+   * Added a separate CRL entry extension parsing function
+   * Separated the ASN.1 parsing code from the X.509 specific parsing code.
+     So now there is a module that is controlled with POLARSSL_ASN1_PARSE_C.
+   * Changed the defined key-length of DES ciphers in cipher.h to include the
+     parity bits, to prevent mistakes in copying data. (Closes ticket #33)
+   * Loads of minimal changes to better support WINCE as a build target
+     (Credits go to Marco Lizza)
+   * Added POLARSSL_MPI_WINDOW_SIZE definition to allow easier time to memory
+     trade-off
+   * Introduced POLARSSL_MPI_MAX_SIZE and POLARSSL_MPI_MAX_BITS for MPI size
+     management (Closes ticket #44)
+   * Changed the used random function pointer to more flexible format. Renamed
+     havege_rand() to havege_random() to prevent mistakes. Lots of changes as
+	 a consequence in library code and programs
+   * Moved all examples programs to use the new entropy and CTR_DRBG
+   * Added permissive certificate parsing to x509parse_crt() and
+     x509parse_crtfile(). With permissive parsing the parsing does not stop on
+	 encountering a parse-error. Beware that the meaning of return values has
+	 changed!
+   * All error codes are now negative. Even on mermory failures and IO errors.
+
+Bugfix
+   * Fixed faulty HMAC-MD2 implementation. Found by dibac. (Closes
+     ticket #37)
+   * Fixed a bug where the CRL parser expected an EXPLICIT ASN.1 tag
+     before version numbers
+   * Allowed X509 key usage parsing to accept 4 byte values instead of the
+     standard 1 byte version sometimes used by Microsoft. (Closes ticket #38)
+   * Fixed incorrect behaviour in case of RSASSA-PSS with a salt length
+     smaller than the hash length. (Closes ticket #41)
+   * If certificate serial is longer than 32 octets, serial number is now
+     appended with '....' after first 28 octets
+   * Improved build support for s390x and sparc64 in bignum.h
+   * Fixed MS Visual C++ name clash with int64 in sha4.h
+   * Corrected removal of leading "00:" in printing serial numbers in
+     certificates and CRLs
+
 = Version 1.0.0 released on 2011-07-27
 Features
    * Expanded cipher layer with support for CFB128 and CTR mode
