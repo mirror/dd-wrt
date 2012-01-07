@@ -224,7 +224,7 @@ typedef enum {
  */
 #define ETHERNET_FCS_SIZE            4
 #define AG71XX_TX_FIFO_LEN	2048
-#define AG71XX_TX_MTU_LEN	1540
+#define AG71XX_TX_MTU_LEN	1544
 #define AG7240_RX_RESERVE           (64)
 #define AG7240_RX_BUF_SIZE      \
     (AG7240_RX_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETHERNET_FCS_SIZE)
@@ -587,7 +587,6 @@ static inline int ag7240_rx_ring_full(ag7240_mac_t *mac)
 #define ag7240_intr_disable_rxovf(_mac)                                      \
     ag7240_reg_rmw_clear(mac, AG7240_DMA_INTR_MASK,                         \
                         (AG7240_INTR_RX_OVF));
-
 
 
 #define ag7240_intr_enable_recv(_mac)                                      \

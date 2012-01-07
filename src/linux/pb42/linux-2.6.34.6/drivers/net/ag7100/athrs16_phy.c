@@ -209,9 +209,12 @@ static inline int id_chip(void)
 
 	switch (id) {
 	case 0x0101:
+		printk(KERN_INFO "AR8216 detected\n");
 		ret = AR8216;
 		break;
 	case 0x1001:
+	case 0x1000:
+		printk(KERN_INFO "AR8316 detected\n");
 		ret = AR8316;
 		break;
 	default:
@@ -281,7 +284,7 @@ void athrs16_reg_init()
       athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8316_GCTRL_MTU)|(9018 + 8 + 2));      
       athrs16_reg_write(AR8216_REG_FLOOD_MASK, 0x003f003f);
       }else{
-      athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8216_GCTRL_MTU)|1716);
+      athrs16_reg_write(0x30,(athrs16_reg_read(0x30)&AR8216_GCTRL_MTU)|1518 + 8 + 2);
       }      
 
     athr16_init_flag = 1;
