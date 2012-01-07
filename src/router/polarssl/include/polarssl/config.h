@@ -86,6 +86,7 @@
  */
 #define POLARSSL_HAVE_ASM
 
+#define POLARSSL_ASN1_PARSE_C
 /**
  * \def POLARSSL_HAVE_SSE2
  *
