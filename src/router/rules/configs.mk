@@ -218,6 +218,7 @@ obj-$(CONFIG_USBIP) += glib20 usbip
 #obj-$(CONFIG_XTA) += xtables-addons
 obj-$(CONFIG_SNORT) += libnfnetlink libnetfilter_queue libdnet daq pcre snort
 obj-$(CONFIG_LAGUNA) += gsp_updater
+obj-$(CONFIG_POLARSSL) += polarssl
 
 obj-y+=anchorfree
 obj-y+=ttraff
