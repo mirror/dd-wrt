@@ -145,6 +145,16 @@ const cipher_info_t aes_256_cbc_info = {
     &aes_info
 };
 
+const cipher_info_t aes_512_cbc_info = {
+    POLARSSL_CIPHER_AES_512_CBC,
+    POLARSSL_MODE_CBC,
+    512,
+    "AES-512-CBC",
+    16,
+    16,
+    &aes_info
+};
+
 #if defined(POLARSSL_CIPHER_MODE_CFB)
 const cipher_info_t aes_128_cfb128_info = {
     POLARSSL_CIPHER_AES_128_CFB128,
@@ -171,6 +181,15 @@ const cipher_info_t aes_256_cfb128_info = {
     POLARSSL_MODE_CFB128,
     256,
     "AES-256-CFB128",
+    16,
+    16,
+    &aes_info
+};
+const cipher_info_t aes_512_cfb128_info = {
+    POLARSSL_CIPHER_AES_512_CFB128,
+    POLARSSL_MODE_CFB128,
+    512,
+    "AES-512-CFB128",
     16,
     16,
     &aes_info
@@ -203,6 +222,16 @@ const cipher_info_t aes_256_ctr_info = {
     POLARSSL_MODE_CTR,
     256,
     "AES-256-CTR",
+    16,
+    16,
+    &aes_info
+};
+
+const cipher_info_t aes_512_ctr_info = {
+    POLARSSL_CIPHER_AES_512_CTR,
+    POLARSSL_MODE_CTR,
+    512,
+    "AES-512-CTR",
     16,
     16,
     &aes_info

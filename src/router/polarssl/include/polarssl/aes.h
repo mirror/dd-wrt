@@ -42,7 +42,7 @@ typedef struct
 {
     int nr;                     /*!<  number of rounds  */
     unsigned long *rk;          /*!<  AES round keys    */
-    unsigned long buf[68];      /*!<  unaligned data    */
+    unsigned long buf[132];      /*!<  unaligned data    */
 }
 aes_context;
 
