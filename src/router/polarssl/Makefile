@@ -39,10 +39,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/seg/DEV/pb42/src/router/polarssl
+CMAKE_SOURCE_DIR = /home/seg/DEV/laguna/src/router/polarssl
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/seg/DEV/pb42/src/router/polarssl
+CMAKE_BINARY_DIR = /home/seg/DEV/laguna/src/router/polarssl
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -120,9 +120,9 @@ test/fast: test
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/pb42/src/router/polarssl/CMakeFiles /home/seg/DEV/pb42/src/router/polarssl/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/laguna/src/router/polarssl/CMakeFiles /home/seg/DEV/laguna/src/router/polarssl/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/pb42/src/router/polarssl/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seg/DEV/laguna/src/router/polarssl/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -508,58 +508,22 @@ rsa_verify_pss/fast:
 .PHONY : rsa_verify_pss/fast
 
 #=============================================================================
-# Target rules for targets named gen_entropy
+# Target rules for targets named gen_random
 
 # Build rule for target.
-gen_entropy: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 gen_entropy
-.PHONY : gen_entropy
+gen_random: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 gen_random
+.PHONY : gen_random
 
 # fast build rule for target.
-gen_entropy/fast:
-	$(MAKE) -f programs/random/CMakeFiles/gen_entropy.dir/build.make programs/random/CMakeFiles/gen_entropy.dir/build
-.PHONY : gen_entropy/fast
+gen_random/fast:
+	$(MAKE) -f programs/random/CMakeFiles/gen_random.dir/build.make programs/random/CMakeFiles/gen_random.dir/build
+.PHONY : gen_random/fast
 
 # Manual pre-install relink rule for target.
-gen_entropy/preinstall:
-	$(MAKE) -f programs/random/CMakeFiles/gen_entropy.dir/build.make programs/random/CMakeFiles/gen_entropy.dir/preinstall
-.PHONY : gen_entropy/preinstall
-
-#=============================================================================
-# Target rules for targets named gen_random_ctr_drbg
-
-# Build rule for target.
-gen_random_ctr_drbg: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 gen_random_ctr_drbg
-.PHONY : gen_random_ctr_drbg
-
-# fast build rule for target.
-gen_random_ctr_drbg/fast:
-	$(MAKE) -f programs/random/CMakeFiles/gen_random_ctr_drbg.dir/build.make programs/random/CMakeFiles/gen_random_ctr_drbg.dir/build
-.PHONY : gen_random_ctr_drbg/fast
-
-# Manual pre-install relink rule for target.
-gen_random_ctr_drbg/preinstall:
-	$(MAKE) -f programs/random/CMakeFiles/gen_random_ctr_drbg.dir/build.make programs/random/CMakeFiles/gen_random_ctr_drbg.dir/preinstall
-.PHONY : gen_random_ctr_drbg/preinstall
-
-#=============================================================================
-# Target rules for targets named gen_random_havege
-
-# Build rule for target.
-gen_random_havege: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 gen_random_havege
-.PHONY : gen_random_havege
-
-# fast build rule for target.
-gen_random_havege/fast:
-	$(MAKE) -f programs/random/CMakeFiles/gen_random_havege.dir/build.make programs/random/CMakeFiles/gen_random_havege.dir/build
-.PHONY : gen_random_havege/fast
-
-# Manual pre-install relink rule for target.
-gen_random_havege/preinstall:
-	$(MAKE) -f programs/random/CMakeFiles/gen_random_havege.dir/build.make programs/random/CMakeFiles/gen_random_havege.dir/preinstall
-.PHONY : gen_random_havege/preinstall
+gen_random/preinstall:
+	$(MAKE) -f programs/random/CMakeFiles/gen_random.dir/build.make programs/random/CMakeFiles/gen_random.dir/preinstall
+.PHONY : gen_random/preinstall
 
 #=============================================================================
 # Target rules for targets named ssl_client1
@@ -793,9 +757,7 @@ help:
 	@echo "... rsa_sign_pss"
 	@echo "... rsa_verify"
 	@echo "... rsa_verify_pss"
-	@echo "... gen_entropy"
-	@echo "... gen_random_ctr_drbg"
-	@echo "... gen_random_havege"
+	@echo "... gen_random"
 	@echo "... ssl_client1"
 	@echo "... ssl_client2"
 	@echo "... ssl_fork_server"

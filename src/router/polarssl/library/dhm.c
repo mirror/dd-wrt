@@ -127,8 +127,7 @@ int dhm_read_params( dhm_context *ctx,
  */
 int dhm_make_params( dhm_context *ctx, int x_size,
                      unsigned char *output, size_t *olen,
-                     int (*f_rng)(void *, unsigned char *, size_t),
-                     void *p_rng )
+                     int (*f_rng)(void *), void *p_rng )
 {
     int ret, n;
     size_t n1, n2, n3;
@@ -204,8 +203,7 @@ int dhm_read_public( dhm_context *ctx,
  */
 int dhm_make_public( dhm_context *ctx, int x_size,
                      unsigned char *output, size_t olen,
-                     int (*f_rng)(void *, unsigned char *, size_t),
-                     void *p_rng )
+                     int (*f_rng)(void *), void *p_rng )
 {
     int ret, n;
 

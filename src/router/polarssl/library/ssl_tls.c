@@ -578,9 +578,8 @@ static int ssl_encrypt_buf( ssl_context *ssl )
             /*
              * Generate IV
              */
-            int ret = ssl->f_rng( ssl->p_rng, ssl->iv_enc, ssl->ivlen );
-            if( ret != 0 )
-                return( ret );
+            for( i = 0; i < ssl->ivlen; i++ )
+                ssl->iv_enc[i] = ssl->f_rng( ssl->p_rng );
 
             /*
              * Shift message for ivlen bytes and prepend IV
@@ -1376,7 +1375,7 @@ int ssl_parse_certificate( ssl_context *ssl )
     {
         SSL_DEBUG_MSG( 1, ( "malloc(%d bytes) failed",
                        sizeof( x509_cert ) ) );
-        return( POLARSSL_ERR_SSL_MALLOC_FAILED );
+        return( 1 );
     }
 
     memset( ssl->peer_cert, 0, sizeof( x509_cert ) );
@@ -1706,7 +1705,7 @@ int ssl_init( ssl_context *ssl )
     if( ssl->in_ctr == NULL )
     {
         SSL_DEBUG_MSG( 1, ( "malloc(%d bytes) failed", len ) );
-        return( POLARSSL_ERR_SSL_MALLOC_FAILED );
+        return( 1 );
     }
 
     ssl->out_ctr = (unsigned char *) malloc( len );
@@ -1717,7 +1716,7 @@ int ssl_init( ssl_context *ssl )
     {
         SSL_DEBUG_MSG( 1, ( "malloc(%d bytes) failed", len ) );
         free( ssl-> in_ctr );
-        return( POLARSSL_ERR_SSL_MALLOC_FAILED );
+        return( 1 );
     }
 
     memset( ssl-> in_ctr, 0, SSL_BUFFER_LEN );
@@ -1730,49 +1729,6 @@ int ssl_init( ssl_context *ssl )
     sha1_starts( &ssl->fin_sha1 );
 
     return( 0 );
-}
-
-/*
- * Reset an initialized and used SSL context for re-use while retaining
- * all application-set variables, function pointers and data.
- */
-void ssl_session_reset( ssl_context *ssl )
-{
-    ssl->state = SSL_HELLO_REQUEST;
-    
-    ssl->in_offt = NULL;
-
-    ssl->in_msgtype = 0;
-    ssl->in_msglen = 0;
-    ssl->in_left = 0;
-
-    ssl->in_hslen = 0;
-    ssl->nb_zero = 0;
-
-    ssl->out_msgtype = 0;
-    ssl->out_msglen = 0;
-    ssl->out_left = 0;
-
-    ssl->do_crypt = 0;
-    ssl->pmslen = 0;
-    ssl->keylen = 0;
-    ssl->minlen = 0;
-    ssl->ivlen = 0;
-    ssl->maclen = 0;
-
-    memset( ssl->out_ctr, 0, SSL_BUFFER_LEN );
-    memset( ssl->in_ctr, 0, SSL_BUFFER_LEN );
-    memset( ssl->randbytes, 0, 64 );
-    memset( ssl->premaster, 0, 256 );
-    memset( ssl->iv_enc, 0, 16 );
-    memset( ssl->iv_dec, 0, 16 );
-    memset( ssl->mac_enc, 0, 32 );
-    memset( ssl->mac_dec, 0, 32 );
-    memset( ssl->ctx_enc, 0, 128 );
-    memset( ssl->ctx_dec, 0, 128 );
-
-     md5_starts( &ssl->fin_md5  );
-    sha1_starts( &ssl->fin_sha1 );
 }
 
 /*
@@ -1797,7 +1753,7 @@ void ssl_set_verify( ssl_context *ssl,
 }
 
 void ssl_set_rng( ssl_context *ssl,
-                  int (*f_rng)(void *, unsigned char *, size_t),
+                  int (*f_rng)(void *),
                   void *p_rng )
 {
     ssl->f_rng      = f_rng;
@@ -1919,12 +1875,6 @@ int ssl_set_hostname( ssl_context *ssl, const char *hostname )
     ssl->hostname[ssl->hostname_len] = '\0';
 
     return( 0 );
-}
-
-void ssl_set_max_version( ssl_context *ssl, int major, int minor )
-{
-    ssl->max_major_ver = major;
-    ssl->max_minor_ver = minor;
 }
 
 /*

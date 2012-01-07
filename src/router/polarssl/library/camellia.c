@@ -68,7 +68,7 @@ static const unsigned char SIGMA_CHARS[6][8] =
     { 0xb0, 0x56, 0x88, 0xc2, 0xb3, 0xe6, 0xc1, 0xfd }
 };
 
-#if defined(POLARSSL_CAMELLIA_SMALL_MEMORY)
+#ifdef POLARSSL_CAMELLIA_SMALL_MEMORY
 
 static const unsigned char FSb[256] =
 {

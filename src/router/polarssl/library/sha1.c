@@ -339,7 +339,7 @@ int sha1_file( const char *path, unsigned char output[20] )
     unsigned char buf[1024];
 
     if( ( f = fopen( path, "rb" ) ) == NULL )
-        return( POLARSSL_ERR_SHA1_FILE_IO_ERROR );
+        return( 1 );
 
     sha1_starts( &ctx );
 
@@ -353,7 +353,7 @@ int sha1_file( const char *path, unsigned char output[20] )
     if( ferror( f ) != 0 )
     {
         fclose( f );
-        return( POLARSSL_ERR_SHA1_FILE_IO_ERROR );
+        return( 2 );
     }
 
     fclose( f );

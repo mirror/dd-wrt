@@ -70,9 +70,9 @@ unsigned long hardclock( void )
 
 unsigned long hardclock( void )
 {
-    unsigned long lo, hi;
-    asm( "rdtsc" : "=a" (lo), "=d" (hi) );
-    return( lo );
+    unsigned long tsc;
+    asm( "rdtsc" : "=a" (tsc) );
+    return( tsc );
 }
 
 #else

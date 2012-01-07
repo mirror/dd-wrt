@@ -97,17 +97,12 @@ void hexify(unsigned char *obuf, const unsigned char *ibuf, int len)
  *
  * rng_state shall be NULL.
  */
-static int rnd_std_rand( void *rng_state, unsigned char *output, size_t len )
+static int rnd_std_rand( void *rng_state )
 {
-    size_t i;
-
     if( rng_state != NULL )
         rng_state  = NULL;
 
-    for( i = 0; i < len; ++i )
-        output[i] = rand();
-
-    return( 0 );
+    return( rand() );
 }
 
 /**
@@ -115,12 +110,10 @@ static int rnd_std_rand( void *rng_state, unsigned char *output, size_t len )
  *
  * rng_state shall be NULL.
  */
-static int rnd_zero_rand( void *rng_state, unsigned char *output, size_t len )
+static int rnd_zero_rand( void *rng_state )
 {
     if( rng_state != NULL )
         rng_state  = NULL;
-
-    memset( output, 0, len );
 
     return( 0 );
 }
@@ -128,7 +121,8 @@ static int rnd_zero_rand( void *rng_state, unsigned char *output, size_t len )
 typedef struct
 {
     unsigned char *buf;
-    size_t length;
+    int length;
+    int per_call;
 } rnd_buf_info;
 
 /**
@@ -142,29 +136,34 @@ typedef struct
  *
  * After the buffer is empty it will return rand();
  */
-static int rnd_buffer_rand( void *rng_state, unsigned char *output, size_t len )
+static int rnd_buffer_rand( void *rng_state )
 {
     rnd_buf_info *info = (rnd_buf_info *) rng_state;
-    size_t use_len;
+    int res;
 
     if( rng_state == NULL )
-        return( rnd_std_rand( NULL, output, len ) );
+        return( rand() );
 
-    use_len = len;
-    if( len > info->length )
-        use_len = info->length;
+    if( info->per_call > 4 )
+        info->per_call = 4;
+    else if( info->per_call < 1 )
+        info->per_call = 1;
 
-    if( use_len )
+    res = rand();
+
+    if( info->length >= info->per_call )
     {
-        memcpy( output, info->buf, use_len );
-        info->buf += use_len;
-        info->length -= use_len;
+        memcpy( &res, info->buf, info->per_call );
+        info->buf += info->per_call;
+        info->length -= info->per_call;
+    }
+    else if( info->length > 0 )
+    {
+        memcpy( &res, info->buf, info->length );
+        info->length = 0;
     }
 
-    if( len - use_len > 0 )
-        return( rnd_std_rand( NULL, output + use_len, len - use_len ) );
-
-    return( 0 );
+    return( res );
 }
 
 /**
@@ -188,33 +187,21 @@ typedef struct
  *
  * rng_state shall be a pointer to a rnd_pseudo_info structure.
  */
-static int rnd_pseudo_rand( void *rng_state, unsigned char *output, size_t len )
+static int rnd_pseudo_rand( void *rng_state )
 {
     rnd_pseudo_info *info = (rnd_pseudo_info *) rng_state;
-    uint32_t i, *k, sum, delta=0x9E3779B9;
+    uint32_t i, *k, sum = 0, delta=0x9E3779B9;
 
     if( rng_state == NULL )
-        return( rnd_std_rand( NULL, output, len ) );
+        return( rand() );
 
     k = info->key;
-
-    while( len > 0 )
+    for( i = 0; i < 32; i++ )
     {
-        size_t use_len = len;
-        sum = 0;
-
-        use_len = 1;
-
-        for( i = 0; i < 32; i++ )
-        {
-            info->v0 += (((info->v1 << 4) ^ (info->v1 >> 5)) + info->v1) ^ (sum + k[sum & 3]);
-            sum += delta;
-            info->v1 += (((info->v0 << 4) ^ (info->v0 >> 5)) + info->v0) ^ (sum + k[(sum>>11) & 3]);
-        }
-
-        memcpy( output, &info->v0, use_len );
-        len -= use_len;
+        info->v0 += (((info->v1 << 4) ^ (info->v1 >> 5)) + info->v1) ^ (sum + k[sum & 3]);
+        sum += delta;
+        info->v1 += (((info->v0 << 4) ^ (info->v0 >> 5)) + info->v0) ^ (sum + k[(sum>>11) & 3]);
     }
 
-    return( 0 );
+    return( info->v0 );
 }

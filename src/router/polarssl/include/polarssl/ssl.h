@@ -29,16 +29,16 @@
 
 #include <time.h>
 
-#include "net.h"
-#include "dhm.h"
-#include "rsa.h"
-#include "md5.h"
-#include "sha1.h"
-#include "x509.h"
-#include "config.h"
+#include "polarssl/net.h"
+#include "polarssl/dhm.h"
+#include "polarssl/rsa.h"
+#include "polarssl/md5.h"
+#include "polarssl/sha1.h"
+#include "polarssl/x509.h"
+#include "polarssl/config.h"
 
 #if defined(POLARSSL_PKCS11_C)
-#include "pkcs11.h"
+#include "polarssl/pkcs11.h"
 #endif
 
 #if defined(_MSC_VER) && !defined(inline)
@@ -81,7 +81,6 @@
 #define POLARSSL_ERR_SSL_BAD_HS_CERTIFICATE_VERIFY         -0x7D80  /**< Processing of the CertificateVerify handshake message failed. */
 #define POLARSSL_ERR_SSL_BAD_HS_CHANGE_CIPHER_SPEC         -0x7E00  /**< Processing of the ChangeCipherSpec handshake message failed. */
 #define POLARSSL_ERR_SSL_BAD_HS_FINISHED                   -0x7E80  /**< Processing of the Finished handshake message failed. */
-#define POLARSSL_ERR_SSL_MALLOC_FAILED                     -0x7F00  /**< Memory allocation failed */
 
 /*
  * Various constants
@@ -233,7 +232,7 @@ struct _ssl_context
     /*
      * Callbacks (RNG, debug, I/O, verification)
      */
-    int  (*f_rng)(void *, unsigned char *, size_t);
+    int  (*f_rng)(void *);
     void (*f_dbg)(void *, int, const char *);
     int (*f_recv)(void *, unsigned char *, size_t);
     int (*f_send)(void *, const unsigned char *, size_t);
@@ -374,19 +373,9 @@ int ssl_get_ciphersuite_id( const char *ciphersuite_name );
  *
  * \param ssl      SSL context
  *
- * \return         0 if successful, or POLARSSL_ERR_SSL_MALLOC_FAILED if
- *                 memory allocation failed
+ * \return         0 if successful, or 1 if memory allocation failed
  */
 int ssl_init( ssl_context *ssl );
-
-/**
- * \brief          Reset an already initialized SSL context for re-use
- *                 while retaining application-set variables, function
- *                 pointers and data.
- *
- * \param ssl      SSL context
- */
-void ssl_session_reset( ssl_context *ssl );
 
 /**
  * \brief          Set the current endpoint type
@@ -440,7 +429,7 @@ void ssl_set_verify( ssl_context *ssl,
  * \param p_rng    RNG parameter
  */
 void ssl_set_rng( ssl_context *ssl,
-                  int (*f_rng)(void *, unsigned char *, size_t),
+                  int (*f_rng)(void *),
                   void *p_rng );
 
 /**
@@ -565,16 +554,6 @@ int ssl_set_dh_param_ctx( ssl_context *ssl, dhm_context *dhm_ctx );
  * \return         0 if successful
  */
 int ssl_set_hostname( ssl_context *ssl, const char *hostname );
-
-/**
- * \brief          Set the maximum supported version sent from the client side
- * 
- * \param ssl      SSL context
- * \param major    Major version number (only SSL_MAJOR_VERSION_3 supported)
- * \param minor    Minor version number (SSL_MINOR_VERSION_0,
- *                 SSL_MINOR_VERSION_1 and SSL_MINOR_VERSION_2 supported)
- */
-void ssl_set_max_version( ssl_context *ssl, int major, int minor );
 
 /**
  * \brief          Return the number of data bytes available to read
