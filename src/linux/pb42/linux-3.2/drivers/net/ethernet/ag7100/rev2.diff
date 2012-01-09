@@ -1,0 +1,247 @@
+Index: ag7100.c
+===================================================================
+--- ag7100.c	(revision 18050)
++++ ag7100.c	(working copy)
+@@ -33,7 +33,6 @@
+ };
+ #endif //CONFIG_BUFFALO //
+ 
+-unsigned int rx_hang_detect_pkt_cnt_all[2], rx_hang_detect_pkt_cnt_valid[2],rx_hang_detected[2];
+ int set_mac_from_link_flag = 0;
+ static ag7100_mac_t *ag7100_macs[2];
+ static void ag7100_hw_setup(ag7100_mac_t *mac);
+@@ -274,10 +273,6 @@
+     /*
+     * phy link mgmt
+     */
+-    rx_hang_detect_pkt_cnt_all[mac->mac_unit] = ag7100_get_rx_count(mac);	    
+-    rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
+-    rx_hang_detected[mac->mac_unit] = 0;
+-
+     init_timer(&mac->mac_phy_timer);
+     mac->mac_phy_timer.data     = (unsigned long)mac;
+     mac->mac_phy_timer.function = (void *)ag7100_check_link;
+@@ -979,52 +974,7 @@
+ #endif        
+     mod_timer(&mac->mac_phy_timer, jiffies + AG7100_PHY_POLL_SECONDS*HZ);
+ 
+-/* "Hydra WAN + RealTek PHY with a specific NetGear Hub" Rx hang workaround */
+-#if 0//ndef CONFIG_AR9100 //1//DMA mac hang
+-     {
+-        unsigned int perf_cnt = ag7100_get_rx_count(mac);
+-        if (perf_cnt == 0xffffffff) {
+-            /* we have saturated the counter. let it overflow to 0 */
+-            if (mac->mac_unit == 0) {
+-                ar7100_reg_wr(AR7100_PERF0_COUNTER, 0);
+-            }
+-            else {
+-                ar7100_reg_wr(AR7100_PERF1_COUNTER, 0);
+-            }
+-        }
+-		int status;
+-		status = ag7100_reg_rd(mac, AG7100_DMA_RX_STATUS);
+-        /* perf_cnt increments on every rx pkt including runts.
+-         * so, the rx hang occurred when perf_cnt incremented, but
+-         * valid rx pkts didn't get incremented. this could result
+-         * in a false positive but the likelihood that over a 2sec
+-         * period all pkts received were runts appears to me
+-         * to be very low -JK.
+-         */
+-	
+-		if ((perf_cnt > rx_hang_detect_pkt_cnt_all[mac->mac_unit]) &&
+-            (mac->net_rx_packets == rx_hang_detect_pkt_cnt_valid[mac->mac_unit]) &&
+-	    (!(status & AG7100_RX_STATUS_PKT_RCVD)) &&
+-	    (!((status & AG7100_RX_STATUS_PKTCNT_MASK )>>16))) {
+-	     	rx_hang_detected[mac->mac_unit] += 1;
+-//	     	if ( mac->mac_unit == 1 )	     
+-//            	printk(MODULE_NAME ": WAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
+-//	    	 else
+-//				printk(MODULE_NAME ": LAN Rx Hang Detected %d times!\n",rx_hang_detected[mac->mac_unit]);
+-            rx_hang_detect_pkt_cnt_all[mac->mac_unit] = perf_cnt;
+-	    	rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
+ 
+-	    	if (rx_hang_detected[mac->mac_unit] >= 2)
+-		     	ag7100_dma_reset(mac);
+-        }
+-        else {
+-            rx_hang_detect_pkt_cnt_all[mac->mac_unit] = perf_cnt;
+-            rx_hang_detect_pkt_cnt_valid[mac->mac_unit] = mac->net_rx_packets;
+-	    	rx_hang_detected[mac->mac_unit] = 0;
+-        }
+-    }
+-#endif
+-
+     return 0;
+ }
+ 
+@@ -1107,12 +1057,13 @@
+ ag7100_handle_tx_full(ag7100_mac_t *mac)
+ {
+     u32         flags;
++    struct net_device *dev = mac->mac_dev;
+ #if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
+     if(!mac->speed_10t)
+ #endif
+     assert(!netif_queue_stopped(mac->mac_dev));
+ 
+-    mac->mac_net_stats.tx_fifo_errors ++;
++    dev->stats.tx_fifo_errors++;
+ 
+     netif_stop_queue(mac->mac_dev);
+ 
+@@ -1138,7 +1089,7 @@
+ 
+     /* force extra pkt if remainder less than 4 bytes */
+     if (*len > tx_len_per_ds)
+-        if (*len <= (tx_len_per_ds + 4))
++        if (*len < (tx_len_per_ds + 4))
+             len_this_ds = tx_len_per_ds - 4;
+         else
+             len_this_ds = tx_len_per_ds;
+@@ -1274,8 +1225,8 @@
+ 
+     wmb();
+ 
+-    mac->net_tx_packets ++;
+-    mac->net_tx_bytes += skb->len;
++    dev->stats.tx_packets++;
++    dev->stats.tx_bytes += skb->len;
+ 
+     ag7100_trc(ag7100_reg_rd(mac, AG7100_DMA_TX_CTRL),"dma idle");
+ 
+@@ -1290,6 +1241,7 @@
+ 
+ dropit:
+     printk(MODULE_NAME ": dropping skb %p\n", skb);
++    dev->stats.tx_dropped++;
+     kfree_skb(skb);
+     return NETDEV_TX_OK;
+ }
+@@ -1457,7 +1409,7 @@
+     *budget     -= work_done;
+     if (likely(ret == AG7100_RX_STATUS_DONE))
+     {
+-    netif_rx_complete(dev);
++	netif_rx_complete(dev);
+     }
+ #endif
+     if(ret == AG7100_RX_DMA_HANG)
+@@ -1604,8 +1556,8 @@
+                     skb_pull(skb, 2); /* remove attansic header */
+ 
+     		dma_cache_sync(NULL, (void *)skb->data,  skb->len, DMA_FROM_DEVICE);
+-                mac->net_rx_packets ++;
+-                mac->net_rx_bytes += skb->len;
++		dev->stats.rx_packets++;
++		dev->stats.rx_bytes += skb->len;
+ #if 0//def CONFIG_CAMEO_REALTEK_PHY
+ 		/* align the data to the ip header - should be faster than copying the entire packet */
+ 		for (i = len - (len % 4); i >= 0; i -= 4) {
+@@ -1629,8 +1581,8 @@
+             else
+             {
+     		dma_cache_sync(NULL, (void *)skb->data,  skb->len, DMA_FROM_DEVICE);
+-                mac->net_rx_packets ++;
+-                mac->net_rx_bytes += skb->len;
++		dev->stats.rx_packets++;
++		dev->stats.rx_bytes += skb->len;
+                 bp->buf_pkt         = NULL;
+                 dev->last_rx        = jiffies;
+                 quota--;
+@@ -1647,8 +1599,8 @@
+         }else
+         {
+     	    dma_cache_sync(NULL, (void *)skb->data,  skb->len, DMA_FROM_DEVICE);
+-            mac->net_rx_packets ++;
+-            mac->net_rx_bytes += skb->len;
++	    dev->stats.rx_packets++;
++	    dev->stats.rx_bytes += skb->len;
+             /*
+             * also pulls the ether header
+             */
+@@ -1663,8 +1615,8 @@
+ 
+ #else
+     	dma_cache_sync(NULL, (void *)skb->data,  skb->len, DMA_FROM_DEVICE);
+-        mac->net_rx_packets ++;
+-        mac->net_rx_bytes += skb->len;
++	dev->stats.rx_packets++;
++	dev->stats.rx_bytes += skb->len;
+         /*
+         * also pulls the ether header
+         */
+@@ -1735,14 +1687,13 @@
+ 
+     if (unlikely(status & AG7100_RX_STATUS_OVF))
+     {
+-        mac->net_rx_over_errors ++;
++	dev->stats.rx_over_errors++;
+         ag7100_intr_ack_rxovf(mac);
+         ag7100_rx_start(mac);
+     }
+ 
+     return ret;
+ }
+-
+ static struct sk_buff *
+     ag7100_buffer_alloc(void)
+ {
+@@ -2111,24 +2062,6 @@
+ #endif
+ }
+ 
+-static struct net_device_stats 
+-    *ag7100_get_stats(struct net_device *dev)
+-{
+-    ag7100_mac_t *mac = netdev_priv(dev);
+-    int i;
+-
+-//    sch = rcu_dereference(dev->qdisc);
+-//    mac->mac_net_stats.tx_dropped = sch->qstats.drops;
+-
+-    i = ag7100_get_rx_count(mac) - mac->net_rx_packets;
+-    if (i<0)
+-        i=0;
+-
+-    mac->mac_net_stats.rx_missed_errors = i;
+-
+-    return &mac->mac_net_stats;
+-}
+-
+ static void
+ ag7100_vet_tx_len_per_pkt(unsigned int *len)
+ {
+@@ -2285,7 +2218,6 @@
+         mac_net_ops.ndo_open      = ag7100_open;
+         mac_net_ops.ndo_stop      = ag7100_stop;
+         mac_net_ops.ndo_start_xmit= ag7100_hard_start;
+-        mac_net_ops.ndo_get_stats = ag7100_get_stats;
+         mac_net_ops.ndo_tx_timeout= ag7100_tx_timeout;
+ #if defined(CONFIG_ATHRS26_PHY) || defined(CONFIG_ATHRS16_PHY) 
+         mac_net_ops.ndo_do_ioctl        =  ag7100_do_ioctl;
+Index: ag7100.h
+===================================================================
+--- ag7100.h	(revision 18050)
++++ ag7100.h	(working copy)
+@@ -83,7 +83,6 @@
+     spinlock_t              mac_lock;
+     struct timer_list       mac_oom_timer;
+     struct work_struct      mac_tx_timeout;
+-    struct net_device_stats mac_net_stats;
+     ag7100_phy_speed_t      mac_speed;
+     int                     mac_fdx;
+     struct timer_list       mac_phy_timer;
+@@ -95,13 +94,6 @@
+     ag7100_trc_t            tb;
+ }ag7100_mac_t;
+ 
+-#define net_rx_packets      mac_net_stats.rx_packets
+-#define net_rx_fifo_errors  mac_net_stats.rx_fifo_errors
+-#define net_tx_packets      mac_net_stats.tx_packets
+-#define net_rx_bytes        mac_net_stats.rx_bytes
+-#define net_tx_bytes        mac_net_stats.tx_bytes
+-#define net_rx_over_errors  mac_net_stats.rx_over_errors
+-#define net_tx_dropped      mac_net_stats.tx_dropped;
+ 
+ #define ag7100_dev_up(_dev)                                     \
+     (((_dev)->flags & (IFF_RUNNING|IFF_UP)) != (IFF_RUNNING|IFF_UP))
