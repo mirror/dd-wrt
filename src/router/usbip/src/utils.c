@@ -35,7 +35,7 @@ int modify_match_busid(char *busid, int add)
 	struct sysfs_attribute *match_busid_attr;
 	int rc, ret = 0;
 
-	if (strlen(busid) > SYSFS_BUS_ID_SIZE - 1) {
+	if (strnlen(busid, SYSFS_BUS_ID_SIZE) > SYSFS_BUS_ID_SIZE - 1) {
 		dbg("busid is too long");
 		return -1;
 	}
