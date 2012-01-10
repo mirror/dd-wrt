@@ -232,8 +232,8 @@ void start_sysinit(void)
 	setWirelessLedPhy0(5);
 #else
 #ifndef HAVE_WZRG450
-	setWirelessLedPhy0(6);
-	setWirelessLedPhy1(6);
+	setWirelessLedGeneric(0,6);
+	setWirelessLedGeneric(1,6);
 #endif
 #endif
 #else
