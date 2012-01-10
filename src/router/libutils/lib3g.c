@@ -473,7 +473,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0002, "option", "1", "3", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	//
 	{0x19d2, 0x0003, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MU351 (cdrom mode)"},	//
 	{0x19d2, 0x0015, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
-	{0x19d2, 0x0016, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0016, "option", "1", "2", 2, NULL, "ONDA MF110/ZTE (modem mode)"},	//
 	{0x19d2, 0x0017, "option", "1", "1", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0022, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K2525 (modem mode)"},	//
 	{0x19d2, 0x0026, "option", "1", "3", 2, &modeswitch_onda2, "ZTE AC581 (cdrom mode)"},	//
