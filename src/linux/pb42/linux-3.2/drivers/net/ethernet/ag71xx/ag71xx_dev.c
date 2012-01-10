@@ -979,19 +979,36 @@ static enum ar71xx_soc_type ar71xx_get_soc_type(void)
 
 #if defined(CONFIG_RTL8366_SMI) || defined(CONFIG_RTL8366_SMI_MODULE)
 
-#ifdef CONFIG_BUFFALO
-/* WZR-HP-G300NH */
-#define GPIO_RTL8366_SDA    19
-#define GPIO_RTL8366_SCK    20
-#else
+#ifdef CONFIG_TPLINK
+
 /* TL-WR1043ND */
-#define GPIO_RTL8366_SDA    18
-#define GPIO_RTL8366_SCK    19
+
+#define GPIO_RTL8366_SDA 18//gpio 19
+#define GPIO_RTL8366_SCK 19//gpio 20
+#elif CONFIG_BUFFALO
+/* WZR-HP-G300NH */
+
+#define GPIO_RTL8366_SDA 19//gpio 19
+#define GPIO_RTL8366_SCK 20//gpio 20
+#else
+/* DLINK-DIR825 or WNDR3700*/
+#define GPIO_RTL8366_SDA 5//gpio 19
+#define GPIO_RTL8366_SCK 7//gpio 20
+#endif
+
+#ifdef CONFIG_DIR825
+static struct rtl8366_initval dir825b1_rtl8366s_initvals[] = {
+	{ .reg = 0x06, .val = 0x0108 },
+};
 #endif
 
 static struct rtl8366_platform_data rtl8366_dev_data = {
 	.gpio_sda        = GPIO_RTL8366_SDA,
 	.gpio_sck        = GPIO_RTL8366_SCK,
+#ifdef CONFIG_DIR825
+	.num_initvals	= ARRAY_SIZE(dir825b1_rtl8366s_initvals),
+	.initvals	= dir825b1_rtl8366s_initvals,
+#endif
 };
 
 static struct platform_device rtl8366_device = {
@@ -1014,6 +1031,10 @@ static void phy_dev_init(void)
 		ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
 		ar71xx_eth1_pll_data.pll_1000 = 0x1e000100;
 	}
+#endif
+#if defined(CONFIG_DIR825) || defined(CONFIG_WNDR3700)
+	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
+	ar71xx_eth1_pll_data.pll_1000 = 0x11110000;
 #endif
 
 	ar71xx_eth0_data.mii_bus_dev = &rtl8366_device.dev;
