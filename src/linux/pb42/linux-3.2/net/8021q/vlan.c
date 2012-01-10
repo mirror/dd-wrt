@@ -135,6 +135,9 @@ void unregister_vlan_dev(struct net_device *dev, struct list_head *head)
 
 		RCU_INIT_POINTER(real_dev->vlgrp, NULL);
 
+		if (ops->ndo_vlan_rx_register)
+			ops->ndo_vlan_rx_register(real_dev, NULL);
+
 		/* Free the group, after all cpu's are done. */
 		call_rcu(&grp->rcu, vlan_rcu_free);
 	}
@@ -205,6 +208,8 @@ int register_vlan_dev(struct net_device *dev)
 	grp->nr_vlans++;
 
 	if (ngrp) {
+		if (ops->ndo_vlan_rx_register)
+			ops->ndo_vlan_rx_register(real_dev, ngrp);
 		rcu_assign_pointer(real_dev->vlgrp, ngrp);
 	}
 	if (real_dev->features & NETIF_F_HW_VLAN_FILTER)
