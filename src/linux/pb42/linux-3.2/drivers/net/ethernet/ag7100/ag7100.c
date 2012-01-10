@@ -1192,7 +1192,7 @@ ag7100_hard_start(struct sk_buff *skb, struct net_device *dev)
 
     if (unlikely(ag7100_tx_ring_full(mac)))
     {
-	printk(KERN_DEBUG "TX FULL\n");
+//	printk(KERN_DEBUG "TX FULL\n");
         ag7100_handle_tx_full(mac);
     }
 
@@ -1306,14 +1306,14 @@ ag7100_intr(int cpl, void *dev_id)
     {
         assert(0);
         handled = 1;
-        printk(KERN_DEBUG "BUS RX ERROR\n");
+//        printk(KERN_DEBUG "BUS RX ERROR\n");
         ag7100_intr_ack_rxbe(mac);
     }
     if (unlikely(isr & AG7100_INTR_TX_BUS_ERROR))
     {
         assert(0);
         handled = 1;
-        printk(KERN_DEBUG "BUS TX ERROR\n");
+//        printk(KERN_DEBUG "BUS TX ERROR\n");
         ag7100_intr_ack_txbe(mac);
     }
 
@@ -1400,7 +1400,7 @@ ag7100_poll(struct net_device *dev, int *budget)
 #endif
     if(ret == AG7100_RX_DMA_HANG)
     {
-	printk(KERN_DEBUG "dma hang\n");
+//	printk(KERN_DEBUG "dma hang\n");
         status = 0;
         ag7100_dma_reset(mac);
     }
@@ -1508,8 +1508,8 @@ process_pkts:
 
         if (ag7100_rx_owned_by_dma(ds))
         {
-            if(quota == iquota)
-		printk(KERN_DEBUG "usually dma hang\n");
+//            if(quota == iquota)
+//		printk(KERN_DEBUG "usually dma hang\n");
     	    break;
 #if 0
             if(quota == iquota)
@@ -1645,9 +1645,9 @@ process_pkts:
     }
 
 #if 1
-    if(quota == iquota)
+//    if(quota == iquota)
     {
-	printk(KERN_DEBUG "usually dma hang 2\n");
+//	printk(KERN_DEBUG "usually dma hang 2\n");
 //        *work_done = quota = 0;
 //        return AG7100_RX_DMA_HANG;
     }
@@ -1655,9 +1655,9 @@ process_pkts:
     r->ring_head   =  head;
     rep = ag7100_rx_replenish(mac);
 #if 1
-    if(rep < 0)
+//    if(rep < 0)
     {
-	printk(KERN_DEBUG "usually dma hang 3\n");
+//	printk(KERN_DEBUG "usually dma hang 3\n");
     //    *work_done =0 ;
     //    return AG7100_RX_DMA_HANG;
     }
@@ -1687,7 +1687,7 @@ done:
 #if 1
     if (unlikely(ag7100_rx_ring_full(mac))) 
     {
-	printk(KERN_DEBUG "OOM !!!\n");
+//	printk(KERN_DEBUG "OOM !!!\n");
         return AG7100_RX_STATUS_OOM;
     }
 #endif
@@ -1697,7 +1697,7 @@ done:
 
     if (unlikely(status & AG7100_RX_STATUS_OVF))
     {
-	printk(KERN_DEBUG "OVERFLOW !!!\n");
+//	printk(KERN_DEBUG "OVERFLOW !!!\n");
 	dev->stats.rx_over_errors++;
         ag7100_intr_ack_rxovf(mac);
         ag7100_rx_start(mac);
@@ -1760,7 +1760,7 @@ ag7100_rx_replenish(ag7100_mac_t *mac)
 
         if(ag7100_rx_owned_by_dma(ds))
         {
-    	    printk(KERN_DEBUG ": rx_repl owned by dma\n");
+//    	    printk(KERN_DEBUG ": rx_repl owned by dma\n");
             return -1;
         }
         assert(!bf->buf_pkt);
@@ -1824,7 +1824,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         if(ag7100_tx_owned_by_dma(ds))
         {
-    	    printk(KERN_DEBUG ": tx_repl owned by dma\n");
+//    	    printk(KERN_DEBUG ": tx_repl owned by dma\n");
             break;
         }
 
@@ -1835,7 +1835,7 @@ ag7100_tx_reap(ag7100_mac_t *mac)
 
         if(ag7100_tx_owned_by_dma(bf->buf_lastds))
         {
-    	    printk(KERN_DEBUG ": tx_repl 2 owned by dma\n");
+//    	    printk(KERN_DEBUG ": tx_repl 2 owned by dma\n");
             break;
         }
 
@@ -1859,10 +1859,10 @@ ag7100_tx_reap(ag7100_mac_t *mac)
     
 	    if (ag7100_ndesc_unused(mac, r) >= AG7100_TX_QSTART_THRESH)
 	    {
-		printk(KERN_DEBUG "wake queu\n");
+//		printk(KERN_DEBUG "wake queu\n");
     		netif_wake_queue(mac->mac_dev);
     	    }else{
-		printk(KERN_DEBUG "wake tx\n");
+//		printk(KERN_DEBUG "wake tx\n");
     		ag7100_intr_enable_tx(mac);
     	    }
     }
