@@ -179,3 +179,12 @@ err_free:
 	kfree_skb(skb);
 	return NULL;
 }
+
+/* VLAN rx hw acceleration helper.  This acts like netif_{rx,receive_skb}(). */
+int __vlan_hwaccel_rx(struct sk_buff *skb, struct vlan_group *grp,
+		      u16 vlan_tci, int polling)
+{
+	__vlan_hwaccel_put_tag(skb, vlan_tci);
+	return polling ? netif_receive_skb(skb) : netif_rx(skb);
+}
+EXPORT_SYMBOL(__vlan_hwaccel_rx);

@@ -105,6 +105,8 @@ extern struct net_device *__vlan_find_dev_deep(struct net_device *real_dev,
 					       u16 vlan_id);
 extern struct net_device *vlan_dev_real_dev(const struct net_device *dev);
 extern u16 vlan_dev_vlan_id(const struct net_device *dev);
+extern int __vlan_hwaccel_rx(struct sk_buff *skb, struct vlan_group *grp,
+			     u16 vlan_tci, int polling);
 
 extern bool vlan_do_receive(struct sk_buff **skb, bool last_handler);
 extern struct sk_buff *vlan_untag(struct sk_buff *skb);
@@ -175,6 +177,32 @@ static inline struct sk_buff *vlan_insert_tag(struct sk_buff *skb, u16 vlan_tci)
 	veth->h_vlan_TCI = htons(vlan_tci);
 
 	return skb;
+}
+
+/**
+ * vlan_hwaccel_rx - netif_rx wrapper for VLAN RX acceleration
+ * @skb: buffer
+ * @grp: vlan group
+ * @vlan_tci: VLAN TCI as received from the card
+ */
+static inline int vlan_hwaccel_rx(struct sk_buff *skb,
+				  struct vlan_group *grp,
+				  u16 vlan_tci)
+{
+	return __vlan_hwaccel_rx(skb, grp, vlan_tci, 0);
+}
+
+/**
+ * vlan_hwaccel_receive_skb - netif_receive_skb wrapper for VLAN RX acceleration
+ * @skb: buffer
+ * @grp: vlan group
+ * @vlan_tci: VLAN TCI as received from the card
+ */
+static inline int vlan_hwaccel_receive_skb(struct sk_buff *skb,
+					   struct vlan_group *grp,
+					   u16 vlan_tci)
+{
+	return __vlan_hwaccel_rx(skb, grp, vlan_tci, 1);
 }
 
 /**
