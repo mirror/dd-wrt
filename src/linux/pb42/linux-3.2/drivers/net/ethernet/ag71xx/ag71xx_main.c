@@ -732,9 +732,9 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		if (ag->phy_dev == NULL)
 			break;
 
-//		spin_lock_irq(&ag->lock);
-//		ret = phy_ethtool_ioctl(ag->phy_dev, (void *) ifr->ifr_data);
-//		spin_unlock_irq(&ag->lock);
+		spin_lock_irq(&ag->lock);
+		ret = phy_ethtool_ioctl(ag->phy_dev, (void *) ifr->ifr_data);
+		spin_unlock_irq(&ag->lock);
 		return ret;
 
 	case SIOCSIFHWADDR:
