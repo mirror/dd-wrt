@@ -105,14 +105,6 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WR1043
 
-	insmod("usbcore");
-	insmod("ehci-hcd");
-	insmod("scsi_mod");
-	insmod("scsi_wait_scan");
-	insmod("cdrom");
-	insmod("sd_mod");
-	insmod("sr_mod");
-	insmod("usb-storage");
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
