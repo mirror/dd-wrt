@@ -593,13 +593,10 @@ ar8216_hw_apply(struct switch_dev *dev)
 			pvid = i;
 		}
 
-		if (priv->vlan) {
-			if (priv->vlan_tagged & (1 << i))
-				egress = AR8216_OUT_ADD_VLAN;
-			else
-				egress = AR8216_OUT_STRIP_VLAN;
+		if (priv->vlan && (priv->vlan_tagged & (1 << i))) {
+			egress = AR8216_OUT_ADD_VLAN;
 		} else {
-			egress = AR8216_OUT_KEEP;
+			egress = AR8216_OUT_STRIP_VLAN;
 		}
 		if (priv->vlan) {
 			ingress = AR8216_IN_SECURE;
