@@ -30,6 +30,6 @@ const char *usb_speed_string(enum usb_device_speed speed)
 		speed = USB_SPEED_UNKNOWN;
 	return names[speed];
 }
-EXPORT_SYMBOL_GPL(usb_speed_string);
+EXPORT_SYMBOL(usb_speed_string);
 
 MODULE_LICENSE("GPL");
