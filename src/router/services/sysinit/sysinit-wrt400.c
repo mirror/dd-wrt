@@ -184,6 +184,10 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
 		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #else
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 0");
+		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
+		system("swconfig dev eth0 set apply");
 		fseek(fp, 0x7f120c, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
