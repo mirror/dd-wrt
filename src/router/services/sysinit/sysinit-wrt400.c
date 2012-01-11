@@ -81,6 +81,13 @@ void start_sysinit(void)
 		int copy[6];
 		int i;
 #ifdef HAVE_WNDR3700
+		system("swconfig dev rtl8366s set reset 1");
+		system("swconfig dev rtl8366s set enable_vlan 0");
+		system("swconfig dev rtl8366s set blinkrate 2");
+		system("swconfig dev rtl8366s port 1 set led 6");
+		system("swconfig dev rtl8366s port 2 set led 9");
+		system("swconfig dev rtl8366s port 5 set led 2");
+		system("swconfig dev rtl8366s set apply");
 
 #ifdef HAVE_WNDR3700V2
 		fseek(fp, 0xff0000, SEEK_SET);
