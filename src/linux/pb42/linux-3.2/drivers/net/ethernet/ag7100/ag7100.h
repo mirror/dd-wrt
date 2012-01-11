@@ -69,30 +69,6 @@ typedef enum {
  */
 #define AG7100_NVDEVS   2
 
-
-#define tq_struct tasklet_struct
-#define ATH_INIT_TQUEUE(a,b,c)      tasklet_init((a),(b),(unsigned long)(c))
-#define ATH_SCHEDULE_TQUEUE(a,b)    tasklet_schedule((a))
-typedef unsigned long TQUEUE_ARG;
-#define mark_bh(a)
-
-
-#define ATH_INIT_TX_TASK()                              \
-	ATH_INIT_TQUEUE(&mac->txreaptq,athr_gmac_txreap_task,mac);
-
-
-#define athr_receive_pkt()  							\
-	static void 								\
-	athr_gmac_recv_packets(TQUEUE_ARG data)
-
-#define ATH_INIT_RX_TASK()  							\
-	ATH_INIT_TQUEUE(&mac->rxtq,athr_gmac_recv_packets,mac);
-
-/*#define ATH_INIT_RX_TASK() \
-	ATH_INIT_TQUEUE(&mac->rxtq,ag7100_recv_packets,mac);
-*/
-#define athr_gmac_t ag7100_mac_t
-
 typedef struct {
     struct net_device      *mac_dev;
     int (*rx)(struct sk_buff *skb);
@@ -108,6 +84,7 @@ typedef struct {
     spinlock_t              mac_lock;
     struct timer_list       mac_oom_timer;
     struct work_struct      mac_tx_timeout;
+    struct net_device_stats mac_net_stats;
     ag7100_phy_speed_t      mac_speed;
     int                     mac_fdx;
     struct timer_list       mac_phy_timer;
@@ -117,9 +94,15 @@ typedef struct {
     int                     speed_10t;
 #endif
     ag7100_trc_t            tb;
-    struct tq_struct        rxtq;        /* rx intr tasklet */
-    struct tq_struct        txreaptq;    /* tx reap tasklet */
 }ag7100_mac_t;
+
+#define net_rx_packets      mac_net_stats.rx_packets
+#define net_rx_fifo_errors  mac_net_stats.rx_fifo_errors
+#define net_tx_packets      mac_net_stats.tx_packets
+#define net_rx_bytes        mac_net_stats.rx_bytes
+#define net_tx_bytes        mac_net_stats.tx_bytes
+#define net_rx_over_errors  mac_net_stats.rx_over_errors
+#define net_tx_dropped      mac_net_stats.tx_dropped;
 
 #define ag7100_dev_up(_dev)                                     \
     (((_dev)->flags & (IFF_RUNNING|IFF_UP)) != (IFF_RUNNING|IFF_UP))
@@ -271,8 +254,6 @@ typedef enum {
 #define AG7100_MAC_CFG1_TX_EN          (1 << 0)
 #define AG7100_MAC_CFG1_RX_FCTL        (1 << 5)
 #define AG7100_MAC_CFG1_TX_FCTL        (1 << 4)
-#define AG7100_MAC_CFG1_STX	       (1 << 1)	/* Synchronize Tx Enable */
-#define AG7100_MAC_CFG1_SRX	       (1 << 3)	/* Synchronize Rx Enable */
 
 
 #define AG7100_MAC_CFG2_FDX            (1 << 0)
@@ -468,12 +449,6 @@ static inline int ag7100_rx_ring_full(ag7100_mac_t *mac)
 
 #define ag7100_intr_disable_tx(_mac)                                     \
     ag7100_reg_rmw_clear((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_TX);
-
-#define ag7100_intr_enable_rxovf(_mac)                                  \
-        ag7100_reg_rmw_set((_mac), AG7100_DMA_INTR_MASK, AG7100_INTR_RX_OVF);
-
-#define ag7100_intr_disable_rxovf(_mac)                                 \
-        ag7100_reg_rmw_clear(mac, AG7100_DMA_INTR_MASK,(AG7100_INTR_RX_OVF));
 
 #define ag7100_intr_disable_recv(_mac)                                      \
     ag7100_reg_rmw_clear(mac, AG7100_DMA_INTR_MASK,                         \
