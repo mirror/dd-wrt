@@ -1,7 +1,9 @@
 #
 # Makefile for Ar7100 gigebit MAC and Phys
 #
+ifndef CONFIG_AG71XX
 obj-$(CONFIG_AG7100)			+=	ag7100_mod.o
+endif
 
 obj-phy-$(CONFIG_VITESSE_PHY)	=	vsc_phy.o
 obj-phy-$(CONFIG_ICPLUS_PHY)	=	ipPhy.o
@@ -39,7 +41,9 @@ endif
 
 #EXTRA_CFLAGS += -DCONFIG_BUFFALO
 
+ifndef CONFIG_AG71XX
 ag7100_mod-objs			:=	$(obj-phy-y) ag7100.o
+endif
 
 ifeq ($(CONFIG_AP81_CARRIER_CUS109), 1)
 # There are two F1e PHY on the CUS109 board.
