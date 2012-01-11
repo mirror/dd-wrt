@@ -173,6 +173,7 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 }
 EXPORT_SYMBOL(ar71xx_gpio_function_setup);
 
+
 static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 		.name		= "generic_0",
@@ -200,21 +201,25 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 4,
 		.active_low	= 0,
 	}, 
+#if !defined(CONFIG_DIR825) && !defined(CONFIG_WNDR3700)
 	{
 		.name		= "generic_5",
 		.gpio		= 5,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_6",
 		.gpio		= 6,
 		.active_low	= 0,
 	}, 
+#if !defined(CONFIG_DIR825) && !defined(CONFIG_WNDR3700)
 	{
 		.name		= "generic_7",
 		.gpio		= 7,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_8",
 		.gpio		= 8,
@@ -265,21 +270,27 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 17,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_TPLINK
 	{
 		.name		= "generic_18",
 		.gpio		= 18,
 		.active_low	= 0,
 	}, 
+#ifndef CONFIG_BUFFALO	
 	{
 		.name		= "generic_19",
 		.gpio		= 19,
 		.active_low	= 0,
 	}, 
+#endif
+#endif
+#ifndef CONFIG_BUFFALO	
 	{
 		.name		= "generic_20",
 		.gpio		= 20,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_21",
 		.gpio		= 21,
