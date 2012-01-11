@@ -81,6 +81,8 @@ void start_sysinit(void)
 	fprintf(stderr, "load ag71xx or ag7100_mod Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7100_mod");
 #ifdef HAVE_WZRG300NH
+	system("swconfig dev rtl8366s set enable_vlan 0");
+	system("swconfig dev rtl8366s set apply");
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
@@ -114,6 +116,7 @@ void start_sysinit(void)
 	char mac[32];
 	if (fp) {
 		system("swconfig dev rtl8366rb set reset 1");
+		system("swconfig dev rtl8366rb set enable_vlan 1");
 		system("swconfig dev rtl8366rb set vlan 1");
 		system("swconfig dev rtl8366rb vlan 1 set ports \"1 2 3 4 5t\"");
 		system("swconfig dev rtl8366rb vlan 2 set ports \"0 5t\"");
