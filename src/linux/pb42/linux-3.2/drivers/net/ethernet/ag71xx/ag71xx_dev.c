@@ -1022,7 +1022,7 @@ static struct platform_device rtl8366_device = {
 
 static void phy_dev_init(void)
 {
-#ifdef CONFIG_BUFFALO
+#if defined (CONFIG_BUFFALO) || defined(CONFIG_TPLINK) || defined(CONFIG_DIR825) || defined(CONFIG_WNDR3700)
 	if (rtl8366_smi_detect(&rtl8366_dev_data) == RTL8366_TYPE_RB) {
 		ar71xx_eth0_pll_data.pll_1000 = 0x1f000000;
 		ar71xx_eth1_pll_data.pll_1000 = 0x100;
