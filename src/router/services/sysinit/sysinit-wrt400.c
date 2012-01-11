@@ -117,6 +117,10 @@ void start_sysinit(void)
 		sprintf(wmac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 #elif HAVE_WZRHPAG300NH
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 1");
+		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
+		system("swconfig dev eth0 set apply");
 		fseek(fp, 0x5120C, SEEK_SET);
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
