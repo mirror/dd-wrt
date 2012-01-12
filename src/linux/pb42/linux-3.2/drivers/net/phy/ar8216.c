@@ -33,7 +33,7 @@
 
 /* size of the vlan table */
 #define AR8X16_MAX_VLANS	128
-#define AR8X16_PROBE_RETRIES	10
+#define AR8X16_PROBE_RETRIES	20
 
 struct ar8216_priv {
 	struct switch_dev dev;
@@ -119,30 +119,8 @@ ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 	return v;
 }
 
-static inline int
-ar8216_id_chip(struct ar8216_priv *priv)
+static inline int id_to_type(int id)
 {
-	u32 val;
-	u16 id;
-	int i;
-
-	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
-	if (val == ~0)
-		return UNKNOWN;
-
-	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
-	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
-		u16 t;
-
-		val = ar8216_mii_read(priv, AR8216_REG_CTRL);
-		if (val == ~0)
-			return UNKNOWN;
-
-		t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
-		if (t != id)
-			return UNKNOWN;
-	}
-
 	switch (id) {
 	case 0x0101:
 		return AR8216;
@@ -152,15 +130,57 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	case 0x1001:
 		return AR8316;
 	default:
+		return UNKNOWN;
+	}
+
+}
+
+static inline int
+ar8216_id_chip(struct ar8216_priv *priv)
+{
+	u32 val;
+	u16 id;
+	int i,type;
+
+	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+	type = id_to_type(id);
+
+	if (type==UNKNOWN) {
+		for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
+			u16 t;
+			val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+			if (val == ~0)
+				continue;
+
+			t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+
+			if (id_to_type(t)!=UNKNOWN) {
+				id = t;
+				type = id_to_type(id);
+				break;
+			}
+		}
+	}
+
+	if (type==UNKNOWN)
 		printk(KERN_DEBUG
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
 			(int)(id >> AR8216_CTRL_VERSION_S),
 			(int)(id & AR8216_CTRL_REVISION),
 			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
 			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
+	else
+		printk(KERN_DEBUG
+			"ar8216: Atheros device found [ver=%d, rev=%d, phy_id=%04x%04x]\n",
+			(int)(id >> AR8216_CTRL_VERSION_S),
+			(int)(id & AR8216_CTRL_REVISION),
+			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
+			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
+	
+	
+	return type;
 
-		return UNKNOWN;
-	}
 }
 
 static int
@@ -966,8 +986,8 @@ ar8216_probe(struct phy_device *pdev)
 {
 	struct ar8216_priv priv;
 	u16 chip;
-
 	priv.phy = pdev;
+
 	chip = ar8216_id_chip(&priv);
 	if (chip == UNKNOWN)
 		return -ENODEV;
