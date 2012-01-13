@@ -316,7 +316,7 @@ config MTD_DOCPROBE_55AA
 
 config MTD_AR7100_SPI_FLASH
 	bool "Support for ar7100 spi flash"
-	depends on MTD
+	depends on MTD && MACH_AR7100
 config MTD_FLASH_16MB
 	bool "Support for 16MB Flash"
 	depends on MTD_AR7100_SPI_FLASH || MTD_AR7240_SPI_FLASH
@@ -328,7 +328,7 @@ config MTD_FLASH_8MB
 	depends on MTD_AR7100_SPI_FLASH || MTD_AR7240_SPI_FLASH
 config MTD_AR9100_PARALLEL_FLASH
         bool "Support for ar9100 parallel flash"
-        depends on MTD
+        depends on MTD && AR9100
 config WZR_HP_G300NH 
 	bool "support for buffalo WZR G300NH"
 	depends on MTD_AR9100_PARALLEL_FLASH

@@ -239,7 +239,7 @@ config PORT0_AS_SWITCH
     bool "Atheros S16 Phy"
     depends on ATHRS16_PHY
 
-config VITESSE_PHY
+config ATHR_VITESSE_PHY
     bool "Vitesse GigE Phy 8201"
 
 config PHY_LAYER
@@ -271,10 +271,10 @@ config VITESSE_8601_PHY
 config VITESSE_8601_7395_PHY
     bool "Vitesse Gige Phy 8601 on MAC0 / VSC73XX Switch on MAC1"
 
-config  ICPLUS_PHY
+config  ATHR_ICPLUS_PHY
     bool "IP Icplus Phy"
 
-config REALTEK_PHY
+config ATHR_REALTEK_PHY
     bool "Rtl8201"
 
 config ADM6996FC_PHY
@@ -322,12 +322,12 @@ config  AG7240_USE_TRC
 config  AG7100_LEN_PER_TX_DS 
         int "Len per tx descriptor" 
         default "1536" 
-	depends on REALTEK_PHY ||  ADM6996FC_PHY || ICPLUS_PHY
+	depends on (REALTEK_PHY ||  ADM6996FC_PHY || ICPLUS_PHY) && AG7100
 
 config  AG7100_LEN_PER_TX_DS 
         int "Len per tx descriptor" 
 	default "512" 	
-	depends on !(REALTEK_PHY ||  ADM6996FC_PHY || ICPLUS_PHY)
+	depends on !(REALTEK_PHY ||  ADM6996FC_PHY || ICPLUS_PHY) && AG7100
 
 config  AG7100_NUMBER_TX_PKTS
         int "Number tx pkts"   
