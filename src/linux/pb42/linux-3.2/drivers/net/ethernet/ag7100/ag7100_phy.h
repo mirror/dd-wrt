@@ -33,15 +33,15 @@
 #define AR7100_ATHRS16_ENET_PHY         10
 
 #if (CYGNUM_USE_ENET_PHY == AR7100_VSC_ENET_PHY) 
-#   define CONFIG_VITESSE_PHY
+#   define CONFIG_ATHR_VITESSE_PHY
 #elif (CYGNUM_USE_ENET_PHY == AR7100_VSC8601_ENET_PHY) 
 #   define CONFIG_VITESSE_8601_PHY
 #elif (CYGNUM_USE_ENET_PHY == AR7100_VSC8601_VSC73XX_ENET_PHY)
 #   define CONFIG_VITESSE_8601_7395_PHY
 #elif (CYGNUM_USE_ENET_PHY == AR7100_ICPLUS_ENET_PHY)
-#   define CONFIG_ICPLUS_PHY 
+#   define CONFIG_ATHR_ICPLUS_PHY 
 #elif (CYGNUM_USE_ENET_PHY == AR7100_REALTEK_ENET_PHY)
-#   define CONFIG_REALTEK_PHY
+#   define CONFIG_ATHR_REALTEK_PHY
 #elif (CYGNUM_USE_ENET_PHY == AR7100_ADMTEK_ENET_PHY)
 #   define CONFIG_ADM6996FC_PHY
 #elif (CYGNUM_USE_ENET_PHY == AR7100_ATHRF1_ENET_PHY)
@@ -149,7 +149,7 @@ ag7100_get_link_status(int unit, int *link, int *fdx, ag7100_phy_speed_t *speed)
 }
 #endif // CONFIG_BUFFALO //
 
-#elif defined(CONFIG_VITESSE_PHY)
+#elif defined(CONFIG_ATHR_VITESSE_PHY)
 
 #include "vsc_phy.h"
 
@@ -336,7 +336,7 @@ ag7100_print_link_status(int unit)
   return -1;  
 }
 
-#elif defined(CONFIG_ICPLUS_PHY)
+#elif defined(CONFIG_ATHR_ICPLUS_PHY)
 
 #include "ipPhy.h"
 
@@ -360,7 +360,7 @@ ag7100_print_link_status(int unit)
   return -1;
 }
 
-#elif defined(CONFIG_REALTEK_PHY)
+#elif defined(CONFIG_ATHR_REALTEK_PHY)
 
 #include "rtPhy.h"
 

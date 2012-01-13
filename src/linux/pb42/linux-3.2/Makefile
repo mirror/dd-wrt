@@ -165,7 +165,7 @@ export srctree objtree VPATH
 # then ARCH is assigned, getting whatever value it gets normally, and 
 # SUBARCH is subsequently ignored.
 
-SUBARCH := mips
+SUBARCH := $(ARCH)
 
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ SUBARCH := mips
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
-ARCH		= mips
+ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= ccache $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
