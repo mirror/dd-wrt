@@ -17,7 +17,9 @@ enum {
 	Root_HDC1 = MKDEV(IDE1_MAJOR, 1),
 	Root_SR0 = MKDEV(SCSI_CDROM_MAJOR, 0),
 };
-
+#ifdef CONFIG_X86
+extern dev_t ROOT_DEV[13];
+#else
 extern dev_t ROOT_DEV;
-
+#endif
 #endif
