@@ -345,3 +345,4 @@
  "vci"  "ATM VCI value"  "RANGE"  "0" "255"  "FALSE" "32"
  "atm_encaps" "ATM Encapsulation" "CHOICE" "2" "0" "1" "FALSE" "0"
  "atm_payld" "ATM Payload" "CHOICE" "2" "0" "1" "FALSE" "1"
+ "annex" "ATM Encapsulation" "CHOICE" "3" "a" "b" "m" "FALSE" "0"
