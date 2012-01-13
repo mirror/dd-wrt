@@ -1,6 +1,6 @@
 #CFLAGS = -Os -Wall -Werror -pedantic --std=gnu99
 CFLAGS += $(COPTS)
-CPPFLAGS = -I.
+CPPFLAGS = -I. -I$(LINUXDIR)/include
 LDFLAGS =
 
 all: relayd 
