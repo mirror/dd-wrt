@@ -8,6 +8,21 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
+	<div class="label"><% tran("idx_h.reconnect"); %></div>
+	<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% nvram_checked("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% nvram_checked("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
+</div>
+<div id="idreconnect">
+	<div class="setting">
+		<div class="label"><% tran("share.time"); %></div>
+		<select name="reconnect_hours">
+			<% make_time_list("reconnect_hours","0","23"); %>
+		</select>:<select name="reconnect_minutes">
+			<% make_time_list("reconnect_minutes","0","59"); %>
+		</select>
+	</div>
+</div>
+<div class="setting">
 	<div class="label"><% tran("share.advanced"); %></div>
 	<input type="checkbox" name="pppoeadv" value="1" <% selchecked("pppoeadv","1"); %> onclick="toggle_layer(this, 'pppoe_advanced')" />
 </div>
@@ -59,18 +74,3 @@
 </div>
 -->
 
-	<div class="setting">
-		<div class="label"><% tran("idx_h.reconnect"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% nvram_checked("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% nvram_checked("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
-	</div>
-	<div id="idreconnect">
-		<div class="setting">
-			<div class="label"><% tran("share.time"); %></div>
-			<select name="reconnect_hours">
-				<% make_time_list("reconnect_hours","0","23"); %>
-			</select>:<select name="reconnect_minutes">
-				<% make_time_list("reconnect_minutes","0","59"); %>
-			</select>
-		</div>
-	</div>
