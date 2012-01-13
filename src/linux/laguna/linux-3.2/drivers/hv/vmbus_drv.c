@@ -62,6 +62,14 @@ struct hv_device_info {
 	struct hv_dev_port_info outbound;
 };
 
+static int vmbus_exists(void)
+{
+	if (hv_acpi_dev == NULL)
+		return -ENODEV;
+
+	return 0;
+}
+
 
 static void get_channel_info(struct hv_device *device,
 			     struct hv_device_info *info)
@@ -590,6 +598,10 @@ int __vmbus_driver_register(struct hv_driver *hv_driver, struct module *owner, c
 
 	pr_info("registering driver %s\n", hv_driver->name);
 
+	ret = vmbus_exists();
+	if (ret < 0)
+		return ret;
+
 	hv_driver->driver.name = hv_driver->name;
 	hv_driver->driver.owner = owner;
 	hv_driver->driver.mod_name = mod_name;
@@ -614,8 +626,8 @@ void vmbus_driver_unregister(struct hv_driver *hv_driver)
 {
 	pr_info("unregistering driver %s\n", hv_driver->name);
 
-	driver_unregister(&hv_driver->driver);
-
+	if (!vmbus_exists())
+		driver_unregister(&hv_driver->driver);
 }
 EXPORT_SYMBOL_GPL(vmbus_driver_unregister);
 
@@ -776,6 +788,7 @@ static int __init hv_acpi_init(void)
 
 cleanup:
 	acpi_bus_unregister_driver(&vmbus_acpi_driver);
+	hv_acpi_dev = NULL;
 	return ret;
 }
 
