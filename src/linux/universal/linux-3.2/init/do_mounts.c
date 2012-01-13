@@ -538,9 +538,9 @@ void __init prepare_namespace(void)
  		int i;
  		for (i=0;i<root_devices;i++)
  		{
- 		ROOT_DEV[i] = name_to_dev_t(root_device_name[i]);
- 		if (strncmp(root_device_name[i], "/dev/", 5) == 0)
- 			root_device_name[i] += 5;
+ 		ROOT_DEV[i] = name_to_dev_t(root_device_name2[i]);
+ 		if (strncmp(root_device_name2[i], "/dev/", 5) == 0)
+ 			root_device_name2[i] += 5;
   		}
 #endif
 	}
