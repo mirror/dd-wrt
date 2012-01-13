@@ -1,0 +1,115 @@
+Index: ar8216.c
+===================================================================
+--- ar8216.c	(revision 18148)
++++ ar8216.c	(working copy)
+@@ -33,7 +33,7 @@
+ 
+ /* size of the vlan table */
+ #define AR8X16_MAX_VLANS	128
+-#define AR8X16_PROBE_RETRIES	10
++#define AR8X16_PROBE_RETRIES	20
+ 
+ struct ar8216_priv {
+ 	struct switch_dev dev;
+@@ -119,48 +119,68 @@
+ 	return v;
+ }
+ 
++static inline int id_to_type(int id)
++{
++	switch (id) {
++	case 0x0101:
++		return AR8216;
++	case 0x0301:
++		return AR8236;
++	case 0x1000:
++	case 0x1001:
++		return AR8316;
++	default:
++		return UNKNOWN;
++	}
++
++}
++
+ static inline int
+ ar8216_id_chip(struct ar8216_priv *priv)
+ {
+ 	u32 val;
+ 	u16 id;
+-	int i;
++	int i,type;
+ 
+ 	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+-	if (val == ~0)
+-		return UNKNOWN;
+-
+ 	id = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+-	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
+-		u16 t;
++	type = id_to_type(id);
+ 
+-		val = ar8216_mii_read(priv, AR8216_REG_CTRL);
+-		if (val == ~0)
+-			return UNKNOWN;
++	if (type==UNKNOWN) {
++		for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
++			u16 t;
++			val = ar8216_mii_read(priv, AR8216_REG_CTRL);
++			if (val == ~0)
++				continue;
+ 
+-		t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
+-		if (t != id)
+-			return UNKNOWN;
++			t = val & (AR8216_CTRL_REVISION | AR8216_CTRL_VERSION);
++
++			if (id_to_type(t)!=UNKNOWN) {
++				id = t;
++				type = id_to_type(id);
++				break;
++			}
++		}
+ 	}
+ 
+-	switch (id) {
+-	case 0x0101:
+-		return AR8216;
+-	case 0x0301:
+-		return AR8236;
+-	case 0x1000:
+-	case 0x1001:
+-		return AR8316;
+-	default:
++	if (type==UNKNOWN)
+ 		printk(KERN_DEBUG
+ 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
+ 			(int)(id >> AR8216_CTRL_VERSION_S),
+ 			(int)(id & AR8216_CTRL_REVISION),
+ 			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
+ 			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
++	else
++		printk(KERN_DEBUG
++			"ar8216: Atheros device found [ver=%d, rev=%d, phy_id=%04x%04x]\n",
++			(int)(id >> AR8216_CTRL_VERSION_S),
++			(int)(id & AR8216_CTRL_REVISION),
++			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
++			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
++	
++	
++	return type;
+ 
+-		return UNKNOWN;
+-	}
+ }
+ 
+ static int
+@@ -966,8 +986,8 @@
+ {
+ 	struct ar8216_priv priv;
+ 	u16 chip;
++	priv.phy = pdev;
+ 
+-	priv.phy = pdev;
+ 	chip = ar8216_id_chip(&priv);
+ 	if (chip == UNKNOWN)
+ 		return -ENODEV;
