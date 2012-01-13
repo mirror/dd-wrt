@@ -650,10 +650,12 @@ ifneq ($(CONFIG_L2TP),y)
 endif
 ifneq ($(CONFIG_PPPOATM),y)
 	rm -f $(INSTALLDIR)/www/index_pppoa.asp
+	rm -f $(INSTALLDIR)/www/index_pppoa_atm.asp
 endif
 ifneq ($(CONFIG_DANUBE),y)
 	rm -f $(INSTALLDIR)/www/index_pppoa_atm.asp
 	rm -f $(INSTALLDIR)/www/index_pppoe_atm.asp
+	rm -f $(INSTALLDIR)/www/index_bridge.asp
 endif
 ifneq ($(CONFIG_AOSS),y)
 	rm -f $(INSTALLDIR)/www/AOSS.asp
