@@ -17,6 +17,8 @@
 #include <linux/clockchips.h>
 #include <linux/irq.h>
 #include <linux/io.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
 
 #include <asm/smp_twd.h>
 #include <asm/localtimer.h>
