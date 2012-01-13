@@ -1949,7 +1949,7 @@ struct ethtool_ops iegbe_ethtool_ops = {
 //    .self_test_count        = iegbe_diag_test_count,
     .self_test              = iegbe_diag_test,
     .get_strings            = iegbe_get_strings,
-//    .phys_id                = iegbe_phys_id,
+    .set_phys_id                = iegbe_phys_id,
 //    .get_stats_count        = iegbe_get_stats_count,
     .get_ethtool_stats      = iegbe_get_ethtool_stats,
 };
