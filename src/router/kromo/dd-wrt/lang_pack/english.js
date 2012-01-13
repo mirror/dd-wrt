@@ -7,6 +7,7 @@ var lang_charset = new Object();
 lang_charset.set="iso-8859-1";
 
 var share = new Object();
+share.annex="Annex Type";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Dial String";
