@@ -31,7 +31,11 @@
 void start_atm(void)
 {
 	if (!nvram_match("wan_proto", "pppoa"))
-		sysprintf("br2684ctl -b -c 0 -e 0 -p 1 -a 0.%s.%s",nvram_safe_get("vpi"),nvram_safe_get("vci"));
+		sysprintf("br2684ctl -b -c 0 -e %s -p %s -a 0.%s.%s",
+			   nvram_safe_get("atm_encaps"),
+			   nvram_safe_get("atm_payld"),
+			   nvram_safe_get("vpi"),
+			   nvram_safe_get("vci"));
 	dd_syslog(LOG_INFO, "ATM : DSL Modem interface created\n");
 	sysprintf("echo netdev > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/trigger");
 	sysprintf("echo nas0 > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/device_name");
