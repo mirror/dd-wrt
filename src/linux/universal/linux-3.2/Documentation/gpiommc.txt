@@ -1,0 +1,97 @@
+GPIOMMC - Driver for an MMC/SD card on a bitbanging GPIO SPI bus
+================================================================
+
+The gpiommc module hooks up the mmc_spi and spi_gpio modules for running an
+MMC or SD card on GPIO pins.
+
+Two interfaces for registering a new MMC/SD card device are provided:
+A static platform-device based mechanism and a dynamic configfs based interface.
+
+
+Registering devices via platform-device
+=======================================
+
+The platform-device interface is used for registering MMC/SD devices that are
+part of the hardware platform. This is most useful only for embedded machines
+with MMC/SD devices statically connected to the platform GPIO bus.
+
+The data structures are declared in <linux/mmc/gpiommc.h>.
+
+To register a new device, define an instance of struct gpiommc_platform_data.
+This structure holds any information about how the device is hooked up to the
+GPIO pins and what hardware modes the device supports. See the docbook-style
+documentation in the header file for more information on the struct fields.
+
+Then allocate a new instance of a platform device by doing:
+
+	pdev = platform_device_alloc(GPIOMMC_PLATDEV_NAME, gpiommc_next_id());
+
+This will allocate the platform device data structures and hook it up to the
+gpiommc driver.
+Then add the gpiommc_platform_data to the platform device.
+
+	err = platform_device_add_data(pdev, pdata, sizeof(struct gpiommc_platform_data));
+
+You may free the local instance of struct gpiommc_platform_data now. (So the
+struct may be allocated on the stack, too).
+Now simply register the platform device.
+
+	err = platform_device_add(pdev);
+
+Done. The gpiommc probe routine will be invoked now and you should see a kernel
+log message for the added device.
+
+
+Registering devices via configfs
+================================
+
+MMC/SD cards connected via GPIO often are a pretty dynamic thing, as for example
+selfmade hacks for soldering an MMC/SD card to standard GPIO pins on embedded
+hardware are a common situation.
+So we provide a dynamic interface to conveniently handle adding and removing
+devices from userspace, without the need to recompile the kernel.
+
+The "gpiommc" subdirectory at the configfs mountpoint is used for handling
+the dynamic configuration.
+
+To create a new device, it must first be allocated with mkdir.
+The following command will allocate a device named "my_mmc":
+	mkdir /config/gpiommc/my_mmc
+
+There are several configuration files available in the new
+/config/gpiommc/my_mmc/ directory:
+
+gpio_data_in			= The SPI data-IN GPIO pin number.
+gpio_data_out			= The SPI data-OUT GPIO pin number.
+gpio_clock			= The SPI Clock GPIO pin number.
+gpio_chipselect			= The SPI Chipselect GPIO pin number.
+gpio_chipselect_activelow	= Boolean. If 0, Chipselect is active-HIGH.
+				  If 1, Chipselect is active-LOW.
+spi_mode			= The SPI data mode. Can be 0-3.
+spi_delay			= Enable all delays in the lowlevel bitbanging.
+max_bus_speed			= The maximum SPI bus speed. In Hertz.
+
+register			= Not a configuration parameter.
+				  Used to register the configured card
+				  with the kernel.
+
+The device must first get configured and then registered by writing "1" to
+the "register" file.
+The configuration parameters "gpio_data_in", "gpio_data_out", "gpio_clock"
+and "gpio_chipselect" are essential and _must_ be configured before writing
+"1" to the "register" file. The registration will fail, otherwise.
+
+The default values for the other parameters are:
+gpio_chipselect_activelow	= 1		(CS active-LOW)
+spi_mode			= 0		(SPI_MODE_0)
+spi_delay			= 1		(enabled)
+max_bus_speed			= 5000000	(5 Mhz)
+
+Configuration values can not be changed after registration. To unregister
+the device, write a "0" to the "register" file. The configuration can be
+changed again after unregistering.
+
+To completely remove the device, simply rmdir the directory
+(/config/gpiommc/my_mmc in this example).
+There's no need to first unregister the device before removing it. That will
+be done automatically.
