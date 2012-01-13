@@ -158,15 +158,19 @@ void start_sysinit(void)
 	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
 #else
 #ifdef HAVE_WMBR_G300NH
-	if( !strcmp( getUEnv("region"), "DE" ))
+	if (!strcmp(getUEnv("region"), "DE"))
 		annex = nvram_default_get("annex", "b");
 	else
 #endif
-	annex = nvram_default_get("annex", "a");
+		annex = nvram_default_get("annex", "a");
+
 	if (!strcmp(annex, "a"))
 		sysprintf
 		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
-	else
+	else if (!strcmp(annex, "m")) {
+		sysprintf
+		    ("/usr/sbin/dsl_cpe_control -i05_00_04_00_4c_01_04_00 -f /usr/lib/firmware/annex_a.bin -n /usr/sbin/dsl_notification.sh &");
+	} else
 		sysprintf
 		    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin -n /usr/sbin/dsl_notification.sh &");
 #endif
@@ -205,9 +209,9 @@ void start_sysinit(void)
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 		eval("ifconfig", "wifi0", "hw", "ether", mac1);
 	}
-
 #ifdef HAVE_ATH9K
-	sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio.0/leds/soc:green:wlan/trigger");
+	sysprintf
+	    ("echo phy0tpt > /sys/devices/platform/leds-gpio.0/leds/soc:green:wlan/trigger");
 #else
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
