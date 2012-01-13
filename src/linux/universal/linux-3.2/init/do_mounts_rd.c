@@ -15,6 +15,13 @@
 #include <linux/decompress/generic.h>
 
 
+#ifdef CONFIG_X86
+#define BASE_ROOT ROOT_DEV[0]
+#else
+#define BASE_ROOT ROOT_DEV
+#endif
+
+
 int __initdata rd_prompt = 1;/* 1 = prompt for RAM disk, 0 = don't prompt */
 
 static int __init prompt_ramdisk(char *str)
@@ -289,7 +296,7 @@ int __init rd_load_disk(int n)
 {
 	if (rd_prompt)
 		change_floppy("root floppy disk to be loaded into RAM disk");
-	create_dev("/dev/root", ROOT_DEV);
+	create_dev("/dev/root", BASE_ROOT);
 	create_dev("/dev/ram", MKDEV(RAMDISK_MAJOR, n));
 	return rd_load_image("/dev/root");
 }
