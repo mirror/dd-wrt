@@ -325,6 +325,19 @@ static void iegbe_update_mng_vlan(struct iegbe_adapter *adapter)
 	u16 vid = hw->mng_cookie.vlan_id;
         u16 old_vid = adapter->mng_vlan_id;
         if (adapter->vlgrp) {
+                if (!vlan_group_get_device(adapter->vlgrp, vid)) {
+			if (hw->mng_cookie.status &
+                                E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) {
+                                iegbe_vlan_rx_add_vid(netdev, vid);
+                                adapter->mng_vlan_id = vid;
+                        } else
+                                adapter->mng_vlan_id = E1000_MNG_VLAN_NONE;
+
+                        if ((old_vid != (u16)E1000_MNG_VLAN_NONE) &&
+                                        (vid != old_vid) &&
+                            !vlan_group_get_device(adapter->vlgrp, old_vid))
+                                iegbe_vlan_rx_kill_vid(netdev, old_vid);
+                } else
                         adapter->mng_vlan_id = vid;
         }
 }
@@ -1237,7 +1250,8 @@ static int iegbe_close(struct net_device *netdev)
 
 	if ((hw->mng_cookie.status &
 			  E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) &&
-	     !(adapter->vlgrp)) {
+	     !(adapter->vlgrp &&
+	       vlan_group_get_device(adapter->vlgrp, adapter->mng_vlan_id))) {
 		iegbe_vlan_rx_kill_vid(netdev, adapter->mng_vlan_id);
 	}
 	return 0;
@@ -4587,7 +4601,7 @@ static void iegbe_vlan_rx_kill_vid(struct net_device *netdev, u16 vid)
 
 	if (!test_bit(__E1000_DOWN, &adapter->flags))
 	iegbe_irq_disable(adapter);
-//	vlan_group_set_device(adapter->vlgrp, vid, NULL);
+	vlan_group_set_device(adapter->vlgrp, vid, NULL);
 	if (!test_bit(__E1000_DOWN, &adapter->flags))
 	iegbe_irq_enable(adapter);
 
@@ -4605,6 +4619,8 @@ static void iegbe_restore_vlan(struct iegbe_adapter *adapter)
 	if (adapter->vlgrp) {
 		u16 vid;
 		for (vid = 0x0; vid < VLAN_N_VID; vid++) {
+			if (!vlan_group_get_device(adapter->vlgrp, vid))
+				continue;
 			iegbe_vlan_rx_add_vid(adapter->netdev, vid);
 		}
 	}
