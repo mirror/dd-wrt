@@ -30,6 +30,7 @@
 
 void start_atm(void)
 {
+	sysprintf("/usr/sbin/dsl_cpe_pipe.sh ifcs 0 4 -320 0 0 0");
 	if (!nvram_match("wan_proto", "pppoa"))
 		sysprintf("br2684ctl -b -c 0 -e %s -p %s -a 0.%s.%s",
 			   nvram_safe_get("atm_encaps"),
