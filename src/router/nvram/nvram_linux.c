@@ -36,12 +36,6 @@ static char *nvram_buf = NULL;
 
 int nvram_init(void *unused)
 {
-#ifdef HAVE_X86
-	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-	if (in == NULL)
-		return -1;
-	fclose(in);
-#endif
 	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)
 		goto err;
 
