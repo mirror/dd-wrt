@@ -75,6 +75,36 @@ extern unsigned long ixp4xx_exp_bus_size;
 #define IXP4XX_PERIPHERAL_BUS_CLOCK 	(66) /* 66Mhzi APB BUS   */ 
 #define IXP4XX_UART_XTAL        	14745600
 
+
+/*
+ * The IXP4xx chips do not have an I2C unit, so GPIO lines are just
+ * used to 
+ * Used as platform_data to provide GPIO pin information to the ixp42x
+ * I2C driver.
+ */
+struct ixp4xx_i2c_pins {
+	unsigned long sda_pin;
+	unsigned long scl_pin;
+};
+
+#define IXDP425_KSSPI_SELECT	4
+#define IXDP425_KSSPI_TXD	3
+#define IXDP425_KSSPI_CLOCK	2
+#define IXDP425_KSSPI_RXD	0
+
+/*
+ * This structure provide a means for the board setup code
+ * to give information to th pata_ixp4xx driver. It is
+ * passed as platform_data.
+ */
+struct ixp4xx_spi_pins {
+  unsigned long spis_pin;
+  unsigned long spic_pin;
+  unsigned long spid_pin;
+  unsigned long spiq_pin;
+};
+
+
 /*
  * This structure provide a means for the board setup code
  * to give information to th pata_ixp4xx driver. It is

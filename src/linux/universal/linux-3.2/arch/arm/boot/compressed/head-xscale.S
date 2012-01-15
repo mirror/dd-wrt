@@ -32,6 +32,18 @@ __XScale_start:
 		bic	r0, r0, #0x1000		@ clear Icache
 		mcr	p15, 0, r0, c1, c0, 0
 
+#ifdef CONFIG_NOP8670
+		mov 	r7, #MACH_TYPE_IXDP425
+#endif
+#ifdef CONFIG_MACH_WG302V2
+               mov     r7, #(MACH_TYPE_WG302V2 & 0xff)
+               orr     r7, r7, #(MACH_TYPE_WG302V2 & 0xff00)
+#endif
+#ifdef CONFIG_MACH_WG302V1
+               mov     r7, #(MACH_TYPE_WG302V1 & 0xff)
+               orr     r7, r7, #(MACH_TYPE_WG302V1 & 0xff00)
+#endif
+
 #ifdef CONFIG_ARCH_IXP2000
 		mov	r1, #-1
 		mov	r0, #0xd6000000

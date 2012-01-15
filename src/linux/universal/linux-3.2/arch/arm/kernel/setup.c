@@ -1013,7 +1013,9 @@ static int c_show(struct seq_file *m, void *v)
 
 	seq_printf(m, "Processor\t: %s rev %d (%s)\n",
 		   cpu_name, read_cpuid_id() & 15, elf_platform);
+#ifdef CONFIG_MACH_GW2388
 	seq_printf(m, "CPUClock\t: %d\n",get_cns3xxx_cpu_clock());
+#endif
 
 #if defined(CONFIG_SMP)
 	for_each_online_cpu(i) {
