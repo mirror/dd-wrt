@@ -18,6 +18,7 @@
 #include <linux/serial.h>
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
+#include <linux/slab.h>
 
 #include <asm/types.h>
 #include <asm/setup.h>
@@ -97,13 +98,12 @@ static void __init wg302v2_init(void)
 #ifdef CONFIG_MACH_WG302V2
 MACHINE_START(WG302V2, "Netgear WG302 v2 / WAG302 v2")
 	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 	.map_io		= ixp4xx_map_io,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
-	.atag_offset	= 0x100,
+	.boot_params	= 0x0100,
 	.init_machine	= wg302v2_init,
-#if defined(CONFIG_PCI)
-	.dma_zone_size	= SZ_64M,
-#endif
 MACHINE_END
 #endif

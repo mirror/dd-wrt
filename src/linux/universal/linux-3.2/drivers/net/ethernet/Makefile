@@ -1,6 +1,53 @@
 #
 # Makefile for the Linux network Ethernet device drivers.
 #
+IX_XSCALE_SW := drivers/ixp400/ixp400_xscale_sw
+OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
+
+OSAL_INCLUDES += \
+  -I$(OSAL_DIR)/ \
+  -I$(OSAL_DIR)/common/include/ \
+  -I$(OSAL_DIR)/common/include/modules/ioMem \
+  -I$(OSAL_DIR)/common/include/modules/ddk \
+  -I$(OSAL_DIR)/common/include/modules/bufferMgt \
+  -I$(OSAL_DIR)/common/os/linux/include/modules/ioMem \
+  -I$(OSAL_DIR)/common/os/linux/include/modules/ddk \
+  -I$(OSAL_DIR)/common/os/linux/include/modules/bufferMgt \
+  -I$(OSAL_DIR)/common/os/linux/include/core
+
+OSAL_CFLAGS += \
+  -D__linux \
+  -DIX_TARGET=linuxbe \
+  -DIX_UTOPIAMODE=0 \
+  -DIX_MPHYSINGLEPORT=0 \
+  -D__LINUX_ARM_ARCH__=5 \
+  -DCPU=33 \
+  -DXSCALE=33 \
+	-DWall \
+  -DENABLE_IOMEM \
+  -DENABLE_BUFFERMGT
+
+ifeq ($(CONFIG_CPU_IXP46X),y)
+OSAL_CFLAGS += -D__ixp46X
+OSAL_INCLUDES += -I$(OSAL_DIR)/platforms/ixp46X/include
+OSAL_INCLUDES += -I$(OSAL_DIR)/platforms/ixp46X/os/linux/include
+else
+ifeq ($(CONFIG_CPU_IXP43X),y)
+OSAL_CFLAGS += -D__ixp43X
+OSAL_INCLUDES += -I$(OSAL_DIR)/platforms/ixp43X/include
+OSAL_INCLUDES += -I$(OSAL_DIR)/platforms/ixp43X/os/linux/include
+else
+OSAL_CFLAGS += -D__ixp42X
+OSAL_INCLUDES += -I$(OSAL_DIR)/platforms/ixp42X/include
+OSAL_INCLUDES += -I$(OSAL_DIR)/platforms/ixp42X/os/linux/include
+endif
+endif
+
+
+CFLAGS_ixp400_eth.o	= -DWall \
+			  -I$(IX_XSCALE_SW)/src/include \
+			  ${OSAL_INCLUDES} \
+			  ${OSAL_CFLAGS}
 
 obj-$(CONFIG_NET_VENDOR_3COM) += 3com/
 obj-$(CONFIG_NET_VENDOR_8390) += 8390/
@@ -77,3 +124,4 @@ obj-$(CONFIG_CNS3XXX_ETH) += cns3xxx_eth.o
 obj-$(CONFIG_AG7100) += ag7100/
 obj-$(CONFIG_AG7240) += ag7240/
 obj-y += ag71xx/
+obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o

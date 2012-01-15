@@ -35,4 +35,16 @@
 /* Platform helper functions and definitions */
 #include "platform.h"
 
+/* Platform specific details */
+#include "ixdp425.h"
+#include "avila.h"
+#include "cambria.h"
+#include "coyote.h"
+#include "pronghornmetro.h"
+#include "prpmc1100.h"
+#include "nslu2.h"
+#include "nas100d.h"
+#include "dsmg600.h"
+#include "ap71.h"
+
 #endif  /* _ASM_ARCH_HARDWARE_H */

@@ -211,6 +211,11 @@
 #define IXP4XX_GPIO_GPCLKR_OFFSET	0x18
 #define IXP4XX_GPIO_GPDBSELR_OFFSET	0x1C
 
+#define GPIO_GET_BIT  0x0000001
+#define GPIO_SET_BIT  0x0000002
+#define GPIO_GET_CONFIG 0x0000003
+#define GPIO_SET_CONFIG 0x0000004
+
 /* 
  * GPIO Register Definitions.
  * [Only perform 32bit reads/writes]

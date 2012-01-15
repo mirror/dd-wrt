@@ -2045,6 +2045,7 @@ uart_report_port(struct uart_driver *drv, struct uart_port *port)
 		snprintf(address, sizeof(address),
 			 "I/O 0x%lx offset 0x%x", port->iobase, port->hub6);
 		break;
+	case UPIO_MEM_DELAY:
 	case UPIO_MEM:
 	case UPIO_MEM32:
 	case UPIO_AU:
@@ -2457,6 +2458,7 @@ int uart_match_port(struct uart_port *port1, struct uart_port *port2)
 	case UPIO_HUB6:
 		return (port1->iobase == port2->iobase) &&
 		       (port1->hub6   == port2->hub6);
+	case UPIO_MEM_DELAY:
 	case UPIO_MEM:
 	case UPIO_MEM32:
 	case UPIO_AU:
