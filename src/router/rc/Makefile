@@ -751,6 +751,9 @@ endif
 ifeq ($(CONFIG_WPS),y)
 	install wpswatcher $(INSTALLDIR)/sbin	
 endif
+ifeq ($(CONFIG_UBNTM),y)
+	install wlanled $(INSTALLDIR)/sbin	
+endif
 #	install event $(INSTALLDIR)/sbin	
 	install radio_timer $(INSTALLDIR)/sbin
 	install hotplug $(INSTALLDIR)/sbin
@@ -887,6 +890,9 @@ endif
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
 ifeq ($(CONFIG_WPS),y)
 	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
+endif
+ifeq ($(CONFIG_UBNTM),y)
+	$(CC) -I$(LINUXDIR)/include $(CFLAGS) -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
 endif
 #	$(CC) $(CFLAGS) -o event event.c
 	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
