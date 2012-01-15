@@ -426,6 +426,20 @@ static void mem_serial_out(struct uart_port *p, int offset, int value)
 	writeb(value, p->membase + offset);
 }
 
+static unsigned int memdelay_serial_in(struct uart_port *p, int offset)
+{
+	struct uart_8250_port *up = (struct uart_8250_port *)p;
+	udelay(up->port.rw_delay);
+	return mem_serial_in(p, offset);
+}
+
+static void memdelay_serial_out(struct uart_port *p, int offset, int value)
+{
+	struct uart_8250_port *up = (struct uart_8250_port *)p;
+	udelay(up->port.rw_delay);
+	mem_serial_out(p, offset, value);
+}
+
 static void mem32_serial_out(struct uart_port *p, int offset, int value)
 {
 	offset = map_8250_out_reg(p, offset) << p->regshift;
@@ -485,6 +499,11 @@ static void set_io_from_upio(struct uart_port *p)
 		p->serial_out = mem32_serial_out;
 		break;
 
+	case UPIO_MEM_DELAY:
+		p->serial_in = memdelay_serial_in;
+		p->serial_out = memdelay_serial_out;
+		break;
+
 	case UPIO_AU:
 		p->serial_in = au_serial_in;
 		p->serial_out = au_serial_out;
@@ -507,6 +526,7 @@ serial_out_sync(struct uart_8250_port *up, int offset, int value)
 	switch (p->iotype) {
 	case UPIO_MEM:
 	case UPIO_MEM32:
+	case UPIO_MEM_DELAY:
 	case UPIO_AU:
 		p->serial_out(p, offset, value);
 		p->serial_in(p, UART_LCR);	/* safe, no side-effects */
@@ -2528,6 +2548,7 @@ static int serial8250_request_std_resource(struct uart_8250_port *up)
 	case UPIO_TSI:
 	case UPIO_MEM32:
 	case UPIO_MEM:
+	case UPIO_MEM_DELAY:
 		if (!up->port.mapbase)
 			break;
 
@@ -2564,6 +2585,7 @@ static void serial8250_release_std_resource(struct uart_8250_port *up)
 	case UPIO_TSI:
 	case UPIO_MEM32:
 	case UPIO_MEM:
+	case UPIO_MEM_DELAY:
 		if (!up->port.mapbase)
 			break;
 
@@ -3080,6 +3102,7 @@ static int __devinit serial8250_probe(struct platform_device *dev)
 		port.set_termios	= p->set_termios;
 		port.pm			= p->pm;
 		port.dev		= &dev->dev;
+		port.rw_delay		= p->rw_delay;
 		port.irqflags		|= irqflag;
 		ret = serial8250_register_port(&port);
 		if (ret < 0) {
@@ -3229,6 +3252,7 @@ int serial8250_register_port(struct uart_port *port)
 		uart->port.iotype       = port->iotype;
 		uart->port.flags        = port->flags | UPF_BOOT_AUTOCONF;
 		uart->port.mapbase      = port->mapbase;
+		uart->port.rw_delay			= port->rw_delay;
 		uart->port.private_data = port->private_data;
 		if (port->dev)
 			uart->port.dev = port->dev;

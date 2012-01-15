@@ -14,7 +14,7 @@
  * Maintainers: http://www.nslu2-linux.org/
  *
  */
-#include <linux/gpio.h>
+
 #include <linux/if_ether.h>
 #include <linux/irq.h>
 #include <linux/serial.h>
@@ -27,6 +27,7 @@
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/flash.h>
+#include <asm/gpio.h>
 
 #define FSG_SDA_PIN		12
 #define FSG_SCL_PIN		13
@@ -269,13 +270,12 @@ static void __init fsg_init(void)
 
 MACHINE_START(FSG, "Freecom FSG-3")
 	/* Maintainer: www.nslu2-linux.org */
+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 	.map_io		= ixp4xx_map_io,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
-	.atag_offset	= 0x100,
+	.boot_params	= 0x0100,
 	.init_machine	= fsg_init,
-#if defined(CONFIG_PCI)
-	.dma_zone_size	= SZ_64M,
-#endif
 MACHINE_END
 

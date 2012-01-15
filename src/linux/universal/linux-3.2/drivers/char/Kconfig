@@ -198,6 +198,15 @@ config IBM_BSR
 
 source "drivers/char/ipmi/Kconfig"
 
+config IXP425_GPIO
+  tristate "IXP425 GPIO Support"
+  depends on ARCH_IXP4XX
+  ---help---
+    If you want support for user-space access to the ixp425 general
+    purpose I/O (GPIO) pins, say Y here, otherwise N.
+    This will build in the GPIO device driver for /dev/ixp425-gpio
+
+
 config DS1620
 	tristate "NetWinder thermometer support"
 	depends on ARCH_NETWINDER

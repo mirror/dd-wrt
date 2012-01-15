@@ -364,6 +364,16 @@ config MTD_IXP4XX
 	  IXDP425 and Coyote. If you have an IXP4xx based board and
 	  would like to use the flash chips on it, say 'Y'.
 
+config MTD_IXP4XXWRT 
+	tristate "CFI Flash device mapped on Intel IXP4xx based systems (Linksys WRT)"
+	depends on MTD_CFI && MTD_COMPLEX_MAPPINGS && ARCH_IXP4XX
+	help
+	  This enables MTD access to flash devices on platforms based
+	  on Intel's IXP4xx family of network processors such as the
+	  IXDP425 and Coyote. If you have an IXP4xx based board and
+	  would like to use the flash chips on it, say 'Y'.
+
+
 config MTD_IXP2000
 	tristate "CFI Flash device mapped on Intel IXP2000 based systems"
 	depends on MTD_CFI && MTD_COMPLEX_MAPPINGS && ARCH_IXP2000
