@@ -25,17 +25,20 @@
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
+
 void __init ixdp425_pci_preinit(void)
 {
-	set_irq_type(IRQ_IXDP425_PCI_INTA, IRQT_LOW);
-	set_irq_type(IRQ_IXDP425_PCI_INTB, IRQT_LOW);
-	set_irq_type(IRQ_IXDP425_PCI_INTC, IRQT_LOW);
-	set_irq_type(IRQ_IXDP425_PCI_INTD, IRQT_LOW);
+	irq_set_irq_type(IRQ_IXDP425_PCI_INTA, IRQT_LOW);
+	irq_set_irq_type(IRQ_IXDP425_PCI_INTB, IRQT_LOW);
+	irq_set_irq_type(IRQ_IXDP425_PCI_INTC, IRQT_LOW);
+	irq_set_irq_type(IRQ_IXDP425_PCI_INTD, IRQT_LOW);
 
 	ixp4xx_pci_preinit();
 }
 
-static int __init ixdp425_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init ixdp425_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	static int pci_irq_table[AVILA_PCI_IRQ_LINES] = {
 		IRQ_IXDP425_PCI_INTA,
