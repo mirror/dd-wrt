@@ -31,6 +31,8 @@
 extern void ixp4xx_pci_preinit(void);
 extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
 extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
 
 void __init wrt300nv2_pci_preinit(void)
 {
@@ -61,7 +63,7 @@ void __init wrt300nv2_pci_preinit(void)
 	ixp4xx_pci_preinit();
 }
 
-static int __init wrt300nv2_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init wrt300nv2_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	static int pci_irq_table[AP71_PCI_MAX_DEV][AP71_PCI_IRQ_LINES] = {
         {AP71_PCI_INTA_IRQ, AP71_PCI_INTC_IRQ},

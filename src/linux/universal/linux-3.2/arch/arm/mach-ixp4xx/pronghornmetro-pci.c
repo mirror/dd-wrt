@@ -24,6 +24,9 @@
 
 #include <asm/mach/pci.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
+
 extern void ixp4xx_pci_preinit(void);
 extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
 extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
@@ -40,7 +43,7 @@ void __init pronghornmetro_pci_preinit(void)
 	ixp4xx_pci_preinit();
 }
 
-static int __init pronghornmetro_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init pronghornmetro_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	if (slot == PCI_SLOT0_DEVID)
 		return IRQ_PCI_SLOT0;
