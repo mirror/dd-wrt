@@ -102,5 +102,8 @@ MACHINE_START(WRT300NV2, "Linksys WRT300N v2")
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,
 	.init_machine	= wrt300nv2_init,
+#if defined(CONFIG_PCI)
+	.dma_zone_size	= SZ_64M,
+#endif
 MACHINE_END
 #endif
