@@ -256,5 +256,8 @@ MACHINE_START(CAMBRIA, "Gateworks Cambria Series")
   .timer    = &ixp4xx_timer,
   .atag_offset  = 0x0100,
   .init_machine = cambria_init,
+#if defined(CONFIG_PCI)
+	.dma_zone_size	= SZ_64M,
+#endif
 MACHINE_END
 

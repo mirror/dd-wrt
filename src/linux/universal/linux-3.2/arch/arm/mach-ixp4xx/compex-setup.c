@@ -154,5 +154,8 @@ MACHINE_START(COMPEX, "Compex WP18 / NP18A / WP188")
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,
 	.init_machine	= compex_init,
+#if defined(CONFIG_PCI)
+	.dma_zone_size	= SZ_64M,
+#endif
 MACHINE_END
 #endif
