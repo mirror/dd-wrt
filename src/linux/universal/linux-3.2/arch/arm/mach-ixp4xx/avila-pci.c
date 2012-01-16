@@ -28,6 +28,9 @@
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
+
 void __init avila_pci_preinit(void)
 {
 	set_irq_type(IRQ_AVILA_PCI_INTA, IRQT_LOW);
@@ -38,7 +41,7 @@ void __init avila_pci_preinit(void)
 	ixp4xx_pci_preinit();
 }
 
-static int __init avila_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init avila_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	static int pci_irq_table[AVILA_PCI_IRQ_LINES] = {
 		IRQ_AVILA_PCI_INTA,

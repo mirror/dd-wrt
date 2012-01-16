@@ -6,6 +6,7 @@
  */
 
 #include <linux/linkage.h>
+#include <generated/mach-types.h>
 
 		.section        ".start", "ax"
 

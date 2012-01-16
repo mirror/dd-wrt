@@ -27,6 +27,9 @@
 
 #include <asm/mach/pci.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
+
 void __init wg302v2_pci_preinit(void)
 {
 	set_irq_type(IRQ_IXP4XX_GPIO8, IRQT_LOW);
@@ -35,7 +38,7 @@ void __init wg302v2_pci_preinit(void)
 	ixp4xx_pci_preinit();
 }
 
-static int __init wg302v2_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init wg302v2_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	if (slot == 1)
 		return IRQ_IXP4XX_GPIO8;

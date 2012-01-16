@@ -25,6 +25,9 @@
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
+
 #define IXP425_GPIO_REG_WRITE(regPtr,val) \
 	(*((volatile int *)(regPtr)) = (val))
 
@@ -129,7 +132,7 @@ void ixp425_gpio_pin_config(void)
  	gpio_line_isr_clear(INTD_PIN);
 }
 
-static int __init compex_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init compex_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	static int pci_irq_table[AVILA_PCI_IRQ_LINES] = {
 		IRQ_IXDP425_PCI_INTA,

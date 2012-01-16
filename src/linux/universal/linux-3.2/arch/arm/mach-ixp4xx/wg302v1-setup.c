@@ -120,12 +120,10 @@ static void __init wg302v1_init(void)
 #ifdef CONFIG_MACH_WG302V1
 MACHINE_START(WG302V1, "Netgear WG302 v1 / WAG302 v1")
 	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
-	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 	.map_io		= ixp4xx_map_io,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
-	.boot_params	= 0x0100,
+	.atag_offset	= 0x0100,
 	.init_machine	= wg302v1_init,
 MACHINE_END
 #endif
