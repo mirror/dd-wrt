@@ -201,4 +201,7 @@ MACHINE_START(USR8200, "USRobotics USR8200")
 	.timer		= &ixp4xx_timer,
 	.boot_params	= 0x0100,
 	.init_machine	= usr8200_init,
+#if defined(CONFIG_PCI)
+	.dma_zone_size	= SZ_64M,
+#endif
 MACHINE_END

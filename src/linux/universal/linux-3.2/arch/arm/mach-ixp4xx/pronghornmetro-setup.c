@@ -165,6 +165,9 @@ MACHINE_START(PRONGHORNMETRO, "ADI Engineering Pronghorn Metro")
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,
 	.init_machine	= pronghornmetro_init,
+#if defined(CONFIG_PCI)
+	.dma_zone_size	= SZ_64M,
+#endif
 MACHINE_END
 #endif
 
@@ -175,6 +178,9 @@ MACHINE_START(PRONGHORN, "ADI Engineering Pronghorn")
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,
 	.init_machine	= pronghornmetro_init,
+#if defined(CONFIG_PCI)
+	.dma_zone_size	= SZ_64M,
+#endif
 MACHINE_END
 #endif
 

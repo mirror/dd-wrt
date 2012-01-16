@@ -350,7 +350,7 @@ void __init ixp4xx_pci_preinit(void)
 #ifdef CONFIG_IXP4XX_INDIRECT_PCI
 	pcibios_min_mem = 0x10000000; /* 1 GB of indirect PCI MMIO space */
 #else
-	pcibios_min_mem = (cpu_is_ixp43x() ? 0x40000000 : 0x48000000); /* 64 MB of PCI MMIO space */
+	pcibios_min_mem = 0x48000000; /* 64 MB of PCI MMIO space */
 #endif
 	/*
 	 * Determine which PCI read method to use.
