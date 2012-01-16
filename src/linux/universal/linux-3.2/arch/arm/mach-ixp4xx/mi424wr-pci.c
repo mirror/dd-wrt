@@ -39,7 +39,7 @@ void __init mi424wr_pci_preinit(void)
 	ixp4xx_pci_preinit();
 }
 
-static int __init mi424wr_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init mi424wr_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	if (slot == 13)
 		return IRQ_IXP4XX_GPIO8;
