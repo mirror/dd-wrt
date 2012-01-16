@@ -1211,6 +1211,7 @@ CONFIG_I2C_HELPER_AUTO=y
 # CONFIG_I2C_GPIO is not set
 # CONFIG_I2C_INTEL_MID is not set
 # CONFIG_I2C_IOP3XX is not set
+# CONFIG_I2C_IXP4XX is not set
 # CONFIG_I2C_OCORES is not set
 # CONFIG_I2C_PCA_PLATFORM is not set
 # CONFIG_I2C_PXA_PCI is not set
