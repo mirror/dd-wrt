@@ -76,7 +76,7 @@ static void gpio_led_set(struct led_classdev *led_cdev,
 							 NULL, NULL);
 			led_dat->blinking = 0;
 		} else
-			gpio_set_value(led_dat->gpio, level);
+		    gpio_direction_output(led_dat->gpio, level); // in case its set to KEEP, direction must be configured too
 	}
 }
 
