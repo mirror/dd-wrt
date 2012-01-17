@@ -291,6 +291,7 @@ static int cambria_gpio_direction_input(struct gpio_chip *chip,
 static int cambria_gpio_direction_output(struct gpio_chip *chip,
 					unsigned offset, int value)
 {
+	setLED(offset,value);
 	return 0;
 }
 
