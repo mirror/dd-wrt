@@ -239,6 +239,7 @@ CONFIG_ARCH_IXP4XX=y
 # CONFIG_PLAT_SPEAR is not set
 # CONFIG_ARCH_VT8500 is not set
 # CONFIG_ARCH_ZYNQ is not set
+# CONFIG_GPIO_PCA953X is not set
 CONFIG_ARCH_SUPPORTS_BIG_ENDIAN=y
 
 #
@@ -560,6 +561,7 @@ CONFIG_NETFILTER_XT_TARGET_CONNMARK=y
 CONFIG_NETFILTER_XT_TARGET_DSCP=y
 CONFIG_NETFILTER_XT_TARGET_HL=y
 # CONFIG_NETFILTER_XT_TARGET_IDLETIMER is not set
+# CONFIG_NETFILTER_XT_TARGET_LED is not set
 CONFIG_NETFILTER_XT_TARGET_MARK=y
 CONFIG_NETFILTER_XT_TARGET_NFLOG=y
 # CONFIG_NETFILTER_XT_TARGET_NFQUEUE is not set
@@ -791,6 +793,7 @@ CONFIG_WEXT_PRIV=y
 #
 # CONFIG_WIMAX is not set
 CONFIG_RFKILL=y
+CONFIG_RFKILL_LEDS=y
 # CONFIG_RFKILL_INPUT is not set
 # CONFIG_NET_9P is not set
 # CONFIG_CAIF is not set
@@ -918,6 +921,7 @@ CONFIG_BLK_DEV_NBD=y
 # CONFIG_BLK_DEV_RAM is not set
 # CONFIG_CDROM_PKTCDVD is not set
 # CONFIG_ATA_OVER_ETH is not set
+# CONFIG_MG_DISK is not set
 # CONFIG_BLK_DEV_RBD is not set
 # CONFIG_SENSORS_LIS3LV02D is not set
 CONFIG_MISC_DEVICES=y
@@ -955,6 +959,7 @@ CONFIG_EEPROM_LEGACY=y
 #
 # Texas Instruments shared transport line discipline
 #
+# CONFIG_TI_ST is not set
 # CONFIG_SENSORS_LIS3_I2C is not set
 
 #
@@ -1269,6 +1274,45 @@ CONFIG_I2C_IXP4XX=y
 #
 # Enable Device Drivers -> PPS to see the PTP clock options.
 #
+CONFIG_ARCH_REQUIRE_GPIOLIB=y
+CONFIG_GPIOLIB=y
+CONFIG_GPIO_SYSFS=y
+
+#
+# Memory mapped GPIO drivers:
+#
+# CONFIG_GPIO_GENERIC_PLATFORM is not set
+# CONFIG_GPIO_IT8761E is not set
+# CONFIG_GPIO_VX855 is not set
+
+#
+# I2C GPIO expanders:
+#
+# CONFIG_GPIO_MAX7300 is not set
+# CONFIG_GPIO_MAX732X is not set
+# CONFIG_GPIO_PCF857X is not set
+# CONFIG_GPIO_SX150X is not set
+# CONFIG_GPIO_ADP5588 is not set
+
+#
+# PCI GPIO expanders:
+#
+# CONFIG_GPIO_BT8XX is not set
+# CONFIG_GPIO_ML_IOH is not set
+# CONFIG_GPIO_RDC321X is not set
+
+#
+# SPI GPIO expanders:
+#
+# CONFIG_GPIO_MCP23S08 is not set
+
+#
+# AC97 GPIO expanders:
+#
+
+#
+# MODULbus GPIO expanders:
+#
 # CONFIG_W1 is not set
 # CONFIG_POWER_SUPPLY is not set
 CONFIG_HWMON=y
@@ -1405,13 +1449,21 @@ CONFIG_BCMA_POSSIBLE=y
 # CONFIG_MFD_CORE is not set
 # CONFIG_MFD_88PM860X is not set
 # CONFIG_MFD_SM501 is not set
+# CONFIG_MFD_ASIC3 is not set
+# CONFIG_HTC_EGPIO is not set
 # CONFIG_HTC_PASIC3 is not set
+# CONFIG_HTC_I2CPLD is not set
 # CONFIG_TPS6105X is not set
+# CONFIG_TPS65010 is not set
 # CONFIG_TPS6507X is not set
+# CONFIG_MFD_TPS6586X is not set
+# CONFIG_MFD_TPS65910 is not set
+# CONFIG_MFD_TPS65912_I2C is not set
 # CONFIG_TWL4030_CORE is not set
 # CONFIG_MFD_STMPE is not set
 # CONFIG_MFD_TC3589X is not set
 # CONFIG_MFD_TMIO is not set
+# CONFIG_MFD_TC6393XB is not set
 # CONFIG_PMIC_DA903X is not set
 # CONFIG_PMIC_ADP5520 is not set
 # CONFIG_MFD_MAX8925 is not set
@@ -1423,11 +1475,13 @@ CONFIG_BCMA_POSSIBLE=y
 # CONFIG_MFD_WM8994 is not set
 # CONFIG_MFD_PCF50633 is not set
 # CONFIG_ABX500_CORE is not set
+# CONFIG_MFD_TIMBERDALE is not set
 # CONFIG_LPC_SCH is not set
 # CONFIG_MFD_RDC321X is not set
 # CONFIG_MFD_JANZ_CMODIO is not set
 # CONFIG_MFD_VX855 is not set
 # CONFIG_MFD_WL1273_CORE is not set
+# CONFIG_MFD_AAT2870_CORE is not set
 # CONFIG_REGULATOR is not set
 # CONFIG_MEDIA_SUPPORT is not set
 
@@ -1458,7 +1512,37 @@ CONFIG_DUMMY_CONSOLE=y
 # CONFIG_UWB is not set
 # CONFIG_MMC is not set
 # CONFIG_MEMSTICK is not set
-# CONFIG_NEW_LEDS is not set
+CONFIG_NEW_LEDS=y
+CONFIG_LEDS_CLASS=y
+
+#
+# LED drivers
+#
+# CONFIG_LEDS_LM3530 is not set
+# CONFIG_LEDS_PCA9532 is not set
+CONFIG_LEDS_GPIO=y
+# CONFIG_LEDS_LP3944 is not set
+# CONFIG_LEDS_LP5521 is not set
+# CONFIG_LEDS_LP5523 is not set
+# CONFIG_LEDS_PCA955X is not set
+# CONFIG_LEDS_BD2802 is not set
+# CONFIG_LEDS_LT3593 is not set
+CONFIG_LEDS_TRIGGERS=y
+
+#
+# LED Triggers
+#
+# CONFIG_LEDS_TRIGGER_TIMER is not set
+# CONFIG_LEDS_TRIGGER_HEARTBEAT is not set
+# CONFIG_LEDS_TRIGGER_BACKLIGHT is not set
+CONFIG_LEDS_TRIGGER_GPIO=y
+# CONFIG_LEDS_TRIGGER_DEFAULT_ON is not set
+
+#
+# iptables trigger is under Netfilter config (LED target)
+#
+# CONFIG_LEDS_TRIGGER_MORSE is not set
+# CONFIG_LEDS_TRIGGER_NETDEV is not set
 # CONFIG_ACCESSIBILITY is not set
 # CONFIG_INFINIBAND is not set
 CONFIG_RTC_LIB=y
