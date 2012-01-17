@@ -541,7 +541,11 @@ void start_sysinit(void)
 		eval("/sbin/mtd", "erase", "nvram");
 		nvram_commit();
 	}
-	return;
+	setWirelessLedGeneric(0,4);
+	setWirelessLedGeneric(1,5);
+	setWirelessLedGeneric(2,6);
+	setWirelessLedGeneric(3,7);
+return;
 }
 
 int check_cfe_nv(void)
