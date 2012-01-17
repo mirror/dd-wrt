@@ -2,11 +2,6 @@
 #define _ARCH_ARM_GPIO_H
 
 /* not all ARM platforms necessarily support this API ... */
-#ifdef CONFIG_ARCH_IXP4XX
-#define gpio_get_value  __gpio_get_value
-#define gpio_set_value  __gpio_set_value
-#define gpio_cansleep   __gpio_cansleep
-#endif
 
 #include <mach/gpio.h>
 
@@ -15,11 +10,9 @@
 #include <asm-generic/gpio.h>
 
 /* The trivial gpiolib dispatchers */
-#ifndef CONFIG_ARCH_IXP4XX
 #define gpio_get_value  __gpio_get_value
 #define gpio_set_value  __gpio_set_value
 #define gpio_cansleep   __gpio_cansleep
-#endif
 #endif
 
 /*

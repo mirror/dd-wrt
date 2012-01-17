@@ -360,12 +360,12 @@ config ARCH_CLPS711X
 config ARCH_CNS3XXX
 	bool "Cavium Networks CNS3XXX family"
 	select CPU_V6K
-	select ARCH_WANT_OPTIONAL_GPIOLIB
 	select ARM_GIC
 #	select HAVE_CLK
 	select COMMON_CLKDEV
 	select GENERIC_TIME
 	select GENERIC_CLOCKEVENTS
+	select ARCH_WANT_OPTIONAL_GPIOLIB
 	select ARCH_REQUIRE_GPIOLIB
 	select MIGHT_HAVE_PCI
 	select ARCH_HAS_CPUFREQ
@@ -527,7 +527,7 @@ config ARCH_IXP4XX
 	depends on MMU
 	select CLKSRC_MMIO
 	select CPU_XSCALE
-	select GENERIC_GPIO
+	select ARCH_REQUIRE_GPIOLIB
 	select GENERIC_CLOCKEVENTS
 	select HAVE_SCHED_CLOCK
 	select MIGHT_HAVE_PCI
