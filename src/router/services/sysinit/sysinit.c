@@ -2272,9 +2272,7 @@ void start_drivers(void)
 		insmod("ohci-hcd");
 
 		insmod("xhci-hcd");
-#ifdef HAVE_DANUBE
 		insmod("dwc_otg");	// usb
-#endif
 		insmod("usb-libusual");
 
 		if (nvram_match("usb_storage", "1")) {
