@@ -305,7 +305,7 @@ int svqos_iptables(void)
 	
 	insmod("imq");
 	insmod("ipt_IMQ");
-		
+
 	// set-up mark/filter tables	
 	system2("iptables -t mangle -F FILTER_OUT");
 	system2("iptables -t mangle -X FILTER_OUT");
@@ -332,7 +332,7 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -A SVQOS_IN -m mark --mark 0 -j RETURN");
 	system2("iptables -t mangle -A SVQOS_IN -j FILTER_IN");
 	system2("iptables -t mangle -A SVQOS_IN -j RETURN");
-	
+
 	system2("iptables -t mangle -F MARK_IN");
 	system2("iptables -t mangle -X MARK_IN");
 	system2("iptables -t mangle -N MARK_IN");
@@ -353,6 +353,7 @@ int svqos_iptables(void)
 		sysprintf("iptables -t mangle -D POSTROUTING -j SVQOS_OUT");
 		sysprintf("iptables -t mangle -I POSTROUTING -j SVQOS_OUT");
 	}
+	system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
 
 	sysprintf("iptables -t mangle -D PREROUTING -j SVQOS_IN");
 	sysprintf("iptables -t mangle -I PREROUTING 2 -j SVQOS_IN");	
@@ -390,7 +391,64 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --restore");
 	system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j MARK --set-mark 14");
+
+	/* add openvpn filter rules */
+#ifdef HAVE_AQOS
+#ifdef HAVE_OPENVPN
+	if (   nvram_invmatch("openvpn_enable", "0")
+		|| nvram_invmatch("openvpncl_enable", "0"))
+	{
+		insmod("xt_dscp");
+		insmod("xt_DSCP");
+
+		system2("iptables -t mangle -F VPN_IN");
+		system2("iptables -t mangle -X VPN_IN");
+		system2("iptables -t mangle -N VPN_IN");
+		system2("iptables -t mangle -A VPN_IN -j CONNMARK --save");
+
+		system2("iptables -t mangle -F VPN_OUT");
+		system2("iptables -t mangle -X VPN_OUT");
+		system2("iptables -t mangle -N VPN_OUT");
+
+		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 10 -j MARK --set-mark 100");
+		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 1 -j MARK --set-mark 10");
+		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 2 -j MARK --set-mark 20");
+		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 3 -j MARK --set-mark 30");
+		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 4 -j MARK --set-mark 40");
+
+		system2("iptables -t mangle -I PREROUTING 2 -i tun+ -j VPN_IN");
+		system2("iptables -t mangle -I INPUT 1 -i tun+ -j IMQ --todev 0");
+		system2("iptables -t mangle -I FORWARD 1 -i tun+ -j IMQ --todev 0");
+		system2("iptables -t mangle -I POSTROUTING 1 -o tun+ -j VPN_OUT");
 	
+		system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
+
+		char *qos_vpn = nvram_safe_get("svqos_vpns");
+
+		/*
+		 *  mac format is "interface level | interface level |" ..etc 
+		*/
+		int dscp_level=0;
+
+		do {
+			if (sscanf(qos_vpn, "%32s %32s |", data, level) < 2)
+				break;
+			
+			dscp_level = atoi(level) / 10;
+
+			/* incomming data */
+			sysprintf("iptables -t mangle -I VPN_IN 1 -i %s -j MARK --set-mark %s",
+					  data, level);
+
+			/* outgoing data */
+			sysprintf("iptables -t mangle -I VPN_OUT 1 -o %s -j DSCP --set-dscp %d",
+					  data, dscp_level);
+
+		} while ((qos_vpn = strpbrk(++qos_vpn, "|")) && qos_vpn++);
+	}
+#endif
+#endif
+
 	// if OSPF is active put it into the Express bucket for outgoing QoS
 	if (nvram_match("wk_mode", "ospf"))
 		system2
@@ -860,6 +918,11 @@ void stop_wshaper(void)
 	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
 	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
 
+#ifdef HAVE_OPENVPN
+	rmmod("xt_dscp");
+	rmmod("xt_DSCP");
+#endif
+	
 	rmmod("ipt_mark");
 	rmmod("xt_mark");
 	rmmod("ipt_CONNMARK");

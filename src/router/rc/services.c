@@ -808,6 +808,12 @@ static void handle_qos(void)
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
+#ifdef HAVE_OPENVPN
+    handle = stop_service_nofree("openvpnserver", handle);
+    handle = stop_service_nofree("openvpn", handle);
+    handle = start_service_nofree_f("openvpnserver", handle);
+    handle = start_service_nofree_f("openvpn", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 }
