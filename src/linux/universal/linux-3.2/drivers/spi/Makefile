@@ -60,6 +60,9 @@ obj-$(CONFIG_SPI_CNS3XXX)		+= spi_cns3xxx.o
 obj-$(CONFIG_SPI_KS8995)		+= ks8995m.o
 obj-$(CONFIG_SPI_IXP4XX)		+= spi-ixp4xx.o
 obj-$(CONFIG_SPI_IXP4XX)		+= spi-ixp4xx-gw2355.o
+obj-$(CONFIG_SPI_XWAY)			+= spi-xway.o
+obj-$(CONFIG_SPI_FALCON)		+= spi-falcon.o
+ 
 
 # special build for s3c24xx spi driver with fiq support
 spi_s3c24xx_hw-y			:= spi_s3c24xx.o

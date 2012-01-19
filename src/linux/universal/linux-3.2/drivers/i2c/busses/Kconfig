@@ -283,6 +283,10 @@ config I2C_POWERMAC
 
 comment "I2C system bus drivers (mostly embedded / system-on-chip)"
 
+config I2C_FALCON
+	tristate "Falcon I2C interface"
+#	depends on SOC_FALCON
+
 config I2C_AT91
 	tristate "Atmel AT91 I2C Two-Wire interface (TWI)"
 	depends on ARCH_AT91 && EXPERIMENTAL && BROKEN
