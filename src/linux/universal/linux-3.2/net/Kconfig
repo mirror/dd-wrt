@@ -72,6 +72,12 @@ config INET
 
 	  Short answer: say Y.
 
+config IFX_UDP_REDIRECT
+	bool "IFX Kernel Packet Interface for UDP redirection"
+	help
+	  You can say Y here if you want to use hooks from kernel for
+	  UDP redirection.
+
 if INET
 source "net/ipv4/Kconfig"
 source "net/ipv6/Kconfig"
