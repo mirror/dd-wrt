@@ -62,10 +62,16 @@ static void vcc_remove_socket(struct sock *sk)
 	write_unlock_irq(&vcc_sklist_lock);
 }
 
+struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int) = NULL;
+EXPORT_SYMBOL(ifx_atm_alloc_tx);
+
 static struct sk_buff *alloc_tx(struct atm_vcc *vcc, unsigned int size)
 {
 	struct sk_buff *skb;
 	struct sock *sk = sk_atm(vcc);
+
+	if (ifx_atm_alloc_tx != NULL)
+		return ifx_atm_alloc_tx(vcc, size);
 
 	if (sk_wmem_alloc_get(sk) && !atm_may_send(vcc, size)) {
 		pr_debug("Sorry: wmem_alloc = %d, size = %d, sndbuf = %d\n",
