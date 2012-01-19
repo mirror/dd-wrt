@@ -219,6 +219,10 @@ config SPI_MPC52xx
 	  This drivers supports the MPC52xx SPI controller in master SPI
 	  mode.
 
+config SPI_FALCON
+	tristate "Falcon SPI controller support"
+	depends on SOC_FALCON
+
 config SPI_MPC52xx_PSC
 	tristate "Freescale MPC52xx PSC SPI controller"
 	depends on PPC_MPC52xx && EXPERIMENTAL
@@ -418,6 +422,14 @@ config SPI_NUC900
 	select SPI_BITBANG
 	help
 	  SPI driver for Nuvoton NUC900 series ARM SoCs
+
+config SPI_XWAY
+	tristate "Lantiq XWAY SPI controller"
+	depends on LANTIQ && SOC_TYPE_XWAY
+	select SPI_BITBANG
+	help
+	  This driver supports the Lantiq SoC SPI controller in master
+	  mode.
 
 #
 # Add new SPI master controllers in alphabetical order above this line
