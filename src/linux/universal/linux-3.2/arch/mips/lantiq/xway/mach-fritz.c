@@ -20,7 +20,7 @@
 #include "../machtypes.h"
 #include "devices.h"
 
-static struct mtd_partition easy50712_partitions[] = {
+/*static struct mtd_partition fritz3370_partitions[] = {
 	{
 		.name	= "uboot",
 		.offset	= 0x0,
@@ -34,13 +34,18 @@ static struct mtd_partition easy50712_partitions[] = {
 	{
 		.name	= "linux",
 		.offset	= 0x20000,
-		.size	= 0x3d0000,
+		.size	= 0xe0000,
+	},
+	{
+		.name	= "rootfs",
+		.offset	= 0x100000,
+		.size	= 0x300000,
 	},
 };
 
-static struct physmap_flash_data easy50712_flash_data = {
-	.nr_parts	= ARRAY_SIZE(easy50712_partitions),
-	.parts		= easy50712_partitions,
+static struct physmap_flash_data fritz3370_flash_data = {
+	.nr_parts	= ARRAY_SIZE(fritz3370_partitions),
+	.parts		= fritz3370_partitions,
 };
 
 static struct ltq_pci_data ltq_pci_data = {
@@ -50,21 +55,23 @@ static struct ltq_pci_data ltq_pci_data = {
 		[14] = INT_NUM_IM0_IRL0 + 22,
 	},
 };
-
+*/
 static struct ltq_eth_data ltq_eth_data = {
 	.mii_mode = PHY_INTERFACE_MODE_MII,
 };
 
-static void __init easy50712_init(void)
+extern void xway_register_nand(void);
+
+static void __init fritz3370_init(void)
 {
-	ltq_register_gpio_stp();
-	ltq_register_nor(&easy50712_flash_data);
-	ltq_register_pci(&ltq_pci_data);
+//	ltq_register_gpio_stp();
+//	ltq_register_nor(&fritz3370_flash_data);
+//	ltq_register_pci(&ltq_pci_data);
 	ltq_register_etop(&ltq_eth_data);
-	ltq_register_tapi();
+	xway_register_nand();
 }
 
-MIPS_MACHINE(LTQ_MACH_EASY50712,
-	     "EASY50712",
-	     "EASY50712 Eval Board",
-	      easy50712_init);
+MIPS_MACHINE(LANTIQ_MACH_FRITZ3370,
+	     "FRITZ3370",
+	     "FRITZ!BOX 3370",
+	      fritz3370_init);

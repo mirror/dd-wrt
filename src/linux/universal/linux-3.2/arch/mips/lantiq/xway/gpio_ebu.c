@@ -61,9 +61,8 @@ static struct gpio_chip ltq_ebu_chip = {
 	.label = "ltq_ebu",
 	.direction_output = ltq_ebu_direction_output,
 	.set = ltq_ebu_set,
-	.base = 72,
+	.base = 100,
 	.ngpio = 16,
-	.can_sleep = 1,
 	.owner = THIS_MODULE,
 };
 

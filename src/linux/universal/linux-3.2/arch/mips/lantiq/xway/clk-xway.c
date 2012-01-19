@@ -212,6 +212,11 @@ unsigned int ltq_get_cpu_hz(void)
 }
 EXPORT_SYMBOL(ltq_get_cpu_hz);
 
+unsigned int getCPUClock(void)
+{
+    return ltq_get_cpu_hz()/1000000;
+}
+
 unsigned int ltq_get_fpi_hz(void)
 {
 	unsigned int ddr_clock = DDR_HZ;

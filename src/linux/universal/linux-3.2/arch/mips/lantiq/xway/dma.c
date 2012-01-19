@@ -24,6 +24,8 @@
 #include <lantiq_soc.h>
 #include <xway_dma.h>
 
+#include "../devices.h"
+
 #define LTQ_DMA_CTRL		0x10
 #define LTQ_DMA_CPOLL		0x14
 #define LTQ_DMA_CS		0x18
@@ -55,12 +57,8 @@
 #define ltq_dma_w32_mask(x, y, z)	ltq_w32_mask(x, y, \
 						ltq_dma_membase + (z))
 
-static struct resource ltq_dma_resource = {
-	.name	= "dma",
-	.start	= LTQ_DMA_BASE_ADDR,
-	.end	= LTQ_DMA_BASE_ADDR + LTQ_DMA_SIZE - 1,
-	.flags  = IORESOURCE_MEM,
-};
+static struct resource ltq_dma_resource =
+	MEM_RES("dma", LTQ_DMA_BASE_ADDR, LTQ_DMA_SIZE);
 
 static void __iomem *ltq_dma_membase;
 
@@ -220,17 +218,8 @@ ltq_dma_init(void)
 {
 	int i;
 
-	/* insert and request the memory region */
-	if (insert_resource(&iomem_resource, &ltq_dma_resource) < 0)
-		panic("Failed to insert dma memory\n");
-
-	if (request_mem_region(ltq_dma_resource.start,
-			resource_size(&ltq_dma_resource), "dma") < 0)
-		panic("Failed to request dma memory\n");
-
 	/* remap dma register range */
-	ltq_dma_membase = ioremap_nocache(ltq_dma_resource.start,
-				resource_size(&ltq_dma_resource));
+	ltq_dma_membase = ltq_remap_resource(&ltq_dma_resource);
 	if (!ltq_dma_membase)
 		panic("Failed to remap dma memory\n");
 

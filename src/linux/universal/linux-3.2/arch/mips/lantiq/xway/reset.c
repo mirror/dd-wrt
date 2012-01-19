@@ -15,6 +15,8 @@
 
 #include <lantiq_soc.h>
 
+#include "../devices.h"
+
 #define ltq_rcu_w32(x, y)	ltq_w32((x), ltq_rcu_membase + (y))
 #define ltq_rcu_r32(x)		ltq_r32(ltq_rcu_membase + (x))
 
@@ -25,12 +27,8 @@
 #define LTQ_RCU_RST_STAT	0x0014
 #define LTQ_RCU_STAT_SHIFT	26
 
-static struct resource ltq_rcu_resource = {
-	.name   = "rcu",
-	.start  = LTQ_RCU_BASE_ADDR,
-	.end    = LTQ_RCU_BASE_ADDR + LTQ_RCU_SIZE - 1,
-	.flags  = IORESOURCE_MEM,
-};
+static struct resource ltq_rcu_resource =
+	MEM_RES("rcu", LTQ_RCU_BASE_ADDR, LTQ_RCU_SIZE);
 
 /* remapped base addr of the reset control unit */
 static void __iomem *ltq_rcu_membase;
@@ -67,17 +65,8 @@ static void ltq_machine_power_off(void)
 
 static int __init mips_reboot_setup(void)
 {
-	/* insert and request the memory region */
-	if (insert_resource(&iomem_resource, &ltq_rcu_resource) < 0)
-		panic("Failed to insert rcu memory\n");
-
-	if (request_mem_region(ltq_rcu_resource.start,
-			resource_size(&ltq_rcu_resource), "rcu") < 0)
-		panic("Failed to request rcu memory\n");
-
 	/* remap rcu register range */
-	ltq_rcu_membase = ioremap_nocache(ltq_rcu_resource.start,
-				resource_size(&ltq_rcu_resource));
+	ltq_rcu_membase = ltq_remap_resource(&ltq_rcu_resource);
 	if (!ltq_rcu_membase)
 		panic("Failed to remap rcu memory\n");
 
