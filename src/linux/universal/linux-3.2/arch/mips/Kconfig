@@ -226,6 +226,7 @@ config LANTIQ
 	select SWAP_IO_SPACE
 	select BOOT_RAW
 	select HAVE_CLK
+	select HAVE_OPROFILE
 	select MIPS_MACHINE
 
 config LASAT
@@ -1989,6 +1990,50 @@ config MIPS_VPE_LOADER
 	help
 	  Includes a loader for loading an elf relocatable object
 	  onto another VPE and running it.
+
+config IFX_VPE_EXT
+	bool "IFX APRP Extensions"
+	depends on MIPS_VPE_LOADER
+	default y
+	help
+	  IFX included extensions in APRP
+
+config IFX_VPE_CACHE_SPLIT
+	bool "IFX Cache Split Ways"
+	depends on IFX_VPE_EXT
+	help
+	  IFX extension for reserving (splitting) cache ways among VPEs. You must
+	  give kernel command line arguments vpe_icache_shared=0 or
+	  vpe_dcache_shared=0 to enable splitting of icache or dcache
+	  respectively. Then you can specify which cache ways should be
+	  assigned to which VPE. There are total 8 cache ways, 4 each
+	  for dcache and icache: dcache_way0, dcache_way1,dcache_way2,
+	  dcache_way3 and icache_way0,icache_way1, icache_way2,icache_way3.
+
+	  For example, if you specify vpe_icache_shared=0 and icache_way2=1,
+	  then the 3rd icache way will be assigned to VPE0 and denied in VPE1.
+
+	  For icache, software is required to make at least one cache way available
+	  for a VPE at all times i.e., one can't assign all the icache ways to one
+	  VPE.
+
+	  By default, vpe_dcache_shared and vpe_icache_shared are set to 1
+	  (i.e., both icache and dcache are shared among VPEs)
+
+config PERFCTRS
+	bool "34K Performance counters"
+	depends on MIPS_MT && PROC_FS
+	default n
+	help
+	  34K Performance counter through /proc
+
+config MTSCHED
+	bool "Support mtsched priority configuration for TCs"
+	depends on MIPS_MT && PROC_FS
+	default y
+	help
+	  Support for mtsched priority configuration for TCs through
+	  /proc/mips/mtsched
 
 config MIPS_MT_SMTC_IM_BACKSTOP
 	bool "Use per-TC register bits as backstop for inhibited IM bits"
