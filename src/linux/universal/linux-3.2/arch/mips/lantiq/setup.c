@@ -18,10 +18,11 @@
 #include "devices.h"
 #include "prom.h"
 
+/* assume 16M as default incase uboot fails to pass proper ramsize */
+unsigned long physical_memsize = 16L;
+
 void __init plat_mem_setup(void)
 {
-	/* assume 16M as default incase uboot fails to pass proper ramsize */
-	unsigned long memsize = 16;
 	char **envp = (char **) KSEG1ADDR(fw_arg2);
 
 	ioport_resource.start = IOPORT_RESOURCE_START;
@@ -35,13 +36,13 @@ void __init plat_mem_setup(void)
 		char *e = (char *)KSEG1ADDR(*envp);
 		if (!strncmp(e, "memsize=", 8)) {
 			e += 8;
-			if (strict_strtoul(e, 0, &memsize))
+			if (strict_strtoul(e, 0, &physical_memsize))
 				pr_warn("bad memsize specified\n");
 		}
 		envp++;
 	}
-	memsize *= 1024 * 1024;
-	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
+	physical_memsize *= 1024 * 1024;
+	add_memory_region(0x00000000, physical_memsize, BOOT_MEM_RAM);
 }
 
 static int __init

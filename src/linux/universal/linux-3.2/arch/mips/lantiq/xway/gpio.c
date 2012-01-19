@@ -21,9 +21,17 @@
 #define LTQ_GPIO_ALTSEL0	0x0C
 #define LTQ_GPIO_ALTSEL1	0x10
 #define LTQ_GPIO_OD		0x14
+#define LTQ_GPIO_PUDSEL		0x1C
+#define LTQ_GPIO_PUDEN		0x20
+#define LTQ_GPIO3_OD		0x24
+#define LTQ_GPIO3_ALTSEL1	0x24
 
+/* PORT3 only has 8 pins and its register layout
+   is slightly different */
 #define PINS_PER_PORT		16
-#define MAX_PORTS		3
+#define PINS_PORT3		8
+#define MAX_PORTS		4
+#define MAX_PIN			56
 
 #define ltq_gpio_getbit(m, r, p)	(!!(ltq_r32(m + r) & (1 << p)))
 #define ltq_gpio_setbit(m, r, p)	ltq_w32_mask(0, (1 << p), m + r)
@@ -53,7 +61,7 @@ int ltq_gpio_request(unsigned int pin, unsigned int alt0,
 {
 	int id = 0;
 
-	if (pin >= (MAX_PORTS * PINS_PER_PORT))
+	if (pin >= MAX_PIN)
 		return -EINVAL;
 	if (gpio_request(pin, name)) {
 		pr_err("failed to setup lantiq gpio: %s\n", name);
@@ -73,12 +81,21 @@ int ltq_gpio_request(unsigned int pin, unsigned int alt0,
 	else
 		ltq_gpio_clearbit(ltq_gpio_port[id].membase,
 			LTQ_GPIO_ALTSEL0, pin);
-	if (alt1)
-		ltq_gpio_setbit(ltq_gpio_port[id].membase,
-			LTQ_GPIO_ALTSEL1, pin);
-	else
-		ltq_gpio_clearbit(ltq_gpio_port[id].membase,
-			LTQ_GPIO_ALTSEL1, pin);
+	if (id == 3) {
+		if (alt1)
+			ltq_gpio_setbit(ltq_gpio_port[1].membase,
+				LTQ_GPIO3_ALTSEL1, pin);
+		else
+			ltq_gpio_clearbit(ltq_gpio_port[1].membase,
+				LTQ_GPIO3_ALTSEL1, pin);
+	} else {
+		if (alt1)
+			ltq_gpio_setbit(ltq_gpio_port[id].membase,
+				LTQ_GPIO_ALTSEL1, pin);
+		else
+			ltq_gpio_clearbit(ltq_gpio_port[id].membase,
+				LTQ_GPIO_ALTSEL1, pin);
+	}
 	return 0;
 }
 EXPORT_SYMBOL(ltq_gpio_request);
@@ -104,8 +121,14 @@ static int ltq_gpio_direction_input(struct gpio_chip *chip, unsigned int offset)
 {
 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
 
-	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
+	if (chip->ngpio == PINS_PORT3)
+		ltq_gpio_clearbit(ltq_gpio_port[0].membase,
+				LTQ_GPIO3_OD, offset);
+	else
+		ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
+	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_PUDSEL, offset);
+	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_PUDEN, offset);
 
 	return 0;
 }
@@ -115,8 +138,13 @@ static int ltq_gpio_direction_output(struct gpio_chip *chip,
 {
 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
 
-	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
+	if (chip->ngpio == PINS_PORT3)
+		ltq_gpio_setbit(ltq_gpio_port[0].membase, LTQ_GPIO3_OD, offset);
+	else
+		ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
 	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
+	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_PUDSEL, offset);
+	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_PUDEN, offset);
 	ltq_gpio_set(chip, offset, value);
 
 	return 0;
@@ -127,7 +155,11 @@ static int ltq_gpio_req(struct gpio_chip *chip, unsigned offset)
 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
 
 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL0, offset);
-	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL1, offset);
+	if (chip->ngpio == PINS_PORT3)
+		ltq_gpio_clearbit(ltq_gpio_port[1].membase,
+				LTQ_GPIO3_ALTSEL1, offset);
+	else
+		ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL1, offset);
 	return 0;
 }
 
@@ -140,6 +172,15 @@ static int ltq_gpio_probe(struct platform_device *pdev)
 			pdev->id);
 		return -EINVAL;
 	}
+
+	/* dirty hack - The registers of port3 are not mapped linearly.
+	   Port 3 may only load if Port 1/2 are mapped */
+	if ((pdev->id == 3) && (!ltq_gpio_port[1].membase || !ltq_gpio_port[2].membase)) {
+		dev_err(&pdev->dev,
+			"ports 1/2 need to be loaded before port 3 works\n");
+		return -ENOMEM;
+	}
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
 		dev_err(&pdev->dev, "failed to get memory for gpio port %d\n",
@@ -169,7 +210,10 @@ static int ltq_gpio_probe(struct platform_device *pdev)
 	ltq_gpio_port[pdev->id].chip.set = ltq_gpio_set;
 	ltq_gpio_port[pdev->id].chip.request = ltq_gpio_req;
 	ltq_gpio_port[pdev->id].chip.base = PINS_PER_PORT * pdev->id;
-	ltq_gpio_port[pdev->id].chip.ngpio = PINS_PER_PORT;
+	if (pdev->id == 3)
+		ltq_gpio_port[pdev->id].chip.ngpio = PINS_PORT3;
+	else
+		ltq_gpio_port[pdev->id].chip.ngpio = PINS_PER_PORT;
 	platform_set_drvdata(pdev, &ltq_gpio_port[pdev->id]);
 	return gpiochip_add(&ltq_gpio_port[pdev->id].chip);
 }

@@ -32,12 +32,7 @@ static struct mtd_partition easy50601_partitions[] = {
 	{
 		.name	= "linux",
 		.offset	= 0x20000,
-		.size	= 0xE0000,
-	},
-	{
-		.name	= "rootfs",
-		.offset	= 0x100000,
-		.size	= 0x300000,
+		.size	= 0x3d0000,
 	},
 };
 
@@ -46,9 +41,14 @@ static struct physmap_flash_data easy50601_flash_data = {
 	.parts		= easy50601_partitions,
 };
 
+static struct ltq_eth_data ltq_eth_data = {
+	.mii_mode = -1, /* use EPHY */
+};
+
 static void __init easy50601_init(void)
 {
 	ltq_register_nor(&easy50601_flash_data);
+	ltq_register_etop(&ltq_eth_data);
 }
 
 MIPS_MACHINE(LTQ_MACH_EASY50601,

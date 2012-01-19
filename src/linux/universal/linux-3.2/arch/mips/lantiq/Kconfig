@@ -1,5 +1,8 @@
 if LANTIQ
 
+config LANTIQ_PCIE
+	bool
+
 config SOC_TYPE_XWAY
 	bool
 	default n
@@ -16,8 +19,21 @@ config SOC_XWAY
 	bool "XWAY"
 	select SOC_TYPE_XWAY
 	select HW_HAS_PCI
+
+config SOC_VR9
+	bool "VR9"
+	select SOC_TYPE_XWAY
+	select HW_HAS_PCI
+	select LANTIQ_PCIE
+
+config SOC_FALCON
+	bool "FALCON"
 endchoice
 
+config AR9
+	bool "AR9 DSL Driver extensions"
+
 source "arch/mips/lantiq/xway/Kconfig"
+source "arch/mips/lantiq/falcon/Kconfig"
 
 endif

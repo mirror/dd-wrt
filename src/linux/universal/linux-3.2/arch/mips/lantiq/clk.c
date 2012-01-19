@@ -22,6 +22,7 @@
 #include <lantiq_soc.h>
 
 #include "clk.h"
+#include "prom.h"
 
 struct clk {
 	const char *name;
@@ -45,16 +46,6 @@ static struct clk cpu_clk_generic[] = {
 		.get_rate = ltq_get_io_region_clock,
 	},
 };
-
-static struct resource ltq_cgu_resource = {
-	.name	= "cgu",
-	.start	= LTQ_CGU_BASE_ADDR,
-	.end	= LTQ_CGU_BASE_ADDR + LTQ_CGU_SIZE - 1,
-	.flags	= IORESOURCE_MEM,
-};
-
-/* remapped clock register range */
-void __iomem *ltq_cgu_membase;
 
 void clk_init(void)
 {
@@ -133,21 +124,11 @@ void __init plat_time_init(void)
 {
 	struct clk *clk;
 
-	if (insert_resource(&iomem_resource, &ltq_cgu_resource) < 0)
-		panic("Failed to insert cgu memory\n");
+	ltq_soc_init();
 
-	if (request_mem_region(ltq_cgu_resource.start,
-			resource_size(&ltq_cgu_resource), "cgu") < 0)
-		panic("Failed to request cgu memory\n");
-
-	ltq_cgu_membase = ioremap_nocache(ltq_cgu_resource.start,
-				resource_size(&ltq_cgu_resource));
-	if (!ltq_cgu_membase) {
-		pr_err("Failed to remap cgu memory\n");
-		unreachable();
-	}
 	clk = clk_get(0, "cpu");
 	mips_hpt_frequency = clk_get_rate(clk) / ltq_get_counter_resolution();
 	write_c0_compare(read_c0_count());
+	pr_info("CPU Clock: %ldMHz\n", clk_get_rate(clk) / 1000000);
 	clk_put(clk);
 }

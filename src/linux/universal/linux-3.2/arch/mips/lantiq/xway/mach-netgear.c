@@ -13,35 +13,13 @@
 #include <linux/mtd/physmap.h>
 #include <linux/input.h>
 #include <linux/phy.h>
+#include <linux/spi/spi.h>
 
 #include <lantiq_soc.h>
 #include <irq.h>
 
 #include "../machtypes.h"
 #include "devices.h"
-
-static struct mtd_partition easy50712_partitions[] = {
-	{
-		.name	= "uboot",
-		.offset	= 0x0,
-		.size	= 0x10000,
-	},
-	{
-		.name	= "uboot_env",
-		.offset	= 0x10000,
-		.size	= 0x10000,
-	},
-	{
-		.name	= "linux",
-		.offset	= 0x20000,
-		.size	= 0x3d0000,
-	},
-};
-
-static struct physmap_flash_data easy50712_flash_data = {
-	.nr_parts	= ARRAY_SIZE(easy50712_partitions),
-	.parts		= easy50712_partitions,
-};
 
 static struct ltq_pci_data ltq_pci_data = {
 	.clock	= PCI_CLOCK_INT,
@@ -55,16 +33,25 @@ static struct ltq_eth_data ltq_eth_data = {
 	.mii_mode = PHY_INTERFACE_MODE_MII,
 };
 
-static void __init easy50712_init(void)
+struct spi_board_info spi_info = {
+	.bus_num        = 0,
+	.chip_select    = 3,
+	.max_speed_hz   = 25000000,
+	.modalias       = "mx25l12805d",
+};
+
+struct ltq_spi_platform_data ltq_spi_data = {
+	.num_chipselect = 4,
+};
+
+static void __init dgn3500_init(void)
 {
-	ltq_register_gpio_stp();
-	ltq_register_nor(&easy50712_flash_data);
 	ltq_register_pci(&ltq_pci_data);
 	ltq_register_etop(&ltq_eth_data);
-	ltq_register_tapi();
+	ltq_register_spi(&ltq_spi_data, &spi_info, 1);
 }
 
-MIPS_MACHINE(LTQ_MACH_EASY50712,
-	     "EASY50712",
-	     "EASY50712 Eval Board",
-	      easy50712_init);
+MIPS_MACHINE(LANTIQ_MACH_DGN3500B,
+	     "DGN3500B",
+	     "Netgear DGN3500B",
+	      dgn3500_init);
