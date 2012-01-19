@@ -21,6 +21,7 @@
 #define SOC_ID_ARX188		0x16C
 #define SOC_ID_ARX168		0x16D
 #define SOC_ID_ARX182		0x16F
+#define SOC_ID_VRX288		0x1C0
 
 /* SoC Types */
 #define SOC_TYPE_DANUBE		0x01
@@ -33,6 +34,10 @@
 #define LTQ_ASC0_BASE_ADDR	0x1E100400
 #define LTQ_ASC1_BASE_ADDR	0x1E100C00
 #define LTQ_ASC_SIZE		0x400
+
+/* during early_printk no ioremap is possible
+   lets use KSEG1 instead  */
+#define LTQ_EARLY_ASC		KSEG1ADDR(LTQ_ASC1_BASE_ADDR)
 
 /* RCU - reset control unit */
 #define LTQ_RCU_BASE_ADDR	0x1F203000
@@ -61,6 +66,8 @@
 #define LTQ_CGU_BASE_ADDR	0x1F103000
 #define LTQ_CGU_SIZE		0x1000
 
+#define CGU_EPHY		0x10
+
 /* ICU - interrupt control unit */
 #define LTQ_ICU_BASE_ADDR	0x1F880200
 #define LTQ_ICU_SIZE		0x100
@@ -74,7 +81,9 @@
 #define LTQ_PMU_SIZE		0x1000
 
 #define PMU_DMA			0x0020
+#define PMU_EPHY		0x0080
 #define PMU_USB			0x8041
+#define PMU_SPI			0x0100
 #define PMU_LED			0x0800
 #define PMU_GPT			0x1000
 #define PMU_PPE			0x2000
@@ -83,7 +92,12 @@
 
 /* ETOP - ethernet */
 #define LTQ_ETOP_BASE_ADDR	0x1E180000
+#define LTQ_ETOP_BASE_ADDR_VR9	0x1E200000
 #define LTQ_ETOP_SIZE		0x40000
+
+/* GBIT - gigabit switch */
+#define LTQ_GBIT_BASE_ADDR	0x1E108000
+#define LTQ_GBIT_SIZE		0x200
 
 /* DMA */
 #define LTQ_DMA_BASE_ADDR	0x1E104100
@@ -97,6 +111,8 @@
 #define LTQ_WDT_BASE_ADDR	0x1F8803F0
 #define LTQ_WDT_SIZE		0x10
 
+#define LTQ_RST_CAUSE_WDTRST	0x20
+
 /* STP - serial to parallel conversion unit */
 #define LTQ_STP_BASE_ADDR	0x1E100BB0
 #define LTQ_STP_SIZE		0x40
@@ -105,7 +121,9 @@
 #define LTQ_GPIO0_BASE_ADDR	0x1E100B10
 #define LTQ_GPIO1_BASE_ADDR	0x1E100B40
 #define LTQ_GPIO2_BASE_ADDR	0x1E100B70
+#define LTQ_GPIO3_BASE_ADDR	0x1E100BA0
 #define LTQ_GPIO_SIZE		0x30
+#define LTQ_GPIO3_SIZE		0x10
 
 /* SSC */
 #define LTQ_SSC_BASE_ADDR	0x1e100800
@@ -121,11 +139,28 @@
 #define LTQ_MPS_BASE_ADDR	(KSEG1 + 0x1F107000)
 #define LTQ_MPS_CHIPID		((u32 *)(LTQ_MPS_BASE_ADDR + 0x0344))
 
+/* register access macros for EBU and CGU */
+#define ltq_ebu_w32(x, y)	ltq_w32((x), ltq_ebu_membase + (y))
+#define ltq_ebu_r32(x)		ltq_r32(ltq_ebu_membase + (x))
+#define ltq_ebu_w32_mask(x, y, z) \
+	ltq_w32_mask(x, y, ltq_ebu_membase + (z))
+#define ltq_cgu_w32(x, y)	ltq_w32((x), ltq_cgu_membase + (y))
+#define ltq_cgu_r32(x)		ltq_r32(ltq_cgu_membase + (x))
+
+extern __iomem void *ltq_ebu_membase;
+extern __iomem void *ltq_cgu_membase;
+
 /* request a non-gpio and set the PIO config */
 extern int  ltq_gpio_request(unsigned int pin, unsigned int alt0,
 	unsigned int alt1, unsigned int dir, const char *name);
 extern void ltq_pmu_enable(unsigned int module);
 extern void ltq_pmu_disable(unsigned int module);
+extern void ltq_cgu_enable(unsigned int clk);
+
+static inline int ltq_is_ase(void)
+{
+	return (ltq_get_soc_type() == SOC_TYPE_AMAZON_SE);
+}
 
 static inline int ltq_is_ar9(void)
 {

@@ -1334,6 +1334,13 @@ void smtc_get_new_mmu_context(struct mm_struct *mm, unsigned long cpu)
 	asid = asid_cache(cpu);
 
 	do {
+#ifdef CONFIG_IFX_VPE_EXT
+		/* If TLB is shared between AP and RP (AP is running SMTC),
+		   leave out max ASID i.e., ASID_MASK for RP
+		 */
+		if (!nostlb && ((asid & ASID_MASK) == (ASID_MASK - 1)))
+			asid++;
+#endif
 		if (!((asid += ASID_INC) & ASID_MASK) ) {
 			if (cpu_has_vtag_icache)
 				flush_icache_all();

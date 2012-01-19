@@ -75,6 +75,65 @@ static struct kspd_notifications kspd_events;
 static int kspd_events_reqd;
 #endif
 
+#ifdef CONFIG_IFX_VPE_EXT
+static int is_sdepgm;
+extern int stlb;
+extern int vpe0_wired;
+extern int vpe1_wired;
+unsigned int vpe1_load_addr;
+
+static int __init load_address(char *str)
+{
+	get_option(&str, &vpe1_load_addr);
+	return 1;
+}
+__setup("vpe1_load_addr=", load_address);
+
+#include <asm/mipsmtregs.h>
+#define write_vpe_c0_wired(val)		mttc0(6, 0, val)
+
+#ifndef COMMAND_LINE_SIZE
+#	define COMMAND_LINE_SIZE	512
+#endif
+
+char command_line[COMMAND_LINE_SIZE * 2];
+
+static unsigned int vpe1_mem;
+static int __init vpe1mem(char *str)
+{
+	vpe1_mem = memparse(str, &str);
+	return 1;
+}
+__setup("vpe1_mem=", vpe1mem);
+
+uint32_t vpe1_wdog_ctr;
+static int __init wdog_ctr(char *str)
+{
+	get_option(&str, &vpe1_wdog_ctr);
+	return 1;
+}
+
+__setup("vpe1_wdog_ctr_addr=", wdog_ctr);
+EXPORT_SYMBOL(vpe1_wdog_ctr);
+
+uint32_t vpe1_wdog_timeout;
+static int __init wdog_timeout(char *str)
+{
+        get_option(&str, &vpe1_wdog_timeout);
+        return 1;
+}
+
+__setup("vpe1_wdog_timeout=", wdog_timeout);
+EXPORT_SYMBOL(vpe1_wdog_timeout);
+
+#endif
+
+#ifdef CONFIG_IFX_VPE_CACHE_SPLIT /* Code for splitting the cache ways among VPEs. */
+extern int vpe_icache_shared,vpe_dcache_shared;
+extern int icache_way0,icache_way1,icache_way2,icache_way3;
+extern int dcache_way0,dcache_way1,dcache_way2,dcache_way3;
+#endif
+
 /* grab the likely amount of memory we will need. */
 #ifdef CONFIG_MIPS_VPE_LOADER_TOM
 #define P_SIZE (2 * 1024 * 1024)
@@ -267,6 +326,13 @@ static void *alloc_progmem(unsigned long len)
 	void *addr;
 
 #ifdef CONFIG_MIPS_VPE_LOADER_TOM
+#ifdef CONFIG_IFX_VPE_EXT
+	if (vpe1_load_addr) {
+		memset((void *)vpe1_load_addr, 0, len);
+		return (void *)vpe1_load_addr;
+	}
+#endif
+
 	/*
 	 * This means you must tell Linux to use less memory than you
 	 * physically have, for example by passing a mem= boot argument.
@@ -745,6 +811,12 @@ static int vpe_run(struct vpe * v)
 	}
 
 	/* Write the address we want it to start running from in the TCPC register. */
+#if defined(CONFIG_IFX_VPE_EXT) && 0
+	if (stlb)
+		write_vpe_c0_wired(vpe0_wired + vpe1_wired);
+	else
+		write_vpe_c0_wired(vpe1_wired);
+#endif
 	write_tc_c0_tcrestart((unsigned long)v->__start);
 	write_tc_c0_tccontext((unsigned long)0);
 
@@ -758,6 +830,20 @@ static int vpe_run(struct vpe * v)
 
 	write_tc_c0_tchalt(read_tc_c0_tchalt() & ~TCHALT_H);
 
+#if defined(CONFIG_IFX_VPE_EXT) && 0
+	/*
+	 * $a2 & $a3 are used to pass command line parameters to VPE1. $a2
+	 * points to the start of the command line string and $a3 points to
+	 * the end of the string. This convention is identical to the Linux
+	 * kernel boot parameter passing mechanism. Please note that $a3 is
+	 * used to pass physical memory size or 0 in SDE tool kit. So, if you
+	 * are passing comand line parameters through $a2 & $a3 SDE programs
+	 * don't work as desired.
+	 */
+	mttgpr(6, command_line);
+	mttgpr(7, (command_line + strlen(command_line)));
+	if (is_sdepgm)
+#endif
 	/*
 	 * The sde-kit passes 'memsize' to __start in $a3, so set something
 	 * here...  Or set $a3 to zero and define DFLT_STACK_SIZE and
@@ -785,6 +871,65 @@ static int vpe_run(struct vpe * v)
 
 	/* enable this VPE */
 	write_vpe_c0_vpeconf0(read_vpe_c0_vpeconf0() | VPECONF0_VPA);
+
+#ifdef CONFIG_IFX_VPE_CACHE_SPLIT
+	if ( (!vpe_icache_shared) || (!vpe_dcache_shared) ) {
+
+		/* PCP bit must be 1 to split the cache */
+		if(read_c0_mvpconf0() & MVPCONF0_PCP) {
+
+			if ( !vpe_icache_shared ){
+				write_vpe_c0_vpeconf0((read_vpe_c0_vpeconf0()) & ~VPECONF0_ICS);
+
+				/*
+				 * If any cache way is 1, then that way is denied
+				 * in VPE1. Otherwise assign that way to VPE1.
+				 */
+				if (!icache_way0)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_IWX0 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_IWX0 );
+				if (!icache_way1)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_IWX1 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_IWX1 );
+				if (!icache_way2)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_IWX2 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_IWX2 );
+				if (!icache_way3)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_IWX3 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_IWX3 );
+			}
+
+			if ( !vpe_dcache_shared ) {
+				write_vpe_c0_vpeconf0((read_vpe_c0_vpeconf0()) & ~VPECONF0_DCS);
+
+				/*
+				 * If any cache way is 1, then that way is denied
+				 * in VPE1. Otherwise assign that way to VPE1.
+				 */
+				if (!dcache_way0)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_DWX0 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_DWX0 );
+				if (!dcache_way1)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_DWX1 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_DWX1 );
+				if (!dcache_way2)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_DWX2 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_DWX2 );
+				if (!dcache_way3)
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() | VPEOPT_DWX3 );
+				else
+					write_vpe_c0_vpeopt(read_vpe_c0_vpeopt() & ~VPEOPT_DWX3 );
+			}
+		}
+	}
+#endif /* endif CONFIG_IFX_VPE_CACHE_SPLIT */
 
 	/* clear out any left overs from a previous program */
 	write_vpe_c0_status(0);
@@ -832,6 +977,9 @@ static int find_vpe_symbols(struct vpe * v, Elf_Shdr * sechdrs,
 	if ( (v->__start == 0) || (v->shared_ptr == NULL))
 		return -1;
 
+#ifdef CONFIG_IFX_VPE_EXT
+	is_sdepgm = 1;
+#endif
 	return 0;
 }
 
@@ -993,6 +1141,15 @@ static int vpe_elfload(struct vpe * v)
 			   (unsigned long)v->load_addr + v->len);
 
 	if ((find_vpe_symbols(v, sechdrs, symindex, strtab, &mod)) < 0) {
+#ifdef CONFIG_IFX_VPE_EXT
+		if (vpe1_load_addr) {
+			/* Conversion to KSEG1 is required ??? */
+			v->__start = KSEG1ADDR(vpe1_load_addr);
+			is_sdepgm = 0;
+			return 0;
+		}
+#endif
+
 		if (v->__start == 0) {
 			printk(KERN_WARNING "VPE loader: program does not contain "
 			       "a __start symbol\n");
@@ -1063,6 +1220,9 @@ static int vpe_open(struct inode *inode, struct file *filp)
 	struct vpe_notifications *not;
 	struct vpe *v;
 	int ret;
+#ifdef CONFIG_IFX_VPE_EXT
+   int progsize;
+#endif
 
 	if (minor != iminor(inode)) {
 		/* assume only 1 device at the moment. */
@@ -1088,7 +1248,12 @@ static int vpe_open(struct inode *inode, struct file *filp)
 		release_progmem(v->load_addr);
 		cleanup_tc(get_tc(tclimit));
 	}
-
+#ifdef CONFIG_IFX_VPE_EXT
+	progsize = (vpe1_mem  != 0) ? vpe1_mem : P_SIZE;
+	//printk("progsize = %x\n", progsize);
+	v->pbuffer = vmalloc(progsize);
+	v->plen = progsize;
+#else
 	/* this of-course trashes what was there before... */
 	v->pbuffer = vmalloc(P_SIZE);
 	if (!v->pbuffer) {
@@ -1096,11 +1261,14 @@ static int vpe_open(struct inode *inode, struct file *filp)
 		return -ENOMEM;
 	}
 	v->plen = P_SIZE;
+#endif
 	v->load_addr = NULL;
 	v->len = 0;
 
+#if 0
 	v->uid = filp->f_cred->fsuid;
 	v->gid = filp->f_cred->fsgid;
+#endif
 
 #ifdef CONFIG_MIPS_APSP_KSPD
 	/* get kspd to tell us when a syscall_exit happens */
@@ -1348,6 +1516,133 @@ static void kspd_sp_exit( int sp_id)
 	cleanup_tc(get_tc(sp_id));
 }
 #endif
+#ifdef CONFIG_IFX_VPE_EXT
+int32_t vpe1_sw_start(void* sw_start_addr, uint32_t tcmask, uint32_t flags)
+{
+	enum vpe_state state;
+	struct vpe *v = get_vpe(tclimit);
+	struct vpe_notifications *not;
+
+	if (tcmask || flags) {
+		printk(KERN_WARNING "Currently tcmask and flags should be 0.\
+				other values not supported\n");
+		return -1;
+	}
+
+	state = xchg(&v->state, VPE_STATE_INUSE);
+	if (state != VPE_STATE_UNUSED) {
+		vpe_stop(v);
+
+		list_for_each_entry(not, &v->notify, list) {
+			not->stop(tclimit);
+		}
+	}
+
+	v->__start = (unsigned long)sw_start_addr;
+	is_sdepgm = 0;
+
+	if (!vpe_run(v)) {
+		printk(KERN_DEBUG "VPE loader: VPE1 running successfully\n");
+		return 0;
+	}
+	return -1;
+}
+
+EXPORT_SYMBOL(vpe1_sw_start);
+
+int32_t vpe1_sw_stop(uint32_t flags)
+{
+	struct vpe *v = get_vpe(tclimit);
+
+	if (!vpe_free(v)) {
+		printk(KERN_DEBUG "RP Stopped\n");
+		return 0;
+	}
+	else
+		return -1;
+}
+
+EXPORT_SYMBOL(vpe1_sw_stop);
+
+uint32_t vpe1_get_load_addr (uint32_t flags)
+{
+	return vpe1_load_addr;
+}
+
+EXPORT_SYMBOL(vpe1_get_load_addr);
+
+uint32_t vpe1_get_max_mem (uint32_t flags)
+{
+	if (!vpe1_mem)
+		return P_SIZE;
+	else
+		return vpe1_mem;
+}
+
+EXPORT_SYMBOL(vpe1_get_max_mem);
+
+void* vpe1_get_cmdline_argument(void)
+{
+	return saved_command_line;
+}
+
+EXPORT_SYMBOL(vpe1_get_cmdline_argument);
+
+int32_t vpe1_set_boot_param(char *field, char *value, char flags)
+{
+	char *ptr, string[64];
+	int start_off, end_off;
+	if (!field)
+		return -1;
+	strcpy(string, field);
+	if (value) {
+		strcat(string, "=");
+		strcat(string, value);
+		strcat(command_line, " ");
+		strcat(command_line, string);
+	}
+	else {
+		ptr = strstr(command_line, string);
+		if (ptr) {
+			start_off = ptr - command_line;
+			ptr += strlen(string);
+			while ((*ptr != ' ') && (*ptr != '\0'))
+				ptr++;
+			end_off = ptr - command_line;
+			command_line[start_off] = '\0';
+			strcat (command_line, command_line+end_off);
+		}
+	}
+	return 0;
+}
+
+EXPORT_SYMBOL(vpe1_set_boot_param);
+
+int32_t vpe1_get_boot_param(char *field, char **value, char flags)
+{
+	char *ptr, string[64];
+	int i = 0;
+	if (!field)
+		return -1;
+	if ((ptr = strstr(command_line, field))) {
+		ptr += strlen(field) + 1; /* including = */
+		while ((*ptr != ' ') && (*ptr != '\0'))
+			string[i++] = *ptr++;
+		string[i] = '\0';
+		*value = kmalloc((strlen(string) + 1), GFP_KERNEL);
+		if (*value != NULL)
+			strcpy(*value, string);
+	}
+	else
+		*value = NULL;
+
+	return 0;
+}
+
+EXPORT_SYMBOL(vpe1_get_boot_param);
+
+extern void configure_tlb(void);
+#endif
 
 static ssize_t store_kill(struct device *dev, struct device_attribute *attr,
 			  const char *buf, size_t len)
@@ -1429,6 +1724,18 @@ static int __init vpe_module_init(void)
 		printk("VPE loader: not a MIPS MT capable processor\n");
 		return -ENODEV;
 	}
+#ifdef CONFIG_IFX_VPE_EXT
+#ifndef CONFIG_MIPS_MT_SMTC
+	configure_tlb();
+#endif
+#endif
+
+#ifndef CONFIG_MIPS_MT_SMTC
+	if (!vpelimit)
+		vpelimit = 1;
+	if (!tclimit)
+		tclimit = 1;
+#endif
 
 	if (vpelimit == 0) {
 		printk(KERN_WARNING "No VPEs reserved for AP/SP, not "
@@ -1473,10 +1780,12 @@ static int __init vpe_module_init(void)
 	mtflags = dmt();
 	vpflags = dvpe();
 
+	back_to_back_c0_hazard();
+
 	/* Put MVPE's into 'configuration state' */
 	set_c0_mvpcontrol(MVPCONTROL_VPC);
 
-	/* dump_mtregs(); */
+	dump_mtregs();
 
 	val = read_c0_mvpconf0();
 	hw_tcs = (val & MVPCONF0_PTC) + 1;
@@ -1488,6 +1797,7 @@ static int __init vpe_module_init(void)
 		 * reschedule send IPIs or similar we might hang.
 		 */
 		clear_c0_mvpcontrol(MVPCONTROL_VPC);
+		back_to_back_c0_hazard();
 		evpe(vpflags);
 		emt(mtflags);
 		local_irq_restore(flags);
@@ -1513,6 +1823,7 @@ static int __init vpe_module_init(void)
 			}
 
 			v->ntcs = hw_tcs - tclimit;
+                        write_tc_c0_tcbind((read_tc_c0_tcbind() & ~TCBIND_CURVPE) | 1);
 
 			/* add the tc to the list of this vpe's tc's. */
 			list_add(&t->tc, &v->tc);
@@ -1581,6 +1892,7 @@ static int __init vpe_module_init(void)
 out_reenable:
 	/* release config state */
 	clear_c0_mvpcontrol(MVPCONTROL_VPC);
+	back_to_back_c0_hazard();
 
 	evpe(vpflags);
 	emt(mtflags);

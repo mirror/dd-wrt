@@ -7,6 +7,7 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/seq_file.h>
+#include <linux/proc_fs.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
@@ -112,3 +113,19 @@ const struct seq_operations cpuinfo_op = {
 	.stop	= c_stop,
 	.show	= show_cpuinfo,
 };
+
+/*
+ * Support for MIPS/local /proc hooks in /proc/mips/
+ */
+
+static struct proc_dir_entry *mips_proc = NULL;
+
+struct proc_dir_entry *get_mips_proc_dir(void)
+{
+       /*
+        * This ought not to be preemptable.
+        */
+       if(mips_proc == NULL)
+               mips_proc = proc_mkdir("mips", NULL);
+       return(mips_proc);
+}
