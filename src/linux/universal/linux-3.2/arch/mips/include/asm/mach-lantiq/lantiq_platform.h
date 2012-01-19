@@ -50,4 +50,13 @@ struct ltq_eth_data {
 	int mii_mode;
 };
 
+
+struct ltq_spi_platform_data {
+	u16 num_chipselect;
+};
+
+struct ltq_spi_controller_data {
+	unsigned gpio;
+};
+
 #endif
