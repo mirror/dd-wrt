@@ -16,7 +16,7 @@
 #include <linux/clk.h>
 #include <linux/io.h>
 
-#include <lantiq.h>
+#include <lantiq_soc.h>
 
 /* Section 3.4 of the datasheet
  * The password sequence protects the WDT control register from unintended

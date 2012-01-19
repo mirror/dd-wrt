@@ -874,6 +874,8 @@ static int refresh_rootfs_split(struct mtd_info *mtd)
 }
 #endif /* CONFIG_MTD_ROOTFS_SPLIT */
 
+
+
 /*
  * This function, given a master MTD object and a partition table, creates
  * and registers slave MTD objects which are bound to the master according to
