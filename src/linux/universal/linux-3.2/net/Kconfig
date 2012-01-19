@@ -74,6 +74,7 @@ config INET
 
 config IFX_UDP_REDIRECT
 	bool "IFX Kernel Packet Interface for UDP redirection"
+	depends on LANTIQ
 	help
 	  You can say Y here if you want to use hooks from kernel for
 	  UDP redirection.
