@@ -35,6 +35,8 @@
 #define LTQ_STP_ADSL_SRC	(3 << 24)
 
 #define LTQ_STP_GROUP0		(1 << 0)
+#define LTQ_STP_GROUP1		(1 << 1)
+#define LTQ_STP_GROUP2		(1 << 2)
 
 #define LTQ_STP_RISING		0
 #define LTQ_STP_FALLING		(1 << 26)
@@ -70,9 +72,8 @@ static struct gpio_chip ltq_stp_chip = {
 	.label = "ltq_stp",
 	.direction_output = ltq_stp_direction_output,
 	.set = ltq_stp_set,
-	.base = 48,
+	.base = 200,
 	.ngpio = 24,
-	.can_sleep = 1,
 	.owner = THIS_MODULE,
 };
 
@@ -93,8 +94,9 @@ static int ltq_stp_hw_init(void)
 	/* rising or falling edge */
 	ltq_stp_w32_mask(LTQ_STP_EDGE_MASK, LTQ_STP_FALLING, LTQ_STP_CON0);
 
-	/* per default stp 15-0 are set */
-	ltq_stp_w32_mask(0, LTQ_STP_GROUP0, LTQ_STP_CON1);
+	/* enable all three led groups */
+	ltq_stp_w32_mask(0, LTQ_STP_GROUP0 | LTQ_STP_GROUP1 | LTQ_STP_GROUP2,
+		LTQ_STP_CON1);
 
 	/* stp are update periodically by the FPI bus */
 	ltq_stp_w32_mask(LTQ_STP_UPD_MASK, LTQ_STP_UPD_FPI, LTQ_STP_CON1);

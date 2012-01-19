@@ -13,6 +13,7 @@
 
 #include <lantiq_soc.h>
 
+#include "devices.h"
 #include "../prom.h"
 
 #define SOC_DANUBE	"Danube"
@@ -28,6 +29,7 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
 {
 	i->partnum = (ltq_r32(LTQ_MPS_CHIPID) & PART_MASK) >> PART_SHIFT;
 	i->rev = (ltq_r32(LTQ_MPS_CHIPID) & REV_MASK) >> REV_SHIFT;
+	sprintf(i->rev_type, "1.%d", i->rev);
 	switch (i->partnum) {
 	case SOC_ID_DANUBE1:
 	case SOC_ID_DANUBE2:
@@ -51,4 +53,12 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
 		unreachable();
 		break;
 	}
+}
+
+void __init ltq_soc_setup(void)
+{
+	ltq_register_asc(0);
+	ltq_register_asc(1);
+	ltq_register_gpio();
+	ltq_register_wdt();
 }
