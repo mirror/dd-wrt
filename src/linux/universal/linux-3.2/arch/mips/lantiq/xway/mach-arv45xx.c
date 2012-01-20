@@ -445,7 +445,7 @@ arv4518pw_init(void)
 	ltq_register_nor(&arv45xx_flash_data);
 	ltq_pci_data.gpio = PCI_GNT2 | PCI_REQ2;
 	ltq_register_pci(&ltq_pci_data);
-	ltq_register_madwifi_eep(ARV4518PW_MADWIFI_ADDR);
+	ltq_register_madwifi_eep((void*)ARV4518PW_MADWIFI_ADDR);
 	ltq_register_ath5k(arv45xx_ath5k_eeprom_data, arv45xx_ath5k_eeprom_mac);
 	xway_register_dwc(ARV4518PW_USB);
 	arv45xx_register_ethernet();
@@ -498,7 +498,7 @@ arv452Cpw_init(void)
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(arv452cpw_gpio_leds), arv452cpw_gpio_leds);
 	ltq_register_nor(&arv45xx_flash_data);
 	ltq_register_pci(&ltq_pci_data);
-	ltq_register_madwifi_eep(ARV452CPW_MADWIFI_ADDR);
+	ltq_register_madwifi_eep((void*)ARV452CPW_MADWIFI_ADDR);
 	xway_register_dwc(ARV452CPW_USB);
 	arv45xx_register_ethernet();
 	arv45xx_register_ath5k();
@@ -530,7 +530,7 @@ arv4525pw_init(void)
 	ltq_register_nor(&arv45xx_flash_data);
 	ltq_pci_data.clock = PCI_CLOCK_INT;
 	ltq_register_pci(&ltq_pci_data);
-	ltq_register_madwifi_eep(ARV4525PW_MADWIFI_ADDR);
+	ltq_register_madwifi_eep((void*)ARV4525PW_MADWIFI_ADDR);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 	arv45xx_register_ethernet();
 }

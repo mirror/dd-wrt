@@ -105,11 +105,11 @@ ltq_register_etop(struct ltq_eth_data *eth)
 int lantiq_emulate_madwifi_eep = 0;
 EXPORT_SYMBOL(lantiq_emulate_madwifi_eep);
 
-int lantiq_madwifi_eep_addr = 0;
+void *lantiq_madwifi_eep_addr = NULL;
 EXPORT_SYMBOL(lantiq_madwifi_eep_addr);
 
 void __init
-ltq_register_madwifi_eep(unsigned long long addr)
+ltq_register_madwifi_eep(void *addr)
 {
 	lantiq_madwifi_eep_addr = addr;
 	lantiq_emulate_madwifi_eep = 1;
