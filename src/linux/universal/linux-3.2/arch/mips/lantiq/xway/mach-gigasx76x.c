@@ -155,16 +155,27 @@ static int __init gigasx76x_register_ethernet(void) {
 	char *uboot_env_page;
 	char *mac;
 	char *boardid;
+	int envsize = 0x2000;
 
-	uboot_env_page = ioremap(LTQ_FLASH_START + UBOOT_ENV_OFFSET, UBOOT_ENV_SIZE);
+	uboot_env_page = ioremap(LTQ_FLASH_START + 0xe000, 0x2000);
+	if (!uboot_env_page)
+	    {
+	    uboot_env_page = ioremap(LTQ_FLASH_START + UBOOT_ENV_OFFSET, UBOOT_ENV_SIZE);
+	    envsize = UBOOT_ENV_SIZE;
+	    }
 	if (!uboot_env_page)
 		return -ENOMEM;
-
-	mac = get_uboot_env_var(uboot_env_page, UBOOT_ENV_SIZE, "\0ethaddr=", 9);
-	boardid = get_uboot_env_var(uboot_env_page, UBOOT_ENV_SIZE, "\0boardid=", 9);
+	redo:;
+	mac = get_uboot_env_var(uboot_env_page, envsize, "\0ethaddr=", 9);
+	boardid = get_uboot_env_var(uboot_env_page, envsize, "\0boardid=", 9);
 
 	if (!mac) {
-	goto error_fail;
+	    if (envsize==UBOOT_ENV_SIZE)
+		goto error_fail;
+	iounmap(uboot_env_page);
+	uboot_env_page = ioremap(LTQ_FLASH_START + UBOOT_ENV_OFFSET, UBOOT_ENV_SIZE);
+	envsize = UBOOT_ENV_SIZE;
+	goto redo;
 	}
 
 	if (!boardid) {
