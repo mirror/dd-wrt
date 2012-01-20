@@ -51,7 +51,7 @@
 static int ltq_stp_shadow = 0xffff;
 static void __iomem *ltq_stp_membase;
 
-static void ltq_stp_set(struct gpio_chip *chip, unsigned offset, int value)
+void ltq_stp_set(struct gpio_chip *chip, unsigned offset, int value)
 {
 	if (value)
 		ltq_stp_shadow |= (1 << offset);
