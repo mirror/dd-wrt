@@ -217,7 +217,6 @@ void start_sysinit(void)
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
-#endif
 
 
 	led_control(LED_POWER, LED_ON);
