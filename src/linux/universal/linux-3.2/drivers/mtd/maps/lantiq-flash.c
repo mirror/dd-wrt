@@ -357,6 +357,24 @@ ltq_mtd_remove(struct platform_device *pdev)
 	return 0;
 }
 
+int ra_mtd_read(int num,int from, int len, u_char *buf)
+{
+	int ret;
+	size_t rdlen;
+	struct mtd_info *mtd;
+	printk(KERN_INFO "read ralink eeprom from %X with len %X to %p (device %d)\n",from,len,buf,num);
+	mtd = get_mtd_device(NULL, num);
+
+	ret = mtd->read(mtd, from, len, &rdlen, buf);
+	if (rdlen != len)
+		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
+
+	put_mtd_device(mtd);
+	return ret;
+}
+EXPORT_SYMBOL(ra_mtd_read);
+
+
 static struct platform_driver ltq_mtd_driver = {
 	.remove = __devexit_p(ltq_mtd_remove),
 	.driver = {
