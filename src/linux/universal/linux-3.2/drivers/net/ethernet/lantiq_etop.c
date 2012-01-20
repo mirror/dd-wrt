@@ -35,7 +35,6 @@
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/dma-mapping.h>
-#include <linux/module.h>
 
 #include <asm/checksum.h>
 
@@ -191,8 +190,12 @@ ltq_etop_hw_receive(struct ltq_etop_chan *ch)
 
 	skb_put(skb, len);
 	skb->dev = ch->netdev;
-	skb->protocol = eth_type_trans(skb, ch->netdev);
-	netif_receive_skb(skb);
+	if (priv->phydev && priv->phydev->netif_receive_skb) {
+		priv->phydev->netif_receive_skb(skb);
+	} else {
+		skb->protocol = eth_type_trans(skb, ch->netdev);
+		netif_receive_skb(skb);
+	}
 }
 
 static int
@@ -818,9 +821,9 @@ static const struct net_device_ops ltq_eth_netdev_ops = {
 	.ndo_start_xmit = ltq_etop_tx,
 	.ndo_change_mtu = ltq_etop_change_mtu,
 	.ndo_do_ioctl = ltq_etop_ioctl,
-	.ndo_set_mac_address = ltq_etop_set_mac_address,
+	.ndo_set_rx_mode = ltq_etop_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
-	.ndo_set_rx_mode = ltq_etop_set_multicast_list,
+	.ndo_set_multicast_list = ltq_etop_set_multicast_list,
 	.ndo_select_queue = ltq_etop_select_queue,
 	.ndo_init = ltq_etop_init,
 	.ndo_tx_timeout = ltq_etop_tx_timeout,
