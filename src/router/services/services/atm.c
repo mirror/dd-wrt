@@ -38,9 +38,9 @@ void start_atm(void)
 			   nvram_safe_get("vpi"),
 			   nvram_safe_get("vci"));
 	dd_syslog(LOG_INFO, "ATM : DSL Modem interface created\n");
-	sysprintf("echo netdev > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/trigger");
-	sysprintf("echo nas0 > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/device_name");
-	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/mode");
+	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
+	sysprintf("echo nas0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
+	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
 	cprintf("done\n");
 	return;
 }
@@ -48,9 +48,9 @@ void start_atm(void)
 void stop_atm(void)
 {
 	stop_process("br2684ctl", "ATM: DSL Modem interface removed");
-	sysprintf("echo netdev > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/trigger");
-	sysprintf("echo ppp0 > /sys/devices/platform/leds-gpio.0/leds/socd:green:adsl/device_name");
-	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio.0/leds/soc:green:adsl/mode");
+	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
+	sysprintf("echo ppp0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
+	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
 	cprintf("done\n");
 	return;
 }
