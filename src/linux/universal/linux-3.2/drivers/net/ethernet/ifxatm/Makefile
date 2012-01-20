@@ -3,13 +3,13 @@ EXTRA_CFLAGS += -DHAVE_CONFIG_H -DLINUX -D__LINUX__ -D__KERNEL__ -DEXPORT_SYMTAB
 ifeq ($(CONFIG_SOC_VR9),y)
 EXTRA_CFLAGS += -DCONFIG_VR9
 endif
-ifeq ($(CONFIG_SOC_AR9),y)
+ifeq ($(CONFIG_AR9),y)
 EXTRA_CFLAGS += -DCONFIG_AR9
-endif
+else
 ifeq ($(CONFIG_SOC_XWAY),y)
 EXTRA_CFLAGS += -DCONFIG_DANUBE
 endif
-
+endif
 
 
 obj-y += mei/
