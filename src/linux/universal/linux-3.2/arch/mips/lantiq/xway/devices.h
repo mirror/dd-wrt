@@ -21,7 +21,7 @@ extern void ltq_register_etop(struct ltq_eth_data *eth);
 extern void ltq_register_gpio_ebu(unsigned int value);
 extern void ltq_register_spi(struct ltq_spi_platform_data *pdata,
 	struct spi_board_info const *info, unsigned n);
-extern void ltq_register_madwifi_eep(unsigned long long addr);
+extern void ltq_register_madwifi_eep(void *addr);
 extern void ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
 
 #endif

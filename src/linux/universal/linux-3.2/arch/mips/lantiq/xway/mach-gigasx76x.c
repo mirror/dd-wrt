@@ -219,7 +219,6 @@ static int __init gigasx76x_register_ethernet(void) {
 static void __init gigasx76x_init(void) {
 #define GIGASX76X_USB		29
 #define GIGASX76X_MADWIFI_ADDR	0xb07f0000
-	unsigned int offset;
 	ltq_register_gpio_stp();
 	ltq_register_nor(&gigasx76x_flash_data);
 	ltq_register_pci(&ltq_pci_data);
@@ -227,8 +226,7 @@ static void __init gigasx76x_init(void) {
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(gigasx76x_gpio_leds), gigasx76x_gpio_leds);
 	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(gigasx76x_gpio_keys), gigasx76x_gpio_keys);
 	ltq_register_ath5k(gigasx76x_ath5k_eeprom_data, gigasx76x_ath5k_eeprom_mac);
-	offset = (unsigned int)&gigasx76x_ath5k_eeprom_data;
-	ltq_register_madwifi_eep((unsigned long long)offset);
+	ltq_register_madwifi_eep(gigasx76x_ath5k_eeprom_data);
 
 	xway_register_dwc(GIGASX76X_USB);
 	gigasx76x_register_ethernet();
