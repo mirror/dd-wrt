@@ -41,6 +41,7 @@
 #include <lantiq_soc.h>
 #include <xway_dma.h>
 #include <lantiq_platform.h>
+#include <linux/module.h>
 
 #define LTQ_ETOP_MDIO		0x11804
 #define MDIO_REQUEST		0x80000000
@@ -203,8 +204,10 @@ ltq_etop_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct ltq_etop_chan *ch = container_of(napi,
 				struct ltq_etop_chan, napi);
+	struct ltq_etop_priv *priv = netdev_priv(ch->netdev);
 	int rx = 0;
 	int complete = 0;
+	unsigned long flags;
 
 	while ((rx < budget) && !complete) {
 		struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
@@ -218,7 +221,9 @@ ltq_etop_poll_rx(struct napi_struct *napi, int budget)
 	}
 	if (complete || !rx) {
 		napi_complete(&ch->napi);
+		spin_lock_irqsave(&priv->lock, flags);
 		ltq_dma_ack_irq(&ch->dma);
+		spin_unlock_irqrestore(&priv->lock, flags);
 	}
 	return rx;
 }
@@ -248,7 +253,9 @@ ltq_etop_poll_tx(struct napi_struct *napi, int budget)
 	if (netif_tx_queue_stopped(txq))
 		netif_tx_start_queue(txq);
 	napi_complete(&ch->napi);
+	spin_lock_irqsave(&priv->lock, flags);
 	ltq_dma_ack_irq(&ch->dma);
+	spin_unlock_irqrestore(&priv->lock, flags);
 	return 1;
 }
 
@@ -615,13 +622,17 @@ ltq_etop_open(struct net_device *dev)
 {
 	struct ltq_etop_priv *priv = netdev_priv(dev);
 	int i;
+	unsigned long flags;
 
 	for (i = 0; i < MAX_DMA_CHAN; i++) {
 		struct ltq_etop_chan *ch = &priv->ch[i];
 
 		if (!IS_TX(i) && (!IS_RX(i)))
 			continue;
+		spin_lock_irqsave(&priv->lock, flags);
 		ltq_dma_open(&ch->dma);
+		ltq_dma_ack_irq(&ch->dma);
+		spin_unlock_irqrestore(&priv->lock, flags);
 		napi_enable(&ch->napi);
 	}
 	if (priv->phydev)
@@ -635,6 +646,7 @@ ltq_etop_stop(struct net_device *dev)
 {
 	struct ltq_etop_priv *priv = netdev_priv(dev);
 	int i;
+	unsigned long flags;
 
 	netif_tx_stop_all_queues(dev);
 	if (priv->phydev)
@@ -645,7 +657,9 @@ ltq_etop_stop(struct net_device *dev)
 		if (!IS_RX(i) && !IS_TX(i))
 			continue;
 		napi_disable(&ch->napi);
+		spin_lock_irqsave(&priv->lock, flags);
 		ltq_dma_close(&ch->dma);
+		spin_unlock_irqrestore(&priv->lock, flags);
 	}
 	return 0;
 }
