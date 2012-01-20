@@ -212,7 +212,7 @@ void start_sysinit(void)
 	}
 #ifdef HAVE_ATH9K
 	sysprintf
-	    ("echo phy0tpt > /sys/devices/platform/leds-gpio.0/leds/soc:green:wlan/trigger");
+	    ("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
 #else
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
