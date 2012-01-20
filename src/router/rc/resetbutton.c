@@ -341,6 +341,13 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_SX763)
+int getbuttonstate()
+{
+	int ret = get_gpio(14);
+
+	return 0;
+}
 #endif
 #if defined(HAVE_GATEWORX) || defined (HAVE_STORM)
 

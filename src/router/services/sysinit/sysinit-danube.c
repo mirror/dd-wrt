@@ -51,6 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
+#include <cymac.h>
 #include "devices/wireless.c"
 
 /*
@@ -216,6 +217,9 @@ void start_sysinit(void)
 	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
 	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
+#endif
+
+
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
@@ -226,6 +230,14 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 	system2("gpio disable 1");
 	system2("gpio disable 18");
+#endif
+#ifdef HAVE_SX763
+	char mac[18];
+	strcpy(mac,nvram_safe_get("et0macaddr"));
+	MAC_ADD(mac);
+	eval("ifconfig","wifi0","hw","ether",mac);
+	system2("echo 219 >/proc/sys/dev/wifi0/ledpin");
+	system2("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
 
 	/*

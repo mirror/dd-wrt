@@ -378,6 +378,8 @@
 #define ROUTER_BOARD_DANUBE 0x6101
 #elif HAVE_VF803
 #define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
+#elif HAVE_SX763
+#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
 #else
 #define ROUTER_BOARD_DANUBE 0x610f
 #endif
