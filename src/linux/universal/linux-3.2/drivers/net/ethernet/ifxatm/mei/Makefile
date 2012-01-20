@@ -28,7 +28,7 @@ EXTRA_CFLAGS += -DCONFIG_VR9
 CFLAGS_MODULE+=-DCONFIG_VR9
 lantiq_atm-objs += ifxmips_atm_vr9.o
 endif
-ifeq ($(CONFIG_SOC_AR9),y)
+ifeq ($(CONFIG_AR9),y)
 EXTRA_CFLAGS += -DCONFIG_AR9
 CFLAGS_MODULE+=-DCONFIG_AR9
 lantiq_atm-objs += ifxmips_atm_ar9.o
