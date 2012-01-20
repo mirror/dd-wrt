@@ -1769,7 +1769,7 @@ CONFIG_HAVE_ARCH_KGDB=y
 # CONFIG_TEST_KSTRTOX is not set
 # CONFIG_EARLY_PRINTK is not set
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyLTQ1,115200 root=1f03 rootfstype=squashfs noinitrd machtype=WMBR cp1_size=2M init=/sbin/init"
+CONFIG_CMDLINE="console=ttyLTQ1,115200 root=1f03 rootfstype=squashfs noinitrd machtype=WBMR cp1_size=2M init=/sbin/init"
 CONFIG_CMDLINE_OVERRIDE=y
 # CONFIG_SPINLOCK_TEST is not set
 
