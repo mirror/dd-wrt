@@ -443,6 +443,10 @@ int ifconfig_main(int argc UNUSED_PARAM, char **argv)
 							bb_show_usage();
 						/*safe_strncpy(host, *argv, sizeof(host));*/
 						host = *argv;
+						struct ifreq ifr_copy;
+						strncpy_IFNAMSIZ(ifr_copy.ifr_name,ifr.ifr_name);
+						ioctl(sockfd, SIOCGIFHWADDR, &ifr_copy);
+						sa.sa_family = ifr_copy.ifr_hwaddr.sa_family;
 						if (hw_class == 1 ? in_ether(host, &sa) : in_ib(host, &sa))
 							bb_error_msg_and_die("invalid hw-addr %s", host);
 						p = (char *) &sa;
@@ -519,7 +523,6 @@ static int in_ether(const char *bufp, struct sockaddr *sap)
 	unsigned char val;
 	unsigned char c;
 
-	sap->sa_family = ARPHRD_ETHER;
 	ptr = (char *) sap->sa_data;
 
 	i = 0;
