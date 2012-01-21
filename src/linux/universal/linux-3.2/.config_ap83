@@ -822,7 +822,7 @@ CONFIG_WZR_HP_G300NH=y
 # CONFIG_MTD_LPDDR is not set
 # CONFIG_MTD_UBI is not set
 # CONFIG_PARPORT is not set
-CONFIG_BLK_DEV=y
+# CONFIG_BLK_DEV is not set
 # CONFIG_BLK_DEV_COW_COMMON is not set
 # CONFIG_BLK_DEV_LOOP is not set
 
