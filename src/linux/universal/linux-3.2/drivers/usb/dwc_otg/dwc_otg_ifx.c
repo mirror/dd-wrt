@@ -66,7 +66,14 @@ void dwc_otg_power_on (void)
 	writel(readl(DANUBE_PMU_PWDCR) & ~0x1, DANUBE_PMU_PWDCR);
 	writel(readl(DANUBE_PMU_PWDCR) & ~0x40, DANUBE_PMU_PWDCR);
 	writel(readl(DANUBE_PMU_PWDCR) & ~0x8000, DANUBE_PMU_PWDCR);
-
+#ifdef CONFIG_LANTIQ_MACH_GIGASX76X
+	writel(0x8b87, IFXMIPS_GPIO_P1_ALTSEL0);
+	writel(0x400, IFXMIPS_GPIO_P1_ALTSEL1);
+	writel(0xf3fc, IFXMIPS_GPIO_P1_OD);
+	writel(0xfb3e, IFXMIPS_GPIO_P1_DIR);
+	writel(0x850, IFXMIPS_GPIO_P1_PUDSEL);
+	writel(readl(IFXMIPS_GPIO_P1_OUT) | (1<<13), IFXMIPS_GPIO_P1_OUT);
+#endif
 #if 1//defined (DWC_HOST_ONLY)
 	// make the hardware be a host controller (default)
 	//clear_bit (DANUBE_USBCFG_HDSEL_BIT, (volatile unsigned long *)DANUBE_RCU_UBSCFG);
