@@ -626,7 +626,7 @@ CONFIG_MTD_FLASH_8MB=y
 #
 # CONFIG_MTD_UBI is not set
 # CONFIG_PARPORT is not set
-CONFIG_BLK_DEV=y
+# CONFIG_BLK_DEV is not set
 # CONFIG_BLK_CPQ_DA is not set
 # CONFIG_BLK_CPQ_CISS_DA is not set
 # CONFIG_BLK_DEV_DAC960 is not set
