@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.2.0 Kernel Configuration
+# Linux/mips 3.2.1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -918,9 +918,6 @@ CONFIG_AG7100_GE1_RGMII=y
 # CONFIG_ATHRS26_PHY is not set
 # CONFIG_ATHRS16_PHY is not set
 # CONFIG_ATHR_VITESSE_PHY is not set
-# CONFIG_ATHR_ICPLUS_PHY is not set
-# CONFIG_ATHR_REALTEK_PHY is not set
-# CONFIG_VITESSE_PHY is not set
 # CONFIG_PHY_LAYER is not set
 CONFIG_CAMEO_REALTEK_PHY=y
 CONFIG_BUFFALO=y
@@ -929,8 +926,8 @@ CONFIG_BUFFALO=y
 # CONFIG_WNDR3700 is not set
 # CONFIG_VITESSE_8601_PHY is not set
 # CONFIG_VITESSE_8601_7395_PHY is not set
-# CONFIG_ICPLUS_PHY is not set
-# CONFIG_REALTEK_PHY is not set
+# CONFIG_ATHR_ICPLUS_PHY is not set
+# CONFIG_ATHR_REALTEK_PHY is not set
 # CONFIG_ADM6996FC_PHY is not set
 CONFIG_AG7100_LEN_PER_TX_DS=1536
 CONFIG_AG7100_NUMBER_TX_PKTS=64
@@ -958,8 +955,11 @@ CONFIG_SWCONFIG=y
 # CONFIG_QSEMI_PHY is not set
 # CONFIG_LXT_PHY is not set
 # CONFIG_CICADA_PHY is not set
+# CONFIG_VITESSE_PHY is not set
 # CONFIG_SMSC_PHY is not set
 # CONFIG_BROADCOM_PHY is not set
+# CONFIG_ICPLUS_PHY is not set
+# CONFIG_REALTEK_PHY is not set
 # CONFIG_NATIONAL_PHY is not set
 # CONFIG_STE10XP is not set
 # CONFIG_LSI_ET1011C_PHY is not set
@@ -1204,7 +1204,6 @@ CONFIG_USB_EHCI_AR9130=y
 # CONFIG_USB_SL811_HCD is not set
 # CONFIG_USB_R8A66597_HCD is not set
 # CONFIG_USB_HWA_HCD is not set
-# CONFIG_USB_DWC_OTG is not set
 
 #
 # USB Device Class drivers
