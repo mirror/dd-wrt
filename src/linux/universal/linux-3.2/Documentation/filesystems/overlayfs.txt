@@ -63,12 +63,16 @@ Where both upper and lower objects are directories, a merged directory
 is formed.
 
 At mount time, the two directories given as mount options are combined
-into a merged directory.  Then whenever a lookup is requested in such
-a merged directory, the lookup is performed in each actual directory
-and the combined result is cached in the dentry belonging to the overlay
-filesystem.  If both actual lookups find directories, both are stored
-and a merged directory is created, otherwise only one is stored: the
-upper if it exists, else the lower.
+into a merged directory:
+
+  mount -t overlayfs overlayfs -olowerdir=/lower,upperdir=/upper /overlay
+
+Then whenever a lookup is requested in such a merged directory, the
+lookup is performed in each actual directory and the combined result
+is cached in the dentry belonging to the overlay filesystem.  If both
+actual lookups find directories, both are stored and a merged
+directory is created, otherwise only one is stored: the upper if it
+exists, else the lower.
 
 Only the lists of names from directories are merged.  Other content
 such as metadata and extended attributes are reported for the upper
@@ -139,6 +143,9 @@ to the upper filesystem (copy_up).  Note that creating a hard-link
 also requires copy_up, though of course creation of a symlink does
 not.
 
+The copy_up may turn out to be unnecessary, for example if the file is
+opened for read-write but the data is not modified.
+
 The copy_up process first makes sure that the containing directory
 exists in the upper filesystem - creating it and any parents as
 necessary.  It then creates the object with the same metadata (owner,
@@ -152,6 +159,34 @@ filesystem - future operations on the file are barely noticed by the
 overlay filesystem (though an operation on the name of the file such as
 rename or unlink will of course be noticed and handled).
 
+
+Non-standard behavior
+---------------------
+
+The copy_up operation essentially creates a new, identical file and
+moves it over to the old name.  The new file may be on a different
+filesystem, so both st_dev and st_ino of the file may change.
+
+Any open files referring to this inode will access the old data and
+metadata.  Similarly any file locks obtained before copy_up will not
+apply to the copied up file.
+
+On a file is opened with O_RDONLY fchmod(2), fchown(2), futimesat(2)
+and fsetxattr(2) will fail with EROFS.
+
+If a file with multiple hard links is copied up, then this will
+"break" the link.  Changes will not be propagated to other names
+referring to the same inode.
+
+Symlinks in /proc/PID/ and /proc/PID/fd which point to a non-directory
+object in overlayfs will not contain vaid absolute paths, only
+relative paths leading up to the filesystem's root.  This will be
+fixed in the future.
+
+Some operations are not atomic, for example a crash during copy_up or
+rename will leave the filesystem in an inconsitent state.  This will
+be addressed in the future.
+
 Changes to underlying filesystems
 ---------------------------------
 
@@ -159,5 +194,6 @@ Offline changes, when the overlay is not mounted, are allowed to either
 the upper or the lower trees.
 
 Changes to the underlying filesystems while part of a mounted overlay
-filesystem are not allowed.  This is not yet enforced, but will be in
-the future.
+filesystem are not allowed.  If the underlying filesystem is changed,
+the behavior of the overlay is undefined, though it will not result in
+a crash or deadlock.
