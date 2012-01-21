@@ -105,7 +105,7 @@ static void detect_wireless_devices(void)
 	int loadath9k = 1;
 	int loadlegacy = 1;
 #ifdef HAVE_RT61
-	if (!strcmp(has_device("0e.00"), "0x3592"))
+	if (!strcmp(has_device("0e.0"), "0x3592"))
 		nvram_set("rtchip", "3062");
 	else
 		nvram_set("rtchip", "2860");
@@ -116,7 +116,7 @@ static void detect_wireless_devices(void)
 	char path[32];
 	int i = 0;
 	for (i = 0; i < 5; i++) {
-		sprintf(path, "0%d.00", i);
+		sprintf(path, "0%d.0", i);
 		if (!strcmp(has_device(path), "0x0023"))
 			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x0024"))
