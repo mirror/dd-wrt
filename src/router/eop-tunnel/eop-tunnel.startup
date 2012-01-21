@@ -2,7 +2,6 @@
 nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
-insmod etherip
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "${i}.pid"
@@ -13,6 +12,7 @@ do
 	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
+		insmod etherip
 		if [ "$($nv get oet${i}_bridged)" = "1" ]
 		then
 			/bin/ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
