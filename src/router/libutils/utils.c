@@ -1367,7 +1367,7 @@ int internal_getRouterBrand()
 	setRouter("Vodafone Easybox 803");
 	return ROUTER_BOARD_DANUBE;
 #elif HAVE_SX763
-	setRouter("Gigaset SX-763");
+	setRouter("Gigaset SX763");
 	return ROUTER_BOARD_DANUBE;
 #elif HAVE_DANUBE
 	setRouter("Infineon Danube");
