@@ -6,4 +6,4 @@ setserial:
 
 setserial-install:
 	install -D setserial-2.17/setserial $(INSTALLDIR)/setserial/usr/sbin/setserial
-	$(STRIP) $(INSTALLDIR)/setserial/usr/sbin/setserial
+#	$(STRIP) $(INSTALLDIR)/setserial/usr/sbin/setserial

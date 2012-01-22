@@ -13,4 +13,6 @@ nprobe-clean:
 
 nprobe-install:
 	make -C nprobe install DESTDIR=$(INSTALLDIR)/nprobe
-
+	rm -f $(INSTALLDIR)/nprobe/usr/lib/*.la
+	rm -f $(INSTALLDIR)/nprobe/usr/lib/*.a
+    
