@@ -59,9 +59,16 @@ void set_gpio(int gpio, int value)
 		fprintf(in, "1");
 		fclose(in);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
-	} else {
+	} else 
+#ifdef HAVE_DANUBE
+	if (gpio>=200)
+		sprintf(buf, "/proc/gpiostp/%d_out", gpio - 200);
+	else
+#endif		
+	{
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
+
 #undef GPIOMAX
 	in = fopen(buf, "wb");
 	if (in == NULL)
