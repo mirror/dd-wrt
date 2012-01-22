@@ -1818,7 +1818,7 @@ static void configure_single(int count)
 #endif
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "trimax_vap"));
+			  nvram_default_get(ssid, "m2m_vap"));
 #elif defined(HAVE_WIKINGS)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "Excel Networks_vap"));
@@ -1929,7 +1929,7 @@ static void configure_single(int count)
 #endif
 #elif defined(HAVE_TRIMAX)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
-		  nvram_default_get(ssid, "trimax"));
+		  nvram_default_get(ssid, "M2M"));
 #elif defined(HAVE_WIKINGS)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "Excel Networks"));
@@ -1987,7 +1987,7 @@ static void configure_single(int count)
 #endif
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
-			  nvram_default_get(ssid, "trimax"));
+			  nvram_default_get(ssid, "M2M"));
 #elif defined(HAVE_WIKINGS)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "Excel Networks"));
