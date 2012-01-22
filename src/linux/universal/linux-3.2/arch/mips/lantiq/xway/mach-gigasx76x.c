@@ -57,7 +57,7 @@ static struct mtd_partition gigasx76x_partitions[] =
 		.size	= 0x7e0000,
 	},
 };
-
+extern int usb_led_pin;
 static struct gpio_led
 gigasx76x_gpio_leds[] __initdata = {
 	{ .name = "soc:green:voip", .gpio = 216, },
@@ -230,6 +230,7 @@ static int __init gigasx76x_register_ethernet(void) {
 static void __init gigasx76x_init(void) {
 #define GIGASX76X_USB		29
 #define GIGASX76X_MADWIFI_ADDR	0xb07f0000
+	usb_led_pin = 218;
 	ltq_register_gpio_stp();
 	ltq_register_nor(&gigasx76x_flash_data);
 	ltq_register_pci(&ltq_pci_data);
