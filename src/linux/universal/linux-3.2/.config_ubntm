@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.2.0 Kernel Configuration
+# Linux/mips 3.2.1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -799,10 +799,8 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOC2001 is not set
 # CONFIG_MTD_DOC2001PLUS is not set
 # CONFIG_MTD_DOCG3 is not set
-# CONFIG_MTD_AR7100_SPI_FLASH is not set
 # CONFIG_MTD_FLASH_16MB is not set
 CONFIG_MTD_FLASH_8MB=y
-# CONFIG_MTD_AR9100_PARALLEL_FLASH is not set
 # CONFIG_WZRG450NH is not set
 CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_NAND is not set
@@ -815,24 +813,6 @@ CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_UBI is not set
 # CONFIG_PARPORT is not set
 # CONFIG_BLK_DEV is not set
-# CONFIG_BLK_CPQ_DA is not set
-# CONFIG_BLK_CPQ_CISS_DA is not set
-# CONFIG_BLK_DEV_DAC960 is not set
-# CONFIG_BLK_DEV_UMEM is not set
-# CONFIG_BLK_DEV_COW_COMMON is not set
-# CONFIG_BLK_DEV_LOOP is not set
-
-#
-# DRBD disabled because PROC_FS, INET or CONNECTOR not selected
-#
-# CONFIG_BLK_DEV_NBD is not set
-# CONFIG_BLK_DEV_SX8 is not set
-# CONFIG_BLK_DEV_UB is not set
-# CONFIG_BLK_DEV_RAM is not set
-# CONFIG_CDROM_PKTCDVD is not set
-# CONFIG_ATA_OVER_ETH is not set
-# CONFIG_BLK_DEV_HD is not set
-# CONFIG_BLK_DEV_RBD is not set
 # CONFIG_MISC_DEVICES is not set
 CONFIG_HAVE_IDE=y
 # CONFIG_IDE is not set
@@ -912,7 +892,6 @@ CONFIG_AG7240_NUMBER_TX_PKTS=64
 CONFIG_AG7240_NUMBER_RX_PKTS=128
 CONFIG_AG7240_MAC_LOCATION=0xbfff0000
 # CONFIG_AG7240_USE_TRC is not set
-CONFIG_AG7100_LEN_PER_TX_DS=1536
 # CONFIG_AG71XX is not set
 # CONFIG_NET_VENDOR_MARVELL is not set
 # CONFIG_NET_VENDOR_MELLANOX is not set
@@ -1208,7 +1187,6 @@ CONFIG_USB_OHCI_LITTLE_ENDIAN=y
 #
 # Enable Host or Gadget support for DesignWare OTG controller
 #
-# CONFIG_USB_DWC_OTG is not set
 
 #
 # USB Device Class drivers

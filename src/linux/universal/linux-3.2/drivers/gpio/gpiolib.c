@@ -64,9 +64,9 @@ struct gpio_desc {
 #define GPIO_FLAGS_MASK		((1 << ID_SHIFT) - 1)
 #define GPIO_TRIGGER_MASK	(BIT(FLAG_TRIG_FALL) | BIT(FLAG_TRIG_RISE))
 
-//#ifdef CONFIG_DEBUG_FS
+#if defined(CONFIG_DEBUG_FS) || defined(CONFIG_LANTIQ)
 	const char		*label;
-//#endif
+#endif
 };
 static struct gpio_desc gpio_desc[ARCH_NR_GPIOS];
 
@@ -76,9 +76,9 @@ static DEFINE_IDR(dirent_idr);
 
 static inline void desc_set_label(struct gpio_desc *d, const char *label)
 {
-//#ifdef CONFIG_DEBUG_FS
+#if defined(CONFIG_DEBUG_FS) || defined(CONFIG_LANTIQ)
 	d->label = label;
-//#endif
+#endif
 }
 
 /* Warn when drivers omit gpio_request() calls -- legal but ill-advised
@@ -727,8 +727,10 @@ int gpio_export(unsigned gpio, bool direction_may_change)
 
 	if (desc->chip->names && desc->chip->names[gpio - desc->chip->base])
 		ioname = desc->chip->names[gpio - desc->chip->base];
+#if defined(CONFIG_LANTIQ)
 	else
 		ioname = gpio_desc[gpio].label;
+#endif
 	if (status == 0) {
 		struct device	*dev;
 
@@ -1348,11 +1350,11 @@ const char *gpiochip_is_requested(struct gpio_chip *chip, unsigned offset)
 		return NULL;
 	if (test_bit(FLAG_REQUESTED, &gpio_desc[gpio].flags) == 0)
 		return NULL;
-//#ifdef CONFIG_DEBUG_FS
+#if defined(CONFIG_DEBUG_FS) || defined(CONFIG_LANTIQ)
 	return gpio_desc[gpio].label;
-//#else
-//	return "?";
-//#endif
+#else
+	return "?";
+#endif
 }
 EXPORT_SYMBOL_GPL(gpiochip_is_requested);
 
