@@ -1,0 +1,142 @@
+#! /bin/sh
+
+#
+# LHa Virtual filesystem executive v0.1
+# Copyright (C) 1996, 1997 Joseph M. Hinkle
+# May be distributed under the terms of the GNU Public License
+# <jhinkle@rockisland.com>
+#
+
+# Code for mc_lha_fs_run() suggested by:
+# Jan 97	Zdenek Kabelac <kabi@informatics.muni.cz>
+
+# Tested with mc 3.5.18 and gawk 3.0.0 on Linux 2.0.0
+# Tested with lha v1.01 and lharc v1.02
+# Information and sources for other forms of lha/lzh appreciated
+
+# Nota bene:
+# There are several compression utilities which produce *.lha files.
+# LHArc and LHa in exist several versions, and their listing output varies.
+# Another variable is the architecture on which the compressed file was made.
+# This program attempts to sort out the variables known to me, but it is likely
+# to display an empty panel if it encounters a mystery. 
+# In that case it will be useful to execute this file from the command line:
+# ./lha list Mystery.lha
+# to examine the output directly on the console.  The output string must be
+# precisely in the format described in the README in this directory.
+# Caveat emptor.
+# Learn Latin.
+
+# Define your awk
+AWK=@AWK@
+
+# Define which archiver you are using with appropriate options
+LHA_LIST="lha lq"
+LHA_GET="lha pq"
+LHA_PUT="lha aq"
+
+# The 'list' command executive
+
+mc_lha_fs_list()
+{
+   # List the contents of the archive and sort it out    
+   $LHA_LIST "$1" | $AWK -v uid=`id -nu` -v gid=`id -ng` '
+      # Strip a leading '/' if present in a filepath
+      $(NF) ~ /^\// { $(NF) = substr($NF,2) }
+      # Print the line this way if there is no permission string
+      $1 ~ /^\[.*\]/ {
+         # Invent a generic permission
+         $1 = ($NF ~ /\/$/) ? "drwxr-xr-x":"-rwxr--r--";
+         # Print it
+         printf "%s 1 %-8s %-8s %-8d %s %s %s %s\n",
+                 $1, uid, gid, $2, $4, $5, $6, $7;
+         # Get the next line of the list
+         next;
+      }
+      # Do it this way for a defined permission
+      $1 !~ /^\[.*\]/ {
+         # If the permissions and UID run together
+         if ($1 ~ /\//) {
+            $8 = $7;
+            $7 = $6;
+            $6 = $5;
+            $5 = $4;
+            $3 = $2;
+            $2 = substr($1,10);
+            $1 = substr($1,1,9);
+         }
+         # If the permission string is missing a type
+         if (length($1) == 9) {
+            if ($NF ~ /\/$/)
+               $1 = ("d" $1);
+            else
+               $1 = ("-" $1);
+         }
+         # UID:GID might not be the same as on your system so print numbers
+         # Well, that is the intent.  At the moment mc is translating them.
+         split($2, id, "/");
+         printf "%s 1 %-8d %-8d %-8d %s %s %s %s\n",
+                 $1, id[1], id[2], $3, $5, $6, $7, $8;
+         # Get the next line of the list
+         next;
+      }
+
+   ' 
+}
+
+# The 'copyout' command executive to copy displayed files to a destination
+
+mc_lha_fs_copyout()
+{
+   $LHA_GET "$1" "$2" > "$3"
+}
+
+# The 'copyin' command executive to add something to the archive
+
+mc_lha_fs_copyin ()
+{
+   NAME2=`basename "$2"`; DIR2=${2%$NAME2}
+   NAME3=`basename "$3"`; DIR3=${3%$NAME3}
+
+   cd "${DIR3}"
+
+   ONE2=${2%%/*}
+   [ -n "${ONE2}" ] || exit 1
+   [ -e "${ONE2}" ] && exit 1
+
+   [ -e "${DIR2}" ] || mkdir -p "${DIR2}"
+   ln "$3" "$2"       || exit 1
+
+   $LHA_PUT "$1" "$2"
+   rm -r "${ONE2}"
+}
+
+# The 'run' command executive to run a command from within an archive
+
+mc_lha_fs_run()
+{
+   TMPDIR=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-ulha.XXXXXX"` || exit 1
+   trap "rm -rf \"$TMPDIR\"; exit 0" 1 2 3 4 15
+   TMPCMD=$TMPDIR/run
+   $LHA_GET "$1" "$2" > $TMPCMD  
+   chmod a+x "$TMPCMD"
+   "$TMPCMD"
+   rm -rf "$TMPDIR"
+}
+
+
+# The main routine
+umask 077
+
+cmd="$1"
+shift
+
+case "$cmd" in
+   list)    mc_lha_fs_list    "$@" ;;
+   copyout) mc_lha_fs_copyout "$@" ;;
+   copyin)  mc_lha_fs_copyin  "$@" ;;
+   run)     mc_lha_fs_run     "$@" ;;
+   *)       exit 1 ;;
+esac
+
+exit 0

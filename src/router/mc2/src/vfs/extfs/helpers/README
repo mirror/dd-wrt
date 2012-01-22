@@ -1,0 +1,197 @@
+            Writing scripts for Midnight Commander's external vfs
+
+IMPORTANT NOTE: There may be some bugs left in extfs. Enjoy.
+
+Starting with version 3.1, the Midnight Commander comes with so called
+extfs, which is one of the virtual filesystems. This system makes it
+possible to create new virtual filesystems for the GNU MC very easily.
+
+To handle requests, create a shell/perl/python/etc script/program
+(with executable permissions) in $(libexecdir)/mc/extfs.d
+or in ~/.mc/extfs.d.
+
+(Note: $(libexecdir) should be substituted for actual libexecdir path
+stored when configured or compiled, like /usr/local/libexec or /usr/libexec).
+
+Assign a vfs suffix. For example, if you have .zip file, and would like
+to see what's inside it, path will be
+
+/anypath/my.zip/uzip://some_path/...
+
+In this example, .zip is suffix, but I call vfs 'uzip'. Why? Well,
+what this vfs essentially does is UNzip. UN is too long, so I choosed
+U. Note that sometime in future filesystem like zip may exist: It will
+take whole tree and create .zip file from it. So /usr/zip:// will be
+zipfile containing whole /usr tree.
+
+If your vfs does not require file to work on, add '+' to the end of name.
+Note, that trailing '+' in file name is not a part of vfs name, it is
+just an vfs attribue. So you have not use it in vfs commands:
+
+cd rpms://
+
+is correct command, and
+
+cd rpms+://
+
+is incorrect command.
+
+
+* Commands that should be implemented by your shell script
+----------------------------------------------------------
+
+Return zero from your script upon completion of the command, otherwise
+nonzero for failure or in case of an unsupported command.
+
+$libdir/extfs/prefix command [arguments]
+
+* Command: list archivename
+
+This command should list the complete archive content in the following format
+(a little modified ls -l listing):
+
+AAAAAAA NNN OOOOOOOO GGGGGGGG SSSSSSSS DATETIME [PATH/]FILENAME [-> [PATH/]FILENAME[/]]]
+
+where (things in [] are optional):
+
+AAAAAAA  is the permission string like in ls -l
+NNN      is the number of links
+OOOOOOOO is the owner (either UID or name)
+GGGGGGGG is the group (either GID or name)
+SSSSSSSS is the file size
+FILENAME is the filename
+PATH     is the path from the archive's root without the leading slash (/)
+DATETIME has one of the following formats:
+	    Mon DD hh:mm, Mon DD YYYY, Mon DD YYYY hh:mm, MM-DD-YYYY hh:mm
+
+            where Mon is a three letter English month name, DD is day
+            1-31, MM is month 01-12, YYYY is four digit year, hh hour is
+            and mm is minute.
+
+If the -> [PATH/]FILENAME part is present, it means:
+
+If permissions start with an l (ell), then it is the name that symlink
+points to. (If this PATH starts with a MC vfs prefix, then it is a symlink
+somewhere to the other virtual filesystem (if you want to specify path from
+the local root, use local:/path_name instead of /path_name, since /path_name
+means from root of the archive listed).
+
+If permissions do not start with l, but number of links is greater than one,
+then it says that this file should be a hardlinked with the other file.
+
+* Command: copyout archivename storedfilename extractto
+
+This should extract from archive archivename the file called
+storedfilename (possibly with path if not located in archive's root
+[this is wrong. current extfs strips paths! -- pavel@ucw.cz])
+to file extractto.
+
+* Command: copyin archivename storedfilename sourcefile
+
+This should add to the archivename the sourcefile with the name
+storedfilename inside the archive.  
+
+Important note: archivename in the above examples may not have the
+extension you are expecting to have, like it may happen that
+archivename will be something like /tmp/f43513254 or just
+anything. Some archivers do not like it, so you'll have to find some
+workaround.
+
+* Command: rm archivename storedfilename
+
+This should remove storedfilename from archivename.
+
+* Command: mkdir archivename dirname
+
+This should create a new directory called dirname inside archivename.
+
+* Command: rmdir archivename dirname
+
+This should remove an existing directory dirname. If the directory is
+not empty, mc will recursively delete it (possibly prompting).
+
+* Command: run
+
+Undocumented :-)
+
+---------------------------------------------------------
+
+Don't forget to mark this file executable (chmod 755 ThisFile, for example)
+
+For skeleton structure of executable, look at some of filesystems
+similar to yours.
+
+---------------------------------------------------------
+
+In constructing these routines, errors will be made, and mc will not display
+a malformed printing line.  That can lead the programmer down many false
+trails in search of the bug.  Since this routine is an executable shell script
+it can be run from the command line independently of mc, and its output will
+show on the console or can be redirected to a file.
+
+* Putting it to use
+----------------------------------------------------------
+The file .mc.ext in a home directory, and in mc's user directory (commonly
+/etc/mc), contains instructions for operations on files depending
+on filename extensions.  It is well documented in other files in this 
+distribution, so here are just a few notes specifically on use of the
+Virtual File System you just built.
+
+There are entries in .mc.ext defining a few operations that can be done on a
+file from an mc panel.  Typically they are annotated with a hash mark and a
+file extension like this:
+
+# zip
+
+There must be a way to find the file by extension, so the next line does
+that.  In essence it says "identify the string ".zip" or (|) ".ZIP" at the
+end ($) of a filename": 
+
+regex/\.(zip|ZIP)$
+
+The operations themselves follow that. They must be indented by at least a
+space, and a tab works as well.  In particular, the Open operation will
+now use your new virtual file system by cd'ing to it like this:
+
+   Open=%cd zip:%d/%p
+
+This is the line used when a file is highlighted in a panel and the user
+presses <Enter> or <Return>.  The contents of the archive should show just
+as if they were in a real directory, and can be manipulated as such.
+The rest of the entry pertains to use of the F3 View key:
+
+   View=%view{ascii} unzip -v %f
+
+And perhaps an optional icon for X:
+
+   Icon=zip.xpm
+
+And perhaps an operation to extract the contents of the file, called from
+a menu selection:
+
+   Extract=unzip %f '*'
+
+This is just an example.  The current entry for .zip files has a menu selection
+of 'Unzip' which could be used in place of 'Extract'.  What goes here depends
+on what items you have in, or add to, the menu system, and that's another 
+subject.  The sum of this is the .mc.ext entry:
+
+# zip
+regex/\.(zip|ZIP)$
+   Open=%cd %p/uzip://
+   View=%view{ascii} unzip -v %f
+   Icon=zip.xpm
+   Extract=unzip %f '*'
+
+Add an entry like this to the .mc.ext file in a user's home directory, If you
+want others to have it, add it to the mc.ext file in the mc system directory,
+often /etc/mc/mc.ext.  Notice this file is not prepended with a dot.
+
+Once all this is done, and things are in their proper places, exit mc if you
+were using it, and restart it so it picks up the new information.
+
+That's all there is to it.  The hardest part is making a listing function
+that sorts the output of a system listing command and turns it into a form
+that mc can use.  Currently awk (or gawk) is used because nearly all systems
+have it. If another scripting language is available, like perl, that could
+also be used. 
