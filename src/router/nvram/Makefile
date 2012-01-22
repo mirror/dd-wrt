@@ -116,23 +116,11 @@ CFLAGS += $(DD_CFLAGS)
 
 vpath %.c $(SRCBASE)/shared/nvram
 
-all: libnvram.so convertnvram
+all: libnvram.so 
 
 install: all
 	install -D libnvram.so $(INSTALLDIR)/lib/libnvram.so
 	$(STRIP) $(INSTALLDIR)/lib/libnvram.so
-ifeq ($(ARCH),armeb)
-	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
-endif
-ifeq ($(ARCH),i386)
-	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
-endif
-ifeq ($(ARCH),powerpc)
-	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
-endif
-ifeq ($(ARCH),mips)
-	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
-endif
 
 
 clean:
