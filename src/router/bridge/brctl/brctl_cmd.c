@@ -100,9 +100,9 @@ static int br_cmd_addif(int argc, char *const* argv)
 			break;
 
 		case EBUSY:
-			fprintf(stderr,	"device %s is already a member of a bridge; "
-				"can't enslave it to bridge %s.\n", ifname,
-				brname);
+//			fprintf(stderr,	"device %s is already a member of a bridge; "
+//				"can't enslave it to bridge %s.\n", ifname,
+//				brname);
 			break;
 
 		case ELOOP:
@@ -302,7 +302,6 @@ static int br_cmd_clearportsnooping(int argc, char *const* argv)
 static int br_cmd_showportsnooping(int argc, char *const* argv)
 {
 	int err;
-	fprintf(stderr,"show port snooping");
 
 	err = br_show_port_snooping(argv[1]);
 	if (err)
