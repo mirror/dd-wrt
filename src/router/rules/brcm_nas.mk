@@ -14,5 +14,5 @@ ifeq ($(CONFIG_MSSID),y)
 else
 	install -D nas/nas.v23 $(INSTALLDIR)/nas/usr/sbin/nas
 endif
-	$(STRIP) $(INSTALLDIR)/nas/usr/sbin/nas
+#	$(STRIP) $(INSTALLDIR)/nas/usr/sbin/nas
 	cd $(INSTALLDIR)/nas/usr/sbin && ln -sf nas nas4not && ln -sf nas nas4wds

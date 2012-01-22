@@ -8,7 +8,7 @@ export ac_cv_func_posix_getgrgid_r=no
 export GLIB_CFLAGS=-I$(TOP)/glib20/libglib/glib
 
 mc-configure: ncurses
-	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" --enable-shared \
+	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib" --enable-shared \
 		--enable-static \
 		--enable-debug=no 
 	make -C mc2/slang
