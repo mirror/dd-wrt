@@ -12,7 +12,7 @@ endif
 ifdef CONFIG_BKM
  MOTD_ADD:=.bkm
 endif
-ifdef CONFIG_M2M
+ifdef CONFIG_TRIMAX
  MOTD_ADD:=.m2m
 endif
 install:
