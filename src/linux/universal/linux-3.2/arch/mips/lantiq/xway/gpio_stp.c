@@ -113,6 +113,7 @@ static int ltq_stp_hw_init(void)
 	return 0;
 }
 
+extern int register_stp_proc(void);
 static int __devinit ltq_stp_probe(struct platform_device *pdev)
 {
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -135,7 +136,7 @@ static int __devinit ltq_stp_probe(struct platform_device *pdev)
 	ret = gpiochip_add(&ltq_stp_chip);
 	if (!ret)
 		ret = ltq_stp_hw_init();
-
+	register_stp_proc();
 	return ret;
 }
 

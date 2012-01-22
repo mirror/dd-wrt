@@ -22,23 +22,23 @@
 #include <asm/uaccess.h>	/* for copy_from_user */
 #include <lantiq.h>
 
-#define MAXGPIO 24
+#define MAXGPIO 16
 
 #define GPIO_IN (1<<6)
 #define GPIO_OUT (1<<7)
 #define GPIO_DIR (1<<8)
 #define PIN_MASK 0x3f
 
-extern void ltq_stp_set(struct gpio_chip *chip, unsigned offset, int value);
+extern void ltq_ebu_set(struct gpio_chip *chip, unsigned offset, int value);
 
 static void set_gpio_out(int pin, int val)
 {
-	ltq_stp_set(NULL, pin, val);
+	ltq_ebu_set(NULL, pin, val);
 }
 
 static void set_gpio_in(int pin, int val)
 {
-	ltq_stp_set(NULL, pin, val);
+	ltq_ebu_set(NULL, pin, val);
 }
 
 static int get_gpio_in(int pin)
@@ -136,7 +136,7 @@ gpio_proc_write(struct file *file, const char *buffer, unsigned long count,
 	return procfs_buffer_size;
 }
 
-__init int register_stp_proc(void)
+__init int register_ebu_proc(void)
 {
 	unsigned char i;
 	unsigned int flag = 0;
@@ -144,7 +144,7 @@ __init int register_stp_proc(void)
 	int gpiocount = MAXGPIO;
 
 	/* create directory gpio */
-	gpio_dir = proc_mkdir("gpiostp", NULL);
+	gpio_dir = proc_mkdir("gpioebu", NULL);
 	if (gpio_dir == NULL)
 		goto fault;
 
