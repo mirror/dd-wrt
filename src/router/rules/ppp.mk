@@ -22,7 +22,7 @@ ifeq ($(CONFIG_PPPOESERVER),y)
 endif
 ifeq ($(CONFIG_PPPOESNIFF),y)
 	install -D rp-pppoe-3.5/src/pppoe-sniff $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
-	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
+#	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
 else
 	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
 endif

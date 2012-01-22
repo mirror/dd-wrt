@@ -79,9 +79,3 @@ else
 	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rad*.so
 	rm -rf $(INSTALLDIR)/pppd/etc/radiusclient
 endif
-#	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rp-pppoe.so
-
-#	$(STRIP) $(INSTALLDIR)/pppd/usr/sbin/pppd
-ifeq ($(CONFIG_PPPSTATS),y)
-	$(STRIP) $(INSTALLDIR)/pppd.new/usr/sbin/pppstats
-endif

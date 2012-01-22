@@ -28,7 +28,7 @@ snort-configure: daq-configure pcre-configure daq pcre
 		--with-dnet-includes="$(TOP)/libdnet/include" \
 		--with-dnet-libraries="$(TOP)/libdnet/src/.libs" \
 		--with-daq-includes="$(TOP)/daq/install/include" \
-		--with-daq-libraries="$(TOP)/daq/install/lib" \
+		--with-daq-libraries="$(TOP)/daq/install/lib64" \
 		PATH=$(TOP)/daq/install/bin:$(PATH)
 
 snort: pcre
