@@ -114,7 +114,7 @@ PICFLAG=-fPIC
 all:: $(IWLIB) $(PROGS)
 
 %: %.o
-	$(CC) $(LDFLAGS) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(LDFLAGS) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS) 
 %.o: %.c wireless.h
 	$(CC) $(XCFLAGS) -c $<
 %.so: %.c wireless.h
@@ -137,8 +137,7 @@ ifrename: ifrename.o $(IWLIB)
 macaddr: macaddr.o $(IWLIB)
 
 # Always do symbol stripping here
-iwmulticall: iwmulticall.o
-	$(CC) $(LDFLAGS) -Wl,-s $(XCFLAGS) -o $@ $^ $(LIBS)
+iwmulticall: iwmulticall.o $(IWLIB)
 
 # It's a kind of magic...
 wireless.h:
