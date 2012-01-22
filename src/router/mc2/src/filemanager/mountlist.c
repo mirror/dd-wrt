@@ -1299,7 +1299,6 @@ static int
 get_fs_usage (char const *file, char const *disk, struct fs_usage *fsp)
 {
 #ifdef STAT_STATVFS        /* POSIX, except glibc/Linux */
-
     struct statvfs fsd;
 
     if (statvfs (file, &fsd) < 0)
@@ -1438,6 +1437,7 @@ get_fs_usage (char const *file, char const *disk, struct fs_usage *fsp)
 
 #if (defined STAT_STATVFS || defined STAT_STATVFS64 \
      || (!defined STAT_STATFS2_FS_DATA && !defined STAT_READ_FILSYS))
+
 
     fsp->fsu_blocks = PROPAGATE_ALL_ONES (fsd.f_blocks);
     fsp->fsu_bfree = PROPAGATE_ALL_ONES (fsd.f_bfree);
