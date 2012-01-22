@@ -1,0 +1,96 @@
+#! /bin/sh
+#
+# extfs support for p7zip
+# Written by Pavel Roskin <proski@gnu.org>
+# Some Bugfixes/workarounds by Sergiy Niskorodov <sgh@mail.zp.ua>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+P7ZIP=`which 7z 2>/dev/null` || P7ZIP=`which 7za 2>/dev/null` || P7ZIP=`which 7zr 2>/dev/null` || P7ZIP=""
+
+mcu7zip_list ()
+{
+	# Symlinks are not shown - no idea how to distinguish them
+	# Read-only files are not shown as such - it's rarely useful
+	ugid="`id -nu` `id -ng`"
+	date_re='^\(....\)-\(..\)-\(..\) \(..:..:..\)'
+	date_mc='\2-\3-\1 \4'
+	size_re='............'
+	$P7ZIP l "$1" | sed -n "s/$date_re D.... $size_re $size_re\(.*\)/drwxr-xr-x 1 $ugid 0 $date_mc \5/p;s/$date_re \..... \($size_re\) $size_re\(.*\)/-rw-r--r-- 1 $ugid \5 $date_mc \6/p"
+}
+
+mcu7zip_copyout ()
+{
+	#first we check if we have old p7zip archive with prefix ./ in filename
+	$P7ZIP l "$1" "$2" | grep -q "0 files, 0 folders" && \
+	EXFNAME='*./'"$2" || EXFNAME="$2"
+	$P7ZIP e -so "$1" "$EXFNAME" > "$3" 2>/dev/null
+}
+
+mcu7zip_copyin ()
+{
+	$P7ZIP a -si"$2" "$1" <"$3" >/dev/null 2>&1
+}
+
+mcu7zip_mkdir ()
+{
+	dir=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-u7z.XXXXXX"` || exit 1
+	mkdir -p "$dir"/"$2"
+	$P7ZIP a -w"$dir" "$1" "$dir"/"$2" >/dev/null 2>&1
+	rm -rf "$dir"
+}
+
+mcu7zip_rm ()
+{
+	# NOTE: Version 4.20 fails to delete files in subdirectories
+	#first we check if we have old p7zip archive with prefix ./ in filename
+	$P7ZIP l "$1" "$2" | grep -q "0 files, 0 folders" && \
+	EXFNAME='*./'"$2" || EXFNAME="$2"
+	$P7ZIP d "$1" "$EXFNAME" 2>&1 | grep -q E_NOTIMPL > /dev/null 2>&1 && \
+	{ printf "Function not implemented...\n7z cannot delete from solid archive." >&2 ; exit 1 ; }
+}
+
+mcu7zip_rmdir ()
+{
+	#first we check if we have old p7zip archive with prefix ./ in filename
+	$P7ZIP l "$1" "$2" | grep -q "0 files, 0 folders" && \
+	EXFNAME='*./'"$2" || EXFNAME="$2"
+	$P7ZIP d "$1" "$EXFNAME"/ 2>&1 | grep -q E_NOTIMPL > /dev/null 2>&1 && \
+	{ printf "Function not implemented...\n7z cannot delete from solid archive." >&2 ; exit 1 ; }
+}
+
+# override any locale for dates
+LC_DATE=C
+export LC_DATE
+
+umask 077
+
+if [ -z "$P7ZIP" ]; then
+    echo "Error: could not find p7zip (looked for 7z, 7za and 7zr)" >&2
+    exit 1
+fi
+
+cmd="$1"
+shift
+
+case "$cmd" in
+  list)    mcu7zip_list    "$@" | sort -k 8 ;;
+  copyout) mcu7zip_copyout "$@" ;;
+  copyin)  mcu7zip_copyin  "$@" ;;
+  mkdir)   mcu7zip_mkdir   "$@" ;;
+  rm)      mcu7zip_rm      "$@" ;;
+  rmdir)   mcu7zip_rmdir   "$@" ;;
+  *) exit 1 ;;
+esac
+exit 0

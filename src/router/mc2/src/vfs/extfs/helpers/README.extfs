@@ -1,0 +1,72 @@
+# Each external VFS type must be registered in extfs.d directory if you want to use it.
+# Trailing plus means that the filesystem is not tied to a certain file.
+
+# Popular PC archivers
+uzip
+uzoo
+ulha
+urar
+uha
+u7z
+ualz
+# FIXME: for arj usage you need a special patch to unarj (see unarj.diff)
+uarj
+uarc
+uace
+
+# For cab files
+ucab
+
+# ar is used for static libraries
+uar
+
+# Packages from popular Linux distributions
+rpm
+deb
+
+# a+ - mtools filesystem
+a+
+
+# For browsing lslR listings (found on many ftp sites)
+lslR
+
+# Hewlett Packard calculator
+hp48+
+
+# Commodore 64/128 d64/D64 files
+uc1541
+
+# Break patches into chunks
+patchfs
+
+# Represents a mailbox as a directory
+mailfs
+
+# List all installed RPM packages on the system
+rpms+
+trpm
+
+# dpkg frontend
+dpkg+
+debd
+
+# apt frontend
+apt+
+deba
+
+# Simple filesystem for audio cdroms. Use /dev/cdrom#audio (or /#audio)
+audio
+
+# Package of Bad Penguin (an Italian GNU/Linux distribution)
+bpp
+
+# ISO image
+iso9660
+
+# Amazon S3
+s3+
+
+# git frontend
+gitfs - browse the git repo
+changesetfs - list of versions of current file
+patchsetfs - list of patches of current file

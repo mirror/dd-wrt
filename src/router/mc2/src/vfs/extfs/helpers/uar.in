@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# Written by    Alex Kuchma <ask@bcs.zp.ua>
+#               Alex Tkachenko <alex@bcs.zp.ua>
+# Updated by    Vitezslav Samel <xsamel00@dcse.fee.vutbr.cz>
+#
+# (C) 1997, 1998 The Free Software Foundation.
+#
+#
+
+XAR=ar
+
+mcarfs_list ()
+{
+    # If $temp_replace string is part of the filename that part might get lost
+    temp_replace='Unique Separator String'
+    thisyear="`date +%Y`"
+    $XAR tv "$1" | sed 's,^,-,;s, , 1 ,;s,/, ,' |
+	sed -e "s/\( [0-2][0-9]\:[0-5][0-9]\)\( $thisyear \)\(.*\)/\1$temp_replace\3/" |
+	sed -e "s/\( [0-2][0-9]\:[0-5][0-9] \)\([12][0-9][0-9][0-9] \)\(.*\)/ \2\3/" |
+	sed -e "s/$temp_replace/ /"
+}
+
+mcarfs_copyout ()
+{
+    $XAR p "$1" "$2" > "$3"
+}
+
+mcarfs_copyin ()
+{
+    TMPDIR=`mktemp -d "${MC_TMPDIR:-/tmp}/mctmpdir-uar.XXXXXX"` || exit 1
+    name=`basename "$2"`
+    (cd "$TMPDIR" && cp -fp "$3" "$name" && $XAR r "$1" "$name")
+    rm -rf "$TMPDIR"
+}
+
+mcarfs_rm ()
+{
+    $XAR d "$1" "$2"
+}
+
+# override any locale for dates
+LC_ALL=C
+export LC_ALL
+
+umask 077
+case "$1" in
+  list) mcarfs_list "$2" ;;
+  copyout) shift; mcarfs_copyout "$@" ;;
+  copyin) shift; mcarfs_copyin "$@" ;;
+  rm) shift; mcarfs_rm "$@" ;;
+  mkdir|rmdir)
+    echo "mcarfs: ar archives cannot contain directories." 1>&2
+    exit 1;;
+  *)
+    echo "mcarfs: unknown command: \"$1\"." 1>&2
+    exit 1;;
+esac
+
+exit 0
