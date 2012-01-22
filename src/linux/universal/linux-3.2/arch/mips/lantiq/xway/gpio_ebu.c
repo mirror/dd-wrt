@@ -40,7 +40,7 @@ static void ltq_ebu_apply(void)
 	spin_unlock_irqrestore(&ebu_lock, flags);
 }
 
-static void ltq_ebu_set(struct gpio_chip *chip, unsigned offset, int value)
+void ltq_ebu_set(struct gpio_chip *chip, unsigned offset, int value)
 {
 	if (value)
 		ltq_ebu_gpio_shadow |= (1 << offset);
@@ -65,6 +65,8 @@ static struct gpio_chip ltq_ebu_chip = {
 	.ngpio = 16,
 	.owner = THIS_MODULE,
 };
+
+extern int register_ebu_proc(void);
 
 static int ltq_ebu_probe(struct platform_device *pdev)
 {
@@ -102,6 +104,8 @@ static int ltq_ebu_probe(struct platform_device *pdev)
 	ret = gpiochip_add(&ltq_ebu_chip);
 	if (!ret)
 		ltq_ebu_apply();
+
+	register_ebu_proc();
 	return ret;
 }
 
