@@ -1,5 +1,5 @@
 chillispot-configure:
-	cd chillispot && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd chillispot && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF"
 
 chillispot:
 	$(MAKE) -j 4 -C chillispot
@@ -18,7 +18,7 @@ ifeq ($(CONFIG_HOTSPOT),y)
 	install -D chillispot/config/3hotss.webhotspot $(INSTALLDIR)/chillispot/etc/config/3hotss.webhotspot
 endif
 	install -D chillispot/src/chilli $(INSTALLDIR)/chillispot/usr/sbin/chilli
-	$(STRIP) $(INSTALLDIR)/chillispot/usr/sbin/chilli
+#	$(STRIP) $(INSTALLDIR)/chillispot/usr/sbin/chilli
 
 chillispot-clean:
 	$(MAKE) -C chillispot clean
