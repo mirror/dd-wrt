@@ -1,20 +1,24 @@
-/* Dialog box features module for the Midnight Commander
+/*
+   Dialog box features module for the Midnight Commander
+
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2009, 2010  Free Software Foundation, Inc.
+   2005, 2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file dialog.c
@@ -24,10 +28,13 @@
 #include <config.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>              /* open() */
 
 #include "lib/global.h"
 
@@ -37,12 +44,8 @@
 #include "lib/tty/key.h"
 #include "lib/strutil.h"
 #include "lib/widget.h"
-
-/* TODO: these includes should be removed! */
-#include "src/help.h"           /* interactive_display() */
-#include "src/filemanager/layout.h"
-#include "src/execute.h"        /* suspend_cmd() */
-#include "src/keybind-defaults.h"
+#include "lib/fileloc.h"        /* MC_HISTORY_FILE */
+#include "lib/event.h"          /* mc_event_raise() */
 
 /*** global variables ****************************************************************************/
 
@@ -64,6 +67,8 @@ int fast_refresh = 0;
 /* left click outside of dialog closes it */
 int mouse_close_dialog = 0;
 
+const global_keymap_t *dialog_map = NULL;
+
 /*** file scope macro definitions ****************************************************************/
 
 /*** file scope type declarations ****************************************************************/
@@ -79,10 +84,9 @@ typedef enum
 /*** file scope variables ************************************************************************/
 
 /*** file scope functions ************************************************************************/
-/* --------------------------------------------------------------------------------------------- */
 
 static GList *
-dlg_widget_next (Dlg_head *h, GList *l)
+dlg_widget_next (Dlg_head * h, GList * l)
 {
     GList *next;
 
@@ -96,7 +100,7 @@ dlg_widget_next (Dlg_head *h, GList *l)
 /* --------------------------------------------------------------------------------------------- */
 
 static GList *
-dlg_widget_prev (Dlg_head *h, GList *l)
+dlg_widget_prev (Dlg_head * h, GList * l)
 {
     GList *prev;
 
@@ -145,6 +149,31 @@ dlg_broadcast_msg_to (Dlg_head * h, widget_msg_t msg, gboolean reverse, int flag
             send_message (w, msg, 0);
     }
     while (first != p);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Read histories from the ${XDG_CACHE_HOME}/mc/history file
+  */
+static void
+dlg_read_history (Dlg_head * h)
+{
+    char *profile;
+    ev_history_load_save_t event_data;
+
+    if (num_history_items_recorded == 0)        /* this is how to disable */
+        return;
+
+    profile = mc_config_get_full_path (MC_HISTORY_FILE);
+    event_data.cfg = mc_config_init (profile);
+    event_data.receiver = NULL;
+
+    /* create all histories in dialog */
+    mc_event_raise (h->event_group, MCEVENT_HISTORY_LOAD, &event_data);
+
+    mc_config_deinit (event_data.cfg);
+    g_free (profile);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -249,48 +278,52 @@ dlg_execute_cmd (Dlg_head * h, unsigned long command)
     cb_ret_t ret = MSG_HANDLED;
     switch (command)
     {
-    case CK_DialogOK:
+    case CK_Ok:
         h->ret_value = B_ENTER;
         dlg_stop (h);
         break;
-    case CK_DialogCancel:
+    case CK_Cancel:
         h->ret_value = B_CANCEL;
         dlg_stop (h);
         break;
 
-    case CK_DialogPrevItem:
+    case CK_Up:
+    case CK_Left:
         dlg_one_up (h);
         break;
-    case CK_DialogNextItem:
+    case CK_Down:
+    case CK_Right:
         dlg_one_down (h);
         break;
 
-    case CK_DialogHelp:
-        interactive_display (NULL, h->help_ctx);
-        do_refresh ();
+    case CK_Help:
+        {
+            ev_help_t event_data = { NULL, h->help_ctx };
+            mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
+        }
         break;
 
-    case CK_DialogSuspend:
-        suspend_cmd ();
+    case CK_Suspend:
+        mc_event_raise (MCEVENT_GROUP_CORE, "suspend", NULL);
         refresh_cmd ();
         break;
-    case CK_DialogRefresh:
+    case CK_Refresh:
         refresh_cmd ();
         break;
 
-    case CK_DialogListCmd:
+    case CK_ScreenList:
         if (!h->modal)
             dialog_switch_list ();
         else
             ret = MSG_NOT_HANDLED;
         break;
-    case CK_DialogNextCmd:
+    case CK_ScreenNext:
         if (!h->modal)
             dialog_switch_next ();
         else
             ret = MSG_NOT_HANDLED;
         break;
-    case CK_DialogPrevCmd:
+    case CK_ScreenPrev:
         if (!h->modal)
             dialog_switch_prev ();
         else
@@ -311,7 +344,7 @@ dlg_handle_key (Dlg_head * h, int d_key)
 {
     unsigned long command;
     command = keybind_lookup_keymap_command (dialog_map, d_key);
-    if ((command == CK_Ignore_Key) || (dlg_execute_cmd (h, command) == MSG_NOT_HANDLED))
+    if ((command == CK_IgnoreKey) || (dlg_execute_cmd (h, command) == MSG_NOT_HANDLED))
         return MSG_NOT_HANDLED;
     else
         return MSG_HANDLED;
@@ -491,7 +524,7 @@ frontend_run_dlg (Dlg_head * h)
     event.x = -1;
 
     /* close opened editors, viewers, etc */
-    if (!h->modal && midnight_shutdown)
+    if (!h->modal && mc_global.widget.midnight_shutdown)
     {
         h->callback (h, NULL, DLG_VALIDATE, 0, NULL);
         return;
@@ -499,8 +532,8 @@ frontend_run_dlg (Dlg_head * h)
 
     while (h->state == DLG_ACTIVE)
     {
-        if (winch_flag)
-            change_screen_size ();
+        if (mc_global.tty.winch_flag)
+            dialog_change_screen_size ();
 
         if (is_idle ())
         {
@@ -728,9 +761,7 @@ create_dlg (gboolean modal, int y1, int x1, int lines, int cols,
     new_d = g_new0 (Dlg_head, 1);
     new_d->modal = modal;
     if (colors != NULL)
-    {
         memmove (new_d->color, colors, sizeof (dlg_colors_t));
-    }
     new_d->help_ctx = help_ctx;
     new_d->callback = (callback != NULL) ? callback : default_dlg_callback;
     new_d->x = x1;
@@ -754,6 +785,9 @@ create_dlg (gboolean modal, int y1, int x1, int lines, int cols,
             new_d->title = g_strdup_printf (" %s ", t);
         g_free (t);
     }
+
+    /* unique name got event group for this dialog */
+    new_d->event_group = g_strdup_printf ("%s_%p", MCEVENT_GROUP_DIALOG, (void *) new_d);
 
     return new_d;
 }
@@ -1058,6 +1092,7 @@ init_dlg (Dlg_head * h)
 
         h->callback (h, NULL, DLG_INIT, 0, NULL);
         dlg_broadcast_msg (h, WIDGET_INIT, FALSE);
+        dlg_read_history (h);
     }
 
     h->state = DLG_ACTIVE;
@@ -1079,8 +1114,8 @@ dlg_process_event (Dlg_head * h, int key, Gpm_Event * event)
     if (key == EV_NONE)
     {
         if (tty_got_interrupt ())
-            if (h->callback (h, NULL, DLG_ACTION, CK_DialogCancel, NULL) != MSG_HANDLED)
-                dlg_execute_cmd (h, CK_DialogCancel);
+            if (h->callback (h, NULL, DLG_ACTION, CK_Cancel, NULL) != MSG_HANDLED)
+                dlg_execute_cmd (h, CK_Cancel);
 
         return;
     }
@@ -1130,13 +1165,54 @@ run_dlg (Dlg_head * h)
 void
 destroy_dlg (Dlg_head * h)
 {
+    /* if some widgets have history, save all history at one moment here */
+    dlg_save_history (h);
     dlg_broadcast_msg (h, WIDGET_DESTROY, FALSE);
     g_list_foreach (h->widgets, (GFunc) g_free, NULL);
     g_list_free (h->widgets);
+    mc_event_group_del (h->event_group);
+    g_free (h->event_group);
     g_free (h->title);
     g_free (h);
 
     do_refresh ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Write history to the ${XDG_CACHE_HOME}/mc/history file
+  */
+void
+dlg_save_history (Dlg_head * h)
+{
+    char *profile;
+    int i;
+
+    if (num_history_items_recorded == 0)        /* this is how to disable */
+        return;
+
+    profile = mc_config_get_full_path (MC_HISTORY_FILE);
+    i = open (profile, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    if (i != -1)
+        close (i);
+
+    /* Make sure the history is only readable by the user */
+    if (chmod (profile, S_IRUSR | S_IWUSR) != -1 || errno == ENOENT)
+    {
+        ev_history_load_save_t event_data;
+
+        event_data.cfg = mc_config_init (profile);
+        event_data.receiver = NULL;
+
+        /* get all histories in dialog */
+        mc_event_raise (h->event_group, MCEVENT_HISTORY_SAVE, &event_data);
+
+        mc_config_save_file (event_data.cfg, NULL);
+        mc_config_deinit (event_data.cfg);
+    }
+
+    g_free (profile);
 }
 
 /* --------------------------------------------------------------------------------------------- */

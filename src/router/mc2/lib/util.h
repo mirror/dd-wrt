@@ -47,6 +47,28 @@ enum compression_type
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
+/* keys are set only during sorting */
+typedef struct
+{
+    /* File attributes */
+    size_t fnamelen;
+    char *fname;
+    struct stat st;
+    /* key used for comparing names */
+    char *sort_key;
+    /* key used for comparing extensions */
+    char *second_sort_key;
+
+    /* Flags */
+    struct
+    {
+        unsigned int marked:1;  /* File marked in pane window */
+        unsigned int link_to_dir:1;     /* If this is a link, does it point to directory? */
+        unsigned int stale_link:1;      /* If this is a symlink and points to Charon's land */
+        unsigned int dir_size_computed:1;       /* Size of directory was computed with dirsizes_cmd */
+    } f;
+} file_entry;
+
 /*** global variables defined in .c file *********************************************************/
 
 extern struct sigaction startup_handler;
@@ -122,9 +144,6 @@ void init_uid_gid_cache (void);
 char *get_group (int);
 char *get_owner (int);
 
-/* Check if the file exists. If not copy the default */
-int check_for_default (const char *default_file, const char *file);
-
 /* Returns a copy of *s until a \n is found and is below top */
 const char *extract_line (const char *s, const char *top);
 
@@ -185,6 +204,8 @@ gboolean mc_util_restore_from_backup_if_possible (const char *, const char *);
 gboolean mc_util_unlink_backup_if_possible (const char *, const char *);
 
 char *guess_message_value (void);
+
+char *mc_build_filename (const char *first_element, ...);
 
 /*** inline functions **************************************************/
 

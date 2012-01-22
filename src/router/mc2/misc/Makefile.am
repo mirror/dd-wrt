@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in.
 
-SUBDIRS = skins syntax
+SUBDIRS = macros.d skins syntax
 
 LIBFILES_OUT = mc.ext
 
@@ -13,7 +13,7 @@ pkgdata_DATA += mc.charsets
 endif
 
 LIBFILES_CONST = \
-	cedit.menu      \
+	mcedit.menu      \
 	edit.indent.rc \
 	edit.spell.rc \
 	filehighlight.ini \
@@ -22,7 +22,6 @@ LIBFILES_CONST = \
 	mc.keymap.emacs \
 	mc.menu \
 	mc.menu.sr
-
 
 CLEANFILES = $(SCRIPTS_OUT)
 

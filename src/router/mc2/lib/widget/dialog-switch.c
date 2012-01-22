@@ -1,23 +1,29 @@
 /*
- * Copyright (c) 2009, 2010 Free Software Foundation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
- * Original idea and code: Oleg "Olegarch" Konovalov <olegarch@linuxinside.com>
- * Written by: 2007 Daniel Borca <dborca@yahoo.com>
- *             2010 Andrew Borodin <aborodin@vmail.ru>
+   Support of multiply editors and viewers.
+
+   Original idea and code: Oleg "Olegarch" Konovalov <olegarch@linuxinside.com>
+
+   Copyright (c) 2009, 2010, 2011
+   The Free Software Foundation
+
+   Written by:
+   Daniel Borca <dborca@yahoo.com>, 2007
+   Andrew Borodin <aborodin@vmail.ru>, 2010
+
+   This file is part of the Midnight Commander.
+
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file dialog-switch.c
@@ -26,16 +32,23 @@
 
 #include <config.h>
 
+/* If TIOCGWINSZ supported, make it available here, because window resizing code
+ * depends on it... */
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+#include <termios.h>
+
 #include "lib/global.h"
 #include "lib/tty/tty.h"        /* LINES, COLS */
+#include "lib/tty/win.h"        /* do_enter_ca_mode() */
+#include "lib/tty/color.h"      /* tty_set_normal_attrs() */
 #include "lib/widget.h"
-
-/* TODO: these includes should be removed! */
-#include "src/filemanager/layout.h"     /* repaint_screen() */
-#include "src/filemanager/midnight.h"   /* midnight_dlg */
-#include "src/main.h"           /* midnight_shutdown */
+#include "lib/event.h"
 
 /*** global variables ****************************************************************************/
+
+Dlg_head *midnight_dlg = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -57,6 +70,17 @@ static unsigned char
 get_hotkey (int n)
 {
     return (n <= 9) ? '0' + n : 'a' + n - 10;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+dialog_switch_suspend (void *data, void *user_data)
+{
+    (void) user_data;
+
+    if (data != mc_current->data)
+        ((Dlg_head *) data)->state = DLG_SUSPENDED;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -86,11 +110,30 @@ dialog_switch_goto (GList * dlg)
                 /* return to panels before run the required dialog */
                 dialog_switch_pending = TRUE;
             else
+            {
                 /* switch to panels */
+                midnight_dlg->state = DLG_ACTIVE;
                 do_refresh ();
+            }
         }
     }
 }
+
+/* --------------------------------------------------------------------------------------------- */
+
+#if defined TIOCGWINSZ
+static void
+dlg_resize_cb (void *data, void *user_data)
+{
+    Dlg_head *d = data;
+
+    (void) user_data;
+    if (d->state == DLG_ACTIVE)
+        d->callback (d, NULL, DLG_RESIZE, 0, NULL);
+    else
+        d->winch_pending = TRUE;
+}
+#endif
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
@@ -110,6 +153,9 @@ dialog_switch_add (Dlg_head * h)
         mc_dialogs = g_list_prepend (mc_dialogs, h);
         mc_current = mc_dialogs;
     }
+
+    /* suspend forced all other screens */
+    g_list_foreach (mc_dialogs, dialog_switch_suspend, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -131,6 +177,10 @@ dialog_switch_remove (Dlg_head * h)
         mc_current = g_list_find (mc_dialogs, (Dlg_head *) top_dlg->data);
     else
         mc_current = mc_dialogs;
+
+    /* resume forced the current screen */
+    if (mc_current != NULL)
+        ((Dlg_head *) mc_current->data)->state = DLG_ACTIVE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -148,7 +198,7 @@ dialog_switch_next (void)
 {
     GList *next;
 
-    if (midnight_shutdown || mc_current == NULL)
+    if (mc_global.widget.midnight_shutdown || mc_current == NULL)
         return;
 
     next = g_list_next (mc_current);
@@ -165,7 +215,7 @@ dialog_switch_prev (void)
 {
     GList *prev;
 
-    if (midnight_shutdown || mc_current == NULL)
+    if (mc_global.widget.midnight_shutdown || mc_current == NULL)
         return;
 
     prev = g_list_previous (mc_current);
@@ -187,7 +237,7 @@ dialog_switch_list (void)
     int i = 0;
     int rv;
 
-    if (midnight_shutdown || mc_current == NULL)
+    if (mc_global.widget.midnight_shutdown || mc_current == NULL)
         return;
 
     lines = min ((size_t) (LINES * 2 / 3), dlg_num);
@@ -239,11 +289,12 @@ dialog_switch_process_pending (void)
         if (h->state == DLG_CLOSED)
         {
             destroy_dlg (h);
+
             /* return to panels */
-            if (mc_run_mode == MC_RUN_FULL)
+            if (mc_global.mc_run_mode == MC_RUN_FULL)
             {
                 mc_current = g_list_find (mc_dialogs, midnight_dlg);
-                update_panels (UP_OPTIMIZE, UP_KEEPSEL);
+                mc_event_raise (MCEVENT_GROUP_FILEMANAGER, "update_panels", NULL);
             }
         }
     }
@@ -277,6 +328,83 @@ dialog_switch_shutdown (void)
         run_dlg (dlg);
         destroy_dlg (dlg);
     }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+clr_scr (void)
+{
+    tty_set_normal_attrs ();
+    tty_fill_region (0, 0, LINES, COLS, ' ');
+    tty_refresh ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+repaint_screen (void)
+{
+    do_refresh ();
+    tty_refresh ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+mc_refresh (void)
+{
+#ifdef WITH_BACKGROUND
+    if (mc_global.we_are_background)
+        return;
+#endif /* WITH_BACKGROUND */
+    if (!mc_global.tty.winch_flag)
+        tty_refresh ();
+    else
+    {
+        /* if winch was caugth, we should do not only redraw screen, but
+           reposition/resize all */
+        dialog_change_screen_size ();
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+dialog_change_screen_size (void)
+{
+    mc_global.tty.winch_flag = FALSE;
+#if defined(HAVE_SLANG) || NCURSES_VERSION_MAJOR >= 4
+#if defined TIOCGWINSZ
+
+#ifndef NCURSES_VERSION
+    tty_noraw_mode ();
+    tty_reset_screen ();
+#endif
+    tty_change_screen_size ();
+#ifdef HAVE_SLANG
+    /* XSI Curses spec states that portable applications shall not invoke
+     * initscr() more than once.  This kludge could be done within the scope
+     * of the specification by using endwin followed by a refresh (in fact,
+     * more than one curses implementation does this); it is guaranteed to work
+     * only with slang.
+     */
+    SLsmg_init_smg ();
+    do_enter_ca_mode ();
+    tty_keypad (TRUE);
+    tty_nodelay (FALSE);
+#endif
+
+    /* Inform all suspending dialogs */
+    dialog_switch_got_winch ();
+    /* Inform all running dialogs */
+    g_list_foreach (top_dlg, (GFunc) dlg_resize_cb, NULL);
+
+    /* Now, force the redraw */
+    repaint_screen ();
+
+#endif /* TIOCGWINSZ */
+#endif /* defined(HAVE_SLANG) || NCURSES_VERSION_MAJOR >= 4 */
 }
 
 /* --------------------------------------------------------------------------------------------- */

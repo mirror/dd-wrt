@@ -1,7 +1,8 @@
 /*
    Interface to the terminal controlling library.
 
-   Copyright (C) 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Roland Illig <roland.illig@gmx.de>, 2005.
@@ -9,20 +10,18 @@
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file tty.c
@@ -34,14 +33,18 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <unistd.h>     /* exit() */
+#include <unistd.h>             /* exit() */
+
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
 
 #include "lib/global.h"
 #include "lib/strutil.h"
 
 #include "tty.h"
 #include "tty-internal.h"
-#include "mouse.h"      /* use_mouse_p */
+#include "mouse.h"              /* use_mouse_p */
 #include "win.h"
 
 /*** global variables ****************************************************************************/
@@ -50,12 +53,6 @@
    command ran in the subshell to the description found in the termcap/terminfo
    database */
 int reset_hp_softkeys = 0;
-
-/* If true lines are drown by spaces */
-gboolean slow_tty = FALSE;
-
-/* If true use +, -, | for line drawing */
-gboolean ugly_line_drawing = FALSE;
 
 int mc_tty_frm[MC_TTY_FRM_MAX];
 
@@ -105,14 +102,6 @@ tty_check_term (gboolean force_xterm)
         || strncmp (termvalue, "konsole", 7) == 0
         || strncmp (termvalue, "rxvt", 4) == 0
         || strcmp (termvalue, "Eterm") == 0 || strcmp (termvalue, "dtterm") == 0;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-extern gboolean
-tty_is_slow (void)
-{
-    return slow_tty;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -236,6 +225,57 @@ mc_tty_normalize_from_utf8 (const char *str)
 
 /* --------------------------------------------------------------------------------------------- */
 
+/** Resize given terminal using TIOCSWINSZ, return ioctl() result */
+int
+tty_resize (int fd)
+{
+#if defined TIOCSWINSZ
+    struct winsize tty_size;
+
+    tty_size.ws_row = LINES;
+    tty_size.ws_col = COLS;
+    tty_size.ws_xpixel = tty_size.ws_ypixel = 0;
+
+    return ioctl (fd, TIOCSWINSZ, &tty_size);
+#else
+    return 0;
+#endif
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+tty_change_screen_size (void)
+{
+#if defined(HAVE_SLANG) || NCURSES_VERSION_MAJOR >= 4
+#if defined TIOCGWINSZ
+    struct winsize winsz;
+
+    winsz.ws_col = winsz.ws_row = 0;
+    /* Ioctl on the STDIN_FILENO */
+    ioctl (0, TIOCGWINSZ, &winsz);
+    if (winsz.ws_col && winsz.ws_row)
+    {
+#if defined(NCURSES_VERSION) && defined(HAVE_RESIZETERM)
+        resizeterm (winsz.ws_row, winsz.ws_col);
+        clearok (stdscr, TRUE); /* sigwinch's should use a semaphore! */
+#else
+        COLS = winsz.ws_col;
+        LINES = winsz.ws_row;
+#endif
+#ifdef HAVE_SUBSHELL_SUPPORT
+        if (!mc_global.tty.use_subshell)
+            return;
+
+        tty_resize (mc_global.tty.subshell_pty);
+#endif
+    }
+#endif /* TIOCGWINSZ */
+#endif /* defined(HAVE_SLANG) || NCURSES_VERSION_MAJOR >= 4 */
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 void
 tty_init_xterm_support (gboolean is_xterm)
 {
@@ -272,7 +312,7 @@ tty_init_xterm_support (gboolean is_xterm)
         /* Enable mouse unless explicitly disabled by --nomouse */
         if (use_mouse_p != MOUSE_DISABLED)
         {
-            if (old_mouse)
+            if (mc_global.tty.old_mouse)
                 use_mouse_p = MOUSE_XTERM_NORMAL_TRACKING;
             else
             {

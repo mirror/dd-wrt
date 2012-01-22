@@ -60,12 +60,16 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
-	$(top_srcdir)/m4.include/ac-get-fs-info.m4 \
+	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
+	$(top_srcdir)/m4.include/fstypename.m4 \
+	$(top_srcdir)/m4.include/fsusage.m4 \
+	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
-	$(top_srcdir)/m4.include/ac-g-module-supported.m4 \
+	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
@@ -78,6 +82,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
+	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -88,7 +93,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmcconfig_la_LIBADD =
 am_libmcconfig_la_OBJECTS = libmcconfig_la-common.lo \
-	libmcconfig_la-get.lo libmcconfig_la-set.lo
+	libmcconfig_la-get.lo libmcconfig_la-set.lo \
+	libmcconfig_la-paths.lo
 libmcconfig_la_OBJECTS = $(am_libmcconfig_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -142,6 +148,8 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CHECK_CFLAGS = @CHECK_CFLAGS@
+CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -215,6 +223,8 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
+LIBMC_RELEASE = @LIBMC_RELEASE@
+LIBMC_VERSION = @LIBMC_VERSION@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -332,11 +342,14 @@ noinst_LTLIBRARIES = libmcconfig.la
 libmcconfig_la_SOURCES = \
 	common.c \
 	get.c \
-	set.c
+	set.c \
+	paths.c
 
 libmcconfig_la_CFLAGS = -I$(top_srcdir) \
 	$(GLIB_CFLAGS) \
-	-DDATADIR=\""$(pkgdatadir)/"\" -DLOCALEDIR=\""$(localedir)"\"
+	-DDATADIR=\""$(pkgdatadir)/"\" \
+	-DLOCALEDIR=\""$(localedir)"\" \
+	-DSYSCONFDIR=\""$(sysconfdir)/@PACKAGE@/"\"
 
 all: all-am
 
@@ -392,6 +405,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcconfig_la-common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcconfig_la-get.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcconfig_la-paths.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcconfig_la-set.Plo@am__quote@
 
 .c.o:
@@ -441,6 +455,14 @@ libmcconfig_la-set.lo: set.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='set.c' object='libmcconfig_la-set.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcconfig_la_CFLAGS) $(CFLAGS) -c -o libmcconfig_la-set.lo `test -f 'set.c' || echo '$(srcdir)/'`set.c
+
+libmcconfig_la-paths.lo: paths.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcconfig_la_CFLAGS) $(CFLAGS) -MT libmcconfig_la-paths.lo -MD -MP -MF $(DEPDIR)/libmcconfig_la-paths.Tpo -c -o libmcconfig_la-paths.lo `test -f 'paths.c' || echo '$(srcdir)/'`paths.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmcconfig_la-paths.Tpo $(DEPDIR)/libmcconfig_la-paths.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='paths.c' object='libmcconfig_la-paths.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcconfig_la_CFLAGS) $(CFLAGS) -c -o libmcconfig_la-paths.lo `test -f 'paths.c' || echo '$(srcdir)/'`paths.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -1,29 +1,32 @@
-/* Widgets for the Midnight Commander
+/*
+   Widgets for the Midnight Commander
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009, 2010 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1994, 1995 Radek Doulik
-   1994, 1995 Miguel de Icaza
-   1995 Jakub Jelinek
-   1996 Andrej Borsenkow
-   1997 Norbert Warmuth
-   2009, 2010 Andrew Borodin
+   Authors:
+   Radek Doulik, 1994, 1995
+   Miguel de Icaza, 1994, 1995
+   Jakub Jelinek, 1995
+   Andrej Borsenkow, 1996
+   Norbert Warmuth, 1997
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file history.c
@@ -49,11 +52,9 @@
 #include "lib/util.h"           /* list_append_unique */
 #include "lib/widget.h"
 
-/* TODO: these includes should be removed! */
-#include "src/setup.h"          /* num_history_items_recorded */
-
 /*** global variables ****************************************************************************/
 
+/* how much history items are used */
 int num_history_items_recorded = 60;
 
 /*** file scope macro definitions ****************************************************************/
@@ -132,38 +133,59 @@ history_dlg_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, vo
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-/*
-   This loads the history of an input line to the widget. It is called
-   with the widgets history name on creation of the widget, and returns
-   the GList list.
+/**
+ * Load the history from the ${XDG_CACHE_HOME}/mc/history file.
+ * It is called with the widgets history name and returns the GList list.
  */
+
 GList *
 history_get (const char *input_name)
 {
-    size_t i;
     GList *hist = NULL;
     char *profile;
     mc_config_t *cfg;
-    char **keys;
-    size_t keys_num = 0;
-    GIConv conv = INVALID_CONV;
-    GString *buffer;
 
     if (num_history_items_recorded == 0)        /* this is how to disable */
         return NULL;
     if ((input_name == NULL) || (*input_name == '\0'))
         return NULL;
 
-    profile = g_build_filename (home_dir, MC_USERCONF_DIR, MC_HISTORY_FILE, NULL);
+    profile = mc_config_get_full_path (MC_HISTORY_FILE);
     cfg = mc_config_init (profile);
 
+    hist = history_load (cfg, input_name);
+
+    mc_config_deinit (cfg);
+    g_free (profile);
+
+    return hist;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Load history form the mc_config
+ */
+GList *
+history_load (struct mc_config_t * cfg, const char *name)
+{
+    size_t i;
+    GList *hist = NULL;
+    char **keys;
+    size_t keys_num = 0;
+    GIConv conv = INVALID_CONV;
+    GString *buffer;
+
+    if (name == NULL || *name == '\0')
+        return NULL;
+
     /* get number of keys */
-    keys = mc_config_get_keys (cfg, input_name, &keys_num);
+    keys = mc_config_get_keys (cfg, name, &keys_num);
     g_strfreev (keys);
 
     /* create charset conversion handler to convert strings
        from utf-8 to system codepage */
-    if (!utf8_display)
+    if (!mc_global.utf8_display)
         conv = str_crt_conv_from ("UTF-8");
 
     buffer = g_string_sized_new (64);
@@ -174,7 +196,7 @@ history_get (const char *input_name)
         char *this_entry;
 
         g_snprintf (key, sizeof (key), "%lu", (unsigned long) i);
-        this_entry = mc_config_get_string_raw (cfg, input_name, key, "");
+        this_entry = mc_config_get_string_raw (cfg, name, key, "");
 
         if (this_entry == NULL)
             continue;
@@ -197,8 +219,6 @@ history_get (const char *input_name)
     g_string_free (buffer, TRUE);
     if (conv != INVALID_CONV)
         str_close_conv (conv);
-    mc_config_deinit (cfg);
-    g_free (profile);
 
     /* return pointer to the last entry in the list */
     return g_list_last (hist);
@@ -206,39 +226,18 @@ history_get (const char *input_name)
 
 /* --------------------------------------------------------------------------------------------- */
 
-/*
-   This saves the history of an input line from the widget. It is called
-   with the widgets history name. It stores histories in the file
-   ~/.mc/history in using the profile code.
- */
+/**
+  * Save history to the mc_config, but don't save config to file
+  */
 void
-history_put (const char *input_name, GList * h)
+history_save (struct mc_config_t *cfg, const char *name, GList * h)
 {
-    int i;
-    char *profile;
-    mc_config_t *cfg;
     GIConv conv = INVALID_CONV;
     GString *buffer;
+    int i;
 
-    if (num_history_items_recorded == 0)        /* this is how to disable */
+    if (name == NULL || *name == '\0' || h == NULL)
         return;
-    if ((input_name == NULL) || (*input_name == '\0'))
-        return;
-    if (h == NULL)
-        return;
-
-    profile = g_build_filename (home_dir, MC_USERCONF_DIR, MC_HISTORY_FILE, NULL);
-
-    i = open (profile, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-    if (i != -1)
-        close (i);
-
-    /* Make sure the history is only readable by the user */
-    if (chmod (profile, S_IRUSR | S_IWUSR) == -1 && errno != ENOENT)
-    {
-        g_free (profile);
-        return;
-    }
 
     /* go to end of list */
     h = g_list_last (h);
@@ -247,14 +246,12 @@ history_put (const char *input_name, GList * h)
     for (i = 0; (i < num_history_items_recorded - 1) && (h->prev != NULL); i++)
         h = g_list_previous (h);
 
-    cfg = mc_config_init (profile);
-
-    if (input_name != NULL)
-        mc_config_del_group (cfg, input_name);
+    if (name != NULL)
+        mc_config_del_group (cfg, name);
 
     /* create charset conversion handler to convert strings
        from system codepage to UTF-8 */
-    if (!utf8_display)
+    if (!mc_global.utf8_display)
         conv = str_crt_conv_to ("UTF-8");
 
     buffer = g_string_sized_new (64);
@@ -271,23 +268,20 @@ history_put (const char *input_name, GList * h)
         g_snprintf (key, sizeof (key), "%d", i++);
 
         if (conv == INVALID_CONV)
-            mc_config_set_string_raw (cfg, input_name, key, text);
+            mc_config_set_string_raw (cfg, name, key, text);
         else
         {
             g_string_set_size (buffer, 0);
             if (str_convert (conv, text, buffer) == ESTR_FAILURE)
-                mc_config_set_string_raw (cfg, input_name, key, text);
+                mc_config_set_string_raw (cfg, name, key, text);
             else
-                mc_config_set_string_raw (cfg, input_name, key, buffer->str);
+                mc_config_set_string_raw (cfg, name, key, buffer->str);
         }
     }
 
     g_string_free (buffer, TRUE);
     if (conv != INVALID_CONV)
         str_close_conv (conv);
-    mc_config_save_file (cfg, NULL);
-    mc_config_deinit (cfg);
-    g_free (profile);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -363,8 +357,7 @@ history_show (GList ** history, Widget * widget)
         char *q;
 
         listbox_get_current (query_list, &q, NULL);
-        if (q != NULL)
-            r = g_strdup (q);
+        r = g_strdup (q);
     }
 
     /* get modified history from dialog */

@@ -9,7 +9,7 @@
 
 #include "lib/global.h"         /* GError */
 
-#include "filemanager/panel.h"  /* WPanel, panel_view_mode_t */
+#include "filemanager/layout.h" /* panel_view_mode_t */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
@@ -31,6 +31,7 @@ typedef enum
 /* panels ini options; [Panels] section */
 typedef struct
 {
+    gboolean show_mini_info;    /* If true, show the mini-info on the panel */
     gboolean kilobyte_si;       /* If TRUE, SI units (1000 based) will be used for larger units
                                  * (kilobyte, megabyte, ...). If FALSE, binary units (1024 based) will be used */
     gboolean mix_all_files;     /* If FALSE then directories are shown separately from files */
@@ -48,22 +49,21 @@ typedef struct
     gboolean filetype_mode;     /* If TRUE then add per file type hilighting */
     gboolean permission_mode;   /* If TRUE, we use permission hilighting */
     qsearch_mode_t qsearch_mode;        /* Quick search mode */
+    gboolean torben_fj_mode;    /* If TRUE, use some usability hacks by Torben */
 } panels_options_t;
+
+struct WPanel;
 
 /*** global variables defined in .c file *********************************************************/
 
 /* global paremeters */
 extern char *profile_name;
 extern char *global_profile_name;
-extern char *setup_color_string;
-extern char *term_color_string;
-extern char *color_terminal_string;
 extern int confirm_delete;
 extern int confirm_directory_hotlist_delete;
 extern int confirm_execute;
 extern int confirm_exit;
 extern int confirm_overwrite;
-extern int confirm_history_cleanup;
 extern int confirm_view_dir;
 extern int safe_delete;
 extern int clear_before_exec;
@@ -72,14 +72,12 @@ extern int drop_menus;
 extern int verbose;
 extern int select_flags;
 extern int setup_copymove_persistent_attr;
-extern int num_history_items_recorded;
 extern int classic_progressbar;
 extern int easy_patterns;
 extern int option_tab_spacing;
 extern int auto_save_setup;
 extern int only_leading_plus_minus;
 extern int cd_symlinks;
-extern int show_all_if_ambiguous;
 extern int auto_fill_mkdir_name;
 extern int output_starts_shell;
 extern int use_file_to_check_type;
@@ -107,11 +105,11 @@ void load_key_defs (void);
 char *load_anon_passwd (void);
 #endif /* ENABLE_VFS_FTP */
 
-void load_keymap_defs (void);
+void load_keymap_defs (gboolean load_from_file);
 void free_keymap_defs (void);
 
-void panel_load_setup (WPanel * panel, const char *section);
-void panel_save_setup (WPanel * panel, const char *section);
+void panel_load_setup (struct WPanel * panel, const char *section);
+void panel_save_setup (struct WPanel * panel, const char *section);
 
 void panels_load_options (void);
 void panels_save_options (void);

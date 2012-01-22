@@ -511,10 +511,10 @@ int str_key_collate (const char *t1, const char *t2, int case_sen);
  */
 void str_release_key (char *key, int case_sen);
 
-/* return 1 if codeset_name is utf8 or utf-8 
+/* return TRUE if codeset_name is utf8 or utf-8
  * I
  */
-int str_isutf8 (const char *codeset_name);
+gboolean str_isutf8 (const char *codeset_name);
 
 const char *str_detect_termencoding (void);
 
@@ -523,6 +523,12 @@ int str_verscmp (const char *s1, const char *s2);
 /* return how many lines and columns will text occupy on terminal
  */
 void str_msg_term_size (const char *text, int *lines, int *columns);
+
+/**
+ skip first <skip_count>  needle's in haystack and returns pointer to
+ <skip_count+1> needle (or NULL if not found).
+ */
+char *strrstr_skip_count (const char *haystack, const char *needle, size_t skip_count);
 
 /*** inline functions ****************************************************************************/
 

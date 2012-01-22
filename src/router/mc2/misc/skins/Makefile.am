@@ -7,8 +7,11 @@ skin_DATA = \
 	double-lines.ini \
 	featured.ini \
 	gotar.ini \
+	mc46.ini \
 	nicedark.ini \
-	mc46.ini
+	sand256.ini \
+	xoria256.ini
+
 
 EXTRA_DIST = \
     $(skin_DATA)

@@ -1,25 +1,30 @@
-/* common strings utilities
-   Copyright (C) 2007 Free Software Foundation, Inc.
+/*
+   Common strings utilities
 
-   Written 2007 by:
-   Rostislav Benes
+   Copyright (C) 2007, 2011
+   The Free Software Foundation, Inc.
+
+   Written by:
+   Rostislav Benes, 2007
 
    The file_date routine is mostly from GNU's fileutils package,
    written by Richard Stallman and David MacKenzie.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
  */
 
 #include <config.h>
@@ -354,15 +359,10 @@ str_choose_str_functions (void)
     }
 }
 
-int
+gboolean
 str_isutf8 (const char *codeset_name)
 {
-    int result = 0;
-    if (str_test_encoding_class (codeset_name, str_utf8_encodings))
-    {
-        result = 1;
-    }
-    return result;
+    return (str_test_encoding_class (codeset_name, str_utf8_encodings) != 0);
 }
 
 void
@@ -803,3 +803,26 @@ str_msg_term_size (const char *text, int *lines, int *columns)
 
     g_free (tmp);
 }
+
+/* --------------------------------------------------------------------------------------------- */
+
+char *
+strrstr_skip_count (const char *haystack, const char *needle, size_t skip_count)
+{
+    char *semi;
+    ssize_t len;
+
+    len = strlen (haystack);
+
+    do
+    {
+        semi = g_strrstr_len (haystack, len, needle);
+        if (semi == NULL)
+            return NULL;
+        len = semi - haystack - 1;
+    }
+    while (skip_count-- != 0);
+    return semi;
+}
+
+/* --------------------------------------------------------------------------------------------- */

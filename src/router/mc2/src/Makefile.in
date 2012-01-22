@@ -40,10 +40,8 @@ host_triplet = @host@
 bin_PROGRAMS = mc$(EXEEXT)
 
 # this is a hack for linking with own samba library in simple way
-@ENABLE_VFS_SMB_TRUE@am__append_5 = ../lib/vfs/mc-vfs/samba/libsamba.a
-@HAVE_GMODULE_TRUE@am__append_6 = $(GMODULE_LIBS)
-@HAVE_GMODULE_FALSE@am__append_7 = $(GLIB_LIBS)
-@CHARSET_TRUE@am__append_8 = selcodepage.c selcodepage.h
+@ENABLE_VFS_SMB_TRUE@am__append_5 = vfs/smbfs/helpers/libsamba.a
+@CHARSET_TRUE@am__append_6 = selcodepage.c selcodepage.h
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -70,12 +68,16 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
-	$(top_srcdir)/m4.include/ac-get-fs-info.m4 \
+	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
+	$(top_srcdir)/m4.include/fstypename.m4 \
+	$(top_srcdir)/m4.include/fsusage.m4 \
+	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
-	$(top_srcdir)/m4.include/ac-g-module-supported.m4 \
+	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
@@ -88,6 +90,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
+	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -99,27 +102,22 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__mc_SOURCES_DIST = cons.handler.c consaver/cons.saver.h args.c \
 	args.h background.c background.h clipboard.c clipboard.h \
-	execute.c execute.h help.c help.h history.h keybind-defaults.c \
-	keybind-defaults.h learn.c learn.h main.c main.h setup.c \
-	setup.h subshell.c subshell.h textconf.c textconf.h \
-	selcodepage.c selcodepage.h
+	events_init.c events_init.h execute.c execute.h help.c help.h \
+	history.h keybind-defaults.c keybind-defaults.h learn.c \
+	learn.h main.c main.h setup.c setup.h subshell.c subshell.h \
+	textconf.c textconf.h util.c util.h selcodepage.c \
+	selcodepage.h
 am__objects_1 = cons.handler.$(OBJEXT)
 @CHARSET_TRUE@am__objects_2 = selcodepage.$(OBJEXT)
 am_mc_OBJECTS = $(am__objects_1) args.$(OBJEXT) background.$(OBJEXT) \
-	clipboard.$(OBJEXT) execute.$(OBJEXT) help.$(OBJEXT) \
-	keybind-defaults.$(OBJEXT) learn.$(OBJEXT) main.$(OBJEXT) \
-	setup.$(OBJEXT) subshell.$(OBJEXT) textconf.$(OBJEXT) \
-	$(am__objects_2)
+	clipboard.$(OBJEXT) events_init.$(OBJEXT) execute.$(OBJEXT) \
+	help.$(OBJEXT) keybind-defaults.$(OBJEXT) learn.$(OBJEXT) \
+	main.$(OBJEXT) setup.$(OBJEXT) subshell.$(OBJEXT) \
+	textconf.$(OBJEXT) util.$(OBJEXT) $(am__objects_2)
 mc_OBJECTS = $(am_mc_OBJECTS)
-am__DEPENDENCIES_1 =
-@HAVE_GMODULE_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-@HAVE_GMODULE_FALSE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
-mc_DEPENDENCIES = viewer/libmcviewer.la \
+mc_DEPENDENCIES = vfs/libmc-vfs.la viewer/libmcviewer.la \
 	filemanager/libmcfilemanager.la $(DIFFLIB) $(EDITLIB) \
-	../lib/libmc.la $(am__append_5) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(top_builddir)/lib/libmc.la $(am__append_5)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -165,7 +163,8 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = filemanager man2hlp viewer editor diffviewer consaver
+DIST_SUBDIRS = filemanager man2hlp vfs viewer editor diffviewer \
+	consaver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -207,6 +206,8 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CHECK_CFLAGS = @CHECK_CFLAGS@
+CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -280,6 +281,8 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
+LIBMC_RELEASE = @LIBMC_RELEASE@
+LIBMC_VERSION = @LIBMC_VERSION@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -393,26 +396,25 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = filemanager man2hlp viewer $(am__append_1) $(am__append_2) \
-	$(am__append_3)
-AM_CPPFLAGS = -DDATADIR=\""$(pkgdatadir)/"\" \
-	-DLOCALEDIR=\""$(localedir)"\" \
-	-DSYSCONFDIR=\""$(sysconfdir)/@PACKAGE@/"\" $(am__append_4)
+SUBDIRS = filemanager man2hlp vfs viewer $(am__append_1) \
+	$(am__append_2) $(am__append_3)
+AM_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\" \
+	-DLIBEXECDIR=\""$(libexecdir)/@PACKAGE@/"\" $(am__append_4)
 AM_CFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CFLAGS)
 @USE_EDIT_TRUE@EDITLIB = editor/libedit.la
 @USE_DIFF_TRUE@DIFFLIB = diffviewer/libdiffviewer.la
-mc_LDADD = viewer/libmcviewer.la filemanager/libmcfilemanager.la \
-	$(DIFFLIB) $(EDITLIB) ../lib/libmc.la $(am__append_5) \
-	$(MCLIBS) $(SLANGLIB) $(am__append_6) $(am__append_7) \
-	$(PCRE_LIBS) $(LIBICONV) $(INTLLIBS)
+mc_LDADD = vfs/libmc-vfs.la viewer/libmcviewer.la \
+	filemanager/libmcfilemanager.la $(DIFFLIB) $(EDITLIB) \
+	$(top_builddir)/lib/libmc.la $(am__append_5)
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
 mc_SOURCES = $(SRC_mc_conssaver) args.c args.h background.c \
-	background.h clipboard.c clipboard.h execute.c execute.h \
-	help.c help.h history.h keybind-defaults.c keybind-defaults.h \
-	learn.c learn.h main.c main.h setup.c setup.h subshell.c \
-	subshell.h textconf.c textconf.h $(am__append_8)
+	background.h clipboard.c clipboard.h events_init.c \
+	events_init.h execute.c execute.h help.c help.h history.h \
+	keybind-defaults.c keybind-defaults.h learn.c learn.h main.c \
+	main.h setup.c setup.h subshell.c subshell.h textconf.c \
+	textconf.h util.c util.h $(am__append_6)
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)
 all: all-recursive
 
@@ -505,6 +507,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/background.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clipboard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cons.handler.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/events_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keybind-defaults.Po@am__quote@
@@ -514,6 +517,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subshell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textconf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

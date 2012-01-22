@@ -1,27 +1,31 @@
-/* Widget based utility functions.
+/*
+   Widget based utility functions.
+
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2008, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1994, 1995, 1996 Miguel de Icaza
-   1994, 1995 Radek Doulik
-   1995  Jakub Jelinek
-   1995  Andrej Borsenkow
-   2009, 2010 Andrew Borodin
+   Authors:
+   Miguel de Icaza, 1994, 1995, 1996
+   Radek Doulik, 1994, 1995
+   Jakub Jelinek, 1995
+   Andrej Borsenkow, 1995
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file wtools.c
@@ -39,9 +43,7 @@
 #include "lib/strutil.h"
 #include "lib/util.h"           /* tilde_expand() */
 #include "lib/widget.h"
-
-/* TODO: these includes should be removed! */
-#include "src/background.h"     /* parent_call */
+#include "lib/event.h"          /* mc_event_raise() */
 
 /*** global variables ****************************************************************************/
 
@@ -263,6 +265,39 @@ fg_input_dialog_help (const char *header, const char *text, const char *help,
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+#ifdef WITH_BACKGROUND
+static int
+wtools_parent_call (void *routine, gpointer ctx, int argc, ...)
+{
+    ev_background_parent_call_t event_data;
+
+    event_data.routine = routine;
+    event_data.ctx = ctx;
+    event_data.argc = argc;
+    va_start (event_data.ap, argc);
+    mc_event_raise (MCEVENT_GROUP_CORE, "background_parent_call", (gpointer) & event_data);
+    va_end (event_data.ap);
+    return event_data.ret.i;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static char *
+wtools_parent_call_string (void *routine, int argc, ...)
+{
+    ev_background_parent_call_t event_data;
+
+    event_data.routine = routine;
+    event_data.argc = argc;
+    va_start (event_data.ap, argc);
+    mc_event_raise (MCEVENT_GROUP_CORE, "background_parent_call_string", (gpointer) & event_data);
+    va_end (event_data.ap);
+    return event_data.ret.s;
+}
+#endif /* WITH_BACKGROUND */
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -406,7 +441,7 @@ message (int flags, const char *title, const char *text, ...)
         title = _("Error");
 
 #ifdef WITH_BACKGROUND
-    if (we_are_background)
+    if (mc_global.we_are_background)
     {
         union
         {
@@ -414,7 +449,9 @@ message (int flags, const char *title, const char *text, ...)
             void (*f) (int, int *, char *, const char *);
         } func;
         func.f = bg_message;
-        parent_call (func.p, NULL, 3, sizeof (flags), &flags, strlen (title), title, strlen (p), p);
+
+        wtools_parent_call (func.p, NULL, 3, sizeof (flags), &flags, strlen (title), title,
+                            strlen (p), p);
     }
     else
 #endif /* WITH_BACKGROUND */
@@ -436,7 +473,7 @@ input_dialog_help (const char *header, const char *text, const char *help,
                    const char *history_name, const char *def_text)
 {
 #ifdef WITH_BACKGROUND
-    if (we_are_background)
+    if (mc_global.we_are_background)
     {
         union
         {
@@ -444,11 +481,11 @@ input_dialog_help (const char *header, const char *text, const char *help,
             char *(*f) (const char *, const char *, const char *, const char *, const char *);
         } func;
         func.f = fg_input_dialog_help;
-        return parent_call_string (func.p, 5,
-                                   strlen (header), header, strlen (text),
-                                   text, strlen (help), help,
-                                   strlen (history_name), history_name,
-                                   strlen (def_text), def_text);
+        return wtools_parent_call_string (func.p, 5,
+                                          strlen (header), header, strlen (text),
+                                          text, strlen (help), help,
+                                          strlen (history_name), history_name,
+                                          strlen (def_text), def_text);
     }
     else
 #endif /* WITH_BACKGROUND */
