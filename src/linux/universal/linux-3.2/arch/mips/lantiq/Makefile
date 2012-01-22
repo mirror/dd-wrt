@@ -4,7 +4,7 @@
 # under the terms of the GNU General Public License version 2 as published
 # by the Free Software Foundation.
 
-obj-y := irq.o setup.o clk.o prom.o devices.o dev-gpio-leds.o dev-gpio-buttons.o proc_lantiqgpio.o
+obj-y := irq.o setup.o clk.o prom.o devices.o dev-gpio-leds.o dev-gpio-buttons.o proc_lantiqgpio.o proc_lantiqgpiostp.o
 
 obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
 
