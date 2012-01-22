@@ -1292,7 +1292,7 @@ static int hub_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	desc = intf->cur_altsetting;
 	hdev = interface_to_usbdev(intf);
 
-#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240)
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240) || defined(CONFIG_LANTIQ)
 	ap_usb_led_off();
 #endif
 
@@ -1657,7 +1657,7 @@ void usb_disconnect(struct usb_device **pdev)
 	dev_info(&udev->dev, "USB disconnect, device number %d\n",
 			udev->devnum);
 
-#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240)
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240) || defined(CONFIG_LANTIQ)
         /* Turn USB LED off only if its a last device attached to root hub */
 	if(udev->parent == udev->bus->root_hub)
 		ap_usb_led_off();
@@ -2897,7 +2897,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 	/* success, speed is known */
 
 	retval = -ENODEV;
-#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240)
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240) || defined(CONFIG_LANTIQ)
 	ap_usb_led_on();
 #endif
 	if (oldspeed != USB_SPEED_UNKNOWN && oldspeed != udev->speed) {

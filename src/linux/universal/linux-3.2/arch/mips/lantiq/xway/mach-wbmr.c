@@ -54,6 +54,7 @@ static struct physmap_flash_data wbmr_flash_data = {
 	.parts		= wbmr_partitions,
 };
 
+extern int usb_led_pin;
 static struct gpio_led
 wbmr_gpio_leds[] __initdata = {
 	{ .name = "soc:blue:movie", .gpio = 20, .active_low = 1, },
@@ -103,6 +104,7 @@ static void __init
 wbmr_init(void)
 {
 #define WMBR_BRN_MAC			0x1fd0024
+	usb_led_pin = 28|0xf00;
 
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(wbmr_gpio_leds), wbmr_gpio_leds);
 //	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(wbmr_gpio_keys), wbmr_gpio_keys);

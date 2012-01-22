@@ -22,29 +22,7 @@
 #include <asm/uaccess.h>	/* for copy_from_user */
 #include <lantiq.h>
 
-#define LQ_GPIO0_BASE_ADDR	0x1E100B10
-#define LQ_GPIO1_BASE_ADDR	0x1E100B40
-#define LQ_GPIO2_BASE_ADDR	0x1E100B70
-#define LQ_GPIO3_BASE_ADDR	0x1E100Ba0
-#define LQ_GPIO_SIZE		0x30
-#define PINS_PER_PORT		16
-
-#define LQ_GPIO_OUT			0x00
-#define LQ_GPIO_IN			0x04
-#define LQ_GPIO_DIR			0x08
-#define LQ_GPIO_ALTSEL0		0x0C
-#define LQ_GPIO_ALTSEL1		0x10
-#define LQ_GPIO_OD			0x14
-
-#define lq_gpio_getbit(m, r, p)		!!(ltq_r32(m + r) & (1 << p))
-#define lq_gpio_setbit(m, r, p)		ltq_w32_mask(0, (1 << p), m + r)
-#define lq_gpio_clearbit(m, r, p)	ltq_w32_mask((1 << p), 0, m + r)
-
-#ifdef CONFIG_AR9
-#define MAXGPIO 56
-#else
-#define MAXGPIO 32
-#endif
+#define MAXGPIO 24
 
 #define GPIO_IN (1<<6)
 #define GPIO_OUT (1<<7)
@@ -55,162 +33,32 @@ extern void ltq_stp_set(struct gpio_chip *chip, unsigned offset, int value);
 
 static void set_gpio_out(int pin, int val)
 {
-	void __iomem *membase = (void *)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-
-	if (val)
-		lq_gpio_setbit(membase, LQ_GPIO_OUT, pin);
-	else
-		lq_gpio_clearbit(membase, LQ_GPIO_OUT, pin);
+	ltq_stp_set(NULL, pin, val);
 }
 
 static void set_gpio_in(int pin, int val)
 {
-	void __iomem *membase = (void *)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-
-	if (val)
-		lq_gpio_setbit(membase, LQ_GPIO_IN, pin);
-	else
-		lq_gpio_clearbit(membase, LQ_GPIO_IN, pin);
+	ltq_stp_set(NULL, pin, val);
 }
 
 static int get_gpio_in(int pin)
 {
-	void __iomem *membase = (void *)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	return lq_gpio_getbit(membase, LQ_GPIO_IN, pin);
+	return 0;
 }
 
 static int get_gpio_out(int pin)
 {
-	void __iomem *membase = (void *)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	return lq_gpio_getbit(membase, LQ_GPIO_OUT, pin);
+	return 0;
 }
 
 static void set_dir(int pin, int dir)
 {
-	void __iomem *membase = (void *)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (dir) {
-		lq_gpio_setbit(membase, LQ_GPIO_OD, pin);
-		lq_gpio_setbit(membase, LQ_GPIO_DIR, pin);
-	} else {
-		lq_gpio_clearbit(membase, LQ_GPIO_OD, pin);
-		lq_gpio_clearbit(membase, LQ_GPIO_DIR, pin);
-	}
 
 }
-
-
-void set_gpio(int pin, int val)
-{
-	if (pin >= 200) {
-		ltq_stp_set(NULL, pin - 200, val);
-		return;
-	}
-	set_dir(pin, 1);
-	set_gpio_out(pin, val);
-}
-
-EXPORT_SYMBOL(set_gpio);
-
-int usb_led_pin = -1;
-
-void ap_usb_led_on(void)
-{
-	if (usb_led_pin >= 0)
-		set_gpio(usb_led_pin, usb_led_pin & 0xf00 ? 0 : 1);
-}
-
-EXPORT_SYMBOL(ap_usb_led_on);
-
-void ap_usb_led_off(void)
-{
-	if (usb_led_pin >= 0)
-		set_gpio(usb_led_pin, usb_led_pin & 0xf00 ? 1 : 0);
-}
-
-EXPORT_SYMBOL(ap_usb_led_off);
 
 static int get_dir(int pin)
 {
-	void __iomem *membase = (void *)KSEG1ADDR(LQ_GPIO0_BASE_ADDR);
-	int val = 0;
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-	}
-	if (pin >= PINS_PER_PORT) {
-		pin -= PINS_PER_PORT;
-		membase += LQ_GPIO_SIZE;
-
-	}
-
-	val |= lq_gpio_getbit(membase, LQ_GPIO_IN, pin);
-	val |= lq_gpio_getbit(membase, LQ_GPIO_OD, pin);
-	return val;
+	return 0;
 
 }
 
@@ -297,7 +145,7 @@ static __init int register_proc(void)
 	int gpiocount = MAXGPIO;
 
 	/* create directory gpio */
-	gpio_dir = proc_mkdir("gpio", NULL);
+	gpio_dir = proc_mkdir("gpiostp", NULL);
 	if (gpio_dir == NULL)
 		goto fault;
 
@@ -346,7 +194,7 @@ static void cleanup_proc(void)
 		sprintf(proc_name, "%i_out", i);
 		remove_proc_entry(proc_name, gpio_dir);
 	}
-	remove_proc_entry("gpio", NULL);
+	remove_proc_entry("gpiostp", NULL);
 	printk(KERN_INFO "gpio_proc: unloaded and /proc/gpio/ removed\n");
 
 }
@@ -355,5 +203,5 @@ module_init(register_proc);
 module_exit(cleanup_proc);
 
 MODULE_AUTHOR("Sebastian Gottschall");
-MODULE_DESCRIPTION("Danube GPIO pins in /proc/gpio/");
+MODULE_DESCRIPTION("Danube STP GPIO pins in /proc/gpiostp/");
 MODULE_LICENSE("GPL");
