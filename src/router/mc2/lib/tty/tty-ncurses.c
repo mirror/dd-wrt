@@ -2,7 +2,8 @@
    Interface to the terminal controlling library.
    Ncurses wrapper.
 
-   Copyright (C) 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Andrew Borodin <aborodin@vmail.ru>, 2009.
@@ -10,20 +11,18 @@
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -39,13 +38,11 @@
 #include "lib/global.h"
 #include "lib/strutil.h"        /* str_term_form */
 
-#include "src/main.h"
-
 #ifndef WANT_TERM_H
 #define WANT_TERM_H
 #endif
 
-#include "tty-internal.h"       /* slow_tty */
+#include "tty-internal.h"       /* mc_tty_normalize_from_utf8() */
 #include "tty.h"
 #include "color-internal.h"
 #include "mouse.h"
@@ -76,6 +73,33 @@
 
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+tty_setup_sigwinch (void (*handler) (int))
+{
+#if (NCURSES_VERSION_MAJOR >= 4) && defined (SIGWINCH)
+    struct sigaction act, oact;
+    act.sa_handler = handler;
+    sigemptyset (&act.sa_mask);
+    act.sa_flags = 0;
+#ifdef SA_RESTART
+    act.sa_flags |= SA_RESTART;
+#endif /* SA_RESTART */
+    sigaction (SIGWINCH, &act, &oact);
+#endif /* SIGWINCH */
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+sigwinch_handler (int dummy)
+{
+    (void) dummy;
+
+    mc_global.tty.winch_flag = TRUE;
+}
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
@@ -140,11 +164,8 @@ mc_tty_normalize_lines_char (const char *ch)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable, gboolean is_xterm)
+tty_init (gboolean mouse_enable, gboolean is_xterm)
 {
-    slow_tty = slow;
-    (void) ugly_lines;
-
     initscr ();
 
 #ifdef HAVE_ESCDELAY
@@ -177,6 +198,8 @@ tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable, gboolean is
     noecho ();
     keypad (stdscr, TRUE);
     nodelay (stdscr, FALSE);
+
+    tty_setup_sigwinch (sigwinch_handler);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -406,7 +429,7 @@ tty_print_anychar (int c)
 {
     unsigned char str[6 + 1];
 
-    if (utf8_display || c > 255)
+    if (mc_global.utf8_display || c > 255)
     {
         int res = g_unichar_to_utf8 (c, (char *) str);
         if (res == 0)
@@ -486,23 +509,6 @@ tty_refresh (void)
 {
     refresh ();
     doupdate ();
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-tty_setup_sigwinch (void (*handler) (int))
-{
-#if (NCURSES_VERSION_MAJOR >= 4) && defined (SIGWINCH)
-    struct sigaction act, oact;
-    act.sa_handler = handler;
-    sigemptyset (&act.sa_mask);
-    act.sa_flags = 0;
-#ifdef SA_RESTART
-    act.sa_flags |= SA_RESTART;
-#endif /* SA_RESTART */
-    sigaction (SIGWINCH, &act, &oact);
-#endif /* SIGWINCH */
 }
 
 /* --------------------------------------------------------------------------------------------- */

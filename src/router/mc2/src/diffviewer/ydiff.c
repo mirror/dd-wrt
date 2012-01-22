@@ -1,26 +1,27 @@
 /*
-   Copyright (C) 2007, 2010  Free Software Foundation, Inc.
+   Copyright (C) 2007, 2010, 2011
+   The Free Software Foundation, Inc.
+
    Written by:
-   2007 Daniel Borca <dborca@yahoo.com>
+   Daniel Borca <dborca@yahoo.com>, 2007
+   Slava Zanko <slavazanko@gmail.com>, 2010
+   Andrew Borodin <aborodin@vmail.ru>, 2010
+   Ilia Maslakov <il.smind@gmail.com>, 2010
 
-   2010 Slava Zanko <slavazanko@gmail.com>
-   2010 Andrew Borodin <aborodin@vmail.ru>
-   2010 Ilia Maslakov <il.smind@gmail.com>
+   This file is part of the Midnight Commander.
 
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -38,19 +39,18 @@
 #include "lib/tty/color.h"
 #include "lib/tty/key.h"
 #include "lib/skin.h"           /* EDITOR_NORMAL_COLOR */
-#include "lib/vfs/mc-vfs/vfs.h" /* mc_opendir, mc_readdir, mc_closedir, */
+#include "lib/vfs/vfs.h"        /* mc_opendir, mc_readdir, mc_closedir, */
 #include "lib/util.h"
 #include "lib/widget.h"
 #include "lib/charsets.h"
+#include "lib/event.h"          /* mc_event_raise() */
 
 #include "src/filemanager/cmd.h"
 #include "src/filemanager/midnight.h"   /* Needed for current_panel and other_panel */
 #include "src/filemanager/layout.h"     /* Needed for get_current_index and get_other_panel */
 
 #include "src/keybind-defaults.h"
-#include "src/help.h"
 #include "src/history.h"
-#include "src/main.h"           /* mc_run_mode, midnight_shutdown */
 #include "src/selcodepage.h"
 
 #include "ydiff.h"
@@ -119,7 +119,9 @@ dview_set_codeset (WDiff * dview)
     const char *encoding_id = NULL;
 
     dview->utf8 = TRUE;
-    encoding_id = get_codepage_id (source_codepage >= 0 ? source_codepage : display_codepage);
+    encoding_id =
+        get_codepage_id (mc_global.source_codepage >=
+                         0 ? mc_global.source_codepage : mc_global.display_codepage);
     if (encoding_id != NULL)
     {
         GIConv conv;
@@ -2582,7 +2584,7 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
                             {
                                 tty_setcolor (att[cnt] ? DFF_CHH_COLOR : DFF_CHG_COLOR);
 #ifdef HAVE_CHARSET
-                                if (utf8_display)
+                                if (mc_global.utf8_display)
                                 {
                                     if (!dview->utf8)
                                     {
@@ -2660,7 +2662,7 @@ dview_display_file (const WDiff * dview, int ord, int r, int c, int height, int 
             if (ch_res)
             {
 #ifdef HAVE_CHARSET
-                if (utf8_display)
+                if (mc_global.utf8_display)
                 {
                     if (!dview->utf8)
                     {
@@ -2943,13 +2945,13 @@ dview_ok_to_exit (WDiff * dview)
     if (!dview->merged)
         return res;
 
-    act = query_dialog (_("Quit"), !midnight_shutdown ?
+    act = query_dialog (_("Quit"), !mc_global.widget.midnight_shutdown ?
                         _("File was modified. Save with exit?") :
                         _("Midnight Commander is being shut down.\nSave modified file?"),
                         D_NORMAL, 2, _("&Yes"), _("&No"));
 
     /* Esc is No */
-    if (midnight_shutdown || (act == -1))
+    if (mc_global.widget.midnight_shutdown || (act == -1))
         act = 1;
 
     switch (act)
@@ -2980,29 +2982,26 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
     cb_ret_t res = MSG_HANDLED;
     switch (command)
     {
-    case CK_DiffHelp:
-        interactive_display (NULL, "[Diff Viewer]");
-        break;
-    case CK_DiffDisplaySymbols:
+    case CK_ShowSymbols:
         dview->display_symbols ^= 1;
         dview->new_frame = 1;
         break;
-    case CK_DiffDisplayNumbers:
+    case CK_ShowNumbers:
         dview->display_numbers ^= calc_nwidth ((const GArray ** const) dview->a);
         dview->new_frame = 1;
         break;
-    case CK_DiffFull:
+    case CK_SplitFull:
         dview->full ^= 1;
         dview->new_frame = 1;
         break;
-    case CK_DiffEqual:
+    case CK_SplitEqual:
         if (!dview->full)
         {
             dview->bias = 0;
             dview->new_frame = 1;
         }
         break;
-    case CK_DiffSplitMore:
+    case CK_SplitMore:
         if (!dview->full)
         {
             dview_compute_split (dview, 1);
@@ -3010,123 +3009,125 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
         }
         break;
 
-    case CK_DiffSplitLess:
+    case CK_SplitLess:
         if (!dview->full)
         {
             dview_compute_split (dview, -1);
             dview->new_frame = 1;
         }
         break;
-    case CK_DiffSetTab2:
+    case CK_Tab2:
         dview->tab_size = 2;
         break;
-    case CK_DiffSetTab3:
+    case CK_Tab3:
         dview->tab_size = 3;
         break;
-    case CK_DiffSetTab4:
+    case CK_Tab4:
         dview->tab_size = 4;
         break;
-    case CK_DiffSetTab8:
+    case CK_Tab8:
         dview->tab_size = 8;
         break;
-    case CK_DiffSwapPanel:
+    case CK_Swap:
         dview->ord ^= 1;
         break;
-    case CK_DiffRedo:
+    case CK_Redo:
         dview_redo (dview);
         break;
-    case CK_DiffNextHunk:
+    case CK_HunkNext:
         dview->skip_rows = dview->search.last_accessed_num_line =
             find_next_hunk (dview->a[0], dview->skip_rows);
         break;
-    case CK_DiffPrevHunk:
+    case CK_HunkPrev:
         dview->skip_rows = dview->search.last_accessed_num_line =
             find_prev_hunk (dview->a[0], dview->skip_rows);
         break;
-    case CK_DiffGoto:
+    case CK_Goto:
         dview_goto_cmd (dview, TRUE);
         break;
-    case CK_DiffEditCurrent:
+    case CK_Edit:
         dview_edit (dview, dview->ord);
         break;
-    case CK_DiffMergeCurrentHunk:
+    case CK_Merge:
         do_merge_hunk (dview);
         dview_redo (dview);
         break;
-    case CK_DiffEditOther:
+    case CK_EditOther:
         dview_edit (dview, dview->ord ^ 1);
         break;
-    case CK_DiffSearch:
+    case CK_Search:
         dview_search_cmd (dview);
         break;
-    case CK_DiffContinueSearch:
+    case CK_SearchContinue:
         dview_continue_search_cmd (dview);
         break;
-    case CK_DiffBOF:
+    case CK_Top:
         dview->skip_rows = dview->search.last_accessed_num_line = 0;
         break;
-    case CK_DiffEOF:
+    case CK_Bottom:
         dview->skip_rows = dview->search.last_accessed_num_line = dview->a[0]->len - 1;
         break;
-    case CK_DiffUp:
+    case CK_Up:
         if (dview->skip_rows > 0)
         {
             dview->skip_rows--;
             dview->search.last_accessed_num_line = dview->skip_rows;
         }
         break;
-    case CK_DiffDown:
+    case CK_Down:
         dview->skip_rows++;
         dview->search.last_accessed_num_line = dview->skip_rows;
         break;
-    case CK_DiffPageDown:
+    case CK_PageDown:
         if (dview->height > 2)
         {
             dview->skip_rows += dview->height - 2;
             dview->search.last_accessed_num_line = dview->skip_rows;
         }
         break;
-    case CK_DiffPageUp:
+    case CK_PageUp:
         if (dview->height > 2)
         {
             dview->skip_rows -= dview->height - 2;
             dview->search.last_accessed_num_line = dview->skip_rows;
         }
         break;
-    case CK_DiffLeft:
+    case CK_Left:
         dview->skip_cols--;
         break;
-    case CK_DiffRight:
+    case CK_Right:
         dview->skip_cols++;
         break;
-    case CK_DiffQuickLeft:
+    case CK_LeftQuick:
         dview->skip_cols -= 8;
         break;
-    case CK_DiffQuickRight:
+    case CK_RightQuick:
         dview->skip_cols += 8;
         break;
-    case CK_DiffHome:
+    case CK_Home:
         dview->skip_cols = 0;
         break;
-    case CK_ShowCommandLine:
+    case CK_Shell:
         view_other_cmd ();
         break;
-    case CK_DiffQuit:
+    case CK_Quit:
         dview->view_quit = 1;
         break;
-    case CK_DiffSave:
+    case CK_Save:
         dview_do_save (dview);
         break;
-    case CK_DiffOptions:
+    case CK_Options:
         dview_diff_options (dview);
         break;
+#ifdef HAVE_CHARSET
     case CK_SelectCodepage:
         dview_select_encoding (dview);
         dview_reread (dview);
         tty_touch_screen ();
         repaint_screen ();
         break;
-    case CK_DialogCancel:
+#endif
+    case CK_Cancel:
         /* don't close diffviewer due to SIGINT */
         break;
     default:
@@ -3145,7 +3146,7 @@ dview_handle_key (WDiff * dview, int key)
     key = convert_from_input_c (key);
 
     command = keybind_lookup_keymap_command (diff_map, key);
-    if ((command != CK_Ignore_Key) && (dview_execute_cmd (dview, command) == MSG_HANDLED))
+    if ((command != CK_IgnoreKey) && (dview_execute_cmd (dview, command) == MSG_HANDLED))
         return MSG_HANDLED;
 
     /* Key not used */
@@ -3247,7 +3248,7 @@ dview_dialog_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, v
 
     case DLG_VALIDATE:
         dview = (WDiff *) find_widget_type (h, dview_callback);
-        h->state = DLG_ACTIVE; /* don't stop the dialog before final decision */
+        h->state = DLG_ACTIVE;  /* don't stop the dialog before final decision */
         if (dview_ok_to_exit (dview))
             h->state = DLG_CLOSED;
         return MSG_HANDLED;
@@ -3326,9 +3327,10 @@ diff_view (const char *file1, const char *file2, const char *label1, const char 
 #define GET_FILE_AND_STAMP(n) \
 do \
 { \
+    vfs_path_t *vpath = vfs_path_from_str(file##n); \
     use_copy##n = 0; \
     real_file##n = file##n; \
-    if (!vfs_file_is_local (file##n)) \
+    if (!vfs_file_is_local (vpath)) \
     { \
         real_file##n = mc_getlocalcopy (file##n); \
         if (real_file##n != NULL) \
@@ -3338,6 +3340,7 @@ do \
                 use_copy##n = -1; \
         } \
     } \
+    vfs_path_free(vpath); \
 } \
 while (0)
 
@@ -3369,7 +3372,7 @@ dview_diff_cmd (void)
     int is_dir0 = 0;
     int is_dir1 = 0;
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
     {
         const WPanel *panel0 = current_panel;
         const WPanel *panel1 = other_panel;

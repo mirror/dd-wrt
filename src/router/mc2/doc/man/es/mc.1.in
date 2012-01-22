@@ -202,7 +202,7 @@ y el
 El valor por defecto de auto repetición para los botones del ratón es 400
 milisegundos. Este valor se puede modificar editando el archivo
 .\"LINK2"
-\&~/.mc/ini
+\&~/.config/mc/ini
 .\"Save Setup"
 y cambiando el parámetro
 .IR mouse_repeat_rate .
@@ -980,7 +980,9 @@ está activada.
 Sobreimpresiona una ventana de entrada con destino por defecto al directorio del
 panel no seleccionado y copia el archivo actualmente seleccionado (o
 los archivos marcados, si hay al menos uno marcado) al directorio especificado
-por el usuario en la ventana. Durante este proceso, podemos pulsar
+por el usuario en la ventana. Space for destination file may be preallocated
+relative to preallocate_space configure option. Durante este proceso, podemos
+pulsar
 .IR Ctrl\-c " o " Esc
 para anular la operación. Para más detalles sobre la máscara de origen
 (que será normalmente * o ^\\(.*\\)$ dependiendo
@@ -1295,7 +1297,7 @@ Los directorios a ser omitidos deberían ser enumerados en la variable
 .B ignore_dirs
 en la sección
 .B FindFile
-de nuestro archivo ~/.mc/ini.
+de nuestro archivo ~/.config/mc/ini.
 .PP
 Los componentes del directorio deberían ser separados por dos puntos, como en
 el ejemplo que sigue:
@@ -1359,7 +1361,7 @@ comando cd interno\&.
 .\"NODE "    Extension File Edit"
 .SH "    Editar el Archivo de Extensiones"
 Abre el archivo
-.I ~/.mc/bindings
+.I ~/.config/mc/mc.ext
 en nuestro editor. El administrador puede optar por editar, en su lugar,
 el archivo de extensiones del sistema
 .IR @prefix@/share/mc/mc.ext .
@@ -1432,7 +1434,7 @@ El menú de usuario es un menú de acciones útiles que puede ser personalizado
 por el usuario. Cuando accedemos al menú de usuario se utiliza, si existe,
 el archivo .mc.menu del directorio actual, pero sólo si es propiedad del
 usuario o del superusuario y no es modificable por todos.
-Si no se encuentra allí el archivo, se intenta de la misma manera con ~/.mc/menu,
+Si no se encuentra allí el archivo, se intenta de la misma manera con ~/.config/mc/menu,
 y si no, mc utiliza el menú por defecto para todo el sistema
 @prefix@/share/mc/mc.menu.
 .PP
@@ -1717,7 +1719,7 @@ regulares son las descritas en ed(1).
 .I Auto\-Guardar Configuración.
 Si esta opción está activada, cuando salimos de Midnight Commander las
 opciones configurables de Midnight Commander se guardan en el archivo
-~/.mc/ini.
+~/.config/mc/ini.
 .PP
 .I Auto Menús.
 Si está activada, el menú de usuario aparece automáticamente al arrancar.
@@ -1872,7 +1874,7 @@ desaparezca. Si no, pulsaremos la tecla que nos pide y esperaremos hasta que
 el diálogo desaparezca.
 .PP
 Cuando acabemos con todas las teclas, podríamos Guardar nuestras teclas
-en nuestro archivo ~/.mc/ini dentro de la sección [terminal:TERM] (donde TERM es el
+en nuestro archivo ~/.config/mc/ini dentro de la sección [terminal:TERM] (donde TERM es el
 nombre de nuestro terminal actual) o descartarlas. Si todas nuestras teclas funcionan
 correctamente y no debemos corregir ninguna, entonces (lógico) no se grabará.
 .\"NODE "    Virtual FS"
@@ -1955,14 +1957,14 @@ y puede ser impedida por algún cortafuegos.
 .\"NODE "    Save Setup"
 .SH "    Guardar Configuración"
 Al arrancar Midnight Commander se carga la información de inicio del
-archivo ~/.mc/ini.  Si éste no existe, se cargará la información del
+archivo ~/.config/mc/ini.  Si éste no existe, se cargará la información del
 archivo de configuración genérico del sistema, @prefix@/share/mc/mc.ini.
 Si el archivo de configuración genérico del sistema no existe, MC utiliza
 la configuración por defecto.
 .PP
 El comando
 .I Guardar Configuración
-crea el archivo ~/.mc/ini guardando la configuración actual de los menús
+crea el archivo ~/.config/mc/ini guardando la configuración actual de los menús
 .\"LINK2"
 Izquierdo, Derecho
 .\"Left and Right Menus"
@@ -2151,11 +2153,11 @@ que serán válidos hasta salir de Midnight Commander.
 Si estamos usando
 .B bash
 podremos especificar comandos de arranque
-para el subshell en nuestro archivo ~/.mc/bashrc y
-mapas de teclado especiales en el archivo ~/.mc/inputrc.
+para el subshell en nuestro archivo ~/.local/share/mc/bashrc y
+mapas de teclado especiales en el archivo ~/.local/share/mc/inputrc.
 Los usuarios de
 .B tcsh
-podrán especificar los comandos de arranque en el archivo ~/.mc/tcshrc.
+podrán especificar los comandos de arranque en el archivo ~/.local/share/mc/tcshrc.
 .PP
 Cuando utilizamos el código del subshell, podemos suspender aplicaciones en
 cualquier momento con la secuencia
@@ -2570,14 +2572,14 @@ aunque podemos recuperar su funcionamiento habitual en terminales (copiar
 y pegar) manteniendo pulsada la tecla mayúsculas.
 .B Ctrl\-Ins
 copia al archivo
-.B cooledit.clip
+.B mcedit.clip
 y
 .B Mayús\-Ins
 pega desde
-.BR cooledit.clip .
+.BR mcedit.clip .
 .B Mayús\-Supr
 corta y copia en
-.BR cooledit.clip ,
+.BR mcedit.clip ,
 y
 .B Ctrl\-Supr
 elimina el texto resaltado. La tecla
@@ -2596,7 +2598,7 @@ seguido de la tecla asignada. También será ejecutada si
 pulsamos Meta (Alt), Ctrl, o Escape y la tecla asignada, siempre y cuando
 la tecla no sea usada por ninguna otra función. Una vez definida, los comandos de
 macro irán al archivo
-.B cedit/cooledit.macros
+.B ~/.local/share/mc/mcedit/mcedit.macros
 en nuestro directorio de inicio. Podemos eliminar una macro borrando
 la línea adecuada en este archivo.
 .PP
@@ -2608,7 +2610,7 @@ o
 u otro). Esto está controlado por el archivo
 .B @prefix@/share/mc/edit.indent.rc
 que se copia la primera vez que se usa en
-.B .mc/cedit/edit.indent.rc
+.B ~/.local/share/mc/mcedit/edit.indent.rc
 en el directorio personal.
 .PP
 El editor también visualiza caracteres no estadounidenses (160+). Al editar
@@ -2707,7 +2709,7 @@ El sistema de archivos tar y los archivos tar comprimidos pueden consultarse usa
 el comando chdir. Para mostrar en el panel el contenido de un archivo tar, cambiamos
 de directorio empleando la siguiente sintaxis:
 .PP
-.I /archivo.tar#utar/[directorio\-dentro\-tar]
+.I /archivo.tar/utar://[directorio\-dentro\-tar]
 .PP
 El archivo mc.ext también ofrece un atajo para los archivos tar, esto quiere decir
 que normalmente basta con apuntar a un archivo tar y pulsar Intro para entrar en el
@@ -2720,8 +2722,8 @@ para obtener más detalles sobre cómo hacer esto.
 Ejemplos:
 .PP
 .nf
-    mc\-3.0.tar.gz#utar/mc\-3.0/vfs
-    /ftp/GCC/gcc\-2.7.0.tar#utar
+    mc\-3.0.tar.gz/utar://mc\-3.0/vfs
+    /ftp/GCC/gcc\-2.7.0.tar/utar://
 .fi
 .PP
 En este último se indica la ruta completa hasta el archivo tar.
@@ -2736,7 +2738,7 @@ o simplemente emplear la orden
 como cuando cambiamos habitualmente de directorio, pero indicando
 como ruta:
 .PP
-.I /#ftp:[!][usuario[:clave]@]maquina[:puerto][dir\-remoto]
+.I ftp://[!][usuario[:clave]@]maquina[:puerto][dir\-remoto]
 .PP
 Los elementos
 .IR usuario ,
@@ -2763,12 +2765,12 @@ delante del nombre de la máquina.
 Ejemplos:
 .PP
 .nf
-    /#ftp:ftp.nuclecu.unam.mx/linux/local
-    /#ftp:tsx\-11.mit.edu/pub/linux/packages
-    /#ftp:!detras.barrera.edu/pub
-    /#ftp:guest@pcremoto.com:40/pub
-    /#ftp:miguel:xxx@servidor/pub
-    /#ftp:ftp.um.es/pub
+    ftp://ftp.nuclecu.unam.mx/linux/local
+    ftp://tsx\-11.mit.edu/pub/linux/packages
+    ftp://!detras.barrera.edu/pub
+    ftp://guest@pcremoto.com:40/pub
+    ftp://miguel:xxx@servidor/pub
+    ftp://ftp.um.es/pub
 .fi
 .PP
 La opciones de FTPfs se encuentran entre las opciones de configuración del
@@ -2786,7 +2788,7 @@ o permitir la conexión a una shell de tipo bash.
 Para conectar con la máquina remota basta cambiar de directorio a un
 directorio virtual cuyo nombre sea de la forma:
 .PP
-.I /#sh:[usuario@]maquina[:opciones]/[directorio\-remoto]
+.I sh://[usuario@]maquina[:opciones]/[directorio\-remoto]
 .PP
 Los elementos
 .IR usuario ,
@@ -2809,9 +2811,9 @@ remota.
 Ejemplos:
 .PP
 .nf
-    /#sh:solorsh.es:r/linux/local
-    /#sh:pepe@quiero.comprension.edu:C/privado
-    /#sh:pepe@sincomprimir.ssh.edu/privado
+    sh://solorsh.es:r/linux/local
+    sh://pepe@quiero.comprension.edu:C/privado
+    sh://pepe@sincomprimir.ssh.edu/privado
 .fi
 
 .\"NODE "  SMB File System"
@@ -2823,7 +2825,7 @@ se puede emplear la "Conexión por SMB..." (accesible desde la barra de
 menús) o bien cambiar de directorio a un directorio virtual cuyo nombre
 sea de la forma:
 .PP
-.I /#smb:[usuario@]maquina[/recurso][/directorio\-remoto]
+.I smb://[usuario@]maquina[/recurso][/directorio\-remoto]
 .PP
 Los elementos
 .IR usuario ,
@@ -2840,9 +2842,9 @@ se pueden especificar en un cuadro de diálogo.
 Ejemplos:
 .PP
 .nf
-    /#smb:maquina/Compartido
-    /#smb:otramaquina
-    /#smb:invitado@maquina/publico/leyes
+    smb://maquina/Compartido
+    smb://otramaquina
+    smb://invitado@maquina/publico/leyes
 .fi
 
 .\"NODE "  Undelete File System"
@@ -2856,14 +2858,14 @@ restaurar todos los archivos borrados en un ext2fs y proporciona
 la extracción selectiva de archivos en una partición regular.
 .PP
 Para usar este sistema de archivos, tendremos que hacer un chdir a un nombre de archivo especial
-formado por el prefijo "/#undel" y el nombre de archivo donde se encuentra el
+formado por el prefijo "/undel://" y el nombre de archivo donde se encuentra el
 sistema de archivos actual.
 .PP
 Por ejemplo, para recuperar archivos borrados en la segunda partición del
 primer disco scsi en Linux, usaríamos el siguiente nombre de ruta:
 .PP
 .nf
-    /#undel:sda2
+    undel://sda2
 .fi
 .PP
 Esto le llevaría un tiempo a undelfs para cargar la información
@@ -2880,7 +2882,7 @@ Los sistemas de archivos Extfs son de dos tipos:
 1. Sistemas de archivos autónomos, que no están asociados a ningún
 archivo existente. Representan algún tipo de información relacionada con
 el sistema en forma de árbol de directorios. Se accede a ellos ejecutando
-.RI ' "cd #nombrefs" '
+.RI ' "cd nombrefs://" '
 donde nombrefs es el nombre corto que identifica el extfs (ver más
 adelante).  Ejemplos de éstos son audio (lista de pistas de sonido en
 el CD) o apt (lista de paquetes de tipo Debian en el sistema).
@@ -2888,7 +2890,7 @@ el CD) o apt (lista de paquetes de tipo Debian en el sistema).
 Por ejemplo, para listar las pistas de música del CD, escribir
 .PP
 .nf
-  cd #audio
+  cd audio://
 .fi
 .PP
 2. Sistemas de archivos en un archivo (como rpm, patchfs y más), que
@@ -2897,7 +2899,7 @@ Puede tratarse de archivos reales empaquetados o comprimidos en un archivo
 (urar, rpm) o archivos virtuales, como puede ser el caso de mensajes
 en un archivo de correo electrónico (mailfs) o partes de un archivo de
 modificaciones o parches (patchfs). Para acceder a ellos se añade
-.RI ' #nombrefs '
+.RI ' nombrefs:// '
 al nombre del archivo a abrir. Este archivo podría él mismo estar en
 otro sistema de archivos virtual.
 .PP
@@ -2905,7 +2907,7 @@ Por ejemplo, para listar los contenidos de un archivo documentos.zip
 comprimido hay que escribir
 .PP
 .nf
-  cd documentos.zip#uzip
+  cd documentos.zip/uzip://
 .fi
 .PP
 En muchos aspectos, se puede tratar un sistema de archivos externo como
@@ -2919,57 +2921,57 @@ archivos externos:
 .TP
 .B a
 acceder a un disquete DOS/Windows 'A:'
-.RI ( "cd #a" ).
+.RI ( "cd a://" ).
 .TP
 .B apt
 monitor del sistema de gestión de paquetes APT de Debian
-.RI ( "cd #apt" ).
+.RI ( "cd apt://" ).
 .TP
 .B audio
 acceso y audición de CDs
-.RI ( "cd #audio"
+.RI ( "cd audio://"
 o
-.IR "cd dispositivo#audio" ).
+.IR "cd dispositivo/audio://" ).
 .TP
 .B bpp
 paquete de la distribución GNU/Linux Bad Penguin
-.RI ( "cd archivo.bpp#bpp" ).
+.RI ( "cd archivo.bpp/bpp://" ).
 .TP
 .B deb
 paquete de la distribución GNU/Linux Debian
-.RI ( "cd archivo.deb#deb" ).
+.RI ( "cd archivo.deb/deb://" ).
 .TP
 .B dpkg
 paquetes instalados en Debian GNU/Linux
-.RI ( "cd #deb" ).
+.RI ( "cd deb://" ).
 .TP
 .B hp48
 ver o copiar archivos a/desde una calculadora HP48
-.RI ( "cd #hp48" ).
+.RI ( "cd hp48://" ).
 .TP
 .B lslR
 navegación en listados lslR empleados en bastantes sitios FTP
-.RI ( "cd filename#lslR" ).
+.RI ( "cd filename/lslR://" ).
 .TP
 .B mailfs
 soporte para archivos de correo electrónico tipo mbox
-.RI ( "cd archivo_mbox#mailfs" ).
+.RI ( "cd archivo_mbox/mailfs://" ).
 .TP
 .B patchfs
 manipulación de archivos de cambios/parches tipo diff
-.RI ( "cd archivo#patchfs" ).
+.RI ( "cd archivo/patchfs://" ).
 .TP
 .B rpm
 paquete RPM
-.RI ( "cd archivo#rpm" ).
+.RI ( "cd archivo/rpm://" ).
 .TP
 .B rpms
 base de datos de paquetes RPM instalados
-.RI ( "cd #rpms" ).
+.RI ( "cd rpms://" ).
 .TP
 .B ulha, urar, uzip, uzoo, uar, uha
 herramientas de compresión
-.RI ( "cd archivo#xxxx"
+.RI ( "cd archivo/xxxx://"
 siendo xxxx uno de estos:
 .IR ulha ,
 .IR urar ,
@@ -2988,7 +2990,7 @@ paquetes Debian:
 .PP
 .nf
   regex/\.deb$
-          Open=%cd %p#deb
+          Open=%cd %p/deb://
 .fi
 .\"NODE "Colors"
 .SH "Colores"
@@ -3133,7 +3135,7 @@ o sin su extensión \.ini. De no indicar la ruta se realiza la búsqueda,
 en orden, en:
 .IP
 1)
-.BR ~/.mc/skins/ .
+.BR ~/.local/share/mc/skins/ .
 .br
 2)
 .BR @sysconfdir@/mc/skins/ .
@@ -3472,7 +3474,7 @@ La mayoría de las opciones de Midnight Commander pueden cambiarse desde
 los menús. Sin embargo, hay un pequeño número de ajustes para los que
 es necesario editar el archivo de configuración.
 .PP
-Estas variables se pueden cambiar en nuestro archivo ~/.mc/ini:
+Estas variables se pueden cambiar en nuestro archivo ~/.config/mc/ini:
 .PP
 .I clear_before_exec
 .IP
@@ -3600,7 +3602,7 @@ del sistema sin necesidad de privilegios de superusuario. El programa
 busca definiciones de teclas en el archivo de inicialización del sistema
 .B @prefix@/share/mc/mc.lib
 o en el del usuario
-.BR ~/.mc/ini ,
+.BR ~/.config/mc/ini ,
 en la sección "terminal:nuestro\-terminal" y si no en "terminal:general".
 Cada línea comienza con el identificador de la tecla, seguido de un signo
 de igual y la definición de la tecla. Para representar el carácter de escape
@@ -3626,7 +3628,7 @@ complete      tecla para completar
 .PP
 Ejemplo: para indicar que la secuencia Escape + [ + O + p corresponde
 a la tecla de insertar, hay que colocar en el archivo
-.BR ~/.mc/ini :
+.BR ~/.config/mc/ini :
 .PP
 .nf
 insert=\\e[Op
@@ -3670,7 +3672,7 @@ Archivo de ayuda.
 .IP
 Archivo de extensiones por defecto del sistema.
 .PP
-.I ~/.mc/bindings
+.I ~/.config/mc/mc.ext
 .IP
 Archivo de usuario de extensiones y configuración de visor y editor. Si
 está presente prevalece sobre el contenido de los archivos del sistema.
@@ -3678,17 +3680,17 @@ está presente prevalece sobre el contenido de los archivos del sistema.
 .I @prefix@/share/mc/mc.ini
 .IP
 Archivo de configuración del sistema para Midnight Commander, sólo si
-el usuario no dispone de su propio ~/.mc/ini.
+el usuario no dispone de su propio ~/.config/mc/ini.
 .PP
 .I @prefix@/share/mc/mc.lib
 .IP
 Opciones globales de Midnight Commander. Se aplican siempre a todos los
-usuarios, tengan ~/.mc/ini o no. Actualmente sólo se emplea para los
+usuarios, tengan ~/.config/mc/ini o no. Actualmente sólo se emplea para los
 .\"LINK2"
 ajustes de terminal\&.
 .\"Terminal databases"
 .PP
-.I ~/.mc/ini
+.I ~/.config/mc/ini
 .IP
 Configuración personal del usuario. Si este archivo está presente entonces
 se cargará la configuración desde aquí en lugar de desde el archivo de
@@ -3703,12 +3705,12 @@ programa.
 .IP
 Este archivo contiene el menú de aplicaciones por defecto para el sistema.
 .PP
-.I ~/.mc/menu
+.I ~/.config/mc/menu
 .IP
 Menú de aplicaciones personal del usuario. Si está presente será utilizado
 en lugar del menú por defecto del sistema.
 .PP
-.I ~/.mc/Tree
+.I ~/.cache/mc/Tree
 .IP
 La lista de directorios para el árbol de directorios y la vista en árbol.
 .PP

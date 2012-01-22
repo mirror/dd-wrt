@@ -2,27 +2,27 @@
    Skins engine.
    Work with colors - backward compability
 
-   Copyright (C) 2009 The Free Software Foundation, Inc.
+   Copyright (C) 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
-   Slava Zanko <slavazanko@gmail.com>, 2009.
+   Slava Zanko <slavazanko@gmail.com>, 2009
+   Egmont Koblinger <egmont@gmail.com>, 2010
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -33,8 +33,6 @@
 #include "internal.h"
 
 #include "lib/tty/color.h"
-
-#include "src/setup.h"
 
 /*** global variables ****************************************************************************/
 
@@ -141,9 +139,6 @@ static void
 mc_skin_colors_old_configure_one (mc_skin_t * mc_skin, const char *the_color_string)
 {
     gchar **colors, **orig_colors;
-    gchar **key_val;
-    const gchar *skin_group, *skin_key;
-    gchar *skin_val;
 
     if (the_color_string == NULL)
         return;
@@ -152,27 +147,30 @@ mc_skin_colors_old_configure_one (mc_skin_t * mc_skin, const char *the_color_str
     if (colors == NULL)
         return;
 
-    for (; *colors; colors++)
+    for (; *colors != NULL; colors++)
     {
-        key_val = g_strsplit_set (*colors, "=,", 3);
+        gchar **key_val;
+        const gchar *skin_group, *skin_key;
 
-        if (!key_val)
+        key_val = g_strsplit_set (*colors, "=,", 4);
+
+        if (key_val == NULL)
             continue;
 
-        if (key_val[1] == NULL
-            || !mc_skin_colors_old_transform (key_val[0], &skin_group, &skin_key))
+        if (key_val[1] != NULL && mc_skin_colors_old_transform (key_val[0], &skin_group, &skin_key))
         {
-            g_strfreev (key_val);
-            continue;
+            gchar *skin_val;
+
+            if (key_val[2] == NULL)
+                skin_val = g_strdup_printf ("%s;", key_val[1]);
+            else if (key_val[3] == NULL)
+                skin_val = g_strdup_printf ("%s;%s", key_val[1], key_val[2]);
+            else
+                skin_val = g_strdup_printf ("%s;%s;%s", key_val[1], key_val[2], key_val[3]);
+
+            mc_config_set_string (mc_skin->config, skin_group, skin_key, skin_val);
+            g_free (skin_val);
         }
-
-        if (key_val[2] != NULL)
-            skin_val = g_strdup_printf ("%s;%s", key_val[1], key_val[2]);
-        else
-            skin_val = g_strdup_printf ("%s;", key_val[1]);
-        mc_config_set_string (mc_skin->config, skin_group, skin_key, skin_val);
-
-        g_free (skin_val);
 
         g_strfreev (key_val);
     }
@@ -186,10 +184,10 @@ mc_skin_colors_old_configure_one (mc_skin_t * mc_skin, const char *the_color_str
 void
 mc_skin_colors_old_configure (mc_skin_t * mc_skin)
 {
-    mc_skin_colors_old_configure_one (mc_skin, setup_color_string);
-    mc_skin_colors_old_configure_one (mc_skin, term_color_string);
+    mc_skin_colors_old_configure_one (mc_skin, mc_global.tty.setup_color_string);
+    mc_skin_colors_old_configure_one (mc_skin, mc_global.tty.term_color_string);
     mc_skin_colors_old_configure_one (mc_skin, getenv ("MC_COLOR_TABLE"));
-    mc_skin_colors_old_configure_one (mc_skin, command_line_colors);
+    mc_skin_colors_old_configure_one (mc_skin, mc_global.tty.command_line_colors);
 }
 
 /* --------------------------------------------------------------------------------------------- */

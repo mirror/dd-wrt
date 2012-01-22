@@ -1,23 +1,28 @@
-/* Terminal management xterm and rxvt support
+/*
+   Terminal management xterm and rxvt support
+
    Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2009 Free Software Foundation, Inc.
+   2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Andrew Borodin <aborodin@vmail.ru>, 2009.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file win.c
  *  \brief Source: Terminal management xterm and rxvt support
@@ -37,15 +42,9 @@
 #include "tty-internal.h"
 #include "tty.h"                /* tty_gotoyx, tty_print_char */
 #include "win.h"
-#include "src/consaver/cons.saver.h"    /* console_flag */
 
 /*** global variables ****************************************************************************/
 
-/* This flag is set by xterm detection routine in function main() */
-/* It is used by function view_other_cmd() */
-gboolean xterm_flag = FALSE;
-
-extern int keybar_visible;
 char *smcup = NULL;
 char *rmcup = NULL;
 
@@ -98,7 +97,7 @@ anything_ready (void)
 void
 do_enter_ca_mode (void)
 {
-    if (xterm_flag && smcup != NULL)
+    if (mc_global.tty.xterm_flag && smcup != NULL)
     {
         fprintf (stdout, /* ESC_STR ")0" */ ESC_STR "7" ESC_STR "[?47h");
         fflush (stdout);
@@ -110,7 +109,7 @@ do_enter_ca_mode (void)
 void
 do_exit_ca_mode (void)
 {
-    if (xterm_flag && rmcup != NULL)
+    if (mc_global.tty.xterm_flag && rmcup != NULL)
     {
         fprintf (stdout, ESC_STR "[?47l" ESC_STR "8" ESC_STR "[m");
         fflush (stdout);
@@ -125,13 +124,14 @@ show_rxvt_contents (int starty, unsigned char y1, unsigned char y2)
     unsigned char *k;
     int bytes, i, j, cols = 0;
 
-    y1 += (keybar_visible != 0);        /* i don't knwo why we need this - paul */
-    y2 += (keybar_visible != 0);
+    y1 += (mc_global.keybar_visible != 0);      /* i don't knwo why we need this - paul */
+    y2 += (mc_global.keybar_visible != 0);
     while (anything_ready ())
         tty_lowlevel_getch ();
 
     /* my own wierd protocol base 26 - paul */
-    printf (ESC_STR "CL%c%c%c%c\n", (y1 / 26) + 'A', (y1 % 26) + 'A', (y2 / 26) + 'A', (y2 % 26) + 'A');
+    printf (ESC_STR "CL%c%c%c%c\n", (y1 / 26) + 'A', (y1 % 26) + 'A', (y2 / 26) + 'A',
+            (y2 % 26) + 'A');
 
     bytes = (y2 - y1) * (COLS + 1) + 1; /* *should* be the number of bytes read */
     j = 0;
@@ -177,7 +177,7 @@ look_for_rxvt_extensions (void)
     }
 
     if (rxvt_extensions)
-        console_flag = 4;
+        mc_global.tty.console_flag = '\004';
 
     return rxvt_extensions;
 }

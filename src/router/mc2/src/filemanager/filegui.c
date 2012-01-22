@@ -1,38 +1,42 @@
-/* File management GUI for the text mode edition
- *
- * Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
- * 2004, 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
- *
- * Written by: 1994, 1995       Janne Kukonlehto
- *             1994, 1995       Fred Leeflang
- *             1994, 1995, 1996 Miguel de Icaza
- *             1995, 1996       Jakub Jelinek
- *             1997             Norbert Warmuth
- *             1998             Pavel Machek
- *             2009             Slava Zanko
- *
- * The copy code was based in GNU's cp, and was written by:
- * Torbjorn Granlund, David MacKenzie, and Jim Meyering.
- *
- * The move code was based in GNU's mv, and was written by:
- * Mike Parker and David MacKenzie.
- *
- * Janne Kukonlehto added much error recovery to them for being used
- * in an interactive program.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+/*
+   File management GUI for the text mode edition
+
+   The copy code was based in GNU's cp, and was written by:
+   Torbjorn Granlund, David MacKenzie, and Jim Meyering.
+
+   The move code was based in GNU's mv, and was written by:
+   Mike Parker and David MacKenzie.
+
+   Janne Kukonlehto added much error recovery to them for being used
+   in an interactive program.
+
+   Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
+   2004, 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
+
+   Written by:
+   Janne Kukonlehto, 1994, 1995
+   Fred Leeflang, 1994, 1995
+   Miguel de Icaza, 1994, 1995, 1996
+   Jakub Jelinek, 1995, 1996
+   Norbert Warmuth, 1997
+   Pavel Machek, 1998
+   Slava Zanko, 2009
+
+   This file is part of the Midnight Commander.
+
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -81,7 +85,7 @@
 #include "lib/tty/key.h"        /* tty_get_event */
 #include "lib/mcconfig.h"
 #include "lib/search.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/strescape.h"
 #include "lib/strutil.h"
 #include "lib/timefmt.h"        /* file_date() */
@@ -120,7 +124,7 @@ int classic_progressbar = 1;
 typedef enum {
     MSDOS_SUPER_MAGIC     = 0x4d44,
     NTFS_SB_MAGIC         = 0x5346544e,
-    NTFS_3G_MAGIC         = 0x65735546,
+    FUSE_MAGIC         = 0x65735546,
     PROC_SUPER_MAGIC      = 0x9fa0,
     SMB_SUPER_MAGIC       = 0x517B,
     NCP_SUPER_MAGIC       = 0x564c,
@@ -194,12 +198,13 @@ filegui__check_attrs_on_fs (const char *fs_path)
     {
     case MSDOS_SUPER_MAGIC:
     case NTFS_SB_MAGIC:
-    case NTFS_3G_MAGIC:
     case PROC_SUPER_MAGIC:
     case SMB_SUPER_MAGIC:
     case NCP_SUPER_MAGIC:
     case USBDEVICE_SUPER_MAGIC:
         return FALSE;
+    default:
+        break;
     }
 #elif defined(HAVE_STRUCT_STATFS_F_FSTYPENAME) \
       || defined(HAVE_STRUCT_STATVFS_F_FSTYPENAME)
@@ -268,7 +273,7 @@ file_bps_prepare_for_show (char *buffer, long bps)
         g_snprintf (buffer, BUF_TINY, _("%ld B/s"), bps);
     }
     else
-        *buffer = 0;
+        *buffer = '\0';
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -843,7 +848,7 @@ file_progress_show_deleting (FileOpContext * ctx, const char *s)
 FileProgressStatus
 file_progress_real_query_replace (FileOpContext * ctx,
                                   enum OperationMode mode, const char *destname,
-                                  struct stat * _s_stat, struct stat * _d_stat)
+                                  struct stat *_s_stat, struct stat *_d_stat)
 {
     FileOpContextUI *ui;
 
@@ -902,8 +907,7 @@ file_progress_real_query_replace (FileOpContext * ctx,
 char *
 file_mask_dialog (FileOpContext * ctx, FileOperation operation,
                   gboolean only_one,
-                  const char *format, const void *text,
-                  const char *def_text, gboolean * do_bg)
+                  const char *format, const void *text, const char *def_text, gboolean * do_bg)
 {
     const size_t FMDY = 13;
     const size_t FMDX = 68;

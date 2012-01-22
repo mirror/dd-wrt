@@ -211,7 +211,7 @@ albero directory\&.
 L'auto ripetizione predefinita per il mouse è di 400 millisecondi. Questo
 valore può essere cambiato modificando il file
 .\"LINK2"
-\&~/.mc/ini
+\&~/.config/mc/ini
 .\"Save Setup"
 e cambiando il parametro
 .IR mouse_repeat_rate .
@@ -938,7 +938,9 @@ se l'opzione, "usa editor interno" è stata impostata.
 Mostra una finestra di dialogo con destinazione predefinita alla
 directory del pannello non selezionato, che copia il file selezionato (o
 i file marcati, se ce n'è almeno uno) sulla directory specificata
-dall'utente nella finestra di dialogo. Durante il processo è possibile
+dall'utente nella finestra di dialogo. Space for destination
+file may be preallocated relative to preallocate_space configure option.
+Durante il processo è possibile
 premere C\-c o ESC per abortire l'operazione. Per maggiori dettagli sulla
 maschera sorgente (che sarà normalmente * o ^\\(.*\\)$ a seconda
 dell'impostazione di "modelli della shell") o sui caratteri jolly sulla
@@ -1243,7 +1245,7 @@ Le directory che devono essere saltate devono essere impostate nella variabile
 .B ignore_dirs 
 nella sezione
 .B FindFile
-del file ~/.mc/ini.
+del file ~/.config/mc/ini.
 .PP
 Le directory devono essere separate da una virgola, come nell'esempio:
 .PP
@@ -1308,7 +1310,7 @@ comando cd interno\&.
 .\"NODE "    Extension File Edit"
 .SH "    Modifica file estensioni"
 Questo comando invocherà l'editor sul file 
-.IR ~/.mc/bindings . 
+.IR ~/.config/mc/mc.ext .
 Il fomato di questo file è il seguente (il formato è cambiato dalla 
 versione 3.0):
 .PP
@@ -1375,7 +1377,7 @@ personalizzati dall'utente. Quando si accede al menu utente, viene
 utilizzato, se esiste, il file .mc.menu dalla directory corrente,
 ma solo se è di proprietà dell'utente o di root e se non è scrivibile
 a tutti. Se tale file non viene trovato, mc alla stessa maniera 
-prova con ~/.mc/menu altrimenti usa il menu di sistema
+prova con ~/.config/mc/menu altrimenti usa il menu di sistema
 @prefix@/share/mc/mc.menu.
 .PP
 Il formato del file menu è molto semplice. Le righe che cominciano
@@ -1660,7 +1662,7 @@ espressioni regolari sono quelle descritte in ed(1).
 .I Autosalva configurazione.
 Se quest'opzione è abilitata, quando si esce dal Midnight Commander le
 opzioni configurabili del Midnight Commander vengono salvate nel file
-~/.mc/ini.
+~/.config/mc/ini.
 .PP
 .I Menu automatici.
 Se quest'opzione è abilitata, il menu utente sarà invocato alla partenza.
@@ -1811,7 +1813,7 @@ premere Esc una volta ed aspettare.
 .PP
 Quando si è finito con tutti i tasti, è possibile salvarli. Le definizioni
 dei tasti che si è ridefinito saranno scritte nella sezione [terminal:TERM]
-del vostro ~/.mc/ini file (dove TERM è il nome del terminale corrente). Le
+del vostro ~/.config/mc/ini file (dove TERM è il nome del terminale corrente). Le
 definizioni dei tasti che già funzionavano correttamente non vengono salvate.
 .\"NODE "    Virtual FS"
 .SH "    FS virtuale "
@@ -1908,14 +1910,14 @@ funzionare con alcuni firewall.
 .\"NODE "    Save Setup"
 .SH "    Salva configurazione"
 Alla partenza il Midnight Commander prova a caricare le informazioni di
-inizializzazione dal file ~/.mc/ini. Se questo file non esiste, 
+inizializzazione dal file ~/.config/mc/ini. Se questo file non esiste, 
 caricherà le informazioni dal file di configurazione di sistema 
 posizionato in @prefix@/share/mc/mc.ini. Se il file di configurazione di 
 sistema non esiste, MC userà le impostazioni predefinite.
 .PP
 Il comando
 .I salva configurazione
-crea il file ~/.mc/ini salvando le impostazioni correnti 
+crea il file ~/.config/mc/ini salvando le impostazioni correnti 
 dei menu
 .\"LINK2"
 sinistra, destra
@@ -2117,11 +2119,11 @@ esca dal Midnight Commander.
 Se si sta usando
 .B bash
 si può specificare comandi alla partenza della subshell nel file
-~/.mc/bashrc e mappature speciali della tastiera nel file
-~/.mc/inputrc.
+~/.local/share/mc/bashrc e mappature speciali della tastiera nel file
+~/.local/share/mc/inputrc.
 .B tcsh 
 gli utenti possono specificare comandi alla partenza nel file
-~/.mc/tcshrc.
+~/.local/share/mc/tcshrc.
 .PP
 Quando il codice della subshell viene utilizzato, si può sospendere
 l'applicazione in ogni momento con la sequenza C\-o e saltare nuovamente
@@ -2452,9 +2454,6 @@ Ridisegna lo schermo.
 .B C\-o
 Passa alla subshell e mostra la schermata dei comandi.
 .PP
-.B !
-Come C\-o, ma esegue una nuova shell se la subshell non sta andando.
-.PP
 .B "[n] m"
 Imposta l'indice n.
 .PP
@@ -2499,13 +2498,13 @@ discesa appropriato. Gli altri tasti sono: maiusc + tasti freccia
 produce la selezione del testo.
 .B Ctrl\-Ins
 copia nel file 
-.B cooledit.clip
+.B mcedit.clip
 e
 .B Shift\-Ins
-incolla da cooledit.clip.
+incolla da mcedit.clip.
 .B Shift\-Del 
 taglia in 
-.BR cooledit.clip , 
+.BR mcedit.clip , 
 e
 .B Ctrl\-Del
 cancella il testo selezionato. 
@@ -2524,7 +2523,7 @@ e poi il tasto assegnato. La macro viene eseguita anche se si
 preme il tasto Meta, Ctrl, o Esc e il tasto assegnato, basta che il tasto
 non sia già assegnato a qualche altra funzione. Una volta definiti, i
 macro comandi finiscono nel file
-.B .mc/cedit/cooledit.macros
+.B ~/.local/share/mc/mcedit/mcedit.macros
 nella propria directory home. E' possibile cancellare una macro cancellando
 la riga appropriata nel suddetto file.
 .PP
@@ -2536,7 +2535,7 @@ o
 o altro). Questo comportamento viene controllato dal file 
 .B @prefix@/share/mc/edit.indent.rc
 che viene copiato nel 
-.B .mc/cedit/edit.indent.rc
+.B ~/.local/share/mc/mcedit/edit.indent.rc
 nella propria directory home la prima volta che lo si usa.
 .PP
 L'editor visualizza snche caratteri non\-americani (160+). Quando si modifica
@@ -2625,7 +2624,7 @@ la directory corrente con un comando
 .I cd
 verso un percorso simile al seguente:
 .PP
-.I /#ftp:[!][utente[:pass]@]macchina[:porta][dir\-remota]
+.I ftp://[!][utente[:pass]@]macchina[:porta][dir\-remota]
 .PP
 Gli elementi
 .IR utente , 
@@ -2651,11 +2650,11 @@ Per abilitare l'uso del proxy FTP, anteporre
 Esempi:
 .PP
 .nf
-    /#ftp:ftp.nuclecu.unam.mx/linux/local
-    /#ftp:tsx\-11.mit.edu/pub/linux/packages
-    /#ftp:!dietro.il.firewall.edu/pub
-    /#ftp:guest@host\-remoto.com:40/pub
-    /#ftp:miguel:xxx@server/pub
+    ftp://ftp.nuclecu.unam.mx/linux/local
+    ftp://tsx\-11.mit.edu/pub/linux/packages
+    ftp://!dietro.il.firewall.edu/pub
+    ftp://guest@host\-remoto.com:40/pub
+    ftp://miguel:xxx@server/pub
 .fi
 .PP
 Controllare la finestra di dialogo
@@ -2669,7 +2668,7 @@ Il file system tar fornisce un accesso in sola lettura ai file tar
 e tar compressi usando il comando chdir. Per cambiare la directory corrente 
 al file tar usare la seguente sintassi:
 .PP
-.I /nomefile.tar#utar/[dir\-dentro\-tar]
+.I /nomefile.tar/utar://[dir\-dentro\-tar]
 .PP
 Il file mc.ext già fornisce un collegamento per il file tar; ciò
 significa che normalmente basta selezionare un file tar e premere invio
@@ -2682,8 +2681,8 @@ per i dettagli su come questo viene fatto.
 Esempi:
 .PP
 .nf
-    mc\-3.0.tar.gz#utar/mc\-3.0/vfs
-    /ftp/GCC/gcc\-2.7.0.tar#utar
+    mc\-3.0.tar.gz/utar://mc\-3.0/vfs
+    /ftp/GCC/gcc\-2.7.0.tar/utar://
 .fi
 .PP
 L'ultima riga, specifica il percorso completo dell'archivio tar.
@@ -2698,7 +2697,7 @@ Per collegarsi ad una macchina remota, basta solo fare cd
 in una speciale directory il cui nome ha il seguente formato:
 .PP
 .nf
-/#sh:[utente@]macchina[:opzioni]/[dir\-remota]
+sh://[utente@]macchina[:opzioni]/[dir\-remota]
 .fi
 Gli elementi
 .IR utente , 
@@ -2721,9 +2720,9 @@ a questo valore.
 Esempi:
 .PP
 .nf
-    /#sh:solorsh.mx:r/linux/locale
-    /#sh:joe@vuole.lacompressione.edu:C/privato
-    /#sh:joe@noncompresso.ssh.edu/privato
+    sh://solorsh.mx:r/linux/locale
+    sh://joe@vuole.lacompressione.edu:C/privato
+    sh://joe@noncompresso.ssh.edu/privato
 .fi
 .\"NODE "  Undelete File System"
 .SH "  Recupero file cancellati"
@@ -2736,14 +2735,14 @@ file cancellati su un fs ext2 e fornisce ed estrae i file selezionati
 in una partizione normale.
 .PP
 Per usare questo file system, è necessario entrare nella directory
-con il nome speciale formato dal prefisso "/#undel" e dal nome del
+con il nome speciale formato dal prefisso "undel://" e dal nome del
 file system dove il file risiede.
 .PP
 Per esempio, per recuperare file cancellati sulla seconda partizione
 del primo disco SCSI su Linux, si dovrà usare il seguente percorso:
 .PP
 .nf
-    /#undel:sda2
+    undel://sda2
 .fi
 .PP
 Il recupero può metterci un po' di tempo per caricare le informazioni
@@ -2758,7 +2757,7 @@ Per usarlo, si può provare il comando dal pannello
 direttamente cambiare directory corrente usando il comando cd verso
 un percorso simile a questo:
 .PP
-.I /#smb:[utente@]macchina[/servizio][/dir\-remota]
+.I smb://[utente@]macchina[/servizio][/dir\-remota]
 .PP
 L'elemento
 .I utente, servizio
@@ -2774,9 +2773,124 @@ possono essere specificati nella finestra di dialogo di ingresso.
 Esempi:
 .PP
 .nf
-    /#smb:macchina/Condivisione
-    /#smb:altra_macchina
-    /#smb:guest@macchina/Public/Irlex
+    smb://macchina/Condivisione
+    smb://altra_macchina
+    smb://guest@macchina/Public/Irlex
+.fi
+.\"NODE "  EXTernal File System"
+.SH "  EXTernal File System"
+.B extfs
+allows to integrate numerous features and file types into GNU Midnight
+Commander in an easy way, by writing scripts.
+.PP
+Extfs filesystems can be divided into two categories:
+.PP
+1. Stand\-alone filesystems, which are not associated with any existing
+file.  They represent certain system\-wide data as a directory tree.
+You can invoke them by typing
+.RI ' "cd fsname://" '
+where fsname is an extfs short name (see below).  Examples of such
+filesystems include audio (list audio tracks on the CD) or apt (list of
+all Debian packages in the system).
+.PP
+For example, to list CD\-Audio tracks on your CD\-ROM drive, type
+.PP
+.nf
+  cd audio://
+.fi
+.PP
+2. 'Archive' filesystems (like rpm, patchfs and more), which represent
+contents of a file as a directory tree.  It can consist of 'real' files
+compressed in an archive (urar, rpm) or virtual files, like messages
+in a mailbox (mailfs) or parts of a patch (patchfs).  To access such
+filesystems
+.RI ' fsname:// '
+should be appended to the archive name.  Note that the archive itself
+can be on another vfs.
+.PP
+For example, to list contents of a zip archive documents.zip type
+.PP
+.nf
+  cd documents.zip/uzip://
+.fi
+.PP
+In many aspects, you could treat extfs like any other directory.  For
+instance, you can add it to the hotlist or change to it from directory
+history.  An important limitation is that you cannot invoke shell
+commands inside extfs, just like any other non\-local VFS.
+.PP
+Common extfs scripts included with Midnight Commander are:
+.TP
+.B a
+access 'A:' DOS/Windows diskette
+.RI ( "cd a://" ).
+.TP
+.B apt
+front end to Debian's APT package management system
+.RI ( "cd apt://" ).
+.TP
+.B audio
+audio CD ripping and playing
+.RI ( "cd audio://"
+or
+.IR "cd device/audio://" ).
+.TP
+.B bpp
+package of Bad Penguin GNU/Linux distribution
+.RI ( "cd file.bpp/bpp://" ).
+.TP
+.B deb
+package of Debian GNU/Linux distribution
+.RI ( "cd file.deb/deb://" ).
+.TP
+.B dpkg
+Debian GNU/Linux installed packages
+.RI ( "cd deb://" ).
+.TP
+.B hp48
+view and copy files to/from a HP48 calculator
+.RI ( "cd hp48://" ).
+.TP
+.B lslR
+browsing of lslR listings as found on many FTPs
+.RI ( "cd filename/lslR://" ).
+.TP
+.B mailfs
+mbox\-style mailbox files support
+.RI ( "cd mailbox/mailfs://" ).
+.TP
+.B patchfs
+extfs to handle unified and context diffs
+.RI ( "cd filename/patchfs://" ).
+.TP
+.B rpm
+RPM package
+.RI ( "cd filename/rpm://" ).
+.TP
+.B rpms
+RPM database management
+.RI ( "cd rpms://" ).
+.TP
+.B ulha, urar, uzip, uzoo, uar, uha
+archivers
+.RI ( "cd archive/xxxx://"
+where xxxx is one of:
+.IR ulha ,
+.IR urar ,
+.IR uzip ,
+.IR uzoo ,
+.IR uar ,
+.IR uha ).
+.PP
+You could bind file type/extension to specified extfs as described in the
+.\"LINK2"
+Extension File Edit
+.\"Extension File Edit"
+section.  Here is an example entry for Debian packages:
+.PP
+.nf
+  regex/\.deb$
+          Open=%cd %p/deb://
 .fi
 .\"NODE "Colors"
 .SH "Colori"
@@ -2914,13 +3028,13 @@ Molte delle impostazioni del Midnight Commander possono essere cambiate
 dai menu. Comunque, c'è un piccolo numero di impostazioni che possono
 essere cambiate solo agendo sul file di configurazione.
 .PP
-Queste sono le variabili che possono essere impostate nel file ~/.mc/ini:
+Queste sono le variabili che possono essere impostate nel file ~/.config/mc/ini:
 .TP
 .I clear_before_exec
 Il valore predefinito del Midnight Commander è di cancellare lo schermo
 prima dell'esecuzione di un comando. Se si preferisce vedere il risultato
 di un comando in fondo allo schermo, si modifichi la copia locale del file
-~/.mc/ini e si cambi il valore del campo clear_before_exec a 0.
+~/.config/mc/ini e si cambi il valore del campo clear_before_exec a 0.
 .TP
 .I confirm_view_dir
 Se si preme F3 su di una directory, normalmente MC entra nella directory.
@@ -3009,7 +3123,7 @@ Il Midnight Commander fornisce una maniera per correggere il database
 dei terminali si sistema senza richiedere i privilegi di 
 amministratore (root). Il Midnight Commander ricerca nel file di
 inizializzazione di sistema (il file mc.lib collocato nella directory
-di libreria del Midnight Commander) e nel file ~/.mc/ini la sezione
+di libreria del Midnight Commander) e nel file ~/.config/mc/ini la sezione
 "terminal:nome\-del\-terminale\-in\-uso" e poi la sezione "terminal:general",
 ogni riga della sezione contiene il simbolo chiave che si vuol definire,
 seguito da un segno di uguale e la definizione per quel tasto.
@@ -3062,7 +3176,7 @@ Il file di aiuto per il programma.
 .IP
 Il file delle estensioni di sistema predefinito.
 .PP
-.I ~/.mc/bindings
+.I ~/.config/mc/mc.ext
 .IP
 Le estensioni dell'utente, la configurazione del visualizzatore e
 dell'editor di file. Se presenti, questi file si sovrappongono ai file di 
@@ -3071,19 +3185,19 @@ sistema.
 .I @prefix@/share/mc/mc.ini
 .IP
 La configurazione di sistema predefinita per il Midnight Commander, usata solo
-se l'utente non possiede il proprio file ~/.mc/ini.
+se l'utente non possiede il proprio file ~/.config/mc/ini.
 .PP
 .I @prefix@/share/mc/mc.lib
 .IP
 Le impostazioni globali per il Midnight Commander. La modifica di questo
-file influisce su tutti gli utenti, che abbiano o no il file ~/.mc/ini .
+file influisce su tutti gli utenti, che abbiano o no il file ~/.config/mc/ini .
 Attualmente vengono caricate solo le
 .\"LINK2"
 impostazioni del terminale
 .\"Terminal databases"
 da mc.lib.
 .PP
-.I ~/.mc/ini
+.I ~/.config/mc/ini
 .IP
 La configurazione dell'utente. Se questo file è presente, la configurazione
 viene caricata da qui invece che dal file di sistema.
@@ -3096,12 +3210,12 @@ Questo file contiene i suggerimenti (dritte) mostrate dal programma.
 .IP
 Questo file contiene il menu di sistema per le applicazioni.
 .PP
-.I ~/.mc/menu
+.I ~/.config/mc/menu
 .IP
 Il menu utente per le applicazioni. Se presente viene usato al posto
 del menu delle applicazioni di sistema.
 .PP
-.I ~/.mc/Tree
+.I ~/.cache/mc/Tree
 .IP
 L'elenco di directory per l'albero directory e per la vista ad albero.
 .PP

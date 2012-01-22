@@ -1,20 +1,24 @@
-/* Hypertext file browser.
+/*
+   Hypertext file browser.
+
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -60,6 +64,7 @@
 #include "lib/fileloc.h"
 #include "lib/util.h"
 #include "lib/widget.h"
+#include "lib/event-types.h"
 
 #include "keybind-defaults.h"
 #include "keybind-defaults.h"
@@ -853,58 +858,58 @@ help_execute_cmd (unsigned long command)
 
     switch (command)
     {
-    case CK_HelpHelp:
+    case CK_Help:
         help_help (whelp);
         break;
-    case CK_HelpIndex:
+    case CK_Index:
         help_index (whelp);
         break;
-    case CK_HelpBack:
+    case CK_Back:
         help_back (whelp);
         break;
-    case CK_HelpMoveUp:
+    case CK_Up:
         help_prev_link (TRUE);
         break;
-    case CK_HelpMoveDown:
+    case CK_Down:
         help_next_link (TRUE);
         break;
-    case CK_HelpMovePgDn:
+    case CK_PageDown:
         move_forward (help_lines - 1);
         break;
-    case CK_HelpMovePgUp:
+    case CK_PageUp:
         move_backward (help_lines - 1);
         break;
-    case CK_HelpMoveHalfPgDn:
+    case CK_HalfPageDown:
         move_forward (help_lines / 2);
         break;
-    case CK_HelpMoveHalfPgUp:
+    case CK_HalfPageUp:
         move_backward (help_lines / 2);
         break;
-    case CK_HelpMoveTop:
+    case CK_Top:
         move_to_top ();
         break;
-    case CK_HelpMoveBottom:
+    case CK_Bottom:
         move_to_bottom ();
         break;
-    case CK_HelpSelectLink:
+    case CK_Enter:
         help_select_link ();
         break;
-    case CK_HelpNextLink:
+    case CK_LinkNext:
         help_next_link (FALSE);
         break;
-    case CK_HelpPrevLink:
+    case CK_LinkPrev:
         help_prev_link (FALSE);
         break;
-    case CK_HelpNextNode:
+    case CK_NodeNext:
         help_next_node ();
         break;
-    case CK_HelpPrevNode:
+    case CK_NodePrev:
         help_prev_node ();
         break;
-    case CK_HelpQuit:
+    case CK_Quit:
         dlg_stop (whelp);
         break;
-    case CK_DialogCancel:
+    case CK_Cancel:
         /* don't close help due to SIGINT */
         break;
     default:
@@ -922,7 +927,7 @@ help_handle_key (Dlg_head * h, int c)
     unsigned long command;
 
     command = keybind_lookup_keymap_command (help_map, c);
-    if ((command == CK_Ignore_Key) || (help_execute_cmd (command) == MSG_NOT_HANDLED))
+    if ((command == CK_IgnoreKey) || (help_execute_cmd (command) == MSG_NOT_HANDLED))
         return MSG_NOT_HANDLED;
 
     help_callback (h, NULL, DLG_DRAW, 0, NULL);
@@ -1040,8 +1045,10 @@ mousedispatch_new (int y, int x, int yl, int xl)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-void
-interactive_display (const char *filename, const char *node)
+/* event callback */
+gboolean
+help_interactive_display (const gchar * event_group_name, const gchar * event_name,
+                          gpointer init_data, gpointer data)
 {
     const dlg_colors_t help_colors = {
         HELP_NORMAL_COLOR,      /* common text color */
@@ -1055,43 +1062,48 @@ interactive_display (const char *filename, const char *node)
     Widget *md;
     char *hlpfile = NULL;
     char *filedata;
+    ev_help_t *event_data = (ev_help_t *) data;
 
-    if (filename != NULL)
-        g_file_get_contents (filename, &filedata, NULL, NULL);
+    (void) event_group_name;
+    (void) event_name;
+    (void) init_data;
+
+    if (event_data->filename != NULL)
+        g_file_get_contents (event_data->filename, &filedata, NULL, NULL);
     else
-        filedata = load_mc_home_file (mc_home_alt, MC_HELP, &hlpfile);
+        filedata = load_mc_home_file (mc_global.share_data_dir, MC_HELP, &hlpfile);
 
     if (filedata == NULL)
         message (D_ERROR, MSG_ERROR, _("Cannot open file %s\n%s"),
-                 filename ? filename : hlpfile, unix_error_string (errno));
+                 event_data->filename ? event_data->filename : hlpfile, unix_error_string (errno));
 
     g_free (hlpfile);
 
     if (filedata == NULL)
-        return;
+        return TRUE;
 
     translate_file (filedata);
 
     g_free (filedata);
 
     if (fdata == NULL)
-        return;
+        return TRUE;
 
-    if ((node == NULL) || (*node == '\0'))
-        node = "[main]";
+    if ((event_data->node == NULL) || (*event_data->node == '\0'))
+        event_data->node = "[main]";
 
-    main_node = search_string (fdata, node);
+    main_node = search_string (fdata, event_data->node);
 
     if (main_node == NULL)
     {
-        message (D_ERROR, MSG_ERROR, _("Cannot find node %s in help file"), node);
+        message (D_ERROR, MSG_ERROR, _("Cannot find node %s in help file"), event_data->node);
 
         /* Fallback to [main], return if it also cannot be found */
         main_node = search_string (fdata, "[main]");
         if (main_node == NULL)
         {
             interactive_display_finish ();
-            return;
+            return TRUE;
         }
     }
 
@@ -1135,6 +1147,7 @@ interactive_display (const char *filename, const char *node)
     run_dlg (whelp);
     interactive_display_finish ();
     destroy_dlg (whelp);
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -37,15 +37,6 @@ enum list_types
 
 typedef enum
 {
-    view_listing = 0,           /* Directory listing */
-    view_info = 1,              /* Information panel */
-    view_tree = 2,              /* Tree view */
-    view_quick = 3,             /* Quick view */
-    view_nothing = 4,           /* Undefined */
-} panel_view_mode_t;
-
-typedef enum
-{
     frame_full,                 /* full screen frame */
     frame_half                  /* half screen frame */
 } panel_display_t;
@@ -75,6 +66,13 @@ typedef struct panel_field_struct
     sortfn *sort_routine;       /* used by mouse_sort_col() */
 } panel_field_t;
 
+typedef struct
+{
+    dir_list list;
+    int count;
+    char root[MC_MAXPATHLEN];
+} panelized_panel_t;
+
 typedef struct panel_sort_info_struct
 {
     gboolean reverse;                /* Show listing in reverse? */
@@ -101,7 +99,7 @@ typedef struct WPanel
     int top_file;               /* The file showed on the top of the panel */
     int selected;               /* Index to the selected file */
     int split;                  /* Split panel to allow two columns */
-    int is_panelized;           /* Flag: special filelisting, can't reload */
+    gboolean is_panelized;      /* Flag: special filelisting, can't reload */
     panel_display_t frame_size; /* half or full frame */
     char *filter;               /* File name filter */
     panel_sort_info_t sort_info;        /* Sort descriptor */
@@ -131,10 +129,9 @@ typedef struct WPanel
 
 /*** global variables defined in .c file *********************************************************/
 
-extern panel_field_t panel_fields[];
+extern panelized_panel_t panelized_panel;
 
-extern int torben_fj_mode;
-extern int show_mini_info;
+extern panel_field_t panel_fields[];
 
 extern hook_t *select_file_hook;
 
@@ -151,6 +148,7 @@ void panel_change_encoding (WPanel * panel);
 
 void update_panels (panel_update_flags_t flags, const char *current_file);
 int set_panel_formats (WPanel * p);
+void panel_update_cols (Widget * widget, panel_display_t frame_size);
 
 void try_to_select (WPanel * panel, const char *name);
 

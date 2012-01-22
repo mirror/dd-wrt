@@ -16,7 +16,7 @@
 /*** typedefs(not structures) and defined constants **********************************************/
 
 #ifndef MC_USERCONF_DIR
-#define MC_USERCONF_DIR         ".mc"
+#define MC_USERCONF_DIR         "mc"
 #endif
 
 #define TAGS_NAME               "TAGS"
@@ -29,6 +29,7 @@
 #define GLOBAL_KEYMAP_FILE      "mc.keymap"
 #define CHARSETS_LIST           "mc.charsets"
 #define MC_LIB_EXT              "mc.ext"
+#define MC_MACRO_FILE           "mc.macros"
 
 #define FISH_PREFIX             "fish"
 
@@ -38,6 +39,7 @@
 #define FISH_UNLINK_FILE        "unlink"
 #define FISH_CHOWN_FILE         "chown"
 #define FISH_CHMOD_FILE         "chmod"
+#define FISH_UTIME_FILE         "utime"
 #define FISH_RMDIR_FILE         "rmdir"
 #define FISH_LN_FILE            "ln"
 #define FISH_MV_FILE            "mv"
@@ -51,7 +53,7 @@
 
 #define MC_BASHRC_FILE          "bashrc"
 #define MC_CONFIG_FILE          "ini"
-#define MC_FILEBIND_FILE        "bindings"
+#define MC_FILEBIND_FILE        "mc.ext"
 #define MC_FILEPOS_FILE         "filepos"
 #define MC_HISTORY_FILE         "history"
 #define MC_HOTLIST_FILE         "hotlist"
@@ -62,16 +64,16 @@
 #define MC_SKINS_SUBDIR         "skins"
 
 /* editor home directory */
-#define EDIT_DIR                MC_USERCONF_DIR PATH_SEP_STR "cedit"
+#define EDIT_DIR                "mcedit"
 
 /* file names */
+#define MC_EXTMACRO_FILE        EDIT_DIR PATH_SEP_STR "macros.d" PATH_SEP_STR "macro"
 #define EDIT_SYNTAX_FILE        EDIT_DIR PATH_SEP_STR "Syntax"
-#define EDIT_CLIP_FILE          EDIT_DIR PATH_SEP_STR "cooledit.clip"
-#define EDIT_MACRO_FILE         EDIT_DIR PATH_SEP_STR "cooledit.macros"
-#define EDIT_BLOCK_FILE         EDIT_DIR PATH_SEP_STR "cooledit.block"
-#define EDIT_TEMP_FILE          EDIT_DIR PATH_SEP_STR "cooledit.temp"
+#define EDIT_CLIP_FILE          EDIT_DIR PATH_SEP_STR "mcedit.clip"
+#define EDIT_BLOCK_FILE         EDIT_DIR PATH_SEP_STR "mcedit.block"
+#define EDIT_TEMP_FILE          EDIT_DIR PATH_SEP_STR "mcedit.temp"
 
-#define EDIT_GLOBAL_MENU        "cedit.menu"
+#define EDIT_GLOBAL_MENU        "mcedit.menu"
 #define EDIT_LOCAL_MENU         ".cedit.menu"
 #define EDIT_HOME_MENU          EDIT_DIR PATH_SEP_STR "menu"
 

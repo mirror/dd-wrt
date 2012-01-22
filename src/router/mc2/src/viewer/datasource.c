@@ -3,36 +3,35 @@
    Functions for datasources
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1994, 1995, 1998 Miguel de Icaza
-   1994, 1995 Janne Kukonlehto
-   1995 Jakub Jelinek
-   1996 Joseph M. Hinkle
-   1997 Norbert Warmuth
-   1998 Pavel Machek
-   2004 Roland Illig <roland.illig@gmx.de>
-   2005 Roland Illig <roland.illig@gmx.de>
-   2009 Slava Zanko <slavazanko@google.com>
-   2009 Andrew Borodin <aborodin@vmail.ru>
-   2009 Ilia Maslakov <il.smind@gmail.com>
+   Written by:
+   Miguel de Icaza, 1994, 1995, 1998
+   Janne Kukonlehto, 1994, 1995
+   Jakub Jelinek, 1995
+   Joseph M. Hinkle, 1996
+   Norbert Warmuth, 1997
+   Pavel Machek, 1998
+   Roland Illig <roland.illig@gmx.de>, 2004, 2005
+   Slava Zanko <slavazanko@google.com>, 2009
+   Andrew Borodin <aborodin@vmail.ru>, 2009
+   Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -57,7 +56,7 @@
 #include <config.h>
 
 #include "lib/global.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/util.h"
 #include "lib/widget.h"         /* D_NORMAL, D_ERROR */
 
@@ -164,6 +163,7 @@ mcview_get_utf (mcview_t * view, off_t byte_index, int *char_width, gboolean * r
     int res = -1;
     gunichar ch;
     gchar *next_ch = NULL;
+    gchar utf8buf[UTF8_CHAR_LEN + 1];
 
     *char_width = 0;
     *result = FALSE;
@@ -188,6 +188,25 @@ mcview_get_utf (mcview_t * view, off_t byte_index, int *char_width, gboolean * r
         return 0;
 
     res = g_utf8_get_char_validated (str, -1);
+
+    if (res < 0)
+    {
+        /* Retry with explicit bytes to make sure it's not a buffer boundary */
+        int i;
+        for (i = 0; i < UTF8_CHAR_LEN; i++)
+        {
+            if (mcview_get_byte (view, byte_index + i, &res))
+                utf8buf[i] = res;
+            else
+            {
+                utf8buf[i] = '\0';
+                break;
+            }
+        }
+        utf8buf[UTF8_CHAR_LEN] = '\0';
+        str = utf8buf;
+        res = g_utf8_get_char_validated (str, -1);
+    }
 
     if (res < 0)
     {

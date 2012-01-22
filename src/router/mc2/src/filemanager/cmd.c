@@ -1,22 +1,26 @@
-/* Routines invoked by a function key
+/*
+   Routines invoked by a function key
    They normally operate on the current panel.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file cmd.c
  *  \brief Source: routines invoked by a function key
@@ -53,20 +57,19 @@
 #include "lib/mcconfig.h"
 #include "lib/search.h"
 #include "lib/filehighlight.h"  /* MC_FHL_INI_FILE */
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
 #include "lib/widget.h"
-#include "lib/keybind.h"        /* CK_PanelMoveDown, CK_InputHistoryShow */
+#include "lib/keybind.h"        /* CK_Down, CK_History */
+#include "lib/event.h"          /* mc_event_raise() */
 
-#include "src/subshell.h"       /* use_subshell */
-#include "src/consaver/cons.saver.h"    /* console_flag */
 #include "src/viewer/mcviewer.h"
-#include "src/help.h"           /* interactive_display() */
 #include "src/setup.h"
 #include "src/execute.h"        /* toggle_panels() */
 #include "src/history.h"
+#include "src/util.h"           /* check_for_default() */
 
 #ifdef USE_INTERNAL_EDIT
 #include "src/editor/edit.h"
@@ -80,6 +83,7 @@
 #include "file.h"               /* file operation routines */
 #include "find.h"               /* find_file() */
 #include "hotlist.h"            /* hotlist_show() */
+#include "panel.h"              /* WPanel */
 #include "tree.h"               /* tree_chdir() */
 #include "midnight.h"           /* change_panel() */
 #include "usermenu.h"           /* MC_GLOBAL_MENU */
@@ -146,10 +150,10 @@ scan_for_file (WPanel * panel, int idx, int direction)
 /* --------------------------------------------------------------------------------------------- */
 /**
  * Run viewer (internal or external) on the currently selected file.
- * If normal is 1, force internal viewer and raw mode (used for F13).
+ * If normal is TRUE, force internal viewer and raw mode (used for F13).
  */
 static void
-do_view_cmd (int normal)
+do_view_cmd (gboolean normal)
 {
     /* Directories are viewed by changing to them */
     if (S_ISDIR (selection (current_panel)->st.st_mode) || link_isdir (selection (current_panel)))
@@ -168,14 +172,16 @@ do_view_cmd (int normal)
     }
     else
     {
-        int dir, file_idx;
-        char *filename;
+        int file_idx;
 
         file_idx = current_panel->selected;
-        while (1)
-        {
-            filename = current_panel->dir.list[file_idx].fname;
 
+        while (TRUE)
+        {
+            char *filename;
+            int dir;
+
+            filename = current_panel->dir.list[file_idx].fname;
             dir = view_file (filename, normal, use_internal_view);
             if (dir == 0)
                 break;
@@ -484,6 +490,23 @@ do_link (link_type_t link_type, const char *fname)
 /* --------------------------------------------------------------------------------------------- */
 
 #if defined(ENABLE_VFS_UNDELFS) || defined(ENABLE_VFS_NET)
+
+static const char *
+transform_prefix (const char *prefix)
+{
+    static char buffer[BUF_TINY];
+    size_t prefix_len = strlen (prefix);
+
+    if (prefix_len < 3)
+        return prefix;
+
+    strcpy (buffer, prefix + 2);
+    strcpy (buffer + prefix_len - 3, VFS_PATH_URL_DELIMITER);
+    return buffer;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static void
 nice_cd (const char *text, const char *xtext, const char *help,
          const char *history_name, const char *prefix, int to_home)
@@ -501,10 +524,21 @@ nice_cd (const char *text, const char *xtext, const char *help,
     to_home = 0;                /* FIXME: how to solve going to home nicely? /~/ is
                                    ugly as hell and leads to problems in vfs layer */
 
+    /* default prefix in old-style format. */
+    if (strncmp (prefix, machine, strlen (prefix)) != 0)
+        prefix = transform_prefix (prefix);     /* Convert prefix to URL-style format */
+
     if (strncmp (prefix, machine, strlen (prefix)) == 0)
         cd_path = g_strconcat (machine, to_home ? "/~/" : (char *) NULL, (char *) NULL);
     else
         cd_path = g_strconcat (prefix, machine, to_home ? "/~/" : (char *) NULL, (char *) NULL);
+
+    if (*cd_path != PATH_SEP)
+    {
+        char *tmp = cd_path;
+        cd_path = g_strconcat (PATH_SEP_STR, tmp, (char *) NULL);
+        g_free (tmp);
+    }
 
     if (!do_panel_cd (MENU_PANEL, cd_path, cd_parse_command))
         message (D_ERROR, MSG_ERROR, _("Cannot chdir to \"%s\""), cd_path);
@@ -548,6 +582,17 @@ switch_to_listing (int panel_index)
 {
     if (get_display_type (panel_index) != view_listing)
         set_display_type (panel_index, view_listing);
+    else
+    {
+        WPanel *p;
+
+        p = (WPanel *) get_panel_widget (panel_index);
+        if (p->is_panelized)
+        {
+            p->is_panelized = FALSE;
+            panel_reload (p);
+        }
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -686,7 +731,7 @@ view_file (const char *filename, int plain_view, int internal)
 void
 view_cmd (void)
 {
-    do_view_cmd (0);
+    do_view_cmd (FALSE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -710,22 +755,28 @@ view_file_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 /** Run plain internal viewer on the currently selected file */
 void
-view_simple_cmd (void)
+view_raw_cmd (void)
 {
-    do_view_cmd (1);
+    do_view_cmd (TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-filtered_view_cmd (void)
+view_filtered_cmd (void)
 {
     char *command;
+    const char *initial_command;
+
+    if (cmdline->buffer[0] == '\0')
+        initial_command = selection (current_panel)->fname;
+    else
+        initial_command = cmdline->buffer;
 
     command =
         input_dialog (_("Filtered view"),
                       _("Filter command and arguments:"),
-                      MC_HISTORY_FM_FILTERED_VIEW, selection (current_panel)->fname);
+                      MC_HISTORY_FM_FILTERED_VIEW, initial_command);
 
     if (command != NULL)
     {
@@ -759,7 +810,7 @@ do_edit_at_line (const char *what, gboolean internal, int start_line)
         execute_with_vfs_arg (editor, what);
     }
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
 
 #ifdef USE_INTERNAL_EDIT
@@ -796,7 +847,7 @@ void
 edit_cmd_new (void)
 {
 #if HAVE_CHARSET
-    source_codepage = default_source_codepage;
+    mc_global.source_codepage = default_source_codepage;
 #endif
     do_edit (NULL);
 }
@@ -969,7 +1020,7 @@ reread_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-reverse_selection_cmd (void)
+select_invert_cmd (void)
 {
     int i;
     file_entry *file;
@@ -1014,11 +1065,11 @@ ext_cmd (void)
                             _("Which extension file you want to edit?"), D_NORMAL, 2,
                             _("&User"), _("&System Wide"));
     }
-    extdir = concat_dir_and_file (mc_home, MC_LIB_EXT);
+    extdir = concat_dir_and_file (mc_global.sysconfig_dir, MC_LIB_EXT);
 
     if (dir == 0)
     {
-        buffer = g_build_filename (home_dir, MC_USERCONF_DIR, MC_FILEBIND_FILE, NULL);
+        buffer = mc_config_get_full_path (MC_FILEBIND_FILE);
         check_for_default (extdir, buffer);
         do_edit (buffer);
         g_free (buffer);
@@ -1028,7 +1079,7 @@ ext_cmd (void)
         if (!exist_file (extdir))
         {
             g_free (extdir);
-            extdir = concat_dir_and_file (mc_home_alt, MC_LIB_EXT);
+            extdir = concat_dir_and_file (mc_global.share_data_dir, MC_LIB_EXT);
         }
         do_edit (extdir);
     }
@@ -1050,12 +1101,12 @@ edit_mc_menu_cmd (void)
                         _("Which menu file do you want to edit?"),
                         D_NORMAL, geteuid ()? 2 : 3, _("&Local"), _("&User"), _("&System Wide"));
 
-    menufile = concat_dir_and_file (mc_home, MC_GLOBAL_MENU);
+    menufile = concat_dir_and_file (mc_global.sysconfig_dir, MC_GLOBAL_MENU);
 
     if (!exist_file (menufile))
     {
         g_free (menufile);
-        menufile = concat_dir_and_file (mc_home_alt, MC_GLOBAL_MENU);
+        menufile = concat_dir_and_file (mc_global.share_data_dir, MC_GLOBAL_MENU);
     }
 
     switch (dir)
@@ -1067,16 +1118,16 @@ edit_mc_menu_cmd (void)
         break;
 
     case 1:
-        buffer = g_build_filename (home_dir, MC_USERCONF_DIR, MC_USERMENU_FILE, NULL);
+        buffer = mc_config_get_full_path (MC_USERMENU_FILE);
         check_for_default (menufile, buffer);
         break;
 
     case 2:
-        buffer = concat_dir_and_file (mc_home, MC_GLOBAL_MENU);
+        buffer = concat_dir_and_file (mc_global.sysconfig_dir, MC_GLOBAL_MENU);
         if (!exist_file (buffer))
         {
             g_free (buffer);
-            buffer = concat_dir_and_file (mc_home_alt, MC_GLOBAL_MENU);
+            buffer = concat_dir_and_file (mc_global.share_data_dir, MC_GLOBAL_MENU);
         }
         break;
 
@@ -1108,11 +1159,11 @@ edit_fhl_cmd (void)
                             _("Which highlighting file you want to edit?"), D_NORMAL, 2,
                             _("&User"), _("&System Wide"));
     }
-    fhlfile = concat_dir_and_file (mc_home, MC_FHL_INI_FILE);
+    fhlfile = concat_dir_and_file (mc_global.sysconfig_dir, MC_FHL_INI_FILE);
 
     if (dir == 0)
     {
-        buffer = g_build_filename (home_dir, MC_USERCONF_DIR, MC_FHL_INI_FILE, NULL);
+        buffer = mc_config_get_full_path (MC_FHL_INI_FILE);
         check_for_default (fhlfile, buffer);
         do_edit (buffer);
         g_free (buffer);
@@ -1122,7 +1173,7 @@ edit_fhl_cmd (void)
         if (!exist_file (fhlfile))
         {
             g_free (fhlfile);
-            fhlfile = concat_dir_and_file (mc_home, MC_FHL_INI_FILE);
+            fhlfile = concat_dir_and_file (mc_global.sysconfig_dir, MC_FHL_INI_FILE);
         }
         do_edit (fhlfile);
     }
@@ -1136,11 +1187,11 @@ edit_fhl_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-quick_chdir_cmd (void)
+hotlist_cmd (void)
 {
     char *target;
 
-    target = hotlist_cmd (LIST_HOTLIST);
+    target = hotlist_show (LIST_HOTLIST);
     if (!target)
         return;
 
@@ -1157,11 +1208,11 @@ quick_chdir_cmd (void)
 
 #ifdef ENABLE_VFS
 void
-reselect_vfs (void)
+vfs_list (void)
 {
     char *target;
 
-    target = hotlist_cmd (LIST_VFSLIST);
+    target = hotlist_show (LIST_VFSLIST);
     if (!target)
         return;
 
@@ -1209,21 +1260,12 @@ diff_view_cmd (void)
 {
     dview_diff_cmd ();
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
 
     dialog_switch_process_pending ();
 }
 #endif
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-history_cmd (void)
-{
-    /* show the history of command line widget */
-    send_message (&cmdline->widget, WIDGET_COMMAND, CK_InputHistoryShow);
-}
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1242,7 +1284,8 @@ view_other_cmd (void)
 {
     static int message_flag = TRUE;
 
-    if (!xterm_flag && !console_flag && !use_subshell && !output_starts_shell)
+    if (!mc_global.tty.xterm_flag && mc_global.tty.console_flag == '\0'
+        && !mc_global.tty.use_subshell && !output_starts_shell)
     {
         if (message_flag)
             message (D_ERROR, MSG_ERROR,
@@ -1323,10 +1366,14 @@ edit_symlink_cmd (void)
 void
 help_cmd (void)
 {
+    ev_help_t event_data = { NULL, NULL };
+
     if (current_panel->searching)
-        interactive_display (NULL, "[Quick search]");
+        event_data.node = "[Quick search]";
     else
-        interactive_display (NULL, "[main]");
+        event_data.node = "[main]";
+
+    mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1334,7 +1381,7 @@ help_cmd (void)
 void
 user_file_menu_cmd (void)
 {
-    user_menu_cmd (NULL);
+    (void) user_menu_cmd (NULL, NULL, -1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1359,7 +1406,7 @@ get_random_hint (int force)
         return g_strdup ("");
     last_sec = tv.tv_sec;
 
-    data = load_mc_home_file (mc_home_alt, MC_HINT, NULL);
+    data = load_mc_home_file (mc_global.share_data_dir, MC_HINT, NULL);
     if (data == NULL)
         return NULL;
 
@@ -1512,7 +1559,7 @@ single_dirsize_cmd (void)
     }
 
     if (panels_options.mark_moves_down)
-        send_message ((Widget *) panel, WIDGET_COMMAND, CK_PanelMoveDown);
+        send_message ((Widget *) panel, WIDGET_COMMAND, CK_Down);
 
     recalculate_panel_summary (panel);
 
@@ -1565,12 +1612,17 @@ dirsizes_cmd (void)
 void
 save_setup_cmd (void)
 {
+    char *d1;
+    const char *d2;
+
+    d1 = mc_config_get_full_path (MC_CONFIG_FILE);
+    d2 = strip_home_and_password (d1);
+    g_free (d1);
+
     if (save_setup (TRUE, TRUE))
-        message (D_NORMAL, _("Setup"), _("Setup saved to ~/%s"),
-                 MC_USERCONF_DIR PATH_SEP_STR MC_CONFIG_FILE);
+        message (D_NORMAL, _("Setup"), _("Setup saved to %s"), d2);
     else
-        message (D_ERROR, _("Setup"), _("Unable to save setup to ~/%s"),
-                 MC_USERCONF_DIR PATH_SEP_STR MC_CONFIG_FILE);
+        message (D_ERROR, _("Setup"), _("Unable to save setup to %s"), d2);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1633,7 +1685,7 @@ change_listing_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tree_cmd (void)
+panel_tree_cmd (void)
 {
     set_display_type (MENU_PANEL_IDX, view_tree);
 }

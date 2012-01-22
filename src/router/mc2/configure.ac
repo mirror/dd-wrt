@@ -11,6 +11,11 @@ AC_CONFIG_AUX_DIR(config)
 MC_VERSION
 AM_INIT_AUTOMAKE(mc, ${VERSION} )
 
+LIBMC_VERSION="0.0.1"
+LIBMC_RELEASE="1"
+AC_SUBST(LIBMC_VERSION)
+AC_SUBST(LIBMC_RELEASE)
+
 dnl Enable silent rules by default (if yes)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
@@ -19,6 +24,8 @@ AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
 
 AC_USE_SYSTEM_EXTENSIONS
+
+AC_DEFINE_UNQUOTED([MC_CONFIGURE_ARGS],["$ac_configure_args"],[MC configure arguments])
 
 AC_PROG_LIBTOOL
 PKG_PROG_PKG_CONFIG
@@ -43,25 +50,29 @@ DX_INIT_DOXYGEN(mc,doxygen.cfg,devel)
 
 dnl PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
 
-dnl
-dnl First try glib 2.x.
-dnl Keep this check close to the beginning, so that the users
-dnl without any glib won't have their time wasted by other checks.
-dnl
+AC_CHECK_GLIB
 
-AC_ARG_WITH([glib_static],
-	    [  --with-glib-static       Link glib statically [[no]]])
+AC_ARG_ENABLE([mclib],
+        [AS_HELP_STRING([--enable-mclib], [Compile shared library libmc.so @<:@no@:>@])],
+        [
+            if test "x$enableval" = "xno" ; then
+                enable_mclib=no
+            else
+                if test "x$enable_shared" = "xno" ; then
+                    AC_MSG_WARN([Build of shared library is disabled. Specify --enable-shared first])
+                    enable_mclib=no
+                else
+                    enable_mclib=yes
+                fi
+            fi
+        ],
+        [enable_mclib=no])
 
-glib_found=no
-
-PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.8], [glib_found=yes], [:])
-if test x"$glib_found" = xno; then
-    AC_MSG_ERROR([glib-2.0 not found or version too old (must be >= 2.8)])
-fi
-
+AM_CONDITIONAL([ENABLE_MCLIB], [test x$enable_mclib = xyes])
 
 AC_HEADER_MAJOR
 AC_C_CONST
+dnl Check this before type sizeof checks
 AC_SYS_LARGEFILE
 
 AC_PROG_LN_S
@@ -195,68 +206,20 @@ AC_CHECK_SIZEOF(off_t)
 AC_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_UID_T
-AC_CHECK_TYPE(nlink_t, unsigned int)
-AC_CHECK_TYPES([socklen_t],,,
-[
-#include <sys/types.h>
-#include <sys/socket.h>
-])
-
-dnl This is needed for regex.c only
-AC_CHECK_TYPE(uintptr_t,
-	      [AC_DEFINE(HAVE_UINTPTR_T, 1,
-			 [Define if you have the `uintptr_t' type.])
-])
 
 AC_FUNC_ALLOCA
 AC_FUNC_STRCOLL
 
-dnl
-dnl This is from GNU fileutils, check aclocal.m4 for more information
-dnl uintmat_t is required for FS info
-dnl
-AC_GET_FS_INFO
+AC_MC_GET_FS_INFO
 
 dnl
 dnl X11 support.
 dnl Used to read keyboard modifiers when running under X11.
 AC_PATH_XTRA
+
 dnl
 dnl Check if the gmodule functionality supported on this system.
 AC_G_MODULE_SUPPORTED
-
-dnl
-dnl Try to find static libraries for glib and gmodule.
-dnl
-if test x$with_glib_static = xyes; then
-    new_GLIB_LIBS=
-    for i in $GLIB_LIBS; do
-	case x$i in
-	x-lglib*)
-	    lib=glib ;;
-	x-lgmodule*)
-	    lib=gmodule ;;
-	*)
-	    lib=
-	    add="$i" ;;
-	esac
-
-	if test -n "$lib"; then
-	    lib1=`echo $i | sed 's/^-l//'`
-	    if test -f "$GLIB_LIBDIR/lib${lib1}.a"; then
-		add="$GLIB_LIBDIR/lib${lib1}.a"
-	    else
-		if test -f "$GLIB_LIBDIR/lib${lib}.a"; then
-		    add="$GLIB_LIBDIR/lib${lib}.a"
-		else
-		    AC_MSG_ERROR([Cannot find static $lib])
-		fi
-	    fi
-	fi
-	new_GLIB_LIBS="$new_GLIB_LIBS $add"
-    done
-    GLIB_LIBS="$new_GLIB_LIBS"
-fi
 
 dnl
 dnl Sequent wants getprocessstats
@@ -442,6 +405,30 @@ linux*)
 esac
 
 
+dnl
+dnl Where config files should be placed
+dnl
+
+AC_ARG_WITH([homedir],
+    AS_HELP_STRING([--with-homedir], [Choose any place of user settings relative to home dir, or XDG for respect XDG standards @<:@XDG@:>@]),
+    [
+	if test "x$withval" = "xXDG"; then
+	    with_homedir=XDG
+	else
+	    with_homedir=$withval
+	fi
+    ],
+    [with_homedir=XDG])
+
+
+if test x$with_homedir = xXDG; then
+    AC_DEFINE(MC_HOMEDIR_XDG, 1,
+	[Define to enable XDG standard support])
+else
+    AC_DEFINE_UNQUOTED([MC_USERCONF_DIR], ["$with_homedir"], [Where configs will be placed relative to $HOME])
+fi
+
+
 dnl Support for background operations
 AC_ARG_ENABLE([background],
 	      [  --enable-background     Support for background file operations [[yes]]])
@@ -483,13 +470,15 @@ fi
 
 AC_ARG_ENABLE(
     [werror],
-    AC_HELP_STRING([--enable-werror], [Handle all compiler warnings as errors] )
+    AS_HELP_STRING([--enable-werror], [Handle all compiler warnings as errors])
 )
 
 if test "x$enable_werror" = xyes; then
     MC_CHECK_ONE_CFLAG([-Werror])
 fi
 CFLAGS="$mc_configured_cflags $CFLAGS_OPTS $CFLAGS"
+
+MC_UNIT_TESTS
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
@@ -532,6 +521,7 @@ contrib/dist/prototype
 
 misc/Makefile
 misc/skins/Makefile
+misc/macros.d/Makefile
 misc/mc.ext
 
 src/Makefile
@@ -542,43 +532,65 @@ src/viewer/Makefile
 src/diffviewer/Makefile
 src/filemanager/Makefile
 
+src/vfs/Makefile
+
+src/vfs/cpio/Makefile
+
+src/vfs/extfs/Makefile
+src/vfs/extfs/helpers/Makefile
+src/vfs/extfs/helpers/a+
+src/vfs/extfs/helpers/apt+
+src/vfs/extfs/helpers/audio
+src/vfs/extfs/helpers/deb
+src/vfs/extfs/helpers/deba
+src/vfs/extfs/helpers/debd
+src/vfs/extfs/helpers/dpkg+
+src/vfs/extfs/helpers/iso9660
+src/vfs/extfs/helpers/hp48+
+src/vfs/extfs/helpers/lslR
+src/vfs/extfs/helpers/mailfs
+src/vfs/extfs/helpers/patchfs
+src/vfs/extfs/helpers/rpms+
+src/vfs/extfs/helpers/s3+
+src/vfs/extfs/helpers/uace
+src/vfs/extfs/helpers/ualz
+src/vfs/extfs/helpers/uar
+src/vfs/extfs/helpers/uarc
+src/vfs/extfs/helpers/uarj
+src/vfs/extfs/helpers/uc1541
+src/vfs/extfs/helpers/ucab
+src/vfs/extfs/helpers/uha
+src/vfs/extfs/helpers/ulha
+src/vfs/extfs/helpers/urar
+src/vfs/extfs/helpers/uzip
+src/vfs/extfs/helpers/uzoo
+
+src/vfs/fish/Makefile
+src/vfs/fish/helpers/Makefile
+
+src/vfs/ftpfs/Makefile
+
+src/vfs/local/Makefile
+
+src/vfs/sfs/Makefile
+
+src/vfs/smbfs/Makefile
+
+src/vfs/tar/Makefile
+
+src/vfs/undelfs/Makefile
+
 lib/Makefile
+lib/event/Makefile
 lib/filehighlight/Makefile
 lib/mcconfig/Makefile
 lib/search/Makefile
 lib/skin/Makefile
 lib/strutil/Makefile
 lib/tty/Makefile
+
 lib/vfs/Makefile
-lib/vfs/mc-vfs/Makefile
-lib/vfs/mc-vfs/extfs/Makefile
-lib/vfs/mc-vfs/extfs/a+
-lib/vfs/mc-vfs/extfs/apt+
-lib/vfs/mc-vfs/extfs/audio
-lib/vfs/mc-vfs/extfs/deb
-lib/vfs/mc-vfs/extfs/deba
-lib/vfs/mc-vfs/extfs/debd
-lib/vfs/mc-vfs/extfs/dpkg+
-lib/vfs/mc-vfs/extfs/iso9660
-lib/vfs/mc-vfs/extfs/hp48+
-lib/vfs/mc-vfs/extfs/lslR
-lib/vfs/mc-vfs/extfs/mailfs
-lib/vfs/mc-vfs/extfs/patchfs
-lib/vfs/mc-vfs/extfs/rpms+
-lib/vfs/mc-vfs/extfs/s3+
-lib/vfs/mc-vfs/extfs/uace
-lib/vfs/mc-vfs/extfs/ualz
-lib/vfs/mc-vfs/extfs/uar
-lib/vfs/mc-vfs/extfs/uarc
-lib/vfs/mc-vfs/extfs/uarj
-lib/vfs/mc-vfs/extfs/uc1541
-lib/vfs/mc-vfs/extfs//ucab
-lib/vfs/mc-vfs/extfs/uha
-lib/vfs/mc-vfs/extfs/ulha
-lib/vfs/mc-vfs/extfs/urar
-lib/vfs/mc-vfs/extfs/uzip
-lib/vfs/mc-vfs/extfs/uzoo
-lib/vfs/mc-vfs/fish/Makefile
+
 lib/widget/Makefile
 
 misc/syntax/Makefile
@@ -604,6 +616,18 @@ doc/hlp/sr/Makefile
 intl/Makefile
 po/Makefile.in
 ])
+
+if test x$enable_tests != xno; then
+    AC_CONFIG_FILES([
+tests/Makefile
+tests/lib/Makefile
+tests/lib/mcconfig/Makefile
+tests/lib/search/Makefile
+tests/lib/vfs/Makefile
+])
+
+fi
+
 
 AC_OUTPUT
 

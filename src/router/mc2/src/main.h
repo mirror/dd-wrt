@@ -9,16 +9,11 @@
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
+#define MAX_MACRO_LENGTH 1024
+
 /*** enums ***************************************************************************************/
 
 /* run mode and params */
-typedef enum
-{
-    MC_RUN_FULL = 0,
-    MC_RUN_EDITOR,
-    MC_RUN_VIEWER,
-    MC_RUN_DIFFVIEWER
-} mc_run_mode_t;
 
 enum cd_enum
 {
@@ -26,14 +21,24 @@ enum cd_enum
     cd_exact
 };
 
-
 /*** structures declarations (and typedefs of structures)*****************************************/
+
+typedef struct macro_action_t
+{
+    unsigned long action;
+    int ch;
+} macro_action_t;
+
+typedef struct macros_t
+{
+    int hotkey;
+    GArray *macro;
+} macros_t;
 
 struct mc_fhl_struct;
 
 /*** global variables defined in .c file *********************************************************/
 
-extern mc_run_mode_t mc_run_mode;
 /*
  * MC_RUN_FULL: dir for left panel
  * MC_RUN_EDITOR: file to edit
@@ -61,31 +66,26 @@ extern int use_internal_view;
 extern int use_internal_edit;
 
 #ifdef HAVE_CHARSET
-extern int source_codepage;
 extern int default_source_codepage;
-extern int display_codepage;
 extern char *autodetect_codeset;
 extern gboolean is_autodetect_codeset_enabled;
-#else
-extern int eight_bit_clean;
-extern int full_eight_bits;
 #endif /* !HAVE_CHARSET */
-
-extern int utf8_display;
-
-extern int midnight_shutdown;
 
 extern char *shell;
 extern const char *mc_prompt;
 
-extern char *mc_home;
-extern char *mc_home_alt;
+/* index to record_macro_buf[], -1 if not recording a macro */
+extern int macro_index;
 
-extern const char *home_dir;
+/* macro stuff */
+extern struct macro_action_t record_macro_buf[MAX_MACRO_LENGTH];
+
+extern GArray *macros_list;
 
 /*** declarations of public functions ************************************************************/
 
 #ifdef HAVE_SUBSHELL_SUPPORT
+gboolean do_load_prompt (void);
 int load_prompt (int fd, void *unused);
 #endif
 

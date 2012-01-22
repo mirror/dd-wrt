@@ -1,19 +1,24 @@
-/* Execution routines for GNU Midnight Commander
-   Copyright (C) 2003, 2004, 2005, 2007 Free Software Foundation, Inc.
+/*
+   Execution routines for GNU Midnight Commander
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   Copyright (C) 2003, 2004, 2005, 2007, 2011
+   The Free Software Foundation, Inc.
 
-   This program is distributed in the hope that it will be useful,
+   This file is part of the Midnight Commander.
+
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file  execute.c
  *  \brief Source: execution routines
@@ -30,7 +35,7 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"
 #include "lib/tty/win.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/util.h"
 #include "lib/widget.h"
 
@@ -68,7 +73,7 @@ edition_post_exec (void)
     tty_raw_mode ();
     channels_up ();
     enable_mouse ();
-    if (alternate_plus_minus)
+    if (mc_global.tty.alternate_plus_minus)
         application_keypad_mode ();
 }
 
@@ -81,7 +86,7 @@ edition_pre_exec (void)
         clr_scr ();
     else
     {
-        if (!(console_flag || xterm_flag))
+        if (!(mc_global.tty.console_flag != '\0' || mc_global.tty.xterm_flag))
             printf ("\n\n");
     }
 
@@ -130,21 +135,21 @@ do_execute (const char *lc_shell, const char *command, int flags)
     char *old_vfs_dir = 0;
 
     if (!vfs_current_is_local ())
-        old_vfs_dir = g_strdup (vfs_get_current_dir ());
+        old_vfs_dir = vfs_get_current_dir ();
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
         save_cwds_stat ();
     pre_exec ();
-    if (console_flag)
+    if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_RESTORE);
 
-    if (!use_subshell && command && !(flags & EXECUTE_INTERNAL))
+    if (!mc_global.tty.use_subshell && command && !(flags & EXECUTE_INTERNAL))
     {
         printf ("%s%s\n", mc_prompt, command);
         fflush (stdout);
     }
 #ifdef HAVE_SUBSHELL_SUPPORT
-    if (use_subshell && !(flags & EXECUTE_INTERNAL))
+    if (mc_global.tty.use_subshell && !(flags & EXECUTE_INTERNAL))
     {
         do_update_prompt ();
 
@@ -158,8 +163,8 @@ do_execute (const char *lc_shell, const char *command, int flags)
     if (!(flags & EXECUTE_INTERNAL))
     {
         if ((pause_after_run == pause_always
-             || (pause_after_run == pause_on_dumb_terminals && !xterm_flag
-                 && !console_flag)) && quit == 0
+             || (pause_after_run == pause_on_dumb_terminals && !mc_global.tty.xterm_flag
+                 && mc_global.tty.console_flag == '\0')) && quit == 0
 #ifdef HAVE_SUBSHELL_SUPPORT
             && subshell_state != RUNNING_COMMAND
 #endif /* HAVE_SUBSHELL_SUPPORT */
@@ -172,9 +177,9 @@ do_execute (const char *lc_shell, const char *command, int flags)
             printf ("\r\n");
             fflush (stdout);
         }
-        if (console_flag)
+        if (mc_global.tty.console_flag != '\0')
         {
-            if (output_lines && keybar_visible)
+            if (output_lines && mc_global.keybar_visible)
             {
                 putchar ('\n');
                 fflush (stdout);
@@ -182,7 +187,7 @@ do_execute (const char *lc_shell, const char *command, int flags)
         }
     }
 
-    if (console_flag)
+    if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_SAVE);
     edition_post_exec ();
 
@@ -198,7 +203,7 @@ do_execute (const char *lc_shell, const char *command, int flags)
         g_free (old_vfs_dir);
     }
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
     {
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
         update_xterm_title_path ();
@@ -215,7 +220,7 @@ do_suspend_cmd (void)
 {
     pre_exec ();
 
-    if (console_flag && !use_subshell)
+    if (mc_global.tty.console_flag != '\0' && !mc_global.tty.use_subshell)
         handle_console (CONSOLE_RESTORE);
 
 #ifdef SIGTSTP
@@ -234,7 +239,7 @@ do_suspend_cmd (void)
     }
 #endif /* SIGTSTP */
 
-    if (console_flag && !use_subshell)
+    if (mc_global.tty.console_flag != '\0' && !mc_global.tty.use_subshell)
         handle_console (CONSOLE_SAVE);
 
     edition_post_exec ();
@@ -278,7 +283,7 @@ shell_execute (const char *command, int flags)
     }
 
 #ifdef HAVE_SUBSHELL_SUPPORT
-    if (use_subshell)
+    if (mc_global.tty.use_subshell)
         if (subshell_state == INACTIVE)
             do_execute (shell, cmd ? cmd : command, flags | EXECUTE_AS_SHELL);
         else
@@ -312,7 +317,7 @@ toggle_panels (void)
     disable_mouse ();
     if (clear_before_exec)
         clr_scr ();
-    if (alternate_plus_minus)
+    if (mc_global.tty.alternate_plus_minus)
         numeric_keypad_mode ();
 #ifndef HAVE_SLANG
     /* With slang we don't want any of this, since there
@@ -325,11 +330,11 @@ toggle_panels (void)
     tty_reset_screen ();
     do_exit_ca_mode ();
     tty_raw_mode ();
-    if (console_flag)
+    if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_RESTORE);
 
 #ifdef HAVE_SUBSHELL_SUPPORT
-    if (use_subshell)
+    if (mc_global.tty.use_subshell)
     {
         new_dir_p = vfs_current_is_local ()? &new_dir : NULL;
         invoke_subshell (NULL, VISIBLY, new_dir_p);
@@ -348,7 +353,7 @@ toggle_panels (void)
             get_key_code (0);
     }
 
-    if (console_flag)
+    if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_SAVE);
 
     do_enter_ca_mode ();
@@ -367,30 +372,30 @@ toggle_panels (void)
         quit = 0;
 #ifdef HAVE_SUBSHELL_SUPPORT
         /* restart subshell */
-        if (use_subshell)
+        if (mc_global.tty.use_subshell)
             init_subshell ();
 #endif /* HAVE_SUBSHELL_SUPPORT */
     }
 
     enable_mouse ();
     channels_up ();
-    if (alternate_plus_minus)
+    if (mc_global.tty.alternate_plus_minus)
         application_keypad_mode ();
 
 #ifdef HAVE_SUBSHELL_SUPPORT
-    if (use_subshell)
+    if (mc_global.tty.use_subshell)
     {
-        load_prompt (0, NULL);
+        do_load_prompt ();
         if (new_dir)
             do_possible_cd (new_dir);
-        if (console_flag && output_lines)
+        if (mc_global.tty.console_flag != '\0' && output_lines)
             show_console_contents (output_start_y,
-                                   LINES - keybar_visible - output_lines -
-                                   1, LINES - keybar_visible - 1);
+                                   LINES - mc_global.keybar_visible - output_lines -
+                                   1, LINES - mc_global.keybar_visible - 1);
     }
 #endif /* HAVE_SUBSHELL_SUPPORT */
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
     {
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
         update_xterm_title_path ();
@@ -400,15 +405,24 @@ toggle_panels (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-void
-suspend_cmd (void)
+/* event callback */
+gboolean
+execute_suspend (const gchar * event_group_name, const gchar * event_name,
+                 gpointer init_data, gpointer data)
 {
-    if (mc_run_mode == MC_RUN_FULL)
+    (void) event_group_name;
+    (void) event_name;
+    (void) init_data;
+    (void) data;
+
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
         save_cwds_stat ();
     do_suspend_cmd ();
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
     do_refresh ();
+
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -424,15 +438,18 @@ execute_with_vfs_arg (const char *command, const char *filename)
     char *fn;
     struct stat st;
     time_t mtime;
+    vfs_path_t *vpath = vfs_path_from_str (filename);
 
     /* Simplest case, this file is local */
-    if (!filename || vfs_file_is_local (filename))
+    if (!filename || vfs_file_is_local (vpath))
     {
-        fn = vfs_canon_and_translate (filename);
+        fn = vfs_path_to_str (vpath);
         do_execute (command, fn, EXECUTE_INTERNAL);
         g_free (fn);
+        vfs_path_free (vpath);
         return;
     }
+    vfs_path_free (vpath);
 
     /* FIXME: Creation of new files on VFS is not supported */
     if (!*filename)

@@ -1,23 +1,29 @@
-/* Extension dependent execution.
+/*
+   Extension dependent execution.
+
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007 Free Software Foundation, Inc.
+   2005, 2007, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1995 Jakub Jelinek
-   1994 Miguel de Icaza
+   Written by:
+   Jakub Jelinek, 1995
+   Miguel de Icaza, 1994
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file  ext.c
  *  \brief Source: extension dependent execution
@@ -36,14 +42,16 @@
 #include "lib/tty/tty.h"
 #include "lib/search.h"
 #include "lib/fileloc.h"
+#include "lib/mcconfig.h"
 #include "lib/util.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/widget.h"
 #include "lib/charsets.h"       /* get_codepage_index */
 
 #include "src/setup.h"          /* use_file_to_check_type */
 #include "src/execute.h"
 #include "src/history.h"
+#include "src/main.h"           /* do_cd */
 
 #include "src/consaver/cons.saver.h"
 #include "src/viewer/mcviewer.h"
@@ -53,7 +61,6 @@
 #endif
 
 #include "usermenu.h"
-#include "layout.h"
 
 #include "ext.h"
 
@@ -85,7 +92,6 @@ static char *data = NULL;
 static void
 exec_extension (const char *filename, const char *lc_data, int *move_dir, int start_line)
 {
-    char *fn;
     char *file_name;
     int cmd_file_fd;
     FILE *cmd_file;
@@ -105,12 +111,15 @@ exec_extension (const char *filename, const char *lc_data, int *move_dir, int st
     time_t localmtime = 0;
     struct stat mystat;
     quote_func_t quote_func = name_quote;
+    vfs_path_t *vpath;
 
     g_return_if_fail (filename != NULL);
     g_return_if_fail (lc_data != NULL);
 
+    vpath = vfs_path_from_str (filename);
+
     /* Avoid making a local copy if we are doing a cd */
-    if (!vfs_file_is_local (filename))
+    if (!vfs_file_is_local (vpath))
         do_local_copy = 1;
     else
         do_local_copy = 0;
@@ -155,6 +164,7 @@ exec_extension (const char *filename, const char *lc_data, int *move_dir, int st
                         g_free (localcopy);
                     }
                     g_free (file_name);
+                    vfs_path_free (vpath);
                     return;
                 }
                 fputs (parameter, cmd_file);
@@ -224,6 +234,7 @@ exec_extension (const char *filename, const char *lc_data, int *move_dir, int st
                                         fclose (cmd_file);
                                         unlink (file_name);
                                         g_free (file_name);
+                                        vfs_path_free (vpath);
                                         return;
                                     }
                                     mc_stat (localcopy, &mystat);
@@ -232,9 +243,9 @@ exec_extension (const char *filename, const char *lc_data, int *move_dir, int st
                                 }
                                 else
                                 {
-                                    fn = vfs_canon_and_translate (filename);
-                                    text = quote_func (fn, 0);
-                                    g_free (fn);
+                                    vfs_path_element_t *path_element;
+                                    path_element = vfs_path_get_by_index (vpath, -1);
+                                    text = quote_func (path_element->path, 0);
                                 }
                             }
 
@@ -351,13 +362,13 @@ exec_extension (const char *filename, const char *lc_data, int *move_dir, int st
     else
     {
         shell_execute (cmd, EXECUTE_INTERNAL);
-        if (console_flag)
+        if (mc_global.tty.console_flag != '\0')
         {
             handle_console (CONSOLE_SAVE);
-            if (output_lines && keybar_visible)
+            if (output_lines && mc_global.keybar_visible)
                 show_console_contents (output_start_y,
-                                       LINES - keybar_visible -
-                                       output_lines - 1, LINES - keybar_visible - 1);
+                                       LINES - mc_global.keybar_visible -
+                                       output_lines - 1, LINES - mc_global.keybar_visible - 1);
         }
     }
 
@@ -370,6 +381,7 @@ exec_extension (const char *filename, const char *lc_data, int *move_dir, int st
         mc_ungetlocalcopy (filename, localcopy, localmtime != mystat.st_mtime);
         g_free (localcopy);
     }
+    vfs_path_free (vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -629,16 +641,16 @@ regex_command (const char *filename, const char *action, int *move_dir)
         int mc_user_ext = 1;
         int home_error = 0;
 
-        extension_file = g_build_filename (home_dir, MC_USERCONF_DIR, MC_FILEBIND_FILE, NULL);
+        extension_file = mc_config_get_full_path (MC_FILEBIND_FILE);
         if (!exist_file (extension_file))
         {
             g_free (extension_file);
           check_stock_mc_ext:
-            extension_file = concat_dir_and_file (mc_home, MC_LIB_EXT);
+            extension_file = concat_dir_and_file (mc_global.sysconfig_dir, MC_LIB_EXT);
             if (!exist_file (extension_file))
             {
                 g_free (extension_file);
-                extension_file = concat_dir_and_file (mc_home_alt, MC_LIB_EXT);
+                extension_file = concat_dir_and_file (mc_global.share_data_dir, MC_LIB_EXT);
             }
             mc_user_ext = 0;
         }
@@ -662,12 +674,12 @@ regex_command (const char *filename, const char *action, int *move_dir)
                 else
                 {
                     char *title = g_strdup_printf (_(" %s%s file error"),
-                                                   mc_home, MC_LIB_EXT);
+                                                   mc_global.sysconfig_dir, MC_LIB_EXT);
                     message (D_ERROR, title, _("The format of the %smc.ext "
                                                "file has changed with version 3.0. It seems that "
                                                "the installation failed. Please fetch a fresh "
                                                "copy from the Midnight Commander package."),
-                             mc_home);
+                             mc_global.sysconfig_dir);
                     g_free (title);
                     return 0;
                 }
@@ -675,13 +687,14 @@ regex_command (const char *filename, const char *action, int *move_dir)
         }
         if (home_error)
         {
-            char *title = g_strdup_printf (_("~/%s file error"),
-                                           MC_USERCONF_DIR PATH_SEP_STR MC_FILEBIND_FILE);
+            char *filebind_filename = mc_config_get_full_path (MC_FILEBIND_FILE);
+            char *title = g_strdup_printf (_("%s file error"), filebind_filename);
             message (D_ERROR, title,
-                     _("The format of the ~/%s file has "
+                     _("The format of the %s file has "
                        "changed with version 3.0. You may either want to copy "
                        "it from %smc.ext or use that file as an example of how to write it."),
-                     MC_USERCONF_DIR PATH_SEP_STR MC_FILEBIND_FILE, mc_home);
+                     filebind_filename, mc_global.sysconfig_dir);
+            g_free (filebind_filename);
             g_free (title);
         }
     }

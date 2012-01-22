@@ -1,20 +1,24 @@
-/* Configure module for the Midnight Commander
+/*
+   Configure module for the Midnight Commander
+
    Copyright (C) 1994, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2009 Free Software Foundation, Inc. 
+   2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -24,8 +28,6 @@
 #include "lib/mcconfig.h"
 
 /*** global variables **************************************************/
-
-extern int utf8_display;
 
 /*** file scope macro definitions **************************************/
 
@@ -38,7 +40,7 @@ extern int utf8_display;
 /*** public functions **************************************************/
 
 gchar **
-mc_config_get_groups (mc_config_t * mc_config, gsize * len)
+mc_config_get_groups (const mc_config_t * mc_config, gsize * len)
 {
     gchar **ret;
 
@@ -60,7 +62,7 @@ mc_config_get_groups (mc_config_t * mc_config, gsize * len)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 gchar **
-mc_config_get_keys (mc_config_t * mc_config, const gchar * group, gsize * len)
+mc_config_get_keys (const mc_config_t * mc_config, const gchar * group, gsize * len)
 {
     gchar **ret;
 
@@ -103,7 +105,7 @@ mc_config_get_string (mc_config_t * mc_config, const gchar * group,
     if (ret == NULL)
         ret = g_strdup (def);
 
-    if (utf8_display)
+    if (mc_global.utf8_display)
         return ret;
 
     conv = str_crt_conv_from ("UTF-8");
@@ -128,7 +130,7 @@ mc_config_get_string (mc_config_t * mc_config, const gchar * group,
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 gchar *
-mc_config_get_string_raw (mc_config_t * mc_config, const gchar * group,
+mc_config_get_string_raw (const mc_config_t * mc_config, const gchar * group,
                           const gchar * param, const gchar * def)
 {
     gchar *ret;

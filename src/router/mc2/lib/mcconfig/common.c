@@ -1,20 +1,24 @@
-/* Configure module for the Midnight Commander
+/*
+   Configure module for the Midnight Commander
+
    Copyright (C) 1994, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2009 Free Software Foundation, Inc. 
+   2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -26,7 +30,7 @@
 #include <errno.h>              /* extern int errno */
 
 #include "lib/global.h"
-#include "lib/vfs/mc-vfs/vfs.h" /* mc_stat */
+#include "lib/vfs/vfs.h"        /* mc_stat */
 #include "lib/util.h"
 #include "lib/mcconfig.h"
 
@@ -65,9 +69,7 @@ mc_config_new_or_override_file (mc_config_t * mc_config, const gchar * ini_path,
     fd = mc_open (ini_path, O_WRONLY | O_TRUNC, 0);
     if (fd == -1)
     {
-        g_propagate_error (error,
-                           g_error_new (mc_main_error_quark (), 0, "%s",
-                                        unix_error_string (errno)));
+        g_propagate_error (error, g_error_new (MC_ERROR, 0, "%s", unix_error_string (errno)));
         g_free (data);
         return FALSE;
     }
@@ -81,9 +83,7 @@ mc_config_new_or_override_file (mc_config_t * mc_config, const gchar * ini_path,
     if (cur_written == -1)
     {
         mc_util_restore_from_backup_if_possible (ini_path, "~");
-        g_propagate_error (error,
-                           g_error_new (mc_main_error_quark (), 0, "%s",
-                                        unix_error_string (errno)));
+        g_propagate_error (error, g_error_new (MC_ERROR, 0, "%s", unix_error_string (errno)));
         return FALSE;
     }
 
@@ -112,14 +112,12 @@ mc_config_init (const gchar * ini_path)
         g_free (mc_config);
         return NULL;
     }
-    if (!ini_path || !exist_file (ini_path))
-    {
+    if (ini_path == NULL)
         return mc_config;
-    }
 
-    if (!mc_stat (ini_path, &st) && st.st_size)
+    if (exist_file (ini_path) && mc_stat (ini_path, &st) == 0 && st.st_size != 0)
     {
-        /* file present and not empty */
+        /* file exists and not empty */
         g_key_file_load_from_file (mc_config->handle, ini_path, G_KEY_FILE_KEEP_COMMENTS, NULL);
     }
 
@@ -143,7 +141,7 @@ mc_config_deinit (mc_config_t * mc_config)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 gboolean
-mc_config_has_param (mc_config_t * mc_config, const char *group, const gchar * param)
+mc_config_has_param (const mc_config_t * mc_config, const char *group, const gchar * param)
 {
     if (!mc_config || !group || !param)
         return FALSE;
@@ -196,7 +194,7 @@ mc_config_del_group (mc_config_t * mc_config, const char *group)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 gboolean
-mc_config_read_file (mc_config_t * mc_config, const gchar * ini_path)
+mc_config_read_file (mc_config_t * mc_config, const gchar * ini_path, gboolean remove_empty)
 {
     mc_config_t *tmp_config;
     gchar **groups, **curr_grp;
@@ -204,9 +202,7 @@ mc_config_read_file (mc_config_t * mc_config, const gchar * ini_path)
     gchar *value;
 
     if (mc_config == NULL)
-    {
         return FALSE;
-    }
 
     tmp_config = mc_config_init (ini_path);
     if (tmp_config == NULL)
@@ -226,11 +222,16 @@ mc_config_read_file (mc_config_t * mc_config, const gchar * ini_path)
         for (curr_key = keys; *curr_key != NULL; curr_key++)
         {
             value = g_key_file_get_value (tmp_config->handle, *curr_grp, *curr_key, NULL);
-            if (value == NULL)
-                continue;
-
-            g_key_file_set_value (mc_config->handle, *curr_grp, *curr_key, value);
-            g_free (value);
+            if (value != NULL)
+            {
+                if (*value == '\0' && remove_empty)
+                    g_key_file_remove_key (mc_config->handle, *curr_grp, *curr_key, NULL);
+                else
+                    g_key_file_set_value (mc_config->handle, *curr_grp, *curr_key, value);
+                g_free (value);
+            }
+            else if (remove_empty)
+                g_key_file_remove_key (mc_config->handle, *curr_grp, *curr_key, NULL);
         }
         g_strfreev (keys);
     }

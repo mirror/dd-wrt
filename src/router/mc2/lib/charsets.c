@@ -1,20 +1,26 @@
-/* Text conversion from one charset to another.
+/*
+   Text conversion from one charset to another.
 
-   Copyright (C) 2001 Walery Studennikov <despair@sama.ru>
+   Copyright (C) 2001, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   Written by:
+   Walery Studennikov <despair@sama.ru>
 
-   This program is distributed in the hope that it will be useful,
+   This file is part of the Midnight Commander.
+
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file charsets.c
@@ -33,8 +39,6 @@
 #include "lib/strutil.h"        /* utf-8 functions */
 #include "lib/fileloc.h"
 #include "lib/charsets.h"
-
-#include "src/main.h"
 
 /*** global variables ****************************************************************************/
 
@@ -163,7 +167,7 @@ load_codepages_list_from_file (GPtrArray ** list, const char *fname)
 
     if (default_codepage != NULL)
     {
-        display_codepage = get_codepage_index (default_codepage);
+        mc_global.display_codepage = get_codepage_index (default_codepage);
         g_free (default_codepage);
     }
 
@@ -200,12 +204,12 @@ load_codepages_list (void)
     char *fname;
 
     /* 1: try load /usr/share/mc/mc.charsets */
-    fname = g_build_filename (mc_home_alt, CHARSETS_LIST, (char *) NULL);
+    fname = g_build_filename (mc_global.share_data_dir, CHARSETS_LIST, (char *) NULL);
     load_codepages_list_from_file (&codepages, fname);
     g_free (fname);
 
     /* 2: try load /etc/mc/mc.charsets */
-    fname = g_build_filename (mc_home, CHARSETS_LIST, (char *) NULL);
+    fname = g_build_filename (mc_global.sysconfig_dir, CHARSETS_LIST, (char *) NULL);
     load_codepages_list_from_file (&codepages, fname);
     g_free (fname);
 
@@ -435,7 +439,7 @@ convert_from_utf_to_current (const char *str)
     if (!str)
         return '.';
 
-    cp_to = get_codepage_id (source_codepage);
+    cp_to = get_codepage_id (mc_global.source_codepage);
     conv = str_crt_conv_to (cp_to);
 
     if (conv != INVALID_CONV)
@@ -537,7 +541,7 @@ convert_from_8bit_to_utf_c2 (const char input_char)
     str[0] = (unsigned char) input_char;
     str[1] = '\0';
 
-    cp_from = get_codepage_id (source_codepage);
+    cp_from = get_codepage_id (mc_global.source_codepage);
     conv = str_crt_conv_to (cp_from);
 
     if (conv != INVALID_CONV)

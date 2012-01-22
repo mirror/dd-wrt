@@ -1,31 +1,34 @@
-/* Directory tree browser for the Midnight Commander
-   Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2007 Free Software Foundation, Inc.
-
-   Written: 1994, 1996 Janne Kukonlehto
-   1997 Norbert Warmuth
-   1996, 1999 Miguel de Icaza
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+/*
+   Directory tree browser for the Midnight Commander
    This module has been converted to be a widget.
 
    The program load and saves the tree each time the tree widget is
    created and destroyed.  This is required for the future vfs layer,
    it will be possible to have tree views over virtual file systems.
 
+   Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
+   2003, 2004, 2005, 2007, 2011
+   The Free Software Foundation, Inc.
+
+   Written by:
+   Janne Kukonlehto, 1994, 1996
+   Norbert Warmuth, 1997
+   Miguel de Icaza, 1996, 1999
+
+   This file is part of the Midnight Commander.
+
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file tree.c
@@ -45,16 +48,17 @@
 #include "lib/tty/mouse.h"
 #include "lib/tty/key.h"
 #include "lib/skin.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
 #include "lib/widget.h"
+#include "lib/event.h"          /* mc_event_raise() */
 
-#include "src/setup.h"          /* confirm_delete */
+
+#include "src/setup.h"          /* confirm_delete, panels_options */
 #include "src/keybind-defaults.h"
 #include "src/history.h"
-#include "src/help.h"
 
 #include "dir.h"
 #include "midnight.h"           /* the_menubar */
@@ -79,7 +83,7 @@ int xtree_mode = 0;
 
 /*** file scope macro definitions ****************************************************************/
 
-#define tlines(t) (t->is_panel ? t->widget.lines - 2 - (show_mini_info ? 2 : 0) : t->widget.lines)
+#define tlines(t) (t->is_panel ? t->widget.lines - 2 - (panels_options.show_mini_info ? 2 : 0) : t->widget.lines)
 
 /* Use the color of the parent widget for the unselected entries */
 #define TREE_NORMALC(h) (h->color[DLG_COLOR_NORMAL])
@@ -160,7 +164,7 @@ remove_callback (tree_entry * entry, void *data)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Save the ~/.mc/Tree file */
+/** Save the ${XDG_CACHE_HOME}/mc/Tree file */
 
 static void
 save_tree (WTree * tree)
@@ -174,7 +178,7 @@ save_tree (WTree * tree)
 
     if (error)
     {
-        tree_name = g_build_filename (home_dir, MC_USERCONF_DIR, MC_TREESTORE_FILE, (char *) NULL);
+        tree_name = mc_config_get_full_path (MC_TREESTORE_FILE);
         fprintf (stderr, _("Cannot open the %s file for writing:\n%s\n"), tree_name,
                  unix_error_string (error));
         g_free (tree_name);
@@ -212,7 +216,7 @@ load_tree (WTree * tree)
     tree_store_load ();
 
     tree->selected_ptr = tree->store->tree_first;
-    tree_chdir (tree, home_dir);
+    tree_chdir (tree, mc_config_get_home_dir ());
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -226,7 +230,7 @@ tree_show_mini_info (WTree * tree, int tree_lines, int tree_cols)
     /* Show mini info */
     if (tree->is_panel)
     {
-        if (!show_mini_info)
+        if (!panels_options.show_mini_info)
             return;
         line = tree_lines + 2;
     }
@@ -1015,57 +1019,60 @@ tree_execute_cmd (WTree * tree, unsigned long command)
 {
     cb_ret_t res = MSG_HANDLED;
 
-    if (command != CK_TreeStartSearch)
+    if (command != CK_Search)
         tree->searching = 0;
 
     switch (command)
     {
-    case CK_TreeHelp:
-        interactive_display (NULL, "[Directory Tree]");
+    case CK_Help:
+        {
+            ev_help_t event_data = { NULL, "[Directory Tree]" };
+            mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
+        }
         break;
-    case CK_TreeForget:
+    case CK_Forget:
         tree_forget (tree);
         break;
-    case CK_TreeToggleNav:
+    case CK_ToggleNavigation:
         tree_toggle_navig (tree);
         break;
-    case CK_TreeCopy:
+    case CK_Copy:
         tree_copy (tree, "");
         break;
-    case CK_TreeMove:
+    case CK_Move:
         tree_move (tree, "");
         break;
-    case CK_TreeMoveUp:
+    case CK_Up:
         tree_move_up (tree);
         break;
-    case CK_TreeMoveDown:
+    case CK_Down:
         tree_move_down (tree);
         break;
-    case CK_TreeMoveHome:
+    case CK_Top:
         tree_move_home (tree);
         break;
-    case CK_TreeMoveEnd:
+    case CK_Bottom:
         tree_move_end (tree);
         break;
-    case CK_TreeMovePgUp:
+    case CK_PageUp:
         tree_move_pgup (tree);
         break;
-    case CK_TreeMovePgDn:
+    case CK_PageDown:
         tree_move_pgdn (tree);
         break;
-    case CK_TreeOpen:
+    case CK_Enter:
         tree_chdir_sel (tree);
         break;
-    case CK_TreeRescan:
+    case CK_Reread:
         tree_rescan (tree);
         break;
-    case CK_TreeStartSearch:
+    case CK_Search:
         tree_start_search (tree);
         break;
-    case CK_TreeRemove:
+    case CK_Delete:
         tree_rmdir (tree);
         break;
-    case CK_DialogCancel:
+    case CK_Cancel:
         /* don't close tree due to SIGINT */
         break;
     default:
@@ -1088,9 +1095,9 @@ tree_key (WTree * tree, int key)
         if (key == tree_map[i].key)
             switch (tree_map[i].command)
             {
-            case CK_TreeMoveLeft:
+            case CK_Left:
                 return tree_move_left (tree) ? MSG_HANDLED : MSG_NOT_HANDLED;
-            case CK_TreeMoveRight:
+            case CK_Right:
                 return tree_move_right (tree) ? MSG_HANDLED : MSG_NOT_HANDLED;
             default:
                 tree_execute_cmd (tree, tree_map[i].command);
@@ -1149,7 +1156,7 @@ tree_frame (Dlg_head * h, WTree * tree)
         widget_move (&tree->widget, 0, (tree->widget.cols - len - 2) / 2);
         tty_printf (" %s ", title);
 
-        if (show_mini_info)
+        if (panels_options.show_mini_info)
             widget_move (&tree->widget, tlines (tree) + 1, 0);
         tty_print_alt_char (ACS_LTEE, FALSE);
         widget_move (&tree->widget, tlines (tree) + 1, tree->widget.cols - 1);

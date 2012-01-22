@@ -1,26 +1,35 @@
-/* Various utilities - Unix variants
+/*
+   Various utilities - Unix variants
+
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2007 Free Software Foundation, Inc.
-   Written 1994, 1995, 1996 by:
-   Miguel de Icaza, Janne Kukonlehto, Dugan Porter,
-   Jakub Jelinek, Mauricio Plaza.
+   2004, 2005, 2007, 2011
+   The Free Software Foundation, Inc.
+
+   Written by:
+   Miguel de Icaza, 1994, 1995, 1996
+   Janne Kukonlehto, 1994, 1995, 1996
+   Dugan Porter, 1994, 1995, 1996
+   Jakub Jelinek, 1994, 1995, 1996
+   Mauricio Plaza, 1994, 1995, 1996
 
    The mc_realpath routine is mostly from uClibc package, written
    by Rick Sladkey <jrs@world.std.com>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file utilunix.c
  *  \brief Source: various utilities - Unix variant
@@ -52,15 +61,17 @@
 #include <grp.h>
 
 #include "lib/global.h"
-#include "lib/vfs/mc-vfs/vfs.h" /* VFS_ENCODING_PREFIX */
+#include "lib/vfs/vfs.h"        /* VFS_ENCODING_PREFIX */
 #include "lib/strutil.h"        /* str_move() */
 #include "lib/util.h"
 #include "lib/widget.h"         /* message() */
+#include "lib/vfs/xdirentry.h"
 
-#include "src/execute.h"
 #ifdef HAVE_CHARSET
-#include "charsets.h"
+#include "lib/charsets.h"
 #endif
+
+#include "utilunix.h"
 
 /*** global variables ****************************************************************************/
 
@@ -542,8 +553,9 @@ void
 custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
 {
     char *p, *s;
-    int len;
+    size_t len;
     char *lpath = path;         /* path without leading UNC part */
+    const size_t url_delim_len = strlen (VFS_PATH_URL_DELIMITER);
 
     /* Detect and preserve UNC paths: //server/... */
     if ((flags & CANON_PATH_GUARDUNC) && path[0] == PATH_SEP && path[1] == PATH_SEP)
@@ -564,7 +576,7 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
         p = lpath;
         while (*p)
         {
-            if (p[0] == PATH_SEP && p[1] == PATH_SEP)
+            if (p[0] == PATH_SEP && p[1] == PATH_SEP && (p == lpath || *(p - 1) != ':'))
             {
                 s = p + 1;
                 while (*(++s) == PATH_SEP);
@@ -592,7 +604,12 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
         /* Remove trailing slashes */
         p = lpath + strlen (lpath) - 1;
         while (p > lpath && *p == PATH_SEP)
+        {
+            if (p >= lpath - (url_delim_len + 1)
+                && strncmp (p - url_delim_len + 1, VFS_PATH_URL_DELIMITER, url_delim_len) == 0)
+                break;
             *p-- = 0;
+        }
 
         /* Remove leading "./" */
         if (lpath[0] == '.' && lpath[1] == PATH_SEP)
@@ -612,9 +629,12 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
         len = strlen (lpath);
         if (len < 2)
             return;
-        if (lpath[len - 1] == PATH_SEP)
+        if (lpath[len - 1] == PATH_SEP
+            && (len < url_delim_len
+                || strncmp (lpath + len - url_delim_len, VFS_PATH_URL_DELIMITER,
+                            url_delim_len) != 0))
         {
-            lpath[len - 1] = 0;
+            lpath[len - 1] = '\0';
         }
         else
         {
@@ -622,12 +642,12 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
             {
                 if (len == 2)
                 {
-                    lpath[1] = 0;
+                    lpath[1] = '\0';
                     return;
                 }
                 else
                 {
-                    lpath[len - 2] = 0;
+                    lpath[len - 2] = '\0';
                 }
             }
         }
@@ -649,8 +669,45 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
 
             /* search for the previous token */
             s = p - 1;
-            while (s >= lpath && *s != PATH_SEP)
+            if (s >= lpath + url_delim_len - 2
+                && strncmp (s - url_delim_len + 2, VFS_PATH_URL_DELIMITER, url_delim_len) == 0)
+            {
+                s -= (url_delim_len - 2);
+                while (s >= lpath && *s-- != PATH_SEP);
+            }
+
+            while (s >= lpath)
+            {
+                if (s - url_delim_len > lpath
+                    && strncmp (s - url_delim_len, VFS_PATH_URL_DELIMITER, url_delim_len) == 0)
+                {
+                    char *vfs_prefix = s - url_delim_len;
+                    struct vfs_class *vclass;
+
+                    while (vfs_prefix > lpath && *--vfs_prefix != PATH_SEP);
+                    if (*vfs_prefix == PATH_SEP)
+                        vfs_prefix++;
+                    *(s - url_delim_len) = '\0';
+
+                    vclass = vfs_prefix_to_class (vfs_prefix);
+                    *(s - url_delim_len) = *VFS_PATH_URL_DELIMITER;
+
+                    if (vclass != NULL)
+                    {
+                        struct vfs_s_subclass *sub = (struct vfs_s_subclass *) vclass->data;
+                        if (sub != NULL && sub->flags & VFS_S_REMOTE)
+                        {
+                            s = vfs_prefix;
+                            continue;
+                        }
+                    }
+                }
+
+                if (*s == PATH_SEP)
+                    break;
+
                 s--;
+            }
 
             s++;
 
@@ -719,7 +776,13 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
                 }
 #endif /* HAVE_CHARSET */
                 else
-                    s[-1] = 0;
+                {
+                    if (s >= lpath + url_delim_len
+                        && strncmp (s - url_delim_len, VFS_PATH_URL_DELIMITER, url_delim_len) == 0)
+                        *s = '\0';
+                    else
+                        s[-1] = '\0';
+                }
                 break;
             }
 
@@ -941,6 +1004,67 @@ get_user_permissions (struct stat *st)
     }
 
     return 2;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Build filename from arguments.
+ * Like to g_build_filename(), but respect VFS_PATH_URL_DELIMITER
+ */
+
+char *
+mc_build_filename (const char *first_element, ...)
+{
+    gboolean absolute;
+    va_list args;
+    const char *element = first_element;
+    GString *path;
+    char *ret;
+
+    if (element == NULL)
+        return NULL;
+
+    path = g_string_new ("");
+    va_start (args, first_element);
+
+    absolute = (*first_element != '\0' && *first_element == PATH_SEP);
+
+    do
+    {
+        if (*element == '\0')
+            element = va_arg (args, char *);
+        else
+        {
+            char *tmp_element;
+            size_t len;
+            const char *start;
+
+            tmp_element = g_strdup (element);
+
+            element = va_arg (args, char *);
+
+            canonicalize_pathname (tmp_element);
+            len = strlen (tmp_element);
+            start = (tmp_element[0] == PATH_SEP) ? tmp_element + 1 : tmp_element;
+
+            g_string_append (path, start);
+            if (tmp_element[len - 1] != PATH_SEP && element != NULL)
+                g_string_append_c (path, PATH_SEP);
+
+            g_free (tmp_element);
+        }
+    }
+    while (element != NULL);
+
+    va_end (args);
+
+    if (absolute)
+        g_string_prepend_c (path, PATH_SEP);
+
+    ret = g_string_free (path, FALSE);
+    canonicalize_pathname (ret);
+
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -1,25 +1,29 @@
-/* 8bit strings utilities
-   Copyright (C) 2007 Free Software Foundation, Inc.
+/*
+   8bit strings utilities
 
-   Written 2007 by:
-   Rostislav Benes 
+   Copyright (C) 2007, 2011
+   The Free Software Foundation, Inc.
+
+   Written by:
+   Rostislav Benes, 2007
 
    The file_date routine is mostly from GNU's fileutils package,
    written by Richard Stallman and David MacKenzie.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -381,33 +385,32 @@ str_8bit_term_trim (const char *text, int width)
     actual = result;
     remain = sizeof (result);
 
-    if (width < (int) length)
+    if (width > 0)
     {
-        if (width <= 3)
+        if (width < (int) length)
         {
-            memset (actual, '.', width);
-            actual += width;
-            remain -= width;
+            if (width <= 3)
+            {
+                memset (actual, '.', width);
+                actual += width;
+                remain -= width;
+            }
+            else
+            {
+                memset (actual, '.', 3);
+                actual += 3;
+                remain -= 3;
+
+                pos += length - width + 3;
+
+                for (; pos < length && remain > 1; pos++, actual++, remain--)
+                    actual[0] = char_isprint (text[pos]) ? text[pos] : '.';
+            }
         }
         else
         {
-            memset (actual, '.', 3);
-            actual += 3;
-            remain -= 3;
-
-            pos += length - width + 3;
-
             for (; pos < length && remain > 1; pos++, actual++, remain--)
-            {
                 actual[0] = char_isprint (text[pos]) ? text[pos] : '.';
-            }
-        }
-    }
-    else
-    {
-        for (; pos < length && remain > 1; pos++, actual++, remain--)
-        {
-            actual[0] = char_isprint (text[pos]) ? text[pos] : '.';
         }
     }
 
