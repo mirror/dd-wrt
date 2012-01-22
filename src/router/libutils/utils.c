@@ -439,7 +439,7 @@ void setRouter(char *name)
 #elif HAVE_TRIMAX
 	if (name)
 		nvram_set("DD_BOARD2", name);
-	nvram_set(NVROUTER, "Trimax Wireless");
+	nvram_set(NVROUTER, "M2M Dynamics");
 #elif HAVE_WIKINGS
 	if (name)
 		nvram_set("DD_BOARD2", name);
@@ -864,7 +864,7 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_FONERA;
 #elif HAVE_EOC2610
 #ifdef HAVE_TRIMAX
-	setRouter("TMAX-1200");
+	setRouter("M2M-1200");
 #else
 	setRouter("Senao EOC-2610");
 #endif

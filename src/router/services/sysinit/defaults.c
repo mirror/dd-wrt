@@ -743,8 +743,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_TRIMAX)
-	{"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
-	{"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
+	{"wl0_ssid", "M2M", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "M2M", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_WIKINGS)
 	{"wl0_ssid", "Excel Networks", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "Excel Networks", 0},	/* Service set ID (network name) */
@@ -1279,7 +1279,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "MAKSAT", 0},
 #endif
 #elif  HAVE_TRIMAX
-	{"router_name", "TRIMAX", 0},
+	{"router_name", "M2M", 0},
 #elif  HAVE_WIKINGS
 	{"router_name", "Excel Networks", 0},
 #elif  HAVE_ESPOD
@@ -2102,7 +2102,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef CONFIG_BRANDING
 	{"snmpd_sysname", "anonymous", 0},
 #elif defined(HAVE_TRIMAX)
-	{"snmpd_sysname", "trimax", 0},
+	{"snmpd_sysname", "m2m", 0},
 #elif defined(HAVE_WIKINGS)
 	{"snmpd_sysname", "Excel Networks", 0},
 #elif defined(HAVE_ESPOD)
