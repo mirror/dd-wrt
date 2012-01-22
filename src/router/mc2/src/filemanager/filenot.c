@@ -1,25 +1,29 @@
 /*
-   filenot.c:  wrapper for routines to notify the
+   Wrapper for routines to notify the
    tree about the changes made to the directory
    structure.
+
+   Copyright (C) 2011
+   The Free Software Foundation, Inc.
 
    Author:
    Janne Kukonlehto
    Miguel de Icaza
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
@@ -37,7 +41,7 @@
 #include "lib/global.h"
 #include "lib/fs.h"
 #include "lib/util.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 
 /*** global variables ****************************************************************************/
 
@@ -75,8 +79,15 @@ my_mkdir_rec (char *s, mode_t mode)
         return -1;
 
     /* FIXME: should check instead if s is at the root of that filesystem */
-    if (!vfs_file_is_local (s))
-        return -1;
+    {
+        vfs_path_t *vpath = vfs_path_from_str (s);
+        if (!vfs_file_is_local (vpath))
+        {
+            vfs_path_free (vpath);
+            return -1;
+        }
+        vfs_path_free (vpath);
+    }
 
     if (!strcmp (s, PATH_SEP_STR))
     {
@@ -85,7 +96,11 @@ my_mkdir_rec (char *s, mode_t mode)
     }
 
     p = concat_dir_and_file (s, "..");
-    q = vfs_canon (p);
+    {
+        vfs_path_t *vpath = vfs_path_from_str (p);
+        q = vfs_path_to_str (vpath);
+        vfs_path_free (vpath);
+    }
     g_free (p);
 
     result = my_mkdir_rec (q, mode);
@@ -109,9 +124,13 @@ my_mkdir (const char *s, mode_t mode)
     result = mc_mkdir (s, mode);
     if (result)
     {
-        char *p = vfs_canon (s);
+        vfs_path_t *vpath;
+        char *p;
+        vpath = vfs_path_from_str (s);
+        p = vfs_path_to_str (vpath);
 
         result = my_mkdir_rec (p, mode);
+        vfs_path_free (vpath);
         g_free (p);
     }
     if (result == 0)

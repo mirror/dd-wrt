@@ -2,27 +2,26 @@
    File highlight plugin.
    Reading and parse rules from ini-files
 
-   Copyright (C) 2009 The Free Software Foundation, Inc.
+   Copyright (C) 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009.
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -34,8 +33,6 @@
 #include "lib/skin.h"
 #include "lib/util.h"           /* exist_file() */
 #include "lib/filehighlight.h"
-
-#include "src/main.h"
 
 #include "internal.h"
 
@@ -187,7 +184,7 @@ mc_fhl_read_ini_file (mc_fhl_t * fhl, const gchar * filename)
         return FALSE;
 
     if (fhl->config != NULL)
-        return mc_config_read_file (fhl->config, filename);
+        return mc_config_read_file (fhl->config, filename, FALSE);
 
     fhl->config = mc_config_init (filename);
     return (fhl->config != NULL);
@@ -201,22 +198,22 @@ mc_fhl_init_from_standard_files (mc_fhl_t * fhl)
     gchar *name;
     gboolean ok;
 
-    /* ~/.mc/filehighlight.ini */
-    name = g_build_filename (home_dir, MC_USERCONF_DIR, MC_FHL_INI_FILE, (char *) NULL);
+    /* ${XDG_CONFIG_HOME}/mc/filehighlight.ini */
+    name = mc_config_get_full_path (MC_FHL_INI_FILE);
     ok = mc_fhl_read_ini_file (fhl, name);
     g_free (name);
     if (ok)
         return TRUE;
 
     /* ${sysconfdir}/mc/filehighlight.ini  */
-    name = g_build_filename (mc_home, MC_FHL_INI_FILE, (char *) NULL);
+    name = g_build_filename (mc_global.sysconfig_dir, MC_FHL_INI_FILE, (char *) NULL);
     ok = mc_fhl_read_ini_file (fhl, name);
     g_free (name);
     if (ok)
         return TRUE;
 
     /* ${datadir}/mc/filehighlight.ini  */
-    name = g_build_filename (mc_home_alt, MC_FHL_INI_FILE, (char *) NULL);
+    name = g_build_filename (mc_global.share_data_dir, MC_FHL_INI_FILE, (char *) NULL);
     ok = mc_fhl_read_ini_file (fhl, name);
     g_free (name);
     return ok;

@@ -1,29 +1,32 @@
-/* Widgets for the Midnight Commander
+/*
+   Widgets for the Midnight Commander
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009, 2010 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1994, 1995 Radek Doulik
-   1994, 1995 Miguel de Icaza
-   1995 Jakub Jelinek
-   1996 Andrej Borsenkow
-   1997 Norbert Warmuth
-   2009, 2010 Andrew Borodin
+   Authors:
+   Radek Doulik, 1994, 1995
+   Miguel de Icaza, 1994, 1995
+   Jakub Jelinek, 1995
+   Andrej Borsenkow, 1996
+   Norbert Warmuth, 1997
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file input.c
@@ -42,22 +45,21 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/mouse.h"
 #include "lib/tty/key.h"        /* XCTRL and ALT macros  */
-#include "lib/vfs/mc-vfs/vfs.h"
 #include "lib/fileloc.h"
 #include "lib/skin.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
 #include "lib/keybind.h"        /* global_keymap_t */
 #include "lib/widget.h"
+#include "lib/event.h"          /* mc_event_raise() */
 
-#include "src/main.h"           /* home_dir */
-#include "src/filemanager/midnight.h"   /* current_panel */
-#include "src/clipboard.h"      /* copy_file_to_ext_clip, paste_to_file_from_ext_clip */
-#include "src/keybind-defaults.h"   /* input_map */
+#include "input_complete.h"
 
 /*** global variables ****************************************************************************/
 
 int quote = 0;
+
+const global_keymap_t *input_map = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -82,122 +84,17 @@ int quote = 0;
 static char *kill_buffer = NULL;
 
 /*** file scope functions ************************************************************************/
-
-static gboolean
-save_text_to_clip_file (const char *text)
-{
-    int file;
-    char *fname = NULL;
-    ssize_t ret;
-    size_t str_len;
-
-    fname = g_build_filename (home_dir, EDIT_CLIP_FILE, NULL);
-    file = mc_open (fname, O_CREAT | O_WRONLY | O_TRUNC,
-                    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | O_BINARY);
-    g_free (fname);
-
-    if (file == -1)
-        return FALSE;
-
-    str_len = strlen (text);
-    ret = mc_write (file, (char *) text, str_len);
-    mc_close (file);
-    return ret == (ssize_t) str_len;
-}
-
 /* --------------------------------------------------------------------------------------------- */
 
-static gboolean
-load_text_from_clip_file (char **text)
+static size_t
+get_history_length (const GList * history)
 {
-    char buf[BUF_LARGE];
-    FILE *f;
-    char *fname = NULL;
-    gboolean first = TRUE;
+    size_t len = 0;
 
-    fname = g_build_filename (home_dir, EDIT_CLIP_FILE, NULL);
-    f = fopen (fname, "r");
-    g_free (fname);
+    for (; history != NULL; history = g_list_previous (history))
+        len++;
 
-    if (f == NULL)
-        return FALSE;
-
-    *text = NULL;
-
-    while (fgets (buf, sizeof (buf), f))
-    {
-        size_t len;
-
-        len = strlen (buf);
-        if (len > 0)
-        {
-            if (buf[len - 1] == '\n')
-                buf[len - 1] = '\0';
-
-            if (first)
-            {
-                first = FALSE;
-                *text = g_strdup (buf);
-            }
-            else
-            {
-                /* remove \n on EOL */
-                char *tmp;
-
-                tmp = g_strconcat (*text, " ", buf, (char *) NULL);
-                g_free (*text);
-                *text = tmp;
-            }
-        }
-    }
-
-    fclose (f);
-
-    return (*text != NULL);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static gboolean
-panel_save_curent_file_to_clip_file (void)
-{
-    gboolean res = FALSE;
-
-    if (current_panel->marked == 0)
-        res = save_text_to_clip_file (selection (current_panel)->fname);
-    else
-    {
-        int i;
-        gboolean first = TRUE;
-        char *flist = NULL;
-
-        for (i = 0; i < current_panel->count; i++)
-            if (current_panel->dir.list[i].f.marked != 0)
-            {                   /* Skip the unmarked ones */
-                if (first)
-                {
-                    flist = g_strdup (current_panel->dir.list[i].fname);
-                    first = FALSE;
-                }
-                else
-                {
-                    /* Add empty lines after the file */
-                    char *tmp;
-
-                    tmp =
-                        g_strconcat (flist, "\n", current_panel->dir.list[i].fname, (char *) NULL);
-                    g_free (flist);
-                    flist = tmp;
-                }
-            }
-
-        if (flist != NULL)
-        {
-            res = save_text_to_clip_file (flist);
-            g_free (flist);
-        }
-    }
-    return res;
+    return len;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -289,7 +186,10 @@ delete_region (WInput * in, int x_first, int x_last)
 static void
 do_show_hist (WInput * in)
 {
+    size_t len;
     char *r;
+
+    len = get_history_length (in->history);
 
     r = history_show (&in->history, &in->widget);
     if (r != NULL)
@@ -297,6 +197,10 @@ do_show_hist (WInput * in)
         input_assign_text (in, r);
         g_free (r);
     }
+
+    /* Has history cleaned up or not? */
+    if (len != get_history_length (in->history))
+        in->history_changed = TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -343,7 +247,15 @@ push_history (WInput * in, const char *text)
         strip_password (t, i >= ELEMENTS);
     }
 
-    in->history = list_append_unique (in->history, t);
+    if (in->history == NULL || in->history->data == NULL || strcmp (in->history->data, t) != 0 ||
+        in->history_changed)
+    {
+        in->history = list_append_unique (in->history, t);
+        in->history_changed = TRUE;
+    }
+    else
+        g_free (t);
+
     in->need_push = FALSE;
 }
 
@@ -568,9 +480,9 @@ copy_region (WInput * in, int x_first, int x_last)
     if (last == first)
     {
         /* Copy selected files to clipboard */
-        panel_save_curent_file_to_clip_file ();
+        mc_event_raise (MCEVENT_GROUP_FILEMANAGER, "panel_save_curent_file_to_clip_file", NULL);
         /* try use external clipboard utility */
-        copy_file_to_ext_clip ();
+        mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_to_ext_clip", NULL);
         return;
     }
 
@@ -581,9 +493,9 @@ copy_region (WInput * in, int x_first, int x_last)
 
     kill_buffer = g_strndup (in->buffer + first, last - first);
 
-    save_text_to_clip_file (kill_buffer);
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_text_to_file", kill_buffer);
     /* try use external clipboard utility */
-    copy_file_to_ext_clip ();
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_to_ext_clip", NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -654,7 +566,7 @@ kill_line (WInput * in)
 static void
 clear_line (WInput * in)
 {
-    in->need_push = 1;
+    in->need_push = TRUE;
     in->buffer[0] = '\0';
     in->point = 0;
     in->mark = 0;
@@ -662,15 +574,20 @@ clear_line (WInput * in)
     in->charpoint = 0;
 }
 
+/* --------------------------------------------------------------------------------------------- */
+
 static void
 ins_from_clip (WInput * in)
 {
     char *p = NULL;
+    ev_clipboard_text_from_file_t event_data;
 
     /* try use external clipboard utility */
-    paste_to_file_from_ext_clip ();
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_from_ext_clip", NULL);
 
-    if (load_text_from_clip_file (&p))
+    event_data.text = &p;
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_text_from_file", &event_data);
+    if (event_data.ret)
     {
         char *pp;
 
@@ -698,6 +615,7 @@ hist_prev (WInput * in)
     if (prev != NULL)
     {
         in->history = prev;
+        in->history_changed = TRUE;
         input_assign_text (in, (char *) prev->data);
         in->need_push = FALSE;
     }
@@ -708,6 +626,8 @@ hist_prev (WInput * in)
 static void
 hist_next (WInput * in)
 {
+    GList *next;
+
     if (in->need_push)
     {
         push_history (in, in->buffer);
@@ -718,12 +638,14 @@ hist_next (WInput * in)
     if (in->history == NULL)
         return;
 
-    if (in->history->next == NULL)
+    next = g_list_next (in->history);
+    if (next == NULL)
         input_assign_text (in, "");
     else
     {
-        in->history = g_list_next (in->history);
-        input_assign_text (in, (char *) in->history->data);
+        in->history = next;
+        in->history_changed = TRUE;
+        input_assign_text (in, (char *) next->data);
         in->need_push = FALSE;
     }
 }
@@ -747,11 +669,9 @@ input_execute_cmd (WInput * in, unsigned long command)
     cb_ret_t res = MSG_HANDLED;
 
     /* a highlight command like shift-arrow */
-    if (command == CK_InputLeftHighlight ||
-        command == CK_InputRightHighlight ||
-        command == CK_InputWordLeftHighlight ||
-        command == CK_InputWordRightHighlight ||
-        command == CK_InputBolHighlight || command == CK_InputEolHighlight)
+    if (command == CK_MarkLeft || command == CK_MarkRight ||
+        command == CK_MarkToWordBegin || command == CK_MarkToWordEnd ||
+        command == CK_MarkToHome || command == CK_MarkToEnd)
     {
         if (!in->highlight)
         {
@@ -762,53 +682,41 @@ input_execute_cmd (WInput * in, unsigned long command)
 
     switch (command)
     {
-    case CK_InputForwardWord:
-    case CK_InputBackwardWord:
-    case CK_InputForwardChar:
-    case CK_InputBackwardChar:
+    case CK_WordRight:
+    case CK_WordLeft:
+    case CK_Right:
+    case CK_Left:
         if (in->highlight)
             input_mark_cmd (in, FALSE);
     }
 
     switch (command)
     {
-    case CK_InputBol:
-    case CK_InputBolHighlight:
+    case CK_Home:
+    case CK_MarkToHome:
         beginning_of_line (in);
         break;
-    case CK_InputEol:
-    case CK_InputEolHighlight:
+    case CK_End:
+    case CK_MarkToEnd:
         end_of_line (in);
         break;
-    case CK_InputMoveLeft:
-    case CK_InputLeftHighlight:
+    case CK_Left:
+    case CK_MarkLeft:
         backward_char (in);
         break;
-    case CK_InputWordLeft:
-    case CK_InputWordLeftHighlight:
+    case CK_WordLeft:
+    case CK_MarkToWordBegin:
         backward_word (in);
         break;
-    case CK_InputMoveRight:
-    case CK_InputRightHighlight:
+    case CK_Right:
+    case CK_MarkRight:
         forward_char (in);
         break;
-    case CK_InputWordRight:
-    case CK_InputWordRightHighlight:
+    case CK_WordRight:
+    case CK_MarkToWordEnd:
         forward_word (in);
         break;
-    case CK_InputBackwardChar:
-        backward_char (in);
-        break;
-    case CK_InputBackwardWord:
-        backward_word (in);
-        break;
-    case CK_InputForwardChar:
-        forward_char (in);
-        break;
-    case CK_InputForwardWord:
-        forward_word (in);
-        break;
-    case CK_InputBackwardDelete:
+    case CK_BackSpace:
         if (in->highlight)
         {
             long m1, m2;
@@ -818,7 +726,7 @@ input_execute_cmd (WInput * in, unsigned long command)
         else
             backward_delete (in);
         break;
-    case CK_InputDeleteChar:
+    case CK_Delete:
         if (in->first)
             port_region_marked_for_delete (in);
         else if (in->highlight)
@@ -830,63 +738,126 @@ input_execute_cmd (WInput * in, unsigned long command)
         else
             delete_char (in);
         break;
-    case CK_InputKillWord:
+    case CK_DeleteToWordEnd:
         kill_word (in);
         break;
-    case CK_InputBackwardKillWord:
+    case CK_DeleteToWordBegin:
         back_kill_word (in);
         break;
-    case CK_InputSetMark:
+    case CK_Mark:
         input_mark_cmd (in, TRUE);
         break;
-    case CK_InputKillRegion:
+    case CK_Remove:
         delete_region (in, in->point, in->mark);
         break;
-    case CK_InputKillLine:
-        /* clear command line from cursor to the EOL */
+    case CK_DeleteToEnd:
         kill_line (in);
         break;
-    case CK_InputClearLine:
-        /* clear command line */
+    case CK_Clear:
         clear_line (in);
         break;
-    case CK_InputCopyRegion:
+    case CK_Store:
         copy_region (in, in->mark, in->point);
         break;
-    case CK_InputKillSave:
+    case CK_Cut:
         copy_region (in, in->mark, in->point);
         delete_region (in, in->point, in->mark);
         break;
-    case CK_InputYank:
+    case CK_Yank:
         yank (in);
         break;
-    case CK_InputPaste:
+    case CK_Paste:
         ins_from_clip (in);
         break;
-    case CK_InputHistoryPrev:
+    case CK_HistoryPrev:
         hist_prev (in);
         break;
-    case CK_InputHistoryNext:
+    case CK_HistoryNext:
         hist_next (in);
         break;
-    case CK_InputHistoryShow:
+    case CK_History:
         do_show_hist (in);
         break;
-    case CK_InputComplete:
+    case CK_Complete:
         complete (in);
         break;
     default:
         res = MSG_NOT_HANDLED;
     }
 
-    if (command != CK_InputLeftHighlight &&
-        command != CK_InputRightHighlight &&
-        command != CK_InputWordLeftHighlight &&
-        command != CK_InputWordRightHighlight &&
-        command != CK_InputBolHighlight && command != CK_InputEolHighlight)
+    if (command != CK_MarkLeft && command != CK_MarkRight &&
+        command != CK_MarkToWordBegin && command != CK_MarkToWordEnd &&
+        command != CK_MarkToHome && command != CK_MarkToEnd)
         in->highlight = FALSE;
 
     return res;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/* "history_load" event handler */
+static gboolean
+input_load_history (const gchar * event_group_name, const gchar * event_name,
+                    gpointer init_data, gpointer data)
+{
+    WInput *in = (WInput *) init_data;
+    ev_history_load_save_t *ev = (ev_history_load_save_t *) data;
+    const char *def_text;
+    size_t buffer_len;
+
+    (void) event_group_name;
+    (void) event_name;
+
+    in->history = history_load (ev->cfg, in->history_name);
+
+    if (in->init_text == NULL)
+        def_text = "";
+    else if (in->init_text == INPUT_LAST_TEXT)
+    {
+        if (in->history != NULL && in->history->data != NULL)
+            def_text = (const char *) in->history->data;
+        else
+            def_text = "";
+
+        in->init_text = NULL;
+    }
+    else
+        def_text = in->init_text;
+
+    buffer_len = strlen (def_text);
+    buffer_len = 1 + max ((size_t) in->field_width, buffer_len);
+    in->current_max_size = buffer_len;
+    if (buffer_len > (size_t) in->field_width)
+        in->buffer = g_realloc (in->buffer, buffer_len);
+    strcpy (in->buffer, def_text);
+    in->point = str_length (in->buffer);
+
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/* "history_save" event handler */
+static gboolean
+input_save_history (const gchar * event_group_name, const gchar * event_name,
+                    gpointer init_data, gpointer data)
+{
+    WInput *in = (WInput *) init_data;
+
+    (void) event_group_name;
+    (void) event_name;
+
+    if (!in->is_password && (((Widget *) in)->owner->ret_value != B_CANCEL))
+    {
+        ev_history_load_save_t *ev = (ev_history_load_save_t *) data;
+
+        push_history (in, in->buffer);
+        if (in->history_changed)
+            history_save (ev->cfg, in->history_name, in->history);
+        in->history_changed = FALSE;
+    }
+
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -900,21 +871,21 @@ input_destroy (WInput * in)
         exit (EXIT_FAILURE);
     }
 
-    input_clean (in);
+    input_free_completions (in);
 
+    /* clean history */
     if (in->history != NULL)
     {
-        if (!in->is_password && (((Widget *) in)->owner->ret_value != B_CANCEL))
-            history_put (in->history_name, in->history);
-
+        /* history is already saved before this moment */
         in->history = g_list_first (in->history);
         g_list_foreach (in->history, (GFunc) g_free, NULL);
         g_list_free (in->history);
     }
+    g_free (in->history_name);
 
     g_free (in->buffer);
     input_free_completions (in);
-    g_free (in->history_name);
+    g_free (in->init_text);
 
     g_free (kill_buffer);
     kill_buffer = NULL;
@@ -976,37 +947,11 @@ WInput *
 input_new (int y, int x, const int *input_colors, int width, const char *def_text,
            const char *histname, input_complete_t completion_flags)
 {
-    WInput *in = g_new (WInput, 1);
-    size_t initial_buffer_len;
+    WInput *in;
 
+    in = g_new (WInput, 1);
     init_widget (&in->widget, y, x, 1, width, input_callback, input_event);
-
-    /* history setup */
-    in->history_name = NULL;
-    in->history = NULL;
-    if ((histname != NULL) && (*histname != '\0'))
-    {
-        in->history_name = g_strdup (histname);
-        in->history = history_get (histname);
-    }
-
-    if (def_text == NULL)
-        def_text = "";
-    else if (def_text == INPUT_LAST_TEXT)
-    {
-        if ((in->history != NULL) && (in->history->data != NULL))
-            def_text = (char *) in->history->data;
-        else
-            def_text = "";
-    }
-
-    initial_buffer_len = strlen (def_text);
-    initial_buffer_len = 1 + max ((size_t) width, initial_buffer_len);
     in->widget.options |= W_IS_INPUT;
-    in->completions = NULL;
-    in->completion_flags = completion_flags;
-    in->current_max_size = initial_buffer_len;
-    in->buffer = g_new (char, initial_buffer_len);
 
     memmove (in->color, input_colors, sizeof (input_colors_t));
 
@@ -1018,10 +963,26 @@ input_new (int y, int x, const int *input_colors, int width, const char *def_tex
     in->mark = 0;
     in->need_push = TRUE;
     in->is_password = FALSE;
-
-    strcpy (in->buffer, def_text);
-    in->point = str_length (in->buffer);
     in->charpoint = 0;
+
+    /* in->buffer will be corrected in "history_load" event handler */
+    in->current_max_size = width + 1;
+    in->buffer = g_new0 (char, in->current_max_size);
+    in->point = 0;
+
+    in->init_text = (def_text == INPUT_LAST_TEXT) ? INPUT_LAST_TEXT : g_strdup (def_text);
+
+    in->completions = NULL;
+    in->completion_flags = completion_flags;
+
+    /* prepare to history setup */
+    in->history = NULL;
+    in->history_changed = FALSE;
+    in->history_name = NULL;
+    if ((histname != NULL) && (*histname != '\0'))
+        in->history_name = g_strdup (histname);
+
+    /* history will be loaded later */
 
     return in;
 }
@@ -1036,6 +997,13 @@ input_callback (Widget * w, widget_msg_t msg, int parm)
 
     switch (msg)
     {
+    case WIDGET_INIT:
+        /* subscribe to "history_load" event */
+        mc_event_add (w->owner->event_group, MCEVENT_HISTORY_LOAD, input_load_history, w, NULL);
+        /* subscribe to "history_save" event */
+        mc_event_add (w->owner->event_group, MCEVENT_HISTORY_SAVE, input_save_history, w, NULL);
+        return MSG_HANDLED;
+
     case WIDGET_KEY:
         if (parm == XCTRL ('q'))
         {
@@ -1076,6 +1044,10 @@ input_callback (Widget * w, widget_msg_t msg, int parm)
         return MSG_HANDLED;
 
     case WIDGET_DESTROY:
+        /* unsubscribe from "history_load" event */
+        mc_event_del (w->owner->event_group, MCEVENT_HISTORY_LOAD, input_load_history, w);
+        /* unsubscribe from "history_save" event */
+        mc_event_del (w->owner->event_group, MCEVENT_HISTORY_SAVE, input_save_history, w);
         input_destroy (in);
         return MSG_HANDLED;
 
@@ -1133,7 +1105,7 @@ input_handle_char (WInput * in, int key)
 
     command = keybind_lookup_keymap_command (input_map, key);
 
-    if (command == CK_Ignore_Key)
+    if (command == CK_IgnoreKey)
     {
         if (key > 255)
             return MSG_NOT_HANDLED;
@@ -1144,7 +1116,7 @@ input_handle_char (WInput * in, int key)
     }
     else
     {
-        if (command != CK_InputComplete)
+        if (command != CK_Complete)
             input_free_completions (in);
         input_execute_cmd (in, command);
         v = MSG_HANDLED;
@@ -1169,10 +1141,10 @@ input_key_is_in_map (WInput * in, int key)
     (void) in;
 
     command = keybind_lookup_keymap_command (input_map, key);
-    if (command == CK_Ignore_Key)
+    if (command == CK_IgnoreKey)
         return 0;
 
-    return (command == CK_InputComplete) ? 2 : 1;
+    return (command == CK_Complete) ? 2 : 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1304,13 +1276,13 @@ input_update (WInput * in, gboolean clear_first)
     else
     {
         cp = str_term_substring (in->buffer, in->term_first_shown, in->field_width - has_history);
+        tty_setcolor (in->color[WINPUTC_MAIN]);
         for (i = 0; i < in->field_width - has_history; i++)
         {
-            if (i >= 0)
-            {
-                tty_setcolor (in->color[WINPUTC_MAIN]);
-                tty_print_char ((cp[0] != '\0') ? '*' : ' ');
-            }
+            if (i < (buf_len - in->term_first_shown) && cp[0] != '\0')
+                tty_print_char ('*');
+            else
+                tty_print_char (' ');
             if (cp[0] != '\0')
                 str_cnext_char (&cp);
         }
@@ -1339,7 +1311,11 @@ input_disable_update (WInput * in)
 
 /* --------------------------------------------------------------------------------------------- */
 
-/* Cleans the input line and adds the current text to the history */
+/**
+  *  Cleans the input line and adds the current text to the history
+  *
+  *  @param in the input line
+  */
 void
 input_clean (WInput * in)
 {

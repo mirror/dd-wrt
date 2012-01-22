@@ -2,27 +2,26 @@
    Skins engine.
    Work with line draving chars.
 
-   Copyright (C) 2009 The Free Software Foundation, Inc.
+   Copyright (C) 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009.
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -30,8 +29,6 @@
 
 #include "internal.h"
 #include "lib/tty/tty.h"
-
-#include "src/args.h"
 
 /*** global variables ****************************************************************************/
 
@@ -98,9 +95,9 @@ mc_skin_lines_load_frm (mc_skin_t * mc_skin, const char *name)
 void
 mc_skin_lines_parse_ini_file (mc_skin_t * mc_skin)
 {
-    if (mc_args__slow_terminal)
+    if (mc_global.tty.slow_terminal)
         mc_skin_hardcoded_space_lines (mc_skin);
-    else if (mc_args__ugly_line_drawing)
+    else if (mc_global.tty.ugly_line_drawing)
         mc_skin_hardcoded_ugly_lines (mc_skin);
 
     /* single lines */

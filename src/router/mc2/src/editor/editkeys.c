@@ -1,24 +1,27 @@
-/* Editor key translation.
+/*
+   Editor key translation.
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1996, 1997 Paul Sheer
+   Written by:
+   Paul Sheer, 1996, 1997
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -47,11 +50,10 @@
 #include "lib/charsets.h"       /* convert_from_input_c() */
 
 #include "edit-impl.h"
-#include "edit-widget.h"        /* edit->macro_i */
+#include "edit-widget.h"        /* WEdit */
 #include "editcmd_dialogs.h"
 
 #include "src/keybind-defaults.h"       /* keybind_lookup_keymap_command() */
-#include "src/main.h"           /* display_codepage */
 
 /*** global variables ****************************************************************************/
 
@@ -75,7 +77,7 @@
 int
 edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
 {
-    unsigned long command = (unsigned long) CK_Insert_Char;
+    unsigned long command = (unsigned long) CK_InsertChar;
     int char_for_insertion = -1;
     int c;
 
@@ -95,7 +97,7 @@ edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
         }
 
         /* input from 8-bit locale */
-        if (!utf8_display)
+        if (!mc_global.utf8_display)
         {
             /* source in 8-bit codeset */
             if (!edit->utf8)
@@ -190,14 +192,14 @@ edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
     else
         command = keybind_lookup_keymap_command (editor_map, x_key);
 
-    if (command == CK_Ignore_Key)
-        command = CK_Insert_Char;
+    if (command == CK_IgnoreKey)
+        command = CK_InsertChar;
 
   fin:
     *cmd = (int) command;       /* FIXME */
     *ch = char_for_insertion;
 
-    return (command == (unsigned long) CK_Insert_Char && char_for_insertion == -1) ? 0 : 1;
+    return (command == (unsigned long) CK_InsertChar && char_for_insertion == -1) ? 0 : 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */

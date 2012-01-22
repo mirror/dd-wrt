@@ -60,12 +60,16 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
-	$(top_srcdir)/m4.include/ac-get-fs-info.m4 \
+	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
+	$(top_srcdir)/m4.include/fstypename.m4 \
+	$(top_srcdir)/m4.include/fsusage.m4 \
+	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
-	$(top_srcdir)/m4.include/ac-g-module-supported.m4 \
+	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
@@ -78,6 +82,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
+	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -92,11 +97,11 @@ am_libmcwidget_la_OBJECTS = libmcwidget_la-button.lo \
 	libmcwidget_la-dialog.lo libmcwidget_la-dialog-switch.lo \
 	libmcwidget_la-gauge.lo libmcwidget_la-groupbox.lo \
 	libmcwidget_la-hline.lo libmcwidget_la-history.lo \
-	libmcwidget_la-input.lo libmcwidget_la-listbox-window.lo \
-	libmcwidget_la-listbox.lo libmcwidget_la-label.lo \
-	libmcwidget_la-menu.lo libmcwidget_la-quick.lo \
-	libmcwidget_la-radio.lo libmcwidget_la-widget-common.lo \
-	libmcwidget_la-wtools.lo
+	libmcwidget_la-input.lo libmcwidget_la-input_complete.lo \
+	libmcwidget_la-listbox-window.lo libmcwidget_la-listbox.lo \
+	libmcwidget_la-label.lo libmcwidget_la-menu.lo \
+	libmcwidget_la-quick.lo libmcwidget_la-radio.lo \
+	libmcwidget_la-widget-common.lo libmcwidget_la-wtools.lo
 libmcwidget_la_OBJECTS = $(am_libmcwidget_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -150,6 +155,8 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CHECK_CFLAGS = @CHECK_CFLAGS@
+CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -223,6 +230,8 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
+LIBMC_RELEASE = @LIBMC_RELEASE@
+LIBMC_VERSION = @LIBMC_VERSION@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -348,6 +357,7 @@ libmcwidget_la_SOURCES = \
 	hline.c hline.h \
 	history.c history.h \
 	input.c input.h \
+	input_complete.c input_complete.h \
 	listbox-window.c listbox-window.h \
 	listbox.c listbox.h \
 	label.c label.h \
@@ -423,6 +433,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-history.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-hline.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-input.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-input_complete.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-label.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-listbox-window.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmcwidget_la-listbox.Plo@am__quote@
@@ -535,6 +546,14 @@ libmcwidget_la-input.lo: input.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='input.c' object='libmcwidget_la-input.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcwidget_la_CFLAGS) $(CFLAGS) -c -o libmcwidget_la-input.lo `test -f 'input.c' || echo '$(srcdir)/'`input.c
+
+libmcwidget_la-input_complete.lo: input_complete.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcwidget_la_CFLAGS) $(CFLAGS) -MT libmcwidget_la-input_complete.lo -MD -MP -MF $(DEPDIR)/libmcwidget_la-input_complete.Tpo -c -o libmcwidget_la-input_complete.lo `test -f 'input_complete.c' || echo '$(srcdir)/'`input_complete.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmcwidget_la-input_complete.Tpo $(DEPDIR)/libmcwidget_la-input_complete.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='input_complete.c' object='libmcwidget_la-input_complete.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcwidget_la_CFLAGS) $(CFLAGS) -c -o libmcwidget_la-input_complete.lo `test -f 'input_complete.c' || echo '$(srcdir)/'`input_complete.c
 
 libmcwidget_la-listbox-window.lo: listbox-window.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmcwidget_la_CFLAGS) $(CFLAGS) -MT libmcwidget_la-listbox-window.lo -MD -MP -MF $(DEPDIR)/libmcwidget_la-listbox-window.Tpo -c -o libmcwidget_la-listbox-window.lo `test -f 'listbox-window.c' || echo '$(srcdir)/'`listbox-window.c

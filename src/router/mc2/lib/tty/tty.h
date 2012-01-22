@@ -65,21 +65,19 @@ extern int mc_tty_frm[];
 
 extern char *tty_tgetstr (const char *name);
 
-extern void tty_beep (void);
-
-/*** declarations of public functions ************************************************************/
-
-
 /* {{{ Input }}} */
 
 extern int reset_hp_softkeys;
 
-extern gboolean tty_check_term (gboolean force_xterm);
-extern void tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable,
-                      gboolean is_xterm);
-extern void tty_shutdown (void);
+/*** declarations of public functions ************************************************************/
 
-extern gboolean tty_is_slow (void);
+extern void tty_beep (void);
+
+/* {{{ Input }}} */
+
+extern gboolean tty_check_term (gboolean force_xterm);
+extern void tty_init (gboolean mouse_enable, gboolean is_xterm);
+extern void tty_shutdown (void);
 
 extern void tty_start_interrupt_key (void);
 extern void tty_enable_interrupt_key (void);
@@ -98,8 +96,6 @@ extern int tty_flush_input (void);
 extern void tty_keypad (gboolean set);
 extern void tty_nodelay (gboolean set);
 extern int tty_baudrate (void);
-
-extern int tty_lowlevel_getch (void);
 
 /* {{{ Output }}} */
 
@@ -131,8 +127,9 @@ extern void tty_draw_vline (int y, int x, int ch, int len);
 extern void tty_draw_box (int y, int x, int rows, int cols, gboolean single);
 extern void tty_fill_region (int y, int x, int rows, int cols, unsigned char ch);
 
+extern int tty_resize (int fd);
 extern void tty_refresh (void);
-extern void tty_setup_sigwinch (void (*handler) (int));
+extern void tty_change_screen_size (void);
 
 extern int mc_tty_normalize_lines_char (const char *);
 

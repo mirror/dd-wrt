@@ -3,36 +3,35 @@
    Interface functions
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1994, 1995, 1998 Miguel de Icaza
-   1994, 1995 Janne Kukonlehto
-   1995 Jakub Jelinek
-   1996 Joseph M. Hinkle
-   1997 Norbert Warmuth
-   1998 Pavel Machek
-   2004 Roland Illig <roland.illig@gmx.de>
-   2005 Roland Illig <roland.illig@gmx.de>
-   2009 Slava Zanko <slavazanko@google.com>
-   2009 Andrew Borodin <aborodin@vmail.ru>
-   2009 Ilia Maslakov <il.smind@gmail.com>
+   Written by:
+   Miguel de Icaza, 1994, 1995, 1998
+   Janne Kukonlehto, 1994, 1995
+   Jakub Jelinek, 1995
+   Joseph M. Hinkle, 1996
+   Norbert Warmuth, 1997
+   Pavel Machek, 1998
+   Roland Illig <roland.illig@gmx.de>, 2004, 2005
+   Slava Zanko <slavazanko@google.com>, 2009
+   Andrew Borodin <aborodin@vmail.ru>, 2009
+   Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -42,7 +41,7 @@
 #include "lib/global.h"
 #include "lib/tty/tty.h"
 #include "lib/tty/mouse.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"           /* load_file_position() */
 #include "lib/widget.h"
@@ -186,19 +185,6 @@ mcview_real_event (Gpm_Event * event, void *x)
     return result;
 }
 
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-mcview_set_keymap (mcview_t * view)
-{
-    view->plain_map = default_viewer_keymap;
-    if (viewer_keymap && viewer_keymap->len > 0)
-        view->plain_map = (global_keymap_t *) viewer_keymap->data;
-
-    view->hex_map = default_viewer_hex_keymap;
-    if (viewer_hex_keymap && viewer_hex_keymap->len > 0)
-        view->hex_map = (global_keymap_t *) viewer_hex_keymap->data;
-}
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
@@ -210,8 +196,6 @@ mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
     mcview_t *view = g_new0 (mcview_t, 1);
 
     init_widget (&view->widget, y, x, lines, cols, mcview_callback, mcview_real_event);
-
-    mcview_set_keymap (view);
 
     view->hex_mode = FALSE;
     view->hexedit_mode = FALSE;
@@ -297,7 +281,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
     if ((view->workdir == NULL) && (file != NULL))
     {
         if (!g_path_is_absolute (file))
-            view->workdir = g_strdup (vfs_get_current_dir ());
+            view->workdir = vfs_get_current_dir ();
         else
         {
             /* try extract path form filename */
@@ -309,7 +293,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
             else
             {
                 g_free (dirname);
-                view->workdir = g_strdup (vfs_get_current_dir ());
+                view->workdir = vfs_get_current_dir ();
             }
         }
     }
@@ -402,8 +386,10 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
         char *canon_fname;
         long line, col;
         off_t new_offset, max_offset;
+        vfs_path_t *vpath;
 
-        canon_fname = vfs_canon (view->filename);
+        vpath = vfs_path_from_str (view->filename);
+        canon_fname = vfs_path_to_str (vpath);
         load_file_position (canon_fname, &line, &col, &new_offset, &view->saved_bookmarks);
         max_offset = mcview_get_filesize (view) - 1;
         if (max_offset < 0)
@@ -418,6 +404,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
             view->hex_cursor = new_offset;
         }
         g_free (canon_fname);
+        vfs_path_free (vpath);
     }
     else if (start_line > 0)
         mcview_moveto (view, start_line - 1, 0);

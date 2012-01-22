@@ -1,29 +1,32 @@
-/* Widgets for the Midnight Commander
+/*
+   Widgets for the Midnight Commander
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009, 2010 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1994, 1995 Radek Doulik
-   1994, 1995 Miguel de Icaza
-   1995 Jakub Jelinek
-   1996 Andrej Borsenkow
-   1997 Norbert Warmuth
-   2009, 2010 Andrew Borodin
+   Authors:
+   Radek Doulik, 1994, 1995
+   Miguel de Icaza, 1994, 1995
+   Jakub Jelinek, 1995
+   Andrej Borsenkow, 1996
+   Norbert Warmuth, 1997
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file listbox.c
@@ -44,11 +47,9 @@
 #include "lib/keybind.h"        /* global_keymap_t */
 #include "lib/widget.h"
 
-/* TODO: these includes should be removed! */
-#include "src/keybind-defaults.h"       /* listbox_map */
-#include "src/setup.h"          /* confirm_history_cleanup */
-
 /*** global variables ****************************************************************************/
+
+const global_keymap_t *listbox_map = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -123,8 +124,8 @@ listbox_draw (WListbox * l, gboolean focused)
     const gboolean disabled = (((Widget *) l)->options & W_DISABLED) != 0;
     const int normalc = disabled ? DISABLED_COLOR : h->color[DLG_COLOR_NORMAL];
     int selc =
-        disabled ? DISABLED_COLOR : focused ? h->color[DLG_COLOR_HOT_FOCUS] : h->
-        color[DLG_COLOR_FOCUS];
+        disabled ? DISABLED_COLOR : focused ? h->
+        color[DLG_COLOR_HOT_FOCUS] : h->color[DLG_COLOR_FOCUS];
 
     GList *le;
     int pos;
@@ -237,27 +238,27 @@ listbox_execute_cmd (WListbox * l, unsigned long command)
 
     switch (command)
     {
-    case CK_ListboxMoveUp:
+    case CK_Up:
         listbox_back (l);
         break;
-    case CK_ListboxMoveDown:
+    case CK_Down:
         listbox_fwd (l);
         break;
-    case CK_ListboxMoveHome:
+    case CK_Top:
         listbox_select_first (l);
         break;
-    case CK_ListboxMoveEnd:
+    case CK_Bottom:
         listbox_select_last (l);
         break;
-    case CK_ListboxMovePgUp:
+    case CK_PageUp:
         for (i = 0; (i < l->widget.lines - 1) && (l->pos > 0); i++)
             listbox_back (l);
         break;
-    case CK_ListboxMovePgDn:
+    case CK_PageDown:
         for (i = 0; (i < l->widget.lines - 1) && (l->pos < l->count - 1); i++)
             listbox_fwd (l);
         break;
-    case CK_ListboxDeleteItem:
+    case CK_Delete:
         if (l->deletable)
         {
             gboolean is_last = (l->pos + 1 >= l->count);
@@ -268,8 +269,8 @@ listbox_execute_cmd (WListbox * l, unsigned long command)
                 l->top--;
         }
         break;
-    case CK_ListboxDeleteAll:
-        if (l->deletable && confirm_history_cleanup
+    case CK_Clear:
+        if (l->deletable && mc_global.widget.confirm_history_cleanup
             /* TRANSLATORS: no need to translate 'DialogTitle', it's just a context prefix */
             && (query_dialog (Q_ ("DialogTitle|History cleanup"),
                               _("Do you want clean this history?"),
@@ -308,7 +309,7 @@ listbox_key (WListbox * l, int key)
     }
 
     command = keybind_lookup_keymap_command (listbox_map, key);
-    if (command == CK_Ignore_Key)
+    if (command == CK_IgnoreKey)
         return MSG_NOT_HANDLED;
     return listbox_execute_cmd (l, command);
 }
@@ -525,7 +526,7 @@ listbox_new (int y, int x, int height, int width, gboolean deletable, lcback_fn 
     l->deletable = deletable;
     l->callback = callback;
     l->allow_duplicates = TRUE;
-    l->scrollbar = !tty_is_slow ();
+    l->scrollbar = !mc_global.tty.slow_terminal;
     widget_want_hotkey (l->widget, TRUE);
     widget_want_cursor (l->widget, FALSE);
 

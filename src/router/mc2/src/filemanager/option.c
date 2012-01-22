@@ -1,20 +1,24 @@
-/* Configure box module for the Midnight Commander
+/*
+   Configure box module for the Midnight Commander
+
    Copyright (C) 1994, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2009, 2010 Free Software Foundation, Inc.
+   2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file option.c
@@ -103,7 +107,7 @@ void
 configure_box (void)
 {
     int dlg_width = 60;
-    int dlg_height = 20;
+    int dlg_height = 21;
 
     char time_out[BUF_TINY] = "";
     char *time_out_new;
@@ -126,11 +130,11 @@ configure_box (void)
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 11, dlg_height, N_("Sa&fe delete"),
                         &safe_delete),
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 10, dlg_height, N_("Cd follows lin&ks"),
-                        &cd_symlinks),
+                        &mc_global.vfs.cd_symlinks),
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 9, dlg_height, N_("Rotating d&ash"),
                         &nice_rotating_dash),
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 8, dlg_height, N_("Co&mplete: show all"),
-                        &show_all_if_ambiguous),
+                        &mc_global.widget.show_all_if_ambiguous),
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 7, dlg_height, N_("Shell &patterns"),
                         &easy_patterns),
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 6, dlg_height, N_("&Drop down menus"),
@@ -140,28 +144,30 @@ configure_box (void)
                         &use_internal_view),
         QUICK_CHECKBOX (dlg_width / 2 + 2, dlg_width, 3, dlg_height, N_("Use internal edi&t"),
                         &use_internal_edit),
-        QUICK_GROUPBOX (dlg_width / 2, dlg_width, 2, dlg_height, dlg_width / 2 - 4, 15,
+        QUICK_GROUPBOX (dlg_width / 2, dlg_width, 2, dlg_height, dlg_width / 2 - 4, 16,
                         N_("Other options")),
         /* pause options */
-        QUICK_RADIO (5, dlg_width, 13, dlg_height, pause_options_num, pause_options,
+        QUICK_RADIO (5, dlg_width, 14, dlg_height, pause_options_num, pause_options,
                      &pause_after_run),
-        QUICK_GROUPBOX (3, dlg_width, 12, dlg_height, dlg_width / 2 - 4, 5, N_("Pause after run")),
+        QUICK_GROUPBOX (3, dlg_width, 13, dlg_height, dlg_width / 2 - 4, 5, N_("Pause after run")),
 
         /* Esc key mode */
-        QUICK_INPUT (10, dlg_width, 10, dlg_height, (const char *) time_out, 8, 0,
+        QUICK_INPUT (10, dlg_width, 11, dlg_height, (const char *) time_out, 8, 0,
                      MC_HISTORY_ESC_TIMEOUT, &time_out_new),
-        QUICK_LABEL (5, dlg_width, 10, dlg_height, N_("Timeout:")),
-        QUICK_CHECKBOX (5, dlg_width, 9, dlg_height, N_("S&ingle press"), &old_esc_mode),
-        QUICK_GROUPBOX (3, dlg_width, 8, dlg_height, dlg_width / 2 - 4, 4, N_("Esc key mode")),
+        QUICK_LABEL (5, dlg_width, 11, dlg_height, N_("Timeout:")),
+        QUICK_CHECKBOX (5, dlg_width, 10, dlg_height, N_("S&ingle press"), &old_esc_mode),
+        QUICK_GROUPBOX (3, dlg_width, 9, dlg_height, dlg_width / 2 - 4, 4, N_("Esc key mode")),
 
         /* file operation options */
+        QUICK_CHECKBOX (5, dlg_width, 7, dlg_height, N_("Preallocate &space"),
+                        &mc_global.vfs.preallocate_space),
         QUICK_CHECKBOX (5, dlg_width, 6, dlg_height, N_("Mkdi&r autoname"), &auto_fill_mkdir_name),
         QUICK_CHECKBOX (5, dlg_width, 5, dlg_height, N_("Classic pro&gressbar"),
                         &classic_progressbar),
         QUICK_CHECKBOX (5, dlg_width, 4, dlg_height, N_("Compute tota&ls"),
                         &file_op_compute_totals),
         QUICK_CHECKBOX (5, dlg_width, 3, dlg_height, N_("&Verbose operation"), &verbose),
-        QUICK_GROUPBOX (3, dlg_width, 2, dlg_height, dlg_width / 2 - 4, 6,
+        QUICK_GROUPBOX (3, dlg_width, 2, dlg_height, dlg_width / 2 - 4, 7,
                         N_("File operation options")),
         QUICK_END
     };
@@ -190,7 +196,7 @@ configure_box (void)
         case 12:
         case 14:
         case 18:
-        case 23:
+        case 24:
             /* groupboxes */
             quick_widgets[i].u.groupbox.title = _(quick_widgets[i].u.groupbox.title);
             break;
@@ -228,7 +234,7 @@ configure_box (void)
 
     /* checkboxes within groupboxes */
     c_len = 0;
-    for (i = 2; i < 23; i++)
+    for (i = 2; i < 24; i++)
         if ((i < 12) || (i == 17) || (i > 18))
             c_len = max (c_len, str_term_width1 (quick_widgets[i].u.checkbox.text) + 3);
     /* radiobuttons */
@@ -238,7 +244,7 @@ configure_box (void)
     l_len = str_term_width1 (quick_widgets[16].u.label.text);
     c_len = max (c_len, l_len + 1 + 8);
     /* groupboxes */
-    g_len = max (c_len + 2, str_term_width1 (quick_widgets[23].u.groupbox.title) + 4);
+    g_len = max (c_len + 2, str_term_width1 (quick_widgets[24].u.groupbox.title) + 4);
     g_len = max (g_len, str_term_width1 (quick_widgets[18].u.groupbox.title) + 4);
     g_len = max (g_len, str_term_width1 (quick_widgets[14].u.groupbox.title) + 4);
     g_len = max (g_len, str_term_width1 (quick_widgets[12].u.groupbox.title) + 4);
@@ -255,7 +261,7 @@ configure_box (void)
     /* groupboxes */
     quick_widgets[14].u.groupbox.width =
         quick_widgets[18].u.groupbox.width =
-        quick_widgets[23].u.groupbox.width = Quick_input.xlen / 2 - 4;
+        quick_widgets[24].u.groupbox.width = Quick_input.xlen / 2 - 4;
     quick_widgets[12].u.groupbox.width = Quick_input.xlen / 2 - 3;
 
     /* input */
@@ -275,6 +281,11 @@ configure_box (void)
 
     if (!old_esc_mode)
         quick_widgets[15].options = quick_widgets[16].options = W_DISABLED;
+
+#ifndef HAVE_POSIX_FALLOCATE
+    mc_global.vfs.preallocate_space = FALSE;
+    quick_widgets[19].options = W_DISABLED;
+#endif
 
     if (quick_dialog (&Quick_input) == B_ENTER)
         old_esc_mode_timeout = atoi (time_out_new);
@@ -326,26 +337,28 @@ panel_options_box (void)
         QUICK_GROUPBOX (dlg_width / 2, dlg_width, 2, dlg_height, dlg_width / 2 - 4, 5,
                         N_("Navigation")),
         /* main panel options */
-        QUICK_CHECKBOX (5, dlg_width, 11, dlg_height, N_("A&uto save panels setup"),
+        QUICK_CHECKBOX (5, dlg_width, 12, dlg_height, N_("A&uto save panels setup"),
                         &panels_options.auto_save_setup),
-        QUICK_CHECKBOX (5, dlg_width, 10, dlg_height, N_("Simple s&wap"),
+        QUICK_CHECKBOX (5, dlg_width, 11, dlg_height, N_("Simple s&wap"),
                         &simple_swap),
-        QUICK_CHECKBOX (5, dlg_width, 9, dlg_height, N_("Re&verse files only"),
+        QUICK_CHECKBOX (5, dlg_width, 10, dlg_height, N_("Re&verse files only"),
                         &panels_options.reverse_files_only),
-        QUICK_CHECKBOX (5, dlg_width, 8, dlg_height, N_("Ma&rk moves down"),
+        QUICK_CHECKBOX (5, dlg_width, 9, dlg_height, N_("Ma&rk moves down"),
                         &panels_options.mark_moves_down),
-        QUICK_CHECKBOX (5, dlg_width, 7, dlg_height, N_("&Fast dir reload"),
+        QUICK_CHECKBOX (5, dlg_width, 8, dlg_height, N_("&Fast dir reload"),
                         &panels_options.fast_reload),
-        QUICK_CHECKBOX (5, dlg_width, 6, dlg_height, N_("Show &hidden files"),
+        QUICK_CHECKBOX (5, dlg_width, 7, dlg_height, N_("Show &hidden files"),
                         &panels_options.show_dot_files),
-        QUICK_CHECKBOX (5, dlg_width, 5, dlg_height, N_("Show &backup files"),
+        QUICK_CHECKBOX (5, dlg_width, 6, dlg_height, N_("Show &backup files"),
                         &panels_options.show_backups),
-        QUICK_CHECKBOX (5, dlg_width, 4, dlg_height, N_("Mi&x all files"),
+        QUICK_CHECKBOX (5, dlg_width, 5, dlg_height, N_("Mi&x all files"),
                         &panels_options.mix_all_files),
-        QUICK_CHECKBOX (5, dlg_width, 3, dlg_height, N_("Use SI si&ze units"),
+        QUICK_CHECKBOX (5, dlg_width, 4, dlg_height, N_("Use SI si&ze units"),
                         &panels_options.kilobyte_si),
+        QUICK_CHECKBOX (5, dlg_width, 3, dlg_height, N_("Show mi&ni-status"),
+                        &panels_options.show_mini_info),
         QUICK_GROUPBOX (3, dlg_width, 2, dlg_height, dlg_width / 2 - 4, 14,
-                        N_("Main panel options")),
+                        N_("Main options")),
         QUICK_END
     };
 
@@ -381,7 +394,7 @@ panel_options_box (void)
         case 3:
         case 6:
         case 10:
-        case 20:
+        case 21:
             /* groupboxes */
             quick_widgets[i].u.groupbox.title = _(quick_widgets[i].u.groupbox.title);
             break;
@@ -389,7 +402,7 @@ panel_options_box (void)
             /* checkboxes */
             quick_widgets[i].u.checkbox.text = _(quick_widgets[i].u.checkbox.text);
             break;
-    }
+        }
 
     Quick_input.title = _(Quick_input.title);
 #endif /* ENABLE_NLS */
@@ -404,7 +417,7 @@ panel_options_box (void)
 
     /* checkboxes within groupboxes */
     c_len = 0;
-    for (i = 4; i < 20; i++)
+    for (i = 4; i < 21; i++)
         if ((i != 6) && (i != 10))
             c_len = max (c_len, str_term_width1 (quick_widgets[i].u.checkbox.text) + 4);
 
@@ -415,7 +428,7 @@ panel_options_box (void)
     g_len = max (c_len + 2, str_term_width1 (quick_widgets[3].u.groupbox.title) + 4);
     g_len = max (g_len, str_term_width1 (quick_widgets[6].u.groupbox.title) + 4);
     g_len = max (g_len, str_term_width1 (quick_widgets[10].u.groupbox.title) + 4);
-    g_len = max (g_len, str_term_width1 (quick_widgets[20].u.groupbox.title) + 4);
+    g_len = max (g_len, str_term_width1 (quick_widgets[21].u.groupbox.title) + 4);
     /* dialog width */
     Quick_input.xlen = max (dlg_width, g_len * 2 + 9);
     Quick_input.xlen = max (Quick_input.xlen, b_len + 2);
@@ -430,7 +443,7 @@ panel_options_box (void)
     quick_widgets[3].u.groupbox.width =
         quick_widgets[6].u.groupbox.width =
         quick_widgets[10].u.groupbox.width = Quick_input.xlen / 2 - 3;
-    quick_widgets[20].u.groupbox.width = Quick_input.xlen / 2 - 4;
+    quick_widgets[21].u.groupbox.width = Quick_input.xlen / 2 - 4;
 
     /* right column */
     quick_widgets[3].relative_x =

@@ -55,12 +55,22 @@ startup.  See also
 .I \-f, \-\-datadir
 Display the compiled\-in search paths for Midnight Commander files.
 .TP
+.I \-F, \-\-datadir\-info
+Display extended info about compiled\-in paths for
+Midnight Commander.
+.TP
+.I \-\-configure\-options
+Display configure options.
+.TP
 .I \-k, \-\-resetsoft
 Reset softkeys to their default from the termcap/terminfo
 database. Only useful on HP terminals when the function keys don't work.
 .TP
 .I \-K file
 Specify a name of keymap file in the command line.
+.TP
+.I \-\-nokeymap
+Don't load key bindings from any file, use default hardcoded keys.
 .TP
 .I \-l file, \-\-ftplog=file
 Save the ftpfs dialog with the server in file.
@@ -230,7 +240,7 @@ key labels by clicking on them.
 The default auto repeat rate for the mouse buttons is 400
 milliseconds. This may be changed to other values by editing the
 .\"LINK2"
-\&~/.mc/ini
+\&~/.config/mc/ini
 .\"Save Setup"
 file and changing the
 .I mouse_repeat_rate
@@ -314,43 +324,44 @@ the input lines in the query dialogs.
 Hotkey bindings may be read from external file (keymap\-file).
 A keymap\-file is searched on the following algorithm (to the first one found):
 .IP
-.BR
+.br
 1) command line option
-.BR \-K
-.BR \<keymap\>
+.B \-K \<keymap\>
 or
-.BR \-\-keymap=\<keymap\>
-.BR
+.B \-\-keymap=\<keymap\>
+.br
 2) Environment variable
-.BR MC_KEYMAP
-.BR
-3) In config file parameter
-.BR keymap
+.B MC_KEYMAP
+.br
+3) Parameter
+.B keymap
 in section
-.BR [Midnight\-Commander]
-.BR
+.B [Midnight\-Commander]
+of config file.
+.br
 4) File
-.BR ~/.mc/mc.keymap
-.BR
+.B ~/.config/mc/mc.keymap
+.br
 5) File
-.BR @sysconfdir@/mc/mc.keymap
+.B @sysconfdir@/mc/mc.keymap
 .br
 6) File
-.BR @prefix@/share/mc/mc.keymap
+.B @prefix@/share/mc/mc.keymap
 .PP
 Command line option, environment variable and parameter in config file may
 contain the absolute path to the keymap\-file (with the extension \.keymap
 or without it). Search of keymap\-file will occur in (to the first one found):
 .IP
+.br
 1)
-.BR ~/.mc/
-.BR
+.B ~/.config/mc
+.br
 2)
-.BR @sysconfdir@/mc/
-.BR
+.B @sysconfdir@/mc/
+.br
 3)
-.BR @prefix@/share/mc/
-.BR
+.B @prefix@/share/mc/
+
 .\"NODE "  Miscellaneous Keys"
 .SH "  Miscellaneous Keys"
 Here are some keys which don't fall into any of the other categories:
@@ -970,13 +981,7 @@ are always shown in the directory panel.
 .\"NODE "    Reread"
 .SH "    Reread"
 The reread command reload the list of files in the directory. It is
-useful if other processes have created or removed files.  If you
-have panelized file names in a panel this will reload the directory
-contents and remove the panelized information (See the section
-.\"LINK2"
-External panelize
-.\"External panelize"
-for more information).
+useful if other processes have created or removed files.
 .\"NODE "  File Menu"
 .SH "  File Menu"
 The Midnight Commander uses the F1 \- F10 keys as keyboard shortcuts
@@ -1052,12 +1057,13 @@ if the use_internal_edit option is on.
 .PP
 Press F5 to pop up an input dialog to copy the currently selected file (or
 the tagged files, if there is at least one file tagged) to the
-directory/filename you specify in the input dialog.  The destination
-defaults to the directory in the non\-selected panel. During this
-process, you can press C\-c or ESC to abort the operation. For details
-about source mask (which will be usually either * or ^\\(.*\\)$ depending
-on setting of Use shell patterns) and possible wildcards in the destination
-see
+directory/filename you specify in the input dialog. The destination
+defaults to the directory in the non\-selected panel. Space for destination
+file may be preallocated relative to preallocate_space configure option.
+During this process, you can press C\-c or ESC to abort the operation.
+For details about source mask (which will be usually either * or ^\\(.*\\)$
+depending on setting of Use shell patterns) and possible wildcards in the
+destination see
 .\"LINK2"
 Mask copy/rename\&.
 .\"Mask Copy/Rename"
@@ -1393,24 +1399,23 @@ that you can do additional operations on them (view, copy, move,
 delete and so on). After panelizing you can press C\-r to return to the
 normal file listing.
 .PP
-It is possible to have a list of directories that the Find File command
-should skip during the search (for example, you may want to avoid
-searches on a CD\-ROM or on a NFS directory that is mounted across a slow
-link).
-.PP
-Directories to be skipped should be set on the variable
-.B ignore_dirs
-in the
-.B FindFile
-section of your ~/.mc/ini file.
-.PP
-Directory components should be separated with a colon, here is an
-example:
+The 'Enable ignore directories' checkbox and input field below it
+allow to set up the list of directories that should be skip during the search
+files (for example, you may want to avoid searches on a CD\-ROM or on a NFS
+directory that is mounted across a slow link). List components must be separated
+with a colon, here is an example:
 .PP
 .nf
-[FindFile]
-ignore_dirs=/cdrom:/nfs/wuarchive:/afs
+/cdrom:/nfs/wuarchive:/afs
 .fi
+.PP
+Relative paths are supported also. The following example shows how to skip special
+directories of version control systems:
+.nf
+/cdrom:/nfs/wuarchive:/afs:.svn:.git:CVS
+.fi
+.PP
+Attention: input field can contain a dot (.), this means the current absolute path.
 .PP
 You may consider using the
 .\"LINK2"
@@ -1468,7 +1473,7 @@ description.
 .\"NODE "    Extension File Edit"
 .SH "    Extension File Edit"
 This will invoke your editor on the file
-.IR ~/.mc/bindings .
+.IR ~/.config/mc/mc.ext .
 The format of this file following:
 .PP
 All lines starting with # or empty lines are thrown away.
@@ -1561,7 +1566,7 @@ The user menu is a menu of useful actions that can be customized by
 the user. When you access the user menu, the
 file .mc.menu from the current directory is used if it exists,
 but only if it is owned by user or root and is not world\-writable.
-If no such file found, ~/.mc/menu is tried in the same way,
+If no such file found, ~/.config/mc/menu is tried in the same way,
 and otherwise mc uses the default system\-wide menu
 @prefix@/share/mc/mc.menu.
 .PP
@@ -1793,6 +1798,10 @@ When you press F7 to create a new directory, the input line in popup dialog
 will be filled by name of current file or directory in active panel.
 Disabled by default.
 .PP
+.I Preallocate space
+Preallocate space for whole target file, if possible, before copy operation.
+Disabled by default.
+.PP
 .B Esc key mode.
 .PP
 By default the Midnight Commander treats the ESC key as a key prefix.
@@ -1912,7 +1921,7 @@ This option is disabled by default.
 .I Auto save setup.
 If this option is enabled, when you exit the Midnight Commander the
 configurable options of the Midnight Commander are saved in the
-~/.mc/ini file.
+~/.config/mc/ini file.
 .\"NODE "    Layout"
 .SH "    Layout"
 The layout dialog gives you a possibility to change the general layout
@@ -1944,10 +1953,6 @@ on native console only.
 If enabled, main menu of Midnight Commander is always visible on the top row
 of screen above panels. Enabled by default.
 .PP
-.I Show mini\-status.
-If enabled, one line of status information about the currently selected item
-is shown at the bottom of the panels. Enabled by default.
-.PP
 .I Command prompt.
 If enabled, command line is avalable. Enabled by default.
 .PP
@@ -1971,6 +1976,10 @@ at the bottom frame of panel. Enabled by default.
 .\"NODE "    Panel options"
 .SH "    Panel options"
 .B Main panel options
+.PP
+.I Show mini\-status.
+If enabled, one line of status information about the currently selected item
+is shown at the bottom of the panels. Enabled by default.
 .PP
 .I Use SI size units.
 If this option is enabled, Midnight Commander will use SI units (powers of 1000)
@@ -2020,7 +2029,7 @@ format and sort options. Unchecked by default.
 .PP
 .I Auto save panels setup.
 If this option is enabled, when you exit the Midnight Commander the
-current settings of panels are saved in the ~/.mc/panels.ini file.
+current settings of panels are saved in the ~/.config/mc/panels.ini file.
 Disabled by default.
 .PP
 .B Navigation
@@ -2114,7 +2123,7 @@ and wait.
 .PP
 When you finish with all the keys, you can Save them.  The definitions
 for the keys you have redefined will be written into the [terminal:TERM]
-section of your ~/.mc/ini file (where TERM is the name of your current
+section of your ~/.config/mc/ini file (where TERM is the name of your current
 terminal).  The definitions of the keys that were already working properly
 are not saved.
 .\"NODE "    Virtual FS"
@@ -2206,15 +2215,15 @@ firewalls.
 .\"NODE "    Save Setup"
 .SH "    Save Setup"
 At startup the Midnight Commander will try to load initialization
-information from the ~/.mc/ini file. If this file doesn't exist, it will
-load the information from the system\-wide configuration file, located in
-@prefix@/share/mc/mc.ini. If the system\-wide configuration file doesn't
-exist, MC uses the default settings.
+information from the ~/.config/mc/ini file. If this file
+doesn't exist, it will load the information from the system\-wide
+configuration file, located in @prefix@/share/mc/mc.ini. If the 
+system\-wide configuration file doesn't exist, MC uses the default settings.
 .PP
 The
 .I Save Setup
-command creates the ~/.mc/ini file by saving the current settings
-of the
+command creates the ~/.config/mc/ini file by saving the
+current settings of the
 .\"LINK2"
 Left, Right
 .\"Left and Right Menus"
@@ -2414,10 +2423,10 @@ valid until you quit the Midnight Commander.
 If you are using
 .B bash
 you can specify startup
-commands for the subshell in your ~/.mc/bashrc file and
-special keyboard maps in the ~/.mc/inputrc file.
+commands for the subshell in your ~/.local/share/mc/bashrc file and
+special keyboard maps in the ~/.local/share/mc/inputrc file.
 .B tcsh
-users may specify startup commands in the ~/.mc/tcshrc file.
+users may specify startup commands in the ~/.local/share/mc/tcshrc file.
 .PP
 When the subshell code is used, you can suspend applications at any
 time with the sequence C\-o and jump back to the Midnight Commander, if
@@ -2877,9 +2886,6 @@ Refresh the screen.
 .B C\-o
 Switch to the subshell and show the command screen.
 .PP
-.B !
-Like C\-o, but run a new shell if the subshell is not running.
-.PP
 .B "[n] m"
 Set the mark n.
 .PP
@@ -2936,13 +2942,13 @@ keys do what, just consult the appropriate pull\-down menu. Other keys
 are: Shift movement keys do text highlighting.
 .B Ctrl\-Ins
 copies to the file
-.B cooledit.clip
+.B mcedit.clip
 and
 .B Shift\-Ins
-pastes from cooledit.clip.
+pastes from mcedit.clip.
 .B Shift\-Del
 cuts to
-.BR cooledit.clip ,
+.BR mcedit.clip ,
 and
 .B Ctrl\-Del
 deletes highlighted text. Mouse highlighting also works, and you
@@ -2962,8 +2968,8 @@ and then the assigned key. The macro is also executed if
 you press Meta, Ctrl, or Esc and the assigned key, provided that the
 key is not used for any other function. Once defined, the macro
 commands go into the file
-.B .mc/cedit/cooledit.macros
-in your home directory. You can delete a macro by deleting the
+.B ~/.local/share/mc/mcedit/mcedit.macros
+You can delete a macro by deleting the
 appropriate line in this file.
 .PP
 To change charset of displayed text may use M\-e (Alt\-e).
@@ -2980,7 +2986,7 @@ code or another). This is controlled by the
 file
 .B @prefix@/share/mc/edit.indent.rc
 which is copied to
-.B .mc/cedit/edit.indent.rc
+.B ~/.local/share/mc/mcedit/edit.indent.rc
 in your home directory the first time you use it.
 .PP
 The editor also displays non\-us characters (160+). When editing
@@ -3105,7 +3111,7 @@ item in the menu or directly change your current directory using the
 .I cd
 command to a path name that looks like this:
 .PP
-.I /#ftp:[!][user[:pass]@]machine[:port][remote\-dir]
+.I ftp://[!][user[:pass]@]machine[:port][remote\-dir]
 .PP
 The
 .IR user ,
@@ -3130,11 +3136,11 @@ To enable using FTP proxy, prepend
 Examples:
 .PP
 .nf
-    /#ftp:ftp.nuclecu.unam.mx/linux/local
-    /#ftp:tsx\-11.mit.edu/pub/linux/packages
-    /#ftp:!behind.firewall.edu/pub
-    /#ftp:guest@remote\-host.com:40/pub
-    /#ftp:miguel:xxx@server/pub
+    ftp://ftp.nuclecu.unam.mx/linux/local
+    ftp://tsx\-11.mit.edu/pub/linux/packages
+    ftp://!behind.firewall.edu/pub
+    ftp://guest@remote\-host.com:40/pub
+    ftp://miguel:xxx@server/pub
 .fi
 .PP
 Please check the
@@ -3149,7 +3155,7 @@ files and compressed tar files by using the chdir command.  To change
 your directory to a tar file, you change your current directory to the
 tar file by using the following syntax:
 .PP
-.I /filename.tar#utar/[dir\-inside\-tar]
+.I /filename.tar/utar://[dir\-inside\-tar]
 .PP
 The mc.ext file already provides a shortcut for tar files, this means
 that usually you just point to a tar file and press return to enter
@@ -3162,8 +3168,8 @@ section for details on how this is done.
 Examples:
 .PP
 .nf
-    mc\-3.0.tar.gz#utar/mc\-3.0/vfs
-    /ftp/GCC/gcc\-2.7.0.tar#utar
+    mc\-3.0.tar.gz/utar://mc\-3.0/vfs
+    /ftp/GCC/gcc\-2.7.0.tar/utar://
 .fi
 .PP
 The latter specifies the full path of the tar archive.
@@ -3178,7 +3184,7 @@ To connect to a remote machine, you just need to chdir
 into a special directory which name is in the following
 format:
 .PP
-.I /#sh:[user@]machine[:options]/[remote\-dir]
+.I sh://[user@]machine[:options]/[remote\-dir]
 .PP
 The
 .I user,
@@ -3206,10 +3212,10 @@ set to this one.
 Examples:
 .PP
 .nf
-    /#sh:onlyrsh.mx:r/linux/local
-    /#sh:joe@want.compression.edu:C/private
-    /#sh:joe@noncompressed.ssh.edu/private
-    /#sh:joe@somehost.ssh.edu:2222/private
+    sh://onlyrsh.mx:r/linux/local
+    sh://joe@want.compression.edu:C/private
+    sh://joe@noncompressed.ssh.edu/private
+    sh://joe@somehost.ssh.edu:2222/private
 .fi
 .\"NODE "  Undelete File System"
 .SH "  Undelete File System"
@@ -3221,14 +3227,14 @@ retrieve all of the deleted files names on an ext2fs and provides and
 to extract the selected files into a regular partition.
 .PP
 To use this file system, you have to chdir into the special file name
-formed by the "/#undel" prefix and the file name where the actual
+formed by the "undel://" prefix and the file name where the actual
 file system resides.
 .PP
 For example, to recover deleted files on the second partition of the
 first SCSI disk on Linux, you would use the following path name:
 .PP
 .nf
-    /#undel:sda2
+    undel://sda2
 .fi
 .PP
 It may take a while for the undelfs to load the required information
@@ -3242,7 +3248,7 @@ To actually use it, you may try to use the panel command "SMB link..."
 (accessible from the menubar) or you may directly change your current
 directory to it using the cd command to a path name that looks like this:
 .PP
-.I /#smb:[user@]machine[/service][/remote\-dir]
+.I smb://[user@]machine[/service][/remote\-dir]
 .PP
 The
 .IR user ,
@@ -3260,9 +3266,9 @@ can be specified in an input dialog.
 Examples:
 .PP
 .nf
-    /#smb:machine/Share
-    /#smb:other_machine
-    /#smb:guest@machine/Public/Irlex
+    smb://machine/Share
+    smb://other_machine
+    smb://guest@machine/Public/Irlex
 .fi
 .\"NODE "  EXTernal File System"
 .SH "  EXTernal File System"
@@ -3275,7 +3281,7 @@ Extfs filesystems can be divided into two categories:
 1. Stand\-alone filesystems, which are not associated with any existing
 file.  They represent certain system\-wide data as a directory tree.
 You can invoke them by typing
-.RI ' "cd #fsname" '
+.RI ' "cd fsname://" '
 where fsname is an extfs short name (see below).  Examples of such
 filesystems include audio (list audio tracks on the CD) or apt (list of
 all Debian packages in the system).
@@ -3283,7 +3289,7 @@ all Debian packages in the system).
 For example, to list CD\-Audio tracks on your CD\-ROM drive, type
 .PP
 .nf
-  cd #audio
+  cd audio://
 .fi
 .PP
 2. 'Archive' filesystems (like rpm, patchfs and more), which represent
@@ -3291,14 +3297,14 @@ contents of a file as a directory tree.  It can consist of 'real' files
 compressed in an archive (urar, rpm) or virtual files, like messages
 in a mailbox (mailfs) or parts of a patch (patchfs).  To access such
 filesystems
-.RI ' #fsname '
+.RI ' fsname:// '
 should be appended to the archive name.  Note that the archive itself
 can be on another vfs.
 .PP
 For example, to list contents of a zip archive documents.zip type
 .PP
 .nf
-  cd documents.zip#uzip
+  cd documents.zip/uzip://
 .fi
 .PP
 In many aspects, you could treat extfs like any other directory.  For
@@ -3310,57 +3316,57 @@ Common extfs scripts included with Midnight Commander are:
 .TP
 .B a
 access 'A:' DOS/Windows diskette
-.RI ( "cd #a" ).
+.RI ( "cd a://" ).
 .TP
 .B apt
 front end to Debian's APT package management system
-.RI ( "cd #apt" ).
+.RI ( "cd apt://" ).
 .TP
 .B audio
 audio CD ripping and playing
-.RI ( "cd #audio"
+.RI ( "cd audio://"
 or
-.IR "cd device#audio" ).
+.IR "cd device/audio://" ).
 .TP
 .B bpp
 package of Bad Penguin GNU/Linux distribution
-.RI ( "cd file.bpp#bpp" ).
+.RI ( "cd file.bpp/bpp://" ).
 .TP
 .B deb
 package of Debian GNU/Linux distribution
-.RI ( "cd file.deb#deb" ).
+.RI ( "cd file.deb/deb://" ).
 .TP
 .B dpkg
 Debian GNU/Linux installed packages
-.RI ( "cd #deb" ).
+.RI ( "cd deb://" ).
 .TP
 .B hp48
 view and copy files to/from a HP48 calculator
-.RI ( "cd #hp48" ).
+.RI ( "cd hp48://" ).
 .TP
 .B lslR
 browsing of lslR listings as found on many FTPs
-.RI ( "cd filename#lslR" ).
+.RI ( "cd filename/lslR://" ).
 .TP
 .B mailfs
 mbox\-style mailbox files support
-.RI ( "cd mailbox#mailfs" ).
+.RI ( "cd mailbox/mailfs://" ).
 .TP
 .B patchfs
 extfs to handle unified and context diffs
-.RI ( "cd filename#patchfs" ).
+.RI ( "cd filename/patchfs://" ).
 .TP
 .B rpm
 RPM package
-.RI ( "cd filename#rpm" ).
+.RI ( "cd filename/rpm://" ).
 .TP
 .B rpms
 RPM database management
-.RI ( "cd #rpms" ).
+.RI ( "cd rpms://" ).
 .TP
 .B ulha, urar, uzip, uzoo, uar, uha
 archivers
-.RI ( "cd archive#xxxx"
+.RI ( "cd archive/xxxx://"
 where xxxx is one of:
 .IR ulha ,
 .IR urar ,
@@ -3377,7 +3383,7 @@ section.  Here is an example entry for Debian packages:
 .PP
 .nf
   regex/\.deb$
-          Open=%cd %p#deb
+          Open=%cd %p/deb://
 .fi
 .\"NODE "Colors"
 .SH "Colors"
@@ -3427,7 +3433,7 @@ xterm=menu=magenta:marked=,magenta:markselect=,red
 The format for the color definition is:
 .PP
 .nf
-  <keyword>=<foregroundcolor>,<backgroundcolor>:<keyword>= ...
+  <keyword>=<fgcolor>,<bgcolor>,<attributes>:<keyword>=...
 .fi
 .PP
 The colors are optional, and the keywords are: normal, selected, disabled, marked,
@@ -3495,11 +3501,21 @@ The possible colors are: black, gray, red, brightred, green,
 brightgreen, brown, yellow, blue, brightblue, magenta, brightmagenta,
 cyan, brightcyan, lightgray and white. And there is a special keyword
 for transparent background. It is 'default'. The 'default' can only be
-used for background color. Example:
+used for background color. Another special keyword "base" means mc's main
+colors.  When 256 colors are available, they can be specified either as
+color16 to color255, or as rgb000 to rgb555 and gray0 to gray23. Example:
 .PP
 .nf
 [Colors]
 base_color=normal=white,default:marked=magenta,default
+.fi
+.PP
+Attributes can be any of bold, underline, reverse and blink, appended by a
+plus sign if more than one are desired.  The special word "none" means no
+attributes, without attempting to fall back to base_color.  Example:
+.PP
+.nf
+menuhotsel=yellow;black;bold+underline
 .fi
 
 .\"NODE "Skins"
@@ -3512,6 +3528,10 @@ with the assignment of colors, as described in Section
 Colors\&.
 .\"Colors"
 .PP
+If your skin contains any of 256\-color definitions, you should define
+the '256colors' key set to TRUE value in [skin] section.
+
+.PP
 A skin\-file is searched on the following algorithm (to the first one found):
 .IP
 .br
@@ -3523,10 +3543,11 @@ or
 2) Environment variable
 .B MC_SKIN
 .br
-3) In config file parameter
+3) Parameter
 .B skin
 in section
 .B [Midnight\-Commander]
+in config file.
 .br
 4) File
 .B @sysconfdir@/mc/skins/default.ini
@@ -3540,7 +3561,7 @@ contain the absolute path to the skin\-file (with the extension \.ini
 or without it). Search of skin\-file will occur in (to the first one found):
 .IP
 1)
-.B ~/.mc/skins/
+.B ~/.local/share/mc/skins/
 .br
 2)
 .B @sysconfdir@/mc/skins/
@@ -3741,11 +3762,12 @@ attribute
 .SH "  Color pair definitions"
 Any parameter in skin\-file contain definition of color pair.
 .PP
-Color pairs described as two colors separated by ';'. First color
-sets the foreground color, second color sets background color.
-One of the colors may be omitted, in this case color will be
-taken from default color pair (global color pair  or
-from default color pair of this section).
+Color pairs described as two colors and the optional attributes
+separated by ';'. First field sets the foreground color, second
+field sets background color, third field sets the attributes.
+Any of the fields may be omitted, in this case value will be
+taken from default color pair (global color pair or from default
+color pair of this section).
 .PP
 Example:
 .br
@@ -3753,14 +3775,15 @@ Example:
 [core]
     # green on black
     _default_=green;black
-    # green (default)  on blue
+    # green (default) on blue
     selected=;blue
     # yellow on black (default)
-    marked=yellow;
+    # underlined yellow on black (default)
+    marked=yellow;;underline
 .fi
 
 .PP
-Possible colors (names) described in
+Possible colors (names) and attributes are described in
 .\"LINK2"
 Colors\&.
 .\"Colors"
@@ -3847,7 +3870,7 @@ Skins
 section.
 .PP
 Rules of filenames highlight are placed in @prefix@/share/mc/filehighlight.ini file
-(~/.mc/filehighlight.ini).
+(~/.config/mc/filehighlight.ini).
 Name of section in this file must be equal to parameters names in
 [filehighlight] section (in current skin\-file).
 .PP
@@ -3892,12 +3915,12 @@ Most of the Midnight Commander settings can be changed from the
 menus. However, there are a small number of settings which can only be
 changed by editing the setup file.
 .PP
-These variables may be set in your ~/.mc/ini file:
+These variables may be set in your ~/.config/mc/ini file:
 .TP
 .I clear_before_exec
 By default the Midnight Commander clears the screen before executing a
 command.  If you would prefer to see the output of the command at the
-bottom of the screen, edit your ~/.mc/ini file and change the value of
+bottom of the screen, edit your ~/.config/mc/ini file and change the value of
 the field clear_before_exec to 0.
 .TP
 .I confirm_view_dir
@@ -4014,8 +4037,9 @@ autodetect_codeset=russian
 The Midnight Commander provides a way to fix your system terminal
 database without requiring root privileges.  The Midnight Commander
 searches in the system initialization file (the mc.lib file located in
-the Midnight Commander library directory) and in the ~/.mc/ini file for
-the section "terminal:your\-terminal\-name" and then for the section
+the Midnight Commander library directory) and in the 
+~/.config/mc/ini file for the section 
+"terminal:your\-terminal\-name" and then for the section
 "terminal:general", each line of the section contains a key symbol that
 you want to define, followed by an equal sign and the definition for the
 key.  You can use the special \\e form to represent the escape character
@@ -4082,7 +4106,7 @@ The help file for the program.
 .IP
 The default system\-wide extensions file.
 .PP
-.I ~/.mc/bindings
+.I ~/.config/mc/mc.ext
 .IP
 User's own extension, view configuration and edit configuration
 file.  They override the contents of the system wide files if present.
@@ -4090,18 +4114,18 @@ file.  They override the contents of the system wide files if present.
 .I @prefix@/share/mc/mc.ini
 .IP
 The default system\-wide setup for the Midnight Commander, used only if
-the user doesn't have his own ~/.mc/ini file.
+the user doesn't have his own ~/.config/mc/ini file.
 .PP
 .I @prefix@/share/mc/mc.lib
 .IP
 Global settings for the Midnight Commander.  Settings in this file
-affect all users, whether they have ~/.mc/ini or not.  Currently, only
+affect all users, whether they have ~/.config/mc/ini or not.  Currently, only
 .\"LINK2"
 terminal settings
 .\"Terminal databases"
 are loaded from mc.lib.
 .PP
-.I ~/.mc/ini
+.I ~/.config/mc/ini
 .IP
 User's own setup. If this file is present then the setup is loaded
 from here instead of the system\-wide startup file.
@@ -4114,16 +4138,16 @@ This file contains the hints displayed by the program.
 .IP
 This file contains the default system\-wide applications menu.
 .PP
-.I ~/.mc/menu
+.I ~/.config/mc/menu
 .IP
 User's own application menu. If this file is present it is used instead
 of the system\-wide applications menu.
 .PP
-.I ~/.mc/Tree
+.I ~/.cache/mc/Tree
 .IP
 The directory list for the directory tree and tree view features.
 .PP
-.I ./.mc.menu
+.I ~/.local/share/mc.menu
 .IP
 Local user\-defined menu. If this file is present, it is used instead of
 the home or system\-wide applications menu.
