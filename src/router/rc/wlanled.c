@@ -303,6 +303,17 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to connect to nl80211\n");
 		return 1;
 	}
+	switch (fork()) {
+	case -1:
+		fprintf(stderr, "can't fork\n");
+		exit(0);
+		break;
+	case 0:
+		(void)setsid();
+	break;
+	default:
+		_exit(0);
+	}
 
 	setup_sigint();
 	run_loop();
