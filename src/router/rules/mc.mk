@@ -13,7 +13,7 @@ mc-configure: ncurses
 		--enable-debug=no 
 	make -C mc2/slang
 
-	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/mc2/slang/src" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -L$(TOP)/glib20/libglib/glib/.libs -lncurses" \
+	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/mc2/slang/src" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -L$(TOP)/glib20/libglib/glib/.libs -lncurses" \
 	--with-included-gettext \
 	--with-ncurses \
 	--without-sco \
