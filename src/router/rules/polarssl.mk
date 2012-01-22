@@ -6,9 +6,12 @@ PKG_INSTALL:=1
 MAKE_FLAGS+=VERBOSE=1
 
 CMAKE_OPTIONS += \
-	-DCMAKE_BUILD_TYPE:String="Release" 
+	-DCMAKE_BUILD_TYPE:String="Release" \
+	-DPKCS11_HELPER_DIR:String="$(TOP)/pkcs11-helper" 
 
 polarssl-configure: 
+	cd $(TOP)/pkcs11-helper && ./configure --host=$(ARCH)-linux --disable-crypto-engine-openssl  --disable-crypto-engine-gnutls --disable-crypto-engine-nss --disable-openssl --disable-shared --enable-static  CFLAGS="$(COPTS) -I$(TOP)/polarssl/include"
+	make -C pkcs11-helper
 	rm -f $(PKG_BUILD_DIR)/CMakeCache.txt
 	(cd $(PKG_BUILD_DIR); \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/$(POLAR_SSL_PATH)/include -DNEED_PRINTF" \
@@ -40,6 +43,7 @@ polarssl:
 	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so
 	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1
 	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1.1.0
+	-rm -f $(POLAR_SSL_PATH)/library/libpolarssl.so.1.0.0
 
 polarssl-clean:
 	$(MAKE) -C $(POLAR_SSL_PATH) clean 

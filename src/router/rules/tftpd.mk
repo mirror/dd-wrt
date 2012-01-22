@@ -4,5 +4,5 @@ tftpd tftpd-clean tftpd-distclean:
 
 tftpd-install:
 	install -D tftpd/tftpd $(INSTALLDIR)/tftpd/usr/sbin/tftpd
-	$(STRIP) $(INSTALLDIR)/tftpd/usr/sbin/tftpd
+#	$(STRIP) $(INSTALLDIR)/tftpd/usr/sbin/tftpd
 

@@ -4,6 +4,8 @@ SSLPATH=$(TOP)/polarssl
 SSL_LIB_PATH=$(SSLPATH)/library
 SSL_TYPE=polarssl
 SSL_DEP=polarssl
+SSL_ADDOPT=--with-pkcs11-helper-headers=$(TOP)/pkcs11-helper/include \
+	   --with-pkcs11-helper-lib=$(TOP)/pkcs11-helper/lib/.libs
 else
 OVPN=openvpn
 SSLPATH=$(TOP)/openssl
@@ -28,7 +30,8 @@ CONFIGURE_ARGS += \
 	--with-ssl-headers=$(SSLPATH)/include \
 	--with-ssl-lib=$(SSL_LIB_PATH) \
 	--with-ssl-type=$(SSL_TYPE) \
-	CFLAGS="$(COPTS)" \
+	$(SSL_ADDOPT) \
+	CFLAGS="$(COPTS) -DNEED_PRINTF" \
 	LDFLAGS="-L../$(SSL_LIB_PATH) -L../lzo -L../lzo/src/.libs -ldl" \
 	ac_cv_func_epoll_create=yes
 
