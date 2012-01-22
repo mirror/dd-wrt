@@ -1,20 +1,25 @@
-/* User Menu implementation
+/*
+   User Menu implementation
+
    Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2006, 2007 Free Software Foundation, Inc.
+   2006, 2007, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file usermenu.c
  *  \brief Source: user menu implementation
@@ -32,7 +37,7 @@
 #include "lib/tty/tty.h"
 #include "lib/skin.h"
 #include "lib/search.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
 #include "lib/widget.h"
@@ -404,7 +409,7 @@ test_line (WEdit * edit_widget, char *p, int *result)
 /** FIXME: recode this routine on version 3.0, it could be cleaner */
 
 static void
-execute_menu_command (WEdit * edit_widget, const char *commands)
+execute_menu_command (WEdit * edit_widget, const char *commands, gboolean show_prompt)
 {
     FILE *cmd_file;
     int cmd_file_fd;
@@ -534,7 +539,15 @@ execute_menu_command (WEdit * edit_widget, const char *commands)
         /* execute the command indirectly to allow execution even
          * on no-exec filesystems. */
         char *cmd = g_strconcat ("/bin/sh ", file_name, (char *) NULL);
-        shell_execute (cmd, EXECUTE_HIDE);
+        if (!show_prompt)
+        {
+            if (system (cmd) == -1)
+                message (D_ERROR, MSG_ERROR, "%s", _("Error calling program"));
+        }
+        else
+        {
+            shell_execute (cmd, EXECUTE_HIDE);
+        }
         g_free (cmd);
     }
     unlink (file_name);
@@ -714,7 +727,7 @@ expand_format (struct WEdit *edit_widget, char c, gboolean do_quote)
     if (c == '%')
         return g_strdup ("%");
 
-    if (mc_run_mode == MC_RUN_FULL)
+    if (mc_global.mc_run_mode == MC_RUN_FULL)
     {
         if (g_ascii_islower ((gchar) c))
             panel = current_panel;
@@ -727,7 +740,7 @@ expand_format (struct WEdit *edit_widget, char c, gboolean do_quote)
         fname = panel->dir.list[panel->selected].fname;
     }
 #ifdef USE_INTERNAL_EDIT
-    else if (mc_run_mode == MC_RUN_EDITOR)
+    else if (mc_global.mc_run_mode == MC_RUN_EDITOR)
         fname = (char *) edit_get_file_name (edit_widget);
 #endif
 
@@ -785,7 +798,7 @@ expand_format (struct WEdit *edit_widget, char c, gboolean do_quote)
 #ifdef USE_INTERNAL_EDIT
             if (edit_widget)
             {
-                char *file = concat_dir_and_file (home_dir, EDIT_BLOCK_FILE);
+                char *file = mc_config_get_full_path (EDIT_BLOCK_FILE);
                 fname = (*quote_func) (file, 0);
                 g_free (file);
                 return fname;
@@ -850,8 +863,8 @@ expand_format (struct WEdit *edit_widget, char c, gboolean do_quote)
  * otherwise we are called from the mcedit menu.
  */
 
-void
-user_menu_cmd (struct WEdit *edit_widget)
+gboolean
+user_menu_cmd (struct WEdit * edit_widget, const char *menu_file, int selected_entry)
 {
     char *p;
     char *data, **entries;
@@ -859,32 +872,54 @@ user_menu_cmd (struct WEdit *edit_widget)
     int col, i, accept_entry = 1;
     int selected, old_patterns;
     Listbox *listbox;
+    gboolean res = FALSE;
+    gboolean interactive = TRUE;
 
     if (!vfs_current_is_local ())
     {
         message (D_ERROR, MSG_ERROR, "%s", _("Cannot execute commands on non-local filesystems"));
-        return;
+        return FALSE;
     }
-
-    menu = g_strdup (edit_widget ? EDIT_LOCAL_MENU : MC_LOCAL_MENU);
+    if (menu_file != NULL)
+        menu = g_strdup (menu_file);
+    else
+        menu = g_strdup (edit_widget ? EDIT_LOCAL_MENU : MC_LOCAL_MENU);
     if (!exist_file (menu) || !menu_file_own (menu))
     {
+        if (menu_file != NULL)
+        {
+            message (D_ERROR, MSG_ERROR, _("Cannot open file%s\n%s"), menu,
+                     unix_error_string (errno));
+            g_free (menu);
+            menu = NULL;
+            return FALSE;
+        }
+
         g_free (menu);
         if (edit_widget)
-            menu = concat_dir_and_file (home_dir, EDIT_HOME_MENU);
+            menu = mc_config_get_full_path (EDIT_HOME_MENU);
         else
-            menu = g_build_filename (home_dir, MC_USERCONF_DIR, MC_USERMENU_FILE, NULL);
+            menu = mc_config_get_full_path (MC_USERMENU_FILE);
 
 
         if (!exist_file (menu))
         {
             g_free (menu);
-            menu = concat_dir_and_file (mc_home, edit_widget ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU);
+            menu =
+                concat_dir_and_file (mc_config_get_home_dir (),
+                                     edit_widget ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU);
             if (!exist_file (menu))
             {
                 g_free (menu);
-                menu = concat_dir_and_file
-                    (mc_home_alt, edit_widget ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU);
+                menu =
+                    concat_dir_and_file (mc_global.sysconfig_dir,
+                                         edit_widget ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU);
+                if (!exist_file (menu))
+                {
+                    g_free (menu);
+                    menu = concat_dir_and_file
+                        (mc_global.share_data_dir, edit_widget ? EDIT_GLOBAL_MENU : MC_GLOBAL_MENU);
+                }
             }
         }
     }
@@ -894,7 +929,7 @@ user_menu_cmd (struct WEdit *edit_widget)
         message (D_ERROR, MSG_ERROR, _("Cannot open file%s\n%s"), menu, unix_error_string (errno));
         g_free (menu);
         menu = NULL;
-        return;
+        return FALSE;
     }
 
     max_cols = 0;
@@ -926,6 +961,9 @@ user_menu_cmd (struct WEdit *edit_widget)
         {
             if (*p == '#')
             {
+                /* show prompt if first line of external script is #interactive */
+                if (selected_entry >= 0 && strncmp (p, "#silent", 7) == 0)
+                    interactive = FALSE;
                 /* A commented menu entry */
                 accept_entry = 1;
             }
@@ -990,27 +1028,38 @@ user_menu_cmd (struct WEdit *edit_widget)
     }
 
     if (menu_lines == 0)
+    {
         message (D_ERROR, MSG_ERROR, _("No suitable entries found in %s"), menu);
+        res = FALSE;
+    }
     else
     {
-        max_cols = min (max (max_cols, col), MAX_ENTRY_LEN);
-
-        /* Create listbox */
-        listbox = create_listbox_window (menu_lines, max_cols + 2, _("User menu"),
-                                         "[Menu File Edit]");
-        /* insert all the items found */
-        for (i = 0; i < menu_lines; i++)
+        if (selected_entry >= 0)
+            selected = selected_entry;
+        else
         {
-            p = entries[i];
-            LISTBOX_APPEND_TEXT (listbox, (unsigned char) p[0],
-                                 extract_line (p, p + MAX_ENTRY_LEN), p);
-        }
-        /* Select the default entry */
-        listbox_select_entry (listbox->list, selected);
+            max_cols = min (max (max_cols, col), MAX_ENTRY_LEN);
 
-        selected = run_listbox (listbox);
+            /* Create listbox */
+            listbox = create_listbox_window (menu_lines, max_cols + 2, _("User menu"),
+                                             "[Menu File Edit]");
+            /* insert all the items found */
+            for (i = 0; i < menu_lines; i++)
+            {
+                p = entries[i];
+                LISTBOX_APPEND_TEXT (listbox, (unsigned char) p[0],
+                                     extract_line (p, p + MAX_ENTRY_LEN), p);
+            }
+            /* Select the default entry */
+            listbox_select_entry (listbox->list, selected);
+
+            selected = run_listbox (listbox);
+        }
         if (selected >= 0)
-            execute_menu_command (edit_widget, entries[selected]);
+        {
+            execute_menu_command (edit_widget, entries[selected], interactive);
+            res = TRUE;
+        }
 
         do_refresh ();
     }
@@ -1020,6 +1069,7 @@ user_menu_cmd (struct WEdit *edit_widget)
     menu = NULL;
     g_free (entries);
     g_free (data);
+    return res;
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -1,30 +1,34 @@
-/* Directory hotlist -- for the Midnight Commander
+/*
+   Directory hotlist -- for the Midnight Commander
+
    Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+   2003, 2004, 2005, 2006, 2007, 2008, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
-   1994 Radek Doulik
-   1995 Janne Kukonlehto
-   1996 Andrej Borsenkow
-   1997 Norbert Warmuth
+   Radek Doulik, 1994
+   Janne Kukonlehto, 1995
+   Andrej Borsenkow, 1996
+   Norbert Warmuth, 1997
 
    Janne did the original Hotlist code, Andrej made the groupable
    hotlist; the move hotlist and revamped the file format and made
    it stronger.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file hotlist.c
@@ -48,7 +52,7 @@
 #include "lib/mcconfig.h"       /* Load/save directories hotlist */
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/util.h"
 #include "lib/widget.h"
 
@@ -56,7 +60,6 @@
 #include "src/history.h"
 
 #include "midnight.h"           /* current_panel */
-#include "layout.h"             /* repaint_screen() */
 #include "command.h"            /* cmdline */
 
 #include "hotlist.h"
@@ -506,7 +509,7 @@ hotlist_button_callback (WButton * button, int action)
 
     case B_REFRESH_VFS:
         listbox_remove_list (l_hotlist);
-        listbox_add_item (l_hotlist, LISTBOX_APPEND_AT_END, 0, home_dir, 0);
+        listbox_add_item (l_hotlist, LISTBOX_APPEND_AT_END, 0, mc_config_get_home_dir (), 0);
         vfs_fill_names (add_name_to_list);
         return MSG_NOT_HANDLED;
 #endif /* ENABLE_VFS */
@@ -814,7 +817,7 @@ init_hotlist (int list_type)
 #ifdef ENABLE_VFS
     if (list_type == LIST_VFSLIST)
     {
-        listbox_add_item (l_hotlist, LISTBOX_APPEND_AT_END, 0, home_dir, 0);
+        listbox_add_item (l_hotlist, LISTBOX_APPEND_AT_END, 0, mc_config_get_home_dir (), 0);
         vfs_fill_names (add_name_to_list);
     }
     else
@@ -1430,13 +1433,18 @@ hot_load_group (struct hotlist *grp)
             current_group = grp;
             break;
         case TKN_ENTRY:
-            CHECK_TOKEN (TKN_STRING);
-            label = g_strdup (tkn_buf->str);
-            CHECK_TOKEN (TKN_URL);
-            CHECK_TOKEN (TKN_STRING);
-            url = g_strdup (tkn_buf->str);
-            add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
-            SKIP_TO_EOL;
+            {
+                vfs_path_t *vpath;
+                CHECK_TOKEN (TKN_STRING);
+                label = g_strdup (tkn_buf->str);
+                CHECK_TOKEN (TKN_URL);
+                CHECK_TOKEN (TKN_STRING);
+                vpath = vfs_path_from_str_flags (tkn_buf->str, VPF_USE_DEPRECATED_PARSER);
+                url = vfs_path_to_str (vpath);
+                vfs_path_free (vpath);
+                add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
+                SKIP_TO_EOL;
+            }
             break;
         case TKN_COMMENT:
             label = g_strdup (tkn_buf->str);
@@ -1482,13 +1490,18 @@ hot_load_file (struct hotlist *grp)
             current_group = grp;
             break;
         case TKN_ENTRY:
-            CHECK_TOKEN (TKN_STRING);
-            label = g_strdup (tkn_buf->str);
-            CHECK_TOKEN (TKN_URL);
-            CHECK_TOKEN (TKN_STRING);
-            url = g_strdup (tkn_buf->str);
-            add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
-            SKIP_TO_EOL;
+            {
+                vfs_path_t *vpath;
+                CHECK_TOKEN (TKN_STRING);
+                label = g_strdup (tkn_buf->str);
+                CHECK_TOKEN (TKN_URL);
+                CHECK_TOKEN (TKN_STRING);
+                vpath = vfs_path_from_str_flags (tkn_buf->str, VPF_USE_DEPRECATED_PARSER);
+                url = vfs_path_to_str (vpath);
+                vfs_path_free (vpath);
+                add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
+                SKIP_TO_EOL;
+            }
             break;
         case TKN_COMMENT:
             label = g_strdup (tkn_buf->str);
@@ -1551,7 +1564,7 @@ load_hotlist (void)
     }
 
     if (!hotlist_file_name)
-        hotlist_file_name = g_build_filename (home_dir, MC_USERCONF_DIR, MC_HOTLIST_FILE, NULL);
+        hotlist_file_name = mc_config_get_full_path (MC_HOTLIST_FILE);
 
     hotlist = new_hotlist ();
     hotlist->type = HL_TYPE_GROUP;
@@ -1580,7 +1593,7 @@ load_hotlist (void)
         else
             message (D_ERROR, _("Hotlist Load"),
                      _
-                     ("MC was unable to write ~/%s file,\nyour old hotlist entries were not deleted"),
+                     ("MC was unable to write %s file,\nyour old hotlist entries were not deleted"),
                      MC_USERCONF_DIR PATH_SEP_STR MC_HOTLIST_FILE);
     }
     else
@@ -1707,7 +1720,7 @@ add2hotlist_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-hotlist_cmd (int vfs_or_hotlist)
+hotlist_show (int vfs_or_hotlist)
 {
     char *target = NULL;
 

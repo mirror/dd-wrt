@@ -6,6 +6,8 @@
 #ifndef MC__WIDGET_INPUT_H
 #define MC__WIDGET_INPUT_H
 
+#include "lib/keybind.h"        /* global_keymap_t */
+
 /*** typedefs(not structures) and defined constants **********************************************/
 
 /* For history load-save functions */
@@ -44,22 +46,24 @@ typedef int input_colors_t[WINPUTC_COUNT_COLORS];
 typedef struct
 {
     Widget widget;
+    input_colors_t color;
     int point;                  /* cursor position in the input line in characters */
     int mark;                   /* the mark position in characters */
     gboolean highlight;         /* there is a selected block */
     int term_first_shown;       /* column of the first shown character */
     size_t current_max_size;    /* maximum length of input line (bytes) */
     int field_width;            /* width of the editing field */
-    input_colors_t color;
     gboolean first;             /* is first keystroke? */
     int disable_update;         /* do we want to skip updates? */
     gboolean is_password;       /* is this a password input line? */
+    char *init_text;            /* initial text of input line */
     char *buffer;               /* pointer to editing buffer */
+    char *history_name;         /* name of history for loading and saving */
     GList *history;             /* the history */
+    gboolean history_changed;   /* the history has changed */
     gboolean need_push;         /* need to push the current Input on hist? */
     char **completions;         /* possible completions array */
     input_complete_t completion_flags;
-    char *history_name;         /* name of history for loading and saving */
     char charbuf[MB_LEN_MAX];   /* buffer for multibytes characters */
     size_t charpoint;           /* point to end of mulibyte sequence in charbuf */
 } WInput;
@@ -67,6 +71,8 @@ typedef struct
 /*** global variables defined in .c file *********************************************************/
 
 extern int quote;
+
+extern const global_keymap_t *input_map;
 
 /*** declarations of public functions ************************************************************/
 
@@ -87,9 +93,6 @@ void input_enable_update (WInput * in);
 void input_disable_update (WInput * in);
 void input_clean (WInput * in);
 void input_free_completions (WInput * in);
-
-/* src/complete.c */
-void complete (WInput * in);
 
 /*** inline functions ****************************************************************************/
 

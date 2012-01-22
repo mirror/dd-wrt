@@ -1,26 +1,35 @@
-/* Various utilities
+/*
+   Various utilities
+
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2007, 2009 Free Software Foundation, Inc.
-   Written 1994, 1995, 1996 by:
-   Miguel de Icaza, Janne Kukonlehto, Dugan Porter,
-   Jakub Jelinek, Mauricio Plaza.
+   2004, 2005, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
+
+   Written by:
+   Miguel de Icaza, 1994, 1995, 1996
+   Janne Kukonlehto, 1994, 1995, 1996
+   Dugan Porter, 1994, 1995, 1996
+   Jakub Jelinek, 1994, 1995, 1996
+   Mauricio Plaza, 1994, 1995, 1996
 
    The file_date routine is mostly from GNU's fileutils package,
    written by Richard Stallman and David MacKenzie.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file
  *  \brief Source: various utilities
@@ -41,16 +50,11 @@
 #include <unistd.h>
 
 #include "lib/global.h"
-#include "lib/tty/win.h"        /* xterm_flag */
 #include "lib/mcconfig.h"
 #include "lib/fileloc.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
-
-#include "src/filemanager/filegui.h"
-#include "src/filemanager/file.h"       /* copy_file_file() */
-#include "src/main.h"           /* home_dir, eight_bit_clean */
 
 /*** global variables ****************************************************************************/
 
@@ -97,7 +101,7 @@ static inline int
 is_8bit_printable (unsigned char c)
 {
     /* "Full 8 bits output" doesn't work on xterm */
-    if (xterm_flag)
+    if (mc_global.tty.xterm_flag)
         return is_iso_printable (c);
 
     return (c > 31 && c != 127 && c != 155);
@@ -221,10 +225,10 @@ is_printable (int c)
        by setting the output codepage */
     return is_8bit_printable (c);
 #else
-    if (!eight_bit_clean)
+    if (!mc_global.eight_bit_clean)
         return is_7bit_printable (c);
 
-    if (full_eight_bits)
+    if (mc_global.full_eight_bits)
     {
         return is_8bit_printable (c);
     }
@@ -399,6 +403,7 @@ void
 size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gboolean use_si)
 {
     /* Avoid taking power for every file.  */
+    /* *INDENT-OFF* */
     static const uintmax_t power10[] = {
     /* we hope that size of uintmax_t is 4 bytes at least */
         1ULL,
@@ -431,10 +436,10 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
      */
 #endif
     };
+    /* *INDENT-ON* */
     static const char *const suffix[] = { "", "K", "M", "G", "T", "P", "E", "Z", "Y", NULL };
     static const char *const suffix_lc[] = { "", "k", "m", "g", "t", "p", "e", "z", "y", NULL };
     int j = 0;
-    int size_remain;
 
     if (len == 0)
         len = 9;
@@ -456,6 +461,8 @@ size_trunc_len (char *buffer, unsigned int len, uintmax_t size, int units, gbool
     if (use_si)
         for (j = 0; j < units; j++)
         {
+            uintmax_t size_remain;
+
             size_remain = ((size % 125) * 1024) / 1000; /* size mod 125, recalculated */
             size = size / 125;  /* 128/125 = 1024/1000 */
             size = size * 128;  /* This will convert size from multiple of 1024 to multiple of 1000 */
@@ -629,8 +636,8 @@ strip_home_and_password (const char *dir)
     size_t len;
     static char newdir[MC_MAXPATHLEN];
 
-    len = strlen (home_dir);
-    if (home_dir != NULL && strncmp (dir, home_dir, len) == 0 &&
+    len = strlen (mc_config_get_home_dir ());
+    if (mc_config_get_home_dir () != NULL && strncmp (dir, mc_config_get_home_dir (), len) == 0 &&
         (dir[len] == PATH_SEP || dir[len] == '\0'))
     {
         newdir[0] = '~';
@@ -652,30 +659,6 @@ extension (const char *filename)
 {
     const char *d = strrchr (filename, '.');
     return (d != NULL) ? d + 1 : "";
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-int
-check_for_default (const char *default_file, const char *file)
-{
-    if (!exist_file (file))
-    {
-        FileOpContext *ctx;
-        FileOpTotalContext *tctx;
-
-        if (!exist_file (default_file))
-            return -1;
-
-        ctx = file_op_context_new (OP_COPY);
-        tctx = file_op_total_context_new ();
-        file_op_context_create_ui (ctx, 0, FALSE);
-        copy_file_file (tctx, ctx, default_file, file);
-        file_op_total_context_destroy (tctx);
-        file_op_context_destroy (ctx);
-    }
-
-    return 0;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -741,8 +724,29 @@ extract_line (const char *s, const char *top)
 const char *
 x_basename (const char *s)
 {
-    const char *where;
-    return ((where = strrchr (s, PATH_SEP))) ? where + 1 : s;
+    const char *url_delim, *path_sep;
+
+    url_delim = g_strrstr (s, VFS_PATH_URL_DELIMITER);
+    path_sep = strrchr (s, PATH_SEP);
+
+    if (url_delim == NULL
+        || url_delim < path_sep - strlen (VFS_PATH_URL_DELIMITER)
+        || url_delim - s + strlen (VFS_PATH_URL_DELIMITER) < strlen (s))
+    {
+        /* avoid trailing PATH_SEP, if present */
+        if (s[strlen (s) - 1] == PATH_SEP)
+        {
+            while (--path_sep > s && *path_sep != PATH_SEP);
+            return (path_sep != s) ? path_sep + 1 : s;
+        }
+        else
+            return (path_sep != NULL) ? path_sep + 1 : s;
+    }
+
+    while (--url_delim > s && *url_delim != PATH_SEP);
+    while (--url_delim > s && *url_delim != PATH_SEP);
+
+    return (url_delim == s) ? s : url_delim + 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -963,15 +967,15 @@ decompress_extension (int type)
     switch (type)
     {
     case COMPRESSION_GZIP:
-        return "#ugz";
+        return "/ugz" VFS_PATH_URL_DELIMITER;
     case COMPRESSION_BZIP:
-        return "#ubz";
+        return "/ubz" VFS_PATH_URL_DELIMITER;
     case COMPRESSION_BZIP2:
-        return "#ubz2";
+        return "/ubz2" VFS_PATH_URL_DELIMITER;
     case COMPRESSION_LZMA:
-        return "#ulzma";
+        return "/ulzma" VFS_PATH_URL_DELIMITER;
     case COMPRESSION_XZ:
-        return "#uxz";
+        return "/uxz" VFS_PATH_URL_DELIMITER;
     }
     /* Should never reach this place */
     fprintf (stderr, "Fatal: decompress_extension called with an unknown argument\n");
@@ -1273,7 +1277,7 @@ load_file_position (const char *filename, long *line, long *column, off_t * offs
     *offset = 0;
 
     /* open file with positions */
-    fn = g_build_filename (home_dir, MC_USERCONF_DIR, MC_FILEPOS_FILE, NULL);
+    fn = mc_config_get_full_path (MC_FILEPOS_FILE);
     f = fopen (fn, "r");
     g_free (fn);
     if (f == NULL)
@@ -1363,7 +1367,7 @@ save_file_position (const char *filename, long line, long column, off_t offset, 
         filepos_max_saved_entries = mc_config_get_int (mc_main_config, CONFIG_APP_SECTION,
                                                        "filepos_max_saved_entries", 1024);
 
-    fn = g_build_filename (home_dir, MC_USERCONF_DIR, MC_FILEPOS_FILE, NULL);
+    fn = mc_config_get_full_path (MC_FILEPOS_FILE);
     if (fn == NULL)
         goto early_error;
 

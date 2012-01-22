@@ -3,36 +3,35 @@
    Callback function for some actions (hotkeys, menu)
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1994, 1995, 1998 Miguel de Icaza
-   1994, 1995 Janne Kukonlehto
-   1995 Jakub Jelinek
-   1996 Joseph M. Hinkle
-   1997 Norbert Warmuth
-   1998 Pavel Machek
-   2004 Roland Illig <roland.illig@gmx.de>
-   2005 Roland Illig <roland.illig@gmx.de>
-   2009 Slava Zanko <slavazanko@google.com>
-   2009 Andrew Borodin <aborodin@vmail.ru>
-   2009 Ilia Maslakov <il.smind@gmail.com>
+   Written by:
+   Miguel de Icaza, 1994, 1995, 1998
+   Janne Kukonlehto, 1994, 1995
+   Jakub Jelinek, 1995
+   Joseph M. Hinkle, 1996
+   Norbert Warmuth, 1997
+   Pavel Machek, 1998
+   Roland Illig <roland.illig@gmx.de>, 2004, 2005
+   Slava Zanko <slavazanko@google.com>, 2009
+   Andrew Borodin <aborodin@vmail.ru>, 2009
+   Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -57,6 +56,7 @@
 #include "lib/util.h"
 #include "lib/widget.h"
 #include "lib/charsets.h"
+#include "lib/event.h"          /* mc_event_raise() */
 
 #include "src/filemanager/layout.h"
 #include "src/filemanager/cmd.h"
@@ -64,9 +64,7 @@
 
 #include "src/history.h"
 #include "src/execute.h"
-#include "src/help.h"
 #include "src/keybind-defaults.h"
-#include "src/main.h"           /* midnight_shutdown */
 
 #include "internal.h"
 #include "mcviewer.h"
@@ -249,22 +247,25 @@ mcview_execute_cmd (mcview_t * view, unsigned long command)
 
     switch (command)
     {
-    case CK_ViewHelp:
-        interactive_display (NULL, "[Internal File Viewer]");
+    case CK_Help:
+        {
+            ev_help_t event_data = { NULL, "[Internal File Viewer]" };
+            mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
+        }
         break;
-    case CK_ViewToggleWrapMode:
+    case CK_WrapMode:
         /* Toggle between wrapped and unwrapped view */
         mcview_toggle_wrap_mode (view);
         break;
-    case CK_ViewToggleHexEditMode:
+    case CK_HexEditMode:
         /* Toggle between hexview and hexedit mode */
         mcview_toggle_hexedit_mode (view);
         break;
-    case CK_ViewToggleHexMode:
+    case CK_HexMode:
         /* Toggle between hex view and text view */
         mcview_toggle_hex_mode (view);
         break;
-    case CK_ViewGoto:
+    case CK_Goto:
         {
             off_t addr;
 
@@ -280,98 +281,100 @@ mcview_execute_cmd (mcview_t * view, unsigned long command)
             }
             break;
         }
-    case CK_ViewHexEditSave:
+    case CK_Save:
         mcview_hexedit_save_changes (view);
         break;
-    case CK_ViewSearch:
+    case CK_Search:
         mcview_search (view);
         break;
-    case CK_ViewToggleMagicMode:
+    case CK_MagicMode:
         mcview_toggle_magic_mode (view);
         break;
-    case CK_ViewToggleNroffMode:
+    case CK_NroffMode:
         mcview_toggle_nroff_mode (view);
         break;
-    case CK_ViewToggleHexNavMode:
+    case CK_ToggleNavigation:
         view->hexview_in_text = !view->hexview_in_text;
         view->dirty++;
         break;
-    case CK_ViewMoveToBol:
+    case CK_Home:
         mcview_moveto_bol (view);
         break;
-    case CK_ViewMoveToEol:
+    case CK_End:
         mcview_moveto_eol (view);
         break;
-    case CK_ViewMoveLeft:
+    case CK_Left:
         mcview_move_left (view, 1);
         break;
-    case CK_ViewMoveRight:
+    case CK_Right:
         mcview_move_right (view, 1);
         break;
-    case CK_ViewMoveLeft10:
+    case CK_LeftQuick:
         if (!view->hex_mode)
             mcview_move_left (view, 10);
         break;
-    case CK_ViewMoveRight10:
+    case CK_RightQuick:
         if (!view->hex_mode)
             mcview_move_right (view, 10);
         break;
-    case CK_ViewContinueSearch:
+    case CK_SearchContinue:
         mcview_continue_search_cmd (view);
         break;
-    case CK_ViewToggleRuler:
+    case CK_Ruler:
         mcview_display_toggle_ruler (view);
         break;
-    case CK_ViewMoveUp:
+    case CK_Up:
         mcview_move_up (view, 1);
         break;
-    case CK_ViewMoveDown:
+    case CK_Down:
         mcview_move_down (view, 1);
         break;
-    case CK_ViewMoveHalfPgUp:
+    case CK_HalfPageUp:
         mcview_move_up (view, (view->data_area.height + 1) / 2);
         break;
-    case CK_ViewMoveHalfPgDn:
+    case CK_HalfPageDown:
         mcview_move_down (view, (view->data_area.height + 1) / 2);
         break;
-    case CK_ViewMovePgUp:
+    case CK_PageUp:
         mcview_move_up (view, view->data_area.height);
         break;
-    case CK_ViewMovePgDn:
+    case CK_PageDown:
         mcview_move_down (view, view->data_area.height);
         break;
-    case CK_ViewMoveTop:
+    case CK_Top:
         mcview_moveto_top (view);
         break;
-    case CK_ViewMoveBottom:
+    case CK_Bottom:
         mcview_moveto_bottom (view);
         break;
-    case CK_ShowCommandLine:
+    case CK_Shell:
         view_other_cmd ();
         break;
-    case CK_ViewGotoBookmark:
+    case CK_BookmarkGoto:
         view->marks[view->marker] = view->dpy_start;
         break;
-    case CK_ViewNewBookmark:
+    case CK_Bookmark:
         view->dpy_start = view->marks[view->marker];
         view->dirty++;
         break;
+#ifdef HAVE_CHARSET
     case CK_SelectCodepage:
         mcview_select_encoding (view);
         view->dirty++;
         break;
-    case CK_ViewNextFile:
-    case CK_ViewPrevFile:
+#endif
+    case CK_FileNext:
+    case CK_FilePrev:
         /* Use to indicate parent that we want to see the next/previous file */
         /* Does not work in panel mode */
         if (!mcview_is_in_panel (view))
-            view->move_dir = (command == CK_ViewNextFile) ? 1 : -1;
+            view->move_dir = (command == CK_FileNext) ? 1 : -1;
         /* fallthrough */
-    case CK_ViewQuit:
+    case CK_Quit:
         if (!mcview_is_in_panel (view))
             dlg_stop (view->widget.owner);
         break;
-    case CK_DialogCancel:
+    case CK_Cancel:
         /* don't close viewer due to SIGINT */
         break;
     default:
@@ -394,13 +397,13 @@ mcview_handle_key (mcview_t * view, int key)
         if (view->hexedit_mode && (mcview_handle_editkey (view, key) == MSG_HANDLED))
             return MSG_HANDLED;
 
-        command = keybind_lookup_keymap_command (view->hex_map, key);
-        if ((command != CK_Ignore_Key) && (mcview_execute_cmd (view, command) == MSG_HANDLED))
+        command = keybind_lookup_keymap_command (viewer_hex_map, key);
+        if ((command != CK_IgnoreKey) && (mcview_execute_cmd (view, command) == MSG_HANDLED))
             return MSG_HANDLED;
     }
 
-    command = keybind_lookup_keymap_command (view->plain_map, key);
-    if ((command != CK_Ignore_Key) && (mcview_execute_cmd (view, command) == MSG_HANDLED))
+    command = keybind_lookup_keymap_command (viewer_map, key);
+    if ((command != CK_IgnoreKey) && (mcview_execute_cmd (view, command) == MSG_HANDLED))
         return MSG_HANDLED;
 
 #ifdef MC_ENABLE_DEBUGGING_CODE
@@ -489,7 +492,7 @@ mcview_callback (Widget * w, widget_msg_t msg, int parm)
         {
             delete_hook (&select_file_hook, mcview_hook);
 
-            if (midnight_shutdown)
+            if (mc_global.widget.midnight_shutdown)
                 mcview_ok_to_quit (view);
         }
         mcview_done (view);
@@ -530,7 +533,7 @@ mcview_dialog_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, 
 
     case DLG_VALIDATE:
         view = (mcview_t *) find_widget_type (h, mcview_callback);
-        h->state = DLG_ACTIVE; /* don't stop the dialog before final decision */
+        h->state = DLG_ACTIVE;  /* don't stop the dialog before final decision */
         if (mcview_ok_to_quit (view))
             h->state = DLG_CLOSED;
         else

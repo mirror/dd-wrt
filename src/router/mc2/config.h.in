@@ -285,6 +285,9 @@
 /* Define to 1 if you have the `pmap_set' function. */
 #undef HAVE_PMAP_SET
 
+/* Define if you have a working posix_fallocate() */
+#undef HAVE_POSIX_FALLOCATE
+
 /* Define to 1 if you have the `posix_openpt' function. */
 #undef HAVE_POSIX_OPENPT
 
@@ -339,6 +342,9 @@
 /* Define to 1 if you have the `statlstat' function. */
 #undef HAVE_STATLSTAT
 
+/* Define to 1 if you have the `statvfs' function. */
+#undef HAVE_STATVFS
+
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H
 
@@ -389,12 +395,6 @@
 /* Define to 1 if `f_fstypename' is a member of `struct statfs'. */
 #undef HAVE_STRUCT_STATFS_F_FSTYPENAME
 
-/* Define to 1 if `f_basetype' is a member of `struct statvfs'. */
-#undef HAVE_STRUCT_STATVFS_F_BASETYPE
-
-/* Define to 1 if `f_fstypename' is a member of `struct statvfs'. */
-#undef HAVE_STRUCT_STATVFS_F_FSTYPENAME
-
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
@@ -435,6 +435,9 @@
 
 /* Define to 1 if you have the <sys/mkdev.h> header file. */
 #undef HAVE_SYS_MKDEV_H
+
+/* Define to 1 if you have the <sys/mntent.h> header file. */
+#undef HAVE_SYS_MNTENT_H
 
 /* Define to 1 if you have the <sys/mount.h> header file. */
 #undef HAVE_SYS_MOUNT_H
@@ -497,9 +500,6 @@
 /* Define to 1 if the system has the type `uintmax_t'. */
 #undef HAVE_UINTMAX_T
 
-/* Define if you have the `uintptr_t' type. */
-#undef HAVE_UINTPTR_T
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -560,6 +560,15 @@
    <sysmacros.h>. */
 #undef MAJOR_IN_SYSMACROS
 
+/* MC configure arguments */
+#undef MC_CONFIGURE_ARGS
+
+/* Define to enable XDG standard support */
+#undef MC_HOMEDIR_XDG
+
+/* Where configs will be placed relative to $HOME */
+#undef MC_USERCONF_DIR
+
 /* Define if there is no specific function for reading the list of mounted
    file systems. fread will be used to read /etc/mnttab. (SVR2) */
 #undef MOUNTED_FREAD
@@ -599,6 +608,10 @@
    mounted file systems and it returns an array of 'struct statvfs'. (NetBSD
    3.0) */
 #undef MOUNTED_GETMNTINFO2
+
+/* Define if we are on interix, and ought to use statvfs plus some special
+   knowledge on where mounted filesystems can be found. (Interix) */
+#undef MOUNTED_INTERIX_STATVFS
 
 /* Define if there is a function named listmntent that can be used to list all
    mounted file systems. (UNICOS) */
@@ -688,11 +701,14 @@
 /* Define if statfs takes 3 args. (DEC Alpha running OSF/1) */
 #undef STAT_STATFS3_OSF1
 
-/* Define if statfs takes 4 args. (SVR3, Dynix, Irix, Dolphin) */
+/* Define if statfs takes 4 args. (SVR3, Dynix, old Irix, old AIX, Dolphin) */
 #undef STAT_STATFS4
 
 /* Define if there is a function named statvfs. (SVR4) */
 #undef STAT_STATVFS
+
+/* Define if statvfs64 should be preferred over statvfs. */
+#undef STAT_STATVFS64
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

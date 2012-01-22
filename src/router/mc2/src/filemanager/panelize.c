@@ -1,23 +1,28 @@
-/* External panelize
+/*
+   External panelize
+
    Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2009 Free Software Foundation, Inc.
+   2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1995 Janne Kukonlehto
-   1995 Jakub Jelinek
+   Written by:
+   Janne Kukonlehto, 1995
+   Jakub Jelinek, 1995
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file panelize.c
@@ -36,19 +41,18 @@
 #include "lib/global.h"
 
 #include "lib/skin.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/mcconfig.h"       /* Load/save directories panelize */
 #include "lib/strutil.h"
 #include "lib/util.h"
 #include "lib/widget.h"
 
 #include "src/setup.h"          /* For profile_bname */
-#include "src/main.h"
 #include "src/history.h"
 
 #include "dir.h"
 #include "midnight.h"           /* current_panel */
-#include "layout.h"             /* repaint_screen() */
+#include "panel.h"              /* WPanel */
 
 #include "panelize.h"
 
@@ -334,6 +338,11 @@ do_external_panelize (char *command)
     /* Clear the counters and the directory list */
     panel_clean_dir (current_panel);
 
+    g_strlcpy (panelized_panel.root, current_panel->cwd, MC_MAXPATHLEN);
+
+    if (set_zero_dir (list))
+        next_free++;
+
     while (1)
     {
         clearerr (external);
@@ -358,7 +367,7 @@ do_external_panelize (char *command)
         if (status == -1)
             break;
         list->list[next_free].fnamelen = strlen (name);
-        list->list[next_free].fname = g_strdup (name);
+        list->list[next_free].fname = g_strndup (name, list->list[next_free].fnamelen);
         file_mark (current_panel, next_free, 0);
         list->list[next_free].f.link_to_dir = link_to_dir;
         list->list[next_free].f.stale_link = stale_link;
@@ -371,7 +380,7 @@ do_external_panelize (char *command)
             rotate_dash ();
     }
 
-    current_panel->is_panelized = 1;
+    current_panel->is_panelized = TRUE;
     if (next_free)
     {
         current_panel->count = next_free;
@@ -394,7 +403,111 @@ do_external_panelize (char *command)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static void
+do_panelize_cd (struct WPanel *panel)
+{
+    int i;
+    dir_list *list = &panel->dir;
+    gboolean panelized_same;
+
+    clean_dir (list, panel->count);
+    if (panelized_panel.root[0] == '\0')
+        g_strlcpy (panelized_panel.root, panel->cwd, MC_MAXPATHLEN);
+
+    if (panelized_panel.count < 1)
+    {
+        if (set_zero_dir (&panelized_panel.list))
+            panelized_panel.count = 1;
+    }
+    else if (panelized_panel.count >= list->size)
+    {
+        list->list = g_try_realloc (list->list, sizeof (file_entry) * panelized_panel.count);
+        list->size = panelized_panel.count;
+    }
+    panel->count = panelized_panel.count;
+    panel->is_panelized = TRUE;
+
+    panelized_same = (strcmp (panelized_panel.root, panel->cwd) == 0);
+
+    for (i = 0; i < panelized_panel.count; i++)
+    {
+        if (panelized_same
+            || (panelized_panel.list.list[i].fname[0] == '.'
+                && panelized_panel.list.list[i].fname[1] == '.'
+                && panelized_panel.list.list[i].fname[2] == '\0'))
+        {
+            list->list[i].fnamelen = panelized_panel.list.list[i].fnamelen;
+            list->list[i].fname = g_strndup (panelized_panel.list.list[i].fname,
+                                             panelized_panel.list.list[i].fnamelen);
+        }
+        else
+        {
+            list->list[i].fname = mc_build_filename (panelized_panel.root,
+                                                     panelized_panel.list.list[i].fname,
+                                                     (char *) NULL);
+            list->list[i].fnamelen = strlen (list->list[i].fname);
+        }
+        list->list[i].f.link_to_dir = panelized_panel.list.list[i].f.link_to_dir;
+        list->list[i].f.stale_link = panelized_panel.list.list[i].f.stale_link;
+        list->list[i].f.dir_size_computed = panelized_panel.list.list[i].f.dir_size_computed;
+        list->list[i].f.marked = panelized_panel.list.list[i].f.marked;
+        list->list[i].st = panelized_panel.list.list[i].st;
+        list->list[i].sort_key = panelized_panel.list.list[i].sort_key;
+        list->list[i].second_sort_key = panelized_panel.list.list[i].second_sort_key;
+    }
+    try_to_select (panel, NULL);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+void
+panelize_save_panel (struct WPanel *panel)
+{
+    int i;
+    dir_list *list = &panel->dir;
+
+    g_strlcpy (panelized_panel.root, panel->cwd, MC_MAXPATHLEN);
+
+    if (panelized_panel.count > 0)
+        clean_dir (&panelized_panel.list, panelized_panel.count);
+    if (panel->count < 1)
+        return;
+
+    panelized_panel.count = panel->count;
+    if (panel->count >= panelized_panel.list.size)
+    {
+        panelized_panel.list.list = g_try_realloc (panelized_panel.list.list,
+                                                   sizeof (file_entry) * panel->count);
+        panelized_panel.list.size = panel->count;
+    }
+    for (i = 0; i < panel->count; i++)
+    {
+        panelized_panel.list.list[i].fnamelen = list->list[i].fnamelen;
+        panelized_panel.list.list[i].fname = g_strndup (list->list[i].fname, list->list[i].fnamelen);
+        panelized_panel.list.list[i].f.link_to_dir = list->list[i].f.link_to_dir;
+        panelized_panel.list.list[i].f.stale_link = list->list[i].f.stale_link;
+        panelized_panel.list.list[i].f.dir_size_computed = list->list[i].f.dir_size_computed;
+        panelized_panel.list.list[i].f.marked = list->list[i].f.marked;
+        panelized_panel.list.list[i].st = list->list[i].st;
+        panelized_panel.list.list[i].sort_key = list->list[i].sort_key;
+        panelized_panel.list.list[i].second_sort_key = list->list[i].second_sort_key;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+cd_panelize_cmd (void)
+{
+    if (get_display_type (MENU_PANEL_IDX) != view_listing)
+        set_display_type (MENU_PANEL_IDX, view_listing);
+
+    do_panelize_cd ((struct WPanel *) get_panel_widget (MENU_PANEL_IDX));
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 void
@@ -481,7 +594,7 @@ load_panelize (void)
     while (*profile_keys)
     {
 
-        if (utf8_display || conv == INVALID_CONV)
+        if (mc_global.utf8_display || conv == INVALID_CONV)
         {
             buffer = g_string_new (*profile_keys);
         }

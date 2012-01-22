@@ -1,23 +1,5 @@
-/* Dialog box features module for the Midnight Commander
-   Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2009, 2010 Free Software Foundation
-
-   Authors: 1994, 1995 Radek Doulik, Miguel de Icaza
-   2009, 2010 Andrew Borodin
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+/*
+   Dialog box features module for the Midnight Commander
  */
 
 /** \file dialog.h
@@ -31,6 +13,7 @@
 
 #include "lib/global.h"
 #include "lib/hook.h"           /* hook_t */
+#include "lib/keybind.h"        /* global_keymap_t */
 
 /*** defined constants ***************************************************************************/
 
@@ -140,6 +123,7 @@ struct Dlg_head
     GList *widgets;             /* widgets list */
     GList *current;             /* Curently active widget */
     void *data;                 /* Data can be passed to dialog */
+    char *event_group;          /* Name of event group for this dialog */
 
     dlg_cb_fn callback;
     dlg_shortcut_str get_shortcut;      /* Shortcut string */
@@ -159,6 +143,8 @@ extern hook_t *idle_hook;
 
 extern int fast_refresh;
 extern int mouse_close_dialog;
+
+extern const global_keymap_t *dialog_map;
 
 /*** declarations of public functions ************************************************************/
 
@@ -186,6 +172,7 @@ int run_dlg (Dlg_head * d);
 void destroy_dlg (Dlg_head * h);
 
 void dlg_run_done (Dlg_head * h);
+void dlg_save_history (Dlg_head * h);
 void dlg_process_event (Dlg_head * h, int key, Gpm_Event * event);
 
 char *dlg_get_title (const Dlg_head * h, size_t len);

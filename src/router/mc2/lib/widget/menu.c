@@ -1,19 +1,25 @@
-/* Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2009 Free Software Foundation, Inc.
+/*
+   Pulldown menu code
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
+   2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   This program is distributed in the hope that it will be useful,
+   This file is part of the Midnight Commander.
+
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file menu.c
  *  \brief Source: pulldown menu code
@@ -34,11 +40,7 @@
 #include "lib/tty/key.h"        /* key macros */
 #include "lib/strutil.h"
 #include "lib/widget.h"
-
-/* TODO: these includes should be removed! */
-#include "src/keybind-defaults.h"       /* CK_Ignore_Key */
-#include "src/help.h"
-#include "src/filemanager/midnight.h"   /* is_right */
+#include "lib/event.h"          /* mc_event_raise() */
 
 /*** global variables ****************************************************************************/
 
@@ -294,9 +296,9 @@ menubar_execute (WMenuBar * menubar)
     const Menu *menu = g_list_nth_data (menubar->menu, menubar->selected);
     const menu_entry_t *entry = g_list_nth_data (menu->entries, menu->selected);
 
-    if ((entry != NULL) && (entry->command != CK_Ignore_Key))
+    if ((entry != NULL) && (entry->command != CK_IgnoreKey))
     {
-        is_right = (menubar->selected != 0);
+        mc_global.is_right = (menubar->selected != 0);
         menubar_finish (menubar);
         menubar->widget.owner->callback (menubar->widget.owner, &menubar->widget,
                                          DLG_ACTION, entry->command, NULL);
@@ -320,7 +322,7 @@ menubar_down (WMenuBar * menubar)
         menu->selected = (menu->selected + 1) % len;
         entry = (menu_entry_t *) g_list_nth_data (menu->entries, menu->selected);
     }
-    while ((entry == NULL) || (entry->command == CK_Ignore_Key));
+    while ((entry == NULL) || (entry->command == CK_IgnoreKey));
 
     menubar_paint_idx (menubar, menu->selected, MENU_SELECTED_COLOR);
 }
@@ -344,7 +346,7 @@ menubar_up (WMenuBar * menubar)
             menu->selected--;
         entry = (menu_entry_t *) g_list_nth_data (menu->entries, menu->selected);
     }
-    while ((entry == NULL) || (entry->command == CK_Ignore_Key));
+    while ((entry == NULL) || (entry->command == CK_IgnoreKey));
 
     menubar_paint_idx (menubar, menu->selected, MENU_SELECTED_COLOR);
 }
@@ -368,7 +370,7 @@ menubar_first (WMenuBar * menubar)
     {
         entry = (menu_entry_t *) g_list_nth_data (menu->entries, menu->selected);
 
-        if ((entry == NULL) || (entry->command == CK_Ignore_Key))
+        if ((entry == NULL) || (entry->command == CK_IgnoreKey))
             menu->selected++;
         else
             break;
@@ -398,7 +400,7 @@ menubar_last (WMenuBar * menubar)
         menu->selected--;
         entry = (menu_entry_t *) g_list_nth_data (menu->entries, menu->selected);
     }
-    while ((entry == NULL) || (entry->command == CK_Ignore_Key));
+    while ((entry == NULL) || (entry->command == CK_IgnoreKey));
 
     menubar_paint_idx (menubar, menu->selected, MENU_SELECTED_COLOR);
 }
@@ -422,15 +424,19 @@ menubar_handle_key (WMenuBar * menubar, int key)
     switch (key)
     {
     case KEY_F (1):
-        if (menubar->is_dropped)
-            interactive_display (NULL,
-                                 ((Menu *) g_list_nth_data (menubar->menu,
-                                                            menubar->selected))->help_node);
-        else
-            interactive_display (NULL, "[Menu Bar]");
-        menubar_draw (menubar);
-        return 1;
+        {
+            ev_help_t event_data = { NULL, NULL };
 
+            if (menubar->is_dropped)
+                event_data.node =
+                    ((Menu *) g_list_nth_data (menubar->menu, menubar->selected))->help_node;
+            else
+                event_data.node = "[Menu Bar]";
+
+            mc_event_raise (MCEVENT_GROUP_CORE, "help", &event_data);
+            menubar_draw (menubar);
+            return 1;
+        }
     case KEY_LEFT:
     case XCTRL ('b'):
         menubar_left (menubar);
@@ -474,7 +480,7 @@ menubar_handle_key (WMenuBar * menubar, int key)
         {
             const menu_entry_t *entry = i->data;
 
-            if ((entry != NULL) && (entry->command != CK_Ignore_Key)
+            if ((entry != NULL) && (entry->command != CK_IgnoreKey)
                 && (entry->text.hotkey != NULL) && (key == g_ascii_tolower (entry->text.hotkey[0])))
             {
                 menu->selected = g_list_position (menu->entries, i);
@@ -686,7 +692,7 @@ menubar_event (Gpm_Event * event, void *data)
         if ((pos < 0) || (pos >= bottom_y - 3))
             return MOU_NORMAL;
 
-        if ((entry != NULL) && (entry->command != CK_Ignore_Key))
+        if ((entry != NULL) && (entry->command != CK_IgnoreKey))
         {
             menubar_paint_idx (menubar, menu->selected, MENU_ENTRY_COLOR);
             menu->selected = pos;

@@ -33,6 +33,9 @@
 /* Return code for the mouse sequence */
 #define MCKEY_MOUSE     -2
 
+/* Return code for the extended mouse sequence */
+#define MCKEY_EXTENDED_MOUSE     -3
+
 /*** enums ***************************************************************************************/
 
 /*** structures declarations (and typedefs of structures)*****************************************/
@@ -53,7 +56,6 @@ extern const key_code_name_t key_name_conv_tab[];
 
 extern int old_esc_mode_timeout;
 
-extern int alternate_plus_minus;
 extern int double_click_speed;
 extern int old_esc_mode;
 extern int use_8th_bit_as_meta;
@@ -68,7 +70,7 @@ void init_key_input_fd (void);
 void done_key (void);
 
 long lookup_key (const char *name, char **label);
-
+char *lookup_key_by_code (const int keycode);
 /* mouse support */
 int tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block);
 gboolean is_idle (void);
@@ -104,7 +106,7 @@ void application_keypad_mode (void);
 static inline gboolean
 is_abort_char (int c)
 {
-    return ((c == ESC_CHAR) || (c == KEY_F (10)));
+    return ((c == (int) ESC_CHAR) || (c == (int) KEY_F (10)));
 }
 
 #endif /* MC_KEY_H */

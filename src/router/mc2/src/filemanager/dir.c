@@ -1,20 +1,25 @@
-/* Directory routines
+/*
+   Directory routines
+
    Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2006, 2007 Free Software Foundation, Inc.
+   2006, 2007, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file dir.c
  *  \brief Source: directory routines
@@ -30,7 +35,7 @@
 #include "lib/global.h"
 #include "lib/tty/tty.h"
 #include "lib/search.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/fs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
@@ -453,7 +458,7 @@ set_zero_dir (dir_list * list)
 
     memset (&(list->list)[0], 0, sizeof (file_entry));
     list->list[0].fnamelen = 2;
-    list->list[0].fname = g_strdup ("..");
+    list->list[0].fname = g_strndup ("..", list->list[0].fnamelen);
     list->list[0].f.link_to_dir = 0;
     list->list[0].f.stale_link = 0;
     list->list[0].f.dir_size_computed = 0;
@@ -553,7 +558,7 @@ do_load_dir (const char *path, dir_list * list, sortfn * sort, gboolean lc_rever
             return next_free;
         }
         list->list[next_free].fnamelen = NLENGTH (dp);
-        list->list[next_free].fname = g_strdup (dp->d_name);
+        list->list[next_free].fname = g_strndup (dp->d_name, list->list[next_free].fnamelen);
         list->list[next_free].f.marked = 0;
         list->list[next_free].f.link_to_dir = link_to_dir;
         list->list[next_free].f.stale_link = stale_link;
@@ -688,7 +693,7 @@ do_reload_dir (const char *path, dir_list * list, sortfn * sort, int count,
         }
 
         list->list[next_free].fnamelen = NLENGTH (dp);
-        list->list[next_free].fname = g_strdup (dp->d_name);
+        list->list[next_free].fname = g_strndup (dp->d_name, list->list[next_free].fnamelen);
         list->list[next_free].f.link_to_dir = link_to_dir;
         list->list[next_free].f.stale_link = stale_link;
         list->list[next_free].f.dir_size_computed = 0;

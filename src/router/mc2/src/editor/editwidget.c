@@ -1,24 +1,27 @@
-/* editor initialisation and callback handler.
+/*
+   Editor initialisation and callback handler.
 
    Copyright (C) 1996, 1997, 1998, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007 Free Software Foundation, Inc.
+   2007,2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1996, 1997 Paul Sheer
+   Written by:
+   Paul Sheer, 1996, 1997
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -48,6 +51,7 @@
 #include "lib/strutil.h"        /* str_term_trim() */
 #include "lib/util.h"           /* concat_dir_and_file() */
 #include "lib/widget.h"
+#include "lib/mcconfig.h"
 
 #include "src/keybind-defaults.h"
 #include "src/main.h"           /* home_dir */
@@ -80,7 +84,7 @@ edit_get_shortcut (unsigned long command)
     if (shortcut != NULL)
         return g_strdup (shortcut);
 
-    ext_map = keybind_lookup_keymap_shortcut (editor_map, CK_Ext_Mode);
+    ext_map = keybind_lookup_keymap_shortcut (editor_map, CK_ExtendedKeyMap);
     if (ext_map != NULL)
         shortcut = keybind_lookup_keymap_shortcut (editor_x_map, command);
     if (shortcut != NULL)
@@ -279,7 +283,7 @@ edit_dialog_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, vo
         return MSG_HANDLED;
 
     case DLG_VALIDATE:
-        h->state = DLG_ACTIVE; /* don't stop the dialog before final decision */
+        h->state = DLG_ACTIVE;  /* don't stop the dialog before final decision */
         if (edit_ok_to_exit (edit))
             h->state = DLG_CLOSED;
         return MSG_HANDLED;
@@ -312,7 +316,9 @@ edit_callback (Widget * w, widget_msg_t msg, int parm)
             cb_ret_t ret = MSG_NOT_HANDLED;
 
             /* The user may override the access-keys for the menu bar. */
-            if (edit_translate_key (e, parm, &cmd, &ch))
+            if (macro_index == -1 && edit_execute_macro (e, parm))
+                ret = MSG_HANDLED;
+            else if (edit_translate_key (e, parm, &cmd, &ch))
             {
                 edit_execute_key_command (e, cmd, ch);
                 edit_update_screen (e);
@@ -357,7 +363,15 @@ edit_file (const char *_file, int line)
 
     if (!made_directory)
     {
-        char *dir = concat_dir_and_file (home_dir, EDIT_DIR);
+        char *dir = concat_dir_and_file (mc_config_get_cache_path (), EDIT_DIR);
+        made_directory = (mkdir (dir, 0700) != -1 || errno == EEXIST);
+        g_free (dir);
+
+        dir = concat_dir_and_file (mc_config_get_path (), EDIT_DIR);
+        made_directory = (mkdir (dir, 0700) != -1 || errno == EEXIST);
+        g_free (dir);
+
+        dir = concat_dir_and_file (mc_config_get_data_path (), EDIT_DIR);
         made_directory = (mkdir (dir, 0700) != -1 || errno == EEXIST);
         g_free (dir);
     }

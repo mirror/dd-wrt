@@ -2,27 +2,26 @@
    File highlight plugin.
    Interface functions. get color pair index for highlighted file.
 
-   Copyright (C) 2009 The Free Software Foundation, Inc.
+   Copyright (C) 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009.
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -78,6 +77,12 @@ mc_fhl_is_link (file_entry * fe)
     (void) fe;
 #endif
     return S_ISLNK (fe->st.st_mode);
+}
+
+inline static gboolean
+mc_fhl_is_hlink (file_entry * fe)
+{
+    return (fe->st.st_nlink > 1);
 }
 
 inline static gboolean
@@ -175,16 +180,14 @@ mc_fhl_get_color_filetype (mc_fhl_filter_t * mc_filter, mc_fhl_t * fhl, file_ent
             my_color = TRUE;
         break;
     case MC_FLHGH_FTYPE_T_LINK:
-        if (mc_fhl_is_link (fe))
+        if ((mc_fhl_is_link (fe)) || (mc_fhl_is_hlink (fe)))
             my_color = TRUE;
         break;
     case MC_FLHGH_FTYPE_T_HARDLINK:
-        /*TODO: hanlde it */
-        if (mc_fhl_is_link (fe))
+        if (mc_fhl_is_hlink (fe))
             my_color = TRUE;
         break;
     case MC_FLHGH_FTYPE_T_SYMLINK:
-        /*TODO: hanlde it */
         if (mc_fhl_is_link (fe))
             my_color = TRUE;
         break;

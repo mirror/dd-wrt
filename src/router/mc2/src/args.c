@@ -1,27 +1,26 @@
 /*
    Handle command line arguments.
 
-   Copyright (C) 2009 The Free Software Foundation, Inc.
+   Copyright (C) 2009, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009.
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -30,18 +29,16 @@
 
 #include "lib/global.h"
 #include "lib/tty/tty.h"
-#include "lib/tty/color.h"      /* command_line_colors */
-#include "lib/tty/mouse.h"
 #include "lib/strutil.h"
-#include "lib/vfs/mc-vfs/vfs.h"
-#ifdef ENABLE_VFS_SMB
-#include "lib/vfs/mc-vfs/smbfs.h"       /* smbfs_set_debugf()  */
-#endif
+#include "lib/vfs/vfs.h"
 #include "lib/util.h"           /* x_basename() */
+
+#ifdef ENABLE_VFS_SMB
+#include "src/vfs/smbfs/smbfs.h"        /* smbfs_set_debugf()  */
+#endif
 
 #include "src/main.h"
 #include "src/textconf.h"
-#include "src/subshell.h"       /* use_subshell */
 
 #include "src/args.h"
 
@@ -57,23 +54,14 @@ gboolean mc_args__force_xterm = FALSE;
 
 gboolean mc_args__nomouse = FALSE;
 
-/* For slow terminals */
-gboolean mc_args__slow_terminal = FALSE;
-
-/* If true use +, -, | for line drawing */
-gboolean mc_args__ugly_line_drawing = FALSE;
-
-/* Set to force black and white display at program startup */
-gboolean mc_args__disable_colors = FALSE;
-
 /* Force colors, only used by Slang */
 gboolean mc_args__force_colors = FALSE;
 
+/* Don't load keymap form file and use default one */
+gboolean mc_args__nokeymap = FALSE;
+
 /* Line to start the editor on */
 int mc_args__edit_start_line = 0;
-
-/* Show in specified skin */
-char *mc_args__skin = NULL;
 
 char *mc_args__last_wd_file = NULL;
 
@@ -102,6 +90,8 @@ static GOptionContext *context;
 
 static gboolean mc_args__nouse_subshell = FALSE;
 static gboolean mc_args__show_datadirs = FALSE;
+static gboolean mc_args__show_datadirs_extended = FALSE;
+static gboolean mc_args__show_configure_opts = FALSE;
 
 static GOptionGroup *main_group;
 
@@ -123,6 +113,22 @@ static const GOptionEntry argument_main_table[] = {
      NULL
     },
 
+    /* show extended information about used data directories */
+    {
+     "datadir-info", 'F', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE,
+     &mc_args__show_datadirs_extended,
+     N_("Print extended info about used data directories"),
+     NULL
+    },
+
+    /* show configure options */
+    {
+     "configure-options", '\0', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE,
+     &mc_args__show_configure_opts,
+     N_("Print configure options"),
+     NULL
+    },
+
     {
      "printwd", 'P', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_STRING,
      &mc_args__last_wd_file,
@@ -133,7 +139,7 @@ static const GOptionEntry argument_main_table[] = {
 #ifdef HAVE_SUBSHELL_SUPPORT
     {
      "subshell", 'U', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE,
-     &use_subshell,
+     &mc_global.tty.use_subshell,
      N_("Enables subshell support (default)"),
      NULL
     },
@@ -198,7 +204,7 @@ static const GOptionEntry argument_terminal_table[] = {
 
     {
      "oldmouse", 'g', ARGS_TERM_OPTIONS, G_OPTION_ARG_NONE,
-     &old_mouse,
+     &mc_global.tty.old_mouse,
      N_("Tries to use an old highlight mouse tracking"),
      NULL
     },
@@ -221,14 +227,14 @@ static const GOptionEntry argument_terminal_table[] = {
 
     {
      "slow", 's', ARGS_TERM_OPTIONS, G_OPTION_ARG_NONE,
-     &mc_args__slow_terminal,
+     &mc_global.tty.slow_terminal,
      N_("To run on slow terminals"),
      NULL
     },
 
     {
      "stickchars", 'a', ARGS_TERM_OPTIONS, G_OPTION_ARG_NONE,
-     &mc_args__ugly_line_drawing,
+     &mc_global.tty.ugly_line_drawing,
      N_("Use stickchars to draw"),
      NULL
     },
@@ -248,6 +254,13 @@ static const GOptionEntry argument_terminal_table[] = {
     },
 
     {
+     "nokeymap", '\0', ARGS_TERM_OPTIONS, G_OPTION_ARG_NONE,
+     &mc_args__nokeymap,
+     N_("Don't load definitions of key bindings from file, use defaults"),
+     NULL
+    },
+
+    {
      NULL, '\0', 0, 0, NULL, NULL, NULL /* Complete struct initialization */
     }
     /* *INDENT-ON* */
@@ -257,13 +270,13 @@ static const GOptionEntry argument_terminal_table[] = {
 
 GOptionGroup *color_group;
 #define ARGS_COLOR_OPTIONS 0
-// #define ARGS_COLOR_OPTIONS G_OPTION_FLAG_IN_MAIN
+/* #define ARGS_COLOR_OPTIONS G_OPTION_FLAG_IN_MAIN */
 static const GOptionEntry argument_color_table[] = {
     /* *INDENT-OFF* */
     /* color options */
     {
      "nocolor", 'b', ARGS_COLOR_OPTIONS, G_OPTION_ARG_NONE,
-     &mc_args__disable_colors,
+     &mc_global.tty.disable_colors,
      N_("Requests to run in black and white"),
      NULL
     },
@@ -277,14 +290,14 @@ static const GOptionEntry argument_color_table[] = {
 
     {
      "colors", 'C', ARGS_COLOR_OPTIONS, G_OPTION_ARG_STRING,
-     &command_line_colors,
+     &mc_global.tty.command_line_colors,
      N_("Specifies a color configuration"),
      "<string>"
     },
 
     {
      "skin", 'S', ARGS_COLOR_OPTIONS, G_OPTION_ARG_STRING,
-     &mc_args__skin,
+     &mc_global.skin,
      N_("Show mc with specified skin"),
      "<string>"
     },
@@ -326,11 +339,12 @@ mc_args_clean_temp_help_strings (void)
 static GOptionGroup *
 mc_args_new_color_group (void)
 {
+/* *INDENT-OFF* */
     /* FIXME: to preserve translations, lines should be split. */
     mc_args__loc__colors_string = g_strdup_printf ("%s\n%s",
                                                    /* TRANSLATORS: don't translate keywords */
-                                                   _("--colors KEYWORD={FORE},{BACK}\n\n"
-                                                     "{FORE} and {BACK} can be omitted, and the default will be used\n"
+                                                   _("--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n\n"
+                                                     "{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
                                                      "\n Keywords:\n"
                                                      "   Global:       errors, disabled, reverse, gauge, header\n"
                                                      "                 input, inputmark, inputunchanged, commandlinemark\n"
@@ -344,11 +358,17 @@ mc_args_new_color_group (void)
                                                      "                 editlinestate\n"
                                                      "   Viewer:       viewbold, viewunderline, viewselected\n"
                                                      "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"),
-                                                   /* TRANSLATORS: don't translate color names */
-                                                   _("Colors:\n"
+                                                   /* TRANSLATORS: don't translate color names and attributes */
+                                                   _("Standard Colors:\n"
                                                     "   black, gray, red, brightred, green, brightgreen, brown,\n"
                                                     "   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
-                                                    "   brightcyan, lightgray and white\n\n"));
+                                                    "   brightcyan, lightgray and white\n\n"
+                                                    "Extended colors, when 256 colors are available:\n"
+                                                    "   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n\n"
+                                                    "Attributes:\n"
+                                                    "   bold, underline, reverse, blink; append more with '+'\n")
+                                                    );
+/* *INDENT-ON* */
 
     return g_option_group_new ("color", mc_args__loc__colors_string,
                                _("Color options"), NULL, NULL);
@@ -403,10 +423,10 @@ mc_setup_by_args (int argc, char *argv[])
     if (mc_args__netfs_logfile != NULL)
     {
 #ifdef ENABLE_VFS_FTP
-        mc_setctl ("/#ftp:", VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
+        mc_setctl ("ftp://", VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
 #endif /* ENABLE_VFS_FTP */
 #ifdef ENABLE_VFS_SMB
-        mc_setctl ("/#smb:", VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
+        mc_setctl ("smb://", VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
 #endif /* ENABLE_VFS_SMB */
     }
 
@@ -487,7 +507,7 @@ mc_setup_by_args (int argc, char *argv[])
                 mc_run_param0 = g_strdup (tmp);
             }
         }
-        mc_run_mode = MC_RUN_EDITOR;
+        mc_global.mc_run_mode = MC_RUN_EDITOR;
     }
     else if (strncmp (base, "mcv", 3) == 0 || strcmp (base, "view") == 0)
     {
@@ -500,7 +520,7 @@ mc_setup_by_args (int argc, char *argv[])
             fprintf (stderr, "%s\n", _("No arguments given to the viewer."));
             exit (EXIT_FAILURE);
         }
-        mc_run_mode = MC_RUN_VIEWER;
+        mc_global.mc_run_mode = MC_RUN_VIEWER;
     }
 #ifdef USE_DIFF_VIEW
     else if (strncmp (base, "mcd", 3) == 0 || strcmp (base, "diff") == 0)
@@ -519,7 +539,7 @@ mc_setup_by_args (int argc, char *argv[])
             tmp = (argc > 1) ? argv[2] : NULL;
             if (tmp != NULL)
                 mc_run_param1 = g_strdup (tmp);
-            mc_run_mode = MC_RUN_DIFFVIEWER;
+            mc_global.mc_run_mode = MC_RUN_DIFFVIEWER;
         }
     }
 #endif /* USE_DIFF_VIEW */
@@ -527,7 +547,7 @@ mc_setup_by_args (int argc, char *argv[])
     {
         /* MC is run as mc */
 
-        switch (mc_run_mode)
+        switch (mc_global.mc_run_mode)
         {
         case MC_RUN_EDITOR:
         case MC_RUN_VIEWER:
@@ -548,7 +568,7 @@ mc_setup_by_args (int argc, char *argv[])
                 if (tmp != NULL)
                     mc_run_param1 = g_strdup (tmp);
             }
-            mc_run_mode = MC_RUN_FULL;
+            mc_global.mc_run_mode = MC_RUN_FULL;
             break;
         }
     }
@@ -566,16 +586,28 @@ mc_args_process (int argc, char *argv[])
     }
     if (mc_args__show_datadirs)
     {
-        printf ("%s (%s)\n", mc_home, mc_home_alt);
+        printf ("%s (%s)\n", mc_global.sysconfig_dir, mc_global.share_data_dir);
+        return FALSE;
+    }
+
+    if (mc_args__show_datadirs_extended)
+    {
+        show_datadirs_extended ();
+        return FALSE;
+    }
+
+    if (mc_args__show_configure_opts)
+    {
+        show_configure_options ();
         return FALSE;
     }
 
     if (mc_args__force_colors)
-        mc_args__disable_colors = FALSE;
+        mc_global.tty.disable_colors = FALSE;
 
 #ifdef HAVE_SUBSHELL_SUPPORT
     if (mc_args__nouse_subshell)
-        use_subshell = 0;
+        mc_global.tty.use_subshell = FALSE;
 #endif /* HAVE_SUBSHELL_SUPPORT */
 
     mc_setup_by_args (argc, argv);
@@ -610,7 +642,7 @@ parse_mc_e_argument (const gchar * option_name, const gchar * value, gpointer da
     (void) data;
     (void) error;
 
-    mc_run_mode = MC_RUN_EDITOR;
+    mc_global.mc_run_mode = MC_RUN_EDITOR;
     mc_run_param0 = g_strdup (value);
 
     return TRUE;
@@ -625,7 +657,7 @@ parse_mc_v_argument (const gchar * option_name, const gchar * value, gpointer da
     (void) data;
     (void) error;
 
-    mc_run_mode = MC_RUN_VIEWER;
+    mc_global.mc_run_mode = MC_RUN_VIEWER;
     mc_run_param0 = g_strdup (value);
 
     return TRUE;

@@ -3,36 +3,35 @@
    Common finctions (used from some other mcviewer functions)
 
    Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   2004, 2005, 2006, 2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1994, 1995, 1998 Miguel de Icaza
-   1994, 1995 Janne Kukonlehto
-   1995 Jakub Jelinek
-   1996 Joseph M. Hinkle
-   1997 Norbert Warmuth
-   1998 Pavel Machek
-   2004 Roland Illig <roland.illig@gmx.de>
-   2005 Roland Illig <roland.illig@gmx.de>
-   2009 Slava Zanko <slavazanko@google.com>
-   2009 Andrew Borodin <aborodin@vmail.ru>
-   2009 Ilia Maslakov <il.smind@gmail.com>
+   Written by:
+   Miguel de Icaza, 1994, 1995, 1998
+   Janne Kukonlehto, 1994, 1995
+   Jakub Jelinek, 1995
+   Joseph M. Hinkle, 1996
+   Norbert Warmuth, 1997
+   Pavel Machek, 1998
+   Roland Illig <roland.illig@gmx.de>, 2004, 2005
+   Slava Zanko <slavazanko@google.com>, 2009
+   Andrew Borodin <aborodin@vmail.ru>, 2009
+   Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -41,7 +40,7 @@
 #include <sys/types.h>
 
 #include "lib/global.h"
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"           /* save_file_position() */
 #include "lib/lock.h"           /* unlock_file() */
@@ -149,7 +148,7 @@ mcview_ok_to_quit (mcview_t * view)
     if (view->change_list == NULL)
         return TRUE;
 
-    if (!midnight_shutdown)
+    if (!mc_global.widget.midnight_shutdown)
     {
         query_set_sel (2);
         r = query_dialog (_("Quit"),
@@ -169,7 +168,7 @@ mcview_ok_to_quit (mcview_t * view)
     switch (r)
     {
     case 0:                    /* Yes */
-        return mcview_hexedit_save_changes (view) || midnight_shutdown;
+        return mcview_hexedit_save_changes (view) || mc_global.widget.midnight_shutdown;
     case 1:                    /* No */
         mcview_hexedit_free_change_list (view);
         return TRUE;
@@ -236,12 +235,15 @@ mcview_done (mcview_t * view)
     if (mcview_remember_file_position && view->filename != NULL)
     {
         char *canon_fname;
-        canon_fname = vfs_canon (view->filename);
+        vfs_path_t *vpath;
+        vpath = vfs_path_from_str (view->filename);
+        canon_fname = vfs_path_to_str (vpath);
         save_file_position (canon_fname, -1, 0,
                             view->hex_mode ? view->hex_cursor : view->dpy_start,
                             view->saved_bookmarks);
         view->saved_bookmarks = NULL;
         g_free (canon_fname);
+        vfs_path_free (vpath);
     }
 
     /* Write back the global viewer mode */
@@ -292,7 +294,9 @@ mcview_set_codeset (mcview_t * view)
     const char *cp_id = NULL;
 
     view->utf8 = TRUE;
-    cp_id = get_codepage_id (source_codepage >= 0 ? source_codepage : display_codepage);
+    cp_id =
+        get_codepage_id (mc_global.source_codepage >=
+                         0 ? mc_global.source_codepage : mc_global.display_codepage);
     if (cp_id != NULL)
     {
         GIConv conv;
@@ -317,9 +321,7 @@ mcview_select_encoding (mcview_t * view)
 {
 #ifdef HAVE_CHARSET
     if (do_select_codepage ())
-    {
         mcview_set_codeset (view);
-    }
 #else
     (void) view;
 #endif
@@ -436,7 +438,7 @@ mcview_lock_file (mcview_t * view)
     char *fullpath;
     gboolean ret;
 
-    fullpath = g_build_filename (view->workdir, view->filename, (char *) NULL);
+    fullpath = mc_build_filename (view->workdir, view->filename, (char *) NULL);
     ret = lock_file (fullpath);
     g_free (fullpath);
 
@@ -451,7 +453,7 @@ mcview_unlock_file (mcview_t * view)
     char *fullpath;
     gboolean ret;
 
-    fullpath = g_build_filename (view->workdir, view->filename, (char *) NULL);
+    fullpath = mc_build_filename (view->workdir, view->filename, (char *) NULL);
     ret = unlock_file (fullpath);
     g_free (fullpath);
 

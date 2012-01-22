@@ -54,14 +54,14 @@ void convert_string (unsigned char *str);
 /*
  * Converter from utf to selected codepage
  * param str, utf char
- * return char in needle codepage (by global int source_codepage)
+ * return char in needle codepage (by global int mc_global.source_codepage)
  */
 unsigned char convert_from_utf_to_current (const char *str);
 
 /*
  * Converter from utf to selected codepage
  * param input_char, gunichar
- * return char in needle codepage (by global int source_codepage)
+ * return char in needle codepage (by global int mc_global.source_codepage)
  */
 unsigned char convert_from_utf_to_current_c (const int input_char, GIConv conv);
 
@@ -93,7 +93,7 @@ convert_to_display_c (int c)
 {
     if (c < 0 || c >= 256)
         return c;
-    return conv_displ[c];
+    return (int) conv_displ[c];
 }
 
 static inline int
@@ -101,7 +101,7 @@ convert_from_input_c (int c)
 {
     if (c < 0 || c >= 256)
         return c;
-    return conv_input[c];
+    return (int) conv_input[c];
 }
 
 #endif /* HAVE_CHARSET */

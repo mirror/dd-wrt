@@ -107,12 +107,16 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
-	$(top_srcdir)/m4.include/ac-get-fs-info.m4 \
+	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
+	$(top_srcdir)/m4.include/fstypename.m4 \
+	$(top_srcdir)/m4.include/fsusage.m4 \
+	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
-	$(top_srcdir)/m4.include/ac-g-module-supported.m4 \
+	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
@@ -125,6 +129,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
+	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -194,6 +199,8 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CHECK_CFLAGS = @CHECK_CFLAGS@
+CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -267,6 +274,8 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
+LIBMC_RELEASE = @LIBMC_RELEASE@
+LIBMC_VERSION = @LIBMC_VERSION@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -382,7 +391,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 DIST_SUBDIRS = hints man hlp
 SUBDIRS = hints man hlp
-DOCS = FAQ HACKING INSTALL INSTALL.FAST MAINTAINERS README.QNX
+DOCS = FAQ HACKING INSTALL INSTALL.FAST MAINTAINERS README.QNX keybind-migration.txt
 EXTRA_DIST = $(DX_CONFIG) doxygen-include.am $(DOCS)
 @DX_COND_doc_TRUE@@DX_COND_html_TRUE@DX_CLEAN_HTML = @DX_DOCDIR@/html
 @DX_COND_chm_TRUE@@DX_COND_doc_TRUE@DX_CLEAN_CHM = @DX_DOCDIR@/chm

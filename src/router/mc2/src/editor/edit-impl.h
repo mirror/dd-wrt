@@ -1,24 +1,5 @@
-/* edit.h - editor private API
-
-   Copyright (C) 1996, 1997, 2009 Free Software Foundation, Inc.
-
-   Authors: 1996, 1997 Paul Sheer
-   2009 Andrew Borodin
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+/*
+   editor private API
  */
 
 /** \file edit-impl.h
@@ -97,6 +78,8 @@
 #define CURS_RIGHT_LOTS 607
 #define COLUMN_ON       608
 #define COLUMN_OFF      609
+#define DELCHAR_BR      610
+#define BACKSPACE_BR    611
 #define MARK_1          1000
 #define MARK_2          500000000
 #define MARK_CURS       1000000000
@@ -164,12 +147,6 @@ typedef struct edit_stack_type
     char *filename;
 } edit_stack_type;
 
-struct macro
-{
-    unsigned long command;
-    int ch;
-};
-
 struct Widget;
 struct WMenuBar;
 
@@ -201,14 +178,12 @@ extern gboolean search_create_bookmark;
 
 int edit_drop_hotkey_menu (WEdit * e, int key);
 void edit_menu_cmd (WEdit * e);
+void user_menu (WEdit * edit, const char *menu_file, int selected_entry);
 void edit_init_menu (struct WMenuBar *menubar);
 void menu_save_mode_cmd (void);
 int edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch);
 int edit_get_byte (WEdit * edit, long byte_index);
-char *edit_get_byte_ptr (WEdit * edit, long byte_index);
-char *edit_get_buf_ptr (WEdit * edit, long byte_index);
 int edit_get_utf (WEdit * edit, long byte_index, int *char_width);
-int edit_get_prev_utf (WEdit * edit, long byte_index, int *char_width);
 long edit_count_lines (WEdit * edit, long current, long upto);
 long edit_move_forward (WEdit * edit, long current, long lines, long upto);
 long edit_move_forward3 (WEdit * edit, long current, int cols, long upto);
@@ -235,14 +210,12 @@ void edit_block_copy_cmd (WEdit * edit);
 void edit_block_move_cmd (WEdit * edit);
 int edit_block_delete_cmd (WEdit * edit);
 void edit_delete_line (WEdit * edit);
-void insert_spaces_tab (WEdit * edit, int half);
 
 int edit_delete (WEdit * edit, const int byte_delete);
 void edit_insert (WEdit * edit, int c);
 void edit_cursor_move (WEdit * edit, long increment);
-void edit_move_block_to_right (WEdit * edit);
-void edit_move_block_to_left (WEdit * edit);
-void edit_push_action (WEdit * edit, long c, ...);
+void edit_push_undo_action (WEdit * edit, long c, ...);
+void edit_push_redo_action (WEdit * edit, long c, ...);
 void edit_push_key_press (WEdit * edit);
 void edit_insert_ahead (WEdit * edit, int c);
 long edit_write_stream (WEdit * edit, FILE * f);
@@ -269,12 +242,13 @@ void edit_get_match_keyword_cmd (WEdit * edit);
 int edit_save_block (WEdit * edit, const char *filename, long start, long finish);
 int edit_save_block_cmd (WEdit * edit);
 int edit_insert_file_cmd (WEdit * edit);
-void edit_insert_column_of_text (WEdit * edit, unsigned char *data, int size, int width);
-int edit_insert_column_of_text_from_file (WEdit * edit, int file);
-int edit_insert_file (WEdit * edit, const char *filename);
+void edit_insert_over (WEdit * edit);
+int edit_insert_column_of_text_from_file (WEdit * edit, int file,
+                                          long *start_pos, long *end_pos, int *col1, int *col2);
+long edit_insert_file (WEdit * edit, const char *filename);
 int edit_load_back_cmd (WEdit * edit);
 int edit_load_forward_cmd (WEdit * edit);
-void edit_block_process_cmd (WEdit * edit, const char *shell_cmd, int block);
+void edit_block_process_cmd (WEdit * edit, int macro_number);
 void edit_refresh_cmd (WEdit * edit);
 void edit_date_cmd (WEdit * edit);
 void edit_goto_cmd (WEdit * edit);
@@ -282,7 +256,6 @@ int eval_marks (WEdit * edit, long *start_mark, long *end_mark);
 void edit_status (WEdit * edit);
 void edit_execute_key_command (WEdit * edit, unsigned long command, int char_for_insertion);
 void edit_update_screen (WEdit * edit);
-int edit_print_string (WEdit * e, const char *s);
 void edit_move_to_line (WEdit * e, long line);
 void edit_move_display (WEdit * e, long line);
 void edit_word_wrap (WEdit * edit);
@@ -290,9 +263,10 @@ int edit_sort_cmd (WEdit * edit);
 int edit_ext_cmd (WEdit * edit);
 void edit_help_cmd (WEdit * edit);
 
-int edit_save_macro_cmd (WEdit * edit, struct macro macro[], int n);
-int edit_load_macro_cmd (WEdit * edit, struct macro macro[], int *n, int k);
+int edit_store_macro_cmd (WEdit * edit);
+gboolean edit_load_macro_cmd (WEdit * edit);
 void edit_delete_macro_cmd (WEdit * edit);
+gboolean edit_repeat_macro_cmd (WEdit * edit);
 
 int edit_copy_to_X_buf_cmd (WEdit * edit);
 int edit_cut_to_X_buf_cmd (WEdit * edit);
@@ -300,8 +274,9 @@ void edit_paste_from_X_buf_cmd (WEdit * edit);
 
 void edit_select_codepage_cmd (WEdit * edit);
 void edit_insert_literal_cmd (WEdit * edit);
-void edit_execute_macro_cmd (WEdit * edit);
+gboolean edit_execute_macro (WEdit * edit, int hotkey);
 void edit_begin_end_macro_cmd (WEdit * edit);
+void edit_begin_end_repeat_cmd (WEdit * edit);
 
 void edit_paste_from_history (WEdit * edit);
 

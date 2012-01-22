@@ -1,24 +1,28 @@
-/* editor syntax highlighting.
+/*
+   Editor syntax highlighting.
 
    Copyright (C) 1996, 1997, 1998, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007 Free Software Foundation, Inc.
+   2007, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1998 Paul Sheer
+   Written by:
+   Paul Sheer, 1998
+   Egmont Koblinger <egmont@gmail.com>, 2010
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -54,8 +58,6 @@
 #include "lib/strutil.h"        /* utf string functions */
 #include "lib/util.h"
 #include "lib/widget.h"         /* message() */
-
-#include "src/main.h"           /* mc_home */
 
 #include "edit-impl.h"
 #include "edit-widget.h"
@@ -762,14 +764,16 @@ get_args (char *l, char **args, int args_size)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-this_try_alloc_color_pair (const char *fg, const char *bg)
+this_try_alloc_color_pair (const char *fg, const char *bg, const char *attrs)
 {
-    char f[80], b[80], *p;
+    char f[80], b[80], a[80], *p;
 
     if (bg != NULL && *bg == '\0')
         bg = NULL;
     if (fg != NULL && *fg == '\0')
         fg = NULL;
+    if (attrs != NULL && *attrs == '\0')
+        attrs = NULL;
 
     if ((fg == NULL) && (bg == NULL))
         return EDITOR_NORMAL_COLOR;
@@ -820,7 +824,19 @@ this_try_alloc_color_pair (const char *fg, const char *bg)
         g_free (editnormal);
     }
 
-    return tty_try_alloc_color_pair (fg, bg);
+    if (attrs != NULL)
+    {
+        g_strlcpy (a, attrs, sizeof (a));
+        p = strchr (a, '/');
+        if (p != NULL)
+            *p = '\0';
+        /* get_args() mangles the + signs, unmangle 'em */
+        p = a;
+        while ((p = strchr (p, SYNTAX_TOKEN_PLUS)) != NULL)
+            *p++ = '+';
+        attrs = a;
+    }
+    return tty_try_alloc_color_pair (fg, bg, attrs);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -836,19 +852,21 @@ open_include_file (const char *filename)
         return fopen (filename, "r");
 
     g_free (error_file_name);
-    error_file_name = g_build_filename (home_dir, EDIT_DIR, filename, (char *) NULL);
+    error_file_name =
+        g_build_filename (mc_config_get_data_path (), EDIT_DIR, filename, (char *) NULL);
     f = fopen (error_file_name, "r");
     if (f != NULL)
         return f;
 
     g_free (error_file_name);
-    error_file_name = g_build_filename (mc_home, "syntax", filename, (char *) NULL);
+    error_file_name = g_build_filename (mc_global.sysconfig_dir, "syntax", filename, (char *) NULL);
     f = fopen (error_file_name, "r");
     if (f != NULL)
         return f;
 
     g_free (error_file_name);
-    error_file_name = g_build_filename (mc_home_alt, "syntax", filename, (char *) NULL);
+    error_file_name =
+        g_build_filename (mc_global.share_data_dir, "syntax", filename, (char *) NULL);
 
     return fopen (error_file_name, "r");
 }
@@ -873,8 +891,8 @@ static int
 edit_read_syntax_rules (WEdit * edit, FILE * f, char **args, int args_size)
 {
     FILE *g = NULL;
-    char *fg, *bg;
-    char last_fg[32] = "", last_bg[32] = "";
+    char *fg, *bg, *attrs;
+    char last_fg[32] = "", last_bg[32] = "", last_attrs[64] = "";
     char whole_right[512];
     char whole_left[512];
     char *l = 0;
@@ -1053,9 +1071,13 @@ edit_read_syntax_rules (WEdit * edit, FILE * f, char **args, int args_size)
             bg = *a;
             if (*a)
                 a++;
+            attrs = *a;
+            if (*a)
+                a++;
             g_strlcpy (last_fg, fg ? fg : "", sizeof (last_fg));
             g_strlcpy (last_bg, bg ? bg : "", sizeof (last_bg));
-            c->keyword[0]->color = this_try_alloc_color_pair (fg, bg);
+            g_strlcpy (last_attrs, attrs ? attrs : "", sizeof (last_attrs));
+            c->keyword[0]->color = this_try_alloc_color_pair (fg, bg, attrs);
             c->keyword[0]->keyword = g_strdup (" ");
             check_not_a;
 
@@ -1122,11 +1144,16 @@ edit_read_syntax_rules (WEdit * edit, FILE * f, char **args, int args_size)
             bg = *a;
             if (*a)
                 a++;
+            attrs = *a;
+            if (*a)
+                a++;
             if (!fg)
                 fg = last_fg;
             if (!bg)
                 bg = last_bg;
-            k->color = this_try_alloc_color_pair (fg, bg);
+            if (!attrs)
+                attrs = last_attrs;
+            k->color = this_try_alloc_color_pair (fg, bg, attrs);
             check_not_a;
 
             if (++num_words >= alloc_words_per_context)
@@ -1241,7 +1268,7 @@ edit_read_syntax_file (WEdit * edit, char ***pnames, const char *syntax_file,
     f = fopen (syntax_file, "r");
     if (f == NULL)
     {
-        lib_file = g_build_filename (mc_home_alt, "syntax", "Syntax", (char *) NULL);
+        lib_file = g_build_filename (mc_global.share_data_dir, "syntax", "Syntax", (char *) NULL);
         f = fopen (lib_file, "r");
         g_free (lib_file);
         if (f == NULL)
@@ -1485,7 +1512,7 @@ edit_load_syntax (WEdit * edit, char ***pnames, const char *type)
         if (!*edit->filename && !type)
             return;
     }
-    f = g_build_filename (home_dir, EDIT_SYNTAX_FILE, (char *) NULL);
+    f = mc_config_get_full_path (EDIT_SYNTAX_FILE);
     if (edit != NULL)
         r = edit_read_syntax_file (edit, pnames, f, edit->filename,
                                    get_first_editor_line (edit),

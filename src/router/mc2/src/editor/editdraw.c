@@ -1,24 +1,27 @@
-/* editor text drawing.
+/*
+   Editor text drawing.
 
    Copyright (C) 1996, 1997, 1998, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007 Free Software Foundation, Inc.
+   2007, 2011
+   The Free Software Foundation, Inc.
 
-   Authors: 1996, 1997 Paul Sheer
+   Written by:
+   Paul Sheer, 1996, 1997
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -47,8 +50,8 @@
 #include "lib/widget.h"         /* buttonbar_redraw() */
 #include "lib/charsets.h"
 
-#include "src/main.h"           /* source_codepage */
 #include "src/setup.h"          /* edit_tab_spacing */
+#include "src/main.h"           /* macro_index */
 
 #include "edit-impl.h"
 #include "edit-widget.h"
@@ -147,13 +150,14 @@ status_string (WEdit * edit, char *s, int w)
                     "%c%c%c%c %3ld %5ld/%ld %6ld/%ld %s %s",
                     edit->mark1 != edit->mark2 ? (edit->column_highlight ? 'C' : 'B') : '-',
                     edit->modified ? 'M' : '-',
-                    edit->macro_i < 0 ? '-' : 'R',
+                    macro_index < 0 ? '-' : 'R',
                     edit->overwrite == 0 ? '-' : 'O',
                     edit->curs_col + edit->over_col,
                     edit->curs_line + 1,
                     edit->total_lines + 1, edit->curs1, edit->last_byte, byte_str,
 #ifdef HAVE_CHARSET
-                    source_codepage >= 0 ? get_codepage_id (source_codepage) : ""
+                    mc_global.source_codepage >=
+                    0 ? get_codepage_id (mc_global.source_codepage) : ""
 #else
                     ""
 #endif
@@ -163,7 +167,7 @@ status_string (WEdit * edit, char *s, int w)
                     "[%c%c%c%c] %2ld L:[%3ld+%2ld %3ld/%3ld] *(%-4ld/%4ldb) %s  %s",
                     edit->mark1 != edit->mark2 ? (edit->column_highlight ? 'C' : 'B') : '-',
                     edit->modified ? 'M' : '-',
-                    edit->macro_i < 0 ? '-' : 'R',
+                    macro_index < 0 ? '-' : 'R',
                     edit->overwrite == 0 ? '-' : 'O',
                     edit->curs_col + edit->over_col,
                     edit->start_line + 1,
@@ -171,7 +175,8 @@ status_string (WEdit * edit, char *s, int w)
                     edit->curs_line + 1,
                     edit->total_lines + 1, edit->curs1, edit->last_byte, byte_str,
 #ifdef HAVE_CHARSET
-                    source_codepage >= 0 ? get_codepage_id (source_codepage) : ""
+                    mc_global.source_codepage >=
+                    0 ? get_codepage_id (mc_global.source_codepage) : ""
 #else
                     ""
 #endif
@@ -518,7 +523,7 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
                     /* fallthrough */
                 default:
 #ifdef HAVE_CHARSET
-                    if (utf8_display)
+                    if (mc_global.utf8_display)
                     {
                         if (!edit->utf8)
                         {
@@ -556,8 +561,8 @@ edit_draw_this_line (WEdit * edit, long b, long row, long start_col, long end_co
                     }
                     if (!edit->utf8)
                     {
-                        if ((utf8_display && g_unichar_isprint (c)) ||
-                            (!utf8_display && is_printable (c)))
+                        if ((mc_global.utf8_display && g_unichar_isprint (c)) ||
+                            (!mc_global.utf8_display && is_printable (c)))
                         {
                             p->ch = c;
                             p++;

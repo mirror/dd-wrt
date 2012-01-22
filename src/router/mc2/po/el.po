@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-09-28 21:31+0300\n"
-"PO-Revision-Date: 2011-04-04 07:37+0000\n"
+"POT-Creation-Date: 2011-12-13 13:35+0300\n"
+"PO-Revision-Date: 2011-12-07 11:21+0000\n"
 "Last-Translator: slavazanko <slavazanko@gmail.com>\n"
 "Language-Team: Greek (http://www.transifex.net/projects/p/mc/team/el/)\n"
 "Language: el\n"
@@ -28,6 +28,26 @@ msgstr ""
 msgid "Cannot translate from %s to %s"
 msgstr ""
 
+msgid "Event system already initialized"
+msgstr ""
+
+msgid "Failed to initialize event system"
+msgstr ""
+
+msgid "Event system not initialized"
+msgstr ""
+
+msgid "Check input data! Some of parameters are NULL!"
+msgstr ""
+
+#, c-format
+msgid "Unable to create group '%s' for events!"
+msgstr ""
+
+#, c-format
+msgid "Unable to create event '%s'!"
+msgstr ""
+
 #, c-format
 msgid ""
 "File \"%s\" is already being edited.\n"
@@ -44,6 +64,31 @@ msgstr ""
 msgid "&Ignore lock"
 msgstr ""
 
+#, c-format
+msgid "Cannot create %s directory"
+msgstr ""
+
+msgid "FATAL: not a directory:"
+msgstr ""
+
+#, c-format
+msgid "An error occured while migrating user settings: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Your old settings were migrated from %s\n"
+"to Freedesktop recommended dirs.\n"
+"To get more info, please visit\n"
+"http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html"
+msgstr ""
+
+#, c-format
+msgid ""
+"Your old settings were migrated from %s\n"
+"to %s\n"
+msgstr ""
+
 msgid "Search string not found"
 msgstr ""
 
@@ -55,6 +100,9 @@ msgstr ""
 
 #, c-format
 msgid "Invalid token number %d"
+msgstr ""
+
+msgid "Regular expression error"
 msgstr ""
 
 msgid "Normal"
@@ -84,6 +132,13 @@ msgid ""
 msgstr ""
 "Αδύνατη η ανάγνωση του δέρματος '%s'. \n"
 " Το προεπιλεγμένο δέρμα έχει φορτωθεί"
+
+#, c-format
+msgid ""
+"Unable to use '%s' skin with 256 colors support\n"
+"on non-256 colors terminal.\n"
+"Default skin has been loaded"
+msgstr ""
 
 msgid "Function key 1"
 msgstr "Πλήκτρο λειτουργίας 1"
@@ -292,6 +347,9 @@ msgstr "Δολάριο"
 msgid "Quotation mark"
 msgstr "Εισαγωγικό"
 
+msgid "Percent sign"
+msgstr ""
+
 msgid "Caret"
 msgstr "Αγκύλη"
 
@@ -409,42 +467,6 @@ msgid "Error dup'ing old error pipe"
 msgstr ""
 
 #, c-format
-msgid ""
-"Cannot open cpio archive\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"Premature end of cpio archive\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"Inconsistent hardlinks of\n"
-"%s\n"
-"in cpio archive\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid "%s contains duplicate entries! Skipping!"
-msgstr ""
-
-#, c-format
-msgid ""
-"Corrupted cpio header encountered in\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"Unexpected end of file\n"
-"%s"
-msgstr ""
-
-#, c-format
 msgid "Directory cache expired for %s"
 msgstr ""
 
@@ -457,191 +479,7 @@ msgstr ""
 msgid "Getting file"
 msgstr "Γίνεται λήψη αρχείου"
 
-#, c-format
-msgid ""
-"Cannot open %s archive\n"
-"%s"
-msgstr ""
-"Άνοιγμα αρχείου %s ανεπιτυχές\n"
-"%s"
-
-msgid "Inconsistent extfs archive"
-msgstr "Χαλασμένο αρχείο extfs"
-
-#, c-format
-msgid "Warning: cannot open %s directory\n"
-msgstr ""
-
-#, c-format
-msgid "fish: Disconnecting from %s"
-msgstr ""
-
-msgid "fish: Waiting for initial line..."
-msgstr ""
-
-msgid "Sorry, we cannot do password authenticated connections for now."
-msgstr ""
-"Με συγχωρείτε, αλλά προς το παρόν συνδέσεις με χρήση κωδικού δεν "
-"υποστηρίζονται."
-
-#, c-format
-msgid "fish: Password is required for %s"
-msgstr ""
-
-msgid "fish: Sending password..."
-msgstr ""
-
-msgid "fish: Sending initial line..."
-msgstr ""
-
-msgid "fish: Handshaking version..."
-msgstr ""
-
-msgid "fish: Getting host info..."
-msgstr ""
-
-msgid "fish: Setting up current directory..."
-msgstr ""
-
-#, c-format
-msgid "fish: Connected, home %s."
-msgstr ""
-
-#, c-format
-msgid "fish: Reading directory %s..."
-msgstr ""
-
-#, c-format
-msgid "%s: done."
-msgstr ""
-
-#, c-format
-msgid "%s: failure"
-msgstr ""
-
-#, c-format
-msgid "fish: store %s: sending command..."
-msgstr ""
-
-msgid "fish: Local read failed, sending zeros"
-msgstr ""
-
-msgid "fish: storing zeros"
-msgstr ""
-
-msgid "fish: storing file"
-msgstr ""
-
-msgid "Aborting transfer..."
-msgstr ""
-
-msgid "Error reported after abort."
-msgstr ""
-
-msgid "Aborted transfer would be successful."
-msgstr ""
-
-#, c-format
-msgid "ftpfs: Disconnecting from %s"
-msgstr "ftpfs: Αποσύνδεση από το %s"
-
-#, c-format
-msgid "FTP: Password required for %s"
-msgstr ""
-
-msgid "ftpfs: sending login name"
-msgstr "ftpfs: αποστολή ονόματος χρήστη"
-
-msgid "ftpfs: sending user password"
-msgstr "ftpfs: αποστολή κωδικού χρήστη"
-
-#, c-format
-msgid "FTP: Account required for user %s"
-msgstr ""
-
-msgid "Account:"
-msgstr ""
-
-msgid "ftpfs: sending user account"
-msgstr ""
-
-msgid "ftpfs: logged in"
-msgstr "ftpfs: επιτυχής είσοδος στο σύστημα"
-
-#, c-format
-msgid "ftpfs: Login incorrect for user %s "
-msgstr "ftpfs: Εσφαλμένο όνομα/κωδικός για το χρήστη %s "
-
-msgid "ftpfs: Invalid host name."
-msgstr "ftpfs: Άκυρο όνομα συστήματος."
-
-#, c-format
-msgid "ftpfs: %s"
-msgstr ""
-
-#, c-format
-msgid "ftpfs: making connection to %s"
-msgstr "ftpfs: σύνδεση με %s σε εξέλιξη"
-
-msgid "ftpfs: connection interrupted by user"
-msgstr "ftpfs: διακοπή σύδεσης από το χρήστη"
-
-#, c-format
-msgid "ftpfs: connection to server failed: %s"
-msgstr "ftpfs: ανεπιτυχής σύνδεση με τον εξυπηρέτη: %s"
-
-#, c-format
-msgid "Waiting to retry... %d (Control-C to cancel)"
-msgstr "Αναμονή επανάληψης... %d (Control-C για ακύρωση)"
-
-msgid "ftpfs: invalid address family"
-msgstr ""
-
-#, c-format
-msgid "ftpfs: could not create socket: %s"
-msgstr ""
-
-msgid "ftpfs: could not setup passive mode"
-msgstr ""
-
-msgid "ftpfs: aborting transfer."
-msgstr "ftpfs: ακύρωση μεταφοράς."
-
-#, c-format
-msgid "ftpfs: abort error: %s"
-msgstr "ftpfs: σφάλμα ακύρωσης: %s"
-
-msgid "ftpfs: abort failed"
-msgstr "ftpfs: ακύρωση ανεπιτυχής"
-
-msgid "ftpfs: CWD failed."
-msgstr "ftpfs: ανεπιτυχές CWD (αλλαγή καταλόγου)"
-
-msgid "ftpfs: couldn't resolve symlink"
-msgstr ""
-
-msgid "Resolving symlink..."
-msgstr ""
-
-#, c-format
-msgid "ftpfs: Reading FTP directory %s... %s%s"
-msgstr ""
-
-msgid "(strict rfc959)"
-msgstr ""
-
-msgid "(chdir first)"
-msgstr ""
-
-msgid "ftpfs: failed; nowhere to fallback to"
-msgstr ""
-
-msgid "ftpfs: storing file"
-msgstr ""
-
-msgid ""
-"~/.netrc file has incorrect mode\n"
-"Remove password or correct mode"
+msgid "Changes to file lost"
 msgstr ""
 
 msgid "Cannot parse:"
@@ -650,147 +488,11 @@ msgstr ""
 msgid "More parsing errors will be ignored."
 msgstr ""
 
-#, c-format
-msgid "Warning: file %s not found\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Warning: Invalid line in %s:\n"
-"%s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Warning: Invalid flag %c in %s:\n"
-"%s\n"
-msgstr ""
-
-#, c-format
-msgid "reconnect to %s failed"
-msgstr ""
-
-msgid "Authentication failed"
-msgstr ""
-
-#, c-format
-msgid "Error %s creating directory %s"
-msgstr ""
-
-#, c-format
-msgid "Error %s removing directory %s"
-msgstr ""
-
-#, c-format
-msgid "%s opening remote file %s"
-msgstr ""
-
-#, c-format
-msgid "%s removing remote file %s"
-msgstr ""
-
-#, c-format
-msgid "%s renaming files\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Cannot open tar archive\n"
-"%s"
-msgstr ""
-"Άνοιγμα αρχείου tar ανεπιτυχές\n"
-"%s"
-
-msgid "Inconsistent tar archive"
-msgstr "Χαλασμένο αρχείο tar"
-
-msgid "Unexpected EOF on archive file"
-msgstr "Απρόσμενο τέλος αρχείου tar"
-
-#, c-format
-msgid ""
-"%s\n"
-"doesn't look like a tar archive."
-msgstr ""
-
-msgid "undelfs: error"
-msgstr ""
-
-msgid "not enough memory"
-msgstr ""
-
-msgid "while allocating block buffer"
-msgstr ""
-
-#, c-format
-msgid "open_inode_scan: %d"
-msgstr ""
-
-#, c-format
-msgid "while starting inode scan %d"
-msgstr ""
-
-#, c-format
-msgid "undelfs: loading deleted files information %d inodes"
-msgstr ""
-
-#, c-format
-msgid "while calling ext2_block_iterate %d"
-msgstr ""
-
-msgid "no more memory while reallocating array"
-msgstr ""
-
-#, c-format
-msgid "while doing inode scan %d"
-msgstr ""
-
-#, c-format
-msgid "Cannot open file %s"
-msgstr ""
-
-msgid "undelfs: reading inode bitmap..."
-msgstr ""
-
-#, c-format
-msgid ""
-"Cannot load inode bitmap from:\n"
-"%s"
-msgstr ""
-
-msgid "undelfs: reading block bitmap..."
-msgstr ""
-
-#, c-format
-msgid ""
-"Cannot load block bitmap from:\n"
-"%s"
-msgstr ""
-
-msgid "vfs_info is not fs!"
-msgstr ""
-
-msgid "You have to chdir to extract files first"
-msgstr ""
-
-msgid "while iterating over blocks"
-msgstr ""
-
-#, c-format
-msgid "Cannot open file \"%s\""
-msgstr ""
-
-msgid "Ext2lib error"
-msgstr ""
-
 msgid "Internal error:"
 msgstr ""
 
 msgid "Password:"
 msgstr "Κωδικός:"
-
-msgid "Changes to file lost"
-msgstr ""
 
 msgid "Screens"
 msgstr ""
@@ -827,6 +529,12 @@ msgid "Displays the current version"
 msgstr ""
 
 msgid "Print data directory"
+msgstr ""
+
+msgid "Print extended info about used data directories"
+msgstr ""
+
+msgid "Print configure options"
 msgstr ""
 
 msgid "Print last working directory to specified file"
@@ -874,6 +582,9 @@ msgstr ""
 msgid "Load definitions of key bindings from specified file"
 msgstr ""
 
+msgid "Don't load definitions of key bindings from file, use defaults"
+msgstr ""
+
 msgid "Requests to run in black and white"
 msgstr ""
 
@@ -888,9 +599,9 @@ msgstr ""
 
 #. TRANSLATORS: don't translate keywords
 msgid ""
-"--colors KEYWORD={FORE},{BACK}\n"
+"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
 "\n"
-"{FORE} and {BACK} can be omitted, and the default will be used\n"
+"{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
 "\n"
 " Keywords:\n"
 "   Global:       errors, disabled, reverse, gauge, header\n"
@@ -907,13 +618,18 @@ msgid ""
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
-#. TRANSLATORS: don't translate color names
+#. TRANSLATORS: don't translate color names and attributes
 msgid ""
-"Colors:\n"
+"Standard Colors:\n"
 "   black, gray, red, brightred, green, brightgreen, brown,\n"
 "   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
 "   brightcyan, lightgray and white\n"
 "\n"
+"Extended colors, when 256 colors are available:\n"
+"   color16 to color255, or rgb000 to rgb555 and gray0 to gray23\n"
+"\n"
+"Attributes:\n"
+"   bold, underline, reverse, blink; append more with '+'\n"
 msgstr ""
 
 msgid "Color options"
@@ -1138,9 +854,6 @@ msgstr ""
 msgid "File \"%s\" is too large"
 msgstr ""
 
-msgid "Macro recursion is too deep"
-msgstr ""
-
 #, c-format
 msgid "Error reading from pipe: %s"
 msgstr ""
@@ -1194,18 +907,6 @@ msgstr ""
 msgid "Save As"
 msgstr ""
 
-msgid "Delete macro"
-msgstr ""
-
-msgid "Cannot open temp file"
-msgstr ""
-
-msgid "Cannot open macro file"
-msgstr ""
-
-msgid "Cannot overwrite macro file"
-msgstr ""
-
 msgid "Syntax file edit"
 msgstr ""
 
@@ -1257,16 +958,25 @@ msgstr ""
 msgid "Cannot save file"
 msgstr ""
 
+msgid "Delete macro"
+msgstr ""
+
+msgid "Press macro hotkey:"
+msgstr ""
+
+msgid "Macro not deleted"
+msgstr ""
+
 msgid "Save macro"
 msgstr ""
 
 msgid "Press the macro's new hotkey:"
 msgstr ""
 
-msgid "Press macro hotkey:"
+msgid "Repeat last commands"
 msgstr ""
 
-msgid "Load macro"
+msgid "Repeat times:"
 msgstr ""
 
 #, c-format
@@ -1355,24 +1065,6 @@ msgstr ""
 msgid "Cannot execute command"
 msgstr ""
 
-msgid "Error creating script:"
-msgstr ""
-
-msgid "Error reading script:"
-msgstr ""
-
-msgid "Error closing script:"
-msgstr ""
-
-msgid "Script created:"
-msgstr ""
-
-msgid "Process block"
-msgstr ""
-
-msgid "Error calling program"
-msgstr ""
-
 msgid "Copies to"
 msgstr ""
 
@@ -1392,9 +1084,6 @@ msgid "Insert literal"
 msgstr ""
 
 msgid "Press any key:"
-msgstr ""
-
-msgid "Execute macro"
 msgstr ""
 
 msgid ""
@@ -1461,6 +1150,9 @@ msgstr ""
 msgid "&Undo"
 msgstr ""
 
+msgid "&Redo"
+msgstr ""
+
 msgid "&Toggle ins/overw"
 msgstr ""
 
@@ -1518,7 +1210,7 @@ msgstr ""
 msgid "&Prev bookmark"
 msgstr ""
 
-msgid "&Flush bookmark"
+msgid "&Flush bookmarks"
 msgstr ""
 
 msgid "&Go to line..."
@@ -1548,16 +1240,13 @@ msgstr ""
 msgid "&Refresh screen"
 msgstr ""
 
-msgid "&Start record macro"
-msgstr ""
-
-msgid "Finis&h record macro..."
-msgstr ""
-
-msgid "&Execute macro..."
+msgid "&Start/Stop record macro"
 msgstr ""
 
 msgid "Delete macr&o..."
+msgstr ""
+
+msgid "Record/Repeat &actions"
 msgstr ""
 
 msgid "'ispell' s&pell check"
@@ -1633,6 +1322,9 @@ msgid "Type writer wrap"
 msgstr ""
 
 msgid "Word wrap line length:"
+msgstr ""
+
+msgid "&Group undo"
 msgstr ""
 
 msgid "Cursor beyond end of line"
@@ -1964,21 +1656,17 @@ msgstr ""
 msgid "set user ID on execution"
 msgstr ""
 
-#, fuzzy
 msgid "Name:"
-msgstr "Όνομα"
+msgstr ""
 
-#, fuzzy
 msgid "Permissions (octal):"
-msgstr "Δικαιώματα"
+msgstr ""
 
-#, fuzzy
 msgid "Owner name:"
-msgstr "Ιδιοκτήτης"
+msgstr ""
 
-#, fuzzy
 msgid "Group name:"
-msgstr "Ομάδα"
+msgstr ""
 
 msgid "C&lear marked"
 msgstr ""
@@ -2172,11 +1860,11 @@ msgid "Setup"
 msgstr ""
 
 #, c-format
-msgid "Setup saved to ~/%s"
+msgid "Setup saved to %s"
 msgstr ""
 
 #, c-format
-msgid "Unable to save setup to ~/%s"
+msgid "Unable to save setup to %s"
 msgstr ""
 
 msgid "Cannot execute commands on non-local filesystems"
@@ -2212,14 +1900,13 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "~/%s file error"
+msgid "%s file error"
 msgstr ""
 
 #, c-format
 msgid ""
-"The format of the ~/%s file has changed with version 3.0. You may either "
-"want to copy it from %smc.ext or use that file as an example of how to write "
-"it."
+"The format of the %s file has changed with version 3.0. You may either want "
+"to copy it from %smc.ext or use that file as an example of how to write it."
 msgstr ""
 
 msgid "DialogTitle|Copy"
@@ -2296,6 +1983,9 @@ msgid ""
 msgstr ""
 
 msgid "&Abort"
+msgstr ""
+
+msgid "Ski&p all"
 msgstr ""
 
 msgid "&Retry"
@@ -2415,6 +2105,12 @@ msgstr ""
 #, c-format
 msgid ""
 "Cannot fstat target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot preallocate space for target file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2678,6 +2374,9 @@ msgstr ""
 msgid "File name:"
 msgstr ""
 
+msgid "Ena&ble ignore directories:"
+msgstr ""
+
 msgid "Start at:"
 msgstr ""
 
@@ -2687,6 +2386,12 @@ msgstr ""
 
 msgid "Finished"
 msgstr ""
+
+#, c-format
+msgid "Finished (ignored %zd directory)"
+msgid_plural "Finished (ignored %zd directories)"
+msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "Searching %s"
@@ -2781,7 +2486,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"MC was unable to write ~/%s file,\n"
+"MC was unable to write %s file,\n"
 "your old hotlist entries were not deleted"
 msgstr ""
 
@@ -2803,18 +2508,17 @@ msgstr ""
 msgid "File: %s"
 msgstr ""
 
-#, c-format
-msgid "Free nodes: %ld (%ld%%) of %ld"
-msgstr ""
-
 msgid "No node information"
 msgstr ""
 
-#, c-format
-msgid "Free space: %s (%d%%) of %s"
+msgid "Free nodes:"
 msgstr ""
 
 msgid "No space information"
+msgstr ""
+
+#, c-format
+msgid "Free space: %s/%s (%d%%)"
 msgstr ""
 
 #, c-format
@@ -2890,9 +2594,6 @@ msgstr ""
 msgid "Command &prompt"
 msgstr ""
 
-msgid "Show &mini status"
-msgstr ""
-
 msgid "Menu&bar visible"
 msgstr ""
 
@@ -2950,6 +2651,9 @@ msgstr ""
 msgid "SM&B link..."
 msgstr ""
 
+msgid "Paneli&ze"
+msgstr ""
+
 msgid "&Rescan"
 msgstr ""
 
@@ -3001,7 +2705,7 @@ msgstr ""
 msgid "U&nselect group"
 msgstr ""
 
-msgid "Reverse selec&tion"
+msgid "&Invert selection"
 msgstr ""
 
 msgid "E&xit"
@@ -3025,7 +2729,7 @@ msgstr ""
 msgid "&Compare directories"
 msgstr ""
 
-msgid "&View diff files"
+msgid "C&ompare files"
 msgstr ""
 
 msgid "E&xternal panelize"
@@ -3121,6 +2825,9 @@ msgstr ""
 msgid "ButtonBar|Mkdir"
 msgstr ""
 
+msgid "Memory exhausted!"
+msgstr ""
+
 msgid "&Never"
 msgstr ""
 
@@ -3170,6 +2877,9 @@ msgid "S&ingle press"
 msgstr ""
 
 msgid "Esc key mode"
+msgstr ""
+
+msgid "Preallocate &space"
 msgstr ""
 
 msgid "Mkdi&r autoname"
@@ -3250,7 +2960,7 @@ msgstr ""
 msgid "Use SI si&ze units"
 msgstr ""
 
-msgid "Main panel options"
+msgid "Show mi&ni-status"
 msgstr ""
 
 msgid "Panel options"
@@ -3383,6 +3093,9 @@ msgid_plural "%s in %d files"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Panelize"
+msgstr ""
+
 msgid "Unknown tag on display format:"
 msgstr ""
 
@@ -3483,6 +3196,9 @@ msgid "True:"
 msgstr ""
 
 msgid "False:"
+msgstr ""
+
+msgid "Error calling program"
 msgstr ""
 
 msgid "Warning -- ignoring file"
@@ -3589,7 +3305,16 @@ msgid "key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
 
 #, c-format
-msgid "Cannot create %s directory"
+msgid ""
+"Failed to run:\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Failed while close:\n"
+"%s\n"
 msgstr ""
 
 msgid "Choose codepage"
@@ -3673,6 +3398,380 @@ msgstr ""
 
 #, c-format
 msgid "Data types:"
+msgstr ""
+
+msgid "System data"
+msgstr ""
+
+msgid "Config directory:"
+msgstr ""
+
+msgid "Data directory:"
+msgstr ""
+
+msgid "VFS plugins and scripts:"
+msgstr ""
+
+msgid "User data"
+msgstr ""
+
+msgid "Cache directory:"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open cpio archive\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Premature end of cpio archive\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Inconsistent hardlinks of\n"
+"%s\n"
+"in cpio archive\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid "%s contains duplicate entries! Skipping!"
+msgstr ""
+
+#, c-format
+msgid ""
+"Corrupted cpio header encountered in\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Unexpected end of file\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
+msgstr ""
+"Άνοιγμα αρχείου %s ανεπιτυχές\n"
+"%s"
+
+msgid "Inconsistent extfs archive"
+msgstr "Χαλασμένο αρχείο extfs"
+
+#, c-format
+msgid "Warning: cannot open %s directory\n"
+msgstr ""
+
+#, c-format
+msgid "fish: Disconnecting from %s"
+msgstr ""
+
+msgid "fish: Waiting for initial line..."
+msgstr ""
+
+msgid "Sorry, we cannot do password authenticated connections for now."
+msgstr ""
+"Με συγχωρείτε, αλλά προς το παρόν συνδέσεις με χρήση κωδικού δεν "
+"υποστηρίζονται."
+
+#, c-format
+msgid "fish: Password is required for %s"
+msgstr ""
+
+msgid "fish: Sending password..."
+msgstr ""
+
+msgid "fish: Sending initial line..."
+msgstr ""
+
+msgid "fish: Handshaking version..."
+msgstr ""
+
+msgid "fish: Getting host info..."
+msgstr ""
+
+msgid "fish: Setting up current directory..."
+msgstr ""
+
+#, c-format
+msgid "fish: Connected, home %s."
+msgstr ""
+
+#, c-format
+msgid "fish: Reading directory %s..."
+msgstr ""
+
+#, c-format
+msgid "%s: done."
+msgstr ""
+
+#, c-format
+msgid "%s: failure"
+msgstr ""
+
+#, c-format
+msgid "fish: store %s: sending command..."
+msgstr ""
+
+msgid "fish: Local read failed, sending zeros"
+msgstr ""
+
+msgid "fish: storing zeros"
+msgstr ""
+
+msgid "fish: storing file"
+msgstr ""
+
+msgid "Aborting transfer..."
+msgstr ""
+
+msgid "Error reported after abort."
+msgstr ""
+
+msgid "Aborted transfer would be successful."
+msgstr ""
+
+#, c-format
+msgid "ftpfs: Disconnecting from %s"
+msgstr "ftpfs: Αποσύνδεση από το %s"
+
+#, c-format
+msgid "FTP: Password required for %s"
+msgstr ""
+
+msgid "ftpfs: sending login name"
+msgstr "ftpfs: αποστολή ονόματος χρήστη"
+
+msgid "ftpfs: sending user password"
+msgstr "ftpfs: αποστολή κωδικού χρήστη"
+
+#, c-format
+msgid "FTP: Account required for user %s"
+msgstr ""
+
+msgid "Account:"
+msgstr ""
+
+msgid "ftpfs: sending user account"
+msgstr ""
+
+msgid "ftpfs: logged in"
+msgstr "ftpfs: επιτυχής είσοδος στο σύστημα"
+
+#, c-format
+msgid "ftpfs: Login incorrect for user %s "
+msgstr "ftpfs: Εσφαλμένο όνομα/κωδικός για το χρήστη %s "
+
+msgid "ftpfs: Invalid host name."
+msgstr "ftpfs: Άκυρο όνομα συστήματος."
+
+#, c-format
+msgid "ftpfs: %s"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: making connection to %s"
+msgstr "ftpfs: σύνδεση με %s σε εξέλιξη"
+
+msgid "ftpfs: connection interrupted by user"
+msgstr "ftpfs: διακοπή σύδεσης από το χρήστη"
+
+#, c-format
+msgid "ftpfs: connection to server failed: %s"
+msgstr "ftpfs: ανεπιτυχής σύνδεση με τον εξυπηρέτη: %s"
+
+#, c-format
+msgid "Waiting to retry... %d (Control-G to cancel)"
+msgstr ""
+
+msgid "ftpfs: invalid address family"
+msgstr ""
+
+#, c-format
+msgid "ftpfs: could not create socket: %s"
+msgstr ""
+
+msgid "ftpfs: could not setup passive mode"
+msgstr ""
+
+msgid "ftpfs: aborting transfer."
+msgstr "ftpfs: ακύρωση μεταφοράς."
+
+#, c-format
+msgid "ftpfs: abort error: %s"
+msgstr "ftpfs: σφάλμα ακύρωσης: %s"
+
+msgid "ftpfs: abort failed"
+msgstr "ftpfs: ακύρωση ανεπιτυχής"
+
+msgid "ftpfs: CWD failed."
+msgstr "ftpfs: ανεπιτυχές CWD (αλλαγή καταλόγου)"
+
+msgid "ftpfs: couldn't resolve symlink"
+msgstr ""
+
+msgid "Resolving symlink..."
+msgstr ""
+
+#, c-format
+msgid "ftpfs: Reading FTP directory %s... %s%s"
+msgstr ""
+
+msgid "(strict rfc959)"
+msgstr ""
+
+msgid "(chdir first)"
+msgstr ""
+
+msgid "ftpfs: failed; nowhere to fallback to"
+msgstr ""
+
+msgid "ftpfs: storing file"
+msgstr ""
+
+msgid ""
+"~/.netrc file has incorrect mode\n"
+"Remove password or correct mode"
+msgstr ""
+
+#, c-format
+msgid "%s: Warning: file %s not found\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Warning: Invalid line in %s:\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Warning: Invalid flag %c in %s:\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid "reconnect to %s failed"
+msgstr ""
+
+msgid "Authentication failed"
+msgstr ""
+
+#, c-format
+msgid "Error %s creating directory %s"
+msgstr ""
+
+#, c-format
+msgid "Error %s removing directory %s"
+msgstr ""
+
+#, c-format
+msgid "%s opening remote file %s"
+msgstr ""
+
+#, c-format
+msgid "%s removing remote file %s"
+msgstr ""
+
+#, c-format
+msgid "%s renaming files\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open tar archive\n"
+"%s"
+msgstr ""
+"Άνοιγμα αρχείου tar ανεπιτυχές\n"
+"%s"
+
+msgid "Inconsistent tar archive"
+msgstr "Χαλασμένο αρχείο tar"
+
+msgid "Unexpected EOF on archive file"
+msgstr "Απρόσμενο τέλος αρχείου tar"
+
+#, c-format
+msgid ""
+"%s\n"
+"doesn't look like a tar archive."
+msgstr ""
+
+msgid "undelfs: error"
+msgstr ""
+
+msgid "not enough memory"
+msgstr ""
+
+msgid "while allocating block buffer"
+msgstr ""
+
+#, c-format
+msgid "open_inode_scan: %d"
+msgstr ""
+
+#, c-format
+msgid "while starting inode scan %d"
+msgstr ""
+
+#, c-format
+msgid "undelfs: loading deleted files information %d inodes"
+msgstr ""
+
+#, c-format
+msgid "while calling ext2_block_iterate %d"
+msgstr ""
+
+msgid "no more memory while reallocating array"
+msgstr ""
+
+#, c-format
+msgid "while doing inode scan %d"
+msgstr ""
+
+#, c-format
+msgid "Cannot open file %s"
+msgstr ""
+
+msgid "undelfs: reading inode bitmap..."
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot load inode bitmap from:\n"
+"%s"
+msgstr ""
+
+msgid "undelfs: reading block bitmap..."
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot load block bitmap from:\n"
+"%s"
+msgstr ""
+
+msgid "vfs_info is not fs!"
+msgstr ""
+
+msgid "You have to chdir to extract files first"
+msgstr ""
+
+msgid "while iterating over blocks"
+msgstr ""
+
+#, c-format
+msgid "Cannot open file \"%s\""
+msgstr ""
+
+msgid "Ext2lib error"
 msgstr ""
 
 msgid "Invalid value"

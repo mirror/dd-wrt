@@ -2,27 +2,27 @@
    Interface to the terminal controlling library.
    Slang wrapper.
 
-   Copyright (C) 2005, 2006, 2007, 2009 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006, 2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
    Written by:
-   Andrew Borodin <aborodin@vmail.ru>, 2009.
+   Andrew Borodin <aborodin@vmail.ru>, 2009
+   Egmont Koblinger <egmont@gmail.com>, 2010
 
    This file is part of the Midnight Commander.
 
-   The Midnight Commander is free software; you can redistribute it
+   The Midnight Commander is free software: you can redistribute it
    and/or modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   The Midnight Commander is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   The Midnight Commander is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /** \file
@@ -43,8 +43,9 @@
 #include "lib/strutil.h"        /* str_term_form */
 #include "lib/util.h"           /* is_printable() */
 
-#include "tty-internal.h"       /* slow_tty */
+#include "tty-internal.h"       /* mc_tty_normalize_from_utf8() */
 #include "tty.h"
+#include "color.h"
 #include "color-slang.h"
 #include "color-internal.h"
 #include "mouse.h"              /* Gpm_Event is required in key.h */
@@ -128,6 +129,34 @@ static const struct
 };
 
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+tty_setup_sigwinch (void (*handler) (int))
+{
+#ifdef SIGWINCH
+    struct sigaction act, oact;
+    act.sa_handler = handler;
+    sigemptyset (&act.sa_mask);
+    act.sa_flags = 0;
+#ifdef SA_RESTART
+    act.sa_flags |= SA_RESTART;
+#endif /* SA_RESTART */
+    sigaction (SIGWINCH, &act, &oact);
+#endif /* SIGWINCH */
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+sigwinch_handler (int dummy)
+{
+    (void) dummy;
+
+    tty_change_screen_size ();
+    mc_global.tty.winch_flag = TRUE;
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 /* HP Terminals have capabilities (pfkey, pfloc, pfx) to program function keys.
@@ -241,11 +270,8 @@ mc_tty_normalize_lines_char (const char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable, gboolean is_xterm)
+tty_init (gboolean mouse_enable, gboolean is_xterm)
 {
-    slow_tty = slow;
-    ugly_line_drawing = ugly_lines;
-
     SLtt_Ignore_Beep = 1;
 
     SLutf8_enable (-1);         /* has to be called first before any of the other functions. */
@@ -270,7 +296,7 @@ tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable, gboolean is
     /* 255 = ignore abort char; XCTRL('g') for abort char = ^g */
     SLang_init_tty (XCTRL ('g'), 1, 0);
 
-    if (ugly_lines)
+    if (mc_global.tty.ugly_line_drawing)
         SLtt_Has_Alt_Charset = 0;
 
     /* If SLang uses fileno(stderr) for terminal input MC will hang
@@ -293,7 +319,8 @@ tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable, gboolean is
 
     tty_reset_prog_mode ();
     load_terminfo_keys ();
-    SLtt_Blink_Mode = 0;
+
+    SLtt_Blink_Mode = tty_use_256colors ()? 1 : 0;
 
     tty_start_interrupt_key ();
 
@@ -315,6 +342,8 @@ tty_init (gboolean slow, gboolean ugly_lines, gboolean mouse_enable, gboolean is
     do_enter_ca_mode ();
     tty_keypad (TRUE);
     tty_nodelay (FALSE);
+
+    tty_setup_sigwinch (sigwinch_handler);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -683,23 +712,6 @@ void
 tty_refresh (void)
 {
     SLsmg_refresh ();
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-tty_setup_sigwinch (void (*handler) (int))
-{
-#ifdef SIGWINCH
-    struct sigaction act, oact;
-    act.sa_handler = handler;
-    sigemptyset (&act.sa_mask);
-    act.sa_flags = 0;
-#ifdef SA_RESTART
-    act.sa_flags |= SA_RESTART;
-#endif /* SA_RESTART */
-    sigaction (SIGWINCH, &act, &oact);
-#endif /* SIGWINCH */
 }
 
 /* --------------------------------------------------------------------------------------------- */

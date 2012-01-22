@@ -192,7 +192,7 @@ esetén is.
 Az egérgomb automatikus ismétlésének határértéke alapesetben 400
 ezredmásodpercnyi. Ez megváltoztatható az
 .\"LINK2"
-~/.mc/ini
+~/.config/mc/ini
 .\"Save Setup"
 fájlban a
 .I mouse_repeat_rate
@@ -914,7 +914,9 @@ ha a belső szerkesztő be van kapcsolva.
 Egy beviteli ablakot jelenít meg, amely alapértelmezésben a nem
 kiválasztott panel könyvtárát adja meg rendeltetési helyként, majd
 átmásolja a kiválasztott fájlt (vagy kijelölt fájlokat, ha egynél több
-fájlról van szó) a beviteli ablakban megadott könyvtárba. A folyamat
+fájlról van szó) a beviteli ablakban megadott könyvtárba. Space for
+destination file may be preallocated relative to preallocate_space
+configure option. A folyamat
 futását a C\-c, vagy ESC lenyomásával szakíthatod meg. A forrás maszk
 beállításairól (ami általában a *, vagy a ^\\(.*\\)$ közül valamelyik.
 Ezekről a "Shell kifejezések" beállításnál, illetve a
@@ -1222,7 +1224,7 @@ slow linkkel csatoltak).
 .PP
 Az átlépendő könyvtárakat a
 .B ignore_dirs
-változó állítja be az ~/.mc/ini fájlod
+változó állítja be az ~/.config/mc/ini fájlod
 .B FindFile
 részében.
 .PP
@@ -1293,7 +1295,7 @@ A cd belső parancs
 leírásánál.
 .\"NODE "    Extension File Edit"
 .SH "    Társítások"
-Ez az ~/.mc/bindings szerkesztéséhez segítségül fogja hívni a
+Ez az ~/.config/mc/mc.ext szerkesztéséhez segítségül fogja hívni a
 szövegszerkesztődet. A fájl formátuma a következő (a formátum a 3.0\-ás
 verzióval megváltozott):
 .PP
@@ -1365,7 +1367,7 @@ A felhasználói menüt a felhasználó testre szabhatja. Ez az aktulis
 könyvtár .mc.menu fájlja, ha az létezik, de csak, ha az a felhasználó
 (illetve a root) a tulajdonosa, és nem lehet bárki számára írható. Ha
 nem talál ilyen fájlt, az
-.I ~/.mc/menu
+.I ~/.config/mc/menu
 keresése a következő lépés, egyébként pedig az mc az alapértelmezett
 rendszerszintű menüt használja, pl.:
 .IR @prefix@/share/mc/mc.menu ,
@@ -1658,7 +1660,7 @@ engedélyezett, akkor a szokásos kiterjesztések azonosak a ed\-ben lévőkkel:
 .PP
 .I Beállítások automatikus mentése
 Ha ez az opciót bekapcsoltad, amikor kilépsz a Midnight Commander\-ből,
-az MC opcióinak beállításait az ~/.mc/ini fájlba menti.
+az MC opcióinak beállításait az ~/.config/mc/ini fájlba menti.
 .PP
 .I Auto menük.
 Ha ez az opció engedélyezett, a felhasználói menü megjelenik az mc
@@ -1812,7 +1814,7 @@ begépelt gomb lesz az megkérdezett gombbal azonosított. Ezután a
 dialógus ablak eltűnik.
 .PP
 Amikor végeztél minden gombbal, ezt elmentheted a Mentés gombbal az
-~/.mc/ini fájlba, a [terminal:TERM] részbe (ahol a TERM a jelenlegi
+~/.config/mc/ini fájlba, a [terminal:TERM] részbe (ahol a TERM a jelenlegi
 terminál neve), vagy elvetheted. Ha minden gombod megfelelően működik,
 és nem javítottál semmit, akkor (természetesen) nem fog menteni semmit
 sem.
@@ -1873,7 +1875,7 @@ FTP fájlrendszernél\&.
 .SH "    Beállítások mentése"
 A Midnight Commander indításkor megpróbálja az indítási információkat
 beolvasni az
-.I ~/.mc/ini
+.I ~/.config/mc/ini
 fájlból. Ha ez a fájl nem létezik, ezeket az információkat a
 rendszerszintű konfigurációs fájlból fogja beolvasni, amelyek a
 .I @prefix@/share/mc/mc.ini
@@ -1890,7 +1892,7 @@ Bal és Jobb oldali menü
 .\"LINK2"
 Beállítások
 .\"Options Menu"
-menü beállításait az ~/.mc/ini fájlba.
+menü beállításait az ~/.config/mc/ini fájlba.
 .PP
 Ha aktiválod az
 .I Auto Beállításmentés
@@ -2096,10 +2098,10 @@ használni fog.
 .PP
 Ha
 .BR bash \-t
-használsz, a subshell indító parancsait megadhatod az ~/.mc/bashrc
-fájlban, és tetszőleges billentyűzet térképet az ~/.mc/inputrc fájlban. A
+használsz, a subshell indító parancsait megadhatod az ~/.local/share/mc/bashrc
+fájlban, és tetszőleges billentyűzet térképet az ~/.local/share/mc/inputrc fájlban. A
 .B tcsh
-felhasználóknak az indítási parancsokat az ~/.mc/tcshrc fájlban van
+felhasználóknak az indítási parancsokat az ~/.local/share/mc/tcshrc fájlban van
 lehetőségük megadni.
 .PP
 Amikor a subshell kódot használod, bármikor megszakíthatod az
@@ -2415,9 +2417,6 @@ Egy sort gördít vissza.
 .B C\-l
 Frissíti képernyőt.
 .PP
-.B !
-Shell belépés a jelenlegi munkakönyvtárba.
-.PP
 .B "[n] m"
 Beállítja az n kijelölést.
 .PP
@@ -2463,13 +2462,13 @@ legördülő menü megtekintése szükséges.  Egyéb gombok: Shift és nyíl
 billentyűk a szöveg kijelöléséhez. A
 .B Ctrl\-Ins
 kimásolja a szöveget a
-.BR cooledit.clip \-be
+.BR mcedit.clip \-be
 és a
 .B Shift\-Ins
-beilleszti azt a cooledit.clip\-ből. A
+beilleszti azt a mcedit.clip\-ből. A
 .B Shift\-Del
 kivágja a szöveget a
-.BR cooledit.clip \-be,
+.BR mcedit.clip \-be,
 és a
 .B Ctrl\-Del
 törli a kijelölt szöveget. A lezáró billentyűként szintén használható a
@@ -2489,7 +2488,7 @@ hozzárendelhetsz az adott gomb lenyomásával. A makró lefut a
 lenyomod a Váltó (Alt), Ctrl, vagy az Esc\-et és a megadott gombot,
 feltételezve azt, hogy a gombot nem használja más funkció. Miután
 megadtad, a makro parancs a home könyvtárad
-.B ~/.cedit/cooledit.macros
+.B ~/.local/share/mc/mcedit/mcedit.macros
 fájljába kerül. A makrót a fájl megfelelő sorának törlésével végezheted
 el.
 .PP
@@ -2500,7 +2499,7 @@ formázza a szöveget
 vagy más kódra) amikor ez a rész
 .BR kijelölt .
 Ennek használatához elöször egy futtatható fájlt kell készítened
-.B ~/.cedit/edit.indent.rc
+.B ~/.local/share/mc/mcedit/edit.indent.rc
 néven. Szerkeszd ezt szkriptet, ha szükséges.
 .PP
 A szerkesztő megjeleníti még a nem\-amerikai karaktereket is (160
@@ -2585,7 +2584,7 @@ panel FTP kapcsolat... parancsát (elérhető a menüből), vagy
 közvetlenül átválthatsz a jelenlegi könyvtárból a cd
 parancs használatával, valahogy így:
 .PP
-.I /#ftp:[!][felhasználó[:jelszó]@]machine[:port][távoli\-könyvtár]
+.I ftp://[!][felhasználó[:jelszó]@]machine[:port][távoli\-könyvtár]
 .PP
 A
 .I felhasználó, port
@@ -2605,14 +2604,14 @@ ekkor sem lesz minden esetben tökéletesen biztonságos megoldás).
 Példák:
 .PP
 .nf
-    /#ftp:ftp.nuclecu.unam.mx/linux/local
-    /#ftp:tsx\-11.mit.edu/pub/linux/packages
-    /#ftp:!behind.firewall.edu/pub
-    /#ftp:guest@remote\-host.com:40/pub
-    /#ftp:miguel:xxx@server/pub
+    ftp://ftp.nuclecu.unam.mx/linux/local
+    ftp://tsx\-11.mit.edu/pub/linux/packages
+    ftp://!behind.firewall.edu/pub
+    ftp://guest@remote\-host.com:40/pub
+    ftp://miguel:xxx@server/pub
 .fi
 .PP
-Tűzfalon keresztüli kapcsolat létrehozásához, az /#ftp:!  kiegészítés
+Tűzfalon keresztüli kapcsolat létrehozásához, az ftp://!  kiegészítés
 használatára van szükséged (pl., felkiáltójel a dupla perjel után)
 ahhoz, hogy a Midnight Commander használni tudja a proxy host\-ot az ftp
 átvitelhez. A
@@ -2671,8 +2670,8 @@ részt, hogy megismerhesd az ezzel kapcsolatos információkat:
 Példák:
 .PP
 .nf
-    mc\-3.0.tar.gz#utar/mc\-3.0/vfs
-    /ftp/GCC/gcc\-2.7.0.tar#utar
+    mc\-3.0.tar.gz/utar://mc\-3.0/vfs
+    /ftp/GCC/gcc\-2.7.0.tar/utar://
 .fi
 .PP
 Az utóbbi meghatározás a tar arhívum teljes elérési útját tartalmazza.
@@ -2687,7 +2686,7 @@ A távoli géphez történő kapcsolódáshoz csak könyvtárat kell váltanod a
 következő formátumnak megfelelő könyvtárba:
 .PP
 .nf
-/#sh:[felhasználó@]machine[:opciók];/[távoli\-könyvtár];</em>
+sh://[felhasználó@]machine[:opciók];/[távoli\-könyvtár];</em>
 .fi
 .PP
 A
@@ -2711,9 +2710,9 @@ elemet beírtad, a távoli gépnek ezt a könyvtárát állítod be.
 Példák:
 .PP
 .nf
-    /#sh:onlyrsh.mx:r/linux/local
-    /#sh:joe@want.compression.edu:C/private
-    /#sh:joe@noncompressed.ssh.edu/private
+    sh://onlyrsh.mx:r/linux/local
+    sh://joe@want.compression.edu:C/private
+    sh://joe@noncompressed.ssh.edu/private
 .fi
 .\"NODE "  Undelete File System"
 .SH "  Törlés visszaállítása"
@@ -2728,7 +2727,7 @@ fájlnevet az ext2fs\-en, megjeleníti őket és a kiválasztott fájlokat a
 kiteszi a megadott partícióra.
 .PP
 Ezen fájlrendszer használatához abba a speciális fájlrendszerbe kell
-belépned, amely "/#undel" meghatározással kezdődik, és annak az aktuális
+belépned, amely "undel://" meghatározással kezdődik, és annak az aktuális
 fájlrendszernek a nevét tartalmazza, ahol a visszaállítani kívánt file
 található.
 .PP
@@ -2737,11 +2736,156 @@ szeretnénk visszaállítani, akkor a következő elérési utat kell
 megadnunk:
 .PP
 .nf
-    /#undel:sda2
+    undel://sda2
 .fi
 .PP
 Persze várakozni kell, amíg az undelfs a szükséges információkat
 beolvassa, a fájl böngészés megkezdése előtt.
+.SH "  SMB File System"
+The smbfs allows you to manipulate files on remote machines with SMB
+(or CIFS) protocol.  These include Windows for Workgroups,
+Windows 9x/ME/XP, Windows NT, Windows 2000 and Samba.
+To actually use it, you may try to use the panel command "SMB link..."
+(accessible from the menubar) or you may directly change your current
+directory to it using the cd command to a path name that looks like this:
+.PP
+.I smb://[user@]machine[/service][/remote\-dir]
+.PP
+The
+.IR user ,
+.I service
+and
+.I remote\-dir
+elements are optional.
+The
+.IR user ,
+.I domain
+and
+.I password
+can be specified in an input dialog.
+.PP
+Examples:
+.PP
+.nf
+    smb://machine/Share
+    smb://other_machine
+    smb://guest@machine/Public/Irlex
+.fi
+.\"NODE "  EXTernal File System"
+.SH "  EXTernal File System"
+.B extfs
+allows to integrate numerous features and file types into GNU Midnight
+Commander in an easy way, by writing scripts.
+.PP
+Extfs filesystems can be divided into two categories:
+.PP
+1. Stand\-alone filesystems, which are not associated with any existing
+file.  They represent certain system\-wide data as a directory tree.
+You can invoke them by typing
+.RI ' "cd fsname://" '
+where fsname is an extfs short name (see below).  Examples of such
+filesystems include audio (list audio tracks on the CD) or apt (list of
+all Debian packages in the system).
+.PP
+For example, to list CD\-Audio tracks on your CD\-ROM drive, type
+.PP
+.nf
+  cd audio://
+.fi
+.PP
+2. 'Archive' filesystems (like rpm, patchfs and more), which represent
+contents of a file as a directory tree.  It can consist of 'real' files
+compressed in an archive (urar, rpm) or virtual files, like messages
+in a mailbox (mailfs) or parts of a patch (patchfs).  To access such
+filesystems
+.RI ' fsname:// '
+should be appended to the archive name.  Note that the archive itself
+can be on another vfs.
+.PP
+For example, to list contents of a zip archive documents.zip type
+.PP
+.nf
+  cd documents.zip/uzip://
+.fi
+.PP
+In many aspects, you could treat extfs like any other directory.  For
+instance, you can add it to the hotlist or change to it from directory
+history.  An important limitation is that you cannot invoke shell
+commands inside extfs, just like any other non\-local VFS.
+.PP
+Common extfs scripts included with Midnight Commander are:
+.TP
+.B a
+access 'A:' DOS/Windows diskette
+.RI ( "cd a://" ).
+.TP
+.B apt
+front end to Debian's APT package management system
+.RI ( "cd apt://" ).
+.TP
+.B audio
+audio CD ripping and playing
+.RI ( "cd audio://"
+or
+.IR "cd device/audio://" ).
+.TP
+.B bpp
+package of Bad Penguin GNU/Linux distribution
+.RI ( "cd file.bpp/bpp://" ).
+.TP
+.B deb
+package of Debian GNU/Linux distribution
+.RI ( "cd file.deb/deb://" ).
+.TP
+.B dpkg
+Debian GNU/Linux installed packages
+.RI ( "cd deb://" ).
+.TP
+.B hp48
+view and copy files to/from a HP48 calculator
+.RI ( "cd hp48://" ).
+.TP
+.B lslR
+browsing of lslR listings as found on many FTPs
+.RI ( "cd filename/lslR://" ).
+.TP
+.B mailfs
+mbox\-style mailbox files support
+.RI ( "cd mailbox/mailfs://" ).
+.TP
+.B patchfs
+extfs to handle unified and context diffs
+.RI ( "cd filename/patchfs://" ).
+.TP
+.B rpm
+RPM package
+.RI ( "cd filename/rpm://" ).
+.TP
+.B rpms
+RPM database management
+.RI ( "cd rpms://" ).
+.TP
+.B ulha, urar, uzip, uzoo, uar, uha
+archivers
+.RI ( "cd archive/xxxx://"
+where xxxx is one of:
+.IR ulha ,
+.IR urar ,
+.IR uzip ,
+.IR uzoo ,
+.IR uar ,
+.IR uha ).
+.PP
+You could bind file type/extension to specified extfs as described in the
+.\"LINK2"
+Extension File Edit
+.\"Extension File Edit"
+section.  Here is an example entry for Debian packages:
+.PP
+.nf
+  regex/\.deb$
+          Open=%cd %p/deb://
+.fi
 .\"NODE "Colors"
 .SH "Színek"
 A Midnight Commander megpróbálja megállapítani azt, hogy a terminál
@@ -2877,7 +3021,7 @@ base_color=normal=white,default:marked=magenta,default
 A legtöbb Midnight Commander beállítás a menükből is elérhető. Ám van
 néhány beállítás, ami csak a setup fájl szerkesztésével állítható be.
 .PP
-Ezeket a változókat az ~/.mc/ini fájlban állíthatod be:
+Ezeket a változókat az ~/.config/mc/ini fájlban állíthatod be:
 .PP
 .I clear_before_exec
 .IP
@@ -2985,7 +3129,7 @@ tartalommal.
 A Midnight Commander lehetőséget nyújt a terminál adatbázis root jogok
 használata nélküli módosítására. A Midnight Commander a rendszer indító
 fájlban (az mc.lib fájlt a Midnight Commander library könyvtárában
-találjuk), vagy az ~/.mc/ini file "terminal:your\-terminal\-name" részében
+találjuk), vagy az ~/.config/mc/ini file "terminal:your\-terminal\-name" részében
 keres, és, a "terminal:general" rész minden sora tartalmazza azokat a
 billentyűzet szimbólumokat az egyenlőségjelet és a definiált szimbólumot
 követően, amelyeket te mag akarsz határozni. A \\e speciális formátumot
@@ -3037,7 +3181,7 @@ A program súgó fájlja.
 .IP
 Az alapértelmezett rendszerszintű kiterjesztés fájl.
 .PP
-.I ~/.mc/bindings
+.I ~/.config/mc/mc.ext
 .IP
 A felhasználó saját kiterjesztései, nézet beállítások és szerkesztési
 beállítások. Ezek felülbírálják a rendszerszintű fájl bejegyzéseit, ha
@@ -3046,7 +3190,7 @@ van ilyen.
 .I @prefix@/share/mc/mc.ini
 .IP
 Az alapértelmezett rendszerszintű Midnight Commander beállítás, amelyet
-csak akkor használ, ha a felhasználónak nincs saját ~/.mc/ini fájlja.
+csak akkor használ, ha a felhasználónak nincs saját ~/.config/mc/ini fájlja.
 .PP
 .I @prefix@/share/mc/mc.lib
 .IP
@@ -3054,7 +3198,7 @@ A Midnight Commander globális beállításai. Az ebben a fájlban elvégzett
 beállítások minden felhasználó Midnight Commander\-jére vonatkoznak, ez
 használható a site\-globális terminál beállításaihoz.
 .PP
-.I ~/.mc/ini
+.I ~/.config/mc/ini
 .IP
 A felhasználó saját beállításai. Ha ez a fájl elérhető, akkor a
 beállítások ebből a fájlból olvasódnak be a rendszerszintű indító fájl
@@ -3069,19 +3213,19 @@ Ez a fájl tartalmazza a program által megjelenített útmutattásokat
 .IP
 Ez a fájl azonos a rendszerszintű alkalmazás menüvel.
 .PP
-.I ~/.mc/menu
+.I ~/.config/mc/menu
 .IP
 A falhasználó saját alkalmazás menüje. Ha ez a fájl elérhető a
 rendszerszintű alkalmazás menü helyett ezt fogja használni.
 .PP
-.I ~/.mc/Tree
+.I ~/.cache/mc/Tree
 .IP
 A könyvtárlista a Könyvtárfa és a Fa nézethez.  Minden sor egy
 bejegyzés. Minden sor perjellel kezdik a teljes könyvtár neveknél. A
 sorok egy számmal kezdődnek, amik azonosak az elöző könyvtáréval. Ha ezt
 a fájlt el akarod készíteni a következő parancsot használd: 
 .nf
-find / \-type d \-print | sort > ~/.mc/Tree"
+find / \-type d \-print | sort > ~/.cache/mc/Tree"
 .fi
 Normálisan nincs erre szükséged, mert a Midnight Commander automatikusan
 frissíti ezt.

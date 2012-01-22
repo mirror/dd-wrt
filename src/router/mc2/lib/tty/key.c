@@ -1,26 +1,31 @@
-/* Keyboard support routines.
+/*
+   Keyboard support routines.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2009, 2010 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2009, 2010, 2011
+   The Free Software Foundation, Inc.
 
-   Written by: 1994, 1995 Miguel de Icaza.
-   1994, 1995 Janne Kukonlehto.
-   1995  Jakub Jelinek.
-   1997  Norbert Warmuth
+   Written by:
+   Miguel de Icaza, 1994, 1995
+   Janne Kukonlehto, 1994, 1995
+   Jakub Jelinek, 1995
+   Norbert Warmuth, 1997
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /** \file key.c
  *  \brief Source: keyboard support routines
@@ -38,20 +43,15 @@
 #include <unistd.h>
 
 #include "lib/global.h"
-#include "lib/strutil.h"        /* str_casecmp */
 
-#include "lib/vfs/mc-vfs/vfs.h"
+#include "lib/vfs/vfs.h"
 
 #include "tty.h"
 #include "tty-internal.h"       /* mouse_enabled */
 #include "mouse.h"
 #include "key.h"
-#include "win.h"                /* xterm_flag */
 
-#include "src/main.h"
-#include "src/filemanager/layout.h"     /* winch_flag, mc_refresh() */
-#include "src/consaver/cons.saver.h"
-
+#include "lib/widget.h"         /* mc_refresh() */
 
 #ifdef HAVE_TEXTMODE_X11_SUPPORT
 #include "x11conn.h"
@@ -79,13 +79,11 @@
 
 /*** global variables ****************************************************************************/
 
-/* If true, use + and \ keys normally and select/unselect do if M-+ / M-\.
-   and M-- and keypad + / - */
-int alternate_plus_minus = 0;
-
 int mou_auto_repeat = 100;
 int double_click_speed = 250;
 int old_esc_mode = 0;
+/* timeout for old_esc_mode in usec */
+int old_esc_mode_timeout = 1000000;     /* settable via env */
 int use_8th_bit_as_meta = 0;
 
 /* This table is a mapping between names and the constants we use
@@ -172,6 +170,7 @@ const key_code_name_t key_name_conv_tab[] = {
     {(int) '&', "ampersand", N_("Ampersand"), "&"},
     {(int) '$', "dollar", N_("Dollar sign"), "$"},
     {(int) '"', "quota", N_("Quotation mark"), "\""},
+    {(int) '%', "percent", N_("Percent sign"), "%"},
     {(int) '^', "caret", N_("Caret"), "^"},
     {(int) '~', "tilda", N_("Tilda"), "~"},
     {(int) '`', "prime", N_("Prime"), "`"},
@@ -250,6 +249,13 @@ typedef struct SelectList
     void *info;
     struct SelectList *next;
 } SelectList;
+
+typedef enum KeySortType
+{
+    KEY_NOSORT = 0,
+    KEY_SORTBYNAME,
+    KEY_SORTBYCODE
+} KeySortType;
 
 #ifdef __QNXNTO__
 typedef int (*ph_dv_f) (void *, void *);
@@ -497,9 +503,6 @@ static key_define_t qansi_key_defines[] = {
     {0, NULL, MCKEY_NOACTION},
 };
 
-/* timeout for old_esc_mode in usec */
-int old_esc_mode_timeout = 1000000;     /* settable via env */
-
 /* This holds all the key definitions */
 static key_def *keys = NULL;
 
@@ -513,6 +516,8 @@ static int *seq_append = NULL;
 
 static int *pending_keys = NULL;
 
+static int mouse_btn, mouse_x, mouse_y;
+
 #ifdef __QNXNTO__
 ph_dv_f ph_attach;
 ph_ov_f ph_input_group;
@@ -524,11 +529,13 @@ static Display *x11_display;
 static Window x11_window;
 #endif /* HAVE_TEXTMODE_X11_SUPPORT */
 
-static const size_t key_name_conv_tab_size = sizeof (key_name_conv_tab) /
-    sizeof (key_name_conv_tab[0]) - 1;
+static KeySortType has_been_sorted = KEY_NOSORT;
 
-static const key_code_name_t *key_name_conv_tab_sorted[sizeof (key_name_conv_tab) /
-                                                       sizeof (key_name_conv_tab[0]) - 1];
+/* *INDENT-OFF* */
+static const size_t key_conv_tab_size = G_N_ELEMENTS (key_name_conv_tab) - 1;
+/* *INDENT-ON* */
+
+static const key_code_name_t *key_conv_tab_sorted[G_N_ELEMENTS (key_name_conv_tab) - 1];
 
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
@@ -701,17 +708,13 @@ getch_with_delay (void)
 static void
 xmouse_get_event (Gpm_Event * ev)
 {
-    int btn;
     static struct timeval tv1 = { 0, 0 };       /* Force first click as single */
     static struct timeval tv2;
     static int clicks = 0;
     static int last_btn = 0;
+    int btn = mouse_btn;
 
     /* Decode Xterm mouse information to a GPM style event */
-
-    /* Variable btn has following meaning: */
-    /* 0 = btn1 dn, 1 = btn2 dn, 2 = btn3 dn, 3 = btn up */
-    btn = tty_lowlevel_getch () - 32;
 
     /* There seems to be no way of knowing which button was released */
     /* So we assume all the buttons were released */
@@ -790,10 +793,8 @@ xmouse_get_event (Gpm_Event * ev)
         }
         last_btn = ev->buttons;
     }
-    /* Coordinates are 33-based */
-    /* Transform them to 1-based */
-    ev->x = tty_lowlevel_getch () - 32;
-    ev->y = tty_lowlevel_getch () - 32;
+    ev->x = mouse_x;
+    ev->y = mouse_y;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -928,6 +929,136 @@ push_char (int c)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/* Parse extended mouse coordinates.
+   Returns -1 if pending_keys (up to seq_append) cannot be a prefix of extended mouse coordinates.
+   Returns 0 if pending_keys (up to seq_append) is a valid (but still incomplete) prefix for
+   extended mouse coordinates, e.g. "^[[32;4".
+   Returns 1 and fills the mouse_btn, mouse_x, mouse_y values if pending_keys (up to seq_append) is
+   a complete extended mouse sequence, e.g. "^[[32;42;5M"
+ */
+
+/* Technical info (Egmont Koblinger <egmont@gmail.com>):
+
+   The ancient way of reporting mouse coordinates only supports coordinates up to 223,
+   so if your terminal is wider (or taller, but that's unlikely), you cannot use your mouse
+   in the rightmost columns.
+
+   * The old way of reporting mouse coordinates is the following:
+   + Output DECSET 1000 to enable mouse
+   + Expect escape sequences in the format \e[M<action+32><x+32><y+32> whereas <action+32>,
+   <x+32> and <y+32> are single bytes. (Action is 0 for left click, 1 for middle click,
+   2 for right click, 3 for release, or something like this.)
+   + Disadvantages of this format:
+   + x and y can only go up to 223.
+   + Coordinates above 95 are not ascii-compatible, so any character set converting
+   layer (e.g. luit) messes them up.
+   + The stream is not valid UTF-8, even if everything else is.
+
+   * The first new extension, introduced by xterm-262, is the following:
+   + Output DECSET 1000 to enable mouse, followed by DECSET 1005 to activate extended mode.
+   + Expect escape sequences in the format \e[M<action+32><<x+32>><<y+32>> whereas <<x+32>>
+   and <<y+32>> each can be up to two bytes long: coordinate+32 is encoded in UTF-8.
+   + Disadvantates of this format:
+   + There's still a limit of 2015 rows/columns (okay, it's not a real life problem).
+   + Doesn't solve the luit issue.
+   + It is "horribly broken" (quoting urxvt's changelog) in terms of compatibility
+   with the previous standard. There is no way for an application to tell whether
+   the underlying terminal supports this new mode (whether DECSET 1005 did actually change
+   the behavior or not), but depending on this a completely different user action might
+   generate the same input. Example:
+   + If the terminal doesn't support this extension, then clicking at (162, 129)
+   generates \e[M<32><194><161>.
+   + If the terminal supports this extension, then clicking at (129, 1) [bit of math:
+   129+32 = 161, U+0161 in UTF-8 is 194 161] generates \e[M<32><194><161><33>.
+   + so there's no way to tell whether the terminal ignored the 1005 escape sequence,
+   the user clicked on (162, 129) and then typed an exclamation mark; or whether
+   the terminal recognized the escape, and the user clicked on (129, 1).
+   + Due to this horrible brokenness, there's no way to implement support it without
+   explicitly asking the user (via a setting) if the terminal can speak this extension.
+
+   * The second new extension, introduced by rxvt-unicode-9.10, is the following:
+   + Output DECSET 1000 to enable mouse, followed by DECSET 1015 to activate this extended mode.
+   + Expect escape sequences in the format \e[{action+32};{x};{y}M where this time I used
+   the braces to denote spelling out the numbers in decimal, rather than using raw bytes.
+   + The only thing I don't understand is why they kept the offset of 32 at action, but other
+   than that, this format is totally okay, and solves all the weaknesses of the previous ones.
+
+   Currently, at least the following terminal emulators have support for these:
+   * xterm supports the xterm extension
+   * rxvt-unicode >= 9.10 supports both extensions
+   * iterm2 supports both extensions
+   * vte >= 0.31 supports the urxvt extension
+ */
+
+static int
+parse_extended_mouse_coordinates (void)
+{
+    int c, btn = 0, x = 0, y = 0;
+    const int *p = pending_keys;
+    const int *endp = seq_append;
+
+    if (p == endp)
+        return 0;
+    c = *p++;
+    if (c != ESC_CHAR)
+        return -1;
+
+    if (p == endp)
+        return 0;
+    c = *p++;
+    if (c != '[')
+        return -1;
+
+    while (TRUE)
+    {
+        if (p == endp)
+            return 0;
+        c = *p++;
+        if (c == ';')
+            break;
+        if (c < '0' || c > '9')
+            return -1;
+        btn = 10 * btn + c - '0';
+    }
+    if (btn < 32)
+        return -1;
+    btn -= 32;
+
+    while (TRUE)
+    {
+        if (p == endp)
+            return 0;
+        c = *p++;
+        if (c == ';')
+            break;
+        if (c < '0' || c > '9')
+            return -1;
+        x = 10 * x + c - '0';
+    }
+    if (x < 1)
+        return -1;
+
+    while (TRUE)
+    {
+        if (p == endp)
+            return 0;
+        c = *p++;
+        if (c == 'M')
+            break;
+        if (c < '0' || c > '9')
+            return -1;
+        y = 10 * y + c - '0';
+    }
+    if (y < 1)
+        return -1;
+
+    mouse_btn = btn;
+    mouse_x = x;
+    mouse_y = y;
+    return 1;
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /* Apply corrections for the keycode generated in get_key_code() */
 
 static int
@@ -1053,7 +1184,7 @@ correct_key_code (int code)
         mod &= ~KEY_M_SHIFT;
     }
 
-    if (!alternate_plus_minus)
+    if (!mc_global.tty.alternate_plus_minus)
         switch (c)
         {
         case KEY_KP_ADD:
@@ -1144,31 +1275,47 @@ s_dispose (SelectList * sel)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-key_code_name_comparator (const void *p1, const void *p2)
+key_code_comparator_by_name (const void *p1, const void *p2)
 {
     const key_code_name_t *n1 = *(const key_code_name_t **) p1;
     const key_code_name_t *n2 = *(const key_code_name_t **) p2;
 
-    return str_casecmp (n1->name, n2->name);
+    return g_ascii_strcasecmp (n1->name, n2->name);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static int
+key_code_comparator_by_code (const void *p1, const void *p2)
+{
+    const key_code_name_t *n1 = *(const key_code_name_t **) p1;
+    const key_code_name_t *n2 = *(const key_code_name_t **) p2;
+
+    return n1->code - n2->code;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 static inline void
-sort_key_name_conv_tab (void)
+sort_key_conv_tab (enum KeySortType type_sort)
 {
-    static gboolean has_been_sorted = FALSE;
-
-    if (!has_been_sorted)
+    if (has_been_sorted != type_sort)
     {
         size_t i;
-        for (i = 0; i < key_name_conv_tab_size; i++)
-            key_name_conv_tab_sorted[i] = &key_name_conv_tab[i];
+        for (i = 0; i < key_conv_tab_size; i++)
+            key_conv_tab_sorted[i] = &key_name_conv_tab[i];
 
-        qsort (key_name_conv_tab_sorted,
-               key_name_conv_tab_size, sizeof (key_name_conv_tab_sorted[0]),
-               &key_code_name_comparator);
-        has_been_sorted = TRUE;
+        if (type_sort == KEY_SORTBYNAME)
+        {
+            qsort (key_conv_tab_sorted, key_conv_tab_size, sizeof (key_conv_tab_sorted[0]),
+                   &key_code_comparator_by_name);
+        }
+        else if (type_sort == KEY_SORTBYCODE)
+        {
+            qsort (key_conv_tab_sorted, key_conv_tab_size, sizeof (key_conv_tab_sorted[0]),
+                   &key_code_comparator_by_code);
+        }
+        has_been_sorted = type_sort;
     }
 }
 
@@ -1189,21 +1336,47 @@ lookup_keyname (const char *name, int *idx)
             return (int) name[0];
         }
 
-        sort_key_name_conv_tab ();
+        sort_key_conv_tab (KEY_SORTBYNAME);
 
-        res = bsearch (&keyp, key_name_conv_tab_sorted,
-                       key_name_conv_tab_size,
-                       sizeof (key_name_conv_tab_sorted[0]), key_code_name_comparator);
+        res = bsearch (&keyp, key_conv_tab_sorted, key_conv_tab_size,
+                       sizeof (key_conv_tab_sorted[0]), key_code_comparator_by_name);
 
         if (res != NULL)
         {
-            *idx = (int) (res - (key_code_name_t **) key_name_conv_tab_sorted);
+            *idx = (int) (res - (key_code_name_t **) key_conv_tab_sorted);
             return (*res)->code;
         }
     }
 
     *idx = -1;
     return 0;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static gboolean
+lookup_keycode (const long code, int *idx)
+{
+    if (code != 0)
+    {
+        const key_code_name_t key = { code, NULL, NULL, NULL };
+        const key_code_name_t *keyp = &key;
+        key_code_name_t **res;
+
+        sort_key_conv_tab (KEY_SORTBYCODE);
+
+        res = bsearch (&keyp, key_conv_tab_sorted, key_conv_tab_size,
+                       sizeof (key_conv_tab_sorted[0]), key_code_comparator_by_code);
+
+        if (res != NULL)
+        {
+            *idx = (int) (res - (key_code_name_t **) key_conv_tab_sorted);
+            return TRUE;
+        }
+    }
+
+    *idx = -1;
+    return FALSE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1222,7 +1395,7 @@ init_key (void)
     define_sequences (mc_default_keys);
 
     /* Terminfo on irix does not have some keys */
-    if (xterm_flag
+    if (mc_global.tty.xterm_flag
         || (term != NULL
             && (strncmp (term, "iris-ansi", 9) == 0
                 || strncmp (term, "xterm", 5) == 0
@@ -1413,12 +1586,12 @@ lookup_key (const char *name, char **label)
 
         if (use_meta != -1)
         {
-            g_string_append (s, key_name_conv_tab_sorted[use_meta]->shortcut);
+            g_string_append (s, key_conv_tab_sorted[use_meta]->shortcut);
             g_string_append_c (s, '-');
         }
         if (use_ctrl != -1)
         {
-            g_string_append (s, key_name_conv_tab_sorted[use_ctrl]->shortcut);
+            g_string_append (s, key_conv_tab_sorted[use_ctrl]->shortcut);
             g_string_append_c (s, '-');
         }
         if (use_shift != -1)
@@ -1427,21 +1600,20 @@ lookup_key (const char *name, char **label)
                 g_string_append_c (s, (gchar) g_ascii_toupper ((gchar) k));
             else
             {
-                g_string_append (s, key_name_conv_tab_sorted[use_shift]->shortcut);
+                g_string_append (s, key_conv_tab_sorted[use_shift]->shortcut);
                 g_string_append_c (s, '-');
-                g_string_append (s, key_name_conv_tab_sorted[lc_index]->shortcut);
+                g_string_append (s, key_conv_tab_sorted[lc_index]->shortcut);
             }
         }
         else if (k < 128)
         {
-            if ((k >= 'A') || (lc_index < 0)
-                || (key_name_conv_tab_sorted[lc_index]->shortcut == NULL))
+            if ((k >= 'A') || (lc_index < 0) || (key_conv_tab_sorted[lc_index]->shortcut == NULL))
                 g_string_append_c (s, (gchar) g_ascii_tolower ((gchar) k));
             else
-                g_string_append (s, key_name_conv_tab_sorted[lc_index]->shortcut);
+                g_string_append (s, key_conv_tab_sorted[lc_index]->shortcut);
         }
-        else if ((lc_index != -1) && (key_name_conv_tab_sorted[lc_index]->shortcut != NULL))
-            g_string_append (s, key_name_conv_tab_sorted[lc_index]->shortcut);
+        else if ((lc_index != -1) && (key_conv_tab_sorted[lc_index]->shortcut != NULL))
+            g_string_append (s, key_conv_tab_sorted[lc_index]->shortcut);
         else
             g_string_append_c (s, (gchar) g_ascii_tolower ((gchar) key));
 
@@ -1468,6 +1640,81 @@ lookup_key (const char *name, char **label)
         k = ALT (k);
 
     return (long) k;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+char *
+lookup_key_by_code (const int keycode)
+{
+    /* code without modifier */
+    unsigned int k = keycode & ~KEY_M_MASK;
+    /* modifier */
+    unsigned int mod = keycode & KEY_M_MASK;
+
+    int use_meta = -1;
+    int use_ctrl = -1;
+    int use_shift = -1;
+    int key_idx = -1;
+
+    GString *s;
+    int idx;
+
+    s = g_string_sized_new (8);
+
+    if (lookup_keycode (k, &key_idx) || (k > 0 && k < 256))
+    {
+        if (mod & KEY_M_ALT)
+        {
+            if (lookup_keycode (KEY_M_ALT, &idx))
+            {
+                use_meta = idx;
+                g_string_append (s, key_conv_tab_sorted[use_meta]->name);
+                g_string_append_c (s, '-');
+            }
+        }
+        if (mod & KEY_M_CTRL)
+        {
+            /* non printeble chars like a CTRL-[A..Z] */
+            if (k < 32)
+                k += 64;
+
+            if (lookup_keycode (KEY_M_CTRL, &idx))
+            {
+                use_ctrl = idx;
+                g_string_append (s, key_conv_tab_sorted[use_ctrl]->name);
+                g_string_append_c (s, '-');
+            }
+        }
+        if (mod & KEY_M_SHIFT)
+        {
+            if (lookup_keycode (KEY_M_ALT, &idx))
+            {
+                use_shift = idx;
+                if (k < 127)
+                    g_string_append_c (s, (gchar) g_ascii_toupper ((gchar) k));
+                else
+                {
+                    g_string_append (s, key_conv_tab_sorted[use_shift]->name);
+                    g_string_append_c (s, '-');
+                    g_string_append (s, key_conv_tab_sorted[key_idx]->name);
+                }
+            }
+        }
+        else if (k < 128)
+        {
+            if ((k >= 'A') || (key_idx < 0) || (key_conv_tab_sorted[key_idx]->name == NULL))
+                g_string_append_c (s, (gchar) k);
+            else
+                g_string_append (s, key_conv_tab_sorted[key_idx]->name);
+        }
+        else if ((key_idx != -1) && (key_conv_tab_sorted[key_idx]->name != NULL))
+            g_string_append (s, key_conv_tab_sorted[key_idx]->name);
+        else
+            g_string_append_c (s, (gchar) keycode);
+    }
+
+    return g_string_free (s, s->len == 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1570,22 +1817,35 @@ get_key_code (int no_delay)
   pend_send:
     if (pending_keys != NULL)
     {
-        int d = *pending_keys++;
-      check_pend:
-        if (*pending_keys == 0)
+        int m;
+
+        m = parse_extended_mouse_coordinates ();
+        if (m == 1)
         {
-            pending_keys = NULL;
-            seq_append = NULL;
+            pending_keys = seq_append = NULL;
+            this = NULL;
+            return MCKEY_EXTENDED_MOUSE;
         }
-        if ((d == ESC_CHAR) && (pending_keys != NULL))
+        if (m == -1)
         {
-            d = ALT (*pending_keys++);
-            goto check_pend;
+            int d = *pending_keys++;
+          check_pend:
+            if (*pending_keys == 0)
+            {
+                pending_keys = NULL;
+                seq_append = NULL;
+            }
+            if ((d == ESC_CHAR) && (pending_keys != NULL))
+            {
+                d = ALT (*pending_keys++);
+                goto check_pend;
+            }
+            if ((d > 127 && d < 256) && use_8th_bit_as_meta)
+                d = ALT (d & 0x7f);
+            this = NULL;
+            return correct_key_code (d);
         }
-        if ((d > 127 && d < 256) && use_8th_bit_as_meta)
-            d = ALT (d & 0x7f);
-        this = NULL;
-        return correct_key_code (d);
+        /* else if (m == 0), just let it continue */
     }
 
   nodelay_try_again:
@@ -1834,7 +2094,7 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
             }
         }
 
-        if (!block || winch_flag)
+        if (!block || mc_global.tty.winch_flag)
         {
             time_addr = &time_out;
             time_out.tv_sec = 0;
@@ -1854,7 +2114,7 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
         {
             if (redo_event)
                 return EV_MOUSE;
-            if (!block || winch_flag)
+            if (!block || mc_global.tty.winch_flag)
                 return EV_NONE;
             vfs_timeout_handler ();
         }
@@ -1892,9 +2152,20 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
 #ifdef KEY_MOUSE
                           || c == KEY_MOUSE
 #endif /* KEY_MOUSE */
-        ))
+                          || c == MCKEY_EXTENDED_MOUSE))
     {
         /* Mouse event */
+        /* In case of extended coordinates, mouse_btn, mouse_x and mouse_y are already filled in. */
+        if (c != MCKEY_EXTENDED_MOUSE)
+        {
+            /* Variable btn has following meaning: */
+            /* 0 = btn1 dn, 1 = btn2 dn, 2 = btn3 dn, 3 = btn up */
+            mouse_btn = tty_lowlevel_getch () - 32;
+            /* Coordinates are 33-based */
+            /* Transform them to 1-based */
+            mouse_x = tty_lowlevel_getch () - 32;
+            mouse_y = tty_lowlevel_getch () - 32;
+        }
         xmouse_get_event (event);
         return (event->type != 0) ? EV_MOUSE : EV_NONE;
     }
@@ -1981,7 +2252,7 @@ learn_key (void)
 void
 numeric_keypad_mode (void)
 {
-    if (console_flag || xterm_flag)
+    if (mc_global.tty.console_flag != '\0' || mc_global.tty.xterm_flag)
     {
         fputs (ESC_STR ">", stdout);
         fflush (stdout);
@@ -1993,7 +2264,7 @@ numeric_keypad_mode (void)
 void
 application_keypad_mode (void)
 {
-    if (console_flag || xterm_flag)
+    if (mc_global.tty.console_flag != '\0' || mc_global.tty.xterm_flag)
     {
         fputs (ESC_STR "=", stdout);
         fflush (stdout);

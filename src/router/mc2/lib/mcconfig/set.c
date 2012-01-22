@@ -1,20 +1,24 @@
-/* Configure module for the Midnight Commander
+/*
+   Configure module for the Midnight Commander
+
    Copyright (C) 1994, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2009 Free Software Foundation, Inc. 
+   2007, 2009, 2011
+   The Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is part of the Midnight Commander.
 
-   This program is distributed in the hope that it will be useful,
+   The Midnight Commander is free software: you can redistribute it
+   and/or modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
+
+   The Midnight Commander is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <config.h>
@@ -24,8 +28,6 @@
 #include "lib/mcconfig.h"
 
 /*** global variables **************************************************/
-
-extern int utf8_display;
 
 /*** file scope macro definitions **************************************/
 
@@ -41,8 +43,9 @@ mc_config_normalize_before_save (const gchar * value)
 {
     GIConv conv;
     GString *buffer;
+    gboolean ok;
 
-    if (utf8_display)
+    if (mc_global.utf8_display)
         return g_strdup (value);
 
     conv = str_crt_conv_to ("UTF-8");
@@ -51,13 +54,15 @@ mc_config_normalize_before_save (const gchar * value)
 
     buffer = g_string_new ("");
 
-    if (str_convert (conv, value, buffer) == ESTR_FAILURE)
+    ok = (str_convert (conv, value, buffer) != ESTR_FAILURE);
+    str_close_conv (conv);
+
+    if (!ok)
     {
         g_string_free (buffer, TRUE);
         return g_strdup (value);
     }
 
-    str_close_conv (conv);
     return g_string_free (buffer, FALSE);
 }
 
@@ -78,7 +83,19 @@ mc_config_set_string_raw (mc_config_t * mc_config, const gchar * group,
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 void
-mc_config_set_string (mc_config_t * mc_config, const gchar * group,
+mc_config_set_string_raw_value (mc_config_t * mc_config, const gchar * group,
+                                const gchar * param, const gchar * value)
+{
+    if (!mc_config || !group || !param || !value)
+        return;
+
+    g_key_file_set_value (mc_config->handle, group, param, value);
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+void
+mc_config_set_string (const mc_config_t * mc_config, const gchar * group,
                       const gchar * param, const gchar * value)
 {
     gchar *buffer;

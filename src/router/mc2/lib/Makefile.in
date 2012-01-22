@@ -36,6 +36,8 @@ build_triplet = @build@
 host_triplet = @host@
 @USE_MAINTAINER_MODE_TRUE@am__append_1 = logging.c logging.h
 @CHARSET_TRUE@am__append_2 = charsets.c charsets.h
+@HAVE_GMODULE_TRUE@am__append_3 = $(GMODULE_LIBS)
+@HAVE_GMODULE_FALSE@am__append_4 = $(GLIB_LIBS)
 subdir = lib
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -62,12 +64,16 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
-	$(top_srcdir)/m4.include/ac-get-fs-info.m4 \
+	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
+	$(top_srcdir)/m4.include/fstypename.m4 \
+	$(top_srcdir)/m4.include/fsusage.m4 \
+	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
-	$(top_srcdir)/m4.include/ac-g-module-supported.m4 \
+	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
 	$(top_srcdir)/m4.include/vfs/socket.m4 \
@@ -80,6 +86,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-cpiofs.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
+	$(top_srcdir)/m4.include/mc-tests.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -87,31 +94,62 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-LTLIBRARIES = $(noinst_LTLIBRARIES)
-libmc_la_DEPENDENCIES = filehighlight/libmcfilehighlight.la \
-	mcconfig/libmcconfig.la search/libsearch.la \
-	strutil/libmcstrutil.la skin/libmcskin.la tty/libmctty.la \
-	vfs/mc-vfs/libvfs-mc.la widget/libmcwidget.la
-am__libmc_la_SOURCES_DIST = filehighlight.h mcconfig.h search.h skin.h \
-	strescape.h strutil.h widget.h utilunix.c unixcompat.h util.c \
-	util.h fileloc.h fs.h hook.c hook.h glibcompat.c glibcompat.h \
-	global.h keybind.c keybind.h lock.c lock.h timefmt.c timefmt.h \
-	logging.c logging.h charsets.c charsets.h
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__installdirs = "$(DESTDIR)$(libdir)"
+LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
+am__DEPENDENCIES_1 =
+@HAVE_GMODULE_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@HAVE_GMODULE_FALSE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+libmc_la_DEPENDENCIES = event/libmcevent.la \
+	filehighlight/libmcfilehighlight.la mcconfig/libmcconfig.la \
+	search/libsearch.la strutil/libmcstrutil.la skin/libmcskin.la \
+	tty/libmctty.la vfs/libmcvfs.la widget/libmcwidget.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am__libmc_la_SOURCES_DIST = event.h event-types.h filehighlight.h \
+	mcconfig.h search.h skin.h strescape.h strutil.h widget.h \
+	utilunix.c utilunix.h unixcompat.h util.c util.h fileloc.h \
+	fs.h hook.c hook.h glibcompat.c glibcompat.h global.c global.h \
+	keybind.c keybind.h lock.c lock.h serialize.c serialize.h \
+	timefmt.c timefmt.h logging.c logging.h charsets.c charsets.h
 am__objects_1 =
 am__objects_2 = libmc_la-utilunix.lo libmc_la-util.lo
 @USE_MAINTAINER_MODE_TRUE@am__objects_3 = libmc_la-logging.lo
 @CHARSET_TRUE@am__objects_4 = libmc_la-charsets.lo
 am_libmc_la_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	libmc_la-hook.lo libmc_la-glibcompat.lo libmc_la-keybind.lo \
-	libmc_la-lock.lo libmc_la-timefmt.lo $(am__objects_3) \
-	$(am__objects_4)
+	libmc_la-hook.lo libmc_la-glibcompat.lo libmc_la-global.lo \
+	libmc_la-keybind.lo libmc_la-lock.lo libmc_la-serialize.lo \
+	libmc_la-timefmt.lo $(am__objects_3) $(am__objects_4)
 libmc_la_OBJECTS = $(am_libmc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 libmc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libmc_la_CFLAGS) \
-	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+	$(CFLAGS) $(libmc_la_LDFLAGS) $(LDFLAGS) -o $@
+@ENABLE_MCLIB_FALSE@am_libmc_la_rpath =
+@ENABLE_MCLIB_TRUE@am_libmc_la_rpath = -rpath $(libdir)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -195,6 +233,8 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CHECK_CFLAGS = @CHECK_CFLAGS@
+CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -268,6 +308,8 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
+LIBMC_RELEASE = @LIBMC_RELEASE@
+LIBMC_VERSION = @LIBMC_VERSION@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -381,9 +423,16 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = filehighlight mcconfig search skin tty vfs strutil widget
-noinst_LTLIBRARIES = libmc.la
+SUBDIRS = event filehighlight mcconfig search skin tty vfs strutil widget .
+@ENABLE_MCLIB_TRUE@LIB_VERSION = `echo $(LIBMC_VERSION) | \
+@ENABLE_MCLIB_TRUE@	tr '.' ' '| \
+@ENABLE_MCLIB_TRUE@	while read v1 v2 v3; do echo $$v2':'$$v3':'$$v1; done`
+
+@ENABLE_MCLIB_TRUE@libmc_la_LDFLAGS = -no-undefined -version-info $(LIB_VERSION) -release $(LIBMC_RELEASE)
+@ENABLE_MCLIB_TRUE@lib_LTLIBRARIES = libmc.la
+@ENABLE_MCLIB_FALSE@noinst_LTLIBRARIES = libmc.la
 SUBLIB_includes = \
+	event.h event-types.h \
 	filehighlight.h \
 	mcconfig.h \
 	search.h \
@@ -393,25 +442,21 @@ SUBLIB_includes = \
 	widget.h
 
 SRC_mc_utils = \
-	utilunix.c \
+	utilunix.c utilunix.h \
 	unixcompat.h \
 	util.c util.h
 
 libmc_la_SOURCES = $(SUBLIB_includes) $(SRC_mc_utils) fileloc.h fs.h \
-	hook.c hook.h glibcompat.c glibcompat.h global.h keybind.c \
-	keybind.h lock.c lock.h timefmt.c timefmt.h $(am__append_1) \
-	$(am__append_2)
+	hook.c hook.h glibcompat.c glibcompat.h global.c global.h \
+	keybind.c keybind.h lock.c lock.h serialize.c serialize.h \
+	timefmt.c timefmt.h $(am__append_1) $(am__append_2)
 libmc_la_CFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CFLAGS)
-libmc_la_LIBADD = \
-	filehighlight/libmcfilehighlight.la \
-	mcconfig/libmcconfig.la \
-	search/libsearch.la \
-	strutil/libmcstrutil.la \
-	skin/libmcskin.la \
-	tty/libmctty.la \
-	vfs/mc-vfs/libvfs-mc.la \
-	widget/libmcwidget.la
-
+libmc_la_LIBADD = event/libmcevent.la \
+	filehighlight/libmcfilehighlight.la mcconfig/libmcconfig.la \
+	search/libsearch.la strutil/libmcstrutil.la skin/libmcskin.la \
+	tty/libmctty.la vfs/libmcvfs.la widget/libmcwidget.la \
+	$(MCLIBS) $(SLANGLIB) $(am__append_3) $(am__append_4) \
+	$(PCRE_LIBS) $(LIBICONV) $(INTLLIBS)
 all: all-recursive
 
 .SUFFIXES:
@@ -446,6 +491,37 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
+	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
+	list2=; for p in $$list; do \
+	  if test -f $$p; then \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
+	}
+
+uninstall-libLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
+	for p in $$list; do \
+	  $(am__strip_dir) \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
+	done
+
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
 
 clean-noinstLTLIBRARIES:
 	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
@@ -456,7 +532,7 @@ clean-noinstLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libmc.la: $(libmc_la_OBJECTS) $(libmc_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libmc_la_LINK)  $(libmc_la_OBJECTS) $(libmc_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libmc_la_LINK) $(am_libmc_la_rpath) $(libmc_la_OBJECTS) $(libmc_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -466,10 +542,12 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-charsets.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-glibcompat.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-global.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-hook.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-keybind.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-lock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-logging.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-serialize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-timefmt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-util.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmc_la-utilunix.Plo@am__quote@
@@ -530,6 +608,14 @@ libmc_la-glibcompat.lo: glibcompat.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -c -o libmc_la-glibcompat.lo `test -f 'glibcompat.c' || echo '$(srcdir)/'`glibcompat.c
 
+libmc_la-global.lo: global.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -MT libmc_la-global.lo -MD -MP -MF $(DEPDIR)/libmc_la-global.Tpo -c -o libmc_la-global.lo `test -f 'global.c' || echo '$(srcdir)/'`global.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmc_la-global.Tpo $(DEPDIR)/libmc_la-global.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='global.c' object='libmc_la-global.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -c -o libmc_la-global.lo `test -f 'global.c' || echo '$(srcdir)/'`global.c
+
 libmc_la-keybind.lo: keybind.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -MT libmc_la-keybind.lo -MD -MP -MF $(DEPDIR)/libmc_la-keybind.Tpo -c -o libmc_la-keybind.lo `test -f 'keybind.c' || echo '$(srcdir)/'`keybind.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmc_la-keybind.Tpo $(DEPDIR)/libmc_la-keybind.Plo
@@ -545,6 +631,14 @@ libmc_la-lock.lo: lock.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='lock.c' object='libmc_la-lock.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -c -o libmc_la-lock.lo `test -f 'lock.c' || echo '$(srcdir)/'`lock.c
+
+libmc_la-serialize.lo: serialize.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -MT libmc_la-serialize.lo -MD -MP -MF $(DEPDIR)/libmc_la-serialize.Tpo -c -o libmc_la-serialize.lo `test -f 'serialize.c' || echo '$(srcdir)/'`serialize.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmc_la-serialize.Tpo $(DEPDIR)/libmc_la-serialize.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='serialize.c' object='libmc_la-serialize.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -c -o libmc_la-serialize.lo `test -f 'serialize.c' || echo '$(srcdir)/'`serialize.c
 
 libmc_la-timefmt.lo: timefmt.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libmc_la_CFLAGS) $(CFLAGS) -MT libmc_la-timefmt.lo -MD -MP -MF $(DEPDIR)/libmc_la-timefmt.Tpo -c -o libmc_la-timefmt.lo `test -f 'timefmt.c' || echo '$(srcdir)/'`timefmt.c
@@ -774,6 +868,9 @@ check: check-recursive
 all-am: Makefile $(LTLIBRARIES)
 installdirs: installdirs-recursive
 installdirs-am:
+	for dir in "$(DESTDIR)$(libdir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -801,8 +898,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
-	mostlyclean-am
+clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
+	clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
@@ -828,7 +925,7 @@ install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
-install-exec-am:
+install-exec-am: install-libLTLIBRARIES
 
 install-html: install-html-recursive
 
@@ -868,25 +965,27 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-libLTLIBRARIES
 
 .MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) ctags-recursive \
 	install-am install-strip tags-recursive
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am check check-am clean clean-generic clean-libtool \
-	clean-noinstLTLIBRARIES ctags ctags-recursive distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am
+	all all-am check check-am clean clean-generic \
+	clean-libLTLIBRARIES clean-libtool clean-noinstLTLIBRARIES \
+	ctags ctags-recursive distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am \
+	uninstall-libLTLIBRARIES
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
