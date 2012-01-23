@@ -17,7 +17,7 @@ ifeq ($(CONFIG_IPTABLES),y)
 ifeq ($(CONFIG_IPV6),y)
 	install -D iptables/ip6tables $(INSTALLDIR)/iptables/usr/sbin/ip6tables
 endif
-#	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables
+	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables
 #	install -D iptables/iptables-restore $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-restore

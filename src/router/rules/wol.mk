@@ -9,4 +9,4 @@ wol-clean:
 
 wol-install:
 	install -D wol/src/wol $(INSTALLDIR)/wol/usr/sbin/wol
-#	$(STRIP) $(INSTALLDIR)/wol/usr/sbin/wol
+	$(STRIP) $(INSTALLDIR)/wol/usr/sbin/wol

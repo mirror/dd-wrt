@@ -11,7 +11,7 @@ parprouted-clean:
 parprouted-install:
 ifeq ($(CONFIG_PARPROUTED),y)
 	install -D parprouted/parprouted $(INSTALLDIR)/parprouted/usr/sbin/parprouted
-#	$(STRIP) $(INSTALLDIR)/parprouted/usr/sbin/parprouted
+	$(STRIP) $(INSTALLDIR)/parprouted/usr/sbin/parprouted
 else
         # So that generic rule does not take precedence
 	@true
