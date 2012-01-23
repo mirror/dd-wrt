@@ -10,8 +10,8 @@ pcmcia-install:
 	install -D pcmcia-cs-3.2.8/cardmgr/cardctl $(INSTALLDIR)/pcmcia/usr/sbin/cardctl
 	install -D pcmcia-cs-3.2.8/etc/sysconfig/pcmcia $(INSTALLDIR)/pcmcia/etc/sysconfig/pcmcia
 	install -D pcmcia-cs-3.2.8/etc/config $(INSTALLDIR)/pcmcia/etc/pcmcia/config
-#	$(STRIP) $(INSTALLDIR)/pcmcia/usr/sbin/cardmgr
-#	$(STRIP) $(INSTALLDIR)/pcmcia/usr/sbin/cardctl
+	$(STRIP) $(INSTALLDIR)/pcmcia/usr/sbin/cardmgr
+	$(STRIP) $(INSTALLDIR)/pcmcia/usr/sbin/cardctl
 	install pcmcia-cs-3.2.8/etc/*.* $(INSTALLDIR)/pcmcia/etc/pcmcia
 	install pcmcia-cs-3.2.8/etc/serial $(INSTALLDIR)/pcmcia/etc/pcmcia/serial 
 	install pcmcia-cs-3.2.8/etc/shared $(INSTALLDIR)/pcmcia/etc/pcmcia/shared 
