@@ -896,7 +896,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_GGEW) && defined(HAVE_WHRHPGN)
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
-	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
+	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
 	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #endif
@@ -924,7 +924,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_GGEW) && defined(HAVE_WHRHPGN)
 	{"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
-	{"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+	{"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_CARLSONWIRELES
 	{"ath0_mode", "wdsap", 0},	/* AP mode (wdsap) */
 #else
