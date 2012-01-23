@@ -546,6 +546,7 @@ int main(int argc, char **argv)
 	FILE *fp = fopen("/tmp/loginprompt", "wb");
 
 #ifndef HAVE_MAKSAT
+#ifndef HAVE_TRIMAX
 #ifndef HAVE_WIKINGS
 #ifndef HAVE_ESPOD
 #ifndef HAVE_NEXTMEDIA
@@ -569,6 +570,7 @@ int main(int argc, char **argv)
 	fprintf(fp,
 		"DD-WRT v24-sp2 custom (c) 2012 NewMedia-NET GmbH\nRelease: "
 		BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+#endif
 #endif
 #endif
 #endif
