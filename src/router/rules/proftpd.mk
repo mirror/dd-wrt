@@ -13,6 +13,6 @@ proftpd-install:
 #	install -D proftpd/proftpd.startup $(INSTALLDIR)/proftpd/etc/config/proftpd.startup
 	install -D proftpd/config/ftp.webnas $(INSTALLDIR)/proftpd/etc/config/ftp.webnas
 	install -D proftpd/config/proftpd.nvramconfig $(INSTALLDIR)/proftpd/etc/config/proftpd.nvramconfig
-#	$(STRIP) $(INSTALLDIR)/proftpd/usr/sbin/proftpd
+	$(STRIP) $(INSTALLDIR)/proftpd/usr/sbin/proftpd
 
 

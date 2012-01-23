@@ -18,7 +18,7 @@ ifeq ($(CONFIG_HOTSPOT),y)
 	install -D chillispot/config/3hotss.webhotspot $(INSTALLDIR)/chillispot/etc/config/3hotss.webhotspot
 endif
 	install -D chillispot/src/chilli $(INSTALLDIR)/chillispot/usr/sbin/chilli
-#	$(STRIP) $(INSTALLDIR)/chillispot/usr/sbin/chilli
+	$(STRIP) $(INSTALLDIR)/chillispot/usr/sbin/chilli
 
 chillispot-clean:
 	$(MAKE) -C chillispot clean
