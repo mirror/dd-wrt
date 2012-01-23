@@ -56,7 +56,7 @@ extern int
  */
 
 /* We need the library */
-#include "iwlib.c"
+//#include "iwlib.c"
 
 /* Get iwconfig in there. Mandatory. */
 #define main(args...) main_iwconfig(args)
