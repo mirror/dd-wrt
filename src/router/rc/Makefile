@@ -133,6 +133,9 @@ endif
 ifeq ($(CONFIG_WHRHPGN),y)
 CFLAGS += -DHAVE_WHRHPGN
 endif
+ifeq ($(CONFIG_HORNET),y)
+CFLAGS += -DHAVE_HORNET
+endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 endif

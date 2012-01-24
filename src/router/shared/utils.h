@@ -457,8 +457,11 @@
 
 #define ROUTER_BOARD_BR6574N 0x8c1a
 
+#ifdef HAVE_HORNET
+#define ROUTER_BOARD_WHRHPGN 0x8d1c	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#else
 #define ROUTER_BOARD_WHRHPGN 0x8d1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
-
+#endif
 // Dynex DX-NRUTER (BCM4703 cpu, 4MB flash / 32MB ram, BCM5325E switch, fccid: Belkin K7SDXNRUTER)
 #define ROUTER_DYNEX_DX_NRUTER 0x8e12
 
