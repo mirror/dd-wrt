@@ -464,27 +464,33 @@ void __init plat_mem_setup(void)
 u32 id;
 u32 t;
 u32 rev=0;
+	id = ar7240_reg_rd(AR7240_REV_ID);
 
         if (is_ar7240()) {
 		ar71xx_soc = AR71XX_SOC_AR7240;
+		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
         }else if (is_ar7241()) {
 		ar71xx_soc = AR71XX_SOC_AR7241;
+		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
         }else if (is_ar7242()) {
 		ar71xx_soc = AR71XX_SOC_AR7242;
+		ar71xx_soc_rev = id & AR724X_REV_ID_REVISION_MASK;
         }else if (is_ar9330()) {
 		ar71xx_soc = AR71XX_SOC_AR9330;
+		ar71xx_soc_rev = id & AR933X_REV_ID_REVISION_MASK;
         }else if (is_ar9331()) {
 		ar71xx_soc = AR71XX_SOC_AR9331;
+		ar71xx_soc_rev = id & AR933X_REV_ID_REVISION_MASK;
         }else if (is_ar9341()) {
 		ar71xx_soc = AR71XX_SOC_AR9341;
+		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
         }else if (is_ar9342()) {
 		ar71xx_soc = AR71XX_SOC_AR9342;
+		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
         }else if (is_ar9344()) {
 		ar71xx_soc = AR71XX_SOC_AR9344;
+		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
         } 
-	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
-	ar71xx_soc_rev = id >> AR71XX_REV_ID_REVISION_SHIFT;
-	ar71xx_soc_rev &= AR71XX_REV_ID_REVISION_MASK;
 
         
 	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
