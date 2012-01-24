@@ -942,6 +942,7 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "<br />\n");
 	}
 #endif
 }
