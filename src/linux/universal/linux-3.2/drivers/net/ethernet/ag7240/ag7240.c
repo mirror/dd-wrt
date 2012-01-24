@@ -309,7 +309,7 @@ ag7240_open(struct net_device *dev)
     }
 #endif
     
-    if (is_ar7240() || is_ar7241() || (is_ar7242() && mac->mac_unit == 1))
+    if (is_ar7240() || is_ar7241() || is_ar933x() || (is_ar7242() && mac->mac_unit == 1))
 	athrs26_enable_linkIntrs(mac->mac_unit);
 
     ag7240_rx_start(mac);	
