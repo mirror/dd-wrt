@@ -151,6 +151,23 @@ void start_sysinit(void)
 	nvram_set("dsl_datarate_us", "");
 	nvram_set("dsl_xtu_status", "");
 	nvram_set("dsl_tcl_status", "");
+/*
+todo
+Annex-B | 10_00_10_00_00_04_00_00
+Annex-B DMT | 10_00_00_00_00_00_00_00
+Annex-B ADSL2 | 00_00_10_00_00_00_00_00
+Annex-B ADSL2+ | 00_00_00_00_00_04_00_00
+Annex-A | 04_01_04_00_00_01_00_00
+Annex-A T1 | 01_00_00_00_00_00_00_00
+Annex-A Lite | 00_01_00_00_00_00_00_00
+Annex-A DMT | 04_00_00_00_00_00_00_00
+Annex-A ADSL2 | 00_00_04_00_00_00_00_00
+Annex-A ADSL2+ | 00_00_00_00_00_01_00_00
+Annex-L | 00_00_00_00_04_00_00_00
+Annex-M ADSL2 | 00_00_00_00_40_00_00_00
+Annex-M ADSL2+ | 00_00_00_00_00_00_04_00
+*/
+
 #ifdef HAVE_ANNEXB
 	sysprintf
 	    ("/usr/sbin/dsl_cpe_control -i -f /usr/lib/firmware/annex_b.bin -n /usr/sbin/dsl_notification.sh &");
