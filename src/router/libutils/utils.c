@@ -935,6 +935,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_HORNET
+	setRouter("Atheros Hornet");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPG300N
 #ifdef HAVE_BUFFALO
 	setRouter("WHR-HP-G300N");
@@ -3571,6 +3576,9 @@ int led_control(int type, int act)
 		connected_gpio = 0x106;
 		ses_gpio = 0x10f;
 		sec0_gpio = 0x10f;
+		break;
+#elif HAVE_HORNET
+	case ROUTER_BOARD_WHRHPGN:
 		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
