@@ -89,7 +89,7 @@ static int ar933x_wmac_reset(void)
 		retries++;
 	}
 
-	pr_err("ar93xx: WMAC reset timed out");
+	printk(KERN_EMERG "ar93xx: WMAC reset timed out");
 	return -ETIMEDOUT;
 }
 

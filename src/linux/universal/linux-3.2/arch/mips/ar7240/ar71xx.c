@@ -129,6 +129,7 @@ void ar71xx_device_start(u32 mask)
 		ar71xx_reset_wr(AR91XX_RESET_REG_RESET_MODULE, t & ~mask);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
+
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
 		spin_lock_irqsave(&ar71xx_device_lock, flags);
@@ -151,6 +152,54 @@ void ar71xx_device_start(u32 mask)
 	}
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
+
+void ar71xx_device_reset_rmw(u32 clear, u32 set)
+{
+	unsigned long flags;
+	unsigned int reg;
+	u32 t;
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		reg = AR71XX_RESET_REG_RESET_MODULE;
+		break;
+
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+		reg = AR724X_RESET_REG_RESET_MODULE;
+		break;
+
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		reg = AR91XX_RESET_REG_RESET_MODULE;
+		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		reg = AR933X_RESET_REG_RESET_MODULE;
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		reg = AR934X_RESET_REG_RESET_MODULE;
+		break;
+
+	default:
+		BUG();
+	}
+
+	spin_lock_irqsave(&ar71xx_device_lock, flags);
+	t = ar71xx_reset_rr(reg);
+	t &= ~clear;
+	t |= set;
+	ar71xx_reset_wr(reg, t);
+	spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+}
+EXPORT_SYMBOL_GPL(ar71xx_device_reset_rmw);
 
 int ar71xx_device_stopped(u32 mask)
 {
@@ -195,7 +244,6 @@ int ar71xx_device_stopped(u32 mask)
 		t = ar71xx_reset_rr(AR934X_RESET_REG_RESET_MODULE);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
-
 
 	default:
 		BUG();
