@@ -384,7 +384,7 @@ void athrs26_reg_init(int ethUnit)
     athrs26_reg_write(PORT_STATUS_REGISTER5,0x0);
 
     /* Enable WAN mac inside S26 */
-    if (mac_has_flag(mac,ETH_SWONLY_MODE)) 
+    if (mac_has_flag(mac,ETH_SWONLY_MODE) || is_ar933x() ) 
         athrs26_reg_write(PORT_STATUS_REGISTER5,0x200);
 
     /* Enable MDIO Access if PHY is Powered-down */
@@ -578,7 +578,7 @@ void athrs26_reg_init_lan(int ethUnit)
     if(mac_has_flag(mac,ATHR_S26_HEADER))
         athrs26_reg_write(0x104,athrs26_reg_read(0x104)|(0x1<<11));
 
-    if (mac_has_flag(mac,ETH_SWONLY_MODE))
+    if (mac_has_flag(mac,ETH_SWONLY_MODE) || is_ar933x()) 
         athrs26_reg_write(PORT_STATUS_REGISTER5,0x200);
 
 
@@ -1030,7 +1030,7 @@ athrs26_reg_read(unsigned int s26_addr)
     if (is_ar7240()) {
         unit = 0;
     } 
-    else if(is_ar7241() || is_ar7242()) {
+    else if(is_ar7241() || is_ar7242() || is_ar933x()) {
         unit = 1;
     }
 
@@ -1064,21 +1064,58 @@ athrs26_reg_write(unsigned int s26_addr, unsigned int s26_write_data)
     if (is_ar7240()) {
         unit = 0;
     } 
-    else if(is_ar7241() || is_ar7242()) {
+    else if(is_ar7241() || is_ar7242() || is_ar933x()) {
         unit = 1;
     }
 
-    phy_reg_write(unit,phy_address, reg_address, data);
+    if(is_ar933x())
+    {
+        //The writing sequence need special care for register 0x40,0x50,0x98, because the busy bit design
+        //0x98: L->H (write low address first, then high address), 0x40: H->L, 0x50: H->L
+        //Other registers: any sequence is working.
+        if(s26_addr!=0x98)
+        {
+            phy_reg_write(unit, phy_address, reg_address, data);
 
-    phy_address = (0x17 & ((addr_temp >> 4) | 0x10));
+            phy_address = 0x17 & ((addr_temp >> 4) | 0x10);
+            reg_address = ((addr_temp << 1) & 0x1e) | 0x1;
+            data =  s26_write_data >> 16;
+            phy_reg_write(unit, phy_address, reg_address, data);
 
-    reg_address = (((addr_temp << 1) & 0x1e) | 0x1);
-    data = s26_write_data >> 16;
-    phy_reg_write(unit,phy_address, reg_address, data);
-    
-    reg_address = ((addr_temp << 1) & 0x1e);
-    data = s26_write_data  & 0xffff;
-    phy_reg_write(unit,phy_address, reg_address, data);
+            reg_address = reg_address & 0x1e;
+            data = s26_write_data  & 0xffff;
+            phy_reg_write(unit, phy_address, reg_address, data);
+        }
+        else
+        {
+            phy_reg_write(unit, phy_address, reg_address, data);
+
+            phy_address = (0x17 & ((addr_temp >> 4) | 0x10));
+            reg_address = ((addr_temp << 1) & 0x1e);
+
+            data = s26_write_data  & 0xffff;
+            phy_reg_write(unit, phy_address, reg_address, data);
+
+            reg_address = (((addr_temp << 1) & 0x1e) | 0x1);
+            data = s26_write_data >> 16;
+            phy_reg_write(unit, phy_address, reg_address, data);
+
+        }
+    }
+    else
+    {
+        phy_reg_write(unit,phy_address, reg_address, data);
+
+        phy_address = (0x17 & ((addr_temp >> 4) | 0x10));
+
+        reg_address = (((addr_temp << 1) & 0x1e) | 0x1);
+        data = s26_write_data >> 16;
+        phy_reg_write(unit,phy_address, reg_address, data);
+
+        reg_address = ((addr_temp << 1) & 0x1e);
+        data = s26_write_data  & 0xffff;
+        phy_reg_write(unit,phy_address, reg_address, data);
+    }
 }
 
 void athrs26_reg_rmw(unsigned int s26_addr, unsigned int s26_write_data) 
