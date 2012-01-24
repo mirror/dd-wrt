@@ -937,8 +937,8 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_HORNET
 	setRouter("Atheros Hornet");
-	nvram_default_get("ath0_rxantenna", "3");
-	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHRHPG300N
 #ifdef HAVE_BUFFALO
