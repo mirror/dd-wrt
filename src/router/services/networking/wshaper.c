@@ -85,6 +85,34 @@ static int client_bridged_enabled(void)
 	return bridged_clients;
 }
 
+#ifdef HAVE_AQOS
+#ifdef HAVE_OPENVPN
+static inline int is_in_bridge(char *interface)
+{
+#define BUFFER_SIZE	256
+
+	FILE *fd = NULL;;
+	char buffer[BUFFER_SIZE];
+
+	if (!interface)
+		return 0;
+
+	system2("/usr/sbin/brctl show > /tmp/bridges");
+
+	fd = fopen("/tmp/bridges", "r");
+	if (fd != NULL) {
+		while (fgets(buffer, BUFFER_SIZE, fd) != NULL) {
+			if (strstr(buffer, interface) != NULL) {
+				fclose(fd);
+				return 1;
+			}
+		}
+		fclose(fd);
+	}
+	return 0;
+}
+#endif
+#endif
 
 #ifdef HAVE_SVQOS
 void svqos_reset_ports(void)
@@ -398,6 +426,11 @@ int svqos_iptables(void)
 	if (   nvram_invmatch("openvpn_enable", "0")
 		|| nvram_invmatch("openvpncl_enable", "0"))
 	{
+		char iflist[256];
+		static char word[256];
+		char *next;
+		bool unbridged_tap = 0;
+
 		insmod("xt_dscp");
 		insmod("xt_DSCP");
 
@@ -415,35 +448,64 @@ int svqos_iptables(void)
 		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 2 -j MARK --set-mark 20");
 		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 3 -j MARK --set-mark 30");
 		system2("iptables -t mangle -I SVQOS_OUT 2 -m dscp --dscp 4 -j MARK --set-mark 40");
+		system2("iptables -t mangle -I SVQOS_OUT 8 -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
 
-		system2("iptables -t mangle -I PREROUTING 2 -i tun+ -j VPN_IN");
-		system2("iptables -t mangle -I INPUT 1 -i tun+ -j IMQ --todev 0");
-		system2("iptables -t mangle -I FORWARD 1 -i tun+ -j IMQ --todev 0");
-		system2("iptables -t mangle -I POSTROUTING 1 -o tun+ -j VPN_OUT");
-	
-		system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
+		// look for present tun-devices
+		if(getifcount("tun")) {
+			system2("iptables -t mangle -I PREROUTING 2 -i tun+ -j VPN_IN");
+			system2("iptables -t mangle -I INPUT 1 -i tun+ -j IMQ --todev 0");
+			system2("iptables -t mangle -I FORWARD 1 -i tun+ -j IMQ --todev 0");
+			system2("iptables -t mangle -I POSTROUTING 1 -o tun+ -j VPN_OUT");
+		}
+
+		// look for present tap-devices
+		if (getifcount("tap"))
+		{
+			insmod("xt_physdev");
+			insmod("ebtables");
+			
+			getIfList(iflist, "tap");
+			foreach(word, iflist, next) {
+				if (is_in_bridge(word)) {
+					sysprintf("iptables -t mangle -I PREROUTING 2 -m physdev --physdev-in %s -j VPN_IN", word);
+					sysprintf("iptables -t mangle -I INPUT 1 -m physdev --physdev-in %s -j IMQ --todev 0", word);
+					sysprintf("iptables -t mangle -I FORWARD 1 -m physdev --physdev-in %s -j IMQ --todev 0", word);
+					sysprintf("iptables -t mangle -I POSTROUTING -m physdev --physdev-out %s -j VPN_OUT", word);
+				} else
+					unbridged_tap = 1;
+			}
+
+			if (unbridged_tap) {
+				system2("iptables -t mangle -I PREROUTING 2 -i tap+ -j VPN_IN");
+				system2("iptables -t mangle -I INPUT 1 -i tap+ -j IMQ --todev 0");
+				system2("iptables -t mangle -I FORWARD 1 -i tap+ -j IMQ --todev 0");
+				system2("iptables -t mangle -I POSTROUTING 1 -o tap+ -j VPN_OUT");
+			}
+		}
+
+		//system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
 
 		char *qos_vpn = nvram_safe_get("svqos_vpns");
 
 		/*
-		 *  mac format is "interface level | interface level |" ..etc 
+		 *  vpn format is "interface level | interface level |" ..etc 
 		*/
-		int dscp_level=0;
-
 		do {
 			if (sscanf(qos_vpn, "%32s %32s |", data, level) < 2)
 				break;
 			
-			dscp_level = atoi(level) / 10;
-
 			/* incomming data */
 			sysprintf("iptables -t mangle -I VPN_IN 1 -i %s -j MARK --set-mark %s",
 					  data, level);
 
 			/* outgoing data */
-			sysprintf("iptables -t mangle -I VPN_OUT 1 -o %s -j DSCP --set-dscp %d",
-					  data, dscp_level);
-
+			if (is_in_bridge(data))
+				sysprintf("iptables -t mangle -I VPN_OUT 1 -m physdev --physdev-out %s -j DSCP --set-dscp %d",
+							data, atoi(level)/10 );
+			else
+				sysprintf("iptables -t mangle -I VPN_OUT 1 -o %s -j DSCP --set-dscp %d",
+							data, atoi(level)/10 );
+			
 		} while ((qos_vpn = strpbrk(++qos_vpn, "|")) && qos_vpn++);
 	}
 #endif
@@ -921,6 +983,7 @@ void stop_wshaper(void)
 #ifdef HAVE_OPENVPN
 	rmmod("xt_dscp");
 	rmmod("xt_DSCP");
+	rmmod("xt_physdev");
 #endif
 	
 	rmmod("ipt_mark");
