@@ -240,9 +240,29 @@ static __init int
 register_proc (void)
 {
   unsigned char i, flag = 0;
+
+#define AR7240_GPIO_COUNT	18
+#define AR7241_GPIO_COUNT	20
+#define AR71XX_GPIO_COUNT	16
+#define AR91XX_GPIO_COUNT	22
+#define AR933X_GPIO_COUNT	30
+#define AR934X_GPIO_COUNT	23
+
+
   char proc_name[64];
   int gpiocount = 64;
-
+  if (is_ar7240())
+    gpiocount = AR7240_GPIO_COUNT;
+  else
+  if (is_ar7241())
+    gpiocount = AR7241_GPIO_COUNT;
+  else
+  if (is_ar933x())
+    gpiocount = AR933X_GPIO_COUNT;
+  else
+  if (is_ar934x())
+    gpiocount = AR934X_GPIO_COUNT;
+  
   /* create directory gpio */
   gpio_dir = proc_mkdir ("gpio", NULL);
   if (gpio_dir == NULL)
