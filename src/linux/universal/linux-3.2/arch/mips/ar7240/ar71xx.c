@@ -71,6 +71,23 @@ void ar71xx_device_stop(u32 mask)
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(AR933X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR933X_RESET_REG_RESET_MODULE, t | mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(AR934X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR934X_RESET_REG_RESET_MODULE, t | mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+
 	default:
 		BUG();
 	}
@@ -112,6 +129,22 @@ void ar71xx_device_start(u32 mask)
 		ar71xx_reset_wr(AR91XX_RESET_REG_RESET_MODULE, t & ~mask);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(AR933X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR933X_RESET_REG_RESET_MODULE, t & ~mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(AR934X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(AR934X_RESET_REG_RESET_MODULE, t & ~mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
 
 	default:
 		BUG();
@@ -147,6 +180,22 @@ int ar71xx_device_stopped(u32 mask)
 		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(AR933X_RESET_REG_RESET_MODULE);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(AR934X_RESET_REG_RESET_MODULE);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+
 
 	default:
 		BUG();

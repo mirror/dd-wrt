@@ -256,7 +256,7 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
     ar9130_debug_dev("Host Operational Reg %p \n",ehci->regs);
 
     /* Added 5_29_07 */
-#ifdef MACH_AR7240
+#ifdef CONFIG_MACH_AR7240
     ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE |AR7240_RESET_USB_PHY_ANALOG);
 #else
     ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE);

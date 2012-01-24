@@ -573,7 +573,9 @@ asmlinkage void __init start_kernel(void)
 	 * we've done PCI setups etc, and console_init() must be aware of
 	 * this. But we do want output early, in case something goes wrong.
 	 */
+	 printk(KERN_EMERG "console initcall\n");
 	console_init();
+	 printk(KERN_EMERG "console initcall done\n");
 	if (panic_later)
 		panic(panic_later, panic_param);
 
@@ -784,6 +786,7 @@ static noinline int init_post(void)
 					"defaults...\n", execute_command);
 	}*/
 	run_init_process("/sbin/init");
+//	run_init_process("/bin/sh");
 
 	panic("No init found.  Try passing init= option to kernel. "
 	      "See Linux Documentation/init.txt for guidance.");

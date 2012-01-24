@@ -784,6 +784,24 @@ config NLM_XLR_BOARD
 	  Support for systems based on Netlogic XLR and XLS processors.
 	  Say Y here if you have a XLR or XLS based board.
 
+config MACH_HORNET
+    bool "Support for Atheros HORNET based board"
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select DMA_NONCOHERENT
+	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+
+config HORNET_EMULATION
+    bool "build system for Hornet emulation board?"
+    depends on MACH_HORNET
+
 config  MACH_AR7100
     bool "Support for Atheros ar7100 based boards"
 	select CEVT_R4K

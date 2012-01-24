@@ -41,7 +41,6 @@ uint32_t ath_ref_clk_freq;
 #endif
 
 static int __init ar7240_init_ioc(void);
-void Uart16550Init(void);
 void serial_print(char *fmt, ...);
 void writeserial(char *str,int count);
 #ifdef CONFIG_WASP_SUPPORT
@@ -49,7 +48,17 @@ static void wasp_sys_frequency(void);
 #else
 static void ar7240_sys_frequency(void);
 #endif
+#ifdef CONFIG_MACH_HORNET
+static void hornet_sys_frequency(void);
+void UartHornetInit(void);
+void UartHornetPut(u8 byte);
+
+#define Uart16550Init          UartHornetInit
+#define Uart16550Put           UartHornetPut
+#else
+void Uart16550Init(void);
 u8 Uart16550GetPoll(void);
+#endif
 /* 
  * Export AHB freq value to be used by Ethernet MDIO.
  */
@@ -139,6 +148,22 @@ switch (id) {
 	case AR9330_REV_1_1:
 		chip = "9330";
 		rev = 1;
+		break;
+	case AR9330_REV_1_2:
+		chip = "9330";
+		rev = 2;
+		break;
+	case AR9331_REV_1_0:
+		chip = "9331";
+		rev = 0;
+		break;
+	case AR9331_REV_1_1:
+		chip = "9331";
+		rev = 1;
+		break;
+	case AR9331_REV_1_2:
+		chip = "9331";
+		rev = 2;
 		break;
 	case AR9344_REV_1_0:
 		chip = "9344";
@@ -265,7 +290,9 @@ wasp_sys_frequency(void)
 static void
 ar7240_sys_frequency(void)
 {
-
+#ifdef CONFIG_MACH_HORNET
+    hornet_sys_frequency();
+#else /* CONFIG_MACH_HORNET */
 #ifdef CONFIG_AR7240_EMULATION
 #ifdef FB50
     ar7240_cpu_freq = 66000000;
@@ -303,29 +330,9 @@ ar7240_sys_frequency(void)
     ar7240_ddr_freq = freq/ddr_div;
     ar7240_ahb_freq = ar7240_cpu_freq/ahb_div;
 #endif
+#endif
 }
 #endif
-extern int early_serial_setup(struct uart_port *port);
-
-#define AR71XX_UART_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP)
-void __init
-serial_setup(void)
-{
-	struct uart_port p;
-
-	memset(&p, 0, sizeof(p));
-
-	p.flags     = AR71XX_UART_FLAGS;
-	p.iotype    = UPIO_MEM32;
-	p.uartclk   = ar7240_ahb_freq;
-	p.irq       = AR7240_MISC_IRQ_UART;
-	p.regshift  = 2;
-	p.membase   = (u8 *)KSEG1ADDR(AR7240_UART_BASE);
-
-	if (early_serial_setup(&p) != 0)
-		printk(KERN_ERR "early_serial_setup failed\n");
-	
-}
 void __init plat_time_init(void)
 {
     /* 
@@ -396,7 +403,7 @@ void disable_early_printk(void)
 
 #define AR71XX_MEM_SIZE_MIN	0x0200000
 #define AR71XX_MEM_SIZE_MAX	0x8000000
-
+static int ramsize;
 static void __init ar71xx_detect_mem_size(void)
 {
 	volatile u8 *p;
@@ -421,7 +428,7 @@ static void __init ar71xx_detect_mem_size(void)
 		}
 	}
 	*p = memsave;
-
+	ramsize = size;
 	add_memory_region(0, size, BOOT_MEM_RAM);
 }
 
@@ -436,12 +443,27 @@ unsigned int __cpuinit get_c0_compare_int(void)
     return AR7240_CPU_IRQ_TIMER;
 }
 
+#define AR71XX_REV_ID_REVISION_MASK	0x3
+#define AR71XX_REV_ID_REVISION_SHIFT	2
+#define AR933X_RESET_REG_BOOTSTRAP		0xac
+#define AR933X_RESET_REG_BOOTSTRAP		0xac
+#define AR933X_BOOTSTRAP_MDIO_GPIO_EN		BIT(18)
+#define AR933X_BOOTSTRAP_EEPBUSY		BIT(4)
+#define AR933X_BOOTSTRAP_REF_CLK_40		BIT(0)
 
+u32 ar71xx_soc_rev;
+EXPORT_SYMBOL_GPL(ar71xx_soc_rev);
+
+u32 ar71xx_ref_freq;
+EXPORT_SYMBOL_GPL(ar71xx_ref_freq);
 
 int is_ar9000;
 EXPORT_SYMBOL(is_ar9000);
 void __init plat_mem_setup(void)
 {
+u32 id;
+u32 t;
+u32 rev=0;
 
         if (is_ar7240()) {
 		ar71xx_soc = AR71XX_SOC_AR7240;
@@ -449,7 +471,21 @@ void __init plat_mem_setup(void)
 		ar71xx_soc = AR71XX_SOC_AR7241;
         }else if (is_ar7242()) {
 		ar71xx_soc = AR71XX_SOC_AR7242;
+        }else if (is_ar9330()) {
+		ar71xx_soc = AR71XX_SOC_AR9330;
+        }else if (is_ar9331()) {
+		ar71xx_soc = AR71XX_SOC_AR9331;
+        }else if (is_ar9341()) {
+		ar71xx_soc = AR71XX_SOC_AR9341;
+        }else if (is_ar9342()) {
+		ar71xx_soc = AR71XX_SOC_AR9342;
+        }else if (is_ar9344()) {
+		ar71xx_soc = AR71XX_SOC_AR9344;
         } 
+	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
+	ar71xx_soc_rev = id >> AR71XX_REV_ID_REVISION_SHIFT;
+	ar71xx_soc_rev &= AR71XX_REV_ID_REVISION_MASK;
+
         
 	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
 						AR71XX_DDR_CTRL_SIZE);
@@ -464,6 +500,15 @@ void __init plat_mem_setup(void)
 
 	ar71xx_usb_ctrl_base = ioremap_nocache(AR71XX_USB_CTRL_BASE,
 						AR71XX_USB_CTRL_SIZE);
+
+
+
+#ifdef CONFIG_MACH_HORNET
+    if ( ar7240_reg_rd(HORNET_BOOTSTRAP_STATUS) & HORNET_BOOTSTRAP_SEL_25M_40M_MASK )
+		ar71xx_ref_freq = (40 * 1000 * 1000);
+    else
+		ar71xx_ref_freq = (25 * 1000 * 1000);
+#endif
 
 #if 0
     board_be_handler = ar7240_be_handler;
@@ -488,7 +533,7 @@ void __init plat_mem_setup(void)
 
     Uart16550Init();
 #ifdef CONFIG_MACH_HORNET
-    serial_print("Booting AR9330(Hornet)...\n");
+    serial_print("Booting %s(Hornet)...\n",get_system_type());
     /* clear wmac reset */
     ar7240_reg_wr(AR7240_RESET, (ar7240_reg_rd(AR7240_RESET) & (~AR7240_RESET_WMAC)));
 #elif CONFIG_WASP_SUPPORT
@@ -509,6 +554,12 @@ void __init plat_mem_setup(void)
 /* === CONFIG === */
 
 #define		REG_OFFSET		4
+
+static int serial_inited = 0;
+
+#define         MY_WRITE(y, z)  ((*((volatile u32*)(y))) = z)
+
+#ifndef CONFIG_MACH_HORNET
 
 /* === END OF CONFIG === */
 
@@ -533,9 +584,6 @@ void __init plat_mem_setup(void)
 #define         UART16550_READ(y)   ar7240_reg_rd((AR7240_UART_BASE+y))
 #define         UART16550_WRITE(x, z)  ar7240_reg_wr((AR7240_UART_BASE+x), z)
 
-static int serial_inited = 0;
-
-#define         MY_WRITE(y, z)  ((*((volatile u32*)(y))) = z)
 
 void Uart16550Init()
 {
@@ -599,7 +647,7 @@ void Uart16550Put(u8 byte)
     while (((UART16550_READ(OFS_LINE_STATUS)) & 0x20) == 0x0);
     UART16550_WRITE(OFS_SEND_BUFFER, byte);
 }
-
+#endif
 extern int vsprintf(char *buf, const char *fmt, va_list args);
 static char sprint_buf[1024];
 
@@ -630,4 +678,179 @@ unsigned int getCPUClock(void)
 {
     return ar7240_cpu_freq/1000000;
 }
+#ifdef CONFIG_MACH_HORNET
+
+void UartHornetInit(void)
+{
+    unsigned int    rdata;
+    unsigned int    baudRateDivisor, clock_step;
+    unsigned int    fcEnable = 0;        
+
+    ar7240_sys_frequency();
+
+#if 0
+    MY_WRITE(0xb8040000, 0xcff);
+    MY_WRITE(0xb8040008, 0x3b);
+    /* Enable UART , SPI and Disable S26 UART */ 
+    MY_WRITE(0xb8040028, (ar7240_reg_rd(0xb8040028) | 0x48002));
+
+    MY_WRITE(0xb8040008, 0x2f);
+#endif
+#ifdef CONFIG_HORNET_EMULATION
+    baudRateDivisor = ( ar7240_ahb_freq / (16*AG7240_CONSOLE_BAUD) ) - 1; // 24 MHz clock is taken as UART clock 
+#else
+
+    rdata = ar7240_reg_rd(HORNET_BOOTSTRAP_STATUS);
+    rdata &= HORNET_BOOTSTRAP_SEL_25M_40M_MASK;
+
+    if (rdata)
+        baudRateDivisor = ( 40000000 / (16*AG7240_CONSOLE_BAUD) ) - 1; // 40 MHz clock is taken as UART clock        
+    else
+        baudRateDivisor = ( 25000000 / (16*AG7240_CONSOLE_BAUD) ) - 1; // 25 MHz clock is taken as UART clock        
+#endif
+
+    clock_step = 8192;
+    
+	rdata = UARTCLOCK_UARTCLOCKSCALE_SET(baudRateDivisor) | UARTCLOCK_UARTCLOCKSTEP_SET(clock_step);
+	uart_reg_write(UARTCLOCK_ADDRESS, rdata);    
+
+    /* Config Uart Controller */
+#if 1 /* No interrupt */
+	rdata = UARTCS_UARTDMAEN_SET(0) | UARTCS_UARTHOSTINTEN_SET(0) | UARTCS_UARTHOSTINT_SET(0)
+	        | UARTCS_UARTSERIATXREADY_SET(0) | UARTCS_UARTTXREADYORIDE_SET(~fcEnable) 
+	        | UARTCS_UARTRXREADYORIDE_SET(~fcEnable) | UARTCS_UARTHOSTINTEN_SET(0);
+#else    
+	rdata = UARTCS_UARTDMAEN_SET(0) | UARTCS_UARTHOSTINTEN_SET(0) | UARTCS_UARTHOSTINT_SET(0)
+	        | UARTCS_UARTSERIATXREADY_SET(0) | UARTCS_UARTTXREADYORIDE_SET(~fcEnable) 
+	        | UARTCS_UARTRXREADYORIDE_SET(~fcEnable) | UARTCS_UARTHOSTINTEN_SET(1);
+#endif	        	        
+	        
+    /* is_dte == 1 */
+    rdata = rdata | UARTCS_UARTINTERFACEMODE_SET(2);   
+    
+	if (fcEnable) {
+	   rdata = rdata | UARTCS_UARTFLOWCONTROLMODE_SET(2); 
+	}
+	
+    /* invert_fc ==0 (Inverted Flow Control) */
+    //rdata = rdata | UARTCS_UARTFLOWCONTROLMODE_SET(3);
+    
+    /* parityEnable == 0 */
+    //rdata = rdata | UARTCS_UARTPARITYMODE_SET(2); -->Parity Odd  
+    //rdata = rdata | UARTCS_UARTPARITYMODE_SET(3); -->Parity Even
+    uart_reg_write(UARTCS_ADDRESS, rdata);
+    
+    serial_inited = 1;
+}
+
+u8 UartHornetGetPoll(void)
+{
+    u8              ret_val;
+    unsigned int    rdata;    
+    
+    do {
+        rdata = uart_reg_read(UARTDATA_ADDRESS);
+    } while (!UARTDATA_UARTRXCSR_GET(rdata));
+    
+    ret_val = (u8)UARTDATA_UARTTXRXDATA_GET(rdata);
+    rdata = UARTDATA_UARTRXCSR_SET(1);
+    uart_reg_write(UARTDATA_ADDRESS, rdata);
+    
+    return ret_val;
+}
+
+void UartHornetPut(u8 byte)
+{
+    unsigned int rdata;
+    
+    if (!serial_inited) {
+        serial_inited = 1;
+        UartHornetInit();
+    }
+
+    do {
+        rdata = uart_reg_read(UARTDATA_ADDRESS);
+    } while (UARTDATA_UARTTXCSR_GET(rdata) == 0);
+    
+    rdata = UARTDATA_UARTTXRXDATA_SET((unsigned int)byte);
+    rdata |= UARTDATA_UARTTXCSR_SET(1);
+
+    uart_reg_write(UARTDATA_ADDRESS, rdata);
+}
+
+static void
+hornet_sys_frequency(void)
+{
+#ifdef CONFIG_HORNET_EMULATION
+    #ifdef CONFIG_HORNET_EMULATION_WLAN_HARDI /* FPGA WLAN emulation */
+    ar7240_cpu_freq = 48000000;
+    ar7240_ddr_freq = 48000000;
+    ar7240_ahb_freq = 24000000;    
+    #else
+    ar7240_cpu_freq = 80000000;
+    ar7240_ddr_freq = 80000000;
+    ar7240_ahb_freq = 40000000;
+    #endif
+#else
+    /* Hornet's PLL is completely different from Python's */
+    u32     ref_clock_rate, pll_freq;
+    u32     pllreg, clockreg;
+    u32     nint, refdiv, outdiv;
+    u32     cpu_div, ahb_div, ddr_div;
+
+    if ( ar7240_reg_rd(HORNET_BOOTSTRAP_STATUS) & HORNET_BOOTSTRAP_SEL_25M_40M_MASK )
+        ref_clock_rate = 40 * 1000000;
+    else
+        ref_clock_rate = 25 * 1000000;
+
+    pllreg   = ar7240_reg_rd(AR7240_CPU_PLL_CONFIG);
+    clockreg = ar7240_reg_rd(AR7240_CPU_CLOCK_CONTROL);    
+    
+    if (clockreg & HORNET_CLOCK_CONTROL_BYPASS_MASK) {
+        /* Bypass PLL */ 
+        pll_freq = ref_clock_rate;
+        cpu_div = ahb_div = ddr_div = 1;
+    }
+    else {
+        nint = (pllreg & HORNET_PLL_CONFIG_NINT_MASK) >> HORNET_PLL_CONFIG_NINT_SHIFT;
+        refdiv = (pllreg & HORNET_PLL_CONFIG_REFDIV_MASK) >> HORNET_PLL_CONFIG_REFDIV_SHIFT;
+        outdiv = (pllreg & HORNET_PLL_CONFIG_OUTDIV_MASK) >> HORNET_PLL_CONFIG_OUTDIV_SHIFT;
+        
+        pll_freq = (ref_clock_rate / refdiv) * nint;
+
+        if (outdiv == 1)
+            pll_freq /= 2;
+        else if (outdiv == 2)   
+            pll_freq /= 4;                    
+        else if (outdiv == 3)  
+            pll_freq /= 8;             
+        else if (outdiv == 4) 
+            pll_freq /= 16;                
+        else if (outdiv == 5) 
+            pll_freq /= 32;             
+        else if (outdiv == 6)  
+            pll_freq /= 64;              
+        else if (outdiv == 7)  
+            pll_freq /= 128;              
+        else /* outdiv == 0 --> illegal value */                                                                     
+            pll_freq /= 2;   
+
+        cpu_div = (clockreg & HORNET_CLOCK_CONTROL_CPU_POST_DIV_MASK) >> HORNET_CLOCK_CONTROL_CPU_POST_DIV_SHIFT;
+        ddr_div = (clockreg & HORNET_CLOCK_CONTROL_DDR_POST_DIV_MASK) >> HORNET_CLOCK_CONTROL_DDR_POST_DIV_SFIFT;
+        ahb_div = (clockreg & HORNET_CLOCK_CONTROL_AHB_POST_DIV_MASK) >> HORNET_CLOCK_CONTROL_AHB_POST_DIV_SFIFT;                     
+        
+        /*
+         * b00 : div by 1, b01 : div by 2, b10 : div by 3, b11 : div by 4
+         */
+        cpu_div++;
+        ddr_div++;
+        ahb_div++;        
+    }
+    
+    ar7240_cpu_freq = pll_freq / cpu_div;
+    ar7240_ddr_freq = pll_freq / ddr_div;
+    ar7240_ahb_freq = pll_freq / ahb_div;    
+#endif
+}
+#endif
 

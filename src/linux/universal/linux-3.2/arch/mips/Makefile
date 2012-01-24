@@ -186,6 +186,13 @@ cflags-$(CONFIG_MACH_AR7100)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7100
 #
 endif
 
+#Atheros Ar9330(Hornet)
+#
+core-$(CONFIG_MACH_HORNET)		+=	arch/mips/ar7240/
+load-$(CONFIG_MACH_HORNET)		+=	0xffffffff80002000
+cflags-$(CONFIG_MACH_HORNET)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7240
+
+
 #Atheros Ar7240
 #
 core-$(CONFIG_MACH_AR7240)		+=	arch/mips/ar7240/

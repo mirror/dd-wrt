@@ -99,7 +99,7 @@ static inline void ag7240_phy_setup(int unit)
     	 rtl8309g_phy_setup(unit);
     } else 
 #endif 
-  if (is_ar7241() || is_ar7240())
+  if (is_ar7241() || is_ar7240() || is_ar933x())
     athrs26_phy_setup (unit);
   else if (is_ar7242() && unit == 1) 
     athrs26_phy_setup (unit);
@@ -126,7 +126,7 @@ ag7240_get_link_status(int unit, int *link, int *fdx, ag7240_phy_speed_t *speed,
     else
 #endif
 
-  if (is_ar7240() || is_ar7241() || (is_ar7242() && unit == 1)) {
+  if (is_ar7240() || is_ar7241() || (is_ar7242() && unit == 1) || is_ar933x()) {
     *link=ag7240_phy_is_up(unit);
     *fdx=ag7240_phy_is_fdx(unit, phyUnit);
     *speed=ag7240_phy_speed(unit, phyUnit);

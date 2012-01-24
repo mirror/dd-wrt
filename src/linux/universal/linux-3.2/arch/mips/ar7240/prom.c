@@ -17,21 +17,6 @@
 
 int __ath_flash_size;
 
-extern void Uart16550Put(unsigned char byte);
-
-#define UART_READ(r) \
-	__raw_readl((void __iomem *)(KSEG1ADDR(AR7240_UART_BASE) + 4 * (r)))
-
-#define UART_WRITE(r, v) \
-	__raw_writel((v), (void __iomem *)(KSEG1ADDR(AR7240_UART_BASE) + 4*(r)))
-
-void prom_putchar(unsigned char ch)
-{
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
-	UART_WRITE(UART_TX, ch);
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
-}
-
 
 void __init prom_init(void)
 {

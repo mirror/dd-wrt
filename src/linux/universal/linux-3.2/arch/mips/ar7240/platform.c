@@ -15,6 +15,9 @@
 #include <asm/mach-ar7240/ar7240.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include "nvram.h"
+#include <asm/mach-ar71xx/ar933x_uart_platform.h>
+
+void serial_print(char *fmt, ...);
 
 #ifdef CONFIG_WASP_SUPPORT
 extern uint32_t ath_ref_clk_freq;
@@ -118,6 +121,62 @@ static struct platform_device ar7240_uart = {
 
 };
 
+
+static struct resource ar933x_uart_resources[] = {
+	{
+		.start  = AR933X_UART_BASE,
+		.end    = AR933X_UART_BASE + AR71XX_UART_SIZE - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	{
+		.start  = AR7240_MISC_IRQ_UART,
+		.end    = AR7240_MISC_IRQ_UART,
+		.flags  = IORESOURCE_IRQ,
+	},
+};
+
+static struct ar933x_uart_platform_data ar933x_uart_data;
+static struct platform_device ar933x_uart_device = {
+	.name           = "ar933x-uart",
+	.id             = -1,
+	.resource       = ar933x_uart_resources,
+	.num_resources  = ARRAY_SIZE(ar933x_uart_resources),
+	.dev = {
+		.platform_data  = &ar933x_uart_data,
+	},
+};
+
+static struct resource ath_uart_resources[] = {
+	{
+	 .start = AR933X_UART_BASE,
+	 .end = AR933X_UART_BASE + 0x0fff,
+	 .flags = IORESOURCE_MEM,
+	 },
+};
+
+static struct plat_serial8250_port ath_uart_data[] = {
+	{
+	 .mapbase = (u32) KSEG1ADDR(AR933X_UART_BASE),
+	 .membase = (void __iomem *)((u32) (KSEG1ADDR(AR933X_UART_BASE))),
+	 .irq = AR7240_MISC_IRQ_UART,
+	 .flags = (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST),
+	 .iotype = UPIO_MEM32,
+	 .regshift = 2,
+	 .uartclk = 0,		/* ath_ahb_freq, */
+	 },
+	{},
+};
+
+static struct platform_device ath_uart = {
+	.name = "serial8250",
+	.id = 0,
+	.dev.platform_data = ath_uart_data,
+	.num_resources = 1,
+	.resource = ath_uart_resources
+};
+
+
+
 static struct platform_device *ar7241_platform_devices[] __initdata = {
 	&ar7240_usb_ehci_device
 };
@@ -127,10 +186,16 @@ static struct platform_device *ar7240_platform_devices[] __initdata = {
 };
 
 static struct platform_device *ar724x_platform_devices[] __initdata = {
+#ifdef CONFIG_MACH_HORNET
+	&ar933x_uart_device,
+	&ath_uart
+#else
 	&ar7240_uart
+#endif
 };
 
 extern __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
+void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
 static void *getCalData(int slot)
 {
@@ -176,6 +241,14 @@ int __init ar7240_platform_init(void)
 
 
         /* need to set clock appropriately */
+#ifdef CONFIG_MACH_HORNET
+//	ath_uart_data[0].uartclk = ar7240_ahb_freq;
+//	ar933x_uart_data.uartclk = ar7240_ahb_freq;
+
+	ath_uart_data[0].uartclk = ar71xx_ref_freq;
+	ar933x_uart_data.uartclk = ar71xx_ref_freq;
+#endif
+
 #ifdef CONFIG_WASP_SUPPORT
 	ar7240_uart_data[0].uartclk = ath_ref_clk_freq;
 #else
@@ -187,7 +260,7 @@ int __init ar7240_platform_init(void)
         if (ret < 0)
 		return ret; 
 
-	if (is_ar7241() || is_ar7242()  || is_ar9330() || is_wasp()) {
+	if (is_ar7241() || is_ar7242()  || is_ar933x() || is_wasp()) {
 	    ret = platform_add_devices(ar7241_platform_devices, 
                                 ARRAY_SIZE(ar7241_platform_devices));
         }
@@ -196,8 +269,13 @@ int __init ar7240_platform_init(void)
                                 ARRAY_SIZE(ar7240_platform_devices));
         }
         
+#ifdef CONFIG_MACH_HORNET
+	ee = (u8 *) KSEG1ADDR(0x1fff1000);
+	ar9xxx_add_device_wmac(ee, NULL);
+#else
 	ee = getCalData(0);
 	ap91_pci_init(ee, mac);
+#endif
 return ret;
 }
 
