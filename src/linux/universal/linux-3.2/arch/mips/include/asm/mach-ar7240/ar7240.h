@@ -3,6 +3,10 @@
 
 #include <asm/addrspace.h>
 
+#ifdef CONFIG_MACH_HORNET
+#include "ar933x.h"
+#endif
+
 typedef unsigned int ar7240_reg_t;
 
 #define ar7240_reg_rd(_phys)    (*(volatile ar7240_reg_t *)KSEG1ADDR(_phys))
@@ -237,7 +241,14 @@ typedef unsigned int ar7240_reg_t;
 /*
  * The IPs. Connected to CPU (hardware IP's; the first two are software)
  */
-#define AR7240_CPU_IRQ_PCI                  AR7240_CPU_IRQ_BASE+2
+#ifdef CONFIG_WASP_SUPPORT
+#define ATH_CPU_IRQ_WLAN		AR7240_CPU_IRQ_BASE+2
+#define AR7240_CPU_IRQ_PCI		AR7240_CPU_IRQ_BASE+8
+#elif defined (CONFIG_MACH_HORNET)
+#define ATH_CPU_IRQ_WLAN		AR7240_CPU_IRQ_BASE+2
+#else
+#define AR7240_CPU_IRQ_PCI		AR7240_CPU_IRQ_BASE+2
+#endif
 #define AR7240_CPU_IRQ_USB                  AR7240_CPU_IRQ_BASE+3
 #define AR7240_CPU_IRQ_GE0                  AR7240_CPU_IRQ_BASE+4
 #define AR7240_CPU_IRQ_GE1                  AR7240_CPU_IRQ_BASE+5
@@ -740,11 +751,17 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define AR7241_REV_1_1			0x0101
 #define AR7242_REV_1_1			0x1101
 #define AR9330_REV_1_0			0x0110
+#define AR9331_REV_1_0			0x1110
 #define AR9330_REV_1_1			0x0111
-
+#define AR9331_REV_1_1			0x1111
+#define AR9330_REV_1_2			0x0112
+#define AR9331_REV_1_2			0x1112
 #define AR9344_REV_1_0			0x2120
 #define AR9342_REV_1_0			0x1120
 #define AR9341_REV_1_0			0x0120
+#define AR9344_REV_1_1			0x2121
+#define AR9342_REV_1_1			0x1121
+#define AR9341_REV_1_1			0x0121
 
 
 #define is_ar7240()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_2) || \
@@ -761,10 +778,17 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define is_ar9342()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_0)
 #define is_ar9341()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_0)
 
-#define is_ar9330()     (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_0) || \
-			((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_1))
+#define is_ar9330() (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_0) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_1) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_2))
+
+#define is_ar9331() (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_0) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_1) || \
+                        ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_2))
 
 #define is_ar934x()	(is_ar9344() || is_ar9342() || is_ar9341())
+
+#define is_ar933x() (is_ar9330() || is_ar9331())
 
 
 #define AR7240_PLL_USE_REV_ID    0
@@ -792,6 +816,11 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define AR7240_RESET_GE1_PHY                (1 << 12)
 #define AR7240_RESET_GE0_MAC                (1 << 9)
 #define AR7240_RESET_GE0_PHY                (1 << 8)
+#ifdef CONFIG_MACH_HORNET
+#define AR7240_RESET_WMAC			(1 << 11)
+#else
+#define AR7240_RESET_USB_PHY_ANALOG		(1 << 11)
+#endif
 #define AR7240_RESET_PCIE_PHY_SHIFT	    (1 << 10)
 #define AR7240_RESET_USBSUS_OVRIDE	    (1 << 3)
 #define AR7240_RESET_USB_OHCI_DLL           (1 << 3)

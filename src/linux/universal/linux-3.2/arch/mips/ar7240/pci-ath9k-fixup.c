@@ -7,7 +7,7 @@
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  */
-
+#ifndef CONFIG_MACH_HORNET
 #include <linux/pci.h>
 #include <linux/delay.h>
 #include <linux/ath9k_platform.h>
@@ -154,3 +154,4 @@ void __init pci_enable_ath9k_fixup(unsigned slot, u16 *cal_data)
 	ath9k_fixups[ath9k_num_fixups].cal_data = cal_data;
 	ath9k_num_fixups++;
 }
+#endif

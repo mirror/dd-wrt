@@ -25,6 +25,7 @@ obj-y	+=	prom.o	\
 			setup.o	\
 			gpio_driver.o	\
 			dev-leds-gpio.o \
+			dev-ar9xxx-wmac.o \
 			ar7240.o \
 			ar71xx.o \
 			pci.o \
@@ -33,6 +34,7 @@ obj-y	+=	prom.o	\
 			nvram.o \
 			platform.o
 
+obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 #obj-$(CONFIG_AR9100)	+= wdt.o
 
 

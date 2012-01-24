@@ -7,7 +7,7 @@
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  */
-
+#ifndef CONFIG_MACH_HORNET
 #include <linux/pci.h>
 #include <linux/ath9k_platform.h>
 #include <linux/delay.h>
@@ -69,3 +69,4 @@ void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 
 	pci_enable_ath9k_fixup(0, wmac_data.eeprom_data);
 }
+#endif
