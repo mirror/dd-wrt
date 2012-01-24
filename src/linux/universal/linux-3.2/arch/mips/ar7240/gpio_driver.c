@@ -326,7 +326,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	}, 
 
 //wl gpios
-
+#ifndef CONFIG_MACH_HORNET
 
 	{
 		.name		= "wireless_generic_0",
@@ -490,8 +490,10 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.active_low	= 0,
 	}, 
 #endif
+#endif
 };
 
+void serial_print(char *fmt, ...);
 
 void __init ar71xx_gpio_init(void)
 {
@@ -501,7 +503,7 @@ void __init ar71xx_gpio_init(void)
 				"AR71xx GPIO controller"))
 		panic("cannot allocate AR71xx GPIO registers page");
 
-	ar71xx_gpio_chip.ngpio = 48;
+	ar71xx_gpio_chip.ngpio = sizeof(generic_leds_gpio)/sizeof(struct gpio_led);
 
 	err = gpiochip_add(&ar71xx_gpio_chip);
 	if (err)

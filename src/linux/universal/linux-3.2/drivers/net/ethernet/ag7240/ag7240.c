@@ -440,7 +440,7 @@ ag7240_hw_setup(ag7240_mac_t *mac)
     ag7240_ring_t *tx, *rx = &mac->mac_rxring;
     ag7240_desc_t *r0, *t0;
     uint32_t mgmt_cfg_val,ac;
-    u32 check_cnt;
+    u32 check_cnt=0;
 
 #ifdef CONFIG_AR7242_RTL8309G_PHY
     ag7240_reg_wr(mac, AG7240_MAC_CFG1, (AG7240_MAC_CFG1_RX_EN | AG7240_MAC_CFG1_TX_EN));
@@ -492,6 +492,10 @@ ag7240_hw_setup(ag7240_mac_t *mac)
             case 220: 
                       mgmt_cfg_val = 0x9;
                       break;
+            case 40:
+            case 24:
+                /* hornet emulation...ahb is either 24 or 40Mhz */
+                mgmt_cfg_val = 0x6;
             default:
                      mgmt_cfg_val = 0x7;
         }
@@ -529,6 +533,20 @@ ag7240_hw_setup(ag7240_mac_t *mac)
             printk("Virian MDC CFG Value ==> %x\n",mgmt_cfg_val);
         }
 #endif
+        else
+          if(is_ar933x()){
+            ar7240_reg_wr(AG7240_ETH_CFG, AG7240_ETH_CFG_MII_GE0_SLAVE); 
+            mgmt_cfg_val = 0xF;
+            if (mac->mac_unit == 1) {
+                while (check_cnt++ < 10) {
+                    ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+                    ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+                    break;
+                }
+                if(check_cnt == 11)
+                    printk("%s: MDC check failed (Hornet)\n", __func__);
+            }
+        }
         else { /* Python 1.0 & 1.1 */
             if (mac->mac_unit == 0) {
                 check_cnt = 0;
@@ -763,7 +781,12 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                 #ifdef CONFIG_DIR615E
             	    ar7100_set_gpio(13+i,0);
                 #endif
-                    s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) | (0x3c0)));
+                        if(is_ar933x()) {
+                                s26_wr_phy(i,0x19, 0x3c0);
+                                s26_wr_phy(i,0x18,(0x4));
+                        } else {
+                                s26_wr_phy(i,0x19,(s26_rd_phy( i,0x19) | (0x3c0)));
+                        }
                     continue;
                 }
                 if (pledctrl->speed[i] == AG7240_PHY_SPEED_10T) {
@@ -774,8 +797,16 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
                 #ifdef CONFIG_DIR615E
             		ar7100_set_gpio(13+i,1);
                 #endif
+                            if(is_ar933x()&& bRateTab->rate <= MB(5)){
+    				            s26_wr_phy(i,0x18, 0);
+                            } else {
                         s26_wr_phy(i,0x18,((bRateTab->timeOn << 12)|(bRateTab->timeOff << 8)));
+                            }
+                            if(is_ar933x()) {
+                                s26_wr_phy(i,0x19, 0x140);                            
+                            } else {
                         s26_wr_phy(i,0x19,(s26_rd_phy(i,0x19) & ~(0x280)));                
+                            }
                         break;
                     }
                 }
@@ -786,10 +817,12 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
             	    s26_wr_phy(i,0x19,0x0);
             }
         }
+            if(!is_ar933x()) {
         /* Flush all LAN MIB counters */
         athrs26_reg_write(0x80,((1 << 17) | (1 << 24))); 
         while ((athrs26_reg_read(0x80) & 0x20000) == 0x20000);
         athrs26_reg_write(0x80,0);
+        }
     }
 
     mac = ag7240_macs[0];
@@ -804,7 +837,13 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
 //                #ifdef CONFIG_DIR615E
 //            	ar7100_set_gpio(17,0);                
 //                #endif
+                    if(is_ar933x()) {
+                s26_wr_phy(4,0x19,((0x3c0)));
+                    
+                    }else
+                    {
                 s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) | (0x3c0)));
+                }
                 goto done;
             }
             if (pledctrl->speed[4] == AG7240_PHY_SPEED_10T) {
@@ -816,7 +855,12 @@ led_control_func(ATH_LED_CONTROL *pledctrl)
 //            	    ar7100_set_gpio(17,1);
 //                #endif
                     s26_wr_phy(4,0x18,((bRateTab->timeOn << 12)|(bRateTab->timeOff << 8)));
+                        if(is_ar933x()) {
+                    s26_wr_phy(4,0x19,0x140);
+                        } else {
                     s26_wr_phy(4,0x19,(s26_rd_phy(4,0x19) & ~(0x280)));
+                        }
+
                     break;
                 }
             }
@@ -2305,7 +2349,7 @@ ag7240_init(void)
 	    mac_set_flag(mac,ATHR_S26_HEADER);
 #endif 
 #ifdef CONFIG_ETH_SOFT_LED
-        if (is_ar7240())
+    if (is_ar7240() || is_ar933x()) 
             mac_set_flag(mac,ETH_SOFT_LED);
 #endif
 #ifdef CONFIG_CHECK_DMA_STATUS 

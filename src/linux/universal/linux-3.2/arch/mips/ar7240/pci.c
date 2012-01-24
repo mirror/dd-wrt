@@ -18,6 +18,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
+#ifndef CONFIG_MACH_HORNET
 unsigned ar71xx_pci_nr_irqs __initdata;
 struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
 
@@ -91,3 +92,4 @@ int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 
 	return ret;
 }
+#endif

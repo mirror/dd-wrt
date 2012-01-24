@@ -59,8 +59,8 @@ void __init arch_init_irq(void)
 #ifdef CONFIG_PCI
 //    setup_irq(AR7240_CPU_IRQ_PCI,   &cascade);
 #endif
-#ifdef CONFIG_WASP_SUPPORT
-	set_irq_chip_and_handler(ATH_CPU_IRQ_WLAN,
+#if defined(CONFIG_WASP_SUPPORT) || defined(CONFIG_MACH_HORNET)
+	irq_set_chip_and_handler(ATH_CPU_IRQ_WLAN,
 				&dummy_irq_chip,
 				handle_percpu_irq);
 #endif
