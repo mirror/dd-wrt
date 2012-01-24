@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////////////////////
-// Croatian Translation / DD-WRT v24-sp2 / updated from r17172 / by Silvio Peša / 2011-12-08 // 
+// DD-WRT v24-sp2 / Croatian Translation / updated from r18044 / by Silvio Peša / 2012-01-23 // 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -7,13 +7,14 @@
 lang_charset.set="UTF-8";
 
 
+share.annex="Annex Tip";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Pozivni Niz";
 share.mode_3g="Tip Veze";
 share.mode_3g_auto="Auto 3G/2G";
-share.mode_3g_3g="Forsiraj 3G";
-share.mode_3g_2g="Forsiraj 2G";
+share.mode_3g_3g="Samo 3G";
+share.mode_3g_2g="Samo 2G";
 share.mode_3g_prefer_3g="Pretpostavi 3G";
 share.mode_3g_prefer_2g="Pretpostavi 2G";
 share.mode_3g_3g2g="Prvo 3G, nakon greške 2G";
@@ -29,12 +30,16 @@ share.disabled="Onemogućeno";
 share.usrname="Ime Korisnika";
 share.passwd="Zaporka";
 share.hostname="Ime Stroja";
-share.vdsl="Napredne postavke";
+share.advanced="Napredne postavke";
+share.vdsl="Napredno VLAN označavanje";
 share.vdslvlan7="T-Home VLAN 7 podrška";
 share.vdslvlan8="T-Home VLAN 8 podrška";
 share.wan_vlantag="VLAN Oznaka ID";
-share.compression="PPP Sažimanje (MPPC)";
+share.compression="MS PPP Sažimanje (MPPC)";
 share.mlppp="Višestruka PPP Veza";
+share.vpi_vci="VPI/VCI";
+share.encaps="Enkapsulacija";
+share.payload="Tip korisnog sadržaja (Payload)";
 share.domainname="Ime Domene";
 share.wandomainname="Ime WAN Domene";
 share.landomainname="Ime LAN Domene";
@@ -46,8 +51,8 @@ share.ip="IP Adresa";
 share.localip="Lokalna IP Adresa";
 share.remoteip="Udaljena IP Adresa";
 share.mac="MAC Adresa";
-share.none="Nijedna";
-share.none2="nijedna";
+share.none="Nijedno";
+share.none2="nijedno";
 share.both="Oboje";
 share.add="Dodaj";
 share.del="Briši";
@@ -123,7 +128,7 @@ share.rule="Pravilo";
 share.lan="LAN";
 share.point2point="Točka u Točku";
 share.nat="NAT";
-share.subnet="Maska Podmreže";
+share.subnet="Mrežna Maska";
 share.unmask="Prikaži";
 share.deflt="Obično";  //don't use share.default !!!
 share.all="Sve";
@@ -139,7 +144,7 @@ share.gateway="Poveznik";
 share.intrface="Sučelje";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
 share.pintrface="Fizičko Sučelje";
-share.vintrface="Virtualno Sučelje";
+share.vintrface="Prividno Sučelje";
 share.router="Usmjerivač";
 share.static_lease="Statički Zakup";
 share.srvip="IP Adresa Poslužitelja";
@@ -163,9 +168,9 @@ share.dhcp="DHCP";
 share.styl="Stil";
 share.err="greška";
 share.errs="greške";
-share.meters="metri";
-share.ht40="Wide HT40 (20+20 MHz)";
-share.ht20="Full HT20 (20 MHz)";
+share.meters="metara";
+share.ht40="Široko HT40 (20+20 MHz)";
+share.ht20="Pun HT20 (20 MHz)";
 share.dynamicturbo="Dinamički (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
 share.full="Pun (20 MHz)";
@@ -215,9 +220,9 @@ share.change="Izmjena Zaporke";
 
 
 sbutton.save="Prihvati";
-sbutton.savetitle="Prihvati postavke bez primjene";
+sbutton.savetitle="Prihvati postavke";
 sbutton.apply="Primjeni";
-sbutton.applytitle="Odmah Primjeni Postavke";
+sbutton.applytitle="Primjeni Postavke";
 sbutton.saving="Prihvaćanje";
 sbutton.cmd="Izvršavanje";
 sbutton.cancel="Otkaži Promjene";
@@ -969,7 +974,7 @@ hidx.right10="Unesi masku podmreže usmjerivača.";
 hidx.right12="Dozvoljava usmjerivaču da upravlja IP adresama vaše mreže.";
 hidx.right14="Ovo je početna adresa za dodjelu klijentima.";
 hidx.right16="Možete ograničiti broj adresa s kojima vaš usmjerivač upravlja. 0 znači da se upravlja samo predefiniranim statičkim najmovima adresa.";
-hidx.right18="Postavi lokalnu vremensku zonu i upotrebu ljetnog računanja vremena. Usmjerivač može koristiti lokalno ili vrijeme po UTC standardu.";
+hidx.right18="Postavi lokalnu vremensku zonu i upotrebu ljetnog računanja vremena. Vremenska zona može biti lokalna ili po UTC standardu.";
 hidx.sas="Pomoćnik postavljanja vas vodi kroz korake osnovnog podešavanja za konfiguriranje usmjerivača.";
 
 // ** DSL ** //
@@ -1832,52 +1837,52 @@ hwanmac.right2="Neki davatelji usluga pristupa (ISP) traže registraciju vaše M
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 
-wpa.titl="Sigurnost Bežične Mreže";
-wpa.h2="Sigurnost Bežične Mreže";
-wpa.secmode="Modus Sigurnosti";
+wpa.titl="Enkripcija Bežične Mreže";
+wpa.h2="Enkripcija";
+wpa.secmode="Način Enkripcije";
 wpa.legend="Enkripcija";
-wpa.auth_mode="Mrežna Autentikacija";
+wpa.auth_mode="Mrežna Autentifikacija";
 wpa.wpa="WPA";
 wpa.radius="RADIUS";
-wpa.gtk_rekey="WPA Group Rekey Interval";
-wpa.rekey="Key Renewal Interval (in seconds)";
-wpa.radius_ipaddr="RADIUS Server Address";
+wpa.gtk_rekey="Interval obnove Ključa WPA Grupe";
+wpa.rekey="Interval obnove Ključa (s)";
+wpa.radius_ipaddr="IP Adresa RADIUS Poslužitelja";
 wpa.radius_port="Vrata RADIUS Poslužitelja";
 wpa.radius_key="RADIUS Ključ";
-wpa.algorithms="WPA Algoritmi";
+wpa.algorithms="WPA Algoritam";
 wpa.shared_key="WPA Dijeljeni Ključ";
 
 
 
-aoss.titl="AOSS Security";
+aoss.titl="AOSS Sigurnost";
 aoss.aoss="AOSS";
-aoss.service="AOSS Service";
-aoss.enable="Enable AOSS";
-aoss.start="Start AOSS negotiation";
-aoss.securitymodes="Security Modes";
+aoss.service="AOSS Usluga";
+aoss.enable="Omogući AOSS";
+aoss.start="Započmi AOSS dogovaranje";
+aoss.securitymodes="Sigurnosni Mod";
 aoss.wpaaes="WPA AES";
 aoss.wpatkip="WPA TKIP";
 aoss.wep="WEP64 / 128";
-aoss.client_name="Client Name";
-aoss.security="Security";
-aoss.connectivity="Connectivity";
-aoss.clients="AOSS Clients";
-aoss.notice="NOTICE";
-aoss.ap_mode_notice="NOTICE: AOSS can only be used when the primary radio is configured as AP or WDS AP.";
-aoss.wep_notice="WEP security mode is insecure, therefore the use of WEP is not recommended.";
+aoss.client_name="Ime Klijenta";
+aoss.security="Sigurnost";
+aoss.connectivity="Povezivost";
+aoss.clients="AOSS Klijenti";
+aoss.notice="NAPOMENA";
+aoss.ap_mode_notice="NAPOMENA: AOSS može biti uporabljen samo ako je primarni radio konfiguriran kao AP ili WDS AP.";
+aoss.wep_notice="WEP sigurnosni mod je nesiguran te njegova upotreba nije preporučana.";
 aoss.wep_info="(required for most gaming consoles supporting AOSS)";
-aoss.wps="WPS Setup";
-aoss.wps_ap_pin="WPS Gateway PIN (Label)";
-aoss.wpspin="WPS Client PIN";
-aoss.wpsactivate="Activate PIN";
-aoss.wpsregister="Register PIN";
-aoss.wpsgenerate="Generate PIN";
-aoss.pinnotvalid="Invalid PIN, checksum not correct!";
+aoss.wps="WPS Postavke";
+aoss.wps_ap_pin="WPS PIN Poveznika (oznaka)";
+aoss.wpspin="Klijentski WPS PIN";
+aoss.wpsactivate="Aktiviraj PIN";
+aoss.wpsregister="Registriraj PIN";
+aoss.wpsgenerate="Generiraj PIN";
+aoss.pinnotvalid="Nevaljali PIN, neispravna kontrolna suma!";
 aoss.wpsenable="WPS Push Button";
 aoss.wpsstatus="WPS Status";
-aoss.externalregistrar="External Registrar";
-aoss.release="Release";
-aoss.configure="Configure";
+aoss.externalregistrar="Vanjski Registrar";
+aoss.release="Otpusti";
+aoss.configure="Konfiguriraj";
 
 
 olupgrade.avail_updates="Available Updates";
@@ -1904,7 +1909,7 @@ sec80211x.options="Additional Network Options";
 
 //help container
 
-hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES";
+hwpa.right2="Možete onemogućiti ili izabrati između WEP, WPA Personal, WPA Enterprise ili RADIUS. Svi uređaji na bežičnoj mreži moraju koristiti isti način enkripcije. Za N-Mode morate koristiti WPA2/AES";
 
 
 // ** WL_FilterTable.asp **//
@@ -1929,13 +1934,13 @@ wl_active.inactive="Inactive clients";
 wds.titl="WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="WDS Postavke";
-wds.label="Lazy WDS";
-wds.label2="WDS Subnet";
+wds.label="Lijeni WDS";
+wds.label2="WDS Podmreža";
 wds.wl_mac="Bežična MAC adresa";
-wds.lazy_default="Default: Disable";
+wds.lazy_default="Obično: Onemogući";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
-wds.subnet="Subnet";
+wds.subnet="Podmreža";
 wds.legend2="Posebne Opcije";
 
 
@@ -1965,12 +1970,12 @@ radius.label18="Radius Accounting";
 // ** Wireless_MAC.asp **//
 
 wl_mac.titl="MAC Filter";
-wl_mac.h2="Wireless MAC Filter";
+wl_mac.h2="WiFi MAC Filter";
 wl_mac.legend="MAC Filter";
-wl_mac.label="Use Filter";
-wl_mac.label2="Filter Mode";
-wl_mac.deny="Prevent clients listed from accessing the wireless network";
-wl_mac.allow="Permit only clients listed to access the wireless network";
+wl_mac.label="Koristi Filter";
+wl_mac.label2="Način Filtriranja";
+wl_mac.deny="Zabrani pristup Klijentima na listi";
+wl_mac.allow="Dozvoli pristup Klijentima na listi";
 
 // ** WiMAX
 
@@ -2029,7 +2034,7 @@ wl_adv.titl="Napredne Bežične Postavke";
 wl_adv.h2="Napredne Bežične Postavke";
 wl_adv.legend="Napredne Postavke";
 wl_adv.legend2="Podrška Bežičnoj Multimediji";
-wl_adv.label="Tip Autentifikacije";
+wl_adv.label="Način Autentifikacije";
 wl_adv.label2="Basic Rate";
 wl_adv.label3="Transmission Fixed Rate";
 wl_adv.label4="CTS Protection Mode";
@@ -2103,7 +2108,7 @@ wl_basic.label3="Ime Bežične Mreže (SSID)";
 wl_basic.label4="Bežični Kanal";
 wl_basic.label5="SSID Objava Bežične Mreže";
 wl_basic.label6="Raspon Osjetljivosti (ACK Timing)";
-wl_basic.label7="802.11n Modus Prijenosa";
+wl_basic.label7="802.11n Način Prijenosa";
 wl_basic.scanlist="Lista Pregleda";
 wl_basic.duallink="Dvojna Veza";
 wl_basic.parent="Parent IP";
@@ -2133,27 +2138,27 @@ wl_basic.n="Samo N";
 wl_basic.rts="RTS Prag";
 wl_basic.rtsvalue="Prag";
 wl_basic.protmode="Mod Zaštite";
-wl_basic.legend2="Radio Time Restrictions";
+wl_basic.legend2="Ograničenja Radio Vremena";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio je Uključen";
-wl_basic.radio_off="Radio je Isključen";
-wl_basic.h2_v24="Bežično Fizičko Sučelje";
-wl_basic.h2_vi="Virtualna Sučelja";
+wl_basic.radio_on="Radio je Uključeno";
+wl_basic.radio_off="Radio je Isključeno";
+wl_basic.h2_v24="Fizičko Sučelje";
+wl_basic.h2_vi="Prividna Sučelja";
 wl_basic.regdom="Regulatorna Domena";
 wl_basic.TXpower="TX Snaga";
-wl_basic.TXpowerFcc="TX Peak Power (FCC)";
-wl_basic.AntGain="Antenna Gain";
+wl_basic.TXpowerFcc="TX Vršna Snaga (FCC)";
+wl_basic.AntGain="Učinak Antene (Gain)";
 wl_basic.diversity="Diversity";
-wl_basic.primary="Primary";
-wl_basic.secondary="Secondary";
-wl_basic.vertical="Vertical";
-wl_basic.horizontal="Horizontal";
+wl_basic.primary="Primarna";
+wl_basic.secondary="Sekundarna";
+wl_basic.vertical="Vertikalna";
+wl_basic.horizontal="Horizontalna";
 wl_basic.adaptive="Adaptive";
-wl_basic.internal="Internal";
-wl_basic.external="External";
-wl_basic.ghz24="2.4 GHz Output";
-wl_basic.ghz5="5 GHz Output";
+wl_basic.internal="Unutrašnja";
+wl_basic.external="Vanjska";
+wl_basic.ghz24="2.4 GHz Izlaz";
+wl_basic.ghz5="5 GHz Izlaz";
 wl_basic.network="Mrežna Konfiguracija";
 wl_basic.unbridged="Nepremošćeno";
 wl_basic.bridged="Premošćeno";
@@ -2161,34 +2166,34 @@ wl_basic.turbo="Turbo Mod";
 wl_basic.extrange="Prošireni Domet";
 wl_basic.supergcomp="Super G Sažimanje";
 wl_basic.supergff="Super G Fast Framing";
-wl_basic.extchannel="Extended Channel Mode";
-wl_basic.outband="Outdoor Band";
+wl_basic.extchannel="Prošireni Kanalni Mod";
+wl_basic.outband="Vanjski Pojas";
 wl_basic.channel_width="Kanalna Širina";
 wl_basic.channel_wide="Rastezni Kanal";
 wl_basic.regulatory="SuperChannel";
 wl_basic.chanshift="Zamjena Kanala";
 wl_basic.specialmode="2.3 GHz Mode";
-wl_basic.wifi_bonding="WiFi Bonding";
-wl_basic.sifstime="OFDM SIFS Time";
-wl_basic.preambletime="OFDM Preamble Time";
+wl_basic.wifi_bonding="WiFi lijepljenje";
+wl_basic.sifstime="OFDM SIFS Vrijeme";
+wl_basic.preambletime="OFDM Preamble Vrijeme";
 wl_basic.multicast="Multicast prosljeđivanje";
 wl_basic.intmit="Imunitet Šuma";
 wl_basic.noise_immunity="Nivo Imuniteta Šuma";
-wl_basic.ofdm_weak_det="OFDM Weak Detection";
+wl_basic.ofdm_weak_det="OFDM Weak Detekcija";
 wl_basic.radar="Detekcija Radara";
 wl_basic.mtikie="MTik Sukladnost";
 wl_basic.csma="Carrier Sense";
-wl_basic.if_label="Oznaka (opcijski)";
-wl_basic.if_info="Info (opcijski)";
+wl_basic.if_label="Oznaka (opcija)";
+wl_basic.if_info="Info (opcija)";
 wl_basic.advanced_options="Napredne Opcije";
-wl_basic.rate_control="Rate Control Algorithm";
-wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na istim s nekim određenim klijentskim uređajima.";
+wl_basic.rate_control="Upravljački Algoritam Omjera";
+wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do slabijeg učinka na istim s određenim klijentima.";
 
 //help container
 
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
-hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely for broadcom firmwares. On Atheros based firmwares it will turn into auto ack timing mode";
+hwl_basic.right2="Ako želite isključiti 802.11g klijente izaberite <em>Samo B</em> način. Ako želite onemogućiti bežični pristup, izaberi <em>Onemogućeno</em>.<br/><b>Napomena :</b> Pri promjeni modusa bežične mreže, neki napredni parametri su osjetljivi na promjenu (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right3="Raspon Osjetljivosti: ";
+hwl_basic.right4="Postavlja ACK Timingt. 0 onemogućuje ACK timing u potpunosti za Broadcom strojni program. Za Atheros zasnovanim strojnim programima ukljčuje automatski mod.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//

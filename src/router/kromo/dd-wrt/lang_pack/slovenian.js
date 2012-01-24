@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 23.Dec.2011, svn 18043	//
+//				Slovenian translation DD-WRT by Eko, last revision: 23.jan.2012, svn 18300	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -7,6 +7,7 @@
 lang_charset.set="utf-8";
 
 
+share.annex="Tip annexa";
 share.apn="APN";
 share.pin="PIN";
 share.dial="Klicni niz";
