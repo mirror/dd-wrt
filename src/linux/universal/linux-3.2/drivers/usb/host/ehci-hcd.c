@@ -48,6 +48,16 @@
 #include <asm/system.h>
 #include <asm/unaligned.h>
 
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_MACH_WASP)
+
+#ifdef CONFIG_MACH_WASP
+#include "../gadget/ath_defs.h"
+#else
+#include "../gadget/ar9130_defs.h"
+#endif
+#endif
+
+
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -278,6 +288,26 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	command |= CMD_RESET;
 	dbg_cmd (ehci, "reset", command);
 	ehci_writel(ehci, command, &ehci->regs->command);
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_MACH_WASP)
+#define ath_usb_reg_wr		ar9130_reg_wr
+#define ath_usb_reg_rd		ar9130_reg_rd
+#define ATH_USB_USB_MODE	AR9130_USB_MODE
+	udelay(1000);
+#ifdef CONFIG_MACH_WASP
+	ath_usb_reg_wr(ATH_USB_USB_MODE,
+			(ath_usb_reg_rd(ATH_USB_USB_MODE) | 0x13));
+#else
+	ath_usb_reg_wr(ATH_USB_USB_MODE,
+			(ath_usb_reg_rd(ATH_USB_USB_MODE) | 0x03));
+#endif
+	printk("%s Intialize USB CONTROLLER in host mode: %x\n",
+			__func__, ath_usb_reg_rd(ATH_USB_USB_MODE));
+
+	udelay(1000);
+	writel((readl(&ehci->regs->port_status[0]) | (1 << 28) ), &ehci->regs->port_status[0]);
+	printk("%s Port Status %x \n", __func__, readl(&ehci->regs->port_status[0]));
+#endif
+
 	ehci->rh_state = EHCI_RH_HALTED;
 	ehci->next_statechange = jiffies;
 	retval = handshake (ehci, &ehci->regs->command,
