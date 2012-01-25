@@ -3579,6 +3579,9 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_HORNET
 	case ROUTER_BOARD_WHRHPGN:
+		usb_power = 0x01a;
+		usb_gpio = 0x001;
+		ses_gpio = 0x11b;
 		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
