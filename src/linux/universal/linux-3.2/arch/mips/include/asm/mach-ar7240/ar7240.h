@@ -236,7 +236,8 @@ typedef unsigned int ar7240_reg_t;
 #define AR7240_CPU_IRQ_BASE         0x00
 #define AR7240_MISC_IRQ_BASE        0x10
 #define AR7240_GPIO_IRQ_BASE        0x20
-#define AR7240_PCI_IRQ_BASE         0x30
+#define AR7240_GPIO_IRQ_COUNT       32
+#define AR7240_PCI_IRQ_BASE         AR7240_GPIO_IRQ_BASE + AR7240_GPIO_IRQ_COUNT
 
 /*
  * The IPs. Connected to CPU (hardware IP's; the first two are software)
@@ -293,7 +294,6 @@ typedef unsigned int ar7240_reg_t;
  * Interrupts connected to the Misc->GPIO line
  */
 #define AR7240_GPIO_IRQn(_gpio)             AR7240_GPIO_IRQ_BASE+(_gpio)
-#define AR7240_GPIO_IRQ_COUNT                 16
 
 void ar7240_gpio_irq_init(int irq_base);
 
@@ -333,7 +333,7 @@ unsigned int ar7240_misc_get_irq_status (void);
 void ar7240_pci_irq_init(int irq_base); /* ??? */
 
 
-#define AR7240_GPIO_COUNT                   64
+#define AR7240_GPIO_COUNT                   32
 
 /*
  * GPIO Function Enables

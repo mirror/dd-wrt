@@ -250,7 +250,7 @@ register_proc (void)
 
 
   char proc_name[64];
-  int gpiocount = 64;
+  int gpiocount = 32;
   if (is_ar7240())
     gpiocount = AR7240_GPIO_COUNT;
   else
