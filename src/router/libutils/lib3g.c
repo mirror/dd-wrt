@@ -597,8 +597,7 @@ char *get3GControlDevice(void)
 						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%s",
 							devicelist
-							[devicecount].
-							datadevice);
+							[devicecount].datadevice);
 					} else
 					    if ((devicelist
 						 [devicecount].modeswitch &
@@ -609,14 +608,14 @@ char *get3GControlDevice(void)
 						     [devicecount].vendor,
 						     devicelist
 						     [devicecount].product);
+						insmod("usb_wwan");
 						sprintf(data, "/dev/usb/tts/%s",
-							devicelist[devicecount].
-							datadevice);
+							devicelist
+							[devicecount].datadevice);
 					} else
 						sprintf(data, "/dev/usb/tts/%s",
 							devicelist
-							[devicecount].
-							datadevice);
+							[devicecount].datadevice);
 
 				}
 				nvram_set("3gdata", data);
@@ -633,7 +632,8 @@ char *get3GControlDevice(void)
 				fprintf(stderr, "customsetup\n");
 				devicelist[devicecount].customsetup(needreset,
 								    devicelist
-								    [devicecount].controldevice);
+								    [devicecount].
+								    controldevice);
 			}
 			static char control[32];
 			if (!strcmp
@@ -652,6 +652,7 @@ char *get3GControlDevice(void)
 					    ("insmod usbserial vendor=0x%04X product=0x%04X",
 					     devicelist[devicecount].vendor,
 					     devicelist[devicecount].product);
+					insmod("usb_wwan");
 					sprintf(control, "/dev/usb/tts/%s",
 						devicelist
 						[devicecount].controldevice);
