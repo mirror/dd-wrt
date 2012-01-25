@@ -498,6 +498,7 @@ void serial_print(char *fmt, ...);
 void __init ar71xx_gpio_init(void)
 {
 	int err;
+	u32 t;
 
 	if (!request_mem_region(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE,
 				"AR71xx GPIO controller"))
@@ -513,4 +514,12 @@ void __init ar71xx_gpio_init(void)
 		generic_leds_gpio[i].default_state = LEDS_GPIO_DEFSTATE_KEEP;
 	}
 	ar71xx_add_device_leds_gpio(-1,sizeof(generic_leds_gpio)/sizeof(struct gpio_led),generic_leds_gpio);
+
+#ifdef CONFIG_MACH_HORNET
+	t = ar71xx_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
+	t |= AR933X_BOOTSTRAP_MDIO_GPIO_EN;
+	ar71xx_reset_wr(AR933X_RESET_REG_BOOTSTRAP, t);
+//	gpio_request(26, "USB power");
+//	gpio_direction_output(26, 1);
+#endif
 }
