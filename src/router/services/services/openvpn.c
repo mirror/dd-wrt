@@ -137,7 +137,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 		/* for QOS */
 		if (nvram_invmatch("wshaper_enable", "0"))
-				fprintf(fp, "--passtos\n");
+				fprintf(fp, "passtos\n");
 	} else
 		write_nvram("/tmp/openvpn/cert.pem", "openvpn_client");
 
@@ -303,7 +303,7 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tlscip"));
 	/* for QOS */
 	if (nvram_invmatch("wshaper_enable", "0"))
-		fprintf(fp, "--passtos\n");
+		fprintf(fp, "passtos\n");
 
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
@@ -371,7 +371,7 @@ void start_openvpn(void)
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config",
 		     "/tmp/openvpncl/openvpn.conf", "--route-up",
-		     "/tmp/openvpn/route-up.sh", "--down",
+		     "/tmp/openvpn/route-up.sh", "--down-pre",
 		     "/tmp/openvpn/route-down.sh", "--daemon",
 		     "--engine", "cryptodev");
 	else
