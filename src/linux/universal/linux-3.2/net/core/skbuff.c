@@ -986,6 +986,9 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	if (skb_shared(skb))
 		BUG();
 
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
 
 	size = SKB_DATA_ALIGN(size);
 
