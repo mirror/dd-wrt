@@ -141,6 +141,7 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	spin_lock(&boot_lock);
 	spin_unlock(&boot_lock);
 }
+extern unsigned int numcpucores;
 
 int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
@@ -172,7 +173,10 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();
 		if (pen_release == -1)
+		{
+			numcpucores++;
 			break;
+		}
 
 		udelay(10);
 	}
