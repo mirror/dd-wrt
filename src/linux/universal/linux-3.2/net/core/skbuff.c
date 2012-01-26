@@ -263,6 +263,10 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 		goto out;
 	prefetchw(skb);
 
+#ifdef CONFIG_ARCH_IXP4XX 
+	gfp_mask |= GFP_DMA;
+#endif
+
 	/* We do our best to align skb_shared_info on a separate cache
 	 * line. It usually works because kmalloc(X > SMP_CACHE_BYTES) gives
 	 * aligned memory blocks, unless SLUB/SLAB debug is enabled.
@@ -982,9 +986,6 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	if (skb_shared(skb))
 		BUG();
 
-#ifdef CONFIG_ARCH_IXP4XX 
-	gfp_mask |= GFP_DMA;
-#endif
 
 	size = SKB_DATA_ALIGN(size);
 
