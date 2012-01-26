@@ -100,9 +100,8 @@ endif
 ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
 endif
-
-export CC := $(CROSS_COMPILE)gcc
-export CXX := $(CROSS_COMPILE)g++
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -182,13 +181,13 @@ endif
 ifeq ($(CONFIG_USR8200),y)
 	cp $(LINUXDIR)/.config_usr8200 $(LINUXDIR)/.config
 endif
-	$(MAKE) -C $(LINUXDIR) oldconfig	
+	$(MAKE) -C $(LINUXDIR) oldconfig ARCH=arm 	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage ARCH=arm CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules  ARCH=arm CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 
 	
