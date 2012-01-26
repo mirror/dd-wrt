@@ -335,6 +335,7 @@ config HID_MULTITOUCH
 	  Say Y here if you have one of the following devices:
 	  - 3M PCT touch screens
 	  - ActionStar dual touch panels
+	  - Atmel panels
 	  - Cando dual touch panels
 	  - Chunghwa panels
 	  - CVTouch panels
@@ -355,6 +356,7 @@ config HID_MULTITOUCH
 	  - Touch International Panels
 	  - Unitec Panels
 	  - XAT optical touch panels
+	  - Xiroku optical touch panels
 
 	  If unsure, say N.
 
@@ -620,6 +622,7 @@ config HID_WIIMOTE
 	depends on BT_HIDP
 	depends on LEDS_CLASS
 	select POWER_SUPPLY
+	select INPUT_FF_MEMLESS
 	---help---
 	Support for the Nintendo Wii Remote bluetooth device.
 
