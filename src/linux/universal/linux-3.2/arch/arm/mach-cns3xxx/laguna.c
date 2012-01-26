@@ -35,6 +35,7 @@
 #include <linux/spi/flash.h>
 #include <linux/if_ether.h>
 #include <linux/export.h>
+#include <linux/module.h>
 #include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -52,6 +53,9 @@ extern struct cpufreq_driver cns_cpu_freq_driver;
 #include <mach/gpio.h>
 #include "core.h"
 #include "devices.h"
+
+unsigned int numcpucores=1;
+EXPORT_SYMBOL(numcpucores);
 
 // Config 1 Bitmap
 #define ETH0_LOAD           BIT(0)

@@ -773,17 +773,22 @@ static int __init imq_init_devs(void)
 
 	return err;
 }
-
+#ifdef CONFIG_ARCH_CNS3XXX
+extern unsigned int numcpucores;
+#endif
 static int __init imq_init_module(void)
 {
 	int err;
+unsigned int numcpucores=1;
 
 #if defined(CONFIG_IMQ_NUM_DEVS)
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS > 16);
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS < 2);
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS - 1 > IMQ_F_IFMASK);
 #endif
-
+#ifdef CONFIG_ARCH_CNS3XXX
+	numqueues = numcpucores;
+#endif
 	err = imq_init_devs();
 	if (err) {
 		printk(KERN_ERR "IMQ: Error trying imq_init_devs(net)\n");
