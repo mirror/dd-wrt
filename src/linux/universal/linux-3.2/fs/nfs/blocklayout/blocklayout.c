@@ -146,14 +146,19 @@ static struct bio *bl_alloc_init_bio(int npg, sector_t isect,
 {
 	struct bio *bio;
 
+	npg = min(npg, BIO_MAX_PAGES);
 	bio = bio_alloc(GFP_NOIO, npg);
-	if (!bio)
-		return NULL;
+	if (!bio && (current->flags & PF_MEMALLOC)) {
+		while (!bio && (npg /= 2))
+			bio = bio_alloc(GFP_NOIO, npg);
+	}
 
-	bio->bi_sector = isect - be->be_f_offset + be->be_v_offset;
-	bio->bi_bdev = be->be_mdev;
-	bio->bi_end_io = end_io;
-	bio->bi_private = par;
+	if (bio) {
+		bio->bi_sector = isect - be->be_f_offset + be->be_v_offset;
+		bio->bi_bdev = be->be_mdev;
+		bio->bi_end_io = end_io;
+		bio->bi_private = par;
+	}
 	return bio;
 }
 
@@ -779,16 +784,13 @@ bl_cleanup_layoutcommit(struct nfs4_layoutcommit_data *lcdata)
 static void free_blk_mountid(struct block_mount_id *mid)
 {
 	if (mid) {
-		struct pnfs_block_dev *dev;
-		spin_lock(&mid->bm_lock);
-		while (!list_empty(&mid->bm_devlist)) {
-			dev = list_first_entry(&mid->bm_devlist,
-					       struct pnfs_block_dev,
-					       bm_node);
+		struct pnfs_block_dev *dev, *tmp;
+
+		/* No need to take bm_lock as we are last user freeing bm_devlist */
+		list_for_each_entry_safe(dev, tmp, &mid->bm_devlist, bm_node) {
 			list_del(&dev->bm_node);
 			bl_free_block_dev(dev);
 		}
-		spin_unlock(&mid->bm_lock);
 		kfree(mid);
 	}
 }
