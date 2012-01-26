@@ -27,6 +27,8 @@
 #include <asm/mach-types.h>
 #include <asm/mach/pci.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
 
 void __init usr8200_pci_preinit(void)
 {
@@ -39,7 +41,7 @@ void __init usr8200_pci_preinit(void)
 	ixp4xx_pci_preinit();
 }
 
-static int __init usr8200_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init usr8200_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	if (slot == 14)
 		return IRQ_IXP4XX_GPIO7;
