@@ -194,12 +194,10 @@ static void __init usr8200_init(void)
 
 MACHINE_START(USR8200, "USRobotics USR8200")
 	/* Maintainer: Peter Denison <openwrt@marshadder.org> */
-	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 	.map_io		= ixp4xx_map_io,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
-	.boot_params	= 0x0100,
+	.atag_offset	= 0x0100,
 	.init_machine	= usr8200_init,
 #if defined(CONFIG_PCI)
 	.dma_zone_size	= SZ_64M,

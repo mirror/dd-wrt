@@ -396,7 +396,7 @@ MACHINE_START(CAMBRIA, "Gateworks Cambria Series")
   .atag_offset  = 0x0100,
   .init_machine = cambria_init,
 #if defined(CONFIG_PCI)
-	.dma_zone_size	= SZ_64M,
+  .dma_zone_size	= SZ_64M,
 #endif
 MACHINE_END
 
