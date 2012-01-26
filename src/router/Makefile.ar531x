@@ -275,12 +275,12 @@ endif
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/whrag108/vmlinux.lzma
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/aw6600/vmlinux.lzma
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/meraki/vmlinux.lzma
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/ls5/vmlinux.lzma
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/ca8pro/vmlinux.lzma
-	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/bwrg1000/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/whrag108/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/aw6600/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/meraki/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/ls5/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/ca8pro/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/bwrg1000/vmlinux.lzma
 	make -C lzma-loader/rt32g clean
 	make -C lzma-loader/rt32g 
 	make -C lzma-loader/whrag108 clean
@@ -317,7 +317,7 @@ endif
 
 	# make overtake image
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) lzma-loader/vmlinux $(ARCH)-uclibc/vmlinus_initrd 
-	cat $(ARCH)-uclibc/vmlinus_initrd | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > lzma-loader/aw6600/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus_initrd | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/aw6600/vmlinux.lzma
 	make -C lzma-loader/aw6600 clean
 	make -C lzma-loader/aw6600 
 	cp lzma-loader/aw6600/lzma.elf $(ARCH)-uclibc/lzma_vmlinuxaw_initrd
@@ -515,7 +515,7 @@ endif
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	
 	mips-linux-uclibc-objcopy -O binary $(strip-flags) -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
-	lzma e -lc1 -lp2 -pb2 -d25 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 #	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
 ifeq ($(CONFIG_TW6600),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
@@ -570,7 +570,7 @@ ifeq ($(CONFIG_WRT54G2),y)
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.wrt54g2
 endif
 ifeq ($(CONFIG_RTG32),y)
-	lzma e -lc1 -lp2 -pb2 -d25  $(ARCH)-uclibc/lzma_vmlinus_rt32g $(ARCH)-uclibc/lzma_vmlinus_rt32g.lzma 
+	lzma e $(ARCH)-uclibc/lzma_vmlinus_rt32g $(ARCH)-uclibc/lzma_vmlinus_rt32g.lzma 
 	dd if=$(ARCH)-uclibc/lzma_vmlinus_rt32g.lzma of=$(ARCH)-uclibc/rt32_preloader.bin bs=4096 conv=sync	
 	cat mips-uclibc/vmlinux.lzma >> mips-uclibc/rt32_preloader.bin
 	dd if=$(ARCH)-uclibc/rt32_preloader.bin of=$(ARCH)-uclibc/rt32_preloader.align bs=65536 conv=sync
