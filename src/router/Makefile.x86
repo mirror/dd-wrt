@@ -87,6 +87,8 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 export BASEOPT:=-Os
 #export ARCH:= mipsel
 
+export LINUXVER = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+
 ifeq ($(ARCH),mipsel)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
@@ -100,8 +102,8 @@ ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 
 endif
 
-export CC := $(CROSS_COMPILE)gcc
-export CXX := $(CROSS_COMPILE)g++
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -157,10 +159,10 @@ else
 endif
 	make -C $(LINUXDIR) oldconfig
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE=i486-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=i486-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
 	#armeb-linux-uclibc-strip --remove-section=.note --remove-section=.comment $(LINUXDIR)/vmlinux
 	#armeb-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux vmlinux.bin 
