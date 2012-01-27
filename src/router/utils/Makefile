@@ -41,9 +41,7 @@ endif
 
 ifeq ($(CONFIG_ATH9K),y)
 CFLAGS += -DHAVE_ATH9K
-UTILS += wl_ath9k
 endif
-
 ifeq ($(CONFIG_MADWIFI),y)
 UTILS += wl_atheros
 else
