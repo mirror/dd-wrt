@@ -162,7 +162,9 @@ void start_openvpnserver(void)
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl addif br0 tap0\n"
-			"ifconfig tap0 0.0.0.0 promisc up\n");
+			"ifconfig tap0 0.0.0.0 promisc up\n"
+			"stopservice wshaper\n"
+			"startservice wshaper\n");
 	} else {	//else only bring up tun/tap
 //		fprintf(fp, "ifconfig %s0 0.0.0.0 up\n",
 //			nvram_safe_get("openvpn_tuntap"));
@@ -179,7 +181,9 @@ void start_openvpnserver(void)
 		fprintf(fp, "gpio disable %s\n", gpiovpn);
 #endif
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
+		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n"
+					"stopservice wshaper\n"
+					"startservice wshaper\n");
 	}
 	fprintf(fp, "sleep 2\n");
 	fclose(fp);
@@ -199,6 +203,11 @@ void start_openvpnserver(void)
 		     "/tmp/openvpn/openvpn.conf", "--up",
 		     "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
+	
+	if (nvrammatch("openvpn_tuntap", "tun")) {
+		eval("stopservice", "wshaper");
+		eval("startservice", "wshaper");
+	}
 }
 
 void stop_openvpnserver(void)
@@ -210,6 +219,10 @@ void stop_openvpnserver(void)
 	}
 #endif
 	stop_process("openvpnserver", "OpenVPN daemon (Server)");
+	
+	eval("stopservice", "wshaper");
+	eval("startservice", "wshaper");
+
 	return;
 }
 
@@ -317,7 +330,9 @@ void start_openvpn(void)
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
 		fprintf(fp, "brctl addif br0 tap1\n"
-			"ifconfig tap1 0.0.0.0 promisc up\n");
+			"ifconfig tap1 0.0.0.0 promisc up\n"
+			"stopservice wshaper\n"
+			"startservice wshaper\n");
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tap")
 		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
@@ -379,12 +394,19 @@ void start_openvpn(void)
 		     "/tmp/openvpncl/openvpn.conf", "--route-up",
 		     "/tmp/openvpncl/route-up.sh", "--down-pre",
 		     "/tmp/openvpncl/route-down.sh", "--daemon");
+
+	eval("stopservice", "wshaper");
+	eval("startservice", "wshaper");
+
 	return;
 }
 
 void stop_openvpn(void)
 {
 	stop_process("openvpn", "OpenVPN daemon (Client)");
+
+	eval("stopservice", "wshaper");
+	eval("startservice", "wshaper");
 }
 
 void stop_openvpn_wandone(void)
