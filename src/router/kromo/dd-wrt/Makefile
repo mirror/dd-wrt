@@ -382,6 +382,7 @@ ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
 endif
 ifeq ($(CONFIG_TRIMAX),y)
 	cp -f trimax/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f trimax/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 endif
 ifeq ($(CONFIG_CNC),y)
 	cp -f cnc/common.js $(INSTALLDIR)/www/common.js
