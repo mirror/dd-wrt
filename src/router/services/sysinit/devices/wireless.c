@@ -115,8 +115,9 @@ static void detect_wireless_devices(void)
 	loadlegacy = 0;
 	char path[32];
 	int i = 0;
-	for (i = 0; i < 5; i++) {
-		sprintf(path, "0%d.0", i);
+	char *bus[]={"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
+	for (i = 0; i < 16; i++) {
+		sprintf(path, "0%s.0", bus[i]);
 		if (!strcmp(has_device(path), "0x0023"))
 			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x0024"))
