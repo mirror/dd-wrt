@@ -15,6 +15,9 @@ void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 	type = GOZILA_GET(wp, "wan_proto");
 	if (type == NULL)
 		type = nvram_safe_get("wan_proto");
+#ifdef HAVE_DSL_CPE_CONTROL
+	do_ej(NULL, "index_atm.asp", wp, NULL);
+#endif
 	char ejname[32];
 	snprintf(ejname,31,"index_%s.asp",type);
 	do_ej(NULL, ejname, wp, NULL);

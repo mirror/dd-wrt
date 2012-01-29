@@ -337,6 +337,15 @@ ifeq ($(CONFIG_TELCOM),y)
 	cp -f telcom/logo.png $(INSTALLDIR)/www/style
 endif
 
+ifeq ($(CONFIG_IMMERSIVE),y)
+	mkdir $(INSTALLDIR)/www/style/immersive
+	cp immersive/style.css $(INSTALLDIR)/www/style/immersive
+	cp immersive/images/* $(INSTALLDIR)/www/images
+	cp immersive/About.htm $(INSTALLDIR)/www
+	cp immersive/help/* $(INSTALLDIR)/www/help
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
+endif
+
 ifeq ($(CONFIG_GLAUCO),y)
 	cp -f glauco/logo.png $(INSTALLDIR)/www/style
 	cp -f glauco/logo-help.png $(INSTALLDIR)/www/help/logo-help.png

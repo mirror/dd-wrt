@@ -50,6 +50,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "corenet", 0},
 #elif HAVE_XIOCOM
 	{"router_style", "xiocom", 0},
+#elif HAVE_IMMERSIVE
+	{"router_style", "immersive", 0},
 #elif HAVE_DDLAN
 	{"router_style", "blue", 0},
 #elif HAVE_CESAR
@@ -762,6 +764,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_crypto", "aes", 0},		/* ath0 encryption type */
 	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
 	{"ath0_txpwrdbm", "19", 0},		/* ath0 transmit power */
+#elif defined(HAVE_IMMERSIVE)
+	{"ath0_ssid", "imm", 0},
+	{"ath1_ssid", "imm_1", 0},
+	{"ath2_ssid", "imm_2", 0},
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
@@ -1002,6 +1008,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_channel", "5180", 0},	/* 5275ath0 frequency */
 	{"ath0_rxantenna", "3", 0},
 	{"ath0_txantenna", "3", 0},
+#elif HAVE_IMMERSIVE
+	{"ath0_channel", "2412", 0},
+	{"ath1_channel", "2437", 0},
+	{"ath2_channel", "2462", 0},
 #else
 	{"ath0_channel", "0", 0},	/* Channel number */
 	{"ath1_channel", "0", 0},	/* Channel number */
@@ -1284,6 +1294,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "Excel Networks", 0},
 #elif  HAVE_ESPOD
 	{"router_name", "ESPOD", 0},
+#elif  HAVE_IMMERSIVE
+	{"router_name", "IMMERSIVE", 0},
 #elif  HAVE_NEXTMEDIA
 	{"router_name", "NEXTMEDIA", 0},
 #elif  HAVE_DDLAN
