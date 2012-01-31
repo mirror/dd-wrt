@@ -172,6 +172,14 @@ ifeq ($(ARCHITECTURE),wzrg450)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
+ifeq ($(ARCHITECTURE),hornet)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
+else
+ifeq ($(ARCHITECTURE),wasp)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
+else
 ifeq ($(ARCHITECTURE),ubntm)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
@@ -197,6 +205,8 @@ ifeq ($(ARCHITECTURE),danube)
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 else
 	cp busybox/.config_3com busybox/.config
+endif
+endif
 endif
 endif
 endif
