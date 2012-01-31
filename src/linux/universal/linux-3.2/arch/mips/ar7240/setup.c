@@ -177,6 +177,18 @@ switch (id) {
 		chip = "9341";
 		rev = 0;
 		break;
+	case AR9344_REV_1_1:
+		chip = "9344";
+		rev = 1;
+		break;
+	case AR9342_REV_1_1:
+		chip = "9342";
+		rev = 1;
+		break;
+	case AR9341_REV_1_1:
+		chip = "9341";
+		rev = 1;
+		break;
 	default:
 		chip = "724x";
 	}

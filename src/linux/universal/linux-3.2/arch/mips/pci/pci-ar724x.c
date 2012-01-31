@@ -21,6 +21,8 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 
+#include "ar7240.h"
+
 #undef DEBUG
 #ifdef DEBUG
 #define DBG(fmt, args...)	printk(KERN_INFO fmt, ## args)
@@ -354,6 +356,12 @@ static void __init ar724x_pci_irq_init(void)
 int __init ar724x_pcibios_init(void)
 {
 	int ret = -ENOMEM;
+
+#ifdef CONFIG_WASP_SUPPORT
+	if (is_ar9341()) {
+		return 0;
+	}
+#endif
 
 	ar724x_pci_localcfg_base = ioremap_nocache(AR724X_PCI_CRP_BASE,
 						   AR724X_PCI_CRP_SIZE);

@@ -528,6 +528,24 @@ static inline void ar7240_spi_flash_cs0_write_page(unsigned int addr, unsigned c
 #define AR7240_RESET                  AR7240_RESET_BASE+0x1c
 #define AR7240_OBSERVATION_ENABLE     AR7240_RESET_BASE+0x28
 
+#define ATH_BOOTSTRAP_REG		(AR7240_RESET_BASE + 0xb0)
+#define ATH_REF_CLK_40			(1 << 4) /* 0 - 25MHz	1 - 40 MHz */
+#define ATH_DDR_WIDTH_32		(1 << 3)
+
+#define AR7240_PCIE_WMAC_INT_STATUS	AR7240_RESET_BASE+0xac
+#	define WMAC_MISC_INT	(1 << 0)	/* Indicates there is a WMAC Intr */
+#	define WMAC_TX_INT	(1 << 1)	/* Reason of interrupt */
+#	define WMAC_RXLP_INT	(1 << 2)
+#	define WMAC_RXHP_INT	(1 << 3)
+#	define PCIE_RC_INT	(1 << 4)
+#	define PCIE_RC_INT0	(1 << 5)
+#	define PCIE_RC_INT1	(1 << 6)
+#	define PCIE_RC_INT2	(1 << 7)
+#	define PCIE_RC_INT3	(1 << 8)
+
+#	define PCI_WMAC_INTR	(PCIE_RC_INT | PCIE_RC_INT0 | PCIE_RC_INT1 | \
+				 PCIE_RC_INT2 | PCIE_RC_INT3)
+
 
 #define AR7240_WD_ACT_MASK      3u
 #define AR7240_WD_ACT_NONE      0u /* No Action */

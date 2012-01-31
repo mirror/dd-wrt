@@ -278,6 +278,9 @@ config WZRG450
     bool "WZRG450 Vlan Mapping"
     depends on AR7242_S16_PHY
 
+config ATHRS27_PHY
+	bool "Atheros S27 Phy"
+
 config AR7242_VIR_PHY
     bool "AR7242 Vitual Switch"
 
@@ -301,14 +304,25 @@ choice
 config AG7240_GE1_MII
     bool "MII mode"
 
+config AG7240_GE1_GMII
+	bool "GMII mode"
+
+config AG7240_GE1_RGMII
+	bool "RGMII mode"
+
 endchoice
+
+config GE1_EXTERNAL_PHY
+	bool "GE1 is connected to different PHY"
+	depends on AG7240_GE1_IS_CONNECTED
 
 choice  
     prompt "PHY or switch used"
-    depends on AG7240
+    depends on GE1_EXTERNAL_PHY
 
 config AR7240_S26_PHY
     bool "Atheros S26 Phy"
+    depends on GE1_EXTERNAL_PHY
 
 config S26_SWITCH_ONLY_MODE
     bool "Enable switch only mode"
