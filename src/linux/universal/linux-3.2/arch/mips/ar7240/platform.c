@@ -270,6 +270,9 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_MACH_HORNET
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, NULL);
+#elif CONFIG_WASP_SUPPORT
+	ee = (u8 *) KSEG1ADDR(0x1fff1000);
+	ar9xxx_add_device_wmac(ee, NULL);
 #else
 	ee = getCalData(0);
 	ap91_pci_init(ee, mac);
