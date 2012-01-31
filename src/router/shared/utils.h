@@ -459,6 +459,8 @@
 
 #ifdef HAVE_HORNET
 #define ROUTER_BOARD_WHRHPGN 0x8d1c	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+#elif HAVE_WASP
+#define ROUTER_BOARD_WHRHPGN 0x8d0f	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #else
 #define ROUTER_BOARD_WHRHPGN 0x8d1b	//Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #endif
