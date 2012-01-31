@@ -69,6 +69,7 @@ int athr_ioctl(struct net_device *dev,uint32_t *args, int cmd);
 int athr_ioctl(uint32_t *args, int cmd);
 #endif
 void ar7240_s26_intr(void);
+void ar7240_s27_intr(void);
 void ag7240_dma_reset(ag7240_mac_t *mac);
 
 int  ag7240_recv_packets(struct net_device *dev, ag7240_mac_t *mac,
@@ -84,13 +85,28 @@ atomic_t Ledstatus;
 extern uint32_t ar7240_ahb_freq;
 extern void athrs26_reg_dev(ag7240_mac_t **mac);
 extern void athrs26_enable_linkIntrs(int ethUnit);
+extern void athrs27_enable_linkintrs(int ethUnit);
 extern void athrs26_disable_linkIntrs(int ethUnit);
+extern void athrs27_disable_linkintrs(int ethUnit);
+#ifdef CONFIG_ATHRS27_PHY
+extern int athrs27_phy_is_link_alive(int phyUnit);
+extern void athrs27_phy_stab_wr(int phy_id, int phy_up, int phy_speed);
+extern uint32_t athrs27_reg_read(unsigned int s26_addr);
+extern void athrs27_reg_write(unsigned int s26_addr, unsigned int s26_write_data);
+void s27_wr_phy(unsigned int phy_addr, unsigned int reg_addr, unsigned int write_data);
+#define athrs26_phy_is_link_alive athrs27_phy_is_link_alive
+#define athrs26_phy_stab_wr athrs27_phy_stab_wr
+#define s26_wr_phy s27_wr_phy
+#define s26_rd_phy s27_rd_phy
+#define athrs26_reg_write athrs27_reg_write
+#define athrs26_reg_read athrs27_reg_read
+#else
 extern int athrs26_phy_is_link_alive(int phyUnit);
 extern void athrs26_phy_stab_wr(int phy_id, int phy_up, int phy_speed);
 extern uint32_t athrs26_reg_read(unsigned int s26_addr);
 extern void athrs26_reg_write(unsigned int s26_addr, unsigned int s26_write_data);
 extern void s26_wr_phy(unsigned int phy_addr, unsigned int reg_addr, unsigned int write_data);
-
+#endif
 char *mii_str[2][4] = {
     {"GMii", "Mii", "RGMii", "RMii"},
     {"GMii","Mii","RGMii", "RMii"}
@@ -309,9 +325,12 @@ ag7240_open(struct net_device *dev)
     }
 #endif
     
-    if (is_ar7240() || is_ar7241() || is_ar933x() || (is_ar7242() && mac->mac_unit == 1))
+    if (is_ar7240() || is_ar7241() || is_ar933x() || is_ar934x() || (is_ar7242() && mac->mac_unit == 1))
+#ifdef CONFIG_ATHRS27_PHY
+	athrs27_enable_linkintrs(mac->mac_unit);
+#else
 	athrs26_enable_linkIntrs(mac->mac_unit);
-
+#endif
     ag7240_rx_start(mac);	
     netif_start_queue(dev);
    
@@ -465,6 +484,33 @@ ag7240_hw_setup(ag7240_mac_t *mac)
 
     if (mac_has_flag(mac,ATHR_S26_HEADER) || mac_has_flag(mac,ATHR_S16_HEADER))
         ag7240_reg_rmw_clear(mac, AG7240_MAC_CFG2, AG7240_MAC_CFG2_LEN_CHECK)
+
+    if (is_ar934x() && is_s27()) {
+        if (!is_emu()) {
+            printk("WASP ----> S27 PHY MDIO\n");
+            mgmt_cfg_val = 7;
+            //athr_swap_phy();
+            ar7240_reg_wr(ATHR_SWITCH_CLK_SPARE,(ar7240_reg_rd(ATHR_SWITCH_CLK_SPARE)|0x40));
+            ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+            ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+
+            if (mac_has_flag(mac,ETH_SWONLY_MODE)) {
+                ar7240_reg_rmw_set(AG7240_ETH_CFG, AG7240_ETH_CFG_SW_ONLY_MODE); 
+                ag7240_reg_rmw_set(ag7240_macs[0], AG7240_MAC_CFG1, AG7240_MAC_CFG1_SOFT_RST);;
+            }
+            //athr_reg_rmw_set(ATHR_GMAC_ETH_CFG, ATHR_GMAC_ETH_CFG_SW_APB_ACCESS);
+        }
+        else {
+           printk("WASP EMULATION ----> S27 PHY\n");
+           mgmt_cfg_val = 7;
+           ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
+           ag7240_reg_wr(ag7240_macs[1], AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
+        }
+        return;
+
+    }
+
+
     /*
     * set the mii if type - NB reg not in the gigE space
     */
@@ -553,8 +599,8 @@ ag7240_hw_setup(ag7240_mac_t *mac)
                 while (check_cnt++ < 10) {
                     ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val | (1 << 31));
                     ag7240_reg_wr(mac, AG7240_MAC_MII_MGMT_CFG, mgmt_cfg_val);
-                    if(athrs26_mdc_check() == 0) 
-                        break;
+//                    if(athrs26_mdc_check() == 0) 
+//                        break;
                 }
                 if(check_cnt == 11)
                     printk("%s: MDC check failed\n", __func__);
@@ -644,7 +690,12 @@ ag7240_hw_stop(ag7240_mac_t *mac)
     ag7240_rx_stop(mac);
     ag7240_tx_stop(mac);
     ag7240_int_disable(mac);
+#ifdef CONFIG_ATHRS27_PHY
+    athrs27_disable_linkintrs(mac->mac_unit);
+#else
     athrs26_disable_linkIntrs(mac->mac_unit);
+
+#endif
     /*
     * put everything into reset.
     * Dont Reset WAN MAC as we are using eth0 MDIO to access S26 Registers.
@@ -1572,7 +1623,11 @@ ag7240_intr(int cpl, void *dev_id)
 static irqreturn_t
 ag7240_link_intr(int cpl, void *dev_id) {
 
+#ifdef CONFIG_ATHRS27_PHY
+	ar7240_s27_intr();
+#else
 	ar7240_s26_intr();
+#endif
 	return IRQ_HANDLED;
 }
 

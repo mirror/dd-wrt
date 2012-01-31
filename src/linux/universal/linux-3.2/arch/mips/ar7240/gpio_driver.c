@@ -73,9 +73,14 @@ static int ar71xx_gpio_direction_input(struct gpio_chip *chip,
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_OE) & ~(1 << offset),
+#ifdef CONFIG_WASP_SUPPORT
+	__raw_writel(__raw_readl(base + GPIO_REG_OE) | (1 << offset),
 		     base + GPIO_REG_OE);
 
+#else
+	__raw_writel(__raw_readl(base + GPIO_REG_OE) & ~(1 << offset),
+		     base + GPIO_REG_OE);
+#endif
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
 	return 0;
@@ -98,10 +103,16 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip,
 		__raw_writel(1 << offset, base + GPIO_REG_SET);
 	else
 		__raw_writel(1 << offset, base + GPIO_REG_CLEAR);
+#ifdef CONFIG_WASP_SUPPORT
+	__raw_writel(__raw_readl(base + GPIO_REG_OE) & ~(1 << offset),
+		     base + GPIO_REG_OE);
 
+#else
 	__raw_writel(__raw_readl(base + GPIO_REG_OE) | (1 << offset),
 		     base + GPIO_REG_OE);
 
+
+#endif
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
 	return 0;

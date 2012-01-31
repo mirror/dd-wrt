@@ -383,6 +383,7 @@ int __init ar71xx_pcibios_init(void)
 {
 	void __iomem *ddr_base = ar71xx_ddr_base;
 
+
 	ar71xx_device_stop(RESET_MODULE_PCI_BUS | RESET_MODULE_PCI_CORE);
 	ar71xx_pci_delay();
 

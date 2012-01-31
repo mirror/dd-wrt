@@ -23,11 +23,25 @@
 #ifdef CONFIG_AR7240_S26_PHY
 
 #include "ar7240_s26_phy.h" 
+#endif
 #ifdef CONFIG_AR7242_RGMII_PHY
 #include "athrf1_phy.h"
 #endif
 #ifdef CONFIG_AR7242_S16_PHY
 #include "athrs16_phy.h"
+#endif
+#define is_emu() (0)
+
+#ifdef CONFIG_ATHRS27_PHY
+#include "athrs27_phy.h"
+#undef is_s27 
+#ifdef CONFIG_ATHR_SUPPORT_DUAL_PHY
+#define is_s27()(mac->mac_unit == 1)
+#else
+#define is_s27()(1)
+#endif
+#else
+#define is_s27() (0)
 #endif
 
 #ifdef CONFIG_AR7242_RTL8309G_PHY
@@ -44,12 +58,16 @@ extern ag7240_mac_t *ag7240_macs[2];
 
 static inline void athrs_reg_dev(ag7240_mac_t **ag7240_macs)
 {
+#ifdef CONFIG_ATHRS27_PHY
+  athrs27_reg_dev(ag7240_macs);
+
+#else
 #if defined(CONFIG_AR7242_S16_PHY)
   if (is_ar7242())
     athrs16_reg_dev(ag7240_macs);
 #endif
   athrs26_reg_dev(ag7240_macs);
-
+#endif
   return ;
 
 }
@@ -58,9 +76,12 @@ static inline int athrs_do_ioctl(struct net_device *dev,struct ifreq *ifr, int c
 {
   ag7240_mac_t *mac = (ag7240_mac_t *)netdev_priv(dev);
   int ret = -1;
-
+#ifdef CONFIG_ATHRS27_PHY
+    ret = 0;//athrs27_ioctl(dev,ifr, cmd);
+#else
   if (is_ar7240() || mac->mac_unit == 1)
     ret = athrs26_ioctl(dev,ifr, cmd);
+#endif
 #ifdef CONFIG_AR7242_S16_PHY
   else if(is_ar7242())
     ret = athrs16_ioctl(ifr->ifr_data, cmd);
@@ -79,6 +100,10 @@ static inline void ag7240_phy_reg_init(int unit)
     rtl8309g_reg_init(unit);
   else
 #else
+#ifdef CONFIG_ATHRS27_PHY
+  if (unit == 0)
+    athrs27_reg_init(unit);
+#else
 #ifndef CONFIG_AR7242_S16_PHY
   if (unit == 0)
     athrs26_reg_init(unit);
@@ -86,9 +111,14 @@ static inline void ag7240_phy_reg_init(int unit)
   if (unit == 0 && is_ar7242())
     athrs16_reg_init(unit);
 #endif
+#endif
   else
 #endif
+#ifdef CONFIG_ATHRS27_PHY
+    athrs27_reg_init_lan(unit);
+#else
     athrs26_reg_init_lan(unit);
+#endif
 } 
 
 static inline void ag7240_phy_setup(int unit)
@@ -99,10 +129,14 @@ static inline void ag7240_phy_setup(int unit)
     	 rtl8309g_phy_setup(unit);
     } else 
 #endif 
+#ifdef CONFIG_ATHRS27_PHY
+    athrs27_phy_setup (unit);
+#else
   if (is_ar7241() || is_ar7240() || is_ar933x())
     athrs26_phy_setup (unit);
   else if (is_ar7242() && unit == 1) 
     athrs26_phy_setup (unit);
+#endif
 #ifdef CONFIG_AR7242_RGMII_PHY
   else if (is_ar7242() && unit == 0)
     athr_phy_setup(unit);
@@ -125,12 +159,17 @@ ag7240_get_link_status(int unit, int *link, int *fdx, ag7240_phy_speed_t *speed,
     }
     else
 #endif
-
+#ifdef CONFIG_ATHRS27_PHY
+    *link=athrs27_phy_is_up(unit);
+    *fdx=athrs27_phy_is_fdx(unit, phyUnit);
+    *speed=athrs27_phy_speed(unit, phyUnit);
+#else
   if (is_ar7240() || is_ar7241() || (is_ar7242() && unit == 1) || is_ar933x()) {
     *link=ag7240_phy_is_up(unit);
     *fdx=ag7240_phy_is_fdx(unit, phyUnit);
     *speed=ag7240_phy_speed(unit, phyUnit);
   } 
+#endif
 #ifdef CONFIG_AR7242_RGMII_PHY
   else if(is_ar7242() && unit == 0){
     *link=athr_phy_is_up(unit);
@@ -161,9 +200,6 @@ ag7240_print_link_status(int unit)
 {
   return -1;
 }
-#else
-#error unknown PHY type PHY not configured in config.h
-#endif
 
 #endif
 
