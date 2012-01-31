@@ -873,6 +873,9 @@ config AR7240_EMULATION
     bool "build system for AR7240 emulation board?"
     depends on MACH_AR7240
 
+config WASP_SUPPORT
+	bool "build system for WASP based board"
+	depends on MACH_AR7240
 
 config AR7100_USB_GPIO_LED
     bool "usb led support?"

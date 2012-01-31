@@ -242,8 +242,6 @@ int __init ar7240_platform_init(void)
 
         /* need to set clock appropriately */
 #ifdef CONFIG_MACH_HORNET
-//	ath_uart_data[0].uartclk = ar7240_ahb_freq;
-//	ar933x_uart_data.uartclk = ar7240_ahb_freq;
 
 	ath_uart_data[0].uartclk = ar71xx_ref_freq;
 	ar933x_uart_data.uartclk = ar71xx_ref_freq;
