@@ -517,9 +517,9 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x0627, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
 	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
 	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//
-	{0x1c9e, 0x9000, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
+	{0x1c9e, 0x9000, "option", "0", "0", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9603, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
-	{0x1c9e, 0x9605, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
+	{0x1c9e, 0x9605, "option", "3", "3", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9607, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
