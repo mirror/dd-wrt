@@ -36,6 +36,10 @@
 #endif
 
 uint32_t ar7240_cpu_freq = 0, ar7240_ahb_freq, ar7240_ddr_freq;
+
+u32 ar71xx_ahb_freq;
+EXPORT_SYMBOL_GPL(ar71xx_ahb_freq);
+
 #ifdef CONFIG_WASP_SUPPORT
 uint32_t ath_ref_clk_freq;
 #endif
@@ -68,15 +72,15 @@ void
 ar7240_restart(char *command)
 {
     for(;;) {
-#ifdef CONFIG_WASP_SUPPORT
+		if (is_ar934x_10()) {
 		/*
 		 * WAR for full chip reset spi vs. boot-rom selection
 		 * bug in wasp 1.0
 		 */
 		ar7240_reg_wr (AR7240_GPIO_OE, ar7240_reg_rd(AR7240_GPIO_OE) & (~(1 << 17)));
-#else
+		}else{
 		ar7240_reg_wr(AR7240_RESET, AR7240_RESET_FULL_CHIP);
-#endif
+		}
     }
 }
 
@@ -243,12 +247,13 @@ EXPORT_SYMBOL(get_wmac_mem_len);
 //#define FB50 1
 
 #if defined (CONFIG_WASP_SUPPORT)
+
+#include "hack.h"
+
 static void
 wasp_sys_frequency(void)
 {
-#if !defined(CONFIG_AR7240_EMULATION)
 	uint32_t pll, out_div, ref_div, nint, frac, clk_ctrl;
-#endif
 	uint32_t ref;
 
 	if (ar7240_cpu_freq)
@@ -259,29 +264,72 @@ wasp_sys_frequency(void)
 	} else {
 		ref = (25 * 1000000);
 	}
+
 	ath_ref_clk_freq = ref;
 
-#ifdef CONFIG_AR7240_EMULATION
-	ar7240_cpu_freq = 80000000;
-	ar7240_ddr_freq = 80000000;
-	ar7240_ahb_freq = 40000000;
-#else
-	clk_ctrl = ar7240_reg_rd(AR7240_DDR_CLK_CTRL);
+	printk("%s: ", __func__);
 
-	pll = ar7240_reg_rd(AR7240_PLL_CONFIG);
-	out_div	= CPU_PLL_CONFIG_OUTDIV_GET(pll);
-	ref_div	= CPU_PLL_CONFIG_REFDIV_GET(pll);
-	nint	= CPU_PLL_CONFIG_NINT_GET(pll);
-	frac	= CPU_PLL_CONFIG_NFRAC_GET(pll);
-	ar7240_cpu_freq = ((nint * ref / ref_div) >> out_div) /
+
+	clk_ctrl = ar7240_reg_rd(ATH_DDR_CLK_CTRL);
+
+
+	pll = ar7240_reg_rd(CPU_DPLL2_ADDRESS);
+
+
+
+	if (CPU_DPLL2_LOCAL_PLL_GET(pll)) {
+
+
+		out_div	= CPU_DPLL2_OUTDIV_GET(pll);
+
+		pll = ar7240_reg_rd(CPU_DPLL_ADDRESS);
+
+		nint = CPU_DPLL_NINT_GET(pll);
+
+
+		frac = CPU_DPLL_NFRAC_GET(pll);
+
+		ref_div = CPU_DPLL_REFDIV_GET(pll);
+		pll = ref >> 18;
+		frac	= frac * pll / ref_div;
+		printk("cpu srif ");
+	} else {
+		pll = ar7240_reg_rd(ATH_PLL_CONFIG);
+
+
+		out_div	= CPU_PLL_CONFIG_OUTDIV_GET(pll);
+		ref_div	= CPU_PLL_CONFIG_REFDIV_GET(pll);
+		nint	= CPU_PLL_CONFIG_NINT_GET(pll);
+		frac	= CPU_PLL_CONFIG_NFRAC_GET(pll);
+		pll = ref >> 6;
+		frac	= frac * pll / ref_div;
+		printk("cpu apb ");
+	}
+	ar7240_cpu_freq = (((nint * (ref / ref_div)) + frac) >> out_div) /
 			(CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV_GET(clk_ctrl) + 1);
 
-	pll = ar7240_reg_rd(AR7240_DDR_PLL_CONFIG);
-	out_div	= DDR_PLL_CONFIG_OUTDIV_GET(pll);
-	ref_div	= DDR_PLL_CONFIG_REFDIV_GET(pll);
-	nint	= DDR_PLL_CONFIG_NINT_GET(pll);
-	frac	= DDR_PLL_CONFIG_NFRAC_GET(pll);
-	ar7240_ddr_freq = ((nint * ref / ref_div) >> out_div) /
+	pll = ar7240_reg_rd(DDR_DPLL2_ADDRESS);
+	if (DDR_DPLL2_LOCAL_PLL_GET(pll)) {
+		out_div	= DDR_DPLL2_OUTDIV_GET(pll);
+
+		pll = ar7240_reg_rd(DDR_DPLL_ADDRESS);
+		nint = DDR_DPLL_NINT_GET(pll);
+		frac = DDR_DPLL_NFRAC_GET(pll);
+		ref_div = DDR_DPLL_REFDIV_GET(pll);
+		pll = ref >> 18;
+		frac	= frac * pll / ref_div;
+		printk("ddr srif ");
+	} else {
+		pll = ar7240_reg_rd(ATH_DDR_PLL_CONFIG);
+		out_div	= DDR_PLL_CONFIG_OUTDIV_GET(pll);
+		ref_div	= DDR_PLL_CONFIG_REFDIV_GET(pll);
+		nint	= DDR_PLL_CONFIG_NINT_GET(pll);
+		frac	= DDR_PLL_CONFIG_NFRAC_GET(pll);
+		pll = ref >> 10;
+		frac	= frac * pll / ref_div;
+		printk("ddr apb ");
+	}
+	ar7240_ddr_freq = (((nint * (ref / ref_div)) + frac) >> out_div) /
 			(CPU_DDR_CLOCK_CONTROL_DDR_POST_DIV_GET(clk_ctrl) + 1);
 
 	if (CPU_DDR_CLOCK_CONTROL_AHBCLK_FROM_DDRPLL_GET(clk_ctrl)) {
@@ -291,11 +339,17 @@ wasp_sys_frequency(void)
 		ar7240_ahb_freq = ar7240_cpu_freq /
 			(CPU_DDR_CLOCK_CONTROL_AHB_POST_DIV_GET(clk_ctrl) + 1);
 	}
-#endif
-	printk("%s: cpu %u ddr %u ahb %u\n", __func__,
+
+	printk("cpu %u ddr %u ahb %u\n", 
 		ar7240_cpu_freq / 1000000,
 		ar7240_ddr_freq / 1000000,
 		ar7240_ahb_freq / 1000000);
+
+
+
+
+
+
 }
 #else
 
@@ -527,6 +581,15 @@ u32 rev=0;
     else
 		ar71xx_ref_freq = (25 * 1000 * 1000);
 #endif
+
+#ifdef CONFIG_WASP_SUPPORT
+	if ((ar7240_reg_rd(ATH_BOOTSTRAP_REG) & ATH_REF_CLK_40)) {
+		ar71xx_ref_freq = (40 * 1000 * 1000);
+	} else {
+		ar71xx_ref_freq = (25 * 1000 * 1000);
+	}
+#endif
+	ar71xx_ahb_freq = ar7240_ahb_freq;
 
 #if 0
     board_be_handler = ar7240_be_handler;

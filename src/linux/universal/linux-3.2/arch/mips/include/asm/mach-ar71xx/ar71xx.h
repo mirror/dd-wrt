@@ -86,13 +86,13 @@
 #define AR71XX_MEM_SIZE_MAX	0x10000000
 
 #define AR71XX_CPU_IRQ_BASE	0
-#define AR71XX_MISC_IRQ_BASE	0x10
+#define AR71XX_MISC_IRQ_BASE	8
 #define AR71XX_MISC_IRQ_COUNT	13
-#define AR71XX_GPIO_IRQ_BASE	0x20
+#define AR71XX_GPIO_IRQ_BASE	40
 #define AR71XX_GPIO_IRQ_COUNT	32
-#define AR71XX_PCI_IRQ_BASE	AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT
-#define AR71XX_PCI_IRQ_COUNT	1
-#define AR934X_IP2_IRQ_BASE	0x40
+#define AR71XX_PCI_IRQ_BASE	72
+#define AR71XX_PCI_IRQ_COUNT	6
+#define AR934X_IP2_IRQ_BASE	78
 #define AR934X_IP2_IRQ_COUNT	2
 
 #define AR71XX_CPU_IRQ_IP2	(AR71XX_CPU_IRQ_BASE + 2)
@@ -417,18 +417,6 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 	return __raw_readl(ar71xx_usb_ctrl_base + reg);
 }
 
-#define GPIO_REG_OE        0x00
-#define GPIO_REG_IN        0x04
-#define GPIO_REG_OUT       0x08
-#define GPIO_REG_SET       0x0c
-#define GPIO_REG_CLEAR     0x10
-#define GPIO_REG_INT_MODE  0x14
-#define GPIO_REG_INT_TYPE  0x18
-#define GPIO_REG_INT_POLARITY  0x1c
-#define GPIO_REG_INT_PENDING   0x20
-#define GPIO_REG_INT_ENABLE    0x24
-#define GPIO_REG_FUNC      0x28
-
 /*
  * GPIO block
  */
@@ -460,7 +448,7 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 #define AR71XX_GPIO_FUNC_USB_OC_EN	BIT(4)
 #define AR71XX_GPIO_FUNC_USB_CLK_EN	BIT(0)
 
-#define AR71XX_GPIO_COUNT	32
+#define AR71XX_GPIO_COUNT	16
 
 #define AR724X_GPIO_FUNC_GE0_MII_CLK_EN		BIT(19)
 #define AR724X_GPIO_FUNC_SPI_EN			BIT(18)

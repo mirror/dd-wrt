@@ -1,242 +1,416 @@
 /*
- * General Interrupt handling for AR7240 soc
+ *  Atheros AR71xx SoC specific interrupt handling
+ *
+ *  Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *
+ *  Parts of this file are based on Atheros 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.31 BSP
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  */
-#include <linux/init.h>
-#include <linux/kernel_stat.h>
-#include <linux/signal.h>
-#include <linux/sched.h>
-#include <linux/interrupt.h>
-#include <linux/slab.h>
-#include <linux/random.h>
-#include <linux/pm.h>
-#include <linux/delay.h>
-#include <linux/reboot.h>
 
-#include <asm/irq.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/interrupt.h>
+#include <linux/irq.h>
+
+#include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
 
-#include "ar7240.h"
-#include <asm/irq_cpu.h>
+#include <asm/mach-ar71xx/ar71xx.h>
 
-void serial_print(char *fmt, ...);
+static void ar71xx_gpio_irq_dispatch(void)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	u32 pending;
 
-/*
- * dummy irqaction, so that interrupt controller cascading can work. Basically
- * when one IC is connected to another, this will be used to enable to Parent
- * IC's irq line to which the child IC is connected
- */
-static struct irqaction cascade  = {
-	.handler	= no_action, 
-	.name		= "cascade", 
+	pending = __raw_readl(base + AR71XX_GPIO_REG_INT_PENDING) &
+		  __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+
+	if (pending)
+		do_IRQ(AR71XX_GPIO_IRQ_BASE + fls(pending) - 1);
+	else
+		spurious_interrupt();
+}
+
+static void ar71xx_gpio_irq_unmask(struct irq_data *d)
+{
+	unsigned int irq = d->irq - AR71XX_GPIO_IRQ_BASE;
+	void __iomem *base = ar71xx_gpio_base;
+	u32 t;
+
+	t = __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	__raw_writel(t | (1 << irq), base + AR71XX_GPIO_REG_INT_ENABLE);
+
+	/* flush write */
+	(void) __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+}
+
+static void ar71xx_gpio_irq_mask(struct irq_data *d)
+{
+	unsigned int irq = d->irq - AR71XX_GPIO_IRQ_BASE;
+	void __iomem *base = ar71xx_gpio_base;
+	u32 t;
+
+	t = __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	__raw_writel(t & ~(1 << irq), base + AR71XX_GPIO_REG_INT_ENABLE);
+
+	/* flush write */
+	(void) __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+}
+
+static struct irq_chip ar71xx_gpio_irq_chip = {
+	.name		= "AR71XX GPIO",
+	.irq_unmask	= ar71xx_gpio_irq_unmask,
+	.irq_mask	= ar71xx_gpio_irq_mask,
+	.irq_mask_ack	= ar71xx_gpio_irq_mask,
 };
 
+static struct irqaction ar71xx_gpio_irqaction = {
+	.handler	= no_action,
+	.name		= "cascade [AR71XX GPIO]",
+};
 
-static void ar7240_dispatch_misc_intr(void);
-#ifndef CONFIG_WASP_SUPPORT
-static void ar7240_dispatch_pci_intr(void);
-#endif
-static void ar7240_dispatch_gpio_intr(void);
-static void ar7240_misc_irq_init(int irq_base);
-extern asmlinkage void ar7240_interrupt_receive(void);
+#define GPIO_INT_ALL	0xffff
+
+static void __init ar71xx_gpio_irq_init(void)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	int i;
+
+	__raw_writel(0, base + AR71XX_GPIO_REG_INT_ENABLE);
+	__raw_writel(0, base + AR71XX_GPIO_REG_INT_PENDING);
+
+	/* setup type of all GPIO interrupts to level sensitive */
+	__raw_writel(GPIO_INT_ALL, base + AR71XX_GPIO_REG_INT_TYPE);
+
+	/* setup polarity of all GPIO interrupts to active high */
+	__raw_writel(GPIO_INT_ALL, base + AR71XX_GPIO_REG_INT_POLARITY);
+
+	for (i = AR71XX_GPIO_IRQ_BASE;
+	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &ar71xx_gpio_irq_chip,
+					 handle_level_irq);
+
+	setup_irq(AR71XX_MISC_IRQ_GPIO, &ar71xx_gpio_irqaction);
+}
+
+static void ar71xx_misc_irq_dispatch(void)
+{
+	u32 pending;
+
+	pending = ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_STATUS)
+	    & ar71xx_reset_rr(AR71XX_RESET_REG_MISC_INT_ENABLE);
+
+	if (pending & MISC_INT_UART)
+		do_IRQ(AR71XX_MISC_IRQ_UART);
+
+	else if (pending & MISC_INT_DMA)
+		do_IRQ(AR71XX_MISC_IRQ_DMA);
+
+	else if (pending & MISC_INT_PERFC)
+		do_IRQ(AR71XX_MISC_IRQ_PERFC);
+
+	else if (pending & MISC_INT_TIMER)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER);
+
+	else if (pending & MISC_INT_OHCI)
+		do_IRQ(AR71XX_MISC_IRQ_OHCI);
+
+	else if (pending & MISC_INT_ERROR)
+		do_IRQ(AR71XX_MISC_IRQ_ERROR);
+
+	else if (pending & MISC_INT_GPIO)
+		ar71xx_gpio_irq_dispatch();
+
+	else if (pending & MISC_INT_WDOG)
+		do_IRQ(AR71XX_MISC_IRQ_WDOG);
+
+	else if (pending & MISC_INT_TIMER2)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER2);
+
+	else if (pending & MISC_INT_TIMER3)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER3);
+
+	else if (pending & MISC_INT_TIMER4)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER4);
+
+	else if (pending & MISC_INT_DDR_PERF)
+		do_IRQ(AR71XX_MISC_IRQ_DDR_PERF);
+
+	else if (pending & MISC_INT_ENET_LINK)
+		do_IRQ(AR71XX_MISC_IRQ_ENET_LINK);
+
+	else
+		spurious_interrupt();
+}
+
+static void ar71xx_misc_irq_unmask(struct irq_data *d)
+{
+	unsigned int irq = d->irq - AR71XX_MISC_IRQ_BASE;
+	void __iomem *base = ar71xx_reset_base;
+	u32 t;
+
+	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	__raw_writel(t | (1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+
+	/* flush write */
+	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+}
+
+static void ar71xx_misc_irq_mask(struct irq_data *d)
+{
+	unsigned int irq = d->irq - AR71XX_MISC_IRQ_BASE;
+	void __iomem *base = ar71xx_reset_base;
+	u32 t;
+
+	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+
+	/* flush write */
+	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+}
+
+static void ar724x_misc_irq_ack(struct irq_data *d)
+{
+	unsigned int irq = d->irq - AR71XX_MISC_IRQ_BASE;
+	void __iomem *base = ar71xx_reset_base;
+	u32 t;
+
+	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
+	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_STATUS);
+
+	/* flush write */
+	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
+}
+
+static struct irq_chip ar71xx_misc_irq_chip = {
+	.name		= "AR71XX MISC",
+	.irq_unmask	= ar71xx_misc_irq_unmask,
+	.irq_mask	= ar71xx_misc_irq_mask,
+};
+
+static struct irqaction ar71xx_misc_irqaction = {
+	.handler	= no_action,
+	.name		= "cascade [AR71XX MISC]",
+};
+
+static void __init ar71xx_misc_irq_init(void)
+{
+	void __iomem *base = ar71xx_reset_base;
+	int i;
+
+	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	__raw_writel(0, base + AR71XX_RESET_REG_MISC_INT_STATUS);
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ar71xx_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
+		break;
+	default:
+		ar71xx_misc_irq_chip.irq_mask_ack = ar71xx_misc_irq_mask;
+		break;
+	}
+
+	for (i = AR71XX_MISC_IRQ_BASE;
+	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &ar71xx_misc_irq_chip,
+					 handle_level_irq);
+
+	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
+}
+
+static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+{
+	u32 status;
+
+	disable_irq_nosync(irq);
+
+	status = ar71xx_reset_rr(AR934X_RESET_REG_PCIE_WMAC_INT_STATUS);
+
+	if (status & AR934X_PCIE_WMAC_INT_PCIE_ALL) {
+		ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_PCIE);
+		generic_handle_irq(AR934X_IP2_IRQ_PCIE);
+	} else if (status & AR934X_PCIE_WMAC_INT_WMAC_ALL) {
+		ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_WMAC);
+		generic_handle_irq(AR934X_IP2_IRQ_WMAC);
+	} else {
+		spurious_interrupt();
+	}
+
+	enable_irq(irq);
+}
+
+static void ar934x_ip2_irq_init(void)
+{
+	int i;
+
+	for (i = AR934X_IP2_IRQ_BASE;
+	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip,
+					 handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
+}
+
+
+/*
+ * The IP2/IP3 lines are tied to a PCI/WMAC/USB device. Drivers for
+ * these devices typically allocate coherent DMA memory, however the
+ * DMA controller may still have some unsynchronized data in the FIFO.
+ * Issue a flush in the handlers to ensure that the driver sees
+ * the update.
+ */
+static void ar71xx_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_PCI);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar724x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR724X_DDR_REG_FLUSH_PCIE);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar913x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_WMAC);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar933x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_WMAC);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar934x_ip2_handler(void)
+{
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar71xx_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar724x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR724X_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar913x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar933x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar934x_ip3_handler(void)
+{
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void (*ip2_handler)(void);
+static void (*ip3_handler)(void);
+
+asmlinkage void plat_irq_dispatch(void)
+{
+	unsigned long pending;
+
+	pending = read_c0_status() & read_c0_cause() & ST0_IM;
+
+	if (pending & STATUSF_IP7)
+		do_IRQ(AR71XX_CPU_IRQ_TIMER);
+
+	else if (pending & STATUSF_IP2)
+		ip2_handler();
+
+	else if (pending & STATUSF_IP4)
+		do_IRQ(AR71XX_CPU_IRQ_GE0);
+
+	else if (pending & STATUSF_IP5)
+		do_IRQ(AR71XX_CPU_IRQ_GE1);
+
+	else if (pending & STATUSF_IP3)
+		ip3_handler();
+
+	else if (pending & STATUSF_IP6)
+		ar71xx_misc_irq_dispatch();
+
+	else
+		spurious_interrupt();
+}
 
 void __init arch_init_irq(void)
 {
-    /*
-     * initialize our interrupt controllers
-     */
-    mips_cpu_irq_init();
-    ar7240_misc_irq_init(AR7240_MISC_IRQ_BASE);
-//    ar7240_gpio_irq_init(AR7240_GPIO_IRQ_BASE);
-#ifdef CONFIG_PCI
-//    ar7240_pci_irq_init(AR7240_PCI_IRQ_BASE);
-#endif
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		ip2_handler = ar71xx_ip2_handler;
+		ip3_handler = ar71xx_ip3_handler;
+		break;
 
-    /*
-     * enable cascades
-     */
-    setup_irq(AR7240_CPU_IRQ_MISC,  &cascade);
-    setup_irq(AR7240_MISC_IRQ_GPIO, &cascade);
-#ifdef CONFIG_PCI
-//    setup_irq(AR7240_CPU_IRQ_PCI,   &cascade);
-#endif
-#if defined(CONFIG_WASP_SUPPORT)
-	irq_set_chip_and_handler(ATH_CPU_IRQ_WLAN,
-				&dummy_irq_chip,
-				handle_percpu_irq);
-#endif
-}
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+		ip2_handler = ar724x_ip2_handler;
+		ip3_handler = ar724x_ip3_handler;
+		break;
 
-static void
-ar7240_dispatch_misc_intr(void)
-{
-    int pending;
-   
-    pending = ar7240_reg_rd(AR7240_MISC_INT_STATUS) &
-              ar7240_reg_rd(AR7240_MISC_INT_MASK);
- 
-    if (pending & MIMR_UART) {
-        do_IRQ(AR7240_MISC_IRQ_UART);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_UART);
-    }
-    else if (pending & MIMR_DMA) {
-        do_IRQ(AR7240_MISC_IRQ_DMA);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_DMA);
-    }
-    else if (pending & MIMR_PERF_COUNTER) {
-        do_IRQ(AR7240_MISC_IRQ_PERF_COUNTER);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_PERF_COUNTER);
-    }
-    else if (pending & MIMR_TIMER) {
-        do_IRQ(AR7240_MISC_IRQ_TIMER);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_TIMER);
-    }
-    else if (pending & MIMR_OHCI_USB) {
-        do_IRQ(AR7240_MISC_IRQ_USB_OHCI);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_OHCI_USB);
-    }
-    else if (pending & MIMR_ERROR) {
-        do_IRQ(AR7240_MISC_IRQ_ERROR);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_ERROR);
-    }
-    else if (pending & MIMR_GPIO) {
-        ar7240_dispatch_gpio_intr();
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_GPIO);
-    }
-    else if (pending & MIMR_WATCHDOG) {
-        do_IRQ(AR7240_MISC_IRQ_WATCHDOG);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_WATCHDOG);
-    }
-    else if (pending & MIMR_ENET_LINK) {
-        do_IRQ(AR7240_MISC_IRQ_ENET_LINK);
-	ar7240_reg_rmw_clear(AR7240_MISC_INT_STATUS,MIMR_ENET_LINK);
-    }
-    else
-		spurious_interrupt();
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ip2_handler = ar913x_ip2_handler;
+		ip3_handler = ar913x_ip3_handler;
+		break;
 
-}
-static void
-ar7240_dispatch_pci_intr(void)
-{
-#if 0 
-    int pending;
-    pending  = ar7240_reg_rd(AR7240_PCI_INT_STATUS) &
-               ar7240_reg_rd(AR7240_PCI_INT_MASK);
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ip2_handler = ar933x_ip2_handler;
+		ip3_handler = ar933x_ip3_handler;
+		break;
 
-    if (pending & PISR_DEV0)
-        do_IRQ(AR7240_PCI_IRQ_DEV0);
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ip2_handler = ar934x_ip2_handler;
+		ip3_handler = ar934x_ip3_handler;
+		break;
 
-    else if (pending & PISR_DEV1)
-        do_IRQ(AR7240_PCI_IRQ_DEV1);
-
-    else if (pending & PISR_DEV2)
-        do_IRQ(AR7240_PCI_IRQ_DEV2);
-#else
-    do_IRQ(AR7240_PCI_IRQ_DEV0);
-#endif
-
-}
-static void
-ar7240_dispatch_gpio_intr(void)
-{
-    int pending, i;
-
-    pending = ar7240_reg_rd(AR7240_GPIO_INT_PENDING) &
-              ar7240_reg_rd(AR7240_GPIO_INT_MASK);
-
-    for(i = 0; i < AR7240_GPIO_COUNT; i++) {
-        if (pending & (1 << i))
-            do_IRQ(AR7240_GPIO_IRQn(i));
-    }
-}
-
-/*
- * Dispatch interrupts. 
- * XXX: This currently does not prioritize except in calling order. Eventually
- * there should perhaps be a static map which defines, the IPs to be masked for
- * a given IP.
- */
-asmlinkage void plat_irq_dispatch(void)
-{
-	int pending = read_c0_status() & read_c0_cause() & ST0_IM;
-
-    if (pending & CAUSEF_IP7) 
-	{
-        do_IRQ(AR7240_CPU_IRQ_TIMER);
+	default:
+		BUG();
 	}
-    else if (pending & CAUSEF_IP2) 
-    {
-#ifdef CONFIG_WASP_SUPPORT
-#ifdef CONFIG_PCI
-		if (unlikely(ar7240_reg_rd
-			(AR7240_PCIE_WMAC_INT_STATUS) & PCI_WMAC_INTR))
-			ar7240_dispatch_pci_intr();
-		else
-#endif
-			do_IRQ(ATH_CPU_IRQ_WLAN);
-#elif defined (CONFIG_MACH_HORNET)
-			do_IRQ(ATH_CPU_IRQ_WLAN);
-#else
-			ar7240_dispatch_pci_intr();
-#endif
-    }
-    else if (pending & CAUSEF_IP4) 
-        do_IRQ(AR7240_CPU_IRQ_GE0);
 
-    else if (pending & CAUSEF_IP5) 
-        do_IRQ(AR7240_CPU_IRQ_GE1);
+	mips_cpu_irq_init();
 
-    else if (pending & CAUSEF_IP3) 
-        do_IRQ(AR7240_CPU_IRQ_USB);
+	ar71xx_misc_irq_init();
 
-    else if (pending & CAUSEF_IP6) 
-        ar7240_dispatch_misc_intr();
-    else
-		spurious_interrupt();
+	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
+	    ar71xx_soc == AR71XX_SOC_AR9342 ||
+	    ar71xx_soc == AR71XX_SOC_AR9344)
+		ar934x_ip2_irq_init();
 
-    /*
-     * Some PCI devices are write to clear. These writes are posted and might
-     * require a flush (r8169.c e.g.). Its unclear what will have more 
-     * performance impact - flush after every interrupt or taking a few
-     * "spurious" interrupts. For now, its the latter.
-     */
-    /*else 
-        printk("spurious IRQ pending: 0x%x\n", pending);*/
+	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
+
+	ar71xx_gpio_irq_init();
 }
-
-static void
-ar7240_misc_irq_enable(struct irq_data *irq)
-{
-    ar7240_reg_rmw_set(AR7240_MISC_INT_MASK, (1 << (irq->irq - AR7240_MISC_IRQ_BASE)));
-}
-
-static void
-ar7240_misc_irq_disable(struct irq_data *irq)
-{
-    ar7240_reg_rmw_clear(AR7240_MISC_INT_MASK, 
-                       (1 << (irq->irq - AR7240_MISC_IRQ_BASE)));
-}
-
-struct irq_chip ar7240_misc_irq_chip = {
-	.name		= "AR7240 MISC",
-	.irq_mask_ack		= ar7240_misc_irq_disable,
-	.irq_mask		= ar7240_misc_irq_disable,
-	.irq_unmask		= ar7240_misc_irq_enable, 
-};
-
-
-/*
- * Determine interrupt source among interrupts that use IP6
- */
-static void
-ar7240_misc_irq_init(int irq_base)
-{
-	int i;
-	ar7240_reg_wr(AR7240_MISC_INT_MASK, 0);
-	ar7240_reg_wr(AR7240_MISC_INT_STATUS, 0);
-
-	for (i = irq_base; i < irq_base + AR7240_MISC_IRQ_COUNT; i++) {
-		irq_set_chip_and_handler(i, &ar7240_misc_irq_chip,
-					 handle_level_irq);
-	}
-}
-
