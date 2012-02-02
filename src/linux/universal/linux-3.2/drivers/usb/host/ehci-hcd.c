@@ -48,9 +48,9 @@
 #include <asm/system.h>
 #include <asm/unaligned.h>
 
-#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_MACH_WASP)
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)
 
-#ifdef CONFIG_MACH_WASP
+#ifdef CONFIG_WASP_SUPPORT
 #include "../gadget/ath_defs.h"
 #else
 #include "../gadget/ar9130_defs.h"
@@ -288,12 +288,12 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	command |= CMD_RESET;
 	dbg_cmd (ehci, "reset", command);
 	ehci_writel(ehci, command, &ehci->regs->command);
-#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_MACH_WASP)
-#define ath_usb_reg_wr		ar9130_reg_wr
-#define ath_usb_reg_rd		ar9130_reg_rd
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)
+#define ath_usb_reg_wr		ar7240_reg_wr
+#define ath_usb_reg_rd		ar7240_reg_rd
 #define ATH_USB_USB_MODE	AR9130_USB_MODE
 	udelay(1000);
-#ifdef CONFIG_MACH_WASP
+#ifdef CONFIG_WASP_SUPPORT
 	ath_usb_reg_wr(ATH_USB_USB_MODE,
 			(ath_usb_reg_rd(ATH_USB_USB_MODE) | 0x13));
 #else
@@ -895,6 +895,18 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 
 		/* kick root hub later */
 		pcd_status = status;
+
+#ifdef CONFIG_WASP_SUPPORT
+#define ath_reg_wr		ar7240_reg_wr
+#define ath_reg_rd		ar7240_reg_rd
+
+#define USB_PHY_CTRL5 0xb8116c94
+		if((ath_reg_rd(&ehci->regs->status) & STS_PCD) && (hcd->state != HC_STATE_SUSPENDED) && \
+			((1<<USB_PORT_STAT_HIGH_SPEED) == ehci_port_speed(ehci, ehci_readl(ehci, &ehci->regs->port_status [0])))) {
+	                ath_reg_wr (USB_PHY_CTRL5, (ath_reg_rd(USB_PHY_CTRL5)|((1<<17) | (1<<22) | (1<<23))) & (~((0x3<<18) | (0x1<<20))));
+	                ath_reg_wr (USB_PHY_CTRL5, (ath_reg_rd(USB_PHY_CTRL5)) & (~(1<<17)));
+	        }
+#endif
 
 		/* resume root hub? */
 		if (!(cmd & CMD_RUN))
