@@ -58,7 +58,11 @@ typedef unsigned int ar7240_reg_t;
 #define AR7240_GPIO_BASE                AR7240_APB_BASE+0x00040000
 #define AR7240_PLL_BASE                 AR7240_APB_BASE+0x00050000
 #define AR7240_RESET_BASE               AR7240_APB_BASE+0x00060000
-#define AR7240_SLIC_BASE                AR7240_APB_BASE+0x00090000
+#ifdef CONFIG_WASP_SUPPORT
+#define AR7240_SLIC_BASE		AR7240_APB_BASE+0x000A9000
+#else
+#define AR7240_SLIC_BASE		AR7240_APB_BASE+0x00090000
+#endif
 #define AR7240_DMA_BASE                 AR7240_APB_BASE+0x000A0000
 #define AR7240_STEREO_BASE              AR7240_APB_BASE+0x000B0000
 #define AR7240_PCI_CTLR_BASE           AR7240_APB_BASE+0x000F0000
@@ -110,10 +114,19 @@ typedef unsigned int ar7240_reg_t;
 /*
  * DDR block, gmac flushing 
  */
-#define AR7240_DDR_GE0_FLUSH            AR7240_DDR_CTL_BASE+0x7c
-#define AR7240_DDR_GE1_FLUSH            AR7240_DDR_CTL_BASE+0x80
+#ifdef CONFIG_WASP_SUPPORT
+#define AR7240_DDR_GE0_FLUSH		AR7240_DDR_CTL_BASE+0x9c
+#define AR7240_DDR_GE1_FLUSH		AR7240_DDR_CTL_BASE+0xa0
+#define AR7240_DDR_USB_FLUSH            AR7240_DDR_CTL_BASE+0xa4
+#define AR7240_DDR_PCIE_FLUSH           AR7240_DDR_CTL_BASE+0xa8
+#else
+#define AR7240_DDR_GE0_FLUSH		AR7240_DDR_CTL_BASE+0x7c
+#define AR7240_DDR_GE1_FLUSH		AR7240_DDR_CTL_BASE+0x80
 #define AR7240_DDR_USB_FLUSH            AR7240_DDR_CTL_BASE+0xa4
 #define AR7240_DDR_PCIE_FLUSH           AR7240_DDR_CTL_BASE+0x88
+#endif
+
+
 
 #define AR7240_EEPROM_GE0_MAC_ADDR      0xbfff1000
 #define AR7240_EEPROM_GE1_MAC_ADDR      0xbfff1006
@@ -221,7 +234,14 @@ typedef unsigned int ar7240_reg_t;
 #define AR7240_GPIO_INT_POLARITY        AR7240_GPIO_BASE+0x1c
 #define AR7240_GPIO_INT_PENDING         AR7240_GPIO_BASE+0x20
 #define AR7240_GPIO_INT_MASK            AR7240_GPIO_BASE+0x24
-#define AR7240_GPIO_FUNCTIONS           AR7240_GPIO_BASE+0x28
+#ifdef CONFIG_WASP_SUPPORT
+// bit meanings have changed...
+#define AR7240_GPIO_FUNCTIONS		AR7240_GPIO_BASE+0x6c
+#else
+#define AR7240_GPIO_FUNCTIONS		AR7240_GPIO_BASE+0x28
+#define AR7240_GPIO_FUNCTION_2		AR7240_GPIO_BASE+0x30
+#define AR7240_GPIO_FUNC_ZERO		AR7240_GPIO_BASE+0x30
+#endif
 
 /*
  * IRQ Map.
@@ -234,10 +254,13 @@ typedef unsigned int ar7240_reg_t;
  * 
  */
 #define AR7240_CPU_IRQ_BASE         0x00
-#define AR7240_MISC_IRQ_BASE        0x10
-#define AR7240_GPIO_IRQ_BASE        0x20
+#define AR7240_MISC_IRQ_BASE        8
+#define AR7240_MISC_IRQ_COUNT       13
+#define AR7240_GPIO_IRQ_BASE        40
 #define AR7240_GPIO_IRQ_COUNT       32
-#define AR7240_PCI_IRQ_BASE         AR7240_GPIO_IRQ_BASE + AR7240_GPIO_IRQ_COUNT
+#define AR7240_PCI_IRQ_BASE         72
+#define AR7240_PCI_IRQ_COUNT	    6
+
 
 /*
  * The IPs. Connected to CPU (hardware IP's; the first two are software)
@@ -268,8 +291,7 @@ typedef unsigned int ar7240_reg_t;
 #define AR7240_MISC_IRQ_USB_OHCI            AR7240_MISC_IRQ_BASE+6
 #define AR7240_MISC_IRQ_DMA                 AR7240_MISC_IRQ_BASE+7
 #define AR7240_MISC_IRQ_ENET_LINK           AR7240_MISC_IRQ_BASE+12
-
-#define AR7240_MISC_IRQ_COUNT                 13
+#define AR7240_MISC_IRQ_NAT_AGER	    AR7240_MISC_IRQ_BASE+13
 
 #define MIMR_TIMER                          0x01
 #define MIMR_ERROR                          0x02
@@ -280,6 +302,7 @@ typedef unsigned int ar7240_reg_t;
 #define MIMR_OHCI_USB                       0x40
 #define MIMR_DMA                            0x80
 #define MIMR_ENET_LINK                      0x1000
+#define MIMR_NAT_AGER			0x2000
 
 #define MISR_TIMER                          MIMR_TIMER
 #define MISR_ERROR                          MIMR_ERROR
@@ -314,7 +337,6 @@ unsigned int ar7240_misc_get_irq_status (void);
 #	define AR7240_PCI_IRQ_COUNT	2
 #else
 #	define AR7240_PCI_IRQ_DEV0	AR7240_PCI_IRQ_BASE+0
-#	define AR7240_PCI_IRQ_COUNT	1
 #endif /* CONFIG_PERICOM */
 
 /*
@@ -475,14 +497,29 @@ static inline void ar7240_spi_enable_cs0(void)
   ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_ENABLE_0 | cs);
 }
 
+#ifdef CONFIG_WASP_SUPPORT
 static inline void ar7240_spi_enable_cs1(void)
 {
-  unsigned int cs;
-  ar7240_spi_down();
-  ar7240_spi_enable_soft_access();
-  cs = ar7240_reg_rd(AR7240_SPI_WRITE) & ~AR7240_SPI_CS_DIS;
-  ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_ENABLE_1 | cs);
+	unsigned int cs;
+	ar7240_spi_down();
+	ar7240_spi_init();
+	ar7240_spi_enable_soft_access();
+	cs = ar7240_reg_rd(AR7240_SPI_WRITE) & AR7240_SPI_CS_DIS;
+	ar7240_reg_wr_nf(AR7240_SPI_WRITE, cs | AR7240_SPI_CLK_HIGH);
+	cs = ar7240_reg_rd(AR7240_SPI_WRITE) & ~AR7240_SPI_CS_DIS;
+	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_ENABLE_1 | cs | AR7240_SPI_CLK_HIGH);
+	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_ENABLE_1 | cs);
 }
+#else
+static inline void ar7240_spi_enable_cs1(void)
+{
+	unsigned int cs;
+	ar7240_spi_down();
+	ar7240_spi_enable_soft_access();
+	cs = ar7240_reg_rd(AR7240_SPI_WRITE) & ~AR7240_SPI_CS_DIS;
+	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_ENABLE_1 | cs);
+}
+#endif
 
 static inline void ar7240_spi_disable_cs(void)
 {
@@ -524,19 +561,21 @@ static inline void ar7240_spi_flash_cs0_write_page(unsigned int addr, unsigned c
 #define AR7240_PCI_INT_A_L		(1 << 14) /* INTA Level Trigger */
 #define AR7240_PCI_INT_B_L		(1 << 15) /* INTB Level Trigger */
 #define AR7240_PCI_INT_C_L		(1 << 16) /* INTC Level Trigger */
-#define AR7240_GLOBAL_INT_STATUS      AR7240_RESET_BASE+0x20
+
+#ifdef CONFIG_WASP_SUPPORT
+#define AR7240_GLOBAL_INT_STATUS	AR7240_RESET_BASE+0x18
+#else
+#define AR7240_GLOBAL_INT_STATUS	AR7240_RESET_BASE+0x20
+#endif
 #define AR7240_RESET                  AR7240_RESET_BASE+0x1c
 #define AR7240_OBSERVATION_ENABLE     AR7240_RESET_BASE+0x28
-
-#define ATH_BOOTSTRAP_REG		(AR7240_RESET_BASE + 0xb0)
-#define ATH_REF_CLK_40			(1 << 4) /* 0 - 25MHz	1 - 40 MHz */
-#define ATH_DDR_WIDTH_32		(1 << 3)
 
 #define AR7240_PCIE_WMAC_INT_STATUS	AR7240_RESET_BASE+0xac
 #	define WMAC_MISC_INT	(1 << 0)	/* Indicates there is a WMAC Intr */
 #	define WMAC_TX_INT	(1 << 1)	/* Reason of interrupt */
 #	define WMAC_RXLP_INT	(1 << 2)
 #	define WMAC_RXHP_INT	(1 << 3)
+
 #	define PCIE_RC_INT	(1 << 4)
 #	define PCIE_RC_INT0	(1 << 5)
 #	define PCIE_RC_INT1	(1 << 6)
@@ -545,6 +584,9 @@ static inline void ar7240_spi_flash_cs0_write_page(unsigned int addr, unsigned c
 
 #	define PCI_WMAC_INTR	(PCIE_RC_INT | PCIE_RC_INT0 | PCIE_RC_INT1 | \
 				 PCIE_RC_INT2 | PCIE_RC_INT3)
+
+#	define WMAC_INTR	(WMAC_MISC_INT | WMAC_TX_INT | WMAC_RXLP_INT | \
+				 WMAC_RXHP_INT)
 
 
 #define AR7240_WD_ACT_MASK      3u
@@ -782,6 +824,10 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define AR9341_REV_1_1			0x0121
 
 
+
+
+
+
 #define is_ar7240()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_2) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_1) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7240_REV_1_0))
@@ -792,9 +838,13 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define is_ar7242()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_0) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_1))
 
-#define is_ar9344()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9344_REV_1_0)
-#define is_ar9342()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_0)
-#define is_ar9341()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_0)
+#define is_ar9344_10()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9344_REV_1_0)
+#define is_ar9342_10()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_0)
+#define is_ar9341_10()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_0)
+
+#define is_ar9344_11()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9344_REV_1_1)
+#define is_ar9342_11()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_1)
+#define is_ar9341_11()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9341_REV_1_1)
 
 #define is_ar9330() (((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_0) || \
                         ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9330_REV_1_1) || \
@@ -804,8 +854,15 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
                         ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_1) || \
                         ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9331_REV_1_2))
 
-#define is_ar934x()	(is_ar9344() || is_ar9342() || is_ar9341())
+#define is_ar934x_10()	(is_ar9344_10() || is_ar9342_10() || is_ar9341_10())
+#define is_ar934x_11()	(is_ar9344_11() || is_ar9342_11() || is_ar9341_11())
 
+
+#define is_ar9341()	(is_ar9341_10() || is_ar9341_11())
+#define is_ar9342()	(is_ar9342_10() || is_ar9342_11())
+#define is_ar9344()	(is_ar9344_10() || is_ar9344_11())
+
+#define is_ar934x() (is_ar934x_10() || is_ar934x_11())
 #define is_ar933x() (is_ar9330() || is_ar9331())
 
 
@@ -822,6 +879,8 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 /*
  * AR7240_RESET bit defines
  */
+#define AR7240_RESET_GE0_MDIO               (1 << 22)
+#define AR7240_RESET_GE1_MDIO               (1 << 23)
 #define AR7240_RESET_EXTERNAL               (1 << 28)
 #define AR7240_RESET_FULL_CHIP              (1 << 24)
 #define AR7240_RESET_CPU_NMI                (1 << 21)
@@ -872,6 +931,12 @@ void ar7240_reset(unsigned int mask);
 
 #define ar7240_get_bit(_reg, _bit)  (ar7240_reg_rd((_reg)) & (1 << (_bit)))
 
+#ifdef CONFIG_WASP_SUPPORT
+
+#define ar7240_flush_ge(_unit)
+
+
+#else
 #define ar7240_flush_ge(_unit) do {                             \
     u32     reg = (_unit) ? AR7240_DDR_GE1_FLUSH : AR7240_DDR_GE0_FLUSH;   \
     ar7240_reg_wr(reg, 1);                 \
@@ -879,7 +944,7 @@ void ar7240_reset(unsigned int mask);
     ar7240_reg_wr(reg, 1);                 \
     while((ar7240_reg_rd(reg) & 0x1));   \
 }while(0);
-
+#endif
 #define ar7240_flush_pcie() do {                             \
     ar7240_reg_wr(AR7240_DDR_PCIE_FLUSH, 1);                 \
     while((ar7240_reg_rd(AR7240_DDR_PCIE_FLUSH) & 0x1));   \

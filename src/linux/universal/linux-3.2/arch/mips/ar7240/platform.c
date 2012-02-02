@@ -15,6 +15,7 @@
 #include <asm/mach-ar7240/ar7240.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 #include "nvram.h"
+#include "devices.h"
 #include <asm/mach-ar71xx/ar933x_uart_platform.h>
 
 void serial_print(char *fmt, ...);
@@ -252,13 +253,57 @@ int __init ar7240_platform_init(void)
 #else
 	ar7240_uart_data[0].uartclk = ar7240_ahb_freq;
 #endif
+#ifdef CONFIG_WASP_SUPPORT
+
+#define DB120_MAC0_OFFSET	0
+#define DB120_MAC1_OFFSET	6
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+
+	void __iomem *base;
+	u32 t;
+
+/*	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+	t &= ~(AR934X_ETH_CFG_GMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+*/
+
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_add_device_mdio(1, 0x0);
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+	ar71xx_switch_data.phy4_mii_en = 1;
+
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(0);
+
+	/* GMAC1 is connected to the internal switch */
+/*	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(1);
+*/
+
+#endif
+
+
 	ret = platform_add_devices(ar724x_platform_devices, 
                                 ARRAY_SIZE(ar724x_platform_devices));
 
         if (ret < 0)
 		return ret; 
 
-	if (is_ar7241() || is_ar7242()  || is_ar933x() || is_wasp()) {
+	if (is_ar7241() || is_ar7242()  || is_ar933x() || is_ar934x()) {
 	    ret = platform_add_devices(ar7241_platform_devices, 
                                 ARRAY_SIZE(ar7241_platform_devices));
         }
@@ -273,6 +318,7 @@ int __init ar7240_platform_init(void)
 #elif CONFIG_WASP_SUPPORT
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, NULL);
+	ap91_pci_init(NULL, NULL);
 #else
 	ee = getCalData(0);
 	ap91_pci_init(ee, mac);

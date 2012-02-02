@@ -36,8 +36,9 @@ enum {
 	SWITCH_ATTR_TYPE,
 	/* device */
 	SWITCH_ATTR_ID,
-	SWITCH_ATTR_NAME,
 	SWITCH_ATTR_DEV_NAME,
+	SWITCH_ATTR_ALIAS,
+	SWITCH_ATTR_NAME,
 	SWITCH_ATTR_VLANS,
 	SWITCH_ATTR_PORTS,
 	SWITCH_ATTR_CPU_PORT,
@@ -98,6 +99,7 @@ struct switch_op;
 struct switch_val;
 struct switch_attr;
 struct switch_attrlist;
+struct switch_led_trigger;
 
 int register_switch(struct switch_dev *dev, struct net_device *netdev);
 void unregister_switch(struct switch_dev *dev);
@@ -111,6 +113,27 @@ void unregister_switch(struct switch_dev *dev);
 struct switch_attrlist {
 	int n_attr;
 	const struct switch_attr *attr;
+};
+
+enum switch_port_speed {
+	SWITCH_PORT_SPEED_UNKNOWN = 0,
+	SWITCH_PORT_SPEED_10 = 10,
+	SWITCH_PORT_SPEED_100 = 100,
+	SWITCH_PORT_SPEED_1000 = 1000,
+};
+
+struct switch_port_link {
+	bool link;
+	bool duplex;
+	bool aneg;
+	bool tx_flow;
+	bool rx_flow;
+	enum switch_port_speed speed;
+};
+
+struct switch_port_stats {
+	unsigned long tx_bytes;
+	unsigned long rx_bytes;
 };
 
 /**
@@ -142,14 +165,21 @@ struct switch_dev_ops {
 
 	int (*apply_config)(struct switch_dev *dev);
 	int (*reset_switch)(struct switch_dev *dev);
+
+	int (*get_port_link)(struct switch_dev *dev, int port,
+			     struct switch_port_link *link);
+	int (*get_port_stats)(struct switch_dev *dev, int port,
+			      struct switch_port_stats *stats);
 };
 
 struct switch_dev {
 	const struct switch_dev_ops *ops;
-	const char *name;
+	/* will be automatically filled */
+	char devname[IFNAMSIZ];
 
-	/* NB: either devname or netdev must be set */
-	const char *devname;
+	const char *name;
+	/* NB: either alias or netdev must be set */
+	const char *alias;
 	struct net_device *netdev;
 
 	int ports;
@@ -163,6 +193,10 @@ struct switch_dev {
 
 	spinlock_t lock;
 	struct switch_port *portbuf;
+
+#ifdef CONFIG_SWCONFIG_LEDS
+	struct switch_led_trigger *led_trigger;
+#endif
 };
 
 struct switch_port {
