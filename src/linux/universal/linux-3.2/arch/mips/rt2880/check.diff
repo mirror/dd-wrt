@@ -1,0 +1,2324 @@
+Index: time.c
+===================================================================
+--- time.c	(revision 14991)
++++ time.c	(working copy)
+@@ -67,36 +67,17 @@
+ 
+ #define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5)
+ 
+-/*
+-#if defined(CONFIG_RALINK_RT2880)
+-static char display_string[] = "      LINUX ON RALINK RT2880 SOC     ";
+-#elif defined (CONFIG_RALINK_RT2883)
+-static char display_string[] = "      LINUX ON RALINK RT2883 SOC     ";
+-#elif defined (CONFIG_RALINK_RT3052)
+-static char display_string[] = "      LINUX ON RALINK RT3052 SOC     ";
+-#endif
+-static unsigned int display_count = 0;
+-#define MAX_DISPLAY_COUNT (sizeof(display_string) - 8)
+-
+-static unsigned int timer_tick_count=0;
+-
+-*/
+-
+-static inline void ack_r4ktimer(unsigned int newval)
+-{
+-	write_c0_compare(newval);
+-}
+-
+-extern void ralink_gpio_control(int gpio,int level);
+-
+ void mips_timer_interrupt(void)
+ {
+-// stupid workaround for hardware watchdog
+-#ifdef CONFIG_EAP9550
+-	ralink_gpio_control(11,0);
+-	ralink_gpio_control(11,1);
+-#endif
++	/*
++	if ((timer_tick_count++ % HZ) == 0) {
++		mips_display_message(&display_string[display_count++]);
++		if (display_count == MAX_DISPLAY_COUNT)
++		        display_count = 0;
+ 
++	}
++	*/
++
+ 	ll_timer_interrupt(RALINK_CPU_TIMER_IRQ);
+ }
+ 
+@@ -122,7 +103,15 @@
+ 
+ 	local_irq_save(flags);
+ 
++#ifndef CONFIG_RALINK_EXTERNAL_TIMER
+ 	mips_hpt_frequency = mips_cpu_feq/2;
++#else
++  #ifdef CONFIG_RT3352_FPGA
++	mips_hpt_frequency = 10000000;
++  #else
++	mips_hpt_frequency = 40000000;
++  #endif
++#endif
+ 
+ 	printk("calculating r4koff... ");
+ 	r4k_offset = cal_r4koff();
+@@ -152,19 +141,28 @@
+ void __init mips_timer_setup(struct irqaction *irq)
+ #endif
+ {
++#ifdef CONFIG_RALINK_EXTERNAL_TIMER
++	u32 reg;
++#endif
+ 	/* we are using the cpu counter for timer interrupts */
+ 	//irq->handler = no_action;     /* we use our own handler */
+ 	setup_irq(RALINK_CPU_TIMER_IRQ, irq);
+ 
+         /* to generate the first timer interrupt */
++#ifndef CONFIG_RALINK_EXTERNAL_TIMER
+ 	r4k_cur = (read_c0_count() + r4k_offset);
+ 	write_c0_compare(r4k_cur);
++#else
++	r4k_cur = ((*((volatile u32 *)(RALINK_COUNT))) + r4k_offset);
++	(*((volatile u32 *)(RALINK_COMPARE))) = r4k_cur;
++	(*((volatile u32 *)(RALINK_MCNT_CFG))) = 3;
++#endif
+ 	set_c0_status(ALLINTS);
+ }
+ 
+ u32 get_surfboard_sysclk(void) 
+ {
+-    return surfboard_sysclk;
++	return surfboard_sysclk;
+ }
+ 
+ EXPORT_SYMBOL(get_surfboard_sysclk);
+Index: init.c
+===================================================================
+--- init.c	(revision 14991)
++++ init.c	(working copy)
+@@ -151,7 +151,7 @@
+ 
+ #if defined(CONFIG_RT2880_FPGA)
+         mips_cpu_feq = 25000000; 
+-#elif defined (CONFIG_RT3052_FPGA) || defined (CONFIG_RT2883_FPGA)
++#elif defined (CONFIG_RT3052_FPGA) || defined (CONFIG_RT3352_FPGA) || defined (CONFIG_RT2883_FPGA) || defined (CONFIG_RT3883_FPGA)
+         mips_cpu_feq = 40000000; 
+ #else
+ 	u32 	reg;
+@@ -164,6 +164,10 @@
+         clk_sel = (reg>>18) & 0x03;
+ #elif defined (CONFIG_RT3052_ASIC) 
+         clk_sel = (reg>>18) & 0x01;
++#elif defined (CONFIG_RT3352_ASIC) 
++        clk_sel = (reg>>8) & 0x01;
++#elif defined (CONFIG_RT3883_ASIC) 
++        clk_sel = (reg>>8) & 0x03;
+ #else
+ #error Please Choice System Type
+ #endif
+@@ -199,21 +203,49 @@
+ 		mips_cpu_feq = (380*1000*1000);
+ 		break;
+ 	case 1:
+-		mips_cpu_feq = (400*1000*1000);
++		mips_cpu_feq = (390*1000*1000);
+ 		break;
+ 	case 2:
+-		mips_cpu_feq = (420*1000*1000);
++		mips_cpu_feq = (400*1000*1000);
+ 		break;
+ 	case 3:
+-		mips_cpu_feq = (430*1000*1000);
++		mips_cpu_feq = (420*1000*1000);
+ 		break;
+ #elif defined (CONFIG_RALINK_RT3052) 
++#if defined (CONFIG_RALINK_RT3350)
++		// MA10 is floating
+ 	case 0:
++	case 1:
+ 		mips_cpu_feq = (320*1000*1000);
+ 		break;
++#else
++	case 0:
++		mips_cpu_feq = (320*1000*1000);
++		break;
+ 	case 1:
+ 		mips_cpu_feq = (384*1000*1000); 
+ 		break;
++#endif
++#elif defined (CONFIG_RALINK_RT3352) 
++	case 0:
++		mips_cpu_feq = (384*1000*1000);
++		break;
++	case 1:
++		mips_cpu_feq = (400*1000*1000); 
++		break;
++#elif defined (CONFIG_RALINK_RT3883) 
++	case 0:
++		mips_cpu_feq = (250*1000*1000);
++		break;
++	case 1:
++		mips_cpu_feq = (384*1000*1000); 
++		break;
++	case 2:
++		mips_cpu_feq = (480*1000*1000); 
++		break;
++	case 3:
++		mips_cpu_feq = (500*1000*1000); 
++		break;
+ #else
+ #error Please Choice Chip Type
+ #endif
+@@ -221,12 +253,45 @@
+ 
+ #endif
+ 	
+-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)  
++#if defined (CONFIG_RT3883_ASIC) 
++	if ((reg>>17) & 0x1) { //DDR2
++		switch (clk_sel) {
++		case 0:
++			surfboard_sysclk = (125*1000*1000);
++			break;
++		case 1:
++			surfboard_sysclk = (128*1000*1000);
++			break;
++		case 2:
++			surfboard_sysclk = (160*1000*1000);
++			break;
++		case 3:
++			surfboard_sysclk = (166*1000*1000);
++			break;
++		}
++	}
++	else { //SDR
++		switch (clk_sel) {
++		case 0:
++			surfboard_sysclk = (83*1000*1000);
++			break;
++		case 1:
++			surfboard_sysclk = (96*1000*1000);
++			break;
++		case 2:
++			surfboard_sysclk = (120*1000*1000);
++			break;
++		case 3:
++			surfboard_sysclk = (125*1000*1000);
++			break;
++		}
++	}
++#elif defined (CONFIG_RALINK_RT2880)
++	surfboard_sysclk = mips_cpu_feq/2;
++#else
+ 	surfboard_sysclk = mips_cpu_feq/3;
+-#else
+-	surfboard_sysclk = mips_cpu_feq/2;
+ #endif
+-	printk("\n The CPU frequency set to %d MHz\n",mips_cpu_feq / 1000 / 1000);
++	printk("\n The CPU feqenuce set to %d MHz\n",mips_cpu_feq / 1000 / 1000);
+ }
+ 
+ /*
+@@ -247,7 +312,7 @@
+    * baud rate = system clock freq / (CLKDIV * 16)
+    * CLKDIV=system clock freq/16/baud rate
+    */
+-  memset(serial_req, 0, 2*sizeof(serial_req));
++  memset(serial_req, 0, 2*sizeof(struct uart_port));
+ 
+   serial_req[0].type       = PORT_16550A;
+   serial_req[0].line       = 0;
+@@ -258,7 +323,11 @@
+   serial_req[0].iobase	   = KSEG1ADDR(RALINK_UART_BASE);
+   serial_req[0].regshift   = 2;
+   serial_req[0].mapbase    = KSEG1ADDR(RALINK_UART_BASE);
++#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
++  serial_req[0].custom_divisor = (40000000 / SURFBOARD_BAUD_DIV / 57600);
++#else
+   serial_req[0].custom_divisor = (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
++#endif
+ 
+   serial_req[1].type       = PORT_16550A;
+   serial_req[1].line       = 1;
+@@ -269,7 +338,11 @@
+   serial_req[1].iobase	   = KSEG1ADDR(RALINK_UART_LITE_BASE);
+   serial_req[1].regshift   = 2;
+   serial_req[1].mapbase    = KSEG1ADDR(RALINK_UART_LITE_BASE);
++#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
++  serial_req[1].custom_divisor = (40000000 / SURFBOARD_BAUD_DIV / 57600);
++#else
+   serial_req[1].custom_divisor = (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
++#endif
+ 
+   early_serial_setup(&serial_req[0]);
+   early_serial_setup(&serial_req[1]);
+@@ -310,12 +383,20 @@
+  	*(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC08)= 0;
+         *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC10)= 0;
+         *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC14)= 0x3;
++#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
++        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC28)= (40000000 / SURFBOARD_BAUD_DIV / 57600);
++#else
+         *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC28)= (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
++#endif
+ 	//fix at 57600 8 n 1 n
+  	*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x508)= 0;
+         *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x510)= 0;
+         *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x514)= 0x3;
++#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
++        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x528)= (40000000 / SURFBOARD_BAUD_DIV / 57600);
++#else
+         *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x528)= (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
++#endif
+ #else
+         IER(CFG_RT2880_CONSOLE) = 0;                                    /* Disable for now */
+         FCR(CFG_RT2880_CONSOLE) = 0;                                    /* No fifos enabled */
+@@ -336,10 +417,15 @@
+ }
+ __init void prom_init(void)
+ {
+-
+ 	mips_machgroup = MACH_GROUP_RT2880;
+ 	mips_machtype = MACH_RALINK_ROUTER;
+ 
++#ifdef CONFIG_UBOOT_CMDLINE
++	prom_argc = fw_arg0;
++	_prom_argv = fw_arg1;
++	_prom_envp = fw_arg2;
++#endif
++
+ 	prom_init_cmdline();
+ 	prom_init_sysclk();
+ 
+@@ -350,11 +436,10 @@
+ 	prom_init_serial_port();  /* Needed for Serial Console */
+ 	prom_meminit();
+ 	prom_setup_printf(prom_get_ttysnum());
+-//	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
+ 	prom_printf("\nLINUX started...\n");
+-#if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || defined(CONFIG_RT2883_FPGA)
++#if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || defined(CONFIG_RT3352_FPGA) || defined(CONFIG_RT2883_FPGA) || defined(CONFIG_RT3883_FPGA)
+ 	prom_printf("\n THIS IS FPGA\n");
+-#elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT3052_ASIC) || defined (CONFIG_RT2883_ASIC)
++#elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT3052_ASIC) || defined(CONFIG_RT3352_ASIC) || defined (CONFIG_RT2883_ASIC) || defined (CONFIG_RT3883_ASIC)
+ 	prom_printf("\n THIS IS ASIC\n");
+ #endif
+ 
+Index: mipsIRQ.S
+===================================================================
+--- mipsIRQ.S	(revision 14991)
++++ mipsIRQ.S	(working copy)
+@@ -96,7 +96,7 @@
+ 
+ 1:
+ 	/* Wheee, combined hardware level zero interrupt. */
+-#if defined(CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3052) || defined(CONFIG_RALINK_RT2883)
++#if defined(CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3052) || defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883)
+ 	jal	rt2880_irqdispatch
+ #else
+ #error "MIPS board not supported\n"
+Index: memory.c
+===================================================================
+--- memory.c	(revision 14991)
++++ memory.c	(working copy)
+@@ -87,26 +87,6 @@
+ 
+ struct prom_pmemblock * __init prom_getmdesc(void)
+ {
+-	/*
+-	*  Configures memory map based on Environment Variables set up by
+-	*  surfmilo (linux loader):
+-	*
+-	*    rambase = base of useable SDRAM
+-	*    ramsize = size of useable SDRAM
+-	*
+-	*  Assumptions made by linux:
+-	*    The kernel variables (.data) immediately follow the kernel code
+-	*      (.text) in memory.  The end of .data section, symbol _end,
+-	*      is used to denote the end of the kernel.
+-	*    The kernel code resides in ram, and all available ram exists
+-	*      after the kernel.
+-	*
+-	*  Note: Cpu jump vectors are in remapped ISRAM/VECMEM,
+-	*        which begins at 0000_0000
+-	*
+-	*        Linux memory map does not contain ISRAM since ISRAM
+-	*        does not support DMA transfers.
+-	*/
+ 	char *env_str;
+ 	unsigned int ramsize, rambase;
+ 
+@@ -165,6 +145,10 @@
+ #ifdef DEBUG
+ 	struct prom_pmemblock *psave;
+ #endif
++
++	//printk("ram start= %x, ram end= %x\n",rt2880_res_ram.start, rt2880_res_ram.end); 
++	//printk("size = %x\n",rt2880_res_ram.end - rt2880_res_ram.start); 
++ 	//add_memory_region(0x0a000000, rt2880_res_ram.end - rt2880_res_ram.start, BOOT_MEM_RAM);
+ 	unsigned long mem, before, offset;
+ 
+ 	before = ((unsigned long) &prom_meminit) & (127 << 20);
+Index: lm.c
+===================================================================
+--- lm.c	(revision 14991)
++++ lm.c	(working copy)
+@@ -41,7 +41,9 @@
+ 	struct lm_device *lmdev = to_lm_device(dev);
+ 	struct lm_driver *lmdrv = to_lm_driver(dev->driver);
+ 
+-	return lmdrv->probe(lmdev);
++	if(lmdrv->probe !=NULL) {
++	    return lmdrv->probe(lmdev);
++	}
+ }
+ 
+ static int lm_bus_remove(struct device *dev)
+@@ -49,7 +51,9 @@
+ 	struct lm_device *lmdev = to_lm_device(dev);
+ 	struct lm_driver *lmdrv = to_lm_driver(dev->driver);
+ 
+-	lmdrv->remove(lmdev);
++	if(lmdrv->remove != NULL) {
++	    lmdrv->remove(lmdev);
++	}
+ 	return 0;
+ }
+ 
+Index: cmdline.c
+===================================================================
+--- cmdline.c	(revision 14991)
++++ cmdline.c	(working copy)
+@@ -41,17 +41,7 @@
+ 
+ #include <asm/bootinfo.h>
+ 
+-#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
+-#ifdef CONFIG_SYSFS
+ char rt2880_cmdline[]=CONFIG_CMDLINE;
+-#else
+-char rt2880_cmdline[]="console=ttyS1,57600n8 root=1f04";
+-#endif
+-#elif defined (CONFIG_RT2880_ROOTFS_IN_RAM)
+-char rt2880_cmdline[]="console=ttyS1,57600n8 root=/dev/ram0";
+-#else
+-#error "RT2880 Root File System not defined"
+-#endif
+ 
+ extern int prom_argc;
+ extern int *_prom_argv;
+@@ -76,16 +66,20 @@
+ 
+ 	cp = &(arcs_cmdline[0]);
+ 
+-	strcpy(cp, rt2880_cmdline);
+-	cp += strlen(rt2880_cmdline);
+-	*cp++ = ' ';
+-
++#ifdef CONFIG_UBOOT_CMDLINE
+ 	while(actr < prom_argc) {
+ 	    strcpy(cp, prom_argv(actr));
+ 	    cp += strlen(prom_argv(actr));
+ 	    *cp++ = ' ';
+ 	    actr++;
+ 	}
++#else
++	strcpy(cp, rt2880_cmdline);
++	cp += strlen(rt2880_cmdline);
++	*cp++ = ' ';
++#endif
++
++
+ 	if (cp != &(arcs_cmdline[0])) /* get rid of trailing space */
+ 	    --cp;
+ 	*cp = '\0';
+Index: pci.c
+===================================================================
+--- pci.c	(revision 14991)
++++ pci.c	(working copy)
+@@ -28,15 +28,15 @@
+  *
+  **************************************************************************
+  * May 2007 Bruce Chang
+- *
+  * Initial Release
+  *
++ * May 2009 Bruce Chang
++ * support RT2880/RT3883 PCIe
+  *
+  *
+  **************************************************************************
+  */
+ 
+-
+ #include <linux/types.h>
+ #include <linux/pci.h>
+ #include <linux/kernel.h>
+@@ -47,64 +47,63 @@
+ #include <asm/rt2880/eureka_ep430.h>
+ #include <linux/init.h>
+ #include <linux/mod_devicetable.h>
++#include <linux/delay.h>
+ 
+ #ifdef CONFIG_PCI
+ 
+-
+-
+ /*
+  * These functions and structures provide the BIOS scan and mapping of the PCI
+  * devices.
+  */
+ 
+-#define MAX_PCI_DEVS 10
+-#if 1
+-#define RT2880_PCI_SLOT1_BASE	0x20000000 //0x00510000 
+-#define RT2880_PCI_SLOT1_END	RT2880_PCI_SLOT2_BASE -1
+-#define RT2880_PCI_SLOT2_BASE	0x28000000 //0x00518000 
+-#define RT2880_PCI_SLOT2_END	0x2fffffff //0x0051ffff 
++#define RALINK_PCI_MM_MAP_BASE	0x20000000
++#if defined(CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883)
++#define RALINK_PCI_IO_MAP_BASE	0x10160000
++#else
++#define RALINK_PCI_IO_MAP_BASE	0x00460000
++#endif
+ 
+-#define RT2880_PCI_SLOT1_1_BASE	RT2880_PCI_SLOT1_BASE+0x04000000
+-#define RT2880_PCI_SLOT1_2_BASE	RT2880_PCI_SLOT1_BASE+0x05000000
+-#define RT2880_PCI_SLOT1_3_BASE	RT2880_PCI_SLOT1_BASE+0x06000000
+-#define RT2880_PCI_SLOT1_4_BASE	RT2880_PCI_SLOT1_BASE+0x07000000
+-#define RT2880_PCI_SLOT1_5_BASE	RT2880_PCI_SLOT1_BASE+0x07800000
++#define RALINK_SYSTEM_CONTROL_BASE	0xb0000000
++#define RALINK_SYSCFG1 			*(unsigned long *)(RALINK_SYSTEM_CONTROL_BASE + 0x14)
++#define RALINK_CLKCFG1			*(unsigned long *)(RALINK_SYSTEM_CONTROL_BASE + 0x30)
++#define RALINK_RSTCTRL			*(unsigned long *)(RALINK_SYSTEM_CONTROL_BASE + 0x34)
++#define RALINK_GPIOMODE			*(unsigned long *)(RALINK_SYSTEM_CONTROL_BASE + 0x60)
++#define RALINK_PCIE_CLK_GEN		*(unsigned long *)(RALINK_SYSTEM_CONTROL_BASE + 0x7c)
++#define RALINK_PCIE_CLK_GEN1		*(unsigned long *)(RALINK_SYSTEM_CONTROL_BASE + 0x80)
++//RALINK_SYSCFG1 bit
++#define RALINK_PCI_HOST_MODE_EN		(1<<7)
++#define RALINK_PCIE_RC_MODE_EN		(1<<8)
++//RALINK_RSTCTRL bit
++#define RALINK_PCIE_RST			(1<<23)
++#define RALINK_PCI_RST			(1<<24)
++//RALINK_CLKCFG1 bit
++#define RALINK_PCI_CLK_EN		(1<<19)
++#define RALINK_PCIE_CLK_EN		(1<<21)
++//RALINK_GPIOMODE bit
++#define PCI_SLOTx2			(1<<11)
++#define PCI_SLOTx1			(2<<11)
+ 
+-#define RT2880_PCI_SLOT2_1_BASE	RT2880_PCI_SLOT2_BASE+0x04000000
+-#define RT2880_PCI_SLOT2_2_BASE	RT2880_PCI_SLOT2_BASE+0x05000000
+-#define RT2880_PCI_SLOT2_3_BASE	RT2880_PCI_SLOT2_BASE+0x06000000
+-#define RT2880_PCI_SLOT2_4_BASE	RT2880_PCI_SLOT2_BASE+0x07000000
+-#define RT2880_PCI_SLOT2_5_BASE	RT2880_PCI_SLOT2_BASE+0x07800000
++
++#if defined(CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883)
++#define MEMORY_BASE 0x0
+ #else
+-#define RT2880_PCI_SLOT1_BASE	0x00510000 
+-#define RT2880_PCI_SLOT1_END	RT2880_PCI_SLOT2_BASE -1
+-#define RT2880_PCI_SLOT2_BASE	0x00518000 
+-#define RT2880_PCI_SLOT2_END	0x0051ffff 
++#define MEMORY_BASE 0x08000000
+ #endif
+ 
+-#define PCI_ACCESS_READ  0
+-#define PCI_ACCESS_WRITE 1
+-
+ //extern pci_probe_only;
+ 
+ void __inline__ read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long *val);
+ void __inline__ write_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long val);
+-#if 0
+-/*  Functions to implement "pci ops"  */
+-static int rt2880_pcibios_read_config_word(struct pci_dev *dev,
+-					    int offset, u16 * val);
+-static int rt2880_pcibios_read_config_byte(struct pci_dev *dev,
+-					    int offset, u8 * val);
+-static int rt2880_pcibios_read_config_dword(struct pci_dev *dev,
+-					     int offset, u32 * val);
+-static int rt2880_pcibios_write_config_byte(struct pci_dev *dev,
+-					     int offset, u8 val);
+-static int rt2880_pcibios_write_config_word(struct pci_dev *dev,
+-					     int offset, u16 val);
+-static int rt2880_pcibios_write_config_dword(struct pci_dev *dev,
+-					      int offset, u32 val);
+-#endif
+ 
++#if 1
++
++#define PCI_ACCESS_READ_1  0
++#define PCI_ACCESS_READ_2  1
++#define PCI_ACCESS_READ_4  2
++#define PCI_ACCESS_WRITE_1 3
++#define PCI_ACCESS_WRITE_2 4
++#define PCI_ACCESS_WRITE_4 5
++
+ static int config_access(unsigned char access_type, struct pci_bus *bus,
+                          unsigned int devfn, unsigned char where,
+                          u32 * data)
+@@ -114,12 +113,135 @@
+   uint32_t address_reg, data_reg;
+   unsigned int address;
+ 
+-  address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-  data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
++  address_reg = RALINK_PCI_CONFIG_ADDR;
++  data_reg = RALINK_PCI_CONFIG_DATA_VIRTUAL_REG;
+ 
+   /* Setup address */
++#ifdef CONFIG_RALINK_RT2883
++  address = (bus->number << 24) | (slot << 19) | (func << 16) | (where & 0xfc)| 0x1;
++#elif CONFIG_RALINK_RT3883
++  address = (bus->number << 16) | (slot << 11) | (func << 8) | (where & 0xfc) | 0x80000000;
++#else
+   address = (bus->number << 16) | (slot << 11) | (func << 8) | (where& 0xfc) | 0x80000000;
++#endif
++  /* start the configuration cycle */
++  MV_WRITE(address_reg, address);
+ 
++  switch(access_type) {
++  case PCI_ACCESS_WRITE_1:
++    MV_WRITE_8(data_reg+(where&0x3), *data);
++    break;
++  case PCI_ACCESS_WRITE_2:
++    MV_WRITE_16(data_reg+(where&0x3), *data);
++    break;
++  case PCI_ACCESS_WRITE_4:
++    MV_WRITE(data_reg, *data);
++    break;
++  case PCI_ACCESS_READ_1:
++    MV_READ_8( data_reg+(where&0x3), data);
++    break;
++  case PCI_ACCESS_READ_2:
++    MV_READ_16(data_reg+(where&0x3), data);
++    break;
++  case PCI_ACCESS_READ_4:
++    MV_READ(data_reg, data);
++    break;
++  default:
++    printk("no specify access type\n");
++    break;
++  }
++  if (bus->number==1&&where==0x30){
++  printk("%x->[%x][%x][%x][%x]=%x\n",access_type,bus->number, slot, func, where, *data);
++  }
++  return 0;
++}
++
++
++
++static int read_config_byte(struct pci_bus *bus, unsigned int devfn,
++                            int where, u8 * val)
++{
++  //u32 data;
++  int ret;
++
++  ret = config_access(PCI_ACCESS_READ_1, bus, devfn, where, val);
++  //*val = (data >> ((where & 3) << 3)) & 0xff;
++  return ret;
++}
++
++static int read_config_word(struct pci_bus *bus, unsigned int devfn,
++                            int where, u16 * val)
++{
++  //u32 data;
++  int ret;
++
++  ret = config_access(PCI_ACCESS_READ_2, bus, devfn, where, val);
++  //*val = (data >> ((where & 3) << 3)) & 0xffff;
++  return ret;
++}
++
++static int read_config_dword(struct pci_bus *bus, unsigned int devfn,
++                             int where, u32 * val)
++{
++  int ret;
++
++  ret = config_access(PCI_ACCESS_READ_4, bus, devfn, where, val);
++  return ret;
++}
++static int
++write_config_byte(struct pci_bus *bus, unsigned int devfn, int where,
++                  u8 val)
++{
++  if (config_access(PCI_ACCESS_WRITE_1, bus, devfn, where, &val))
++    return -1;
++
++  return PCIBIOS_SUCCESSFUL;
++}
++
++static int
++write_config_word(struct pci_bus *bus, unsigned int devfn, int where,
++                  u16 val)
++{
++  if (config_access(PCI_ACCESS_WRITE_2, bus, devfn, where, &val))
++    return -1;
++
++
++  return PCIBIOS_SUCCESSFUL;
++}
++
++static int
++write_config_dword(struct pci_bus *bus, unsigned int devfn, int where,
++                   u32 val)
++{
++  if (config_access(PCI_ACCESS_WRITE_4, bus, devfn, where, &val))
++    return -1;
++
++  return PCIBIOS_SUCCESSFUL;
++}
++#else
++#define PCI_ACCESS_READ  0
++#define PCI_ACCESS_WRITE 1
++
++static int config_access(unsigned char access_type, struct pci_bus *bus,
++                         unsigned int devfn, unsigned char where,
++                         u32 * data)
++{
++  unsigned int slot = PCI_SLOT(devfn);
++  u8 func = PCI_FUNC(devfn);
++  uint32_t address_reg, data_reg;
++  unsigned int address;
++
++  address_reg = RALINK_PCI_CONFIG_ADDR;
++  data_reg = RALINK_PCI_CONFIG_DATA_VIRTUAL_REG;
++
++  /* Setup address */
++#ifdef CONFIG_RALINK_RT2883
++  address = (bus->number << 24) | (slot << 19) | (func << 16) | (where & 0xfc)| 0x1;
++#elif CONFIG_RALINK_RT3883
++  address = (bus->number << 16) | (slot << 11) | (func << 8) | (where & 0xfc) | 0x80000000;
++#else
++  address = (bus->number << 16) | (slot << 11) | (func << 8) | (where& 0xfc) | 0x80000000;
++#endif
+   /* start the configuration cycle */
+   MV_WRITE(address_reg, address);
+ 
+@@ -128,6 +250,7 @@
+   }else{
+     MV_READ(data_reg, data);
+   }
++  //printk("%x->[%x][%x][%x][%x]=%x\n",access_type,bus->number, slot, func, where, *data);
+   return 0;
+ }
+ 
+@@ -209,6 +332,7 @@
+ 
+   return PCIBIOS_SUCCESSFUL;
+ }
++#endif
+ 
+ static int pci_config_read(struct pci_bus *bus, unsigned int devfn,
+                        int where, int size, u32 * val)
+@@ -248,18 +372,14 @@
+ 
+ static struct resource rt2880_res_pci_mem1 = {
+   .name = "PCI MEM1",
+-//  .start = 0,
+-//  .end = 0x0fffffff,
+-  .start = 0x20000000,
+-  .end = 0x2FFFFFFF,
++  .start = RALINK_PCI_MM_MAP_BASE,
++  .end = (RALINK_PCI_MM_MAP_BASE + (unsigned char *)0x0fffffff),
+   .flags = IORESOURCE_MEM,
+ };
+ static struct resource rt2880_res_pci_io1 = {
+   .name = "PCI I/O1",
+-  .start = 0x00460000,
+-  .end = 0x0046FFFF,
+-//  .start = 0,
+-//  .end = 0xffff,
++  .start = RALINK_PCI_IO_MAP_BASE,
++  .end = (RALINK_PCI_IO_MAP_BASE + (unsigned char *)0x0ffff ),
+   .flags = IORESOURCE_IO,
+ };
+ 
+@@ -271,39 +391,21 @@
+   .io_offset      = 0x00000000UL,
+ };
+ 
+-
+-/*
+- * pci_range_ck -
+- *
+- * Check if the pci device that are trying to access does really exists
+- * on the evaluation board.  
+- *
+- * Inputs :
+- * bus - bus number (0 for PCI 0 ; 1 for PCI 1)
+- * dev - number of device on the specific pci bus
+- *
+- * Outpus :
+- * 0 - if OK , 1 - if failure
+- */
+-static __inline__ int pci_range_ck(unsigned char bus, unsigned char dev)
+-{
+-	/* Accessing device 31 crashes the MV-64340. */
+-	return 0;
+-	if (dev < 5)
+-		return 0;
+-	return -1;
+-}
+-
+ void __inline__ read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long *val)
+ {
+ 	unsigned long address_reg, data_reg, address;
+ 
+- 	address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-        data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
++ 	address_reg = RALINK_PCI_CONFIG_ADDR;
++        data_reg = RALINK_PCI_CONFIG_DATA_VIRTUAL_REG;
+ 
+         /* set addr */
+-        address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) | 0x80000000 ;
+-
++#ifdef CONFIG_RALINK_RT2883
++	        address = (bus << 24) | (dev << 19) | (func << 16) | (reg & 0xfc);
++#elif CONFIG_RALINK_RT3883
++  		address = (bus << 16) | (dev << 11) | (func << 8) | (reg& 0xfc) | 0x80000000 ;
++#else
++		address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) | 0x80000000 ;
++#endif
+         /* start the configuration cycle */
+         MV_WRITE(address_reg, address);
+         /* read the data */
+@@ -315,12 +417,17 @@
+ {
+ 	unsigned long address_reg, data_reg, address;
+ 
+- 	address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-        data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
++ 	address_reg = RALINK_PCI_CONFIG_ADDR;
++        data_reg = RALINK_PCI_CONFIG_DATA_VIRTUAL_REG;
+ 
+         /* set addr */
+-        address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) | 0x80000000;
+-
++#ifdef CONFIG_RALINK_RT2883
++	        address = (bus << 24) | (dev << 19) | (func << 16) | (reg & 0xfc);
++#elif CONFIG_RALINK_RT3883
++  		address = (bus << 16) | (dev << 11) | (func << 8) | (reg& 0xfc) | 0x80000000 ;
++#else
++		address = (bus << 16) | (dev << 11) | (func << 8) | (reg & 0xfc) | 0x80000000 ;
++#endif
+         /* start the configuration cycle */
+         MV_WRITE(address_reg, address);
+         /* read the data */
+@@ -328,599 +435,109 @@
+ 	return;
+ }
+ 
+-/*
+- * marvell_pcibios_(read/write)_config_(dword/word/byte) -
+- *
+- * reads/write a dword/word/byte register from the configuration space
+- * of a device.
+- *
+- * Note that bus 0 and bus 1 are local, and we assume all other busses are
+- * bridged from bus 1.  This is a safe assumption, since any other
+- * configuration will require major modifications to the CP7000G
+- *
+- * Inputs :
+- * bus - bus number
+- * dev - device number
+- * offset - register offset in the configuration space
+- * val - value to be written / read
+- *
+- * Outputs :
+- * PCIBIOS_SUCCESSFUL when operation was succesfull
+- * PCIBIOS_DEVICE_NOT_FOUND when the bus or dev is errorneous
+- * PCIBIOS_BAD_REGISTER_NUMBER when accessing non aligned
+- */
+-#if 0
+-static int rt2880_pcibios_read_config_dword(struct pci_dev *device,
+-					      int offset, u32* val)
+-{
+-	int dev, bus, func;
+-	uint32_t address_reg, data_reg;
+-	uint32_t address;
+ 
+-	bus = device->bus->number;
+-	dev = PCI_SLOT(device->devfn);
+-	func = PCI_FUNC(device->devfn);
+-
+-	/* verify the range */
+-	if (pci_range_ck(bus, dev))
+-		return PCIBIOS_DEVICE_NOT_FOUND;
+-
+-	/* select the MV-64340 registers to communicate with the PCI bus */
+-	
+-		address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-		data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
+-	
+-
+-	address = (bus << 16) | (dev << 11) | (func << 8) |
+-		(offset & 0xfc) | 0x80000000;
+-
+-	/* start the configuration cycle */
+-	MV_WRITE(address_reg, address);
+-
+-	/* read the data */
+-	MV_READ(data_reg, val);
+-
+-	return PCIBIOS_SUCCESSFUL;
+-}
+-
+-
+-static int rt2880_pcibios_read_config_word(struct pci_dev *device,
+-					     int offset, u16* val)
+-{
+-	int dev, bus, func;
+-	uint32_t address_reg, data_reg;
+-	uint32_t address,temp;
+-
+-	bus = device->bus->number;
+-	dev = PCI_SLOT(device->devfn);
+-	func = PCI_FUNC(device->devfn);
+-
+-	/* verify the range */
+-	if (pci_range_ck(bus, dev))
+-		return PCIBIOS_DEVICE_NOT_FOUND;
+-
+-	/* select the MV-64340 registers to communicate with the PCI bus */
+-	
+-		address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-		data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
+-	
+-
+-	address = (bus << 16) | (dev << 11) | (func << 8) |
+-		(offset & 0xfc) | 0x80000000;
+-
+-	/* start the configuration cycle */
+-	MV_WRITE(address_reg, address);
+-
+-	/* read the data */
+-	//MV_READ_16(data_reg + (offset & 0x3), val);
+-	/* read the data */
+-	MV_READ(data_reg, &temp);
+-
+-	switch(offset % 4)
+-    {
+-        case 0:
+-	case 1:
+-	    temp &= 0x0000FFFF;
+-	    break;
+-	case 2:
+-	case 3:
+-	    temp &= 0xFFFF0000;
+-	    temp = temp >> 16;
+-	    break;
+-    }
+-	*val = (u16)temp;
+-
+-	return PCIBIOS_SUCCESSFUL;
+-}
+-
+-static int rt2880_pcibios_read_config_byte(struct pci_dev *device,
+-					     int offset, u8* val)
+-{
+-	int dev, bus, func;
+-	uint32_t address_reg, data_reg;
+-	uint32_t address;
+-	uint32_t temp;
+-
+-	bus = device->bus->number;
+-	dev = PCI_SLOT(device->devfn);
+-	func = PCI_FUNC(device->devfn);
+-
+-	/* verify the range */
+-	if (pci_range_ck(bus, dev))
+-		return PCIBIOS_DEVICE_NOT_FOUND;
+-
+-	/* select the MV-64340 registers to communicate with the PCI bus */
+-	
+-		address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-		data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
+-	
+-
+-	address = (bus << 16) | (dev << 11) | (func << 8) |
+-		(offset & 0xfc) | 0x80000000;
+-
+-	/* start the configuration cycle */
+-	MV_WRITE(address_reg, address);
+-
+-	/* read the data */
+-	MV_READ(data_reg, &temp);
+-
+-
+-	/* read the data */
+-	//MV_READ(data_reg, val);
+-	
+-	/* write the data */
+-	//MV_READ_8(data_reg + (offset & 0x3), val);
+-
+-	switch(offset % 4)
+-    {
+-        case 0:
+-	    temp &= 0x000000FF;
+-	    break;
+-	case 1:
+-	    temp &= 0x0000FF00;
+-   	    temp = temp >> 8;
+-	    break;
+-	case 2:
+-            temp &= 0x00FF0000;
+-            temp = temp >> 16;
+-            break;
+- 	case 3:
+-            temp &= 0xFF000000;
+-            temp = temp >> 24;
+- 	break;
+-    }
+-
+-	*val = (u8)temp;
+-
+-	return PCIBIOS_SUCCESSFUL;
+-}
+-
+-static int rt2880_pcibios_write_config_dword(struct pci_dev *device,
+-					      int offset, u32 val)
+-{
+-	int dev, bus, func;
+-	uint32_t address_reg, data_reg;
+-	uint32_t address;
+-
+-	bus = device->bus->number;
+-	dev = PCI_SLOT(device->devfn);
+-	func = PCI_FUNC(device->devfn);
+-
+-	/* verify the range */
+-	if (pci_range_ck(bus, dev))
+-		return PCIBIOS_DEVICE_NOT_FOUND;
+-
+-	/* select the MV-64340 registers to communicate with the PCI bus */
+-	
+-		address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-		data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
+-	
+-
+-	address = (bus << 16) | (dev << 11) | (func << 8) |
+-		(offset & 0xfc) | 0x80000000;
+-
+-	/* start the configuration cycle */
+-	MV_WRITE(address_reg, address);
+-
+-	/* write the data */
+-	MV_WRITE(data_reg, val);
+-
+-	return PCIBIOS_SUCCESSFUL;
+-}
+-
+-
+-static int rt2880_pcibios_write_config_word(struct pci_dev *device,
+-					     int offset, u16 val)
+-{
+-	int dev, bus, func;
+-	uint32_t address_reg, data_reg;
+-	uint32_t address,temp;
+-
+-	bus = device->bus->number;
+-	dev = PCI_SLOT(device->devfn);
+-	func = PCI_FUNC(device->devfn);
+-
+-	/* verify the range */
+-	if (pci_range_ck(bus, dev))
+-		return PCIBIOS_DEVICE_NOT_FOUND;
+-
+-	/* select the MV-64340 registers to communicate with the PCI bus */
+-	
+-		address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-		data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
+-	
+-	address = (bus << 16) | (dev << 11) | (func << 8) |
+-		(offset & 0xfc) | 0x80000000;
+-
+-	/* start the configuration cycle */
+-	MV_WRITE(address_reg, address);
+-	
+-
+-	/* read the data */
+-	MV_READ(data_reg, &temp);
+-
+-	switch(offset % 4)
+-    { 
+-        case 0:
+-		case 1:
+-			temp &= 0xFFFF0000;
+-            temp += val;
+-	    
+-	    break;
+-		case 2:
+-		case 3:
+-            temp &= 0x0000FFFF;
+-            temp += (u32)(((u32)val) << 16);
+-	    
+-		break;
+-    }
+-
+-	
+-	/* write the data */
+-	MV_WRITE(data_reg, temp);
+-	
+-
+-	/* write the data */
+-	//MV_WRITE_16(data_reg + (offset & 0x3), val);
+-
+-	return PCIBIOS_SUCCESSFUL;
+-}
+-
+-static int rt2880_pcibios_write_config_byte(struct pci_dev *device,
+-					     int offset, u8 val)
+-{
+-	int dev, bus, func;
+-	uint32_t address_reg, data_reg;
+-	uint32_t address,temp;
+-
+-	bus = device->bus->number;
+-	dev = PCI_SLOT(device->devfn);
+-	func = PCI_FUNC(device->devfn);
+-
+-	/* verify the range */
+-	if (pci_range_ck(bus, dev))
+-		return PCIBIOS_DEVICE_NOT_FOUND;
+-
+-	/* select the MV-64340 registers to communicate with the PCI bus */
+-	
+-		address_reg = EUREKA_EP430_PCI_CONFIG_ADDR;
+-		data_reg = EUREKA_EP430_PCI_CONFIG_DATA_VIRTUAL_REG;
+-	
+-
+-	address = (bus << 16) | (dev << 11) | (func << 8) |
+-		(offset & 0xfc) | 0x80000000;
+-
+-	/* start the configuration cycle */
+-	MV_WRITE(address_reg, address);
+-
+-	/* read the data */
+-	MV_READ(data_reg, &temp);
+-
+- 	switch (offset % 4)
+-    {
+-        case 0:
+-	    temp &= 0xFFFFFF00;
+-	    temp += val;
+-	     break;
+-	case 1:
+-		temp &= 0xFFFF00FF;
+-	    temp += (u32)(((u32)val) << 8);
+-	    break;
+-	case 2:
+-		temp &= 0xFF00FFFF;
+-	    temp += (u32)(((u32)val) << 16);
+-	     break;
+-	case 3:
+-   	    temp &= 0x00FFFFFF;
+-	    temp += (u32)(((u32)val) << 24);
+-	    break;
+-    }
+-
+-//--------------------------	
+-
+-	/* write the data */
+-//	MV_WRITE_8(data_reg + (offset & 0x3), val);
+-
+-	/* write the data */
+-	MV_WRITE(data_reg, temp);
+-
+-
+-	return PCIBIOS_SUCCESSFUL;
+-}
+-#endif
+-
+-
+-#if 0
+-void __init pcibios_fixup_bus(struct pci_bus *bus)
+-{
+-	struct pci_bus *current_bus = bus;
+-	struct pci_dev *devices;
+-	struct list_head *devices_link;
+-	u32 cmd;
+-	/* loop over all known devices on this bus */
+-	//printk("%s %s():%d\n",__FILE__,__FUNCTION__,__LINE__);
+-	list_for_each(devices_link, &(current_bus->devices)) {
+-
+-		devices = pci_dev_b(devices_link);
+-		if (devices == NULL)
+-			continue;
+-		#if 0
+-		if ((current_bus->number == 0) &&
+-			(PCI_SLOT(devices->devfn) == 1) &&
+-			(PCI_FUNC(devices->devfn) == 0)) {
+-			/* LSI 53C10101R SCSI (A) */
+-			devices->irq = 2;
+-		} else if ((current_bus->number == 0) &&
+-			(PCI_SLOT(devices->devfn) == 1) &&
+-			(PCI_FUNC(devices->devfn) == 1)) {
+-			/* LSI 53C10101R SCSI (B) */
+-			devices->irq = 2;
+-		} else if ((current_bus->number == 1) &&
+-			(PCI_SLOT(devices->devfn) == 1)) {
+-			/* Intel 21555 bridge */
+-			devices->irq = 12;
+-		} else if ((current_bus->number == 1) &&
+-			(PCI_SLOT(devices->devfn) == 2)) {
+-			/* PMC Slot */
+-			devices->irq = 4;
+-		} else {
+-			/* We don't have assign interrupts for other devices. */
+-			devices->irq = 0xff;
+-		}
+-		#endif
+-		/* Assign an interrupt number for the device */
+-		//bus->ops->write_byte(devices, PCI_INTERRUPT_LINE, devices->irq);
+-
+-		/* enable master for everything but the MV-64340 */
+-		//if (((current_bus->number != 0) && (current_bus->number != 1))
+-		//		|| (PCI_SLOT(devices->devfn) != 0)) {
+-		//	bus->ops->read(devices, PCI_COMMAND, &cmd);
+-		//	cmd |= PCI_COMMAND_MASTER;
+-		//	bus->ops->write(devices, PCI_COMMAND, cmd);
+-		//}
+-	}
+-	//mv64340_board_pcibios_fixup_bus(c);
+-}
+-#endif
+-#if 0
+-int pci_scan(unsigned long slot)
+-{
+-	unsigned long val, i, BaseAddr, data = 0;
+-	//int io_set=0, mem_set=0;
+-	
+-	//printk("%s %s():%d\n",__FILE__,__FUNCTION__,__LINE__);
+-	BaseAddr = PCI_BASE_ADDRESS_0;
+-
+-	read_config(0, slot, 0, 0, &val);
+-	if(val !=0){
+-	  for (i=0;i<2;i++, BaseAddr+=4) {  //detect resource usage
+-	
+-	  write_config(0, slot, 0, BaseAddr, 0xffffffff);
+-	  read_config(0, slot, 0, BaseAddr, &data);
+-	  //printk("write %d 0xffffffff and read back %x\n", i, data);
+-          if (data!=0) {  //resource request exist
+-              int j;
+-              if (data&1) {  //IO space
+-		  //if(io_set == 1)
+-		//	  continue;
+-                  //pci_config->BAR[i].Type = IO_SPACE;
+-                  //scan resource size
+-                  for (j=2;j<32;j++)
+-                      if (data&(1<<j)) break;
+-		  if(j>16){
+-			printk("slot 0x%x, request memory over 32k, not support\n", slot);
+-			return -1;
+-		  }
+-		  if(slot == 0x11)
+-		    write_config(0, slot, 0, BaseAddr, 0x00520000);
+-		  else if(slot == 0x12)
+-		    write_config(0, slot, 0, BaseAddr, 0x00528000);
+-
+-		    read_config(0, slot, 0, BaseAddr, &data);
+-		    //printk(" ********* %x\n", data);
+-		  //io_set = 1;
+-                  //if (j<32) pci_config->BAR[i].Size = 1<<j;
+-                  //else  pci_config->BAR[i].Size = 0;
+-              } else {  //Memory space
+-		  //if(mem_set == 1)
+-		//	  continue;
+-                  //pci_config->BAR[i].Type = MEM_SPACE;
+-                  //bus width
+-                  if ((data&0x0006)==4) {
+-		    //pci_config->BAR[i].Width = WIDTH64; //bus width 64
+-		    printk("slot 0x%x, 64bit, not support\n", slot);
+-		    return -1;
+-		  }
+-                  //else 
+-		     //pci_config->BAR[i].Width = WIDTH32;  //bus width 32
+-
+-                  //prefetchable
+-                  //if (data&0x0008) pci_config->BAR[i].Prefetch = 1; //prefetchable
+-                  //else pci_config->BAR[i].Prefetch = 0;  //no prefetch
+-                  //scan resource size
+-                  //if (pci_config->BAR[i].Width==WIDTH32) {
+-                    for (j=4;j<32;j++)
+-                      if (data&(1<<j)) break;
+-		    if(j>16){
+-			printk("slot 0x%x, request memory over 32k, not support\n", slot);
+-			return -1;
+-		    }
+-		  if(slot == 0x11)
+-		    write_config(0, slot, 0, BaseAddr, RT2880_PCI_SLOT1_BASE);
+-		  else if(slot == 0x12)
+-		    write_config(0, slot, 0, BaseAddr, RT2880_PCI_SLOT2_BASE);
+-
+-		    //read_config(0, slot, 0, BaseAddr, &data);
+-		    //printk(" ********* %x\n", data);
+-		    //mem_set = 1;
+-                    //if (j<32) pci_config->BAR[i].Size = 1<<j;
+-                    //else  pci_config->BAR[i].Size = 0;
+-                  //} else //width64 is not support
+-                  //  pci_config->BAR[i].Size = 0;
+-              };
+-          } else {  //no resource
+-              //memset(&(pci_config->BAR[i]), 0, sizeof(base_address_s));
+-		printk("slot 0x%x, error access\n", slot);
+-		return -1;
+-          };
+-    	  };//for
+-	} else {
+-	  printk("slot 0x%x empty\n", slot);
+-	}
+-}
+-void pcibios_fixup_resources(struct pci_dev *dev)
+-{
+-
+-	u16 cmd;
+-	u32 bus, devid, func;
+-
+-		printk("*********************%s %s():%d\n",__FILE__,__FUNCTION__,__LINE__);
+-		pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 0x14);  //configure cache line size 0x14
+-  		pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xFF);  //configure latency timer 0x10
+-		//Set device
+-		pci_read_config_word(dev, PCI_COMMAND, &cmd);		
+-#if 0
+-		cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
+-		cmd |= (PCI_COMMAND_PARITY | PCI_COMMAND_SERR);			 
+-#else
+-		cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY |
+-			PCI_COMMAND_INVALIDATE | PCI_COMMAND_FAST_BACK | PCI_COMMAND_SERR |
+-			PCI_COMMAND_WAIT | PCI_COMMAND_PARITY;
+-#endif
+-		pci_write_config_word(dev, PCI_COMMAND, cmd);
+-		
+-        	bus = dev->bus->number;
+-        	devid = PCI_SLOT(dev->devfn);
+-        	func = PCI_FUNC(dev->devfn);
+-		//printk("bus = %d, dev = %d, fun = %d\n", bus,devid,func);
+-		
+-		if (bus == 0 && (devid == 0x11 ||devid==0x12) ) {
+-
+-		unsigned long i, j, BaseAddr;
+-		u32 val, data=0;
+-		int mem_cnt=0;
+-		struct resource *res;
+-		BaseAddr = PCI_BASE_ADDRESS_0;
+-
+-		pci_write_config_dword(dev, BaseAddr, ~0);
+-		pci_read_config_dword(dev, BaseAddr, &val);
+-		if(val !=0){	//find the card
+-	  	  for (i=0;i<3;i++, BaseAddr+=4) {  //detect resource usage
+-			pci_write_config_dword(dev, BaseAddr, ~0);
+-			pci_read_config_dword(dev, BaseAddr, &data);
+-			res = &dev->resource[i];
+-          		if (data!=0) {  //resource request exist
+-              		  if (data&1) {  //IO space
+-
+-				for (j=2;j<32;j++)
+-				  if (data&(1<<j)) break;	
+-		  		if(devid == 0x11){
+-	  			  pci_write_config_dword(dev, BaseAddr, 0x00460000);
+-				  res->start = 0x00460000;
+-				  res->end = 0x00467FFF;
+-				}
+-		  		else if(devid == 0x12){
+-	  			  pci_write_config_dword(dev, BaseAddr, 0x00528000);
+-				  res->start = 0x00528000;
+-				  res->end = 0x0052FFFF;
+-				}
+-
+-				pci_read_config_dword(dev, BaseAddr, &data);
+-		    		//printk(" ********* %x\n", data);
+-              		  } else { //memory space 
+-				for (j=4;j<32;j++)
+-                      		  if (data&(1<<j)) break;
+-
+-		  		if(devid == 0x11){
+-				 if(mem_cnt==0) {
+-	  			  pci_write_config_dword(dev, BaseAddr, RT2880_PCI_SLOT1_BASE);
+-				  res->start = RT2880_PCI_SLOT1_BASE;
+-				  //res->size = 1<<j;
+-				  res->end = RT2880_PCI_SLOT1_BASE + (1<<j) -1;
+-				 }else if(mem_cnt==1){
+-	  			  pci_write_config_dword(dev, BaseAddr, RT2880_PCI_SLOT1_1_BASE);
+-				  res->start = RT2880_PCI_SLOT1_1_BASE;
+-				  //res->size = 1<<j;
+-				  res->end = RT2880_PCI_SLOT1_1_BASE + (1<<j) -1;
+-				 }
+-				}
+-		  		else if(devid== 0x12){
+-				 if(mem_cnt==0) {
+-	  			  pci_write_config_dword(dev, BaseAddr, RT2880_PCI_SLOT2_BASE);
+-				  res->start = RT2880_PCI_SLOT2_BASE;
+-				  //res->size = 1<<j;
+-				  res->end = RT2880_PCI_SLOT2_BASE + (1<<j) -1;
+-				 }else if(mem_cnt==1){
+-	  			  pci_write_config_dword(dev, BaseAddr, RT2880_PCI_SLOT2_1_BASE);
+-				  res->start = RT2880_PCI_SLOT2_1_BASE;
+-				  //res->size = 1<<j;
+-				  res->end = RT2880_PCI_SLOT2_1_BASE + (1<<j) -1;
+-				 }
+-				}
+-
+-				pci_read_config_dword(dev, BaseAddr, &data);
+-				//printk("start = 0x%08x, end = 0x%08x\n", res->start, res->end);
+-		    		//printk(" ********* %x\n", data);
+-				mem_cnt++;
+-              		  }//if(data&1)
+-          		}else{
+-				printk("%s %s():%d   ",__FILE__,__FUNCTION__,__LINE__);
+-				printk("baseaddr = %x\n", BaseAddr);
+-			}//if(data!=0)
+-		  }//for
+-		}else{
+-			printk(" slot =%d configuration space access error\n", devid);
+-		}
+-		if(devid == 0x11) {
+-			dev->irq = 2;
+-			pci_write_config_byte(dev, PCI_INTERRUPT_LINE, 2);
+-			//pci_write_config_byte(dev, PCI_INTERRUPT_PIN, 2);
+-		}else if(devid == 0x12) {
+-			dev->irq = 15;
+-			pci_write_config_byte(dev, PCI_INTERRUPT_LINE, 15);
+-			//pci_write_config_byte(dev, PCI_INTERRUPT_PIN, 15);
+-		}
+-
+-		}
+-
+-		return;
+-
+-}
+-#endif
+-
+ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+ {
+   u16 cmd;
+   u32 val;
+   struct resource *res;
+   int i;
++#ifdef CONFIG_RALINK_RT2883	
++  if (dev->bus->number > 1) {
++    printk("bus>1\n");
++    return 0;
++  }
++  if (slot > 0) {
++    printk("slot=%d >0\n", slot);
++    return 0;
++  }
++#elif CONFIG_RALINK_RT2880
+   if (dev->bus->number != 0) {
+     return 0;
+   }
+-  slot = PCI_SLOT(dev->devfn);
++#else
++#endif
+ 
++  //printk("** bus= %x, slot=0x%x\n",dev->bus->number,  slot);
++#ifdef CONFIG_RALINK_RT3883	
++  if((dev->bus->number ==0) && (slot == 0)) {
++	RALINK_PCI0_BAR0SETUP_ADDR = 0x03FF0001;	//open 3FF:64M; ENABLE
++	RALINK_PCI1_BAR0SETUP_ADDR = 0x03FF0001;	//open 3FF:64M; ENABLE
++  	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
++  	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
++ 	printk("BAR0 at slot 0 = %x\n", val);
++//  	dev->irq = 0;
++ 	printk("bus=0, slot = 0x%x\n", slot);
++   	res = &dev->resource[0];
++    	res->start = MEMORY_BASE;
++    	res->end   = MEMORY_BASE + 0x01ffffff;
++	for(i=0;i<16;i++){
++	read_config(0, 0, 0, i<<2, &val);
++	printk("P2P(PCI) 0x%02x = %08x\n", i<<2, val);
++	}
++  	dev->irq = 0;
++  }else if((dev->bus->number ==0) && (slot == 0x1)){
++	write_config(0, 1, 0, 0x1c, 0x00000101);
++	for(i=0;i<16;i++){
++	read_config(0, 1, 0, i<<2, &val);
++	printk("P2P(PCIe)  0x%02x = %08x\n", i<<2, val);
++	}
++  }else if((dev->bus->number ==0) && (slot == 0x11)){
++ 	printk("bus=0, slot = 0x%x\n", slot);
++	for(i=0;i<16;i++){
++	read_config(0, 0x11, 0, i<<2, &val);
++	printk("dev I(PCI)  0x%02x = %08x\n", i<<2, val);
++	}
++	dev->irq = 2;
++  }else if((dev->bus->number ==0) && (slot == 0x12)){
++ 	printk("bus=0, slot = 0x%x\n", slot);
++	for(i=0;i<16;i++){
++	read_config(0, 0x12, 0, i<<2, &val);
++	printk("dev II(PCI)  0x%02x = %08x\n", i<<2, val);
++	}
++	dev->irq = 15;
++  }else if((dev->bus->number ==1) ){
++ 	printk("bus=1, slot = 0x%x\n", slot);
++	for(i=0;i<16;i++){
++	read_config(1, 0, 0, i<<2, &val);
++	printk("dev III(PCIe)  0x%02x = %08x\n", i<<2, val);
++	}
++	dev->irq = 16;
++  }else{
++  	return 0;
++  }	
++#elif CONFIG_RALINK_RT2883	
++  if((dev->bus->number ==0) && (slot == 0)) {
++	RALINK_PCI_BAR0SETUP_ADDR = 0x01FF0001;	//open 1FF:32M; ENABLE
++  	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
++  	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
++ 	printk("BAR0 at slot 0 = %x\n", val);
++//  	dev->irq = 0;
++ 	printk("bus=0, slot = 0x%x\n", slot);
++   	res = &dev->resource[0];
++    	res->start = MEMORY_BASE;
++    	res->end   = MEMORY_BASE + 0x01ffffff;
++	for(i=0;i<16;i++){
++	read_config(0, 0, 0, i<<2, &val);
++	printk("pci-to-pci 0x%02x = %08x\n", i<<2, val);
++	}
++  	dev->irq = 0;
++  }else if((dev->bus->number ==1)){
++ 	printk("bus=1, slot = 0x%x\n", slot);
++	for(i=0;i<16;i++){
++	read_config(1, slot, 0, (i)<<2, &val);
++	printk("bus 1 dev %d fun 0: 0x%02x = %08x\n", slot, i<<2, val);
++	}
++	dev->irq = 2;
++  }else{
++  	return 0;
++  }	
++#else //RT2880
+   if(slot == 0) {
+-  	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, 0x08000000);
++	  printk("*************************************************************\n");
++	RALINK_PCI_BAR0SETUP_ADDR = 0x07FF0001;	
++ 	printk("MEMORY_BASE = %x\n", MEMORY_BASE);
++  	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
+   	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
+   	dev->irq = 0;
+     res = &dev->resource[0];
+@@ -934,22 +551,28 @@
+   }else{
+   	return 0;
+   }	
++#endif
+ 
+   for(i=0;i<6;i++){
+     res = &dev->resource[i];
+-    //printk("res[%d]->start = %x\n", i, res->start);
+-    //printk("res[%d]->end = %x\n", i, res->end);
++    printk("res[%d]->start = %x\n", i, res->start);
++    printk("res[%d]->end = %x\n", i, res->end);
+   }
+ 
+   pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 0x14);  //configure cache line size 0x14
+   pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xFF);  //configure latency timer 0x10
+-#if 1
+   pci_read_config_word(dev, PCI_COMMAND, &cmd);
++//FIXME
++#ifdef CONFIG_RALINK_RT2883
++  cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
++#elif CONFIG_RALINK_RT3883
++  cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
++#else
+   cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY |
+   	PCI_COMMAND_INVALIDATE | PCI_COMMAND_FAST_BACK | PCI_COMMAND_SERR |
+   	PCI_COMMAND_WAIT | PCI_COMMAND_PARITY;
+-  pci_write_config_word(dev, PCI_COMMAND, cmd);
+ #endif
++  pci_write_config_word(dev, PCI_COMMAND, cmd);
+   pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
+   //pci_write_config_byte(dev, PCI_INTERRUPT_PIN, dev->irq);
+   return (dev->irq);
+@@ -958,84 +581,196 @@
+ int init_rt2880pci(void)
+ {
+ 	unsigned long val = 0;
+-	int i;
++	int i, j;
++#if defined(CONFIG_PCIE_ONLY) || defined(CONFIG_PCIE_PCI_CONCURRENT)
++	RALINK_SYSCFG1 &= ~(0x30);
++	RALINK_SYSCFG1 |= (2<<4);
++	RALINK_PCIE_CLK_GEN &= 0x7fffffff;
++	RALINK_PCIE_CLK_GEN1 &= 0x80ffffff;
++	RALINK_PCIE_CLK_GEN1 |= 0xa << 24;
++	RALINK_PCIE_CLK_GEN |= 0x80000000;
++	mdelay(50);
++#endif
++	
++#ifdef CONFIG_RALINK_RT3883
++#if 0
++	printk("before\n");
++	printk("RALINK_GPIOMODE = %x\n", RALINK_GPIOMODE);
++	printk("RALINK_SYSCFG1 = %x\n", RALINK_SYSCFG1);
++	printk("RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
++	printk("RALINK_CLKCFG1 = %x\n", RALINK_CLKCFG1);
++	printk("RALINK_PCIE_CLK_GEN= %x\n", RALINK_PCIE_CLK_GEN);
++	printk("RALINK_PCIE_CLK_GEN1= %x\n", RALINK_PCIE_CLK_GEN1);
++	printk("**************************\n");
++#endif
+ 
++#ifdef CONFIG_PCI_ONLY
++//PCI host only, 330T
++	RALINK_GPIOMODE = (RALINK_GPIOMODE & ~(0x3800) | PCI_SLOTx2);
++	RALINK_SYSCFG1 = ((RALINK_SYSCFG1 | RALINK_PCI_HOST_MODE_EN) & ~RALINK_PCIE_RC_MODE_EN);
++	RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCIE_RST);
++	RALINK_CLKCFG1 = (RALINK_CLKCFG1 & ~RALINK_PCIE_CLK_EN);
++#elif CONFIG_PCIE_ONLY
++//PCIe RC only, 220T
++	RALINK_SYSCFG1 = (RALINK_SYSCFG1 | RALINK_PCIE_RC_MODE_EN & ~RALINK_PCI_HOST_MODE_EN);
++	RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCI_RST);
++	RALINK_CLKCFG1 = (RALINK_CLKCFG1 & ~RALINK_PCI_CLK_EN);
++#elif CONFIG_PCIE_PCI_CONCURRENT
++//PCIe PCI co-exist
++	RALINK_GPIOMODE = (RALINK_GPIOMODE & ~(0x3800) | PCI_SLOTx2);
++	RALINK_SYSCFG1 = ((RALINK_SYSCFG1 | RALINK_PCI_HOST_MODE_EN) | RALINK_PCIE_RC_MODE_EN);
++#endif
++	mdelay(500);
+ 
++#if 0
++	printk("after\n");
++	printk("RALINK_GPIOMODE = %x\n", RALINK_GPIOMODE);
++	printk("RALINK_SYSCFG1 = %x\n", RALINK_SYSCFG1);
++	printk("RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
++	printk("RALINK_CLKCFG1 = %x\n", RALINK_CLKCFG1);
++	printk("RALINK_PCIE_CLK_GEN= %x\n", RALINK_PCIE_CLK_GEN);
++	printk("RALINK_PCIE_CLK_GEN1= %x\n", RALINK_PCIE_CLK_GEN1);
++	printk("**************************\n");
++#endif
++#endif
++
++#ifdef CONFIG_RALINK_RT2880
+ 	//pci_probe_only = 1;
+ 	RALINK_PCI_PCICFG_ADDR = 0;
++#elif CONFIG_RALINK_RT2883
++	RALINK_PCI_PCICFG_ADDR = 0;
++#elif CONFIG_RALINK_RT3883
++
++#ifdef CONFIG_PCIE_ONLY
++	RALINK_PCI_PCICFG_ADDR = 0;
++	//RALINK_PCI_PCICFG_ADDR |= (1<<16);
++#elif CONFIG_PCI_ONLY
++	RALINK_PCI_PCICFG_ADDR = 0;
++	RALINK_PCI_PCICFG_ADDR |= (1<<16);
++#elif CONFIG_PCIE_PCI_CONCURRENT
++	RALINK_PCI_PCICFG_ADDR = 0;
++	RALINK_PCI_PCICFG_ADDR |= (1<<16);
++#endif
++	mdelay(500);
++
++#endif
++	printk("RALINK_PCI_PCICFG_ADDR = %x\n", RALINK_PCI_PCICFG_ADDR);
++
++#ifdef CONFIG_RALINK_RT3883
++	printk("\n*************** Ralink PCIe RC mode *************\n");
++	mdelay(500);
++	if(RALINK_SYSCFG1 & RALINK_PCIE_RC_MODE_EN){
++		if(( RALINK_PCI1_STATUS & 0x1) == 0)
++		{
++			printk(" RALINK_PCI1_STATUS = %x\n", RALINK_PCI1_STATUS );
++			for(i=0;i<16;i++){
++				read_config(0, 1, 0, i<<2, &val);
++				printk("pci-to-pci 0x%02x = %08x\n", i<<2, val);
++			}
++			printk("reset PCIe and turn off PCIe clock\n");
++			RALINK_RSTCTRL = (RALINK_RSTCTRL | RALINK_PCIE_RST);
++			RALINK_RSTCTRL = (RALINK_RSTCTRL & ~RALINK_PCIE_RST);
++			RALINK_CLKCFG1 = (RALINK_CLKCFG1 & ~RALINK_PCIE_CLK_EN);
++			printk("RALINK_CLKCFG1 = %x\n", RALINK_CLKCFG1);
++			//cgrstb, cgpdb, pexdrven0, pexdrven1, cgpllrstb, cgpllpdb, pexclken
++			RALINK_PCIE_CLK_GEN &= 0x0fff3f7f;
++			printk("RALINK_PCIE_CLK_GEN= %x\n", RALINK_PCIE_CLK_GEN);
++			return 0;
++		}
++	}
++	if(RALINK_SYSCFG1 & RALINK_PCI_HOST_MODE_EN){
++		RALINK_PCI_ARBCTL = 0x79;
++	}
++
++#elif CONFIG_RALINK_RT2883
++	printk("\n*************** Ralink PCIe RC mode *************\n");
++	mdelay(500);
++	if(( RALINK_PCI_STATUS & 0x1) == 0)
++	{
++		printk(" RALINK_PCI_STATUS = %x\n", RALINK_PCI_STATUS );
++		printk("************No PCIE device**********\n");
++		for(i=0;i<16;i++){
++			read_config(0, 0, 0, i<<2, &val);
++			printk("pci-to-pci 0x%02x = %08x\n", i<<2, val);
++		}
++		return 0;
++	}
++#else
+ 	for(i=0;i<0xfffff;i++);
+-	RT2880_PCI_ARBCTL = 0x79;
+-	//printk(" RT2880_PCI_ARBCTL = %x\n", RT2880_PCI_ARBCTL);
++	RALINK_PCI_ARBCTL = 0x79;
++#endif	
++	//printk(" RALINK_PCI_ARBCTL = %x\n", RALINK_PCI_ARBCTL);
+ 
+ /*
+ 	ioport_resource.start = rt2880_res_pci_io1.start;
+   	ioport_resource.end = rt2880_res_pci_io1.end;
+ */
+ 
+-	RALINK_PCI_BAR0SETUP_ADDR = 0x07FF0001;//0x07ff0001;	//open 32M
+-	//RALINK_PCI_BAR1SETUP_ADDR = 0;
+-	RT2880_PCI_MEMBASE = RT2880_PCI_SLOT1_BASE;
+-	RT2880_PCI_IOBASE = 0x00460000;
+-	RALINK_PCI_IMBASEBAR0_ADDR = 0x08000000;
++	RALINK_PCI_MEMBASE = 0xffffffff; //RALINK_PCI_MM_MAP_BASE;
++	RALINK_PCI_IOBASE = RALINK_PCI_IO_MAP_BASE;
+ 
+-	RT2880_PCI_ID = 0x08021814;
+-	RT2880_PCI_CLASS = 0x00800001;
+-	RT2880_PCI_SUBID = 0x28801814;
++#ifdef CONFIG_RALINK_RT2880
++	RALINK_PCI_BAR0SETUP_ADDR = 0x07FF0000;	//open 1FF:32M; DISABLE
++	RALINK_PCI_IMBASEBAR0_ADDR = MEMORY_BASE;
++	RALINK_PCI_ID = 0x08021814;
++	RALINK_PCI_CLASS = 0x00800001;
++	RALINK_PCI_SUBID = 0x28801814;
++#elif CONFIG_RALINK_RT2883
++	RALINK_PCI_BAR0SETUP_ADDR = 0x01FF0000;	//open 1FF:32M; DISABLE
++	RALINK_PCI_IMBASEBAR0_ADDR = MEMORY_BASE;
++	RALINK_PCI_ID = 0x08021814;
++	RALINK_PCI_CLASS = 0x06040001;
++	RALINK_PCI_SUBID = 0x28801814;
++#elif CONFIG_RALINK_RT3883
++	//PCI
++	RALINK_PCI0_BAR0SETUP_ADDR = 0x03FF0000;	//open 3FF:64M; DISABLE
++	RALINK_PCI0_IMBASEBAR0_ADDR = MEMORY_BASE;
++	RALINK_PCI0_ID = 0x08021814;
++	RALINK_PCI0_CLASS = 0x00800001;
++	RALINK_PCI0_SUBID = 0x28801814;
++	//PCIe
++	RALINK_PCI1_BAR0SETUP_ADDR = 0x01FF0000;	//open 1FF:32M; DISABLE
++	RALINK_PCI1_IMBASEBAR0_ADDR = MEMORY_BASE;
++	RALINK_PCI1_ID = 0x08021814;
++	RALINK_PCI1_CLASS = 0x06040001;
++	RALINK_PCI1_SUBID = 0x28801814;
++#endif
+ 
++
++#ifdef CONFIG_RALINK_RT3883
++	RALINK_PCI_PCIMSK_ADDR = 0x001c0000; // enable pcie/pci interrupt
++#else
+ 	RALINK_PCI_PCIMSK_ADDR = 0x000c0000; // enable pci interrupt
++#endif
+ 
+-	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, 0x08000000);
++#ifdef CONFIG_RALINK_RT3883
++	//PCIe
++	read_config(0, 1, 0, 0x4, &val);
++	write_config(0, 1, 0, 0x4, val|0x7);
++	//PCI
++	read_config(0, 0, 0, 0x4, &val);
++	write_config(0, 0, 0, 0x4, val|0x7);
++#elif CONFIG_RALINK_RT2883
++	read_config(0, 0, 0, 0x4, &val);
++	write_config(0, 0, 0, 0x4, val|0x7);
++	//FIXME
++	////write_config(0, 0, 0, 0x18, 0x10100);
++	//write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
++	//read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val); 
++	////printk("BAR0 at slot 0 = %x\n", val); 
++#else 
++	write_config(0, 0, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE); 
+ 	read_config(0, 0, 0, PCI_BASE_ADDRESS_0, &val);
+ 	printk("BAR0 at slot 0 = %x\n", val);
+-/*
+-	val = RALINK_PCI_PCIMSK_ADDR;
+-	val |= 0x000C0000;
+-	RALINK_PCI_PCIMSK_ADDR = val;
+-*/
++#endif
+ 	register_pci_controller(&rt2880_controller);
+ 	return 0;
+ 
+ }
+-#if 0
+-void __init pcibios_fixup_irqs(void)
+-{
+-    struct pci_dev *dev;
+-
+-        pci_for_each_dev(dev) {
+-                dev->irq = 2; // fix irq
+-        }
+-}
++#ifndef CONFIG_PCIE_PCI_NONE
++arch_initcall(init_rt2880pci);
+ #endif
+ 
+-
+-#if 0
+-void __init rt2880_pcibios_init(void)
+-{
+-	//printk("\n pcibios_init is called ioport_resource = %08X\n",&ioport_resource);
+-	//printk("\n pcibios_init is called iomem_resource = %08X\n",&iomem_resource);
+-	
+-	/* Reset PCI I/O and PCI MEM values */
+-	/* Reset PCI I/O and PCI MEM values */
+-	//ioport_resource.start = 0;//0xc0000000;
+-	//ioport_resource.end   = 0;//0xc0000000 + 0x20000000 - 1;
+-	//iomem_resource.start  = 0;//0xc0000000;
+-	//iomem_resource.end    = 0;//0xc0000000 + 0x20000000 - 1;
+-	
+-	//printk("%s %s():%d\n",__FILE__,__FUNCTION__,__LINE__);
+-	init_rt2880pci();
+-		
+-	pci_scan_bus(0, &rt2880_pci_ops, NULL);
+-
+-	//pci_scan(0x11);
+-	//pci_scan(0x12);
+-
+-	//pcibios_fixup_irqs();
+-}
+-#endif
+-
+-arch_initcall(init_rt2880pci);
+-
+-
+ /* Do platform specific device initialization at pci_enable_device() time */
+ int pcibios_plat_dev_init(struct pci_dev *dev)
+ {
+Index: rt_timer.c
+===================================================================
+--- rt_timer.c	(revision 14991)
++++ rt_timer.c	(working copy)
+@@ -7,12 +7,27 @@
+  *
+  * (c) Copyright 2002-2006, Ralink Technology, Inc.
+  *
+- * All rights reserved. Ralink's source code is an unpublished work and the
+- * use of a copyright notice does not imply otherwise. This source code
+- * contains confidential trade secret material of Ralink Tech. Any attempt
+- * or participation in deciphering, decoding, reverse engineering or in any
+- * way altering the source code is stricitly prohibited, unless the prior
+- * written consent of Ralink Technology, Inc. is obtained.
++ *  This program is free software; you can redistribute  it and/or modify it
++ *  under  the terms of  the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the  License, or (at your
++ *  option) any later version.
++ *
++ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
++ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
++ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
++ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
++ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
++ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
++ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ *
+  ***************************************************************************
+ 
+     Module Name:
+@@ -39,18 +54,11 @@
+ #include <asm/rt2880/surfboardint.h>
+ #include <linux/interrupt.h>
+ #include "rt_timer.h"
+-#include "chip_reg_map.h"
+ 
+ 
+-#if defined (CONFIG_RALINK_TIMER_WDG)   
+-    static int wdg_load_value;
+-    struct timer_list wdg_timer;
+-#endif
+-#if defined (CONFIG_RALINK_TIMER_DFS)   
+-    static struct timer0_data tmr0;
+-#endif
++static struct timer0_data tmr0;
+ 
+-void set_wdg_timer_ebl(unsigned int timer, unsigned int ebl)
++void set_dfs_timer_ebl(unsigned int timer, unsigned int ebl)
+ {
+     unsigned int result;
+ 
+@@ -64,38 +72,10 @@
+ 
+     sysRegWrite(timer,result);
+ 
+-    //timer1 used for watchdog timer
+-#if defined (CONFIG_RALINK_TIMER_WDG_RESET_OUTPUT)
+-
+-#if defined (CONFIG_RALINK_RT2880)
+-    if(timer==TMR1CTL) {
+-	result=sysRegRead(CLKCFG);            
+-
+-	if(ebl==1){
+-	    result |= (1<<9); /* SRAM_CS_N is used as wdg reset */
+-	}else {
+-	    result &= ~(1<<9); /* SRAM_CS_N is used as normal func */
+-	}
+-
+-	sysRegWrite(CLKCFG,result);
+-    }
+-#elif defined (CONFIG_RALINK_RT3052_MP2) || defined(CONFIG_RALINK_RT2883)
+-    if(timer==TMR1CTL) {
+-	//the last 4bits in SYSCFG are write only
+-	result=sysRegRead(SYSCFG);                                                                                    
+-
+-	if(ebl==1){
+-	    result |= (1<<2); /* SRAM_CS_MODE is used as wdg reset */
+-	}
+-
+-	sysRegWrite(SYSCFG,result);
+-    }
+-#endif             
+-#endif 
+ }
+ 
+ 
+-void set_wdg_timer_clock_prescale(unsigned int timer, enum timer_clock_freq prescale)
++void set_timer_clock_prescale(unsigned int timer, enum timer_clock_freq prescale)
+ {
+     unsigned int result;
+ 
+@@ -106,7 +86,7 @@
+ 
+ }
+ 
+-void set_wdg_timer_mode(unsigned int timer, enum timer_mode mode)
++void set_timer_mode(unsigned int timer, enum timer_mode mode)
+ {
+     unsigned int result;
+ 
+@@ -117,26 +97,6 @@
+ 
+ }
+ 
+-void setup_wdg_timer(struct timer_list * timer,
+-	void (*function)(unsigned long),
+-	unsigned long data)
+-{
+-    timer->function = function;
+-    timer->data = data;
+-    init_timer(timer);
+-}
+-
+-#if defined (CONFIG_RALINK_TIMER_WDG)
+-void refresh_wdg_timer(unsigned long unused)
+-{
+-    sysRegWrite(TMR1LOAD, wdg_load_value);
+-
+-    wdg_timer.expires = jiffies + HZ * CONFIG_RALINK_WDG_REFRESH_INTERVAL;
+-    add_timer(&wdg_timer);
+-}
+-#endif
+-
+-#if defined (CONFIG_RALINK_TIMER_DFS)   
+ int request_tmr_service(int interval, void (*function)(unsigned long), unsigned long data)
+ {
+     unsigned int reg_val;
+@@ -154,15 +114,21 @@
+     sysRegWrite(INTENA, reg_val);
+ 
+     //Set Timer0 Mode
+-    set_wdg_timer_mode(TMR0CTL, PERIODIC);
++    set_timer_mode(TMR0CTL, PERIODIC);
+ 
+     //Set Period Interval
+-    //266MHz: Unit=1/(133M/16384)=0.0001231 Sec, 1ms / 0.0001231 = 8
+-    set_wdg_timer_clock_prescale(TMR0CTL,SYS_CLK_DIV16384);
+-    sysRegWrite(TMR0LOAD, interval*8);
++    //Unit= SysClk/16384, 1ms = (SysClk/16384)/1000
++    set_timer_clock_prescale(TMR0CTL,SYS_CLK_DIV16384);
+ 
++#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || \
++    defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883)
++    sysRegWrite(TMR0LOAD, interval* (get_surfboard_sysclk()/16384/1000));
++#else //RT3352
++    sysRegWrite(TMR0LOAD, interval* (40000000/16384/1000)); //fixed at 40MHz
++#endif
++
+     //Enable Timer0
+-    set_wdg_timer_ebl(TMR0CTL,1);
++    set_dfs_timer_ebl(TMR0CTL,1);
+ 
+     spin_unlock_irqrestore(tmr0.tmr0_lock, flags);
+ 
+@@ -177,7 +143,7 @@
+     spin_lock_irqsave(tmr0.tmr0_lock, flags);
+ 
+     //Disable Timer0
+-    set_wdg_timer_ebl(TMR0CTL,0);
++    set_dfs_timer_ebl(TMR0CTL,0);
+ 
+     //Timer0 Interrupt Status Disable
+     reg_val = sysRegRead(INTENA);
+@@ -219,65 +185,34 @@
+     return IRQ_HANDLED;
+ 
+ }
+-#endif
+ 
+ int32_t __init timer_init_module(void)
+ {
+-    printk("Load RT2880 Timer Module(Wdg/Soft)\n");
++    printk("Load Ralink DFS Timer Module\n");
+ 
+-    /* 
+-     * System Clock = CPU Clock/2
+-     * For user easy configuration, We assume the unit of watch dog timer is 1s, 
+-     * so we need to calculate the TMR1LOAD value.
+-     *
+-     * Unit= 1/(SysClk/65536), 1 Sec = (SysClk)/65536 
+-     *
+-     */
+-
+-#if defined (CONFIG_RALINK_TIMER_WDG)   
+-    // initialize WDG timer (Timer1)
+-    setup_wdg_timer(&wdg_timer, refresh_wdg_timer, 0);
+-    set_wdg_timer_mode(TMR1CTL,WATCHDOG);
+-    set_wdg_timer_clock_prescale(TMR1CTL,SYS_CLK_DIV65536);
+-    wdg_load_value = CONFIG_RALINK_WDG_TIMER * (get_surfboard_sysclk()/65536);
+-    refresh_wdg_timer(wdg_load_value);
+-    set_wdg_timer_ebl(TMR1CTL,1);
+-#endif
+-
+-#if defined (CONFIG_RALINK_TIMER_DFS)   
+     // initialize Soft Timer (Timer0)
+     spin_lock_init(&tmr0.tmr0_lock);
+     if(request_irq(SURFBOARDINT_TIMER0, rt2880tmr0_irq_handler, SA_INTERRUPT,
+ 		"rt2880_timer0", NULL)){
+ 	return 1;
+     }
+-#endif
+ 
+     return 0;
+ }
+ 
+ void __exit timer_cleanup_module(void)
+ {
+-    printk("Unload RT2880 Timer Module(Wdg/Soft)\n");
++    printk("Unload Ralink DFS Timer Module\n");
+ 
+-#if defined (CONFIG_RALINK_TIMER_WDG)   
+-    set_wdg_timer_ebl(TMR1CTL,0);
+-    del_timer_sync(&wdg_timer);
+-#endif
+-
+-#if defined (CONFIG_RALINK_TIMER_DFS)   
+     unregister_tmr_service();
+-#endif
+ }
+ 
+ module_init(timer_init_module);
+ module_exit(timer_cleanup_module);
+ 
+-#if defined (CONFIG_RALINK_TIMER_DFS)   
+ EXPORT_SYMBOL(request_tmr_service);
+ EXPORT_SYMBOL(unregister_tmr_service);
+-#endif
+ 
+-MODULE_DESCRIPTION("Ralink Timer Module(Wdg/Soft)");
++MODULE_DESCRIPTION("Ralink DFS Timer Module");
+ MODULE_AUTHOR("Steven/Bob");
+ MODULE_LICENSE("GPL");
+Index: rt_timer.h
+===================================================================
+--- rt_timer.h	(revision 14991)
++++ rt_timer.h	(working copy)
+@@ -7,13 +7,28 @@
+  *
+  * (c) Copyright 2002-2006, Ralink Technology, Inc.
+  *
+- * All rights reserved. Ralink's source code is an unpublished work and the
+- * use of a copyright notice does not imply otherwise. This source code
+- * contains confidential trade secret material of Ralink Tech. Any attempt
+- * or participation in deciphering, decoding, reverse engineering or in any
+- * way altering the source code is stricitly prohibited, unless the prior
+- * written consent of Ralink Technology, Inc. is obtained.
+- ***************************************************************************
++ *  This program is free software; you can redistribute  it and/or modify it
++ *  under  the terms of  the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the  License, or (at your
++ *  option) any later version.
++ *
++ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
++ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
++ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
++ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
++ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
++ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
++ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ *
++ * ***************************************************************************
+ 
+     Module Name:
+     rt_timer.h
+@@ -37,6 +52,8 @@
+ #define sysRegWrite(phys, val)  ((*(volatile unsigned int *)PHYS_TO_K1(phys)) = (val))
+ 
+ #define SYSCFG      RALINK_SYSCTL_BASE + 0x10  /* System Configuration Register */
++#define SYSCFG1     RALINK_SYSCTL_BASE + 0x14  /* System Configuration Register1 */
++#define GPIOMODE    RALINK_SYSCTL_BASE + 0x60  
+ #define CLKCFG      RALINK_SYSCTL_BASE + 0x30  /* Clock Configuration Register */
+ #define TMRSTAT     (RALINK_TIMER_BASE)  /* Timer Status Register */
+ #define TMR0LOAD    (TMRSTAT + 0x10)  /* Timer0 Load Value */
+Index: irq.c
+===================================================================
+--- irq.c	(revision 14991)
++++ irq.c	(working copy)
+@@ -28,9 +28,10 @@
+  *
+  **************************************************************************
+  * May 2007 Bruce Chang
+- *
+  * Initial Release
+  *
++ * May 2009 Bruce Chang
++ * support RT2880/RT2883 PCIe
+  *
+  *
+  **************************************************************************
+@@ -215,6 +216,9 @@
+ 		return;
+ 	irq = ls1bit32(int_status);
+ 
++//	printk("-------------------------\n");
++//	printk("irqdispatch receive IRQ%d\n",irq);
++//	printk("-------------------------\n");
+ 	/*
+ 	 * RT2880:
+ 	 * bit[3] PIO Programmable IO Interrupt Status after Mask
+@@ -223,12 +227,13 @@
+ 	 * bit[0] TIMER0 Timer 0 Interrupt Status after Mask
+ 	 *
+ 	 * RT2883/RT3052:
++	 * bit[17] Ethernet switch interrupt status after mask
+ 	 * bit[6] PIO Programmable IO Interrupt Status after Mask
+ 	 * bit[5] UART Interrupt Status after Mask
+ 	 * bit[2] WDTIMER Timer 1 Interrupt Status after Mask
+ 	 * bit[1] TIMER0 Timer 0 Interrupt Status after Mask
+ 	 */
+-#ifdef CONFIG_RALINK_TIMER
++#ifdef CONFIG_RALINK_TIMER_DFS
+ #if defined (CONFIG_RALINK_RT2880_SHUTTLE) || \
+     defined (CONFIG_RALINK_RT2880_MP)
+ 	if (irq == 0) {
+@@ -266,12 +271,7 @@
+ 	if (irq == 5) {
+ 		irq = SURFBOARDINT_UART;
+ 	}
+-#if defined (CONFIG_RALINK_RT3052)
+-	/* ESW */ 
+-	if (irq == 17) {
+-		irq = SURFBOARDINT_ESW;
+-	}
+-#endif
++
+ 	action = irq_desc[irq].action;
+ 	do_IRQ(irq);
+ 	return;
+@@ -295,8 +295,6 @@
+ 	write_32bit_cp0_register(CP0_STATUS, int_status);
+ }
+ 
+-extern void ralink_gpio_init_irq(void);
+-
+ void __init arch_init_irq(void)
+ {
+ 	int i;
+@@ -338,8 +336,10 @@
+ 
+ void rt2880_irqdispatch(void)
+ {
+-#if 1
+-	unsigned long mips_cp0_status, mips_cp0_cause, irq_x, irq, i, pci_status=0;
++	unsigned long mips_cp0_status, mips_cp0_cause, irq_x, irq, i;
++#if defined(CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883) 
++	unsigned long pci_status=0;
++#endif
+ 
+ 	mips_cp0_cause = read_32bit_cp0_register(CP0_CAUSE);
+ 	mips_cp0_status = read_32bit_cp0_register(CP0_STATUS);
+@@ -361,7 +361,7 @@
+ 	   }
+ 	   */
+ 	/* from high to low priority */
+-	irq = 5;
++	irq = 4;
+ 	pci_order^=1;
+ 
+ #ifdef CONFIG_RAETH_ROUTER
+@@ -372,39 +372,51 @@
+ 	//	do_IRQ(irq, regs);
+ #endif
+ 
+-	for (i = 0; i< 6; i++) {
+-		if(irq_x & 0x20)
++	for (i = 0; i< 5; i++) {
++		if(irq_x & 0x10)
+ 		{
++#ifdef CONFIG_RALINK_RT3883
++			clear_c0_status(0x7c00);
++#else
+ 			disable_rt2880_cp_int(1<<(irq+10));
++#endif
+ 			if(irq > 2)
+ 				do_IRQ(irq);
+ 			else if(irq == 2){
+-			 //disable_rt2880_cp_int(CAUSEF_IP4);
+-/*FIXME*/
+-#if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT2880_ASIC)
++#if defined (CONFIG_RALINK_RT2883)
++				do_IRQ(2);
++#elif defined (CONFIG_RALINK_RT3883)
++			 	pci_status = RALINK_PCI_PCIINT_ADDR;
++				if(pci_status &0x100000){
++					do_IRQ(16);
++				}else if(pci_status &0x40000){
++					do_IRQ(2);
++				}else{
++					do_IRQ(15);
++				}
++
++#elif defined (CONFIG_RALINK_RT3052)
++
++#elif defined (CONFIG_RALINK_RT3352)
++
++#else // 2880
++
++#if defined(CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3883)
+ 			 pci_status = RALINK_PCI_PCIINT_ADDR;
+ #endif
+ 			 if(pci_order ==0) { 
+-#if defined(CONFIG_RT2880_ASIC) || \
+-	defined (CONFIG_RT2883_ASIC) || \
+-	defined (CONFIG_RT3052_ASIC) 
++#if defined(CONFIG_RT2880_ASIC) 
+ 				if(pci_status &0x40000)
+-#elif defined(CONFIG_RT2880_FPGA) || \
+-	defined (CONFIG_RT2883_FPGA) || \
+-	defined(CONFIG_RT3052_FPGA)
++#elif defined(CONFIG_RT2880_FPGA) 
+ 				if(pci_status &0x80000)
+ #endif
+ 					do_IRQ(2);
+ 				else // if(pci_status & 0x40000)
+ 					do_IRQ(15);
+ 			 } else {
+-#if defined(CONFIG_RT2880_ASIC)  || \
+-	defined (CONFIG_RT2883_ASIC) || \
+-	defined (CONFIG_RT3052_ASIC)
++#if defined(CONFIG_RT2880_ASIC)  
+ 				if(pci_status &0x80000)
+-#elif defined(CONFIG_RT2880_FPGA) || \
+-	defined (CONFIG_RT2883_FPGA) || \
+-	defined(CONFIG_RT3052_FPGA)
++#elif defined(CONFIG_RT2880_FPGA) 
+ 				if(pci_status &0x40000)
+ #endif
+ 					do_IRQ(15);
+@@ -412,67 +424,23 @@
+ 					do_IRQ(2);
+ 			 }
+ 
+-			 //enable_rt2880_cp_int(CAUSEF_IP4);
++#endif //CONFIG_RALINK_RT2883//
+ 			}
+ 			else {
+ 				surfboard_hw0_irqdispatch();
+ 			}
++#ifdef CONFIG_RALINK_RT3883
++			set_c0_status(0x7c00);
++#else
+ 			enable_rt2880_cp_int(1<<(irq+10));
++#endif
+ 		}
+ 		irq--;
+ 		irq_x <<= 1;
+ 	}
+-#else
+-	unsigned long int_status, int_cause;
+-	u32 ill_acc_val;
+ 	
+-	int_cause = read_32bit_cp0_register(CP0_CAUSE);
+-	ill_acc_val = RALINK_SDRAM_ILL_ACC_ADDR;
+-			
+-	if(ill_acc_val != 0)
+-	{
+-		printk("\n RALINK_SDRAM_ILL_ACC_ADDR=[0x%08X]\n",ill_acc_val);
+-		ill_acc_val = RALINK_SDRAM_ILL_ACC_TYPE;
+-		RALINK_SDRAM_ILL_ACC_ADDR = 0xFFFFFFFF;
+-		printk("\n RALINK_SDRAM_ILL_ACC_TYPE=[0x%08X]\n",ill_acc_val);
+-			
+-		//surfboard_hw0_icregs->irq0Status = 0;
+-		//surfboard_hw0_icregs->irq1Status = 0;
+-		return;
+-				
+-	}
+-
+-	if ((int_cause & CAUSEF_IP2))
+-	{
+-		
+-		surfboard_hw0_irqdispatch();	
+-	}	
+-	else
+-	{
+-
+-		if(( int_cause & CAUSEF_IP5 ))
+-			do_IRQ(3); /* dispatch gmac irq here */	
+-		else if(( int_cause & CAUSEF_IP4 ))
+-		{//PCI slot
+-			int_status = RALINK_PCI_PCIRAW_ADDR;
+-			RALINK_PCI_PCIRAW_ADDR = 0xFFFFFFFF;
+-
+-			if(RALINK_PCI_PCIRAW_FAIL_STATUS & int_status)
+-			{
+-				printk("\n PCI fail status occur!! Status=[0x%08X] \n",int_status);
+-				return;
+-			}
+-			
+-			if((int_status & 0x000C0000))
+-				do_IRQ(2); /* dispatch gmac irq here */		
+-		}
+-	}	
+-#endif
+-	
+ 	return;
+ }
+-extern void mips_timer_interrupt(void);
+-
+ asmlinkage void plat_irq_dispatch(void)
+ {
+         unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
+Index: Makefile
+===================================================================
+--- Makefile	(revision 14991)
++++ Makefile	(working copy)
+@@ -14,11 +14,13 @@
+ 	$(CC) $(CFLAGS) -c $< -o $*.o
+ 
+ obj-y    := mipsIRQ.o reset.o init.o irq.o \
+-            memory.o printf.o cmdline.o setup.o time.o 
++            memory.o printf.o cmdline.o setup.o time.o
+ obj-$(CONFIG_PCI) += pci.o
+ obj-$(CONFIG_DWC_OTG) += lm.o
++obj-$(CONFIG_RALINK_TIMER_DFS) +=  rt_timer.o
+ 
+-ifdef CONFIG_RALINK_TIMER
+-obj-$(CONFIG_RALINK_TIMER) +=  rt_timer.o
++ifdef CONFIG_RT3XXX_EHCI
++obj-y +=  ehci_ohci.o
++else ifdef CONFIG_RT3XXX_OHCI
++obj-y +=  ehci_ohci.o
+ endif
+-

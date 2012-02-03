@@ -67,3 +67,6 @@ obj-$(CONFIG_USB_USBNET)        += usb/
 obj-$(CONFIG_USB_ZD1201)        += usb/
 obj-$(CONFIG_USB_IPHETH)        += usb/
 obj-$(CONFIG_USB_CDC_PHONET)   += usb/
+ifeq ($(CONFIG_RAETH_ROUTER),y)
+obj-$(CONFIG_RT2880_GMAC) += mii.o
+endif

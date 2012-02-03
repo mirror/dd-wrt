@@ -452,6 +452,8 @@ static unsigned int mem32_serial_in(struct uart_port *p, int offset)
 	return readl(p->membase + offset);
 }
 
+
+
 static unsigned int au_serial_in(struct uart_port *p, int offset)
 {
 	offset = map_8250_in_reg(p, offset) << p->regshift;
@@ -467,13 +469,31 @@ static void au_serial_out(struct uart_port *p, int offset, int value)
 static unsigned int io_serial_in(struct uart_port *p, int offset)
 {
 	offset = map_8250_in_reg(p, offset) << p->regshift;
-	return inb(p->iobase + offset);
+#if defined (CONFIG_RALINK_RT2880) || \
+    defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
+    defined (CONFIG_RALINK_RT3052)
+		return (*(int*)(p->iobase + offset));
+#else
+		return inb(p->iobase + offset);
+#endif
 }
 
 static void io_serial_out(struct uart_port *p, int offset, int value)
 {
 	offset = map_8250_out_reg(p, offset) << p->regshift;
-	outb(value, p->iobase + offset);
+#if defined (CONFIG_RALINK_RT2880) || \
+    defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
+    defined (CONFIG_RALINK_RT3052)
+		*(int*)(p->iobase + offset) = value;
+#else
+		outb(value, p->iobase + offset);
+#endif
 }
 
 static int serial8250_default_handle_irq(struct uart_port *port);
@@ -561,8 +581,24 @@ static inline void _serial_dl_write(struct uart_8250_port *up, int value)
 	serial_outp(up, UART_DLL, value & 0xff);
 	serial_outp(up, UART_DLM, value >> 8 & 0xff);
 }
+#if defined (CONFIG_RALINK_RT2880) || \
+    defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
+    defined (CONFIG_RALINK_RT3052)
+ /* Ralink haven't got a standard divisor latch */
+static int serial_dl_read(struct uart_8250_port *up)
+{
+ 	return serial_inp(up, UART_DLL);
+}
+  
+static void serial_dl_write(struct uart_8250_port *up, int value)
+{
+ 	serial_outp(up, UART_DLL, value);
+}
 
-#if defined(CONFIG_MIPS_ALCHEMY)
+#elif defined(CONFIG_MIPS_ALCHEMY)
 /* Au1x00 haven't got a standard divisor latch */
 static int serial_dl_read(struct uart_8250_port *up)
 {
@@ -772,6 +808,22 @@ static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
 {
 	unsigned char old_dll, old_dlm, old_lcr;
 	unsigned int id;
+#if defined (CONFIG_RALINK_RT2880) || \
+    defined (CONFIG_RALINK_RT2883) || \
+    defined (CONFIG_RALINK_RT3883) || \
+    defined (CONFIG_RALINK_RT3352) || \
+    defined (CONFIG_RALINK_RT5350) || \
+    defined (CONFIG_RALINK_RT3052)
+	unsigned short old_dl;
+
+	old_dl = serial_dl_read(p);
+	serial_dl_write(p, 0);
+	id = serial_dl_read(p);
+	serial_dl_write(p, old_dl);
+
+	old_lcr = serial_inp(p, UART_LCR);
+	serial_outp(p, UART_LCR, UART_LCR_DLAB);
+#else
 
 	old_lcr = serial_inp(p, UART_LCR);
 	serial_outp(p, UART_LCR, UART_LCR_CONF_MODE_A);
@@ -786,6 +838,7 @@ static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
 
 	serial_outp(p, UART_DLL, old_dll);
 	serial_outp(p, UART_DLM, old_dlm);
+#endif
 	serial_outp(p, UART_LCR, old_lcr);
 
 	return id;

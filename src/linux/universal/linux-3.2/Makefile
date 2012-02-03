@@ -167,6 +167,9 @@ export srctree objtree VPATH
 ifeq ($(ARCH),armeb)
 ARCH := arm
 endif
+ifeq ($(ARCH),mipsel)
+ARCH=mips
+endif
 
 SUBARCH := $(ARCH)
 
