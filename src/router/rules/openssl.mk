@@ -41,23 +41,15 @@ openssl-apps-static:
 	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 openssl-install:
-ifeq ($(CONFIG_MADWIFI),y)
-	install -D openssl/libcrypto.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.0.9.8 
-	install -D openssl/libssl.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libssl.so.0.9.8
-endif
-ifeq ($(CONFIG_DANUBE),y)
-	install -D openssl/libcrypto.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.0.9.8 
-	install -D openssl/libssl.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libssl.so.0.9.8
-endif
+#ifeq ($(CONFIG_MADWIFI),y)
+	-install -D openssl/libcrypto.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.0.9.8 
+	-install -D openssl/libssl.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libssl.so.0.9.8
+#endif
+#ifneq ($(ARCH),mipsel)
+#	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+#endif
 ifeq ($(CONFIG_FREERADIUS),y)
-	install -D openssl/libcrypto.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.0.9.8
-	install -D openssl/libssl.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libssl.so.0.9.8
-endif
-ifneq ($(ARCH),mipsel)
-	install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
-endif
-ifeq ($(CONFIG_FREERADIUS),y)
-	install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
 endif
 	@true
 

@@ -52,7 +52,9 @@ openvpn: $(SSL_DEP) openvpn-configure
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_DANUBE),y)
 ifneq ($(CONFIG_FREERADIUS),y)
+ifneq ($(CONFIG_POUND),y)
 	rm -f openssl/*.so*
+endif
 endif
 endif
 endif
