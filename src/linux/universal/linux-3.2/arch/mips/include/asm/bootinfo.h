@@ -89,6 +89,9 @@
 #define MACH_GROUP_AR7240       31
 #define MACH_ATHEROS_AR7240     1
 
+#define MACH_GROUP_RT2880    32 	/* Ralink AP SoC */
+#define MACH_RALINK_ROUTER   0 		/* Ralink Wireless ROUTER*/
+
 extern char *system_type;
 const char *get_system_type(void);
 

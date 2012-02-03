@@ -3,6 +3,13 @@
 #
 
 obj-y				+= mem.o random.o
+obj-$(CONFIG_RALINK_GPIO)	+= ralink_gpio.o
+obj-$(CONFIG_RALINK_GDMA)	+= ralink_gdma.o 
+obj-$(CONFIG_RALINK_SPI) 	+= spi_drv.o 
+obj-$(CONFIG_RALINK_I2C) 	+= i2c_drv.o
+obj-$(CONFIG_RALINK_PCM)	+= pcm/
+obj-$(CONFIG_RALINK_I2S)	+= i2s/
+
 obj-$(CONFIG_TTY_PRINTK)	+= ttyprintk.o
 obj-y				+= misc.o
 obj-$(CONFIG_ATARI_DSP56K)	+= dsp56k.o
