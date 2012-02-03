@@ -56,6 +56,7 @@ struct rtl_priv {
 	int do_cpu;
 	struct mii_bus *bus;
 	char hwname[sizeof(RTL_NAME_UNKNOWN)];
+	bool fixup;
 };
 
 struct rtl_phyregs {
@@ -255,6 +256,9 @@ rtl_set_page(struct rtl_priv *priv, unsigned int page)
 {
 	struct mii_bus *bus = priv->bus;
 	u16 pgsel;
+
+	if (priv->fixup)
+		return;
 
 	if (priv->page == page)
 		return;
@@ -710,7 +714,7 @@ static struct switch_attr rtl_globals[] = {
 	},
 	{
 		.type = SWITCH_TYPE_INT,
-		.name = "vlan",
+		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
 		.max = 1,
 		.set = rtl_set_vlan,
@@ -829,7 +833,7 @@ static struct switch_attr rtl_vlan[] = {
 	{
 		RTL_VLAN_REGATTR(VID),
 		.name = "vid",
-		.description = "VLAN ID",
+		.description = "VLAN ID (1-4095)",
 		.max = 4095,
 	},
 };
@@ -923,6 +927,8 @@ rtl8306_fixup(struct phy_device *pdev)
 	if (pdev->addr != 0 && pdev->addr != 4)
 		return 0;
 
+	memset(&priv, 0, sizeof(priv));
+	priv.fixup = true;
 	priv.page = -1;
 	priv.bus = pdev->bus;
 	chipid = rtl_get(&priv.dev, RTL_REG_CHIPID);
