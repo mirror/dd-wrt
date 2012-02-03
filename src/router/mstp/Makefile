@@ -34,7 +34,7 @@ install: all
 	-mkdir -pv $(INSTALLDIR)/sbin
 	install -m 755 mstpd $(INSTALLDIR)/sbin/mstpd
 	install -m 755 mstpctl $(INSTALLDIR)/sbin/mstpctl
-#	install -m 755 bridge-stp $(DESTDIR)/sbin/bridge-stp
+	install -m 755 bridge-stp $(DESTDIR)/sbin/bridge-stp
 
 romfs: all
 	$(ROMFSINST) /sbin/mstpd
