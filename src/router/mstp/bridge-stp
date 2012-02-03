@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# Script to start/stop spanning tree called from kernel
+# Make sure umask is sane
+umask 022
+
+# Set up a default search path.
+PATH="/sbin:/usr/sbin:/bin:/usr/bin"
+export PATH
+
+if [ $# -ne 2 ]; then
+    echo "Usage: bridge-stp <bridge> {start|stop}"
+    exit 1
+fi
+bridge=$1
+service=mstpd
+pid_file=/var/run/${service}.pid
+
+# Set this to the list of bridges for which MSTP should be used
+MSTP_BRIDGES="br0"
+
+# Set $pid to pids from /var/run* for {program}.  $pid should be declared
+# local in the caller.
+# Returns LSB exit code for the 'status' action.
+checkpid()
+{
+    pid=
+    if [ -f "$1" ] ; then
+        local line p
+        read line < "$pid_file"
+        for p in $line ; do
+            [ -z "${p//[0-9]/}" -a -d "/proc/$p" ] && pid="$pid $p"
+        done
+        if [ -n "$pid" ]; then
+            return 0
+        fi
+        return 1 # "Program is dead and /var/run pid file exists"
+    fi
+    return 3 # "Program is not running"
+}
+
+case $2 in
+    start) 
+        checkpid $pid_file || exit 1
+        for b in $MSTP_BRIDGES; do
+            if [ "$bridge" == "$b" ]; then
+                exec /sbin/mstpctl addbridge $bridge
+            fi
+        done
+        exit 1 ;;
+    stop)
+        exec /sbin/mstpctl delbridge $bridge
+        ;;
+    *)
+        echo "Unknown action:" $2
+        echo "Usage: bridge-stp <bridge> {start|stop}"
+        exit 1
+esac
