@@ -4,6 +4,60 @@
 
 menu "Character devices"
 
+config RALINK_GPIO
+	bool "Ralink GPIO Support"
+	depends on RAETH
+	default y
+
+config RALINK_GPIO_LED
+	bool "Ralink GPIO LED Support"
+	depends on RALINK_GPIO
+	default y
+
+config RALINK_GDMA
+	tristate "Ralink GDMA Support"
+	depends on RAETH
+	default n
+choice
+        prompt "GDMA Channel Allocation Mode"
+	depends on RALINK_GDMA
+	default GDMA_EVERYBODY
+
+	config GDMA_PCM_ONLY
+	        bool "All for PCM0/PCM1"
+	
+	config GDMA_PCM_I2S_OTHERS
+	        bool "4Ch for PCM0 / 2Ch for I2S / 2Ch for Everybody"
+
+	config GDMA_EVERYBODY
+	        bool "All for Everybody"
+	
+	config GDMA_DEBUG
+	        bool "Debug Mode 0->1..7->0->1..7.."
+endchoice
+
+config RALINK_SPI
+	tristate "Ralink RT2880 SPI Support"
+	depends on RAETH
+	default n
+
+	
+config RALINK_I2C
+	tristate "Ralink RT2880 I2C Support"
+	depends on RAETH
+	default n
+
+config RALINK_PCM
+	tristate "Ralink PCM Support"
+	depends on RAETH
+	default n
+		
+config RALINK_I2S
+	tristate "Ralink I2S Support"
+	depends on RAETH
+	default n
+
+
 source "drivers/tty/Kconfig"
 
 config DEVKMEM

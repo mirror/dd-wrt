@@ -59,6 +59,12 @@ config USB_EHCI_HCD
 	  To compile this driver as a module, choose M here: the
 	  module will be called ehci-hcd.
 
+config RT3XXX_EHCI
+	bool "Ralink EHCI HCD support"
+	depends on USB_EHCI_HCD && RAETH
+	default y
+
+
 config USB_EHCI_ROOT_HUB_TT
 	bool "Root Hub Transaction Translators"
 	depends on USB_EHCI_HCD

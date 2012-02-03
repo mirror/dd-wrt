@@ -61,3 +61,5 @@ obj-$(CONFIG_MWIFIEX)	+= mwifiex/
 obj-$(CONFIG_BRCMFMAC) += brcm80211/
 obj-$(CONFIG_BRCMUMAC) += brcm80211/
 obj-$(CONFIG_BRCMSMAC) += brcm80211/
+obj-$(CONFIG_RT2860V2_AP)       += rt3352/rt2860v2_ap/
+obj-$(CONFIG_RT2860V2_STA)      += rt3352/rt2860v2_sta/

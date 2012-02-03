@@ -69,3 +69,8 @@ obj-$(CONFIG_DNS_RESOLVER)	+= dns_resolver/
 obj-$(CONFIG_CEPH_LIB)		+= ceph/
 obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
 obj-$(CONFIG_NFC)		+= nfc/
+ifeq ($(CONFIG_RAETH),y)
+ifneq ($(CONFIG_RA_NAT_NONE),y)
+obj-y                           += nat/foe_hook/
+endif
+endif

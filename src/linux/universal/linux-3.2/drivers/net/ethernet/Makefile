@@ -127,3 +127,4 @@ obj-y += ag71xx/
 obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_LANTIQ) += ifxatm/
 obj-$(CONFIG_AG934X) += ag934x/
+obj-$(CONFIG_RAETH) += raeth/
