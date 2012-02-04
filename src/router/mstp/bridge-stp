@@ -43,9 +43,7 @@ case $2 in
     start) 
         checkpid $pid_file || exit 1
         for b in $MSTP_BRIDGES; do
-            if [ "$bridge" == "$b" ]; then
                 exec /sbin/mstpctl addbridge $bridge
-            fi
         done
         exit 1 ;;
     stop)
