@@ -321,6 +321,9 @@ endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS_EXTRA += -DHAVE_WASP
 endif
+ifeq ($(CONFIG_MSTP),y)
+CFLAGS_EXTRA += -DHAVE_MSTP
+endif
 ifeq ($(CONFIG_TEW632BRP),y)
 CFLAGS_EXTRA += -DHAVE_TEW632BRP
 endif
