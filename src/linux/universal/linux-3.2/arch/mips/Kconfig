@@ -43,6 +43,8 @@ config RALINK_RT5350_MP
 	bool
 config RALINK_RT3883_MP
 	bool
+config RALINK_DEVICE
+	bool
 
 
 choice
@@ -54,6 +56,7 @@ config RALINK_RT2880
 	select DMA_NONCOHERENT
 	select CEVT_R4K_LIB
 	select CSRC_R4K_LIB
+	select RALINK_DEVICE
 	select SYS_HAS_EARLY_PRINTK
 	select IRQ_CPU
 	select HW_HAS_PCI
@@ -71,6 +74,7 @@ config RALINK_RT2883
 	select DMA_NONCOHERENT
 	select CEVT_R4K_LIB
 	select CSRC_R4K_LIB
+	select RALINK_DEVICE
 	select SYS_HAS_EARLY_PRINTK
 	select IRQ_CPU
 	select HW_HAS_PCI
@@ -89,6 +93,7 @@ config RALINK_RT3052
 	select DMA_NONCOHERENT
 	select CEVT_R4K_LIB
 	select CSRC_R4K_LIB
+	select RALINK_DEVICE
 	select SYS_HAS_EARLY_PRINTK
 	select IRQ_CPU
 	select SWAP_IO_SPACE
@@ -106,6 +111,7 @@ config RALINK_RT3052
 	select DMA_NONCOHERENT
 	select CEVT_R4K_LIB
 	select CSRC_R4K_LIB
+	select RALINK_DEVICE
 	select SYS_HAS_EARLY_PRINTK
 	select IRQ_CPU
 	select SWAP_IO_SPACE
@@ -124,6 +130,7 @@ config RALINK_RT5350
 	select CEVT_R4K_LIB
 	select CSRC_R4K_LIB
 	select SYS_HAS_EARLY_PRINTK
+	select RALINK_DEVICE
 	select IRQ_CPU
 	select SWAP_IO_SPACE
 	select SYS_HAS_CPU_MIPS32_R1
@@ -139,6 +146,7 @@ config RALINK_RT3883
         bool "Ralink RT3883 board"
 	select DMA_NONCOHERENT
 	select CEVT_R4K_LIB
+	select RALINK_DEVICE
 	select CSRC_R4K_LIB
 	select SYS_HAS_EARLY_PRINTK
 	select IRQ_CPU
@@ -1009,7 +1017,9 @@ config AP_USB_LED_GPIO
 
 endchoice
 
+if RALINK_DEVICE
 source "arch/mips/rt2880/Kconfig"
+endif
 source "arch/mips/alchemy/Kconfig"
 source "arch/mips/ath79/Kconfig"
 source "arch/mips/bcm47xx/Kconfig"

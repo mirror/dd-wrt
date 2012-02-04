@@ -1,8 +1,10 @@
 config RAETH
         tristate "Ralink GMAC"
+        depends on RALINK_DEVICE
         ---help---
           This driver supports Ralink gigabit ethernet family of
           adapters.
+
 
 config RAETH_NAPI
         bool "Use Rx Polling (NAPI)"
@@ -10,6 +12,7 @@ config RAETH_NAPI
 
 choice
 	prompt "Network BottomHalves"	
+	depends on RAETH
 	default RA_NETWORK_TASKLET_BH
 
 	config RA_NETWORK_TASKLET_BH
@@ -256,4 +259,3 @@ config RTL8367M
 config AR8316
         tristate "Atheros AR8316 Support"
         default n
-

@@ -17,7 +17,9 @@ config MDIO
 config SUNGEM_PHY
 	tristate
 
+if RALINK_DEVICE
 source "drivers/net/ethernet/raeth/Kconfig"
+endif
 source "drivers/net/ethernet/3com/Kconfig"
 source "drivers/net/ethernet/adaptec/Kconfig"
 source "drivers/net/ethernet/aeroflex/Kconfig"
