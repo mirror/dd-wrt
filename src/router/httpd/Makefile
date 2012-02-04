@@ -149,7 +149,9 @@ endif
 ifeq ($(CONFIG_VF803),y)
   CFLAGS += -DHAVE_VF803
 endif
-
+ifeq ($(CONFIG_MSTP),y)
+  CFLAGS += -DHAVE_MSTP
+endif
 ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
