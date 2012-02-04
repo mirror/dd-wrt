@@ -2011,7 +2011,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"br0\" />\n",
 			  bridge_name);
+#ifdef HAVE_MSTP
+		websWrite(wp, "&nbsp;MSTP&nbsp;");
+#else
 		websWrite(wp, "&nbsp;STP&nbsp;");
+#endif
 		sprintf(bridge_name, "bridgestp%d", count);
 		showOptions(wp, bridge_name, "On Off", "Off");
 		websWrite(wp, "&nbsp;Prio&nbsp;");
@@ -2061,7 +2065,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 			  bridge_name, bridge);
+#ifdef HAVE_MSTP
+		websWrite(wp, "&nbsp;MSTP&nbsp;");
+#else
 		websWrite(wp, "&nbsp;STP&nbsp;");
+#endif
 		sprintf(bridge_name, "bridgestp%d", count);
 		showOptions(wp, bridge_name, "On Off", stp);
 		websWrite(wp, "&nbsp;Prio&nbsp;");
@@ -2095,7 +2103,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		sprintf(bridge_name, "bridgename%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" />\n",
 			  bridge_name);
+#ifdef HAVE_MSTP
+		websWrite(wp, "&nbsp;MSTP&nbsp;");
+#else
 		websWrite(wp, "&nbsp;STP&nbsp;");
+#endif
 		sprintf(bridge_name, "bridgestp%d", i);
 		showOptions(wp, bridge_name, "On Off", "On");
 		websWrite(wp, "&nbsp;Prio&nbsp;");
