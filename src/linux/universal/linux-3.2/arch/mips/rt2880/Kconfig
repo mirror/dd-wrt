@@ -144,6 +144,7 @@ config FLASH_REMAP_NEED
 choice
        prompt "DRAM Size"
        default RT2880_DRAM_16M
+       depends on RALINK_RT2880
 
 config RT2880_DRAM_8M
        bool "8M"
