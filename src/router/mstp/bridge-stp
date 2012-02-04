@@ -42,9 +42,7 @@ checkpid()
 case $2 in
     start) 
         checkpid $pid_file || exit 1
-        for b in $MSTP_BRIDGES; do
-                exec /sbin/mstpctl addbridge $bridge
-        done
+        exec /sbin/mstpctl addbridge $bridge
         exit 1 ;;
     stop)
         exec /sbin/mstpctl delbridge $bridge
