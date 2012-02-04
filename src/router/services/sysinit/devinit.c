@@ -167,6 +167,7 @@ void start_devinit(void)
 	eval("mkdir", "-p", "/usr/local/nvram");
 #endif
 #ifdef HAVE_MSTP
+	fprintf(stderr,"start MSTP Daemon\n");
 	eval("/sbin/mstpd");
 #endif
 	fprintf(stderr, "done\n");
