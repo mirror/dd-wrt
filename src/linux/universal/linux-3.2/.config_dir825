@@ -7,6 +7,12 @@ CONFIG_MIPS=y
 #
 # Machine selection
 #
+# CONFIG_RALINK_RT2880 is not set
+# CONFIG_RALINK_RT2883 is not set
+# CONFIG_RALINK_RT3052 is not set
+# CONFIG_RALINK_RT3352 is not set
+# CONFIG_RALINK_RT5350 is not set
+# CONFIG_RALINK_RT3883 is not set
 # CONFIG_MIPS_ALCHEMY is not set
 # CONFIG_AR7 is not set
 # CONFIG_ATH79 is not set
