@@ -59,7 +59,7 @@ int brctl_main(int argc, char **argv)
 }
 #else
 
-#if HAVE_RSTP
+#if HAVE_MSTP
 
 int br_set_stp_state(const char *br, int stp_state)
 {
@@ -67,10 +67,10 @@ int br_set_stp_state(const char *br, int stp_state)
 		return -1;
 	if (stp_state == 1) {
 		// syslog (LOG_INFO, "stp is set to on\n");
-		return eval("rstpctl", "rstp", br, "on");
+		return eval("mstpctl", "addbridge", br);
 	} else {
 		// syslog (LOG_INFO, "stp is set to off\n");
-		return eval("rstpctl", "rstp", br, "off");
+		return eval("mstpctl", "delbridge", br);
 	}
 }
 
@@ -78,14 +78,14 @@ int br_set_port_prio(const char *br, char *port, char *prio)
 {
 	if (!ifexists(br))
 		return -1;
-	return eval("rstpctl", "setportprio", br, port, prio);
+	return eval("mstpctl", "settreeportprio", br, port, "0", prio);
 }
 
 int br_set_bridge_prio(const char *br, char *prio)
 {
 	if (!ifexists(br))
 		return -1;
-	return eval("rstpctl", "setbridgeprio", br, prio);
+	return eval("mstpctl", "settreeprio", br, "0", prio);
 }
 
 int br_set_bridge_forward_delay(const char *br, int sec)
@@ -93,7 +93,7 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 	char delay[32];
 
 	sprintf(delay, "%d", sec);
-	return eval("rstpctl", "setfdelay", br, delay);
+	return eval("mstpctl", "setfdelay", br, delay);
 
 }
 #else
