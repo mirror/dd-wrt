@@ -159,40 +159,28 @@ endif
 cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
 
 
-#
-# Ralink RT2880 board
-#
-core-$(CONFIG_RALINK_RT2880)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT2880)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT2880)	+= 0x88000000
 
 #
-# Ralink RT2883 board
+# Ralink SoC common stuff
 #
-core-$(CONFIG_RALINK_RT2883)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT2883)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT2883)	+= 0x80000000
+core-$(CONFIG_MIPS_RALINK)	+= arch/mips/ralink/common/
+cflags-$(CONFIG_MIPS_RALINK)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink
 
 #
-# Ralink RT3052 board
+# Ralink RT288x
 #
-core-$(CONFIG_RALINK_RT3052)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT3052)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT3052)	+= 0x80000000
+core-$(CONFIG_RALINK_RT288X)	+= arch/mips/ralink/rt288x/
+cflags-$(CONFIG_RALINK_RT288X)	+= -I$(srctree)//arch/mips/include/asm/mach-ralink/rt288x  -I$(srctree)/arch/mips/include/asm/rt2880
+load-$(CONFIG_RALINK_RT288X)	+= 0xffffffff88000000
 
 #
-# Ralink RT3352 board
+# Ralink RT305x
 #
-core-$(CONFIG_RALINK_RT3352)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT3352)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT3352)	+= 0x80000000
+core-$(CONFIG_RALINK_RT305X)	+= arch/mips/ralink/rt305x/
+cflags-$(CONFIG_RALINK_RT305X)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x -I$(srctree)/arch/mips/include/asm/rt2880
+load-$(CONFIG_RALINK_RT305X)	+= 0xffffffff80000000
 
-#
-# Ralink RT3883 board
-#
-core-$(CONFIG_RALINK_RT3883)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT3883)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT3883)	+= 0x80000000
+
 #
 
 

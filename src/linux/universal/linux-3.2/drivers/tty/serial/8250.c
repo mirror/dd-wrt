@@ -318,9 +318,9 @@ static const struct serial8250_config uart_config[] = {
 	},
 };
 
-#if defined(CONFIG_MIPS_ALCHEMY)
+#if defined(CONFIG_MIPS_ALCHEMY) || defined (CONFIG_SERIAL_8250_RT288X)
 
-/* Au1x00 UART hardware has a weird register layout */
+/* Au1x00 and RT288x UART hardware has a weird register layout */
 static const u8 au_io_in_map[] = {
 	[UART_RX]  = 0,
 	[UART_IER] = 2,
@@ -452,8 +452,6 @@ static unsigned int mem32_serial_in(struct uart_port *p, int offset)
 	return readl(p->membase + offset);
 }
 
-
-
 static unsigned int au_serial_in(struct uart_port *p, int offset)
 {
 	offset = map_8250_in_reg(p, offset) << p->regshift;
@@ -469,31 +467,13 @@ static void au_serial_out(struct uart_port *p, int offset, int value)
 static unsigned int io_serial_in(struct uart_port *p, int offset)
 {
 	offset = map_8250_in_reg(p, offset) << p->regshift;
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT3052)
-		return (*(int*)(p->iobase + offset));
-#else
-		return inb(p->iobase + offset);
-#endif
+	return inb(p->iobase + offset);
 }
 
 static void io_serial_out(struct uart_port *p, int offset, int value)
 {
 	offset = map_8250_out_reg(p, offset) << p->regshift;
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT3052)
-		*(int*)(p->iobase + offset) = value;
-#else
-		outb(value, p->iobase + offset);
-#endif
+	outb(value, p->iobase + offset);
 }
 
 static int serial8250_default_handle_irq(struct uart_port *port);
@@ -581,25 +561,9 @@ static inline void _serial_dl_write(struct uart_8250_port *up, int value)
 	serial_outp(up, UART_DLL, value & 0xff);
 	serial_outp(up, UART_DLM, value >> 8 & 0xff);
 }
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT3052)
- /* Ralink haven't got a standard divisor latch */
-static int serial_dl_read(struct uart_8250_port *up)
-{
- 	return serial_inp(up, UART_DLL);
-}
-  
-static void serial_dl_write(struct uart_8250_port *up, int value)
-{
- 	serial_outp(up, UART_DLL, value);
-}
 
-#elif defined(CONFIG_MIPS_ALCHEMY)
-/* Au1x00 haven't got a standard divisor latch */
+#if defined(CONFIG_MIPS_ALCHEMY) || defined (CONFIG_SERIAL_8250_RT288X)
+/* Au1x00 and RT288x haven't got a standard divisor latch */
 static int serial_dl_read(struct uart_8250_port *up)
 {
 	if (up->port.iotype == UPIO_AU)
@@ -806,39 +770,19 @@ static int size_fifo(struct uart_8250_port *up)
  */
 static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
 {
-	unsigned char old_dll, old_dlm, old_lcr;
+	unsigned char old_lcr;
+	unsigned int old_dl;
 	unsigned int id;
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT3052)
-	unsigned short old_dl;
-
-	old_dl = serial_dl_read(p);
-	serial_dl_write(p, 0);
-	id = serial_dl_read(p);
-	serial_dl_write(p, old_dl);
-
-	old_lcr = serial_inp(p, UART_LCR);
-	serial_outp(p, UART_LCR, UART_LCR_DLAB);
-#else
 
 	old_lcr = serial_inp(p, UART_LCR);
 	serial_outp(p, UART_LCR, UART_LCR_CONF_MODE_A);
 
-	old_dll = serial_inp(p, UART_DLL);
-	old_dlm = serial_inp(p, UART_DLM);
+	old_dl = serial_dl_read(p);
 
-	serial_outp(p, UART_DLL, 0);
-	serial_outp(p, UART_DLM, 0);
+	serial_dl_write(p, 0);
+	id = serial_dl_read(p);
 
-	id = serial_inp(p, UART_DLL) | serial_inp(p, UART_DLM) << 8;
-
-	serial_outp(p, UART_DLL, old_dll);
-	serial_outp(p, UART_DLM, old_dlm);
-#endif
+	serial_dl_write(p, old_dl);
 	serial_outp(p, UART_LCR, old_lcr);
 
 	return id;
@@ -964,7 +908,7 @@ static int broken_efr(struct uart_8250_port *up)
 	/*
 	 * Exar ST16C2550 "A2" devices incorrectly detect as
 	 * having an EFR, and report an ID of 0x0201.  See
-	 * http://linux.derkeiler.com/Mailing-Lists/Kernel/2004-11/4812.html 
+	 * http://linux.derkeiler.com/Mailing-Lists/Kernel/2004-11/4812.html
 	 */
 	if (autoconfig_read_divisor_id(up) == 0x0201 && size_fifo(up) == 16)
 		return 1;

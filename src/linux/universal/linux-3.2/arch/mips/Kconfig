@@ -31,6 +31,8 @@ menu "Machine selection"
 config ZONE_DMA
 	bool
 
+config RALINK_DEVICE
+	bool
 config RALINK_RT2880_MP
 	bool
 config RALINK_RT2880_SHUTTLE
@@ -43,124 +45,15 @@ config RALINK_RT5350_MP
 	bool
 config RALINK_RT3883_MP
 	bool
-config RALINK_DEVICE
+config RALINK_RT3052
+	bool
+config RALINK_RT2880
 	bool
 
 
 choice
 	prompt "System type"
 	default SGI_IP22
-
-config RALINK_RT2880
-        bool "Ralink RT2880 board"
-	select DMA_NONCOHERENT
-	select CEVT_R4K_LIB
-	select CSRC_R4K_LIB
-	select RALINK_DEVICE
-	select SYS_HAS_EARLY_PRINTK
-	select IRQ_CPU
-	select HW_HAS_PCI
-	select SWAP_IO_SPACE
-	select SYS_HAS_CPU_MIPS32_R1
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select BOOT_ELF32
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT2880_MP
-        help
-         Ralink evaluation board based on RT2880
-
-config RALINK_RT2883
-        bool "Ralink RT2883 board"
-	select DMA_NONCOHERENT
-	select CEVT_R4K_LIB
-	select CSRC_R4K_LIB
-	select RALINK_DEVICE
-	select SYS_HAS_EARLY_PRINTK
-	select IRQ_CPU
-	select HW_HAS_PCI
-	select SWAP_IO_SPACE
-	select SYS_HAS_CPU_MIPS32_R1
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select BOOT_ELF32
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT2883_MP
-    help
-         Ralink evaluation board based on RT2883
-
-
-config RALINK_RT3052
-        bool "Ralink RT305x/RT3350 board"
-	select DMA_NONCOHERENT
-	select CEVT_R4K_LIB
-	select CSRC_R4K_LIB
-	select RALINK_DEVICE
-	select SYS_HAS_EARLY_PRINTK
-	select IRQ_CPU
-	select SWAP_IO_SPACE
-	select SYS_HAS_CPU_MIPS32_R1
-	select SYS_HAS_CPU_MIPS32_R2
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select BOOT_ELF32
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT3052_MP2 if !RALINK_RT3350
-        help
-         Ralink evaluation board based on RT3052
-
- config RALINK_RT3352
-        bool "Ralink RT3352 board"
-	select DMA_NONCOHERENT
-	select CEVT_R4K_LIB
-	select CSRC_R4K_LIB
-	select RALINK_DEVICE
-	select SYS_HAS_EARLY_PRINTK
-	select IRQ_CPU
-	select SWAP_IO_SPACE
-	select SYS_HAS_CPU_MIPS32_R1
-        select SYS_HAS_CPU_MIPS32_R2
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select BOOT_ELF32
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT3352_MP
-        help
-         Ralink evaluation board based on RT3352
-
-config RALINK_RT5350
-	bool "Ralink RT5350 board"
-	select DMA_NONCOHERENT
-	select CEVT_R4K_LIB
-	select CSRC_R4K_LIB
-	select SYS_HAS_EARLY_PRINTK
-	select RALINK_DEVICE
-	select IRQ_CPU
-	select SWAP_IO_SPACE
-	select SYS_HAS_CPU_MIPS32_R1
-	select SYS_HAS_CPU_MIPS32_R2
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select BOOT_ELF32
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT5350_MP
-	help
-	 Ralink evaluation board based on RT5350
-
-config RALINK_RT3883
-        bool "Ralink RT3883 board"
-	select DMA_NONCOHERENT
-	select CEVT_R4K_LIB
-	select RALINK_DEVICE
-	select CSRC_R4K_LIB
-	select SYS_HAS_EARLY_PRINTK
-	select IRQ_CPU
-	select HW_HAS_PCI
-	select SWAP_IO_SPACE
-	select SYS_HAS_CPU_MIPS32_R1
-        select SYS_HAS_CPU_MIPS32_R2
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select BOOT_ELF32
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select RALINK_RT3883_MP
-        help
-         Ralink evaluation board based on RT3883
-
 
 config MIPS_ALCHEMY
 	bool "Alchemy processor based machines"
@@ -213,6 +106,9 @@ config ATH79
 	select SYS_SUPPORTS_BIG_ENDIAN
 	help
 	  Support for the Atheros AR71XX/AR724X/AR913X SoCs.
+
+config MIPS_RALINK
+	bool "Ralink MIPS SoC based boards"
 
 config BCM47XX
 	bool "Broadcom BCM47XX based boards"
@@ -1018,7 +914,7 @@ config AP_USB_LED_GPIO
 endchoice
 
 if RALINK_DEVICE
-source "arch/mips/rt2880/Kconfig"
+#source "arch/mips/rt2880/Kconfig"
 endif
 source "arch/mips/alchemy/Kconfig"
 source "arch/mips/ath79/Kconfig"
@@ -1028,6 +924,7 @@ source "arch/mips/jazz/Kconfig"
 source "arch/mips/jz4740/Kconfig"
 source "arch/mips/lantiq/Kconfig"
 source "arch/mips/lasat/Kconfig"
+source "arch/mips/ralink/Kconfig"
 source "arch/mips/pmc-sierra/Kconfig"
 source "arch/mips/powertv/Kconfig"
 source "arch/mips/sgi-ip27/Kconfig"
@@ -1378,7 +1275,7 @@ config BOOT_ELF32
 
 config MIPS_L1_CACHE_SHIFT
 	int
-	default "4" if MACH_DECSTATION || MIKROTIK_RB532 || PMC_MSP4200_EVAL
+	default "4" if MACH_DECSTATION || MIKROTIK_RB532 || PMC_MSP4200_EVAL || RALINK_RT2880 || RALINK_RT288X
 	default "6" if MIPS_CPU_SCACHE
 	default "7" if SGI_IP22 || SGI_IP27 || SGI_IP28 || SNI_RM || CPU_CAVIUM_OCTEON
 	default "5"

@@ -298,6 +298,7 @@ static void disable_rt2880_cp_int(unsigned int IP_X)
 	write_32bit_cp0_register(CP0_STATUS, int_status);
 }
 
+
 void __init arch_init_irq(void)
 {
 	int i;
@@ -308,25 +309,18 @@ void __init arch_init_irq(void)
 	 */
 
 	mips_cpu_irq_init();
-
-#if 1
-	int mips_cp0_cause, mips_cp0_status;
-        mips_cp0_cause = read_32bit_cp0_register(CP0_CAUSE);
-        mips_cp0_status = read_32bit_cp0_register(CP0_STATUS);
-        printk("cause = %x, status = %x\n", mips_cp0_cause, mips_cp0_status);
-        mips_cp0_status= mips_cp0_status& ~(CAUSEF_IP0|CAUSEF_IP1|CAUSEF_IP2|CAUSEF_IP3|CAUSEF_IP4|CAUSEF_IP5|CAUSEF_IP6|CAUSEF_IP7);
-        write_32bit_cp0_register(CP0_STATUS, mips_cp0_status);
-#endif
+	surfboard_hw0_icregs->intDisable = ~0;
+	surfboard_hw0_icregs->intType = 0;
 	
 	memset(irq_desc, 0, sizeof(irq_desc));
 
-	for (i = 0; i <= SURFBOARDINT_END; i++) {
+	for (i = 8; i <= 8 + 32; i++) {
 		irq_set_chip_and_handler(i, &surfboard_irq_type,
 					 handle_level_irq);
 	}
 
-	/* Enable global interrupt bit */
-//	surfboard_hw0_icregs->intDisable = 0xffffffff;
+//	setup_irq(2, &ramips_intc_irqaction);
+
 	surfboard_hw0_icregs->intEnable = M_SURFBOARD_GLOBAL_INT;
 
 #ifdef CONFIG_RALINK_GPIO
@@ -454,7 +448,7 @@ asmlinkage void plat_irq_dispatch(void)
 {
         unsigned int pending = read_c0_status() & read_c0_cause() & ST0_IM;
         if (pending & CAUSEF_IP7)
-                mips_timer_interrupt();
+                do_IRQ(7);
 	else
 		rt2880_irqdispatch();
 }

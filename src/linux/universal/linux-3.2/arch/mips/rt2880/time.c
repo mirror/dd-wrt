@@ -104,53 +104,7 @@ static unsigned int __init cal_r4koff(void)
 
 void __init plat_time_init(void)
 {
-        unsigned long flags;
-        unsigned int est_freq;
-#ifdef CONFIG_RALINK_EXTERNAL_TIMER
-	u32 reg;
-#endif
-
-
-        /* to generate the first timer interrupt */
-#ifndef CONFIG_RALINK_EXTERNAL_TIMER
-	r4k_cur = (read_c0_count() + r4k_offset);
-	write_c0_compare(r4k_cur);
-#else
-	r4k_cur = ((*((volatile u32 *)(RALINK_COUNT))) + r4k_offset);
-	(*((volatile u32 *)(RALINK_COMPARE))) = r4k_cur;
-	(*((volatile u32 *)(RALINK_MCNT_CFG))) = 3;
-#endif
-	set_c0_status(ALLINTS);
-
-
-	local_irq_save(flags);
-
-#ifndef CONFIG_RALINK_EXTERNAL_TIMER
 	mips_hpt_frequency = mips_cpu_feq/2;
-#else
-	mips_hpt_frequency = 50000;
-#endif
-
-	printk("calculating r4koff... ");
-	r4k_offset = cal_r4koff();
-	printk("%08x(%d)\n", r4k_offset, r4k_offset);
-
-#if 0
-        if ((read_c0_prid() & 0xffff00) ==
-	    (PRID_COMP_MIPS | PRID_IMP_20KC))
-		est_freq = r4k_offset*HZ;
-	else
-		est_freq = 2*r4k_offset*HZ;
-#endif
-
-	
-	est_freq = r4k_offset*HZ;
-	est_freq += 5000;    /* round */
-	est_freq -= est_freq%10000;
-	printk("CPU frequency %d.%02d MHz\n", est_freq/1000000,
-	       (est_freq%1000000)*100/1000000);
-
-	local_irq_restore(flags);
 }
 
 unsigned int __cpuinit get_c0_compare_irq(void)
@@ -158,10 +112,10 @@ unsigned int __cpuinit get_c0_compare_irq(void)
 	return CP0_LEGACY_COMPARE_IRQ;
 }
 
-unsigned int __cpuinit get_c0_compare_int(void)
+/*unsigned int __cpuinit get_c0_compare_int(void)
 {
 	return RALINK_CPU_TIMER_IRQ;
-}
+}*/
 
 u32 get_surfboard_sysclk(void) 
 {
