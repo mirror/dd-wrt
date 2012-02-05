@@ -48,8 +48,23 @@ config SOC_RT305X
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SYS_HAS_EARLY_PRINTK
 	select RALINK_DEVICE
-	select RALINK_RT3052
 	select USB_ARCH_HAS_HCD
+
+config RALINK_RT3052
+	bool "RT3052"
+	depends on SOC_RT305X
+	select RALINK_RT3052_MP
+
+config RALINK_RT3352
+	bool "RT3352"
+	depends on SOC_RT305X
+	select RALINK_RT3352_MP
+
+config RALINK_RT3350
+	bool "RT3350"
+	depends on SOC_RT305X
+	select RALINK_RT3052_MP
+
 
 config RALINK_DEV_GPIO_BUTTONS
 	def_bool n
