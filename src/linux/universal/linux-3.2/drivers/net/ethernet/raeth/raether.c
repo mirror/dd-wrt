@@ -1951,7 +1951,7 @@ int ei_open(struct net_device *dev)
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	INIT_WORK(&ei_local->kill_sig_wq, kill_sig_workq);
 #endif
-	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
+	err = request_irq(25, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
 	if (err)
 	{
 	printk("unable to request ESW irq %d\n",SURFBOARDINT_ESW);

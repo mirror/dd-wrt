@@ -66,3 +66,4 @@ obj-$(CONFIG_MACH_AR7100)	+= fixup-ar7100.o ops-ar7100.o pci-ar7100.o
 #obj-$(CONFIG_MACH_AR7100)	+= pci-ar71xx.o pci-ar724x.o
 obj-$(CONFIG_MACH_AR7240)	+= pci-ar724x.o pci-ar71xx.o
 #+obj-$(CONFIG_ATHEROS_AR71XX)	+= pci-ar71xx.o pci-ar724x.o
+obj-$(CONFIG_SOC_RT288X)	+= pci-rt288x.o

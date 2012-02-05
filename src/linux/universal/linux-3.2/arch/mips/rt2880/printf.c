@@ -73,10 +73,6 @@ int putPromChar(char c)
 	return 1;
 }
 
-void prom_putchar(unsigned char ch)
-{
-	putPromChar(ch);
-}
 
 char getPromChar(void)
 {

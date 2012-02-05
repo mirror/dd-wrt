@@ -81,6 +81,33 @@ extern void mips_timer_setup(struct irqaction *irq);
 static struct uart_port serial_aboard[4];
 extern int early_serial_setup(struct uart_port *port);
 
+void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,
+				      unsigned irq)
+{
+	struct uart_port p;
+	int err;
+
+	memset(&p, 0, sizeof(p));
+	p.flags		= UPF_SKIP_TEST | UPF_FIXED_TYPE;
+	p.iotype	= UPIO_AU;
+	p.uartclk	= freq;
+	p.regshift	= 2;
+	p.type		= PORT_16550A;
+
+	p.mapbase	= base;
+	p.membase	= ioremap_nocache(p.mapbase, PAGE_SIZE);
+	p.line		= line;
+	p.irq		= irq;
+
+	err = early_serial_setup(&p);
+	if (err)
+		printk(KERN_ERR "early serial%d registration failed %d\n",
+		       line, err);
+}
+
+int getCPUClock(void);
+
+
 void __init rt2880_setup(void)
 {
 #ifdef CONFIG_KGDB
@@ -148,33 +175,10 @@ void __init rt2880_setup(void)
 	//rtc_ops = &no_rtc_ops;
 //	board_time_init = mips_time_init;
 	//board_timer_setup = mips_timer_setup;
+	printk(KERN_INFO "running at %lu MHz\n", getCPUClock());
 
 	mips_reboot_setup();
 
-#ifdef CONFIG_TIXI
-	int i;
-	 for (i=0; 4 > i; i++) {
-		  serial_aboard[i].type       = PORT_16550A;
-		  serial_aboard[i].line       = i+2;
-		  serial_aboard[i].irq        = SURFBOARDINT_GPIO;
-		  //serial_aboard[i].flags      = STD_COM_FLAGS;
-		  serial_aboard[i].flags      = STD_COM_TIXI_FLAGS;
-		  serial_aboard[i].uartclk    = 57600 *16;
-		  serial_aboard[i].iotype     = TIXI8_UART;
-		  serial_aboard[i].iobase	  = 0x118-(i*8);
-		  serial_aboard[i].regshift   = 0;
-		  serial_aboard[i].mapbase    = NULL;
-		  //serial_aboard[i].custom_divisor = (40000000 / SURFBOARD_BAUD_DIV / 57600);
-		  //serial_aboard[i].custom_divisor = (3686400 / SURFBOARD_BAUD_DIV / 115200);
-		  serial_aboard[i].custom_divisor = (3686400 / SURFBOARD_BAUD_DIV / 9600);
-	  }
-
-	  printk("+serial8250_register_port 0");
-	  early_serial_setup(&serial_aboard[0]);
-	  early_serial_setup(&serial_aboard[1]);
-	  early_serial_setup(&serial_aboard[2]);
-	  early_serial_setup(&serial_aboard[3]);
-#endif
 }
 
 void __init plat_mem_setup(void)
