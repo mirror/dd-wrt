@@ -1,21 +1,17 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.2.2 Kernel Configuration
+# Linux/mips 3.2.4 Kernel Configuration
 #
 CONFIG_MIPS=y
 
 #
 # Machine selection
 #
-# CONFIG_RALINK_RT2880 is not set
-# CONFIG_RALINK_RT2883 is not set
-# CONFIG_RALINK_RT3052 is not set
-# CONFIG_RALINK_RT3352 is not set
-# CONFIG_RALINK_RT5350 is not set
-# CONFIG_RALINK_RT3883 is not set
 # CONFIG_MIPS_ALCHEMY is not set
 # CONFIG_AR7 is not set
+# CONFIG_MIPS_RALINK is not set
 # CONFIG_ATH79 is not set
+# CONFIG_MIPS_RALINK is not set
 # CONFIG_BCM47XX is not set
 # CONFIG_BCM63XX is not set
 # CONFIG_MIPS_COBALT is not set
@@ -811,6 +807,10 @@ CONFIG_MTD_AR7240_SPI_FLASH=y
 #
 # CONFIG_MTD_LPDDR is not set
 # CONFIG_MTD_UBI is not set
+
+#
+# Ralink Non-volatile Device Drivers
+#
 # CONFIG_PARPORT is not set
 # CONFIG_BLK_DEV is not set
 # CONFIG_MISC_DEVICES is not set
