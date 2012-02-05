@@ -211,7 +211,6 @@ void hard_init(struct net_device *dev)
 	END_DEVICE *ei_local = (END_DEVICE *)netdev_priv(dev);//kmalloc(sizeof(END_DEVICE), GFP_KERNEL);
 	MAC_INFO *macinfo = kmalloc(sizeof(MAC_INFO), GFP_KERNEL);
 
-	memset(ei_local, 0 , sizeof(END_DEVICE));
 	memset(macinfo, 0 , sizeof(MAC_INFO));
 
 	macinfo->ivec = dev->irq;

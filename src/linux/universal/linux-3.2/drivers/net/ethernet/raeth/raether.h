@@ -52,7 +52,7 @@
 #define GMAC0_OFFSET    0x28 
 #define GMAC1_OFFSET    0x2E
 
-#define IRQ_ENET0	3 	/* hardware interrupt #3, defined in RT2880 Soc Design Spec Rev 0.03, pp43 */
+#define IRQ_ENET0	5 	/* hardware interrupt #3, defined in RT2880 Soc Design Spec Rev 0.03, pp43 */
 
 #define FE_INT_STATUS_REG (*(volatile unsigned long *)(FE_INT_STATUS))
 #define FE_INT_STATUS_CLEAN(reg) (*(volatile unsigned long *)(FE_INT_STATUS)) = reg

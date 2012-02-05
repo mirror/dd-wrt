@@ -534,7 +534,6 @@ static int rt2880_eth_setup(struct net_device *dev)
 		ei_local->rx_ring0[i].rxd_info1.PDP0 = dma_map_single(NULL, skb_put(ei_local->netrx0_skbuf[i], 2), MAX_RX_LENGTH, PCI_DMA_FROMDEVICE);
 	}
 	printk("\nphy_rx_ring0 = 0x%08x, rx_ring0 = 0x%p\n",ei_local->phy_rx_ring0,ei_local->rx_ring0);
-
 #if defined (CONFIG_RAETH_MULTIPLE_RX_RING)
 	/* Initial RX Ring 1*/
 	ei_local->rx_ring1 = pci_alloc_consistent(NULL, NUM_RX_DESC * sizeof(struct PDMA_rxdesc), &ei_local->phy_rx_ring1);
@@ -1489,6 +1488,7 @@ static struct net_device_ops mac_net_ops;
 void ra2880_setup_dev_fptable(struct net_device *dev)
 {
         END_DEVICE *ei_local =  (END_DEVICE *)netdev_priv(dev);
+        memset(ei_local, 0, sizeof(END_DEVICE));
 	RAETH_PRINT(__FUNCTION__ "is called!\n");
 	mac_net_ops.ndo_init	  = rather_probe;
         mac_net_ops.ndo_open      = ei_open;
@@ -1504,6 +1504,7 @@ void ra2880_setup_dev_fptable(struct net_device *dev)
 	mac_net_ops.ndo_ethtool_ops	= ra_ethtool_ops;
 #endif
         dev->netdev_ops = (const struct net_device_ops *)&mac_net_ops;             
+	ei_local->mac_dev = dev;
 #ifdef CONFIG_RAETH_NAPI
 #if defined (CONFIG_RAETH_ROUTER)
 	netif_napi_add(dev, &ei_local->mac_napi, raeth_clean, 32);
@@ -1513,7 +1514,6 @@ void ra2880_setup_dev_fptable(struct net_device *dev)
 	netif_napi_add(dev, &ei_local->mac_napi, raeth_clean, 128);
 #endif
 #endif
-	ei_local->mac_dev = dev;
 	dev->mtu		= 1500;
 }
 
@@ -1893,7 +1893,7 @@ void RAETH_Init_PSEUDO(pEND_DEVICE pAd, struct net_device *net_dev)
  */
 int ei_open(struct net_device *dev)
 {
-	int i;
+	int i,err;
 	unsigned long flags;
 	END_DEVICE *ei_local;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
@@ -1930,9 +1930,14 @@ int ei_open(struct net_device *dev)
 #endif
         }       // kmalloc
 
-	spin_lock_irqsave(&(ei_local->page_lock), flags);
-	request_irq( dev->irq, ei_interrupt, IRQF_DISABLED, dev->name, dev);	// try to fix irq in open
-	rt2880_eth_setup(dev);
+//	spin_lock_irqsave(&(ei_local->page_lock), flags);
+	err = request_irq( dev->irq, ei_interrupt, IRQF_DISABLED, dev->name, dev);	// try to fix irq in open
+	if (err)
+	{
+	printk("unable to request ETH irq %d\n",dev->irq);
+	
+	}	
+    	rt2880_eth_setup(dev);
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	//INTENA: Interrupt enabled for ESW
@@ -1946,7 +1951,13 @@ int ei_open(struct net_device *dev)
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	INIT_WORK(&ei_local->kill_sig_wq, kill_sig_workq);
 #endif
-	request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
+	err = request_irq(SURFBOARDINT_ESW, esw_interrupt, IRQF_DISABLED, "Ralink_ESW", dev);
+	if (err)
+	{
+	printk("unable to request ESW irq %d\n",SURFBOARDINT_ESW);
+	
+	}	
+
 #endif // CONFIG_RALINK_RT3052 || CONFIG_RALINK_RT3352 || CONFIG_RALINK_RT5350 //
 
 
@@ -1976,7 +1987,7 @@ int ei_open(struct net_device *dev)
 	napi_enable(&ei_local->mac_napi);
 #endif
 
-	spin_unlock_irqrestore(&(ei_local->page_lock), flags);
+//	spin_unlock_irqrestore(&(ei_local->page_lock), flags);
 #ifdef CONFIG_PSEUDO_SUPPORT
 	if(ei_local->PseudoDev==NULL) {
 	    RAETH_Init_PSEUDO(ei_local, dev);
@@ -2000,7 +2011,7 @@ int ei_close(struct net_device *dev)
 {
 	int i;
 	END_DEVICE *ei_local = netdev_priv(dev);	// device pointer
-	unsigned int flags;
+	unsigned long flags;
 	spin_lock_irqsave(&(ei_local->page_lock), flags);
 
 #ifdef CONFIG_PSEUDO_SUPPORT
