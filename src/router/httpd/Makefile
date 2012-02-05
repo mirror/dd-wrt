@@ -143,6 +143,9 @@ endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
+ifeq ($(CONFIG_HOTPLUG2),y)
+CFLAGS += -DHAVE_HOTPLUG2
+endif
 ifeq ($(CONFIG_WRT54G2),y)
 CFLAGS += -DHAVE_WRT54G2
 endif
@@ -801,6 +804,12 @@ CFLAGS += -DHAVE_WZRG300NH
 endif
 ifeq ($(CONFIG_WHRHPGN),y)
 CFLAGS += -DHAVE_WHRHPGN
+endif
+ifeq ($(CONFIG_HORNET),y)
+CFLAGS += -DHAVE_HORNET
+endif
+ifeq ($(CONFIG_WASP),y)
+CFLAGS += -DHAVE_WASP
 endif
 ifeq ($(CONFIG_DANUBE),y)
 CFLAGS += -DHAVE_DANUBE
