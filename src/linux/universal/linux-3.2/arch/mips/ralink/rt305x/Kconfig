@@ -1,17 +1,5 @@
-if RALINK_RT2880
-
-choice
-        prompt "Soc Hardware Type"
-	default RT2880_ASIC
-
-config  RT2880_ASIC 
-        bool "RT2880-ASIC"
-endchoice
-
-endif
 #-----------------------------
 
-if RALINK_RT3052
 
 choice
         prompt "Soc Hardware Type"
@@ -24,25 +12,11 @@ endchoice
 config RALINK_RT3350
 	bool "Ralink RT3350 chipset"
 
-endif
 
 
-config  RT2860V2_2850
-        bool "Dual Band"
-        depends on RALINK_RT2880
 
 choice
         prompt "RF Type"
-        depends on RALINK_RT5350 
-        default RALINK_RT5350_1T1R
-
-        config  RALINK_RT5350_1T1R
-        bool "1T1R"
-endchoice
-
-choice
-        prompt "RF Type"
-        depends on RALINK_RT3052
         default RALINK_RT3052_2T2R
 
         config  RALINK_RT3050_1T1R
@@ -180,7 +154,7 @@ endchoice
 
 config  RT2880_FLASH_32M
         bool "Flash Size 32MB Support"
-	depends on (RALINK_RT3052_MP2 || RALINK_RT3350) && !MTD_SPI_RALINK
+	depends on (RALINK_RT305X || RALINK_RT3350) && !MTD_SPI_RALINK
 	select MTD_CONCAT if RT2880_FLASH_32M
 
 config  RALINK_RAM_SIZE
@@ -192,7 +166,7 @@ config  RALINK_RAM_SIZE
 
 config MTD_PHYSMAP_START
        hex 'Physmap start'
-       default 0xBF000000 if !FLASH_REMAP_NEED && RALINK_RT3052
+       default 0xBF000000 if !FLASH_REMAP_NEED && RALINK_RT305X
 
 config MTD_PHYSMAP_LEN
        hex 
@@ -247,7 +221,7 @@ config  RALINK_TIMER_WDG_RESET_OUTPUT
 
 config  EAP9550
 	bool "EAP 9550 watchdog workaround"
-	depends on RALINK_RT3052
+	depends on RALINK_RT305X
 
 config  RALINK_WDG_TIMER
         int "WatchDog Timer (Unit:1Sec, Max=30Sec)"

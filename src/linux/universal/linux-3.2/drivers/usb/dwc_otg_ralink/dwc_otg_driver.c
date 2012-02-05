@@ -885,7 +885,7 @@ SoCreg(0xb0000014) &= 0xFFFFFBFF;
 	lmdev->resource.start = RALINK_USB_OTG_BASE;
 	lmdev->resource.end = RALINK_USB_OTG_BASE + SZ_256K - 1;
 	lmdev->resource.flags = IORESOURCE_MEM;
-	lmdev->irq = RALINK_INTCTL_OTG_IRQN;
+	lmdev->irq = 26;
 	lmdev->id = 0;
 
 	lm_device_register(lmdev);

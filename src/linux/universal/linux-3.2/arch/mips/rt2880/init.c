@@ -340,53 +340,16 @@ int getCPUClock(void)
 ** To get the correct baud_base value, prom_init_sysclk() must be called before
 ** this function is called.
 */
-#define STD_COM_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST)
-extern int early_serial_setup(struct uart_port *port);
+void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,
+				      unsigned irq);
 
 static struct uart_port serial_req[2];
 int prom_init_serial_port(void)
 {
 
-  /*
-   * baud rate = system clock freq / (CLKDIV * 16)
-   * CLKDIV=system clock freq/16/baud rate
-   */
-  memset(serial_req, 0, 2*sizeof(struct uart_port));
 
-  serial_req[0].type       = PORT_16550A;
-  serial_req[0].line       = 0;
-  serial_req[0].irq        = SURFBOARDINT_UART;
-  serial_req[0].flags      = STD_COM_FLAGS;
-  serial_req[0].uartclk    = 57600 *16;
-  serial_req[0].iotype     = SERIAL_IO_PORT;
-  serial_req[0].iobase	   = KSEG1ADDR(RALINK_UART_BASE);
-  serial_req[0].regshift   = 2;
-  serial_req[0].mapbase    = RALINK_UART_BASE;
-  serial_req[0].membase	   = ioremap_nocache(serial_req[0].mapbase, PAGE_SIZE);
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
-  serial_req[0].custom_divisor = (40000000 / SURFBOARD_BAUD_DIV / 57600);
-#else
-  serial_req[0].custom_divisor = (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
-#endif
-
-  serial_req[1].type       = PORT_16550A;
-  serial_req[1].line       = 1;
-  serial_req[1].irq        = SURFBOARDINT_UART1;
-  serial_req[1].flags      = STD_COM_FLAGS;
-  serial_req[1].uartclk    = 57600 *16;
-  serial_req[1].iotype     = SERIAL_IO_PORT;
-  serial_req[1].iobase	   = KSEG1ADDR(RALINK_UART_LITE_BASE);
-  serial_req[1].regshift   = 2;
-  serial_req[1].mapbase    = RALINK_UART_LITE_BASE;
-  serial_req[1].membase	= ioremap_nocache(serial_req[1].mapbase, PAGE_SIZE);
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
-  serial_req[1].custom_divisor = (40000000 / SURFBOARD_BAUD_DIV / 57600);
-#else
-  serial_req[1].custom_divisor = (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
-#endif
-
-  early_serial_setup(&serial_req[0]);
-  early_serial_setup(&serial_req[1]);
+    ramips_early_serial_setup(0, RALINK_UART_BASE, surfboard_sysclk,SURFBOARDINT_UART);
+    ramips_early_serial_setup(1, RALINK_UART_LITE_BASE, surfboard_sysclk,SURFBOARDINT_UART1);
 
   return(0);
 }
@@ -414,48 +377,6 @@ int prom_get_ttysnum(void)
 	return (ttys_num);
 }
 
-static void serial_setbrg(unsigned long wBaud)
-{
-        unsigned int clock_divisor = 0;
-        clock_divisor = (surfboard_sysclk / SURFBOARD_BAUD_DIV);
-	
-#if 1
-	//fix at 57600 8 n 1 n
- 	*(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC08)= 0;
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC10)= 0;
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC14)= 0x3;
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) ||  defined (CONFIG_RALINK_RT5350)
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC28)= (40000000 / SURFBOARD_BAUD_DIV / 57600);
-#else
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0xC28)= (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
-#endif
-	//fix at 57600 8 n 1 n
- 	*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x508)= 0;
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x510)= 0;
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x514)= 0x3;
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) ||  defined (CONFIG_RALINK_RT5350)
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x528)= (40000000 / SURFBOARD_BAUD_DIV / 57600);
-#else
-        *(volatile u32 *)(RALINK_SYSCTL_BASE + 0x528)= (surfboard_sysclk / SURFBOARD_BAUD_DIV / 57600);
-#endif
-#else
-        IER(CFG_RT2880_CONSOLE) = 0;                                    /* Disable for now */
-        FCR(CFG_RT2880_CONSOLE) = 0;                                    /* No fifos enabled */
-
-        /* set baud rate */
-        LCR(CFG_RT2880_CONSOLE) = LCR_WLS0 | LCR_WLS1 | LCR_DLAB;
-        DLL(CFG_RT2880_CONSOLE) = clock_divisor &0xffff;
-        LCR(CFG_RT2880_CONSOLE) = LCR_WLS0 | LCR_WLS1;
-#endif
-}
-
-
-int serial_init(unsigned long wBaud)
-{
-        serial_setbrg(wBaud);
-
-        return (0);
-}
 __init void prom_init(void)
 {
 //	mips_machgroup = MACH_GROUP_RT2880;
@@ -472,7 +393,7 @@ __init void prom_init(void)
 
 	set_io_port_base(KSEG1);
 	write_c0_wired(0);
-	serial_init(57600);
+//	serial_init(57600);
 
 	prom_init_serial_port();  /* Needed for Serial Console */
 	prom_meminit();
