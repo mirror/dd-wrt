@@ -326,11 +326,19 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_LAGUNA
 #define FREQLINE 2
 #elif HAVE_RT3052
+#ifdef HAVE_HOTPLUG2
+#define FREQLINE 7
+#else
 #define FREQLINE 4
+#endif
 #elif defined(HAVE_DANUBE)
 #define FREQLINE 6
 #elif HAVE_RT2880
+#ifdef HAVE_HOTPLUG2
+#define FREQLINE 7
+#else
 #define FREQLINE 4
+#endif
 #elif HAVE_XSCALE
 #define FREQLINE 2
 #elif defined(HAVE_MAGICBOX) || defined(HAVE_RB600)
