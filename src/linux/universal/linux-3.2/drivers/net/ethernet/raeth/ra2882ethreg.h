@@ -638,7 +638,6 @@ typedef struct MACInfo_s
 typedef struct end_device
 {
     struct net_device      *mac_dev;
-    struct napi_struct mac_napi;
     unsigned int        ppeEbl;
     int                 enetUnit;       /* enet unit number */
     int                 isLAN;          /* 0-->WAN; 1-->LAN */
@@ -704,6 +703,7 @@ typedef struct end_device
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info	mii_info;
 #endif
+    struct napi_struct mac_napi;
 } END_DEVICE, *pEND_DEVICE;
 
 #define RAETH_VERSION	"v2.0"
