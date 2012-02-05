@@ -34,18 +34,35 @@ void __init rt305x_clocks_init(void)
 
 	t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
 	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
+#if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT3350)
+        t = (reg>>8) & 0x01;
+#endif
 
 	switch (t) {
 	case SYSTEM_CONFIG_CPUCLK_320:
+#if defined (CONFIG_RALINK_RT3352)
+		rt305x_cpu_clk.rate = 384000000;
+#else
 		rt305x_cpu_clk.rate = 320000000;
+#endif
 		break;
 	case SYSTEM_CONFIG_CPUCLK_384:
+#if defined (CONFIG_RALINK_RT3352)
+		rt305x_cpu_clk.rate = 400000000;
+#elif defined (CONFIG_RALINK_RT3350)
+		rt305x_cpu_clk.rate = 320000000;
+#else
 		rt305x_cpu_clk.rate = 384000000;
-		break;
+#endif	
+	break;
 	}
 
 	rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
+#if defined (CONFIG_RALINK_RT3352)
+	rt305x_uart_clk.rate = 400000000;
+#else
 	rt305x_uart_clk.rate = rt305x_sys_clk.rate;
+#endif
 	rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
 }
 
