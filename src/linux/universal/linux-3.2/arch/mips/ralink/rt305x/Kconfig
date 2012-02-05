@@ -9,10 +9,6 @@ config  RT3052_ASIC
         bool "RT305x/RT3350-ASIC"
 endchoice
 
-config RALINK_RT3350
-	bool "Ralink RT3350 chipset"
-
-
 
 
 choice
