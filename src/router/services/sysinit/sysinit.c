@@ -2256,6 +2256,7 @@ void start_drivers(void)
 		led_control(USB_POWER, LED_ON);
 		led_control(LED_USB, LED_ON);
 
+		insmod("nls_base");
 		insmod("usb-common");
 		cprintf("loading usbcore\n");
 		insmod("usbcore");
