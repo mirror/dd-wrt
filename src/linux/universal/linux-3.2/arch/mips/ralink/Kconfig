@@ -16,8 +16,6 @@ choice
 
 endchoice
 
-source "arch/mips/ralink/rt288x/Kconfig"
-source "arch/mips/ralink/rt305x/Kconfig"
 
 config SOC_RT288X
 	bool
@@ -82,5 +80,10 @@ config RALINK_DEV_GPIO_BUTTONS
 
 config RALINK_DEV_GPIO_LEDS
 	def_bool n
+
+source "arch/mips/ralink/rt288x/Kconfig"
+source "arch/mips/ralink/rt305x/Kconfig"
+source "arch/mips/ralink/common/Kconfig"
+
 
 endif
