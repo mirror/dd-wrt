@@ -632,7 +632,7 @@ int spidrv_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-int spidrv_ioctl(struct inode *inode, struct file *filp,
+int spidrv_ioctl(struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
 	unsigned int address, value, size;
@@ -692,8 +692,24 @@ int spidrv_ioctl(struct inode *inode, struct file *filp,
 	return 0;
 }
 
+static DEFINE_MUTEX(spi_mutex);
+
+
+static long unlocked_spidrv_ioctl(struct file *file, unsigned int cmd,
+				   unsigned long arg)
+{
+	int ret;
+
+	mutex_lock(&spi_mutex);
+	ret = spidrv_ioctl(file, cmd, arg);
+	mutex_unlock(&spi_mutex);
+
+	return ret;
+}
+
+
 struct file_operations spidrv_fops = {
-    ioctl:      spidrv_ioctl,
+    unlocked_ioctl:      unlocked_spidrv_ioctl,
     open:       spidrv_open,
     release:    spidrv_release,
 };

@@ -33,8 +33,23 @@ void __init rt288x_clocks_init(void)
 	u32	t;
 
 	t = rt288x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
-	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
 
+#if defined (CONFIG_RALINK_RT2883) 
+	t = ((t >> 18) & SYSTEM_CONFIG_CPUCLK_MASK);
+	case 0:
+		rt288x_cpu_clk.rate = (380*1000*1000);
+		break;
+	case 1:
+		rt288x_cpu_clk.rate = (390*1000*1000);
+		break;
+	case 2:
+		rt288x_cpu_clk.rate = (400*1000*1000);
+		break;
+	case 3:
+		rt288x_cpu_clk.rate = (420*1000*1000);
+		break;
+#else
+	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
 	switch (t) {
 	case SYSTEM_CONFIG_CPUCLK_250:
 		rt288x_cpu_clk.rate = 250000000;
@@ -49,11 +64,22 @@ void __init rt288x_clocks_init(void)
 		rt288x_cpu_clk.rate = 300000000;
 		break;
 	}
-
+#endif
 	rt288x_sys_clk.rate = rt288x_cpu_clk.rate / 2;
 	rt288x_uart_clk.rate = rt288x_sys_clk.rate;
 	rt288x_wdt_clk.rate = rt288x_sys_clk.rate;
 }
+
+int getCPUClock(void)
+{
+    return rt288x_cpu_clk.rate / 1000 / 1000;
+}
+
+u32 get_surfboard_sysclk(void) 
+{
+	return rt288x_sys_clk.rate;
+}
+
 
 /*
  * Linux clock API

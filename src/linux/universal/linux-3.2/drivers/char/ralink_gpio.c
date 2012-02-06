@@ -279,10 +279,25 @@ int ralink_gpio_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
+static DEFINE_MUTEX(gpio_mutex);
+
+
+static long unlocked_gpio_ioctl(struct file *file, unsigned int cmd,
+				   unsigned long arg)
+{
+	int ret;
+
+	mutex_lock(&gpio_mutex);
+	ret = ralink_gpio_ioctl(file, cmd, arg);
+	mutex_unlock(&gpio_mutex);
+
+	return ret;
+}
+
 struct file_operations ralink_gpio_fops =
 {
 	owner:		THIS_MODULE,
-	unlocked_ioctl:		ralink_gpio_ioctl,
+	unlocked_ioctl:		unlocked_gpio_ioctl,
 	open:		ralink_gpio_open,
 	release:	ralink_gpio_release,
 };
