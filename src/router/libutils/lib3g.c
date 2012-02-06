@@ -427,7 +427,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
 	{0x12d1, 0x14c6, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x1506, "option", "2", "2", 2 | GENERIC, NULL, "Huawei E367"},	//
+	{0x12d1, 0x1506, "option", "0", "0", 2 | GENERIC, NULL, "Huawei E367"},	//
 	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K3765"},	//
 	{0x12d1, 0x1465, "option", "0", "0", 2, NULL, "Huawei K3765"},	//
 	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K4505"},	//
