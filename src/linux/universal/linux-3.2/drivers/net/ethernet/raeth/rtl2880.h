@@ -1,7 +1,6 @@
 #ifndef _RTL2880_H_INCLUDED
 #define _RTL2880_H_INCLUDED
 
-#include <linux/autoconf.h>
 #include <asm/rt2880/rt_mmap.h>
 /*
  * Address of RT2880 Registers
