@@ -33,9 +33,10 @@ void __init rt305x_clocks_init(void)
 	u32	t;
 
 	t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
-	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
 #if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT3350)
         t = (reg>>8) & 0x01;
+#else
+	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
 #endif
 
 	switch (t) {
