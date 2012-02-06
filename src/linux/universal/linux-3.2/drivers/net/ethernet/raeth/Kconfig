@@ -44,7 +44,7 @@ config  RAETH_ROUTER
         bool "IC+"
         depends on !RALINK_RT3052
 
-config  ICPLUS_PHY
+config  RAETH_ICPLUS_PHY
         bool "100PHY"
         depends on !RALINK_RT3052
 
@@ -232,7 +232,7 @@ config  RAETH_ROUTER
         bool "IC+"
         depends on !RALINK_RT3052
 
-config  ICPLUS_PHY
+config  RAETH_ICPLUS_PHY
         bool "100PHY"
         depends on !RALINK_RT3052
 
