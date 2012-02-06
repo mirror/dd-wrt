@@ -2542,7 +2542,7 @@ extern int rtl_smi_init(void);
         printk("Rtl8366RB Phy Init...\n");
 //        sysRegWrite(MDIO_CFG, 0x0000dc01);
 
-#elif defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_ICPLUS_PHY)
+#elif defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RAETH_ICPLUS_PHY)
 
 	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_ICPLUS_PHY_INIT_VALUE);
 
