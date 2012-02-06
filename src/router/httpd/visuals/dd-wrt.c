@@ -363,7 +363,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		b = getc(fp);
 		if (b == ':')
 			cnt++;
-		if (cnt == 7) {
+		if (cnt == 8) {
 			getc(fp);
 			char cpuclk[32];
 			int i = 0;
