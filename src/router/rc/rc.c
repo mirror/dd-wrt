@@ -170,6 +170,36 @@ int get_wanface(int argc, char **argv)
 	return 0;
 }
 
+void gratarp(int argc, char **argv)
+{
+
+	signal(SIGCHLD, SIG_IGN);
+
+	pid_t pid;
+	int status;
+
+	if (argc < 2) {
+		fprintf(stderr, "usage: gratarp <interface>\n");
+		return 1;
+	}
+	
+	pid = fork();
+	switch (pid) {
+		case -1:
+			perror("fork failed");
+			exit(1);
+			break;
+		case 0:
+			gratarp_main(argv[1]);
+			return 0;
+			break;
+		default:
+			//waitpid(pid, &status, 0);
+			// dprintf("parent\n");
+			break;
+	}
+}
+
 struct MAIN {
 	char *callname;
 	char *execname;
@@ -246,6 +276,7 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_REGISTER
 	{"regshell", NULL, &reg_main}
 #endif
+	{"gratarp", NULL, &gratarp},
 };
 
 int main(int argc, char **argv)
@@ -308,8 +339,7 @@ int main(int argc, char **argv)
 			// have 
 			// problem 
 			// erasing 
-			// nvram, 
-			// so 
+			// nvram,
 			// we 
 			// only 
 			// software 
