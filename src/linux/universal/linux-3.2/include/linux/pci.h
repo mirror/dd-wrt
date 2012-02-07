@@ -236,7 +236,6 @@ struct pci_ats;
  * The pci_dev structure is used to describe PCI devices.
  */
 struct pci_dev {
-	struct	device	dev;		/* Generic device interface */
 	struct list_head bus_list;	/* node in per-bus list */
 	struct pci_bus	*bus;		/* bus this device is on */
 	struct pci_bus	*subordinate;	/* bus this device bridges to */
@@ -290,6 +289,7 @@ struct pci_dev {
 #endif
 
 	pci_channel_state_t error_state;	/* current connectivity state */
+	struct	device	dev;		/* Generic device interface */
 
 	int		cfg_size;	/* Size of configuration space */
 
