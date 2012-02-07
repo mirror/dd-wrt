@@ -274,7 +274,7 @@ static struct MAIN maincalls[] = {
 	// {"ledtool", NULL, &ledtool_main},
 #endif
 #ifdef HAVE_REGISTER
-	{"regshell", NULL, &reg_main}
+	{"regshell", NULL, &reg_main},
 #endif
 	{"gratarp", NULL, &gratarp},
 };
