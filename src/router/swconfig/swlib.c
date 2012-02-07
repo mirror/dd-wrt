@@ -582,7 +582,7 @@ add_switch(struct nl_msg *msg, void *arg)
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct switch_dev *dev;
 	const char *name;
-	// const char *alias;
+	const char *alias;
 
 	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
 		goto done;
@@ -591,20 +591,20 @@ add_switch(struct nl_msg *msg, void *arg)
 		goto done;
 
 	name = nla_get_string(tb[SWITCH_ATTR_DEV_NAME]);
-	// alias = nla_get_string(tb[SWITCH_ATTR_ALIAS]);
+	if (tb[SWITCH_ATTR_ALIAS])
+		alias = nla_get_string(tb[SWITCH_ATTR_ALIAS]);
+	else
+		alias="";
 
-	// if (sa->name && (strcmp(name, sa->name) != 0) && (strcmp(alias, sa->name) != 0))
-	if (sa->name && (strcmp(name, sa->name) != 0) )
-	 	goto done;
+	if (sa->name && (strcmp(name, sa->name) != 0) && (strcmp(alias, sa->name) != 0))
+		goto done;
 
 	dev = swlib_alloc(sizeof(struct switch_dev));
 	if (!dev)
 		goto done;
 
 	strncpy(dev->dev_name, name, IFNAMSIZ - 1);
-	// dev->alias = strdup(alias);
-	dev->alias = strdup("");
-
+	dev->alias = strdup(alias);
 	if (tb[SWITCH_ATTR_ID])
 		dev->id = nla_get_u32(tb[SWITCH_ATTR_ID]);
 	if (tb[SWITCH_ATTR_NAME])
