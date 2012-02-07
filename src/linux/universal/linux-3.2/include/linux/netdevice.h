@@ -964,8 +964,6 @@ struct net_device_ops {
  */
 
 struct net_device {
-	/* class/net/name entry */
-	struct device		dev;
 
 	/*
 	 * This is the first field of the "visible" part of this structure
@@ -1294,6 +1292,8 @@ struct net_device {
 	/* GARP */
 	struct garp_port __rcu	*garp_port;
 
+	/* class/net/name entry */
+	struct device		dev;
 	/* space for optional device, statistics, and wireless sysfs groups */
 	const struct attribute_group *sysfs_groups[4];
 
