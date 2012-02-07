@@ -644,6 +644,7 @@ static void do_portsetup(char *lan, char *ifname)
 	} else {
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)),
 			 nvram_nget("%s_netmask", ifname));
+		sysprintf("/sbin/gratarp %s", ifname);
 	}
 
 }
@@ -2178,6 +2179,7 @@ void start_lan(void)
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"),
 		 nvram_safe_get("lan_netmask"));
 	eval("ifconfig", lan_ifname, "promisc");
+	sysprintf("/sbin/gratarp %s", lan_ifname);
 
 	char staticlan[32];
 
@@ -3802,6 +3804,7 @@ void start_wan(int status)
 			 nvram_safe_get("wan_ipaddr"),
 			 nvram_safe_get("wan_netmask"));
 		start_wan_done(wan_ifname);
+		sysprintf("/sbin/gratarp %s", wan_ifname);
 	}
 	cprintf("dhcp client ready\n");
 
