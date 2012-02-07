@@ -4553,10 +4553,6 @@ static inline void setup_garp_reply(struct arph *arp, char *hw_addr, char *paddr
  */
 static int send_garp(char *iface)
 {
-
-		
-	usleep(500000);
-	
 	char pkt[ARP_HLEN];
 	char iface_hw[ETH_ALEN];
 	char iface_paddr[IP_ALEN];
@@ -4612,7 +4608,7 @@ static int send_garp(char *iface)
 	                perror("sendto");
 			goto out;
 		}
-		//usleep(500000);
+		usleep(200000);
 	}
 
 out:
@@ -4622,7 +4618,10 @@ out:
 
 int gratarp_main(char *iface)
 {
-	if (iface)
+	if (iface) {
+		usleep(500000);
 		send_garp(iface);
+	}
+
 	return 0;
 }
