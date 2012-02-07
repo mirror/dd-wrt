@@ -59,6 +59,15 @@
 #include <linux/sockios.h>
 #include <cymac.h>
 #include <broadcom.h>
+
+#ifndef IP_ALEN
+#define IP_ALEN 4
+#endif
+
+#ifndef unlikely
+#define unlikely(x)     __builtin_expect((x),0)
+#endif
+
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 
