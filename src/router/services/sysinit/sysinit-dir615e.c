@@ -1,5 +1,5 @@
 /*
- * sysinit-whrhpgn.c
+ * sysinit-dir615e.c
  *
  * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
