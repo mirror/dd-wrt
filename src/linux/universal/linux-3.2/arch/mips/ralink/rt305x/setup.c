@@ -45,6 +45,9 @@ unsigned int __cpuinit get_c0_compare_irq(void)
 	return CP0_LEGACY_COMPARE_IRQ;
 }
 
+
+
+
 void __init ramips_soc_setup(void)
 {
 	struct clk *clk;

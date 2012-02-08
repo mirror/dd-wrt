@@ -59,11 +59,11 @@ void __init rt305x_clocks_init(void)
 	}
 
 	rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
-//#if defined (CONFIG_RALINK_RT3352)
-//	rt305x_uart_clk.rate = 40000000;
-//#else
+#if defined (CONFIG_RALINK_RT3352)
+	rt305x_uart_clk.rate = 40000000;
+#else
 	rt305x_uart_clk.rate = rt305x_sys_clk.rate;
-//#endif
+#endif
 	rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
 }
 
@@ -76,8 +76,6 @@ u32 get_surfboard_sysclk(void)
 {
 	return rt305x_sys_clk.rate;
 }
-
-
 /*
  * Linux clock API
  */
