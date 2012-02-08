@@ -227,7 +227,7 @@ static void fixup_old_sst_eraseregion(struct mtd_info *mtd)
 	cfi->cfiq->NumEraseRegions = 1;
 }
 
-static void fixup_sst39vf(struct mtd_info *mtd)
+static void fixup_sst39vf(struct mtd_info *mtd, void *param)
 {
 	struct map_info *map = mtd->priv;
 	struct cfi_private *cfi = map->fldrv_priv;
@@ -238,7 +238,7 @@ static void fixup_sst39vf(struct mtd_info *mtd)
 	cfi->addr_unlock2 = 0x2AAA;
 }
 
-static void fixup_sst39vf_rev_b(struct mtd_info *mtd)
+static void fixup_sst39vf_rev_b(struct mtd_info *mtd, void *param)
 {
 	struct map_info *map = mtd->priv;
 	struct cfi_private *cfi = map->fldrv_priv;
@@ -251,12 +251,12 @@ static void fixup_sst39vf_rev_b(struct mtd_info *mtd)
 	cfi->sector_erase_cmd = CMD(0x50);
 }
 
-static void fixup_sst38vf640x_sectorsize(struct mtd_info *mtd)
+static void fixup_sst38vf640x_sectorsize(struct mtd_info *mtd, void *param)
 {
 	struct map_info *map = mtd->priv;
 	struct cfi_private *cfi = map->fldrv_priv;
 
-	fixup_sst39vf_rev_b(mtd);
+	fixup_sst39vf_rev_b(mtd, param);
 
 	/*
 	 * CFI reports 1024 sectors (0x03ff+1) of 64KBytes (0x0100*256) where
@@ -266,7 +266,7 @@ static void fixup_sst38vf640x_sectorsize(struct mtd_info *mtd)
 	printk(KERN_WARNING "%s: Bad 38VF640x CFI data; adjusting sector size from 64 to 8KiB\n", mtd->name);
 }
 
-static void fixup_s29gl064n_sectors(struct mtd_info *mtd)
+static void fixup_s29gl064n_sectors(struct mtd_info *mtd, void *param)
 {
 	struct map_info *map = mtd->priv;
 	struct cfi_private *cfi = map->fldrv_priv;
@@ -277,7 +277,7 @@ static void fixup_s29gl064n_sectors(struct mtd_info *mtd)
 	}
 }
 
-static void fixup_s29gl032n_sectors(struct mtd_info *mtd)
+static void fixup_s29gl032n_sectors(struct mtd_info *mtd, void *param)
 {
 	struct map_info *map = mtd->priv;
 	struct cfi_private *cfi = map->fldrv_priv;
@@ -290,15 +290,15 @@ static void fixup_s29gl032n_sectors(struct mtd_info *mtd)
 
 /* Used to fix CFI-Tables of chips without Extended Query Tables */
 static struct cfi_fixup cfi_nopri_fixup_table[] = {
-	{ CFI_MFR_SST, 0x234a, fixup_sst39vf }, /* SST39VF1602 */
-	{ CFI_MFR_SST, 0x234b, fixup_sst39vf }, /* SST39VF1601 */
-	{ CFI_MFR_SST, 0x235a, fixup_sst39vf }, /* SST39VF3202 */
-	{ CFI_MFR_SST, 0x235b, fixup_sst39vf }, /* SST39VF3201 */
-	{ CFI_MFR_SST, 0x235c, fixup_sst39vf_rev_b }, /* SST39VF3202B */
-	{ CFI_MFR_SST, 0x235d, fixup_sst39vf_rev_b }, /* SST39VF3201B */
-	{ CFI_MFR_SST, 0x236c, fixup_sst39vf_rev_b }, /* SST39VF6402B */
-	{ CFI_MFR_SST, 0x236d, fixup_sst39vf_rev_b }, /* SST39VF6401B */
-	{ 0, 0, NULL }
+	{ CFI_MFR_SST, 0x234a, fixup_sst39vf, NULL, }, /* SST39VF1602 */
+	{ CFI_MFR_SST, 0x234b, fixup_sst39vf, NULL, }, /* SST39VF1601 */
+	{ CFI_MFR_SST, 0x235a, fixup_sst39vf, NULL, }, /* SST39VF3202 */
+	{ CFI_MFR_SST, 0x235b, fixup_sst39vf, NULL, }, /* SST39VF3201 */
+	{ CFI_MFR_SST, 0x235c, fixup_sst39vf_rev_b, NULL, }, /* SST39VF3202B */
+	{ CFI_MFR_SST, 0x235d, fixup_sst39vf_rev_b, NULL, }, /* SST39VF3201B */
+	{ CFI_MFR_SST, 0x236c, fixup_sst39vf_rev_b, NULL, }, /* SST39VF6402B */
+	{ CFI_MFR_SST, 0x236d, fixup_sst39vf_rev_b, NULL, }, /* SST39VF6401B */
+	{ 0, 0, NULL, NULL }
 };
 
 static struct cfi_fixup cfi_fixup_table[] = {
@@ -311,14 +311,14 @@ static struct cfi_fixup cfi_fixup_table[] = {
 	{ CFI_MFR_AMD, 0x0056, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x005C, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x005F, fixup_use_secsi, NULL, },
-	{ CFI_MFR_AMD, 0x0c01, fixup_s29gl064n_sectors },
-	{ CFI_MFR_AMD, 0x1301, fixup_s29gl064n_sectors },
-	{ CFI_MFR_AMD, 0x1a00, fixup_s29gl032n_sectors },
-	{ CFI_MFR_AMD, 0x1a01, fixup_s29gl032n_sectors },
-	{ CFI_MFR_SST, 0x536a, fixup_sst38vf640x_sectorsize }, /* SST38VF6402 */
-	{ CFI_MFR_SST, 0x536b, fixup_sst38vf640x_sectorsize }, /* SST38VF6401 */
-	{ CFI_MFR_SST, 0x536c, fixup_sst38vf640x_sectorsize }, /* SST38VF6404 */
-	{ CFI_MFR_SST, 0x536d, fixup_sst38vf640x_sectorsize }, /* SST38VF6403 */
+	{ CFI_MFR_AMD, 0x0c01, fixup_s29gl064n_sectors, NULL, },
+	{ CFI_MFR_AMD, 0x1301, fixup_s29gl064n_sectors, NULL, },
+	{ CFI_MFR_AMD, 0x1a00, fixup_s29gl032n_sectors, NULL, },
+	{ CFI_MFR_AMD, 0x1a01, fixup_s29gl032n_sectors, NULL, },
+	{ CFI_MFR_SST, 0x536a, fixup_sst38vf640x_sectorsize, NULL, }, /* SST38VF6402 */
+	{ CFI_MFR_SST, 0x536b, fixup_sst38vf640x_sectorsize, NULL, }, /* SST38VF6401 */
+	{ CFI_MFR_SST, 0x536c, fixup_sst38vf640x_sectorsize, NULL, }, /* SST38VF6404 */
+	{ CFI_MFR_SST, 0x536d, fixup_sst38vf640x_sectorsize, NULL, }, /* SST38VF6403 */
 #if !FORCE_WORD_WRITE
 	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers, NULL, },
 #endif
@@ -397,65 +397,61 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 
 	if (cfi->cfi_mode==CFI_MODE_CFI){
 		unsigned char bootloc;
-		/*
-		 * It's a real CFI chip, not one for which the probe
-		 * routine faked a CFI structure. So we read the feature
-		 * table from it.
-		 */
 		__u16 adr = primary?cfi->cfiq->P_ADR:cfi->cfiq->A_ADR;
 		struct cfi_pri_amdstd *extp;
 
 		extp = (struct cfi_pri_amdstd*)cfi_read_pri(map, adr, sizeof(*extp), "Amd/Fujitsu");
-		if (!extp) {
-			kfree(mtd);
-			return NULL;
-		}
-
-		cfi_fixup_major_minor(cfi, extp);
+		if (extp) {
+			/*
+			 * It's a real CFI chip, not one for which the probe
+			 * routine faked a CFI structure.
+			 */
+			cfi_fixup_major_minor(cfi, extp);
 
 		if (extp->MajorVersion != '1' ||
 			    (extp->MajorVersion == '1' && (extp->MinorVersion < '0' || extp->MinorVersion > '4'))) {
 				printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
-				       "version %c.%c.\n",
+				       "version %c.%c (%#02x/%#02x).\n",
+				       extp->MajorVersion, extp->MinorVersion,
 				       extp->MajorVersion, extp->MinorVersion);
 				kfree(extp);
 				kfree(mtd);
 				return NULL;
-			}		
+			}
 		
-		/* Install our own private info structure */
-		cfi->cmdset_priv = extp;
+			/* Install our own private info structure */
+			cfi->cmdset_priv = extp;
 
-		/* Apply cfi device specific fixups */
-		cfi_fixup(mtd, cfi_fixup_table);
+			/* Apply cfi device specific fixups */
+			cfi_fixup(mtd, cfi_fixup_table);
 
 #ifdef DEBUG_CFI_FEATURES
-		/* Tell the user about it in lots of lovely detail */
-		cfi_tell_features(extp);
+			/* Tell the user about it in lots of lovely detail */
+			cfi_tell_features(extp);
 #endif
 
-		bootloc = extp->TopBottom;
-		if ((bootloc != 2) && (bootloc != 3)) {
-			printk(KERN_WARNING "%s: CFI does not contain boot "
-			       "bank location. Assuming top.\n", map->name);
-			bootloc = 2;
-		}
-
-		if (bootloc == 3 && cfi->cfiq->NumEraseRegions > 1) {
-			printk(KERN_WARNING "%s: Swapping erase regions for broken CFI table.\n", map->name);
-
-			for (i=0; i<cfi->cfiq->NumEraseRegions / 2; i++) {
-				int j = (cfi->cfiq->NumEraseRegions-1)-i;
-				__u32 swap;
-
-				swap = cfi->cfiq->EraseRegionInfo[i];
-				cfi->cfiq->EraseRegionInfo[i] = cfi->cfiq->EraseRegionInfo[j];
-				cfi->cfiq->EraseRegionInfo[j] = swap;
+			bootloc = extp->TopBottom;
+			if ((bootloc != 2) && (bootloc != 3)) {
+				printk(KERN_WARNING "%s: CFI does not contain boot "
+				"bank location. Assuming top.\n", map->name);
+				bootloc = 2;
 			}
-		}
-		/* Set the default CFI lock/unlock addresses */
-		cfi->addr_unlock1 = 0x555;
-		cfi->addr_unlock2 = 0x2aa;
+
+			if (bootloc == 3 && cfi->cfiq->NumEraseRegions > 1) {
+				printk(KERN_WARNING "%s: Swapping erase regions for broken CFI table.\n", map->name);
+
+				for (i=0; i<cfi->cfiq->NumEraseRegions / 2; i++) {
+					int j = (cfi->cfiq->NumEraseRegions-1)-i;
+					__u32 swap;
+
+					swap = cfi->cfiq->EraseRegionInfo[i];
+					cfi->cfiq->EraseRegionInfo[i] = cfi->cfiq->EraseRegionInfo[j];
+					cfi->cfiq->EraseRegionInfo[j] = swap;
+				}
+			}
+			/* Set the default CFI lock/unlock addresses */
+			cfi->addr_unlock1 = 0x555;
+			cfi->addr_unlock2 = 0x2aa;
 		/* Modify the unlock address if we are in compatibility mode */
 		if (	/* x16 in x8 mode */
 			((cfi->device_type == CFI_DEVICETYPE_X8) &&
@@ -466,6 +462,13 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 		{
 			cfi->addr_unlock1 = 0xaaa;
 			cfi->addr_unlock2 = 0x555;
+		}
+
+		cfi_fixup(mtd, cfi_nopri_fixup_table);
+
+		if (!cfi->addr_unlock1 || !cfi->addr_unlock2) {
+			kfree(mtd);
+			return NULL;
 		}
 
 	} /* CFI mode */
