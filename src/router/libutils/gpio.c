@@ -92,7 +92,12 @@ int get_gpio(int gpio)
 	sprintf(buf, "/proc/gpio/%d_in", gpio);
 	in = fopen(buf, "rb");
 	if (in == NULL)
-		return 0;
+		{
+		sprintf(buf, "/proc/gpio/%d_out", gpio);
+		in = fopen(buf, "rb");
+		}
+	if (in == NULL)
+	    return 0;
 	fscanf(in, "%d", &ret);
 	fclose(in);
 	return ret;
