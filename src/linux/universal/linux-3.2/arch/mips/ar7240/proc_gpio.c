@@ -196,12 +196,24 @@ void set_wl0_gpio(int gpio,int val)
 	ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9283 register [0x4048]
 }
 
+#define MS(_v, _f)  (((_v) & _f) >> _f##_S)
+
+#define AR9287_GPIO_IN_VAL                           0x001FF800
+#define AR9287_GPIO_IN_VAL_S                         11
+#define AR9287_GPIO_OE_OUT                           0x404c // GPIO output enable register
+#define AR9287_GPIO_OE_OUT_DRV                       0x3    // 2 bit field mask, shifted by 2*bitpos
+#define AR9287_GPIO_OE_OUT_DRV_NO                    0x0    // tristate
+#define AR9287_GPIO_OE_OUT_DRV_LOW                   0x1    // drive if low
+#define AR9287_GPIO_OE_OUT_DRV_HI                    0x2    // drive if high
+#define AR9287_GPIO_OE_OUT_DRV_ALL                   0x3    // drive always
+
 int get_wl0_gpio(int gpio)
 {
-	register	gpio_words	wl0	= (gpio_words)ar7240_reg_rd(GPIO_WL0_ADDR);	//ar9280 register [0x4048]
-        if (wl0&(1<<gpio));
-    	    return 1;
-    	return 0;
+    u32    gpio_shift;
+    gpio_shift = 2*gpio;
+    ar7240_reg_rmw(GPIOOUT_WL0_ADDR,(AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift),(AR9287_GPIO_OE_OUT_DRV << gpio_shift));
+
+    return (MS(ar7240_reg_rd(GPIO_WL0_ADDR), AR9287_GPIO_IN_VAL) & (1<<gpio)) != 0;
 }
 
 #define USB_LED_OFF 1
