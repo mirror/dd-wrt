@@ -827,6 +827,7 @@ ifeq ($(CONFIG_ARP),y)
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc sendudp
 	cd $(INSTALLDIR)/sbin && ln -sf rc misc	
+	cd $(INSTALLDIR)/sbin && ln -sf rc gratarp
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
 #	cd $(INSTALLDIR)/sbin && ln -sf rc wland
