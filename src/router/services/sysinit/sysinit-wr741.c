@@ -1,5 +1,5 @@
 /*
- * sysinit-whrhpgn.c
+ * sysinit-wr741.c
  *
  * Copyright (C) 2009 Sebastian Gottschall <gottschall@dd-wrt.com>
  *

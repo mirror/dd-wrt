@@ -153,6 +153,11 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WNR2000)
+int getbuttonstate()
+{
+	return get_gpio(21);
+}
 #elif defined(HAVE_WHRHPGN)
 int getbuttonstate()
 {
@@ -729,6 +734,9 @@ void period_check(int sig)
 #elif defined(HAVE_WASP)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
+#elif defined(HAVE_WNR2000)
+	sesgpio = 0x008;
+	val |= get_gpio(8) << 8;	//aoss pushbutton
 #elif defined(HAVE_WHRHPGN)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton

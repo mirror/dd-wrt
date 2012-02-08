@@ -935,6 +935,11 @@ int internal_getRouterBrand()
 #elif HAVE_BWRG1000
 	setRouter("Bountiful BWRG-1000");
 	return ROUTER_BOARD_LS2;
+#elif HAVE_WNR2000
+	setRouter("Netgear WNR2000v3");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WLAEAG300N
 #ifdef HAVE_BUFFALO
 	setRouter("WLAE-AG300N");
@@ -3583,7 +3588,15 @@ int led_control(int type, int act)
 		connected_gpio = 0x109;
 		ses_gpio = 0x10e;
 		break;
-#ifdef HAVE_WLAEAG300N
+#ifdef HAVE_WNR2000
+	case ROUTER_BOARD_WHRHPGN:
+		power_gpio = 0x123;
+		diag_gpio = 0x122;
+		connected_gpio = 0x100;
+//		ses_gpio = 0x104;
+//		sec0_gpio = 0x104;
+		break;
+#elif HAVE_WLAEAG300N
 	case ROUTER_BOARD_WHRHPGN:
 		power_gpio = 0x110;
 		diag_gpio = 0x111;
