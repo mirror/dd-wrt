@@ -151,7 +151,7 @@ typedef struct {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
     struct napi_struct mac_napi;
 #endif
-    uint32_t                mac_flags;
+    uint16_t                mac_flags;
 }ag7240_mac_t;
 
 #define net_rx_packets      mac_net_stats.rx_packets
@@ -423,8 +423,6 @@ typedef enum {
 #define AG7240_ETH_CFG_SW_PHY_SWAP      (1<<7)
 #define AG7240_ETH_CFG_SW_PHY_ADDR_SWAP (1<<8)
 
-#define ATHR_SWITCH_CLK_SPARE		     0x18050024
-
 /*
  * Everything but TX
  */
@@ -645,8 +643,6 @@ int  ag7242_check_link(ag7240_mac_t *mac);
 #define ATHR_S26_HEADER         0x0010
 #define ATHR_S16_HEADER         0x0020
 #define ETH_PKT_INSPECT         0x0040
-#define ATHR_S27_HEADER         0x00010000
-#define ATHR_DUAL_PHY           0x00040000
 
 static inline int
 mac_has_flag(ag7240_mac_t *mac, u_int16_t flag)
