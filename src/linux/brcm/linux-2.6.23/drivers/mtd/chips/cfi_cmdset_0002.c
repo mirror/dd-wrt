@@ -459,9 +459,10 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 			/* x32 in x16 mode */
 			((cfi->device_type == CFI_DEVICETYPE_X16) &&
 				(cfi->cfiq->InterfaceDesc == 4)))
-		{
-			cfi->addr_unlock1 = 0xaaa;
-			cfi->addr_unlock2 = 0x555;
+			{
+				cfi->addr_unlock1 = 0xaaa;
+				cfi->addr_unlock2 = 0x555;
+			}
 		}
 
 		cfi_fixup(mtd, cfi_nopri_fixup_table);
