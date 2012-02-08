@@ -19,14 +19,18 @@
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/interrupt.h>
-#include <linux/interrupt.h>
+#include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <asm/semaphore.h>
+#include <linux/mutex.h>
 #include <linux/delay.h>
 #include "ralink_spi.h"
 #include <linux/squashfs_fs.h>
+#include "../mtdcore.h"
+#include <linux/platform_device.h>
+
+
 
 extern u32 get_surfboard_sysclk(void) ;
 
@@ -275,7 +279,7 @@ static struct chip_info chips_data [] = {
 
 
 struct flash_info {
-	struct semaphore	lock;
+	struct mutex		lock;
 	struct mtd_info		mtd;
 	struct chip_info	*chip;
 	u8			command[5];
@@ -454,7 +458,7 @@ static int raspi_erase_sector(u32 offset)
 	return 0;
 }
 
-int raspi_set_lock (struct mtd_info *mtd, loff_t to, size_t len, int set)
+int raspi_set_lock (struct mtd_info *mtd, loff_t to, uint64_t len, int set)
 {
 	u32 page_offset, page_size;
 	int retval;
@@ -508,21 +512,20 @@ static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 	/* sanity checks */
 	if (instr->addr + instr->len > flash->mtd.size)
 		return -EINVAL;
-	if ((instr->addr % mtd->erasesize) != 0
-			|| (instr->len % mtd->erasesize) != 0) {
+	if ((((size_t)instr->addr) % mtd->erasesize) != 0 || (((size_t)instr->len) % mtd->erasesize) != 0) {
 		return -EINVAL;
 	}
 
 	addr = instr->addr;
 	len = instr->len;
 
-  	down(&flash->lock);
+  	mutex_lock(&flash->lock);
 
 	/* now erase those sectors */
 	while (len > 0) {
 		if (raspi_erase_sector(addr)) {
 			instr->state = MTD_ERASE_FAILED;
-			up(&flash->lock);
+			mutex_unlock(&flash->lock);
 			return -EIO;
 		}
 
@@ -530,7 +533,7 @@ static int ramtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 		len -= mtd->erasesize;
 	}
 
-  	up(&flash->lock);
+  	mutex_unlock(&flash->lock);
 
 	instr->state = MTD_ERASE_DONE;
 	mtd_erase_callback(instr);
@@ -559,12 +562,12 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (retlen)
 		*retlen = 0;
 
-	down(&flash->lock);
+	mutex_lock(&flash->lock);
 
 	/* Wait till previous write/erase is done. */
 	if (raspi_wait_ready(1)) {
 		/* REVISIT status return?? */
-		up(&flash->lock);
+		mutex_unlock(&flash->lock);
 		return -EIO;
 	}
 
@@ -590,7 +593,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		flash->command[3] = from;
 		readlen = spic_read(flash->command, 4, buf, len);
 	}
-  	up(&flash->lock);
+  	mutex_unlock(&flash->lock);
 
 	if (retlen) 
 		*retlen = readlen;
@@ -601,12 +604,12 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	return 0;
 }
 
-inline int ramtd_lock (struct mtd_info *mtd, loff_t to, size_t len)
+inline int ramtd_lock (struct mtd_info *mtd, loff_t to, uint64_t len)
 {
 	return raspi_set_lock(mtd, to, len, 1);
 }
 
-inline int ramtd_unlock (struct mtd_info *mtd, loff_t to, size_t len)
+inline int ramtd_unlock (struct mtd_info *mtd, loff_t to, uint64_t len)
 {
 	return raspi_set_lock(mtd, to, len, 0);
 }
@@ -634,11 +637,11 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	if (to + len > flash->mtd.size)
 		return -EINVAL;
 
-  	down(&flash->lock);
+  	mutex_lock(&flash->lock);
 
 	/* Wait until finished previous write command. */
 	if (raspi_wait_ready(2)) {
-		up(&flash->lock);
+		mutex_unlock(&flash->lock);
 		return -1;
 	}
 
@@ -705,7 +708,7 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 				*retlen += retval;
 				
 			if (retval < page_size) {
-				up(&flash->lock);
+				mutex_unlock(&flash->lock);
 				printk("%s: retval:%x return:%x page_size:%x \n", 
 				       __func__, retval, retval, page_size);
 				return -EIO;
@@ -721,7 +724,7 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 	raspi_4byte_mode(0);
 #endif
 
-	up(&flash->lock);
+	mutex_unlock(&flash->lock);
 
 	return 0;
 }
@@ -798,11 +801,12 @@ static int __devinit raspi_prob(void)
 	if (!flash)
 		return -ENOMEM;
 
-	init_MUTEX(&flash->lock);
+	mutex_init(&flash->lock);
 
 	flash->chip = chip;
-	flash->mtd.name = "raspi";
+	memset(&flash->mtd, 0, sizeof(struct mtd_info));
 
+	flash->mtd.name = "raspi";
 	flash->mtd.type = MTD_NORFLASH;
 	flash->mtd.writesize = 1;
 	flash->mtd.flags = MTD_CAP_NORFLASH;
@@ -813,6 +817,8 @@ static int __devinit raspi_prob(void)
 	flash->mtd.write = ramtd_write;
 	flash->mtd.lock = ramtd_lock;
 	flash->mtd.unlock = ramtd_unlock;
+	flash->mtd.owner = THIS_MODULE;
+
 
 	printk("%s(%02x %04x) (%d Kbytes)\n", 
 	       chip->name, chip->id, chip->jedec_id, flash->mtd.size / 1024);
@@ -875,7 +881,7 @@ int raspi_init(void)
 }
 
 
-rootfs_initcall(raspi_init);
+module_init(raspi_init);
 module_exit(raspi_remove);
 
 MODULE_LICENSE("GPL");
