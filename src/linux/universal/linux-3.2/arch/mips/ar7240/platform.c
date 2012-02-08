@@ -224,7 +224,7 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_WR741
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 #else
-	u8 *mac = NULL;
+	u8 *mac = NULL;//(u8 *) KSEG1ADDR(0x1fff0000);
 #endif
 
 #if defined(CONFIG_AR7242_RTL8309G_PHY) || defined(CONFIG_DIR615E)
@@ -321,6 +321,8 @@ int __init ar7240_platform_init(void)
 	ap91_pci_init(NULL, NULL);
 #else
 	ee = getCalData(0);
+	if (ee)
+	    mac = ((u8 *)ee)-0x1000;
 	ap91_pci_init(ee, mac);
 #endif
 return ret;
