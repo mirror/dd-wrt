@@ -343,6 +343,32 @@ static struct cfi_fixup fixup_table[] = {
 	{ 0, 0, NULL, NULL }
 };
 
+static void cfi_fixup_major_minor(struct cfi_private *cfi,
+				  struct cfi_pri_amdstd *extp)
+{
+	if (cfi->mfr == CFI_MFR_SAMSUNG) {
+		if ((extp->MajorVersion == '0' && extp->MinorVersion == '0') ||
+		    (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
+			/*
+			 * Samsung K8P2815UQB and K8D6x16UxM chips
+			 * report major=0 / minor=0.
+			 * K8D3x16UxC chips report major=3 / minor=3.
+			 */
+			printk(KERN_NOTICE "  Fixing Samsung's Amd/Fujitsu"
+			       " Extended Query version to 1.%c\n",
+			       extp->MinorVersion);
+			extp->MajorVersion = '1';
+		}
+	}
+
+	/*
+	 * SST 38VF640x chips report major=0xFF / minor=0xFF.
+	 */
+	if (cfi->mfr == CFI_MFR_SST && (cfi->id >> 4) == 0x0536) {
+		extp->MajorVersion = '1';
+		extp->MinorVersion = '0';
+	}
+}
 
 struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 {
@@ -385,33 +411,18 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 			return NULL;
 		}
 
-		if (extp->MajorVersion != '1' ||
-		  (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
-				if (cfi->mfr == CFI_MFR_SAMSUNG &&
-				  (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
-					printk(KERN_NOTICE "  Newer Samsung flash detected, "
-					       "should be compatibile with Amd/Fujitsu.\n");
-				}
-				else if (cfi->mfr == CFI_MFR_SAMSUNG && extp->MajorVersion == '0') {
-					printk(KERN_NOTICE "  Newer Samsung flash detected, "
-					       "should be compatibile with Amd/Fujitsu.\n");
-					switch (cfi->id) {
-						case 0x257e:
-						case 0x22e2:
-						extp->MajorVersion = '1';
-						break;
-					}
-				}
-				else {
-					printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
-				       "version %c.%c.\n",  extp->MajorVersion,
-				       extp->MinorVersion);
-					kfree(extp);
-					kfree(mtd);
-					return NULL;
-				}
-		}
+		cfi_fixup_major_minor(cfi, extp);
 
+		if (extp->MajorVersion != '1' ||
+			    (extp->MajorVersion == '1' && (extp->MinorVersion < '0' || extp->MinorVersion > '4'))) {
+				printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
+				       "version %c.%c.\n",
+				       extp->MajorVersion, extp->MinorVersion);
+				kfree(extp);
+				kfree(mtd);
+				return NULL;
+			}		
+		
 		/* Install our own private info structure */
 		cfi->cmdset_priv = extp;
 
