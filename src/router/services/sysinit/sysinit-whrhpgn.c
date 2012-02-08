@@ -72,6 +72,7 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
+#ifndef HAVE_WNR2000
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
@@ -90,6 +91,7 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
+#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
@@ -119,7 +121,9 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
-#ifdef HAVE_WLAEAG300N
+#ifdef HAVE_WNR2000
+	setWirelessLedPhy0(1);
+#elif HAVE_WLAEAG300N
 	setWirelessLed(0,14);
 #else
 	setWirelessLedPhy0(1);
