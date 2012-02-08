@@ -66,9 +66,12 @@ void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,
 		       line, err);
 }
 
+
+
 void __init plat_mem_setup(void)
 {
 	set_io_port_base(KSEG1);
+
 
 	detect_mem_size();
 	ramips_soc_setup();

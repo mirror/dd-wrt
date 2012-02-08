@@ -47,7 +47,6 @@ config SOC_RT305X
 	bool
 	select CEVT_R4K
 	select CSRC_R4K
-	select RALINK_RT3052_MP2 if !RALINK_RT3350
 	select DMA_NONCOHERENT
 	select IRQ_CPU
 	select ARCH_REQUIRE_GPIOLIB
@@ -62,7 +61,7 @@ config SOC_RT305X
 config RALINK_RT3052
 	bool "RT3052"
 	depends on SOC_RT305X
-	select RALINK_RT3052_MP
+	select RALINK_RT3052_MP2
 
 config RALINK_RT3352
 	bool "RT3352"
@@ -72,7 +71,6 @@ config RALINK_RT3352
 config RALINK_RT3350
 	bool "RT3350"
 	depends on SOC_RT305X
-	select RALINK_RT3052_MP
 
 
 config RALINK_DEV_GPIO_BUTTONS
