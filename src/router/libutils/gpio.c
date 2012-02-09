@@ -59,17 +59,16 @@ void set_gpio(int gpio, int value)
 		fprintf(in, "1");
 		fclose(in);
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
-	} else 
+	} else
 #ifdef HAVE_DANUBE
-	if (gpio>=200)
+	if (gpio >= 200)
 		sprintf(buf, "/proc/gpiostp/%d_out", gpio - 200);
 	else
-#endif		
+#endif
 	{
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 	}
 
-#undef GPIOMAX
 	in = fopen(buf, "wb");
 	if (in == NULL)
 		return;
@@ -82,25 +81,35 @@ int get_gpio(int gpio)
 	FILE *in;
 	int ret;
 	char buf[64];
-
-	sprintf(buf, "/proc/gpio/%d_dir", gpio);
-	in = fopen(buf, "wb");
+	if (gpio < GPIOMAX) {
+		sprintf(buf, "/proc/gpio/%d_dir", gpio);
+		in = fopen(buf, "wb");
+		if (in == NULL)
+			return;
+		fprintf(in, "0");
+		fclose(in);
+		sprintf(buf, "/proc/gpio/%d_in", gpio);
+		in = fopen(buf, "rb");
+	} else {
+		sprintf(buf, "/proc/gpio/%d_dir", gpio);
+		in = fopen(buf, "wb");
+		if (in != NULL) {
+			fprintf(in, "0");
+			fclose(in);
+		}
+		sprintf(buf, "/proc/gpio/%d_in", gpio);
+		in = fopen(buf, "rb");
+		if (in == NULL) {
+			sprintf(buf, "/proc/gpio/%d_out", gpio);
+			in = fopen(buf, "rb");
+		}
+	}
 	if (in == NULL)
 		return 0;
-	fprintf(in, "0");
-	fclose(in);
-	sprintf(buf, "/proc/gpio/%d_in", gpio);
-	in = fopen(buf, "rb");
-	if (in == NULL)
-		{
-		sprintf(buf, "/proc/gpio/%d_out", gpio);
-		in = fopen(buf, "rb");
-		}
-	if (in == NULL)
-	    return 0;
 	fscanf(in, "%d", &ret);
 	fclose(in);
 	return ret;
+#undef GPIOMAX
 }
 
 #elif HAVE_XSCALE
@@ -748,7 +757,7 @@ int get_gpio(int pin)
 
 }
 
-#else  //e.g. Broadcom...
+#else				//e.g. Broadcom...
 
 /*
  * External clk/data based shift register 
@@ -757,7 +766,6 @@ int get_gpio(int pin)
  *
  * Netgear WNDR4000 uses 8-bit serial-in/parallel-out shift register 74HC164
  */
-
 
 /* Direct ctrl mode */
 #define WNDR4000_GPIO_USB                        (1)
@@ -771,7 +779,7 @@ int get_gpio(int pin)
 #define WNDR4000_GPIO_EXT_CTRL_CLK               (7)
 
 /* Extended LED max shift times */
-#define WNDR4000_EXT_LED_MAX_SHIFTS              (8 - 1)         /* 8 extended pins */
+#define WNDR4000_EXT_LED_MAX_SHIFTS              (8 - 1)	/* 8 extended pins */
 
 /* Extended LED shift defines, not gpio pins, all active low */
 #define WNDR4000_GPIO_LED_PWR_GREEN              (0)
@@ -783,61 +791,61 @@ int get_gpio(int pin)
 #define WNDR4000_GPIO_LED_WPS                    (6)
 #define WNDR4000_GPIO_LED_WLAN                   (7)
 
-
-void ext_output_value(unsigned int led_status, int clk, int data, int max_shifts)
+void ext_output_value(unsigned int led_status, int clk, int data,
+		      int max_shifts)
 {
-    int i;
+	int i;
 
-    set_gpio_normal(data, 1); /* init off, pull high */
-    set_gpio_normal(clk, 0); /* init reset */
-    
-    for (i = max_shifts; i >= 0; i--)
-    {
-        if (led_status & (1 << i))
-            set_gpio_normal(data, 0); /* on, pull low */
-        else
-            set_gpio_normal(data, 1); /* off, pull high */
+	set_gpio_normal(data, 1);	/* init off, pull high */
+	set_gpio_normal(clk, 0);	/* init reset */
 
-        set_gpio_normal(clk, 1); /* pull high to trigger */
-        set_gpio_normal(clk, 0); /* reset to low */
-    }
-    
+	for (i = max_shifts; i >= 0; i--) {
+		if (led_status & (1 << i))
+			set_gpio_normal(data, 0);	/* on, pull low */
+		else
+			set_gpio_normal(data, 1);	/* off, pull high */
+
+		set_gpio_normal(clk, 1);	/* pull high to trigger */
+		set_gpio_normal(clk, 0);	/* reset to low */
+	}
+
 }
 
-void gpio_control_clk_data(int pin, int value, int clk, int data, int max_shifts)
+void gpio_control_clk_data(int pin, int value, int clk, int data,
+			   int max_shifts)
 {
-    int old = 0;
-    int ext_led_new;
-    FILE *in; 
-    
-    if (pin < 0 || pin > max_shifts)
-    	return;
-    	
+	int old = 0;
+	int ext_led_new;
+	FILE *in;
+
+	if (pin < 0 || pin > max_shifts)
+		return;
+
 	if (in = fopen("/tmp/.ext_led_value", "rb")) {
 		fscanf(in, "%d", &old);
 		fclose(in);
 	}
 
-    if (value)
-        ext_led_new = old | (1 << pin); /* set pin bit */
-    else
-        ext_led_new = old & (~(1 << pin)); /* clear pin bit */
+	if (value)
+		ext_led_new = old | (1 << pin);	/* set pin bit */
+	else
+		ext_led_new = old & (~(1 << pin));	/* clear pin bit */
 
-    if (ext_led_new == old)
-        return;
-    
+	if (ext_led_new == old)
+		return;
+
 	if (in = fopen("/tmp/.ext_led_value", "wb")) {
-    	fprintf(in, "%d", ext_led_new);
-    	fclose(in);
+		fprintf(in, "%d", ext_led_new);
+		fclose(in);
 	}
- 
-    ext_output_value(ext_led_new, clk, data, max_shifts);
-    
+
+	ext_output_value(ext_led_new, clk, data, max_shifts);
+
 }
 
-void set_gpio_normal (int pin, int value)
+void set_gpio_normal(int pin, int value)
 {
-	
+
 	int gpioouten = open("/dev/gpio/outen", O_RDWR);
 	int gpioout = open("/dev/gpio/out", O_RDWR);
 	unsigned int gpio;
@@ -857,13 +865,13 @@ void set_gpio_normal (int pin, int value)
 	close(gpioouten);
 }
 
-
 void set_gpio(int pin, int value)
 {
 	if (getRouterBrand() == ROUTER_NETGEAR_WNDR4000) {
-		gpio_control_clk_data(pin, value, WNDR4000_GPIO_EXT_CTRL_CLK, WNDR4000_GPIO_EXT_CTRL_DATA, WNDR4000_EXT_LED_MAX_SHIFTS);
-	}	
-	else {
+		gpio_control_clk_data(pin, value, WNDR4000_GPIO_EXT_CTRL_CLK,
+				      WNDR4000_GPIO_EXT_CTRL_DATA,
+				      WNDR4000_EXT_LED_MAX_SHIFTS);
+	} else {
 		set_gpio_normal(pin, value);
 	}
 }
