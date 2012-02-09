@@ -721,6 +721,9 @@ endif
 ifeq ($(CONFIG_WNR2000),y)
 CFLAGS += -DHAVE_WNR2000
 endif
+ifeq ($(CONFIG_WNR2200),y)
+CFLAGS += -DHAVE_WNR2200
+endif
 ifeq ($(CONFIG_HORNET),y)
 CFLAGS += -DHAVE_HORNET
 endif
