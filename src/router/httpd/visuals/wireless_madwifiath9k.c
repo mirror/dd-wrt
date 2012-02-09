@@ -53,7 +53,7 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci ; wc ; wc = wc->next) {
-		if (cnt)
+		if (cnt && wc->inactive_time < it)
 			websWrite(wp, ",");
 		cnt++;
 		strncpy(mac, wc->mac, 31);
