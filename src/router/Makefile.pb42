@@ -221,6 +221,9 @@ endif
 ifeq ($(CONFIG_WHRHPGN),y)
 	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WNR2000),y)
+	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR615E),y)
 	cp $(LINUXDIR)/.config_dir615e $(LINUXDIR)/.config
 endif
@@ -250,6 +253,9 @@ ifeq ($(CONFIG_DIR632),y)
 endif
 ifeq ($(CONFIG_HORNET),y)
 	cp $(LINUXDIR)/.config_hornet $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WASP),y)
+	cp $(LINUXDIR)/.config_wasp $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
@@ -738,9 +744,72 @@ ifeq ($(CONFIG_TEW673GRU),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/tew673gru-uimage.bin
 	cat tools/tew673gru.tag >> $(ARCH)-uclibc/tew673gru-uimage.bin
 endif
+ifeq ($(CONFIG_WNR2000),y)
+	mkdir -p $(ARCH)-uclibc/wnr2000v3/image
+	./tools/wndr3700/wnr2000v3 \
+		$(ARCH)-uclibc/root.uimage \
+		$(ARCH)-uclibc/wnr2000v3/image/uImage
+
+	./tools/wndr3700/mksquashfs-lzma \
+		$(ARCH)-uclibc/wnr2000v3 $(ARCH)-uclibc/kernel2000v3.squashfs \
+		-nopad -noappend -root-owned -be
+	-rm -rf $(ARCH)-uclibc/wnr2000v3
+
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'wnr2000v3-V1.1.4.68' \
+		-d $(ARCH)-uclibc/kernel2000v3.squashfs \
+		$(ARCH)-uclibc/kernel2000v3.uimage
+
+	./tools/wndr3700/wnr2000v3 \
+		$(ARCH)-uclibc/kernel2000v3.uimage \
+		$(ARCH)-uclibc/kernel2000v3.image	
+
+	( \
+		dd if=$(ARCH)-uclibc/kernel2000v3.image bs=1024k conv=sync; \
+		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
+	) > $(ARCH)-uclibc/wnr2000v3-uimage.bin
+
+	./tools/wndr3700/mkdniimg -B wnr2000v3 -v 1.1.4.68 -r NA -i $(ARCH)-uclibc/wnr2000v3-uimage.bin -o $(ARCH)-uclibc/wnr2000v3-factory_NA.img
+	./tools/wndr3700/mkdniimg -B wnr2000v3 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/wnr2000v3-uimage.bin -o $(ARCH)-uclibc/wnr2000v3-factory_WW.img
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wnr2000v3-webflash.bin $(ARCH)-uclibc/wnr2000v3-uimage.bin	
+
+endif
+ifeq ($(CONFIG_WNR2200),y)
+	mkdir -p $(ARCH)-uclibc/wnr2200/image
+	./tools/wndr3700/wnr2200 \
+		$(ARCH)-uclibc/root.uimage \
+		$(ARCH)-uclibc/wnr2200/image/uImage
+
+	./tools/wndr3700/mksquashfs-lzma \
+		$(ARCH)-uclibc/wnr2200 $(ARCH)-uclibc/kernel2200.squashfs \
+		-nopad -noappend -root-owned -be
+	-rm -rf $(ARCH)-uclibc/wnr2200
+
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'wnr2200-V1.1.4.68' \
+		-d $(ARCH)-uclibc/kernel2200.squashfs \
+		$(ARCH)-uclibc/kernel2200.uimage
+
+	./tools/wndr3700/wnr2200 \
+		$(ARCH)-uclibc/kernel2200.uimage \
+		$(ARCH)-uclibc/kernel2200.image	
+
+	( \
+		dd if=$(ARCH)-uclibc/kernel2200.image bs=1024k conv=sync; \
+		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
+	) > $(ARCH)-uclibc/wnr2200-uimage.bin
+
+	./tools/wndr3700/mkdniimg -B wnr2200 -v 1.1.4.68 -r NA -i $(ARCH)-uclibc/wnr2200-uimage.bin -o $(ARCH)-uclibc/wnr2200-factory_NA.img
+	./tools/wndr3700/mkdniimg -B wnr2200 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/wnr2200-uimage.bin -o $(ARCH)-uclibc/wnr2200-factory_WW.img
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wnr2200-webflash.bin $(ARCH)-uclibc/wnr2200-uimage.bin	
+
+endif
 ifeq ($(CONFIG_WNDR3700),y)
 	mkdir -p $(ARCH)-uclibc/wndr3700/image
 	mkdir -p $(ARCH)-uclibc/wndr3700v2/image
+	mkdir -p $(ARCH)-uclibc/wndr3800/image
 	./tools/wndr3700/wndr3700 \
 		$(ARCH)-uclibc/root.uimage \
 		$(ARCH)-uclibc/wndr3700/image/uImage
@@ -748,6 +817,10 @@ ifeq ($(CONFIG_WNDR3700),y)
 	./tools/wndr3700/wndr3700v2 \
 		$(ARCH)-uclibc/root.uimage \
 		$(ARCH)-uclibc/wndr3700v2/image/uImage
+
+	./tools/wndr3700/wndr3700v2 \
+		$(ARCH)-uclibc/root.uimage \
+		$(ARCH)-uclibc/wndr3800/image/uImage
 
 	./tools/wndr3700/mksquashfs-lzma \
 		$(ARCH)-uclibc/wndr3700 $(ARCH)-uclibc/kernel.squashfs \
@@ -757,8 +830,13 @@ ifeq ($(CONFIG_WNDR3700),y)
 		$(ARCH)-uclibc/wndr3700v2 $(ARCH)-uclibc/kernelv2.squashfs \
 		-nopad -noappend -root-owned -be
 
+	./tools/wndr3700/mksquashfs-lzma \
+		$(ARCH)-uclibc/wndr3800 $(ARCH)-uclibc/kernel3800.squashfs \
+		-nopad -noappend -root-owned -be
+
 	-rm -rf $(ARCH)-uclibc/wndr3700
 	-rm -rf $(ARCH)-uclibc/wndr3700v2
+	-rm -rf $(ARCH)-uclibc/wndr3800
 
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
@@ -771,6 +849,13 @@ ifeq ($(CONFIG_WNDR3700),y)
 		-n 'WNDR3700v2-V1.0.4.68' \
 		-d $(ARCH)-uclibc/kernelv2.squashfs \
 		$(ARCH)-uclibc/kernelv2.uimage
+
+	mkimage -A mips -O linux -T filesystem -C none \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'WNDR3800-V1.0.4.68' \
+		-d $(ARCH)-uclibc/kernel3800.squashfs \
+		$(ARCH)-uclibc/kernel3800.uimage
+
 	./tools/wndr3700/wndr3700v2 \
 		$(ARCH)-uclibc/kernelv2.uimage \
 		$(ARCH)-uclibc/kernelv2.image	
@@ -778,6 +863,10 @@ ifeq ($(CONFIG_WNDR3700),y)
 	./tools/wndr3700/wndr3700 \
 		$(ARCH)-uclibc/kernel.uimage \
 		$(ARCH)-uclibc/kernel.image	
+
+	./tools/wndr3700/wndr3700v2 \
+		$(ARCH)-uclibc/kernel3800.uimage \
+		$(ARCH)-uclibc/kernel3800.image	
 	( \
 		dd if=$(ARCH)-uclibc/kernel.image bs=1024k conv=sync; \
 		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
@@ -788,12 +877,20 @@ ifeq ($(CONFIG_WNDR3700),y)
 		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
 	) > $(ARCH)-uclibc/wndr3700v2-uimage.bin
 
+	( \
+		dd if=$(ARCH)-uclibc/kernel3800.image bs=1024k conv=sync; \
+		dd if=$(ARCH)-uclibc/root.fs bs=64k; \
+	) > $(ARCH)-uclibc/wndr3800-uimage.bin
+
 	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_NA.img
 	./tools/wndr3700/mkdniimg -B WNDR3700 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3700-uimage.bin -o $(ARCH)-uclibc/wndr3700-factory_WW.img
 	./tools/wndr3700/mkdniimg -B WNDR3700v2 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3700v2-uimage.bin -o $(ARCH)-uclibc/wndr3700v2-factory_NA.img
 	./tools/wndr3700/mkdniimg -B WNDR3700v2 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3700v2-uimage.bin -o $(ARCH)-uclibc/wndr3700v2-factory_WW.img
+	./tools/wndr3700/mkdniimg -B WNDR3800 -v 1.0.4.68 -r NA -i $(ARCH)-uclibc/wndr3800-uimage.bin -o $(ARCH)-uclibc/wndr3800-factory_NA.img
+	./tools/wndr3700/mkdniimg -B WNDR3800 -v 1.0.4.68 -r "" -i $(ARCH)-uclibc/wndr3800-uimage.bin -o $(ARCH)-uclibc/wndr3800-factory_WW.img
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wndr3700-webflash.bin $(ARCH)-uclibc/wndr3700-uimage.bin	
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wndr3700v2-webflash.bin $(ARCH)-uclibc/wndr3700v2-uimage.bin	
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/wndr3800-webflash.bin $(ARCH)-uclibc/wndr3800-uimage.bin	
 endif
 ifeq ($(CONFIG_TEW632BRP),y)
 	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/tew632brp-uimage.bin
