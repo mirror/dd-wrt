@@ -206,6 +206,10 @@ void set_wl0_gpio(int gpio,int val)
 #define AR9287_GPIO_OE_OUT_DRV_LOW                   0x1    // drive if low
 #define AR9287_GPIO_OE_OUT_DRV_HI                    0x2    // drive if high
 #define AR9287_GPIO_OE_OUT_DRV_ALL                   0x3    // drive always
+#define ar7240_reg_rmw(_off, _set, _clr) do { \
+            ar7240_reg_rmw_clear(((_off)), (_clr)); \
+            ar7240_reg_rmw_set(((_off)), (_set)); \
+	} while(0)
 
 int get_wl0_gpio(int gpio)
 {
