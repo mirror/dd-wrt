@@ -124,7 +124,7 @@ void start_sysinit(void)
 #ifdef HAVE_WNR2200
 	set_gpio(38,1);
 	get_gpio(38);
-	setWirelessLedPhy0(1);
+	setWirelessLedPhy0(0);
 #elif HAVE_WNR2000
 	set_gpio(40,1);
 	get_gpio(40);
