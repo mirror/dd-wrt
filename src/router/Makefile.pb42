@@ -224,6 +224,9 @@ endif
 ifeq ($(CONFIG_WNR2000),y)
 	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WNR2200),y)
+	cp $(LINUXDIR)/.config_ar7240 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR615E),y)
 	cp $(LINUXDIR)/.config_dir615e $(LINUXDIR)/.config
 endif

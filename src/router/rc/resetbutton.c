@@ -747,6 +747,9 @@ void period_check(int sig)
 #elif defined(HAVE_WASP)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
+#elif defined(HAVE_WNR2200)
+//	sesgpio = 0x00b; //not yet supported
+//	val |= get_gpio(37) << 37;	//aoss pushbutton
 #elif defined(HAVE_WNR2000)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton

@@ -3606,7 +3606,7 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_WHRHPGN:
 		power_gpio = 0x122;
 		diag_gpio = 0x121;
-		connected_gpio = 0x100;
+		connected_gpio = 0x107;
 //		ses_gpio = 0x104;
 //		sec0_gpio = 0x104;
 		break;
