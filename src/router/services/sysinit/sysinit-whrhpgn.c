@@ -121,7 +121,13 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
-#ifdef HAVE_WNR2000
+#ifdef HAVE_WNR2200
+	set_gpio(38,1);
+	get_gpio(38);
+	setWirelessLedPhy0(1);
+#elif HAVE_WNR2000
+	set_gpio(40,1);
+	get_gpio(40);
 	setWirelessLedPhy0(1);
 #elif HAVE_WLAEAG300N
 	setWirelessLed(0,14);
