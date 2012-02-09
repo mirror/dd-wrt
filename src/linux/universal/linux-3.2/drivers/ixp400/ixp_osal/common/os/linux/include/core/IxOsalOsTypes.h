@@ -156,7 +156,7 @@ typedef int IxOsalOsThread;
 typedef struct semaphore *IxOsalOsSemaphore;
 
 /* Mutex handle */
-typedef struct mutex *IxOsalOsMutex;
+typedef struct semaphore *IxOsalOsMutex;
 
 #ifdef IX_OSAL_OEM_FAST_MUTEX
 

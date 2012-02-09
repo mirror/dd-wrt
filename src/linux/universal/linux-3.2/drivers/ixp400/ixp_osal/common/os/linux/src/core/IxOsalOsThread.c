@@ -62,16 +62,11 @@ struct IxOsalOsThreadData
    IxOsalVoidFnVoidPtr entryPoint;
    void                *arg;
 };
-#define down mutex_lock
-#define up mutex_unlock
-#define init_MUTEX mutex_init
-#define DECLARE_MUTEX(a) struct mutex a
 
 /* declaring mutexes */
-DECLARE_MUTEX (IxOsalThreadMutex);
-DECLARE_MUTEX (IxOsalThreadStopMutex);
-static int mutex_init = 0;
-static int stop_mutex_init = 0;
+DEFINE_SEMAPHORE (IxOsalThreadMutex);
+DEFINE_SEMAPHORE (IxOsalThreadStopMutex);
+
 #ifndef IX_OSAL_OS_LINUX_VERSION_2_6   /* ! Linux-Kernel Version 2.6 */
 
 struct IxOsalOsThreadData thread_data;
@@ -141,7 +136,7 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
 
     threadInfo = (struct IxOsalOsThreadInfo*) ixOsalMemAlloc(
                         sizeof(struct IxOsalOsThreadInfo));
-    
+
     if (unlikely(NULL == threadInfo))
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
@@ -178,11 +173,7 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
      * Save thread handler of the created thread in the threadInfo node
      */
     threadInfo->ptid = *ptrTid;
-    if (!mutex_init)
-	{
-	mutex_init = 1;
-	mutex_init(&IxOsalThreadMutex);
-	}
+
     down (&IxOsalThreadMutex);
 
     /*
@@ -359,12 +350,6 @@ PUBLIC IX_STATUS
 ixOsalThreadCreate (IxOsalThread * ptrTid,
     IxOsalThreadAttr * threadAttr, IxOsalVoidFnVoidPtr entryPoint, void *arg)
 {
-    if (!mutex_init)
-	{
-	mutex_init = 1;
-	mutex_init(&IxOsalThreadMutex);
-	}
-
     down (&IxOsalThreadMutex);
     IxOsalOsThreadData.entryPoint = entryPoint;
     IxOsalOsThreadData.arg = arg;
@@ -406,11 +391,6 @@ ixOsalThreadStart (IxOsalThread * tId)
 PUBLIC IX_STATUS
 ixOsalThreadKill (IxOsalThread * tid)
 {
-    if (!stop_mutex_init)
-	{
-	stop_mutex_init=1;
-	mutex_init(&IxOsalThreadStopMutex);
-	}
     down(&IxOsalThreadStopMutex);
     kill_task = find_task_by_pid(*tid);
 

@@ -67,8 +67,6 @@
 /* Max timeout in MS, used to guard against possible overflow */
 #define IX_OSAL_MAX_TIMEOUT_MS (IX_OSAL_MAX_LONG/HZ)
 
-#define init_MUTEX mutex_init
-#define DECLARE_MUTEX(a) struct mutex a
 
 PUBLIC IX_STATUS
 ixOsalSemaphoreInit (IxOsalSemaphore * sid, UINT32 start_value)
@@ -271,7 +269,8 @@ ixOsalSemaphoreDestroy (IxOsalSemaphore * sid)
 PUBLIC IX_STATUS
 ixOsalMutexInit (IxOsalMutex * mutex)
 {
-    *mutex = (struct mutex *) kmalloc (sizeof (struct mutex), GFP_KERNEL);
+    *mutex =
+        (struct semaphore *) kmalloc (sizeof (struct semaphore), GFP_KERNEL);
     if (!mutex)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
@@ -281,7 +280,7 @@ ixOsalMutexInit (IxOsalMutex * mutex)
         return IX_FAIL;
     }
 
-    init_MUTEX (*mutex);
+    sema_init (*mutex, 1);
     return IX_SUCCESS;
 }
 
@@ -313,11 +312,11 @@ ixOsalMutexLock (IxOsalMutex * mutex, INT32 timeout)
 
     if (timeout == IX_OSAL_WAIT_FOREVER)
     {
-        mutex_lock (*mutex);
+        down (*mutex);
     }
     else if (timeout == IX_OSAL_WAIT_NONE)
     {
-        if (mutex_trylock (*mutex))
+        if (down_trylock (*mutex))
         {
             return IX_FAIL;
         }
@@ -335,7 +334,7 @@ ixOsalMutexLock (IxOsalMutex * mutex, INT32 timeout)
         timeoutTime = jiffies + (timeout * HZ) / 1000;
         while (1)
         {
-            if (!mutex_trylock (*mutex))
+            if (!down_trylock (*mutex))
             {
                 break;
             }
@@ -369,7 +368,7 @@ ixOsalMutexUnlock (IxOsalMutex * mutex)
         return IX_FAIL;
     }
 
-    mutex_unlock (*mutex);
+    up (*mutex);
     return IX_SUCCESS;
 }
 
@@ -389,7 +388,7 @@ ixOsalMutexTryLock (IxOsalMutex * mutex)
         return IX_FAIL;
     }
 
-    if (mutex_trylock (*mutex))
+    if (down_trylock (*mutex))
     {
         return IX_FAIL;
     }
