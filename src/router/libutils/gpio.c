@@ -91,16 +91,16 @@ int get_gpio(int gpio)
 		sprintf(buf, "/proc/gpio/%d_in", gpio);
 		in = fopen(buf, "rb");
 	} else {
-		sprintf(buf, "/proc/gpio/%d_dir", gpio);
+		sprintf(buf, "/proc/wl0gpio/%d_dir", (gpio - GPIOMAX));
 		in = fopen(buf, "wb");
 		if (in != NULL) {
 			fprintf(in, "0");
 			fclose(in);
 		}
-		sprintf(buf, "/proc/gpio/%d_in", gpio);
+		sprintf(buf, "/proc/wl0gpio/%d_in", (gpio - GPIOMAX));
 		in = fopen(buf, "rb");
 		if (in == NULL) {
-			sprintf(buf, "/proc/gpio/%d_out", gpio);
+			sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
 			in = fopen(buf, "rb");
 		}
 	}
