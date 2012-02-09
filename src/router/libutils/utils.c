@@ -1025,6 +1025,7 @@ int internal_getRouterBrand()
 #define M900 (- (2427 - 907))
 #define M365 (- (5540 - 3650))
 #define M35 (- (5540 - 3540))
+#define M10 (- (5540 - 10322))
 	struct UBNTDEV dev[] = {
 		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M, 0},	//
 		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M, 0},	//
@@ -1070,7 +1071,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti PowerBridge M3", 0xe2a3, "3", "3", ROUTER_BOARD_R5M, M35},	//
 		{"Ubiquiti PowerBridge M5", 0xe1a5, "3", "3", ROUTER_BOARD_R5M, 0},	//
 		{"Ubiquiti PowerBridge M365", 0xe1a3, "3", "3", ROUTER_BOARD_R5M, M365},	//
-		{"Ubiquiti PowerBridge M10", 0xe110, "3", "3", ROUTER_BOARD_R5M, 0},	// 
+		{"Ubiquiti PowerBridge M10", 0xe110, "3", "3", ROUTER_BOARD_R5M, M10},	// 
 		{"Ubiquiti NanoBridge M3", 0xe243, "3", "3", ROUTER_BOARD_BS5M, M35},	//
 		{"Ubiquiti NanoBridge M365", 0xe233, "3", "3", ROUTER_BOARD_BS5M, M365},	//
 		{"Ubiquiti NanoBridge M900", 0xe239, "3", "3", ROUTER_BOARD_BS5M, M900},	//
