@@ -59,7 +59,7 @@ int brctl_main(int argc, char **argv)
 }
 #else
 
-#if HAVE_MSTP
+#ifdef HAVE_MSTP
 
 int br_set_stp_state(const char *br, int stp_state)
 {
@@ -67,10 +67,10 @@ int br_set_stp_state(const char *br, int stp_state)
 		return -1;
 	if (stp_state == 1) {
 		// syslog (LOG_INFO, "stp is set to on\n");
-		return eval("mstpctl", "addbridge", br);
+		return eval("brctl", "stp", br, "1");
 	} else {
 		// syslog (LOG_INFO, "stp is set to off\n");
-		return eval("mstpctl", "delbridge", br);
+		return eval("brctl", "stp", br, "0");
 	}
 }
 
