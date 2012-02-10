@@ -1,6 +1,5 @@
 #include <linux/init.h>
 #include <linux/version.h>
-#include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/kernel.h>   
 #include <asm/uaccess.h>
