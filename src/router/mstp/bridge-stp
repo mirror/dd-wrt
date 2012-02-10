@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Script to start/stop spanning tree called from kernel
 # Make sure umask is sane
