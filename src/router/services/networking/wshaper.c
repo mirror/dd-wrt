@@ -333,6 +333,7 @@ int svqos_iptables(void)
 	
 	insmod("imq");
 	insmod("ipt_IMQ");
+	insmod("xt_IMQ");
 
 	// set-up mark/filter tables	
 	system2("iptables -t mangle -F FILTER_OUT");
@@ -998,6 +999,8 @@ void stop_wshaper(void)
 	rmmod("ipt_layer7");
 	rmmod("ipt_mac");
 	rmmod("xt_mac");		
+	rmmod("xt_IMQ");		
+	rmmod("ipt_IMQ");		
 	rmmod("imq");
 	
 	return;
