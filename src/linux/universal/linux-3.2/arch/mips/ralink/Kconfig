@@ -61,7 +61,7 @@ config SOC_RT305X
 config RALINK_RT3052
 	bool "RT3052"
 	depends on SOC_RT305X
-	select RALINK_RT3052_MP2
+	select RALINK_RT3052_MP2 if !RALINK_RT3350
 
 config RALINK_RT3352
 	bool "RT3352"
