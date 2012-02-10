@@ -204,7 +204,7 @@ void start_openvpnserver(void)
 		     "/tmp/openvpn/route-up.sh", "--down",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
 	
-	if (nvrammatch("openvpn_tuntap", "tun")) {
+	if (nvram_match("openvpn_tuntap", "tun")) {
 		eval("stopservice", "wshaper");
 		eval("startservice", "wshaper");
 	}
