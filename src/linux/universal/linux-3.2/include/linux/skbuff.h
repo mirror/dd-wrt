@@ -2359,6 +2359,10 @@ static inline void nf_reset(struct sk_buff *skb)
 	nf_conntrack_put_reasm(skb->nfct_reasm);
 	skb->nfct_reasm = NULL;
 #endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	skb->imq_flags = 0;
+	skb->nf_queue_entry = NULL;
+#endif
 #ifdef CONFIG_BRIDGE_NETFILTER
 	nf_bridge_put(skb->nf_bridge);
 	skb->nf_bridge = NULL;
