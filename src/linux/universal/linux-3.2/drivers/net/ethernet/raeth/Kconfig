@@ -45,15 +45,15 @@ config  RAETH_ROUTER
         depends on !RALINK_RT3052
 
 config  RAETH_ICPLUS_PHY
-        bool "100PHY"
+        bool "ICPLUS 100PHY"
         depends on !RALINK_RT3052
 
 config  RTL8366_SWITCH
-        bool "100PHY"
+        bool "RTL8366 Switch"
         depends on !RALINK_RT3052
 
 config  RTL8366RB_SWITCH
-        bool "100PHY"
+        bool "RTL8366RB Switch"
         depends on RALINK_RT3052
 
 config  AR690W
