@@ -52,6 +52,7 @@ static void rt305x_intc_irq_dispatch(void)
 	else
 		spurious_interrupt();
 }
+extern void ralink_gpio_control(int gpio,int level);
 
 asmlinkage void plat_irq_dispatch(void)
 {
@@ -59,9 +60,13 @@ asmlinkage void plat_irq_dispatch(void)
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 
-	if (pending & STATUSF_IP7)
+	if (pending & STATUSF_IP7) {
+#ifdef CONFIG_EAP9550
+		ralink_gpio_control(11,0);
+		ralink_gpio_control(11,1);
+#endif
 		do_IRQ(RT305X_CPU_IRQ_COUNTER);
-
+	}
 	else if (pending & STATUSF_IP5)
 		do_IRQ(RT305X_CPU_IRQ_FE);
 
