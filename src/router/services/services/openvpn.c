@@ -181,9 +181,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "gpio disable %s\n", gpiovpn);
 #endif
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n"
-					"stopservice wshaper\n"
-					"startservice wshaper\n");
+		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
 	}
 	fprintf(fp, "sleep 2\n");
 	fclose(fp);
