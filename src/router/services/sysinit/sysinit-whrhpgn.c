@@ -130,7 +130,7 @@ void start_sysinit(void)
 	get_gpio(40);
 	setWirelessLedPhy0(1);
 #elif HAVE_WLAEAG300N
-	setWirelessLed(0,14);
+	setWirelessLed(0,15);
 #else
 	setWirelessLedPhy0(1);
 #endif

@@ -3623,8 +3623,8 @@ int led_control(int type, int act)
 		power_gpio = 0x110;
 		diag_gpio = 0x111;
 		connected_gpio = 0x106;
-		ses_gpio = 0x10f;
-		sec0_gpio = 0x10f;
+		ses_gpio = 0x10e;
+		sec0_gpio = 0x10e;
 		break;
 #elif HAVE_HORNET
 	case ROUTER_BOARD_WHRHPGN:
