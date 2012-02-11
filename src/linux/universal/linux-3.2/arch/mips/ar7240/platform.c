@@ -321,14 +321,16 @@ int __init ar7240_platform_init(void)
 	ap91_pci_init(NULL, NULL);
 #else
 	ee = getCalData(0);
-	if (ee)
-	{
-	    mac = ((u8 *)ee)-0x1000;
-	    if (!memcmp(mac,"\xff\xff\xff\xff\xff\xff",6))
-	    {
+	if (ee) {
+	    if (!memcmp((u8 *)ee)+0x20c,"\xff\xff\xff\xff\xff\xff",6) || !memcmp((u8 *)ee)+0x20c,"\x00\x00\x00\x00\x00\x00",6)) {
+		printk("Found empty mac address in calibration dataset, leave the responsibility to the driver to use the correct one\n");
+		mac = ((u8 *)ee)-0x1000;
+	    }
+	    if (mac && (!memcmp(mac,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(mac,"\x00\x00\x00\x00\x00\x00",6))) {
 		printk("Found empty mac address in dataset, leave the responsibility to the driver to use the correct one\n");
 		mac = NULL;
 	    }
+	    
 	}
 	ap91_pci_init(ee, mac);
 #endif
