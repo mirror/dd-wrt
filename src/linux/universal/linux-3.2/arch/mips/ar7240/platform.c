@@ -322,7 +322,14 @@ int __init ar7240_platform_init(void)
 #else
 	ee = getCalData(0);
 	if (ee)
+	{
 	    mac = ((u8 *)ee)-0x1000;
+	    if (!memcmp(mac,"\xff\xff\xff\xff\xff\xff",6))
+	    {
+		printk("Found empty mac address in dataset, leave the responsibility to the driver to use the correct one\n");
+		mac = NULL;
+	    }
+	}
 	ap91_pci_init(ee, mac);
 #endif
 return ret;
