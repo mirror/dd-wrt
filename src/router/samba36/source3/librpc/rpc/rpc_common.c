@@ -100,24 +100,22 @@ static bool initialize_interfaces(void)
 		return false;
 	}
 #endif
+#ifdef SAMR_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_samr)) {
 		return false;
 	}
+#endif
 #ifdef NETLOGON_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_netlogon)) {
 		return false;
 	}
 #endif
-#ifdef SRVSVC_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_srvsvc)) {
 		return false;
 	}
-#endif
-#ifdef WKSSVC_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_wkssvc)) {
 		return false;
 	}
-#endif
 #ifdef WINREG_SUPPORT
 	if (!smb_register_ndr_interface(&ndr_table_winreg)) {
 		return false;

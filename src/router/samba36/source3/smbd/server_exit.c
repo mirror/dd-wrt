@@ -132,9 +132,7 @@ static void exit_server_common(enum server_exit_reason how,
 #endif
 
 	if (am_parent) {
-#ifdef WKSSVC_SUPPORT
 		rpc_wkssvc_shutdown();
-#endif
 #ifdef ACTIVE_DIRECTORY
 		rpc_dssetup_shutdown();
 #endif
@@ -154,9 +152,7 @@ static void exit_server_common(enum server_exit_reason how,
 		rpc_spoolss_shutdown();
 #endif
 
-#ifdef SRVSVC_SUPPORT
 		rpc_srvsvc_shutdown();
-#endif
 #ifdef WINREG_SUPPORT
 		rpc_winreg_shutdown();
 #endif
@@ -164,7 +160,9 @@ static void exit_server_common(enum server_exit_reason how,
 #ifdef NETLOGON_SUPPORT
 		rpc_netlogon_shutdown();
 #endif
+#ifdef SAMR_SUPPORT
 		rpc_samr_shutdown();
+#endif
 		rpc_lsarpc_shutdown();
 	}
 
