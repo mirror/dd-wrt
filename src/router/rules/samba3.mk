@@ -28,6 +28,7 @@ CONFIGURE_ARGS += \
 	--disable-relro \
 	--disable-static \
 	--disable-swat \
+	--disable-shared-libs \
 	--with-codepagedir=/etc/samba \
 	--with-configdir=/etc/samba \
 	--with-included-iniparser \
@@ -43,7 +44,14 @@ CONFIGURE_ARGS += \
 	--without-krb5 \
 	--without-ldap \
 	--without-pam \
-	--without-winbind
+	--without-winbind \
+	--without-libtdb \
+	--without-libtalloc \
+	--without-libnetapi \
+	--without-libsmbclient \
+	--without-libsmbsharemodes \
+	--without-libaddns \
+	--with-shared-modules=
 	
 
 
@@ -56,8 +64,6 @@ samba3: samba3-configure
 samba3-install:
 	mkdir -p $(INSTALLDIR)/samba3
 	install -D samba36/source3/bin/samba_multicall $(INSTALLDIR)/samba3/usr/sbin/samba_multicall
-	install -D samba36/source3/bin/libtalloc.so.2 $(INSTALLDIR)/samba3/usr/lib/libtalloc.so.2
-	install -D samba36/source3/bin/libtdb.so.1 $(INSTALLDIR)/samba3/usr/lib/libtdb.so.1
 	install -D samba36/source3/bin/smbpasswd $(INSTALLDIR)/samba3/usr/sbin/smbpasswd
 	install -D samba36/config/samba3.webnas $(INSTALLDIR)/samba3/etc/config/samba3.webnas
 	install -D samba36/config/samba3.nvramconfig $(INSTALLDIR)/samba3/etc/config/samba3.nvramconfig
