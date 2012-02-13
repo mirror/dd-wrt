@@ -48,9 +48,9 @@ CONFIGURE_ARGS += \
 
 
 samba3-configure:
-	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=2  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=2  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"
+	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=2  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=2  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"; fi
 
-samba3:
+samba3: samba3-configure
 	$(MAKE) -C samba36/source3 all WITH_LFS=yes DYNEXP= 
 
 samba3-install:
@@ -64,4 +64,4 @@ samba3-install:
 
 
 samba3-clean:
-	$(MAKE) -C samba36/source3 clean
+	-$(MAKE) -C samba36/source3 clean
