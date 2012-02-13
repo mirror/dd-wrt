@@ -1210,8 +1210,10 @@ extern void build_options(bool screen);
 		exit(1);
 	}
 
+#ifdef REGISTRY_BACKEND
 	if (!W_ERROR_IS_OK(registry_init_full()))
 		exit(1);
+#endif
 
 #ifdef PRINTER_SUPPORT
 	if (!print_backend_init(smbd_messaging_context()))
