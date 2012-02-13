@@ -459,7 +459,6 @@ static bool winreg_init_cb(void *ptr)
 }
 #endif
 
-#ifdef SRVSVC_SUPPORT
 static bool srvsvc_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -508,7 +507,6 @@ static bool srvsvc_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 static bool lsarpc_init_cb(void *ptr)
 {
@@ -559,6 +557,7 @@ static bool lsarpc_init_cb(void *ptr)
 	return true;
 }
 
+#ifdef SAMR_SUPPORT
 static bool samr_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -607,6 +606,7 @@ static bool samr_init_cb(void *ptr)
 
 	return true;
 }
+#endif
 
 #ifdef NETLOGON_SUPPORT
 static bool netlogon_init_cb(void *ptr)
@@ -986,7 +986,6 @@ static bool dssetup_init_cb(void *ptr)
 }
 #endif
 
-#ifdef WKSSVC_SUPPORT
 static bool wkssvc_init_cb(void *ptr)
 {
 	struct dcesrv_ep_context *ep_ctx =
@@ -1034,7 +1033,6 @@ static bool wkssvc_init_cb(void *ptr)
 
 	return true;
 }
-#endif
 
 bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 		     struct messaging_context *msg_ctx)
@@ -1100,14 +1098,13 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 	}
 #endif
 
-#ifdef SRVSVC_SUPPORT
 	srvsvc_cb.init         = srvsvc_init_cb;
 	srvsvc_cb.shutdown     = NULL;
 	srvsvc_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_srvsvc_init(&srvsvc_cb))) {
 		return false;
 	}
-#endif
+
 
 	lsarpc_cb.init         = lsarpc_init_cb;
 	lsarpc_cb.shutdown     = NULL;
@@ -1116,12 +1113,14 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 		return false;
 	}
 
+#ifdef SAMR_SUPPORT
 	samr_cb.init         = samr_init_cb;
 	samr_cb.shutdown     = NULL;
 	samr_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_samr_init(&samr_cb))) {
 		return false;
 	}
+#endif
 
 #ifdef NETLOGON_SUPPORT
 	netlogon_cb.init         = netlogon_init_cb;
@@ -1212,14 +1211,12 @@ bool dcesrv_ep_setup(struct tevent_context *ev_ctx,
 	}
 #endif
 
-#ifdef WKSSVC_SUPPORT
 	wkssvc_cb.init         = wkssvc_init_cb;
 	wkssvc_cb.shutdown     = NULL;
 	wkssvc_cb.private_data = ep_ctx;
 	if (!NT_STATUS_IS_OK(rpc_wkssvc_init(&wkssvc_cb))) {
 		return false;
 	}
-#endif
 
 	return true;
 }
