@@ -623,16 +623,16 @@ static struct cmd_set *rpcclient_command_list[] = {
 	rpcclient_commands,
 	lsarpc_commands,
 	ds_commands,
+#ifdef SAMR_SUPPORT
 	samr_commands,
+#endif
 #ifdef PRINTER_SUPPORT
 	spoolss_commands,
 #endif
 #ifdef NETLOGON_SUPPORT
 	netlogon_commands,
 #endif
-#ifdef SRVSVC_SUPPORT
 	srvsvc_commands,
-#endif
 #ifdef DFS_SUPPORT
 	dfs_commands,
 #endif
@@ -642,9 +642,7 @@ static struct cmd_set *rpcclient_command_list[] = {
 	epmapper_commands,
 	shutdown_commands,
  	test_commands,
-#ifdef WKSSVC_SUPPORT
 	wkssvc_commands,
-#endif
 #ifdef EXTRA_SERVICES
 	ntsvcs_commands,
 	drsuapi_commands,
