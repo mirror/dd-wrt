@@ -11,3 +11,10 @@
 	<input name="vpi" size="3" maxlength="3" value="<% nvram_get("vpi"); %>" style="text-align: right;" />/
 	<input name="vci" size="3" maxlength="3" value="<% nvram_get("vci"); %>" style="text-align: right;" />
 </div>
+<div class="setting">
+	<div class="label"><% tran("share.encaps"); %></div>
+	<select name="atm_encaps">
+		<option value="0" <% nvram_selmatch("atm_encaps", "0", "selected"); %>>LLC</option>
+		<option value="1" <% nvram_selmatch("atm_encaps", "1", "selected"); %>>VC Mux</option>
+	</select>
+</div>
