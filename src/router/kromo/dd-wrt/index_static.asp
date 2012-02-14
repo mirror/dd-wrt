@@ -26,3 +26,4 @@
 	<div class="label"><% tran("idx_static.dns"); %>&nbsp;3</div>
 	<input class="num" name="wan_dns2_0" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","0"); %>" />.<input class="num" name="wan_dns2_1" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","1"); %>" />.<input class="num" name="wan_dns2_2" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","2"); %>" />.<input class="num" name="wan_dns2_3" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","3"); %>" />
 </div>
+<% atmsettings("pppoe"); %>
