@@ -33,6 +33,8 @@ struct ath9k_platform_data {
 	int (*get_mac_revision)(void);
 	int (*external_reset)(void);
 
+	int num_leds;
+	const struct gpio_led *leds;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
