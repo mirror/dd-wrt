@@ -91,7 +91,6 @@ int fsl_pq_local_mdio_read(struct fsl_pq_mdio __iomem *regs,
 		int mii_id, int regnum)
 {
 	u16 value;
-
 	/* Set the PHY address and the register address we want to read */
 	out_be32(&regs->miimadd, (mii_id << 8) | regnum);
 
@@ -155,12 +154,12 @@ static int fsl_pq_mdio_reset(struct mii_bus *bus)
 	out_be32(&regs->miimcfg, MIIMCFG_INIT_VALUE);
 
 	/* Wait until the bus is free */
-	while ((in_be32(&regs->miimind) & MIIMIND_BUSY) && timeout--)
+	while ((in_be32(&regs->miimind) & MIIMIND_BUSY) && --timeout)
 		cpu_relax();
 
 	mutex_unlock(&bus->mdio_lock);
 
-	if (timeout < 0) {
+	if (timeout == 0) {
 		printk(KERN_ERR "%s: The MII Bus is stuck!\n",
 				bus->name);
 		return -EBUSY;
@@ -278,7 +277,6 @@ static int fsl_pq_mdio_probe(struct platform_device *ofdev)
 	new_bus->reset = &fsl_pq_mdio_reset,
 	new_bus->priv = priv;
 	fsl_pq_mdio_bus_name(new_bus->id, np);
-
 	addrp = of_get_address(np, 0, &size, NULL);
 	if (!addrp) {
 		err = -EINVAL;
@@ -291,19 +289,13 @@ static int fsl_pq_mdio_probe(struct platform_device *ofdev)
 		err = -EINVAL;
 		goto err_free_bus;
 	}
-
 	map = ioremap(addr, size);
 	if (!map) {
 		err = -ENOMEM;
 		goto err_free_bus;
 	}
 	priv->map = map;
-
-	if (of_device_is_compatible(np, "fsl,gianfar-mdio") ||
-			of_device_is_compatible(np, "fsl,gianfar-tbi") ||
-			of_device_is_compatible(np, "fsl,ucc-mdio") ||
-			of_device_is_compatible(np, "ucc_geth_phy"))
-		map -= offsetof(struct fsl_pq_mdio, miimcfg);
+	map -= offsetof(struct fsl_pq_mdio, miimcfg);
 	regs = map;
 	priv->regs = regs;
 
@@ -316,7 +308,7 @@ static int fsl_pq_mdio_probe(struct platform_device *ofdev)
 
 	new_bus->parent = &ofdev->dev;
 	dev_set_drvdata(&ofdev->dev, new_bus);
-
+#if 0
 	if (of_device_is_compatible(np, "fsl,gianfar-mdio") ||
 			of_device_is_compatible(np, "fsl,gianfar-tbi") ||
 			of_device_is_compatible(np, "fsl,etsec2-mdio") ||
@@ -365,7 +357,7 @@ static int fsl_pq_mdio_probe(struct platform_device *ofdev)
 	}
 
 	out_be32(tbipa, tbiaddr);
-
+#endif 
 	err = of_mdiobus_register(new_bus, np);
 	if (err) {
 		printk (KERN_ERR "%s: Cannot register as MDIO bus\n",

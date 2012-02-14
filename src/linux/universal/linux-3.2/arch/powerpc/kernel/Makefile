@@ -124,7 +124,9 @@ obj-$(CONFIG_FSL_EMB_PERF_EVENT_E500) += e500-pmu.o
 obj-$(CONFIG_8XX_MINIMAL_FPEMU) += softemu8xx.o
 
 ifneq ($(CONFIG_PPC_INDIRECT_IO),y)
+ifneq ($(CONFIG_RB_IOMAP),y)
 obj-y				+= iomap.o
+endif
 endif
 
 obj-$(CONFIG_PPC64)		+= $(obj64-y)

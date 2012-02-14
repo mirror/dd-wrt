@@ -7,6 +7,7 @@
 #include <linux/spinlock.h>
 #include <linux/slab.h>
 #include <linux/bootmem.h>
+#include <linux/vmalloc.h>
 #include "wrapper.h"
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
