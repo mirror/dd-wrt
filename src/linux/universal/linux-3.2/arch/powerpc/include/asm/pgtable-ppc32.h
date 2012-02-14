@@ -63,7 +63,7 @@ extern int icache_44x_need_flush;
 #ifdef CONFIG_HIGHMEM
 #define KVIRT_TOP	PKMAP_BASE
 #else
-#define KVIRT_TOP	(0xfe000000UL)	/* for now, could be FIXMAP_BASE ? */
+#define KVIRT_TOP	(0xf0000000UL)	/* for now, could be FIXMAP_BASE ? */
 #endif
 
 /*

@@ -420,27 +420,15 @@ static int scan_block_full(struct mtd_info *mtd, struct nand_bbt_descr *bd,
 static int scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr *bd,
 			   loff_t offs, uint8_t *buf, int len)
 {
-	struct mtd_oob_ops ops;
+	struct nand_chip *chip = mtd->priv;
 	int j, ret;
 
-	ops.ooblen = mtd->oobsize;
-	ops.oobbuf = buf;
-	ops.ooboffs = 0;
-	ops.datbuf = NULL;
-	ops.mode = MTD_OPS_PLACE_OOB;
 
 	for (j = 0; j < len; j++) {
-		/*
-		 * Read the full oob until read_oob is fixed to handle single
-		 * byte reads for 16 bit buswidth.
-		 */
-		ret = mtd->read_oob(mtd, offs, &ops);
+		ret = chip->block_bad(mtd, offs, 1);
 		/* Ignore ECC errors when checking for BBM */
 		if (ret && !mtd_is_bitflip_or_eccerr(ret))
 			return ret;
-
-		if (check_short_pattern(buf, bd))
-			return 1;
 
 		offs += mtd->writesize;
 	}

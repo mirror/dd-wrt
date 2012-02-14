@@ -523,6 +523,9 @@ struct nand_chip {
 
 	int onfi_version;
 	struct nand_onfi_params	onfi_params;
+#ifdef MIPSEL
+	unsigned	backup_offset;
+#endif
 
 	flstate_t state;
 
@@ -542,6 +545,14 @@ struct nand_chip {
 
 	void *priv;
 };
+
+#define BACKUP_4xFF_OFFSET	36
+#define ALWAYS_4x00_OFFSET	32
+#define ECC_ID_OFFSET		01
+/* ECC_ID_OFFSET contains:
+ *	0x00 => mlc ecc (>= 4bit/512 bytes),
+ *	0xff => slc ecc (>= 1bit/256 bytes)
+ */
 
 /*
  * NAND Flash Manufacturer ID Codes

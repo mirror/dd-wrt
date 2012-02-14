@@ -25,3 +25,6 @@ obj-$(CONFIG_SBC8548)     += sbc8548.o
 obj-$(CONFIG_SOCRATES)    += socrates.o socrates_fpga_pic.o
 obj-$(CONFIG_KSI8560)	  += ksi8560.o
 obj-$(CONFIG_XES_MPC85xx) += xes_mpc85xx.o
+obj-$(CONFIG_RB1000)	  += rb1000.o
+obj-$(CONFIG_RB800)	  += rb800.o
+obj-$(CONFIG_METAROUTER)  += metarouter.o

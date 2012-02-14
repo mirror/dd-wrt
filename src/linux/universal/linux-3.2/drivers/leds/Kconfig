@@ -24,6 +24,10 @@ config LEDS_CLASS
 
 comment "LED drivers"
 
+config LEDS_RB_PPC
+	tristate "LED Support for RB300/RB600/RB1000"
+	depends on LEDS_CLASS && (RB_PPC || RB1000 || RB800)
+
 config LEDS_88PM860X
 	tristate "LED Support for Marvell 88PM860x PMIC"
 	depends on LEDS_CLASS

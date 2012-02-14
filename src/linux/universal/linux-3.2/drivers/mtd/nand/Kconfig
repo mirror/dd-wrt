@@ -444,6 +444,15 @@ config MTD_ALAUDA
 	  These two (and possibly other) Alauda-based cardreaders for
 	  SmartMedia and xD allow raw flash access.
 
+config MTD_NAND_RB_PPC
+	bool "Support for RB333/RB600/RB1000 nand"
+	depends on MTD_NAND && MTD_PARTITIONS && (RB_PPC || RB1000 || RB800)
+	select MTD_NAND_RB
+
+config MTD_NAND_RB
+	tristate
+
+
 config MTD_NAND_ORION
 	tristate "NAND Flash support for Marvell Orion SoC"
 	depends on PLAT_ORION
