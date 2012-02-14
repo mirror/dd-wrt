@@ -56,3 +56,4 @@
 		//]]>
 		</script>
 </div>
+<% atmsettings("pppoe"); %>
