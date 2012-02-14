@@ -666,6 +666,7 @@ ifneq ($(CONFIG_DANUBE),y)
 	rm -f $(INSTALLDIR)/www/index_pppoa_atm.asp
 	rm -f $(INSTALLDIR)/www/index_pppoe_atm.asp
 	rm -f $(INSTALLDIR)/www/index_bridge.asp
+	rm -f $(INSTALLDIR)/www/index_dhcp.asp
 endif
 ifneq ($(CONFIG_AOSS),y)
 	rm -f $(INSTALLDIR)/www/AOSS.asp
