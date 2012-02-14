@@ -978,7 +978,6 @@ void stop_wshaper(void)
 	//rmmod("ebt_mark");
 	//rmmod("ebtable_filter");
 	//rmmod("ebtable_nat");
-	rmmod("ebtables");
 	
 	// don't let packages pass to iptables without ebtables loaded
 	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
@@ -1002,6 +1001,7 @@ void stop_wshaper(void)
 	rmmod("xt_IMQ");		
 	rmmod("ipt_IMQ");		
 	rmmod("imq");
+	rmmod("ebtables");
 	
 	return;
 }
