@@ -618,9 +618,8 @@ static void __init early_cmdline_parse(void)
 	if ((long)_prom->chosen > 0)
 		l = prom_getprop(_prom->chosen, "bootargs", p, COMMAND_LINE_SIZE-1);
 #ifdef CONFIG_CMDLINE
-	if (l <= 0 || p[0] == '\0') /* dbl check */
-		strlcpy(RELOC(prom_cmd_line),
-			RELOC(CONFIG_CMDLINE), sizeof(prom_cmd_line));
+	strlcpy(RELOC(prom_cmd_line),
+		RELOC(CONFIG_CMDLINE), sizeof(prom_cmd_line));
 #endif /* CONFIG_CMDLINE */
 	prom_printf("command line: %s\n", RELOC(prom_cmd_line));
 
