@@ -2026,8 +2026,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -3646,8 +3646,12 @@ void start_wan(int status)
 
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
-		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s llc-encaps",
-			nvram_safe_get("vpi"), nvram_safe_get("vci"));
+
+		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s %s",
+			nvram_safe_get("vpi"),
+			nvram_safe_get("vci"),
+			nvram_match("atm_encaps",
+				    "0") ? "llc-encaps" : "vc-encaps");
 		fprintf(fp, "\n");
 
 		// Those are default options we use + user/passwd
