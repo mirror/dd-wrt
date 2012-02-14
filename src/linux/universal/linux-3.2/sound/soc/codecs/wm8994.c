@@ -729,6 +729,8 @@ static void vmid_reference(struct snd_soc_codec *codec)
 {
 	struct wm8994_priv *wm8994 = snd_soc_codec_get_drvdata(codec);
 
+	pm_runtime_get_sync(codec->dev);
+
 	wm8994->vmid_refcount++;
 
 	dev_dbg(codec->dev, "Referencing VMID, refcount is now %d\n",
@@ -742,7 +744,7 @@ static void vmid_reference(struct snd_soc_codec *codec)
 				    WM8994_VMID_RAMP_MASK,
 				    WM8994_STARTUP_BIAS_ENA |
 				    WM8994_VMID_BUF_ENA |
-				    (0x11 << WM8994_VMID_RAMP_SHIFT));
+				    (0x3 << WM8994_VMID_RAMP_SHIFT));
 
 		/* Main bias enable, VMID=2x40k */
 		snd_soc_update_bits(codec, WM8994_POWER_MANAGEMENT_1,
@@ -796,6 +798,8 @@ static void vmid_dereference(struct snd_soc_codec *codec)
 				    WM8994_VMID_BUF_ENA |
 				    WM8994_VMID_RAMP_MASK, 0);
 	}
+
+	pm_runtime_put(codec->dev);
 }
 
 static int vmid_event(struct snd_soc_dapm_widget *w,
