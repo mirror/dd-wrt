@@ -458,6 +458,11 @@ static struct DEVICES devicelist[] = {
 
 	{0x1410, 0x6000, "option", "0", "0", 2, NULL, "Novatel USB760 Modem Mode"},	//
 	{0x1410, 0x6002, "option", "0", "0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
+//anydata
+	{0x16d5, 0x6501, "option", "0", "0", 2, NULL, "AnyData ADU-300A"},
+	{0x16d5, 0x6502, "option", "0", "0", 2, NULL, "AnyData ADU-500A"},
+	{0x16d5, 0x6202, "option", "0", "0", 2, NULL, "AnyData ADU-620W"},
+
 //qualcomm
 	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
