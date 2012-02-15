@@ -1,6 +1,8 @@
 #include <linux/mtd/nand.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/module.h>
+#include "../mtdcore.h"
 
 static struct mtd_partition partition_info[] = {
     {

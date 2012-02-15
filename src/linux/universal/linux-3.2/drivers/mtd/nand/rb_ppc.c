@@ -1,10 +1,13 @@
 #include <linux/init.h>
+#include <linux/module.h>
 #include <linux/mtd/nand.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
-#include <asm/of_platform.h>
-#include <asm/of_device.h>
+#include <linux/of_platform.h>
+#include <linux/of_device.h>
+#include <linux/slab.h>
 #include <asm/io.h>
+#include "../mtdcore.h"
 
 extern int rb_nand_probe(struct nand_chip *nand, int booter);
 
@@ -75,8 +78,7 @@ static void rbppc_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
 	memcpy(buf, chip->IO_ADDR_R, len);
 }
 
-static int rbppc_nand_probe(struct of_device *pdev,
-			    const struct of_device_id *match)
+static int rbppc_nand_probe(struct platform_device *pdev)
 {
 	struct device_node *gpio;
 	struct device_node *nnand;
@@ -89,10 +91,10 @@ static int rbppc_nand_probe(struct of_device *pdev,
 
 	info = kmalloc(sizeof(*info), GFP_KERNEL);
 
-	rdy = of_get_property(pdev->node, "rdy", NULL);
-	nce = of_get_property(pdev->node, "nce", NULL);
-	cle = of_get_property(pdev->node, "cle", NULL);
-	ale = of_get_property(pdev->node, "ale", NULL);
+	rdy = of_get_property(pdev->dev.of_node, "rdy", NULL);
+	nce = of_get_property(pdev->dev.of_node, "nce", NULL);
+	cle = of_get_property(pdev->dev.of_node, "cle", NULL);
+	ale = of_get_property(pdev->dev.of_node, "ale", NULL);
 
 	if (!rdy || !nce || !cle || !ale) {
 		printk("rbppc nand error: gpios properties are missing\n");
@@ -140,7 +142,7 @@ static int rbppc_nand_probe(struct of_device *pdev,
 	of_node_put(nnand);
 	info->localbus = ioremap_nocache(res.start, res.end - res.start + 1);
 	
-	if (of_address_to_resource(pdev->node, 0, &res)) {
+	if (of_address_to_resource(pdev->dev.of_node, 0, &res)) {
 	    printk("rbppc nand error: no reg property found\n");
 	    goto err;
 	}
@@ -168,24 +170,24 @@ static struct of_device_id rbppc_nand_ids[] = {
 	{}
 };
 
-static struct of_platform_driver rbppc_nand_driver = {
-	.name   = "nand",
+static struct platform_driver rbppc_nand_driver = {
+//	.name   = "nand",
 	.probe	= rbppc_nand_probe,
-	.match_table = rbppc_nand_ids,
 	.driver	= {
 		.name = "rbppc-nand",
+		.of_match_table = rbppc_nand_ids,
 		.owner = THIS_MODULE,
 	},
 };
 
 static int __init rbppc_nand_init(void)
 {
-	return of_register_platform_driver(&rbppc_nand_driver);
+	return platform_driver_register(&rbppc_nand_driver);
 }
 
 static void __exit rbppc_nand_exit(void)
 {
-	of_unregister_platform_driver(&rbppc_nand_driver);
+	platform_driver_unregister(&rbppc_nand_driver);
 }
 							     
 module_init(rbppc_nand_init);
