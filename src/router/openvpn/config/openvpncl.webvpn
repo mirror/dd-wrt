@@ -81,8 +81,12 @@
 				</div>
 			</div>
 			<div class="setting">
-				<div class="label"><% tran("idx.lanip"); %></div>
+				<div class="label"><% tran("share.ip"); %></div>
 				<input size="15" maxlength="15" name="openvpncl_ip" value="<% nvram_get("openvpncl_ip"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("share.subnet"); %></div>
+				<input size="15" maxlength="15" name="openvpncl_mask" value="<% nvram_get("openvpncl_mask"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_mtu"); %></div>
