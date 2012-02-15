@@ -192,14 +192,14 @@ void start_openvpnserver(void)
 
 	if (nvram_match("use_crypto", "1"))
 		eval("/tmp/openvpnserver", "--config",
-		     "/tmp/openvpn/openvpn.conf", "--up",
-		     "/tmp/openvpn/route-up.sh", "--down",
+		     "/tmp/openvpn/openvpn.conf", "--route-up",
+		     "/tmp/openvpn/route-up.sh", "--down-pre",
 		     "/tmp/openvpn/route-down.sh", "--daemon", "--engine",
 		     "cryptodev");
 	else
 		eval("/tmp/openvpnserver", "--config",
-		     "/tmp/openvpn/openvpn.conf", "--up",
-		     "/tmp/openvpn/route-up.sh", "--down",
+		     "/tmp/openvpn/openvpn.conf", "--route-up",
+		     "/tmp/openvpn/route-up.sh", "--down-pre",
 		     "/tmp/openvpn/route-down.sh", "--daemon");
 	
 	eval("stopservice", "wshaper");
@@ -332,8 +332,9 @@ void start_openvpn(void)
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tap")
 		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
-			fprintf(fp, "ifconfig tap1 %s up\n",
-				nvram_safe_get("openvpncl_ip"));
+			fprintf(fp, "ifconfig tap1 %s netmask %s up\n",
+				nvram_safe_get("openvpncl_ip"),
+				nvram_safe_get("openvpncl_mask"));
 	 }
 	if (nvram_match("openvpncl_nat", "1")) {
 		fprintf(fp,
