@@ -72,21 +72,24 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_cipher"); %></div>
-			<select name="openvpn_cipher">
-			<option value="bf-cbc" <% nvram_selected("openvpn_cipher","bf-cbc"); %>>Blowfish CBC</option>
-			<option value="aes-128-cbc" <% nvram_selected("openvpn_cipher","aes-128-cbc"); %>>AES-128 CBC</option>
-			<option value="aes-192-cbc" <% nvram_selected("openvpn_cipher","aes-192-cbc"); %>>AES-192 CBC</option>
-			<option value="aes-256-cbc" <% nvram_selected("openvpn_cipher","aes-256-cbc"); %>>AES-256 CBC</option>
+			<select name="openvpn_cipher">	
 			<option value="aes-512-cbc" <% nvram_selected("openvpn_cipher","aes-512-cbc"); %>>AES-512 CBC</option>
+			<option value="aes-256-cbc" <% nvram_selected("openvpn_cipher","aes-256-cbc"); %>>AES-256 CBC</option>
+			<option value="aes-192-cbc" <% nvram_selected("openvpn_cipher","aes-192-cbc"); %>>AES-192 CBC</option>
+			<option value="aes-128-cbc" <% nvram_selected("openvpn_cipher","aes-128-cbc"); %>>AES-128 CBC</option>
+			<option value="bf-cbc" <% nvram_selected("openvpn_cipher","bf-cbc"); %>>Blowfish CBC</option>	
+			<option value="none" <% nvram_selected("openvpn_cipher","none"); %>>None</option>						
 		</select>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_auth"); %></div>
 			<select name="openvpn_auth">
-			<option value="sha1" <% nvram_selected("openvpn_auth","sha1"); %>>SHA1</option>
-			<option value="sha256" <% nvram_selected("openvpn_auth","sha256"); %>>SHA256</option>
 			<option value="sha512" <% nvram_selected("openvpn_auth","sha512"); %>>SHA512</option>
+			<option value="sha256" <% nvram_selected("openvpn_auth","sha256"); %>>SHA256</option>
+			<option value="sha1" <% nvram_selected("openvpn_auth","sha1"); %>>SHA1</option>
 			<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5</option>
+			<option value="md4" <% nvram_selected("openvpn_auth","md4"); %>>MD4</option>
+			<option value="none" <% nvram_selected("openvpn_auth","none"); %>>None</option>
 		</select>
 		</div>
 		<div class="setting">
@@ -136,9 +139,9 @@
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_tlscip"); %></div>
 				<select name="openvpn_tlscip">
-				<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>Disable</option>
-				<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
 				<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
+				<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
+				<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>None</option>
 				</select>
 			</div>
 			<div class="setting">		
