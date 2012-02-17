@@ -314,6 +314,24 @@ config MTD_DOCPROBE_55AA
 	  LinuxBIOS or if you need to recover a DiskOnChip Millennium on which
 	  you have managed to wipe the first block.
 
+config MTD_SPIFLASH
+	tristate "Atheros AR2315/6/7 SPI Flash support"
+	depends on MTD && ATHEROS
+	
+config MTD_SPIFLASH_SELFMAP
+	tristate "Atheros AR2315/6/7 SPI Flash support (dd-wrt selfmap)"
+	depends on MTD && ATHEROS
+
+config MTD_SPIFLASH_PP
+	bool	"Page Programming mode support"
+	depends on MTD && ATHEROS
+	
+config MTD_SPIFLASH_PP_GPIO
+	depends on MTD_SPIFLASH_PP
+	int	"Chip Select GPIO for Page Programming mode support"
+	default "0"
+
+
 config MTD_AR7100_SPI_FLASH
 	bool "Support for ar7100 spi flash"
 	depends on MTD && MACH_AR7100

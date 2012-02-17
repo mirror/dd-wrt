@@ -557,4 +557,25 @@ config MTD_LATCH_ADDR
 
           If compiled as a module, it will be called latch-addr-flash.
 
+config MTD_AR531X
+        tristate "AR531X Flash device in physical memory map"
+        depends on MTD && ATHEROS
+        help
+          Map driver for Atheros SoC AR531x
+
+config MTD_EOC5610
+        tristate "Senao EOC5610 Flash mapping"
+        depends on MTD && ATHEROS
+        help
+          Map driver for Senao EOC5610
+
+config MTD_AR531X_SIZE
+        hex "Physical size"
+        depends on MTD_AR531X
+        default "0x400000"
+        help
+          Physical size flash
+
+
+
 endmenu

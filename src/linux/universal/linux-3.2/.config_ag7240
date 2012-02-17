@@ -10,6 +10,7 @@ CONFIG_MIPS=y
 # Machine selection
 #
 # CONFIG_MACH_ALCHEMY is not set
+# CONFIG_ATHEROS is not set
 # CONFIG_AR7 is not set
 # CONFIG_BCM47XX is not set
 # CONFIG_BCM63XX is not set
