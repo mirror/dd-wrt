@@ -61,6 +61,8 @@ filter (char *m, char *source, char *dest, int len)
 {
   int i;
   int disable = 0;
+  if (strlen(source)>len)
+    return len;
 //printf("filter %s to %s\n",source,dest);
   for (i = 0; i < len - strlen (source); i++)
     {
