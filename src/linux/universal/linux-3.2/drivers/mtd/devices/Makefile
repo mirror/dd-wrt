@@ -23,5 +23,7 @@ obj-$(CONFIG_MTD_AR9100_PARALLEL_FLASH)	+= ar9100_pflash.o
 obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash.o
 obj-$(CONFIG_WZRAG300NH)	+= wzrag300nh_flash.o
 obj-$(CONFIG_WZRG450NH)		+= wzrg450nh_flash.o
+obj-$(CONFIG_MTD_SPIFLASH)	+= spiflash.o
+obj-$(CONFIG_MTD_SPIFLASH_SELFMAP)	+= spiflash_selfmap.o
 
 CFLAGS_docg3.o			+= -I$(src)

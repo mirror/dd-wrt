@@ -940,6 +940,14 @@ config RC32434_WDT
 	  To compile this driver as a module, choose M here: the
 	  module will be called rc32434_wdt.
 
+config AR2315_WDT
+	tristate "AR2315 watch dog timer"
+	depends on WATCHDOG && ATHEROS
+	help
+	  An atheros watchdog timer for the ar2315 soc.
+	  Most people will say N
+
+
 config INDYDOG
 	tristate "Indy/I2 Hardware Watchdog"
 	depends on SGI_HAS_INDYDOG
