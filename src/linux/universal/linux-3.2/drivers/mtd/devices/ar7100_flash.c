@@ -182,6 +182,59 @@ ar7100_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
 	return 0;
 }
 
+
+/* read value from spi flash reg */
+unsigned int ar7100_spi_read_cmd(u32 cmd)
+{
+	u32 ret = 0;
+	
+	ar7100_reg_wr_nf(AR7100_SPI_FS, 1);
+	ar7100_reg_wr_nf(AR7100_SPI_WRITE, AR7100_SPI_CS_DIS);	/* Chip Select */
+	
+   	ar7100_spi_bit_banger(cmd);
+	ret = ar7100_spi_raw_input_u32();
+	
+	ar7100_spi_done();
+
+	return ret;
+}
+
+/* write a value to spi flash reg */
+void ar7100_spi_write_cmd(u32 cmd, u8 val)
+{
+	ar7100_spi_write_enable();
+	
+	ar7100_spi_bit_banger(cmd);
+	ar7100_spi_bit_banger(val);
+
+	ar7100_spi_go();
+    ar7100_spi_poll();
+
+	ar7100_spi_done();
+}
+
+static void ar7100_flash_unlock(void)
+{
+	u32 flashid;
+	u32 stat;
+
+	flashid = ar7100_spi_read_cmd(0x9f);
+	printk("->Oops: flash id 0x%x . \n", flashid >> 8);
+	
+
+	if (flashid >> 8 == 0x898912)
+	{
+		printk("->Oops: an Intel Flash. \n");
+		
+		stat = ar7100_spi_read_cmd(AR7100_SPI_CMD_RD_STATUS);
+		stat = stat >> 24;
+		printk("->Oops: old stat 0x%x . \n", stat);
+		
+		ar7100_spi_write_cmd(0x01, stat & (~0x1c));
+	}
+}
+
+
 static int zcom=0;
 static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
@@ -519,6 +572,7 @@ static int __init ar7100_flash_init(void)
 		dir_parts[7].size = mtd->size;	// linux + nvram = phy size
 		result = add_mtd_partitions(mtd, dir_parts, 8);
 	}
+	ar7100_flash_unlock();
 
 	return 0;
 }
