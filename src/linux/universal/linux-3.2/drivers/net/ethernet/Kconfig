@@ -36,6 +36,20 @@ source "drivers/net/ethernet/cirrus/Kconfig"
 source "drivers/net/ethernet/cisco/Kconfig"
 source "drivers/net/ethernet/davicom/Kconfig"
 
+
+config AR2313
+	tristate "AR2313 Ethernet support"
+	depends on ETHERNET && ATHEROS
+	select PHYLIB
+	help
+	  Support for the AR231x/531x ethernet controller
+
+config AR2313_VLAN
+	bool "AR2313 VLAN support"
+	depends on AR2313
+	help
+	  Support for the AR231x/531x VLANs
+
 config DNET
 	tristate "Dave ethernet support (DNET)"
 	depends on HAS_IOMEM

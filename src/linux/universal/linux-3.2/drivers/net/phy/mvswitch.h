@@ -27,11 +27,22 @@
 
 
 #define MV_PORTS	5
+#ifdef CONFIG_MTD_AR531X
 #define MV_WANPORT	0
+#else
+#ifndef CONFIG_ATHEROS
+#define MV_WANPORT	0
+#else
+#define MV_WANPORT	4
+#endif
+#endif
 #define MV_CPUPORT	5
 
+#ifdef CONFIG_ATHEROS
+#define MV_BASE		0x10
+#else
 #define MV_BASE		0
-
+#endif
 #define MV_PHYPORT_BASE		(MV_BASE + 0x0)
 #define MV_PHYPORT(_n)		(MV_PHYPORT_BASE + (_n))
 #define MV_SWITCHPORT_BASE	(MV_BASE + 0x8)

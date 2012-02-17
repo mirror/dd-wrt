@@ -8,6 +8,7 @@ CONFIG_MIPS=y
 # Machine selection
 #
 # CONFIG_MIPS_ALCHEMY is not set
+# CONFIG_ATHEROS is not set
 # CONFIG_AR7 is not set
 # CONFIG_ATH79 is not set
 # CONFIG_MIPS_RALINK is not set
