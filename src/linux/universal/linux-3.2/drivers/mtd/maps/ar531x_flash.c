@@ -154,7 +154,7 @@ int __init init_ar531x(void)
        		printk(KERN_NOTICE "AR531x Flash device initialized: size 0x%x at 0x%x bankwidth 0x%x\n",
 	    	    mymtd->size, WINDOW_ADDR, ar531x_map.bankwidth);
 
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 		mtd_parts_nb = parse_mtd_partitions(mymtd, probes, &mtd_parts,0);
 		if (mtd_parts_nb > 0)
 		{
