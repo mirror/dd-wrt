@@ -3,7 +3,6 @@
 // GPL'ed
 // some code stolen from Yoshinori Sato <ysato@users.sourceforge.jp>
 
-#include <linux/autoconf.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -13,8 +12,9 @@
 #include <linux/string.h>
 #include <linux/fs.h>
 #include <asm/uaccess.h>	/* for copy_from_user */
-#include "ar531x.h"
-#include "ar5315.h"
+#include <ar5312_regs.h>
+#include <ar2315_regs.h>
+#include <ar231x.h>
 
 #define PROCFS_MAX_SIZE 64
 extern const char *get_arch_type( void );
@@ -43,6 +43,9 @@ struct proc_dir_entry *proc_gpio, *gpio_dir;
 
 static void cleanup_proc( void );
 
+#define sysRegRead ar231x_read_reg
+#define sysRegWrite ar231x_write_reg
+
 //The buffer used to store the data returned by the proc file
 static char procfs_buffer[PROCFS_MAX_SIZE];
 static unsigned long procfs_buffer_size = 0;
@@ -56,11 +59,11 @@ gpio_proc_read( char *buf, char **start, off_t offset,
     if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
     {
 	if( ( unsigned int )data & GPIO_IN )
-	    reg = sysRegRead( AR5315_GPIO_DI );
+	    reg = sysRegRead( AR2315_GPIO_DI );
 	if( ( unsigned int )data & GPIO_OUT )
-	    reg = sysRegRead( AR5315_GPIO_DO );
+	    reg = sysRegRead( AR2315_GPIO_DO );
 	if( ( unsigned int )data & GPIO_DIR )
-	    reg = sysRegRead( AR5315_GPIO_CR );
+	    reg = sysRegRead( AR2315_GPIO_CR );
     }
     else
     {
@@ -96,8 +99,8 @@ gpio_proc_info_read( char *buf, char **start, off_t offset,
 	return ( sprintf
 		 ( buf,
 		   "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
-		   sysRegRead( AR5315_GPIO_DI ), sysRegRead( AR5315_GPIO_DO ),
-		   sysRegRead( AR5315_GPIO_CR ) ) );
+		   sysRegRead( AR2315_GPIO_DI ), sysRegRead( AR2315_GPIO_DO ),
+		   sysRegRead( AR2315_GPIO_CR ) ) );
     }
     else
     {
@@ -135,11 +138,11 @@ gpio_proc_write( struct file *file, const char *buffer, unsigned long count,
     {
 
 	if( ( unsigned int )data & GPIO_IN )
-	    reg = sysRegRead( AR5315_GPIO_DI );
+	    reg = sysRegRead( AR2315_GPIO_DI );
 	if( ( unsigned int )data & GPIO_OUT )
-	    reg = sysRegRead( AR5315_GPIO_DO );
+	    reg = sysRegRead( AR2315_GPIO_DO );
 	if( ( unsigned int )data & GPIO_DIR )
-	    reg = sysRegRead( AR5315_GPIO_CR );
+	    reg = sysRegRead( AR2315_GPIO_CR );
     }
     else
     {
@@ -163,18 +166,18 @@ gpio_proc_write( struct file *file, const char *buffer, unsigned long count,
 	    reg = reg | GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK );
 	if( ( unsigned int )data & GPIO_IN )
 	{
-	    sysRegWrite( AR5315_GPIO_DI, reg );
-	    ( void )sysRegRead( AR5315_GPIO_DI );	/* flush write to hardware */
+	    sysRegWrite( AR2315_GPIO_DI, reg );
+	    ( void )sysRegRead( AR2315_GPIO_DI );	/* flush write to hardware */
 	}
 	if( ( unsigned int )data & GPIO_OUT )
 	{
-	    sysRegWrite( AR5315_GPIO_DO, reg );
-	    ( void )sysRegRead( AR5315_GPIO_DO );	/* flush write to hardware */
+	    sysRegWrite( AR2315_GPIO_DO, reg );
+	    ( void )sysRegRead( AR2315_GPIO_DO );	/* flush write to hardware */
 	}
 	if( ( unsigned int )data & GPIO_DIR )
 	{
-	    sysRegWrite( AR5315_GPIO_CR, reg );
-	    ( void )sysRegRead( AR5315_GPIO_CR );	/* flush write to hardware */
+	    sysRegWrite( AR2315_GPIO_CR, reg );
+	    ( void )sysRegRead( AR2315_GPIO_CR );	/* flush write to hardware */
 	}
     }
     else
@@ -237,7 +240,6 @@ static __init int register_proc( void )
     gpio_dir = proc_mkdir( "gpio", NULL );
     if( gpio_dir == NULL )
 	goto fault;
-    gpio_dir->owner = THIS_MODULE;
 
     for( i = 0; i < gpiocount * 3; i++ )	//create for every GPIO "x_in"," x_out" and "x_dir"
     {
@@ -262,7 +264,6 @@ static __init int register_proc( void )
 	{
 	    proc_gpio->read_proc = gpio_proc_read;
 	    proc_gpio->write_proc = gpio_proc_write;
-	    proc_gpio->owner = THIS_MODULE;
 	    proc_gpio->data = ( ( i % gpiocount ) | flag );
 	}
 	else
@@ -274,7 +275,6 @@ static __init int register_proc( void )
     if( proc_gpio )
     {
 	proc_gpio->read_proc = gpio_proc_info_read;
-	proc_gpio->owner = THIS_MODULE;
     }
     else
 	goto fault;
