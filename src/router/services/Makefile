@@ -1209,7 +1209,7 @@ ifeq ($(CONFIG_WZRG300NH2),y)
 endif
 
 services.so: $(OBJS)
-#	$(AR) arc -o $@.a $^
+#	$(AR) rcu -o $@.a $^
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) --shared -c $(NCFLAGS) -o $(NOBJS) $(NFILES)
 endif
@@ -1222,7 +1222,7 @@ endif
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
-	$(AR) arc -o  $@ $^
+	$(AR) rcu -o  $@ $^
 
 #	$(CC) -o $@.test $^ $(LDFLAGS)
 
