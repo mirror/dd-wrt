@@ -7,7 +7,11 @@ obj-$(CONFIG_MTD)		+= mtd.o
 mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o
 
 obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
+ifdef CONFIG_ATHEROS
+obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot_atheros.o
+else
 obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
+endif
 obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
 obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
 obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
