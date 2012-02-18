@@ -32,7 +32,7 @@ libnetconf.so: netconf_linux.o
 	$(LD) -shared -o $@ $^ $(LDFLAGS) -liptc
 
 libnetconf.a: netconf_linux.o
-	 $(AR) arc -o $@ $^
+	 $(AR) rcu -o $@ $^
 
 netconf: main.o libnetconf.a
 	$(CC) -o $@ $< $(LDFLAGS) -lnetconf
