@@ -78,14 +78,14 @@ static struct resource ar231x_wmac1_res[] = {
 static struct platform_device ar231x_wmac[] = {
 	{
 		.id = 0,
-		.name = "ar231x-wmac",
+		.name = "ar531x-wmac",
 		.resource = ar231x_wmac0_res,
 		.num_resources = ARRAY_SIZE(ar231x_wmac0_res),
 		.dev.platform_data = &ar231x_board,
 	},
 	{
 		.id = 1,
-		.name = "ar231x-wmac",
+		.name = "ar531x-wmac",
 		.resource = ar231x_wmac1_res,
 		.num_resources = ARRAY_SIZE(ar231x_wmac1_res),
 		.dev.platform_data = &ar231x_board,
