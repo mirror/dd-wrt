@@ -831,6 +831,10 @@ ifeq ($(CONFIG_BKM),y)
 CFLAGS += -DHAVE_BKM
 endif
 
+ifeq ($(CONFIG_IMMERSIVE),y)
+CFLAGS += -DHAVE_IMMERSIVE
+endif
+
 ifeq ($(CONFIG_NOTRIAL),y)
 CFLAGS += -DHAVE_NOTRIAL
 endif
@@ -978,9 +982,9 @@ endif
 
 
 libutils.a: $(OBJS)
-	$(AR) arc -o  $@ $^
+	$(AR) rcu -o  $@ $^
 
 libwireless.a: $(WOBJS)
-	$(AR) arc -o  $@ $^
+	$(AR) rcu -o  $@ $^
 
 *.o: $(CY_DEPS)
