@@ -173,7 +173,11 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
+#ifdef HAVE_HOTPLUG2
+	insmod("ar231x");
+#else
 	insmod("ar2313");
+#endif
 
 	detect_wireless_devices();
 
