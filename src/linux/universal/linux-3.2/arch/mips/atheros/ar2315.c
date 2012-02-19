@@ -563,6 +563,11 @@ ar2315_restart(char *command)
 	gpio_direction_output(AR2315_RESET_GPIO, 0);
 	mdelay(100);
 
+	/* now do GPIO 0 reset, known to be used on Seano devices */
+	gpio_direction_output(0, 0);
+	mdelay(100);
+
+
 	/* Some boards (e.g. Senao EOC-2610) don't implement the reset logic
 	 * workaround. Attempt to jump to the mips reset location -
 	 * the boot loader itself might be able to recover the system */
@@ -623,14 +628,14 @@ ar2315_apb_frequency(void)
 {
     return ar2315_sys_clk(ar231x_read_reg(AR2315_AMBACLK));
 }
-
+extern unsigned int ath_cpufreq;
 void __init
 ar2315_time_init(void)
 {
 	if (!is_2315())
 		return;
-
-	mips_hpt_frequency = ar2315_cpu_frequency() / 2;
+	ath_cpufreq = ar2315_cpu_frequency();
+	mips_hpt_frequency = ath_cpufreq / 2;
 }
 
 void __init

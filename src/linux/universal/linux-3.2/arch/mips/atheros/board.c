@@ -238,16 +238,11 @@ get_c0_compare_int(void)
 {
 	return CP0_LEGACY_COMPARE_IRQ;
 }
+unsigned int ath_cpufreq;
 
-int getCPUClock(void)
+unsigned int getCPUClock(void)
 {
-
-		if (is_2315())
-		    return ar2315_cpu_frequency();
-		else
-		    return ar5312_cpu_frequency();
-		
-
+		return ath_cpufreq / 1000 / 1000;
 }
 void __init
 arch_init_irq(void)
