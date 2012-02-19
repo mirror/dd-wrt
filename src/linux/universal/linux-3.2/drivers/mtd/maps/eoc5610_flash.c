@@ -21,10 +21,8 @@
 #include <linux/vmalloc.h>
 #include <linux/squashfs_fs.h>
 
-#ifdef CONFIG_MTD_PARTITIONS
 #include <linux/mtd/partitions.h>
 #define MTDID "ar531x"
-#endif
 #include "../mtdcore.h"
 
 #define WINDOW_ADDR 0xbe000000
@@ -43,16 +41,13 @@
 
 static struct mtd_info *mymtd;
 
-#ifdef CONFIG_MTD_PARTITIONS
 static const char *probes[] = { "cmdlinepart", NULL };
-#endif
 
 struct map_info ar531x_map = {
       name:"ar531x",
       size:WINDOW_SIZE
 };
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition *mtd_parts = 0;
 static int mtd_parts_nb = 0;
 
@@ -111,7 +106,6 @@ struct fis_image_desc {
 };
 
 #define NUM_PARTITIONS	(sizeof(dir_parts)/sizeof(struct mtd_partition))
-#endif
 
 int __init init_ar531x(void)
 {

@@ -22,10 +22,8 @@
 #include <linux/squashfs_fs.h>
 
 
-#ifdef CONFIG_MTD_PARTITIONS
 #include <linux/mtd/partitions.h>
 #define MTDID "ar531x"
-#endif
 #include "../mtdcore.h"
 
 #define WINDOW_ADDR 0xbe000000
@@ -46,16 +44,14 @@
 
 static struct mtd_info *mymtd;
 
-#ifdef CONFIG_MTD_PARTITIONS
 static const char *probes []={"cmdlinepart",NULL};
-#endif
 
 struct map_info ar531x_map = {
 	name: "ar531x",
 	size: WINDOW_SIZE
 };
 
-#ifdef CONFIG_MTD_PARTITIONS
+#ifdef CONFIG_MTD
 static struct mtd_partition *mtd_parts = 0;
 static int                   mtd_parts_nb = 0;
 

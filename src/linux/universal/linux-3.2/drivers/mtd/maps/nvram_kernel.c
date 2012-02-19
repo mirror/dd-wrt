@@ -543,20 +543,27 @@ dev_nvram_init(void)
 		mem_map_reserve(page);
 
 #ifdef CONFIG_MTD
-//	printk(KERN_EMERG "searching for nvram\n");
+	printk(KERN_INFO "searching for nvram\n");
 	/* Find associated MTD device */
 	for (i = 0; i < 32; i++) {
 		nvram_mtd = get_mtd_device(NULL, i);
 		if (nvram_mtd) {
 			if (!strcmp(nvram_mtd->name, "nvram") &&
 			    nvram_mtd->size >= NVRAM_SPACE) 
+			    {
+			    printk(KERN_INFO "nvram size = %d\n",nvram_mtd->size);
 				break;
+			    }
 			put_mtd_device(nvram_mtd);
 		}
 	}
 	if (i >= 32)
+	{
+	printk(KERN_EMERG "no nvram partition found\n");
+		return -1;
 		nvram_mtd = NULL;
-
+	}
+    
 #endif
 
 	/* Initialize hash table lock */
@@ -572,7 +579,8 @@ dev_nvram_init(void)
 	}
 
 	/* Initialize hash table */
-	_nvram_init();
+	if (_nvram_init());
+	    return -1;
 
 	/* Create /dev/nvram handle */
 

@@ -539,7 +539,7 @@ _nvram_init(void)
 	int ret;
 
 	if (!(header = (struct nvram_header *) MALLOC(NVRAM_SPACE))) {
-		printk("nvram_init: out of memory\n");
+		printk(KERN_INFO "nvram_init: out of memory\n");
 		return -12; /* -ENOMEM */
 	}
 
