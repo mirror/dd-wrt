@@ -161,7 +161,7 @@ u8 *find_radio_config(char *flash_limit, char *bconfig)
 	return (u8 *) rconfig;
 }
 
-int __init ar531x_find_config(char *flash_limit)
+int __init ar231x_find_config(u8 *flash_limit)
 {
 	unsigned int rcfg_size;
 	char *bcfg, *rcfg;
