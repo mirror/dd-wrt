@@ -92,7 +92,11 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
+#ifdef HAVE_HOTPLUG2
+	insmod("ar231x");
+#else
 	insmod("ar2313");
+#endif
 	detect_wireless_devices();
 
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
