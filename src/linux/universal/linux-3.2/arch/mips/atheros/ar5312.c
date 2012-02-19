@@ -511,7 +511,7 @@ ar5312_prom_init(void)
 	ar231x_board.devid = (u16) devid;
 	ar231x_gpiodev = &ar5312_gpiodev;
 }
-
+extern unsigned int ath_cpufreq;
 void __init
 ar5312_plat_setup(void)
 {
@@ -522,8 +522,9 @@ ar5312_plat_setup(void)
 	ar231x_read_reg(AR531X_PROCADDR);
 	ar231x_read_reg(AR531X_DMAADDR);
 	ar231x_write_reg(AR531X_WD_CTRL, AR531X_WD_CTRL_IGNORE_EXPIRATION);
-
+	ath_cpufreq = ar5312_sys_frequency();
 	_machine_restart = ar5312_restart;
-	ar231x_serial_setup(KSEG1ADDR(AR531X_UART0), ar5312_sys_frequency());
+	ar231x_serial_setup(KSEG1ADDR(AR531X_UART0), ath_cpufreq);
+	ath_cpufreq *=4;
 }
 
