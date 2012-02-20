@@ -1222,7 +1222,7 @@ endif
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
-	$(AR) rcu -o  $@ $^
+	$(AR) cr $@ $^
 
 #	$(CC) -o $@.test $^ $(LDFLAGS)
 
