@@ -982,9 +982,9 @@ endif
 
 
 libutils.a: $(OBJS)
-	$(AR) rcu -o  $@ $^
+	$(AR) cr $@ $^
 
 libwireless.a: $(WOBJS)
-	$(AR) rcu -o  $@ $^
+	$(AR) cr $@ $^
 
 *.o: $(CY_DEPS)
