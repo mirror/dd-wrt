@@ -1,7 +1,9 @@
 ebtables:
 ifeq ($(CONFIG_HOTPLUG2),y)
+	-cp -f ebtables-2.0.9/ebtables-standalone.c.use ebtables-2.0.9/ebtables-standalone.c
 	$(MAKE) -C ebtables-2.0.9 static BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 else
+	-cp -f ebtables/ebtables-standalone.c.use ebtables/ebtables-standalone.c
 	$(MAKE) -C ebtables static BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) KERNEL_INCLUDES=$(LINUXDIR)/include
 endif
 
