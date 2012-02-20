@@ -1250,7 +1250,7 @@ CONFIG_HAVE_ARCH_KGDB=y
 # CONFIG_TEST_KSTRTOX is not set
 CONFIG_EARLY_PRINTK=y
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS0,115200 root=/dev/1f02 rootfstype=squashfs noinitrd  init=/sbin/init"
+CONFIG_CMDLINE="console=ttyS0,115200 root=1f02 rootfstype=squashfs noinitrd  init=/sbin/init"
 CONFIG_CMDLINE_OVERRIDE=y
 # CONFIG_SPINLOCK_TEST is not set
 
