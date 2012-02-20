@@ -10,6 +10,7 @@ daq-configure: libpcap libdnet-configure libnetfilter_queue-configure libdnet li
 		--enable-pcap-module \
 		--enable-static \
 		--prefix=$(TOP)/daq/install \
+		--libdir=$(TOP)/daq/install/lib \
 		--with-libpcap-includes="$(TOP)/libpcap_noring" \
 		--with-libpcap-libraries="$(TOP)/libpcap_noring" \
 		--with-dnet-includes="$(TOP)/libdnet/include" \
