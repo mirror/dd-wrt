@@ -129,32 +129,32 @@ clean:
 ifeq ($(ARCH),i386)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-	$(AR) rcu -o libnvram.a $^
+	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),armeb)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-	$(AR) rcu -o libnvram.a $^
+	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),arm)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-	$(AR) rcu -o libnvram.a $^
+	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),powerpc)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-	$(AR) rcu -o libnvram.a $^
+	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),mips)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-	$(AR) rcu -o libnvram.a $^
+	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),mipsel)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-	$(AR) rcu -o libnvram.a $^
+	$(AR) cr libnvram.a $^
 endif
 convertnvram: convertnvram.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
