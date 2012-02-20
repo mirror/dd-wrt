@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[ -n "$CROSS" ] || {
+[ -n "$CROSS_COMPILE" ] || {
 	echo "The variable CROSS must be set to point to the cross-compiler prefix"
 	exit 1
 }
@@ -11,7 +11,7 @@ MODULE="$1"
 	exit 1
 }
 
-${CROSS}objcopy \
+${CROSS_COMPILE}objcopy \
 	--strip-unneeded \
 	-R .comment \
 	-R .pdr \
@@ -22,7 +22,7 @@ ${CROSS}objcopy \
 	-G __this_module \
 	-x "$MODULE" "$MODULE.tmp"
 
-${CROSS}nm "$MODULE.tmp" | awk '
+${CROSS_COMPILE}nm "$MODULE.tmp" | awk '
 BEGIN {
 	n = 0
 }
@@ -33,6 +33,6 @@ $3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ {
 }
 ' > "$MODULE.tmp1"
 
-${CROSS}objcopy `cat ${MODULE}.tmp1` ${MODULE}.tmp ${MODULE}.out
+${CROSS_COMPILE}objcopy `cat ${MODULE}.tmp1` ${MODULE}.tmp ${MODULE}.out
 mv "${MODULE}.out" "${MODULE}"
 rm -f "${MODULE}".t*
