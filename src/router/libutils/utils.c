@@ -37,6 +37,7 @@
 #include <sys/ioctl.h>
 #include <sys/sysinfo.h>
 #include <arpa/inet.h>
+#include <netpacket/packet.h>
 #include <netdb.h>
 #include <resolv.h>
 #include <signal.h>
@@ -4506,15 +4507,15 @@ double HTTxRate40_400(unsigned int index)
 struct arph {
 	uint16_t hw_type;
 
-	#define ARPHDR_ETHER            1
+	#define ARPHDR_ETHER	1
 
 	uint16_t proto_type;
 
 	char ha_len;
 	char pa_len;
 
-	#define ARPOP_BROADCAST         1
-	#define ARPOP_REPLY		        2
+	#define ARPOP_BROADCAST	1
+	#define ARPOP_REPLY	2
 	uint16_t opcode;
 	char source_add[ETH_ALEN];
 	char source_ip[IP_ALEN];
@@ -4525,7 +4526,6 @@ struct arph {
 } __attribute__((packed));
 
 #define ARP_HLEN	sizeof(struct arph) + ETH_HLEN
-#define ARPHDR_ETHER            1
 #define BCAST		"\xff\xff\xff\xff\xff\xff"
 
 static inline int get_iface_attr(int sk, char *iface, char *hw, char *paddr)
@@ -4604,7 +4604,7 @@ static int send_garp(char *iface)
 	char pkt[ARP_HLEN];
 	char iface_hw[ETH_ALEN];
 	char iface_paddr[IP_ALEN];
-	struct sockaddr addr;
+	struct sockaddr_ll link;
 	struct ether_header *eth;
 	struct arph *arp;
 	int rc;
@@ -4614,7 +4614,7 @@ static int send_garp(char *iface)
 	eth = (struct ether_header *)pkt;
 	arp = (struct arph *)(pkt + ETH_HLEN);
 
-	sk = socket(AF_INET, SOCK_PACKET, htons(ETH_P_ARP));
+	sk = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (unlikely(sk == -1)) {
 		perror("socket");
 		return sk;
@@ -4624,8 +4624,10 @@ static int send_garp(char *iface)
 	if (unlikely(rc == -1))
 		goto out;
 
-	addr.sa_family = AF_INET;
-	strcpy(addr.sa_data, iface);
+       /* set link layer information for driver */
+        memset(&link, 0, sizeof(link));
+        link.sll_family = AF_PACKET;
+        link.sll_ifindex = if_nametoindex(iface);
 
 	setup_eth(eth, iface_hw);
 	setup_garp(arp, iface_hw, iface_paddr);
@@ -4636,8 +4638,8 @@ static int send_garp(char *iface)
 				pkt,
 				ARP_HLEN,
 				0,
-				&addr,
-				sizeof(struct sockaddr)
+				(struct sockaddr *)&link,
+				sizeof(struct sockaddr_ll)
 				);
 	        if (unlikely(rc == -1)) {
 	                perror("sendto");
@@ -4649,8 +4651,8 @@ static int send_garp(char *iface)
 				pkt,
 				ARP_HLEN,
 				0,
-				&addr, 
-				sizeof(struct sockaddr)
+				(struct sockaddr *)&link,
+				sizeof(struct sockaddr_ll)
 				); 
 	        if (unlikely(rc == -1)) {
 	                perror("sendto");
