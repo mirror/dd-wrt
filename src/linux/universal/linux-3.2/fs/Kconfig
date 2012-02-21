@@ -111,7 +111,6 @@ source "fs/sysfs/Kconfig"
 
 config TMPFS
 	bool "Tmpfs virtual memory file system support (former shm fs)"
-	depends on SHMEM
 	help
 	  Tmpfs is a file system which keeps all files in virtual memory.
 
