@@ -88,7 +88,15 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-
+#ifdef HAVE_RTG32
+	insmod("slhc");
+	insmod("ppp_generic");
+	insmod("ppp_async");
+	insmod("ppp_synctty");
+	insmod("ppp_mppe_mppc ");
+	insmod("pppox");
+	insmod("pppoe");
+#endif
 	/*
 	 * network drivers 
 	 */
