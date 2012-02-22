@@ -27,7 +27,7 @@
 #include "devices.h"
 #include "ar5312.h"
 #include "ar2315.h"
-
+#include "board3.h"
 void (*ar231x_irq_dispatch)(void);
 
 char *board_config, *radio_config;
@@ -107,6 +107,12 @@ u8 *find_board_config(char *flash_limit)
  
  		addr = (char*) &default_config;
 		}
+		else
+		{
+		printk("WARNING: No board configuration data found!\n");
+		addr=&bdata;
+		}
+		
 	}
 	
 	return addr;
