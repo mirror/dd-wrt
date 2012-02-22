@@ -110,7 +110,8 @@ u8 *find_board_config(char *flash_limit)
 		else
 		{
 		printk("WARNING: No board configuration data found!\n");
-		addr=&bdata;
+		addr=NULL;
+//		addr=&bdata;
 		}
 		
 	}
