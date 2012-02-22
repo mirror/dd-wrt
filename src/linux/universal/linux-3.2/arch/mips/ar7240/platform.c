@@ -314,7 +314,7 @@ int __init ar7240_platform_init(void)
         
 #ifdef CONFIG_MACH_HORNET
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
-	ar9xxx_add_device_wmac(ee, NULL);
+	ar9xxx_add_device_wmac(ee, mac);
 #elif CONFIG_WASP_SUPPORT
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	ar9xxx_add_device_wmac(ee, NULL);
