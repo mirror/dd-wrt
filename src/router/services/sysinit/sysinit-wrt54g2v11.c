@@ -109,7 +109,7 @@ void start_sysinit(void)
 
 	eval("ifconfig", "eth0", "up");	// wan
 	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set vlan 1");
+	system("swconfig dev eth0 set enable_vlan 1");
 #ifdef HAVE_RTG32
 	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
