@@ -416,6 +416,9 @@
 #define AR531XPLUS_MEM_CTRL         (AR531XPLUS_SDRAMCTL + 0x0c)
 #define AR531XPLUS_MEM_REF          (AR531XPLUS_SDRAMCTL + 0x10)
 
+
+
+
 #define SDRAM_DATA_WIDTH_M          0x00006000
 #define SDRAM_DATA_WIDTH_S          13
 
