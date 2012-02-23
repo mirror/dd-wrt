@@ -74,13 +74,14 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	insmod("ag7240_mod");
-/*	FILE *fp = fopen("/dev/mtdblock/6", "rb");
+#ifdef HAVE_WR741V4
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	char mac[32];
 	if (fp) {
 		unsigned char buf2[256];
-		fseek(fp, 0x03f120c, SEEK_SET);
+		fseek(fp, 0x1fc00, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		char mac[32];
 		unsigned int copy[256];
 		int i;
 		for (i = 0; i < 256; i++)
@@ -89,9 +90,14 @@ void start_sysinit(void)
 			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
+		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
-	}*/
+#ifndef HAVE_ATH9K
+		MAC_SUB(mac);
+#endif
+	}
+#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
