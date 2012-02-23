@@ -64,7 +64,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "keepalive 10 120\n"
 			"verb 4\n" "mute 5\n"
 			"log-append /var/log/openvpn\n"
-			"tls-server\n"
+			"writepid /var/log/openvpnd.pid\n"
 			"management 127.0.0.1 5002\n"
 			"management-log-cache 50\n"
 			"mtu-disc yes\n"
@@ -78,6 +78,8 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
+		if (nvram_invmatch("openvpn_cipher", "none")) //not needed if we have no encryption anyway
+			fprintf(fp, "tls-server\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
 		//keep peer ip persistant for x sec. works only when dupcn=off & no proxy mode
@@ -143,11 +145,6 @@ void start_openvpnserver(void)
 
 	fprintf(fp, "%s\n", nvram_safe_get("openvpn_config"));
 	fclose(fp);
-
-	//accept incoming connections on startup
-/*	sysprintf("iptables -I INPUT -p %s --dport %s -j ACCEPT\n",
-		  nvram_match("openvpn_proto", "udp") ? "udp" : "tcp",
-		  nvram_safe_get("openvpn_port"));			*/
 
 	fp = fopen("/tmp/openvpn/route-up.sh", "wb");
 	if (fp == NULL)
@@ -271,8 +268,8 @@ void start_openvpn(void)
 		"management-log-cache 50\n"
 		"verb 4\n" "mute 5\n"
 		"log-append /var/log/openvpncl\n"
+		"writepid /var/log/openvpncl.pid\n"
 		"client\n"
-		"tls-client\n"
 		"resolv-retry infinite\n"
 		"nobind\n" "persist-key\n" "persist-tun\n" 
 		"script-security 2\n" "mtu-disc yes\n");
@@ -283,6 +280,8 @@ void start_openvpn(void)
 	fprintf(fp, "remote %s %s\n",
 		nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
+	if (nvram_invmatch("openvpncl_cipher", "none")) //not needed if we have no encryption anyway
+		fprintf(fp, "tls-client\n");
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
 	if (nvram_invmatch("openvpncl_mssfix", "")
