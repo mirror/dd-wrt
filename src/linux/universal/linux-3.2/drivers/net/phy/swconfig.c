@@ -274,7 +274,7 @@ swconfig_get_dev(struct genl_info *info)
 		break;
 	}
 	if (dev)
-		spin_lock(&dev->lock);
+		mutex_lock(&dev->lock);
 	else
 		DPRINTF("device %d not found\n", id);
 	swconfig_unlock();
@@ -285,7 +285,7 @@ done:
 static inline void
 swconfig_put_dev(struct switch_dev *dev)
 {
-	spin_unlock(&dev->lock);
+	mutex_unlock(&dev->lock);
 }
 
 static int
@@ -883,7 +883,7 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 			return -ENOMEM;
 	}
 	swconfig_defaults_init(dev);
-	spin_lock_init(&dev->lock);
+	mutex_init(&dev->lock);
 	swconfig_lock();
 	dev->id = ++swdev_id;
 
@@ -921,11 +921,11 @@ unregister_switch(struct switch_dev *dev)
 {
 	swconfig_destroy_led_trigger(dev);
 	kfree(dev->portbuf);
-	spin_lock(&dev->lock);
+	mutex_lock(&dev->lock);
 	swconfig_lock();
 	list_del(&dev->dev_list);
 	swconfig_unlock();
-	spin_unlock(&dev->lock);
+	mutex_unlock(&dev->lock);
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 
