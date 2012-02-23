@@ -91,7 +91,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	long flags = -1;
 	int size = BUFSIZ;
 	int i = 0;
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_USR5453) && !defined(HAVE_DIR400) && !defined(HAVE_WRT54G2)
+#if (defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_USR5453)) && (!defined(HAVE_DIR400) && !defined(HAVE_WRT54G2))
 #define WRITEPART "rootfs"
 #else
 #define WRITEPART "linux"
