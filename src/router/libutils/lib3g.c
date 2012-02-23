@@ -490,7 +490,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0055, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0063, "option", "1", "3", 2, NULL, "Vodafone K3565-Z HSDPA (modem mode)"},	// tested, working. i hope the other ZDA devices are working in the same way
 	{0x19d2, 0x0064, "option", "1", "3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
-	{0x19d2, 0x0083, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (cdrom mode)"},	//
+	{0x19d2, 0x0083, "option", "1", "4", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (cdrom mode)"},	//
 	{0x19d2, 0x0094, "option", "1", "3", 2, NULL, "ZTE AC581 (modem mode)"},	//
 	{0x19d2, 0x0101, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K4505-Z (cdrom mode)"},	//
 	{0x19d2, 0x0103, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MF112 (cdrom mode)"},	//
