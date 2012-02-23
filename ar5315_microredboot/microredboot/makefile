@@ -151,6 +151,18 @@ pb44:
 #	cp redboot/pb44/ram/install/bin/redboot.img images/redboot_pb42_32M_8M_kendin.elf
 
 
+pb9x:   BOARD_TYPE=pb9x
+pb9x:
+# RAM version
+	$(PLATFORM_RAM_START) \
+	ecosconfig import $(ECOS_REPOSITORY)/hal/mips/pb9x/current/misc/redboot_RAM.ecm; \
+	ecosconfig tree; \
+	$(PLATFORM_BLD_CUST)
+	$(PLATFORM_RAM_BUILD)
+	cp redboot/pb9x/ram/install/bin/redboot.rom images/redboot_pb9x_32M_8M.rom
+#	cp redboot/pb44/ram/install/bin/redboot.img images/redboot_pb42_32M_8M_kendin.elf
+
+
 #
 # The rules
 #
