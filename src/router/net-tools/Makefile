@@ -199,7 +199,7 @@ route:		$(NET_LIB) route.o
 		$(CC) $(LDFLAGS) -o route route.o $(NLIB) $(RESLIB)
 
 arp:		$(NET_LIB) arp.o
-		$(AR) arc -o arp.a arp.o
+		$(AR) cr arp.a arp.o
 
 rarp:		$(NET_LIB) rarp.o
 		$(CC) $(LDFLAGS) -o rarp rarp.o $(NLIB)
