@@ -584,7 +584,7 @@ add_switch(struct nl_msg *msg, void *arg)
 	const char *name;
 	const char *alias;
 
-	if (nla_parse(tb, SWITCH_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
+	if (nla_parse(tb, SWITCH_ATTR_MAX-1, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
 		goto done;
 
 	if (!tb[SWITCH_ATTR_DEV_NAME])
