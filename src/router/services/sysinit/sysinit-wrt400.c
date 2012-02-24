@@ -159,6 +159,12 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
 		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #elif HAVE_WZRG450
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 1");
+		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+		system("swconfig dev eth0 set apply");
+
 		fseek(fp, 0x51002, SEEK_SET); //osprey eeprom mac location
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
