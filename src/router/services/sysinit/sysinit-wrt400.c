@@ -148,6 +148,14 @@ void start_sysinit(void)
 		sprintf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0],
 			copy[1], copy[2], copy[3], copy[4], copy[5]);
 //		eval("gpio","enable","13");
+#ifdef HAVE_SWCONFIG
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 1");
+		system("swconfig dev eth0 vlan 1 set ports \"0t 1 3 4 5\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 2\"");
+		system("swconfig dev eth0 set apply");
+#endif
+
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
@@ -159,12 +167,6 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
 		eval("ifconfig", "vlan2", "hw", "ether", mac2);
 #elif HAVE_WZRG450
-		system("swconfig dev eth0 set reset 1");
-		system("swconfig dev eth0 set enable_vlan 1");
-		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
-		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
-		system("swconfig dev eth0 set apply");
-
 		fseek(fp, 0x51002, SEEK_SET); //osprey eeprom mac location
 		fread(mactmp, 6, 1, fp);
 		fclose(fp);
@@ -179,6 +181,14 @@ void start_sysinit(void)
 //		mac1[0] |= 0x02; // add private bit
 //		mac2[0] |= 0x02;
 //		eval("gpio","disable","16");
+#ifdef HAVE_SWCONFIG
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 1");
+		system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+		system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+		system("swconfig dev eth0 set apply");
+#endif
+
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
 		eval("ifconfig", "eth0", "hw", "ether", mac2);
 		eval("ifconfig", "eth0", "up");
