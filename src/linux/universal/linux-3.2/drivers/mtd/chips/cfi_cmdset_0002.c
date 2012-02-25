@@ -414,6 +414,17 @@ static void cfi_fixup_major_minor(struct cfi_private *cfi,
 	}
 }
 
+#ifdef CONFIG_RT2880_FLASH_8M
+/* marklin 20080605 ; for ST M29W640 */
+void Flash_SetModeRead(void)
+{
+	volatile unsigned int delay;
+
+	(*((volatile uint16_t *)(((0xBF400000 - 0x400000)) + (0)))) = 0x00F0;
+	for (delay = 0; delay < 5; delay++) ;
+}
+#endif
+
 struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 {
 	struct cfi_private *cfi = map->fldrv_priv;
@@ -1010,6 +1021,11 @@ static int cfi_amdstd_read (struct mtd_info *mtd, loff_t from, size_t len, size_
 	unsigned long ofs;
 	int chipnum;
 	int ret = 0;
+
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
 
 	/* ofs: offset within the first chip that the first read should start */
 
