@@ -817,7 +817,6 @@ ar8216_config_init(struct phy_device *pdev)
 			/* switch device has not been initialized, reuse priv */
 			if (!pdev->priv) {
 				priv->port4_phy = true;
-				printk(KERN_EMERG "port 4 phy mod pre\n");
 				pdev->priv = priv;
 				return 0;
 			}
@@ -825,7 +824,6 @@ ar8216_config_init(struct phy_device *pdev)
 			kfree(priv);
 
 			/* switch device has been initialized, reinit */
-			printk(KERN_EMERG "port 4 phy mod\n");
 			priv = pdev->priv;
 			priv->dev.ports = (AR8216_NUM_PORTS - 1);
 			priv->initialized = false;
@@ -861,7 +859,6 @@ ar8216_config_init(struct phy_device *pdev)
 		swdev->vlans = AR8X16_MAX_VLANS;
 
 		if (priv->port4_phy) {
-			printk(KERN_EMERG "ports red\n");
 			/* port 5 connected to the other mac, therefore unusable */
 			swdev->ports = (AR8216_NUM_PORTS - 1);
 		}
