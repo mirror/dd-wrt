@@ -2002,25 +2002,7 @@ static void filter_input(void)
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
 		save2file("-A FORWARD -o %s0 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
-	}
-	//check if ovpn client is running
-/*	if (nvram_match("openvpncl_enable", "1")) {
-		if (nvram_match("openvpncl_nat", "1"))
-			save2file
-			    ("-A POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
-			     nvram_safe_get("openvpncl_tuntap"));
-		else {
-			save2file("-A INPUT -i %s1 -j %s\n",
-				  nvram_safe_get("openvpncl_tuntap"),
-				  log_accept);
-			save2file("-A FORWARD -i %s1 -j %s\n",
-				  nvram_safe_get("openvpncl_tuntap"),
-				  log_accept);
-			save2file("-A FORWARD -o %s1 -j %s\n",
-				  nvram_safe_get("openvpncl_tuntap"),
-				  log_accept);
-		}
-	}	*/
+	}	
 #endif
 	if (wanactive()) {
 		if (nvram_invmatch("dr_wan_rx", "0"))
