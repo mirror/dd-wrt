@@ -36,8 +36,7 @@ CONFIGURE_ARGS += \
 	ac_cv_func_epoll_create=yes
 
 openvpn-configure: $(SSL_DEP)
-	#if ! test -e "lzo/Makefile"; then cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"; fi
-	if ! test -e "lzo/Makefile"; then cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="-g"; fi
+	if ! test -e "lzo/Makefile"; then cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"; fi
 	make -j 4 -C lzo
 	#if ! test -e "$(OVPN)/Makefile"; then cd $(OVPN) && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-pthread --disable-plugins --enable-debug --enable-password-save --enable-management --enable-lzo --enable-server --enable-multihome CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs -ldl" ac_cv_func_epoll_create=no; fi 
 	if ! test -e "$(OVPN)/Makefile"; then cd $(OVPN) && ./configure $(CONFIGURE_ARGS); fi 
