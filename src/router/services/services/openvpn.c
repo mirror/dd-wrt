@@ -78,7 +78,7 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
-		if (nvram_invmatch("openvpn_cipher", "none")) //not needed if we have no encryption anyway
+		if (nvram_invmatch("openvpn_auth", "none")) //not needed if we have no auth anyway
 			fprintf(fp, "tls-server\n");
 		if (nvram_match("openvpn_dupcn", "1"))
 			fprintf(fp, "duplicate-cn\n");
@@ -280,7 +280,7 @@ void start_openvpn(void)
 	fprintf(fp, "remote %s %s\n",
 		nvram_safe_get("openvpncl_remoteip"),
 		nvram_safe_get("openvpncl_remoteport"));
-	if (nvram_invmatch("openvpncl_cipher", "none")) //not needed if we have no encryption anyway
+	if (nvram_invmatch("openvpncl_auth", "none")) //not needed if we have no auth anyway
 		fprintf(fp, "tls-client\n");
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
@@ -331,11 +331,17 @@ void start_openvpn(void)
 				nvram_safe_get("openvpncl_ip"),
 				nvram_safe_get("openvpncl_mask"));
 	 }
-	if (nvram_match("openvpncl_nat", "1")) {
+	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
-	}
+	else {
+		fprintf(fp,
+			"iptables -A FORWARD -i %s1 -j %s\n",
+			"iptables -A FORWARD -o %s1 -j %s\n",
+			nvram_safe_get("openvpncl_tuntap"),
+			nvram_safe_get("openvpncl_tuntap"));
+		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route add default via %s table 10\n",
@@ -361,6 +367,13 @@ void start_openvpn(void)
 		fprintf(fp,
 			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
+	else {
+		fprintf(fp,
+			"iptables -D FORWARD -i %s1 -j %s\n",
+			"iptables -D FORWARD -o %s1 -j %s\n",
+			nvram_safe_get("openvpncl_tuntap"),
+			nvram_safe_get("openvpncl_tuntap"));
+		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route del default via %s table 10\n",
