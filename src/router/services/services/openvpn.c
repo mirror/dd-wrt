@@ -351,7 +351,9 @@ void start_openvpn(void)
 			"for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"	ip rule add from $IP table 10\n" "done\n");
 	}
+	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
+	
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
 	if (fp == NULL)
 		return;
