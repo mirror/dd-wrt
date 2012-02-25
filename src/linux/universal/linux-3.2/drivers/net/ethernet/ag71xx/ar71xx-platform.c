@@ -8,6 +8,7 @@
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  */
+#ifndef CONFIG_MACH_AR7240
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -18,6 +19,7 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 
 static DEFINE_SPINLOCK(ar71xx_device_lock);
+
 enum ar71xx_soc_type ar71xx_soc;
 
 void ar71xx_device_stop(u32 mask)
@@ -78,7 +80,6 @@ void ar71xx_device_stop(u32 mask)
 	}
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_stop);
-
 void ar71xx_device_start(u32 mask)
 {
 	unsigned long flags;
@@ -137,7 +138,6 @@ void ar71xx_device_start(u32 mask)
 	}
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
-
 void ar71xx_ddr_flush(u32 reg)
 {
 	ar71xx_ddr_wr(reg, 1);
@@ -149,4 +149,5 @@ void ar71xx_ddr_flush(u32 reg)
 		;
 }
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
+#endif
 

@@ -354,6 +354,18 @@ void athrs16_reg_init(int ethUinit)
 
 
 #else
+#if 0 // double vlan tag
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER0,0x403e0001); // 1111100000000000000001
+
+    /* Insert PVID 1 to LAN ports */
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER1,0x40010002); // 0000010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER2,0x40390001); // 1110010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER3,0x40350001); // 1101010000000000000001
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER4,0x402d0001); // 1011010000000000000001
+
+   /* Insert PVID 2 to WAN port */
+    athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER5,0x401d0001); // 0111010000000000000010
+#else
     athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER0,0xc03e0001); // 1111100000000000000001
 
     /* Insert PVID 1 to LAN ports */
@@ -366,16 +378,28 @@ void athrs16_reg_init(int ethUinit)
     athrs16_reg_write(S16_PORT_BASE_VLAN_REGISTER5,0x001d0001); // 0111010000000000000010
 
 
+#endif
+
    /* Egress tag packet to CPU and untagged packet to LAN port */
 
-    athrs16_reg_write(S16_PORT_CONTROL_REGISTER0,0x00006204);
+#if 0 // double vlan tag
 
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER0,0x00004204);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER1,0x00004104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER2,0x00004104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER3,0x00004104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER4,0x00004104);
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER5,0x00004104);
+#else
+    athrs16_reg_write(S16_PORT_CONTROL_REGISTER0,0x00006204);
     athrs16_reg_write(S16_PORT_CONTROL_REGISTER1,0x00006104);
     athrs16_reg_write(S16_PORT_CONTROL_REGISTER2,0x00006104);
     athrs16_reg_write(S16_PORT_CONTROL_REGISTER3,0x00006104);
     athrs16_reg_write(S16_PORT_CONTROL_REGISTER4,0x00006104);
     athrs16_reg_write(S16_PORT_CONTROL_REGISTER5,0x00006104);
 
+
+#endif
   /* Group port - 0,1,2,3 to VID 1 */
     athrs16_reg_write(S16_VLAN_FUNC_REGISTER1,0x0000083d); // 100000111101
     athrs16_reg_write(S16_VLAN_FUNC_REGISTER0,0x0001000a);
