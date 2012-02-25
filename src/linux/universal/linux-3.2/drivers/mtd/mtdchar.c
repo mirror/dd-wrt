@@ -37,6 +37,11 @@
 
 #include <asm/uaccess.h>
 
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+extern void Flash_SetModeRead(void);
+#endif
+
 #define MTD_INODE_FS_MAGIC 0x11307854
 static DEFINE_MUTEX(mtd_mutex);
 static struct vfsmount *mtd_inode_mnt __read_mostly;
@@ -196,6 +201,11 @@ static ssize_t mtd_read(struct file *file, char __user *buf, size_t count,loff_t
 	char *kbuf;
 
 	pr_debug("MTD_read\n");
+
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
 
 	if (*ppos + count > mtd->size)
 		count = mtd->size - *ppos;
