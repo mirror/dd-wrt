@@ -631,7 +631,7 @@ ar8236_hw_init(struct ar8216_priv *priv) {
 
 	/* Initialize the PHYs */
 	bus = priv->phy->bus;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < AR8216_NUM_PORTS; i++) {
 		bus->write(bus, i, MII_ADVERTISE,
 			   ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
 			   ADVERTISE_PAUSE_ASYM);
@@ -680,7 +680,7 @@ ar8316_hw_init(struct ar8216_priv *priv) {
 
 	/* Initialize the ports */
 	bus = priv->phy->bus;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < AR8216_NUM_PORTS; i++) {
 		if ((i == 4) && priv->port4_phy &&
 		    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
 			/* work around for phy4 rgmii mode */
@@ -732,10 +732,7 @@ ar8216_reset_switch(struct switch_dev *dev)
 		if (i == AR8216_PORT_CPU) {
 			priv->write(priv, AR8216_REG_PORT_STATUS(i),
 				AR8216_PORT_STATUS_LINK_UP |
-				((priv->chip == AR8316) ?
-					AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
-				AR8216_PORT_STATUS_TXMAC |
-				AR8216_PORT_STATUS_RXMAC |
+				((priv->chip == AR8316) ? AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) | AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC |
 				((priv->chip == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
 				((priv->chip == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
 				AR8216_PORT_STATUS_DUPLEX);
@@ -820,6 +817,7 @@ ar8216_config_init(struct phy_device *pdev)
 			/* switch device has not been initialized, reuse priv */
 			if (!pdev->priv) {
 				priv->port4_phy = true;
+				printk(KERN_EMERG "port 4 phy mod pre\n");
 				pdev->priv = priv;
 				return 0;
 			}
@@ -827,6 +825,7 @@ ar8216_config_init(struct phy_device *pdev)
 			kfree(priv);
 
 			/* switch device has been initialized, reinit */
+			printk(KERN_EMERG "port 4 phy mod\n");
 			priv = pdev->priv;
 			priv->dev.ports = (AR8216_NUM_PORTS - 1);
 			priv->initialized = false;
@@ -862,6 +861,7 @@ ar8216_config_init(struct phy_device *pdev)
 		swdev->vlans = AR8X16_MAX_VLANS;
 
 		if (priv->port4_phy) {
+			printk(KERN_EMERG "ports red\n");
 			/* port 5 connected to the other mac, therefore unusable */
 			swdev->ports = (AR8216_NUM_PORTS - 1);
 		}
