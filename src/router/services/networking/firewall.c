@@ -2004,7 +2004,7 @@ static void filter_input(void)
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
 	}
 	//check if ovpn client is running
-	if (nvram_match("openvpncl_enable", "1")) {
+/*	if (nvram_match("openvpncl_enable", "1")) {
 		if (nvram_match("openvpncl_nat", "1"))
 			save2file
 			    ("-A POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
@@ -2020,7 +2020,7 @@ static void filter_input(void)
 				  nvram_safe_get("openvpncl_tuntap"),
 				  log_accept);
 		}
-	}
+	}	*/
 #endif
 	if (wanactive()) {
 		if (nvram_invmatch("dr_wan_rx", "0"))

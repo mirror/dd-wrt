@@ -4,13 +4,13 @@ REMOTENET=$(/usr/sbin/nvram get pptpd_client_srvsubmsk)
 case "$6" in
  kelokepptpd)
   /sbin/route add -net $REMOTESUB netmask $REMOTENET dev $1
-  /usr/sbin/iptables --insert OUTPUT --source 0.0.0.0/0.0.0.0 --destination $REMOTESUB/$REMOTENET --jump ACCEPT --out-interface $1
-  /usr/sbin/iptables --insert INPUT --source $REMOTESUB/$REMOTENET --destination 0.0.0.0/0.0.0.0 --jump ACCEPT --in-interface $1
-  /usr/sbin/iptables --insert FORWARD --source 0.0.0.0/0.0.0.0 --destination $REMOTESUB/$REMOTENET --jump ACCEPT --out-interface $1
-  /usr/sbin/iptables --insert FORWARD --source $REMOTESUB/$REMOTENET --destination 0.0.0.0/0.0.0.0 --jump ACCEPT --in-interface $1
-  /usr/sbin/iptables --insert FORWARD --protocol tcp --tcp-flags SYN,RST SYN --jump TCPMSS --clamp-mss-to-pmtu 
+  /usr/sbin/iptables -I OUTPUT -d $REMOTESUB/$REMOTENET -o $1 -j ACCEPT
+  /usr/sbin/iptables -I INPUT -s $REMOTESUB/$REMOTENET -i $1 -j ACCEPT 
+  /usr/sbin/iptables -I FORWARD -d $REMOTESUB/$REMOTENET -o $1 -j ACCEPT 
+  /usr/sbin/iptables -I FORWARD -s $REMOTESUB/$REMOTENET -i $1 -j ACCEPT 
+  /usr/sbin/iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu -j TCPMSS
   if [ "$(/usr/sbin/nvram get pptpd_client_nat)" = "1" ]; then
-      /usr/sbin/iptables --table nat --append POSTROUTING --out-interface $1 --jump MASQUERADE
+      /usr/sbin/iptables -t nat -A POSTROUTING -o $1 -j MASQUERADE
   fi
   ;;
  *)
