@@ -252,7 +252,6 @@ int ar71xx_device_stopped(u32 mask)
 	return ((t & mask) == mask);
 }
 EXPORT_SYMBOL_GPL(ar71xx_device_stopped);
-
 void ar71xx_ddr_flush(u32 reg)
 {
 	ar71xx_ddr_wr(reg, 1);
@@ -264,7 +263,6 @@ void ar71xx_ddr_flush(u32 reg)
 		;
 }
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
-
 void ar71xx_flash_acquire(void)
 {
 	mutex_lock(&ar71xx_flash_mutex);

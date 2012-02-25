@@ -1051,6 +1051,10 @@ static inline void phy_dev_init(void)
 #ifdef CONFIG_ATHRS26_PHY
 	ar71xx_eth1_data.phy_mask = BIT(4);
 	ar71xx_add_device_mdio(0, 0x0);
+#elif CONFIG_WZRG450
+	ar71xx_add_device_mdio(0, ~BIT(0));
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
 #else
 	/* defaults for many switches */
 	ar71xx_eth0_data.phy_mask = BIT(0);
@@ -1079,6 +1083,18 @@ static int __init ar71xx_eth_dev_register(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 #endif
 
+#if defined(CONFIG_AG7240_GE0_MII)
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+#elif defined(CONFIG_AG7240_GE0_RMII)
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+#elif defined(CONFIG_AG7240_GE0_GMII)
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+#elif defined(CONFIG_AG7240_GE0_RGMII)
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+#endif
+
 #if defined(CONFIG_AG7100_GE1_MII)
 	ar71xx_eth1_data.speed = SPEED_100;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
@@ -1091,12 +1107,27 @@ static int __init ar71xx_eth_dev_register(void)
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 #endif
 
+#if defined(CONFIG_AG7240_GE1_MII)
+	ar71xx_eth1_data.speed = SPEED_100;
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+#elif defined(CONFIG_AG7240_GE1_RMII)
+	ar71xx_eth1_data.speed = SPEED_100;
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
+#elif defined(CONFIG_AG7240_GE1_GMII)
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+#elif defined(CONFIG_AG7240_GE1_RGMII)
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+#endif
+
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	phy_dev_init();
 
 	ar71xx_add_device_eth(0);
 #ifdef CONFIG_AG7100_GE1_IS_CONNECTED
+	ar71xx_add_device_eth(1);
+#endif
+#ifdef CONFIG_AG7240_GE1_IS_CONNECTED
 	ar71xx_add_device_eth(1);
 #endif
 
