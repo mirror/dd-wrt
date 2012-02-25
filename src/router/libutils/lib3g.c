@@ -422,7 +422,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1433, "option", "0", "0", 2, NULL, "HUAWEI/Option E1756C"},	//
 	{0x12d1, 0x14ac, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x14ae, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x1446, "option", "2", "2", 2, &modeswitch_huawei, "HUAWEI/Option E1552 HSPA Modem"},	//
+	{0x12d1, 0x1446, "option", "2", "2", 2, &modeswitch_huawei, "HUAWEI/Option E1552/E1800 HSPA Modem"},	//
 	{0x12d1, 0x14ad, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K3806"},	//
 	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
