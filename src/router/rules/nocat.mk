@@ -11,6 +11,7 @@ nocat:
 	make  -C nocat
 
 nocat-clean:
+	make  -C glib clean
 	make  -C nocat clean
 	
 
