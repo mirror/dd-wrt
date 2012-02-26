@@ -336,10 +336,9 @@ void start_openvpn(void)
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp,
-			"iptables -I FORWARD -i %s1 -j logaccept\n",
-			"iptables -I FORWARD -o %s1 -j logaccept\n",
-			nvram_safe_get("openvpncl_tuntap"),
+		fprintf(fp,"iptables -I FORWARD -i %s1 -j logaccept\n",
+			nvram_safe_get("openvpncl_tuntap"));
+		fprintf(fp,"iptables -I FORWARD -o %s1 -j logaccept\n",
 			nvram_safe_get("openvpncl_tuntap"));
 		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
