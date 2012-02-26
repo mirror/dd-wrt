@@ -423,7 +423,7 @@ log {
 	#
 	# allowed values: {no, yes}
 	#
-	stripped_names = no
+	stripped_names = yes
 
 	#  Log authentication requests to the log file.
 	#
