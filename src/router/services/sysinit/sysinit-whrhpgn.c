@@ -71,7 +71,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7240_mod");
+	system("insmod ag71xx || insmod ag7240_mod");
 #ifndef HAVE_WNR2000
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
@@ -91,6 +91,12 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
+#endif
+#ifdef HAVE_SWCONFIG
+		system("swconfig dev eth0 set reset 1");
+		system("swconfig dev eth0 set enable_vlan 0");
+		system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
+		system("swconfig dev eth0 set apply");
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");

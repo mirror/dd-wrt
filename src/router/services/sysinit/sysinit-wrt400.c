@@ -71,7 +71,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ag71xx or ag7100_mod Ethernet Driver\n");
-	system("insmod ag71xx || insmod ag7100_mod");
+	system("insmod ag71xx || insmod ag7100_mod || insmod ag7240_mod");
 	char mac1[32];
 	char mac2[32];
 	char wmac[32];
