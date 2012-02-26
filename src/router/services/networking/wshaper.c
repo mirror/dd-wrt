@@ -574,7 +574,7 @@ int svqos_iptables(void)
 				("iptables -t mangle -A FILTER_IN -p tcp -m tcp --dport %s -j MARK --set-mark %s",
 				 data, level);
 			sysprintf
-				("iptables -t mangle -A FILTE1_IN -p tcp -m tcp --sport %s -j MARK --set-mark %s",
+				("iptables -t mangle -A FILTER_IN -p tcp -m tcp --sport %s -j MARK --set-mark %s",
 				 data, level);
 		}
 		
