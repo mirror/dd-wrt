@@ -553,6 +553,13 @@ int svqos_iptables(void)
 			sysprintf
 				("iptables -t mangle -A FILTER_OUT -p udp -m udp --sport %s -j MARK --set-mark %s",
 				 data, level);
+
+			sysprintf
+				("iptables -t mangle -A FILTER_IN -p udp -m udp --dport %s -j MARK --set-mark %s",
+				 data, level);
+			sysprintf
+				("iptables -t mangle -A FILTER_IN -p udp -m udp --sport %s -j MARK --set-mark %s",
+				 data, level);
 		}
 
 		// tcp and L7 is managed on both ingress and egress
