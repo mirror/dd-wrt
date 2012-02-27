@@ -424,6 +424,7 @@ void start_openvpn(void)
 			"rmmod ebt_pkttype\n"
 			"rmmod ebtable_filter\n"
 			"rmmod ebtables\n");
+	}
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
