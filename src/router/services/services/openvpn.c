@@ -163,6 +163,14 @@ void start_openvpnserver(void)
 			"stopservice wshaper\n"
 			"startservice wshaper\n");
 	}
+	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
+		&& nvram_match("openvpn_tuntap", "tap")) {
+		fprintf(fp, "insmod ebtables\n"
+			"insmod ebtable_filter\n"
+			"insmod ebt_pkttype\n"
+			"ebtables -A FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
+			"ebtables -A OUTPUT -o tap0 --pkttype-type multicast -j DROP\n");
+	}
 	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
 
@@ -176,6 +184,15 @@ void start_openvpnserver(void)
 #endif
 	if (nvram_match("openvpn_tuntap", "tap")) {
 		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
+	}
+	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
+		&& nvram_match("openvpn_tuntap", "tap")) {
+		fprintf(fp, 
+			"ebtables -D FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
+			"ebtables -D OUTPUT -o tap0 --pkttype-type multicast -j DROP\n"
+			"rmmod ebt_pkttype\n"
+			"rmmod ebtable_filter\n"
+			"rmmod ebtables\n");
 	}
 	fclose(fp);
 
@@ -353,6 +370,16 @@ void start_openvpn(void)
 			"for IP in `cat /tmp/openvpncl/policy_ips` ; do\n"
 			"	ip rule add from $IP table 10\n" "done\n");
 	}
+	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
+		&& nvram_match("openvpncl_tuntap", "tap")
+		&& nvram_match("openvpncl_bridge", "1")) {
+		fprintf(fp, "insmod ebtables\n"
+			"insmod ebtable_filter\n"
+			"insmod ebt_pkttype\n"
+			"ebtables -I FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
+			"ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
+);
+	}
 	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
 	
@@ -388,6 +415,15 @@ void start_openvpn(void)
 			"for IP in `cat /tmp/openvpn/policy_ips` ; do\n"
 			"	ip rule del from $IP table 10\n" "done\n");
 	}
+	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
+		&& nvram_match("openvpncl_tuntap", "tap")
+		&& nvram_match("openvpncl_bridge", "1")) {
+		fprintf(fp, 
+			"ebtables -D FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
+			"ebtables -D OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
+			"rmmod ebt_pkttype\n"
+			"rmmod ebtable_filter\n"
+			"rmmod ebtables\n");
 	fclose(fp);
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
