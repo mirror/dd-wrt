@@ -333,12 +333,15 @@ void start_openvpn(void)
 	 }
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
+			"iptables -I INPUT -i %s1 -j logaccept\n"
 			"iptables -I POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
+			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
-		fprintf(fp,"iptables -I FORWARD -i %s1 -j logaccept\n",
-			nvram_safe_get("openvpncl_tuntap"));
-		fprintf(fp,"iptables -I FORWARD -o %s1 -j logaccept\n",
+		fprintf(fp,
+			"iptables -I FORWARD -i %s1 -j logaccept\n"
+			"iptables -I FORWARD -o %s1 -j logaccept\n",
+			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 		}
 	if (strlen(nvram_safe_get("openvpncl_route")) > 0) {	//policy based routing
@@ -366,11 +369,13 @@ void start_openvpn(void)
 		fprintf(fp, "ifconfig tap1 down\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
+			"iptables -I INPUT -i %s1 -j logaccept\n"
 			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
+			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
 		fprintf(fp,
-			"iptables -D FORWARD -i %s1 -j logaccept\n",
+			"iptables -D FORWARD -i %s1 -j logaccept\n"
 			"iptables -D FORWARD -o %s1 -j logaccept\n",
 			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
