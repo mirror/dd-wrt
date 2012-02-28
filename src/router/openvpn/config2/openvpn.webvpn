@@ -104,6 +104,14 @@
 		</div>
 		<div id="idmtu">
 			<div class="setting">
+				<div class="label"><% tran("service.vpn_tlscip"); %></div>
+				<select name="openvpn_tlscip">
+				<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
+				<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
+				<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>None</option>
+				</select>
+			</div>
+			<div class="setting">
 				<div class="label"><% tran("service.vpn_compress"); %></div>
 				<input class="spaceradio" type="radio" name="openvpn_lzo" value="1" <% nvram_checked("openvpn_lzo", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="openvpn_lzo" value="0" <% nvram_checked("openvpn_lzo", "0"); %> /><% tran("share.disable"); %>
@@ -140,24 +148,6 @@
 				document.write("(" + share.deflt + ": Disable)");
 				//]]>
 				</script></span>
-			</div>
-			<div class="setting">
-				<div class="label"><% tran("service.vpn_tlscip"); %></div>
-				<select name="openvpn_tlscip">
-				<option value="AES256-SHA" <% nvram_selected("openvpn_tlscip","AES256-SHA"); %>>AES-256 SHA</option>
-				<option value="AES128-SHA" <% nvram_selected("openvpn_tlscip","AES128-SHA"); %>>AES-128 SHA</option>
-				<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>None</option>
-				</select>
-			</div>
-			<div class="setting">		
-				<div class="label"><% tran("service.vpnd_clcon"); %></div>
-				<textarea cols="60" rows="2" id="openvpn_clcon" name="openvpn_clcon"> </textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-					var openvpn_clcon = fix_cr( '<% nvram_get("openvpn_clcon"); %>' );
-					document.getElementById("openvpn_clcon").value = openvpn_clcon;
-				//]]>
-				</script>
 			</div>
 		</div>
 		<div class="setting">		
