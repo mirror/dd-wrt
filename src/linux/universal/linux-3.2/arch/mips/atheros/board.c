@@ -27,7 +27,7 @@
 #include "devices.h"
 #include "ar5312.h"
 #include "ar2315.h"
-#include "board3.h"
+//#include "board3.h"
 void (*ar231x_irq_dispatch)(void);
 
 char *board_config, *radio_config;
