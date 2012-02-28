@@ -105,7 +105,7 @@ wbmr_init(void)
 {
 #define WMBR_BRN_MAC			0x1fd0024
 	usb_led_pin = 28|0xf00;
-	ltq_register_gpio_stp();
+//	ltq_register_gpio_stp();
 
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(wbmr_gpio_leds), wbmr_gpio_leds);
 //	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(wbmr_gpio_keys), wbmr_gpio_keys);
