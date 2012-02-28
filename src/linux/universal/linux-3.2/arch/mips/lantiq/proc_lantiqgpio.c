@@ -177,7 +177,7 @@ int usb_led_pin = -1;
 void ap_usb_led_on(void)
 {
 	if (usb_led_pin >= 0)
-		set_gpio(usb_led_pin, usb_led_pin & 0xf00 ? 0 : 1);
+		set_gpio(usb_led_pin&0xff, usb_led_pin & 0xf00 ? 0 : 1);
 }
 
 EXPORT_SYMBOL(ap_usb_led_on);
@@ -185,7 +185,7 @@ EXPORT_SYMBOL(ap_usb_led_on);
 void ap_usb_led_off(void)
 {
 	if (usb_led_pin >= 0)
-		set_gpio(usb_led_pin, usb_led_pin & 0xf00 ? 1 : 0);
+		set_gpio(usb_led_pin&0xff, usb_led_pin & 0xf00 ? 1 : 0);
 }
 
 EXPORT_SYMBOL(ap_usb_led_off);
