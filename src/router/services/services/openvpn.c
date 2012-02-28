@@ -396,7 +396,7 @@ void start_openvpn(void)
 		fprintf(fp, "ifconfig tap1 down\n");
 	if (nvram_match("openvpncl_nat", "1"))
 		fprintf(fp,
-			"iptables -I INPUT -i %s1 -j logaccept\n"
+			"iptables -D INPUT -i %s1 -j logaccept\n"
 			"iptables -D POSTROUTING -t nat -o %s1 -j MASQUERADE\n",
 			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
