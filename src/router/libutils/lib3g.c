@@ -225,6 +225,8 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x12d1 -p 0x1c0b -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1c24 -M 55534243123456780000000000000011060000000100000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011060000000100000000000000000000");
 	sleep(2);
 }
 
@@ -405,7 +407,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6890, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 888"},	//
 	{0x1199, 0x6893, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 889"},	//
 //      {0x1199, 0x68a3, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},   //alternate variant
-	{0x1199, 0x68a3, "sierra", "2", "2", 1, &reset_mc, "Sierra Wireless MC8700/Compass Direct IP"},	//
+	{0x1199, 0x68a3, "sierra", "3", "3", 1, &reset_mc, "Sierra Wireless MC8700/Compass Direct IP"},	//
 //option/huawei
 	{0x12d1, 0x1001, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E600/E620 or generic"},	//
 	{0x12d1, 0x1003, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC27/E220/E230/E270 HSDPA/HSUPA Model"},	//
@@ -442,6 +444,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x1c08, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
 	{0x12d1, 0x1c23, "option", "2", "2", 2, NULL, "Huawei E173 Modem Mode"},	//
 	{0x12d1, 0x1c24, "option", "2", "2", 2, &modeswitch_huawei, "Huawei E173 CDROM Mode"},	//
+	{0x12d1, 0x1f01, "option", "2", "2", 2, &modeswitch_huawei, "Huawei E353 CDROM Mode"},	//
 
 	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
 
@@ -467,6 +470,11 @@ static struct DEVICES devicelist[] = {
 	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
+
+	{0x0af0, 0x8120, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
+	{0x0af0, 0x9200, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
+	{0x0af0, 0x8900, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
+	{0x0af0, 0x9000, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 	{0x0af0, 0xd055, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
 //ericsson
