@@ -137,7 +137,6 @@ static int ltq_gpio_direction_output(struct gpio_chip *chip,
 	unsigned int offset, int value)
 {
 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
-
 	if (chip->ngpio == PINS_PORT3)
 		ltq_gpio_setbit(ltq_gpio_port[0].membase, LTQ_GPIO3_OD, offset);
 	else
