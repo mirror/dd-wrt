@@ -631,7 +631,6 @@ ltq_etop_open(struct net_device *dev)
 			continue;
 		spin_lock_irqsave(&priv->lock, flags);
 		ltq_dma_open(&ch->dma);
-		ltq_dma_ack_irq(&ch->dma);
 		spin_unlock_irqrestore(&priv->lock, flags);
 		napi_enable(&ch->napi);
 	}
@@ -679,7 +678,6 @@ ltq_etop_tx(struct sk_buff *skb, struct net_device *dev)
 	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 
 	if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) || ch->skb[ch->dma.desc]) {
-		dev_kfree_skb_any(skb);
 		netdev_err(dev, "tx ring full\n");
 		netif_tx_stop_queue(txq);
 		return NETDEV_TX_BUSY;
