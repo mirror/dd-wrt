@@ -2,6 +2,7 @@
  * openvpn.c
  *
  * Copyright (C) 2005 - 2006 Sebastian Gottschall <gottschall@dd-wrt.com
+ * Copyright (C) 2010 - 2012 Sash
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -190,9 +191,9 @@ void start_openvpnserver(void)
 		fprintf(fp, 
 			"ebtables -D FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
 			"ebtables -D OUTPUT -o tap0 --pkttype-type multicast -j DROP\n"
-			"rmmod ebt_pkttype\n"
-			"rmmod ebtable_filter\n"
-			"rmmod ebtables\n");
+			"#rmmod ebt_pkttype\n"
+			"#rmmod ebtable_filter\n"
+			"#rmmod ebtables\n");
 	}
 	fclose(fp);
 
