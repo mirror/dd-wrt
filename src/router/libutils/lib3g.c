@@ -471,10 +471,10 @@ static struct DEVICES devicelist[] = {
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
 
-	{0x0af0, 0x8120, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
-	{0x0af0, 0x9200, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
-	{0x0af0, 0x8900, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
-	{0x0af0, 0x9000, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
+	{0x0af0, 0x8120, "option", "2", "2", 3, NULL, "Option GTM681W"},	//
+	{0x0af0, 0x9200, "option", "2", "2", 3, NULL, "Option GTM671WFS"},	//
+	{0x0af0, 0x8900, "option", "2", "2", 3, NULL, "Option GTM671W"},	//
+	{0x0af0, 0x9000, "option", "2", "2", 3, NULL, "Option GTM661W"},	//
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 	{0x0af0, 0xd055, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
 //ericsson

@@ -3564,6 +3564,16 @@ int led_control(int type, int act)
 		ses_gpio = 0x10c;
 		break;
 #else
+	case ROUTER_BOARD_DANUBE:
+#ifdef HAVE_WMBR_G300NH
+		diag_gpio = 0x105;
+		ses_gpio = 0x10e;
+		sec0_gpio = 0x10e;
+		connected_gpio = 0x111;
+		disconnected_gpio = 0x112;
+		power_gpio = 0x101;
+#endif
+	break;
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WZRG300NH
 		diag_gpio = 0x101;
