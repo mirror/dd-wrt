@@ -20,6 +20,7 @@
  * $Id:
  */
 #ifdef HAVE_MILKFISH
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -73,7 +74,8 @@ void start_milkfish_boot(void)
 	// Start the milkfish services
 	eval("milkfish_services", "start");
 	// dbtext module setup
-	eval("mkdir", "-p", "/var/openser/dbtext/");
+	mkdir("/var/openser",0700);
+	mkdir("/var/openser/dbtext",0700);
 	eval("cp", "/etc/openser/dbtext/aliases", "/var/openser/dbtext/");
 	eval("cp", "/etc/openser/dbtext/location", "/var/openser/dbtext/");
 	eval("cp", "/etc/openser/dbtext/subscriber", "/var/openser/dbtext/");

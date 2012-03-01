@@ -127,10 +127,10 @@ void start_devinit(void)
 
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
+	mkdir("/tmp/www",0700);
 
 	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
+	mkdir("/tmp/nvram",0700);
 
 	/*
 	 * /var 
@@ -164,7 +164,8 @@ void start_devinit(void)
 		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
 //              eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
-	eval("mkdir", "-p", "/usr/local/nvram");
+	mkdir("/usr/local",0700);
+	mkdir("/usr/local/nvram",0700);
 #endif
 #ifdef HAVE_MSTP
 	fprintf(stderr,"start MSTP Daemon\n");
