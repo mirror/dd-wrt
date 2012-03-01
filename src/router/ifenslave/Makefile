@@ -13,7 +13,7 @@ ifenslave: $(OBJS)
 	$(CC) -s -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f *.o *~ $(UTILS)
+	rm -f *.o ifenslave *~ $(UTILS)
 
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
