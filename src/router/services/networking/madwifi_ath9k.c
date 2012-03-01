@@ -21,6 +21,7 @@
 
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
@@ -846,7 +847,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tidentity=\"%s\"\n",
 				nvram_prefix_get("tls8021xuser", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk);
+			mkdir(psk,0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_tls8021xca", prefix);
 			write_nvram(psk, ath);
@@ -892,7 +893,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tpassword=\"%s\"\n",
 				nvram_prefix_get("peap8021xpasswd", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk);
+			mkdir(psk,0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_peap8021xca", prefix);
 			if (!nvram_match(ath, "")) {
@@ -929,7 +930,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 				nvram_prefix_get("ttls8021xpasswd", prefix));
 			if (strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0) {
 				sprintf(psk, "/tmp/%s", prefix);
-				mkdir(psk);
+				mkdir(psk,0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
 				sprintf(ath, "%s_ttls8021xca", prefix);
 				write_nvram(psk, ath);

@@ -416,7 +416,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_BCMMODERN
 	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mkdir", "/dev/gpio");
+	mkdir("/dev/gpio",0700);
 	eval("mknod", "/dev/gpio/in", "c", "127", "0");
 	eval("mknod", "/dev/gpio/out", "c", "127", "1");
 	eval("mknod", "/dev/gpio/outen", "c", "127", "2");
@@ -424,7 +424,7 @@ void start_sysinit(void)
 	eval("mknod", "/dev/ppp", "c", "108", "0");
 	eval("mknod", "/dev/rtc", "c", "254", "0");
 	eval("mknod", "/dev/crypto", "c", "10", "70");
-	eval("mkdir", "/dev/usb");
+	mkdir("/dev/usb",0700);
 #endif
 	cprintf("sysinit() setup console\n");
 #ifndef HAVE_MICRO

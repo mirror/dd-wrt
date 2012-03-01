@@ -64,7 +64,8 @@ void start_sysinit(void)
 	eval("mount", "-o", "remount,rw", "/dev/root");
 	eval("mount", "-o", "remount,rw", "/dev/sda1","/");
 	sleep(1);		//give some time for remount
-	eval("mkdir", "-p", "/usr/local/nvram");
+	mkdir("/usr/local",0700);
+	mkdir("/usr/local/nvram",0700);
 	/*
 	 * Setup console 
 	 */

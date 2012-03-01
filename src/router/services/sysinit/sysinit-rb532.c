@@ -65,7 +65,6 @@ void start_sysinit(void)
 	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
 	// fix for linux kernel 2.6
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-	eval("mkdir", "/tmp/www");
 
 	// load ext2 
 	// eval("insmod","jbd");
@@ -87,7 +86,6 @@ void start_sysinit(void)
 	}
 	eval("mkdir", "-p", "/usr/local/nvram");
 	unlink("/tmp/nvram/.lock");
-	eval("mkdir", "/tmp/nvram");
 	eval("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
 
 	eval("mount", "/usr/local", "-o", "remount,ro");
