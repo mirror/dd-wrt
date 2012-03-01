@@ -415,15 +415,15 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 #ifdef HAVE_BCMMODERN
-	eval("mknod", "/dev/nvram", "c", "229", "0");
+	mknod("/dev/nvram",S_IFCHR|0644,makedev(229,0));
 	mkdir("/dev/gpio",0700);
-	eval("mknod", "/dev/gpio/in", "c", "127", "0");
-	eval("mknod", "/dev/gpio/out", "c", "127", "1");
-	eval("mknod", "/dev/gpio/outen", "c", "127", "2");
-	eval("mknod", "/dev/gpio/control", "c", "127", "3");
-	eval("mknod", "/dev/ppp", "c", "108", "0");
-	eval("mknod", "/dev/rtc", "c", "254", "0");
-	eval("mknod", "/dev/crypto", "c", "10", "70");
+	mknod("/dev/gpio/in",S_IFCHR|0644,makedev(127,0));
+	mknod("/dev/gpio/out",S_IFCHR|0644,makedev(127,1));
+	mknod("/dev/gpio/outen",S_IFCHR|0644,makedev(127,2));
+	mknod("/dev/gpio/control",S_IFCHR|0644,makedev(127,3));
+	mknod("/dev/ppp",S_IFCHR|0644,makedev(108,0));
+	mknod("/dev/rtc",S_IFCHR|0644,makedev(254,0));
+	mknod("/dev/crypto",S_IFCHR|0644,makedev(10,70));
 	mkdir("/dev/usb",0700);
 #endif
 	cprintf("sysinit() setup console\n");
