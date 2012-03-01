@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2011.4.12AR.3],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="813"
+AC_INIT([ntfs-3g],[2012.1.15AR.1],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="831"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -129,6 +129,13 @@ AC_ARG_ENABLE(
 )
 
 AC_ARG_ENABLE(
+	[ntfs-3g],
+	[AS_HELP_STRING([--disable-ntfs-3g],[disable the ntfs-3g FUSE driver])],
+	,
+	[enable_ntfs_3g="yes"]
+)
+
+AC_ARG_ENABLE(
 	[ntfsprogs],
 	[AS_HELP_STRING([--disable-ntfsprogs],[disable ntfsprogs utilities
 		       (default=no)])],
@@ -213,7 +220,7 @@ linux*)
 		[with_fuse="internal"]
 	)
 	;;
-darwin*|netbsd*|solaris*)
+darwin*|netbsd*|solaris*|kfreebsd*-gnu)
 	with_fuse="external"
 	;;
 freebsd*)
@@ -360,10 +367,10 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([ctype.h fcntl.h libgen.h libintl.h limits.h locale.h \
 	mntent.h stddef.h stdint.h stdlib.h stdio.h stdarg.h string.h \
 	strings.h errno.h time.h unistd.h utime.h wchar.h getopt.h features.h \
-	endian.h byteswap.h sys/byteorder.h sys/endian.h sys/param.h \
-	sys/ioctl.h sys/mkdev.h sys/mount.h sys/stat.h sys/types.h sys/vfs.h \
-	sys/statvfs.h sys/sysmacros.h linux/major.h linux/fd.h linux/hdreg.h \
-	machine/endian.h windows.h syslog.h pwd.h])
+	endian.h byteswap.h sys/byteorder.h sys/disk.h sys/endian.h \
+	sys/param.h sys/ioctl.h sys/mkdev.h sys/mount.h sys/stat.h sys/types.h \
+	sys/vfs.h sys/statvfs.h sys/sysmacros.h linux/major.h linux/fd.h \
+	linux/hdreg.h machine/endian.h windows.h syslog.h pwd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -500,6 +507,7 @@ AM_CONDITIONAL([RUN_LDCONFIG], [test "${enable_ldconfig}" = "yes"])
 AM_CONDITIONAL([REALLYSTATIC], [test "${enable_really_static}" = "yes"])
 AM_CONDITIONAL([INSTALL_LIBRARY], [test "${enable_library}" = "yes"])
 AM_CONDITIONAL([ENABLE_MOUNT_HELPER], [test "${enable_mount_helper}" = "yes"])
+AM_CONDITIONAL([ENABLE_NTFS_3G], [test "${enable_ntfs_3g}" = "yes"])
 AM_CONDITIONAL([ENABLE_NTFSPROGS], [test "${enable_ntfsprogs}" = "yes"])
 AM_CONDITIONAL([ENABLE_EXTRAS], [test "${enable_extras}" = "yes"])
 

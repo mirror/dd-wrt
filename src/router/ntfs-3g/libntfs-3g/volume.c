@@ -54,6 +54,7 @@
 #include <locale.h>
 #endif
 
+#include "param.h"
 #include "compat.h"
 #include "volume.h"
 #include "attrib.h"
@@ -374,6 +375,12 @@ mft_has_no_attr_list:
 	/* Done with the $Mft mft record. */
 	ntfs_attr_put_search_ctx(ctx);
 	ctx = NULL;
+
+	/* Update the size fields in the inode. */
+	vol->mft_ni->data_size = vol->mft_na->data_size;
+	vol->mft_ni->allocated_size = vol->mft_na->allocated_size;
+	set_nino_flag(vol->mft_ni, KnownSize);
+
 	/*
 	 * The volume is now setup so we can use all read access functions.
 	 */
@@ -495,6 +502,12 @@ ntfs_volume *ntfs_volume_startup(struct ntfs_device *dev, unsigned long flags)
 	NVolSetShowSysFiles(vol);
 	NVolSetShowHidFiles(vol);
 	NVolClearHideDotFiles(vol);
+		/* set default compression */
+#if DEFAULT_COMPRESSION
+	NVolSetCompression(vol);
+#else
+	NVolClearCompression(vol);
+#endif
 	if (flags & MS_RDONLY)
 		NVolSetReadOnly(vol);
 	
@@ -749,7 +762,8 @@ int ntfs_volume_check_hiberfile(ntfs_volume *vol, int verbose)
 		errno = EPERM;
 		goto out;
 	}
-	if (memcmp(buf, "hibr", 4) == 0) {
+	if ((memcmp(buf, "hibr", 4) == 0)
+	   ||  (memcmp(buf, "HIBR", 4) == 0)) {
 		if (verbose)
 			ntfs_log_error("Windows is hibernated, refused to mount.\n");
 		errno = EPERM;
@@ -1718,4 +1732,114 @@ int ntfs_volume_get_free_space(ntfs_volume *vol)
 			ret = 0;
 	}
 	return (ret);
+}
+
+/**
+ * ntfs_volume_rename - change the current label on a volume
+ * @vol:	volume to change the label on
+ * @label:	the new label
+ * @label_len:	the length of @label in ntfschars including the terminating NULL
+ *		character, which is mandatory (the value can not exceed 128)
+ *
+ * Change the label on the volume @vol to @label.
+ */
+int ntfs_volume_rename(ntfs_volume *vol, ntfschar *label, int label_len)
+{
+	ntfs_attr *na;
+	char *old_vol_name;
+	char *new_vol_name = NULL;
+	int new_vol_name_len;
+	int err;
+
+	if (NVolReadOnly(vol)) {
+		ntfs_log_error("Refusing to change label on read-only mounted "
+			"volume.\n");
+		errno = EROFS;
+		return -1;
+	}
+
+	label_len *= sizeof(ntfschar);
+	if (label_len > 0x100) {
+		ntfs_log_error("New label is too long. Maximum %u characters "
+				"allowed.\n",
+				(unsigned)(0x100 / sizeof(ntfschar)));
+		errno = ERANGE;
+		return -1;
+	}
+
+	na = ntfs_attr_open(vol->vol_ni, AT_VOLUME_NAME, AT_UNNAMED, 0);
+	if (!na) {
+		if (errno != ENOENT) {
+			err = errno;
+			ntfs_log_perror("Lookup of $VOLUME_NAME attribute "
+				"failed");
+			goto err_out;
+		}
+
+		/* The volume name attribute does not exist.  Need to add it. */
+		if (ntfs_attr_add(vol->vol_ni, AT_VOLUME_NAME, AT_UNNAMED, 0,
+			(u8*) label, label_len))
+		{
+			err = errno;
+			ntfs_log_perror("Encountered error while adding "
+				"$VOLUME_NAME attribute");
+			goto err_out;
+		}
+	}
+	else {
+		s64 written;
+
+		if (NAttrNonResident(na)) {
+			err = errno;
+			ntfs_log_error("Error: Attribute $VOLUME_NAME must be "
+					"resident.\n");
+			goto err_out;
+		}
+
+		if (na->data_size != label_len) {
+			if (ntfs_attr_truncate(na, label_len)) {
+				err = errno;
+				ntfs_log_perror("Error resizing resident "
+					"attribute");
+				goto err_out;
+			}
+		}
+
+		if (label_len) {
+			written = ntfs_attr_pwrite(na, 0, label_len, label);
+			if (written == -1) {
+				err = errno;
+				ntfs_log_perror("Error when writing "
+					"$VOLUME_NAME data");
+				goto err_out;
+			}
+			else if (written != label_len) {
+				err = EIO;
+				ntfs_log_error("Partial write when writing "
+					"$VOLUME_NAME data.");
+				goto err_out;
+
+			}
+		}
+	}
+
+	new_vol_name_len =
+		ntfs_ucstombs(label, label_len, &new_vol_name, 0);
+	if (new_vol_name_len == -1) {
+		err = errno;
+		ntfs_log_perror("Error while decoding new volume name");
+		goto err_out;
+	}
+
+	old_vol_name = vol->vol_name;
+	vol->vol_name = new_vol_name;
+	free(old_vol_name);
+
+	err = 0;
+err_out:
+	if (na)
+		ntfs_attr_close(na);
+	if (err)
+		errno = err;
+	return err ? -1 : 0;
 }

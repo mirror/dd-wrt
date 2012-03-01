@@ -113,6 +113,7 @@ typedef enum {
 	NV_ShowHidFiles,	/* 1: Show files marked hidden. */
 	NV_HideDotFiles,	/* 1: Set hidden flag on dot files */
 	NV_Compression,		/* 1: allow compression */
+	NV_NoFixupWarn,		/* 1: Do not log fixup errors */
 } ntfs_volume_state_bits;
 
 #define  test_nvol_flag(nv, flag)	 test_bit(NV_##flag, (nv)->state)
@@ -146,6 +147,10 @@ typedef enum {
 #define NVolCompression(nv)		 test_nvol_flag(nv, Compression)
 #define NVolSetCompression(nv)		  set_nvol_flag(nv, Compression)
 #define NVolClearCompression(nv)	clear_nvol_flag(nv, Compression)
+
+#define NVolNoFixupWarn(nv)		 test_nvol_flag(nv, NoFixupWarn)
+#define NVolSetNoFixupWarn(nv)		  set_nvol_flag(nv, NoFixupWarn)
+#define NVolClearNoFixupWarn(nv)	clear_nvol_flag(nv, NoFixupWarn)
 
 /*
  * NTFS version 1.1 and 1.2 are used by Windows NT4.
@@ -297,6 +302,7 @@ extern int ntfs_volume_error(int err);
 extern void ntfs_mount_error(const char *vol, const char *mntpoint, int err);
 
 extern int ntfs_volume_get_free_space(ntfs_volume *vol);
+extern int ntfs_volume_rename(ntfs_volume *vol, ntfschar *label, int label_len);
 
 extern int ntfs_set_shown_files(ntfs_volume *vol,
 		BOOL show_sys_files, BOOL show_hid_files, BOOL hide_dot_files);

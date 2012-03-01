@@ -56,8 +56,8 @@
 #else
 #define USESTUBS 0 /* direct calls to API, based on following definitions */
 #define ENVNTFS3G "NTFS3G"
-#define LIBFILE64 "/lib64/libntfs-3g.so.813"
-#define LIBFILE "/lib/libntfs-3g.so.813"
+#define LIBFILE64 "/lib64/libntfs-3g.so.831"
+#define LIBFILE "/lib/libntfs-3g.so.831"
 #endif
 
 #define MAPDIR ".NTFS-3G"

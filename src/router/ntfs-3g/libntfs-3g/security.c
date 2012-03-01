@@ -52,6 +52,7 @@
 #include <pwd.h>
 #include <grp.h>
 
+#include "compat.h"
 #include "param.h"
 #include "types.h"
 #include "layout.h"
@@ -1064,7 +1065,6 @@ static int upgrade_secur_desc(ntfs_volume *vol,
 			na = ntfs_attr_open(ni, AT_STANDARD_INFORMATION,
 				AT_UNNAMED, 0);
 			if (na) {
-				res = 0;
 			/* expand standard information attribute to v3.x */
 				res = ntfs_attr_truncate(na,
 					 (s64)sizeof(STANDARD_INFORMATION));
@@ -2013,7 +2013,6 @@ int ntfs_get_posix_acl(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 	const SID *gsid;	/* group of file/directory */
 	uid_t uid;
 	gid_t gid;
-	int perm;
 	BOOL isdir;
 	size_t outsize;
 
@@ -2048,7 +2047,6 @@ int ntfs_get_posix_acl(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 					 * fetch owner and group for cacheing
 					 */
 				if (pxdesc) {
-					perm = pxdesc->mode & 07777;
 				/*
 				 *  Create a security id if there were none
 				 * and upgrade option is selected
@@ -2062,11 +2060,10 @@ int ntfs_get_posix_acl(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 #if OWNERFROMACL
 					uid = ntfs_find_user(scx->mapping[MAPUSERS],usid);
 #else
-					if (!perm && ntfs_same_sid(usid, adminsid)) {
+					if (!(pxdesc->mode & 07777)
+					    && ntfs_same_sid(usid, adminsid)) {
 						uid = find_tenant(scx,
 								securattr);
-						if (uid)
-							perm = 0700;
 					} else
 						uid = ntfs_find_user(scx->mapping[MAPUSERS],usid);
 #endif
@@ -2893,7 +2890,6 @@ int ntfs_set_posix_acl(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 	uid_t uid;
 	uid_t gid;
 	int res;
-	mode_t mode;
 	BOOL isdir;
 	BOOL deflt;
 	BOOL exist;
@@ -2919,7 +2915,6 @@ int ntfs_set_posix_acl(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 			gid = cached->gid;
 			oldpxdesc = cached->pxdesc;
 			if (oldpxdesc) {
-				mode = oldpxdesc->mode;
 				newpxdesc = ntfs_replace_acl(oldpxdesc,
 						(const struct POSIX_ACL*)value,count,deflt);
 				}
@@ -2946,7 +2941,6 @@ int ntfs_set_posix_acl(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 					  || (!exist && (flags & XATTR_REPLACE))) {
 						errno = (exist ? EEXIST : ENODATA);
 					} else {
-						mode = oldpxdesc->mode;
 						newpxdesc = ntfs_replace_acl(oldpxdesc,
 							(const struct POSIX_ACL*)value,count,deflt);
 					}
@@ -3513,16 +3507,16 @@ int ntfs_set_owner(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 int ntfs_set_ownmod(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 			uid_t uid, gid_t gid, const mode_t mode)
 {
-	const SECURITY_DESCRIPTOR_RELATIVE *phead;
 	const struct CACHED_PERMISSIONS *cached;
 	char *oldattr;
-	const SID *usid;
-	const SID *gsid;
 	uid_t fileuid;
 	uid_t filegid;
-	BOOL isdir;
 	int res;
 #if POSIXACLS
+	const SECURITY_DESCRIPTOR_RELATIVE *phead;
+	const SID *usid;
+	const SID *gsid;
+	BOOL isdir;
 	const struct POSIX_SECURITY *oldpxdesc;
 	struct POSIX_SECURITY *newpxdesc = (struct POSIX_SECURITY*)NULL;
 	int pxsize;
@@ -3555,6 +3549,7 @@ int ntfs_set_ownmod(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 		filegid = 0;
 		oldattr = getsecurityattr(scx->vol, ni);
 		if (oldattr) {
+#if POSIXACLS
 			isdir = (ni->mrec->flags & MFT_RECORD_IS_DIRECTORY)
 				!= const_cpu_to_le16(0);
 			phead = (const SECURITY_DESCRIPTOR_RELATIVE*)
@@ -3567,7 +3562,6 @@ int ntfs_set_ownmod(struct SECURITY_CONTEXT *scx, ntfs_inode *ni,
 			usid = (const SID*)
 				&oldattr[le32_to_cpu(phead->owner)];
 #endif
-#if POSIXACLS
 			newpxdesc = ntfs_build_permissions_posix(scx->mapping, oldattr,
 					usid, gsid, isdir);
 			if (!newpxdesc || ntfs_merge_mode_posix(newpxdesc, mode))
@@ -4784,6 +4778,7 @@ BOOL ntfs_set_file_attributes(struct SECURITY_API *scapi,
 				ni->flags = (ni->flags & ~settable)
 					 | (cpu_to_le32(attrib) & settable);
 				NInoSetDirty(ni);
+				NInoFileNameSetDirty(ni);
 			}
 			if (!ntfs_inode_close(ni))
 				res = -1;
