@@ -38,6 +38,7 @@ void start_openvpnserver(void)
 
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;
+	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Server) starting/restarting...\n");
 	mkdir("/tmp/openvpn", 0700);
 	mkdir("/tmp/openvpn/ccd", 0700);
 	write_nvram("/tmp/openvpn/ccd/DEFAULT", "openvpn_ccddef");
@@ -265,6 +266,7 @@ void start_openvpn(void)
 {
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
+	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Client) starting/restarting...\n");
 	mkdir("/tmp/openvpncl", 0700);
 	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
