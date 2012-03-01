@@ -63,11 +63,11 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
-	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
-	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
-	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
-	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
+	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
+	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
+	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
+	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
+	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
 
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");

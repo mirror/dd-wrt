@@ -114,16 +114,17 @@ void start_devinit(void)
 	// shell-skript. otherwise we loose our console
 	system("echo >/proc/sys/kernel/hotplug");
 	system("mount -t tmpfs none /dev -o size=512K");
-	system("mknod /dev/console c 5 1");
-	system("mknod /dev/null c 1 3");
-	system("mkdir /dev/pts");
+
+	mknod("/dev/console",S_IFCHR|0644,makedev(5,1));
+	mknod("/dev/null",S_IFCHR|0644,makedev(1,3));
+	mkdir("/dev/pts",0700);
 #else
 	// fix for linux kernel 2.6
-	eval("mknod", "/dev/ppp", "c", "108", "0");
+	mknod("/dev/ppp",S_IFCHR|0644,makedev(108,0));
 #endif
 // fix me udevtrigger does not create that (yet) not registered?
-	eval("mknod", "/dev/nvram", "c", "229", "0");
-	eval("mknod", "/dev/watchdog", "c", "10", "130");
+	mknod("/dev/nvram",S_IFCHR|0644,makedev(229,0));
+	mknod("/dev/watchdog",S_IFCHR|0644,makedev(10,130));
 
 	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 	mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);

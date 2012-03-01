@@ -128,7 +128,7 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	eval("mknod", "/dev/gpio", "c", "127", "0");
+	mknod("/dev/gpio",S_IFCHR|0644,makedev(127,0));
 	mkdir("/usr/local",0700);
 	mkdir("/usr/local/nvram",0700);
 
