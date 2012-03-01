@@ -710,9 +710,9 @@ static int utf8_to_unicode(u32 *wc, const char *s)
 			    | ((u32)(s[1] & 0x3F) << 12)
 			    | ((u32)(s[2] & 0x3F) << 6)
 			    | ((u32)(s[3] & 0x3F));
-		/* Check valid ranges */
-		if ((*wc <= 0x10ffff) && (*wc >= 0x10000))
-			return 4;
+			/* Check valid ranges */
+			if ((*wc <= 0x10ffff) && (*wc >= 0x10000))
+				return 4;
 		}
 		goto fail;
 	}
@@ -1262,7 +1262,7 @@ void ntfs_upcase_table_build(ntfschar *uc, u32 uc_len)
 
 u32 ntfs_upcase_build_default(ntfschar **upcase)
 {
-	u32 upcase_len;
+	u32 upcase_len = 0;
 
 	*upcase = (ntfschar*)ntfs_malloc(UPCASE_LEN*2);
 	if (*upcase) {

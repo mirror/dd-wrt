@@ -293,7 +293,7 @@ static ntfs_inode *ntfs_new_file(ntfs_inode *dir_ni,
 
 	/* ntfs_mbstoucs(...) will allocate memory for ufilename if it's NULL */
 	ufilename = NULL;
-	ufilename_len = ntfs_mbstoucs_libntfscompat(filename, &ufilename, 0);
+	ufilename_len = ntfs_mbstoucs(filename, &ufilename);
 	if (ufilename_len == -1) {
 		ntfs_log_perror("ERROR: Failed to convert '%s' to unicode",
 					filename);
@@ -360,6 +360,12 @@ int main(int argc, char *argv[])
 	if ((vol->flags & VOLUME_IS_DIRTY) && !opts.force)
 		goto umount;
 
+	NVolSetCompression(vol); /* allow compression */
+	if (ntfs_volume_get_free_space(vol)) {
+		ntfs_log_perror("ERROR: couldn't get free space");
+		goto umount;
+	}
+
 	{
 		struct stat fst;
 		if (stat(opts.src_file, &fst) == -1) {
@@ -394,11 +400,9 @@ int main(int argc, char *argv[])
 		char *filename;
 		ntfs_inode *dir_ni;
 		ntfs_inode *ni;
-		int dest_path_len;
 		char *dirname_last_whack;
 
 		filename = basename(opts.dest_file);
-		dest_path_len = strlen(opts.dest_file);
 		parent_dirname = strdup(opts.dest_file);
 		if (!parent_dirname) {
 			ntfs_log_perror("strdup() failed");
@@ -561,6 +565,9 @@ int main(int argc, char *argv[])
 		}
 		offset += bw;
 	}
+	if ((na->data_flags & ATTR_COMPRESSION_MASK)
+	    && ntfs_attr_pclose(na))
+		ntfs_log_perror("ERROR: ntfs_attr_pclose failed");
 	ntfs_log_verbose("Syncing.\n");
 	result = 0;
 	free(buf);

@@ -174,12 +174,21 @@ struct open_file {
 	fuse_ino_t ino;
 	fuse_ino_t parent;
 	int state;
+#if defined(__sun) && defined (__SVR4)
+	pid_t tid;
+#endif /* defined(__sun) && defined (__SVR4) */
 } ;
 
 enum {
 	CLOSE_GHOST = 1,
 	CLOSE_COMPRESSED = 2,
-	CLOSE_ENCRYPTED = 4
+	CLOSE_ENCRYPTED = 4,
+#if defined(__sun) && defined (__SVR4)
+	CLOSE_DMTIME = 8,
+	CLOSE_WRITING = 16
+#else /* defined(__sun) && defined (__SVR4) */
+	CLOSE_DMTIME = 8
+#endif /* defined(__sun) && defined (__SVR4) */
 };
 
 static struct ntfs_options opts;
@@ -1028,14 +1037,17 @@ static void ntfs_fuse_releasedir(fuse_req_t req,
 	ntfs_fuse_fill_item_t *current;
 
 	fill = (ntfs_fuse_fill_context_t*)(long)fi->fh;
-		/* make sure to clear results */
-	current = fill->first;
-	while (current) {
-		current = current->next;
-		free(fill->first);
-		fill->first = current;
+	if (fill && (fill->ino == ino)) {
+			/* make sure to clear results */
+		current = fill->first;
+		while (current) {
+			current = current->next;
+			free(fill->first);
+			fill->first = current;
+		}
+		fill->ino = 0;
+		free(fill);
 	}
-	free(fill);
 	fuse_reply_err(req, 0);
 }
 
@@ -1051,7 +1063,7 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 	int err = 0;
 
 	fill = (ntfs_fuse_fill_context_t*)(long)fi->fh;
-	if (fill) {
+	if (fill && (fill->ino == ino)) {
 		if (!fill->filled) {
 				/* initial call : build the full list */
 			first = (ntfs_fuse_fill_item_t*)ntfs_malloc
@@ -1111,6 +1123,31 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 		fuse_reply_err(req, -err);
 }
 
+#if defined(__sun) && defined (__SVR4)
+
+/*
+ *		When a file is created with a read-only mode,
+ *	access for writing and ftruncating are allowed to the thread
+ *	which is creating.
+ */
+
+static BOOL check_open_for_writing(fuse_ino_t ino, pid_t tid)
+{
+	BOOL ok;
+	struct open_file *of;
+
+	ok = FALSE;
+	of = ctx->open_files;
+	while (of && (of->ino != ino))
+		of = of->next;
+	if (of && (of->state & CLOSE_WRITING) && (of->tid == tid)) {
+		ok = TRUE;
+	}
+	return (ok);
+}
+
+#endif /* defined(__sun) && defined (__SVR4) */
+
 static void ntfs_fuse_open(fuse_req_t req, fuse_ino_t ino,
 		      struct fuse_file_info *fi)
 {
@@ -1146,6 +1183,9 @@ static void ntfs_fuse_open(fuse_req_t req, fuse_ino_t ino,
 #endif
 			if ((res >= 0)
 			    && (fi->flags & (O_WRONLY | O_RDWR))) {
+#if defined(__sun) && defined (__SVR4)
+				state |= CLOSE_WRITING;
+#endif /* defined(__sun) && defined (__SVR4) */
 			/* mark a future need to compress the last chunk */
 				if (na->data_flags & ATTR_COMPRESSION_MASK)
 					state |= CLOSE_COMPRESSED;
@@ -1156,6 +1196,9 @@ static void ntfs_fuse_open(fuse_req_t req, fuse_ino_t ino,
 				    && (ni->flags & FILE_ATTR_ENCRYPTED))
 					state |= CLOSE_ENCRYPTED;
 #endif /* HAVE_SETXATTR */
+			/* mark a future need to update the mtime */
+				if (ctx->dmtime)
+					state |= CLOSE_DMTIME;
 			/* deny opening metadata files for writing */
 				if (ino < FILE_first_user)
 					res = -EPERM;
@@ -1174,6 +1217,13 @@ static void ntfs_fuse_open(fuse_req_t req, fuse_ino_t ino,
 			of->parent = 0;
 			of->ino = ino;
 			of->state = state;
+#if defined(__sun) && defined (__SVR4)
+#if !KERNELPERMS | (POSIXACLS & !KERNELACLS)
+			of->tid = security.tid;
+#else
+			of->tid = fuse_req_ctx(req)->pid;
+#endif
+#endif /* defined(__sun) && defined (__SVR4) */
 			of->next = ctx->open_files;
 			of->previous = (struct open_file*)NULL;
 			if (ctx->open_files)
@@ -1199,8 +1249,10 @@ static void ntfs_fuse_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 	s64 total = 0;
 	s64 max_read;
 
-	if (!size)
+	if (!size) {
+		res = 0;
 		goto exit;
+	}
 	buf = (char*)ntfs_malloc(size);
 	if (!buf) {
 		res = -errno;
@@ -1290,7 +1342,7 @@ static void ntfs_fuse_write(fuse_req_t req, fuse_ino_t ino, const char *buf,
 		total  += ret;
 	}
 	res = total;
-	if (res > 0)
+	if ((res > 0) && !ctx->dmtime)
 		ntfs_fuse_update_times(na->ni, NTFS_UPDATE_MCTIME);
 exit:
 	if (na)
@@ -1671,8 +1723,14 @@ static void ntfs_fuse_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 	}
 						/* size */
 	if (!res && (to_set & FUSE_SET_ATTR_SIZE)) {
+#if defined(__sun) && defined (__SVR4)
+		res = ntfs_fuse_trunc(&security, ino, attr->st_size,
+					!fi && !check_open_for_writing(ino,
+						security.tid), &stbuf);
+#else
 		res = ntfs_fuse_trunc(&security, ino, attr->st_size,
 					!fi, &stbuf);
+#endif /* defined(__sun) && defined (__SVR4) */
 	}
 						/* some set of atime/mtime */
 	if (!res && (to_set & (FUSE_SET_ATTR_ATIME + FUSE_SET_ATTR_MTIME))) {
@@ -1975,6 +2033,13 @@ static void ntfs_fuse_access(fuse_req_t req, fuse_ino_t ino, int mask)
 		else
 			res = -EOPNOTSUPP;
 	} else {
+#if defined(__sun) && defined (__SVR4)
+		if ((mask & W_OK) && check_open_for_writing(ino,
+						security.tid)) {
+			fuse_reply_err(req, 0);
+			return;
+		}
+#endif /* defined(__sun) && defined (__SVR4) */
 		ni = ntfs_inode_open(ctx->vol, INODE(ino));
 		if (!ni) {
 			res = -errno;
@@ -2117,6 +2182,8 @@ static int ntfs_fuse_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 			    && (ni->flags & FILE_ATTR_ENCRYPTED))
 				state |= CLOSE_ENCRYPTED;
 #endif /* HAVE_SETXATTR */
+			if (fi && ctx->dmtime)
+				state |= CLOSE_DMTIME;
 			ntfs_inode_update_mbsname(dir_ni, name, ni->mft_no);
 			NInoSetDirty(ni);
 			e->ino = ni->mft_no;
@@ -2149,7 +2216,12 @@ exit:
 		if (of) {
 			of->parent = 0;
 			of->ino = e->ino;
+#if defined(__sun) && defined (__SVR4)
+			of->state = state | CLOSE_WRITING;
+			of->tid = security.tid;
+#else /* defined(__sun) && defined (__SVR4) */
 			of->state = state;
+#endif /* defined(__sun) && defined (__SVR4) */
 			of->next = ctx->open_files;
 			of->previous = (struct open_file*)NULL;
 			if (ctx->open_files)
@@ -2587,7 +2659,9 @@ static void ntfs_fuse_release(fuse_req_t req, fuse_ino_t ino,
 
 	of = (struct open_file*)(long)fi->fh;
 	/* Only for marked descriptors there is something to do */
-	if (!of || !(of->state & (CLOSE_COMPRESSED | CLOSE_ENCRYPTED))) {
+	if (!of
+	    || !(of->state & (CLOSE_COMPRESSED
+				| CLOSE_ENCRYPTED | CLOSE_DMTIME))) {
 		res = 0;
 		goto out;
 	}
@@ -2602,6 +2676,8 @@ static void ntfs_fuse_release(fuse_req_t req, fuse_ino_t ino,
 		goto exit;
 	}
 	res = 0;
+	if (of->state & CLOSE_DMTIME)
+		ntfs_inode_update_times(ni,NTFS_UPDATE_MCTIME);
 	if (of->state & CLOSE_COMPRESSED)
 		res = ntfs_attr_pclose(na);
 #ifdef HAVE_SETXATTR	/* extended attributes interface required */
@@ -3044,7 +3120,7 @@ static void ntfs_fuse_getxattr(fuse_req_t req, fuse_ino_t ino, const char *name,
 		/* trusted only readable by root */
 	if ((namespace == XATTRNS_TRUSTED)
 	    && security.uid) {
-		res = -EPERM;
+		res = -ENODATA;
 		goto out;
 	}
 #endif
@@ -3627,6 +3703,8 @@ static int ntfs_open(const char *device)
 		NDevSetSync(ctx->vol->dev);
 	if (ctx->compression)
 		NVolSetCompression(ctx->vol);
+	else
+		NVolClearCompression(ctx->vol);
 #ifdef HAVE_SETXATTR
 			/* archivers must see hidden files */
 	if (ctx->efs_raw)
@@ -3872,6 +3950,9 @@ static void setup_logging(char *parsed_options)
 	ctx->seccache = (struct PERMISSIONS_CACHE*)NULL;
 
 	ntfs_log_info("Version %s %s %d\n", VERSION, FUSE_TYPE, fuse_version());
+	if (strcmp(opts.arg_device,opts.device))
+		ntfs_log_info("Requested device %s canonicalized as %s\n",
+				opts.arg_device,opts.device);
 	ntfs_log_info("Mounted %s (%s, label \"%s\", NTFS %d.%d)\n",
 			opts.device, (ctx->ro) ? "Read-Only" : "Read-Write",
 			ctx->vol->vol_name, ctx->vol->major_ver,
@@ -3935,7 +4016,9 @@ int main(int argc, char *argv[])
 		goto err_out;
 	}
 	if (!ntfs_check_if_mounted(opts.device,&existing_mount)
-	    && (existing_mount & NTFS_MF_MOUNTED)) {
+	    && (existing_mount & NTFS_MF_MOUNTED)
+		/* accept multiple read-only mounts */
+	    && (!(existing_mount & NTFS_MF_READONLY) || !ctx->ro)) {
 		err = NTFS_VOLUME_LOCKED;
 		goto err_out;
 	}
@@ -3950,6 +4033,10 @@ int main(int argc, char *argv[])
 				     PATH_MAX - strlen(opts.mnt_point) - 1)) {
 				strcat(ctx->abs_mnt_point, "/");
 				strcat(ctx->abs_mnt_point, opts.mnt_point);
+#if defined(__sun) && defined (__SVR4)
+			/* Solaris also wants the absolute mount point */
+				opts.mnt_point = ctx->abs_mnt_point;
+#endif /* defined(__sun) && defined (__SVR4) */
 			}
 		}
 	}
@@ -4028,7 +4115,7 @@ int main(int argc, char *argv[])
 		else {
 			permissions_mode = "User mapping built, Posix ACLs in use";
 #if KERNELACLS
-			if (ntfs_strappend(&parsed_options,
+			if (ntfs_strinsert(&parsed_options,
 					",default_permissions,acl")) {
 				err = NTFS_VOLUME_SYNTAX_ERROR;
 				goto err_out;
@@ -4044,7 +4131,7 @@ int main(int argc, char *argv[])
 			 */
 #if KERNELPERMS
 			ctx->vol->secure_flags |= (1 << SECURITY_DEFAULT);
-			if (ntfs_strappend(&parsed_options, ",default_permissions")) {
+			if (ntfs_strinsert(&parsed_options, ",default_permissions")) {
 				err = NTFS_VOLUME_SYNTAX_ERROR;
 				goto err_out;
 			}
@@ -4061,7 +4148,7 @@ int main(int argc, char *argv[])
 		if ((ctx->vol->secure_flags & (1 << SECURITY_WANTED))
 		   && !(ctx->vol->secure_flags & (1 << SECURITY_DEFAULT))) {
 			ctx->vol->secure_flags |= (1 << SECURITY_DEFAULT);
-			if (ntfs_strappend(&parsed_options, ",default_permissions")) {
+			if (ntfs_strinsert(&parsed_options, ",default_permissions")) {
 				err = NTFS_VOLUME_SYNTAX_ERROR;
 				goto err_out;
 			}

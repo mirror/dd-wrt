@@ -191,6 +191,12 @@ this option doesn't break applications that need to know
 if a file has been read since the last time it was modified.
 This is the default behaviour.
 .TP
+.B delay_mtime
+Delay the updating of file modification time and file change time until
+the file is closed. This is mainly useful for files which are written
+to without changing their size, such as databases or file system images
+mounted as loop.
+.TP
 .B show_sys_files
 Show the metafiles in directory listings. Otherwise the default behaviour is
 to hide the metafiles, which are special files used to store the NTFS
@@ -356,8 +362,10 @@ to be the owner of all files:
 .B ntfs-3g /dev/sda5 /home/user/mnt \-o ro,uid=1000
 .sp
 .RE
-/etc/fstab entry for the above:
+/etc/fstab entry for the above (the sixth and last field has to be zero to
+avoid a file system check at boot time) :
 .RS
+.sp
 .B /dev/sda5 /home/user/mnt ntfs\-3g ro,uid=1000 0 0
 .sp
 .RE

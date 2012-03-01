@@ -1,7 +1,7 @@
 /**
  * mkntfs - Part of the Linux-NTFS project.
  *
- * Copyright (c) 2000-2007 Anton Altaparmakov
+ * Copyright (c) 2000-2011 Anton Altaparmakov
  * Copyright (c) 2001-2005 Richard Russon
  * Copyright (c) 2002-2006 Szabolcs Szakacsits
  * Copyright (c) 2005      Erik Sornes
@@ -167,6 +167,11 @@ static int		   g_mft_bitmap_byte_size = 0;
 static u8		  *g_mft_bitmap		  = NULL;
 static int		   g_lcn_bitmap_byte_size = 0;
 static int		   g_dynamic_buf_size	  = 0;
+#if defined(__sun) && defined (__SVR4)
+#undef basename
+#define basename(name) name
+#endif
+
 static u8		  *g_dynamic_buf	  = NULL;
 static runlist		  *g_rl_mft		  = NULL;
 static runlist		  *g_rl_mft_bmp		  = NULL;
@@ -2136,8 +2141,9 @@ static int add_attr_data_positioned(MFT_RECORD *m, const char *name,
  * Create volume name attribute specifying the volume name @vol_name as a null
  * terminated char string of length @vol_name_len (number of characters not
  * including the terminating null), which is converted internally to a little
- * endian ntfschar string. The name is at least 1 character long and at most
- * 0xff characters long (not counting the terminating null).
+ * endian ntfschar string. The name is at least 1 character long (though
+ * Windows accepts zero characters), and at most 128 characters long (not
+ * counting the terminating null).
  *
  * Return 0 on success or -errno on error.
  */
@@ -2149,10 +2155,10 @@ static int add_attr_vol_name(MFT_RECORD *m, const char *vol_name,
 	int i;
 
 	if (vol_name) {
-		uname_len = ntfs_mbstoucs_libntfscompat(vol_name, &uname, 0);
+		uname_len = ntfs_mbstoucs(vol_name, &uname);
 		if (uname_len < 0)
 			return -errno;
-		if (uname_len > 0xff) {
+		if (uname_len > 128) {
 			free(uname);
 			return -ENAMETOOLONG;
 		}
@@ -2241,8 +2247,8 @@ static int add_attr_index_root(MFT_RECORD *m, const char *name,
 			 free(r);
 			 return -EINVAL;
 		}
-		r->clusters_per_index_block = index_block_size /
-				opts.sector_size;
+		r->clusters_per_index_block = index_block_size
+				>> NTFS_BLOCK_SIZE_BITS;
 	}
 	memset(&r->reserved, 0, sizeof(r->reserved));
 	r->index.entries_offset = const_cpu_to_le32(sizeof(INDEX_HEADER));
