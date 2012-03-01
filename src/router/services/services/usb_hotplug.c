@@ -134,7 +134,7 @@ void start_hotplug_block(void)
 		sysprintf("mknod %s b %d %d\n", devname, major, minor);
 		fclose(fp);	// skip partitions
 	}
-      //sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
+	//sysprintf("echo add devname %s >> /tmp/hotplugs", devname);
 	if (!strcmp(action, "add"))
 		usb_add_ufd(devname);
 	if (!strcmp(action, "remove"))
@@ -257,7 +257,9 @@ static int usb_process_path(char *path, char *fs, char *target)
 		ret = eval("ntfs-3g", path, mount_point);
 	} else
 #endif
-		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
+		ret =
+		    eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path,
+			 mount_point);
 
 	if (ret != 0) {		//give it another try
 #ifdef HAVE_NTFS3G
@@ -372,18 +374,20 @@ int usb_add_ufd(char *devpath)
 			if (devpath) {
 				char devname[64];
 				sprintf(devname, "/dev/%s", entry->d_name);
-                              //sysprintf
-                                //  ("echo cmp devname %s >> /tmp/hotplugs"
-                                //   ,entry->d_name);
+				//sysprintf
+				//  ("echo cmp devname %s >> /tmp/hotplugs"
+				//   ,entry->d_name);
 				if (strcmp(devname, devpath))
 					continue;	// skip all non matching devices
-                            //  sysprintf
-                            //      ("echo take devname %s >> /tmp/hotplugs",
-                            //       devname);
+				//  sysprintf
+				//      ("echo take devname %s >> /tmp/hotplugs",
+				//       devname);
 			}
 			if (!new && (strncmp(entry->d_name, "disc", 4)))
 				continue;
-			if (new && (strncmp(entry->d_name, "sd", 2)) && (strncmp(entry->d_name, "sr", 2)) && (strncmp(entry->d_name, "mmcblk", 6)))
+			if (new && (strncmp(entry->d_name, "sd", 2))
+			    && (strncmp(entry->d_name, "sr", 2))
+			    && (strncmp(entry->d_name, "mmcblk", 6)))
 				continue;
 			mounted[i] = 1;
 
@@ -394,7 +398,9 @@ int usb_add_ufd(char *devpath)
 			 */
 			if (new) {
 				//everything else would cause a memory fault
-				if ((strncmp(entry->d_name, "mmcblk", 6)) && usb_ufd_connected(entry->d_name) == FALSE)
+				if ((strncmp(entry->d_name, "mmcblk", 6))
+				    && usb_ufd_connected(entry->d_name) ==
+				    FALSE)
 					continue;
 			} else {
 				if (usb_ufd_connected(entry->d_name + 4) ==
@@ -402,12 +408,14 @@ int usb_add_ufd(char *devpath)
 					continue;
 			}
 			if (new) {
-		//		sysprintf("echo test %s >> /tmp/hotplugs",entry->d_name);
-				if (strlen(entry->d_name) != 3 && (strncmp(entry->d_name, "mmcblk", 6)))
+				//              sysprintf("echo test %s >> /tmp/hotplugs",entry->d_name);
+				if (strlen(entry->d_name) != 3
+				    && (strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
-				if (strlen(entry->d_name) != 7 && !(strncmp(entry->d_name, "mmcblk", 6)))
+				if (strlen(entry->d_name) != 7
+				    && !(strncmp(entry->d_name, "mmcblk", 6)))
 					continue;
-		//		sysprintf("echo test success %s >> /tmp/hotplugs",entry->d_name);
+				//              sysprintf("echo test success %s >> /tmp/hotplugs",entry->d_name);
 				sprintf(path, "/dev/%s", entry->d_name);
 			} else {
 				sprintf(path, "/dev/discs/%s/disc",
@@ -445,7 +453,9 @@ int usb_add_ufd(char *devpath)
 						} else if (strstr(line, "UDF")) {
 							fs = "udf";
 							break;
-						} else if (strstr(line, "ISO9660")) {
+						} else
+						    if (strstr(line, "ISO9660"))
+						{
 							fs = "iso9660";
 							break;
 						} else if (strstr(line, "Ext3")) {
@@ -455,13 +465,13 @@ int usb_add_ufd(char *devpath)
 							fs = "ext2";
 #endif
 							break;
-						} 
+						}
 #ifdef HAVE_USB_ADVANCED
 						else if (strstr(line, "Ext4")) {
 							fs = "ext4";
 							break;
-						}
-						else if (strstr(line, "Btrfs")) {
+						} else
+						    if (strstr(line, "Btrfs")) {
 							fs = "btrfs";
 							break;
 						}
@@ -534,11 +544,12 @@ int usb_add_ufd(char *devpath)
 			}
 
 			if ((fp = fopen(DUMPFILE, "a"))) {
-				if (fs && is_mounted)
+				if (fs && is_mounted) {
 					fprintf(fp,
 						"Status: <b>Mounted on /%s</b>\n",
 						nvram_safe_get("usb_mntpoint"));
-				else if (fs)
+					i = 16;
+				} else if (fs)
 					fprintf(fp,
 						"Status: <b>Not mounted</b>\n");
 				else
@@ -562,10 +573,6 @@ int usb_add_ufd(char *devpath)
 					system(path);
 				}
 			}
-//                      if (is_mounted) {       //temp. fix: only mount 1st mountable part, then exit
-//                              closedir(dir);
-//                              return 0;
-//                      }
 		}
 		if (i < 4)
 			sleep(1);
