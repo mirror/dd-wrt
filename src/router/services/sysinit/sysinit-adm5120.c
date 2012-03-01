@@ -143,7 +143,8 @@ void start_sysinit(void)
 	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
 	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
-	eval("mkdir", "/dev/mtd");
+	mkdir("/dev/mtd",0700);
+
 	eval("mknod", "/dev/mtd/0", "c", "90", "0");
 	eval("mknod", "/dev/mtd/0ro", "c", "90", "1");
 	eval("mknod", "/dev/mtd/1", "c", "90", "2");
