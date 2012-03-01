@@ -643,7 +643,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ZIMBABWE, NULL1_WORLD, "ZW", "ZIMBABWE", YES, NO, YES, 7000}
 };
 #ifdef HAVE_BUFFALO
-static char regionCountryCodes[9][31][3] = {
+static char regionCountryCodes[10][31][3] = {
 	{"EU", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "F2", "DE", "GR","HU", "IE", "IT", "LV", "LI", "LT", "LU", "MK", "NL", "NO", "PL", "PT","RO", "SK", "SI", "ES", "SE", "CH", "GB"},
 	{"US", "US", "CA", "MX", "GT", "HN", "SV", "CR", "PA", "VE", "EC", "CO", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
 	{"JP", "JP", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","", "", "", "", "", "", "", "", "", "", "", "", "", ""},
