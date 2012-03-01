@@ -376,9 +376,7 @@ static void buffalo_defaults(int force)
 #else
 		if (!strcmp(region, "US")) {
 			nvram_set("ath0_regdomain", "UNITED_STATES");
-#else
-
-#else
+#endif
 		} else if (!strcmp(region, "EU")) {
 			nvram_set("ath0_regdomain", "GERMANY");
 		} else if (!strcmp(region, "JP")) {
