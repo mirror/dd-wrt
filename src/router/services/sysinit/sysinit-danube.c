@@ -133,6 +133,7 @@ void start_sysinit(void)
 	// insmod("ag7100_mod");
 	// sleep(1);
 	//load dsl drivers
+	insmod("lantiq_etop");
 	insmod("lantiq_mei");
 	insmod("lantiq_atm");
 	insmod("drv_dsl_cpe_api");
