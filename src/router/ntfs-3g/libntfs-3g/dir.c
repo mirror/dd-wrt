@@ -257,7 +257,7 @@ u64 ntfs_inode_lookup_by_name(ntfs_inode *dir_ni,
 	u8 *index_end;
 	ntfs_attr *ia_na;
 	int eo, rc;
-	u32 index_block_size, index_vcn_size;
+	u32 index_block_size;
 	u8 index_vcn_size_bits;
 
 	ntfs_log_trace("Entering\n");
@@ -378,11 +378,9 @@ u64 ntfs_inode_lookup_by_name(ntfs_inode *dir_ni,
 
 	/* Determine the size of a vcn in the directory index. */
 	if (vol->cluster_size <= index_block_size) {
-		index_vcn_size = vol->cluster_size;
 		index_vcn_size_bits = vol->cluster_size_bits;
 	} else {
-		index_vcn_size = vol->sector_size;
-		index_vcn_size_bits = vol->sector_size_bits;
+		index_vcn_size_bits = NTFS_BLOCK_SIZE_BITS;
 	}
 
 	/* Get the starting vcn of the index_block holding the child node. */
@@ -1039,7 +1037,7 @@ int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
 	INDEX_ENTRY *ie;
 	INDEX_ALLOCATION *ia = NULL;
 	int rc, ir_pos, bmp_buf_size, bmp_buf_pos, eo;
-	u32 index_block_size, index_vcn_size;
+	u32 index_block_size;
 	u8 index_block_size_bits, index_vcn_size_bits;
 
 	ntfs_log_trace("Entering.\n");
@@ -1131,11 +1129,9 @@ int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
 	}
 	index_block_size_bits = ffs(index_block_size) - 1;
 	if (vol->cluster_size <= index_block_size) {
-		index_vcn_size = vol->cluster_size;
 		index_vcn_size_bits = vol->cluster_size_bits;
 	} else {
-		index_vcn_size = vol->sector_size;
-		index_vcn_size_bits = vol->sector_size_bits;
+		index_vcn_size_bits = NTFS_BLOCK_SIZE_BITS;
 	}
 
 	/* Are we jumping straight into the index allocation attribute? */
@@ -1517,7 +1513,7 @@ static ntfs_inode *__ntfs_create(ntfs_inode *dir_ni, le32 securid,
 		else
 			ir->clusters_per_index_block = 
 					ni->vol->indx_record_size >>
-					ni->vol->sector_size_bits;
+					NTFS_BLOCK_SIZE_BITS;
 		ir->index.entries_offset = cpu_to_le32(sizeof(INDEX_HEADER));
 		ir->index.index_length = cpu_to_le32(index_len);
 		ir->index.allocated_size = cpu_to_le32(index_len);
@@ -2006,6 +2002,7 @@ search:
 					"Leaving inconsistent metadata.\n");
 		}
 #endif
+	debug_double_inode(ni->mft_no,0);
 	if (ntfs_mft_record_free(ni->vol, ni)) {
 		err = errno;
 		ntfs_log_error("Failed to free base MFT record.  "
@@ -2508,24 +2505,24 @@ int ntfs_set_ntfs_dos_name(ntfs_inode *ni, ntfs_inode *dir_ni,
 	int res = 0;
 	int longlen = 0;
 	int shortlen = 0;
-	char newname[MAX_DOS_NAME_LENGTH + 1];
+	char newname[3*MAX_DOS_NAME_LENGTH + 1];
 	ntfschar oldname[MAX_DOS_NAME_LENGTH];
 	int oldlen;
-	ntfs_volume *vol;
-	u64 fnum;
 	u64 dnum;
 	BOOL closed = FALSE;
 	ntfschar *shortname = NULL;
 	ntfschar longname[NTFS_MAX_NAME_LEN];
 
-	vol = ni->vol;
-	fnum = ni->mft_no;
-		/* convert the string to the NTFS wide chars */
-	if (size > MAX_DOS_NAME_LENGTH)
-		size = MAX_DOS_NAME_LENGTH;
+		/* copy the string to insert a null char, and truncate */
+	if (size > 3*MAX_DOS_NAME_LENGTH)
+		size = 3*MAX_DOS_NAME_LENGTH;
 	strncpy(newname, value, size);
+		/* a long name may be truncated badly and be untranslatable */
 	newname[size] = 0;
+		/* convert the string to the NTFS wide chars, and truncate */
 	shortlen = ntfs_mbstoucs(newname, &shortname);
+	if (shortlen > MAX_DOS_NAME_LENGTH)
+		shortlen = MAX_DOS_NAME_LENGTH;
 			/* make sure the short name has valid chars */
 	if ((shortlen < 0) || ntfs_forbidden_chars(shortname,shortlen)) {
 		ntfs_inode_close_in_dir(ni,dir_ni);

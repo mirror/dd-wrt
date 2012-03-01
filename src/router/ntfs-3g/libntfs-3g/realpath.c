@@ -90,7 +90,6 @@ char *ntfs_realpath_canonicalize(const char *path, char *canonical)
 	if (!ntfs_realpath(path, canonical))
 		return NULL;
 
-
 	p = strrchr(canonical, '/');
 	if (p && strncmp(p, "/dm-", 4) == 0 && isdigit(*(p + 4))) {
 		p = canonicalize_dm_name(p+1, canonical);

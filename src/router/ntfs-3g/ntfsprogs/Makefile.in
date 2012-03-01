@@ -38,18 +38,16 @@ target_triplet = @target@
 @ENABLE_NTFSPROGS_TRUE@bin_PROGRAMS = ntfsfix$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfsinfo$(EXEEXT) ntfscluster$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfsls$(EXEEXT) ntfscat$(EXEEXT) \
-@ENABLE_NTFSPROGS_TRUE@	ntfscmp$(EXEEXT) $(am__append_2)
+@ENABLE_NTFSPROGS_TRUE@	ntfscmp$(EXEEXT) $(am__EXEEXT_3)
 @ENABLE_NTFSPROGS_TRUE@sbin_PROGRAMS = mkntfs$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfslabel$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfsundelete$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfsresize$(EXEEXT) ntfsclone$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfscp$(EXEEXT)
-@ENABLE_NTFSPROGS_TRUE@EXTRA_PROGRAMS = ntfsdump_logfile$(EXEEXT) \
-@ENABLE_NTFSPROGS_TRUE@	ntfswipe$(EXEEXT) ntfstruncate$(EXEEXT) \
-@ENABLE_NTFSPROGS_TRUE@	ntfsmove$(EXEEXT) ntfsmftalloc$(EXEEXT) \
-@ENABLE_NTFSPROGS_TRUE@	ntfsck$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_CRYPTO_TRUE@@ENABLE_NTFSPROGS_TRUE@am__append_1 = ntfsdecrypt
-@ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@am__append_2 = $(EXTRA_PROGRAMS)
+@ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@am__append_2 = $(EXTRA_PROGRAM_NAMES)
+@ENABLE_EXTRAS_FALSE@@ENABLE_NTFSPROGS_TRUE@EXTRA_PROGRAMS =  \
+@ENABLE_EXTRAS_FALSE@@ENABLE_NTFSPROGS_TRUE@	$(am__EXEEXT_2)
 subdir = ntfsprogs
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/mkntfs.8.in $(srcdir)/ntfscat.8.in \
@@ -73,6 +71,12 @@ CONFIG_CLEAN_FILES = mkntfs.8 ntfscat.8 ntfsclone.8 ntfscluster.8 \
 	ntfsprogs.8 ntfsresize.8 ntfsundelete.8
 CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_CRYPTO_TRUE@@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_1 = ntfsdecrypt$(EXEEXT)
+@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_2 = ntfsdump_logfile$(EXEEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfswipe$(EXEEXT) ntfstruncate$(EXEEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfsmove$(EXEEXT) ntfsmftalloc$(EXEEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfsck$(EXEEXT) $(am__EXEEXT_1)
+@ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_3 =  \
+@ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(am__EXEEXT_2)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(man8dir)"
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
@@ -448,6 +452,9 @@ top_srcdir = @top_srcdir@
 
 # Workaround to make REALLYSTATIC work with automake 1.5.
 LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
+@ENABLE_NTFSPROGS_TRUE@EXTRA_PROGRAM_NAMES = ntfsdump_logfile ntfswipe \
+@ENABLE_NTFSPROGS_TRUE@	ntfstruncate ntfsmove ntfsmftalloc \
+@ENABLE_NTFSPROGS_TRUE@	ntfsck $(am__append_1)
 @ENABLE_NTFSPROGS_TRUE@man_MANS = mkntfs.8 ntfsfix.8 ntfslabel.8 ntfsinfo.8 \
 @ENABLE_NTFSPROGS_TRUE@			  ntfsundelete.8 ntfsresize.8 ntfsprogs.8 ntfsls.8 \
 @ENABLE_NTFSPROGS_TRUE@			  ntfsclone.8 ntfscluster.8 ntfscat.8 ntfscp.8 \

@@ -86,6 +86,7 @@
 #include "ntfstime.h"
 /* #include "version.h" */
 #include "logging.h"
+#include "misc.h"
 
 static const char *EXEC_NAME = "ntfsundelete";
 static const char *MFTFILE   = "mft";
@@ -115,7 +116,6 @@ static long	nr_entries;			/* Number of range entries */
 static int parse_inode_arg(void)
 {
 	int p;
-	u32 imax;
 	u32 range_begin;
 	u32 range_end;
 	u32 range_temp;
@@ -132,7 +132,6 @@ static int parse_inode_arg(void)
 
 	/* init variables */
 	p = strlen(optarg);
-	imax = p;
 	opt_arg_ptr = optarg;
 	opt_arg_end1 = optarg;
 	opt_arg_end2 = &(optarg[p]);
@@ -720,13 +719,14 @@ static int parse_options(int argc, char *argv[])
  */
 static void free_file(struct ufile *file)
 {
-	struct list_head *item, *tmp;
+	struct ntfs_list_head *item, *tmp;
 
 	if (!file)
 		return;
 
-	list_for_each_safe(item, tmp, &file->name) { /* List of filenames */
-		struct filename *f = list_entry(item, struct filename, list);
+	ntfs_list_for_each_safe(item, tmp, &file->name) {
+		/* List of filenames */
+		struct filename *f = ntfs_list_entry(item, struct filename, list);
 		ntfs_log_debug("freeing filename '%s'", f->name ? f->name :
 				NONE);
 		if (f->name)
@@ -740,8 +740,9 @@ static void free_file(struct ufile *file)
 		free(f);
 	}
 
-	list_for_each_safe(item, tmp, &file->data) { /* List of data streams */
-		struct data *d = list_entry(item, struct data, list);
+	ntfs_list_for_each_safe(item, tmp, &file->data) {
+		/* List of data streams */
+		struct data *d = ntfs_list_entry(item, struct data, list);
 		ntfs_log_debug("Freeing data stream '%s'.\n", d->name ?
 				d->name : UNNAMED);
 		if (d->name)
@@ -874,6 +875,74 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
 	return;
 }
 
+/*
+ *		Rescue the last deleted name of a file
+ *
+ *	Under some conditions, when a name is deleted and the MFT
+ *	record is shifted to reclaim the space, the name is still
+ *	present beyond the end of record.
+ *
+ *	For this to be possible, the data record has to be small (less
+ *	than 80 bytes), and there must be no other attributes.
+ *	So only the names of plain unfragmented files can be rescued.
+ *
+ *	Returns NULL when the name cannot be recovered.
+ */
+
+static struct filename *rescue_name(MFT_RECORD *mft, ntfs_attr_search_ctx *ctx)
+{
+	ATTR_RECORD *rec;
+	struct filename *name;
+	int off_name;
+	int length;
+	int type;
+
+	name = (struct filename*)NULL;
+	ntfs_attr_reinit_search_ctx(ctx);
+	rec = find_attribute(AT_DATA, ctx);
+	if (rec) {
+		/*
+		 * If the data attribute replaced the name attribute,
+		 * the name itself is at offset 0x58 from the data attr.
+		 * First be sure this location is within the unused part
+		 * of the MFT record, then make extra checks.
+		 */
+		off_name = (long)rec - (long)mft + 0x58;
+		if ((off_name >= (int)le32_to_cpu(mft->bytes_in_use))
+		    && ((off_name + 4)
+				 <= (int)le32_to_cpu(mft->bytes_allocated))) {
+			length = *((char*)mft + off_name);
+			type = *((char*)mft + off_name + 1);
+			/* check whether the name is fully allocated */
+			if ((type <= 3)
+			   && (length > 0)
+			   && ((off_name + 2*length + 2) 
+				<= (int)le32_to_cpu(mft->bytes_allocated))) {
+				/* create a (partial) name record */
+				name = (struct filename*)
+						ntfs_calloc(sizeof(*name));
+				if (name) {
+					name->uname = (ntfschar*)
+						((char*)mft + off_name + 2);
+					name->uname_len = length;
+					name->name_space = type;
+					if (ntfs_ucstombs(name->uname, length,
+							&name->name, 0) < 0) {
+						free(name);
+						name = (struct filename*)NULL;
+					}
+				}
+			if (name && name->name)
+				ntfs_log_verbose("Recovered file name %s\n",
+						name->name);
+			}
+		}
+	}
+	return (name);
+}
+
+
+
 /**
  * get_filenames - Read an MFT Record's $FILENAME attributes
  * @file:  The file object to work with
@@ -956,10 +1025,38 @@ static int get_filenames(struct ufile *file, ntfs_volume* vol)
 		file->max_size = max(file->max_size, name->size_alloc);
 		file->max_size = max(file->max_size, name->size_data);
 
-		list_add_tail(&name->list, &file->name);
+		ntfs_list_add_tail(&name->list, &file->name);
 		count++;
 	}
 
+	if (!count) {
+		name = rescue_name(file->mft,ctx);
+		if (name) {
+			/* a name was recovered, get missing attributes */
+			file->pref_name = name->name;
+			ntfs_attr_reinit_search_ctx(ctx);
+			rec = find_attribute(AT_STANDARD_INFORMATION, ctx);
+			if (rec) {
+				attr = (FILE_NAME_ATTR *)((char *)rec +
+						le16_to_cpu(rec->value_offset));
+				name->flags      = attr->file_attributes;
+
+				name->date_c     = ntfs2timespec(attr->creation_time).tv_sec;
+				name->date_a     = ntfs2timespec(attr->last_data_change_time).tv_sec;
+				name->date_m     = ntfs2timespec(attr->last_mft_change_time).tv_sec;
+				name->date_r     = ntfs2timespec(attr->last_access_time).tv_sec;
+			}
+			rec = find_attribute(AT_DATA, ctx);
+			if (rec) {
+				attr = (FILE_NAME_ATTR *)((char *)rec +
+						le16_to_cpu(rec->value_offset));
+				name->size_alloc = sle64_to_cpu(attr->allocated_size);
+				name->size_data  = sle64_to_cpu(attr->data_size);
+			}
+		ntfs_list_add_tail(&name->list, &file->name);
+		count++;
+		}
+	}
 	ntfs_attr_put_search_ctx(ctx);
 	ntfs_log_debug("File has %d names.\n", count);
 	return count;
@@ -1038,7 +1135,7 @@ static int get_data(struct ufile *file, ntfs_volume *vol)
 		file->max_size = max(file->max_size, data->size_data);
 		file->max_size = max(file->max_size, data->size_init);
 
-		list_add_tail(&data->list, &file->data);
+		ntfs_list_add_tail(&data->list, &file->data);
 		count++;
 	}
 
@@ -1073,8 +1170,8 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 		return NULL;
 	}
 
-	INIT_LIST_HEAD(&file->name);
-	INIT_LIST_HEAD(&file->data);
+	NTFS_INIT_LIST_HEAD(&file->name);
+	NTFS_INIT_LIST_HEAD(&file->data);
 	file->inode = record;
 
 	file->mft = malloc(vol->mft_record_size);
@@ -1154,7 +1251,7 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 {
 	runlist_element *rl = NULL;
-	struct list_head *pos;
+	struct ntfs_list_head *pos;
 	struct data *data;
 	long long i, j;
 	long long start, end;
@@ -1169,13 +1266,13 @@ static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 		return 0;
 	}
 
-	if (list_empty(&file->data)) {
+	if (ntfs_list_empty(&file->data)) {
 		ntfs_log_verbose("File has no data streams.\n");
 		return 0;
 	}
 
-	list_for_each(pos, &file->data) {
-		data  = list_entry(pos, struct data, list);
+	ntfs_list_for_each(pos, &file->data) {
+		data  = ntfs_list_entry(pos, struct data, list);
 		clusters_inuse = 0;
 		clusters_free  = 0;
 
@@ -1279,8 +1376,7 @@ static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 static void dump_record(struct ufile *file)
 {
 	char buffer[20];
-	const char *name;
-	struct list_head *item;
+	struct ntfs_list_head *item;
 	int i;
 
 	if (!file)
@@ -1294,13 +1390,9 @@ static void dump_record(struct ufile *file)
 	if (file->attr_list)
 		ntfs_log_quiet("Metadata may span more than one MFT record\n");
 
-	list_for_each(item, &file->name) {
-		struct filename *f = list_entry(item, struct filename, list);
-
-		if (f->name)
-			name = f->name;
-		else
-			name = NONE;
+	ntfs_list_for_each(item, &file->name) {
+		struct filename *f =
+			ntfs_list_entry(item, struct filename, list);
 
 		ntfs_log_quiet("Filename: (%d) %s\n", f->name_space, f->name);
 		ntfs_log_quiet("File Flags: ");
@@ -1347,8 +1439,8 @@ static void dump_record(struct ufile *file)
 	}
 
 	ntfs_log_quiet("Data Streams:\n");
-	list_for_each(item, &file->data) {
-		struct data *d = list_entry(item, struct data, list);
+	ntfs_list_for_each(item, &file->data) {
+		struct data *d = ntfs_list_entry(item, struct data, list);
 		ntfs_log_quiet("Name: %s\n", (d->name) ? d->name : UNNAMED);
 		ntfs_log_quiet("Flags: ");
 		if (d->resident)   ntfs_log_quiet("Resident\n");
@@ -1408,7 +1500,7 @@ static void dump_record(struct ufile *file)
 static void list_record(struct ufile *file)
 {
 	char buffer[20];
-	struct list_head *item;
+	struct ntfs_list_head *item;
 	const char *name = NULL;
 	long long size = 0;
 	int percent = 0;
@@ -1425,8 +1517,8 @@ static void list_record(struct ufile *file)
 	else
 		flagd = 'F';
 
-	list_for_each(item, &file->data) {
-		struct data *d = list_entry(item, struct data, list);
+	ntfs_list_for_each(item, &file->data) {
+		struct data *d = ntfs_list_entry(item, struct data, list);
 
 		if (!d->name) {
 			if (d->resident)
@@ -1469,14 +1561,15 @@ static void list_record(struct ufile *file)
  */
 static int name_match(regex_t *re, struct ufile *file)
 {
-	struct list_head *item;
+	struct ntfs_list_head *item;
 	int result;
 
 	if (!re || !file)
 		return 0;
 
-	list_for_each(item, &file->name) {
-		struct filename *f = list_entry(item, struct filename, list);
+	ntfs_list_for_each(item, &file->name) {
+		struct filename *f =
+			ntfs_list_entry(item, struct filename, list);
 
 		if (!f->name)
 			continue;
@@ -1655,7 +1748,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 	int i, j;
 	long long start, end;
 	runlist_element *rl;
-	struct list_head *item;
+	struct ntfs_list_head *item;
 	int fd = -1;
 	long long k;
 	int result = 0;
@@ -1706,18 +1799,25 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 		goto free;
 	}
 
-	if (list_empty(&file->data)) {
+	if (ntfs_list_empty(&file->data)) {
 		ntfs_log_quiet("File has no data.  There is nothing to recover.\n");
 		goto free;
 	}
 
-	list_for_each(item, &file->data) {
-		struct data *d = list_entry(item, struct data, list);
+	ntfs_list_for_each(item, &file->data) {
+		struct data *d = ntfs_list_entry(item, struct data, list);
+		char defname[sizeof(UNKNOWN) + 25];
 
 		if (opts.output)
-				name = opts.output;
+			name = opts.output;
 		else
+			if (file->pref_name)
 				name = file->pref_name;
+			else {
+				sprintf(defname,"%s%lld",UNKNOWN,
+						(long long)file->inode);
+				name = defname;
+			}
 
 		create_pathname(opts.dest, name, d->name, pathname, sizeof(pathname));
 		if (d->resident) {
@@ -1792,7 +1892,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 				if (rl[i].lcn == LCN_HOLE) {
 					ntfs_log_verbose("File has a sparse section.\n");
 					memset(buffer, 0, bufsize);
-					for (k = 0; k < rl[k].length * vol->cluster_size; k += bufsize) {
+					for (k = 0; k < rl[i].length * vol->cluster_size; k += bufsize) {
 						if (write_data(fd, buffer, bufsize) < bufsize) {
 							ntfs_log_perror("Write failed");
 							close(fd);

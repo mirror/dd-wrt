@@ -62,12 +62,7 @@ The ntfsclone utility guarantees to make an exact copy of NTFS but it
 won't deal with booting issues. This is by design: ntfsclone is a 
 filesystem, not system utility. Its aim is only NTFS cloning, not Windows 
 cloning. Hereby ntfsclone can be used as a very fast and reliable 
-build block for Windows cloning but itself it's not enough. You 
-can find useful tips following the related links on the below page
-.br
-.nh
-http://wiki.linux-ntfs.org/doku.php?id=ntfsclone
-.hy
+build block for Windows cloning but itself it's not enough.
 .SS Sparse Files
 A file is sparse if it has unallocated blocks (holes). The reported size of
 such files are always higher than the disk space consumed by them.  The
@@ -162,6 +157,8 @@ embedded into metadata. All is filled with zeros.
 Moreover all the file timestamps, deleted and unused spaces inside
 the metadata are filled with zeros. Thus this mode is inappropriate
 for example for forensic analyses.
+This mode may be combined with \fB\-\-save\-image\fP to create a
+special image format file instead of a sparse file.
 
 Please note, filenames are not wiped out. They might contain
 sensitive information, so think twice before sending such an
@@ -216,8 +213,9 @@ beginning of such sectors are marked by "BadSectoR\\0".
 \fB\-m\fR, \fB\-\-metadata\fR
 Clone
 .B ONLY METADATA
-(for NTFS experts). Moreover only cloning to a file is allowed.
-You can't metadata\-only clone to a device, image or standard output.
+(for NTFS experts). Only cloning to a (sparse) file is allowed, unless used
+the option \fB\-\-save\-image\fP is also used.
+You can't metadata\-only clone to a device.
 .TP
 \fB\-\-ignore\-fs\-check\fR
 Ignore the result of the filesystem consistency check. This option is allowed
@@ -230,10 +228,33 @@ inconsistency are saved too.
 Do not wipe the timestamps, to be used only with the
 .B \-\-metadata
 option.
+
+
+.TP
+\fB\-\-new\-serial\fR, or
+.TP
+\fB\-\-new\-half\-serial\fR
+Set a new random serial number to the clone. The serial number is a 64
+bit number used to identify the device during the mounting process, so
+it has to be changed to enable the original file system
+and the clone to be mounted at the same time on the same computer.
+
+The option \fB\-\-new\-half\-serial\fP only changes the upper part of the
+serial number, keeping the lower part which is used by Windows unchanged.
+
+The options \fB\-\-new\-serial\fP and \fB\-\-new\-half\-serial\fP can
+only be used when cloning a file system of restoring from an image.
+
+The serial number is not the volume UUID used by Windows
+to locate files which have been moved to another volume.
+
 .TP
 \fB\-f\fR, \fB\-\-force\fR
 Forces ntfsclone to proceed if the filesystem is marked
 "dirty" for consistency check.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Do not display any progress-bars during operation.
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Show a list of options with a brief description of each one.
@@ -306,12 +327,16 @@ Clone an NTFS volume to a non\-existent file:
 .RE
 Pack NTFS metadata for NTFS experts. Please note that bzip2 runs
 very long but results usually at least 10 times smaller archives 
-than gzip.
+than gzip on a sparse file.
 .RS
 .sp
 .B ntfsclone \-\-metadata \-\-output ntfsmeta.img /dev/hda1
 .br
 .B bzip2 ntfsmeta.img
+.sp
+Or, outputting to a compressed image :
+.br
+.B ntfsclone \-mst \-\-output - /dev/hda1 | bzip2 > ntfsmeta.bz2
 .sp
 .RE
 Unpacking NTFS metadata into a sparse file:
@@ -351,18 +376,6 @@ package and is available at:
 .br
 .nh
 http://www.tuxera.com/community/
-.hy
-.sp
-The latest manual pages are available at:
-.br
-.nh
-http://man.linux-ntfs.org/
-.hy
-.sp
-Additional up-to-date information can be found furthermore at:
-.br
-.nh
-http://wiki.linux-ntfs.org/doku.php?id=ntfsclone
 .hy
 .SH SEE ALSO
 .BR ntfsresize (8)

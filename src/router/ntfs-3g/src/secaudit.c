@@ -1,7 +1,7 @@
 /*
  *		 Display and audit security attributes in an NTFS volume
  *
- * Copyright (c) 2007-2010 Jean-Pierre Andre
+ * Copyright (c) 2007-2011 Jean-Pierre Andre
  * 
  *	Options :
  *		-a auditing security data
@@ -184,6 +184,13 @@
  *
  *  Apr 2011, version 1.3.20
  *     - fixed false memory leak detection
+ *
+ *  Jun 2011, version 1.3.21
+ *     - cleaned a few unneeded variables
+ *
+ *  Nov 2011, version 1.3.22
+ *     - added a distinctive prefix to owner and group SID
+ *     - fixed a false memory leak detection
  */
 
 /*
@@ -207,7 +214,7 @@
  *		General parameters which may have to be adapted to needs
  */
 
-#define AUDT_VERSION "1.3.20"
+#define AUDT_VERSION "1.3.22"
 
 #define GET_FILE_SECURITY "ntfs_get_file_security"
 #define SET_FILE_SECURITY "ntfs_set_file_security"
@@ -427,7 +434,7 @@ unsigned int utf16len(const char*);
 void printname(FILE*, const char*);
 void printerror(FILE*);
 BOOL guess_dir(const char*);
-void showsid(const char*, int, int);
+void showsid(const char*, int, const char*, int);
 void showusid(const char*, int);
 void showgsid(const char*, int);
 void showheader(const char*, int);
@@ -486,6 +493,7 @@ BOOL recurseset_posix(const char*, const struct POSIX_SECURITY*);
 BOOL singleset_posix(const char*, const struct POSIX_SECURITY*);
 struct POSIX_SECURITY *encode_posix_acl(const char*);
 #endif
+static void *stdmalloc(size_t);
 static void stdfree(void*);
 
 BOOL valid_sds(const char*, unsigned int, unsigned int,
@@ -1336,7 +1344,7 @@ BOOL guess_dir(const char *attr)
  *   See http://msdn2.microsoft.com/en-us/library/aa379649.aspx
  */
 
-void showsid(const char *attr, int off, int level)
+void showsid(const char *attr, int off, const char *prefix, int level)
 {
 	int cnt;
 	int i;
@@ -1463,12 +1471,12 @@ void showsid(const char *attr, int off, int level)
 		}
 	if (!known)
 		printf("%*cUnknown SID\n",-level,marker);
-	printf("%*chex S-%d-",-level,marker,attr[off] & 255);
+	printf("%*c%shex S-%d-",-level,marker,prefix,attr[off] & 255);
 	printf("%llx",auth);
 	for (i=0; i<cnt; i++)
 		printf("-%lx",get4l(attr,off+8+4*i));
 	printf("\n");
-	printf("%*cdec S-%d-",-level,marker,attr[off] & 255);
+	printf("%*c%sdec S-%d-",-level,marker,prefix,attr[off] & 255);
 	printf("%llu",auth);
 	for (i=0; i<cnt; i++)
 		printf("-%lu",get4l(attr,off+8+4*i));
@@ -1486,9 +1494,9 @@ void showusid(const char *attr, int level)
 		marker = ' ';
 	if (level)
 		printf("%*c",-level,marker);
-	printf("User SID\n");
+	printf("Owner SID\n");
 	off = get4l(attr,4);
-	showsid(attr,off,level+4);
+	showsid(attr,off,"O:",level+4);
 }
 
 void showgsid(const char *attr, int level)
@@ -1504,7 +1512,7 @@ void showgsid(const char *attr, int level)
 		printf("%*c",-level,marker);
 	printf("Group SID\n");
 	off = get4l(attr,8);
-	showsid(attr,off,level+4);
+	showsid(attr,off,"G:",level+4);
 }
 
 void showheader(const char *attr, int level)
@@ -1664,7 +1672,7 @@ void showace(const char *attr, int off, int isdir, int level)
 		printf("%*cGeneric read\n",-level-4,marker);
 
 	printf("%*cSID at 0x%x\n",-level,marker,off+8);
-	showsid(attr,off+8,level+4);
+	showsid(attr,off+8,"",level+4);
 	printf("%*cSummary :",-level,marker);
 	if (attr[off] == 0)
 		printf(" grant");
@@ -2024,14 +2032,15 @@ int linux_permissions(const char *attr, BOOL isdir)
 
 uid_t linux_owner(const char *attr)
 {
-	const SECURITY_DESCRIPTOR_RELATIVE *phead;
 	const SID *usid;
 	uid_t uid;
 
-	phead = (const SECURITY_DESCRIPTOR_RELATIVE*)attr;
 #if OWNERFROMACL
 	usid = ntfs_acl_owner((const char*)attr);
 #else
+	const SECURITY_DESCRIPTOR_RELATIVE *phead;
+
+	phead = (const SECURITY_DESCRIPTOR_RELATIVE*)attr;
 	usid = (const SID*)&attr[le32_to_cpu(phead->owner)];
 #endif
 #if defined(WIN32) | defined(STSC)
@@ -2150,12 +2159,24 @@ static int do_default_mapping(struct MAPPING *mapping[],
 
 	res = -1;
 	sidsz = ntfs_sid_size(usid);
+#if USESTUBS
+	sid = (SID*)stdmalloc(sidsz); /* will be freed within the library */
+#else
 	sid = (SID*)ntfs_malloc(sidsz);
+#endif
 	if (sid) {
 		memcpy(sid,usid,sidsz);
+#if USESTUBS
+		usermapping = (struct MAPPING*)stdmalloc(sizeof(struct MAPPING));
+#else
 		usermapping = (struct MAPPING*)ntfs_malloc(sizeof(struct MAPPING));
+#endif
 		if (usermapping) {
+#if USESTUBS
+			groupmapping = (struct MAPPING*)stdmalloc(sizeof(struct MAPPING));
+#else
 			groupmapping = (struct MAPPING*)ntfs_malloc(sizeof(struct MAPPING));
+#endif
 			if (groupmapping) {
 				usermapping->sid = sid;
 				usermapping->xid = 0;
@@ -2400,7 +2421,6 @@ void showhex(FILE *fd)
 	int lth;
 	int first;
 	unsigned int pos;
-	unsigned char b;
 	u32 v;
 	int c;
 	int isdir;
@@ -2410,7 +2430,6 @@ void showhex(FILE *fd)
 	BOOL isdump;
 	BOOL done;
 
-	b = 0;
 	pos = 0;
 	off = 0;
 	done = FALSE;
@@ -2491,7 +2510,6 @@ void showhex(FILE *fd)
 BOOL applyattr(const char *fullname, const char *attr,
 			BOOL withattr, int attrib, s32 key)
 {
-	const SECURITY_DESCRIPTOR_RELATIVE *phead;
 	struct SECURITY_DATA *psecurdata;
 	const char *curattr;
 	char *newattr;
@@ -2549,7 +2567,6 @@ BOOL applyattr(const char *fullname, const char *attr,
        
 
 	if (curattr) {
-		phead = (const SECURITY_DESCRIPTOR_RELATIVE*)curattr;
 #ifdef WIN32
 			/* SACL currently not set, need some special privilege */
 		selection = OWNER_SECURITY_INFORMATION
@@ -2617,8 +2634,6 @@ BOOL restore(FILE *fd)
 	int lth;
 	int first;
 	unsigned int pos;
-	unsigned int size;
-	unsigned char b;
 	int c;
 	int isdir;
 	int mode;
@@ -2633,9 +2648,7 @@ BOOL restore(FILE *fd)
 	BOOL withattr;
 	BOOL done;
 
-	b = 0;
 	pos = 0;
-	size = 0;
 	off = 0;
 	done = FALSE;
 	withattr = FALSE;
@@ -2680,7 +2693,6 @@ BOOL restore(FILE *fd)
 				mode = linux_permissions(attr,isdir);
 				printf("Interpreted Unix mode 0%03o\n",mode);
 			}
-			size = pos;
 			pos = 0;
 		}
 		if (isdump && !off)
@@ -6846,6 +6858,11 @@ void chkfree(void *p, const char *file, int line)
 	}
 }
 
+void *stdmalloc(size_t size)
+{
+	return (malloc(size));
+}
+
 void stdfree(void *p)
 {
 	free(p);
@@ -7096,13 +7113,14 @@ char *argv[];
 int main(int argc, char *argv[])
 {
 	FILE *fd;
-	unsigned int mode;
 	const char *p;
 	int xarg;
 	BOOL cmderr;
 	int i;
 #if POSIXACLS
 	struct POSIX_SECURITY *pxdesc;
+#else
+	unsigned int mode;
 #endif
 
 	printf("%s\n",BANNER);
@@ -7171,7 +7189,6 @@ int main(int argc, char *argv[])
 					cmderr = listfiles(argv[xarg],argv[xarg+1]);
 			break;
 		case 3 :
-			mode = 0;
 			p = argv[xarg+1];
 #if POSIXACLS
 			pxdesc = encode_posix_acl(p);
@@ -7202,6 +7219,7 @@ int main(int argc, char *argv[])
 			} else
 				cmderr = TRUE;
 #else
+			mode = 0;
 			while ((*p >= '0') && (*p <= '7'))
 				mode = (mode << 3) + (*p++) - '0';
 			if (*p) {
