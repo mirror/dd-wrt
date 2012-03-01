@@ -694,7 +694,7 @@ extern void *getUEnv(char *name);
 static int isValidCountry(char *region, char *country)
 {
 	int i, j;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 9; i++) {
 		if (!strcmp(region, regionCountryCodes[i][0])) {
 			for (j = 1; j < 31; j++) {
 				//fprintf(stderr, "[%s] %s\n", country, regionCountryCodes[i][j]);
