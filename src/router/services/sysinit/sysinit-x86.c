@@ -193,7 +193,7 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 
-	eval("mknod", "/dev/rtc", "c", "253", "0");
+	mknod("/dev/rtc",S_IFCHR|0644,makedev(253,0));
 #ifdef HAVE_CPUTEMP
 	// insmod("nsc_gpio");
 	// insmod("scx200_gpio");
@@ -203,7 +203,7 @@ void start_sysinit(void)
 #endif
 
 	nvram_set("wl0_ifname", "ath0");
-	eval("mknod", "/dev/crypto", "c", "10", "70");
+	mknod("/dev/crypto",S_IFCHR|0644,makedev(10,70));
 	/*
 	 * Set a sane date 
 	 */

@@ -60,13 +60,15 @@ void start_sysinit(void)
 	char buf[PATH_MAX];
 	struct stat tmp_stat;
 	time_t tm = 0;
-	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
-	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
-	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
-	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
-	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
-	eval("mknod", "/dev/gpio", "c", "252", "0");
+	mknod("/dev/mmc",S_IFBLK|0660,makedev(126,0));
+	mknod("/dev/mmc0",S_IFBLK|0660,makedev(126,1));
+	mknod("/dev/mmc1",S_IFBLK|0660,makedev(126,2));
+	mknod("/dev/mmc2",S_IFBLK|0660,makedev(126,3));
+	mknod("/dev/mmc3",S_IFBLK|0660,makedev(126,4));
+	mknod("/dev/gpio",S_IFCHR|0644,makedev(252,0));
+
+
 
 	/*
 	 * Setup console 
