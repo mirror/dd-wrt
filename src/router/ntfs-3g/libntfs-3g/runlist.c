@@ -136,9 +136,10 @@ runlist_element *ntfs_rl_extend(ntfs_attr *na, runlist_element *rl,
 		if (!newrl) {
 			errno = ENOMEM;
 			rl = (runlist_element*)NULL;
-		} else
+		} else {
 			na->rl = newrl;
 			rl = &newrl[irl];
+		}
 	} else {
 		ntfs_log_error("Cannot extend unmapped runlist");
 		errno = EIO;
@@ -1623,7 +1624,7 @@ errno_set:
 int ntfs_rl_truncate(runlist **arl, const VCN start_vcn)
 {
 	runlist *rl;
-	BOOL is_end = FALSE;
+	/* BOOL is_end = FALSE; */
 
 	if (!arl || !*arl) {
 		errno = EINVAL;
@@ -1666,8 +1667,10 @@ int ntfs_rl_truncate(runlist **arl, const VCN start_vcn)
 	 */
 	if (rl->length) {
 		++rl;
+/*
 		if (!rl->length)
 			is_end = TRUE;
+*/
 		rl->vcn = start_vcn;
 		rl->length = 0;
 	}
@@ -1675,7 +1678,7 @@ int ntfs_rl_truncate(runlist **arl, const VCN start_vcn)
 	/**
 	 * Reallocate memory if necessary.
 	 * FIXME: Below code is broken, because runlist allocations must be 
-	 * a multiply of 4096. The code caused crashes and corruptions.
+	 * a multiple of 4096. The code caused crashes and corruptions.
 	 */
 /*	
 	 if (!is_end) {

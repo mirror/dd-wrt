@@ -29,6 +29,7 @@ struct ntfs_options {
         char    *mnt_point;     /* Mount point */    
         char    *options;       /* Mount options */  
         char    *device;        /* Device to mount */
+	char	*arg_device;	/* Device requested in argv */
 } ;
 
 typedef enum {
@@ -49,6 +50,7 @@ enum {
 	OPT_NOATIME,
 	OPT_ATIME,
 	OPT_RELATIME,
+	OPT_DMTIME,
 	OPT_FAKE_RW,
 	OPT_FSNAME,
 	OPT_NO_DEF_OPTS,
@@ -115,6 +117,7 @@ typedef struct {
 	unsigned int dmask;
 	ntfs_fuse_streams_interface streams;
 	ntfs_atime_t atime;
+	BOOL dmtime;
 	BOOL ro;
 	BOOL show_sys_files;
 	BOOL hide_hid_files;
@@ -169,6 +172,7 @@ extern const char nf_ns_trusted_prefix[];
 extern const int nf_ns_trusted_prefix_len;
 
 int ntfs_strappend(char **dest, const char *append);
+int ntfs_strinsert(char **dest, const char *append);
 char *parse_mount_options(ntfs_fuse_context_t *ctx,
 			const struct ntfs_options *popts, BOOL low_fuse);
 int ntfs_parse_options(struct ntfs_options *popts, void (*usage)(void),

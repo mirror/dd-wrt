@@ -4,6 +4,7 @@
  * Copyright (c) 2002 Matthew J. Fanto
  * Copyright (c) 2002-2005 Anton Altaparmakov
  * Copyright (c) 2002-2003 Richard Russon
+ * Copyright (c) 2012      Jean-Pierre Andre
  *
  * This utility will display/change the label on an NTFS partition.
  *
@@ -43,12 +44,16 @@
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #include "debug.h"
 #include "mft.h"
 #include "utils.h"
 /* #include "version.h" */
 #include "logging.h"
+#include "misc.h"
 
 static const char *EXEC_NAME = "ntfslabel";
 
@@ -58,6 +63,8 @@ static struct options {
 	int	 quiet;		/* Less output */
 	int	 verbose;	/* Extra output */
 	int	 force;		/* Override common sense */
+	int	 new_serial;	/* Change the serial number */
+	long long serial;	/* Forced serial number value */
 	int	 noaction;	/* Do not write to disk */
 } opts;
 
@@ -76,6 +83,7 @@ static void version(void)
 	ntfs_log_info("    2002      Matthew J. Fanto\n");
 	ntfs_log_info("    2002-2005 Anton Altaparmakov\n");
 	ntfs_log_info("    2002-2003 Richard Russon\n");
+	ntfs_log_info("    2012      Jean-Pierre Andre\n");
 	ntfs_log_info("\n%s\n%s%s\n", ntfs_gpl, ntfs_bugs, ntfs_home);
 }
 
@@ -91,6 +99,8 @@ static void usage(void)
 	ntfs_log_info("\nUsage: %s [options] device [label]\n"
 	       "    -n, --no-action    Do not write to disk\n"
 	       "    -f, --force        Use less caution\n"
+	       "        --new-serial   Set a new serial number\n"
+	       "        --new-half-serial Set a partial new serial number\n"
 	       "    -q, --quiet        Less output\n"
 	       "    -v, --verbose      More output\n"
 	       "    -V, --version      Display version information\n"
@@ -110,10 +120,12 @@ static void usage(void)
  */
 static int parse_options(int argc, char *argv[])
 {
-	static const char *sopt = "-fh?nqvV";
+	static const char *sopt = "-fh?IinqvV";
 	static const struct option lopt[] = {
 		{ "force",	 no_argument,		NULL, 'f' },
 		{ "help",	 no_argument,		NULL, 'h' },
+		{ "new-serial",  optional_argument,	NULL, 'I' },
+		{ "new-half-serial", optional_argument,	NULL, 'i' },
 		{ "no-action",	 no_argument,		NULL, 'n' },
 		{ "quiet",	 no_argument,		NULL, 'q' },
 		{ "verbose",	 no_argument,		NULL, 'v' },
@@ -126,6 +138,7 @@ static int parse_options(int argc, char *argv[])
 	int ver  = 0;
 	int help = 0;
 	int levels = 0;
+	char *endserial;
 
 	opterr = 0; /* We'll handle the errors, thank you. */
 
@@ -150,6 +163,23 @@ static int parse_options(int argc, char *argv[])
 				break;
 			}
 			help++;
+			break;
+		case 'I' :	/* not proposed as a short option letter */
+			if (optarg) {
+				opts.serial = strtoll(optarg, &endserial, 16);
+				if (*endserial)
+					ntfs_log_error("Bad hexadecimal serial number.\n");
+			}
+			opts.new_serial |= 2;
+			break;
+		case 'i' :	/* not proposed as a short option letter */
+			if (optarg) {
+				opts.serial = strtoll(optarg, &endserial, 16)
+							<< 32;
+				if (*endserial)
+					ntfs_log_error("Bad hexadecimal serial number.\n");
+			}
+			opts.new_serial |= 1;
 			break;
 		case 'n':
 			opts.noaction++;
@@ -203,6 +233,106 @@ static int parse_options(int argc, char *argv[])
 	return (!err && !help && !ver);
 }
 
+static int change_serial(ntfs_volume *vol, u64 sector, le64 serial_number,
+			NTFS_BOOT_SECTOR *bs, NTFS_BOOT_SECTOR *oldbs)
+{
+	int res;
+	le64 mask;
+	BOOL same;
+
+	res = -1;
+        if ((ntfs_pread(vol->dev, sector << vol->sector_size_bits,
+			vol->sector_size, bs) == vol->sector_size)) {
+		same = TRUE;
+		if (!sector)
+				/* save the real bootsector */
+			memcpy(oldbs, bs, vol->sector_size);
+		else
+				/* backup bootsector must be similar */
+			same = !memcmp(oldbs, bs, vol->sector_size);
+		if (same) {
+			if (opts.new_serial & 2)
+				bs->volume_serial_number = serial_number;
+			else {
+				mask = const_cpu_to_le64(~0x0ffffffffULL);
+				bs->volume_serial_number
+				    = (serial_number & mask)
+					| (bs->volume_serial_number & ~mask);
+			}
+			if (opts.noaction
+			    || (ntfs_pwrite(vol->dev,
+				sector << vol->sector_size_bits,
+				vol->sector_size, bs) == vol->sector_size)) {
+				res = 0;
+			}
+		} else {
+			ntfs_log_info("* Warning : the backup boot sector"
+				" does not match (leaving unchanged)\n");
+			res = 0;
+		}
+	}
+	return (res);
+}
+
+static int set_new_serial(ntfs_volume *vol)
+{
+	NTFS_BOOT_SECTOR *bs; /* full boot sectors */
+	NTFS_BOOT_SECTOR *oldbs; /* full original boot sector */
+	le64 serial_number;
+	u64 number_of_sectors;
+	u64 sn;
+	int res;
+
+	res = -1;
+	bs = (NTFS_BOOT_SECTOR*)ntfs_malloc(vol->sector_size);
+	oldbs = (NTFS_BOOT_SECTOR*)ntfs_malloc(vol->sector_size);
+	if (bs && oldbs) {
+		if (opts.serial)
+			serial_number = cpu_to_le64(opts.serial);
+		else {
+			/* different values for parallel processes */
+			srandom(time((time_t*)NULL) ^ (getpid() << 16));
+			sn = ((u64)random() << 32)
+					| ((u64)random() & 0xffffffff);
+			serial_number = cpu_to_le64(sn);
+		}
+		if (!change_serial(vol, 0, serial_number, bs, oldbs)) {
+			number_of_sectors = le64_to_cpu(bs->number_of_sectors);
+			if (!change_serial(vol, number_of_sectors,
+						serial_number, bs, oldbs)) {
+				ntfs_log_info("New serial number : %016llx\n",
+					(long long)le64_to_cpu(
+						bs->volume_serial_number));
+				res = 0;
+				}
+		}
+		free(bs);
+		free(oldbs);
+	}
+	if (res)
+		ntfs_log_info("Error setting a new serial number\n");
+	return (res);
+}
+
+static int print_serial(ntfs_volume *vol)
+{
+	NTFS_BOOT_SECTOR *bs; /* full boot sectors */
+	int res;
+
+	res = -1;
+	bs = (NTFS_BOOT_SECTOR*)ntfs_malloc(vol->sector_size);
+	if (bs
+	    && (ntfs_pread(vol->dev, 0,
+			vol->sector_size, bs) == vol->sector_size)) {
+		ntfs_log_info("Serial number : %016llx\n",
+			(long long)le64_to_cpu(bs->volume_serial_number));
+		res = 0;
+		free(bs);
+	}
+	if (res)
+		ntfs_log_info("Error getting the serial number\n");
+	return (res);
+}
 
 /**
  * print_label - display the current label of a mounted ntfs partition.
@@ -223,43 +353,11 @@ static int print_label(ntfs_volume *vol, unsigned long mnt_flags)
 		result = 1;
 	}
 
-	ntfs_log_info("%s\n", vol->vol_name);
+	if (opts.verbose)
+		ntfs_log_info("Volume label :  %s\n", vol->vol_name);
+	else
+		ntfs_log_info("%s\n", vol->vol_name);
 	return result;
-}
-
-/**
- * resize_resident_attribute_value - resize a resident attribute
- * @m:		mft record containing attribute to resize
- * @a:		attribute record (inside @m) which to resize
- * @new_vsize:	the new attribute value size to resize the attribute to
- *
- * Return 0 on success and -1 with errno = ENOSPC if not enough space in the
- * mft record.
- */
-static int resize_resident_attribute_value(MFT_RECORD *m, ATTR_RECORD *a,
-		const u32 new_vsize)
-{
-	int new_alen, new_muse;
-
-	/* New attribute length and mft record bytes used. */
-	new_alen = (le16_to_cpu(a->value_offset) + new_vsize + 7) & ~7;
-	new_muse = le32_to_cpu(m->bytes_in_use) - le32_to_cpu(a->length) +
-			new_alen;
-	/* Check for sufficient space. */
-	if ((u32)new_muse > le32_to_cpu(m->bytes_allocated)) {
-		errno = ENOSPC;
-		return -1;
-	}
-	/* Move attributes behind @a to their new location. */
-	memmove((char*)a + new_alen, (char*)a + le32_to_cpu(a->length),
-			le32_to_cpu(m->bytes_in_use) - ((char*)a - (char*)m) -
-			le32_to_cpu(a->length));
-	/* Adjust @m to reflect change in used space. */
-	m->bytes_in_use = cpu_to_le32(new_muse);
-	/* Adjust @a to reflect new value size. */
-	a->length = cpu_to_le32(new_alen);
-	a->value_length = cpu_to_le32(new_vsize);
-	return 0;
 }
 
 /**
@@ -271,103 +369,31 @@ static int resize_resident_attribute_value(MFT_RECORD *m, ATTR_RECORD *a,
  *
  * Change the label on the device @dev to @label.
  */
-static int change_label(ntfs_volume *vol, unsigned long mnt_flags, char *label, BOOL force)
+static int change_label(ntfs_volume *vol, char *label)
 {
-	ntfs_attr_search_ctx *ctx;
 	ntfschar *new_label = NULL;
-	ATTR_RECORD *a;
 	int label_len;
 	int result = 0;
 
-	//XXX significant?
-	if (mnt_flags & NTFS_MF_MOUNTED) {
-		/* If not the root fs or mounted read/write, refuse change. */
-		if (!(mnt_flags & NTFS_MF_ISROOT) ||
-				!(mnt_flags & NTFS_MF_READONLY)) {
-			if (!force) {
-				ntfs_log_error("Refusing to change label on "
-						"read-%s mounted device %s.\n",
-						mnt_flags & NTFS_MF_READONLY ?
-						"only" : "write", opts.device);
-				return 1;
-			}
-		}
-	}
-	ctx = ntfs_attr_get_search_ctx(vol->vol_ni, NULL);
-	if (!ctx) {
-		ntfs_log_perror("Failed to get attribute search context");
-		goto err_out;
-	}
-	if (ntfs_attr_lookup(AT_VOLUME_NAME, AT_UNNAMED, 0, CASE_SENSITIVE,
-			0, NULL, 0, ctx)) {
-		if (errno != ENOENT) {
-			ntfs_log_perror("Lookup of $VOLUME_NAME attribute failed");
-			goto err_out;
-		}
-		/* The volume name attribute does not exist.  Need to add it. */
-		a = NULL;
-	} else {
-		a = ctx->attr;
-		if (a->non_resident) {
-			ntfs_log_error("Error: Attribute $VOLUME_NAME must be "
-					"resident.\n");
-			goto err_out;
-		}
-	}
-	label_len = ntfs_mbstoucs_libntfscompat(label, &new_label, 0);
+	label_len = ntfs_mbstoucs(label, &new_label);
 	if (label_len == -1) {
 		ntfs_log_perror("Unable to convert label string to Unicode");
-		goto err_out;
+		return 1;
 	}
-	label_len *= sizeof(ntfschar);
-	if (label_len > 0x100) {
-		ntfs_log_error("New label is too long. Maximum %u characters "
-				"allowed. Truncating excess characters.\n",
-				(unsigned)(0x100 / sizeof(ntfschar)));
-		label_len = 0x100;
-		new_label[label_len / sizeof(ntfschar)] = const_cpu_to_le16(0);
+	else if (label_len*sizeof(ntfschar) > 0x100) {
+		ntfs_log_warning("New label is too long. Maximum %u characters "
+				"allowed. Truncating %u excess characters.\n",
+				(unsigned)(0x100 / sizeof(ntfschar)),
+				(unsigned)(label_len -
+				(0x100 / sizeof(ntfschar))));
+		label_len = 0x100 / sizeof(ntfschar);
+		label[label_len] = const_cpu_to_le16(0);
 	}
-	if (a) {
-		if (resize_resident_attribute_value(ctx->mrec, a, label_len)) {
-			ntfs_log_perror("Error resizing resident attribute");
-			goto err_out;
-		}
-	} else {
-		/* sizeof(resident attribute record header) == 24 */
-		int asize = (24 + label_len + 7) & ~7;
-		u32 biu = le32_to_cpu(ctx->mrec->bytes_in_use);
-		if (biu + asize > le32_to_cpu(ctx->mrec->bytes_allocated)) {
-			errno = ENOSPC;
-			ntfs_log_perror("Error adding resident attribute");
-			goto err_out;
-		}
-		a = ctx->attr;
-		memmove((u8*)a + asize, a, biu - ((u8*)a - (u8*)ctx->mrec));
-		ctx->mrec->bytes_in_use = cpu_to_le32(biu + asize);
-		a->type = AT_VOLUME_NAME;
-		a->length = cpu_to_le32(asize);
-		a->non_resident = 0;
-		a->name_length = 0;
-		a->name_offset = cpu_to_le16(24);
-		a->flags = cpu_to_le16(0);
-		a->instance = ctx->mrec->next_attr_instance;
-		ctx->mrec->next_attr_instance = cpu_to_le16((le16_to_cpu(
-				ctx->mrec->next_attr_instance) + 1) & 0xffff);
-		a->value_length = cpu_to_le32(label_len);
-		a->value_offset = a->name_offset;
-		a->resident_flags = 0;
-		a->reservedR = 0;
-	}
-	memcpy((u8*)a + le16_to_cpu(a->value_offset), new_label, label_len);
-	if (!opts.noaction && ntfs_inode_sync(vol->vol_ni)) {
-		ntfs_log_perror("Error writing MFT Record to disk");
-		goto err_out;
-	}
-	result = 0;
-err_out:
+
+	if(!opts.noaction)
+		result = ntfs_volume_rename(vol, new_label, label_len) ? 1 : 0;
+
 	free(new_label);
-	if (ctx)
-		ntfs_attr_put_search_ctx(ctx);
 	return result;
 }
 
@@ -393,7 +419,17 @@ int main(int argc, char **argv)
 
 	utils_set_locale();
 
-	if (!opts.label)
+	if ((opts.label || opts.new_serial)
+	    && !opts.noaction
+	    && !opts.force
+	    && !ntfs_check_if_mounted(opts.device, &mnt_flags)
+	    && (mnt_flags & NTFS_MF_MOUNTED)) {
+		ntfs_log_error("Cannot make changes to a mounted device\n");
+		result = 1;
+		goto abort;
+	}
+
+	if (!opts.label && !opts.new_serial)
 		opts.noaction++;
 
 	vol = utils_mount_volume(opts.device,
@@ -402,12 +438,22 @@ int main(int argc, char **argv)
 	if (!vol)
 		return 1;
 
+	if (opts.new_serial) {
+		result = set_new_serial(vol);
+		if (result)
+			goto unmount;
+	} else {
+		if (opts.verbose)
+			result = print_serial(vol);
+	}
 	if (opts.label)
-		result = change_label(vol, mnt_flags, opts.label, opts.force);
+		result = change_label(vol, opts.label);
 	else
 		result = print_label(vol, mnt_flags);
 
+unmount :
 	ntfs_umount(vol, FALSE);
+abort :
 	return result;
 }
 
