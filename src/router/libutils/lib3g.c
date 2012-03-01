@@ -21,7 +21,7 @@
  * this module detects various special 3G/CDMA USB Devices which is required to handle them correct, since some devices
  * are using non standard tty interfaces. everything which is not handled here in this list, is supported by the default tty handling which means dialin on tty0
  */
-
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <shutils.h>
@@ -540,7 +540,7 @@ static struct DEVICES devicelist[] = {
 char *get3GControlDevice(void)
 {
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
-	mkdir("/tmp/usb");
+	mkdir("/tmp/usb",0700);
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
 //insmod("sierra");  //further investigation required (compass problem)
 #endif

@@ -103,7 +103,7 @@ void start_sysinit(void)
 
 	if (in != NULL) {
 		fclose(in);
-		eval("mkdir", "/tmp/nvram");
+		mkdir("/tmp/nvram",0700);
 		eval("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
 		eval("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 		eval("/usr/sbin/convertnvram");
