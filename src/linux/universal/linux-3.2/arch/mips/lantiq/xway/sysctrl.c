@@ -42,6 +42,8 @@ void ltq_cgu_enable(unsigned int clk)
 	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) | clk, LTQ_CGU_IFCCR);
 }
 
+EXPORT_SYMBOL(ltq_cgu_enable);
+
 void ltq_pmu_enable(unsigned int module)
 {
 	int err = 1000000;
