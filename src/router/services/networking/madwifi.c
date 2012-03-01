@@ -1077,7 +1077,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			pragma = "-n3 ";
 		if (nvram_match(type, "3"))
 			pragma = "";
-		sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma,
 			  prefix, server, port, share);
 	} else {
@@ -1794,7 +1793,6 @@ static void configure_single(int count)
 		char *mvap = nvram_default_get(mode, "ap");
 		set_scanlist(dev, wif);
 		setRTS(var);
-		sleep(1);
 		sysprintf("iwpriv %s bgscan 0", var);
 		if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta")
 		    && strcmp(mvap, "wet")) {
@@ -1807,7 +1805,6 @@ static void configure_single(int count)
 				sysprintf("iwconfig %s freq %sM", var, ch);
 			}
 		}
-		sleep(1);
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
@@ -2043,7 +2040,6 @@ static void configure_single(int count)
 		}
 	}
 
-	sleep(1);
 	apm = nvram_default_get(wl, "ap");
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
 	    && strcmp(apm, "wet")) {
@@ -2056,7 +2052,6 @@ static void configure_single(int count)
 			sysprintf("iwconfig %s freq %sM", dev, ch);
 		}
 	}
-	sleep(1);
 	// set inact inact tick (order is important!)
 	sprintf(inact_tick, "%s_inact_tick", dev);
 	sprintf(inact, "%s_inact", dev);
@@ -2547,11 +2542,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			} else if (nvram_match(wdsvarname, "2")
 				   && nvram_match(br1enable, "1")) {
 				eval("ifconfig", dev, "up");
-				sleep(1);
 				br_add_interface("br1", dev);
 			} else if (nvram_match(wdsvarname, "3")) {
 				ifconfig(dev, IFUP, 0, 0);
-				sleep(1);
 				br_add_interface(getBridge(dev), dev);
 			}
 		}

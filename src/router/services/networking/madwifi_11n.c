@@ -1117,7 +1117,6 @@ void configure_single_11n(int count)
 			setupSupplicant(var, NULL);
 		}
 
-	sleep(3);		//give some time to let hostapd initialize
 
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {

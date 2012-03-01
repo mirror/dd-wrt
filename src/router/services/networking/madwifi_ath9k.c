@@ -1098,12 +1098,10 @@ void ath9k_start_supplicant(int count)
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
-		sleep(3);
 	} else {
 		if (strlen(vifs) > 0) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
-			sleep(3);	// give some time to let hostapd initialize
 			sprintf(ctrliface, "/var/run/hostapd/%s.1", dev);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
