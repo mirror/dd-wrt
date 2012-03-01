@@ -132,9 +132,9 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	eval("mknod", "/dev/gpio", "c", "127", "0");
-	eval("mknod", "/dev/rtc", "c", "254", "0");
-	eval("mknod", "/dev/crypto", "c", "10", "70");
+	mknod("/dev/gpio",S_IFCHR|0644,makedev(127,0));
+	mknod("/dev/rtc",S_IFCHR|0644,makedev(254,0));
+	mknod("/dev/crypto",S_IFCHR|0644,makedev(10,70));
 	eval("mount", "-o", "remount,rw", "/");
 
 	/*
