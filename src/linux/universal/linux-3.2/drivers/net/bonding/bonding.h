@@ -176,6 +176,8 @@ struct slave {
 	struct slave *prev;
 	struct bonding *bond; /* our master */
 	int    delay;
+	unsigned int  weight_tokens;
+	unsigned int  weight;
 	unsigned long jiffies;
 	unsigned long last_arp_rx;
 	s8     link;    /* one of BOND_LINK_XXXX */
