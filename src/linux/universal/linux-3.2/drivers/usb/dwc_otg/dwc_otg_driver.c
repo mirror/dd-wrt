@@ -645,10 +645,12 @@ dwc_otg_driver_probe(struct platform_device *_dev)
 	int32_t	snpsid;
 	struct resource *res;
 	gusbcfg_data_t usbcfg = {.d32 = 0};
+	printk(KERN_INFO "PIN %d\n",pin);
 
 	// GPIOs
 	if(pin >= 0)
 	{
+		printk(KERN_INFO "enable usb power on PIN %d\n",pin);
 		gpio_request(pin, "usb_power");
 		gpio_direction_output(pin, 1);
 		gpio_set_value(pin, 1);
