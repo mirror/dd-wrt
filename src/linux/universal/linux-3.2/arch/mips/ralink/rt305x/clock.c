@@ -76,6 +76,8 @@ u32 get_surfboard_sysclk(void)
 {
 	return rt305x_sys_clk.rate;
 }
+EXPORT_SYMBOL(get_surfboard_sysclk);
+
 /*
  * Linux clock API
  */

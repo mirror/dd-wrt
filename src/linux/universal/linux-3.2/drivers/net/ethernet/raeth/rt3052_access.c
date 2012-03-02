@@ -438,7 +438,7 @@ static struct proc_dir_entry * g_proc_vlan = NULL;
 static struct proc_dir_entry * g_proc_mii = NULL;
 static struct proc_dir_entry * g_system_reset = NULL;
 
-static void rt3052_access_exit(void)
+void rt3052_access_exit(void)
 {
 	if (g_proc_root)
 	{
@@ -464,7 +464,7 @@ static void rt3052_access_exit(void)
 	}
 }
 
-static int __init rt3052_access_init(void)
+int __init rt3052_access_init(void)
 {
 	int ret;
 
@@ -512,6 +512,3 @@ static int __init rt3052_access_init(void)
 	return ret;
 }
 
-module_init(rt3052_access_init);
-module_exit(rt3052_access_exit);
-MODULE_LICENSE("GPL");
