@@ -271,10 +271,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #else
 
 			if ((brand == ROUTER_WRT320N && nvram_match("boardrev", "0x1307"))	//E2000
+			    || brand == ROUTER_LINKSYS_E2500
 			    || (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300"))	//E3000
 			    || brand == ROUTER_LINKSYS_E3200
 			    || brand == ROUTER_LINKSYS_E4200) {
 				if (memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
+				    && memcmp(&buf[0], &CODE_PATTERN_E2500, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
 				    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
@@ -291,8 +293,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto err;	// must be there, otherwise fail here
 				}
 			} else {
-				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) ==
-				    0) {
+				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0
+					|| memcmp(&buf[0], &CODE_PATTERN_NV64K, 4) == 0) {
 					cprintf
 					    ("image not compatible with your router!\n");
 					goto err;	// fail here                            
@@ -318,6 +320,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			    && memcmp(&buf[0], &CODE_PATTERN_VALET_M20, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E1000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E2500, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E3000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E3200, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E4200, 4)
