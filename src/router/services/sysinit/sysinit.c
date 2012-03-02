@@ -1635,6 +1635,7 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_WRT610NV2:
 	case ROUTER_LINKSYS_E1000V2:
+	case ROUTER_LINKSYS_E2500:
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_NETGEAR_WNDR4000:
