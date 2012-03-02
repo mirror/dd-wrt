@@ -89,8 +89,8 @@ void start_sysinit(void)
 
 	stime(&tm);
 	nvram_set("wl0_ifname", "ra0");
-
 	insmod("rt2860v2_ap");
+	insmod("raeth");
 #ifdef HAVE_DIR600
 	sysprintf("echo \"write 0 0 0x3300\" > /proc/rt3052/mii/ctrl");
 	sysprintf("echo \"write 1 0 0x3300\" > /proc/rt3052/mii/ctrl");
