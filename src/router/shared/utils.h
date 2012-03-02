@@ -572,6 +572,10 @@
 
 #define ROUTER_BOARD_WCRGN 0xb31a
 
+// Linksys E2500 (dual radio, BCM5358U cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E2500) >_60K nvram_<
+#define ROUTER_LINKSYS_E2500 0xb415
+
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
