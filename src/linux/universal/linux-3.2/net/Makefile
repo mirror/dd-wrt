@@ -74,3 +74,8 @@ ifneq ($(CONFIG_RA_NAT_NONE),y)
 obj-y                           += nat/foe_hook/
 endif
 endif
+ifeq ($(CONFIG_RAETH),m)
+ifneq ($(CONFIG_RA_NAT_NONE),y)
+obj-y                           += nat/foe_hook/
+endif
+endif
