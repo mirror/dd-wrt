@@ -702,6 +702,9 @@ int internal_getRouterBrand()
 #elif HAVE_ALLNET11N
 	setRouter("Allnet 802.11n Router");
 	return ROUTER_BOARD_WHRG300N;
+#elif HAVE_TECHNAXX3G
+	setRouter("Technaxx 3G Router");
+	return ROUTER_BOARD_TECHNAXX3G;
 #elif HAVE_AR670W
 	setRouter("Airlink 101 AR670W");
 	return ROUTER_BOARD_AR670W;
@@ -3321,6 +3324,12 @@ int led_control(int type, int act)
 		// number (f=disabled)
 	{
 #ifndef HAVE_BUFFALO
+	case ROUTER_BOARD_TECHNAXX3G:
+		usb_gpio = 0x109;
+		diag_gpio = 0x10c;
+		connected_gpio = 0x10b;
+		ses_gpio = 0x10c;
+		break;
 	case ROUTER_BOARD_UNIFI:
 		diag_gpio = 0x001;
 		break;

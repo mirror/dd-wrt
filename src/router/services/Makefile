@@ -538,6 +538,9 @@ endif
 ifeq ($(CONFIG_ECB9750),y)
   CFLAGS_EXTRA += -DHAVE_ECB9750
 endif
+ifeq ($(CONFIG_TECHNAXX3G),y)
+  CFLAGS_EXTRA += -DHAVE_TECHNAXX3G
+endif
 
 ifeq ($(CONFIG_RT2880),y)
 OBJS += rt2880.o
