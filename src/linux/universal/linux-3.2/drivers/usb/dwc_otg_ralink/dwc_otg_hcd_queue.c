@@ -126,7 +126,6 @@ void dwc_otg_hcd_qh_init(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, struct urb *urb)
 {
 	char *speed, *type;
 	memset (qh, 0, sizeof (dwc_otg_qh_t));
-
 	/* Initialize QH */
 	switch (usb_pipetype(urb->pipe)) {
 	case PIPE_CONTROL:
@@ -171,7 +170,9 @@ void dwc_otg_hcd_qh_init(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh, struct urb *urb)
 	/* FS/LS Enpoint on HS Hub 
 	 * NOT virtual root hub */
 	qh->do_split = 0;
-	if (((urb->dev->speed == USB_SPEED_LOW) || 
+
+
+	if (urb->dev &&( urb->dev->tt) && (urb->dev->tt->hub) && ((urb->dev->speed == USB_SPEED_LOW) || 
 	     (urb->dev->speed == USB_SPEED_FULL)) &&
 	    (urb->dev->tt) && (urb->dev->tt->hub->devnum != 1)) 
 	{
