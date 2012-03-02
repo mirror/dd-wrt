@@ -1348,7 +1348,7 @@ void start_lan(void)
 #endif
 #ifdef HAVE_RT2880
 	int rb = getRouterBrand();
-	if (rb == ROUTER_BOARD_ECB9750 || rb == ROUTER_BOARD_EAP9550)	// lets load
+	if (rb == ROUTER_BOARD_ECB9750 || rb == ROUTER_BOARD_EAP9550 || rb == ROUTER_BOARD_TECHNAXX3G)	// lets load
 	{
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
@@ -2732,6 +2732,10 @@ void start_wan(int status)
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_ECB9750
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ?
+	    nvram_safe_get("pppoe_wan_ifname") : "eth2";
+#elif HAVE_TECHNAXX3G
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ?
 	    nvram_safe_get("pppoe_wan_ifname") : "eth2";
