@@ -1981,6 +1981,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Cisco Valet Plus M20");	// ranamed wrt310nv2
 			return ROUTER_WRT310NV2;
+		} else if (nvram_match("boot_hw_model", "E2500")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys E2500");
+			return ROUTER_LINKSYS_E2500;
 		} else if (nvram_match("boot_hw_model", "E3200")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E3200");
@@ -3867,6 +3871,10 @@ int led_control(int type, int act)
 		diag_gpio = 0x006;	// power led blink / off to indicate fac.def. 
 		connected_gpio = 0x007;	// ses orange
 		ses_gpio = 0x008;	// ses blue
+		break;
+	case ROUTER_LINKSYS_E2500:
+		power_gpio = 0x103;
+		diag_gpio = 0x003;
 		break;
 	case ROUTER_LINKSYS_E3200:
 		power_gpio = 0x103;
