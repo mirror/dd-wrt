@@ -80,6 +80,7 @@ u32 get_surfboard_sysclk(void)
 	return rt288x_sys_clk.rate;
 }
 
+EXPORT_SYMBOL(get_surfboard_sysclk);
 
 /*
  * Linux clock API
