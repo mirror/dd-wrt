@@ -73,7 +73,7 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 
-	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
 		if (fseek(fp, 0x07f0000, SEEK_SET))
