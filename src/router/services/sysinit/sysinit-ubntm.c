@@ -80,7 +80,7 @@ void start_sysinit(void)
 		    fseek(fp, 0x03f0000, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6))
+		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6)))
 		    break;
 		char mac[32];
 		unsigned int copy[256];
