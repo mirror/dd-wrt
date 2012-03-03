@@ -71,7 +71,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7240_mod");
+	system("insmod ag71xx || insmod ag7240_mod");
 //#ifndef HAVE_DIR632
 	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
@@ -132,6 +132,13 @@ void start_sysinit(void)
 //#endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
+#ifdef HAVE_SWCONFIG
+		system("swconfig dev eth1 set reset 1");
+		system("swconfig dev eth1 set enable_vlan 0");
+		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
+		system("swconfig dev eth1 set apply");
+#endif
+
 	struct ifreq ifr;
 	int s;
 
