@@ -2251,7 +2251,7 @@ static void filter_forward(void)
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (nvram_nmatch("0", "%s_bridged", var)) {
+			if (nvram_nmatch("0", "%s_bridged", var) && nvram_nmatch("0","%s_nat")) {
 				save2file("-A FORWARD -i %s -j %s\n", var,
 					  log_accept);
 			}
