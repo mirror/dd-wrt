@@ -81,7 +81,7 @@ void start_sysinit(void)
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
 		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6)))
-		    break;
+		    goto out;
 		char mac[32];
 		unsigned int copy[256];
 		int i;
@@ -94,7 +94,7 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}
-
+	out:;
 
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
