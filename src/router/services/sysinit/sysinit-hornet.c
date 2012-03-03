@@ -73,7 +73,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7240_mod");
+	system("insmod ag71xx || insmod ag7240_mod");
 #ifdef HAVE_WR741V4
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
