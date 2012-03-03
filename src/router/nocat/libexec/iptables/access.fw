@@ -56,6 +56,7 @@ fi
 
 # Mark inbound RELATED,ESTABLISHED traffic to this node as ACCEPT
 iptables -t filter $cmd NoCat_Inbound -d $ip -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -t filter $cmd NoCat_Inbound -d $ip -j lan2wan
 
 #echo 0
 #
