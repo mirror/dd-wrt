@@ -59,6 +59,8 @@ int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 		ret = ar724x_pcibios_map_irq(dev, slot, pin);
 		break;
 
+
+
 	default:
 		break;
 	}
@@ -88,11 +90,11 @@ int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
 		t = ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
-//		if (t & AR934X_BOOTSTRAP_PCIE_RC) {
+		if (t & AR934X_BOOTSTRAP_PCIE_RC) {
 			ret = ar724x_pcibios_init(AR934X_IP2_IRQ_PCIE);
 			break;
-//		}else
-//		printk("no pci device found\n");
+		}else
+		printk("no pci device found\n");
 
 		/* fall through */
 	default:
