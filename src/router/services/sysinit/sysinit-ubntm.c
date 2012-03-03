@@ -72,6 +72,30 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
+
+	FILE *fp = fopen("/dev/mtdblock/7", "rb");
+	if (fp) {
+		unsigned char buf2[256];
+		if (fseek(fp, 0x07f0000, SEEK_SET))
+		    fseek(fp, 0x03f0000, SEEK_SET);
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		if ((!memcmp(buf2,"\xff\xff\xff\xff\xff\xff",6) || !memcmp(buf2,"\x00\x00\x00\x00\x00\x00",6))
+		    break;
+		char mac[32];
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
+			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		eval("ifconfig", "eth0", "hw", "ether", mac);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		eval("ifconfig", "eth1", "hw", "ether", mac);
+	}
+
+
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 	struct ifreq ifr;
