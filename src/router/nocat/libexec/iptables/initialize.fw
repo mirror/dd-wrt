@@ -138,11 +138,11 @@ else
     iptables -t nat -I POSTROUTING -j NoCat_NAT
 fi
 
-if [ $Verbosity -gt 6 ]; then logger "Appending NoCat chain to mangle:PREROUTING."; fi
+if [ $Verbosity -gt 6 ]; then logger "Inserting NoCat chain to mangle:PREROUTING."; fi
 iptables -t mangle -N NoCat 2>/dev/null
 iptables -t mangle -F NoCat
 iptables -t mangle -D PREROUTING -j NoCat 2>/dev/null
-iptables -t mangle -A PREROUTING -j NoCat
+iptables -t mangle -I PREROUTING -j NoCat
 
 #Need to add a config var for SipProxy, or eg, AllowProxies to make this machine-independent
 #sip_enable=`/usr/sbin/nvram get sip_enable`
