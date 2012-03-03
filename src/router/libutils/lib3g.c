@@ -143,7 +143,7 @@ static void modeswitch_onda(int needreset, char *controldev)
 		"MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n"
 		"NeedResponse=1\n" "CheckSuccess=20\n");
 	fclose(out);
-	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+	system("usb_modeswitch -I -c /tmp/usb_modeswitch.conf");
 	sleep(2);
 }
 
