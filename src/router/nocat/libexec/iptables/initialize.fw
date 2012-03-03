@@ -379,6 +379,7 @@ fi
 ##
 # Add any other local firewall rules below.
 ##
+iptables -A NoCat -j lan2wan
 
 #
 # Ende
