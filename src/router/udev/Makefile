@@ -121,8 +121,6 @@ CFLAGS		+= $(WARNINGS)
 
 LDFLAGS = -Wl,-warn-common
 
-OPTFLAGS = -Os
-CFLAGS += $(OPTFLAGS)
 
 ifeq ($(strip $(USE_LOG)),true)
 	CFLAGS += -DUSE_LOG
