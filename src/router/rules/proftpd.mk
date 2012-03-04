@@ -5,7 +5,7 @@ proftpd:
 	$(MAKE) -C proftpd
 
 proftpd-clean:
-	$(MAKE) -C proftpd clean
+	-$(MAKE) -C proftpd clean
 
 proftpd-install:
 	install -D proftpd/proftpd $(INSTALLDIR)/proftpd/usr/sbin/proftpd
