@@ -113,11 +113,11 @@ LD = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
 RANLIB = $(CROSS_COMPILE)ranlib
 
-CFLAGS		= -g -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS		= -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 WARNINGS	= -Wstrict-prototypes -Wsign-compare -Wshadow \
 		  -Wchar-subscripts -Wmissing-declarations -Wnested-externs \
 		  -Wpointer-arith -Wcast-align -Wsign-compare -Wmissing-prototypes
-CFLAGS		+= $(WARNINGS)
+CFLAGS		+= $(WARNINGS) $(COPTS)
 
 LDFLAGS = -Wl,-warn-common
 
