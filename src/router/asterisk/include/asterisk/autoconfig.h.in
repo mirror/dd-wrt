@@ -659,7 +659,7 @@
 #undef HAVE_RES_NDESTROY
 
 /* Define to 1 if your system has the re-entrant resolver functions. */
-#undef HAVE_RES_NINIT
+//#undef HAVE_RES_NINIT
 
 /* Define to 1 if you have the `re_comp' function. */
 #undef HAVE_RE_COMP
