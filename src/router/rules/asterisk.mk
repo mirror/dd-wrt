@@ -4,6 +4,7 @@ asterisk-configure:
 	if ! test -e "asterisk/makeopts"; then \
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
+	--libdir=/usr/lib \
 	--without-curl \
 	--without-curses \
 	--with-gsm=internal \
