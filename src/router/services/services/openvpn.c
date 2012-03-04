@@ -31,6 +31,7 @@
 #include <shutils.h>
 #include <syslog.h>
 #include <services.h>
+#include <utils.h>
 
 #ifdef HAVE_OPENVPN
 
