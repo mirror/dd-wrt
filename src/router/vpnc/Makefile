@@ -65,10 +65,10 @@ endif
 all : gnupg $(BINS)
 
 gnupg :
-	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-nls; fi
+	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr  --libdir=/usr/lib --disable-nls; fi
 	make -C libgpg-error
 	make -C libgpg-error install DESTDIR=$(INSTALLDIR)/vpnc
-	if test ! -e "libgcrypt/Makefile"; then cd libgcrypt && ./configure --host=$(ARCH)-linux --prefix=/usr --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr; fi
+	if test ! -e "libgcrypt/Makefile"; then cd libgcrypt && ./configure --host=$(ARCH)-linux --enable-static --disable-shared --prefix=/usr --libdir=/usr/lib --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr; fi
 	make -C libgcrypt install DESTDIR=$(INSTALLDIR)/vpnc
 
 
@@ -107,6 +107,10 @@ vpnc-%.tar.gz :
 dist : VERSION vpnc.8 vpnc-$(RELEASE_VERSION).tar.gz
 
 clean :
+	make -C libgcrypt clean
+	make -C libgpg-error clean
+	-rm -f libgpg-error/Makefile
+	-rm -f libgcrypt/Makefile
 	-rm -f $(OBJS) $(BINOBJS) $(BINS) tags
 
 distclean : clean
