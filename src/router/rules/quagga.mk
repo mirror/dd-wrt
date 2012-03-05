@@ -31,7 +31,7 @@ endif
 	rm -f $(INSTALLDIR)/quagga/usr/lib/*.la
 
 
-quagga-clean: ncurses
+quagga-clean:
 ifeq ($(CONFIG_QUAGGA_STABLE),y)
 	if test -e "quagga-stable/Makefile"; then $(MAKE) -C quagga-stable clean; fi
 else
