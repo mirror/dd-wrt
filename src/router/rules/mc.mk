@@ -11,6 +11,7 @@ mc-configure: ncurses
 	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib" --enable-shared \
 		--enable-static \
 		--enable-debug=no 
+	make -C mc2/slang clean
 	make -C mc2/slang
 
 	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/mc2/slang/src" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -L$(TOP)/glib20/libglib/glib/.libs -lncurses" \
@@ -46,6 +47,7 @@ mc-configure: ncurses
 
 
 mc: ncurses
+	$(MAKE) -j 4 -C mc2/slang
 	$(MAKE) -j 4 -C mc2
 
 mc-install:
@@ -55,4 +57,5 @@ mc-install:
 
 
 mc-clean:
+	if test -e "mc2/slang/Makefile"; then $(MAKE) -C mc2/slang clean; fi
 	if test -e "mc2/Makefile"; then $(MAKE) -C mc2 clean; fi
