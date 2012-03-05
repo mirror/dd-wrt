@@ -2,7 +2,7 @@ ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 dnsmasq-clean:
-	$(MAKE) -j 4 -C CFLAGS="$(COPTS)" clean
+	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
 	$(MAKE) -j 4 -C dnsmasq/contrib/wrt CFLAGS="$(COPTS)" clean
 
 
