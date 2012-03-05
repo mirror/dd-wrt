@@ -16,6 +16,9 @@ ncurses-configure:
 		--with-terminfo-dirs=/etc/terminfo \
 		--with-default-terminfo-dir=/etc/terminfo 
 
+ncurses-clean:
+	make -j 4 -C ncurses clean
+
 ncurses:
 	make -j 4 -C ncurses
 
