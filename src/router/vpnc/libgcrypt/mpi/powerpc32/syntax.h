@@ -70,6 +70,6 @@
   C_LABEL(name)
 
 #undef END
-#define END(name)		     \
-  ASM_SIZE_DIRECTIVE(name)
+#define END(name)		    
+//  ASM_SIZE_DIRECTIVE(name)
 

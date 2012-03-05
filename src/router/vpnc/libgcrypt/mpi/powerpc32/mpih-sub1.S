@@ -91,7 +91,7 @@ Lend:	stw	7,4(3)		# store ultimate result limb
    possible 2-unrolled inner loop will not be.	Also, watch out for the
    alignment...  */
 
-EALIGN(_gcry_mpih_sub_n,3,1)
+EALIGN(gcry_mpih_sub_n,3,1)
 /* Set up for loop below.  */
        mtcrf 0x01,%r6
        srwi. %r7,%r6,1
@@ -129,5 +129,5 @@ EALIGN(_gcry_mpih_sub_n,3,1)
 1:     subfe %r3,%r3,%r3
        neg   %r3,%r3
        blr
-END(_gcry_mpih_sub_n)
+END(gcry_mpih_sub_n)
 #endif
