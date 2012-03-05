@@ -54,5 +54,5 @@ mc-install:
 	rm -rf $(INSTALLDIR)/usr/share/man
 
 
-mc-clean: ncurses
+mc-clean:
 	if test -e "mc2/Makefile"; then $(MAKE) -C mc2 clean; fi
