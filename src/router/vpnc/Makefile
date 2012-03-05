@@ -107,8 +107,8 @@ vpnc-%.tar.gz :
 dist : VERSION vpnc.8 vpnc-$(RELEASE_VERSION).tar.gz
 
 clean :
-	make -C libgcrypt clean
-	make -C libgpg-error clean
+	-make -C libgcrypt clean
+	-make -C libgpg-error clean
 	-rm -f libgpg-error/Makefile
 	-rm -f libgcrypt/Makefile
 	-rm -f $(OBJS) $(BINOBJS) $(BINS) tags
