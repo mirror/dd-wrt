@@ -347,26 +347,27 @@ optimize-lib:
 		-Wl,-soname=libpthread.so.0
 
 ifneq ($(CONFIG_NOOPT),y)
-	rm -rf /tmp/mklibs-out
-	rm -f /tmp/mklibs-progs
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	mkdir /tmp/$(ARCHITECTURE)/
 	find $(TARGETDIR) -type f -perm +100 -exec \
 		file -r -N -F '' {} + | \
-		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/mklibs-progs
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	find $(TARGETDIR) -type f -name \*.so\* -exec \
 		file -r -N -F '' {} + | \
-		awk ' /shared object/ { print $$1 }' >> /tmp/mklibs-progs
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
-	mkdir -p /tmp/mklibs-out
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
 	mklibs.py -D \
-		-d /tmp/mklibs-out \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
-		`cat /tmp/mklibs-progs` 2>&1
-	cp /tmp/mklibs-out/* $(TARGETDIR)/lib
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
 	rm -f $(TARGETDIR)/lib/*.a
 	rm -f $(TARGETDIR)/lib/*.map
