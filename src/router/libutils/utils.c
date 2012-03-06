@@ -2418,7 +2418,8 @@ void *getUEnv(char *name)
 #else
 #define UOFFSET 0x3E000
 #endif
-	static char res[64];
+//	static char res[64];
+	static char res[256];
 	memset(res, 0, sizeof(res));
 	//fprintf(stderr,"[u-boot env]%s\n",name);
 #ifdef HAVE_WMBR_G300NH
