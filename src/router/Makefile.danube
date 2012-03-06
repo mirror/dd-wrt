@@ -99,7 +99,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -funit-at-a-time 
 endif
 ifeq ($(ARCH),mips)
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time -msoft-float
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves
 endif
 ifeq ($(ARCH),powerpc)
 export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align 
@@ -108,8 +108,8 @@ ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
 endif
 
-export CC := $(CROSS_COMPILE)gcc
-export CXX := $(CROSS_COMPILE)g++
+export CC := ccache $(CROSS_COMPILE)gcc
+export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
 export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
@@ -164,6 +164,9 @@ ifeq ($(CONFIG_VF803),y)
 endif
 ifeq ($(CONFIG_VF802),y)
 	cp $(LINUXDIR)/.config_802 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_SX763),y)
+	cp $(LINUXDIR)/.config_sx763 $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WMBR_G300NH),y)
 	cp $(LINUXDIR)/.config_wmbr $(LINUXDIR)/.config
