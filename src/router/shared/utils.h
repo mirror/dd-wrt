@@ -914,6 +914,8 @@ char *getRADev(char *prefix);
 #endif
 #endif
 
+void *getUEnv(char *name);
+
 /* gartarp */
 
 #ifndef unlikely
