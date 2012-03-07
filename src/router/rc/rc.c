@@ -170,13 +170,12 @@ int get_wanface(int argc, char **argv)
 	return 0;
 }
 
-void gratarp(int argc, char **argv)
+int gratarp(int argc, char **argv)
 {
 
 	signal(SIGCHLD, SIG_IGN);
 
 	pid_t pid;
-	int status;
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: gratarp <interface>\n");
@@ -198,6 +197,8 @@ void gratarp(int argc, char **argv)
 			// dprintf("parent\n");
 			break;
 	}
+
+	return 0;
 }
 
 struct MAIN {
