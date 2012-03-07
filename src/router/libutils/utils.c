@@ -163,157 +163,159 @@ static char *get_wshaper_dev(void)
 static char *get_wanface(void)
 {
 	char *dev = get_wan_face();
-	
+
 	if (!strcmp(dev, "br0"))
 		dev = NULL;
 	return dev;
 }
 
-void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream)
-{	
+void add_userip(char *ip, int idx, char *upstream, char *downstream,
+		char *lanstream)
+{
 	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-	system2("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2
+	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
-	
+
 	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
-	system2("iptables -t mangle -D FILTER_OUT -j RETURN");	
-	
+	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
+
 	int base = 1200 + idx;
 	char *dev = get_wanface();
-	
-	long int lanlevel = atol(lanstream);	
+
+	long int lanlevel = atol(lanstream);
 	if (lanlevel < 1)
 		lanlevel = 1000000;
-	
-	if (dev) 
-	{
-		/* egress */		
+
+	if (dev) {
+		/* egress */
 		if (nvram_match("qos_type", "0"))
 			sysprintf
-				("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-				 dev, base, upstream, upstream);
+			    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
+			     dev, base, upstream, upstream);
 		else
 			sysprintf
-				("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-				 dev, base, upstream, upstream);
-	
+			    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+			     dev, base, upstream, upstream);
+
 		sysprintf
-			("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-			 dev, base, base);
+		    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+		     dev, base, base);
 		sysprintf
-			("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-			 dev, base, base);
+		    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		     dev, base, base);
 	}
-	
-	/* ingress */		
+
+	/* ingress */
 	if (nvram_match("qos_type", "0")) {
 		sysprintf
-			("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-			 "imq0", base, downstream, downstream);
+		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
+		     "imq0", base, downstream, downstream);
 		sysprintf
-			("tc class add dev %s parent 1:2 classid 1:%d htb rate %dkbit ceil %dkbit prio 5",
-			 "imq1", base, lanlevel, lanlevel);
+		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %dkbit ceil %dkbit prio 5",
+		     "imq1", base, lanlevel, lanlevel);
 	} else {
 		sysprintf
-			("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-			 "imq0", base, downstream, downstream);
+		    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+		     "imq0", base, downstream, downstream);
 		sysprintf
-			("tc class add dev %s parent 1:2 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 "imq1", base, lanlevel, lanlevel);
+		    ("tc class add dev %s parent 1:2 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+		     "imq1", base, lanlevel, lanlevel);
 	}
-	
+
 	sysprintf
-		("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-		 "imq0", base, base);
-	
+	    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+	     "imq0", base, base);
+
 	sysprintf
-		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		 "imq0", base, base);
+	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+	     "imq0", base, base);
 	sysprintf
-		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		 "imq1", base, base);	
-	
+	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+	     "imq1", base, base);
+
 	sysprintf
-		("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 1 -j MARK --set-mark %d",
-		 ip, base);
+	    ("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 1 -j MARK --set-mark %d",
+	     ip, base);
 	sysprintf
-		("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 1 -j MARK --set-mark %d",
-		 ip, base);
+	    ("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 1 -j MARK --set-mark %d",
+	     ip, base);
 	sysprintf
-		("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
-		 ip, base);
+	    ("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
+	     ip, base);
 	sysprintf
-		("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
-		 ip, base);
-	
+	    ("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
+	     ip, base);
+
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	system2("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2
+	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
-	
+
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
 }
 
-void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream)
-{	
+void add_usermac(char *mac, int idx, char *upstream, char *downstream,
+		 char *lanstream)
+{
 	int base = 1200 + idx;
 	char *dev = get_wanface();
 	long int lanlevel = atol(lanstream);
-	
+
 	if (lanlevel < 1)
 		lanlevel = 1000000;
-	
-	if (dev)
-	{
-		/* egress */		
-		if (nvram_match("qos_type", "0"))	
+
+	if (dev) {
+		/* egress */
+		if (nvram_match("qos_type", "0"))
 			sysprintf
-				("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-				 dev, base, upstream, upstream);
+			    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
+			     dev, base, upstream, upstream);
 		else
 			sysprintf
-				("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-				 dev, base, upstream, upstream);		
+			    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+			     dev, base, upstream, upstream);
 
 		sysprintf
-			("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-			 dev, base, base);
+		    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+		     dev, base, base);
 		sysprintf
-			("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-			 dev, base, base);
+		    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		     dev, base, base);
 	}
-	
-	/* ingress */		
+
+	/* ingress */
 	if (nvram_match("qos_type", "0")) {
 		sysprintf
-			("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-			 "imq0", base, downstream, downstream);
+		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
+		     "imq0", base, downstream, downstream);
 		sysprintf
-			("tc class add dev %s parent 1:2 classid 1:%d htb rate %dkbit ceil %dkbit prio 5",
-			 "imq1", base, lanlevel, lanlevel);
+		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %dkbit ceil %dkbit prio 5",
+		     "imq1", base, lanlevel, lanlevel);
 	} else {
 		sysprintf
-			("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-			 "imq0", base, downstream, downstream);	
+		    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
+		     "imq0", base, downstream, downstream);
 		sysprintf
-			("tc class add dev %s parent 1:2 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 "imq1", base, lanlevel, lanlevel);	
+		    ("tc class add dev %s parent 1:2 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+		     "imq1", base, lanlevel, lanlevel);
 	}
 
 	sysprintf
-		("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-		 "imq0", base, base);
-	
+	    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
+	     "imq0", base, base);
+
 	sysprintf
-		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		 "imq0", base, base);
+	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+	     "imq0", base, base);
 	sysprintf
-		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		 "imq1", base, base);
-	
+	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+	     "imq1", base, base);
+
 	sysprintf
-		("iptables -t mangle -I FILTER_IN 2 -m mac --mac-source %s -m mark --mark 1 -j MARK --set-mark %d",
-		 mac, base);			
+	    ("iptables -t mangle -I FILTER_IN 2 -m mac --mac-source %s -m mark --mark 1 -j MARK --set-mark %d",
+	     mac, base);
 }
 
 #endif
@@ -522,7 +524,7 @@ int internal_getRouterBrand()
 	char *filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-0/0-0050/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
 	if (!file) {
-	    filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-adapter/i2c-0/0-0050/eeprom";	/* bank2=0x100 older kernel */
+		filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-adapter/i2c-0/0-0050/eeprom";	/* bank2=0x100 older kernel */
 		file = fopen(filename, "r");
 	}
 	if (file) {
@@ -1041,7 +1043,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M, 0},	//
 		{"Ubiquiti NanoStation M3", 0xe035, "3", "3", ROUTER_BOARD_NS5M, M35},	//
 		{"Ubiquiti NanoStation M365", 0xe003, "3", "3", ROUTER_BOARD_NS5M, M365},	//
-//		{"Ubiquiti NanoStation M900 GPS", 0xe0b9, "3", "3", ROUTER_BOARD_NS5M, M900},       //
+//              {"Ubiquiti NanoStation M900 GPS", 0xe0b9, "3", "3", ROUTER_BOARD_NS5M, M900},       //
 		{"Ubiquiti Rocket M2", 0xe102, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M, 0},	//
 		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0},	//
@@ -1073,7 +1075,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M, 0},	//
 		{"Ubiquiti Loco M5", 0xe8a5, "3", "3", ROUTER_BOARD_NS5M, 0},	//
 		{"Ubiquiti Loco M2", 0xe0a2, "3", "3", ROUTER_BOARD_NS5M, 0},	//
-//		{"Ubiquiti Loco M2", 0xe8a2, "3", "3", ROUTER_BOARD_NS5M, 0},	//
+//              {"Ubiquiti Loco M2", 0xe8a2, "3", "3", ROUTER_BOARD_NS5M, 0},   //
 		{"Ubiquiti Loco M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900},	//
 		{"Ubiquiti NanoStation M900 Sector", 0xe0b9, "3", "3", ROUTER_BOARD_NS5M, M900},	//
 		{"Ubiquiti LiteStation M25", 0xe115, "3", "3", ROUTER_BOARD_NS5M, 0},	//
@@ -1547,7 +1549,11 @@ int internal_getRouterBrand()
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x054D")
 	    && nvram_match("boardrev", "0x1101")) {
-		setRouter("Asus RT-N12B");
+		char *hwrev = nvram_safe_get("hardware_version");
+		if (!strncmp(hwrev, "RTN12C1", 7))
+			setRouter("Asus RT-N12C1");
+		else
+			setRouter("Asus RT-N12B");
 		return ROUTER_ASUS_RTN12B;
 	}
 
@@ -2285,8 +2291,9 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNDR4000");
 		return ROUTER_NETGEAR_WNDR4000;
 	}
-	
-	if (nvram_match("boardnum", "4536") && nvram_match("boardtype", "0xf52e")
+
+	if (nvram_match("boardnum", "4536")
+	    && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1102")) {
 		setRouter("Netgear WNDR4500");
 		return ROUTER_NETGEAR_WNDR4500;
@@ -2418,7 +2425,7 @@ void *getUEnv(char *name)
 #else
 #define UOFFSET 0x3E000
 #endif
-//	static char res[64];
+//      static char res[64];
 	static char res[256];
 	memset(res, 0, sizeof(res));
 	//fprintf(stderr,"[u-boot env]%s\n",name);
@@ -3344,12 +3351,12 @@ int led_control(int type, int act)
 		power_gpio = 0x101;
 #endif
 #ifdef HAVE_SX763
-//		diag_gpio = 0x105;
-//		ses_gpio = 0x10e;
-//		sec0_gpio = 0x10e;
+//              diag_gpio = 0x105;
+//              ses_gpio = 0x10e;
+//              sec0_gpio = 0x10e;
 		connected_gpio = 0x1de;
-//		disconnected_gpio = 0x112;
-//		power_gpio = 0x101;
+//              disconnected_gpio = 0x112;
+//              power_gpio = 0x101;
 #endif
 		break;
 	case ROUTER_BOARD_PB42:
@@ -3587,7 +3594,7 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x112;
 		power_gpio = 0x101;
 #endif
-	break;
+		break;
 	case ROUTER_BOARD_PB42:
 #ifdef HAVE_WZRG300NH
 		diag_gpio = 0x101;
@@ -3623,7 +3630,7 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_WCRGN:
 		diag_gpio = 0x107;
 		connected_gpio = 0x10b;
-//		ses_gpio = 0x10e;
+//              ses_gpio = 0x10e;
 		break;
 	case ROUTER_BOARD_WHRG300N:
 		diag_gpio = 0x107;
@@ -3635,17 +3642,17 @@ int led_control(int type, int act)
 		power_gpio = 0x122;
 		diag_gpio = 0x121;
 		connected_gpio = 0x107;
-		usb_power = 0x024; // enable usb port 
-//		ses_gpio = 0x104;
-//		sec0_gpio = 0x104;
+		usb_power = 0x024;	// enable usb port 
+//              ses_gpio = 0x104;
+//              sec0_gpio = 0x104;
 		break;
 #elif HAVE_WNR2000
 	case ROUTER_BOARD_WHRHPGN:
 		power_gpio = 0x123;
 		diag_gpio = 0x122;
 		connected_gpio = 0x100;
-//		ses_gpio = 0x104;
-//		sec0_gpio = 0x104;
+//              ses_gpio = 0x104;
+//              sec0_gpio = 0x104;
 		break;
 #elif HAVE_WLAEAG300N
 	case ROUTER_BOARD_WHRHPGN:
@@ -3663,9 +3670,9 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_WASP
 	case ROUTER_BOARD_WHRHPGN:
-//		usb_power = 0x01a;
-//		usb_gpio = 0x001;
-//		ses_gpio = 0x11b;
+//              usb_power = 0x01a;
+//              usb_gpio = 0x001;
+//              ses_gpio = 0x11b;
 		break;
 #else
 	case ROUTER_BOARD_WHRHPGN:
@@ -4535,21 +4542,20 @@ double HTTxRate40_400(unsigned int index)
 struct arph {
 	uint16_t hw_type;
 
-	#define ARPHDR_ETHER	1
+#define ARPHDR_ETHER	1
 
 	uint16_t proto_type;
 
 	char ha_len;
 	char pa_len;
 
-	#define ARPOP_BROADCAST	1
-	#define ARPOP_REPLY	2
+#define ARPOP_BROADCAST	1
+#define ARPOP_REPLY	2
 	uint16_t opcode;
 	char source_add[ETH_ALEN];
 	char source_ip[IP_ALEN];
 	char dest_add[ETH_ALEN];
 	char dest_ip[IP_ALEN];
-
 
 } __attribute__((packed));
 
@@ -4559,23 +4565,23 @@ struct arph {
 static inline int get_iface_attr(int sk, char *iface, char *hw, char *paddr)
 {
 	int ret;
-        struct ifreq ifr;
+	struct ifreq ifr;
 
-        strcpy(ifr.ifr_name, iface);
+	strcpy(ifr.ifr_name, iface);
 
-        ret = ioctl(sk, SIOCGIFHWADDR, &ifr);
+	ret = ioctl(sk, SIOCGIFHWADDR, &ifr);
 	if (unlikely(ret == -1)) {
 		perror("ioctl SIOCGIFHWADDR");
 		return ret;
 	}
 	memcpy(hw, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 
-        ret = ioctl(sk, SIOCGIFADDR, &ifr);
+	ret = ioctl(sk, SIOCGIFADDR, &ifr);
 	if (unlikely(ret == -1)) {
 		perror("ioctl SIOCGIFADDR");
 		return ret;
 	}
-	memcpy(paddr, ifr.ifr_addr.sa_data+2, IP_ALEN);
+	memcpy(paddr, ifr.ifr_addr.sa_data + 2, IP_ALEN);
 
 	return ret;
 }
@@ -4589,29 +4595,30 @@ static inline void setup_eth(struct ether_header *eth, char *hw_addr)
 
 static inline void setup_garp(struct arph *arp, char *hw_addr, char *paddr)
 {
-        arp->hw_type          = htons(ARPHDR_ETHER);
-        arp->proto_type       = htons(ETH_P_IP);
-        arp->ha_len           = ETH_ALEN;
-        arp->pa_len           = IP_ALEN;
+	arp->hw_type = htons(ARPHDR_ETHER);
+	arp->proto_type = htons(ETH_P_IP);
+	arp->ha_len = ETH_ALEN;
+	arp->pa_len = IP_ALEN;
 
 	memcpy(arp->source_add, hw_addr, ETH_ALEN);
-        memcpy(arp->source_ip, paddr, IP_ALEN);
+	memcpy(arp->source_ip, paddr, IP_ALEN);
 }
 
 static inline void setup_garp_broadcast(struct arph *arp, char *paddr)
 {
-        arp->opcode = htons(ARPOP_BROADCAST);
+	arp->opcode = htons(ARPOP_BROADCAST);
 
 	memset(arp->dest_add, 0, ETH_ALEN);
-        memcpy(arp->dest_ip, paddr, IP_ALEN);
+	memcpy(arp->dest_ip, paddr, IP_ALEN);
 }
 
-static inline void setup_garp_reply(struct arph *arp, char *hw_addr, char *paddr)
+static inline void setup_garp_reply(struct arph *arp, char *hw_addr,
+				    char *paddr)
 {
-        arp->opcode = htons(ARPOP_REPLY);
+	arp->opcode = htons(ARPOP_REPLY);
 
 	memcpy(arp->dest_add, hw_addr, ETH_ALEN);
-        memcpy(arp->dest_ip, paddr, IP_ALEN);
+	memcpy(arp->dest_ip, paddr, IP_ALEN);
 }
 
 /*
@@ -4637,7 +4644,7 @@ static int send_garp(char *iface)
 	struct arph *arp;
 	int rc;
 	int sk;
-	int n_garps=10;
+	int n_garps = 10;
 
 	eth = (struct ether_header *)pkt;
 	arp = (struct arph *)(pkt + ETH_HLEN);
@@ -4652,10 +4659,10 @@ static int send_garp(char *iface)
 	if (unlikely(rc == -1))
 		goto out;
 
-       /* set link layer information for driver */
-        memset(&link, 0, sizeof(link));
-        link.sll_family = AF_PACKET;
-        link.sll_ifindex = if_nametoindex(iface);
+	/* set link layer information for driver */
+	memset(&link, 0, sizeof(link));
+	link.sll_family = AF_PACKET;
+	link.sll_ifindex = if_nametoindex(iface);
 
 	setup_eth(eth, iface_hw);
 	setup_garp(arp, iface_hw, iface_paddr);
@@ -4663,27 +4670,25 @@ static int send_garp(char *iface)
 	while (n_garps--) {
 		setup_garp_broadcast(arp, iface_paddr);
 		rc = sendto(sk,
-				pkt,
-				ARP_HLEN,
-				0,
-				(struct sockaddr *)&link,
-				sizeof(struct sockaddr_ll)
-				);
-	        if (unlikely(rc == -1)) {
-	                perror("sendto");
+			    pkt,
+			    ARP_HLEN,
+			    0,
+			    (struct sockaddr *)&link, sizeof(struct sockaddr_ll)
+		    );
+		if (unlikely(rc == -1)) {
+			perror("sendto");
 			goto out;
 		}
 
 		setup_garp_reply(arp, iface_hw, iface_paddr);
 		rc = sendto(sk,
-				pkt,
-				ARP_HLEN,
-				0,
-				(struct sockaddr *)&link,
-				sizeof(struct sockaddr_ll)
-				); 
-	        if (unlikely(rc == -1)) {
-	                perror("sendto");
+			    pkt,
+			    ARP_HLEN,
+			    0,
+			    (struct sockaddr *)&link, sizeof(struct sockaddr_ll)
+		    );
+		if (unlikely(rc == -1)) {
+			perror("sendto");
 			goto out;
 		}
 		usleep(200000);
