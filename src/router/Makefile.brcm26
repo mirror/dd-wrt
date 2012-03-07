@@ -584,6 +584,14 @@ ifneq ($(CONFIG_NVRAM_64K),y)
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12B1
+# Asus RT-N12C1
+	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
+	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12C1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
+	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 16000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12C1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	rm -f $(ARCH)-uclibc/asusver	
+	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
+# end Asus RT-N12C1
 # Asus RT-N10
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10 1.00 1.05 $(ARCH)-uclibc/vmlinuz
