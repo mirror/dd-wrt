@@ -4711,3 +4711,58 @@ int gratarp_main(char *iface)
 
 	return 0;
 }
+
+/* NF Mark/Mask
+ *
+ * since multiple services needs a NF packet mark,
+ * we need to use masks to split the 32bit value into several pieces
+ *
+ *                                             31       23       15       7      0
+ * port_forwards         1 bit(s) offset 31  > 10000000 00000000 00000000 00000000
+ * sputnik agent         8 bit(s) offset 23  > 01111111 10000000 00000000 00000000
+ * quality of service   12 bit(s) offset 11  > 00000000 01111111 11111000 00000000
+ *
+ * the remaining 11 bits are currently not in use
+ */
+
+struct NF_MASKS {
+	char *service_name;	// name of the service
+	int	 bits_used;		// bits used by this service
+	int  bit_offset;	// position of the fist bit 
+};
+
+static struct NF_MASKS service_masks[] = {
+	{"FORWARD",	1, 31},
+	{"SPUTNIK",	8, 23},
+	{"QOS",		12, 11},
+};
+
+char *
+get_NFServiceMark(char *service, uint32 mark)
+{
+	int x, offset, bitpos;
+	uint32 nfmark = 0, nfmask = 0;
+
+	char buffer[24];
+
+	for (x=0; x < sizeof(service_masks) / sizeof(struct NF_MASKS); x++) {
+		if (strcmp(service, service_masks[x].service_name) == 0)
+		{
+			if (mark > (2^service_masks[x].bits_used) )
+				return NULL; // mark exceeds valid scope
+
+			offset = service_masks[x].bit_offset;
+			bitpos = offset + service_masks[x].bits_used - 1;
+
+			nfmark = (mark << offset);
+
+			for(; bitpos>=offset; bitpos--)
+				nfmask |= (1 << bitpos);
+
+			sprintf(buffer, "0x%x/0x%x", nfmark, nfmask);
+			return buffer;
+		}
+	}
+	return NULL;
+}
+
