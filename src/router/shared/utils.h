@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
+#include <typedefs.h>
 
 /*
  * 2 byte router ID number; Eko 4.jul.06
@@ -875,10 +876,9 @@ struct wl_client_mac {
 };
 
 extern int dd_timer_delete(timer_t timer);
-extern int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
-			   struct sigevent *evp,	/* user event handler */
-			   timer_t * pTimer	/* ptr to return value */
-    );
+extern int dd_timer_create(clockid_t clock_id, struct sigevent *evp, timer_t * pTimer);
+extern int dd_timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
+extern int dd_timer_settime(timer_t timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue);
 
 int endswith(char *str, char *cmp);
 
@@ -948,4 +948,8 @@ struct arph {
 #define BCAST		"\xff\xff\xff\xff\xff\xff"
 
 int gratarp_main(char *iface);
+
+/* NF packet marks */
+char *get_NFServiceMark(char *service, uint32 mark);
+
 
