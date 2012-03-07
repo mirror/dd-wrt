@@ -913,3 +913,37 @@ char *getRADev(char *prefix);
 #define dd_syslog(a, args...) syslog( a,## args);
 #endif
 #endif
+
+/* gartarp */
+
+#ifndef unlikely
+#define unlikely(x)     __builtin_expect((x), 0)
+#endif
+
+#define IP_ALEN		4
+
+/*
+struct arph {
+	uint16_t hw_type;
+
+	#define ARPOP_BROADCAST         1
+	#define ARPHDR_ETHER            1
+	uint16_t proto_type;
+
+	char ha_len;
+	char pa_len;
+	uint16_t opcode;
+	char source_add[ETH_ALEN];
+	char source_ip[IP_ALEN];
+	char dest_add[ETH_ALEN];
+	char dest_ip[IP_ALEN];
+
+
+} __attribute__((packed));
+*/
+
+#define ARP_HLEN	sizeof(struct arph) + ETH_HLEN
+#define BCAST		"\xff\xff\xff\xff\xff\xff"
+
+int gratarp_main(char *iface);
+
