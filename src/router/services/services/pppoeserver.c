@@ -97,12 +97,12 @@ static void makeipup(void)
 			"	tc qdisc del dev $1 ingress\n"	//
 			" 	tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
 			" 	tc qdisc add dev $1 handle ffff: ingress\n"	//
-			" 	tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n");
+			" 	tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
+			"fi\n");
 		}
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
-	fprintf(fp, "fi\n");
 	fclose(fp);
 	fp = fopen("/tmp/pppoeserver/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" 
