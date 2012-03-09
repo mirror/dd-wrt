@@ -335,12 +335,17 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 			i = 1;
 		if (chan != NULL && chan[i].freq != -1) {
 			channel = chan[i].channel;
+			freq=chan[i].freq;
 		} else {
 			// that should never be called
-			if (has_2ghz(prefix))
+			if (has_2ghz(prefix)) {
 				channel = 6;
-			if (has_5ghz(prefix))
+				freq=2437;
+			}
+			if (has_5ghz(prefix)) {
 				channel = 40;
+				freq=5200;
+			}
 		}
 	} else {
 		// also we still should take care on the selected mode
