@@ -25,6 +25,7 @@ configure:
 
 clean:
 	    	cd libusb && make clean
+	    	cd libusb-compat && make clean
 	      $(RM) ./usb_modeswitch 
 
 install: all
