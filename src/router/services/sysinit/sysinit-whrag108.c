@@ -169,6 +169,47 @@ void start_sysinit(void)
 	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
+	insmod("zlib_deflate");
+	insmod("crc-ccitt");
+	insmod("crypto");
+	insmod("crypto_algapi");
+	insmod("crypto_blkcipher");
+	insmod("crypto_hash");
+	insmod("crypto_wq");
+	insmod("aead");
+	insmod("arc4");
+	insmod("ecb");
+	insmod("pcompress");
+	insmod("rng");
+	insmod("sha1_generic");
+	insmod("chainiv");
+	insmod("eseqiv");
+	insmod("cryptomgr");
+
+
+	insmod("slhc");
+	insmod("ppp_generic");
+	insmod("ppp_async");
+	insmod("ppp_synctty");
+	insmod("ppp_mppe");
+	insmod("pppox");
+	insmod("pppoe");
+	
+
+	insmod("nf_conntrack_h323");
+	insmod("nf_nat_h323");
+	insmod("nf_conntrack_sip");
+	insmod("nf_nat_sip");
+
+	insmod("xt_state");
+	insmod("xt_recent");
+	insmod("xt_physdev");
+	insmod("xt_mac");
+	insmod("xt_limit");
+	insmod("xt_layer7");
+	insmod("xt_dscp");
+	insmod("xt_connlimit");
+	insmod("xt_DSCP");
 
 	/*
 	 * network drivers 
