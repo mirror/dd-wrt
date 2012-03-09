@@ -27,6 +27,7 @@ clean:
 	    	cd libusb && make clean
 	    	cd libusb-compat && make clean
 	      $(RM) ./usb_modeswitch 
+	      $(RM) ./ozerocdoff
 
 install: all
 	mkdir -p $(SBINDIR)
