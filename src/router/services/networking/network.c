@@ -1861,9 +1861,9 @@ void start_lan(void)
 		else
 			br_set_stp_state(lan_ifname, 1);
 #ifdef HAVE_MICRO
-		br_set_bridge_forward_delay(lan_ifname, 1);
+		br_set_bridge_forward_delay(lan_ifname, 2);
 #else
-		br_set_bridge_forward_delay(lan_ifname, 1);
+		br_set_bridge_forward_delay(lan_ifname, 2);
 #endif
 #ifdef HAVE_EAD
 		eval("killall", "-9", "ead");
@@ -2305,7 +2305,7 @@ void start_lan(void)
 			else
 				br_set_stp_state("br1", 1);	// eval ("brctl", "stp",
 			// "br1", "off");
-			br_set_bridge_forward_delay("br1", 1);
+			br_set_bridge_forward_delay("br1", 2);
 
 			/*
 			 * Bring up and configure br1 interface 
