@@ -2683,11 +2683,11 @@ menu "Power management options"
 
 config ARCH_HIBERNATION_POSSIBLE
 	def_bool y
-	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
+	depends on (SYS_SUPPORTS_HOTPLUG_CPU || !SMP) && !ATHEROS && !RALINK_DEVICE && !MACH_AR7240 && !MACH_AR7100
 
 config ARCH_SUSPEND_POSSIBLE
 	def_bool y
-	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
+	depends on (SYS_SUPPORTS_HOTPLUG_CPU || !SMP) && !ATHEROS && !RALINK_DEVICE && !MACH_AR7240 && !MACH_AR7100
 
 source "kernel/power/Kconfig"
 
