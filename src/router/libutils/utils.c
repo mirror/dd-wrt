@@ -4743,13 +4743,13 @@ get_NFServiceMark(char *service, uint32 mark)
 	int x, offset, bitpos;
 	uint32 nfmark = 0, nfmask = 0;
 
-	char buffer[24];
+	static char buffer[24];
 
 	for (x=0; x < sizeof(service_masks) / sizeof(struct NF_MASKS); x++) {
 		if (strcmp(service, service_masks[x].service_name) == 0)
 		{
-			if (mark > (2^service_masks[x].bits_used) )
-				return NULL; // mark exceeds valid scope
+			if (mark >= (1<<service_masks[x].bits_used))
+				return "0xffffffff/0xffffffff";
 
 			offset = service_masks[x].bit_offset;
 			bitpos = offset + service_masks[x].bits_used - 1;
@@ -4760,9 +4760,11 @@ get_NFServiceMark(char *service, uint32 mark)
 				nfmask |= (1 << bitpos);
 
 			sprintf(buffer, "0x%x/0x%x", nfmark, nfmask);
+			//fprintf(stderr, "%s\n", buffer);
+
 			return buffer;
 		}
 	}
-	return NULL;
+	return "0xffffffff/0xffffffff";
 }
 
