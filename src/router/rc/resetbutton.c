@@ -892,7 +892,6 @@ void period_check(int sig)
 	case ROUTER_BELKIN_F7D4301:
 	case ROUTER_BELKIN_F7D4302:
 	case ROUTER_BELKIN_F5D8235V3:
-	case ROUTER_LINKSYS_E2500:
 	case ROUTER_LINKSYS_E3200:
 		sesgpio = 0x108;	// gpio 8, inversed
 		break;
@@ -925,6 +924,7 @@ void period_check(int sig)
 		sesgpio = 0x105;	// gpio 5, inversed
 		break;
 	case ROUTER_LINKSYS_E1000V2:
+	case ROUTER_LINKSYS_E2500:
 		sesgpio = 0x109;	// gpio 9, inversed
 		break;	
 
