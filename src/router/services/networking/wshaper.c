@@ -519,12 +519,9 @@ int svqos_iptables(void)
 
 	if(!strcmp(wshaper_dev, "LAN")) {
 		// don't let packages pass to iptables without ebtables loaded
-		sysprintf
-		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-		sysprintf
-		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-		sysprintf
-		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables","1");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables","1");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","1");
 		
 		insmod("ebtables");
 	//	insmod("ebtable_nat");
@@ -987,9 +984,9 @@ void stop_wshaper(void)
 	//rmmod("ebtable_nat");
 	
 	// don't let packages pass to iptables without ebtables loaded
-	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables","0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables","0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","0");
 
 #ifdef HAVE_OPENVPN
 	rmmod("xt_dscp");

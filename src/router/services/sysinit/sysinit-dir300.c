@@ -196,8 +196,8 @@ void start_sysinit(void)
 	detect_wireless_devices();
 	// eval ("ifconfig", "wifi0", "up");
 	eval("ifconfig", "eth0", "up");	// wan
-	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","2");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200) {
 		eval("ifconfig", "eth0", "up", "promisc");	// required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");

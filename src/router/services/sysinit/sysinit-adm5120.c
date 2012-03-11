@@ -407,8 +407,8 @@ void start_sysinit(void)
 		eval("watchdog");
 
 #ifdef HAVE_WP54G
-	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","6");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 #endif
 	/*
 	 * Set a sane date 

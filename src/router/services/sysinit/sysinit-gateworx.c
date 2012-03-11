@@ -293,7 +293,7 @@ void start_sysinit(void)
 			insmod("spi-ixp4xx");
 		insmod("ks8995m");
 		sleep(1);
-		system2("echo R01=01 > /proc/driver/KS8995M");	// enable switch 
+		writeproc("/proc/driver/KS8995M","R01=01");
 	}
 
 	char filename2[64];
@@ -477,14 +477,14 @@ void start_sysinit(void)
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
 		insmod("8250_gw2358");
-		system2("echo 0 >/proc/sys/dev/wifi0/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi0/softled");
-		system2("echo 1 >/proc/sys/dev/wifi1/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi1/softled");
-		system2("echo 2 >/proc/sys/dev/wifi2/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi2/softled");
-		system2("echo 3 >/proc/sys/dev/wifi3/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi3/softled");
+		writeproc("/proc/sys/dev/wifi0/ledpin","0");
+		writeproc("/proc/sys/dev/wifi0/softled","1");
+		writeproc("/proc/sys/dev/wifi1/ledpin","1");
+		writeproc("/proc/sys/dev/wifi1/softled","1");
+		writeproc("/proc/sys/dev/wifi2/ledpin","2");
+		writeproc("/proc/sys/dev/wifi2/softled","1");
+		writeproc("/proc/sys/dev/wifi3/ledpin","3");
+		writeproc("/proc/sys/dev/wifi3/softled","1");
 	}
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
