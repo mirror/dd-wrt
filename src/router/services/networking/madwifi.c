@@ -63,7 +63,9 @@
 
 static int setsysctrl(const char *dev, const char *control, u_long value)
 {
-	sysprintf("echo %li > /proc/sys/dev/%s/%s", value, dev, control);
+	char val[32];
+	sprintf(val,"%li",value);
+	writevaproc(val,"/proc/sys/dev/%s/%s", dev, control);
 
 	return 0;
 }

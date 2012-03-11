@@ -280,7 +280,7 @@ static void usb_unmount(char *path)
 	char mount_point[32];
 	eval("stopservice", "samba3");
 	eval("stopservice", "ftpsrv");
-	system("echo 1 > /proc/sys/vm/drop_caches");	// flush fs cache
+	writeproc("/proc/sys/vm/drop_caches","1");	// flush fs cache
 /* todo: how to unmount correct drive */
 	if (!path)
 		sprintf(mount_point, "/%s",
