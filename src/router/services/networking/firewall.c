@@ -921,7 +921,7 @@ static void nat_postrouting(void)
 #ifndef HAVE_TW6600
 #ifndef HAVE_BCMMODERN
 		if (nvram_match("block_loopback", "0"))
-			system2("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+			writeproc("/proc/sys/net/ipv4/conf/br0/loop","1");
 #endif
 #endif
 #endif
@@ -3218,181 +3218,8 @@ void start_firewall(void)
 		diag_led(DMZ, STOP_LED);
 	cprintf("done");
 #ifdef XBOX_SUPPORT
-#ifdef HAVE_RB500
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_XSCALE
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_LAGUNA
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_MAGICBOX
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_RB600
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_FONERA
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_RT2880
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_LS2
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_SOLO51
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_LS5
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_WHRAG108
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_LSX
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_DANUBE
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_STORM
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_OPENRISC
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_ADM5120
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_PB42
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_TW6600
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_CA8
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_X86
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#elif HAVE_BCMMODERN
-	if ((fp =
-	     fopen("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
-		   "r+"))) {
-		fprintf(fp, "%d", 65);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
-#else
-	if ((fp = fopen("/proc/sys/net/ipv4/ip_conntrack_udp_timeouts", "r+"))) {
-		fprintf(fp, "%d %d", 65, 180);
-		fclose(fp);
-	} else
-		perror("/proc/sys/net/ipv4/ip_conntrack_udp_timeouts");
-#endif
+	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout","65");
+	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeouts","65 180");
 #endif
 	cprintf("Start firewall\n");
 	/*
@@ -3406,13 +3233,7 @@ void start_firewall(void)
 		perror("/proc/sys/net/ipv4/ip_forward");
 	cprintf("start ipv6\n");
 	if (nvram_match("ipv6_enable", "1")) {
-
-		if ((fp =
-		     fopen("/proc/sys/net/ipv6/conf/all/forwarding", "r+"))) {
-			fputc('1', fp);
-			fclose(fp);
-		} else
-			perror("/proc/sys/net/ipv6/conf/all/forwarding");
+		writeproc("/proc/sys/net/ipv6/conf/all/forwarding","1");
 	}
 #ifdef HAVE_WIFIDOG
 	stop_wifidog();

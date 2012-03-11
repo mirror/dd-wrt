@@ -953,4 +953,5 @@ int gratarp_main(char *iface);
 /* NF packet marks */
 char *get_NFServiceMark(char *service, uint32 mark);
 
+int writeproc(char *path,char *value);
 

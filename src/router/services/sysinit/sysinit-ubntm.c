@@ -127,7 +127,7 @@ void start_sysinit(void)
 	if (brand == ROUTER_BOARD_UNIFI) {
 		setWirelessLed(0, 0);
 	} else {
-		system2("echo 0 >/proc/sys/dev/wifi0/softled");
+		writeproc("/proc/sys/dev/wifi0/softled","0");
 		sysprintf
 		    ("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
 	}

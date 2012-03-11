@@ -2519,13 +2519,13 @@ int diag_led_4702(int type, int act)
 	if (act == START_LED) {
 		switch (type) {
 		case DMZ:
-			system2("echo 1 > /proc/sys/diag");
+			writeproc("/proc/sys/diag","1");
 			break;
 		}
 	} else {
 		switch (type) {
 		case DMZ:
-			system2("echo 0 > /proc/sys/diag");
+			writeproc("/proc/sys/diag","0");
 			break;
 		}
 	}
@@ -2559,11 +2559,7 @@ int C_led_4702(int i)
 
 	memset(string, 0, 10);
 	sprintf(string, "%d", flg);
-	if ((fp = fopen("/proc/sys/diag", "w"))) {
-		fputs(string, fp);
-		fclose(fp);
-	} else
-		perror("/proc/sys/diag");
+	writeproc("/proc/sys/diag",string);
 
 	return 0;
 #endif
@@ -3026,13 +3022,9 @@ int killall(const char *name, int sig)
 void set_ip_forward(char c)
 {
 	FILE *fp;
-
-	if ((fp = fopen("/proc/sys/net/ipv4/ip_forward", "r+"))) {
-		fputc(c, fp);
-		fclose(fp);
-	} else {
-		perror("/proc/sys/net/ipv4/ip_forward");
-	}
+	char ch[8];
+	sprintf(ch,"%c",c);
+	writeproc("/proc/sys/net/ipv4/ip_forward",ch);
 }
 
 int ifexists(const char *ifname)
@@ -4540,6 +4532,18 @@ double HTTxRate40_400(unsigned int index)
 	return vHTTxRate40_400[index];
 }
 
+
+int writeproc(char *path,char *value)
+{
+	FILE *fp;
+	fp = fopen(path,"wb");
+	if (fp==NULL) {
+		return -1;
+	}
+	fprintf(fp,value);
+	fclose(fp);
+	return 0;    
+}
 /* gartarp */
 
 struct arph {
