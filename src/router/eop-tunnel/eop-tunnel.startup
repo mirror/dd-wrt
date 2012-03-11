@@ -8,7 +8,7 @@ do
 	then 
 	    /usr/sbin/brctl delif $(/sbin/getbridge oet${i}) oet${i} 2>&1 > /dev/null
 	    /bin/ip tunnel del oet${i}
-	    rm -f ${i}
+	    rm -f ${i}.pid
 	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
