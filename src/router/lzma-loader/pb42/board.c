@@ -36,6 +36,8 @@ void puts(char *str)
 int cnt=0;
 while(str[cnt])
     board_putc(str[cnt++]);
+board_putc('\r');
+board_putc('\n');
 }
 void board_init(void)
 {
