@@ -4451,7 +4451,7 @@ int get_ath9k_phy_idx(int idx)
 	return idx - getifcount("wifi");
 }
 
-int is_ath9k(char *prefix)
+int is_ath9k(const char *prefix)
 {
 	glob_t globbuf;
 	int count = 0;
