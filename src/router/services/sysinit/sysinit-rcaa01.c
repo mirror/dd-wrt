@@ -95,10 +95,10 @@ void start_sysinit(void)
 	int s;
 	struct ifreq ifr;
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
-		system2("echo 7 >/proc/sys/dev/wifi0/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi0/softled");
-		system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi1/softled");
+		writeproc("/proc/sys/dev/wifi0/ledpin","7");
+		writeproc("/proc/sys/dev/wifi0/softled","1");
+		writeproc("/proc/sys/dev/wifi1/ledpin","5");
+		writeproc("/proc/sys/dev/wifi1/softled","1");
 	}
 	if (getRouterBrand() == ROUTER_BOARD_RCAA01) {
 		insmod("mvswitch");
@@ -125,10 +125,10 @@ void start_sysinit(void)
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			close(s);
 		}
-		system2("echo 4 >/proc/sys/dev/wifi0/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi0/softled");
-		system2("echo 5 >/proc/sys/dev/wifi1/ledpin");
-		system2("echo 1 >/proc/sys/dev/wifi1/softled");
+		writeproc("/proc/sys/dev/wifi0/ledpin","4");
+		writeproc("/proc/sys/dev/wifi0/softled","1");
+		writeproc("/proc/sys/dev/wifi1/ledpin","5");
+		writeproc("/proc/sys/dev/wifi1/softled","1");
 	}
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];

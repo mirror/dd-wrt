@@ -40,6 +40,7 @@
 #include <code_pattern.h>
 #include <cy_conf.h>
 #include <utils.h>
+#include <services.h>
 
 void start_stabridge(void)
 {
@@ -51,10 +52,9 @@ void start_stabridge(void)
 		sprintf(debug, "%s_relayd_debug", getWET());
 		if (nvram_match(debug, "1")) {
 			//sprintf(debug_string, " -dd >/tmp/%s_relayd.log 2>&1", getWET());
-			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger",
-				getWET());
+			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger");
 		} else {
-			sprintf(debug_string, "");
+			memset(debug_string,0,sizeof(debug_string));
 		}
 		if (nvram_match(label, "0")) {
 			sprintf(label, "%s_relayd_gw_ipaddr", getWET());
@@ -71,12 +71,10 @@ void start_stabridge(void)
 #else
 	if (getWET()) {
 		// let packages pass to iptables without ebtables loaded
-		sysprintf
-		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-		sysprintf
-		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-		sysprintf
-		    ("echo 1 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables","1");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables","1");
+		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","1");
 		insmod("ebtables");
 		insmod("ebtables");
 		insmod("ebtable_filter");
@@ -124,8 +122,8 @@ void stop_stabridge(void)
 	rmmod("ebtable_filter");
 	rmmod("ebtables");
 	// don't let packages pass to iptables without ebtables loaded
-	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-arptables");
-	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-ip6tables");
-	sysprintf("echo 0 >/proc/sys/net/bridge/bridge-nf-call-iptables");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables","0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables","0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","0");
 #endif
 }

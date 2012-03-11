@@ -320,8 +320,8 @@ void start_sysinit(void)
 	setWirelessLed(2,2);
 #elif HAVE_WRT160NL
 	setWirelessLed(0,6);
-	system2("echo 6 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","6");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4 5\"");
