@@ -366,21 +366,6 @@ config PHY_LAYER
 config CAMEO_REALTEK_PHY
     bool "Cameo Realtek Phy"
 
-config BUFFALO
-    bool "WHR G300NH support"
-    depends on CAMEO_REALTEK_PHY
-
-config TPLINK
-    bool "TPLink Support"
-    depends on BUFFALO
-
-config DIR825
-    bool "DIR825 Support"
-    depends on CAMEO_REALTEK_PHY
-
-config WNDR3700
-    bool "WNDR3700 Support"
-    depends on CAMEO_REALTEK_PHY
         
 config VITESSE_8601_PHY
     bool "Vitesse Gige Phy 8601 on MAC0 and optionally on MAC1"
@@ -398,6 +383,24 @@ config ADM6996FC_PHY
     bool "AdmTek 6996FC"
 
 endchoice
+
+config BUFFALO
+    bool "WHR G300NH support"
+    depends on CAMEO_REALTEK_PHY
+
+config TPLINK
+    bool "TPLink Support"
+    depends on BUFFALO || AG71XX
+
+config DIR825
+    bool "DIR825 Support"
+    depends on CAMEO_REALTEK_PHY
+
+config WNDR3700
+    bool "WNDR3700 Support"
+    depends on CAMEO_REALTEK_PHY
+
+
 
 config  AG7240_LEN_PER_TX_DS 
         int "Len per tx descriptor" 
