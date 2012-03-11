@@ -390,7 +390,7 @@ config BUFFALO
 
 config TPLINK
     bool "TPLink Support"
-    depends on BUFFALO || AG71XX
+    depends on BUFFALO
 
 config DIR825
     bool "DIR825 Support"
