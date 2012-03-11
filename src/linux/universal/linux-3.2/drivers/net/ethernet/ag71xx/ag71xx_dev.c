@@ -1024,7 +1024,11 @@ static void phy_dev_init(void)
 {
 #if defined (CONFIG_BUFFALO) || defined(CONFIG_TPLINK) || defined(CONFIG_DIR825) || defined(CONFIG_WNDR3700)
 	if (rtl8366_smi_detect(&rtl8366_dev_data) == RTL8366_TYPE_RB) {
+#if defined (CONFIG_TPLINK)
+		ar71xx_eth0_pll_data.pll_1000 = 0x1a000000;
+#else
 		ar71xx_eth0_pll_data.pll_1000 = 0x1f000000;
+#endif
 		ar71xx_eth1_pll_data.pll_1000 = 0x100;
 	} else {
 		rtl8366_device.name = RTL8366S_DRIVER_NAME;
