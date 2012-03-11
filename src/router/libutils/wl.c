@@ -1774,14 +1774,14 @@ void radio_off(int idx)
 		radio_off_ath9k(idx);
 #endif
 	if (idx != -1) {
-		sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", idx);
-		sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon", idx);	//switch off led
+		sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent 2>&1", idx);
+		sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon 2>&1", idx);	//switch off led
 	} else {
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
-			sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent", i);
-			sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon", i);	//switch off led
+			sysprintf("echo 1 > /proc/sys/dev/wifi%d/silent 2>&1", i);
+			sysprintf("echo 1 > /proc/sys/dev/wifi%d/ledon 2>&1", i);	//switch off led
 		}
 	}
 }
@@ -1795,12 +1795,12 @@ void radio_on(int idx)
 		radio_on_ath9k(idx);
 #endif
 	if (idx != -1)
-		sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent", idx);
+		sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent 2>&1", idx);
 	else {
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++)
-			sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent", i);
+			sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent  2>&1", i);
 	}
 }
 
