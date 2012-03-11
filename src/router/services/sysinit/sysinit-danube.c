@@ -235,8 +235,8 @@ void start_sysinit(void)
 	sysprintf
 	    ("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
 #else
-	system2("echo 15 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","15");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 #endif
 
 	led_control(LED_POWER, LED_ON);
@@ -255,8 +255,8 @@ void start_sysinit(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
-	system2("echo 219 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","219");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 #endif
 
 	/*

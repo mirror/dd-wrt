@@ -223,10 +223,10 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-	system2("echo 3 >/proc/sys/dev/wifi1/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi1/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","2");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
+	writeproc("/proc/sys/dev/wifi0/ledpin","3");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 
 	// eval ("ifconfig", "wifi0", "up");
 	// eval ("ifconfig", "wifi1", "up");

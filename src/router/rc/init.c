@@ -389,31 +389,25 @@ static void set_tcp_params(void)
 	FILE *fp =
 	    fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
-		int vegas = 1;
-		int westwood = 0;
-		int bic = 0;
+		char  *vegas = "1";
+		char *westwood = "0";
+		char *bic = "0";
 		if (nvram_match("tcp_congestion_control", "westwood")) {
-			westwood = 1;
-			vegas = 0;
+			westwood = "1";
+			vegas = "0";
 		}
 		if (nvram_match("tcp_congestion_control", "bic")) {
-			bic = 1;
-			vegas = 0;
+			bic = "1";
+			vegas = "0";
 		}
-		sysprintf("/bin/echo %d > /proc/sys/net/ipv4/tcp_westwood",
-			  westwood);
-		sysprintf
-		    ("/bin/echo %d > /proc/sys/net/ipv4/tcp_vegas_cong_avoid",
-		     vegas);
-		sysprintf("/bin/echo %d > /proc/sys/net/ipv4/tcp_bic", bic);
-		system("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha");
-		system("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta");
-
+		writeproc("/proc/sys/net/ipv4/tcp_westwood",westwood);
+		writeproc("/proc/sys/net/ipv4/tcp_vegas_cong_avoid",vegas);
+		writeproc("/proc/sys/net/ipv4/tcp_bic",bic);
+		writeproc("/proc/sys/net/ipv4/tcp_vegas_alpha","3");
+		writeproc("/proc/sys/net/ipv4/tcp_vegas_beta","3");
 	} else {
 		fclose(fp);
-		sysprintf
-		    ("/bin/echo %s > /proc/sys/net/ipv4/tcp_congestion_control",
-		     nvram_default_get("tcp_congestion_control", "vegas"));
+		writeproc("/proc/sys/net/ipv4/tcp_congestion_control",nvram_default_get("tcp_congestion_control", "vegas"));
 	}
 
 }

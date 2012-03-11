@@ -106,8 +106,8 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 #ifdef HAVE_WRK54G
-	system2("echo 2 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
+	writeproc("/proc/sys/dev/wifi0/ledpin","2");
+	writeproc("/proc/sys/dev/wifi0/softled","1");
 #endif
 	// eval ("ifconfig", "wifi0", "up");
 	eval("ifconfig", "eth0", "up");
