@@ -629,10 +629,10 @@ ltq_etop_open(struct net_device *dev)
 
 		if (!IS_TX(i) && (!IS_RX(i)))
 			continue;
+		napi_enable(&ch->napi);
 		spin_lock_irqsave(&priv->lock, flags);
 		ltq_dma_open(&ch->dma);
 		spin_unlock_irqrestore(&priv->lock, flags);
-		napi_enable(&ch->napi);
 	}
 	if (priv->phydev)
 		phy_start(priv->phydev);
