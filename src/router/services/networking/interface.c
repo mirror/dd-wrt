@@ -155,17 +155,14 @@ void start_config_vlan(void)
 	char *phy = getPhyDev();
 
 	// configure ports
-	sysprintf("echo 1 > /proc/switch/%s/reset", phy);	
+	writevaproc("1","/proc/switch/%s/reset", phy);	
 	for (i = 0; i < 16; i++) {
 		char vlanb[16];
 
 		sprintf(vlanb, "vlan%dports", i);
 		if (nvram_get(vlanb) == NULL || nvram_match(vlanb, ""))
 			continue;
-		sysprintf("echo %s > /proc/switch/%s/vlan/%d/ports",
-			  nvram_safe_get(vlanb), phy, i);
-		sysprintf("echo %s > /proc/switch/%s/vlan/%d/ports",
-			  nvram_safe_get(vlanb), phy, i);
+		writevaproc(nvram_safe_get(vlanb),"/proc/switch/%s/vlan/%d/ports",phy, i);
 	}
 
 	/*
@@ -435,13 +432,9 @@ void start_setup_vlans(void)
 				}
 			}
 			if (mask & 8 && use < 5) {
-				sysprintf
-				    ("echo 0 > /proc/switch/%s/port/%d/enable",
-				     phy, use);
+				writevaproc("0","/proc/switch/%s/port/%d/enable",phy, use);
 			} else {
-				sysprintf
-				    ("echo 1 > /proc/switch/%s/port/%d/enable",
-				     phy, use);
+				writevaproc("1","/proc/switch/%s/port/%d/enable",phy, use);
 			}
 			snprintf(buff, 69, "/proc/switch/%s/port/%d/media",
 				 phy, use);
@@ -510,13 +503,11 @@ void start_setup_vlans(void)
 		}
 	}
 	for (i = 0; i < 16; i++) {
-		sysprintf("echo " " > /proc/switch/%s/vlan/%d/ports", phy, i);
+		writevaproc(" ","/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 	for (i = 0; i < 16; i++) {
-		fprintf(stderr, "configure vlan ports to %s\n",
-			portsettings[i]);
-		sysprintf("echo %s > /proc/switch/%s/vlan/%d/ports",
-			  portsettings[i], phy, i);
+		fprintf(stderr, "configure vlan ports to %s\n",portsettings[i]);
+		writevaproc(portsettings[i],"/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
 	return;
 #endif

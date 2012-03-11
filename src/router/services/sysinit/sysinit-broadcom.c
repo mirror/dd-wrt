@@ -2523,48 +2523,29 @@ char *enable_dtag_vlan(int enable)
 		vlan7ports = "0t 8";
 
 	if (!donothing) {
-		sysprintf("echo 1 > /proc/switch/%s/reset", eth);
+		writevaproc("1","/proc/switch/%s/reset",eth);
 		if (enable) {
 			fprintf(stderr, "enable vlan port mapping %s/%s\n",
 				vlan_lan_ports, vlan7ports);
 			if (!nvram_match("dtag_vlan8", "1")
 			    || nvram_match("wan_vdsl", "0")) {
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
-				     vlan_lan_ports, eth, lan_vlan_num);
+				writevaproc(vlan_lan_ports,"/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
-				     "", eth, wan_vlan_num);
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
-				     vlan7ports, eth);
+				writevaproc(" ","/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
+				writevaproc(vlan7ports,"/proc/switch/%s/vlan/7/ports", eth);
 			} else {
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
-				     vlan_lan_ports, eth, lan_vlan_num);
+				writevaproc(vlan_lan_ports,"/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
-				     "", eth, wan_vlan_num);
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
-				     vlan7ports, eth);
-				sysprintf
-				    ("echo \"%s\" > /proc/switch/%s/vlan/8/ports",
-				     vlan7ports, eth);
+				writevaproc("","/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
+				writevaproc(vlan7ports,"/proc/switch/%s/vlan/7/ports", eth);
+				writevaproc(vlan7ports,"/proc/switch/%s/vlan/8/ports", eth);
 			}
 		} else {
-			fprintf(stderr, "disable vlan port mapping %s/%s\n",
-				vlan_lan_ports, vlan_wan_ports);
-			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/8/ports",
-				  "", eth);
-			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/7/ports",
-				  "", eth);
-			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
-				  vlan_lan_ports, eth, lan_vlan_num);
-			sysprintf("echo \"%s\" > /proc/switch/%s/vlan/%d/ports",
-				  vlan_wan_ports, eth, wan_vlan_num);
+			fprintf(stderr, "disable vlan port mapping %s/%s\n",vlan_lan_ports, vlan_wan_ports);
+			writevaproc(" ","/proc/switch/%s/vlan/7/ports", eth);
+			writevaproc(" ","/proc/switch/%s/vlan/8/ports", eth);
+			writevaproc(vlan_lan_ports,"/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
+			writevaproc(vlan_wan_ports,"/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);
 			start_setup_vlans();
 		}
 	}
