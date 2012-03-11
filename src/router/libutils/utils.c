@@ -4544,6 +4544,18 @@ int writeproc(char *path,char *value)
 	fclose(fp);
 	return 0;    
 }
+
+int writevaproc(char *value, char *fmt,...)
+{
+	char varbuf[256];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return writeproc(varbuf,value);;
+
+}
 /* gartarp */
 
 struct arph {

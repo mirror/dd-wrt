@@ -955,3 +955,4 @@ char *get_NFServiceMark(char *service, uint32 mark);
 
 int writeproc(char *path,char *value);
 
+int writevaproc(char *value, char *fmt,...);
