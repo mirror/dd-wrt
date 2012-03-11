@@ -137,41 +137,25 @@ void svqos_reset_ports(void)
 #ifndef HAVE_ADM5120
 #ifndef HAVE_TW6600
 	if (nvram_match("portprio_support", "1")) {
-		system2
-		    ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
-		system2
-		    ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
-		system2
-		    ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
-		system2
-		    ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
+		writeproc("/proc/switch/eth0/port/1/enable","1");
+		writeproc("/proc/switch/eth0/port/2/enable","1");
+		writeproc("/proc/switch/eth0/port/3/enable","1");
+		writeproc("/proc/switch/eth0/port/4/enable","1");
 
-		system2
-		    ("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
-		system2
-		    ("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
-		system2
-		    ("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
-		system2
-		    ("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
+		writeproc("/proc/switch/eth0/port/1/prio-enable","0");
+		writeproc("/proc/switch/eth0/port/2/prio-enable","0");
+		writeproc("/proc/switch/eth0/port/3/prio-enable","0");
+		writeproc("/proc/switch/eth0/port/4/prio-enable","0");
 
-		system2
-		    ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
-		system2
-		    ("echo AUTO > /proc/switch/eth0/port/2/media 2>&1 > /dev/null");
-		system2
-		    ("echo AUTO > /proc/switch/eth0/port/3/media 2>&1 > /dev/null");
-		system2
-		    ("echo AUTO > /proc/switch/eth0/port/4/media 2>&1 > /dev/null");
+		writeproc("/proc/switch/eth0/port/1/media","AUTO");
+		writeproc("/proc/switch/eth0/port/2/media","AUTO");
+		writeproc("/proc/switch/eth0/port/3/media","AUTO");
+		writeproc("/proc/switch/eth0/port/4/media","AUTO");
 
-		system2
-		    ("echo FULL > /proc/switch/eth0/port/1/bandwidth 2>&1 > /dev/null");
-		system2
-		    ("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
-		system2
-		    ("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
-		system2
-		    ("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
+		writeproc("/proc/switch/eth0/port/1/bandwidth","FULL");
+		writeproc("/proc/switch/eth0/port/2/bandwidth","FULL");
+		writeproc("/proc/switch/eth0/port/3/bandwidth","FULL");
+		writeproc("/proc/switch/eth0/port/4/bandwidth","FULL");
 	}
 #endif
 #endif
@@ -227,21 +211,15 @@ int svqos_set_ports(void)
 			snprintf(nvram_var, 31, "svqos_port%dbw", loop);
 
 			if (strcmp("0", nvram_safe_get(nvram_var)))
-				sysprintf
-				    ("echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",
-				     nvram_safe_get(nvram_var), loop);
+				writevaproc(nvram_safe_get(nvram_var),"/proc/switch/eth0/port/%d/bandwidth",loop);
 			else
-				sysprintf
-				    ("echo 0 > /proc/switch/eth0/port/%d/enable",
-				     loop);
+				writevaproc("0","/proc/switch/eth0/port/%d/enable",loop);
 
-			sysprintf
-			    ("echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
-			     loop);
+				writevaproc("1","/proc/switch/eth0/port/%d/prio-enable",loop);
 			level = nvram_nget("svqos_port%dprio", loop);
-			sysprintf
-			    ("echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",
-			     atoi(level) / 10 - 1, loop);
+			char lvl[32];
+			sprintf(lvl,"%d",atoi(level) / 10 - 1)
+			writevaproc(lvl,"/proc/switch/eth0/port/%d/prio",loop);
 		}
 	}
 #endif
