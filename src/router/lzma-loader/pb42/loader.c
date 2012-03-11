@@ -219,14 +219,14 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	board_init();
 
-	puts("\n\nOpenWrt kernel loader for AR7XXX/AR9XXX\n");
-	puts("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
+	puts("\r\n\r\nOpenWrt kernel loader for AR7XXX/AR9XXX");
+	puts("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>");
 
 	lzma_init_data();
 
 	res = lzma_init_props();
 	if (res != LZMA_RESULT_OK) {
-		puts("Incorrect LZMA stream properties!\n");
+		puts("Incorrect LZMA stream properties!");
 		halt();
 	}
 
@@ -237,19 +237,19 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 		puts("failed, ");
 		switch (res) {
 		case LZMA_RESULT_DATA_ERROR:
-			puts("data error!\n");
+			puts("data error!");
 			break;
 		default:
-			puts("unknown error!\n");
+			puts("unknown error!");
 		}
 		halt();
 	} else {
-		puts("done!\n");
+		puts("done!");
 	}
 
 	flush_cache(kernel_la, lzma_outsize);
 
-	puts("Starting kernel...\n\n");
+	puts("Starting kernel...\r\n");
 
 #ifdef CONFIG_KERNEL_CMDLINE
 	reg_a0 = kernel_argc;
