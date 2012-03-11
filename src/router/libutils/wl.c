@@ -1800,7 +1800,7 @@ void radio_on(int idx)
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++)
-			sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent  2>&1", i);
+			sysprintf("echo 0 > /proc/sys/dev/wifi%d/silent 2>&1", i);
 	}
 }
 
