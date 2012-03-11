@@ -228,10 +228,10 @@ void stop_openvpnserver(void)
 		set_gpio(atoi(gpiovpn), 0);
 	}
 #endif
-	stop_process("openvpnserver", "OpenVPN daemon (Server)");
-	
-	eval("stopservice", "wshaper");
-	eval("startservice", "wshaper");
+	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
+		eval("stopservice", "wshaper");
+		eval("startservice", "wshaper");
+	}
 
 	return;
 }
@@ -455,17 +455,21 @@ void start_openvpn(void)
 
 void stop_openvpn(void)
 {
-	stop_process("openvpn", "OpenVPN daemon (Client)");
-
-	eval("stopservice", "wshaper");
-	eval("startservice", "wshaper");
+	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
+	    stop_wshaper();
+	    start_wshaper();
+	}
 }
 
 void stop_openvpn_wandone(void)
 {
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
-	stop_process("openvpn", "OpenVPN daemon (Client)");
+
+	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
+		stop_wshaper();
+		start_wshaper();
+	}
 }
 
 #endif
