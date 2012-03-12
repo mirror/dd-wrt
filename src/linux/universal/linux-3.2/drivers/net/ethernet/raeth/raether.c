@@ -2378,10 +2378,10 @@ void rt305x_esw_init(void)
 }
 #endif
 
-
-static int __init rt3052_access_init(void);
-static int rt3052_access_exit(void);
-
+#ifdef CONFIG_RALINK_RT3052
+int __init rt3052_access_init(void);
+int rt3052_access_exit(void);
+#endif
 /**
  * ra2882eth_init - Module Init code
  *
@@ -2623,7 +2623,9 @@ extern int rtl_smi_init(void);
 
 
 	dev_raether = dev;
+#ifdef CONFIG_RALINK_RT3052
 	rt3052_access_init();
+#endif
 return ret;
 }
 
@@ -2638,7 +2640,9 @@ void ra2882eth_cleanup_module(void)
 	int i;
 	struct net_device *dev = dev_raether;
 	END_DEVICE *ei_local;
+#ifdef CONFIG_RALINK_RT3052
 	rt3052_access_exit();
+#endif
 	ei_local = netdev_priv(dev);
 	if ( ei_local->MACInfo != NULL ) {
 	    RAETH_PRINT("Free MACInfo...\n");
