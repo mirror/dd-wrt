@@ -251,6 +251,13 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WR741V4)
+int getbuttonstate()
+{
+	int ret = get_gpio(11);
+
+	return ret;
+}
 #elif defined(HAVE_WR741)
 int getbuttonstate()
 {
