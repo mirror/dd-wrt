@@ -578,9 +578,6 @@ int flush_interfaces(void)
 #elif HAVE_WA901v1
 	snprintf(all_ifnames, 255, "%s %s %s", "eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-#elif HAVE_WR741V4
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
-		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WR741
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1",
 		 nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
