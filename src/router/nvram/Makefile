@@ -104,6 +104,9 @@ endif
 ifeq ($(CONFIG_JJAP93),y)
 CFLAGS += -DHAVE_JJAP93
 endif
+ifeq ($(CONFIG_WR741),y)
+CFLAGS += -DHAVE_WR741
+endif
 ifeq ($(CONFIG_NVRAM_60K),y)
 CFLAGS += -DHAVE_NVRAM_60K
 endif
