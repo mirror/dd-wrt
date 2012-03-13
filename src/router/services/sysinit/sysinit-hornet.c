@@ -75,6 +75,16 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 #ifdef HAVE_WR741V4
+#ifdef HAVE_SWCONFIG
+		system("swconfig dev eth1 set reset 1");
+		system("swconfig dev eth1 set enable_vlan 1");
+		system("swconfig dev eth1 vlan 1 set ports \"5t 1 2 3\"");
+		system("swconfig dev eth1 vlan 2 set ports \"5t 4\"");
+		system("swconfig dev eth1 set apply");
+#endif
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth1", "1");
+	eval("vconfig", "add", "eth1", "2");
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
@@ -88,15 +98,16 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
 			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
-		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
+		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		MAC_ADD(mac);
+		eval("ifconfig", "vlan2", "hw", "ether", mac);
 #ifndef HAVE_ATH9K
 		MAC_SUB(mac);
 #endif
 	}
+
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
