@@ -491,7 +491,7 @@ static inline bool br_multicast_is_router(struct net_bridge *br)
 extern int br_netfilter_init(void);
 extern void br_netfilter_fini(void);
 extern void br_netfilter_rtable_init(struct net_bridge *);
-extern bool br_netfilter_run_hooks(void);
+extern __weak bool br_netfilter_run_hooks(void);
 #else
 #define br_netfilter_init()	(0)
 #define br_netfilter_fini()	do { } while(0)

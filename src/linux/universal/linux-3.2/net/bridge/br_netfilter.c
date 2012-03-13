@@ -62,7 +62,7 @@ static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #define brnf_filter_pppoe_tagged 0
 #endif
 
-bool br_netfilter_run_hooks(void)
+__weak bool br_netfilter_run_hooks(void)
 {
 	return brnf_call_iptables | brnf_call_ip6tables | brnf_call_arptables;
 }
