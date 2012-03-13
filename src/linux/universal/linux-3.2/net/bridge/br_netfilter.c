@@ -49,9 +49,9 @@
 
 #ifdef CONFIG_SYSCTL
 static struct ctl_table_header *brnf_sysctl_header;
-static int brnf_call_iptables __read_mostly = 1;
-static int brnf_call_ip6tables __read_mostly = 1;
-static int brnf_call_arptables __read_mostly = 1;
+static int brnf_call_iptables __read_mostly = 0;
+static int brnf_call_ip6tables __read_mostly = 0;
+static int brnf_call_arptables __read_mostly = 0;
 static int brnf_filter_vlan_tagged __read_mostly = 0;
 static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #else
@@ -61,6 +61,11 @@ static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #define brnf_filter_vlan_tagged 0
 #define brnf_filter_pppoe_tagged 0
 #endif
+
+bool br_netfilter_run_hooks(void)
+{
+	return brnf_call_iptables | brnf_call_ip6tables | brnf_call_arptables;
+}
 
 static inline __be16 vlan_proto(const struct sk_buff *skb)
 {
@@ -961,12 +966,18 @@ int __init br_netfilter_init(void)
 		return -ENOMEM;
 	}
 #endif
+brnf_call_iptables = 1;
+brnf_call_ip6tables = 1;
+brnf_call_arptables = 1;
 	printk(KERN_NOTICE "Bridge firewalling registered\n");
 	return 0;
 }
 
 void br_netfilter_fini(void)
 {
+brnf_call_iptables = 0;
+brnf_call_ip6tables = 0;
+brnf_call_arptables = 0;
 	nf_unregister_hooks(br_nf_ops, ARRAY_SIZE(br_nf_ops));
 #ifdef CONFIG_SYSCTL
 	unregister_sysctl_table(brnf_sysctl_header);
