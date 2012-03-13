@@ -13,7 +13,8 @@
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
-#include "ar7240.h"
+#include <asm/mach-ar71xx/ar71xx.h>
+#include <asm/mach-ar71xx/ar933x_uart.h>
 
 int __ath_flash_size;
 

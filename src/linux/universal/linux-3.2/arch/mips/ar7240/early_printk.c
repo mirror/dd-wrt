@@ -57,6 +57,11 @@ static void prom_putchar_dummy(unsigned char ch)
 
 static void prom_putchar_init(void)
 {
+#ifdef CONFIG_MACH_HORNET
+	_prom_putchar = prom_putchar_ar933x;
+
+#else
+
 	void __iomem *base;
 	u32 id;
 
@@ -85,6 +90,7 @@ static void prom_putchar_init(void)
 		_prom_putchar = prom_putchar_dummy;
 		break;
 	}
+#endif
 }
 
 void prom_putchar(unsigned char ch)
