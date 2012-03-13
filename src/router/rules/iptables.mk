@@ -1,11 +1,11 @@
 iptables-clean:
-	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1 clean
+	-$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1 clean
 
 iptables:
-	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1
+	$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1
 
 iptables-devel:
-	$(MAKE) -j 4 -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
+	$(MAKE) -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
 
 
 iptables-install:
@@ -38,9 +38,6 @@ else
         # So that generic rule does not take precedence
 	@true
 endif
-
-iptables-clean:
-	-$(MAKE) -C iptables KERNEL_DIR=$(LINUXDIR) clean
 
 iptables-distclean:
 	-$(MAKE) -C iptables KERNEL_DIR=$(LINUXDIR) distclean
