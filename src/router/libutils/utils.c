@@ -3367,7 +3367,12 @@ int led_control(int type, int act)
 		ses_gpio = 0x005;
 //              usb_gpio = 0x101;
 #endif
-#ifdef HAVE_WR741
+#ifdef HAVE_WR741V4
+		diag_gpio = 0x11b;
+		ses_gpio = 0x001;
+		sec0_gpio = 0x001;
+//              usb_gpio = 0x101;
+#elif HAVE_WR741
 		diag_gpio = 0x101;
 		ses_gpio = 0x000;
 //              usb_gpio = 0x101;
