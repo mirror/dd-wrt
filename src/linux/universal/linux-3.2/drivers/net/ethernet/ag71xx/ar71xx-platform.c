@@ -9,6 +9,7 @@
  *  by the Free Software Foundation.
  */
 #ifndef CONFIG_MACH_AR7240
+#ifndef CONFIG_MACH_HORNET
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -150,4 +151,4 @@ void ar71xx_ddr_flush(u32 reg)
 }
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
 #endif
-
+#endif
