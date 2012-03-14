@@ -93,10 +93,9 @@ void start_openvpnserver(void)
 				"ifconfig-pool-persist /tmp/openvpn/ip-pool 86400\n");
 //		if (nvram_match("openvpn_certtype", "1"))	//server doenst need this
 //			fprintf(fp, "ns-cert-type server\n");
-		if (nvram_match("openvpn_lzo", "1"))
-			fprintf(fp, "comp-lzo yes\n");	//yes/no/adaptive
-		else
-			fprintf(fp, "comp-lzo no\n");
+		if (nvram_invmatch("openvpn_lzo", ""))
+			fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
+				nvram_safe_get("openvpn_lzo"));
 		if (nvram_match("openvpn_cl2cl", "1"))
 			fprintf(fp, "client-to-client\n");
 		if (nvram_match("openvpn_redirgate", "1"))
@@ -312,10 +311,9 @@ void start_openvpn(void)
 		fprintf(fp, "fragment %s\n",
 			nvram_safe_get("openvpncl_mssfix"));
 	}
-	if (nvram_match("openvpncl_lzo", "1"))
-		fprintf(fp, "comp-lzo adaptive\n");
-	else
-		fprintf(fp, "comp-lzo no\n");
+	if (nvram_invmatch("openvpncl_lzo", ""))
+		fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable
+			nvram_safe_get("openvpncl_lzo"));
 	if (nvram_match("openvpncl_certtype", "1"))
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
