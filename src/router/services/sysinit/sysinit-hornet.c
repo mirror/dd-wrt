@@ -75,16 +75,6 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 #ifdef HAVE_WR741V4
-/*#ifdef HAVE_SWCONFIG
-		system("swconfig dev eth1 set reset 1");
-		system("swconfig dev eth1 set enable_vlan 1");
-		system("swconfig dev eth1 vlan 1 set ports \"5t 1 2 3\"");
-		system("swconfig dev eth1 vlan 2 set ports \"5t 4\"");
-		system("swconfig dev eth1 set apply");
-#endif
-	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-	eval("vconfig", "add", "eth1", "1");
-	eval("vconfig", "add", "eth1", "2");*/
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
