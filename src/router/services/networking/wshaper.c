@@ -218,7 +218,7 @@ int svqos_set_ports(void)
 				writevaproc("1","/proc/switch/eth0/port/%d/prio-enable",loop);
 			level = nvram_nget("svqos_port%dprio", loop);
 			char lvl[32];
-			sprintf(lvl,"%d",atoi(level) / 10 - 1)
+			sprintf(lvl,"%d",atoi(level) / 10 - 1);
 			writevaproc(lvl,"/proc/switch/eth0/port/%d/prio",loop);
 		}
 	}
