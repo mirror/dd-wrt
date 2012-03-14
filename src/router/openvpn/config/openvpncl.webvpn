@@ -76,8 +76,12 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_compress"); %></div>
-				<input class="spaceradio" type="radio" name="openvpncl_lzo" value="1" <% nvram_checked("openvpncl_lzo", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="openvpncl_lzo" value="0" <% nvram_checked("openvpncl_lzo", "0"); %> /><% tran("share.disable"); %>
+				<select name="openvpncl_lzo">
+				<option value="" <% nvram_selected("openvpncl_lzo",""); %>>Disabled</option>
+				<option value="1 <% nvram_selected("openvpncl_lzo","1"); %>>Yes</option>
+				<option value="adaptive" <% nvram_selected("openvpncl_lzo","adaptive"); %>>Adaptive</option>
+				<option value="0" <% nvram_selected("openvpncl_lzo","0"); %>>No</option>
+				</select>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_nat"); %></div>
