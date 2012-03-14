@@ -85,12 +85,11 @@ static void makeipup(void)
 		//	just an uptime test
 		"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
-		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
-		"iptables -I FORWARD -i $1 -j ACCEPT\n");	//
+		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
+		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		//	per peer shaping
-	if (nvram_match("pppoeradius_enabled", "1")) {
-		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
+			"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 			"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 			"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//only if Speed limit !=0 and !empty
 			"then	tc qdisc del root dev $1\n"	//
@@ -99,7 +98,6 @@ static void makeipup(void)
 			" 	tc qdisc add dev $1 handle ffff: ingress\n"	//
 			" 	tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
 			"fi\n");
-		}
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
 //eg: tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 10Mbit
 //burst = (min+min+max)/(3*avpkt); limit = minimum: max+burst or x*max, max = 2*min
@@ -124,11 +122,9 @@ static void makeipup(void)
 		//
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
-		"iptables -D FORWARD -i $1 -j ACCEPT\n");	//
-	if (nvram_match("pppoeradius_enabled", "1")) {
-		fprintf(fp, "tc qdisc del root dev $1\n"	//
-			"tc qdisc del dev $1 ingress\n");
-		}
+		"iptables -D FORWARD -i $1 -j ACCEPT\n"	//
+ 		"tc qdisc del root dev $1\n"	//
+		"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
 
 	chmod("/tmp/pppoeserver/ip-up", 0744);
