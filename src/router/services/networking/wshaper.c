@@ -520,7 +520,6 @@ int svqos_iptables(void)
 		     level) < 4)
 			break;
 		
-		// udp is managed on egress only
 		if (strstr(type, "udp") || strstr(type, "both")) {
 			sysprintf
 				("iptables -t mangle -A FILTER_OUT -p udp -m udp --dport %s -j MARK --set-mark %s",
