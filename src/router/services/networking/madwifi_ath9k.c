@@ -140,11 +140,17 @@ void configure_single_ath9k(int count)
 
 	sprintf(bw, "%s_channelbw", dev);
 	if (nvram_match(bw, "5"))
-		sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		sysprintf
+		    ("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw",
+		     wif);
 	else if (nvram_match(bw, "10"))
-		sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		sysprintf
+		    ("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw",
+		     wif);
 	else
-		sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		sysprintf
+		    ("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw",
+		     wif);
 
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
@@ -192,7 +198,6 @@ void configure_single_ath9k(int count)
 	nvram_set(athmac, macaddr);
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
 	sysprintf("iw phy %s set distance %d", wif, distance);
-
 
 // das scheint noch aerger zu machen
 	sysprintf("iw dev %s set power_save off", dev);
@@ -316,8 +321,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 				sprintf(ht, "40-");
 				iht = -1;
 			}
-		}
-		else
+		} else
 			sprintf(ht, "20");
 	} else {
 		sprintf(ht, "20");
@@ -335,16 +339,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 			i = 1;
 		if (chan != NULL && chan[i].freq != -1) {
 			channel = chan[i].channel;
-			freq=chan[i].freq;
+			freq = chan[i].freq;
 		} else {
 			// that should never be called
 			if (has_2ghz(prefix)) {
 				channel = 6;
-				freq=2437;
+				freq = 2437;
 			}
 			if (has_5ghz(prefix)) {
 				channel = 40;
-				freq=5200;
+				freq = 5200;
 			}
 		}
 	} else {
@@ -395,9 +399,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	free(caps);
 	if (chan)
 		free(chan);
-	if (freq < 4000)
+
+	if (freq < 4000) {
+		if (!strcmp(netmode, "b-only")) {
+			fprintf(fp, "hw_mode=b\n");
+			fprintf(fp, "supported_rates=10 20 55 110\n");
+		} else {
+			fprintf(fp, "hw_mode=g\n");
+		}
 		fprintf(fp, "hw_mode=g\n");
-	else
+	} else
 		fprintf(fp, "hw_mode=a\n");
 	fprintf(fp, "channel=%d\n", channel);
 	fprintf(fp, "\n");
@@ -852,7 +863,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tidentity=\"%s\"\n",
 				nvram_prefix_get("tls8021xuser", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk,0700);
+			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_tls8021xca", prefix);
 			write_nvram(psk, ath);
@@ -898,7 +909,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tpassword=\"%s\"\n",
 				nvram_prefix_get("peap8021xpasswd", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk,0700);
+			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_peap8021xca", prefix);
 			if (!nvram_match(ath, "")) {
@@ -935,7 +946,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 				nvram_prefix_get("ttls8021xpasswd", prefix));
 			if (strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0) {
 				sprintf(psk, "/tmp/%s", prefix);
-				mkdir(psk,0700);
+				mkdir(psk, 0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
 				sprintf(ath, "%s_ttls8021xca", prefix);
 				write_nvram(psk, ath);
