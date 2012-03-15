@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.2.10 Kernel Configuration
+# Linux/mips 3.2.11 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1308,7 +1308,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
 # iptables trigger is under Netfilter config (LED target)
 #
 # CONFIG_LEDS_TRIGGER_MORSE is not set
-CONFIG_LEDS_TRIGGER_NETDEV=y
+CONFIG_LEDS_TRIGGER_NETDEV=m
 # CONFIG_LEDS_TRIGGER_USBDEV is not set
 # CONFIG_ACCESSIBILITY is not set
 CONFIG_RTC_LIB=y
