@@ -53,6 +53,20 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
+static void setSwitchLED(int gpio, int portmask)
+{
+sysprintf("echo switch0 > /sys/class/leds/generic_%d/trigger",gpio);
+sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask",portmask,gpio);
+}
+
+static void setEthLED(int gpio,char *eth)
+{
+sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger",gpio);
+sysprintf("echo %s > /sys/class/leds/generic_%d/device_name",eth,gpio);
+sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode",gpio);
+}
+
+
 void start_sysinit(void)
 {
 	time_t tm = 0;
@@ -74,6 +88,7 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
+	insmod("ledtrig-netdev");
 #ifdef HAVE_WR741V4
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
@@ -95,11 +110,24 @@ void start_sysinit(void)
 #ifndef HAVE_ATH9K
 		MAC_SUB(mac);
 #endif
+	
+
 	}
 
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
+
+
+#ifdef HAVE_WR741V4
+#ifndef HAVE_WR703
+	setEthLED(13,"eth0");
+	setSwitchLED(14,0x4);
+	setSwitchLED(15,0x8);
+	setSwitchLED(16,0x10);
+	setSwitchLED(17,0x02);
+#endif
+#endif
 	struct ifreq ifr;
 	int s;
 
