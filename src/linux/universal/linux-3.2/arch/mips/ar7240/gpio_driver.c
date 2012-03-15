@@ -260,11 +260,19 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 16,
 		.active_low	= 0,
 	}, 
+#if defined(CONFIG_MACH_HORNET) && defined(CONFIG_WR741)
+	{
+		.name		= "generic_17",
+		.gpio		= 17,
+		.active_low	= 1,
+	}, 
+#else
 	{
 		.name		= "generic_17",
 		.gpio		= 17,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_18",
 		.gpio		= 18,
