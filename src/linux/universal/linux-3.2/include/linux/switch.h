@@ -190,11 +190,12 @@ struct switch_dev {
 	int id;
 	struct list_head dev_list;
 	unsigned long def_global, def_port, def_vlan;
-
 	struct mutex lock;
 	struct switch_port *portbuf;
 
-#ifdef CONFIG_SWCONFIG_LEDS
+	char buf[128];
+
+#ifdef CONFIG_LEDS_TRIGGERS
 	struct switch_led_trigger *led_trigger;
 #endif
 };
