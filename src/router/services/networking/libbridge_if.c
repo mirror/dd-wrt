@@ -153,10 +153,9 @@ int br_add_bridge(const char *brname)
 	    && !nvram_match(netmask, "0.0.0.0")) {
 		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask",
 		     nvram_safe_get(netmask), "mtu", getBridgeMTU(brname),
-		     "up", "promisc");
+		     "up");
 	} else
-		eval("ifconfig", brname, "mtu", getBridgeMTU(brname),
-		     "promisc");
+		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
 
 	return ret < 0 ? errno : 0;
 }
@@ -230,7 +229,6 @@ int br_add_interface(const char *bridge, const char *dev)
 		ifr.ifr_data = (char *)args;
 		err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 	}
-	eval("ifconfig", dev, "promisc");
 	return err < 0 ? errno : 0;
 }
 
