@@ -814,9 +814,12 @@ static inline void cpu_probe_mips(struct cpuinfo_mips *c, unsigned int cpu)
 		__cpu_name[cpu] = "MIPS 20Kc";
 		break;
 	case PRID_IMP_24K:
-	case PRID_IMP_24KE:
 		c->cputype = CPU_24K;
 		__cpu_name[cpu] = "MIPS 24Kc";
+		break;
+	case PRID_IMP_24KE:
+		c->cputype = CPU_24K;
+		__cpu_name[cpu] = "MIPS 24KEc";
 		break;
 	case PRID_IMP_25KF:
 		c->cputype = CPU_25KF;
@@ -885,7 +888,7 @@ static inline void cpu_probe_sibyte(struct cpuinfo_mips *c, unsigned int cpu)
 		__cpu_name[cpu] = "SiByte SB1";
 		/* FPU in pass1 is known to have issues. */
 		if ((c->processor_id & 0xff) < 0x02)
-			c->options &= ~(MIPS_CPU_FPU | MIPS_CPU_32FPR);
+		c->options &= ~(MIPS_CPU_FPU | MIPS_CPU_32FPR);
 		break;
 	case PRID_IMP_SB1A:
 		c->cputype = CPU_SB1A;

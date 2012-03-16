@@ -26,17 +26,6 @@ const u8 br_group_address[ETH_ALEN] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
 br_should_route_hook_t __rcu *br_should_route_hook __read_mostly;
 EXPORT_SYMBOL(br_should_route_hook);
 
-static inline int
-BR_HOOK(uint8_t pf, unsigned int hook, struct sk_buff *skb,
-	struct net_device *in, struct net_device *out,
-	int (*okfn)(struct sk_buff *))
-{
-	if (!br_netfilter_run_hooks || !br_netfilter_run_hooks())
-		return okfn(skb);
-
-	return NF_HOOK(pf, hook, skb, in, out, okfn);
-}
-
 static int br_pass_frame_up(struct sk_buff *skb)
 {
 	struct net_device *indev, *brdev = BR_INPUT_SKB_CB(skb)->brdev;
