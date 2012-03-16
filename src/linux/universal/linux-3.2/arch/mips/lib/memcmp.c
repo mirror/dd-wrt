@@ -10,13 +10,13 @@
 #undef memcmp
 int memcmp(const void *cs, const void *ct, size_t count)
 {
-	const unsigned char *su1, *su2;
-	int res = 0;
+	register const unsigned char *r1 = (const unsigned char *) cs;
+	register const unsigned char *r2 = (const unsigned char *) ct;
 
-	for (su1 = cs, su2 = ct; 0 < count; ++su1, ++su2, count--)
-		if ((res = *su1 - *su2) != 0)
-			break;
-	return res;
+	int r = 0;
+	while (count-- && ((r = ((int)(*r1++)) - *r2++) == 0));
+
+	return r;
 }
 EXPORT_SYMBOL(memcmp);
 
