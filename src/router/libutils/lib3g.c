@@ -176,6 +176,8 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x1520 -V 0x19d2 -P 0x1522 -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x0166 -V 0x19d2 -P 0x0257 -M 55534243123456782400000080000685000000240000000000000000000000");
+	system
 	    ("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0xfff6 -M 5553424312345678c00000008000069f030000000000000000000000000000");
@@ -511,6 +513,8 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0117, "option", "1", "2", 2, NULL, "ZTE MF112 (modem mode)"},	// tested, works
 	{0x19d2, 0x0128, "option", "1", "3", 2, NULL, "ZTE MF651 (modem mode)"},	//
 	{0x19d2, 0x0124, "option", "1", "4", 2, NULL, "ZTE MF110 (Variant) (modem mode)"},	//
+	{0x19d2, 0x0166, "option", "2", "2", 2, &modeswitch_onda2, "ZTE MF821 (Variant) (cdrom mode)"},	//
+	{0x19d2, 0x0257, "option", "2", "2", 2, NULL, "ZTE MF821 (Variant) (modem mode)"},	//
 	{0x19d2, 0x1001, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3805-Z (cdrom mode)"},	//
 	{0x19d2, 0x1003, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3805-Z (modem mode)"},	//
 	{0x19d2, 0x1007, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3570-Z (cdrom mode)"},	//
