@@ -231,6 +231,10 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x12d1 -p 0x1c24 -M 55534243123456780000000000000011060000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011060000000100000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1505 -M 55534243123456780000000000000011062000000100000000000000000000");
+
+
 	sleep(2);
 }
 
@@ -433,7 +437,9 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
 	{0x12d1, 0x14c6, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x1506, "option", "0", "0", 2 | GENERIC, NULL, "Huawei E367"},	//
+	{0x12d1, 0x1505, "option", "0", "0", 2 , &modeswitch_huawei, "Huawei E398"},	//
+	{0x12d1, 0x1506, "option", "0", "0", 2 , NULL, "Huawei E367/E398 whatever"},	//
+	{0x12d1, 0x150f, "option", "0", "0", 2 , NULL, "Huawei E367"},	//
 	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K3765"},	//
 	{0x12d1, 0x1465, "option", "0", "0", 2, NULL, "Huawei K3765"},	//
 	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K4505"},	//
