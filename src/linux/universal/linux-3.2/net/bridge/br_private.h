@@ -499,6 +499,17 @@ extern __weak bool br_netfilter_run_hooks(void);
 #define br_netfilter_run_hooks()	false
 #endif
 
+static inline int
+BR_HOOK(uint8_t pf, unsigned int hook, struct sk_buff *skb,
+	struct net_device *in, struct net_device *out,
+	int (*okfn)(struct sk_buff *))
+{
+	if (!br_netfilter_run_hooks || !br_netfilter_run_hooks())
+		return okfn(skb);
+
+	return NF_HOOK(pf, hook, skb, in, out, okfn);
+}
+
 /* br_stp.c */
 extern void br_log_state(const struct net_bridge_port *p);
 extern struct net_bridge_port *br_get_port(struct net_bridge *br,

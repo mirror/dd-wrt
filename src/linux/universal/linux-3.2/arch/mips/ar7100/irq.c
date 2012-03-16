@@ -54,7 +54,7 @@ void __init arch_init_irq(void)
 	mips_cpu_irq_init();
 
 	ar7100_misc_irq_init(AR7100_MISC_IRQ_BASE);
-//	cp0_perfcount_irq = AR7100_MISC_IRQ_PERF_COUNTER;
+	cp0_perfcount_irq = AR7100_MISC_IRQ_PERF_COUNTER;
 //	ar7100_gpio_irq_init(AR7100_GPIO_IRQ_BASE);
 #ifdef CONFIG_PCI
 	ar7100_pci_irq_init(AR7100_PCI_IRQ_BASE);
