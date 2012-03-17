@@ -239,7 +239,11 @@ endif
 
 ifeq ($(CONFIG_USB),y)
 CFLAGS_EXTRA += -DHAVE_USB
+ifneq ($(CONFIG_3G_ONLY),y)
 OBJS += usb_hotplug.o
+else
+CFLAGS_EXTRA += -DHAVE_3G_ONLY
+endif
 endif
 ifeq ($(CONFIG_ALFA_BRANDING1),y)
 CFLAGS_EXTRA += -DHAVE_ALFA_BRANDING
