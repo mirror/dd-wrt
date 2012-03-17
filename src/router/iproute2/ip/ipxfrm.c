@@ -239,6 +239,7 @@ const char *strxf_proto(__u8 proto)
 
 	return p;
 }
+#ifdef NEED_PRINTF
 
 void xfrm_id_info_print(xfrm_address_t *saddr, struct xfrm_id *id,
 			__u8 mode, __u32 reqid, __u16 family, int force_spi,
@@ -290,7 +291,7 @@ void xfrm_id_info_print(xfrm_address_t *saddr, struct xfrm_id *id,
 	}
 	fprintf(fp, "%s", _SL_);
 }
-
+#endif
 static const char *strxf_limit(__u64 limit)
 {
 	static char str[32];
@@ -301,6 +302,7 @@ static const char *strxf_limit(__u64 limit)
 
 	return str;
 }
+#ifdef NEED_PRINTF
 
 void xfrm_stats_print(struct xfrm_stats *s, FILE *fp, const char *prefix)
 {
@@ -317,7 +319,7 @@ void xfrm_stats_print(struct xfrm_stats *s, FILE *fp, const char *prefix)
 	fprintf(fp, "failed %u", s->integrity_failed);
 	fprintf(fp, "%s", _SL_);
 }
-
+#endif
 static const char *strxf_time(__u64 time)
 {
 	static char str[32];
@@ -339,6 +341,7 @@ static const char *strxf_time(__u64 time)
 
 	return str;
 }
+#ifdef NEED_PRINTF
 
 void xfrm_lifetime_print(struct xfrm_lifetime_cfg *cfg,
 			 struct xfrm_lifetime_cur *cur,
@@ -641,7 +644,7 @@ void xfrm_xfrma_print(struct rtattr *tb[], __u16 family,
 				RTA_PAYLOAD(rta), family, fp, prefix);
 	}
 }
-
+#endif
 static int xfrm_selector_iszero(struct xfrm_selector *s)
 {
 	struct xfrm_selector s0;
@@ -650,6 +653,7 @@ static int xfrm_selector_iszero(struct xfrm_selector *s)
 
 	return (memcmp(&s0, s, sizeof(s0)) == 0);
 }
+#ifdef NEED_PRINTF
 
 void xfrm_state_info_print(struct xfrm_usersa_info *xsinfo,
 			    struct rtattr *tb[], FILE *fp, const char *prefix,
@@ -760,7 +764,7 @@ void xfrm_policy_info_print(struct xfrm_userpolicy_info *xpinfo,
 
 	xfrm_xfrma_print(tb, xpinfo->sel.family, fp, buf);
 }
-
+#endif
 int xfrm_id_parse(xfrm_address_t *saddr, struct xfrm_id *id, __u16 *family,
 		  int loose, int *argcp, char ***argvp)
 {
@@ -1172,12 +1176,12 @@ int do_xfrm(int argc, char **argv)
 		return do_xfrm_state(argc-1, argv+1);
 	else if (matches(*argv, "policy") == 0)
 		return do_xfrm_policy(argc-1, argv+1);
+#ifdef NEED_PRINTF
 	else if (matches(*argv, "monitor") == 0)
 		return do_xfrm_monitor(argc-1, argv+1);
-	else if (matches(*argv, "help") == 0) {
+	else if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //		fprintf(stderr, "xfrm Object \"%s\" is unknown.\n", *argv);
 		exit(-1);
-	}
-	usage();
 }

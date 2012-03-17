@@ -105,6 +105,7 @@ static int flush_update(void)
 	filter.flushp = 0;
 	return 0;
 }
+#ifdef NEED_PRINTF
 
 int print_route(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 {
@@ -567,6 +568,13 @@ int print_route(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 	return 0;
 }
 
+#else
+
+int print_route(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
+{
+    return 0;
+}
+#endif
 
 int parse_one_nh(struct rtattr *rta, struct rtnexthop *rtnh, int *argcp, char ***argvp)
 {
@@ -1181,10 +1189,12 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 				exit(1);
 			}
 			filter.flushed = 0;
+#ifdef NEED_PRINTF
 			if (rtnl_dump_filter(&rth, print_route, stdout, NULL, NULL) < 0) {
 //				fprintf(stderr, "Flush terminated\n");
 				exit(1);
 			}
+#endif
 			if (filter.flushed == 0) {
 				if (round == 0) {
 //					if (filter.tb != -1 || do_ipv6 == AF_INET6)
@@ -1211,6 +1221,7 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 		}
 	}
 
+#ifdef NEED_PRINTF
 	if (filter.tb != -1) {
 		if (rtnl_wilddump_request(&rth, do_ipv6, RTM_GETROUTE) < 0) {
 			perror("Cannot send dump request");
@@ -1227,7 +1238,7 @@ static int iproute_list_or_flush(int argc, char **argv, int flush)
 //		fprintf(stderr, "Dump terminated\n");
 		exit(1);
 	}
-
+#endif
 	exit(0);
 }
 
@@ -1385,12 +1396,13 @@ int iproute_get(int argc, char **argv)
 		if (rtnl_talk(&rth, &req.n, 0, 0, &req.n, NULL, NULL) < 0)
 			exit(2);
 	}
+#ifdef NEED_PRINTF
 
 	if (print_route(NULL, &req.n, (void*)stdout) < 0) {
 //		fprintf(stderr, "An error :-)\n");
 		exit(1);
 	}
-
+#endif
 	exit(0);
 }
 
@@ -1403,8 +1415,13 @@ void iproute_reset_filter()
 
 int do_iproute(int argc, char **argv)
 {
+#ifdef NEED_PRINTF
 	if (argc < 1)
 		return iproute_list_or_flush(0, NULL, 0);
+#else
+	if (argc < 1)
+		return 0;
+#endif
 	
 	if (matches(*argv, "add") == 0)
 		return iproute_modify(RTM_NEWROUTE, NLM_F_CREATE|NLM_F_EXCL,
@@ -1427,15 +1444,19 @@ int do_iproute(int argc, char **argv)
 	if (matches(*argv, "delete") == 0)
 		return iproute_modify(RTM_DELROUTE, 0,
 				      argc-1, argv+1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "list") == 0 || matches(*argv, "show") == 0
 	    || matches(*argv, "lst") == 0)
 		return iproute_list_or_flush(argc-1, argv+1, 0);
+#endif
 	if (matches(*argv, "get") == 0)
 		return iproute_get(argc-1, argv+1);
 	if (matches(*argv, "flush") == 0)
 		return iproute_list_or_flush(argc-1, argv+1, 1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip route help\".\n", *argv);
 	exit(-1);
 }

@@ -32,6 +32,7 @@
 /* prefix flags; see kernel's net/ipv6/addrconf.c and include/net/if_inet6.h */
 #define IF_PREFIX_ONLINK	0x01
 #define IF_PREFIX_AUTOCONF	0x02
+#ifdef NEED_PRINTF
 
 int print_prefix(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 {
@@ -103,4 +104,4 @@ int print_prefix(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 
 	return 0;
 }
-
+#endif

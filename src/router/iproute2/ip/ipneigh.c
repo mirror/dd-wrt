@@ -192,6 +192,7 @@ static int ipneigh_modify(int cmd, int flags, int argc, char **argv)
 	exit(0);
 }
 
+#ifdef NEED_PRINTF
 
 int print_neigh(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 {
@@ -318,7 +319,12 @@ int print_neigh(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 	fflush(fp);
 	return 0;
 }
-
+#else
+int print_neigh(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
+{
+    return 0;
+}
+#endif
 void ipneigh_reset_filter()
 {
 	memset(&filter, 0, sizeof(filter));
@@ -432,6 +438,7 @@ int do_show_or_flush(int argc, char **argv, int flush)
 			}
 		}
 	}
+#ifdef NEED_PRINTF
 
 	if (rtnl_wilddump_request(&rth, filter.family, RTM_GETNEIGH) < 0) {
 //		perror("Cannot send dump request");
@@ -442,7 +449,7 @@ int do_show_or_flush(int argc, char **argv, int flush)
 //		fprintf(stderr, "Dump terminated\n");
 		exit(1);
 	}
-
+#endif
 	return 0;
 }
 
@@ -462,17 +469,23 @@ int do_ipneigh(int argc, char **argv)
 //			fprintf(stderr, "Sorry, \"neigh get\" is not implemented :-(\n");
 			return -1;
 		}
+#ifdef NEED_PRINTF
 		if (matches(*argv, "show") == 0 ||
 		    matches(*argv, "lst") == 0 ||
 		    matches(*argv, "list") == 0)
 			return do_show_or_flush(argc-1, argv+1, 0);
+#endif
 		if (matches(*argv, "flush") == 0)
 			return do_show_or_flush(argc-1, argv+1, 1);
+#ifdef NEED_PRINTF
 		if (matches(*argv, "help") == 0)
 			usage();
-	} else
+#endif
+	}
+#ifdef NEED_PRINTF
+	 else
 		return do_show_or_flush(0, NULL, 0);
-
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip neigh help\".\n", *argv);
 	exit(-1);
 }

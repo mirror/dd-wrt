@@ -334,6 +334,7 @@ static int xfrm_policy_filter_match(struct xfrm_userpolicy_info *xpinfo)
 
 	return 1;
 }
+#ifdef NEED_PRINTF
 
 int xfrm_policy_print(const struct sockaddr_nl *who, struct nlmsghdr *n,
 		      void *arg)
@@ -371,7 +372,7 @@ int xfrm_policy_print(const struct sockaddr_nl *who, struct nlmsghdr *n,
 
 	return 0;
 }
-
+#endif
 static int xfrm_policy_get_or_delete(int argc, char **argv, int delete,
 				     void *res_nlbuf)
 {
@@ -452,6 +453,7 @@ static int xfrm_policy_delete(int argc, char **argv)
 	return xfrm_policy_get_or_delete(argc, argv, 1, NULL);
 }
 
+#ifdef NEED_PRINTF
 static int xfrm_policy_get(int argc, char **argv)
 {
 	char buf[NLMSG_BUF_SIZE];
@@ -468,7 +470,7 @@ static int xfrm_policy_get(int argc, char **argv)
 
 	return 0;
 }
-
+#endif
 /*
  * With an existing policy of nlmsg, make new nlmsg for deleting the policy
  * and store it to buffer.
@@ -620,7 +622,9 @@ static int xfrm_policy_list_or_flush(int argc, char **argv, int flush)
 			xb.offset = 0;
 			xb.nlmsg_count = 0;
 		}
-	} else {
+	} 
+#ifdef NEED_PRINTF
+	else {
 		if (rtnl_wilddump_request(&rth, preferred_family, XFRM_MSG_GETPOLICY) < 0) {
 			perror("Cannot send dump request");
 			exit(1);
@@ -631,7 +635,7 @@ static int xfrm_policy_list_or_flush(int argc, char **argv, int flush)
 			exit(1);
 		}
 	}
-
+#endif
 	rtnl_close(&rth);
 
 	exit(0);
@@ -666,9 +670,10 @@ static int xfrm_policy_flush_all(void)
 
 int do_xfrm_policy(int argc, char **argv)
 {
+#ifdef NEED_PRINTF
 	if (argc < 1)
 		return xfrm_policy_list_or_flush(0, NULL, 0);
-
+#endif
 	if (matches(*argv, "add") == 0)
 		return xfrm_policy_modify(XFRM_MSG_NEWPOLICY, 0,
 					  argc-1, argv+1);
@@ -677,19 +682,23 @@ int do_xfrm_policy(int argc, char **argv)
 					  argc-1, argv+1);
 	if (matches(*argv, "delete") == 0 || matches(*argv, "del") == 0)
 		return xfrm_policy_delete(argc-1, argv+1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "list") == 0 || matches(*argv, "show") == 0
 	    || matches(*argv, "lst") == 0)
 		return xfrm_policy_list_or_flush(argc-1, argv+1, 0);
 	if (matches(*argv, "get") == 0)
 		return xfrm_policy_get(argc-1, argv+1);
+#endif
 	if (matches(*argv, "flush") == 0) {
 		if (argc-1 < 1)
 			return xfrm_policy_flush_all();
 		else
 			return xfrm_policy_list_or_flush(argc-1, argv+1, 1);
 	}
+#ifdef NEED_PRINTF
 	if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip xfrm policy help\".\n", *argv);
 	exit(-1);
 }
