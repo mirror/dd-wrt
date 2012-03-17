@@ -1,6 +1,7 @@
 ###
 ###	Makefile for disktype
 ###
+include $(TOP)/.config
 
 RM = rm -f
 #CC = gcc
@@ -65,7 +66,9 @@ clean:
 	$(RM) *.o *~ *% $(TARGET)
 	
 install:
+ifneq ($(CONFIG_3G_ONLY),y)	
 	install -D disktype $(INSTALLDIR)/usr/sbin/disktype
+endif
 
 distclean: clean
 	$(RM) .depend
