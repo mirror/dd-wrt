@@ -44,6 +44,7 @@ static void usage(void)
 	exit(-1);
 }
 */
+#ifdef NEED_PRINTF
 static int print_rule(const struct sockaddr_nl *who, struct nlmsghdr *n,
 		      void *arg)
 {
@@ -160,7 +161,6 @@ static int print_rule(const struct sockaddr_nl *who, struct nlmsghdr *n,
 	fflush(fp);
 	return 0;
 }
-
 static int iprule_list(int argc, char **argv)
 {
 	struct rtnl_handle rth;
@@ -190,6 +190,7 @@ static int iprule_list(int argc, char **argv)
 	return 0;
 }
 
+#endif
 
 static int iprule_modify(int cmd, int argc, char **argv)
 {
@@ -365,20 +366,27 @@ static int iprule_flush(int argc, char **argv)
 int do_iprule(int argc, char **argv)
 {
 	if (argc < 1) {
+#ifdef NEED_PRINTF
 		return iprule_list(0, NULL);
-	} else if (matches(argv[0], "list") == 0 ||
+#endif
+#ifdef NEED_PRINTF
+	} 
+	else if (matches(argv[0], "list") == 0 ||
 		   matches(argv[0], "lst") == 0 ||
 		   matches(argv[0], "show") == 0) {
 		return iprule_list(argc-1, argv+1);
+#endif
 	} else if (matches(argv[0], "add") == 0) {
 		return iprule_modify(RTM_NEWRULE, argc-1, argv+1);
 	} else if (matches(argv[0], "delete") == 0) {
 		return iprule_modify(RTM_DELRULE, argc-1, argv+1);
 	} else if (matches(argv[0], "flush") == 0) {
 		return iprule_flush(argc-1, argv+1);
-	} else if (matches(argv[0], "help") == 0)
+	}
+#ifdef NEED_PRINTF
+	 else if (matches(argv[0], "help") == 0)
 		usage();
-
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip rule help\".\n", *argv);
 	exit(-1);
 }
