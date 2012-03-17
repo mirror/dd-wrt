@@ -182,6 +182,8 @@
 	.set	at=v1
 #endif
 
+#include "prefetch.h"
+
 /*
  * A combined memcpy/__copy_user
  * __copy_user sets len to 0 for success; else to an upper bound of
@@ -195,6 +197,8 @@ LEAF(__copy_user_inatomic)
 	 * Temps
 	 */
 #define rem t8
+
+	prefetch_store dst, len, t0, t1, t2
 
 	/*
 	 * The "issue break"s below are very approximate.
