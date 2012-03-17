@@ -19,6 +19,8 @@
 #define LONG_S_R sdr
 #endif
 
+#include "prefetch.h"
+
 #define EX(insn,reg,addr,handler)			\
 9:	insn	reg, addr;				\
 	.section __ex_table,"a"; 			\
@@ -74,6 +76,8 @@ FEXPORT(__bzero)
 	sltiu		t0, a2, LONGSIZE	/* very small region? */
 	bnez		t0, .Lsmall_memset
 	 andi		t0, a0, LONGMASK	/* aligned? */
+
+	prefetch_store a0, a2, t2, t3, t4
 
 #ifndef CONFIG_CPU_DADDI_WORKAROUNDS
 	beqz		t0, 1f
