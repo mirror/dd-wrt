@@ -182,6 +182,8 @@
 	.set	at=v1
 #endif
 
+#include "prefetch.h"
+
 /*
  * A combined memcpy/__copy_user
  * __copy_user sets len to 0 for success; else to an upper bound of
@@ -198,6 +200,8 @@ FEXPORT(__copy_user)
 	 * Temps
 	 */
 #define rem t8
+
+	prefetch_store a0, a2, t0, t1, t2
 
 	R10KCBARRIER(0(ra))
 	/*

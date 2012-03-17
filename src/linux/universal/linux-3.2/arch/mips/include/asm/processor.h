@@ -354,7 +354,7 @@ unsigned long get_wchan(struct task_struct *p);
 #define prefetch(x) __builtin_prefetch((x), 0, 1)
 
 #define ARCH_HAS_PREFETCHW
-#define prefetchw(x) __builtin_prefetch((x), 1, 1)
+#define prefetchw(x) do {} while (0)
 
 #endif
 
