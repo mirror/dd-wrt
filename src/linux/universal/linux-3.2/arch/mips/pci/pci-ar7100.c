@@ -212,7 +212,7 @@ static u8 mac1[6];
 static void *getCalData(int slot)
 {
 u8 *base;
-for (base=(u8 *) KSEG1ADDR(STARTSCAN);base<KSEG1ADDR (0x1fff0000);base+=0x1000) {
+for (base=(u8 *) KSEG1ADDR(STARTSCAN);base<KSEG1ADDR (0x1ffff000);base+=0x1000) {
     u32 *cal = (u32 *)base;
     if (*cal==0xa55a0000 || *cal==0x5aa50000) { //protection bit is always zero on inflash devices, so we can use for match it
 	if (slot) {
