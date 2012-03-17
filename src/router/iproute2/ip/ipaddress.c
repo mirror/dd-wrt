@@ -77,6 +77,7 @@ static void usage(void)
 	exit(-1);
 }
 */
+#ifdef NEED_PRINTF
 void print_link_flags(FILE *fp, unsigned flags, unsigned mdown)
 {
 	fprintf(fp, "<");
@@ -269,7 +270,7 @@ int print_linkinfo(const struct sockaddr_nl *who,
 	fflush(fp);
 	return 0;
 }
-
+#endif
 static int flush_update(void)
 {
 	if (rtnl_send(filter.rth, filter.flushb, filter.flushp) < 0) {
@@ -279,6 +280,12 @@ static int flush_update(void)
 	filter.flushp = 0;
 	return 0;
 }
+struct nlmsg_list
+{
+	struct nlmsg_list *next;
+	struct nlmsghdr	  h;
+};
+#ifdef NEED_PRINTF
 
 int print_addrinfo(const struct sockaddr_nl *who, struct nlmsghdr *n, 
 		   void *arg)
@@ -443,13 +450,18 @@ int print_addrinfo(const struct sockaddr_nl *who, struct nlmsghdr *n,
 	fflush(fp);
 	return 0;
 }
-
-
-struct nlmsg_list
+#else
+int print_addrinfo(const struct sockaddr_nl *who, struct nlmsghdr *n, 
+		   void *arg)
+		   
 {
-	struct nlmsg_list *next;
-	struct nlmsghdr	  h;
-};
+	return 0;
+}
+#endif
+
+#ifdef NEED_PRINTF
+
+
 
 int print_selected_addrinfo(int ifindex, struct nlmsg_list *ainfo, FILE *fp)
 {
@@ -471,7 +483,7 @@ int print_selected_addrinfo(int ifindex, struct nlmsg_list *ainfo, FILE *fp)
 	}
 	return 0;
 }
-
+#endif
 
 static int store_nlmsg(const struct sockaddr_nl *who, struct nlmsghdr *n, 
 		       void *arg)
@@ -631,6 +643,7 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 		}
 	}
 
+#ifdef NEED_PRINTF
 	if (filter.family != AF_PACKET) {
 		if (rtnl_wilddump_request(&rth, filter.family, RTM_GETADDR) < 0) {
 			perror("Cannot send dump request");
@@ -702,7 +715,6 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 				lp = &l->next;
 		}
 	}
-
 	for (l=linfo; l; l = l->next) {
 		if (no_link || print_linkinfo(NULL, &l->h, stdout) == 0) {
 			struct ifinfomsg *ifi = NLMSG_DATA(&l->h);
@@ -711,16 +723,17 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 		}
 		fflush(stdout);
 	}
-
+#endif
 	exit(0);
 }
-
+#ifdef NEED_PRINTF
 int ipaddr_list_link(int argc, char **argv)
 {
 	preferred_family = AF_PACKET;
 	do_link = 1;
 	return ipaddr_list_or_flush(argc, argv, 0);
 }
+#endif
 
 void ipaddr_reset_filter(int oneline)
 {
@@ -898,19 +911,29 @@ int ipaddr_modify(int cmd, int argc, char **argv)
 
 int do_ipaddr(int argc, char **argv)
 {
+#ifdef NEED_PRINTF
 	if (argc < 1)
 		return ipaddr_list_or_flush(0, NULL, 0);
+#else
+	if (argc < 1)
+	    return 0;
+
+#endif
 	if (matches(*argv, "add") == 0)
 		return ipaddr_modify(RTM_NEWADDR, argc-1, argv+1);
 	if (matches(*argv, "delete") == 0)
 		return ipaddr_modify(RTM_DELADDR, argc-1, argv+1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "list") == 0 || matches(*argv, "show") == 0
 	    || matches(*argv, "lst") == 0)
 		return ipaddr_list_or_flush(argc-1, argv+1, 0);
+#endif
 	if (matches(*argv, "flush") == 0)
 		return ipaddr_list_or_flush(argc-1, argv+1, 1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip address help\".\n", *argv);
 	exit(-1);
 }

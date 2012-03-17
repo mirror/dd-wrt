@@ -137,8 +137,10 @@ int main(int argc, char **argv)
 		return do_iplink(argc-1, argv+1);
 	if (strcmp(basename, "iptunnel") == 0)
 		return do_iptunnel(argc-1, argv+1);
+#ifdef NEED_PRINTF
 	if (strcmp(basename, "ipmonitor") == 0)
 		return do_ipmonitor(argc-1, argv+1);
+#endif
 	if (strcmp(basename, "ipxfrm") == 0)
 		return do_xfrm(argc-1, argv+1);
 
@@ -161,8 +163,10 @@ int main(int argc, char **argv)
 		if (matches(argv[1], "tunnel") == 0 ||
 		    strcmp(argv[1], "tunl") == 0)
 			return do_iptunnel(argc-2, argv+2);
+#ifdef NEED_PRINTF
 		if (matches(argv[1], "monitor") == 0)
 			return do_ipmonitor(argc-2, argv+2);
+#endif
 		if (matches(argv[1], "xfrm") == 0)
 			return do_xfrm(argc-2, argv+2);
 		if (matches(argv[1], "help") == 0)

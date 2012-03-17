@@ -189,6 +189,7 @@ void read_igmp6(struct ma_info **result_p)
 	}
 	fclose(fp);
 }
+#ifdef NEED_PRINTF
 
 static void print_maddr(FILE *fp, struct ma_info *list)
 {
@@ -271,7 +272,7 @@ static int multiaddr_list(int argc, char **argv)
 	print_mlist(stdout, list);
 	return 0;
 }
-
+#endif
 int multiaddr_modify(int cmd, int argc, char **argv)
 {
 	struct ifreq ifr;
@@ -327,17 +328,24 @@ int multiaddr_modify(int cmd, int argc, char **argv)
 
 int do_multiaddr(int argc, char **argv)
 {
+#ifdef NEED_PRINTF
 	if (argc < 1)
 		return multiaddr_list(0, NULL);
+#else
+	if (argc < 1)
+	    return 0;
+#endif
 	if (matches(*argv, "add") == 0)
 		return multiaddr_modify(RTM_NEWADDR, argc-1, argv+1);
 	if (matches(*argv, "delete") == 0)
 		return multiaddr_modify(RTM_DELADDR, argc-1, argv+1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "list") == 0 || matches(*argv, "show") == 0
 	    || matches(*argv, "lst") == 0)
 		return multiaddr_list(argc-1, argv+1);
 	if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip maddr help\".\n", *argv);
 	exit(-1);
 }

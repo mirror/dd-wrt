@@ -43,6 +43,7 @@ static void usage(void)
 //	fprintf(stderr, "Usage: ip xfrm monitor [ all | LISTofOBJECTS ]\n");
 	exit(-1);
 }*/
+#ifdef NEED_PRINTF
 
 static int xfrm_acquire_print(const struct sockaddr_nl *who,
 			      struct nlmsghdr *n, void *arg)
@@ -180,7 +181,6 @@ static int xfrm_policy_expire_print(const struct sockaddr_nl *who,
 
 	return 0;
 }
-
 static int xfrm_accept_msg(const struct sockaddr_nl *who,
 			   struct nlmsghdr *n, void *arg)
 {
@@ -214,6 +214,7 @@ static int xfrm_accept_msg(const struct sockaddr_nl *who,
 	}
 	return 0;
 }
+#endif
 
 int do_xfrm_monitor(int argc, char **argv)
 {

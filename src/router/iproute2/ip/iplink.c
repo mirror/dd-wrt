@@ -419,15 +419,19 @@ int do_iplink(int argc, char **argv)
 	if (argc > 0) {
 		if (matches(*argv, "set") == 0)
 			return do_set(argc-1, argv+1);
+#ifdef NEED_PRINTF
 		if (matches(*argv, "show") == 0 ||
 		    matches(*argv, "lst") == 0 ||
 		    matches(*argv, "list") == 0)
 			return ipaddr_list_link(argc-1, argv+1);
 		if (matches(*argv, "help") == 0)
 			usage();
-	} else
+#endif
+	}
+#ifdef NEED_PRINTF
+	 else
 		return ipaddr_list_link(0, NULL);
-
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip link help\".\n", *argv);
 	exit(-1);
 }
