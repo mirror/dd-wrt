@@ -417,6 +417,7 @@ int do_del(int argc, char **argv)
 	return -1;
 }
 
+#ifdef NEED_PRINTF
 void print_tunnel(struct ip_tunnel_parm *p)
 {
 	char s1[1024];
@@ -564,7 +565,6 @@ static int do_tunnels_list(struct ip_tunnel_parm *p)
 	}
 	return 0;
 }
-
 static int do_show(int argc, char **argv)
 {
 	int err;
@@ -597,6 +597,7 @@ static int do_show(int argc, char **argv)
 	fprintf(stdout,"\n");
 	return 0;
 }
+#endif
 
 int do_iptunnel(int argc, char **argv)
 {
@@ -607,14 +608,19 @@ int do_iptunnel(int argc, char **argv)
 			return do_add(SIOCCHGTUNNEL, argc-1, argv+1);
 		if (matches(*argv, "del") == 0)
 			return do_del(argc-1, argv+1);
+#ifdef NEED_PRINTF
 		if (matches(*argv, "show") == 0 ||
 		    matches(*argv, "lst") == 0 ||
 		    matches(*argv, "list") == 0)
 			return do_show(argc-1, argv+1);
 		if (matches(*argv, "help") == 0)
 			usage();
-	} else
+#endif
+	}
+#ifdef NEED_PRINTF
+	 else
 		return do_show(0, NULL);
+#endif
 
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip tunnel help\".\n", *argv);
 	exit(-1);

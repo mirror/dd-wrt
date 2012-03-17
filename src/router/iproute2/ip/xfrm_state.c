@@ -516,11 +516,12 @@ static int xfrm_state_allocspi(int argc, char **argv)
 	if (rtnl_talk(&rth, &req.n, 0, 0, res_n, NULL, NULL) < 0)
 		exit(2);
 
+#ifdef NEED_PRINTF
 	if (xfrm_state_print(NULL, res_n, (void*)stdout) < 0) {
 //		fprintf(stderr, "An error :-)\n");
 		exit(1);
 	}
-
+#endif
 	rtnl_close(&rth);
 
 	return 0;
@@ -553,6 +554,7 @@ static int xfrm_state_filter_match(struct xfrm_usersa_info *xsinfo)
 
 	return 1;
 }
+#ifdef NEED_PRINTF
 
 int xfrm_state_print(const struct sockaddr_nl *who, struct nlmsghdr *n,
 		     void *arg)
@@ -590,7 +592,7 @@ int xfrm_state_print(const struct sockaddr_nl *who, struct nlmsghdr *n,
 
 	return 0;
 }
-
+#endif
 static int xfrm_state_get_or_delete(int argc, char **argv, int delete)
 {
 	struct rtnl_handle rth;
@@ -641,7 +643,9 @@ static int xfrm_state_get_or_delete(int argc, char **argv, int delete)
 	if (delete) {
 		if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0)
 			exit(2);
-	} else {
+	}
+#ifdef NEED_PRINTF
+	 else {
 		char buf[NLMSG_BUF_SIZE];
 		struct nlmsghdr *res_n = (struct nlmsghdr *)buf;
 
@@ -655,7 +659,7 @@ static int xfrm_state_get_or_delete(int argc, char **argv, int delete)
 			exit(1);
 		}
 	}
-
+#endif
 	rtnl_close(&rth);
 
 	return 0;
@@ -801,7 +805,9 @@ static int xfrm_state_list_or_flush(int argc, char **argv, int flush)
 			xb.nlmsg_count = 0;
 		}
 
-	} else {
+	} 
+#ifdef NEED_PRINTF
+	else {
 		if (rtnl_wilddump_request(&rth, preferred_family, XFRM_MSG_GETSA) < 0) {
 //			perror("Cannot send dump request");
 			exit(1);
@@ -812,7 +818,7 @@ static int xfrm_state_list_or_flush(int argc, char **argv, int flush)
 			exit(1);
 		}
 	}
-
+#endif
 	rtnl_close(&rth);
 
 	exit(0);
@@ -849,9 +855,10 @@ static int xfrm_state_flush_all(void)
 
 int do_xfrm_state(int argc, char **argv)
 {
+#ifdef NEED_PRINTF
 	if (argc < 1)
 		return xfrm_state_list_or_flush(0, NULL, 0);
-
+#endif
 	if (matches(*argv, "add") == 0)
 		return xfrm_state_modify(XFRM_MSG_NEWSA, 0,
 					 argc-1, argv+1);
@@ -862,19 +869,23 @@ int do_xfrm_state(int argc, char **argv)
 		return xfrm_state_allocspi(argc-1, argv+1);
 	if (matches(*argv, "delete") == 0 || matches(*argv, "del") == 0)
 		return xfrm_state_get_or_delete(argc-1, argv+1, 1);
+#ifdef NEED_PRINTF
 	if (matches(*argv, "list") == 0 || matches(*argv, "show") == 0
 	    || matches(*argv, "lst") == 0)
 		return xfrm_state_list_or_flush(argc-1, argv+1, 0);
 	if (matches(*argv, "get") == 0)
 		return xfrm_state_get_or_delete(argc-1, argv+1, 0);
+#endif
 	if (matches(*argv, "flush") == 0) {
 		if (argc-1 < 1)
 			return xfrm_state_flush_all();
 		else
 			return xfrm_state_list_or_flush(argc-1, argv+1, 1);
 	}
+#ifdef NEED_PRINTF
 	if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip xfrm state help\".\n", *argv);
 	exit(-1);
 }

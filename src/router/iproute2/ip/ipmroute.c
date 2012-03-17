@@ -186,7 +186,12 @@ static int mroute_list(int argc, char **argv)
 int do_multiroute(int argc, char **argv)
 {
 	if (argc < 1)
+#ifdef NEED_PRINTF
 		return mroute_list(0, NULL);
+#else
+		return 0;
+#endif
+
 #if 0
 	if (matches(*argv, "add") == 0)
 		return mroute_modify(RTM_NEWADDR, argc-1, argv+1);
@@ -195,11 +200,13 @@ int do_multiroute(int argc, char **argv)
 	if (matches(*argv, "get") == 0)
 		return mroute_get(argc-1, argv+1);
 #endif
+#ifdef NEED_PRINTF
 	if (matches(*argv, "list") == 0 || matches(*argv, "show") == 0
 	    || matches(*argv, "lst") == 0)
 		return mroute_list(argc-1, argv+1);
 	if (matches(*argv, "help") == 0)
 		usage();
+#endif
 //	fprintf(stderr, "Command \"%s\" is unknown, try \"ip mroute help\".\n", *argv);
 	exit(-1);
 }
