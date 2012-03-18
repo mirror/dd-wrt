@@ -92,10 +92,10 @@ void start_sysinit(void)
 	insmod("rt2860v2_ap");
 	insmod("raeth");
 #ifdef HAVE_DIR600
-	writeproc("/proc/rt3052/mii/ctrl","\"write 0 0 0x3300\"");
-	writeproc("/proc/rt3052/mii/ctrl","\"write 1 0 0x3300\"");
-	writeproc("/proc/rt3052/mii/ctrl","\"write 2 0 0x3300\"");
-	writeproc("/proc/rt3052/mii/ctrl","\"write 3 0 0x3300\"");
+	writeproc("/proc/rt3052/mii/ctrl","write 0 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl","write 1 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl","write 2 0 0x3300");
+	writeproc("/proc/rt3052/mii/ctrl","write 3 0 0x3300");
 #endif
 #if defined(HAVE_RT10N) || defined(HAVE_F5D8235) || defined(HAVE_RT15N) || defined(HAVE_WCRGN)
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
