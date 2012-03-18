@@ -173,6 +173,7 @@ void start_sysinit(void)
 #ifdef HAVE_ALLNET11N
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -182,6 +183,7 @@ void start_sysinit(void)
 #elif HAVE_ESR9752
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -191,6 +193,7 @@ void start_sysinit(void)
 #elif HAVE_ESR6650
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -200,6 +203,7 @@ void start_sysinit(void)
 #elif HAVE_WR5422
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -209,6 +213,7 @@ void start_sysinit(void)
 #elif HAVE_RT10N
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -218,6 +223,7 @@ void start_sysinit(void)
 #elif HAVE_ACXNR22
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -227,6 +233,7 @@ void start_sysinit(void)
 #elif HAVE_W502U
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1002");
@@ -251,6 +258,7 @@ void start_sysinit(void)
 #elif HAVE_F5D8235
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f40");
 		sysprintf("switch reg w e4 20");
 		sysprintf("switch reg w 40 1001");
@@ -266,11 +274,13 @@ void start_sysinit(void)
 		sysprintf("switch reg w 4c 1");
 		sysprintf("switch reg w 50 2001");
 		sysprintf("switch reg w 70 ffffffff");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f7f");
 		sysprintf("switch reg w e4 7f");
 #else
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 90 7f7f");
 		sysprintf("switch reg w 98 7f3f");
 		sysprintf("switch reg w e4 3f");
 		sysprintf("switch reg w 40 1001");
@@ -331,6 +341,7 @@ char *enable_dtag_vlan(int enable)
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			sysprintf("switch reg w 14 405555");
 			sysprintf("switch reg w 50 7001");
+			sysprintf("switch reg w 90 7f7f");
 			sysprintf("switch reg w 98 7f2f");
 			sysprintf("switch reg w e4 2f");
 #ifdef HAVE_ALLNET11N
@@ -381,6 +392,7 @@ char *enable_dtag_vlan(int enable)
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			sysprintf("switch reg w 14 405555");
 			sysprintf("switch reg w 50 2001");
+			sysprintf("switch reg w 90 7f7f");
 			sysprintf("switch reg w 98 7f3f");
 			sysprintf("switch reg w e4 3f");
 #ifdef HAVE_ALLNET11N
