@@ -132,7 +132,7 @@ static void __init rb1000_pic_init(void)
 	iounmap(gcr);
 
 	mpic = mpic_alloc(np, r.start,
-			  MPIC_PRIMARY | MPIC_WANTS_RESET | MPIC_BIG_ENDIAN,
+			  MPIC_WANTS_RESET | MPIC_BIG_ENDIAN,
 			  1, 0, " OpenPIC ");
 	
 	for (i = 0; i < 31; ++i) {

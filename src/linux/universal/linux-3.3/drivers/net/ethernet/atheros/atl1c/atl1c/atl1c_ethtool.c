@@ -235,9 +235,6 @@ static struct ethtool_ops atl1c_ethtool_ops = {
 	.get_link               = ethtool_op_get_link,
 	.get_eeprom_len         = atl1c_get_eeprom_len,
 	.get_eeprom             = atl1c_get_eeprom,
-	.get_tx_csum            = atl1c_get_tx_csum,
-	.get_sg                 = ethtool_op_get_sg,
-	.set_sg                 = ethtool_op_set_sg,
 };
 
 void atl1c_set_ethtool_ops(struct net_device *netdev)
