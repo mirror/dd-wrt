@@ -9,6 +9,7 @@
 #include <linux/export.h>
 
 #ifdef CONFIG_PCI
+#ifndef CONFIG_RB_IOMAP
 /**
  * pci_iomap - create a virtual mapping cookie for a PCI BAR
  * @dev: PCI device that owns the BAR
@@ -45,4 +46,5 @@ void __iomem *pci_iomap(struct pci_dev *dev, int bar, unsigned long maxlen)
 }
 
 EXPORT_SYMBOL(pci_iomap);
+#endif
 #endif /* CONFIG_PCI */

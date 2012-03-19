@@ -394,29 +394,30 @@ static void atl1c_set_multi(struct net_device *netdev)
 	}
 }
 
-static void atl1c_vlan_rx_register(struct net_device *netdev,
-				   struct vlan_group *grp)
+static void __atl1c_vlan_mode(netdev_features_t features, u32 *mac_ctrl_data)
+{
+	if (features & NETIF_F_HW_VLAN_RX) {
+		/* enable VLAN tag insert/strip */
+		*mac_ctrl_data |= MAC_CTRL_RMV_VLAN;
+	} else {
+		/* disable VLAN tag insert/strip */
+		*mac_ctrl_data &= ~MAC_CTRL_RMV_VLAN;
+	}
+}
+
+static void atl1c_vlan_mode(struct net_device *netdev,
+	netdev_features_t features)
 {
 	struct atl1c_adapter *adapter = netdev_priv(netdev);
 	struct pci_dev *pdev = adapter->pdev;
 	u32 mac_ctrl_data = 0;
 
 	if (netif_msg_pktdata(adapter))
-		dev_dbg(&pdev->dev, "atl1c_vlan_rx_register\n");
+		dev_dbg(&pdev->dev, "atl1c_vlan_mode\n");
 
 	atl1c_irq_disable(adapter);
-
-	adapter->vlgrp = grp;
 	AT_READ_REG(&adapter->hw, REG_MAC_CTRL, &mac_ctrl_data);
-
-	if (grp) {
-		/* enable VLAN tag insert/strip */
-		mac_ctrl_data |= MAC_CTRL_RMV_VLAN;
-	} else {
-		/* disable VLAN tag insert/strip */
-		mac_ctrl_data &= ~MAC_CTRL_RMV_VLAN;
-	}
-
+	__atl1c_vlan_mode(features, &mac_ctrl_data);
 	AT_WRITE_REG(&adapter->hw, REG_MAC_CTRL, mac_ctrl_data);
 	atl1c_irq_enable(adapter);
 }
@@ -426,8 +427,8 @@ static void atl1c_restore_vlan(struct atl1c_adapter *adapter)
 	struct pci_dev *pdev = adapter->pdev;
 
 	if (netif_msg_pktdata(adapter))
-		dev_dbg(&pdev->dev, "atl1c_restore_vlan !");
-	atl1c_vlan_rx_register(adapter->netdev, adapter->vlgrp);
+		dev_dbg(&pdev->dev, "atl1c_restore_vlan\n");
+	atl1c_vlan_mode(adapter->netdev, adapter->netdev->features);
 }
 /*
  * atl1c_set_mac - Change the Ethernet Address of the NIC
@@ -463,6 +464,37 @@ static void atl1c_set_rxbufsize(struct atl1c_adapter *adapter,
 	adapter->rx_buffer_len = mtu > AT_RX_BUF_SIZE ?
 		roundup(mtu + ETH_HLEN + ETH_FCS_LEN + VLAN_HLEN, 8) : AT_RX_BUF_SIZE;
 }
+
+
+static netdev_features_t atl1c_fix_features(struct net_device *netdev,
+	netdev_features_t features)
+{
+	/*
+	 * Since there is no support for separate rx/tx vlan accel
+	 * enable/disable make sure tx flag is always in same state as rx.
+	 */
+	if (features & NETIF_F_HW_VLAN_RX)
+		features |= NETIF_F_HW_VLAN_TX;
+	else
+		features &= ~NETIF_F_HW_VLAN_TX;
+
+	if (netdev->mtu > MAX_TSO_FRAME_SIZE)
+		features &= ~(NETIF_F_TSO | NETIF_F_TSO6);
+
+	return features;
+}
+
+static int atl1c_set_features(struct net_device *netdev,
+	netdev_features_t features)
+{
+	netdev_features_t changed = netdev->features ^ features;
+
+	if (changed & NETIF_F_HW_VLAN_RX)
+		atl1c_vlan_mode(netdev, features);
+
+	return 0;
+}
+
 /*
  * atl1c_change_mtu - Change the Maximum Transfer Unit
  * @netdev: network interface device structure
@@ -1672,15 +1704,15 @@ rrs_checked:
 		skb->protocol = eth_type_trans(skb, netdev);
 		skb->dev = netdev;
 		atl1c_rx_checksum(adapter, skb, rrs);
-		if (unlikely(adapter->vlgrp) &&
-		    le32_to_cpu(rrs->word3) & RRS_VLAN_INS) {
+
+		if (le32_to_cpu(rrs->word3) & RRS_VLAN_INS) {
 			u16 vlan;
 
 			AT_TAG_TO_VLAN(rrs->vlan_tag, vlan);
 			vlan = le16_to_cpu(vlan);
-			vlan_hwaccel_receive_skb(skb, adapter->vlgrp, vlan);
-		} else
-			netif_receive_skb(skb);
+			__vlan_hwaccel_put_tag(skb, vlan);
+		}
+		netif_receive_skb(skb);
 
 		netdev->last_rx = jiffies;
 		(*work_done)++;
@@ -2420,10 +2452,12 @@ static const struct net_device_ops atl1c_netdev_ops = {
 	.ndo_set_mac_address 	= atl1c_set_mac_addr,
 	.ndo_set_rx_mode 	= atl1c_set_multi,
 	.ndo_change_mtu		= atl1c_change_mtu,
+	.ndo_fix_features	= atl1c_fix_features,
+	.ndo_set_features	= atl1c_set_features,
 	.ndo_do_ioctl		= atl1c_ioctl,
 	.ndo_tx_timeout		= atl1c_tx_timeout,
 	.ndo_get_stats		= atl1c_get_stats,
-	.ndo_vlan_rx_register	= atl1c_vlan_rx_register,
+//	.ndo_vlan_rx_register	= atl1c_vlan_rx_register,
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	.ndo_poll_controller	= atl1c_netpoll,
 #endif

@@ -193,7 +193,7 @@ void __init rb_pic_init(void)
 	iounmap(gcr);
 
 	mpic = mpic_alloc(np, r.start, 
-			  MPIC_PRIMARY | MPIC_WANTS_RESET | MPIC_BIG_ENDIAN,
+			  MPIC_WANTS_RESET | MPIC_BIG_ENDIAN,
 			  4, 0, " OpenPIC ");
 	for (i = 0; i < 80; i += 4) {
 		mpic_assign_isu(mpic, i / 4, r.start + 0x10000 + i * 0x20);
