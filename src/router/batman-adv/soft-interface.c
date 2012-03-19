@@ -55,8 +55,6 @@ static const struct ethtool_ops bat_ethtool_ops = {
 	.get_msglevel = bat_get_msglevel,
 	.set_msglevel = bat_set_msglevel,
 	.get_link = bat_get_link,
-	.get_rx_csum = bat_get_rx_csum,
-	.set_rx_csum = bat_set_rx_csum
 };
 
 int my_skb_head_push(struct sk_buff *skb, unsigned int len)
