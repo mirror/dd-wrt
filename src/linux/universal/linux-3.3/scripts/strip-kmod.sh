@@ -11,25 +11,37 @@ MODULE="$1"
 	exit 1
 }
 
+ARGS=
+if [ -n "$KEEP_SYMBOLS" ]; then
+	ARGS="-X --strip-debug"
+else
+	ARGS="-x -G __this_module --strip-unneeded"
+fi
+
 ${CROSS_COMPILE}objcopy \
-	--strip-unneeded \
 	-R .comment \
 	-R .pdr \
 	-R .mdebug.abi32 \
 	-R .note.gnu.build-id \
 	-R .gnu.attributes \
 	-R .reginfo \
-	-G __this_module \
-	-x "$MODULE" "$MODULE.tmp"
+	$ARGS \
+	"$MODULE" "$MODULE.tmp"
+
+[ -n "$NO_RENAME" ] && {
+	mv "${MODULE}.tmp" "$MODULE"
+	exit 0
+}
 
 ${CROSS_COMPILE}nm "$MODULE.tmp" | awk '
 BEGIN {
 	n = 0
 }
 
-$3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ {
+$3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ && !def[$3] {
 	print "--redefine-sym "$3"=_"n;
 	n = n + 1
+	def[$3] = 1
 }
 ' > "$MODULE.tmp1"
 
