@@ -191,6 +191,7 @@ static irqreturn_t twd_handler(int irq, void *dev_id)
 
 	return IRQ_NONE;
 }
+#ifndef CONFIG_ARCH_CNS3XXX
 
 static struct clk *twd_get_clock(void)
 {
@@ -220,7 +221,7 @@ static struct clk *twd_get_clock(void)
 
 	return clk;
 }
-
+#endif
 /*
  * Setup the local clock events for a CPU.
  */
@@ -246,12 +247,14 @@ void __cpuinit twd_timer_setup(struct clock_event_device *clk)
 		}
 	}
 
+#ifndef CONFIG_ARCH_CNS3XXX
 	if (!twd_clk)
 		twd_clk = twd_get_clock();
 
 	if (!IS_ERR_OR_NULL(twd_clk))
 		twd_timer_rate = clk_get_rate(twd_clk);
 	else
+#endif
 		twd_calibrate_rate();
 
 	__raw_writel(0, twd_base + TWD_TIMER_CONTROL);
