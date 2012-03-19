@@ -6,7 +6,7 @@
 
 TC=/usr/sbin/tc
 IPTABLES=/usr/sbin/iptables
-IP=/bin/ip
+IP=/usr/sbin/ip
 IPT="${IPTABLES} -t mangle "
 TCA="${TC} class add dev "
 TFA="${TC} filter add dev "
