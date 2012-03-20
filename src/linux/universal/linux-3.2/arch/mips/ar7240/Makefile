@@ -32,9 +32,8 @@ obj-y	+=	prom.o	\
 			dev-ap91-pci.o \
 			pci-ath9k-fixup.o \
 			nvram.o \
-			platform.o
-
-#			devices.o 
+			platform.o \
+			devices.o 
 
 obj-$(CONFIG_EARLY_PRINTK)		+= early_printk.o
 #obj-$(CONFIG_AR9100)	+= wdt.o
