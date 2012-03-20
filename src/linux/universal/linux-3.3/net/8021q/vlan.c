@@ -106,8 +106,12 @@ void unregister_vlan_dev(struct net_device *dev, struct list_head *head)
 	unregister_netdevice_queue(dev, head);
 
 	/* If the group is now empty, kill off the group. */
-	if (grp->nr_vlan_devs == 0)
+	if (grp->nr_vlan_devs == 0) {
 		vlan_gvrp_uninit_applicant(real_dev);
+
+		if (ops->ndo_vlan_rx_register)
+			ops->ndo_vlan_rx_register(real_dev, NULL);
+	}
 
 	/* Get rid of the vlan's reference to real_dev */
 	dev_put(real_dev);
