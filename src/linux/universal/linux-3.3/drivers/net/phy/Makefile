@@ -2,6 +2,8 @@
 
 libphy-objs			:= phy.o phy_device.o mdio_bus.o
 
+obj-$(CONFIG_MDIO_BOARDINFO)	+= mdio-boardinfo.o
+
 obj-$(CONFIG_PHYLIB)		+= libphy.o
 obj-$(CONFIG_SWCONFIG)		+= swconfig.o
 obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
