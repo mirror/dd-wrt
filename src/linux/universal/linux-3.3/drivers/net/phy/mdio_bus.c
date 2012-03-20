@@ -36,6 +36,8 @@
 #include <asm/irq.h>
 #include <asm/uaccess.h>
 
+#include "mdio-boardinfo.h"
+
 /**
  * mdiobus_alloc_size - allocate a mii_bus structure
  * @size: extra amount of memory to allocate for private storage.
@@ -192,14 +194,32 @@ void mdiobus_free(struct mii_bus *bus)
 }
 EXPORT_SYMBOL(mdiobus_free);
 
+static void mdiobus_setup_phydev_from_boardinfo(struct mii_bus *bus,
+						struct phy_device *phydev,
+						struct mdio_board_info *bi)
+{
+	if (strcmp(bus->id, bi->bus_id) ||
+	    bi->phy_addr != phydev->addr)
+		return;
+
+	phydev->dev.platform_data = (void *) bi->platform_data;
+}
+
 struct phy_device *mdiobus_scan(struct mii_bus *bus, int addr)
 {
 	struct phy_device *phydev;
+	struct mdio_board_entry *be;
 	int err;
 
 	phydev = get_phy_device(bus, addr);
 	if (IS_ERR(phydev) || phydev == NULL)
 		return phydev;
+
+	mutex_lock(&__mdio_board_lock);
+	list_for_each_entry(be, &__mdio_board_list, list)
+		mdiobus_setup_phydev_from_boardinfo(bus, phydev,
+						    &be->board_info);
+	mutex_unlock(&__mdio_board_lock);
 
 	err = phy_device_register(phydev);
 	if (err) {
