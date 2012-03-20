@@ -530,6 +530,8 @@ void __init plat_mem_setup(void)
 u32 id;
 u32 t;
 u32 rev=0;
+
+
 	id = ar7240_reg_rd(AR7240_REV_ID);
 
         if (is_ar7240()) {
