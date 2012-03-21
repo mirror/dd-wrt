@@ -2464,7 +2464,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_ca", "", 0},
 	{"openvpncl_client", "", 0},
 	{"openvpncl_key", "", 0},
-	{"openvpncl_lzo", "", 0},
+	{"openvpncl_lzo", "0", 0},
 	{"openvpncl_proto", "udp", 0},
 	{"openvpncl_mtu", "1500", 0},
 	{"openvpncl_mssfix", "", 0},
@@ -2494,7 +2494,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_crt", "", 0},
 	{"openvpn_client", "", 0},	//old and invalid just to be compatible to old config
 	{"openvpn_key", "", 0},
-	{"openvpn_lzo", "", 0},
+	{"openvpn_lzo", "0", 0},
 	{"openvpn_proto", "udp", 0},
 	{"openvpn_mtu", "1500", 0},
 	{"openvpn_mssfix", "", 0},
