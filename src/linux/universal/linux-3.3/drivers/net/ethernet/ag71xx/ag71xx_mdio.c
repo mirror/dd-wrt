@@ -58,11 +58,9 @@ int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CMD, MII_CMD_READ);
 
 	i = AG71XX_MDIO_RETRY;
-	udelay(AG71XX_MDIO_DELAY);
 	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
 		if (i-- == 0) {
-			printk(KERN_ERR "%s: mii_read timed out\n",
-				am->mii_bus->name);
+			pr_err("%s: mii_read timed out\n", am->mii_bus->name);
 			ret = 0xffff;
 			goto out;
 		}
@@ -89,11 +87,9 @@ void ag71xx_mdio_mii_write(struct ag71xx_mdio *am, int addr, int reg, u16 val)
 	ag71xx_mdio_wr(am, AG71XX_REG_MII_CTRL, val);
 
 	i = AG71XX_MDIO_RETRY;
-	udelay(AG71XX_MDIO_DELAY);
 	while (ag71xx_mdio_rr(am, AG71XX_REG_MII_IND) & MII_IND_BUSY) {
 		if (i-- == 0) {
-			printk(KERN_ERR "%s: mii_write timed out\n",
-				am->mii_bus->name);
+			pr_err("%s: mii_write timed out\n", am->mii_bus->name);
 			break;
 		}
 		udelay(AG71XX_MDIO_DELAY);

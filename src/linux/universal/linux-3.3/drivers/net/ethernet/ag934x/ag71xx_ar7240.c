@@ -207,6 +207,17 @@
 #define AR934X_REG_OPER_MODE1		0x08
 #define   AR934X_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
 
+#define AR934X_REG_FLOOD_MASK		0x2c
+#define   AR934X_FLOOD_MASK_BC_DP(_p)	BIT(25 + (_p))
+
+#define AR934X_REG_QM_CTRL		0x3c
+#define   AR934X_QM_CTRL_ARP_EN		BIT(15)
+
+#define AR934X_REG_AT_CTRL		0x5c
+#define   AR934X_AT_CTRL_AGE_TIME	BITS(0, 15)
+#define   AR934X_AT_CTRL_AGE_EN		BIT(17)
+#define   AR934X_AT_CTRL_LEARN_CHANGE	BIT(18)
+
 #define AR934X_REG_PORT_BASE(_port)	(0x100 + (_port) * 0x100)
 
 #define AR934X_REG_PORT_VLAN1(_port)	(AR934X_REG_PORT_BASE((_port)) + 0x08)
@@ -556,17 +567,30 @@ static void ar7240sw_setup(struct ar7240sw *as)
 	/* Setup TAG priority mapping */
 	ar7240sw_reg_write(mii, AR7240_REG_TAG_PRIORITY, 0xfa50);
 
-	/* Enable ARP frame acknowledge, aging, MAC replacing */
-	ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
-		AR7240_AT_CTRL_RESERVED |
-		0x2b /* 5 min age time */ |
-		AR7240_AT_CTRL_AGE_EN |
-		AR7240_AT_CTRL_ARP_EN |
-		AR7240_AT_CTRL_LEARN_CHANGE);
-
-	/* Enable Broadcast frames transmitted to the CPU */
-	ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
-			 AR7240_FLOOD_MASK_BROAD_TO_CPU);
+	if (sw_is_ar934x(as)) {
+		/* Enable aging, MAC replacing */
+		ar7240sw_reg_write(mii, AR934X_REG_AT_CTRL,
+			0x2b /* 5 min age time */ |
+			AR934X_AT_CTRL_AGE_EN |
+			AR934X_AT_CTRL_LEARN_CHANGE);
+		/* Enable ARP frame acknowledge */
+		ar7240sw_reg_set(mii, AR934X_REG_QM_CTRL,
+				 AR934X_QM_CTRL_ARP_EN);
+		/* Enable Broadcast frames transmitted to the CPU */
+		ar7240sw_reg_set(mii, AR934X_REG_FLOOD_MASK,
+				 AR934X_FLOOD_MASK_BC_DP(0));
+	} else {
+		/* Enable ARP frame acknowledge, aging, MAC replacing */
+		ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
+			AR7240_AT_CTRL_RESERVED |
+			0x2b /* 5 min age time */ |
+			AR7240_AT_CTRL_AGE_EN |
+			AR7240_AT_CTRL_ARP_EN |
+			AR7240_AT_CTRL_LEARN_CHANGE);
+		/* Enable Broadcast frames transmitted to the CPU */
+		ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
+				 AR7240_FLOOD_MASK_BROAD_TO_CPU);
+	}
 
 	/* setup MTU */
 	ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL, AR7240_GLOBAL_CTRL_MTU_M,
@@ -595,6 +619,16 @@ static int ar7240sw_reset(struct ar7240sw *as)
 
 	ret = ar7240sw_reg_wait(mii, AR7240_REG_MASK_CTRL,
 				AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
+
+	/* setup PHYs */
+	for (i = 0; i < AR7240_NUM_PHYS; i++) {
+		ar7240sw_phy_write(mii, i, MII_ADVERTISE,
+				   ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
+				   ADVERTISE_PAUSE_ASYM);
+		ar7240sw_phy_write(mii, i, MII_BMCR,
+				   BMCR_RESET | BMCR_ANENABLE);
+	}
+	msleep(1000);
 
 	ar7240sw_setup(as);
 	return ret;
@@ -1017,6 +1051,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 
 	if (sw_is_ar7240(as)) {
 		swdev->name = "AR7240/AR9330 built-in switch";
+		swdev->ports = AR7240_NUM_PORTS - 1;
 	} else if (sw_is_ar934x(as)) {
 		swdev->name = "AR934X built-in switch";
 
@@ -1032,16 +1067,19 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 			goto err_free;
 		}
 
-		if (as->swdata->phy4_mii_en)
+		if (as->swdata->phy4_mii_en) {
 			ar7240sw_reg_set(mii, AR934X_REG_OPER_MODE1,
 					 AR934X_REG_OPER_MODE1_PHY4_MII_EN);
+			swdev->ports = AR7240_NUM_PORTS - 1;
+		} else {
+			swdev->ports = AR7240_NUM_PORTS;
+		}
 	} else {
 		pr_err("%s: unsupported chip, ctrl=%08x\n",
 			ag->dev->name, ctrl);
 		goto err_free;
 	}
 
-	swdev->ports = AR7240_NUM_PORTS - 1;
 	swdev->cpu_port = AR7240_PORT_CPU;
 	swdev->vlans = AR7240_MAX_VLANS;
 	swdev->ops = &ar7240_ops;
@@ -1066,11 +1104,12 @@ err_free:
 
 static void link_function(struct work_struct *work) {
 	struct ag71xx *ag = container_of(work, struct ag71xx, link_work.work);
+	struct ar7240sw *as = ag->phy_priv;
 	unsigned long flags;
 	int i;
 	int status = 0;
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < as->swdev.ports; i++) {
 		int link = ar7240sw_phy_read(ag->mii_bus, i, MII_BMSR);
 		if(link & BMSR_LSTATUS) {
 			status = 1;

@@ -295,9 +295,20 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
     mdelay(10);
 #else        
 #ifdef CONFIG_MACH_AR7240
+
+#ifdef CONFIG_WASP_SUPPORT
+    /* USB Soft Reset Sequence - Power Down the USB PHY PLL */
+	ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE | AR9130_RESET_USB_PHY_ANALOG | AR9130_RESET_USB_PHY_PLL_PWD_EXT);
+	mdelay(10);
+
+    /* USB Soft Reset Sequence - Power Up the USB PHY PLL */
+	ar9130_reg_wr(AR9130_RESET,(ar9130_reg_rd(AR9130_USB_RESET) & ~(AR9130_RESET_USB_PHY_PLL_PWD_EXT)));
+    mdelay(10);
+#else
+
     ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE |AR7240_RESET_USB_PHY_ANALOG);
     mdelay(10);
-	
+#endif	
     ar9130_reg_wr(AR9130_RESET,((ar9130_reg_rd(AR9130_RESET) & ~(AR9130_RESET_USB_HOST)) |  AR9130_RESET_USBSUS_OVRIDE));
     mdelay(10);
 
@@ -316,22 +327,6 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
 #endif
 #endif
 #endif
-
-
-#if 0
-#ifdef CONFIG_MACH_AR7240
-    ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE |AR7240_RESET_USB_PHY_ANALOG);
-#else
-    ar9130_reg_rmw_set(AR9130_RESET,AR9130_RESET_USBSUS_OVRIDE);
-#endif
-#endif
-    mdelay(10);
-	
-    ar9130_reg_wr(AR9130_RESET,((ar9130_reg_rd(AR9130_RESET) & ~(AR9130_RESET_USB_HOST)) | AR9130_RESET_USBSUS_OVRIDE));
-    mdelay(10);
-
-    ar9130_reg_wr(AR9130_RESET,((ar9130_reg_rd(AR9130_RESET) & ~(AR9130_RESET_USB_PHY)) | AR9130_RESET_USBSUS_OVRIDE));
-    mdelay(10);
 
 	
 	}

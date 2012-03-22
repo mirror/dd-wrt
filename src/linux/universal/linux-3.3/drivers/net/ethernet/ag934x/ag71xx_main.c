@@ -134,6 +134,7 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct net_device *dev = ag->dev;
+	u32 bytes_compl = 0, pkts_compl = 0;
 
 	while (ring->curr != ring->dirty) {
 		u32 i = ring->dirty % ring->size;
@@ -143,17 +144,19 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 			dev->stats.tx_errors++;
 		}
 
-		if (ring->buf[i].skb)
+		if (ring->buf[i].skb) {
+			bytes_compl += ring->buf[i].skb->len;
+			pkts_compl++;
 			dev_kfree_skb_any(ring->buf[i].skb);
-
+		}
 		ring->buf[i].skb = NULL;
-
 		ring->dirty++;
 	}
 
 	/* flush descriptors */
 	wmb();
 
+	netdev_completed_queue(dev, pkts_compl, bytes_compl);
 }
 
 static void ag71xx_ring_tx_init(struct ag71xx *ag)
@@ -174,6 +177,7 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 
 	ring->curr = 0;
 	ring->dirty = 0;
+	netdev_reset_queue(ag->dev);
 }
 
 static void ag71xx_ring_rx_clean(struct ag71xx *ag)
@@ -326,6 +330,7 @@ static void ag71xx_rings_cleanup(struct ag71xx *ag)
 	ag71xx_ring_free(&ag->rx_ring);
 
 	ag71xx_ring_tx_clean(ag);
+	netdev_reset_queue(ag->dev);
 	ag71xx_ring_free(&ag->tx_ring);
 }
 
@@ -389,8 +394,8 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 
 	val = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
 	if (val)
-		printk(KERN_ALERT "%s: unable to clear DMA Rx status: %08x\n",
-			ag->dev->name, val);
+		pr_alert("%s: unable to clear DMA Rx status: %08x\n",
+			 ag->dev->name, val);
 
 	val = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
 
@@ -398,8 +403,8 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 	val &= ~0xff000000;
 
 	if (val)
-		printk(KERN_ALERT "%s: unable to clear DMA Tx status: %08x\n",
-			ag->dev->name, val);
+		pr_alert("%s: unable to clear DMA Tx status: %08x\n",
+			 ag->dev->name, val);
 
 	ag71xx_dump_dma_regs(ag);
 }
@@ -467,8 +472,8 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	if (pdata->is_ar724x) {
 		u32 reset_phy = reset_mask;
 
-		reset_phy &= RESET_MODULE_GE0_PHY | RESET_MODULE_GE1_PHY;
-		reset_mask &= ~(RESET_MODULE_GE0_PHY | RESET_MODULE_GE1_PHY);
+		reset_phy &= AR71XX_RESET_GE0_PHY | AR71XX_RESET_GE1_PHY;
+		reset_mask &= ~(AR71XX_RESET_GE0_PHY | AR71XX_RESET_GE1_PHY);
 
 		ar71xx_device_stop(reset_phy);
 		mdelay(50);
@@ -497,7 +502,7 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 	u32 rx_ds, tx_ds;
 	u32 mii_reg;
 
-	reset_mask &= RESET_MODULE_GE0_MAC | RESET_MODULE_GE1_MAC;
+	reset_mask &= AR71XX_RESET_GE0_MAC | AR71XX_RESET_GE1_MAC;
 
 	mii_reg = ag71xx_rr(ag, AG71XX_REG_MII_CFG);
 	rx_ds = ag71xx_rr(ag, AG71XX_REG_RX_DESC);
@@ -538,7 +543,7 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 		ag71xx_hw_stop(ag);
 		netif_carrier_off(ag->dev);
 		if (netif_msg_link(ag))
-			printk(KERN_INFO "%s: link down\n", ag->dev->name);
+			pr_info("%s: link down\n", ag->dev->name);
 		return;
 	}
 
@@ -589,7 +594,7 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 
 	netif_carrier_on(ag->dev);
 	if (netif_msg_link(ag))
-		printk(KERN_INFO "%s: link up (%sMbps/%s duplex)\n",
+		pr_info("%s: link up (%sMbps/%s duplex)\n",
 			ag->dev->name,
 			ag71xx_speed_str(ag),
 			(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
@@ -606,11 +611,10 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG4),
 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5));
 
-	DBG("%s: mac_cfg2=%#x, mac_ifctl=%#x, mii_ctrl=%#x\n",
+	DBG("%s: mac_cfg2=%#x, mac_ifctl=%#x\n",
 		ag->dev->name,
 		ag71xx_rr(ag, AG71XX_REG_MAC_CFG2),
-		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL),
-		ag71xx_mii_ctrl_rr(ag));
+		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL));
 }
 
 static int ag71xx_open(struct net_device *dev)
@@ -692,6 +696,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	dma_addr = dma_map_single(&dev->dev, skb->data, skb->len,
 				  DMA_TO_DEVICE);
 
+	netdev_sent_queue(dev, skb->len);
 	ring->buf[i].skb = skb;
 	ring->buf[i].timestamp = jiffies;
 
@@ -777,7 +782,7 @@ static void ag71xx_tx_timeout(struct net_device *dev)
 	struct ag71xx *ag = netdev_priv(dev);
 
 	if (netif_msg_tx_err(ag))
-		printk(KERN_DEBUG "%s: tx timeout\n", ag->dev->name);
+		pr_info("%s: tx timeout\n", ag->dev->name);
 
 	schedule_work(&ag->restart_work);
 }
@@ -823,11 +828,11 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-	int sent;
+	int sent = 0;
+	int bytes_compl = 0;
 
 	DBG("%s: processing TX ring\n", ag->dev->name);
 
-	sent = 0;
 	while (ring->dirty != ring->curr) {
 		unsigned int i = ring->dirty % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
@@ -842,6 +847,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
 
+		bytes_compl += skb->len;
 		ag->dev->stats.tx_bytes += skb->len;
 		ag->dev->stats.tx_packets++;
 
@@ -854,6 +860,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 	DBG("%s: %d packets sent out\n", ag->dev->name, sent);
 
+	netdev_completed_queue(ag->dev, sent, bytes_compl);
 	if ((ring->curr - ring->dirty) < (ring->size * 3) / 4)
 		netif_wake_queue(ag->dev);
 
@@ -988,7 +995,7 @@ more:
 
 oom:
 	if (netif_msg_rx_err(ag))
-		printk(KERN_DEBUG "%s: out of memory\n", dev->name);
+		pr_info("%s: out of memory\n", dev->name);
 
 	mod_timer(&ag->oom_timer, jiffies + AG71XX_OOM_REFILL);
 	napi_complete(napi);
@@ -1029,11 +1036,6 @@ static irqreturn_t ag71xx_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static void ag71xx_set_multicast_list(struct net_device *dev)
-{
-	/* TODO */
-}
-
 #ifdef CONFIG_NET_POLL_CONTROLLER
 /*
  * Polling 'interrupt' - used by things like netconsole to send skbs
@@ -1052,7 +1054,6 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 	.ndo_open		= ag71xx_open,
 	.ndo_stop		= ag71xx_stop,
 	.ndo_start_xmit		= ag71xx_hard_start_xmit,
-	.ndo_set_rx_mode	= ag71xx_set_multicast_list,
 	.ndo_do_ioctl		= ag71xx_do_ioctl,
 	.ndo_tx_timeout		= ag71xx_tx_timeout,
 	.ndo_change_mtu		= eth_change_mtu,
@@ -1156,8 +1157,8 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 		goto err_free_desc;
 	}
 
-	printk(KERN_INFO "%s: Atheros AG71xx at 0x%08lx, irq %d\n",
-	       dev->name, dev->base_addr, dev->irq);
+	pr_info("%s: Atheros AG71xx at 0x%08lx, irq %d\n",
+		dev->name, dev->base_addr, dev->irq);
 
 	ag71xx_dump_regs(ag);
 
