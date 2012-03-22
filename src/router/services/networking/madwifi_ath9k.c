@@ -407,9 +407,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 		} else {
 			fprintf(fp, "hw_mode=g\n");
 		}
-		fprintf(fp, "hw_mode=g\n");
-	} else
+	} else {
 		fprintf(fp, "hw_mode=a\n");
+		if (!strcmp(netmode, "a-only")) {
+			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");		
+		}
+	    
+	}
 	fprintf(fp, "channel=%d\n", channel);
 	fprintf(fp, "\n");
 	fprintf(fp, "frequency=%d\n", freq);
