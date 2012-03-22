@@ -97,7 +97,7 @@ ospf_if_recalculate_output_cost (struct interface *ifp)
       if (oi->output_cost != newcost)
 	{
 	  oi->output_cost = newcost;
-	  ospf_router_lsa_timer_add (oi->area);
+	  ospf_router_lsa_update_area (oi->area);
 	}
     }
 }
@@ -219,9 +219,6 @@ ospf_if_new (struct ospf *ospf, struct interface *ifp, struct prefix *p)
   ospf_add_to_if (ifp, oi);
   listnode_add (ospf->oiflist, oi);
   
-  /* Clear self-originated network-LSA. */
-  oi->network_lsa_self = NULL;
-
   /* Initialize neighbor list. */
   oi->nbrs = route_table_init ();
 
@@ -301,10 +298,6 @@ ospf_if_cleanup (struct ospf_interface *oi)
   ospf_nbr_delete (oi->nbr_self);
   oi->nbr_self = ospf_nbr_new (oi);
   ospf_nbr_add_self (oi);
-  
-  ospf_lsa_unlock (&oi->network_lsa_self);
-  oi->network_lsa_self = NULL;
-  OSPF_TIMER_OFF (oi->t_network_lsa_self);
 }
 
 void
@@ -334,6 +327,8 @@ ospf_if_free (struct ospf_interface *oi)
 
   listnode_delete (oi->ospf->oiflist, oi);
   listnode_delete (oi->area->oiflist, oi);
+
+  thread_cancel_event (master, oi);
 
   memset (oi, 0, sizeof (*oi));
   XFREE (MTYPE_OSPF_IF, oi);
@@ -534,6 +529,8 @@ ospf_new_if_params (void)
 
   oip->auth_crypt = list_new ();
   
+  oip->network_lsa_seqnum = htonl(OSPF_INITIAL_SEQUENCE_NUMBER);
+
   return oip;
 }
 
@@ -572,7 +569,8 @@ ospf_free_if_params (struct interface *ifp, struct in_addr addr)
       !OSPF_IF_PARAM_CONFIGURED (oip, type) &&
       !OSPF_IF_PARAM_CONFIGURED (oip, auth_simple) &&
       !OSPF_IF_PARAM_CONFIGURED (oip, auth_type) &&
-      listcount (oip->auth_crypt) == 0)
+      listcount (oip->auth_crypt) == 0 &&
+      ntohl (oip->network_lsa_seqnum) != OSPF_INITIAL_SEQUENCE_NUMBER)
     {
       ospf_del_if_params (oip);
       rn->info = NULL;
@@ -1121,8 +1119,8 @@ ospf_vl_up_check (struct ospf_area *area, struct in_addr rid,
              if (IS_DEBUG_OSPF (ism, ISM_EVENTS))
                zlog_debug ("ospf_vl_up_check: VL cost change,"
                           " scheduling router lsa refresh");
-             if(ospf->backbone)
-               ospf_router_lsa_timer_add (ospf->backbone);
+             if (ospf->backbone)
+               ospf_router_lsa_update_area (ospf->backbone);
              else if (IS_DEBUG_OSPF (ism, ISM_EVENTS))
                zlog_debug ("ospf_vl_up_check: VL cost change, no backbone!");
            }

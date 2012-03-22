@@ -1393,6 +1393,13 @@ route_set_community_delete (void *rule, struct prefix *prefix,
 	  new = community_uniq_sort (merge);
 	  community_free (merge);
 
+	  /* HACK: if the old community is not intern'd,
+	   * we should free it here, or all reference to it may be lost.
+	   * Really need to cleanup attribute caching sometime.
+	   */
+	  if (old->refcnt == 0)
+	    community_free (old);
+
 	  if (new->size == 0)
 	    {
 	      binfo->attr->community = NULL;
@@ -1475,10 +1482,10 @@ route_set_ecommunity_rt (void *rule, struct prefix *prefix,
       else
 	new_ecom = ecommunity_dup (ecom);
 
-      bgp_info->attr->extra->ecommunity = new_ecom;
+      bgp_info->attr->extra->ecommunity = ecommunity_intern (new_ecom);
 
       if (old_ecom)
-	ecommunity_free (old_ecom);
+	ecommunity_unintern (&old_ecom);
 
       bgp_info->attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_EXT_COMMUNITIES);
     }
@@ -1494,7 +1501,7 @@ route_set_ecommunity_rt_compile (const char *arg)
   ecom = ecommunity_str2com (arg, ECOMMUNITY_ROUTE_TARGET, 0);
   if (! ecom)
     return NULL;
-  return ecom;
+  return ecommunity_intern (ecom);
 }
 
 /* Free function for set community. */
@@ -1502,7 +1509,7 @@ static void
 route_set_ecommunity_rt_free (void *rule)
 {
   struct ecommunity *ecom = rule;
-  ecommunity_free (ecom);
+  ecommunity_unintern (&ecom);
 }
 
 /* Set community rule structure. */
@@ -1521,7 +1528,7 @@ static route_map_result_t
 route_set_ecommunity_soo (void *rule, struct prefix *prefix, 
 			 route_map_object_t type, void *object)
 {
-  struct ecommunity *ecom;
+  struct ecommunity *ecom, *old_ecom, *new_ecom;
   struct bgp_info *bgp_info;
 
   if (type == RMAP_BGP)
@@ -1532,8 +1539,19 @@ route_set_ecommunity_soo (void *rule, struct prefix *prefix,
       if (! ecom)
 	return RMAP_OKAY;
     
+      old_ecom = (bgp_attr_extra_get (bgp_info->attr))->ecommunity;
+      
+      if (old_ecom)
+	new_ecom = ecommunity_merge (ecommunity_dup (old_ecom), ecom);
+      else
+	new_ecom = ecommunity_dup (ecom);
+
+      bgp_info->attr->extra->ecommunity = ecommunity_intern (new_ecom);
+
+      if (old_ecom)
+	ecommunity_unintern (&old_ecom);
+
       bgp_info->attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_EXT_COMMUNITIES);
-      (bgp_attr_extra_get (bgp_info->attr))->ecommunity = ecommunity_dup (ecom);
     }
   return RMAP_OKAY;
 }
@@ -1548,7 +1566,7 @@ route_set_ecommunity_soo_compile (const char *arg)
   if (! ecom)
     return NULL;
   
-  return ecom;
+  return ecommunity_intern (ecom);
 }
 
 /* Free function for set community. */
@@ -1556,7 +1574,7 @@ static void
 route_set_ecommunity_soo_free (void *rule)
 {
   struct ecommunity *ecom = rule;
-  ecommunity_free (ecom);
+  ecommunity_unintern (&ecom);
 }
 
 /* Set community rule structure. */

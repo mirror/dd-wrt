@@ -251,12 +251,6 @@ proto_trans(int type)
       return 1; /* shouldn't happen */
     case ZEBRA_ROUTE_BGP:
       return 14; /* bgp */
-    case ZEBRA_ROUTE_HSLS:
-      return 1; /* other */
-    case ZEBRA_ROUTE_OLSR:
-      return 1; /* other */
-    case ZEBRA_ROUTE_BATMAN:
-      return 1; /* other */
     default:
       return 1; /* other */
     }

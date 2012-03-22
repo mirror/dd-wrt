@@ -169,9 +169,6 @@
 /* Define to 1 if you have the `umem' library (-lumem). */
 #undef HAVE_LIBUMEM
 
-/* Define to 1 if you have the <libutil.h> header file. */
-#undef HAVE_LIBUTIL_H
-
 /* Define to 1 if you have the `xnet' library (-lxnet). */
 #undef HAVE_LIBXNET
 
@@ -287,6 +284,9 @@
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */
 #undef HAVE_REALLOC
+
+/* Have RFC3678 protocol-independed API */
+#undef HAVE_RFC3678
 
 /* Enable IPv6 Routing Advertisement support */
 #undef HAVE_RTADV
