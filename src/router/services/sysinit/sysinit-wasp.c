@@ -92,8 +92,15 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 	}*/
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 1");
+	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
+	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
+	system("swconfig dev eth0 set apply");
 	eval("ifconfig", "eth0", "up");
-	eval("ifconfig", "eth1", "up");
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "1");
+	eval("vconfig", "add", "eth0", "2");
 	struct ifreq ifr;
 	int s;
 
