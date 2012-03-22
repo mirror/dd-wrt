@@ -87,12 +87,12 @@ static int ag71xx_phy_connect_fixed(struct ag71xx *ag)
 	case SPEED_1000:
 		break;
 	default:
-		printk(KERN_ERR "%s: invalid speed specified\n", dev->name);
+		netdev_err(dev, "invalid speed specified\n");
 		ret = -EINVAL;
 		break;
 	}
 
-	printk(KERN_DEBUG "%s: using fixed link parameters\n", dev->name);
+	netdev_dbg(dev, "using fixed link parameters\n");
 
 	ag->duplex = pdata->duplex;
 	ag->speed = pdata->speed;
@@ -125,8 +125,8 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 	}
 
 	if (!phydev) {
-		printk(KERN_ERR "%s: no PHY found with phy_mask=%08x\n",
-			dev->name, pdata->phy_mask);
+		netdev_err(dev, "no PHY found with phy_mask=%08x\n",
+			   pdata->phy_mask);
 		return -ENODEV;
 	}
 
@@ -135,8 +135,8 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 				  pdata->phy_if_mode);
 
 	if (IS_ERR(ag->phy_dev)) {
-		printk(KERN_ERR "%s: could not connect to PHY at %s\n",
-			dev->name, dev_name(&phydev->dev));
+		netdev_err(dev, "could not connect to PHY at %s\n",
+			   dev_name(&phydev->dev));
 		return PTR_ERR(ag->phy_dev);
 	}
 
@@ -148,9 +148,8 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 
 	phydev->advertising = phydev->supported;
 
-	printk(KERN_DEBUG "%s: connected to PHY at %s [uid=%08x, driver=%s]\n",
-		dev->name, dev_name(&phydev->dev),
-		phydev->phy_id, phydev->drv->name);
+	netdev_info(dev, "connected to PHY at %s [uid=%08x, driver=%s]\n",
+		    dev_name(&phydev->dev), phydev->phy_id, phydev->drv->name);
 
 	ag->link = 0;
 	ag->speed = 0;
@@ -204,8 +203,8 @@ int __devinit ag71xx_phy_connect(struct ag71xx *ag)
 
 	ag->mii_bus = dev_to_mii_bus(pdata->mii_bus_dev);
 	if (ag->mii_bus == NULL) {
-		printk(KERN_ERR "%s: unable to find MII bus on device '%s'\n",
-			ag->dev->name, dev_name(pdata->mii_bus_dev));
+		netdev_err(ag->dev, "unable to find MII bus on device '%s'\n",
+			   dev_name(pdata->mii_bus_dev));
 		return -ENODEV;
 	}
 
