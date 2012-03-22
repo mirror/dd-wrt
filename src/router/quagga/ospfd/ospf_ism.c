@@ -221,8 +221,8 @@ ospf_dr_election (struct ospf_interface *oi)
 
   new_state = ospf_ism_state (oi);
 
-  zlog_info ("DR-Election[1st]: Backup %s", inet_ntoa (BDR (oi)));
-  zlog_info ("DR-Election[1st]: DR     %s", inet_ntoa (DR (oi)));
+  zlog_debug ("DR-Election[1st]: Backup %s", inet_ntoa (BDR (oi)));
+  zlog_debug ("DR-Election[1st]: DR     %s", inet_ntoa (DR (oi)));
 
   if (new_state != old_state &&
       !(new_state == ISM_DROther && old_state < ISM_DROther))
@@ -232,8 +232,8 @@ ospf_dr_election (struct ospf_interface *oi)
 
       new_state = ospf_ism_state (oi);
 
-      zlog_info ("DR-Election[2nd]: Backup %s", inet_ntoa (BDR (oi)));
-      zlog_info ("DR-Election[2nd]: DR     %s", inet_ntoa (DR (oi)));
+      zlog_debug ("DR-Election[2nd]: Backup %s", inet_ntoa (BDR (oi)));
+      zlog_debug ("DR-Election[2nd]: DR     %s", inet_ntoa (DR (oi)));
     }
 
   list_delete (el_list);
@@ -578,20 +578,17 @@ ism_change_state (struct ospf_interface *oi, int state)
     oi->area->act_ints++;
 
   /* schedule router-LSA originate. */
-  ospf_router_lsa_timer_add (oi->area);
+  ospf_router_lsa_update_area (oi->area);
 
   /* Originate network-LSA. */
   if (old_state != ISM_DR && state == ISM_DR)
-    ospf_network_lsa_timer_add (oi);
+    ospf_network_lsa_update (oi);
   else if (old_state == ISM_DR && state != ISM_DR)
     {
       /* Free self originated network LSA. */
       lsa = oi->network_lsa_self;
       if (lsa)
-	{
-	  ospf_lsa_flush_area (lsa, oi->area);
-	  OSPF_TIMER_OFF (oi->t_network_lsa_self);
-	}
+        ospf_lsa_flush_area (lsa, oi->area);
 
       ospf_lsa_unlock (&oi->network_lsa_self);
       oi->network_lsa_self = NULL;

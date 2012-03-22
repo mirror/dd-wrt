@@ -162,7 +162,7 @@ nsm_should_adj (struct ospf_neighbor *nbr)
 
 /* OSPF NSM functions. */
 static int
-nsm_hello_received (struct ospf_neighbor *nbr)
+nsm_packet_received (struct ospf_neighbor *nbr)
 {
   /* Start or Restart Inactivity Timer. */
   OSPF_NSM_TIMER_OFF (nbr->t_inactivity);
@@ -216,7 +216,7 @@ ospf_db_summary_add (struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
     {
     case OSPF_OPAQUE_LINK_LSA:
       /* Exclude type-9 LSAs that does not have the same "oi" with "nbr". */
-      if (lsa->oi != nbr->oi)
+      if (nbr->oi && ospf_if_exists (lsa->oi) != nbr->oi)
           return 0;
       break;
     case OSPF_OPAQUE_AREA_LSA:
@@ -408,7 +408,7 @@ struct {
   {
     /* DependUpon: dummy state. */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { NULL,                    NSM_DependUpon }, /* HelloReceived     */
+    { NULL,                    NSM_DependUpon }, /* PacketReceived    */
     { NULL,                    NSM_DependUpon }, /* Start             */
     { NULL,                    NSM_DependUpon }, /* 2-WayReceived     */
     { NULL,                    NSM_DependUpon }, /* NegotiationDone   */
@@ -425,7 +425,7 @@ struct {
   {
     /* Deleted: dummy state. */
     { NULL,                    NSM_Deleted    }, /* NoEvent           */
-    { NULL,                    NSM_Deleted    }, /* HelloReceived     */
+    { NULL,                    NSM_Deleted    }, /* PacketReceived    */
     { NULL,                    NSM_Deleted    }, /* Start             */
     { NULL,                    NSM_Deleted    }, /* 2-WayReceived     */
     { NULL,                    NSM_Deleted    }, /* NegotiationDone   */
@@ -442,7 +442,7 @@ struct {
   {
     /* Down: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_Init       }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_Init       }, /* PacketReceived    */
     { nsm_start,               NSM_Attempt    }, /* Start             */
     { NULL,                    NSM_Down       }, /* 2-WayReceived     */
     { NULL,                    NSM_Down       }, /* NegotiationDone   */
@@ -459,7 +459,7 @@ struct {
   {
     /* Attempt: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_Init       }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_Init       }, /* PacketReceived    */
     { NULL,                    NSM_Attempt    }, /* Start             */
     { NULL,                    NSM_Attempt    }, /* 2-WayReceived     */
     { NULL,                    NSM_Attempt    }, /* NegotiationDone   */
@@ -476,7 +476,7 @@ struct {
   {
     /* Init: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_Init       }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_Init      }, /* PacketReceived    */
     { NULL,                    NSM_Init       }, /* Start             */
     { nsm_twoway_received,     NSM_DependUpon }, /* 2-WayReceived     */
     { NULL,                    NSM_Init       }, /* NegotiationDone   */
@@ -493,7 +493,7 @@ struct {
   {
     /* 2-Way: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_TwoWay     }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_TwoWay     }, /* HelloReceived     */
     { NULL,                    NSM_TwoWay     }, /* Start             */
     { NULL,                    NSM_TwoWay     }, /* 2-WayReceived     */
     { NULL,                    NSM_TwoWay     }, /* NegotiationDone   */
@@ -510,7 +510,7 @@ struct {
   {
     /* ExStart: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_ExStart    }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_ExStart    }, /* PacaketReceived   */
     { NULL,                    NSM_ExStart    }, /* Start             */
     { NULL,                    NSM_ExStart    }, /* 2-WayReceived     */
     { nsm_negotiation_done,    NSM_Exchange   }, /* NegotiationDone   */
@@ -527,7 +527,7 @@ struct {
   {
     /* Exchange: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_Exchange   }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_Exchange   }, /* PacketReceived    */
     { NULL,                    NSM_Exchange   }, /* Start             */
     { NULL,                    NSM_Exchange   }, /* 2-WayReceived     */
     { NULL,                    NSM_Exchange   }, /* NegotiationDone   */
@@ -544,7 +544,7 @@ struct {
   {
     /* Loading: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_Loading    }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_Loading    }, /* PacketReceived    */
     { NULL,                    NSM_Loading    }, /* Start             */
     { NULL,                    NSM_Loading    }, /* 2-WayReceived     */
     { NULL,                    NSM_Loading    }, /* NegotiationDone   */
@@ -560,7 +560,7 @@ struct {
   },
   { /* Full: */
     { NULL,                    NSM_DependUpon }, /* NoEvent           */
-    { nsm_hello_received,      NSM_Full       }, /* HelloReceived     */
+    { nsm_packet_received,     NSM_Full       }, /* PacketReceived    */
     { NULL,                    NSM_Full       }, /* Start             */
     { NULL,                    NSM_Full       }, /* 2-WayReceived     */
     { NULL,                    NSM_Full       }, /* NegotiationDone   */
@@ -579,7 +579,7 @@ struct {
 static const char *ospf_nsm_event_str[] =
 {
   "NoEvent",
-  "HelloReceived",
+  "PacketReceived",
   "Start",
   "2-WayReceived",
   "NegotiationDone",
@@ -711,7 +711,7 @@ nsm_change_state (struct ospf_neighbor *nbr, int state)
 		 LOOKUP(ospf_nsm_state_msg, old_state),
 		 LOOKUP(ospf_nsm_state_msg, state));
 
-      ospf_router_lsa_timer_add (oi->area);
+      ospf_router_lsa_update_area (oi->area);
 
       if (oi->type == OSPF_IFTYPE_VIRTUALLINK)
 	{
@@ -719,7 +719,7 @@ nsm_change_state (struct ospf_neighbor *nbr, int state)
 	    ospf_area_lookup_by_area_id (oi->ospf, oi->vl_data->vl_area_id);
 	  
 	  if (vl_area)
-	    ospf_router_lsa_timer_add (vl_area);
+	    ospf_router_lsa_update_area (vl_area);
 	}
 
       /* Originate network-LSA. */
@@ -730,10 +730,9 @@ nsm_change_state (struct ospf_neighbor *nbr, int state)
 	      ospf_lsa_flush_area (oi->network_lsa_self, oi->area);
 	      ospf_lsa_unlock (&oi->network_lsa_self);
 	      oi->network_lsa_self = NULL;
-	      OSPF_TIMER_OFF (oi->t_network_lsa_self);
 	    }
 	  else
-	    ospf_network_lsa_timer_add (oi);
+	    ospf_network_lsa_update (oi);
 	}
     }
 

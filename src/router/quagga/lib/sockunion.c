@@ -527,6 +527,46 @@ sockopt_ttl (int family, int sock, int ttl)
   return 0;
 }
 
+int
+sockopt_cork (int sock, int onoff)
+{
+#ifdef TCP_CORK
+  return setsockopt (sock, IPPROTO_TCP, TCP_CORK, &onoff, sizeof(onoff));
+#else
+  return 0;
+#endif
+}
+
+int
+sockopt_minttl (int family, int sock, int minttl)
+{
+#ifdef IP_MINTTL
+  if (family == AF_INET)
+    {
+      int ret = setsockopt (sock, IPPROTO_IP, IP_MINTTL, &minttl, sizeof(minttl));
+      if (ret < 0)
+	  zlog (NULL, LOG_WARNING,
+		"can't set sockopt IP_MINTTL to %d on socket %d: %s",
+		minttl, sock, safe_strerror (errno));
+      return ret;
+    }
+#endif /* IP_MINTTL */
+#ifdef IPV6_MINHOPCNT
+  if (family == AF_INET6)
+    {
+      int ret = setsockopt (sock, IPPROTO_IPV6, IPV6_MINHOPCNT, &minttl, sizeof(minttl));
+      if (ret < 0)
+	  zlog (NULL, LOG_WARNING,
+		"can't set sockopt IPV6_MINHOPCNT to %d on socket %d: %s",
+		minttl, sock, safe_strerror (errno));
+      return ret;
+    }
+#endif
+
+  errno = EOPNOTSUPP;
+  return -1;
+}
+
 /* If same family and same prefix return 1. */
 int
 sockunion_same (union sockunion *su1, union sockunion *su2)

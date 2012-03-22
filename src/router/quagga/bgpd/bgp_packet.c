@@ -206,7 +206,7 @@ bgp_update_packet (struct peer *peer, afi_t afi, safi_t safi)
 
       /* Synchnorize attribute.  */
       if (adj->attr)
-	bgp_attr_unintern (adj->attr);
+	bgp_attr_unintern (&adj->attr);
       else
 	peer->scount[afi][safi]++;
 
@@ -598,7 +598,6 @@ bgp_write (struct thread *thread)
   struct stream *s; 
   int num;
   unsigned int count = 0;
-  int write_errno;
 
   /* Yes first of all get peer pointer. */
   peer = THREAD_ARG (thread);
@@ -611,46 +610,37 @@ bgp_write (struct thread *thread)
       return 0;
     }
 
-    /* Nonblocking write until TCP output buffer is full.  */
-  while (1)
+  s = bgp_write_packet (peer);
+  if (!s)
+    return 0;	/* nothing to send */
+
+  sockopt_cork (peer->fd, 1);
+
+  /* Nonblocking write until TCP output buffer is full.  */
+  do
     {
       int writenum;
-      int val;
-
-      s = bgp_write_packet (peer);
-      if (! s)
-	return 0;
-      
-      /* XXX: FIXME, the socket should be NONBLOCK from the start
-       * status shouldnt need to be toggled on each write
-       */
-      val = fcntl (peer->fd, F_GETFL, 0);
-      fcntl (peer->fd, F_SETFL, val|O_NONBLOCK);
 
       /* Number of bytes to be sent.  */
       writenum = stream_get_endp (s) - stream_get_getp (s);
 
       /* Call write() system call.  */
       num = write (peer->fd, STREAM_PNT (s), writenum);
-      write_errno = errno;
-      fcntl (peer->fd, F_SETFL, val);
-      if (num <= 0)
+      if (num < 0)
 	{
-	  /* Partial write. */
-	  if (write_errno == EWOULDBLOCK || write_errno == EAGAIN)
-	      break;
+	  /* write failed either retry needed or error */
+	  if (ERRNO_IO_RETRY(errno))
+		break;
 
-	  BGP_EVENT_ADD (peer, TCP_fatal_error);
+          BGP_EVENT_ADD (peer, TCP_fatal_error);
 	  return 0;
 	}
+
       if (num != writenum)
 	{
+	  /* Partial write */
 	  stream_forward_getp (s, num);
-
-	  if (write_errno == EAGAIN)
-	    break;
-
-	  continue;
+	  break;
 	}
 
       /* Retrieve BGP packet type. */
@@ -691,13 +681,14 @@ bgp_write (struct thread *thread)
 
       /* OK we send packet so delete it. */
       bgp_packet_delete (peer);
-
-      if (++count >= BGP_WRITE_PACKET_MAX)
-	break;
     }
+  while (++count < BGP_WRITE_PACKET_MAX &&
+	 (s = bgp_write_packet (peer)) != NULL);
   
   if (bgp_write_proceed (peer))
     BGP_WRITE_ON (peer->t_write, bgp_write, peer->fd);
+  else
+    sockopt_cork (peer->fd, 0);
   
   return 0;
 }
@@ -706,7 +697,7 @@ bgp_write (struct thread *thread)
 static int
 bgp_write_notify (struct peer *peer)
 {
-  int ret;
+  int ret, val;
   u_char type;
   struct stream *s; 
 
@@ -716,7 +707,10 @@ bgp_write_notify (struct peer *peer)
     return 0;
   assert (stream_get_endp (s) >= BGP_HEADER_SIZE);
 
-  /* I'm not sure fd is writable. */
+  /* Put socket in blocking mode. */
+  val = fcntl (peer->fd, F_GETFL, 0);
+  fcntl (peer->fd, F_SETFL, val & ~O_NONBLOCK);
+
   ret = writen (peer->fd, STREAM_DATA (s), stream_get_endp (s));
   if (ret <= 0)
     {
@@ -901,14 +895,27 @@ bgp_notify_send_with_data (struct peer *peer, u_char code, u_char sub_code,
   if (sub_code != BGP_NOTIFY_CEASE_CONFIG_CHANGE)
     {
       if (sub_code == BGP_NOTIFY_CEASE_ADMIN_RESET)
-      peer->last_reset = PEER_DOWN_USER_RESET;
+      {
+        peer->last_reset = PEER_DOWN_USER_RESET;
+        zlog_info ("Notification sent to neighbor %s: User reset", peer->host);
+      }
       else if (sub_code == BGP_NOTIFY_CEASE_ADMIN_SHUTDOWN)
-      peer->last_reset = PEER_DOWN_USER_SHUTDOWN;
+      {
+        peer->last_reset = PEER_DOWN_USER_SHUTDOWN;
+        zlog_info ("Notification sent to neighbor %s: shutdown", peer->host);
+      }
       else
-      peer->last_reset = PEER_DOWN_NOTIFY_SEND;
+      {
+        peer->last_reset = PEER_DOWN_NOTIFY_SEND;
+        zlog_info ("Notification sent to neighbor %s: type %u/%u",
+                   peer->host, code, sub_code);
+      }
     }
+  else
+     zlog_info ("Notification sent to neighbor %s: configuration change",
+                peer->host);
 
-  /* Call imidiately. */
+  /* Call immediately. */
   BGP_WRITE_OFF (peer->t_write);
 
   bgp_write_notify (peer);
@@ -1452,9 +1459,13 @@ bgp_open_receive (struct peer *peer, bgp_size_t size)
   /* Open option part parse. */
   if (optlen != 0) 
     {
-      ret = bgp_open_option_parse (peer, optlen, &capability);
-      if (ret < 0)
-	return ret;
+      if ((ret = bgp_open_option_parse (peer, optlen, &capability)) < 0)
+        {
+          bgp_notify_send (peer,
+                 BGP_NOTIFY_OPEN_ERR,
+                 BGP_NOTIFY_OPEN_UNACEP_HOLDTIME);
+	  return ret;
+        }
     }
   else
     {
@@ -1589,26 +1600,47 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
 		       BGP_NOTIFY_UPDATE_MAL_ATTR);
       return -1;
     }
+  
+  /* Certain attribute parsing errors should not be considered bad enough
+   * to reset the session for, most particularly any partial/optional
+   * attributes that have 'tunneled' over speakers that don't understand
+   * them. Instead we withdraw only the prefix concerned.
+   * 
+   * Complicates the flow a little though..
+   */
+  bgp_attr_parse_ret_t attr_parse_ret = BGP_ATTR_PARSE_PROCEED;
+  /* This define morphs the update case into a withdraw when lower levels
+   * have signalled an error condition where this is best.
+   */
+#define NLRI_ATTR_ARG (attr_parse_ret != BGP_ATTR_PARSE_WITHDRAW ? &attr : NULL)
 
   /* Parse attribute when it exists. */
   if (attribute_len)
     {
-      ret = bgp_attr_parse (peer, &attr, attribute_len, 
+      attr_parse_ret = bgp_attr_parse (peer, &attr, attribute_len, 
 			    &mp_update, &mp_withdraw);
-      if (ret < 0)
+      if (attr_parse_ret == BGP_ATTR_PARSE_ERROR)
 	return -1;
     }
-
+  
   /* Logging the attribute. */
-  if (BGP_DEBUG (update, UPDATE_IN))
+  if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW
+      || BGP_DEBUG (update, UPDATE_IN))
     {
       ret= bgp_dump_attr (peer, &attr, attrstr, BUFSIZ);
+      int lvl = (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW)
+                 ? LOG_ERR : LOG_DEBUG;
+      
+      if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW)
+        zlog (peer->log, LOG_ERR,
+              "%s rcvd UPDATE with errors in attr(s)!! Withdrawing route.",
+              peer->host);
 
       if (ret)
-	zlog (peer->log, LOG_DEBUG, "%s rcvd UPDATE w/ attr: %s",
+	zlog (peer->log, lvl, "%s rcvd UPDATE w/ attr: %s",
 	      peer->host, attrstr);
     }
-
+  
   /* Network Layer Reachability Information. */
   update_len = end - stream_pnt (s);
 
@@ -1617,7 +1649,12 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
       /* Check NLRI packet format and prefix length. */
       ret = bgp_nlri_sanity_check (peer, AFI_IP, stream_pnt (s), update_len);
       if (ret < 0)
-	return -1;
+        {
+          bgp_attr_unintern_sub (&attr);
+          if (attr.extra)
+            bgp_attr_extra_free (&attr);
+	  return -1;
+	}
 
       /* Set NLRI portion to structure. */
       update.afi = AFI_IP;
@@ -1640,15 +1677,20 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
 	     update. */
 	  ret = bgp_attr_check (peer, &attr);
 	  if (ret < 0)
-	    return -1;
+	    {
+	      bgp_attr_unintern_sub (&attr);
+              if (attr.extra)
+                bgp_attr_extra_free (&attr);
+	      return -1;
+            }
 
-	  bgp_nlri_parse (peer, &attr, &update);
+	  bgp_nlri_parse (peer, NLRI_ATTR_ARG, &update);
 	}
 
       if (mp_update.length
 	  && mp_update.afi == AFI_IP 
 	  && mp_update.safi == SAFI_UNICAST)
-	bgp_nlri_parse (peer, &attr, &mp_update);
+	bgp_nlri_parse (peer, NLRI_ATTR_ARG, &mp_update);
 
       if (mp_withdraw.length
 	  && mp_withdraw.afi == AFI_IP 
@@ -1675,7 +1717,7 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
       if (mp_update.length
 	  && mp_update.afi == AFI_IP 
 	  && mp_update.safi == SAFI_MULTICAST)
-	bgp_nlri_parse (peer, &attr, &mp_update);
+	bgp_nlri_parse (peer, NLRI_ATTR_ARG, &mp_update);
 
       if (mp_withdraw.length
 	  && mp_withdraw.afi == AFI_IP 
@@ -1705,7 +1747,7 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
       if (mp_update.length 
 	  && mp_update.afi == AFI_IP6 
 	  && mp_update.safi == SAFI_UNICAST)
-	bgp_nlri_parse (peer, &attr, &mp_update);
+	bgp_nlri_parse (peer, NLRI_ATTR_ARG, &mp_update);
 
       if (mp_withdraw.length 
 	  && mp_withdraw.afi == AFI_IP6 
@@ -1734,7 +1776,7 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
       if (mp_update.length 
 	  && mp_update.afi == AFI_IP6 
 	  && mp_update.safi == SAFI_MULTICAST)
-	bgp_nlri_parse (peer, &attr, &mp_update);
+	bgp_nlri_parse (peer, NLRI_ATTR_ARG, &mp_update);
 
       if (mp_withdraw.length 
 	  && mp_withdraw.afi == AFI_IP6 
@@ -1762,7 +1804,7 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
       if (mp_update.length 
 	  && mp_update.afi == AFI_IP 
 	  && mp_update.safi == BGP_SAFI_VPNV4)
-	bgp_nlri_parse_vpnv4 (peer, &attr, &mp_update);
+	bgp_nlri_parse_vpnv4 (peer, NLRI_ATTR_ARG, &mp_update);
 
       if (mp_withdraw.length 
 	  && mp_withdraw.afi == AFI_IP 
@@ -1784,21 +1826,10 @@ bgp_update_receive (struct peer *peer, bgp_size_t size)
 
   /* Everything is done.  We unintern temporary structures which
      interned in bgp_attr_parse(). */
-  if (attr.aspath)
-    aspath_unintern (attr.aspath);
-  if (attr.community)
-    community_unintern (attr.community);
+  bgp_attr_unintern_sub (&attr);
   if (attr.extra)
-    {
-      if (attr.extra->ecommunity)
-        ecommunity_unintern (attr.extra->ecommunity);
-      if (attr.extra->cluster)
-        cluster_unintern (attr.extra->cluster);
-      if (attr.extra->transit)
-        transit_unintern (attr.extra->transit);
-      bgp_attr_extra_free (&attr);
-    }
-
+    bgp_attr_extra_free (&attr);
+  
   /* If peering is stopped due to some reason, do not generate BGP
      event.  */
   if (peer->status != Established)
@@ -2015,7 +2046,7 @@ bgp_route_refresh_receive (struct peer *peer, bgp_size_t size)
                    * as possible without going beyond the bounds of the entry,
                    * to maximise debug information.
                    */
-		  int ok ;
+		  int ok;
 		  memset (&orfp, 0, sizeof (struct orf_prefix));
 		  common = *p_pnt++;
 		  /* after ++: p_pnt <= p_end */
@@ -2027,11 +2058,11 @@ bgp_route_refresh_receive (struct peer *peer, bgp_size_t size)
 		      break;
 		    }
 		  ok = ((p_end - p_pnt) >= sizeof(u_int32_t)) ;
-		  if (ok)
+		  if (!ok)
 		    {
-		  memcpy (&seq, p_pnt, sizeof (u_int32_t));
-		  p_pnt += sizeof (u_int32_t);
-		  orfp.seq = ntohl (seq);
+		      memcpy (&seq, p_pnt, sizeof (u_int32_t));
+                      p_pnt += sizeof (u_int32_t);
+                      orfp.seq = ntohl (seq);
 		    }
 		  else
 		    p_pnt = p_end ;
@@ -2069,16 +2100,17 @@ bgp_route_refresh_receive (struct peer *peer, bgp_size_t size)
 			       inet_ntop (orfp.p.family, &orfp.p.u.prefix, buf, BUFSIZ),
 			       orfp.p.prefixlen, orfp.ge, orfp.le,
 			       ok ? "" : " MALFORMED");
-
+                  
 		  if (ok)
-		  ret = prefix_bgp_orf_set (name, afi, &orfp,
-				 (common & ORF_COMMON_PART_DENY ? 0 : 1 ),
-				 (common & ORF_COMMON_PART_REMOVE ? 0 : 1));
+		    ret = prefix_bgp_orf_set (name, afi, &orfp,
+				   (common & ORF_COMMON_PART_DENY ? 0 : 1 ),
+				   (common & ORF_COMMON_PART_REMOVE ? 0 : 1));
 
 		  if (!ok || (ret != CMD_SUCCESS))
 		    {
 		      if (BGP_DEBUG (normal, NORMAL))
-			zlog_debug ("%s Received misformatted prefixlist ORF. Remove All pfxlist", peer->host);
+			zlog_debug ("%s Received misformatted prefixlist ORF."
+			            " Remove All pfxlist", peer->host);
 		      prefix_bgp_orf_remove_all (name);
 		      break;
 		    }
@@ -2263,12 +2295,13 @@ bgp_read_packet (struct peer *peer)
     return 0;
 
   /* Read packet from fd. */
-  nbytes = stream_read_unblock (peer->ibuf, peer->fd, readsize);
+  nbytes = stream_read_try (peer->ibuf, peer->fd, readsize);
 
   /* If read byte is smaller than zero then error occured. */
   if (nbytes < 0) 
     {
-      if (errno == EAGAIN)
+      /* Transient error should retry */
+      if (nbytes == -2)
 	return -1;
 
       plog_err (peer->log, "%s [Error] bgp_read_packet error: %s",

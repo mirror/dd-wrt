@@ -670,7 +670,7 @@ ospf_external_lsa_originate_check (struct ospf *ospf,
   if (is_prefix_default (&ei->p))
     if (ospf->default_originate == DEFAULT_ORIGINATE_NONE)
       {
-        zlog_info ("LSA[Type5:0.0.0.0]: Not originate AS-exntenal-LSA "
+        zlog_info ("LSA[Type5:0.0.0.0]: Not originate AS-external-LSA "
                    "for default");
         return 0;
       }
@@ -929,13 +929,8 @@ ospf_distribute_list_update_timer (struct thread *thread)
   struct external_info *ei;
   struct route_table *rt;
   struct ospf_lsa *lsa;
-  intptr_t type;
+  int type, default_refresh = 0;
   struct ospf *ospf;
-
-  type = (intptr_t)THREAD_ARG (thread);
-  assert (type <= ZEBRA_ROUTE_MAX);
-  
-  rt = EXTERNAL_INFO (type);
 
   ospf = ospf_lookup ();
   if (ospf == NULL)
@@ -946,17 +941,24 @@ ospf_distribute_list_update_timer (struct thread *thread)
   zlog_info ("Zebra[Redistribute]: distribute-list update timer fired!");
 
   /* foreach all external info. */
-  if (rt)
-    for (rn = route_top (rt); rn; rn = route_next (rn))
-      if ((ei = rn->info) != NULL)
-        {
-          if (is_prefix_default (&ei->p))
-            ospf_external_lsa_refresh_default (ospf);
-          else if ((lsa = ospf_external_info_find_lsa (ospf, &ei->p)))
-            ospf_external_lsa_refresh (ospf, lsa, ei, LSA_REFRESH_IF_CHANGED);
-          else
-            ospf_external_lsa_originate (ospf, ei);
-        }
+  for (type = 0; type <= ZEBRA_ROUTE_MAX; type++)
+    {
+      rt = EXTERNAL_INFO (type);
+      if (!rt)
+	continue;
+      for (rn = route_top (rt); rn; rn = route_next (rn))
+	if ((ei = rn->info) != NULL)
+	  {
+	    if (is_prefix_default (&ei->p))
+	      default_refresh = 1;
+	    else if ((lsa = ospf_external_info_find_lsa (ospf, &ei->p)))
+	      ospf_external_lsa_refresh (ospf, lsa, ei, LSA_REFRESH_IF_CHANGED);
+	    else
+	      ospf_external_lsa_originate (ospf, ei);
+	  }
+    }
+  if (default_refresh)
+    ospf_external_lsa_refresh_default (ospf);
   return 0;
 }
 
@@ -972,9 +974,9 @@ ospf_distribute_list_update (struct ospf *ospf, int type)
   if (!(rt = EXTERNAL_INFO (type)))
     return;
 
-  /* If exists previously invoked thread, then cancel it. */
+  /* If exists previously invoked thread, then let it continue. */
   if (ospf->t_distribute_update)
-    OSPF_TIMER_OFF (ospf->t_distribute_update);
+    return;
 
   /* Set timer. */
   ospf->t_distribute_update =

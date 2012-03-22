@@ -49,6 +49,7 @@
 
 #define OSPF_LSA_HEADER_SIZE	     20U
 #define OSPF_ROUTER_LSA_LINK_SIZE    12U
+#define OSPF_ROUTER_LSA_TOS_SIZE      4U
 #define OSPF_MAX_LSA_SIZE	   1500U
 
 /* AS-external-LSA refresh method. */
@@ -114,11 +115,9 @@ struct ospf_lsa
 
   /* Refreshement List or Queue */
   int refresh_list;
-
-#ifdef HAVE_OPAQUE_LSA
-  /* For Type-9 Opaque-LSAs, reference to ospf-interface is required. */
+  
+  /* For Type-9 Opaque-LSAs */
   struct ospf_interface *oi;
-#endif /* HAVE_OPAQUE_LSA */
 };
 
 /* OSPF LSA Link Type. */
@@ -154,6 +153,7 @@ struct router_lsa_link
 };
 
 /* OSPF Router-LSAs structure. */
+#define OSPF_ROUTER_LSA_MIN_SIZE                  16U /* w/1 link descriptor */
 struct router_lsa
 {
   struct lsa_header header;
@@ -171,6 +171,7 @@ struct router_lsa
 };
 
 /* OSPF Network-LSAs structure. */
+#define OSPF_NETWORK_LSA_MIN_SIZE                  8U /* w/1 router-ID */
 struct network_lsa
 {
   struct lsa_header header;
@@ -179,6 +180,7 @@ struct network_lsa
 };
 
 /* OSPF Summary-LSAs structure. */
+#define OSPF_SUMMARY_LSA_MIN_SIZE                  8U /* w/1 TOS metric block */
 struct summary_lsa
 {
   struct lsa_header header;
@@ -188,6 +190,7 @@ struct summary_lsa
 };
 
 /* OSPF AS-external-LSAs structure. */
+#define OSPF_AS_EXTERNAL_LSA_MIN_SIZE             16U /* w/1 TOS forwarding block */
 struct as_external_lsa
 {
   struct lsa_header header;
@@ -254,19 +257,16 @@ extern struct lsa_header *ospf_lsa_data_dup (struct lsa_header *);
 extern void ospf_lsa_data_free (struct lsa_header *);
 
 /* Prototype for various LSAs */
-extern int ospf_router_lsa_update_timer (struct thread *);
-extern void ospf_router_lsa_timer_add (struct ospf_area *);
+extern int ospf_router_lsa_update (struct ospf *);
+extern int ospf_router_lsa_update_area (struct ospf_area *);
 
-extern int ospf_network_lsa_refresh (struct ospf_lsa *, struct ospf_interface *);
-extern void ospf_network_lsa_timer_add (struct ospf_interface *);
+extern void ospf_network_lsa_update (struct ospf_interface *);
 
 extern struct ospf_lsa *ospf_summary_lsa_originate (struct prefix_ipv4 *, u_int32_t,
 					     struct ospf_area *);
 extern struct ospf_lsa *ospf_summary_asbr_lsa_originate (struct prefix_ipv4 *,
 						  u_int32_t,
 						  struct ospf_area *);
-extern struct ospf_lsa *ospf_summary_lsa_refresh (struct ospf *, struct ospf_lsa *);
-extern struct ospf_lsa *ospf_summary_asbr_lsa_refresh (struct ospf *, struct ospf_lsa *);
 
 extern struct ospf_lsa *ospf_lsa_install (struct ospf *,
 				   struct ospf_interface *, struct ospf_lsa *);
@@ -300,12 +300,15 @@ extern void ospf_lsa_maxage (struct ospf *, struct ospf_lsa *);
 extern u_int32_t get_metric (u_char *);
 
 extern int ospf_lsa_maxage_walker (struct thread *);
-
+extern struct ospf_lsa *ospf_lsa_refresh (struct ospf *, struct ospf_lsa *);
+ 
 extern void ospf_external_lsa_refresh_default (struct ospf *);
 
 extern void ospf_external_lsa_refresh_type (struct ospf *, u_char, int);
-extern void ospf_external_lsa_refresh (struct ospf *, struct ospf_lsa *,
-				struct external_info *, int);
+extern struct ospf_lsa *ospf_external_lsa_refresh (struct ospf *,
+                                                   struct ospf_lsa *,
+                                                   struct external_info *,
+                                                   int);
 extern struct in_addr ospf_lsa_unique_id (struct ospf *, struct ospf_lsdb *, u_char,
 				   struct prefix_ipv4 *);
 extern void ospf_schedule_lsa_flood_area (struct ospf_area *, struct ospf_lsa *);
