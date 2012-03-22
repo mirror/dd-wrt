@@ -921,7 +921,7 @@ static void nat_postrouting(void)
 #ifndef HAVE_TW6600
 #ifndef HAVE_BCMMODERN
 		if (nvram_match("block_loopback", "0"))
-			writeproc("/proc/sys/net/ipv4/conf/br0/loop","1");
+			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
 #endif
 #endif
 #endif
@@ -1993,7 +1993,7 @@ static void filter_input(void)
 #ifdef HAVE_OPENVPN
 	//check if ovpn server is running
 	if (nvram_match("openvpn_enable", "1")
-		&& nvram_match("openvpn_switch", "1")) {
+	    && nvram_match("openvpn_switch", "1")) {
 		save2file("-A INPUT -p %s --dport %s -j %s\n",
 			  nvram_match("openvpn_proto", "udp") ? "udp" : "tcp",
 			  nvram_safe_get("openvpn_port"), log_accept);
@@ -2003,7 +2003,7 @@ static void filter_input(void)
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
 		save2file("-A FORWARD -o %s0 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
-	}	
+	}
 #endif
 	if (wanactive()) {
 		if (nvram_invmatch("dr_wan_rx", "0"))
@@ -2251,7 +2251,8 @@ static void filter_forward(void)
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
-			if (nvram_nmatch("0", "%s_bridged", var) && nvram_nmatch("0","%s_nat",var)) {
+			if (nvram_nmatch("0", "%s_bridged", var)
+			    && nvram_nmatch("0", "%s_nat", var)) {
 				save2file("-A FORWARD -i %s -j %s\n", var,
 					  log_accept);
 			}
@@ -3190,15 +3191,17 @@ void start_firewall(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
+	{
 		runStartup("/jffs/etc/config", ".prewall");	// if available
-	runStartup("/mmc/etc/config", ".prewall");	// if available
-	runStartup("/tmp/etc/config", ".prewall");	// if available
-	create_rc_file(RC_FIREWALL);
-	if (f_exists("/tmp/.rc_firewall")) {
-		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-		system("/tmp/.rc_firewall");
+		runStartup("/mmc/etc/config", ".prewall");	// if available
+		runStartup("/tmp/etc/config", ".prewall");	// if available
+		create_rc_file(RC_FIREWALL);
+		if (f_exists("/tmp/.rc_firewall")) {
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+			system("/tmp/.rc_firewall");
+		}
+		runStartup("/etc/config", ".firewall");
 	}
-	runStartup("/etc/config", ".firewall");
 
 	cprintf("Ready\n");
 	/*
@@ -3218,8 +3221,10 @@ void start_firewall(void)
 		diag_led(DMZ, STOP_LED);
 	cprintf("done");
 #ifdef XBOX_SUPPORT
-	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout","65");
-	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeouts","65 180");
+	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
+		  "65");
+	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeouts",
+		  "65 180");
 #endif
 	cprintf("Start firewall\n");
 	/*
@@ -3233,7 +3238,7 @@ void start_firewall(void)
 		perror("/proc/sys/net/ipv4/ip_forward");
 	cprintf("start ipv6\n");
 	if (nvram_match("ipv6_enable", "1")) {
-		writeproc("/proc/sys/net/ipv6/conf/all/forwarding","1");
+		writeproc("/proc/sys/net/ipv6/conf/all/forwarding", "1");
 	}
 #ifdef HAVE_WIFIDOG
 	stop_wifidog();

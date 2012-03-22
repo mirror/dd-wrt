@@ -784,9 +784,9 @@ void start_lan(void)
 	static char wl_face[10];
 
 	// don't let packages pass to iptables without ebtables loaded
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables","0");
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables","0");
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");
+	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "0");
 	strcpy(lan_ifname, nvram_safe_get("lan_ifname"));
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
@@ -2052,8 +2052,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.
-							     ifr_hwaddr.sa_data,
+							     ifr.ifr_hwaddr.
+							     sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -4194,12 +4194,17 @@ void start_wan_done(char *wan_ifname)
 
 	cprintf("running custom DD-WRT ipup scripts\n");
 	runStartup("/etc/config", ".ipup");
-#ifdef HAVE_RB500
-	runStartup("/usr/local/etc/config", ".ipup");
-#else
-	runStartup("/jffs/etc/config", ".ipup");
-	runStartup("/mmc/etc/config", ".ipup");
+#ifdef HAVE_REGISTER
+	if (isregistered_real())
 #endif
+	{
+#ifdef HAVE_RB500
+		runStartup("/usr/local/etc/config", ".ipup");
+#else
+		runStartup("/jffs/etc/config", ".ipup");
+		runStartup("/mmc/etc/config", ".ipup");
+#endif
+	}
 	cprintf("trigger gpio");
 
 	led_control(LED_CONNECTED, LED_OFF);
