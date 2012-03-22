@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Logging of zebra
  * Copyright (C) 1997, 1998, 1999 Kunihiro Ishiguro
  *
@@ -776,7 +774,8 @@ lookup (const struct message *mes, int key)
  * provided otherwise.
  */
 const char *
-mes_lookup (const struct message *meslist, int max, int index, const char *none)
+mes_lookup (const struct message *meslist, int max, int index,
+  const char *none, const char *mesname)
 {
   int pos = index - meslist[0].key;
   
@@ -799,13 +798,13 @@ mes_lookup (const struct message *meslist, int max, int index, const char *none)
 	  {
 	    const char *str = (meslist->str ? meslist->str : none);
 	    
-	    zlog_debug ("message index %d [%s] found in position %d (max is %d)",
-		      index, str, i, max);
+	    zlog_debug ("message index %d [%s] found in %s at position %d (max is %d)",
+		      index, str, mesname, i, max);
 	    return str;
 	  }
       }
   }
-  zlog_err("message index %d not found (max is %d)", index, max);
+  zlog_err("message index %d not found in %s (max is %d)", index, mesname, max);
   assert (none);
   return none;
 }
@@ -838,8 +837,6 @@ static const struct zebra_desc_table route_types[] = {
   DESC_ENTRY	(ZEBRA_ROUTE_ISIS,	"isis",		'I' ),
   DESC_ENTRY	(ZEBRA_ROUTE_BGP,	"bgp",		'B' ),
   DESC_ENTRY	(ZEBRA_ROUTE_HSLS,	"hsls",		'H' ),
-  DESC_ENTRY	(ZEBRA_ROUTE_OLSR,	"olsr",		'o' ),
-  DESC_ENTRY	(ZEBRA_ROUTE_BATMAN,	"batman",	'b' ),
 };
 #undef DESC_ENTRY
 

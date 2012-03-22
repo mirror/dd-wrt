@@ -135,7 +135,7 @@ ospf_process_self_originated_lsa (struct ospf *ospf,
       /* Originate a new instance and schedule flooding */
       if (area->router_lsa_self)
 	area->router_lsa_self->data->ls_seqnum = new->data->ls_seqnum;
-      ospf_router_lsa_timer_add (area);
+      ospf_router_lsa_update_area (area);
       return;
     case OSPF_NETWORK_LSA:
 #ifdef HAVE_OPAQUE_LSA
@@ -171,7 +171,7 @@ ospf_process_self_originated_lsa (struct ospf *ospf,
             if (oi->network_lsa_self)
 	      oi->network_lsa_self->data->ls_seqnum = new->data->ls_seqnum;
             /* Schedule network-LSA origination. */
-            ospf_network_lsa_timer_add (oi);
+            ospf_network_lsa_update (oi);
             return;
           }
       break;
@@ -319,7 +319,8 @@ ospf_flood (struct ospf *ospf, struct ospf_neighbor *nbr,
      procedure cannot overwrite the newly installed LSA until
      MinLSArrival seconds have elapsed. */  
 
-  new = ospf_lsa_install (ospf, nbr->oi, new);
+  if (! (new = ospf_lsa_install (ospf, nbr->oi, new)))
+    return 0; /* unknown LSA type */
 
   /* Acknowledge the receipt of the LSA by sending a Link State
      Acknowledgment packet back out the receiving interface. */
@@ -990,4 +991,34 @@ ospf_lsa_flush_as (struct ospf *ospf, struct ospf_lsa *lsa)
   lsa->data->ls_age = htons (OSPF_LSA_MAXAGE);
   ospf_flood_through_as (ospf, NULL, lsa);
   ospf_lsa_maxage (ospf, lsa);
+}
+
+void
+ospf_lsa_flush (struct ospf *ospf, struct ospf_lsa *lsa)
+{
+  lsa->data->ls_age = htons (OSPF_LSA_MAXAGE);
+  
+  switch (lsa->data->type)
+    {
+      case OSPF_ROUTER_LSA:
+      case OSPF_NETWORK_LSA:
+      case OSPF_SUMMARY_LSA:
+      case OSPF_ASBR_SUMMARY_LSA:
+      case OSPF_AS_NSSA_LSA:
+#ifdef HAVE_OPAQUE_LSA
+      case OSPF_OPAQUE_LINK_LSA:
+      case OSPF_OPAQUE_AREA_LSA:
+#endif /* HAVE_OPAQUE_LSA */
+        ospf_lsa_flush_area (lsa, lsa->area);
+        break;
+      case OSPF_AS_EXTERNAL_LSA:
+#ifdef HAVE_OPAQUE_LSA
+      case OSPF_OPAQUE_AS_LSA:
+#endif /* HAVE_OPAQUE_LSA */
+        ospf_lsa_flush_as (ospf, lsa);
+        break;
+      default:
+        zlog_info ("%s: Unknown LSA type %u", __func__, lsa->data->type);
+        break;
+    }
 }
