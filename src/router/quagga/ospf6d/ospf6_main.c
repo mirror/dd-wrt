@@ -34,8 +34,13 @@
 #include "plist.h"
 #include "privs.h"
 #include "sigevent.h"
+#include "zclient.h"
 
 #include "ospf6d.h"
+#include "ospf6_top.h"
+#include "ospf6_message.h"
+#include "ospf6_asbr.h"
+#include "ospf6_lsa.h"
 
 /* Default configuration file name for ospf6d. */
 #define OSPF6_DEFAULT_CONFIG       "ospf6d.conf"
@@ -124,6 +129,35 @@ Report bugs to zebra@zebra.org\n", progname);
   exit (status);
 }
 
+static void
+ospf6_exit (int status)
+{
+  extern struct ospf6 *ospf6;
+  extern struct zclient *zclient;
+
+  if (ospf6)
+    ospf6_delete (ospf6);
+
+  ospf6_message_terminate ();
+  ospf6_asbr_terminate ();
+  ospf6_lsa_terminate ();
+
+  if_terminate ();
+  vty_terminate ();
+  cmd_terminate ();
+
+  if (zclient)
+    zclient_free (zclient);
+
+  if (master)
+    thread_master_free (master);
+
+  if (zlog_default)
+    closezlog (zlog_default);
+
+  exit (status);
+}
+
 /* SIGHUP handler. */
 static void 
 sighup (void)
@@ -136,7 +170,7 @@ static void
 sigint (void)
 {
   zlog_notice ("Terminating on signal SIGINT");
-  exit (0);
+  ospf6_exit (0);
 }
 
 /* SIGTERM handler. */
@@ -144,7 +178,7 @@ static void
 sigterm (void)
 {
   zlog_notice ("Terminating on signal SIGTERM");
-  exit (0);
+  ospf6_exit (0);
 }
 
 /* SIGUSR1 handler. */
@@ -308,7 +342,7 @@ main (int argc, char *argv[], char *envp[])
   zlog_warn ("Thread failed");
 
   /* Not reached. */
-  exit (0);
+  ospf6_exit (0);
 }
 
 

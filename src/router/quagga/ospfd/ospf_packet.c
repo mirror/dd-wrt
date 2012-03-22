@@ -50,15 +50,49 @@
 #include "ospfd/ospf_dump.h"
 
 /* Packet Type String. */
-const char *ospf_packet_type_str[] =
+const struct message ospf_packet_type_str[] =
 {
-  "unknown",
-  "Hello",
-  "Database Description",
-  "Link State Request",
-  "Link State Update",
-  "Link State Acknowledgment",
+  { OSPF_MSG_HELLO,   "Hello"                     },
+  { OSPF_MSG_DB_DESC, "Database Description"      },
+  { OSPF_MSG_LS_REQ,  "Link State Request"        },
+  { OSPF_MSG_LS_UPD,  "Link State Update"         },
+  { OSPF_MSG_LS_ACK,  "Link State Acknowledgment" },
 };
+const size_t ospf_packet_type_str_max = sizeof (ospf_packet_type_str) /
+  sizeof (ospf_packet_type_str[0]);
+
+/* Minimum (besides OSPF_HEADER_SIZE) lengths for OSPF packets of
+   particular types, offset is the "type" field of a packet. */
+static const u_int16_t ospf_packet_minlen[] =
+{
+  0,
+  OSPF_HELLO_MIN_SIZE,
+  OSPF_DB_DESC_MIN_SIZE,
+  OSPF_LS_REQ_MIN_SIZE,
+  OSPF_LS_UPD_MIN_SIZE,
+  OSPF_LS_ACK_MIN_SIZE,
+};
+
+/* Minimum (besides OSPF_LSA_HEADER_SIZE) lengths for LSAs of particular
+   types, offset is the "LSA type" field. */
+static const u_int16_t ospf_lsa_minlen[] =
+{
+  0,
+  OSPF_ROUTER_LSA_MIN_SIZE,
+  OSPF_NETWORK_LSA_MIN_SIZE,
+  OSPF_SUMMARY_LSA_MIN_SIZE,
+  OSPF_SUMMARY_LSA_MIN_SIZE,
+  OSPF_AS_EXTERNAL_LSA_MIN_SIZE,
+  0,
+  OSPF_AS_EXTERNAL_LSA_MIN_SIZE,
+  0,
+  0,
+  0,
+  0,
+};
+
+/* for ospf_check_auth() */
+static int ospf_check_sum (struct ospf_header *);
 
 /* OSPF authentication checking function */
 static int
@@ -125,6 +159,20 @@ ospf_fifo_push (struct ospf_fifo *fifo, struct ospf_packet *op)
   fifo->count++;
 }
 
+/* Add new packet to head of fifo. */
+static void
+ospf_fifo_push_head (struct ospf_fifo *fifo, struct ospf_packet *op)
+{
+  op->next = fifo->head;
+  
+  if (fifo->tail == NULL)
+    fifo->tail = op;
+  
+  fifo->head = op;
+  
+  fifo->count++;
+}
+
 /* Delete first packet from fifo. */
 struct ospf_packet *
 ospf_fifo_pop (struct ospf_fifo *fifo)
@@ -187,13 +235,34 @@ ospf_packet_add (struct ospf_interface *oi, struct ospf_packet *op)
 	       "destination %s) called with NULL obuf, ignoring "
 	       "(please report this bug)!\n",
 	       IF_NAME(oi), oi->state, LOOKUP (ospf_ism_state_msg, oi->state),
-	       ospf_packet_type_str[stream_getc_from(op->s, 1)],
+	       LOOKUP (ospf_packet_type_str, stream_getc_from(op->s, 1)),
 	       inet_ntoa (op->dst));
       return;
     }
 
   /* Add packet to end of queue. */
   ospf_fifo_push (oi->obuf, op);
+
+  /* Debug of packet fifo*/
+  /* ospf_fifo_debug (oi->obuf); */
+}
+
+static void
+ospf_packet_add_top (struct ospf_interface *oi, struct ospf_packet *op)
+{
+  if (!oi->obuf)
+    {
+      zlog_err("ospf_packet_add(interface %s in state %d [%s], packet type %s, "
+	       "destination %s) called with NULL obuf, ignoring "
+	       "(please report this bug)!\n",
+	       IF_NAME(oi), oi->state, LOOKUP (ospf_ism_state_msg, oi->state),
+	       LOOKUP (ospf_packet_type_str, stream_getc_from(op->s, 1)),
+	       inet_ntoa (op->dst));
+      return;
+    }
+
+  /* Add packet to head of queue. */
+  ospf_fifo_push_head (oi->obuf, op);
 
   /* Debug of packet fifo*/
   /* ospf_fifo_debug (oi->obuf); */
@@ -256,24 +325,14 @@ ospf_packet_max (struct ospf_interface *oi)
 
 
 static int
-ospf_check_md5_digest (struct ospf_interface *oi, struct stream *s,
-                       u_int16_t length)
+ospf_check_md5_digest (struct ospf_interface *oi, struct ospf_header *ospfh)
 {
-  unsigned char *ibuf;
   MD5_CTX ctx;
   unsigned char digest[OSPF_AUTH_MD5_SIZE];
-  unsigned char *pdigest;
   struct crypt_key *ck;
-  struct ospf_header *ospfh;
   struct ospf_neighbor *nbr;
+  u_int16_t length = ntohs (ospfh->length);
   
-
-  ibuf = STREAM_PNT (s);
-  ospfh = (struct ospf_header *) ibuf;
-
-  /* Get pointer to the end of the packet. */
-  pdigest = ibuf + length;
-
   /* Get secret key. */
   ck = ospf_crypt_key_lookup (OSPF_IF_PARAM (oi, auth_crypt),
 			      ospfh->u.crypt.key_id);
@@ -299,12 +358,12 @@ ospf_check_md5_digest (struct ospf_interface *oi, struct stream *s,
   /* Generate a digest for the ospf packet - their digest + our digest. */
   memset(&ctx, 0, sizeof(ctx));
   MD5Init(&ctx);
-  MD5Update(&ctx, ibuf, length);
+  MD5Update(&ctx, ospfh, length);
   MD5Update(&ctx, ck->auth_key, OSPF_AUTH_MD5_SIZE);
   MD5Final(digest, &ctx);
 
   /* compare the two */
-  if (memcmp (pdigest, digest, OSPF_AUTH_MD5_SIZE))
+  if (memcmp ((caddr_t)ospfh + length, digest, OSPF_AUTH_MD5_SIZE))
     {
       zlog_warn ("interface %s: ospf_check_md5 checksum mismatch",
 		 IF_NAME (oi));
@@ -653,6 +712,13 @@ ospf_write (struct thread *thread)
   iph.ip_tos = IPTOS_PREC_INTERNETCONTROL;
   iph.ip_len = (iph.ip_hl << OSPF_WRITE_IPHL_SHIFT) + op->length;
 
+#if defined(__DragonFly__)
+  /*
+   * DragonFly's raw socket expects ip_len/ip_off in network byte order.
+   */
+  iph.ip_len = htons(iph.ip_len);
+#endif
+
 #ifdef WANT_OSPF_WRITE_FRAGMENT
   /* XXX-MT: not thread-safe at all..
    * XXX: this presumes this is only programme sending OSPF packets 
@@ -713,7 +779,7 @@ ospf_write (struct thread *thread)
 	}
 
       zlog_debug ("%s sent to [%s] via [%s].",
-		 ospf_packet_type_str[type], inet_ntoa (op->dst),
+		 LOOKUP (ospf_packet_type_str, type), inet_ntoa (op->dst),
 		 IF_NAME (oi));
 
       if (IS_DEBUG_OSPF_PACKET (type - 1, DETAIL))
@@ -759,7 +825,7 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
         {
           zlog_debug ("ospf_header[%s/%s]: selforiginated, "
                      "dropping.",
-                     ospf_packet_type_str[ospfh->type],
+                     LOOKUP (ospf_packet_type_str, ospfh->type),
                      inet_ntoa (iph->ip_src));
         }
       return;
@@ -881,7 +947,7 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
   old_state = nbr->state;
 
   /* Add event to thread. */
-  OSPF_NSM_EVENT_EXECUTE (nbr, NSM_HelloReceived);
+  OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_PacketReceived);
 
   /*  RFC2328  Section 9.5.1
       If the router is not eligible to become Designated Router,
@@ -901,7 +967,7 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
   if (oi->type == OSPF_IFTYPE_NBMA &&
       (old_state == NSM_Down || old_state == NSM_Attempt))
     {
-      OSPF_NSM_EVENT_EXECUTE (nbr, NSM_OneWayReceived);
+      OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_OneWayReceived);
       nbr->priority = hello->priority;
       nbr->d_router = hello->d_router;
       nbr->bd_router = hello->bd_router;
@@ -911,12 +977,12 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
   if (ospf_nbr_bidirectional (&oi->ospf->router_id, hello->neighbors,
 			      size - OSPF_HELLO_MIN_SIZE))
     {
-      OSPF_NSM_EVENT_EXECUTE (nbr, NSM_TwoWayReceived);
+      OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_TwoWayReceived);
       nbr->options |= hello->options;
     }
   else
     {
-      OSPF_NSM_EVENT_EXECUTE (nbr, NSM_OneWayReceived);
+      OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_OneWayReceived);
       /* Set neighbor information. */
       nbr->priority = hello->priority;
       nbr->d_router = hello->d_router;
@@ -1191,6 +1257,9 @@ ospf_db_desc (struct ip *iph, struct ospf_header *ospfh,
     }
 #endif /* HAVE_OPAQUE_LSA */
 
+  /* Add event to thread. */
+  OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_PacketReceived);
+
   /* Process DD packet by neighbor status. */
   switch (nbr->state)
     {
@@ -1411,6 +1480,9 @@ ospf_ls_req (struct ip *iph, struct ospf_header *ospfh,
 		 inet_ntoa (ospfh->router_id));
       return;
     }
+
+  /* Add event to thread. */
+  OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_PacketReceived);
 
   /* Neighbor State should be Exchange or later. */
   if (nbr->state != NSM_Exchange &&
@@ -1643,6 +1715,9 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
 		 inet_ntoa (ospfh->router_id), IF_NAME (oi));
       return;
     }
+
+  /* Add event to thread. */
+  OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_PacketReceived);
 
   /* Check neighbor state. */
   if (nbr->state < NSM_Exchange)
@@ -1946,7 +2021,7 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
 	      quagga_gettime (QUAGGA_CLK_MONOTONIC, &now);
 	      
 	      if (tv_cmp (tv_sub (now, current->tv_orig), 
-			  int2tv (OSPF_MIN_LS_ARRIVAL)) > 0)
+			  int2tv (OSPF_MIN_LS_ARRIVAL)) >= 0)
 		/* Trap NSSA type later.*/
 		ospf_ls_upd_send_lsa (nbr, current, OSPF_SEND_PACKET_DIRECT);
 	      DISCARD_LSA (lsa, 8);
@@ -1976,6 +2051,9 @@ ospf_ls_ack (struct ip *iph, struct ospf_header *ospfh,
 		 inet_ntoa (ospfh->router_id));
       return;
     }
+
+  /* Add event to thread. */
+  OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_PacketReceived);
 
   if (nbr->state < NSM_Exchange)
     {
@@ -2080,6 +2158,15 @@ ospf_recv_packet (int fd, struct interface **ifp, struct stream *ibuf)
   ip_len = ip_len + (iph->ip_hl << 2);
 #endif
   
+#if defined(__DragonFly__)
+  /*
+   * in DragonFly's raw socket, ip_len/ip_off are read 
+   * in network byte order.
+   * As OpenBSD < 200311 adjust ip_len to strip IP header size!
+   */
+  ip_len = ntohs(iph->ip_len) + (iph->ip_hl << 2);
+#endif
+
   ifindex = getsockopt_ifindex (AF_INET, &msgh);
   
   *ifp = if_lookup_by_index (ifindex);
@@ -2178,45 +2265,91 @@ ospf_check_network_mask (struct ospf_interface *oi, struct in_addr ip_src)
  return 0;
 }
 
+/* Return 1, if the packet is properly authenticated and checksummed,
+   0 otherwise. In particular, check that AuType header field is valid and
+   matches the locally configured AuType, and that D.5 requirements are met. */
 static int
-ospf_check_auth (struct ospf_interface *oi, struct stream *ibuf,
-		 struct ospf_header *ospfh)
+ospf_check_auth (struct ospf_interface *oi, struct ospf_header *ospfh)
 {
-  int ret = 0;
   struct crypt_key *ck;
+  u_int16_t iface_auth_type;
+  u_int16_t pkt_auth_type = ntohs (ospfh->auth_type);
 
-  switch (ntohs (ospfh->auth_type))
+  switch (pkt_auth_type)
+  {
+  case OSPF_AUTH_NULL: /* RFC2328 D.5.1 */
+    if (OSPF_AUTH_NULL != (iface_auth_type = ospf_auth_type (oi)))
     {
-    case OSPF_AUTH_NULL:
-      ret = 1;
-      break;
-    case OSPF_AUTH_SIMPLE:
-      if (!memcmp (OSPF_IF_PARAM (oi, auth_simple), ospfh->u.auth_data, OSPF_AUTH_SIMPLE_SIZE))
-	ret = 1;
-      else
-	ret = 0;
-      break;
-    case OSPF_AUTH_CRYPTOGRAPHIC:
-      if ((ck = listgetdata (listtail(OSPF_IF_PARAM (oi,auth_crypt)))) == NULL)
-	{
-	  ret = 0;
-	  break;
-	}
-      
-      /* This is very basic, the digest processing is elsewhere */
-      if (ospfh->u.crypt.auth_data_len == OSPF_AUTH_MD5_SIZE && 
-          ospfh->u.crypt.key_id == ck->key_id &&
-          ntohs (ospfh->length) + OSPF_AUTH_SIMPLE_SIZE <= stream_get_size (ibuf))
-        ret = 1;
-      else
-        ret = 0;
-      break;
-    default:
-      ret = 0;
-      break;
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: auth-type mismatch, local %s, rcvd Null",
+                   IF_NAME (oi), LOOKUP (ospf_auth_type_str, iface_auth_type));
+      return 0;
     }
-
-  return ret;
+    if (! ospf_check_sum (ospfh))
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: Null auth OK, but checksum error, Router-ID %s",
+                   IF_NAME (oi), inet_ntoa (ospfh->router_id));
+      return 0;
+    }
+    return 1;
+  case OSPF_AUTH_SIMPLE: /* RFC2328 D.5.2 */
+    if (OSPF_AUTH_SIMPLE != (iface_auth_type = ospf_auth_type (oi)))
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: auth-type mismatch, local %s, rcvd Simple",
+                   IF_NAME (oi), LOOKUP (ospf_auth_type_str, iface_auth_type));
+      return 0;
+    }
+    if (memcmp (OSPF_IF_PARAM (oi, auth_simple), ospfh->u.auth_data, OSPF_AUTH_SIMPLE_SIZE))
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: Simple auth failed", IF_NAME (oi));
+      return 0;
+    }
+    if (! ospf_check_sum (ospfh))
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: Simple auth OK, checksum error, Router-ID %s",
+                   IF_NAME (oi), inet_ntoa (ospfh->router_id));
+      return 0;
+    }
+    return 1;
+  case OSPF_AUTH_CRYPTOGRAPHIC: /* RFC2328 D.5.3 */
+    if (OSPF_AUTH_CRYPTOGRAPHIC != (iface_auth_type = ospf_auth_type (oi)))
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: auth-type mismatch, local %s, rcvd Cryptographic",
+                   IF_NAME (oi), LOOKUP (ospf_auth_type_str, iface_auth_type));
+      return 0;
+    }
+    if (ospfh->checksum)
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: OSPF header checksum is not 0", IF_NAME (oi));
+      return 0;
+    }
+    /* only MD5 crypto method can pass ospf_packet_examin() */
+    if
+    (
+      NULL == (ck = listgetdata (listtail(OSPF_IF_PARAM (oi,auth_crypt)))) ||
+      ospfh->u.crypt.key_id != ck->key_id ||
+      /* Condition above uses the last key ID on the list, which is
+         different from what ospf_crypt_key_lookup() does. A bug? */
+      ! ospf_check_md5_digest (oi, ospfh)
+    )
+    {
+      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+        zlog_warn ("interface %s: MD5 auth failed", IF_NAME (oi));
+      return 0;
+    }
+    return 1;
+  default:
+    if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
+      zlog_warn ("interface %s: invalid packet auth-type (%02x)",
+                 IF_NAME (oi), pkt_auth_type);
+    return 0;
+  }
 }
 
 static int
@@ -2245,19 +2378,311 @@ ospf_check_sum (struct ospf_header *ospfh)
   return 1;
 }
 
+/* Verify, that given link/TOS records are properly sized/aligned and match
+   Router-LSA "# links" and "# TOS" fields as specified in RFC2328 A.4.2. */
+static unsigned
+ospf_router_lsa_links_examin
+(
+  struct router_lsa_link * link,
+  u_int16_t linkbytes,
+  const u_int16_t num_links
+)
+{
+  unsigned counted_links = 0, thislinklen;
+
+  while (linkbytes)
+  {
+    thislinklen = OSPF_ROUTER_LSA_LINK_SIZE + 4 * link->m[0].tos_count;
+    if (thislinklen > linkbytes)
+    {
+      if (IS_DEBUG_OSPF_PACKET (0, RECV))
+        zlog_debug ("%s: length error in link block #%u", __func__, counted_links);
+      return MSG_NG;
+    }
+    link = (struct router_lsa_link *)((caddr_t) link + thislinklen);
+    linkbytes -= thislinklen;
+    counted_links++;
+  }
+  if (counted_links != num_links)
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: %u link blocks declared, %u present",
+                  __func__, num_links, counted_links);
+    return MSG_NG;
+  }
+  return MSG_OK;
+}
+
+/* Verify, that the given LSA is properly sized/aligned (including type-specific
+   minimum length constraint). */
+static unsigned
+ospf_lsa_examin (struct lsa_header * lsah, const u_int16_t lsalen, const u_char headeronly)
+{
+  unsigned ret;
+  struct router_lsa * rlsa;
+  if
+  (
+    lsah->type < OSPF_MAX_LSA &&
+    ospf_lsa_minlen[lsah->type] &&
+    lsalen < OSPF_LSA_HEADER_SIZE + ospf_lsa_minlen[lsah->type]
+  )
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: undersized (%u B) %s",
+                  __func__, lsalen, LOOKUP (ospf_lsa_type_msg, lsah->type));
+    return MSG_NG;
+  }
+  switch (lsah->type)
+  {
+  case OSPF_ROUTER_LSA:
+    /* RFC2328 A.4.2, LSA header + 4 bytes followed by N>=1 (12+)-byte link blocks */
+    if (headeronly)
+    {
+      ret = (lsalen - OSPF_LSA_HEADER_SIZE - OSPF_ROUTER_LSA_MIN_SIZE) % 4 ? MSG_NG : MSG_OK;
+      break;
+    }
+    rlsa = (struct router_lsa *) lsah;
+    ret = ospf_router_lsa_links_examin
+    (
+      (struct router_lsa_link *) rlsa->link,
+      lsalen - OSPF_LSA_HEADER_SIZE - 4, /* skip: basic header, "flags", 0, "# links" */
+      ntohs (rlsa->links) /* 16 bits */
+    );
+    break;
+  case OSPF_AS_EXTERNAL_LSA:
+    /* RFC2328 A.4.5, LSA header + 4 bytes followed by N>=1 12-bytes long blocks */
+  case OSPF_AS_NSSA_LSA:
+    /* RFC3101 C, idem */
+    ret = (lsalen - OSPF_LSA_HEADER_SIZE - OSPF_AS_EXTERNAL_LSA_MIN_SIZE) % 12 ? MSG_NG : MSG_OK;
+    break;
+  /* Following LSA types are considered OK length-wise as soon as their minimum
+   * length constraint is met and length of the whole LSA is a multiple of 4
+   * (basic LSA header size is already a multiple of 4). */
+  case OSPF_NETWORK_LSA:
+    /* RFC2328 A.4.3, LSA header + 4 bytes followed by N>=1 router-IDs */
+  case OSPF_SUMMARY_LSA:
+  case OSPF_ASBR_SUMMARY_LSA:
+    /* RFC2328 A.4.4, LSA header + 4 bytes followed by N>=1 4-bytes TOS blocks */
+#ifdef HAVE_OPAQUE_LSA
+  case OSPF_OPAQUE_LINK_LSA:
+  case OSPF_OPAQUE_AREA_LSA:
+  case OSPF_OPAQUE_AS_LSA:
+    /* RFC5250 A.2, "some number of octets (of application-specific
+     * data) padded to 32-bit alignment." This is considered equivalent
+     * to 4-byte alignment of all other LSA types, see OSPF-ALIGNMENT.txt
+     * file for the detailed analysis of this passage. */
+#endif
+    ret = lsalen % 4 ? MSG_NG : MSG_OK;
+    break;
+  default:
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: unsupported LSA type 0x%02x", __func__, lsah->type);
+    return MSG_NG;
+  }
+  if (ret != MSG_OK && IS_DEBUG_OSPF_PACKET (0, RECV))
+    zlog_debug ("%s: alignment error in %s",
+                __func__, LOOKUP (ospf_lsa_type_msg, lsah->type));
+  return ret;
+}
+
+/* Verify if the provided input buffer is a valid sequence of LSAs. This
+   includes verification of LSA blocks length/alignment and dispatching
+   of deeper-level checks. */
+static unsigned
+ospf_lsaseq_examin
+(
+  struct lsa_header *lsah, /* start of buffered data */
+  size_t length,
+  const u_char headeronly,
+  /* When declared_num_lsas is not 0, compare it to the real number of LSAs
+     and treat the difference as an error. */
+  const u_int32_t declared_num_lsas
+)
+{
+  u_int32_t counted_lsas = 0;
+
+  while (length)
+  {
+    u_int16_t lsalen;
+    if (length < OSPF_LSA_HEADER_SIZE)
+    {
+      if (IS_DEBUG_OSPF_PACKET (0, RECV))
+        zlog_debug ("%s: undersized (%zu B) trailing (#%u) LSA header",
+                    __func__, length, counted_lsas);
+      return MSG_NG;
+    }
+    /* save on ntohs() calls here and in the LSA validator */
+    lsalen = ntohs (lsah->length);
+    if (lsalen < OSPF_LSA_HEADER_SIZE)
+    {
+      if (IS_DEBUG_OSPF_PACKET (0, RECV))
+        zlog_debug ("%s: malformed LSA header #%u, declared length is %u B",
+                    __func__, counted_lsas, lsalen);
+      return MSG_NG;
+    }
+    if (headeronly)
+    {
+      /* less checks here and in ospf_lsa_examin() */
+      if (MSG_OK != ospf_lsa_examin (lsah, lsalen, 1))
+      {
+        if (IS_DEBUG_OSPF_PACKET (0, RECV))
+          zlog_debug ("%s: malformed header-only LSA #%u", __func__, counted_lsas);
+        return MSG_NG;
+      }
+      lsah = (struct lsa_header *) ((caddr_t) lsah + OSPF_LSA_HEADER_SIZE);
+      length -= OSPF_LSA_HEADER_SIZE;
+    }
+    else
+    {
+      /* make sure the input buffer is deep enough before further checks */
+      if (lsalen > length)
+      {
+        if (IS_DEBUG_OSPF_PACKET (0, RECV))
+          zlog_debug ("%s: anomaly in LSA #%u: declared length is %u B, buffered length is %zu B",
+                      __func__, counted_lsas, lsalen, length);
+        return MSG_NG;
+      }
+      if (MSG_OK != ospf_lsa_examin (lsah, lsalen, 0))
+      {
+        if (IS_DEBUG_OSPF_PACKET (0, RECV))
+          zlog_debug ("%s: malformed LSA #%u", __func__, counted_lsas);
+        return MSG_NG;
+      }
+      lsah = (struct lsa_header *) ((caddr_t) lsah + lsalen);
+      length -= lsalen;
+    }
+    counted_lsas++;
+  }
+
+  if (declared_num_lsas && counted_lsas != declared_num_lsas)
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: #LSAs declared (%u) does not match actual (%u)",
+                  __func__, declared_num_lsas, counted_lsas);
+    return MSG_NG;
+  }
+  return MSG_OK;
+}
+
+/* Verify a complete OSPF packet for proper sizing/alignment. */
+static unsigned
+ospf_packet_examin (struct ospf_header * oh, const unsigned bytesonwire)
+{
+  u_int16_t bytesdeclared, bytesauth;
+  unsigned ret;
+  struct ospf_ls_update * lsupd;
+
+  /* Length, 1st approximation. */
+  if (bytesonwire < OSPF_HEADER_SIZE)
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: undersized (%u B) packet", __func__, bytesonwire);
+    return MSG_NG;
+  }
+  /* Now it is safe to access header fields. Performing length check, allow
+   * for possible extra bytes of crypto auth/padding, which are not counted
+   * in the OSPF header "length" field. */
+  if (oh->version != OSPF_VERSION)
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: invalid (%u) protocol version", __func__, oh->version);
+    return MSG_NG;
+  }
+  bytesdeclared = ntohs (oh->length);
+  if (ntohs (oh->auth_type) != OSPF_AUTH_CRYPTOGRAPHIC)
+    bytesauth = 0;
+  else
+  {
+    if (oh->u.crypt.auth_data_len != OSPF_AUTH_MD5_SIZE)
+    {
+      if (IS_DEBUG_OSPF_PACKET (0, RECV))
+        zlog_debug ("%s: unsupported crypto auth length (%u B)",
+                    __func__, oh->u.crypt.auth_data_len);
+      return MSG_NG;
+    }
+    bytesauth = OSPF_AUTH_MD5_SIZE;
+  }
+  if (bytesdeclared + bytesauth > bytesonwire)
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: packet length error (%u real, %u+%u declared)",
+                  __func__, bytesonwire, bytesdeclared, bytesauth);
+    return MSG_NG;
+  }
+  /* Length, 2nd approximation. The type-specific constraint is checked
+     against declared length, not amount of bytes on wire. */
+  if
+  (
+    oh->type >= OSPF_MSG_HELLO &&
+    oh->type <= OSPF_MSG_LS_ACK &&
+    bytesdeclared < OSPF_HEADER_SIZE + ospf_packet_minlen[oh->type]
+  )
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: undersized (%u B) %s packet", __func__,
+                  bytesdeclared, LOOKUP (ospf_packet_type_str, oh->type));
+    return MSG_NG;
+  }
+  switch (oh->type)
+  {
+  case OSPF_MSG_HELLO:
+    /* RFC2328 A.3.2, packet header + OSPF_HELLO_MIN_SIZE bytes followed
+       by N>=0 router-IDs. */
+    ret = (bytesdeclared - OSPF_HEADER_SIZE - OSPF_HELLO_MIN_SIZE) % 4 ? MSG_NG : MSG_OK;
+    break;
+  case OSPF_MSG_DB_DESC:
+    /* RFC2328 A.3.3, packet header + OSPF_DB_DESC_MIN_SIZE bytes followed
+       by N>=0 header-only LSAs. */
+    ret = ospf_lsaseq_examin
+    (
+      (struct lsa_header *) ((caddr_t) oh + OSPF_HEADER_SIZE + OSPF_DB_DESC_MIN_SIZE),
+      bytesdeclared - OSPF_HEADER_SIZE - OSPF_DB_DESC_MIN_SIZE,
+      1, /* header-only LSAs */
+      0
+    );
+    break;
+  case OSPF_MSG_LS_REQ:
+    /* RFC2328 A.3.4, packet header followed by N>=0 12-bytes request blocks. */
+    ret = (bytesdeclared - OSPF_HEADER_SIZE - OSPF_LS_REQ_MIN_SIZE) %
+      OSPF_LSA_KEY_SIZE ? MSG_NG : MSG_OK;
+    break;
+  case OSPF_MSG_LS_UPD:
+    /* RFC2328 A.3.5, packet header + OSPF_LS_UPD_MIN_SIZE bytes followed
+       by N>=0 full LSAs (with N declared beforehand). */
+    lsupd = (struct ospf_ls_update *) ((caddr_t) oh + OSPF_HEADER_SIZE);
+    ret = ospf_lsaseq_examin
+    (
+      (struct lsa_header *) ((caddr_t) lsupd + OSPF_LS_UPD_MIN_SIZE),
+      bytesdeclared - OSPF_HEADER_SIZE - OSPF_LS_UPD_MIN_SIZE,
+      0, /* full LSAs */
+      ntohl (lsupd->num_lsas) /* 32 bits */
+    );
+    break;
+  case OSPF_MSG_LS_ACK:
+    /* RFC2328 A.3.6, packet header followed by N>=0 header-only LSAs. */
+    ret = ospf_lsaseq_examin
+    (
+      (struct lsa_header *) ((caddr_t) oh + OSPF_HEADER_SIZE + OSPF_LS_ACK_MIN_SIZE),
+      bytesdeclared - OSPF_HEADER_SIZE - OSPF_LS_ACK_MIN_SIZE,
+      1, /* header-only LSAs */
+      0
+    );
+    break;
+  default:
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("%s: invalid packet type 0x%02x", __func__, oh->type);
+    return MSG_NG;
+  }
+  if (ret != MSG_OK && IS_DEBUG_OSPF_PACKET (0, RECV))
+    zlog_debug ("%s: malformed %s packet", __func__, LOOKUP (ospf_packet_type_str, oh->type));
+  return ret;
+}
+
 /* OSPF Header verification. */
 static int
 ospf_verify_header (struct stream *ibuf, struct ospf_interface *oi,
 		    struct ip *iph, struct ospf_header *ospfh)
 {
-  /* check version. */
-  if (ospfh->version != OSPF_VERSION)
-    {
-      zlog_warn ("interface %s: ospf_read version number mismatch.",
-		 IF_NAME (oi));
-      return -1;
-    }
-
   /* Check Area ID. */
   if (!ospf_check_area_id (oi, ospfh))
     {
@@ -2274,42 +2699,9 @@ ospf_verify_header (struct stream *ibuf, struct ospf_interface *oi,
       return -1;
     }
 
-  /* Check authentication. */
-  if (ospf_auth_type (oi) != ntohs (ospfh->auth_type))
-    {
-      zlog_warn ("interface %s: auth-type mismatch, local %d, rcvd %d",
-		 IF_NAME (oi), ospf_auth_type (oi), ntohs (ospfh->auth_type));
-      return -1;
-    }
-
-  if (! ospf_check_auth (oi, ibuf, ospfh))
-    {
-      zlog_warn ("interface %s: ospf_read authentication failed.",
-		 IF_NAME (oi));
-      return -1;
-    }
-
-  /* if check sum is invalid, packet is discarded. */
-  if (ntohs (ospfh->auth_type) != OSPF_AUTH_CRYPTOGRAPHIC)
-    {
-      if (! ospf_check_sum (ospfh))
-	{
-	  zlog_warn ("interface %s: ospf_read packet checksum error %s",
-		     IF_NAME (oi), inet_ntoa (ospfh->router_id));
-	  return -1;
-	}
-    }
-  else
-    {
-      if (ospfh->checksum != 0)
-	return -1;
-      if (ospf_check_md5_digest (oi, ibuf, ntohs (ospfh->length)) == 0)
-	{
-	  zlog_warn ("interface %s: ospf_read md5 authentication failed.",
-		     IF_NAME (oi));
-	  return -1;
-	}
-    }
+  /* Check authentication. The function handles logging actions, where required. */
+  if (! ospf_check_auth (oi, ospfh))
+    return -1;
 
   return 0;
 }
@@ -2333,10 +2725,10 @@ ospf_read (struct thread *thread)
   /* prepare for next packet. */
   ospf->t_read = thread_add_read (master, ospf_read, ospf, ospf->fd);
 
-  /* read OSPF packet. */
   stream_reset(ospf->ibuf);
   if (!(ibuf = ospf_recv_packet (ospf->fd, &ifp, ospf->ibuf)))
     return -1;
+  /* This raw packet is known to be at least as big as its IP header. */
   
   /* Note that there should not be alignment problems with this assignment
      because this is at the beginning of the stream data buffer. */
@@ -2367,14 +2759,22 @@ ospf_read (struct thread *thread)
       return 0;
     }
 
-  /* Adjust size to message length. */
+  /* Advance from IP header to OSPF header (iph->ip_hl has been verified
+     by ospf_recv_packet() to be correct). */
   stream_forward_getp (ibuf, iph->ip_hl * 4);
-  
-  /* Get ospf packet header. */
+
   ospfh = (struct ospf_header *) STREAM_PNT (ibuf);
+  if (MSG_OK != ospf_packet_examin (ospfh, stream_get_endp (ibuf) - stream_get_getp (ibuf)))
+    return -1;
+  /* Now it is safe to access all fields of OSPF packet header. */
 
   /* associate packet with ospf interface */
   oi = ospf_if_lookup_recv_if (ospf, iph->ip_src, ifp);
+
+  /* ospf_verify_header() relies on a valid "oi" and thus can be called only
+     after the passive/backbone/other checks below are passed. These checks
+     in turn access the fields of unverified "ospfh" structure for their own
+     purposes and must remain very accurate in doing this. */
 
   /* If incoming interface is passive one, ignore it. */
   if (oi && OSPF_IF_PASSIVE_STATUS (oi) == OSPF_IF_PASSIVE)
@@ -2466,6 +2866,17 @@ ospf_read (struct thread *thread)
       return 0;
     }
 
+  /* Verify more OSPF header fields. */
+  ret = ospf_verify_header (ibuf, oi, iph, ospfh);
+  if (ret < 0)
+  {
+    if (IS_DEBUG_OSPF_PACKET (0, RECV))
+      zlog_debug ("ospf_read[%s]: Header check failed, "
+                  "dropping.",
+                  inet_ntoa (iph->ip_src));
+    return ret;
+  }
+
   /* Show debug receiving packet. */
   if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
     {
@@ -2476,7 +2887,7 @@ ospf_read (struct thread *thread)
         }
 
       zlog_debug ("%s received from [%s] via [%s]",
-                 ospf_packet_type_str[ospfh->type],
+                 LOOKUP (ospf_packet_type_str, ospfh->type),
                  inet_ntoa (ospfh->router_id), IF_NAME (oi));
       zlog_debug (" src [%s],", inet_ntoa (iph->ip_src));
       zlog_debug (" dst [%s]", inet_ntoa (iph->ip_dst));
@@ -2484,20 +2895,6 @@ ospf_read (struct thread *thread)
       if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, DETAIL))
 	zlog_debug ("-----------------------------------------------------");
   }
-
-  /* Some header verification. */
-  ret = ospf_verify_header (ibuf, oi, iph, ospfh);
-  if (ret < 0)
-    {
-      if (IS_DEBUG_OSPF_PACKET (ospfh->type - 1, RECV))
-        {
-          zlog_debug ("ospf_read[%s/%s]: Header check failed, "
-                     "dropping.",
-                     ospf_packet_type_str[ospfh->type],
-                     inet_ntoa (iph->ip_src));
-        }
-      return ret;
-    }
 
   stream_forward_getp (ibuf, OSPF_HEADER_SIZE);
 
@@ -2955,8 +3352,8 @@ ospf_make_ls_ack (struct ospf_interface *oi, struct list *ack, struct stream *s)
   return length;
 }
 
-void
-ospf_hello_send_sub (struct ospf_interface *oi, struct in_addr *addr)
+static void
+ospf_hello_send_sub (struct ospf_interface *oi, in_addr_t addr)
 {
   struct ospf_packet *op;
   u_int16_t length = OSPF_HEADER_SIZE;
@@ -2975,10 +3372,12 @@ ospf_hello_send_sub (struct ospf_interface *oi, struct in_addr *addr)
   /* Set packet length. */
   op->length = length;
 
-  op->dst.s_addr = addr->s_addr;
+  op->dst.s_addr = addr;
 
-  /* Add packet to the interface output queue. */
-  ospf_packet_add (oi, op);
+  /* Add packet to the top of the interface output queue, so that they
+   * can't get delayed by things like long queues of LS Update packets
+   */
+  ospf_packet_add_top (oi, op);
 
   /* Hook thread to write packet. */
   OSPF_ISM_WRITE_ON (oi->ospf);
@@ -3009,7 +3408,7 @@ ospf_poll_send (struct ospf_nbr_nbma *nbr_nbma)
       && oi->state != ISM_DR && oi->state != ISM_Backup)
     return;
 
-  ospf_hello_send_sub (oi, &nbr_nbma->addr);
+  ospf_hello_send_sub (oi, nbr_nbma->addr.s_addr);
 }
 
 int
@@ -3048,7 +3447,7 @@ ospf_hello_reply_timer (struct thread *thread)
     zlog (NULL, LOG_DEBUG, "NSM[%s:%s]: Timer (hello-reply timer expire)",
 	  IF_NAME (nbr->oi), inet_ntoa (nbr->router_id));
 
-  ospf_hello_send_sub (nbr->oi, &nbr->address.u.prefix4);
+  ospf_hello_send_sub (nbr->oi, nbr->address.u.prefix4.s_addr);
 
   return 0;
 }
@@ -3057,26 +3456,9 @@ ospf_hello_reply_timer (struct thread *thread)
 void
 ospf_hello_send (struct ospf_interface *oi)
 {
-  struct ospf_packet *op;
-  u_int16_t length = OSPF_HEADER_SIZE;
-
   /* If this is passive interface, do not send OSPF Hello. */
   if (OSPF_IF_PASSIVE_STATUS (oi) == OSPF_IF_PASSIVE)
     return;
-
-  op = ospf_packet_new (oi->ifp->mtu);
-
-  /* Prepare OSPF common header. */
-  ospf_make_header (OSPF_MSG_HELLO, oi, op->s);
-
-  /* Prepare OSPF Hello body. */
-  length += ospf_make_hello (oi, op->s);
-
-  /* Fill OSPF header. */
-  ospf_fill_header (oi, op->s, length);
-
-  /* Set packet length. */
-  op->length = length;
 
   if (oi->type == OSPF_IFTYPE_NBMA)
     {
@@ -3107,34 +3489,16 @@ ospf_hello_send (struct ospf_interface *oi)
 		if (nbr->priority == 0 && oi->state == ISM_DROther)
 		  continue;
 		/* if oi->state == Waiting, send hello to all neighbors */
-		{
-		  struct ospf_packet *op_dup;
-
-		  op_dup = ospf_packet_dup(op);
-		  op_dup->dst = nbr->address.u.prefix4;
-
-		  /* Add packet to the interface output queue. */
-		  ospf_packet_add (oi, op_dup);
-
-		  OSPF_ISM_WRITE_ON (oi->ospf);
-		}
-
+		ospf_hello_send_sub (oi, nbr->address.u.prefix4.s_addr);
 	      }
-      ospf_packet_free (op);
     }
   else
     {
       /* Decide destination address. */
       if (oi->type == OSPF_IFTYPE_VIRTUALLINK)
-	op->dst.s_addr = oi->vl_data->peer_addr.s_addr;
-      else 
-	op->dst.s_addr = htonl (OSPF_ALLSPFROUTERS);
-
-      /* Add packet to the interface output queue. */
-      ospf_packet_add (oi, op);
-
-      /* Hook thread to write packet. */
-      OSPF_ISM_WRITE_ON (oi->ospf);
+        ospf_hello_send_sub (oi, oi->vl_data->peer_addr.s_addr);
+      else
+        ospf_hello_send_sub (oi, htonl (OSPF_ALLSPFROUTERS));
     }
 }
 

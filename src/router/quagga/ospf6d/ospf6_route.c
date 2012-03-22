@@ -690,6 +690,8 @@ ospf6_route_best_next (struct ospf6_route *route)
   struct route_node *rnode;
   struct ospf6_route *next;
 
+  ospf6_route_unlock (route);
+
   rnode = route->rnode;
   route_lock_node (rnode);
   rnode = route_next (rnode);
@@ -701,7 +703,6 @@ ospf6_route_best_next (struct ospf6_route *route)
 
   assert (rnode->info);
   next = (struct ospf6_route *) rnode->info;
-  ospf6_route_unlock (route);
   ospf6_route_lock (next);
   return next;
 }
@@ -1335,13 +1336,14 @@ ospf6_brouter_show (struct vty *vty, struct ospf6_route *route)
 
 DEFUN (debug_ospf6_route,
        debug_ospf6_route_cmd,
-       "debug ospf6 route (table|intra-area|inter-area)",
+       "debug ospf6 route (table|intra-area|inter-area|memory)",
        DEBUG_STR
        OSPF6_STR
        "Debug route table calculation\n"
        "Debug detail\n"
        "Debug intra-area route calculation\n"
        "Debug inter-area route calculation\n"
+       "Debug route memory use\n"
        )
 {
   unsigned char level = 0;
@@ -1352,18 +1354,21 @@ DEFUN (debug_ospf6_route,
     level = OSPF6_DEBUG_ROUTE_INTRA;
   else if (! strncmp (argv[0], "inter", 5))
     level = OSPF6_DEBUG_ROUTE_INTER;
+  else if (! strncmp (argv[0], "memor", 5))
+    level = OSPF6_DEBUG_ROUTE_MEMORY;
   OSPF6_DEBUG_ROUTE_ON (level);
   return CMD_SUCCESS;
 }
 
 DEFUN (no_debug_ospf6_route,
        no_debug_ospf6_route_cmd,
-       "no debug ospf6 route (table|intra-area|inter-area)",
+       "no debug ospf6 route (table|intra-area|inter-area|memory)",
        NO_STR
        DEBUG_STR
        OSPF6_STR
        "Debug route table calculation\n"
-       "Debug intra-area route calculation\n")
+       "Debug intra-area route calculation\n"
+       "Debug route memory use\n")
 {
   unsigned char level = 0;
 
@@ -1373,6 +1378,8 @@ DEFUN (no_debug_ospf6_route,
     level = OSPF6_DEBUG_ROUTE_INTRA;
   else if (! strncmp (argv[0], "inter", 5))
     level = OSPF6_DEBUG_ROUTE_INTER;
+  else if (! strncmp (argv[0], "memor", 5))
+    level = OSPF6_DEBUG_ROUTE_MEMORY;
   OSPF6_DEBUG_ROUTE_OFF (level);
   return CMD_SUCCESS;
 }

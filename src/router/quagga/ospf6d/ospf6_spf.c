@@ -50,7 +50,9 @@ ospf6_vertex_cmp (void *a, void *b)
   struct ospf6_vertex *vb = (struct ospf6_vertex *) b;
 
   /* ascending order */
-  return (va->cost - vb->cost);
+  if (va->cost != vb->cost)
+    return (va->cost - vb->cost);
+  return (va->hops - vb->hops);
 }
 
 static int
@@ -280,8 +282,7 @@ ospf6_spf_install (struct ospf6_vertex *v,
 {
   struct ospf6_route *route;
   int i, j;
-  struct ospf6_vertex *prev, *w;
-  struct listnode *node, *nnode;
+  struct ospf6_vertex *prev;
 
   if (IS_OSPF6_DEBUG_SPF (PROCESS))
     zlog_debug ("SPF install %s hops %d cost %d",
@@ -320,22 +321,8 @@ ospf6_spf_install (struct ospf6_vertex *v,
         }
 
       prev = (struct ospf6_vertex *) route->route_option;
-      if (prev->hops > v->hops)
-        {
-          for (ALL_LIST_ELEMENTS (prev->child_list, node, nnode, w))
-            {
-              assert (w->parent == prev);
-              w->parent = v;
-              listnode_add_sort (v->child_list, w);
-            }
-          listnode_delete (prev->parent->child_list, prev);
-          listnode_add_sort (v->parent->child_list, v);
-
-          ospf6_vertex_delete (prev);
-          route->route_option = v;
-        }
-      else
-        ospf6_vertex_delete (v);
+      assert (prev->hops <= v->hops);
+      ospf6_vertex_delete (v);
 
       return -1;
     }
@@ -404,18 +391,19 @@ ospf6_spf_calculation (u_int32_t router_id,
   caddr_t lsdesc;
   struct ospf6_lsa *lsa;
 
-  /* initialize */
-  candidate_list = pqueue_create ();
-  candidate_list->cmp = ospf6_vertex_cmp;
-
-  ospf6_spf_table_finish (result_table);
-
   /* Install the calculating router itself as the root of the SPF tree */
   /* construct root vertex */
   lsa = ospf6_lsdb_lookup (htons (OSPF6_LSTYPE_ROUTER), htonl (0),
                            router_id, oa->lsdb);
   if (lsa == NULL)
     return;
+
+  /* initialize */
+  candidate_list = pqueue_create ();
+  candidate_list->cmp = ospf6_vertex_cmp;
+
+  ospf6_spf_table_finish (result_table);
+
   root = ospf6_vertex_create (lsa);
   root->area = oa;
   root->cost = 0;

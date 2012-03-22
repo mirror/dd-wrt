@@ -24,8 +24,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 0.99.18, last updated 21 March 2011 of `The Quagga
-Manual', for Quagga Version 0.99.18.
+   This is Edition 0.99.20.1, last updated 12 March 2012 of `The Quagga
+Manual', for Quagga Version 0.99.20.1.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -50,8 +50,8 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.18.
-Quagga is a fork of GNU Zebra.
+TCP/IP based routing protocols.  This is the Manual for Quagga
+0.99.20.1. Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -1024,7 +1024,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 0.99.18)
+     Hello, this is Quagga (version 0.99.20.1)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification
@@ -2220,8 +2220,8 @@ writing, `ospfd' does not support multiple OSPF processes.
      section G.2 (changes) in section 16.4 a change to the path
      preference algorithm that prevents possible routing loops that were
      possible in the old version of OSPFv2. More specifically it demands
-     that inter-area paths and intra-area path are now of equal
-     preference but still both preferred to external paths.
+     that inter-area paths and intra-area backbone path are now of
+     equal preference but still both preferred to external paths.
 
      This command should NOT be set normally.
 
@@ -3005,6 +3005,7 @@ one.
 
 * BGP distance::
 * BGP decision process::
+* BGP route flap dampening::
 
 
 File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP router
@@ -3022,7 +3023,7 @@ File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP ro
      This command set distance value to
 
 
-File: quagga.info,  Node: BGP decision process,  Prev: BGP distance,  Up: BGP router
+File: quagga.info,  Node: BGP decision process,  Next: BGP route flap dampening,  Prev: BGP distance,  Up: BGP router
 
 9.2.2 BGP decision process
 --------------------------
@@ -3043,6 +3044,31 @@ File: quagga.info,  Node: BGP decision process,  Prev: BGP distance,  Up: BGP ro
      This command specifies that the length of confederation path sets
      and sequences should should be taken into account during the BGP
      best path decision process.
+
+
+File: quagga.info,  Node: BGP route flap dampening,  Prev: BGP decision process,  Up: BGP router
+
+9.2.3 BGP route flap dampening
+------------------------------
+
+ -- BGP: bgp dampening <1-45> <1-20000> <1-20000> <1-255>
+     This command enables BGP route-flap dampening and specifies
+     dampening parameters.
+
+    half-life
+          Half-life time for the penalty
+
+    reuse-threshold
+          Value to start reusing a route
+
+    suppress-threshold
+          Value to start suppressing a route
+
+    max-suppress
+          Maximum duration to suppress a stable route
+
+     The route-flap damping algorithm is compatible with `RFC2439'. The
+     use of this command is not recommended nowadays, see RIPE-378.
 
 
 File: quagga.info,  Node: BGP network,  Next: BGP Peer,  Prev: BGP router,  Up: BGP
@@ -3843,6 +3869,12 @@ File: quagga.info,  Node: More Show IP BGP,  Prev: Show IP BGP,  Up: Displaying 
 
  -- Command: clear ip bgp PEER soft in
      Clear peer using soft reconfiguration.
+
+ -- Command: show ip bgp dampened-paths
+     Display paths suppressed due to dampening
+
+ -- Command: show ip bgp flap-statistics
+     Display flap statistics of routes
 
  -- Command: show debug
 
@@ -6005,8 +6037,8 @@ traps, like sound a siren, have your display flash, etc., be creative
 
 File: quagga.info,  Node: Zebra Protocol,  Next: Packet Binary Dump Format,  Prev: SNMP Support,  Up: Top
 
-Appendix A Zebra Protocol
-*************************
+Anhang A Zebra Protocol
+***********************
 
 A.1 Overview of the Zebra Protocol
 ==================================
@@ -6106,8 +6138,8 @@ ZEBRA_IPV6_NEXTHOP_LOOKUP                    16
 
 File: quagga.info,  Node: Packet Binary Dump Format,  Next: Command Index,  Prev: Zebra Protocol,  Up: Top
 
-Appendix B Packet Binary Dump Format
-************************************
+Anhang B Packet Binary Dump Format
+**********************************
 
 Quagga can dump routing protocol packet into file with a binary format
 (*note Dump BGP packets and table::).
@@ -6360,6 +6392,8 @@ Command Index
 * bgp cluster-id A.B.C.D:                Route Reflector.     (line   7)
 * bgp config-type cisco:                 Multiple instance.   (line  20)
 * bgp config-type zebra:                 Multiple instance.   (line  53)
+* bgp dampening <1-45> <1-20000> <1-20000> <1-255>: BGP route flap dampening.
+                                                              (line   7)
 * bgp multiple-instance:                 Multiple instance.   (line  10)
 * bgp router-id A.B.C.D:                 BGP router.          (line  22)
 * call NAME:                             Route Map Call Command.
@@ -6380,8 +6414,8 @@ Command Index
                                                               (line   8)
 * continue N:                            Route Map Exit Action Command.
                                                               (line  12)
-* debug event:                           More Show IP BGP.    (line  33)
-* debug keepalive:                       More Show IP BGP.    (line  37)
+* debug event:                           More Show IP BGP.    (line  39)
+* debug keepalive:                       More Show IP BGP.    (line  43)
 * debug ospf ism:                        Debugging OSPF.      (line  12)
 * debug ospf ism (status|events|timers): Debugging OSPF.      (line  13)
 * debug ospf lsa:                        Debugging OSPF.      (line  22)
@@ -6401,7 +6435,7 @@ Command Index
                                                               (line  13)
 * debug ripng zebra:                     ripngd Terminal Mode Commands.
                                                               (line  15)
-* debug update:                          More Show IP BGP.    (line  35)
+* debug update:                          More Show IP BGP.    (line  41)
 * default-information originate <1>:     Redistribute routes to OSPF.
                                                               (line  37)
 * default-information originate:         How to Announce RIP route.
@@ -6697,8 +6731,8 @@ Command Index
 * no banner motd:                        Basic Config Commands.
                                                               (line 127)
 * no bgp multiple-instance:              Multiple instance.   (line  14)
-* no debug event:                        More Show IP BGP.    (line  39)
-* no debug keepalive:                    More Show IP BGP.    (line  43)
+* no debug event:                        More Show IP BGP.    (line  45)
+* no debug keepalive:                    More Show IP BGP.    (line  49)
 * no debug ospf ism:                     Debugging OSPF.      (line  14)
 * no debug ospf ism (status|events|timers): Debugging OSPF.   (line  15)
 * no debug ospf lsa:                     Debugging OSPF.      (line  24)
@@ -6711,7 +6745,7 @@ Command Index
 * no debug ospf zebra:                   Debugging OSPF.      (line  29)
 * no debug ospf zebra (interface|redistribute): Debugging OSPF.
                                                               (line  30)
-* no debug update:                       More Show IP BGP.    (line  41)
+* no debug update:                       More Show IP BGP.    (line  47)
 * no default-information originate:      Redistribute routes to OSPF.
                                                               (line  50)
 * no default-metric:                     Redistribute routes to OSPF.
@@ -6998,7 +7032,7 @@ Command Index
                                                               (line  17)
 * set weight WEIGHT:                     Route Map Set Command.
                                                               (line  13)
-* show debug:                            More Show IP BGP.    (line  31)
+* show debug:                            More Show IP BGP.    (line  37)
 * show debugging ospf:                   Debugging OSPF.      (line  32)
 * show debugging rip:                    RIP Debug Commands.  (line  29)
 * show debugging ripng:                  ripngd Terminal Mode Commands.
@@ -7023,6 +7057,8 @@ Command Index
                                                               (line  17)
 * show ip bgp community-list WORD exact-match: Display BGP Routes by Community.
                                                               (line  21)
+* show ip bgp dampened-paths:            More Show IP BGP.    (line  31)
+* show ip bgp flap-statistics:           More Show IP BGP.    (line  34)
 * show ip bgp neighbor [PEER]:           More Show IP BGP.    (line  23)
 * show ip bgp regexp LINE <1>:           More Show IP BGP.    (line   7)
 * show ip bgp regexp LINE:               Display BGP Routes by AS Path.
@@ -7194,63 +7230,4 @@ VTY Key Index
 * M-d:                                   CLI Editing Commands. (line 17)
 * M-f:                                   CLI Movement Commands.
                                                                (line 18)
-
-
-File: quagga.info,  Node: Index,  Prev: VTY Key Index,  Up: Top
-
-Index
-*****
-
- [index ]
-* Menu:
-
-* About Quagga:                          About Quagga.         (line  6)
-* Bug hunting:                           Bug Reports.          (line  6)
-* Bug Reports:                           Bug Reports.          (line  6)
-* Build options:                         The Configure script and its options.
-                                                               (line  6)
-* Building on Linux boxes:               Linux notes.          (line  6)
-* Building the system:                   Installation.         (line  6)
-* Compatibility with other systems:      Supported Platforms.  (line  6)
-* Configuration files for running the software: Config Commands.
-                                                               (line  6)
-* Configuration options:                 The Configure script and its options.
-                                                               (line  6)
-* Configuring Quagga:                    Linux notes.          (line  6)
-* Contact information:                   Mailing List.         (line  6)
-* Distribution configuration:            The Configure script and its options.
-                                                               (line  6)
-* Errors in the software:                Bug Reports.          (line  6)
-* Files for running configurations:      Config Commands.      (line  6)
-* Found a bug?:                          Bug Reports.          (line  6)
-* Getting the herd running:              Config Commands.      (line  6)
-* How to get in touch with Quagga:       Mailing List.         (line  6)
-* How to install Quagga:                 Installation.         (line  6)
-* Installation:                          Installation.         (line  6)
-* Installing Quagga:                     Installation.         (line  6)
-* Linux configurations:                  Linux notes.          (line  6)
-* Mailing lists:                         Mailing List.         (line  6)
-* Mailing Quagga:                        Mailing List.         (line  6)
-* Making Quagga:                         Installation.         (line  6)
-* Modifying the herd's behavior:         Config Commands.      (line  6)
-* Operating systems that support Quagga: Supported Platforms.  (line  6)
-* Options for configuring:               The Configure script and its options.
-                                                               (line  6)
-* Options to ./configure:                The Configure script and its options.
-                                                               (line  6)
-* OSPFv2:                                ripngd Filtering Commands.
-                                                               (line 14)
-* Overview:                              Overview.             (line  6)
-* Quagga Least-Privileges:               Least-Privilege support.
-                                                               (line  6)
-* Quagga on other systems:               Supported Platforms.  (line  6)
-* Quagga Privileges:                     Least-Privilege support.
-                                                               (line  6)
-* Reporting bugs:                        Bug Reports.          (line  6)
-* Reporting software errors:             Bug Reports.          (line  6)
-* Software architecture:                 System Architecture.  (line  6)
-* Software internals:                    System Architecture.  (line  6)
-* Supported platforms:                   Supported Platforms.  (line  6)
-* System architecture:                   System Architecture.  (line  6)
-
 

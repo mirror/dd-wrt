@@ -107,14 +107,8 @@ str2distribute_source (const char *str, int *source)
     *source = ZEBRA_ROUTE_STATIC;
   else if (strncmp (str, "r", 1) == 0)
     *source = ZEBRA_ROUTE_RIP;
-  else if (strncmp (str, "bg", 2) == 0)
+  else if (strncmp (str, "b", 1) == 0)
     *source = ZEBRA_ROUTE_BGP;
-  else if (strncmp (str, "h", 1) == 0)
-    *source = ZEBRA_ROUTE_HSLS;
-  else if (strncmp (str, "o", 1) == 0)
-    *source = ZEBRA_ROUTE_OLSR;
-  else if (strncmp (str, "ba", 2) == 0)
-    *source = ZEBRA_ROUTE_BATMAN;
   else
     return 0;
 
@@ -2939,7 +2933,13 @@ show_ip_ospf_interface_sub (struct vty *vty, struct ospf *ospf,
 		       inet_ntoa (nbr->address.u.prefix4), VTY_NEWLINE);
 	    }
 	}
-
+      
+      /* Next network-LSA sequence number we'll use, if we're elected DR */
+      if (oi->params && ntohl (oi->params->network_lsa_seqnum)
+                          != OSPF_INITIAL_SEQUENCE_NUMBER)
+        vty_out (vty, "  Saved Network-LSA sequence number 0x%x%s",
+                 ntohl (oi->params->network_lsa_seqnum), VTY_NEWLINE);
+      
       vty_out (vty, "  Multicast group memberships:");
       if (OI_MEMBER_CHECK(oi, MEMBER_ALLROUTERS)
           || OI_MEMBER_CHECK(oi, MEMBER_DROUTERS))
@@ -7029,7 +7029,7 @@ DEFUN (ospf_max_metric_router_lsa_admin,
       SET_FLAG (area->stub_router_state, OSPF_AREA_ADMIN_STUB_ROUTED);
       
       if (!CHECK_FLAG (area->stub_router_state, OSPF_AREA_IS_STUB_ROUTED))
-          ospf_router_lsa_timer_add (area);
+          ospf_router_lsa_update_area (area);
     }
   return CMD_SUCCESS;
 }
@@ -7055,7 +7055,7 @@ DEFUN (no_ospf_max_metric_router_lsa_admin,
           && !area->t_stub_router)
         {
           UNSET_FLAG (area->stub_router_state, OSPF_AREA_IS_STUB_ROUTED);
-          ospf_router_lsa_timer_add (area);
+          ospf_router_lsa_update_area (area);
         }
     }
   return CMD_SUCCESS;
@@ -7108,7 +7108,7 @@ DEFUN (no_ospf_max_metric_router_lsa_startup,
       if (!CHECK_FLAG (area->stub_router_state, OSPF_AREA_ADMIN_STUB_ROUTED))
         {
           UNSET_FLAG (area->stub_router_state, OSPF_AREA_IS_STUB_ROUTED);
-          ospf_router_lsa_timer_add (area);
+          ospf_router_lsa_update_area (area);
         }
     }
   return CMD_SUCCESS;
@@ -7902,9 +7902,9 @@ config_write_ospf_distribute (struct vty *vty, struct ospf *ospf)
     {
       /* distribute-list print. */
       for (type = 0; type < ZEBRA_ROUTE_MAX; type++)
-	if (ospf->dlist[type].name)
+	if (DISTRIBUTE_NAME (ospf, type))
 	  vty_out (vty, " distribute-list %s out %s%s", 
-		   ospf->dlist[type].name,
+		   DISTRIBUTE_NAME (ospf, type),
 		   zebra_route_string(type), VTY_NEWLINE);
 
       /* default-information print. */
