@@ -16,7 +16,6 @@
 
 #include <asm/hardware/icst.h>
 
-#include <mach/clkdev.h>
 
 int clk_enable(struct clk *clk)
 {
