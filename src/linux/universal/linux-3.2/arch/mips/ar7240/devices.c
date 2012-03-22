@@ -470,12 +470,12 @@ static void ar933x_ddr_flush_ge1(void)
 
 static void ar934x_ddr_flush_ge0(void)
 {
-	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_GE0);
+//	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_GE0);
 }
 
 static void ar934x_ddr_flush_ge1(void)
 {
-	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_GE1);
+//	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_GE1);
 }
 
 static struct resource ar71xx_eth0_resources[] = {
@@ -923,6 +923,10 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->set_speed = ar934x_set_speed_ge1;
 
 			pdata->switch_data = &ar71xx_switch_data;
+
+			/* reset the built-in switch */
+			ar71xx_device_stop(AR934X_RESET_ETH_SWITCH);
+			ar71xx_device_start(AR934X_RESET_ETH_SWITCH);
 		}
 
 		pdata->has_gbit = 1;

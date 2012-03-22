@@ -306,8 +306,8 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
 
 
-	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_mdio(1, 0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
 
@@ -318,8 +318,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
-	ar71xx_eth0_data.speed = SPEED_1000;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 
 	ar71xx_add_device_eth(0);
