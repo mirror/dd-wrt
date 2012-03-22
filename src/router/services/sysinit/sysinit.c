@@ -191,11 +191,10 @@ static void buffalo_defaults(int force)
 	}
 	if (nvram_get("ath0_akm") == NULL || force) {
 		char *region = getUEnv("region");
-		if (!region
-		    || (strcmp(region, "AP") && strcmp(region, "TW")
-			&& strcmp(region, "RU")
-			&& strcmp(region, "KR")
-			&& strcmp(region, "CH"))) {
+		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
+				&& strcmp(region, "RU")
+				&& strcmp(region, "KR")
+				&& strcmp(region, "CH"))) {
 			{
 				char *mode_ex =
 				    getUEnv
@@ -406,9 +405,9 @@ static void buffalo_defaults(int force)
 		}
 #endif
 		if (!strcmp(region, "AP") || !strcmp(region, "CH")
-			|| !strcmp(region, "KR")
-			|| !strcmp(region, "TW")
-			|| !strcmp(region, "RU"))
+		    || !strcmp(region, "KR")
+		    || !strcmp(region, "TW")
+		    || !strcmp(region, "RU"))
 			nvram_set("wps_status", "0");
 		else
 			nvram_set("wps_status", "1");
@@ -425,13 +424,19 @@ void start_modules(void)
 {
 	runStartup("/etc/config", ".startup");
 
+#ifdef HAVE_REGISTER
+	if (isregistered_real()) {
+#endif
 #ifdef HAVE_RB500
-	runStartup("/usr/local/etc/config", ".startup");	// if available
+		runStartup("/usr/local/etc/config", ".startup");	// if available
 #elif HAVE_X86
-	runStartup("/usr/local/etc/config", ".startup");	// if available
+		runStartup("/usr/local/etc/config", ".startup");	// if available
 #else
-	runStartup("/jffs/etc/config", ".startup");	// if available
-	runStartup("/mmc/etc/config", ".startup");	// if available
+		runStartup("/jffs/etc/config", ".startup");	// if available
+		runStartup("/mmc/etc/config", ".startup");	// if available
+#endif
+#ifdef HAVE_REGISTER
+	}
 #endif
 	return;
 }
@@ -439,15 +444,21 @@ void start_modules(void)
 void start_wanup(void)
 {
 	runStartup("/etc/config", ".wanup");
-#ifdef HAVE_RB500
-	runStartup("/usr/local/etc/config", ".wanup");	// if available
-#elif HAVE_X86
-	runStartup("/usr/local/etc/config", ".wanup");	// if available
-#else
-	runStartup("/jffs/etc/config", ".wanup");	// if available
-	runStartup("/mmc/etc/config", ".wanup");	// if available
-	runStartup("/tmp/etc/config", ".wanup");	// if available
+#ifdef HAVE_REGISTER
+	if (isregistered_real())
 #endif
+	{
+
+#ifdef HAVE_RB500
+		runStartup("/usr/local/etc/config", ".wanup");	// if available
+#elif HAVE_X86
+		runStartup("/usr/local/etc/config", ".wanup");	// if available
+#else
+		runStartup("/jffs/etc/config", ".wanup");	// if available
+		runStartup("/mmc/etc/config", ".wanup");	// if available
+		runStartup("/tmp/etc/config", ".wanup");	// if available
+#endif
+	}
 	return;
 }
 
@@ -2615,12 +2626,12 @@ void start_nvram(void)
 	nvram_unset("lasthour");
 #ifdef HAVE_AQOS
 	//filter hostapd shaping rules
-	
+
 	char *qos_mac = nvram_safe_get("svqos_macs");
 
 	if (strlen(qos_mac) > 0) {
 		char *newqos = malloc(strlen(qos_mac) + 254);
-		memset(newqos, 0, strlen(qos_mac)+254);
+		memset(newqos, 0, strlen(qos_mac) + 254);
 
 		char level[32], level2[32], data[32], type[32], level3[32];
 
@@ -2630,7 +2641,7 @@ void start_nvram(void)
 			     level2, type, level3) < 5)
 				break;
 
-			if(!strcmp(level3, "|")) 
+			if (!strcmp(level3, "|"))
 				strcpy(level3, "0");
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
@@ -2639,8 +2650,9 @@ void start_nvram(void)
 						newqos, data, level, level2,
 						type, level3);
 				else
-					sprintf(newqos, "%s %s %s %s %s |", data,
-						level, level2, type, level3);
+					sprintf(newqos, "%s %s %s %s %s |",
+						data, level, level2, type,
+						level3);
 
 			}
 		}
@@ -2648,32 +2660,35 @@ void start_nvram(void)
 		nvram_set("svqos_macs", newqos);
 		free(newqos);
 	}
-	
+
 	char *qos_ip = nvram_safe_get("svqos_ips");
 
 	if (strlen(qos_ip) > 0) {
 		char *newip = malloc(strlen(qos_ip) + 254);
-		memset(newip, 0, strlen(qos_ip)+254);
-		
+		memset(newip, 0, strlen(qos_ip) + 254);
+
 		char data[32], level[32], level2[32], level3[32];
-		
+
 		do {
-			if (sscanf(qos_ip, "%31s %31s %31s %31s |", data, level, level2, level3) < 4)
+			if (sscanf
+			    (qos_ip, "%31s %31s %31s %31s |", data, level,
+			     level2, level3) < 4)
 				break;
-			
+
 			if (!strcmp(level3, "|"))
 				strcpy(level3, "0");
-			
+
 			if (strlen(newip) > 0)
-				sprintf(newip, "%s %s %s %s %s |", newip, data, level, level2, level3);
+				sprintf(newip, "%s %s %s %s %s |", newip, data,
+					level, level2, level3);
 			else
-				sprintf(newip, "%s %s %s %s |", data, level, level2, level3);
+				sprintf(newip, "%s %s %s %s |", data, level,
+					level2, level3);
 		}
 		while ((qos_ip = strpbrk(++qos_ip, "|")) && qos_ip++);
 		nvram_set("svqos_ips", newip);
 		free(newip);
 	}
-	
 #endif
 	return;
 }
