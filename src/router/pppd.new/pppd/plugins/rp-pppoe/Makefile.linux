@@ -25,7 +25,7 @@ INSTALL	= install
 VERSION=3.3
 
 #COPTS=-O2 -g
-CFLAGS=$(COPTS) -I../../../include/linux 
+CFLAGS= -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) -I../../../include/linux 
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
 
 include $(TOP)/.config
