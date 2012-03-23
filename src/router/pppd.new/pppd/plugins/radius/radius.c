@@ -633,12 +633,12 @@ radius_setparams(VALUE_PAIR *vp, char *msg, REQUEST_INFO *req_info,
 	} else if (vp->vendorcode == VENDOR_MICROSOFT) {
 	    switch (vp->attribute) {
 	    case PW_MS_CHAP2_SUCCESS:
-		if ((vp->lvalue != 43) || strncmp(vp->strvalue + 1, "S=", 2)) {
+		if ((vp->lvalue != 43) || strncmp((char*)vp->strvalue + 1, "S=", 2)) {
 		    slprintf(msg,BUF_LEN,"RADIUS: bad MS-CHAP2-Success packet");
 		    return -1;
 		}
 		if (message != NULL)
-		    strlcpy(message, vp->strvalue + 1, message_space);
+		    strlcpy(message, (char*)vp->strvalue + 1, message_space);
 		ms_chap2_success = 1;
 		break;
 
