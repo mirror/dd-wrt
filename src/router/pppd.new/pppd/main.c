@@ -1040,7 +1040,8 @@ get_input()
 	}
 	notice("Modem hangup");
 	hungup = 1;
-	status = EXIT_HANGUP;
+	if (status == EXIT_OK)
+		status = EXIT_HANGUP;
 	lcp_lowerdown(0);	/* serial link is no longer available */
 	link_terminated(0);
 	return;
