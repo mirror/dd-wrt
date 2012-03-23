@@ -885,6 +885,7 @@ void period_check(int sig)
 	case ROUTER_ASKEY_RT220XD:	// not soldered
 	case ROUTER_DYNEX_DX_NRUTER:
 	case ROUTER_LINKSYS_E4200:
+	case ROUTER_ASUS_RTN66:
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
 	case ROUTER_ASUS_WL500G_PRE:
