@@ -195,10 +195,25 @@ DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar71xx_pci_fixup);
 
 #ifdef CONFIG_DIR825
 #define STARTSCAN 0x1f660000
-#define DIR825B1_MAC_LOCATION_0			0x2ffa81b8
-#define DIR825B1_MAC_LOCATION_1			0x2ffa8370
+#define DIR825B1_MAC_LOCATION_0			0x1f66ffa0
+#define DIR825B1_MAC_LOCATION_1			0x1f66ffb4
 static u8 mac0[6];
 static u8 mac1[6];
+
+static void dir825b1_read_ascii_mac(u8 *dest, unsigned int src_addr)
+{
+	int ret;
+	u8 *src = (u8 *)KSEG1ADDR(src_addr);
+
+	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+		     &dest[0], &dest[1], &dest[2],
+		     &dest[3], &dest[4], &dest[5]);
+
+	if (ret != 6)
+		memset(dest, 0, 6);
+}
+
+
 #else  
 #define STARTSCAN 0x1f000000
 #endif  
@@ -244,7 +259,7 @@ static void ath_pci_fixup(struct pci_dev *dev)
 		if (cal_data) {
 		memcpy(wmac_data[0].eeprom_data,cal_data,sizeof(wmac_data[0].eeprom_data));
 		#ifdef CONFIG_DIR825
-		memcpy(mac0,KSEG1ADDR(DIR825B1_MAC_LOCATION_0),6);
+		dir825b1_read_ascii_mac(mac0, DIR825B1_MAC_LOCATION_0);
 		wmac_data[0].macaddr = mac0;
 		#endif
 		#ifdef CONFIG_WNDR3700
@@ -262,7 +277,7 @@ static void ath_pci_fixup(struct pci_dev *dev)
 		if (cal_data) {
 		memcpy(wmac_data[1].eeprom_data,cal_data,sizeof(wmac_data[1].eeprom_data));
 		#ifdef CONFIG_DIR825
-		memcpy(mac1,KSEG1ADDR(DIR825B1_MAC_LOCATION_1),6);
+		dir825b1_read_ascii_mac(mac1, DIR825B1_MAC_LOCATION_1);
 		wmac_data[1].macaddr = mac1;
 		#endif
 		#ifdef CONFIG_WNDR3700
