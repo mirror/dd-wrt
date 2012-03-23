@@ -457,6 +457,13 @@ int generic_establish_ppp (int fd)
     if (new_style_driver) {
 	int flags;
 
+        /* if a ppp_fd is already open, close it first */
+        if(ppp_fd > 0) {
+          close(ppp_fd);
+          remove_fd(ppp_fd);
+          ppp_fd = -1;
+        }
+
 	/* Open an instance of /dev/ppp and connect the channel to it */
 	if (ioctl(fd, PPPIOCGCHAN, &chindex) == -1) {
 	    error("Couldn't get channel number: %m");
