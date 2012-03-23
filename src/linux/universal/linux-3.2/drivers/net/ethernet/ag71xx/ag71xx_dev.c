@@ -1064,6 +1064,12 @@ static inline void phy_dev_init(void)
 	ar71xx_add_device_mdio(0, ~BIT(0));
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
+#elif #if defined(CONFIG_DIR825)
+
+	ar71xx_eth0_data.phy_mask = 0;
+	ar71xx_eth1_data.phy_mask = 0x10;
+	ar71xx_add_device_mdio(0, 0x0);
+
 #else
 	/* defaults for many switches */
 	ar71xx_eth0_data.phy_mask = BIT(0);
