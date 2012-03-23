@@ -559,8 +559,8 @@
 
 #define ROUTER_BOARD_UNIFI 0xae1c	//bullet 2m
 
-// Asus RT-N66U
-#define ROUTER_ASUS_RTN66 0xaf0f
+// Asus RT-N66U (BCM4706 @ 600MHz cpu, 32MB flash / 256MB ram, fccid: Asus MSQ-RTN66U)
+#define ROUTER_ASUS_RTN66 0xaf19
 
 // Asus RT-N53		    
 #define ROUTER_ASUS_RTN53 0xb013
