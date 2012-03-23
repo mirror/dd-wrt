@@ -524,13 +524,13 @@ size_t strlcpy __P((char *, const char *, size_t));	/* safe strcpy */
 size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
 
 #ifndef NEED_PRINTF
-#define option_error(fmt,args...) { }
+#define option_error(fmt,args...) do { } while(0)
 
 
-#define notice(fmt,...) { }
-#define info(fmt,...) { }
-#define dbglog(fmt,...) { }
-#define warn(fmt,...) { }
+#define notice(fmt,...)do { } while(0)
+#define info(fmt,...) do { } while(0)
+#define dbglog(fmt,...) do { } while(0)
+#define warn(fmt,...) do { } while(0)
 #define error(fmt,...) { ++error_count; }
 #define fatal(fmt,...) { die(1); }
 #else
