@@ -208,42 +208,40 @@ distclean mrproper: $(obj-distclean) clean_target
 
 optimize-lib:
 	make -f Makefile.x86 lib.i486-install
-	cp lib.i486/pics/* $(TARGETDIR)/lib
-	cp lib.i486/libgcc_s.so.1 $(TARGETDIR)/lib
-
-
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"lib.i486/libc_so.a" \
-		"lib.i486/libc_so.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
 		"$(ARCH)-uclibc/target/lib/libc.so.0" \
 		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		lib.i486/libgcc_s.so.*
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"$(wildcard lib.i486/libcrypt-*.so)" \
-		"lib.i486/libcrypt_pic.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
 		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
-		lib.i486/libgcc_s.so.* \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libcrypt.so.0
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"$(wildcard lib.i486/libm-*.so)" \
-		"lib.i486/libm_pic.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
 		"$(ARCH)-uclibc/target/lib/libm.so.0" \
-		lib.i486/libgcc_s.so.* \
-		-Wl,-soname=libm.so.0
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libm.so.0 
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"$(wildcard lib.i486/libpthread-*.so)" \
-		"lib.i486/libpthread_so.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
 		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		lib.i486/libgcc_s.so.* \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
+
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 
 ifneq ($(CONFIG_NOOPT),y)
 	rm -rf $(ARCH)-uclibc/tmp/mklibs-out
