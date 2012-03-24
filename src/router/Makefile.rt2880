@@ -89,7 +89,7 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
-export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -fno-caller-saves
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 endif
 ifeq ($(ARCH),arm)
 export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
@@ -210,6 +210,9 @@ endif
 ifeq ($(CONFIG_WCRGN),y)
 	cp $(LINUXDIR)/.config_rt3350 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_TECHNAXX3G),y)
+	cp $(LINUXDIR)/.config_technaxx3g $(LINUXDIR)/.config
+endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -254,42 +257,40 @@ distclean mrproper: $(obj-distclean) clean_target
 
 optimize-lib:
 	make -f Makefile.rt2880 lib.$(ARCH)-install
-	cp lib.$(ARCH)/pics/* $(TARGETDIR)/lib
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
-
-
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"lib.$(ARCH)/libc_so.a" \
-		"lib.$(ARCH)/libc_so.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
 		"$(ARCH)-uclibc/target/lib/libc.so.0" \
 		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		lib.$(ARCH)/libgcc_s.so.*
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"$(wildcard lib.$(ARCH)/libcrypt-*.so)" \
-		"lib.$(ARCH)/libcrypt_pic.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
 		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
-		lib.$(ARCH)/libgcc_s.so.* \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libcrypt.so.0
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"$(wildcard lib.$(ARCH)/libm-*.so)" \
-		"lib.$(ARCH)/libm_pic.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
 		"$(ARCH)-uclibc/target/lib/libm.so.0" \
-		lib.$(ARCH)/libgcc_s.so.* \
-		-Wl,-soname=libm.so.0
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libm.so.0 
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
-		"$(wildcard lib.$(ARCH)/libpthread-*.so)" \
-		"lib.$(ARCH)/libpthread_so.a" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
 		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		lib.$(ARCH)/libgcc_s.so.* \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
+
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 
 ifneq ($(CONFIG_NOOPT),y)
 	rm -rf $(ARCH)-uclibc/tmp/mklibs-out
