@@ -747,7 +747,7 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-
+		
 	case ROUTER_BELKIN_F7D3302:		
 	case ROUTER_BELKIN_F7D4302:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
@@ -759,7 +759,6 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
-		
 		
 	case ROUTER_NETGEAR_WNDR3400:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
@@ -1116,7 +1115,14 @@ void start_sysinit(void)
 			need_reboot = 1;
 		}
 		break;
+
 	case ROUTER_ASUS_RTN66:
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
+		if (nvram_match("vlan2ports", "0 8u") {
+			nvram_set("vlan2ports", "0 8");
+			need_reboot = 1;
+		}
 		nvram_unset("maxp2ga0");
 		nvram_unset("maxp2ga1");
 		nvram_unset("maxp2ga2");
@@ -1139,8 +1145,8 @@ void start_sysinit(void)
 		nvram_set("pci/2/1/maxp5gha2","0x5C");
 		nvram_set("pci/2/1/regrev","0");
 		nvram_set("pci/2/1/ccode","ALL");
-	
 		break;
+
 	case ROUTER_WRT310NV2:
 		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
