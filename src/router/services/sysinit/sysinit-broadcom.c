@@ -1119,7 +1119,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_RTN66:
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
-		if (nvram_match("vlan2ports", "0 8u") {
+		if (nvram_match("vlan2ports", "0 8u")) {
 			nvram_set("vlan2ports", "0 8");
 			need_reboot = 1;
 		}
