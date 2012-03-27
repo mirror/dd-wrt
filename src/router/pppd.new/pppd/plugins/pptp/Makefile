@@ -12,7 +12,7 @@ VERSION = $(shell awk -F '"' '/VERSION/ { print $$2; }' ../../patchlevel.h)
 INSTALL	= install
 
 PLUGIN=pptp
-CFLAGS=-Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -I. -I../../../ $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON -DNEED_PRINTF
+CFLAGS=-Wall -I. -I../../../ $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON -DNEED_PRINTF
 
 
 
