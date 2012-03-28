@@ -565,6 +565,12 @@ skip =0;
 					if ( !skip || ( (freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq )) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
+#if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
+							if( (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")) 
+							     && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14
+							     && !nvram_default_match("lachan_ovride", "1", "0"))
+								continue;
+#endif 
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
 							// todo: wenn wir das ueberhaupt noch verwenden
