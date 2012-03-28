@@ -166,6 +166,8 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x0115 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
+		("usb_modeswitch -v 0x19d2 -p 0x0166 -V 0x19d2 -P 0x0257 -n -M 55534243123456782400000080000685000000240000000000000000000000");
+	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x1001 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x1007 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
@@ -175,8 +177,6 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x19d2 -p 0x1013 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x1520 -V 0x19d2 -P 0x1522 -M 5553424312345678000000000000061b000000020000000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x19d2 -p 0x0166 -V 0x19d2 -P 0x0257 -M 55534243123456782400000080000685000000240000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
 	system
@@ -216,7 +216,11 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011062000000100000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x14fe -M 55534243123456780000000000000011062000000100000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1505 -M 55534243123456780000000000000011062000000100000000000000000000");
+	system	    
+		("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
@@ -231,10 +235,6 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x12d1 -p 0x1c24 -M 55534243123456780000000000000011060000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1f01 -M 55534243123456780000000000000011060000000100000000000000000000");
-	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x1505 -M 55534243123456780000000000000011062000000100000000000000000000");
-
-
 	sleep(2);
 }
 
@@ -361,8 +361,34 @@ struct DEVICES {
 #define ACM 0x10
 #define GENERIC 0x20
 static struct DEVICES devicelist[] = {
-//sierra wireless cards
-	{0x1199, 0x0fff, "sierra", "3", "4", 1, &modeswitch_sierra, "Sierra Device CDROM Mode"},	//
+
+//Nokia Mobile Phones
+	{0x0421, 0x060c, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-10 (cdrom mode)"},	//
+	{0x0421, 0x060e, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-10 (modem mode)"},	//
+	{0x0421, 0x0610, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-15 (cdrom mode)"},	//
+	{0x0421, 0x0612, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-15/CS-18 (modem mode)"},	//
+	{0x0421, 0x0622, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
+	{0x0421, 0x0623, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-17 (modem mode)"},	//
+	{0x0421, 0x0627, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
+	{0x0421, 0x03a7, "option", "0", "0", 2 | ACM, NULL, "Nokia C5-00 Mobile phone (modem)"},     // 
+	
+//Option
+	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
+	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
+	{0x0af0, 0x8120, "option", "2", "2", 3, NULL, "Option GTM681W"},	//
+	{0x0af0, 0x8900, "option", "2", "2", 3, NULL, "Option GTM671W"},	//
+	{0x0af0, 0x9000, "option", "2", "2", 3, NULL, "Option GTM661W"},	//
+	{0x0af0, 0x9200, "option", "2", "2", 3, NULL, "Option GTM671WFS"},	//
+	{0x0af0, 0xd055, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
+
+//Ericsson Business Mobile Networks
+	{0x0bdb, 0x1900, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
+	{0x0bdb, 0x1902, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
+	
+//Curitel
+	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
+
+//Sierra Wireless
 	{0x1199, 0x0017, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x0018, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x0019, "sierra", "3", "4", 1, NULL, "Sierra Wireless AC595U Modem Mode"},	//
@@ -379,6 +405,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x0218, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC5720 Wireless Modem"},	//
 	{0x1199, 0x0220, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x0224, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0fff, "sierra", "3", "4", 1, &modeswitch_sierra, "Sierra Device CDROM Mode"},	//
 	{0x1199, 0x6802, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
 	{0x1199, 0x6803, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
 	{0x1199, 0x6804, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
@@ -416,82 +443,67 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6893, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 889"},	//
 //      {0x1199, 0x68a3, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},   //alternate variant
 	{0x1199, 0x68a3, "sierra", "3", "3", 1, &reset_mc, "Sierra Wireless MC8700/Compass Direct IP"},	//
-//option/huawei
+
+//Huawei Technologies
 	{0x12d1, 0x1001, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E600/E620 or generic"},	//
 	{0x12d1, 0x1003, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E172/EC27/E220/E230/E270 HSDPA/HSUPA Model"},	//
 	{0x12d1, 0x1009, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option U120"},	//
 	{0x12d1, 0x101e, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI U7510 / U7517"},	//
 	{0x12d1, 0x1031, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI U8110 (Android smartphone)"},	//
 	{0x12d1, 0x1035, "option", "0", "0", 2, NULL, "HUAWEI U8110 (Android smartphone)"},	//
-	{0x12d1, 0x1414, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E180"},	//
 	{0x12d1, 0x1406, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x140b, "option", "0", "0", 2, NULL, "HUAWEI/Option EC1260 Wireless Data Modem HSD USB Card"},	//
 	{0x12d1, 0x140c, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x1412, "option", "0", "0", 2, NULL, "HUAWEI/Option EC168"},	//
+	{0x12d1, 0x1414, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E180"},	//
 	{0x12d1, 0x141b, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x1433, "option", "0", "0", 2, NULL, "HUAWEI/Option E1756C"},	//
-	{0x12d1, 0x14ac, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
-	{0x12d1, 0x14ae, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x1446, "option", "2", "2", 2, &modeswitch_huawei, "HUAWEI/Option E1552/E1800 HSPA Modem"},	//
-	{0x12d1, 0x14ad, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K3806"},	//
-	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
-	{0x12d1, 0x14c6, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K4605"},	//
-	{0x12d1, 0x1505, "option", "0", "0", 2 , &modeswitch_huawei, "Huawei E398"},	//
-	{0x12d1, 0x1506, "option", "0", "0", 2 , NULL, "Huawei E367/E398 whatever"},	//
-	{0x12d1, 0x150f, "option", "0", "0", 2 , NULL, "Huawei E367"},	//
-	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K3765"},	//
-	{0x12d1, 0x1465, "option", "0", "0", 2, NULL, "Huawei K3765"},	//
-	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K4505"},	//
+	{0x12d1, 0x1446, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E1552/E1800 HSPA Modem"},	//
 	{0x12d1, 0x1464, "option", "0", "0", 2, NULL, "Huawei K4505"},	//
-	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei R201"},	//
+	{0x12d1, 0x1465, "option", "0", "0", 2, NULL, "Huawei K3765"},	//
 	{0x12d1, 0x1491, "option", "0", "0", 2, NULL, "Huawei R201"},	//
+	{0x12d1, 0x14a5, "option", "0", "0", 2, NULL, "Huawei E173"},	//
+	{0x12d1, 0x14ac, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
+	{0x12d1, 0x14ad, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x14ae, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3806"},	//
+	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x14c6, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
+	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E352,E353"},	//
+	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E398"},	//	
+	{0x12d1, 0x1506, "option", "0", "0", 2, NULL, "Huawei E367/E398 whatever"},	//
+	{0x12d1, 0x150f, "option", "0", "0", 2, NULL, "Huawei E367"},	//	
+	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K3765"},	//
+	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K4505"},	//
 	{0x12d1, 0x1553, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E1553"},	//
 	{0x12d1, 0x1557, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173"},	//
-	{0x12d1, 0x14a5, "option", "0", "0", 2, NULL, "Huawei E173"},	//
-	{0x12d1, 0x1c0b, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173s CDROM Mode"},	//
 	{0x12d1, 0x1c05, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
 	{0x12d1, 0x1c08, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
+	{0x12d1, 0x1c0b, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173s CDROM Mode"},	//
 	{0x12d1, 0x1c23, "option", "2", "2", 2, NULL, "Huawei E173 Modem Mode"},	//
 	{0x12d1, 0x1c24, "option", "2", "2", 2, &modeswitch_huawei, "Huawei E173 CDROM Mode"},	//
 	{0x12d1, 0x1f01, "option", "2", "2", 2, &modeswitch_huawei, "Huawei E353 CDROM Mode"},	//
 
-	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
-
+//Novatel Wireless
+	{0x1410, 0x4100, "option", "0", "0", 2, NULL, "Novatel U727 Modem Mode"},	//
+	{0x1410, 0x4400, "option", "0", "0", 2, NULL, "Novatel Ovation MC930D/MC950D Modem Mode"},	//
 	{0x1410, 0x5010, "option", "0", "0", 2, &modeswitch_usb760, "Novatel CDROM Mode"},	//
 	{0x1410, 0x5020, "option", "0", "0", 2, &modeswitch_usb760, "Novatel MC990D CDROM Mode"},	//
 	{0x1410, 0x5030, "option", "0", "0", 2, &modeswitch_usb760, "Novatel USB760 CDROM Mode"},	//
 	{0x1410, 0x5031, "option", "0", "0", 2, &modeswitch_usb760, "Novatel USB760 3G CDROM Mode"},	//
 	{0x1410, 0x5041, "option", "0", "0", 2, &modeswitch_usb760, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 CDROM Mode"},	//
-	{0x1410, 0x4100, "option", "0", "0", 2, NULL, "Novatel U727 Modem Mode"},	//
-	{0x1410, 0x4400, "option", "0", "0", 2, NULL, "Novatel Ovation MC930D/MC950D Modem Mode"},	//
-
+	{0x1410, 0x6000, "option", "0", "0", 2, NULL, "Novatel USB760 Modem Mode"},	//
+	{0x1410, 0x6002, "option", "0", "0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
 	{0x1410, 0x7001, "option", "0", "0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
 	{0x1410, 0x7003, "option", "0", "0", 2, NULL, "Novatel Generic MiFi 2352 / Vodafone MiFi 2352 Modem Mode"},	//
 
-	{0x1410, 0x6000, "option", "0", "0", 2, NULL, "Novatel USB760 Modem Mode"},	//
-	{0x1410, 0x6002, "option", "0", "0", 2, NULL, "Novatel USB760 3G Modem Mode"},	//
-//anydata
+//AnyDATA
+	{0x16d5, 0x6202, "option", "0", "0", 2, NULL, "AnyData ADU-620W"},
 	{0x16d5, 0x6501, "option", "0", "0", 2, NULL, "AnyData ADU-300A"},
 	{0x16d5, 0x6502, "option", "0", "0", 2, NULL, "AnyData ADU-500A"},
-	{0x16d5, 0x6202, "option", "0", "0", 2, NULL, "AnyData ADU-620W"},
 
-//qualcomm
-	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
-	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
-	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
 
-	{0x0af0, 0x8120, "option", "2", "2", 3, NULL, "Option GTM681W"},	//
-	{0x0af0, 0x9200, "option", "2", "2", 3, NULL, "Option GTM671WFS"},	//
-	{0x0af0, 0x8900, "option", "2", "2", 3, NULL, "Option GTM671W"},	//
-	{0x0af0, 0x9000, "option", "2", "2", 3, NULL, "Option GTM661W"},	//
-	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
-	{0x0af0, 0xd055, NULL, "hso", "hso", 0, &hsoinit_icon505, "Qualcomm ICON 505"},	//
-//ericsson
-	{0x0bdb, 0x1900, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
-	{0x0bdb, 0x1902, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
-//ONDA
-	{0x19d2, 0x2000, "option", "1", "1", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
+//ZTE WCDMA Technologies
 	{0x19d2, 0x0001, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0002, "option", "1", "3", 2, NULL, "ZTE ET502HS/MT505UP/MF632"},	//
 	{0x19d2, 0x0003, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MU351 (cdrom mode)"},	//
@@ -517,10 +529,11 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0115, "option", "1", "3", 2, &modeswitch_onda2, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0116, "option", "1", "3", 2, NULL, "ZTE MF651 (cdrom mode)"},	//
 	{0x19d2, 0x0117, "option", "1", "2", 2, NULL, "ZTE MF112 (modem mode)"},	// tested, works
-	{0x19d2, 0x0128, "option", "1", "3", 2, NULL, "ZTE MF651 (modem mode)"},	//
 	{0x19d2, 0x0124, "option", "1", "4", 2, NULL, "ZTE MF110 (Variant) (modem mode)"},	//
-	{0x19d2, 0x0166, "option", "2", "2", 2, &modeswitch_onda2, "ZTE MF821 (Variant) (cdrom mode)"},	//
-	{0x19d2, 0x0257, "option", "2", "2", 2, NULL, "ZTE MF821 (Variant) (modem mode)"},	//
+	{0x19d2, 0x0128, "option", "1", "3", 2, NULL, "ZTE MF651 (modem mode)"},	//
+	{0x19d2, 0x0166, "option", "1", "2", 2, &modeswitch_onda2, "ZTE MF821 (Variant) (cdrom mode)"},	//
+//	{0x19d2, 0x0257, "option", "1", "2", 2, NULL, "ZTE MF821 (variant) (modem mode)"},	//
+	{0x19d2, 0x0257, "option", "1", "2", 2| GENERIC, NULL, "ZTE MF821 (variant) (modem mode)"},	//	while waiting for option support
 	{0x19d2, 0x1001, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3805-Z (cdrom mode)"},	//
 	{0x19d2, 0x1003, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3805-Z (modem mode)"},	//
 	{0x19d2, 0x1007, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3570-Z (cdrom mode)"},	//
@@ -531,23 +544,25 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x1015, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3806-Z (modem mode)"},	//
 	{0x19d2, 0x1520, "option", "0", "0", 2 | ACM , &modeswitch_onda2, "ZTE MF652"},	//
 	{0x19d2, 0x1522, "option", "0", "0", 2 | ACM , NULL, "ZTE MF652"},	//
+	{0x19d2, 0x2000, "option", "1", "1", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//	
+	{0x19d2, 0xfff1, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
 	{0x19d2, 0xfff5, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
 	{0x19d2, 0xfff6, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
-	{0x19d2, 0xfff1, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
 	{0x19d2, 0xffff, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
-	{0x0421, 0x060c, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-10 (cdrom mode)"},	//
-	{0x0421, 0x060e, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-10 (modem mode)"},	//
-	{0x0421, 0x0610, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-15 (cdrom mode)"},	//
-	{0x0421, 0x0612, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-15/CS-18 (modem mode)"},	//
-	{0x0421, 0x0622, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
-	{0x0421, 0x0623, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-17 (modem mode)"},	//
-	{0x0421, 0x0627, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
-	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
-	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//
+
+//OMEGA TECHNOLOGY
 	{0x1c9e, 0x9000, "option", "0", "0", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9603, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9605, "option", "3", "3", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9607, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
+	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//	
+	
+//Qualcomm / Option
+	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
+	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
+	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
+
+	
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
