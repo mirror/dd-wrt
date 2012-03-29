@@ -130,7 +130,7 @@ void start_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_DIR825C1
 	setWirelessLed(0,13);
-	setWirelessLed(1,32)	
+	setWirelessLed(1,32);
 #else
 	setWirelessLed(0,0);
 #endif
