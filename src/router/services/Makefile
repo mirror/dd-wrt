@@ -340,6 +340,9 @@ endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS_EXTRA += -DHAVE_WASP
 endif
+ifeq ($(CONFIG_DIR825C1),y)
+CFLAGS_EXTRA += -DHAVE_DIR825C1
+endif
 ifeq ($(CONFIG_MSTP),y)
 CFLAGS_EXTRA += -DHAVE_MSTP
 endif

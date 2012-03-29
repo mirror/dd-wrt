@@ -933,7 +933,7 @@ void start_restore_defaults(void)
 #elif HAVE_WASP
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "vlan1 vlan2 ath0", 0},
+		{"lan_ifnames", "vlan1 vlan2 ath0 ath1", 0},
 		{"wan_ifname", "", 0},
 		{"wan_ifname2", "", 0},
 		{"wan_ifnames", "", 0},
