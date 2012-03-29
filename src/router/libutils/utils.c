@@ -1985,6 +1985,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys E1000 v1");	// renamed wrt160nv3
 			return ROUTER_WRT160NV3;
+		} else if (nvram_match("boot_hw_model", "E900")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys E900");
+			return ROUTER_LINKSYS_E900;
 		} else if (nvram_match("boot_hw_model", "E1000")
 			   && nvram_match("boot_hw_ver", "2.0")) {
 			setRouter("Linksys E1000 v2");
@@ -3899,6 +3903,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x101;	// power led blink / off to indicate fac.def. 
 		connected_gpio = 0x102;	// ses orange
 		ses_gpio = 0x104;	// ses blue
+		break;
+	case ROUTER_LINKSYS_E900:
+		ses_gpio = 0x108;	// ses
 		break;
 	case ROUTER_LINKSYS_E1000V2:
 		power_gpio = 0x106;
