@@ -1404,7 +1404,34 @@ CONFIG_RTC_LIB=y
 # CONFIG_VIRTIO_PCI is not set
 # CONFIG_VIRTIO_BALLOON is not set
 # CONFIG_VIRTIO_MMIO is not set
-# CONFIG_STAGING is not set
+CONFIG_STAGING=y
+# CONFIG_ET131X is not set
+CONFIG_USBIP_CORE=m
+CONFIG_USBIP_VHCI_HCD=m
+CONFIG_USBIP_HOST=m
+# CONFIG_USBIP_DEBUG is not set
+# CONFIG_ECHO is not set
+# CONFIG_ASUS_OLED is not set
+# CONFIG_RTS_PSTOR is not set
+# CONFIG_RTS5139 is not set
+# CONFIG_TRANZPORT is not set
+# CONFIG_POHMELFS is not set
+# CONFIG_USB_SERIAL_QUATECH2 is not set
+# CONFIG_USB_SERIAL_QUATECH_USB2 is not set
+# CONFIG_VME_BUS is not set
+# CONFIG_DX_SEP is not set
+# CONFIG_IIO is not set
+# CONFIG_XVMALLOC is not set
+# CONFIG_ZRAM is not set
+# CONFIG_CRYSTALHD is not set
+# CONFIG_USB_ENESTORAGE is not set
+# CONFIG_BCM_WIMAX is not set
+# CONFIG_FT1000 is not set
+
+#
+# Speakup console speech
+#
+# CONFIG_STAGING_MEDIA is not set
 
 #
 # Hardware Spinlock drivers
