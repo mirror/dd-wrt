@@ -128,8 +128,12 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
+#ifdef HAVE_DIR825C1
+	setWirelessLed(0,13);
+	setWirelessLedPhy1(0);
+#else
 	setWirelessLed(0,0);
-
+#endifAA
 	/*
 	 * Set a sane date 
 	 */
