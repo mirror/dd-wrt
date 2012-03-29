@@ -286,8 +286,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto err;	// must be there, otherwise fail here
 				}
 			} else if (brand == ROUTER_NETGEAR_WNDR4000
-				   || brand == ROUTER_NETGEAR_WNDR3400) {
-				if (memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
+				   || brand == ROUTER_NETGEAR_WNDR3400
+				   || brand == ROUTER_LINKSYS_E900) {
+				if ((memcmp(&buf[0], &CODE_PATTERN_E900, 4)
+					&& memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
 					cprintf
 					    ("image not compatible with nv64k router!\n");
 					goto err;	// must be there, otherwise fail here
