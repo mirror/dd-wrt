@@ -570,6 +570,15 @@ static void ses_restore_defaults(void)
 void start_restore_defaults(void)
 {
 
+#if HAVE_BUFFALO_SA
+	int factory_state = 0;
+	if((!nvram_get("sv_restore_defaults") || nvram_default_match("sv_restore_defaults", "0", "0")) 
+	    && !nvram_get("os_date")
+	    && (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")))
+		factory_state = 1;
+	if(factory_state)
+		nvram_set("region", "SA");
+#endif
 #ifdef HAVE_RB500
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
