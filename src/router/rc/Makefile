@@ -145,6 +145,9 @@ endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS += -DHAVE_WASP
 endif
+ifeq ($(CONFIG_DIR825C1),y)
+CFLAGS += -DHAVE_DIR825C1
+endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 endif
