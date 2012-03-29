@@ -1403,6 +1403,11 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	else if (!strncmp(value, "Restore", 7)) {
 		ACTION("ACT_SW_RESTORE");
 		nvram_set("sv_restore_defaults", "1");
+#ifdef HAVE_BUFFALO_SA
+		int region_sa = 0;
+		if(nvram_default_match("region", "SA", ""))
+			region_sa = 0;
+#endif
 		killall("udhcpc", SIGKILL);
 		sys_commit();
 #ifdef HAVE_X86
@@ -1469,6 +1474,13 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 #else
 		eval("erase", "nvram");
 #endif
+		nvram_set("sv_restore_defaults", "1");
+#ifdef HAVE_BUFFALO_SA
+		if(region_sa)
+			nvram_set("region", "SA");
+#endif
+		sys_commit();
+		
 		action = REBOOT;
 	}
 
@@ -1563,7 +1575,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm,
 	strncpy(userid, nvram_safe_get("http_username"), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("http_passwd"), AUTH_MAX);
 	// strncpy(realm, MODEL_NAME, AUTH_MAX);
-#ifdef HAVE_ERC
+#if defined(HAVE_ERC) || defined(HAVE_IPR)
 	strncpy(realm, "LOGIN", AUTH_MAX);
 	wp->userid = 0;
 	if (auth_check(userid, passwd, realm, authorisation))

@@ -697,6 +697,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 endif
+ifeq ($(CONFIG_BUFFALO_SA),y)
+CFLAGS += -DHAVE_BUFFALO_SA
+endif
 ifeq ($(CONFIG_SPOTPASS),y)
 CFLAGS += -DHAVE_SPOTPASS
 endif
