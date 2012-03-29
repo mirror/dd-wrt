@@ -578,6 +578,9 @@
 
 #define ROUTER_BOARD_TECHNAXX3G 0xb51a
 
+// Linksys E900 (BCM53572 cpu, 8MB serial flash, 32 MB ram, fccid: Linksys Q87-E900) >_64K nvram_<
+#define ROUTER_LINKSYS_E900 0xb61a
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
