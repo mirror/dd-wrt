@@ -240,11 +240,19 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.gpio		= 12,
 		.active_low	= 0,
 	}, 
+#if defined(CONFIG_DIR825C1)
+	{
+		.name		= "generic_13",
+		.gpio		= 13,
+		.active_low	= 1,
+	}, 
+#else
 	{
 		.name		= "generic_13",
 		.gpio		= 13,
 		.active_low	= 0,
 	}, 
+#endif
 	{
 		.name		= "generic_14",
 		.gpio		= 14,
