@@ -680,6 +680,10 @@ ifeq ($(CONFIG_NVRAM_60K),y)
 	../../opt/tools/addpattern -4 -p 4200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e4200.bin -g
 
 endif
+ifeq ($(CONFIG_NVRAM_64K),y)
+	../../opt/tools/addpattern -4 -p E900 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e900.bin -g
+
+endif
 # end Linksys
 
 # special
