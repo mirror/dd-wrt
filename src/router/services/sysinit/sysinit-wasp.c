@@ -133,7 +133,7 @@ void start_sysinit(void)
 	setWirelessLedPhy1(0);
 #else
 	setWirelessLed(0,0);
-#endifAA
+#endif
 	/*
 	 * Set a sane date 
 	 */
