@@ -365,6 +365,9 @@ config WZR_HP_G300NH
 config WZRAG300NH 
 	bool "support for buffalo WZR HP AG G300NH"
 	depends on MACH_AR7100
+config DIR825C1
+	bool "support for DIR825C1"
+	depends on MACH_AR7240 
 config WZRG450NH 
 	bool "support for buffalo WZR HP G450NH"
 	depends on MACH_AR7240 
