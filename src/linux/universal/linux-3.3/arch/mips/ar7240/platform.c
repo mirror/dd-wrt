@@ -248,6 +248,30 @@ return NULL;
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
 
+#ifdef CONFIG_DIR825C1
+#define DIR825C1_MAC_LOCATION_0			0x1ffe0004
+#define DIR825C1_MAC_LOCATION_1			0x1ffe0018
+static u8 mac0[6];
+static u8 mac1[6];
+
+static void dir825b1_read_ascii_mac(u8 *dest, unsigned int src_addr)
+{
+	int ret;
+	u8 *src = (u8 *)KSEG1ADDR(src_addr);
+
+	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+		     &dest[0], &dest[1], &dest[2],
+		     &dest[3], &dest[4], &dest[5]);
+
+	if (ret != 6)
+		memset(dest, 0, 6);
+}
+
+
+
+#endif
+
+
 int __init ar7240_platform_init(void)
 {
 	int ret;
@@ -291,10 +315,17 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
+#ifdef CONFIG_DIR825C1
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
+#else
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
-
+#endif
 	void __iomem *base;
 	u32 t;
+
+	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
+	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
+
 
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 
@@ -313,8 +344,11 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_add_device_mdio(0, 0x0);
 
+#ifdef CONFIG_DIR825C1
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 0);
+#else
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
-
+#endif
 
 	mdiobus_register_board_info(db120_mdio0_info,
 				    ARRAY_SIZE(db120_mdio0_info));
@@ -359,8 +393,13 @@ int __init ar7240_platform_init(void)
 	ar9xxx_add_device_wmac(ee, mac);
 #elif CONFIG_WASP_SUPPORT
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
-	ar9xxx_add_device_wmac(ee, NULL);
+	ar9xxx_add_device_wmac(ee, mac0);
+
+#ifdef CONFIG_DIR825C1
+	ap91_pci_init(ee+0x4000, mac1);
+#else
 	ap91_pci_init(NULL, NULL);
+#endif
 #else
 	ee = getCalData(0);
 	if (ee && !mac) {
