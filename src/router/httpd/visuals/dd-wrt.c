@@ -3924,7 +3924,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.AntGain)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBi\n",
-			  power, nvram_safe_get(power));
+			  power, nvram_default_get(power,"0"));
 		websWrite(wp, "</div>\n");
 	}
 #endif
@@ -5201,7 +5201,7 @@ if (is_ath9k(prefix))
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.AntGain)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBi\n",
-			  power, nvram_safe_get(power));
+			  power, nvram_default_get(power,"0"));
 		websWrite(wp, "</div>\n");
 	}
 #endif
