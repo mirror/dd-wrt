@@ -1108,10 +1108,10 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WASP
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
