@@ -488,10 +488,11 @@ static inline bool br_multicast_is_router(struct net_bridge *br)
 
 /* br_netfilter.c */
 #ifdef CONFIG_BRIDGE_NETFILTER
+extern int brnf_call_ebtables;
 extern int br_netfilter_init(void);
 extern void br_netfilter_fini(void);
 extern void br_netfilter_rtable_init(struct net_bridge *);
-extern __weak bool br_netfilter_run_hooks(void);
+extern bool br_netfilter_run_hooks(void);
 #else
 #define br_netfilter_init()	(0)
 #define br_netfilter_fini()	do { } while(0)
@@ -504,7 +505,7 @@ BR_HOOK(uint8_t pf, unsigned int hook, struct sk_buff *skb,
 	struct net_device *in, struct net_device *out,
 	int (*okfn)(struct sk_buff *))
 {
-	if (!br_netfilter_run_hooks || !br_netfilter_run_hooks())
+	if (!br_netfilter_run_hooks())
 		return okfn(skb);
 
 	return NF_HOOK(pf, hook, skb, in, out, okfn);

@@ -14,7 +14,6 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  */
-#include "../br_netfilter.c"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/kmod.h>
@@ -2391,9 +2390,6 @@ static int __init ebtables_init(void)
 {
 	int ret;
 
-	if (br_netfilter_init())
-		return 1;
-
 	ret = xt_register_target(&ebt_standard_target);
 	if (ret < 0)
 		return ret;
@@ -2404,14 +2400,15 @@ static int __init ebtables_init(void)
 	}
 
 	printk(KERN_INFO "Ebtables v2.0 registered\n");
+	brnf_call_ebtables=1;
 	return 0;
 }
 
 static void __exit ebtables_fini(void)
 {
+	brnf_call_ebtables=0;
 	nf_unregister_sockopt(&ebt_sockopts);
 	xt_unregister_target(&ebt_standard_target);
-	br_netfilter_fini();
 	printk(KERN_INFO "Ebtables v2.0 unregistered\n");
 }
 

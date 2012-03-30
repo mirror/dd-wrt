@@ -101,9 +101,9 @@ static int __init br_init(void)
 	if (err)
 		goto err_out1;
 
-//	err = br_netfilter_init();
-//	if (err)
-//		goto err_out2;
+	err = br_netfilter_init();
+	if (err)
+		goto err_out2;
 
 	err = register_netdevice_notifier(&br_device_notifier);
 	if (err)
@@ -150,7 +150,7 @@ static void __exit br_deinit(void)
 
 	rcu_barrier(); /* Wait for completion of call_rcu()'s */
 
-//	br_netfilter_fini();
+	br_netfilter_fini();
 #if defined(CONFIG_ATM_LANE) || defined(CONFIG_ATM_LANE_MODULE)
 	br_fdb_test_addr_hook = NULL;
 #endif
