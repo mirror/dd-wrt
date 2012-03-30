@@ -2004,6 +2004,10 @@ int internal_getRouterBrand()
 			   && nvram_match("boot_hw_ver", "2.1")) {
 			setRouter("Linksys E1000 v2.1");
 			return ROUTER_LINKSYS_E1000V2;
+		} else if (nvram_match("boot_hw_model", "E1500")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys E1500");
+			return ROUTER_LINKSYS_E1500;
 		} else if (nvram_match("boot_hw_model", "WRT310N")
 			   && nvram_match("boot_hw_ver", "1.0")) {
 			setRouter("Linksys WRT310N");
@@ -3922,6 +3926,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x104;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E900:
+	case ROUTER_LINKSYS_E1500:
 		power_gpio = 0x106;
 		diag_gpio = 0x006;	// power led blink / off to indicate fac.def.
 		ses_gpio = 0x108;	// ses blue
@@ -3933,9 +3938,6 @@ int led_control(int type, int act)
 		ses_gpio = 0x008;	// ses blue
 		break;
 	case ROUTER_LINKSYS_E2500:
-		power_gpio = 0x103;
-		diag_gpio = 0x003;
-		break;
 	case ROUTER_LINKSYS_E3200:
 		power_gpio = 0x103;
 		diag_gpio = 0x003;	// power led blink / off to indicate fac.def. 
