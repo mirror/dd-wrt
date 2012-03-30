@@ -440,6 +440,9 @@ int svqos_iptables(void)
 		// look for present tap-devices
 		if (getifcount("tap"))
 		{
+			writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables","1");
+			writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables","1");
+			writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","1");
 			insmod("xt_physdev");
 			insmod("ebtables");
 			
