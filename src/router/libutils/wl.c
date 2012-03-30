@@ -162,6 +162,7 @@ int wifi_getchannel(char *ifname)
 	double freq;
 	int channel;
 
+	(void)memset(&iwr, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
@@ -187,6 +188,7 @@ int wifi_getfreq(char *ifname)
 	struct iwreq wrq;
 	double freq;
 
+	(void)memset(&iwr, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
@@ -209,6 +211,7 @@ float wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
 
+	(void)memset(&iwr, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWRATE, &wrq);
 	closesocket();
@@ -647,18 +650,6 @@ int getUptime(char *ifname, unsigned char *mac)
 #include "../madwifi.dev/madwifi.dev/net80211/ieee80211_crypto.h"
 #include "../madwifi.dev/madwifi.dev/net80211/ieee80211_ioctl.h"
 
-int getsocket(void)
-{
-	static int s = -1;
-
-	if (s < 0) {
-		s = socket(AF_INET, SOCK_DGRAM, 0);
-		if (s < 0)
-			err(1, "socket(SOCK_DGRAM)");
-	}
-	return s;
-}
-
 /*
  * Atheros 
  */
@@ -754,6 +745,7 @@ float wifi_getrate(char *ifname)
 
 		struct iwreq wrq;
 
+		(void)memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 		ioctl(getsocket(), SIOCGIWRATE, &wrq);
 		return wrq.u.bitrate.value;
@@ -934,7 +926,10 @@ int wifi_gettxpower(char *ifname)
 	}
 	struct iwreq wrq;
 
+	(void)memset(&wrq, 0, sizeof(struct iwreq));
+
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+
 	ioctl(getsocket(), SIOCGIWTXPOW, &wrq);
 	closesocket();
 	struct iw_param *txpower = &wrq.u.txpower;
@@ -1120,10 +1115,12 @@ u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
 		return 14;
+	if (freq == 2407)
+		return 0;
 	if (freq < 2484 && freq > 2407 )
 		return (freq - 2407) / 5;
 	if (freq < 2412 ){
-		int d = ((((int)freq) - 2412) / 5) + 256;
+		int d = ((((int)freq) - 2407) / 5) + 256;
 		return d;
 		}
 	if (freq > 2484 && freq < 4000 )
@@ -1144,6 +1141,7 @@ int wifi_getchannel(char *ifname)
 	struct iwreq wrq;
 	int channel;
 
+	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
@@ -1163,6 +1161,7 @@ int wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
 
+	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
