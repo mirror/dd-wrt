@@ -50,18 +50,6 @@ static const char *kobject_actions[] = {
 	[KOBJ_OFFLINE] =	"offline",
 };
 
-u64 uevent_next_seqnum(void)
-{
-	u64 seq;
-
-	spin_lock(&sequence_lock);
-	seq = ++uevent_seqnum;
-	spin_unlock(&sequence_lock);
-
-	return seq;
-}
-EXPORT_SYMBOL_GPL(uevent_next_seqnum);
-
 /**
  * kobject_action_type - translate action string to numeric type
  *
