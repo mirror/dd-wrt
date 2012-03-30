@@ -28,6 +28,7 @@
 enum ahci_type {
 	AHCI,		/* standard platform ahci */
 	IMX53_AHCI,	/* ahci on i.mx53 */
+	STRICT_AHCI,	/* delayed DMA engine start */
 };
 
 static struct platform_device_id ahci_devtype[] = {
@@ -43,6 +44,9 @@ static struct platform_device_id ahci_devtype[] = {
 	}, {
 		.name = "imx53-ahci",
 		.driver_data = IMX53_AHCI,
+	}, {
+		.name = "strict-ahci",
+		.driver_data = STRICT_AHCI,
 	}, {
 		/* sentinel */
 	}
@@ -63,6 +67,13 @@ static const struct ata_port_info ahci_port_info[] = {
 		.pio_mask	= ATA_PIO4,
 		.udma_mask	= ATA_UDMA6,
 		.port_ops	= &ahci_pmp_retry_srst_ops,
+	},
+	[STRICT_AHCI] = {
+		AHCI_HFLAGS	(AHCI_HFLAG_DELAY_ENGINE),
+		.flags		= AHCI_FLAG_COMMON,
+		.pio_mask	= ATA_PIO4,
+		.udma_mask	= ATA_UDMA6,
+		.port_ops	= &ahci_ops,
 	},
 };
 
