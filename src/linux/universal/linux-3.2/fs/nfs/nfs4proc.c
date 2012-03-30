@@ -257,15 +257,28 @@ static int nfs4_handle_exception(struct nfs_server *server, int errorcode, struc
 {
 	struct nfs_client *clp = server->nfs_client;
 	struct nfs4_state *state = exception->state;
+	struct inode *inode = exception->inode;
 	int ret = errorcode;
 
 	exception->retry = 0;
 	switch(errorcode) {
 		case 0:
 			return 0;
+		case -NFS4ERR_OPENMODE:
+			if (nfs_have_delegation(inode, FMODE_READ)) {
+				nfs_inode_return_delegation(inode);
+				exception->retry = 1;
+				return 0;
+			}
+			if (state == NULL)
+				break;
+			nfs4_schedule_stateid_recovery(server, state);
+			goto wait_on_recovery;
+		case -NFS4ERR_DELEG_REVOKED:
 		case -NFS4ERR_ADMIN_REVOKED:
 		case -NFS4ERR_BAD_STATEID:
-		case -NFS4ERR_OPENMODE:
+			if (state != NULL)
+				nfs_remove_bad_delegation(state->inode);
 			if (state == NULL)
 				break;
 			nfs4_schedule_stateid_recovery(server, state);
@@ -1316,8 +1329,11 @@ int nfs4_open_delegation_recall(struct nfs_open_context *ctx, struct nfs4_state 
 				 * The show must go on: exit, but mark the
 				 * stateid as needing recovery.
 				 */
+			case -NFS4ERR_DELEG_REVOKED:
 			case -NFS4ERR_ADMIN_REVOKED:
 			case -NFS4ERR_BAD_STATEID:
+				nfs_inode_find_state_and_recover(state->inode,
+						stateid);
 				nfs4_schedule_stateid_recovery(server, state);
 			case -EKEYEXPIRED:
 				/*
@@ -1822,7 +1838,7 @@ static struct nfs4_state *nfs4_do_open(struct inode *dir, struct dentry *dentry,
 		 * the user though...
 		 */
 		if (status == -NFS4ERR_BAD_SEQID) {
-			printk(KERN_WARNING "NFS: v4 server %s "
+			pr_warn_ratelimited("NFS: v4 server %s "
 					" returned a bad sequence-id error!\n",
 					NFS_SERVER(dir)->nfs_client->cl_hostname);
 			exception.retry = 1;
@@ -1893,7 +1909,10 @@ static int nfs4_do_setattr(struct inode *inode, struct rpc_cred *cred,
 			   struct nfs4_state *state)
 {
 	struct nfs_server *server = NFS_SERVER(inode);
-	struct nfs4_exception exception = { };
+	struct nfs4_exception exception = {
+		.state = state,
+		.inode = inode,
+	};
 	int err;
 	do {
 		err = nfs4_handle_exception(server,
@@ -2223,11 +2242,12 @@ static int nfs4_lookup_root(struct nfs_server *server, struct nfs_fh *fhandle,
 		switch (err) {
 		case 0:
 		case -NFS4ERR_WRONGSEC:
-			break;
+			goto out;
 		default:
 			err = nfs4_handle_exception(server, err, &exception);
 		}
 	} while (exception.retry);
+out:
 	return err;
 }
 
@@ -3707,8 +3727,11 @@ nfs4_async_handle_error(struct rpc_task *task, const struct nfs_server *server, 
 	if (task->tk_status >= 0)
 		return 0;
 	switch(task->tk_status) {
+		case -NFS4ERR_DELEG_REVOKED:
 		case -NFS4ERR_ADMIN_REVOKED:
 		case -NFS4ERR_BAD_STATEID:
+			if (state != NULL)
+				nfs_remove_bad_delegation(state->inode);
 		case -NFS4ERR_OPENMODE:
 			if (state == NULL)
 				break;
@@ -4526,7 +4549,9 @@ out:
 
 static int nfs4_proc_setlk(struct nfs4_state *state, int cmd, struct file_lock *request)
 {
-	struct nfs4_exception exception = { };
+	struct nfs4_exception exception = {
+		.state = state,
+	};
 	int err;
 
 	do {
@@ -4619,6 +4644,7 @@ int nfs4_lock_delegation_recall(struct nfs4_state *state, struct file_lock *fl)
 				 * The show must go on: exit, but mark the
 				 * stateid as needing recovery.
 				 */
+			case -NFS4ERR_DELEG_REVOKED:
 			case -NFS4ERR_ADMIN_REVOKED:
 			case -NFS4ERR_BAD_STATEID:
 			case -NFS4ERR_OPENMODE:
@@ -5957,21 +5983,22 @@ nfs4_layoutcommit_done(struct rpc_task *task, void *calldata)
 		return;
 
 	switch (task->tk_status) { /* Just ignore these failures */
-	case NFS4ERR_DELEG_REVOKED: /* layout was recalled */
-	case NFS4ERR_BADIOMODE:     /* no IOMODE_RW layout for range */
-	case NFS4ERR_BADLAYOUT:     /* no layout */
-	case NFS4ERR_GRACE:	    /* loca_recalim always false */
+	case -NFS4ERR_DELEG_REVOKED: /* layout was recalled */
+	case -NFS4ERR_BADIOMODE:     /* no IOMODE_RW layout for range */
+	case -NFS4ERR_BADLAYOUT:     /* no layout */
+	case -NFS4ERR_GRACE:	    /* loca_recalim always false */
 		task->tk_status = 0;
-	}
-
-	if (nfs4_async_handle_error(task, server, NULL) == -EAGAIN) {
-		rpc_restart_call_prepare(task);
-		return;
-	}
-
-	if (task->tk_status == 0)
+		break;
+	case 0:
 		nfs_post_op_update_inode_force_wcc(data->args.inode,
 						   data->res.fattr);
+		break;
+	default:
+		if (nfs4_async_handle_error(task, server, NULL) == -EAGAIN) {
+			rpc_restart_call_prepare(task);
+			return;
+		}
+	}
 }
 
 static void nfs4_layoutcommit_release(void *calldata)
@@ -6074,11 +6101,12 @@ nfs41_proc_secinfo_no_name(struct nfs_server *server, struct nfs_fh *fhandle,
 		case 0:
 		case -NFS4ERR_WRONGSEC:
 		case -NFS4ERR_NOTSUPP:
-			break;
+			goto out;
 		default:
 			err = nfs4_handle_exception(server, err, &exception);
 		}
 	} while (exception.retry);
+out:
 	return err;
 }
 
