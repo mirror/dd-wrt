@@ -1406,7 +1406,7 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 #ifdef HAVE_BUFFALO_SA
 		int region_sa = 0;
 		if(nvram_default_match("region", "SA", ""))
-			region_sa = 0;
+			region_sa = 1;
 #endif
 		killall("udhcpc", SIGKILL);
 		sys_commit();
@@ -1475,11 +1475,9 @@ apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		eval("erase", "nvram");
 #endif
 #ifdef HAVE_BUFFALO_SA
+		nvram_set("sv_restore_defaults", "1");
 		if(region_sa)
-		{
-			nvram_set("sv_restore_defaults", "1");
 			nvram_set("region", "SA");
-		}
 #endif
 		sys_commit();
 		
