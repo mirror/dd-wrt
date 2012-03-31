@@ -90,10 +90,6 @@ void start_sysinit(void)
 	system("insmod ag71xx || insmod ag7240_mod");
 	insmod("ledtrig-netdev");
 #ifdef HAVE_WR741V4
-	system("swconfig dev eth0 set reset 1");
-	system("swconfig dev eth0 set enable_vlan 0");
-	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
-	system("swconfig dev eth0 set apply");
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
@@ -124,6 +120,12 @@ void start_sysinit(void)
 
 
 #ifdef HAVE_WR741V4
+#ifdef HAVE_SWCONFIG
+		system("swconfig dev eth1 set reset 1");
+		system("swconfig dev eth1 set enable_vlan 0");
+		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
+		system("swconfig dev eth1 set apply");
+#endif
 #ifndef HAVE_WR703
 	setEthLED(13,"eth0");
 	setSwitchLED(14,0x4);
