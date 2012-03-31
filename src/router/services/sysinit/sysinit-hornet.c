@@ -122,7 +122,7 @@ void start_sysinit(void)
 #ifdef HAVE_WR741V4
 #ifdef HAVE_SWCONFIG
 		system("swconfig dev eth1 set reset 1");
-		system("swconfig dev eth1 set enable_vlan 0");
+		system("swconfig dev eth1 set enable_vlan 1");
 		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
 		system("swconfig dev eth1 set apply");
 #endif
