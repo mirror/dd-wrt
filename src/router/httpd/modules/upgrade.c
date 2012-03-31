@@ -475,18 +475,16 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 #ifdef HAVE_BUFFALO_SA
 	int region_sa = 0;
 	if(nvram_default_match("region", "SA", ""))
-		region_sa = 0;
+		region_sa = 1;
 #endif
 	if (nvram_match("sv_restore_defaults", "1")) {
 		eval("erase", "nvram");
-	}
 #ifdef HAVE_BUFFALO_SA
+		nvram_set("sv_restore_defaults", "1");
 		if(region_sa)
-		{
-			nvram_set("sv_restore_defaults", "1");
 			nvram_set("region", "SA");
-		}
 #endif
+	}
 	sys_commit();
 	
 	// #ifdef HAVE_WRK54G
