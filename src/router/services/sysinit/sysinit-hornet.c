@@ -90,6 +90,10 @@ void start_sysinit(void)
 	system("insmod ag71xx || insmod ag7240_mod");
 	insmod("ledtrig-netdev");
 #ifdef HAVE_WR741V4
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 0");
+	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
+	system("swconfig dev eth0 set apply");
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
