@@ -130,6 +130,12 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 				fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 				continue;
 			}
+#ifdef HAVE_BUFFALO_SA
+			if(nvram_default_match("region", "SA", "") 
+			   && (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
+			   && achans.ic_chans[i].ic_ieee > 11 && achans.ic_chans[i].ic_ieee <= 14)
+				continue;
+#endif
 			if (nvram_match(wl_turbo, "40")
 			    && (nvram_match(wl_mode, "n2-only")
 				|| nvram_match(wl_mode, "mixed")
