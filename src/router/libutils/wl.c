@@ -162,7 +162,7 @@ int wifi_getchannel(char *ifname)
 	double freq;
 	int channel;
 
-	(void)memset(&iwr, 0, sizeof(struct iwreq));
+	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
@@ -188,7 +188,7 @@ int wifi_getfreq(char *ifname)
 	struct iwreq wrq;
 	double freq;
 
-	(void)memset(&iwr, 0, sizeof(struct iwreq));
+	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
@@ -211,7 +211,7 @@ float wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
 
-	(void)memset(&iwr, 0, sizeof(struct iwreq));
+	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWRATE, &wrq);
 	closesocket();
