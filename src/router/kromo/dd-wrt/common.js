@@ -426,7 +426,7 @@ function isascii(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch < ' ' || ch > '~'){
-			alert(M+errmsg.err29);
+			alert('"'+M+'"'+errmsg.err29);
 			I.value = I.defaultValue;
 			return false;
 		}
