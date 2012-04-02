@@ -469,7 +469,11 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 {
 
+#ifdef HAVE_IPR
+	char *str = "rev 1.2";
+#else
 	char *str = cpustring();
+#endif
 	if (!str) {
 		websWrite(wp, "Not Detected!\n");
 		return;
@@ -5578,7 +5582,11 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
 	sprintf(var, "%s_wpa_psk", prefix);
 	websWrite(wp,
+#ifdef HAVE_BUFFALO
+		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_wpa_psk(this);\" maxlength=\"64\" size=\"32\" value=\"",
+#else
 		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_psk_length(this);\" maxlength=\"64\" size=\"32\" value=\"",
+#endif
 		  prefix, prefix);
 	tf_webWriteESCNV(wp, var);
 	websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
