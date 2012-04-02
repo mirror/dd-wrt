@@ -192,6 +192,11 @@ cflags-$(CONFIG_RALINK_RT305X)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink
 load-$(CONFIG_RALINK_RT305X)	+= 0xffffffff80000000
 
 
+core-$(CONFIG_RALINK_RT3883)	+= arch/mips/ralink/rt3883/
+cflags-$(CONFIG_RALINK_RT3883)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt3883 -I$(srctree)/arch/mips/include/asm/rt2880
+load-$(CONFIG_RALINK_RT3883)	+= 0xffffffff80000000
+
+
 # Atheros AR5312/AR2312 WiSoC
 #
 core-$(CONFIG_ATHEROS)		+= arch/mips/atheros/
