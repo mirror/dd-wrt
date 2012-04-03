@@ -290,6 +290,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				   || brand == ROUTER_LINKSYS_E900
 				   || brand == ROUTER_LINKSYS_E1500) {
 				if (memcmp(&buf[0], &CODE_PATTERN_E900, 4)
+					&& memcmp(&buf[0], &CODE_PATTERN_E1200V1, 4)
+					&& memcmp(&buf[0], &CODE_PATTERN_E1200V2, 4)
 					&& memcmp(&buf[0], &CODE_PATTERN_E1500, 4)
 					&& memcmp(&buf[0], &CODE_PATTERN_NV64K, 4)) {
 					cprintf
@@ -324,6 +326,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			    && memcmp(&buf[0], &CODE_PATTERN_VALET_M20, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E900, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E1000, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E1200V1, 4)
+			    && memcmp(&buf[0], &CODE_PATTERN_E1200V2, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E1500, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E2000, 4)
 			    && memcmp(&buf[0], &CODE_PATTERN_E2500, 4)
