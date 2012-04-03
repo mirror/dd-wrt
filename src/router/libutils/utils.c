@@ -2006,7 +2006,7 @@ int internal_getRouterBrand()
 			return ROUTER_LINKSYS_E1000V2;
 		} else if (nvram_match("boot_hw_model", "E1200")
 			   && nvram_match("boot_hw_ver", "1.0")) {
-			setRouter("Linksys E1200");
+			setRouter("Linksys E1200 v1");
 			return ROUTER_LINKSYS_E1500;
 		} else if (nvram_match("boot_hw_model", "E1500")
 			   && nvram_match("boot_hw_ver", "1.0")) {
