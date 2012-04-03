@@ -88,6 +88,8 @@ static void makeipup(void)
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
+		"echo 1 > /proc/sys/net/ipv4/conf/br0/proxy_arp"
+		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp"
 		//	per peer shaping
 			"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 			"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
