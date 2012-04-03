@@ -16,7 +16,9 @@
 #define _wlutils_h_
 
 #include <typedefs.h>
+#ifndef _NO_WLIOCTL_H
 #include <wlioctl.h>
+#endif
 #ifndef WLC_IOCTL_SMLEN
 #define	WLC_IOCTL_SMLEN		256	/* "small" length ioctl buffer
 					 * required */
@@ -130,6 +132,7 @@ extern int mac80211_get_avail_rx_antenna(int phy);
 extern int mac80211_get_configured_tx_antenna(int phy);
 extern int mac80211_get_configured_rx_antenna(int phy);
 extern int mac80211_check_valid_frequency(char *interface, char *country, int freq);
+extern int getFrequency_mac80211(char *interface);
 
 struct wifi_channels {
 	int channel;
@@ -157,6 +160,7 @@ struct mac80211_info {
 	uint64_t channel_receive_time;
 	uint64_t channel_transmit_time;
 	uint64_t extension_channel_busy_time;
+    uint32_t frequency;
 };
 
 struct wifi_client_info {
