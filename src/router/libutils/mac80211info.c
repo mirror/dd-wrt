@@ -156,6 +156,9 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 
 		if (sinfo[NL80211_SURVEY_INFO_NOISE])
 			mac80211_info->noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
+
+		if (sinfo[NL80211_SURVEY_INFO_FREQUENCY])
+			mac80211_info->frequency = freq;
 	}
 
 out:
@@ -192,6 +195,23 @@ int getNoise_mac80211(char *interface)
 nla_put_failure:
 	nlmsg_free(msg);
 	return(-199);
+}
+
+int getFrequency_mac80211(char *interface)
+{
+	struct nl_msg *msg;
+	struct mac80211_info mac80211_info;
+	int wdev = if_nametoindex(interface);
+	memset(&mac80211_info, 0, sizeof(mac80211_info));
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
+	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	return mac80211_info.frequency;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	return(0);
 }
 
 int mac80211_get_coverageclass(char *interface) {
@@ -274,6 +294,9 @@ static int mac80211_cb_stations(struct nl_msg *msg,void *data) {
 	strcpy(mac80211_info->wci->mac, mac_addr);
 	strcpy(mac80211_info->wci->ifname, dev);
 	mac80211_info->wci->noise=mac80211_info->noise;
+
+	if (strstr(dev, ".sta"))
+		mac80211_info->wci->is_wds=1;
 
 	if (sinfo[NL80211_STA_INFO_INACTIVE_TIME]) {
 		mac80211_info->wci->inactive_time=nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]);
@@ -599,7 +622,7 @@ skip =0;
 								list[count].ht40plus = 1;
 							}
 							else {
-								if (max_bandwidth_khz == 40) {
+								if (regmaxbw == 40) {
 									if ((freq_mhz - htrange) >= startfreq ) {
 										list[count].ht40minus = 1;
 									}
