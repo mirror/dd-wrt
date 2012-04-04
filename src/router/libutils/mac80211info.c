@@ -617,11 +617,6 @@ skip =0;
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
-							if (!skip) {
-								list[count].ht40minus = 1;
-								list[count].ht40plus = 1;
-							}
-							else {
 								if (regmaxbw == 40) {
 									if ((freq_mhz - htrange) >= startfreq ) {
 										list[count].ht40minus = 1;
@@ -630,7 +625,6 @@ skip =0;
 										list[count].ht40plus = 1;
 									}
 								}
-							}
 							count++;
 						}
 						if (run == 0) chancount++;
