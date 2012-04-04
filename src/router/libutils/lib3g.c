@@ -166,7 +166,7 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x0115 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
-		("usb_modeswitch -v 0x19d2 -p 0x0166 -V 0x19d2 -P 0x0257 -n -M 55534243123456782400000080000685000000240000000000000000000000");
+	    ("usb_modeswitch -v 0x19d2 -p 0x0166 -V 0x19d2 -P 0x0257 -n -M 55534243123456782400000080000685000000240000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x1001 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
@@ -195,6 +195,16 @@ static void modeswitch_sierra(int needreset, char *controldev)
 		"SierraMode=1\n" "CheckSuccess=10\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x1199\n");
+		"DefaultProduct=0x0fff\n"
+		"TargetVendor=0x0f3d\n"
+		"TargetProduct=0x68aa\n"
+		"SierraMode=1\n" "CheckSuccess=10\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
 	sleep(2);
 }
 
@@ -202,6 +212,7 @@ static void modeswitch_huawei(int needreset, char *controldev)
 {
 	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1411 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x101e -M 55534243123456780000000000000011062000000100000000000000000000");
@@ -219,8 +230,8 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	    ("usb_modeswitch -v 0x12d1 -p 0x14fe -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1505 -M 55534243123456780000000000000011062000000100000000000000000000");
-	system	    
-		("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011062000000100000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x12d1 -p 0x1520 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x1521 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
@@ -347,6 +358,41 @@ static void modeswitch_4g_xsstick(int needreset, char *controldev)
 	sleep(2);
 }
 
+static void modeswitch_alcatel(int needreset, char *controldev)
+{
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x1bbb\n");
+	fprintf(out, "DefaultProduct=0xf000\n");
+	fprintf(out, "TargetVendor=0x1bbb\n");
+	fprintf(out, "TargetProductList=\"0000,0017\"\n");
+	fprintf(out,
+		"MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
+	fprintf(out, "CheckSuccess=20\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
+	sleep(2);
+}
+
+static void modeswitch_bandrich(int needreset, char *controldev)
+{
+	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x1a8d\n");
+	fprintf(out, "DefaultProduct=0x1000\n");
+	fprintf(out, "TargetVendor=0x1a8d\n");
+	fprintf(out, "TargetProductList=\"1002,1007,1009,2006\"\n");
+	fprintf(out,
+		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n");
+	fprintf(out,
+		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
+	fprintf(out, "ReleaseDelay=4000\n");
+	fprintf(out, "NeedResponse=1\n");
+	fclose(out);
+	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
+
+	sleep(2);
+}
+
 struct DEVICES {
 	int vendor;
 	int product;
@@ -370,8 +416,8 @@ static struct DEVICES devicelist[] = {
 	{0x0421, 0x0622, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-17 (cdrom mode)"},	//
 	{0x0421, 0x0623, "option", "0", "0", 2 | ACM, NULL, "Nokia CS-17 (modem mode)"},	//
 	{0x0421, 0x0627, "option", "0", "0", 2 | ACM, &modeswitch_nokia, "Nokia CS-18 (cdrom mode)"},	//
-	{0x0421, 0x03a7, "option", "0", "0", 2 | ACM, NULL, "Nokia C5-00 Mobile phone (modem)"},     // 
-	
+	{0x0421, 0x03a7, "option", "0", "0", 2 | ACM, NULL, "Nokia C5-00 Mobile phone (modem)"},	// 
+
 //Option
 	{0x0af0, 0x6971, NULL, "hso", "hso", 0, &hsoinit_icon225, "Qualcomm ICON 225"},	//
 	{0x0af0, 0x7011, "option", "0", "0", 2, NULL, "HUAWEI/Option E301 HSUPA"},	//
@@ -384,7 +430,10 @@ static struct DEVICES devicelist[] = {
 //Ericsson Business Mobile Networks
 	{0x0bdb, 0x1900, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
 	{0x0bdb, 0x1902, "option", "4", "4", 0, NULL, "Ericsson F3507g"},	//
-	
+
+//AirPrime (Sierra)
+	{0x0f3d, 0x68aa, "sierra", "3", "3", 1, NULL, "Sierra Wireless AC313U/320U/330U Modem Mode"},	//
+
 //Curitel
 	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
 
@@ -405,6 +454,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x0218, "sierra", "3", "4", 1, NULL, "Sierra Wireless MC5720 Wireless Modem"},	//
 	{0x1199, 0x0220, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
 	{0x1199, 0x0224, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
+	{0x1199, 0x0301, "sierra", "3", "4", 1, NULL, "Sierra Wireless AC250U Modem Mode"},	//
 	{0x1199, 0x0fff, "sierra", "3", "4", 1, &modeswitch_sierra, "Sierra Device CDROM Mode"},	//
 	{0x1199, 0x6802, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8755 Modem Mode"},	//
 	{0x1199, 0x6803, "sierra", "0", "2", 1, NULL, "Sierra Wireless MC8765 Modem Mode"},	//
@@ -455,9 +505,11 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x140b, "option", "0", "0", 2, NULL, "HUAWEI/Option EC1260 Wireless Data Modem HSD USB Card"},	//
 	{0x12d1, 0x140c, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x1412, "option", "0", "0", 2, NULL, "HUAWEI/Option EC168"},	//
+	{0x12d1, 0x1411, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E510/EC121"},	//
 	{0x12d1, 0x1414, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E180"},	//
 	{0x12d1, 0x141b, "option", "0", "0", 2, NULL, "HUAWEI/Option newer modems"},	//
 	{0x12d1, 0x1433, "option", "0", "0", 2, NULL, "HUAWEI/Option E1756C"},	//
+	{0x12d1, 0x1436, "option", "0", "0", 2, NULL, "HUAWEI/Option E1800"},	//
 	{0x12d1, 0x1446, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E1552/E1800 HSPA Modem"},	//
 	{0x12d1, 0x1464, "option", "0", "0", 2, NULL, "Huawei K4505"},	//
 	{0x12d1, 0x1465, "option", "0", "0", 2, NULL, "Huawei K3765"},	//
@@ -468,6 +520,7 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14ae, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3806"},	//
 	{0x12d1, 0x14c1, "option", "0", "0", 2, &modeswitch_huawei, "Vodafone (Huawei) K4605"},	//
 	{0x12d1, 0x14c6, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K4605"},	//
+	{0x12d1, 0x14c9, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3770"},	//
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
 	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E352,E353"},	//
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E398"},	//	
@@ -501,7 +554,6 @@ static struct DEVICES devicelist[] = {
 	{0x16d5, 0x6202, "option", "0", "0", 2, NULL, "AnyData ADU-620W"},
 	{0x16d5, 0x6501, "option", "0", "0", 2, NULL, "AnyData ADU-300A"},
 	{0x16d5, 0x6502, "option", "0", "0", 2, NULL, "AnyData ADU-500A"},
-
 
 //ZTE WCDMA Technologies
 	{0x19d2, 0x0001, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
@@ -542,27 +594,38 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x1010, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3571-Z (modem mode)"},	//
 	{0x19d2, 0x1013, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3806-Z (cdrom mode)"},	//
 	{0x19d2, 0x1015, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3806-Z (modem mode)"},	//
-	{0x19d2, 0x1520, "option", "0", "0", 2 | ACM , &modeswitch_onda2, "ZTE MF652"},	//
+	{0x19d2, 0x1520, "option", "0", "0", 2, &modeswitch_onda2, "ZTE MF652"},	//
 	{0x19d2, 0x1522, "option", "0", "0", 2 | ACM , NULL, "ZTE MF652"},	//
-	{0x19d2, 0x2000, "option", "1", "1", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//	
+	{0x19d2, 0x2000, "option", "1", "1", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
 	{0x19d2, 0xfff1, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
 	{0x19d2, 0xfff5, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
 	{0x19d2, 0xfff6, "option", "1", "3", 2, &modeswitch_onda2, "ZTE generic (cdrom mode)"},	//
 	{0x19d2, 0xffff, "option", "1", "3", 2, NULL, "ZTE generic (modem mode)"},	//
+
+//Bandrich
+	{0x1a8d, 0x1000, "option", "0", "0", 2, &modeswitch_bandrich, "Bandrich C-100/C-120/C-170/C-180/C-270/C-320/C321 (cdrom mode)"},
+	{0x1a8d, 0x1002, "option", "0", "0", 2, NULL, "Bandrich C-100/C-120 (modem mode)"},
+	{0x1a8d, 0x1007, "option", "0", "0", 2, NULL, "Bandrich C-270 (modem mode)"},
+	{0x1a8d, 0x1009, "option", "0", "0", 2, NULL, "Bandrich C-170/C-180 (modem mode)"},
+	{0x1a8d, 0x2006, "option", "0", "0", 2| ACM, NULL, "Bandrich C-170/C-180 (modem mode)"},
+
+//T&A Mobile Phones (Alcatel)
+	{0x1bbb, 0x0000, "option", "2", "2", 2, NULL, "Alcatel X060S/X070S/X080S/X200 (modem mode)"},	//
+	{0x1bbb, 0x0017, "option", "4", "4", 2| GENERIC, NULL, "Alcatel X220L (Variant), X500D (modem mode)"},	//
+	{0x1bbb, 0xf000, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X060S/X070S/X080S/X200/X220L/X500D(cdrom mode)"},	//
 
 //OMEGA TECHNOLOGY
 	{0x1c9e, 0x9000, "option", "0", "0", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9603, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9605, "option", "3", "3", 2, NULL, "4G Systems XS Stick W14"},	//
 	{0x1c9e, 0x9607, "option", "2", "2", 2, NULL, "4G Systems XS Stick W14"},	//
-	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//	
-	
+	{0x1c9e, 0xf000, "option", "2", "2", 2, &modeswitch_4g_xsstick, "4G Systems XS Stick W14 (cdrom mode)"},	//
+
 //Qualcomm / Option
 	{0x1e0e, 0x9000, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0x9200, "option", "2", "2", 3, NULL, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU Modem Mode"},	//
 	{0x1e0e, 0xf000, "option", "2", "2", 3, &modeswitch_icon210, "Option iCON 210, PROLiNK PHS100, Hyundai MB-810, A-Link 3GU CDROM Mode"},	//
 
-	
 	{0xffff, 0xffff, NULL, NULL, NULL, 0, NULL, NULL}	//
 };
 
