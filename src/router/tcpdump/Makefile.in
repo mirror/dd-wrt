@@ -43,7 +43,7 @@ VPATH = @srcdir@
 CC = @CC@
 PROG = tcpdump
 CCOPT = @V_CCOPT@
-INCLS = -I. @V_INCLS@
+INCLS = -I. -I./missing
 DEFS = @DEFS@ @CPPFLAGS@ @V_DEFS@
 
 # Standard CFLAGS
