@@ -18,7 +18,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: /tcpdump/master/tcpdump/ethertype.h,v 1.24.2.1 2005/07/10 14:51:10 hannes Exp $ (LBL)
+ * @(#) $Header: /tcpdump/master/tcpdump/ethertype.h,v 1.30 2008-02-06 10:47:53 guy Exp $ (LBL)
  */
 
 /*
@@ -76,6 +76,9 @@
 #ifndef ETHERTYPE_SCA
 #define ETHERTYPE_SCA		0x6007
 #endif
+#ifndef ETHERTYPE_TEB
+#define ETHERTYPE_TEB		0x6558
+#endif
 #ifndef	ETHERTYPE_LANBRIDGE
 #define	ETHERTYPE_LANBRIDGE	0x8038
 #endif
@@ -100,6 +103,20 @@
 #ifndef	ETHERTYPE_8021Q
 #define	ETHERTYPE_8021Q		0x8100
 #endif
+
+/* see:
+        http://en.wikipedia.org/wiki/IEEE_802.1Q
+    and http://en.wikipedia.org/wiki/QinQ
+*/
+#ifndef	ETHERTYPE_8021Q9100
+#define	ETHERTYPE_8021Q9100	0x9100
+#endif
+#ifndef	ETHERTYPE_8021Q9200
+#define	ETHERTYPE_8021Q9200	0x9200
+#endif
+#ifndef	ETHERTYPE_8021QinQ
+#define	ETHERTYPE_8021QinQ      0x88a8
+#endif
 #ifndef ETHERTYPE_IPX
 #define ETHERTYPE_IPX		0x8137
 #endif
@@ -108,6 +125,9 @@
 #endif
 #ifndef ETHERTYPE_PPP
 #define	ETHERTYPE_PPP		0x880b
+#endif
+#ifndef ETHERTYPE_MPCP
+#define	ETHERTYPE_MPCP		0x8808
 #endif
 #ifndef ETHERTYPE_SLOW
 #define	ETHERTYPE_SLOW		0x8809
@@ -124,17 +144,35 @@
 #ifndef ETHERTYPE_PPPOES
 #define ETHERTYPE_PPPOES	0x8864
 #endif
+#ifndef ETHERTYPE_PPPOED2
+#define ETHERTYPE_PPPOED2	0x3c12
+#endif
+#ifndef ETHERTYPE_PPPOES2
+#define ETHERTYPE_PPPOES2	0x3c13
+#endif
 #ifndef ETHERTYPE_JUMBO
 #define ETHERTYPE_JUMBO         0x8870
 #endif
+#ifndef ETHERTYPE_LLDP
+#define ETHERTYPE_LLDP          0x88cc
+#endif
 #ifndef ETHERTYPE_EAPOL
 #define ETHERTYPE_EAPOL  	0x888e
+#endif
+#ifndef ETHERTYPE_RRCP
+#define ETHERTYPE_RRCP  	0x8899
 #endif
 #ifndef	ETHERTYPE_LOOPBACK
 #define	ETHERTYPE_LOOPBACK	0x9000
 #endif
 #ifndef	ETHERTYPE_VMAN
 #define	ETHERTYPE_VMAN	        0x9100 /* Extreme VMAN Protocol */ 
+#endif
+#ifndef	ETHERTYPE_CFM_OLD
+#define	ETHERTYPE_CFM_OLD       0xabcd /* 802.1ag depreciated */
+#endif
+#ifndef	ETHERTYPE_CFM
+#define	ETHERTYPE_CFM           0x8902 /* 802.1ag */
 #endif
 #ifndef	ETHERTYPE_ISO
 #define	ETHERTYPE_ISO           0xfefe  /* nonstandard - used in Cisco HDLC encapsulation */

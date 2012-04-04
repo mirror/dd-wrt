@@ -22,7 +22,7 @@
  */
 #ifndef lint
 static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-bootp.c,v 1.78.2.9 2007/08/21 22:02:08 guy Exp $ (LBL)";
+    "@(#) $Header: /tcpdump/master/tcpdump/print-bootp.c,v 1.89 2008-04-22 09:45:08 hannes Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -352,9 +352,13 @@ static struct tok dhcp_msg_values[] = {
         { 0,			NULL }
 };
 
-#define AGENT_SUBOPTION_CIRCUIT_ID 1
+#define AGENT_SUBOPTION_CIRCUIT_ID 	1	/* RFC 3046 */
+#define AGENT_SUBOPTION_REMOTE_ID  	2	/* RFC 3046 */
+#define AGENT_SUBOPTION_SUBSCRIBER_ID 	6	/* RFC 3993 */
 static struct tok agent_suboption_values[] = {
         { AGENT_SUBOPTION_CIRCUIT_ID, "Circuit-ID" },
+        { AGENT_SUBOPTION_REMOTE_ID, "Remote-ID" },
+        { AGENT_SUBOPTION_SUBSCRIBER_ID, "Subscriber-ID" },
         { 0,			NULL }
 };
 
@@ -581,8 +585,6 @@ rfc1048_print(register const u_char *bp)
 				if (len < 1)  {
 					printf("ERROR: option %u len %u < 1 bytes",
 					    TAG_NETBIOS_NODE, len);
-					bp += len;
-					len = 0;
 					break;
 				}
 				tag = *bp++;
@@ -595,8 +597,6 @@ rfc1048_print(register const u_char *bp)
 				if (len < 1)  {
 					printf("ERROR: option %u len %u < 1 bytes",
 					    TAG_OPT_OVERLOAD, len);
-					bp += len;
-					len = 0;
 					break;
 				}
 				tag = *bp++;
@@ -636,8 +636,6 @@ rfc1048_print(register const u_char *bp)
 				if (len < 1)  {
 					printf("ERROR: option %u len %u < 1 bytes",
 					    TAG_CLIENT_ID, len);
-					bp += len;
-					len = 0;
 					break;
 				}
 				type = *bp++;
@@ -686,9 +684,11 @@ rfc1048_print(register const u_char *bp)
 					   suboptlen);
 					switch (subopt) {
 
-					case AGENT_SUBOPTION_CIRCUIT_ID:
-						fn_printn(bp, suboptlen, NULL);
-						break;
+                                        case AGENT_SUBOPTION_CIRCUIT_ID: /* fall through */
+                                        case AGENT_SUBOPTION_REMOTE_ID:
+                                        case AGENT_SUBOPTION_SUBSCRIBER_ID:
+                                                fn_printn(bp, suboptlen, NULL);
+                                                break;
 
 					default:
 						print_unknown_data(bp, "\n\t\t", suboptlen);
