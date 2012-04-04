@@ -581,6 +581,7 @@
 #define ROUTER_BOARD_TECHNAXX3G 0xb51a
 
 // Linksys E900 (BCM53572 cpu, 8MB serial flash / 32 MB ram, fccid: Linksys Q87-E900) >_64K nvram_<
+// Linksys E1200v2 (BCM53572 cpu, 8MB serial flash / 32 MB ram, fccid: Linksys Q87-E1200V2) >_64K nvram_<
 #define ROUTER_LINKSYS_E900 0xb61a
 
 // Linksys E1500 (BCM5357 cpu, 8MB serial flash / 32 MB ram, fccid: Linksys Q87-E1500) >_64K nvram_<
