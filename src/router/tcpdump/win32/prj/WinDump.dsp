@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I "../../../winpcap/wpcap/libpcap/bpf" /I "../../../winpcap/wpcap/libpcap" /I "../../../winpcap/wpcap/libpcap/Win32/Include" /I "../../../winpcap/wpcap/libpcap/Win32/Include/net" /I "../../Win32/Include" /I "../../linux-Include" /I "../../lbl" /I "../../" /I "../../../winpcap/wpcap/win32-extensions" /D "NDEBUG" /D "INET6" /D "WIN32" /D "_MBCS" /D "_CONSOLE" /D "__STDC__" /D "WPCAP" /D HAVE_ADDRINFO=1 /D HAVE_SOCKADDR_STORAGE=1 /D HAVE_PCAP_LIST_DATALINKS=1 /D HAVE_PCAP_SET_DATALINK=1 /D HAVE_PCAP_DATALINK_NAME_TO_VAL=1 /D HAVE_PCAP_DATALINK_VAL_TO_DESCRIPTION=1 /D HAVE_PCAP_DUMP_FTELL=1 /D HAVE_BPF_DUMP=1 /D HAVE_PCAP_DUMP_FLUSH=1 /D HAVE_PCAP_FINDALLDEVS=1 /D HAVE_PCAP_IF_T=1 /D HAVE_PCAP_LIB_VERSION=1 /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "HAVE_REMOTE" /D _U_= /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "../../../winpcap/wpcap/libpcap/bpf" /I "../../../winpcap/wpcap/libpcap" /I "../../../winpcap/wpcap/libpcap/Win32/Include" /I "../../../winpcap/wpcap/libpcap/Win32/Include/net" /I "../../Win32/Include" /I "../../linux-Include" /I "../../lbl" /I "../../" /I "../../../winpcap/wpcap/win32-extensions" /D "NDEBUG" /D "INET6" /D "WIN32" /D "_MBCS" /D "_CONSOLE" /D "__STDC__" /D "WPCAP" /D HAVE_ADDRINFO=1 /D HAVE_SOCKADDR_STORAGE=1 /D HAVE_PCAP_LIST_DATALINKS=1 /D HAVE_PCAP_SET_DATALINK=1 /D HAVE_PCAP_DATALINK_NAME_TO_VAL=1 /D HAVE_PCAP_DATALINK_VAL_TO_DESCRIPTION=1 /D HAVE_PCAP_DUMP_FTELL=1 /D HAVE_BPF_DUMP=1 /D HAVE_PCAP_DUMP_FLUSH=1 /D HAVE_PCAP_FINDALLDEVS=1 /D HAVE_PCAP_IF_T=1 /D HAVE_PCAP_LIB_VERSION=1 /D "HAVE_REMOTE" /D _U_= /YX /FD /c
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
 # ADD RSC /l 0x410 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -66,7 +66,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /Gm /Gi /GX /ZI /I "../../../winpcap/wpcap/libpcap/bpf" /I "../../../winpcap/wpcap/libpcap" /I "../../../winpcap/wpcap/libpcap/Win32/Include" /I "../../../winpcap/wpcap/libpcap/Win32/Include/net" /I "../../Win32/Include" /I "../../linux-Include" /I "../../lbl" /I "../../" /I "../../../winpcap/wpcap/win32-extensions" /D "_DEBUG" /D "_WINDOWS" /D "INET6" /D "WIN32" /D "_MBCS" /D "_CONSOLE" /D "__STDC__" /D "WPCAP" /D HAVE_ADDRINFO=1 /D HAVE_SOCKADDR_STORAGE=1 /D HAVE_PCAP_LIST_DATALINKS=1 /D HAVE_PCAP_SET_DATALINK=1 /D HAVE_PCAP_DATALINK_NAME_TO_VAL=1 /D HAVE_PCAP_DATALINK_VAL_TO_DESCRIPTION=1 /D HAVE_PCAP_DUMP_FTELL=1 /D HAVE_BPF_DUMP=1 /D HAVE_PCAP_DUMP_FLUSH=1 /D HAVE_PCAP_FINDALLDEVS=1 /D HAVE_PCAP_IF_T=1 /D HAVE_PCAP_LIB_VERSION=1 /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "HAVE_REMOTE" /D _U_= /FR /YX /FD /c
+# ADD CPP /nologo /W3 /Gm /Gi /GX /ZI /I "../../../winpcap/wpcap/libpcap/bpf" /I "../../../winpcap/wpcap/libpcap" /I "../../../winpcap/wpcap/libpcap/Win32/Include" /I "../../../winpcap/wpcap/libpcap/Win32/Include/net" /I "../../Win32/Include" /I "../../linux-Include" /I "../../lbl" /I "../../" /I "../../../winpcap/wpcap/win32-extensions" /D "_DEBUG" /D "_WINDOWS" /D "INET6" /D "WIN32" /D "_MBCS" /D "_CONSOLE" /D "__STDC__" /D "WPCAP" /D HAVE_ADDRINFO=1 /D HAVE_SOCKADDR_STORAGE=1 /D HAVE_PCAP_LIST_DATALINKS=1 /D HAVE_PCAP_SET_DATALINK=1 /D HAVE_PCAP_DATALINK_NAME_TO_VAL=1 /D HAVE_PCAP_DATALINK_VAL_TO_DESCRIPTION=1 /D HAVE_PCAP_DUMP_FTELL=1 /D HAVE_BPF_DUMP=1 /D HAVE_PCAP_DUMP_FLUSH=1 /D HAVE_PCAP_FINDALLDEVS=1 /D HAVE_PCAP_IF_T=1 /D HAVE_PCAP_LIB_VERSION=1 /D "HAVE_REMOTE" /D _U_= /FR /YX /FD /c
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
 # ADD RSC /l 0x410 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -94,6 +94,10 @@ SOURCE=..\..\af.c
 # Begin Source File
 
 SOURCE=..\..\bpf_dump.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\checksum.c
 # End Source File
 # Begin Source File
 
@@ -209,7 +213,15 @@ SOURCE="..\..\print-bootp.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\print-bt.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\print-cdp.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-cfm.c"
 # End Source File
 # Begin Source File
 
@@ -238,6 +250,10 @@ SOURCE="..\..\print-dhcp6.c"
 # Begin Source File
 
 SOURCE="..\..\print-domain.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-dtp.c"
 # End Source File
 # Begin Source File
 
@@ -361,11 +377,19 @@ SOURCE="..\..\print-llc.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\print-lldp.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\print-lmp.c"
 # End Source File
 # Begin Source File
 
 SOURCE="..\..\print-lspping.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-lwapp.c"
 # End Source File
 # Begin Source File
 
@@ -378,6 +402,10 @@ SOURCE="..\..\print-mobile.c"
 # Begin Source File
 
 SOURCE="..\..\print-mobility.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-mpcp.c"
 # End Source File
 # Begin Source File
 
@@ -445,11 +473,19 @@ SOURCE="..\..\print-raw.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\print-rrcp.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\print-rip.c"
 # End Source File
 # Begin Source File
 
 SOURCE="..\..\print-ripng.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-rpki-rtr.c"
 # End Source File
 # Begin Source File
 
@@ -466,6 +502,10 @@ SOURCE="..\..\print-rx.c"
 # Begin Source File
 
 SOURCE="..\..\print-sctp.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-sflow.c"
 # End Source File
 # Begin Source File
 
@@ -533,6 +573,10 @@ SOURCE="..\..\print-token.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\print-udld.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\print-udp.c"
 # End Source File
 # Begin Source File
@@ -541,7 +585,15 @@ SOURCE="..\..\print-vjc.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\print-vqp.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\print-vrrp.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\print-vtp.c"
 # End Source File
 # Begin Source File
 

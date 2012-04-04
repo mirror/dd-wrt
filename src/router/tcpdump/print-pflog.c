@@ -21,7 +21,7 @@
 
 #ifndef lint
 static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-pflog.c,v 1.13.2.4 2007/09/13 17:18:10 gianluca Exp $ (LBL)";
+    "@(#) $Header: /tcpdump/master/tcpdump/print-pflog.c,v 1.16 2007-09-12 19:36:18 guy Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -31,22 +31,18 @@ static const char rcsid[] _U_ =
 #ifndef HAVE_NET_PFVAR_H
 #error "No pf headers available"
 #endif
-
 #include <sys/types.h>
-#ifndef WIN32
 #include <sys/socket.h>
-#endif
 #include <net/if.h>
 #include <net/pfvar.h>
 #include <net/if_pflog.h>
-
-
 
 #include <tcpdump-stdinc.h>
 
 #include <stdio.h>
 #include <pcap.h>
 
+#include "extract.h"
 #include "interface.h"
 #include "addrtoname.h"
 
@@ -99,8 +95,8 @@ pflog_print(const struct pfloghdr *hdr)
 {
 	u_int32_t rulenr, subrulenr;
 
-	rulenr = ntohl(hdr->rulenr);
-	subrulenr = ntohl(hdr->subrulenr);
+	rulenr = EXTRACT_32BITS(&hdr->rulenr);
+	subrulenr = EXTRACT_32BITS(&hdr->subrulenr);
 	if (subrulenr == (u_int32_t)-1)
 		printf("rule %u/", rulenr);
 	else
@@ -166,7 +162,7 @@ pflog_if_print(const struct pcap_pkthdr *h, register const u_char *p)
 #if OPENBSD_AF_INET6 != AF_INET6
 		case OPENBSD_AF_INET6:		/* XXX: read pcap files */
 #endif
-			ip6_print(p, length);
+			ip6_print(gndo, p, length);
 			break;
 #endif
 
