@@ -633,14 +633,16 @@ endif
 ifeq ($(CONFIG_WZRG300NH2),y)
 	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.tftp
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
-	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
 ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_BUFFALO_SA),y)
-	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "2.08" "US-AP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WZR-HP-G302H 1.81 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
+	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "1.06" "US-AP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
 else
-	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.80" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
+	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
 endif
 else
+	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
 	tools/bufenc/mkfw-multi -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.80" "2.08" "US" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
 endif
 else
