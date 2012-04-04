@@ -531,13 +531,12 @@ struct wifi_channels *mac80211_get_channels(char *interface,char *country,int ma
 
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) return NULL;
-/*
+
 #ifdef HAVE_SUPERCHANNEL
 	sprintf(sc, "%s_regulatory", interface);
 	if (issuperchannel() && atoi(nvram_default_get(sc, "1")) == 0) skip=0;
 #endif
-*/
-skip =0;
+
 
 	rd=mac80211_get_regdomain(country);
 	// for now just leave 
@@ -585,6 +584,11 @@ skip =0;
 					startfreq=(int)((float)(regfreq.start_freq_khz)/1000.0);
 					stopfreq=(int)((float)(regfreq.end_freq_khz)/1000.0);
 					regmaxbw=(int)((float)(regfreq.max_bandwidth_khz)/1000.0);
+					if (!skip)
+					    regmaxbw = 40;
+					else
+					    regmaxbw=(int)((float)(regfreq.max_bandwidth_khz)/1000.0);
+
 					if ( !skip || ( (freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq )) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
