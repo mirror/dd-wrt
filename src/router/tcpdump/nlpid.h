@@ -1,4 +1,4 @@
-/* @(#) $Header: /tcpdump/master/tcpdump/nlpid.h,v 1.4 2004/10/19 15:27:55 hannes Exp $ (LBL) */
+/* @(#) $Header: /tcpdump/master/tcpdump/nlpid.h,v 1.4 2004-10-19 15:27:55 hannes Exp $ (LBL) */
 /* 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code
@@ -14,7 +14,7 @@
  * Original code by Hannes Gredler (hannes@juniper.net)
  */
 
-extern struct tok nlpid_values[];
+extern const struct tok nlpid_values[];
 
 #define	NLPID_NULLNS	0x00
 #define NLPID_Q933      0x08 /* ANSI T1.617 Annex D or ITU-T Q.933 Annex A */
