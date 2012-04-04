@@ -2521,7 +2521,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-$as_echo "#define USBIP_VERSION 0x00000106" >>confdefs.h
+$as_echo "#define USBIP_VERSION 0x00000111" >>confdefs.h
 
 
 CURRENT=0
