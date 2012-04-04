@@ -648,6 +648,32 @@ nla_put_failure:
 	return NULL;
 }
 
+
+int has_ht40(char *interface) {
+		struct wifi_channels *chan;
+		int found=0;
+		int i=0;
+		char regdomain[32];
+		char *country;
+
+		sprintf(regdomain, "%s_regdomain", interface);
+		country = nvram_default_get(regdomain, "UNITED_STATES");
+
+		chan = mac80211_get_channels(interface, getIsoName(country), 40, 0xff);
+		if (chan != NULL)
+			while (chan[i].freq != -1) {
+				if (chan[i].ht40plus || chan[i].ht40minus) {
+					free(chan);
+					return 1;
+				}
+			i++;
+			}
+		if (chan != NULL)
+			free(chan);
+		return 0;
+}
+
+
 int mac80211_check_valid_frequency(char *interface, char *country, int freq) {
 		struct wifi_channels *chan;
 		int found=0;

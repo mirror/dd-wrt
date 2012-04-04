@@ -95,6 +95,7 @@ extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
 extern int has_2ghz(char *prefix);
 extern int has_5ghz(char *prefix);
+extern int has_ht40(char *prefix);
 
 #define SITE_SURVEY_DB  "/tmp/site_survey"
 #define SITE_SURVEY_NUM 256
