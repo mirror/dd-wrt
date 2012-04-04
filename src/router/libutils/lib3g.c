@@ -197,7 +197,7 @@ static void modeswitch_sierra(int needreset, char *controldev)
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
 
 	out = fopen("/tmp/usb_modeswitch.conf", "wb");
-	fprintf(out, "DefaultVendor=0x1199\n");
+	fprintf(out, "DefaultVendor=0x1199\n"
 		"DefaultProduct=0x0fff\n"
 		"TargetVendor=0x0f3d\n"
 		"TargetProduct=0x68aa\n"
