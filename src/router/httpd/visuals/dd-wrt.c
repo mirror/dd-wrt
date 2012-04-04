@@ -4175,6 +4175,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 	if (is_ath11n(prefix)) {
+	
+#if defined(HAVE_ATH9K)
+		if (has_ht40(prefix))
+#endif
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -4196,21 +4200,25 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
+{
+#if defined(HAVE_ATH9K)
+		if (has_ht40(prefix))
+#endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
 			  nvram_match(wl_width,
 				      "40") ? "selected=\\\"selected\\\"" : "");
+}
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "20") ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_ATH9K
+
+#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 }
 #endif
-#ifdef HAVE_ATH9K
-if (is_ath9k(prefix))
-#endif
-    {
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
+{
 websWrite(wp,
 	  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
 	  nvram_match(wl_width, "10") ? "selected=\\\"selected\\\"" : "");
@@ -4226,6 +4234,7 @@ websWrite(wp,
 	}
 #endif
 }
+#endif
 websWrite(wp, "//]]>\n</script>\n");
 websWrite(wp, "</select>\n");
 websWrite(wp, "</div>\n");
@@ -4822,6 +4831,9 @@ if (!strcmp(prefix, "wl1"))
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 /* limit channel options by mode */
+#if defined(HAVE_ATH9K)
+		if (has_ht40(prefix))
+#endif
 	if (is_ath11n(prefix)) {
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
@@ -4843,17 +4855,21 @@ if (!strcmp(prefix, "wl1"))
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
+{
+#if defined(HAVE_ATH9K)
+		if (has_ht40(prefix))
+#endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
 			  nvram_match(wl_width,
 				      "40") ? "selected=\\\"selected\\\"" : "");
+}
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "20") ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_ATH9K
-if (is_ath9k(prefix))
-#endif
+
+#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
     {
 	websWrite(wp,
 		  "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n",
@@ -4863,7 +4879,6 @@ if (is_ath9k(prefix))
 		  "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
 		  nvram_match(wl_width,
 			      "5") ? "selected=\\\"selected\\\"" : "");
-    }
 #ifdef HAVE_SUBQUARTER
 	if(registered_has_subquarter()) {
 	/* will be enabled once it is tested and the spectrum analyse is done */
@@ -4872,6 +4887,8 @@ if (is_ath9k(prefix))
 		  nvram_match(wl_width,
 			      "2") ? "selected=\\\"selected\\\"" : "");
 	}
+#endif
+    }
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
