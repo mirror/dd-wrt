@@ -4177,7 +4177,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (is_ath11n(prefix)) {
 	
 #if defined(HAVE_ATH9K)
-		if (has_ht40(prefix))
+		if (has_ht40(prefix) || !is_ath9k(prefix))
 #endif
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
@@ -4202,7 +4202,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 {
 #if defined(HAVE_ATH9K)
-		if (has_ht40(prefix))
+		if (has_ht40(prefix) || !is_ath9k(prefix))
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
@@ -4832,7 +4832,7 @@ if (!strcmp(prefix, "wl1"))
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 /* limit channel options by mode */
 #if defined(HAVE_ATH9K)
-		if (has_ht40(prefix))
+		if (has_ht40(prefix) || !is_ath9k(prefix))
 #endif
 	if (is_ath11n(prefix)) {
 		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
@@ -4857,7 +4857,7 @@ if (!strcmp(prefix, "wl1"))
 #endif
 {
 #if defined(HAVE_ATH9K)
-		if (has_ht40(prefix))
+		if (has_ht40(prefix) || !is_ath9k(prefix))
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
