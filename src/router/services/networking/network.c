@@ -953,10 +953,10 @@ void start_lan(void)
 #endif
 #ifdef HAVE_DIR300
 	if (getSTA() || getWET() || CANBRIDGE()) {
-		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 		PORTSETUPWAN("");
 	} else {
-		nvram_setz(lan_ifnames, "vlan0 vlan2 ath0");
+		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 		PORTSETUPWAN("vlan2");
 	}
 	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -4020,8 +4020,7 @@ void start_wan_done(char *wan_ifname)
 		    nvram_safe_get("pptp_get_ip") :
 		    nvram_safe_get("wan_gateway");
 		if (strcmp(gateway, "0.0.0.0")) {
-			route_add(wan_ifname, 0, gateway, NULL,
-				  "255.255.255.255");
+//			route_add(wan_ifname, 0, gateway, NULL,"255.255.255.255");
 
 			while (route_add
 			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
