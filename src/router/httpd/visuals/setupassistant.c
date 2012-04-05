@@ -711,7 +711,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		     || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix)))
 		    {
 #if defined(HAVE_ATH9K)
-		if (has_ht40(prefix) || !is_ath9k(prefix))
+		if (!is_ath9k(prefix) || has_ht40(prefix))
 #endif
 			websWrite(wp,
 				  "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n",
@@ -730,7 +730,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 #endif
 {
 #if defined(HAVE_ATH9K)
-		if (has_ht40(prefix) || !is_ath9k(prefix))
+		if (!is_ath9k(prefix) || has_ht40(prefix))
 #endif
 		websWrite(wp,
 			  "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
