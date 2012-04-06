@@ -53,6 +53,20 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
+
+static void setSwitchLED(int gpio, int portmask)
+{
+sysprintf("echo switch0 > /sys/class/leds/generic_%d/trigger",gpio);
+sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask",portmask,gpio);
+}
+
+static void setEthLED(int gpio,char *eth)
+{
+sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger",gpio);
+sysprintf("echo %s > /sys/class/leds/generic_%d/device_name",eth,gpio);
+sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode",gpio);
+}
+
 void start_sysinit(void)
 {
 	time_t tm = 0;
@@ -72,6 +86,7 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
+	insmod("ledtrig-netdev");
 
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
@@ -104,6 +119,13 @@ void start_sysinit(void)
 		system("swconfig dev eth1 set enable_vlan 0");
 		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
 		system("swconfig dev eth1 set apply");
+
+	setEthLED(17,"eth0");
+	setSwitchLED(13,0x2);
+	setSwitchLED(14,0x4);
+	setSwitchLED(15,0x8);
+	setSwitchLED(16,0x10);
+
 #endif
 
 	struct ifreq ifr;
