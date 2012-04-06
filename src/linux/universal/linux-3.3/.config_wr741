@@ -1173,7 +1173,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
 # iptables trigger is under Netfilter config (LED target)
 #
 # CONFIG_LEDS_TRIGGER_MORSE is not set
-# CONFIG_LEDS_TRIGGER_NETDEV is not set
+CONFIG_LEDS_TRIGGER_NETDEV=m
 # CONFIG_ACCESSIBILITY is not set
 # CONFIG_INFINIBAND is not set
 CONFIG_RTC_LIB=y
