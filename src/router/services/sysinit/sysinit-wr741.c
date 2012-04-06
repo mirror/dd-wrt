@@ -129,9 +129,6 @@ void start_sysinit(void)
 #endif
 	//enable wlan led (card gpio based)
 	setWirelessLedPhy0(1);
-#ifdef HAVE_WR842
-	eval("gpio","enable","6");
-#endif
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
