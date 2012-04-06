@@ -257,27 +257,27 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.name		= "generic_14",
 		.gpio		= 14,
 #if defined(CONFIG_DIR615E)
-		.active_low	= 0,
-#else
 		.active_low	= 1,
+#else
+		.active_low	= 0,
 #endif
 	}, 
 	{
 		.name		= "generic_15",
 		.gpio		= 15,
 #if defined(CONFIG_DIR615E)
-		.active_low	= 0,
-#else
 		.active_low	= 1,
+#else
+		.active_low	= 0,
 #endif
 	}, 
 	{
 		.name		= "generic_16",
 		.gpio		= 16,
 #if defined(CONFIG_DIR615E)
-		.active_low	= 0,
-#else
 		.active_low	= 1,
+#else
+		.active_low	= 0,
 #endif
 	}, 
 #if defined(CONFIG_MACH_HORNET) && defined(CONFIG_WR741)
@@ -291,9 +291,9 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.name		= "generic_17",
 		.gpio		= 17,
 #if defined(CONFIG_DIR615E)
-		.active_low	= 0,
-#else
 		.active_low	= 1,
+#else
+		.active_low	= 0,
 #endif
 	}, 
 #endif
