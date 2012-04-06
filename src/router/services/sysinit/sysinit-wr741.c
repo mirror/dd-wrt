@@ -128,8 +128,11 @@ void start_sysinit(void)
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
 #endif
 	//enable wlan led (card gpio based)
+#if defined(HAVE_WR841v7) || defined(HAVE_WR842)
+	setWirelessLedPhy0(0);
+#else
 	setWirelessLedPhy0(1);
-
+#endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
