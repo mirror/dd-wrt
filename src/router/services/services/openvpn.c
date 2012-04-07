@@ -405,6 +405,7 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
 		fprintf(fp,
+			"iptables -D INPUT -i %s1 -j logaccept\n"
 			"iptables -D FORWARD -i %s1 -j logaccept\n"
 			"iptables -D FORWARD -o %s1 -j logaccept\n",
 			nvram_safe_get("openvpncl_tuntap"),
