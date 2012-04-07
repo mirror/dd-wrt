@@ -588,6 +588,10 @@
 // Linksys E1200v1 (BCM5357 cpu, 4MB serial flash / 32 MB ram, fccid: Linksys Q87-E1200) >_64K nvram_<
 #define ROUTER_LINKSYS_E1500 0xb71a
 
+// Linksys E1550 (BCM5358U cpu, 16MB serial flash / 64MB ram, USB, fccid: Linksys Q87-E1550) >_60K nvram_<
+#define ROUTER_LINKSYS_E1550 0xb81a
+
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
