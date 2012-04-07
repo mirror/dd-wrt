@@ -673,6 +673,7 @@ ifneq ($(CONFIG_NVRAM_64K),y)
 endif
 endif
 ifeq ($(CONFIG_NVRAM_60K),y)
+	../../opt/tools/addpattern -4 -p 1550 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1550.bin -g
 	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
 	../../opt/tools/addpattern -4 -p E25X -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2500.bin -g 
 	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
