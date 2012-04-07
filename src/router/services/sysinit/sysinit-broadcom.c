@@ -270,6 +270,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_LINKSYS_E900:	
 	case ROUTER_LINKSYS_E1000V2:
 	case ROUTER_LINKSYS_E1500:
+	case ROUTER_LINKSYS_E1550:
 	case ROUTER_LINKSYS_E2500:
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
@@ -1165,10 +1166,11 @@ void start_sysinit(void)
 			nvram_set("vlan1ports", "4 3 2 1 5*");
 		}
 		break;
-		
-	case ROUTER_LINKSYS_E1000V2:
+	
 	case ROUTER_LINKSYS_E900:
+	case ROUTER_LINKSYS_E1000V2:
 	case ROUTER_LINKSYS_E1500:
+	case ROUTER_LINKSYS_E1550:
 		basic_params = vlan_1_2;
 		break;
 
@@ -2006,6 +2008,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E1000V2:
 			case ROUTER_LINKSYS_E900:
 			case ROUTER_LINKSYS_E1500:
+			case ROUTER_LINKSYS_E1550:
 			case ROUTER_LINKSYS_E2500:
 				nvram_set("portprio_support", "0");
 				modules = "";
@@ -2091,6 +2094,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E1000V2:
 			case ROUTER_LINKSYS_E900:
 			case ROUTER_LINKSYS_E1500:
+			case ROUTER_LINKSYS_E1550:
 			case ROUTER_LINKSYS_E2500:
 				nvram_set("portprio_support", "0");
 				modules = "";
