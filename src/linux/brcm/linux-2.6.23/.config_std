@@ -752,6 +752,7 @@ CONFIG_WL_USE_APSTA=y
 # CONFIG_WL_USE_STA_ONCHIP_G is not set
 # CONFIG_WL_USE_APSTA_ONCHIP_G is not set
 # CONFIG_WL_USE_HIGH is not set
+CONFIG_WL_USBAP=n
 CONFIG_WL_AP="wlconfig_lx_router_ap"
 CONFIG_WL_AP_SDSTD="wlconfig_lx_router_ap_sdstd"
 CONFIG_WL_STA="wlconfig_lx_router_sta"
