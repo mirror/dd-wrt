@@ -2543,6 +2543,7 @@ dbus_usbos_dispatch_schedule(CALLBACK_ARGS)
 
 #endif /* USBOS_THREAD */
 
+#ifdef USB_TRIGGER_DEBUG
 static bool
 dbus_usbos_ctl_send_debugtrig(usbos_info_t* usbinfo)
 {
