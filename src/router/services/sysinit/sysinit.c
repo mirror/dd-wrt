@@ -1851,6 +1851,8 @@ void start_restore_defaults(void)
 	int icnt = get_wl_instances();
 #else
 	int icnt = getdevicecount();
+	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)  //dual radio, 2nd on usb-bus
+		icnt = 2;
 #endif
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 	buffalo_defaults(restore_defaults);
