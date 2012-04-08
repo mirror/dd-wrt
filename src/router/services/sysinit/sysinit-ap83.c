@@ -158,10 +158,13 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth0", "0");
 		eval("vconfig", "add", "eth0", "1");
 		fprintf(stderr, "configure vlan0 to %s\n", mac);
+		MAC_SUB(mac);
 		eval("ifconfig", "vlan0", "hw", "ether", mac);
+		MAC_ADD(mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure vlan1 to %s\n", mac);
 		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		MAC_SUB(mac);
 		MAC_SUB(mac);
 	}
 #endif
