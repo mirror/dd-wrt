@@ -58,6 +58,8 @@ config WL_USE_APSTA_ONCHIP_G
 config WL_USE_HIGH
 	bool "Config file for high/bmac split variant"
 endchoice
+config WL_USBAP
+	bool "USB/HSIC Wireless Access Point support"
 config WL_AP 
 	string "Config file for basic AP variant"
 	default "wlconfig_lx_router_ap"
