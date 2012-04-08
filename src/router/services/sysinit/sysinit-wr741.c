@@ -102,7 +102,9 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x",
 			copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
+		MAC_SUB(mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
+		MAC_ADD(mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
