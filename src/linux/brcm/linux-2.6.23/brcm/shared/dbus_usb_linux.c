@@ -2560,7 +2560,7 @@ dbus_usbos_ctl_send_debugtrig(usbos_info_t* usbinfo)
 	return TRUE;
 }
 #endif /* USB_TRIGGER_DEBUG */
-_t           *req = urb->context;
+	urb_req_t           *req = urb->context;
 	usbos_info_t        *usbos_info = req->usbinfo;
 	usbos_list_entry_t  *entry;
 	unsigned long       flags;
