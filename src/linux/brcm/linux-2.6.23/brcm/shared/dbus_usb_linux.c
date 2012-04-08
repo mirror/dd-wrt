@@ -2543,59 +2543,6 @@ dbus_usbos_dispatch_schedule(CALLBACK_ARGS)
 
 #endif /* USBOS_THREAD */
 
-#ifdef USB_TRIGGER_DEBUG
-static bool
-dbus_usbos_ctl_send_debugtrig(usbos_info_t* usbinfo)
-{
-	bootrom_id_t id;
-
-	if (usbinfo == NULL)
-		return FALSE;
-
-	id.chip = 0xDEAD;
-
-	dbus_usbos_dl_cmd(usbinfo, DL_DBGTRIG, &id, sizeof(bootrom_id_t));
-
-	/* ignore the result for now */
-	return TRUE;
-}
-#endif /* USB_TRIGGER_DEBUG */
-	urb_req_t           *req = urb->context;
-	usbos_info_t        *usbos_info = req->usbinfo;
-	usbos_list_entry_t  *entry;
-	unsigned long       flags;
-	struct list_head    *cur;
-
-	spin_lock_irqsave(&usbos_info->usbos_list_lock, flags);
-
-	cur   = usbos_info->usbos_free_list.next;
-	entry = list_entry(cur, struct usbos_list_entry, list);
-
-	/* detach this entry from the free list and prepare it insert it to use list */
-	list_del_init(cur);
-
-	if (entry) {
-		entry->urb_context = urb->context;
-		entry->urb_length  = urb->actual_length;
-		entry->urb_status  = urb->status;
-
-		atomic_inc(&usbos_info->usbos_list_cnt);
-		list_add_tail(cur, &usbos_info->usbos_list);
-	}
-	else {
-		DBUSERR(("!!!!!!OUT OF MEMORY!!!!!!!\n"));
-	}
-
-	spin_unlock_irqrestore(&usbos_info->usbos_list_lock, flags);
-
-	/* thread */
-	wake_up_interruptible(&usbos_info->usbos_queue_head);
-
-}
-
-#endif /* USBOS_THREAD */
-
-#ifdef USB_TRIGGER_DEBUG
 static bool
 dbus_usbos_ctl_send_debugtrig(usbos_info_t* usbinfo)
 {
