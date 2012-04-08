@@ -359,8 +359,10 @@ void start_openvpn(void)
 			nvram_safe_get("openvpncl_tuntap"));
 	else {
 		fprintf(fp,
+			"iptables -I INPUT -i %s1 -j logaccept\n"
 			"iptables -I FORWARD -i %s1 -j logaccept\n"
 			"iptables -I FORWARD -o %s1 -j logaccept\n",
+			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 		}
@@ -408,6 +410,7 @@ void start_openvpn(void)
 			"iptables -D INPUT -i %s1 -j logaccept\n"
 			"iptables -D FORWARD -i %s1 -j logaccept\n"
 			"iptables -D FORWARD -o %s1 -j logaccept\n",
+			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"),
 			nvram_safe_get("openvpncl_tuntap"));
 		}
