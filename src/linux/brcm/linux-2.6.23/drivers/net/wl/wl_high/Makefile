@@ -12,7 +12,8 @@
 # $Id: Makefile,v 1.1 2008/05/14 01:24:11 Exp $
 #
 
-SRCBASE := ../../../../../..
+SRCBASE := ../../../../brcm
+EXTRA_CFLAGS+=-I$(TOPDIR)/brcm/include
 
 ifeq ($(CONFIG_WL_HIGH),)
 CONFIG_WL_AP := "wlconfig_lx_router_high"
