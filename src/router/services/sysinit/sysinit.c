@@ -376,7 +376,7 @@ static void buffalo_defaults(int force)
 			nvram_set("ath0_regdomain", "JAPAN");
 #ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
-			nvram_set("ath0_regdomain", "BRAZIL");
+			nvram_set("ath0_regdomain", "SINGAPORE");
 #else
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("ath0_regdomain", "SINGAPORE");
@@ -401,7 +401,7 @@ static void buffalo_defaults(int force)
 			nvram_set("ath1_regdomain", "RUSSIA");
 #ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
-			nvram_set("ath1_regdomain", "BRAZIL");
+			nvram_set("ath1_regdomain", "SINGAPORE");
 #else
 		} else if (!strcmp(region, "AP")) {
 			nvram_set("ath1_regdomain", "SINGAPORE");
