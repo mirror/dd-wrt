@@ -1,5 +1,5 @@
 #debug stuff
-logfd2
+logfd 2
 debug
 dump
 #
