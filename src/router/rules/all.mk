@@ -237,6 +237,7 @@ include rules/snort.mk
 include rules/swconfig.mk
 include rules/dlna.mk
 include rules/polarssl.mk
+include rules/ipeth.mk
 
 #
 # Generic rules

@@ -220,6 +220,7 @@ obj-$(CONFIG_SNORT) += libnfnetlink libnetfilter_queue libdnet daq pcre snort
 obj-$(CONFIG_LAGUNA) += gsp_updater
 obj-$(CONFIG_POLARSSL) += polarssl
 obj-$(CONFIG_MSTP) += mstp
+obj-$(CONFIG_IPETH) += ipeth
 
 obj-y+=anchorfree
 obj-y+=ttraff
