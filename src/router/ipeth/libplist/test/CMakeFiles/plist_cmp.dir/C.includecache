@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/seg/DEV/pb42/src/router/ipeth/libplist/test/plist_cmp.c
+plist/plist.h
+/home/seg/DEV/pb42/src/router/ipeth/libplist/test/plist/plist.h
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+sys/stat.h
+-
+node.h
+-
+
+include/plist/plist.h
+stdint.h
+-
+sys/types.h
+-
+stdarg.h
+-
+
+libcnary/include/node.h
+object.h
+libcnary/include/object.h
+
+libcnary/include/object.h
+

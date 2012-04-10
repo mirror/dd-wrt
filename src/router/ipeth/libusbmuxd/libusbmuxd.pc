@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libusbmuxd
+Description: A library to communicate with the usbmux daemon
+Version: 1.0.8
+Libs: -L/usr/lib -lusbmuxd
+Cflags: -I/usr/include
+

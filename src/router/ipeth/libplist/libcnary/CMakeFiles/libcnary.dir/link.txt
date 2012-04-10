@@ -1,0 +1,2 @@
+/xfs/toolchains/toolchain-mips_r2_gcc-4.6-linaro_uClibc-0.9.33/bin/mips-linux-uclibc-ar cr libcnary.a  CMakeFiles/libcnary.dir/iterator.c.o CMakeFiles/libcnary.dir/list.c.o CMakeFiles/libcnary.dir/node.c.o CMakeFiles/libcnary.dir/node_iterator.c.o CMakeFiles/libcnary.dir/node_list.c.o
+/xfs/toolchains/toolchain-mips_r2_gcc-4.6-linaro_uClibc-0.9.33/bin/mips-linux-uclibc-ranlib libcnary.a
