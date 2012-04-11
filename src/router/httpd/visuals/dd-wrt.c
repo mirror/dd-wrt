@@ -3430,7 +3430,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 				  nvram_safe_get(wl_macaddr));
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
-#ifndef HAVE_EASY_WIRELESS_CONFIG
+#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
 		websWrite(wp,
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
 
@@ -3632,7 +3632,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #else
 		showbridgesettings(wp, var, 1, 0);
 #endif
-#ifdef HAVE_EASY_WIRELESS_CONFIG
+#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
 		websWrite(wp, "</div>\n");
 #endif
 		websWrite(wp, "</fieldset><br />\n");
