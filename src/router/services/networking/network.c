@@ -3847,6 +3847,8 @@ void start_wan(int status)
 		eval("usbmuxd");
 		sleep(5);
 		eval("ipheth-pair");
+		eval("ipheth-pair");
+		eval("ipheth-pair");
 		eval("ifconfig","iph0","up");
 		start_dhcpc("iph0", NULL, NULL, 1);
 	}
