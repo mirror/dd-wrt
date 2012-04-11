@@ -181,10 +181,205 @@ void runStartup(char *folder, char *extension)
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 
-extern void *getUEnv(char *name);
 
+#ifdef HAVE_BCMMODERN
+    #define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
+
+	char *pincode = getUEnv("pincode");
+	if (pincode && nvram_get("pincode") == NULL) {
+		nvram_set("pincode", pincode);
+	}
+	if (nvram_get("wl0_akm") == NULL || force) {
+		char *region = getUEnv("region");
+		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
+				&& strcmp(region, "RU")
+				&& strcmp(region, "KR")
+				&& strcmp(region, "CH"))) {
+			{
+				char *mode_ex = getUEnv("DEF-p_wireless_eth1_11a-authmode_ex");
+				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
+					char *mode =
+					    getUEnv
+					    ("DEF-p_wireless_eth1_11a-authmode");
+					if (!mode)
+						return;
+					if (!strcmp(mode, "psk")) {
+						nvram_set("wl0_akm","psk psk2");
+						nvram_set("wl0_security_mode","psk psk2");
+						nvram_set("wl_akm","psk psk2");
+						nvram_set("wl_security_mode","psk psk2");
+					}
+					if (!strcmp(mode, "psk2")) {
+						nvram_set("wl0_akm","psk psk2");
+						nvram_set("wl0_security_mode","psk psk2");
+						nvram_set("wl_akm","psk psk2");
+						nvram_set("wl_security_mode","psk psk2");
+					}
+				} else {
+					char *mode =
+					    getUEnv
+					    ("DEF-p_wireless_eth1_11a-authmode");
+					if (mode) {
+						nvram_set("wl0_akm", mode);
+						nvram_set("wl0_security_mode",
+							  mode);
+						nvram_set("wl_akm", mode);
+						nvram_set("wl_security_mode",
+							  mode);
+					} else
+						return;
+				}
+
+				char *crypto =
+				    getUEnv("DEF-p_wireless_eth1_11a-crypto");
+				if (crypto){
+					nvram_set("wl0_crypto", crypto);
+					nvram_set("wl_crypto", crypto);
+					}
+				char *wpapsk =
+				    getUEnv("DEF-p_wireless_eth1_11a-wpapsk");
+				if (wpapsk)
+				{
+					nvram_set("wl_wpa_psk", wpapsk);
+					nvram_set("wl0_wpa_psk", wpapsk);
+				}
+			}
+			{
+				char *mode_ex =
+				    getUEnv
+				    ("DEF-p_wireless_eth2_11bg-authmode_ex");
+				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
+					char *mode =
+					    getUEnv
+					    ("DEF-p_wireless_eth2_11bg-authmode");
+					if (!mode)
+						return;
+					if (!strcmp(mode, "psk")) {
+						nvram_set("wl1_akm",
+							  "psk psk2");
+						nvram_set("wl1_security_mode",
+							  "psk psk2");
+					}
+					if (!strcmp(mode, "psk2")) {
+						nvram_set("wl1_akm",
+							  "psk psk2");
+						nvram_set("wl1_security_mode",
+							  "psk psk2");
+					}
+				} else {
+					char *mode =
+					    getUEnv
+					    ("DEF-p_wireless_eth2_11bg-authmode");
+					if (mode) {
+						nvram_set("wl1_akm", mode);
+						nvram_set("wl1_security_mode",
+							  mode);
+					} else
+						return;
+				}
+
+				char *crypto =
+				    getUEnv("DEF-p_wireless_eth2_11bg-crypto");
+				if (crypto)
+					nvram_set("wl1_crypto", crypto);
+				char *wpapsk =
+				    getUEnv("DEF-p_wireless_eth2_11bg-wpapsk");
+				if (wpapsk)
+					nvram_set("wl1_wpa_psk", wpapsk);
+			}
+		}
+		struct ifreq ifr;
+		int s;
+
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			close(s);
+			unsigned char *edata =
+			    (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A",
+				edata[3] & 0xff, edata[4] & 0xff,
+				edata[5] & 0xff);
+			nvram_set("wl_ssid", eabuf);
+			nvram_set("wl0_ssid", eabuf);
+			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G",
+				edata[3] & 0xff, edata[4] & 0xff,
+				edata[5] & 0xff);
+			nvram_set("wl1_ssid", eabuf);
+		}
+
+		region = getUEnv("region");
+		if (region == NULL) {
+			region = "US";
+		}
+		if (!strcmp(region, "US")) {
+			nvram_set("wl0_regdomain", "UNITED_STATES");
+		} else if (!strcmp(region, "EU")) {
+			nvram_set("wl0_regdomain", "GERMANY");
+		} else if (!strcmp(region, "JP")) {
+			nvram_set("wl0_regdomain", "JAPAN");
+#ifdef HAVE_BUFFALO_SA
+		} else if (!strcmp(region, "AP")) {
+			nvram_set("wl0_regdomain", "SINGAPORE");
+#else
+		} else if (!strcmp(region, "AP")) {
+			nvram_set("wl0_regdomain", "SINGAPORE");
+#endif
+		} else if (!strcmp(region, "RU")) {
+			nvram_set("wl0_regdomain", "RUSSIA");
+		} else if (!strcmp(region, "TW")) {
+			nvram_set("wl0_regdomain", "TAIWAN");
+		} else if (!strcmp(region, "CH")) {
+			nvram_set("wl0_regdomain", "CHINA");
+		} else if (!strcmp(region, "KR")) {
+			nvram_set("wl0_regdomain", "KOREA_REPUBLIC");
+		}
+#ifdef HAVE_WZRHPAG300NH
+		if (!strcmp(region, "US")) {
+			nvram_set("wl1_regdomain", "UNITED_STATES");
+		} else if (!strcmp(region, "EU")) {
+			nvram_set("wl1_regdomain", "GERMANY");
+		} else if (!strcmp(region, "JP")) {
+			nvram_set("wl1_regdomain", "JAPAN");
+		} else if (!strcmp(region, "RU")) {
+			nvram_set("wl1_regdomain", "RUSSIA");
+#ifdef HAVE_BUFFALO_SA
+		} else if (!strcmp(region, "AP")) {
+			nvram_set("wl1_regdomain", "SINGAPORE");
+#else
+		} else if (!strcmp(region, "AP")) {
+			nvram_set("wl1_regdomain", "SINGAPORE");
+#endif
+		} else if (!strcmp(region, "TW")) {
+			nvram_set("wl1_regdomain", "TAIWAN");
+		} else if (!strcmp(region, "CH")) {
+			nvram_set("wl1_regdomain", "CHINA");
+		} else if (!strcmp(region, "KR")) {
+			nvram_set("wl1_regdomain", "KOREA_REPUBLIC");
+		}
+#endif
+		if (!strcmp(region, "AP") || !strcmp(region, "CH")
+		    || !strcmp(region, "KR")
+		    || !strcmp(region, "TW")
+		    || !strcmp(region, "RU"))
+			nvram_set("wps_status", "0");
+		else
+			nvram_set("wps_status", "1");
+#ifdef HAVE_SPOTPASS
+		system("startservice spotpass_defaults");
+#endif
+	}
+}
+
+#else
+    extern void *getUEnv(char *name);
+static void buffalo_defaults(int force)
+{
+
 	char *pincode = getUEnv("pincode");
 	if (pincode && nvram_get("pincode") == NULL) {
 		nvram_set("pincode", pincode);
@@ -196,9 +391,7 @@ static void buffalo_defaults(int force)
 				&& strcmp(region, "KR")
 				&& strcmp(region, "CH"))) {
 			{
-				char *mode_ex =
-				    getUEnv
-				    ("DEF-p_wireless_ath0_11bg-authmode_ex");
+				char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
 				if (!mode_ex)
 					mode_ex =
 					    getUEnv
@@ -424,8 +617,12 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
+	nvram_commit();
 	}
 }
+#endif
+
+
 #endif
 /*
  * SeG dd-wrt addition for module startup scripts 
@@ -570,7 +767,7 @@ static void ses_restore_defaults(void)
 void start_restore_defaults(void)
 {
 
-#if HAVE_BUFFALO_SA
+#ifdef HAVE_BUFFALO_SA
 	int factory_state = 0;
 	if((!nvram_get("sv_restore_defaults") || nvram_default_match("sv_restore_defaults", "0", "0")) 
 	    && !nvram_get("os_date")
@@ -1696,6 +1893,9 @@ void start_restore_defaults(void)
 		linux_overrides = rt53nvlan;
 		break;
 #endif
+	case ROUTER_D1800H:
+		linux_overrides = wrt6102vlan;
+		break;
 	case ROUTER_BUFFALO_WZRG144NH:
 		linux_overrides = wzr144nhvlan;
 		break;
@@ -2024,6 +2224,17 @@ void start_restore_defaults(void)
 		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8u");
+		}
+
+	} else if (brand == ROUTER_D1800H) {
+
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 8");
+		}
+		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 8");
 		}
 
 	} else if (brand == ROUTER_ASUS_RTN53) {
