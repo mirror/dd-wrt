@@ -331,6 +331,10 @@ int has_mimo(char *prefix)
 {
 	return 1;
 }
+int has_ac(char *prefix)
+{
+	return 0;
+}
 #else
 
 int has_mimo(char *prefix)
@@ -339,6 +343,17 @@ int has_mimo(char *prefix)
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
 	if (contains(phy, 'n') || contains(phy, 'h') || contains(phy, 's') || contains(phy, 'v'))
+		return 1;
+	else
+		return 0;
+}
+
+int has_ac(char *prefix)
+{
+	char mimo[32];
+	sprintf(mimo, "%s_phytypes", prefix);
+	char *phy = nvram_safe_get(mimo);
+	if (contains(phy, 'v'))
 		return 1;
 	else
 		return 0;
