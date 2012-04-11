@@ -1,5 +1,5 @@
-CFLAGS += $(COPTS) -I$(TOP)/ipeth/libimobiledevice/include -I$(TOP)/ipeth/libplist/include -DNEED_PRINTF
-LDLIBS += -L$(TOP)/ipeth/libimobiledevice/src/.libs -limobiledevice -L$(TOP)/openssl -lssl -lcrypto -L$(TOP)/ipeth/libplist/src/ -lplist -L$(TOP)/ipeth/libusbmuxd/libusbmuxd/ -lusbmuxd
+CFLAGS += $(COPTS) -I$(TOP)/ipeth/libimobiledevice/include -I$(TOP)/ipeth/libplist/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDLIBS += $(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.a -L$(TOP)/openssl -lssl -lcrypto -L$(TOP)/ipeth/libplist/src -lplist $(TOP)/ipeth/libusbmuxd/libusbmuxd/liblibusbmuxd-static.a $(TOP)/ipeth/libxml2/.libs/libxml2.a -lm -lpthread
 
 all: ipheth-pair
 
