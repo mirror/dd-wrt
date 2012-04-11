@@ -257,7 +257,7 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_IPETH
 	websWrite(wp,
-		  "<option value=\"heartbeat\" %s >IPhone/IPad Tethering</option>\n",
+		  "<option value=\"iphone\" %s >IPhone/IPad Tethering</option>\n",
 		  nvram_selmatch(wp, "wan_proto",
 				 "iphone") ? "selected=\"selected\"" : "");
 #endif
