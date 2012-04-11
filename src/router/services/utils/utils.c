@@ -62,7 +62,11 @@ void getLANMac(char *newmac)
 void getWirelessMac(char *newmac)
 {
 #ifdef HAVE_BUFFALO
+#ifdef HAVE_BCMMODERN
+	strcpy(newmac, nvram_safe_get("et0macaddr"));
+#else
 	strcpy(newmac, nvram_safe_get("il0macaddr"));
+#endif
 #else
 	// if (strlen(nvram_safe_get ("il0macaddr")) != 0)
 	// {
