@@ -863,6 +863,16 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_selnmatch(wp, "40", "%s_nbw",
 						  prefix) ?
 				  "selected=\\\"selected\\\"" : "");
+		if (has_ac(prefix))
+		{
+		websWrite(wp,
+			  "<option value=\"80\" %s>80 MHz</option>\n",
+			  nvram_nmatch("80", "%s_nbw",
+				       prefix) ?
+			  "selected=\\\"selected\\\"" : "");
+		
+		
+		}
 #endif
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
@@ -889,6 +899,18 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 
 				websWrite(wp, "</div>\n");
 			}
+		if (nvram_selnmatch("80", "%s_nbw", prefix)) { // 802.11ac
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
+			websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",prefix);
+			websWrite(wp, "<option value=\"ll\" %s>lower lower</option>\n",nvram_nmatch("ll", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"lu\" %s>lower upper</option>\n",nvram_nmatch("lu", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"ul\" %s>upper lower</option>\n",nvram_nmatch("ul", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"uu\" %s>upper upper</option>\n",nvram_nmatch("uu", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "</select>\n");
+			websWrite(wp, "</div>\n");
+		}
 		} else {
 			sas_show_channel(wp, prefix, prefix, 0);
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
