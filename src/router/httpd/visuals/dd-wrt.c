@@ -3771,7 +3771,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
 	char power[16];
 
-#if !defiled(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
+#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
 	// char maxpower[16];
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
