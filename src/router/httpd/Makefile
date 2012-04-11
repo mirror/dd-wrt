@@ -39,7 +39,7 @@ LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared 
 
 BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS = $(BCFLAGS)
+CFLAGS = $(BCFLAGS) -I$(LINUXDIR)/brcm/wl/bcmwifi/include
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -109,6 +109,9 @@ CFLAGS += -DHAVE_RADLOCAL
 endif
 ifeq ($(CONFIG_WZRHPAG300NH),y)
 CFLAGS += -DHAVE_WZRHPAG300NH
+endif
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS += -DHAVE_80211AC
 endif
 ifeq ($(CONFIG_WZRG450),y)
 CFLAGS += -DHAVE_WZRG450
