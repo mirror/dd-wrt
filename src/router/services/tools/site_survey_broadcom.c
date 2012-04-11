@@ -345,6 +345,39 @@ static char *getEncInfo(wl_bss_info_t * bi)
 		return "Open";
 }
 
+static int get_mcs_max(const __u8 *mcs)
+
+	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
+
+	for (mcs_bit = 0; mcs_bit < 16 * 8; mcs_bit++) {
+		unsigned int mcs_octet = mcs_bit/8;
+		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
+		bool mcs_rate_idx_set;
+
+		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
+
+		if (!mcs_rate_idx_set)
+			continue;
+
+		if (prev_bit != mcs_bit - 1) {
+			prev_cont = 0;
+		} else if (!prev_cont) {
+			prev_cont = 1;
+		}
+
+		prev_bit = mcs_bit;
+	}
+
+	if (prev_cont) {
+		if (prev_bit == 7) return 150;
+		if (prev_bit == 15) return 300;
+		if (prev_bit == 23) return 450;
+		if (prev_bit == 31) return 600;
+		}
+	return 0;
+}
+
+
 int site_survey_main(int argc, char *argv[])
 {
 	char tmp[32];
@@ -417,7 +450,7 @@ int site_survey_main(int argc, char *argv[])
 		site_survey_lists[i].phy_noise = bss_info->phy_noise;
 		site_survey_lists[i].beacon_period = bss_info->beacon_period;
 		site_survey_lists[i].capability = bss_info->capability;
-		site_survey_lists[i].rate_count = bss_info->rateset.count;
+		site_survey_lists[i].rate_count = get_mcs_max(bss_info->basic_mcs);
 		site_survey_lists[i].dtim_period = bss_info->dtim_period;
 		strcpy(site_survey_lists[i].ENCINFO, getEncInfo(bss_info));
 
