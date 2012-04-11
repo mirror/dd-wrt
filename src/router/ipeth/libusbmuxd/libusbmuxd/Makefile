@@ -158,12 +158,27 @@ libusbmuxd/preinstall:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f CMakeFiles/Makefile2 libusbmuxd/CMakeFiles/libusbmuxd.dir/preinstall
 .PHONY : libusbmuxd/preinstall
 
+# Convenience name for target.
+libusbmuxd/CMakeFiles/libusbmuxd-static.dir/rule:
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f CMakeFiles/Makefile2 libusbmuxd/CMakeFiles/libusbmuxd-static.dir/rule
+.PHONY : libusbmuxd/CMakeFiles/libusbmuxd-static.dir/rule
+
+# Convenience name for target.
+libusbmuxd-static: libusbmuxd/CMakeFiles/libusbmuxd-static.dir/rule
+.PHONY : libusbmuxd-static
+
+# fast build rule for target.
+libusbmuxd-static/fast:
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build
+.PHONY : libusbmuxd-static/fast
+
 __/common/utils.o: __/common/utils.c.o
 .PHONY : __/common/utils.o
 
 # target to build an object file
 __/common/utils.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/__/common/utils.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/__/common/utils.c.o
 .PHONY : __/common/utils.c.o
 
 __/common/utils.i: __/common/utils.c.i
@@ -172,6 +187,7 @@ __/common/utils.i: __/common/utils.c.i
 # target to preprocess a source file
 __/common/utils.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/__/common/utils.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/__/common/utils.c.i
 .PHONY : __/common/utils.c.i
 
 __/common/utils.s: __/common/utils.c.s
@@ -180,6 +196,7 @@ __/common/utils.s: __/common/utils.c.s
 # target to generate assembly for a file
 __/common/utils.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/__/common/utils.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/__/common/utils.c.s
 .PHONY : __/common/utils.c.s
 
 libusbmuxd.o: libusbmuxd.c.o
@@ -188,6 +205,7 @@ libusbmuxd.o: libusbmuxd.c.o
 # target to build an object file
 libusbmuxd.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/libusbmuxd.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/libusbmuxd.c.o
 .PHONY : libusbmuxd.c.o
 
 libusbmuxd.i: libusbmuxd.c.i
@@ -196,6 +214,7 @@ libusbmuxd.i: libusbmuxd.c.i
 # target to preprocess a source file
 libusbmuxd.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/libusbmuxd.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/libusbmuxd.c.i
 .PHONY : libusbmuxd.c.i
 
 libusbmuxd.s: libusbmuxd.c.s
@@ -204,6 +223,7 @@ libusbmuxd.s: libusbmuxd.c.s
 # target to generate assembly for a file
 libusbmuxd.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/libusbmuxd.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/libusbmuxd.c.s
 .PHONY : libusbmuxd.c.s
 
 sock_stuff.o: sock_stuff.c.o
@@ -212,6 +232,7 @@ sock_stuff.o: sock_stuff.c.o
 # target to build an object file
 sock_stuff.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/sock_stuff.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/sock_stuff.c.o
 .PHONY : sock_stuff.c.o
 
 sock_stuff.i: sock_stuff.c.i
@@ -220,6 +241,7 @@ sock_stuff.i: sock_stuff.c.i
 # target to preprocess a source file
 sock_stuff.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/sock_stuff.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/sock_stuff.c.i
 .PHONY : sock_stuff.c.i
 
 sock_stuff.s: sock_stuff.c.s
@@ -228,6 +250,7 @@ sock_stuff.s: sock_stuff.c.s
 # target to generate assembly for a file
 sock_stuff.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd.dir/sock_stuff.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libusbmuxd && $(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/sock_stuff.c.s
 .PHONY : sock_stuff.c.s
 
 # Help Target
@@ -241,6 +264,7 @@ help:
 	@echo "... install/local"
 	@echo "... install/strip"
 	@echo "... libusbmuxd"
+	@echo "... libusbmuxd-static"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... __/common/utils.o"

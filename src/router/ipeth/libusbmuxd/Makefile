@@ -171,6 +171,19 @@ libusbmuxd/preinstall:
 .PHONY : libusbmuxd/preinstall
 
 #=============================================================================
+# Target rules for targets named libusbmuxd-static
+
+# Build rule for target.
+libusbmuxd-static: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 libusbmuxd-static
+.PHONY : libusbmuxd-static
+
+# fast build rule for target.
+libusbmuxd-static/fast:
+	$(MAKE) -f libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build.make libusbmuxd/CMakeFiles/libusbmuxd-static.dir/build
+.PHONY : libusbmuxd-static/fast
+
+#=============================================================================
 # Target rules for targets named usbmuxd
 
 # Build rule for target.
@@ -220,6 +233,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... uninstall"
 	@echo "... libusbmuxd"
+	@echo "... libusbmuxd-static"
 	@echo "... usbmuxd"
 	@echo "... iproxy"
 .PHONY : help
