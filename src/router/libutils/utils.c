@@ -2183,6 +2183,15 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WBR-B11");
 		return ROUTER_BUFFALO_WBR54G;
 	}
+	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
+	    && nvram_match("boardrev", "0x1204")) {
+#ifdef HAVE_BUFFALO
+		setRouter("WZR-D1800H");	// renamed (and fixed reset button) wrt320n
+#else
+		setRouter("Buffalo WZR-D1800H");	// renamed (and fixed reset button) wrt320n
+#endif
+		return ROUTER_D1800H;
+	}
 #ifndef HAVE_BUFFALO
 	if (boardnum == 0 && nvram_match("boardtype", "0x048e") &&	// cfe sets boardnum="", strtoul -> 0
 	    nvram_match("boardrev", "0x35")) {
@@ -2359,6 +2368,7 @@ int internal_getRouterBrand()
 		setRouter("Linksys E2000");	// renamed (and fixed reset button) wrt320n
 		return ROUTER_WRT320N;
 	}
+
 #endif
 
 	if (boardnum == 94703 && nvram_match("boardtype", "0x04c0")
