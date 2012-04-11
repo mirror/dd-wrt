@@ -764,7 +764,7 @@ void reset_hwaddr(char *ifname)
 }
 
 #ifdef HAVE_3G
-#define CANBRIDGE() (nvram_match( "wan_proto", "disabled" ) ||  nvram_match( "wan_proto", "3g" ))
+#define CANBRIDGE() (nvram_match( "wan_proto", "disabled" ) ||  nvram_match( "wan_proto", "3g" ) ||  nvram_match( "wan_proto", "iphone" ))
 #else
 #define CANBRIDGE() nvram_match( "wan_proto", "disabled" )
 #endif
@@ -3836,6 +3836,21 @@ void start_wan(int status)
 	if (strcmp(wan_proto, "dhcp") == 0) {
 		start_dhcpc(wan_ifname, NULL, NULL, 1);
 	}
+#ifdef HAVE_IPETH
+	else if (strcmp(wan_proto, "iphone") == 0) {
+		if (!nvram_match("usb_enable", "1")) {
+			nvram_set("usb_enable", "1");	//  simply enable it, otherwise 3g might not work
+			nvram_commit();
+			start_drivers();
+		}
+		insmod("ipheth");
+		eval("usbmuxd");
+		sleep(5);
+		eval("iph-pair");
+		eval("ifconfig","iph0","up");
+		start_dhcpc("iph0", NULL, NULL, 1);
+	}
+#endif
 #ifdef HAVE_PPTP
 	else if (strcmp(wan_proto, "pptp") == 0) {
 		start_pptp(status);

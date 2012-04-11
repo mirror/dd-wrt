@@ -255,6 +255,12 @@ void ej_show_connectiontype(webs_t wp, int argc, char_t ** argv)
 		  nvram_selmatch(wp, "wan_proto",
 				 "heartbeat") ? "selected=\"selected\"" : "");
 #endif
+#ifdef HAVE_IPETH
+	websWrite(wp,
+		  "<option value=\"heartbeat\" %s >IPhone/IPad Tethering</option>\n",
+		  nvram_selmatch(wp, "wan_proto",
+				 "iphone") ? "selected=\"selected\"" : "");
+#endif
 #ifdef HAVE_3G
 #ifdef HAVE_BUFFALO
 	char *region = getUEnv("region");

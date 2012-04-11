@@ -189,6 +189,8 @@ void ej_show_miscinfo(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "SWWanStatus = 3\n");
 	if (nvram_match("wan_proto", "3g"))
 		websWrite(wp, "SWWanStatus = 4\n");
+	if (nvram_match("wan_proto", "iphone"))
+		websWrite(wp, "SWWanStatus = 5\n");
 
 	websWrite(wp, "\n");
 
