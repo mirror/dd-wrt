@@ -591,6 +591,8 @@
 // Linksys E1550 (BCM5358U cpu, 16MB serial flash / 64MB ram, USB, fccid: Linksys Q87-E1550) >_60K nvram_<
 #define ROUTER_LINKSYS_E1550 0xb81a
 
+#define ROUTER_D1800H 0xb919
+
 
 #define NVROUTER "DD_BOARD"
 
