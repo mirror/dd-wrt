@@ -9,7 +9,7 @@
  "wan_vdsl" "DTAG VDSL VLAN Tagging" "CHOICE" "2" "0" "1" "FALSE" "0"
  "dtag_vlan8" "DTAG VDSL VLAN 8 support" "CHOICE" "2" "0" "1" "FALSE" "0"
  "wan_vlantag" "Vlan Tag ID" "RANGE" "1" "4096" "FALSE" "0"
- "wan_proto"  "WAN Protocol"  "CHOICE" "7" "disabled"  "dhcp"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "FALSE" "3"
+ "wan_proto"  "WAN Protocol"  "CHOICE" "9" "disabled"  "dhcp"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat" "3g" "iphone"  "FALSE" "3"
  "wan_apn" "apn name" "NULL" "TRUE" "0"
  "wan_pin" "pin number" "NULL" "TRUE" "0"
  "wan_dial" "dial string" "CHOICE" "5" "0" "1" "2" "3" "4" "FALSE" "0"
