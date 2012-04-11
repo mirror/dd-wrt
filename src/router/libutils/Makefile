@@ -27,7 +27,7 @@ else
 CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
-CFLAGS += -DNDEBUG
+CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/wl/bcmwifi/include
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
 REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
