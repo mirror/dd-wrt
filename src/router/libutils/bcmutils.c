@@ -530,7 +530,7 @@ int dns_to_resolv(void)
  */
 int get_single_ip(char *ipaddr, int which)
 {
-	int ip[4] = {
+	static int ip[4] = {
 		0, 0, 0, 0
 	};
 	int ret;
