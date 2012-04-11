@@ -345,8 +345,8 @@ static char *getEncInfo(wl_bss_info_t * bi)
 		return "Open";
 }
 
-static int get_mcs_max(const __u8 *mcs)
-
+static int get_mcs_max(const unsigned char *mcs)
+{
 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
 
 	for (mcs_bit = 0; mcs_bit < 16 * 8; mcs_bit++) {
