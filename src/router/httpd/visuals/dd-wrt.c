@@ -4515,6 +4515,16 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			  nvram_nmatch("40", "%s_nbw",
 				       prefix) ?
 			  "selected=\\\"selected\\\"" : "");
+		if (has_ac(prefix))
+		{
+		websWrite(wp,
+			  "<option value=\"80\" %s>80 MHz</option>\n",
+			  nvram_nmatch("80", "%s_nbw",
+				       prefix) ?
+			  "selected=\\\"selected\\\"" : "");
+		
+		
+		}
 #endif
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -4537,6 +4547,18 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 				  "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "</select>\n");
 
+			websWrite(wp, "</div>\n");
+		}
+		if (nvram_nmatch("80", "%s_nbw", prefix)) { // 802.11ac
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
+			websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",prefix);
+			websWrite(wp, "<option value=\"ll\" %s>lower lower</option>\n",nvram_nmatch("ll", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"lu\" %s>lower upper</option>\n",nvram_nmatch("lu", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"ul\" %s>upper lower</option>\n",nvram_nmatch("ul", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"uu\" %s>upper upper</option>\n",nvram_nmatch("uu", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
 		}
 	} else {
@@ -4947,12 +4969,21 @@ if (!strcmp(prefix, "wl1"))
 				  nvram_nmatch("20", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
-			fprintf(stderr, "[CHANNEL WIDTH] 40 Mhz (4)\n");
 			websWrite(wp,
 				  "<option value=\"40\" %s>40 MHz</option>\n",
 				  nvram_nmatch("40", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
+		if (has_ac(prefix))
+		{
+		websWrite(wp,
+			  "<option value=\"80\" %s>80 MHz</option>\n",
+			  nvram_nmatch("80", "%s_nbw",
+				       prefix) ?
+			  "selected=\\\"selected\\\"" : "");
+		
+		
+		}
 #endif
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
@@ -4977,6 +5008,18 @@ if (!strcmp(prefix, "wl1"))
 
 				websWrite(wp, "</div>\n");
 			}
+		if (nvram_nmatch("80", "%s_nbw", prefix)) { // 802.11ac
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp,
+				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
+			websWrite(wp, "<select name=\"%s_nctrlsb\" >\n",prefix);
+			websWrite(wp, "<option value=\"ll\" %s>lower lower</option>\n",nvram_nmatch("ll", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"lu\" %s>lower upper</option>\n",nvram_nmatch("lu", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"ul\" %s>upper lower</option>\n",nvram_nmatch("ul", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"uu\" %s>upper upper</option>\n",nvram_nmatch("uu", "%s_nctrlsb",prefix) ?"selected=\\\"selected\\\"" : "");
+			websWrite(wp, "</select>\n");
+			websWrite(wp, "</div>\n");
+		}
 		} else {
 
 			show_channel(wp, prefix, prefix, 0);
