@@ -1,12 +1,42 @@
 
 ipeth-configure: 
-	cd $(TOP)/ipeth/libxml2 && ./configure  --host=$(ARCH)-linux CFLAGS="$(COPTS) -fPIC" --without-python
+	cd $(TOP)/ipeth/libxml2 && ./configure  --host=$(ARCH)-linux CFLAGS="$(COPTS) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" --without-python \
+	--enable-shared \
+	--enable-static \
+	--with-c14n \
+	--without-catalog \
+	--with-debug \
+	--without-docbook \
+	--with-html \
+	--without-ftp \
+	--without-http \
+	--without-iconv \
+	--without-iso8859x \
+	--without-legacy \
+	--with-output \
+	--without-pattern \
+	--without-push \
+	--without-python \
+	--with-reader \
+	--without-readline \
+	--without-regexps \
+	--with-sax1 \
+	--with-schemas \
+	--with-threads \
+	--with-tree \
+	--with-valid \
+	--with-writer \
+	--with-xinclude \
+	--with-xpath \
+	--with-xptr \
+	--with-zlib 
+
 	cd $(TOP)/ipeth/libxml2 && make
 	
 	rm -f $(TOP)/ipeth/libplist/CMakeCache.txt
 	(cd  $(TOP)/ipeth/libplist; \
-		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libplist/include -DNEED_PRINTF  -fPIC" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libplist -DNEED_PRINTF  -fPIC" \
+		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		cmake \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
@@ -35,8 +65,8 @@ ipeth-configure:
 
 	rm -f $(TOP)/ipeth/libusbmuxd/CMakeCache.txt
 	(cd  $(TOP)/ipeth/libusbmuxd; \
-		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libusbmuxd/include -DNEED_PRINTF" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libusbmuxd -DNEED_PRINTF" \
+		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libusbmuxd/include  -ffunction-sections -fdata-sections -Wl,--gc-sections " \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) -I$(TOP)/ipeth/libusbmuxd  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		cmake \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
@@ -63,7 +93,7 @@ ipeth-configure:
 	)
 	cd $(TOP)/ipeth/libusbmuxd && make
 
-	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libplist/src/ -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" 
+	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libplist/src/ -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" 
 	cd $(TOP)/ipeth/libimobiledevice && make
 
 
@@ -85,8 +115,8 @@ ipeth-clean:
 
 ipeth-install:
 	install -D $(TOP)/ipeth/libplist/src/libplist.so.1 $(INSTALLDIR)/ipeth/usr/lib/libplist.so.1
-	install -D $(TOP)/ipeth/libusbmuxd/libusbmuxd/libusbmuxd.so.2 $(INSTALLDIR)/ipeth/usr/lib/libusbmuxd.so.2
+#	install -D $(TOP)/ipeth/libusbmuxd/libusbmuxd/libusbmuxd.so.2 $(INSTALLDIR)/ipeth/usr/lib/libusbmuxd.so.2
 	install -D $(TOP)/ipeth/libusbmuxd/daemon/usbmuxd $(INSTALLDIR)/ipeth/usr/sbin/usbmuxd
-	install -D $(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.so.3 $(INSTALLDIR)/ipeth/usr/lib/libimobiledevice.so.3
+#	install -D $(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.so.3 $(INSTALLDIR)/ipeth/usr/lib/libimobiledevice.so.3
 	install -D $(TOP)/ipeth/ipheth-pair/ipheth-pair $(INSTALLDIR)/ipeth/usr/sbin/ipheth-pair
 	@true
