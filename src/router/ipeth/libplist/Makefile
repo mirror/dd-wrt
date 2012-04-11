@@ -232,6 +232,19 @@ plist++/preinstall:
 .PHONY : plist++/preinstall
 
 #=============================================================================
+# Target rules for targets named plist-static
+
+# Build rule for target.
+plist-static: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 plist-static
+.PHONY : plist-static
+
+# fast build rule for target.
+plist-static/fast:
+	$(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/build
+.PHONY : plist-static/fast
+
+#=============================================================================
 # Target rules for targets named plutil
 
 # Build rule for target.
@@ -658,6 +671,7 @@ help:
 	@echo "... libcnary"
 	@echo "... plist"
 	@echo "... plist++"
+	@echo "... plist-static"
 	@echo "... plutil"
 	@echo "... Continuous"
 	@echo "... ContinuousBuild"
