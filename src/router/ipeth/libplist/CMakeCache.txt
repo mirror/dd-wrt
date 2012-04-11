@@ -37,7 +37,7 @@ CMAKE_CXX_COMPILER:FILEPATH=/xfs/toolchains/toolchain-mips_r2_gcc-4.6-linaro_uCl
 CMAKE_CXX_COMPILER_WITH_PATH:FILEPATH=/xfs/toolchains/toolchain-mips_r2_gcc-4.6-linaro_uClibc-0.9.33/bin/mips-linux-uclibc-g++
 
 //Flags used by the compiler during all build types.
-CMAKE_CXX_FLAGS:STRING='  -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -I/home/seg/DEV/pb42/src/router/ipeth/libplist -DNEED_PRINTF  -fPIC '
+CMAKE_CXX_FLAGS:STRING='  -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -I/home/seg/DEV/pb42/src/router/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections '
 
 //Flags used by the compiler during debug builds.
 CMAKE_CXX_FLAGS_DEBUG:STRING=-g
@@ -60,7 +60,7 @@ CMAKE_C_COMPILER:FILEPATH=/xfs/toolchains/toolchain-mips_r2_gcc-4.6-linaro_uClib
 CMAKE_C_COMPILER_WITH_PATH:FILEPATH=/xfs/toolchains/toolchain-mips_r2_gcc-4.6-linaro_uClibc-0.9.33/bin/mips-linux-uclibc-gcc
 
 //Flags used by the compiler during all build types.
-CMAKE_C_FLAGS:STRING='  -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -I/home/seg/DEV/pb42/src/router/ipeth/libplist/include -DNEED_PRINTF  -fPIC '
+CMAKE_C_FLAGS:STRING='  -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves -I/home/seg/DEV/pb42/src/router/ipeth/libplist/include -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections '
 
 //Flags used by the compiler during debug builds.
 CMAKE_C_FLAGS_DEBUG:STRING=-g
@@ -314,6 +314,9 @@ libplist_SOURCE_DIR:STATIC=/home/seg/DEV/pb42/src/router/ipeth/libplist
 
 //Dependencies for the target
 plist++_LIB_DEPENDS:STATIC=general;plist;
+
+//Dependencies for target
+plist-static_LIB_DEPENDS:STATIC=
 
 //Dependencies for the target
 plist_LIB_DEPENDS:STATIC=general;/home/seg/DEV/pb42/src/router/ipeth/libxml2/.libs/libxml2.a;
