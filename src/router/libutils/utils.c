@@ -2995,6 +2995,11 @@ char *get_wan_face(void)
 			strcpy(localwanface, getSTA());
 	}
 #endif
+#ifdef HAVE_IPETH
+	else if (nvram_match("wan_proto", "iphone")) {
+		strncpy(localwanface, "iph0",IFNAMSIZ);
+	}
+#endif
 	else
 		strncpy(localwanface, nvram_safe_get("wan_ifname"), IFNAMSIZ);
 
