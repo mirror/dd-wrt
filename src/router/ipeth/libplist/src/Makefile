@@ -207,6 +207,20 @@ plist++/preinstall:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/plist++.dir/preinstall
 .PHONY : plist++/preinstall
 
+# Convenience name for target.
+src/CMakeFiles/plist-static.dir/rule:
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/plist-static.dir/rule
+.PHONY : src/CMakeFiles/plist-static.dir/rule
+
+# Convenience name for target.
+plist-static: src/CMakeFiles/plist-static.dir/rule
+.PHONY : plist-static
+
+# fast build rule for target.
+plist-static/fast:
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/build
+.PHONY : plist-static/fast
+
 Array.o: Array.cpp.o
 .PHONY : Array.o
 
@@ -453,6 +467,7 @@ base64.o: base64.c.o
 # target to build an object file
 base64.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/base64.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/base64.c.o
 .PHONY : base64.c.o
 
 base64.i: base64.c.i
@@ -461,6 +476,7 @@ base64.i: base64.c.i
 # target to preprocess a source file
 base64.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/base64.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/base64.c.i
 .PHONY : base64.c.i
 
 base64.s: base64.c.s
@@ -469,6 +485,7 @@ base64.s: base64.c.s
 # target to generate assembly for a file
 base64.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/base64.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/base64.c.s
 .PHONY : base64.c.s
 
 bplist.o: bplist.c.o
@@ -477,6 +494,7 @@ bplist.o: bplist.c.o
 # target to build an object file
 bplist.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/bplist.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/bplist.c.o
 .PHONY : bplist.c.o
 
 bplist.i: bplist.c.i
@@ -485,6 +503,7 @@ bplist.i: bplist.c.i
 # target to preprocess a source file
 bplist.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/bplist.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/bplist.c.i
 .PHONY : bplist.c.i
 
 bplist.s: bplist.c.s
@@ -493,6 +512,7 @@ bplist.s: bplist.c.s
 # target to generate assembly for a file
 bplist.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/bplist.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/bplist.c.s
 .PHONY : bplist.c.s
 
 bytearray.o: bytearray.c.o
@@ -501,6 +521,7 @@ bytearray.o: bytearray.c.o
 # target to build an object file
 bytearray.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/bytearray.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/bytearray.c.o
 .PHONY : bytearray.c.o
 
 bytearray.i: bytearray.c.i
@@ -509,6 +530,7 @@ bytearray.i: bytearray.c.i
 # target to preprocess a source file
 bytearray.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/bytearray.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/bytearray.c.i
 .PHONY : bytearray.c.i
 
 bytearray.s: bytearray.c.s
@@ -517,6 +539,7 @@ bytearray.s: bytearray.c.s
 # target to generate assembly for a file
 bytearray.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/bytearray.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/bytearray.c.s
 .PHONY : bytearray.c.s
 
 hashtable.o: hashtable.c.o
@@ -525,6 +548,7 @@ hashtable.o: hashtable.c.o
 # target to build an object file
 hashtable.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/hashtable.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/hashtable.c.o
 .PHONY : hashtable.c.o
 
 hashtable.i: hashtable.c.i
@@ -533,6 +557,7 @@ hashtable.i: hashtable.c.i
 # target to preprocess a source file
 hashtable.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/hashtable.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/hashtable.c.i
 .PHONY : hashtable.c.i
 
 hashtable.s: hashtable.c.s
@@ -541,6 +566,7 @@ hashtable.s: hashtable.c.s
 # target to generate assembly for a file
 hashtable.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/hashtable.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/hashtable.c.s
 .PHONY : hashtable.c.s
 
 plist.o: plist.c.o
@@ -549,6 +575,7 @@ plist.o: plist.c.o
 # target to build an object file
 plist.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/plist.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/plist.c.o
 .PHONY : plist.c.o
 
 plist.i: plist.c.i
@@ -557,6 +584,7 @@ plist.i: plist.c.i
 # target to preprocess a source file
 plist.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/plist.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/plist.c.i
 .PHONY : plist.c.i
 
 plist.s: plist.c.s
@@ -565,6 +593,7 @@ plist.s: plist.c.s
 # target to generate assembly for a file
 plist.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/plist.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/plist.c.s
 .PHONY : plist.c.s
 
 ptrarray.o: ptrarray.c.o
@@ -573,6 +602,7 @@ ptrarray.o: ptrarray.c.o
 # target to build an object file
 ptrarray.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/ptrarray.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/ptrarray.c.o
 .PHONY : ptrarray.c.o
 
 ptrarray.i: ptrarray.c.i
@@ -581,6 +611,7 @@ ptrarray.i: ptrarray.c.i
 # target to preprocess a source file
 ptrarray.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/ptrarray.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/ptrarray.c.i
 .PHONY : ptrarray.c.i
 
 ptrarray.s: ptrarray.c.s
@@ -589,6 +620,7 @@ ptrarray.s: ptrarray.c.s
 # target to generate assembly for a file
 ptrarray.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/ptrarray.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/ptrarray.c.s
 .PHONY : ptrarray.c.s
 
 xplist.o: xplist.c.o
@@ -597,6 +629,7 @@ xplist.o: xplist.c.o
 # target to build an object file
 xplist.c.o:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/xplist.c.o
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/xplist.c.o
 .PHONY : xplist.c.o
 
 xplist.i: xplist.c.i
@@ -605,6 +638,7 @@ xplist.i: xplist.c.i
 # target to preprocess a source file
 xplist.c.i:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/xplist.c.i
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/xplist.c.i
 .PHONY : xplist.c.i
 
 xplist.s: xplist.c.s
@@ -613,6 +647,7 @@ xplist.s: xplist.c.s
 # target to generate assembly for a file
 xplist.c.s:
 	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist.dir/build.make src/CMakeFiles/plist.dir/xplist.c.s
+	cd /home/seg/DEV/pb42/src/router/ipeth/libplist && $(MAKE) -f src/CMakeFiles/plist-static.dir/build.make src/CMakeFiles/plist-static.dir/xplist.c.s
 .PHONY : xplist.c.s
 
 # Help Target
@@ -630,6 +665,7 @@ help:
 	@echo "... package_source"
 	@echo "... plist"
 	@echo "... plist++"
+	@echo "... plist-static"
 	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... Array.o"
