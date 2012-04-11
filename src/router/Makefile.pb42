@@ -194,6 +194,9 @@ endif
 ifeq ($(CONFIG_WR741),y)
 	cp $(LINUXDIR)/.config_wr741 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WR842),y)
+	cp $(LINUXDIR)/.config_wr842 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WR741V4),y)
 	cp $(LINUXDIR)/.config_wr741v4 $(LINUXDIR)/.config
 endif
@@ -276,6 +279,9 @@ ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_IPETH),y)
+	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -609,7 +615,7 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_BUFFALO_SA),y)
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.76 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.76" "2.08" "US-AP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.76" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
 else
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.75 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.75" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
@@ -638,7 +644,7 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_BUFFALO_SA),y)
 	tools/bufenc/encryptRC4 WZR-HP-G302H 1.81 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
-	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "1.06" "US-AP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "1.06" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
 else
 	tools/bufenc/encryptRC4 WZR-HP-G302H 1.80 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg300nh2-firmware.enc
 	tools/bufenc/mkfw -hw_ver=4 -hcrypt="Buffalo" "WZR-HP-G300NH2" "WZR-HP-G302H" "1.81" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg300nh2-firmware.enc $(ARCH)-uclibc/wzrg300nh2-firmware_MULTI.enc
@@ -665,7 +671,7 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_BUFFALO_SA),y)
 	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.77 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.77" "3.01" "US-AP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.77" "3.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
 else
 	tools/bufenc/encryptRC4 WZR-HP-AG300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrag300h-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WZR-HP-AG300H" "WZR-HP-AG300H" "1.74" "3.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrag300h-firmware.enc $(ARCH)-uclibc/wzrag300h-firmware_MULTI.enc
@@ -731,7 +737,7 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 #multi region
 ifeq ($(CONFIG_BUFFALO_SA),y)
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.84 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.84" "1.01" "US-AP" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.84" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
 else
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.82" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
@@ -1018,6 +1024,9 @@ ifeq ($(CONFIG_WR741),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WR740NDv4 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.lzma -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv4-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv4-firmware.bin mips-uclibc/tplink-WR740NDv4-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WR842NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR842NDv1-firmware.bin mips-uclibc/tplink-WR842NDv1-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B TL-WR703Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.lzma -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR703Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR703Nv1-firmware.bin mips-uclibc/tplink-WR703Nv1-firmware.bin
