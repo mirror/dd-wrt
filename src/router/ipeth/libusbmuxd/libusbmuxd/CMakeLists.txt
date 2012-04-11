@@ -11,6 +11,7 @@ endif()
 endif(WANT_INOTIFY)
 
 add_library (libusbmuxd SHARED libusbmuxd.c sock_stuff.c ${CMAKE_SOURCE_DIR}/common/utils.c)
+add_library (libusbmuxd-static STATIC libusbmuxd.c sock_stuff.c ${CMAKE_SOURCE_DIR}/common/utils.c)
 find_library (PTHREAD pthread)
 
 if (HAVE_PLIST)
