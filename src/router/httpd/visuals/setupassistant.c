@@ -12,6 +12,19 @@
 #include <wlutils.h>
 #include <cymac.h>
 
+void sas_show_wep(webs_t wp, char *prefix);
+void sas_show_preshared(webs_t wp, char *prefix);
+void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup);
+void sas_show_netmode(webs_t wp, char *prefix);
+void sas_show_channel(webs_t wp, char *dev, char *prefix, int type);
+void ej_sas_show_wireless_single(webs_t wp, char *prefix);
+void sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix);
+void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
+			      int primary);
+
+void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix,
+			  char *security_prefix);
+
 char *nvram_selget(webs_t wp, char *name)
 {
 	if (nvram_match("gozila_action", "1")) {
@@ -25,7 +38,7 @@ char *nvram_selget(webs_t wp, char *name)
 	return nvram_safe_get(name);
 }
 
-char *nvram_selnmatch(webs_t wp, char *match, const char *fmt, ...)
+int nvram_selnmatch(webs_t wp, char *match, const char *fmt, ...)
 {
 
 	char varbuf[64];
@@ -500,7 +513,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4 GHz]");
 	} else {
-		sprintf(frequencies, "");
+		frequencies[0]=0;
 	}
 
 	// wireless mode
@@ -899,7 +912,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 
 				websWrite(wp, "</div>\n");
 			}
-		if (nvram_selnmatch("80", "%s_nbw", prefix)) { // 802.11ac
+		if (nvram_selnmatch(wp, "80", "%s_nbw", prefix)) { // 802.11ac
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp,
 				  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
@@ -1422,7 +1435,7 @@ void ej_sas_show_security(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
+void sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
 {
 	char *next;
 	char var[80];
@@ -2072,7 +2085,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix,
 	return;
 }
 
-char *sas_get_wep_value(char *temp, char *type, char *_bit, char *prefix)
+char *sas_get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 {
 	int cnt;
 	char *wordlist;
@@ -2083,7 +2096,7 @@ char *sas_get_wep_value(char *temp, char *type, char *_bit, char *prefix)
 	    && !nvram_match("generate_key", "1")) {
 		char label[32];
 		sprintf(label, "%s_%s", prefix, type);
-		return nvram_selget(temp, label);
+		return nvram_selget(wp, label);
 	}
 
 	if (nvram_match("generate_key", "1")) {
@@ -2210,7 +2223,7 @@ void sas_show_wep(webs_t wp, char *prefix)
 	char temp[256];
 
 	sprintf(p_temp, "%s",
-		sas_get_wep_value(temp, "passphrase", bit, prefix));
+		sas_get_wep_value(wp, temp, "passphrase", bit, prefix));
 	nvram_set("passphrase_temp", p_temp);
 	tf_webWriteESCNV(wp, "passphrase_temp");
 	nvram_unset("passphrase_temp");
@@ -2233,25 +2246,25 @@ void sas_show_wep(webs_t wp, char *prefix)
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, sas_get_wep_value(temp, "key1", bit,
+		  prefix, mlen2, mlen, sas_get_wep_value(wp, temp, "key1", bit,
 							 prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, sas_get_wep_value(temp, "key2", bit,
+		  prefix, mlen2, mlen, sas_get_wep_value(wp, temp, "key2", bit,
 							 prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, sas_get_wep_value(temp, "key3", bit,
+		  prefix, mlen2, mlen, sas_get_wep_value(wp, temp, "key3", bit,
 							 prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n");
 	websWrite(wp,
 		  "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-		  prefix, mlen2, mlen, sas_get_wep_value(temp, "key4", bit,
+		  prefix, mlen2, mlen, sas_get_wep_value(wp, temp, "key4", bit,
 							 prefix));
 	websWrite(wp, "</div>\n");
 }
