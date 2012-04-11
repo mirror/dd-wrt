@@ -540,6 +540,23 @@ int has_2ghz(char *prefix)
 	return 0;
 }
 
+int wifi_getchannel(char *ifn)
+{
+	channel_info_t ci;
+	char name[32];
+	sprintf(name, "%s_ifname", ifn);
+	char *ifname = nvram_safe_get(name);
+
+	memset(&ci, 0, sizeof(ci));
+	wl_ioctl(ifname, WLC_GET_CHANNEL, &ci, sizeof(ci));
+	if (ci.scan_channel > 0) {
+		return ci.scan_channel;
+	} else if (ci.hw_channel > 0) {
+		return ci.hw_channel;
+	} else
+		return -1;
+}
+
 int wl_getbssid(char *wl, char *mac)
 {
 	int ret;
