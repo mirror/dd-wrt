@@ -31,9 +31,11 @@ static enum ndr_err_code ndr_push_rap_share_info_0(struct ndr_push *ndr, int ndr
 
 static enum ndr_err_code ndr_pull_rap_share_info_0(struct ndr_pull *ndr, int ndr_flags, struct rap_share_info_0 *r)
 {
+	uint32_t size_share_name_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 1));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->share_name, 13));
+		size_share_name_0 = 13;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->share_name, size_share_name_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 1));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -80,11 +82,13 @@ static enum ndr_err_code ndr_push_rap_share_info_1(struct ndr_push *ndr, int ndr
 
 static enum ndr_err_code ndr_pull_rap_share_info_1(struct ndr_pull *ndr, int ndr_flags, struct rap_share_info_1 *r)
 {
+	uint32_t size_share_name_0 = 0;
 	uint32_t _ptr_comment;
 	TALLOC_CTX *_mem_save_comment_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->share_name, 13));
+		size_share_name_0 = 13;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->share_name, size_share_name_0));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->reserved1));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->share_type));
 		{
@@ -182,13 +186,16 @@ static enum ndr_err_code ndr_push_rap_share_info_2(struct ndr_push *ndr, int ndr
 
 static enum ndr_err_code ndr_pull_rap_share_info_2(struct ndr_pull *ndr, int ndr_flags, struct rap_share_info_2 *r)
 {
+	uint32_t size_share_name_0 = 0;
 	uint32_t _ptr_comment;
 	TALLOC_CTX *_mem_save_comment_0;
 	uint32_t _ptr_path;
 	TALLOC_CTX *_mem_save_path_0;
+	uint32_t size_password_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->share_name, 13));
+		size_share_name_0 = 13;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->share_name, size_share_name_0));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->reserved1));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->share_type));
 		{
@@ -216,7 +223,8 @@ static enum ndr_err_code ndr_pull_rap_share_info_2(struct ndr_pull *ndr, int ndr
 			}
 			ndr->flags = _flags_save_string;
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->password, 9));
+		size_password_0 = 9;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->password, size_password_0));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->reserved2));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 5));
 	}
@@ -398,9 +406,11 @@ static enum ndr_err_code ndr_push_rap_server_info_0(struct ndr_push *ndr, int nd
 
 static enum ndr_err_code ndr_pull_rap_server_info_0(struct ndr_pull *ndr, int ndr_flags, struct rap_server_info_0 *r)
 {
+	uint32_t size_name_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 1));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->name, 16));
+		size_name_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->name, size_name_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 1));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -448,11 +458,13 @@ static enum ndr_err_code ndr_push_rap_server_info_1(struct ndr_push *ndr, int nd
 
 static enum ndr_err_code ndr_pull_rap_server_info_1(struct ndr_pull *ndr, int ndr_flags, struct rap_server_info_1 *r)
 {
+	uint32_t size_name_0 = 0;
 	uint32_t _ptr_comment;
 	TALLOC_CTX *_mem_save_comment_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->name, 16));
+		size_name_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->name, size_name_0));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->version_major));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->version_minor));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->servertype));
@@ -723,6 +735,9 @@ static enum ndr_err_code ndr_push_rap_PrintJobInfo1(struct ndr_push *ndr, int nd
 
 static enum ndr_err_code ndr_pull_rap_PrintJobInfo1(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintJobInfo1 *r)
 {
+	uint32_t size_UserName_0 = 0;
+	uint32_t size_NotifyName_0 = 0;
+	uint32_t size_DataType_0 = 0;
 	uint16_t _ptr_PrintParameterString;
 	TALLOC_CTX *_mem_save_PrintParameterString_0;
 	uint16_t _ptr_JobStatusString;
@@ -732,10 +747,13 @@ static enum ndr_err_code ndr_pull_rap_PrintJobInfo1(struct ndr_pull *ndr, int nd
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->JobID));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->UserName, 21, sizeof(uint8_t), CH_DOS));
+		size_UserName_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->UserName, size_UserName_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->Pad));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->NotifyName, 16, sizeof(uint8_t), CH_DOS));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->DataType, 10, sizeof(uint8_t), CH_DOS));
+		size_NotifyName_0 = 16;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->NotifyName, size_NotifyName_0, sizeof(uint8_t), CH_DOS));
+		size_DataType_0 = 10;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->DataType, size_DataType_0, sizeof(uint8_t), CH_DOS));
 		{
 			uint32_t _flags_save_string = ndr->flags;
 			ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM);
@@ -1964,9 +1982,11 @@ static enum ndr_err_code ndr_push_rap_PrintQueue0(struct ndr_push *ndr, int ndr_
 
 static enum ndr_err_code ndr_pull_rap_PrintQueue0(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintQueue0 *r)
 {
+	uint32_t size_PrintQName_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 1));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintQName, 13, sizeof(uint8_t), CH_DOS));
+		size_PrintQName_0 = 13;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintQName, size_PrintQName_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 1));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -2083,6 +2103,7 @@ static enum ndr_err_code ndr_push_rap_PrintQueue1(struct ndr_push *ndr, int ndr_
 
 static enum ndr_err_code ndr_pull_rap_PrintQueue1(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintQueue1 *r)
 {
+	uint32_t size_PrintQName_0 = 0;
 	uint16_t _ptr_SeparatorPageFilename;
 	TALLOC_CTX *_mem_save_SeparatorPageFilename_0;
 	uint16_t _ptr_PrintProcessorDllName;
@@ -2095,7 +2116,8 @@ static enum ndr_err_code ndr_pull_rap_PrintQueue1(struct ndr_pull *ndr, int ndr_
 	TALLOC_CTX *_mem_save_CommentString_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintQName, 13, sizeof(uint8_t), CH_DOS));
+		size_PrintQName_0 = 13;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintQName, size_PrintQName_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->Pad1));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->Priority));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->StartTime));
@@ -2316,15 +2338,17 @@ static enum ndr_err_code ndr_push_rap_PrintQueue2(struct ndr_push *ndr, int ndr_
 
 static enum ndr_err_code ndr_pull_rap_PrintQueue2(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintQueue2 *r)
 {
+	uint32_t size_job_0 = 0;
 	uint32_t cntr_job_0;
 	TALLOC_CTX *_mem_save_job_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_rap_PrintQueue1(ndr, NDR_SCALARS, &r->queue));
-		NDR_PULL_ALLOC_N(ndr, r->job, r->queue.PrintJobCount);
+		size_job_0 = r->queue.PrintJobCount;
+		NDR_PULL_ALLOC_N(ndr, r->job, size_job_0);
 		_mem_save_job_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->job, 0);
-		for (cntr_job_0 = 0; cntr_job_0 < r->queue.PrintJobCount; cntr_job_0++) {
+		for (cntr_job_0 = 0; cntr_job_0 < size_job_0; cntr_job_0++) {
 			NDR_CHECK(ndr_pull_rap_PrintJobInfo1(ndr, NDR_SCALARS, &r->job[cntr_job_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_job_0, 0);
@@ -2332,9 +2356,10 @@ static enum ndr_err_code ndr_pull_rap_PrintQueue2(struct ndr_pull *ndr, int ndr_
 	}
 	if (ndr_flags & NDR_BUFFERS) {
 		NDR_CHECK(ndr_pull_rap_PrintQueue1(ndr, NDR_BUFFERS, &r->queue));
+		size_job_0 = r->queue.PrintJobCount;
 		_mem_save_job_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->job, 0);
-		for (cntr_job_0 = 0; cntr_job_0 < r->queue.PrintJobCount; cntr_job_0++) {
+		for (cntr_job_0 = 0; cntr_job_0 < size_job_0; cntr_job_0++) {
 			NDR_CHECK(ndr_pull_rap_PrintJobInfo1(ndr, NDR_BUFFERS, &r->job[cntr_job_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_job_0, 0);
@@ -2844,15 +2869,17 @@ static enum ndr_err_code ndr_push_rap_PrintQueue4(struct ndr_push *ndr, int ndr_
 
 static enum ndr_err_code ndr_pull_rap_PrintQueue4(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintQueue4 *r)
 {
+	uint32_t size_job_0 = 0;
 	uint32_t cntr_job_0;
 	TALLOC_CTX *_mem_save_job_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_rap_PrintQueue3(ndr, NDR_SCALARS, &r->queue));
-		NDR_PULL_ALLOC_N(ndr, r->job, r->queue.PrintJobCount);
+		size_job_0 = r->queue.PrintJobCount;
+		NDR_PULL_ALLOC_N(ndr, r->job, size_job_0);
 		_mem_save_job_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->job, 0);
-		for (cntr_job_0 = 0; cntr_job_0 < r->queue.PrintJobCount; cntr_job_0++) {
+		for (cntr_job_0 = 0; cntr_job_0 < size_job_0; cntr_job_0++) {
 			NDR_CHECK(ndr_pull_rap_PrintJobInfo2(ndr, NDR_SCALARS, &r->job[cntr_job_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_job_0, 0);
@@ -2860,9 +2887,10 @@ static enum ndr_err_code ndr_pull_rap_PrintQueue4(struct ndr_pull *ndr, int ndr_
 	}
 	if (ndr_flags & NDR_BUFFERS) {
 		NDR_CHECK(ndr_pull_rap_PrintQueue3(ndr, NDR_BUFFERS, &r->queue));
+		size_job_0 = r->queue.PrintJobCount;
 		_mem_save_job_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->job, 0);
-		for (cntr_job_0 = 0; cntr_job_0 < r->queue.PrintJobCount; cntr_job_0++) {
+		for (cntr_job_0 = 0; cntr_job_0 < size_job_0; cntr_job_0++) {
 			NDR_CHECK(ndr_pull_rap_PrintJobInfo2(ndr, NDR_BUFFERS, &r->job[cntr_job_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_job_0, 0);
@@ -3494,9 +3522,11 @@ static enum ndr_err_code ndr_push_rap_PrintDest0(struct ndr_push *ndr, int ndr_f
 
 static enum ndr_err_code ndr_pull_rap_PrintDest0(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintDest0 *r)
 {
+	uint32_t size_PrintDestName_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 1));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintDestName, 9, sizeof(uint8_t), CH_DOS));
+		size_PrintDestName_0 = 9;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintDestName, size_PrintDestName_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 1));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -3547,12 +3577,16 @@ static enum ndr_err_code ndr_push_rap_PrintDest1(struct ndr_push *ndr, int ndr_f
 
 static enum ndr_err_code ndr_pull_rap_PrintDest1(struct ndr_pull *ndr, int ndr_flags, struct rap_PrintDest1 *r)
 {
+	uint32_t size_PrintDestName_0 = 0;
+	uint32_t size_UserName_0 = 0;
 	uint16_t _ptr_StatusStringName;
 	TALLOC_CTX *_mem_save_StatusStringName_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintDestName, 9, sizeof(uint8_t), CH_DOS));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->UserName, 21, sizeof(uint8_t), CH_DOS));
+		size_PrintDestName_0 = 9;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->PrintDestName, size_PrintDestName_0, sizeof(uint8_t), CH_DOS));
+		size_UserName_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->UserName, size_UserName_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->JobId));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->Status));
 		{
@@ -4189,9 +4223,11 @@ static enum ndr_err_code ndr_push_rap_NetUserInfo0(struct ndr_push *ndr, int ndr
 
 static enum ndr_err_code ndr_pull_rap_NetUserInfo0(struct ndr_pull *ndr, int ndr_flags, struct rap_NetUserInfo0 *r)
 {
+	uint32_t size_Name_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 1));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, 21, sizeof(uint8_t), CH_DOS));
+		size_Name_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, size_Name_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 1));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -4301,6 +4337,8 @@ static enum ndr_err_code ndr_push_rap_NetUserInfo1(struct ndr_push *ndr, int ndr
 
 static enum ndr_err_code ndr_pull_rap_NetUserInfo1(struct ndr_pull *ndr, int ndr_flags, struct rap_NetUserInfo1 *r)
 {
+	uint32_t size_Name_0 = 0;
+	uint32_t size_Password_0 = 0;
 	uint16_t _ptr_HomeDir;
 	TALLOC_CTX *_mem_save_HomeDir_0;
 	uint16_t _ptr_Comment;
@@ -4309,9 +4347,11 @@ static enum ndr_err_code ndr_pull_rap_NetUserInfo1(struct ndr_pull *ndr, int ndr
 	TALLOC_CTX *_mem_save_ScriptPath_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, 21, sizeof(uint8_t), CH_DOS));
+		size_Name_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, size_Name_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->Pad));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->Password, 16));
+		size_Password_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->Password, size_Password_0));
 		NDR_CHECK(ndr_pull_time_t(ndr, NDR_SCALARS, &r->PasswordAge));
 		NDR_CHECK(ndr_pull_rap_UserPriv(ndr, NDR_SCALARS, &r->Priv));
 		{
@@ -4479,9 +4519,11 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_LogonHours(struct ndr_push *ndr, int ndr
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_LogonHours(struct ndr_pull *ndr, int ndr_flags, struct rap_LogonHours *r)
 {
+	uint32_t size_LogonHours_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 1));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->LogonHours, 21));
+		size_LogonHours_0 = 21;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->LogonHours, size_LogonHours_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 1));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -4661,6 +4703,8 @@ static enum ndr_err_code ndr_push_rap_NetUserInfo2(struct ndr_push *ndr, int ndr
 
 static enum ndr_err_code ndr_pull_rap_NetUserInfo2(struct ndr_pull *ndr, int ndr_flags, struct rap_NetUserInfo2 *r)
 {
+	uint32_t size_Name_0 = 0;
+	uint32_t size_Password_0 = 0;
 	uint16_t _ptr_HomeDir;
 	TALLOC_CTX *_mem_save_HomeDir_0;
 	uint16_t _ptr_Comment;
@@ -4681,9 +4725,11 @@ static enum ndr_err_code ndr_pull_rap_NetUserInfo2(struct ndr_pull *ndr, int ndr
 	TALLOC_CTX *_mem_save_LogonServer_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, 21, sizeof(uint8_t), CH_DOS));
+		size_Name_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, size_Name_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->Pad));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->Password, 16));
+		size_Password_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->Password, size_Password_0));
 		NDR_CHECK(ndr_pull_time_t(ndr, NDR_SCALARS, &r->PasswordAge));
 		NDR_CHECK(ndr_pull_rap_UserPriv(ndr, NDR_SCALARS, &r->Priv));
 		{
@@ -5087,6 +5133,7 @@ static enum ndr_err_code ndr_push_rap_NetUserInfo10(struct ndr_push *ndr, int nd
 
 static enum ndr_err_code ndr_pull_rap_NetUserInfo10(struct ndr_pull *ndr, int ndr_flags, struct rap_NetUserInfo10 *r)
 {
+	uint32_t size_Name_0 = 0;
 	uint16_t _ptr_Comment;
 	TALLOC_CTX *_mem_save_Comment_0;
 	uint16_t _ptr_UsrComment;
@@ -5095,7 +5142,8 @@ static enum ndr_err_code ndr_pull_rap_NetUserInfo10(struct ndr_pull *ndr, int nd
 	TALLOC_CTX *_mem_save_FullName_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, 21, sizeof(uint8_t), CH_DOS));
+		size_Name_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, size_Name_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->Pad));
 		{
 			uint32_t _flags_save_string = ndr->flags;
@@ -5360,6 +5408,7 @@ static enum ndr_err_code ndr_push_rap_NetUserInfo11(struct ndr_push *ndr, int nd
 
 static enum ndr_err_code ndr_pull_rap_NetUserInfo11(struct ndr_pull *ndr, int ndr_flags, struct rap_NetUserInfo11 *r)
 {
+	uint32_t size_Name_0 = 0;
 	uint16_t _ptr_Comment;
 	TALLOC_CTX *_mem_save_Comment_0;
 	uint16_t _ptr_UsrComment;
@@ -5378,7 +5427,8 @@ static enum ndr_err_code ndr_pull_rap_NetUserInfo11(struct ndr_pull *ndr, int nd
 	TALLOC_CTX *_mem_save_LogonHours_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, 21, sizeof(uint8_t), CH_DOS));
+		size_Name_0 = 21;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->Name, size_Name_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->Pad));
 		{
 			uint32_t _flags_save_string = ndr->flags;
@@ -6345,6 +6395,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetServerEnum2(struct ndr_push *ndr, int
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetServerEnum2(struct ndr_pull *ndr, int flags, struct rap_NetServerEnum2 *r)
 {
+	uint32_t size_info_0 = 0;
 	uint32_t cntr_info_0;
 	TALLOC_CTX *_mem_save_info_0;
 	if (flags & NDR_IN) {
@@ -6365,14 +6416,15 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetServerEnum2(struct ndr_pull *ndr, int
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.convert));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.count));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.available));
-		NDR_PULL_ALLOC_N(ndr, r->out.info, r->out.count);
+		size_info_0 = r->out.count;
+		NDR_PULL_ALLOC_N(ndr, r->out.info, size_info_0);
 		_mem_save_info_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.info, 0);
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_set_switch_value(ndr, &r->out.info[cntr_info_0], r->in.level));
 			NDR_CHECK(ndr_pull_rap_server_info(ndr, NDR_SCALARS, &r->out.info[cntr_info_0]));
 		}
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_rap_server_info(ndr, NDR_BUFFERS, &r->out.info[cntr_info_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_info_0, 0);
@@ -6507,6 +6559,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetPrintQEnum(struct ndr_push *ndr, int 
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetPrintQEnum(struct ndr_pull *ndr, int flags, struct rap_NetPrintQEnum *r)
 {
+	uint32_t size_info_0 = 0;
 	uint32_t cntr_info_0;
 	TALLOC_CTX *_mem_save_info_0;
 	if (flags & NDR_IN) {
@@ -6520,14 +6573,15 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetPrintQEnum(struct ndr_pull *ndr, int 
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.convert));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.count));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.available));
-		NDR_PULL_ALLOC_N(ndr, r->out.info, r->out.count);
+		size_info_0 = r->out.count;
+		NDR_PULL_ALLOC_N(ndr, r->out.info, size_info_0);
 		_mem_save_info_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.info, 0);
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_set_switch_value(ndr, &r->out.info[cntr_info_0], r->in.level));
 			NDR_CHECK(ndr_pull_rap_printq_info(ndr, NDR_SCALARS, &r->out.info[cntr_info_0]));
 		}
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_rap_printq_info(ndr, NDR_BUFFERS, &r->out.info[cntr_info_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_info_0, 0);
@@ -7006,6 +7060,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetPrintJobEnum(struct ndr_push *ndr, in
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetPrintJobEnum(struct ndr_pull *ndr, int flags, struct rap_NetPrintJobEnum *r)
 {
+	uint32_t size_info_0 = 0;
 	uint32_t cntr_info_0;
 	TALLOC_CTX *_mem_save_info_0;
 	if (flags & NDR_IN) {
@@ -7025,14 +7080,15 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetPrintJobEnum(struct ndr_pull *ndr, in
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.convert));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.count));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.available));
-		NDR_PULL_ALLOC_N(ndr, r->out.info, r->out.count);
+		size_info_0 = r->out.count;
+		NDR_PULL_ALLOC_N(ndr, r->out.info, size_info_0);
 		_mem_save_info_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.info, 0);
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_set_switch_value(ndr, &r->out.info[cntr_info_0], r->in.level));
 			NDR_CHECK(ndr_pull_rap_printj_info(ndr, NDR_SCALARS, &r->out.info[cntr_info_0]));
 		}
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_rap_printj_info(ndr, NDR_BUFFERS, &r->out.info[cntr_info_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_info_0, 0);
@@ -7231,6 +7287,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetPrintDestEnum(struct ndr_push *ndr, i
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetPrintDestEnum(struct ndr_pull *ndr, int flags, struct rap_NetPrintDestEnum *r)
 {
+	uint32_t size_info_0 = 0;
 	uint32_t cntr_info_0;
 	TALLOC_CTX *_mem_save_info_0;
 	if (flags & NDR_IN) {
@@ -7244,14 +7301,15 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetPrintDestEnum(struct ndr_pull *ndr, i
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.convert));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.count));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.available));
-		NDR_PULL_ALLOC_N(ndr, r->out.info, r->out.count);
+		size_info_0 = r->out.count;
+		NDR_PULL_ALLOC_N(ndr, r->out.info, size_info_0);
 		_mem_save_info_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.info, 0);
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_set_switch_value(ndr, &r->out.info[cntr_info_0], r->in.level));
 			NDR_CHECK(ndr_pull_rap_printdest_info(ndr, NDR_SCALARS, &r->out.info[cntr_info_0]));
 		}
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_rap_printdest_info(ndr, NDR_BUFFERS, &r->out.info[cntr_info_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_info_0, 0);
@@ -7392,6 +7450,8 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetUserPasswordSet2(struct ndr_push *ndr
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetUserPasswordSet2(struct ndr_pull *ndr, int flags, struct rap_NetUserPasswordSet2 *r)
 {
+	uint32_t size_OldPassword_0 = 0;
+	uint32_t size_NewPassword_0 = 0;
 	if (flags & NDR_IN) {
 		ZERO_STRUCT(r->out);
 
@@ -7401,8 +7461,10 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetUserPasswordSet2(struct ndr_pull *ndr
 			NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->in.UserName));
 			ndr->flags = _flags_save_string;
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.OldPassword, 16));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.NewPassword, 16));
+		size_OldPassword_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.OldPassword, size_OldPassword_0));
+		size_NewPassword_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.NewPassword, size_NewPassword_0));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.EncryptedPassword));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.RealPasswordLength));
 	}
@@ -7462,6 +7524,8 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetOEMChangePassword(struct ndr_push *nd
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetOEMChangePassword(struct ndr_pull *ndr, int flags, struct rap_NetOEMChangePassword *r)
 {
+	uint32_t size_crypt_password_0 = 0;
+	uint32_t size_password_hash_0 = 0;
 	if (flags & NDR_IN) {
 		ZERO_STRUCT(r->out);
 
@@ -7471,8 +7535,10 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetOEMChangePassword(struct ndr_pull *nd
 			NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->in.UserName));
 			ndr->flags = _flags_save_string;
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.crypt_password, 516));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.password_hash, 16));
+		size_crypt_password_0 = 516;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.crypt_password, size_crypt_password_0));
+		size_password_hash_0 = 16;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.password_hash, size_password_hash_0));
 	}
 	if (flags & NDR_OUT) {
 		NDR_CHECK(ndr_pull_rap_status(ndr, NDR_SCALARS, &r->out.status));
@@ -7607,6 +7673,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_rap_NetSessionEnum(struct ndr_push *ndr, int
 
 _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetSessionEnum(struct ndr_pull *ndr, int flags, struct rap_NetSessionEnum *r)
 {
+	uint32_t size_info_0 = 0;
 	uint32_t cntr_info_0;
 	TALLOC_CTX *_mem_save_info_0;
 	if (flags & NDR_IN) {
@@ -7620,14 +7687,15 @@ _PUBLIC_ enum ndr_err_code ndr_pull_rap_NetSessionEnum(struct ndr_pull *ndr, int
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.convert));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.count));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->out.available));
-		NDR_PULL_ALLOC_N(ndr, r->out.info, r->out.count);
+		size_info_0 = r->out.count;
+		NDR_PULL_ALLOC_N(ndr, r->out.info, size_info_0);
 		_mem_save_info_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.info, 0);
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_set_switch_value(ndr, &r->out.info[cntr_info_0], r->in.level));
 			NDR_CHECK(ndr_pull_rap_session_info(ndr, NDR_SCALARS, &r->out.info[cntr_info_0]));
 		}
-		for (cntr_info_0 = 0; cntr_info_0 < r->out.count; cntr_info_0++) {
+		for (cntr_info_0 = 0; cntr_info_0 < size_info_0; cntr_info_0++) {
 			NDR_CHECK(ndr_pull_rap_session_info(ndr, NDR_BUFFERS, &r->out.info[cntr_info_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_info_0, 0);

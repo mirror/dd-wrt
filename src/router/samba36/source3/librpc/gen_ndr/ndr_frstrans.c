@@ -193,6 +193,10 @@ static enum ndr_err_code ndr_push_frstrans_Update(struct ndr_push *ndr, int ndr_
 
 static enum ndr_err_code ndr_pull_frstrans_Update(struct ndr_pull *ndr, int ndr_flags, struct frstrans_Update *r)
 {
+	uint32_t size_sha1_hash_0 = 0;
+	uint32_t size_rdc_similarity_0 = 0;
+	uint32_t size_name_0 = 0;
+	uint32_t length_name_0 = 0;
 	{
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_PRINT_ARRAY_HEX);
@@ -205,8 +209,10 @@ static enum ndr_err_code ndr_pull_frstrans_Update(struct ndr_pull *ndr, int ndr_
 			NDR_CHECK(ndr_pull_NTTIME(ndr, NDR_SCALARS, &r->clock));
 			NDR_CHECK(ndr_pull_NTTIME(ndr, NDR_SCALARS, &r->create_time));
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->content_set_guid));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->sha1_hash, 20));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->rdc_similarity, 16));
+			size_sha1_hash_0 = 20;
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->sha1_hash, size_sha1_hash_0));
+			size_rdc_similarity_0 = 16;
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->rdc_similarity, size_rdc_similarity_0));
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->uid_db_guid));
 			NDR_CHECK(ndr_pull_hyper(ndr, NDR_SCALARS, &r->uid_version));
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->gsvn_db_guid));
@@ -214,11 +220,13 @@ static enum ndr_err_code ndr_pull_frstrans_Update(struct ndr_pull *ndr, int ndr_
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->parent_db_guid));
 			NDR_CHECK(ndr_pull_hyper(ndr, NDR_SCALARS, &r->parent_version));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->name));
-			if (ndr_get_array_length(ndr, &r->name) > 261) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", 261, ndr_get_array_length(ndr, &r->name));
+			size_name_0 = 261;
+			length_name_0 = ndr_get_array_length(ndr, &r->name);
+			if (length_name_0 > size_name_0) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_name_0, length_name_0);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->name, ndr_get_array_length(ndr, &r->name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_name_0, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->name, length_name_0, sizeof(uint16_t), CH_UTF16));
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->flags));
 			NDR_CHECK(ndr_pull_trailer_align(ndr, 8));
 		}
@@ -400,10 +408,12 @@ static enum ndr_err_code ndr_push_frstrans_AsyncVersionVectorResponse(struct ndr
 static enum ndr_err_code ndr_pull_frstrans_AsyncVersionVectorResponse(struct ndr_pull *ndr, int ndr_flags, struct frstrans_AsyncVersionVectorResponse *r)
 {
 	uint32_t _ptr_version_vector;
+	uint32_t size_version_vector_1 = 0;
 	uint32_t cntr_version_vector_1;
 	TALLOC_CTX *_mem_save_version_vector_0;
 	TALLOC_CTX *_mem_save_version_vector_1;
 	uint32_t _ptr_epoque_vector;
+	uint32_t size_epoque_vector_1 = 0;
 	uint32_t cntr_epoque_vector_1;
 	TALLOC_CTX *_mem_save_epoque_vector_0;
 	TALLOC_CTX *_mem_save_epoque_vector_1;
@@ -431,10 +441,11 @@ static enum ndr_err_code ndr_pull_frstrans_AsyncVersionVectorResponse(struct ndr
 			_mem_save_version_vector_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->version_vector, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->version_vector));
-			NDR_PULL_ALLOC_N(ndr, r->version_vector, ndr_get_array_size(ndr, &r->version_vector));
+			size_version_vector_1 = ndr_get_array_size(ndr, &r->version_vector);
+			NDR_PULL_ALLOC_N(ndr, r->version_vector, size_version_vector_1);
 			_mem_save_version_vector_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->version_vector, 0);
-			for (cntr_version_vector_1 = 0; cntr_version_vector_1 < r->version_vector_count; cntr_version_vector_1++) {
+			for (cntr_version_vector_1 = 0; cntr_version_vector_1 < size_version_vector_1; cntr_version_vector_1++) {
 				NDR_CHECK(ndr_pull_frstrans_VersionVector(ndr, NDR_SCALARS, &r->version_vector[cntr_version_vector_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_version_vector_1, 0);
@@ -444,10 +455,11 @@ static enum ndr_err_code ndr_pull_frstrans_AsyncVersionVectorResponse(struct ndr
 			_mem_save_epoque_vector_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->epoque_vector, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->epoque_vector));
-			NDR_PULL_ALLOC_N(ndr, r->epoque_vector, ndr_get_array_size(ndr, &r->epoque_vector));
+			size_epoque_vector_1 = ndr_get_array_size(ndr, &r->epoque_vector);
+			NDR_PULL_ALLOC_N(ndr, r->epoque_vector, size_epoque_vector_1);
 			_mem_save_epoque_vector_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->epoque_vector, 0);
-			for (cntr_epoque_vector_1 = 0; cntr_epoque_vector_1 < r->epoque_vector_count; cntr_epoque_vector_1++) {
+			for (cntr_epoque_vector_1 = 0; cntr_epoque_vector_1 < size_epoque_vector_1; cntr_epoque_vector_1++) {
 				NDR_CHECK(ndr_pull_frstrans_EpoqueVector(ndr, NDR_SCALARS, &r->epoque_vector[cntr_epoque_vector_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_epoque_vector_1, 0);
@@ -607,10 +619,12 @@ static enum ndr_err_code ndr_push_frstrans_RdcParameterGeneric(struct ndr_push *
 
 static enum ndr_err_code ndr_pull_frstrans_RdcParameterGeneric(struct ndr_pull *ndr, int ndr_flags, struct frstrans_RdcParameterGeneric *r)
 {
+	uint32_t size_chunker_parameters_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 3));
 		NDR_CHECK(ndr_pull_frstrans_RdcChunckerAlgorithm(ndr, NDR_SCALARS, &r->chunker_type));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->chunker_parameters, 64));
+		size_chunker_parameters_0 = 64;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->chunker_parameters, size_chunker_parameters_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 3));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -955,6 +969,7 @@ static enum ndr_err_code ndr_push_frstrans_RdcFileInfo(struct ndr_push *ndr, int
 
 static enum ndr_err_code ndr_pull_frstrans_RdcFileInfo(struct ndr_pull *ndr, int ndr_flags, struct frstrans_RdcFileInfo *r)
 {
+	uint32_t size_rdc_filter_parameters_0 = 0;
 	uint32_t cntr_rdc_filter_parameters_0;
 	TALLOC_CTX *_mem_save_rdc_filter_parameters_0;
 	if (ndr_flags & NDR_SCALARS) {
@@ -969,10 +984,11 @@ static enum ndr_err_code ndr_pull_frstrans_RdcFileInfo(struct ndr_pull *ndr, int
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
 		NDR_CHECK(ndr_pull_frstrans_RdcCompressionAlgorithm(ndr, NDR_SCALARS, &r->compression_algorithm));
-		NDR_PULL_ALLOC_N(ndr, r->rdc_filter_parameters, ndr_get_array_size(ndr, &r->rdc_filter_parameters));
+		size_rdc_filter_parameters_0 = ndr_get_array_size(ndr, &r->rdc_filter_parameters);
+		NDR_PULL_ALLOC_N(ndr, r->rdc_filter_parameters, size_rdc_filter_parameters_0);
 		_mem_save_rdc_filter_parameters_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->rdc_filter_parameters, 0);
-		for (cntr_rdc_filter_parameters_0 = 0; cntr_rdc_filter_parameters_0 < r->rdc_signature_levels; cntr_rdc_filter_parameters_0++) {
+		for (cntr_rdc_filter_parameters_0 = 0; cntr_rdc_filter_parameters_0 < size_rdc_filter_parameters_0; cntr_rdc_filter_parameters_0++) {
 			NDR_CHECK(ndr_pull_frstrans_RdcParameters(ndr, NDR_SCALARS, &r->rdc_filter_parameters[cntr_rdc_filter_parameters_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_rdc_filter_parameters_0, 0);
@@ -1025,11 +1041,13 @@ static enum ndr_err_code ndr_push_frstrans_BytePipe_chunk(struct ndr_push *ndr, 
 
 static enum ndr_err_code ndr_pull_frstrans_BytePipe_chunk(struct ndr_pull *ndr, int ndr_flags, struct frstrans_BytePipe_chunk *r)
 {
+	uint32_t size_array_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_uint3264(ndr, NDR_SCALARS, &r->count));
-		NDR_PULL_ALLOC_N(ndr, r->array, r->count);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->array, r->count));
+		size_array_0 = r->count;
+		NDR_PULL_ALLOC_N(ndr, r->array, size_array_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->array, size_array_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 5));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -1290,7 +1308,10 @@ static enum ndr_err_code ndr_push_frstrans_RequestUpdates(struct ndr_push *ndr, 
 
 static enum ndr_err_code ndr_pull_frstrans_RequestUpdates(struct ndr_pull *ndr, int flags, struct frstrans_RequestUpdates *r)
 {
+	uint32_t size_version_vector_diff_1 = 0;
 	uint32_t cntr_version_vector_diff_1;
+	uint32_t size_frs_update_1 = 0;
+	uint32_t length_frs_update_1 = 0;
 	uint32_t cntr_frs_update_1;
 	TALLOC_CTX *_mem_save_version_vector_diff_1;
 	TALLOC_CTX *_mem_save_frs_update_1;
@@ -1317,12 +1338,13 @@ static enum ndr_err_code ndr_pull_frstrans_RequestUpdates(struct ndr_pull *ndr, 
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.version_vector_diff_count));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.version_vector_diff));
+		size_version_vector_diff_1 = ndr_get_array_size(ndr, &r->in.version_vector_diff);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->in.version_vector_diff, ndr_get_array_size(ndr, &r->in.version_vector_diff));
+			NDR_PULL_ALLOC_N(ndr, r->in.version_vector_diff, size_version_vector_diff_1);
 		}
 		_mem_save_version_vector_diff_1 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.version_vector_diff, 0);
-		for (cntr_version_vector_diff_1 = 0; cntr_version_vector_diff_1 < r->in.version_vector_diff_count; cntr_version_vector_diff_1++) {
+		for (cntr_version_vector_diff_1 = 0; cntr_version_vector_diff_1 < size_version_vector_diff_1; cntr_version_vector_diff_1++) {
 			NDR_CHECK(ndr_pull_frstrans_VersionVector(ndr, NDR_SCALARS, &r->in.version_vector_diff[cntr_version_vector_diff_1]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_version_vector_diff_1, 0);
@@ -1343,15 +1365,17 @@ static enum ndr_err_code ndr_pull_frstrans_RequestUpdates(struct ndr_pull *ndr, 
 	if (flags & NDR_OUT) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.frs_update));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->out.frs_update));
-		if (ndr_get_array_length(ndr, &r->out.frs_update) > ndr_get_array_size(ndr, &r->out.frs_update)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->out.frs_update), ndr_get_array_length(ndr, &r->out.frs_update));
+		size_frs_update_1 = ndr_get_array_size(ndr, &r->out.frs_update);
+		length_frs_update_1 = ndr_get_array_length(ndr, &r->out.frs_update);
+		if (length_frs_update_1 > size_frs_update_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_frs_update_1, length_frs_update_1);
 		}
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->out.frs_update, ndr_get_array_size(ndr, &r->out.frs_update));
+			NDR_PULL_ALLOC_N(ndr, r->out.frs_update, size_frs_update_1);
 		}
 		_mem_save_frs_update_1 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.frs_update, 0);
-		for (cntr_frs_update_1 = 0; cntr_frs_update_1 < ndr_get_array_length(ndr, &r->out.frs_update); cntr_frs_update_1++) {
+		for (cntr_frs_update_1 = 0; cntr_frs_update_1 < length_frs_update_1; cntr_frs_update_1++) {
 			NDR_CHECK(ndr_pull_frstrans_Update(ndr, NDR_SCALARS, &r->out.frs_update[cntr_frs_update_1]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_frs_update_1, 0);
@@ -1920,6 +1944,8 @@ static enum ndr_err_code ndr_push_frstrans_InitializeFileTransferAsync(struct nd
 static enum ndr_err_code ndr_pull_frstrans_InitializeFileTransferAsync(struct ndr_pull *ndr, int flags, struct frstrans_InitializeFileTransferAsync *r)
 {
 	uint32_t _ptr_rdc_file_info;
+	uint32_t size_data_buffer_1 = 0;
+	uint32_t length_data_buffer_1 = 0;
 	TALLOC_CTX *_mem_save_frs_update_0;
 	TALLOC_CTX *_mem_save_staging_policy_0;
 	TALLOC_CTX *_mem_save_server_context_0;
@@ -2010,13 +2036,15 @@ static enum ndr_err_code ndr_pull_frstrans_InitializeFileTransferAsync(struct nd
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_rdc_file_info_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.data_buffer));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->out.data_buffer));
-		if (ndr_get_array_length(ndr, &r->out.data_buffer) > ndr_get_array_size(ndr, &r->out.data_buffer)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->out.data_buffer), ndr_get_array_length(ndr, &r->out.data_buffer));
+		size_data_buffer_1 = ndr_get_array_size(ndr, &r->out.data_buffer);
+		length_data_buffer_1 = ndr_get_array_length(ndr, &r->out.data_buffer);
+		if (length_data_buffer_1 > size_data_buffer_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_data_buffer_1, length_data_buffer_1);
 		}
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->out.data_buffer, ndr_get_array_size(ndr, &r->out.data_buffer));
+			NDR_PULL_ALLOC_N(ndr, r->out.data_buffer, size_data_buffer_1);
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.data_buffer, ndr_get_array_length(ndr, &r->out.data_buffer)));
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.data_buffer, length_data_buffer_1));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->out.size_read);
 		}

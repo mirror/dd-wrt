@@ -63,6 +63,7 @@ static enum ndr_err_code ndr_push_eventlog6_boolean8Array(struct ndr_push *ndr, 
 static enum ndr_err_code ndr_pull_eventlog6_boolean8Array(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_boolean8Array *r)
 {
 	uint32_t _ptr_ptr;
+	uint32_t size_ptr_1 = 0;
 	TALLOC_CTX *_mem_save_ptr_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -83,8 +84,9 @@ static enum ndr_err_code ndr_pull_eventlog6_boolean8Array(struct ndr_pull *ndr, 
 			_mem_save_ptr_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->ptr));
-			NDR_PULL_ALLOC_N(ndr, r->ptr, ndr_get_array_size(ndr, &r->ptr));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->ptr, ndr_get_array_size(ndr, &r->ptr)));
+			size_ptr_1 = ndr_get_array_size(ndr, &r->ptr);
+			NDR_PULL_ALLOC_N(ndr, r->ptr, size_ptr_1);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->ptr, size_ptr_1));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ptr_0, 0);
 		}
 		if (r->ptr) {
@@ -132,6 +134,7 @@ static enum ndr_err_code ndr_push_eventlog6_UInt32Array(struct ndr_push *ndr, in
 static enum ndr_err_code ndr_pull_eventlog6_UInt32Array(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_UInt32Array *r)
 {
 	uint32_t _ptr_ptr;
+	uint32_t size_ptr_1 = 0;
 	uint32_t cntr_ptr_1;
 	TALLOC_CTX *_mem_save_ptr_0;
 	TALLOC_CTX *_mem_save_ptr_1;
@@ -154,10 +157,11 @@ static enum ndr_err_code ndr_pull_eventlog6_UInt32Array(struct ndr_pull *ndr, in
 			_mem_save_ptr_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->ptr));
-			NDR_PULL_ALLOC_N(ndr, r->ptr, ndr_get_array_size(ndr, &r->ptr));
+			size_ptr_1 = ndr_get_array_size(ndr, &r->ptr);
+			NDR_PULL_ALLOC_N(ndr, r->ptr, size_ptr_1);
 			_mem_save_ptr_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
-			for (cntr_ptr_1 = 0; cntr_ptr_1 < r->count; cntr_ptr_1++) {
+			for (cntr_ptr_1 = 0; cntr_ptr_1 < size_ptr_1; cntr_ptr_1++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->ptr[cntr_ptr_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ptr_1, 0);
@@ -214,6 +218,7 @@ static enum ndr_err_code ndr_push_eventlog6_UInt64Array(struct ndr_push *ndr, in
 static enum ndr_err_code ndr_pull_eventlog6_UInt64Array(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_UInt64Array *r)
 {
 	uint32_t _ptr_ptr;
+	uint32_t size_ptr_1 = 0;
 	uint32_t cntr_ptr_1;
 	TALLOC_CTX *_mem_save_ptr_0;
 	TALLOC_CTX *_mem_save_ptr_1;
@@ -236,10 +241,11 @@ static enum ndr_err_code ndr_pull_eventlog6_UInt64Array(struct ndr_pull *ndr, in
 			_mem_save_ptr_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->ptr));
-			NDR_PULL_ALLOC_N(ndr, r->ptr, ndr_get_array_size(ndr, &r->ptr));
+			size_ptr_1 = ndr_get_array_size(ndr, &r->ptr);
+			NDR_PULL_ALLOC_N(ndr, r->ptr, size_ptr_1);
 			_mem_save_ptr_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
-			for (cntr_ptr_1 = 0; cntr_ptr_1 < r->count; cntr_ptr_1++) {
+			for (cntr_ptr_1 = 0; cntr_ptr_1 < size_ptr_1; cntr_ptr_1++) {
 				NDR_CHECK(ndr_pull_hyper(ndr, NDR_SCALARS, &r->ptr[cntr_ptr_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ptr_1, 0);
@@ -295,6 +301,8 @@ static enum ndr_err_code ndr_push_eventlog6_StringArray(struct ndr_push *ndr, in
 static enum ndr_err_code ndr_pull_eventlog6_StringArray(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_StringArray *r)
 {
 	uint32_t _ptr_ptr;
+	uint32_t size_ptr_1 = 0;
+	uint32_t length_ptr_1 = 0;
 	TALLOC_CTX *_mem_save_ptr_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -316,11 +324,13 @@ static enum ndr_err_code ndr_pull_eventlog6_StringArray(struct ndr_pull *ndr, in
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->ptr));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->ptr));
-			if (ndr_get_array_length(ndr, &r->ptr) > ndr_get_array_size(ndr, &r->ptr)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->ptr), ndr_get_array_length(ndr, &r->ptr));
+			size_ptr_1 = ndr_get_array_size(ndr, &r->ptr);
+			length_ptr_1 = ndr_get_array_length(ndr, &r->ptr);
+			if (length_ptr_1 > size_ptr_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_ptr_1, length_ptr_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->ptr), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->ptr, ndr_get_array_length(ndr, &r->ptr), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_ptr_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->ptr, length_ptr_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ptr_0, 0);
 		}
 	}
@@ -365,6 +375,7 @@ static enum ndr_err_code ndr_push_eventlog6_GuidArray(struct ndr_push *ndr, int 
 static enum ndr_err_code ndr_pull_eventlog6_GuidArray(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_GuidArray *r)
 {
 	uint32_t _ptr_ptr;
+	uint32_t size_ptr_1 = 0;
 	uint32_t cntr_ptr_1;
 	TALLOC_CTX *_mem_save_ptr_0;
 	TALLOC_CTX *_mem_save_ptr_1;
@@ -387,10 +398,11 @@ static enum ndr_err_code ndr_pull_eventlog6_GuidArray(struct ndr_pull *ndr, int 
 			_mem_save_ptr_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->ptr));
-			NDR_PULL_ALLOC_N(ndr, r->ptr, ndr_get_array_size(ndr, &r->ptr));
+			size_ptr_1 = ndr_get_array_size(ndr, &r->ptr);
+			NDR_PULL_ALLOC_N(ndr, r->ptr, size_ptr_1);
 			_mem_save_ptr_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->ptr, 0);
-			for (cntr_ptr_1 = 0; cntr_ptr_1 < r->count; cntr_ptr_1++) {
+			for (cntr_ptr_1 = 0; cntr_ptr_1 < size_ptr_1; cntr_ptr_1++) {
 				NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->ptr[cntr_ptr_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ptr_1, 0);
@@ -576,7 +588,11 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcVariantUnion(struct ndr_pull *
 	uint32_t level;
 	uint32_t _level;
 	TALLOC_CTX *_mem_save_stringVal_0;
+	uint32_t _ptr_stringVal;
+	uint32_t size_stringVal_1 = 0;
+	uint32_t length_stringVal_1 = 0;
 	TALLOC_CTX *_mem_save_guidVal_0;
+	uint32_t _ptr_guidVal;
 	level = ndr_pull_get_switch_value(ndr, r);
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_union_align(ndr, 8));
@@ -603,7 +619,6 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcVariantUnion(struct ndr_pull *
 			break; }
 
 			case EvtRpcVarTypeString: {
-				uint32_t _ptr_stringVal;
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_stringVal));
 				if (_ptr_stringVal) {
 					NDR_PULL_ALLOC(ndr, r->stringVal);
@@ -613,7 +628,6 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcVariantUnion(struct ndr_pull *
 			break; }
 
 			case EvtRpcVarTypeGuid: {
-				uint32_t _ptr_guidVal;
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_guidVal));
 				if (_ptr_guidVal) {
 					NDR_PULL_ALLOC(ndr, r->guidVal);
@@ -666,11 +680,13 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcVariantUnion(struct ndr_pull *
 					NDR_PULL_SET_MEM_CTX(ndr, r->stringVal, 0);
 					NDR_CHECK(ndr_pull_array_size(ndr, &r->stringVal));
 					NDR_CHECK(ndr_pull_array_length(ndr, &r->stringVal));
-					if (ndr_get_array_length(ndr, &r->stringVal) > ndr_get_array_size(ndr, &r->stringVal)) {
-						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->stringVal), ndr_get_array_length(ndr, &r->stringVal));
+					size_stringVal_1 = ndr_get_array_size(ndr, &r->stringVal);
+					length_stringVal_1 = ndr_get_array_length(ndr, &r->stringVal);
+					if (length_stringVal_1 > size_stringVal_1) {
+						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_stringVal_1, length_stringVal_1);
 					}
-					NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->stringVal), sizeof(uint16_t)));
-					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->stringVal, ndr_get_array_length(ndr, &r->stringVal), sizeof(uint16_t), CH_UTF16));
+					NDR_CHECK(ndr_check_string_terminator(ndr, length_stringVal_1, sizeof(uint16_t)));
+					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->stringVal, length_stringVal_1, sizeof(uint16_t), CH_UTF16));
 					NDR_PULL_SET_MEM_CTX(ndr, _mem_save_stringVal_0, 0);
 				}
 			break;
@@ -862,6 +878,7 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcVariantList(struct ndr_push *n
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcVariantList(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_EvtRpcVariantList *r)
 {
 	uint32_t _ptr_props;
+	uint32_t size_props_1 = 0;
 	uint32_t cntr_props_1;
 	TALLOC_CTX *_mem_save_props_0;
 	TALLOC_CTX *_mem_save_props_1;
@@ -884,13 +901,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcVariantList(struct ndr_pull *n
 			_mem_save_props_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->props, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->props));
-			NDR_PULL_ALLOC_N(ndr, r->props, ndr_get_array_size(ndr, &r->props));
+			size_props_1 = ndr_get_array_size(ndr, &r->props);
+			NDR_PULL_ALLOC_N(ndr, r->props, size_props_1);
 			_mem_save_props_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->props, 0);
-			for (cntr_props_1 = 0; cntr_props_1 < r->count; cntr_props_1++) {
+			for (cntr_props_1 = 0; cntr_props_1 < size_props_1; cntr_props_1++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcVariant(ndr, NDR_SCALARS, &r->props[cntr_props_1]));
 			}
-			for (cntr_props_1 = 0; cntr_props_1 < r->count; cntr_props_1++) {
+			for (cntr_props_1 = 0; cntr_props_1 < size_props_1; cntr_props_1++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcVariant(ndr, NDR_BUFFERS, &r->props[cntr_props_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_props_1, 0);
@@ -946,6 +964,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcQueryChannelInfo(struct ndr_pu
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQueryChannelInfo(struct ndr_pull *ndr, int ndr_flags, struct eventlog6_EvtRpcQueryChannelInfo *r)
 {
 	uint32_t _ptr_name;
+	uint32_t size_name_1 = 0;
+	uint32_t length_name_1 = 0;
 	TALLOC_CTX *_mem_save_name_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -964,11 +984,13 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQueryChannelInfo(struct ndr_pu
 			NDR_PULL_SET_MEM_CTX(ndr, r->name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->name));
-			if (ndr_get_array_length(ndr, &r->name) > ndr_get_array_size(ndr, &r->name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->name), ndr_get_array_length(ndr, &r->name));
+			size_name_1 = ndr_get_array_size(ndr, &r->name);
+			length_name_1 = ndr_get_array_length(ndr, &r->name);
+			if (length_name_1 > size_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_name_1, length_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->name, ndr_get_array_length(ndr, &r->name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_name_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->name, length_name_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_name_0, 0);
 		}
 	}
@@ -1055,8 +1077,15 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcRegisterRemoteSubscription(str
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterRemoteSubscription(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcRegisterRemoteSubscription *r)
 {
 	uint32_t _ptr_channelPath;
+	uint32_t size_channelPath_1 = 0;
+	uint32_t length_channelPath_1 = 0;
+	uint32_t size_query_1 = 0;
+	uint32_t length_query_1 = 0;
 	uint32_t _ptr_bookmarkXml;
+	uint32_t size_bookmarkXml_1 = 0;
+	uint32_t length_bookmarkXml_1 = 0;
 	uint32_t _ptr_queryChannelInfo;
+	uint32_t size_queryChannelInfo_2 = 0;
 	uint32_t cntr_queryChannelInfo_2;
 	TALLOC_CTX *_mem_save_channelPath_0;
 	TALLOC_CTX *_mem_save_bookmarkXml_0;
@@ -1081,26 +1110,36 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterRemoteSubscription(str
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.channelPath, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.channelPath));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.channelPath));
-			if (ndr_get_array_length(ndr, &r->in.channelPath) > ndr_get_array_size(ndr, &r->in.channelPath)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.channelPath), ndr_get_array_length(ndr, &r->in.channelPath));
-			}
-			if (ndr_get_array_length(ndr, &r->in.channelPath) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			size_channelPath_1 = ndr_get_array_size(ndr, &r->in.channelPath);
+			if (size_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t), CH_UTF16));
+			length_channelPath_1 = ndr_get_array_length(ndr, &r->in.channelPath);
+			if (length_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_channelPath_1 > size_channelPath_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channelPath_1, length_channelPath_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_channelPath_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, length_channelPath_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_channelPath_0, 0);
 		}
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.query));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.query));
-		if (ndr_get_array_length(ndr, &r->in.query) > ndr_get_array_size(ndr, &r->in.query)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.query), ndr_get_array_length(ndr, &r->in.query));
-		}
-		if (ndr_get_array_length(ndr, &r->in.query) < 1 || ndr_get_array_length(ndr, &r->in.query) > MAX_RPC_QUERY_LENGTH) {
+		size_query_1 = ndr_get_array_size(ndr, &r->in.query);
+		if (size_query_1 < 1 || size_query_1 > MAX_RPC_QUERY_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.query), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.query, ndr_get_array_length(ndr, &r->in.query), sizeof(uint16_t), CH_UTF16));
+		length_query_1 = ndr_get_array_length(ndr, &r->in.query);
+		if (length_query_1 < 1 || length_query_1 > MAX_RPC_QUERY_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_query_1 > size_query_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_query_1, length_query_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_query_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.query, length_query_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_bookmarkXml));
 		if (_ptr_bookmarkXml) {
 			NDR_PULL_ALLOC(ndr, r->in.bookmarkXml);
@@ -1112,14 +1151,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterRemoteSubscription(str
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.bookmarkXml, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.bookmarkXml));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.bookmarkXml));
-			if (ndr_get_array_length(ndr, &r->in.bookmarkXml) > ndr_get_array_size(ndr, &r->in.bookmarkXml)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.bookmarkXml), ndr_get_array_length(ndr, &r->in.bookmarkXml));
-			}
-			if (ndr_get_array_length(ndr, &r->in.bookmarkXml) > MAX_RPC_BOOKMARK_LENGTH) {
+			size_bookmarkXml_1 = ndr_get_array_size(ndr, &r->in.bookmarkXml);
+			if (size_bookmarkXml_1 > MAX_RPC_BOOKMARK_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.bookmarkXml), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.bookmarkXml, ndr_get_array_length(ndr, &r->in.bookmarkXml), sizeof(uint16_t), CH_UTF16));
+			length_bookmarkXml_1 = ndr_get_array_length(ndr, &r->in.bookmarkXml);
+			if (length_bookmarkXml_1 > MAX_RPC_BOOKMARK_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_bookmarkXml_1 > size_bookmarkXml_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_bookmarkXml_1, length_bookmarkXml_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_bookmarkXml_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.bookmarkXml, length_bookmarkXml_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_bookmarkXml_0, 0);
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
@@ -1171,19 +1215,17 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterRemoteSubscription(str
 			_mem_save_queryChannelInfo_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.queryChannelInfo, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.queryChannelInfo));
-			NDR_PULL_ALLOC_N(ndr, *r->out.queryChannelInfo, ndr_get_array_size(ndr, r->out.queryChannelInfo));
-			if (ndr_get_array_size(ndr, r->out.queryChannelInfo) > MAX_RPC_QUERY_CHANNEL_SIZE) {
+			size_queryChannelInfo_2 = ndr_get_array_size(ndr, r->out.queryChannelInfo);
+			if (size_queryChannelInfo_2 > MAX_RPC_QUERY_CHANNEL_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.queryChannelInfoSize > MAX_RPC_QUERY_CHANNEL_SIZE) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.queryChannelInfo, size_queryChannelInfo_2);
 			_mem_save_queryChannelInfo_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.queryChannelInfo, 0);
-			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < *r->out.queryChannelInfoSize; cntr_queryChannelInfo_2++) {
+			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < size_queryChannelInfo_2; cntr_queryChannelInfo_2++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcQueryChannelInfo(ndr, NDR_SCALARS, &(*r->out.queryChannelInfo)[cntr_queryChannelInfo_2]));
 			}
-			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < *r->out.queryChannelInfoSize; cntr_queryChannelInfo_2++) {
+			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < size_queryChannelInfo_2; cntr_queryChannelInfo_2++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcQueryChannelInfo(ndr, NDR_BUFFERS, &(*r->out.queryChannelInfo)[cntr_queryChannelInfo_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_queryChannelInfo_2, 0);
@@ -1332,10 +1374,13 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcRemoteSubscriptionNextAsync(st
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNextAsync(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcRemoteSubscriptionNextAsync *r)
 {
 	uint32_t _ptr_eventDataIndices;
+	uint32_t size_eventDataIndices_2 = 0;
 	uint32_t cntr_eventDataIndices_2;
 	uint32_t _ptr_eventDataSizes;
+	uint32_t size_eventDataSizes_2 = 0;
 	uint32_t cntr_eventDataSizes_2;
 	uint32_t _ptr_resultBuffer;
+	uint32_t size_resultBuffer_2 = 0;
 	TALLOC_CTX *_mem_save_handle_0;
 	TALLOC_CTX *_mem_save_numActualRecords_0;
 	TALLOC_CTX *_mem_save_eventDataIndices_0;
@@ -1393,16 +1438,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNextAsync(st
 			_mem_save_eventDataIndices_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataIndices, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventDataIndices));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataIndices, ndr_get_array_size(ndr, r->out.eventDataIndices));
-			if (ndr_get_array_size(ndr, r->out.eventDataIndices) > MAX_RPC_RECORD_COUNT) {
+			size_eventDataIndices_2 = ndr_get_array_size(ndr, r->out.eventDataIndices);
+			if (size_eventDataIndices_2 > MAX_RPC_RECORD_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numActualRecords > MAX_RPC_RECORD_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataIndices, size_eventDataIndices_2);
 			_mem_save_eventDataIndices_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataIndices, 0);
-			for (cntr_eventDataIndices_2 = 0; cntr_eventDataIndices_2 < *r->out.numActualRecords; cntr_eventDataIndices_2++) {
+			for (cntr_eventDataIndices_2 = 0; cntr_eventDataIndices_2 < size_eventDataIndices_2; cntr_eventDataIndices_2++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &(*r->out.eventDataIndices)[cntr_eventDataIndices_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventDataIndices_2, 0);
@@ -1424,16 +1467,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNextAsync(st
 			_mem_save_eventDataSizes_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataSizes, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventDataSizes));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataSizes, ndr_get_array_size(ndr, r->out.eventDataSizes));
-			if (ndr_get_array_size(ndr, r->out.eventDataSizes) > MAX_RPC_RECORD_COUNT) {
+			size_eventDataSizes_2 = ndr_get_array_size(ndr, r->out.eventDataSizes);
+			if (size_eventDataSizes_2 > MAX_RPC_RECORD_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numActualRecords > MAX_RPC_RECORD_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataSizes, size_eventDataSizes_2);
 			_mem_save_eventDataSizes_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataSizes, 0);
-			for (cntr_eventDataSizes_2 = 0; cntr_eventDataSizes_2 < *r->out.numActualRecords; cntr_eventDataSizes_2++) {
+			for (cntr_eventDataSizes_2 = 0; cntr_eventDataSizes_2 < size_eventDataSizes_2; cntr_eventDataSizes_2++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &(*r->out.eventDataSizes)[cntr_eventDataSizes_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventDataSizes_2, 0);
@@ -1462,11 +1503,12 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNextAsync(st
 			_mem_save_resultBuffer_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.resultBuffer, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.resultBuffer));
-			NDR_PULL_ALLOC_N(ndr, *r->out.resultBuffer, ndr_get_array_size(ndr, r->out.resultBuffer));
-			if (ndr_get_array_size(ndr, r->out.resultBuffer) > MAX_RPC_BATCH_SIZE) {
+			size_resultBuffer_2 = ndr_get_array_size(ndr, r->out.resultBuffer);
+			if (size_resultBuffer_2 > MAX_RPC_BATCH_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.resultBuffer, ndr_get_array_size(ndr, r->out.resultBuffer)));
+			NDR_PULL_ALLOC_N(ndr, *r->out.resultBuffer, size_resultBuffer_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.resultBuffer, size_resultBuffer_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_resultBuffer_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_resultBuffer_0, LIBNDR_FLAG_REF_ALLOC);
@@ -1617,10 +1659,13 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcRemoteSubscriptionNext(struct 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNext(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcRemoteSubscriptionNext *r)
 {
 	uint32_t _ptr_eventDataIndices;
+	uint32_t size_eventDataIndices_2 = 0;
 	uint32_t cntr_eventDataIndices_2;
 	uint32_t _ptr_eventDataSizes;
+	uint32_t size_eventDataSizes_2 = 0;
 	uint32_t cntr_eventDataSizes_2;
 	uint32_t _ptr_resultBuffer;
+	uint32_t size_resultBuffer_2 = 0;
 	TALLOC_CTX *_mem_save_handle_0;
 	TALLOC_CTX *_mem_save_numActualRecords_0;
 	TALLOC_CTX *_mem_save_eventDataIndices_0;
@@ -1679,16 +1724,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNext(struct 
 			_mem_save_eventDataIndices_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataIndices, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventDataIndices));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataIndices, ndr_get_array_size(ndr, r->out.eventDataIndices));
-			if (ndr_get_array_size(ndr, r->out.eventDataIndices) > MAX_RPC_RECORD_COUNT) {
+			size_eventDataIndices_2 = ndr_get_array_size(ndr, r->out.eventDataIndices);
+			if (size_eventDataIndices_2 > MAX_RPC_RECORD_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numActualRecords > MAX_RPC_RECORD_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataIndices, size_eventDataIndices_2);
 			_mem_save_eventDataIndices_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataIndices, 0);
-			for (cntr_eventDataIndices_2 = 0; cntr_eventDataIndices_2 < *r->out.numActualRecords; cntr_eventDataIndices_2++) {
+			for (cntr_eventDataIndices_2 = 0; cntr_eventDataIndices_2 < size_eventDataIndices_2; cntr_eventDataIndices_2++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &(*r->out.eventDataIndices)[cntr_eventDataIndices_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventDataIndices_2, 0);
@@ -1710,16 +1753,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNext(struct 
 			_mem_save_eventDataSizes_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataSizes, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventDataSizes));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataSizes, ndr_get_array_size(ndr, r->out.eventDataSizes));
-			if (ndr_get_array_size(ndr, r->out.eventDataSizes) > MAX_RPC_RECORD_COUNT) {
+			size_eventDataSizes_2 = ndr_get_array_size(ndr, r->out.eventDataSizes);
+			if (size_eventDataSizes_2 > MAX_RPC_RECORD_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numActualRecords > MAX_RPC_RECORD_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataSizes, size_eventDataSizes_2);
 			_mem_save_eventDataSizes_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataSizes, 0);
-			for (cntr_eventDataSizes_2 = 0; cntr_eventDataSizes_2 < *r->out.numActualRecords; cntr_eventDataSizes_2++) {
+			for (cntr_eventDataSizes_2 = 0; cntr_eventDataSizes_2 < size_eventDataSizes_2; cntr_eventDataSizes_2++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &(*r->out.eventDataSizes)[cntr_eventDataSizes_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventDataSizes_2, 0);
@@ -1748,11 +1789,12 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRemoteSubscriptionNext(struct 
 			_mem_save_resultBuffer_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.resultBuffer, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.resultBuffer));
-			NDR_PULL_ALLOC_N(ndr, *r->out.resultBuffer, ndr_get_array_size(ndr, r->out.resultBuffer));
-			if (ndr_get_array_size(ndr, r->out.resultBuffer) > MAX_RPC_BATCH_SIZE) {
+			size_resultBuffer_2 = ndr_get_array_size(ndr, r->out.resultBuffer);
+			if (size_resultBuffer_2 > MAX_RPC_BATCH_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.resultBuffer, ndr_get_array_size(ndr, r->out.resultBuffer)));
+			NDR_PULL_ALLOC_N(ndr, *r->out.resultBuffer, size_resultBuffer_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.resultBuffer, size_resultBuffer_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_resultBuffer_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_resultBuffer_0, LIBNDR_FLAG_REF_ALLOC);
@@ -2024,7 +2066,12 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcRegisterLogQuery(struct ndr_pu
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterLogQuery(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcRegisterLogQuery *r)
 {
 	uint32_t _ptr_path;
+	uint32_t size_path_1 = 0;
+	uint32_t length_path_1 = 0;
+	uint32_t size_query_1 = 0;
+	uint32_t length_query_1 = 0;
 	uint32_t _ptr_queryChannelInfo;
+	uint32_t size_queryChannelInfo_2 = 0;
 	uint32_t cntr_queryChannelInfo_2;
 	TALLOC_CTX *_mem_save_path_0;
 	TALLOC_CTX *_mem_save_handle_0;
@@ -2048,26 +2095,36 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterLogQuery(struct ndr_pu
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.path, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.path));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.path));
-			if (ndr_get_array_length(ndr, &r->in.path) > ndr_get_array_size(ndr, &r->in.path)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.path), ndr_get_array_length(ndr, &r->in.path));
-			}
-			if (ndr_get_array_length(ndr, &r->in.path) > MAX_RPC_CHANNEL_PATH_LENGTH) {
+			size_path_1 = ndr_get_array_size(ndr, &r->in.path);
+			if (size_path_1 > MAX_RPC_CHANNEL_PATH_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.path), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.path, ndr_get_array_length(ndr, &r->in.path), sizeof(uint16_t), CH_UTF16));
+			length_path_1 = ndr_get_array_length(ndr, &r->in.path);
+			if (length_path_1 > MAX_RPC_CHANNEL_PATH_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_path_1 > size_path_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_path_1, length_path_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_path_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.path, length_path_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_path_0, 0);
 		}
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.query));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.query));
-		if (ndr_get_array_length(ndr, &r->in.query) > ndr_get_array_size(ndr, &r->in.query)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.query), ndr_get_array_length(ndr, &r->in.query));
-		}
-		if (ndr_get_array_length(ndr, &r->in.query) < 1 || ndr_get_array_length(ndr, &r->in.query) > MAX_RPC_QUERY_LENGTH) {
+		size_query_1 = ndr_get_array_size(ndr, &r->in.query);
+		if (size_query_1 < 1 || size_query_1 > MAX_RPC_QUERY_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.query), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.query, ndr_get_array_length(ndr, &r->in.query), sizeof(uint16_t), CH_UTF16));
+		length_query_1 = ndr_get_array_length(ndr, &r->in.query);
+		if (length_query_1 < 1 || length_query_1 > MAX_RPC_QUERY_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_query_1 > size_query_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_query_1, length_query_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_query_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.query, length_query_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		NDR_PULL_ALLOC(ndr, r->out.handle);
 		ZERO_STRUCTP(r->out.handle);
@@ -2117,19 +2174,17 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRegisterLogQuery(struct ndr_pu
 			_mem_save_queryChannelInfo_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.queryChannelInfo, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.queryChannelInfo));
-			NDR_PULL_ALLOC_N(ndr, *r->out.queryChannelInfo, ndr_get_array_size(ndr, r->out.queryChannelInfo));
-			if (ndr_get_array_size(ndr, r->out.queryChannelInfo) > MAX_RPC_QUERY_CHANNEL_SIZE) {
+			size_queryChannelInfo_2 = ndr_get_array_size(ndr, r->out.queryChannelInfo);
+			if (size_queryChannelInfo_2 > MAX_RPC_QUERY_CHANNEL_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.queryChannelInfoSize > MAX_RPC_QUERY_CHANNEL_SIZE) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.queryChannelInfo, size_queryChannelInfo_2);
 			_mem_save_queryChannelInfo_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.queryChannelInfo, 0);
-			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < *r->out.queryChannelInfoSize; cntr_queryChannelInfo_2++) {
+			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < size_queryChannelInfo_2; cntr_queryChannelInfo_2++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcQueryChannelInfo(ndr, NDR_SCALARS, &(*r->out.queryChannelInfo)[cntr_queryChannelInfo_2]));
 			}
-			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < *r->out.queryChannelInfoSize; cntr_queryChannelInfo_2++) {
+			for (cntr_queryChannelInfo_2 = 0; cntr_queryChannelInfo_2 < size_queryChannelInfo_2; cntr_queryChannelInfo_2++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcQueryChannelInfo(ndr, NDR_BUFFERS, &(*r->out.queryChannelInfo)[cntr_queryChannelInfo_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_queryChannelInfo_2, 0);
@@ -2250,7 +2305,11 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcClearLog(struct ndr_push *ndr,
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcClearLog(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcClearLog *r)
 {
+	uint32_t size_channelPath_1 = 0;
+	uint32_t length_channelPath_1 = 0;
 	uint32_t _ptr_backupPath;
+	uint32_t size_backupPath_1 = 0;
+	uint32_t length_backupPath_1 = 0;
 	TALLOC_CTX *_mem_save_control_0;
 	TALLOC_CTX *_mem_save_backupPath_0;
 	TALLOC_CTX *_mem_save_error_0;
@@ -2266,14 +2325,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcClearLog(struct ndr_pull *ndr,
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_control_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.channelPath));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.channelPath));
-		if (ndr_get_array_length(ndr, &r->in.channelPath) > ndr_get_array_size(ndr, &r->in.channelPath)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.channelPath), ndr_get_array_length(ndr, &r->in.channelPath));
-		}
-		if (ndr_get_array_length(ndr, &r->in.channelPath) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_channelPath_1 = ndr_get_array_size(ndr, &r->in.channelPath);
+		if (size_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t), CH_UTF16));
+		length_channelPath_1 = ndr_get_array_length(ndr, &r->in.channelPath);
+		if (length_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_channelPath_1 > size_channelPath_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channelPath_1, length_channelPath_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_channelPath_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, length_channelPath_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_backupPath));
 		if (_ptr_backupPath) {
 			NDR_PULL_ALLOC(ndr, r->in.backupPath);
@@ -2285,14 +2349,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcClearLog(struct ndr_pull *ndr,
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.backupPath, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.backupPath));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.backupPath));
-			if (ndr_get_array_length(ndr, &r->in.backupPath) > ndr_get_array_size(ndr, &r->in.backupPath)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.backupPath), ndr_get_array_length(ndr, &r->in.backupPath));
-			}
-			if (ndr_get_array_length(ndr, &r->in.backupPath) > MAX_RPC_FILE_PATH_LENGTH) {
+			size_backupPath_1 = ndr_get_array_size(ndr, &r->in.backupPath);
+			if (size_backupPath_1 > MAX_RPC_FILE_PATH_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.backupPath), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.backupPath, ndr_get_array_length(ndr, &r->in.backupPath), sizeof(uint16_t), CH_UTF16));
+			length_backupPath_1 = ndr_get_array_length(ndr, &r->in.backupPath);
+			if (length_backupPath_1 > MAX_RPC_FILE_PATH_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_backupPath_1 > size_backupPath_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_backupPath_1, length_backupPath_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_backupPath_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.backupPath, length_backupPath_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_backupPath_0, 0);
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
@@ -2396,6 +2465,12 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcExportLog(struct ndr_push *ndr
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcExportLog(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcExportLog *r)
 {
 	uint32_t _ptr_channelPath;
+	uint32_t size_channelPath_1 = 0;
+	uint32_t length_channelPath_1 = 0;
+	uint32_t size_query_1 = 0;
+	uint32_t length_query_1 = 0;
+	uint32_t size_backupPath_1 = 0;
+	uint32_t length_backupPath_1 = 0;
 	TALLOC_CTX *_mem_save_control_0;
 	TALLOC_CTX *_mem_save_channelPath_0;
 	TALLOC_CTX *_mem_save_error_0;
@@ -2420,36 +2495,51 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcExportLog(struct ndr_pull *ndr
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.channelPath, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.channelPath));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.channelPath));
-			if (ndr_get_array_length(ndr, &r->in.channelPath) > ndr_get_array_size(ndr, &r->in.channelPath)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.channelPath), ndr_get_array_length(ndr, &r->in.channelPath));
-			}
-			if (ndr_get_array_length(ndr, &r->in.channelPath) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			size_channelPath_1 = ndr_get_array_size(ndr, &r->in.channelPath);
+			if (size_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t), CH_UTF16));
+			length_channelPath_1 = ndr_get_array_length(ndr, &r->in.channelPath);
+			if (length_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_channelPath_1 > size_channelPath_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channelPath_1, length_channelPath_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_channelPath_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, length_channelPath_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_channelPath_0, 0);
 		}
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.query));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.query));
-		if (ndr_get_array_length(ndr, &r->in.query) > ndr_get_array_size(ndr, &r->in.query)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.query), ndr_get_array_length(ndr, &r->in.query));
-		}
-		if (ndr_get_array_length(ndr, &r->in.query) < 1 || ndr_get_array_length(ndr, &r->in.query) > MAX_RPC_QUERY_LENGTH) {
+		size_query_1 = ndr_get_array_size(ndr, &r->in.query);
+		if (size_query_1 < 1 || size_query_1 > MAX_RPC_QUERY_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.query), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.query, ndr_get_array_length(ndr, &r->in.query), sizeof(uint16_t), CH_UTF16));
+		length_query_1 = ndr_get_array_length(ndr, &r->in.query);
+		if (length_query_1 < 1 || length_query_1 > MAX_RPC_QUERY_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_query_1 > size_query_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_query_1, length_query_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_query_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.query, length_query_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.backupPath));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.backupPath));
-		if (ndr_get_array_length(ndr, &r->in.backupPath) > ndr_get_array_size(ndr, &r->in.backupPath)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.backupPath), ndr_get_array_length(ndr, &r->in.backupPath));
-		}
-		if (ndr_get_array_length(ndr, &r->in.backupPath) < 1 || ndr_get_array_length(ndr, &r->in.backupPath) > MAX_RPC_FILE_PATH_LENGTH) {
+		size_backupPath_1 = ndr_get_array_size(ndr, &r->in.backupPath);
+		if (size_backupPath_1 < 1 || size_backupPath_1 > MAX_RPC_FILE_PATH_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.backupPath), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.backupPath, ndr_get_array_length(ndr, &r->in.backupPath), sizeof(uint16_t), CH_UTF16));
+		length_backupPath_1 = ndr_get_array_length(ndr, &r->in.backupPath);
+		if (length_backupPath_1 < 1 || length_backupPath_1 > MAX_RPC_FILE_PATH_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_backupPath_1 > size_backupPath_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_backupPath_1, length_backupPath_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_backupPath_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.backupPath, length_backupPath_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		NDR_PULL_ALLOC(ndr, r->out.error);
 		ZERO_STRUCTP(r->out.error);
@@ -2541,6 +2631,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcLocalizeExportLog(struct ndr_p
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcLocalizeExportLog(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcLocalizeExportLog *r)
 {
+	uint32_t size_logFilePath_1 = 0;
+	uint32_t length_logFilePath_1 = 0;
 	TALLOC_CTX *_mem_save_control_0;
 	TALLOC_CTX *_mem_save_error_0;
 	if (flags & NDR_IN) {
@@ -2555,14 +2647,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcLocalizeExportLog(struct ndr_p
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_control_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.logFilePath));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.logFilePath));
-		if (ndr_get_array_length(ndr, &r->in.logFilePath) > ndr_get_array_size(ndr, &r->in.logFilePath)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.logFilePath), ndr_get_array_length(ndr, &r->in.logFilePath));
-		}
-		if (ndr_get_array_length(ndr, &r->in.logFilePath) < 1 || ndr_get_array_length(ndr, &r->in.logFilePath) > MAX_RPC_FILE_PATH_LENGTH) {
+		size_logFilePath_1 = ndr_get_array_size(ndr, &r->in.logFilePath);
+		if (size_logFilePath_1 < 1 || size_logFilePath_1 > MAX_RPC_FILE_PATH_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.logFilePath), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.logFilePath, ndr_get_array_length(ndr, &r->in.logFilePath), sizeof(uint16_t), CH_UTF16));
+		length_logFilePath_1 = ndr_get_array_length(ndr, &r->in.logFilePath);
+		if (length_logFilePath_1 < 1 || length_logFilePath_1 > MAX_RPC_FILE_PATH_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_logFilePath_1 > size_logFilePath_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_logFilePath_1, length_logFilePath_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_logFilePath_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.logFilePath, length_logFilePath_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.locale));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		NDR_PULL_ALLOC(ndr, r->out.error);
@@ -2666,7 +2763,9 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcMessageRender(struct ndr_push 
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcMessageRender(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcMessageRender *r)
 {
+	uint32_t size_eventId_1 = 0;
 	uint32_t _ptr_string;
+	uint32_t size_string_2 = 0;
 	TALLOC_CTX *_mem_save_pubCfgObj_0;
 	TALLOC_CTX *_mem_save_values_0;
 	TALLOC_CTX *_mem_save_actualSizeString_0;
@@ -2689,10 +2788,11 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcMessageRender(struct ndr_pull 
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.eventId));
+		size_eventId_1 = ndr_get_array_size(ndr, &r->in.eventId);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->in.eventId, ndr_get_array_size(ndr, &r->in.eventId));
+			NDR_PULL_ALLOC_N(ndr, r->in.eventId, size_eventId_1);
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.eventId, ndr_get_array_size(ndr, &r->in.eventId)));
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.eventId, size_eventId_1));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.messageId));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->in.values);
@@ -2745,11 +2845,12 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcMessageRender(struct ndr_pull 
 			_mem_save_string_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.string, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.string));
-			NDR_PULL_ALLOC_N(ndr, *r->out.string, ndr_get_array_size(ndr, r->out.string));
-			if (ndr_get_array_size(ndr, r->out.string) > MAX_RPC_RENDERED_STRING_SIZE) {
+			size_string_2 = ndr_get_array_size(ndr, r->out.string);
+			if (size_string_2 > MAX_RPC_RENDERED_STRING_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.string, ndr_get_array_size(ndr, r->out.string)));
+			NDR_PULL_ALLOC_N(ndr, *r->out.string, size_string_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.string, size_string_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_string_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_string_0, LIBNDR_FLAG_REF_ALLOC);
@@ -2872,7 +2973,9 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcMessageRenderDefault(struct nd
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcMessageRenderDefault(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcMessageRenderDefault *r)
 {
+	uint32_t size_eventId_1 = 0;
 	uint32_t _ptr_string;
+	uint32_t size_string_2 = 0;
 	TALLOC_CTX *_mem_save_values_0;
 	TALLOC_CTX *_mem_save_actualSizeString_0;
 	TALLOC_CTX *_mem_save_neededSizeString_0;
@@ -2887,10 +2990,11 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcMessageRenderDefault(struct nd
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.eventId));
+		size_eventId_1 = ndr_get_array_size(ndr, &r->in.eventId);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->in.eventId, ndr_get_array_size(ndr, &r->in.eventId));
+			NDR_PULL_ALLOC_N(ndr, r->in.eventId, size_eventId_1);
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.eventId, ndr_get_array_size(ndr, &r->in.eventId)));
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.eventId, size_eventId_1));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.messageId));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->in.values);
@@ -2943,11 +3047,12 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcMessageRenderDefault(struct nd
 			_mem_save_string_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.string, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.string));
-			NDR_PULL_ALLOC_N(ndr, *r->out.string, ndr_get_array_size(ndr, r->out.string));
-			if (ndr_get_array_size(ndr, r->out.string) > MAX_RPC_RENDERED_STRING_SIZE) {
+			size_string_2 = ndr_get_array_size(ndr, r->out.string);
+			if (size_string_2 > MAX_RPC_RENDERED_STRING_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.string, ndr_get_array_size(ndr, r->out.string)));
+			NDR_PULL_ALLOC_N(ndr, *r->out.string, size_string_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.string, size_string_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_string_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_string_0, LIBNDR_FLAG_REF_ALLOC);
@@ -3079,10 +3184,13 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcQueryNext(struct ndr_push *ndr
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQueryNext(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcQueryNext *r)
 {
 	uint32_t _ptr_eventDataIndices;
+	uint32_t size_eventDataIndices_2 = 0;
 	uint32_t cntr_eventDataIndices_2;
 	uint32_t _ptr_eventDataSizes;
+	uint32_t size_eventDataSizes_2 = 0;
 	uint32_t cntr_eventDataSizes_2;
 	uint32_t _ptr_resultBuffer;
+	uint32_t size_resultBuffer_2 = 0;
 	TALLOC_CTX *_mem_save_logQuery_0;
 	TALLOC_CTX *_mem_save_numActualRecords_0;
 	TALLOC_CTX *_mem_save_eventDataIndices_0;
@@ -3141,16 +3249,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQueryNext(struct ndr_pull *ndr
 			_mem_save_eventDataIndices_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataIndices, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventDataIndices));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataIndices, ndr_get_array_size(ndr, r->out.eventDataIndices));
-			if (ndr_get_array_size(ndr, r->out.eventDataIndices) > MAX_RPC_RECORD_COUNT) {
+			size_eventDataIndices_2 = ndr_get_array_size(ndr, r->out.eventDataIndices);
+			if (size_eventDataIndices_2 > MAX_RPC_RECORD_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numActualRecords > MAX_RPC_RECORD_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataIndices, size_eventDataIndices_2);
 			_mem_save_eventDataIndices_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataIndices, 0);
-			for (cntr_eventDataIndices_2 = 0; cntr_eventDataIndices_2 < *r->out.numActualRecords; cntr_eventDataIndices_2++) {
+			for (cntr_eventDataIndices_2 = 0; cntr_eventDataIndices_2 < size_eventDataIndices_2; cntr_eventDataIndices_2++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &(*r->out.eventDataIndices)[cntr_eventDataIndices_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventDataIndices_2, 0);
@@ -3172,16 +3278,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQueryNext(struct ndr_pull *ndr
 			_mem_save_eventDataSizes_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataSizes, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventDataSizes));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataSizes, ndr_get_array_size(ndr, r->out.eventDataSizes));
-			if (ndr_get_array_size(ndr, r->out.eventDataSizes) > MAX_RPC_RECORD_COUNT) {
+			size_eventDataSizes_2 = ndr_get_array_size(ndr, r->out.eventDataSizes);
+			if (size_eventDataSizes_2 > MAX_RPC_RECORD_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numActualRecords > MAX_RPC_RECORD_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventDataSizes, size_eventDataSizes_2);
 			_mem_save_eventDataSizes_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventDataSizes, 0);
-			for (cntr_eventDataSizes_2 = 0; cntr_eventDataSizes_2 < *r->out.numActualRecords; cntr_eventDataSizes_2++) {
+			for (cntr_eventDataSizes_2 = 0; cntr_eventDataSizes_2 < size_eventDataSizes_2; cntr_eventDataSizes_2++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &(*r->out.eventDataSizes)[cntr_eventDataSizes_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventDataSizes_2, 0);
@@ -3210,11 +3314,12 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQueryNext(struct ndr_pull *ndr
 			_mem_save_resultBuffer_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.resultBuffer, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.resultBuffer));
-			NDR_PULL_ALLOC_N(ndr, *r->out.resultBuffer, ndr_get_array_size(ndr, r->out.resultBuffer));
-			if (ndr_get_array_size(ndr, r->out.resultBuffer) > MAX_RPC_BATCH_SIZE) {
+			size_resultBuffer_2 = ndr_get_array_size(ndr, r->out.resultBuffer);
+			if (size_resultBuffer_2 > MAX_RPC_BATCH_SIZE) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.resultBuffer, ndr_get_array_size(ndr, r->out.resultBuffer)));
+			NDR_PULL_ALLOC_N(ndr, *r->out.resultBuffer, size_resultBuffer_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.resultBuffer, size_resultBuffer_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_resultBuffer_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_resultBuffer_0, LIBNDR_FLAG_REF_ALLOC);
@@ -3339,6 +3444,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcQuerySeek(struct ndr_push *ndr
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQuerySeek(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcQuerySeek *r)
 {
 	uint32_t _ptr_bookmarkXml;
+	uint32_t size_bookmarkXml_1 = 0;
+	uint32_t length_bookmarkXml_1 = 0;
 	TALLOC_CTX *_mem_save_logQuery_0;
 	TALLOC_CTX *_mem_save_bookmarkXml_0;
 	TALLOC_CTX *_mem_save_error_0;
@@ -3364,14 +3471,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcQuerySeek(struct ndr_pull *ndr
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.bookmarkXml, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.bookmarkXml));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.bookmarkXml));
-			if (ndr_get_array_length(ndr, &r->in.bookmarkXml) > ndr_get_array_size(ndr, &r->in.bookmarkXml)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.bookmarkXml), ndr_get_array_length(ndr, &r->in.bookmarkXml));
-			}
-			if (ndr_get_array_length(ndr, &r->in.bookmarkXml) > MAX_RPC_BOOKMARK_LENGTH) {
+			size_bookmarkXml_1 = ndr_get_array_size(ndr, &r->in.bookmarkXml);
+			if (size_bookmarkXml_1 > MAX_RPC_BOOKMARK_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.bookmarkXml), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.bookmarkXml, ndr_get_array_length(ndr, &r->in.bookmarkXml), sizeof(uint16_t), CH_UTF16));
+			length_bookmarkXml_1 = ndr_get_array_length(ndr, &r->in.bookmarkXml);
+			if (length_bookmarkXml_1 > MAX_RPC_BOOKMARK_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_bookmarkXml_1 > size_bookmarkXml_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_bookmarkXml_1, length_bookmarkXml_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_bookmarkXml_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.bookmarkXml, length_bookmarkXml_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_bookmarkXml_0, 0);
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.timeOut));
@@ -3626,17 +3738,24 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcAssertConfig(struct ndr_push *
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcAssertConfig(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcAssertConfig *r)
 {
+	uint32_t size_path_1 = 0;
+	uint32_t length_path_1 = 0;
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.path));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.path));
-		if (ndr_get_array_length(ndr, &r->in.path) > ndr_get_array_size(ndr, &r->in.path)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.path), ndr_get_array_length(ndr, &r->in.path));
-		}
-		if (ndr_get_array_length(ndr, &r->in.path) < 1 || ndr_get_array_length(ndr, &r->in.path) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_path_1 = ndr_get_array_size(ndr, &r->in.path);
+		if (size_path_1 < 1 || size_path_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.path), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.path, ndr_get_array_length(ndr, &r->in.path), sizeof(uint16_t), CH_UTF16));
+		length_path_1 = ndr_get_array_length(ndr, &r->in.path);
+		if (length_path_1 < 1 || length_path_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_path_1 > size_path_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_path_1, length_path_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_path_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.path, length_path_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 	}
 	if (flags & NDR_OUT) {
@@ -3692,17 +3811,24 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcRetractConfig(struct ndr_push 
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcRetractConfig(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcRetractConfig *r)
 {
+	uint32_t size_path_1 = 0;
+	uint32_t length_path_1 = 0;
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.path));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.path));
-		if (ndr_get_array_length(ndr, &r->in.path) > ndr_get_array_size(ndr, &r->in.path)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.path), ndr_get_array_length(ndr, &r->in.path));
-		}
-		if (ndr_get_array_length(ndr, &r->in.path) < 1 || ndr_get_array_length(ndr, &r->in.path) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_path_1 = ndr_get_array_size(ndr, &r->in.path);
+		if (size_path_1 < 1 || size_path_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.path), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.path, ndr_get_array_length(ndr, &r->in.path), sizeof(uint16_t), CH_UTF16));
+		length_path_1 = ndr_get_array_length(ndr, &r->in.path);
+		if (length_path_1 < 1 || length_path_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_path_1 > size_path_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_path_1, length_path_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_path_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.path, length_path_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 	}
 	if (flags & NDR_OUT) {
@@ -3766,6 +3892,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcOpenLogHandle(struct ndr_push 
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcOpenLogHandle(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcOpenLogHandle *r)
 {
+	uint32_t size_channel_1 = 0;
+	uint32_t length_channel_1 = 0;
 	TALLOC_CTX *_mem_save_handle_0;
 	TALLOC_CTX *_mem_save_error_0;
 	if (flags & NDR_IN) {
@@ -3773,14 +3901,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcOpenLogHandle(struct ndr_pull 
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.channel));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.channel));
-		if (ndr_get_array_length(ndr, &r->in.channel) > ndr_get_array_size(ndr, &r->in.channel)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.channel), ndr_get_array_length(ndr, &r->in.channel));
-		}
-		if (ndr_get_array_length(ndr, &r->in.channel) < 1 || ndr_get_array_length(ndr, &r->in.channel) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_channel_1 = ndr_get_array_size(ndr, &r->in.channel);
+		if (size_channel_1 < 1 || size_channel_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.channel), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channel, ndr_get_array_length(ndr, &r->in.channel), sizeof(uint16_t), CH_UTF16));
+		length_channel_1 = ndr_get_array_length(ndr, &r->in.channel);
+		if (length_channel_1 < 1 || length_channel_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_channel_1 > size_channel_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channel_1, length_channel_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_channel_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channel, length_channel_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		NDR_PULL_ALLOC(ndr, r->out.handle);
 		ZERO_STRUCTP(r->out.handle);
@@ -3869,6 +4002,7 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetLogFileInfo(struct ndr_push
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetLogFileInfo(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetLogFileInfo *r)
 {
+	uint32_t size_propertyValueBuffer_1 = 0;
 	TALLOC_CTX *_mem_save_logHandle_0;
 	TALLOC_CTX *_mem_save_propertyValueBufferLength_0;
 	if (flags & NDR_IN) {
@@ -3893,10 +4027,11 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetLogFileInfo(struct ndr_pull
 	}
 	if (flags & NDR_OUT) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.propertyValueBuffer));
+		size_propertyValueBuffer_1 = ndr_get_array_size(ndr, &r->out.propertyValueBuffer);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->out.propertyValueBuffer, ndr_get_array_size(ndr, &r->out.propertyValueBuffer));
+			NDR_PULL_ALLOC_N(ndr, r->out.propertyValueBuffer, size_propertyValueBuffer_1);
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.propertyValueBuffer, ndr_get_array_size(ndr, &r->out.propertyValueBuffer)));
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.propertyValueBuffer, size_propertyValueBuffer_1));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->out.propertyValueBufferLength);
 		}
@@ -3985,7 +4120,10 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetChannelList(struct ndr_push
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetChannelList(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetChannelList *r)
 {
 	uint32_t _ptr_channelPaths;
+	uint32_t size_channelPaths_2 = 0;
 	uint32_t cntr_channelPaths_2;
+	uint32_t size_channelPaths_4 = 0;
+	uint32_t length_channelPaths_4 = 0;
 	TALLOC_CTX *_mem_save_numChannelPaths_0;
 	TALLOC_CTX *_mem_save_channelPaths_0;
 	TALLOC_CTX *_mem_save_channelPaths_1;
@@ -4023,16 +4161,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetChannelList(struct ndr_pull
 			_mem_save_channelPaths_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.channelPaths, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.channelPaths));
-			NDR_PULL_ALLOC_N(ndr, *r->out.channelPaths, ndr_get_array_size(ndr, r->out.channelPaths));
-			if (ndr_get_array_size(ndr, r->out.channelPaths) > MAX_RPC_CHANNEL_COUNT) {
+			size_channelPaths_2 = ndr_get_array_size(ndr, r->out.channelPaths);
+			if (size_channelPaths_2 > MAX_RPC_CHANNEL_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numChannelPaths > MAX_RPC_CHANNEL_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.channelPaths, size_channelPaths_2);
 			_mem_save_channelPaths_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.channelPaths, 0);
-			for (cntr_channelPaths_2 = 0; cntr_channelPaths_2 < *r->out.numChannelPaths; cntr_channelPaths_2++) {
+			for (cntr_channelPaths_2 = 0; cntr_channelPaths_2 < size_channelPaths_2; cntr_channelPaths_2++) {
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_channelPaths));
 				if (_ptr_channelPaths) {
 					NDR_PULL_ALLOC(ndr, (*r->out.channelPaths)[cntr_channelPaths_2]);
@@ -4040,20 +4176,25 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetChannelList(struct ndr_pull
 					(*r->out.channelPaths)[cntr_channelPaths_2] = NULL;
 				}
 			}
-			for (cntr_channelPaths_2 = 0; cntr_channelPaths_2 < *r->out.numChannelPaths; cntr_channelPaths_2++) {
+			for (cntr_channelPaths_2 = 0; cntr_channelPaths_2 < size_channelPaths_2; cntr_channelPaths_2++) {
 				if ((*r->out.channelPaths)[cntr_channelPaths_2]) {
 					_mem_save_channelPaths_3 = NDR_PULL_GET_MEM_CTX(ndr);
 					NDR_PULL_SET_MEM_CTX(ndr, (*r->out.channelPaths)[cntr_channelPaths_2], 0);
 					NDR_CHECK(ndr_pull_array_size(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]));
 					NDR_CHECK(ndr_pull_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]));
-					if (ndr_get_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]) > ndr_get_array_size(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2])) {
-						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]), ndr_get_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]));
-					}
-					if (ndr_get_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]) > MAX_RPC_CHANNEL_COUNT) {
+					size_channelPaths_4 = ndr_get_array_size(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]);
+					if (size_channelPaths_4 > MAX_RPC_CHANNEL_COUNT) {
 						return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 					}
-					NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]), sizeof(uint16_t)));
-					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &(*r->out.channelPaths)[cntr_channelPaths_2], ndr_get_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]), sizeof(uint16_t), CH_UTF16));
+					length_channelPaths_4 = ndr_get_array_length(ndr, &(*r->out.channelPaths)[cntr_channelPaths_2]);
+					if (length_channelPaths_4 > MAX_RPC_CHANNEL_COUNT) {
+						return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+					}
+					if (length_channelPaths_4 > size_channelPaths_4) {
+						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channelPaths_4, length_channelPaths_4);
+					}
+					NDR_CHECK(ndr_check_string_terminator(ndr, length_channelPaths_4, sizeof(uint16_t)));
+					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &(*r->out.channelPaths)[cntr_channelPaths_2], length_channelPaths_4, sizeof(uint16_t), CH_UTF16));
 					NDR_PULL_SET_MEM_CTX(ndr, _mem_save_channelPaths_3, 0);
 				}
 			}
@@ -4140,20 +4281,27 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetChannelConfig(struct ndr_pu
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetChannelConfig(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetChannelConfig *r)
 {
+	uint32_t size_channelPath_1 = 0;
+	uint32_t length_channelPath_1 = 0;
 	TALLOC_CTX *_mem_save_props_0;
 	if (flags & NDR_IN) {
 		ZERO_STRUCT(r->out);
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.channelPath));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.channelPath));
-		if (ndr_get_array_length(ndr, &r->in.channelPath) > ndr_get_array_size(ndr, &r->in.channelPath)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.channelPath), ndr_get_array_length(ndr, &r->in.channelPath));
-		}
-		if (ndr_get_array_length(ndr, &r->in.channelPath) < 1 || ndr_get_array_length(ndr, &r->in.channelPath) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_channelPath_1 = ndr_get_array_size(ndr, &r->in.channelPath);
+		if (size_channelPath_1 < 1 || size_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t), CH_UTF16));
+		length_channelPath_1 = ndr_get_array_length(ndr, &r->in.channelPath);
+		if (length_channelPath_1 < 1 || length_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_channelPath_1 > size_channelPath_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channelPath_1, length_channelPath_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_channelPath_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, length_channelPath_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		NDR_PULL_ALLOC(ndr, r->out.props);
 		ZERO_STRUCTP(r->out.props);
@@ -4230,6 +4378,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcPutChannelConfig(struct ndr_pu
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcPutChannelConfig(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcPutChannelConfig *r)
 {
+	uint32_t size_channelPath_1 = 0;
+	uint32_t length_channelPath_1 = 0;
 	TALLOC_CTX *_mem_save_props_0;
 	TALLOC_CTX *_mem_save_error_0;
 	if (flags & NDR_IN) {
@@ -4237,14 +4387,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcPutChannelConfig(struct ndr_pu
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.channelPath));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.channelPath));
-		if (ndr_get_array_length(ndr, &r->in.channelPath) > ndr_get_array_size(ndr, &r->in.channelPath)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.channelPath), ndr_get_array_length(ndr, &r->in.channelPath));
-		}
-		if (ndr_get_array_length(ndr, &r->in.channelPath) < 1 || ndr_get_array_length(ndr, &r->in.channelPath) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_channelPath_1 = ndr_get_array_size(ndr, &r->in.channelPath);
+		if (size_channelPath_1 < 1 || size_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, ndr_get_array_length(ndr, &r->in.channelPath), sizeof(uint16_t), CH_UTF16));
+		length_channelPath_1 = ndr_get_array_length(ndr, &r->in.channelPath);
+		if (length_channelPath_1 < 1 || length_channelPath_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_channelPath_1 > size_channelPath_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_channelPath_1, length_channelPath_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_channelPath_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.channelPath, length_channelPath_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->in.props);
@@ -4341,7 +4496,10 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetPublisherList(struct ndr_pu
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherList(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetPublisherList *r)
 {
 	uint32_t _ptr_publisherIds;
+	uint32_t size_publisherIds_2 = 0;
 	uint32_t cntr_publisherIds_2;
+	uint32_t size_publisherIds_4 = 0;
+	uint32_t length_publisherIds_4 = 0;
 	TALLOC_CTX *_mem_save_numPublisherIds_0;
 	TALLOC_CTX *_mem_save_publisherIds_0;
 	TALLOC_CTX *_mem_save_publisherIds_1;
@@ -4379,16 +4537,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherList(struct ndr_pu
 			_mem_save_publisherIds_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.publisherIds, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.publisherIds));
-			NDR_PULL_ALLOC_N(ndr, *r->out.publisherIds, ndr_get_array_size(ndr, r->out.publisherIds));
-			if (ndr_get_array_size(ndr, r->out.publisherIds) > MAX_RPC_PUBLISHER_COUNT) {
+			size_publisherIds_2 = ndr_get_array_size(ndr, r->out.publisherIds);
+			if (size_publisherIds_2 > MAX_RPC_PUBLISHER_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numPublisherIds > MAX_RPC_PUBLISHER_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.publisherIds, size_publisherIds_2);
 			_mem_save_publisherIds_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.publisherIds, 0);
-			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < *r->out.numPublisherIds; cntr_publisherIds_2++) {
+			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < size_publisherIds_2; cntr_publisherIds_2++) {
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_publisherIds));
 				if (_ptr_publisherIds) {
 					NDR_PULL_ALLOC(ndr, (*r->out.publisherIds)[cntr_publisherIds_2]);
@@ -4396,20 +4552,25 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherList(struct ndr_pu
 					(*r->out.publisherIds)[cntr_publisherIds_2] = NULL;
 				}
 			}
-			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < *r->out.numPublisherIds; cntr_publisherIds_2++) {
+			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < size_publisherIds_2; cntr_publisherIds_2++) {
 				if ((*r->out.publisherIds)[cntr_publisherIds_2]) {
 					_mem_save_publisherIds_3 = NDR_PULL_GET_MEM_CTX(ndr);
 					NDR_PULL_SET_MEM_CTX(ndr, (*r->out.publisherIds)[cntr_publisherIds_2], 0);
 					NDR_CHECK(ndr_pull_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]));
 					NDR_CHECK(ndr_pull_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]));
-					if (ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]) > ndr_get_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2])) {
-						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]), ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]));
-					}
-					if (ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]) > MAX_RPC_PUBLISHER_COUNT) {
+					size_publisherIds_4 = ndr_get_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]);
+					if (size_publisherIds_4 > MAX_RPC_PUBLISHER_COUNT) {
 						return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 					}
-					NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]), sizeof(uint16_t)));
-					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &(*r->out.publisherIds)[cntr_publisherIds_2], ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]), sizeof(uint16_t), CH_UTF16));
+					length_publisherIds_4 = ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]);
+					if (length_publisherIds_4 > MAX_RPC_PUBLISHER_COUNT) {
+						return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+					}
+					if (length_publisherIds_4 > size_publisherIds_4) {
+						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_publisherIds_4, length_publisherIds_4);
+					}
+					NDR_CHECK(ndr_check_string_terminator(ndr, length_publisherIds_4, sizeof(uint16_t)));
+					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &(*r->out.publisherIds)[cntr_publisherIds_2], length_publisherIds_4, sizeof(uint16_t), CH_UTF16));
 					NDR_PULL_SET_MEM_CTX(ndr, _mem_save_publisherIds_3, 0);
 				}
 			}
@@ -4513,7 +4674,10 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetPublisherListForChannel(str
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherListForChannel(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetPublisherListForChannel *r)
 {
 	uint32_t _ptr_publisherIds;
+	uint32_t size_publisherIds_2 = 0;
 	uint32_t cntr_publisherIds_2;
+	uint32_t size_publisherIds_4 = 0;
+	uint32_t length_publisherIds_4 = 0;
 	TALLOC_CTX *_mem_save_channelName_0;
 	TALLOC_CTX *_mem_save_numPublisherIds_0;
 	TALLOC_CTX *_mem_save_publisherIds_0;
@@ -4559,16 +4723,14 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherListForChannel(str
 			_mem_save_publisherIds_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.publisherIds, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.publisherIds));
-			NDR_PULL_ALLOC_N(ndr, *r->out.publisherIds, ndr_get_array_size(ndr, r->out.publisherIds));
-			if (ndr_get_array_size(ndr, r->out.publisherIds) > MAX_RPC_PUBLISHER_COUNT) {
+			size_publisherIds_2 = ndr_get_array_size(ndr, r->out.publisherIds);
+			if (size_publisherIds_2 > MAX_RPC_PUBLISHER_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numPublisherIds > MAX_RPC_PUBLISHER_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.publisherIds, size_publisherIds_2);
 			_mem_save_publisherIds_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.publisherIds, 0);
-			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < *r->out.numPublisherIds; cntr_publisherIds_2++) {
+			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < size_publisherIds_2; cntr_publisherIds_2++) {
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_publisherIds));
 				if (_ptr_publisherIds) {
 					NDR_PULL_ALLOC(ndr, (*r->out.publisherIds)[cntr_publisherIds_2]);
@@ -4576,20 +4738,25 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherListForChannel(str
 					(*r->out.publisherIds)[cntr_publisherIds_2] = NULL;
 				}
 			}
-			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < *r->out.numPublisherIds; cntr_publisherIds_2++) {
+			for (cntr_publisherIds_2 = 0; cntr_publisherIds_2 < size_publisherIds_2; cntr_publisherIds_2++) {
 				if ((*r->out.publisherIds)[cntr_publisherIds_2]) {
 					_mem_save_publisherIds_3 = NDR_PULL_GET_MEM_CTX(ndr);
 					NDR_PULL_SET_MEM_CTX(ndr, (*r->out.publisherIds)[cntr_publisherIds_2], 0);
 					NDR_CHECK(ndr_pull_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]));
 					NDR_CHECK(ndr_pull_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]));
-					if (ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]) > ndr_get_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2])) {
-						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]), ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]));
-					}
-					if (ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]) > MAX_RPC_PUBLISHER_COUNT) {
+					size_publisherIds_4 = ndr_get_array_size(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]);
+					if (size_publisherIds_4 > MAX_RPC_PUBLISHER_COUNT) {
 						return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 					}
-					NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]), sizeof(uint16_t)));
-					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &(*r->out.publisherIds)[cntr_publisherIds_2], ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]), sizeof(uint16_t), CH_UTF16));
+					length_publisherIds_4 = ndr_get_array_length(ndr, &(*r->out.publisherIds)[cntr_publisherIds_2]);
+					if (length_publisherIds_4 > MAX_RPC_PUBLISHER_COUNT) {
+						return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+					}
+					if (length_publisherIds_4 > size_publisherIds_4) {
+						return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_publisherIds_4, length_publisherIds_4);
+					}
+					NDR_CHECK(ndr_check_string_terminator(ndr, length_publisherIds_4, sizeof(uint16_t)));
+					NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &(*r->out.publisherIds)[cntr_publisherIds_2], length_publisherIds_4, sizeof(uint16_t), CH_UTF16));
 					NDR_PULL_SET_MEM_CTX(ndr, _mem_save_publisherIds_3, 0);
 				}
 			}
@@ -4693,7 +4860,11 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetPublisherMetadata(struct nd
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherMetadata(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetPublisherMetadata *r)
 {
 	uint32_t _ptr_publisherId;
+	uint32_t size_publisherId_1 = 0;
+	uint32_t length_publisherId_1 = 0;
 	uint32_t _ptr_logFilePath;
+	uint32_t size_logFilePath_1 = 0;
+	uint32_t length_logFilePath_1 = 0;
 	TALLOC_CTX *_mem_save_publisherId_0;
 	TALLOC_CTX *_mem_save_logFilePath_0;
 	TALLOC_CTX *_mem_save_pubMetadataProps_0;
@@ -4712,14 +4883,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherMetadata(struct nd
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.publisherId, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.publisherId));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.publisherId));
-			if (ndr_get_array_length(ndr, &r->in.publisherId) > ndr_get_array_size(ndr, &r->in.publisherId)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.publisherId), ndr_get_array_length(ndr, &r->in.publisherId));
-			}
-			if (ndr_get_array_length(ndr, &r->in.publisherId) > MAX_RPC_PUBLISHER_ID_LENGTH) {
+			size_publisherId_1 = ndr_get_array_size(ndr, &r->in.publisherId);
+			if (size_publisherId_1 > MAX_RPC_PUBLISHER_ID_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.publisherId), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.publisherId, ndr_get_array_length(ndr, &r->in.publisherId), sizeof(uint16_t), CH_UTF16));
+			length_publisherId_1 = ndr_get_array_length(ndr, &r->in.publisherId);
+			if (length_publisherId_1 > MAX_RPC_PUBLISHER_ID_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_publisherId_1 > size_publisherId_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_publisherId_1, length_publisherId_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_publisherId_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.publisherId, length_publisherId_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_publisherId_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_logFilePath));
@@ -4733,14 +4909,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetPublisherMetadata(struct nd
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.logFilePath, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.logFilePath));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.logFilePath));
-			if (ndr_get_array_length(ndr, &r->in.logFilePath) > ndr_get_array_size(ndr, &r->in.logFilePath)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.logFilePath), ndr_get_array_length(ndr, &r->in.logFilePath));
-			}
-			if (ndr_get_array_length(ndr, &r->in.logFilePath) > MAX_RPC_FILE_PATH_LENGTH) {
+			size_logFilePath_1 = ndr_get_array_size(ndr, &r->in.logFilePath);
+			if (size_logFilePath_1 > MAX_RPC_FILE_PATH_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.logFilePath), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.logFilePath, ndr_get_array_length(ndr, &r->in.logFilePath), sizeof(uint16_t), CH_UTF16));
+			length_logFilePath_1 = ndr_get_array_length(ndr, &r->in.logFilePath);
+			if (length_logFilePath_1 > MAX_RPC_FILE_PATH_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_logFilePath_1 > size_logFilePath_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_logFilePath_1, length_logFilePath_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_logFilePath_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.logFilePath, length_logFilePath_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_logFilePath_0, 0);
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.locale));
@@ -4927,6 +5108,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetEventMetadataEnum(struct nd
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetEventMetadataEnum(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetEventMetadataEnum *r)
 {
 	uint32_t _ptr_reservedForFilter;
+	uint32_t size_reservedForFilter_1 = 0;
+	uint32_t length_reservedForFilter_1 = 0;
 	TALLOC_CTX *_mem_save_pubMetadata_0;
 	TALLOC_CTX *_mem_save_reservedForFilter_0;
 	TALLOC_CTX *_mem_save_eventMetaDataEnum_0;
@@ -4952,14 +5135,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetEventMetadataEnum(struct nd
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.reservedForFilter, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.reservedForFilter));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.reservedForFilter));
-			if (ndr_get_array_length(ndr, &r->in.reservedForFilter) > ndr_get_array_size(ndr, &r->in.reservedForFilter)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.reservedForFilter), ndr_get_array_length(ndr, &r->in.reservedForFilter));
-			}
-			if (ndr_get_array_length(ndr, &r->in.reservedForFilter) > MAX_RPC_FILTER_LENGTH) {
+			size_reservedForFilter_1 = ndr_get_array_size(ndr, &r->in.reservedForFilter);
+			if (size_reservedForFilter_1 > MAX_RPC_FILTER_LENGTH) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.reservedForFilter), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.reservedForFilter, ndr_get_array_length(ndr, &r->in.reservedForFilter), sizeof(uint16_t), CH_UTF16));
+			length_reservedForFilter_1 = ndr_get_array_length(ndr, &r->in.reservedForFilter);
+			if (length_reservedForFilter_1 > MAX_RPC_FILTER_LENGTH) {
+				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+			}
+			if (length_reservedForFilter_1 > size_reservedForFilter_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_reservedForFilter_1, length_reservedForFilter_1);
+			}
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_reservedForFilter_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.reservedForFilter, length_reservedForFilter_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_reservedForFilter_0, 0);
 		}
 		NDR_PULL_ALLOC(ndr, r->out.eventMetaDataEnum);
@@ -5052,6 +5240,7 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetNextEventMetadata(struct nd
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetNextEventMetadata(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetNextEventMetadata *r)
 {
 	uint32_t _ptr_eventMetadataInstances;
+	uint32_t size_eventMetadataInstances_2 = 0;
 	uint32_t cntr_eventMetadataInstances_2;
 	TALLOC_CTX *_mem_save_eventMetaDataEnum_0;
 	TALLOC_CTX *_mem_save_numReturned_0;
@@ -5098,19 +5287,17 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetNextEventMetadata(struct nd
 			_mem_save_eventMetadataInstances_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventMetadataInstances, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.eventMetadataInstances));
-			NDR_PULL_ALLOC_N(ndr, *r->out.eventMetadataInstances, ndr_get_array_size(ndr, r->out.eventMetadataInstances));
-			if (ndr_get_array_size(ndr, r->out.eventMetadataInstances) > MAX_RPC_EVENT_METADATA_COUNT) {
+			size_eventMetadataInstances_2 = ndr_get_array_size(ndr, r->out.eventMetadataInstances);
+			if (size_eventMetadataInstances_2 > MAX_RPC_EVENT_METADATA_COUNT) {
 				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 			}
-			if (*r->out.numReturned > MAX_RPC_EVENT_METADATA_COUNT) {
-				return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
-			}
+			NDR_PULL_ALLOC_N(ndr, *r->out.eventMetadataInstances, size_eventMetadataInstances_2);
 			_mem_save_eventMetadataInstances_2 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.eventMetadataInstances, 0);
-			for (cntr_eventMetadataInstances_2 = 0; cntr_eventMetadataInstances_2 < *r->out.numReturned; cntr_eventMetadataInstances_2++) {
+			for (cntr_eventMetadataInstances_2 = 0; cntr_eventMetadataInstances_2 < size_eventMetadataInstances_2; cntr_eventMetadataInstances_2++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcVariantList(ndr, NDR_SCALARS, &(*r->out.eventMetadataInstances)[cntr_eventMetadataInstances_2]));
 			}
-			for (cntr_eventMetadataInstances_2 = 0; cntr_eventMetadataInstances_2 < *r->out.numReturned; cntr_eventMetadataInstances_2++) {
+			for (cntr_eventMetadataInstances_2 = 0; cntr_eventMetadataInstances_2 < size_eventMetadataInstances_2; cntr_eventMetadataInstances_2++) {
 				NDR_CHECK(ndr_pull_eventlog6_EvtRpcVariantList(ndr, NDR_BUFFERS, &(*r->out.eventMetadataInstances)[cntr_eventMetadataInstances_2]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_eventMetadataInstances_2, 0);
@@ -5200,6 +5387,8 @@ static enum ndr_err_code ndr_push_eventlog6_EvtRpcGetClassicLogDisplayName(struc
 
 static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetClassicLogDisplayName(struct ndr_pull *ndr, int flags, struct eventlog6_EvtRpcGetClassicLogDisplayName *r)
 {
+	uint32_t size_logName_1 = 0;
+	uint32_t length_logName_1 = 0;
 	uint32_t _ptr_displayName;
 	TALLOC_CTX *_mem_save_displayName_0;
 	TALLOC_CTX *_mem_save_displayName_1;
@@ -5208,14 +5397,19 @@ static enum ndr_err_code ndr_pull_eventlog6_EvtRpcGetClassicLogDisplayName(struc
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.logName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.logName));
-		if (ndr_get_array_length(ndr, &r->in.logName) > ndr_get_array_size(ndr, &r->in.logName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.logName), ndr_get_array_length(ndr, &r->in.logName));
-		}
-		if (ndr_get_array_length(ndr, &r->in.logName) < 1 || ndr_get_array_length(ndr, &r->in.logName) > MAX_RPC_CHANNEL_NAME_LENGTH) {
+		size_logName_1 = ndr_get_array_size(ndr, &r->in.logName);
+		if (size_logName_1 < 1 || size_logName_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.logName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.logName, ndr_get_array_length(ndr, &r->in.logName), sizeof(uint16_t), CH_UTF16));
+		length_logName_1 = ndr_get_array_length(ndr, &r->in.logName);
+		if (length_logName_1 < 1 || length_logName_1 > MAX_RPC_CHANNEL_NAME_LENGTH) {
+			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
+		}
+		if (length_logName_1 > size_logName_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_logName_1, length_logName_1);
+		}
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_logName_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.logName, length_logName_1, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.locale));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.flags));
 		NDR_PULL_ALLOC(ndr, r->out.displayName);
