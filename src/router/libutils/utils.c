@@ -538,6 +538,9 @@ int internal_getRouterBrand()
 		} else if (!strncmp(gwid, "GW2380", 6)) {
 			setRouter("Gateworks Laguna GW2380");
 			return ROUTER_BOARD_GW2380;
+		} else if (!strncmp(gwid, "GW2387", 6)) {
+			setRouter("Gateworks Laguna GW2387");
+			return ROUTER_BOARD_GW2380;
 		} else {
 			setRouter("Gateworks Laguna GWXXXX");
 			return ROUTER_BOARD_GW2388;
