@@ -793,7 +793,7 @@ static int __init laguna_model_setup(void)
 		platform_device_register(&laguna_uart);
 
 		printk(KERN_EMERG "notflash size %d\n",laguna_info.nor_flash_size);
-		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && strncmp(laguna_info.model, "GW2388", 6) == 0) {
+		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && (strncmp(laguna_info.model, "GW2388", 6) == 0 || strncmp(laguna_info.model, "GW2387", 6) == 0)) {
 			printk(KERN_EMERG "detecting NOR FLASH\n");
 //			if (laguna_info.nor_flash_size < 1 || laguna_info.nor_flash_size > 5)
 //			    laguna_info.nor_flash_size = 2; //guess default for wrong config 
