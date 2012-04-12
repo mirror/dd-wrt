@@ -242,11 +242,13 @@ _PUBLIC_ enum ndr_err_code ndr_push_dns_rdata_data(struct ndr_push *ndr, int ndr
 
 _PUBLIC_ enum ndr_err_code ndr_pull_dns_rdata_data(struct ndr_pull *ndr, int ndr_flags, struct dns_rdata_data *r)
 {
+	uint32_t size_data_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 2));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->length));
-		NDR_PULL_ALLOC_N(ndr, r->data, r->length);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, r->length));
+		size_data_0 = r->length;
+		NDR_PULL_ALLOC_N(ndr, r->data, size_data_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, size_data_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 2));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -678,12 +680,16 @@ _PUBLIC_ enum ndr_err_code ndr_push_dns_name_packet(struct ndr_push *ndr, int nd
 
 _PUBLIC_ enum ndr_err_code ndr_pull_dns_name_packet(struct ndr_pull *ndr, int ndr_flags, struct dns_name_packet *r)
 {
+	uint32_t size_questions_0 = 0;
 	uint32_t cntr_questions_0;
 	TALLOC_CTX *_mem_save_questions_0;
+	uint32_t size_answers_0 = 0;
 	uint32_t cntr_answers_0;
 	TALLOC_CTX *_mem_save_answers_0;
+	uint32_t size_nsrecs_0 = 0;
 	uint32_t cntr_nsrecs_0;
 	TALLOC_CTX *_mem_save_nsrecs_0;
+	uint32_t size_additional_0 = 0;
 	uint32_t cntr_additional_0;
 	TALLOC_CTX *_mem_save_additional_0;
 	{
@@ -697,52 +703,59 @@ _PUBLIC_ enum ndr_err_code ndr_pull_dns_name_packet(struct ndr_pull *ndr, int nd
 			NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->ancount));
 			NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->nscount));
 			NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->arcount));
-			NDR_PULL_ALLOC_N(ndr, r->questions, r->qdcount);
+			size_questions_0 = r->qdcount;
+			NDR_PULL_ALLOC_N(ndr, r->questions, size_questions_0);
 			_mem_save_questions_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->questions, 0);
-			for (cntr_questions_0 = 0; cntr_questions_0 < r->qdcount; cntr_questions_0++) {
+			for (cntr_questions_0 = 0; cntr_questions_0 < size_questions_0; cntr_questions_0++) {
 				NDR_CHECK(ndr_pull_dns_name_question(ndr, NDR_SCALARS, &r->questions[cntr_questions_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_questions_0, 0);
-			NDR_PULL_ALLOC_N(ndr, r->answers, r->ancount);
+			size_answers_0 = r->ancount;
+			NDR_PULL_ALLOC_N(ndr, r->answers, size_answers_0);
 			_mem_save_answers_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->answers, 0);
-			for (cntr_answers_0 = 0; cntr_answers_0 < r->ancount; cntr_answers_0++) {
+			for (cntr_answers_0 = 0; cntr_answers_0 < size_answers_0; cntr_answers_0++) {
 				NDR_CHECK(ndr_pull_dns_res_rec(ndr, NDR_SCALARS, &r->answers[cntr_answers_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_answers_0, 0);
-			NDR_PULL_ALLOC_N(ndr, r->nsrecs, r->nscount);
+			size_nsrecs_0 = r->nscount;
+			NDR_PULL_ALLOC_N(ndr, r->nsrecs, size_nsrecs_0);
 			_mem_save_nsrecs_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->nsrecs, 0);
-			for (cntr_nsrecs_0 = 0; cntr_nsrecs_0 < r->nscount; cntr_nsrecs_0++) {
+			for (cntr_nsrecs_0 = 0; cntr_nsrecs_0 < size_nsrecs_0; cntr_nsrecs_0++) {
 				NDR_CHECK(ndr_pull_dns_res_rec(ndr, NDR_SCALARS, &r->nsrecs[cntr_nsrecs_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_nsrecs_0, 0);
-			NDR_PULL_ALLOC_N(ndr, r->additional, r->arcount);
+			size_additional_0 = r->arcount;
+			NDR_PULL_ALLOC_N(ndr, r->additional, size_additional_0);
 			_mem_save_additional_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->additional, 0);
-			for (cntr_additional_0 = 0; cntr_additional_0 < r->arcount; cntr_additional_0++) {
+			for (cntr_additional_0 = 0; cntr_additional_0 < size_additional_0; cntr_additional_0++) {
 				NDR_CHECK(ndr_pull_dns_res_rec(ndr, NDR_SCALARS, &r->additional[cntr_additional_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_additional_0, 0);
 			NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 		}
 		if (ndr_flags & NDR_BUFFERS) {
+			size_answers_0 = r->ancount;
 			_mem_save_answers_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->answers, 0);
-			for (cntr_answers_0 = 0; cntr_answers_0 < r->ancount; cntr_answers_0++) {
+			for (cntr_answers_0 = 0; cntr_answers_0 < size_answers_0; cntr_answers_0++) {
 				NDR_CHECK(ndr_pull_dns_res_rec(ndr, NDR_BUFFERS, &r->answers[cntr_answers_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_answers_0, 0);
+			size_nsrecs_0 = r->nscount;
 			_mem_save_nsrecs_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->nsrecs, 0);
-			for (cntr_nsrecs_0 = 0; cntr_nsrecs_0 < r->nscount; cntr_nsrecs_0++) {
+			for (cntr_nsrecs_0 = 0; cntr_nsrecs_0 < size_nsrecs_0; cntr_nsrecs_0++) {
 				NDR_CHECK(ndr_pull_dns_res_rec(ndr, NDR_BUFFERS, &r->nsrecs[cntr_nsrecs_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_nsrecs_0, 0);
+			size_additional_0 = r->arcount;
 			_mem_save_additional_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->additional, 0);
-			for (cntr_additional_0 = 0; cntr_additional_0 < r->arcount; cntr_additional_0++) {
+			for (cntr_additional_0 = 0; cntr_additional_0 < size_additional_0; cntr_additional_0++) {
 				NDR_CHECK(ndr_pull_dns_res_rec(ndr, NDR_BUFFERS, &r->additional[cntr_additional_0]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_additional_0, 0);

@@ -278,10 +278,12 @@ _PUBLIC_ enum ndr_err_code ndr_push_bkrp_dc_serverwrap_key(struct ndr_push *ndr,
 
 _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_dc_serverwrap_key(struct ndr_pull *ndr, int ndr_flags, struct bkrp_dc_serverwrap_key *r)
 {
+	uint32_t size_key_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->magic));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->key, 256));
+		size_key_0 = 256;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->key, size_key_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -318,16 +320,20 @@ _PUBLIC_ enum ndr_err_code ndr_push_bkrp_client_side_wrapped(struct ndr_push *nd
 
 _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_client_side_wrapped(struct ndr_pull *ndr, int ndr_flags, struct bkrp_client_side_wrapped *r)
 {
+	uint32_t size_encrypted_secret_0 = 0;
+	uint32_t size_access_check_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->version));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->encrypted_secret_len));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->access_check_len));
 		NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->guid));
-		NDR_PULL_ALLOC_N(ndr, r->encrypted_secret, r->encrypted_secret_len);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->encrypted_secret, r->encrypted_secret_len));
-		NDR_PULL_ALLOC_N(ndr, r->access_check, r->access_check_len);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->access_check, r->access_check_len));
+		size_encrypted_secret_0 = r->encrypted_secret_len;
+		NDR_PULL_ALLOC_N(ndr, r->encrypted_secret, size_encrypted_secret_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->encrypted_secret, size_encrypted_secret_0));
+		size_access_check_0 = r->access_check_len;
+		NDR_PULL_ALLOC_N(ndr, r->access_check, size_access_check_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->access_check, size_access_check_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -427,13 +433,17 @@ _PUBLIC_ enum ndr_err_code ndr_push_bkrp_encrypted_secret_v2(struct ndr_push *nd
 
 _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_encrypted_secret_v2(struct ndr_pull *ndr, int ndr_flags, struct bkrp_encrypted_secret_v2 *r)
 {
+	uint32_t size_secret_0 = 0;
+	uint32_t size_payload_key_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->secret_len));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->magic));
-		NDR_PULL_ALLOC_N(ndr, r->secret, r->secret_len);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->secret, r->secret_len));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->payload_key, 32));
+		size_secret_0 = r->secret_len;
+		NDR_PULL_ALLOC_N(ndr, r->secret, size_secret_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->secret, size_secret_0));
+		size_payload_key_0 = 32;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->payload_key, size_payload_key_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -472,15 +482,19 @@ _PUBLIC_ enum ndr_err_code ndr_push_bkrp_encrypted_secret_v3(struct ndr_push *nd
 
 _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_encrypted_secret_v3(struct ndr_pull *ndr, int ndr_flags, struct bkrp_encrypted_secret_v3 *r)
 {
+	uint32_t size_secret_0 = 0;
+	uint32_t size_payload_key_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->secret_len));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->magic1));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->magic2));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->magic3));
-		NDR_PULL_ALLOC_N(ndr, r->secret, r->secret_len);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->secret, r->secret_len));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->payload_key, 48));
+		size_secret_0 = r->secret_len;
+		NDR_PULL_ALLOC_N(ndr, r->secret, size_secret_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->secret, size_secret_0));
+		size_payload_key_0 = 48;
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->payload_key, size_payload_key_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -650,7 +664,9 @@ _PUBLIC_ enum ndr_err_code ndr_push_bkrp_BackupKey(struct ndr_push *ndr, int fla
 
 _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_BackupKey(struct ndr_pull *ndr, int flags, struct bkrp_BackupKey *r)
 {
+	uint32_t size_data_in_1 = 0;
 	uint32_t _ptr_data_out;
+	uint32_t size_data_out_2 = 0;
 	TALLOC_CTX *_mem_save_guidActionAgent_0;
 	TALLOC_CTX *_mem_save_data_out_0;
 	TALLOC_CTX *_mem_save_data_out_1;
@@ -666,10 +682,11 @@ _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_BackupKey(struct ndr_pull *ndr, int fla
 		NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, r->in.guidActionAgent));
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_guidActionAgent_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.data_in));
+		size_data_in_1 = ndr_get_array_size(ndr, &r->in.data_in);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->in.data_in, ndr_get_array_size(ndr, &r->in.data_in));
+			NDR_PULL_ALLOC_N(ndr, r->in.data_in, size_data_in_1);
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.data_in, ndr_get_array_size(ndr, &r->in.data_in)));
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.data_in, size_data_in_1));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.data_in_len));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.param));
 		NDR_PULL_ALLOC(ndr, r->out.data_out);
@@ -696,8 +713,9 @@ _PUBLIC_ enum ndr_err_code ndr_pull_bkrp_BackupKey(struct ndr_pull *ndr, int fla
 			_mem_save_data_out_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.data_out, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.data_out));
-			NDR_PULL_ALLOC_N(ndr, *r->out.data_out, ndr_get_array_size(ndr, r->out.data_out));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.data_out, ndr_get_array_size(ndr, r->out.data_out)));
+			size_data_out_2 = ndr_get_array_size(ndr, r->out.data_out);
+			NDR_PULL_ALLOC_N(ndr, *r->out.data_out, size_data_out_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.data_out, size_data_out_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_data_out_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_data_out_0, LIBNDR_FLAG_REF_ALLOC);

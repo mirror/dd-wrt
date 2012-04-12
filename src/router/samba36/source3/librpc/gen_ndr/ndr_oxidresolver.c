@@ -75,6 +75,7 @@ static enum ndr_err_code ndr_push_ResolveOxid(struct ndr_push *ndr, int flags, c
 
 static enum ndr_err_code ndr_pull_ResolveOxid(struct ndr_pull *ndr, int flags, struct ResolveOxid *r)
 {
+	uint32_t size_arRequestedProtseqs_0 = 0;
 	uint32_t cntr_arRequestedProtseqs_0;
 	uint32_t _ptr_ppdsaOxidBindings;
 	TALLOC_CTX *_mem_save_arRequestedProtseqs_0;
@@ -88,10 +89,11 @@ static enum ndr_err_code ndr_pull_ResolveOxid(struct ndr_pull *ndr, int flags, s
 		NDR_CHECK(ndr_pull_hyper(ndr, NDR_SCALARS, &r->in.pOxid));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.cRequestedProtseqs));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.arRequestedProtseqs));
-		NDR_PULL_ALLOC_N(ndr, r->in.arRequestedProtseqs, ndr_get_array_size(ndr, &r->in.arRequestedProtseqs));
+		size_arRequestedProtseqs_0 = ndr_get_array_size(ndr, &r->in.arRequestedProtseqs);
+		NDR_PULL_ALLOC_N(ndr, r->in.arRequestedProtseqs, size_arRequestedProtseqs_0);
 		_mem_save_arRequestedProtseqs_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.arRequestedProtseqs, 0);
-		for (cntr_arRequestedProtseqs_0 = 0; cntr_arRequestedProtseqs_0 < r->in.cRequestedProtseqs; cntr_arRequestedProtseqs_0++) {
+		for (cntr_arRequestedProtseqs_0 = 0; cntr_arRequestedProtseqs_0 < size_arRequestedProtseqs_0; cntr_arRequestedProtseqs_0++) {
 			NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.arRequestedProtseqs[cntr_arRequestedProtseqs_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_arRequestedProtseqs_0, 0);
@@ -286,7 +288,9 @@ static enum ndr_err_code ndr_push_ComplexPing(struct ndr_push *ndr, int flags, c
 
 static enum ndr_err_code ndr_pull_ComplexPing(struct ndr_pull *ndr, int flags, struct ComplexPing *r)
 {
+	uint32_t size_AddToSet_0 = 0;
 	uint32_t cntr_AddToSet_0;
+	uint32_t size_DelFromSet_0 = 0;
 	uint32_t cntr_DelFromSet_0;
 	TALLOC_CTX *_mem_save_SetId_0;
 	TALLOC_CTX *_mem_save_AddToSet_0;
@@ -306,18 +310,20 @@ static enum ndr_err_code ndr_pull_ComplexPing(struct ndr_pull *ndr, int flags, s
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.cAddToSet));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.cDelFromSet));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.AddToSet));
-		NDR_PULL_ALLOC_N(ndr, r->in.AddToSet, ndr_get_array_size(ndr, &r->in.AddToSet));
+		size_AddToSet_0 = ndr_get_array_size(ndr, &r->in.AddToSet);
+		NDR_PULL_ALLOC_N(ndr, r->in.AddToSet, size_AddToSet_0);
 		_mem_save_AddToSet_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.AddToSet, 0);
-		for (cntr_AddToSet_0 = 0; cntr_AddToSet_0 < r->in.cAddToSet; cntr_AddToSet_0++) {
+		for (cntr_AddToSet_0 = 0; cntr_AddToSet_0 < size_AddToSet_0; cntr_AddToSet_0++) {
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->in.AddToSet[cntr_AddToSet_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_AddToSet_0, 0);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.DelFromSet));
-		NDR_PULL_ALLOC_N(ndr, r->in.DelFromSet, ndr_get_array_size(ndr, &r->in.DelFromSet));
+		size_DelFromSet_0 = ndr_get_array_size(ndr, &r->in.DelFromSet);
+		NDR_PULL_ALLOC_N(ndr, r->in.DelFromSet, size_DelFromSet_0);
 		_mem_save_DelFromSet_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.DelFromSet, 0);
-		for (cntr_DelFromSet_0 = 0; cntr_DelFromSet_0 < r->in.cDelFromSet; cntr_DelFromSet_0++) {
+		for (cntr_DelFromSet_0 = 0; cntr_DelFromSet_0 < size_DelFromSet_0; cntr_DelFromSet_0++) {
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->in.DelFromSet[cntr_DelFromSet_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_DelFromSet_0, 0);
@@ -483,6 +489,7 @@ static enum ndr_err_code ndr_push_ResolveOxid2(struct ndr_push *ndr, int flags, 
 
 static enum ndr_err_code ndr_pull_ResolveOxid2(struct ndr_pull *ndr, int flags, struct ResolveOxid2 *r)
 {
+	uint32_t size_arRequestedProtseqs_0 = 0;
 	uint32_t cntr_arRequestedProtseqs_0;
 	uint32_t _ptr_pdsaOxidBindings;
 	TALLOC_CTX *_mem_save_arRequestedProtseqs_0;
@@ -497,10 +504,11 @@ static enum ndr_err_code ndr_pull_ResolveOxid2(struct ndr_pull *ndr, int flags, 
 		NDR_CHECK(ndr_pull_hyper(ndr, NDR_SCALARS, &r->in.pOxid));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.cRequestedProtseqs));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.arRequestedProtseqs));
-		NDR_PULL_ALLOC_N(ndr, r->in.arRequestedProtseqs, ndr_get_array_size(ndr, &r->in.arRequestedProtseqs));
+		size_arRequestedProtseqs_0 = ndr_get_array_size(ndr, &r->in.arRequestedProtseqs);
+		NDR_PULL_ALLOC_N(ndr, r->in.arRequestedProtseqs, size_arRequestedProtseqs_0);
 		_mem_save_arRequestedProtseqs_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.arRequestedProtseqs, 0);
-		for (cntr_arRequestedProtseqs_0 = 0; cntr_arRequestedProtseqs_0 < r->in.cRequestedProtseqs; cntr_arRequestedProtseqs_0++) {
+		for (cntr_arRequestedProtseqs_0 = 0; cntr_arRequestedProtseqs_0 < size_arRequestedProtseqs_0; cntr_arRequestedProtseqs_0++) {
 			NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.arRequestedProtseqs[cntr_arRequestedProtseqs_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_arRequestedProtseqs_0, 0);

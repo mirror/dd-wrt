@@ -1037,8 +1037,10 @@ static enum ndr_err_code ndr_pull_RemQueryInterface(struct ndr_pull *ndr, int fl
 {
 	uint32_t _ptr_ripid;
 	uint32_t _ptr_iids;
+	uint32_t size_iids_1 = 0;
 	uint32_t cntr_iids_1;
 	uint32_t _ptr_ip;
+	uint32_t size_ip_1 = 0;
 	uint32_t cntr_ip_1;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_ripid_0;
@@ -1074,10 +1076,11 @@ static enum ndr_err_code ndr_pull_RemQueryInterface(struct ndr_pull *ndr, int fl
 			_mem_save_iids_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.iids, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.iids));
-			NDR_PULL_ALLOC_N(ndr, r->in.iids, ndr_get_array_size(ndr, &r->in.iids));
+			size_iids_1 = ndr_get_array_size(ndr, &r->in.iids);
+			NDR_PULL_ALLOC_N(ndr, r->in.iids, size_iids_1);
 			_mem_save_iids_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.iids, 0);
-			for (cntr_iids_1 = 0; cntr_iids_1 < r->in.cIids; cntr_iids_1++) {
+			for (cntr_iids_1 = 0; cntr_iids_1 < size_iids_1; cntr_iids_1++) {
 				NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->in.iids[cntr_iids_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_iids_1, 0);
@@ -1107,13 +1110,14 @@ static enum ndr_err_code ndr_pull_RemQueryInterface(struct ndr_pull *ndr, int fl
 			_mem_save_ip_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.ip, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->out.ip));
-			NDR_PULL_ALLOC_N(ndr, r->out.ip, ndr_get_array_size(ndr, &r->out.ip));
+			size_ip_1 = ndr_get_array_size(ndr, &r->out.ip);
+			NDR_PULL_ALLOC_N(ndr, r->out.ip, size_ip_1);
 			_mem_save_ip_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.ip, 0);
-			for (cntr_ip_1 = 0; cntr_ip_1 < r->in.cIids; cntr_ip_1++) {
+			for (cntr_ip_1 = 0; cntr_ip_1 < size_ip_1; cntr_ip_1++) {
 				NDR_CHECK(ndr_pull_MInterfacePointer(ndr, NDR_SCALARS, &r->out.ip[cntr_ip_1]));
 			}
-			for (cntr_ip_1 = 0; cntr_ip_1 < r->in.cIids; cntr_ip_1++) {
+			for (cntr_ip_1 = 0; cntr_ip_1 < size_ip_1; cntr_ip_1++) {
 				NDR_CHECK(ndr_pull_MInterfacePointer(ndr, NDR_BUFFERS, &r->out.ip[cntr_ip_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ip_1, 0);
@@ -1217,8 +1221,10 @@ static enum ndr_err_code ndr_push_RemAddRef(struct ndr_push *ndr, int flags, con
 
 static enum ndr_err_code ndr_pull_RemAddRef(struct ndr_pull *ndr, int flags, struct RemAddRef *r)
 {
+	uint32_t size_InterfaceRefs_0 = 0;
 	uint32_t cntr_InterfaceRefs_0;
 	uint32_t _ptr_pResults;
+	uint32_t size_pResults_1 = 0;
 	uint32_t cntr_pResults_1;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_InterfaceRefs_0;
@@ -1230,10 +1236,11 @@ static enum ndr_err_code ndr_pull_RemAddRef(struct ndr_pull *ndr, int flags, str
 		NDR_CHECK(ndr_pull_ORPCTHIS(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.ORPCthis));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.cInterfaceRefs));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.InterfaceRefs));
-		NDR_PULL_ALLOC_N(ndr, r->in.InterfaceRefs, ndr_get_array_size(ndr, &r->in.InterfaceRefs));
+		size_InterfaceRefs_0 = ndr_get_array_size(ndr, &r->in.InterfaceRefs);
+		NDR_PULL_ALLOC_N(ndr, r->in.InterfaceRefs, size_InterfaceRefs_0);
 		_mem_save_InterfaceRefs_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.InterfaceRefs, 0);
-		for (cntr_InterfaceRefs_0 = 0; cntr_InterfaceRefs_0 < r->in.cInterfaceRefs; cntr_InterfaceRefs_0++) {
+		for (cntr_InterfaceRefs_0 = 0; cntr_InterfaceRefs_0 < size_InterfaceRefs_0; cntr_InterfaceRefs_0++) {
 			NDR_CHECK(ndr_pull_REMINTERFACEREF(ndr, NDR_SCALARS, &r->in.InterfaceRefs[cntr_InterfaceRefs_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_InterfaceRefs_0, 0);
@@ -1261,10 +1268,11 @@ static enum ndr_err_code ndr_pull_RemAddRef(struct ndr_pull *ndr, int flags, str
 			_mem_save_pResults_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.pResults, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->out.pResults));
-			NDR_PULL_ALLOC_N(ndr, r->out.pResults, ndr_get_array_size(ndr, &r->out.pResults));
+			size_pResults_1 = ndr_get_array_size(ndr, &r->out.pResults);
+			NDR_PULL_ALLOC_N(ndr, r->out.pResults, size_pResults_1);
 			_mem_save_pResults_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.pResults, 0);
-			for (cntr_pResults_1 = 0; cntr_pResults_1 < r->in.cInterfaceRefs; cntr_pResults_1++) {
+			for (cntr_pResults_1 = 0; cntr_pResults_1 < size_pResults_1; cntr_pResults_1++) {
 				NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.pResults[cntr_pResults_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_pResults_1, 0);
@@ -1348,6 +1356,7 @@ static enum ndr_err_code ndr_push_RemRelease(struct ndr_push *ndr, int flags, co
 
 static enum ndr_err_code ndr_pull_RemRelease(struct ndr_pull *ndr, int flags, struct RemRelease *r)
 {
+	uint32_t size_InterfaceRefs_0 = 0;
 	uint32_t cntr_InterfaceRefs_0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_InterfaceRefs_0;
@@ -1357,10 +1366,11 @@ static enum ndr_err_code ndr_pull_RemRelease(struct ndr_pull *ndr, int flags, st
 		NDR_CHECK(ndr_pull_ORPCTHIS(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.ORPCthis));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.cInterfaceRefs));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.InterfaceRefs));
-		NDR_PULL_ALLOC_N(ndr, r->in.InterfaceRefs, ndr_get_array_size(ndr, &r->in.InterfaceRefs));
+		size_InterfaceRefs_0 = ndr_get_array_size(ndr, &r->in.InterfaceRefs);
+		NDR_PULL_ALLOC_N(ndr, r->in.InterfaceRefs, size_InterfaceRefs_0);
 		_mem_save_InterfaceRefs_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.InterfaceRefs, 0);
-		for (cntr_InterfaceRefs_0 = 0; cntr_InterfaceRefs_0 < r->in.cInterfaceRefs; cntr_InterfaceRefs_0++) {
+		for (cntr_InterfaceRefs_0 = 0; cntr_InterfaceRefs_0 < size_InterfaceRefs_0; cntr_InterfaceRefs_0++) {
 			NDR_CHECK(ndr_pull_REMINTERFACEREF(ndr, NDR_SCALARS, &r->in.InterfaceRefs[cntr_InterfaceRefs_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_InterfaceRefs_0, 0);
@@ -2112,10 +2122,13 @@ static enum ndr_err_code ndr_pull_RemQueryInterface2(struct ndr_pull *ndr, int f
 {
 	uint32_t _ptr_ripid;
 	uint32_t _ptr_iids;
+	uint32_t size_iids_1 = 0;
 	uint32_t cntr_iids_1;
 	uint32_t _ptr_phr;
+	uint32_t size_phr_1 = 0;
 	uint32_t cntr_phr_1;
 	uint32_t _ptr_ppMIF;
+	uint32_t size_ppMIF_1 = 0;
 	uint32_t cntr_ppMIF_1;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_ripid_0;
@@ -2152,10 +2165,11 @@ static enum ndr_err_code ndr_pull_RemQueryInterface2(struct ndr_pull *ndr, int f
 			_mem_save_iids_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.iids, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.iids));
-			NDR_PULL_ALLOC_N(ndr, r->in.iids, ndr_get_array_size(ndr, &r->in.iids));
+			size_iids_1 = ndr_get_array_size(ndr, &r->in.iids);
+			NDR_PULL_ALLOC_N(ndr, r->in.iids, size_iids_1);
 			_mem_save_iids_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.iids, 0);
-			for (cntr_iids_1 = 0; cntr_iids_1 < r->in.cIids; cntr_iids_1++) {
+			for (cntr_iids_1 = 0; cntr_iids_1 < size_iids_1; cntr_iids_1++) {
 				NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->in.iids[cntr_iids_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_iids_1, 0);
@@ -2185,10 +2199,11 @@ static enum ndr_err_code ndr_pull_RemQueryInterface2(struct ndr_pull *ndr, int f
 			_mem_save_phr_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.phr, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->out.phr));
-			NDR_PULL_ALLOC_N(ndr, r->out.phr, ndr_get_array_size(ndr, &r->out.phr));
+			size_phr_1 = ndr_get_array_size(ndr, &r->out.phr);
+			NDR_PULL_ALLOC_N(ndr, r->out.phr, size_phr_1);
 			_mem_save_phr_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.phr, 0);
-			for (cntr_phr_1 = 0; cntr_phr_1 < r->in.cIids; cntr_phr_1++) {
+			for (cntr_phr_1 = 0; cntr_phr_1 < size_phr_1; cntr_phr_1++) {
 				NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.phr[cntr_phr_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_phr_1, 0);
@@ -2204,13 +2219,14 @@ static enum ndr_err_code ndr_pull_RemQueryInterface2(struct ndr_pull *ndr, int f
 			_mem_save_ppMIF_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.ppMIF, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->out.ppMIF));
-			NDR_PULL_ALLOC_N(ndr, r->out.ppMIF, ndr_get_array_size(ndr, &r->out.ppMIF));
+			size_ppMIF_1 = ndr_get_array_size(ndr, &r->out.ppMIF);
+			NDR_PULL_ALLOC_N(ndr, r->out.ppMIF, size_ppMIF_1);
 			_mem_save_ppMIF_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.ppMIF, 0);
-			for (cntr_ppMIF_1 = 0; cntr_ppMIF_1 < r->in.cIids; cntr_ppMIF_1++) {
+			for (cntr_ppMIF_1 = 0; cntr_ppMIF_1 < size_ppMIF_1; cntr_ppMIF_1++) {
 				NDR_CHECK(ndr_pull_MInterfacePointer(ndr, NDR_SCALARS, &r->out.ppMIF[cntr_ppMIF_1]));
 			}
-			for (cntr_ppMIF_1 = 0; cntr_ppMIF_1 < r->in.cIids; cntr_ppMIF_1++) {
+			for (cntr_ppMIF_1 = 0; cntr_ppMIF_1 < size_ppMIF_1; cntr_ppMIF_1++) {
 				NDR_CHECK(ndr_pull_MInterfacePointer(ndr, NDR_BUFFERS, &r->out.ppMIF[cntr_ppMIF_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ppMIF_1, 0);
@@ -2692,6 +2708,7 @@ static enum ndr_err_code ndr_pull_GetIDsOfNames(struct ndr_pull *ndr, int flags,
 {
 	uint32_t _ptr_riid;
 	uint32_t _ptr_rgDispId;
+	uint32_t size_rgDispId_1 = 0;
 	uint32_t cntr_rgDispId_1;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_riid_0;
@@ -2736,10 +2753,11 @@ static enum ndr_err_code ndr_pull_GetIDsOfNames(struct ndr_pull *ndr, int flags,
 			_mem_save_rgDispId_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.rgDispId, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->out.rgDispId));
-			NDR_PULL_ALLOC_N(ndr, r->out.rgDispId, ndr_get_array_size(ndr, &r->out.rgDispId));
+			size_rgDispId_1 = ndr_get_array_size(ndr, &r->out.rgDispId);
+			NDR_PULL_ALLOC_N(ndr, r->out.rgDispId, size_rgDispId_1);
 			_mem_save_rgDispId_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.rgDispId, 0);
-			for (cntr_rgDispId_1 = 0; cntr_rgDispId_1 < r->in.cNames; cntr_rgDispId_1++) {
+			for (cntr_rgDispId_1 = 0; cntr_rgDispId_1 < size_rgDispId_1; cntr_rgDispId_1++) {
 				NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->out.rgDispId[cntr_rgDispId_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_rgDispId_1, 0);
@@ -3298,6 +3316,8 @@ static enum ndr_err_code ndr_push_MakeCoffee(struct ndr_push *ndr, int flags, co
 
 static enum ndr_err_code ndr_pull_MakeCoffee(struct ndr_pull *ndr, int flags, struct MakeCoffee *r)
 {
+	uint32_t size_flavor_1 = 0;
+	uint32_t length_flavor_1 = 0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	if (flags & NDR_IN) {
 		ZERO_STRUCT(r->out);
@@ -3305,11 +3325,13 @@ static enum ndr_err_code ndr_pull_MakeCoffee(struct ndr_pull *ndr, int flags, st
 		NDR_CHECK(ndr_pull_ORPCTHIS(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.ORPCthis));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.flavor));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.flavor));
-		if (ndr_get_array_length(ndr, &r->in.flavor) > ndr_get_array_size(ndr, &r->in.flavor)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.flavor), ndr_get_array_length(ndr, &r->in.flavor));
+		size_flavor_1 = ndr_get_array_size(ndr, &r->in.flavor);
+		length_flavor_1 = ndr_get_array_length(ndr, &r->in.flavor);
+		if (length_flavor_1 > size_flavor_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_flavor_1, length_flavor_1);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.flavor), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.flavor, ndr_get_array_length(ndr, &r->in.flavor), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_flavor_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.flavor, length_flavor_1, sizeof(uint16_t), CH_UTF16));
 		NDR_PULL_ALLOC(ndr, r->out.ORPCthat);
 		ZERO_STRUCTP(r->out.ORPCthat);
 	}
@@ -3433,6 +3455,8 @@ static enum ndr_err_code ndr_push_Read(struct ndr_push *ndr, int flags, const st
 
 static enum ndr_err_code ndr_pull_Read(struct ndr_pull *ndr, int flags, struct Read *r)
 {
+	uint32_t size_pv_0 = 0;
+	uint32_t length_pv_0 = 0;
 	uint32_t _ptr_num_readx;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_num_readx_0;
@@ -3469,11 +3493,13 @@ static enum ndr_err_code ndr_pull_Read(struct ndr_pull *ndr, int flags, struct R
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ORPCthat_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.pv));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->out.pv));
-		if (ndr_get_array_length(ndr, &r->out.pv) > ndr_get_array_size(ndr, &r->out.pv)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->out.pv), ndr_get_array_length(ndr, &r->out.pv));
+		size_pv_0 = ndr_get_array_size(ndr, &r->out.pv);
+		length_pv_0 = ndr_get_array_length(ndr, &r->out.pv);
+		if (length_pv_0 > size_pv_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_pv_0, length_pv_0);
 		}
-		NDR_PULL_ALLOC_N(ndr, r->out.pv, ndr_get_array_size(ndr, &r->out.pv));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.pv, ndr_get_array_length(ndr, &r->out.pv)));
+		NDR_PULL_ALLOC_N(ndr, r->out.pv, size_pv_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.pv, length_pv_0));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->out.num_read);
 		}
@@ -3559,6 +3585,7 @@ static enum ndr_err_code ndr_push_Write(struct ndr_push *ndr, int flags, const s
 static enum ndr_err_code ndr_pull_Write(struct ndr_pull *ndr, int flags, struct Write *r)
 {
 	uint32_t _ptr_data;
+	uint32_t size_data_1 = 0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_data_0;
 	TALLOC_CTX *_mem_save_num_written_0;
@@ -3576,8 +3603,9 @@ static enum ndr_err_code ndr_pull_Write(struct ndr_pull *ndr, int flags, struct 
 			_mem_save_data_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.data, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.data));
-			NDR_PULL_ALLOC_N(ndr, r->in.data, ndr_get_array_size(ndr, &r->in.data));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.data, ndr_get_array_size(ndr, &r->in.data)));
+			size_data_1 = ndr_get_array_size(ndr, &r->in.data);
+			NDR_PULL_ALLOC_N(ndr, r->in.data, size_data_1);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.data, size_data_1));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_data_0, 0);
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.num_requested));

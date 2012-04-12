@@ -24,6 +24,7 @@ static enum ndr_err_code ndr_push_EFS_HASH_BLOB(struct ndr_push *ndr, int ndr_fl
 static enum ndr_err_code ndr_pull_EFS_HASH_BLOB(struct ndr_pull *ndr, int ndr_flags, struct EFS_HASH_BLOB *r)
 {
 	uint32_t _ptr_pbData;
+	uint32_t size_pbData_1 = 0;
 	TALLOC_CTX *_mem_save_pbData_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -41,8 +42,9 @@ static enum ndr_err_code ndr_pull_EFS_HASH_BLOB(struct ndr_pull *ndr, int ndr_fl
 			_mem_save_pbData_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->pbData, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->pbData));
-			NDR_PULL_ALLOC_N(ndr, r->pbData, ndr_get_array_size(ndr, &r->pbData));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->pbData, ndr_get_array_size(ndr, &r->pbData)));
+			size_pbData_1 = ndr_get_array_size(ndr, &r->pbData);
+			NDR_PULL_ALLOC_N(ndr, r->pbData, size_pbData_1);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->pbData, size_pbData_1));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_pbData_0, 0);
 		}
 		if (r->pbData) {
@@ -101,6 +103,8 @@ static enum ndr_err_code ndr_pull_ENCRYPTION_CERTIFICATE_HASH(struct ndr_pull *n
 	uint32_t _ptr_pHash;
 	TALLOC_CTX *_mem_save_pHash_0;
 	uint32_t _ptr_lpDisplayInformation;
+	uint32_t size_lpDisplayInformation_1 = 0;
+	uint32_t length_lpDisplayInformation_1 = 0;
 	TALLOC_CTX *_mem_save_lpDisplayInformation_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -143,11 +147,13 @@ static enum ndr_err_code ndr_pull_ENCRYPTION_CERTIFICATE_HASH(struct ndr_pull *n
 			NDR_PULL_SET_MEM_CTX(ndr, r->lpDisplayInformation, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->lpDisplayInformation));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->lpDisplayInformation));
-			if (ndr_get_array_length(ndr, &r->lpDisplayInformation) > ndr_get_array_size(ndr, &r->lpDisplayInformation)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->lpDisplayInformation), ndr_get_array_length(ndr, &r->lpDisplayInformation));
+			size_lpDisplayInformation_1 = ndr_get_array_size(ndr, &r->lpDisplayInformation);
+			length_lpDisplayInformation_1 = ndr_get_array_length(ndr, &r->lpDisplayInformation);
+			if (length_lpDisplayInformation_1 > size_lpDisplayInformation_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_lpDisplayInformation_1, length_lpDisplayInformation_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->lpDisplayInformation), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->lpDisplayInformation, ndr_get_array_length(ndr, &r->lpDisplayInformation), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_lpDisplayInformation_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->lpDisplayInformation, length_lpDisplayInformation_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_lpDisplayInformation_0, 0);
 		}
 	}
@@ -206,6 +212,7 @@ static enum ndr_err_code ndr_push_ENCRYPTION_CERTIFICATE_HASH_LIST(struct ndr_pu
 static enum ndr_err_code ndr_pull_ENCRYPTION_CERTIFICATE_HASH_LIST(struct ndr_pull *ndr, int ndr_flags, struct ENCRYPTION_CERTIFICATE_HASH_LIST *r)
 {
 	uint32_t _ptr_pUsers;
+	uint32_t size_pUsers_0 = 0;
 	uint32_t cntr_pUsers_0;
 	TALLOC_CTX *_mem_save_pUsers_0;
 	TALLOC_CTX *_mem_save_pUsers_1;
@@ -213,10 +220,11 @@ static enum ndr_err_code ndr_pull_ENCRYPTION_CERTIFICATE_HASH_LIST(struct ndr_pu
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->pUsers));
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->nCert_Hash));
-		NDR_PULL_ALLOC_N(ndr, r->pUsers, ndr_get_array_size(ndr, &r->pUsers));
+		size_pUsers_0 = ndr_get_array_size(ndr, &r->pUsers);
+		NDR_PULL_ALLOC_N(ndr, r->pUsers, size_pUsers_0);
 		_mem_save_pUsers_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->pUsers, 0);
-		for (cntr_pUsers_0 = 0; cntr_pUsers_0 < r->nCert_Hash; cntr_pUsers_0++) {
+		for (cntr_pUsers_0 = 0; cntr_pUsers_0 < size_pUsers_0; cntr_pUsers_0++) {
 			NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_pUsers));
 			if (_ptr_pUsers) {
 				NDR_PULL_ALLOC(ndr, r->pUsers[cntr_pUsers_0]);
@@ -231,9 +239,10 @@ static enum ndr_err_code ndr_pull_ENCRYPTION_CERTIFICATE_HASH_LIST(struct ndr_pu
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 5));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
+		size_pUsers_0 = ndr_get_array_size(ndr, &r->pUsers);
 		_mem_save_pUsers_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->pUsers, 0);
-		for (cntr_pUsers_0 = 0; cntr_pUsers_0 < r->nCert_Hash; cntr_pUsers_0++) {
+		for (cntr_pUsers_0 = 0; cntr_pUsers_0 < size_pUsers_0; cntr_pUsers_0++) {
 			if (r->pUsers[cntr_pUsers_0]) {
 				_mem_save_pUsers_1 = NDR_PULL_GET_MEM_CTX(ndr);
 				NDR_PULL_SET_MEM_CTX(ndr, r->pUsers[cntr_pUsers_0], 0);
@@ -288,6 +297,7 @@ static enum ndr_err_code ndr_push_EFS_CERTIFICATE_BLOB(struct ndr_push *ndr, int
 static enum ndr_err_code ndr_pull_EFS_CERTIFICATE_BLOB(struct ndr_pull *ndr, int ndr_flags, struct EFS_CERTIFICATE_BLOB *r)
 {
 	uint32_t _ptr_pbData;
+	uint32_t size_pbData_1 = 0;
 	TALLOC_CTX *_mem_save_pbData_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -306,8 +316,9 @@ static enum ndr_err_code ndr_pull_EFS_CERTIFICATE_BLOB(struct ndr_pull *ndr, int
 			_mem_save_pbData_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->pbData, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->pbData));
-			NDR_PULL_ALLOC_N(ndr, r->pbData, ndr_get_array_size(ndr, &r->pbData));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->pbData, ndr_get_array_size(ndr, &r->pbData)));
+			size_pbData_1 = ndr_get_array_size(ndr, &r->pbData);
+			NDR_PULL_ALLOC_N(ndr, r->pbData, size_pbData_1);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->pbData, size_pbData_1));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_pbData_0, 0);
 		}
 		if (r->pbData) {
@@ -435,17 +446,21 @@ static enum ndr_err_code ndr_push_EfsRpcOpenFileRaw(struct ndr_push *ndr, int fl
 
 static enum ndr_err_code ndr_pull_EfsRpcOpenFileRaw(struct ndr_pull *ndr, int flags, struct EfsRpcOpenFileRaw *r)
 {
+	uint32_t size_FileName_0 = 0;
+	uint32_t length_FileName_0 = 0;
 	TALLOC_CTX *_mem_save_pvContext_0;
 	if (flags & NDR_IN) {
 		ZERO_STRUCT(r->out);
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.FileName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.FileName));
-		if (ndr_get_array_length(ndr, &r->in.FileName) > ndr_get_array_size(ndr, &r->in.FileName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.FileName), ndr_get_array_length(ndr, &r->in.FileName));
+		size_FileName_0 = ndr_get_array_size(ndr, &r->in.FileName);
+		length_FileName_0 = ndr_get_array_length(ndr, &r->in.FileName);
+		if (length_FileName_0 > size_FileName_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_FileName_0, length_FileName_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_FileName_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, length_FileName_0, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.Flags));
 		NDR_PULL_ALLOC(ndr, r->out.pvContext);
 		ZERO_STRUCTP(r->out.pvContext);
@@ -697,14 +712,18 @@ static enum ndr_err_code ndr_push_EfsRpcEncryptFileSrv(struct ndr_push *ndr, int
 
 static enum ndr_err_code ndr_pull_EfsRpcEncryptFileSrv(struct ndr_pull *ndr, int flags, struct EfsRpcEncryptFileSrv *r)
 {
+	uint32_t size_Filename_0 = 0;
+	uint32_t length_Filename_0 = 0;
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.Filename));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.Filename));
-		if (ndr_get_array_length(ndr, &r->in.Filename) > ndr_get_array_size(ndr, &r->in.Filename)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.Filename), ndr_get_array_length(ndr, &r->in.Filename));
+		size_Filename_0 = ndr_get_array_size(ndr, &r->in.Filename);
+		length_Filename_0 = ndr_get_array_length(ndr, &r->in.Filename);
+		if (length_Filename_0 > size_Filename_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_Filename_0, length_Filename_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.Filename), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.Filename, ndr_get_array_length(ndr, &r->in.Filename), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_Filename_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.Filename, length_Filename_0, sizeof(uint16_t), CH_UTF16));
 	}
 	if (flags & NDR_OUT) {
 		NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.result));
@@ -752,14 +771,18 @@ static enum ndr_err_code ndr_push_EfsRpcDecryptFileSrv(struct ndr_push *ndr, int
 
 static enum ndr_err_code ndr_pull_EfsRpcDecryptFileSrv(struct ndr_pull *ndr, int flags, struct EfsRpcDecryptFileSrv *r)
 {
+	uint32_t size_FileName_0 = 0;
+	uint32_t length_FileName_0 = 0;
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.FileName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.FileName));
-		if (ndr_get_array_length(ndr, &r->in.FileName) > ndr_get_array_size(ndr, &r->in.FileName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.FileName), ndr_get_array_length(ndr, &r->in.FileName));
+		size_FileName_0 = ndr_get_array_size(ndr, &r->in.FileName);
+		length_FileName_0 = ndr_get_array_length(ndr, &r->in.FileName);
+		if (length_FileName_0 > size_FileName_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_FileName_0, length_FileName_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_FileName_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, length_FileName_0, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.Reserved));
 	}
 	if (flags & NDR_OUT) {
@@ -815,6 +838,8 @@ static enum ndr_err_code ndr_push_EfsRpcQueryUsersOnFile(struct ndr_push *ndr, i
 
 static enum ndr_err_code ndr_pull_EfsRpcQueryUsersOnFile(struct ndr_pull *ndr, int flags, struct EfsRpcQueryUsersOnFile *r)
 {
+	uint32_t size_FileName_0 = 0;
+	uint32_t length_FileName_0 = 0;
 	uint32_t _ptr_pUsers;
 	TALLOC_CTX *_mem_save_pUsers_0;
 	TALLOC_CTX *_mem_save_pUsers_1;
@@ -823,11 +848,13 @@ static enum ndr_err_code ndr_pull_EfsRpcQueryUsersOnFile(struct ndr_pull *ndr, i
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.FileName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.FileName));
-		if (ndr_get_array_length(ndr, &r->in.FileName) > ndr_get_array_size(ndr, &r->in.FileName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.FileName), ndr_get_array_length(ndr, &r->in.FileName));
+		size_FileName_0 = ndr_get_array_size(ndr, &r->in.FileName);
+		length_FileName_0 = ndr_get_array_length(ndr, &r->in.FileName);
+		if (length_FileName_0 > size_FileName_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_FileName_0, length_FileName_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_FileName_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, length_FileName_0, sizeof(uint16_t), CH_UTF16));
 		NDR_PULL_ALLOC(ndr, r->out.pUsers);
 		ZERO_STRUCTP(r->out.pUsers);
 	}
@@ -910,6 +937,8 @@ static enum ndr_err_code ndr_push_EfsRpcQueryRecoveryAgents(struct ndr_push *ndr
 
 static enum ndr_err_code ndr_pull_EfsRpcQueryRecoveryAgents(struct ndr_pull *ndr, int flags, struct EfsRpcQueryRecoveryAgents *r)
 {
+	uint32_t size_FileName_0 = 0;
+	uint32_t length_FileName_0 = 0;
 	uint32_t _ptr_pRecoveryAgents;
 	TALLOC_CTX *_mem_save_pRecoveryAgents_0;
 	TALLOC_CTX *_mem_save_pRecoveryAgents_1;
@@ -918,11 +947,13 @@ static enum ndr_err_code ndr_pull_EfsRpcQueryRecoveryAgents(struct ndr_pull *ndr
 
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.FileName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.FileName));
-		if (ndr_get_array_length(ndr, &r->in.FileName) > ndr_get_array_size(ndr, &r->in.FileName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.FileName), ndr_get_array_length(ndr, &r->in.FileName));
+		size_FileName_0 = ndr_get_array_size(ndr, &r->in.FileName);
+		length_FileName_0 = ndr_get_array_length(ndr, &r->in.FileName);
+		if (length_FileName_0 > size_FileName_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_FileName_0, length_FileName_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_FileName_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, length_FileName_0, sizeof(uint16_t), CH_UTF16));
 		NDR_PULL_ALLOC(ndr, r->out.pRecoveryAgents);
 		ZERO_STRUCTP(r->out.pRecoveryAgents);
 	}
@@ -998,14 +1029,18 @@ static enum ndr_err_code ndr_push_EfsRpcRemoveUsersFromFile(struct ndr_push *ndr
 
 static enum ndr_err_code ndr_pull_EfsRpcRemoveUsersFromFile(struct ndr_pull *ndr, int flags, struct EfsRpcRemoveUsersFromFile *r)
 {
+	uint32_t size_FileName_0 = 0;
+	uint32_t length_FileName_0 = 0;
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.FileName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.FileName));
-		if (ndr_get_array_length(ndr, &r->in.FileName) > ndr_get_array_size(ndr, &r->in.FileName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.FileName), ndr_get_array_length(ndr, &r->in.FileName));
+		size_FileName_0 = ndr_get_array_size(ndr, &r->in.FileName);
+		length_FileName_0 = ndr_get_array_length(ndr, &r->in.FileName);
+		if (length_FileName_0 > size_FileName_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_FileName_0, length_FileName_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_FileName_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, length_FileName_0, sizeof(uint16_t), CH_UTF16));
 	}
 	if (flags & NDR_OUT) {
 		NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.result));
@@ -1052,14 +1087,18 @@ static enum ndr_err_code ndr_push_EfsRpcAddUsersToFile(struct ndr_push *ndr, int
 
 static enum ndr_err_code ndr_pull_EfsRpcAddUsersToFile(struct ndr_pull *ndr, int flags, struct EfsRpcAddUsersToFile *r)
 {
+	uint32_t size_FileName_0 = 0;
+	uint32_t length_FileName_0 = 0;
 	if (flags & NDR_IN) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.FileName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.FileName));
-		if (ndr_get_array_length(ndr, &r->in.FileName) > ndr_get_array_size(ndr, &r->in.FileName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.FileName), ndr_get_array_length(ndr, &r->in.FileName));
+		size_FileName_0 = ndr_get_array_size(ndr, &r->in.FileName);
+		length_FileName_0 = ndr_get_array_length(ndr, &r->in.FileName);
+		if (length_FileName_0 > size_FileName_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_FileName_0, length_FileName_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, ndr_get_array_length(ndr, &r->in.FileName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_FileName_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.FileName, length_FileName_0, sizeof(uint16_t), CH_UTF16));
 	}
 	if (flags & NDR_OUT) {
 		NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.result));

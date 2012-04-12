@@ -38,30 +38,44 @@ _PUBLIC_ enum ndr_err_code ndr_push_preg_entry(struct ndr_push *ndr, int ndr_fla
 
 _PUBLIC_ enum ndr_err_code ndr_pull_preg_entry(struct ndr_pull *ndr, int ndr_flags, struct preg_entry *r)
 {
+	uint32_t size__opening_bracket_0 = 0;
+	uint32_t size__sep1_0 = 0;
+	uint32_t size__sep2_0 = 0;
+	uint32_t size__sep3_0 = 0;
+	uint32_t size__sep4_0 = 0;
+	uint32_t size_data_0 = 0;
+	uint32_t size__closing_bracket_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_opening_bracket, 2, sizeof(uint8_t), CH_DOS));
+		size__opening_bracket_0 = 2;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_opening_bracket, size__opening_bracket_0, sizeof(uint8_t), CH_DOS));
 		{
 			uint32_t _flags_save_string = ndr->flags;
 			ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2);
 			NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->keyname));
 			ndr->flags = _flags_save_string;
 		}
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep1, 2, sizeof(uint8_t), CH_DOS));
+		size__sep1_0 = 2;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep1, size__sep1_0, sizeof(uint8_t), CH_DOS));
 		{
 			uint32_t _flags_save_string = ndr->flags;
 			ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2);
 			NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->valuename));
 			ndr->flags = _flags_save_string;
 		}
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep2, 2, sizeof(uint8_t), CH_DOS));
+		size__sep2_0 = 2;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep2, size__sep2_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_winreg_Type(ndr, NDR_SCALARS, &r->type));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep3, 2, sizeof(uint8_t), CH_DOS));
+		size__sep3_0 = 2;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep3, size__sep3_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->size));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep4, 2, sizeof(uint8_t), CH_DOS));
-		NDR_PULL_ALLOC_N(ndr, r->data, r->size);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, r->size));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_closing_bracket, 2, sizeof(uint8_t), CH_DOS));
+		size__sep4_0 = 2;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_sep4, size__sep4_0, sizeof(uint8_t), CH_DOS));
+		size_data_0 = r->size;
+		NDR_PULL_ALLOC_N(ndr, r->data, size_data_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, size_data_0));
+		size__closing_bracket_0 = 2;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->_closing_bracket, size__closing_bracket_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -97,9 +111,11 @@ _PUBLIC_ enum ndr_err_code ndr_push_preg_header(struct ndr_push *ndr, int ndr_fl
 
 _PUBLIC_ enum ndr_err_code ndr_pull_preg_header(struct ndr_pull *ndr, int ndr_flags, struct preg_header *r)
 {
+	uint32_t size_signature_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->signature, 4, sizeof(uint8_t), CH_DOS));
+		size_signature_0 = 4;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->signature, size_signature_0, sizeof(uint8_t), CH_DOS));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->version));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}

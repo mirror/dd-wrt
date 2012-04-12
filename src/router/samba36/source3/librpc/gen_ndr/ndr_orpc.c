@@ -57,13 +57,15 @@ _PUBLIC_ enum ndr_err_code ndr_push_ORPC_EXTENT(struct ndr_push *ndr, int ndr_fl
 
 _PUBLIC_ enum ndr_err_code ndr_pull_ORPC_EXTENT(struct ndr_pull *ndr, int ndr_flags, struct ORPC_EXTENT *r)
 {
+	uint32_t size_data_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->data));
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->id));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->size));
-		NDR_PULL_ALLOC_N(ndr, r->data, ndr_get_array_size(ndr, &r->data));
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, ndr_get_array_size(ndr, &r->data)));
+		size_data_0 = ndr_get_array_size(ndr, &r->data);
+		NDR_PULL_ALLOC_N(ndr, r->data, size_data_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, size_data_0));
 		if (r->data) {
 			NDR_CHECK(ndr_check_array_size(ndr, (void*)&r->data, ((r->size + 7) & ~7)));
 		}
@@ -114,6 +116,7 @@ static enum ndr_err_code ndr_push_ORPC_EXTENT_ARRAY(struct ndr_push *ndr, int nd
 static enum ndr_err_code ndr_pull_ORPC_EXTENT_ARRAY(struct ndr_pull *ndr, int ndr_flags, struct ORPC_EXTENT_ARRAY *r)
 {
 	uint32_t _ptr_extent;
+	uint32_t size_extent_1 = 0;
 	uint32_t cntr_extent_1;
 	TALLOC_CTX *_mem_save_extent_0;
 	TALLOC_CTX *_mem_save_extent_1;
@@ -135,10 +138,11 @@ static enum ndr_err_code ndr_pull_ORPC_EXTENT_ARRAY(struct ndr_pull *ndr, int nd
 			_mem_save_extent_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->extent, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->extent));
-			NDR_PULL_ALLOC_N(ndr, r->extent, ndr_get_array_size(ndr, &r->extent));
+			size_extent_1 = ndr_get_array_size(ndr, &r->extent);
+			NDR_PULL_ALLOC_N(ndr, r->extent, size_extent_1);
 			_mem_save_extent_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->extent, 0);
-			for (cntr_extent_1 = 0; cntr_extent_1 < ((r->size + 1) & ~1); cntr_extent_1++) {
+			for (cntr_extent_1 = 0; cntr_extent_1 < size_extent_1; cntr_extent_1++) {
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_extent));
 				if (_ptr_extent) {
 					NDR_PULL_ALLOC(ndr, r->extent[cntr_extent_1]);
@@ -146,7 +150,7 @@ static enum ndr_err_code ndr_pull_ORPC_EXTENT_ARRAY(struct ndr_pull *ndr, int nd
 					r->extent[cntr_extent_1] = NULL;
 				}
 			}
-			for (cntr_extent_1 = 0; cntr_extent_1 < ((r->size + 1) & ~1); cntr_extent_1++) {
+			for (cntr_extent_1 = 0; cntr_extent_1 < size_extent_1; cntr_extent_1++) {
 				if (r->extent[cntr_extent_1]) {
 					_mem_save_extent_2 = NDR_PULL_GET_MEM_CTX(ndr);
 					NDR_PULL_SET_MEM_CTX(ndr, r->extent[cntr_extent_1], 0);
@@ -580,13 +584,15 @@ static enum ndr_err_code ndr_push_u_custom(struct ndr_push *ndr, int ndr_flags, 
 
 static enum ndr_err_code ndr_pull_u_custom(struct ndr_pull *ndr, int ndr_flags, struct u_custom *r)
 {
+	uint32_t size_pData_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->clsid));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->cbExtension));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->size));
-		NDR_PULL_ALLOC_N(ndr, r->pData, r->size);
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->pData, r->size));
+		size_pData_0 = r->size;
+		NDR_PULL_ALLOC_N(ndr, r->pData, size_pData_0);
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->pData, size_pData_0));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {

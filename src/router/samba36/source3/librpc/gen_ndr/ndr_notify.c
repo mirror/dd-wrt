@@ -87,15 +87,17 @@ _PUBLIC_ enum ndr_err_code ndr_push_notify_entry_array(struct ndr_push *ndr, int
 
 _PUBLIC_ enum ndr_err_code ndr_pull_notify_entry_array(struct ndr_pull *ndr, int ndr_flags, struct notify_entry_array *r)
 {
+	uint32_t size_entries_0 = 0;
 	uint32_t cntr_entries_0;
 	TALLOC_CTX *_mem_save_entries_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 8));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->num_entries));
-		NDR_PULL_ALLOC_N(ndr, r->entries, r->num_entries);
+		size_entries_0 = r->num_entries;
+		NDR_PULL_ALLOC_N(ndr, r->entries, size_entries_0);
 		_mem_save_entries_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->entries, 0);
-		for (cntr_entries_0 = 0; cntr_entries_0 < r->num_entries; cntr_entries_0++) {
+		for (cntr_entries_0 = 0; cntr_entries_0 < size_entries_0; cntr_entries_0++) {
 			NDR_CHECK(ndr_pull_notify_entry(ndr, NDR_SCALARS, &r->entries[cntr_entries_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_entries_0, 0);
@@ -142,6 +144,7 @@ static enum ndr_err_code ndr_push_notify_depth(struct ndr_push *ndr, int ndr_fla
 
 static enum ndr_err_code ndr_pull_notify_depth(struct ndr_pull *ndr, int ndr_flags, struct notify_depth *r)
 {
+	uint32_t size_entries_0 = 0;
 	uint32_t cntr_entries_0;
 	TALLOC_CTX *_mem_save_entries_0;
 	if (ndr_flags & NDR_SCALARS) {
@@ -149,10 +152,11 @@ static enum ndr_err_code ndr_pull_notify_depth(struct ndr_pull *ndr, int ndr_fla
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->max_mask));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->max_mask_subdir));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->num_entries));
-		NDR_PULL_ALLOC_N(ndr, r->entries, r->num_entries);
+		size_entries_0 = r->num_entries;
+		NDR_PULL_ALLOC_N(ndr, r->entries, size_entries_0);
 		_mem_save_entries_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->entries, 0);
-		for (cntr_entries_0 = 0; cntr_entries_0 < r->num_entries; cntr_entries_0++) {
+		for (cntr_entries_0 = 0; cntr_entries_0 < size_entries_0; cntr_entries_0++) {
 			NDR_CHECK(ndr_pull_notify_entry(ndr, NDR_SCALARS, &r->entries[cntr_entries_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_entries_0, 0);
@@ -199,15 +203,17 @@ _PUBLIC_ enum ndr_err_code ndr_push_notify_array(struct ndr_push *ndr, int ndr_f
 
 _PUBLIC_ enum ndr_err_code ndr_pull_notify_array(struct ndr_pull *ndr, int ndr_flags, struct notify_array *r)
 {
+	uint32_t size_depth_0 = 0;
 	uint32_t cntr_depth_0;
 	TALLOC_CTX *_mem_save_depth_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 8));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->num_depths));
-		NDR_PULL_ALLOC_N(ndr, r->depth, r->num_depths);
+		size_depth_0 = r->num_depths;
+		NDR_PULL_ALLOC_N(ndr, r->depth, size_depth_0);
 		_mem_save_depth_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->depth, 0);
-		for (cntr_depth_0 = 0; cntr_depth_0 < r->num_depths; cntr_depth_0++) {
+		for (cntr_depth_0 = 0; cntr_depth_0 < size_depth_0; cntr_depth_0++) {
 			NDR_CHECK(ndr_pull_notify_depth(ndr, NDR_SCALARS, &r->depth[cntr_depth_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_depth_0, 0);
@@ -341,6 +347,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_FILE_NOTIFY_INFORMATION(struct ndr_push *ndr
 
 _PUBLIC_ enum ndr_err_code ndr_pull_FILE_NOTIFY_INFORMATION(struct ndr_pull *ndr, int ndr_flags, struct FILE_NOTIFY_INFORMATION *r)
 {
+	uint32_t size_FileName1_0 = 0;
 	{
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_ALIGN4);
@@ -352,7 +359,8 @@ _PUBLIC_ enum ndr_err_code ndr_pull_FILE_NOTIFY_INFORMATION(struct ndr_pull *ndr
 			{
 				uint32_t _flags_save_uint16 = ndr->flags;
 				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_NOTERM);
-				NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->FileName1, r->FileNameLength, sizeof(uint16_t), CH_UTF16));
+				size_FileName1_0 = r->FileNameLength;
+				NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->FileName1, size_FileName1_0, sizeof(uint16_t), CH_UTF16));
 				ndr->flags = _flags_save_uint16;
 			}
 			NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
