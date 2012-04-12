@@ -30,6 +30,7 @@ static enum ndr_err_code ndr_push_BrowserrSrvInfo100Ctr(struct ndr_push *ndr, in
 static enum ndr_err_code ndr_pull_BrowserrSrvInfo100Ctr(struct ndr_pull *ndr, int ndr_flags, struct BrowserrSrvInfo100Ctr *r)
 {
 	uint32_t _ptr_entries;
+	uint32_t size_entries_1 = 0;
 	uint32_t cntr_entries_1;
 	TALLOC_CTX *_mem_save_entries_0;
 	TALLOC_CTX *_mem_save_entries_1;
@@ -49,13 +50,14 @@ static enum ndr_err_code ndr_pull_BrowserrSrvInfo100Ctr(struct ndr_pull *ndr, in
 			_mem_save_entries_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->entries, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->entries));
-			NDR_PULL_ALLOC_N(ndr, r->entries, ndr_get_array_size(ndr, &r->entries));
+			size_entries_1 = ndr_get_array_size(ndr, &r->entries);
+			NDR_PULL_ALLOC_N(ndr, r->entries, size_entries_1);
 			_mem_save_entries_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->entries, 0);
-			for (cntr_entries_1 = 0; cntr_entries_1 < r->entries_read; cntr_entries_1++) {
+			for (cntr_entries_1 = 0; cntr_entries_1 < size_entries_1; cntr_entries_1++) {
 				NDR_CHECK(ndr_pull_srvsvc_NetSrvInfo100(ndr, NDR_SCALARS, &r->entries[cntr_entries_1]));
 			}
-			for (cntr_entries_1 = 0; cntr_entries_1 < r->entries_read; cntr_entries_1++) {
+			for (cntr_entries_1 = 0; cntr_entries_1 < size_entries_1; cntr_entries_1++) {
 				NDR_CHECK(ndr_pull_srvsvc_NetSrvInfo100(ndr, NDR_BUFFERS, &r->entries[cntr_entries_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_entries_1, 0);
@@ -115,6 +117,7 @@ static enum ndr_err_code ndr_push_BrowserrSrvInfo101Ctr(struct ndr_push *ndr, in
 static enum ndr_err_code ndr_pull_BrowserrSrvInfo101Ctr(struct ndr_pull *ndr, int ndr_flags, struct BrowserrSrvInfo101Ctr *r)
 {
 	uint32_t _ptr_entries;
+	uint32_t size_entries_1 = 0;
 	uint32_t cntr_entries_1;
 	TALLOC_CTX *_mem_save_entries_0;
 	TALLOC_CTX *_mem_save_entries_1;
@@ -134,13 +137,14 @@ static enum ndr_err_code ndr_pull_BrowserrSrvInfo101Ctr(struct ndr_pull *ndr, in
 			_mem_save_entries_0 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->entries, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->entries));
-			NDR_PULL_ALLOC_N(ndr, r->entries, ndr_get_array_size(ndr, &r->entries));
+			size_entries_1 = ndr_get_array_size(ndr, &r->entries);
+			NDR_PULL_ALLOC_N(ndr, r->entries, size_entries_1);
 			_mem_save_entries_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->entries, 0);
-			for (cntr_entries_1 = 0; cntr_entries_1 < r->entries_read; cntr_entries_1++) {
+			for (cntr_entries_1 = 0; cntr_entries_1 < size_entries_1; cntr_entries_1++) {
 				NDR_CHECK(ndr_pull_srvsvc_NetSrvInfo101(ndr, NDR_SCALARS, &r->entries[cntr_entries_1]));
 			}
-			for (cntr_entries_1 = 0; cntr_entries_1 < r->entries_read; cntr_entries_1++) {
+			for (cntr_entries_1 = 0; cntr_entries_1 < size_entries_1; cntr_entries_1++) {
 				NDR_CHECK(ndr_pull_srvsvc_NetSrvInfo101(ndr, NDR_BUFFERS, &r->entries[cntr_entries_1]));
 			}
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_entries_1, 0);
@@ -223,7 +227,9 @@ static enum ndr_err_code ndr_pull_BrowserrSrvInfoUnion(struct ndr_pull *ndr, int
 	uint32_t level;
 	uint32_t _level;
 	TALLOC_CTX *_mem_save_info100_0;
+	uint32_t _ptr_info100;
 	TALLOC_CTX *_mem_save_info101_0;
+	uint32_t _ptr_info101;
 	level = ndr_pull_get_switch_value(ndr, r);
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_union_align(ndr, 5));
@@ -234,7 +240,6 @@ static enum ndr_err_code ndr_pull_BrowserrSrvInfoUnion(struct ndr_pull *ndr, int
 		NDR_CHECK(ndr_pull_union_align(ndr, 5));
 		switch (level) {
 			case 100: {
-				uint32_t _ptr_info100;
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_info100));
 				if (_ptr_info100) {
 					NDR_PULL_ALLOC(ndr, r->info100);
@@ -244,7 +249,6 @@ static enum ndr_err_code ndr_pull_BrowserrSrvInfoUnion(struct ndr_pull *ndr, int
 			break; }
 
 			case 101: {
-				uint32_t _ptr_info101;
 				NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_info101));
 				if (_ptr_info101) {
 					NDR_PULL_ALLOC(ndr, r->info101);
@@ -467,6 +471,8 @@ static enum ndr_err_code ndr_push_BrowserrQueryOtherDomains(struct ndr_push *ndr
 static enum ndr_err_code ndr_pull_BrowserrQueryOtherDomains(struct ndr_pull *ndr, int flags, struct BrowserrQueryOtherDomains *r)
 {
 	uint32_t _ptr_server_unc;
+	uint32_t size_server_unc_1 = 0;
+	uint32_t length_server_unc_1 = 0;
 	TALLOC_CTX *_mem_save_server_unc_0;
 	TALLOC_CTX *_mem_save_info_0;
 	TALLOC_CTX *_mem_save_total_entries_0;
@@ -484,11 +490,13 @@ static enum ndr_err_code ndr_pull_BrowserrQueryOtherDomains(struct ndr_pull *ndr
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.server_unc, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.server_unc));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.server_unc));
-			if (ndr_get_array_length(ndr, &r->in.server_unc) > ndr_get_array_size(ndr, &r->in.server_unc)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.server_unc), ndr_get_array_length(ndr, &r->in.server_unc));
+			size_server_unc_1 = ndr_get_array_size(ndr, &r->in.server_unc);
+			length_server_unc_1 = ndr_get_array_length(ndr, &r->in.server_unc);
+			if (length_server_unc_1 > size_server_unc_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_server_unc_1, length_server_unc_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.server_unc), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.server_unc, ndr_get_array_length(ndr, &r->in.server_unc), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_server_unc_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.server_unc, length_server_unc_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_server_unc_0, 0);
 		}
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {

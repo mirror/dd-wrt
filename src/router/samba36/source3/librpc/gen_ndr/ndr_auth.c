@@ -224,6 +224,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_auth_user_info_torture(struct ndr_push *ndr,
 
 _PUBLIC_ enum ndr_err_code ndr_pull_auth_user_info_torture(struct ndr_pull *ndr, int ndr_flags, struct auth_user_info_torture *r)
 {
+	uint32_t size_dc_sids_0 = 0;
 	uint32_t cntr_dc_sids_0;
 	TALLOC_CTX *_mem_save_dc_sids_0;
 	uint32_t _ptr_pac_srv_sig;
@@ -234,10 +235,11 @@ _PUBLIC_ enum ndr_err_code ndr_pull_auth_user_info_torture(struct ndr_pull *ndr,
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->num_dc_sids));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->dc_sids));
-		NDR_PULL_ALLOC_N(ndr, r->dc_sids, ndr_get_array_size(ndr, &r->dc_sids));
+		size_dc_sids_0 = ndr_get_array_size(ndr, &r->dc_sids);
+		NDR_PULL_ALLOC_N(ndr, r->dc_sids, size_dc_sids_0);
 		_mem_save_dc_sids_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->dc_sids, 0);
-		for (cntr_dc_sids_0 = 0; cntr_dc_sids_0 < r->num_dc_sids; cntr_dc_sids_0++) {
+		for (cntr_dc_sids_0 = 0; cntr_dc_sids_0 < size_dc_sids_0; cntr_dc_sids_0++) {
 			NDR_CHECK(ndr_pull_dom_sid(ndr, NDR_SCALARS, &r->dc_sids[cntr_dc_sids_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_dc_sids_0, 0);
@@ -384,6 +386,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_auth_user_info_dc(struct ndr_push *ndr, int 
 
 _PUBLIC_ enum ndr_err_code ndr_pull_auth_user_info_dc(struct ndr_pull *ndr, int ndr_flags, struct auth_user_info_dc *r)
 {
+	uint32_t size_sids_0 = 0;
 	uint32_t cntr_sids_0;
 	TALLOC_CTX *_mem_save_sids_0;
 	uint32_t _ptr_info;
@@ -392,10 +395,11 @@ _PUBLIC_ enum ndr_err_code ndr_pull_auth_user_info_dc(struct ndr_pull *ndr, int 
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->num_sids));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->sids));
-		NDR_PULL_ALLOC_N(ndr, r->sids, ndr_get_array_size(ndr, &r->sids));
+		size_sids_0 = ndr_get_array_size(ndr, &r->sids);
+		NDR_PULL_ALLOC_N(ndr, r->sids, size_sids_0);
 		_mem_save_sids_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->sids, 0);
-		for (cntr_sids_0 = 0; cntr_sids_0 < r->num_sids; cntr_sids_0++) {
+		for (cntr_sids_0 = 0; cntr_sids_0 < size_sids_0; cntr_sids_0++) {
 			NDR_CHECK(ndr_pull_dom_sid(ndr, NDR_SCALARS, &r->sids[cntr_sids_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_sids_0, 0);

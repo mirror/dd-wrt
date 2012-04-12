@@ -418,6 +418,7 @@ static enum ndr_err_code ndr_push_frsrpc_CommPktChangeOrderCommand(struct ndr_pu
 
 static enum ndr_err_code ndr_pull_frsrpc_CommPktChangeOrderCommand(struct ndr_pull *ndr, int ndr_flags, struct frsrpc_CommPktChangeOrderCommand *r)
 {
+	uint32_t size_file_name_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 8));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->sequence_number));
@@ -456,7 +457,8 @@ static enum ndr_err_code ndr_pull_frsrpc_CommPktChangeOrderCommand(struct ndr_pu
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->spare2bin));
 		NDR_CHECK(ndr_pull_NTTIME(ndr, NDR_SCALARS, &r->event_time));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->file_name_length));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->file_name, 260 + 1, sizeof(uint16_t), CH_UTF16));
+		size_file_name_0 = 260 + 1;
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->file_name, size_file_name_0, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->padding1));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->padding2));
 		NDR_CHECK(ndr_pull_uint8(ndr, NDR_SCALARS, &r->padding3));
@@ -579,6 +581,7 @@ static enum ndr_err_code ndr_push_frsrpc_CommPktDataExtensionChecksum(struct ndr
 
 static enum ndr_err_code ndr_pull_frsrpc_CommPktDataExtensionChecksum(struct ndr_pull *ndr, int ndr_flags, struct frsrpc_CommPktDataExtensionChecksum *r)
 {
+	uint32_t size_data_0 = 0;
 	{
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_PRINT_ARRAY_HEX);
@@ -586,7 +589,8 @@ static enum ndr_err_code ndr_pull_frsrpc_CommPktDataExtensionChecksum(struct ndr
 			NDR_CHECK(ndr_pull_align(ndr, 4));
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->prefix_size));
 			NDR_CHECK(ndr_pull_frsrpc_CommPktDataExtensionType(ndr, NDR_SCALARS, &r->prefix_type));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, 16));
+			size_data_0 = 16;
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->data, size_data_0));
 			NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 		}
 		if (ndr_flags & NDR_BUFFERS) {
@@ -1857,9 +1861,17 @@ static enum ndr_err_code ndr_push_frsrpc_FrsVerifyPromotionParent(struct ndr_pus
 static enum ndr_err_code ndr_pull_frsrpc_FrsVerifyPromotionParent(struct ndr_pull *ndr, int flags, struct frsrpc_FrsVerifyPromotionParent *r)
 {
 	uint32_t _ptr_parent_account;
+	uint32_t size_parent_account_1 = 0;
+	uint32_t length_parent_account_1 = 0;
 	uint32_t _ptr_parent_password;
+	uint32_t size_parent_password_1 = 0;
+	uint32_t length_parent_password_1 = 0;
 	uint32_t _ptr_replica_set_name;
+	uint32_t size_replica_set_name_1 = 0;
+	uint32_t length_replica_set_name_1 = 0;
 	uint32_t _ptr_replica_set_type;
+	uint32_t size_replica_set_type_1 = 0;
+	uint32_t length_replica_set_type_1 = 0;
 	TALLOC_CTX *_mem_save_parent_account_0;
 	TALLOC_CTX *_mem_save_parent_password_0;
 	TALLOC_CTX *_mem_save_replica_set_name_0;
@@ -1876,11 +1888,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsVerifyPromotionParent(struct ndr_pul
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.parent_account, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.parent_account));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.parent_account));
-			if (ndr_get_array_length(ndr, &r->in.parent_account) > ndr_get_array_size(ndr, &r->in.parent_account)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.parent_account), ndr_get_array_length(ndr, &r->in.parent_account));
+			size_parent_account_1 = ndr_get_array_size(ndr, &r->in.parent_account);
+			length_parent_account_1 = ndr_get_array_length(ndr, &r->in.parent_account);
+			if (length_parent_account_1 > size_parent_account_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_parent_account_1, length_parent_account_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.parent_account), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_account, ndr_get_array_length(ndr, &r->in.parent_account), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_parent_account_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_account, length_parent_account_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_parent_account_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_parent_password));
@@ -1894,11 +1908,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsVerifyPromotionParent(struct ndr_pul
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.parent_password, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.parent_password));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.parent_password));
-			if (ndr_get_array_length(ndr, &r->in.parent_password) > ndr_get_array_size(ndr, &r->in.parent_password)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.parent_password), ndr_get_array_length(ndr, &r->in.parent_password));
+			size_parent_password_1 = ndr_get_array_size(ndr, &r->in.parent_password);
+			length_parent_password_1 = ndr_get_array_length(ndr, &r->in.parent_password);
+			if (length_parent_password_1 > size_parent_password_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_parent_password_1, length_parent_password_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.parent_password), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_password, ndr_get_array_length(ndr, &r->in.parent_password), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_parent_password_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_password, length_parent_password_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_parent_password_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_replica_set_name));
@@ -1912,11 +1928,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsVerifyPromotionParent(struct ndr_pul
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.replica_set_name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.replica_set_name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.replica_set_name));
-			if (ndr_get_array_length(ndr, &r->in.replica_set_name) > ndr_get_array_size(ndr, &r->in.replica_set_name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.replica_set_name), ndr_get_array_length(ndr, &r->in.replica_set_name));
+			size_replica_set_name_1 = ndr_get_array_size(ndr, &r->in.replica_set_name);
+			length_replica_set_name_1 = ndr_get_array_length(ndr, &r->in.replica_set_name);
+			if (length_replica_set_name_1 > size_replica_set_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_replica_set_name_1, length_replica_set_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.replica_set_name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_name, ndr_get_array_length(ndr, &r->in.replica_set_name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_replica_set_name_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_name, length_replica_set_name_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_replica_set_name_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_replica_set_type));
@@ -1930,11 +1948,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsVerifyPromotionParent(struct ndr_pul
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.replica_set_type, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.replica_set_type));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.replica_set_type));
-			if (ndr_get_array_length(ndr, &r->in.replica_set_type) > ndr_get_array_size(ndr, &r->in.replica_set_type)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.replica_set_type), ndr_get_array_length(ndr, &r->in.replica_set_type));
+			size_replica_set_type_1 = ndr_get_array_size(ndr, &r->in.replica_set_type);
+			length_replica_set_type_1 = ndr_get_array_length(ndr, &r->in.replica_set_type);
+			if (length_replica_set_type_1 > size_replica_set_type_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_replica_set_type_1, length_replica_set_type_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.replica_set_type), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_type, ndr_get_array_length(ndr, &r->in.replica_set_type), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_replica_set_type_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_type, length_replica_set_type_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_replica_set_type_0, 0);
 		}
 		NDR_CHECK(ndr_pull_frsrpc_PartnerAuthLevel(ndr, NDR_SCALARS, &r->in.partner_auth_level));
@@ -2094,12 +2114,26 @@ static enum ndr_err_code ndr_push_frsrpc_FrsStartPromotionParent(struct ndr_push
 static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull *ndr, int flags, struct frsrpc_FrsStartPromotionParent *r)
 {
 	uint32_t _ptr_parent_account;
+	uint32_t size_parent_account_1 = 0;
+	uint32_t length_parent_account_1 = 0;
 	uint32_t _ptr_parent_password;
+	uint32_t size_parent_password_1 = 0;
+	uint32_t length_parent_password_1 = 0;
 	uint32_t _ptr_replica_set_name;
+	uint32_t size_replica_set_name_1 = 0;
+	uint32_t length_replica_set_name_1 = 0;
 	uint32_t _ptr_replica_set_type;
+	uint32_t size_replica_set_type_1 = 0;
+	uint32_t length_replica_set_type_1 = 0;
 	uint32_t _ptr_connection_name;
+	uint32_t size_connection_name_1 = 0;
+	uint32_t length_connection_name_1 = 0;
 	uint32_t _ptr_partner_name;
+	uint32_t size_partner_name_1 = 0;
+	uint32_t length_partner_name_1 = 0;
 	uint32_t _ptr_partner_princ_name;
+	uint32_t size_partner_princ_name_1 = 0;
+	uint32_t length_partner_princ_name_1 = 0;
 	uint32_t _ptr_connection_guid;
 	uint32_t _ptr_partner_guid;
 	uint32_t _ptr_parent_guid;
@@ -2127,11 +2161,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.parent_account, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.parent_account));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.parent_account));
-			if (ndr_get_array_length(ndr, &r->in.parent_account) > ndr_get_array_size(ndr, &r->in.parent_account)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.parent_account), ndr_get_array_length(ndr, &r->in.parent_account));
+			size_parent_account_1 = ndr_get_array_size(ndr, &r->in.parent_account);
+			length_parent_account_1 = ndr_get_array_length(ndr, &r->in.parent_account);
+			if (length_parent_account_1 > size_parent_account_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_parent_account_1, length_parent_account_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.parent_account), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_account, ndr_get_array_length(ndr, &r->in.parent_account), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_parent_account_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_account, length_parent_account_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_parent_account_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_parent_password));
@@ -2145,11 +2181,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.parent_password, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.parent_password));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.parent_password));
-			if (ndr_get_array_length(ndr, &r->in.parent_password) > ndr_get_array_size(ndr, &r->in.parent_password)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.parent_password), ndr_get_array_length(ndr, &r->in.parent_password));
+			size_parent_password_1 = ndr_get_array_size(ndr, &r->in.parent_password);
+			length_parent_password_1 = ndr_get_array_length(ndr, &r->in.parent_password);
+			if (length_parent_password_1 > size_parent_password_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_parent_password_1, length_parent_password_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.parent_password), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_password, ndr_get_array_length(ndr, &r->in.parent_password), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_parent_password_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.parent_password, length_parent_password_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_parent_password_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_replica_set_name));
@@ -2163,11 +2201,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.replica_set_name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.replica_set_name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.replica_set_name));
-			if (ndr_get_array_length(ndr, &r->in.replica_set_name) > ndr_get_array_size(ndr, &r->in.replica_set_name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.replica_set_name), ndr_get_array_length(ndr, &r->in.replica_set_name));
+			size_replica_set_name_1 = ndr_get_array_size(ndr, &r->in.replica_set_name);
+			length_replica_set_name_1 = ndr_get_array_length(ndr, &r->in.replica_set_name);
+			if (length_replica_set_name_1 > size_replica_set_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_replica_set_name_1, length_replica_set_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.replica_set_name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_name, ndr_get_array_length(ndr, &r->in.replica_set_name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_replica_set_name_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_name, length_replica_set_name_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_replica_set_name_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_replica_set_type));
@@ -2181,11 +2221,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.replica_set_type, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.replica_set_type));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.replica_set_type));
-			if (ndr_get_array_length(ndr, &r->in.replica_set_type) > ndr_get_array_size(ndr, &r->in.replica_set_type)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.replica_set_type), ndr_get_array_length(ndr, &r->in.replica_set_type));
+			size_replica_set_type_1 = ndr_get_array_size(ndr, &r->in.replica_set_type);
+			length_replica_set_type_1 = ndr_get_array_length(ndr, &r->in.replica_set_type);
+			if (length_replica_set_type_1 > size_replica_set_type_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_replica_set_type_1, length_replica_set_type_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.replica_set_type), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_type, ndr_get_array_length(ndr, &r->in.replica_set_type), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_replica_set_type_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.replica_set_type, length_replica_set_type_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_replica_set_type_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_connection_name));
@@ -2199,11 +2241,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.connection_name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.connection_name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.connection_name));
-			if (ndr_get_array_length(ndr, &r->in.connection_name) > ndr_get_array_size(ndr, &r->in.connection_name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.connection_name), ndr_get_array_length(ndr, &r->in.connection_name));
+			size_connection_name_1 = ndr_get_array_size(ndr, &r->in.connection_name);
+			length_connection_name_1 = ndr_get_array_length(ndr, &r->in.connection_name);
+			if (length_connection_name_1 > size_connection_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_connection_name_1, length_connection_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.connection_name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.connection_name, ndr_get_array_length(ndr, &r->in.connection_name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_connection_name_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.connection_name, length_connection_name_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_connection_name_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_partner_name));
@@ -2217,11 +2261,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.partner_name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.partner_name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.partner_name));
-			if (ndr_get_array_length(ndr, &r->in.partner_name) > ndr_get_array_size(ndr, &r->in.partner_name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.partner_name), ndr_get_array_length(ndr, &r->in.partner_name));
+			size_partner_name_1 = ndr_get_array_size(ndr, &r->in.partner_name);
+			length_partner_name_1 = ndr_get_array_length(ndr, &r->in.partner_name);
+			if (length_partner_name_1 > size_partner_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_partner_name_1, length_partner_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.partner_name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.partner_name, ndr_get_array_length(ndr, &r->in.partner_name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_partner_name_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.partner_name, length_partner_name_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_partner_name_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_partner_princ_name));
@@ -2235,11 +2281,13 @@ static enum ndr_err_code ndr_pull_frsrpc_FrsStartPromotionParent(struct ndr_pull
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.partner_princ_name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.partner_princ_name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.partner_princ_name));
-			if (ndr_get_array_length(ndr, &r->in.partner_princ_name) > ndr_get_array_size(ndr, &r->in.partner_princ_name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.partner_princ_name), ndr_get_array_length(ndr, &r->in.partner_princ_name));
+			size_partner_princ_name_1 = ndr_get_array_size(ndr, &r->in.partner_princ_name);
+			length_partner_princ_name_1 = ndr_get_array_length(ndr, &r->in.partner_princ_name);
+			if (length_partner_princ_name_1 > size_partner_princ_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_partner_princ_name_1, length_partner_princ_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.partner_princ_name), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.partner_princ_name, ndr_get_array_length(ndr, &r->in.partner_princ_name), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_partner_princ_name_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.partner_princ_name, length_partner_princ_name_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_partner_princ_name_0, 0);
 		}
 		NDR_CHECK(ndr_pull_frsrpc_PartnerAuthLevel(ndr, NDR_SCALARS, &r->in.partner_auth_level));

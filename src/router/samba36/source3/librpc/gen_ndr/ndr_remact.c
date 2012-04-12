@@ -90,9 +90,15 @@ static enum ndr_err_code ndr_push_RemoteActivation(struct ndr_push *ndr, int fla
 
 static enum ndr_err_code ndr_pull_RemoteActivation(struct ndr_pull *ndr, int flags, struct RemoteActivation *r)
 {
+	uint32_t size_pwszObjectName_1 = 0;
+	uint32_t length_pwszObjectName_1 = 0;
+	uint32_t size_pIIDs_1 = 0;
 	uint32_t cntr_pIIDs_1;
+	uint32_t size_protseq_0 = 0;
 	uint32_t cntr_protseq_0;
+	uint32_t size_ifaces_0 = 0;
 	uint32_t cntr_ifaces_0;
+	uint32_t size_results_0 = 0;
 	uint32_t cntr_results_0;
 	TALLOC_CTX *_mem_save_that_0;
 	TALLOC_CTX *_mem_save_pObjectStorage_0;
@@ -114,11 +120,13 @@ static enum ndr_err_code ndr_pull_RemoteActivation(struct ndr_pull *ndr, int fla
 		NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->in.Clsid));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.pwszObjectName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.pwszObjectName));
-		if (ndr_get_array_length(ndr, &r->in.pwszObjectName) > ndr_get_array_size(ndr, &r->in.pwszObjectName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.pwszObjectName), ndr_get_array_length(ndr, &r->in.pwszObjectName));
+		size_pwszObjectName_1 = ndr_get_array_size(ndr, &r->in.pwszObjectName);
+		length_pwszObjectName_1 = ndr_get_array_length(ndr, &r->in.pwszObjectName);
+		if (length_pwszObjectName_1 > size_pwszObjectName_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_pwszObjectName_1, length_pwszObjectName_1);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.pwszObjectName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.pwszObjectName, ndr_get_array_length(ndr, &r->in.pwszObjectName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_pwszObjectName_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.pwszObjectName, length_pwszObjectName_1, sizeof(uint16_t), CH_UTF16));
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 			NDR_PULL_ALLOC(ndr, r->in.pObjectStorage);
 		}
@@ -133,21 +141,23 @@ static enum ndr_err_code ndr_pull_RemoteActivation(struct ndr_pull *ndr, int fla
 			return ndr_pull_error(ndr, NDR_ERR_RANGE, "value out of range");
 		}
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.pIIDs));
+		size_pIIDs_1 = ndr_get_array_size(ndr, &r->in.pIIDs);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->in.pIIDs, ndr_get_array_size(ndr, &r->in.pIIDs));
+			NDR_PULL_ALLOC_N(ndr, r->in.pIIDs, size_pIIDs_1);
 		}
 		_mem_save_pIIDs_1 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.pIIDs, 0);
-		for (cntr_pIIDs_1 = 0; cntr_pIIDs_1 < r->in.Interfaces; cntr_pIIDs_1++) {
+		for (cntr_pIIDs_1 = 0; cntr_pIIDs_1 < size_pIIDs_1; cntr_pIIDs_1++) {
 			NDR_CHECK(ndr_pull_GUID(ndr, NDR_SCALARS, &r->in.pIIDs[cntr_pIIDs_1]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_pIIDs_1, 0);
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.num_protseqs));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.protseq));
-		NDR_PULL_ALLOC_N(ndr, r->in.protseq, ndr_get_array_size(ndr, &r->in.protseq));
+		size_protseq_0 = ndr_get_array_size(ndr, &r->in.protseq);
+		NDR_PULL_ALLOC_N(ndr, r->in.protseq, size_protseq_0);
 		_mem_save_protseq_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.protseq, 0);
-		for (cntr_protseq_0 = 0; cntr_protseq_0 < r->in.num_protseqs; cntr_protseq_0++) {
+		for (cntr_protseq_0 = 0; cntr_protseq_0 < size_protseq_0; cntr_protseq_0++) {
 			NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->in.protseq[cntr_protseq_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_protseq_0, 0);
@@ -223,15 +233,16 @@ static enum ndr_err_code ndr_pull_RemoteActivation(struct ndr_pull *ndr, int fla
 		NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, r->out.hr));
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_hr_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.ifaces));
-		NDR_PULL_ALLOC_N(ndr, r->out.ifaces, ndr_get_array_size(ndr, &r->out.ifaces));
+		size_ifaces_0 = ndr_get_array_size(ndr, &r->out.ifaces);
+		NDR_PULL_ALLOC_N(ndr, r->out.ifaces, size_ifaces_0);
 		_mem_save_ifaces_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.ifaces, 0);
-		for (cntr_ifaces_0 = 0; cntr_ifaces_0 < r->in.Interfaces; cntr_ifaces_0++) {
+		for (cntr_ifaces_0 = 0; cntr_ifaces_0 < size_ifaces_0; cntr_ifaces_0++) {
 			if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
 				NDR_PULL_ALLOC(ndr, r->out.ifaces[cntr_ifaces_0]);
 			}
 		}
-		for (cntr_ifaces_0 = 0; cntr_ifaces_0 < r->in.Interfaces; cntr_ifaces_0++) {
+		for (cntr_ifaces_0 = 0; cntr_ifaces_0 < size_ifaces_0; cntr_ifaces_0++) {
 			_mem_save_ifaces_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, r->out.ifaces[cntr_ifaces_0], LIBNDR_FLAG_REF_ALLOC);
 			NDR_CHECK(ndr_pull_MInterfacePointer(ndr, NDR_SCALARS|NDR_BUFFERS, r->out.ifaces[cntr_ifaces_0]));
@@ -239,10 +250,11 @@ static enum ndr_err_code ndr_pull_RemoteActivation(struct ndr_pull *ndr, int fla
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ifaces_0, 0);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.results));
-		NDR_PULL_ALLOC_N(ndr, r->out.results, ndr_get_array_size(ndr, &r->out.results));
+		size_results_0 = ndr_get_array_size(ndr, &r->out.results);
+		NDR_PULL_ALLOC_N(ndr, r->out.results, size_results_0);
 		_mem_save_results_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.results, 0);
-		for (cntr_results_0 = 0; cntr_results_0 < r->in.Interfaces; cntr_results_0++) {
+		for (cntr_results_0 = 0; cntr_results_0 < size_results_0; cntr_results_0++) {
 			NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.results[cntr_results_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_results_0, 0);
