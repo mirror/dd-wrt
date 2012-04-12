@@ -22,13 +22,40 @@ function generateKey(F,PREFIX) {
 	F.submit();
 }
 
+wpa_psk_error = 0;
+function check_form(F) {
+	var security_mode = 'disabled';
+	// parse through security modes
+	for(i = 0; i < F.elements.length; i++) {
+		element = F.elements[i];
+		if(element.name) {
+			if(element.name.substr(element.name.length - 14, 14) == "_security_mode") {
+				if(element.options[element.selectedIndex].value.substr(0,3) == "psk"
+				   || element.options[element.selectedIndex].value.substr(0,3) == "wpa") {
+					var iface = element.name.substr(0, element.name.length - 14);
+					var wpa_psk_input = $(iface + '_wpa_psk');
+					if(wpa_psk_input) {
+						result = valid_wpa_psk(wpa_psk_input, false);
+						wpa_psk_error = 0;
+						return result;
+					}
+				}
+			}
+		}	
+	}
+	if(wpa_psk_error) return false;
+	return true;
+}
+
 function to_submit(F) {
+	if(!check_form(F)) return false;
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
   apply(F);
 }
 function to_apply(F) {
+	if(!check_form(F)) return false;
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
@@ -47,20 +74,38 @@ function valid_radius(F) {
 	return true;
 }
 
-function valid_wpa_psk(F) {
+function valid_wpa_psk(F, blur) {
 	if(F.nodeName == 'INPUT') {
+		var value = F.value;
 		if(F.value.length == 64){
 			if(!isxdigit(F, F.value)) {
+				wpa_psk_error = 1;
 				return false;
 			}
 		} else 
 		if(F.value.length >=8 && F.value.length <= 63 ){
 			if(!isascii(F,F.value)) {
+				F.value = value;
+				wpa_psk_error = 1;
+				settimeout("wpa_psk_error=0", 2000);
 				return false;
 			}
-		} else{
-			alert(errmsg.err39);
-			return false;
+		} else {
+			if(blur) {
+				if(!isascii(F,F.value)) {
+					F.value = value;
+					wpa_psk_error = 1;
+					settimeout("wpa_psk_error=0", 2000);
+					return false;
+				}	
+			} else {
+				if(!wpa_psk_error) {
+					alert(errmsg.err39);
+					wpa_psk_error = 1;
+					settimeout("wpa_psk_error=0", 2000);
+				}
+				return false;
+			}
 		}
 	} else {
 		if(F.security_mode.value == "psk" || F.security_mode.value == "psk2" || F.security_mode.value == "psk psk2"){
@@ -80,6 +125,7 @@ function valid_wpa_psk(F) {
 		}
 	}
 
+	wpa_psk_error = 0;
 	return true;
 }
 
