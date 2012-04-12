@@ -196,20 +196,18 @@ function submitcheck(F) {
 		F.wl0_nctrlsb.value = "none";
 		F.wl0_nbw.value = 10;
 	}
+	else if(F.wl0_nbw.value == 5) { // 5MHz
+		F.wl0_nctrlsb.value = "none";
+		F.wl0_nbw.value = 5;
+	}
 	else if(F.wl0_nbw.value == 20) { // 20MHz
 		F.wl0_nctrlsb.value = "none";
 		F.wl0_nbw.value = 20;
 	}
+	else if(F.wl0_nbw.value == 80) { // 80MHz
+		F.wl0_nbw.value = 80;
+	}
 	else { // 40MHz
-		if (F.wl0_channel)
-		{
-		if(F.wl0_channel.selectedIndex == 0) {
-		F.wl0_nctrlsb.value = "lower";
-		}
-		else {
-		F.wl0_nctrlsb.value = "upper";
-		}
-		}
 		F.wl0_nbw.value = 40;
 	}
 	}
@@ -217,6 +215,10 @@ function submitcheck(F) {
 	{
 	if(F.wl1_nbw.value == 0) { // Auto
 		F.wl1_channel.value = 0;
+	}
+	else if(F.wl1_nbw.value == 5) { // 5MHz
+		F.wl1_nctrlsb.value = "none";
+		F.wl1_nbw.value = 5;
 	}
 	else if(F.wl1_nbw.value == 10) { // 10MHz
 		F.wl1_nctrlsb.value = "none";
@@ -226,16 +228,10 @@ function submitcheck(F) {
 		F.wl1_nctrlsb.value = "none";
 		F.wl1_nbw.value = 20;
 	}
+	else if(F.wl1_nbw.value == 80) { // 80MHz
+		F.wl1_nbw.value = 80;
+	}
 	else { // 40MHz
-		if (F.wl1_channel)
-		{
-		if(F.wl1_channel.selectedIndex == 0) {
-			F.wl1_nctrlsb.value = "lower";
-		}
-		else {
-			F.wl1_nctrlsb.value = "upper";
-		}
-		}
 		F.wl1_nbw.value = 40;
 	}
 	}
@@ -264,13 +260,13 @@ addEvent(window, "load", function() {
 	var wl0_mode = "<% nvram_get("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
 	{
-	    if (wl0_phytype == 'n')
+	    if (wl0_phytype == 'n' || wl0_phytype == 'h' || wl0_phytype == 'v' || wl0_phytype == 's')
 		InitBW0('<% nvram_get("wl0_nbw"); %>' ,document.wireless);
 	}
 	var wl1_mode = "<% nvram_get("wl1_mode"); %>";
 	   if (wl1_mode=="ap" || wl1_mode=="infra")
 	{
-	    if (wl1_phytype == 'n')
+	    if (wl1_phytype == 'n' || wl1_phytype == 'h' || wl1_phytype == 'v' || wl1_phytype == 's')
 		InitBW1('<% nvram_get("wl1_nbw"); %>' ,document.wireless);
 	}
 		
