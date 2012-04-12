@@ -207,7 +207,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 					  2 : ci.hw_channel - 2);
 			}
 			if (nvram_nmatch("80", "%s_nbw", prefix)) {
-				int channel = ci.hw_channel - 8 + 2;
+				int channel = ci.hw_channel - 6;
 				if (nvram_nmatch("ll", "%s_nctrlsb", prefix))
 					websWrite(wp, "%d + ", channel);
 				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
