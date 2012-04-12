@@ -126,6 +126,7 @@ struct ltq_mtd {
 };
 
 static char ltq_map_name[] = "ltq_nor";
+static const char *ltq_probe_types[] __devinitconst = { "cmdlinepart", NULL };
 
 static map_word
 ltq_read16(struct map_info *map, unsigned long adr)
@@ -187,7 +188,6 @@ ltq_copy_to(struct map_info *map, unsigned long to,
 		*t++ = *f++;
 	spin_unlock_irqrestore(&ebu_lock, flags);
 }
-static const char *part_probe_types[] = { "cmdlinepart", NULL };
 
 
 static int __init
@@ -256,7 +256,7 @@ ltq_mtd_probe(struct platform_device *pdev)
 	cfi->addr_unlock1 ^= 1;
 	cfi->addr_unlock2 ^= 1;
 
-	nr_parts = parse_mtd_partitions(ltq_mtd->mtd, part_probe_types, &parts, 0);
+	nr_parts = parse_mtd_partitions(ltq_mtd->mtd, ltq_probe_types, &parts, 0);
 	printk(KERN_EMERG "parse_mtd returns %d\n",nr_parts);
 	if (nr_parts > 0) {
 		printk(KERN_INFO "ifxmips_mtd: found %d partitions from cmdline\n", err);
