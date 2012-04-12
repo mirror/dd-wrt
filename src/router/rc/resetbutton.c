@@ -1031,6 +1031,11 @@ void period_check(int sig)
 					// database
 					eval("erase", "nvram");
 #else
+#ifdef HAVE_BUFFALO_SA
+					int region_sa = 0;
+					if(nvram_default_match("region", "SA", ""))
+						region_sa = 1;
+#endif
 					nvram_set("sv_restore_defaults", "1");
 					nvram_commit();
 					eval("killall", "ledtool");	// stop blinking on
@@ -1046,6 +1051,13 @@ void period_check(int sig)
 #endif
 
 					eval("erase", "nvram");
+#ifdef HAVE_BUFFALO_SA
+					nvram_set("sv_restore_defaults", "1");
+					if(region_sa)
+						nvram_set("region", "SA");
+fprintf(stderr, "[RESETBUTTON] SA erase $d\n", region_sa);
+					nvram_commit();
+#endif
 #endif
 
 					// nvram_set ("sv_restore_defaults", "1");
