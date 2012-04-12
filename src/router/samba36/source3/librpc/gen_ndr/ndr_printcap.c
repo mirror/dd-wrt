@@ -38,10 +38,16 @@ static enum ndr_err_code ndr_push_pcap_printer(struct ndr_push *ndr, int ndr_fla
 static enum ndr_err_code ndr_pull_pcap_printer(struct ndr_pull *ndr, int ndr_flags, struct pcap_printer *r)
 {
 	uint32_t _ptr_name;
+	uint32_t size_name_1 = 0;
+	uint32_t length_name_1 = 0;
 	TALLOC_CTX *_mem_save_name_0;
 	uint32_t _ptr_info;
+	uint32_t size_info_1 = 0;
+	uint32_t length_info_1 = 0;
 	TALLOC_CTX *_mem_save_info_0;
 	uint32_t _ptr_location;
+	uint32_t size_location_1 = 0;
+	uint32_t length_location_1 = 0;
 	TALLOC_CTX *_mem_save_location_0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_align(ndr, 5));
@@ -71,11 +77,13 @@ static enum ndr_err_code ndr_pull_pcap_printer(struct ndr_pull *ndr, int ndr_fla
 			NDR_PULL_SET_MEM_CTX(ndr, r->name, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->name));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->name));
-			if (ndr_get_array_length(ndr, &r->name) > ndr_get_array_size(ndr, &r->name)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->name), ndr_get_array_length(ndr, &r->name));
+			size_name_1 = ndr_get_array_size(ndr, &r->name);
+			length_name_1 = ndr_get_array_length(ndr, &r->name);
+			if (length_name_1 > size_name_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_name_1, length_name_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->name), sizeof(uint8_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->name, ndr_get_array_length(ndr, &r->name), sizeof(uint8_t), CH_UTF8));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_name_1, sizeof(uint8_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->name, length_name_1, sizeof(uint8_t), CH_UTF8));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_name_0, 0);
 		}
 		if (r->info) {
@@ -83,11 +91,13 @@ static enum ndr_err_code ndr_pull_pcap_printer(struct ndr_pull *ndr, int ndr_fla
 			NDR_PULL_SET_MEM_CTX(ndr, r->info, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->info));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->info));
-			if (ndr_get_array_length(ndr, &r->info) > ndr_get_array_size(ndr, &r->info)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->info), ndr_get_array_length(ndr, &r->info));
+			size_info_1 = ndr_get_array_size(ndr, &r->info);
+			length_info_1 = ndr_get_array_length(ndr, &r->info);
+			if (length_info_1 > size_info_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_info_1, length_info_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->info), sizeof(uint8_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->info, ndr_get_array_length(ndr, &r->info), sizeof(uint8_t), CH_UTF8));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_info_1, sizeof(uint8_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->info, length_info_1, sizeof(uint8_t), CH_UTF8));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_info_0, 0);
 		}
 		if (r->location) {
@@ -95,11 +105,13 @@ static enum ndr_err_code ndr_pull_pcap_printer(struct ndr_pull *ndr, int ndr_fla
 			NDR_PULL_SET_MEM_CTX(ndr, r->location, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->location));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->location));
-			if (ndr_get_array_length(ndr, &r->location) > ndr_get_array_size(ndr, &r->location)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->location), ndr_get_array_length(ndr, &r->location));
+			size_location_1 = ndr_get_array_size(ndr, &r->location);
+			length_location_1 = ndr_get_array_length(ndr, &r->location);
+			if (length_location_1 > size_location_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_location_1, length_location_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->location), sizeof(uint8_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->location, ndr_get_array_length(ndr, &r->location), sizeof(uint8_t), CH_UTF8));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_location_1, sizeof(uint8_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->location, length_location_1, sizeof(uint8_t), CH_UTF8));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_location_0, 0);
 		}
 	}
@@ -155,6 +167,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_pcap_data(struct ndr_push *ndr, int ndr_flag
 
 _PUBLIC_ enum ndr_err_code ndr_pull_pcap_data(struct ndr_pull *ndr, int ndr_flags, struct pcap_data *r)
 {
+	uint32_t size_printers_0 = 0;
 	uint32_t cntr_printers_0;
 	TALLOC_CTX *_mem_save_printers_0;
 	if (ndr_flags & NDR_SCALARS) {
@@ -162,10 +175,11 @@ _PUBLIC_ enum ndr_err_code ndr_pull_pcap_data(struct ndr_pull *ndr, int ndr_flag
 		NDR_CHECK(ndr_pull_align(ndr, 5));
 		NDR_CHECK(ndr_pull_NTSTATUS(ndr, NDR_SCALARS, &r->status));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->count));
-		NDR_PULL_ALLOC_N(ndr, r->printers, ndr_get_array_size(ndr, &r->printers));
+		size_printers_0 = ndr_get_array_size(ndr, &r->printers);
+		NDR_PULL_ALLOC_N(ndr, r->printers, size_printers_0);
 		_mem_save_printers_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->printers, 0);
-		for (cntr_printers_0 = 0; cntr_printers_0 < r->count; cntr_printers_0++) {
+		for (cntr_printers_0 = 0; cntr_printers_0 < size_printers_0; cntr_printers_0++) {
 			NDR_CHECK(ndr_pull_pcap_printer(ndr, NDR_SCALARS, &r->printers[cntr_printers_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_printers_0, 0);
@@ -175,9 +189,10 @@ _PUBLIC_ enum ndr_err_code ndr_pull_pcap_data(struct ndr_pull *ndr, int ndr_flag
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 5));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
+		size_printers_0 = ndr_get_array_size(ndr, &r->printers);
 		_mem_save_printers_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->printers, 0);
-		for (cntr_printers_0 = 0; cntr_printers_0 < r->count; cntr_printers_0++) {
+		for (cntr_printers_0 = 0; cntr_printers_0 < size_printers_0; cntr_printers_0++) {
 			NDR_CHECK(ndr_pull_pcap_printer(ndr, NDR_BUFFERS, &r->printers[cntr_printers_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_printers_0, 0);

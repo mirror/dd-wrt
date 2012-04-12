@@ -799,12 +799,14 @@ static enum ndr_err_code ndr_push_dfs_padding(struct ndr_push *ndr, int ndr_flag
 static enum ndr_err_code ndr_pull_dfs_padding(struct ndr_pull *ndr, int ndr_flags, union dfs_padding *r)
 {
 	uint32_t level;
+	uint32_t size_value_0 = 0;
 	level = ndr_pull_get_switch_value(ndr, r);
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_union_align(ndr, 1));
 		switch (level) {
 			case 16: {
-				NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->value, 16));
+				size_value_0 = 16;
+				NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->value, size_value_0));
 			break; }
 
 			default: {
@@ -1234,6 +1236,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_dfs_referral_resp(struct ndr_push *ndr, int 
 
 _PUBLIC_ enum ndr_err_code ndr_pull_dfs_referral_resp(struct ndr_pull *ndr, int ndr_flags, struct dfs_referral_resp *r)
 {
+	uint32_t size_referral_entries_0 = 0;
 	uint32_t cntr_referral_entries_0;
 	TALLOC_CTX *_mem_save_referral_entries_0;
 	if (ndr_flags & NDR_SCALARS) {
@@ -1241,19 +1244,21 @@ _PUBLIC_ enum ndr_err_code ndr_pull_dfs_referral_resp(struct ndr_pull *ndr, int 
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->path_consumed));
 		NDR_CHECK(ndr_pull_uint16(ndr, NDR_SCALARS, &r->nb_referrals));
 		NDR_CHECK(ndr_pull_DFS_HEADER_FLAG(ndr, NDR_SCALARS, &r->header_flags));
-		NDR_PULL_ALLOC_N(ndr, r->referral_entries, r->nb_referrals);
+		size_referral_entries_0 = r->nb_referrals;
+		NDR_PULL_ALLOC_N(ndr, r->referral_entries, size_referral_entries_0);
 		_mem_save_referral_entries_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->referral_entries, 0);
-		for (cntr_referral_entries_0 = 0; cntr_referral_entries_0 < r->nb_referrals; cntr_referral_entries_0++) {
+		for (cntr_referral_entries_0 = 0; cntr_referral_entries_0 < size_referral_entries_0; cntr_referral_entries_0++) {
 			NDR_CHECK(ndr_pull_dfs_referral_type(ndr, NDR_SCALARS, &r->referral_entries[cntr_referral_entries_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_referral_entries_0, 0);
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 5));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
+		size_referral_entries_0 = r->nb_referrals;
 		_mem_save_referral_entries_0 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->referral_entries, 0);
-		for (cntr_referral_entries_0 = 0; cntr_referral_entries_0 < r->nb_referrals; cntr_referral_entries_0++) {
+		for (cntr_referral_entries_0 = 0; cntr_referral_entries_0 < size_referral_entries_0; cntr_referral_entries_0++) {
 			NDR_CHECK(ndr_pull_dfs_referral_type(ndr, NDR_BUFFERS, &r->referral_entries[cntr_referral_entries_0]));
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_referral_entries_0, 0);

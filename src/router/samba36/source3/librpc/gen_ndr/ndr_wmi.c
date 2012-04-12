@@ -25,16 +25,20 @@ static enum ndr_err_code ndr_push_BSTR(struct ndr_push *ndr, int ndr_flags, cons
 
 static enum ndr_err_code ndr_pull_BSTR(struct ndr_pull *ndr, int ndr_flags, struct BSTR *r)
 {
+	uint32_t size_data_0 = 0;
+	uint32_t length_data_0 = 0;
 	if (ndr_flags & NDR_SCALARS) {
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->data));
 		NDR_CHECK(ndr_pull_align(ndr, 4));
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->flags));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->data));
-		if (ndr_get_array_length(ndr, &r->data) > ndr_get_array_size(ndr, &r->data)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->data), ndr_get_array_length(ndr, &r->data));
+		size_data_0 = ndr_get_array_size(ndr, &r->data);
+		length_data_0 = ndr_get_array_length(ndr, &r->data);
+		if (length_data_0 > size_data_0) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_data_0, length_data_0);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->data), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->data, ndr_get_array_length(ndr, &r->data), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_data_0, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->data, length_data_0, sizeof(uint16_t), CH_UTF16));
 		NDR_CHECK(ndr_pull_trailer_align(ndr, 4));
 	}
 	if (ndr_flags & NDR_BUFFERS) {
@@ -66,6 +70,8 @@ static enum ndr_err_code ndr_push_Delete(struct ndr_push *ndr, int flags, const 
 
 static enum ndr_err_code ndr_pull_Delete(struct ndr_pull *ndr, int flags, struct Delete *r)
 {
+	uint32_t size_wszName_1 = 0;
+	uint32_t length_wszName_1 = 0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	if (flags & NDR_IN) {
 		ZERO_STRUCT(r->out);
@@ -73,11 +79,13 @@ static enum ndr_err_code ndr_pull_Delete(struct ndr_pull *ndr, int flags, struct
 		NDR_CHECK(ndr_pull_ORPCTHIS(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.ORPCthis));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszName));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszName));
-		if (ndr_get_array_length(ndr, &r->in.wszName) > ndr_get_array_size(ndr, &r->in.wszName)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszName), ndr_get_array_length(ndr, &r->in.wszName));
+		size_wszName_1 = ndr_get_array_size(ndr, &r->in.wszName);
+		length_wszName_1 = ndr_get_array_length(ndr, &r->in.wszName);
+		if (length_wszName_1 > size_wszName_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszName_1, length_wszName_1);
 		}
-		NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszName), sizeof(uint16_t)));
-		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszName, ndr_get_array_length(ndr, &r->in.wszName), sizeof(uint16_t), CH_UTF16));
+		NDR_CHECK(ndr_check_string_terminator(ndr, length_wszName_1, sizeof(uint16_t)));
+		NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszName, length_wszName_1, sizeof(uint16_t), CH_UTF16));
 		NDR_PULL_ALLOC(ndr, r->out.ORPCthat);
 		ZERO_STRUCTP(r->out.ORPCthat);
 	}
@@ -4038,6 +4046,8 @@ static enum ndr_err_code ndr_push_IEnumWbemClassObject_Next(struct ndr_push *ndr
 static enum ndr_err_code ndr_pull_IEnumWbemClassObject_Next(struct ndr_pull *ndr, int flags, struct IEnumWbemClassObject_Next *r)
 {
 	uint32_t _ptr_apObjects;
+	uint32_t size_apObjects_1 = 0;
+	uint32_t length_apObjects_1 = 0;
 	uint32_t cntr_apObjects_1;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_apObjects_1;
@@ -4066,15 +4076,17 @@ static enum ndr_err_code ndr_pull_IEnumWbemClassObject_Next(struct ndr_pull *ndr
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ORPCthat_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.apObjects));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->out.apObjects));
-		if (ndr_get_array_length(ndr, &r->out.apObjects) > ndr_get_array_size(ndr, &r->out.apObjects)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->out.apObjects), ndr_get_array_length(ndr, &r->out.apObjects));
+		size_apObjects_1 = ndr_get_array_size(ndr, &r->out.apObjects);
+		length_apObjects_1 = ndr_get_array_length(ndr, &r->out.apObjects);
+		if (length_apObjects_1 > size_apObjects_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_apObjects_1, length_apObjects_1);
 		}
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->out.apObjects, ndr_get_array_size(ndr, &r->out.apObjects));
+			NDR_PULL_ALLOC_N(ndr, r->out.apObjects, size_apObjects_1);
 		}
 		_mem_save_apObjects_1 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->out.apObjects, 0);
-		for (cntr_apObjects_1 = 0; cntr_apObjects_1 < ndr_get_array_length(ndr, &r->out.apObjects); cntr_apObjects_1++) {
+		for (cntr_apObjects_1 = 0; cntr_apObjects_1 < length_apObjects_1; cntr_apObjects_1++) {
 			NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_apObjects));
 			if (_ptr_apObjects) {
 				NDR_PULL_ALLOC(ndr, r->out.apObjects[cntr_apObjects_1]);
@@ -4082,7 +4094,7 @@ static enum ndr_err_code ndr_pull_IEnumWbemClassObject_Next(struct ndr_pull *ndr
 				r->out.apObjects[cntr_apObjects_1] = NULL;
 			}
 		}
-		for (cntr_apObjects_1 = 0; cntr_apObjects_1 < ndr_get_array_length(ndr, &r->out.apObjects); cntr_apObjects_1++) {
+		for (cntr_apObjects_1 = 0; cntr_apObjects_1 < length_apObjects_1; cntr_apObjects_1++) {
 			if (r->out.apObjects[cntr_apObjects_1]) {
 				_mem_save_apObjects_2 = NDR_PULL_GET_MEM_CTX(ndr);
 				NDR_PULL_SET_MEM_CTX(ndr, r->out.apObjects[cntr_apObjects_1], 0);
@@ -5273,6 +5285,8 @@ static enum ndr_err_code ndr_push_EstablishPosition(struct ndr_push *ndr, int fl
 static enum ndr_err_code ndr_pull_EstablishPosition(struct ndr_pull *ndr, int flags, struct EstablishPosition *r)
 {
 	uint32_t _ptr_wszLocaleList;
+	uint32_t size_wszLocaleList_1 = 0;
+	uint32_t length_wszLocaleList_1 = 0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_wszLocaleList_0;
 	TALLOC_CTX *_mem_save_reserved_0;
@@ -5291,11 +5305,13 @@ static enum ndr_err_code ndr_pull_EstablishPosition(struct ndr_pull *ndr, int fl
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.wszLocaleList, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszLocaleList));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszLocaleList));
-			if (ndr_get_array_length(ndr, &r->in.wszLocaleList) > ndr_get_array_size(ndr, &r->in.wszLocaleList)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszLocaleList), ndr_get_array_length(ndr, &r->in.wszLocaleList));
+			size_wszLocaleList_1 = ndr_get_array_size(ndr, &r->in.wszLocaleList);
+			length_wszLocaleList_1 = ndr_get_array_length(ndr, &r->in.wszLocaleList);
+			if (length_wszLocaleList_1 > size_wszLocaleList_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszLocaleList_1, length_wszLocaleList_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszLocaleList), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszLocaleList, ndr_get_array_length(ndr, &r->in.wszLocaleList), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_wszLocaleList_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszLocaleList, length_wszLocaleList_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_wszLocaleList_0, 0);
 		}
 		NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->in.dwNumLocales));
@@ -5401,7 +5417,13 @@ static enum ndr_err_code ndr_push_RequestChallenge(struct ndr_push *ndr, int fla
 static enum ndr_err_code ndr_pull_RequestChallenge(struct ndr_pull *ndr, int flags, struct RequestChallenge *r)
 {
 	uint32_t _ptr_wszNetworkResource;
+	uint32_t size_wszNetworkResource_1 = 0;
+	uint32_t length_wszNetworkResource_1 = 0;
 	uint32_t _ptr_wszUser;
+	uint32_t size_wszUser_1 = 0;
+	uint32_t length_wszUser_1 = 0;
+	uint32_t size_Nonce_1 = 0;
+	uint32_t length_Nonce_1 = 0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_wszNetworkResource_0;
 	TALLOC_CTX *_mem_save_wszUser_0;
@@ -5420,11 +5442,13 @@ static enum ndr_err_code ndr_pull_RequestChallenge(struct ndr_pull *ndr, int fla
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.wszNetworkResource, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszNetworkResource));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszNetworkResource));
-			if (ndr_get_array_length(ndr, &r->in.wszNetworkResource) > ndr_get_array_size(ndr, &r->in.wszNetworkResource)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszNetworkResource), ndr_get_array_length(ndr, &r->in.wszNetworkResource));
+			size_wszNetworkResource_1 = ndr_get_array_size(ndr, &r->in.wszNetworkResource);
+			length_wszNetworkResource_1 = ndr_get_array_length(ndr, &r->in.wszNetworkResource);
+			if (length_wszNetworkResource_1 > size_wszNetworkResource_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszNetworkResource_1, length_wszNetworkResource_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszNetworkResource), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszNetworkResource, ndr_get_array_length(ndr, &r->in.wszNetworkResource), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_wszNetworkResource_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszNetworkResource, length_wszNetworkResource_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_wszNetworkResource_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_wszUser));
@@ -5438,11 +5462,13 @@ static enum ndr_err_code ndr_pull_RequestChallenge(struct ndr_pull *ndr, int fla
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.wszUser, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszUser));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszUser));
-			if (ndr_get_array_length(ndr, &r->in.wszUser) > ndr_get_array_size(ndr, &r->in.wszUser)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszUser), ndr_get_array_length(ndr, &r->in.wszUser));
+			size_wszUser_1 = ndr_get_array_size(ndr, &r->in.wszUser);
+			length_wszUser_1 = ndr_get_array_length(ndr, &r->in.wszUser);
+			if (length_wszUser_1 > size_wszUser_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszUser_1, length_wszUser_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszUser), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszUser, ndr_get_array_length(ndr, &r->in.wszUser), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_wszUser_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszUser, length_wszUser_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_wszUser_0, 0);
 		}
 		NDR_PULL_ALLOC(ndr, r->out.ORPCthat);
@@ -5460,13 +5486,15 @@ static enum ndr_err_code ndr_pull_RequestChallenge(struct ndr_pull *ndr, int fla
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_ORPCthat_0, LIBNDR_FLAG_REF_ALLOC);
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->out.Nonce));
 		NDR_CHECK(ndr_pull_array_length(ndr, &r->out.Nonce));
-		if (ndr_get_array_length(ndr, &r->out.Nonce) > ndr_get_array_size(ndr, &r->out.Nonce)) {
-			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->out.Nonce), ndr_get_array_length(ndr, &r->out.Nonce));
+		size_Nonce_1 = ndr_get_array_size(ndr, &r->out.Nonce);
+		length_Nonce_1 = ndr_get_array_length(ndr, &r->out.Nonce);
+		if (length_Nonce_1 > size_Nonce_1) {
+			return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_Nonce_1, length_Nonce_1);
 		}
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->out.Nonce, ndr_get_array_size(ndr, &r->out.Nonce));
+			NDR_PULL_ALLOC_N(ndr, r->out.Nonce, size_Nonce_1);
 		}
-		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.Nonce, ndr_get_array_length(ndr, &r->out.Nonce)));
+		NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->out.Nonce, length_Nonce_1));
 		NDR_CHECK(ndr_pull_WERROR(ndr, NDR_SCALARS, &r->out.result));
 		if (r->out.Nonce) {
 			NDR_CHECK(ndr_check_array_size(ndr, (void*)&r->out.Nonce, 16));
@@ -5565,7 +5593,11 @@ static enum ndr_err_code ndr_push_WBEMLogin(struct ndr_push *ndr, int flags, con
 static enum ndr_err_code ndr_pull_WBEMLogin(struct ndr_pull *ndr, int flags, struct WBEMLogin *r)
 {
 	uint32_t _ptr_wszPreferredLocale;
+	uint32_t size_wszPreferredLocale_1 = 0;
+	uint32_t length_wszPreferredLocale_1 = 0;
 	uint32_t _ptr_AccessToken;
+	uint32_t size_AccessToken_1 = 0;
+	uint32_t length_AccessToken_1 = 0;
 	uint32_t _ptr_ppNamespace;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_wszPreferredLocale_0;
@@ -5588,11 +5620,13 @@ static enum ndr_err_code ndr_pull_WBEMLogin(struct ndr_pull *ndr, int flags, str
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.wszPreferredLocale, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszPreferredLocale));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszPreferredLocale));
-			if (ndr_get_array_length(ndr, &r->in.wszPreferredLocale) > ndr_get_array_size(ndr, &r->in.wszPreferredLocale)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszPreferredLocale), ndr_get_array_length(ndr, &r->in.wszPreferredLocale));
+			size_wszPreferredLocale_1 = ndr_get_array_size(ndr, &r->in.wszPreferredLocale);
+			length_wszPreferredLocale_1 = ndr_get_array_length(ndr, &r->in.wszPreferredLocale);
+			if (length_wszPreferredLocale_1 > size_wszPreferredLocale_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszPreferredLocale_1, length_wszPreferredLocale_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszPreferredLocale), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszPreferredLocale, ndr_get_array_length(ndr, &r->in.wszPreferredLocale), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_wszPreferredLocale_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszPreferredLocale, length_wszPreferredLocale_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_wszPreferredLocale_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_AccessToken));
@@ -5606,11 +5640,13 @@ static enum ndr_err_code ndr_pull_WBEMLogin(struct ndr_pull *ndr, int flags, str
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.AccessToken, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.AccessToken));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.AccessToken));
-			if (ndr_get_array_length(ndr, &r->in.AccessToken) > ndr_get_array_size(ndr, &r->in.AccessToken)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.AccessToken), ndr_get_array_length(ndr, &r->in.AccessToken));
+			size_AccessToken_1 = ndr_get_array_size(ndr, &r->in.AccessToken);
+			length_AccessToken_1 = ndr_get_array_length(ndr, &r->in.AccessToken);
+			if (length_AccessToken_1 > size_AccessToken_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_AccessToken_1, length_AccessToken_1);
 			}
-			NDR_PULL_ALLOC_N(ndr, r->in.AccessToken, ndr_get_array_size(ndr, &r->in.AccessToken));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.AccessToken, ndr_get_array_length(ndr, &r->in.AccessToken)));
+			NDR_PULL_ALLOC_N(ndr, r->in.AccessToken, size_AccessToken_1);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, r->in.AccessToken, length_AccessToken_1));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_AccessToken_0, 0);
 		}
 		NDR_CHECK(ndr_pull_int32(ndr, NDR_SCALARS, &r->in.lFlags));
@@ -5760,7 +5796,11 @@ static enum ndr_err_code ndr_push_NTLMLogin(struct ndr_push *ndr, int flags, con
 static enum ndr_err_code ndr_pull_NTLMLogin(struct ndr_pull *ndr, int flags, struct NTLMLogin *r)
 {
 	uint32_t _ptr_wszNetworkResource;
+	uint32_t size_wszNetworkResource_1 = 0;
+	uint32_t length_wszNetworkResource_1 = 0;
 	uint32_t _ptr_wszPreferredLocale;
+	uint32_t size_wszPreferredLocale_1 = 0;
+	uint32_t length_wszPreferredLocale_1 = 0;
 	uint32_t _ptr_pCtx;
 	uint32_t _ptr_ppNamespace;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
@@ -5784,11 +5824,13 @@ static enum ndr_err_code ndr_pull_NTLMLogin(struct ndr_pull *ndr, int flags, str
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.wszNetworkResource, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszNetworkResource));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszNetworkResource));
-			if (ndr_get_array_length(ndr, &r->in.wszNetworkResource) > ndr_get_array_size(ndr, &r->in.wszNetworkResource)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszNetworkResource), ndr_get_array_length(ndr, &r->in.wszNetworkResource));
+			size_wszNetworkResource_1 = ndr_get_array_size(ndr, &r->in.wszNetworkResource);
+			length_wszNetworkResource_1 = ndr_get_array_length(ndr, &r->in.wszNetworkResource);
+			if (length_wszNetworkResource_1 > size_wszNetworkResource_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszNetworkResource_1, length_wszNetworkResource_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszNetworkResource), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszNetworkResource, ndr_get_array_length(ndr, &r->in.wszNetworkResource), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_wszNetworkResource_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszNetworkResource, length_wszNetworkResource_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_wszNetworkResource_0, 0);
 		}
 		NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_wszPreferredLocale));
@@ -5802,11 +5844,13 @@ static enum ndr_err_code ndr_pull_NTLMLogin(struct ndr_pull *ndr, int flags, str
 			NDR_PULL_SET_MEM_CTX(ndr, r->in.wszPreferredLocale, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, &r->in.wszPreferredLocale));
 			NDR_CHECK(ndr_pull_array_length(ndr, &r->in.wszPreferredLocale));
-			if (ndr_get_array_length(ndr, &r->in.wszPreferredLocale) > ndr_get_array_size(ndr, &r->in.wszPreferredLocale)) {
-				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", ndr_get_array_size(ndr, &r->in.wszPreferredLocale), ndr_get_array_length(ndr, &r->in.wszPreferredLocale));
+			size_wszPreferredLocale_1 = ndr_get_array_size(ndr, &r->in.wszPreferredLocale);
+			length_wszPreferredLocale_1 = ndr_get_array_length(ndr, &r->in.wszPreferredLocale);
+			if (length_wszPreferredLocale_1 > size_wszPreferredLocale_1) {
+				return ndr_pull_error(ndr, NDR_ERR_ARRAY_SIZE, "Bad array size %u should exceed array length %u", size_wszPreferredLocale_1, length_wszPreferredLocale_1);
 			}
-			NDR_CHECK(ndr_check_string_terminator(ndr, ndr_get_array_length(ndr, &r->in.wszPreferredLocale), sizeof(uint16_t)));
-			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszPreferredLocale, ndr_get_array_length(ndr, &r->in.wszPreferredLocale), sizeof(uint16_t), CH_UTF16));
+			NDR_CHECK(ndr_check_string_terminator(ndr, length_wszPreferredLocale_1, sizeof(uint16_t)));
+			NDR_CHECK(ndr_pull_charset(ndr, NDR_SCALARS, &r->in.wszPreferredLocale, length_wszPreferredLocale_1, sizeof(uint16_t), CH_UTF16));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_wszPreferredLocale_0, 0);
 		}
 		NDR_CHECK(ndr_pull_int32(ndr, NDR_SCALARS, &r->in.lFlags));
@@ -6031,6 +6075,7 @@ static enum ndr_err_code ndr_push_IWbemWCOSmartEnum_Next(struct ndr_push *ndr, i
 static enum ndr_err_code ndr_pull_IWbemWCOSmartEnum_Next(struct ndr_pull *ndr, int flags, struct IWbemWCOSmartEnum_Next *r)
 {
 	uint32_t _ptr_pData;
+	uint32_t size_pData_2 = 0;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_gEWCO_0;
 	TALLOC_CTX *_mem_save_gWCO_0;
@@ -6105,8 +6150,9 @@ static enum ndr_err_code ndr_pull_IWbemWCOSmartEnum_Next(struct ndr_pull *ndr, i
 			_mem_save_pData_1 = NDR_PULL_GET_MEM_CTX(ndr);
 			NDR_PULL_SET_MEM_CTX(ndr, *r->out.pData, 0);
 			NDR_CHECK(ndr_pull_array_size(ndr, r->out.pData));
-			NDR_PULL_ALLOC_N(ndr, *r->out.pData, ndr_get_array_size(ndr, r->out.pData));
-			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.pData, ndr_get_array_size(ndr, r->out.pData)));
+			size_pData_2 = ndr_get_array_size(ndr, r->out.pData);
+			NDR_PULL_ALLOC_N(ndr, *r->out.pData, size_pData_2);
+			NDR_CHECK(ndr_pull_array_uint8(ndr, NDR_SCALARS, *r->out.pData, size_pData_2));
 			NDR_PULL_SET_MEM_CTX(ndr, _mem_save_pData_1, 0);
 		}
 		NDR_PULL_SET_MEM_CTX(ndr, _mem_save_pData_0, LIBNDR_FLAG_REF_ALLOC);
@@ -7063,6 +7109,7 @@ static enum ndr_err_code ndr_push_Indicate(struct ndr_push *ndr, int flags, cons
 static enum ndr_err_code ndr_pull_Indicate(struct ndr_pull *ndr, int flags, struct Indicate *r)
 {
 	uint32_t _ptr_apObjArray;
+	uint32_t size_apObjArray_1 = 0;
 	uint32_t cntr_apObjArray_1;
 	TALLOC_CTX *_mem_save_ORPCthat_0;
 	TALLOC_CTX *_mem_save_apObjArray_1;
@@ -7073,12 +7120,13 @@ static enum ndr_err_code ndr_pull_Indicate(struct ndr_pull *ndr, int flags, stru
 		NDR_CHECK(ndr_pull_ORPCTHIS(ndr, NDR_SCALARS|NDR_BUFFERS, &r->in.ORPCthis));
 		NDR_CHECK(ndr_pull_int32(ndr, NDR_SCALARS, &r->in.lObjectCount));
 		NDR_CHECK(ndr_pull_array_size(ndr, &r->in.apObjArray));
+		size_apObjArray_1 = ndr_get_array_size(ndr, &r->in.apObjArray);
 		if (ndr->flags & LIBNDR_FLAG_REF_ALLOC) {
-			NDR_PULL_ALLOC_N(ndr, r->in.apObjArray, ndr_get_array_size(ndr, &r->in.apObjArray));
+			NDR_PULL_ALLOC_N(ndr, r->in.apObjArray, size_apObjArray_1);
 		}
 		_mem_save_apObjArray_1 = NDR_PULL_GET_MEM_CTX(ndr);
 		NDR_PULL_SET_MEM_CTX(ndr, r->in.apObjArray, 0);
-		for (cntr_apObjArray_1 = 0; cntr_apObjArray_1 < r->in.lObjectCount; cntr_apObjArray_1++) {
+		for (cntr_apObjArray_1 = 0; cntr_apObjArray_1 < size_apObjArray_1; cntr_apObjArray_1++) {
 			NDR_CHECK(ndr_pull_generic_ptr(ndr, &_ptr_apObjArray));
 			if (_ptr_apObjArray) {
 				NDR_PULL_ALLOC(ndr, r->in.apObjArray[cntr_apObjArray_1]);
@@ -7086,7 +7134,7 @@ static enum ndr_err_code ndr_pull_Indicate(struct ndr_pull *ndr, int flags, stru
 				r->in.apObjArray[cntr_apObjArray_1] = NULL;
 			}
 		}
-		for (cntr_apObjArray_1 = 0; cntr_apObjArray_1 < r->in.lObjectCount; cntr_apObjArray_1++) {
+		for (cntr_apObjArray_1 = 0; cntr_apObjArray_1 < size_apObjArray_1; cntr_apObjArray_1++) {
 			if (r->in.apObjArray[cntr_apObjArray_1]) {
 				_mem_save_apObjArray_2 = NDR_PULL_GET_MEM_CTX(ndr);
 				NDR_PULL_SET_MEM_CTX(ndr, r->in.apObjArray[cntr_apObjArray_1], 0);
