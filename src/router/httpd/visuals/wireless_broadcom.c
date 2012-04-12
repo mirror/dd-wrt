@@ -197,14 +197,27 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("ng-only", "%s_net_mode", prefix))
-		    && (nvram_nmatch("40", "%s_nbw", prefix))
 		    && (nvram_nmatch("ap", "%s_mode", prefix)
 			|| nvram_nmatch("wdsap", "%s_mode", prefix)
 			|| nvram_nmatch("infra", "%s_mode", prefix))) {
-			websWrite(wp, "%d + ",
-				  nvram_nmatch("upper", "%s_nctrlsb",
-					       prefix) ? ci.hw_channel +
-				  2 : ci.hw_channel - 2);
+			if (nvram_nmatch("40", "%s_nbw", prefix)) {
+				websWrite(wp, "%d + ",
+					  nvram_nmatch("upper", "%s_nctrlsb",
+						       prefix) ? ci.hw_channel +
+					  2 : ci.hw_channel - 2);
+			}
+			if (nvram_nmatch("80", "%s_nbw", prefix)) {
+				int channel = ci.hw_channel - 8 + 2;
+				if (nvram_nmatch("ll", "%s_nctrlsb", prefix))
+					websWrite(wp, "%d + ", channel);
+				if (nvram_nmatch("lu", "%s_nctrlsb", prefix))
+					websWrite(wp, "%d + ", channel + 4);
+				if (nvram_nmatch("ul", "%s_nctrlsb", prefix))
+					websWrite(wp, "%d + ", channel + 8);
+				if (nvram_nmatch("uu", "%s_nctrlsb", prefix))
+					websWrite(wp, "%d + ", channel + 12);
+
+			}
 		}
 		websWrite(wp, "%d", ci.hw_channel);
 	} else
