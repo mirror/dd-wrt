@@ -1055,7 +1055,6 @@ void period_check(int sig)
 					nvram_set("sv_restore_defaults", "1");
 					if(region_sa)
 						nvram_set("region", "SA");
-fprintf(stderr, "[RESETBUTTON] SA erase $d\n", region_sa);
 					nvram_commit();
 #endif
 #endif
