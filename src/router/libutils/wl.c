@@ -686,6 +686,11 @@ int getchannels(unsigned int *retlist, char *ifname)
 
 	if (bw > 20) {
 #ifdef WL_CHANSPEC_CTL_SB_UU
+		if (bw == 80) {
+			if (nvram_nmatch("lower", "wl%d_nctrlsb", wl) ||
+			    nvram_nmatch("upper", "wl%d_nctrlsb", wl))
+				nvram_nset("ll", "wl%d_nctrlsb", wl);
+		}
 		if (nvram_nmatch("uu", "wl%d_nctrlsb", wl))
 			spec = WL_CHANSPEC_CTL_SB_UU;
 		else if (nvram_nmatch("ul", "wl%d_nctrlsb", wl))
@@ -694,14 +699,20 @@ int getchannels(unsigned int *retlist, char *ifname)
 			spec = WL_CHANSPEC_CTL_SB_LU;
 		else if (nvram_nmatch("ll", "wl%d_nctrlsb", wl))
 			spec = WL_CHANSPEC_CTL_SB_LL;
-		else
 #endif
+		if (bw == 40) {
+			if (nvram_nmatch("uu", "wl%d_nctrlsb", wl) ||
+			    nvram_nmatch("ul", "wl%d_nctrlsb", wl) ||
+			    nvram_nmatch("lu", "wl%d_nctrlsb", wl) ||
+			    nvram_nmatch("ll", "wl%d_nctrlsb", wl))
+				nvram_nset("lower", "wl%d_nctrlsb", wl);
+		}
 		if (nvram_nmatch("lower", "wl%d_nctrlsb", wl))
 			spec = WL_CHANSPEC_CTL_SB_LOWER;
 		else if (nvram_nmatch("upper", "wl%d_nctrlsb", wl))
 			spec = WL_CHANSPEC_CTL_SB_UPPER;
 	}
-	
+
 	for (i = 0; i < list->count; i++) {
 
 		c = list->element[i];
@@ -740,10 +751,10 @@ int getchannels(unsigned int *retlist, char *ifname)
 
 #ifdef TEST
 
-void main(int argc,char *argv[])
+void main(int argc, char *argv[])
 {
-char buf[1024];
-getchannels(buf,"eth1");
+	char buf[1024];
+	getchannels(buf, "eth1");
 }
 #endif
 int has_5ghz(char *prefix)
