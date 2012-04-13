@@ -3747,7 +3747,7 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x113;
 		power_gpio = 0x10e;
 //              usb_power = 0x01a;
-//              usb_gpio = 0x001;
+        	  usb_gpio = 0x10b;
 //              ses_gpio = 0x11b;
 		break;
 #elif HAVE_WASP
