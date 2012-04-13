@@ -663,6 +663,9 @@ int getchannels(unsigned int *retlist, char *ifname)
 
 	int mask = 0;
 	int bw = atoi(nvram_nget("wl%d_nbw", wl));
+	if (!bw)
+	    bw = 20;
+	    
 	int spec = 0;
 #ifdef WL_CHANSPEC_BW_8080
 	if (nvram_nmatch("8080", "wl%d_nbw", wl))
@@ -676,6 +679,8 @@ int getchannels(unsigned int *retlist, char *ifname)
 	if (nvram_nmatch("40", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_40;
 	else if (nvram_nmatch("20", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_20;
+	else if (nvram_nmatch("0", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_20;
 	else if (nvram_nmatch("10", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_10;
