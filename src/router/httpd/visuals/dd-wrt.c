@@ -5649,7 +5649,7 @@ void show_preshared(webs_t wp, char *prefix)
 	sprintf(var, "%s_wpa_psk", prefix);
 	websWrite(wp,
 #ifdef HAVE_BUFFALO
-		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_wpa_psk(this);\" maxlength=\"64\" size=\"32\" value=\"",
+		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_wpa_psk(this, true);\" maxlength=\"64\" size=\"32\" value=\"",
 #else
 		  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_psk_length(this);\" maxlength=\"64\" size=\"32\" value=\"",
 #endif
@@ -6396,22 +6396,38 @@ void show_wep(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n");
 	websWrite(wp,
+#ifdef HAVE_BUFFALO
+		  "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+#else
 		  "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+#endif
 		  prefix, mlen2, mlen, nvram_nget("%s_key1", prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n");
 	websWrite(wp,
+#ifdef HAVE_BUFFALO
+		  "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+#else
 		  "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+#endif
 		  prefix, mlen2, mlen, nvram_nget("%s_key2", prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n");
 	websWrite(wp,
+#ifdef HAVE_BUFFALO
+		  "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+#else
 		  "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+#endif
 		  prefix, mlen2, mlen, nvram_nget("%s_key3", prefix));
 	websWrite(wp,
 		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n");
 	websWrite(wp,
+#ifdef HAVE_BUFFALO
+		  "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" onblur=\"valid_wep(this, 1)\" /></div>\n",
+#else
 		  "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+#endif
 		  prefix, mlen2, mlen, nvram_nget("%s_key4", prefix));
 	websWrite(wp, "</div>\n");
 }
