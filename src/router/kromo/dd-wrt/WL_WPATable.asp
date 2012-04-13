@@ -23,6 +23,7 @@ function generateKey(F,PREFIX) {
 }
 
 wpa_psk_error = 0;
+wep_error = 0;
 function check_form(F) {
 	var security_mode = 'disabled';
 	// parse through security modes
@@ -38,6 +39,22 @@ function check_form(F) {
 						result = valid_wpa_psk(wpa_psk_input, false);
 						wpa_psk_error = 0;
 						return result;
+					}
+				} else if(element.options[element.selectedIndex].value.substr(0,3) == "wep") {
+					var iface = element.name.substr(0, element.name.length - 14);
+					for (var i=1; i <= 4; i++) {
+						if(F.elements[iface + '_key'][i-1].checked) {
+							aaa = eval(F.elements[iface+"_key"+i]).value;
+							if(aaa == "") {
+								alert(errmsg.err40 + i);
+								return false;
+							} else {
+								result = valid_wep(F.elements[iface+"_key"+i]);
+								wep_error = 0;
+								return result;
+							}
+							break;
+						}
 					}
 				}
 			}
@@ -80,6 +97,7 @@ function valid_wpa_psk(F, blur) {
 		if(F.value.length == 64){
 			if(!isxdigit(F, F.value)) {
 				wpa_psk_error = 1;
+				settimeout("wpa_psk_error=0", 1000);
 				return false;
 			}
 		} else 
@@ -87,7 +105,7 @@ function valid_wpa_psk(F, blur) {
 			if(!isascii(F,F.value)) {
 				F.value = value;
 				wpa_psk_error = 1;
-				settimeout("wpa_psk_error=0", 2000);
+				settimeout("wpa_psk_error=0", 1000);
 				return false;
 			}
 		} else {
@@ -95,14 +113,14 @@ function valid_wpa_psk(F, blur) {
 				if(!isascii(F,F.value)) {
 					F.value = value;
 					wpa_psk_error = 1;
-					settimeout("wpa_psk_error=0", 2000);
+					settimeout("wpa_psk_error=0", 1000);
 					return false;
 				}	
 			} else {
 				if(!wpa_psk_error) {
 					alert(errmsg.err39);
 					wpa_psk_error = 1;
-					settimeout("wpa_psk_error=0", 2000);
+					settimeout("wpa_psk_error=0", 1000);
 				}
 				return false;
 			}
@@ -129,45 +147,67 @@ function valid_wpa_psk(F, blur) {
 	return true;
 }
 
-function valid_wep(F) {
-	if(F.security_mode.value == "psk" || F.security_mode.value == "wpa" || F.security_mode.value == "psk2" || F.security_mode.value == "wpa2" || F.security_mode.value == "psk psk2" || F.security_mode.value == "wpa wpa2")
+function valid_wep(F, blur) {
+	if(F.nodeName == 'INPUT') {
+		var iface = F.name.substr(0, F.name.length - 5);
+		if(document.forms[0].elements[iface + '_security_mode'].value != "wep")
+			return true;
+		
+		if(wep_error) {
+			wep_error = 0;
+			return false;
+		}
+			
+		var value = F.value;
+		var bitselect = document.forms[0].elements[iface + '_wep_bit'];
+		if (ValidateKey(F, bitselect.options[bitselect.selectedIndex].value,1) == false) {
+			wep_error = 1;
+			settimeout("wep_error=0", 1000);
+			return false;
+		}
+	} else {
+		if(F.security_mode.value == "psk" || F.security_mode.value == "wpa" || F.security_mode.value == "psk2" || F.security_mode.value == "wpa2" || F.security_mode.value == "psk psk2" || F.security_mode.value == "wpa wpa2")
 		return true;
+	
+		if (ValidateKey(F.wl_key1, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,1) == false)
+			return false;
 
-	if (ValidateKey(F.wl_key1, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,1) == false)
-		return false;
+	  	if (ValidateKey(F.wl_key2, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,2) == false)
+			return false;
 
-  	if (ValidateKey(F.wl_key2, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,2) == false)
-		return false;
+		if (ValidateKey(F.wl_key3, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,3) == false)
+			return false;
+	
+		if (ValidateKey(F.wl_key4, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,4) == false)
+			return false;
 
-	if (ValidateKey(F.wl_key3, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,3) == false)
-		return false;
-
-	if (ValidateKey(F.wl_key4, F.wl_wep_bit.options[F.wl_wep_bit.selectedIndex].value,4) == false)
-		return false;
-
-	for (var i=1; i <= 4; i++) {
-		if(F.wl_key[i-1].checked) {
-			aaa = eval("F.wl_key"+i).value;
-			if(aaa == "") {
-				alert(errmsg.err40 + i);
-				return false;
+		for (var i=1; i <= 4; i++) {
+			if(F.wl_key[i-1].checked) {
+				aaa = eval("F.wl_key"+i).value;
+				if(aaa == "") {
+					alert(errmsg.err40 + i);
+					return false;
+				}
+				break;
 			}
-			break;
 		}
 	}
 
+  wep_error = 0;
   return true;
 }
 
 function ValidateKey(key, bit, index) {
+	var value = key.value;
+	if(!isxdigit(key,key.value)) {
+		key.value = value;
+		return false;
+	}
 	if(bit == 64) {
 		switch(key.value.length) {
 			case 0:
 				break;
 			case 10:
-				if(!isxdigit(key,key.value)) {
-					return false;
-				}
 				break;
 			default:
 				alert(errmsg.err41 + key.value);
