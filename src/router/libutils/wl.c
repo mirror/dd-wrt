@@ -593,13 +593,30 @@ static int getcenterchannel(chanspec_t chspec)
 
 #else
 
+#ifndef CHSPEC_IS40
+
+#define WL_CHANSPEC_CTL_SB_MASK		0x0300
+#define WL_CHANSPEC_CTL_SB_LOWER	0x0100
+#define WL_CHANSPEC_CTL_SB_UPPER	0x0200
+
+#define WL_CHANSPEC_BW_MASK		0x0C00
+#define WL_CHANSPEC_BW_40		0x0C00
+
+#define CHSPEC_CHANNEL(chspec)	((uint8)(chspec & 0xff))
+
+#define CHSPEC_IS40(chspec)	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
+#define CHSPEC_SB_UPPER(chspec)	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
+#define CHSPEC_SB_LOWER(chspec)	((chspec & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
+#endif
+
 static int getcenterchannel(chanspec_t chspec)
 {
 	const char *band;
 	uint ctl_chan;
-
+	int channel;
 	channel = CHSPEC_CHANNEL(chspec);
 	/* check for non-default band spec */
+
 	if (CHSPEC_IS40(chspec)) {
 		if (CHSPEC_SB_UPPER(chspec)) {
 			channel += 2;
@@ -607,6 +624,7 @@ static int getcenterchannel(chanspec_t chspec)
 			channel -= 2;
 		}
 	}
+	return channel;
 }
 #endif
 int getchannels(unsigned int *retlist, char *ifname)
@@ -661,8 +679,10 @@ int getchannels(unsigned int *retlist, char *ifname)
 		mask = WL_CHANSPEC_BW_20;
 	else if (nvram_nmatch("10", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_10;
+#ifdef WL_CHANSPEC_BW_5
 	else if (nvram_nmatch("5", "wl%d_nbw", wl))
 		mask = WL_CHANSPEC_BW_5;
+#endif
 
 	if (bw > 20) {
 #ifdef WL_CHANSPEC_CTL_SB_UU
