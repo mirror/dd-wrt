@@ -862,11 +862,6 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 						  prefix) ?
 				  "selected=\\\"selected\\\"" : "");
 			websWrite(wp,
-				  "<option value=\"10\" %s>10 MHz</option>\n",
-				  nvram_selnmatch(wp, "10", "%s_nbw",
-						  prefix) ?
-				  "selected=\\\"selected\\\"" : "");
-			websWrite(wp,
 				  "<option value=\"20\" %s>20 MHz</option>\n",
 				  nvram_selnmatch(wp, "20", "%s_nbw",
 						  prefix) ?

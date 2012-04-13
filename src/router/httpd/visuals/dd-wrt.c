@@ -4501,11 +4501,6 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 				       prefix) ?
 			  "selected=\\\"selected\\\"" : "");
 		websWrite(wp,
-			  "<option value=\"10\" %s>10 MHz</option>\n",
-			  nvram_nmatch("10", "%s_nbw",
-				       prefix) ?
-			  "selected=\\\"selected\\\"" : "");
-		websWrite(wp,
 			  "<option value=\"20\" %s>20 MHz</option>\n",
 			  nvram_nmatch("20", "%s_nbw",
 				       prefix) ?
@@ -4957,11 +4952,6 @@ if (!strcmp(prefix, "wl1"))
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 				  nvram_nmatch("0", "%s_nbw",
-					       prefix) ?
-				  "selected=\\\"selected\\\"" : "");
-			websWrite(wp,
-				  "<option value=\"10\" %s>10 MHz</option>\n",
-				  nvram_nmatch("10", "%s_nbw",
 					       prefix) ?
 				  "selected=\\\"selected\\\"" : "");
 			websWrite(wp,
