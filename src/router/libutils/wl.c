@@ -38,12 +38,12 @@ u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
 		return 14;
-	if (freq < 2484 && freq > 2407 )
+	if (freq < 2484 && freq > 2407)
 		return (freq - 2407) / 5;
-	if (freq < 2412 ){
+	if (freq < 2412) {
 		int d = ((((int)freq) - 2412) / 5) + 256;
 		return d;
-		}
+	}
 	if (freq < 2502)
 		return 14;
 	if (freq < 2512)
@@ -77,7 +77,6 @@ unsigned int ieee80211_ieee2mhz(unsigned int chan)
 			return ((2512) + ((chan - 15) * 20));
 	}
 }
-
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(char *prefix)
@@ -154,7 +153,6 @@ int getchannels(unsigned int *list, char *ifname)
 #include <linux/if.h>
 #define __user
 #include "wireless.h"
-
 
 int wifi_getchannel(char *ifname)
 {
@@ -496,34 +494,238 @@ void radio_on(int idx)
 }
 
 #else
-int getchannels(unsigned int *list, char *ifname)
+#ifdef WL_CHANSPEC_BW_8080
+
+static const uint8 wf_chspec_bw_mhz[] = { 5, 10, 20, 40, 80, 160, 160 };
+
+#define WF_NUM_BW \
+	(sizeof(wf_chspec_bw_mhz)/sizeof(uint8))
+
+/* 40MHz channels in 5GHz band */
+static const uint8 wf_5g_40m_chans[] =
+    { 38, 46, 54, 62, 102, 110, 118, 126, 134, 142, 151, 159 };
+#define WF_NUM_5G_40M_CHANS \
+	(sizeof(wf_5g_40m_chans)/sizeof(uint8))
+
+/* 80MHz channels in 5GHz band */
+static const uint8 wf_5g_80m_chans[] = { 42, 58, 106, 122, 138, 155 };
+
+#define WF_NUM_5G_80M_CHANS \
+	(sizeof(wf_5g_80m_chans)/sizeof(uint8))
+
+/* 160MHz channels in 5GHz band */
+static const uint8 wf_5g_160m_chans[] = { 50, 114 };
+
+#define WF_NUM_5G_160M_CHANS \
+	(sizeof(wf_5g_160m_chans)/sizeof(uint8))
+
+static uint8 center_chan_to_edge(uint bw)
 {
-	// int ret, num;
-	// num = (sizeof (*list) - 4) / 6; /* Maximum number of entries in the
-	// buffer */
-	// memcpy (list, &num, 4); /* First 4 bytes are the number of ent. */
-
-	// ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
-	// fprintf(stderr,"get channels\n");
-	char exec[64];
-
-	sprintf(exec, "wl -i %s channels", ifname);
-	FILE *in = popen(exec, "r");
-
-	int chan;
-	int count = 0;
-
-	while (!feof(in) && fscanf(in, "%d", &chan) == 1) {
-		list[count++] = chan;
-	}
-	pclose(in);
-#ifdef BUFFALO_JP
-	return count - 1;
-#else
-	return count;
-#endif
+	/* edge channels separated by BW - 10MHz on each side
+	 * delta from cf to edge is half of that,
+	 * MHz to channel num conversion is 5MHz/channel
+	 */
+	return (uint8) (((bw - 20) / 2) / 5);
 }
 
+static uint8 channel_low_edge(uint center_ch, uint bw)
+{
+	return (uint8) (center_ch - center_chan_to_edge(bw));
+}
+
+/* return control channel given center channel and side band */
+static uint8 channel_to_ctl_chan(uint center_ch, uint bw, uint sb)
+{
+	return (uint8) (channel_low_edge(center_ch, bw) + sb * 4);
+}
+
+/* convert bandwidth from chanspec to MHz */
+static uint bw_chspec_to_mhz(chanspec_t chspec)
+{
+	uint bw;
+
+	bw = (chspec & WL_CHANSPEC_BW_MASK) >> WL_CHANSPEC_BW_SHIFT;
+	return (bw >= WF_NUM_BW ? 0 : wf_chspec_bw_mhz[bw]);
+}
+
+uint8 wf_chspec_ctlchan(chanspec_t chspec)
+{
+	uint center_chan;
+	uint bw_mhz;
+	uint sb;
+
+	/* Is there a sideband ? */
+	if (CHSPEC_IS20(chspec)) {
+		return CHSPEC_CHANNEL(chspec);
+	} else {
+		sb = CHSPEC_CTL_SB(chspec) >> WL_CHANSPEC_CTL_SB_SHIFT;
+
+		if (CHSPEC_IS8080(chspec)) {
+			bw_mhz = 80;
+
+			if (sb < 4) {
+				center_chan = CHSPEC_CHAN1(chspec);
+			} else {
+				center_chan = CHSPEC_CHAN2(chspec);
+				sb -= 4;
+			}
+
+			/* convert from channel index to channel number */
+			center_chan = wf_5g_80m_chans[center_chan];
+		} else {
+			bw_mhz = bw_chspec_to_mhz(chspec);
+			center_chan =
+			    CHSPEC_CHANNEL(chspec) >> WL_CHANSPEC_CHAN_SHIFT;
+		}
+
+		return (channel_to_ctl_chan(center_chan, bw_mhz, sb));
+	}
+}
+
+static int getcenterchannel(chanspec_t chspec)
+{
+	const char *band;
+	uint ctl_chan;
+
+	/* ctl channel */
+	return wf_chspec_ctlchan(chspec);
+}
+
+#else
+
+static int getcenterchannel(chanspec_t chspec)
+{
+	const char *band;
+	uint ctl_chan;
+
+	channel = CHSPEC_CHANNEL(chspec);
+	/* check for non-default band spec */
+	if (CHSPEC_IS40(chspec)) {
+		if (CHSPEC_SB_UPPER(chspec)) {
+			channel += 2;
+		} else {
+			channel -= 2;
+		}
+	}
+}
+#endif
+int getchannels(unsigned int *retlist, char *ifname)
+{
+	char buf[WLC_IOCTL_MAXLEN];
+	int buflen;
+	int ret;
+	int count = 0;
+	int i;
+	chanspec_t c = 0, *chanspec;
+	char abbrev[WLC_CNTRY_BUF_SZ] = "";	/* default.. current locale */
+	wl_uint32_list_t *list;
+
+	memset(buf, 0, WLC_IOCTL_MAXLEN);
+	strcpy(buf, "chanspecs");
+	buflen = strlen(buf) + 1;
+
+	chanspec = (chanspec_t *) (buf + buflen);
+	*chanspec = c;
+	buflen += (sizeof(chanspec_t));
+
+	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
+	buflen += WLC_CNTRY_BUF_SZ;
+
+	list = (wl_uint32_list_t *) (buf + buflen);
+	list->count = WL_NUMCHANSPECS;
+	buflen += sizeof(uint32) * (WL_NUMCHANSPECS + 1);
+
+	if ((ret = wl_ioctl(ifname, WLC_GET_VAR, &buf[0], buflen)))
+		if (ret < 0)
+			return 0;
+
+	int wl = get_wl_instance(ifname);
+
+	list = (wl_uint32_list_t *) buf;
+
+	int mask = 0;
+	int bw = atoi(nvram_nget("wl%d_nbw", wl));
+	int spec = 0;
+#ifdef WL_CHANSPEC_BW_8080
+	if (nvram_nmatch("8080", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_8080;
+	else if (nvram_nmatch("160", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_160;
+	else if (nvram_nmatch("80", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_80;
+	else
+#endif
+	if (nvram_nmatch("40", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_40;
+	else if (nvram_nmatch("20", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_20;
+	else if (nvram_nmatch("10", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_10;
+	else if (nvram_nmatch("5", "wl%d_nbw", wl))
+		mask = WL_CHANSPEC_BW_5;
+
+	if (bw > 20) {
+#ifdef WL_CHANSPEC_CTL_SB_UU
+		if (nvram_nmatch("uu", "wl%d_nctrlsb", wl))
+			spec = WL_CHANSPEC_CTL_SB_UU;
+		else if (nvram_nmatch("ul", "wl%d_nctrlsb", wl))
+			spec = WL_CHANSPEC_CTL_SB_UL;
+		else if (nvram_nmatch("lu", "wl%d_nctrlsb", wl))
+			spec = WL_CHANSPEC_CTL_SB_LU;
+		else if (nvram_nmatch("ll", "wl%d_nctrlsb", wl))
+			spec = WL_CHANSPEC_CTL_SB_LL;
+		else
+#endif
+		if (nvram_nmatch("lower", "wl%d_nctrlsb", wl))
+			spec = WL_CHANSPEC_CTL_SB_LOWER;
+		else if (nvram_nmatch("upper", "wl%d_nctrlsb", wl))
+			spec = WL_CHANSPEC_CTL_SB_UPPER;
+	}
+	
+	for (i = 0; i < list->count; i++) {
+
+		c = list->element[i];
+		int cspec = c & 0x700;
+		int cbw = c & 0x3800;
+		if ((cbw == mask) && (cspec == spec)) {
+
+			int channel = getcenterchannel(c);
+
+			int a;
+			int inlist = 0;
+			for (a = 0; a < count; a++)
+				if (retlist[a] == channel) {
+					inlist = 1;
+					break;
+				}
+			if (!inlist) {
+				retlist[count++] = channel;
+			}
+		}
+	}
+	int a;
+	// sort
+	for (a = 0; a < count; a++) {
+		for (i = 0; i < count - 1; i++) {
+			if (retlist[i + 1] < retlist[i]) {
+				int cc = retlist[i + 1];
+				retlist[i + 1] = retlist[i];
+				retlist[i] = cc;
+			}
+		}
+	}
+
+	return count;
+}
+
+#ifdef TEST
+
+void main(int argc,char *argv[])
+{
+char buf[1024];
+getchannels(buf,"eth1");
+}
+#endif
 int has_5ghz(char *prefix)
 {
 	if (strstr(nvram_nget("%s_bandlist", prefix), "a"))
@@ -736,12 +938,15 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 		memcpy(data, iwr.u.name, len);
 	return iwr.u.data.length;
 }
+
 #define MEGA	1e6
 
 float wifi_getrate(char *ifname)
 {
 #ifdef HAVE_ATH9K
-	if (is_ath9k(ifname) && (nvram_nmatch("ap","%s_mode",ifname) || nvram_nmatch("wdsap","%s_mode",ifname))) {
+	if (is_ath9k(ifname)
+	    && (nvram_nmatch("ap", "%s_mode", ifname)
+		|| nvram_nmatch("wdsap", "%s_mode", ifname))) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
 			return 11.0;
 		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
@@ -752,9 +957,11 @@ float wifi_getrate(char *ifname)
 			return 54.0;
 		if (nvram_nmatch("2040", "%s_channelbw", ifname)
 		    || nvram_nmatch("40", "%s_channelbw", ifname)) {
-				return (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			return (float)(HTTxRate40_400
+				       (mac80211_get_maxmcs(ifname))) * MEGA;
 		} else {
-				return (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			return (float)(HTTxRate20_400
+				       (mac80211_get_maxmcs(ifname))) * MEGA;
 		}
 	} else
 #endif
@@ -1134,13 +1341,13 @@ u_int ieee80211_mhz2ieee(u_int freq)
 		return 14;
 	if (freq == 2407)
 		return 0;
-	if (freq < 2484 && freq > 2407 )
+	if (freq < 2484 && freq > 2407)
 		return (freq - 2407) / 5;
-	if (freq < 2412 ){
+	if (freq < 2412) {
 		int d = ((((int)freq) - 2407) / 5) + 256;
 		return d;
-		}
-	if (freq > 2484 && freq < 4000 )
+	}
+	if (freq > 2484 && freq < 4000)
 		return (freq - 2407) / 5;
 	if (freq < 4990 && freq > 4940)
 		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
@@ -1150,7 +1357,7 @@ u_int ieee80211_mhz2ieee(u_int freq)
 	if (freq < 5000)
 		return 15 + ((freq - 2512) / 20);
 
-	return (freq - 5000 ) / 5;
+	return (freq - 5000) / 5;
 }
 
 int wifi_getchannel(char *ifname)
@@ -1264,7 +1471,6 @@ int getAssocMAC(char *ifname, char *mac)
 }
 
 #ifdef HAVE_ATH9K
-
 
 void radio_off_ath9k(int idx)
 {
@@ -1790,14 +1996,14 @@ void radio_off(int idx)
 		radio_off_ath9k(idx);
 #endif
 	if (idx != -1) {
-		writevaproc("1","/proc/sys/dev/wifi%d/silent", idx);
-		writevaproc("1","/proc/sys/dev/wifi%d/ledon", idx); // switch off led
+		writevaproc("1", "/proc/sys/dev/wifi%d/silent", idx);
+		writevaproc("1", "/proc/sys/dev/wifi%d/ledon", idx);	// switch off led
 	} else {
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
-			writevaproc("1","/proc/sys/dev/wifi%d/silent", i);
-			writevaproc("1","/proc/sys/dev/wifi%d/ledon", i); // switch off led
+			writevaproc("1", "/proc/sys/dev/wifi%d/silent", i);
+			writevaproc("1", "/proc/sys/dev/wifi%d/ledon", i);	// switch off led
 		}
 	}
 }
@@ -1811,12 +2017,12 @@ void radio_on(int idx)
 		radio_on_ath9k(idx);
 #endif
 	if (idx != -1)
-		writevaproc("0","/proc/sys/dev/wifi%d/silent", idx);
+		writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
 	else {
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++)
-			writevaproc("0","/proc/sys/dev/wifi%d/silent", idx);
+			writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
 	}
 }
 
