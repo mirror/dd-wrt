@@ -350,14 +350,14 @@ static int get_mcs_max(const unsigned char *mcs)
 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
 
 	for (mcs_bit = 0; mcs_bit < 16 * 8; mcs_bit++) {
-		unsigned int mcs_octet = mcs_bit/8;
+		unsigned int mcs_octet = mcs_bit / 8;
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
 
 		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
 
 		if (!mcs_rate_idx_set)
-			continue;
+			break;
 
 		if (prev_bit != mcs_bit - 1) {
 			prev_cont = 0;
@@ -367,16 +367,33 @@ static int get_mcs_max(const unsigned char *mcs)
 
 		prev_bit = mcs_bit;
 	}
-
 	if (prev_cont) {
-		if (prev_bit == 7) return 150;
-		if (prev_bit == 15) return 300;
-		if (prev_bit == 23) return 450;
-		if (prev_bit == 31) return 600;
-		}
+		if (prev_bit == 7)
+			return 150;
+		if (prev_bit == 15)
+			return 300;
+		if (prev_bit == 23)
+			return 450;
+		if (prev_bit == 31)
+			return 600;
+	}
 	return 0;
 }
 
+int get_legacy(unsigned char *rates, int count)
+{
+	int r, b, i;
+	int maxrate = 0;
+	for (i = 0; i < count; i++) {
+		r = rates[i] & 0x7f;
+		//b = rates[i] & 0x80;
+		if (r == 0)
+			break;
+		if (r > maxrate)
+			maxrate = r;
+	}
+	return maxrate / 2;
+}
 
 int site_survey_main(int argc, char *argv[])
 {
@@ -445,12 +462,19 @@ int site_survey_main(int argc, char *argv[])
 #ifndef HAVE_RB500
 		site_survey_lists[i].channel = bss_info->chanspec & 0xff;
 #endif
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency =
+		    ieee80211_ieee2mhz(site_survey_lists[i].channel);
 		site_survey_lists[i].RSSI = bss_info->RSSI;
 		site_survey_lists[i].phy_noise = bss_info->phy_noise;
 		site_survey_lists[i].beacon_period = bss_info->beacon_period;
 		site_survey_lists[i].capability = bss_info->capability;
-		site_survey_lists[i].rate_count = get_mcs_max(bss_info->basic_mcs);
+		site_survey_lists[i].rate_count =
+		    get_mcs_max(bss_info->basic_mcs);
+		if (!site_survey_lists[i].rate_count)
+			site_survey_lists[i].rate_count =
+			    get_legacy(bss_info->rateset.rates,
+				       bss_info->rateset.count);
+
 		site_survey_lists[i].dtim_period = bss_info->dtim_period;
 		strcpy(site_survey_lists[i].ENCINFO, getEncInfo(bss_info));
 
@@ -507,3 +531,13 @@ static int open_site_survey(void)
 	}
 	return FALSE;
 }
+
+#ifdef TEST
+
+void main(int argc, char *argv[])
+{
+	site_survey_main(argc, argv);
+
+}
+
+#endif
