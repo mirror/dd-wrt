@@ -5042,8 +5042,9 @@ if (!strcmp(prefix, "wl1"))
 // wireless ssid
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
-		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
-		  wl_ssid, nvram_safe_get(wl_ssid));
+		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", wl_ssid);
+	tf_webWriteESCNV(wp, wl_ssid);
+	websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_RT2880
 	if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
