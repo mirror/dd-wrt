@@ -2054,9 +2054,6 @@ void start_restore_defaults(void)
 	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)  //dual radio, 2nd on usb-bus
 		icnt = 2;
 #endif
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
-	buffalo_defaults(restore_defaults);
-#endif
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
@@ -2077,6 +2074,9 @@ void start_restore_defaults(void)
 			}
 		}
 	}
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
+	buffalo_defaults(restore_defaults);
+#endif
 	free_defaults();
 	if (strlen(nvram_safe_get("http_username")) == 0) {
 		nvram_set("http_username", zencrypt("root"));
