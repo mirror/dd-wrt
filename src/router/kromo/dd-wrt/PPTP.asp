@@ -108,6 +108,24 @@ addEvent(window, "unload", function() {
 			<input size="25" name="pptpd_wins2" value="<% nvram_get("pptpd_wins2"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.pptpd_mtu"); %></div>
+			<input size="5" maxlength="5" class="num" name="pptpd_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_mtu"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 1450)");
+			//]]>
+			</script></span>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.pptpd_mru"); %></div>
+			<input size="5" maxlength="5" class="num" name="pptpd_mru" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_mru"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 1450)");
+			//]]>
+			</script></span>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("share.srvip"); %></div>
 			<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" />
 		</div>
