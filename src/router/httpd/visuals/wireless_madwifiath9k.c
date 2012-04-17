@@ -39,23 +39,21 @@
 #include "wireless_generic.c"
 int
 ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
-			  char *ifname, int cnt, int turbo, int macmask) {
+			    char *ifname, int cnt, int turbo, int macmask)
+{
 	char mac[32];
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	char nb[32];
-	int bias,qual,it;
-
+	int bias, qual, it;
+	int co = 0;
 	sprintf(nb, "%s_bias", ifname);
 	bias = atoi(nvram_default_get(nb, "0"));
 	// sprintf(it, "inactivity_time", ifname);
 	it = atoi(nvram_default_get("inacttime", "300000"));
 
 	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci ; wc ; wc = wc->next) {
-		if (cnt && wc->inactive_time < it)
-			websWrite(wp, ",");
-		cnt++;
+	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 		strncpy(mac, wc->mac, 31);
 		if (nvram_match("maskmac", "1") && macmask) {
 			mac[0] = 'x';
@@ -69,19 +67,21 @@ ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv,
 		}
 		qual = wc->signal * 124 + 11600;
 		qual /= 10;
-		if (wc->inactive_time < it)
-		 websWrite(wp,
-			"'%s','%s','%s','%dM','%dM','%d','%d','%d','%d'",
-			mac,
-			wc->ifname,
-			UPTIME(wc->uptime),
-			wc->txrate / 10,
-			wc->rxrate / 10,
-			wc->signal + bias,
-			wc->noise + bias,
-			wc->signal - wc->noise,
-			qual
-		);
+		if (wc->inactive_time < it) {
+			if (cnt)
+				websWrite(wp, ",");
+			websWrite(wp,
+				  "'%s','%s','%s','%dM','%dM','%d','%d','%d','%d'",
+				  mac,
+				  wc->ifname,
+				  UPTIME(wc->uptime),
+				  wc->txrate / 10,
+				  wc->rxrate / 10,
+				  wc->signal + bias,
+				  wc->noise + bias,
+				  wc->signal - wc->noise, qual);
+			cnt++;
+		}
 	}
 	free_wifi_clients(mac80211_info->wci);
 	free(mac80211_info);
