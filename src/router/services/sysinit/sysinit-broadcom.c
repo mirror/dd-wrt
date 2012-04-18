@@ -1121,6 +1121,10 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_D1800H:
+		nvram_set("ledbh0","11");
+		nvram_set("ledbh1","11");
+		nvram_set("ledbh2","11");
+		nvram_set("ledbh11","130");
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 		nvram_set("wan_ifname", "vlan2");
 	break;
