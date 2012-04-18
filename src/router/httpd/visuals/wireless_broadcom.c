@@ -147,8 +147,12 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 			/* display the sta info */
 			sta = (sta_info_compat_t *) buf;
 			if (sta->flags & WL_STA_SCBSTATS) {
-				sprintf(txrate, "%dM", sta->tx_rate / 1000);
-				sprintf(rxrate, "%dM", sta->rx_rate / 1000);
+				if (sta->tx_rate > 0)
+					sprintf(txrate, "%dM",
+						sta->tx_rate / 1000);
+				if (sta->rx_rate > 0)
+					sprintf(rxrate, "%dM",
+						sta->rx_rate / 1000);
 				strcpy(time, UPTIME(sta->in));
 			}
 		}
@@ -160,8 +164,8 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		int qual = rssi * 124 + 11600;
 		qual /= 10;
 		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
-			  mac, iface, time, txrate, rxrate, rssi, noise, rssi - noise,
-			  qual);
+			  mac, iface, time, txrate, rxrate, rssi, noise,
+			  rssi - noise, qual);
 	}
 	unlink(RSSI_TMP);
 
