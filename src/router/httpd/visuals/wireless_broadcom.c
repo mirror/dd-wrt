@@ -145,7 +145,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
 		if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
 			/* display the sta info */
-			sta = (sta_info_t *) buf;
+			sta = (sta_info_compat_t *) buf;
 			if (sta->flags & WL_STA_SCBSTATS) {
 				sprintf(txrate, "%dM", sta->tx_rate / 1000);
 				sprintf(rxrate, "%dM", sta->rx_rate / 1000);
