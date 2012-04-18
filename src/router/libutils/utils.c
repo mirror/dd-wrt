@@ -1650,10 +1650,17 @@ int internal_getRouterBrand()
 		setRouter("Buffalo WAPM-HP-AM54G54");
 		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
 	}
+	
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32093) {
 		setRouter("Buffalo WHR-G125");
 		return ROUTER_BUFFALO_WHRG54S;
+	}
+
+	if (nvram_match("boardnum", "0x5347") && nvram_match("boardrev", "0x11")
+	    && nvram_match("boardtype", "0x048e")) {
+		setRouter("Huawei B970b");
+		return ROUTER_HUAWEI_B970B;
 	}
 
 	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
