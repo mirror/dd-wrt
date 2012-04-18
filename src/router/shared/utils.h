@@ -593,6 +593,7 @@
 
 #define ROUTER_D1800H 0xb919
 
+#define ROUTER_HUAWEI_B970B 0xba0f
 
 #define NVROUTER "DD_BOARD"
 
