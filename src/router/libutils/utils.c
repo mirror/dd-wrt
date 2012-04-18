@@ -3813,6 +3813,8 @@ int led_control(int type, int act)
 		power_gpio = 0x002;
 		diag_gpio = 0x00d;
 		diag_gpio_disabled = 0x002;
+		connected_gpio = 0x10f;
+		disconnected_gpio = 0x10e;
 	break;
 	case ROUTER_BUFFALO_WZRRSG54:
 		diag_gpio = 0x107;
