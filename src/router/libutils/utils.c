@@ -3375,6 +3375,7 @@ int led_control(int type, int act)
 
 	int power_gpio = 0x0ff;
 	int diag_gpio = 0x0ff;
+	int diag_gpio_disabled = 0x0ff;
 	int dmz_gpio = 0x0ff;
 	int connected_gpio = 0x0ff;
 	int disconnected_gpio = 0x0ff;
@@ -3806,6 +3807,13 @@ int led_control(int type, int act)
 			ses_gpio = 0x106;
 		}
 		break;
+	case ROUTER_D1800H:
+		usb_gpio = 0x101;
+		usb_power = 0x007;
+		power_gpio = 0x002;
+		diag_gpio = 0x00d;
+		diag_gpio_disabled = 0x002;
+	break;
 	case ROUTER_BUFFALO_WZRRSG54:
 		diag_gpio = 0x107;
 		vpn_gpio = 0x101;
@@ -4148,7 +4156,14 @@ int led_control(int type, int act)
 		use_gpio = usb_power;
 		break;
 	case LED_DIAG:
+		if (act == LED_ON)
+			led_control(LED_DIAG_DISABLED, LED_OFF);
+		else
+			led_control(LED_DIAG_DISABLED, LED_ON);
 		use_gpio = diag_gpio;
+		break;
+	case LED_DIAG_DISABLED:
+		use_gpio = diag_gpio_disabled;
 		break;
 	case LED_DMZ:
 		use_gpio = dmz_gpio;
