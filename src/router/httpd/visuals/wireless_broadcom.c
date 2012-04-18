@@ -26,6 +26,26 @@
 
 #include "wireless_generic.c"
 
+typedef struct {
+	uint16 ver;		/* version of this struct */
+	uint16 len;		/* length in bytes of this structure */
+	uint16 cap;		/* sta's advertised capabilities */
+	uint32 flags;		/* flags defined below */
+	uint32 idle;		/* time since data pkt rx'd from sta */
+	struct ether_addr ea;	/* Station address */
+	wl_rateset_t rateset;	/* rateset in use */
+	uint32 in;		/* seconds elapsed since associated */
+	uint32 listen_interval_inms;	/* Min Listen interval in ms for this STA */
+	uint32 tx_pkts;		/* # of packets transmitted */
+	uint32 tx_failures;	/* # of packets failed */
+	uint32 rx_ucast_pkts;	/* # of unicast packets received */
+	uint32 rx_mcast_pkts;	/* # of multicast packets received */
+	uint32 tx_rate;		/* Rate of last successful tx frame */
+	uint32 rx_rate;		/* Rate of last successful rx frame */
+	uint32 rx_decrypt_succeeds;	/* # of packet decrypted successfully */
+	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
+} sta_info_compat_t;
+
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
 #define RSSI_CMD	"wl rssi"
@@ -106,14 +126,42 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		if (cnt)
 			websWrite(wp, ",");
 		cnt++;
+		int rxrate[32];
+		int txrate[32];
+		int time[32];
+		strcpy(rxrate, "N/A");
+		strcpy(txrate, "N/A");
+		strcpy(time, "N/A");
+#ifndef WL_STA_SCBSTATS
+#define WL_STA_SCBSTATS		0x4000	/* Per STA debug stats */
+#endif
+		sta_info_compat_t *sta;
+		char *param;
+		int buflen;
+		char buf[WLC_IOCTL_MEDLEN];
+		strcpy(buf, "sta_info");
+		buflen = strlen(buf) + 1;
+		param = (char *)(buf + buflen);
+		memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
+		if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
+			/* display the sta info */
+			sta = (sta_info_t *) buf;
+			if (sta->flags & WL_STA_SCBSTATS) {
+				sprintf(txrate, "%d", sta->tx_rate / 1000);
+				sprintf(rxrate, "%d", sta->rx_rate / 1000);
+				strcpy(time, UPTIME(sta->in));
+			}
+		}
+
 		/*
 		 * if (!strcmp (mode, "ap")) { noise = getNoise(iface,NULL); // null
 		 * only for broadcom }
 		 */
 		int qual = rssi * 124 + 11600;
 		qual /= 10;
-		websWrite(wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'",
-			  mac, iface, rssi, noise, rssi - noise, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%s','%d','%d','%d','%d'",
+			  mac, iface, time, txrate, rxrate, rssi, noise, rssi - noise,
+			  qual);
 	}
 	unlink(RSSI_TMP);
 
