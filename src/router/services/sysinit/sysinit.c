@@ -369,6 +369,10 @@ static void buffalo_defaults(int force)
 			nvram_set("wps_status", "0");
 		else
 			nvram_set("wps_status", "1");
+
+		nvram_set("wl_country_code",region);
+		nvram_set("wl0_country_code",region);
+		nvram_set("wl1_country_code",region);
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
