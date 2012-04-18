@@ -66,16 +66,8 @@ unsigned int ieee80211_ieee2mhz(unsigned int chan)
 		return ((2407) + chan * 5);
 	else if (chan < 27)
 		return ((2512) + ((chan - 15) * 20));
-	else {
-		if (chan > 212 && chan < 256) {
-			//recalculate offset
-			int newchan = chan - 256;
-			int newfreq = (2407) + (newchan * 5);
-
-			return newfreq;
-		} else
-			return ((2512) + ((chan - 15) * 20));
-	}
+	else
+		return ((5000) + (chan * 5));		
 }
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
