@@ -22,7 +22,36 @@ char xml_InternetGatewayDevice[] =
 	"\t</specVersion>\r\n"
 	"\t<device>\r\n"
 	"\t\t<deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>\r\n"
+#ifdef HAVE_BUFFALO
+	"\t\t<manufacturer>Buffalo Inc.</manufacturer>\r\n"
+	"\t\t<manufacturerURL>http://www.buffalo.jp</manufacturerURL>\r\n"
+	"\t\t<modelDescription>Gateway</modelDescription>\r\n"
+#ifdef HAVE_WHRHPG300N
+	"\t\t<friendlyName>Buffalo WHR-HP-G300N</friendlyName>\r\n"
+	"\t\t<modelName>Buffalo WHR-HP-G300N</modelName>\r\n"
+#elif HAVE_WHRHPGN
+	"\t\t<friendlyName>Buffalo WHR-HP-GN</friendlyName>\r\n"
+	"\t\t<modelName>Buffalo WHR-HP-GN</modelName>\r\n"
+#elif HAVE_WZRG300NH
+	"\t\t<friendlyName>Buffalo WZR-HP-G300NH</friendlyName>\r\n"
+	"\t\t<modelName>Buffalo WZR-HP-G300NH</modelName>\r\n"
+#elif HAVE_WZRG300NH2
+	"\t\t<friendlyName>Buffalo WZR-HP-G300NH2</friendlyName>\r\n"
+	"\t\t<modelName>Buffalo WZR-HP-G300NH2</modelName>\r\n"
+#elif HAVE_WZRHPAG300NH
+	"\t\t<friendlyName>Buffalo WZR-HP-AG300H</friendlyName>\r\n"
+	"\t\t<modelName>Buffalo WZR-HP-AG300H</modelName>\r\n"
+#elif HAVE_WZRG450
+	"\t\t<friendlyName>Buffalo WZR-HP-G450H</friendlyName>\r\n"
+	"\t\t<modelName>Buffalo WZR-HP-G450H</modelName>\r\n"
+#else
 	"\t\t<friendlyName>router</friendlyName>\r\n"
+	"\t\t<modelName>router</modelName>\r\n"
+#endif
+	"\t\t<modelNumber>V24</modelNumber>\r\n"
+	"\t\t<serialNumber>0000001</serialNumber>\r\n"
+	"\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+#else
 	"\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t<modelDescription>Gateway</modelDescription>\r\n"
@@ -30,6 +59,7 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<modelNumber>V24</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
+#endif
 	"\t\t<UDN>uuid:eb9ab5b2-981c-4401-a20e-b7bcde359dbb</UDN>\r\n"
 	"\t\t<serviceList>\r\n"
 	"\t\t\t<service>\r\n"
@@ -44,11 +74,19 @@ char xml_InternetGatewayDevice[] =
 	"\t\t\t<device>\r\n"
 	"\t\t\t\t<deviceType>urn:schemas-upnp-org:device:WANDevice:1</deviceType>\r\n"
 	"\t\t\t\t<friendlyName>WANDevice</friendlyName>\r\n"
+#ifdef HAVE_BUFFALO
+	"\t\t\t\t<manufacturer>Buffalo Inc.</manufacturer>\r\n"
+	"\t\t\t\t<manufacturerURL>http://www.buffalo.jp</manufacturerURL>\r\n"
+	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
+	"\t\t\t\t<modelName>router</modelName>\r\n"
+	"\t\t\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
+#else
 	"\t\t\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t<modelName>router</modelName>\r\n"
-	"\t\t\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
+	"\t\t\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+#endif
 	"\t\t\t\t<UDN>uuid:e1f05c9d-3034-4e4c-af82-17cdfbdcc077</UDN>\r\n"
 	"\t\t\t\t<serviceList>\r\n"
 	"\t\t\t\t\t<service>\r\n"
@@ -63,11 +101,19 @@ char xml_InternetGatewayDevice[] =
 	"\t\t\t\t\t<device>\r\n"
 	"\t\t\t\t\t\t<deviceType>urn:schemas-upnp-org:device:WANConnectionDevice:1</deviceType>\r\n"
 	"\t\t\t\t\t\t<friendlyName>WAN Connection Device</friendlyName>\r\n"
+#ifdef HAVE_BUFFALO
+	"\t\t\t\t\t\t<manufacturer>Buffalo Inc.</manufacturer>\r\n"
+	"\t\t\t\t\t\t<manufacturerURL>http://www.buffalo.jp</manufacturerURL>\r\n"
+	"\t\t\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
+	"\t\t\t\t\t\t<modelName>router</modelName>\r\n"
+	"\t\t\t\t\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+#else
 	"\t\t\t\t\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t\t\t\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t\t\t<modelName>router</modelName>\r\n"
 	"\t\t\t\t\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
+#endif
 	"\t\t\t\t\t\t<UDN>uuid:1995cf2d-d4b1-4fdb-bf84-8e59d2066198</UDN>\r\n"
 	"\t\t\t\t\t\t<serviceList>\r\n"
 	"\t\t\t\t\t\t\t<service>\r\n"
