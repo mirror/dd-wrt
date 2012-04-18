@@ -11,6 +11,7 @@
 #
 # $Id: Makefile,v 1.4 2008/12/02 08:12:11 Exp $
 #
+include $(TOP)/.config
 
 ifeq "$(SRCBASE)" ""
 	SRCBASE=$(shell cd ../.. ; pwd)
@@ -24,6 +25,23 @@ ifeq ($(strip $(CFG_BCMIGD)),1)
 CFLAGS  += -D__BCMIGD__
 endif
 DEBUG	:= 0
+
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO
+ifeq ($(CONFIG_WZRG300NH),y)
+CFLAGS += -DHAVE_WZRG300NH
+else ifeq ($(CONFIG_WZRG300NH2),y)
+CFLAGS += -DHAVE_WZRG300NH2
+else ifeq ($(CONFIG_WZRG450),y)
+CFLAGS += -DHAVE_WZRG450
+else ifeq ($(CONFIG_WZRHPAG300NH),y)
+CFLAGS += -DHAVE_WZRHPAG300NH
+else ifeq ($(CONFIG_WHRHPG300N),y)
+CFLAGS += -DHAVE_WHRHPG300N
+else ifeq ($(CONFIG_WHRHPGN),y)
+CFLAGS += -DHAVE_WHRHPGN
+endif
+endif
 
 all: upnp
 
