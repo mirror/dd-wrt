@@ -176,7 +176,9 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0x1013 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x19d2 -p 0x1520 -V 0x19d2 -P 0x1522 -M 5553424312345678000000000000061b000000020000000000000000000000");
+	    ("usb_modeswitch -v 0x19d2 -p 0x1224 -n -M 5553424312345678000000000000061e000000000000000000000000000000 -2 5553424312345679000000000000061b000000020000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x19d2 -p 0x1520 -n -M 5553424312345678000000000000061b000000020000000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x19d2 -p 0xfff5 -M 5553424312345678c00000008000069f030000000000000000000000000000");
 	system
@@ -453,8 +455,10 @@ static struct DEVICES devicelist[] = {
 //AirPrime (Sierra)
 	{0x0f3d, 0x68aa, "sierra", "3", "3", 1, NULL, "Sierra Wireless AC313U/320U/330U Modem Mode"},	//
 
-//Curitel
-	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML290 4G Modem"},	//
+//PANTECH (Curitel)
+	{0x106c, 0x3711, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-150"},	//
+	{0x106c, 0x3714, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-175"},	//
+	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML-290 4G Modem"},	//
 
 //Sierra Wireless
 	{0x1199, 0x0017, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
@@ -587,7 +591,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0003, "option", "1", "3", 2, &modeswitch_onda2, "ZTE MU351 (cdrom mode)"},	//
 	{0x19d2, 0x0015, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0016, "option", "1", "2", 2, NULL, "ONDA MF110/ZTE (modem mode)"},	//
-	{0x19d2, 0x0017, "option", "1", "1", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
+	{0x19d2, 0x0017, "option", "1", "2", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0022, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K2525 (modem mode)"},	//
 	{0x19d2, 0x0026, "option", "1", "3", 2, &modeswitch_onda2, "ZTE AC581 (cdrom mode)"},	//
 	{0x19d2, 0x0031, "option", "1", "2", 2, NULL, "ZTE MF110/MF112/MF626 (Variant) (modem mode)"},	//tested on MF626
@@ -598,6 +602,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0055, "option", "1", "3", 2, NULL, "ONDA MT505UP/ZTE (modem mode)"},	//
 	{0x19d2, 0x0063, "option", "1", "3", 2, NULL, "Vodafone K3565-Z HSDPA (modem mode)"},	// tested, working. i hope the other ZDA devices are working in the same way
 	{0x19d2, 0x0064, "option", "1", "3", 2, NULL, "ZTE MF627 AU (modem mode)"},	//
+	{0x19d2, 0x0082, "option", "1", "2", 2, NULL, "ZTE MF668/MF190 (Variant) (modem mode)"},	//
 	{0x19d2, 0x0083, "option", "1", "4", 2, &modeswitch_onda2, "ZTE MF110 (Variant) (cdrom mode)"},	//
 	{0x19d2, 0x0094, "option", "1", "3", 2, NULL, "ZTE AC581 (modem mode)"},	//
 	{0x19d2, 0x0101, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K4505-Z (cdrom mode)"},	//
@@ -621,6 +626,7 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x1010, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3571-Z (modem mode)"},	//
 	{0x19d2, 0x1013, "option", "1", "3", 2, &modeswitch_onda2, "Vodafone (ZTE) K3806-Z (cdrom mode)"},	//
 	{0x19d2, 0x1015, "option", "1", "3", 2, NULL, "Vodafone (ZTE) K3806-Z (modem mode)"},	//
+	{0x19d2, 0x1224, "option", "0", "0", 2, &modeswitch_onda2, "ZTE MF190"},	//
 	{0x19d2, 0x1520, "option", "0", "0", 2, &modeswitch_onda2, "ZTE MF652"},	//
 	{0x19d2, 0x1522, "option", "0", "0", 2 | ACM , NULL, "ZTE MF652"},	//
 	{0x19d2, 0x2000, "option", "1", "1", 2, &modeswitch_onda, "ONDA/ZTE (cdrom mode)"},	//
