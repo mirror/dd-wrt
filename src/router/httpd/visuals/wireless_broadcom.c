@@ -147,8 +147,8 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 			/* display the sta info */
 			sta = (sta_info_t *) buf;
 			if (sta->flags & WL_STA_SCBSTATS) {
-				sprintf(txrate, "%d", sta->tx_rate / 1000);
-				sprintf(rxrate, "%d", sta->rx_rate / 1000);
+				sprintf(txrate, "%dM", sta->tx_rate / 1000);
+				sprintf(rxrate, "%dM", sta->rx_rate / 1000);
 				strcpy(time, UPTIME(sta->in));
 			}
 		}
