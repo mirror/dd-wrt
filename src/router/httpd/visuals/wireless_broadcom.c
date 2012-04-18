@@ -46,6 +46,7 @@ typedef struct {
 	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
 } sta_info_compat_t;
 
+
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
 #define RSSI_CMD	"wl rssi"
