@@ -424,11 +424,12 @@ int site_survey_main(int argc, char *argv[])
 		strcpy(params.ssid.SSID, argv[1]);
 	}
 	params.bss_type = DOT11_BSSTYPE_ANY;
-	params.scan_type = -1;
+	params.scan_type = 0;
 	params.nprobes = -1;
 	params.active_time = -1;
 	params.passive_time = -1;
 	params.home_time = -1;
+	params.channel_num = 0;
 
 	/*
 	 * can only scan in STA mode 
@@ -437,13 +438,20 @@ int site_survey_main(int argc, char *argv[])
 		fprintf(stderr, "scan failed\n");
 		return -1;
 	}
-	sleep(1);
-	bzero(buf, sizeof(buf));
-	scan_res->buflen = sizeof(buf);
+	int count = 10;
+	int ret = 0;
+	while ((count--) > 0)	//scan for max 5 seconds
+	{
+		usleep(500 * 1000);
 
-	if (wl_ioctl(dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0) {
-		fprintf(stderr, "scan results failed\n");
-		return -1;
+		bzero(buf, sizeof(buf));
+		scan_res->buflen = sizeof(buf);
+		ret = wl_ioctl(dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN);
+		if (!ret)
+			break;
+	}
+	if (ret < 0) {
+		fprintf(stderr, "scan failed with errorcode %d\n", ret);
 	}
 
 	fprintf(stderr, "buflen=[%d] version=[%d] count=[%d]\n",
