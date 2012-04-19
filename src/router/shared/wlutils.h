@@ -103,7 +103,7 @@ extern int has_ht40(char *prefix);
 struct site_survey_list {
 	char SSID[33];
 	unsigned char BSSID[18];
-	uint8 channel;		/* Channel no. */
+	uint16 channel;		/* Channel no. */
 	uint16 frequency;		/* Frequency i.e. for superchannel */
 	int16 RSSI;		/* receive signal strength (in dBm) */
 	int16 phy_noise;	/* noise (in dBm) */
