@@ -747,10 +747,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_ssid", "maksat", 0},	/* Service set ID (network name) */
 #endif
 #else
-#ifdef HAVE_BUFFALO
-	{"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
-	{"ath0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
-#elif defined(HAVE_TRIMAX)
+#if defined(HAVE_TRIMAX)
 	{"wl0_ssid", "M2M", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "M2M", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_WIKINGS)
@@ -797,8 +794,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_ssid", "ERC", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "ERC", 0},	/* Service set ID (network name) */
 #else
+#ifndef HAVE_BUFFALO		
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+#endif
 #endif
 
 #endif
@@ -818,10 +817,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 	{"ath0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 #else
-#ifdef HAVE_BUFFALO
-	{"wl_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
-	{"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
-#else
+#ifndef HAVE_BUFFALO		
 	{"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"wl1_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -966,12 +962,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_wds", "", 0},	/* xx:xx:xx:xx:xx:xx ... */
 	{"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
+#ifndef HAVE_BUFFALO
 	{"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
 	{"wl_auth", "0", 0},	/* Shared key authentication optional (0) or
 				 * required (1) */
 	{"wl0_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
-	{"wl0_auth", "0", 0},	/* Shared key authentication optional (0) or
-				 * required (1) */
+#endif
+	{"wl0_auth", "0", 0},	/* Shared key authentication optional (0) or required (1) */
 	{"wl1_auth", "0", 0},
 	{"wl0_key", "1", 0},	/* Current WEP key */
 	{"wl0_key1", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
@@ -1124,7 +1121,6 @@ struct nvram_tuple srouter_defaults[] = {
 	 * WPA parameters 
 	 */
 	{"security_mode", "disabled", 0},	/* WPA mode
-						 * (disabled|radius|wpa|psk|wep) for
 	 * * * WEB *//*
 	 * Add 
 	 */
@@ -1132,13 +1128,18 @@ struct nvram_tuple srouter_defaults[] = {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K) 
 	{"wl0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
+#ifndef HAVE_BUFFALO		
 	{"wl0_akm", "disabled", 0},
 	{"wl0_wpa_psk", "", 0},	/* WPA pre-shared key */
+#endif
 	{"wl0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
 	{"wl0_radius_port", "1812", 0},	/* RADIUS server UDP port */
 	{"wl0_radius_ipaddr", "", 0},	/* RADIUS server IP address */
 	{"wl0_radius_key", "", 0},	/* RADIUS shared secret */
+#ifndef HAVE_BUFFALO		
 	{"wl0_security_mode", "disabled", 0},	/* WPA mode */
+#endif
+
 
 	{"wl0.1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
@@ -1168,14 +1169,15 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0.3_radius_key", "", 0},	/* RADIUS shared secret */
 
 #else
-	{"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
-						 */
+	{"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk)  */
+#ifndef HAVE_BUFFALO		
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_akm", "psk2", 0},
 	{"ath0_wpa_psk", "7078227000", 0},	/* ath0 encryption key */
 #else
 	{"ath0_akm", "disabled", 0},
 	{"ath0_wpa_psk", "", 0},	/* WPA pre-shared key */
+#endif
 #endif
 	{"ath0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
 	{"ath0_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -1186,8 +1188,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath1_radius_port", "1812", 0},	/* RADIUS server UDP port */
 	{"ath1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
+#ifndef HAVE_BUFFALO		
 	{"ath1_akm", "disabled", 0},
 	{"ath1_wpa_psk", "", 0},	/* WPA pre-shared key */
+#endif
 	{"ath1_radius_ipaddr", "", 0},	/* RADIUS server IP address */
 	{"ath1_radius_key", "", 0},	/* RADIUS shared secret */
 
