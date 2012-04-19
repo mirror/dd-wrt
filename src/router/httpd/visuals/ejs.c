@@ -1283,9 +1283,14 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 		while ((entry = readdir(directory)) != NULL) {
 			if (argc > 0) {
 				if (endswith(entry->d_name, argv[0])) {
-#ifdef HAVE_ERC
+#if defined(HAVE_ERC)
 					if (strcmp(entry->d_name, "base.webconfig") && !wp->userid)	//show only base.webconfig for this user and nothing else
 					{
+						continue;
+					}
+#endif
+#if defined(HAVE_IPR)
+					if(!strcmp(entry->d_name, "snmp.webservices") && !wp->userid) {
 						continue;
 					}
 #endif
@@ -1600,6 +1605,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	{"", "", "", "", "", "", "", "", "", "", "", "", ""}
 	};
 
+#elif HAVE_IPR
+
 #endif
 
 	static char menu_t[8][12][32] =
@@ -1662,11 +1669,23 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	static char menuname[8][13][32];
 	memcpy(menu, menu_t, 8 * 12 * 32);
 	memcpy(menuname, menuname_t, 8 * 13 * 32);
-#ifdef HAVE_ERC
+#if HAVE_ERC
 	if (!wp->userid) {
 		memcpy(menu, menu_s, 8 * 12 * 32);
 		memcpy(menuname, menuname_s, 8 * 13 * 32);
 	}
+#endif
+#ifdef HAVE_IPR
+	if (!wp->userid) {
+		sprintf(&menu[0][2][0], "");	// setup - mac cloning
+		//sprintf(&menu[0][4][0], "");	// setup - routing / test!
+		sprintf(&menu[2][4][0], "");	// services - USB
+		sprintf(&menu[2][5][0], "");	// services - NAS
+		sprintf(&menu[2][6][0], "");	// services - Hotspot
+		sprintf(&menu[6][2][0], "");	// administration - commands
+		sprintf(&menu[6][5][0], "");	// administration - upgrade
+	}
+	sprintf(&menu[2][9][0], "");	// services - anchorfree
 #endif
 #ifdef HAVE_CORENET
 	sprintf(&menuname[0][0][0], "setupnetw");
