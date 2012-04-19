@@ -178,8 +178,10 @@ void start_openvpnserver(void)
 		//&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n"
 			"insmod ebtable_filter\n" "insmod ebt_ip"
+			"ebtables -D INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
 			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
 			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
+			"ebtables -I INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
 			"ebtables -I FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
 			"ebtables -I FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
 	fprintf(fp, "startservice set_routes\n");
@@ -207,6 +209,7 @@ void start_openvpnserver(void)
 	//if (nvram_match("openvpn_block_dhcp", "1") //block dhcp on bridged vpns
 		//&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp,
+			"ebtables -D INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
 			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
 			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
 	fclose(fp);
