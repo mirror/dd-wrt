@@ -181,9 +181,8 @@ void runStartup(char *folder, char *extension)
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 
-
 #ifdef HAVE_BCMMODERN
-    #define getUEnv(name) nvram_get(name)
+#define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
 
@@ -198,24 +197,46 @@ static void buffalo_defaults(int force)
 				&& strcmp(region, "KR")
 				&& strcmp(region, "CH"))) {
 			{
-				char *mode_ex = getUEnv("DEF-p_wireless_eth1_11a-authmode_ex");
+				char *mode_ex =
+				    getUEnv
+				    ("DEF-p_wireless_eth1_11a-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode =
 					    getUEnv
 					    ("DEF-p_wireless_eth1_11a-authmode");
-					if (!mode)
-						return;
-					if (!strcmp(mode, "psk")) {
-						nvram_set("wl0_akm","psk psk2");
-						nvram_set("wl0_security_mode","psk psk2");
-						nvram_set("wl_akm","psk psk2");
-						nvram_set("wl_security_mode","psk psk2");
-					}
-					if (!strcmp(mode, "psk2")) {
-						nvram_set("wl0_akm","psk psk2");
-						nvram_set("wl0_security_mode","psk psk2");
-						nvram_set("wl_akm","psk psk2");
-						nvram_set("wl_security_mode","psk psk2");
+					if (!mode) {
+						nvram_set("wl_akm", "disabled");
+						nvram_set("wl0_akm",
+							  "disabled");
+						nvram_set("wl_security_mode",
+							  "disabled");
+						nvram_set("wl0_security_mode",
+							  "disabled");
+					} else {
+						if (!strcmp(mode, "psk")) {
+							nvram_set("wl0_akm",
+								  "psk psk2");
+							nvram_set
+							    ("wl0_security_mode",
+							     "psk psk2");
+							nvram_set("wl_akm",
+								  "psk psk2");
+							nvram_set
+							    ("wl_security_mode",
+							     "psk psk2");
+						}
+						if (!strcmp(mode, "psk2")) {
+							nvram_set("wl0_akm",
+								  "psk psk2");
+							nvram_set
+							    ("wl0_security_mode",
+							     "psk psk2");
+							nvram_set("wl_akm",
+								  "psk psk2");
+							nvram_set
+							    ("wl_security_mode",
+							     "psk psk2");
+						}
 					}
 				} else {
 					char *mode =
@@ -228,20 +249,26 @@ static void buffalo_defaults(int force)
 						nvram_set("wl_akm", mode);
 						nvram_set("wl_security_mode",
 							  mode);
-					} else
-						return;
+					} else {
+						nvram_set("wl_akm", "disabled");
+						nvram_set("wl0_akm",
+							  "disabled");
+						nvram_set("wl_security_mode",
+							  "disabled");
+						nvram_set("wl0_security_mode",
+							  "disabled");
+					}
 				}
 
 				char *crypto =
 				    getUEnv("DEF-p_wireless_eth1_11a-crypto");
-				if (crypto){
+				if (crypto) {
 					nvram_set("wl0_crypto", crypto);
 					nvram_set("wl_crypto", crypto);
-					}
+				}
 				char *wpapsk =
 				    getUEnv("DEF-p_wireless_eth1_11a-wpapsk");
-				if (wpapsk)
-				{
+				if (wpapsk) {
 					nvram_set("wl_wpa_psk", wpapsk);
 					nvram_set("wl0_wpa_psk", wpapsk);
 				}
@@ -254,19 +281,26 @@ static void buffalo_defaults(int force)
 					char *mode =
 					    getUEnv
 					    ("DEF-p_wireless_eth2_11bg-authmode");
-					if (!mode)
-						return;
-					if (!strcmp(mode, "psk")) {
+					if (!mode) {
 						nvram_set("wl1_akm",
-							  "psk psk2");
+							  "disabled");
 						nvram_set("wl1_security_mode",
-							  "psk psk2");
-					}
-					if (!strcmp(mode, "psk2")) {
-						nvram_set("wl1_akm",
-							  "psk psk2");
-						nvram_set("wl1_security_mode",
-							  "psk psk2");
+							  "disabled");
+					} else {
+						if (!strcmp(mode, "psk")) {
+							nvram_set("wl1_akm",
+								  "psk psk2");
+							nvram_set
+							    ("wl1_security_mode",
+							     "psk psk2");
+						}
+						if (!strcmp(mode, "psk2")) {
+							nvram_set("wl1_akm",
+								  "psk psk2");
+							nvram_set
+							    ("wl1_security_mode",
+							     "psk psk2");
+						}
 					}
 				} else {
 					char *mode =
@@ -276,8 +310,12 @@ static void buffalo_defaults(int force)
 						nvram_set("wl1_akm", mode);
 						nvram_set("wl1_security_mode",
 							  mode);
-					} else
-						return;
+					} else {
+						nvram_set("wl1_akm",
+							  "disabled");
+						nvram_set("wl1_security_mode",
+							  "disabled");
+					}
 				}
 
 				char *crypto =
@@ -370,9 +408,9 @@ static void buffalo_defaults(int force)
 		else
 			nvram_set("wps_status", "1");
 
-		nvram_set("wl_country_code",region);
-		nvram_set("wl0_country_code",region);
-		nvram_set("wl1_country_code",region);
+		nvram_set("wl_country_code", region);
+		nvram_set("wl0_country_code", region);
+		nvram_set("wl1_country_code", region);
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
@@ -380,7 +418,7 @@ static void buffalo_defaults(int force)
 }
 
 #else
-    extern void *getUEnv(char *name);
+extern void *getUEnv(char *name);
 static void buffalo_defaults(int force)
 {
 
@@ -395,7 +433,9 @@ static void buffalo_defaults(int force)
 				&& strcmp(region, "KR")
 				&& strcmp(region, "CH"))) {
 			{
-				char *mode_ex = getUEnv("DEF-p_wireless_ath0_11bg-authmode_ex");
+				char *mode_ex =
+				    getUEnv
+				    ("DEF-p_wireless_ath0_11bg-authmode_ex");
 				if (!mode_ex)
 					mode_ex =
 					    getUEnv
@@ -408,19 +448,26 @@ static void buffalo_defaults(int force)
 						mode =
 						    getUEnv
 						    ("DEF-p_wireless_ath00_11bg-authmode");
-					if (!mode)
-						return;
-					if (!strcmp(mode, "psk")) {
+					if (!mode) {
 						nvram_set("ath0_akm",
-							  "psk psk2");
+							  "disabled");
 						nvram_set("ath0_security_mode",
-							  "psk psk2");
-					}
-					if (!strcmp(mode, "psk2")) {
-						nvram_set("ath0_akm",
-							  "psk psk2");
-						nvram_set("ath0_security_mode",
-							  "psk psk2");
+							  "disabled");
+					} else {
+						if (!strcmp(mode, "psk")) {
+							nvram_set("ath0_akm",
+								  "psk psk2");
+							nvram_set
+							    ("ath0_security_mode",
+							     "psk psk2");
+						}
+						if (!strcmp(mode, "psk2")) {
+							nvram_set("ath0_akm",
+								  "psk psk2");
+							nvram_set
+							    ("ath0_security_mode",
+							     "psk psk2");
+						}
 					}
 				} else {
 					char *mode =
@@ -434,8 +481,12 @@ static void buffalo_defaults(int force)
 						nvram_set("ath0_akm", mode);
 						nvram_set("ath0_security_mode",
 							  mode);
-					} else
-						return;
+					} else {
+						nvram_set("ath0_akm",
+							  "disabled");
+						nvram_set("ath0_security_mode",
+							  "disabled");
+					}
 				}
 
 				char *crypto =
@@ -472,19 +523,26 @@ static void buffalo_defaults(int force)
 						mode =
 						    getUEnv
 						    ("DEF-p_wireless_ath10_11a-authmode");
-					if (!mode)
-						return;
-					if (!strcmp(mode, "psk")) {
+					if (!mode) {
 						nvram_set("ath1_akm",
-							  "psk psk2");
+							  "disabled");
 						nvram_set("ath1_security_mode",
-							  "psk psk2");
-					}
-					if (!strcmp(mode, "psk2")) {
-						nvram_set("ath1_akm",
-							  "psk psk2");
-						nvram_set("ath1_security_mode",
-							  "psk psk2");
+							  "disabled");
+					} else {
+						if (!strcmp(mode, "psk")) {
+							nvram_set("ath1_akm",
+								  "psk psk2");
+							nvram_set
+							    ("ath1_security_mode",
+							     "psk psk2");
+						}
+						if (!strcmp(mode, "psk2")) {
+							nvram_set("ath1_akm",
+								  "psk psk2");
+							nvram_set
+							    ("ath1_security_mode",
+							     "psk psk2");
+						}
 					}
 				} else {
 					char *mode =
@@ -498,8 +556,12 @@ static void buffalo_defaults(int force)
 						nvram_set("ath1_akm", mode);
 						nvram_set("ath1_security_mode",
 							  mode);
-					} else
-						return;
+					} else {
+						nvram_set("ath1_akm",
+							  "disabled");
+						nvram_set("ath1_security_mode",
+							  "disabled");
+					}
 				}
 
 				char *crypto =
@@ -621,11 +683,10 @@ static void buffalo_defaults(int force)
 #ifdef HAVE_SPOTPASS
 		system("startservice spotpass_defaults");
 #endif
-	nvram_commit();
+		nvram_commit();
 	}
 }
 #endif
-
 
 #endif
 /*
@@ -773,11 +834,13 @@ void start_restore_defaults(void)
 
 #ifdef HAVE_BUFFALO_SA
 	int factory_state = 0;
-	if((!nvram_get("sv_restore_defaults") || nvram_default_match("sv_restore_defaults", "0", "0")) 
+	if ((!nvram_get("sv_restore_defaults")
+	     || nvram_default_match("sv_restore_defaults", "0", "0"))
 	    && !nvram_get("os_date")
-	    && (!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US")))
+	    && (!strcmp(getUEnv("region"), "AP")
+		|| !strcmp(getUEnv("region"), "US")))
 		factory_state = 1;
-	if(factory_state)
+	if (factory_state)
 		nvram_set("region", "SA");
 #endif
 #ifdef HAVE_RB500
@@ -2055,7 +2118,7 @@ void start_restore_defaults(void)
 	int icnt = get_wl_instances();
 #else
 	int icnt = getdevicecount();
-	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)  //dual radio, 2nd on usb-bus
+	if (brand == ROUTER_LINKSYS_E2500 || brand == ROUTER_LINKSYS_E3200)	//dual radio, 2nd on usb-bus
 		icnt = 2;
 #endif
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
