@@ -46,7 +46,7 @@ void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 
 		if (site_survey_lists[i].SSID[0] == 0 ||
 		    site_survey_lists[i].BSSID[0] == 0 ||
-		    site_survey_lists[i].channel == 0)
+		    (site_survey_lists[i].channel&0xff) == 0)
 			break;
 
 		if (startswith(site_survey_lists[i].SSID, "www.fbn-dd.de")) {
@@ -80,7 +80,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 
 		if (site_survey_lists[i].BSSID[0] == 0 ||
-		    site_survey_lists[i].channel == 0)
+		    (site_survey_lists[i].channel&0xff) == 0)
 			break;
 
 		// fix for " in SSID
@@ -212,7 +212,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "\",\"%s\",\"%s\",\"%d (%d MHz)\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
-			  site_survey_lists[i].channel,
+			  site_survey_lists[i].channel&0xff,
 			  site_survey_lists[i].frequency,
 			  site_survey_lists[i].RSSI,
 			  site_survey_lists[i].phy_noise,
