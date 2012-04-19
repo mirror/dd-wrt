@@ -475,13 +475,13 @@ int site_survey_main(int argc, char *argv[])
 		switch(bss_info->chanspec & 0x3800)
 		{
 		case WL_CHANSPEC_BW_80:
-		site_survey_lists[i].channel&=0x1000;
+		site_survey_lists[i].channel|=0x1000;
 		break;
 		case WL_CHANSPEC_BW_8080:
-		site_survey_lists[i].channel&=0x1100;
+		site_survey_lists[i].channel|=0x1100;
 		break;
 		case WL_CHANSPEC_BW_160:
-		site_survey_lists[i].channel&=0x1200;
+		site_survey_lists[i].channel|=0x1200;
 		break;
 #endif
 
