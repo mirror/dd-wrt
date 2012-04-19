@@ -167,13 +167,21 @@ void start_openvpnserver(void)
 			"startservice wshaper\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
-		&& nvram_match("openvpn_tuntap", "tap")) {
+		&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, "insmod ebtables\n"
 			"insmod ebtable_filter\n"
 			"insmod ebt_pkttype\n"
 			"ebtables -A FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
 			"ebtables -A OUTPUT -o tap0 --pkttype-type multicast -j DROP\n");
-	}
+		//for testing only
+		//if (nvram_match("openvpn_block_dhcp", "1") //block dhcp on bridged vpns
+		//&& nvram_match("openvpn_tuntap", "tap"))
+		fprintf(fp, "insmod ebtables\n"
+			"insmod ebtable_filter\n" "insmod ebt_ip"
+			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
+			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
+			"ebtables -I FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
+			"ebtables -I FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
 	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
 
@@ -189,14 +197,18 @@ void start_openvpnserver(void)
 		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
-		&& nvram_match("openvpn_tuntap", "tap")) {
+		&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, 
 			"ebtables -D FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
 			"ebtables -D OUTPUT -o tap0 --pkttype-type multicast -j DROP\n"
 			"#rmmod ebt_pkttype\n"
 			"#rmmod ebtable_filter\n"
 			"#rmmod ebtables\n");
-	}
+	//if (nvram_match("openvpn_block_dhcp", "1") //block dhcp on bridged vpns
+		//&& nvram_match("openvpn_tuntap", "tap"))
+		fprintf(fp,
+			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP"
+			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
@@ -428,9 +440,9 @@ void start_openvpn(void)
 		fprintf(fp, 
 			"ebtables -D FORWARD -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -D OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
-			"rmmod ebt_pkttype\n"
-			"rmmod ebtable_filter\n"
-			"rmmod ebtables\n");
+			"#rmmod ebt_pkttype\n"
+			"#rmmod ebtable_filter\n"
+			"#rmmod ebtables\n");
 	}
 	fclose(fp);
 
