@@ -470,8 +470,21 @@ int site_survey_main(int argc, char *argv[])
 #ifndef HAVE_RB500
 		site_survey_lists[i].channel = bss_info->chanspec & 0xff;
 #endif
-		site_survey_lists[i].frequency =
-		    ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
+#ifdef WL_CHANSPEC_BW_80
+		switch(bss_info->chanspec & 0x3800)
+		{
+		case WL_CHANSPEC_BW_80:
+		site_survey_lists[i].channel&=0x1000;
+		break;
+		case WL_CHANSPEC_BW_8080:
+		site_survey_lists[i].channel&=0x1100;
+		break;
+		case WL_CHANSPEC_BW_160:
+		site_survey_lists[i].channel&=0x1200;
+		break;
+#endif
+
 		site_survey_lists[i].RSSI = bss_info->RSSI;
 		site_survey_lists[i].phy_noise = bss_info->phy_noise;
 		site_survey_lists[i].beacon_period = bss_info->beacon_period;
