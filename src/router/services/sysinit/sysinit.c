@@ -2050,68 +2050,10 @@ void start_restore_defaults(void)
 		}
 	}
 #endif
-#ifdef HAVE_GATEWORX
 	if (restore_defaults) {
-		eval("erase", "nvram");
+		nvram_clear();
 	}
-#elif HAVE_XSCALE
-	if (restore_defaults)
-		eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
-#endif
-#ifdef HAVE_MAGICBOX
-	if (restore_defaults) {
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_RB600
-	if (restore_defaults) {
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_RT2880
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_LAGUNA
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_FONERA
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_SOLO51
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_LS2
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_LS5
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_WHRAG108
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
-#ifdef HAVE_TW6600
-	if (restore_defaults) {
-		eval("erase", "nvram");
-	}
-#endif
+
 	int nvcnt = 0;
 
 #ifndef HAVE_MADWIFI
