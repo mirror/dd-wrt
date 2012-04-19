@@ -110,7 +110,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			//0x000 = 80 mhz
 			//0x100 = 8080 mhz
 			//0x200 = 160 mhz
-			speed = site_survey_lists[i].rate_count;
+			int speed = site_survey_lists[i].rate_count;
+			
 			switch (cbw) {
 			case 0:
 				if (speed == 150)
@@ -124,7 +125,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				if (speed == 150)
 					speed = 867;
 				else if (speed == 300)
-					speed = 1734;
+					speed = 1733;
 				else if (speed == 450)
 					speed = 2600;
 			}

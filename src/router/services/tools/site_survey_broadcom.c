@@ -483,6 +483,7 @@ int site_survey_main(int argc, char *argv[])
 		case WL_CHANSPEC_BW_160:
 		site_survey_lists[i].channel|=0x1200;
 		break;
+		}
 #endif
 
 		site_survey_lists[i].RSSI = bss_info->RSSI;
