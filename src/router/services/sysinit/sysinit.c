@@ -2182,7 +2182,7 @@ void start_restore_defaults(void)
 				nvram_set("vlan2ports", "0 8*");
 			}
 		}
-	} else if (brand == ROUTER_WRT610N || brand == ROUTER_WRT610NV2) {
+	} else if (brand == ROUTER_WRT610N) {
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8");
@@ -2191,6 +2191,16 @@ void start_restore_defaults(void)
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8");
 		}
+	} else if (brand == ROUTER_WRT610NV2) {
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+			nvram_set("vlan1ports", "4 3 2 1 8*");
+			nvram_set("vlan2ports", "0 8");
+		}
+		if (!nvram_get("vlan2ports") || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "4 3 2 1 8*");
+			nvram_set("vlan2ports", "0 8");
+		}
+
 	} else if (brand == ROUTER_WRT350N) {
 
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
