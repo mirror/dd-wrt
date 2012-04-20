@@ -3522,7 +3522,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 			  number, number, cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
-			  "					<input type=\"checkbox\" name=\"smbuser_password%s_unmask\" value=\"0\" onclick=\"setElementMask('smbuser_password%s', this.checked);\" />Unmask\n",
+			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />Unmask\n",
 			  number, number);
 		//websWrite(wp, "                               </div>\n");
 		websWrite(wp, "			</td>\n");
