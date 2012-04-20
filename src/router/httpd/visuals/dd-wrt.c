@@ -3632,7 +3632,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #else
 		showbridgesettings(wp, var, 1, 0);
 #endif
-#if defined(HAVE_EASY_WIRELESS_CONFIG) && !defined(HAVE_MODERN)
+#if defined(HAVE_EASY_WIRELESS_CONFIG) && !defined(HAVE_BCMMODERN)
 		websWrite(wp, "</div>\n");
 #endif
 		websWrite(wp, "</fieldset><br />\n");
