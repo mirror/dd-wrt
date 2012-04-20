@@ -150,6 +150,10 @@ static int freq_list(struct unl *unl, int phy)
 			     && !nvram_default_match("region", "SA", ""))
 				continue;
 #endif 
+#if defined(HAVE_BUFFALO) && defined(HAVE_WZRHPAG300NH)
+			if (tb[NL80211_FREQUENCY_ATTR_RADAR])
+				continue;
+#endif
 			f = calloc(1, sizeof(*f));
 			INIT_LIST_HEAD(&f->list);
 
