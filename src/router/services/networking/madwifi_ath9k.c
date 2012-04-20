@@ -566,10 +566,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 
 	if (aoss) {
-		if (!strncmp(ifname, "ath1", 4))
-			ssid = "ESSID-AOSS-1";
-		else
+		if (!strncmp(ifname, "aossa", 4))
 			ssid = "ESSID-AOSS";
+		else
+			ssid = "ESSID-AOSS-1";
 	} else {
 		sprintf(nssid, "%s_ssid", ifname);
 		ssid = nvram_default_get(nssid, "dd-wrt");
