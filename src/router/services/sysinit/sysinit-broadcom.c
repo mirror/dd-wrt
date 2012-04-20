@@ -1564,7 +1564,8 @@ void start_sysinit(void)
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("pci/1/1/ledbh2", "8");
 		nvram_set("sb/1/ledbh1", "8");
-
+		if (nvram_match("vlan1ports", "1 2 3 4 8*"))
+			nvram_set("vlan1ports", "4 3 2 1 8*");
 		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 		    || startswith(nvram_safe_get("pci/1/1/macaddr"),
 				  "00:90:4c")) {
