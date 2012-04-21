@@ -738,6 +738,8 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 ifeq ($(CONFIG_BUFFALO_SA),y)
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.84 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.84" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WHR-HP-GN 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-GN" "WHR-HP-GN" "1.82" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-gn-firmware_MULTI.enc
 else
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.82" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
@@ -1042,6 +1044,9 @@ ifeq ($(CONFIG_WR741),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv7 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv7-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv7-firmware.bin mips-uclibc/tplink-WR841NDv7-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B RNX-N300RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N300RT-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N300RT-firmware.bin mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B TL-WR840Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR840Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR840Nv1-firmware.bin mips-uclibc/tplink-WR840Nv1-firmware.bin
