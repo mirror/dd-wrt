@@ -567,9 +567,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 
 	if (aoss) {
 		if (!strncmp(ifname, "aossa", 4))
-			ssid = "ESSID-AOSS";
-		else
 			ssid = "ESSID-AOSS-1";
+		else
+			ssid = "ESSID-AOSS";
 	} else {
 		sprintf(nssid, "%s_ssid", ifname);
 		ssid = nvram_default_get(nssid, "dd-wrt");
