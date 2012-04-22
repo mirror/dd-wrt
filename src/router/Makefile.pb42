@@ -1051,6 +1051,9 @@ ifeq ($(CONFIG_WR741),y)
 	-./tools/tplink/mktplinkfw -B RNX-N300RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N300RT-firmware.bin mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 
+	-./tools/tplink/mktplinkfw -B RNX-N150RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N150RT-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N150RT-firmware.bin mips-uclibc/rosewill-RNX-N150RT-firmware.bin
+
 	-./tools/tplink/mktplinkfw -B TL-WR840Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR840Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR840Nv1-firmware.bin mips-uclibc/tplink-WR840Nv1-firmware.bin
 
@@ -1059,6 +1062,9 @@ ifeq ($(CONFIG_WR741),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WA901NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv1-firmware.bin mips-uclibc/tplink-WA901NDv1-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WA801NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA801NDv1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA801NDv1-firmware.bin mips-uclibc/tplink-WA801NDv1-firmware.bin
 endif
 ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
