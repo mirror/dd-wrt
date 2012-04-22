@@ -566,7 +566,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 
 	if (aoss) {
-		if (!strncmp(ifname, "aossa", 4))
+		if (!strncmp(ifname, "aossa", 5))
 			ssid = "ESSID-AOSS-1";
 		else
 			ssid = "ESSID-AOSS";
