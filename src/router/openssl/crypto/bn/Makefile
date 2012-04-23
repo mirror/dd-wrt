@@ -74,6 +74,12 @@ sparcv8.o:	asm/sparcv8.S
 sparcv8plus.o:	asm/sparcv8plus.S
 	$(CC) $(CFLAGS) -c asm/sparcv8plus.S
 
+bn-mips.s:	asm/mips.pl
+	$(PERL) asm/mips.pl > $@
+
+mips-mont.s:	asm/mips-mont.pl
+	$(PERL)	asm/mips-mont.pl > $@
+
 bn-mips3.o:	asm/mips3.s
 	@if [ "$(CC)" = "gcc" ]; then \
 		ABI=`expr "$(CFLAGS)" : ".*-mabi=\([n3264]*\)"` && \
