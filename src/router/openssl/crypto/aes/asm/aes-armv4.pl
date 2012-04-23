@@ -1,4 +1,4 @@
-7#!/usr/bin/env perl
+#!/usr/bin/env perl
 
 # ====================================================================
 # Written by Andy Polyakov <appro@fy.chalmers.se> for the OpenSSL
@@ -34,6 +34,7 @@
 
 while (($output=shift) && ($output!~/^\w[\w\-]*\.\w+$/)) {}
 open STDOUT,">$output";
+
 
 $s0="r0";
 $s1="r1";
