@@ -171,6 +171,8 @@ void start_openvpnserver(void)
 		fprintf(fp, "insmod ebtables\n"
 			"insmod ebtable_filter\n"
 			"insmod ebt_pkttype\n"
+			"ebtables -D FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
+			"ebtables -D OUTPUT -o tap0 --pkttype-type multicast -j DROP\n"
 			"ebtables -A FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
 			"ebtables -A OUTPUT -o tap0 --pkttype-type multicast -j DROP\n");
 		//for testing only
