@@ -47,9 +47,6 @@ lib:	$(LIBOBJ)
 
 $(LIBOBJ): $(LIBSRC)
 
-aes-armv4.s: asm/aes-armv4.pl
-	$(PERL) $^ > $@
-
 aes-mips.s: asm/aes-mips.pl
 	$(PERL) $^ > $@
 
@@ -64,6 +61,11 @@ aes-x86_64.s: asm/aes-x86_64.pl
 
 aes-ppc.s:	asm/aes-ppc.pl
 	$(PERL) asm/aes-ppc.pl linux32 $@
+
+# GNU make "catch all"
+aes-%.S:	asm/aes-%.pl;	$(PERL) $< $(PERLASM_SCHEME) > $@
+aes-armv4.o:	aes-armv4.S
+
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
