@@ -4047,12 +4047,14 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_WRT610N:
 		power_gpio = 0x001;
+		diag_gpio = 0x101;  // power led blink /off to indicate factory defaults
 		connected_gpio = 0x103;	// ses amber
 		ses_gpio = 0x109;	// ses blue
 		usb_gpio = 0x100;
 		break;
 	case ROUTER_WRT610NV2:
 		power_gpio = 0x005;
+		diag_gpio = 0x105;  // power led blink
 		connected_gpio = 0x100;	// ses amber
 		ses_gpio = 0x103;	// ses blue
 		usb_gpio = 0x007;
