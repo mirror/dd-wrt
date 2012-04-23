@@ -56,14 +56,8 @@ sha256-ia64.s: asm/sha512-ia64.pl
 sha512-ia64.s: asm/sha512-ia64.pl
 	(cd asm; $(PERL) sha512-ia64.pl ../$@ $(CFLAGS))
 
-sha256-armv4.s: asm/sha256-armv4.pl
-	$(PERL) $< $@
-
-sha512-armv4.s: asm/sha512-armv4.pl
-	$(PERL) $< $@
-
-sha1-armv4-large.s: asm/sha1-armv4-large.pl
-	$(PERL) $< $@
+sha256-armv4.S: asm/sha256-armv4.pl
+	$(PERL) $< $(PERLASM_SCHEME) $@
 
 sha256-mips.s: asm/sha512-mips.pl
 	$(PERL) $< > $@
@@ -84,6 +78,16 @@ sha512-ppc.s:	asm/sha512-ppc.pl;	$(PERL) asm/sha512-ppc.pl linux32 $@
 sha1-x86_64.s:	asm/sha1-x86_64.pl;	$(PERL) asm/sha1-x86_64.pl $@
 sha256-x86_64.s:asm/sha512-x86_64.pl;	$(PERL) asm/sha512-x86_64.pl $@
 sha512-x86_64.s:asm/sha512-x86_64.pl;	$(PERL) asm/sha512-x86_64.pl $@
+
+
+sha1-%.S:	asm/sha1-%.pl;		$(PERL) $< $(PERLASM_SCHEME) > $@
+sha256-%.S:	asm/sha512-%.pl;	$(PERL) $< $(PERLASM_SCHEME) > $@
+sha512-%.S:	asm/sha512-%.pl;	$(PERL) $< $(PERLASM_SCHEME) > $@
+
+sha1-armv4-large.o:	sha1-armv4-large.S
+sha256-armv4.o:		sha256-armv4.S
+sha512-armv4.o:		sha512-armv4.S
+
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
