@@ -65,6 +65,16 @@ sha512-armv4.s: asm/sha512-armv4.pl
 sha1-armv4-large.s: asm/sha1-armv4-large.pl
 	$(PERL) $< $@
 
+sha256-mips.s: asm/sha512-mips.pl
+	$(PERL) $< > $@
+
+sha512-mips.s: asm/sha512-mips.pl
+	$(PERL) $< > $@
+
+sha1-mips.s: asm/sha1-mips.pl
+	$(PERL) $< > $@
+
+
 sha1-ppc.s:	asm/sha1-ppc.pl;	$(PERL) asm/sha1-ppc.pl linux32 $@
 sha256-ppc.s:	asm/sha512-ppc.pl;	$(PERL) asm/sha512-ppc.pl linux32 $@
 sha512-ppc.s:	asm/sha512-ppc.pl;	$(PERL) asm/sha512-ppc.pl linux32 $@
