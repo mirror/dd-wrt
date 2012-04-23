@@ -2050,9 +2050,11 @@ void start_restore_defaults(void)
 		}
 	}
 #endif
+if defined(HAVE_GATEWORX) || defined(XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_RT2880) || defined(HAVE_LAGUNA) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600)
 	if (restore_defaults) {
 		nvram_clear();
 	}
+#endif
 
 	int nvcnt = 0;
 
