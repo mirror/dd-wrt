@@ -31,10 +31,9 @@ my $globl = sub {
 				$ret .= ".type	$name,\@function";
 				last;
 			      };
-	/linux.*64/	&& do {	$ret .= ".globl	.$name\n";
-				$ret .= ".type	.$name,\@function\n";
+	/linux.*64/	&& do {	$ret .= ".globl	$name\n";
+				$ret .= ".type	$name,\@function\n";
 				$ret .= ".section	\".opd\",\"aw\"\n";
-				$ret .= ".globl	$name\n";
 				$ret .= ".align	3\n";
 				$ret .= "$name:\n";
 				$ret .= ".quad	.$name,.TOC.\@tocbase,0\n";
@@ -61,6 +60,14 @@ my $machine = sub {
 	$arch = ($flavour=~/64/) ? "ppc970-64" : "ppc970" if ($arch eq "any");
     }
     ".machine	$arch";
+};
+my $size = sub {
+    if ($flavour =~ /linux.*32/)
+    {	shift;
+	".size	" . join(",",@_);
+    }
+    else
+    {	"";	}
 };
 my $asciz = sub {
     shift;
@@ -99,6 +106,13 @@ my $bnelr = sub {
     my $bo = $f=~/\-/ ? 4+2 : 4;	# optional "not to be taken" hint
     ($flavour =~ /linux/) ?		# GNU as doesn't allow most recent hints
 	"	.long	".sprintf "0x%x",19<<26|$bo<<21|2<<16|16<<1 :
+	"	bclr	$bo,2";
+};
+my $beqlr = sub {
+    my $f = shift;
+    my $bo = $f=~/-/ ? 12+2 : 12;	# optional "not to be taken" hint
+    ($flavour =~ /linux/) ?		# GNU as doesn't allow most recent hints
+	"	.long	".sprintf "0x%X",19<<26|$bo<<21|2<<16|16<<1 :
 	"	bclr	$bo,2";
 };
 # GNU assembler can't handle extrdi rA,rS,16,48, or when sum of last two
