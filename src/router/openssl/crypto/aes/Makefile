@@ -50,6 +50,9 @@ $(LIBOBJ): $(LIBSRC)
 aes-armv4.s: asm/aes-armv4.pl
 	$(PERL) $^ > $@
 
+aes-mips.s: asm/aes-mips.pl
+	$(PERL) $^ > $@
+
 aes-ia64.s: asm/aes-ia64.S
 	$(CC) $(CFLAGS) -E asm/aes-ia64.S > $@
 
