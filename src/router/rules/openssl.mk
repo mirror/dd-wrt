@@ -10,6 +10,18 @@ export OPENSSL_TARGET := linux-armv4
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
 export OPENSSL_CMAKEFLAGS := -DASMAES512
 endif
+ifeq ($(ARCH),mips)
+export OPENSSL_TARGET := linux-mips
+#export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes_cbc.o aes-mips.o"
+export OPENSSL_CMAKEFLAGS := -DASMAES512
+endif
+ifeq ($(ARCH),mipsel)
+export OPENSSL_TARGET := linux-mips
+#export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes_cbc.o aes-mips.o"
+export OPENSSL_CMAKEFLAGS := -DASMAES512
+endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-ppc
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
