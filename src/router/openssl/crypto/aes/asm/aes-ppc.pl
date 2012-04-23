@@ -391,7 +391,7 @@ $code.=<<___;
 
 .align	5
 Lppc_AES_encrypt:
-	lwz	$acc00,240($key)
+	lwz	$acc00,464($key)
 	lwz	$t0,0($key)
 	lwz	$t1,4($key)
 	lwz	$t2,8($key)
@@ -533,7 +533,7 @@ Lenc_loop:
 
 .align	4
 Lppc_AES_encrypt_compact:
-	lwz	$acc00,240($key)
+	lwz	$acc00,464($key)
 	lwz	$t0,0($key)
 	lwz	$t1,4($key)
 	lwz	$t2,8($key)
@@ -740,7 +740,7 @@ Lenc_compact_done:
 
 .align	5
 Lppc_AES_decrypt:
-	lwz	$acc00,240($key)
+	lwz	$acc00,464($key)
 	lwz	$t0,0($key)
 	lwz	$t1,4($key)
 	lwz	$t2,8($key)
@@ -882,7 +882,7 @@ Ldec_loop:
 
 .align	4
 Lppc_AES_decrypt_compact:
-	lwz	$acc00,240($key)
+	lwz	$acc00,464($key)
 	lwz	$t0,0($key)
 	lwz	$t1,4($key)
 	lwz	$t2,8($key)
