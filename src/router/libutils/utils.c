@@ -1422,6 +1422,9 @@ int internal_getRouterBrand()
 #elif HAVE_AP83
 	setRouter("Atheros AP83");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WP546
+	setRouter("Compex WP546");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WP543
 	setRouter("Compex WP543");
 	return ROUTER_BOARD_PB42;
@@ -3379,6 +3382,7 @@ int led_control(int type, int act)
 	int disable;
 
 	int power_gpio = 0x0ff;
+	int beeper_gpio = 0x0ff;
 	int diag_gpio = 0x0ff;
 	int diag_gpio_disabled = 0x0ff;
 	int dmz_gpio = 0x0ff;
@@ -3475,6 +3479,11 @@ int led_control(int type, int act)
 		ses_gpio = 0x103;
 #endif
 #ifdef HAVE_WP543
+		diag_gpio = 0x107;
+		connected_gpio = 0x106;
+#endif
+#ifdef HAVE_WP546
+		beeper_gpio= 0x001;
 		diag_gpio = 0x107;
 		connected_gpio = 0x106;
 #endif
@@ -4160,6 +4169,9 @@ int led_control(int type, int act)
 	switch (type) {
 	case LED_POWER:
 		use_gpio = power_gpio;
+		break;
+	case BEEPER:
+		use_gpio = beeper_gpio;
 		break;
 	case USB_POWER:
 		use_gpio = usb_power;
