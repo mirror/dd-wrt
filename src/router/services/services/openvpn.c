@@ -180,7 +180,7 @@ void start_openvpnserver(void)
 //		&& nvram_match("openvpn_tuntap", "tap")
 //		&& nvram_match("openvpn_proxy", "0"))
 		fprintf(fp, "insmod ebtables\n"
-			"insmod ebtable_filter\n" "insmod ebt_ip"
+			"insmod ebtable_filter\n" "insmod ebt_ip\n"
 			"ebtables -D INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
 			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
 			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
