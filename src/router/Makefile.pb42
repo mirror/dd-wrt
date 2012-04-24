@@ -218,6 +218,9 @@ endif
 ifeq ($(CONFIG_WP543),y)
 	cp $(LINUXDIR)/.config_wp543 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WP546),y)
+	cp $(LINUXDIR)/.config_wp546 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_UBNTM),y)
 	cp $(LINUXDIR)/.config_ar7240 $(LINUXDIR)/.config
 endif
@@ -714,8 +717,8 @@ ifeq ($(CONFIG_WP543),y)
 endif
 ifeq ($(CONFIG_WP546),y)
 	-./tools/compex/mkmylofw -B WP546 \
-		-p0x30000:0x3d0000:alp:0x80060000 \
-		-b0x30000:0x3d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		-p0x30000:0x7d0000:alp:0x80060000 \
+		-b0x30000:0x7d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wp546.img
 endif
 endif
