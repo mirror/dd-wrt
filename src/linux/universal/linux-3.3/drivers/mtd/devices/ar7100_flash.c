@@ -346,6 +346,10 @@ static struct mtd_partition dir_parts[] = {
       {name:NULL,},
 };
 
+unsigned int compex=0;
+
+EXPORT_SYMBOL(compex);
+
 struct fis_image_desc {
 	unsigned char name[16];	// Null terminated name
 	unsigned long flash_base;	// Address within FLASH of image
@@ -417,7 +421,6 @@ static int __init ar7100_flash_init(void)
 
 		offset = 0;
 
-		int compex = 0;
 		if (!strncmp((char *)(buf + 0x295a), "myloram.bin", 11)) {
 			printk(KERN_EMERG "Compex WP543 device detected\n");
 			dir_parts[0].size = 0x30000;
