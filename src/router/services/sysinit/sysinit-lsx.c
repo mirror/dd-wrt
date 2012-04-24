@@ -196,13 +196,20 @@ void start_sysinit(void)
 	setWirelessLed(0,2);
 	setWirelessLed(1,2);
 	setWirelessLed(2,2);
+#elif HAVE_WP546
+	setWirelessLed(0,5);
+	setWirelessLed(1,4);
 #elif HAVE_WP543
 	setWirelessLed(0,5);
 #else
 	setWirelessLed(0,2);
 #endif
 
+#ifdef HAVE_WP546
+	led_control(BEEPER, LED_ON);
+	usleep(200);
 	led_control(BEEPER, LED_OFF);
+#endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
