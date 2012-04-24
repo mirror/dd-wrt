@@ -207,7 +207,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_WP546
 	led_control(BEEPER, LED_ON);
-	usleep(200);
+	usleep(500);
 	led_control(BEEPER, LED_OFF);
 #endif
 	led_control(LED_POWER, LED_ON);
