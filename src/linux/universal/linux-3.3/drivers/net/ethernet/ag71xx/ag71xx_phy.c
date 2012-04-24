@@ -107,7 +107,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 	struct phy_device *phydev = NULL;
 	int phy_addr;
 	int ret = 0;
-
+	int phyadd=0;
 	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
 		if (!(pdata->phy_mask & (1 << phy_addr)))
 			continue;
@@ -119,7 +119,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 			dev->name,
 			dev_name(&ag->mii_bus->phy_map[phy_addr]->dev),
 			ag->mii_bus->phy_map[phy_addr]->phy_id);
-
+		phyadd = phy_addr;
 		if (phydev == NULL)
 			phydev = ag->mii_bus->phy_map[phy_addr];
 	}
@@ -128,7 +128,17 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		netdev_err(dev, "no PHY found with phy_mask=%08x\n",
 			   pdata->phy_mask);
 		return -ENODEV;
+    	}
+	if (ag->mii_bus->phy_map[phyadd]->phy_id == 0x4dd072 && phyadd == 1)
+	{
+	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1d, 0);
+	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1e, 0x82ee);
+	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1d, 5);
+	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0x1e, 0x2d47);
+	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0, 0x8000|0x1000);
+	udelay(50000);
 	}
+
 
 	ag->phy_dev = phy_connect(dev, dev_name(&phydev->dev),
 				  &ag71xx_phy_link_adjust, 0,

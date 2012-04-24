@@ -1073,10 +1073,8 @@ static inline void phy_dev_init(void)
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth1_data.phy_mask = BIT(1);
 	ar71xx_add_device_mdio(0, ~(ar71xx_eth0_data.phy_mask | ar71xx_eth1_data.phy_mask));
-	ar71xx_eth0_data.reset_bit = AR71XX_RESET_GE0_MAC |
-				    AR71XX_RESET_GE0_PHY;
-	ar71xx_eth1_data.reset_bit = AR71XX_RESET_GE1_MAC |
-				    AR71XX_RESET_GE1_PHY;
+//	ar71xx_eth0_data.reset_bit = AR71XX_RESET_GE0_MAC |
+//				    AR71XX_RESET_GE0_PHY;
 	}else
 #endif
 {
