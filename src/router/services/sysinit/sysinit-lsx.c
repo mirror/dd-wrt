@@ -71,7 +71,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
-	insmod("ag7100_mod");
+	system("insmod ag71xx || insmod ag7100_mod");
 
 	// sleep(1);
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
@@ -166,12 +166,6 @@ void start_sysinit(void)
 				copy[7], copy[8], copy[9], copy[10], copy[11]);
 			fprintf(stderr, "configure ETH1 to %s\n", mac);
 			eval("ifconfig", "eth1", "hw", "ether", mac);
-			/* disable led's */
-			eval("gpio", "enable", "3");	// 1
-			eval("gpio", "enable", "4");	// 2
-			eval("gpio", "enable", "5");	//wlan
-			eval("gpio", "enable", "6");	//conn
-			eval("gpio", "enable", "7");	//diag
 
 		}
 		fclose(fp);
@@ -207,6 +201,16 @@ void start_sysinit(void)
 #else
 	setWirelessLed(0,2);
 #endif
+
+	led_control(BEEPER, LED_OFF);
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_SES2, LED_OFF);
+	led_control(LED_DIAG, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN0, LED_OFF);
+	led_control(LED_WLAN1, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
 
 	/*
 	 * Set a sane date 
