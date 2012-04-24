@@ -445,12 +445,14 @@ void Uart16550Init()
 	ar71xx_detect_sys_frequency();
 	freq = ar71xx_ahb_freq;
 
+#if 0
 	MY_WRITE(0xb8040000, 0xcff);
 	MY_WRITE(0xb8040008, 0x3b);
 
 	MY_WRITE(0xb8040028, 0x100);
 
 	MY_WRITE(0xb8040008, 0x2f);
+#endif
 
 	div = freq/(AG7100_CONSOLE_BAUD*16);
 
