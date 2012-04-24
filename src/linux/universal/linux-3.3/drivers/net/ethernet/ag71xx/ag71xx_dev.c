@@ -1054,7 +1054,9 @@ static void phy_dev_init(void)
 }
 
 #else
-
+#ifdef CONFIG_MTD_AR7100_SPI_FLASH
+extern unsigned int compex;
+#endif
 static inline void phy_dev_init(void)
 {
 #ifdef CONFIG_ATHRS26_PHY
@@ -1065,10 +1067,24 @@ static inline void phy_dev_init(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 #else
+#ifdef CONFIG_MTD_AR7100_SPI_FLASH
+	if (compex)
+	{
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth1_data.phy_mask = BIT(1);
+	ar71xx_add_device_mdio(0, ~(ar71xx_eth0_data.phy_mask | ar71xx_eth1_data.phy_mask));
+	ar71xx_eth0_data.reset_bit = AR71XX_RESET_GE0_MAC |
+				    AR71XX_RESET_GE0_PHY;
+	ar71xx_eth1_data.reset_bit = AR71XX_RESET_GE1_MAC |
+				    AR71XX_RESET_GE1_PHY;
+	}else
+#endif
+{
 	/* defaults for many switches */
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth1_data.phy_mask = BIT(4);
 	ar71xx_add_device_mdio(0, ~(ar71xx_eth0_data.phy_mask | ar71xx_eth1_data.phy_mask));
+	}
 #endif
 }
 
