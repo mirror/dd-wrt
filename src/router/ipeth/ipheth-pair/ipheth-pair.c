@@ -25,8 +25,7 @@
 #include <libimobiledevice/lockdown.h>
 
 
-int
-ipeth_main(int argc, char **argv)
+int ipeth_main(int argc, char **argv)
 {
     const char *myself = argv[0];
     const char *uuid = NULL;
@@ -131,9 +130,11 @@ ipeth_main(int argc, char **argv)
     return 0;
 }
 
-
 void main(int argc, char *argv[])
 {
+if (argc>1)
+	return ipeth_main(argc,argv);
+    
     pid_t pid;
 	pid = fork();
 	switch (pid) {
@@ -142,6 +143,7 @@ void main(int argc, char *argv[])
 		exit(1);
 	case 0:
 		for (;;) {
+		    system("ifconfig iph0 up");
 		    ipeth_main(argc,argv);
 		}
 		break;
