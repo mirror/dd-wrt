@@ -3865,8 +3865,8 @@ void start_wan(int status)
 		eval("usbmuxd");
 		sleep(5);
 		stop_process("ipheth-pair","IPhone Pairing daemon");
-		eval("ipheth-pair");
 		eval("ifconfig","iph0","up");
+		eval("ipheth-pair");
 		start_dhcpc("iph0", NULL, NULL, 1);
 	}
 #endif
