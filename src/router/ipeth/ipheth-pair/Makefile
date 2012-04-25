@@ -1,9 +1,11 @@
 CFLAGS += $(COPTS) -I$(TOP)/ipeth/libimobiledevice/include -I$(TOP)/ipeth/libplist/include -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDLIBS += $(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.a -L$(TOP)/openssl -lssl -lcrypto -L$(TOP)/ipeth/libplist/src -lplist $(TOP)/ipeth/libusbmuxd/libusbmuxd/liblibusbmuxd-static.a $(TOP)/ipeth/libxml2/.libs/libxml2.a -lm -lpthread
 
-all: ipheth-pair
+all: ipheth-pair ipheth-loop
 
 ipheth-pair: ipheth-pair.o
+
+ipheth-loop: ipheth-loop.o
 
 install:
 	install -m 0755 ipheth-pair /lib/udev/
