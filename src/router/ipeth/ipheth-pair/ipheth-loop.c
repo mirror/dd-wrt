@@ -8,7 +8,6 @@ int main(int argc,char *argv[])
 	pid_t pid;
 
 	pid = fork();
-	system("usbmuxd");
 	switch (pid) {
 	case -1:
 		perror("fork failed");
