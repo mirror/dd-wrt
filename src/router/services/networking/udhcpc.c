@@ -175,7 +175,7 @@ static int bound(void)
 	int changed = 0;
 	static char *cidr;
 	if (nvram_match("wan_proto", "iphone"))
-	    stop_process("ipheth-pair","IPhone Pairing Daemon");
+	    stop_process("ipheth-loop","IPhone Pairing Daemon");
 
 
 	cidr = getenv("cidrroute");
