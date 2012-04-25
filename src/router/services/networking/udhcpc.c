@@ -174,6 +174,10 @@ static int bound(void)
 	    temp_wan_gateway[16];
 	int changed = 0;
 	static char *cidr;
+	if (nvram_match("wan_proto", "iphone"))
+	    stop_process("ipheth-pair","IPhone Pairing Daemon");
+
+
 	cidr = getenv("cidrroute");
 	if (cidr && wan_ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
