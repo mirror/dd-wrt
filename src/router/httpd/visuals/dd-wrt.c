@@ -2477,6 +2477,13 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			int i = 0;
 
 			while (chan[i].freq != -1) {
+#ifdef HAVE_BUFFALO
+				if(chan[i].dfs == 1) {
+					i++;
+					continue;
+				}
+#endif
+
 				cprintf("%d\n", chan[i].channel);
 				cprintf("%d\n", chan[i].freq);
 
@@ -2487,7 +2494,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 						chan[i].channel,
 						chan[i].ht40minus,
 						chan[i].ht40plus,
-						chan[i].no_outdoor, chan[i].dfs,
+						chan[i].no_outdoor, 
+						chan[i].dfs,
 						chan[i].max_eirp,
 						chan[i].no_ofdm);
 				} else
