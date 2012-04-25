@@ -133,25 +133,7 @@ int ipeth_main(int argc, char **argv)
 
 void main(int argc, char *argv[])
 {
-if (argc>1)
-	return ipeth_main(argc,argv);
-    
-    pid_t pid;
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-	case 0:
-		for (;;) {
-		    system("ifconfig iph0 up");
-		    ipeth_main(argc,argv);
-		}
-		break;
-	default:
-		_exit(0);
-		break;
-	}
-
+system("ifconfig iph0 up");
+return ipeth_main(argc,argv);
 
 }
