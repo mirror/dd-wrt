@@ -119,4 +119,5 @@ ipeth-install:
 	install -D $(TOP)/ipeth/libusbmuxd/daemon/usbmuxd $(INSTALLDIR)/ipeth/usr/sbin/usbmuxd
 #	install -D $(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.so.3 $(INSTALLDIR)/ipeth/usr/lib/libimobiledevice.so.3
 	install -D $(TOP)/ipeth/ipheth-pair/ipheth-pair $(INSTALLDIR)/ipeth/usr/sbin/ipheth-pair
+	install -D $(TOP)/ipeth/ipheth-pair/ipheth-loop $(INSTALLDIR)/ipeth/usr/sbin/ipheth-loop
 	@true
