@@ -26,6 +26,14 @@
 
 #include "wireless_generic.c"
 
+typedef struct wl_rateset_compat {
+	uint32	count;			/* # rates in this set */
+	uint8	rates[16];	/* rates in 500kbps units w/hi bit set if basic */
+} wl_rateset_compat_t;
+
+
+
+
 typedef struct {
 	uint16 ver;		/* version of this struct */
 	uint16 len;		/* length in bytes of this structure */
@@ -33,7 +41,7 @@ typedef struct {
 	uint32 flags;		/* flags defined below */
 	uint32 idle;		/* time since data pkt rx'd from sta */
 	struct ether_addr ea;	/* Station address */
-	wl_rateset_t rateset;	/* rateset in use */
+	wl_rateset_compat_t rateset;	/* rateset in use */
 	uint32 in;		/* seconds elapsed since associated */
 	uint32 listen_interval_inms;	/* Min Listen interval in ms for this STA */
 	uint32 tx_pkts;		/* # of packets transmitted */
@@ -150,7 +158,6 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 			if (sta->flags & WL_STA_SCBSTATS) {
 				int tx = sta->tx_rate;
 				int rx = sta->rx_rate;
-				 
 				if (tx > 0)
 					sprintf(txrate, "%dM",
 						tx / 1000);
