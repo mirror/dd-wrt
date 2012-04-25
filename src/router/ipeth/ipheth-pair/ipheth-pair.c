@@ -26,7 +26,7 @@
 
 
 int
-main(int argc, char **argv)
+ipeth_main(int argc, char **argv)
 {
     const char *myself = argv[0];
     const char *uuid = NULL;
@@ -70,7 +70,7 @@ main(int argc, char **argv)
 	rv = idevice_get_device_list(&devices, &count);
 	if (rv || !count) {
 	    fprintf(stderr, "%s: %d: no devices\n", myself, rv);
-	    return -1;
+	    exit(-1);
 	}
 	for (i = 0; i < count; i++) {
 	    char *device_name = NULL;
@@ -91,7 +91,7 @@ main(int argc, char **argv)
 	}
 
 	idevice_device_list_free(devices);
-	return err;
+	exit (err);
     }
 
     rv = idevice_new(&device, uuid);
@@ -129,4 +129,26 @@ main(int argc, char **argv)
     idevice_free(device);
 
     return 0;
+}
+
+
+void main(int argc, char *argv[])
+{
+    pid_t pid;
+	pid = fork();
+	switch (pid) {
+	case -1:
+		perror("fork failed");
+		exit(1);
+	case 0:
+		for (;;) {
+		    ipeth_main(argc,argv);
+		}
+		break;
+	default:
+		_exit(0);
+		break;
+	}
+
+
 }
