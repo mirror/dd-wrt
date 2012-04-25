@@ -3866,7 +3866,7 @@ void start_wan(int status)
 		sleep(5);
 		stop_process("ipheth-pair","IPhone Pairing daemon");
 		eval("ifconfig","iph0","up");
-		eval("ipheth-pair");
+		system("ipheth-pair");
 		start_dhcpc("iph0", NULL, NULL, 1);
 	}
 #endif
