@@ -419,6 +419,7 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/class
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/core
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
