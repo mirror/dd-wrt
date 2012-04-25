@@ -83,7 +83,8 @@ int ipeth_main(int argc, char **argv)
 		idevice_free(device);
 	    }
 	    printf("%s %s\n", devices[i], device_name ? device_name : "N/A");
-	    free(device_name);
+	    if (device_name)
+		free(device_name);
 	    if (rv) {
 		err = rv;
 	    }
