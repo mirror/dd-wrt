@@ -2362,6 +2362,24 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101")) {
+		
+		int mtd = getMTD("board_data");
+		char devname[32];
+		sprintf(devname,"/dev/mtdblock/%d",mtd);
+	    	FILE *model = fopen(devname,"rb");
+		if (model)
+		    {
+		    #define WNDR3700V3 "U12H194T00_NETGEAR"
+		    char modelstr[32];
+		    fread(modelstr,1,strlen(WNDR3700V3),model);
+		    if (!strncmp(modelstr,WNDR3700V3,strlen(WNDR3700V3)))
+			{
+			fclose(model);
+			setRouter("Netgear WNDR3700v3");
+			return ROUTER_NETGEAR_WNDR4000;
+			}
+		    fclose(model);
+		    }
 		setRouter("Netgear WNDR4000");
 		return ROUTER_NETGEAR_WNDR4000;
 	}
