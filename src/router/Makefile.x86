@@ -152,6 +152,9 @@ kernel:
 ifeq ($(CONFIG_ISOFS),y)
 	cp $(LINUXDIR)/.config_isofs $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_IPETH),y)
+	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
