@@ -209,6 +209,9 @@ endif
 ifeq ($(CONFIG_USR8200),y)
 CFLAGS += -DHAVE_USR8200
 endif
+ifeq ($(CONFIG_IPETH),y)
+CFLAGS += -DHAVE_IPETH
+endif
 ifeq ($(CONFIG_OLED),y)
 CFLAGS += -DHAVE_OLED
 endif
