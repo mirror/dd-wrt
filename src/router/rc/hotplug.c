@@ -31,21 +31,24 @@
 #include <utils.h>
 #include <errno.h>
 
-
 #define start_service(a) eval("startservice",a);
 #define stop_service(a) eval("stopservice",a);
 
 int main(int argc, char **argv)
 {
 	if (argc >= 2) {
-//		sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
+//              sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
 #ifdef HAVE_IPETH
-			char *action = getenv("ACTION");
-			char *id = getenv("PHYSDEVDRIVER");
-			if (action && !strcmp(action,"add") && id && !strcmp(id,"ipheth")) {
-				eval("ipheth-loop");
-				return 0;
+			sysprintf("env >> /tmp/hotplugs");
+			if (nvram_match("wan_proto", "iphone")) {
+				char *action = getenv("ACTION");
+				char *id = getenv("PHYSDEVDRIVER");
+				if (action && !strcmp(action, "add") && id
+				    && !strcmp(id, "ipheth")) {
+					eval("ipheth-loop");
+					return 0;
+				}
 			}
 #endif
 			start_service("hotplug_net");
@@ -67,18 +70,22 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_ATH9K
 		if (!strcmp(argv[1], "regulatory")) {
-			syslog(LOG_DEBUG, "hotplug: old style regulatory called\n");
+			syslog(LOG_DEBUG,
+			       "hotplug: old style regulatory called\n");
 			return eval("/sbin/crda");
 		}
 		if (!strcmp(argv[1], "platform")) {
 			char *action;
 			char *devicepath;
-			if ((action = getenv("ACTION")) && (devicepath=getenv("DEVPATH"))
-				&& !strcmp(action, "change") && !strcmp(devicepath,"/devices/platform/regulatory.0"))
-				{
-				syslog(LOG_DEBUG, "hotplug: new style regulatory called\n");
+			if ((action = getenv("ACTION"))
+			    && (devicepath = getenv("DEVPATH"))
+			    && !strcmp(action, "change")
+			    && !strcmp(devicepath,
+				       "/devices/platform/regulatory.0")) {
+				syslog(LOG_DEBUG,
+				       "hotplug: new style regulatory called\n");
 				return eval("/sbin/crda");
-				}
+			}
 		}
 #endif
 #ifdef HAVE_XSCALE
@@ -91,5 +98,4 @@ int main(int argc, char **argv)
 	}
 	return 0;
 
-			
 }
