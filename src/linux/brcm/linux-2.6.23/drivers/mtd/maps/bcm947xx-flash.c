@@ -184,6 +184,7 @@ static struct mtd_partition bcm947xx_parts[] = {
 	{ name: "rootfs", offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
 	{ name: "ddwrt", offset: 0, size: 0, },
+	{ name: "board_data", offset: 0, size: 0, },
 	{ name: NULL, },
 };
 
@@ -514,6 +515,13 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		bcm947xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}
 
+	if (board_data_size != 0) {
+		bcm947xx_parts[5].size = board_data_size;	
+		bcm947xx_parts[5].offset = bcm947xx_parts[3].offset - board_data_size;	
+	} else {
+		bcm947xx_parts[5].name = NULL;	
+	}
+
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size;
@@ -524,6 +532,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 			bcm947xx_parts[3].size + mtd->erasesize;
 		bcm947xx_parts[1].size   = (((size - bcm947xx_parts[0].size) - (2*bcm947xx_parts[3].size)) - mtd->erasesize) - board_data_size;
 	}
+
 
 	/* find and size rootfs */
 	if (find_root(mtd,size,&bcm947xx_parts[2])==0) {
