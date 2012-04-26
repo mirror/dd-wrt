@@ -39,8 +39,20 @@ int main(int argc, char **argv)
 {
 	if (argc >= 2) {
 //		sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
+//		sysprintf("env >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
+#ifdef HAVE_IPETH
+			char *action = getenv("ACTION");
+			char *id = getenv("PHYSDEVDRIVER");
+//			sysprintf("echo cation %s %s >> /tmp/hotplugs",id,action);
+			if (action && !strcmp(action,"add") && id && !strcmp(id,"ipheth")) {
+				eval("ipheth-loop");
+				return 0;
+			}
+#endif
 			start_service("hotplug_net");
+			action = getenv("ACTION");
+
 			return 0;
 		}
 #ifdef HAVE_USB
