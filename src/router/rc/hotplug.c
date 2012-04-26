@@ -40,12 +40,13 @@ int main(int argc, char **argv)
 //              sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
 #ifdef HAVE_IPETH
-			sysprintf("env >> /tmp/hotplugs");
 			if (nvram_match("wan_proto", "iphone")) {
 				char *action = getenv("ACTION");
 				char *id = getenv("PHYSDEVDRIVER");
+				if (!id)
+				    id = getenv("DEVICENAME");
 				if (action && !strcmp(action, "add") && id
-				    && !strcmp(id, "ipheth")) {
+				    && (!strcmp(id, "ipheth") || !strcmp("iph0"))) {
 					eval("ipheth-loop");
 					return 0;
 				}
