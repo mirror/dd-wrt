@@ -181,6 +181,10 @@ endif
 ifeq ($(CONFIG_USR8200),y)
 	cp $(LINUXDIR)/.config_usr8200 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_IPETH),y)
+	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
+endif
+
 	$(MAKE) -C $(LINUXDIR) oldconfig ARCH=arm 	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
