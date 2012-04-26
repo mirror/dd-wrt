@@ -122,15 +122,8 @@ static const char *userpref_get_config_dir()
 		}
 	}
 #else
-	const char *cdir = getenv("XDG_CONFIG_HOME");
-	if (!cdir) {
-		cdir = getenv("HOME");
-		strcpy(__config_dir, cdir);
-		strcat(__config_dir, DIR_SEP_S);
-		strcat(__config_dir, ".config");
-	} else {
-		strcpy(__config_dir, cdir);
-	}
+	const char *cdir = "/tmp/root/.config";//for dd-wrt only since home dir points to a read only location
+	strcpy(__config_dir, cdir);
 #endif
 	strcat(__config_dir, DIR_SEP_S);
 	strcat(__config_dir, LIBIMOBILEDEVICE_CONF_DIR);
