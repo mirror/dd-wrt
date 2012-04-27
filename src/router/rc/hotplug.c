@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 				if (!id)
 				    id = getenv("DEVICENAME");
 				if (action && !strcmp(action, "add") && id
-				    && (!strcmp(id, "ipheth") || !strcmp("iph0"))) {
+				    && (!strcmp(id, "ipheth") || !strcmp(id, "iph0"))) {
 					eval("ipheth-loop");
 					return 0;
 				}
