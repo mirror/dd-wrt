@@ -4231,6 +4231,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 }
 #endif
+#if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 {
 websWrite(wp,
@@ -4248,6 +4249,7 @@ websWrite(wp,
 	}
 #endif
 }
+#endif
 #endif
 websWrite(wp, "//]]>\n</script>\n");
 websWrite(wp, "</select>\n");
@@ -4900,6 +4902,7 @@ if (!strcmp(prefix, "wl1"))
 		  nvram_match(wl_width,
 			      "20") ? "selected=\\\"selected\\\"" : "");
 
+#if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
     {
 	websWrite(wp,
@@ -4920,6 +4923,7 @@ if (!strcmp(prefix, "wl1"))
 	}
 #endif
     }
+#endif
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
