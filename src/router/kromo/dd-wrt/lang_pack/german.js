@@ -677,11 +677,11 @@ nas.titl="NAS";
 nas.proftpd_legend="FTP Server";
 nas.proftpd_srv="ProFTPD";
 nas.proftpd_port="Server Port";
-nas.proftpd_dir="Datei Verzeichniss";
+nas.proftpd_dir="Datei Verzeichnis";
 nas.proftpd_passw="Nutzer Passwort Liste";
-nas.proftpd_writeen="Schreiberlaubniss";
+nas.proftpd_writeen="Schreiberlaubnis";
 nas.proftpd_anon="Anonymes Login (Nur-Lesen)";
-nas.proftpd_anon_subdir="Anonymes Heimat Unterverzeichniss";
+nas.proftpd_anon_subdir="Anonymes Heimat Unterverzeichnis";
 
 
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
@@ -1344,7 +1344,7 @@ service.rstats_legend="Bandbreiten Überwachung";
 service.rstats_srv="rstats Daemon";
 service.rstats_path="Speichere Daten nach";
 service.rstats_time="Speicher Zyklus";
-service.rstats_usrdir="Nutzer Verzeichniss";
+service.rstats_usrdir="Nutzer Verzeichnis";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS Tunneling";
