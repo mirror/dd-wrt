@@ -969,8 +969,7 @@ ppp_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	put_unaligned_be16(proto, pp);
 
 	skb_queue_tail(&ppp->file.xq, skb);
-	if (!ppp_xmit_process(ppp))
-		netif_stop_queue(dev);
+	ppp_xmit_process(ppp)
 	return NETDEV_TX_OK;
 
  outf:
@@ -1052,7 +1051,6 @@ static int
 ppp_xmit_process(struct ppp *ppp)
 {
 	struct sk_buff *skb;
-	int ret = 0;
 
 	ppp_xmit_lock(ppp);
 	if (!ppp->closing) {
@@ -1064,8 +1062,8 @@ ppp_xmit_process(struct ppp *ppp)
 		   code that we can accept some more. */
 		if (!ppp->xmit_pending && !skb_peek(&ppp->file.xq)) {
 			netif_wake_queue(ppp->dev);
-			ret = 1;
-		}
+		}else
+			netif_stop_queue(ppp->dev);
 	}
 	ppp_xmit_unlock(ppp);
 	return ret;
