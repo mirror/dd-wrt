@@ -235,7 +235,7 @@ struct ppp_net {
 /* Prototypes. */
 static int ppp_unattached_ioctl(struct net *net, struct ppp_file *pf,
 			struct file *file, unsigned int cmd, unsigned long arg);
-static int ppp_xmit_process(struct ppp *ppp);
+static void ppp_xmit_process(struct ppp *ppp);
 static void ppp_send_frame(struct ppp *ppp, struct sk_buff *skb);
 static void ppp_push(struct ppp *ppp);
 static void ppp_channel_push(struct channel *pch);
@@ -1047,7 +1047,7 @@ static void ppp_setup(struct net_device *dev)
  * Called to do any work queued up on the transmit side
  * that can now be done.
  */
-static int
+static void
 ppp_xmit_process(struct ppp *ppp)
 {
 	struct sk_buff *skb;
@@ -1066,7 +1066,6 @@ ppp_xmit_process(struct ppp *ppp)
 			netif_stop_queue(ppp->dev);
 	}
 	ppp_xmit_unlock(ppp);
-	return ret;
 }
 
 static inline struct sk_buff *
