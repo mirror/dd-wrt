@@ -1,4 +1,4 @@
-.TH POUND "8" "May 2002" "pound" "System Manager's Manual"
+.TH POUND "8" "Jan 2010" "pound" "System Manager's Manual"
 .SH NAME
 pound \- HTTP/HTTPS reverse-proxy and load-balancer
 .SH SYNOPSIS
@@ -222,6 +222,16 @@ puts itself in the background). By specifying this option you can force
 to work like a regular process. Useful for debugging or if you want to
 use something like \fIdaemontools\fR.
 .TP
+\fBThreads\fR nnn
+How many worker threads
+.B Pound
+should use. Default: 128. Tune this parameter to improve performance.
+If you set it too high,
+.B Pound
+will use a lot memory, and some CPU will be wasted on context switches.
+If you set it too low requests may be served with some delay. Experiment
+to find the optimal value for your installation.
+.TP
 \fBLogFacility\fR value
 Specify the log facility to use.
 .I value
@@ -242,6 +252,10 @@ and
 .I BackEnd
 used).
 This value can be overridden for specific listeners.
+.TP
+\fBIgnoreCase\fR 0|1
+Ignore case when matching URLs (default: 0). This value can be
+overridden for specific services.
 .TP
 \fBDynScale\fR 0|1
 Enable or disable the dynamic rescaling code (default: 0). If enabled
@@ -275,6 +289,13 @@ How long should
 wait for a response from the back-end (in seconds). Default: 15 seconds.
 This value can be overridden for specific back-ends.
 .TP
+\fBConnTO\fR value
+How long should
+.B Pound
+wait for a connection to the back-end (in seconds). Default: the
+.B TimeOut
+value. This value can be overridden for specific back-ends.
+.TP
 \fBGrace\fR value
 How long should
 .B Pound
@@ -296,6 +317,9 @@ does not listen for any commands. The commands may be issued by using
 the
 .I poundctl(8)
 program.
+.TP
+\fBInclude\fR "/path/to/file"
+Include the file as though it were part of the configuration file.
 .SH "HTTP Listener"
 An HTTP listener defines an address and port that
 .B Pound
@@ -340,8 +364,8 @@ PROPPATCH, SEARCH, MKCOL, MOVE, COPY, OPTIONS, TRACE, MKACTIVITY,
 CHECKOUT, MERGE, REPORT).
 .IP
 .I 3
-additionally allow MS extensions WebDAV verbs (SUBSCRIBE, BPROPPATCH,
-POLL, BMOVE, BCOPY, BDELETE, CONNECT).
+additionally allow MS extensions WebDAV verbs (SUBSCRIBE, UNSUBSCRIBE,
+NOTIFY, BPROPFIND, BPROPPATCH, POLL, BMOVE, BCOPY, BDELETE, CONNECT).
 .IP
 .I 4
 additionally allow MS RPC extensions verbs (RPC_IN_DATA, RPC_OUT_DATA).
@@ -394,7 +418,8 @@ caution).
 .TP
 \fBAddHeader\fR "header: to add"
 Add the defined header to the request passed to the back-end server. The header
-is added verbatim.
+is added verbatim. Use multiple \fIAddHeader\fR directives if you need to add more
+than one header.
 .TP
 \fBRewriteLocation\fR 0|1|2
 If 1 force
@@ -443,12 +468,31 @@ is the file containing the certificate, possibly a certificate chain and the sig
 for this server. This directive is
 .B mandatory
 for HTTPS listeners.
+.IP
+Please note that multiple
+.I Cert
+directives are allowed if your OpenSSL version supports SNI. In such cases,
+the first directive is the default certificate, with additional certificates
+used if the client requests them.
+.IP
+The ordering of the directives is important: the first certificate where the CN
+matches the client request will be used, so put your directives in the
+most-specific-to-least specific order (i.e. wildcard certificates
+.B after
+host-specific certificates).
+.IP
+.I Cert
+directives
+.B must
+precede all other SSL-specific directives.
 .TP
 \fBClientCert\fR 0|1|2|3 depth
 Ask for the client's HTTPS certificate: 0 - don't ask (default), 1 - ask,
 2 - ask and fail if no certificate was presented, 3 - ask but do not verify.
-.I depth
-is the depth of verification for a client certificate (up to 9).
+.I Depth
+is the depth of verification for a client certificate (up to 9). The default
+depth limit is 9, allowing for the peer certificate and additional 9 CA
+certificates that must be verified.
 .TP
 \fBCiphers\fR "acceptable:cipher:list"
 This is the list of ciphers that will be accepted by the SSL connection; it is a
@@ -506,7 +550,14 @@ returns an error. You may define multiple
 .I URL
 conditions per service. If no
 .I URL
-was defined then all requests match.
+was defined then all requests match. The matching is by default case-sensitive,
+but this can be overridden by specifying
+.B IgnoreCase 1
+.TP
+\fBIgnoreCase\fR 0|1
+Override the global
+.B IgnoreCase
+setting.
 .TP
 \fBHeadRequire\fR "pattern"
 The request must contain at least on header matching the given pattern.
@@ -532,6 +583,14 @@ the service matching is attempted.
 \fBDynScale\fR 0|1
 Enable or disable dynamic rescaling for the current service. This value will
 override the value globally defined.
+.TP
+\fBDisabled\fR 0|1
+Start
+.B Pound
+with this service disabled (1) or enabled (0). If started as disabled, the
+service can be later enabled with
+.I poundctl
+(8).
 .TP
 \fBBackEnd\fR
 Directives enclosed between a
@@ -636,6 +695,13 @@ will connect to. This is a
 .B mandatory
 parameter for non Unix-domain back-ends.
 .TP
+\fBHTTPS\fR [ "cert" ]
+The back-end is using HTTPS. If the optional parameter
+.I cert
+is specified,
+.B Pound
+will present this certificate to the back-end.
+.TP
 \fBPriority\fR val
 The priority of this back-end (between 1 and 9, 5 is default). Higher priority
 back-ends will be used more often than lower priority ones, so you should
@@ -646,12 +712,25 @@ Override the global
 .I TimeOut
 value.
 .TP
+\fBConnTO\fR val
+Override the global
+.I ConnTO
+value.
+.TP
 \fBHAport\fR [ address ] port
 A port (and optional address) to be used for server function checks. See below
 the "High Availability" section for a more detailed discussion. By default
 .B Pound
 uses the same address as the back-end server, but you may use a separate address
 if you wish. This directive applies only to non Unix-domain servers.
+.TP
+\fBDisabled\fR 0|1
+Start
+.B Pound
+with this back-end disabled (1) or enabled (0). If started as disabled, the
+back-end can be later enabled with
+.I poundctl
+(8).
 .SH "Emergency"
 The emergency server will be used once all existing back-ends are "dead".
 All configuration directives enclosed between
@@ -1129,7 +1208,7 @@ Written by Robert Segall, Apsis GmbH.
 .SH "REPORTING BUGS"
 Report bugs to <roseg@apsis.ch>.
 .SH COPYRIGHT
-Copyright \(co 2002-2006 Apsis GmbH.
+Copyright \(co 2002-2010 Apsis GmbH.
 .br
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

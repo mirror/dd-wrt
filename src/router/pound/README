@@ -128,7 +128,7 @@ INSTALLATION
         --disable-super -- disable supervisor process (default: enabled)
 
         --with-t_rsa=nnn   -- timeout of the RSA ephemeral keys regeneration
-        (default: 300 seconds).
+        (default: 1800 seconds).
 
         --with-owner=owner -- name of installed binaries owner (default is
         system-dependent).
@@ -346,6 +346,19 @@ VIRTUAL HOSTS AND HTTPS
     even some.other.server.encrypted.com or whatever other name matches) proceeds
     as usual. Pound supports these certificates and you can use virtual hosts in
     the normal way.
+
+    Update June 2010: starting with the 2.6 series, Pound has SNI support, if your
+    OpenSSL version supports it. Basically you supply Pound with several certificates,
+    one for each virtual host (wild card certificates - as described above - are
+    allowed). On connecting the client signals to which server it wants to talk,
+    and Pound searches among its certificates which would fit. Not all versions
+    of OpenSSL and not all clients support this mode, but if available it allows
+    for virtual hosts over HTTPS.
+
+    An additional option is to use a semi-official TLS extension, the so called
+    alternate subject name. If your version of OpenSSL supports it you may specify
+    in one certificate several alternate server names. This requires support for a
+    special TLS feature, and nor all clients accept it.
 
 
 

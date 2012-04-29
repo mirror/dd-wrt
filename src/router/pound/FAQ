@@ -24,11 +24,11 @@ FREQUENTLY ASKED QUESTIONS
 
     No. Pound tries to be as transparent as possible - ideally a client
     should not be aware that there is anything between itself and the actual
-    Web server. A limited form of redirects are available - see the man page.
+    Web server. A limited form of redirect is available - see the man page.
 
 1.5 Can I use Pound to deny certain requests?
 
-    Yes. Pound has quite a good mechanism for classifying requests and it
+    Yes. Pound has a rather good mechanism for classifying requests and it
     can deny/reject certain requests based on URL and/or header content.
 
 
@@ -238,12 +238,9 @@ FREQUENTLY ASKED QUESTIONS
 
 4.9 Can Pound use HTTPS back-end servers?
 
-    No, that is not supported: such a connection would break a lot of things,
-    either security (Pound would effectively act as a man-in-the-middle,
-    breaking the end-to-end integrity of SSL) or functionality (if Pound
-    would just pass encrypted data back and forth things like session
-    tracking and validity checking would be impossible). This means that
-    such support is unlikely to ever be part of Pound.
+    Yes, but that is not always a very good idea. Such a setup would essentially
+    make Pound into a "man-in-the-middle" program. Even worse, the certificates
+    on the back-end would become meaningless - they are seen only by Pound.
 
 
 5. Session tracking
@@ -299,7 +296,7 @@ FREQUENTLY ASKED QUESTIONS
 6.5 Why does Pound not log anything when chrooted?
 
     On some systems you need access to /dev/log in order to use the syslog(8)
-    facility. Create the device as needed in the root jail you use.
+    facility. Create/link the device as needed in the root jail you use.
 
 6.6 Why can't Pound log directly to a file?
 
