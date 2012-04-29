@@ -10,6 +10,7 @@ OpenSSL  -  Frequently Asked Questions
 * Why aren't tools like 'autoconf' and 'libtool' used?
 * What is an 'engine' version?
 * How do I check the authenticity of the OpenSSL distribution?
+* How does the versioning scheme work?
 
 [LEGAL] Legal questions
 
@@ -166,6 +167,19 @@ just do:
 
    pgp TARBALL.asc
 
+* How does the versioning scheme work?
+
+After the release of OpenSSL 1.0.0 the versioning scheme changed. Letter 
+releases (e.g. 1.0.1a) can only contain bug and security fixes and no
+new features. Minor releases change the last number (e.g. 1.0.2) and 
+can contain new features that retain binary compatibility. Changes to
+the middle number are considered major releases and neither source nor
+binary compatibility is guaranteed.
+
+Therefore the answer to the common question "when will feature X be
+backported to OpenSSL 1.0.0/0.9.8?" is "never" but it could appear
+in the next minor release.
+
 [LEGAL] =======================================================================
 
 * Do I need patent licenses to use OpenSSL?
@@ -277,7 +291,7 @@ current directory in this case, but this has changed with 0.9.6a.)
 Check out the CA.pl(1) manual page. This provides a simple wrapper round
 the 'req', 'verify', 'ca' and 'pkcs12' utilities. For finer control check
 out the manual pages for the individual utilities and the certificate
-extensions documentation (currently in doc/openssl.txt).
+extensions documentation (in ca(1), req(1), x509v3_config(5) )
 
 
 * Why can't I create certificate requests?
