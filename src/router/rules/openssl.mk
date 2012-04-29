@@ -47,15 +47,15 @@ openssl-apps: openssl-shared
 	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 openssl-apps-static:
-	-rm openssl/libcrypto.so.0.9.8
-	-rm openssl/libssl.so.0.9.8
+	-rm openssl/libcrypto.so.1.0.0
+	-rm openssl/libssl.so.1.0.0
 	-rm openssl/apps/openssl
 	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 openssl-install:
 #ifeq ($(CONFIG_MADWIFI),y)
-	-install -D openssl/libcrypto.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.0.9.8 
-	-install -D openssl/libssl.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libssl.so.0.9.8
+	-install -D openssl/libcrypto.so.1.0.0 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.1.0.0 
+	-install -D openssl/libssl.so.1.0.0 $(INSTALLDIR)/openssl/usr/lib/libssl.so.1.0.0
 #endif
 #ifneq ($(ARCH),mipsel)
 #	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
