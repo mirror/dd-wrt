@@ -969,7 +969,7 @@ ppp_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	put_unaligned_be16(proto, pp);
 
 	skb_queue_tail(&ppp->file.xq, skb);
-	ppp_xmit_process(ppp)
+	ppp_xmit_process(ppp);
 	return NETDEV_TX_OK;
 
  outf:
