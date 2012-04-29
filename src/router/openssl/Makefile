@@ -12,9 +12,9 @@ SHLIB_VERSION_HISTORY=
 SHLIB_MAJOR=0
 SHLIB_MINOR=9.8
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
-PLATFORM=linux-openwrt
-OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -march=i486 -mtune=i486 -funit-at-a-time -DOPENSSL_FIPS_AES_ASM=1 -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-capieng no-cms no-ec no-ecdh no-ecdsa no-engines no-err no-gmp no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-montasm no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-seed no-sha0 no-shared no-smime no-sse2
-CONFIGURE_ARGS=linux-openwrt --prefix=/usr --openssldir=/etc/ssl -Os -pipe -march=i486 -mtune=i486 -funit-at-a-time -DOPENSSL_FIPS_AES_ASM=1 -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-ec no-err no-hw threads zlib-dynamic no-engines no-sse2 no-perlasm
+PLATFORM=linux-mips
+OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -DASMAES512 -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-capieng no-cms no-ec no-ecdh no-ecdsa no-engines no-err no-gmp no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-montasm no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-seed no-sha0 no-shared no-smime
+CONFIGURE_ARGS=linux-mips --prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -DASMAES512 -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-ec no-err no-hw threads zlib-dynamic no-engines no-perlasm
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -59,8 +59,8 @@ OPENSSLDIR=/etc/ssl
 # equal 4.
 # PKCS1_CHECK - pkcs1 tests.
 
-CC= i386-linux-uclibc-gcc
-CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -march=i486 -mtune=i486 -funit-at-a-time -DOPENSSL_FIPS_AES_ASM=1 -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DOPENSSL_NO_HW -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall
+CC= ccache mips-linux-uclibc-gcc
+CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -DASMAES512 -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DOPENSSL_NO_HW -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall -DSHA1_ASM -DSHA256_ASM -DAES_ASM
 DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_CAPIENG -DOPENSSL_NO_CMS -DOPENSSL_NO_EC -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_ENGINES -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_PERLASM -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SEED -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME
 PEX_LIBS= 
 EX_LIBS= -ldl -ldl
@@ -87,16 +87,16 @@ ASFLAG=$(CFLAG)
 PROCESSOR= 
 
 # CPUID module collects small commonly used assembler snippets
-CPUID_OBJ= 
-BN_ASM= bn_asm.o
+CPUID_OBJ= mem_clr.o
+BN_ASM= bn-mips.o
 DES_ENC= des_enc.o fcrypt_b.o
-AES_ASM_OBJ= aes_core.o aes_cbc.o
+AES_ASM_OBJ= aes_cbc.o aes-mips.o aes_core.o
 BF_ENC= bf_enc.o
 CAST_ENC= c_enc.o
 RC4_ENC= rc4_enc.o rc4_skey.o
 RC5_ENC= rc5_enc.o
 MD5_ASM_OBJ= 
-SHA1_ASM_OBJ= 
+SHA1_ASM_OBJ= sha1-mips.o sha256-mips.o
 RMD160_ASM_OBJ= 
 
 # KRB5 stuff
