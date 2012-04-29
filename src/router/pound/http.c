@@ -1,6 +1,6 @@
 /*
  * Pound - the reverse-proxy load-balancer
- * Copyright (C) 2002-2007 Apsis GmbH
+ * Copyright (C) 2002-2010 Apsis GmbH
  *
  * This file is part of Pound.
  *
@@ -9,7 +9,7 @@
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  * 
- * Foobar is distributed in the hope that it will be useful,
+ * Pound is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -22,7 +22,6 @@
  * P.O.Box
  * 8707 Uetikon am See
  * Switzerland
- * Tel: +41-44-920 4904
  * EMail: roseg@apsis.ch
  */
 
@@ -82,12 +81,12 @@ redirect_reply(BIO *const c, const char *url, const int code)
  * Read and write some binary data
  */
 static int
-copy_bin(BIO *const cl, BIO *const be, long cont, long *res_bytes, const int no_write)
+copy_bin(BIO *const cl, BIO *const be, LONG cont, LONG *res_bytes, const int no_write)
 {
     char        buf[MAXBUF];
     int         res;
 
-    while(cont > 0L) {
+    while(cont > L0) {
         if((res = BIO_read(cl, buf, cont > MAXBUF? MAXBUF: cont)) < 0)
             return -1;
         else if(res == 0)
@@ -110,7 +109,7 @@ copy_bin(BIO *const cl, BIO *const be, long cont, long *res_bytes, const int no_
  * The result buffer is NULL terminated
  * Return 0 on success
  */
-static
+static int
 get_line(BIO *const in, char *const buf, const int bufsize)
 {
     char    tmp;
@@ -126,7 +125,7 @@ get_line(BIO *const in, char *const buf, const int bufsize)
         case -1:
             return 1;
         default:
-            for(i = n_read; i < bufsize; i++)
+            for(i = n_read; i < bufsize && buf[i]; i++)
                 if(buf[i] == '\n' || buf[i] == '\r') {
                     buf[i] = '\0';
                     return 0;
@@ -149,7 +148,7 @@ get_line(BIO *const in, char *const buf, const int bufsize)
 /*
  * Strip trailing CRLF
  */
-static
+static int
 strip_eol(char *lin)
 {
     while(*lin)
@@ -165,12 +164,12 @@ strip_eol(char *lin)
  * Copy chunked
  */
 static int
-copy_chunks(BIO *const cl, BIO *const be, long *res_bytes, const int no_write, const long max_size)
+copy_chunks(BIO *const cl, BIO *const be, LONG *res_bytes, const int no_write, const LONG max_size)
 {
     char        buf[MAXBUF];
-    long        cont, tot_size;
+    LONG        cont, tot_size;
     regmatch_t  matches[2];
-    int         has_eol, res;
+    int         res;
 
     for(tot_size = 0L;;) {
         if((res = get_line(cl, buf, MAXBUF)) < 0) {
@@ -180,7 +179,7 @@ copy_chunks(BIO *const cl, BIO *const be, long *res_bytes, const int no_write, c
             /* EOF */
             return 0;
         if(!regexec(&CHUNK_HEAD, buf, 2, matches, 0))
-            cont = strtol(buf, NULL, 16);
+            cont = STRTOL(buf, NULL, 16);
         else {
             /* not chunk header */
             logmsg(LOG_NOTICE, "(%lx) bad chunk header <%s>: %s", pthread_self(), buf, strerror(errno));
@@ -193,12 +192,12 @@ copy_chunks(BIO *const cl, BIO *const be, long *res_bytes, const int no_write, c
             }
 
         tot_size += cont;
-        if(max_size > 0L && tot_size > max_size) {
+        if(max_size > L0 && tot_size > max_size) {
             logmsg(LOG_WARNING, "(%lx) chunk content too large", pthread_self);
                 return -4;
         }
 
-        if(cont > 0L) {
+        if(cont > L0) {
             if(copy_bin(cl, be, cont, res_bytes, no_write)) {
                 if(errno)
                     logmsg(LOG_NOTICE, "(%lx) error copy chunk cont: %s", pthread_self(), strerror(errno));
@@ -443,23 +442,30 @@ cur_time(void)
 #ifdef  HAVE_GETTIMEOFDAY
     struct timeval  tv;
     struct timezone tz;
+    int             sv_errno;
 
+    sv_errno = errno;
     gettimeofday(&tv, &tz);
+    errno = sv_errno;
     return tv.tv_sec * 1000000.0 + tv.tv_usec;
 #else
     return time(NULL) * 1000000.0;
 #endif
 }
 
-#define LOG_BYTES_SIZE  16
+#define LOG_BYTES_SIZE  32
 /*
  * Apache log-file-style number format
  */
 static void
-log_bytes(char *res, const long cnt)
+log_bytes(char *res, const LONG cnt)
 {
-    if(cnt > 0L)
+    if(cnt > L0)
+#ifdef  HAVE_LONG_LONG_INT
+        snprintf(res, LOG_BYTES_SIZE - 1, "%lld", cnt);
+#else
         snprintf(res, LOG_BYTES_SIZE - 1, "%ld", cnt);
+#endif
     else
         strcpy(res, "-");
     return;
@@ -478,22 +484,22 @@ log_bytes(char *res, const long cnt)
 /*
  * handle an HTTP request
  */
-void *
-thr_http(void *arg)
+void
+do_http(thr_arg *arg)
 {
-    int                 cl_11, be_11, res, chunked, n, sock, no_cont, skip, conn_closed, force_10, sock_proto;
+    int                 cl_11, be_11, res, chunked, n, sock, no_cont, skip, conn_closed, force_10, sock_proto, is_rpc;
     LISTENER            *lstn;
     SERVICE             *svc;
-    BACKEND             *backend, *cur_backend;
-    struct addrinfo     from_host;
+    BACKEND             *backend, *cur_backend, *old_backend;
+    struct addrinfo     from_host, z_addr;
     struct sockaddr_storage from_host_addr;
     BIO                 *cl, *be, *bb, *b64;
     X509                *x509;
     char                request[MAXBUF], response[MAXBUF], buf[MAXBUF], url[MAXBUF], loc_path[MAXBUF], **headers,
                         headers_ok[MAXHEADERS], v_host[MAXBUF], referer[MAXBUF], u_agent[MAXBUF], u_name[MAXBUF],
                         caddr[MAXBUF], req_time[LOG_TIME_SIZE], s_res_bytes[LOG_BYTES_SIZE], *mh;
-    SSL                 *ssl;
-    long                cont, res_bytes;
+    SSL                 *ssl, *be_ssl;
+    LONG                cont, res_bytes;
     regmatch_t          matches[4];
     struct linger       l;
     double              start_req, end_req;
@@ -527,7 +533,7 @@ thr_http(void *arg)
         logmsg(LOG_WARNING, "(%lx) BIO_new_socket failed", pthread_self());
         shutdown(sock, 2);
         close(sock);
-        pthread_exit(NULL);
+        return;
     }
     if(lstn->to > 0) {
         BIO_set_callback_arg(cl, (char *)&lstn->to);
@@ -535,18 +541,18 @@ thr_http(void *arg)
     }
 
     if(lstn->ctx != NULL) {
-        if((ssl = SSL_new(lstn->ctx)) == NULL) {
+        if((ssl = SSL_new(lstn->ctx->ctx)) == NULL) {
             logmsg(LOG_WARNING, "(%lx) SSL_new: failed", pthread_self());
             BIO_reset(cl);
             BIO_free_all(cl);
-            pthread_exit(NULL);
+            return;
         }
         SSL_set_bio(ssl, cl, cl);
         if((bb = BIO_new(BIO_f_ssl())) == NULL) {
             logmsg(LOG_WARNING, "(%lx) BIO_new(Bio_f_ssl()) failed", pthread_self());
             BIO_reset(cl);
             BIO_free_all(cl);
-            pthread_exit(NULL);
+            return;
         }
         BIO_set_ssl(bb, ssl, BIO_CLOSE);
         BIO_set_ssl_mode(bb, 0);
@@ -560,7 +566,7 @@ thr_http(void *arg)
             */
             BIO_reset(cl);
             BIO_free_all(cl);
-            pthread_exit(NULL);
+            return;
         } else {
             if((x509 = SSL_get_peer_certificate(ssl)) != NULL && lstn->clnt_check < 3
             && SSL_get_verify_result(ssl) != X509_V_OK) {
@@ -568,7 +574,7 @@ thr_http(void *arg)
                 logmsg(LOG_NOTICE, "Bad certificate from %s", caddr);
                 BIO_reset(cl);
                 BIO_free_all(cl);
-                pthread_exit(NULL);
+                return;
             }
         }
     } else {
@@ -580,14 +586,15 @@ thr_http(void *arg)
         logmsg(LOG_WARNING, "(%lx) BIO_new(buffer) failed", pthread_self());
         BIO_reset(cl);
         BIO_free_all(cl);
-        pthread_exit(NULL);
+        return;
     }
     BIO_set_close(cl, BIO_CLOSE);
     BIO_set_buffer_size(cl, MAXBUF);
     cl = BIO_push(bb, cl);
 
     for(cl_11 = be_11 = 0;;) {
-        res_bytes = 0L;
+        res_bytes = L0;
+        is_rpc = -1;
         v_host[0] = referer[0] = u_agent[0] = u_name[0] = '\0';
         conn_closed = 0;
         for(n = 0; n < MAXHEADERS; n++)
@@ -601,7 +608,7 @@ thr_http(void *arg)
                 }
             }
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
         memset(req_time, 0, LOG_TIME_SIZE);
         start_req = cur_time();
@@ -611,28 +618,40 @@ thr_http(void *arg)
         strncpy(request, headers[0], MAXBUF);
         if(!regexec(&lstn->verb, request, 3, matches, 0)) {
             no_cont = !strncasecmp(request + matches[1].rm_so, "HEAD", matches[1].rm_eo - matches[1].rm_so);
+            if(!strncasecmp(request + matches[1].rm_so, "RPC_IN_DATA", matches[1].rm_eo - matches[1].rm_so))
+                is_rpc = 1;
+            else if(!strncasecmp(request + matches[1].rm_so, "RPC_OUT_DATA", matches[1].rm_eo - matches[1].rm_so))
+                is_rpc = 0;
         } else {
             addr2str(caddr, MAXBUF - 1, &from_host, 1);
             logmsg(LOG_WARNING, "(%lx) e501 bad request \"%s\" from %s", pthread_self(), request, caddr);
             err_reply(cl, h501, lstn->err501);
             free_headers(headers);
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
         cl_11 = (request[strlen(request) - 1] == '1');
-        strncpy(url, request + matches[2].rm_so, matches[2].rm_eo - matches[2].rm_so);
-        url[matches[2].rm_eo - matches[2].rm_so] = '\0';
+        n = cpURL(url, request + matches[2].rm_so, matches[2].rm_eo - matches[2].rm_so);
+        if(n != strlen(url)) {
+            /* the URL probably contained a %00 aka NULL - which we don't allow */
+            addr2str(caddr, MAXBUF - 1, &from_host, 1);
+            logmsg(LOG_NOTICE, "(%lx) e501 URL \"%s\" (contains NULL) from %s", pthread_self(), url, caddr);
+            err_reply(cl, h501, lstn->err501);
+            free_headers(headers);
+            clean_all();
+            return;
+        }
         if(lstn->has_pat && regexec(&lstn->url_pat,  url, 0, NULL, 0)) {
             addr2str(caddr, MAXBUF - 1, &from_host, 1);
             logmsg(LOG_NOTICE, "(%lx) e501 bad URL \"%s\" from %s", pthread_self(), url, caddr);
             err_reply(cl, h501, lstn->err501);
             free_headers(headers);
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
 
         /* check other headers */
-        for(chunked = 0, cont = 0L, n = 1; n < MAXHEADERS && headers[n]; n++) {
+        for(chunked = 0, cont = L_1, n = 1; n < MAXHEADERS && headers[n]; n++) {
             /* no overflow - see check_header for details */
             switch(check_header(headers[n], buf)) {
             case HEADER_HOST:
@@ -649,7 +668,7 @@ thr_http(void *arg)
                     conn_closed = 1;
                 break;
             case HEADER_TRANSFER_ENCODING:
-                if(cont != 0L)
+                if(cont >= L0)
                     headers_ok[n] = 0;
                 else if(!strcasecmp("chunked", buf))
                     if(chunked)
@@ -658,10 +677,11 @@ thr_http(void *arg)
                         chunked = 1;
                 break;
             case HEADER_CONTENT_LENGTH:
-                if(chunked)
+                if(chunked || cont >= 0L)
                     headers_ok[n] = 0;
                 else
-                    cont = atol(buf);
+                    if((cont = ATOL(buf)) < 0L)
+                        headers_ok[n] = 0;
                 break;
             case HEADER_ILLEGAL:
                 if(lstn->log_level > 0) {
@@ -711,13 +731,13 @@ thr_http(void *arg)
         }
 
         /* possibly limited request size */
-        if(lstn->max_req > 0L && cont > 0L && cont > lstn->max_req) {
+        if(lstn->max_req > L0 && cont > L0 && cont > lstn->max_req && is_rpc != 1) {
             addr2str(caddr, MAXBUF - 1, &from_host, 1);
             logmsg(LOG_NOTICE, "(%lx) e501 request too large (%ld) from %s", pthread_self(), cont, caddr);
             err_reply(cl, h501, lstn->err501);
             free_headers(headers);
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
 
         if(be != NULL) {
@@ -732,19 +752,19 @@ thr_http(void *arg)
         /* check that the requested URL still fits the old back-end (if any) */
         if((svc = get_service(lstn, url, &headers[1])) == NULL) {
             addr2str(caddr, MAXBUF - 1, &from_host, 1);
-            logmsg(LOG_NOTICE, "(%lx) e503 no service \"%s\" from %s", pthread_self(), request, caddr);
+            logmsg(LOG_NOTICE, "(%lx) e503 no service \"%s\" from %s %s", pthread_self(), request, caddr, v_host[0]? v_host: "-");
             err_reply(cl, h503, lstn->err503);
             free_headers(headers);
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
         if((backend = get_backend(svc, &from_host, url, &headers[1])) == NULL) {
             addr2str(caddr, MAXBUF - 1, &from_host, 1);
-            logmsg(LOG_NOTICE, "(%lx) e503 no back-end \"%s\" from %s", pthread_self(), request, caddr);
+            logmsg(LOG_NOTICE, "(%lx) e503 no back-end \"%s\" from %s %s", pthread_self(), request, caddr, v_host[0]? v_host: "-");
             err_reply(cl, h503, lstn->err503);
             free_headers(headers);
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
 
         if(be != NULL && backend != cur_backend) {
@@ -768,8 +788,7 @@ thr_http(void *arg)
                 err_reply(cl, h503, lstn->err503);
                 free_headers(headers);
                 clean_all();
-                pthread_exit(NULL);
-                break;
+                return;
             }
             if((sock = socket(sock_proto, SOCK_STREAM, 0)) < 0) {
                 str_be(buf, MAXBUF - 1, backend);
@@ -777,20 +796,31 @@ thr_http(void *arg)
                 err_reply(cl, h503, lstn->err503);
                 free_headers(headers);
                 clean_all();
-                pthread_exit(NULL);
+                return;
             }
-            if(connect_nb(sock, &backend->addr, backend->to) < 0) {
+            if(connect_nb(sock, &backend->addr, backend->conn_to) < 0) {
                 str_be(buf, MAXBUF - 1, backend);
                 logmsg(LOG_WARNING, "(%lx) backend %s connect: %s", pthread_self(), buf, strerror(errno));
+                shutdown(sock, 2);
                 close(sock);
-                kill_be(svc, backend, BE_KILL);
-                if((backend = get_backend(svc, &from_host, url, &headers[1])) == NULL) {
+                /*
+                 * kill the back-end only if no HAport is defined for it
+                 * otherwise allow the HAport mechanism to do its job
+                 */
+                memset(&z_addr, 0, sizeof(z_addr));
+                if(memcmp(&(backend->ha_addr), &(z_addr), sizeof(z_addr)) == 0)
+                    kill_be(svc, backend, BE_KILL);
+                /*
+                 * ...but make sure we don't get into a loop with the same back-end
+                 */
+                old_backend = backend;
+                if((backend = get_backend(svc, &from_host, url, &headers[1])) == NULL || backend == old_backend) {
                     addr2str(caddr, MAXBUF - 1, &from_host, 1);
                     logmsg(LOG_NOTICE, "(%lx) e503 no back-end \"%s\" from %s", pthread_self(), request, caddr);
                     err_reply(cl, h503, lstn->err503);
                     free_headers(headers);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
                 continue;
             }
@@ -814,19 +844,48 @@ thr_http(void *arg)
                 err_reply(cl, h503, lstn->err503);
                 free_headers(headers);
                 clean_all();
-                pthread_exit(NULL);
+                return;
             }
             BIO_set_close(be, BIO_CLOSE);
             if(backend->to > 0) {
                 BIO_set_callback_arg(be, (char *)&backend->to);
                 BIO_set_callback(be, bio_callback);
             }
+            if(backend->ctx != NULL) {
+                if((be_ssl = SSL_new(backend->ctx)) == NULL) {
+                    logmsg(LOG_WARNING, "(%lx) be SSL_new: failed", pthread_self());
+                    err_reply(cl, h503, lstn->err503);
+                    free_headers(headers);
+                    clean_all();
+                    return;
+                }
+                SSL_set_bio(be_ssl, be, be);
+                if((bb = BIO_new(BIO_f_ssl())) == NULL) {
+                    logmsg(LOG_WARNING, "(%lx) BIO_new(Bio_f_ssl()) failed", pthread_self());
+                    err_reply(cl, h503, lstn->err503);
+                    free_headers(headers);
+                    clean_all();
+                    return;
+                }
+                BIO_set_ssl(bb, be_ssl, BIO_CLOSE);
+                BIO_set_ssl_mode(bb, 1);
+                be = bb;
+                if(BIO_do_handshake(be) <= 0) {
+                    str_be(buf, MAXBUF - 1, backend);
+                    logmsg(LOG_NOTICE, "BIO_do_handshake with %s failed: %s", buf,
+                        ERR_error_string(ERR_get_error(), NULL));
+                    err_reply(cl, h503, lstn->err503);
+                    free_headers(headers);
+                    clean_all();
+                    return;
+                }
+            }
             if((bb = BIO_new(BIO_f_buffer())) == NULL) {
                 logmsg(LOG_WARNING, "(%lx) e503 BIO_new(buffer) server failed", pthread_self());
                 err_reply(cl, h503, lstn->err503);
                 free_headers(headers);
                 clean_all();
-                pthread_exit(NULL);
+                return;
             }
             BIO_set_buffer_size(bb, MAXBUF);
             BIO_set_close(bb, BIO_CLOSE);
@@ -861,7 +920,7 @@ thr_http(void *arg)
                             pthread_self(), strerror(errno));
                         free_headers(headers);
                         clean_all();
-                        pthread_exit(NULL);
+                        return;
                     }
                 }
                 if(BIO_printf(be, "%s\r\n", headers[n]) <= 0) {
@@ -873,7 +932,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     free_headers(headers);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
             }
             /* add header if required */
@@ -881,11 +940,12 @@ thr_http(void *arg)
                 if(BIO_printf(be, "%s\r\n", lstn->add_head) <= 0) {
                     str_be(buf, MAXBUF - 1, cur_backend);
                     end_req = cur_time();
-                    logmsg(LOG_WARNING, "(%lx) e500 error write HTTPSHeader to %s: %s (%.3f sec)",
+                    logmsg(LOG_WARNING, "(%lx) e500 error write AddHeader to %s: %s (%.3f sec)",
                         pthread_self(), buf, strerror(errno), (end_req - start_req) / 1000000.0);
                     err_reply(cl, h500, lstn->err500);
+                    free_headers(headers);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
         }
         free_headers(headers);
@@ -893,6 +953,20 @@ thr_http(void *arg)
         /* if SSL put additional headers for client certificate */
         if(cur_backend->be_type == 0 && ssl != NULL) {
             SSL_CIPHER  *cipher;
+
+            if((cipher = SSL_get_current_cipher(ssl)) != NULL) {
+                SSL_CIPHER_description(cipher, buf, MAXBUF - 1);
+                strip_eol(buf);
+                if(BIO_printf(be, "X-SSL-cipher: %s\r\n", buf) <= 0) {
+                    str_be(buf, MAXBUF - 1, cur_backend);
+                    end_req = cur_time();
+                    logmsg(LOG_WARNING, "(%lx) e500 error write X-SSL-cipher to %s: %s (%.3f sec)",
+                        pthread_self(), buf, strerror(errno), (end_req - start_req) / 1000000.0);
+                    err_reply(cl, h500, lstn->err500);
+                    clean_all();
+                    return;
+                }
+            }
 
             if(lstn->clnt_check > 0 && x509 != NULL && (bb = BIO_new(BIO_s_mem())) != NULL) {
                 X509_NAME_print_ex(bb, X509_get_subject_name(x509), 8, XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB);
@@ -905,7 +979,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
 
                 X509_NAME_print_ex(bb, X509_get_issuer_name(x509), 8, XN_FLAG_ONELINE & ~ASN1_STRFLGS_ESC_MSB);
@@ -918,7 +992,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
 
                 ASN1_TIME_print(bb, X509_get_notBefore(x509));
@@ -931,7 +1005,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
 
                 ASN1_TIME_print(bb, X509_get_notAfter(x509));
@@ -944,7 +1018,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
                 if(BIO_printf(be, "X-SSL-serial: %ld\r\n", ASN1_INTEGER_get(X509_get_serialNumber(x509))) <= 0) {
                     str_be(buf, MAXBUF - 1, cur_backend);
@@ -954,7 +1028,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
 #ifdef  CERT1L
                 PEM_write_bio_X509(bb, x509);
@@ -967,7 +1041,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
                 while(get_line(bb, buf, MAXBUF) == 0) {
                     if(BIO_printf(be, "%s", buf) <= 0) {
@@ -978,7 +1052,7 @@ thr_http(void *arg)
                         err_reply(cl, h500, lstn->err500);
                         BIO_free_all(bb);
                         clean_all();
-                        pthread_exit(NULL);
+                        return;
                     }
                 }
                 if(BIO_printf(be, "\r\n", buf) <= 0) {
@@ -989,7 +1063,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
 #else
                 PEM_write_bio_X509(bb, x509);
@@ -1002,7 +1076,7 @@ thr_http(void *arg)
                     err_reply(cl, h500, lstn->err500);
                     BIO_free_all(bb);
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
                 while(get_line(bb, buf, MAXBUF) == 0) {
                     if(BIO_printf(be, "\t%s\r\n", buf) <= 0) {
@@ -1013,23 +1087,10 @@ thr_http(void *arg)
                         err_reply(cl, h500, lstn->err500);
                         BIO_free_all(bb);
                         clean_all();
-                        pthread_exit(NULL);
+                        return;
                     }
                 }
 #endif
-                if((cipher = SSL_get_current_cipher(ssl)) != NULL) {
-                    SSL_CIPHER_description(cipher, buf, MAXBUF - 1);
-                    strip_eol(buf);
-                    if(BIO_printf(be, "X-SSL-cipher: %s\r\n", buf) <= 0) {
-                        str_be(buf, MAXBUF - 1, cur_backend);
-                        end_req = cur_time();
-                        logmsg(LOG_WARNING, "(%lx) e500 error write X-SSL-cipher to %s: %s (%.3f sec)",
-                            pthread_self(), buf, strerror(errno), (end_req - start_req) / 1000000.0);
-                        err_reply(cl, h500, lstn->err500);
-                        clean_all();
-                        pthread_exit(NULL);
-                    }
-                }
                 BIO_free_all(bb);
             }
         }
@@ -1047,22 +1108,88 @@ thr_http(void *arg)
             if(copy_chunks(cl, be, NULL, cur_backend->be_type, lstn->max_req)) {
                 str_be(buf, MAXBUF - 1, cur_backend);
                 end_req = cur_time();
-                logmsg(LOG_NOTICE, "(%lx) e500 copy_chunks to %s/%s (%.3f sec)",
-                    pthread_self(), buf, request, (end_req - start_req) / 1000000.0);
+                addr2str(caddr, MAXBUF - 1, &from_host, 1);
+                logmsg(LOG_NOTICE, "(%lx) e500 for %s copy_chunks to %s/%s (%.3f sec)",
+                    pthread_self(), caddr, buf, request, (end_req - start_req) / 1000000.0);
                 err_reply(cl, h500, lstn->err500);
                 clean_all();
-                pthread_exit(NULL);
+                return;
             }
-        } else if(cont > 0L) {
+        } else if(cont > L0 && is_rpc != 1) {
             /* had Content-length, so do raw reads/writes for the length */
             if(copy_bin(cl, be, cont, NULL, cur_backend->be_type)) {
                 str_be(buf, MAXBUF - 1, cur_backend);
                 end_req = cur_time();
-                logmsg(LOG_NOTICE, "(%lx) e500 error copy client cont to %s/%s: %s (%.3f sec)",
-                    pthread_self(), buf, request, strerror(errno), (end_req - start_req) / 1000000.0);
+                addr2str(caddr, MAXBUF - 1, &from_host, 1);
+                logmsg(LOG_NOTICE, "(%lx) e500 for %s error copy client cont to %s/%s: %s (%.3f sec)",
+                    pthread_self(), caddr, buf, request, strerror(errno), (end_req - start_req) / 1000000.0);
                 err_reply(cl, h500, lstn->err500);
                 clean_all();
-                pthread_exit(NULL);
+                return;
+            }
+        } else if(cont > 0L && is_readable(cl, lstn->to)) {
+            char one;
+            BIO  *cl_unbuf;
+            /*
+             * special mode for RPC_IN_DATA - content until EOF
+             * force HTTP/1.0 - client closes connection when done.
+             */
+            cl_11 = be_11 = 0;
+
+            /*
+             * first read whatever is already in the input buffer
+             */
+            while(BIO_pending(cl)) {
+                if(BIO_read(cl, &one, 1) != 1) {
+                    logmsg(LOG_NOTICE, "(%lx) error read request pending: %s",
+                        pthread_self(), strerror(errno));
+                    clean_all();
+                    pthread_exit(NULL);
+                }
+                if (++res_bytes > cont) {
+                    logmsg(LOG_NOTICE, "(%lx) error read request pending: max. RPC length exceeded",
+                        pthread_self());
+                    clean_all();
+                    pthread_exit(NULL);
+                }
+                if(BIO_write(be, &one, 1) != 1) {
+                    if(errno)
+                        logmsg(LOG_NOTICE, "(%lx) error write request pending: %s",
+                            pthread_self(), strerror(errno));
+                    clean_all();
+                    pthread_exit(NULL);
+                }
+            }
+            BIO_flush(be);
+
+            /*
+             * find the socket BIO in the chain
+             */
+            if ((cl_unbuf = BIO_find_type(cl, lstn->ctx? BIO_TYPE_SSL : BIO_TYPE_SOCKET)) == NULL) {
+                 logmsg(LOG_WARNING, "(%lx) error get unbuffered: %s", pthread_self(), strerror(errno));
+                 clean_all();
+                 pthread_exit(NULL);
+            }
+
+            /*
+             * copy till EOF
+             */
+            while((res = BIO_read(cl_unbuf, buf, MAXBUF)) > 0) {
+                if((res_bytes += res) > cont) {
+                    logmsg(LOG_NOTICE, "(%lx) error copy request body: max. RPC length exceeded",
+                        pthread_self());
+                    clean_all();
+                    pthread_exit(NULL);
+                }
+                if(BIO_write(be, buf, res) != res) {
+                    if(errno)
+                        logmsg(LOG_NOTICE, "(%lx) error copy request body: %s",
+                            pthread_self(), strerror(errno));
+                    clean_all();
+                    pthread_exit(NULL);
+                } else {
+                    BIO_flush(be);
+                }
             }
         }
 
@@ -1070,11 +1197,12 @@ thr_http(void *arg)
         if(cur_backend->be_type == 0 && BIO_flush(be) != 1) {
             str_be(buf, MAXBUF - 1, cur_backend);
             end_req = cur_time();
-            logmsg(LOG_NOTICE, "(%lx) e500 error flush to %s/%s: %s (%.3f sec)",
-                pthread_self(), buf, request, strerror(errno), (end_req - start_req) / 1000000.0);
+            addr2str(caddr, MAXBUF - 1, &from_host, 1);
+            logmsg(LOG_NOTICE, "(%lx) e500 for %s error flush to %s/%s: %s (%.3f sec)",
+                pthread_self(), caddr, buf, request, strerror(errno), (end_req - start_req) / 1000000.0);
             err_reply(cl, h500, lstn->err500);
             clean_all();
-            pthread_exit(NULL);
+            return;
         }
 
         /*
@@ -1098,7 +1226,7 @@ thr_http(void *arg)
         /* if we have a redirector */
         if(cur_backend->be_type) {
             memset(buf, 0, sizeof(buf));
-            if(cur_backend->redir_req)
+            if(!cur_backend->redir_req)
                 snprintf(buf, sizeof(buf) - 1, "%s%s", cur_backend->url, url);
             else 
                 strncpy(buf, cur_backend->url, sizeof(buf) - 1);
@@ -1128,6 +1256,51 @@ thr_http(void *arg)
             if(!cl_11 || conn_closed || force_10)
                 break;
             continue;
+        } else if(is_rpc == 1) {
+            /* log RPC_IN_DATA */
+            end_req = cur_time();
+            memset(s_res_bytes, 0, LOG_BYTES_SIZE);
+            /* actual request length */
+            log_bytes(s_res_bytes, res_bytes);
+            addr2str(caddr, MAXBUF - 1, &from_host, 1);
+            str_be(buf, MAXBUF - 1, cur_backend);
+            switch(lstn->log_level) {
+            case 0:
+                break;
+            case 1:
+                logmsg(LOG_INFO, "%s %s - -", caddr, request);
+                break;
+            case 2:
+                if(v_host[0])
+                    logmsg(LOG_INFO, "%s %s - - (%s/%s -> %s) %.3f sec",
+                        caddr, request, v_host, svc->name[0]? svc->name: "-", buf,
+                        (end_req - start_req) / 1000000.0);
+                else
+                    logmsg(LOG_INFO, "%s %s - - (%s -> %s) %.3f sec",
+                        caddr, request, svc->name[0]? svc->name: "-", buf,
+                        (end_req - start_req) / 1000000.0);
+                break;
+            case 3:
+                logmsg(LOG_INFO, "%s %s - %s [%s] \"%s\" 000 %s \"%s\" \"%s\"",
+                    v_host[0]? v_host: "-",
+                    caddr, u_name[0]? u_name: "-", req_time, request,
+                    s_res_bytes, referer, u_agent);
+                break;
+            case 4:
+                logmsg(LOG_INFO, "%s - %s [%s] \"%s\" 000 %s \"%s\" \"%s\"",
+                    caddr, u_name[0]? u_name: "-", req_time, request,
+                    s_res_bytes, referer, u_agent);
+                break;
+            case 5:
+                logmsg(LOG_INFO, "%s %s - %s [%s] \"%s\" 000 %s \"%s\" \"%s\" (%s -> %s) %.3f sec",
+                    v_host[0]? v_host: "-",
+                    caddr, u_name[0]? u_name: "-", req_time, request,
+                    s_res_bytes, referer, u_agent, svc->name[0]? svc->name: "-", buf,
+                    (end_req - start_req) / 1000000.0);
+                break;
+            }
+            /* no response expected - bail out */
+            break;
         }
 
         /* get the response */
@@ -1135,11 +1308,12 @@ thr_http(void *arg)
             if((headers = get_headers(be, cl, lstn)) == NULL) {
                 str_be(buf, MAXBUF - 1, cur_backend);
                 end_req = cur_time();
-                logmsg(LOG_NOTICE, "(%lx) e500 response error read from %s/%s: %s (%.3f secs)",
-                    pthread_self(), buf, request, strerror(errno), (end_req - start_req) / 1000000.0);
+                addr2str(caddr, MAXBUF - 1, &from_host, 1);
+                logmsg(LOG_NOTICE, "(%lx) e500 for %s response error read from %s/%s: %s (%.3f secs)",
+                    pthread_self(), caddr, buf, request, strerror(errno), (end_req - start_req) / 1000000.0);
                 err_reply(cl, h500, lstn->err500);
                 clean_all();
-                pthread_exit(NULL);
+                return;
             }
 
             strncpy(response, headers[0], MAXBUF);
@@ -1163,10 +1337,13 @@ thr_http(void *arg)
                     }
                     break;
                 case HEADER_CONTENT_LENGTH:
-                    cont = atol(buf);
+                    cont = ATOL(buf);
+                    /* treat RPC_OUT_DATA like reply without content-length */
+                    if(is_rpc == 0 && cont == 0x40000000L)
+                        cont = -1L;
                     break;
                 case HEADER_LOCATION:
-                    if(v_host[0] && need_rewrite(lstn->rewr_loc, buf, loc_path, lstn, cur_backend)) {
+                    if(v_host[0] && need_rewrite(lstn->rewr_loc, buf, loc_path, v_host, lstn, cur_backend)) {
                         snprintf(buf, MAXBUF, "Location: %s://%s/%s",
                             (ssl == NULL? "http": "https"), v_host, loc_path);
                         free(headers[n]);
@@ -1175,12 +1352,12 @@ thr_http(void *arg)
                                 pthread_self(), strerror(errno));
                             free_headers(headers);
                             clean_all();
-                            pthread_exit(NULL);
+                            return;
                         }
                     }
                     break;
                 case HEADER_CONTLOCATION:
-                    if(v_host[0] && need_rewrite(lstn->rewr_loc, buf, loc_path, lstn, cur_backend)) {
+                    if(v_host[0] && need_rewrite(lstn->rewr_loc, buf, loc_path, v_host, lstn, cur_backend)) {
                         snprintf(buf, MAXBUF, "Content-location: %s://%s/%s",
                             (ssl == NULL? "http": "https"), v_host, loc_path);
                         free(headers[n]);
@@ -1189,7 +1366,7 @@ thr_http(void *arg)
                                 pthread_self(), strerror(errno));
                             free_headers(headers);
                             clean_all();
-                            pthread_exit(NULL);
+                            return;
                         }
                     }
                     break;
@@ -1209,7 +1386,7 @@ thr_http(void *arg)
                         }
                         free_headers(headers);
                         clean_all();
-                        pthread_exit(NULL);
+                        return;
                     }
                 }
             free_headers(headers);
@@ -1223,25 +1400,25 @@ thr_http(void *arg)
                     logmsg(LOG_NOTICE, "(%lx) error flush headers to %s: %s", pthread_self(), caddr, strerror(errno));
                 }
                 clean_all();
-                pthread_exit(NULL);
+                return;
             }
 
             if(!no_cont) {
                 /* ignore this if request was HEAD or similar */
                 if(be_11 && chunked) {
                     /* had Transfer-encoding: chunked so read/write all the chunks (HTTP/1.1 only) */
-                    if(copy_chunks(be, cl, &res_bytes, skip, 0L)) {
+                    if(copy_chunks(be, cl, &res_bytes, skip, L0)) {
                         /* copy_chunks() has its own error messages */
                         clean_all();
-                        pthread_exit(NULL);
+                        return;
                     }
-                } else if(cont >= 0L) {
+                } else if(cont >= L0) {
                     /* may have had Content-length, so do raw reads/writes for the length */
                     if(copy_bin(be, cl, cont, &res_bytes, skip)) {
                         if(errno)
                             logmsg(LOG_NOTICE, "(%lx) error copy server cont: %s", pthread_self(), strerror(errno));
                         clean_all();
-                        pthread_exit(NULL);
+                        return;
                     }
                 } else if(!skip) {
                     if(is_readable(be, cur_backend->to)) {
@@ -1261,14 +1438,14 @@ thr_http(void *arg)
                                 logmsg(LOG_NOTICE, "(%lx) error read response pending: %s",
                                     pthread_self(), strerror(errno));
                                 clean_all();
-                                pthread_exit(NULL);
+                                return;
                             }
                             if(BIO_write(cl, &one, 1) != 1) {
                                 if(errno)
                                     logmsg(LOG_NOTICE, "(%lx) error write response pending: %s",
                                         pthread_self(), strerror(errno));
                                 clean_all();
-                                pthread_exit(NULL);
+                                return;
                             }
                             res_bytes++;
                         }
@@ -1277,10 +1454,10 @@ thr_http(void *arg)
                         /*
                          * find the socket BIO in the chain
                          */
-                        if((be_unbuf = BIO_find_type(be, BIO_TYPE_SOCKET)) == NULL) {
+                        if((be_unbuf = BIO_find_type(be, cur_backend->ctx? BIO_TYPE_SSL : BIO_TYPE_SOCKET)) == NULL) {
                             logmsg(LOG_WARNING, "(%lx) error get unbuffered: %s", pthread_self(), strerror(errno));
                             clean_all();
-                            pthread_exit(NULL);
+                            return;
                         }
 
                         /*
@@ -1292,7 +1469,7 @@ thr_http(void *arg)
                                     logmsg(LOG_NOTICE, "(%lx) error copy response body: %s",
                                         pthread_self(), strerror(errno));
                                 clean_all();
-                                pthread_exit(NULL);
+                                return;
                             } else {
                                 res_bytes += res;
                                 BIO_flush(cl);
@@ -1301,12 +1478,15 @@ thr_http(void *arg)
                     }
                 }
                 if(BIO_flush(cl) != 1) {
+                    /* client closes RPC_OUT_DATA connection - no error */
+                    if(is_rpc == 0 && res_bytes > 0L)
+                        break;
                     if(errno) {
                         addr2str(caddr, MAXBUF - 1, &from_host, 1);
                         logmsg(LOG_NOTICE, "(%lx) error final flush to %s: %s", pthread_self(), caddr, strerror(errno));
                     }
                     clean_all();
-                    pthread_exit(NULL);
+                    return;
                 }
             }
         }
@@ -1378,5 +1558,17 @@ thr_http(void *arg)
         SSL_set_shutdown(ssl, SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN);
 
     clean_all();
-    pthread_exit(NULL);
+    return;
+}
+
+void *
+thr_http(void *dummy)
+{
+    thr_arg *arg;
+
+    for(;;) {
+        while((arg = get_thr_arg()) == NULL)
+            logmsg(LOG_WARNING, "NULL get_thr_arg");
+        do_http(arg);
+    }
 }

@@ -1,4 +1,202 @@
 ------------------------------------------------------------------------
+r74 | roseg | 2011-12-28 14:57:45 +0100 (Wed, 28 Dec 2011) | 10 lines
+
+Release 2.6
+
+Enhancements:
+    - allow multiple AddHeader directives
+
+Bug fixes:
+    - fixed memory leak in config/AddHeader
+    - removed call to AC_FUNC_MALLOC for AIX compatability
+    - workaround for AIX getaddrinfo() bug
+
+------------------------------------------------------------------------
+r73 | roseg | 2011-06-24 17:59:41 +0200 (Fri, 24 Jun 2011) | 7 lines
+
+Release 2.6f
+
+Enhancements:
+
+Bug fixes:
+    - fixed memory leak in DH (patch by Edvin Torok via Patrizio Tassone)
+
+------------------------------------------------------------------------
+r72 | roseg | 2011-04-25 11:10:45 +0200 (Mon, 25 Apr 2011) | 8 lines
+
+Release 2.6e
+
+Enhancements:
+
+Bug fixes:
+    - fixed problem in SNI certificate storage
+    - changed long to long long for support of requests larger than 2GB
+
+------------------------------------------------------------------------
+r71 | roseg | 2011-04-11 15:59:05 +0200 (Mon, 11 Apr 2011) | 9 lines
+
+Release 2.6d
+
+Enhancements:
+    - added parsing for certificate CN
+
+Bug fixes:
+    - fixed problem in task enqueing
+    - fixed small problem in Makefile
+
+------------------------------------------------------------------------
+r70 | roseg | 2010-12-27 17:54:18 +0100 (Mon, 27 Dec 2010) | 14 lines
+
+Release 2.6c
+
+Enhancements:
+    - added support for OpenSSL 1.0
+    - added some more detailed error logging
+
+Bug fixes:
+    - fix for RewriteLocation
+    - fix for HTTPS back-ends
+    - fix for RPC support
+    - fix for possible request smuggling by using multiple headers
+
+Many thanks to Frank Schmirler and Ruben Kerkhof for the contributed patches
+
+------------------------------------------------------------------------
+r69 | roseg | 2010-09-25 16:49:49 +0200 (Sat, 25 Sep 2010) | 7 lines
+
+Release 2.6b
+
+Enhancements:
+    - pre-defined number of threads for better performance on small hardware
+
+Bug fixes:
+
+------------------------------------------------------------------------
+r68 | roseg | 2010-06-23 19:18:39 +0200 (Wed, 23 Jun 2010) | 15 lines
+
+Release 2.6a
+
+Stable release 2.5.1
+
+Enhancements:
+    - support for SNI via multiple Cert directives (thanks to Joe Gooch)
+    - translate hexadecimal characters in URL for pattern matching
+    - added support for a "Disabled" directive in the configuration
+
+Bug fixes:
+    - keep sessions for disabled back-ends, continue using them until the time-out
+    - fixed memory leak in session removal
+    - user IgnoreCase for CheckURL too
+    - fixed some issues with OpenSolaris build (thanks to Spradling Cloyce)
+
+------------------------------------------------------------------------
+r67 | roseg | 2010-02-02 12:49:00 +0100 (Tue, 02 Feb 2010) | 9 lines
+
+Release 2.5
+
+Enhancements:
+
+Bug fixes:
+  - fixed XML format to avoid problems with brain-dead parsers
+  - fixed Redirect to accept "/" as a path, so that "Redirect http://x/" is
+    considered an absolute path, but "Redirect http://x" is not
+
+------------------------------------------------------------------------
+r66 | roseg | 2010-01-04 17:20:55 +0100 (Mon, 04 Jan 2010) | 7 lines
+
+Release 2.5e
+
+Enhancements:
+  - added support for symbolic host names in poundctl
+
+Bug fixes:
+
+------------------------------------------------------------------------
+r65 | roseg | 2009-12-07 17:01:21 +0100 (Mon, 07 Dec 2009) | 9 lines
+
+Release 2.5d
+
+Enhancements:
+  - added support for --disable-pcreposix, --disable--tcmalloc, --disable-hoard in configuration script
+
+Bug fixes:
+  - fixed problem with long input lines in http.c
+  - if libpcreposix is present, then pcreposix.h must also be present
+
+------------------------------------------------------------------------
+r64 | roseg | 2009-09-21 13:16:57 +0200 (Mon, 21 Sep 2009) | 8 lines
+
+Release 2.5c
+
+Enhancements:
+  - added support for HTTPS backends
+
+Bug fixes:
+  - fixed problem with sub-patterns in session parameters
+
+------------------------------------------------------------------------
+r63 | roseg | 2009-08-19 17:44:07 +0200 (Wed, 19 Aug 2009) | 10 lines
+
+Release 2.5b
+
+Enhancements:
+  - support for ConnTO directive
+  - support for IgnoreCase directive
+
+Bug fixes:
+  - fixed problem in conf_fgets (\n confuses the regexp)
+  - changed RSA ephemeral keys regeneration default time (every 30 minutes)
+
+------------------------------------------------------------------------
+r62 | roseg | 2009-08-06 17:23:30 +0200 (Thu, 06 Aug 2009) | 9 lines
+
+Release 2.5a
+
+Enhancements:
+  - support for include directive
+
+Bug fixes:
+  - fixed generation of ephemeral RSA keys (avoid premature locking)
+  - added pre-generated DH parameters
+
+------------------------------------------------------------------------
+r61 | roseg | 2009-06-29 17:53:55 +0200 (Mon, 29 Jun 2009) | 13 lines
+
+Release 2.4.5
+
+Stable release 2.4.5
+
+Enhancements:
+    - log back-end killed/disabled/enabled (thanks to Joe Gooch and Jon Garvin)
+    - kill a BE on connection failure only if it has no HAport defined (thanks to Albert); the request may still fail!
+
+Bug fixes:
+    - fixed parantheses problems in need_rewrite (thanks to SBR)
+    - added call to free_headers in http.c (thanks to SBR)
+    - fixed maximal path length in UNIX domain sockets (thanks to Ricardo Gameiro)
+
+------------------------------------------------------------------------
+r60 | roseg | 2009-01-14 17:39:52 +0100 (Wed, 14 Jan 2009) | 18 lines
+
+Release 2.4.4
+
+Stable release 2.4.4
+
+Enhancements:
+    - added support for UNSUBSCRIBE and NOTIFY in xHTTP 3 and 4
+    - added support for BPROPFIND in xHTTP 4
+    - on SSL connections always pass the cipher used to the back-end (thanks to Magnus Sandin)
+
+Bug fixes:
+    - save and restore errno value in cur_time() (thanks to Albert)
+    - fixed problem in timer thread (thanks to Albert)
+    - added shutdown for failed socket connection (thanks to Albert)
+    - fixed problem with CC containing spaces in Makefile.in (thanks to Elan Ruusamäe)
+    - increased MAXBUF to default 4096
+    - increased T_RSA default to 30 minutes
+    - fixed a problem with Unix sockets back-ends (thanks to Ricardo Gameiro)
+
+------------------------------------------------------------------------
 r59 | roseg | 2008-05-31 12:25:41 +0200 (Sat, 31 May 2008) | 11 lines
 
 Release 2.4.3

@@ -1,6 +1,6 @@
 /*
  * Pound - the reverse-proxy load-balancer
- * Copyright (C) 2002-2007 Apsis GmbH
+ * Copyright (C) 2002-2010 Apsis GmbH
  *
  * This file is part of Pound.
  *
@@ -9,7 +9,7 @@
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  * 
- * Foobar is distributed in the hope that it will be useful,
+ * Pound is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -22,18 +22,22 @@
  * P.O.Box
  * 8707 Uetikon am See
  * Switzerland
- * Tel: +41-44-920 4904
  * EMail: roseg@apsis.ch
  */
 
 #include    "pound.h"
+
+#ifndef LHASH_OF
+#define LHASH_OF(x) LHASH
+#define CHECKED_LHASH_OF(type, h) h
+#endif
 
 /*
  * Add a new key/content pair to a hash table
  * the table should be already locked
  */
 static void
-t_add(LHASH *const tab, const char *key, const void *content, const size_t cont_len)
+t_add(LHASH_OF(TABNODE) *const tab, const char *key, const void *content, const size_t cont_len)
 {
     TABNODE *t, *old;
 
@@ -54,7 +58,11 @@ t_add(LHASH *const tab, const char *key, const void *content, const size_t cont_
     }
     memcpy(t->content, content, cont_len);
     t->last_acc = time(NULL);
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    if((old = LHM_lh_insert(TABNODE, tab, t)) != NULL) {
+#else
     if((old = (TABNODE *)lh_insert(tab, t)) != NULL) {
+#endif
         free(old->key);
         free(old->content);
         free(old);
@@ -69,7 +77,7 @@ t_add(LHASH *const tab, const char *key, const void *content, const size_t cont_
  * side-effect: update the time of last access
  */
 static void *
-t_find(LHASH *const tab, char *const key)
+t_find(LHASH_OF(TABNODE) *const tab, char *const key)
 {
     TABNODE t, *res;
 
@@ -85,12 +93,16 @@ t_find(LHASH *const tab, char *const key)
  * Delete a key
  */
 static void
-t_remove(LHASH *const tab, char *const key)
+t_remove(LHASH_OF(TABNODE) *const tab, char *const key)
 {
     TABNODE t, *res;
 
     t.key = key;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    if((res = LHM_lh_delete(TABNODE, tab, &t)) != NULL) {
+#else
     if((res = (TABNODE *)lh_delete(tab, &t)) != NULL) {
+#endif
         free(res->key);
         free(res->content);
         free(res);
@@ -99,59 +111,87 @@ t_remove(LHASH *const tab, char *const key)
 }
 
 typedef struct  {
-    LHASH   *tab;
-    time_t  lim;
-    void    *content;
-    int     cont_len;
+    LHASH_OF(TABNODE)   *tab;
+    time_t              lim;
+    void                *content;
+    int                 cont_len;
 }   ALL_ARG;
 
 static void
-t_old(TABNODE *t, void *arg)
+t_old_doall_arg(TABNODE *t, ALL_ARG *a)
 {
-    ALL_ARG *a;
+    TABNODE *res;
 
-    a = (ALL_ARG *)arg;
     if(t->last_acc < a->lim)
-        lh_delete(a->tab, t);
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        if((res = LHM_lh_delete(TABNODE, a->tab, t)) != NULL) {
+#else
+        if((res = lh_delete(a->tab, t)) != NULL) {
+#endif
+            free(res->key);
+            free(res->content);
+            free(res);
+        }
     return;
 }
-IMPLEMENT_LHASH_DOALL_ARG_FN(t_old, TABNODE *, void *)
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+IMPLEMENT_LHASH_DOALL_ARG_FN(t_old, TABNODE, ALL_ARG)
+#else
+#define t_old t_old_doall_arg
+IMPLEMENT_LHASH_DOALL_ARG_FN(t_old, TABNODE *, ALL_ARG *)
+#endif
 
 /*
  * Expire all old nodes
  */
 static void
-t_expire(LHASH *const tab, const time_t lim)
+t_expire(LHASH_OF(TABNODE) *const tab, const time_t lim)
 {
     ALL_ARG a;
     int down_load;
 
     a.tab = tab;
     a.lim = lim;
-    down_load = tab->down_load;
-    tab->down_load = 0;
+    down_load = CHECKED_LHASH_OF(TABNODE, tab)->down_load;
+    CHECKED_LHASH_OF(TABNODE, tab)->down_load = 0;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    LHM_lh_doall_arg(TABNODE, tab, LHASH_DOALL_ARG_FN(t_old), ALL_ARG, &a);
+#else
     lh_doall_arg(tab, LHASH_DOALL_ARG_FN(t_old), &a);
-    tab->down_load = down_load;
+#endif
+    CHECKED_LHASH_OF(TABNODE, tab)->down_load = down_load;
     return;
 }
 
 static void
-t_cont(TABNODE *t, void *arg)
+t_cont_doall_arg(TABNODE *t, ALL_ARG *arg)
 {
-    ALL_ARG *a;
+    TABNODE *res;
 
-    a = (ALL_ARG *)arg;
-    if(memcmp(t->content, a->content, a->cont_len) == 0)
-        lh_delete(a->tab, t);
+    if(memcmp(t->content, arg->content, arg->cont_len) == 0)
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        if((res = LHM_lh_delete(TABNODE, arg->tab, t)) != NULL) {
+#else
+        if((res = lh_delete(arg->tab, t)) != NULL) {
+#endif
+            free(res->key);
+            free(res->content);
+            free(res);
+        }
     return;
 }
-IMPLEMENT_LHASH_DOALL_ARG_FN(t_cont, TABNODE *, void *)
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+IMPLEMENT_LHASH_DOALL_ARG_FN(t_cont, TABNODE, ALL_ARG)
+#else
+#define t_cont t_cont_doall_arg
+IMPLEMENT_LHASH_DOALL_ARG_FN(t_cont, TABNODE *, ALL_ARG *)
+#endif
 
 /*
  * Remove all nodes with the given content
  */
 static void
-t_clean(LHASH *const tab, void *const content, const size_t cont_len)
+t_clean(LHASH_OF(TABNODE) *const tab, void *const content, const size_t cont_len)
 {
     ALL_ARG a;
     int down_load;
@@ -159,10 +199,14 @@ t_clean(LHASH *const tab, void *const content, const size_t cont_len)
     a.tab = tab;
     a.content = content;
     a.cont_len = cont_len;
-    down_load = tab->down_load;
-    tab->down_load = 0;
+    down_load = CHECKED_LHASH_OF(TABNODE, tab)->down_load;
+    CHECKED_LHASH_OF(TABNODE, tab)->down_load = 0;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    LHM_lh_doall_arg(TABNODE, tab, LHASH_DOALL_ARG_FN(t_cont), ALL_ARG, &a);
+#else
     lh_doall_arg(tab, LHASH_DOALL_ARG_FN(t_cont), &a);
-    tab->down_load = down_load;
+#endif
+    CHECKED_LHASH_OF(TABNODE, tab)->down_load = down_load;
     return;
 }
 
@@ -258,6 +302,70 @@ addr2str(char *const res, const int res_len, const struct addrinfo *addr, const 
 #error "Pound needs inet_ntop()"
 #endif
     return;
+}
+
+/*
+ * Parse a URL, possibly decoding hexadecimal-encoded characters
+ */
+int
+cpURL(char *res, char *src, int len)
+{
+    int     state;
+    char    *kp_res;
+
+    for(kp_res = res, state = 0; len > 0; len--)
+        switch(state) {
+        case 1:
+            if(*src >= '0' && *src <= '9') {
+                *res = *src++ - '0';
+                state = 2;
+            } else if(*src >= 'A' && *src <= 'F') {
+                *res = *src++ - 'A' + 10;
+                state = 2;
+            } else if(*src >= 'a' && *src <= 'f') {
+                *res = *src++ - 'a' + 10;
+                state = 2;
+            } else {
+                *res++ = '%';
+                *res++ = *src++;
+                state = 0;
+            }
+            break;
+        case 2:
+            if(*src >= '0' && *src <= '9') {
+                *res = *res * 16 + *src++ - '0';
+                res++;
+                state = 0;
+            } else if(*src >= 'A' && *src <= 'F') {
+                *res = *res * 16 + *src++ - 'A' + 10;
+                res++;
+                state = 0;
+            } else if(*src >= 'a' && *src <= 'f') {
+                *res = *res * 16 + *src++ - 'a' + 10;
+                res++;
+                state = 0;
+            } else {
+                *res++ = '%';
+                *res++ = *(src - 1);
+                *res++ = *src++;
+                state = 0;
+            }
+            break;
+        default:
+            if(*src != '%')
+                *res++ = *src++;
+            else {
+                src++;
+                state = 1;
+            }
+            break;
+        }
+    if(state > 0)
+        *res++ = '%';
+    if(state > 1)
+        *res++ = *(src - 1);
+    *res = '\0';
+    return res - kp_res;
 }
 
 /*
@@ -368,16 +476,21 @@ get_service(const LISTENER *lstn, const char *request, char **const headers)
 static int
 get_REQUEST(char *res, const SERVICE *svc, const char *request)
 {
-    int         n;
+    int         n, s;
     regmatch_t  matches[4];
 
-    if(regexec(&svc->sess_pat, request, 4, matches, 0)) {
+    if(regexec(&svc->sess_start, request, 4, matches, 0)) {
+        res[0] = '\0';
+        return 0;
+    }
+    s = matches[0].rm_eo;
+    if(regexec(&svc->sess_pat, request + s, 4, matches, 0)) {
         res[0] = '\0';
         return 0;
     }
     if((n = matches[1].rm_eo - matches[1].rm_so) > KEY_SIZE)
         n = KEY_SIZE;
-    strncpy(res, request + matches[1].rm_so, n);
+    strncpy(res, request + s + matches[1].rm_so, n);
     res[n] = '\0';
     return 1;
 }
@@ -385,7 +498,7 @@ get_REQUEST(char *res, const SERVICE *svc, const char *request)
 static int
 get_HEADERS(char *res, const SERVICE *svc, char **const headers)
 {
-    int         i, n;
+    int         i, n, s;
     regmatch_t  matches[4];
 
     /* this will match SESS_COOKIE, SESS_HEADER and SESS_BASIC */
@@ -393,11 +506,14 @@ get_HEADERS(char *res, const SERVICE *svc, char **const headers)
     for(i = 0; i < (MAXHEADERS - 1); i++) {
         if(headers[i] == NULL)
             continue;
-        if(regexec(&svc->sess_pat, headers[i], 4, matches, 0))
+        if(regexec(&svc->sess_start, headers[i], 4, matches, 0))
+            continue;
+        s = matches[0].rm_eo;
+        if(regexec(&svc->sess_pat, headers[i] + s, 4, matches, 0))
             continue;
         if((n = matches[1].rm_eo - matches[1].rm_so) > KEY_SIZE)
             n = KEY_SIZE;
-        strncpy(res, headers[i] + matches[1].rm_so, n);
+        strncpy(res, headers[i] + s + matches[1].rm_so, n);
         res[n] = '\0';
     }
     return res[0] != '\0';
@@ -437,7 +553,7 @@ hash_backend(BACKEND *be, int abs_pri, char *key)
 
     hv = 2166136261;
     while(*key)
-        hv = (hv ^ *key++) * 16777619;
+        hv = ((hv ^ *key++) * 16777619) & 0xFFFFFFFF;
     pri = hv % abs_pri;
     for(tb = be; tb; tb = tb->next)
         if((pri -= tb->priority) < 0)
@@ -464,28 +580,31 @@ get_backend(SERVICE *const svc, const struct addrinfo *from_host, const char *re
 {
     BACKEND     *res;
     char        key[KEY_SIZE + 1];
-    int         ret_val;
+    int         ret_val, no_be;
     void        *vp;
-
-    if(svc->tot_pri <= 0)
-        /* it might be NULL, but that is OK */
-        return svc->emergency;
 
     if(ret_val = pthread_mutex_lock(&svc->mut))
         logmsg(LOG_WARNING, "get_backend() lock: %s", strerror(ret_val));
+
+    no_be = (svc->tot_pri <= 0);
+
     switch(svc->sess_type) {
     case SESS_NONE:
         /* choose one back-end randomly */
-        res = rand_backend(svc->backends, random() % svc->tot_pri);
+        res = no_be? svc->emergency: rand_backend(svc->backends, random() % svc->tot_pri);
         break;
     case SESS_IP:
         addr2str(key, KEY_SIZE, from_host, 1);
         if(svc->sess_ttl < 0)
-            res = hash_backend(svc->backends, svc->abs_pri, key);
+            res = no_be? svc->emergency: hash_backend(svc->backends, svc->abs_pri, key);
         else if((vp = t_find(svc->sessions, key)) == NULL) {
-            /* no session yet - create one */
-            res = rand_backend(svc->backends, random() % svc->tot_pri);
-            t_add(svc->sessions, key, &res, sizeof(res));
+            if(no_be)
+                res = svc->emergency;
+            else {
+                /* no session yet - create one */
+                res = rand_backend(svc->backends, random() % svc->tot_pri);
+                t_add(svc->sessions, key, &res, sizeof(res));
+            }
         } else
             memcpy(&res, vp, sizeof(res));
         break;
@@ -493,30 +612,38 @@ get_backend(SERVICE *const svc, const struct addrinfo *from_host, const char *re
     case SESS_PARM:
         if(get_REQUEST(key, svc, request)) {
             if(svc->sess_ttl < 0)
-                res = hash_backend(svc->backends, svc->abs_pri, key);
+                res = no_be? svc->emergency: hash_backend(svc->backends, svc->abs_pri, key);
             else if((vp = t_find(svc->sessions, key)) == NULL) {
-                /* no session yet - create one */
-                res = rand_backend(svc->backends, random() % svc->tot_pri);
-                t_add(svc->sessions, key, &res, sizeof(res));
+                if(no_be)
+                    res = svc->emergency;
+                else {
+                    /* no session yet - create one */
+                    res = rand_backend(svc->backends, random() % svc->tot_pri);
+                    t_add(svc->sessions, key, &res, sizeof(res));
+                }
             } else
                 memcpy(&res, vp, sizeof(res));
         } else {
-            res = rand_backend(svc->backends, random() % svc->tot_pri);
+            res = no_be? svc->emergency: rand_backend(svc->backends, random() % svc->tot_pri);
         }
         break;
     default:
         /* this works for SESS_BASIC, SESS_HEADER and SESS_COOKIE */
         if(get_HEADERS(key, svc, headers)) {
             if(svc->sess_ttl < 0)
-                res = hash_backend(svc->backends, svc->abs_pri, key);
+                res = no_be? svc->emergency: hash_backend(svc->backends, svc->abs_pri, key);
             else if((vp = t_find(svc->sessions, key)) == NULL) {
-                /* no session yet - create one */
-                res = rand_backend(svc->backends, random() % svc->tot_pri);
-                t_add(svc->sessions, key, &res, sizeof(res));
+                if(no_be)
+                    res = svc->emergency;
+                else {
+                    /* no session yet - create one */
+                    res = rand_backend(svc->backends, random() % svc->tot_pri);
+                    t_add(svc->sessions, key, &res, sizeof(res));
+                }
             } else
                 memcpy(&res, vp, sizeof(res));
         } else {
-            res = rand_backend(svc->backends, random() % svc->tot_pri);
+            res = no_be? svc->emergency: rand_backend(svc->backends, random() % svc->tot_pri);
         }
         break;
     }
@@ -549,7 +676,7 @@ upd_session(SERVICE *const svc, char **const headers, BACKEND *const be)
 
 /*
  * mark a backend host as dead/disabled; remove its sessions if necessary
- *  disable_only == 1:  mark as disabled, remove sessions
+ *  disable_only == 1:  mark as disabled
  *  disable_only == 0:  mark as dead, remove sessions
  *  disable_only == -1:  mark as enabled
  */
@@ -558,6 +685,7 @@ kill_be(SERVICE *const svc, const BACKEND *be, const int disable_mode)
 {
     BACKEND *b;
     int     ret_val;
+    char    buf[MAXBUF];
 
     if(ret_val = pthread_mutex_lock(&svc->mut))
         logmsg(LOG_WARNING, "kill_be() lock: %s", strerror(ret_val));
@@ -567,12 +695,18 @@ kill_be(SERVICE *const svc, const BACKEND *be, const int disable_mode)
             switch(disable_mode) {
             case BE_DISABLE:
                 b->disabled = 1;
+                str_be(buf, MAXBUF - 1, b);
+                logmsg(LOG_NOTICE, "(%lx) BackEnd %s disabled", pthread_self(), buf);
                 break;
             case BE_KILL:
                 b->alive = 0;
+                str_be(buf, MAXBUF - 1, b);
+                logmsg(LOG_NOTICE, "(%lx) BackEnd %s dead (killed)", pthread_self(), buf);
                 t_clean(svc->sessions, &be, sizeof(be));
                 break;
             case BE_ENABLE:
+                str_be(buf, MAXBUF - 1, b);
+                logmsg(LOG_NOTICE, "(%lx) BackEnd %s enabled", pthread_self(), buf);
                 b->disabled = 0;
                 break;
             default:
@@ -627,9 +761,13 @@ get_host(char *const name, struct addrinfo *res)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_CANONNAME;
     if((ret_val = getaddrinfo(name, NULL, &hints, &chain)) == 0) {
+#ifdef _AIX
+        ap = chain;
+#else
         for(ap = chain; ap != NULL; ap = ap->ai_next)
             if(ap->ai_socktype == SOCK_STREAM)
                 break;
+#endif
         if(ap == NULL) {
             freeaddrinfo(chain);
             return EAI_NONAME;
@@ -655,13 +793,13 @@ get_host(char *const name, struct addrinfo *res)
  * (2) if the redirect was done to the back-end rather than the listener
  */
 int
-need_rewrite(const int rewr_loc, char *const location, char *const path, const LISTENER *lstn, const BACKEND *be)
+need_rewrite(const int rewr_loc, char *const location, char *const path, const char *v_host, const LISTENER *lstn, const BACKEND *be)
 {
     struct addrinfo         addr;
     struct sockaddr_in      in_addr, be_addr;
     struct sockaddr_in6     in6_addr, be6_addr;
     regmatch_t              matches[4];
-    char                    *proto, *host, *port;
+    char                    *proto, *host, *port, *cp, buf[MAXBUF];
     int                     ret_val;
 
     /* check if rewriting is required at all */
@@ -699,37 +837,31 @@ need_rewrite(const int rewr_loc, char *const location, char *const path, const L
         free(addr.ai_addr);
         return 0;
     }
+    memset(buf, '\0', MAXBUF);
+    strncpy(buf, v_host, MAXBUF - 1);
+    if((cp = strchr(buf, ':')) != NULL)
+        *cp = '\0';
     if(addr.ai_family == AF_INET) {
-        memcpy(&in_addr, addr.ai_addr, sizeof(in_addr));
-        memcpy(&be_addr, be->addr.ai_addr, sizeof(be_addr));
-        if(port)
-            in_addr.sin_port = (in_port_t)htons(atoi(port));
-        else if(!strcasecmp(proto, "https"))
-            in_addr.sin_port = (in_port_t)htons(443);
-        else
-            in_addr.sin_port = (in_port_t)htons(80);
         /*
-         * check if the Location points to the back-end
+         * check if the Location points to the Listener but with the wrong port or protocol
          */
-        if(memcmp(&be_addr.sin_addr.s_addr, &in_addr.sin_addr.s_addr, sizeof(in_addr.sin_addr.s_addr)) == 0
-        && memcmp(&be_addr.sin_port, &in_addr.sin_port, sizeof(in_addr.sin_port)) == 0) {
+        memcpy(&be_addr, lstn->addr.ai_addr, sizeof(be_addr));
+        if((memcmp(&be_addr.sin_addr.s_addr, &in_addr.sin_addr.s_addr, sizeof(in_addr.sin_addr.s_addr)) == 0
+          || strcasecmp(host, buf) == 0)
+        && (memcmp(&be_addr.sin_port, &in_addr.sin_port, sizeof(in_addr.sin_port)) != 0
+          || strcasecmp(proto, (lstn->ctx == NULL)? "http": "https"))) {
             free(addr.ai_addr);
             return 1;
         }
-    } else {
-        memcpy(&in6_addr, addr.ai_addr, sizeof(in6_addr));
-        memcpy(&be6_addr, be->addr.ai_addr, sizeof(be6_addr));
-        if(port)
-            in6_addr.sin6_port = (in_port_t)htons(atoi(port));
-        else if(!strcasecmp(proto, "https"))
-            in6_addr.sin6_port = (in_port_t)htons(443);
-        else
-            in6_addr.sin6_port = (in_port_t)htons(80);
+    } else /* AF_INET6 */ {
         /*
-         * check if the Location points to the back-end
+         * check if the Location points to the Listener but with the wrong port or protocol
          */
-        if(memcmp(&be6_addr.sin6_addr.s6_addr, &in6_addr.sin6_addr.s6_addr, sizeof(in6_addr.sin6_addr.s6_addr)) == 0
-        && memcmp(&be6_addr.sin6_port, &in6_addr.sin6_port, sizeof(in6_addr.sin6_port)) == 0) {
+        memcpy(&be6_addr, lstn->addr.ai_addr, sizeof(be6_addr));
+        if((memcmp(&be6_addr.sin6_addr.s6_addr, &in6_addr.sin6_addr.s6_addr, sizeof(in6_addr.sin6_addr.s6_addr)) == 0
+          || strcasecmp(host, buf) == 0)
+        && (memcmp(&be6_addr.sin6_port, &in6_addr.sin6_port, sizeof(in6_addr.sin6_port)) != 0
+          || strcasecmp(proto, (lstn->ctx == NULL)? "http": "https"))) {
             free(addr.ai_addr);
             return 1;
         }
@@ -749,8 +881,8 @@ need_rewrite(const int rewr_loc, char *const location, char *const path, const L
          * check if the Location points to the Listener but with the wrong port or protocol
          */
         if(memcmp(&be_addr.sin_addr.s_addr, &in_addr.sin_addr.s_addr, sizeof(in_addr.sin_addr.s_addr)) == 0
-        && (memcmp(&be_addr.sin_port, &in_addr.sin_port, sizeof(in_addr.sin_port) != 0
-            || strcasecmp(proto, (lstn->ctx == NULL)? "http": "https")))) {
+        && (memcmp(&be_addr.sin_port, &in_addr.sin_port, sizeof(in_addr.sin_port)) != 0
+            || strcasecmp(proto, lstn->ctx? "http": "https"))) {
             free(addr.ai_addr);
             return 1;
         }
@@ -761,8 +893,8 @@ need_rewrite(const int rewr_loc, char *const location, char *const path, const L
          * check if the Location points to the Listener but with the wrong port or protocol
          */
         if(memcmp(&be6_addr.sin6_addr.s6_addr, &in6_addr.sin6_addr.s6_addr, sizeof(in6_addr.sin6_addr.s6_addr)) == 0
-        && (memcmp(&be6_addr.sin6_port, &in6_addr.sin6_port, sizeof(in6_addr.sin6_port) != 0
-            || strcasecmp(proto, (lstn->ctx == NULL)? "http": "https")))) {
+        && (memcmp(&be6_addr.sin6_port, &in6_addr.sin6_port, sizeof(in6_addr.sin6_port)) != 0
+            || strcasecmp(proto, lstn->ctx? "http": "https"))) {
             free(addr.ai_addr);
             return 1;
         }
@@ -890,7 +1022,7 @@ do_resurect(void)
         default:
             continue;
         }
-        if(connect_nb(sock, &be->ha_addr, be->to) != 0) {
+        if(connect_nb(sock, &be->ha_addr, be->conn_to) != 0) {
             kill_be(svc, be, BE_KILL);
             str_be(buf, MAXBUF - 1, be);
             logmsg(LOG_NOTICE, "BackEnd %s is dead (HA)", buf);
@@ -926,7 +1058,7 @@ do_resurect(void)
         default:
             continue;
         }
-        if(connect_nb(sock, &be->ha_addr, be->to) != 0) {
+        if(connect_nb(sock, &be->ha_addr, be->conn_to) != 0) {
             kill_be(svc, be, BE_KILL);
             str_be(buf, MAXBUF - 1, be);
             logmsg(LOG_NOTICE, "BackEnd %s is dead (HA)", buf);
@@ -981,7 +1113,7 @@ do_resurect(void)
                 }
                 addr = &be->ha_addr;
             }
-            if(connect_nb(sock, addr, be->to) == 0) {
+            if(connect_nb(sock, addr, be->conn_to) == 0) {
                 be->resurrect = 1;
                 modified = 1;
             }
@@ -1050,7 +1182,7 @@ do_resurect(void)
                 }
                 addr = &be->ha_addr;
             }
-            if(connect_nb(sock, addr, be->to) == 0) {
+            if(connect_nb(sock, addr, be->conn_to) == 0) {
                 be->resurrect = 1;
                 modified = 1;
             }
@@ -1282,18 +1414,35 @@ static void
 do_RSAgen(void)
 {
     int n, ret_val;
+    RSA *t_RSA512_keys[N_RSA_KEYS];
+    RSA *t_RSA1024_keys[N_RSA_KEYS];
 
+    for(n = 0; n < N_RSA_KEYS; n++) {
+        t_RSA512_keys[n] = RSA_generate_key(512, RSA_F4, NULL, NULL);
+        t_RSA1024_keys[n] = RSA_generate_key(1024, RSA_F4, NULL, NULL);
+    }
     if(ret_val = pthread_mutex_lock(&RSA_mut))
         logmsg(LOG_WARNING, "thr_RSAgen() lock: %s", strerror(ret_val));
     for(n = 0; n < N_RSA_KEYS; n++) {
         RSA_free(RSA512_keys[n]);
-        RSA512_keys[n] = RSA_generate_key(512, RSA_F4, NULL, NULL);
+        RSA512_keys[n] = t_RSA512_keys[n];
         RSA_free(RSA1024_keys[n]);
-        RSA1024_keys[n] = RSA_generate_key(1024, RSA_F4, NULL, NULL);
+        RSA1024_keys[n] = t_RSA1024_keys[n];
     }
     if(ret_val = pthread_mutex_unlock(&RSA_mut))
         logmsg(LOG_WARNING, "thr_RSAgen() unlock: %s", strerror(ret_val));
     return;
+}
+
+#include    "dh512.h"
+#include    "dh1024.h"
+
+static DH   *DH512_params, *DH1024_params;
+
+DH *
+DH_tmp_callback(/* not used */SSL *s, /* not used */int is_export, int keylength)
+{
+    return keylength == 512? DH512_params: DH1024_params;
 }
 
 static time_t   last_RSA, last_rescale, last_alive, last_expire;
@@ -1325,6 +1474,9 @@ init_timer(void)
     /* pthread_mutex_init() always returns 0 */
     pthread_mutex_init(&RSA_mut, NULL);
 
+    DH512_params = get_dh512();
+    DH1024_params = get_dh1024();
+
     return;
 }
 
@@ -1353,19 +1505,19 @@ thr_timer(void *arg)
         if((n_remain = n_wait - (cur_time - last_time)) > 0)
             sleep(n_remain);
         last_time = time(NULL);
-        if((last_time - last_RSA) > T_RSA_KEYS) {
+        if((last_time - last_RSA) >= T_RSA_KEYS) {
             last_RSA = time(NULL);
             do_RSAgen();
         }
-        if((last_time - last_rescale) > RESCALE_TO) {
+        if((last_time - last_rescale) >= RESCALE_TO) {
             last_rescale = time(NULL);
             do_rescale();
         }
-        if((last_time - last_alive) > alive_to) {
+        if((last_time - last_alive) >= alive_to) {
             last_alive = time(NULL);
             do_resurect();
         }
-        if((last_time - last_expire) > EXPIRE_TO) {
+        if((last_time - last_expire) >= EXPIRE_TO) {
             last_expire = time(NULL);
             do_expire();
         }
@@ -1378,40 +1530,47 @@ typedef struct  {
 }   DUMP_ARG;
 
 static void
-t_dump(TABNODE *t, void *arg)
+t_dump_doall_arg(TABNODE *t, DUMP_ARG *arg)
 {
-    DUMP_ARG    *a;
     BACKEND     *be, *bep;
     int         n_be, sz;
 
-    a = (DUMP_ARG *)arg;
     memcpy(&bep, t->content, sizeof(bep));
-    for(n_be = 0, be = a->backends; be; be = be->next, n_be++)
+    for(n_be = 0, be = arg->backends; be; be = be->next, n_be++)
         if(be == bep)
             break;
     if(!be)
         /* should NEVER happen */
         n_be = 0;
-    write(a->control_sock, t, sizeof(TABNODE));
-    write(a->control_sock, &n_be, sizeof(n_be));
+    (void)write(arg->control_sock, t, sizeof(TABNODE));
+    (void)write(arg->control_sock, &n_be, sizeof(n_be));
     sz = strlen(t->key);
-    write(a->control_sock, &sz, sizeof(sz));
-    write(a->control_sock, t->key, sz);
+    (void)write(arg->control_sock, &sz, sizeof(sz));
+    (void)write(arg->control_sock, t->key, sz);
     return;
 }
-IMPLEMENT_LHASH_DOALL_ARG_FN(t_dump, TABNODE *, void *)
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+IMPLEMENT_LHASH_DOALL_ARG_FN(t_dump, TABNODE, DUMP_ARG)
+#else
+#define t_dump t_dump_doall_arg
+IMPLEMENT_LHASH_DOALL_ARG_FN(t_dump, TABNODE *, DUMP_ARG *)
+#endif
 
 /*
  * write sessions to the control socket
  */
 static void
-dump_sess(const int control_sock, LHASH *const sess, BACKEND *const backends)
+dump_sess(const int control_sock, LHASH_OF(TABNODE) *const sess, BACKEND *const backends)
 {
     DUMP_ARG a;
 
     a.control_sock = control_sock;
     a.backends = backends;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    LHM_lh_doall_arg(TABNODE, sess, LHASH_DOALL_ARG_FN(t_dump), DUMP_ARG, &a);
+#else
     lh_doall_arg(sess, LHASH_DOALL_ARG_FN(t_dump), &a);
+#endif
     return;
 }
 
@@ -1518,17 +1677,17 @@ thr_control(void *arg)
         case CTRL_LST:
             /* logmsg(LOG_INFO, "thr_control() list"); */
             for(lstn = listeners; lstn; lstn = lstn->next) {
-                write(ctl, (void *)lstn, sizeof(LISTENER));
-                write(ctl, lstn->addr.ai_addr, lstn->addr.ai_addrlen);
+                (void)write(ctl, (void *)lstn, sizeof(LISTENER));
+                (void)write(ctl, lstn->addr.ai_addr, lstn->addr.ai_addrlen);
                 for(svc = lstn->services; svc; svc = svc->next) {
-                    write(ctl, (void *)svc, sizeof(SERVICE));
+                    (void)write(ctl, (void *)svc, sizeof(SERVICE));
                     for(be = svc->backends; be; be = be->next) {
-                        write(ctl, (void *)be, sizeof(BACKEND));
-                        write(ctl, be->addr.ai_addr, be->addr.ai_addrlen);
+                        (void)write(ctl, (void *)be, sizeof(BACKEND));
+                        (void)write(ctl, be->addr.ai_addr, be->addr.ai_addrlen);
                         if(be->ha_addr.ai_addrlen > 0)
-                            write(ctl, be->ha_addr.ai_addr, be->ha_addr.ai_addrlen);
+                            (void)write(ctl, be->ha_addr.ai_addr, be->ha_addr.ai_addrlen);
                     }
-                    write(ctl, (void *)&dummy_be, sizeof(BACKEND));
+                    (void)write(ctl, (void *)&dummy_be, sizeof(BACKEND));
                     if(dummy = pthread_mutex_lock(&svc->mut))
                         logmsg(LOG_WARNING, "thr_control() lock: %s", strerror(dummy));
                     else {
@@ -1536,20 +1695,20 @@ thr_control(void *arg)
                         if(dummy = pthread_mutex_unlock(&svc->mut))
                             logmsg(LOG_WARNING, "thr_control() unlock: %s", strerror(dummy));
                     }
-                    write(ctl, (void *)&dummy_sess, sizeof(TABNODE));
+                    (void)write(ctl, (void *)&dummy_sess, sizeof(TABNODE));
                 }
-                write(ctl, (void *)&dummy_svc, sizeof(SERVICE));
+                (void)write(ctl, (void *)&dummy_svc, sizeof(SERVICE));
             }
-            write(ctl, (void *)&dummy_lstn, sizeof(LISTENER));
+            (void)write(ctl, (void *)&dummy_lstn, sizeof(LISTENER));
             for(svc = services; svc; svc = svc->next) {
-                write(ctl, (void *)svc, sizeof(SERVICE));
+                (void)write(ctl, (void *)svc, sizeof(SERVICE));
                 for(be = svc->backends; be; be = be->next) {
-                    write(ctl, (void *)be, sizeof(BACKEND));
-                    write(ctl, be->addr.ai_addr, be->addr.ai_addrlen);
+                    (void)write(ctl, (void *)be, sizeof(BACKEND));
+                    (void)write(ctl, be->addr.ai_addr, be->addr.ai_addrlen);
                     if(be->ha_addr.ai_addrlen > 0)
-                        write(ctl, be->ha_addr.ai_addr, be->ha_addr.ai_addrlen);
+                        (void)write(ctl, be->ha_addr.ai_addr, be->ha_addr.ai_addrlen);
                 }
-                write(ctl, (void *)&dummy_be, sizeof(BACKEND));
+                (void)write(ctl, (void *)&dummy_be, sizeof(BACKEND));
                 if(dummy = pthread_mutex_lock(&svc->mut))
                     logmsg(LOG_WARNING, "thr_control() lock: %s", strerror(dummy));
                 else {
@@ -1557,9 +1716,9 @@ thr_control(void *arg)
                     if(dummy = pthread_mutex_unlock(&svc->mut))
                         logmsg(LOG_WARNING, "thr_control() unlock: %s", strerror(dummy));
                 }
-                write(ctl, (void *)&dummy_sess, sizeof(TABNODE));
+                (void)write(ctl, (void *)&dummy_sess, sizeof(TABNODE));
             }
-            write(ctl, (void *)&dummy_svc, sizeof(SERVICE));
+            (void)write(ctl, (void *)&dummy_svc, sizeof(SERVICE));
             break;
         case CTRL_EN_LSTN:
             if((lstn = sel_lstn(&cmd)) == NULL)
