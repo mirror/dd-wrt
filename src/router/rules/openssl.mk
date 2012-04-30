@@ -33,8 +33,8 @@ export OPENSSL_TARGET := linux-i386
 endif
 
 openssl:
-	$(MAKE) -j 4 -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	$(MAKE) -j 4 -C openssl CC="$(CC) -I$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	rm -f openssl/apps/openssl
 	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
