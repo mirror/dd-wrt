@@ -2825,55 +2825,6 @@ ok:
 	}
 #endif
 
-#ifdef __linux__
-
-#define START	0
-#define STOP	1
-
-/*
- * record CPU usage as well
- */
-
-int do_cpu = 0;
-
-struct cpu_stat {
-	unsigned int	user;
-	unsigned int	nice;
-	unsigned int	system;
-	unsigned int	idle;
-	unsigned int	total;
-};
-
-struct cpu_stat cpu_start, cpu_finish;
-
-static void
-get_cpu(int s)
-{
-	FILE *fp = NULL;
-	unsigned char	buf[80];
-	struct cpu_stat *st = s == START ? &cpu_start : &cpu_finish;
-
-	memset(st, 0, sizeof(*st));
-
-	if (fp == NULL)
-		fp = fopen("/proc/stat", "r");
-	if (!fp)
-		return;
-	if (fseek(fp, 0, SEEK_SET) == -1) {
-		fclose(fp);
-		return;
-	}
-	fscanf(fp, "%s %d %d %d %d", &buf[0], &st->user, &st->nice,
-		&st->system, &st->idle);
-	st->total = st->user + st->nice + st->system + st->idle;
-	fclose(fp);
-}
-
-
-#endif
-
-
-
 /* app_tminterval section */
 #if defined(_WIN32)
 double app_tminterval(int stop,int usertime)
@@ -2966,10 +2917,6 @@ double app_tminterval(int stop,int usertime)
 	unsigned long		now;
 #endif
 	static int warning=1;
-#ifdef __linux__
-	if (do_cpu)
-		get_cpu(s);
-#endif
 
 	if (usertime && warning)
 		{
