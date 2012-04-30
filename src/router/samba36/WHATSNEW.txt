@@ -1,4 +1,51 @@
                    =============================
+                   Release Notes for Samba 3.6.5
+                          April 30, 2012
+                   =============================
+
+
+This is a security release in order to address
+CVE-2012-2111 (Incorrect permission checks when granting/removing
+privileges can compromise file server security).
+
+o  CVE-2012-2111:
+   Samba 3.4.x to 3.6.4 are affected by a
+   vulnerability that allows arbitrary users
+   to modify privileges on a file server.
+
+
+Changes since 3.6.4:
+--------------------
+
+
+o   Jeremy Allison <jra@samba.org>
+    * Fix  incorrect permission checks when granting/removing
+      privileges (CVE-2012-2111).
+
+
+######################################################################
+Reporting bugs & Development Discussion
+#######################################
+
+Please discuss this release on the samba-technical mailing list or by
+joining the #samba-technical IRC channel on irc.freenode.net.
+
+If you do report problems then please try to send high quality
+feedback. If you don't provide vital information to help us track down
+the problem then you will probably be ignored.  All bug reports should
+be filed under the Samba 3.6 product in the project's Bugzilla
+database (https://bugzilla.samba.org/).
+
+
+======================================================================
+== Our Code, Our Bugs, Our Responsibility.
+== The Samba Team
+======================================================================
+
+Release notes for older releases follow:
+----------------------------------------
+
+                   =============================
                    Release Notes for Samba 3.6.4
                           April 10, 2012
                    =============================
@@ -41,8 +88,9 @@ database (https://bugzilla.samba.org/).
 == The Samba Team
 ======================================================================
 
-Release notes for older releases follow:
-----------------------------------------
+
+----------------------------------------------------------------------
+
 
                    =============================
                    Release Notes for Samba 3.6.3
