@@ -2221,6 +2221,18 @@ static void updtRolesDisabledTree(tree_t *tree)
         ptp->selectedRole = roleDisabled;
 }
 
+/* Aux function, not in standard.
+ * Sets reselect for all MSTIs in the case CIST state for the port changes
+ */
+static void reselectMSTIs(port_t *prt)
+{
+    per_tree_port_t *ptp = GET_CIST_PTP_FROM_PORT(prt);
+
+    /* For each non-CIST ptp */
+    list_for_each_entry_continue(ptp, &prt->trees, port_list)
+        ptp->reselect = true;
+}
+
 /* 13.26.23 updtRolesTree */
 static void updtRolesTree(tree_t *tree)
 {
@@ -2343,6 +2355,7 @@ static void updtRolesTree(tree_t *tree)
     FOREACH_PTP_IN_TREE(ptp, tree)
     {
         port_t *prt = ptp->port;
+        per_tree_port_t *cist_tree = GET_CIST_PTP_FROM_PORT(prt);
 
         /* f) Set Disabled role */
         if(ioDisabled == ptp->infoIs)
@@ -2351,11 +2364,9 @@ static void updtRolesTree(tree_t *tree)
             continue;
         }
 
-        if(!cist && (ioReceived == ptp->infoIs)
-           && !prt->infoInternal)
+        if(!cist && (ioReceived == cist_tree->infoIs) && !prt->infoInternal)
         {
             /* g) Set role for the boundary port in MSTI */
-            per_tree_port_t *cist_tree = GET_CIST_PTP_FROM_PORT(prt);
             if(roleRoot == cist_tree->selectedRole)
             {
                 ptp->selectedRole = roleMaster;
@@ -2367,9 +2378,22 @@ static void updtRolesTree(tree_t *tree)
                     ptp->updtInfo = true;
                 continue;
             }
-            if(roleAlternate == cist_tree->selectedRole)
+            /* Bad IEEE again! It says in 13.26.23 g) 2) that
+             * MSTI state should follow CIST state only for the case of
+             * Alternate port. This is obviously wrong!
+             * In the descriptive clause 13.13 f) it says:
+             *  "At a Boundary Port frames allocated to the CIST and
+             *   all MSTIs are forwarded or not forwarded alike.
+             *   This is because Port Role assignments are such that
+             *   if the CIST Port Role is Root Port, the MSTI Port Role
+             *   will be Master Port, and if the CIST Port Role is
+             *   Designated Port, Alternate Port, Backup Port,
+             *   or Disabled Port, each MSTI’s Port Role will be the same."
+             * So, ignore wrong 13.26.23 g) 2) and do as stated in 13.13 f) !
+             */
+            /* if(roleAlternate == cist_tree->selectedRole) */
             {
-                ptp->selectedRole = roleAlternate;
+                ptp->selectedRole = cist_tree->selectedRole;
                 if(!samePriorityAndTimers(&ptp->portPriority,
                                           &ptp->designatedPriority,
                                           &ptp->portTimes,
@@ -2379,7 +2403,8 @@ static void updtRolesTree(tree_t *tree)
                 continue;
             }
         }
-        else /* if(cist || (ioReceived != ptp->infoIs) || prt->infoInternal) */
+        else
+     /* if(cist || (ioReceived != cist_tree->infoIs) || prt->infoInternal) */
         {
             /* h) Set role for the aged info */
             if(ioAged == ptp->infoIs)
@@ -2407,34 +2432,46 @@ static void updtRolesTree(tree_t *tree)
                 {
                     ptp->selectedRole = roleRoot;
                     ptp->updtInfo = false;
-                    continue;
                 }
-                if(betterorsamePriority(&ptp->portPriority,
-                                        &ptp->designatedPriority,
-                                        0, 0, cist))
+                else
                 {
-                    if(cmp(ptp->portPriority.DesignatedBridgeID, !=,
-                           tree->BridgeIdentifier))
+                    if(betterorsamePriority(&ptp->portPriority,
+                                             &ptp->designatedPriority,
+                                             0, 0, cist))
                     {
-                        /* k) Set Alternate role */
-                        ptp->selectedRole = roleAlternate;
+                        if(cmp(ptp->portPriority.DesignatedBridgeID, !=,
+                               tree->BridgeIdentifier))
+                        {
+                            /* k) Set Alternate role */
+                            ptp->selectedRole = roleAlternate;
+                        }
+                        else
+                        {
+                            /* l) Set Backup role */
+                            ptp->selectedRole = roleBackup;
+                        }
+                        /* reset updtInfo for both k) and l) */
+                        ptp->updtInfo = false;
                     }
-                    else
+                    else /* designatedPriority is better than portPriority */
                     {
-                        /* l) Set Backup role */
-                        ptp->selectedRole = roleBackup;
+                        /* m) Set Designated role */
+                        ptp->selectedRole = roleDesignated;
+                        ptp->updtInfo = true;
                     }
-                    /* reset updtInfo for both k) and l) */
-                    ptp->updtInfo = false;
-                    continue;
                 }
-                else /* designatedPriority is better than portPriority */
-                {
-                    /* m) Set Designated role */
-                    ptp->selectedRole = roleDesignated;
-                    ptp->updtInfo = true;
-                    continue;
-                }
+                /* This is not in standard. But we really should set here
+                 * reselect for all MSTIs so that updtRolesTree is called
+                 * for each MSTI and due to above clause g) MSTI role is
+                 * changed to Master or reflects CIST port role.
+                 * Because in 802.1Q-2005 this will not happen when BPDU arrives
+                 * at boundary port - the rcvdMsg is not set for the MSTIs and
+                 * updtRolesTree is not called.
+                 * Bad IEEE !!!
+                 */
+                if(cist && (ptp->selectedRole != ptp->role))
+                    reselectMSTIs(prt);
+                continue;
             }
         }
     }
