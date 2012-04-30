@@ -73,7 +73,7 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS:= no-ec no-err no-hw threads zlib-dynamic \
-					no-sse2 no-perlasm --with-cryptodev
+					no-sse2 no-perlasm -DHAVE_CRYPTODEV
 else
 OPENSSL_OPTIONS:= no-ec no-err no-hw threads zlib-dynamic \
 					no-engines no-perlasm
