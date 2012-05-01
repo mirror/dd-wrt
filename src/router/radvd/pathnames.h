@@ -1,5 +1,4 @@
 /*
- *   $Id: pathnames.h,v 1.9 2010/12/14 11:58:21 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>

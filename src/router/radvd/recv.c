@@ -1,5 +1,4 @@
 /*
- *   $Id: recv.c,v 1.14 2011/02/06 03:41:38 reubenhwk Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>

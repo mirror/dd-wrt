@@ -1,5 +1,4 @@
 /*
- *   $Id: send.c,v 1.48 2011/05/06 07:51:54 reubenhwk Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -72,7 +71,7 @@ send_ra_inc_len(size_t *len, int add)
 	*len += add;
 	if(*len >= MSG_SIZE_SEND)
 	{
-		flog(LOG_ERR, "Too many prefixes or routes. Exiting.");
+		flog(LOG_ERR, "Too many prefixes, routes, rdnss or dnssl to fit in buffer.  Exiting.");
 		exit(1);
 	}
 }
@@ -130,6 +129,7 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 	time_t secs_since_last_ra;
 
 	unsigned char buff[MSG_SIZE_SEND];
+	size_t buff_dest = 0;
 	size_t len = 0;
 	ssize_t err;
 
@@ -186,6 +186,8 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 	memset(buff, 0, sizeof(buff));
 	radvert = (struct nd_router_advert *) buff;
 
+	send_ra_inc_len(&len, sizeof(struct nd_router_advert));
+
 	radvert->nd_ra_type  = ND_ROUTER_ADVERT;
 	radvert->nd_ra_code  = 0;
 	radvert->nd_ra_cksum = 0;
@@ -211,8 +213,6 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 	radvert->nd_ra_reachable  = htonl(iface->AdvReachableTime);
 	radvert->nd_ra_retransmit = htonl(iface->AdvRetransTimer);
 
-	len = sizeof(struct nd_router_advert);
-
 	prefix = iface->AdvPrefixList;
 
 	/*
@@ -226,6 +226,8 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 			struct nd_opt_prefix_info *pinfo;
 
 			pinfo = (struct nd_opt_prefix_info *) (buff + len);
+
+			send_ra_inc_len(&len, sizeof(*pinfo));
 
 			pinfo->nd_opt_pi_type	     = ND_OPT_PREFIX_INFORMATION;
 			pinfo->nd_opt_pi_len	     = 4;
@@ -261,8 +263,6 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 
 			memcpy(&pinfo->nd_opt_pi_prefix, &prefix->Prefix,
 			       sizeof(struct in6_addr));
-
-			send_ra_inc_len(&len, sizeof(*pinfo));
 		}
 
 		prefix = prefix->next;
@@ -280,6 +280,8 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 
 		rinfo = (struct nd_opt_route_info_local *) (buff + len);
 
+		send_ra_inc_len(&len, sizeof(*rinfo));
+
 		rinfo->nd_opt_ri_type	     = ND_OPT_ROUTE_INFORMATION;
 		/* XXX: the prefixes are allowed to be sent in smaller chunks as well */
 		rinfo->nd_opt_ri_len	     = 3;
@@ -295,7 +297,6 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 
 		memcpy(&rinfo->nd_opt_ri_prefix, &route->Prefix,
 		       sizeof(struct in6_addr));
-		send_ra_inc_len(&len, sizeof(*rinfo));
 
 		route = route->next;
 	}
@@ -311,6 +312,8 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 		struct nd_opt_rdnss_info_local *rdnssinfo;
 
 		rdnssinfo = (struct nd_opt_rdnss_info_local *) (buff + len);
+
+		send_ra_inc_len(&len, sizeof(*rdnssinfo) - (3-rdnss->AdvRDNSSNumber)*sizeof(struct in6_addr));
 
 		rdnssinfo->nd_opt_rdnssi_type	     = ND_OPT_RDNSS_INFORMATION;
 		rdnssinfo->nd_opt_rdnssi_len	     = 1 + 2*rdnss->AdvRDNSSNumber;
@@ -328,7 +331,6 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 		       sizeof(struct in6_addr));
 		memcpy(&rdnssinfo->nd_opt_rdnssi_addr3, &rdnss->AdvRDNSSAddr3,
 		       sizeof(struct in6_addr));
-		send_ra_inc_len(&len, sizeof(*rdnssinfo) - (3-rdnss->AdvRDNSSNumber)*sizeof(struct in6_addr));
 
 		rdnss = rdnss->next;
 	}
@@ -342,13 +344,18 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 	while(dnssl)
 	{
 		struct nd_opt_dnssl_info_local *dnsslinfo;
+		int const start_len = len;
 		int i;
-		char *buff_ptr;
 
 		dnsslinfo = (struct nd_opt_dnssl_info_local *) (buff + len);
 
+		send_ra_inc_len(&len, sizeof(dnsslinfo->nd_opt_dnssli_type) + 
+			sizeof(dnsslinfo->nd_opt_dnssli_len) +
+			sizeof(dnsslinfo->nd_opt_dnssli_reserved) +
+			sizeof(dnsslinfo->nd_opt_dnssli_lifetime)
+		);
+
 		dnsslinfo->nd_opt_dnssli_type		= ND_OPT_DNSSL_INFORMATION;
-		dnsslinfo->nd_opt_dnssli_len 		= 1; /* more further down */
 		dnsslinfo->nd_opt_dnssli_reserved	= 0;
 
 		if (iface->cease_adv && dnssl->FlushDNSSLFlag) {
@@ -357,7 +364,6 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 			dnsslinfo->nd_opt_dnssli_lifetime	= htonl(dnssl->AdvDNSSLLifetime);
 		}
 
-		buff_ptr = dnsslinfo->nd_opt_dnssli_suffixes;
 		for (i = 0; i < dnssl->AdvDNSSLNumber; i++) {
 			char *label;
 			int label_len;
@@ -370,23 +376,32 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 				else
 					label_len = strchr(label, '.') - label;
 
-				*buff_ptr++ = label_len;
+				buff_dest = len;
+				send_ra_inc_len(&len, 1);
+				buff[buff_dest] = label_len;
 
-				memcpy(buff_ptr, label, label_len);
-				buff_ptr += label_len;
+				buff_dest = len;
+				send_ra_inc_len(&len, label_len);
+				memcpy(buff + buff_dest, label, label_len);
 
 				label += label_len;
 
 				if (label[0] == '.')
 					label++;
-				else
-					*buff_ptr++ = 0;
+				else {
+					buff_dest = len;
+					send_ra_inc_len(&len, 1);
+					buff[buff_dest] = 0;
+				}
 			}
 		}
 
-		dnsslinfo->nd_opt_dnssli_len		+= ((buff_ptr-dnsslinfo->nd_opt_dnssli_suffixes)+7)/8;
+		dnsslinfo->nd_opt_dnssli_len = (len - start_len) / 8;
 
-		send_ra_inc_len(&len, dnsslinfo->nd_opt_dnssli_len * 8);
+		if ( (len - start_len) % 8 != 0 ) {
+			send_ra_inc_len(&len, 8 - (len - start_len) % 8);
+			++dnsslinfo->nd_opt_dnssli_len;
+		}
 
 		dnssl = dnssl->next;
 	}
@@ -400,12 +415,12 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 
 		mtu = (struct nd_opt_mtu *) (buff + len);
 
+		send_ra_inc_len(&len, sizeof(*mtu));
+
 		mtu->nd_opt_mtu_type     = ND_OPT_MTU;
 		mtu->nd_opt_mtu_len      = 1;
 		mtu->nd_opt_mtu_reserved = 0;
 		mtu->nd_opt_mtu_mtu      = htonl(iface->AdvLinkMTU);
-
-		send_ra_inc_len(&len, sizeof(*mtu));
 	}
 
 	/*
@@ -419,14 +434,18 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 
 		ucp = (uint8_t *) (buff + len);
 
+		send_ra_inc_len(&len, 2 * sizeof(uint8_t));
+
 		*ucp++  = ND_OPT_SOURCE_LINKADDR;
 		*ucp++  = (uint8_t) ((iface->if_hwaddr_len + 16 + 63) >> 6);
 
-		send_ra_inc_len(&len, 2 * sizeof(uint8_t));
-
 		i = (iface->if_hwaddr_len + 7) >> 3;
-		memcpy(buff + len, iface->if_hwaddr, i);
+
+		buff_dest = len;
+
 		send_ra_inc_len(&len, i);
+
+		memcpy(buff + buff_dest, iface->if_hwaddr, i);
 	}
 
 	/*
@@ -451,8 +470,9 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 		a_ival.reserved	= 0;
 		a_ival.adv_ival	= htonl(ival);
 
-		memcpy(buff + len, &a_ival, sizeof(a_ival));
+		buff_dest = len;
 		send_ra_inc_len(&len, sizeof(a_ival));
+		memcpy(buff + buff_dest, &a_ival, sizeof(a_ival));
 	}
 
 	/*
@@ -473,8 +493,9 @@ send_ra(struct Interface *iface, struct in6_addr *dest)
 		ha_info.preference	= htons(iface->HomeAgentPreference);
 		ha_info.lifetime	= htons(iface->HomeAgentLifetime);
 
-		memcpy(buff + len, &ha_info, sizeof(ha_info));
+		buff_dest = len;
 		send_ra_inc_len(&len, sizeof(ha_info));
+		memcpy(buff + buff_dest, &ha_info, sizeof(ha_info));
 	}
 
 	iov.iov_len  = len;

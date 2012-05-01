@@ -1,5 +1,4 @@
 /*
- *   $Id: interface.c,v 1.27 2011/04/28 15:08:40 reubenhwk Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>

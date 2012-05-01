@@ -1,5 +1,4 @@
 .\"
-.\"   $Id: radvd.conf.5.man,v 1.41 2011/05/10 21:55:10 reubenhwk Exp $
 .\"
 .\"   Authors:
 .\"    Lars Fenneberg		<lf@elemental.net>

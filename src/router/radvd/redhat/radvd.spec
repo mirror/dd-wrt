@@ -1,4 +1,3 @@
-# $Id: radvd.spec,v 1.31 2011/05/06 14:32:12 reubenhwk Exp $
 
 %define initdir %{_sysconfdir}/rc.d/init.d
 
@@ -6,7 +5,7 @@
 
 Summary: A Router Advertisement daemon
 Name: radvd
-Version: 1.8
+Version: 1.8.5
 Release: 1
 # The code includes the advertising clause, so it's GPL-incompatible
 License: BSD with advertising
@@ -97,6 +96,23 @@ exit 0
 %{_sbindir}/radvdump
 
 %changelog
+* Wed Jan 25 2012 Reuben Hawkins <reubenhwk@gmail.com> 1.8.5-1
+- 1.8.5
+- PID file had wrong PID.  This release fixes the PID.
+
+* Thu Jan 21 2012 Reuben Hawkins <reubenhwk@gmail.com> 1.8.4-1
+- 1.8.4
+- privsep always on
+- minor logging changes
+
+* Fri Oct 14 2011 Reuben Hawkins <reubenhwk@gmail.com> 1.8.3-1
+- 1.8.3
+- minor fixes
+
+* Wed Oct  4 2011 Reuben Hawkins <reubenhwk@gmail.com> 1.8.2-1
+- 1.8.2
+- Security patches
+
 * Fri May  6 2011 Reuben Hawkins <reubenhwk@gmail.com> 1.8-1
 - 1.8
 - IgnoreIfMissing now defaults to on

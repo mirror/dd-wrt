@@ -1,5 +1,4 @@
 /*
- *   $Id: gram.y,v 1.39 2011/05/06 13:58:57 reubenhwk Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -398,12 +397,12 @@ prefixdef	: prefixhead optional_prefixplist ';'
 
 				if ( prefix->if6[0] )
 				{
+#ifndef HAVE_IFADDRS_H
+					flog(LOG_ERR, "Base6Interface not supported in %s, line %d", conf_file, num_lines);
+					ABORT;
+#else
 					struct ifaddrs *ifap = 0, *ifa = 0;
 					struct AdvPrefix *next = prefix->next;
-#ifndef HAVE_IFADDRS_H
-				flog(LOG_ERR, "invalid all-zeros prefix in %s, line %d", conf_file, num_lines);
-				ABORT;
-#else
 
 					if (prefix->PrefixLen != 64) {
 						flog(LOG_ERR, "Only /64 is allowed with Base6Interface.  %s:%d", conf_file, num_lines);
@@ -454,7 +453,7 @@ prefixdef	: prefixhead optional_prefixplist ';'
 
 					if (ifap)
 						freeifaddrs(ifap);
-#endif
+#endif /* ifndef HAVE_IFADDRS_H */
 				}
 			}
 			$$ = prefix;
@@ -468,12 +467,13 @@ prefixhead	: T_PREFIX IPV6ADDR '/' NUMBER
 			memset(&zeroaddr, 0, sizeof(zeroaddr));
 
 			if (!memcmp($2, &zeroaddr, sizeof(struct in6_addr))) {
-				struct ifaddrs *ifap = 0, *ifa = 0;
-				struct AdvPrefix *next = iface->AdvPrefixList;
 #ifndef HAVE_IFADDRS_H
 				flog(LOG_ERR, "invalid all-zeros prefix in %s, line %d", conf_file, num_lines);
 				ABORT;
 #else
+				struct ifaddrs *ifap = 0, *ifa = 0;
+				struct AdvPrefix *next = iface->AdvPrefixList;
+
 				while (next) {
 					if (next->AutoSelected) {
 						flog(LOG_ERR, "auto selecting prefixes works only once per interface.  See %s, line %d", conf_file, num_lines);

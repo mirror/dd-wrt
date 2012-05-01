@@ -1,6 +1,5 @@
 #! /bin/sh
 #
-# $Id: radvd.init,v 1.7 2010/03/05 12:14:47 psavola Exp $
 #
 # chkconfig: - 54 46
 # description:	radvd is the router advertisement daemon for IPv6.  It \

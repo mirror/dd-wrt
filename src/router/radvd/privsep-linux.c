@@ -1,5 +1,4 @@
 /*
- *   $Id: privsep-linux.c,v 1.6 2011/02/28 10:53:07 reubenhwk Exp $
  *
  *   Authors:
  *    Jim Paris			<jim@jtan.com>
@@ -63,7 +62,7 @@ privsep_read_loop(void)
 		}
 		if (ret != sizeof(cmd)) {
 			/* Short read, ignore */
-			continue;
+			return;
 		}
 
 		cmd.iface[IFNAMSIZ-1] = '\0';
@@ -115,24 +114,12 @@ privsep_read_loop(void)
 	}
 }
 
-/* Return 1 if privsep is currently enabled */
-int
-privsep_enabled(void)
-{
-	if (pfd < 0)
-		return 0;
-	return 1;
-}
-
 /* Fork to create privileged process connected by a pipe */
 int
 privsep_init(void)
 {
 	int pipefds[2];
 	pid_t pid;
-
-	if (privsep_enabled())
-		return 0;
 
 	if (pipe(pipefds) != 0) {
 		flog(LOG_ERR, "Couldn't create privsep pipe.");
