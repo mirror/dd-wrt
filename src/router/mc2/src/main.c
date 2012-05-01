@@ -59,7 +59,7 @@
 #include "filemanager/layout.h" /* command_prompt */
 #include "filemanager/ext.h"    /* flush_extension_file() */
 #include "filemanager/command.h"        /* cmdline */
-#include "filemanager/panel.h"          /* panalized_panel */
+#include "filemanager/panel.h"  /* panalized_panel */
 
 #include "vfs/plugins_init.h"
 
@@ -147,7 +147,8 @@ check_codeset (void)
             if (mc_global.display_codepage == -1)
                 mc_global.display_codepage = 0;
 
-            mc_config_set_string (mc_main_config, "Misc", "display_codepage", cp_display);
+            mc_config_set_string (mc_main_config, CONFIG_MISC_SECTION, "display_codepage",
+                                  cp_display);
         }
     }
 #endif
@@ -161,8 +162,10 @@ check_codeset (void)
 static void
 OS_Setup (void)
 {
-    const char *shell_env = getenv ("SHELL");
+    const char *shell_env;
+    const char *datadir_env;
 
+    shell_env = getenv ("SHELL");
     if ((shell_env == NULL) || (shell_env[0] == '\0'))
     {
         struct passwd *pwd;
@@ -178,6 +181,19 @@ OS_Setup (void)
         g_free (shell);
         shell = g_strdup ("/bin/sh");
     }
+
+    /* This is the directory, where MC was installed, on Unix this is DATADIR */
+    /* and can be overriden by the MC_DATADIR environment variable */
+    datadir_env = g_getenv ("MC_DATADIR");
+    if (datadir_env != NULL)
+        mc_global.sysconfig_dir = g_strdup (datadir_env);
+    else
+        mc_global.sysconfig_dir = g_strdup (SYSCONFDIR);
+
+    mc_global.share_data_dir = g_strdup (DATADIR);
+
+    /* Set up temporary directory */
+    mc_tmpdir ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -258,33 +274,37 @@ init_sigchld (void)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-int
-do_cd (const char *new_dir, enum cd_enum exact)
+gboolean
+do_cd (const vfs_path_t * new_dir_vpath, enum cd_enum exact)
 {
     gboolean res;
-    const char *_new_dir = new_dir;
+    const vfs_path_t *_new_dir_vpath = new_dir_vpath;
 
-    if (current_panel->is_panelized && _new_dir[0] == '.' && _new_dir[1] == '.' && _new_dir[2] == 0)
-        _new_dir = panelized_panel.root;
+    if (current_panel->is_panelized)
+    {
+        size_t new_vpath_len;
 
-    res = do_panel_cd (current_panel, _new_dir, exact);
+        new_vpath_len = vfs_path_len (new_dir_vpath);
+        if (vfs_path_ncmp (new_dir_vpath, panelized_panel.root_vpath, new_vpath_len) == 0)
+            _new_dir_vpath = panelized_panel.root_vpath;
+    }
 
-#if HAVE_CHARSET
+    res = do_panel_cd (current_panel, _new_dir_vpath, exact);
+
+#ifdef HAVE_CHARSET
     if (res)
     {
-        vfs_path_t *vpath = vfs_path_from_str (current_panel->cwd);
-        vfs_path_element_t *path_element = vfs_path_get_by_index (vpath, -1);
+        const vfs_path_element_t *path_element;
 
+        path_element = vfs_path_get_by_index (current_panel->cwd_vpath, -1);
         if (path_element->encoding != NULL)
             current_panel->codepage = get_codepage_index (path_element->encoding);
         else
             current_panel->codepage = SELECT_CHARSET_NO_TRANSLATE;
-
-        vfs_path_free (vpath);
     }
 #endif /* HAVE_CHARSET */
 
-    return res ? 1 : 0;
+    return res;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -299,7 +319,7 @@ do_load_prompt (void)
         return ret;
 
     /* Don't actually change the prompt if it's invisible */
-    if (((Dlg_head *) top_dlg->data == midnight_dlg) && command_prompt)
+    if (top_dlg != NULL && ((Dlg_head *) top_dlg->data == midnight_dlg) && command_prompt)
     {
         setup_cmdline ();
 
@@ -330,48 +350,62 @@ load_prompt (int fd, void *unused)
 
 /* --------------------------------------------------------------------------------------------- */
 
+void
+title_path_prepare (char **path, char **login)
+{
+
+    char host[BUF_TINY];
+    struct passwd *pw = NULL;
+    int res = 0;
+
+    *login = NULL;
+
+
+    *path =
+        vfs_path_to_str_flags (current_panel->cwd_vpath, 0, VPF_STRIP_HOME | VPF_STRIP_PASSWORD);
+    res = gethostname (host, sizeof (host));
+    if (res)
+    {                           /* On success, res = 0 */
+        host[0] = '\0';
+    }
+    else
+    {
+        host[sizeof (host) - 1] = '\0';
+    }
+    pw = getpwuid (getuid ());
+    if (pw)
+    {
+        *login = g_strdup_printf ("%s@%s", pw->pw_name, host);
+    }
+    else
+    {
+        *login = g_strdup (host);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /** Show current directory in the xterm title */
 void
 update_xterm_title_path (void)
 {
-    /* TODO: share code with midnight_get_title () */
-
-    const char *path;
-    char host[BUF_TINY];
     char *p;
-    struct passwd *pw = NULL;
-    char *login = NULL;
-    int res = 0;
+    char *path;
+    char *login;
 
-    if (mc_global.tty.xterm_flag && xterm_title)
-    {
-        path = strip_home_and_password (current_panel->cwd);
-        res = gethostname (host, sizeof (host));
-        if (res)
-        {                       /* On success, res = 0 */
-            host[0] = '\0';
-        }
-        else
-        {
-            host[sizeof (host) - 1] = '\0';
-        }
-        pw = getpwuid (getuid ());
-        if (pw)
-        {
-            login = g_strdup_printf ("%s@%s", pw->pw_name, host);
-        }
-        else
-        {
-            login = g_strdup (host);
-        }
-        p = g_strdup_printf ("mc [%s]:%s", login, path);
-        fprintf (stdout, "\33]0;%s\7", str_term_form (p));
-        g_free (login);
-        g_free (p);
-        if (!mc_global.tty.alternate_plus_minus)
-            numeric_keypad_mode ();
-        (void) fflush (stdout);
-    }
+    if (!(mc_global.tty.xterm_flag && xterm_title))
+        return;
+
+    title_path_prepare (&path, &login);
+
+    p = g_strdup_printf ("mc [%s]:%s", login, path);
+    fprintf (stdout, "\33]0;%s\7", str_term_form (p));
+    g_free (login);
+    g_free (p);
+    if (!mc_global.tty.alternate_plus_minus)
+        numeric_keypad_mode ();
+    (void) fflush (stdout);
+    g_free (path);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -380,41 +414,67 @@ int
 main (int argc, char *argv[])
 {
     GError *error = NULL;
-    gboolean isInitialized;
+    int exit_code = EXIT_FAILURE;
 
     /* We had LC_CTYPE before, LC_ALL includs LC_TYPE as well */
     (void) setlocale (LC_ALL, "");
     (void) bindtextdomain ("mc", LOCALEDIR);
     (void) textdomain ("mc");
 
-    if (!events_init (&error))
-    {
-        fprintf (stderr, _("Failed to run:\n%s\n"), error->message);
-        g_error_free (error);
-        (void) mc_event_deinit (NULL);
-        exit (EXIT_FAILURE);
-    }
-
-    /* Set up temporary directory */
-    (void) mc_tmpdir ();
-
-    OS_Setup ();
-
+    /* do this before args parsing */
     str_init_strings (NULL);
 
-    /* Initialize and create home directories */
-    /* do it after the screen library initialization to show the error message */
-    mc_config_init_config_paths (&error);
+    if (!mc_args_parse (&argc, &argv, "mc", &error))
+    {
+      startup_exit_falure:
+        fprintf (stderr, _("Failed to run:\n%s\n"), error->message);
+        g_error_free (error);
+        g_free (shell);
+      startup_exit_ok:
+        str_uninit_strings ();
+        return exit_code;
+    }
 
+    /* do this before mc_args_show_info () to view paths in the --datadir-info output */
+    OS_Setup ();
+
+    if (!g_path_is_absolute (mc_config_get_home_dir ()))
+    {
+        error = g_error_new (MC_ERROR, 0, "%s: %s", _("Home directory path is not absolute"),
+                             mc_config_get_home_dir ());
+        mc_event_deinit (NULL);
+        goto startup_exit_falure;
+    }
+
+    if (!mc_args_show_info ())
+    {
+        exit_code = EXIT_SUCCESS;
+        goto startup_exit_ok;
+    }
+
+    if (!events_init (&error))
+        goto startup_exit_falure;
+
+    mc_config_init_config_paths (&error);
     if (error == NULL && mc_config_deprecated_dir_present ())
         mc_config_migrate_from_old_place (&error);
+    if (error != NULL)
+    {
+        mc_event_deinit (NULL);
+        goto startup_exit_falure;
+    }
 
     vfs_init ();
     vfs_plugins_init ();
     vfs_setup_work_dir ();
 
-    if (!mc_args_handle (argc, argv, "mc"))
-        exit (EXIT_FAILURE);
+    /* do this after vfs initialization due to mc_setctl() call in mc_setup_by_args() */
+    if (!mc_setup_by_args (argc, argv, &error))
+    {
+        vfs_shut ();
+        mc_event_deinit (NULL);
+        goto startup_exit_falure;
+    }
 
     /* check terminal type
      * $TEMR must be set and not empty
@@ -463,20 +523,7 @@ main (int argc, char *argv[])
 
     tty_init_colors (mc_global.tty.disable_colors, mc_args__force_colors);
 
-    {
-        GError *error2 = NULL;
-        isInitialized = mc_skin_init (&error2);
-        mc_filehighlight = mc_fhl_new (TRUE);
-        dlg_set_default_colors ();
-
-        if (!isInitialized)
-        {
-            message (D_ERROR, _("Warning"), "%s", error2->message);
-            g_error_free (error2);
-            error2 = NULL;
-        }
-    }
-
+    mc_skin_init (&error);
     if (error != NULL)
     {
         message (D_ERROR, _("Warning"), "%s", error->message);
@@ -484,6 +531,8 @@ main (int argc, char *argv[])
         error = NULL;
     }
 
+    mc_filehighlight = mc_fhl_new (TRUE);
+    dlg_set_default_colors ();
 
 #ifdef HAVE_SUBSHELL_SUPPORT
     /* Done here to ensure that the subshell doesn't  */
@@ -512,8 +561,10 @@ main (int argc, char *argv[])
         mc_prompt = (geteuid () == 0) ? "# " : "$ ";
 
     /* Program main loop */
-    if (!mc_global.widget.midnight_shutdown)
-        do_nc ();
+    if (mc_global.midnight_shutdown)
+        exit_code = EXIT_SUCCESS;
+    else
+        exit_code = do_nc ()? EXIT_SUCCESS : EXIT_FAILURE;
 
     /* Save the tree store */
     (void) tree_store_save ();
@@ -582,20 +633,19 @@ main (int argc, char *argv[])
     g_free (mc_run_param0);
     g_free (mc_run_param1);
 
-    (void) mc_event_deinit (&error);
-
     mc_config_deinit_config_paths ();
 
+    (void) mc_event_deinit (&error);
     if (error != NULL)
     {
         fprintf (stderr, _("\nFailed while close:\n%s\n"), error->message);
         g_error_free (error);
-        exit (EXIT_FAILURE);
+        exit_code = EXIT_FAILURE;
     }
 
     (void) putchar ('\n');      /* Hack to make shell's prompt start at left of screen */
 
-    return 0;
+    return exit_code;
 }
 
 /* --------------------------------------------------------------------------------------------- */

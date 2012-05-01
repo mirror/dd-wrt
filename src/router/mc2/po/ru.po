@@ -1,27 +1,29 @@
-# translation of ru.po to Русский
-# Russian translation of Midnight Commander
-# Copyright (C) 1998-2003, 2005 Free Software Foundation, Inc.
-# Current translators: Anton S. Chumak <nightfast@yahoo.co.uk>
-# Based on work of
-# Andrew V. Samoilov <sav@bcs.zp.ua>, 2000-2003.
-# Pavel Roskin <proski@gnu.org>, 2001-2004.
-# Valek Filippov <frob@df.ru>, 2000.
-# Evgeny Bulgakov <bgav@netvision.net.il>, 1999.
-# Sergey Panov <sipan@mit.edu>, 1999.
-# Andrew V. Samoilov <sav@bcs.zp.ua>, 1999.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Translators:
+# Alex Tkachenko <alex@bcs.zp.ua>, 1998.
 # and Alex Tkachenko <alex@bcs.zp.ua>, 1998.
+# Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2011, 2012.
+# Andrew V. Samoilov <sav@bcs.zp.ua>, 1999.
 # Anton Sergeevich Chumak <nightfast@yahoo.co.uk>, 2005.
-# Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2011
+# Evgeny Bulgakov <bgav@netvision.net.il>, 1999.
 # Ilia Maslakov <il.smind@gmail.com>, 2009.
-# Slava Zanko <slavazanko@gmail.com>, 2009.
+#   <mifchip@gmail.com>, 2012.
+# NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012.
+# Sergey Panov <sipan@mit.edu>, 1999.
+# Slava Zanko <slavazanko@gmail.com>, 2009, 2011, 2012.
+# Valek Filippov <frob@df.ru>, 2000.
 msgid ""
 msgstr ""
-"Project-Id-Version: ru\n"
+"Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-12-13 13:35+0300\n"
-"PO-Revision-Date: 2011-12-13 14:05+0300\n"
-"Last-Translator: Andrew Borodin <aborodin@vmail.ru>\n"
-"Language-Team: Russian (http://www.transifex.net/projects/p/mc/team/ru/)\n"
+"POT-Creation-Date: 2012-04-25 19:29+0300\n"
+"PO-Revision-Date: 2012-04-22 06:02+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"Language-Team: Russian (http://www.transifex.net/projects/p/mc/language/"
+"ru/)\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -126,17 +128,17 @@ msgstr "Неправильный шаблон цели %d"
 msgid "Regular expression error"
 msgstr "Ошибка в регулярном выражении"
 
-msgid "Normal"
-msgstr "Обычный"
+msgid "&Normal"
+msgstr "О&бычный"
 
-msgid "&Regular expression"
+msgid "Re&gular expression"
 msgstr "&Регулярное выражение"
 
-msgid "Hexadecimal"
-msgstr "Шестнадцатеричный"
+msgid "He&xadecimal"
+msgstr "Шестнад&цатеричный"
 
-msgid "Wildcard search"
-msgstr "По шаблону"
+msgid "Wil&dcard search"
+msgstr "По &шаблону"
 
 #, c-format
 msgid ""
@@ -259,6 +261,9 @@ msgstr "Клавиша Delete   "
 
 msgid "Completion/M-tab"
 msgstr "Завершение/M-Tab "
+
+msgid "Back Tabulation S-tab"
+msgstr "Вернуть табуляцию S-tab"
 
 msgid "+ on keypad"
 msgstr "+ доп.клавиатуры "
@@ -452,34 +457,6 @@ msgstr ""
 "Размер экрана %dx%d не поддерживается.\n"
 "Проверьте переменную окружения TERM.\n"
 
-#, c-format
-msgid "%s is not a directory\n"
-msgstr "%s не является каталогом\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "Вы не владеете каталогом %s\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Невозможно установить правильные права доступа к каталогу %s\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "Невозможно создать временный каталог %s: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Временные файлы будут создаваться в каталоге %s\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "Временные файлы не будут создаваться\n"
-
-#, c-format
-msgid "Press any key to continue..."
-msgstr "Для продолжения нажмите любую клавишу..."
-
 msgid "Warning"
 msgstr "Предупреждение"
 
@@ -507,6 +484,34 @@ msgstr "Получение файла"
 
 msgid "Changes to file lost"
 msgstr "Изменения для файла потеряны"
+
+#, c-format
+msgid "%s is not a directory\n"
+msgstr "%s не является каталогом\n"
+
+#, c-format
+msgid "Directory %s is not owned by you\n"
+msgstr "Вы не владеете каталогом %s\n"
+
+#, c-format
+msgid "Cannot set correct permissions for directory %s\n"
+msgstr "Невозможно установить правильные права доступа к каталогу %s\n"
+
+#, c-format
+msgid "Cannot create temporary directory %s: %s\n"
+msgstr "Невозможно создать временный каталог %s: %s\n"
+
+#, c-format
+msgid "Temporary files will be created in %s\n"
+msgstr "Временные файлы будут создаваться в каталоге %s\n"
+
+#, c-format
+msgid "Temporary files will not be created\n"
+msgstr "Временные файлы не будут создаваться\n"
+
+#, c-format
+msgid "Press any key to continue..."
+msgstr "Для продолжения нажмите любую клавишу..."
 
 msgid "Cannot parse:"
 msgstr "Невозможно проанализировать:"
@@ -588,6 +593,9 @@ msgstr "Редактировать файл"
 
 msgid "Forces xterm features"
 msgstr "Подразумевать свойства xterm"
+
+msgid "Disable X11 support"
+msgstr "Отключить поддержку X11"
 
 msgid "Tries to use an old highlight mouse tracking"
 msgstr "Пытаться использовать старый способ трэкинга мыши"
@@ -719,17 +727,20 @@ msgstr ""
 msgid "GNU Midnight Commander %s\n"
 msgstr "GNU Midnight Commander, версия %s\n"
 
-msgid "No arguments given to the viewer."
-msgstr "Не заданы аргументы для программы просмотра."
-
-msgid "Two files are required to evoke the diffviewer."
-msgstr "Требуются два файла для программы сравнения."
-
 msgid "Main options"
 msgstr "Основные настройки"
 
 msgid "Terminal options"
 msgstr "Настройки терминала"
+
+msgid "Arguments parse error!"
+msgstr "Аргументы вызывают ошибку!"
+
+msgid "No arguments given to the viewer."
+msgstr "Не заданы аргументы для программы просмотра."
+
+msgid "Two files are required to evoke the diffviewer."
+msgstr "Требуются два файла для программы сравнения."
 
 msgid "Background process error"
 msgstr "Ошибка фонового процесса"
@@ -756,8 +767,8 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Закрыть"
 
-msgid "All charsets"
-msgstr "Все кодировки"
+msgid "&All charsets"
+msgstr "&Все кодировки"
 
 msgid "&Whole words"
 msgstr "&Слово целиком"
@@ -765,8 +776,8 @@ msgstr "&Слово целиком"
 msgid "&Backwards"
 msgstr "&Назад"
 
-msgid "Case &sensitive"
-msgstr "Учет ре&гистра"
+msgid "Cas&e sensitive"
+msgstr "У&чёт регистра"
 
 msgid "Enter search string:"
 msgstr "Введите строку для поиска:"
@@ -802,9 +813,6 @@ msgid ""
 msgstr ""
 "Невозможно создать временный файл слияния\n"
 "%s"
-
-msgid "&Normal"
-msgstr "О&бычный"
 
 msgid "&Fastest (Assume large files)"
 msgstr "Б&ыстрый (для больших файлов)"
@@ -887,6 +895,21 @@ msgstr ""
 
 msgid "Diff:"
 msgstr "Различия:"
+
+#, fuzzy, c-format
+msgid "\"%s\" is a directory"
+msgstr "%s не является каталогом\n"
+
+#, c-format
+msgid ""
+"Cannot stat \"%s\"\n"
+"%s"
+msgstr ""
+"Невозможно получить свойства \"%s\"\n"
+"%s"
+
+msgid "Diff viewer: invalid mode"
+msgstr ""
 
 msgid "Two files are needed to compare"
 msgstr "Для сравнения необходимы два файла"
@@ -1026,14 +1049,18 @@ msgstr "П&роверка перевода строки в конце файла
 msgid "Edit Save Mode"
 msgstr "Режим сохранения"
 
+msgid "Save as"
+msgstr "Сохранить как"
+
+#, fuzzy
+msgid "Cannot save: destination is not a regular file"
+msgstr "Просмотр невозможен: необычный файл"
+
 msgid "A file already exists with this name"
 msgstr "Файл с таким именем уже существует"
 
 msgid "&Overwrite"
 msgstr "Пе&реписать"
-
-msgid "Save as"
-msgstr "Сохранить как"
 
 msgid "Cannot save file"
 msgstr "Невозможно сохранить файл"
@@ -1176,7 +1203,7 @@ msgstr ""
 "Продолжение операции приведет к потере изменений"
 
 msgid "In se&lection"
-msgstr "В вы&деленном"
+msgstr "В в&ыделенном"
 
 msgid "Enter replacement string:"
 msgstr "Введите текст для замены:"
@@ -2454,16 +2481,36 @@ msgid "Background process: File exists"
 msgstr "Фоновый процесс: файл существует"
 
 #, c-format
-msgid "Files processed: %zu of %zu"
-msgstr "Обработано файлов: %zu из %zu"
+msgid "Files processed: %zu/%zu"
+msgstr "Файлы обработаны: %zu/%zu"
 
 #, c-format
-msgid "Time: %s  %s (%s)"
-msgstr "Время: %s  %s (%s)"
+msgid "Files processed: %zu"
+msgstr "Файлы обработаны: %zu"
 
 #, c-format
-msgid "Total: %s of %s"
-msgstr "Всего: %s из %s"
+msgid "Time: %s %s"
+msgstr "Время: %s %s"
+
+#, c-format
+msgid "Time: %s %s (%s)"
+msgstr "Время: %s %s (%s)"
+
+#, c-format
+msgid "Time: %s"
+msgstr "Время: %s"
+
+#, c-format
+msgid "Time: %s (%s)"
+msgstr "Время: %s (%s)"
+
+#, c-format
+msgid " Total: %s "
+msgstr " Всего: %s "
+
+#, c-format
+msgid " Total: %s/%s "
+msgstr " Всего: %s/%s "
 
 msgid "Source"
 msgstr "Источник"
@@ -2521,26 +2568,17 @@ msgstr "Найден: %ld"
 msgid "Malformed regular expression"
 msgstr "Регулярное выражение сформировано неверно"
 
-msgid "Cas&e sensitive"
-msgstr "У&чёт регистра"
-
 msgid "&Find recursively"
 msgstr "Найти ре&курсивно"
 
 msgid "S&kip hidden"
 msgstr "Пропускать скр&ытые"
 
-msgid "&All charsets"
-msgstr "&Все кодировки"
-
 msgid "Sea&rch for content"
 msgstr "Поиск по содер&жимому"
 
 msgid "Case sens&itive"
 msgstr "Учёт ре&гистра"
-
-msgid "Re&gular expression"
-msgstr "&Регулярное выражение"
 
 msgid "Fir&st hit"
 msgstr "До первого в&хождения"
@@ -2654,17 +2692,16 @@ msgstr "Новая группа быстрого доступа"
 msgid "Name of new group:"
 msgstr "Имя новой группы:"
 
-msgid "Remove:"
-msgstr "Удалить:"
+#, c-format
+msgid "Are you sure you want to remove entry \"%s\"?"
+msgstr "Вы действительно хотите удалить запись \"%s\"?"
 
-msgid "Are you sure you want to remove this entry?"
-msgstr "Хотите удалить?"
-
+#, c-format
 msgid ""
-"Group not empty.\n"
+"Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
-"Группа не пуста.\n"
+"Группа \"%s\" не пуста.\n"
 "Удалить её?"
 
 msgid "Top level group"
@@ -2678,7 +2715,7 @@ msgid ""
 "MC was unable to write %s file,\n"
 "your old hotlist entries were not deleted"
 msgstr ""
-"MC не смог удалить файл %s,\n"
+"MC не смог записать файл %s,\n"
 "ваши старые элементы быстрого доступа не были удалены"
 
 #, c-format
@@ -2995,13 +3032,13 @@ msgid "Do you really want to quit the Midnight Commander?"
 msgstr "Вы действительно хотите выйти из Midnight Commander?"
 
 msgid "&Above"
-msgstr "&Верхняя"
+msgstr "&Верхняя панель"
 
 msgid "&Left"
 msgstr "&Левая панель"
 
 msgid "&Below"
-msgstr "&Нижняя"
+msgstr "&Нижняя панель"
 
 msgid "&Right"
 msgstr "&Правая панель"
@@ -3534,6 +3571,9 @@ msgstr ""
 "Сбой запуска:\n"
 "%s\n"
 
+msgid "Home directory path is not absolute"
+msgstr "Путь домашнего каталога не является абсолютным"
+
 #, c-format
 msgid ""
 "\n"
@@ -3631,6 +3671,10 @@ msgstr "Виртуальная файловая система:"
 msgid "Data types:"
 msgstr "Тип данных:"
 
+#, fuzzy
+msgid "Root directory:"
+msgstr "Домашний каталог:"
+
 msgid "System data"
 msgstr "Системные данные"
 
@@ -3654,7 +3698,7 @@ msgid ""
 "Cannot open cpio archive\n"
 "%s"
 msgstr ""
-"Невозможно открыть cpio-архив\n"
+"Невозможно открыть архив cpio\n"
 "%s"
 
 #, c-format
@@ -3737,9 +3781,6 @@ msgstr "fish: версия подтверждения связи..."
 
 msgid "fish: Getting host info..."
 msgstr "fish: собирается информация об удалённой машине..."
-
-msgid "fish: Setting up current directory..."
-msgstr "fish: устанавливается текущий каталог..."
 
 #, c-format
 msgid "fish: Connected, home %s."
@@ -4110,14 +4151,6 @@ msgstr ""
 "Невозможно открыть \"%s\"\n"
 "%s"
 
-#, c-format
-msgid ""
-"Cannot stat \"%s\"\n"
-"%s"
-msgstr ""
-"Невозможно получить свойства \"%s\"\n"
-"%s"
-
 msgid "Cannot view: not a regular file"
 msgstr "Просмотр невозможен: необычный файл"
 
@@ -4129,3 +4162,6 @@ msgstr "Поиск закончен"
 
 msgid "Continue from beginning?"
 msgstr "Продолжить с начала?"
+
+#~ msgid "fish: Setting up current directory..."
+#~ msgstr "fish: устанавливается текущий каталог..."

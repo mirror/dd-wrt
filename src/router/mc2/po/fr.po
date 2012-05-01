@@ -8,10 +8,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-12-13 13:35+0300\n"
-"PO-Revision-Date: 2011-12-07 11:21+0000\n"
-"Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: French (http://www.transifex.net/projects/p/mc/team/fr/)\n"
+"POT-Creation-Date: 2012-04-25 19:29+0300\n"
+"PO-Revision-Date: 2012-03-19 17:28+0000\n"
+"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"Language-Team: French (http://www.transifex.net/projects/p/mc/language/fr/)\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -108,16 +108,16 @@ msgstr " Nombre de jetons invalide %d "
 msgid "Regular expression error"
 msgstr ""
 
-msgid "Normal"
-msgstr "Normal"
+msgid "&Normal"
+msgstr "&Normal"
 
-msgid "&Regular expression"
-msgstr "Expression &régulière"
+msgid "Re&gular expression"
+msgstr "Expression ré&gulière"
 
-msgid "Hexadecimal"
-msgstr "Hexadécimal"
+msgid "He&xadecimal"
+msgstr ""
 
-msgid "Wildcard search"
+msgid "Wil&dcard search"
 msgstr ""
 
 #, c-format
@@ -238,6 +238,9 @@ msgstr "Effacement"
 
 msgid "Completion/M-tab"
 msgstr "Complétion/M-tab"
+
+msgid "Back Tabulation S-tab"
+msgstr ""
 
 msgid "+ on keypad"
 msgstr "Pavé numérique +"
@@ -431,34 +434,6 @@ msgstr ""
 "La taille de l'écran %dx%d n'est pas supportée.\n"
 "Vérifiez la variable d'environnement TERM.\n"
 
-#, c-format
-msgid "%s is not a directory\n"
-msgstr "%s n'est pas un répertoire\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "Vous n'êtes pas le propriétaire du répertoire %s\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Impossible de régler des droits corrects sur le répertoire %s\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr " Ne peut créer le répertoire temporaire %s : %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Les fichiers temporaires seront crées dans %s\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "Les fichiers temporaires ne seront pas crées\n"
-
-#, c-format
-msgid "Press any key to continue..."
-msgstr "Appuyez sur une touche pour continuer..."
-
 msgid "Warning"
 msgstr "Attention"
 
@@ -486,6 +461,34 @@ msgstr "Obtention du fichier"
 
 msgid "Changes to file lost"
 msgstr "Les changements au fichier sont perdus"
+
+#, c-format
+msgid "%s is not a directory\n"
+msgstr "%s n'est pas un répertoire\n"
+
+#, c-format
+msgid "Directory %s is not owned by you\n"
+msgstr "Vous n'êtes pas le propriétaire du répertoire %s\n"
+
+#, c-format
+msgid "Cannot set correct permissions for directory %s\n"
+msgstr "Impossible de régler des droits corrects sur le répertoire %s\n"
+
+#, c-format
+msgid "Cannot create temporary directory %s: %s\n"
+msgstr " Ne peut créer le répertoire temporaire %s : %s\n"
+
+#, c-format
+msgid "Temporary files will be created in %s\n"
+msgstr "Les fichiers temporaires seront crées dans %s\n"
+
+#, c-format
+msgid "Temporary files will not be created\n"
+msgstr "Les fichiers temporaires ne seront pas crées\n"
+
+#, c-format
+msgid "Press any key to continue..."
+msgstr "Appuyez sur une touche pour continuer..."
 
 msgid "Cannot parse:"
 msgstr "Ne peut analyser :"
@@ -565,6 +568,9 @@ msgstr "Édite un fichier"
 
 msgid "Forces xterm features"
 msgstr "Force un attribut xterm"
+
+msgid "Disable X11 support"
+msgstr ""
 
 msgid "Tries to use an old highlight mouse tracking"
 msgstr ""
@@ -662,17 +668,20 @@ msgstr ""
 msgid "GNU Midnight Commander %s\n"
 msgstr "GNU Midnight Commander %s\n"
 
-msgid "No arguments given to the viewer."
-msgstr ""
-
-msgid "Two files are required to evoke the diffviewer."
-msgstr ""
-
 msgid "Main options"
 msgstr "Options principales"
 
 msgid "Terminal options"
 msgstr "Options du terminal"
+
+msgid "Arguments parse error!"
+msgstr ""
+
+msgid "No arguments given to the viewer."
+msgstr ""
+
+msgid "Two files are required to evoke the diffviewer."
+msgstr ""
 
 msgid "Background process error"
 msgstr " Erreur dans un processus en tâche de fond"
@@ -699,8 +708,8 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Fermer"
 
-msgid "All charsets"
-msgstr "Tous les encodages"
+msgid "&All charsets"
+msgstr "&Tout les encodages"
 
 msgid "&Whole words"
 msgstr "&Mots entiers"
@@ -708,8 +717,8 @@ msgstr "&Mots entiers"
 msgid "&Backwards"
 msgstr "Vers le &haut"
 
-msgid "Case &sensitive"
-msgstr "Respec&t de la casse "
+msgid "Cas&e sensitive"
+msgstr "Sensible la ca&sse "
 
 msgid "Enter search string:"
 msgstr " Saisissez la chaîne à rechercher :"
@@ -738,9 +747,6 @@ msgid ""
 "Cannot create temporary merge file\n"
 "%s"
 msgstr ""
-
-msgid "&Normal"
-msgstr "&Normal"
 
 msgid "&Fastest (Assume large files)"
 msgstr ""
@@ -820,6 +826,19 @@ msgid ""
 msgstr ""
 
 msgid "Diff:"
+msgstr ""
+
+#, fuzzy, c-format
+msgid "\"%s\" is a directory"
+msgstr "%s n'est pas un répertoire\n"
+
+#, c-format
+msgid ""
+"Cannot stat \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Diff viewer: invalid mode"
 msgstr ""
 
 msgid "Two files are needed to compare"
@@ -957,14 +976,17 @@ msgstr "Vérifier les nouvelles lignes &POSIX"
 msgid "Edit Save Mode"
 msgstr ""
 
+msgid "Save as"
+msgstr ""
+
+msgid "Cannot save: destination is not a regular file"
+msgstr ""
+
 msgid "A file already exists with this name"
 msgstr ""
 
 msgid "&Overwrite"
 msgstr "É&craser"
-
-msgid "Save as"
-msgstr ""
 
 msgid "Cannot save file"
 msgstr ""
@@ -2291,15 +2313,35 @@ msgid "Background process: File exists"
 msgstr ""
 
 #, c-format
-msgid "Files processed: %zu of %zu"
+msgid "Files processed: %zu/%zu"
 msgstr ""
 
 #, c-format
-msgid "Time: %s  %s (%s)"
-msgstr "Temps :   %s %s (%s)"
+msgid "Files processed: %zu"
+msgstr ""
 
 #, c-format
-msgid "Total: %s of %s"
+msgid "Time: %s %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s %s (%s)"
+msgstr ""
+
+#, c-format
+msgid "Time: %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s (%s)"
+msgstr ""
+
+#, c-format
+msgid " Total: %s "
+msgstr ""
+
+#, c-format
+msgid " Total: %s/%s "
 msgstr ""
 
 msgid "Source"
@@ -2358,26 +2400,17 @@ msgstr "Trouvé : %ld"
 msgid "Malformed regular expression"
 msgstr ""
 
-msgid "Cas&e sensitive"
-msgstr "Sensible la ca&sse "
-
 msgid "&Find recursively"
 msgstr "Recherche récursive"
 
 msgid "S&kip hidden"
 msgstr ""
 
-msgid "&All charsets"
-msgstr "&Tout les encodages"
-
 msgid "Sea&rch for content"
 msgstr ""
 
 msgid "Case sens&itive"
 msgstr "Respec&t de la casse"
-
-msgid "Re&gular expression"
-msgstr "Expression ré&gulière"
 
 msgid "Fir&st hit"
 msgstr "Première occurence"
@@ -2490,14 +2523,13 @@ msgstr ""
 msgid "Name of new group:"
 msgstr ""
 
-msgid "Remove:"
+#, c-format
+msgid "Are you sure you want to remove entry \"%s\"?"
 msgstr ""
 
-msgid "Are you sure you want to remove this entry?"
-msgstr ""
-
+#, c-format
 msgid ""
-"Group not empty.\n"
+"Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
 
@@ -3354,6 +3386,9 @@ msgid ""
 "%s\n"
 msgstr ""
 
+msgid "Home directory path is not absolute"
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3448,6 +3483,10 @@ msgstr ""
 #, c-format
 msgid "Data types:"
 msgstr ""
+
+#, fuzzy
+msgid "Root directory:"
+msgstr "répertoire"
 
 msgid "System data"
 msgstr ""
@@ -3557,9 +3596,6 @@ msgstr "fish : vérification des numéros de version..."
 
 msgid "fish: Getting host info..."
 msgstr "fish : recoie les infos dur l'hôte..."
-
-msgid "fish: Setting up current directory..."
-msgstr "fish: configuration du répertoire courant..."
 
 #, c-format
 msgid "fish: Connected, home %s."
@@ -3924,12 +3960,6 @@ msgid ""
 "%s"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot stat \"%s\"\n"
-"%s"
-msgstr ""
-
 msgid "Cannot view: not a regular file"
 msgstr ""
 
@@ -3941,3 +3971,6 @@ msgstr ""
 
 msgid "Continue from beginning?"
 msgstr ""
+
+#~ msgid "fish: Setting up current directory..."
+#~ msgstr "fish: configuration du répertoire courant..."

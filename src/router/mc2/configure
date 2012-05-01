@@ -634,6 +634,8 @@ HAVE_TESTS_FALSE
 HAVE_TESTS_TRUE
 CHECK_LIBS
 CHECK_CFLAGS
+ENABLE_BACKGROUND_FALSE
+ENABLE_BACKGROUND_TRUE
 SLANG_LIBS
 SLANG_CFLAGS
 HAVE_FILECMD
@@ -910,6 +912,7 @@ enable_rpath
 with_libiconv_prefix
 with_included_gettext
 with_libintl_prefix
+enable_assert
 with_x
 enable_vfs
 enable_vfs_cpio
@@ -1609,6 +1612,7 @@ Optional Features:
   --disable-largefile     omit support for large files
   --disable-nls           do not use Native Language Support
   --disable-rpath         do not hardcode runtime library paths
+  --disable-assert        turn off assertions
   --disable-vfs           Disable VFS
   --enable-vfs-cpio       Support for cpio filesystem [yes]
   --enable-vfs-tar        Support for tar filesystem [yes]
@@ -1618,7 +1622,7 @@ Optional Features:
   --enable-vfs-ftp        Support for FTP filesystem [yes]
   --enable-vfs-fish       Support for FISH filesystem [yes]
   --enable-vfs-smb        Support for SMB filesystem [no]
-  --enable-background     Support for background file operations [yes]
+  --enable-background     Support for background file operations [[yes]]
   --enable-charset        Support for charset selection and conversion [yes]
   --enable-werror         Handle all compiler warnings as errors
 
@@ -15036,7 +15040,7 @@ else
 fi
 
 
-for ac_prog in gnome-moz-remote mozilla konqueror opera netscape
+for ac_prog in gnome-moz-remote mozilla firefox konqueror opera
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -18735,9 +18739,8 @@ esac
 
 for ac_header in unistd.h string.h memory.h limits.h malloc.h \
 	utime.h fcntl.h sys/statfs.h sys/vfs.h sys/time.h \
-	sys/timeb.h sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
-	security/pam_misc.h sys/socket.h sys/sysmacros.h sys/types.h \
-	sys/mkdev.h wchar.h wctype.h
+	sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
+	sys/socket.h sys/sysmacros.h sys/types.h sys/mkdev.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -18944,117 +18947,27 @@ fi
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ANSI C header files" >&5
-$as_echo_n "checking for ANSI C header files... " >&6; }
-if ${ac_cv_header_stdc+:} false; then :
-  $as_echo_n "(cached) " >&6
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable assertions" >&5
+$as_echo_n "checking whether to enable assertions... " >&6; }
+  # Check whether --enable-assert was given.
+if test "${enable_assert+set}" = set; then :
+  enableval=$enable_assert; ac_enable_assert=$enableval
+     if       test "x$enableval" = xno; then :
+
+$as_echo "#define NDEBUG 1" >>confdefs.h
+
+elif test "x$enableval" != xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: invalid argument supplied to --enable-assert" >&5
+$as_echo "$as_me: WARNING: invalid argument supplied to --enable-assert" >&2;}
+	ac_enable_assert=yes
+fi
 else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <float.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_header_stdc=yes
-else
-  ac_cv_header_stdc=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-if test $ac_cv_header_stdc = yes; then
-  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <string.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "memchr" >/dev/null 2>&1; then :
-
-else
-  ac_cv_header_stdc=no
-fi
-rm -f conftest*
-
+  ac_enable_assert=yes
 fi
 
-if test $ac_cv_header_stdc = yes; then
-  # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "free" >/dev/null 2>&1; then :
-
-else
-  ac_cv_header_stdc=no
-fi
-rm -f conftest*
-
-fi
-
-if test $ac_cv_header_stdc = yes; then
-  # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
-  if test "$cross_compiling" = yes; then :
-  :
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ctype.h>
-#include <stdlib.h>
-#if ((' ' & 0x0FF) == 0x020)
-# define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
-# define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
-#else
-# define ISLOWER(c) \
-		   (('a' <= (c) && (c) <= 'i') \
-		     || ('j' <= (c) && (c) <= 'r') \
-		     || ('s' <= (c) && (c) <= 'z'))
-# define TOUPPER(c) (ISLOWER(c) ? ((c) | 0x40) : (c))
-#endif
-
-#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
-int
-main ()
-{
-  int i;
-  for (i = 0; i < 256; i++)
-    if (XOR (islower (i), ISLOWER (i))
-	|| toupper (i) != TOUPPER (i))
-      return 2;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-
-else
-  ac_cv_header_stdc=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_stdc" >&5
-$as_echo "$ac_cv_header_stdc" >&6; }
-if test $ac_cv_header_stdc = yes; then
-
-$as_echo "#define STDC_HEADERS 1" >>confdefs.h
-
-fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_enable_assert" >&5
+$as_echo "$ac_enable_assert" >&6; }
 
 
 ac_fn_c_check_member "$LINENO" "struct stat" "st_blksize" "ac_cv_member_struct_stat_st_blksize" "$ac_includes_default"
@@ -19100,10 +19013,10 @@ fi
 
 for ac_func in \
 	atoll \
-	cfgetospeed \
-	initgroups isascii \
-	setreuid statfs sysconf \
-	tcgetattr tcsetattr truncate \
+	isascii \
+	statfs sysconf \
+	tcgetattr tcsetattr \
+	ftruncate \
 	strverscmp \
 	strncasecmp \
 	realpath
@@ -19474,195 +19387,6 @@ $as_echo "#define gid_t int" >>confdefs.h
 
 fi
 
-
-# The Ultrix 4.2 mips builtin alloca declared by alloca.h only works
-# for constant arguments.  Useless!
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for working alloca.h" >&5
-$as_echo_n "checking for working alloca.h... " >&6; }
-if ${ac_cv_working_alloca_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <alloca.h>
-int
-main ()
-{
-char *p = (char *) alloca (2 * sizeof (int));
-			  if (p) return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_working_alloca_h=yes
-else
-  ac_cv_working_alloca_h=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_working_alloca_h" >&5
-$as_echo "$ac_cv_working_alloca_h" >&6; }
-if test $ac_cv_working_alloca_h = yes; then
-
-$as_echo "#define HAVE_ALLOCA_H 1" >>confdefs.h
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for alloca" >&5
-$as_echo_n "checking for alloca... " >&6; }
-if ${ac_cv_func_alloca_works+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#ifdef __GNUC__
-# define alloca __builtin_alloca
-#else
-# ifdef _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# else
-#  ifdef HAVE_ALLOCA_H
-#   include <alloca.h>
-#  else
-#   ifdef _AIX
- #pragma alloca
-#   else
-#    ifndef alloca /* predefined by HP cc +Olibcalls */
-void *alloca (size_t);
-#    endif
-#   endif
-#  endif
-# endif
-#endif
-
-int
-main ()
-{
-char *p = (char *) alloca (1);
-				    if (p) return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_func_alloca_works=yes
-else
-  ac_cv_func_alloca_works=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_alloca_works" >&5
-$as_echo "$ac_cv_func_alloca_works" >&6; }
-
-if test $ac_cv_func_alloca_works = yes; then
-
-$as_echo "#define HAVE_ALLOCA 1" >>confdefs.h
-
-else
-  # The SVR3 libPW and SVR4 libucb both contain incompatible functions
-# that cause trouble.  Some versions do not even contain alloca or
-# contain a buggy version.  If you still want to use their alloca,
-# use ar to extract alloca.o from them instead of compiling alloca.c.
-
-ALLOCA=\${LIBOBJDIR}alloca.$ac_objext
-
-$as_echo "#define C_ALLOCA 1" >>confdefs.h
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether \`alloca.c' needs Cray hooks" >&5
-$as_echo_n "checking whether \`alloca.c' needs Cray hooks... " >&6; }
-if ${ac_cv_os_cray+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#if defined CRAY && ! defined CRAY2
-webecray
-#else
-wenotbecray
-#endif
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "webecray" >/dev/null 2>&1; then :
-  ac_cv_os_cray=yes
-else
-  ac_cv_os_cray=no
-fi
-rm -f conftest*
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_os_cray" >&5
-$as_echo "$ac_cv_os_cray" >&6; }
-if test $ac_cv_os_cray = yes; then
-  for ac_func in _getb67 GETB67 getb67; do
-    as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define CRAY_STACKSEG_END $ac_func
-_ACEOF
-
-    break
-fi
-
-  done
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking stack direction for C alloca" >&5
-$as_echo_n "checking stack direction for C alloca... " >&6; }
-if ${ac_cv_c_stack_direction+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "$cross_compiling" = yes; then :
-  ac_cv_c_stack_direction=0
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$ac_includes_default
-int
-find_stack_direction ()
-{
-  static char *addr = 0;
-  auto char dummy;
-  if (addr == 0)
-    {
-      addr = &dummy;
-      return find_stack_direction ();
-    }
-  else
-    return (&dummy > addr) ? 1 : -1;
-}
-
-int
-main ()
-{
-  return find_stack_direction () < 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  ac_cv_c_stack_direction=1
-else
-  ac_cv_c_stack_direction=-1
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_stack_direction" >&5
-$as_echo "$ac_cv_c_stack_direction" >&6; }
-cat >>confdefs.h <<_ACEOF
-#define STACK_DIRECTION $ac_cv_c_stack_direction
-_ACEOF
-
-
-fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working strcoll" >&5
 $as_echo_n "checking for working strcoll... " >&6; }
@@ -21627,13 +21351,14 @@ posix_fallocate(0, 0, 0);
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
 $as_echo "#define HAVE_POSIX_FALLOCATE 1" >>confdefs.h
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 
 
@@ -27037,16 +26762,36 @@ _ACEOF
 fi
 
 
-# Check whether --enable-background was given.
+
+    # Check whether --enable-background was given.
 if test "${enable_background+set}" = set; then :
   enableval=$enable_background;
+	    if test "x$enableval" = xno; then
+		enable_background=no
+	    else
+		enable_background=yes
+	    fi
+
+else
+  enable_background=yes
 fi
 
-if test "x$enable_background" != xno; then
 
-$as_echo "#define WITH_BACKGROUND 1" >>confdefs.h
+    if test "x$enable_background" = xyes; then
 
+$as_echo "#define ENABLE_BACKGROUND 1" >>confdefs.h
+
+    fi
+
+     if test "x$enable_background" = xyes; then
+  ENABLE_BACKGROUND_TRUE=
+  ENABLE_BACKGROUND_FALSE='#'
+else
+  ENABLE_BACKGROUND_TRUE='#'
+  ENABLE_BACKGROUND_FALSE=
 fi
+
+
 
 
 # Check whether --enable-charset was given.
@@ -28578,11 +28323,11 @@ fi
 ac_config_files="$ac_config_files src/man2hlp/man2hlp"
 
 
-ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/debian/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile doc/Makefile doc/hints/Makefile doc/man/mc.1 doc/man/mcedit.1 doc/man/mcview.1 doc/man/Makefile doc/man/es/mc.1 doc/man/es/Makefile doc/man/hu/mc.1 doc/man/hu/Makefile doc/man/it/mc.1 doc/man/it/Makefile doc/man/pl/mc.1 doc/man/pl/Makefile doc/man/ru/mc.1 doc/man/ru/Makefile doc/man/sr/mc.1 doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
+ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/debian/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/skins/Makefile misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile doc/Makefile doc/hints/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
 
 
 if test x$enable_tests != xno; then
-    ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/vfs/Makefile"
+    ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/vfs/Makefile tests/src/Makefile tests/src/filemanager/Makefile"
 
 
 fi
@@ -28855,6 +28600,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_VFS_NET_TRUE}" && test -z "${ENABLE_VFS_NET_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_VFS_NET\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_BACKGROUND_TRUE}" && test -z "${ENABLE_BACKGROUND_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_BACKGROUND\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_TESTS_TRUE}" && test -z "${HAVE_TESTS_FALSE}"; then
@@ -29853,21 +29602,12 @@ do
     "misc/syntax/Makefile") CONFIG_FILES="$CONFIG_FILES misc/syntax/Makefile" ;;
     "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
     "doc/hints/Makefile") CONFIG_FILES="$CONFIG_FILES doc/hints/Makefile" ;;
-    "doc/man/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/mc.1" ;;
-    "doc/man/mcedit.1") CONFIG_FILES="$CONFIG_FILES doc/man/mcedit.1" ;;
-    "doc/man/mcview.1") CONFIG_FILES="$CONFIG_FILES doc/man/mcview.1" ;;
     "doc/man/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/Makefile" ;;
-    "doc/man/es/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/es/mc.1" ;;
     "doc/man/es/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/es/Makefile" ;;
-    "doc/man/hu/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/hu/mc.1" ;;
     "doc/man/hu/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/hu/Makefile" ;;
-    "doc/man/it/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/it/mc.1" ;;
     "doc/man/it/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/it/Makefile" ;;
-    "doc/man/pl/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/pl/mc.1" ;;
     "doc/man/pl/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/pl/Makefile" ;;
-    "doc/man/ru/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/ru/mc.1" ;;
     "doc/man/ru/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/ru/Makefile" ;;
-    "doc/man/sr/mc.1") CONFIG_FILES="$CONFIG_FILES doc/man/sr/mc.1" ;;
     "doc/man/sr/Makefile") CONFIG_FILES="$CONFIG_FILES doc/man/sr/Makefile" ;;
     "doc/hlp/Makefile") CONFIG_FILES="$CONFIG_FILES doc/hlp/Makefile" ;;
     "doc/hlp/es/Makefile") CONFIG_FILES="$CONFIG_FILES doc/hlp/es/Makefile" ;;
@@ -29883,6 +29623,8 @@ do
     "tests/lib/mcconfig/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/mcconfig/Makefile" ;;
     "tests/lib/search/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/search/Makefile" ;;
     "tests/lib/vfs/Makefile") CONFIG_FILES="$CONFIG_FILES tests/lib/vfs/Makefile" ;;
+    "tests/src/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/Makefile" ;;
+    "tests/src/filemanager/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/filemanager/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -31515,6 +31257,7 @@ Configuration:
   Mouse support:              ${mouse_lib}
   X11 events support:         ${textmode_x11_support}
   With subshell support:      ${subshell}
+  With background operations: ${enable_background}
   Internal editor:            ${edit_msg}
   Diff viewer:                ${diff_msg}
   Support for charset:        ${charset_msg}

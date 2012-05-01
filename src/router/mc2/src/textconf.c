@@ -97,7 +97,7 @@ static const char *const features[] = {
 #endif
 #endif /* !HAVE_SUBSHELL_SUPPORT */
 
-#ifdef WITH_BACKGROUND
+#ifdef ENABLE_BACKGROUND
     N_("With support for background operations\n"),
 #endif
 
@@ -177,6 +177,9 @@ show_version (void)
 void
 show_datadirs_extended (void)
 {
+    (void) printf ("%s %s\n", _("Root directory:"), mc_config_get_home_dir ());
+    (void) puts ("");
+
     PRINTF_GROUP (_("System data"));
 
     PRINTF_SECTION (_("Config directory:"), mc_global.sysconfig_dir);

@@ -1,7 +1,7 @@
 AM_CFLAGS = -I$(top_srcdir)/lib/vfs $(GLIB_CFLAGS) -I$(top_srcdir) @CHECK_CFLAGS@ \
-	-DTEST_SHARE_DIR=\"$(abs_srcdir)\" -z muldefs
+	-DTEST_SHARE_DIR=\"$(abs_srcdir)\"
 
-AM_LDFLAGS = -z muldefs
+AM_LDFLAGS = -Wl,-z,muldefs
 
 EXTRA_DIST = mc.charsets
 
@@ -11,8 +11,13 @@ LIBS=@CHECK_LIBS@  \
 TESTS = \
 	canonicalize_pathname \
 	current_dir \
+	path_cmp \
+	path_len \
+	path_manipulations \
 	path_recode \
 	path_serialize \
+	relative_cd \
+	tempdir \
 	vfs_parse_ls_lga \
 	vfs_path_string_convert \
 	vfs_prefix_to_class \
@@ -27,11 +32,26 @@ canonicalize_pathname_SOURCES = \
 current_dir_SOURCES = \
 	current_dir.c
 
+path_cmp_SOURCES = \
+	path_cmp.c
+
+path_len_SOURCES = \
+	path_len.c
+
+path_manipulations_SOURCES = \
+	path_manipulations.c
+
 path_recode_SOURCES = \
 	path_recode.c
 
 path_serialize_SOURCES = \
 	path_serialize.c
+
+relative_cd_SOURCES = \
+	relative_cd.c
+
+tempdir_SOURCES = \
+	tempdir.c
 
 vfs_split_SOURCES = \
 	vfs_split.c

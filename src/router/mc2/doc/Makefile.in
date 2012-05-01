@@ -116,6 +116,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
+	$(top_srcdir)/m4.include/mc-background.m4 \
 	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \

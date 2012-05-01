@@ -3,15 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Muhammet Kara <muhammet.k@gmail.com>, 2012.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-12-13 13:35+0300\n"
-"PO-Revision-Date: 2011-12-07 11:21+0000\n"
-"Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: Turkish (http://www.transifex.net/projects/p/mc/team/tr/)\n"
+"POT-Creation-Date: 2012-04-25 19:29+0300\n"
+"PO-Revision-Date: 2012-04-04 20:41+0000\n"
+"Last-Translator: Muhammet Kara <muhammet.k@gmail.com>\n"
+"Language-Team: Turkish (http://www.transifex.net/projects/p/mc/language/"
+"tr/)\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,7 +24,7 @@ msgid "Warning: cannot load codepages list"
 msgstr ""
 
 msgid "7-bit ASCII"
-msgstr ""
+msgstr "7-bit ASCII"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
@@ -56,7 +58,7 @@ msgid ""
 msgstr ""
 
 msgid "File locked"
-msgstr ""
+msgstr "Dosya kilitlendi"
 
 msgid "&Grab lock"
 msgstr ""
@@ -105,16 +107,16 @@ msgstr ""
 msgid "Regular expression error"
 msgstr ""
 
-msgid "Normal"
+msgid "&Normal"
 msgstr ""
 
-msgid "&Regular expression"
-msgstr "&Düzenli ifade"
-
-msgid "Hexadecimal"
+msgid "Re&gular expression"
 msgstr ""
 
-msgid "Wildcard search"
+msgid "He&xadecimal"
+msgstr ""
+
+msgid "Wil&dcard search"
 msgstr ""
 
 #, c-format
@@ -231,6 +233,9 @@ msgstr "Gri Del tuşu"
 
 msgid "Completion/M-tab"
 msgstr "Tamamlama/M-tab"
+
+msgid "Back Tabulation S-tab"
+msgstr ""
 
 msgid "+ on keypad"
 msgstr "Gri +"
@@ -424,34 +429,6 @@ msgstr ""
 "%dx%d ekran boyutu desteklenmiyor.\n"
 "TERM ortam değişkenini kontrol ediniz.\n"
 
-#, c-format
-msgid "%s is not a directory\n"
-msgstr ""
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr ""
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr ""
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr ""
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr ""
-
-#, c-format
-msgid "Press any key to continue..."
-msgstr "Bir tuşa basınız..."
-
 msgid "Warning"
 msgstr "Uyarı"
 
@@ -480,6 +457,34 @@ msgstr "Dosya alınması"
 msgid "Changes to file lost"
 msgstr "Değişiklikler kayıp"
 
+#, c-format
+msgid "%s is not a directory\n"
+msgstr "%s bir dizin değil\n"
+
+#, c-format
+msgid "Directory %s is not owned by you\n"
+msgstr ""
+
+#, c-format
+msgid "Cannot set correct permissions for directory %s\n"
+msgstr ""
+
+#, c-format
+msgid "Cannot create temporary directory %s: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Temporary files will be created in %s\n"
+msgstr ""
+
+#, c-format
+msgid "Temporary files will not be created\n"
+msgstr ""
+
+#, c-format
+msgid "Press any key to continue..."
+msgstr "Bir tuşa basınız..."
+
 msgid "Cannot parse:"
 msgstr "Ayrıştırılamadı:"
 
@@ -496,7 +501,7 @@ msgid "Screens"
 msgstr ""
 
 msgid "History"
-msgstr ""
+msgstr "Geçmiş"
 
 #. TRANSLATORS: no need to translate 'DialogTitle', it's just a context prefix
 msgid "DialogTitle|History cleanup"
@@ -558,6 +563,9 @@ msgstr "Dosya düzenler"
 
 msgid "Forces xterm features"
 msgstr "xterm özelliklerini etkinleştirir"
+
+msgid "Disable X11 support"
+msgstr ""
 
 msgid "Tries to use an old highlight mouse tracking"
 msgstr ""
@@ -652,16 +660,19 @@ msgstr ""
 msgid "GNU Midnight Commander %s\n"
 msgstr "GNU Midnight Commander %s\n"
 
-msgid "No arguments given to the viewer."
-msgstr ""
-
-msgid "Two files are required to evoke the diffviewer."
-msgstr ""
-
 msgid "Main options"
 msgstr ""
 
 msgid "Terminal options"
+msgstr ""
+
+msgid "Arguments parse error!"
+msgstr ""
+
+msgid "No arguments given to the viewer."
+msgstr ""
+
+msgid "Two files are required to evoke the diffviewer."
 msgstr ""
 
 msgid "Background process error"
@@ -687,7 +698,7 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "&Bırak"
 
-msgid "All charsets"
+msgid "&All charsets"
 msgstr ""
 
 msgid "&Whole words"
@@ -696,7 +707,7 @@ msgstr ""
 msgid "&Backwards"
 msgstr "&Geriye doğru"
 
-msgid "Case &sensitive"
+msgid "Cas&e sensitive"
 msgstr ""
 
 msgid "Enter search string:"
@@ -725,9 +736,6 @@ msgstr ""
 msgid ""
 "Cannot create temporary merge file\n"
 "%s"
-msgstr ""
-
-msgid "&Normal"
 msgstr ""
 
 msgid "&Fastest (Assume large files)"
@@ -808,6 +816,19 @@ msgid ""
 msgstr ""
 
 msgid "Diff:"
+msgstr ""
+
+#, fuzzy, c-format
+msgid "\"%s\" is a directory"
+msgstr "%s bir dizin değil\n"
+
+#, c-format
+msgid ""
+"Cannot stat \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Diff viewer: invalid mode"
 msgstr ""
 
 msgid "Two files are needed to compare"
@@ -944,13 +965,16 @@ msgstr ""
 msgid "Edit Save Mode"
 msgstr ""
 
+msgid "Save as"
+msgstr ""
+
+msgid "Cannot save: destination is not a regular file"
+msgstr ""
+
 msgid "A file already exists with this name"
 msgstr ""
 
 msgid "&Overwrite"
-msgstr ""
-
-msgid "Save as"
 msgstr ""
 
 msgid "Cannot save file"
@@ -2266,15 +2290,35 @@ msgid "Background process: File exists"
 msgstr ""
 
 #, c-format
-msgid "Files processed: %zu of %zu"
+msgid "Files processed: %zu/%zu"
 msgstr ""
 
 #, c-format
-msgid "Time: %s  %s (%s)"
+msgid "Files processed: %zu"
 msgstr ""
 
 #, c-format
-msgid "Total: %s of %s"
+msgid "Time: %s %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s %s (%s)"
+msgstr ""
+
+#, c-format
+msgid "Time: %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s (%s)"
+msgstr ""
+
+#, c-format
+msgid " Total: %s "
+msgstr ""
+
+#, c-format
+msgid " Total: %s/%s "
 msgstr ""
 
 msgid "Source"
@@ -2333,25 +2377,16 @@ msgstr ""
 msgid "Malformed regular expression"
 msgstr ""
 
-msgid "Cas&e sensitive"
-msgstr ""
-
 msgid "&Find recursively"
 msgstr ""
 
 msgid "S&kip hidden"
 msgstr ""
 
-msgid "&All charsets"
-msgstr ""
-
 msgid "Sea&rch for content"
 msgstr ""
 
 msgid "Case sens&itive"
-msgstr ""
-
-msgid "Re&gular expression"
 msgstr ""
 
 msgid "Fir&st hit"
@@ -2464,14 +2499,13 @@ msgstr ""
 msgid "Name of new group:"
 msgstr ""
 
-msgid "Remove:"
+#, c-format
+msgid "Are you sure you want to remove entry \"%s\"?"
 msgstr ""
 
-msgid "Are you sure you want to remove this entry?"
-msgstr ""
-
+#, c-format
 msgid ""
-"Group not empty.\n"
+"Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
 
@@ -3321,6 +3355,9 @@ msgid ""
 "%s\n"
 msgstr ""
 
+msgid "Home directory path is not absolute"
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3410,6 +3447,10 @@ msgstr ""
 #, c-format
 msgid "Data types:"
 msgstr ""
+
+#, fuzzy
+msgid "Root directory:"
+msgstr "dizin:"
 
 msgid "System data"
 msgstr ""
@@ -3519,9 +3560,6 @@ msgstr "fish: Sürüm anlaşması..."
 msgid "fish: Getting host info..."
 msgstr ""
 
-msgid "fish: Setting up current directory..."
-msgstr "fish: Çalışma dizini belirlenmesi..."
-
 #, c-format
 msgid "fish: Connected, home %s."
 msgstr "fish: Bağlantı kuruldu, Ev %s."
@@ -3579,10 +3617,10 @@ msgid "FTP: Account required for user %s"
 msgstr ""
 
 msgid "Account:"
-msgstr ""
+msgstr "Hesap:"
 
 msgid "ftpfs: sending user account"
-msgstr ""
+msgstr "ftpfs: kullanıcı hesabı gönderiliyor"
 
 msgid "ftpfs: logged in"
 msgstr "ftpfs: giriş tamamlandı: "
@@ -3596,7 +3634,7 @@ msgstr "ftpfs: Makina ismi geçersiz."
 
 #, c-format
 msgid "ftpfs: %s"
-msgstr ""
+msgstr "ftpfs: %s"
 
 #, c-format
 msgid "ftpfs: making connection to %s"
@@ -3688,7 +3726,7 @@ msgid "reconnect to %s failed"
 msgstr ""
 
 msgid "Authentication failed"
-msgstr ""
+msgstr "Kimlik denetimi başarısız oldu"
 
 #, c-format
 msgid "Error %s creating directory %s"
@@ -3876,12 +3914,6 @@ msgid ""
 "%s"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot stat \"%s\"\n"
-"%s"
-msgstr ""
-
 msgid "Cannot view: not a regular file"
 msgstr ""
 
@@ -3893,3 +3925,6 @@ msgstr ""
 
 msgid "Continue from beginning?"
 msgstr ""
+
+#~ msgid "fish: Setting up current directory..."
+#~ msgstr "fish: Çalışma dizini belirlenmesi..."

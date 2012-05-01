@@ -16,6 +16,16 @@
 
 /*** enums ***************************************************************************************/
 
+/**
+    enum for store the search conditions check results.
+    (if search condition have BOL(^) or EOL ($) regexp checial characters).
+*/
+typedef enum
+{
+    AT_START_LINE = (1 << 0),
+    AT_END_LINE = (1 << 1)
+} edit_search_line_t;
+
 /*** structures declarations (and typedefs of structures)*****************************************/
 
 struct _book_mark
@@ -39,8 +49,8 @@ struct WEdit
 {
     Widget widget;
 
-    char *filename;             /* Name of the file */
-    char *dir;                  /* NULL if filename is absolute */
+    vfs_path_t *filename_vpath; /* Name of the file */
+    vfs_path_t *dir_vpath;      /* NULL if filename is absolute */
 
     /* dynamic buffers and cursor position for editor: */
     long curs1;                 /* position of the cursor from the beginning of the file. */
@@ -55,6 +65,8 @@ struct WEdit
     /* search handler */
     mc_search_t *search;
     int replace_mode;
+    /* is search conditions should be started from BOL(^) or ended with EOL($) */
+    edit_search_line_t search_line_type;
 
     char *last_search_string;   /* String that have been searched */
     long search_start;          /* First character to start searching from */
@@ -106,14 +118,14 @@ struct WEdit
     unsigned long undo_stack_size;
     unsigned long undo_stack_size_mask;
     unsigned long undo_stack_bottom;
-    unsigned int undo_stack_disable:1;       /* If not 0, don't save events in the undo stack */
+    unsigned int undo_stack_disable:1;  /* If not 0, don't save events in the undo stack */
 
     unsigned long redo_stack_pointer;
     long *redo_stack;
     unsigned long redo_stack_size;
     unsigned long redo_stack_size_mask;
     unsigned long redo_stack_bottom;
-    unsigned int redo_stack_reset:1;         /* If 1, need clear redo stack */
+    unsigned int redo_stack_reset:1;    /* If 1, need clear redo stack */
 
     struct stat stat1;          /* Result of mc_fstat() on the file */
     unsigned int skip_detach_prompt:1;  /* Do not prompt whether to detach a file anymore */

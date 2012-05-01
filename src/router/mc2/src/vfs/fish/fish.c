@@ -42,7 +42,7 @@
  * Derived from ftpfs.c
  * Read README.fish for protocol specification.
  *
- * Syntax of path is: \verbatim /#sh:user@host[:Cr]/path \endverbatim
+ * Syntax of path is: \verbatim sh://user@host[:Cr]/path \endverbatim
  *      where C means you want compressed connection,
  *      and r means you want to use rsh
  *
@@ -404,18 +404,6 @@ fish_info (struct vfs_class *me, struct vfs_s_super *super)
 
 
 /* --------------------------------------------------------------------------------------------- */
-/* The returned directory should always contain a trailing slash */
-
-static char *
-fish_getcwd (struct vfs_class *me, struct vfs_s_super *super)
-{
-    if (fish_command (me, super, WANT_STRING, "#PWD\npwd; echo '### 200'\n") == COMPLETE)
-        return g_strconcat (reply_str, "/", (char *) NULL);
-    ERRNOR (EIO, NULL);
-}
-
-
-/* --------------------------------------------------------------------------------------------- */
 
 static void
 fish_open_archive_pipeopen (struct vfs_s_super *super)
@@ -555,12 +543,10 @@ fish_open_archive_int (struct vfs_class *me, struct vfs_s_super *super)
     if (fish_info (me, super))
         SUP->scr_env = fish_set_env (SUP->host_flags);
 
-    vfs_print_message (_("fish: Setting up current directory..."));
-    super->path_element->path = fish_getcwd (me, super);
     vfs_print_message (_("fish: Connected, home %s."), super->path_element->path);
 #if 0
     super->name =
-        g_strconcat ("/#sh:", super->path_element->user, "@", super->path_element->host, "/",
+        g_strconcat ("sh://", super->path_element->user, "@", super->path_element->host, "/",
                      (char *) NULL);
 #else
     super->name = g_strdup (PATH_SEP_STR);
@@ -843,8 +829,6 @@ fish_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path)
     reply_code = fish_decode_reply (buffer + 4, 0);
     if (reply_code == COMPLETE)
     {
-        g_free (super->path_element->path);
-        super->path_element->path = g_strdup (remote_path);
         vfs_print_message (_("%s: done."), me->name);
         return 0;
     }
@@ -1164,7 +1148,9 @@ fish_rename (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     const char *crpath1, *crpath2;
     char *rpath1, *rpath2;
     struct vfs_s_super *super, *super2;
-    vfs_path_element_t *path_element = vfs_path_get_by_index (vpath1, -1);
+    const vfs_path_element_t *path_element;
+
+    path_element = vfs_path_get_by_index (vpath1, -1);
 
     crpath1 = vfs_s_get_path (vpath1, &super, 0);
     if (crpath1 == NULL)
@@ -1195,8 +1181,7 @@ fish_link (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     const char *crpath1, *crpath2;
     char *rpath1, *rpath2;
     struct vfs_s_super *super, *super2;
-    vfs_path_element_t *path_element;
-
+    const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath1, -1);
 
@@ -1231,7 +1216,9 @@ fish_symlink (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element = vfs_path_get_by_index (vpath2, -1);
+    const vfs_path_element_t *path_element;
+
+    path_element = vfs_path_get_by_index (vpath2, -1);
 
     crpath = vfs_s_get_path (vpath2, &super, 0);
     if (crpath == NULL)
@@ -1259,7 +1246,7 @@ fish_chmod (const vfs_path_t * vpath, mode_t mode)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element;
+    const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath, -1);
 
@@ -1302,10 +1289,9 @@ fish_chown (const vfs_path_t * vpath, uid_t owner, gid_t group)
         const char *crpath;
         char *rpath;
         struct vfs_s_super *super;
-        vfs_path_element_t *path_element;
+        const vfs_path_element_t *path_element;
 
         path_element = vfs_path_get_by_index (vpath, -1);
-
 
         crpath = vfs_s_get_path (vpath, &super, 0);
         if (crpath == NULL)
@@ -1338,9 +1324,10 @@ fish_utime (const vfs_path_t * vpath, struct utimbuf *times)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element;
+    const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath, -1);
+
     crpath = vfs_s_get_path (vpath, &super, 0);
     if (crpath == NULL)
         return -1;
@@ -1377,9 +1364,10 @@ fish_unlink (const vfs_path_t * vpath)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element;
+    const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath, -1);
+
     crpath = vfs_s_get_path (vpath, &super, 0);
     if (crpath == NULL)
         return -1;
@@ -1404,9 +1392,10 @@ fish_exists (const vfs_path_t * vpath)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element;
+    const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath, -1);
+
     crpath = vfs_s_get_path (vpath, &super, 0);
     if (crpath == NULL)
         return -1;
@@ -1432,7 +1421,7 @@ fish_mkdir (const vfs_path_t * vpath, mode_t mode)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element;
+    const vfs_path_element_t *path_element;
 
     (void) mode;
 
@@ -1472,7 +1461,7 @@ fish_rmdir (const vfs_path_t * vpath)
     const char *crpath;
     char *rpath;
     struct vfs_s_super *super;
-    vfs_path_element_t *path_element;
+    const vfs_path_element_t *path_element;
 
     path_element = vfs_path_get_by_index (vpath, -1);
 
@@ -1522,10 +1511,17 @@ fish_fh_open (struct vfs_class *me, vfs_file_handler_t * fh, int flags, mode_t m
 
         if (!fh->ino->localname)
         {
-            int tmp_handle = vfs_mkstemps (&fh->ino->localname, me->name,
-                                           fh->ino->ent->name);
+            vfs_path_t *vpath;
+            int tmp_handle;
+
+            tmp_handle = vfs_mkstemps (&vpath, me->name, fh->ino->ent->name);
             if (tmp_handle == -1)
+            {
+                vfs_path_free (vpath);
                 goto fail;
+            }
+            fh->ino->localname = vfs_path_to_str (vpath);
+            vfs_path_free (vpath);
             close (tmp_handle);
         }
         return 0;
@@ -1572,11 +1568,7 @@ fish_fill_names (struct vfs_class *me, fill_names_f func)
             }
             break;
         }
-
-        name =
-            g_strconcat (vfs_fish_ops.prefix, VFS_PATH_URL_DELIMITER,
-                         super->path_element->user, "@", super->path_element->host, flags, "/",
-                         super->path_element->path, (char *) NULL);
+        name = vfs_path_element_build_pretty_path_str (super->path_element);
         func (name);
         g_free (name);
     }
@@ -1606,7 +1598,7 @@ init_fish (void)
 
     tcp_init ();
 
-    fish_subclass.flags = VFS_S_REMOTE;
+    fish_subclass.flags = VFS_S_REMOTE | VFS_S_USETMP;
     fish_subclass.archive_same = fish_archive_same;
     fish_subclass.open_archive = fish_open_archive;
     fish_subclass.free_archive = fish_free_archive;
