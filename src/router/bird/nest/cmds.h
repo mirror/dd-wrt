@@ -6,6 +6,11 @@
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+struct sym_show_data {
+	int	type;	/* Symbols type to show */
+	struct symbol	*sym;
+};
+
 void cmd_show_status(void);
-void cmd_show_symbols(struct symbol *sym);
+void cmd_show_symbols(struct sym_show_data *sym);
 void cmd_show_memory(void);

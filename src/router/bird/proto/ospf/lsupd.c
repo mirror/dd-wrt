@@ -77,7 +77,7 @@ ospf_lsa_flooding_allowed(struct ospf_lsa_header *lsa, u32 domain, struct ospf_i
     {
       if (ifa->type == OSPF_IT_VLINK)
 	return 0;
-      if (ifa->oa->stub)
+      if (!oa_is_ext(ifa->oa))
 	return 0;
       return 1;
     }
@@ -97,6 +97,7 @@ unknown_lsa_type(struct ospf_lsa_header *lsa)
     case LSA_T_SUM_NET:
     case LSA_T_SUM_RT:
     case LSA_T_EXT:
+    case LSA_T_NSSA:
     case LSA_T_LINK:
     case LSA_T_PREFIX:
       return 0;
@@ -126,7 +127,7 @@ ospf_lsa_flooding_allowed(struct ospf_lsa_header *lsa, u32 domain, struct ospf_i
     case LSA_SCOPE_AS:
       if (ifa->type == OSPF_IT_VLINK)
 	return 0;
-      if (ifa->oa->stub)
+      if (!oa_is_ext(ifa->oa))
 	return 0;
       return 1;
 
@@ -486,21 +487,21 @@ ospf_lsupd_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
 
 #ifdef OSPFv2
     /* pg 143 (2) */
-    if ((lsa->type < LSA_T_RT) || (lsa->type > LSA_T_EXT))
+    if ((lsa->type == 0) || (lsa->type == 6) || (lsa->type > LSA_T_NSSA))
     {
       log(L_WARN "Unknown LSA type from %I", n->ip);
       continue;
     }
 
     /* pg 143 (3) */
-    if ((lsa->type == LSA_T_EXT) && ifa->oa->stub)
+    if ((lsa->type == LSA_T_EXT) && !oa_is_ext(ifa->oa))
     {
       log(L_WARN "Received External LSA in stub area from %I", n->ip);
       continue;
     }
 #else /* OSPFv3 */
     /* 4.5.1 (2) */
-    if ((LSA_SCOPE(lsa) == LSA_SCOPE_AS) && ifa->oa->stub)
+    if ((LSA_SCOPE(lsa) == LSA_SCOPE_AS) && !oa_is_ext(ifa->oa))
     {
       log(L_WARN "Received LSA with AS scope in stub area from %I", n->ip);
       continue;

@@ -104,6 +104,13 @@ kif_force_scan(void)
     }
 }
 
+void
+kif_request_scan(void)
+{
+  if (kif_proto && kif_scan_timer->expires > now)
+    tm_start(kif_scan_timer, 1);
+}
+
 static struct proto *
 kif_init(struct proto_config *c)
 {
@@ -216,14 +223,33 @@ kif_reconfigure(struct proto *p, struct proto_config *new)
   return 1;
 }
 
+static void
+kif_copy_config(struct proto_config *dest, struct proto_config *src)
+{
+  struct kif_config *d = (struct kif_config *) dest;
+  struct kif_config *s = (struct kif_config *) src;
+
+  /* Shallow copy of everything (just scan_time currently) */
+  proto_copy_rest(dest, src, sizeof(struct krt_config));
+
+  /* Copy primary addr list */
+  cfg_copy_list(&d->primary, &s->primary, sizeof(struct kif_primary_item));
+
+  /* Fix sysdep parts */
+  kif_copy_params(&d->iface, &s->iface);
+}
+
+
 struct protocol proto_unix_iface = {
   name:		"Device",
   template:	"device%d",
+  preference:	DEF_PREF_DIRECT,
   preconfig:	kif_preconfig,
   init:		kif_init,
   start:	kif_start,
   shutdown:	kif_shutdown,
   reconfigure:	kif_reconfigure,
+  copy_config:	kif_copy_config
 };
 
 /*
@@ -582,10 +608,9 @@ krt_got_route(struct krt_proto *p, rte *e)
       return;
     }
 
-  if (net->n.flags & KRF_INSTALLED)
+  old = net->routes;
+  if ((net->n.flags & KRF_INSTALLED) && old)
     {
-      old = net->routes;
-      ASSERT(old);
       if (krt_uptodate(e, old))
 	verdict = KRF_SEEN;
       else
@@ -908,6 +933,19 @@ krt_reconfigure(struct proto *p, struct proto_config *new)
     ;
 }
 
+static void
+krt_copy_config(struct proto_config *dest, struct proto_config *src)
+{
+  struct krt_config *d = (struct krt_config *) dest;
+  struct krt_config *s = (struct krt_config *) src;
+
+  /* Shallow copy of everything */
+  proto_copy_rest(dest, src, sizeof(struct krt_config));
+
+  /* Fix sysdep parts */
+  krt_set_copy_params(&d->set, &s->set);
+  krt_scan_copy_params(&d->scan, &s->scan);
+}
 
 static int
 krt_get_attr(eattr * a, byte * buf, int buflen UNUSED)
@@ -930,12 +968,14 @@ struct protocol proto_unix_kernel = {
   name:		"Kernel",
   template:	"kernel%d",
   attr_class:	EAP_KRT,
+  preference:	DEF_PREF_INHERITED,
   preconfig:	krt_preconfig,
   postconfig:	krt_postconfig,
   init:		krt_init,
   start:	krt_start,
   shutdown:	krt_shutdown,
   reconfigure:	krt_reconfigure,
+  copy_config:	krt_copy_config,
   get_attr:	krt_get_attr,
 #ifdef KRT_ALLOW_LEARN
   dump:		krt_dump,

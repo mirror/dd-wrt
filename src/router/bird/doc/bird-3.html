@@ -59,6 +59,8 @@ protocol rip {
 
 <P>
 <DL>
+<DT><CODE>include "<I>filename</I>"</CODE><DD><P>This statement causes inclusion of a new file. The maximal depth is set to 5.
+<P>
 <DT><CODE>log "<I>filename</I>"|syslog [name <I>name</I>]|stderr all|{ <I>list of classes</I> }</CODE><DD><P>Set logging of messages having the given class (either <CODE>all</CODE> or <CODE>{
 error, trace }</CODE> etc.) into selected destination (a file specified as a filename string,
 syslog with optional name argument, or the stderr output). Classes are:
@@ -88,10 +90,19 @@ in the following chapter.
 <DT><CODE>function <I>name</I> (<I>parameters</I>) <I>local variables</I> { <I>commands</I> }</CODE><DD><P>Define a function. You can learn more
 about functions in the following chapter.
 <P>
-<DT><CODE>protocol rip|ospf|bgp|... <I>[name]</I> { <I>protocol options</I> }</CODE><DD><P>Define a protocol
-instance called <CODE><I>name</I></CODE> (or with a name like "rip5" generated automatically if you don't specify any <CODE><I>name</I></CODE>). You can learn more
-about configuring protocols in their own chapters. You can run more than one instance of
-most protocols (like RIP or BGP). By default, no instances are configured.
+<DT><CODE>protocol rip|ospf|bgp|... [<I>name</I> [from <I>name2</I>]] { <I>protocol options</I> }</CODE><DD><P>Define a protocol instance called <CODE><I>name</I></CODE> (or with a name like "rip5" generated
+automatically if you don't specify any <CODE><I>name</I></CODE>). You can learn more about
+configuring protocols in their own chapters. When <CODE>from <I>name2</I></CODE> expression is
+used, initial protocol options are taken from protocol or template <CODE><I>name2</I></CODE>
+You can run more than one instance of most protocols (like RIP or BGP). By default, no
+instances are configured.
+<P>
+<DT><CODE>template rip|bgp|... [<I>name</I> [from <I>name2</I>]] { <I>protocol options</I> }</CODE><DD><P>Define a protocol template instance called <CODE><I>name</I></CODE> (or with a name like "bgp1"
+generated automatically if you don't specify any <CODE><I>name</I></CODE>). Protocol templates can
+be used to group common options when many similarly configured protocol instances are to be
+defined. Protocol instances (and other templates) can use templates by using <CODE>from</CODE>
+expression and the name of the template. At the moment templates (and <CODE>from</CODE> expression)
+are not implemented for OSPF protocol.
 <P>
 <DT><CODE>define <I>constant</I> = (<I>expression</I>)|<I>number</I>|<I>IP address</I></CODE><DD><P>Define a constant. You can use it later in every place you could use a simple integer or an IP address.
 Besides, there are some predefined numeric constants based on /etc/iproute2/rt_* files.
@@ -133,6 +144,20 @@ and might change in the future.
 <DT><CODE>table <I>name</I></CODE><DD><P>Create a new routing table. The default
 routing table is created implicitly, other routing tables have
 to be added by this command.
+<P>
+<DT><CODE>roa table [ { roa table options ... } ] <I>name</I></CODE><DD><P>Create a new ROA (Route Origin Authorization) table. ROA
+tables can be used to validate route origination of BGP
+routes. A ROA table contains ROA entries, each consist of a
+network prefix, a max prefix length and an AS number. A ROA
+entry specifies prefixes which could be originated by that AS
+number. ROA tables could be filled with data from RPKI (RFC
+6480) or from public databases like Whois. ROA tables are 
+examined by <CODE>roa_check()</CODE> operator in filters.
+<P>Currently, there is just one option,
+<CODE>roa <I>prefix</I> max <I>num</I> as <I>num</I></CODE>, which
+can be used to populate the ROA table with static ROA
+entries. The option may be used multiple times. Other entries
+can be added dynamically by <CODE>add roa</CODE> command.
 <P>
 <DT><CODE>eval <I>expr</I></CODE><DD><P>Evaluates given filter expression. It
 is used by us for testing of filters.

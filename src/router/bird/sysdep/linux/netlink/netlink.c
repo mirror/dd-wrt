@@ -198,7 +198,7 @@ nl_exchange(struct nlmsghdr *pkt)
 	break;
       log(L_WARN "nl_exchange: Unexpected reply received");
     }
-  return nl_error(h);
+  return nl_error(h) ? -1 : 0;
 }
 
 /*
@@ -386,7 +386,7 @@ nl_parse_link(struct nlmsghdr *h, int scan)
   struct ifinfomsg *i;
   struct rtattr *a[IFLA_WIRELESS+1];
   int new = h->nlmsg_type == RTM_NEWLINK;
-  struct iface f;
+  struct iface f = {};
   struct iface *ifi;
   char *name;
   u32 mtu;
@@ -408,26 +408,21 @@ nl_parse_link(struct nlmsghdr *h, int scan)
   if (!new)
     {
       DBG("KIF: IF%d(%s) goes down\n", i->ifi_index, name);
-      if (ifi && !scan)
-	{
-	  memcpy(&f, ifi, sizeof(struct iface));
-	  f.flags |= IF_SHUTDOWN;
-	  if_update(&f);
-	}
+      if (!ifi)
+	return;
+
+      if_delete(ifi);
     }
   else
     {
       DBG("KIF: IF%d(%s) goes up (mtu=%d,flg=%x)\n", i->ifi_index, name, mtu, i->ifi_flags);
-      if (ifi)
-	memcpy(&f, ifi, sizeof(f));
-      else
-	{
-	  bzero(&f, sizeof(f));
-	  f.index = i->ifi_index;
-	}
-      strncpy(f.name, RTA_DATA(a[IFLA_IFNAME]), sizeof(f.name)-1);
+      if (ifi && strncmp(ifi->name, name, sizeof(ifi->name)-1))
+	if_delete(ifi);
+
+      strncpy(f.name, name, sizeof(f.name)-1);
+      f.index = i->ifi_index;
       f.mtu = mtu;
-      f.flags = 0;
+
       fl = i->ifi_flags;
       if (fl & IFF_UP)
 	f.flags |= IF_ADMIN_UP;
@@ -616,7 +611,7 @@ nh_bufsize(struct mpnh *nh)
   return rv;
 }
 
-static void
+static int
 nl_send_route(struct krt_proto *p, rte *e, int new)
 {
   eattr *ea;
@@ -625,7 +620,7 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
   struct {
     struct nlmsghdr h;
     struct rtmsg r;
-    char buf[64 + nh_bufsize(a->nexthops)];
+    char buf[128 + nh_bufsize(a->nexthops)];
   } r;
 
   DBG("nl_send_route(%I/%d,new=%d)\n", net->n.prefix, net->n.pxlen, new);
@@ -663,7 +658,7 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
       break;
     case RTD_DEVICE:
       if (!a->iface)
-	return;
+	return -1;
       r.r.rtm_type = RTN_UNICAST;
       nl_add_attr_u32(&r.h, sizeof(r), RTA_OIF, a->iface->index);
       break;
@@ -684,17 +679,24 @@ nl_send_route(struct krt_proto *p, rte *e, int new)
       bug("krt_capable inconsistent with nl_send_route");
     }
 
-  nl_exchange(&r.h);
+  return nl_exchange(&r.h);
 }
 
 void
-krt_set_notify(struct krt_proto *p, net *n UNUSED, rte *new, rte *old)
+krt_set_notify(struct krt_proto *p, net *n, rte *new, rte *old)
 {
+  int err = 0;
+
   if (old)
     nl_send_route(p, old, 0);
 
   if (new)
-    nl_send_route(p, new, 1);
+    err = nl_send_route(p, new, 1);
+
+  if (err < 0)
+    n->n.flags |= KRF_SYNC_ERROR;
+  else
+    n->n.flags &= ~KRF_SYNC_ERROR;
 }
 
 

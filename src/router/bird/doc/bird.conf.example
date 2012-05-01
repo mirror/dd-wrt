@@ -10,7 +10,7 @@
 #log "tmp" all;
 
 # Override router ID
-#router id 62.168.0.1;
+#router id 198.51.100.1;
 
 # You can define your own symbols...
 #define xyzzy = (120+10);
@@ -24,6 +24,8 @@
 
 #filter sink { reject; }
 #filter okay { accept; }
+
+#include "filters.conf";
 
 # Define another routing table
 #table testable;
@@ -64,12 +66,12 @@ protocol static {
 #	preference 1000;	# Default preference of routes
 #	debug { states, routes, filters, interfaces, events, packets };
 #	debug all;
-#	route 0.0.0.0/0 via 62.168.0.13;
-#	route 62.168.0.0/25 reject;
+#	route 0.0.0.0/0 via 198.51.100.13;
+#	route 198.51.100.0/25 reject;
 #	route 10.0.0.0/8 reject;
-#	route 10.1.1.0:255.255.255.0 via 62.168.0.3;
-#	route 10.1.2.0:255.255.255.0 via 62.168.0.3;
-#	route 10.1.3.0:255.255.255.0 via 62.168.0.4;
+#	route 10.1.1.0:255.255.255.0 via 198.51.100.3;
+#	route 10.1.2.0:255.255.255.0 via 198.51.100.3;
+#	route 10.1.3.0:255.255.255.0 via 198.51.100.4;
 #	route 10.2.0.0/24 via "arc0";
 }
 
@@ -166,7 +168,7 @@ protocol static {
 #	disabled;
 #	description "My BGP uplink";
 #	local as 65000;
-#	neighbor 62.168.0.130 as 5588;
+#	neighbor 198.51.100.130 as 64496;
 #	multihop;
 #	hold time 240;
 #	startup hold time 240;
@@ -181,7 +183,7 @@ protocol static {
 #	path metric 1;		# Prefer routes with shorter paths (like Cisco does)
 #	default bgp_med 0;	# MED value we use for comparison when none is defined
 #	default bgp_local_pref 0;	# The same for local preference
-#	source address 62.168.0.14;	# What local address we use for the TCP connection
+#	source address 198.51.100.14;	# What local address we use for the TCP connection
 #	password "secret";	# Password used for MD5 authentication
 #	rr client;		# I am a route reflector and the neighor is my client
 #	rr cluster id 1.0.0.1;	# Use this value for cluster id instead of my router id 
@@ -191,7 +193,7 @@ protocol static {
 #			bgp_community = -empty-; bgp_community = add(bgp_community,(65000,5678));
 #			bgp_origin = 0;
 #			bgp_community = -empty-; bgp_community.add((65000,5678));
-#			if (65000,5678) ~ bgp_community then
+#			if (65000,64501) ~ bgp_community then
 #				bgp_community.add((0, 1));
 #			if bgp_path ~ [= 65000 =] then
 #				bgp_path.prepend(65000);
@@ -199,4 +201,17 @@ protocol static {
 #		}
 #		reject;
 #	};
+#}
+# 
+# Template usage example
+#template bgp rr_client {
+#	disabled;
+#	local as 65000;
+#	multihop;
+#	rr client;
+#	rr cluster id 1.0.0.1;
+#}
+#
+#protocol bgp rr_abcd from rr_client {
+#	neighbor 10.1.4.7 as 65000;
 #}

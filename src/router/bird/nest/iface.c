@@ -152,13 +152,21 @@ ifa_send_notify(struct proto *p, unsigned c, struct ifa *a)
 }
 
 static void
-ifa_notify_change(unsigned c, struct ifa *a)
+ifa_notify_change_dep(unsigned c, struct ifa *a)
 {
   struct proto *p;
 
   DBG("IFA change notification (%x) for %s:%I\n", c, a->iface->name, a->ip);
+
   WALK_LIST(p, active_proto_list)
     ifa_send_notify(p, c, a);
+}
+
+static inline void
+ifa_notify_change(unsigned c, struct ifa *a)
+{
+  neigh_ifa_update(a);
+  ifa_notify_change_dep(c, a);
 }
 
 static inline void
@@ -197,11 +205,12 @@ if_notify_change(unsigned c, struct iface *i)
 
   if (c & IF_CHANGE_UP)
     neigh_if_up(i);
+
   if (c & IF_CHANGE_DOWN)
     WALK_LIST(a, i->addrs)
       {
 	a->flags = (i->flags & ~IA_FLAGS) | (a->flags & IA_FLAGS);
-	ifa_notify_change(IF_CHANGE_DOWN, a);
+	ifa_notify_change_dep(IF_CHANGE_DOWN, a);
       }
 
   WALK_LIST(p, active_proto_list)
@@ -211,7 +220,7 @@ if_notify_change(unsigned c, struct iface *i)
     WALK_LIST(a, i->addrs)
       {
 	a->flags = (i->flags & ~IA_FLAGS) | (a->flags & IA_FLAGS);
-	ifa_notify_change(IF_CHANGE_UP, a);
+	ifa_notify_change_dep(IF_CHANGE_UP, a);
       }
 
   if ((c & (IF_CHANGE_UP | IF_CHANGE_DOWN | IF_CHANGE_LINK)) == IF_CHANGE_LINK)
@@ -241,6 +250,24 @@ if_change_flags(struct iface *i, unsigned flags)
   i->flags = if_recalc_flags(i, flags);
   if ((i->flags ^ of) & IF_UP)
     if_notify_change((i->flags & IF_UP) ? IF_CHANGE_UP : IF_CHANGE_DOWN, i);
+}
+
+/**
+ * if_delete - remove interface 
+ * @old: interface 
+ *
+ * This function is called by the low-level platform dependent code
+ * whenever it notices an interface disappears. It is just a shorthand
+ * for if_update().
+ */
+
+void
+if_delete(struct iface *old)
+{
+  struct iface f = {};
+  strncpy(f.name, old->name, sizeof(f.name)-1);
+  f.flags = IF_SHUTDOWN;
+  if_update(&f);
 }
 
 /**
@@ -279,13 +306,14 @@ if_update(struct iface *new)
 	    new->addr = i->addr;
 	    memcpy(&new->addrs, &i->addrs, sizeof(i->addrs));
 	    memcpy(i, new, sizeof(*i));
+	    i->flags &= ~IF_UP; /* IF_TMP_DOWN will be added later */
 	    goto newif;
 	  }
-	else if (c)
-	  {
-	    if_copy(i, new);
-	    if_notify_change(c, i);
-	  }
+
+	if_copy(i, new);
+	if (c)
+	  if_notify_change(c, i);
+
 	i->flags |= IF_UPDATED;
 	return i;
       }
@@ -391,7 +419,7 @@ if_find_by_index(unsigned idx)
   struct iface *i;
 
   WALK_LIST(i, iface_list)
-    if (i->index == idx)
+    if (i->index == idx && !(i->flags & IF_SHUTDOWN))
       return i;
   return NULL;
 }
@@ -413,6 +441,24 @@ if_find_by_name(char *name)
     if (!strcmp(i->name, name))
       return i;
   return NULL;
+}
+
+struct iface *
+if_get_by_name(char *name)
+{
+  struct iface *i;
+
+  if (i = if_find_by_name(name))
+    return i;
+
+  /* No active iface, create a dummy */
+  i = mb_allocz(if_pool, sizeof(struct iface));
+  strncpy(i->name, name, sizeof(i->name)-1);
+  i->flags = IF_SHUTDOWN;
+  init_list(&i->addrs);
+  init_list(&i->neighbors);
+  add_tail(&iface_list, &i->n);
+  return i;
 }
 
 struct ifa *kif_choose_primary(struct iface *i);

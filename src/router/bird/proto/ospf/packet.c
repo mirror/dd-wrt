@@ -489,17 +489,17 @@ ospf_rx_hook(sock *sk, int size)
 void
 ospf_tx_hook(sock * sk)
 {
-//  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
+  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
 //  struct proto *p = (struct proto *) (ifa->oa->po);
-  log(L_ERR "OSPF: TX_Hook called");
+  log(L_ERR "OSPF: TX hook called on %s", ifa->iface->name);
 }
 
 void
 ospf_err_hook(sock * sk, int err)
 {
-//  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
+  struct ospf_iface *ifa= (struct ospf_iface *) (sk->data);
 //  struct proto *p = (struct proto *) (ifa->oa->po);
-  log(L_ERR "OSPF: Socket error: %m", err);
+  log(L_ERR "OSPF: Socket error on %s: %M", ifa->iface->name, err);
 }
 
 void

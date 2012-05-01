@@ -146,7 +146,11 @@ rip_tx( sock *s )
     DBG( "Preparing packet to send: " );
 
     packet->heading.command = RIPCMD_RESPONSE;
+#ifndef IPV6
     packet->heading.version = RIP_V2;
+#else
+    packet->heading.version = RIP_NG;
+#endif
     packet->heading.unused  = 0;
 
     i = !!P_CF->authtype;
@@ -281,7 +285,7 @@ rip_rte_update_if_better(rtable *tab, net *net, struct proto *p, rte *new)
  * bird core with this route.
  */
 static void
-advertise_entry( struct proto *p, struct rip_block *b, ip_addr whotoldme )
+advertise_entry( struct proto *p, struct rip_block *b, ip_addr whotoldme, struct iface *iface )
 {
   rta *a, A;
   rte *r;
@@ -309,7 +313,7 @@ advertise_entry( struct proto *p, struct rip_block *b, ip_addr whotoldme )
 
   /* No need to look if destination looks valid - ie not net 0 or 127 -- core will do for us. */
 
-  neighbor = neigh_find( p, &A.gw, 0 );
+  neighbor = neigh_find2( p, &A.gw, iface, 0 );
   if (!neighbor) {
     log( L_REMOTE "%s: %I asked me to route %I/%d using not-neighbor %I.", p->name, A.from, b->network, pxlen, A.gw );
     return;
@@ -353,7 +357,7 @@ advertise_entry( struct proto *p, struct rip_block *b, ip_addr whotoldme )
  * process_block - do some basic check and pass block to advertise_entry
  */
 static void
-process_block( struct proto *p, struct rip_block *block, ip_addr whotoldme )
+process_block( struct proto *p, struct rip_block *block, ip_addr whotoldme, struct iface *iface )
 {
 #ifndef IPV6
   int metric = ntohl( block->metric );
@@ -380,7 +384,7 @@ process_block( struct proto *p, struct rip_block *block, ip_addr whotoldme )
     return;
   }
 
-  advertise_entry( p, block, whotoldme );
+  advertise_entry( p, block, whotoldme, iface );
 }
 
 #define BAD( x ) { log( L_REMOTE "%s: " x, p->name ); return 1; }
@@ -389,7 +393,7 @@ process_block( struct proto *p, struct rip_block *block, ip_addr whotoldme )
  * rip_process_packet - this is main routine for incoming packets.
  */
 static int
-rip_process_packet( struct proto *p, struct rip_packet *packet, int num, ip_addr whotoldme, int port )
+rip_process_packet( struct proto *p, struct rip_packet *packet, int num, ip_addr whotoldme, int port, struct iface *iface )
 {
   int i;
   int authenticated = 0;
@@ -406,7 +410,7 @@ rip_process_packet( struct proto *p, struct rip_packet *packet, int num, ip_addr
 	  if (P_CF->honor == HO_NEVER)
 	    BAD( "They asked me to send routing table, but I was told not to do it" );
 
-	  if ((P_CF->honor == HO_NEIGHBOR) && (!neigh_find( p, &whotoldme, 0 )))
+	  if ((P_CF->honor == HO_NEIGHBOR) && (!neigh_find2( p, &whotoldme, iface, 0 )))
 	    BAD( "They asked me to send routing table, but he is not my neighbor" );
     	  rip_sendto( p, whotoldme, port, HEAD(P->interfaces) ); /* no broadcast */
           break;
@@ -416,7 +420,7 @@ rip_process_packet( struct proto *p, struct rip_packet *packet, int num, ip_addr
 	    return 1;
 	  }
 
-	  if (!(neighbor = neigh_find( p, &whotoldme, 0 )) || neighbor->scope == SCOPE_HOST) {
+	  if (!(neighbor = neigh_find2( p, &whotoldme, iface, 0 )) || neighbor->scope == SCOPE_HOST) {
 	    log( L_REMOTE "%s: %I send me routing info but he is not my neighbor", p->name, whotoldme );
 	    return 0;
 	  }
@@ -443,7 +447,7 @@ rip_process_packet( struct proto *p, struct rip_packet *packet, int num, ip_addr
 	    if (packet->heading.version == RIP_V1)	/* FIXME (nonurgent): switch to disable this? */
 	      block->netmask = ipa_class_mask(block->network);
 #endif
-	    process_block( p, block, whotoldme );
+	    process_block( p, block, whotoldme, iface );
 	  }
           break;
   case RIPCMD_TRACEON:
@@ -463,11 +467,19 @@ rip_rx(sock *s, int size)
 {
   struct rip_interface *i = s->data;
   struct proto *p = i->proto;
+  struct iface *iface = NULL;
   int num;
 
   /* In non-listening mode, just ignore packet */
   if (i->mode & IM_NOLISTEN)
     return 1;
+
+#ifdef IPV6
+  if (! i->iface || s->lifindex != i->iface->index)
+    return 1;
+
+  iface = i->iface;
+#endif
 
   CHK_MAGIC;
   DBG( "RIP: message came: %d bytes from %I via %s\n", size, s->faddr, i->iface ? i->iface->name : "(dummy)" );
@@ -477,17 +489,12 @@ rip_rx(sock *s, int size)
   num = size / sizeof( struct rip_block );
   if (num>PACKET_MAX) BAD( "Too many blocks" );
 
-#ifdef IPV6
-  /* Try to absolutize link scope addresses */
-  ipa_absolutize(&s->faddr, &i->iface->addr->ip);
-#endif
-
   if (ipa_equal(i->iface->addr->ip, s->faddr)) {
     DBG("My own packet\n");
     return 1;
   }
 
-  rip_process_packet( p, (struct rip_packet *) s->rbuf, num, s->faddr, s->fport );
+  rip_process_packet( p, (struct rip_packet *) s->rbuf, num, s->faddr, s->fport, iface );
   return 1;
 }
 
@@ -701,22 +708,21 @@ new_iface(struct proto *p, struct iface *new, unsigned long flags, struct iface_
     {
       rif->sock->ttl = 1;
       rif->sock->tos = IP_PREC_INTERNET_CONTROL;
+      rif->sock->flags = SKF_LADDR_RX;
     }
 
   if (new) {
     if (new->addr->flags & IA_PEER)
       log( L_WARN "%s: rip is not defined over unnumbered links", p->name );
+    rif->sock->saddr = IPA_NONE;
     if (rif->multicast) {
 #ifndef IPV6
       rif->sock->daddr = ipa_from_u32(0xe0000009);
-      rif->sock->saddr = ipa_from_u32(0xe0000009);
 #else
       rif->sock->daddr = ipa_build(0xff020000, 0, 0, 9);
-      rif->sock->saddr = new->addr->ip;
 #endif
     } else {
       rif->sock->daddr = new->addr->brd;
-      rif->sock->saddr = new->addr->brd;
     }
   }
 
@@ -976,9 +982,8 @@ void
 rip_init_config(struct rip_proto_config *c)
 {
   init_list(&c->iface_list);
-  c->c.preference = DEF_PREF_RIP;
   c->infinity	= 16;
-  c->port	= 520;
+  c->port	= RIP_PORT;
   c->period	= 30;
   c->garbage_time = 120+180;
   c->timeout_time = 120;
@@ -1016,10 +1021,24 @@ rip_reconfigure(struct proto *p, struct proto_config *c)
                  sizeof(struct rip_proto_config) - generic);
 }
 
+static void
+rip_copy_config(struct proto_config *dest, struct proto_config *src)
+{
+  /* Shallow copy of everything */
+  proto_copy_rest(dest, src, sizeof(struct rip_proto_config));
+
+  /* We clean up iface_list, ifaces are non-sharable */
+  init_list(&((struct rip_proto_config *) dest)->iface_list);
+
+  /* Copy of passwords is OK, it just will be replaced in dest when used */
+}
+
+
 struct protocol proto_rip = {
   name: "RIP",
   template: "rip%d",
   attr_class: EAP_RIP,
+  preference: DEF_PREF_RIP,
   get_route_info: rip_get_route_info,
   get_attr: rip_get_attr,
 
@@ -1027,4 +1046,5 @@ struct protocol proto_rip = {
   dump: rip_dump,
   start: rip_start,
   reconfigure: rip_reconfigure,
+  copy_config: rip_copy_config
 };

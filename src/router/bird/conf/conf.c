@@ -108,10 +108,11 @@ config_parse(struct config *c)
   cfg_mem = c->mem;
   if (setjmp(conf_jmpbuf))
     return 0;
-  cf_lex_init(0);
+  cf_lex_init(0, c);
   sysdep_preconfig(c);
   protos_preconfig(c);
   rt_preconfig(c);
+  roa_preconfig(c);
   cf_parse();
   protos_postconfig(c);
   if (EMPTY_LIST(c->protos))
@@ -138,7 +139,7 @@ cli_parse(struct config *c)
   cfg_mem = c->mem;
   if (setjmp(conf_jmpbuf))
     return 0;
-  cf_lex_init(1);
+  cf_lex_init(1, c);
   cf_parse();
   return 1;
 }
@@ -210,6 +211,7 @@ config_do_commit(struct config *c, int type)
   force_restart |= global_commit(c, old_config);
   DBG("rt_commit\n");
   rt_commit(c, old_config);
+  roa_commit(c, old_config);
   DBG("protos_commit\n");
   protos_commit(c, old_config, force_restart, type);
   new_config = NULL;			/* Just to be sure nobody uses that now */
@@ -355,7 +357,8 @@ cf_error(char *msg, ...)
   if (bvsnprintf(buf, sizeof(buf), msg, args) < 0)
     strcpy(buf, "<bug: error message too long>");
   new_config->err_msg = cfg_strdup(buf);
-  new_config->err_lino = conf_lino;
+  new_config->err_lino = ifs->conf_lino;
+  new_config->err_file_name = ifs->conf_fname;
   longjmp(conf_jmpbuf, 1);
 }
 
@@ -375,4 +378,19 @@ cfg_strdup(char *c)
   char *z = cfg_allocu(l);
   memcpy(z, c, l);
   return z;
+}
+
+
+void
+cfg_copy_list(list *dest, list *src, unsigned node_size)
+{
+  node *dn, *sn;
+
+  init_list(dest);
+  WALK_LIST(sn, *src)
+  {
+    dn = cfg_alloc(node_size);
+    memcpy(dn, sn, node_size);
+    add_tail(dest, dn);
+  }
 }

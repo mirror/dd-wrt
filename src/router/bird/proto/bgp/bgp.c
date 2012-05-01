@@ -92,6 +92,8 @@ static int
 bgp_open(struct bgp_proto *p)
 {
   struct config *cfg = p->cf->c.global;
+  int errcode;
+
   bgp_counter++;
 
   if (!bgp_listen_sk)
@@ -100,10 +102,8 @@ bgp_open(struct bgp_proto *p)
   if (!bgp_listen_sk)
     {
       bgp_counter--;
-      p->p.disabled = 1;
-      bgp_store_error(p, NULL, BE_MISC, BEM_NO_SOCKET);
-      proto_notify_state(&p->p, PS_DOWN);
-      return -1;
+      errcode = BEM_NO_SOCKET;
+      goto err;
     }
 
   if (!bgp_linpool)
@@ -111,18 +111,22 @@ bgp_open(struct bgp_proto *p)
 
   if (p->cf->password)
     {
-      int rv = sk_set_md5_auth(bgp_listen_sk, p->cf->remote_ip, p->cf->password);
+      int rv = sk_set_md5_auth(bgp_listen_sk, p->cf->remote_ip, p->cf->iface, p->cf->password);
       if (rv < 0)
 	{
 	  bgp_close(p, 0);
-	  p->p.disabled = 1;
-	  bgp_store_error(p, NULL, BE_MISC, BEM_INVALID_MD5);
-	  proto_notify_state(&p->p, PS_DOWN);
-	  return -1;
+	  errcode = BEM_INVALID_MD5;
+	  goto err;
 	}
     }
 
   return 0;
+
+err:
+  p->p.disabled = 1;
+  bgp_store_error(p, NULL, BE_MISC, errcode);
+  proto_notify_state(&p->p, PS_DOWN);
+  return -1;
 }
 
 static void
@@ -174,7 +178,7 @@ bgp_close(struct bgp_proto *p, int apply_md5)
   bgp_counter--;
 
   if (p->cf->password && apply_md5)
-    sk_set_md5_auth(bgp_listen_sk, p->cf->remote_ip, NULL);
+    sk_set_md5_auth(bgp_listen_sk, p->cf->remote_ip, p->cf->iface, NULL);
 
   if (!bgp_counter)
     {
@@ -567,28 +571,45 @@ bgp_connect(struct bgp_proto *p)	/* Enter Connect state and start establishing c
 {
   sock *s;
   struct bgp_conn *conn = &p->outgoing_conn;
+  int hops = p->cf->multihop ? : 1;
 
   DBG("BGP: Connecting\n");
   s = sk_new(p->p.pool);
   s->type = SK_TCP_ACTIVE;
   s->saddr = p->source_addr;
   s->daddr = p->cf->remote_ip;
+  s->iface = p->neigh ? p->neigh->iface : NULL;
   s->dport = BGP_PORT;
-  s->ttl = p->cf->multihop ? : 1;
+  s->ttl = p->cf->ttl_security ? 255 : hops;
   s->rbsize = BGP_RX_BUFFER_SIZE;
   s->tbsize = BGP_TX_BUFFER_SIZE;
   s->tos = IP_PREC_INTERNET_CONTROL;
   s->password = p->cf->password;
   s->tx_hook = bgp_connected;
-  BGP_TRACE(D_EVENTS, "Connecting to %I from local address %I", s->daddr, s->saddr);
+  BGP_TRACE(D_EVENTS, "Connecting to %I%J from local address %I%J", s->daddr, p->cf->iface,
+	    s->saddr, ipa_has_link_scope(s->saddr) ? s->iface : NULL);
   bgp_setup_conn(p, conn);
   bgp_setup_sk(conn, s);
   bgp_conn_set_state(conn, BS_CONNECT);
-  if (sk_open(s))
+
+  if (sk_open(s) < 0)
     {
       bgp_sock_err(s, 0);
       return;
     }
+
+  /* Set minimal receive TTL if needed */
+  if (p->cf->ttl_security)
+  {
+    DBG("Setting minimum received TTL to %d", 256 - hops);
+    if (sk_set_min_ttl(s, 256 - hops) < 0)
+    {
+      log(L_ERR "TTL security configuration failed, closing session");
+      bgp_sock_err(s, 0);
+      return;
+    }
+  }
+
   DBG("BGP: Waiting for connect success\n");
   bgp_start_timer(conn->connect_retry_timer, p->cf->connect_retry_time);
 }
@@ -615,27 +636,43 @@ bgp_incoming_connection(sock *sk, int dummy UNUSED)
     if (pc->protocol == &proto_bgp && pc->proto)
       {
 	struct bgp_proto *p = (struct bgp_proto *) pc->proto;
-	if (ipa_equal(p->cf->remote_ip, sk->daddr))
+	if (ipa_equal(p->cf->remote_ip, sk->daddr) &&
+	    (!ipa_has_link_scope(sk->daddr) || (p->cf->iface == sk->iface)))
 	  {
 	    /* We are in proper state and there is no other incoming connection */
 	    int acc = (p->p.proto_state == PS_START || p->p.proto_state == PS_UP) &&
 	      (p->start_state >= BSS_CONNECT) && (!p->incoming_conn.sk);
 
-	    BGP_TRACE(D_EVENTS, "Incoming connection from %I (port %d) %s",
-		      sk->daddr, sk->dport, acc ? "accepted" : "rejected");
+	    BGP_TRACE(D_EVENTS, "Incoming connection from %I%J (port %d) %s",
+		      sk->daddr, ipa_has_link_scope(sk->daddr) ? sk->iface : NULL,
+		      sk->dport, acc ? "accepted" : "rejected");
 
 	    if (!acc)
 	      goto err;
 
+	    int hops = p->cf->multihop ? : 1;
+	    if (p->cf->ttl_security)
+	    {
+	      /* TTL security support */
+	      if ((sk_set_ttl(sk, 255) < 0) ||
+		  (sk_set_min_ttl(sk, 256 - hops) < 0))
+	      {
+		log(L_ERR "TTL security configuration failed, closing session");
+		goto err;
+	      }
+	    }
+	    else
+	      sk_set_ttl(sk, hops);
+
 	    bgp_setup_conn(p, &p->incoming_conn);
 	    bgp_setup_sk(&p->incoming_conn, sk);
-	    sk_set_ttl(sk, p->cf->multihop ? : 1);
 	    bgp_send_open(&p->incoming_conn);
 	    return 0;
 	  }
       }
 
-  log(L_WARN "BGP: Unexpected connect from unknown address %I (port %d)", sk->daddr, sk->dport);
+  log(L_WARN "BGP: Unexpected connect from unknown address %I%J (port %d)",
+      sk->daddr, ipa_has_link_scope(sk->daddr) ? sk->iface : NULL, sk->dport);
  err:
   rfree(sk);
   return 0;
@@ -656,6 +693,7 @@ bgp_setup_listen_sk(ip_addr addr, unsigned port, u32 flags)
   sock *s = sk_new(&root_pool);
   DBG("BGP: Creating listening socket\n");
   s->type = SK_TCP_PASSIVE;
+  s->ttl = 255;
   s->saddr = addr;
   s->sport = port ? port : BGP_PORT;
   s->flags = flags ? 0 : SKF_V6ONLY;
@@ -664,14 +702,15 @@ bgp_setup_listen_sk(ip_addr addr, unsigned port, u32 flags)
   s->tbsize = BGP_TX_BUFFER_SIZE;
   s->rx_hook = bgp_incoming_connection;
   s->err_hook = bgp_listen_sock_err;
-  if (sk_open(s))
+
+  if (sk_open(s) < 0)
     {
       log(L_ERR "BGP: Unable to open listening socket");
       rfree(s);
       return NULL;
     }
-  else
-    return s;
+
+  return s;
 }
 
 static void
@@ -679,6 +718,7 @@ bgp_start_neighbor(struct bgp_proto *p)
 {
   /* Called only for single-hop BGP sessions */
 
+  /* Remove this ? */
   if (ipa_zero(p->source_addr))
     p->source_addr = p->neigh->iface->addr->ip; 
 
@@ -708,7 +748,7 @@ bgp_neigh_notify(neighbor *n)
 {
   struct bgp_proto *p = (struct bgp_proto *) n->proto;
 
-  if (n->iface)
+  if (n->scope > 0)
     {
       if ((p->p.proto_state == PS_START) && (p->start_state == BSS_PREPARE))
 	{
@@ -759,10 +799,10 @@ bgp_start_locked(struct object_lock *lock)
       return;
     }
 
-  p->neigh = neigh_find(&p->p, &cf->remote_ip, NEF_STICKY);
+  p->neigh = neigh_find2(&p->p, &cf->remote_ip, cf->iface, NEF_STICKY);
   if (!p->neigh || (p->neigh->scope == SCOPE_HOST))
     {
-      log(L_ERR "%s: Invalid remote address %I", p->p.name, cf->remote_ip);
+      log(L_ERR "%s: Invalid remote address %I%J", p->p.name, cf->remote_ip, cf->iface);
       /* As we do not start yet, we can just disable protocol */
       p->p.disabled = 1;
       bgp_store_error(p, NULL, BE_MISC, BEM_INVALID_NEXT_HOP);
@@ -770,10 +810,10 @@ bgp_start_locked(struct object_lock *lock)
       return;
     }
   
-  if (p->neigh->iface)
+  if (p->neigh->scope > 0)
     bgp_start_neighbor(p);
   else
-    BGP_TRACE(D_EVENTS, "Waiting for %I to become my neighbor", cf->remote_ip);
+    BGP_TRACE(D_EVENTS, "Waiting for %I%J to become my neighbor", cf->remote_ip, cf->iface);
 }
 
 static int
@@ -813,6 +853,7 @@ bgp_start(struct proto *P)
 
   lock = p->lock = olock_new(P->pool);
   lock->addr = p->cf->remote_ip;
+  lock->iface = p->cf->iface;
   lock->type = OBJLOCK_TCP;
   lock->port = BGP_PORT;
   lock->iface = NULL;
@@ -874,6 +915,10 @@ bgp_init(struct proto_config *C)
   P->import_control = bgp_import_control;
   P->neigh_notify = bgp_neigh_notify;
   P->reload_routes = bgp_reload_routes;
+
+  if (c->deterministic_med)
+    P->rte_recalculate = bgp_rte_recalculate;
+
   p->cf = c;
   p->local_as = c->local_as;
   p->remote_as = c->remote_as;
@@ -884,6 +929,77 @@ bgp_init(struct proto_config *C)
 
   return P;
 }
+
+
+void
+bgp_check_config(struct bgp_config *c)
+{
+  int internal = (c->local_as == c->remote_as);
+
+  /* Do not check templates at all */
+  if (c->c.class == SYM_TEMPLATE)
+    return;
+
+  if (!c->local_as)
+    cf_error("Local AS number must be set");
+
+  if (!c->remote_as)
+    cf_error("Neighbor must be configured");
+
+  if (!(c->capabilities && c->enable_as4) && (c->remote_as > 0xFFFF))
+    cf_error("Neighbor AS number out of range (AS4 not available)");
+
+  if (!internal && c->rr_client)
+    cf_error("Only internal neighbor can be RR client");
+
+  if (internal && c->rs_client)
+    cf_error("Only external neighbor can be RS client");
+
+  if (c->multihop && (c->gw_mode == GW_DIRECT))
+    cf_error("Multihop BGP cannot use direct gateway mode");
+
+  if (c->multihop && (ipa_has_link_scope(c->remote_ip) || 
+		      ipa_has_link_scope(c->source_addr)))
+    cf_error("Multihop BGP cannot be used with link-local addresses");
+
+  /* Different default based on rs_client */
+  if (!c->missing_lladdr)
+    c->missing_lladdr = c->rs_client ? MLL_IGNORE : MLL_SELF;
+
+  /* Different default for gw_mode */
+  if (!c->gw_mode)
+    c->gw_mode = (c->multihop || internal) ? GW_RECURSIVE : GW_DIRECT;
+}
+
+static int
+bgp_reconfigure(struct proto *P, struct proto_config *C)
+{
+  struct bgp_config *new = (struct bgp_config *) C;
+  struct bgp_proto *p = (struct bgp_proto *) P;
+  struct bgp_config *old = p->cf;
+
+  int same = !memcmp(((byte *) old) + sizeof(struct proto_config),
+		     ((byte *) new) + sizeof(struct proto_config),
+		     // password item is last and must be checked separately
+		     OFFSETOF(struct bgp_config, password) - sizeof(struct proto_config))
+    && ((!old->password && !new->password)
+	|| (old->password && new->password && !strcmp(old->password, new->password)))
+    && (get_igp_table(old) == get_igp_table(new));
+
+  /* We should update our copy of configuration ptr as old configuration will be freed */
+  if (same)
+    p->cf = new;
+
+  return same;
+}
+
+static void
+bgp_copy_config(struct proto_config *dest, struct proto_config *src)
+{
+  /* Just a shallow copy */
+  proto_copy_rest(dest, src, sizeof(struct bgp_config));
+}
+
 
 /**
  * bgp_error - report a protocol error
@@ -949,38 +1065,6 @@ bgp_store_error(struct bgp_proto *p, struct bgp_conn *c, u8 class, u32 code)
   p->last_error_code = code;
 }
 
-void
-bgp_check(struct bgp_config *c)
-{
-  int internal = (c->local_as == c->remote_as);
-
-  if (!c->local_as)
-    cf_error("Local AS number must be set");
-
-  if (!c->remote_as)
-    cf_error("Neighbor must be configured");
-
-  if (!(c->capabilities && c->enable_as4) && (c->remote_as > 0xFFFF))
-    cf_error("Neighbor AS number out of range (AS4 not available)");
-
-  if (!internal && c->rr_client)
-    cf_error("Only internal neighbor can be RR client");
-
-  if (internal && c->rs_client)
-    cf_error("Only external neighbor can be RS client");
-
-  if (c->multihop && (c->gw_mode == GW_DIRECT))
-    cf_error("Multihop BGP cannot use direct gateway mode");
-
-  /* Different default based on rs_client */
-  if (!c->missing_lladdr)
-    c->missing_lladdr = c->rs_client ? MLL_IGNORE : MLL_SELF;
-
-  /* Different default for gw_mode */
-  if (!c->gw_mode)
-    c->gw_mode = (c->multihop || internal) ? GW_RECURSIVE : GW_DIRECT;
-}
-
 static char *bgp_state_names[] = { "Idle", "Connect", "Active", "OpenSent", "OpenConfirm", "Established", "Close" };
 static char *bgp_err_classes[] = { "", "Error: ", "Socket: ", "Received: ", "BGP Error: ", "Automatic shutdown: ", ""};
 static char *bgp_misc_errors[] = { "", "Neighbor lost", "Invalid next hop", "Kernel MD5 auth failed", "No listening socket" };
@@ -1008,8 +1092,8 @@ bgp_last_errmsg(struct bgp_proto *p)
 static const char *
 bgp_state_dsc(struct bgp_proto *p)
 {
-  //if (p->p.proto_state == PS_DOWN)
-  //  return "Down";
+  if (p->p.proto_state == PS_DOWN)
+    return "Down";
 
   int state = MAX(p->incoming_conn.state, p->outgoing_conn.state);
   if ((state == BS_IDLE) && (p->start_state >= BSS_CONNECT) && p->cf->passive)
@@ -1041,10 +1125,9 @@ bgp_show_proto_info(struct proto *P)
   struct bgp_proto *p = (struct bgp_proto *) P;
   struct bgp_conn *c = p->conn;
 
-  if (P->proto_state == PS_DOWN)
-    return;
-
   cli_msg(-1006, "  BGP state:          %s", bgp_state_dsc(p));
+  cli_msg(-1006, "    Neighbor address: %I%J", p->cf->remote_ip, p->cf->iface);
+  cli_msg(-1006, "    Neighbor AS:      %u", p->remote_as);
 
   if (P->proto_state == PS_START)
     {
@@ -1062,18 +1145,17 @@ bgp_show_proto_info(struct proto *P)
     }
   else if (P->proto_state == PS_UP)
     {
-      cli_msg(-1006, "    Session:          %s%s%s%s",
-	      p->is_internal ? "internal" : "external",
-	      p->rr_client ? " route-reflector" : "",
-	      p->rs_client ? " route-server" : "",
-	      p->as4_session ? " AS4" : "");
-      cli_msg(-1006, "    Neighbor AS:      %u", p->remote_as);
       cli_msg(-1006, "    Neighbor ID:      %R", p->remote_id);
-      cli_msg(-1006, "    Neighbor address: %I", p->cf->remote_ip);
-      cli_msg(-1006, "    Source address:   %I", p->source_addr);
       cli_msg(-1006, "    Neighbor caps:   %s%s",
 	      c->peer_refresh_support ? " refresh" : "",
 	      c->peer_as4_support ? " AS4" : "");
+      cli_msg(-1006, "    Session:          %s%s%s%s%s",
+	      p->is_internal ? "internal" : "external",
+	      p->cf->multihop ? " multihop" : "",
+	      p->rr_client ? " route-reflector" : "",
+	      p->rs_client ? " route-server" : "",
+	      p->as4_session ? " AS4" : "");
+      cli_msg(-1006, "    Source address:   %I", p->source_addr);
       if (p->cf->route_limit)
 	cli_msg(-1006, "    Route limit:      %d/%d",
 		p->p.stats.imp_routes, p->cf->route_limit);
@@ -1092,37 +1174,17 @@ bgp_show_proto_info(struct proto *P)
     }
 }
 
-static int
-bgp_reconfigure(struct proto *P, struct proto_config *C)
-{
-  struct bgp_config *new = (struct bgp_config *) C;
-  struct bgp_proto *p = (struct bgp_proto *) P;
-  struct bgp_config *old = p->cf;
-
-  int same = !memcmp(((byte *) old) + sizeof(struct proto_config),
-		     ((byte *) new) + sizeof(struct proto_config),
-		     // password item is last and must be checked separately
-		     OFFSETOF(struct bgp_config, password) - sizeof(struct proto_config))
-    && ((!old->password && !new->password)
-	|| (old->password && new->password && !strcmp(old->password, new->password)))
-    && (get_igp_table(old) == get_igp_table(new));
-
-  /* We should update our copy of configuration ptr as old configuration will be freed */
-  if (same)
-    p->cf = new;
-
-  return same;
-}
-
 struct protocol proto_bgp = {
   name:			"BGP",
   template:		"bgp%d",
   attr_class:		EAP_BGP,
+  preference:		DEF_PREF_BGP,
   init:			bgp_init,
   start:		bgp_start,
   shutdown:		bgp_shutdown,
   cleanup:		bgp_cleanup,
   reconfigure:		bgp_reconfigure,
+  copy_config:		bgp_copy_config,
   get_status:		bgp_get_status,
   get_attr:		bgp_get_attr,
   get_route_info:	bgp_get_route_info,

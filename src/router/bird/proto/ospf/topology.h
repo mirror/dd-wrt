@@ -71,10 +71,8 @@ int can_flush_lsa(struct proto_ospf *po);
 void originate_sum_net_lsa(struct ospf_area *oa, struct fib_node *fn, int metric);
 void originate_sum_rt_lsa(struct ospf_area *oa, struct fib_node *fn, int metric, u32 options UNUSED);
 void flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type);
-
-void originate_ext_lsa(net * n, rte * e, struct proto_ospf *po,
-		       struct ea_list *attrs);
-void flush_ext_lsa(net *n, struct proto_ospf *po);
+void originate_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int src, u32 metric, ip_addr fwaddr, u32 tag, int pbit);
+void flush_ext_lsa(struct ospf_area *oa, struct fib_node *fn);
 
 
 #ifdef OSPFv2

@@ -94,10 +94,10 @@ ospf_hello_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
     return;
   }
 
-  tmp = !(ps->options & OPT_E);
-  if (tmp != !!ifa->oa->stub)
+  /* Check whether bits E, N match */
+  if ((ps->options ^ ifa->oa->options) & (OPT_E | OPT_N))
   {
-    log(L_ERR "%s%I - stub area flag mismatch (%d)", beg, faddr, tmp);
+    log(L_ERR "%s%I - area type mismatch (%x)", beg, faddr, ps->options);
     return;
   }
 

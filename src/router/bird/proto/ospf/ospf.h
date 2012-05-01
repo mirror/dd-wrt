@@ -75,6 +75,7 @@ do { if ((p->debug & D_PACKETS) || OSPF_FORCE_DEBUG) \
 #define DEFAULT_RFC1583 0	/* compatibility with rfc1583 */
 #define DEFAULT_STUB_COST 1000
 #define DEFAULT_ECMP_LIMIT 16
+#define DEFAULT_TRANSINT 40
 
 
 struct ospf_config
@@ -84,8 +85,8 @@ struct ospf_config
   byte rfc1583;
   byte abr;
   int ecmp;
-  list area_list;
-  list vlink_list;
+  list area_list;		/* list of struct ospf_area_config */
+  list vlink_list;		/* list of struct ospf_iface_patt */
 };
 
 struct nbma_node
@@ -101,6 +102,7 @@ struct area_net_config
   node n;
   struct prefix px;
   int hidden;
+  u32 tag;
 };
 
 struct area_net
@@ -109,6 +111,7 @@ struct area_net
   int hidden;
   int active;
   u32 metric;
+  u32 tag;
 };
 
 struct ospf_stubnet_config
@@ -123,9 +126,16 @@ struct ospf_area_config
 {
   node n;
   u32 areaid;
-  u32 stub;
+  u32 default_cost;		/* Cost of default route for stub areas */
+  u8 type;			/* Area type (standard, stub, NSSA), represented
+				   by option flags (OPT_E, OPT_N) */
+  u8 summary;			/* Import summaries to this stub/NSSA area, valid for ABR */
+  u8 default_nssa;		/* Generate default NSSA route for NSSA+summary area */
+  u8 translator;		/* Translator role, for NSSA ABR */
+  u32 transint;			/* Translator stability interval */
   list patt_list;
   list net_list;	      	/* List of aggregate networks for that area */
+  list enet_list;	      	/* List of aggregate external (NSSA) networks */
   list stubnet_list;		/* List of stub networks added to Router LSA */
 };
 
@@ -137,12 +147,14 @@ struct ospf_area_config
 #define OPT_DC	0x20
 
 #ifdef OSPFv2
+#define OPT_P	0x08		/* flags P and N share position, see NSSA RFC */
 #define OPT_EA	0x10
 
 /* VEB flags are are stored independently in 'u16 options' */
 #define OPT_RT_B  (0x01 << 8)
 #define OPT_RT_E  (0x02 << 8)
 #define OPT_RT_V  (0x04 << 8)
+#define OPT_RT_NT (0x10 << 8)
 #endif
 
 #ifdef OSPFv3
@@ -165,7 +177,7 @@ struct ospf_area_config
 struct ospf_iface
 {
   node n;
-  struct iface *iface;		/* Nest's iface */
+  struct iface *iface;		/* Nest's iface, non-NULL (unless type OSPF_IT_VLINK) */
   struct ifa *addr;		/* IP prefix associated with that OSPF iface */
   struct ospf_area *oa;
   struct ospf_iface_patt *cf;
@@ -363,6 +375,7 @@ struct ospf_lsa_header
 #define LSA_T_SUM_NET	3
 #define LSA_T_SUM_RT	4
 #define LSA_T_EXT	5
+#define LSA_T_NSSA	7
 
 #define LSA_SCOPE_AREA	0x2000
 #define LSA_SCOPE_AS	0x4000
@@ -377,6 +390,7 @@ struct ospf_lsa_header
 #define LSA_T_SUM_NET	0x2003
 #define LSA_T_SUM_RT	0x2004
 #define LSA_T_EXT	0x4005
+#define LSA_T_NSSA	0x2007
 #define LSA_T_LINK	0x0008
 #define LSA_T_PREFIX	0x2009
 
@@ -720,19 +734,25 @@ struct ospf_area
 {
   node n;
   u32 areaid;
-  struct ospf_area_config *ac;	/* Related area config, might be NULL */
+  struct ospf_area_config *ac;	/* Related area config */
   struct top_hash_entry *rt;	/* My own router LSA */
   struct top_hash_entry *pxr_lsa; /* Originated prefix LSA */
   list cand;			/* List of candidates for RT calc. */
   struct fib net_fib;		/* Networks to advertise or not */
-  u32 stub;			/* 0 or stub area cost */
+  struct fib enet_fib;		/* External networks for NSSAs */
   u32 options;			/* Optional features */
   byte origrt;			/* Rt lsa origination scheduled? */
   byte trcap;			/* Transit capability? */
   byte marked;			/* Used in OSPF reconfigure */
+  byte translate;		/* Translator state (TRANS_*), for NSSA ABR  */
+  timer *translator_timer;	/* For NSSA translator switch */
   struct proto_ospf *po;
   struct fib rtr;		/* Routing tables for routers */
 };
+
+#define TRANS_OFF	0
+#define TRANS_ON	1
+#define TRANS_WAIT	2	/* Waiting before the end of translation */
 
 struct proto_ospf
 {
@@ -796,7 +816,6 @@ struct ospf_iface_patt
 #endif
 };
 
-
 int ospf_import_control(struct proto *p, rte **new, ea_list **attrs,
 			struct linpool *pool);
 struct ea_list *ospf_make_tmp_attrs(struct rte *rt, struct linpool *pool);
@@ -806,6 +825,16 @@ void schedule_rtcalc(struct proto_ospf *po);
 void schedule_net_lsa(struct ospf_iface *ifa);
 
 struct ospf_area *ospf_find_area(struct proto_ospf *po, u32 aid);
+static inline struct ospf_area *ospf_main_area(struct proto_ospf *po)
+{ return (po->areano == 1) ? HEAD(po->area_list) : po->backbone; }
+
+static inline int oa_is_stub(struct ospf_area *oa)
+{ return (oa->options & (OPT_E | OPT_N)) == 0; }
+static inline int oa_is_ext(struct ospf_area *oa)
+{ return oa->options & OPT_E; }
+static inline int oa_is_nssa(struct ospf_area *oa)
+{ return oa->options & OPT_N; }
+
 
 #ifdef OSPFv3
 void schedule_link_lsa(struct ospf_iface *ifa);
@@ -817,7 +846,19 @@ void ospf_sh_neigh(struct proto *p, char *iff);
 void ospf_sh(struct proto *p);
 void ospf_sh_iface(struct proto *p, char *iff);
 void ospf_sh_state(struct proto *p, int verbose, int reachable);
-void ospf_sh_lsadb(struct proto *p);
+
+#define SH_ROUTER_SELF 0xffffffff
+
+struct lsadb_show_data {
+  struct symbol *name;	/* Protocol to request data from */
+  u16 type;		/* LSA Type, 0 -> all */
+  u16 scope;		/* Scope, 0 -> all, hack to handle link scope as 1 */
+  u32 area;		/* Specified for area scope */
+  u32 lsid;		/* LSA ID, 0 -> all */
+  u32 router;		/* Advertising router, 0 -> all */
+};
+
+void ospf_sh_lsadb(struct lsadb_show_data *ld);
 
 
 #define EA_OSPF_METRIC1	EA_CODE(EAP_OSPF, 0)

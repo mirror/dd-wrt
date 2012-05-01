@@ -268,6 +268,26 @@ int import_control(struct proto *p, rte **e, ea_list **attrs, struct linpool *po
 { DUMMY; }
 
 /**
+ * rte_recalculate - prepare routes for comparison
+ * @table: a routing table 
+ * @net: a network entry
+ * @new: new route for the network
+ * @old: old route for the network
+ * @old_best: old best route for the network (may be NULL)
+ *
+ * This hook is called when a route change (from @old to @new for a
+ * @net entry) is propagated to a @table. It may be used to prepare
+ * routes for comparison by rte_better() in the best route
+ * selection. @new may or may not be in @net->routes list,
+ * @old is not there.
+ *
+ * Result: 1 if the ordering implied by rte_better() changes enough
+ * that full best route calculation have to be done, 0 otherwise.
+ */
+int rte_recalculate(struct rtable *table, struct network *net, struct rte *new, struct rte *old, struct rte *old_best)
+{ DUMMY; }
+
+/**
  * rte_better - compare metrics of two routes
  * @new: the new route
  * @old: the original route

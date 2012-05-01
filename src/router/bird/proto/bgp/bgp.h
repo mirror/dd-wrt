@@ -19,8 +19,10 @@ struct bgp_config {
   struct proto_config c;
   u32 local_as, remote_as;
   ip_addr remote_ip;
-  int multihop;				/* Number of hops if multihop */
   ip_addr source_addr;			/* Source address to use */
+  struct iface *iface;			/* Interface for link-local addresses */
+  int multihop;				/* Number of hops if multihop */
+  int ttl_security;			/* Enable TTL security [RFC5082] */
   int next_hop_self;			/* Always set next hop to local IP address */
   int missing_lladdr;			/* What we will do when we don' know link-local addr, see MLL_* */
   int gw_mode;				/* How we compute route gateway from next_hop attr, see GW_* */
@@ -28,6 +30,7 @@ struct bgp_config {
   int med_metric;			/* Compare MULTI_EXIT_DISC even between routes from differen ASes */
   int igp_metric;			/* Use IGP metrics when selecting best route */
   int prefer_older;			/* Prefer older routes according to RFC 5004 */
+  int deterministic_med;		/* Use more complicated algo to have strict RFC 4271 MED comparison */
   u32 default_local_pref;		/* Default value for LOCAL_PREF attribute */
   u32 default_med;			/* Default value for MULTI_EXIT_DISC attribute */
   int capabilities;			/* Enable capability handshake [RFC3392] */
@@ -140,7 +143,7 @@ extern struct linpool *bgp_linpool;
 
 
 void bgp_start_timer(struct timer *t, int value);
-void bgp_check(struct bgp_config *c);
+void bgp_check_config(struct bgp_config *c);
 void bgp_error(struct bgp_conn *c, unsigned code, unsigned subcode, byte *data, int len);
 void bgp_close_conn(struct bgp_conn *c);
 void bgp_update_startup_delay(struct bgp_proto *p);
@@ -184,6 +187,7 @@ byte *bgp_attach_attr_wa(struct ea_list **to, struct linpool *pool, unsigned att
 struct rta *bgp_decode_attrs(struct bgp_conn *conn, byte *a, unsigned int len, struct linpool *pool, int mandatory);
 int bgp_get_attr(struct eattr *e, byte *buf, int buflen);
 int bgp_rte_better(struct rte *, struct rte *);
+int bgp_rte_recalculate(rtable *table, net *net, rte *new, rte *old, rte *old_best);
 void bgp_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UNUSED, ea_list *attrs);
 int bgp_import_control(struct proto *, struct rte **, struct ea_list **, struct linpool *);
 void bgp_attr_init(struct bgp_proto *);
@@ -236,7 +240,7 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define BA_RCID_PATH		0x0d
 #define BA_MP_REACH_NLRI	0x0e	/* [RFC2283] */
 #define BA_MP_UNREACH_NLRI	0x0f
-#define BA_EXTENDED_COMM	0x10	/* draft-ramachandra-bgp-ext-communities */
+#define BA_EXT_COMMUNITY	0x10	/* [RFC4360] */
 #define BA_AS4_PATH             0x11    /* [RFC4893] */
 #define BA_AS4_AGGREGATOR       0x12
 

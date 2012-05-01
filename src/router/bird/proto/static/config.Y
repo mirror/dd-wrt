@@ -18,7 +18,7 @@ static struct static_route *this_srt, *this_srt_nh, *last_srt_nh;
 CF_DECLS
 
 CF_KEYWORDS(STATIC, ROUTE, VIA, DROP, REJECT, PROHIBIT, PREFERENCE, CHECK, LINK)
-CF_KEYWORDS(MULTIPATH, WEIGHT)
+CF_KEYWORDS(MULTIPATH, WEIGHT, RECURSIVE, IGP, TABLE)
 
 
 CF_GRAMMAR
@@ -26,7 +26,7 @@ CF_GRAMMAR
 CF_ADDTO(proto, static_proto '}')
 
 static_proto_start: proto_start STATIC {
-     this_proto = proto_config_new(&proto_static, sizeof(struct static_config));
+     this_proto = proto_config_new(&proto_static, sizeof(struct static_config), $1);
      static_init_config((struct static_config *) this_proto);
   }
  ;
@@ -35,6 +35,7 @@ static_proto:
    static_proto_start proto_name '{'
  | static_proto proto_item ';'
  | static_proto CHECK LINK bool ';' { STATIC_CFG->check_link = $4; }
+ | static_proto IGP TABLE rtable ';' { STATIC_CFG->igp_table = $4; }
  | static_proto stat_route ';'
  ;
 
@@ -47,11 +48,12 @@ stat_route0: ROUTE prefix {
  ;
 
 stat_multipath1:
-   VIA ipa {
+   VIA ipa ipa_scope {
      last_srt_nh = this_srt_nh;
      this_srt_nh = cfg_allocz(sizeof(struct static_route));
      this_srt_nh->dest = RTD_NONE;
      this_srt_nh->via = $2;
+     this_srt_nh->via_if = $3;
      this_srt_nh->if_name = (void *) this_srt; /* really */
    }
  | stat_multipath1 WEIGHT expr {
@@ -66,9 +68,10 @@ stat_multipath:
  ;
 
 stat_route:
-   stat_route0 VIA ipa {
+   stat_route0 VIA ipa ipa_scope {
       this_srt->dest = RTD_ROUTER;
       this_srt->via = $3;
+      this_srt->via_if = $4;
    }
  | stat_route0 VIA TEXT {
       this_srt->dest = RTD_DEVICE;
@@ -78,6 +81,10 @@ stat_route:
    }
  | stat_route0 MULTIPATH stat_multipath {
       this_srt->dest = RTD_MULTIPATH;
+   }
+ | stat_route0 RECURSIVE ipa {
+      this_srt->dest = RTDX_RECURSIVE;
+      this_srt->via = $3;
    }
  | stat_route0 DROP { this_srt->dest = RTD_BLACKHOLE; }
  | stat_route0 REJECT { this_srt->dest = RTD_UNREACHABLE; }

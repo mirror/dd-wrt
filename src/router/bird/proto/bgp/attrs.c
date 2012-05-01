@@ -247,7 +247,6 @@ bgp_check_community(struct bgp_proto *p UNUSED, byte *a UNUSED, int len)
   return ((len % 4) == 0) ? 0 : WITHDRAW;
 }
 
-
 static int
 bgp_check_cluster_list(struct bgp_proto *p UNUSED, byte *a UNUSED, int len)
 {
@@ -281,6 +280,13 @@ bgp_check_unreach_nlri(struct bgp_proto *p UNUSED, byte *a UNUSED, int len UNUSE
   return IGNORE;
 }
 
+static int
+bgp_check_ext_community(struct bgp_proto *p UNUSED, byte *a UNUSED, int len)
+{
+  return ((len % 8) == 0) ? 0 : WITHDRAW;
+}
+
+
 static struct attr_desc bgp_attr_table[] = {
   { NULL, -1, 0, 0, 0,								/* Undefined */
     NULL, NULL },
@@ -311,7 +317,8 @@ static struct attr_desc bgp_attr_table[] = {
     bgp_check_reach_nlri, NULL },
   { "mp_unreach_nlri", -1, BAF_OPTIONAL, EAF_TYPE_OPAQUE, 1,			/* BA_MP_UNREACH_NLRI */
     bgp_check_unreach_nlri, NULL },
-  {  .name = NULL },								/* BA_EXTENDED_COMM */
+  { "ext_community", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_EC_SET, 1,	/* BA_EXT_COMMUNITY */
+    bgp_check_ext_community, NULL },
   { "as4_path", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,		/* BA_AS4_PATH */
     NULL, NULL },
   { "as4_aggregator", -1, BAF_OPTIONAL | BAF_TRANSITIVE, EAF_TYPE_OPAQUE, 1,	/* BA_AS4_PATH */
@@ -468,7 +475,7 @@ bgp_get_attr_len(eattr *a)
 unsigned int
 bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 {
-  unsigned int i, code, flags;
+  unsigned int i, code, type, flags;
   byte *start = w;
   int len, rv;
 
@@ -477,6 +484,7 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
       eattr *a = &attrs->attrs[i];
       ASSERT(EA_PROTO(a->id) == EAP_BGP);
       code = EA_ID(a->id);
+
 #ifdef IPV6
       /* When talking multiprotocol BGP, the NEXT_HOP attributes are used only temporarily. */
       if (code == BA_NEXT_HOP)
@@ -559,11 +567,12 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 
       /* Standard path continues here ... */
 
+      type = a->type & EAF_TYPE_MASK;
       flags = a->flags & (BAF_OPTIONAL | BAF_TRANSITIVE | BAF_PARTIAL);
       len = bgp_get_attr_len(a);
 
-      /* Skip empty int sets */ 
-      if (((a->type & EAF_TYPE_MASK) == EAF_TYPE_INT_SET) && (len == 0))
+      /* Skip empty sets */ 
+      if (((type == EAF_TYPE_INT_SET) || (type == EAF_TYPE_EC_SET)) && (len == 0))
 	continue; 
 
       if (remains < len + 4)
@@ -572,7 +581,7 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
       rv = bgp_encode_attr_hdr(w, flags, code, len);
       ADVANCE(w, remains, rv);
 
-      switch (a->type & EAF_TYPE_MASK)
+      switch (type)
 	{
 	case EAF_TYPE_INT:
 	case EAF_TYPE_ROUTER_ID:
@@ -589,8 +598,9 @@ bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains)
 	    break;
 	  }
 	case EAF_TYPE_INT_SET:
+	case EAF_TYPE_EC_SET:
 	  {
-	    u32 *z = (u32 *)a->u.ptr->data;
+	    u32 *z = int_set_get_data(a->u.ptr);
 	    int i;
 	    for(i=0; i<len; i+=4)
 	      put_u32(w+i, *z++);
@@ -624,11 +634,48 @@ bgp_compare_u32(const u32 *x, const u32 *y)
   return (*x < *y) ? -1 : (*x > *y) ? 1 : 0;
 }
 
-static void
-bgp_normalize_set(u32 *dest, u32 *src, unsigned cnt)
+static inline void
+bgp_normalize_int_set(u32 *dest, u32 *src, unsigned cnt)
 {
   memcpy(dest, src, sizeof(u32) * cnt);
   qsort(dest, cnt, sizeof(u32), (int(*)(const void *, const void *)) bgp_compare_u32);
+}
+
+static int
+bgp_compare_ec(const u32 *xp, const u32 *yp)
+{
+  u64 x = ec_get(xp, 0);
+  u64 y = ec_get(yp, 0);
+  return (x < y) ? -1 : (x > y) ? 1 : 0;
+}
+
+static inline void
+bgp_normalize_ec_set(struct adata *ad, u32 *src, int internal)
+{
+  u32 *dst = int_set_get_data(ad);
+
+  /* Remove non-transitive communities (EC_TBIT active) on external sessions */
+  if (! internal)
+    {
+      int len = int_set_get_size(ad);
+      u32 *t = dst;
+      int i;
+
+      for (i=0; i < len; i += 2)
+	{
+	  if (src[i] & EC_TBIT)
+	    continue;
+	  
+	  *t++ = src[i];
+	  *t++ = src[i+1];
+	}
+
+      ad->length = (t - dst) * 4;
+    }
+  else
+    memcpy(dst, src, ad->length);
+
+  qsort(dst, ad->length / 8, 8, (int(*)(const void *, const void *)) bgp_compare_ec);
 }
 
 static void
@@ -763,7 +810,15 @@ bgp_get_bucket(struct bgp_proto *p, net *n, ea_list *attrs, int originate)
 	  {
 	    struct adata *z = alloca(sizeof(struct adata) + d->u.ptr->length);
 	    z->length = d->u.ptr->length;
-	    bgp_normalize_set((u32 *) z->data, (u32 *) d->u.ptr->data, z->length / 4);
+	    bgp_normalize_int_set((u32 *) z->data, (u32 *) d->u.ptr->data, z->length / 4);
+	    d->u.ptr = z;
+	    break;
+	  }
+	case EAF_TYPE_EC_SET:
+	  {
+	    struct adata *z = alloca(sizeof(struct adata) + d->u.ptr->length);
+	    z->length = d->u.ptr->length;
+	    bgp_normalize_ec_set(z, (u32 *) d->u.ptr->data, p->is_internal);
 	    d->u.ptr = z;
 	    break;
 	  }
@@ -946,10 +1001,13 @@ bgp_update_attrs(struct bgp_proto *p, rte *e, ea_list **attrs, struct linpool *p
     }
 
   /* iBGP -> keep next_hop, eBGP multi-hop -> use source_addr,
-     eBGP single-hop -> keep next_hop if on the same iface */
+   * eBGP single-hop -> keep next_hop if on the same iface.
+   * If the next_hop is zero (i.e. link-local), keep only if on the same iface.
+   */
   a = ea_find(e->attrs->eattrs, EA_CODE(EAP_BGP, BA_NEXT_HOP));
   if (a && !p->cf->next_hop_self && 
-      (p->is_internal || (p->neigh && (e->attrs->iface == p->neigh->iface))))
+      ((p->is_internal && ipa_nonzero(*((ip_addr *) a->u.ptr->data))) ||
+       (p->neigh && (e->attrs->iface == p->neigh->iface))))
     {
       /* Leave the original next hop attribute, will check later where does it point */
     }
@@ -1070,6 +1128,14 @@ bgp_rte_better(rte *new, rte *old)
   eattr *x, *y;
   u32 n, o;
 
+  /* Skip suppressed routes (see bgp_rte_recalculate()) */
+  n = new->u.bgp.suppressed;
+  o = old->u.bgp.suppressed;
+  if (n > o)
+    return 0;
+  if (n < o)
+    return 1;
+
   /* RFC 4271 9.1.2.1. Route resolvability test */
   n = rte_resolvable(new);
   o = rte_resolvable(old);
@@ -1112,14 +1178,15 @@ bgp_rte_better(rte *new, rte *old)
     return 0;
 
   /* RFC 4271 9.1.2.2. c) Compare MED's */
-  /* This is noncompliant. Proper RFC 4271 path selection cannot be
-   * interpreted as finding the best path in some ordering.
-   * Therefore, it cannot be implemented in BIRD without some ugly
-   * hacks. This is just an approximation, which in specific
-   * situations may lead to persistent routing loops, because it is
-   * nondeterministic - it depends on the order in which routes
-   * appeared. But it is also the same behavior as used by default in
-   * Cisco routers, so it is probably not a big issue.
+  /* Proper RFC 4271 path selection cannot be interpreted as finding
+   * the best path in some ordering. It is implemented partially in
+   * bgp_rte_recalculate() when deterministic_med option is
+   * active. Without that option, the behavior is just an
+   * approximation, which in specific situations may lead to
+   * persistent routing loops, because it is nondeterministic - it
+   * depends on the order in which routes appeared. But it is also the
+   * same behavior as used by default in Cisco routers, so it is
+   * probably not a big issue.
    */
   if (new_bgp->cf->med_metric || old_bgp->cf->med_metric ||
       (bgp_get_neighbor(new) == bgp_get_neighbor(old)))
@@ -1179,6 +1246,148 @@ bgp_rte_better(rte *new, rte *old)
 
   /* RFC 4271 9.1.2.2. g) Compare peer IP adresses */
   return (ipa_compare(new_bgp->cf->remote_ip, old_bgp->cf->remote_ip) < 0);
+}
+
+
+static inline int
+same_group(rte *r, u32 lpref, u32 lasn)
+{
+  return (r->pref == lpref) && (bgp_get_neighbor(r) == lasn);
+}
+
+static inline int
+use_deterministic_med(rte *r)
+{
+  return ((struct bgp_proto *) r->attrs->proto)->cf->deterministic_med;
+}
+
+int
+bgp_rte_recalculate(rtable *table, net *net, rte *new, rte *old, rte *old_best)
+{
+  rte *r, *s;
+  rte *key = new ? new : old;
+  u32 lpref = key->pref;
+  u32 lasn = bgp_get_neighbor(key);
+  int old_is_group_best = 0;
+
+  /*
+   * Proper RFC 4271 path selection is a bit complicated, it cannot be
+   * implemented just by rte_better(), because it is not a linear
+   * ordering. But it can be splitted to two levels, where the lower
+   * level chooses the best routes in each group of routes from the
+   * same neighboring AS and higher level chooses the best route (with
+   * a slightly different ordering) between the best-in-group routes.
+   *
+   * When deterministic_med is disabled, we just ignore this issue and
+   * choose the best route by bgp_rte_better() alone. If enabled, the
+   * lower level of the route selection is done here (for the group
+   * to which the changed route belongs), all routes in group are
+   * marked as suppressed, just chosen best-in-group is not.
+   *
+   * Global best route selection then implements higher level by
+   * choosing between non-suppressed routes (as they are always
+   * preferred over suppressed routes). Routes from BGP protocols
+   * that do not set deterministic_med are just never suppressed. As
+   * they do not participate in the lower level selection, it is OK
+   * that this fn is not called for them.
+   *
+   * The idea is simple, the implementation is more problematic,
+   * mostly because of optimizations in rte_recalculate() that 
+   * avoids full recalculation in most cases.
+   *
+   * We can assume that at least one of new, old is non-NULL and both
+   * are from the same protocol with enabled deterministic_med. We
+   * group routes by both neighbor AS (lasn) and preference (lpref),
+   * because bgp_rte_better() does not handle preference itself.
+   */
+
+  /* If new and old are from different groups, we just process that
+     as two independent events */
+  if (new && old && !same_group(old, lpref, lasn))
+    {
+      int i1, i2;
+      i1 = bgp_rte_recalculate(table, net, NULL, old, old_best);
+      i2 = bgp_rte_recalculate(table, net, new, NULL, old_best);
+      return i1 || i2;
+    }
+
+  /* 
+   * We could find the best-in-group and then make some shortcuts like
+   * in rte_recalculate, but as we would have to walk through all
+   * net->routes just to find it, it is probably not worth. So we
+   * just have two simpler fast cases that use just the old route.
+   * We also set suppressed flag to avoid using it in bgp_rte_better().
+   */
+
+  if (new)
+    new->u.bgp.suppressed = 1;
+
+  if (old)
+    {
+      old_is_group_best = !old->u.bgp.suppressed;
+      old->u.bgp.suppressed = 1;
+      int new_is_better = new && bgp_rte_better(new, old);
+
+      /* The first case - replace not best with worse (or remove not best) */
+      if (!old_is_group_best && !new_is_better)
+	return 0;
+
+      /* The second case - replace the best with better */
+      if (old_is_group_best && new_is_better)
+	{
+	  /* new is best-in-group, the see discussion below - this is
+	     a special variant of NBG && OBG. From OBG we can deduce
+	     that same_group(old_best) iff (old == old_best)  */
+	  new->u.bgp.suppressed = 0;
+	  return (old == old_best);
+	}
+    }
+
+  /* The default case - find a new best-in-group route */
+  r = new; /* new may not be in the list */
+  for (s=net->routes; s; s=s->next)
+    if (use_deterministic_med(s) && same_group(s, lpref, lasn))
+      {
+	s->u.bgp.suppressed = 1;
+	if (!r || bgp_rte_better(s, r))
+	  r = s;
+      }
+
+  /* Simple case - the last route in group disappears */
+  if (!r)
+    return 0;
+
+  /* Found best-in-group */
+  r->u.bgp.suppressed = 0;
+
+  /*
+   * There are generally two reasons why we have to force
+   * recalculation (return 1): First, the new route may be wrongfully
+   * chosen to be the best in the first case check in
+   * rte_recalculate(), this may happen only if old_best is from the
+   * same group. Second, another (different than new route)
+   * best-in-group is chosen and that may be the proper best (although
+   * rte_recalculate() without ignore that possibility).
+   *
+   * There are three possible cases according to whether the old route
+   * was the best in group (OBG, stored in old_is_group_best) and
+   * whether the new route is the best in group (NBG, tested by r == new).
+   * These cases work even if old or new is NULL.
+   *
+   * NBG -> new is a possible candidate for the best route, so we just
+   *        check for the first reason using same_group().
+   *
+   * !NBG && OBG -> Second reason applies, return 1
+   *
+   * !NBG && !OBG -> Best in group does not change, old != old_best,
+   *                 rte_better(new, old_best) is false and therefore
+   *                 the first reason does not apply, return 0
+   */
+
+  if (r == new)
+    return old_best && same_group(old_best, lpref, lasn);
+  else
+    return old_is_group_best;
 }
 
 static struct adata *
@@ -1447,6 +1656,7 @@ bgp_decode_attrs(struct bgp_conn *conn, byte *attr, unsigned int len, struct lin
 	  ipa_ntoh(*(ip_addr *)ad->data);
 	  break;
 	case EAF_TYPE_INT_SET:
+	case EAF_TYPE_EC_SET:
 	  {
 	    u32 *z = (u32 *) ad->data;
 	    for(i=0; i<ad->length/4; i++)
@@ -1520,16 +1730,18 @@ bgp_get_attr(eattr *a, byte *buf, int buflen)
 {
   unsigned int i = EA_ID(a->id);
   struct attr_desc *d;
+  int len;
 
   if (ATTR_KNOWN(i))
     {
       d = &bgp_attr_table[i];
-      buf += bsprintf(buf, "%s", d->name);
+      len = bsprintf(buf, "%s", d->name);
+      buf += len;
       if (d->format)
 	{
 	  *buf++ = ':';
 	  *buf++ = ' ';
-	  d->format(a, buf, buflen);
+	  d->format(a, buf, buflen - len - 2);
 	  return GA_FULL;
 	}
       return GA_NAME;
@@ -1557,6 +1769,10 @@ bgp_get_route_info(rte *e, byte *buf, ea_list *attrs)
   u32 origas;
 
   buf += bsprintf(buf, " (%d", e->pref);
+
+  if (e->u.bgp.suppressed)
+    buf += bsprintf(buf, "-");
+
   if (e->attrs->hostentry)
     {
       if (!rte_resolvable(e))

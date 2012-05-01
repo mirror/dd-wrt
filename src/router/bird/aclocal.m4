@@ -6,7 +6,8 @@ AC_DEFUN(BIRD_CHECK_INTEGERS,
 AC_CHECK_SIZEOF(short int, 0)
 AC_CHECK_SIZEOF(int, 0)
 AC_CHECK_SIZEOF(long int, 0)
-for size in 1 2 4 ; do
+AC_CHECK_SIZEOF(long long int, 0)
+for size in 1 2 4 8; do
 	bits=`expr $size "*" 8`
 	AC_MSG_CHECKING([for $bits-bit type])
 	if test $ac_cv_sizeof_int = $size ; then
@@ -17,6 +18,8 @@ for size in 1 2 4 ; do
 		res="short int"
 	elif test $ac_cv_sizeof_long_int = $size ; then
 		res="long int"
+	elif test $ac_cv_sizeof_long_long_int = $size ; then
+		res="long long int"
 	else
 		AC_MSG_RESULT([not found])
 		AC_MSG_ERROR([Cannot find $bits-bit integer type.])

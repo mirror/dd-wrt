@@ -85,6 +85,7 @@ ipv6_classify(ip_addr *a)
 	case 5:  return IADDR_MULTICAST | SCOPE_SITE;
 	case 8:  return IADDR_MULTICAST | SCOPE_ORGANIZATION;
 	case 14: return IADDR_MULTICAST | SCOPE_UNIVERSE;
+	default: return IADDR_MULTICAST | SCOPE_UNDEFINED;
 	}
     }
   if (!x && !a->addr[1] && !a->addr[2])
@@ -102,7 +103,7 @@ ipv6_classify(ip_addr *a)
       if (y >= 0x01000000 && y < 0xe0000000)
 	return IADDR_HOST | SCOPE_UNIVERSE;
     }
-  return IADDR_INVALID;
+  return IADDR_HOST | SCOPE_UNDEFINED;
 }
 
 void

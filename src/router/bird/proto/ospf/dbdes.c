@@ -96,7 +96,7 @@ ospf_dbdes_send(struct ospf_neighbor *n, int next)
     pkt = ospf_tx_buffer(ifa);
     op = &pkt->ospf_packet;
     ospf_pkt_fill_hdr(ifa, pkt, DBDES_P);
-    pkt->iface_mtu = htons(ifa->iface->mtu);
+    pkt->iface_mtu = (ifa->type == OSPF_IT_VLINK) ? 0 : htons(ifa->iface->mtu);
     pkt->options = hton_opt(oa->options);
     pkt->imms = n->myimms;
     pkt->ddseq = htonl(n->dds);
@@ -119,7 +119,7 @@ ospf_dbdes_send(struct ospf_neighbor *n, int next)
       op = (struct ospf_packet *) pkt;
 
       ospf_pkt_fill_hdr(ifa, pkt, DBDES_P);
-      pkt->iface_mtu = htons(ifa->iface->mtu);
+      pkt->iface_mtu = (ifa->type == OSPF_IT_VLINK) ? 0 : htons(ifa->iface->mtu);
       pkt->ddseq = htonl(n->dds);
       pkt->options = hton_opt(oa->options);
 
@@ -260,6 +260,7 @@ ospf_dbdes_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
   struct ospf_dbdes_packet *ps = (void *) ps_i;
   u32 ps_ddseq = ntohl(ps->ddseq);
   u32 ps_options = ntoh_opt(ps->options);
+  u16 ps_iface_mtu = ntohs(ps->iface_mtu);
   
   OSPF_PACKET(ospf_dump_dbdes, ps, "DBDES packet received from %I via %s", n->ip, ifa->iface->name);
 
@@ -277,6 +278,12 @@ ospf_dbdes_receive(struct ospf_packet *ps_i, struct ospf_iface *ifa,
     if (n->state != NEIGHBOR_EXSTART)
       return;
   case NEIGHBOR_EXSTART:
+
+    if ((ps_iface_mtu != ifa->iface->mtu) && (ifa->type != OSPF_IT_VLINK)
+	&& (ps_iface_mtu != 0) && (ifa->iface->mtu != 0))
+      log(L_WARN "OSPF: MTU mismatch with neighbour %I on interface %s (remote %d, local %d)",
+	  n->ip, ifa->iface->name, ps_iface_mtu, ifa->iface->mtu);
+
     if ((ps->imms.bit.m && ps->imms.bit.ms && ps->imms.bit.i)
 	&& (n->rid > po->router_id) && (size == sizeof(struct ospf_dbdes_packet)))
     {

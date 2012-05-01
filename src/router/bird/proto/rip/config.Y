@@ -37,7 +37,7 @@ CF_GRAMMAR
 CF_ADDTO(proto, rip_cfg '}' { RIP_CFG->passwords = get_passwords(); } )
 
 rip_cfg_start: proto_start RIP {
-     this_proto = proto_config_new(&proto_rip, sizeof(struct rip_proto_config));
+     this_proto = proto_config_new(&proto_rip, sizeof(struct rip_proto_config), $1);
      rip_init_config(RIP_CFG);
    }
  ;
