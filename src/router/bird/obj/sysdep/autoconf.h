@@ -19,6 +19,8 @@
 /* 32-bit integer type */
 #define INTEGER_32 int
 
+#define INTEGER_64 long long
+
 /* CPU endianity */
 #include <endian.h>
 
