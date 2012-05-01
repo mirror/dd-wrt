@@ -3,16 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Jake Li <gnozil@gmail.com>, 2011.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-12-13 13:35+0300\n"
-"PO-Revision-Date: 2011-12-07 11:21+0000\n"
-"Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: Chinese (China) (http://www.transifex.net/projects/p/mc/team/"
-"zh_CN/)\n"
+"POT-Creation-Date: 2012-04-25 19:29+0300\n"
+"PO-Revision-Date: 2012-03-19 17:28+0000\n"
+"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"Language-Team: Chinese (China) (http://www.transifex.net/projects/p/mc/"
+"language/zh_CN/)\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -109,17 +110,17 @@ msgstr "无效的标记个数%d "
 msgid "Regular expression error"
 msgstr ""
 
-msgid "Normal"
-msgstr "普通"
+msgid "&Normal"
+msgstr "普通(&N)"
 
-msgid "&Regular expression"
+msgid "Re&gular expression"
 msgstr "正规表达式(&R)"
 
-msgid "Hexadecimal"
-msgstr "十六进制"
+msgid "He&xadecimal"
+msgstr ""
 
-msgid "Wildcard search"
-msgstr "通配符查找"
+msgid "Wil&dcard search"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -239,6 +240,9 @@ msgstr "删除键"
 
 msgid "Completion/M-tab"
 msgstr "补全/M-Tab"
+
+msgid "Back Tabulation S-tab"
+msgstr ""
 
 msgid "+ on keypad"
 msgstr "小键盘 +"
@@ -432,6 +436,34 @@ msgstr ""
 "不支持屏幕大小 %dx%d。\n"
 "检查 TERM 环境变量。\n"
 
+msgid "Warning"
+msgstr "警告"
+
+msgid "Pipe failed"
+msgstr "管道失败 "
+
+msgid "Dup failed"
+msgstr "复制失败 "
+
+msgid "Error dup'ing old error pipe"
+msgstr "复制原有出错管道时发生错误"
+
+#, c-format
+msgid "Directory cache expired for %s"
+msgstr "%s 的目录缓存已过期"
+
+msgid "bytes transferred"
+msgstr "字节已经传输"
+
+msgid "Starting linear transfer..."
+msgstr "正在开始线性传输..."
+
+msgid "Getting file"
+msgstr "正在获取文件"
+
+msgid "Changes to file lost"
+msgstr "对文件的修改被丢失"
+
 #, c-format
 msgid "%s is not a directory\n"
 msgstr "%s不是目录\n"
@@ -459,34 +491,6 @@ msgstr "不能创建临时文件\n"
 #, c-format
 msgid "Press any key to continue..."
 msgstr "按任意键继续..."
-
-msgid "Warning"
-msgstr "警告"
-
-msgid "Pipe failed"
-msgstr "管道失败 "
-
-msgid "Dup failed"
-msgstr "复制失败 "
-
-msgid "Error dup'ing old error pipe"
-msgstr "复制原有出错管道时发生错误"
-
-#, c-format
-msgid "Directory cache expired for %s"
-msgstr "%s 的目录缓存已过期"
-
-msgid "bytes transferred"
-msgstr ""
-
-msgid "Starting linear transfer..."
-msgstr "正在开始线性传输..."
-
-msgid "Getting file"
-msgstr "正在获取文件"
-
-msgid "Changes to file lost"
-msgstr "对文件的修改被丢失"
 
 msgid "Cannot parse:"
 msgstr "无法解析："
@@ -566,6 +570,9 @@ msgstr "编辑一个文件"
 
 msgid "Forces xterm features"
 msgstr "强制使用 xterm 特性"
+
+msgid "Disable X11 support"
+msgstr ""
 
 msgid "Tries to use an old highlight mouse tracking"
 msgstr ""
@@ -663,17 +670,20 @@ msgstr ""
 msgid "GNU Midnight Commander %s\n"
 msgstr "GNU Midnight Commander %s\n"
 
-msgid "No arguments given to the viewer."
-msgstr "查看器没有指定参数"
-
-msgid "Two files are required to evoke the diffviewer."
-msgstr "两个文件需要调用差异查看器"
-
 msgid "Main options"
 msgstr "主要选项"
 
 msgid "Terminal options"
 msgstr "终端选项 "
+
+msgid "Arguments parse error!"
+msgstr ""
+
+msgid "No arguments given to the viewer."
+msgstr "查看器没有指定参数"
+
+msgid "Two files are required to evoke the diffviewer."
+msgstr "两个文件需要调用差异查看器"
 
 msgid "Background process error"
 msgstr "后台进程错误"
@@ -700,8 +710,8 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "取消(&D)"
 
-msgid "All charsets"
-msgstr "所有字体集"
+msgid "&All charsets"
+msgstr "所有字符集(&A)"
 
 msgid "&Whole words"
 msgstr "仅整词(&W)"
@@ -709,8 +719,8 @@ msgstr "仅整词(&W)"
 msgid "&Backwards"
 msgstr "向上(&B)"
 
-msgid "Case &sensitive"
-msgstr "大小写敏感(&S)"
+msgid "Cas&e sensitive"
+msgstr "大小写敏感(&e)"
 
 msgid "Enter search string:"
 msgstr "输入查找字符串："
@@ -746,9 +756,6 @@ msgid ""
 msgstr ""
 "无法创建临时合并文件\n"
 "%s "
-
-msgid "&Normal"
-msgstr "普通(&N)"
 
 msgid "&Fastest (Assume large files)"
 msgstr "最快(&F针对大文件)"
@@ -831,6 +838,21 @@ msgstr ""
 
 msgid "Diff:"
 msgstr "差异："
+
+#, fuzzy, c-format
+msgid "\"%s\" is a directory"
+msgstr "%s不是目录\n"
+
+#, c-format
+msgid ""
+"Cannot stat \"%s\"\n"
+"%s"
+msgstr ""
+"无法查看\"%s\"的状态\n"
+"%s"
+
+msgid "Diff viewer: invalid mode"
+msgstr ""
 
 msgid "Two files are needed to compare"
 msgstr "比较时需要两个文件"
@@ -970,14 +992,18 @@ msgstr "检查&POSIX换行"
 msgid "Edit Save Mode"
 msgstr "编辑保存模式 "
 
+msgid "Save as"
+msgstr "保存为"
+
+#, fuzzy
+msgid "Cannot save: destination is not a regular file"
+msgstr "无法查看：不是常规文件"
+
 msgid "A file already exists with this name"
 msgstr "同名文件已存在"
 
 msgid "&Overwrite"
 msgstr "覆盖(&O)"
-
-msgid "Save as"
-msgstr "保存为"
 
 msgid "Cannot save file"
 msgstr "不能保存文件"
@@ -2390,16 +2416,36 @@ msgid "Background process: File exists"
 msgstr "后台进程：文件已存在"
 
 #, c-format
-msgid "Files processed: %zu of %zu"
+msgid "Files processed: %zu/%zu"
 msgstr ""
 
 #, c-format
-msgid "Time: %s  %s (%s)"
-msgstr "时间: %s  %s (%s)"
+msgid "Files processed: %zu"
+msgstr ""
 
 #, c-format
-msgid "Total: %s of %s"
-msgstr "总计: %s / %s"
+msgid "Time: %s %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s %s (%s)"
+msgstr ""
+
+#, c-format
+msgid "Time: %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s (%s)"
+msgstr ""
+
+#, c-format
+msgid " Total: %s "
+msgstr ""
+
+#, c-format
+msgid " Total: %s/%s "
+msgstr ""
 
 msgid "Source"
 msgstr "源"
@@ -2457,26 +2503,17 @@ msgstr "找到: %ld"
 msgid "Malformed regular expression"
 msgstr "不正确的正规表达式"
 
-msgid "Cas&e sensitive"
-msgstr "大小写敏感(&e)"
-
 msgid "&Find recursively"
 msgstr "递归查找(&F)"
 
 msgid "S&kip hidden"
 msgstr "跳过隐藏(&K)"
 
-msgid "&All charsets"
-msgstr "所有字符集(&A)"
-
 msgid "Sea&rch for content"
 msgstr "搜索内容(&R)"
 
 msgid "Case sens&itive"
 msgstr "大小写敏感(&T)"
-
-msgid "Re&gular expression"
-msgstr "正规表达式(&R)"
 
 msgid "Fir&st hit"
 msgstr "第一个命中(&S)"
@@ -2588,18 +2625,15 @@ msgstr "新建活动表组"
 msgid "Name of new group:"
 msgstr "新建组名："
 
-msgid "Remove:"
-msgstr "删除："
+#, c-format
+msgid "Are you sure you want to remove entry \"%s\"?"
+msgstr ""
 
-msgid "Are you sure you want to remove this entry?"
-msgstr "您确实要删除这个条目？"
-
+#, c-format
 msgid ""
-"Group not empty.\n"
+"Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
-"组非空。\n"
-"删除它吗？"
 
 msgid "Top level group"
 msgstr "顶级组"
@@ -2607,13 +2641,11 @@ msgstr "顶级组"
 msgid "Hotlist Load"
 msgstr "加载活动表"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "MC was unable to write %s file,\n"
 "your old hotlist entries were not deleted"
 msgstr ""
-"MC无法写文件~/%s，\n"
-"您的活动列表条目没有被删除"
 
 #, c-format
 msgid "Label for \"%s\":"
@@ -2685,7 +2717,7 @@ msgstr "大小：     %s"
 #, c-format
 msgid " (%ld block)"
 msgid_plural " (%ld blocks)"
-msgstr[0] ""
+msgstr[0] " (%ld blocks)"
 
 #, c-format
 msgid "Owner:     %s/%s"
@@ -2916,7 +2948,7 @@ msgstr "面板："
 #, c-format
 msgid "You have %zd opened screen. Quit anyway?"
 msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] ""
+msgstr[0] "You have %zd opened screens. Quit anyway?"
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3002,9 +3034,8 @@ msgstr "按下单个键(&I)"
 msgid "Esc key mode"
 msgstr "ESC键模式"
 
-#, fuzzy
 msgid "Preallocate &space"
-msgstr "忽略所有空白(&W)"
+msgstr ""
 
 msgid "Mkdi&r autoname"
 msgstr "创建目录时自动命名(&R)"
@@ -3061,7 +3092,7 @@ msgid "A&uto save panels setup"
 msgstr "自动保存面板设置(&U)"
 
 msgid "Simple s&wap"
-msgstr ""
+msgstr "简单交换(&W)"
 
 msgid "Re&verse files only"
 msgstr "仅反选文件(&V)"
@@ -3211,12 +3242,12 @@ msgstr "<readlink 失败>"
 #, c-format
 msgid "%s byte"
 msgid_plural "%s bytes"
-msgstr[0] ""
+msgstr[0] "%s bytes"
 
 #, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
-msgstr[0] ""
+msgstr[0] "%s in %d files"
 
 msgid "Panelize"
 msgstr ""
@@ -3457,6 +3488,9 @@ msgid ""
 "%s\n"
 msgstr ""
 
+msgid "Home directory path is not absolute"
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3505,22 +3539,22 @@ msgid "Warning: Cannot change to %s.\n"
 msgstr "警告：无法换到 %s。\n"
 
 msgid "Using the S-Lang library with terminfo database\n"
-msgstr ""
+msgstr "使用S-Lang库和terminfo数据库\n"
 
 msgid "Using the ncurses library\n"
-msgstr ""
+msgstr "使用ncurses库\n"
 
 msgid "Using the ncursesw library\n"
-msgstr ""
+msgstr "使用ncursesw库\n"
 
 msgid "With builtin Editor\n"
 msgstr "内建编辑器\n"
 
 msgid "With optional subshell support\n"
-msgstr ""
+msgstr "With optional subshell support\n"
 
 msgid "With subshell support as default\n"
-msgstr ""
+msgstr "With subshell support as default\n"
 
 msgid "With support for background operations\n"
 msgstr "后台操作支持\n"
@@ -3542,7 +3576,7 @@ msgstr "多代码页支持\n"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
-msgstr ""
+msgstr "依赖Glib %d.%d.%d\n"
 
 #, c-format
 msgid "Virtual File Systems:"
@@ -3551,6 +3585,10 @@ msgstr "虚拟文件系统:"
 #, c-format
 msgid "Data types:"
 msgstr "数据类型"
+
+#, fuzzy
+msgid "Root directory:"
+msgstr "目录"
 
 msgid "System data"
 msgstr ""
@@ -3660,9 +3698,6 @@ msgstr "fish：正在握手版本..."
 msgid "fish: Getting host info..."
 msgstr "fish：获取主机信息..."
 
-msgid "fish: Setting up current directory..."
-msgstr "fish：正在设置当前目录..."
-
 #, c-format
 msgid "fish: Connected, home %s."
 msgstr "fish：已连接，主目录%s，"
@@ -3687,10 +3722,10 @@ msgid "fish: Local read failed, sending zeros"
 msgstr "fish：本地读取失败，正在发送零"
 
 msgid "fish: storing zeros"
-msgstr ""
+msgstr "fish: 存贮空白字符"
 
 msgid "fish: storing file"
-msgstr ""
+msgstr "fish: 存贮文件"
 
 msgid "Aborting transfer..."
 msgstr "正在中止传输..."
@@ -3797,7 +3832,7 @@ msgid "ftpfs: failed; nowhere to fallback to"
 msgstr "ftpfs：失败；没有后备"
 
 msgid "ftpfs: storing file"
-msgstr ""
+msgstr "ftpfs: 存贮文件"
 
 msgid ""
 "~/.netrc file has incorrect mode\n"
@@ -4032,14 +4067,6 @@ msgstr ""
 "无法打开\"%s\"\n"
 "%s "
 
-#, c-format
-msgid ""
-"Cannot stat \"%s\"\n"
-"%s"
-msgstr ""
-"无法查看\"%s\"的状态\n"
-"%s"
-
 msgid "Cannot view: not a regular file"
 msgstr "无法查看：不是常规文件"
 
@@ -4050,4 +4077,7 @@ msgid "Search done"
 msgstr "搜索完成"
 
 msgid "Continue from beginning?"
-msgstr ""
+msgstr "从开始处继续？"
+
+#~ msgid "fish: Setting up current directory..."
+#~ msgstr "fish：正在设置当前目录..."

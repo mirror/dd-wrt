@@ -46,7 +46,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -326,116 +328,6 @@ tilde_expand (const char *directory)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
- * Return the directory where mc should keep its temporary files.
- * This directory is (in Bourne shell terms) "${TMPDIR=/tmp}/mc-$USER"
- * When called the first time, the directory is created if needed.
- * The first call should be done early, since we are using fprintf()
- * and not message() to report possible problems.
- */
-
-const char *
-mc_tmpdir (void)
-{
-    static char buffer[64];
-    static const char *tmpdir;
-    const char *sys_tmp;
-    struct passwd *pwd;
-    struct stat st;
-    const char *error = NULL;
-
-    /* Check if already correctly initialized */
-    if (tmpdir && lstat (tmpdir, &st) == 0 && S_ISDIR (st.st_mode) &&
-        st.st_uid == getuid () && (st.st_mode & 0777) == 0700)
-        return tmpdir;
-
-    sys_tmp = getenv ("TMPDIR");
-    if (!sys_tmp || sys_tmp[0] != '/')
-    {
-        sys_tmp = TMPDIR_DEFAULT;
-    }
-
-    pwd = getpwuid (getuid ());
-
-    if (pwd)
-        g_snprintf (buffer, sizeof (buffer), "%s/mc-%s", sys_tmp, pwd->pw_name);
-    else
-        g_snprintf (buffer, sizeof (buffer), "%s/mc-%lu", sys_tmp, (unsigned long) getuid ());
-
-    canonicalize_pathname (buffer);
-
-    if (lstat (buffer, &st) == 0)
-    {
-        /* Sanity check for existing directory */
-        if (!S_ISDIR (st.st_mode))
-            error = _("%s is not a directory\n");
-        else if (st.st_uid != getuid ())
-            error = _("Directory %s is not owned by you\n");
-        else if (((st.st_mode & 0777) != 0700) && (chmod (buffer, 0700) != 0))
-            error = _("Cannot set correct permissions for directory %s\n");
-    }
-    else
-    {
-        /* Need to create directory */
-        if (mkdir (buffer, S_IRWXU) != 0)
-        {
-            fprintf (stderr,
-                     _("Cannot create temporary directory %s: %s\n"),
-                     buffer, unix_error_string (errno));
-            error = "";
-        }
-    }
-
-    if (error != NULL)
-    {
-        int test_fd;
-        char *test_fn, *fallback_prefix;
-        int fallback_ok = 0;
-
-        if (*error)
-            fprintf (stderr, error, buffer);
-
-        /* Test if sys_tmp is suitable for temporary files */
-        fallback_prefix = g_strdup_printf ("%s/mctest", sys_tmp);
-        test_fd = mc_mkstemps (&test_fn, fallback_prefix, NULL);
-        g_free (fallback_prefix);
-        if (test_fd != -1)
-        {
-            close (test_fd);
-            test_fd = open (test_fn, O_RDONLY);
-            if (test_fd != -1)
-            {
-                close (test_fd);
-                unlink (test_fn);
-                fallback_ok = 1;
-            }
-        }
-
-        if (fallback_ok)
-        {
-            fprintf (stderr, _("Temporary files will be created in %s\n"), sys_tmp);
-            g_snprintf (buffer, sizeof (buffer), "%s", sys_tmp);
-            error = NULL;
-        }
-        else
-        {
-            fprintf (stderr, _("Temporary files will not be created\n"));
-            g_snprintf (buffer, sizeof (buffer), "%s", "/dev/null/");
-        }
-
-        fprintf (stderr, "%s\n", _("Press any key to continue..."));
-        getc (stdin);
-    }
-
-    tmpdir = buffer;
-
-    if (!error)
-        g_setenv ("MC_TMPDIR", tmpdir, TRUE);
-
-    return tmpdir;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/**
  * Creates a pipe to hold standard error for a later analysis.
  * The pipe can hold 4096 bytes. Make sure no more is written
  * or a deadlock might occur.
@@ -500,7 +392,7 @@ close_error_pipe (int error, const char *text)
     if (error_pipe[0] == -1)
         return 0;
 
-    if (error)
+    if (error < 0 || (error > 0 && (error & D_ERROR) != 0))
         title = MSG_ERROR;
     else
         title = _("Warning");
@@ -508,6 +400,9 @@ close_error_pipe (int error, const char *text)
     {
         if (dup2 (old_error, 2) == -1)
         {
+            if (error < 0)
+                error = D_ERROR;
+
             message (error, MSG_ERROR, _("Error dup'ing old error pipe"));
             return 1;
         }
@@ -728,7 +623,7 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
                 else
                 {
                     /* "token/../foo" -> "foo" */
-#if HAVE_CHARSET
+#ifdef HAVE_CHARSET
                     if ((strncmp (s, VFS_ENCODING_PREFIX, enc_prefix_len) == 0)
                         && (is_supported_encoding (s + enc_prefix_len)))
                         /* special case: remove encoding */
@@ -756,7 +651,7 @@ custom_canonicalize_pathname (char *path, CANON_PATH_FLAGS flags)
                 /* "foo/token/.." -> "foo" */
                 if (s == lpath + 1)
                     s[0] = 0;
-#if HAVE_CHARSET
+#ifdef HAVE_CHARSET
                 else if ((strncmp (s, VFS_ENCODING_PREFIX, enc_prefix_len) == 0)
                          && (is_supported_encoding (s + enc_prefix_len)))
                 {
@@ -1013,10 +908,9 @@ get_user_permissions (struct stat *st)
  */
 
 char *
-mc_build_filename (const char *first_element, ...)
+mc_build_filenamev (const char *first_element, va_list args)
 {
     gboolean absolute;
-    va_list args;
     const char *element = first_element;
     GString *path;
     char *ret;
@@ -1025,7 +919,6 @@ mc_build_filename (const char *first_element, ...)
         return NULL;
 
     path = g_string_new ("");
-    va_start (args, first_element);
 
     absolute = (*first_element != '\0' && *first_element == PATH_SEP);
 
@@ -1056,14 +949,33 @@ mc_build_filename (const char *first_element, ...)
     }
     while (element != NULL);
 
-    va_end (args);
-
     if (absolute)
         g_string_prepend_c (path, PATH_SEP);
 
     ret = g_string_free (path, FALSE);
     canonicalize_pathname (ret);
 
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Build filename from arguments.
+ * Like to g_build_filename(), but respect VFS_PATH_URL_DELIMITER
+ */
+
+char *
+mc_build_filename (const char *first_element, ...)
+{
+    va_list args;
+    char *ret;
+
+    if (first_element == NULL)
+        return NULL;
+
+    va_start (args, first_element);
+    ret = mc_build_filenamev (first_element, args);
+    va_end (args);
     return ret;
 }
 

@@ -8,10 +8,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2011-12-13 13:35+0300\n"
-"PO-Revision-Date: 2011-12-07 11:21+0000\n"
-"Last-Translator: slavazanko <slavazanko@gmail.com>\n"
-"Language-Team: Korean (http://www.transifex.net/projects/p/mc/team/ko/)\n"
+"POT-Creation-Date: 2012-04-25 19:29+0300\n"
+"PO-Revision-Date: 2012-03-19 17:28+0000\n"
+"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"Language-Team: Korean (http://www.transifex.net/projects/p/mc/language/ko/)\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -105,17 +105,17 @@ msgstr ""
 msgid "Regular expression error"
 msgstr ""
 
-msgid "Normal"
-msgstr "일반"
+msgid "&Normal"
+msgstr "일반(&N)"
 
-msgid "&Regular expression"
-msgstr "정규 표현식(&R)"
+msgid "Re&gular expression"
+msgstr "정규표현식(&G)"
 
-msgid "Hexadecimal"
-msgstr "16진수"
+msgid "He&xadecimal"
+msgstr ""
 
-msgid "Wildcard search"
-msgstr "와일드카드 검색"
+msgid "Wil&dcard search"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -235,6 +235,9 @@ msgstr "딜리트키"
 
 msgid "Completion/M-tab"
 msgstr "완료/M-tab"
+
+msgid "Back Tabulation S-tab"
+msgstr ""
 
 msgid "+ on keypad"
 msgstr "키패드 +"
@@ -428,34 +431,6 @@ msgstr ""
 "화면크기 %dx%d은(는) 지원되지 않습니다.\n"
 "TERM 환경변수를 확인해 보세요.\n"
 
-#, c-format
-msgid "%s is not a directory\n"
-msgstr "%s은(는) 디렉터리가 아닙니다\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "디렉터리 %s은(는) 당신 소유가 아닙니다\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "%s 임시 디렉터리에 대한 맞는 퍼미션을 설정 \n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "임시 디렉터리 \"%s\"을(를) 만들 수 없습니다 : %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "임시 파일이 만들어집니다  %s\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "임시 파일이 만들어 지지 않습니다\n"
-
-#, c-format
-msgid "Press any key to continue..."
-msgstr "계속하려면 아무 키나 누르십시오..."
-
 msgid "Warning"
 msgstr "경고"
 
@@ -483,6 +458,34 @@ msgstr "파일 받기"
 
 msgid "Changes to file lost"
 msgstr "파일 바꾸기 실패"
+
+#, c-format
+msgid "%s is not a directory\n"
+msgstr "%s은(는) 디렉터리가 아닙니다\n"
+
+#, c-format
+msgid "Directory %s is not owned by you\n"
+msgstr "디렉터리 %s은(는) 당신 소유가 아닙니다\n"
+
+#, c-format
+msgid "Cannot set correct permissions for directory %s\n"
+msgstr "%s 임시 디렉터리에 대한 맞는 퍼미션을 설정 \n"
+
+#, c-format
+msgid "Cannot create temporary directory %s: %s\n"
+msgstr "임시 디렉터리 \"%s\"을(를) 만들 수 없습니다 : %s\n"
+
+#, c-format
+msgid "Temporary files will be created in %s\n"
+msgstr "임시 파일이 만들어집니다  %s\n"
+
+#, c-format
+msgid "Temporary files will not be created\n"
+msgstr "임시 파일이 만들어 지지 않습니다\n"
+
+#, c-format
+msgid "Press any key to continue..."
+msgstr "계속하려면 아무 키나 누르십시오..."
 
 msgid "Cannot parse:"
 msgstr "분석 할 수 없습니다:"
@@ -562,6 +565,9 @@ msgstr "한 파일 편집"
 
 msgid "Forces xterm features"
 msgstr "xterm 기능을 무조건 사용"
+
+msgid "Disable X11 support"
+msgstr ""
 
 msgid "Tries to use an old highlight mouse tracking"
 msgstr ""
@@ -656,17 +662,20 @@ msgstr ""
 msgid "GNU Midnight Commander %s\n"
 msgstr "GNU 미드나잇 코맨더 %s\n"
 
-msgid "No arguments given to the viewer."
-msgstr ""
-
-msgid "Two files are required to evoke the diffviewer."
-msgstr ""
-
 msgid "Main options"
 msgstr " 패널 선택 항목 "
 
 msgid "Terminal options"
 msgstr " 기타 선택 항목 "
+
+msgid "Arguments parse error!"
+msgstr ""
+
+msgid "No arguments given to the viewer."
+msgstr ""
+
+msgid "Two files are required to evoke the diffviewer."
+msgstr ""
 
 msgid "Background process error"
 msgstr ""
@@ -691,8 +700,8 @@ msgstr ""
 msgid "&Dismiss"
 msgstr "취소(&D)"
 
-msgid "All charsets"
-msgstr "모든 문자셋"
+msgid "&All charsets"
+msgstr "모든 문자셋(&A)"
 
 msgid "&Whole words"
 msgstr "단어 단위로(&W)"
@@ -700,8 +709,8 @@ msgstr "단어 단위로(&W)"
 msgid "&Backwards"
 msgstr "뒤로(&B)"
 
-msgid "Case &sensitive"
-msgstr ""
+msgid "Cas&e sensitive"
+msgstr "대소문자 구분(&E)"
 
 msgid "Enter search string:"
 msgstr ""
@@ -730,9 +739,6 @@ msgid ""
 "Cannot create temporary merge file\n"
 "%s"
 msgstr ""
-
-msgid "&Normal"
-msgstr "일반(&N)"
 
 msgid "&Fastest (Assume large files)"
 msgstr "빠름 (큰파일 가정)(&F)"
@@ -812,6 +818,19 @@ msgid ""
 msgstr ""
 
 msgid "Diff:"
+msgstr ""
+
+#, fuzzy, c-format
+msgid "\"%s\" is a directory"
+msgstr "%s은(는) 디렉터리가 아닙니다\n"
+
+#, c-format
+msgid ""
+"Cannot stat \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Diff viewer: invalid mode"
 msgstr ""
 
 msgid "Two files are needed to compare"
@@ -948,14 +967,17 @@ msgstr "체크 POSIX의 새로운 라인(&P)"
 msgid "Edit Save Mode"
 msgstr ""
 
+msgid "Save as"
+msgstr ""
+
+msgid "Cannot save: destination is not a regular file"
+msgstr ""
+
 msgid "A file already exists with this name"
 msgstr ""
 
 msgid "&Overwrite"
 msgstr "겹쳐 쓰기(&O)"
-
-msgid "Save as"
-msgstr ""
 
 msgid "Cannot save file"
 msgstr ""
@@ -2270,15 +2292,35 @@ msgid "Background process: File exists"
 msgstr ""
 
 #, c-format
-msgid "Files processed: %zu of %zu"
+msgid "Files processed: %zu/%zu"
 msgstr ""
 
 #, c-format
-msgid "Time: %s  %s (%s)"
-msgstr "시간:  %s  %s (%s)"
+msgid "Files processed: %zu"
+msgstr ""
 
 #, c-format
-msgid "Total: %s of %s"
+msgid "Time: %s %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s %s (%s)"
+msgstr ""
+
+#, c-format
+msgid "Time: %s"
+msgstr ""
+
+#, c-format
+msgid "Time: %s (%s)"
+msgstr ""
+
+#, c-format
+msgid " Total: %s "
+msgstr ""
+
+#, c-format
+msgid " Total: %s/%s "
 msgstr ""
 
 msgid "Source"
@@ -2337,26 +2379,17 @@ msgstr "찾기: %ld"
 msgid "Malformed regular expression"
 msgstr ""
 
-msgid "Cas&e sensitive"
-msgstr "대소문자 구분(&E)"
-
 msgid "&Find recursively"
 msgstr "재귀 찾기(&F)"
 
 msgid "S&kip hidden"
 msgstr "숨김 스킵(&K)"
 
-msgid "&All charsets"
-msgstr "모든 문자셋(&A)"
-
 msgid "Sea&rch for content"
 msgstr ""
 
 msgid "Case sens&itive"
 msgstr "대소문자 구분(&I)"
-
-msgid "Re&gular expression"
-msgstr "정규표현식(&G)"
 
 msgid "Fir&st hit"
 msgstr "먼저 하기(&S)"
@@ -2468,14 +2501,13 @@ msgstr ""
 msgid "Name of new group:"
 msgstr ""
 
-msgid "Remove:"
+#, c-format
+msgid "Are you sure you want to remove entry \"%s\"?"
 msgstr ""
 
-msgid "Are you sure you want to remove this entry?"
-msgstr ""
-
+#, c-format
 msgid ""
-"Group not empty.\n"
+"Group \"%s\" is not empty.\n"
 "Remove it?"
 msgstr ""
 
@@ -2878,9 +2910,8 @@ msgstr ""
 msgid "Esc key mode"
 msgstr ""
 
-#, fuzzy
 msgid "Preallocate &space"
-msgstr "빈공간 모두 무시(&W)"
+msgstr ""
 
 msgid "Mkdi&r autoname"
 msgstr ""
@@ -3326,6 +3357,9 @@ msgid ""
 "%s\n"
 msgstr ""
 
+msgid "Home directory path is not absolute"
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3420,6 +3454,10 @@ msgstr ""
 #, c-format
 msgid "Data types:"
 msgstr ""
+
+#, fuzzy
+msgid "Root directory:"
+msgstr "디렉터리"
 
 msgid "System data"
 msgstr ""
@@ -3526,9 +3564,6 @@ msgstr "fish: 핸드 쉐이킹 버전..."
 
 msgid "fish: Getting host info..."
 msgstr ""
-
-msgid "fish: Setting up current directory..."
-msgstr "fish: 현재 디렉터리의 설정..."
 
 #, c-format
 msgid "fish: Connected, home %s."
@@ -3884,12 +3919,6 @@ msgid ""
 "%s"
 msgstr ""
 
-#, c-format
-msgid ""
-"Cannot stat \"%s\"\n"
-"%s"
-msgstr ""
-
 msgid "Cannot view: not a regular file"
 msgstr ""
 
@@ -3901,3 +3930,6 @@ msgstr "검색결과 없음"
 
 msgid "Continue from beginning?"
 msgstr ""
+
+#~ msgid "fish: Setting up current directory..."
+#~ msgstr "fish: 현재 디렉터리의 설정..."

@@ -296,7 +296,7 @@ type/^ELF
 ### Documentation ###
 
 # Texinfo
-regex/\.(te?xi|texinfo)$
+#regex/\.(te?xi|texinfo)$
 
 # GNU Info page
 type/^Info\ text
@@ -462,11 +462,14 @@ regex/\.([mM][kK][vV])$
 regex/\.([mM][oO][vV]|[qQ][tT])$
 	Include=video
 
-regex/\.([mM][pP]4|[mM][pP][eE]?[gG])$
+regex/\.([mM][pP]4|[mM]4[vV]|[mM][pP][eE]?[gG])$
 	Include=video
 
 # MPEG-2 TS container + H.264 codec
 regex/\.([mM][tT][sS])$
+	Include=video
+
+regex/\.([tT][sS])$
 	Include=video
 
 regex/\.([vV][oO][bB])$
@@ -563,8 +566,9 @@ regex/\.([Tt][Ee][Xx])$
 	Include=editor
 
 # DjVu
-regex/\.(djvu|DJVU)$
+regex/\.(djvu?|DJVU?)$
 	Open=djview %f &
+	View=%view{ascii} djvused -e print-pure-txt %f
 
 ### Miscellaneous ###
 

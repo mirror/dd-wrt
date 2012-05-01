@@ -42,6 +42,7 @@ bin_PROGRAMS = mc$(EXEEXT)
 # this is a hack for linking with own samba library in simple way
 @ENABLE_VFS_SMB_TRUE@am__append_5 = vfs/smbfs/helpers/libsamba.a
 @CHARSET_TRUE@am__append_6 = selcodepage.c selcodepage.h
+@ENABLE_BACKGROUND_TRUE@am__append_7 = background.c background.h
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -77,6 +78,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
+	$(top_srcdir)/m4.include/mc-background.m4 \
 	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
@@ -101,19 +103,19 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__mc_SOURCES_DIST = cons.handler.c consaver/cons.saver.h args.c \
-	args.h background.c background.h clipboard.c clipboard.h \
-	events_init.c events_init.h execute.c execute.h help.c help.h \
-	history.h keybind-defaults.c keybind-defaults.h learn.c \
-	learn.h main.c main.h setup.c setup.h subshell.c subshell.h \
-	textconf.c textconf.h util.c util.h selcodepage.c \
-	selcodepage.h
+	args.h clipboard.c clipboard.h events_init.c events_init.h \
+	execute.c execute.h help.c help.h history.h keybind-defaults.c \
+	keybind-defaults.h learn.c learn.h main.c main.h setup.c \
+	setup.h subshell.c subshell.h textconf.c textconf.h util.c \
+	util.h selcodepage.c selcodepage.h background.c background.h
 am__objects_1 = cons.handler.$(OBJEXT)
 @CHARSET_TRUE@am__objects_2 = selcodepage.$(OBJEXT)
-am_mc_OBJECTS = $(am__objects_1) args.$(OBJEXT) background.$(OBJEXT) \
-	clipboard.$(OBJEXT) events_init.$(OBJEXT) execute.$(OBJEXT) \
-	help.$(OBJEXT) keybind-defaults.$(OBJEXT) learn.$(OBJEXT) \
-	main.$(OBJEXT) setup.$(OBJEXT) subshell.$(OBJEXT) \
-	textconf.$(OBJEXT) util.$(OBJEXT) $(am__objects_2)
+@ENABLE_BACKGROUND_TRUE@am__objects_3 = background.$(OBJEXT)
+am_mc_OBJECTS = $(am__objects_1) args.$(OBJEXT) clipboard.$(OBJEXT) \
+	events_init.$(OBJEXT) execute.$(OBJEXT) help.$(OBJEXT) \
+	keybind-defaults.$(OBJEXT) learn.$(OBJEXT) main.$(OBJEXT) \
+	setup.$(OBJEXT) subshell.$(OBJEXT) textconf.$(OBJEXT) \
+	util.$(OBJEXT) $(am__objects_2) $(am__objects_3)
 mc_OBJECTS = $(am_mc_OBJECTS)
 mc_DEPENDENCIES = vfs/libmc-vfs.la viewer/libmcviewer.la \
 	filemanager/libmcfilemanager.la $(DIFFLIB) $(EDITLIB) \
@@ -398,8 +400,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = filemanager man2hlp vfs viewer $(am__append_1) \
 	$(am__append_2) $(am__append_3)
-AM_CPPFLAGS = -DLOCALEDIR=\""$(localedir)"\" \
-	-DLIBEXECDIR=\""$(libexecdir)/@PACKAGE@/"\" $(am__append_4)
+AM_CPPFLAGS = -DSYSCONFDIR=\""$(sysconfdir)/@PACKAGE@/"\" \
+	-DLIBEXECDIR=\""$(libexecdir)/@PACKAGE@/"\" \
+	-DDATADIR=\""$(pkgdatadir)/"\" -DLOCALEDIR=\""$(localedir)"\" \
+	$(am__append_4)
 AM_CFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CFLAGS)
 @USE_EDIT_TRUE@EDITLIB = editor/libedit.la
 @USE_DIFF_TRUE@DIFFLIB = diffviewer/libdiffviewer.la
@@ -409,12 +413,12 @@ mc_LDADD = vfs/libmc-vfs.la viewer/libmcviewer.la \
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
-mc_SOURCES = $(SRC_mc_conssaver) args.c args.h background.c \
-	background.h clipboard.c clipboard.h events_init.c \
-	events_init.h execute.c execute.h help.c help.h history.h \
-	keybind-defaults.c keybind-defaults.h learn.c learn.h main.c \
-	main.h setup.c setup.h subshell.c subshell.h textconf.c \
-	textconf.h util.c util.h $(am__append_6)
+mc_SOURCES = $(SRC_mc_conssaver) args.c args.h clipboard.c clipboard.h \
+	events_init.c events_init.h execute.c execute.h help.c help.h \
+	history.h keybind-defaults.c keybind-defaults.h learn.c \
+	learn.h main.c main.h setup.c setup.h subshell.c subshell.h \
+	textconf.c textconf.h util.c util.h $(am__append_6) \
+	$(am__append_7)
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)
 all: all-recursive
 

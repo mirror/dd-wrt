@@ -34,7 +34,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 TESTS = canonicalize_pathname$(EXEEXT) current_dir$(EXEEXT) \
-	path_recode$(EXEEXT) path_serialize$(EXEEXT) \
+	path_cmp$(EXEEXT) path_len$(EXEEXT) \
+	path_manipulations$(EXEEXT) path_recode$(EXEEXT) \
+	path_serialize$(EXEEXT) relative_cd$(EXEEXT) tempdir$(EXEEXT) \
 	vfs_parse_ls_lga$(EXEEXT) vfs_path_string_convert$(EXEEXT) \
 	vfs_prefix_to_class$(EXEEXT) vfs_split$(EXEEXT) \
 	vfs_s_get_path$(EXEEXT)
@@ -74,6 +76,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
+	$(top_srcdir)/m4.include/mc-background.m4 \
 	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
@@ -96,7 +99,9 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = canonicalize_pathname$(EXEEXT) current_dir$(EXEEXT) \
-	path_recode$(EXEEXT) path_serialize$(EXEEXT) \
+	path_cmp$(EXEEXT) path_len$(EXEEXT) \
+	path_manipulations$(EXEEXT) path_recode$(EXEEXT) \
+	path_serialize$(EXEEXT) relative_cd$(EXEEXT) tempdir$(EXEEXT) \
 	vfs_parse_ls_lga$(EXEEXT) vfs_path_string_convert$(EXEEXT) \
 	vfs_prefix_to_class$(EXEEXT) vfs_split$(EXEEXT) \
 	vfs_s_get_path$(EXEEXT)
@@ -109,12 +114,27 @@ am__v_lt_0 = --silent
 am_current_dir_OBJECTS = current_dir.$(OBJEXT)
 current_dir_OBJECTS = $(am_current_dir_OBJECTS)
 current_dir_LDADD = $(LDADD)
+am_path_cmp_OBJECTS = path_cmp.$(OBJEXT)
+path_cmp_OBJECTS = $(am_path_cmp_OBJECTS)
+path_cmp_LDADD = $(LDADD)
+am_path_len_OBJECTS = path_len.$(OBJEXT)
+path_len_OBJECTS = $(am_path_len_OBJECTS)
+path_len_LDADD = $(LDADD)
+am_path_manipulations_OBJECTS = path_manipulations.$(OBJEXT)
+path_manipulations_OBJECTS = $(am_path_manipulations_OBJECTS)
+path_manipulations_LDADD = $(LDADD)
 am_path_recode_OBJECTS = path_recode.$(OBJEXT)
 path_recode_OBJECTS = $(am_path_recode_OBJECTS)
 path_recode_LDADD = $(LDADD)
 am_path_serialize_OBJECTS = path_serialize.$(OBJEXT)
 path_serialize_OBJECTS = $(am_path_serialize_OBJECTS)
 path_serialize_LDADD = $(LDADD)
+am_relative_cd_OBJECTS = relative_cd.$(OBJEXT)
+relative_cd_OBJECTS = $(am_relative_cd_OBJECTS)
+relative_cd_LDADD = $(LDADD)
+am_tempdir_OBJECTS = tempdir.$(OBJEXT)
+tempdir_OBJECTS = $(am_tempdir_OBJECTS)
+tempdir_LDADD = $(LDADD)
 am_vfs_parse_ls_lga_OBJECTS = vfs_parse_ls_lga.$(OBJEXT)
 vfs_parse_ls_lga_OBJECTS = $(am_vfs_parse_ls_lga_OBJECTS)
 vfs_parse_ls_lga_LDADD = $(LDADD)
@@ -159,13 +179,19 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
-	$(path_recode_SOURCES) $(path_serialize_SOURCES) \
-	$(vfs_parse_ls_lga_SOURCES) $(vfs_path_string_convert_SOURCES) \
+	$(path_cmp_SOURCES) $(path_len_SOURCES) \
+	$(path_manipulations_SOURCES) $(path_recode_SOURCES) \
+	$(path_serialize_SOURCES) $(relative_cd_SOURCES) \
+	$(tempdir_SOURCES) $(vfs_parse_ls_lga_SOURCES) \
+	$(vfs_path_string_convert_SOURCES) \
 	$(vfs_prefix_to_class_SOURCES) $(vfs_s_get_path_SOURCES) \
 	$(vfs_split_SOURCES)
 DIST_SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
-	$(path_recode_SOURCES) $(path_serialize_SOURCES) \
-	$(vfs_parse_ls_lga_SOURCES) $(vfs_path_string_convert_SOURCES) \
+	$(path_cmp_SOURCES) $(path_len_SOURCES) \
+	$(path_manipulations_SOURCES) $(path_recode_SOURCES) \
+	$(path_serialize_SOURCES) $(relative_cd_SOURCES) \
+	$(tempdir_SOURCES) $(vfs_parse_ls_lga_SOURCES) \
+	$(vfs_path_string_convert_SOURCES) \
 	$(vfs_prefix_to_class_SOURCES) $(vfs_s_get_path_SOURCES) \
 	$(vfs_split_SOURCES)
 ETAGS = etags
@@ -380,9 +406,9 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = -I$(top_srcdir)/lib/vfs $(GLIB_CFLAGS) -I$(top_srcdir) @CHECK_CFLAGS@ \
-	-DTEST_SHARE_DIR=\"$(abs_srcdir)\" -z muldefs
+	-DTEST_SHARE_DIR=\"$(abs_srcdir)\"
 
-AM_LDFLAGS = -z muldefs
+AM_LDFLAGS = -Wl,-z,muldefs
 EXTRA_DIST = mc.charsets
 canonicalize_pathname_SOURCES = \
 	canonicalize_pathname.c
@@ -390,11 +416,26 @@ canonicalize_pathname_SOURCES = \
 current_dir_SOURCES = \
 	current_dir.c
 
+path_cmp_SOURCES = \
+	path_cmp.c
+
+path_len_SOURCES = \
+	path_len.c
+
+path_manipulations_SOURCES = \
+	path_manipulations.c
+
 path_recode_SOURCES = \
 	path_recode.c
 
 path_serialize_SOURCES = \
 	path_serialize.c
+
+relative_cd_SOURCES = \
+	relative_cd.c
+
+tempdir_SOURCES = \
+	tempdir.c
 
 vfs_split_SOURCES = \
 	vfs_split.c
@@ -460,12 +501,27 @@ canonicalize_pathname$(EXEEXT): $(canonicalize_pathname_OBJECTS) $(canonicalize_
 current_dir$(EXEEXT): $(current_dir_OBJECTS) $(current_dir_DEPENDENCIES) 
 	@rm -f current_dir$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(current_dir_OBJECTS) $(current_dir_LDADD) $(LIBS)
+path_cmp$(EXEEXT): $(path_cmp_OBJECTS) $(path_cmp_DEPENDENCIES) 
+	@rm -f path_cmp$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(path_cmp_OBJECTS) $(path_cmp_LDADD) $(LIBS)
+path_len$(EXEEXT): $(path_len_OBJECTS) $(path_len_DEPENDENCIES) 
+	@rm -f path_len$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(path_len_OBJECTS) $(path_len_LDADD) $(LIBS)
+path_manipulations$(EXEEXT): $(path_manipulations_OBJECTS) $(path_manipulations_DEPENDENCIES) 
+	@rm -f path_manipulations$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(path_manipulations_OBJECTS) $(path_manipulations_LDADD) $(LIBS)
 path_recode$(EXEEXT): $(path_recode_OBJECTS) $(path_recode_DEPENDENCIES) 
 	@rm -f path_recode$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(path_recode_OBJECTS) $(path_recode_LDADD) $(LIBS)
 path_serialize$(EXEEXT): $(path_serialize_OBJECTS) $(path_serialize_DEPENDENCIES) 
 	@rm -f path_serialize$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(path_serialize_OBJECTS) $(path_serialize_LDADD) $(LIBS)
+relative_cd$(EXEEXT): $(relative_cd_OBJECTS) $(relative_cd_DEPENDENCIES) 
+	@rm -f relative_cd$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(relative_cd_OBJECTS) $(relative_cd_LDADD) $(LIBS)
+tempdir$(EXEEXT): $(tempdir_OBJECTS) $(tempdir_DEPENDENCIES) 
+	@rm -f tempdir$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tempdir_OBJECTS) $(tempdir_LDADD) $(LIBS)
 vfs_parse_ls_lga$(EXEEXT): $(vfs_parse_ls_lga_OBJECTS) $(vfs_parse_ls_lga_DEPENDENCIES) 
 	@rm -f vfs_parse_ls_lga$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(vfs_parse_ls_lga_OBJECTS) $(vfs_parse_ls_lga_LDADD) $(LIBS)
@@ -490,8 +546,13 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/canonicalize_pathname.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/current_dir.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_cmp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_len.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_manipulations.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_recode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_serialize.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/relative_cd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tempdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_parse_ls_lga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_path_string_convert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_prefix_to_class.Po@am__quote@

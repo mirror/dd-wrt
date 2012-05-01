@@ -143,11 +143,15 @@ mcview_display_status (mcview_t * view)
     widget_move (view, top, left);
     tty_draw_hline (-1, -1, ' ', width);
 
-    file_label = view->filename ? view->filename : view->command ? view->command : "";
+    file_label =
+        view->filename_vpath != NULL ?
+        vfs_path_get_last_path_str (view->filename_vpath) : view->command != NULL ?
+        view->command : "";
     file_label_width = str_term_width1 (file_label) - 2;
     if (width > 40)
     {
         char buffer[BUF_TINY];
+
         widget_move (view, top, width - 32);
         if (view->hex_mode)
             tty_printf ("0x%08" PRIxMAX, (uintmax_t) view->hex_cursor);
@@ -309,7 +313,9 @@ mcview_update_bytes_per_line (mcview_t * view)
         bytes = 4;
     else
         bytes = 4 * ((cols - 8) / ((cols < 80) ? 17 : 18));
+#ifdef HAVE_ASSERT_H
     assert (bytes != 0);
+#endif
 
     view->bytes_per_line = bytes;
     view->dirty = mcview_max_dirt_limit + 1;    /* To force refresh */
@@ -327,7 +333,9 @@ mcview_display_toggle_ruler (mcview_t * view)
         RULER_NONE
     };
 
+#ifdef HAVE_ASSERT_H
     assert ((size_t) ruler < 3);
+#endif
     ruler = next[(size_t) ruler];
     mcview_compute_areas (view);
     view->dirty++;

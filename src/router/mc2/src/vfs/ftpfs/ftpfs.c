@@ -54,18 +54,18 @@ What to do with this?
 
      * NOTE: Usage of tildes is deprecated, consider:
      * \verbatim
-         cd /#ftp:pavel@hobit
+         cd ftp//:pavel@hobit
          cd ~
        \endverbatim
      * And now: what do I want to do? Do I want to go to /home/pavel or to
-     * /#ftp:hobit/home/pavel? I think first has better sense...
+     * ftp://hobit/home/pavel? I think first has better sense...
      *
     \verbatim
     {
         int f = !strcmp( remote_path, "/~" );
         if (f || !strncmp( remote_path, "/~/", 3 )) {
             char *s;
-            s = concat_dir_and_file( qhome (*bucket), remote_path +3-f );
+            s = mc_build_filename ( qhome (*bucket), remote_path +3-f, NULL );
             g_free (remote_path);
             remote_path = s;
         }
@@ -87,7 +87,9 @@ What to do with this?
 #endif
 #include <arpa/ftp.h>
 #include <arpa/telnet.h>
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
 #include <errno.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -260,7 +262,6 @@ static const char *netrcp;
    c) strip trailing "/."
  */
 
-static char *ftpfs_get_current_directory (struct vfs_class *me, struct vfs_s_super *super);
 static int ftpfs_chdir_internal (struct vfs_class *me, struct vfs_s_super *super,
                                  const char *remote_path);
 static int ftpfs_command (struct vfs_class *me, struct vfs_s_super *super, int wait_reply,
@@ -627,7 +628,7 @@ ftpfs_login_server (struct vfs_class *me, struct vfs_s_super *super, const char 
 
         reply_up = g_ascii_strup (reply_string, -1);
         SUP->remote_is_amiga = strstr (reply_up, "AMIGA") != 0;
-        if (strstr (reply_up, " SPFTP/1.0.0000 SERVER ")) /* handles `LIST -la` in a weird way */
+        if (strstr (reply_up, " SPFTP/1.0.0000 SERVER "))       /* handles `LIST -la` in a weird way */
             SUP->strict = RFC_STRICT;
         g_free (reply_up);
 
@@ -959,10 +960,6 @@ ftpfs_open_archive_int (struct vfs_class *me, struct vfs_s_super *super)
     }
     while (retry_seconds != 0);
 
-    super->path_element->path = ftpfs_get_current_directory (me, super);
-    if (super->path_element->path == NULL)
-        super->path_element->path = g_strdup (PATH_SEP_STR);
-
     return 0;
 }
 
@@ -1012,57 +1009,6 @@ ftpfs_archive_same (const vfs_path_element_t * vpath_element, struct vfs_s_super
 
     vfs_path_element_free (path_element);
     return result;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/* The returned directory should always contain a trailing slash */
-
-static char *
-ftpfs_get_current_directory (struct vfs_class *me, struct vfs_s_super *super)
-{
-    char buf[BUF_8K], *bufp, *bufq;
-
-    if (ftpfs_command (me, super, NONE, "PWD") == COMPLETE &&
-        ftpfs_get_reply (me, SUP->sock, buf, sizeof (buf)) == COMPLETE)
-    {
-        bufp = NULL;
-        for (bufq = buf; *bufq; bufq++)
-            if (*bufq == '"')
-            {
-                if (!bufp)
-                {
-                    bufp = bufq + 1;
-                }
-                else
-                {
-                    *bufq = 0;
-                    if (*bufp)
-                    {
-                        if (*(bufq - 1) != '/')
-                        {
-                            *bufq++ = '/';
-                            *bufq = 0;
-                        }
-                        if (*bufp == '/')
-                            return g_strdup (bufp);
-                        else
-                        {
-                            /* If the remote server is an Amiga a leading slash
-                               might be missing. MC needs it because it is used
-                               as separator between hostname and path internally. */
-                            return g_strconcat ("/", bufp, (char *) NULL);
-                        }
-                    }
-                    else
-                    {
-                        ftpfs_errno = EIO;
-                        return NULL;
-                    }
-                }
-            }
-    }
-    ftpfs_errno = EIO;
-    return NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1680,8 +1626,10 @@ ftpfs_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path
         sock = ftpfs_open_data_connection (me, super, "LIST -la", 0, TYPE_ASCII, 0);
     else
     {
+        char *path;
+
         /* Trailing "/." is necessary if remote_path is a symlink */
-        char *path = concat_dir_and_file (remote_path, ".");
+        path = mc_build_filename (remote_path, ".", NULL);
         sock = ftpfs_open_data_connection (me, super, "LIST -la", path, TYPE_ASCII, 0);
         g_free (path);
     }
@@ -1965,8 +1913,7 @@ ftpfs_send_command (const vfs_path_t * vpath, const char *cmd, int flags)
     char *p;
     struct vfs_s_super *super;
     int r;
-    vfs_path_element_t *path_element;
-
+    const vfs_path_element_t *path_element;
     int flush_directory_cache = (flags & OPT_FLUSH);
 
     path_element = vfs_path_get_by_index (vpath, -1);
@@ -2067,11 +2014,7 @@ ftpfs_chdir_internal (struct vfs_class *me, struct vfs_s_super *super, const cha
     if (r != COMPLETE)
         ftpfs_errno = EIO;
     else
-    {
-        g_free (super->path_element->path);
-        super->path_element->path = g_strdup (remote_path);
         SUP->cwd_deferred = 0;
-    }
     return r;
 }
 
@@ -2105,7 +2048,7 @@ ftpfs_rmdir (const vfs_path_t * vpath)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-ftpfs_fh_free_data (vfs_file_handler_t *fh)
+ftpfs_fh_free_data (vfs_file_handler_t * fh)
 {
     if (fh != NULL)
     {
@@ -2143,11 +2086,18 @@ ftpfs_fh_open (struct vfs_class *me, vfs_file_handler_t * fh, int flags, mode_t 
         {
             if (!fh->ino->localname)
             {
-                int handle = vfs_mkstemps (&fh->ino->localname, me->name,
-                                           fh->ino->ent->name);
+                vfs_path_t *vpath;
+                int handle;
+
+                handle = vfs_mkstemps (&vpath, me->name, fh->ino->ent->name);
                 if (handle == -1)
+                {
+                    vfs_path_free (vpath);
                     goto fail;
+                }
                 close (handle);
+                fh->ino->localname = vfs_path_to_str (vpath);
+                vfs_path_free (vpath);
                 ftp->append = flags & O_APPEND;
             }
             return 0;
@@ -2237,10 +2187,7 @@ ftpfs_fill_names (struct vfs_class *me, fill_names_f func)
         const struct vfs_s_super *super = (const struct vfs_s_super *) iter->data;
         char *name;
 
-        name =
-            g_strconcat (vfs_ftpfs_ops.prefix, VFS_PATH_URL_DELIMITER, super->path_element->user,
-                         "@", super->path_element->host, "/", super->path_element->path,
-                         (char *) NULL);
+        name = vfs_path_element_build_pretty_path_str (super->path_element);
         func (name);
         g_free (name);
     }
@@ -2562,7 +2509,7 @@ init_ftpfs (void)
 
     tcp_init ();
 
-    ftpfs_subclass.flags = VFS_S_REMOTE;
+    ftpfs_subclass.flags = VFS_S_REMOTE | VFS_S_USETMP;
     ftpfs_subclass.archive_same = ftpfs_archive_same;
     ftpfs_subclass.open_archive = ftpfs_open_archive;
     ftpfs_subclass.free_archive = ftpfs_free_archive;
