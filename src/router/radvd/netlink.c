@@ -1,5 +1,4 @@
 /*
- *   $Id: netlink.c,v 1.1 2011/02/25 04:17:23 reubenhwk Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>	 
@@ -39,7 +38,6 @@ void process_netlink_msg(int sock)
 	struct nlmsghdr *nh;
 	struct ifinfomsg * ifinfo;
 	char ifname[IF_NAMESIZE] = {""};
-	char * rc = 0;
 
 	len = recvmsg (sock, &msg, 0);
 	if (len == -1) {
@@ -57,14 +55,14 @@ void process_netlink_msg(int sock)
 		}
 
 		/* Continue with parsing payload. */
-                ifinfo = NLMSG_DATA(nh);
-                rc = if_indextoname(ifinfo->ifi_index, ifname);
-                if (ifinfo->ifi_flags & IFF_RUNNING) {
-                        dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is running", ifname, ifinfo->ifi_index);
-                }
-                else {
-                        dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is *NOT* running", ifname, ifinfo->ifi_index);
-                }
+		ifinfo = NLMSG_DATA(nh);
+		if_indextoname(ifinfo->ifi_index, ifname);
+		if (ifinfo->ifi_flags & IFF_RUNNING) {
+			dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is running", ifname, ifinfo->ifi_index);
+		}
+		else {
+			dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is *NOT* running", ifname, ifinfo->ifi_index);
+		}
 		reload_config();
 	}
 }

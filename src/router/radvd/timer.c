@@ -1,5 +1,4 @@
 /*
- *   $Id: timer.c,v 1.12 2011/02/22 00:20:40 reubenhwk Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
