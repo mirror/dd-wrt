@@ -17,6 +17,7 @@ struct krt_if_status {
 
 extern int if_scan_sock;
 
-static inline int kif_params_same(struct krt_if_params *old, struct krt_if_params *new) { return 1; }
+static inline int kif_params_same(struct krt_if_params *old UNUSED, struct krt_if_params *new UNUSED) { return 1; }
+static inline void kif_copy_params(struct krt_if_params *dest UNUSED, struct krt_if_params *src UNUSED) { }
 
 #endif

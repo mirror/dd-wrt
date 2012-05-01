@@ -175,6 +175,7 @@ proto_flush_hooks(struct proto *p)
  * proto_config_new - create a new protocol configuration
  * @pr: protocol the configuration will belong to
  * @size: size of the structure including generic data
+ * @class: SYM_PROTO or SYM_TEMPLATE
  *
  * Whenever the configuration file says that a new instance
  * of a routing protocol should be created, the parser calls
@@ -183,21 +184,73 @@ proto_flush_hooks(struct proto *p)
  * containing all the generic items followed by protocol-specific
  * ones). Also, the configuration entry gets added to the list
  * of protocol instances kept in the configuration.
+ *
+ * The function is also used to create protocol templates (when class
+ * SYM_TEMPLATE is specified), the only difference is that templates
+ * are not added to the list of protocol instances and therefore not
+ * initialized during protos_commit()).
  */
 void *
-proto_config_new(struct protocol *pr, unsigned size)
+proto_config_new(struct protocol *pr, unsigned size, int class)
 {
   struct proto_config *c = cfg_allocz(size);
 
-  add_tail(&new_config->protos, &c->n);
+  if (class == SYM_PROTO)
+    add_tail(&new_config->protos, &c->n);
   c->global = new_config;
   c->protocol = pr;
   c->name = pr->name;
+  c->preference = pr->preference;
+  c->class = class;
   c->out_filter = FILTER_REJECT;
   c->table = c->global->master_rtc;
   c->debug = new_config->proto_default_debug;
   c->mrtdump = new_config->proto_default_mrtdump;
   return c;
+}
+
+/**
+ * proto_copy_config - copy a protocol configuration
+ * @dest: destination protocol configuration
+ * @src: source protocol configuration
+ *
+ * Whenever a new instance of a routing protocol is created from the
+ * template, proto_copy_config() is called to copy a content of
+ * the source protocol configuration to the new protocol configuration.
+ * Name, class and a node in protos list of @dest are kept intact.
+ * copy_config() protocol hook is used to copy protocol-specific data.
+ */
+void
+proto_copy_config(struct proto_config *dest, struct proto_config *src)
+{
+  node old_node;
+  int old_class;
+  char *old_name;
+
+  if (dest->protocol != src->protocol)
+    cf_error("Can't copy configuration from a different protocol type");
+
+  if (dest->protocol->copy_config == NULL)
+    cf_error("Inheriting configuration for %s is not supported", src->protocol->name);
+
+  DBG("Copying configuration from %s to %s\n", src->name, dest->name);
+
+  /* 
+   * Copy struct proto_config here. Keep original node, class and name.
+   * protocol-specific config copy is handled by protocol copy_config() hook
+   */
+
+  old_node = dest->n;
+  old_class = dest->class;
+  old_name = dest->name;
+
+  memcpy(dest, src, sizeof(struct proto_config));
+
+  dest->n = old_node;
+  dest->class = old_class;
+  dest->name = old_name;
+
+  dest->protocol->copy_config(dest, src);
 }
 
 /**
@@ -230,7 +283,8 @@ protos_preconfig(struct config *c)
  * @c: new configuration
  *
  * This function calls the postconfig() hooks of all protocol
- * instances specified in configuration @c.
+ * instances specified in configuration @c. The hooks are not
+ * called for protocol templates.
  */
 void
 protos_postconfig(struct config *c)
@@ -366,14 +420,15 @@ protos_commit(struct config *new, struct config *old, int force_reconfig, int ty
 {
   struct proto_config *oc, *nc;
   struct proto *p, *n;
+  struct symbol *sym;
 
   DBG("protos_commit:\n");
   if (old)
     {
       WALK_LIST(oc, old->protos)
 	{
-	  struct proto *p = oc->proto;
-	  struct symbol *sym = cf_find_symbol(oc->name);
+	  p = oc->proto;
+	  sym = cf_find_symbol(oc->name);
 	  if (sym && sym->class == SYM_PROTO && !new->shutdown)
 	    {
 	      /* Found match, let's check if we can smoothly switch to new configuration */

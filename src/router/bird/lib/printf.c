@@ -12,6 +12,8 @@
 
 #include <errno.h>
 
+#include "nest/iface.h"
+
 /* we use this so that we can do without the ctype library */
 #define is_digit(c)	((c) >= '0' && (c) <= '9')
 
@@ -138,6 +140,7 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 	char *str, *start;
 	const char *s;
 	char ipbuf[STD_ADDRESS_P_LENGTH+1];
+	struct iface *iface;
 
 	int flags;		/* flags to number() */
 
@@ -277,6 +280,21 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 					field_width = STD_ADDRESS_P_LENGTH;
 			}
 			s = ipbuf;
+			goto str;
+
+		/* Interface scope after link-local IP address */
+		case 'J':
+			iface = va_arg(args, struct iface *);
+			if (!iface)
+				continue;
+			if (!size)
+				return -1;
+
+			*str++ = '%';
+			start++;
+			size--;
+
+			s = iface->name;
 			goto str;
 
 		/* Router/Network ID - essentially IPv4 address in u32 value */

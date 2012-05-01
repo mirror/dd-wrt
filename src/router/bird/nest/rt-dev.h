@@ -11,7 +11,7 @@
 
 struct rt_dev_config {
   struct proto_config c;
-  list iface_list;
+  list iface_list;		/* list of struct iface_patt */
 };
 
 #endif

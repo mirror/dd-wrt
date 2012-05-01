@@ -11,8 +11,19 @@
 #define EA_RIP_TAG	EA_CODE(EAP_RIP, 0)
 #define EA_RIP_METRIC	EA_CODE(EAP_RIP, 1)
 
-#define PACKET_MAX 25
-#define PACKET_MD5_MAX 18	/* FIXME */
+#define PACKET_MAX	25
+#define PACKET_MD5_MAX	18	/* FIXME */
+
+
+#define RIP_V1		1
+#define RIP_V2		2
+#define RIP_NG		1	/* A new version numbering */
+
+#ifndef IPV6
+#define RIP_PORT	520	/* RIP for IPv4 */
+#else
+#define RIP_PORT	521	/* RIPng */
+#endif
 
 struct rip_connection {
   node n;
@@ -37,8 +48,9 @@ struct rip_packet_heading {		/* 4 bytes */
 #define RIPCMD_TRACEOFF         4       /* turn it off */
 #define RIPCMD_MAX              5
   u8 version;
-#define RIP_V1 1
-#define RIP_V2 2
+#define RIP_V1			1
+#define RIP_V2			2
+#define RIP_NG 			1	/* this is verion 1 of RIPng */
   u16 unused;
 };
 

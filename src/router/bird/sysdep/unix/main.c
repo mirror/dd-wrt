@@ -17,6 +17,8 @@
 #include <signal.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/stat.h>
+#include <libgen.h>
 
 #include "nest/bird.h"
 #include "lib/lists.h"
@@ -149,17 +151,39 @@ read_iproute_table(char *file, char *prefix, int max)
 #endif // PATH_IPROUTE_DIR
 
 
-static int conf_fd;
 static char *config_name = PATH_CONFIG;
 
 static int
-cf_read(byte *dest, unsigned int len)
+cf_read(byte *dest, unsigned int len, int fd)
 {
-  int l = read(conf_fd, dest, len);
+  int l = read(fd, dest, len);
   if (l < 0)
     cf_error("Read error");
   return l;
 }
+
+static int
+cf_open(char *filename)
+{
+  char full_name[BIRD_FNAME_MAX];
+  char *cur = filename;
+  int ret;
+
+  if (*filename != '/') {
+    char dir[BIRD_FNAME_MAX];
+    strncpy(dir, config_name, sizeof(dir));
+    dir[sizeof(dir)-1] = 0;
+    snprintf(full_name, sizeof(full_name), "%s/%s", dirname(dir), filename);
+    full_name[sizeof(full_name)-1] = 0;
+    cur = full_name;
+  }
+
+  if ((ret = open(cur, O_RDONLY)) == -1)
+    cf_error("Unable to open included configuration file: %s", cur);
+
+  return ret;
+}
+
 
 void
 sysdep_preconfig(struct config *c)
@@ -188,12 +212,13 @@ unix_read_config(struct config **cp, char *name)
   int ret;
 
   *cp = conf;
-  conf_fd = open(name, O_RDONLY);
-  if (conf_fd < 0)
+  conf->file_fd = open(name, O_RDONLY);
+  if (conf->file_fd < 0)
     return 0;
   cf_read_hook = cf_read;
+  cf_open_hook = cf_open;
   ret = config_parse(conf);
-  close(conf_fd);
+  close(conf->file_fd);
   return ret;
 }
 
@@ -205,7 +230,7 @@ read_config(void)
   if (!unix_read_config(&conf, config_name))
     {
       if (conf->err_msg)
-	die("%s, line %d: %s", config_name, conf->err_lino, conf->err_msg);
+	die("%s, line %d: %s", conf->err_file_name, conf->err_lino, conf->err_msg);
       else
 	die("Unable to open configuration file %s: %m", config_name);
     }
@@ -221,7 +246,7 @@ async_config(void)
   if (!unix_read_config(&conf, config_name))
     {
       if (conf->err_msg)
-	log(L_ERR "%s, line %d: %s", config_name, conf->err_lino, conf->err_msg);
+	log(L_ERR "%s, line %d: %s", conf->err_file_name, conf->err_lino, conf->err_msg);
       else
 	log(L_ERR "Unable to open configuration file %s: %m", config_name);
       config_free(conf);
@@ -621,6 +646,7 @@ main(int argc, char **argv)
   io_init();
   rt_init();
   if_init();
+  roa_init();
 
   uid_t use_uid = get_uid(use_user);
   gid_t use_gid = get_gid(use_group);

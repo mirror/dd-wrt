@@ -656,7 +656,7 @@ call <B>sk_open()</B> to do the actual opening of the socket.
 <HR><H3>Function</H3>
 <P><I>int</I>
 <B>sk_set_ttl</B>
-(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set TTL for given socket.
+(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set transmit TTL for given socket.
 <P>
 <H3>Arguments</H3>
 <P>
@@ -674,14 +674,32 @@ different TTL.
 
 <HR><H3>Function</H3>
 <P><I>int</I>
+<B>sk_set_min_ttl</B>
+(<I>sock *</I> <B>s</B>, <I>int</I> <B>ttl</B>) --     set minimal accepted TTL for given socket.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>sock *</I> <B>s</B><DD><P>socket
+<DT><I>int</I> <B>ttl</B><DD><P>TTL value
+</DL>
+<H3>Description</H3>
+<P>Can be used in TTL security implementation
+<H3>Result</H3>
+<P>0 for success, -1 for an error.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
 <B>sk_set_md5_auth</B>
-(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>a</B>, <I>char *</I> <B>passwd</B>) --     add / remove MD5 security association for given socket.
+(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>a</B>, <I>struct iface *</I> <B>ifa</B>, <I>char *</I> <B>passwd</B>) --     add / remove MD5 security association for given socket.
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>sock *</I> <B>s</B><DD><P>socket
 <DT><I>ip_addr</I> <B>a</B><DD><P>IP address of the other side
+<DT><I>struct iface *</I> <B>ifa</B><DD><P>Interface for link-local IP address
 <DT><I>char *</I> <B>passwd</B><DD><P>password used for MD5 authentication
 </DL>
 <H3>Description</H3>

@@ -318,6 +318,13 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 
 #else		/* IPv6 version */
 
+static inline int
+same_iface(struct bgp_proto *p, ip_addr *ip)
+{
+  neighbor *n = neigh_find(&p->p, ip, 0);
+  return n && p->neigh && n->iface == p->neigh->iface;
+}
+
 static byte *
 bgp_create_update(struct bgp_conn *conn, byte *buf)
 {
@@ -329,7 +336,6 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
   ip_addr *ipp, ip, ip_ll;
   ea_list *ea;
   eattr *nh;
-  neighbor *n;
 
   put_u16(buf, 0);
   w = buf+4;
@@ -399,10 +405,13 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	       * link local address seems to be a natural way to solve that
 	       * problem, but it is contrary to RFC 2545 and Quagga does not
 	       * accept such routes.
+	       *
+	       * There are two cases, either we have global IP, or
+	       * IPA_NONE if the neighbor is link-local. For IPA_NONE,
+	       * we suppose it is on the same iface, see bgp_update_attrs().
 	       */
 
-	      n = neigh_find(&p->p, &ip, 0);
-	      if (n && p->neigh && n->iface == p->neigh->iface)
+	      if (ipa_zero(ip) || same_iface(p, &ip))
 		{
 		  if (second && ipa_nonzero(ipp[1]))
 		    ip_ll = ipp[1];
@@ -433,6 +442,9 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	  *tmp++ = 0;
 	  *tmp++ = BGP_AF_IPV6;
 	  *tmp++ = 1;
+
+	  if (ipa_has_link_scope(ip))
+	    ip = IPA_NONE;
 
 	  if (ipa_nonzero(ip_ll))
 	    {
@@ -809,13 +821,27 @@ bgp_set_next_hop(struct bgp_proto *p, rta *a)
 
 #ifdef IPV6
   int second = (nh->u.ptr->length == NEXT_HOP_LENGTH);
+
+  /* First address should not be link-local, but may be zero in direct mode */
+  if (ipa_has_link_scope(*nexthop))
+    *nexthop = IPA_NONE;
 #else
   int second = 0;
 #endif
 
   if (p->cf->gw_mode == GW_DIRECT)
     {
-      neighbor *ng = neigh_find(&p->p, nexthop, 0) ? : p->neigh;
+      neighbor *ng = NULL;
+
+      if (ipa_nonzero(*nexthop))
+	ng = neigh_find(&p->p, nexthop, 0);
+      else if (second)	/* GW_DIRECT -> single_hop -> p->neigh != NULL */
+	ng = neigh_find2(&p->p, nexthop + 1, p->neigh->iface, 0);
+
+      /* Fallback */
+      if (!ng)
+	ng = p->neigh;
+
       if (ng->scope == SCOPE_HOST)
 	return 0;
 
@@ -826,7 +852,12 @@ bgp_set_next_hop(struct bgp_proto *p, rta *a)
       a->igp_metric = 0;
     }
   else /* GW_RECURSIVE */
-    rta_set_recursive_next_hop(p->p.table, a, p->igp_table, nexthop, nexthop + second);
+    {
+      if (ipa_zero(*nexthop))
+	  return 0;
+
+      rta_set_recursive_next_hop(p->p.table, a, p->igp_table, nexthop, nexthop + second);
+    }
 
   return 1;
 }
@@ -875,6 +906,7 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	  rte *e = rte_get_temp(rta_clone(a));
 	  e->net = net_get(p->p.table, prefix, pxlen);
 	  e->pflags = 0;
+	  e->u.bgp.suppressed = 0;
 	  rte_update(p->p.table, e->net, &p->p, &p->p, e);
 	}
       else
@@ -993,6 +1025,7 @@ bgp_do_rx_update(struct bgp_conn *conn,
 	      rte *e = rte_get_temp(rta_clone(a));
 	      e->net = net_get(p->p.table, prefix, pxlen);
 	      e->pflags = 0;
+	      e->u.bgp.suppressed = 0;
 	      rte_update(p->p.table, e->net, &p->p, &p->p, e);
 	    }
 	  else

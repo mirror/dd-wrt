@@ -18,6 +18,9 @@
 /* 32-bit integer type */
 #define INTEGER_32 ?
 
+/* 64-bit integer type */
+#define INTEGER_64 ?
+
 /* CPU endianity */
 #undef CPU_LITTLE_ENDIAN
 #undef CPU_BIG_ENDIAN

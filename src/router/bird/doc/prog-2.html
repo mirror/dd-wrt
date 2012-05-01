@@ -944,13 +944,14 @@ automatically by the core code.
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>proto_config_new</B>
-(<I>struct protocol *</I> <B>pr</B>, <I>unsigned</I> <B>size</B>) --  create a new protocol configuration
+(<I>struct protocol *</I> <B>pr</B>, <I>unsigned</I> <B>size</B>, <I>int</I> <B>class</B>) --  create a new protocol configuration
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct protocol *</I> <B>pr</B><DD><P>protocol the configuration will belong to
 <DT><I>unsigned</I> <B>size</B><DD><P>size of the structure including generic data
+<DT><I>int</I> <B>class</B><DD><P>SYM_PROTO or SYM_TEMPLATE
 </DL>
 <H3>Description</H3>
 <P>Whenever the configuration file says that a new instance
@@ -960,6 +961,29 @@ instance (a structure staring with the <I>proto_config</I> header
 containing all the generic items followed by protocol-specific
 ones). Also, the configuration entry gets added to the list
 of protocol instances kept in the configuration.
+<P>The function is also used to create protocol templates (when class
+SYM_TEMPLATE is specified), the only difference is that templates
+are not added to the list of protocol instances and therefore not
+initialized during <B>protos_commit()</B>).
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_copy_config</B>
+(<I>struct proto_config *</I> <B>dest</B>, <I>struct proto_config *</I> <B>src</B>) --  copy a protocol configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto_config *</I> <B>dest</B><DD><P>destination protocol configuration
+<DT><I>struct proto_config *</I> <B>src</B><DD><P>source protocol configuration
+</DL>
+<H3>Description</H3>
+<P>Whenever a new instance of a routing protocol is created from the
+template, <B>proto_copy_config()</B> is called to copy a content of
+the source protocol configuration to the new protocol configuration.
+Name, class and a node in protos list of <B>dest</B> are kept intact.
+<B>copy_config()</B> protocol hook is used to copy protocol-specific data.
 
 
 <HR><H3>Function</H3>
@@ -990,7 +1014,8 @@ configuration.
 </DL>
 <H3>Description</H3>
 <P>This function calls the <B>postconfig()</B> hooks of all protocol
-instances specified in configuration <B>c</B>.
+instances specified in configuration <B>c</B>. The hooks are not
+called for protocol templates.
 
 
 <HR><H3>Function</H3>
@@ -1457,6 +1482,31 @@ should be passed to the filters.
 
 <HR><H3>Function</H3>
 <P><I>int</I>
+<B>rte_recalculate</B>
+(<I>struct rtable *</I> <B>table</B>, <I>struct network *</I> <B>net</B>, <I>struct rte *</I> <B>new</B>, <I>struct rte *</I> <B>old</B>, <I>struct rte *</I> <B>old_best</B>) --     prepare routes for comparison
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct rtable *</I> <B>table</B><DD><P>a routing table 
+<DT><I>struct network *</I> <B>net</B><DD><P>a network entry
+<DT><I>struct rte *</I> <B>new</B><DD><P>new route for the network
+<DT><I>struct rte *</I> <B>old</B><DD><P>old route for the network
+<DT><I>struct rte *</I> <B>old_best</B><DD><P>old best route for the network (may be NULL)
+</DL>
+<H3>Description</H3>
+<P>This hook is called when a route change (from <B>old</B> to <B>new</B> for a
+<B>net</B> entry) is propagated to a <B>table</B>. It may be used to prepare
+routes for comparison by <B>rte_better()</B> in the best route
+selection. <B>new</B> may or may not be in <B>net</B>-&gt;routes list,
+<B>old</B> is not there.
+<H3>Result</H3>
+<P>1 if the ordering implied by <B>rte_better()</B> changes enough
+that full best route calculation have to be done, 0 otherwise.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
 <B>rte_better</B>
 (<I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>) --     compare metrics of two routes
 <P>
@@ -1581,6 +1631,22 @@ network interface to the debug output.
 <P>
 <P>This function dumps information about all known network
 interfaces to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_delete</B>
+(<I>struct iface *</I> <B>old</B>) --     remove interface 
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>old</B><DD><P>interface 
+</DL>
+<H3>Description</H3>
+<P>This function is called by the low-level platform dependent code
+whenever it notices an interface disappears. It is just a shorthand
+for <B>if_update()</B>.
 
 
 <HR><H3>Function</H3>
@@ -1815,6 +1881,22 @@ to be flushed.
 <P>Notify the neighbor cache that an interface changed link state.
 All owners of neighbor entries connected to this interface are
 notified.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_ifa_update</B>
+(<I>struct ifa *</I> <B>a</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct ifa *</I> <B>a</B><DD><P>-- undescribed --
+</DL>
+<H3>Description</H3>
+<P>Tell the neighbor cache that an address was added or removed.
+<P>The neighbor cache wakes up all inactive sticky neighbors with
+addresses belonging to prefixes of the interface belonging to <B>ifa</B>
+and causes all unreachable neighbors to be flushed.
 
 
 <HR><H3>Function</H3>

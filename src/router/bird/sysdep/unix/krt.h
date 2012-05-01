@@ -19,7 +19,7 @@ struct kif_proto;
 #include "lib/krt-set.h"
 #include "lib/krt-iface.h"
 
-/* Flags stored in net->n.flags */
+/* Flags stored in net->n.flags, rest are in nest/route.h */
 
 #define KRF_VERDICT_MASK 0x0f
 #define KRF_CREATE 0			/* Not seen in kernel table */
@@ -27,9 +27,6 @@ struct kif_proto;
 #define KRF_UPDATE 2			/* Need to update this entry */
 #define KRF_DELETE 3			/* Should be deleted */
 #define KRF_IGNORE 4			/* To be ignored */
-
-#define KRF_INSTALLED 0x80		/* This route should be installed in the kernel */
-
 
 #define EA_KRT_PREFSRC EA_CODE(EAP_KRT, 0)
 #define EA_KRT_REALM EA_CODE(EAP_KRT, 1)
@@ -80,6 +77,7 @@ extern pool *krt_pool;
   if (pr->p.debug & fl)				\
     { log(L_TRACE "%s: " msg, pr->p.name , ## args); } } while(0)
 
+void kif_request_scan(void);
 void krt_got_route(struct krt_proto *p, struct rte *e);
 void krt_got_route_async(struct krt_proto *p, struct rte *e, int new);
 
@@ -103,7 +101,7 @@ struct kif_config {
   struct proto_config c;
   struct krt_if_params iface;
   int scan_time;		/* How often we re-scan interfaces */
-  list primary;			/* Preferences for primary addresses */
+  list primary;			/* Preferences for primary addresses (struct kif_primary_item) */
 };
 
 struct kif_proto {

@@ -237,3 +237,47 @@ sk_set_md5_auth_int(sock *s, sockaddr *sa, char *passwd)
 
   return rv;
 }
+
+
+#ifndef IPV6
+
+#ifdef IP_MINTTL
+
+static int
+sk_set_min_ttl4(sock *s, int ttl)
+{
+  if (setsockopt(s->fd, IPPROTO_IP, IP_MINTTL, &ttl, sizeof(ttl)) < 0)
+  {
+    if (errno == ENOPROTOOPT)
+      log(L_ERR "Kernel does not support IPv4 TTL security");
+    else
+      log(L_ERR "sk_set_min_ttl4: setsockopt: %m");
+
+    return -1;
+  }
+
+  return 0;
+}
+
+#else /* no IP_MINTTL */
+
+static int
+sk_set_min_ttl4(sock *s, int ttl)
+{
+  log(L_ERR "IPv4 TTL security not supported");
+  return -1;
+}
+
+#endif
+
+#else /* IPv6 */
+
+static int
+sk_set_min_ttl6(sock *s, int ttl)
+{
+  log(L_ERR "IPv6 TTL security not supported");
+  return -1;
+}
+
+#endif
+

@@ -143,26 +143,44 @@ operators on prefixes:
 <CODE>.ip</CODE> which extracts the IP address from the pair, and <CODE>.len</CODE>, which separates prefix
 length from the pair. So <CODE>1.2.0.0/16.pxlen = 16</CODE> is true.
 <P>
-<DT><CODE>int|pair|quad|ip|prefix|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
+<DT><CODE>ec</CODE><DD><P>This is a specialized type used to represent BGP
+extended community values. It is essentially a 64bit value,
+literals of this type are usually written as <CODE>(<I>kind</I>,
+<I>key</I>, <I>value</I>)</CODE>, where <CODE>kind</CODE> is a kind of
+extended community (e.g. <CODE>rt</CODE> / <CODE>ro</CODE> for a route
+target / route origin communities), the format and possible
+values of <CODE>key</CODE> and <CODE>value</CODE> are usually integers, but
+it depends on the used kind. Similarly to pairs, ECs can be
+constructed using expressions for <CODE>key</CODE> and
+<CODE>value</CODE> parts, (e.g. <CODE>(ro, myas, 3*10)</CODE>, where
+<CODE>myas</CODE> is an integer variable).
+<P>
+<DT><CODE>int|pair|quad|ip|prefix|ec|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
 but you can't modify them. Literals of type <CODE>int set</CODE> look like <CODE>[ 1, 2, 5..7 ]</CODE>. As you can see, both simple values and ranges are permitted in
 sets.
-For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
+<P>For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
 that case <CODE>(123,0)..(123,65535)</CODE>). You can also use <CODE>(123,5..100)</CODE> for range
 <CODE>(123,5)..(123,100)</CODE>. You can also use <CODE>*</CODE> and <CODE>a..b</CODE> expressions
 in the first part of a pair, note that such expressions are translated to a set
 of intervals, which may be memory intensive. E.g. <CODE>(*,4..20)</CODE> is translated to
 <CODE>(0,4..20), (1,4..20), (2,4..20), ... (65535, 4..20)</CODE>.
-You can also use expressions for both, pair sets and int sets. However it must
+<P>EC sets use similar expressions like pair sets, e.g. <CODE>(rt, 123, 10..20)</CODE> 
+or <CODE>(ro, 123, *)</CODE>. Expressions requiring the translation (like  <CODE>(rt, *, 3)</CODE>)
+are not allowed (as they usually have 4B range for ASNs).
+<P>You can also use expressions for int, pair and EC set values. However it must
 be possible to evaluate these expressions before daemon boots. So you can use
 only constants inside them. E.g.
 <HR>
 <PRE>
          define one=1;
+         define myas=64500;
          int set odds;
          pair set ps;
+         ec set es;
 
-         odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ];
+         odds = [ one, 2+1, 6-one, 2*2*2-1, 9, 11 ];
          ps = [ (1,one+one), (3,4)..(4,8), (5,*), (6,3..6), (7..9,*) ];
+         es = [ (rt, myas, 3*10), (rt, myas+one, 0..16*16*16-1), (ro, myas+2, *) ];
         
 </PRE>
 <HR>
@@ -220,25 +238,35 @@ There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *
 <DT><CODE>clist</CODE><DD><P>Clist is similar to a set, except that unlike other sets, it
 can be modified. The type is used for community list (a set
 of pairs) and for cluster list (a set of quads). There exist
-no literals of this type. There are two special operators on
+no literals of this type. There are three special operators on
 clists:
 <P><CODE>add(<I>C</I>,<I>P</I>)</CODE> adds pair (or quad) <I>P</I> to clist
 <I>C</I> and returns the result.  If item <I>P</I> is already in
-clist <I>C</I>, it does nothing.
+clist <I>C</I>, it does nothing. <I>P</I> may also be a clist,
+in that case all its members are added; i.e., it works as clist union.
 <P><CODE>delete(<I>C</I>,<I>P</I>)</CODE> deletes pair (or quad)
 <I>P</I> from clist <I>C</I> and returns the result.  If clist
 <I>C</I> does not contain item <I>P</I>, it does nothing.
 <I>P</I> may also be a pair (or quad) set, in that case the
 operator deletes all items from clist <I>C</I> that are also
-members of set <I>P</I>.
+members of set <I>P</I>. Moreover, <I>P</I> may also be a clist,
+which works analogously; i.e., it works as clist difference.
 <P><CODE>filter(<I>C</I>,<I>P</I>)</CODE> deletes all items from clist
 <I>C</I> that are not members of pair (or quad) set <I>P</I>.
 I.e., <CODE>filter</CODE> do the same as <CODE>delete</CODE> with inverted
-set <I>P</I>.
+set <I>P</I>. <I>P</I> may also be a clist, which works analogously;
+i.e., it works as clist intersection.
 <P>Statement <CODE><I>C</I> = add(<I>C</I>, <I>P</I>);</CODE> can be shortened to
 <CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route
 attribute (for example <CODE>bgp_community</CODE>). Similarly for
 <CODE>delete</CODE> and <CODE>filter</CODE>.
+<P>
+<DT><CODE>eclist</CODE><DD><P>Eclist is a data type used for BGP extended community lists.
+Eclists are very similar to clists, but they are sets of ECs
+instead of pairs. The same operations (like <CODE>add</CODE>,
+<CODE>delete</CODE>, or <CODE>~</CODE> membership operator) can be
+used to modify or test eclists, with ECs instead of pairs as
+arguments.
 </DL>
 <P>
 <H2><A NAME="ss5.3">5.3</A> <A HREF="bird.html#toc5.3">Operators</A>
@@ -249,7 +277,18 @@ attribute (for example <CODE>bgp_community</CODE>). Similarly for
 Special operators include <CODE>~</CODE> for "is element of a set" operation - it can be
 used on element and set of elements of the same type (returning true if element is contained in the given set), or
 on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
-prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
+prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on number and bgppath (returning true if the number is in the path) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
+<P>
+<P>There is one operator related to ROA infrastructure -
+<CODE>roa_check()</CODE>. It examines a ROA table and does RFC 6483 route
+origin validation for a given network prefix. The basic usage
+is <CODE>roa_check(<I>table</I>)</CODE>, which checks current route (which
+should be from BGP to have AS_PATH argument) in the specified ROA
+table and returns ROA_UNKNOWN if there is no relevant ROA, ROA_VALID
+if there is a matching ROA, or ROA_INVALID if there are some relevant
+ROAs but none of them match. There is also an extended variant
+<CODE>roa_check(<I>table</I>, <I>prefix</I>, <I>asn</I>)</CODE>, which allows to
+specify a prefix and an ASN as arguments.
 <P>
 <P>
 <H2><A NAME="ss5.4">5.4</A> <A HREF="bird.html#toc5.4">Control structures</A>

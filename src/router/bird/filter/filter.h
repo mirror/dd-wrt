@@ -32,6 +32,12 @@ struct f_inst {		/* Instruction */
 #define arg1 a1.p
 #define arg2 a2.p
 
+/* Not enough fields in f_inst for three args used by roa_check() */
+struct f_inst_roa_check {
+  struct f_inst i;
+  struct roa_table_config *rtc;	
+};
+
 struct f_prefix {
   ip_addr ip;
   int len;
@@ -46,6 +52,7 @@ struct f_val {
   int type;
   union {
     int i;
+    u64 ec;
     /*    ip_addr ip; Folded into prefix */	
     struct f_prefix px;
     char *s;
@@ -65,6 +72,8 @@ struct f_inst *f_new_inst(void);
 struct f_inst *f_new_dynamic_attr(int type, int f_type, int code);	/* Type as core knows it, type as filters know it, and code of dynamic attribute */
 struct f_tree *f_new_tree(void);
 struct f_inst *f_generate_complex(int operation, int operation_aux, struct f_inst *dyn, struct f_inst *argument);
+struct f_inst *f_generate_roa_check(struct symbol *sym, struct f_inst *prefix, struct f_inst *asn);
+
 
 struct f_tree *build_tree(struct f_tree *);
 struct f_tree *find_tree(struct f_tree *t, struct f_val val);
@@ -140,6 +149,7 @@ int tree_compare(const void *p1, const void *p2);
 #define T_ENUM_SCOPE 0x32
 #define T_ENUM_RTC 0x33
 #define T_ENUM_RTD 0x34
+#define T_ENUM_ROA 0x35
 /* new enums go here */
 #define T_ENUM_EMPTY 0x3f	/* Special hack for atomic_aggr */
 
@@ -152,6 +162,8 @@ int tree_compare(const void *p1, const void *p2);
 #define T_PATH_MASK 0x23	/* mask for BGP path */
 #define T_PATH 0x24		/* BGP path */
 #define T_CLIST 0x25		/* Community list */
+#define T_ECLIST 0x26		/* Extended community list */
+#define T_EC 0x27		/* Extended community value, u64 */
 
 #define T_RETURN 0x40
 #define T_SET 0x80
