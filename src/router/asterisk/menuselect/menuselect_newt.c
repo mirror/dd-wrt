@@ -20,7 +20,7 @@
  * \file
  *
  * \author Sean Bright <sean.bright@gmail.com>
- * 
+ *
  * \brief newt frontend for selection maintenance
  */
 
@@ -34,6 +34,9 @@
 #define MIN_X 80
 #define MIN_Y 21
 
+#define MIN(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); ((__a > __b) ? __b : __a);})
+#define MAX(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); ((__a < __b) ? __b : __a);})
+
 extern int changes_made;
 
 static newtComponent rootOptions;
@@ -43,9 +46,11 @@ static newtComponent memberNameTextbox;
 static newtComponent dependsLabel;
 static newtComponent usesLabel;
 static newtComponent conflictsLabel;
+static newtComponent supportLevelLabel;
 static newtComponent dependsDataTextbox;
 static newtComponent usesDataTextbox;
 static newtComponent conflictsDataTextbox;
+static newtComponent supportLevelDataTextbox;
 
 static newtComponent exitButton;
 static newtComponent saveAndExitButton;
@@ -67,12 +72,27 @@ static void toggle_all_options(int select)
 
 static void toggle_selected_option()
 {
+	int i;
 	struct member *mem = newtListboxGetCurrent(subOptions);
 
 	toggle_enabled(mem);
 
 	/* Redraw */
 	build_members_menu(1);
+
+	/* Select the next item in the list */
+	for (i = 0; i < newtListboxItemCount(subOptions); i++) {
+		struct member *cur;
+
+		newtListboxGetEntry(subOptions, i, NULL, (void **) &cur);
+
+		if (cur == mem) {
+			i = MIN(i + 1, newtListboxItemCount(subOptions) - 1);
+			break;
+		}
+	}
+
+	newtListboxSetCurrent(subOptions, i);
 
 	return;
 }
@@ -83,6 +103,7 @@ static void reset_display()
 	newtTextboxSetText(dependsDataTextbox, "");
 	newtTextboxSetText(usesDataTextbox, "");
 	newtTextboxSetText(conflictsDataTextbox, "");
+	newtTextboxSetText(supportLevelDataTextbox, "");
 	newtRefresh();
 }
 
@@ -90,9 +111,9 @@ static void display_member_info(struct member *mem)
 {
 	char buffer[128] = { 0 };
 
-	struct depend *dep;
-	struct conflict *con;
-	struct use *uses;
+	struct reference *dep;
+	struct reference *con;
+	struct reference *uses;
 
 	reset_display();
 
@@ -101,7 +122,11 @@ static void display_member_info(struct member *mem)
 	}
 
 	if (AST_LIST_EMPTY(&mem->deps)) {
-		newtTextboxSetText(dependsDataTextbox, "N/A");
+		if (mem->is_separator) {
+			newtTextboxSetText(dependsDataTextbox, "");
+		} else {
+			newtTextboxSetText(dependsDataTextbox, "N/A");
+		}
 	} else {
 		strcpy(buffer, "");
 		AST_LIST_TRAVERSE(&mem->deps, dep, list) {
@@ -114,11 +139,16 @@ static void display_member_info(struct member *mem)
 	}
 
 	if (AST_LIST_EMPTY(&mem->uses)) {
-		newtTextboxSetText(usesDataTextbox, "N/A");
+		if (mem->is_separator) {
+			newtTextboxSetText(usesDataTextbox, "");
+		} else {
+			newtTextboxSetText(usesDataTextbox, "N/A");
+		}
 	} else {
 		strcpy(buffer, "");
 		AST_LIST_TRAVERSE(&mem->uses, uses, list) {
 			strncat(buffer, uses->displayname, sizeof(buffer) - strlen(buffer) - 1);
+			strncat(buffer, uses->member ? "(M)" : "(E)", sizeof(buffer) - strlen(buffer) - 1);
 			if (AST_LIST_NEXT(uses, list))
 				strncat(buffer, ", ", sizeof(buffer) - strlen(buffer) - 1);
 		}
@@ -126,7 +156,11 @@ static void display_member_info(struct member *mem)
 	}
 
 	if (AST_LIST_EMPTY(&mem->conflicts)) {
-		newtTextboxSetText(conflictsDataTextbox, "N/A");
+		if (!mem->is_separator) {
+			newtTextboxSetText(conflictsDataTextbox, "N/A");
+		} else {
+			newtTextboxSetText(conflictsDataTextbox, "");
+		}
 	} else {
 		strcpy(buffer, "");
 		AST_LIST_TRAVERSE(&mem->conflicts, con, list) {
@@ -138,7 +172,19 @@ static void display_member_info(struct member *mem)
 		newtTextboxSetText(conflictsDataTextbox, buffer);
 	}
 
-	return;
+	{ /* Support Level */
+		snprintf(buffer, sizeof(buffer), "%s", mem->support_level);
+		if (mem->replacement && *mem->replacement) {
+			char buf2[64];
+			snprintf(buf2, sizeof(buf2), ", Replaced by: %s", mem->replacement);
+			strncat(buffer, buf2, sizeof(buffer) - strlen(buffer) - 1);
+		}
+		if (mem->is_separator) {
+			newtTextboxSetText(supportLevelDataTextbox, "");
+		} else {
+			newtTextboxSetText(supportLevelDataTextbox, buffer);
+		}
+	}
 }
 
 static void build_members_menu(int overlay)
@@ -159,6 +205,8 @@ static void build_members_menu(int overlay)
 
 		if ((mem->depsfailed == HARD_FAILURE) || (mem->conflictsfailed == HARD_FAILURE)) {
 			snprintf(buf, sizeof(buf), "XXX %s", mem->name);
+		} else if (mem->is_separator) {
+			snprintf(buf, sizeof(buf), "    --- %s ---", mem->name);
 		} else if (mem->depsfailed == SOFT_FAILURE) {
 			snprintf(buf, sizeof(buf), "<%s> %s", mem->enabled ? "*" : " ", mem->name);
 		} else if (mem->conflictsfailed == SOFT_FAILURE) {
@@ -278,13 +326,15 @@ int run_menu(void)
 	newtFormAddComponent(form, subOptions);
 	newtComponentAddCallback(subOptions, category_menu_callback, NULL);
 
-	memberNameTextbox    = newtTextbox(2, y - 13, x - 10, 1, 0);
-	dependsLabel         = newtLabel(2, y - 11, "    Depends on:");
-	usesLabel            = newtLabel(2, y - 10, "       Can use:");
-	conflictsLabel       = newtLabel(2, y - 9, "Conflicts with:");
-	dependsDataTextbox   = newtTextbox(18, y - 11, x - 27, 1, 0);
-	usesDataTextbox      = newtTextbox(18, y - 10, x - 27, 1, 0);
-	conflictsDataTextbox = newtTextbox(18, y - 9, x - 27, 1, 0);
+	memberNameTextbox       = newtTextbox(2, y - 13, x - 10, 1, 0);
+	dependsLabel            = newtLabel(2, y - 11, "    Depends on:");
+	usesLabel               = newtLabel(2, y - 10, "       Can use:");
+	conflictsLabel          = newtLabel(2, y - 9,  "Conflicts with:");
+	supportLevelLabel       = newtLabel(2, y - 8,  " Support Level:");
+	dependsDataTextbox      = newtTextbox(18, y - 11, x - 27, 1, 0);
+	usesDataTextbox         = newtTextbox(18, y - 10, x - 27, 1, 0);
+	conflictsDataTextbox    = newtTextbox(18, y - 9, x - 27, 1, 0);
+	supportLevelDataTextbox = newtTextbox(18, y - 8, x - 27, 1, 0);
 
 	exitButton = newtButton(x - 23, y - 11, "  Exit  ");
 	saveAndExitButton = newtButton(x - 43, y - 11, " Save & Exit ");
@@ -298,6 +348,8 @@ int run_menu(void)
 		usesDataTextbox,
 		conflictsLabel,
 		conflictsDataTextbox,
+		supportLevelLabel,
+		supportLevelDataTextbox,
 		saveAndExitButton,
 		exitButton,
 		NULL);

@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 276347 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 335064 $")
 
 #include <sys/time.h>
 #include <signal.h>
@@ -397,6 +397,10 @@ static void handle_frame(struct ast_dial *dial, struct ast_dial_channel *channel
 			ast_verb(3, "%s is circuit-busy\n", channel->owner->name);
 			ast_hangup(channel->owner);
 			channel->owner = NULL;
+			break;
+		case AST_CONTROL_INCOMPLETE:
+			ast_verb(3, "%s dialed Incomplete extension %s\n", channel->owner->name, channel->owner->exten);
+			ast_indicate(chan, AST_CONTROL_INCOMPLETE);
 			break;
 		case AST_CONTROL_RINGING:
 			ast_verb(3, "%s is ringing\n", channel->owner->name);

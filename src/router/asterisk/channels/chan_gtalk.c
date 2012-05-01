@@ -35,12 +35,13 @@
 	<depend>iksemel</depend>
 	<depend>res_jabber</depend>
 	<use>openssl</use>
+	<support_level>extended</support_level>
  ***/
 
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 297957 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 346086 $")
 
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -480,7 +481,8 @@ static int gtalk_ringing_ack(void *data, ikspak *pak)
 				break;
 			}
 			if (!strcasecmp(name, "error") &&
-				(redirect = iks_find_cdata(traversenodes, "redirect")) &&
+				((redirect = iks_find_cdata(traversenodes, "redirect")) ||
+				  (redirect = iks_find_cdata(traversenodes, "sta:redirect"))) &&
 				(redirect = strstr(redirect, "xmpp:"))) {
 				redirect += 5;
 				ast_log(LOG_DEBUG, "redirect %s\n", redirect);
@@ -976,7 +978,7 @@ static struct gtalk_pvt *gtalk_alloc(struct gtalk *client, const char *us, const
 {
 	struct gtalk_pvt *tmp = NULL;
 	struct aji_resource *resources = NULL;
-	struct aji_buddy *buddy;
+	struct aji_buddy *buddy = NULL;
 	char idroster[200];
 	char *data, *exten = NULL;
 	struct ast_sockaddr bindaddr_tmp;
@@ -1004,7 +1006,13 @@ static struct gtalk_pvt *gtalk_alloc(struct gtalk *client, const char *us, const
 			snprintf(idroster, sizeof(idroster), "%s", them);
 		} else {
 			ast_log(LOG_ERROR, "no gtalk capable clients to talk to.\n");
+			if (buddy) {
+				ASTOBJ_UNREF(buddy, ast_aji_buddy_destroy);
+			}
 			return NULL;
+		}
+		if (buddy) {
+			ASTOBJ_UNREF(buddy, ast_aji_buddy_destroy);
 		}
 	}
 	if (!(tmp = ast_calloc(1, sizeof(*tmp)))) {
@@ -1266,6 +1274,9 @@ static int gtalk_newcall(struct gtalk *client, ikspak *pak)
 	if (!strcasecmp(client->name, "guest")){
 		/* the guest account is not tied to any configured XMPP client,
 		   let's set it now */
+		if (client->connection) {
+			ASTOBJ_UNREF(client->connection, ast_aji_client_destroy);
+		}
 		client->connection = ast_aji_get_client(from);
 		if (!client->connection) {
 			ast_log(LOG_ERROR, "No XMPP client to talk to, us (partial JID) : %s\n", from);
@@ -1295,7 +1306,7 @@ static int gtalk_newcall(struct gtalk *client, ikspak *pak)
 	ast_copy_string(p->sid, sid, sizeof(p->sid));
 
 	/* codec points to the first <payload-type/> tag */
-	codec = iks_first_tag(iks_first_tag(iks_first_tag(pak->x)));
+	codec = iks_first_tag(iks_first_tag(pak->query));
 
 	while (codec) {
 		char *codec_id = iks_find_attrib(codec, "id");
@@ -1866,6 +1877,9 @@ static struct ast_channel *gtalk_request(const char *type, format_t format, cons
 	if (!strcasecmp(client->name, "guest")){
 		/* the guest account is not tied to any configured XMPP client,
 		   let's set it now */
+		if (client->connection) {
+			ASTOBJ_UNREF(client->connection, ast_aji_client_destroy);
+		}
 		client->connection = ast_aji_get_client(sender);
 		if (!client->connection) {
 			ast_log(LOG_ERROR, "No XMPP client to talk to, us (partial JID) : %s\n", sender);
@@ -1972,6 +1986,12 @@ static int gtalk_parser(void *data, ikspak *pak)
 {
 	struct gtalk *client = ASTOBJ_REF((struct gtalk *) data);
 	int res;
+	iks *tmp;
+
+	if (!strcasecmp(iks_name(pak->query), "jin:jingle") && (tmp = iks_next(pak->query)) && !strcasecmp(iks_name(tmp), "ses:session")) {
+		ast_debug(1, "New method detected. Skipping jingle offer and using old gtalk method.\n");
+		pak->query = tmp;
+	}
 
 	if (!strcmp(S_OR(iks_find_attrib(pak->x, "type"), ""), "error")) {
 		ast_log(LOG_NOTICE, "Remote peer reported an error, trying to establish the call anyway\n");
@@ -2149,8 +2169,12 @@ static int gtalk_load_config(void)
 					ASTOBJ_CONTAINER_TRAVERSE(clients, 1, {
 						ASTOBJ_WRLOCK(iterator);
 						ASTOBJ_WRLOCK(member);
+						if (member->connection) {
+							ASTOBJ_UNREF(member->connection, ast_aji_client_destroy);
+						}
 						member->connection = NULL;
 						iks_filter_add_rule(iterator->f, gtalk_parser, member, IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_NS, GOOGLE_NS, IKS_RULE_DONE);
+						iks_filter_add_rule(iterator->f, gtalk_parser, member, IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_NS, GOOGLE_JINGLE_NS, IKS_RULE_DONE);
 						iks_filter_add_rule(iterator->f, gtalk_parser, member, IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_NS, "http://jabber.org/protocol/gtalk", IKS_RULE_DONE);
 						ASTOBJ_UNLOCK(member);
 						ASTOBJ_UNLOCK(iterator);

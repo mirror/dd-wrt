@@ -24,9 +24,13 @@
  * \ingroup functions
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 286189 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <regex.h>
 #include <ctype.h>
@@ -188,14 +192,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 286189 $")
 						<para>     <literal>remote_normdevjitter</literal>Remote calculated jitter (normal deviation)</para>
 						<para>     <literal>remote_stdevjitter</literal>Remote calculated jitter (standard deviation)</para>
 						<para>     <literal>remote_count</literal>      Number of transmitted packets</para>
-						<para>     <literal>remote_ssrc</literal>       Remote SSRC (stream ID)</para>
-						<para>     <literal>remote_lostpackets</literal>Remote lost packets</para>
-						<para>     <literal>remote_jitter</literal>     Remote reported jitter</para>
-						<para>     <literal>remote_maxjitter</literal>  Remote calculated jitter (maximum)</para>
-						<para>     <literal>remote_minjitter</literal>  Remote calculated jitter (minimum)</para>
-						<para>     <literal>remote_normdevjitter</literal>Remote calculated jitter (normal deviation)</para>
-						<para>     <literal>remote_stdevjitter</literal>Remote calculated jitter (standard deviation)</para>
-						<para>     <literal>remote_count</literal>      Number of transmitted packets</para>
 						<para>     <literal>rtt</literal>               Round trip time</para>
 						<para>     <literal>maxrtt</literal>            Round trip time (maximum)</para>
 						<para>     <literal>minrtt</literal>            Round trip time (minimum)</para>
@@ -224,12 +220,35 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 286189 $")
 				</enumlist>
 				<para><emphasis>chan_dahdi</emphasis> provides the following additional options:</para>
 				<enumlist>
-					<enum name="reversecharge">
-						<para>R/O Reverse Charging Indication, one of:</para>
+					<enum name="dahdi_channel">
+						<para>R/O DAHDI channel related to this channel.</para>
+					</enum>
+					<enum name="dahdi_span">
+						<para>R/O DAHDI span related to this channel.</para>
+					</enum>
+					<enum name="dahdi_type">
+						<para>R/O DAHDI channel type, one of:</para>
 						<enumlist>
-							<enum name="-1 - None" />
-							<enum name="1 - Reverse Charging Requested" />
+							<enum name="analog" />
+							<enum name="mfc/r2" />
+							<enum name="pri" />
+							<enum name="pseudo" />
+							<enum name="ss7" />
 						</enumlist>
+					</enum>
+					<enum name="keypad_digits">
+						<para>R/O PRI Keypad digits that came in with the SETUP message.</para>
+					</enum>
+					<enum name="reversecharge">
+						<para>R/O PRI Reverse Charging Indication, one of:</para>
+						<enumlist>
+							<enum name="-1"> <para>None</para></enum>
+							<enum name=" 1"> <para>Reverse Charging Requested</para></enum>
+						</enumlist>
+					</enum>
+					<enum name="no_media_path">
+						<para>R/O PRI Nonzero if the channel has no B channel.
+						The channel is either on hold or a call waiting call.</para>
 					</enum>
 				</enumlist>
 			</parameter>

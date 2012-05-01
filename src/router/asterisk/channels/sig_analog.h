@@ -223,6 +223,7 @@ struct analog_callback {
 	void (* const set_cadence)(void *pvt, int *cidrings, struct ast_channel *chan);
 	void (* const set_alarm)(void *pvt, int in_alarm);
 	void (* const set_dialing)(void *pvt, int is_dialing);
+	void (* const set_outgoing)(void *pvt, int is_outgoing);
 	void (* const set_ringtimeout)(void *pvt, int ringt);
 	void (* const set_waitingfordt)(void *pvt, struct ast_channel *ast);
 	int (* const check_waitingfordt)(void *pvt);
@@ -235,6 +236,7 @@ struct analog_callback {
 	void (* const set_new_owner)(void *pvt, struct ast_channel *new_owner);
 
 	const char *(* const get_orig_dialstring)(void *pvt);
+	int (* const have_progressdetect)(void *pvt);
 };
 
 

@@ -83,10 +83,12 @@ monitor-type = MixMonitor
 ; A strategy may be specified.  Valid strategies include:
 ;
 ; ringall - ring all available channels until one answers (default)
-; leastrecent - ring interface which was least recently called by this queue
+; leastrecent - ring interface which was least recently hung up by this queue
 ; fewestcalls - ring the one with fewest completed calls from this queue
 ; random - ring random interface
 ; rrmemory - round robin with memory, remember where we left off last ring pass
+; rrordered - same as rrmemory, except the queue member order from config file 
+;             is preserved
 ; linear - rings interfaces in the order specified in this configuration file.
 ;          If you use dynamic members, the members will be rung in the order in
 ;          which they were added
@@ -316,6 +318,8 @@ monitor-type = MixMonitor
 ;queue-callswaiting = queue-callswaiting
 			;	("The current est. holdtime is")
 ;queue-holdtime = queue-holdtime
+			;	("minute.")
+;queue-minute = queue-minute
 			;	("minutes.")
 ;queue-minutes = queue-minutes
 			;	("seconds.")
@@ -371,7 +375,16 @@ monitor-type = MixMonitor
 ;
 ; You can specify a post recording command to be executed after the end of
 ; recording by calling (from the dialplan)
+;
 ;   Set(MONITOR_EXEC=mv /var/spool/asterisk/monitor/^{MONITOR_FILENAME} /tmp/^{MONITOR_FILENAME})
+;
+; or
+;
+;   Set(MONITOR_EXEC=mv /var/spool/asterisk/monitor/^{MIXMONITOR_FILENAME} /tmp/^{MIXMONITOR_FILENAME})
+;
+; If you choose to use the latter, you will not be able to switch the monitor-type back to Monitor
+; without changing this in the dialplan.
+;
 ;
 ; The command specified within the contents of MONITOR_EXEC will be executed when
 ; the recording is over. Any strings matching ^{X} will be unescaped to ${X} and
@@ -442,6 +455,7 @@ monitor-type = MixMonitor
 ; If this is set to yes, the following manager events will be generated:
 ; QueueMemberStatus
 ; (may generate a WHOLE LOT of extra manager events)
+; The default value is yes and this can not be set globally.
 ;
 ; eventmemberstatus = no
 ;

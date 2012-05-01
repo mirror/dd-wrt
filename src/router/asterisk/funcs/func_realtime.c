@@ -15,6 +15,10 @@
  *
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 /*! \file
  *
  * \brief REALTIME dialplan function
@@ -26,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206808 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 340863 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -67,6 +71,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206808 $")
 			If there is no match, NULL will be returned by the function.
 			On a write, this function will always return NULL.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_STORE" language="en_US">
 		<synopsis>
@@ -84,6 +94,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206808 $")
 			creates channel variable named RTSTOREID, which contains value of unique ID.
 			Currently, a maximum of 30 field/value pairs is supported.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_DESTROY" language="en_US">
 		<synopsis>
@@ -100,6 +116,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206808 $")
 			<para>This function acts in the same way as REALTIME(....) does, except that
 			it destroys the matched record in the RT engine.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_FIELD" language="en_US">
 		<synopsis>
@@ -117,6 +139,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206808 $")
 			<replaceable>value</replaceable>.  When written to, the REALTIME_FIELD() function
 			performs identically to the REALTIME() function.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_HASH</ref>
+		</see-also>
 	</function>
 	<function name="REALTIME_HASH" language="en_US">
 		<synopsis>
@@ -134,6 +162,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206808 $")
 			it can be assigned to the HASH() function.  The HASH() function then provides
 			a suitable method for retrieving each field value of the record.</para>
 		</description>
+		<see-also>
+			<ref type="function">REALTIME</ref>
+			<ref type="function">REALTIME_STORE</ref>
+			<ref type="function">REALTIME_DESTROY</ref>
+			<ref type="function">REALTIME_FIELD</ref>
+		</see-also>
 	</function>
  ***/
 

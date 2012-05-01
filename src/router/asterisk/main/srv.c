@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 277102 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 321392 $")
 
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -249,7 +249,11 @@ void ast_srv_cleanup(struct srv_context **context)
 	const char *host;
 	unsigned short port;
 
-	while (!(ast_srv_lookup(context, NULL, &host, &port)));
+	if (*context) {
+		/* We have a context to clean up. */
+		while (!(ast_srv_lookup(context, NULL, &host, &port))) {
+		}
+	}
 }
 
 int ast_get_srv(struct ast_channel *chan, char *host, int hostlen, int *port, const char *service)

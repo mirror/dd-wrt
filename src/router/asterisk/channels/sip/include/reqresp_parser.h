@@ -29,11 +29,13 @@
  * - Multiple scheme's can be specified ',' delimited. ex: "sip:,sips:"
  * - If a component is not requested, do not split around it. This means
  *   that if we don't have domain, we cannot split name:pass.
- * - It is safe to call with ret_name, pass, domain, port pointing all to
+ * - It is safe to call with ret_name, pass, hostport pointing all to
  *   the same place.
- * - If no secret parameter is provided, ret_name will return with both parts, user:secret
- * - If no port parameter is provided, domain will return with both parts, domain:port
- * - This function overwrites the the uri string.
+ * - If no secret parameter is provided, ret_name will return with both
+ *   parts, user:secret.
+ * - If the URI contains a port number, hostport will return with both
+ *   parts, host:port.
+ * - This function overwrites the the URI string.
  * 
  * \retval 0 on success
  * \retval -1 on error.
@@ -43,7 +45,7 @@
  * \endverbatim
  */
 int parse_uri(char *uri, const char *scheme, char **ret_name, char **pass,
-	      char **domain, char **transport);
+	      char **hostport, char **transport);
 
 /*!
  * \brief parses a URI in to all of its components and any trailing residue
@@ -53,7 +55,7 @@ int parse_uri(char *uri, const char *scheme, char **ret_name, char **pass,
  *
  */
 int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
-		   char **domain, struct uriparams *params, char **headers,
+		   char **hostport, struct uriparams *params, char **headers,
 		   char **residue);
 
 /*!
@@ -166,9 +168,43 @@ int sip_reqresp_parser_init(void);
 void sip_reqresp_parser_exit(void);
 
 /*!
- * \brief Parse the VIA header into it's parts.
+ * \brief Parse a Via header
  *
- * \note This will modify the string
+ * This function parses the Via header and processes it according to section
+ * 18.2 of RFC 3261 and RFC 3581. Since we don't have a transport layer, we
+ * only care about the maddr and ttl parms.  The received and rport params are
+ * not parsed.
+ *
+ * \note This function fails to parse some odd combinations of SWS in parameter
+ * lists.
+ *
+ * \code
+ * VIA syntax. RFC 3261 section 25.1
+ * Via               =  ( "Via" / "v" ) HCOLON via-parm *(COMMA via-parm)
+ * via-parm          =  sent-protocol LWS sent-by *( SEMI via-params )
+ * via-params        =  via-ttl / via-maddr
+ *                   / via-received / via-branch
+ *                   / via-extension
+ * via-ttl           =  "ttl" EQUAL ttl
+ * via-maddr         =  "maddr" EQUAL host
+ * via-received      =  "received" EQUAL (IPv4address / IPv6address)
+ * via-branch        =  "branch" EQUAL token
+ * via-extension     =  generic-param
+ * sent-protocol     =  protocol-name SLASH protocol-version
+ *                   SLASH transport
+ * protocol-name     =  "SIP" / token
+ * protocol-version  =  token
+ * transport         =  "UDP" / "TCP" / "TLS" / "SCTP"
+ *                   / other-transport
+ * sent-by           =  host [ COLON port ]
+ * ttl               =  1*3DIGIT ; 0 to 255
+ * \endcode
  */
-void get_viabranch(char *via, char **sent_by, char **branch);
+struct sip_via *parse_via(const char *header);
+
+/*
+ * \brief Free parsed Via data.
+ */
+void free_via(struct sip_via *v);
+
 #endif

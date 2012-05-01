@@ -28,11 +28,12 @@
 
 /*** MODULEINFO
 	<depend>res_odbc</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 284096 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350571 $")
 
 #include <sys/types.h>
 #include <time.h>
@@ -437,6 +438,8 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					ast_copy_string(colbuf, record.peer, sizeof(colbuf));
 				} else if (strcmp(entry->celname, "amaflags") == 0) {
 					snprintf(colbuf, sizeof(colbuf), "%d", record.amaflag);
+				} else if (strcmp(entry->celname, "extra") == 0) {
+					ast_copy_string(colbuf, record.extra, sizeof(colbuf));
 				} else {
 					colbuf[0] = 0;
 				}
@@ -571,9 +574,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					}
 					break;
 				case SQL_INTEGER:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						int integer = 0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							integer = (int) record.event_type;
@@ -590,9 +591,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					}
 					break;
 				case SQL_BIGINT:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						long long integer = 0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							integer = (long long) record.event_type;
@@ -609,9 +608,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					}
 					break;
 				case SQL_SMALLINT:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						short integer = 0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							integer = (short) record.event_type;
@@ -628,9 +625,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					}
 					break;
 				case SQL_TINYINT:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						char integer = 0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							integer = (char) record.event_type;
@@ -647,9 +642,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					}
 					break;
 				case SQL_BIT:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						char integer = 0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							integer = (char) record.event_type;
@@ -669,9 +662,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 					break;
 				case SQL_NUMERIC:
 				case SQL_DECIMAL:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						double number = 0.0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							number = (double)record.event_type;
@@ -690,9 +681,7 @@ static void odbc_log(const struct ast_event *event, void *userdata)
 				case SQL_FLOAT:
 				case SQL_REAL:
 				case SQL_DOUBLE:
-					if (ast_strlen_zero(colptr)) {
-						continue;
-					} else {
+					{
 						double number = 0.0;
 						if (strcasecmp(entry->name, "eventtype") == 0) {
 							number = (double) record.event_type;
@@ -765,11 +754,15 @@ static int unload_module(void)
 
 	free_config();
 	AST_RWLIST_UNLOCK(&odbc_tables);
+	AST_RWLIST_HEAD_DESTROY(&odbc_tables);
+        
 	return 0;
 }
 
 static int load_module(void)
 {
+	AST_RWLIST_HEAD_INIT(&odbc_tables);
+
 	if (AST_RWLIST_WRLOCK(&odbc_tables)) {
 		ast_log(LOG_ERROR, "Unable to lock column list.  Load failed.\n");
 		return 0;

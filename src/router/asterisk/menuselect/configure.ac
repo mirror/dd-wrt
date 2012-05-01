@@ -23,6 +23,36 @@ AC_CANONICAL_HOST
 HOST_OS=${host_os}
 AC_SUBST(HOST_OS)
 
+PBX_WINARCH=0
+case "${host_os}" in
+     freebsd*)
+     OSARCH=FreeBSD
+     ;;
+     netbsd*)
+     OSARCH=NetBSD
+     ;;
+     openbsd*)
+     OSARCH=OpenBSD
+     ;;
+     solaris*)
+     OSARCH=SunOS
+     ;;
+     mingw32)
+     OSARCH=mingw32
+     PBX_WINARCH=1
+     ;;
+     cygwin)
+     OSARCH=cygwin
+     PBX_WINARCH=1
+     ;;
+     linux-gnueabi)
+     OSARCH=linux-gnu
+     ;;
+     *)
+     OSARCH=${host_os}
+     ;;
+esac
+
 AH_TOP(
 #ifndef MENUSELECT_AUTOCONFIG_H
 #define MENUSELECT_AUTOCONFIG_H
@@ -51,8 +81,36 @@ AC_ARG_ENABLE([debug],
     esac])
 AC_SUBST(MENUSELECT_DEBUG)
 
-AST_GCC_ATTRIBUTE(weak_import)
-AST_GCC_ATTRIBUTE(weakref)
+# Support weak symbols on a platform specific basis.  The Mac OS X
+# (Darwin) support must be isolated from the other platforms because
+# it has caused other platforms to fail.
+#
+case "${OSARCH}" in
+	darwin*)
+	# Allow weak symbol support on Darwin platforms only because there
+	# is active community support for it.
+	# However, Darwin seems to break weak symbols for each new version.
+	#
+	AST_GCC_ATTRIBUTE(weak_import, [], [], PBX_WEAKREF)
+
+	# Several other platforms including Linux have GCC versions that
+	# define the weak attribute.  However, this attribute is only
+	# setup for use in the code by Darwin.
+	AST_GCC_ATTRIBUTE(weak, [], [], PBX_WEAKREF)
+	;;
+	linux-gnu)
+	# Primarily support weak symbols on Linux platforms.
+	#
+	AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
+	;;
+	*)
+	# Allow weak symbols on other platforms.  However, any problems
+	# with this feature on other platforms must be fixed by the
+	# community.
+	#
+	AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
+	;;
+esac
 
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS([asprintf getloadavg setenv strcasestr strndup strnlen strsep unsetenv vasprintf])

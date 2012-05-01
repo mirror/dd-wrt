@@ -25,9 +25,13 @@
  * \ingroup functions
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 287647 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 336314 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -223,7 +227,7 @@ static void print_frame(struct ast_frame *frame)
 		break;
 	case AST_FRAME_CONTROL:
 		ast_verbose("FrameType: CONTROL\n");
-		switch (frame->subclass.integer) {
+		switch ((enum ast_control_frame_type) frame->subclass.integer) {
 		case AST_CONTROL_HANGUP:
 			ast_verbose("SubClass: HANGUP\n");
 			break;
@@ -308,7 +312,17 @@ static void print_frame(struct ast_frame *frame)
 		case AST_CONTROL_AOC:
 			ast_verbose("SubClass: AOC\n");
 			break;
+		case AST_CONTROL_INCOMPLETE:
+			ast_verbose("SubClass: INCOMPLETE\n");
+			break;
+		case AST_CONTROL_END_OF_Q:
+			ast_verbose("SubClass: END_OF_Q\n");
+			break;
+		case AST_CONTROL_UPDATE_RTP_PEER:
+			ast_verbose("SubClass: UPDATE_RTP_PEER\n");
+			break;
 		}
+		
 		if (frame->subclass.integer == -1) {
 			ast_verbose("SubClass: %d\n", frame->subclass.integer);
 		}

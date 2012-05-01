@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291075 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 344661 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_MODULE_DIR */
@@ -1385,11 +1385,12 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 {
 	struct ast_channel *c=NULL;
 	struct timeval now;
-	struct ast_str *out = ast_str_thread_get(&ast_str_thread_global_buf, 16);
 	char cdrtime[256];
 	char nf[256], wf[256], rf[256];
 	struct ast_str *write_transpath = ast_str_alloca(256);
 	struct ast_str *read_transpath = ast_str_alloca(256);
+	struct ast_str *obuf;/*!< Buffer for variable, CDR variable, and trace output. */
+	struct ast_str *output;/*!< Accumulation buffer for all output. */
 	long elapsed_seconds=0;
 	int hour=0, min=0, sec=0;
 #ifdef CHANNEL_TRACE
@@ -1418,6 +1419,15 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		return CLI_SUCCESS;
 	}
 
+	obuf = ast_str_thread_get(&ast_str_thread_global_buf, 16);
+	if (!obuf) {
+		return CLI_FAILURE;
+	}
+	output = ast_str_create(8192);
+	if (!output) {
+		return CLI_FAILURE;
+	}
+
 	ast_channel_lock(c);
 
 	if (c->cdr) {
@@ -1430,7 +1440,7 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		strcpy(cdrtime, "N/A");
 	}
 
-	ast_cli(a->fd, 
+	ast_str_append(&output, 0,
 		" -- General --\n"
 		"           Name: %s\n"
 		"           Type: %s\n"
@@ -1438,6 +1448,8 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		"       LinkedID: %s\n"
 		"      Caller ID: %s\n"
 		" Caller ID Name: %s\n"
+		"Connected Line ID: %s\n"
+		"Connected Line ID Name: %s\n"
 		"    DNID Digits: %s\n"
 		"       Language: %s\n"
 		"          State: %s (%d)\n"
@@ -1466,6 +1478,8 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		c->name, c->tech->type, c->uniqueid, c->linkedid,
 		S_COR(c->caller.id.number.valid, c->caller.id.number.str, "(N/A)"),
 		S_COR(c->caller.id.name.valid, c->caller.id.name.str, "(N/A)"),
+		S_COR(c->connected.id.number.valid, c->connected.id.number.str, "(N/A)"),
+		S_COR(c->connected.id.name.valid, c->connected.id.name.str, "(N/A)"),
 		S_OR(c->dialed.number.str, "(N/A)"),
 		c->language,	
 		ast_state2str(c->_state), c->_state, c->rings, 
@@ -1485,24 +1499,28 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		( c-> data ? S_OR(c->data, "(Empty)") : "(None)"),
 		(ast_test_flag(c, AST_FLAG_BLOCKING) ? c->blockproc : "(Not Blocking)"));
 	
-	if (pbx_builtin_serialize_variables(c, &out)) {
-		ast_cli(a->fd,"      Variables:\n%s\n", ast_str_buffer(out));
+	if (pbx_builtin_serialize_variables(c, &obuf)) {
+		ast_str_append(&output, 0, "      Variables:\n%s\n", ast_str_buffer(obuf));
 	}
 
-	if (c->cdr && ast_cdr_serialize_variables(c->cdr, &out, '=', '\n', 1)) {
-		ast_cli(a->fd,"  CDR Variables:\n%s\n", ast_str_buffer(out));
+	if (c->cdr && ast_cdr_serialize_variables(c->cdr, &obuf, '=', '\n', 1)) {
+		ast_str_append(&output, 0, "  CDR Variables:\n%s\n", ast_str_buffer(obuf));
 	}
 
 #ifdef CHANNEL_TRACE
 	trace_enabled = ast_channel_trace_is_enabled(c);
-	ast_cli(a->fd, "  Context Trace: %s\n", trace_enabled ? "Enabled" : "Disabled");
-	if (trace_enabled && ast_channel_trace_serialize(c, &out))
-		ast_cli(a->fd, "          Trace:\n%s\n", ast_str_buffer(out));
+	ast_str_append(&output, 0, "  Context Trace: %s\n",
+		trace_enabled ? "Enabled" : "Disabled");
+	if (trace_enabled && ast_channel_trace_serialize(c, &obuf)) {
+		ast_str_append(&output, 0, "          Trace:\n%s\n", ast_str_buffer(obuf));
+	}
 #endif
 
 	ast_channel_unlock(c);
 	c = ast_channel_unref(c);
 
+	ast_cli(a->fd, "%s", ast_str_buffer(output));
+	ast_free(output);
 	return CLI_SUCCESS;
 }
 
@@ -1875,20 +1893,30 @@ static int word_match(const char *cmd, const char *cli_word)
 		return -1;
 	if (!strchr(cli_rsvd, cli_word[0])) /* normal match */
 		return (strcasecmp(cmd, cli_word) == 0) ? 1 : -1;
-	/* regexp match, takes [foo|bar] or {foo|bar} */
 	l = strlen(cmd);
 	/* wildcard match - will extend in the future */
 	if (l > 0 && cli_word[0] == '%') {
 		return 1;	/* wildcard */
 	}
+
+	/* Start a search for the command entered against the cli word in question */
 	pos = strcasestr(cli_word, cmd);
-	if (pos == NULL) /* not found, say ok if optional */
-		return cli_word[0] == '[' ? 0 : -1;
-	if (pos == cli_word)	/* no valid match at the beginning */
-		return -1;
-	if (strchr(cli_rsvd, pos[-1]) && strchr(cli_rsvd, pos[l]))
-		return 1;	/* valid match */
-	return -1;	/* not found */
+	while (pos) {
+
+		/*
+		 *Check if the word matched with is surrounded by reserved characters on both sides
+		 * and isn't at the beginning of the cli_word since that would make it check in a location we shouldn't know about.
+		 * If it is surrounded by reserved chars and isn't at the beginning, it's a match.
+		 */
+		if (pos != cli_word && strchr(cli_rsvd, pos[-1]) && strchr(cli_rsvd, pos[l])) {
+			return 1;	/* valid match */
+		}
+
+		/* Ok, that one didn't match, strcasestr to the next appearance of the command and start over.*/
+		pos = strcasestr(pos + 1, cmd);
+	}
+	/* If no matches were found over the course of the while loop, we hit the end of the string. It's a mismatch. */
+	return -1;
 }
 
 /*! \brief if word is a valid prefix for token, returns the pos-th

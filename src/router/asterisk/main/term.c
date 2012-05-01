@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 280020 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 330107 $")
 
 #include "asterisk/_private.h"
 #include <sys/time.h>
@@ -143,6 +143,8 @@ int ast_term_init(void)
 		} else if (!strcmp(term, "xterm")) {
 			vt100compat = 1;
 		} else if (!strcmp(term, "xterm-color")) {
+			vt100compat = 1;
+		} else if (!strcmp(term, "xterm-256color")) {
 			vt100compat = 1;
 		} else if (!strncmp(term, "Eterm", 5)) {
 			/* Both entries which start with Eterm support color */

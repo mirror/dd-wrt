@@ -34,11 +34,12 @@
 
 /*** MODULEINFO
 	<depend>ais</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 284597 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $");
 
 #include <stdlib.h>
 #include <stdio.h>

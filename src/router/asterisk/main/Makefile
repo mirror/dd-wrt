@@ -34,7 +34,7 @@ AST_LIBS += $(OPENSSL_LIB)
 AST_LIBS += $(BKTR_LIB)
 AST_LIBS += $(LIBXML2_LIB) 
 
-ifneq ($(findstring $(OSARCH), linux-gnu uclinux linux-uclibc linux-gnueabi ),)
+ifneq ($(findstring $(OSARCH), linux-gnu uclinux linux-uclibc linux-gnueabi linux-gnueabihf ),)
   ifneq ($(findstring LOADABLE_MODULES,$(MENUSELECT_CFLAGS)),)
   AST_LIBS+=-ldl
   endif
@@ -53,7 +53,7 @@ endif
 ifneq ($(findstring darwin,$(OSARCH)),)
   AST_LIBS+=-lresolv
   ASTLINK=-Xlinker -macosx_version_min -Xlinker 10.4 -Xlinker -undefined -Xlinker dynamic_lookup -force_flat_namespace
-  ifeq ($(shell /usr/bin/sw_vers -productVersion | cut -c1-4),10.6)
+  ifeq ($(shell if test `/usr/bin/sw_vers -productVersion | cut -c4` -gt 5; then echo 6; else echo 0; fi),6)
     ASTLINK+=/usr/lib/bundle1.o
   endif
 else
@@ -105,6 +105,7 @@ ASTLINK+=-Wl,--version-script,asterisk.exports
   endif
 endif
 
+.PHONY: CHECK_SUBDIR
 CHECK_SUBDIR:	# do nothing, just make sure that we recurse in the subdir/
 
 editline/libedit.a: CHECK_SUBDIR

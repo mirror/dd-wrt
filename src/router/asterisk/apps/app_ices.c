@@ -26,10 +26,14 @@
  *
  * \ingroup applications
  */
+
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 196072 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <signal.h>
 #include <fcntl.h>
@@ -112,7 +116,6 @@ static int ices_exec(struct ast_channel *chan, const char *data)
 	int pid = -1;
 	int flags;
 	int oreadformat;
-	struct timeval last;
 	struct ast_frame *f;
 	char filename[256]="";
 	char *c;
@@ -121,8 +124,6 @@ static int ices_exec(struct ast_channel *chan, const char *data)
 		ast_log(LOG_WARNING, "ICES requires an argument (configfile.xml)\n");
 		return -1;
 	}
-	
-	last = ast_tv(0, 0);
 	
 	if (pipe(fds)) {
 		ast_log(LOG_WARNING, "Unable to create pipe\n");

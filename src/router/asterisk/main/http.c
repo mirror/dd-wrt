@@ -30,9 +30,13 @@
  * \ref AstHTTP - AMI over the http protocol
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 314723 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 353770 $")
 
 #include <time.h>
 #include <sys/time.h>
@@ -56,6 +60,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 314723 $")
 
 #define MAX_PREFIX 80
 #define DEFAULT_SESSION_LIMIT 100
+
+#define DEFAULT_HTTP_PORT 8080
+#define DEFAULT_HTTPS_PORT 8089
 
 /* See http.h for more information about the SSL implementation */
 #if defined(HAVE_OPENSSL) && (defined(HAVE_FUNOPEN) || defined(HAVE_FOPENCOOKIE))
@@ -112,6 +119,14 @@ static struct {
 	{ "svg", "image/svg+xml" },
 	{ "svgz", "image/svg+xml" },
 	{ "gif", "image/gif" },
+	{ "html", "text/html" },
+	{ "htm", "text/html" },
+	{ "css", "text/css" },
+	{ "cnf", "text/plain" },
+	{ "cfg", "text/plain" },
+	{ "bin", "application/octet-stream" },
+	{ "sbn", "application/octet-stream" },
+	{ "ld", "application/octet-stream" },
 };
 
 struct http_uri_redirect {
@@ -124,7 +139,7 @@ static AST_RWLIST_HEAD_STATIC(uri_redirects, http_uri_redirect);
 
 static const struct ast_cfhttp_methods_text {
 	enum ast_http_method method;
-	const char text[];
+	const char *text;
 } ast_http_methods_text[] = {
 	{ AST_HTTP_UNKNOWN,     "UNKNOWN" },
 	{ AST_HTTP_GET,         "GET" },
@@ -135,7 +150,15 @@ static const struct ast_cfhttp_methods_text {
 
 const char *ast_get_http_method(enum ast_http_method method)
 {
-	return ast_http_methods_text[method].text;
+	int x;
+
+	for (x = 0; x < ARRAY_LEN(ast_http_methods_text); x++) {
+		if (ast_http_methods_text[x].method == method) {
+			return ast_http_methods_text[x].text;
+		}
+	}
+
+	return NULL;
 }
 
 const char *ast_http_ftype2mtype(const char *ftype)
@@ -272,7 +295,7 @@ static int static_callback(struct ast_tcptls_session_instance *ser,
 
 	ast_str_set(&http_header, 0, "Content-type: %s\r\n"
 		"ETag: %s\r\n"
-		"Last-Modified: %s",
+		"Last-Modified: %s\r\n",
 		mtype,
 		etag,
 		timebuf);
@@ -363,7 +386,7 @@ static struct ast_http_uri staticuri = {
 };
 
 
-/* send http/1.1 responce */
+/* send http/1.1 response */
 /* free content variable and close socket*/
 void ast_http_send(struct ast_tcptls_session_instance *ser,
 	enum ast_http_method method, int status_code, const char *status_title,
@@ -381,7 +404,7 @@ void ast_http_send(struct ast_tcptls_session_instance *ser,
 
 	ast_strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", ast_localtime(&now, &tm, "GMT"));
 
-	/* calc conetnt length */
+	/* calc content length */
 	if (out) {
 		content_length += strlen(ast_str_buffer(out));
 	}
@@ -398,7 +421,8 @@ void ast_http_send(struct ast_tcptls_session_instance *ser,
 		"Connection: close\r\n"
 		"%s"
 		"Content-Length: %d\r\n"
-		"%s\r\n\r\n",
+		"%s"
+		"\r\n",
 		status_code, status_title ? status_title : "OK",
 		ast_get_version(),
 		timebuf,
@@ -453,7 +477,7 @@ void ast_http_auth(struct ast_tcptls_session_instance *ser, const char *realm,
 
 	ast_str_set(&http_headers, 0,
 		"WWW-authenticate: Digest algorithm=MD5, realm=\"%s\", nonce=\"%08lx\", qop=\"auth\", opaque=\"%08lx\"%s\r\n"
-		"Content-type: text/html",
+		"Content-type: text/html\r\n",
 		realm ? realm : "Asterisk",
 		nonce,
 		opaque,
@@ -475,7 +499,7 @@ void ast_http_auth(struct ast_tcptls_session_instance *ser, const char *realm,
 	return;
 }
 
-/* send http error responce and close socket*/
+/* send http error response and close socket*/
 void ast_http_error(struct ast_tcptls_session_instance *ser, int status_code, const char *status_title, const char *text)
 {
 	struct ast_str *http_headers = ast_str_create(40);
@@ -487,7 +511,7 @@ void ast_http_error(struct ast_tcptls_session_instance *ser, int status_code, co
 		return;
 	}
 
-	ast_str_set(&http_headers, 0, "Content-type: text/html");
+	ast_str_set(&http_headers, 0, "Content-type: text/html\r\n");
 
 	ast_str_set(&out, 0,
 		"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\r\n"
@@ -657,6 +681,8 @@ static int handle_uri(struct ast_tcptls_session_instance *ser, char *uri,
 	struct ast_variable *get_vars = NULL, *v, *prev = NULL;
 	struct http_uri_redirect *redirect;
 
+	ast_debug(2, "HTTP Request URI is %s \n", uri);
+
 	strsep(&params, "?");
 	/* Extract arguments from the request and store them in variables. */
 	if (params) {
@@ -799,9 +825,7 @@ static struct ast_variable *parse_cookies(char *cookies)
 			continue;
 		}
 
-		if (option_debug) {
-			ast_log(LOG_DEBUG, "mmm ... cookie!  Name: '%s'  Value: '%s'\n", name, val);
-		}
+		ast_debug(1, "HTTP Cookie, Name: '%s'  Value: '%s'\n", name, val);
 
 		var = ast_variable_new(name, val, __FILE__);
 		var->next = vars;
@@ -1001,20 +1025,18 @@ static int __ast_http_load(int reload)
 	struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
 	struct sockaddr_in tmp = {0,};
 	struct sockaddr_in tmp2 = {0,};
+	int http_tls_was_enabled = 0;
 
 	cfg = ast_config_load2("http.conf", "http", config_flags);
 	if (cfg == CONFIG_STATUS_FILEMISSING || cfg == CONFIG_STATUS_FILEUNCHANGED || cfg == CONFIG_STATUS_FILEINVALID) {
 		return 0;
 	}
 
-	/* default values */
-	tmp.sin_family = AF_INET;
-	tmp.sin_port = htons(8088);
-	ast_sockaddr_from_sin(&http_desc.local_address, &tmp);
+	http_tls_was_enabled = (reload && http_tls_cfg.enabled);
 
-	tmp2.sin_family = AF_INET;
-	tmp2.sin_port = htons(8089);
-	ast_sockaddr_from_sin(&https_desc.local_address, &tmp2);
+	tmp.sin_family = AF_INET;
+	tmp.sin_port = htons(DEFAULT_HTTP_PORT);
+	ast_sockaddr_from_sin(&http_desc.local_address, &tmp);
 
 	http_tls_cfg.enabled = 0;
 	if (http_tls_cfg.certfile) {
@@ -1037,6 +1059,8 @@ static int __ast_http_load(int reload)
 		ast_free(redirect);
 	}
 	AST_RWLIST_UNLOCK(&uri_redirects);
+
+	ast_sockaddr_setnull(&https_desc.local_address);
 
 	if (cfg) {
 		v = ast_variable_browse(cfg, "general");
@@ -1086,13 +1110,16 @@ static int __ast_http_load(int reload)
 
 		ast_config_destroy(cfg);
 	}
-	/* if the https addres has not been set, default is the same as non secure http */
+	/* if the https address has not been set, default is the same as non secure http */
 	ast_sockaddr_to_sin(&http_desc.local_address, &tmp);
 	ast_sockaddr_to_sin(&https_desc.local_address, &tmp2);
 	if (!tmp2.sin_addr.s_addr) {
 		tmp2.sin_addr = tmp.sin_addr;
-		ast_sockaddr_from_sin(&https_desc.local_address, &tmp2);
 	}
+	if (!tmp2.sin_port) {
+		tmp2.sin_port = htons(DEFAULT_HTTPS_PORT);
+	}
+	ast_sockaddr_from_sin(&https_desc.local_address, &tmp2);
 	if (!enabled) {
 		ast_sockaddr_setnull(&http_desc.local_address);
 		ast_sockaddr_setnull(&https_desc.local_address);
@@ -1102,7 +1129,10 @@ static int __ast_http_load(int reload)
 	}
 	enablestatic = newenablestatic;
 	ast_tcptls_server_start(&http_desc);
-	if (ast_ssl_setup(https_desc.tls_cfg)) {
+	/* If https was enabled previously but now is not, then stop the service */
+	if (http_tls_was_enabled && !http_tls_cfg.enabled) {
+		ast_tcptls_server_stop(&https_desc);
+	} else if (ast_ssl_setup(https_desc.tls_cfg)) {
 		ast_tcptls_server_start(&https_desc);
 	}
 

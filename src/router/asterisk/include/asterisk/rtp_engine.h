@@ -345,6 +345,8 @@ struct ast_rtp_engine {
 	void (*alt_remote_address_set)(struct ast_rtp_instance *instance, struct ast_sockaddr *sa);
 	/*! Callback for changing DTMF mode */
 	int (*dtmf_mode_set)(struct ast_rtp_instance *instance, enum ast_rtp_dtmf_mode dtmf_mode);
+	/*! Callback for getting DTMF mode */
+	enum ast_rtp_dtmf_mode (*dtmf_mode_get)(struct ast_rtp_instance *instance);
 	/*! Callback for retrieving statistics */
 	int (*get_stat)(struct ast_rtp_instance *instance, struct ast_rtp_instance_stats *stats, enum ast_rtp_instance_stat stat);
 	/*! Callback for setting QoS values */
@@ -373,6 +375,8 @@ struct ast_rtp_engine {
 	void (*stun_request)(struct ast_rtp_instance *instance, struct ast_sockaddr *suggestion, const char *username);
 	/*! Callback to get the transcodeable formats supported */
 	int (*available_formats)(struct ast_rtp_instance *instance, format_t to_endpoint, format_t to_asterisk);
+	/*! Callback to send CNG */
+	int (*sendcng)(struct ast_rtp_instance *instance, int level);
 	/*! Linked list information */
 	AST_RWLIST_ENTRY(ast_rtp_engine) entry;
 };
@@ -964,7 +968,8 @@ void ast_rtp_codecs_payloads_set_m_type(struct ast_rtp_codecs *codecs, struct as
  * \param options Optional options that may change the behavior of this specific payload
  *
  * \retval 0 success
- * \retval -1 failure
+ * \retval -1 failure, invalid payload numbe
+ * \retval -2 failure, unknown mimetype
  *
  * Example usage:
  *
@@ -1684,6 +1689,24 @@ void ast_rtp_instance_set_timeout(struct ast_rtp_instance *instance, int timeout
 void ast_rtp_instance_set_hold_timeout(struct ast_rtp_instance *instance, int timeout);
 
 /*!
+ * \brief Set the RTP keepalive interval
+ *
+ * \param instance The RTP instance
+ * \param period Value to set the keepalive interval to
+ *
+ * Example usage:
+ *
+ * \code
+ * ast_rtp_instance_set_keepalive(instance, 5000);
+ * \endcode
+ *
+ * This sets the RTP keepalive interval on 'instance' to be 5000.
+ *
+ * \since 1.8
+ */
+void ast_rtp_instance_set_keepalive(struct ast_rtp_instance *instance, int timeout);
+
+/*!
  * \brief Get the RTP timeout value
  *
  * \param instance The RTP instance
@@ -1720,6 +1743,25 @@ int ast_rtp_instance_get_timeout(struct ast_rtp_instance *instance);
  * \since 1.8
  */
 int ast_rtp_instance_get_hold_timeout(struct ast_rtp_instance *instance);
+
+/*!
+ * \brief Get the RTP keepalive interval
+ *
+ * \param instance The RTP instance
+ *
+ * \retval period Keepalive interval value
+ *
+ * Example usage:
+ *
+ * \code
+ * int interval = ast_rtp_instance_get_keepalive(instance);
+ * \endcode
+ *
+ * This gets the RTP keepalive interval value for the RTP instance pointed to by 'instance'.
+ *
+ * \since 1.8
+ */
+int ast_rtp_instance_get_keepalive(struct ast_rtp_instance *instance);
 
 /*!
  * \brief Get the RTP engine in use on an RTP instance
@@ -1780,7 +1822,36 @@ struct ast_rtp_glue *ast_rtp_instance_get_active_glue(struct ast_rtp_instance *i
  */
 struct ast_channel *ast_rtp_instance_get_chan(struct ast_rtp_instance *instance);
 
-int ast_rtp_instance_add_srtp_policy(struct ast_rtp_instance *instance, struct ast_srtp_policy *policy);
+/*!
+ * \brief Send a comfort noise packet to the RTP instance
+ *
+ * \param instance The RTP instance
+ * \param level Magnitude of the noise level
+ *
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_rtp_instance_sendcng(struct ast_rtp_instance *instance, int level);
+
+/*!
+ * \brief Add or replace the SRTP policies for the given RTP instance
+ *
+ * \param instance the RTP instance
+ * \param remote_policy the remote endpoint's policy
+ * \param local_policy our policy for this RTP instance's remote endpoint
+ *
+ * \retval 0 Success
+ * \retval non-zero Failure
+ */
+int ast_rtp_instance_add_srtp_policy(struct ast_rtp_instance *instance, struct ast_srtp_policy* remote_policy, struct ast_srtp_policy *local_policy);
+
+/*!
+ * \brief Obtain the SRTP instance associated with an RTP instance
+ *
+ * \param instance the RTP instance
+ * \retval the SRTP instance on success
+ * \retval NULL if no SRTP instance exists
+ */
 struct ast_srtp *ast_rtp_instance_get_srtp(struct ast_rtp_instance *instance);
 
 #if defined(__cplusplus) || defined(c_plusplus)

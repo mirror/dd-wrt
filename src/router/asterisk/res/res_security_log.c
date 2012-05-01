@@ -27,9 +27,13 @@
  * \todo Escape quotes in string payload IE contents
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 206021 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $");
 
 #include "asterisk/module.h"
 #include "asterisk/logger.h"

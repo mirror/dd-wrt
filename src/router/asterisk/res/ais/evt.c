@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 294535 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 335497 $");
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -132,6 +132,13 @@ void evt_event_deliver_cb(SaEvtSubscriptionIdT sub_id,
 		ast_log(LOG_ERROR, "Event received with size %u, which is too big\n"
 			"for the allocated size %u. Change the code to increase the size.\n",
 			(unsigned int) event_datalen, (unsigned int) len);
+		return;
+	}
+
+	if (event_datalen < ast_event_minimum_length()) {
+		ast_debug(1, "Ignoring event that's too small. %u < %u\n",
+			(unsigned int) event_datalen,
+			(unsigned int) ast_event_minimum_length());
 		return;
 	}
 
