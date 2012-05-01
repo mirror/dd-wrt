@@ -7,6 +7,7 @@
  */
 
 #include "nest/bird.h"
+#include "nest/route.h"
 #include "nest/cli.h"
 #include "conf/conf.h"
 #include "nest/cmds.h"
@@ -35,16 +36,22 @@ cmd_show_status(void)
 }
 
 void
-cmd_show_symbols(struct symbol *sym)
+cmd_show_symbols(struct sym_show_data *sd)
 {
   int pos = 0;
+  struct symbol *sym = sd->sym;
 
   if (sym)
-    cli_msg(1010, "%s\t%s", sym->name, cf_symbol_class_name(sym));
+    cli_msg(1010, "%-8s\t%s", sym->name, cf_symbol_class_name(sym));
   else
     {
       while (sym = cf_walk_symbols(config, sym, &pos))
-	cli_msg(-1010, "%s\t%s", sym->name, cf_symbol_class_name(sym));
+	{
+	  if (sd->type && (sym->class != sd->type))
+	    continue;
+
+	  cli_msg(-1010, "%-8s\t%s", sym->name, cf_symbol_class_name(sym));
+	}
       cli_msg(0, "");
     }
 }
@@ -65,6 +72,7 @@ print_size(char *dsc, size_t val)
 
 extern pool *rt_table_pool;
 extern pool *rta_pool;
+extern pool *roa_pool;
 extern pool *proto_pool;
 
 void
@@ -73,6 +81,7 @@ cmd_show_memory(void)
   cli_msg(-1018, "BIRD memory usage");
   print_size("Routing tables:", rmemsize(rt_table_pool));
   print_size("Route attributes:", rmemsize(rta_pool));
+  print_size("ROA tables:", rmemsize(roa_pool));
   print_size("Protocols:", rmemsize(proto_pool));
   print_size("Total:", rmemsize(&root_pool));
   cli_msg(0, "");

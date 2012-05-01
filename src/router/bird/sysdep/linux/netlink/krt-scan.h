@@ -30,4 +30,7 @@ static inline int krt_scan_params_same(struct krt_scan_params *o, struct krt_sca
   return o->table_id == n->table_id;
 }
 
+static inline void krt_scan_copy_params(struct krt_scan_params *d UNUSED, struct krt_scan_params *s UNUSED) { }
+/* table_id copied in krt_copy_config() */
+
 #endif

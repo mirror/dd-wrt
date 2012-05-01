@@ -54,10 +54,11 @@ int sk_send(sock *, unsigned len);	/* Send data, <0=err, >0=ok, 0=sleep */
 int sk_send_to(sock *, unsigned len, ip_addr to, unsigned port); /* sk_send to given destination */
 void sk_reallocate(sock *);		/* Free and allocate tbuf & rbuf */
 void sk_dump_all(void);
-int sk_set_ttl(sock *s, int ttl);	/* Set TTL for given socket */
+int sk_set_ttl(sock *s, int ttl);	/* Set transmit TTL for given socket */
+int sk_set_min_ttl(sock *s, int ttl);	/* Set minimal accepted TTL for given socket */
 
 /* Add or remove security associations for given passive socket */
-int sk_set_md5_auth(sock *s, ip_addr a, char *passwd);
+int sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd);
 int sk_rx_ready(sock *s);
 
 /* Prepare UDP or IP socket to multicasting. s->iface and s->ttl must be set */

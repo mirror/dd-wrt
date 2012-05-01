@@ -1,4 +1,31 @@
 
+Version 1.3.7 (2012-03-22)
+  o Route Origin Authorization basics.
+  o RIPng working again.
+  o Extended clist operations in filters. 
+  o Fixes several bugs in BSD iface handling.
+  o Several minor bugfixes and enhancements.
+
+Version 1.3.6 (2012-01-20)
+  o Important bugfix in BGP.
+
+Version 1.3.5 (2012-01-10)
+  o Protocol templates.
+  o Deterministic MED option for BGP.
+  o Support for link-local addresses in BGP and static protocols.
+  o Several bugfixes.
+
+Version 1.3.4 (2011-10-10)
+  o Static recursive routes.
+  o Several bugfixes.
+
+Version 1.3.3 (2011-09-11)
+  o OSPF NSSA.
+  o BGP extended communities.
+  o BGP TTL security.
+  o Configuration option "include" added (based on patch from Alexander V. Chernikov).
+  o Some minor bugfixes.
+
 Version 1.3.2 (2011-07-08)
   o Allows run with restricted privileges.
   o Community list filter operation.
@@ -24,7 +51,7 @@ Version 1.3.0 (2011-03-31)
   o Much improved OSPF reconfiguration.
   o Point-to-MultiPoint interfaces (OSPF).
   o Minor changes and improvements in config file grammar.
-  o Better community list matching
+  o Better community list matching.
   o Changes default behavior of BGP IPv6 socket to v6only.
     Use 'listen bgp dual' for the old behavior.
   o Changes default for handling missing link-local addresses on

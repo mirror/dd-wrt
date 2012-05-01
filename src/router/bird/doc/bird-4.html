@@ -55,11 +55,13 @@ all network nodes in the link-state database.
 link-state database.  It is just a stripped-down version of
 'show ospf state'.
 <P>
+<DT><CODE>show ospf lsadb [global | area <I>id</I> | link] [type <I>num</I>] [lsid <I>id</I>] [self | router <I>id</I>] [<I>name</I>] </CODE><DD><P>Show contents of an OSPF LSA database. Options could be used to filter entries.
+<P>
 <DT><CODE>show static [<I>name</I>]</CODE><DD><P>Show detailed information about static routes.
 <P>
 <DT><CODE>show interfaces [summary]</CODE><DD><P>Show the list of interfaces. For each interface, print its type, state, MTU and addresses assigned. 
 <P>
-<DT><CODE>show symbols</CODE><DD><P>Show the list of symbols defined in the configuration (names of protocols, routing tables etc.).
+<DT><CODE>show symbols [table|filter|function|protocol|template|roa|<I>symbol</I>]</CODE><DD><P>Show the list of symbols defined in the configuration (names of protocols, routing tables etc.).
 <P>
 <DT><CODE>show route [[for] <I>prefix</I>|<I>IP</I>] [table <I>sym</I>] [filter <I>f</I>|where <I>c</I>] [(export|preexport) <I>p</I>] [protocol <I>p</I>] [<I>options</I>]</CODE><DD><P>Show contents of a routing table (by default of the main one),
 that is routes, their metrics and (in case the <CODE>all</CODE> switch is given)
@@ -84,6 +86,25 @@ export filter of the protocol is skipped.
 <P>The <CODE>stats</CODE> switch requests showing of route statistics (the
 number of networks, number of routes before and after filtering). If
 you use <CODE>count</CODE> instead, only the statistics will be printed.
+<P>
+<DT><CODE>show roa [<I>prefix</I> | in <I>prefix</I> | for <I>prefix</I>] [as <I>num</I>] [table <I>t</I>>]</CODE><DD><P>Show contents of a ROA table (by default of the first one).
+You can specify a <I>prefix</I> to print ROA entries for a
+specific network. If you use <CODE>for <I>prefix</I></CODE>, you'll
+get all entries relevant for route validation of the network
+prefix; i.e., ROA entries whose prefixes cover the network
+prefix. Or you can use <CODE>in <I>prefix</I></CODE> to get ROA entries
+covered by the network prefix. You could also use <CODE>as</CODE> option
+to show just entries for given AS.
+<P>
+<DT><CODE>add roa <I>prefix</I> max <I>num</I>] as <I>num</I> [table <I>t</I>>]</CODE><DD><P>Add a new ROA entry to a ROA table. Such entry is called
+<I>dynamic</I> compared to <I>static</I> entries specified in the
+config file. These dynamic entries survive reconfiguration.
+<P>
+<DT><CODE>delete roa <I>prefix</I> max <I>num</I>] as <I>num</I> [table <I>t</I>>]</CODE><DD><P>Delete the specified ROA entry from a ROA table. Only dynamic
+ROA entries (i.e., the ones added by <CODE>add roa</CODE> command) can
+be deleted.
+<P>
+<DT><CODE>flush roa [table <I>t</I>>]</CODE><DD><P>Remove all dynamic ROA entries from a ROA table.
 <P>
 <DT><CODE>configure [soft] ["<I>config file</I>"]</CODE><DD><P>Reload configuration from a given file. BIRD will smoothly
 switch itself to the new configuration, protocols are

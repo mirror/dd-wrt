@@ -259,6 +259,9 @@ protocol rip {
 <sect>Global options
 
 <p><descrip>
+	<tag>include "<m/filename/"</tag> 
+	This statement causes inclusion of a new file. The maximal depth is set to 5.
+
 	<tag>log "<m/filename/"|syslog [name <m/name/]|stderr all|{ <m/list of classes/ }</tag> 
 	Set logging of messages having the given class (either <cf/all/ or <cf/{
 	error, trace }/ etc.) into selected destination (a file specified as a filename string,
@@ -293,10 +296,21 @@ protocol rip {
 	<tag>function <m/name/ (<m/parameters/) <m/local variables/ { <m/commands/ }</tag> Define a function. You can learn more
 	about functions in the following chapter.
  
-	<tag>protocol rip|ospf|bgp|... <m/[name]/ { <m>protocol options</m> }</tag> Define a protocol
-	instance called <cf><m/name/</cf> (or with a name like "rip5" generated automatically if you don't specify any <cf><m/name/</cf>). You can learn more
-	about configuring protocols in their own chapters. You can run more than one instance of
-	most protocols (like RIP or BGP). By default, no instances are configured.
+	<tag>protocol rip|ospf|bgp|... [<m/name/ [from <m/name2/]] { <m>protocol options</m> }</tag>
+	Define a protocol instance called <cf><m/name/</cf> (or with a name like "rip5" generated
+	automatically if you don't specify any <cf><m/name/</cf>). You can learn more about
+	configuring protocols in their own chapters. When <cf>from <m/name2/</cf> expression is
+	used, initial protocol options are taken from protocol or template <cf><m/name2/</cf>
+	You can run more than one instance of most protocols (like RIP or BGP). By default, no
+	instances are configured.
+
+	<tag>template rip|bgp|... [<m/name/ [from <m/name2/]] { <m>protocol options</m> }</tag>
+	Define a protocol template instance called <cf><m/name/</cf> (or with a name like "bgp1"
+	generated automatically if you don't specify any <cf><m/name/</cf>). Protocol templates can
+	be used to group common options when many similarly configured protocol instances are to be
+	defined. Protocol instances (and other templates) can use templates by using <cf/from/
+	expression and the name of the template. At the moment templates (and <cf/from/ expression)
+	are not implemented for OSPF protocol.
 
 	<tag>define <m/constant/ = (<m/expression/)|<m/number/|<m/IP address/</tag>
 	Define a constant. You can use it later in every place you could use a simple integer or an IP address.
@@ -343,6 +357,22 @@ protocol rip {
 	<tag>table <m/name/</tag> Create a new routing table. The default
 	routing table is created implicitly, other routing tables have
 	to be added by this command.
+
+	<tag>roa table [ { roa table options ... } ] <m/name/</tag>
+	Create a new ROA (Route Origin Authorization) table. ROA
+	tables can be used to validate route origination of BGP
+	routes. A ROA table contains ROA entries, each consist of a
+	network prefix, a max prefix length and an AS number. A ROA
+	entry specifies prefixes which could be originated by that AS
+	number. ROA tables could be filled with data from RPKI (RFC
+	6480) or from public databases like Whois. ROA tables are 
+	examined by <cf/roa_check()/ operator in filters.
+
+	Currently, there is just one option,
+	<cf>roa <m/prefix/ max <m/num/ as <m/num/</cf>, which
+	can be used to populate the ROA table with static ROA
+	entries. The option may be used multiple times. Other entries
+	can be added dynamically by <cf/add roa/ command.
 
 	<tag>eval <m/expr/</tag> Evaluates given filter expression. It
 	is used by us for testing of filters.
@@ -547,13 +577,16 @@ This argument can be omitted if there exists only a single instance.
 	link-state database.  It is just a stripped-down version of
 	'show ospf state'.
 
+	<tag>show ospf lsadb [global | area <m/id/ | link] [type <m/num/] [lsid <m/id/] [self | router <m/id/] [<m/name/] </tag>
+	Show contents of an OSPF LSA database. Options could be used to filter entries.
+
 	<tag>show static [<m/name/]</tag>
 	Show detailed information about static routes.
 
 	<tag>show interfaces [summary]</tag>
 	Show the list of interfaces. For each interface, print its type, state, MTU and addresses assigned. 
 
-	<tag>show symbols</tag>
+	<tag>show symbols [table|filter|function|protocol|template|roa|<m/symbol/]</tag>
 	Show the list of symbols defined in the configuration (names of protocols, routing tables etc.).
 
 	<tag>show route [[for] <m/prefix/|<m/IP/] [table <m/sym/] [filter <m/f/|where <m/c/] [(export|preexport) <m/p/] [protocol <m/p/] [<m/options/]</tag>
@@ -581,6 +614,29 @@ This argument can be omitted if there exists only a single instance.
 	<p>The <cf/stats/ switch requests showing of route statistics (the
 	number of networks, number of routes before and after filtering). If
 	you use <cf/count/ instead, only the statistics will be printed.
+
+	<tag>show roa [<m/prefix/ | in <m/prefix/ | for <m/prefix/] [as <m/num/] [table <m/t/>]</tag>
+	Show contents of a ROA table (by default of the first one).
+	You can specify a <m/prefix/ to print ROA entries for a
+	specific network. If you use <cf>for <m/prefix/</cf>, you'll
+	get all entries relevant for route validation of the network
+	prefix; i.e., ROA entries whose prefixes cover the network
+	prefix. Or you can use <cf>in <m/prefix/</cf> to get ROA entries
+	covered by the network prefix. You could also use <cf/as/ option
+	to show just entries for given AS.
+
+	<tag>add roa <m/prefix/ max <m/num/] as <m/num/ [table <m/t/>]</tag>
+	Add a new ROA entry to a ROA table. Such entry is called
+	<it/dynamic/ compared to <it/static/ entries specified in the
+	config file. These dynamic entries survive reconfiguration.
+
+	<tag>delete roa <m/prefix/ max <m/num/] as <m/num/ [table <m/t/>]</tag>
+	Delete the specified ROA entry from a ROA table. Only dynamic
+	ROA entries (i.e., the ones added by <cf/add roa/ command) can
+	be deleted.
+
+	<tag>flush roa [table <m/t/>]</tag>
+	Remove all dynamic ROA entries from a ROA table.
 
 	<tag>configure [soft] ["<m/config file/"]</tag>
 	Reload configuration from a given file. BIRD will smoothly
@@ -746,27 +802,48 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  <cf/.ip/ which extracts the IP address from the pair, and <cf/.len/, which separates prefix
 	  length from the pair. So <cf>1.2.0.0/16.pxlen = 16</cf> is true.
 
-	<tag/int|pair|quad|ip|prefix|enum set/
+	<tag/ec/ This is a specialized type used to represent BGP
+	  extended community values. It is essentially a 64bit value,
+	  literals of this type are usually written as <cf>(<m/kind/,
+	  <m/key/, <m/value/)</cf>, where <cf/kind/ is a kind of
+	  extended community (e.g. <cf/rt/ / <cf/ro/ for a route
+	  target / route origin communities), the format and possible
+	  values of <cf/key/ and <cf/value/ are usually integers, but
+	  it depends on the used kind. Similarly to pairs, ECs can be
+	  constructed using expressions for <cf/key/ and
+	  <cf/value/ parts, (e.g. <cf/(ro, myas, 3*10)/, where
+	  <cf/myas/ is an integer variable).
+ 
+	<tag/int|pair|quad|ip|prefix|ec|enum set/
 	  Filters recognize four types of sets. Sets are similar to strings: you can pass them around
 	  but you can't modify them. Literals of type <cf>int set</cf> look like <cf>
 	  [ 1, 2, 5..7 ]</cf>. As you can see, both simple values and ranges are permitted in
 	  sets.
+
 	  For pair sets, expressions like <cf/(123,*)/ can be used to denote ranges (in
 	  that case <cf/(123,0)..(123,65535)/). You can also use <cf/(123,5..100)/ for range
 	  <cf/(123,5)..(123,100)/. You can also use <cf/*/ and <cf/a..b/ expressions
 	  in the first part of a pair, note that such expressions are translated to a set
 	  of intervals, which may be memory intensive. E.g. <cf/(*,4..20)/ is translated to
 	  <cf/(0,4..20), (1,4..20), (2,4..20), ... (65535, 4..20)/.
-	  You can also use expressions for both, pair sets and int sets. However it must
+
+	  EC sets use similar expressions like pair sets, e.g. <cf/(rt, 123, 10..20)/ 
+	  or <cf/(ro, 123, *)/. Expressions requiring the translation (like  <cf/(rt, *, 3)/)
+	  are not allowed (as they usually have 4B range for ASNs).
+
+	  You can also use expressions for int, pair and EC set values. However it must
 	  be possible to evaluate these expressions before daemon boots. So you can use
 	  only constants inside them. E.g.
 	<code>
 	 define one=1;
+	 define myas=64500;
 	 int set odds;
 	 pair set ps;
+	 ec set es;
 
-	 odds = [ one, (2+1), (6-one), (2*2*2-1), 9, 11 ];
+	 odds = [ one, 2+1, 6-one, 2*2*2-1, 9, 11 ];
 	 ps = [ (1,one+one), (3,4)..(4,8), (5,*), (6,3..6), (7..9,*) ];
+	 es = [ (rt, myas, 3*10), (rt, myas+one, 0..16*16*16-1), (ro, myas+2, *) ];
 	</code>
 
 	  Sets of prefixes are special: their literals does not allow ranges, but allows
@@ -835,29 +912,40 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 	  Clist is similar to a set, except that unlike other sets, it
 	  can be modified. The type is used for community list (a set
 	  of pairs) and for cluster list (a set of quads). There exist
-	  no literals of this type. There are two special operators on
+	  no literals of this type. There are three special operators on
 	  clists:
 
           <cf>add(<m/C/,<m/P/)</cf> adds pair (or quad) <m/P/ to clist
 	  <m/C/ and returns the result.  If item <m/P/ is already in
-	  clist <m/C/, it does nothing.
+	  clist <m/C/, it does nothing. <m/P/ may also be a clist,
+	  in that case all its members are added; i.e., it works as clist union.
 
           <cf>delete(<m/C/,<m/P/)</cf> deletes pair (or quad)
 	  <m/P/ from clist <m/C/ and returns the result.  If clist
 	  <m/C/ does not contain item <m/P/, it does nothing.
 	  <m/P/ may also be a pair (or quad) set, in that case the
 	  operator deletes all items from clist <m/C/ that are also
-	  members of set <m/P/.
+	  members of set <m/P/. Moreover, <m/P/ may also be a clist,
+	  which works analogously; i.e., it works as clist difference.
 
           <cf>filter(<m/C/,<m/P/)</cf> deletes all items from clist
 	  <m/C/ that are not members of pair (or quad) set <m/P/.
 	  I.e., <cf/filter/ do the same as <cf/delete/ with inverted
-	  set <m/P/.
+	  set <m/P/. <m/P/ may also be a clist, which works analogously;
+	  i.e., it works as clist intersection.
 
           Statement <cf><m/C/ = add(<m/C/, <m/P/);</cf> can be shortened to
           <cf><m/C/.add(<m/P/);</cf> if <m/C/ is appropriate route
           attribute (for example <cf/bgp_community/). Similarly for
           <cf/delete/ and <cf/filter/.
+
+	<tag/eclist/
+	  Eclist is a data type used for BGP extended community lists.
+	  Eclists are very similar to clists, but they are sets of ECs
+	  instead of pairs. The same operations (like <cf/add/,
+	  <cf/delete/, or <cf/&tilde;/ membership operator) can be
+	  used to modify or test eclists, with ECs instead of pairs as
+	  arguments.
 </descrip>
 
 <sect>Operators
@@ -867,7 +955,18 @@ incompatible with each other (that is to prevent you from shooting in the foot).
 Special operators include <cf/&tilde;/ for "is element of a set" operation - it can be
 used on element and set of elements of the same type (returning true if element is contained in the given set), or
 on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
-prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
+prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on number and bgppath (returning true if the number is in the path) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
+
+<p>There is one operator related to ROA infrastructure -
+<cf/roa_check()/. It examines a ROA table and does RFC 6483 route
+origin validation for a given network prefix. The basic usage
+is <cf>roa_check(<m/table/)</cf>, which checks current route (which
+should be from BGP to have AS_PATH argument) in the specified ROA
+table and returns ROA_UNKNOWN if there is no relevant ROA, ROA_VALID
+if there is a matching ROA, or ROA_INVALID if there are some relevant
+ROAs but none of them match. There is also an extended variant
+<cf>roa_check(<m/table/, <m/prefix/, <m/asn/)</cf>, which allows to
+specify a prefix and an ASN as arguments.
 
 
 <sect>Control structures
@@ -1013,12 +1112,16 @@ capability negotiation
 (RFC 3392<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc3392.txt">),
 MD5 password authentication
 (RFC 2385<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc2385.txt">),
+extended communities
+(RFC 4360<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4360.txt">),
 route reflectors 
 (RFC 4456<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4456.txt">),
 multiprotocol extensions
 (RFC 4760<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4760.txt">),
-and 4B AS numbers 
-(RFC 4893<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt">).
+4B AS numbers 
+(RFC 4893<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt">),
+and 4B AS numbers in extended communities
+(RFC 5668<htmlurl url="ftp://ftp.rfc-editor.org/in-notes/rfc5668.txt">).
 
 
 For IPv6, it uses the standard multiprotocol extensions defined in
@@ -1087,9 +1190,11 @@ for each neighbor using the following configuration parameters:
 	subnets. Such IP address have to be reachable through system
 	routing table. For multihop BGP it is recommended to
 	explicitly configure <cf/source address/ to have it
-	stable. Optional <cf/number/ argument can be used to limit TTL
-	(the number of hops).
-	Default: switched off.
+	stable. Optional <cf/number/ argument can be used to specify
+	the number of hops (used for TTL). Note that the number of
+	networks (edges) in a path is counted, i.e. if two BGP
+	speakers are separated by one router, the number of hops is
+	2. Default: switched off.
 
 	<tag>source address <m/ip/</tag> Define local address we
 	should use for next hop calculation and as a source address
@@ -1135,6 +1240,18 @@ for each neighbor using the following configuration parameters:
 	<tag>igp table <m/name/</tag> Specifies a table that is used
 	as an IGP routing table. Default: the same as the table BGP is
 	connected to.
+	
+	<tag>ttl security <m/switch/</tag> Use GTSM (RFC 5082 - the
+	generalized TTL security mechanism). GTSM protects against
+	spoofed packets by ignoring received packets with a smaller
+	than expected TTL. To work properly, GTSM have to be enabled
+	on both sides of a BGP session. If both <cf/ttl security/ and
+	<cf/multihop/ options are enabled, <cf/multihop/ option should
+	specify proper hop value to compute expected TTL. Kernel
+	support required: Linux: 2.6.34+ (IPv4), 2.6.35+ (IPv6), BSD:
+	since long ago, IPv4 only. Note that full (ICMP protection,
+	for example) RFC 5082 support is provided by Linux
+	only. Default: disabled.
 	
 	<tag>password <m/string/</tag> Use this password for MD5 authentication
 	of BGP sessions. Default: no authentication. Password has to be set by
@@ -1255,6 +1372,21 @@ for each neighbor using the following configuration parameters:
 	received from the same AS (which is the standard behavior).
 	Default: off.
 
+	<tag>deterministic med <m/switch/</tag> BGP route selection
+	algorithm is often viewed as a comparison between individual
+	routes (e.g. if a new route appears and is better than the
+	current best one, it is chosen as the new best one). But the
+	proper route selection, as specified by RFC 4271, cannot be
+	fully implemented in that way. The problem is mainly in
+	handling the MED attribute. BIRD, by default, uses an
+	simplification based on individual route comparison, which in
+	some cases may lead to temporally dependent behavior (i.e. the
+	selection is dependent on the order in which routes appeared).
+	This option enables a different (and slower) algorithm
+	implementing proper RFC 4271 route selection, which is
+	deterministic. Alternative way how to get deterministic
+	behavior is to use <cf/med metric/ option. Default: off.
+
 	<tag>igp metric <m/switch/</tag> Enable comparison of internal
  	distances to boundary routers during best route selection. Default: on.
 
@@ -1331,6 +1463,12 @@ with `<tt/O/') are optional.
 	its own routing policy, it also has a complete freedom about which community
 	attributes it defines and what will their semantics be.
 
+	<tag>eclist <cf/bgp_ext_community/ [O]</tag> List of extended community
+	values associated with the route. Extended communities have similar usage
+	as plain communities, but they have an extended range (to allow 4B ASNs)
+	and a nontrivial structure with a type field. Individual community values are
+	represented using an <cf/ec/ data type inside the filters.
+
 	<tag>quad <cf/bgp_originator_id/ [I, O]</tag> This attribute is created by the
 	route reflector when reflecting the route and contains the router ID of the
 	originator of the route in the local AS.
@@ -1345,22 +1483,22 @@ with `<tt/O/') are optional.
 <p><code>
 protocol bgp {
 	local as 65000;			     # Use a private AS number
-	neighbor 62.168.0.130 as 5588;	     # Our neighbor ...
+	neighbor 198.51.100.130 as 64496;    # Our neighbor ...
 	multihop;			     # ... which is connected indirectly
 	export filter {			     # We use non-trivial export rules
 		if source = RTS_STATIC then { # Export only static routes
 		        # Assign our community
-			bgp_community.add((65000,5678));
+			bgp_community.add((65000,64501));
 			# Artificially increase path length
 			# by advertising local AS number twice
-			if bgp_path ~ [= 65000 =] then	  
-				bgp_path.prepend(65000);  
+			if bgp_path ~ [= 65000 =] then
+				bgp_path.prepend(65000);
 			accept;
 		}
 		reject;
 	};
 	import all;
-	source address 62.168.0.1;	# Use a non-standard source address
+	source address 198.51.100.14;	# Use a non-standard source address
 }
 </code>
 
@@ -1602,10 +1740,23 @@ protocol ospf &lt;name&gt; {
 	tick &lt;num&gt;;
 	ecmp &lt;switch&gt; [limit &lt;num&gt;];
 	area &lt;id&gt; {
-		stub cost &lt;num&gt;;
+		stub;
+		nssa;
+		summary &lt;switch&gt;;
+		default nssa &lt;switch&gt;;
+		default cost &lt;num&gt;;
+		default cost2 &lt;num&gt;;
+		translator &lt;switch&gt;;
+		translator stability &lt;num&gt;;
+
                 networks {
 			&lt;prefix&gt;;
 			&lt;prefix&gt; hidden;
+		}
+                external {
+			&lt;prefix&gt;;
+			&lt;prefix&gt; hidden;
+			&lt;prefix&gt; tag &lt;num&gt;;
 		}
 		stubnet &lt;prefix&gt;;
 		stubnet &lt;prefix&gt; {
@@ -1683,14 +1834,67 @@ protocol ospf &lt;name&gt; {
 	 address, similarly to a router ID). The most important area is
 	 the backbone (ID 0) to which every other area must be connected.
 
-	<tag>stub cost <M>num</M></tag>
-	 No external (except default) routes are flooded into stub areas.
-         Setting this value marks area stub with defined cost of default route.
-	 Default value is no. (Area is not stub.)
+	<tag>stub</tag>
+	 This option configures the area to be a stub area. External
+	 routes are not flooded into stub areas. Also summary LSAs can be
+	 limited in stub areas (see option <cf/summary/).
+	 By default, the area is not a stub area.
+
+	<tag>nssa</tag>
+	 This option configures the area to be a NSSA (Not-So-Stubby
+	 Area). NSSA is a variant of a stub area which allows a
+	 limited way of external route propagation. Global external
+	 routes are not propagated into a NSSA, but an external route
+	 can be imported into NSSA as a (area-wide) NSSA-LSA (and
+	 possibly translated and/or aggregated on area boundary).
+	 By default, the area is not NSSA.
+
+	<tag>summary <M>switch</M></tag>
+	 This option controls propagation of summary LSAs into stub or
+	 NSSA areas. If enabled, summary LSAs are propagated as usual,
+	 otherwise just the default summary route (0.0.0.0/0) is
+	 propagated (this is sometimes called totally stubby area). If
+	 a stub area has more area boundary routers, propagating
+	 summary LSAs could lead to more efficient routing at the cost
+	 of larger link state database. Default value is no.
+
+	<tag>default nssa <M>switch</M></tag>
+ 	 When <cf/summary/ option is enabled, default summary route is
+	 no longer propagated to the NSSA. In that case, this option
+	 allows to originate default route as NSSA-LSA to the NSSA.
+	 Default value is no.
+
+	<tag>default cost <M>num</M></tag>
+	 This option controls the cost of a default route propagated to
+	 stub and NSSA areas. Default value is 1000.
+
+	<tag>default cost2 <M>num</M></tag>
+	 When a default route is originated as NSSA-LSA, its cost
+	 can use either type 1 or type 2 metric. This option allows
+	 to specify the cost of a default route in type 2 metric.
+	 By default, type 1 metric (option <cf/default cost/) is used.
+
+	<tag>translator <M>switch</M></tag>
+	 This option controls translation of NSSA-LSAs into external
+	 LSAs. By default, one translator per NSSA is automatically
+	 elected from area boundary routers. If enabled, this area
+	 boundary router would unconditionally translate all NSSA-LSAs
+	 regardless of translator election. Default value is no.
+
+	<tag>translator stability <M>num</M></tag>
+	 This option controls the translator stability interval (in
+	 seconds). When the new translator is elected, the old one
+	 keeps translating until the interval is over. Default value
+	 is 40.
 
 	<tag>networks { <m/set/ }</tag>
          Definition of area IP ranges. This is used in summary LSA origination.
 	 Hidden networks are not propagated into other areas.
+
+	<tag>external { <m/set/ }</tag>
+         Definition of external area IP ranges for NSSAs. This is used
+	 for NSSA-LSA translation. Hidden networks are not translated
+	 into external LSAs. Networks can have configured route tag.
 
 	<tag>stubnet <m/prefix/ { <m/options/ }</tag>
 	 Stub networks are networks that are not transit networks
@@ -1937,17 +2141,18 @@ and vice versa, depending on what's allowed by the filters. Export filters contr
 of routes from the primary table to the secondary one, import filters control the opposite
 direction.
 
-<p>The Pipe protocol may work in the opaque mode or in the transparent
-mode. In the opaque mode, the Pipe protocol retransmits optimal route
+<p>The Pipe protocol may work in the transparent mode mode or in the opaque mode.
+In the transparent mode, the Pipe protocol retransmits all routes from
+one table to the other table, retaining their original source and
+attributes.  If import and export filters are set to accept, then both
+tables would have the same content. The transparent mode is the default mode.
+
+<p>In the opaque mode, the Pipe protocol retransmits optimal route
 from one table to the other table in a similar way like other
 protocols send and receive routes. Retransmitted route will have the
 source set to the Pipe protocol, which may limit access to protocol
-specific route attributes. The opaque mode is a default mode.
-
-<p>In transparent mode, the Pipe protocol retransmits all routes from
-one table to the other table, retaining their original source and
-attributes.  If import and export filters are set to accept, then both
-tables would have the same content. The mode can be set by
+specific route attributes. This mode is mainly for compatibility, it
+is not suggested for new configs. The mode can be changed by
 <tt/mode/ option.
 
 <p>The primary use of multiple routing tables and the Pipe protocol is for policy routing,
@@ -2298,11 +2503,13 @@ telling to return packets as undeliverable if they are in your IP block,
 you don't have any specific destination for them and you don't want to send
 them out through the default route to prevent routing loops).
 
-<p>There are three types of static routes: `classical' routes telling to
-forward packets to a neighboring router, device routes specifying forwarding
-to hosts on a directly connected network and special routes (sink, blackhole
-etc.) which specify a special action to be done instead of forwarding the
-packet.
+<p>There are five types of static routes: `classical' routes telling
+to forward packets to a neighboring router, multipath routes
+specifying several (possibly weighted) neighboring routers, device
+routes specifying forwarding to hosts on a directly connected network,
+recursive routes computing their nexthops by doing route table lookups
+for a given IP and special routes (sink, blackhole etc.) which specify
+a special action to be done instead of forwarding the packet.
 
 <p>When the particular destination is not available (the interface is down or
 the next hop of the route is not a neighbor at the moment), Static just
@@ -2320,17 +2527,22 @@ definition of the protocol contains mainly a list of static routes:
  	with their weights.
 	<tag>route <m/prefix/ via <m/"interface"/</tag> Static device
 	route through an interface to hosts on a directly connected network.
+	<tag>route <m/prefix/ recursive <m/ip/</tag> Static recursive route,
+	its nexthop depends on a route table lookup for given IP address.
 	<tag>route <m/prefix/ drop|reject|prohibit</tag> Special routes
 	specifying to drop the packet, return it as unreachable or return
 	it as administratively prohibited.
 
-	<tag>check link <M>switch</M></tag>
-	The only option of the static protocol. If set, hardware link
-	states of network interfaces are taken into consideration.
-	When link disappears (e.g. ethernet cable is unplugged),
-	static routes directing to that interface are removed. It is
-	possible that some hardware drivers or platforms do not
-	implement this feature. Default: off.
+	<tag>check link <m/switch/</tag>
+	If set, hardware link states of network interfaces are taken
+	into consideration.  When link disappears (e.g. ethernet cable
+	is unplugged), static routes directing to that interface are
+	removed. It is possible that some hardware drivers or
+	platforms do not implement this feature. Default: off.
+
+	<tag>igp table <m/name/</tag> Specifies a table that is used
+	for route table lookups of recursive routes. Default: the
+	same table as the protocol is connected to.
 </descrip>
 
 <p>Static routes have no specific attributes.
@@ -2340,12 +2552,12 @@ definition of the protocol contains mainly a list of static routes:
 <p><code>
 protocol static {
 	table testable;			 # Connect to a non-default routing table
-	route 0.0.0.0/0 via 62.168.0.13; # Default route
+	route 0.0.0.0/0 via 198.51.100.130; # Default route
 	route 10.0.0.0/8 multipath	 # Multipath route
-		via 62.168.0.14 weight 2
-		via 62.168.1.10
-		via 62.168.1.11;
-	route 62.168.0.0/25 reject;	 # Sink route
+		via 198.51.100.10 weight 2
+		via 198.51.100.20
+		via 192.0.2.1;
+	route 203.0.113.0/24 reject;	 # Sink route
 	route 10.2.0.0/24 via "arc0";	 # Secondary network
 }
 </code>
@@ -2359,9 +2571,8 @@ there are still some features which would surely deserve to be
 implemented in future versions of BIRD:
 
 <itemize>
-<item>OSPF NSSA areas and opaque LSA's
+<item>Opaque LSA's
 <item>Route aggregation and flap dampening
-<item>Generation of IPv6 router advertisements
 <item>Multipath routes
 <item>Multicast routing protocols
 <item>Ports to other systems

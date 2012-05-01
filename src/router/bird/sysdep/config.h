@@ -7,7 +7,7 @@
 #define _BIRD_CONFIG_H_
 
 /* BIRD version */
-#define BIRD_VERSION "1.3.2"
+#define BIRD_VERSION "1.3.7"
 
 /* Include parameters determined by configure script */
 #include "sysdep/autoconf.h"
@@ -30,6 +30,8 @@ typedef INTEGER_16 s16;
 typedef unsigned INTEGER_16 u16;
 typedef INTEGER_32 s32;
 typedef unsigned INTEGER_32 u32;
+typedef INTEGER_64 s64;
+typedef unsigned INTEGER_64 u64;
 typedef u8 byte;
 typedef u16 word;
 

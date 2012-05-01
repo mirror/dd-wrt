@@ -88,6 +88,7 @@ void ifa_dump(struct ifa *);
 void if_show(void);
 void if_show_summary(void);
 struct iface *if_update(struct iface *);
+void if_delete(struct iface *old);
 struct ifa *ifa_update(struct ifa *);
 void ifa_delete(struct ifa *);
 void if_start_update(void);
@@ -97,6 +98,7 @@ void if_flush_ifaces(struct proto *p);
 void if_feed_baby(struct proto *);
 struct iface *if_find_by_index(unsigned);
 struct iface *if_find_by_name(char *);
+struct iface *if_get_by_name(char *);
 void ifa_recalc_all_primary_addresses(void);
 
 /* The Neighbor Cache */
@@ -110,11 +112,13 @@ typedef struct neighbor {
   void *data;				/* Protocol-specific data */
   unsigned aux;				/* Protocol-specific data */
   unsigned flags;
-  unsigned scope;			/* Address scope, SCOPE_HOST when it's our own address */
+  int scope;				/* Address scope, -1 for unreachable sticky neighbors,
+					   SCOPE_HOST when it's our own address */
 } neighbor;
 
 #define NEF_STICKY 1
 #define NEF_ONLINK 2
+#define NEF_BIND 4			/* Used internally for neighbors bound to an iface */
 
 neighbor *neigh_find(struct proto *, ip_addr *, unsigned flags);
 neighbor *neigh_find2(struct proto *p, ip_addr *a, struct iface *ifa, unsigned flags);
@@ -131,6 +135,7 @@ void neigh_prune(void);
 void neigh_if_up(struct iface *);
 void neigh_if_down(struct iface *);
 void neigh_if_link(struct iface *);
+void neigh_ifa_update(struct ifa *);
 void neigh_init(struct pool *);
 
 /*

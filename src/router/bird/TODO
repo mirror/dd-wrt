@@ -2,7 +2,6 @@ Core
 ~~~~
 - socket open failure should not be fatal
 - &&,||: priorities
-- filters: function for BGP path length
 - static: allow specifying a per-route filter program for setting route attributes?
 
 Globals
@@ -23,14 +22,10 @@ Various ideas
 ~~~~~~~~~~~~~
 - client: Ctrl-R eats one more enter
 - bgp: timing of updates?
-- netlink: realms
 - netlink: import Linux route attributes to our rta's, so that they can be filtered?
 - config: executable config files
 - filters: user defined attributes?
-- client: access control
 - io: use poll if available
-- real multipath (doesn't seem to be simple at all :()
-- fake multipath (even less simple)
 - route recalculation timing and flap dampening [see RFC2439 for algorithms]
 - aggregate engine: standard route aggregation and summarization [RFC2519]
 - aggregate engine: injection of manually configured pseudo-static routes
@@ -44,7 +39,6 @@ OSPF
 	- check incoming packets using neighbor cache
 	- RFC2328 appendix E: Use a better algorithm
 	- automatic generation of external route tags (RFC1403)
-	- RFC3101 NSSA areas
 	- RFC2370 opaque LSA's
 	- Limit export rate of external LSAs (like Gated does)
 	- Bugfix in link state retransmission list (aging)

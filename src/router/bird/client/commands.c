@@ -29,6 +29,7 @@ struct cmd_node {
   struct cmd_node *sibling, *son, **plastson;
   struct cmd_info *cmd, *help;
   int len;
+  signed char prio;
   char token[1];
 };
 
@@ -66,6 +67,7 @@ cmd_build_tree(void)
 	      new->plastson = &new->son;
 	      new->len = c-d;
 	      memcpy(new->token, d, c-d);
+	      new->prio = (new->len == 3 && !memcmp(new->token, "roa", 3)) ? 0 : 1; /* Hack */
 	    }
 	  old = new;
 	  while (isspace(*c))
@@ -108,7 +110,10 @@ cmd_find_abbrev(struct cmd_node *root, char *cmd, int len, int *pambiguous)
 	return m;
       if (m->len > len && !memcmp(m->token, cmd, len))
 	{
-	  best2 = best;
+	  if (best && best->prio > m->prio)
+	    continue;
+	  if (best && best->prio == m->prio)
+	    best2 = best;
 	  best = m;
 	}
     }
@@ -168,19 +173,31 @@ static int
 cmd_find_common_match(struct cmd_node *root, char *cmd, int len, int *pcount, char *buf)
 {
   struct cmd_node *m;
-  int best, i;
+  int best, best_prio, i;
 
   *pcount = 0;
   best = -1;
+  best_prio = -1;
   for(m=root->son; m; m=m->sibling)
     {
       if (m->len < len || memcmp(m->token, cmd, len))
 	continue;
+
+      if (best_prio > m->prio)
+	continue;
+
+      if (best_prio < m->prio)
+	{
+	  *pcount = 0;
+	  best = -1;
+	}
+
       (*pcount)++;
       if (best < 0)
 	{
 	  strcpy(buf, m->token + len);
 	  best = m->len - len;
+	  best_prio = m->prio;
 	}
       else
 	{

@@ -610,9 +610,9 @@ sk_insert(sock *s)
 #ifdef IPV6
 
 void
-fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
+fill_in_sockaddr(struct sockaddr_in6 *sa, ip_addr a, struct iface *ifa, unsigned port)
 {
-  memset (sa, 0, sizeof (struct sockaddr_in6));
+  memset(sa, 0, sizeof (struct sockaddr_in6));
   sa->sin6_family = AF_INET6;
   sa->sin6_port = htons(port);
   sa->sin6_flowinfo = 0;
@@ -620,16 +620,13 @@ fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
   sa->sin6_len = sizeof(struct sockaddr_in6);
 #endif
   set_inaddr(&sa->sin6_addr, a);
-}
 
-static inline void
-fill_in_sockifa(sockaddr *sa, struct iface *ifa)
-{
-  sa->sin6_scope_id = ifa ? ifa->index : 0;
+  if (ifa && ipa_has_link_scope(a))
+    sa->sin6_scope_id = ifa->index;
 }
 
 void
-get_sockaddr(struct sockaddr_in6 *sa, ip_addr *a, unsigned *port, int check)
+get_sockaddr(struct sockaddr_in6 *sa, ip_addr *a, struct iface **ifa, unsigned *port, int check)
 {
   if (check && sa->sin6_family != AF_INET6)
     bug("get_sockaddr called for wrong address family (%d)", sa->sin6_family);
@@ -637,12 +634,15 @@ get_sockaddr(struct sockaddr_in6 *sa, ip_addr *a, unsigned *port, int check)
     *port = ntohs(sa->sin6_port);
   memcpy(a, &sa->sin6_addr, sizeof(*a));
   ipa_ntoh(*a);
+
+  if (ifa && ipa_has_link_scope(*a))
+    *ifa = if_find_by_index(sa->sin6_scope_id);
 }
 
 #else
 
 void
-fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
+fill_in_sockaddr(struct sockaddr_in *sa, ip_addr a, struct iface *ifa, unsigned port)
 {
   memset (sa, 0, sizeof (struct sockaddr_in));
   sa->sin_family = AF_INET;
@@ -653,13 +653,8 @@ fill_in_sockaddr(sockaddr *sa, ip_addr a, unsigned port)
   set_inaddr(&sa->sin_addr, a);
 }
 
-static inline void
-fill_in_sockifa(sockaddr *sa UNUSED, struct iface *ifa UNUSED)
-{
-}
-
 void
-get_sockaddr(struct sockaddr_in *sa, ip_addr *a, unsigned *port, int check)
+get_sockaddr(struct sockaddr_in *sa, ip_addr *a, struct iface **ifa, unsigned *port, int check)
 {
   if (check && sa->sin_family != AF_INET)
     bug("get_sockaddr called for wrong address family (%d)", sa->sin_family);
@@ -805,7 +800,7 @@ bad:
 }
 
 /**
- * sk_set_ttl - set TTL for given socket.
+ * sk_set_ttl - set transmit TTL for given socket.
  * @s: socket
  * @ttl: TTL value
  *
@@ -828,11 +823,34 @@ sk_set_ttl(sock *s, int ttl)
   return (err ? -1 : 0);
 }
 
+/**
+ * sk_set_min_ttl - set minimal accepted TTL for given socket.
+ * @s: socket
+ * @ttl: TTL value
+ *
+ * Can be used in TTL security implementation
+ *
+ * Result: 0 for success, -1 for an error.
+ */
+
+int
+sk_set_min_ttl(sock *s, int ttl)
+{
+  int err;
+#ifdef IPV6
+  err = sk_set_min_ttl6(s, ttl);
+#else
+  err = sk_set_min_ttl4(s, ttl);
+#endif
+
+  return err;
+}
 
 /**
  * sk_set_md5_auth - add / remove MD5 security association for given socket.
  * @s: socket
  * @a: IP address of the other side
+ * @ifa: Interface for link-local IP address
  * @passwd: password used for MD5 authentication
  *
  * In TCP MD5 handling code in kernel, there is a set of pairs
@@ -848,10 +866,10 @@ sk_set_ttl(sock *s, int ttl)
  */
 
 int
-sk_set_md5_auth(sock *s, ip_addr a, char *passwd)
+sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd)
 {
   sockaddr sa;
-  fill_in_sockaddr(&sa, a, 0);
+  fill_in_sockaddr(&sa, a, ifa, 0);
   return sk_set_md5_auth_int(s, &sa, passwd);
 }
 
@@ -1027,7 +1045,7 @@ sk_tcp_connected(sock *s)
   sockaddr lsa;
   int lsa_len = sizeof(lsa);
   if (getsockname(s->fd, (struct sockaddr *) &lsa, &lsa_len) == 0)
-    get_sockaddr(&lsa, &s->saddr, &s->sport, 1);
+    get_sockaddr(&lsa, &s->saddr, &s->iface, &s->sport, 1);
 
   s->type = SK_TCP;
   sk_alloc_bufs(s);
@@ -1053,9 +1071,9 @@ sk_passive_connected(sock *s, struct sockaddr *sa, int al, int type)
 	  sockaddr lsa;
 	  int lsa_len = sizeof(lsa);
 	  if (getsockname(fd, (struct sockaddr *) &lsa, &lsa_len) == 0)
-	    get_sockaddr(&lsa, &t->saddr, &t->sport, 1);
+	    get_sockaddr(&lsa, &t->saddr, &t->iface, &t->sport, 1);
 
-	  get_sockaddr((sockaddr *) sa, &t->daddr, &t->dport, 1);
+	  get_sockaddr((sockaddr *) sa, &t->daddr, &t->iface, &t->dport, 1);
 	}
       sk_insert(t);
       if (err = sk_setup(t))
@@ -1134,12 +1152,11 @@ sk_open(sock *s)
 	  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
 	    ERR("SO_REUSEADDR");
 	}
-      fill_in_sockaddr(&sa, s->saddr, port);
-      fill_in_sockifa(&sa, s->iface);
+      fill_in_sockaddr(&sa, s->saddr, s->iface, port);
       if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0)
 	ERR("bind");
     }
-  fill_in_sockaddr(&sa, s->daddr, s->dport);
+  fill_in_sockaddr(&sa, s->daddr, s->iface, s->dport);
 
   if (s->password)
     {
@@ -1262,8 +1279,7 @@ sk_maybe_write(sock *s)
 	  return 1;
 
 	sockaddr sa;
-	fill_in_sockaddr(&sa, s->daddr, s->dport);
-	fill_in_sockifa(&sa, s->iface);
+	fill_in_sockaddr(&sa, s->daddr, s->iface, s->dport);
 
 	struct iovec iov = {s->tbuf, s->tpos - s->tbuf};
 	// byte cmsg_buf[CMSG_TX_SPACE];
@@ -1441,7 +1457,7 @@ sk_read(sock *s)
 	    return 0;
 	  }
 	s->rpos = s->rbuf + e;
-	get_sockaddr(&sa, &s->faddr, &s->fport, 1);
+	get_sockaddr(&sa, &s->faddr, NULL, &s->fport, 1);
 	sysio_process_rx_cmsgs(s, &msg);
 
 	s->rx_hook(s, e);
@@ -1458,7 +1474,7 @@ sk_write(sock *s)
     case SK_TCP_ACTIVE:
       {
 	sockaddr sa;
-	fill_in_sockaddr(&sa, s->daddr, s->dport);
+	fill_in_sockaddr(&sa, s->daddr, s->iface, s->dport);
 	if (connect(s->fd, (struct sockaddr *) &sa, sizeof(sa)) >= 0 || errno == EISCONN)
 	  sk_tcp_connected(s);
 	else if (errno != EINTR && errno != EAGAIN && errno != EINPROGRESS)

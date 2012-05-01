@@ -17,6 +17,7 @@ CF_DEFINES
 
 static struct ospf_area_config *this_area;
 static struct nbma_node *this_nbma;
+static list *this_nets;
 static struct area_net_config *this_pref;
 static struct ospf_stubnet_config *this_stubnet; 
 
@@ -56,8 +57,17 @@ ospf_iface_finish(void)
 static void
 ospf_area_finish(void)
 {
-  if ((this_area->areaid == 0) && (this_area->stub != 0))
-    cf_error( "Backbone area cannot be stub");
+  if ((this_area->areaid == 0) && (this_area->type != OPT_E))
+    cf_error("Backbone area cannot be stub/NSSA");
+
+  if (this_area->summary && (this_area->type == OPT_E))
+    cf_error("Only Stub/NSSA areas can use summary propagation");
+
+  if (this_area->default_nssa && ((this_area->type != OPT_N) || ! this_area->summary))
+    cf_error("Only NSSA areas with summary propagation can use NSSA default route");
+
+  if ((this_area->default_cost & LSA_EXT_EBIT) && ! this_area->default_nssa)
+    cf_error("Only NSSA default route can use type 2 metric");
 }
 
 static void
@@ -85,33 +95,42 @@ ospf_proto_finish(void)
     add_head(&cf->area_list, NODE ac);
     init_list(&ac->patt_list);
     init_list(&ac->net_list);
+    init_list(&ac->enet_list);
     init_list(&ac->stubnet_list);
   }
 
   if (!cf->abr && !EMPTY_LIST(cf->vlink_list))
-    cf_error( "No configured areas in OSPF");
+    cf_error( "Vlinks cannot be used on single area router");
+}
+
+static inline void
+check_defcost(int cost)
+{
+  if ((cost <= 0) || (cost >= LSINFINITY))
+   cf_error("Default cost must be in range 1-%d", LSINFINITY);
 }
 
 CF_DECLS
 
 CF_KEYWORDS(OSPF, AREA, OSPF_METRIC1, OSPF_METRIC2, OSPF_TAG, OSPF_ROUTER_ID)
-CF_KEYWORDS(NEIGHBORS, RFC1583COMPAT, STUB, TICK, COST, RETRANSMIT)
+CF_KEYWORDS(NEIGHBORS, RFC1583COMPAT, STUB, TICK, COST, COST2, RETRANSMIT)
 CF_KEYWORDS(HELLO, TRANSMIT, PRIORITY, DEAD, TYPE, BROADCAST, BCAST)
 CF_KEYWORDS(NONBROADCAST, NBMA, POINTOPOINT, PTP, POINTOMULTIPOINT, PTMP)
 CF_KEYWORDS(NONE, SIMPLE, AUTHENTICATION, STRICT, CRYPTOGRAPHIC)
 CF_KEYWORDS(ELIGIBLE, POLL, NETWORKS, HIDDEN, VIRTUAL, CHECK, LINK)
-CF_KEYWORDS(RX, BUFFER, LARGE, NORMAL, STUBNET, HIDDEN, SUMMARY)
-CF_KEYWORDS(WAIT, DELAY, LSADB, ECMP, LIMIT, WEIGHT)
+CF_KEYWORDS(RX, BUFFER, LARGE, NORMAL, STUBNET, HIDDEN, SUMMARY, TAG, EXTERNAL)
+CF_KEYWORDS(WAIT, DELAY, LSADB, ECMP, LIMIT, WEIGHT, NSSA, TRANSLATOR, STABILITY)
+CF_KEYWORDS(GLOBAL, LSID, ROUTER, SELF)
 
 %type <t> opttext
+%type <ld> lsadb_args
 
 CF_GRAMMAR
 
 CF_ADDTO(proto, ospf_proto '}' { ospf_proto_finish(); } )
 
 ospf_proto_start: proto_start OSPF {
-     this_proto = proto_config_new(&proto_ospf, sizeof(struct ospf_config));
-     this_proto->preference = DEF_PREF_OSPF;
+     this_proto = proto_config_new(&proto_ospf, sizeof(struct ospf_config), $1);
      init_list(&OSPF_CFG->area_list);
      init_list(&OSPF_CFG->vlink_list);
      OSPF_CFG->rfc1583 = DEFAULT_RFC1583;
@@ -137,9 +156,13 @@ ospf_area_start: AREA idval {
   this_area = cfg_allocz(sizeof(struct ospf_area_config));
   add_tail(&OSPF_CFG->area_list, NODE this_area);
   this_area->areaid = $2;
-  this_area->stub = 0;
+  this_area->default_cost = DEFAULT_STUB_COST;
+  this_area->type = OPT_E;
+  this_area->transint = DEFAULT_TRANSINT;
+
   init_list(&this_area->patt_list);
   init_list(&this_area->net_list);
+  init_list(&this_area->enet_list);
   init_list(&this_area->stubnet_list);
  }
  ;
@@ -153,9 +176,17 @@ ospf_area_opts:
  ;
 
 ospf_area_item:
-   STUB COST expr { this_area->stub = $3 ; if($3<=0) cf_error("Stub cost must be greater than zero"); }
- | STUB bool {if($2) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;}}
- | NETWORKS '{' pref_list '}'
+   STUB bool { this_area->type = $2 ? 0 : OPT_E; /* We should remove the option */ }
+ | NSSA { this_area->type = OPT_N; }
+ | SUMMARY bool { this_area->summary = $2; }
+ | DEFAULT NSSA bool { this_area->default_nssa = $3; }
+ | DEFAULT COST expr { this_area->default_cost = $3; check_defcost($3); }
+ | DEFAULT COST2 expr { this_area->default_cost = $3 | LSA_EXT_EBIT; check_defcost($3); }
+ | STUB COST expr { this_area->default_cost = $3;  check_defcost($3); }
+ | TRANSLATOR bool { this_area->translator = $2; }
+ | TRANSLATOR STABILITY expr { this_area->transint = $3; }
+ | NETWORKS { this_nets = &this_area->net_list; } '{' pref_list '}'
+ | EXTERNAL { this_nets = &this_area->enet_list; } '{' pref_list '}'
  | STUBNET ospf_stubnet
  | INTERFACE ospf_iface
  | ospf_vlink
@@ -188,7 +219,7 @@ ospf_stubnet_item:
 
 ospf_vlink:
    ospf_vlink_start '{' ospf_vlink_opts '}' { ospf_iface_finish(); }
- | ospf_vlink_start
+ | ospf_vlink_start { ospf_iface_finish(); }
  ;
 
 ospf_vlink_opts:
@@ -267,28 +298,22 @@ pref_list:
  | pref_list pref_item
  ;
 
-pref_item:
-   pref_el
- | pref_hid;
+pref_item: pref_base pref_opt ';' ;
 
-pref_el: prefix ';'
+pref_base: prefix
  {
    this_pref = cfg_allocz(sizeof(struct area_net_config));
-   add_tail(&this_area->net_list, NODE this_pref);
+   add_tail(this_nets, NODE this_pref);
    this_pref->px.addr = $1.addr;
    this_pref->px.len = $1.len;
  }
 ;
 
-pref_hid: prefix HIDDEN ';'
- {
-   this_pref = cfg_allocz(sizeof(struct area_net_config));
-   add_tail(&this_area->net_list, NODE this_pref);
-   this_pref->px.addr = $1.addr;
-   this_pref->px.len = $1.len;
-   this_pref->hidden = 1;
- }
-;
+pref_opt:
+ /* empty */
+ | HIDDEN { this_pref->hidden = 1; }
+ | TAG expr { this_pref->tag = $2; }
+ ;
 
 ipa_list:
  /* empty */
@@ -363,7 +388,8 @@ CF_ADDTO(dynamic_attr, OSPF_METRIC2 { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF
 CF_ADDTO(dynamic_attr, OSPF_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); })
 CF_ADDTO(dynamic_attr, OSPF_ROUTER_ID { $$ = f_new_dynamic_attr(EAF_TYPE_ROUTER_ID | EAF_TEMP, T_QUAD, EA_OSPF_ROUTER_ID); })
 
-CF_CLI(SHOW OSPF, optsym, [<name>], [[Show information about OSPF protocol]])
+CF_CLI_HELP(SHOW OSPF, ..., [[Show information about OSPF protocol]]);
+CF_CLI(SHOW OSPF, optsym, [<name>], [[Show information about OSPF protocol XXX]])
 { ospf_sh(proto_get_named($3, &proto_ospf)); };
 
 CF_CLI(SHOW OSPF NEIGHBORS, optsym opttext, [<name>] [\"<interface>\"], [[Show information about OSPF neighbors]])
@@ -388,8 +414,23 @@ CF_CLI(SHOW OSPF STATE, optsym opttext, [<name>], [[Show information about reach
 CF_CLI(SHOW OSPF STATE ALL, optsym opttext, [<name>], [[Show information about all OSPF network state]])
 { ospf_sh_state(proto_get_named($5, &proto_ospf), 1, 0); };
 
-CF_CLI(SHOW OSPF LSADB, optsym opttext, [<name>], [[Show content of OSPF LSA database]])
-{ ospf_sh_lsadb(proto_get_named($4, &proto_ospf)); };
+CF_CLI_HELP(SHOW OSPF LSADB, ..., [[Show content of OSPF LSA database]]);
+CF_CLI(SHOW OSPF LSADB, lsadb_args, [global | area <id> | link] [type <num>] [lsid <id>] [self | router <id>] [<proto>], [[Show content of OSPF LSA database]])
+{ ospf_sh_lsadb($4); };
+
+lsadb_args:
+   /* empty */ {
+     $$ = cfg_allocz(sizeof(struct lsadb_show_data));
+   }
+ | lsadb_args GLOBAL { $$ = $1; $$->scope = LSA_SCOPE_AS; }
+ | lsadb_args AREA idval { $$ = $1; $$->scope = LSA_SCOPE_AREA; $$->area = $3 }
+ | lsadb_args LINK { $$ = $1; $$->scope = 1; /* hack, 0 is no filter */ }
+ | lsadb_args TYPE NUM { $$ = $1; $$->type = $3; }
+ | lsadb_args LSID idval { $$ = $1; $$->lsid = $3; }
+ | lsadb_args SELF { $$ = $1; $$->router = SH_ROUTER_SELF; }
+ | lsadb_args ROUTER idval { $$ = $1; $$->router = $3; }
+ | lsadb_args SYM { $$ = $1; $$->name = $2; }
+ ;
 
 CF_CODE
 

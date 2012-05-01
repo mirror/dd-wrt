@@ -27,9 +27,9 @@
 char *
 ip_scope_text(unsigned scope)
 {
-  static char *scope_table[] = { "host", "link", "site", "org", "univ" };
+  static char *scope_table[] = { "host", "link", "site", "org", "univ", "undef" };
 
-  if (scope > SCOPE_UNIVERSE)
+  if (scope > SCOPE_UNDEFINED)
     return "?";
   else
     return scope_table[scope];

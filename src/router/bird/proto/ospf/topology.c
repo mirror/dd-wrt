@@ -150,7 +150,7 @@ get_seqnum(struct top_hash_entry *en)
     return LSA_INITSEQNO;
   }
 
-  return en->lsa.sn++;
+  return en->lsa.sn + 1;
 }
 
 
@@ -222,7 +222,10 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
   if (po->areano > 1)
     rt->options |= OPT_RT_B;
 
-  if ((po->ebit) && (!oa->stub))
+  if ((po->areano > 1) && oa_is_nssa(oa) && oa->ac->translator)
+    rt->options |= OPT_RT_NT;
+
+  if (po->ebit && !oa_is_stub(oa))
     rt->options |= OPT_RT_E;
 
   rt = NULL; /* buffer might be reallocated later */
@@ -388,7 +391,10 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
   if (po->areano > 1)
     rt->options |= OPT_RT_B;
 
-  if ((po->ebit) && (!oa->stub))
+  if ((po->areano > 1) && oa_is_nssa(oa) && oa->ac->translator)
+    rt->options |= OPT_RT_NT;
+
+  if (po->ebit && !oa_is_stub(oa))
     rt->options |= OPT_RT_E;
 
   rt = NULL; /* buffer might be reallocated later */
@@ -780,7 +786,7 @@ originate_sum_net_lsa(struct ospf_area *oa, struct fib_node *fn, int metric)
   {
     if (check_sum_net_lsaid_collision(fn, en))
     {
-      log(L_ERR, "%s: LSAID collision for %I/%d",
+      log(L_ERR "%s: LSAID collision for %I/%d",
 	  p->name, fn->prefix, fn->pxlen);
       return;
     }
@@ -858,7 +864,7 @@ flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type)
     {
       if ((type == ORT_NET) && check_sum_net_lsaid_collision(fn, en))
 	{
-	  log(L_ERR, "%s: LSAID collision for %I/%d",
+	  log(L_ERR "%s: LSAID collision for %I/%d",
 	      p->name, fn->prefix, fn->pxlen);
 	  return;
 	}
@@ -878,14 +884,14 @@ flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type)
 #ifdef OSPFv2
 
 static inline void *
-originate_ext_lsa_body(struct proto_ospf *po, u16 *length, net *n,
-		       u32 metric, ip_addr fwaddr, u32 tag)
+originate_ext_lsa_body(struct proto_ospf *po, u16 *length, struct fib_node *fn,
+		       u32 metric, ip_addr fwaddr, u32 tag, int pbit UNUSED)
 {
   struct ospf_lsa_ext *ext = mb_alloc(po->proto.pool, sizeof(struct ospf_lsa_ext));
   *length = sizeof(struct ospf_lsa_header) + sizeof(struct ospf_lsa_ext);
 
   ext->metric = metric; 
-  ext->netmask = ipa_mkmask(n->n.pxlen);
+  ext->netmask = ipa_mkmask(fn->pxlen);
   ext->fwaddr = fwaddr;
   ext->tag = tag;
 
@@ -922,11 +928,11 @@ check_ext_lsa(struct top_hash_entry *en, struct fib_node *fn, u32 metric, ip_add
 #else /* OSPFv3 */
 
 static inline void *
-originate_ext_lsa_body(struct proto_ospf *po, u16 *length, net *n,
-		       u32 metric, ip_addr fwaddr, u32 tag)
+originate_ext_lsa_body(struct proto_ospf *po, u16 *length, struct fib_node *fn,
+		       u32 metric, ip_addr fwaddr, u32 tag, int pbit)
 {
   int size = sizeof(struct ospf_lsa_ext)
-    + IPV6_PREFIX_SPACE(n->n.pxlen)
+    + IPV6_PREFIX_SPACE(fn->pxlen)
     + (ipa_nonzero(fwaddr) ? 16 : 0)
     + (tag ? 4 : 0);
 
@@ -936,7 +942,7 @@ originate_ext_lsa_body(struct proto_ospf *po, u16 *length, net *n,
   ext->metric = metric;
 
   u32 *buf = ext->rest;
-  buf = put_ipv6_prefix(buf, n->n.prefix, n->n.pxlen, 0, 0);
+  buf = put_ipv6_prefix(buf, fn->prefix, fn->pxlen, pbit ? OPT_PX_P : 0, 0);
 
   if (ipa_nonzero(fwaddr))
   {
@@ -987,60 +993,115 @@ check_ext_lsa(struct top_hash_entry *en, struct fib_node *fn, u32 metric, ip_add
 
 #endif
 
+static inline ip_addr
+find_surrogate_fwaddr(struct ospf_area *oa)
+{
+  struct proto_ospf *po = oa->po;
+  struct ospf_iface *ifa;
+  struct ifa *a, *cur_addr = NULL;
+  int np, cur_np = 0;
+
+  WALK_LIST(ifa, po->iface_list)
+  {
+    if ((ifa->oa != oa) ||
+	(ifa->type == OSPF_IT_VLINK))
+      continue;
+
+#ifdef OSPFv2
+    a = ifa->addr;
+    if (a->flags & IA_PEER)
+      continue;
+
+    np = ((a->flags & IA_HOST) || ifa->stub) ? 2 : 1;
+    if (np > cur_np)
+    {
+      cur_addr = a;
+      cur_np = np;
+    }
+
+#else /* OSPFv3 */
+    WALK_LIST(a, ifa->iface->addrs)
+    {
+      if ((a->flags & IA_SECONDARY) ||
+	  (a->flags & IA_PEER) ||
+	  (a->scope <= SCOPE_LINK))
+	continue;
+
+      np = ((a->flags & IA_HOST) || ifa->stub) ? 2 : 1;
+      if (np > cur_np)
+      {
+	cur_addr = a;
+	cur_np = np;
+      }
+    }
+#endif
+  }
+
+  return cur_addr ? cur_addr->ip : IPA_NONE;
+}
+
+
 /**
  * originate_ext_lsa - new route received from nest and filters
- * @n: network prefix and mask
- * @e: rte
- * @po: current instance of OSPF
- * @attrs: list of extended attributes
+ * @oa: ospf_area for which LSA is originated
+ * @fn: network prefix and mask
+ * @src: the source of origination of the LSA (EXT_EXPORT/EXT_NSSA)
+ * @metric: the metric of a route
+ * @fwaddr: the forwarding address
+ * @tag: the route tag
+ * @pbit: P-bit for NSSA LSAs, ignored for external LSAs
  *
  * If I receive a message that new route is installed, I try to originate an
- * external LSA.
+ * external LSA. If @oa is an NSSA area, NSSA-LSA is originated instead.
+ * @oa should not be a stub area. @src does not specify whether the LSA
+ * is external or NSSA, but it specifies the source of origination - 
+ * the export from ospf_rt_notify(), or the NSSA-EXT translation.
  *
  * The function also sets flag ebit. If it's the first time, the new router lsa
  * origination is necessary.
  */
 void
-originate_ext_lsa(net * n, rte * e, struct proto_ospf *po,
-		  struct ea_list *attrs)
+originate_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int src,
+		  u32 metric, ip_addr fwaddr, u32 tag, int pbit)
 {
+  struct proto_ospf *po = oa->po;
   struct proto *p = &po->proto;
-  struct fib_node *fn = &n->n;
   struct ospf_lsa_header lsa;
   struct top_hash_entry *en = NULL;
   void *body;
-  struct ospf_area *oa;
+  int nssa = oa_is_nssa(oa);
+  u32 dom = nssa ? oa->areaid : 0;
 
-  OSPF_TRACE(D_EVENTS, "Originating AS-external-LSA for %I/%d",
-	     fn->prefix, fn->pxlen);
+  OSPF_TRACE(D_EVENTS, "Originating %s-LSA for %I/%d",
+	     nssa ? "NSSA" : "AS-external", fn->prefix, fn->pxlen);
 
   lsa.age = 0;
 #ifdef OSPFv2
-  lsa.options = 0; /* or oa->options ? */
+  lsa.options = nssa ? (pbit ? OPT_P : 0) : OPT_E;
 #endif
-  lsa.type = LSA_T_EXT;
+  lsa.type = nssa ? LSA_T_NSSA : LSA_T_EXT;
   lsa.id = fibnode_to_lsaid(po, fn);
   lsa.rt = po->router_id;
 
-  /* Compute LSA content */
-  u32 m1 = ea_get_int(attrs, EA_OSPF_METRIC1, LSINFINITY);
-  u32 m2 = ea_get_int(attrs, EA_OSPF_METRIC2, 10000);
-  u32 metric = (m1 != LSINFINITY) ? m1 : (m2 | LSA_EXT_EBIT);
-  u32 tag = ea_get_int(attrs, EA_OSPF_TAG, 0);
-  ip_addr gw = IPA_NONE;
-  // FIXME check for gw should be per ifa, not per iface
-  if ((e->attrs->dest == RTD_ROUTER) &&
-      ipa_nonzero(e->attrs->gw) &&
-      !ipa_has_link_scope(e->attrs->gw) &&
-      (ospf_iface_find((struct proto_ospf *) p, e->attrs->iface) != NULL))
-    gw = e->attrs->gw;
-
-  if ((en = ospf_hash_find_header(po->gr, 0, &lsa)) != NULL)
+  if (nssa && pbit && ipa_zero(fwaddr))
   {
-    int rv = check_ext_lsa(en, fn, metric, gw, tag);
+    /* NSSA-LSA with P-bit set must have non-zero forwarding address */
+
+    fwaddr = find_surrogate_fwaddr(oa);
+    if (ipa_zero(fwaddr))
+    {
+      log(L_ERR "%s: Cannot find forwarding address for NSSA-LSA %I/%d",
+	  p->name, fn->prefix, fn->pxlen);
+      return;
+    }
+  }
+
+  if ((en = ospf_hash_find_header(po->gr, dom, &lsa)) != NULL)
+  {
+    int rv = check_ext_lsa(en, fn, metric, fwaddr, tag);
     if (rv < 0)
     {
-      log(L_ERR, "%s: LSAID collision for %I/%d",
+      log(L_ERR "%s: LSAID collision for %I/%d",
 	  p->name, fn->prefix, fn->pxlen);
       return;
     }
@@ -1050,11 +1111,14 @@ originate_ext_lsa(net * n, rte * e, struct proto_ospf *po,
   }
   lsa.sn = get_seqnum(en);
 
-  body = originate_ext_lsa_body(po, &lsa.length, n, metric, gw, tag);
+  body = originate_ext_lsa_body(po, &lsa.length, fn, metric, fwaddr, tag, pbit);
   lsasum_calculate(&lsa, body);
 
-  en = lsa_install_new(po, &lsa, 0, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, 0, 1);
+  if (src) 
+    fn->x1 = src;
+
+  en = lsa_install_new(po, &lsa, dom, body);
+  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
 
   if (po->ebit == 0)
   {
@@ -1067,26 +1131,30 @@ originate_ext_lsa(net * n, rte * e, struct proto_ospf *po,
 }
 
 void
-flush_ext_lsa(net *n, struct proto_ospf *po)
+flush_ext_lsa(struct ospf_area *oa, struct fib_node *fn)
 {
+  struct proto_ospf *po = oa->po;
   struct proto *p = &po->proto;
-  struct fib_node *fn = &n->n;
   struct top_hash_entry *en;
+  int nssa = oa_is_nssa(oa);
 
-  OSPF_TRACE(D_EVENTS, "Flushing AS-external-LSA for %I/%d",
-	     fn->prefix, fn->pxlen);
+  OSPF_TRACE(D_EVENTS, "Flushing %s-LSA for %I/%d",
+	     nssa ? "NSSA" : "AS-external", fn->prefix, fn->pxlen);
 
+  u32 dom = nssa ? oa->areaid : 0;
+  u32 type = nssa ? LSA_T_NSSA : LSA_T_EXT;
   u32 lsaid = fibnode_to_lsaid(po, fn);
 
-  if (en = ospf_hash_find(po->gr, 0, lsaid, po->router_id, LSA_T_EXT))
+  if (en = ospf_hash_find(po->gr, dom, lsaid, po->router_id, type))
     {
       if (check_ext_lsa(en, fn, 0, IPA_NONE, 0) < 0)
 	{
-	  log(L_ERR, "%s: LSAID collision for %I/%d",
+	  log(L_ERR "%s: LSAID collision for %I/%d",
 	      p->name, fn->prefix, fn->pxlen);
 	  return;
 	}
 
+      fn->x1 = 0;
       ospf_lsupd_flush_nlsa(po, en);
     }
 }
@@ -1316,7 +1384,7 @@ prefix_advance(u32 *buf)
   return buf + IPV6_PREFIX_WORDS(pxl);
 }
 
-/* FIXME eliminate items wit LA bit set? see 4.4.3.9 */
+/* FIXME eliminate items with LA bit set? see 4.4.3.9 */
 static void
 add_prefix(struct proto_ospf *po, u32 *px, int offset, int *pxc)
 {
