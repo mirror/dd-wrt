@@ -24,9 +24,13 @@
  * \ingroup functions
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 211539 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 352029 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -167,7 +171,7 @@ static int timeout_write(struct ast_channel *chan, const char *cmd, char *data,
 	case 'r':
 	case 'R':
 		if (chan->pbx) {
-			chan->pbx->rtimeoutms = when.tv_sec * 1000 + when.tv_usec / 1000.0;
+			chan->pbx->rtimeoutms = when.tv_sec * 1000 + when.tv_usec / 1000;
 			ast_verb(3, "Response timeout set to %.3f\n", chan->pbx->rtimeoutms / 1000.0);
 		}
 		break;
@@ -175,7 +179,7 @@ static int timeout_write(struct ast_channel *chan, const char *cmd, char *data,
 	case 'd':
 	case 'D':
 		if (chan->pbx) {
-			chan->pbx->dtimeoutms = when.tv_sec * 1000 + when.tv_usec / 1000.0;
+			chan->pbx->dtimeoutms = when.tv_sec * 1000 + when.tv_usec / 1000;
 			ast_verb(3, "Digit timeout set to %.3f\n", chan->pbx->dtimeoutms / 1000.0);
 		}
 		break;

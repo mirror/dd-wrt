@@ -53,10 +53,11 @@
 	<depend>isdnnet</depend>
 	<depend>misdn</depend>
 	<depend>suppserv</depend>
+	<support_level>extended</support_level>
  ***/
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 296582 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 344965 $")
 
 #include <pthread.h>
 #include <sys/socket.h>
@@ -679,7 +680,7 @@ static ast_mutex_t cl_te_lock;
 static enum event_response_e
 cb_events(enum event_e event, struct misdn_bchannel *bc, void *user_data);
 
-static void send_cause2ast(struct ast_channel *ast, struct misdn_bchannel*bc, struct chan_list *ch);
+static int send_cause2ast(struct ast_channel *ast, struct misdn_bchannel *bc, struct chan_list *ch);
 
 static void cl_queue_chan(struct chan_list *chan);
 
@@ -6982,6 +6983,19 @@ static int misdn_indication(struct ast_channel *ast, int cond, const void *data,
 		chan_misdn_log(1, p->bc->port, " --> * IND :\tproceeding pid:%d\n", p->bc->pid);
 		misdn_lib_send_event(p->bc, EVENT_PROCEEDING);
 		break;
+	case AST_CONTROL_INCOMPLETE:
+		chan_misdn_log(1, p->bc->port, " --> *\tincomplete pid:%d\n", p->bc->pid);
+		if (!p->overlap_dial) {
+			/* Overlapped dialing not enabled - send hangup */
+			p->bc->out_cause = AST_CAUSE_INVALID_NUMBER_FORMAT;
+			start_bc_tones(p);
+			misdn_lib_send_event(p->bc, EVENT_DISCONNECT);
+
+			if (p->bc->nt) {
+				hanguptone_indicate(p);
+			}
+		}
+		break;
 	case AST_CONTROL_CONGESTION:
 		chan_misdn_log(1, p->bc->port, " --> * IND :\tcongestion pid:%d\n", p->bc->pid);
 
@@ -7870,64 +7884,71 @@ static struct ast_channel *misdn_request(const char *type, format_t format, cons
 		}
 
 		if (rr) {
-			int robin_channel = rr->channel;
 			int port_start;
-			int next_chan = 1;
+			int bchan_start;
+			int port_up;
+			int check;
+			int maxbchans;
+			int wraped = 0;
 
+			if (!rr->port) {
+				rr->port = misdn_cfg_get_next_port_spin(0);
+			}
+
+			if (!rr->channel) {
+				rr->channel = 1;
+			}
+
+			bchan_start = rr->channel;
+			port_start = rr->port;
 			do {
-				port_start = 0;
-				for (port = misdn_cfg_get_next_port_spin(rr->port); port > 0 && port != port_start;
-					 port = misdn_cfg_get_next_port_spin(port)) {
-
-					if (!port_start) {
-						port_start = port;
-					}
-
-					if (port >= port_start) {
-						next_chan = 1;
-					}
-
-					if (port <= port_start && next_chan) {
-						int maxbchans = misdn_lib_get_maxchans(port);
-
-						if (++robin_channel >= maxbchans) {
-							robin_channel = 1;
-						}
-						next_chan = 0;
-					}
-
-					misdn_cfg_get(port, MISDN_CFG_GROUPNAME, cfg_group, sizeof(cfg_group));
-
-					if (!strcasecmp(cfg_group, group)) {
-						int port_up;
-						int check;
-
-						misdn_cfg_get(port, MISDN_CFG_PMP_L1_CHECK, &check, sizeof(check));
-						port_up = misdn_lib_port_up(port, check);
-
-						if (check && !port_up) {
-							chan_misdn_log(1, port, "L1 is not Up on this Port\n");
-						}
-
-						if (check && port_up < 0) {
-							ast_log(LOG_WARNING, "This port (%d) is blocked\n", port);
-						}
-
-						if (port_up > 0)	{
-							newbc = misdn_lib_get_free_bc(port, robin_channel, 0, 0);
-							if (newbc) {
-								chan_misdn_log(4, port, " Success! Found port:%d channel:%d\n", newbc->port, newbc->channel);
-								if (port_up) {
-									chan_misdn_log(4, port, "portup:%d\n",  port_up);
-								}
-								rr->port = newbc->port;
-								rr->channel = newbc->channel;
-								break;
-							}
-						}
-					}
+				misdn_cfg_get(rr->port, MISDN_CFG_GROUPNAME, cfg_group, sizeof(cfg_group));
+				if (strcasecmp(cfg_group, group)) {
+					wraped = 1;
+					rr->port = misdn_cfg_get_next_port_spin(rr->port);
+					rr->channel = 1;
+					continue;
 				}
-			} while (!newbc && robin_channel != rr->channel);
+
+				misdn_cfg_get(rr->port, MISDN_CFG_PMP_L1_CHECK, &check, sizeof(check));
+				port_up = misdn_lib_port_up(rr->port, check);
+
+				if (!port_up) {
+					chan_misdn_log(1, rr->port, "L1 is not Up on this Port\n");
+					rr->port = misdn_cfg_get_next_port_spin(rr->port);
+					rr->channel = 1;
+				} else if (port_up < 0) {
+					ast_log(LOG_WARNING, "This port (%d) is blocked\n", rr->port);
+					rr->port = misdn_cfg_get_next_port_spin(rr->port);
+					rr->channel = 1;
+				} else {
+					chan_misdn_log(4, rr->port, "portup\n");
+					maxbchans = misdn_lib_get_maxchans(rr->port);
+
+					for (;rr->channel <= maxbchans;rr->channel++) {
+						/* ive come full circle and can stop now */
+						if (wraped && (rr->port == port_start) && (rr->channel == bchan_start)) {
+							break;
+						}
+
+						chan_misdn_log(4, rr->port, "Checking channel %d\n",  rr->channel);
+
+						if ((newbc = misdn_lib_get_free_bc(rr->port, rr->channel, 0, 0))) {
+							chan_misdn_log(4, rr->port, " Success! Found port:%d channel:%d\n", newbc->port, newbc->channel);
+							rr->channel++;
+							break;
+						}
+					}
+					if (wraped && (rr->port == port_start) && (rr->channel <= bchan_start)) {
+						break;
+					} else if (!newbc || (rr->channel == maxbchans)) {
+						rr->port = misdn_cfg_get_next_port_spin(rr->port);
+						rr->channel = 1;
+					}
+
+				}
+				wraped = 1;
+			} while (!newbc && (rr->port > 0));
 		} else {
 			for (port = misdn_cfg_get_next_port(0); port > 0;
 				port = misdn_cfg_get_next_port(port)) {
@@ -8365,8 +8386,7 @@ static void hangup_chan(struct chan_list *ch, struct misdn_bchannel *bc)
 		cb_log(2, port, " --> hangup\n");
 		ch->need_hangup = 0;
 		ch->need_queue_hangup = 0;
-		if (ch->ast) {
-			send_cause2ast(ch->ast, bc, ch);
+		if (ch->ast && send_cause2ast(ch->ast, bc, ch)) {
 			ast_hangup(ch->ast);
 		}
 		return;
@@ -8374,13 +8394,15 @@ static void hangup_chan(struct chan_list *ch, struct misdn_bchannel *bc)
 
 	if (!ch->need_queue_hangup) {
 		cb_log(2, port, " --> No need to queue hangup\n");
+		return;
 	}
 
 	ch->need_queue_hangup = 0;
 	if (ch->ast) {
-		send_cause2ast(ch->ast, bc, ch);
-		ast_queue_hangup_with_cause(ch->ast, bc->cause);
-		cb_log(2, port, " --> queue_hangup\n");
+		if (send_cause2ast(ch->ast, bc, ch)) {
+			ast_queue_hangup_with_cause(ch->ast, bc->cause);
+			cb_log(2, port, " --> queue_hangup\n");
+		}
 	} else {
 		cb_log(1, port, "Cannot hangup chan, no ast\n");
 	}
@@ -8654,26 +8676,31 @@ static void do_immediate_setup(struct misdn_bchannel *bc, struct chan_list *ch, 
 	}
 }
 
+/*!
+ * \retval -1 if can hangup after calling.
+ * \retval 0 if cannot hangup after calling.
+ */
+static int send_cause2ast(struct ast_channel *ast, struct misdn_bchannel *bc, struct chan_list *ch)
+{
+	int can_hangup;
 
-
-static void send_cause2ast(struct ast_channel *ast, struct misdn_bchannel *bc, struct chan_list *ch) {
 	if (!ast) {
 		chan_misdn_log(1, 0, "send_cause2ast: No Ast\n");
-		return;
+		return 0;
 	}
 	if (!bc) {
 		chan_misdn_log(1, 0, "send_cause2ast: No BC\n");
-		return;
+		return 0;
 	}
 	if (!ch) {
 		chan_misdn_log(1, 0, "send_cause2ast: No Ch\n");
-		return;
+		return 0;
 	}
 
 	ast->hangupcause = bc->cause;
 
+	can_hangup = -1;
 	switch (bc->cause) {
-
 	case AST_CAUSE_UNALLOCATED:
 	case AST_CAUSE_NO_ROUTE_TRANSIT_NET:
 	case AST_CAUSE_NO_ROUTE_DESTINATION:
@@ -8700,15 +8727,16 @@ static void send_cause2ast(struct ast_channel *ast, struct misdn_bchannel *bc, s
 			chan_misdn_log(1, bc ? bc->port : 0, "Queued busy already\n");
 			break;
 		}
-
-		chan_misdn_log(1, bc ? bc->port : 0, " --> * SEND: Queue Busy pid:%d\n", bc ? bc->pid : -1);
-
-		ast_queue_control(ast, AST_CONTROL_BUSY);
-
 		ch->need_busy = 0;
 
+		chan_misdn_log(1, bc ? bc->port : 0, " --> * SEND: Queue Busy pid:%d\n", bc ? bc->pid : -1);
+		ast_queue_control(ast, AST_CONTROL_BUSY);
+
+		/* The BUSY is likely to cause a hangup or the user needs to hear it. */
+		can_hangup = 0;
 		break;
 	}
+	return can_hangup;
 }
 
 
@@ -12432,38 +12460,33 @@ int chan_misdn_jb_empty(struct misdn_bchannel *bc, char *buf, int len)
 /* allocates the jb-structure and initialize the elements*/
 struct misdn_jb *misdn_jb_init(int size, int upper_threshold)
 {
-	int i;
 	struct misdn_jb *jb;
 
-	jb = ast_malloc(sizeof(*jb));
+	jb = ast_calloc(1, sizeof(*jb));
 	if (!jb) {
 	    chan_misdn_log(-1, 0, "No free Mem for jb\n");
 	    return NULL;
 	}
 	jb->size = size;
 	jb->upper_threshold = upper_threshold;
-	jb->wp = 0;
-	jb->rp = 0;
-	jb->state_full = 0;
-	jb->state_empty = 0;
-	jb->bytes_wrote = 0;
-	jb->samples = ast_malloc(size * sizeof(char));
+	//jb->wp = 0;
+	//jb->rp = 0;
+	//jb->state_full = 0;
+	//jb->state_empty = 0;
+	//jb->bytes_wrote = 0;
+	jb->samples = ast_calloc(size, sizeof(*jb->samples));
 	if (!jb->samples) {
 		ast_free(jb);
 		chan_misdn_log(-1, 0, "No free Mem for jb->samples\n");
 		return NULL;
 	}
 
-	jb->ok = ast_malloc(size * sizeof(char));
+	jb->ok = ast_calloc(size, sizeof(*jb->ok));
 	if (!jb->ok) {
 		ast_free(jb->samples);
 		ast_free(jb);
 		chan_misdn_log(-1, 0, "No free Mem for jb->ok\n");
 		return NULL;
-	}
-
-	for (i = 0; i < size; i++) {
-		jb->ok[i] = 0;
 	}
 
 	ast_mutex_init(&jb->mutexjb);

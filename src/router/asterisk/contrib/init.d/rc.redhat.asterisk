@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: rc.redhat.asterisk 268534 2010-06-06 05:29:50Z tilghman $
+# $Id: rc.redhat.asterisk 337115 2011-09-20 22:18:25Z lmadsen $
 #
 # asterisk    Starts, Stops and Reloads Asterisk.
 #
@@ -74,7 +74,7 @@ start() {
 	VERSION=`${AST_SBIN}/asterisk -rx 'core show version'`
 	if [ "`echo $VERSION | cut -c 1-8`" = "Asterisk" ]; then
 		echo "Asterisk is already running."
-		exit 1
+		exit 0
 	fi
 
 	# Start daemons.

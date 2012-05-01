@@ -5,7 +5,7 @@
 port = 1720
 ;bindaddr = 1.2.3.4 	; this SHALL contain a single, valid IP address for this machine
 ;
-; See qos.tex or Quality of Service section of asterisk.pdf for a description of these parameters.
+; See https://wiki.asterisk.org/wiki/display/AST/IP+Quality+of+Service for a description of these parameters.
 ;tos_audio=ef		; Sets TOS for RTP audio packets.
 ;cos_audio=5		; Sets 802.1p priority for RTP audio packets.
 ;
@@ -27,7 +27,8 @@ port = 1720
 ;allow=all		; turns on all installed codecs
 ;disallow=g723.1	; Hm...  Proprietary, don't use it...
 ;allow=gsm		; Always allow GSM, it's cool :)
-;allow=ulaw		; see doc/rtp-packetization for framing options
+;allow=ulaw		; see https://wiki.asterisk.org/wiki/display/AST/RTP+Packetization
+			; for framing options
 ;
 ; User-Input Mode (DTMF)
 ;

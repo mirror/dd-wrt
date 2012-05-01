@@ -25,10 +25,13 @@
  * \ingroup channel_drivers
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 314723 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 363208 $")
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -219,14 +222,15 @@ static char version_id[16] = "P002F202";
 #endif
 #endif
 
-/*! Global jitterbuffer configuration - by default, jb is disabled */
+/*! Global jitterbuffer configuration - by default, jb is disabled
+ *  \note Values shown here match the defaults shown in skinny.conf.sample */
 static struct ast_jb_conf default_jbconf =
 {
 	.flags = 0,
-	.max_size = -1,
-	.resync_threshold = -1,
-	.impl = "",
-	.target_extra = -1,
+	.max_size = 200,
+	.resync_threshold = 1000,
+	.impl = "fixed",
+	.target_extra = 40,
 };
 static struct ast_jb_conf global_jbconf;
 
@@ -1356,15 +1360,6 @@ static struct skinny_device_options {
 static struct skinny_device_options *default_device = &default_device_struct;
 	
 static AST_LIST_HEAD_STATIC(devices, skinny_device);
-
-/*static struct ast_jb_conf default_jbconf =
-{
-	.flags = 0,
-	.max_size = -1,
-	.resync_threshold = -1,
-	.impl = ""
-};
-static struct ast_jb_conf global_jbconf;*/
 
 struct skinnysession {
 	pthread_t t;
@@ -3482,8 +3477,6 @@ static int manager_skinny_show_lines(struct mansession *s, const struct message 
 
 static char *handle_skinny_show_lines(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
-	int verbose = 0;
-
 	switch (cmd) {
 	case CLI_INIT:
 		e->command = "skinny show lines [verbose]";
@@ -3498,9 +3491,7 @@ static char *handle_skinny_show_lines(struct ast_cli_entry *e, int cmd, struct a
 	}
 
 	if (a->argc == e->args) {
-		if (!strcasecmp(a->argv[e->args-1], "verbose")) {
-			verbose = 1;
-		} else {
+		if (strcasecmp(a->argv[e->args-1], "verbose")) {
 			return CLI_SHOWUSAGE;
 		}
 	} else if (a->argc != e->args - 1) {
@@ -3703,12 +3694,17 @@ static char *handle_skinny_show_settings(struct ast_cli_entry *e, int cmd, struc
 	ast_cli(a->fd, "  Date Format:            %s\n", date_format);
 	ast_cli(a->fd, "  Voice Mail Extension:   %s\n", S_OR(global_vmexten, "(not set)"));
 	ast_cli(a->fd, "  Reg. context:           %s\n", S_OR(regcontext, "(not set)"));
-	ast_cli(a->fd, "  Jitterbuffer enabled:   %s\n", (ast_test_flag(&global_jbconf, AST_JB_ENABLED) ? "Yes" : "No"));
-	ast_cli(a->fd, "  Jitterbuffer forced:    %s\n", (ast_test_flag(&global_jbconf, AST_JB_FORCED) ? "Yes" : "No"));
-	ast_cli(a->fd, "  Jitterbuffer max size:  %ld\n", global_jbconf.max_size);
-	ast_cli(a->fd, "  Jitterbuffer resync:    %ld\n", global_jbconf.resync_threshold);
-	ast_cli(a->fd, "  Jitterbuffer impl:      %s\n", global_jbconf.impl);
-	ast_cli(a->fd, "  Jitterbuffer log:       %s\n", (ast_test_flag(&global_jbconf, AST_JB_LOG) ? "Yes" : "No"));
+	ast_cli(a->fd, "  Jitterbuffer enabled:   %s\n", AST_CLI_YESNO(ast_test_flag(&global_jbconf, AST_JB_ENABLED)));
+	 if (ast_test_flag(&global_jbconf, AST_JB_ENABLED)) {
+		ast_cli(a->fd, "  Jitterbuffer forced:    %s\n", AST_CLI_YESNO(ast_test_flag(&global_jbconf, AST_JB_FORCED)));
+		ast_cli(a->fd, "  Jitterbuffer max size:  %ld\n", global_jbconf.max_size);
+		ast_cli(a->fd, "  Jitterbuffer resync:    %ld\n", global_jbconf.resync_threshold);
+		ast_cli(a->fd, "  Jitterbuffer impl:      %s\n", global_jbconf.impl);
+		if (!strcasecmp(global_jbconf.impl, "adaptive")) {
+			ast_cli(a->fd, "  Jitterbuffer tgt extra: %ld\n", global_jbconf.target_extra);
+		}
+		ast_cli(a->fd, "  Jitterbuffer log:       %s\n", AST_CLI_YESNO(ast_test_flag(&global_jbconf, AST_JB_LOG)));
+	}
 
 	return CLI_SUCCESS;
 }
@@ -3913,7 +3909,6 @@ static void *skinny_ss(void *data)
 static int skinny_call(struct ast_channel *ast, char *dest, int timeout)
 {
 	int res = 0;
-	int tone = 0;
 	struct skinny_subchannel *sub = ast->tech_pvt;
 	struct skinny_line *l = sub->parent;
 	struct skinny_device *d = l->device;
@@ -3943,10 +3938,8 @@ static int skinny_call(struct ast_channel *ast, char *dest, int timeout)
 	
 	switch (l->hookstate) {
 	case SKINNY_OFFHOOK:
-		tone = SKINNY_CALLWAITTONE;
 		break;
 	case SKINNY_ONHOOK:
-		tone = SKINNY_ALERT;
 		l->activesub = sub;
 		break;
 	default:
@@ -3975,7 +3968,6 @@ static int skinny_hangup(struct ast_channel *ast)
 	struct skinny_subchannel *sub = ast->tech_pvt;
 	struct skinny_line *l;
 	struct skinny_device *d;
-	struct skinnysession *s;
 
 	if (!sub) {
 		ast_debug(1, "Asked to hangup channel not connected\n");
@@ -3984,7 +3976,6 @@ static int skinny_hangup(struct ast_channel *ast)
 
 	l = sub->parent;
 	d = l->device;
-	s = d->session;
 
 	if (skinnydebug)
 		ast_verb(3,"Hanging up %s/%d\n",d->name,sub->callid);
@@ -4299,6 +4290,8 @@ static char *control2str(int ind) {
 		return "Connected Line";
 	case AST_CONTROL_REDIRECTING:
 		return "Redirecting";
+	case AST_CONTROL_INCOMPLETE:
+		return "Incomplete";
 	case -1:
 		return "Stop tone";
 	default:
@@ -4432,6 +4425,8 @@ static int skinny_indicate(struct ast_channel *ast, int ind, const void *data, s
 			}
 		}
 		return -1; /* Tell asterisk to provide inband signalling */
+	case AST_CONTROL_INCOMPLETE:
+		/* Support for incomplete not supported for chan_skinny; treat as congestion */
 	case AST_CONTROL_CONGESTION:
 		if (ast->_state != AST_STATE_UP) {
 			if (!d->earlyrtp) {
@@ -5300,7 +5295,6 @@ static int handle_offhook_message(struct skinny_req *req, struct skinnysession *
 	struct skinny_line *tmp;
 	pthread_t t;
 	int instance;
-	int reference;
 
 	/* if any line on a device is offhook, than the device must be offhook, 
 	   unless we have shared lines CCM seems that it would never get here, 
@@ -5316,7 +5310,6 @@ static int handle_offhook_message(struct skinny_req *req, struct skinnysession *
 	}
 
 	instance = letohl(req->data.offhook.instance);
-	reference = letohl(req->data.offhook.reference);
 
 	if (instance) {
 		sub = find_subchannel_by_instance_reference(d, d->lastlineinstance, d->lastcallreference);
@@ -6148,7 +6141,8 @@ static int handle_message(struct skinny_req *req, struct skinnysession *s)
 	struct skinny_speeddial *sd;
 	struct skinny_line *l;
 	struct skinny_device *d = s->device;
-	
+	size_t len;
+
 	if ((!s->device) && (letohl(req->e) != REGISTER_MESSAGE && letohl(req->e) != ALARM_MESSAGE)) {
 		ast_log(LOG_WARNING, "Client sent message #%d without first registering.\n", req->e);
 		ast_free(req);
@@ -6213,8 +6207,13 @@ static int handle_message(struct skinny_req *req, struct skinnysession *s)
 				ast_log(LOG_WARNING, "Unsupported digit %d\n", digit);
 			}
 
-			d->exten[strlen(d->exten)] = dgt;
-			d->exten[strlen(d->exten)+1] = '\0';
+			len = strlen(d->exten);
+			if (len < sizeof(d->exten) - 1) {
+				d->exten[len] = dgt;
+				d->exten[len + 1] = '\0';
+			} else {
+				ast_log(AST_LOG_WARNING, "Dropping digit with value %d because digit queue is full\n", dgt);
+			}
 		} else
 			res = handle_keypad_button_message(req, s);
 		}
@@ -6629,15 +6628,11 @@ static int skinny_devicestate(void *data)
 
 static struct ast_channel *skinny_request(const char *type, format_t format, const struct ast_channel *requestor, void *data, int *cause)
 {
-	format_t oldformat;
-	
 	struct skinny_line *l;
 	struct ast_channel *tmpc = NULL;
 	char tmp[256];
 	char *dest = data;
 
-	oldformat = format;
-	
 	if (!(format &= AST_FORMAT_AUDIO_MASK)) {
 		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n", ast_getformatname_multiple(tmp, sizeof(tmp), format));
 		return NULL;
@@ -6937,6 +6932,7 @@ static struct ast_channel *skinny_request(const char *type, format_t format, con
  			if (type & (TYPE_DEVICE)) {
 				struct ast_sockaddr CDEV_addr_tmp;
 
+				CDEV_addr_tmp.ss.ss_family = AF_INET;
 				if (ast_get_ip(&CDEV_addr_tmp, v->value)) {
  					ast_log(LOG_WARNING, "Bad IP '%s' at line %d.\n", v->value, v->lineno);
  				}
@@ -7218,8 +7214,6 @@ static struct ast_channel *skinny_request(const char *type, format_t format, con
   	int on = 1;
   	struct ast_config *cfg;
   	char *cat;
-  	struct skinny_device *d;
- 	struct skinny_line *l;
   	int oldport = ntohs(bindaddr.sin_port);
   	struct ast_flags config_flags = { 0 };
  	
@@ -7258,7 +7252,7 @@ static struct ast_channel *skinny_request(const char *type, format_t format, con
 		memcpy(&__ourip, hp->h_addr, sizeof(__ourip));
 	}
 	if (!ntohs(bindaddr.sin_port)) {
-		bindaddr.sin_port = ntohs(DEFAULT_SKINNY_PORT);
+		bindaddr.sin_port = htons(DEFAULT_SKINNY_PORT);
 	}
 	bindaddr.sin_family = AF_INET;
 
@@ -7268,7 +7262,7 @@ static struct ast_channel *skinny_request(const char *type, format_t format, con
 	config_parse_variables(TYPE_DEF_LINE, default_line, ast_variable_browse(cfg, "lines"));
 	cat = ast_category_browse(cfg, "lines");
 	while (cat && strcasecmp(cat, "general") && strcasecmp(cat, "devices")) {
-		l = config_line(cat, ast_variable_browse(cfg, cat));
+		config_line(cat, ast_variable_browse(cfg, cat));
 		cat = ast_category_browse(cfg, cat);
 	}
 		
@@ -7278,7 +7272,7 @@ static struct ast_channel *skinny_request(const char *type, format_t format, con
 	config_parse_variables(TYPE_DEF_DEVICE, default_device, ast_variable_browse(cfg, "devices"));
 	cat = ast_category_browse(cfg, "devices");
 	while (cat && strcasecmp(cat, "general") && strcasecmp(cat, "lines")) {
-		d = config_device(cat, ast_variable_browse(cfg, cat));
+		config_device(cat, ast_variable_browse(cfg, cat));
 		cat = ast_category_browse(cfg, cat);
 	}
 

@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 292188 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 332559 $")
 
 #include "asterisk/config.h"
 #include "asterisk/netsock2.h"
@@ -85,7 +85,7 @@ char *ast_sockaddr_stringify_fmt(const struct ast_sockaddr *sa, int format)
 		sa_tmp = sa;
 	}
 
-	if ((e = getnameinfo((struct sockaddr *)&sa_tmp->ss, sa->len,
+	if ((e = getnameinfo((struct sockaddr *)&sa_tmp->ss, sa_tmp->len,
 			     format & AST_SOCKADDR_STR_ADDR ? host : NULL,
 			     format & AST_SOCKADDR_STR_ADDR ? sizeof(host) : 0,
 			     format & AST_SOCKADDR_STR_PORT ? port : 0,
@@ -95,7 +95,14 @@ char *ast_sockaddr_stringify_fmt(const struct ast_sockaddr *sa, int format)
 		return "";
 	}
 
-	switch (format)  {
+	if ((format & AST_SOCKADDR_STR_REMOTE) == AST_SOCKADDR_STR_REMOTE) {
+		char *p;
+		if (ast_sockaddr_is_ipv6_link_local(sa) && (p = strchr(host, '%'))) {
+			*p = '\0';
+		}
+	}
+
+	switch ((format & AST_SOCKADDR_STR_FORMAT_MASK))  {
 	case AST_SOCKADDR_STR_DEFAULT:
 		ast_str_set(&str, 0, sa_tmp->ss.ss_family == AF_INET6 ?
 				"[%s]:%s" : "%s:%s", host, port);
@@ -121,8 +128,10 @@ char *ast_sockaddr_stringify_fmt(const struct ast_sockaddr *sa, int format)
 int ast_sockaddr_split_hostport(char *str, char **host, char **port, int flags)
 {
 	char *s = str;
+	char *orig_str = str;/* Original string in case the port presence is incorrect. */
+	char *host_end = NULL;/* Delay terminating the host in case the port presence is incorrect. */
 
-	ast_debug(5, "Splitting '%s' gives...\n", str);
+	ast_debug(5, "Splitting '%s' into...\n", str);
 	*host = NULL;
 	*port = NULL;
 	if (*s == '[') {
@@ -130,7 +139,8 @@ int ast_sockaddr_split_hostport(char *str, char **host, char **port, int flags)
 		for (; *s && *s != ']'; ++s) {
 		}
 		if (*s == ']') {
-			*s++ = '\0';
+			host_end = s;
+			++s;
 		}
 		if (*s == ':') {
 			*port = s + 1;
@@ -148,11 +158,10 @@ int ast_sockaddr_split_hostport(char *str, char **host, char **port, int flags)
 			}
 		}
 		if (*port) {
-			**port = '\0';
+			host_end = *port;
 			++*port;
 		}
 	}
-	ast_debug(5, "...host '%s' and port '%s'.\n", *host, *port);
 
 	switch (flags & PARSE_PORT_MASK) {
 	case PARSE_PORT_IGNORE:
@@ -160,18 +169,23 @@ int ast_sockaddr_split_hostport(char *str, char **host, char **port, int flags)
 		break;
 	case PARSE_PORT_REQUIRE:
 		if (*port == NULL) {
-			ast_log(LOG_WARNING, "missing port\n");
+			ast_log(LOG_WARNING, "Port missing in %s\n", orig_str);
 			return 0;
 		}
 		break;
 	case PARSE_PORT_FORBID:
 		if (*port != NULL) {
-			ast_log(LOG_WARNING, "port disallowed\n");
+			ast_log(LOG_WARNING, "Port disallowed in %s\n", orig_str);
 			return 0;
 		}
 		break;
 	}
 
+	/* Can terminate the host string now if needed. */
+	if (host_end) {
+		*host_end = '\0';
+	}
+	ast_debug(5, "...host '%s' and port '%s'.\n", *host, *port ? *port : "");
 	return 1;
 }
 
@@ -231,6 +245,10 @@ int ast_sockaddr_resolve(struct ast_sockaddr **addrs, const char *str,
 	struct addrinfo hints, *res, *ai;
 	char *s, *host, *port;
 	int	e, i, res_cnt;
+
+	if (!str) {
+		return 0;
+	}
 
 	s = ast_strdupa(str);
 	if (!ast_sockaddr_split_hostport(s, &host, &port, flags)) {
@@ -379,6 +397,12 @@ int ast_sockaddr_is_ipv4_mapped(const struct ast_sockaddr *addr)
 {
 	const struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&addr->ss;
 	return addr->len && IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr);
+}
+
+int ast_sockaddr_is_ipv6_link_local(const struct ast_sockaddr *addr)
+{
+	const struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&addr->ss;
+	return ast_sockaddr_is_ipv6(addr) && IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr);
 }
 
 int ast_sockaddr_is_ipv6(const struct ast_sockaddr *addr)

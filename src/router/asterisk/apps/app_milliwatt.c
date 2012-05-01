@@ -25,9 +25,13 @@
  * \ingroup applications
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 227580 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360466 $")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -74,7 +78,7 @@ static void milliwatt_release(struct ast_channel *chan, void *data)
 static int milliwatt_generate(struct ast_channel *chan, void *data, int len, int samples)
 {
 	unsigned char buf[AST_FRIENDLY_OFFSET + 640];
-	const int maxsamples = ARRAY_LEN(buf);
+	const int maxsamples = ARRAY_LEN(buf) - (AST_FRIENDLY_OFFSET / sizeof(buf[0]));
 	int i, *indexp = (int *) data;
 	struct ast_frame wf = {
 		.frametype = AST_FRAME_VOICE,

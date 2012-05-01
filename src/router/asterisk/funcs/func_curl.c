@@ -32,11 +32,12 @@
  
 /*** MODULEINFO
 	<depend>curl</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 294989 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 353818 $")
 
 #include <curl/curl.h>
 
@@ -49,6 +50,113 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 294989 $")
 #include "asterisk/app.h"
 #include "asterisk/utils.h"
 #include "asterisk/threadstorage.h"
+
+/*** DOCUMENTATION
+	<function name="CURL" language="en_US">
+		<synopsis>
+			Retrieve content from a remote web or ftp server
+		</synopsis>
+		<syntax>
+			<parameter name="url" required="true" />
+			<parameter name="post-data">
+				<para>If specified, an <literal>HTTP POST</literal> will be
+				performed with the content of
+				<replaceable>post-data</replaceable>, instead of an
+				<literal>HTTP GET</literal> (default).</para>
+			</parameter>
+		</syntax>
+		<description />
+		<see-also>
+			<ref type="function">CURLOPT</ref>
+		</see-also>
+	</function>
+	<function name="CURLOPT" language="en_US">
+		<synopsis>
+			Sets various options for future invocations of CURL.
+		</synopsis>
+		<syntax>
+			<parameter name="key" required="yes">
+				<enumlist>
+					<enum name="cookie">
+						<para>A cookie to send with the request.  Multiple
+						cookies are supported.</para>
+					</enum>
+					<enum name="conntimeout">
+						<para>Number of seconds to wait for a connection to succeed</para>
+					</enum>
+					<enum name="dnstimeout">
+						<para>Number of seconds to wait for DNS to be resolved</para>
+					</enum>
+					<enum name="ftptext">
+						<para>For FTP URIs, force a text transfer (boolean)</para>
+					</enum>
+					<enum name="ftptimeout">
+						<para>For FTP URIs, number of seconds to wait for a
+						server response</para>
+					</enum>
+					<enum name="header">
+						<para>Include header information in the result
+						(boolean)</para>
+					</enum>
+					<enum name="httptimeout">
+						<para>For HTTP(S) URIs, number of seconds to wait for a
+						server response</para>
+					</enum>
+					<enum name="maxredirs">
+						<para>Maximum number of redirects to follow</para>
+					</enum>
+					<enum name="proxy">
+						<para>Hostname or IP address to use as a proxy server</para>
+					</enum>
+					<enum name="proxytype">
+						<para>Type of <literal>proxy</literal></para>
+						<enumlist>
+							<enum name="http" />
+							<enum name="socks4" />
+							<enum name="socks5" />
+						</enumlist>
+					</enum>
+					<enum name="proxyport">
+						<para>Port number of the <literal>proxy</literal></para>
+					</enum>
+					<enum name="proxyuserpwd">
+						<para>A <replaceable>username</replaceable><literal>:</literal><replaceable>password</replaceable>
+						combination to use for authenticating requests through a
+						<literal>proxy</literal></para>
+					</enum>
+					<enum name="referer">
+						<para>Referer URL to use for the request</para>
+					</enum>
+					<enum name="useragent">
+						<para>UserAgent string to use for the request</para>
+					</enum>
+					<enum name="userpwd">
+						<para>A <replaceable>username</replaceable><literal>:</literal><replaceable>password</replaceable>
+						to use for authentication when the server response to
+						an initial request indicates a 401 status code.</para>
+					</enum>
+					<enum name="ssl_verifypeer">
+						<para>Whether to verify the server certificate against
+						a list of known root certificate authorities (boolean).</para>
+					</enum>
+					<enum name="hashcompat">
+						<para>Assuming the responses will be in <literal>key1=value1&amp;key2=value2</literal>
+						format, reformat the response such that it can be used
+						by the <literal>HASH</literal> function.</para>
+					</enum>
+				</enumlist>
+			</parameter>
+		</syntax>
+		<description>
+			<para>Options may be set globally or per channel.  Per-channel
+			settings will override global settings.</para>
+		</description>
+		<see-also>
+			<ref type="function">CURL</ref>
+			<ref type="function">HASH</ref>
+		</see-also>
+	</function>
+ ***/
 
 #define CURLVERSION_ATLEAST(a,b,c) \
 	((LIBCURL_VERSION_MAJOR > (a)) || ((LIBCURL_VERSION_MAJOR == (a)) && (LIBCURL_VERSION_MINOR > (b))) || ((LIBCURL_VERSION_MAJOR == (a)) && (LIBCURL_VERSION_MINOR == (b)) && (LIBCURL_VERSION_PATCH >= (c))))
@@ -443,9 +551,11 @@ static void curl_instance_cleanup(void *data)
 }
 
 AST_THREADSTORAGE_CUSTOM(curl_instance, curl_instance_init, curl_instance_cleanup);
+AST_THREADSTORAGE(thread_escapebuf);
 
 static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info, char *buf, struct ast_str **input_str, ssize_t len)
 {
+	struct ast_str *escapebuf = ast_str_thread_get(&thread_escapebuf, 16);
 	struct ast_str *str = ast_str_create(16);
 	int ret = -1;
 	AST_DECLARE_APP_ARGS(args,
@@ -460,6 +570,15 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 
 	if (buf) {
 		*buf = '\0';
+	}
+
+	if (!str) {
+		return -1;
+	}
+
+	if (!escapebuf) {
+		ast_free(str);
+		return -1;
 	}
 
 	if (ast_strlen_zero(info)) {
@@ -531,13 +650,12 @@ static int acf_curl_helper(struct ast_channel *chan, const char *cmd, char *info
 			int rowcount = 0;
 			while (fields && values && (piece = strsep(&remainder, "&"))) {
 				char *name = strsep(&piece, "=");
-				if (!piece) {
-					piece = "";
+				if (piece) {
+					ast_uri_decode(piece);
 				}
-				ast_uri_decode(piece);
 				ast_uri_decode(name);
-				ast_str_append(&fields, 0, "%s%s", rowcount ? "," : "", name);
-				ast_str_append(&values, 0, "%s%s", rowcount ? "," : "", piece);
+				ast_str_append(&fields, 0, "%s%s", rowcount ? "," : "", ast_str_set_escapecommas(&escapebuf, 0, name, INT_MAX));
+				ast_str_append(&values, 0, "%s%s", rowcount ? "," : "", ast_str_set_escapecommas(&escapebuf, 0, S_OR(piece, ""), INT_MAX));
 				rowcount++;
 			}
 			pbx_builtin_setvar_helper(chan, "~ODBCFIELDS~", ast_str_buffer(fields));

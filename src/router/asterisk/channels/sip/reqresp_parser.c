@@ -21,7 +21,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 280269 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 351618 $")
 
 #include "include/sip.h"
 #include "include/sip_utils.h"
@@ -33,7 +33,7 @@ locale_t c_locale;
 
 /*! \brief * parses a URI in its components.*/
 int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
-		   char **domain, struct uriparams *params, char **headers,
+		   char **hostport, struct uriparams *params, char **headers,
 		   char **residue)
 {
 	char *userinfo = NULL;
@@ -41,6 +41,27 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 	char *endparams = NULL;
 	char *c = NULL;
 	int error = 0;
+
+	/*
+	 * Initialize requested strings - some functions don't care if parse_uri fails
+	 * and will attempt to use string pointers passed into parse_uri even after a
+	 * parse_uri failure
+	 */
+	if (user) {
+		*user = "";
+	}
+	if (pass) {
+		*pass = "";
+	}
+	if (hostport) {
+		*hostport = "";
+	}
+	if (headers) {
+		*headers = "";
+	}
+	if (residue) {
+		*residue = "";
+	}
 
 	/* check for valid input */
 	if (ast_strlen_zero(uri)) {
@@ -64,8 +85,8 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 		}
 	}
 
-	if (!domain) {
-		/* if we don't want to split around domain, keep everything as a
+	if (!hostport) {
+		/* if we don't want to split around hostport, keep everything as a
 		 * userinfo - cos thats how old parse_uri operated*/
 		userinfo = uri;
 	} else {
@@ -81,7 +102,7 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 			userinfo = "";
 		}
 
-		*domain = dom;
+		*hostport = dom;
 	}
 
 	if (pass && (c = strchr(userinfo, ':'))) {	  /* user:password */
@@ -155,23 +176,23 @@ int parse_uri_full(char *uri, const char *scheme, char **user, char **pass,
 			}
 
 			if (!strcmp(label, "transport")) {
-				if (params) {params->transport=value;}
+				params->transport = value;
 				rem = parameters;
 			} else if (!strcmp(label, "user")) {
-				if (params) {params->user=value;}
+				params->user = value;
 				rem = parameters;
 			} else if (!strcmp(label, "method")) {
-				if (params) {params->method=value;}
+				params->method = value;
 				rem = parameters;
 			} else if (!strcmp(label, "ttl")) {
-				if (params) {params->ttl=value;}
+				params->ttl = value;
 				rem = parameters;
 			} else if (!strcmp(label, "maddr")) {
-				if (params) {params->maddr=value;}
+				params->maddr = value;
 				rem = parameters;
 			/* Treat "lr", "lr=yes", "lr=on", "lr=1", "lr=almostanything" as lr enabled and "", "lr=no", "lr=off", "lr=0", "lr=" and "lranything" as lr disabled */
 			} else if ((!strcmp(label, "lr") && strcmp(value, "no") && strcmp(value, "off") && strcmp(value, "0") && strcmp(value, "")) || ((lr) && strcmp(value, "lr"))) {
-				if (params) {params->lr=1;}
+				params->lr = 1;
 				rem = parameters;
 			} else {
 				value--;
@@ -200,7 +221,7 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 {
 	int res = AST_TEST_PASS;
 	char uri[1024];
-	char *user, *pass, *domain, *headers, *residue;
+	char *user, *pass, *hostport, *headers, *residue;
 	struct uriparams params;
 
 	struct testdata {
@@ -208,13 +229,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		char *uri;
 		char **userptr;
 		char **passptr;
-		char **domainptr;
+		char **hostportptr;
 		char **headersptr;
 		char **residueptr;
 		struct uriparams *paramsptr;
 		char *user;
 		char *pass;
-		char *domain;
+		char *hostport;
 		char *headers;
 		char *residue;
 		struct uriparams params;
@@ -231,13 +252,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;param=discard;transport=tcp;param2=residue",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "param2=residue",
 		.params.transport = "tcp",
@@ -250,13 +271,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;param=discard;transport=tcp;param2=discard2?header=blah&header2=blah2;param3=residue",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "header=blah&header2=blah2",
 		.residue = "param3=residue",
 		.params.transport = "tcp",
@@ -269,13 +290,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:-_.!~*'()&=+$,;?/:secret@host:5060;transport=tcp",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "-_.!~*'()&=+$,;?/",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "",
 		.params.transport = "tcp",
@@ -288,13 +309,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:-_.!~*'()&=+$,@host:5060;transport=tcp",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "-_.!~*'()&=+$,",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "",
 		.params.transport = "tcp",
@@ -307,13 +328,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@1-1.a-1.:5060;transport=tcp",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "1-1.a-1.:5060",
+		.hostport = "1-1.a-1.:5060",
 		.headers = "",
 		.residue = "",
 		.params.transport = "tcp",
@@ -326,13 +347,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;-_.!~*'()[]/:&+$=-_.!~*'()[]/:&+$;transport=tcp",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "",
 		.params.transport = "tcp",
@@ -345,13 +366,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;-_.!~*'()[]/:&+$=-_.!~*'()[]/:&+$?header=blah&header2=blah2;-_.!~*'()[]/:&+$=residue",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "header=blah&header2=blah2",
 		.residue = "-_.!~*'()[]/:&+$=residue",
 		.params.transport = "",
@@ -364,13 +385,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;param=discard;lr?header=blah",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "header=blah",
 		.residue = "",
 		.params.transport = "",
@@ -383,13 +404,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;param=discard;lr=yes?header=blah",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "header=blah",
 		.residue = "",
 		.params.transport = "",
@@ -402,13 +423,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 		.uri = "sip:user:secret@host:5060;paramlr=lr;lr=no;lr=off;lr=0;lr=;=lr;lrextra;lrparam2=lr?header=blah",
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "header=blah",
 		.residue = "",
 		.params.transport = "",
@@ -443,19 +464,19 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 	}
 
 	AST_LIST_TRAVERSE(&testdatalist, testdataptr, list) {
-		user = pass = domain = headers = residue = NULL;
+		user = pass = hostport = headers = residue = NULL;
 		params.transport = params.user = params.method = params.ttl = params.maddr = NULL;
 		params.lr = 0;
 
 		ast_copy_string(uri,testdataptr->uri,sizeof(uri));
 		if (parse_uri_full(uri, "sip:,sips:", testdataptr->userptr,
-				   testdataptr->passptr, testdataptr->domainptr,
+				   testdataptr->passptr, testdataptr->hostportptr,
 				   testdataptr->paramsptr,
 				   testdataptr->headersptr,
 				   testdataptr->residueptr) ||
 			((testdataptr->userptr) && strcmp(testdataptr->user, user)) ||
 			((testdataptr->passptr) && strcmp(testdataptr->pass, pass)) ||
-			((testdataptr->domainptr) && strcmp(testdataptr->domain, domain)) ||
+			((testdataptr->hostportptr) && strcmp(testdataptr->hostport, hostport)) ||
 			((testdataptr->headersptr) && strcmp(testdataptr->headers, headers)) ||
 			((testdataptr->residueptr) && strcmp(testdataptr->residue, residue)) ||
 			((testdataptr->paramsptr) && strcmp(testdataptr->params.transport,params.transport)) ||
@@ -473,13 +494,13 @@ AST_TEST_DEFINE(sip_parse_uri_fully_test)
 
 
 int parse_uri(char *uri, const char *scheme, char **user, char **pass,
-	      char **domain, char **transport) {
+	      char **hostport, char **transport) {
 	int ret;
 	char *headers;
 	struct uriparams params;
 
 	headers = NULL;
-	ret = parse_uri_full(uri, scheme, user, pass, domain, &params, &headers, NULL);
+	ret = parse_uri_full(uri, scheme, user, pass, hostport, &params, &headers, NULL);
 	if (transport) {
 		*transport=params.transport;
 	}
@@ -489,7 +510,7 @@ int parse_uri(char *uri, const char *scheme, char **user, char **pass,
 AST_TEST_DEFINE(sip_parse_uri_test)
 {
 	int res = AST_TEST_PASS;
-	char *name, *pass, *domain, *transport;
+	char *name, *pass, *hostport, *transport;
 	char uri1[] = "sip:name@host";
 	char uri2[] = "sip:name@host;transport=tcp";
 	char uri3[] = "sip:name:secret@host;transport=tcp";
@@ -516,114 +537,114 @@ AST_TEST_DEFINE(sip_parse_uri_test)
 	}
 
 	/* Test 1, simple URI */
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri1, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri1, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			strcmp(name, "name")        ||
 			!ast_strlen_zero(pass)      ||
-			strcmp(domain, "host")      ||
+			strcmp(hostport, "host")      ||
 			!ast_strlen_zero(transport)) {
 		ast_test_status_update(test, "Test 1: simple uri failed. \n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 2, add tcp transport */
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri2, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri2, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			strcmp(name, "name")        ||
 			!ast_strlen_zero(pass)      ||
-			strcmp(domain, "host")    ||
+			strcmp(hostport, "host")    ||
 			strcmp(transport, "tcp")) {
 		ast_test_status_update(test, "Test 2: uri with addtion of tcp transport failed. \n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 3, add secret */
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri3, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri3, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			strcmp(name, "name")        ||
 			strcmp(pass, "secret")      ||
-			strcmp(domain, "host")    ||
+			strcmp(hostport, "host")    ||
 			strcmp(transport, "tcp")) {
 		ast_test_status_update(test, "Test 3: uri with addition of secret failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 4, add port and unparsed header field*/
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri4, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri4, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			strcmp(name, "name")        ||
 			strcmp(pass, "secret")      ||
-			strcmp(domain, "host:port") ||
+			strcmp(hostport, "host:port") ||
 			strcmp(transport, "tcp")) {
 		ast_test_status_update(test, "Test 4: add port and unparsed header field failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 5, verify parse_uri does not crash when given a NULL uri */
-	name = pass = domain = transport = NULL;
-	if (!parse_uri(NULL, "sip:,sips:", &name, &pass, &domain, &transport)) {
+	name = pass = hostport = transport = NULL;
+	if (!parse_uri(NULL, "sip:,sips:", &name, &pass, &hostport, &transport)) {
 		ast_test_status_update(test, "Test 5: passing a NULL uri failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 6, verify parse_uri does not crash when given a NULL output parameters */
-	name = pass = domain = transport = NULL;
+	name = pass = hostport = transport = NULL;
 	if (parse_uri(uri6, "sip:,sips:", NULL, NULL, NULL, NULL)) {
 		ast_test_status_update(test, "Test 6: passing NULL output parameters failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
-	/* Test 7, verify parse_uri returns user:secret and domain when no port or secret output parameters are supplied. */
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri7, "sip:,sips:", &name, NULL, &domain, NULL) ||
+	/* Test 7, verify parse_uri returns user:secret and hostport when no port or secret output parameters are supplied. */
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri7, "sip:,sips:", &name, NULL, &hostport, NULL) ||
 			strcmp(name, "name:secret")        ||
-			strcmp(domain, "host:port")) {
+			strcmp(hostport, "host:port")) {
 
 		ast_test_status_update(test, "Test 7: providing no port and secret output parameters failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
-	/* Test 8, verify parse_uri can handle a domain only uri */
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri8, "sip:,sips:", &name, &pass, &domain, &transport) ||
-			strcmp(domain, "host") ||
+	/* Test 8, verify parse_uri can handle a hostport only uri */
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri8, "sip:,sips:", &name, &pass, &hostport, &transport) ||
+			strcmp(hostport, "host") ||
 			!ast_strlen_zero(name)) {
 		ast_test_status_update(test, "Test 8: add port and unparsed header field failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
-	/* Test 9, add port and unparsed header field with domain only uri*/
-	name = pass = domain = transport = NULL;
-	if (parse_uri(uri9, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	/* Test 9, add port and unparsed header field with hostport only uri*/
+	name = pass = hostport = transport = NULL;
+	if (parse_uri(uri9, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			!ast_strlen_zero(name)        ||
 			!ast_strlen_zero(pass)      ||
-			strcmp(domain, "host:port")    ||
+			strcmp(hostport, "host:port")    ||
 			strcmp(transport, "tcp")) {
-		ast_test_status_update(test, "Test 9: domain only uri failed \n");
+		ast_test_status_update(test, "Test 9: hostport only uri failed \n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 10, handle invalid/missing "sip:,sips:" scheme
 	 * we expect parse_uri to return an error, but still parse
 	 * the results correctly here */
-	name = pass = domain = transport = NULL;
-	if (!parse_uri(uri10, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	name = pass = hostport = transport = NULL;
+	if (!parse_uri(uri10, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			!ast_strlen_zero(name)        ||
 			!ast_strlen_zero(pass)      ||
-			strcmp(domain, "host:port")    ||
+			strcmp(hostport, "host:port")    ||
 			strcmp(transport, "tcp")) {
 		ast_test_status_update(test, "Test 10: missing \"sip:sips:\" scheme failed\n");
 		res = AST_TEST_FAIL;
 	}
 
-	/* Test 11, simple domain only URI with missing scheme
+	/* Test 11, simple hostport only URI with missing scheme
 	 * we expect parse_uri to return an error, but still parse
 	 * the results correctly here */
-	name = pass = domain = transport = NULL;
-	if (!parse_uri(uri11, "sip:,sips:", &name, &pass, &domain, &transport) ||
+	name = pass = hostport = transport = NULL;
+	if (!parse_uri(uri11, "sip:,sips:", &name, &pass, &hostport, &transport) ||
 			!ast_strlen_zero(name)      ||
 			!ast_strlen_zero(pass)      ||
-			strcmp(domain, "host")      ||
+			strcmp(hostport, "host")      ||
 			!ast_strlen_zero(transport)) {
 		ast_test_status_update(test, "Test 11: simple uri with missing scheme failed. \n");
 		res = AST_TEST_FAIL;
@@ -664,63 +685,77 @@ const char *get_calleridname(const char *input, char *output, size_t outputsize)
 	char *orig_output = output;
 	const char *orig_input = input;
 
+	if (!output || !outputsize) {
+		/* Bad output parameters.  Should never happen. */
+		return input;
+	}
+
 	/* clear any empty characters in the beginning */
 	input = ast_skip_blanks(input);
-
-	/* no data at all or no storage room? */
-	if (!input || *input == '<' || !outputsize || !output) {
-		return orig_input;
-	}
 
 	/* make sure the output buffer is initilized */
 	*orig_output = '\0';
 
 	/* make room for '\0' at the end of the output buffer */
-	outputsize--;
+	--outputsize;
+
+	/* no data at all or no display name? */
+	if (!input || *input == '<') {
+		return input;
+	}
 
 	/* quoted-string rules */
 	if (input[0] == '"') {
 		input++; /* skip the first " */
 
-		for (;((outputsize > 0) && *input); input++) {
+		for (; *input; ++input) {
 			if (*input == '"') {  /* end of quoted-string */
 				break;
 			} else if (*input == 0x5c) { /* quoted-pair = "\" (%x00-09 / %x0B-0C / %x0E-7F) */
-				input++;
-				if (!*input || (unsigned char)*input > 0x7f || *input == 0xa || *input == 0xd) {
+				++input;
+				if (!*input) {
+					break;
+				}
+				if ((unsigned char) *input > 0x7f || *input == 0xa || *input == 0xd) {
 					continue;  /* not a valid quoted-pair, so skip it */
 				}
-			} else if (((*input != 0x9) && ((unsigned char) *input < 0x20)) ||
-			            (*input == 0x7f)) {
+			} else if ((*input != 0x9 && (unsigned char) *input < 0x20)
+				|| *input == 0x7f) {
 				continue; /* skip this invalid character. */
 			}
 
-			*output++ = *input;
-			outputsize--;
+			if (0 < outputsize) {
+				/* We still have room for the output display-name. */
+				*output++ = *input;
+				--outputsize;
+			}
 		}
 
 		/* if this is successful, input should be at the ending quote */
-		if (!input || *input != '"') {
+		if (*input != '"') {
 			ast_log(LOG_WARNING, "No ending quote for display-name was found\n");
 			*orig_output = '\0';
 			return orig_input;
 		}
 
 		/* make sure input is past the last quote */
-		input++;
+		++input;
 
-		/* terminate outbuf */
+		/* terminate output */
 		*output = '\0';
 	} else {  /* either an addr-spec or tokenLWS-combo */
-		for (;((outputsize > 0) && *input); input++) {
+		for (; *input; ++input) {
 			/* token or WSP (without LWS) */
 			if ((*input >= '0' && *input <= '9') || (*input >= 'A' && *input <= 'Z')
 				|| (*input >= 'a' && *input <= 'z') || *input == '-' || *input == '.'
 				|| *input == '!' || *input == '%' || *input == '*' || *input == '_'
 				|| *input == '+' || *input == '`' || *input == '\'' || *input == '~'
 				|| *input == 0x9 || *input == ' ') {
-				*output++ = *input;
-				outputsize -= 1;
+				if (0 < outputsize) {
+					/* We still have room for the output display-name. */
+					*output++ = *input;
+					--outputsize;
+				}
 			} else if (*input == '<') {   /* end of tokenLWS-combo */
 				/* we could assert that the previous char is LWS, but we don't care */
 				break;
@@ -738,10 +773,10 @@ const char *get_calleridname(const char *input, char *output, size_t outputsize)
 			return orig_input;
 		}
 
-		/* set NULL while trimming trailing whitespace */
+		/* terminate output while trimming any trailing whitespace */
 		do {
 			*output-- = '\0';
-		} while (*output == 0x9 || *output == ' '); /* we won't go past orig_output as first was a non-space */
+		} while (orig_output <= output && (*output == 0x9 || *output == ' '));
 	}
 
 	return input;
@@ -750,11 +785,12 @@ const char *get_calleridname(const char *input, char *output, size_t outputsize)
 AST_TEST_DEFINE(get_calleridname_test)
 {
 	int res = AST_TEST_PASS;
-	const char *in1 = "\" quoted-text internal \\\" quote \"<stuff>";
+	const char *in1 = " \" quoted-text internal \\\" quote \"<stuff>";
 	const char *in2 = " token text with no quotes <stuff>";
 	const char *overflow1 = " \"quoted-text overflow 1234567890123456789012345678901234567890\" <stuff>";
+	const char *overflow2 = " non-quoted text overflow 1234567890123456789012345678901234567890 <stuff>";
 	const char *noendquote = " \"quoted-text no end <stuff>";
-	const char *addrspec = " \"sip:blah@blah <stuff>";
+	const char *addrspec = " sip:blah@blah";
 	const char *no_quotes_no_brackets = "blah@blah";
 	const char *after_dname;
 	char dname[40];
@@ -789,8 +825,16 @@ AST_TEST_DEFINE(get_calleridname_test)
 	/* quoted-text buffer overflow */
 	after_dname = get_calleridname(overflow1, dname, sizeof(dname));
 	ast_test_status_update(test, "overflow display-name1: %s\nafter: %s\n", dname, after_dname);
-	if (*dname != '\0' && after_dname != overflow1) {
+	if (strcmp(dname, "quoted-text overflow 123456789012345678")) {
 		ast_test_status_update(test, "overflow display-name1 test failed\n");
+		res = AST_TEST_FAIL;
+	}
+
+	/* non-quoted-text buffer overflow */
+	after_dname = get_calleridname(overflow2, dname, sizeof(dname));
+	ast_test_status_update(test, "overflow display-name2: %s\nafter: %s\n", dname, after_dname);
+	if (strcmp(dname, "non-quoted text overflow 12345678901234")) {
+		ast_test_status_update(test, "overflow display-name2 test failed\n");
 		res = AST_TEST_FAIL;
 	}
 
@@ -804,7 +848,7 @@ AST_TEST_DEFINE(get_calleridname_test)
 
 	/* addr-spec rather than display-name. */
 	after_dname = get_calleridname(addrspec, dname, sizeof(dname));
-	ast_test_status_update(test, "noendquote display-name1: %s\nafter: %s\n", dname, after_dname);
+	ast_test_status_update(test, "addr-spec display-name1: %s\nafter: %s\n", dname, after_dname);
 	if (*dname != '\0' && after_dname != addrspec) {
 		ast_test_status_update(test, "detection of addr-spec failed\n");
 		res = AST_TEST_FAIL;
@@ -818,16 +862,15 @@ AST_TEST_DEFINE(get_calleridname_test)
 		res = AST_TEST_FAIL;
 	}
 
-
 	return res;
 }
 
 int get_name_and_number(const char *hdr, char **name, char **number)
 {
 	char header[256];
-	char tmp_name[50] = { 0, };
+	char tmp_name[50];
 	char *tmp_number = NULL;
-	char *domain = NULL;
+	char *hostport = NULL;
 	char *dummy = NULL;
 
 	if (!name || !number || ast_strlen_zero(hdr)) {
@@ -845,7 +888,7 @@ int get_name_and_number(const char *hdr, char **name, char **number)
 	tmp_number = get_in_brackets(header);
 
 	/* parse out the number here */
-	if (parse_uri(tmp_number, "sip:,sips:", &tmp_number, &dummy, &domain, NULL) || ast_strlen_zero(tmp_number)) {
+	if (parse_uri(tmp_number, "sip:,sips:", &tmp_number, &dummy, &hostport, NULL) || ast_strlen_zero(tmp_number)) {
 		ast_log(LOG_ERROR, "can not parse name and number from sip header.\n");
 		return -1;
 	}
@@ -1008,14 +1051,14 @@ int get_in_brackets_full(char *tmp,char **out,char **residue)
 	only affects token based display-names there is no danger of brackets being in quotes */
 	if (first_bracket) {
 		parse = first_bracket;
-		} else {
+	} else {
 		parse = tmp;
 	}
 
 	if ((second_bracket = strchr(parse, '>'))) {
 		*second_bracket++ = '\0';
 		if (out) {
-			*out = first_bracket;
+			*out = (char *) parse;
 		}
 		if (residue) {
 			*residue = second_bracket;
@@ -1024,9 +1067,9 @@ int get_in_brackets_full(char *tmp,char **out,char **residue)
 	}
 
 	if ((first_bracket)) {
-			ast_log(LOG_WARNING, "No closing bracket found in '%s'\n", tmp);
+		ast_log(LOG_WARNING, "No closing bracket found in '%s'\n", tmp);
 		return -1;
-		}
+	}
 
 	if (out) {
 		*out = tmp;
@@ -1048,13 +1091,14 @@ char *get_in_brackets(char *tmp)
 AST_TEST_DEFINE(get_in_brackets_test)
 {
 	int res = AST_TEST_PASS;
-	char *in_brackets = "<sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah>";
+	char in_brackets[] = "sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah";
 	char no_name[] = "<sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah>";
 	char quoted_string[] = "\"I'm a quote stri><ng\" <sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah>";
 	char missing_end_quote[] = "\"I'm a quote string <sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah>";
 	char name_no_quotes[] = "name not in quotes <sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah>";
 	char no_end_bracket[] = "name not in quotes <sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah";
 	char no_name_no_brackets[] = "sip:name@host";
+	char missing_start_bracket[] = "sip:name:secret@host:port;transport=tcp?headers=testblah&headers2=blahblah>";
 	char *uri = NULL;
 
 	switch (cmd) {
@@ -1071,51 +1115,50 @@ AST_TEST_DEFINE(get_in_brackets_test)
 	}
 
 	/* Test 1, simple get in brackets */
-	if (!(uri = get_in_brackets(no_name)) || !(strcmp(uri, in_brackets))) {
-
-		ast_test_status_update(test, "Test 1, simple get in brackets failed.\n");
+	if (!(uri = get_in_brackets(no_name)) || strcmp(uri, in_brackets)) {
+		ast_test_status_update(test, "Test 1, simple get in brackets failed. %s\n", uri);
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 2, starts with quoted string */
-	if (!(uri = get_in_brackets(quoted_string)) || !(strcmp(uri, in_brackets))) {
-
-		ast_test_status_update(test, "Test 2, get in brackets with quoted string in front failed.\n");
+	if (!(uri = get_in_brackets(quoted_string)) || strcmp(uri, in_brackets)) {
+		ast_test_status_update(test, "Test 2, get in brackets with quoted string in front failed. %s\n", uri);
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 3, missing end quote */
-	if (!(uri = get_in_brackets(missing_end_quote)) || !(strcmp(uri, in_brackets))) {
-
-		ast_test_status_update(test, "Test 3, missing end quote failed.\n");
+	if (!(uri = get_in_brackets(missing_end_quote)) || !strcmp(uri, in_brackets)) {
+		ast_test_status_update(test, "Test 3, missing end quote failed. %s\n", uri);
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 4, starts with a name not in quotes */
-	if (!(uri = get_in_brackets(name_no_quotes)) || !(strcmp(uri, in_brackets))) {
-
-		ast_test_status_update(test, "Test 4, passing name not in quotes failed.\n");
+	if (!(uri = get_in_brackets(name_no_quotes)) || strcmp(uri, in_brackets)) {
+		ast_test_status_update(test, "Test 4, passing name not in quotes failed. %s\n", uri);
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 5, no end bracket, should just return everything after the first '<'  */
-	if (!(uri = get_in_brackets(no_end_bracket)) || !(strcmp(uri, in_brackets))) {
-
-		ast_test_status_update(test, "Test 5, no end bracket failed.\n");
+	if (!(uri = get_in_brackets(no_end_bracket)) || !strcmp(uri, in_brackets)) {
+		ast_test_status_update(test, "Test 5, no end bracket failed. %s\n", uri);
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 6, NULL input  */
 	if ((uri = get_in_brackets(NULL))) {
-
 		ast_test_status_update(test, "Test 6, NULL input failed.\n");
 		res = AST_TEST_FAIL;
 	}
 
 	/* Test 7, no name, and no brackets. */
-	if (!(uri = get_in_brackets(no_name_no_brackets)) || (strcmp(uri, "sip:name@host"))) {
-
+	if (!(uri = get_in_brackets(no_name_no_brackets)) || strcmp(uri, "sip:name@host")) {
 		ast_test_status_update(test, "Test 7 failed. %s\n", uri);
+		res = AST_TEST_FAIL;
+	}
+
+	/* Test 8, no start bracket, but with ending bracket. */
+	if (!(uri = get_in_brackets(missing_start_bracket)) || strcmp(uri, in_brackets)) {
+		ast_test_status_update(test, "Test 8 failed. %s\n", uri);
 		res = AST_TEST_FAIL;
 	}
 
@@ -1124,32 +1167,54 @@ AST_TEST_DEFINE(get_in_brackets_test)
 
 
 int parse_name_andor_addr(char *uri, const char *scheme, char **name,
-			  char **user, char **pass, char **domain,
+			  char **user, char **pass, char **hostport,
 			  struct uriparams *params, char **headers,
 			  char **residue)
 {
-	static char buf[1024];
-	char **residue2=residue;
+	char buf[1024];
+	char **residue2 = residue;
+	char *orig_uri = uri;
 	int ret;
+
+	buf[0] = '\0';
 	if (name) {
-		get_calleridname(uri,buf,sizeof(buf));
-		*name = buf;
+		uri = (char *) get_calleridname(uri, buf, sizeof(buf));
 	}
-	ret = get_in_brackets_full(uri,&uri,residue);
-	if (ret == 0) { /* uri is in brackets so do not treat unknown trailing uri parameters as potential messageheader parameters */
-		*residue = *residue + 1; /* step over the first semicolon so as per parse uri residue */
+	ret = get_in_brackets_full(uri, &uri, residue);
+	if (ret == 0) {
+		/*
+		 * The uri is in brackets so do not treat unknown trailing uri
+		 * parameters as potential message header parameters.
+		 */
+		if (residue && **residue) {
+			/* step over the first semicolon as per parse_uri_full residue */
+			*residue = *residue + 1;
+		}
 		residue2 = NULL;
 	}
 
-	return parse_uri_full(uri, scheme, user, pass, domain, params, headers,
-			      residue2);
+	if (name) {
+		if (buf[0]) {
+			/*
+			 * There is always room at orig_uri for the display-name because
+			 * at least one character has always been removed.  A '"' or '<'
+			 * has been removed.
+			 */
+			strcpy(orig_uri, buf);
+			*name = orig_uri;
+		} else {
+			*name = "";
+		}
+	}
+
+	return parse_uri_full(uri, scheme, user, pass, hostport, params, headers, residue2);
 }
 
 AST_TEST_DEFINE(parse_name_andor_addr_test)
 {
 	int res = AST_TEST_PASS;
 	char uri[1024];
-	char *name, *user, *pass, *domain, *headers, *residue;
+	char *name, *user, *pass, *hostport, *headers, *residue;
 	struct uriparams params;
 
 	struct testdata {
@@ -1158,14 +1223,14 @@ AST_TEST_DEFINE(parse_name_andor_addr_test)
 		char **nameptr;
 		char **userptr;
 		char **passptr;
-		char **domainptr;
+		char **hostportptr;
 		char **headersptr;
 		char **residueptr;
 		struct uriparams *paramsptr;
 		char *name;
 		char *user;
 		char *pass;
-		char *domain;
+		char *hostport;
 		char *headers;
 		char *residue;
 		struct uriparams params;
@@ -1182,14 +1247,14 @@ AST_TEST_DEFINE(parse_name_andor_addr_test)
 		.nameptr = &name,
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.name =  "name :@ ",
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "tag=tag",
 		.params.transport = "tcp",
@@ -1203,14 +1268,14 @@ AST_TEST_DEFINE(parse_name_andor_addr_test)
 		.nameptr = &name,
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.name = "givenname familyname",
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "expires=3600",
 		.params.transport = "tcp",
@@ -1224,14 +1289,14 @@ AST_TEST_DEFINE(parse_name_andor_addr_test)
 		.nameptr = &name,
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.name = "",
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5060",
+		.hostport = "host:5060",
 		.headers = "",
 		.residue = "q=1",
 		.params.transport = "tcp",
@@ -1245,14 +1310,14 @@ AST_TEST_DEFINE(parse_name_andor_addr_test)
 		.nameptr = &name,
 		.userptr = &user,
 		.passptr = &pass,
-		.domainptr = &domain,
+		.hostportptr = &hostport,
 		.headersptr = &headers,
 		.residueptr = &residue,
 		.paramsptr = &params,
 		.name = "",
 		.user = "",
 		.pass = "",
-		.domain = "host",
+		.hostport = "host",
 		.headers = "",
 		.residue = "",
 		.params.transport = "",
@@ -1281,37 +1346,37 @@ AST_TEST_DEFINE(parse_name_andor_addr_test)
 	}
 
 	AST_LIST_TRAVERSE(&testdatalist, testdataptr, list) {
-		name = user = pass = domain = headers = residue = NULL;
+		name = user = pass = hostport = headers = residue = NULL;
 		params.transport = params.user = params.method = params.ttl = params.maddr = NULL;
 		params.lr = 0;
-	ast_copy_string(uri,testdataptr->uri,sizeof(uri));
+		ast_copy_string(uri,testdataptr->uri,sizeof(uri));
 		if (parse_name_andor_addr(uri, "sip:,sips:",
 					  testdataptr->nameptr,
 					  testdataptr->userptr,
 					  testdataptr->passptr,
-					  testdataptr->domainptr,
+					  testdataptr->hostportptr,
 					  testdataptr->paramsptr,
 					  testdataptr->headersptr,
 					  testdataptr->residueptr) ||
 			((testdataptr->nameptr) && strcmp(testdataptr->name, name)) ||
 			((testdataptr->userptr) && strcmp(testdataptr->user, user)) ||
 			((testdataptr->passptr) && strcmp(testdataptr->pass, pass)) ||
-			((testdataptr->domainptr) && strcmp(testdataptr->domain, domain)) ||
+			((testdataptr->hostportptr) && strcmp(testdataptr->hostport, hostport)) ||
 			((testdataptr->headersptr) && strcmp(testdataptr->headers, headers)) ||
 			((testdataptr->residueptr) && strcmp(testdataptr->residue, residue)) ||
 			((testdataptr->paramsptr) && strcmp(testdataptr->params.transport,params.transport)) ||
 			((testdataptr->paramsptr) && strcmp(testdataptr->params.user,params.user))
-		) {
-				ast_test_status_update(test, "Sub-Test: %s,failed.\n", testdataptr->desc);
-				res = AST_TEST_FAIL;
+			) {
+			ast_test_status_update(test, "Sub-Test: %s,failed.\n", testdataptr->desc);
+			res = AST_TEST_FAIL;
 		}
 	}
-
 
 	return res;
 }
 
-int get_comma(char *in, char **out) {
+int get_comma(char *in, char **out)
+{
 	char *c;
 	char *parse = in;
 	if (out) {
@@ -1347,35 +1412,35 @@ int get_comma(char *in, char **out) {
 	return 1;
 }
 
-int parse_contact_header(char *contactheader, struct contactliststruct *contactlist) {
+int parse_contact_header(char *contactheader, struct contactliststruct *contactlist)
+{
 	int res;
 	int last;
 	char *comma;
 	char *residue;
 	char *param;
 	char *value;
-	struct contact *contact=NULL;
+	struct contact *split_contact = NULL;
 
 	if (*contactheader == '*') {
 		return 1;
 	}
 
-	contact = malloc(sizeof(*contact));
+	split_contact = ast_calloc(1, sizeof(*split_contact));
 
-	AST_LIST_HEAD_SET_NOLOCK(contactlist, contact);
-	while ((last = get_comma(contactheader,&comma)) != -1) {
-
+	AST_LIST_HEAD_SET_NOLOCK(contactlist, split_contact);
+	while ((last = get_comma(contactheader, &comma)) != -1) {
 		res = parse_name_andor_addr(contactheader, "sip:,sips:",
-					    &contact->name, &contact->user,
-					    &contact->pass, &contact->domain,
-					    &contact->params, &contact->headers,
-					    &residue);
+			&split_contact->name, &split_contact->user,
+			&split_contact->pass, &split_contact->hostport,
+			&split_contact->params, &split_contact->headers,
+			&residue);
 		if (res == -1) {
 			return res;
 		}
 
 		/* parse contact params */
-		contact->expires = contact->q = "";
+		split_contact->expires = split_contact->q = "";
 
 		while ((value = strchr(residue,'='))) {
 			*value++ = '\0';
@@ -1388,20 +1453,19 @@ int parse_contact_header(char *contactheader, struct contactliststruct *contactl
 			}
 
 			if (!strcmp(param,"expires")) {
-				contact->expires = value;
+				split_contact->expires = value;
 			} else if (!strcmp(param,"q")) {
-				contact->q = value;
+				split_contact->q = value;
 			}
 		}
 
-		if(last) {
+		if (last) {
 			return 0;
 		}
 		contactheader = comma;
 
-		contact = malloc(sizeof(*contact));
-		AST_LIST_INSERT_TAIL(contactlist, contact, list);
-
+		split_contact = ast_calloc(1, sizeof(*split_contact));
+		AST_LIST_INSERT_TAIL(contactlist, split_contact, list);
 	}
 	return last;
 }
@@ -1440,7 +1504,7 @@ AST_TEST_DEFINE(parse_contact_header_test)
 		.name = "name :@;?&,",
 		.user = "user",
 		.pass = "secret",
-		.domain = "host:5082",
+		.hostport = "host:5082",
 		.params.transport = "tcp",
 		.params.ttl = "",
 		.params.lr = 0,
@@ -1459,7 +1523,7 @@ AST_TEST_DEFINE(parse_contact_header_test)
 		.name = "",
 		.user = ",user1,",
 		.pass = ",secret1,",
-		.domain = "host1",
+		.hostport = "host1",
 		.params.transport = "",
 		.params.ttl = "7",
 		.params.lr = 0,
@@ -1471,7 +1535,7 @@ AST_TEST_DEFINE(parse_contact_header_test)
 		.name = "",
 		.user = "",
 		.pass = "",
-		.domain = "host2",
+		.hostport = "host2",
 		.params.transport = "",
 		.params.ttl = "",
 		.params.lr = 0,
@@ -1527,23 +1591,22 @@ AST_TEST_DEFINE(parse_contact_header_test)
 					strcmp(tdcontactptr->name, contactptr->name) ||
 					strcmp(tdcontactptr->user, contactptr->user) ||
 					strcmp(tdcontactptr->pass, contactptr->pass) ||
-					strcmp(tdcontactptr->domain, contactptr->domain) ||
+					strcmp(tdcontactptr->hostport, contactptr->hostport) ||
 					strcmp(tdcontactptr->headers, contactptr->headers) ||
 					strcmp(tdcontactptr->expires, contactptr->expires) ||
 					strcmp(tdcontactptr->q, contactptr->q) ||
 					strcmp(tdcontactptr->params.transport, contactptr->params.transport) ||
 					strcmp(tdcontactptr->params.ttl, contactptr->params.ttl) ||
 					(tdcontactptr->params.lr != contactptr->params.lr)
-				) {
+					) {
 					ast_test_status_update(test, "Sub-Test: %s,failed.\n", testdataptr->desc);
 					res = AST_TEST_FAIL;
 					break;
 				}
 
-			contactptr = AST_LIST_NEXT(contactptr,list);
+				contactptr = AST_LIST_NEXT(contactptr,list);
 			}
 		}
-
 	}
 
 	return res;
@@ -2009,7 +2072,11 @@ static int sip_uri_domain_cmp(const char *host1, const char *host2)
 	 */
 	if (!addr1_parsed) {
 #ifdef HAVE_XLOCALE_H
-		return strcasecmp_l(host1, host2, c_locale);
+		if(!c_locale) {
+			return strcasecmp(host1, host2);
+		} else {
+			return strcasecmp_l(host1, host2, c_locale);
+		}
 #else
 		return strcasecmp(host1, host2);
 #endif
@@ -2243,123 +2310,164 @@ AST_TEST_DEFINE(sip_uri_cmp_test)
 	return test_res;
 }
 
-void get_viabranch(char *via, char **sent_by, char **branch)
+void free_via(struct sip_via *v)
 {
-	char *tmp;
-
-	if (sent_by) {
-		*sent_by = NULL;
-	}
-	if (branch) {
-		*branch = NULL;
-	}
-	if (ast_strlen_zero(via)) {
+	if (!v) {
 		return;
 	}
-	via = ast_skip_blanks(via);
-	/*
-	 * VIA syntax. RFC 3261 section 6.40.5
-	 * Via = ( "Via" | "v") ":" 1#( sent-protocol sent-by *( ";" via-params ) [ comment ] )
-	 * via-params  = via-hidden | via-ttl | via-maddr | via-received | via-branch
-	 * via-hidden       = "hidden"
-	 * via-ttl          = "ttl" "=" ttl
-	 * via-maddr        = "maddr" "=" maddr
-	 * via-received     = "received" "=" host
-	 * via-branch       = "branch" "=" token
-	 * sent-protocol    = protocol-name "/" protocol-version "/" transport
-	 * protocol-name    = "SIP" | token
-	 * protocol-version = token
-	 * transport        = "UDP" | "TCP" | token
-	 * sent-by          = ( host [ ":" port ] ) | ( concealed-host )
-	 * concealed-host   = token
-	 * ttl              = 1*3DIGIT     ; 0 to 255	
-	 */
 
-	/* chop off ("Via:" | "v:") if present */
-	if (!strncasecmp(via, "Via:", 4)) {
-		via += 4;
-	} else if (!strncasecmp(via, "v:", 2)) {
-		via += 2;
+	ast_free(v->via);
+	ast_free(v);
+}
+
+struct sip_via *parse_via(const char *header)
+{
+	struct sip_via *v = ast_calloc(1, sizeof(*v));
+	char *via, *parm;
+
+	if (!v) {
+		return NULL;
 	}
+
+	v->via = ast_strdup(header);
+	v->ttl = 1;
+
+	via = v->via;
+
 	if (ast_strlen_zero(via)) {
-		return;
+		ast_log(LOG_ERROR, "received request without a Via header\n");
+		free_via(v);
+		return NULL;
 	}
+
+	/* seperate the first via-parm */
+	via = strsep(&via, ",");
 
 	/* chop off sent-protocol */
-	via = ast_skip_blanks(via);
-	strsep(&via, " \t\r\n");
-	if (ast_strlen_zero(via)) {
-		return;
+	v->protocol = strsep(&via, " \t\r\n");
+	if (ast_strlen_zero(v->protocol)) {
+		ast_log(LOG_ERROR, "missing sent-protocol in Via header\n");
+		free_via(v);
+		return NULL;
+	}
+	v->protocol = ast_skip_blanks(v->protocol);
+
+	if (via) {
+		via = ast_skip_blanks(via);
 	}
 
 	/* chop off sent-by */
-	via = ast_skip_blanks(via);
-	*sent_by = strsep(&via, "; \t\r\n");
-	if (ast_strlen_zero(via)) {
-		return;
+	v->sent_by = strsep(&via, "; \t\r\n");
+	if (ast_strlen_zero(v->sent_by)) {
+		ast_log(LOG_ERROR, "missing sent-by in Via header\n");
+		free_via(v);
+		return NULL;
+	}
+	v->sent_by = ast_skip_blanks(v->sent_by);
+
+	/* store the port, we have to handle ipv6 addresses containing ':'
+	 * characters gracefully */
+	if (((parm = strchr(v->sent_by, ']')) && *(++parm) == ':') || (parm = strchr(v->sent_by, ':'))) {
+		char *endptr;
+
+		v->port = strtol(++parm, &endptr, 10);
 	}
 
-	/* now see if there is a branch parameter in there */
-	if (!ast_strlen_zero(via) && (tmp = strstr(via, "branch="))) {
-		/* find the branch ID */
-		via = ast_skip_blanks(tmp + 7);
+	/* evaluate any via-parms */
+	while ((parm = strsep(&via, "; \t\r\n"))) {
+		char *c;
+		if ((c = strstr(parm, "maddr="))) {
+			v->maddr = ast_skip_blanks(c + sizeof("maddr=") - 1);
+		} else if ((c = strstr(parm, "branch="))) {
+			v->branch = ast_skip_blanks(c + sizeof("branch=") - 1);
+		} else if ((c = strstr(parm, "ttl="))) {
+			char *endptr;
+			c = ast_skip_blanks(c + sizeof("ttl=") - 1);
+			v->ttl = strtol(c, &endptr, 10);
 
-		/* chop off the branch parameter */
-		*branch = strsep(&via, "; \t\r\n");
+			/* make sure we got a valid ttl value */
+			if (c == endptr) {
+				v->ttl = 1;
+			}
+		}
 	}
+
+	return v;
 }
 
-AST_TEST_DEFINE(get_viabranch_test)
+AST_TEST_DEFINE(parse_via_test)
 {
 	int res = AST_TEST_PASS;
 	int i = 1;
-	char *sent_by, *branch;
+	struct sip_via *via;
 	struct testdata {
 		char *in;
+		char *expected_protocol;
 		char *expected_branch;
 		char *expected_sent_by;
+		char *expected_maddr;
+		unsigned int expected_port;
+		unsigned char expected_ttl;
+		int expected_null;
 		AST_LIST_ENTRY(testdata) list;
 	};
 	struct testdata *testdataptr;
 	static AST_LIST_HEAD_NOLOCK(testdataliststruct, testdata) testdatalist;
 	struct testdata t1 = {
-		.in = "Via: SIP/2.0/UDP host:port;branch=thebranch",
+		.in = "SIP/2.0/UDP host:port;branch=thebranch",
+		.expected_protocol = "SIP/2.0/UDP",
+		.expected_sent_by = "host:port",
 		.expected_branch = "thebranch",
-		.expected_sent_by = "host:port"
 	};
 	struct testdata t2 = {
-		.in = "SIP/2.0/UDP host:port;branch=thebranch",
-		.expected_branch = "thebranch",
-		.expected_sent_by = "host:port"
+		.in = "SIP/2.0/UDP host:port",
+		.expected_protocol = "SIP/2.0/UDP",
+		.expected_sent_by = "host:port",
+		.expected_branch = "",
 	};
 	struct testdata t3 = {
-		.in = "SIP/2.0/UDP host:port",
-		.expected_branch = "",
-		.expected_sent_by = "host:port"
+		.in = "SIP/2.0/UDP",
+		.expected_null = 1,
 	};
 	struct testdata t4 = {
-		.in = "BLAH/BLAH/BLAH            host:port        ;    branch=        thebranch ;;;;;;;",
-		.expected_branch = "thebranch",
-		.expected_sent_by = "host:port"
+		.in = "BLAH/BLAH/BLAH host:port;branch=",
+		.expected_protocol = "BLAH/BLAH/BLAH",
+		.expected_sent_by = "host:port",
+		.expected_branch = "",
 	};
 	struct testdata t5 = {
-		.in = "v: BLAH/BLAH/BLAH",
-		.expected_branch = "",
-		.expected_sent_by = ""
+		.in = "SIP/2.0/UDP host:5060;branch=thebranch;maddr=224.0.0.1;ttl=1",
+		.expected_protocol = "SIP/2.0/UDP",
+		.expected_sent_by = "host:5060",
+		.expected_port = 5060,
+		.expected_branch = "thebranch",
+		.expected_maddr = "224.0.0.1",
+		.expected_ttl = 1,
 	};
 	struct testdata t6 = {
-		.in = "BLAH/BLAH/BLAH host:port;branch=",
+		.in = "SIP/2.0/UDP      host:5060;\n   branch=thebranch;\r\n  maddr=224.0.0.1;   ttl=1",
+		.expected_protocol = "SIP/2.0/UDP",
+		.expected_sent_by = "host:5060",
+		.expected_port = 5060,
+		.expected_branch = "thebranch",
+		.expected_maddr = "224.0.0.1",
+		.expected_ttl = 1,
+	};
+	struct testdata t7 = {
+		.in = "SIP/2.0/UDP [::1]:5060",
+		.expected_protocol = "SIP/2.0/UDP",
+		.expected_sent_by = "[::1]:5060",
+		.expected_port = 5060,
 		.expected_branch = "",
-		.expected_sent_by = "host:port"
 	};
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "get_viabranch_test";
+		info->name = "parse_via_test";
 		info->category = "/channels/chan_sip/";
-		info->summary = "Tests getting sent-by and branch parameter from via";
+		info->summary = "Tests parsing the Via header";
 		info->description =
-				"Runs through various test situations in which a sent-by and"
-				" branch parameter must be extracted from a VIA header";
+				"Runs through various test situations in which various "
+				" parameters parameter must be extracted from a VIA header";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -2371,18 +2479,95 @@ AST_TEST_DEFINE(get_viabranch_test)
 	AST_LIST_INSERT_TAIL(&testdatalist, &t4, list);
 	AST_LIST_INSERT_TAIL(&testdatalist, &t5, list);
 	AST_LIST_INSERT_TAIL(&testdatalist, &t6, list);
+	AST_LIST_INSERT_TAIL(&testdatalist, &t7, list);
 
 
 	AST_LIST_TRAVERSE(&testdatalist, testdataptr, list) {
-		get_viabranch(ast_strdupa(testdataptr->in), &sent_by, &branch);
-		if ((ast_strlen_zero(sent_by) && !ast_strlen_zero(testdataptr->expected_sent_by)) ||
-			(ast_strlen_zero(branch) && !ast_strlen_zero(testdataptr->expected_branch)) ||
-			(!ast_strlen_zero(sent_by) && strcmp(sent_by, testdataptr->expected_sent_by)) ||
-			(!ast_strlen_zero(branch) && strcmp(branch, testdataptr->expected_branch))) {
-			ast_test_status_update(test, "TEST#%d FAILED:  VIA = \"%s\" parsed sent-by = \"%s\" parsed branch = \"%s\"\n",
-			i, testdataptr->in, sent_by, branch);
+		via = parse_via(testdataptr->in);
+		if (!via) {
+		        if (!testdataptr->expected_null) {
+				ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+					"failed to parse header\n",
+				i, testdataptr->in);
+				res = AST_TEST_FAIL;
+			}
+			i++;
+			continue;
+		}
+
+		if (testdataptr->expected_null) {
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"successfully parased invalid via header\n",
+			i, testdataptr->in);
+			res = AST_TEST_FAIL;
+			free_via(via);
+			i++;
+			continue;
+		}
+
+		if ((ast_strlen_zero(via->protocol) && !ast_strlen_zero(testdataptr->expected_protocol))
+			|| (!ast_strlen_zero(via->protocol) && strcmp(via->protocol, testdataptr->expected_protocol))) {
+
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"parsed protocol = \"%s\"\n"
+				"expected = \"%s\"\n"
+				"failed to parse protocol\n",
+			i, testdataptr->in, via->protocol, testdataptr->expected_protocol);
 			res = AST_TEST_FAIL;
 		}
+
+		if ((ast_strlen_zero(via->sent_by) && !ast_strlen_zero(testdataptr->expected_sent_by))
+			|| (!ast_strlen_zero(via->sent_by) && strcmp(via->sent_by, testdataptr->expected_sent_by))) {
+
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"parsed sent_by = \"%s\"\n"
+				"expected = \"%s\"\n"
+				"failed to parse sent-by\n",
+			i, testdataptr->in, via->sent_by, testdataptr->expected_sent_by);
+			res = AST_TEST_FAIL;
+		}
+
+		if (testdataptr->expected_port && testdataptr->expected_port != via->port) {
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"parsed port = \"%d\"\n"
+				"expected = \"%d\"\n"
+				"failed to parse port\n",
+			i, testdataptr->in, via->port, testdataptr->expected_port);
+			res = AST_TEST_FAIL;
+		}
+
+		if ((ast_strlen_zero(via->branch) && !ast_strlen_zero(testdataptr->expected_branch))
+			|| (!ast_strlen_zero(via->branch) && strcmp(via->branch, testdataptr->expected_branch))) {
+
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"parsed branch = \"%s\"\n"
+				"expected = \"%s\"\n"
+				"failed to parse branch\n",
+			i, testdataptr->in, via->branch, testdataptr->expected_branch);
+			res = AST_TEST_FAIL;
+		}
+
+		if ((ast_strlen_zero(via->maddr) && !ast_strlen_zero(testdataptr->expected_maddr))
+			|| (!ast_strlen_zero(via->maddr) && strcmp(via->maddr, testdataptr->expected_maddr))) {
+
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"parsed maddr = \"%s\"\n"
+				"expected = \"%s\"\n"
+				"failed to parse maddr\n",
+			i, testdataptr->in, via->maddr, testdataptr->expected_maddr);
+			res = AST_TEST_FAIL;
+		}
+
+		if (testdataptr->expected_ttl && testdataptr->expected_ttl != via->ttl) {
+			ast_test_status_update(test, "TEST#%d FAILED: VIA = \"%s\"\n"
+				"parsed ttl = \"%d\"\n"
+				"expected = \"%d\"\n"
+				"failed to parse ttl\n",
+			i, testdataptr->in, via->ttl, testdataptr->expected_ttl);
+			res = AST_TEST_FAIL;
+		}
+
+		free_via(via);
 		i++;
 	}
 	return res;
@@ -2399,7 +2584,7 @@ void sip_request_parser_register_tests(void)
 	AST_TEST_REGISTER(parse_contact_header_test);
 	AST_TEST_REGISTER(sip_parse_options_test);
 	AST_TEST_REGISTER(sip_uri_cmp_test);
-	AST_TEST_REGISTER(get_viabranch_test);
+	AST_TEST_REGISTER(parse_via_test);
 }
 void sip_request_parser_unregister_tests(void)
 {
@@ -2412,7 +2597,7 @@ void sip_request_parser_unregister_tests(void)
 	AST_TEST_UNREGISTER(parse_contact_header_test);
 	AST_TEST_UNREGISTER(sip_parse_options_test);
 	AST_TEST_UNREGISTER(sip_uri_cmp_test);
-	AST_TEST_UNREGISTER(get_viabranch_test);
+	AST_TEST_UNREGISTER(parse_via_test);
 }
 
 int sip_reqresp_parser_init(void)

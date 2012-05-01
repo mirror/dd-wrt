@@ -37,11 +37,12 @@
 /*** MODULEINFO
 	<depend>jack</depend>
 	<depend>resample</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 240368 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <limits.h>
 

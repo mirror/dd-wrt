@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291758 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 358430 $")
 
 #include "asterisk/network.h"
 
@@ -408,6 +408,9 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 	}
 
 	if (!(ha = ast_calloc(1, sizeof(*ha)))) {
+		if (error) {
+			*error = 1;
+		}
 		return ret;
 	}
 
@@ -421,7 +424,9 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 	if (!ast_sockaddr_parse(&ha->addr, address, PARSE_PORT_FORBID)) {
 		ast_log(LOG_WARNING, "Invalid IP address: %s\n", address);
 		ast_free_ha(ha);
-		*error = 1;
+		if (error) {
+			*error = 1;
+		}
 		return ret;
 	}
 
@@ -443,7 +448,9 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 		if (!ast_sockaddr_parse(&ha->netmask, mask, PARSE_PORT_FORBID)) {
 			ast_log(LOG_WARNING, "Invalid netmask: %s\n", mask);
 			ast_free_ha(ha);
-			*error = 1;
+			if (error) {
+				*error = 1;
+			}
 			return ret;
 		}
 		/* If someone specifies an IPv4-mapped IPv6 netmask,
@@ -457,13 +464,17 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 		if (addr_is_v4 ^ mask_is_v4) {
 			ast_log(LOG_WARNING, "Address and mask are not using same address scheme.\n");
 			ast_free_ha(ha);
-			*error = 1;
+			if (error) {
+				*error = 1;
+			}
 			return ret;
 		}
 	} else if (parse_cidr_mask(&ha->netmask, addr_is_v4, mask)) {
 		ast_log(LOG_WARNING, "Invalid CIDR netmask: %s\n", mask);
 		ast_free_ha(ha);
-		*error = 1;
+		if (error) {
+			*error = 1;
+		}
 		return ret;
 	}
 
@@ -475,7 +486,9 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 		char *failaddr = ast_strdupa(ast_sockaddr_stringify(&ha->addr));
 		ast_log(LOG_WARNING, "Unable to apply netmask %s to address %s\n", failmask, failaddr);
 		ast_free_ha(ha);
-		*error = 1;
+		if (error) {
+			*error = 1;
+		}
 		return ret;
 	}
 
@@ -573,7 +586,7 @@ static int resolve_first(struct ast_sockaddr *addr, const char *name, int flag,
 	return 0;
 }
 
-int ast_get_ip_or_srv(struct ast_sockaddr *addr, const char *value, const char *service)
+int ast_get_ip_or_srv(struct ast_sockaddr *addr, const char *hostname, const char *service)
 {
 	char srv[256];
 	char host[256];
@@ -581,13 +594,13 @@ int ast_get_ip_or_srv(struct ast_sockaddr *addr, const char *value, const char *
 	int tportno;
 
 	if (service) {
-		snprintf(srv, sizeof(srv), "%s.%s", service, value);
+		snprintf(srv, sizeof(srv), "%s.%s", service, hostname);
 		if ((srv_ret = ast_get_srv(NULL, host, sizeof(host), &tportno, srv)) > 0) {
-			value = host;
+			hostname = host;
 		}
 	}
 
-	if (resolve_first(addr, value, PARSE_PORT_FORBID, addr->ss.ss_family) != 0) {
+	if (resolve_first(addr, hostname, PARSE_PORT_FORBID, addr->ss.ss_family) != 0) {
 		return -1;
 	}
 
@@ -676,9 +689,9 @@ const char *ast_tos2str(unsigned int tos)
 	return "unknown";
 }
 
-int ast_get_ip(struct ast_sockaddr *addr, const char *value)
+int ast_get_ip(struct ast_sockaddr *addr, const char *hostname)
 {
-	return ast_get_ip_or_srv(addr, value, NULL);
+	return ast_get_ip_or_srv(addr, hostname, NULL);
 }
 
 int ast_ouraddrfor(const struct ast_sockaddr *them, struct ast_sockaddr *us)
@@ -724,6 +737,7 @@ int ast_find_ourip(struct ast_sockaddr *ourip, const struct ast_sockaddr *bindad
 {
 	char ourhost[MAXHOSTNAMELEN] = "";
 	struct ast_sockaddr root;
+	int res, port = ast_sockaddr_port(ourip);
 
 	/* just use the bind address if it is nonzero */
 	if (!ast_sockaddr_is_any(bindaddr)) {
@@ -736,6 +750,8 @@ int ast_find_ourip(struct ast_sockaddr *ourip, const struct ast_sockaddr *bindad
 		ast_log(LOG_WARNING, "Unable to get hostname\n");
 	} else {
 		if (resolve_first(ourip, ourhost, PARSE_PORT_FORBID, family) == 0) {
+			/* reset port since resolve_first wipes this out */
+			ast_sockaddr_set_port(ourip, port);
 			return 0;
 		}
 	}
@@ -743,8 +759,12 @@ int ast_find_ourip(struct ast_sockaddr *ourip, const struct ast_sockaddr *bindad
 	/* A.ROOT-SERVERS.NET. */
 	if (!resolve_first(&root, "A.ROOT-SERVERS.NET", PARSE_PORT_FORBID, 0) &&
 	    !ast_ouraddrfor(&root, ourip)) {
+		/* reset port since resolve_first wipes this out */
+		ast_sockaddr_set_port(ourip, port);
 		return 0;
 	}
-	return get_local_address(ourip);
+	res = get_local_address(ourip);
+	ast_sockaddr_set_port(ourip, port);
+	return res;
 }
 

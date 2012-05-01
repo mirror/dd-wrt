@@ -33,11 +33,13 @@
 
 /*** MODULEINFO
 	<depend>dahdi</depend>
+	<support_level>deprecated</support_level>
+	<replacement>app_chanspy</replacement>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 227580 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328446 $")
 
 #include <dahdi/user.h>
 

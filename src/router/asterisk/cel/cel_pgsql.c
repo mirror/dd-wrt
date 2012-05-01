@@ -39,11 +39,12 @@
 
 /*** MODULEINFO
 	<depend>pgsql</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350571 $")
 
 #include <libpq-fe.h>
 
@@ -144,13 +145,7 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 		int first = 1;
 
 		if (!sql || !sql2) {
-			if (sql) {
-				ast_free(sql);
-			}
-			if (sql2) {
-				ast_free(sql2);
-			}
-			return;
+			goto ast_log_cleanup;
 		}
 
 		ast_str_set(&sql, 0, "INSERT INTO %s (", table);
@@ -239,6 +234,8 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 					value = record.user_field;
 				} else if (strcmp(cur->name, "peer") == 0) {
 					value = record.peer;
+				} else if (strcmp(cur->name, "extra") == 0) {
+					value = record.extra;
 				} else {
 					value = NULL;
 				}
@@ -288,10 +285,10 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 		if (PQstatus(conn) == CONNECTION_OK) {
 			connected = 1;
 		} else {
-			ast_log(LOG_ERROR, "Connection was lost... attempting to reconnect.\n");
+			ast_log(LOG_WARNING, "Connection was lost... attempting to reconnect.\n");
 			PQreset(conn);
 			if (PQstatus(conn) == CONNECTION_OK) {
-				ast_log(LOG_ERROR, "Connection reestablished.\n");
+				ast_log(LOG_NOTICE, "Connection reestablished.\n");
 				connected = 1;
 			} else {
 				pgerror = PQerrorMessage(conn);
@@ -300,21 +297,18 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 				PQfinish(conn);
 				conn = NULL;
 				connected = 0;
-				ast_mutex_unlock(&pgsql_lock);
-				ast_free(sql);
-				ast_free(sql2);
-				return;
+				goto ast_log_cleanup;
 			}
 		}
 		result = PQexec(conn, ast_str_buffer(sql));
 		if (PQresultStatus(result) != PGRES_COMMAND_OK) {
 			pgerror = PQresultErrorMessage(result);
-			ast_log(LOG_ERROR, "Failed to insert call detail record into database!\n");
-			ast_log(LOG_ERROR, "Reason: %s\n", pgerror);
-			ast_log(LOG_ERROR, "Connection may have been lost... attempting to reconnect.\n");
+			ast_log(LOG_WARNING, "Failed to insert call detail record into database!\n");
+			ast_log(LOG_WARNING, "Reason: %s\n", pgerror);
+			ast_log(LOG_WARNING, "Connection may have been lost... attempting to reconnect.\n");
 			PQreset(conn);
 			if (PQstatus(conn) == CONNECTION_OK) {
-				ast_log(LOG_ERROR, "Connection reestablished.\n");
+				ast_log(LOG_NOTICE, "Connection reestablished.\n");
 				connected = 1;
 				PQclear(result);
 				result = PQexec(conn, ast_str_buffer(sql));
@@ -324,44 +318,54 @@ static void pgsql_log(const struct ast_event *event, void *userdata)
 					ast_log(LOG_ERROR, "Reason: %s\n", pgerror);
 				}
 			}
-			ast_mutex_unlock(&pgsql_lock);
 			PQclear(result);
-			ast_free(sql);
-			ast_free(sql2);
-			return;
+			goto ast_log_cleanup;
 		}
-		ast_mutex_unlock(&pgsql_lock);
+
+ast_log_cleanup:
+		ast_free(sql);
+		ast_free(sql2);
 	}
+
+	ast_mutex_unlock(&pgsql_lock);
 }
 
 static int my_unload_module(void)
 {
 	struct columns *current;
+	AST_RWLIST_WRLOCK(&psql_columns);
 	if (event_sub) {
 		event_sub = ast_event_unsubscribe(event_sub);
+		event_sub = NULL;
 	}
 	if (conn) {
 		PQfinish(conn);
+		conn = NULL;
 	}
 	if (pghostname) {
 		ast_free(pghostname);
+		pghostname = NULL;
 	}
 	if (pgdbname) {
 		ast_free(pgdbname);
+		pgdbname = NULL;
 	}
 	if (pgdbuser) {
 		ast_free(pgdbuser);
+		pgdbuser = NULL;
 	}
 	if (pgpassword) {
 		ast_free(pgpassword);
+		pgpassword = NULL;
 	}
 	if (pgdbport) {
 		ast_free(pgdbport);
+		pgdbport = NULL;
 	}
 	if (table) {
 		ast_free(table);
+		table = NULL;
 	}
-	AST_RWLIST_WRLOCK(&psql_columns);
 	while ((current = AST_RWLIST_REMOVE_HEAD(&psql_columns, list))) {
 		ast_free(current);
 	}
@@ -527,7 +531,6 @@ static int process_my_load_module(struct ast_config *cfg)
 static int my_load_module(int reload)
 {
 	struct ast_config *cfg;
-	int res;
 	struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
 
 	if ((cfg = ast_config_load(config, config_flags)) == NULL || cfg == CONFIG_STATUS_FILEINVALID) {
@@ -537,7 +540,7 @@ static int my_load_module(int reload)
 		return AST_MODULE_LOAD_SUCCESS;
 	}
 
-	res = process_my_load_module(cfg);
+	process_my_load_module(cfg);
 	ast_config_destroy(cfg);
 
 	event_sub = ast_event_subscribe(AST_EVENT_CEL, pgsql_log, "CEL PGSQL backend", NULL, AST_EVENT_IE_END);

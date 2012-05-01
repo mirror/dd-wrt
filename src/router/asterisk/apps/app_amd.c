@@ -26,10 +26,13 @@
  * \author Claude Klimos (claude.klimos@aheeva.com)
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 277183 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include "asterisk/module.h"
 #include "asterisk/lock.h"
@@ -156,7 +159,6 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 	int iTotalTime = 0;
 	int iWordsCount = 0;
 	int currentState = STATE_IN_WORD;
-	int previousState = STATE_IN_SILENCE;
 	int consecutiveVoiceDuration = 0;
 	char amdCause[256] = "", amdStatus[256] = "";
 	char *parse = ast_strdupa(data);
@@ -301,7 +303,6 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 				
 				if (silenceDuration >= betweenWordsSilence) {
 					if (currentState != STATE_IN_SILENCE ) {
-						previousState = currentState;
 						ast_verb(3, "AMD: Channel [%s]. Changed state to STATE_IN_SILENCE\n", chan->name);
 					}
 					/* Find words less than word duration */
@@ -341,7 +342,6 @@ static void isAnsweringMachine(struct ast_channel *chan, const char *data)
 				if (consecutiveVoiceDuration >= minimumWordLength && currentState == STATE_IN_SILENCE) {
 					iWordsCount++;
 					ast_verb(3, "AMD: Channel [%s]. Word detected. iWordsCount:%d\n", chan->name, iWordsCount);
-					previousState = currentState;
 					currentState = STATE_IN_WORD;
 				}
 				if (consecutiveVoiceDuration >= maximumWordLength){

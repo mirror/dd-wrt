@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 298960 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 337973 $")
 
 /* When we include logger.h again it will trample on some stuff in syslog.h, but
  * nothing we care about in here. */
@@ -79,6 +79,7 @@ static char exec_after_rotate[256] = "";
 static int filesize_reload_needed;
 static unsigned int global_logmask = 0xFFFF;
 static int queuelog_init;
+static int logger_initialized;
 
 static enum rotatestrategy {
 	SEQUENTIAL = 1 << 0,     /* Original method - create a new file, in order */
@@ -282,9 +283,16 @@ static struct logchannel *make_logchannel(const char *channel, const char *compo
 				 channel[0] != '/' ? ast_config_AST_LOG_DIR : "", channel);
 		}
 		if (!(chan->fileptr = fopen(chan->filename, "a"))) {
-			/* Can't log here, since we're called with a lock */
-			fprintf(stderr, "Logger Warning: Unable to open log file '%s': %s\n", chan->filename, strerror(errno));
-		} 
+			/* Can't do real logging here since we're called with a lock
+			 * so log to any attached consoles */
+			ast_console_puts_mutable("ERROR: Unable to open log file '", __LOG_ERROR);
+			ast_console_puts_mutable(chan->filename, __LOG_ERROR);
+			ast_console_puts_mutable("': ", __LOG_ERROR);
+			ast_console_puts_mutable(strerror(errno), __LOG_ERROR);
+			ast_console_puts_mutable("'\n", __LOG_ERROR);
+			ast_free(chan);
+			return NULL;
+		}
 		chan->type = LOGTYPE_FILE;
 	}
 	chan->logmask = make_components(chan->components, lineno);
@@ -392,16 +400,20 @@ static void init_logger_chain(int locked)
 	var = ast_variable_browse(cfg, "logfiles");
 	for (; var; var = var->next) {
 		if (!(chan = make_logchannel(var->name, var->value, var->lineno))) {
+			/* Print error message directly to the consoles since the lock is held
+			 * and we don't want to unlock with the list partially built */
+			ast_console_puts_mutable("ERROR: Unable to create log channel '", __LOG_ERROR);
+			ast_console_puts_mutable(var->name, __LOG_ERROR);
+			ast_console_puts_mutable("'\n", __LOG_ERROR);
 			continue;
 		}
 		AST_RWLIST_INSERT_HEAD(&logchannels, chan, list);
 		global_logmask |= chan->logmask;
 	}
+
 	if (qlog) {
-		char tmp[4096];
 		fclose(qlog);
-		snprintf(tmp, sizeof(tmp), "%s/%s", ast_config_AST_LOG_DIR, queue_log_name);
-		qlog = fopen(tmp, "a");
+		qlog = NULL;
 	}
 
 	if (!locked) {
@@ -469,9 +481,25 @@ void ast_queue_log(const char *queuename, const char *callid, const char *agent,
 	int qlog_len;
 	char time_str[30];
 
+	if (!logger_initialized) {
+		/* You are too early.  We are not open yet! */
+		return;
+	}
 	if (!queuelog_init) {
-		queuelog_init = 1;
-		logger_queue_init();
+		AST_RWLIST_WRLOCK(&logchannels);
+		if (!queuelog_init) {
+			/*
+			 * We have delayed initializing the queue logging system so
+			 * preloaded realtime modules can get up.  We must initialize
+			 * now since someone is trying to log something.
+			 */
+			logger_queue_init();
+			queuelog_init = 1;
+			AST_RWLIST_UNLOCK(&logchannels);
+			ast_queue_log("NONE", "NONE", "NONE", "QUEUESTART", "%s", "");
+		} else {
+			AST_RWLIST_UNLOCK(&logchannels);
+		}
 	}
 
 	if (ast_check_realtime("queue_log")) {
@@ -487,7 +515,8 @@ void ast_queue_log(const char *queuename, const char *callid, const char *agent,
 			);
 			AST_NONSTANDARD_APP_ARGS(args, qlog_msg, '|');
 			/* Ensure fields are large enough to receive data */
-			ast_realtime_require_field("queue_log", "data1", RQ_CHAR, strlen(S_OR(args.data[0], "")),
+			ast_realtime_require_field("queue_log",
+				"data1", RQ_CHAR, strlen(S_OR(args.data[0], "")),
 				"data2", RQ_CHAR, strlen(S_OR(args.data[1], "")),
 				"data3", RQ_CHAR, strlen(S_OR(args.data[2], "")),
 				"data4", RQ_CHAR, strlen(S_OR(args.data[3], "")),
@@ -609,25 +638,98 @@ static int rotate_file(const char *filename)
 		if (rename(filename, new)) {
 			fprintf(stderr, "Unable to rename file '%s' to '%s'\n", filename, new);
 			res = -1;
+		} else {
+			filename = new;
 		}
 	}
 
 	if (!ast_strlen_zero(exec_after_rotate)) {
 		struct ast_channel *c = ast_dummy_channel_alloc();
 		char buf[512];
+
 		pbx_builtin_setvar_helper(c, "filename", filename);
 		pbx_substitute_variables_helper(c, exec_after_rotate, buf, sizeof(buf));
+		if (c) {
+			c = ast_channel_unref(c);
+		}
 		if (ast_safe_system(buf) == -1) {
 			ast_log(LOG_WARNING, "error executing '%s'\n", buf);
 		}
-		c = ast_channel_release(c);
+	}
+	return res;
+}
+
+/*!
+ * \internal
+ * \brief Start the realtime queue logging if configured.
+ *
+ * \retval TRUE if not to open queue log file.
+ */
+static int logger_queue_rt_start(void)
+{
+	if (ast_check_realtime("queue_log")) {
+		if (!ast_realtime_require_field("queue_log",
+			"time", RQ_DATETIME, 26,
+			"data1", RQ_CHAR, 20,
+			"data2", RQ_CHAR, 20,
+			"data3", RQ_CHAR, 20,
+			"data4", RQ_CHAR, 20,
+			"data5", RQ_CHAR, 20,
+			SENTINEL)) {
+			logfiles.queue_adaptive_realtime = 1;
+		} else {
+			logfiles.queue_adaptive_realtime = 0;
+		}
+
+		if (!logfiles.queue_log_to_file) {
+			/* Don't open the log file. */
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/*!
+ * \internal
+ * \brief Rotate the queue log file and restart.
+ *
+ * \param queue_rotate Log queue rotation mode.
+ *
+ * \note Assumes logchannels is write locked on entry.
+ *
+ * \retval 0 on success.
+ * \retval -1 on error.
+ */
+static int logger_queue_restart(int queue_rotate)
+{
+	int res = 0;
+	char qfname[PATH_MAX];
+
+	if (logger_queue_rt_start()) {
+		return res;
+	}
+
+	snprintf(qfname, sizeof(qfname), "%s/%s", ast_config_AST_LOG_DIR, queue_log_name);
+	if (qlog) {
+		/* Just in case it was still open. */
+		fclose(qlog);
+		qlog = NULL;
+	}
+	if (queue_rotate) {
+		rotate_file(qfname);
+	}
+
+	/* Open the log file. */
+	qlog = fopen(qfname, "a");
+	if (!qlog) {
+		ast_log(LOG_ERROR, "Unable to create queue log: %s\n", strerror(errno));
+		res = -1;
 	}
 	return res;
 }
 
 static int reload_logger(int rotate)
 {
-	char old[PATH_MAX] = "";
 	int queue_rotate = rotate;
 	struct logchannel *f;
 	int res = 0;
@@ -676,47 +778,15 @@ static int reload_logger(int rotate)
 
 	init_logger_chain(1 /* locked */);
 
+	ast_unload_realtime("queue_log");
 	if (logfiles.queue_log) {
-		do {
-			ast_unload_realtime("queue_log");
-			if (ast_check_realtime("queue_log")) {
-				if (!ast_realtime_require_field("queue_log",
-						"time", RQ_DATETIME, 26, "data1", RQ_CHAR, 20,
-						"data2", RQ_CHAR, 20, "data3", RQ_CHAR, 20,
-						"data4", RQ_CHAR, 20, "data5", RQ_CHAR, 20, SENTINEL)) {
-					logfiles.queue_adaptive_realtime = 1;
-				} else {
-					logfiles.queue_adaptive_realtime = 0;
-				}
-
-				if (!logfiles.queue_log_to_file) {
-					/* Skip the following section */
-					break;
-				}
-			}
-			if (qlog) {
-				fclose(qlog);
-				qlog = NULL;
-			}
-			snprintf(old, sizeof(old), "%s/%s", ast_config_AST_LOG_DIR, queue_log_name);
-			if (queue_rotate) {
-				rotate_file(old);
-			}
-
-			qlog = fopen(old, "a");
-			if (qlog) {
-				AST_RWLIST_UNLOCK(&logchannels);
-				ast_queue_log("NONE", "NONE", "NONE", "CONFIGRELOAD", "%s", "");
-				AST_RWLIST_WRLOCK(&logchannels);
-				ast_verb(1, "Asterisk Queue Logger restarted\n");
-			} else {
-				ast_log(LOG_ERROR, "Unable to create queue log: %s\n", strerror(errno));
-				res = -1;
-			}
-		} while (0);
+		res = logger_queue_restart(queue_rotate);
+		AST_RWLIST_UNLOCK(&logchannels);
+		ast_queue_log("NONE", "NONE", "NONE", "CONFIGRELOAD", "%s", "");
+		ast_verb(1, "Asterisk Queue Logger restarted\n");
+	} else {
+		AST_RWLIST_UNLOCK(&logchannels);
 	}
-
-	AST_RWLIST_UNLOCK(&logchannels);
 
 	return res;
 }
@@ -1021,22 +1091,36 @@ static void *logger_thread(void *data)
 	return NULL;
 }
 
+/*!
+ * \internal
+ * \brief Initialize the logger queue.
+ *
+ * \note Assumes logchannels is write locked on entry.
+ *
+ * \return Nothing
+ */
 static void logger_queue_init(void)
 {
-	/* Preloaded modules are up. */
 	ast_unload_realtime("queue_log");
-	if (logfiles.queue_log && ast_check_realtime("queue_log")) {
-		if (!ast_realtime_require_field("queue_log",
-				"time", RQ_DATETIME, 26, "data1", RQ_CHAR, 20,
-				"data2", RQ_CHAR, 20, "data3", RQ_CHAR, 20,
-				"data4", RQ_CHAR, 20, "data5", RQ_CHAR, 20, SENTINEL)) {
-			logfiles.queue_adaptive_realtime = 1;
-		} else {
-			logfiles.queue_adaptive_realtime = 0;
+	if (logfiles.queue_log) {
+		char qfname[PATH_MAX];
+
+		if (logger_queue_rt_start()) {
+			return;
+		}
+
+		/* Open the log file. */
+		snprintf(qfname, sizeof(qfname), "%s/%s", ast_config_AST_LOG_DIR,
+			queue_log_name);
+		if (qlog) {
+			/* Just in case it was already open. */
+			fclose(qlog);
+		}
+		qlog = fopen(qfname, "a");
+		if (!qlog) {
+			ast_log(LOG_ERROR, "Unable to create queue log: %s\n", strerror(errno));
 		}
 	}
-
-	ast_queue_log("NONE", "NONE", "NONE", "QUEUESTART", "%s", "");
 }
 
 int init_logger(void)
@@ -1058,6 +1142,7 @@ int init_logger(void)
 
 	/* create log channels */
 	init_logger_chain(0 /* locked */);
+	logger_initialized = 1;
 
 	return 0;
 }
@@ -1065,6 +1150,8 @@ int init_logger(void)
 void close_logger(void)
 {
 	struct logchannel *f = NULL;
+
+	logger_initialized = 0;
 
 	/* Stop logger thread */
 	AST_LIST_LOCK(&logmsgs);
@@ -1112,20 +1199,18 @@ void ast_log(int level, const char *file, int line, const char *function, const 
 	if (!(buf = ast_str_thread_get(&log_buf, LOG_BUF_INIT_SIZE)))
 		return;
 
-	if (AST_RWLIST_EMPTY(&logchannels)) {
+	if (level != __LOG_VERBOSE && AST_RWLIST_EMPTY(&logchannels)) {
 		/*
 		 * we don't have the logger chain configured yet,
 		 * so just log to stdout
 		 */
-		if (level != __LOG_VERBOSE) {
-			int result;
-			va_start(ap, fmt);
-			result = ast_str_set_va(&buf, BUFSIZ, fmt, ap); /* XXX BUFSIZ ? */
-			va_end(ap);
-			if (result != AST_DYNSTR_BUILD_FAILED) {
-				term_filter_escapes(ast_str_buffer(buf));
-				fputs(ast_str_buffer(buf), stdout);
-			}
+		int result;
+		va_start(ap, fmt);
+		result = ast_str_set_va(&buf, BUFSIZ, fmt, ap); /* XXX BUFSIZ ? */
+		va_end(ap);
+		if (result != AST_DYNSTR_BUILD_FAILED) {
+			term_filter_escapes(ast_str_buffer(buf));
+			fputs(ast_str_buffer(buf), stdout);
 		}
 		return;
 	}
@@ -1579,7 +1664,7 @@ void ast_logger_unregister_level(const char *name)
 
 		global_logmask &= ~(1 << x);
 
-		free(levels[x]);
+		ast_free(levels[x]);
 		levels[x] = NULL;
 		AST_RWLIST_UNLOCK(&logchannels);
 

@@ -98,14 +98,17 @@ void ast_console_puts_mutable(const char *string, int level);
 void ast_console_toggle_mute(int fd, int silent);
 
 /*!
- * \since 1.6.1
+ * \brief enables or disables logging of a specified level to the console
+ * fd specifies the index of the console receiving the level change
+ * level specifies the index of the logging level being toggled
+ * state indicates whether logging will be on or off (0 for off, 1 for on)
  */
 void ast_console_toggle_loglevel(int fd, int level, int state);
 
 /* Note: The AST_LOG_* macros below are the same as
  * the LOG_* macros and are intended to eventually replace
- * the LOG_* macros to avoid name collisions as has been
- * seen in app_voicemail. However, please do NOT remove
+ * the LOG_* macros to avoid name collisions with the syslog(3)
+ * log levels. However, please do NOT remove
  * the LOG_* macros from the source since these may be still
  * needed for third-party modules
  */
@@ -165,7 +168,7 @@ void ast_console_toggle_loglevel(int fd, int level, int state);
 #ifdef AST_LOG_VERBOSE
 #undef AST_LOG_VERBOSE
 #endif
-#define LOG_VERBOSE    __LOG_VERBOSE, _A_
+#define AST_LOG_VERBOSE    __LOG_VERBOSE, _A_
 
 #ifdef LOG_DTMF
 #undef LOG_DTMF
@@ -178,7 +181,7 @@ void ast_console_toggle_loglevel(int fd, int level, int state);
 #endif
 #define AST_LOG_DTMF    __LOG_DTMF, _A_
 
-#define NUMLOGLEVELS 6
+#define NUMLOGLEVELS 7
 
 /*!
  * \brief Get the debug level for a module

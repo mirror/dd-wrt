@@ -25,11 +25,12 @@
 
 /*** MODULEINFO
 	<depend>dahdi</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 349194 $");
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -137,7 +138,7 @@ static unsigned int dahdi_timer_get_max_rate(int handle)
 	return 1000;
 }
 
-#define SEE_TIMING "For more information on Asterisk timing modules, including ways to potentially fix this problem, please see doc/timing.txt\n"
+#define SEE_TIMING "For more information on Asterisk timing modules, including ways to potentially fix this problem, please see https://wiki.asterisk.org/wiki/display/AST/Timing+Interfaces\n"
 
 static int dahdi_test_timer(void)
 {
@@ -202,5 +203,5 @@ static int unload_module(void)
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "DAHDI Timing Interface",
 		.load = load_module,
 		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+		.load_pri = AST_MODPRI_TIMING,
 		);

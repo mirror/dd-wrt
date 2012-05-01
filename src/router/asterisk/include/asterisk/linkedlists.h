@@ -535,7 +535,8 @@ struct {								\
 	     (var);									\
 	     __list_prev = __new_prev, (var) = __list_next,				\
 	     __new_prev = (var),							\
-	     __list_next = (var) ? (var)->field.next : NULL				\
+	     __list_next = (var) ? (var)->field.next : NULL,				\
+	     (void) __list_prev								\
 	    )
 
 #define AST_RWLIST_TRAVERSE_SAFE_BEGIN AST_LIST_TRAVERSE_SAFE_BEGIN
@@ -588,7 +589,7 @@ struct {								\
 		(elm)->field.next = __list_head->first;			\
 		__list_head->first = (elm);				\
 	}								\
-	__new_prev = (elm);						\
+	__list_prev = (elm);						\
 } while (0)
 
 #define AST_RWLIST_INSERT_BEFORE_CURRENT AST_LIST_INSERT_BEFORE_CURRENT
@@ -837,7 +838,10 @@ struct {								\
  */
 #define AST_LIST_REMOVE(head, elm, field) ({			        \
 	__typeof(elm) __res = NULL; \
-	if ((head)->first == (elm)) {					\
+	__typeof(elm) __tmp = elm; \
+	if (!__tmp) { \
+		__res = NULL; \
+	} else if ((head)->first == (elm)) {					\
 		__res = (head)->first;                      \
 		(head)->first = (elm)->field.next;			\
 		if ((head)->last == (elm))			\
@@ -853,7 +857,9 @@ struct {								\
 				(head)->last = curelm;				\
 		} \
 	}								\
-	(elm)->field.next = NULL;                                       \
+	if (__res) { \
+		(__res)->field.next = NULL; \
+	} \
 	(__res); \
 })
 

@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 268894 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356604 $")
 
 #include "asterisk/options.h"
 #include "asterisk/utils.h"
@@ -161,15 +161,9 @@ static int sdp_crypto_activate(struct sdp_crypto *p, int suite_val, unsigned cha
 		goto err;
 	}
 
-	/* FIXME MIKMA */
-	/* ^^^ I wish I knew what needed fixing... */
-	if (ast_rtp_instance_add_srtp_policy(rtp, local_policy)) {
-		ast_log(LOG_WARNING, "Could not set local SRTP policy\n");
-		goto err;
-	}
-
-	if (ast_rtp_instance_add_srtp_policy(rtp, remote_policy)) {
-		ast_log(LOG_WARNING, "Could not set remote SRTP policy\n");
+	/* Add the SRTP policies */
+	if (ast_rtp_instance_add_srtp_policy(rtp, remote_policy, local_policy)) {
+		ast_log(LOG_WARNING, "Could not set SRTP policies\n");
 		goto err;
 	}
 
@@ -191,7 +185,6 @@ err:
 int sdp_crypto_process(struct sdp_crypto *p, const char *attr, struct ast_rtp_instance *rtp)
 {
 	char *str = NULL;
-	char *name = NULL;
 	char *tag = NULL;
 	char *suite = NULL;
 	char *key_params = NULL;
@@ -211,7 +204,7 @@ int sdp_crypto_process(struct sdp_crypto *p, const char *attr, struct ast_rtp_in
 
 	str = ast_strdupa(attr);
 
-	name = strsep(&str, ":");
+	strsep(&str, ":");
 	tag = strsep(&str, " ");
 	suite = strsep(&str, " ");
 	key_params = strsep(&str, " ");
@@ -277,10 +270,8 @@ int sdp_crypto_process(struct sdp_crypto *p, const char *attr, struct ast_rtp_in
 			ast_log(LOG_ERROR, "Could not allocate memory for a_crypto\n");
 			return -1;
 		}
-
 		snprintf(p->a_crypto, attr_len + 10, "a=crypto:%s %s inline:%s\r\n", tag, suite, p->local_key64);
 	}
-
 	return 0;
 }
 
