@@ -50,6 +50,11 @@ CF_DECLS
   struct f_path_mask *h;
   struct password_item *p;
   struct rt_show_data *ra;
+  struct roa_show_data *ro;
+  struct sym_show_data *sd;
+  struct lsadb_show_data *ld;
+  struct iface *iface;
+  struct roa_table *rot;
   void *g;
   bird_clock_t time;
   struct prefix px;
@@ -65,6 +70,7 @@ CF_DECLS
 %token <a> IPA
 %token <s> SYM
 %token <t> TEXT
+%type <iface> ipa_scope
 
 %type <i> expr bool pxlen
 %type <time> datetime
@@ -138,6 +144,11 @@ ipa:
      if ($1->class != SYM_IPA) cf_error("IP address expected");
      $$ = *(ip_addr *)$1->def;
    }
+ ;
+
+ipa_scope:
+   /* empty */ { $$ = NULL; }
+ | '%' SYM { $$ = if_get_by_name($2->name); }
  ;
 
 prefix:

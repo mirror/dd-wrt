@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #define PARSER 1
 
@@ -63,18 +64,27 @@ struct sym_scope {
 };
 static struct sym_scope *conf_this_scope;
 
-int conf_lino;
+#define MAX_INCLUDE_DEPTH 5
+
+static struct include_file_stack *ifs_head;
+static int ifs_depth;
 
 static int cf_hash(byte *c);
 static struct symbol *cf_find_sym(byte *c, unsigned int h0);
 
 linpool *cfg_mem;
 
-int (*cf_read_hook)(byte *buf, unsigned int max);
+int (*cf_read_hook)(byte *buf, unsigned int max, int fd);
+int (*cf_open_hook)(char *filename);
+struct include_file_stack *ifs;
 
-#define YY_INPUT(buf,result,max) result = cf_read_hook(buf, max);
+#define YY_INPUT(buf,result,max) result = cf_read_hook(buf, max, ifs->conf_fd);
 #define YY_NO_UNPUT
 #define YY_FATAL_ERROR(msg) cf_error(msg)
+
+static void new_include(void);
+static int check_eof(void);
+static struct include_file_stack *new_stack(struct include_file_stack *old);
 
 %}
 
@@ -90,8 +100,10 @@ DIGIT [0-9]
 XIGIT [0-9a-fA-F]
 ALNUM [a-zA-Z_0-9]
 WHITE [ \t]
+include   ^{WHITE}*include{WHITE}*\".*\"{WHITE}*;
 
 %%
+{include} { if(cf_open_hook) new_include(); }
 
 {DIGIT}+\.{DIGIT}+\.{DIGIT}+\.{DIGIT}+ {
 #ifdef IPV6
@@ -117,10 +129,10 @@ WHITE [ \t]
 
 0x{XIGIT}+ {
   char *e;
-  long int l;
+  unsigned long int l;
   errno = 0;
   l = strtoul(yytext+2, &e, 16);
-  if (e && *e || errno == ERANGE || (long int)(int) l != l)
+  if (e && *e || errno == ERANGE || (unsigned long int)(unsigned int) l != l)
     cf_error("Number out of range");
   cf_lval.i = l;
   return NUM;
@@ -128,10 +140,10 @@ WHITE [ \t]
 
 {DIGIT}+ {
   char *e;
-  long int l;
+  unsigned long int l;
   errno = 0;
   l = strtoul(yytext, &e, 10);
-  if (e && *e || errno == ERANGE || (long int)(int) l != l)
+  if (e && *e || errno == ERANGE || (unsigned long int)(unsigned int) l != l)
     cf_error("Number out of range");
   cf_lval.i = l;
   return NUM;
@@ -188,11 +200,11 @@ else: {
 
 ["][^"\n]*\n	cf_error("Unterminated string");
 
-<INITIAL,COMMENT><<EOF>>	return END;
+<INITIAL,COMMENT><<EOF>>	{ if(check_eof()) return END; }
 
 {WHITE}+
 
-\n	conf_lino++;
+\n	ifs->conf_lino++;
 
 #	BEGIN(COMMENT);
 
@@ -201,14 +213,14 @@ else: {
 .	cf_error("Unknown character");
 
 <COMMENT>\n {
-  conf_lino++;
+  ifs->conf_lino++;
   BEGIN(INITIAL);
 }
 
 <COMMENT>.
 
 <CCOMM>\*\/	BEGIN(INITIAL);
-<CCOMM>\n	conf_lino++;
+<CCOMM>\n	ifs->conf_lino++;
 <CCOMM>\/\*	cf_error("Comment nesting not supported");
 <CCOMM><<EOF>>	cf_error("Unterminated comment");
 <CCOMM>.
@@ -232,6 +244,50 @@ cf_hash(byte *c)
   while (*c)
     h = (h * 37) + *c++;
   return h;
+}
+
+/* Open included file with properly swapped buffers */
+static void
+new_include(void)
+{
+  char *fname, *p = NULL;
+
+  if ((fname = strchr(yytext, '"')) != NULL) {
+
+    if ((p = strchr(++fname, '"')) != NULL) *p = '\0';
+
+    if (ifs_depth >= MAX_INCLUDE_DEPTH)
+      cf_error("Max include depth reached.");
+
+    /* Save current stack */
+    ifs->stack = YY_CURRENT_BUFFER;
+    /* Prepare new stack */
+    ifs->next = new_stack(ifs);
+    ifs = ifs->next;
+    strcpy(ifs->conf_fname, fname); /* XXX: strlcpy should be here */
+    ifs->conf_fd = cf_open_hook(fname);
+
+    yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+  }
+}
+
+static int
+check_eof(void)
+{
+	if (ifs == ifs_head) {
+		/* EOF in main config file */
+		ifs->conf_lino = 1;
+		return 1;
+	}
+
+	ifs_depth--;
+	close(ifs->conf_fd);
+	ifs = ifs->prev;
+	ifs->next = NULL;
+	
+	yy_delete_buffer(YY_CURRENT_BUFFER);
+	yy_switch_to_buffer(ifs->stack);
+	return 0;
 }
 
 static struct symbol *
@@ -359,6 +415,16 @@ cf_lex_init_kh(void)
   kw_hash_inited = 1;
 }
 
+static struct include_file_stack *
+new_stack(struct include_file_stack *old)
+{
+  struct include_file_stack *ret;
+  ret = cfg_allocz(sizeof(struct include_file_stack));
+  ret->conf_lino = 1;
+  ret->prev = old;
+  return ret;
+}
+
 /**
  * cf_lex_init - initialize the lexer
  * @is_cli: true if we're going to parse CLI command, false for configuration
@@ -367,11 +433,18 @@ cf_lex_init_kh(void)
  * parsing of a new input.
  */
 void
-cf_lex_init(int is_cli)
+cf_lex_init(int is_cli, struct config *c)
 {
   if (!kw_hash_inited)
     cf_lex_init_kh();
-  conf_lino = 1;
+  ifs_head = new_stack(NULL);
+  ifs = ifs_head;
+  ifs_depth = 0;
+  if (!is_cli) {
+    ifs->conf_fd = c->file_fd;
+    ifs_depth = 1;
+    strcpy(ifs->conf_fname, c->file_name);
+  }
   yyrestart(NULL);
   if (is_cli)
     BEGIN(CLI);
@@ -461,6 +534,10 @@ cf_symbol_class_name(struct symbol *sym)
       return "routing table";
     case SYM_IPA:
       return "network address";
+    case SYM_TEMPLATE:
+      return "protocol template";
+    case SYM_ROA:
+      return "ROA table";
     default:
       return "unknown type";
     }

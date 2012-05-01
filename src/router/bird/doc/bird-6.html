@@ -52,15 +52,21 @@ capability negotiation
 MD5 password authentication
 (RFC 2385
 <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2385.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2385.txt</A>),
+extended communities
+(RFC 4360
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4360.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4360.txt</A>),
 route reflectors 
 (RFC 4456
 <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4456.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4456.txt</A>),
 multiprotocol extensions
 (RFC 4760
 <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4760.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4760.txt</A>),
-and 4B AS numbers 
+4B AS numbers 
 (RFC 4893
-<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt</A>).
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt">ftp://ftp.rfc-editor.org/in-notes/rfc4893.txt</A>),
+and 4B AS numbers in extended communities
+(RFC 5668
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc5668.txt">ftp://ftp.rfc-editor.org/in-notes/rfc5668.txt</A>).
 <P>
 <P>For IPv6, it uses the standard multiprotocol extensions defined in
 RFC 2283
@@ -131,9 +137,11 @@ neighbor IP address does not match with any local network
 subnets. Such IP address have to be reachable through system
 routing table. For multihop BGP it is recommended to
 explicitly configure <CODE>source address</CODE> to have it
-stable. Optional <CODE>number</CODE> argument can be used to limit TTL
-(the number of hops).
-Default: switched off.
+stable. Optional <CODE>number</CODE> argument can be used to specify
+the number of hops (used for TTL). Note that the number of
+networks (edges) in a path is counted, i.e. if two BGP
+speakers are separated by one router, the number of hops is
+2. Default: switched off.
 <P>
 <DT><CODE>source address <I>ip</I></CODE><DD><P>Define local address we
 should use for next hop calculation and as a source address
@@ -179,6 +187,18 @@ handle well nontrivial iBGP setups and multihop. Default:
 <DT><CODE>igp table <I>name</I></CODE><DD><P>Specifies a table that is used
 as an IGP routing table. Default: the same as the table BGP is
 connected to.
+<P>
+<DT><CODE>ttl security <I>switch</I></CODE><DD><P>Use GTSM (RFC 5082 - the
+generalized TTL security mechanism). GTSM protects against
+spoofed packets by ignoring received packets with a smaller
+than expected TTL. To work properly, GTSM have to be enabled
+on both sides of a BGP session. If both <CODE>ttl security</CODE> and
+<CODE>multihop</CODE> options are enabled, <CODE>multihop</CODE> option should
+specify proper hop value to compute expected TTL. Kernel
+support required: Linux: 2.6.34+ (IPv4), 2.6.35+ (IPv6), BSD:
+since long ago, IPv4 only. Note that full (ICMP protection,
+for example) RFC 5082 support is provided by Linux
+only. Default: disabled.
 <P>
 <DT><CODE>password <I>string</I></CODE><DD><P>Use this password for MD5 authentication
 of BGP sessions. Default: no authentication. Password has to be set by
@@ -299,6 +319,21 @@ disabled, MED attributes are compared only if routes are
 received from the same AS (which is the standard behavior).
 Default: off.
 <P>
+<DT><CODE>deterministic med <I>switch</I></CODE><DD><P>BGP route selection
+algorithm is often viewed as a comparison between individual
+routes (e.g. if a new route appears and is better than the
+current best one, it is chosen as the new best one). But the
+proper route selection, as specified by RFC 4271, cannot be
+fully implemented in that way. The problem is mainly in
+handling the MED attribute. BIRD, by default, uses an
+simplification based on individual route comparison, which in
+some cases may lead to temporally dependent behavior (i.e. the
+selection is dependent on the order in which routes appeared).
+This option enables a different (and slower) algorithm
+implementing proper RFC 4271 route selection, which is
+deterministic. Alternative way how to get deterministic
+behavior is to use <CODE>med metric</CODE> option. Default: off.
+<P>
 <DT><CODE>igp metric <I>switch</I></CODE><DD><P>Enable comparison of internal
 distances to boundary routers during best route selection. Default: on.
 <P>
@@ -373,6 +408,12 @@ policy information like "don't export to USA peers". As each AS can define
 its own routing policy, it also has a complete freedom about which community
 attributes it defines and what will their semantics be.
 <P>
+<DT><CODE>eclist <CODE>bgp_ext_community</CODE> [O]</CODE><DD><P>List of extended community
+values associated with the route. Extended communities have similar usage
+as plain communities, but they have an extended range (to allow 4B ASNs)
+and a nontrivial structure with a type field. Individual community values are
+represented using an <CODE>ec</CODE> data type inside the filters.
+<P>
 <DT><CODE>quad <CODE>bgp_originator_id</CODE> [I, O]</CODE><DD><P>This attribute is created by the
 route reflector when reflecting the route and contains the router ID of the
 originator of the route in the local AS.
@@ -389,22 +430,22 @@ cluster ID when reflecting the route.
 <PRE>
 protocol bgp {
         local as 65000;                      # Use a private AS number
-        neighbor 62.168.0.130 as 5588;       # Our neighbor ...
+        neighbor 198.51.100.130 as 64496;    # Our neighbor ...
         multihop;                            # ... which is connected indirectly
         export filter {                      # We use non-trivial export rules
                 if source = RTS_STATIC then { # Export only static routes
                         # Assign our community
-                        bgp_community.add((65000,5678));
+                        bgp_community.add((65000,64501));
                         # Artificially increase path length
                         # by advertising local AS number twice
-                        if bgp_path ~ [= 65000 =] then    
-                                bgp_path.prepend(65000);  
+                        if bgp_path ~ [= 65000 =] then
+                                bgp_path.prepend(65000);
                         accept;
                 }
                 reject;
         };
         import all;
-        source address 62.168.0.1;      # Use a non-standard source address
+        source address 198.51.100.14;   # Use a non-standard source address
 }
 </PRE>
 <HR>
@@ -665,10 +706,23 @@ protocol ospf &lt;name&gt; {
         tick &lt;num&gt;;
         ecmp &lt;switch&gt; [limit &lt;num&gt;];
         area &lt;id&gt; {
-                stub cost &lt;num&gt;;
+                stub;
+                nssa;
+                summary &lt;switch&gt;;
+                default nssa &lt;switch&gt;;
+                default cost &lt;num&gt;;
+                default cost2 &lt;num&gt;;
+                translator &lt;switch&gt;;
+                translator stability &lt;num&gt;;
+
                 networks {
                         &lt;prefix&gt;;
                         &lt;prefix&gt; hidden;
+                }
+                external {
+                        &lt;prefix&gt;;
+                        &lt;prefix&gt; hidden;
+                        &lt;prefix&gt; tag &lt;num&gt;;
                 }
                 stubnet &lt;prefix&gt;;
                 stubnet &lt;prefix&gt; {
@@ -743,12 +797,57 @@ limit is 16.
 address, similarly to a router ID). The most important area is
 the backbone (ID 0) to which every other area must be connected.
 <P>
-<DT><CODE>stub cost <I>num</I></CODE><DD><P>No external (except default) routes are flooded into stub areas.
-Setting this value marks area stub with defined cost of default route.
-Default value is no. (Area is not stub.)
+<DT><CODE>stub</CODE><DD><P>This option configures the area to be a stub area. External
+routes are not flooded into stub areas. Also summary LSAs can be
+limited in stub areas (see option <CODE>summary</CODE>).
+By default, the area is not a stub area.
+<P>
+<DT><CODE>nssa</CODE><DD><P>This option configures the area to be a NSSA (Not-So-Stubby
+Area). NSSA is a variant of a stub area which allows a
+limited way of external route propagation. Global external
+routes are not propagated into a NSSA, but an external route
+can be imported into NSSA as a (area-wide) NSSA-LSA (and
+possibly translated and/or aggregated on area boundary).
+By default, the area is not NSSA.
+<P>
+<DT><CODE>summary <I>switch</I></CODE><DD><P>This option controls propagation of summary LSAs into stub or
+NSSA areas. If enabled, summary LSAs are propagated as usual,
+otherwise just the default summary route (0.0.0.0/0) is
+propagated (this is sometimes called totally stubby area). If
+a stub area has more area boundary routers, propagating
+summary LSAs could lead to more efficient routing at the cost
+of larger link state database. Default value is no.
+<P>
+<DT><CODE>default nssa <I>switch</I></CODE><DD><P>When <CODE>summary</CODE> option is enabled, default summary route is
+no longer propagated to the NSSA. In that case, this option
+allows to originate default route as NSSA-LSA to the NSSA.
+Default value is no.
+<P>
+<DT><CODE>default cost <I>num</I></CODE><DD><P>This option controls the cost of a default route propagated to
+stub and NSSA areas. Default value is 1000.
+<P>
+<DT><CODE>default cost2 <I>num</I></CODE><DD><P>When a default route is originated as NSSA-LSA, its cost
+can use either type 1 or type 2 metric. This option allows
+to specify the cost of a default route in type 2 metric.
+By default, type 1 metric (option <CODE>default cost</CODE>) is used.
+<P>
+<DT><CODE>translator <I>switch</I></CODE><DD><P>This option controls translation of NSSA-LSAs into external
+LSAs. By default, one translator per NSSA is automatically
+elected from area boundary routers. If enabled, this area
+boundary router would unconditionally translate all NSSA-LSAs
+regardless of translator election. Default value is no.
+<P>
+<DT><CODE>translator stability <I>num</I></CODE><DD><P>This option controls the translator stability interval (in
+seconds). When the new translator is elected, the old one
+keeps translating until the interval is over. Default value
+is 40.
 <P>
 <DT><CODE>networks { <I>set</I> }</CODE><DD><P>Definition of area IP ranges. This is used in summary LSA origination.
 Hidden networks are not propagated into other areas.
+<P>
+<DT><CODE>external { <I>set</I> }</CODE><DD><P>Definition of external area IP ranges for NSSAs. This is used
+for NSSA-LSA translation. Hidden networks are not translated
+into external LSAs. Networks can have configured route tag.
 <P>
 <DT><CODE>stubnet <I>prefix</I> { <I>options</I> }</CODE><DD><P>Stub networks are networks that are not transit networks
 between OSPF routers. They are also propagated through an
@@ -973,17 +1072,18 @@ and vice versa, depending on what's allowed by the filters. Export filters contr
 of routes from the primary table to the secondary one, import filters control the opposite
 direction.
 <P>
-<P>The Pipe protocol may work in the opaque mode or in the transparent
-mode. In the opaque mode, the Pipe protocol retransmits optimal route
+<P>The Pipe protocol may work in the transparent mode mode or in the opaque mode.
+In the transparent mode, the Pipe protocol retransmits all routes from
+one table to the other table, retaining their original source and
+attributes.  If import and export filters are set to accept, then both
+tables would have the same content. The transparent mode is the default mode.
+<P>
+<P>In the opaque mode, the Pipe protocol retransmits optimal route
 from one table to the other table in a similar way like other
 protocols send and receive routes. Retransmitted route will have the
 source set to the Pipe protocol, which may limit access to protocol
-specific route attributes. The opaque mode is a default mode.
-<P>
-<P>In transparent mode, the Pipe protocol retransmits all routes from
-one table to the other table, retaining their original source and
-attributes.  If import and export filters are set to accept, then both
-tables would have the same content. The mode can be set by
+specific route attributes. This mode is mainly for compatibility, it
+is not suggested for new configs. The mode can be changed by
 <CODE>mode</CODE> option.
 <P>
 <P>The primary use of multiple routing tables and the Pipe protocol is for policy routing,
@@ -1330,11 +1430,13 @@ telling to return packets as undeliverable if they are in your IP block,
 you don't have any specific destination for them and you don't want to send
 them out through the default route to prevent routing loops).
 <P>
-<P>There are three types of static routes: `classical' routes telling to
-forward packets to a neighboring router, device routes specifying forwarding
-to hosts on a directly connected network and special routes (sink, blackhole
-etc.) which specify a special action to be done instead of forwarding the
-packet.
+<P>There are five types of static routes: `classical' routes telling
+to forward packets to a neighboring router, multipath routes
+specifying several (possibly weighted) neighboring routers, device
+routes specifying forwarding to hosts on a directly connected network,
+recursive routes computing their nexthops by doing route table lookups
+for a given IP and special routes (sink, blackhole etc.) which specify
+a special action to be done instead of forwarding the packet.
 <P>
 <P>When the particular destination is not available (the interface is down or
 the next hop of the route is not a neighbor at the moment), Static just
@@ -1351,16 +1453,21 @@ a neighboring router.
 with their weights.
 <DT><CODE>route <I>prefix</I> via <I>"interface"</I></CODE><DD><P>Static device
 route through an interface to hosts on a directly connected network.
+<DT><CODE>route <I>prefix</I> recursive <I>ip</I></CODE><DD><P>Static recursive route,
+its nexthop depends on a route table lookup for given IP address.
 <DT><CODE>route <I>prefix</I> drop|reject|prohibit</CODE><DD><P>Special routes
 specifying to drop the packet, return it as unreachable or return
 it as administratively prohibited.
 <P>
-<DT><CODE>check link <I>switch</I></CODE><DD><P>The only option of the static protocol. If set, hardware link
-states of network interfaces are taken into consideration.
-When link disappears (e.g. ethernet cable is unplugged),
-static routes directing to that interface are removed. It is
-possible that some hardware drivers or platforms do not
-implement this feature. Default: off.
+<DT><CODE>check link <I>switch</I></CODE><DD><P>If set, hardware link states of network interfaces are taken
+into consideration.  When link disappears (e.g. ethernet cable
+is unplugged), static routes directing to that interface are
+removed. It is possible that some hardware drivers or
+platforms do not implement this feature. Default: off.
+<P>
+<DT><CODE>igp table <I>name</I></CODE><DD><P>Specifies a table that is used
+for route table lookups of recursive routes. Default: the
+same table as the protocol is connected to.
 </DL>
 <P>
 <P>Static routes have no specific attributes.
@@ -1372,12 +1479,12 @@ implement this feature. Default: off.
 <PRE>
 protocol static {
         table testable;                  # Connect to a non-default routing table
-        route 0.0.0.0/0 via 62.168.0.13; # Default route
+        route 0.0.0.0/0 via 198.51.100.130; # Default route
         route 10.0.0.0/8 multipath       # Multipath route
-                via 62.168.0.14 weight 2
-                via 62.168.1.10
-                via 62.168.1.11;
-        route 62.168.0.0/25 reject;      # Sink route
+                via 198.51.100.10 weight 2
+                via 198.51.100.20
+                via 192.0.2.1;
+        route 203.0.113.0/24 reject;     # Sink route
         route 10.2.0.0/24 via "arc0";    # Secondary network
 }
 </PRE>

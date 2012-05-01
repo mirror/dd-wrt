@@ -242,12 +242,13 @@ scope, it's the same <B>sym</B> as passed to the function.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>cf_lex_init</B>
-(<I>int</I> <B>is_cli</B>) --     initialize the lexer
+(<I>int</I> <B>is_cli</B>, <I>struct config *</I> <B>c</B>) --     initialize the lexer
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>int</I> <B>is_cli</B><DD><P>true if we're going to parse CLI command, false for configuration
+<DT><I>struct config *</I> <B>c</B><DD><P>-- undescribed --
 </DL>
 <H3>Description</H3>
 <P><B>cf_lex_init()</B> initializes the lexical analyzer and prepares it for

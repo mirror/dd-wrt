@@ -35,6 +35,9 @@ typedef struct orta
    * intra-area (type == RTS_OSPF) and its area is not a backbone.
    */
 #define ORTA_PREF 0x80000000
+#define ORTA_NSSA 0x40000000
+#define ORTA_PROP 0x20000000
+
   u32 metric1;
   u32 metric2;
   u32 tag;
@@ -43,12 +46,9 @@ typedef struct orta
   struct ospf_area *voa;	/* Used when route is replaced in ospf_rt_sum_tr(),
 				   NULL otherwise */
   struct mpnh *nhs;		/* Next hops computed during SPF */
+  struct top_hash_entry *en;	/* LSA responsible for this orta */
 }
 orta;
-
-//  struct ospf_iface *ifa;	/* Outgoing interface */
-//  ip_addr nh;			/* Next hop */
-
 
 typedef struct ort
 {
@@ -56,6 +56,10 @@ typedef struct ort
    * We use fn.x0 to mark persistent rt entries, that are needed for summary
    * LSAs that don't have 'proper' rt entry (area networks + default to stubs)
    * to keep uid stable (used for LSA ID in OSPFv3 - see fibnode_to_lsaid()).
+   *
+   * We use fn.x1 to note whether the external route was originated
+   * from the route export (in ospf_rt_notify()) or from the NSSA
+   * route translation (in check_nssa_lsa()).
    *
    * old_* values are here to represent the last route update. old_rta
    * is cached (we keep reference), mainly for multipath nexthops.
@@ -68,6 +72,12 @@ typedef struct ort
   rta *old_rta;
 }
 ort;
+
+static inline int rt_is_nssa(ort *nf)
+{ return nf->n.options & ORTA_NSSA; }
+
+#define EXT_EXPORT 1
+#define EXT_NSSA 2
 
 /*
  * Invariants for structs top_hash_entry (nodes of LSA db)

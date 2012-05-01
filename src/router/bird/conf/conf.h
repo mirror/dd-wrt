@@ -12,6 +12,8 @@
 #include "lib/resource.h"
 #include "lib/timer.h"
 
+#define BIRD_FNAME_MAX 255	/* Would be better to use some UNIX define */
+
 /* Configuration structure */
 
 struct config {
@@ -19,7 +21,9 @@ struct config {
   linpool *mem;				/* Linear pool containing configuration data */
   list protos;				/* Configured protocol instances (struct proto_config) */
   list tables;				/* Configured routing tables (struct rtable_config) */
+  list roa_tables;			/* Configured ROA tables (struct roa_table_config) */
   list logfiles;			/* Configured log fils (sysdep) */
+
   int mrtdump_file;			/* Configured MRTDump file (sysdep, fd in unix) */
   char *syslog_name;			/* Name used for syslog (NULL -> no syslog) */
   struct rtable_config *master_rtc;	/* Configuration of master routing table */
@@ -38,7 +42,9 @@ struct config {
   int cli_debug;			/* Tracing of CLI connections and commands */
   char *err_msg;			/* Parser error message */
   int err_lino;				/* Line containing error */
-  char *file_name;			/* Name of configuration file */
+  char *err_file_name;			/* File name containing error */
+  char *file_name;			/* Name of main configuration file */
+  int file_fd;				/* File descriptor of main configuration file */
   struct symbol **sym_hash;		/* Lexer: symbol hash table */
   struct symbol **sym_fallback;		/* Lexer: fallback symbol hash table */
   int obstacle_count;			/* Number of items blocking freeing of this config */
@@ -80,10 +86,12 @@ extern linpool *cfg_mem;
 #define cfg_allocu(size) lp_allocu(cfg_mem, size)
 #define cfg_allocz(size) lp_allocz(cfg_mem, size)
 char *cfg_strdup(char *c);
+void cfg_copy_list(list *dest, list *src, unsigned node_size);
 
 /* Lexer */
 
-extern int (*cf_read_hook)(byte *buf, unsigned int max);
+extern int (*cf_read_hook)(byte *buf, unsigned int max, int fd);
+extern int (*cf_open_hook)(char *filename);
 
 struct symbol {
   struct symbol *next;
@@ -103,13 +111,25 @@ struct symbol {
 #define SYM_FILTER 4
 #define SYM_TABLE 5
 #define SYM_IPA 6
+#define SYM_TEMPLATE 7
+#define SYM_ROA 8
 
 #define SYM_VARIABLE 0x100	/* 0x100-0x1ff are variable types */
 
-extern int conf_lino;
+struct include_file_stack {
+        void	*stack; /* Internal lexer state */
+        unsigned int    conf_lino; /* Current file lineno (at include) */
+        char            conf_fname[BIRD_FNAME_MAX]; /* Current file name */
+        int             conf_fd; /* Current file descriptor */
+        struct include_file_stack *prev;
+        struct include_file_stack *next;
+};
+
+extern struct include_file_stack *ifs;
+
 
 int cf_lex(void);
-void cf_lex_init(int is_cli);
+void cf_lex_init(int is_cli, struct config *c);
 struct symbol *cf_find_symbol(byte *c);
 struct symbol *cf_default_name(char *template, int *counter);
 struct symbol *cf_define_symbol(struct symbol *symbol, int type, void *def);

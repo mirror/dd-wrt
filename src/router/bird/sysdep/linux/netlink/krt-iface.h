@@ -24,5 +24,6 @@ static inline void krt_if_shutdown(struct kif_proto *p UNUSED) { };
 static inline void krt_if_io_init(void) { };
 
 static inline int kif_params_same(struct krt_if_params *old UNUSED, struct krt_if_params *new UNUSED) { return 1; }
+static inline void kif_copy_params(struct krt_if_params *dest UNUSED, struct krt_if_params *src UNUSED) { }
 
 #endif

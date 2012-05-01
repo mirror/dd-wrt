@@ -442,7 +442,7 @@ function for origination of router, network LSAs.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>ospf_disp</B>
-(<I>timer *</I> <B>timer</B>) --     invokes routing table calctulation, aging and also <B>area_disp()</B>
+(<I>timer *</I> <B>timer</B>) --     invokes routing table calculation, aging and also <B>area_disp()</B>
 <P>
 <H3>Arguments</H3>
 <P>
@@ -542,19 +542,25 @@ In other case, new instance of network LSA is originated.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>originate_ext_lsa</B>
-(<I>net *</I> <B>n</B>, <I>rte *</I> <B>e</B>, <I>struct proto_ospf *</I> <B>po</B>, <I>struct ea_list *</I> <B>attrs</B>) --  new route received from nest and filters
+(<I>struct ospf_area *</I> <B>oa</B>, <I>struct fib_node *</I> <B>fn</B>, <I>int</I> <B>src</B>, <I>u32</I> <B>metric</B>, <I>ip_addr</I> <B>fwaddr</B>, <I>u32</I> <B>tag</B>, <I>int</I> <B>pbit</B>) --  new route received from nest and filters
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>net *</I> <B>n</B><DD><P>network prefix and mask
-<DT><I>rte *</I> <B>e</B><DD><P>rte
-<DT><I>struct proto_ospf *</I> <B>po</B><DD><P>current instance of OSPF
-<DT><I>struct ea_list *</I> <B>attrs</B><DD><P>list of extended attributes
+<DT><I>struct ospf_area *</I> <B>oa</B><DD><P>ospf_area for which LSA is originated
+<DT><I>struct fib_node *</I> <B>fn</B><DD><P>network prefix and mask
+<DT><I>int</I> <B>src</B><DD><P>the source of origination of the LSA (EXT_EXPORT/EXT_NSSA)
+<DT><I>u32</I> <B>metric</B><DD><P>the metric of a route
+<DT><I>ip_addr</I> <B>fwaddr</B><DD><P>the forwarding address
+<DT><I>u32</I> <B>tag</B><DD><P>the route tag
+<DT><I>int</I> <B>pbit</B><DD><P>P-bit for NSSA LSAs, ignored for external LSAs
 </DL>
 <H3>Description</H3>
 <P>If I receive a message that new route is installed, I try to originate an
-external LSA.
+external LSA. If <B>oa</B> is an NSSA area, NSSA-LSA is originated instead.
+<B>oa</B> should not be a stub area. <B>src</B> does not specify whether the LSA
+is external or NSSA, but it specifies the source of origination - 
+the export from <B>ospf_rt_notify()</B>, or the NSSA-EXT translation.
 <P>The function also sets flag ebit. If it's the first time, the new router lsa
 origination is necessary.
 

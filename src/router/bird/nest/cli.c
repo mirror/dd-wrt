@@ -224,7 +224,7 @@ static int cli_rh_trick_flag;
 struct cli *this_cli;
 
 static int
-cli_cmd_read_hook(byte *buf, unsigned int max)
+cli_cmd_read_hook(byte *buf, unsigned int max, UNUSED int fd)
 {
   if (!cli_rh_trick_flag)
     {
@@ -251,6 +251,7 @@ cli_command(struct cli *c)
   bzero(&f, sizeof(f));
   f.mem = c->parser_pool;
   cf_read_hook = cli_cmd_read_hook;
+  cf_open_hook = NULL;
   cli_rh_pos = c->rx_buf;
   cli_rh_len = strlen(c->rx_buf);
   cli_rh_trick_flag = 0;

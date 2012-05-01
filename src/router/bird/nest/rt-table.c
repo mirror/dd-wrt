@@ -498,6 +498,9 @@ rte_recalculate(rtable *table, net *net, struct proto *p, struct proto *src, rte
 
   rte_announce(table, RA_ANY, net, new, old, tmpa);
 
+  if (src->rte_recalculate && src->rte_recalculate(table, net, new, old, old_best))
+    goto do_recalculate;
+
   if (new && rte_better(new, old_best))
     {
       /* The first case - the new route is cleary optimal, we link it
@@ -516,6 +519,7 @@ rte_recalculate(rtable *table, net *net, struct proto *p, struct proto *src, rte
 	 that route at the first position and announce it. New optimal
 	 route might be NULL if there is no more routes */
 
+    do_recalculate:
       /* Add the new route to the list */
       if (new)
 	{
@@ -1015,27 +1019,36 @@ rt_next_hop_update_net(rtable *tab, net *n)
   if (!old_best)
     return 0;
 
-  new_best = NULL;
+  for (k = &n->routes; e = *k; k = &e->next)
+    if (rta_next_hop_outdated(e->attrs))
+      {
+	new = rt_next_hop_update_rte(tab, e);
+	*k = new;
 
+	rte_announce_i(tab, RA_ANY, n, new, e);
+	rte_trace_in(D_ROUTES, new->sender, new, "updated");
+
+	/* Call a pre-comparison hook */
+	/* Not really an efficient way to compute this */
+	if (e->attrs->proto->rte_recalculate)
+	  e->attrs->proto->rte_recalculate(tab, n, new, e, NULL);
+
+	if (e != old_best)
+	  rte_free_quick(e);
+	else /* Freeing of the old best rte is postponed */
+	  free_old_best = 1;
+
+	e = new;
+	count++;
+      }
+
+  if (!count)
+    return 0;
+
+  /* Find the new best route */
+  new_best = NULL;
   for (k = &n->routes; e = *k; k = &e->next)
     {
-      if (rta_next_hop_outdated(e->attrs))
-	{
-	  new = rt_next_hop_update_rte(tab, e);
-	  *k = new;
-
-	  rte_announce_i(tab, RA_ANY, n, new, e);
-	  rte_trace_in(D_ROUTES, new->sender, new, "updated");
-
-	  if (e != old_best)
-	    rte_free_quick(e);
-	  else /* Freeing of the old best rte is postponed */
-	    free_old_best = 1;
-
-	  e = new;
-	  count++;
-	}
-
       if (!new_best || rte_better(e, *new_best))
 	new_best = k;
     }
@@ -1645,6 +1658,7 @@ rt_show_rte(struct cli *c, byte *ia, rte *e, struct rt_show_data *d, ea_list *tm
   byte tm[TM_DATETIME_BUFFER_SIZE], info[256];
   rta *a = e->attrs;
   int primary = (e->net->routes == e);
+  int sync_error = (e->net->n.flags & KRF_SYNC_ERROR);
   struct mpnh *nh;
 
   rt_format_via(e, via);
@@ -1667,7 +1681,7 @@ rt_show_rte(struct cli *c, byte *ia, rte *e, struct rt_show_data *d, ea_list *tm
   else
     bsprintf(info, " (%d)", e->pref);
   cli_printf(c, -1007, "%-18s %s [%s %s%s]%s%s", ia, via, a->proto->name,
-	     tm, from, primary ? " *" : "", info);
+	     tm, from, primary ? (sync_error ? " !" : " *") : "", info);
   for (nh = a->nexthops; nh; nh = nh->next)
     cli_printf(c, -1007, "\tvia %I on %s weight %d", nh->gw, nh->iface->name, nh->weight + 1);
   if (d->verbose)

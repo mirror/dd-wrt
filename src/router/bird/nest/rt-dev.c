@@ -92,9 +92,25 @@ dev_reconfigure(struct proto *p, struct proto_config *new)
   return iface_patts_equal(&o->iface_list, &n->iface_list, NULL);
 }
 
+static void
+dev_copy_config(struct proto_config *dest, struct proto_config *src)
+{
+  struct rt_dev_config *d = (struct rt_dev_config *) dest;
+  struct rt_dev_config *s = (struct rt_dev_config *) src;
+
+  /*
+   * We copy iface_list as ifaces can be shared by more direct protocols.
+   * Copy suffices to be is shallow, because new nodes can be added, but
+   * old nodes cannot be modified (although they contain internal lists).
+   */
+  cfg_copy_list(&d->iface_list, &s->iface_list, sizeof(struct iface_patt));
+}
+
 struct protocol proto_device = {
   name:		"Direct",
   template:	"direct%d",
+  preference:	DEF_PREF_DIRECT,
   init:		dev_init,
-  reconfigure:	dev_reconfigure
+  reconfigure:	dev_reconfigure,
+  copy_config:	dev_copy_config
 };

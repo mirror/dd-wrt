@@ -60,6 +60,7 @@ static struct resclass sl_class = {
   sizeof(struct slab),
   slab_free,
   slab_dump,
+  NULL,
   slab_memsize
 };
 

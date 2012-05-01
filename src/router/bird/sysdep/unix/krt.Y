@@ -30,8 +30,7 @@ kern_proto_start: proto_start KERNEL {
      if (cf_krt)
        cf_error("Kernel protocol already defined");
 #endif
-     cf_krt = this_proto = proto_config_new(&proto_unix_kernel, sizeof(struct krt_config));
-     this_proto->preference = DEF_PREF_INHERITED;
+     cf_krt = this_proto = proto_config_new(&proto_unix_kernel, sizeof(struct krt_config), $1);
      THIS_KRT->scan_time = 60;
      THIS_KRT->learn = THIS_KRT->persist = 0;
      krt_scan_construct(THIS_KRT);
@@ -66,8 +65,7 @@ CF_ADDTO(proto, kif_proto '}')
 kif_proto_start: proto_start DEVICE {
      if (cf_kif)
        cf_error("Kernel device protocol already defined");
-     cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config));
-     this_proto->preference = DEF_PREF_DIRECT;
+     cf_kif = this_proto = proto_config_new(&proto_unix_iface, sizeof(struct kif_config), $1);
      THIS_KIF->scan_time = 60;
      init_list(&THIS_KIF->primary);
      krt_if_construct(THIS_KIF);

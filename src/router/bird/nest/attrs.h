@@ -50,12 +50,54 @@ int as_path_match(struct adata *path, struct f_path_mask *mask);
 
 /* a-set.c */
 
-int int_set_format(struct adata *set, int way, int from, byte *buf, unsigned int size);
-struct adata *int_set_add(struct linpool *pool, struct adata *list, u32 val);
-int int_set_contains(struct adata *list, u32 val);
-struct adata *int_set_del(struct linpool *pool, struct adata *list, u32 val);
+
+/* Extended Community subtypes (kinds) */
+#define EC_RT 0x0002
+#define EC_RO 0x0003
+
+#define EC_GENERIC 0xFFFF
+
+/* Transitive bit (for first u32 half of EC) */
+#define EC_TBIT 0x40000000
+
 
 static inline int int_set_get_size(struct adata *list)
 { return list->length / 4; }
+
+static inline u32 *int_set_get_data(struct adata *list)
+{ return (u32 *) list->data; }
+
+static inline u32 ec_hi(u64 ec) { return ec >> 32; }
+static inline u32 ec_lo(u64 ec) { return ec; }
+static inline u64 ec_get(const u32 *l, int i)
+{ return (((u64) l[i]) << 32) | l[i+1]; }
+
+/* RFC 4360 3.1.  Two-Octet AS Specific Extended Community */
+static inline u64 ec_as2(u64 kind, u64 key, u64 val)
+{ return ((kind | 0x0000) << 48) | (key << 32) | val; }
+
+/* RFC 5668  4-Octet AS Specific BGP Extended Community */
+static inline u64 ec_as4(u64 kind, u64 key, u64 val)
+{ return ((kind | 0x0200) << 48) | (key << 16) | val; }
+
+/* RFC 4360 3.2.  IPv4 Address Specific Extended Community */
+static inline u64 ec_ip4(u64 kind, u64 key, u64 val)
+{ return ((kind | 0x0100) << 48) | (key << 16) | val; }
+
+static inline u64 ec_generic(u64 key, u64 val)
+{ return (key << 32) | val; }
+
+int int_set_format(struct adata *set, int way, int from, byte *buf, unsigned int size);
+int ec_format(byte *buf, u64 ec);
+int ec_set_format(struct adata *set, int from, byte *buf, unsigned int size);
+int int_set_contains(struct adata *list, u32 val);
+int ec_set_contains(struct adata *list, u64 val);
+struct adata *int_set_add(struct linpool *pool, struct adata *list, u32 val);
+struct adata *ec_set_add(struct linpool *pool, struct adata *list, u64 val);
+struct adata *int_set_del(struct linpool *pool, struct adata *list, u32 val);
+struct adata *ec_set_del(struct linpool *pool, struct adata *list, u64 val);
+struct adata *int_set_union(struct linpool *pool, struct adata *l1, struct adata *l2);
+struct adata *ec_set_union(struct linpool *pool, struct adata *l1, struct adata *l2);
+
 
 #endif
