@@ -31,11 +31,12 @@
 /*** MODULEINFO
 	<depend>osptk</depend>
 	<depend>openssl</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 281497 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 338609 $")
 
 #include <osp/osp.h>
 #include <osp/osputils.h>

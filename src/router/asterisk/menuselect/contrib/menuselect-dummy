@@ -110,14 +110,23 @@ sub warning($) {
 # Convert XML syntax to mail-header-like syntax:
 # <var>value</var> --> Var: value
 sub extract_xml_key($) {
+	my %attr = ();
 	my $xml_line = shift;
-	if ($xml_line !~ m{^\s*<([a-zA-Z0-9]*)>([^<]*)</\1>}) {
+	if ($xml_line !~ m{^\s*<([a-z_A-Z0-9]+)(\s+([^>]*))?>([^<]*)</\1>}) {
 		warning "parsed empty value from XML line $xml_line";
 		return ('', ''); # warn?
 	}
-	my ($var, $val) = ($1, $2);
+	my ($var, $val) = ($1, $4);
 	$var =~ s{^[a-z]}{\u$&};
-	return ($var, $val);
+	if (defined $3) {
+		my $attr_text = $3;
+		while ($attr_text =~ /^( *([^=]+)="([^"]+)")/) {
+			my ($var, $val) = ($2, $3);
+			$attr_text =~ s/^$1//;
+			$attr{$var} = $val;
+		}
+	}
+	return ($var, $val, %attr);
 }
 
 # Get information embedded in source files from a subdirectory.
@@ -141,14 +150,16 @@ sub get_subdir_module_info {
 		);
 
 		while (<SRC>) {
-			next unless (m|^/\*\*\* MODULEINFO| .. m|^ ?\*\*\*/|);
+			next unless (m|^/\*\*\* MODULEINFO| .. m|^ *[*]+/|);
 			next unless (m|^[A-Z]| || m|^\s*<|);
 
 			# At this point we can assume we're in the module 
 			# info section.
 			chomp;
-			my ($var, $val) = extract_xml_key($_);
-
+			my ($var, $val, %attr) = extract_xml_key($_);
+			foreach (keys %attr) {
+				push @{$data{$_}},($attr{$_});
+			}
 			if ($var =~ /^(Depend|Use)$/i) {
 				# use uppercase for dependency names;
 				$val = uc($val); 

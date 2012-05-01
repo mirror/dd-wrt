@@ -58,11 +58,12 @@
 
 /*** MODULEINFO
 	<use>res_monitor</use>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 352955 $")
 
 #include <sys/time.h>
 #include <sys/signal.h>
@@ -223,6 +224,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			up by another user.</para>
 			<para>This application will return to the dialplan if the queue does not exist, or
 			any of the join options cause the caller to not enter the queue.</para>
+			<para>This application does not automatically answer and should be preceeded
+			by an application such as Answer(), Progress(), or Ringing().</para>
 			<para>This application sets the following channel variable upon completion:</para>
 			<variablelist>
 				<variable name="QUEUESTATUS">
@@ -238,14 +241,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			</variablelist>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
 			<ref type="application">AddQueueMember</ref>
 			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
-			<ref type="application">AgentLogin</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
 			<ref type="function">QUEUE_MEMBER_COUNT</ref>
-			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
 			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="AddQueueMember" language="en_US">
@@ -274,10 +282,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			</variablelist>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
 			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
-			<ref type="application">AgentLogin</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="RemoveQueueMember" language="en_US">
@@ -303,9 +320,18 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 		</description>
 		<see-also>
 			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
 			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="PauseQueueMember" language="en_US">
@@ -337,7 +363,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			<para>Example: PauseQueueMember(,SIP/3000)</para>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
 			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="UnpauseQueueMember" language="en_US">
@@ -366,7 +404,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			<para>Example: UnpauseQueueMember(,SIP/3000)</para>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
 			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<application name="QueueLog" language="en_US">
@@ -386,6 +436,18 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 		</description>
 		<see-also>
 			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</application>
 	<function name="QUEUE_VARIABLES" language="en_US">
@@ -426,6 +488,21 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			<para>Makes the following queue variables available.</para>
 			<para>Returns <literal>0</literal> if queue is found and setqueuevar is defined, <literal>-1</literal> otherwise.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER" language="en_US">
 		<synopsis>
@@ -453,6 +530,21 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 		<description>
 			<para>Returns the number of members currently associated with the specified <replaceable>queuename</replaceable>.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER_COUNT" language="en_US">
 		<synopsis>
@@ -466,7 +558,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			<warning><para>This function has been deprecated in favor of the <literal>QUEUE_MEMBER()</literal> function</para></warning>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
 			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</function>
 	<function name="QUEUE_EXISTS" language="en_US">
@@ -479,6 +583,21 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 		<description>
 			<para>Returns 1 if the specified queue exists, 0 if it does not</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_WAITING_COUNT" language="en_US">
 		<synopsis>
@@ -490,6 +609,21 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 		<description>
 			<para>Returns the number of callers currently waiting in the specified <replaceable>queuename</replaceable>.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER_LIST" language="en_US">
 		<synopsis>
@@ -502,7 +636,19 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 			<para>Returns a comma-separated list of members associated with the specified <replaceable>queuename</replaceable>.</para>
 		</description>
 		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
 			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
 		</see-also>
 	</function>
 	<function name="QUEUE_MEMBER_PENALTY" language="en_US">
@@ -516,13 +662,27 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 308144 $")
 		<description>
 			<para>Gets or sets queue members penalty.</para>
 		</description>
+		<see-also>
+			<ref type="application">Queue</ref>
+			<ref type="application">QueueLog</ref>
+			<ref type="application">AddQueueMember</ref>
+			<ref type="application">RemoveQueueMember</ref>
+			<ref type="application">PauseQueueMember</ref>
+			<ref type="application">UnpauseQueueMember</ref>
+			<ref type="function">QUEUE_VARIABLES</ref>
+			<ref type="function">QUEUE_MEMBER</ref>
+			<ref type="function">QUEUE_MEMBER_COUNT</ref>
+			<ref type="function">QUEUE_EXISTS</ref>
+			<ref type="function">QUEUE_WAITING_COUNT</ref>
+			<ref type="function">QUEUE_MEMBER_LIST</ref>
+			<ref type="function">QUEUE_MEMBER_PENALTY</ref>
+		</see-also>
 	</function>
 	<manager name="Queues" language="en_US">
 		<synopsis>
 			Queues.
 		</synopsis>
 		<syntax>
-			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 		</syntax>
 		<description>
 		</description>
@@ -680,7 +840,8 @@ enum {
 	QUEUE_STRATEGY_RANDOM,
 	QUEUE_STRATEGY_RRMEMORY,
 	QUEUE_STRATEGY_LINEAR,
-	QUEUE_STRATEGY_WRANDOM
+	QUEUE_STRATEGY_WRANDOM,
+	QUEUE_STRATEGY_RRORDERED,
 };
 
 enum {
@@ -708,6 +869,7 @@ static const struct strategy {
 	{ QUEUE_STRATEGY_RRMEMORY, "roundrobin" },
 	{ QUEUE_STRATEGY_LINEAR, "linear" },
 	{ QUEUE_STRATEGY_WRANDOM, "wrandom"},
+	{ QUEUE_STRATEGY_RRORDERED, "rrordered"},
 };
 
 static const struct autopause {
@@ -839,7 +1001,7 @@ struct callattempt {
 struct queue_ent {
 	struct call_queue *parent;             /*!< What queue is our parent */
 	char moh[80];                          /*!< Name of musiconhold to be used */
-	char announce[80];                     /*!< Announcement to play for member when call is answered */
+	char announce[PATH_MAX];               /*!< Announcement to play for member when call is answered */
 	char context[AST_MAX_CONTEXT];         /*!< Context when user exits queue */
 	char digits[AST_MAX_EXTENSION];        /*!< Digits entered while in queue */
 	int valid_digits;                      /*!< Digits entered correspond to valid extension. Exited */
@@ -1008,12 +1170,6 @@ struct call_queue {
 	int autofill;                       /*!< Ignore the head call status and ring an available agent */
 	
 	struct ao2_container *members;             /*!< Head of the list of members */
-	/*! 
-	 * \brief Number of members _logged in_
-	 * \note There will be members in the members container that are not logged
-	 *       in, so this can not simply be replaced with ao2_container_count(). 
-	 */
-	int membercount;
 	struct queue_ent *head;             /*!< Head of the list of callers */
 	AST_LIST_ENTRY(call_queue) list;    /*!< Next call queue */
 	AST_LIST_HEAD_NOLOCK(, penalty_rule) rules; /*!< The list of penalty rules to invoke */
@@ -1124,7 +1280,7 @@ static inline struct call_queue *queue_ref(struct call_queue *q)
 static inline struct call_queue *queue_unref(struct call_queue *q)
 {
 	ao2_ref(q, -1);
-	return q;
+	return NULL;
 }
 #endif
 
@@ -1223,6 +1379,7 @@ static int get_member_status(struct call_queue *q, int max_penalty, int min_pena
 				ast_debug(4, "%s is unavailable because his device state is 'ringing'\n", member->membername);
 				break;
 			}
+			goto default_case;
 		case AST_DEVICE_UNKNOWN:
 			if (conditions & QUEUE_EMPTY_UNKNOWN) {
 				ast_debug(4, "%s is unavailable because his device state is 'unknown'\n", member->membername);
@@ -1238,9 +1395,9 @@ static int get_member_status(struct call_queue *q, int max_penalty, int min_pena
 				ast_debug(4, "%s is unavailable because it has only been %d seconds since his last call (wrapup time is %d)\n", member->membername, (int) (time(NULL) - member->lastcall), q->wrapuptime);
 				break;
 			} else {
-				ao2_unlock(q);
 				ao2_ref(member, -1);
 				ao2_iterator_destroy(&mem_iter);
+				ao2_unlock(q);
 				ast_debug(4, "%s is available.\n", member->membername);
 				return 0;
 			}
@@ -1538,7 +1695,7 @@ static void init_queue(struct call_queue *q)
 	q->autopause = QUEUE_AUTOPAUSE_OFF;
 	q->timeoutpriority = TIMEOUT_PRIORITY_APP;
 	if (!q->members) {
-		if (q->strategy == QUEUE_STRATEGY_LINEAR)
+		if (q->strategy == QUEUE_STRATEGY_LINEAR || q->strategy == QUEUE_STRATEGY_RRORDERED)
 			/* linear strategy depends on order, so we have to place all members in a single bucket */
 			q->members = ao2_container_alloc(1, member_hash_fn, member_cmp_fn);
 		else
@@ -1558,8 +1715,13 @@ static void init_queue(struct call_queue *q)
 	ast_string_field_set(q, sound_thanks, "queue-thankyou");
 	ast_string_field_set(q, sound_reporthold, "queue-reporthold");
 
-	if ((q->sound_periodicannounce[0] = ast_str_create(32)))
+	if (!q->sound_periodicannounce[0]) {
+		q->sound_periodicannounce[0] = ast_str_create(32);
+	}
+
+	if (q->sound_periodicannounce[0]) {
 		ast_str_set(&q->sound_periodicannounce[0], 0, "queue-periodic-announce");
+	}
 
 	for (i = 1; i < MAX_PERIODIC_ANNOUNCEMENTS; i++) {
 		if (q->sound_periodicannounce[i])
@@ -1599,7 +1761,7 @@ static void clear_queue(struct call_queue *q)
  * \retval 0 on success 
  * \note Call this with the rule_lists locked 
 */
-static int insert_penaltychange (const char *list_name, const char *content, const int linenum)
+static int insert_penaltychange(const char *list_name, const char *content, const int linenum)
 {
 	char *timestr, *maxstr, *minstr, *contentdup;
 	struct penalty_rule *rule = NULL, *rule_iter;
@@ -1964,11 +2126,10 @@ static void rt_handle_member_record(struct call_queue *q, char *interface, const
 			m->dead = 0;
 			m->realtime = 1;
 			ast_copy_string(m->rt_uniqueid, rt_uniqueid, sizeof(m->rt_uniqueid));
-			ast_queue_log(q->name, "REALTIME", m->interface, "ADDMEMBER", "%s", "");
+			ast_queue_log(q->name, "REALTIME", m->interface, "ADDMEMBER", "%s", paused ? "PAUSED" : "");
 			ao2_link(q->members, m);
 			ao2_ref(m, -1);
 			m = NULL;
-			q->membercount++;
 		}
 	}
 }
@@ -1983,7 +2144,6 @@ static void free_members(struct call_queue *q, int all)
 	while ((cur = ao2_iterator_next(&mem_iter))) {
 		if (all || !cur->dynamic) {
 			ao2_unlink(q->members, cur);
-			q->membercount--;
 		}
 		ao2_ref(cur, -1);
 	}
@@ -2086,7 +2246,6 @@ static struct call_queue *find_queue_by_name_rt(const char *queuename, struct as
 		ao2_lock(q);
 		clear_queue(q);
 		q->realtime = 1;
-		q->membercount = 0;
 		/*Before we initialize the queue, we need to set the strategy, so that linear strategy
 		 * will allocate the members properly
 		 */
@@ -2126,11 +2285,9 @@ static struct call_queue *find_queue_by_name_rt(const char *queuename, struct as
 		queue_set_param(q, tmp_name, v->value, -1, 0);
 	}
 
-	/* Temporarily set realtime members dead so we can detect deleted ones. 
-	 * Also set the membercount correctly for realtime*/
+	/* Temporarily set realtime members dead so we can detect deleted ones. */
 	mem_iter = ao2_iterator_init(q->members, 0);
 	while ((m = ao2_iterator_next(&mem_iter))) {
-		q->membercount++;
 		if (m->realtime)
 			m->dead = 1;
 		ao2_ref(m, -1);
@@ -2152,7 +2309,6 @@ static struct call_queue *find_queue_by_name_rt(const char *queuename, struct as
 		if (m->dead) {
 			ast_queue_log(q->name, "REALTIME", m->interface, "REMOVEMEMBER", "%s", "");
 			ao2_unlink(q->members, m);
-			q->membercount--;
 		}
 		ao2_ref(m, -1);
 	}
@@ -2163,6 +2319,7 @@ static struct call_queue *find_queue_by_name_rt(const char *queuename, struct as
 	return q;
 }
 
+/*! \note Returns a reference to the loaded realtime queue. */
 static struct call_queue *load_realtime_queue(const char *queuename)
 {
 	struct ast_variable *queue_vars;
@@ -2189,25 +2346,20 @@ static struct call_queue *load_realtime_queue(const char *queuename)
 		if (queue_vars) {
 			member_config = ast_load_realtime_multientry("queue_members", "interface LIKE", "%", "queue_name", queuename, SENTINEL);
 			if (!member_config) {
-				ast_log(LOG_ERROR, "no queue_members defined in your config (extconfig.conf).\n");
-				ast_variables_destroy(queue_vars);
-				return NULL;
+				ast_debug(1, "No queue_members defined in config extconfig.conf\n");
+				member_config = ast_config_new();
 			}
 		}
 		if (q) {
 			prev_weight = q->weight ? 1 : 0;
+			queue_t_unref(q, "Need to find realtime queue");
 		}
-
-		ao2_lock(queues);
 
 		q = find_queue_by_name_rt(queuename, queue_vars, member_config);
-		if (member_config) {
-			ast_config_destroy(member_config);
-		}
-		if (queue_vars) {
-			ast_variables_destroy(queue_vars);
-		}
-		/* update the use_weight value if the queue's has gained or lost a weight */ 
+		ast_config_destroy(member_config);
+		ast_variables_destroy(queue_vars);
+
+		/* update the use_weight value if the queue's has gained or lost a weight */
 		if (q) {
 			if (!q->weight && prev_weight) {
 				ast_atomic_fetchadd_int(&use_weight, -1);
@@ -2217,8 +2369,6 @@ static struct call_queue *load_realtime_queue(const char *queuename)
 			}
 		}
 		/* Other cases will end up with the proper value for use_weight */
-		ao2_unlock(queues);
-
 	} else {
 		update_realtime_members(q);
 	}
@@ -2252,10 +2402,9 @@ static void update_realtime_members(struct call_queue *q)
 		return;
 	}
 
-	ao2_lock(queues);
 	ao2_lock(q);
-	
-	/* Temporarily set realtime  members dead so we can detect deleted ones.*/ 
+
+	/* Temporarily set realtime  members dead so we can detect deleted ones.*/
 	mem_iter = ao2_iterator_init(q->members, 0);
 	while ((m = ao2_iterator_next(&mem_iter))) {
 		if (m->realtime)
@@ -2279,13 +2428,11 @@ static void update_realtime_members(struct call_queue *q)
 		if (m->dead) {
 			ast_queue_log(q->name, "REALTIME", m->interface, "REMOVEMEMBER", "%s", "");
 			ao2_unlink(q->members, m);
-			q->membercount--;
 		}
 		ao2_ref(m, -1);
 	}
 	ao2_iterator_destroy(&mem_iter);
 	ao2_unlock(q);
-	ao2_unlock(queues);
 	ast_config_destroy(member_config);
 }
 
@@ -2300,7 +2447,6 @@ static int join_queue(char *queuename, struct queue_ent *qe, enum queue_result *
 	if (!(q = load_realtime_queue(queuename)))
 		return res;
 
-	ao2_lock(queues);
 	ao2_lock(q);
 
 	/* This is our one */
@@ -2309,7 +2455,7 @@ static int join_queue(char *queuename, struct queue_ent *qe, enum queue_result *
 		if ((status = get_member_status(q, qe->max_penalty, qe->min_penalty, q->joinempty))) {
 			*reason = QUEUE_JOINEMPTY;
 			ao2_unlock(q);
-			ao2_unlock(queues);
+			queue_t_unref(q, "Done with realtime queue");
 			return res;
 		}
 	}
@@ -2354,15 +2500,25 @@ static int join_queue(char *queuename, struct queue_ent *qe, enum queue_result *
 		q->count++;
 		res = 0;
 		ast_manager_event(qe->chan, EVENT_FLAG_CALL, "Join",
-			"Channel: %s\r\nCallerIDNum: %s\r\nCallerIDName: %s\r\nQueue: %s\r\nPosition: %d\r\nCount: %d\r\nUniqueid: %s\r\n",
+			"Channel: %s\r\n"
+			"CallerIDNum: %s\r\n"
+			"CallerIDName: %s\r\n"
+			"ConnectedLineNum: %s\r\n"
+			"ConnectedLineName: %s\r\n"
+			"Queue: %s\r\n"
+			"Position: %d\r\n"
+			"Count: %d\r\n"
+			"Uniqueid: %s\r\n",
 			qe->chan->name,
 			S_COR(qe->chan->caller.id.number.valid, qe->chan->caller.id.number.str, "unknown"),/* XXX somewhere else it is <unknown> */
 			S_COR(qe->chan->caller.id.name.valid, qe->chan->caller.id.name.str, "unknown"),
+			S_COR(qe->chan->connected.id.number.valid, qe->chan->connected.id.number.str, "unknown"),/* XXX somewhere else it is <unknown> */
+			S_COR(qe->chan->connected.id.name.valid, qe->chan->connected.id.name.str, "unknown"),
 			q->name, qe->pos, q->count, qe->chan->uniqueid );
 		ast_debug(1, "Queue '%s' Join, Channel '%s', Position '%d'\n", q->name, qe->chan->name, qe->pos );
 	}
 	ao2_unlock(q);
-	ao2_unlock(queues);
+	queue_t_unref(q, "Done with realtime queue");
 
 	return res;
 }
@@ -2746,9 +2902,7 @@ static int compare_weight(struct call_queue *rq, struct member *member)
 	struct member *mem;
 	int found = 0;
 	struct ao2_iterator queue_iter;
-	
-	/* q's lock and rq's lock already set by try_calling()
-	 * to solve deadlock */
+
 	queue_iter = ao2_iterator_init(queues, 0);
 	while ((q = ao2_t_iterator_next(&queue_iter, "Iterate through queues"))) {
 		if (q == rq) { /* don't check myself, could deadlock */
@@ -2903,10 +3057,7 @@ static int ring_entry(struct queue_ent *qe, struct callattempt *tmp, int *busies
 		return 0;
 	}
 
-	ast_channel_lock(tmp->chan);
-	while (ast_channel_trylock(qe->chan)) {
-		CHANNEL_DEADLOCK_AVOIDANCE(tmp->chan);
-	}
+	ast_channel_lock_both(tmp->chan, qe->chan);
 
 	if (qe->cancel_answered_elsewhere) {
 		ast_set_flag(tmp->chan, AST_FLAG_ANSWERED_ELSEWHERE);
@@ -2969,19 +3120,22 @@ static int ring_entry(struct queue_ent *qe, struct callattempt *tmp, int *busies
 		strcpy(tmp->chan->cdr->userfield, qe->chan->cdr->userfield);
 	}
 
+	ast_channel_unlock(tmp->chan);
+	ast_channel_unlock(qe->chan);
+
 	/* Place the call, but don't wait on the answer */
 	if ((res = ast_call(tmp->chan, location, 0))) {
 		/* Again, keep going even if there's an error */
 		ast_debug(1, "ast call on peer returned %d\n", res);
 		ast_verb(3, "Couldn't call %s\n", tmp->interface);
-		ast_channel_unlock(tmp->chan);
-		ast_channel_unlock(qe->chan);
 		do_hang(tmp);
 		(*busies)++;
 		update_status(qe->parent, tmp->member, get_queue_member_status(tmp->member));
 		return 0;
 	} else if (qe->parent->eventwhencalled) {
 		char vars[2048];
+
+		ast_channel_lock_both(tmp->chan, qe->chan);
 
 		manager_event(EVENT_FLAG_AGENT, "AgentCalled",
 			"Queue: %s\r\n"
@@ -2991,20 +3145,26 @@ static int ring_entry(struct queue_ent *qe, struct callattempt *tmp, int *busies
 			"DestinationChannel: %s\r\n"
 			"CallerIDNum: %s\r\n"
 			"CallerIDName: %s\r\n"
+			"ConnectedLineNum: %s\r\n"
+			"ConnectedLineName: %s\r\n"
 			"Context: %s\r\n"
 			"Extension: %s\r\n"
 			"Priority: %d\r\n"
 			"Uniqueid: %s\r\n"
 			"%s",
 			qe->parent->name, tmp->interface, tmp->member->membername, qe->chan->name, tmp->chan->name,
-			S_COR(tmp->chan->caller.id.number.valid, tmp->chan->caller.id.number.str, "unknown"),
-			S_COR(tmp->chan->caller.id.name.valid, tmp->chan->caller.id.name.str, "unknown"),
+			S_COR(qe->chan->caller.id.number.valid, qe->chan->caller.id.number.str, "unknown"),
+			S_COR(qe->chan->caller.id.name.valid, qe->chan->caller.id.name.str, "unknown"),
+			S_COR(qe->chan->connected.id.number.valid, qe->chan->connected.id.number.str, "unknown"),
+			S_COR(qe->chan->connected.id.name.valid, qe->chan->connected.id.name.str, "unknown"),
 			qe->chan->context, qe->chan->exten, qe->chan->priority, qe->chan->uniqueid,
 			qe->parent->eventwhencalled == QUEUE_EVENT_VARIABLES ? vars2manager(qe->chan, vars, sizeof(vars)) : "");
+
+		ast_channel_unlock(tmp->chan);
+		ast_channel_unlock(qe->chan);
+
 		ast_verb(3, "Called %s\n", tmp->interface);
 	}
-	ast_channel_unlock(tmp->chan);
-	ast_channel_unlock(qe->chan);
 
 	update_status(qe->parent, tmp->member, get_queue_member_status(tmp->member));
 	return 1;
@@ -3120,7 +3280,7 @@ static int store_next_lin(struct queue_ent *qe, struct callattempt *outgoing)
 	return 0;
 }
 
-/*! \brief Playback announcement to queued members if peroid has elapsed */
+/*! \brief Playback announcement to queued members if period has elapsed */
 static int say_periodic_announcement(struct queue_ent *qe, int ringing)
 {
 	int res = 0;
@@ -3311,7 +3471,9 @@ static struct callattempt *wait_for_answer(struct queue_ent *qe, struct callatte
 				if (o->stillgoing) {	/* Keep track of important channels */
 					stillgoing = 1;
 					if (o->chan) {
-						watchers[pos++] = o->chan;
+						if (pos < AST_MAX_WATCHERS) {
+							watchers[pos++] = o->chan;
+						}
 						if (!start)
 							start = o;
 						else
@@ -3422,10 +3584,7 @@ static struct callattempt *wait_for_answer(struct queue_ent *qe, struct callatte
 					} else {
 						struct ast_party_redirecting redirecting;
 
-						ast_channel_lock(o->chan);
-						while (ast_channel_trylock(in)) {
-							CHANNEL_DEADLOCK_AVOIDANCE(o->chan);
-						}
+						ast_channel_lock_both(o->chan, in);
 						ast_channel_inherit_variables(in, o->chan);
 						ast_channel_datastore_inherit(in, o->chan);
 
@@ -3593,7 +3752,7 @@ static struct callattempt *wait_for_answer(struct queue_ent *qe, struct callatte
 						case AST_CONTROL_REDIRECTING:
 							if (!update_connectedline) {
 								ast_verb(3, "Redirecting update to %s prevented\n", inchan_name);
-							} else {
+							} else if (qe->parent->strategy != QUEUE_STRATEGY_RINGALL) {
 								ast_verb(3, "%s redirecting info has changed, passing it to %s\n", ochan_name, inchan_name);
 								if (ast_channel_redirecting_macro(o->chan, in, f, 1, 1)) {
 									ast_indicate_data(in, AST_CONTROL_REDIRECTING, f->data.ptr, f->datalen);
@@ -3880,7 +4039,8 @@ static int update_queue(struct call_queue *q, struct member *member, int callcom
 static int calc_metric(struct call_queue *q, struct member *mem, int pos, struct queue_ent *qe, struct callattempt *tmp)
 {
 	/* disregarding penalty on too few members? */
-	unsigned char usepenalty = (q->membercount <= q->penaltymemberslimit) ? 0 : 1;
+	int membercount = ao2_container_count(q->members);
+	unsigned char usepenalty = (membercount <= q->penaltymemberslimit) ? 0 : 1;
 
 	if (usepenalty) {
 		if ((qe->max_penalty && (mem->penalty > qe->max_penalty)) ||
@@ -3889,7 +4049,7 @@ static int calc_metric(struct call_queue *q, struct member *mem, int pos, struct
 		}
 	} else {
 		ast_debug(1, "Disregarding penalty, %d members and %d in penaltymemberslimit.\n",
-			  q->membercount, q->penaltymemberslimit);
+			  membercount, q->penaltymemberslimit);
 	}
 
 	switch (q->strategy) {
@@ -3908,6 +4068,7 @@ static int calc_metric(struct call_queue *q, struct member *mem, int pos, struct
 		}
 		tmp->metric += mem->penalty * 1000000 * usepenalty;
 		break;
+	case QUEUE_STRATEGY_RRORDERED:
 	case QUEUE_STRATEGY_RRMEMORY:
 		if (pos < q->rrpos) {
 			tmp->metric = 1000 + pos;
@@ -4161,7 +4322,6 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 	char *agiexec = NULL;
 	char *macroexec = NULL;
 	char *gosubexec = NULL;
-	int ret = 0;
 	const char *monitorfilename;
 	const char *monitor_exec;
 	const char *monitor_options;
@@ -4177,7 +4337,6 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 	struct ao2_iterator memi;
 	struct ast_datastore *datastore, *transfer_ds;
 	struct queue_end_bridge *queue_end_bridge = NULL;
-	const int need_weight = use_weight;
 
 	ast_channel_lock(qe->chan);
 	datastore = ast_channel_datastore_find(qe->chan, &dialed_interface_info, NULL);
@@ -4230,10 +4389,10 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 			ast_set_flag(&(bridge_config.features_caller), AST_FEATURE_PARKCALL);
 			break;
 		case 'n':
-			if (qe->parent->strategy == QUEUE_STRATEGY_RRMEMORY || qe->parent->strategy == QUEUE_STRATEGY_LINEAR)
+			if (qe->parent->strategy == QUEUE_STRATEGY_RRMEMORY || qe->parent->strategy == QUEUE_STRATEGY_LINEAR || qe->parent->strategy == QUEUE_STRATEGY_RRORDERED)
 				(*tries)++;
 			else
-				*tries = qe->parent->membercount;
+				*tries = ao2_container_count(qe->parent->members);
 			*noption = 1;
 			break;
 		case 'i':
@@ -4260,9 +4419,6 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 		qe->cancel_answered_elsewhere = 1;
 	}
 
-	/* Hold the lock while we setup the outgoing calls */
-	if (need_weight)
-		ao2_lock(queues);
 	ao2_lock(qe->parent);
 	ast_debug(1, "%s is trying to call a queue member.\n",
 							qe->chan->name);
@@ -4279,30 +4435,24 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 		AST_LIST_HEAD(, ast_dialed_interface) *dialed_interfaces;
 		if (!tmp) {
 			ao2_ref(cur, -1);
-			ao2_unlock(qe->parent);
 			ao2_iterator_destroy(&memi);
-			if (need_weight)
-				ao2_unlock(queues);
+			ao2_unlock(qe->parent);
 			goto out;
 		}
 		if (!datastore) {
 			if (!(datastore = ast_datastore_alloc(&dialed_interface_info, NULL))) {
-				ao2_ref(cur, -1);
-				ao2_unlock(qe->parent);
-				ao2_iterator_destroy(&memi);
-				if (need_weight)
-					ao2_unlock(queues);
 				callattempt_free(tmp);
+				ao2_ref(cur, -1);
+				ao2_iterator_destroy(&memi);
+				ao2_unlock(qe->parent);
 				goto out;
 			}
 			datastore->inheritance = DATASTORE_INHERIT_FOREVER;
 			if (!(dialed_interfaces = ast_calloc(1, sizeof(*dialed_interfaces)))) {
-				ao2_ref(cur, -1);
-				ao2_unlock(&qe->parent);
-				ao2_iterator_destroy(&memi);
-				if (need_weight)
-					ao2_unlock(queues);
 				callattempt_free(tmp);
+				ao2_ref(cur, -1);
+				ao2_iterator_destroy(&memi);
+				ao2_unlock(&qe->parent);
 				goto out;
 			}
 			datastore->data = dialed_interfaces;
@@ -4326,6 +4476,7 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 
 		if (di) {
 			callattempt_free(tmp);
+			ao2_ref(cur, -1);
 			continue;
 		}
 
@@ -4335,12 +4486,10 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 		 * it won't call one that has already been called. */
 		if (strncasecmp(cur->interface, "Local/", 6)) {
 			if (!(di = ast_calloc(1, sizeof(*di) + strlen(cur->interface)))) {
-				ao2_ref(cur, -1);
-				ao2_unlock(qe->parent);
-				ao2_iterator_destroy(&memi);
-				if (need_weight)
-					ao2_unlock(queues);
 				callattempt_free(tmp);
+				ao2_ref(cur, -1);
+				ao2_iterator_destroy(&memi);
+				ao2_unlock(qe->parent);
 				goto out;
 			}
 			strcpy(di->interface, cur->interface);
@@ -4402,8 +4551,6 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 	++qe->pending;
 	ao2_unlock(qe->parent);
 	ring_one(qe, outgoing, &numbusies);
-	if (need_weight)
-		ao2_unlock(queues);
 	lpeer = wait_for_answer(qe, outgoing, &to, &digit, numbusies, ast_test_flag(&(bridge_config.features_caller), AST_FEATURE_DISCONNECT), forwardsallowed, update_connectedline);
 	/* The ast_channel_datastore_remove() function could fail here if the
 	 * datastore was moved to another channel during a masquerade. If this is
@@ -4417,8 +4564,9 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 	}
 	ast_channel_unlock(qe->chan);
 	ao2_lock(qe->parent);
-	if (qe->parent->strategy == QUEUE_STRATEGY_RRMEMORY) {
+	if (qe->parent->strategy == QUEUE_STRATEGY_RRMEMORY || qe->parent->strategy == QUEUE_STRATEGY_RRORDERED) {
 		store_next_rr(qe, outgoing);
+
 	}
 	if (qe->parent->strategy == QUEUE_STRATEGY_LINEAR) {
 		store_next_lin(qe, outgoing);
@@ -4686,7 +4834,7 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 					/* We purposely lock the CDR so that pbx_exec does not update the application data */
 					if (qe->chan->cdr)
 						ast_set_flag(qe->chan->cdr, AST_CDR_FLAG_LOCKED);
-					ret = pbx_exec(qe->chan, mixmonapp, mixmonargs);
+					pbx_exec(qe->chan, mixmonapp, mixmonargs);
 					if (qe->chan->cdr)
 						ast_clear_flag(qe->chan->cdr, AST_CDR_FLAG_LOCKED);
 
@@ -4767,14 +4915,24 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 
 				gosub_argstart = strchr(gosubexec, ',');
 				if (gosub_argstart) {
+					const char *what_is_s = "s";
 					*gosub_argstart = 0;
-					if (asprintf(&gosub_args, "%s,s,1(%s)", gosubexec, gosub_argstart + 1) < 0) {
+					if (!ast_exists_extension(peer, gosubexec, "s", 1, S_COR(peer->caller.id.number.valid, peer->caller.id.number.str, NULL)) &&
+						 ast_exists_extension(peer, gosubexec, "~~s~~", 1, S_COR(peer->caller.id.number.valid, peer->caller.id.number.str, NULL))) {
+						what_is_s = "~~s~~";
+					}
+					if (asprintf(&gosub_args, "%s,%s,1(%s)", gosubexec, what_is_s, gosub_argstart + 1) < 0) {
 						ast_log(LOG_WARNING, "asprintf() failed: %s\n", strerror(errno));
 						gosub_args = NULL;
 					}
 					*gosub_argstart = ',';
 				} else {
-					if (asprintf(&gosub_args, "%s,s,1", gosubexec) < 0) {
+					const char *what_is_s = "s";
+					if (!ast_exists_extension(peer, gosubexec, "s", 1, S_COR(peer->caller.id.number.valid, peer->caller.id.number.str, NULL)) &&
+						 ast_exists_extension(peer, gosubexec, "~~s~~", 1, S_COR(peer->caller.id.number.valid, peer->caller.id.number.str, NULL))) {
+						what_is_s = "~~s~~";
+					}
+					if (asprintf(&gosub_args, "%s,%s,1", gosubexec, what_is_s) < 0) {
 						ast_log(LOG_WARNING, "asprintf() failed: %s\n", strerror(errno));
 						gosub_args = NULL;
 					}
@@ -4808,15 +4966,41 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 			application = pbx_findapp("agi");
 			if (application) {
 				agiexec = ast_strdupa(agi);
-				ret = pbx_exec(qe->chan, application, agiexec);
+				pbx_exec(qe->chan, application, agiexec);
 			} else
 				ast_log(LOG_WARNING, "Asked to execute an AGI on this channel, but could not find application (agi)!\n");
 		}
 		qe->handled++;
 		ast_queue_log(queuename, qe->chan->uniqueid, member->membername, "CONNECT", "%ld|%s|%ld", (long) time(NULL) - qe->start, peer->uniqueid,
 													(long)(orig - to > 0 ? (orig - to) / 1000 : 0));
-		if (update_cdr && qe->chan->cdr) 
-			ast_copy_string(qe->chan->cdr->dstchannel, member->membername, sizeof(qe->chan->cdr->dstchannel));
+
+		if (qe->chan->cdr) {
+			struct ast_cdr *cdr;
+			struct ast_cdr *newcdr;
+
+			/* Only work with the last CDR in the stack*/
+			cdr = qe->chan->cdr;
+			while (cdr->next) {
+				cdr = cdr->next;
+			}
+
+			/* If this CDR is not related to us add new one*/
+			if ((strcasecmp(cdr->uniqueid, qe->chan->uniqueid)) &&
+			    (strcasecmp(cdr->linkedid, qe->chan->uniqueid)) &&
+			    (newcdr = ast_cdr_dup(cdr))) {
+				ast_channel_lock(qe->chan);
+				ast_cdr_init(newcdr, qe->chan);
+				ast_cdr_reset(newcdr, 0);
+				cdr = ast_cdr_append(cdr, newcdr);
+				cdr = cdr->next;
+				ast_channel_unlock(qe->chan);
+			}
+
+			if (update_cdr) {
+				ast_copy_string(cdr->dstchannel, member->membername, sizeof(cdr->dstchannel));
+			}
+		}
+
 		if (qe->parent->eventwhencalled)
 			manager_event(EVENT_FLAG_AGENT, "AgentConnect",
 					"Queue: %s\r\n"
@@ -4877,8 +5061,11 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 			if ((tds = ast_channel_datastore_find(qe->chan, &queue_transfer_info, NULL))) {	
 				ast_channel_datastore_remove(qe->chan, tds);
 			}
+			ast_channel_unlock(qe->chan);
 			update_queue(qe->parent, member, callcompletedinsl, (time(NULL) - callstart));
 		} else {
+			ast_channel_unlock(qe->chan);
+
 			/* We already logged the TRANSFER on the queue_log, but we still need to send the AgentComplete event */
 			send_agent_complete(qe, queuename, peer, member, callstart, vars, sizeof(vars), TRANSFER);
 		}
@@ -4886,7 +5073,6 @@ static int try_calling(struct queue_ent *qe, const char *options, char *announce
 		if (transfer_ds) {
 			ast_datastore_free(transfer_ds);
 		}
-		ast_channel_unlock(qe->chan);
 		ast_hangup(peer);
 		res = bridge ? bridge : 1;
 		ao2_ref(member, -1);
@@ -4992,7 +5178,6 @@ static int remove_from_queue(const char *queuename, const char *interface)
 
 	ast_copy_string(tmpmem.interface, interface, sizeof(tmpmem.interface));
 	if ((q = ao2_t_find(queues, &tmpq, OBJ_POINTER, "Temporary reference for interface removal"))) {
-		ao2_lock(queues);
 		ao2_lock(q);
 		if ((mem = ao2_find(q->members, &tmpmem, OBJ_POINTER))) {
 			/* XXX future changes should beware of this assumption!! */
@@ -5000,10 +5185,8 @@ static int remove_from_queue(const char *queuename, const char *interface)
 				ao2_ref(mem, -1);
 				ao2_unlock(q);
 				queue_t_unref(q, "Interface wasn't dynamic, expiring temporary reference");
-				ao2_unlock(queues);
 				return RES_NOT_DYNAMIC;
 			}
-			q->membercount--;
 			manager_event(EVENT_FLAG_AGENT, "QueueMemberRemoved",
 				"Queue: %s\r\n"
 				"Location: %s\r\n"
@@ -5020,7 +5203,6 @@ static int remove_from_queue(const char *queuename, const char *interface)
 			res = RES_EXISTS;
 		}
 		ao2_unlock(q);
-		ao2_unlock(queues);
 		queue_t_unref(q, "Expiring temporary reference");
 	}
 
@@ -5045,14 +5227,11 @@ static int add_to_queue(const char *queuename, const char *interface, const char
 	if (!(q = load_realtime_queue(queuename)))
 		return res;
 
-	ao2_lock(queues);
-
 	ao2_lock(q);
 	if ((old_member = interface_exists(q, interface)) == NULL) {
 		if ((new_member = create_queue_member(interface, membername, penalty, paused, state_interface))) {
 			new_member->dynamic = 1;
 			ao2_link(q->members, new_member);
-			q->membercount++;
 			manager_event(EVENT_FLAG_AGENT, "QueueMemberAdded",
 				"Queue: %s\r\n"
 				"Location: %s\r\n"
@@ -5083,7 +5262,6 @@ static int add_to_queue(const char *queuename, const char *interface, const char
 		res = RES_EXISTS;
 	}
 	ao2_unlock(q);
-	ao2_unlock(queues);
 	queue_t_unref(q, "Expiring temporary reference");
 
 	return res;
@@ -5264,8 +5442,6 @@ static void reload_queue_members(void)
 	struct call_queue *cur_queue;
 	char queue_data[PM_MAX_LEN];
 
-	ao2_lock(queues);
-
 	/* Each key in 'pm_family' is the name of a queue */
 	db_tree = ast_db_gettree(pm_family, NULL);
 	for (entry = db_tree; entry; entry = entry->next) {
@@ -5336,7 +5512,6 @@ static void reload_queue_members(void)
 		queue_t_unref(cur_queue, "Expire reload reference");
 	}
 
-	ao2_unlock(queues);
 	if (db_tree) {
 		ast_log(LOG_NOTICE, "Queue members successfully reloaded from database.\n");
 		ast_db_freetree(db_tree);
@@ -5585,7 +5760,6 @@ static void copy_rules(struct queue_ent *qe, const char *rulename)
 			struct penalty_rule *new_pr = ast_calloc(1, sizeof(*new_pr));
 			if (!new_pr) {
 				ast_log(LOG_ERROR, "Memory allocation error when copying penalty rules! Aborting!\n");
-				AST_LIST_UNLOCK(&rule_lists);
 				break;
 			}
 			new_pr->time = pr_iter->time;
@@ -5820,7 +5994,7 @@ check_turns:
 		}
 
 		/* exit after 'timeout' cycle if 'n' option enabled */
-		if (noption && tries >= qe.parent->membercount) {
+		if (noption && tries >= ao2_container_count(qe.parent->members)) {
 			ast_verb(3, "Exiting on time-out cycle\n");
 			ast_queue_log(args.queuename, chan->uniqueid, "NONE", "EXITWITHTIMEOUT", "%d", qe.pos);
 			record_abandoned(&qe);
@@ -6031,7 +6205,7 @@ static int queue_function_qac(struct ast_channel *chan, const char *cmd, char *d
 			}
 			ao2_iterator_destroy(&mem_iter);
 		} else /* must be "count" */
-			count = q->membercount;
+			count = ao2_container_count(q->members);
 		ao2_unlock(q);
 		queue_t_unref(q, "Done with temporary reference in QUEUE_MEMBER()");
 	} else
@@ -6140,9 +6314,10 @@ static int queue_function_queuememberlist(struct ast_channel *chan, const char *
 
 	if ((q = ao2_t_find(queues, &tmpq, OBJ_POINTER, "Find for QUEUE_MEMBER_LIST()"))) {
 		int buflen = 0, count = 0;
-		struct ao2_iterator mem_iter = ao2_iterator_init(q->members, 0);
+		struct ao2_iterator mem_iter;
 
 		ao2_lock(q);
+		mem_iter = ao2_iterator_init(q->members, 0);
 		while ((m = ao2_iterator_next(&mem_iter))) {
 			/* strcat() is always faster than printf() */
 			if (count++) {
@@ -6310,6 +6485,7 @@ static int reload_queue_rules(int reload)
 	while ((rulecat = ast_category_browse(cfg, rulecat))) {
 		if (!(new_rl = ast_calloc(1, sizeof(*new_rl)))) {
 			AST_LIST_UNLOCK(&rule_lists);
+			ast_config_destroy(cfg);
 			return AST_MODULE_LOAD_FAILURE;
 		} else {
 			ast_copy_string(new_rl->name, rulecat, sizeof(new_rl->name));
@@ -6420,8 +6596,6 @@ static void reload_single_member(const char *memberdata, struct call_queue *q)
 
 	if (cur) {
 		ao2_ref(cur, -1);
-	} else {
-		q->membercount++;
 	}
 }
 
@@ -6437,19 +6611,11 @@ static int mark_member_dead(void *obj, void *arg, int flags)
 static int kill_dead_members(void *obj, void *arg, int flags)
 {
 	struct member *member = obj;
-	struct call_queue *q = arg;
 
 	if (!member->delme) {
-		if (member->dynamic) {
-			/* dynamic members were not counted toward the member count
-			 * when reloading members from queues.conf, so we do that here
-			 */
-			q->membercount++;
-		}
 		member->status = get_queue_member_status(member);
 		return 0;
 	} else {
-		q->membercount--;
 		return CMP_MATCH;
 	}
 }
@@ -6528,7 +6694,6 @@ static void reload_single_queue(struct ast_config *cfg, struct ast_flags *mask, 
 		init_queue(q);
 	}
 	if (member_reload) {
-		q->membercount = 0;
 		ao2_callback(q->members, OBJ_NODATA, mark_member_dead, NULL);
 	}
 	for (var = ast_variable_browse(cfg, queuename); var; var = var->next) {
@@ -6614,7 +6779,7 @@ static int reload_queues(int reload, struct ast_flags *mask, const char *queuena
 
 	/* We've made it here, so it looks like we're doing operations on all queues. */
 	ao2_lock(queues);
-	
+
 	/* Mark all queues as dead for the moment if we're reloading queues.
 	 * For clarity, we could just be reloading members, in which case we don't want to mess
 	 * with the other queue parameters at all*/
@@ -6641,12 +6806,12 @@ static int reload_queues(int reload, struct ast_flags *mask, const char *queuena
 	ao2_unlock(queues);
 	return 0;
 }
-  
+
 /*! \brief Facilitates resetting statistics for a queue
  *
  * This function actually does not reset any statistics, but
  * rather finds a call_queue struct which corresponds to the
- * passed-in queue name and passes that structure to the 
+ * passed-in queue name and passes that structure to the
  * clear_queue function. If no queuename is passed in, then
  * all queues will have their statistics reset.
  *
@@ -6658,7 +6823,9 @@ static int reload_queues(int reload, struct ast_flags *mask, const char *queuena
 static int clear_stats(const char *queuename)
 {
 	struct call_queue *q;
-	struct ao2_iterator queue_iter = ao2_iterator_init(queues, 0);
+	struct ao2_iterator queue_iter;
+
+	queue_iter = ao2_iterator_init(queues, 0);
 	while ((q = ao2_t_iterator_next(&queue_iter, "Iterate through queues"))) {
 		ao2_lock(q);
 		if (ast_strlen_zero(queuename) || !strcasecmp(q->name, queuename))
@@ -6746,8 +6913,8 @@ static char *__queues_show(struct mansession *s, int fd, int argc, const char * 
 		}
 	}
 
-	queue_iter = ao2_iterator_init(queues, AO2_ITERATOR_DONTLOCK);
 	ao2_lock(queues);
+	queue_iter = ao2_iterator_init(queues, AO2_ITERATOR_DONTLOCK);
 	while ((q = ao2_t_iterator_next(&queue_iter, "Iterate through queues"))) {
 		float sl;
 		struct call_queue *realtime_queue = NULL;
@@ -6757,13 +6924,16 @@ static char *__queues_show(struct mansession *s, int fd, int argc, const char * 
 		 * queues which have been deleted from realtime but which have not yet
 		 * been deleted from the in-core container
 		 */
-		if (q->realtime && !(realtime_queue = load_realtime_queue(q->name))) {
-			ao2_unlock(q);
-			queue_t_unref(q, "Done with iterator");
-			continue;
-		} else if (q->realtime) {
+		if (q->realtime) {
+			realtime_queue = load_realtime_queue(q->name);
+			if (!realtime_queue) {
+				ao2_unlock(q);
+				queue_t_unref(q, "Done with iterator");
+				continue;
+			}
 			queue_t_unref(realtime_queue, "Queue is already in memory");
 		}
+
 		if (argc == 3 && strcasecmp(q->name, argv[2])) {
 			ao2_unlock(q);
 			queue_t_unref(q, "Done with iterator");
@@ -6903,8 +7073,14 @@ static int manager_queues_show(struct mansession *s, const struct message *m)
 static int manager_queue_rule_show(struct mansession *s, const struct message *m)
 {
 	const char *rule = astman_get_header(m, "Rule");
+	const char *id = astman_get_header(m, "ActionID");
 	struct rule_list *rl_iter;
 	struct penalty_rule *pr_iter;
+
+	astman_append(s, "Response: Success\r\n");
+	if (!ast_strlen_zero(id)) {
+		astman_append(s, "ActionID: %s\r\n", id);
+	}
 
 	AST_LIST_LOCK(&rule_lists);
 	AST_LIST_TRAVERSE(&rule_lists, rl_iter, list) {
@@ -6919,6 +7095,10 @@ static int manager_queue_rule_show(struct mansession *s, const struct message *m
 	}
 	AST_LIST_UNLOCK(&rule_lists);
 
+	/*
+	 * Two blank lines instead of one because the Response and
+	 * ActionID headers used to not be present.
+	 */
 	astman_append(s, "\r\n\r\n");
 
 	return RESULT_SUCCESS;
@@ -7075,12 +7255,16 @@ static int manager_queues_status(struct mansession *s, const struct message *m)
 					"Uniqueid: %s\r\n"
 					"CallerIDNum: %s\r\n"
 					"CallerIDName: %s\r\n"
+					"ConnectedLineNum: %s\r\n"
+					"ConnectedLineName: %s\r\n"
 					"Wait: %ld\r\n"
 					"%s"
 					"\r\n",
 					q->name, pos++, qe->chan->name, qe->chan->uniqueid,
 					S_COR(qe->chan->caller.id.number.valid, qe->chan->caller.id.number.str, "unknown"),
 					S_COR(qe->chan->caller.id.name.valid, qe->chan->caller.id.name.str, "unknown"),
+					S_COR(qe->chan->connected.id.number.valid, qe->chan->connected.id.number.str, "unknown"),
+					S_COR(qe->chan->connected.id.name.valid, qe->chan->connected.id.name.str, "unknown"),
 					(long) (now - qe->start), idText);
 			}
 		}
@@ -7131,7 +7315,7 @@ static int manager_add_queue_member(struct mansession *s, const struct message *
 
 	switch (add_to_queue(queuename, interface, membername, penalty, paused, queue_persistent_members, state_interface)) {
 	case RES_OKAY:
-		ast_queue_log(queuename, "MANAGER", interface, "ADDMEMBER", "%s", "");
+		ast_queue_log(queuename, "MANAGER", interface, "ADDMEMBER", "%s", paused ? "PAUSED" : "");
 		astman_send_ack(s, m, "Added interface to queue");
 		break;
 	case RES_EXISTS:
@@ -7430,11 +7614,11 @@ static char *complete_queue_remove_member(const char *line, const char *word, in
 		while ((m = ao2_iterator_next(&mem_iter))) {
 			if (!strncasecmp(word, m->membername, wordlen) && ++which > state) {
 				char *tmp;
-				ao2_unlock(q);
 				tmp = ast_strdup(m->interface);
 				ao2_ref(m, -1);
-				queue_t_unref(q, "Done with iterator, returning interface name");
 				ao2_iterator_destroy(&mem_iter);
+				ao2_unlock(q);
+				queue_t_unref(q, "Done with iterator, returning interface name");
 				ao2_iterator_destroy(&queue_iter);
 				return tmp;
 			}
@@ -7861,8 +8045,7 @@ static struct ast_cli_entry cli_queue[] = {
 	MEMBER(call_queue, rrpos, AST_DATA_INTEGER)			\
 	MEMBER(call_queue, memberdelay, AST_DATA_INTEGER)		\
 	MEMBER(call_queue, autofill, AST_DATA_INTEGER)			\
-	MEMBER(call_queue, members, AST_DATA_CONTAINER)			\
-	MEMBER(call_queue, membercount, AST_DATA_INTEGER)
+	MEMBER(call_queue, members, AST_DATA_CONTAINER)
 
 AST_DATA_STRUCTURE(call_queue, DATA_EXPORT_CALL_QUEUE);
 
@@ -7930,6 +8113,7 @@ static void queues_data_provider_get_helper(const struct ast_data_search *search
 	ast_data_add_structure(call_queue, data_queue, queue);
 
 	ast_data_add_str(data_queue, "strategy", int2strat(queue->strategy));
+	ast_data_add_int(data_queue, "membercount", ao2_container_count(queue->members));
 
 	/* announce position */
 	enum_node = ast_data_add_node(data_queue, "announceposition");
@@ -7976,6 +8160,7 @@ static void queues_data_provider_get_helper(const struct ast_data_search *search
 
 		ao2_ref(member, -1);
 	}
+	ao2_iterator_destroy(&im);
 
 	/* include the callers inside the result. */
 	if (queue->head) {
@@ -8042,11 +8227,13 @@ static int queues_data_provider_get(const struct ast_data_search *search,
 	i = ao2_iterator_init(queues, 0);
 	while ((queue = ao2_iterator_next(&i))) {
 		ao2_lock(queue);
-		if (queue->realtime && !(queue_realtime = load_realtime_queue(queue->name))) {
-			ao2_unlock(queue);
-			queue_unref(queue);
-			continue;
-		} else if (queue->realtime) {
+		if (queue->realtime) {
+			queue_realtime = load_realtime_queue(queue->name);
+			if (!queue_realtime) {
+				ao2_unlock(queue);
+				queue_unref(queue);
+				continue;
+			}
 			queue_unref(queue_realtime);
 		}
 
@@ -8054,6 +8241,7 @@ static int queues_data_provider_get(const struct ast_data_search *search,
 		ao2_unlock(queue);
 		queue_unref(queue);
 	}
+	ao2_iterator_destroy(&i);
 
 	return 0;
 }

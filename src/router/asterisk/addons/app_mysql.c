@@ -26,6 +26,8 @@
 /*** MODULEINFO
 	<depend>mysqlclient</depend>
 	<defaultenabled>no</defaultenabled>
+	<support_level>deprecated</support_level>
+	<replacement>func_odbc</replacement>
  ***/
 
 #include "asterisk.h"
@@ -546,7 +548,10 @@ static int MYSQL_exec(struct ast_channel *chan, const char *data)
 	result = 0;
 
 	if (autoclear) {
-		struct ast_datastore *mysql_store = ast_channel_datastore_find(chan, &mysql_ds_info, NULL);
+		struct ast_datastore *mysql_store = NULL;
+
+		ast_channel_lock(chan);
+		mysql_store = ast_channel_datastore_find(chan, &mysql_ds_info, NULL);
 		if (!mysql_store) {
 			if (!(mysql_store = ast_datastore_alloc(&mysql_ds_info, NULL))) {
 				ast_log(LOG_WARNING, "Unable to allocate new datastore.\n");
@@ -555,6 +560,7 @@ static int MYSQL_exec(struct ast_channel *chan, const char *data)
 				ast_channel_datastore_add(chan, mysql_store);
 			}
 		}
+		ast_channel_unlock(chan);
 	}
 	ast_mutex_lock(&_mysql_mutex);
 

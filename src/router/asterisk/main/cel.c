@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 283230 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350555 $")
 
 #include "asterisk/_private.h"
 
@@ -47,7 +47,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 283230 $")
 static unsigned char cel_enabled;
 
 /*! \brief CEL is off by default */
-static const unsigned char CEL_ENALBED_DEFAULT = 0;
+#define CEL_ENABLED_DEFAULT		0
 
 /*! 
  * \brief which events we want to track 
@@ -65,12 +65,12 @@ static int64_t eventset;
 /*! 
  * \brief Track no events by default.
  */
-static const int64_t CEL_DEFAULT_EVENTS = 0;
+#define CEL_DEFAULT_EVENTS	0
 
 /*!
  * \brief Number of buckets for the appset container
  */
-static const int NUM_APP_BUCKETS = 97;
+#define NUM_APP_BUCKETS		97
 
 /*!
  * \brief Container of Asterisk application names
@@ -298,7 +298,7 @@ static int do_reload(void)
 	ast_mutex_lock(&reload_lock);
 
 	/* Reset all settings before reloading configuration */
-	cel_enabled = CEL_ENALBED_DEFAULT;
+	cel_enabled = CEL_ENABLED_DEFAULT;
 	eventset = CEL_DEFAULT_EVENTS;
 	*cel_dateformat = '\0';
 	ao2_callback(appset, OBJ_UNLINK | OBJ_NODATA | OBJ_MULTIPLE, NULL, NULL);
@@ -417,7 +417,7 @@ struct ast_channel *ast_cel_fabricate_channel_from_event(const struct ast_event 
 
 	/* first, get the variables from the event */
 	if (ast_cel_fill_record(event, &record)) {
-		ast_channel_release(tchan);
+		ast_channel_unref(tchan);
 		return NULL;
 	}
 
@@ -439,6 +439,9 @@ struct ast_channel *ast_cel_fabricate_channel_from_event(const struct ast_event 
 		AST_LIST_INSERT_HEAD(headp, newvariable, entries);
 	}
 
+	if ((newvariable = ast_var_assign("userdeftype", record.user_defined_name))) {
+		AST_LIST_INSERT_HEAD(headp, newvariable, entries);
+	}
 	if ((newvariable = ast_var_assign("eventextra", record.extra))) {
 		AST_LIST_INSERT_HEAD(headp, newvariable, entries);
 	}
@@ -462,7 +465,9 @@ struct ast_channel *ast_cel_fabricate_channel_from_event(const struct ast_event 
 	ast_string_field_set(tchan, peeraccount, record.peer_account);
 	ast_string_field_set(tchan, userfield, record.user_field);
 
-	pbx_builtin_setvar_helper(tchan, "BRIDGEPEER", record.peer);
+	if ((newvariable = ast_var_assign("BRIDGEPEER", record.peer))) {
+		AST_LIST_INSERT_HEAD(headp, newvariable, entries);
+	}
 
 	tchan->appl = ast_strdup(record.application_name);
 	tchan->data = ast_strdup(record.application_data);

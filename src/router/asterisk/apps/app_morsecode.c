@@ -24,9 +24,13 @@
  * \ingroup applications
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 211539 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 336716 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -46,7 +50,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 211539 $")
 		</syntax>
 		<description>
 			<para>Plays the Morse code equivalent of the passed string.</para>
-
+			<para>This application does not automatically answer and should be preceeded by
+			an application such as Answer() or Progress().</para>
 			<para>This application uses the following variables:</para>
 			<variablelist>
 				<variable name="MORSEDITLEN">

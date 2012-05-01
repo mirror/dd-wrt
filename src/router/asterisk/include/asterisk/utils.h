@@ -273,6 +273,19 @@ char *ast_uri_encode(const char *string, char *outbuf, int buflen, int do_specia
  */
 void ast_uri_decode(char *s);
 
+/*!
+ * \brief Escape characters found in a quoted string.
+ *
+ * \note This function escapes quoted characters based on the 'qdtext' set of
+ * allowed characters from RFC 3261 section 25.1.
+ *
+ * \param string string to be escaped
+ * \param outbuf resulting escaped string
+ * \param buflen size of output buffer
+ * \return a pointer to the escaped string
+ */
+char *ast_escape_quoted(const char *string, char *outbuf, int buflen);
+
 static force_inline void ast_slinear_saturated_add(short *input, short *value)
 {
 	int res;
@@ -654,7 +667,7 @@ void ast_enable_packet_fragmentation(int sock);
  */
 int ast_mkdir(const char *path, int mode);
 
-#define ARRAY_LEN(a) (sizeof(a) / sizeof(0[a]))
+#define ARRAY_LEN(a) (size_t) (sizeof(a) / sizeof(0[a]))
 
 
 /* Definition for Digest authorization */
@@ -711,6 +724,59 @@ static void force_inline _ast_assert(int condition, const char *condition_str,
 #endif
 
 #include "asterisk/strings.h"
+
+/*!
+ * \brief Return the number of bytes used in the alignment of type.
+ * \param type
+ * \return The number of bytes required for alignment.
+ *
+ * This is really just __alignof__(), but tucked away in this header so we
+ * don't have to look at the nasty underscores in the source.
+ */
+#define ast_alignof(type) __alignof__(type)
+
+/*!
+ * \brief Increase offset so it is a multiple of the required alignment of type.
+ * \param offset The value that should be increased.
+ * \param type The data type that offset should be aligned to.
+ * \return The smallest multiple of alignof(type) larger than or equal to offset.
+ * \see ast_make_room_for()
+ *
+ * Many systems prefer integers to be stored on aligned on memory locations.
+ * This macro will increase an offset so a value of the supplied type can be
+ * safely be stored on such a memory location.
+ *
+ * Examples:
+ * ast_align_for(0x17, int64_t) ==> 0x18
+ * ast_align_for(0x18, int64_t) ==> 0x18
+ * ast_align_for(0x19, int64_t) ==> 0x20
+ *
+ * Don't mind the ugliness, the compiler will optimize it.
+ */
+#define ast_align_for(offset, type) (((offset + __alignof__(type) - 1) / __alignof__(type)) * __alignof__(type))
+
+/*!
+ * \brief Increase offset by the required alignment of type and make sure it is
+ *        a multiple of said alignment.
+ * \param offset The value that should be increased.
+ * \param type The data type that room should be reserved for.
+ * \return The smallest multiple of alignof(type) larger than or equal to offset
+ *         plus alignof(type).
+ * \see ast_align_for()
+ *
+ * A use case for this is when prepending length fields of type int to a buffer.
+ * If you keep the offset a multiple of the alignment of the integer type,
+ * a next block of length+buffer will have the length field automatically
+ * aligned.
+ *
+ * Examples:
+ * ast_make_room_for(0x17, int64_t) ==> 0x20
+ * ast_make_room_for(0x18, int64_t) ==> 0x20
+ * ast_make_room_for(0x19, int64_t) ==> 0x28
+ *
+ * Don't mind the ugliness, the compiler will optimize it.
+ */
+#define ast_make_room_for(offset, type) (((offset + (2 * __alignof__(type) - 1)) / __alignof__(type)) * __alignof__(type))
 
 /*!
  * \brief An Entity ID is essentially a MAC address, brief and unique 

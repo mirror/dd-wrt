@@ -32,9 +32,13 @@
  * \ingroup channel_drivers
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 276347 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 339938 $")
 
 #include <sys/stat.h>
 #include <signal.h>
@@ -186,14 +190,15 @@ static void dummy(char *unused, ...)
 	return;
 }
 
-/*! \brief Global jitterbuffer configuration - by default, jb is disabled */
+/*! \brief Global jitterbuffer configuration - by default, jb is disabled
+ *  \note Values shown here match the defaults shown in unistim.conf.sample */
 static struct ast_jb_conf default_jbconf =
 {
 	.flags = 0,
-	.max_size = -1,
-	.resync_threshold = -1,
-	.impl = "",
-	.target_extra = -1,
+	.max_size = 200,
+	.resync_threshold = 1000,
+	.impl = "fixed",
+	.target_extra = 40,
 };
 static struct ast_jb_conf global_jbconf;
 				
@@ -797,7 +802,7 @@ static void send_client(int size, const unsigned char *data, struct unistimsessi
 {
 	unsigned int tick;
 	int buf_pos;
-	unsigned short *sdata = (unsigned short *) data;
+	unsigned short seq = ntohs(++pte->seq_server);
 
 	ast_mutex_lock(&pte->lock);
 	buf_pos = pte->last_buf_available;
@@ -807,7 +812,7 @@ static void send_client(int size, const unsigned char *data, struct unistimsessi
 		ast_mutex_unlock(&pte->lock);
 		return;
 	}
-	sdata[1] = ntohs(++(pte->seq_server));
+	memcpy((void *)data + sizeof(unsigned short), (void *)&seq, sizeof(unsigned short));
 	pte->wsabufsend[buf_pos].len = size;
 	memcpy(pte->wsabufsend[buf_pos].buf, data, size);
 
@@ -877,6 +882,7 @@ static struct unistimsession *create_client(const struct sockaddr_in *addr_from)
 
 	memcpy(&s->sin, addr_from, sizeof(struct sockaddr_in));
 	get_to_address(unistimsock, &s->sout);
+	s->sout.sin_family = AF_INET;
 	if (unistimdebug) {
 		ast_verb(0, "Creating a new entry for the phone from %s received via server ip %s\n",
 			 ast_inet_ntoa(addr_from->sin_addr), ast_inet_ntoa(s->sout.sin_addr));
@@ -1324,7 +1330,7 @@ send_select_output(struct unistimsession *pte, unsigned char output, unsigned ch
 				change_favorite_icon(pte, FAV_ICON_SPEAKER_OFFHOOK_BLACK);
 		}
 	} else
-		ast_log(LOG_WARNING, "Invalid ouput (%d)\n", output);
+		ast_log(LOG_WARNING, "Invalid output (%d)\n", output);
 	if (output != pte->device->output)
 		pte->device->previous_output = pte->device->output;
 	pte->device->output = output;
@@ -1892,7 +1898,7 @@ static int attempt_transfer(struct unistim_subchannel *p1, struct unistim_subcha
 	int res = 0;
 	struct ast_channel
 	 *chana = NULL, *chanb = NULL, *bridgea = NULL, *bridgeb = NULL, *peera =
-		NULL, *peerb = NULL, *peerc = NULL, *peerd = NULL;
+		NULL, *peerb = NULL, *peerc = NULL;
 
 	if (!p1->owner || !p2->owner) {
 		ast_log(LOG_WARNING, "Transfer attempted without dual ownership?\n");
@@ -1907,12 +1913,10 @@ static int attempt_transfer(struct unistim_subchannel *p1, struct unistim_subcha
 		peera = chana;
 		peerb = chanb;
 		peerc = bridgea;
-		peerd = bridgeb;
 	} else if (bridgeb) {
 		peera = chanb;
 		peerb = chana;
 		peerc = bridgeb;
-		peerd = bridgea;
 	}
 
 	if (peera && peerb && peerc && (peerb != peerc)) {
@@ -4179,6 +4183,10 @@ static int unistim_indicate(struct ast_channel *ast, int ind, const void *data,
 			break;
 		}
 		return -1;
+	case AST_CONTROL_INCOMPLETE:
+		/* Overlapped dialing is not currently supported for UNIStim.  Treat an indication
+		 * of incomplete as congestion
+		 */
 	case AST_CONTROL_CONGESTION:
 		if (ast->_state != AST_STATE_UP) {
 			sub->alreadygone = 1;

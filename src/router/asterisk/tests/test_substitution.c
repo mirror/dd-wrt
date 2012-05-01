@@ -28,11 +28,12 @@
 /*** MODULEINFO
 	<depend>TEST_FRAMEWORK</depend>
 	<depend>func_curl</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 276347 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 332176 $")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -261,6 +262,9 @@ AST_TEST_DEFINE(test_substitution)
 	TEST(test_expected_result(test, c, "A${${baz}o:-2:-1}A", "A2A"));
 	pbx_builtin_setvar_helper(c, "list1", "ab&cd&ef");
 	TEST(test_expected_result(test, c, "${LISTFILTER(list1,&,cd)}", "ab&ef"));
+	TEST(test_expected_result(test, c, "${SHELL(printf '%d' 123)},${SHELL(printf '%d' 456)}", "123,456"));
+	TEST(test_expected_result(test, c, "${foo},${CDR(answer)},${SHELL(printf '%d' 456)}", "123,,456"));
+	TEST(test_expected_result(test, c, "${foo},${this_does_not_exist},${THIS_DOES_NOT_EXIST(either)}", "123,,"));
 #undef TEST
 
 	/* For testing dialplan functions */

@@ -36,11 +36,13 @@
 /*** MODULEINFO
 	<depend>mysqlclient</depend>
 	<defaultenabled>no</defaultenabled>
+	<support_level>deprecated</support_level>
+	<replacement>cdr_adaptive_odbc</replacement>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 269153 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
@@ -325,7 +327,7 @@ db_reconnect:
 				ast_str_make_space(&escape, (valsz = strlen(value)) * 2 + 1);
 				mysql_real_escape_string(&mysql, ast_str_buffer(escape), value, valsz);
 
-				ast_str_append(&sql1, 0, "%s", entry->name);
+				ast_str_append(&sql1, 0, "`%s`", entry->name);
 				ast_str_append(&sql2, 0, "'%s'", ast_str_buffer(escape));
 			}
 		}
@@ -428,7 +430,7 @@ static int my_load_module(int reload)
 	int res;
 	struct ast_config *cfg;
 	struct ast_variable *var;
-	struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
+	struct ast_flags config_flags = { 0 };
 	struct column *entry;
 	char *temp;
 	struct ast_str *compat;
@@ -439,6 +441,9 @@ static int my_load_module(int reload)
 	my_bool my_bool_true = 1;
 #endif
 
+	/* Cannot use a conditionally different flag, because the table layout may
+	 * have changed, which is not detectable by config file change detection,
+	 * but should still cause the configuration to be re-parsed. */
 	cfg = ast_config_load(config, config_flags);
 	if (!cfg) {
 		ast_log(LOG_WARNING, "Unable to load config for mysql CDR's: %s\n", config);

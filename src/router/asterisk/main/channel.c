@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301504 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 357093 $")
 
 #include "asterisk/_private.h"
 
@@ -58,7 +58,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301504 $")
 #include "asterisk/app.h"
 #include "asterisk/transcap.h"
 #include "asterisk/devicestate.h"
-#include "asterisk/sha1.h"
 #include "asterisk/threadstorage.h"
 #include "asterisk/slinfactory.h"
 #include "asterisk/audiohook.h"
@@ -610,6 +609,56 @@ static char *handle_cli_core_show_channeltype(struct ast_cli_entry *e, int cmd, 
 static struct ast_cli_entry cli_channel[] = {
 	AST_CLI_DEFINE(handle_cli_core_show_channeltypes, "List available channel types"),
 	AST_CLI_DEFINE(handle_cli_core_show_channeltype,  "Give more details on that channel type")
+};
+
+static struct ast_frame *kill_read(struct ast_channel *chan)
+{
+	/* Hangup channel. */
+	return NULL;
+}
+
+static struct ast_frame *kill_exception(struct ast_channel *chan)
+{
+	/* Hangup channel. */
+	return NULL;
+}
+
+static int kill_write(struct ast_channel *chan, struct ast_frame *frame)
+{
+	/* Hangup channel. */
+	return -1;
+}
+
+static int kill_fixup(struct ast_channel *oldchan, struct ast_channel *newchan)
+{
+	/* No problem fixing up the channel. */
+	return 0;
+}
+
+static int kill_hangup(struct ast_channel *chan)
+{
+	chan->tech_pvt = NULL;
+	return 0;
+}
+
+/*!
+ * \brief Kill the channel channel driver technology descriptor.
+ *
+ * \details
+ * The purpose of this channel technology is to encourage the
+ * channel to hangup as quickly as possible.
+ *
+ * \note Used by DTMF atxfer and zombie channels.
+ */
+const struct ast_channel_tech ast_kill_tech = {
+	.type = "Kill",
+	.description = "Kill channel (should not see this)",
+	.capabilities = -1,
+	.read = kill_read,
+	.exception = kill_exception,
+	.write = kill_write,
+	.fixup = kill_fixup,
+	.hangup = kill_hangup,
 };
 
 #ifdef CHANNEL_TRACE
@@ -1351,7 +1400,6 @@ static int __ast_queue_frame(struct ast_channel *chan, struct ast_frame *fin, in
 {
 	struct ast_frame *f;
 	struct ast_frame *cur;
-	int blah = 1;
 	unsigned int new_frames = 0;
 	unsigned int new_voice_frames = 0;
 	unsigned int queued_frames = 0;
@@ -1450,7 +1498,10 @@ static int __ast_queue_frame(struct ast_channel *chan, struct ast_frame *fin, in
 	}
 
 	if (chan->alertpipe[1] > -1) {
-		if (write(chan->alertpipe[1], &blah, new_frames * sizeof(blah)) != (new_frames * sizeof(blah))) {
+		int blah[new_frames];
+
+		memset(blah, 1, sizeof(blah));
+		if (write(chan->alertpipe[1], &blah, sizeof(blah)) != (sizeof(blah))) {
 			ast_log(LOG_WARNING, "Unable to write to alert pipe on %s (qlen = %d): %s!\n",
 				chan->name, queued_frames, strerror(errno));
 		}
@@ -2502,7 +2553,7 @@ struct ast_datastore *ast_channel_datastore_find(struct ast_channel *chan, const
 	if (info == NULL)
 		return NULL;
 
-	AST_LIST_TRAVERSE_SAFE_BEGIN(&chan->datastores, datastore, entry) {
+	AST_LIST_TRAVERSE(&chan->datastores, datastore, entry) {
 		if (datastore->info != info) {
 			continue;
 		}
@@ -2517,7 +2568,6 @@ struct ast_datastore *ast_channel_datastore_find(struct ast_channel *chan, const
 			break;
 		}
 	}
-	AST_LIST_TRAVERSE_SAFE_END;
 
 	return datastore;
 }
@@ -2599,6 +2649,31 @@ void ast_poll_channel_del(struct ast_channel *chan0, struct ast_channel *chan1)
 	return;
 }
 
+void ast_channel_clear_softhangup(struct ast_channel *chan, int flag)
+{
+	ast_channel_lock(chan);
+
+	chan->_softhangup &= ~flag;
+
+	if (!chan->_softhangup) {
+		struct ast_frame *fr;
+
+		/* If we have completely cleared the softhangup flag,
+		 * then we need to fully abort the hangup process.  This requires
+		 * pulling the END_OF_Q frame out of the channel frame queue if it
+		 * still happens to be there. */
+
+		fr = AST_LIST_LAST(&chan->readq);
+		if (fr && fr->frametype == AST_FRAME_CONTROL &&
+				fr->subclass.integer == AST_CONTROL_END_OF_Q) {
+			AST_LIST_REMOVE(&chan->readq, fr, frame_list);
+			ast_frfree(fr);
+		}
+	}
+
+	ast_channel_unlock(chan);
+}
+
 /*! \brief Softly hangup a channel, don't lock */
 int ast_softhangup_nolock(struct ast_channel *chan, int cause)
 {
@@ -2654,50 +2729,68 @@ void ast_set_hangupsource(struct ast_channel *chan, const char *source, int forc
 	}
 }
 
-/*! \brief Hangup a channel */
-int ast_hangup(struct ast_channel *chan)
+static void destroy_hooks(struct ast_channel *chan)
 {
-	int res = 0;
-	char extra_str[64]; /* used for cel logging below */
-
-	/* Don't actually hang up a channel that will masquerade as someone else, or
-	   if someone is going to masquerade as us */
-	ast_channel_lock(chan);
-
 	if (chan->audiohooks) {
 		ast_audiohook_detach_list(chan->audiohooks);
 		chan->audiohooks = NULL;
 	}
 
 	ast_framehook_list_destroy(chan);
+}
+
+/*! \brief Hangup a channel */
+int ast_hangup(struct ast_channel *chan)
+{
+	char extra_str[64]; /* used for cel logging below */
+	int was_zombie;
 
 	ast_autoservice_stop(chan);
 
-	if (chan->masq) {
+	ast_channel_lock(chan);
+
+	/*
+	 * Do the masquerade if someone is setup to masquerade into us.
+	 *
+	 * NOTE: We must hold the channel lock after testing for a
+	 * pending masquerade and setting the channel as a zombie to
+	 * prevent __ast_channel_masquerade() from setting up a
+	 * masquerade with a dead channel.
+	 */
+	while (chan->masq) {
 		ast_channel_unlock(chan);
 		if (ast_do_masquerade(chan)) {
 			ast_log(LOG_WARNING, "Failed to perform masquerade\n");
+
+			/* Abort the loop or we might never leave. */
+			ast_channel_lock(chan);
+			break;
 		}
 		ast_channel_lock(chan);
 	}
 
-	if (chan->masq) {
-		ast_log(LOG_WARNING, "%s getting hung up, but someone is trying to masq into us?!?\n", chan->name);
-		ast_channel_unlock(chan);
-		return 0;
-	}
-	/* If this channel is one which will be masqueraded into something,
-	   mark it as a zombie already, so we know to free it later */
 	if (chan->masqr) {
+		/*
+		 * This channel is one which will be masqueraded into something.
+		 * Mark it as a zombie already so ast_do_masquerade() will know
+		 * to free it later.
+		 */
 		ast_set_flag(chan, AST_FLAG_ZOMBIE);
+		destroy_hooks(chan);
 		ast_channel_unlock(chan);
 		return 0;
 	}
+
+	if (!(was_zombie = ast_test_flag(chan, AST_FLAG_ZOMBIE))) {
+		ast_set_flag(chan, AST_FLAG_ZOMBIE);
+	}
+
 	ast_channel_unlock(chan);
-
 	ao2_unlink(channels, chan);
-
 	ast_channel_lock(chan);
+
+	destroy_hooks(chan);
+
 	free_translation(chan);
 	/* Close audio stream */
 	if (chan->stream) {
@@ -2714,9 +2807,11 @@ int ast_hangup(struct ast_channel *chan)
 		chan->sched = NULL;
 	}
 
-	if (chan->generatordata)	/* Clear any tone stuff remaining */
-		if (chan->generator && chan->generator->release)
+	if (chan->generatordata) {	/* Clear any tone stuff remaining */
+		if (chan->generator && chan->generator->release) {
 			chan->generator->release(chan, chan->generatordata);
+		}
+	}
 	chan->generatordata = NULL;
 	chan->generator = NULL;
 
@@ -2725,49 +2820,55 @@ int ast_hangup(struct ast_channel *chan)
 
 	if (ast_test_flag(chan, AST_FLAG_BLOCKING)) {
 		ast_log(LOG_WARNING, "Hard hangup called by thread %ld on %s, while fd "
-					"is blocked by thread %ld in procedure %s!  Expect a failure\n",
-					(long)pthread_self(), chan->name, (long)chan->blocker, chan->blockproc);
+			"is blocked by thread %ld in procedure %s!  Expect a failure\n",
+			(long) pthread_self(), chan->name, (long)chan->blocker, chan->blockproc);
 		ast_assert(ast_test_flag(chan, AST_FLAG_BLOCKING) == 0);
 	}
-	if (!ast_test_flag(chan, AST_FLAG_ZOMBIE)) {
+	if (!was_zombie) {
 		ast_debug(1, "Hanging up channel '%s'\n", chan->name);
-		if (chan->tech->hangup)
-			res = chan->tech->hangup(chan);
+
+		if (chan->tech->hangup) {
+			chan->tech->hangup(chan);
+		}
 	} else {
 		ast_debug(1, "Hanging up zombie '%s'\n", chan->name);
 	}
-			
+
 	ast_channel_unlock(chan);
+
 	ast_cc_offer(chan);
 	ast_manager_event(chan, EVENT_FLAG_CALL, "Hangup",
 		"Channel: %s\r\n"
 		"Uniqueid: %s\r\n"
 		"CallerIDNum: %s\r\n"
 		"CallerIDName: %s\r\n"
+		"ConnectedLineNum: %s\r\n"
+		"ConnectedLineName: %s\r\n"
 		"Cause: %d\r\n"
 		"Cause-txt: %s\r\n",
 		chan->name,
 		chan->uniqueid,
 		S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, "<unknown>"),
 		S_COR(chan->caller.id.name.valid, chan->caller.id.name.str, "<unknown>"),
+		S_COR(chan->connected.id.number.valid, chan->connected.id.number.str, "<unknown>"),
+		S_COR(chan->connected.id.name.valid, chan->connected.id.name.str, "<unknown>"),
 		chan->hangupcause,
 		ast_cause2str(chan->hangupcause)
 		);
 
-	if (chan->cdr && !ast_test_flag(chan->cdr, AST_CDR_FLAG_BRIDGED) && 
-		!ast_test_flag(chan->cdr, AST_CDR_FLAG_POST_DISABLED) && 
-	    (chan->cdr->disposition != AST_CDR_NULL || ast_test_flag(chan->cdr, AST_CDR_FLAG_DIALED))) {
+	if (chan->cdr && !ast_test_flag(chan->cdr, AST_CDR_FLAG_BRIDGED) &&
+		!ast_test_flag(chan->cdr, AST_CDR_FLAG_POST_DISABLED) &&
+		(chan->cdr->disposition != AST_CDR_NULL || ast_test_flag(chan->cdr, AST_CDR_FLAG_DIALED))) {
 		ast_channel_lock(chan);
-			
 		ast_cdr_end(chan->cdr);
 		ast_cdr_detach(chan->cdr);
 		chan->cdr = NULL;
 		ast_channel_unlock(chan);
 	}
 
-	chan = ast_channel_release(chan);
+	ast_channel_unref(chan);
 
-	return res;
+	return 0;
 }
 
 int ast_raw_answer(struct ast_channel *chan, int cdr_answer)
@@ -3466,6 +3567,7 @@ int ast_waitfordigit_full(struct ast_channel *c, int ms, int audiofd, int cmdfd)
 				case AST_CONTROL_SRCCHANGE:
 				case AST_CONTROL_CONNECTED_LINE:
 				case AST_CONTROL_REDIRECTING:
+				case AST_CONTROL_UPDATE_RTP_PEER:
 				case -1:
 					/* Unimportant */
 					break;
@@ -3654,23 +3756,27 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		} else {
 			goto done;
 		}
-	}
-
+	} else {
 #ifdef AST_DEVMODE
-	/* 
-	 * The ast_waitfor() code records which of the channel's file descriptors reported that
-	 * data is available.  In theory, ast_read() should only be called after ast_waitfor()
-	 * reports that a channel has data available for reading.  However, there still may be
-	 * some edge cases throughout the code where ast_read() is called improperly.  This can
-	 * potentially cause problems, so if this is a developer build, make a lot of noise if
-	 * this happens so that it can be addressed. 
-	 */
-	if (chan->fdno == -1) {
-		ast_log(LOG_ERROR,
-			"ast_read() on chan '%s' called with no recorded file descriptor.\n",
-			chan->name);
-	}
+		/*
+		 * The ast_waitfor() code records which of the channel's file
+		 * descriptors reported that data is available.  In theory,
+		 * ast_read() should only be called after ast_waitfor() reports
+		 * that a channel has data available for reading.  However,
+		 * there still may be some edge cases throughout the code where
+		 * ast_read() is called improperly.  This can potentially cause
+		 * problems, so if this is a developer build, make a lot of
+		 * noise if this happens so that it can be addressed.
+		 *
+		 * One of the potential problems is blocking on a dead channel.
+		 */
+		if (chan->fdno == -1) {
+			ast_log(LOG_ERROR,
+				"ast_read() on chan '%s' called with no recorded file descriptor.\n",
+				chan->name);
+		}
 #endif
+	}
 
 	prestate = chan->_state;
 
@@ -3800,7 +3906,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 			}
 			/* Clear the exception flag */
 			ast_clear_flag(chan, AST_FLAG_EXCEPTION);
-		} else if (chan->tech->read)
+		} else if (chan->tech && chan->tech->read)
 			f = chan->tech->read(chan);
 		else
 			ast_log(LOG_WARNING, "No read routine on channel %s\n", chan->name);
@@ -4190,8 +4296,10 @@ static int attribute_const is_visible_indication(enum ast_control_frame_type con
 	case AST_CONTROL_READ_ACTION:
 	case AST_CONTROL_AOC:
 	case AST_CONTROL_END_OF_Q:
+	case AST_CONTROL_UPDATE_RTP_PEER:
 		break;
 
+	case AST_CONTROL_INCOMPLETE:
 	case AST_CONTROL_CONGESTION:
 	case AST_CONTROL_BUSY:
 	case AST_CONTROL_RINGING:
@@ -4240,7 +4348,9 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		awesome_frame = ast_frdup(&frame);
 
 		/* who knows what we will get back! the anticipation is killing me. */
-		if (!(awesome_frame = ast_framehook_list_read_event(chan->framehooks, &frame))) {
+		if (!(awesome_frame = ast_framehook_list_write_event(chan->framehooks, awesome_frame))
+			|| awesome_frame->frametype != AST_FRAME_CONTROL) {
+
 			res = 0;
 			goto indicate_cleanup;
 		}
@@ -4346,6 +4456,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	case AST_CONTROL_BUSY:
 		ts = ast_get_indication_tone(chan->zone, "busy");
 		break;
+	case AST_CONTROL_INCOMPLETE:
 	case AST_CONTROL_CONGESTION:
 		ts = ast_get_indication_tone(chan->zone, "congestion");
 		break;
@@ -4373,6 +4484,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	case AST_CONTROL_READ_ACTION:
 	case AST_CONTROL_AOC:
 	case AST_CONTROL_END_OF_Q:
+	case AST_CONTROL_UPDATE_RTP_PEER:
 		/* Nothing left to do for these. */
 		res = 0;
 		break;
@@ -4440,13 +4552,18 @@ char *ast_recvtext(struct ast_channel *chan, int timeout)
 int ast_sendtext(struct ast_channel *chan, const char *text)
 {
 	int res = 0;
+
+	ast_channel_lock(chan);
 	/* Stop if we're a zombie or need a soft hangup */
-	if (ast_test_flag(chan, AST_FLAG_ZOMBIE) || ast_check_hangup(chan))
+	if (ast_test_flag(chan, AST_FLAG_ZOMBIE) || ast_check_hangup(chan)) {
+		ast_channel_unlock(chan);
 		return -1;
+	}
 	CHECK_BLOCKING(chan);
 	if (chan->tech->send_text)
 		res = chan->tech->send_text(chan, text);
 	ast_clear_flag(chan, AST_FLAG_BLOCKING);
+	ast_channel_unlock(chan);
 	return res;
 }
 
@@ -4782,10 +4899,25 @@ int ast_write(struct ast_channel *chan, struct ast_frame *fr)
 		}
 
 		/* If the frame is in the raw write format, then it's easy... just use the frame - otherwise we will have to translate */
-		if (fr->subclass.codec == chan->rawwriteformat)
+		if (fr->subclass.codec == chan->rawwriteformat) {
 			f = fr;
-		else
+		} else {
+			/* XXX Something is not right we are not compatible with this frame bad things can happen
+			 * problems range from no/one-way audio to unexplained line hangups as a last resort try adjust the format
+			 * ideally we do not want to do this and this indicates a deeper problem for now we log these events to
+			 * eliminate user impact and help identify the problem areas
+			 * JIRA issues related to this :-
+			 * ASTERISK-14384, ASTERISK-17502, ASTERISK-17541, ASTERISK-18063, ASTERISK-18325, ASTERISK-18422*/
+			if ((!(fr->subclass.codec & chan->nativeformats)) && (chan->writeformat != fr->subclass.codec)) {
+				char nf[512];
+				ast_log(LOG_WARNING, "Codec mismatch on channel %s setting write format to %s from %s native formats %s\n",
+					chan->name, ast_getformatname(fr->subclass.codec), ast_getformatname(chan->writeformat),
+					ast_getformatname_multiple(nf, sizeof(nf), chan->nativeformats & AST_FORMAT_AUDIO_MASK));
+				ast_set_write_format(chan, fr->subclass.codec);
+			}
+
 			f = (chan->writetrans) ? ast_translate(chan->writetrans, fr, 0) : fr;
+		}
 
 		if (!f) {
 			res = 0;
@@ -5067,11 +5199,47 @@ static void handle_cause(int cause, int *outstate)
 	}
 }
 
+/*!
+ * \internal
+ * \brief Helper function to inherit info from parent channel.
+ *
+ * \param new_chan Channel inheriting information.
+ * \param parent Channel new_chan inherits information.
+ * \param orig Channel being replaced by the call forward channel.
+ *
+ * \return Nothing
+ */
+static void call_forward_inherit(struct ast_channel *new_chan, struct ast_channel *parent, struct ast_channel *orig)
+{
+	if (!ast_test_flag(parent, AST_FLAG_ZOMBIE) && !ast_check_hangup(parent)) {
+		struct ast_party_redirecting redirecting;
+
+		/*
+		 * The parent is not a ZOMBIE or hungup so update it with the
+		 * original channel's redirecting information.
+		 */
+		ast_party_redirecting_init(&redirecting);
+		ast_channel_lock(orig);
+		ast_party_redirecting_copy(&redirecting, &orig->redirecting);
+		ast_channel_unlock(orig);
+		if (ast_channel_redirecting_macro(orig, parent, &redirecting, 1, 0)) {
+			ast_channel_update_redirecting(parent, &redirecting, NULL);
+		}
+		ast_party_redirecting_free(&redirecting);
+	}
+
+	/* Safely inherit variables and datastores from the parent channel. */
+	ast_channel_lock_both(parent, new_chan);
+	ast_channel_inherit_variables(parent, new_chan);
+	ast_channel_datastore_inherit(parent, new_chan);
+	ast_channel_unlock(new_chan);
+	ast_channel_unlock(parent);
+}
+
 struct ast_channel *ast_call_forward(struct ast_channel *caller, struct ast_channel *orig, int *timeout, format_t format, struct outgoing_helper *oh, int *outstate)
 {
 	char tmpchan[256];
-	struct ast_channel *new = NULL;
-	struct ast_party_redirecting *apr = &orig->redirecting;
+	struct ast_channel *new_chan = NULL;
 	char *data, *type;
 	int cause = 0;
 	int res;
@@ -5090,62 +5258,52 @@ struct ast_channel *ast_call_forward(struct ast_channel *caller, struct ast_chan
 		data = tmpchan;
 		type = "Local";
 	}
-	if (!(new = ast_request(type, format, orig, data, &cause))) {
+	if (!(new_chan = ast_request(type, format, orig, data, &cause))) {
 		ast_log(LOG_NOTICE, "Unable to create channel for call forward to '%s/%s' (cause = %d)\n", type, data, cause);
 		handle_cause(cause, outstate);
 		ast_hangup(orig);
 		return NULL;
 	}
 
-	ast_channel_set_redirecting(new, apr, NULL);
-
 	/* Copy/inherit important information into new channel */
 	if (oh) {
 		if (oh->vars) {
-			ast_set_variables(new, oh->vars);
-		}
-		if (!ast_strlen_zero(oh->cid_num) && !ast_strlen_zero(oh->cid_name)) {
-			ast_set_callerid(new, oh->cid_num, oh->cid_name, oh->cid_num);
+			ast_set_variables(new_chan, oh->vars);
 		}
 		if (oh->parent_channel) {
-			ast_channel_update_redirecting(oh->parent_channel, apr, NULL);
-			ast_channel_inherit_variables(oh->parent_channel, new);
-			ast_channel_datastore_inherit(oh->parent_channel, new);
+			call_forward_inherit(new_chan, oh->parent_channel, orig);
 		}
 		if (oh->account) {
-			ast_cdr_setaccount(new, oh->account);
+			ast_channel_lock(new_chan);
+			ast_cdr_setaccount(new_chan, oh->account);
+			ast_channel_unlock(new_chan);
 		}
 	} else if (caller) { /* no outgoing helper so use caller if avaliable */
-		ast_channel_update_redirecting(caller, apr, NULL);
-		ast_channel_inherit_variables(caller, new);
-		ast_channel_datastore_inherit(caller, new);
+		call_forward_inherit(new_chan, caller, orig);
 	}
 
-	ast_channel_lock(orig);
-	while (ast_channel_trylock(new)) {
-		CHANNEL_DEADLOCK_AVOIDANCE(orig);
-	}
-	ast_copy_flags(new->cdr, orig->cdr, AST_CDR_FLAG_ORIGINATED);
-	ast_string_field_set(new, accountcode, orig->accountcode);
-	ast_party_caller_copy(&new->caller, &orig->caller);
-	ast_party_connected_line_copy(&new->connected, &orig->connected);
-	ast_channel_unlock(new);
+	ast_channel_lock_both(orig, new_chan);
+	ast_copy_flags(new_chan->cdr, orig->cdr, AST_CDR_FLAG_ORIGINATED);
+	ast_string_field_set(new_chan, accountcode, orig->accountcode);
+	ast_party_connected_line_copy(&new_chan->connected, &orig->connected);
+	ast_party_redirecting_copy(&new_chan->redirecting, &orig->redirecting);
+	ast_channel_unlock(new_chan);
 	ast_channel_unlock(orig);
 
 	/* call new channel */
-	res = ast_call(new, data, 0);
+	res = ast_call(new_chan, data, 0);
 	if (timeout) {
 		*timeout = res;
 	}
 	if (res) {
 		ast_log(LOG_NOTICE, "Unable to call forward to channel %s/%s\n", type, (char *)data);
 		ast_hangup(orig);
-		ast_hangup(new);
+		ast_hangup(new_chan);
 		return NULL;
 	}
 	ast_hangup(orig);
 
-	return new;
+	return new_chan;
 }
 
 struct ast_channel *__ast_request_and_dial(const char *type, format_t format, const struct ast_channel *requestor, void *data, int timeout, int *outstate, const char *cid_num, const char *cid_name, struct outgoing_helper *oh)
@@ -5170,20 +5328,42 @@ struct ast_channel *__ast_request_and_dial(const char *type, format_t format, co
 	}
 
 	if (oh) {
-		if (oh->vars)	
+		if (oh->vars) {
 			ast_set_variables(chan, oh->vars);
-		/* XXX why is this necessary, for the parent_channel perhaps ? */
-		if (!ast_strlen_zero(oh->cid_num) && !ast_strlen_zero(oh->cid_name))
-			ast_set_callerid(chan, oh->cid_num, oh->cid_name, oh->cid_num);
+		}
+		if (!ast_strlen_zero(oh->cid_num) && !ast_strlen_zero(oh->cid_name)) {
+			/*
+			 * Use the oh values instead of the function parameters for the
+			 * outgoing CallerID.
+			 */
+			cid_num = oh->cid_num;
+			cid_name = oh->cid_name;
+		}
 		if (oh->parent_channel) {
+			/* Safely inherit variables and datastores from the parent channel. */
+			ast_channel_lock_both(oh->parent_channel, chan);
 			ast_channel_inherit_variables(oh->parent_channel, chan);
 			ast_channel_datastore_inherit(oh->parent_channel, chan);
+			ast_channel_unlock(oh->parent_channel);
+			ast_channel_unlock(chan);
 		}
-		if (oh->account)
-			ast_cdr_setaccount(chan, oh->account);	
+		if (oh->account) {
+			ast_channel_lock(chan);
+			ast_cdr_setaccount(chan, oh->account);
+			ast_channel_unlock(chan);
+		}
 	}
 
+	/*
+	 * I seems strange to set the CallerID on an outgoing call leg
+	 * to whom we are calling, but this function's callers are doing
+	 * various Originate methods.  This call leg goes to the local
+	 * user.  Once the local user answers, the dialplan needs to be
+	 * able to access the CallerID from the CALLERID function as if
+	 * the local user had placed this call.
+	 */
 	ast_set_callerid(chan, cid_num, cid_name, cid_num);
+
 	ast_set_flag(chan->cdr, AST_CDR_FLAG_ORIGINATED);
 	ast_party_connected_line_set_init(&connected, &chan->connected);
 	if (cid_num) {
@@ -5238,6 +5418,12 @@ struct ast_channel *__ast_request_and_dial(const char *type, format_t format, co
 					timeout = 0;
 					break;
 
+				case AST_CONTROL_INCOMPLETE:
+					ast_cdr_failed(chan->cdr);
+					*outstate = AST_CONTROL_CONGESTION;
+					timeout = 0;
+					break;
+
 				case AST_CONTROL_CONGESTION:
 					ast_cdr_failed(chan->cdr);
 					*outstate = f->subclass.integer;
@@ -5286,21 +5472,27 @@ struct ast_channel *__ast_request_and_dial(const char *type, format_t format, co
 		*outstate = AST_CONTROL_ANSWER;
 
 	if (res <= 0) {
-		if ( AST_CONTROL_RINGING == last_subclass ) 
+		ast_channel_lock(chan);
+		if (AST_CONTROL_RINGING == last_subclass) {
 			chan->hangupcause = AST_CAUSE_NO_ANSWER;
-		if (!chan->cdr && (chan->cdr = ast_cdr_alloc()))
+		}
+		if (!chan->cdr && (chan->cdr = ast_cdr_alloc())) {
 			ast_cdr_init(chan->cdr, chan);
+		}
 		if (chan->cdr) {
 			char tmp[256];
+
 			snprintf(tmp, sizeof(tmp), "%s/%s", type, (char *)data);
-			ast_cdr_setapp(chan->cdr,"Dial",tmp);
+			ast_cdr_setapp(chan->cdr, "Dial", tmp);
 			ast_cdr_update(chan);
 			ast_cdr_start(chan->cdr);
 			ast_cdr_end(chan->cdr);
 			/* If the cause wasn't handled properly */
-			if (ast_cdr_disposition(chan->cdr,chan->hangupcause))
+			if (ast_cdr_disposition(chan->cdr, chan->hangupcause)) {
 				ast_cdr_failed(chan->cdr);
+			}
 		}
+		ast_channel_unlock(chan);
 		ast_hangup(chan);
 		chan = NULL;
 	}
@@ -5649,48 +5841,81 @@ static int __ast_channel_masquerade(struct ast_channel *original, struct ast_cha
 	int res = -1;
 	struct ast_channel *final_orig, *final_clone, *base;
 
-retrymasq:
-	final_orig = original;
-	final_clone = clonechan;
+	for (;;) {
+		final_orig = original;
+		final_clone = clonechan;
 
-	ast_channel_lock(original);
-	while (ast_channel_trylock(clonechan)) {
-		ast_channel_unlock(original);
-		usleep(1);
-		ast_channel_lock(original);
-	}
+		ast_channel_lock_both(original, clonechan);
 
-	/* each of these channels may be sitting behind a channel proxy (i.e. chan_agent)
-	   and if so, we don't really want to masquerade it, but its proxy */
-	if (original->_bridge && (original->_bridge != ast_bridged_channel(original)) && (original->_bridge->_bridge != original))
-		final_orig = original->_bridge;
-
-	if (clonechan->_bridge && (clonechan->_bridge != ast_bridged_channel(clonechan)) && (clonechan->_bridge->_bridge != clonechan))
-		final_clone = clonechan->_bridge;
-	
-	if (final_clone->tech->get_base_channel && (base = final_clone->tech->get_base_channel(final_clone))) {
-		final_clone = base;
-	}
-
-	if ((final_orig != original) || (final_clone != clonechan)) {
-		/* Lots and lots of deadlock avoidance.  The main one we're competing with
-		 * is ast_write(), which locks channels recursively, when working with a
-		 * proxy channel. */
-		if (ast_channel_trylock(final_orig)) {
+		if (ast_test_flag(original, AST_FLAG_ZOMBIE)
+			|| ast_test_flag(clonechan, AST_FLAG_ZOMBIE)) {
+			/* Zombies! Run! */
+			ast_log(LOG_WARNING,
+				"Can't setup masquerade. One or both channels is dead. (%s <-- %s)\n",
+				original->name, clonechan->name);
 			ast_channel_unlock(clonechan);
 			ast_channel_unlock(original);
-			goto retrymasq;
+			return -1;
 		}
-		if (ast_channel_trylock(final_clone)) {
-			ast_channel_unlock(final_orig);
+
+		/*
+		 * Each of these channels may be sitting behind a channel proxy
+		 * (i.e. chan_agent) and if so, we don't really want to
+		 * masquerade it, but its proxy
+		 */
+		if (original->_bridge
+			&& (original->_bridge != ast_bridged_channel(original))
+			&& (original->_bridge->_bridge != original)) {
+			final_orig = original->_bridge;
+		}
+		if (clonechan->_bridge
+			&& (clonechan->_bridge != ast_bridged_channel(clonechan))
+			&& (clonechan->_bridge->_bridge != clonechan)) {
+			final_clone = clonechan->_bridge;
+		}
+		if (final_clone->tech->get_base_channel
+			&& (base = final_clone->tech->get_base_channel(final_clone))) {
+			final_clone = base;
+		}
+
+		if ((final_orig != original) || (final_clone != clonechan)) {
+			/*
+			 * Lots and lots of deadlock avoidance.  The main one we're
+			 * competing with is ast_write(), which locks channels
+			 * recursively, when working with a proxy channel.
+			 */
+			if (ast_channel_trylock(final_orig)) {
+				ast_channel_unlock(clonechan);
+				ast_channel_unlock(original);
+
+				/* Try again */
+				continue;
+			}
+			if (ast_channel_trylock(final_clone)) {
+				ast_channel_unlock(final_orig);
+				ast_channel_unlock(clonechan);
+				ast_channel_unlock(original);
+
+				/* Try again */
+				continue;
+			}
 			ast_channel_unlock(clonechan);
 			ast_channel_unlock(original);
-			goto retrymasq;
+			original = final_orig;
+			clonechan = final_clone;
+
+			if (ast_test_flag(original, AST_FLAG_ZOMBIE)
+				|| ast_test_flag(clonechan, AST_FLAG_ZOMBIE)) {
+				/* Zombies! Run! */
+				ast_log(LOG_WARNING,
+					"Can't setup masquerade. One or both channels is dead. (%s <-- %s)\n",
+					original->name, clonechan->name);
+				ast_channel_unlock(clonechan);
+				ast_channel_unlock(original);
+				return -1;
+			}
 		}
-		ast_channel_unlock(clonechan);
-		ast_channel_unlock(original);
-		original = final_orig;
-		clonechan = final_clone;
+		break;
 	}
 
 	if (original == clonechan) {
@@ -6210,29 +6435,40 @@ int ast_do_masquerade(struct ast_channel *original)
 	 */
 	ao2_lock(channels);
 
-	/* lock the original channel to determine if the masquerade is require or not */
+	/* lock the original channel to determine if the masquerade is required or not */
 	ast_channel_lock(original);
 
-	/* This checks to see if the masquerade has already happened or not.  There is a
-	 * race condition that exists for this function. Since all pvt and channel locks
-	 * must be let go before calling do_masquerade, it is possible that it could be
-	 * called multiple times for the same channel.  This check verifies whether
-	 * or not the masquerade has already been completed by another thread */
-	if (!original->masq) {
-		ast_channel_unlock(original);
-		ao2_unlock(channels);
-		return 0; /* masq already completed by another thread, or never needed to be done to begin with */
+	/*
+	 * This checks to see if the masquerade has already happened or
+	 * not.  There is a race condition that exists for this
+	 * function.  Since all pvt and channel locks must be let go
+	 * before calling do_masquerade, it is possible that it could be
+	 * called multiple times for the same channel.  This check
+	 * verifies whether or not the masquerade has already been
+	 * completed by another thread.
+	 */
+	while ((clonechan = original->masq) && ast_channel_trylock(clonechan)) {
+		/*
+		 * A masq is needed but we could not get the clonechan lock
+		 * immediately.  Since this function already holds the global
+		 * container lock, unlocking original for deadlock avoidance
+		 * will not result in any sort of masquerade race condition.  If
+		 * masq is called by a different thread while this happens, it
+		 * will be stuck waiting until we unlock the container.
+		 */
+		CHANNEL_DEADLOCK_AVOIDANCE(original);
 	}
 
-	/* now that we have verified no race condition exists, set the clone channel */
-	clonechan = original->masq;
-
-	/* since this function already holds the global container lock, unlocking original
-	 * for deadlock avoidance will not result in any sort of masquerade race condition.
-	 * If masq is called by a different thread while this happens, it will be stuck waiting
-	 * until we unlock the container. */
-	while (ast_channel_trylock(clonechan)) {
-		CHANNEL_DEADLOCK_AVOIDANCE(original);
+	/*
+	 * A final masq check must be done after deadlock avoidance for
+	 * clonechan above or we could get a double masq.  This is
+	 * posible with ast_hangup at least.
+	 */
+	if (!clonechan) {
+		/* masq already completed by another thread, or never needed to be done to begin with */
+		ast_channel_unlock(original);
+		ao2_unlock(channels);
+		return 0;
 	}
 
 	/* Get any transfer masquerade connected line exchange data. */
@@ -6379,6 +6615,12 @@ int ast_do_masquerade(struct ast_channel *original)
 		res = -1;
 		goto done;
 	}
+
+	/*
+	 * We just hung up the physical side of the channel.  Set the
+	 * new zombie to use the kill channel driver for safety.
+	 */
+	clonechan->tech = &ast_kill_tech;
 
 	/* Mangle the name of the clone channel */
 	snprintf(zombn, sizeof(zombn), "%s<ZOMBIE>", orig); /* quick, hide the brains! */
@@ -6611,7 +6853,8 @@ void ast_channel_set_caller(struct ast_channel *chan, const struct ast_party_cal
 
 void ast_channel_set_caller_event(struct ast_channel *chan, const struct ast_party_caller *caller, const struct ast_set_party_caller *update)
 {
-	struct ast_party_caller pre_set;
+	const char *pre_set_number;
+	const char *pre_set_name;
 
 	if (&chan->caller == caller) {
 		/* Don't set to self */
@@ -6619,12 +6862,14 @@ void ast_channel_set_caller_event(struct ast_channel *chan, const struct ast_par
 	}
 
 	ast_channel_lock(chan);
-	pre_set = chan->caller;
+	pre_set_number =
+		S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, NULL);
+	pre_set_name = S_COR(chan->caller.id.name.valid, chan->caller.id.name.str, NULL);
 	ast_party_caller_set(&chan->caller, caller, update);
-	if (S_COR(pre_set.id.number.valid, pre_set.id.number.str, NULL)
-			!= S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, NULL)
-		|| S_COR(pre_set.id.name.valid, pre_set.id.name.str, NULL)
-			!= S_COR(chan->caller.id.name.valid, chan->caller.id.name.str, NULL)) {
+	if (S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, NULL)
+			!= pre_set_number
+		|| S_COR(chan->caller.id.name.valid, chan->caller.id.name.str, NULL)
+			!= pre_set_name) {
 		/* The caller id name or number changed. */
 		report_new_callerid(chan);
 	}
@@ -6661,10 +6906,14 @@ int ast_setstate(struct ast_channel *chan, enum ast_channel_state state)
 		"ChannelStateDesc: %s\r\n"
 		"CallerIDNum: %s\r\n"
 		"CallerIDName: %s\r\n"
+		"ConnectedLineNum: %s\r\n"
+		"ConnectedLineName: %s\r\n"
 		"Uniqueid: %s\r\n",
 		chan->name, chan->_state, ast_state2str(chan->_state),
 		S_COR(chan->caller.id.number.valid, chan->caller.id.number.str, ""),
 		S_COR(chan->caller.id.name.valid, chan->caller.id.name.str, ""),
+		S_COR(chan->connected.id.number.valid, chan->connected.id.number.str, ""),
+		S_COR(chan->connected.id.name.valid, chan->connected.id.name.str, ""),
 		chan->uniqueid);
 
 	return 0;
@@ -6806,10 +7055,10 @@ static enum ast_bridge_result ast_generic_bridge(struct ast_channel *c0, struct 
 				ast_jb_get_and_deliver(c0, c1);
 			if ((c0->_softhangup | c1->_softhangup) & AST_SOFTHANGUP_UNBRIDGE) {/* Bit operators are intentional. */
 				if (c0->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
-					c0->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+					ast_channel_clear_softhangup(c0, AST_SOFTHANGUP_UNBRIDGE);
 				}
 				if (c1->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
-					c1->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+					ast_channel_clear_softhangup(c1, AST_SOFTHANGUP_UNBRIDGE);
 				}
 				c0->_bridge = c1;
 				c1->_bridge = c0;
@@ -7025,6 +7274,8 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 	char caller_warning = 0;
 	char callee_warning = 0;
 
+	*fo = NULL;
+
 	if (c0->_bridge) {
 		ast_log(LOG_WARNING, "%s is already in a bridge with %s\n",
 			c0->name, c0->_bridge->name);
@@ -7041,7 +7292,8 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 	    ast_test_flag(c1, AST_FLAG_ZOMBIE) || ast_check_hangup_locked(c1))
 		return -1;
 
-	*fo = NULL;
+	caller_warning = ast_test_flag(&config->features_caller, AST_FEATURE_PLAY_WARNING);
+	callee_warning = ast_test_flag(&config->features_callee, AST_FEATURE_PLAY_WARNING);
 
 	if (ast_tvzero(config->start_time)) {
 		config->start_time = ast_tvnow();
@@ -7068,12 +7320,10 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 		config->nexteventts = ast_tvadd(config->feature_start_time, ast_samp2tv(config->feature_timer, 1000));
 	} else if (config->timelimit) {
 		time_left_ms = config->timelimit - ast_tvdiff_ms(ast_tvnow(), config->start_time);
-		caller_warning = ast_test_flag(&config->features_caller, AST_FEATURE_PLAY_WARNING);
-		callee_warning = ast_test_flag(&config->features_callee, AST_FEATURE_PLAY_WARNING);
 		config->nexteventts = ast_tvadd(config->start_time, ast_samp2tv(config->timelimit, 1000));
 		if ((caller_warning || callee_warning) && config->play_warning) {
 			long next_warn = config->play_warning;
-			if (time_left_ms < config->play_warning) {
+			if (time_left_ms < config->play_warning && config->warning_freq > 0) {
 				/* At least one warning was played, which means we are returning after feature */
 				long warns_passed = (config->play_warning - time_left_ms) / config->warning_freq;
 				/* It is 'warns_passed * warning_freq' NOT '(warns_passed + 1) * warning_freq',
@@ -7150,10 +7400,10 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 
 		if ((c0->_softhangup | c1->_softhangup) & AST_SOFTHANGUP_UNBRIDGE) {/* Bit operators are intentional. */
 			if (c0->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
-				c0->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+				ast_channel_clear_softhangup(c0, AST_SOFTHANGUP_UNBRIDGE);
 			}
 			if (c1->_softhangup & AST_SOFTHANGUP_UNBRIDGE) {
-				c1->_softhangup &= ~AST_SOFTHANGUP_UNBRIDGE;
+				ast_channel_clear_softhangup(c1, AST_SOFTHANGUP_UNBRIDGE);
 			}
 			c0->_bridge = c1;
 			c1->_bridge = c0;
@@ -7185,6 +7435,7 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 		    (c0->tech->bridge == c1->tech->bridge) &&
 		    !c0->monitor && !c1->monitor &&
 		    !c0->audiohooks && !c1->audiohooks &&
+		    ast_framehook_list_is_empty(c0->framehooks) && ast_framehook_list_is_empty(c1->framehooks) &&
 		    !c0->masq && !c0->masqr && !c1->masq && !c1->masqr) {
 			int timeoutms = to - 1000 > 0 ? to - 1000 : to;
 			/* Looks like they share a bridge method and nothing else is in the way */
@@ -7285,28 +7536,42 @@ enum ast_bridge_result ast_channel_bridge(struct ast_channel *c0, struct ast_cha
 /*! \brief Sets an option on a channel */
 int ast_channel_setoption(struct ast_channel *chan, int option, void *data, int datalen, int block)
 {
+	int res;
+
+	ast_channel_lock(chan);
 	if (!chan->tech->setoption) {
 		errno = ENOSYS;
+		ast_channel_unlock(chan);
 		return -1;
 	}
 
 	if (block)
 		ast_log(LOG_ERROR, "XXX Blocking not implemented yet XXX\n");
 
-	return chan->tech->setoption(chan, option, data, datalen);
+	res = chan->tech->setoption(chan, option, data, datalen);
+	ast_channel_unlock(chan);
+
+	return res;
 }
 
 int ast_channel_queryoption(struct ast_channel *chan, int option, void *data, int *datalen, int block)
 {
+	int res;
+
+	ast_channel_lock(chan);
 	if (!chan->tech->queryoption) {
 		errno = ENOSYS;
+		ast_channel_unlock(chan);
 		return -1;
 	}
 
 	if (block)
 		ast_log(LOG_ERROR, "XXX Blocking not implemented yet XXX\n");
 
-	return chan->tech->queryoption(chan, option, data, datalen);
+	res = chan->tech->queryoption(chan, option, data, datalen);
+	ast_channel_unlock(chan);
+
+	return res;
 }
 
 struct tonepair_def {

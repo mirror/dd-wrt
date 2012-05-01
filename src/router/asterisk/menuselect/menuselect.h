@@ -34,39 +34,17 @@
 
 struct member;
 
-struct depend {
+struct reference {
 	/*! the name of the dependency */
 	const char *name;
 	/*! the display name of the dependency */
 	const char *displayname;
 	/*! if this dependency is a member, not an external object */
 	struct member *member;
+	/*! if this package was found */
+	unsigned char met:1;
 	/*! for linking */
-	AST_LIST_ENTRY(depend) list;
-};
-
-struct conflict {
-	/*! the name of the conflict */
-	const char *name;
-	/*! the display name of the conflict */
-	const char *displayname;
-	/*! if this conflict is a member, not an external object */
-	const struct member *member;
-	/*! for linking */
-	AST_LIST_ENTRY(conflict) list;
-};
-
-struct use {
-	/*! the name of the used package */
-	const char *name;
-	/*! the display name of the used package */
-	const char *displayname;
-	/*! if this used package is a member, not an external object */
-	struct member *member;
-	/*! if this used package was found */
-	unsigned char met;
-	/*! for linking */
-	AST_LIST_ENTRY(use) list;
+	AST_LIST_ENTRY(reference) list;
 };
 
 enum failure_types {
@@ -86,6 +64,8 @@ struct member {
 	const char *remove_on_change;
 	/*! Touch these file(s) if this member changes */
 	const char *touch_on_change;
+	const char *support_level;
+	const char *replacement;
 	/*! This module is currently selected */
 	unsigned int enabled:1;
 	/*! This module was enabled when the config was loaded */
@@ -103,17 +83,29 @@ struct member {
 	/*! This module should never be enabled automatically, but only
 	 * when explicitly set. */
 	unsigned int explicitly_enabled_only:1;
+	/*! This isn't actually a module!  It's a separator, and it should
+	 * be passed over for many of the usual purposes associated with members. */
+	unsigned int is_separator:1;
 	/*! dependencies of this module */
-	AST_LIST_HEAD_NOLOCK(, depend) deps;
+	AST_LIST_HEAD_NOLOCK(, reference) deps;
 	/*! conflicts of this module */
-	AST_LIST_HEAD_NOLOCK(, conflict) conflicts;
+	AST_LIST_HEAD_NOLOCK(, reference) conflicts;
 	/*! optional packages used by this module */
-	AST_LIST_HEAD_NOLOCK(, use) uses;
+	AST_LIST_HEAD_NOLOCK(, reference) uses;
 	/*! for making a list of modules */
 	AST_LIST_ENTRY(member) list;
 };
 
+enum support_level_values {
+	SUPPORT_CORE = 0,
+	SUPPORT_EXTENDED = 1,
+	SUPPORT_DEPRECATED = 2,
+	SUPPORT_UNSPECIFIED = 3,
+	SUPPORT_COUNT = 4, /* Keep this item at the end of the list. Tracks total number of support levels. */
+};
+
 struct category {
+	struct member *separators[SUPPORT_COUNT];
 	/*! the Makefile variable */
 	const char *name;
 	/*! the name displayed in the menu */

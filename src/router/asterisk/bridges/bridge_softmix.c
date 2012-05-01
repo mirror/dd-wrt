@@ -29,9 +29,13 @@
  * on channels present in the bridge and transcoding capabilities.
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 247770 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <stdio.h>
 #include <stdlib.h>

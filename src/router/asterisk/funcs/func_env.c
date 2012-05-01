@@ -21,9 +21,13 @@
  * \ingroup functions
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 289581 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <sys/stat.h>   /* stat(2) */
 
@@ -499,6 +503,7 @@ static int file_read(struct ast_channel *chan, const char *cmd, char *data, stru
 
 		if (fseeko(ff, 0, SEEK_END) < 0) {
 			ast_log(LOG_ERROR, "Cannot seek to end of '%s': %s\n", args.filename, strerror(errno));
+			fclose(ff);
 			return -1;
 		}
 		flength = ftello(ff);
@@ -511,6 +516,7 @@ static int file_read(struct ast_channel *chan, const char *cmd, char *data, stru
 			fseeko(ff, length, SEEK_END);
 			if ((length = ftello(ff)) - offset < 0) {
 				/* Eliminates all results */
+				fclose(ff);
 				return -1;
 			}
 		} else if (length == LLONG_MAX) {
@@ -537,6 +543,7 @@ static int file_read(struct ast_channel *chan, const char *cmd, char *data, stru
 
 			ast_str_append_substr(buf, len, fbuf, toappend);
 		}
+		fclose(ff);
 		return 0;
 	}
 
@@ -701,6 +708,7 @@ static int file_read(struct ast_channel *chan, const char *cmd, char *data, stru
 		}
 	}
 
+	fclose(ff);
 	return 0;
 }
 
@@ -772,6 +780,8 @@ static int file_write(struct ast_channel *chan, const char *cmd, char *data, con
 		if (offset < 0) {
 			if (fseeko(ff, offset, SEEK_END)) {
 				ast_log(LOG_ERROR, "Cannot seek to offset: %s\n", strerror(errno));
+				fclose(ff);
+				return -1;
 			}
 			offset = ftello(ff);
 		}

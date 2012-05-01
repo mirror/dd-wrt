@@ -27,12 +27,13 @@
  */
 
 /*** MODULEINFO
+	<support_level>core</support_level>
 	<depend>dahdi</depend>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293970 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 340863 $")
 
 #include <fcntl.h>
 #include <netinet/in.h>

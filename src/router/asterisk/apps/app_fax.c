@@ -16,11 +16,12 @@
 	<defaultenabled>no</defaultenabled>
 	<depend>spandsp</depend>
 	<conflict>res_fax</conflict>
+	<support_level>extended</support_level>
 ***/
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 276347 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 340108 $")
 
 #include <string.h>
 #include <stdlib.h>
@@ -45,7 +46,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 276347 $")
 #include "asterisk/manager.h"
 
 /*** DOCUMENTATION
-	<application name="SendFAX" language="en_US">
+	<application name="SendFAX" language="en_US" module="app_fax">
 		<synopsis>
 			Send a Fax
 		</synopsis>
@@ -90,7 +91,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 276347 $")
 			</variablelist>
 		</description>
 	</application>
-	<application name="ReceiveFAX" language="en_US">
+	<application name="ReceiveFAX" language="en_US" module="app_fax">
 		<synopsis>
 			Receive a Fax
 		</synopsis>
@@ -255,6 +256,9 @@ static void phase_e_handler(t30_state_t *f, void *user_data, int result)
 		"Channel: %s\r\n"
 		"Exten: %s\r\n"
 		"CallerID: %s\r\n"
+		"CallerIDName: %s\r\n"
+		"ConnectedLineNum: %s\r\n"
+		"ConnectedLineName: %s\r\n"
 		"RemoteStationID: %s\r\n"
 		"LocalStationID: %s\r\n"
 		"PagesTransferred: %d\r\n"
@@ -264,6 +268,9 @@ static void phase_e_handler(t30_state_t *f, void *user_data, int result)
 		s->chan->name,
 		s->chan->exten,
 		S_COR(s->chan->caller.id.number.valid, s->chan->caller.id.number.str, ""),
+		S_COR(s->chan->caller.id.name.valid, s->chan->caller.id.name.str, ""),
+		S_COR(s->chan->connected.id.number.valid, s->chan->connected.id.number.str, ""),
+		S_COR(s->chan->connected.id.name.valid, s->chan->connected.id.name.str, ""),
 		far_ident,
 		local_ident,
 		pages_transferred,

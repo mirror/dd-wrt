@@ -20,7 +20,7 @@ AC_CONFIG_SRCDIR([main/asterisk.c])
 AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_COPYRIGHT("Asterisk")
-AC_REVISION($Revision: 301221 $)
+AC_REVISION($Revision: 355608 $)
 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
@@ -69,12 +69,12 @@ esac
 
 case "${host_os}" in
      freebsd*)
-     AC_PREFIX_DEFAULT([/usr/local])
+     ac_default_prefix=/usr/local
      CPPFLAGS=-I/usr/local/include
      LDFLAGS=-L/usr/local/lib
      ;;
      openbsd*)
-     AC_PREFIX_DEFAULT([/usr/local])
+     ac_default_prefix=/usr/local
      if test ${prefix} = '/usr/local' || test ${prefix} = 'NONE'; then
         if test ${sysconfdir} = '${prefix}/etc'; then
            astetcdir=/etc/asterisk
@@ -87,7 +87,7 @@ case "${host_os}" in
      LDFLAGS=-L/usr/local/lib
      ;;
      darwin*)
-     AC_PREFIX_DEFAULT([/usr/local])
+     ac_default_prefix=/usr/local
      if test ${prefix} = 'NONE'; then
         astlibdir='/Library/Application Support/Asterisk/Modules'
         astvarlibdir='/Library/Application Support/Asterisk'
@@ -111,7 +111,7 @@ case "${host_os}" in
      fi
      ;;
      *)
-     AC_PREFIX_DEFAULT([/usr])
+     ac_default_prefix=/usr
      if test ${prefix} = '/usr' || test ${prefix} = 'NONE'; then
         if test ${sysconfdir} = '${prefix}/etc'; then
            sysconfdir=/etc
@@ -408,24 +408,25 @@ AST_EXT_LIB_SETUP([PGSQL], [PostgreSQL], [postgres])
 AST_EXT_LIB_SETUP([POPT], [popt], [popt])
 AST_EXT_LIB_SETUP([PORTAUDIO], [PortAudio], [portaudio])
 AST_EXT_LIB_SETUP([PRI], [ISDN PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_MWI], [ISDN PRI Message Waiting Indication], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_MCID], [ISDN PRI Malicious Call ID], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_CALL_WAITING], [ISDN PRI call waiting supplementary service], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_AOC_EVENTS], [ISDN PRI advice of charge supplementary service events], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_TRANSFER], [ISDN PRI call transfer supplementary service], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_CCSS], [ISDN PRI call completion supplementary service], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_HANGUP_FIX], [ISDN PRI hangup fix], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_SUBADDR], [ISDN PRI subaddressing], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_CALL_HOLD], [ISDN PRI call hold], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_CALL_REROUTING], [ISDN PRI call rerouting and call deflection], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_SETUP_KEYPAD], [ISDN PRI keypad facility in SETUP], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_L2_PERSISTENCE], [ISDN Layer 2 persistence option], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_MWI], [ISDN PRI Message Waiting Indication], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_MCID], [ISDN PRI Malicious Call ID], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_CALL_WAITING], [ISDN PRI call waiting supplementary service], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_AOC_EVENTS], [ISDN PRI advice of charge supplementary service events], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_TRANSFER], [ISDN PRI call transfer supplementary service], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_CCSS], [ISDN PRI call completion supplementary service], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_HANGUP_FIX], [ISDN PRI hangup fix], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_SUBADDR], [ISDN PRI subaddressing], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_CALL_HOLD], [ISDN PRI call hold], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_CALL_REROUTING], [ISDN PRI call rerouting and call deflection], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_SETUP_KEYPAD], [ISDN PRI keypad facility in SETUP], [PRI], [pri])
 # ------------------------------------v
 # TODO: The code can be changed to always include these features now.
 # These features will always be present if pri_connected_line_update is available.
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_INBANDDISCONNECT], [ISDN PRI set_inbanddisconnect], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_PROG_W_CAUSE], [ISDN progress with cause], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_SERVICE_MESSAGES], [ISDN service messages], [PRI], [pri])
-AST_EXT_LIB_SETUP_DEPENDENT([PRI_REVERSE_CHARGE], [ISDN reverse charge], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_INBANDDISCONNECT], [ISDN PRI set_inbanddisconnect], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_PROG_W_CAUSE], [ISDN progress with cause], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_SERVICE_MESSAGES], [ISDN service messages], [PRI], [pri])
+AST_EXT_LIB_SETUP_OPTIONAL([PRI_REVERSE_CHARGE], [ISDN reverse charge], [PRI], [pri])
 # ------------------------------------^
 AST_EXT_LIB_SETUP([PWLIB], [PWlib], [pwlib])
 AST_EXT_LIB_SETUP([RADIUS], [Radius Client], [radius])
@@ -465,6 +466,49 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/event.h sys/file.h sys/ioctl.h sys/param.h sys/socket.h sys/time.h syslog.h termios.h unistd.h utime.h arpa/nameser.h sys/io.h])
 
+# Any one of these 4 packages support a mandatory requirement, so we want to check on them as early as possible.
+AST_EXT_LIB_CHECK([TERMCAP], [termcap], [tgetent], [])
+AST_EXT_LIB_CHECK([TINFO], [tinfo], [tgetent], [])
+AST_EXT_LIB_CHECK([CURSES], [curses], [initscr], [curses.h])
+AST_EXT_LIB_CHECK([NCURSES], [ncurses], [initscr], [curses.h])
+
+EDITLINE_LIB=""
+if test "x$TERMCAP_LIB" != "x" ; then
+  EDITLINE_LIB="$TERMCAP_LIB"
+elif test "x$TINFO_LIB" != "x" ; then
+  EDITLINE_LIB="$TINFO_LIB"
+elif test "x$CURSES_LIB" != "x" ; then
+  EDITLINE_LIB="$CURSES_LIB"
+elif test "x$NCURSES_LIB" != "x" ; then
+  EDITLINE_LIB="$NCURSES_LIB"
+else
+  AC_MSG_ERROR([*** termcap support not found (on modern systems, this typically means the ncurses development package is missing)])
+fi
+AC_SUBST(EDITLINE_LIB)
+
+# Another mandatory item (unless it's explicitly disabled)
+AC_ARG_ENABLE([xmldoc],
+	[AS_HELP_STRING([--disable-xmldoc],
+		[Explicity disable XML documentation])],
+	[case "${enableval}" in
+		y|ye|yes) disable_xmldoc=no ;;
+		n|no)  disable_xmldoc=yes ;;
+		*) AC_MSG_ERROR(bad value ${enableval} for --disable-xmldoc)  ;;
+	esac], [disable_xmldoc=no])
+
+if test "${disable_xmldoc}" != "yes"; then
+	AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
+	[#include <libxml/tree.h>
+	#include <libxml/parser.h>],
+	[LIBXML_TEST_VERSION])
+	if test "${PBX_LIBXML2}" != 1; then
+		AC_MSG_NOTICE(*** XML documentation will not be available because the 'libxml2' development package is missing.)
+		AC_MSG_NOTICE(*** Please run the 'configure' script with the '--disable-xmldoc' parameter option)
+		AC_MSG_NOTICE(*** or install the 'libxml2' development package.)
+		exit 1
+	fi
+fi
+
 # some embedded systems omit internationalization (locale) support
 AC_CHECK_HEADERS([xlocale.h])
 
@@ -487,7 +531,8 @@ AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_CHECK_MEMBERS([struct stat.st_blksize])
-AC_CHECK_MEMBERS([struct ucred.uid, struct ucred.cr_uid], [], [], [#include <sys/socket.h>])
+AC_CHECK_MEMBERS([struct ucred.uid, struct ucred.cr_uid, struct sockpeercred.uid], [], [], [#include <sys/types.h>
+#include <sys/socket.h> ])
 AC_CHECK_MEMBERS([struct ifreq.ifr_ifru.ifru_hwaddr], [], [], [#include <net/if.h>])
 AC_HEADER_TIME
 AC_STRUCT_TM
@@ -533,8 +578,8 @@ fi
 
 AC_MSG_CHECKING(for LLONG_MAX in limits.h)
 AC_LINK_IFELSE(
-	AC_LANG_PROGRAM([#include <limits.h>],
-		[long long foo = LLONG_MAX]),
+	[AC_LANG_PROGRAM([#include <limits.h>],
+		[long long foo = LLONG_MAX])],
 	AC_MSG_RESULT(yes)
 	AC_DEFINE([HAVE_LLONG_MAX], 1, [Define to 1 if limits.h includes a LLONG_MAX definition.]),
 	AC_MSG_RESULT(no)
@@ -542,8 +587,8 @@ AC_LINK_IFELSE(
 
 AC_MSG_CHECKING(for timersub in time.h)
 AC_LINK_IFELSE(
-	AC_LANG_PROGRAM([#include <sys/time.h>],
-		[struct timeval *a; timersub(a, a, a);]),
+	[AC_LANG_PROGRAM([#include <sys/time.h>],
+		[struct timeval *a; timersub(a, a, a);])],
 	AC_MSG_RESULT(yes)
 		AC_DEFINE([HAVE_TIMERSUB], 1, [Define to 1 if your system defines timersub.]),
 	AC_MSG_RESULT(no)
@@ -559,7 +604,7 @@ _ACEOF
 LDFLAGS="${LDFLAGS} -Wl,--dynamic-list,conftest.dynamics"
 PBX_DYNAMIC_LIST=0
 AC_LINK_IFELSE(
-	AC_LANG_PROGRAM([], []),
+	[AC_LANG_PROGRAM([], [])],
 	PBX_DYNAMIC_LIST=1
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
@@ -594,8 +639,8 @@ AC_CHECK_FUNCS([inet_aton])
 # check if we have IP_PKTINFO constant defined
 AC_MSG_CHECKING(for IP_PKTINFO)
 AC_LINK_IFELSE(
-		AC_LANG_PROGRAM([#include <netinet/in.h>],
-						[int pi = IP_PKTINFO;]),
+		[AC_LANG_PROGRAM([#include <netinet/in.h>],
+						[int pi = IP_PKTINFO;])],
 		AC_MSG_RESULT(yes)
 		AC_DEFINE([HAVE_PKTINFO], 1, [Define to 1 if your system defines IP_PKTINFO.]),
 		AC_MSG_RESULT(no)
@@ -606,9 +651,9 @@ AC_SEARCH_LIBS(gethostbyname_r, [socket nsl])
 
 AC_MSG_CHECKING(for gethostbyname_r with 6 arguments)
 AC_LINK_IFELSE(
-        AC_LANG_PROGRAM([#include <stdlib.h>
+        [AC_LANG_PROGRAM([#include <stdlib.h>
                          #include <netdb.h>],
-                        [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (struct hostent **)NULL, (int *)NULL);]),
+                        [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (struct hostent **)NULL, (int *)NULL);])],
         AC_MSG_RESULT(yes)
         AC_DEFINE([HAVE_GETHOSTBYNAME_R_6], 1, [Define to 1 if your system has gethostbyname_r with 6 arguments.]),
         AC_MSG_RESULT(no)
@@ -616,9 +661,9 @@ AC_LINK_IFELSE(
 
 AC_MSG_CHECKING(for gethostbyname_r with 5 arguments)
 AC_LINK_IFELSE(
-        AC_LANG_PROGRAM([#include <stdlib.h>
+        [AC_LANG_PROGRAM([#include <stdlib.h>
 	                 #include <netdb.h>],
-                        [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (int *)NULL);]),
+                        [struct hostent *he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL, (char *)NULL, (int)0, (int *)NULL);])],
         AC_MSG_RESULT(yes)
         AC_DEFINE([HAVE_GETHOSTBYNAME_R_5], 1, [Define to 1 if your system has gethostbyname_r with 5 arguments.]),
         AC_MSG_RESULT(no)
@@ -628,7 +673,7 @@ AC_CHECK_HEADER([byteswap.h], [AC_DEFINE_UNQUOTED([HAVE_BYTESWAP_H], 1, [Define 
 
 AC_MSG_CHECKING(for __swap16 variant of <sys/endian.h> byteswapping macros)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <sys/endian.h>], [int a = 1; int b = __swap16(a);]),
+[AC_LANG_PROGRAM([#include <sys/endian.h>], [int a = 1; int b = __swap16(a);])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_SYS_ENDIAN_SWAP16], 1, [Define to 1 if your sys/endian.h header file provides the __swap16 macro.]),
 AC_MSG_RESULT(no)
@@ -636,7 +681,7 @@ AC_MSG_RESULT(no)
 
 AC_MSG_CHECKING(for bswap16 variant of <sys/endian.h> byteswapping macros)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <sys/endian.h>], [int a = 1; int b = bswap16(a);]),
+[AC_LANG_PROGRAM([#include <sys/endian.h>], [int a = 1; int b = bswap16(a);])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_SYS_ENDIAN_BSWAP16], 1, [Define to 1 if your sys/endian.h header file provides the bswap16 macro.]),
 AC_MSG_RESULT(no)
@@ -649,13 +694,13 @@ fi
 
 AC_MSG_CHECKING(for locale_t in locale.h)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <locale.h>], [locale_t lt = NULL]),
+[AC_LANG_PROGRAM([#include <locale.h>], [locale_t lt = NULL])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_LOCALE_T_IN_LOCALE_H], 1, [Define to 1 if your system defines the locale_t type in locale.h]),
 AC_MSG_RESULT(no)
   AC_MSG_CHECKING(for locale_t in xlocale.h)
   AC_LINK_IFELSE(
-  AC_LANG_PROGRAM([#include <xlocale.h>], [locale_t lt = NULL]),
+  [AC_LANG_PROGRAM([#include <xlocale.h>], [locale_t lt = NULL])],
   AC_MSG_RESULT(yes)
   AC_DEFINE([HAVE_LOCALE_T_IN_XLOCALE_H], 1, [Define to 1 if your system defines the locale_t type in xlocale.h]),
   AC_MSG_RESULT(no)
@@ -664,7 +709,7 @@ AC_MSG_RESULT(no)
 
 AC_MSG_CHECKING(for O_EVTONLY in fcntl.h)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <fcntl.h>], [int a = O_EVTONLY;]),
+[AC_LANG_PROGRAM([#include <fcntl.h>], [int a = O_EVTONLY;])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_O_EVTONLY], 1, [Define to 1 if your system defines the file flag O_EVTONLY in fcntl.h]),
 AC_MSG_RESULT(no)
@@ -672,7 +717,7 @@ AC_MSG_RESULT(no)
 
 AC_MSG_CHECKING(for O_SYMLINK in fcntl.h)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <fcntl.h>], [int a = O_SYMLINK;]),
+[AC_LANG_PROGRAM([#include <fcntl.h>], [int a = O_SYMLINK;])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_O_SYMLINK], 1, [Define to 1 if your system defines the file flag O_SYMLINK in fcntl.h]),
 AC_MSG_RESULT(no)
@@ -682,7 +727,7 @@ AST_C_DEFINE_CHECK([PTHREAD_RWLOCK_INITIALIZER], [PTHREAD_RWLOCK_INITIALIZER], [
 
 AC_MSG_CHECKING(for PTHREAD_RWLOCK_PREFER_WRITER_NP in pthread.h)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <pthread.h>], [int a = PTHREAD_RWLOCK_PREFER_WRITER_NP;]),
+[AC_LANG_PROGRAM([#include <pthread.h>], [int a = PTHREAD_RWLOCK_PREFER_WRITER_NP;])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_PTHREAD_RWLOCK_PREFER_WRITER_NP], 1, [Define to 1 if your system defines PTHREAD_RWLOCK_PREFER_WRITER_NP in pthread.h]),
 AC_MSG_RESULT(no)
@@ -690,7 +735,7 @@ AC_MSG_RESULT(no)
 
 AC_MSG_CHECKING(for PTHREAD_MUTEX_RECURSIVE_NP in pthread.h)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([#include <pthread.h>], [int a = PTHREAD_MUTEX_RECURSIVE_NP;]),
+[AC_LANG_PROGRAM([#include <pthread.h>], [int a = PTHREAD_MUTEX_RECURSIVE_NP;])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_PTHREAD_MUTEX_RECURSIVE_NP], 1, [Define to 1 if your system defines PTHREAD_MUTEX_RECURSIVE_NP in pthread.h]),
 AC_MSG_RESULT(no)
@@ -747,11 +792,11 @@ AST_C_DEFINE_CHECK([PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP], [PTHREAD_RECURSIVE_
 # Generally yes on OpenBSD/FreeBSD and no on Mac OS X.
 AC_MSG_CHECKING(whether we can compare a mutex to its initial value)
 AC_LINK_IFELSE(
-	AC_LANG_PROGRAM([#include <pthread.h>], [pthread_mutex_t lock;
+	[AC_LANG_PROGRAM([#include <pthread.h>], [pthread_mutex_t lock;
 	if ((lock) != ((pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER)) {
 		return 0;
 	}
-	return 0]),
+	return 0])],
 	AC_MSG_RESULT(yes)
 	AC_DEFINE([CAN_COMPARE_MUTEX_TO_INIT_VALUE], 1, [Define to 1 if your system's implementation of mutexes supports comparison of a mutex to its initializer.]),
 	AC_MSG_RESULT(no)
@@ -774,7 +819,7 @@ AC_LINK_IFELSE(
 
 AC_MSG_CHECKING(for compiler atomic operations)
 AC_LINK_IFELSE(
-AC_LANG_PROGRAM([], [int foo1; int foo2 = __sync_fetch_and_add(&foo1, 1);]),
+[AC_LANG_PROGRAM([], [int foo1; int foo2 = __sync_fetch_and_add(&foo1, 1);])],
 AC_MSG_RESULT(yes)
 AC_DEFINE([HAVE_GCC_ATOMICS], 1, [Define to 1 if your GCC C compiler provides atomic operations.]),
 AC_MSG_RESULT(no)
@@ -783,8 +828,8 @@ AC_MSG_RESULT(no)
 # glibc, AFAIK, is the only C library that makes printing a NULL to a string safe.
 AC_MSG_CHECKING([if your system printf is NULL-safe.])
 AC_RUN_IFELSE(
-	AC_LANG_PROGRAM([#include <stdio.h>],
-		[printf("%s", NULL)]),
+	[AC_LANG_PROGRAM([#include <stdio.h>],
+		[printf("%s", NULL)])],
 	AC_DEFINE([HAVE_NULLSAFE_PRINTF], 1, [Define to 1 if your C library can safely print NULL to string formats.])
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no),
@@ -794,7 +839,7 @@ AC_RUN_IFELSE(
 
 AC_MSG_CHECKING(if we can increase the maximum select-able file descriptor)
 AC_RUN_IFELSE(
-AC_LANG_PROGRAM([
+[AC_LANG_PROGRAM([
 #include <stdio.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -817,7 +862,7 @@ AC_LANG_PROGRAM([
 	FD_SET(fd0, (fd_set *) &fds);
 	FD_SET(fd1, (fd_set *) &fds);
 	if (select(FD_SETSIZE + 2, (fd_set *) &fds, NULL, NULL, &tv) < 0) { exit(1); }
-	exit(0)]]),
+	exit(0)]])],
 	AC_MSG_RESULT(yes)
 	AC_DEFINE([HAVE_VARIABLE_FDSET], 1, [Define to 1 if your system can support larger than default select bitmasks.]),
 	AC_MSG_RESULT(no),
@@ -826,11 +871,11 @@ AC_LANG_PROGRAM([
 
 if test "${ac_cv_have_variable_fdset}x" = "0x"; then
 	AC_RUN_IFELSE(
-		AC_LANG_PROGRAM([
+		[AC_LANG_PROGRAM([
 #include <unistd.h>
 #include <sys/types.h>
 #include <stdlib.h>
-], [if (getuid() != 0) { exit(1); }]),
+], [if (getuid() != 0) { exit(1); }])],
 		AC_DEFINE([CONFIGURE_RAN_AS_ROOT], 1, [Some configure tests will unexpectedly fail if configure is run by a non-root user.  These may be able to be tested at runtime.]))
 fi
 
@@ -842,20 +887,49 @@ AST_GCC_ATTRIBUTE(always_inline)
 AST_GCC_ATTRIBUTE(deprecated)
 AST_GCC_ATTRIBUTE(sentinel)
 AST_GCC_ATTRIBUTE(warn_unused_result)
-AST_GCC_ATTRIBUTE(weak_import, [], [], PBX_WEAKREF)
-AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
+
+# Support weak symbols on a platform specific basis.  The Mac OS X
+# (Darwin) support must be isolated from the other platforms because
+# it has caused other platforms to fail.
+#
+case "${OSARCH}" in
+	darwin*)
+	# Allow weak symbol support on Darwin platforms only because there
+	# is active community support for it.
+	# However, Darwin seems to break weak symbols for each new version.
+	#
+	AST_GCC_ATTRIBUTE(weak_import, [], [], PBX_WEAKREF)
+
+	# Several other platforms including Linux have GCC versions that
+	# define the weak attribute.  However, this attribute is only
+	# setup for use in the code by Darwin.
+	AST_GCC_ATTRIBUTE(weak, [], [], PBX_WEAKREF)
+	;;
+	linux-gnu)
+	# Primarily support weak symbols on Linux platforms.
+	#
+	AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
+	;;
+	*)
+	# Allow weak symbols on other platforms.  However, any problems
+	# with this feature on other platforms must be fixed by the
+	# community.
+	#
+	AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
+	;;
+esac
 
 AC_MSG_CHECKING(for -ffunction-sections support)
 saved_CFLAGS="${CFLAGS}"
 CFLAGS="${CFLAGS} -ffunction-sections"
 AC_COMPILE_IFELSE(
-	AC_LANG_PROGRAM([], [int x = 1;]),
+	[AC_LANG_PROGRAM([], [int x = 1;])],
 	AC_MSG_RESULT(yes)
 	[saved_LDFLAGS="${LDFLAGS}"]
 	[LDFLAGS="${LDFLAGS} -Wl,--gc-sections"]
 	AC_MSG_CHECKING(for --gc-sections support)
 	AC_LINK_IFELSE(
-		AC_LANG_PROGRAM([], [int x = 1;]),
+		[AC_LANG_PROGRAM([], [int x = 1;])],
 		AC_MSG_RESULT(yes)
 		[GC_CFLAGS="-ffunction-sections"]
 		[[GC_LDFLAGS="-Wl,--gc-sections"]],
@@ -910,8 +984,8 @@ AC_SUBST(AST_SHADOW_WARNINGS)
 
 AC_MSG_CHECKING(for sysinfo)
 AC_LINK_IFELSE(
-        AC_LANG_PROGRAM([#include <sys/sysinfo.h>],
-                        [struct sysinfo sys_info; int uptime = sys_info.uptime]),
+        [AC_LANG_PROGRAM([#include <sys/sysinfo.h>],
+                        [struct sysinfo sys_info; int uptime = sys_info.uptime])],
         AC_MSG_RESULT(yes)
         AC_DEFINE([HAVE_SYSINFO], 1, [Define to 1 if your system has sysinfo support]),
         AC_MSG_RESULT(no)
@@ -920,7 +994,7 @@ AC_LINK_IFELSE(
 AC_SEARCH_LIBS(res_9_ninit, resolv)
 AC_MSG_CHECKING(for res_ninit)
 AC_LINK_IFELSE(
-	AC_LANG_PROGRAM([
+	[AC_LANG_PROGRAM([
 			#ifdef HAVE_SYS_SOCKET_H
 			#include <sys/socket.h>
 			#endif
@@ -931,13 +1005,13 @@ AC_LINK_IFELSE(
 			#include <arpa/nameser.h>
 			#endif
 			#include <resolv.h>],
-			[int foo = res_ninit(NULL);]),
+			[int foo = res_ninit(NULL);])],
 	AC_MSG_RESULT(yes)
 	AC_DEFINE([HAVE_RES_NINIT], 1, [Define to 1 if your system has the re-entrant resolver functions.])
 	AC_SEARCH_LIBS(res_9_ndestroy, resolv)
 	AC_MSG_CHECKING(for res_ndestroy)
 	AC_LINK_IFELSE(
-		AC_LANG_PROGRAM([
+		[AC_LANG_PROGRAM([
 				#ifdef HAVE_SYS_SOCKET_H
 				#include <sys/socket.h>
 				#endif
@@ -948,7 +1022,7 @@ AC_LINK_IFELSE(
 				#include <arpa/nameser.h>
 				#endif
 				#include <resolv.h>],
-				[res_ndestroy(NULL);]),
+				[res_ndestroy(NULL);])],
 		AC_MSG_RESULT(yes)
 		AC_DEFINE([HAVE_RES_NDESTROY], 1, [Define to 1 if your system has the ndestroy resolver function.]),
 		AC_MSG_RESULT(no)
@@ -956,7 +1030,7 @@ AC_LINK_IFELSE(
 	AC_SEARCH_LIBS(res_9_close, resolv)
 	AC_MSG_CHECKING(for res_close)
 	AC_LINK_IFELSE(
-		AC_LANG_PROGRAM([
+		[AC_LANG_PROGRAM([
 				#ifdef HAVE_SYS_SOCKET_H
 				#include <sys/socket.h>
 				#endif
@@ -967,7 +1041,7 @@ AC_LINK_IFELSE(
 				#include <arpa/nameser.h>
 				#endif
 				#include <resolv.h>],
-				[res_close();]),
+				[res_close();])],
 		AC_MSG_RESULT(yes)
 		AC_DEFINE([HAVE_RES_CLOSE], 1, [Define to 1 if your system has the close resolver function.]),
 		AC_MSG_RESULT(no)
@@ -1012,10 +1086,10 @@ PBX_DLADDR=0
 old_LIBS=${LIBS}
 LIBS="${LIBS} -ldl"
 AC_LINK_IFELSE(
-	AC_LANG_PROGRAM([#define _GNU_SOURCE 1
+	[AC_LANG_PROGRAM([#define _GNU_SOURCE 1
 #include <dlfcn.h>],
 		[dladdr((void *)0, (void *)0)]
-	),
+	)],
 	AC_MSG_RESULT(yes)
 	PBX_DLADDR=1
 	AC_SUBST([PBX_DLADDR])
@@ -1033,8 +1107,6 @@ AC_CHECK_TOOL(PKGCONFIG, pkg-config, No)
 AST_EXT_LIB_CHECK([ALSA], [asound], [snd_spcm_init], [alsa/asoundlib.h], [-lm -ldl])
 
 AST_EXT_LIB_CHECK([BFD], [bfd], [bfd_openr], [bfd.h])
-
-AST_EXT_LIB_CHECK([CURSES], [curses], [initscr], [curses.h])
 
 if test "x${OSARCH}" = "xlinux-gnu" ; then
   AST_EXT_LIB_CHECK([CAP], [cap], [cap_from_text], [sys/capability.h])
@@ -1120,6 +1192,8 @@ if test "${USE_GSM}" != "no"; then
 fi
 
 AST_EXT_LIB_CHECK([ICONV], [iconv], [iconv_open], [iconv.h])
+# GNU libiconv #define's iconv_open to libiconv_open, so we need to search for that symbol
+AST_EXT_LIB_CHECK([ICONV], [iconv], [libiconv_open], [iconv.h])
 # Some versions of Linux package iconv in glibc
 AST_EXT_LIB_CHECK([ICONV], [c], [iconv_close], [iconv.h])
 
@@ -1146,7 +1220,7 @@ if test "${USE_IMAP_TK}" != "no"; then
       	CPPFLAGS="${CPPFLAGS} ${imap_include}"
 	  	LIBS="${LIBS} ${imap_libs} "`echo ${imap_ldflags}`
 	  	AC_LINK_IFELSE(
-	    	AC_LANG_PROGRAM(
+	    	[AC_LANG_PROGRAM(
 				[#include "c-client.h"
 				void mm_searched (MAILSTREAM *stream,unsigned long number)
 				{
@@ -1196,13 +1270,13 @@ if test "${USE_IMAP_TK}" != "no"; then
 				[
 				MAILSTREAM *foo = mail_open(NULL, "", 0);
 				]
-			),
+			)],
 			[ac_cv_imap_tk="yes"],
 			[ac_cv_imap_tk="no"]
 	   	)
 		if test "${ac_cv_imap_tk}" = "yes"; then
 			AC_LINK_IFELSE(
-				AC_LANG_PROGRAM(
+				[AC_LANG_PROGRAM(
 					[#include "c-client.h"
 					void mm_searched (MAILSTREAM *stream,unsigned long number)
 					{
@@ -1252,7 +1326,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 					[
 					long check = mail_expunge_full(NULL, "", 0);
 					]
-				),
+				)],
 				[ac_cv_imap_tk2006="yes"],
 				[ac_cv_imap_tk2006="no"]
 			)
@@ -1273,7 +1347,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 				CPPFLAGS="${CPPFLAGS} ${imap_include}"
 				LIBS="${LIBS} ${imap_libs} ${imap_ldflags}"
 				AC_LINK_IFELSE(
-	    			AC_LANG_PROGRAM(
+	    			[AC_LANG_PROGRAM(
 						[#include "c-client.h"
 						void mm_searched (MAILSTREAM *stream,unsigned long number)
 						{
@@ -1323,13 +1397,13 @@ if test "${USE_IMAP_TK}" != "no"; then
 						[
 						MAILSTREAM *foo = mail_open(NULL, "", 0);
 						]
-					),
+					)],
 					[ac_cv_imap_tk="yes"],
 					[ac_cv_imap_tk="no"]
 	   			)
 				if test "${ac_cv_imap_tk}" = "yes"; then
 					AC_LINK_IFELSE(
-						AC_LANG_PROGRAM(
+						[AC_LANG_PROGRAM(
 							[#include "c-client.h"
 							void mm_searched (MAILSTREAM *stream,unsigned long number)
 							{
@@ -1379,7 +1453,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 							[
 							long check = mail_expunge_full(NULL, "", 0);
 							]
-						),
+						)],
 						[ac_cv_imap_tk2006="yes"],
 						[ac_cv_imap_tk2006="no"]
 					)
@@ -1398,7 +1472,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 		CPPFLAGS="${CPPFLAGS} ${imap_include}"
 		LIBS="${LIBS} ${imap_libs} "`echo ${imap_ldflags}`
 		AC_LINK_IFELSE(
-	    	AC_LANG_PROGRAM(
+	    	[AC_LANG_PROGRAM(
 				[#include <stdio.h>
 				#include <imap/c-client.h>
 				void mm_searched (MAILSTREAM *stream,unsigned long number)
@@ -1449,13 +1523,13 @@ if test "${USE_IMAP_TK}" != "no"; then
 				[
 				MAILSTREAM *foo = mail_open(NULL, "", 0);
 				]
-			),
+			)],
 			[ac_cv_imap_tk="yes"],
 			[ac_cv_imap_tk="no"]
 	   	)
 		if test "${ac_cv_imap_tk}" = "yes"; then
 			AC_LINK_IFELSE(
-				AC_LANG_PROGRAM(
+				[AC_LANG_PROGRAM(
 					[#include <stdio.h>
 					#include <imap/c-client.h>
 					void mm_searched (MAILSTREAM *stream,unsigned long number)
@@ -1506,7 +1580,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 					[
 					long check = mail_expunge_full(NULL, "", 0);
 					]
-				),
+				)],
 				[ac_cv_imap_tk2006="yes"],
 				[ac_cv_imap_tk2006="no"]
 			)
@@ -1519,7 +1593,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 			CPPFLAGS="${CPPFLAGS} ${imap_include}"
 			LIBS="${LIBS} ${imap_libs} "`echo ${imap_ldflags}`
 			AC_LINK_IFELSE(
-	    		AC_LANG_PROGRAM(
+	    		[AC_LANG_PROGRAM(
 					[#include <stdio.h>
 					#include <c-client/c-client.h>
 					void mm_searched (MAILSTREAM *stream,unsigned long number)
@@ -1570,13 +1644,13 @@ if test "${USE_IMAP_TK}" != "no"; then
 					[
 					MAILSTREAM *foo = mail_open(NULL, "", 0);
 					]
-				),
+				)],
 				[ac_cv_imap_tk="yes"],
 				[ac_cv_imap_tk="no"]
 	   		)
 			if test "${ac_cv_imap_tk}" = "yes"; then
 				AC_LINK_IFELSE(
-					AC_LANG_PROGRAM(
+					[AC_LANG_PROGRAM(
 						[#include <stdio.h>
 						#include <c-client/c-client.h>
 						void mm_searched (MAILSTREAM *stream,unsigned long number)
@@ -1627,7 +1701,7 @@ if test "${USE_IMAP_TK}" != "no"; then
 						[
 						long check = mail_expunge_full(NULL, "", 0);
 						]
-					),
+					)],
 					[ac_cv_imap_tk2006="yes"],
 					[ac_cv_imap_tk2006="no"]
 				)
@@ -1667,28 +1741,6 @@ AST_EXT_LIB_CHECK([LTDL], [ltdl], [lt_dlinit], [ltdl.h], [])
 
 AST_EXT_LIB_CHECK([LDAP], [ldap], [ldap_initialize], [ldap.h])
 
-AC_ARG_ENABLE([xmldoc],
-	[AS_HELP_STRING([--disable-xmldoc],
-		[Explicity disable XML documentation])],
-	[case "${enableval}" in
-		y|ye|yes) disable_xmldoc=no ;;
-		n|no)  disable_xmldoc=yes ;;
-		*) AC_MSG_ERROR(bad value ${enableval} for --disable-xmldoc)  ;;
-	esac], [disable_xmldoc=no])
-
-if test "${disable_xmldoc}" != "yes"; then
-	AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
-	[#include <libxml/tree.h>
-	#include <libxml/parser.h>],
-	[LIBXML_TEST_VERSION])
-	if test "${PBX_LIBXML2}" != 1; then
-		AC_MSG_NOTICE(*** XML documentation will not be available because the 'libxml2' development package is missing.)
-		AC_MSG_NOTICE(*** Please run the 'configure' script with the '--disable-xmldoc' parameter option)
-		AC_MSG_NOTICE(*** or install the 'libxml2' development package.)
-		exit 1
-	fi
-fi
-
 AST_EXT_LIB_CHECK([MISDN], [mISDN], [mISDN_open], [mISDNuser/mISDNlib.h])
 
 if test "${PBX_MISDN}" = 1; then
@@ -1703,8 +1755,6 @@ fi
 AST_EXT_TOOL_CHECK([MYSQLCLIENT], [mysql_config])
 
 AST_EXT_LIB_CHECK([NBS], [nbs], [nbs_connect], [nbs.h])
-
-AST_EXT_LIB_CHECK([NCURSES], [ncurses], [initscr], [curses.h])
 
 AST_EXT_TOOL_CHECK([NEON], [neon-config])
 
@@ -1802,6 +1852,7 @@ AST_EXT_LIB_CHECK([POPT], [popt], [poptStrerror], [popt.h])
 AST_EXT_LIB_CHECK([PORTAUDIO], [portaudio], [Pa_GetDeviceCount], [portaudio.h])
 
 AST_EXT_LIB_CHECK([PRI], [pri], [pri_connected_line_update], [libpri.h])
+AST_EXT_LIB_CHECK([PRI_L2_PERSISTENCE], [pri], [pri_persistent_layer2_option], [libpri.h])
 AST_EXT_LIB_CHECK([PRI_MWI], [pri], [pri_mwi_indicate], [libpri.h])
 AST_EXT_LIB_CHECK([PRI_MCID], [pri], [pri_mcid_enable], [libpri.h])
 AST_EXT_LIB_CHECK([PRI_CALL_WAITING], [pri], [pri_connect_ack_enable], [libpri.h])
@@ -1947,7 +1998,7 @@ AST_EXT_LIB_CHECK([CRYPTO], [crypto], [AES_encrypt], [openssl/aes.h])
 
 if test "$PBX_CRYPTO" = "1";
 then
-    AST_EXT_LIB_CHECK([OPENSSL], [ssl], [ssl2_connect], [openssl/ssl.h], [-lcrypto])
+	AST_EXT_LIB_CHECK([OPENSSL], [ssl], [SSL_connect], [openssl/ssl.h], [-lcrypto])
 fi
 
 if test "$PBX_OPENSSL" = "1";
@@ -1976,14 +2027,16 @@ then
     [ AC_MSG_RESULT(yes) ],
     [
         AC_MSG_RESULT(no)
-        AC_MSG_NOTICE(***)
-        AC_MSG_NOTICE(*** libsrtp could not be linked as a shared object)
-        AC_MSG_NOTICE(*** try compiling libsrtp manually and configuring with)
-        AC_MSG_NOTICE(*** ./configure CFLAGS=-fPIC --prefix=/usr)
-        AC_MSG_NOTICE(*** replacing /usr with the prefix of your choice)
-        AC_MSG_NOTICE(***)
-        AC_MSG_NOTICE(*** If you do not need SRTP support re-run configure)
-        AC_MSG_NOTICE(*** with the --without-srtp option.)
+        AC_MSG_WARN(***)
+        AC_MSG_WARN(*** libsrtp could not be linked as a shared object.)
+        AC_MSG_WARN(*** Try compiling libsrtp manually. Configure libsrtp)
+        AC_MSG_WARN(*** with ./configure CFLAGS=-fPIC --prefix=/usr)
+        AC_MSG_WARN(*** replacing /usr with the prefix of your choice.)
+        AC_MSG_WARN(*** After re-installing libsrtp, re-run the Asterisk)
+        AC_MSG_WARN(*** configure script.)
+        AC_MSG_WARN(***)
+        AC_MSG_WARN(*** If you do not need SRTP support re-run configure)
+        AC_MSG_WARN(*** with the --without-srtp option.)
         exit 1
     ]
     )
@@ -1993,29 +2046,24 @@ then
 fi
 
 AST_EXT_TOOL_CHECK([GMIME], [gmime-config], [], [], [#include <gmime/gmime.h>], [gboolean q = g_mime_check_version(0,0,0);])
-if test "x${PBX_GMIME}" = "x0"; then
+if test "x${PBX_GMIME}" = "x0" -a "${PKGCONFIG}" != "No"; then
 	# Later versions of GMime use pkg-config
-	if test "x${PKGCONFIG}" = xNo; then :; else
-		GMIME_INCLUDE=$(${PKGCONFIG} gmime-2.0 --cflags 2>/dev/null)
-		GMIME_LIB=$(${PKGCONFIG} gmime-2.0 --libs)
-		if test "x${GMIME_INCLUDE}${GMIME_LIB}" = "x"; then 
-			GMIME_INCLUDE=$(${PKGCONFIG} gmime-2.2 --cflags 2>/dev/null)
-			GMIME_LIB=$(${PKGCONFIG} gmime-2.2 --libs)
+	for ver in 2.0 2.2 2.4; do
+		if ! ${PKGCONFIG} --exists gmime-$ver; then
+			continue
 		fi
-		if test "x${GMIME_INCLUDE}${GMIME_LIB}" != "x"; then
-			PBX_GMIME=1
-			AC_DEFINE([HAVE_GMIME], 1, [Define if your system has the GMIME libraries.])
-		fi
-	fi
+		# If we got here, we have this version:
+		GMIME_INCLUDE=$(${PKGCONFIG} gmime-$ver --cflags 2>/dev/null)
+		GMIME_LIB=$(${PKGCONFIG} gmime-$ver --libs)
+		PBX_GMIME=1
+		AC_DEFINE([HAVE_GMIME], 1, [Define if your system has the GMIME libraries.])
+		break;
+	done
 fi
 
 AST_EXT_LIB_CHECK([HOARD], [hoard], [malloc], [])
 
 AST_EXT_LIB_CHECK([FREETDS], [sybdb], [dbinit], [sybdb.h])
-
-AST_EXT_LIB_CHECK([TERMCAP], [termcap], [tgetent], [])
-
-AST_EXT_LIB_CHECK([TINFO], [tinfo], [tgetent], [])
 
 AC_CHECK_LIB([tonezone], [tone_zone_find_by_num], tonezone_does_not_need_lm=yes, tonezone_does_not_need_lm=no)
 
@@ -2029,10 +2077,11 @@ AST_EXT_LIB_CHECK([USB], [usb], [usb_init], [usb.h], [])
 
 if test "${OSARCH}" = "OpenBSD";
 then
-	AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -logg])
+	AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -lvorbisfile -logg])
 else
-	AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc])
+	AST_EXT_LIB_CHECK([VORBIS], [vorbis], [vorbis_info_init], [vorbis/codec.h], [-lm -lvorbisenc -lvorbisfile])
 fi
+AST_C_DECLARE_CHECK([VORBIS_OPEN_CALLBACKS], [OV_CALLBACKS_NOCLOSE], [vorbis/vorbisfile.h])
 
 AC_LANG_PUSH(C++)
 
@@ -2081,28 +2130,14 @@ AC_LANG_POP
 
 AST_EXT_LIB_CHECK([ZLIB], [z], [compress], [zlib.h])
 
-EDITLINE_LIB=""
-if test "x$TERMCAP_LIB" != "x" ; then
-  EDITLINE_LIB="$TERMCAP_LIB"
-elif test "x$TINFO_LIB" != "x" ; then
-  EDITLINE_LIB="$TINFO_LIB"
-elif test "x$CURSES_LIB" != "x" ; then
-  EDITLINE_LIB="$CURSES_LIB"
-elif test "x$NCURSES_LIB" != "x" ; then
-  EDITLINE_LIB="$NCURSES_LIB"
-else
-  AC_MSG_ERROR([*** termcap support not found (on modern systems, this typically means the ncurses development package is missing)])
-fi
-AC_SUBST(EDITLINE_LIB)
-
 if test "x${PBX_UNIXODBC}" = "x1" -o "x${PBX_IODBC}" = "x1"; then
 	# Does ODBC support wide characters?
 	AC_MSG_CHECKING(whether ODBC has support for Unicode types)
 	AC_LINK_IFELSE(
-		AC_LANG_PROGRAM(
+		[AC_LANG_PROGRAM(
 			[#include <sql.h>
 #include <sqlext.h>],
-			[int foo = SQL_WCHAR]),
+			[int foo = SQL_WCHAR])],
 		AC_MSG_RESULT(yes)
 			AC_DEFINE([HAVE_ODBC_WCHAR], [1], [Define to 1 if your ODBC library has wide (Unicode) types.]),
 		AC_MSG_RESULT(no)
@@ -2148,7 +2183,7 @@ fi
 AC_SUBST(PBX_LAUNCHD)
 
 PBX_GTK2=0
-if test ! "x${PKGCONFIG}" = xNo; then
+if test "${PKGCONFIG}" != "No"; then
    GTK2_INCLUDE=$(${PKGCONFIG} gtk+-2.0 --cflags 2>/dev/null)
    GTK2_LIB=$(${PKGCONFIG} gtk+-2.0 --libs)
    PBX_GTK2=1

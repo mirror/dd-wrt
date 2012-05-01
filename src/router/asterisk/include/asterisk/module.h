@@ -175,6 +175,14 @@ char *ast_module_helper(const char *line, const char *word, int pos, int state, 
 
 struct ast_module;
 
+/*!
+ * \brief Get the name of a module.
+ * \param mod A pointer to the module.
+ * \return the name of the module
+ * \retval NULL if mod or mod->info is NULL
+ */
+const char *ast_module_name(const struct ast_module *mod);
+
 /* User count routines keep track of which channels are using a given module
    resource.  They can help make removing modules safer, particularly if
    they're in use at the time they have been requested to be removed */
@@ -197,6 +205,7 @@ enum ast_module_load_priority {
 	AST_MODPRI_REALTIME_DEPEND =    10,  /*!< Dependency for a realtime driver */
 	AST_MODPRI_REALTIME_DEPEND2 =   20,  /*!< Second level dependency for a realtime driver (func_curl needs res_curl, but is needed by res_config_curl) */
 	AST_MODPRI_REALTIME_DRIVER =    30,  /*!< A realtime driver, which provides configuration services for other modules */
+	AST_MODPRI_TIMING =             40,  /*!< Dependency for a channel (MOH needs timing interfaces to be fully loaded) */
 	AST_MODPRI_CHANNEL_DEPEND =     50,  /*!< Channel driver dependency (may depend upon realtime, e.g. MOH) */
 	AST_MODPRI_CHANNEL_DRIVER =     60,  /*!< Channel drivers (provide devicestate) */
 	AST_MODPRI_APP_DEPEND =         70,  /*!< Dependency for an application */

@@ -37,6 +37,8 @@
 /*** MODULEINFO
 	<depend>openh323</depend>
 	<defaultenabled>yes</defaultenabled>
+	<support_level>deprecated</support_level>
+	<replacement>chan_ooh323</replacement>
  ***/
 
 #ifdef __cplusplus
@@ -45,7 +47,7 @@ extern "C" {
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291758 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 350789 $")
 
 #ifdef __cplusplus
 }
@@ -112,14 +114,15 @@ onhold_cb on_hold;
 
 int h323debug; /*!< global debug flag */
 
-/*! \brief Global jitterbuffer configuration - by default, jb is disabled */
+/*! \brief Global jitterbuffer configuration - by default, jb is disabled
+ *  \note Values shown here match the defaults shown in h323.conf.sample */
 static struct ast_jb_conf default_jbconf =
 {
 	.flags = 0,
-	.max_size = -1,
-	.resync_threshold = -1,
-	.impl = "",
-	.target_extra = -1,
+	.max_size = 200,
+	.resync_threshold = 1000,
+	.impl = "fixed",
+	.target_extra = 40,
 };
 static struct ast_jb_conf global_jbconf;
 
@@ -761,7 +764,7 @@ static struct ast_frame *oh323_rtp_read(struct oh323_pvt *pvt)
 	if (f && (f->frametype == AST_FRAME_DTMF) && !(pvt->options.dtmfmode & (H323_DTMF_RFC2833 | H323_DTMF_CISCO))) {
 		return &ast_null_frame;
 	}
-	if (pvt->owner) {
+	if (f && pvt->owner) {
 		/* We already hold the channel lock */
 		if (f->frametype == AST_FRAME_VOICE) {
 			if (f->subclass.codec != pvt->owner->nativeformats) {
@@ -897,6 +900,10 @@ static int oh323_indicate(struct ast_channel *c, int condition, const void *data
 			res = 0;
 		}
 		break;
+	case AST_CONTROL_INCOMPLETE:
+		/* While h323 does support overlapped dialing, this channel driver does not
+		 * at this time.  Treat a response of Incomplete as if it were congestion.
+		 */
 	case AST_CONTROL_CONGESTION:
 		if (c->_state != AST_STATE_UP) {
 			h323_answering_call(token, 1);
@@ -971,6 +978,7 @@ static int __oh323_rtp_create(struct oh323_pvt *pvt)
 			return -1;
 		}
 	}
+	our_addr.ss.ss_family = AF_INET;
 	pvt->rtp = ast_rtp_instance_new("asterisk", sched, &our_addr, NULL);
 	if (!pvt->rtp) {
 		ast_mutex_unlock(&pvt->lock);
@@ -1423,6 +1431,7 @@ static struct oh323_user *build_user(const char *name, struct ast_variable *v, s
 			} else {
 				struct ast_sockaddr tmp;
 
+				tmp.ss.ss_family = AF_INET;
 				if (ast_get_ip(&tmp, v->value)) {
 					ASTOBJ_UNREF(user, oh323_destroy_user);
 					return NULL;
@@ -1542,6 +1551,7 @@ static struct oh323_peer *build_peer(const char *name, struct ast_variable *v, s
 			{
 				struct ast_sockaddr tmp;
 
+				tmp.ss.ss_family = AF_INET;
 				if (ast_get_ip(&tmp, v->value)) {
 					ast_log(LOG_ERROR, "Could not determine IP for %s\n", v->value);
 					ASTOBJ_UNREF(peer, oh323_destroy_peer);
@@ -1747,7 +1757,6 @@ static int create_addr(struct oh323_pvt *pvt, char *opeer)
 }
 static struct ast_channel *oh323_request(const char *type, format_t format, const struct ast_channel *requestor, void *data, int *cause)
 {
-	format_t oldformat;
 	struct oh323_pvt *pvt;
 	struct ast_channel *tmpc = NULL;
 	char *dest = (char *)data;
@@ -1763,7 +1772,6 @@ static struct ast_channel *oh323_request(const char *type, format_t format, cons
 		ast_log(LOG_WARNING, "Unable to build pvt data for '%s'\n", (char *)data);
 		return NULL;
 	}
-	oldformat = format;
 	format &= AST_FORMAT_AUDIO_MASK;
 	if (!format) {
 		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n", ast_getformatname_multiple(tmp, sizeof(tmp), format));
@@ -3191,6 +3199,7 @@ static enum ast_rtp_glue_result oh323_get_rtp_peer(struct ast_channel *chan, str
 	return res;
 }
 
+#if 0
 static char *convertcap(format_t cap)
 {
 	switch (cap) {
@@ -3217,6 +3226,7 @@ static char *convertcap(format_t cap)
 		return NULL;
 	}
 }
+#endif
 
 static int oh323_set_rtp_peer(struct ast_channel *chan, struct ast_rtp_instance *rtp, struct ast_rtp_instance *vrtp, struct ast_rtp_instance *trtp, format_t codecs, int nat_active)
 {
@@ -3224,13 +3234,18 @@ static int oh323_set_rtp_peer(struct ast_channel *chan, struct ast_rtp_instance 
 	struct oh323_pvt *pvt;
 	struct sockaddr_in them = { 0, };
 	struct sockaddr_in us = { 0, };
+#if 0	/* Native bridge still isn't ready */
 	char *mode;
+#endif
 
 	if (!rtp) {
 		return 0;
 	}
 
+#if 0	/* Native bridge still isn't ready */
 	mode = convertcap(chan->writeformat);
+#endif
+
 	pvt = (struct oh323_pvt *) chan->tech_pvt;
 	if (!pvt) {
 		ast_log(LOG_ERROR, "No Private Structure, this is bad\n");

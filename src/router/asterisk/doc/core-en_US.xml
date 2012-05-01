@@ -97,7 +97,7 @@
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description />
+		<description></description>
 	</function>
 	<manager name="Agents" language="en_US">
 		<synopsis>
@@ -321,7 +321,7 @@
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description />
+		<description></description>
 		<see-also>
 			<ref type="function">SIPPEER</ref>
 		</see-also>
@@ -333,7 +333,7 @@
 		<syntax>
 			<parameter name="varname" required="true" />
 		</syntax>
-		<description />
+		<description></description>
 	</function>
 	<manager name="IAXpeers" language="en_US">
 		<synopsis>
@@ -544,7 +544,7 @@
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description />
+		<description></description>
 	</function>
 	<function name="SIPCHANINFO" language="en_US">
 		<synopsis>
@@ -578,7 +578,7 @@
 				</enumlist>
 			</parameter>
 		</syntax>
-		<description />
+		<description></description>
 	</function>
 	<function name="CHECKSIPDOMAIN" language="en_US">
 		<synopsis>
@@ -1171,7 +1171,7 @@
 		</syntax>
 		<description>
 			<para>This application is used to listen to the audio from an Asterisk channel. This includes the audio 
-			coming in and "out of the channel being spied on. If the <literal>chanprefix</literal> parameter is specified,
+			coming in and out of the channel being spied on. If the <literal>chanprefix</literal> parameter is specified,
 			only channels beginning with this string will be spied upon.</para>
 			<para>While spying, the following actions may be performed:</para>
 			<para> - Dialing <literal>#</literal> cycles the volume level.</para>
@@ -5996,7 +5996,7 @@
 			Send arbitrary text to a selected log level.
 		</synopsis>
 		<syntax>
-			<parameter name="level">
+			<parameter name="level" required="true">
 				<para>Level must be one of <literal>ERROR</literal>, <literal>WARNING</literal>, <literal>NOTICE</literal>,
 				<literal>DEBUG</literal>, <literal>VERBOSE</literal> or <literal>DTMF</literal>.</para>	
 			</parameter>
@@ -6452,6 +6452,11 @@
 		<description>
 			<para>Returns an AES encrypted string encoded in base64.</para>
 		</description>
+		<see-also>
+			<ref type="function">AES_DECRYPT</ref>
+			<ref type="function">BASE64_ENCODE</ref>
+			<ref type="function">BASE64_DECODE</ref>
+		</see-also>
 	</function>
 	<function name="AES_DECRYPT" language="en_US">
 		<synopsis>
@@ -6468,6 +6473,11 @@
 		<description>
 			<para>Returns the plain text string.</para>
 		</description>
+		<see-also>
+			<ref type="function">AES_ENCRYPT</ref>
+			<ref type="function">BASE64_ENCODE</ref>
+			<ref type="function">BASE64_DECODE</ref>
+		</see-also>
 	</function>
  	<function name = "AUDIOHOOK_INHERIT" language="en_US">
 		<synopsis>
@@ -6530,6 +6540,11 @@
 		<description>
 			<para>Returns the base64 string.</para>
 		</description>
+		<see-also>
+			<ref type="function">BASE64_DECODE</ref>
+			<ref type="function">AES_DECRYPT</ref>
+			<ref type="function">AES_ENCRYPT</ref>
+		</see-also>
 	</function>
 	<function name="BASE64_DECODE" language="en_US">
 		<synopsis>
@@ -6543,6 +6558,11 @@
 		<description>
 			<para>Returns the plain text string.</para>
 		</description>
+		<see-also>
+			<ref type="function">BASE64_ENCODE</ref>
+			<ref type="function">AES_DECRYPT</ref>
+			<ref type="function">AES_ENCRYPT</ref>
+		</see-also>
 	</function>
 	<function name="BLACKLIST" language="en_US">
 		<synopsis>
@@ -9104,7 +9124,7 @@
 		</synopsis>
 		<syntax>
 			<parameter name="timeout">
-				<para>A custom parking timeout for this parked call.</para>
+				<para>A custom parking timeout for this parked call. Value in milliseconds.</para>
 			</parameter>
 			<parameter name="return_context">
 				<para>The context to return the call to after it times out.</para>

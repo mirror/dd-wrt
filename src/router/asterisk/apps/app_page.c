@@ -28,11 +28,12 @@
 /*** MODULEINFO
 	<depend>dahdi</depend>
 	<depend>app_meetme</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 234173 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include "asterisk/channel.h"
 #include "asterisk/pbx.h"
