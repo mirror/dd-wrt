@@ -1,4 +1,3 @@
-# $Id: radvd.sysconfig,v 1.1 2001/11/14 19:58:11 lutchann Exp $
 
 # No chroot; /var/run/radvd must be owned by -u.
 OPTIONS="-u radvd"

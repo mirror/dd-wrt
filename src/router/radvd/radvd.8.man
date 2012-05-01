@@ -1,5 +1,4 @@
 .\"
-.\"   $Id: radvd.8.man,v 1.15 2011/01/05 08:19:23 psavola Exp $
 .\"
 .\"   Authors:
 .\"    Lars Fenneberg		<lf@elemental.net>	 

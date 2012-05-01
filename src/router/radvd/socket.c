@@ -1,5 +1,4 @@
 /*
- *   $Id: socket.c,v 1.8 2010/12/14 11:58:21 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
