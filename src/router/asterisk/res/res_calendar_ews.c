@@ -22,10 +22,12 @@
 
 /*** MODULEINFO
 	<depend>neon29</depend>
+	<support_level>core</support_level>
 ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 287271 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <ne_request.h>
 #include <ne_session.h>

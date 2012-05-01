@@ -49,13 +49,14 @@
 
  \note Please try to \b re-use \b existing \b headers to simplify manager message parsing in clients.
     Don't re-use an existing header with a new meaning, please.
-    You can find a reference of standard headers in doc/manager.txt
+    You can find a reference of standard headers in http://wiki.asterisk.org
 
 - \ref manager.c Main manager code file
  */
 
 #define AMI_VERSION                     "1.1"
 #define DEFAULT_MANAGER_PORT 5038	/* Default port for Asterisk management via TCP */
+#define DEFAULT_MANAGER_TLS_PORT 5039	/* Default port for Asterisk management via TCP */
 
 /*! \name Constant return values
  *\note Currently, returning anything other than zero causes the session to terminate.
@@ -84,6 +85,7 @@
 #define EVENT_FLAG_HOOKRESPONSE		(1 << 14) /* Hook Response */
 #define EVENT_FLAG_CC			(1 << 15) /* Call Completion events */
 #define EVENT_FLAG_AOC			(1 << 16) /* Advice Of Charge events */
+#define EVENT_FLAG_TEST			(1 << 17) /* Test event used to signal the Asterisk Test Suite */
 /*@} */
 
 /*! \brief Export manager structures */
@@ -151,6 +153,15 @@ struct manager_action {
 	enum ast_doc_src docsrc;
 	/*! For easy linking */
 	AST_RWLIST_ENTRY(manager_action) list;
+	/*!
+	 * \brief TRUE if the AMI action is registered and the callback can be called.
+	 *
+	 * \note Needed to prevent a race between calling the callback
+	 * function and unregestring the AMI action object.
+	 */
+	unsigned int registered:1;
+	/*! Number of active func() calls in progress. */
+	unsigned int active_count;
 };
 
 /*! \brief External routines may register/unregister manager callbacks this way 

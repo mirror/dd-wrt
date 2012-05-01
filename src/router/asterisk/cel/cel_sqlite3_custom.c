@@ -36,11 +36,12 @@
 
 /*** MODULEINFO
 	<depend>sqlite3</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 355319 $")
 
 #include <sqlite3.h>
 
@@ -261,7 +262,7 @@ static void write_cel(const struct ast_event *event, void *userdata)
 		}
 		sql = sqlite3_mprintf("INSERT INTO %q (%s) VALUES (%s)", table, columns, ast_str_buffer(value_string));
 		ast_debug(1, "About to log: %s\n", sql);
-		dummy = ast_channel_release(dummy);
+		dummy = ast_channel_unref(dummy);
 		ast_free(value_string);
 	}
 
@@ -320,7 +321,7 @@ static int load_module(void)
 	}
 
 	/* is the table there? */
-	sql = sqlite3_mprintf("SELECT COUNT(AcctId) FROM %q;", table);
+	sql = sqlite3_mprintf("SELECT COUNT(*) FROM %q;", table);
 	res = sqlite3_exec(db, sql, NULL, NULL, NULL);
 	sqlite3_free(sql);
 	if (res != SQLITE_OK) {
@@ -352,7 +353,7 @@ static int reload(void)
 
 	ast_mutex_lock(&lock);
 	res = load_config(1);
-	ast_mutex_lock(&lock);
+	ast_mutex_unlock(&lock);
 
 	return res;
 }

@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 311192 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 346564 $")
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -76,9 +76,23 @@ static HOOK_T ssl_write(void *cookie, const char *buf, LEN_T len)
 
 static int ssl_close(void *cookie)
 {
-	close(SSL_get_fd(cookie));
-	SSL_shutdown(cookie);
-	SSL_free(cookie);
+	int cookie_fd = SSL_get_fd(cookie);
+	int ret;
+	if (cookie_fd > -1) {
+		/*
+		 * According to the TLS standard, it is acceptable for an application to only send its shutdown
+		 * alert and then close the underlying connection without waiting for the peer's response (this
+		 * way resources can be saved, as the process can already terminate or serve another connection).
+		 */
+		if ((ret = SSL_shutdown(cookie)) < 0) {
+			ast_log(LOG_ERROR, "SSL_shutdown() failed: %d\n", SSL_get_error(cookie, ret));
+		}
+		SSL_free(cookie);
+		/* adding shutdown(2) here has no added benefit */
+		if (close(cookie_fd)) {
+			ast_log(LOG_ERROR, "close() failed: %s\n", strerror(errno));
+		}
+	}
 	return 0;
 }
 #endif	/* DO_SSL */
@@ -141,8 +155,7 @@ static void *handle_tcptls_connection(void *data)
 	if (!tcptls_session->parent->tls_cfg) {
 		if ((tcptls_session->f = fdopen(tcptls_session->fd, "w+"))) {
 			if(setvbuf(tcptls_session->f, NULL, _IONBF, 0)) {
-				fclose(tcptls_session->f);
-				tcptls_session->f = NULL;
+				ast_tcptls_close_session_file(tcptls_session);
 			}
 		}
 	}
@@ -200,10 +213,10 @@ static void *handle_tcptls_connection(void *data)
 					}
 					if (!found) {
 						ast_log(LOG_ERROR, "Certificate common name did not match (%s)\n", tcptls_session->parent->hostname);
-						if (peer)
+						if (peer) {
 							X509_free(peer);
-						close(tcptls_session->fd);
-						fclose(tcptls_session->f);
+						}
+						ast_tcptls_close_session_file(tcptls_session);
 						ao2_ref(tcptls_session, -1);
 						return NULL;
 					}
@@ -218,7 +231,7 @@ static void *handle_tcptls_connection(void *data)
 #endif /* DO_SSL */
 
 	if (!tcptls_session->f) {
-		close(tcptls_session->fd);
+		ast_tcptls_close_session_file(tcptls_session);
 		ast_log(LOG_WARNING, "FILE * open failed!\n");
 #ifndef DO_SSL
 		if (tcptls_session->parent->tls_cfg) {
@@ -260,7 +273,9 @@ void *ast_tcptls_server_root(void *data)
 		tcptls_session = ao2_alloc(sizeof(*tcptls_session), session_instance_destructor);
 		if (!tcptls_session) {
 			ast_log(LOG_WARNING, "No memory for new session: %s\n", strerror(errno));
-			close(fd);
+			if (close(fd)) {
+				ast_log(LOG_ERROR, "close() failed: %s\n", strerror(errno));
+			}
 			continue;
 		}
 
@@ -277,7 +292,7 @@ void *ast_tcptls_server_root(void *data)
 		/* This thread is now the only place that controls the single ref to tcptls_session */
 		if (ast_pthread_create_detached_background(&launched, NULL, handle_tcptls_connection, tcptls_session)) {
 			ast_log(LOG_WARNING, "Unable to launch helper thread: %s\n", strerror(errno));
-			close(tcptls_session->fd);
+			ast_tcptls_close_session_file(tcptls_session);
 			ao2_ref(tcptls_session, -1);
 		}
 	}
@@ -297,9 +312,12 @@ static int __ssl_setup(struct ast_tls_config *cfg, int client)
 	SSLeay_add_ssl_algorithms();
 
 	if (client) {
+#ifndef OPENSSL_NO_SSL2
 		if (ast_test_flag(&cfg->flags, AST_SSL_SSLV2_CLIENT)) {
 			cfg->ssl_ctx = SSL_CTX_new(SSLv2_client_method());
-		} else if (ast_test_flag(&cfg->flags, AST_SSL_SSLV3_CLIENT)) {
+		} else
+#endif
+		if (ast_test_flag(&cfg->flags, AST_SSL_SSLV3_CLIENT)) {
 			cfg->ssl_ctx = SSL_CTX_new(SSLv3_client_method());
 		} else if (ast_test_flag(&cfg->flags, AST_SSL_TLSV1_CLIENT)) {
 			cfg->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
@@ -414,7 +432,8 @@ struct ast_tcptls_session_instance *ast_tcptls_client_create(struct ast_tcptls_s
 		return NULL;
 	}
 
-	ast_sockaddr_copy(&desc->old_address, &desc->remote_address);
+	/* If we return early, there is no connection */
+	ast_sockaddr_setnull(&desc->old_address);
 
 	if (desc->accept_fd != -1)
 		close(desc->accept_fd);
@@ -451,6 +470,8 @@ struct ast_tcptls_session_instance *ast_tcptls_client_create(struct ast_tcptls_s
 	ast_sockaddr_copy(&tcptls_session->remote_address,
 			  &desc->remote_address);
 
+	/* Set current info */
+	ast_sockaddr_copy(&desc->old_address, &desc->remote_address);
 	return tcptls_session;
 
 error:
@@ -472,7 +493,8 @@ void ast_tcptls_server_start(struct ast_tcptls_session_args *desc)
 		return;
 	}
 
-	ast_sockaddr_copy(&desc->old_address, &desc->local_address);
+	/* If we return early, there is no one listening */
+	ast_sockaddr_setnull(&desc->old_address);
 
 	/* Shutdown a running server if there is one */
 	if (desc->master != AST_PTHREADT_NULL) {
@@ -518,11 +540,33 @@ void ast_tcptls_server_start(struct ast_tcptls_session_args *desc)
 			strerror(errno));
 		goto error;
 	}
+
+	/* Set current info */
+	ast_sockaddr_copy(&desc->old_address, &desc->local_address);
+
 	return;
 
 error:
 	close(desc->accept_fd);
 	desc->accept_fd = -1;
+}
+
+void ast_tcptls_close_session_file(struct ast_tcptls_session_instance *tcptls_session)
+{
+	if (tcptls_session->f) {
+		if (fclose(tcptls_session->f)) {
+			ast_log(LOG_ERROR, "fclose() failed: %s\n", strerror(errno));
+		}
+		tcptls_session->f = NULL;
+		tcptls_session->fd = -1;
+	} else if (tcptls_session->fd != -1) {
+		if (close(tcptls_session->fd)) {
+			ast_log(LOG_ERROR, "close() failed: %s\n", strerror(errno));
+		}
+		tcptls_session->fd = -1;
+	} else {
+		ast_log(LOG_ERROR, "ast_tcptls_close_session_file invoked on session instance without file or file descriptor\n");
+	}
 }
 
 void ast_tcptls_server_stop(struct ast_tcptls_session_args *desc)
@@ -531,6 +575,7 @@ void ast_tcptls_server_stop(struct ast_tcptls_session_args *desc)
 		pthread_cancel(desc->master);
 		pthread_kill(desc->master, SIGURG);
 		pthread_join(desc->master, NULL);
+		desc->master = AST_PTHREADT_NULL;
 	}
 	if (desc->accept_fd != -1)
 		close(desc->accept_fd);
@@ -554,7 +599,7 @@ int ast_tls_read_conf(struct ast_tls_config *tls_cfg, struct ast_tcptls_session_
 	} else if (!strcasecmp(varname, "tlscafile")) {
 		ast_free(tls_cfg->cafile);
 		tls_cfg->cafile = ast_strdup(value);
-	} else if (!strcasecmp(varname, "tlscapath")) {
+	} else if (!strcasecmp(varname, "tlscapath") || !strcasecmp(varname, "tlscadir")) {
 		ast_free(tls_cfg->capath);
 		tls_cfg->capath = ast_strdup(value);
 	} else if (!strcasecmp(varname, "tlsverifyclient")) {

@@ -26,11 +26,12 @@
 
 /*** MODULEINFO
 	<depend>res_odbc</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 283319 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <sys/types.h>
 #include <time.h>

@@ -268,9 +268,9 @@ int run_menu(void)
 			char dep_buf[64] = "";
 			char use_buf[64] = "";
 			char cnf_buf[64] = "";
-			struct depend *dep;
-			struct use *use;
-			struct conflict *cnf;
+			struct reference *dep;
+			struct reference *use;
+			struct reference *cnf;
 
 			AST_LIST_TRAVERSE(&mem->deps, dep, list) {
 				strncat(dep_buf, dep->displayname, sizeof(dep_buf) - strlen(dep_buf) - 1);
@@ -290,7 +290,11 @@ int run_menu(void)
 					strncat(cnf_buf, ", ", sizeof(cnf_buf) - strlen(cnf_buf) - 1);
 			}
 
-			snprintf(name_buf, sizeof(name_buf), "%s", mem->name);
+			if (mem->is_separator) {
+				snprintf(name_buf, sizeof(name_buf), "--- %s ---", mem->name);
+			} else {
+				snprintf(name_buf, sizeof(name_buf), "%s", mem->name);
+			}
 			if (mem->depsfailed == HARD_FAILURE)
 				strncat(name_buf, " (Failed Deps.)", sizeof(name_buf) - strlen(name_buf) - 1);
 			if (mem->conflictsfailed == HARD_FAILURE)

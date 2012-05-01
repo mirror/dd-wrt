@@ -29,9 +29,13 @@
  * \ingroup applications
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 299865 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 352955 $")
 
 #include <ctype.h>
 #include <errno.h>
@@ -404,6 +408,7 @@ struct chanspy_translation_helper {
 	struct ast_audiohook bridge_whisper_audiohook;
 	int fd;
 	int volfactor;
+	struct ast_flags flags;
 };
 
 struct spy_dtmf_options {
@@ -435,7 +440,7 @@ static int spy_generate(struct ast_channel *chan, void *data, int len, int sampl
 		return -1;
 	}
 
-	if (ast_test_flag(&csth->spy_audiohook, OPTION_READONLY)) {
+	if (ast_test_flag(&csth->flags, OPTION_READONLY)) {
 		/* Option 'o' was set, so don't mix channel audio */
 		f = ast_audiohook_read_frame(&csth->spy_audiohook, samples, AST_AUDIOHOOK_DIRECTION_READ, AST_FORMAT_SLINEAR);
 	} else {
@@ -536,8 +541,11 @@ static int channel_spy(struct ast_channel *chan, struct ast_autochan *spyee_auto
 			spyer_name, name);
 
 	memset(&csth, 0, sizeof(csth));
-	ast_copy_flags(&csth.spy_audiohook, flags, AST_FLAGS_ALL);
+	ast_copy_flags(&csth.flags, flags, AST_FLAGS_ALL);
 
+	/* This is the audiohook which gives us the audio off the channel we are
+	   spying on.
+	*/
 	ast_audiohook_init(&csth.spy_audiohook, AST_AUDIOHOOK_TYPE_SPY, "ChanSpy");
 
 	if (start_spying(spyee_autochan, spyer_name, &csth.spy_audiohook)) {
@@ -545,17 +553,30 @@ static int channel_spy(struct ast_channel *chan, struct ast_autochan *spyee_auto
 		return 0;
 	}
 
-	ast_audiohook_init(&csth.whisper_audiohook, AST_AUDIOHOOK_TYPE_WHISPER, "ChanSpy");
-	ast_audiohook_init(&csth.bridge_whisper_audiohook, AST_AUDIOHOOK_TYPE_WHISPER, "Chanspy");
-	if (start_spying(spyee_autochan, spyer_name, &csth.whisper_audiohook)) {
-		ast_log(LOG_WARNING, "Unable to attach whisper audiohook to spyee %s. Whisper mode disabled!\n", name);
-	}
-	if ((spyee_bridge_autochan = ast_autochan_setup(ast_bridged_channel(spyee_autochan->chan)))) {
-		ast_channel_lock(spyee_bridge_autochan->chan);
-		if (start_spying(spyee_bridge_autochan, spyer_name, &csth.bridge_whisper_audiohook)) {
-			ast_log(LOG_WARNING, "Unable to attach barge audiohook on spyee %s. Barge mode disabled!\n", name);
+	if (ast_test_flag(flags, OPTION_WHISPER | OPTION_BARGE | OPTION_DTMF_SWITCH_MODES)) {
+		/* This audiohook will let us inject audio from our channel into the
+		   channel we are currently spying on.
+		*/
+		ast_audiohook_init(&csth.whisper_audiohook, AST_AUDIOHOOK_TYPE_WHISPER, "ChanSpy");
+
+		if (start_spying(spyee_autochan, spyer_name, &csth.whisper_audiohook)) {
+			ast_log(LOG_WARNING, "Unable to attach whisper audiohook to spyee %s. Whisper mode disabled!\n", name);
 		}
-		ast_channel_unlock(spyee_bridge_autochan->chan);
+	}
+
+	if (ast_test_flag(flags, OPTION_BARGE | OPTION_DTMF_SWITCH_MODES)) {
+		/* And this hook lets us inject audio into the channel that the spied on
+		   channel is currently bridged with.
+		*/
+		ast_audiohook_init(&csth.bridge_whisper_audiohook, AST_AUDIOHOOK_TYPE_WHISPER, "Chanspy");
+
+		if ((spyee_bridge_autochan = ast_autochan_setup(ast_bridged_channel(spyee_autochan->chan)))) {
+			ast_channel_lock(spyee_bridge_autochan->chan);
+			if (start_spying(spyee_bridge_autochan, spyer_name, &csth.bridge_whisper_audiohook)) {
+				ast_log(LOG_WARNING, "Unable to attach barge audiohook on spyee %s. Barge mode disabled!\n", name);
+			}
+			ast_channel_unlock(spyee_bridge_autochan->chan);
+		}
 	}
 
 	ast_channel_lock(chan);
@@ -678,15 +699,19 @@ static int channel_spy(struct ast_channel *chan, struct ast_autochan *spyee_auto
 	ast_clear_flag(chan, AST_FLAG_END_DTMF_ONLY);
 	ast_channel_unlock(chan);
 
-	ast_audiohook_lock(&csth.whisper_audiohook);
-	ast_audiohook_detach(&csth.whisper_audiohook);
-	ast_audiohook_unlock(&csth.whisper_audiohook);
-	ast_audiohook_destroy(&csth.whisper_audiohook);
-	
-	ast_audiohook_lock(&csth.bridge_whisper_audiohook);
-	ast_audiohook_detach(&csth.bridge_whisper_audiohook);
-	ast_audiohook_unlock(&csth.bridge_whisper_audiohook);
-	ast_audiohook_destroy(&csth.bridge_whisper_audiohook);
+	if (ast_test_flag(flags, OPTION_WHISPER | OPTION_BARGE | OPTION_DTMF_SWITCH_MODES)) {
+		ast_audiohook_lock(&csth.whisper_audiohook);
+		ast_audiohook_detach(&csth.whisper_audiohook);
+		ast_audiohook_unlock(&csth.whisper_audiohook);
+		ast_audiohook_destroy(&csth.whisper_audiohook);
+	}
+
+	if (ast_test_flag(flags, OPTION_BARGE | OPTION_DTMF_SWITCH_MODES)) {
+		ast_audiohook_lock(&csth.bridge_whisper_audiohook);
+		ast_audiohook_detach(&csth.bridge_whisper_audiohook);
+		ast_audiohook_unlock(&csth.bridge_whisper_audiohook);
+		ast_audiohook_destroy(&csth.bridge_whisper_audiohook);
+	}
 
 	ast_audiohook_lock(&csth.spy_audiohook);
 	ast_audiohook_detach(&csth.spy_audiohook);
@@ -707,6 +732,7 @@ static struct ast_autochan *next_channel(struct ast_channel_iterator *iter,
 		struct ast_autochan *autochan, struct ast_channel *chan)
 {
 	struct ast_channel *next;
+	struct ast_autochan *autochan_store;
 	const size_t pseudo_len = strlen("DAHDI/pseudo");
 
 	if (!iter) {
@@ -724,7 +750,10 @@ redo:
 		goto redo;
 	}
 
-	return ast_autochan_setup(next);
+	autochan_store = ast_autochan_setup(next);
+	ast_channel_unref(next);
+
+	return autochan_store;
 }
 
 static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
@@ -796,11 +825,13 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 		}
 
 		if (!iter) {
-			return -1;
+			res = -1;
+			goto exit;
 		}
 
 		res = ast_waitfordigit(chan, waitms);
 		if (res < 0) {
+			iter = ast_channel_iterator_destroy(iter);
 			ast_clear_flag(chan, AST_FLAG_SPYING);
 			break;
 		}
@@ -808,10 +839,12 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 			char tmp[2];
 			tmp[0] = res;
 			tmp[1] = '\0';
-			if (!ast_goto_if_exists(chan, exitcontext, tmp, 1))
+			if (!ast_goto_if_exists(chan, exitcontext, tmp, 1)) {
+				iter = ast_channel_iterator_destroy(iter);
 				goto exit;
-			else
+			} else {
 				ast_debug(2, "Exit by single digit did not work in chanspy. Extension %s does not exist in context %s\n", tmp, exitcontext);
+			}
 		}
 
 		/* reset for the next loop around, unless overridden later */
@@ -950,10 +983,12 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 
 			if (res == -1) {
 				ast_autochan_destroy(autochan);
+				iter = ast_channel_iterator_destroy(iter);
 				goto exit;
 			} else if (res == -2) {
 				res = 0;
 				ast_autochan_destroy(autochan);
+				iter = ast_channel_iterator_destroy(iter);
 				goto exit;
 			} else if (res > 1 && spec) {
 				struct ast_channel *next;
@@ -973,6 +1008,7 @@ static int common_exec(struct ast_channel *chan, struct ast_flags *flags,
 					}
 				}
 			} else if (res == 0 && ast_test_flag(flags, OPTION_EXITONHANGUP)) {
+				iter = ast_channel_iterator_destroy(iter);
 				goto exit;
 			}
 		}

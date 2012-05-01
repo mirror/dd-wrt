@@ -31,11 +31,12 @@
 	<depend>iksemel</depend>
 	<depend>res_jabber</depend>
 	<use>openssl</use>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 291758 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 346086 $")
 
 #include <sys/socket.h>
 #include <fcntl.h>
@@ -584,7 +585,6 @@ static int jingle_create_candidates(struct jingle *client, struct jingle_pvt *p,
 	struct ast_sockaddr sin_tmp;
 	struct ast_sockaddr us_tmp;
 	struct ast_sockaddr bindaddr_tmp;
-	struct sockaddr_in dest;
 	struct in_addr us;
 	struct in_addr externaddr;
 	iks *iq, *jingle, *content, *transport, *candidate;
@@ -665,9 +665,6 @@ static int jingle_create_candidates(struct jingle *client, struct jingle_pvt *p,
 		ours2 = NULL;
 	}
 	ours1 = NULL;
-	dest.sin_addr = __ourip;
-	dest.sin_port = sin.sin_port;
-
 
 	for (tmp = p->ourcandidates; tmp; tmp = tmp->next) {
 		snprintf(component, sizeof(component), "%u", tmp->component);
@@ -743,7 +740,7 @@ static struct jingle_pvt *jingle_alloc(struct jingle *client, const char *from, 
 {
 	struct jingle_pvt *tmp = NULL;
 	struct aji_resource *resources = NULL;
-	struct aji_buddy *buddy;
+	struct aji_buddy *buddy = NULL;
 	char idroster[200];
 	struct ast_sockaddr bindaddr_tmp;
 
@@ -751,8 +748,9 @@ static struct jingle_pvt *jingle_alloc(struct jingle *client, const char *from, 
 	if (!sid && !strchr(from, '/')) {	/* I started call! */
 		if (!strcasecmp(client->name, "guest")) {
 			buddy = ASTOBJ_CONTAINER_FIND(&client->connection->buddies, from);
-			if (buddy)
+			if (buddy) {
 				resources = buddy->resources;
+			}
 		} else if (client->buddy)
 			resources = client->buddy->resources;
 		while (resources) {
@@ -765,7 +763,13 @@ static struct jingle_pvt *jingle_alloc(struct jingle *client, const char *from, 
 			snprintf(idroster, sizeof(idroster), "%s/%s", from, resources->resource);
 		else {
 			ast_log(LOG_ERROR, "no jingle capable clients to talk to.\n");
+			if (buddy) {
+				ASTOBJ_UNREF(buddy, ast_aji_buddy_destroy);
+			}
 			return NULL;
+		}
+		if (buddy) {
+			ASTOBJ_UNREF(buddy, ast_aji_buddy_destroy);
 		}
 	}
 	if (!(tmp = ast_calloc(1, sizeof(*tmp)))) {
@@ -981,15 +985,18 @@ static int jingle_newcall(struct jingle *client, ikspak *pak)
 		tmp = tmp->next;
 	}
 
- 	if (!strcasecmp(client->name, "guest")){
- 		/* the guest account is not tied to any configured XMPP client,
- 		   let's set it now */
- 		client->connection = ast_aji_get_client(from);
- 		if (!client->connection) {
- 			ast_log(LOG_ERROR, "No XMPP client to talk to, us (partial JID) : %s\n", from);
- 			return -1;
- 		}
- 	}
+	if (!strcasecmp(client->name, "guest")){
+		/* the guest account is not tied to any configured XMPP client,
+		   let's set it now */
+		if (client->connection) {
+			ASTOBJ_UNREF(client->connection, ast_aji_client_destroy);
+		}
+		client->connection = ast_aji_get_client(from);
+		if (!client->connection) {
+			ast_log(LOG_ERROR, "No XMPP client to talk to, us (partial JID) : %s\n", from);
+			return -1;
+		}
+	}
 
 	p = jingle_alloc(client, pak->from->partial, iks_find_attrib(pak->query, JINGLE_SID));
 	if (!p) {
@@ -1526,6 +1533,9 @@ static struct ast_channel *jingle_request(const char *type, format_t format, con
 	if (!strcasecmp(client->name, "guest")){
 		/* the guest account is not tied to any configured XMPP client,
 		   let's set it now */
+		if (client->connection) {
+			ASTOBJ_UNREF(client->connection, ast_aji_client_destroy);
+		}
 		client->connection = ast_aji_get_client(sender);
 		if (!client->connection) {
 			ast_log(LOG_ERROR, "No XMPP client to talk to, us (partial JID) : %s\n", sender);
@@ -1855,6 +1865,9 @@ static int jingle_load_config(void)
 					ASTOBJ_CONTAINER_TRAVERSE(clients, 1, {
 						ASTOBJ_WRLOCK(iterator);
 						ASTOBJ_WRLOCK(member);
+						if (member->connection) {
+							ASTOBJ_UNREF(member->connection, ast_aji_client_destroy);
+						}
 						member->connection = NULL;
 						iks_filter_add_rule(iterator->f, jingle_parser, member, IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_NS,	JINGLE_NS, IKS_RULE_DONE);
 						iks_filter_add_rule(iterator->f, jingle_parser, member, IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_NS,	JINGLE_DTMF_NS, IKS_RULE_DONE);

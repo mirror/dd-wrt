@@ -24,10 +24,11 @@
 
 /*** MODULEINFO
 	<depend>res_ael_share</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 298960 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include "asterisk/paths.h"	/* CONFIG_DIR */
 #include <locale.h>

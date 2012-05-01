@@ -83,6 +83,24 @@ enum sig_pri_law {
 	SIG_PRI_ALAW
 };
 
+/*! Call establishment life cycle level for simple comparisons. */
+enum sig_pri_call_level {
+	/*! Call does not exist. */
+	SIG_PRI_CALL_LEVEL_IDLE,
+	/*! Call is present but has no response yet. (SETUP) */
+	SIG_PRI_CALL_LEVEL_SETUP,
+	/*! Call is collecting digits for overlap dialing. (SETUP ACKNOWLEDGE) */
+	SIG_PRI_CALL_LEVEL_OVERLAP,
+	/*! Call routing is happening. (PROCEEDING) */
+	SIG_PRI_CALL_LEVEL_PROCEEDING,
+	/*! Called party is being alerted of the call. (ALERTING) */
+	SIG_PRI_CALL_LEVEL_ALERTING,
+	/*! Call is dialing 'w' deferred digits. (CONNECT) */
+	SIG_PRI_CALL_LEVEL_DEFER_DIAL,
+	/*! Call is connected/answered. (CONNECT) */
+	SIG_PRI_CALL_LEVEL_CONNECT,
+};
+
 struct sig_pri_span;
 
 struct sig_pri_callback {
@@ -111,6 +129,7 @@ struct sig_pri_callback {
 	void (* const set_alarm)(void *pvt, int in_alarm);
 	void (* const set_dialing)(void *pvt, int is_dialing);
 	void (* const set_digital)(void *pvt, int is_digital);
+	void (* const set_outgoing)(void *pvt, int is_outgoing);
 	void (* const set_callerid)(void *pvt, const struct ast_party_caller *caller);
 	void (* const set_dnid)(void *pvt, const char *dnid);
 	void (* const set_rdnis)(void *pvt, const char *rdnis);
@@ -120,8 +139,19 @@ struct sig_pri_callback {
 	const char *(* const get_orig_dialstring)(void *pvt);
 	void (* const make_cc_dialstring)(void *pvt, char *buf, size_t buf_size);
 	void (* const update_span_devstate)(struct sig_pri_span *pri);
+	void (* const dial_digits)(void *pvt, const char *dial_string);
 
 	void (* const open_media)(void *pvt);
+
+	/*!
+	 * \brief Post an AMI B channel association event.
+	 *
+	 * \param pvt Private structure of the user of this module.
+	 * \param chan Channel associated with the private pointer
+	 *
+	 * \return Nothing
+	 */
+	void (* const ami_channel_event)(void *pvt, struct ast_channel *chan);
 
 	/*! Reference the parent module. */
 	void (*module_ref)(void);
@@ -201,6 +231,8 @@ struct sig_pri_chan {
 	/*! \brief Keypad digits that came in with the SETUP message. */
 	char keypad_digits[AST_MAX_EXTENSION];
 #endif	/* defined(HAVE_PRI_SETUP_KEYPAD) */
+	/*! 'w' deferred dialing digits. */
+	char deferred_digits[AST_MAX_EXTENSION];
 
 #if defined(HAVE_PRI_AOC_EVENTS)
 	struct pri_subcmd_aoc_e aoc_e;
@@ -210,14 +242,22 @@ struct sig_pri_chan {
 	unsigned int holding_aoce:1;     /*!< received AOC-E msg from asterisk. holding for disconnect/release */
 #endif	/* defined(HAVE_PRI_AOC_EVENTS) */
 	unsigned int inalarm:1;
-	unsigned int alerting:1;		/*!< TRUE if channel is alerting/ringing */
 	unsigned int alreadyhungup:1;	/*!< TRUE if the call has already gone/hungup */
 	unsigned int isidlecall:1;		/*!< TRUE if this is an idle call */
-	unsigned int proceeding:1;		/*!< TRUE if call is in a proceeding state */
-	unsigned int progress:1;		/*!< TRUE if the call has seen progress through the network */
+	unsigned int progress:1;		/*!< TRUE if the call has seen inband-information progress through the network */
 	unsigned int resetting:1;		/*!< TRUE if this channel is being reset/restarted */
-	unsigned int setup_ack:1;		/*!< TRUE if this channel has received a SETUP_ACKNOWLEDGE */
 
+	/*!
+	 * \brief TRUE when this channel is allocated.
+	 *
+	 * \details
+	 * Needed to hold an outgoing channel allocation before the
+	 * owner pointer is created.
+	 *
+	 * \note This is one of several items to check to see if a
+	 * channel is available for use.
+	 */
+	unsigned int allocated:1;
 	unsigned int outgoing:1;
 	unsigned int digital:1;
 	/*! \brief TRUE if this interface has no B channel.  (call hold and call waiting) */
@@ -232,6 +272,8 @@ struct sig_pri_chan {
 	struct sig_pri_span *pri;
 	q931_call *call;				/*!< opaque libpri call control structure */
 
+	/*! Call establishment life cycle level for simple comparisons. */
+	enum sig_pri_call_level call_level;
 	int prioffset;					/*!< channel number in span */
 	int logicalspan;				/*!< logical span number within trunk group */
 	int mastertrunkgroup;			/*!< what trunk group is our master */
@@ -291,6 +333,10 @@ struct sig_pri_span {
 	int qsigchannelmapping;							/*!< QSIG channel mapping type */
 	int discardremoteholdretrieval;					/*!< shall remote hold or remote retrieval notifications be discarded? */
 	int facilityenable;								/*!< Enable facility IEs */
+#if defined(HAVE_PRI_L2_PERSISTENCE)
+	/*! Layer 2 persistence option. */
+	int l2_persistence;
+#endif	/* defined(HAVE_PRI_L2_PERSISTENCE) */
 	int dchan_logical_span[SIG_PRI_NUM_DCHANS];		/*!< Logical offset the DCHAN sits in */
 	int fds[SIG_PRI_NUM_DCHANS];					/*!< FD's for d-channels */
 
@@ -459,6 +505,7 @@ int sig_pri_indicate(struct sig_pri_chan *p, struct ast_channel *chan, int condi
 
 int sig_pri_answer(struct sig_pri_chan *p, struct ast_channel *ast);
 
+int sig_pri_is_chan_available(struct sig_pri_chan *pvt);
 int sig_pri_available(struct sig_pri_chan **pvt, int is_specific_channel);
 
 void sig_pri_init_pri(struct sig_pri_span *pri);
@@ -466,10 +513,12 @@ void sig_pri_init_pri(struct sig_pri_span *pri);
 /* If return 0, it means this function was able to handle it (pre setup digits).  If non zero, the user of this
  * functions should handle it normally (generate inband DTMF) */
 int sig_pri_digit_begin(struct sig_pri_chan *pvt, struct ast_channel *ast, char digit);
+void sig_pri_dial_complete(struct sig_pri_chan *pvt, struct ast_channel *ast);
 
 void sig_pri_stop_pri(struct sig_pri_span *pri);
 int sig_pri_start_pri(struct sig_pri_span *pri);
 
+void sig_pri_set_alarm(struct sig_pri_chan *p, int in_alarm);
 void sig_pri_chan_alarm_notify(struct sig_pri_chan *p, int noalarm);
 
 void pri_event_alarm(struct sig_pri_span *pri, int index, int before_start_pri);
@@ -483,6 +532,8 @@ void sig_pri_chan_delete(struct sig_pri_chan *doomed);
 
 int pri_is_up(struct sig_pri_span *pri);
 
+void sig_pri_cli_show_channels_header(int fd);
+void sig_pri_cli_show_channels(int fd, struct sig_pri_span *pri);
 void sig_pri_cli_show_spans(int fd, int span, struct sig_pri_span *pri);
 
 void sig_pri_cli_show_span(int fd, int *dchannels, struct sig_pri_span *pri);
@@ -499,7 +550,7 @@ void sig_pri_fixup(struct ast_channel *oldchan, struct ast_channel *newchan, str
 int sig_pri_cc_agent_init(struct ast_cc_agent *agent, struct sig_pri_chan *pvt_chan);
 int sig_pri_cc_agent_start_offer_timer(struct ast_cc_agent *agent);
 int sig_pri_cc_agent_stop_offer_timer(struct ast_cc_agent *agent);
-void sig_pri_cc_agent_req_ack(struct ast_cc_agent *agent);
+void sig_pri_cc_agent_req_rsp(struct ast_cc_agent *agent, enum ast_cc_agent_response_reason reason);
 int sig_pri_cc_agent_status_req(struct ast_cc_agent *agent);
 int sig_pri_cc_agent_stop_ringing(struct ast_cc_agent *agent);
 int sig_pri_cc_agent_party_b_free(struct ast_cc_agent *agent);

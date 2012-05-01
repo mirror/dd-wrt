@@ -73,11 +73,16 @@ typedef enum {
 
 /*! \brief Structure for variables, used for configurations and for channel variables */
 struct ast_variable {
+	/*! Variable name.  Stored in stuff[] at struct end. */
 	const char *name;
+	/*! Variable value.  Stored in stuff[] at struct end. */
 	const char *value;
+
+	/*! Next node in the list. */
 	struct ast_variable *next;
 
-	char *file;
+	/*! Filename where variable found.  Stored in stuff[] at struct end. */
+	const char *file;
 
 	int lineno;
 	int object;		/*!< 0 for variable, 1 for object */
@@ -85,6 +90,10 @@ struct ast_variable {
 	struct ast_comment *precomments;
 	struct ast_comment *sameline;
 	struct ast_comment *trailing; /*!< the last object in the list will get assigned any trailing comments when EOF is hit */
+	/*!
+	 * \brief Contents of file, name, and value in that order stuffed here.
+	 * \note File must be stuffed before name because of ast_include_rename().
+	 */
 	char stuff[0];
 };
 
@@ -349,6 +358,9 @@ int ast_realtime_require_field(const char *family, ...) attribute_sentinel;
  * is thus stored inside a traditional ast_config structure rather than
  * just returning a linked list of variables.
  *
+ * \return An ast_config with one or more results
+ * \retval NULL Error or no results returned
+ *
  * \note You should use the constant SENTINEL to terminate arguments, in
  * order to preserve cross-platform compatibility.
  */
@@ -436,6 +448,17 @@ int ast_check_realtime(const char *family);
 
 /*! \brief Check if there's any realtime engines loaded */
 int ast_realtime_enabled(void);
+
+/*!
+ * \brief Duplicate variable list
+ * \param var the linked list of variables to clone
+ * \return A duplicated list which you'll need to free with
+ * ast_variables_destroy or NULL when out of memory.
+ *
+ * \note Do not depend on this to copy more than just name, value and filename
+ * (the arguments to ast_variables_new).
+ */
+struct ast_variable *ast_variables_dup(struct ast_variable *var);
 
 /*!
  * \brief Free variable list

@@ -33,9 +33,13 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 258190 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 336716 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_MONITOR_DIR */
 #include "asterisk/file.h"
@@ -99,6 +103,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 258190 $")
 		</syntax>
 		<description>
 			<para>Records the audio on the current channel to the specified file.</para>
+			<para>This application does not automatically answer and should be preceeded by
+			an application such as Answer or Progress().</para>
 			<variablelist>
 				<variable name="MIXMONITOR_FILENAME">
 					<para>Will contain the filename used to record.</para>
@@ -280,6 +286,7 @@ static void *mixmonitor_thread(void *obj)
 	struct ast_filestream **fs = NULL;
 	unsigned int oflags;
 	char *ext;
+	char *last_slash;
 	int errflag = 0;
 
 	ast_verb(2, "Begin MixMonitor Recording %s\n", mixmonitor->name);
@@ -311,7 +318,8 @@ static void *mixmonitor_thread(void *obj)
 				oflags = O_CREAT | O_WRONLY;
 				oflags |= ast_test_flag(mixmonitor, MUXFLAG_APPEND) ? O_APPEND : O_TRUNC;
 
-				if ((ext = strrchr(mixmonitor->filename, '.')))
+				last_slash = strrchr(mixmonitor->filename, '/');
+				if ((ext = strrchr(mixmonitor->filename, '.')) && (ext > last_slash))
 					*(ext++) = '\0';
 				else
 					ext = "raw";

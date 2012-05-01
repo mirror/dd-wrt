@@ -19,7 +19,7 @@
  */
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 298960 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 342487 $")
 
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
@@ -60,7 +60,7 @@ struct astobj2 {
 };
 
 #ifdef AST_DEVMODE
-#define AO2_DEBUG 1
+/* #define AO2_DEBUG 1 */
 #endif
 
 #ifdef AO2_DEBUG
@@ -210,14 +210,19 @@ int __ao2_ref_debug(void *user_data, const int delta, char *tag, char *file, int
 		return -1;
 
 	if (delta != 0) {
-		FILE *refo = fopen(REF_FILE,"a");
-		fprintf(refo, "%p %s%d   %s:%d:%s (%s) [@%d]\n", user_data, (delta<0? "":"+"), delta, file, line, funcname, tag, obj ? obj->priv_data.ref_counter : -1);
-		fclose(refo);
+		FILE *refo = fopen(REF_FILE, "a");
+		if (refo) {
+			fprintf(refo, "%p %s%d   %s:%d:%s (%s) [@%d]\n", user_data, (delta < 0 ? "" : "+"),
+				delta, file, line, funcname, tag, obj ? obj->priv_data.ref_counter : -1);
+			fclose(refo);
+		}
 	}
 	if (obj->priv_data.ref_counter + delta == 0 && obj->priv_data.destructor_fn != NULL) { /* this isn't protected with lock; just for o/p */
-			FILE *refo = fopen(REF_FILE,"a"); 	 
-			fprintf(refo, "%p **call destructor** %s:%d:%s (%s)\n", user_data, file, line, funcname, tag); 	 
+		FILE *refo = fopen(REF_FILE, "a");
+		if (refo) {
+			fprintf(refo, "%p **call destructor** %s:%d:%s (%s)\n", user_data, file, line, funcname, tag);
 			fclose(refo);
+		}
 	}
 	return internal_ao2_ref(user_data, delta);
 }
@@ -319,14 +324,13 @@ void *__ao2_alloc_debug(size_t data_size, ao2_destructor_fn destructor_fn, char 
 {
 	/* allocation */
 	void *obj;
-	FILE *refo = ref_debug ? fopen(REF_FILE,"a") : NULL;
+	FILE *refo;
 
 	if ((obj = internal_ao2_alloc(data_size, destructor_fn, file, line, funcname)) == NULL) {
-		fclose(refo);
 		return NULL;
 	}
 
-	if (refo) {
+	if (ref_debug && (refo = fopen(REF_FILE, "a"))) {
 		fprintf(refo, "%p =1   %s:%d:%s (%s)\n", obj, file, line, funcname, tag);
 		fclose(refo);
 	}
@@ -693,7 +697,11 @@ static void *internal_ao2_callback(struct ao2_container *c,
 			 * link the object into the container that will hold the results.
 			 */
 			if (ret && (multi_container != NULL)) {
-				__ao2_link(multi_container, ret);
+				if (tag) {
+					__ao2_link_debug(multi_container, ret, tag, file, line, funcname);
+				} else {
+					__ao2_link(multi_container, ret);
+				}
 				ret = NULL;
 			}
 

@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #if !defined(STANDALONE)
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 245497 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 309808 $")
 #else
 #ifndef __USE_ISOC99
 #define __USE_ISOC99 1
@@ -65,10 +65,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 245497 $")
 #include "asterisk/channel.h"
 #endif
 
-/*!\note The latest Flex uses fwrite without checking its return value, which
- * is a warning on some compilers.  Therefore, we use this workaround, to trick
- * the compiler into suppressing this warning. */
-#define fwrite(a,b,c,d)	do { int __res = fwrite(a,b,c,d); (__res); } while (0)
+/* Conditionally redefine the macro from flex 2.5.35, in case someone uses flex <2.5.35 to regenerate this file. */
+#ifndef ECHO
+#define ECHO do { if (fwrite( yytext, yyleng, 1, yyout )) {} } while (0)
+#endif
 
 enum valtype {
 	AST_EXPR_number, AST_EXPR_numeric_string, AST_EXPR_string
@@ -468,7 +468,7 @@ int ast_yyerror (const char *s,  yyltype *loc, struct parse_io *parseio )
 			(extra_error_message_supplied?extra_error_message:""), s2, parseio->string,spacebuf2);
 #endif
 #ifndef STANDALONE
-	ast_log(LOG_WARNING,"If you have questions, please refer to doc/tex/channelvariables.tex.\n");
+	ast_log(LOG_WARNING,"If you have questions, please refer to https://wiki.asterisk.org/wiki/display/AST/Channel+Variables\n");
 #endif
 	free(s2);
 	return(0);

@@ -22,8 +22,12 @@
  *
  */
 
+/*** MODULEINFO
+	<support_level>extended</support_level>
+ ***/
+
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 159818 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 #include "asterisk.h"
 
 #include <newt.h>

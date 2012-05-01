@@ -37,7 +37,7 @@ extern "C" {
 
 struct ast_codec_pref {
 	char order[sizeof(format_t) * 8];
-	char framing[sizeof(format_t) * 8];
+	int framing[64]; /*!< Magic numbers are bad, but this just needs to be bigger than ARRAY_LEN(AST_FORMAT_LIST) */
 };
 
 /*!
@@ -278,6 +278,7 @@ extern struct ast_frame ast_null_frame;
 #define AST_FORMAT_PNG        (1ULL << 17)
 /*! H.261 Video */
 #define AST_FORMAT_H261       (1ULL << 18)
+#define AST_FORMAT_FIRST_VIDEO_BIT AST_FORMAT_H261
 /*! H.263 Video */
 #define AST_FORMAT_H263       (1ULL << 19)
 /*! H.263+ Video */
@@ -304,35 +305,37 @@ extern struct ast_frame ast_null_frame;
 #define AST_FORMAT_RESERVED   (1ULL << 63)
 
 enum ast_control_frame_type {
-	AST_CONTROL_HANGUP = 1,		/*!< Other end has hungup */
-	AST_CONTROL_RING = 2,		/*!< Local ring */
-	AST_CONTROL_RINGING = 3,	/*!< Remote end is ringing */
-	AST_CONTROL_ANSWER = 4,		/*!< Remote end has answered */
-	AST_CONTROL_BUSY = 5,		/*!< Remote end is busy */
+	AST_CONTROL_HANGUP = 1,			/*!< Other end has hungup */
+	AST_CONTROL_RING = 2,			/*!< Local ring */
+	AST_CONTROL_RINGING = 3,		/*!< Remote end is ringing */
+	AST_CONTROL_ANSWER = 4,			/*!< Remote end has answered */
+	AST_CONTROL_BUSY = 5,			/*!< Remote end is busy */
 	AST_CONTROL_TAKEOFFHOOK = 6,	/*!< Make it go off hook */
-	AST_CONTROL_OFFHOOK = 7,	/*!< Line is off hook */
-	AST_CONTROL_CONGESTION = 8,	/*!< Congestion (circuits busy) */
-	AST_CONTROL_FLASH = 9,		/*!< Flash hook */
-	AST_CONTROL_WINK = 10,		/*!< Wink */
-	AST_CONTROL_OPTION = 11,	/*!< Set a low-level option */
-	AST_CONTROL_RADIO_KEY = 12,	/*!< Key Radio */
+	AST_CONTROL_OFFHOOK = 7,		/*!< Line is off hook */
+	AST_CONTROL_CONGESTION = 8,		/*!< Congestion (circuits busy) */
+	AST_CONTROL_FLASH = 9,			/*!< Flash hook */
+	AST_CONTROL_WINK = 10,			/*!< Wink */
+	AST_CONTROL_OPTION = 11,		/*!< Set a low-level option */
+	AST_CONTROL_RADIO_KEY = 12,		/*!< Key Radio */
 	AST_CONTROL_RADIO_UNKEY = 13,	/*!< Un-Key Radio */
-	AST_CONTROL_PROGRESS = 14,	/*!< Indicate PROGRESS */
+	AST_CONTROL_PROGRESS = 14,		/*!< Indicate PROGRESS */
 	AST_CONTROL_PROCEEDING = 15,	/*!< Indicate CALL PROCEEDING */
-	AST_CONTROL_HOLD = 16,		/*!< Indicate call is placed on hold */
-	AST_CONTROL_UNHOLD = 17,	/*!< Indicate call is left from hold */
-	AST_CONTROL_VIDUPDATE = 18,	/*!< Indicate video frame update */
-	_XXX_AST_CONTROL_T38 = 19,	/*!< T38 state change request/notification \deprecated This is no longer supported. Use AST_CONTROL_T38_PARAMETERS instead. */
-	AST_CONTROL_SRCUPDATE = 20,     /*!< Indicate source of media has changed */
-	AST_CONTROL_TRANSFER = 21,      /*!< Indicate status of a transfer request */
+	AST_CONTROL_HOLD = 16,			/*!< Indicate call is placed on hold */
+	AST_CONTROL_UNHOLD = 17,		/*!< Indicate call is left from hold */
+	AST_CONTROL_VIDUPDATE = 18,		/*!< Indicate video frame update */
+	_XXX_AST_CONTROL_T38 = 19,		/*!< T38 state change request/notification \deprecated This is no longer supported. Use AST_CONTROL_T38_PARAMETERS instead. */
+	AST_CONTROL_SRCUPDATE = 20,		/*!< Indicate source of media has changed */
+	AST_CONTROL_TRANSFER = 21,		/*!< Indicate status of a transfer request */
 	AST_CONTROL_CONNECTED_LINE = 22,/*!< Indicate connected line has changed */
-	AST_CONTROL_REDIRECTING = 23,    /*!< Indicate redirecting id has changed */
-	AST_CONTROL_T38_PARAMETERS = 24, /*! T38 state change request/notification with parameters */
-	AST_CONTROL_CC = 25, /*!< Indication that Call completion service is possible */
-	AST_CONTROL_SRCCHANGE = 26,  /*!< Media source has changed and requires a new RTP SSRC */
-	AST_CONTROL_READ_ACTION = 27, /*!< Tell ast_read to take a specific action */
-	AST_CONTROL_AOC = 28,           /*!< Advice of Charge with encoded generic AOC payload */
+	AST_CONTROL_REDIRECTING = 23,	/*!< Indicate redirecting id has changed */
+	AST_CONTROL_T38_PARAMETERS = 24,/*!< T38 state change request/notification with parameters */
+	AST_CONTROL_CC = 25,			/*!< Indication that Call completion service is possible */
+	AST_CONTROL_SRCCHANGE = 26,		/*!< Media source has changed and requires a new RTP SSRC */
+	AST_CONTROL_READ_ACTION = 27,	/*!< Tell ast_read to take a specific action */
+	AST_CONTROL_AOC = 28,			/*!< Advice of Charge with encoded generic AOC payload */
 	AST_CONTROL_END_OF_Q = 29,		/*!< Indicate that this position was the end of the channel queue for a softhangup. */
+	AST_CONTROL_INCOMPLETE = 30,	/*!< Indication that the extension dialed is incomplete */
+	AST_CONTROL_UPDATE_RTP_PEER = 31, /*!< Interrupt the bridge and have it update the peer */
 };
 
 enum ast_frame_read_action {
@@ -403,45 +406,51 @@ enum ast_control_transfer {
 #define AST_OPTION_FLAG_WTF		6
 
 /*! Verify touchtones by muting audio transmission 
-	(and reception) and verify the tone is still present */
+ * (and reception) and verify the tone is still present
+ * Option data is a single signed char value 0 or 1 */
 #define AST_OPTION_TONE_VERIFY		1		
 
-/*! Put a compatible channel into TDD (TTY for the hearing-impared) mode */
+/*! Put a compatible channel into TDD (TTY for the hearing-impared) mode
+ * Option data is a single signed char value 0 or 1 */
 #define	AST_OPTION_TDD			2
 
-/*! Relax the parameters for DTMF reception (mainly for radio use) */
+/*! Relax the parameters for DTMF reception (mainly for radio use)
+ * Option data is a single signed char value 0 or 1 */
 #define	AST_OPTION_RELAXDTMF		3
 
-/*! Set (or clear) Audio (Not-Clear) Mode */
+/*! Set (or clear) Audio (Not-Clear) Mode
+ * Option data is a single signed char value 0 or 1 */
 #define	AST_OPTION_AUDIO_MODE		4
 
 /*! Set channel transmit gain 
- * Option data is a single signed char
-   representing number of decibels (dB)
-   to set gain to (on top of any gain
-   specified in channel driver)
-*/
+ * Option data is a single signed char representing number of decibels (dB)
+ * to set gain to (on top of any gain specified in channel driver) */
 #define AST_OPTION_TXGAIN		5
 
 /*! Set channel receive gain
- * Option data is a single signed char
-   representing number of decibels (dB)
-   to set gain to (on top of any gain
-   specified in channel driver)
-*/
+ * Option data is a single signed char representing number of decibels (dB)
+ * to set gain to (on top of any gain specified in channel driver) */
 #define AST_OPTION_RXGAIN		6
 
-/* set channel into "Operator Services" mode */
+/* set channel into "Operator Services" mode 
+ * Option data is a struct oprmode
+ *
+ * \note This option should never be sent over the network */
 #define	AST_OPTION_OPRMODE		7
 
-/*! Explicitly enable or disable echo cancelation for the given channel */
+/*! Explicitly enable or disable echo cancelation for the given channel
+ * Option data is a single signed char value 0 or 1
+ *
+ * \note This option appears to be unused in the code. It is handled, but never
+ * set or queried. */
 #define	AST_OPTION_ECHOCAN		8
 
 /*! \brief Handle channel write data
  * If a channel needs to process the data from a func_channel write operation
  * after func_channel_write executes, it can define the setoption callback
  * and process this option. A pointer to an ast_chan_write_info_t will be passed.
- * */
+ *
+ * \note This option should never be passed over the network. */
 #define AST_OPTION_CHANNEL_WRITE 9
 
 /* !
@@ -450,28 +459,38 @@ enum ast_control_transfer {
  */
 #define AST_OPTION_T38_STATE		10
 
-/*! Request that the channel driver deliver frames in a specific format */
+/*! Request that the channel driver deliver frames in a specific format
+ * Option data is a format_t */
 #define AST_OPTION_FORMAT_READ          11
 
-/*! Request that the channel driver be prepared to accept frames in a specific format */
+/*! Request that the channel driver be prepared to accept frames in a specific format
+ * Option data is a format_t */
 #define AST_OPTION_FORMAT_WRITE         12
 
-/*! Request that the channel driver make two channels of the same tech type compatible if possible */
+/*! Request that the channel driver make two channels of the same tech type compatible if possible
+ * Option data is an ast_channel
+ *
+ * \note This option should never be passed over the network */
 #define AST_OPTION_MAKE_COMPATIBLE      13
 
-/*! Get or set the digit detection state of the channel */
+/*! Get or set the digit detection state of the channel
+ * Option data is a single signed char value 0 or 1 */
 #define AST_OPTION_DIGIT_DETECT		14
 
-/*! Get or set the fax tone detection state of the channel */
+/*! Get or set the fax tone detection state of the channel
+ * Option data is a single signed char value 0 or 1 */
 #define AST_OPTION_FAX_DETECT		15
 
-/*! Get the device name from the channel */
+/*! Get the device name from the channel (Read only)
+ * Option data is a character buffer of suitable length */
 #define AST_OPTION_DEVICE_NAME		16
 
-/*! Get the CC agent type from the channel */
+/*! Get the CC agent type from the channel (Read only) 
+ * Option data is a character buffer of suitable length */
 #define AST_OPTION_CC_AGENT_TYPE    17
 
-/*! Get or set the security options on a channel */
+/*! Get or set the security options on a channel
+ * Option data is an integer value of 0 or 1 */
 #define AST_OPTION_SECURE_SIGNALING        18
 #define AST_OPTION_SECURE_MEDIA            19
 

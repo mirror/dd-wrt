@@ -2,8 +2,8 @@
 ; Static and realtime external configuration
 ; engine configuration
 ;
-; Please read doc/extconfig.txt for basic table
-; formatting information.
+; See https://wiki.asterisk.org/wiki/display/AST/Realtime+Database+Configuration
+; for basic table formatting information.
 ;
 [settings]
 ;
@@ -61,11 +61,14 @@
 ;    curl ... res_config_curl
 ;    ldap ... res_config_ldap
 ;
+; Note: The res_config_pgsql and res_config_sqlite backends configure the
+; database used in their respective configuration files and ignore the
+; database name configured in this file.
+;
 ;iaxusers => odbc,asterisk
 ;iaxpeers => odbc,asterisk
-;sipusers => odbc,asterisk
 ;sippeers => odbc,asterisk
-;sipregs => odbc,asterisk
+;sipregs => odbc,asterisk ; (avoid sipregs if possible, e.g. by using a view)
 ;voicemail => odbc,asterisk
 ;extensions => odbc,asterisk
 ;meetme => mysql,general

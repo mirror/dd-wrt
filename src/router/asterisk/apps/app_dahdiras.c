@@ -27,11 +27,12 @@
 
 /*** MODULEINFO
 	<depend>dahdi</depend>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 199479 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <sys/ioctl.h>
 #include <sys/wait.h>

@@ -28,11 +28,12 @@
 
 /*** MODULEINFO
 	<depend>openssl</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 280058 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_KEY_DIR */
 #include <openssl/ssl.h>
@@ -99,7 +100,8 @@ static int pw_cb(char *buf, int size, int rwflag, void *userdata)
 {
 	struct ast_key *key = (struct ast_key *)userdata;
 	char prompt[256];
-	int res, tmp;
+	int tmp;
+	int res;
 
 	if (key->infd < 0) {
 		/* Note that we were at least called */
@@ -118,6 +120,9 @@ static int pw_cb(char *buf, int size, int rwflag, void *userdata)
 	tmp = ast_hide_password(key->infd);
 	memset(buf, 0, size);
 	res = read(key->infd, buf, size);
+	if (res == -1) {
+		ast_log(LOG_WARNING, "read() failed: %s\n", strerror(errno));
+	}
 	ast_restore_tty(key->infd, tmp);
 	if (buf[strlen(buf) -1] == '\n') {
 		buf[strlen(buf) - 1] = '\0';

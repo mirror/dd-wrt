@@ -42,7 +42,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 268690 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 349728 $")
 
 #include <math.h>
 
@@ -209,9 +209,9 @@ enum gsamp_thresh {
 #define DTMF_GSIZE		102
 
 /* How many successive hits needed to consider begin of a digit */
-#define DTMF_HITS_TO_BEGIN	2
+#define DTMF_HITS_TO_BEGIN	4
 /* How many successive misses needed to consider end of a digit */
-#define DTMF_MISSES_TO_END	3
+#define DTMF_MISSES_TO_END	4
 
 /*!
  * \brief The default silence threshold we will use if an alternate
@@ -723,41 +723,40 @@ static int dtmf_detect(struct ast_dsp *dsp, digit_detect_state_t *s, int16_t amp
 			}
 		} 
 
-		if (s->td.dtmf.current_hit) {
-			/* We are in the middle of a digit already */
-			if (hit != s->td.dtmf.current_hit) {
-				s->td.dtmf.misses++;
-				if (s->td.dtmf.misses == s->td.dtmf.misses_to_end) {
-					/* There were enough misses to consider digit ended */
-					s->td.dtmf.current_hit = 0;
+		if (hit == s->td.dtmf.lasthit) {
+			if (s->td.dtmf.current_hit) {
+				/* We are in the middle of a digit already */
+				if (hit) {
+					if (hit != s->td.dtmf.current_hit) {
+						/* Look for a start of a new digit.
+						   This is because hits_to_begin may be smaller than misses_to_end
+						   and we may find the beginning of new digit before we consider last one ended. */
+						s->td.dtmf.current_hit = 0;
+					} else {
+						/* Current hit was same as last, so increment digit duration (of last digit) */
+						s->digitlen[s->current_digits - 1] += DTMF_GSIZE;
+					}
+				} else {
+					/* No Digit */
+					s->td.dtmf.misses++;
+					if (s->td.dtmf.misses == s->td.dtmf.misses_to_end) {
+						/* There were enough misses to consider digit ended */
+						s->td.dtmf.current_hit = 0;
+					}
 				}
-			} else {
-				s->td.dtmf.misses = 0;
-				/* Current hit was same as last, so increment digit duration (of last digit) */
-				s->digitlen[s->current_digits - 1] += DTMF_GSIZE;
-			}
-		}
-
-		/* Look for a start of a new digit no matter if we are already in the middle of some
-		   digit or not. This is because hits_to_begin may be smaller than misses_to_end
-		   and we may find begin of new digit before we consider last one ended. */
-		if (hit) {
-			if (hit == s->td.dtmf.lasthit) {
+			} else if (hit) {
+				/* Detecting new digit */
 				s->td.dtmf.hits++;
-			} else {
-				s->td.dtmf.hits = 1;
-			}
-
-			if (s->td.dtmf.hits == s->td.dtmf.hits_to_begin && hit != s->td.dtmf.current_hit) {
-				store_digit(s, hit);
-				s->td.dtmf.current_hit = hit;
-				s->td.dtmf.misses = 0;
+				if (s->td.dtmf.hits == s->td.dtmf.hits_to_begin) {
+					store_digit(s, hit);
+					s->td.dtmf.current_hit = hit;
+				}
 			}
 		} else {
-			s->td.dtmf.hits = 0;
+			s->td.dtmf.hits = 1;
+			s->td.dtmf.misses = 1;
+			s->td.dtmf.lasthit = hit;
 		}
-
-		s->td.dtmf.lasthit = hit;
 
 		/* If we had a hit in this block, include it into mute fragment */
 		if (squelch && hit) {
@@ -795,7 +794,6 @@ static int mf_detect(struct ast_dsp *dsp, digit_detect_state_t *s, int16_t amp[]
 	float energy[6];
 	int best;
 	int second_best;
-	float famp;
 	int i;
 	int j;
 	int sample;
@@ -820,7 +818,6 @@ static int mf_detect(struct ast_dsp *dsp, digit_detect_state_t *s, int16_t amp[]
 		/* The following unrolled loop takes only 35% (rough estimate) of the 
 		   time of a rolled loop on the machine on which it was developed */
 		for (j = sample;  j < limit;  j++) {
-			famp = amp[j];
 			/* With GCC 2.95, the following unrolled code seems to take about 35%
 			   (rough estimate) as long as a neat little 0-3 loop */
 			goertzel_sample(s->td.mf.tone_out, amp[j]);
@@ -1241,7 +1238,7 @@ int ast_dsp_busydetect(struct ast_dsp *dsp)
 	}
 	/* If we know the expected busy tone length, check we are in the range */
 	if (res && (dsp->busy_tonelength > 0)) {
-		if (abs(avgtone - dsp->busy_tonelength) > (dsp->busy_tonelength*BUSY_PAT_PERCENT/100)) {
+		if (abs(avgtone - dsp->busy_tonelength) > MAX(dsp->busy_tonelength*BUSY_PAT_PERCENT/100, 20)) {
 #ifdef BUSYDETECT_DEBUG
 			ast_debug(5, "busy detector: avgtone of %d not close enough to desired %d\n",
 				avgtone, dsp->busy_tonelength);
@@ -1252,7 +1249,7 @@ int ast_dsp_busydetect(struct ast_dsp *dsp)
 #ifndef BUSYDETECT_TONEONLY
 	/* If we know the expected busy tone silent-period length, check we are in the range */
 	if (res && (dsp->busy_quietlength > 0)) {
-		if (abs(avgsilence - dsp->busy_quietlength) > (dsp->busy_quietlength*BUSY_PAT_PERCENT/100)) {
+		if (abs(avgsilence - dsp->busy_quietlength) > MAX(dsp->busy_quietlength*BUSY_PAT_PERCENT/100, 20)) {
 #ifdef BUSYDETECT_DEBUG
 		ast_debug(5, "busy detector: avgsilence of %d not close enough to desired %d\n",
 			avgsilence, dsp->busy_quietlength);
@@ -1546,6 +1543,9 @@ struct ast_dsp *ast_dsp_new(void)
 void ast_dsp_set_features(struct ast_dsp *dsp, int features)
 {
 	dsp->features = features;
+	if (!(features & DSP_FEATURE_DIGIT_DETECT)) {
+		dsp->display_inband_dtmf_warning = 0;
+	}
 }
 
 void ast_dsp_free(struct ast_dsp *dsp)

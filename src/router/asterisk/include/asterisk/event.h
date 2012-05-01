@@ -114,7 +114,7 @@ typedef void (*ast_event_cb_t)(const struct ast_event *event, void *userdata);
  * \note A NULL description will cause this function to crash, so watch out!
  */
 struct ast_event_sub *ast_event_subscribe(enum ast_event_type event_type,
-       ast_event_cb_t cb, char *description, void *userdata, ...);
+       ast_event_cb_t cb, const char *description, void *userdata, ...);
 
 /*!
  * \brief Allocate a subscription, but do not activate it
@@ -397,8 +397,7 @@ int ast_event_queue(struct ast_event *event);
  * The event API already knows which events can be cached and how to cache them.
  *
  * \retval 0 success
- * \retval non-zero failure.  If failure is returned, the event must be destroyed
- *         by the caller of this function.
+ * \retval non-zero failure.
  */
 int ast_event_queue_and_cache(struct ast_event *event);
 
@@ -743,6 +742,13 @@ void *ast_event_iterator_get_ie_raw(struct ast_event_iterator *iterator);
  * \return The payload length of the current IE
  */
 uint16_t ast_event_iterator_get_ie_raw_payload_len(struct ast_event_iterator *iterator);
+
+/*!
+ * \brief Get the minimum length of an ast_event.
+ *
+ * \return minimum amount of memory that will be consumed by any ast_event.
+ */
+size_t ast_event_minimum_length(void);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

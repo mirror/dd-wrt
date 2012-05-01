@@ -23,9 +23,13 @@
  * \author Joshua Colp <jcolp@digium.com>
  */
 
+/*** MODULEINFO
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $");
 
 #include "asterisk/channel.h"
 #include "asterisk/module.h"

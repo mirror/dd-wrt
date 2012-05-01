@@ -27,12 +27,13 @@
  */
 
 /*** MODULEINFO
+	<support_level>core</support_level>
 	<depend>curl</depend>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 278132 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 340863 $")
 
 #include <curl/curl.h>
 

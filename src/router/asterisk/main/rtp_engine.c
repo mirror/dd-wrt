@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293803 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 356604 $")
 
 #include <math.h>
 
@@ -39,6 +39,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 293803 $")
 #include "asterisk/pbx.h"
 #include "asterisk/translate.h"
 #include "asterisk/netsock2.h"
+#include "asterisk/framehook.h"
 
 struct ast_srtp_res *res_srtp = NULL;
 struct ast_srtp_policy_res *res_srtp_policy = NULL;
@@ -65,8 +66,8 @@ struct ast_rtp_instance {
 	int timeout;
 	/*! RTP timeout when on hold (negative or zero means disabled, negative value means temporarily disabled). */
 	int holdtimeout;
-	/*! DTMF mode in use */
-	enum ast_rtp_dtmf_mode dtmf_mode;
+	/*! RTP keepalive interval */
+	int keepalive;
 	/*! Glue currently in use */
 	struct ast_rtp_glue *glue;
 	/*! Channel associated with the instance */
@@ -99,6 +100,7 @@ static const struct ast_rtp_mime_type {
 	{{1, AST_FORMAT_ADPCM}, "audio", "DVI4", 8000},
 	{{1, AST_FORMAT_SLINEAR}, "audio", "L16", 8000},
 	{{1, AST_FORMAT_SLINEAR16}, "audio", "L16", 16000},
+	{{1, AST_FORMAT_SLINEAR16}, "audio", "L16-256", 16000},
 	{{1, AST_FORMAT_LPC10}, "audio", "LPC", 8000},
 	{{1, AST_FORMAT_G729A}, "audio", "G729", 8000},
 	{{1, AST_FORMAT_G729A}, "audio", "G729A", 8000},
@@ -562,8 +564,8 @@ int ast_rtp_codecs_payloads_set_rtpmap_type_rate(struct ast_rtp_codecs *codecs, 
 		}
 
 		/* if both sample rates have been supplied, and they don't match,
-		                      then this not a match; if one has not been supplied, then the
-				      rates are not compared */
+		 * then this not a match; if one has not been supplied, then the
+		 * rates are not compared */
 		if (sample_rate && t->sample_rate &&
 		    (sample_rate != t->sample_rate)) {
 			continue;
@@ -743,18 +745,12 @@ int ast_rtp_instance_dtmf_end_with_duration(struct ast_rtp_instance *instance, c
 
 int ast_rtp_instance_dtmf_mode_set(struct ast_rtp_instance *instance, enum ast_rtp_dtmf_mode dtmf_mode)
 {
-	if (!instance->engine->dtmf_mode_set || instance->engine->dtmf_mode_set(instance, dtmf_mode)) {
-		return -1;
-	}
-
-	instance->dtmf_mode = dtmf_mode;
-
-	return 0;
+	return (!instance->engine->dtmf_mode_set || instance->engine->dtmf_mode_set(instance, dtmf_mode)) ? -1 : 0;
 }
 
 enum ast_rtp_dtmf_mode ast_rtp_instance_dtmf_mode_get(struct ast_rtp_instance *instance)
 {
-	return instance->dtmf_mode;
+	return instance->engine->dtmf_mode_get ? instance->engine->dtmf_mode_get(instance) : 0;
 }
 
 void ast_rtp_instance_update_source(struct ast_rtp_instance *instance)
@@ -851,7 +847,8 @@ static enum ast_bridge_result local_bridge_loop(struct ast_channel *c0, struct a
 		if ((c0->tech_pvt != pvt0) ||
 		    (c1->tech_pvt != pvt1) ||
 		    (c0->masq || c0->masqr || c1->masq || c1->masqr) ||
-		    (c0->monitor || c0->audiohooks || c1->monitor || c1->audiohooks)) {
+		    (c0->monitor || c0->audiohooks || c1->monitor || c1->audiohooks) ||
+		    (!ast_framehook_list_is_empty(c0->framehooks) || !ast_framehook_list_is_empty(c1->framehooks))) {
 			ast_debug(1, "rtp-engine-local-bridge: Oooh, something is weird, backing out\n");
 			/* If a masquerade needs to happen we have to try to read in a frame so that it actually happens. Without this we risk being called again and going into a loop */
 			if ((c0->masq || c0->masqr) && (fr = ast_read(c0))) {
@@ -893,7 +890,8 @@ static enum ast_bridge_result local_bridge_loop(struct ast_channel *c0, struct a
 			    (fr->subclass.integer == AST_CONTROL_UNHOLD) ||
 			    (fr->subclass.integer == AST_CONTROL_VIDUPDATE) ||
 			    (fr->subclass.integer == AST_CONTROL_SRCUPDATE) ||
-			    (fr->subclass.integer == AST_CONTROL_T38_PARAMETERS)) {
+			    (fr->subclass.integer == AST_CONTROL_T38_PARAMETERS) ||
+			    (fr->subclass.integer == AST_CONTROL_UPDATE_RTP_PEER)) {
 				/* If we are going on hold, then break callback mode and P2P bridging */
 				if (fr->subclass.integer == AST_CONTROL_HOLD) {
 					if (instance0->engine->local_bridge) {
@@ -914,7 +912,10 @@ static enum ast_bridge_result local_bridge_loop(struct ast_channel *c0, struct a
 					instance0->bridged = instance1;
 					instance1->bridged = instance0;
 				}
-				ast_indicate_data(other, fr->subclass.integer, fr->data.ptr, fr->datalen);
+				/* Since UPDATE_BRIDGE_PEER is only used by the bridging code, don't forward it */
+				if (fr->subclass.integer != AST_CONTROL_UPDATE_RTP_PEER) {
+					ast_indicate_data(other, fr->subclass.integer, fr->data.ptr, fr->datalen);
+				}
 				ast_frfree(fr);
 			} else if (fr->subclass.integer == AST_CONTROL_CONNECTED_LINE) {
 				if (ast_channel_connected_line_macro(who, other, fr, other == c0, 1)) {
@@ -1024,7 +1025,8 @@ static enum ast_bridge_result remote_bridge_loop(struct ast_channel *c0, struct 
 		if ((c0->tech_pvt != pvt0) ||
 		    (c1->tech_pvt != pvt1) ||
 		    (c0->masq || c0->masqr || c1->masq || c1->masqr) ||
-		    (c0->monitor || c0->audiohooks || c1->monitor || c1->audiohooks)) {
+		    (c0->monitor || c0->audiohooks || c1->monitor || c1->audiohooks) ||
+		    (!ast_framehook_list_is_empty(c0->framehooks) || !ast_framehook_list_is_empty(c1->framehooks))) {
 			ast_debug(1, "Oooh, something is weird, backing out\n");
 			res = AST_BRIDGE_RETRY;
 			break;
@@ -1137,7 +1139,8 @@ static enum ast_bridge_result remote_bridge_loop(struct ast_channel *c0, struct 
 			    (fr->subclass.integer == AST_CONTROL_UNHOLD) ||
 			    (fr->subclass.integer == AST_CONTROL_VIDUPDATE) ||
 			    (fr->subclass.integer == AST_CONTROL_SRCUPDATE) ||
-			    (fr->subclass.integer == AST_CONTROL_T38_PARAMETERS)) {
+			    (fr->subclass.integer == AST_CONTROL_T38_PARAMETERS) ||
+				(fr->subclass.integer == AST_CONTROL_UPDATE_RTP_PEER)) {
 				if (fr->subclass.integer == AST_CONTROL_HOLD) {
 					/* If we someone went on hold we want the other side to reinvite back to us */
 					if (who == c0) {
@@ -1145,8 +1148,10 @@ static enum ast_bridge_result remote_bridge_loop(struct ast_channel *c0, struct 
 					} else {
 						glue0->update_peer(c0, NULL, NULL, NULL, 0, 0);
 					}
-				} else if (fr->subclass.integer == AST_CONTROL_UNHOLD) {
-					/* If they went off hold they should go back to being direct */
+				} else if (fr->subclass.integer == AST_CONTROL_UNHOLD ||
+					fr->subclass.integer == AST_CONTROL_UPDATE_RTP_PEER) {
+					/* If they went off hold they should go back to being direct, or if we have
+					 * been told to force a peer update, go ahead and do it. */
 					if (who == c0) {
 						glue1->update_peer(c1, instance0, vinstance0, tinstance0, codec0, 0);
 					} else {
@@ -1165,7 +1170,10 @@ static enum ast_bridge_result remote_bridge_loop(struct ast_channel *c0, struct 
 				if (glue1->get_codec && c1->tech_pvt) {
 					oldcodec1 = codec1 = glue1->get_codec(c1);
 				}
-				ast_indicate_data(other, fr->subclass.integer, fr->data.ptr, fr->datalen);
+				/* Since UPDATE_BRIDGE_PEER is only used by the bridging code, don't forward it */
+				if (fr->subclass.integer != AST_CONTROL_UPDATE_RTP_PEER) {
+					ast_indicate_data(other, fr->subclass.integer, fr->data.ptr, fr->datalen);
+				}
 				ast_frfree(fr);
 			} else if (fr->subclass.integer == AST_CONTROL_CONNECTED_LINE) {
 				if (ast_channel_connected_line_macro(who, other, fr, other == c0, 1)) {
@@ -1202,10 +1210,22 @@ static enum ast_bridge_result remote_bridge_loop(struct ast_channel *c0, struct 
 		cs[1] = cs[2];
 	}
 
-	if (glue0->update_peer(c0, NULL, NULL, NULL, 0, 0)) {
+	if (ast_test_flag(c0, AST_FLAG_ZOMBIE)) {
+		ast_debug(1, "Channel '%s' Zombie cleardown from bridge\n", c0->name);
+	} else if (c0->tech_pvt != pvt0) {
+		ast_debug(1, "Channel c0->'%s' pvt changed, in bridge with c1->'%s'\n", c0->name, c1->name);
+	} else if (glue0 != ast_rtp_instance_get_glue(c0->tech->type)) {
+		ast_debug(1, "Channel c0->'%s' technology changed, in bridge with c1->'%s'\n", c0->name, c1->name);
+	} else if (glue0->update_peer(c0, NULL, NULL, NULL, 0, 0)) {
 		ast_log(LOG_WARNING, "Channel '%s' failed to break RTP bridge\n", c0->name);
 	}
-	if (glue1->update_peer(c1, NULL, NULL, NULL, 0, 0)) {
+	if (ast_test_flag(c1, AST_FLAG_ZOMBIE)) {
+		ast_debug(1, "Channel '%s' Zombie cleardown from bridge\n", c1->name);
+	} else if (c1->tech_pvt != pvt1) {
+		ast_debug(1, "Channel c1->'%s' pvt changed, in bridge with c0->'%s'\n", c1->name, c0->name);
+	} else if (glue1 != ast_rtp_instance_get_glue(c1->tech->type)) {
+		ast_debug(1, "Channel c1->'%s' technology changed, in bridge with c0->'%s'\n", c1->name, c0->name);
+	} else if (glue1->update_peer(c1, NULL, NULL, NULL, 0, 0)) {
 		ast_log(LOG_WARNING, "Channel '%s' failed to break RTP bridge\n", c1->name);
 	}
 
@@ -1234,10 +1254,11 @@ enum ast_bridge_result ast_rtp_instance_bridge(struct ast_channel *c0, struct as
 			*vinstance0 = NULL, *vinstance1 = NULL,
 			*tinstance0 = NULL, *tinstance1 = NULL;
 	struct ast_rtp_glue *glue0, *glue1;
-	struct ast_sockaddr addr1, addr2;
-	enum ast_rtp_glue_result audio_glue0_res = AST_RTP_GLUE_RESULT_FORBID, video_glue0_res = AST_RTP_GLUE_RESULT_FORBID, text_glue0_res = AST_RTP_GLUE_RESULT_FORBID;
-	enum ast_rtp_glue_result audio_glue1_res = AST_RTP_GLUE_RESULT_FORBID, video_glue1_res = AST_RTP_GLUE_RESULT_FORBID, text_glue1_res = AST_RTP_GLUE_RESULT_FORBID;
+	struct ast_sockaddr addr1 = { {0, }, }, addr2 = { {0, }, };
+	enum ast_rtp_glue_result audio_glue0_res = AST_RTP_GLUE_RESULT_FORBID, video_glue0_res = AST_RTP_GLUE_RESULT_FORBID;
+	enum ast_rtp_glue_result audio_glue1_res = AST_RTP_GLUE_RESULT_FORBID, video_glue1_res = AST_RTP_GLUE_RESULT_FORBID;
 	enum ast_bridge_result res = AST_BRIDGE_FAILED;
+	enum ast_rtp_dtmf_mode dmode;
 	format_t codec0 = 0, codec1 = 0;
 	int unlock_chans = 1;
 
@@ -1263,11 +1284,9 @@ enum ast_bridge_result ast_rtp_instance_bridge(struct ast_channel *c0, struct as
 
 	audio_glue0_res = glue0->get_rtp_info(c0, &instance0);
 	video_glue0_res = glue0->get_vrtp_info ? glue0->get_vrtp_info(c0, &vinstance0) : AST_RTP_GLUE_RESULT_FORBID;
-	text_glue0_res = glue0->get_trtp_info ? glue0->get_trtp_info(c0, &tinstance0) : AST_RTP_GLUE_RESULT_FORBID;
 
 	audio_glue1_res = glue1->get_rtp_info(c1, &instance1);
 	video_glue1_res = glue1->get_vrtp_info ? glue1->get_vrtp_info(c1, &vinstance1) : AST_RTP_GLUE_RESULT_FORBID;
-	text_glue1_res = glue1->get_trtp_info ? glue1->get_trtp_info(c1, &tinstance1) : AST_RTP_GLUE_RESULT_FORBID;
 
 	/* If we are carrying video, and both sides are not going to remotely bridge... fail the native bridge */
 	if (video_glue0_res != AST_RTP_GLUE_RESULT_FORBID && (audio_glue0_res != AST_RTP_GLUE_RESULT_REMOTE || video_glue0_res != AST_RTP_GLUE_RESULT_REMOTE)) {
@@ -1295,11 +1314,13 @@ enum ast_bridge_result ast_rtp_instance_bridge(struct ast_channel *c0, struct as
 	}
 
 	/* If we need to get DTMF see if we can do it outside of the RTP stream itself */
-	if ((flags & AST_BRIDGE_DTMF_CHANNEL_0) && instance0->properties[AST_RTP_PROPERTY_DTMF]) {
+	dmode = ast_rtp_instance_dtmf_mode_get(instance0);
+	if ((flags & AST_BRIDGE_DTMF_CHANNEL_0) && dmode) {
 		res = AST_BRIDGE_FAILED_NOWARN;
 		goto done;
 	}
-	if ((flags & AST_BRIDGE_DTMF_CHANNEL_1) && instance1->properties[AST_RTP_PROPERTY_DTMF]) {
+	dmode = ast_rtp_instance_dtmf_mode_get(instance1);
+	if ((flags & AST_BRIDGE_DTMF_CHANNEL_1) && dmode) {
 		res = AST_BRIDGE_FAILED_NOWARN;
 		goto done;
 	}
@@ -1326,10 +1347,10 @@ enum ast_bridge_result ast_rtp_instance_bridge(struct ast_channel *c0, struct as
 
 	/* Depending on the end result for bridging either do a local bridge or remote bridge */
 	if (audio_glue0_res == AST_RTP_GLUE_RESULT_LOCAL || audio_glue1_res == AST_RTP_GLUE_RESULT_LOCAL) {
-		ast_verbose(VERBOSE_PREFIX_3 "Locally bridging %s and %s\n", c0->name, c1->name);
+		ast_verb(3, "Locally bridging %s and %s\n", c0->name, c1->name);
 		res = local_bridge_loop(c0, c1, instance0, instance1, timeoutms, flags, fo, rc, c0->tech_pvt, c1->tech_pvt);
 	} else {
-		ast_verbose(VERBOSE_PREFIX_3 "Remotely bridging %s and %s\n", c0->name, c1->name);
+		ast_verb(3, "Remotely bridging %s and %s\n", c0->name, c1->name);
 		res = remote_bridge_loop(c0, c1, instance0, instance1, vinstance0, vinstance1,
 				tinstance0, tinstance1, glue0, glue1, codec0, codec1, timeoutms, flags,
 				fo, rc, c0->tech_pvt, c1->tech_pvt);
@@ -1369,8 +1390,8 @@ void ast_rtp_instance_early_bridge_make_compatible(struct ast_channel *c0, struc
 		*vinstance0 = NULL, *vinstance1 = NULL,
 		*tinstance0 = NULL, *tinstance1 = NULL;
 	struct ast_rtp_glue *glue0, *glue1;
-	enum ast_rtp_glue_result audio_glue0_res = AST_RTP_GLUE_RESULT_FORBID, video_glue0_res = AST_RTP_GLUE_RESULT_FORBID, text_glue0_res = AST_RTP_GLUE_RESULT_FORBID;
-	enum ast_rtp_glue_result audio_glue1_res = AST_RTP_GLUE_RESULT_FORBID, video_glue1_res = AST_RTP_GLUE_RESULT_FORBID, text_glue1_res = AST_RTP_GLUE_RESULT_FORBID;
+	enum ast_rtp_glue_result audio_glue0_res = AST_RTP_GLUE_RESULT_FORBID, video_glue0_res = AST_RTP_GLUE_RESULT_FORBID;
+	enum ast_rtp_glue_result audio_glue1_res = AST_RTP_GLUE_RESULT_FORBID, video_glue1_res = AST_RTP_GLUE_RESULT_FORBID;
 	format_t codec0 = 0, codec1 = 0;
 	int res = 0;
 
@@ -1390,11 +1411,9 @@ void ast_rtp_instance_early_bridge_make_compatible(struct ast_channel *c0, struc
 
 	audio_glue0_res = glue0->get_rtp_info(c0, &instance0);
 	video_glue0_res = glue0->get_vrtp_info ? glue0->get_vrtp_info(c0, &vinstance0) : AST_RTP_GLUE_RESULT_FORBID;
-	text_glue0_res = glue0->get_trtp_info ? glue0->get_trtp_info(c0, &tinstance0) : AST_RTP_GLUE_RESULT_FORBID;
 
 	audio_glue1_res = glue1->get_rtp_info(c1, &instance1);
 	video_glue1_res = glue1->get_vrtp_info ? glue1->get_vrtp_info(c1, &vinstance1) : AST_RTP_GLUE_RESULT_FORBID;
-	text_glue1_res = glue1->get_trtp_info ? glue1->get_trtp_info(c1, &tinstance1) : AST_RTP_GLUE_RESULT_FORBID;
 
 	/* If we are carrying video, and both sides are not going to remotely bridge... fail the native bridge */
 	if (video_glue0_res != AST_RTP_GLUE_RESULT_FORBID && (audio_glue0_res != AST_RTP_GLUE_RESULT_REMOTE || video_glue0_res != AST_RTP_GLUE_RESULT_REMOTE)) {
@@ -1429,6 +1448,10 @@ void ast_rtp_instance_early_bridge_make_compatible(struct ast_channel *c0, struc
 		ast_rtp_codecs_payloads_copy(&tinstance0->codecs, &tinstance1->codecs, tinstance1);
 	}
 
+        if (glue0->update_peer(c0, instance1, vinstance1, tinstance1, codec1, 0)) {
+                ast_log(LOG_WARNING, "Channel '%s' failed to setup early bridge to '%s'\n", c0->name, c1 ? c1->name : "<unspecified>");
+        }
+
 	res = 0;
 
 done:
@@ -1453,8 +1476,8 @@ int ast_rtp_instance_early_bridge(struct ast_channel *c0, struct ast_channel *c1
 			*vinstance0 = NULL, *vinstance1 = NULL,
 			*tinstance0 = NULL, *tinstance1 = NULL;
 	struct ast_rtp_glue *glue0, *glue1;
-	enum ast_rtp_glue_result audio_glue0_res = AST_RTP_GLUE_RESULT_FORBID, video_glue0_res = AST_RTP_GLUE_RESULT_FORBID, text_glue0_res = AST_RTP_GLUE_RESULT_FORBID;
-	enum ast_rtp_glue_result audio_glue1_res = AST_RTP_GLUE_RESULT_FORBID, video_glue1_res = AST_RTP_GLUE_RESULT_FORBID, text_glue1_res = AST_RTP_GLUE_RESULT_FORBID;
+	enum ast_rtp_glue_result audio_glue0_res = AST_RTP_GLUE_RESULT_FORBID, video_glue0_res = AST_RTP_GLUE_RESULT_FORBID;
+	enum ast_rtp_glue_result audio_glue1_res = AST_RTP_GLUE_RESULT_FORBID, video_glue1_res = AST_RTP_GLUE_RESULT_FORBID;
 	format_t codec0 = 0, codec1 = 0;
 	int res = 0;
 
@@ -1479,11 +1502,9 @@ int ast_rtp_instance_early_bridge(struct ast_channel *c0, struct ast_channel *c1
 
 	audio_glue0_res = glue0->get_rtp_info(c0, &instance0);
 	video_glue0_res = glue0->get_vrtp_info ? glue0->get_vrtp_info(c0, &vinstance0) : AST_RTP_GLUE_RESULT_FORBID;
-	text_glue0_res = glue0->get_trtp_info ? glue0->get_trtp_info(c0, &tinstance0) : AST_RTP_GLUE_RESULT_FORBID;
 
 	audio_glue1_res = glue1->get_rtp_info(c1, &instance1);
 	video_glue1_res = glue1->get_vrtp_info ? glue1->get_vrtp_info(c1, &vinstance1) : AST_RTP_GLUE_RESULT_FORBID;
-	text_glue1_res = glue1->get_trtp_info ? glue1->get_trtp_info(c1, &tinstance1) : AST_RTP_GLUE_RESULT_FORBID;
 
 	/* If we are carrying video, and both sides are not going to remotely bridge... fail the native bridge */
 	if (video_glue0_res != AST_RTP_GLUE_RESULT_FORBID && (audio_glue0_res != AST_RTP_GLUE_RESULT_REMOTE || video_glue0_res != AST_RTP_GLUE_RESULT_REMOTE)) {
@@ -1704,6 +1725,11 @@ void ast_rtp_instance_set_hold_timeout(struct ast_rtp_instance *instance, int ti
 	instance->holdtimeout = timeout;
 }
 
+void ast_rtp_instance_set_keepalive(struct ast_rtp_instance *instance, int interval)
+{
+	instance->keepalive = interval;
+}
+
 int ast_rtp_instance_get_timeout(struct ast_rtp_instance *instance)
 {
 	return instance->timeout;
@@ -1712,6 +1738,11 @@ int ast_rtp_instance_get_timeout(struct ast_rtp_instance *instance)
 int ast_rtp_instance_get_hold_timeout(struct ast_rtp_instance *instance)
 {
 	return instance->holdtimeout;
+}
+
+int ast_rtp_instance_get_keepalive(struct ast_rtp_instance *instance)
+{
+	return instance->keepalive;
 }
 
 struct ast_rtp_engine *ast_rtp_instance_get_engine(struct ast_rtp_instance *instance)
@@ -1755,20 +1786,36 @@ int ast_rtp_engine_srtp_is_registered(void)
 	return res_srtp && res_srtp_policy;
 }
 
-int ast_rtp_instance_add_srtp_policy(struct ast_rtp_instance *instance, struct ast_srtp_policy *policy)
+int ast_rtp_instance_add_srtp_policy(struct ast_rtp_instance *instance, struct ast_srtp_policy *remote_policy, struct ast_srtp_policy *local_policy)
 {
+	int res = 0;
+
 	if (!res_srtp) {
 		return -1;
 	}
 
 	if (!instance->srtp) {
-		return res_srtp->create(&instance->srtp, instance, policy);
+		res = res_srtp->create(&instance->srtp, instance, remote_policy);
 	} else {
-		return res_srtp->add_stream(instance->srtp, policy);
+		res = res_srtp->replace(&instance->srtp, instance, remote_policy);
 	}
+	if (!res) {
+		res = res_srtp->add_stream(instance->srtp, local_policy);
+	}
+
+	return res;
 }
 
 struct ast_srtp *ast_rtp_instance_get_srtp(struct ast_rtp_instance *instance)
 {
 	return instance->srtp;
+}
+
+int ast_rtp_instance_sendcng(struct ast_rtp_instance *instance, int level)
+{
+	if (instance->engine->sendcng) {
+		return instance->engine->sendcng(instance, level);
+	}
+
+	return -1;
 }

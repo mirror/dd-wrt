@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 301308 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360466 $")
 
 #include <ctype.h>
 #include <sys/stat.h>
@@ -208,6 +208,8 @@ struct hostent *ast_gethostbyname(const char *host, struct ast_hostent *hp)
 		hp->hp.h_addrtype = AF_INET;
 		hp->hp.h_addr_list = (void *) hp->buf;
 		hp->hp.h_addr = hp->buf + sizeof(void *);
+		/* For AF_INET, this will always be 4 */
+		hp->hp.h_length = 4;
 		if (inet_pton(AF_INET, host, hp->hp.h_addr) > 0)
 			return &hp->hp;
 		return NULL;
@@ -413,6 +415,37 @@ char *ast_uri_encode(const char *string, char *outbuf, int buflen, int do_specia
 	return outbuf;
 }
 
+/*! \brief escapes characters specified for quoted portions of sip messages */
+char *ast_escape_quoted(const char *string, char *outbuf, int buflen)
+{
+	const char *ptr  = string;
+	char *out = outbuf;
+	char *allow = "\t\v !"; /* allow LWS (minus \r and \n) and "!" */
+
+	while (*ptr && out - outbuf < buflen - 1) {
+		if (!(strchr(allow, *ptr))
+			&& !(*ptr >= '#' && *ptr <= '[') /* %x23 - %x5b */
+			&& !(*ptr >= ']' && *ptr <= '~') /* %x5d - %x7e */
+			&& !((unsigned char) *ptr > 0x7f)) {             /* UTF8-nonascii */
+
+			if (out - outbuf >= buflen - 2) {
+				break;
+			}
+			out += sprintf(out, "\\%c", (unsigned char) *ptr);
+		} else {
+			*out = *ptr;
+			out++;
+		}
+		ptr++;
+	}
+
+	if (buflen) {
+		*out = '\0';
+	}
+
+	return outbuf;
+}
+
 /*! \brief  ast_uri_decode: Decode SIP URI, URN, URL (overwrite the string)  */
 void ast_uri_decode(char *s) 
 {
@@ -420,7 +453,7 @@ void ast_uri_decode(char *s)
 	unsigned int tmp;
 
 	for (o = s; *s; s++, o++) {
-		if (*s == '%' && strlen(s) > 2 && sscanf(s + 1, "%2x", &tmp) == 1) {
+		if (*s == '%' && s[1] != '\0' && s[2] != '\0' && sscanf(s + 1, "%2x", &tmp) == 1) {
 			/* have '%', two chars and correct parsing */
 			*o = tmp;
 			s += 2;	/* Will be incremented once more when we break out */
@@ -780,7 +813,7 @@ static void append_lock_information(struct ast_str **str, struct thr_lock_info *
 		return;
 	
 	lock = lock_info->locks[i].lock_addr;
-	lt = &lock->track;
+	lt = lock->track;
 	ast_reentrancy_lock(lt);
 	for (j = 0; *str && j < lt->reentrancy; j++) {
 		ast_str_append(str, 0, "=== --- ---> Locked Here: %s line %d (%s)\n",
@@ -876,7 +909,7 @@ static char *handle_show_locks(struct ast_cli_entry *e, int cmd, struct ast_cli_
 	AST_LIST_TRAVERSE(&lock_infos, lock_info, entry) {
 		int i;
 		if (lock_info->num_locks) {
-			ast_str_append(&str, 0, "=== Thread ID: %ld (%s)\n", (long) lock_info->thread_id,
+			ast_str_append(&str, 0, "=== Thread ID: 0x%lx (%s)\n", (long) lock_info->thread_id,
 				lock_info->thread_name);
 			pthread_mutex_lock(&lock_info->lock);
 			for (i = 0; str && i < lock_info->num_locks; i++) {
@@ -1613,10 +1646,13 @@ ast_string_field __ast_string_field_alloc_space(struct ast_string_field_mgr *mgr
 {
 	char *result = NULL;
 	size_t space = (*pool_head)->size - (*pool_head)->used;
-	size_t to_alloc = needed + sizeof(ast_string_field_allocation);
+	size_t to_alloc;
 
-	/* This +1 accounts for alignment on SPARC */
-	if (__builtin_expect(to_alloc + 1 > space, 0)) {
+	/* Make room for ast_string_field_allocation and make it a multiple of that. */
+	to_alloc = ast_make_room_for(needed, ast_string_field_allocation);
+	ast_assert(to_alloc % ast_alignof(ast_string_field_allocation) == 0);
+
+	if (__builtin_expect(to_alloc > space, 0)) {
 		size_t new_size = (*pool_head)->size;
 
 		while (new_size < to_alloc) {
@@ -1632,17 +1668,14 @@ ast_string_field __ast_string_field_alloc_space(struct ast_string_field_mgr *mgr
 #endif
 	}
 
+	/* pool->base is always aligned (gcc aligned attribute). We ensure that
+	 * to_alloc is also a multiple of ast_alignof(ast_string_field_allocation)
+	 * causing result to always be aligned as well; which in turn fixes that
+	 * AST_STRING_FIELD_ALLOCATION(result) is aligned. */
 	result = (*pool_head)->base + (*pool_head)->used;
-#ifdef __sparc__
-	/* SPARC requires that the allocation field be aligned. */
-	if ((long) result % sizeof(ast_string_field_allocation)) {
-		result++;
-		(*pool_head)->used++;
-	}
-#endif
 	(*pool_head)->used += to_alloc;
 	(*pool_head)->active += needed;
-	result += sizeof(ast_string_field_allocation);
+	result += ast_alignof(ast_string_field_allocation);
 	AST_STRING_FIELD_ALLOCATION(result) = needed;
 	mgr->last_alloc = result;
 
@@ -1713,14 +1746,11 @@ void __ast_string_field_ptr_build_va(struct ast_string_field_mgr *mgr,
 			available += space;
 		}
 	} else {
-		target = (*pool_head)->base + (*pool_head)->used + sizeof(ast_string_field_allocation);
-#ifdef __sparc__
-		if ((long) target % sizeof(ast_string_field_allocation)) {
-			target++;
-			space--;
-		}
-#endif
-		available = space - sizeof(ast_string_field_allocation);
+		/* pool->used is always a multiple of ast_alignof(ast_string_field_allocation)
+		 * so we don't need to re-align anything here.
+		 */
+		target = (*pool_head)->base + (*pool_head)->used + ast_alignof(ast_string_field_allocation);
+		available = space - ast_alignof(ast_string_field_allocation);
 	}
 
 	needed = vsnprintf(target, available, format, ap1) + 1;
@@ -1745,15 +1775,15 @@ void __ast_string_field_ptr_build_va(struct ast_string_field_mgr *mgr,
 		__ast_string_field_release_active(*pool_head, *ptr);
 		mgr->last_alloc = *ptr = target;
 		AST_STRING_FIELD_ALLOCATION(target) = needed;
-		(*pool_head)->used += needed + sizeof(ast_string_field_allocation);
+		(*pool_head)->used += ast_make_room_for(needed, ast_string_field_allocation);
 		(*pool_head)->active += needed;
 	} else if ((grow = (needed - AST_STRING_FIELD_ALLOCATION(*ptr))) > 0) {
 		/* the allocation was satisfied by using available space in the pool *and*
 		   the field was the last allocated field from the pool, so it grew
 		*/
-		(*pool_head)->used += grow;
-		(*pool_head)->active += grow;
 		AST_STRING_FIELD_ALLOCATION(*ptr) += grow;
+		(*pool_head)->used += ast_align_for(grow, ast_string_field_allocation);
+		(*pool_head)->active += grow;
 	}
 }
 
@@ -1955,9 +1985,28 @@ int ast_utils_init(void)
  * pedantic arg can be set to nonzero if we need to do addition Digest check.
  */
 int ast_parse_digest(const char *digest, struct ast_http_digest *d, int request, int pedantic) {
-	int i;
-	char *c, key[512], val[512], tmp[512];
+	char *c;
 	struct ast_str *str = ast_str_create(16);
+
+	/* table of recognised keywords, and places where they should be copied */
+	const struct x {
+		const char *key;
+		const ast_string_field *field;
+	} *i, keys[] = {
+		{ "username=", &d->username },
+		{ "realm=", &d->realm },
+		{ "nonce=", &d->nonce },
+		{ "uri=", &d->uri },
+		{ "domain=", &d->domain },
+		{ "response=", &d->response },
+		{ "cnonce=", &d->cnonce },
+		{ "opaque=", &d->opaque },
+		/* Special cases that cannot be directly copied */
+		{ "algorithm=", NULL },
+		{ "qop=", NULL },
+		{ "nc=", NULL },
+		{ NULL, 0 },
+	};
 
 	if (ast_strlen_zero(digest) || !d || !str) {
 		ast_free(str);
@@ -1968,7 +2017,7 @@ int ast_parse_digest(const char *digest, struct ast_http_digest *d, int request,
 
 	c = ast_skip_blanks(ast_str_buffer(str));
 
-	if (strncasecmp(tmp, "Digest ", strlen("Digest "))) {
+	if (strncasecmp(c, "Digest ", strlen("Digest "))) {
 		ast_log(LOG_WARNING, "Missing Digest.\n");
 		ast_free(str);
 		return -1;
@@ -1976,72 +2025,55 @@ int ast_parse_digest(const char *digest, struct ast_http_digest *d, int request,
 	c += strlen("Digest ");
 
 	/* lookup for keys/value pair */
-	while (*c && *(c = ast_skip_blanks(c))) {
+	while (c && *c && *(c = ast_skip_blanks(c))) {
 		/* find key */
-		i = 0;
-		while (*c && *c != '=' && *c != ',' && !isspace(*c)) {
-			key[i++] = *c++;
-		}
-		key[i] = '\0';
-		c = ast_skip_blanks(c);
-		if (*c == '=') {
-			c = ast_skip_blanks(++c);
-			i = 0;
-			if (*c == '\"') {
-				/* in quotes. Skip first and look for last */
-				c++;
-				while (*c && *c != '\"') {
-					if (*c == '\\' && c[1] != '\0') { /* unescape chars */
-						c++;
-					}
-					val[i++] = *c++;
-				}
+		for (i = keys; i->key != NULL; i++) {
+			char *src, *separator;
+			int unescape = 0;
+			if (strncasecmp(c, i->key, strlen(i->key)) != 0) {
+				continue;
+			}
+
+			/* Found. Skip keyword, take text in quotes or up to the separator. */
+			c += strlen(i->key);
+			if (*c == '"') {
+				src = ++c;
+				separator = "\"";
+				unescape = 1;
 			} else {
-				/* token */
-				while (*c && *c != ',' && !isspace(*c)) {
-					val[i++] = *c++;
+				src = c;
+				separator = ",";
+			}
+			strsep(&c, separator); /* clear separator and move ptr */
+			if (unescape) {
+				ast_unescape_c(src);
+			}
+			if (i->field) {
+				ast_string_field_ptr_set(d, i->field, src);
+			} else {
+				/* Special cases that require additional procesing */
+				if (!strcasecmp(i->key, "algorithm=")) {
+					if (strcasecmp(src, "MD5")) {
+						ast_log(LOG_WARNING, "Digest algorithm: \"%s\" not supported.\n", src);
+						ast_free(str);
+						return -1;
+					}
+				} else if (!strcasecmp(i->key, "qop=") && !strcasecmp(src, "auth")) {
+					d->qop = 1;
+				} else if (!strcasecmp(i->key, "nc=")) {
+					unsigned long u;
+					if (sscanf(src, "%30lx", &u) != 1) {
+						ast_log(LOG_WARNING, "Incorrect Digest nc value: \"%s\".\n", src);
+						ast_free(str);
+						return -1;
+					}
+					ast_string_field_set(d, nc, src);
 				}
 			}
-			val[i] = '\0';
+			break;
 		}
-
-		while (*c && *c != ',') {
-			c++;
-		}
-		if (*c) {
-			c++;
-		}
-
-		if (!strcasecmp(key, "username")) {
-			ast_string_field_set(d, username, val);
-		} else if (!strcasecmp(key, "realm")) {
-			ast_string_field_set(d, realm, val);
-		} else if (!strcasecmp(key, "nonce")) {
-			ast_string_field_set(d, nonce, val);
-		} else if (!strcasecmp(key, "uri")) {
-			ast_string_field_set(d, uri, val);
-		} else if (!strcasecmp(key, "domain")) {
-			ast_string_field_set(d, domain, val);
-		} else if (!strcasecmp(key, "response")) {
-			ast_string_field_set(d, response, val);
-		} else if (!strcasecmp(key, "algorithm")) {
-			if (strcasecmp(val, "MD5")) {
-				ast_log(LOG_WARNING, "Digest algorithm: \"%s\" not supported.\n", val);
-				return -1;
-			}
-		} else if (!strcasecmp(key, "cnonce")) {
-			ast_string_field_set(d, cnonce, val);
-		} else if (!strcasecmp(key, "opaque")) {
-			ast_string_field_set(d, opaque, val);
-		} else if (!strcasecmp(key, "qop") && !strcasecmp(val, "auth")) {
-			d->qop = 1;
-		} else if (!strcasecmp(key, "nc")) {
-			unsigned long u;
-			if (sscanf(val, "%30lx", &u) != 1) {
-				ast_log(LOG_WARNING, "Incorrect Digest nc value: \"%s\".\n", val);
-				return -1;
-			}
-			ast_string_field_set(d, nc, val);
+		if (i->key == NULL) { /* not found, try ',' */
+			strsep(&c, ",");
 		}
 	}
 	ast_free(str);

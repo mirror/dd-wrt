@@ -25,12 +25,13 @@
  */
 
 /*** MODULEINFO
-    <depend>iconv</depend>
+	<depend>iconv</depend>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 153365 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision: 328209 $")
 
 #include <ctype.h>
 #include <iconv.h>
