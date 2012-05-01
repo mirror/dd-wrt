@@ -20,11 +20,12 @@
 #include <inttypes.h>           /* uintmax_t */
 
 #include "lib/global.h"
+#include "lib/vfs/vfs.h"
 
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
-typedef int (*mc_stat_fn) (const char *filename, struct stat * buf);
+typedef int (*mc_stat_fn) (const vfs_path_t * vpath, struct stat * buf);
 
 /*** enums ***************************************************************************************/
 
@@ -167,14 +168,13 @@ typedef struct
 {
     size_t progress_count;
     uintmax_t progress_bytes;
-    uintmax_t copyed_bytes;
+    uintmax_t copied_bytes;
     size_t bps;
     size_t bps_count;
     struct timeval transfer_start;
     double eta_secs;
 
     gboolean ask_overwrite;
-    gboolean is_toplevel_file;
 } FileOpTotalContext;
 
 /*** global variables defined in .c file *********************************************************/

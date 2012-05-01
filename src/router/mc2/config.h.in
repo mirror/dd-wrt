@@ -8,6 +8,9 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Define to enable background file operations */
+#undef ENABLE_BACKGROUND
+
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS
@@ -60,9 +63,6 @@
 
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
-
-/* Define to 1 if you have the `cfgetospeed' function. */
-#undef HAVE_CFGETOSPEED
 
 /* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
@@ -130,6 +130,9 @@
 /* Define to 1 if you have the `fs_stat_dev' function. */
 #undef HAVE_FS_STAT_DEV
 
+/* Define to 1 if you have the `ftruncate' function. */
+#undef HAVE_FTRUNCATE
+
 /* Define to 1 if you have the `fwprintf' function. */
 #undef HAVE_FWPRINTF
 
@@ -181,9 +184,6 @@
 
 /* Define if the list of mounted filesystems can be determined */
 #undef HAVE_INFOMOUNT_LIST
-
-/* Define to 1 if you have the `initgroups' function. */
-#undef HAVE_INITGROUPS
 
 /* Define if you have the 'intmax_t' type in <stdint.h> or <inttypes.h>. */
 #undef HAVE_INTMAX_T
@@ -309,17 +309,11 @@
 /* Define to 1 if you have the `rresvport' function. */
 #undef HAVE_RRESVPORT
 
-/* Define to 1 if you have the <security/pam_misc.h> header file. */
-#undef HAVE_SECURITY_PAM_MISC_H
-
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
-
-/* Define to 1 if you have the `setreuid' function. */
-#undef HAVE_SETREUID
 
 /* Define to use S-Lang library for screen management */
 #undef HAVE_SLANG
@@ -467,9 +461,6 @@
 /* Define to 1 if you have the <sys/sysmacros.h> header file. */
 #undef HAVE_SYS_SYSMACROS_H
 
-/* Define to 1 if you have the <sys/timeb.h> header file. */
-#undef HAVE_SYS_TIMEB_H
-
 /* Define to 1 if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
 
@@ -491,9 +482,6 @@
 /* Define to enable getting events from X Window System */
 #undef HAVE_TEXTMODE_X11_SUPPORT
 
-/* Define to 1 if you have the `truncate' function. */
-#undef HAVE_TRUNCATE
-
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
 
@@ -512,17 +500,11 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
-/* Define to 1 if you have the <wchar.h> header file. */
-#undef HAVE_WCHAR_H
-
 /* Define if you have the 'wchar_t' type. */
 #undef HAVE_WCHAR_T
 
 /* Define to 1 if you have the `wcslen' function. */
 #undef HAVE_WCSLEN
-
-/* Define to 1 if you have the <wctype.h> header file. */
-#undef HAVE_WCTYPE_H
 
 /* Define if you have the 'wint_t' type. */
 #undef HAVE_WINT_T
@@ -621,6 +603,9 @@
    list of mounted file systems, and there is a system header file that
    declares `struct vmount.' (AIX) */
 #undef MOUNTED_VMOUNT
+
+/* Define to 1 if assertions should be disabled. */
+#undef NDEBUG
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
@@ -764,9 +749,6 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* Define to enable background file operations */
-#undef WITH_BACKGROUND
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING

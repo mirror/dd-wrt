@@ -19,7 +19,8 @@
 enum
 {
     D_NORMAL = 0,
-    D_ERROR = 1
+    D_ERROR = (1 << 0),
+    D_CENTER = (1 << 1)
 } /* dialog options */ ;
 
 /*** structures declarations (and typedefs of structures)*****************************************/
@@ -32,7 +33,7 @@ enum
 char *input_dialog (const char *header, const char *text,
                     const char *history_name, const char *def_text);
 char *input_dialog_help (const char *header, const char *text, const char *help,
-                         const char *history_name, const char *def_text);
+                         const char *history_name, const char *def_text, gboolean strip_password);
 char *input_expand_dialog (const char *header, const char *text,
                            const char *history_name, const char *def_text);
 

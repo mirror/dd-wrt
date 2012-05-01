@@ -219,8 +219,10 @@ mcview_handle_editkey (mcview_t * view, int key)
             return MSG_NOT_HANDLED;
     }
 
-    if ((view->filename != NULL) && (view->filename[0] != '\0') && (view->change_list == NULL))
-        view->locked = mcview_lock_file (view);
+    if ((view->filename_vpath != NULL)
+        && (*(vfs_path_get_last_path_str (view->filename_vpath)) != '\0')
+        && (view->change_list == NULL))
+        view->locked = lock_file (view->filename_vpath);
 
     if (node == NULL)
     {
@@ -287,6 +289,14 @@ mcview_execute_cmd (mcview_t * view, unsigned long command)
     case CK_Search:
         mcview_search (view);
         break;
+    case CK_SearchForward:
+        mcview_search_options.backwards = FALSE;
+        mcview_search (view);
+        break;
+    case CK_SearchBackward:
+        mcview_search_options.backwards = TRUE;
+        mcview_search (view);
+        break;
     case CK_MagicMode:
         mcview_toggle_magic_mode (view);
         break;
@@ -318,6 +328,14 @@ mcview_execute_cmd (mcview_t * view, unsigned long command)
             mcview_move_right (view, 10);
         break;
     case CK_SearchContinue:
+        mcview_continue_search_cmd (view);
+        break;
+    case CK_SearchForwardContinue:
+        mcview_search_options.backwards = FALSE;
+        mcview_continue_search_cmd (view);
+        break;
+    case CK_SearchBackwardContinue:
+        mcview_search_options.backwards = TRUE;
         mcview_continue_search_cmd (view);
         break;
     case CK_Ruler:
@@ -492,7 +510,7 @@ mcview_callback (Widget * w, widget_msg_t msg, int parm)
         {
             delete_hook (&select_file_hook, mcview_hook);
 
-            if (mc_global.widget.midnight_shutdown)
+            if (mc_global.midnight_shutdown)
                 mcview_ok_to_quit (view);
         }
         mcview_done (view);

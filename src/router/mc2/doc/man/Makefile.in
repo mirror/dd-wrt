@@ -34,8 +34,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/date-of-man-include.am $(srcdir)/mc.1.in \
-	$(srcdir)/mcedit.1.in $(srcdir)/mcview.1.in
+	$(srcdir)/date-of-man-include.am
 subdir = doc/man
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
@@ -70,6 +69,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-ncurses.m4 \
 	$(top_srcdir)/m4.include/mc-with-screen-slang.m4 \
+	$(top_srcdir)/m4.include/mc-background.m4 \
 	$(top_srcdir)/m4.include/ac-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
@@ -89,7 +89,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = mc.1 mcedit.1 mcview.1
+CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
@@ -372,9 +372,25 @@ DIST_SUBDIRS = es hu it pl ru sr
 @USE_NLS_TRUE@SUBDIRS = $(DOC_LINGUAS)
 man_MANS = mc.1 mcedit.1 mcview.1
 CLEANFILES = $(man_MANS)
-EXTRA_DIST = date-of-man-include.am
+EXTRA_DIST = \
+	date-of-man-include.am \
+	mc.1.in \
+	mcedit.1.in \
+	mcview.1.in
+
 DATE_LANG = en_US.UTF-8
 DATE_FORMAT = %B %Y
+SED_PARAMETERS = \
+	-e "s/%DATE_OF_MAN_PAGE%/$${MAN_DATE}/g" \
+	-e "s/%DISTR_VERSION%/@DISTR_VERSION@/g" \
+	-e "s{%prefix%{@prefix@{g" \
+	-e "s{%sysconfdir%{@sysconfdir@{g"
+
+MAN_DATE_CMD = \
+	LC_ALL=$(DATE_LANG) perl -MPOSIX -e '\
+	    @fi=lstat("'$${MAN_FILE}'"); \
+	    print POSIX::strftime("$(DATE_FORMAT)", localtime($$fi[9]));' 2>/dev/null
+
 all: all-recursive
 
 .SUFFIXES:
@@ -408,12 +424,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-mc.1: $(top_builddir)/config.status $(srcdir)/mc.1.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-mcedit.1: $(top_builddir)/config.status $(srcdir)/mcedit.1.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-mcview.1: $(top_builddir)/config.status $(srcdir)/mcview.1.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -786,29 +796,17 @@ uninstall-man: uninstall-man1
 	uninstall-man1
 
 
-mc.1: $(top_builddir)/config.status $(srcdir)/mc.1.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-	@MTM=$$(LANG=C stat -c '%y'  $(srcdir)/mc.1.in); \
-	MAN_DATE=$$(LC_TIME=$(DATE_LANG) date -d "$${MTM}" +'$(DATE_FORMAT)'); \
-	sed -i "s/@DATE_OF_MAN_PAGE@/$${MAN_DATE}/" $@
+mc.1: $(srcdir)/mc.1.in
+	MAN_FILE=$<; MAN_DATE=$$($(MAN_DATE_CMD)); \
+	sed $(SED_PARAMETERS) $< > $@
 
-mcedit.1: $(top_builddir)/config.status $(srcdir)/mcedit.1.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-	@MTM=$$(LANG=C stat -c '%y'  $(srcdir)/mcedit.1.in); \
-	MAN_DATE=$$(LC_TIME=$(DATE_LANG) date -d "$${MTM}" +'$(DATE_FORMAT)'); \
-	sed -i "s/@DATE_OF_MAN_PAGE@/$${MAN_DATE}/" $@
+mcedit.1: $(srcdir)/mcedit.1.in
+	MAN_FILE=$<; MAN_DATE=$$($(MAN_DATE_CMD)); \
+	sed $(SED_PARAMETERS) $< > $@
 
-mcview.1: $(top_builddir)/config.status $(srcdir)/mcview.1.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-	@MTM=$$(LANG=C stat -c '%y'  $(srcdir)/mcview.1.in); \
-	MAN_DATE=$$(LC_TIME=$(DATE_LANG) date -d "$${MTM}" +'$(DATE_FORMAT)'); \
-	sed -i "s/@DATE_OF_MAN_PAGE@/$${MAN_DATE}/" $@
-
-mcserv.8: $(top_builddir)/config.status $(srcdir)/mcserv.8.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-	@MTM=$$(LANG=C stat -c '%y'  $(srcdir)/mcserv.1.in); \
-	MAN_DATE=$$(LC_TIME=$(DATE_LANG) date -d "$${MTM}" +'$(DATE_FORMAT)'); \
-	sed -i "s/@DATE_OF_MAN_PAGE@/$${MAN_DATE}/" $@
+mcview.1: $(srcdir)/mcview.1.in
+	MAN_FILE=$<; MAN_DATE=$$($(MAN_DATE_CMD)); \
+	sed $(SED_PARAMETERS) $< > $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

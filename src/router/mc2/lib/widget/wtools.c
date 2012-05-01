@@ -68,6 +68,7 @@ default_query_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, 
     switch (msg)
     {
     case DLG_RESIZE:
+        if ((h->flags & DLG_CENTER) == 0)
         {
             Dlg_head *prev_dlg = NULL;
             int ypos, xpos;
@@ -99,8 +100,10 @@ default_query_callback (Dlg_head * h, Widget * sender, dlg_msg_t msg, int parm, 
 
             /* set position */
             dlg_set_position (h, ypos, xpos, ypos + h->lines, xpos + h->cols);
+
+            return MSG_HANDLED;
         }
-        return MSG_HANDLED;
+        /* fallthrough */
 
     default:
         return default_dlg_callback (h, sender, msg, parm, data);
@@ -151,7 +154,7 @@ fg_message (int flags, const char *title, const char *text)
 /* --------------------------------------------------------------------------------------------- */
 /** Show message box from background */
 
-#ifdef WITH_BACKGROUND
+#ifdef ENABLE_BACKGROUND
 static void
 bg_message (int dummy, int *flags, char *title, const char *text)
 {
@@ -160,7 +163,7 @@ bg_message (int dummy, int *flags, char *title, const char *text)
     fg_message (*flags, title, text);
     g_free (title);
 }
-#endif /* WITH_BACKGROUND */
+#endif /* ENABLE_BACKGROUND */
 
 /* --------------------------------------------------------------------------------------------- */
 
@@ -177,14 +180,14 @@ bg_message (int dummy, int *flags, char *title, const char *text)
  */
 static char *
 fg_input_dialog_help (const char *header, const char *text, const char *help,
-                      const char *history_name, const char *def_text)
+                      const char *history_name, const char *def_text, gboolean strip_password)
 {
     char *my_str;
-
+    int flags = (strip_password) ? 4 : 0;
     QuickWidget quick_widgets[] = {
         /* 0 */ QUICK_BUTTON (6, 64, 1, 0, N_("&Cancel"), B_CANCEL, NULL),
         /* 1 */ QUICK_BUTTON (3, 64, 1, 0, N_("&OK"), B_ENTER, NULL),
-        /* 2 */ QUICK_INPUT (3, 64, 0, 0, def_text, 58, 0, NULL, &my_str),
+        /* 2 */ QUICK_INPUT (3, 64, 0, 0, def_text, 58, flags, NULL, &my_str),
         /* 3 */ QUICK_LABEL (3, 64, 2, 0, ""),
         QUICK_END
     };
@@ -266,7 +269,7 @@ fg_input_dialog_help (const char *header, const char *text, const char *help,
 
 /* --------------------------------------------------------------------------------------------- */
 
-#ifdef WITH_BACKGROUND
+#ifdef ENABLE_BACKGROUND
 static int
 wtools_parent_call (void *routine, gpointer ctx, int argc, ...)
 {
@@ -295,7 +298,7 @@ wtools_parent_call_string (void *routine, int argc, ...)
     va_end (event_data.ap);
     return event_data.ret.s;
 }
-#endif /* WITH_BACKGROUND */
+#endif /* ENABLE_BACKGROUND */
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
@@ -314,7 +317,8 @@ query_dialog (const char *header, const char *text, int flags, int count, ...)
     int result = -1;
     int cols, lines;
     char *cur_name;
-    const int *query_colors = (flags & D_ERROR) ? alarm_colors : dialog_colors;
+    const int *query_colors = (flags & D_ERROR) != 0 ? alarm_colors : dialog_colors;
+    dlg_flags_t dlg_flags = (flags & D_CENTER) != 0 ? (DLG_CENTER | DLG_TRYUP) : DLG_NONE;
 
     if (header == MSG_ERROR)
         header = _("Error");
@@ -340,7 +344,7 @@ query_dialog (const char *header, const char *text, int flags, int count, ...)
     /* prepare dialog */
     query_dlg =
         create_dlg (TRUE, 0, 0, lines, cols, query_colors, default_query_callback,
-                    "[QueryBox]", header, DLG_NONE);
+                    "[QueryBox]", header, dlg_flags);
 
     if (count > 0)
     {
@@ -440,7 +444,7 @@ message (int flags, const char *title, const char *text, ...)
     if (title == MSG_ERROR)
         title = _("Error");
 
-#ifdef WITH_BACKGROUND
+#ifdef ENABLE_BACKGROUND
     if (mc_global.we_are_background)
     {
         union
@@ -454,7 +458,7 @@ message (int flags, const char *title, const char *text, ...)
                             strlen (p), p);
     }
     else
-#endif /* WITH_BACKGROUND */
+#endif /* ENABLE_BACKGROUND */
         fg_message (flags, title, p);
 
     g_free (p);
@@ -470,26 +474,28 @@ message (int flags, const char *title, const char *text, ...)
 
 char *
 input_dialog_help (const char *header, const char *text, const char *help,
-                   const char *history_name, const char *def_text)
+                   const char *history_name, const char *def_text, gboolean strip_password)
 {
-#ifdef WITH_BACKGROUND
+#ifdef ENABLE_BACKGROUND
     if (mc_global.we_are_background)
     {
         union
         {
             void *p;
-            char *(*f) (const char *, const char *, const char *, const char *, const char *);
+            char *(*f) (const char *, const char *, const char *, const char *, const char *,
+                        gboolean);
         } func;
         func.f = fg_input_dialog_help;
-        return wtools_parent_call_string (func.p, 5,
+        return wtools_parent_call_string (func.p, 6,
                                           strlen (header), header, strlen (text),
                                           text, strlen (help), help,
                                           strlen (history_name), history_name,
-                                          strlen (def_text), def_text);
+                                          strlen (def_text), def_text,
+                                          sizeof (gboolean), strip_password);
     }
     else
-#endif /* WITH_BACKGROUND */
-        return fg_input_dialog_help (header, text, help, history_name, def_text);
+#endif /* ENABLE_BACKGROUND */
+        return fg_input_dialog_help (header, text, help, history_name, def_text, strip_password);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -498,7 +504,7 @@ input_dialog_help (const char *header, const char *text, const char *help,
 char *
 input_dialog (const char *header, const char *text, const char *history_name, const char *def_text)
 {
-    return input_dialog_help (header, text, "[Input Line Keys]", history_name, def_text);
+    return input_dialog_help (header, text, "[Input Line Keys]", history_name, def_text, FALSE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
