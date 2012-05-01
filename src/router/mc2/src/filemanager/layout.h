@@ -25,19 +25,30 @@ typedef enum
 
 struct WPanel;
 
+typedef struct
+{
+    int horizontal_split;
+
+    /* vertical split */
+    int vertical_equal;
+    int left_panel_size;
+
+    /* horizontal split */
+    int horizontal_equal;
+    int top_panel_size;
+} panels_layout_t;
+
 /*** global variables defined in .c file *********************************************************/
 
-extern int equal_split;
-extern int first_panel_size;
 extern int output_lines;
 extern gboolean command_prompt;
 extern int menubar_visible;
 extern int output_start_y;
 extern gboolean xterm_title;
 extern int free_space;
-
-extern int horizontal_split;
 extern int nice_rotating_dash;
+
+extern panels_layout_t panels_layout;
 
 /*** declarations of public functions ************************************************************/
 
@@ -60,7 +71,7 @@ struct Widget *get_panel_widget (int idx);
 struct WPanel *get_other_panel (void);
 
 void save_panel_dir (int idx);
-const char *get_panel_dir_for (const struct WPanel * widget);
+char *get_panel_dir_for (const struct WPanel * widget);
 
 void set_hintbar (const char *str);
 

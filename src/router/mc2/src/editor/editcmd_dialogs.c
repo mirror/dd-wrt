@@ -105,7 +105,7 @@ editcmd_dialog_replace_show (WEdit * edit, const char *search_default, const cha
             /*  1 */ QUICK_BUTTON (2, 10, 13, REPLACE_DLG_HEIGHT, N_("&OK"), B_ENTER, NULL),
 #ifdef HAVE_CHARSET
             /*  2 */ QUICK_CHECKBOX (33, REPLACE_DLG_WIDTH, 11, REPLACE_DLG_HEIGHT,
-                                     N_("All charsets"),
+                                     N_("&All charsets"),
                                      &edit_search_options.all_codepages),
 #endif
             /*  3 */ QUICK_CHECKBOX (33, REPLACE_DLG_WIDTH, 10, REPLACE_DLG_HEIGHT,
@@ -117,7 +117,7 @@ editcmd_dialog_replace_show (WEdit * edit, const char *search_default, const cha
             /*  5 */ QUICK_CHECKBOX (33, REPLACE_DLG_WIDTH, 8, REPLACE_DLG_HEIGHT, N_("&Backwards"),
                                      &edit_search_options.backwards),
             /*  6 */ QUICK_CHECKBOX (33, REPLACE_DLG_WIDTH, 7, REPLACE_DLG_HEIGHT,
-                                     N_("Case &sensitive"),
+                                     N_("Cas&e sensitive"),
                                      &edit_search_options.case_sens),
             /*  7 */ QUICK_RADIO (3, REPLACE_DLG_WIDTH, 7, REPLACE_DLG_HEIGHT,
                                   num_of_types, (const char **) list_of_types,
@@ -177,7 +177,7 @@ editcmd_dialog_search_show (WEdit * edit)
         QUICK_BUTTON (2, 10, 11, SEARCH_DLG_HEIGHT, N_("&OK"), B_ENTER, NULL),
 #ifdef HAVE_CHARSET
         /* 3 */
-        QUICK_CHECKBOX (33, SEARCH_DLG_WIDTH, 9, SEARCH_DLG_HEIGHT, N_("All charsets"),
+        QUICK_CHECKBOX (33, SEARCH_DLG_WIDTH, 9, SEARCH_DLG_HEIGHT, N_("&All charsets"),
                         &edit_search_options.all_codepages),
 #endif
         /* 4 */
@@ -190,7 +190,7 @@ editcmd_dialog_search_show (WEdit * edit)
         QUICK_CHECKBOX (33, SEARCH_DLG_WIDTH, 6, SEARCH_DLG_HEIGHT, N_("&Backwards"),
                         &edit_search_options.backwards),
         /* 7 */
-        QUICK_CHECKBOX (33, SEARCH_DLG_WIDTH, 5, SEARCH_DLG_HEIGHT, N_("Case &sensitive"),
+        QUICK_CHECKBOX (33, SEARCH_DLG_WIDTH, 5, SEARCH_DLG_HEIGHT, N_("Cas&e sensitive"),
                         &edit_search_options.case_sens),
         /* 8 */
         QUICK_RADIO (3, SEARCH_DLG_WIDTH, 5, SEARCH_DLG_HEIGHT,
@@ -526,24 +526,25 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, int max_l
         {
             if (edit_stack_iterator + 1 < MAX_HISTORY_MOVETO)
             {
-                g_free (edit_history_moveto[edit_stack_iterator].filename);
-                if (edit->dir)
+                vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
+                if (edit->dir_vpath != NULL)
                 {
-                    edit_history_moveto[edit_stack_iterator].filename =
-                        g_strdup_printf ("%s/%s", edit->dir, edit->filename);
+                    edit_history_moveto[edit_stack_iterator].filename_vpath =
+                        vfs_path_append_vpath_new (edit->dir_vpath, edit->filename_vpath, NULL);
                 }
                 else
                 {
-                    edit_history_moveto[edit_stack_iterator].filename = g_strdup (edit->filename);
+                    edit_history_moveto[edit_stack_iterator].filename_vpath =
+                        vfs_path_clone (edit->filename_vpath);
                 }
                 edit_history_moveto[edit_stack_iterator].line = edit->start_line +
                     edit->curs_row + 1;
                 edit_stack_iterator++;
-                g_free (edit_history_moveto[edit_stack_iterator].filename);
-                edit_history_moveto[edit_stack_iterator].filename =
-                    g_strdup ((char *) curr_def->fullpath);
+                vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
+                edit_history_moveto[edit_stack_iterator].filename_vpath =
+                    vfs_path_from_str ((char *) curr_def->fullpath);
                 edit_history_moveto[edit_stack_iterator].line = curr_def->line;
-                edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename,
+                edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename_vpath,
                                   edit_history_moveto[edit_stack_iterator].line);
             }
         }

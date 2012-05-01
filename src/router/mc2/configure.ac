@@ -79,7 +79,7 @@ AC_PROG_LN_S
 AC_CHECK_TOOL(AR, ar, ar)
 
 dnl Only list browsers here that can be run in background (i.e. with `&')
-AC_CHECK_PROGS(X11_WWW, [gnome-moz-remote mozilla konqueror opera netscape])
+AC_CHECK_PROGS(X11_WWW, [gnome-moz-remote mozilla firefox konqueror opera])
 
 dnl
 dnl Ovverriding mmap support.  This has to be before AC_FUNC_MMAP is used.
@@ -144,13 +144,12 @@ esac
 AC_PROG_INSTALL
 AC_CHECK_HEADERS([unistd.h string.h memory.h limits.h malloc.h \
 	utime.h fcntl.h sys/statfs.h sys/vfs.h sys/time.h \
-	sys/timeb.h sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
-	security/pam_misc.h sys/socket.h sys/sysmacros.h sys/types.h \
-	sys/mkdev.h wchar.h wctype.h])
+	sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
+	sys/socket.h sys/sysmacros.h sys/types.h sys/mkdev.h])
 
 AC_HEADER_TIME
 AC_HEADER_DIRENT
-AC_HEADER_STDC
+AC_HEADER_ASSERT
 
 dnl Missing structure components
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev])
@@ -162,10 +161,10 @@ dnl
 
 AC_CHECK_FUNCS([\
 	atoll \
-	cfgetospeed \
-	initgroups isascii \
-	setreuid statfs sysconf \
-	tcgetattr tcsetattr truncate \
+	isascii \
+	statfs sysconf \
+	tcgetattr tcsetattr \
+	ftruncate \
 	strverscmp \
 	strncasecmp \
 	realpath
@@ -207,7 +206,6 @@ AC_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_UID_T
 
-AC_FUNC_ALLOCA
 AC_FUNC_STRCOLL
 
 AC_MC_GET_FS_INFO
@@ -429,12 +427,7 @@ else
 fi
 
 
-dnl Support for background operations
-AC_ARG_ENABLE([background],
-	      [  --enable-background     Support for background file operations [[yes]]])
-if test "x$enable_background" != xno; then
-    AC_DEFINE(WITH_BACKGROUND, 1, [Define to enable background file operations])
-fi
+MC_BACKGROUND
 
 
 dnl
@@ -597,13 +590,13 @@ misc/syntax/Makefile
 
 doc/Makefile
 doc/hints/Makefile
-doc/man/mc.1 doc/man/mcedit.1 doc/man/mcview.1 doc/man/Makefile
-doc/man/es/mc.1 doc/man/es/Makefile
-doc/man/hu/mc.1 doc/man/hu/Makefile
-doc/man/it/mc.1 doc/man/it/Makefile
-doc/man/pl/mc.1 doc/man/pl/Makefile
-doc/man/ru/mc.1 doc/man/ru/Makefile
-doc/man/sr/mc.1 doc/man/sr/Makefile
+doc/man/Makefile
+doc/man/es/Makefile
+doc/man/hu/Makefile
+doc/man/it/Makefile
+doc/man/pl/Makefile
+doc/man/ru/Makefile
+doc/man/sr/Makefile
 
 doc/hlp/Makefile
 doc/hlp/es/Makefile
@@ -624,6 +617,8 @@ tests/lib/Makefile
 tests/lib/mcconfig/Makefile
 tests/lib/search/Makefile
 tests/lib/vfs/Makefile
+tests/src/Makefile
+tests/src/filemanager/Makefile
 ])
 
 fi
@@ -643,6 +638,7 @@ Configuration:
   Mouse support:              ${mouse_lib}
   X11 events support:         ${textmode_x11_support}
   With subshell support:      ${subshell}
+  With background operations: ${enable_background}
   Internal editor:            ${edit_msg}
   Diff viewer:                ${diff_msg}
   Support for charset:        ${charset_msg}

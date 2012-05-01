@@ -34,7 +34,9 @@
 
 #include <config.h>
 
+#ifdef HAVE_ASSERT_H
 #include <assert.h>
+#endif
 #include <ctype.h>
 
 #include <stdio.h>
@@ -116,34 +118,39 @@ int edit_confirm_save = 1;
 /* returns 0 on error, -1 on abort */
 
 static int
-edit_save_file (WEdit * edit, const char *filename)
+edit_save_file (WEdit * edit, const vfs_path_t * filename_vpath)
 {
     char *p;
     gchar *tmp;
     long filelen = 0;
-    char *savename = 0;
-    gchar *real_filename;
     int this_save_mode, fd = -1;
+    vfs_path_t *real_filename_vpath;
+    vfs_path_t *savename_vpath = NULL;
+    const char *start_filename;
+    const vfs_path_element_t *vpath_element;
 
-    if (!filename)
-        return 0;
-    if (!*filename)
+    vpath_element = vfs_path_get_by_index (filename_vpath, 0);
+    if (vpath_element == NULL)
         return 0;
 
-    if (*filename != PATH_SEP && edit->dir)
+    start_filename = vpath_element->path;
+    if (*start_filename == '\0')
+        return 0;
+
+    if (*start_filename != PATH_SEP && edit->dir_vpath != NULL)
     {
-        real_filename = concat_dir_and_file (edit->dir, filename);
+        real_filename_vpath = vfs_path_append_vpath_new (edit->dir_vpath, filename_vpath, NULL);
     }
     else
     {
-        real_filename = g_strdup (filename);
+        real_filename_vpath = vfs_path_clone (filename_vpath);
     }
 
     this_save_mode = option_save_mode;
     if (this_save_mode != EDIT_QUICK_SAVE)
     {
-        vfs_path_t *vpath = vfs_path_from_str (real_filename);
-        if (!vfs_file_is_local (vpath) || (fd = mc_open (real_filename, O_RDONLY | O_BINARY)) == -1)
+        if (!vfs_file_is_local (real_filename_vpath)
+            || (fd = mc_open (real_filename_vpath, O_RDONLY | O_BINARY)) == -1)
         {
             /*
              * The file does not exists yet, so no safe save or
@@ -151,7 +158,6 @@ edit_save_file (WEdit * edit, const char *filename)
              */
             this_save_mode = EDIT_QUICK_SAVE;
         }
-        vfs_path_free (vpath);
         if (fd != -1)
             mc_close (fd);
     }
@@ -161,7 +167,7 @@ edit_save_file (WEdit * edit, const char *filename)
         int rv;
         struct stat sb;
 
-        rv = mc_stat (real_filename, &sb);
+        rv = mc_stat (real_filename_vpath, &sb);
         if (rv == 0 && sb.st_nlink > 1)
         {
             rv = edit_query_dialog3 (_("Warning"),
@@ -176,7 +182,7 @@ edit_save_file (WEdit * edit, const char *filename)
                 edit->skip_detach_prompt = 1;
                 break;
             default:
-                g_free (real_filename);
+                vfs_path_free (real_filename_vpath);
                 return -1;
             }
         }
@@ -184,7 +190,6 @@ edit_save_file (WEdit * edit, const char *filename)
         /* Prevent overwriting changes from other editor sessions. */
         if (rv == 0 && edit->stat1.st_mtime != 0 && edit->stat1.st_mtime != sb.st_mtime)
         {
-
             /* The default action is "Cancel". */
             query_set_sel (1);
 
@@ -193,7 +198,7 @@ edit_save_file (WEdit * edit, const char *filename)
                                      _("&Yes"), _("&Cancel"));
             if (rv != 0)
             {
-                g_free (real_filename);
+                vfs_path_free (real_filename_vpath);
                 return -1;
             }
         }
@@ -202,22 +207,18 @@ edit_save_file (WEdit * edit, const char *filename)
     if (this_save_mode != EDIT_QUICK_SAVE)
     {
         char *savedir, *saveprefix;
-        const char *slashpos;
-        slashpos = strrchr (real_filename, PATH_SEP);
-        if (slashpos)
-        {
-            savedir = g_strdup (real_filename);
-            savedir[slashpos - real_filename + 1] = '\0';
-        }
-        else
+
+        savedir = vfs_path_tokens_get (real_filename_vpath, 0, -1);
+        if (savedir == NULL)
             savedir = g_strdup (".");
-        saveprefix = concat_dir_and_file (savedir, "cooledit");
+
+        saveprefix = mc_build_filename (savedir, "cooledit", NULL);
         g_free (savedir);
-        fd = mc_mkstemps (&savename, saveprefix, NULL);
+        fd = mc_mkstemps (&savename_vpath, saveprefix, NULL);
         g_free (saveprefix);
-        if (!savename)
+        if (savename_vpath == NULL)
         {
-            g_free (real_filename);
+            vfs_path_free (real_filename_vpath);
             return 0;
         }
         /* FIXME:
@@ -228,19 +229,17 @@ edit_save_file (WEdit * edit, const char *filename)
         close (fd);
     }
     else
-        savename = g_strdup (real_filename);
-    {
-        int ret;
-        ret = mc_chown (savename, edit->stat1.st_uid, edit->stat1.st_gid);
-        ret = mc_chmod (savename, edit->stat1.st_mode);
-    }
+        savename_vpath = vfs_path_clone (real_filename_vpath);
 
-    fd = mc_open (savename, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, edit->stat1.st_mode);
+    (void) mc_chown (savename_vpath, edit->stat1.st_uid, edit->stat1.st_gid);
+    (void) mc_chmod (savename_vpath, edit->stat1.st_mode);
+
+    fd = mc_open (savename_vpath, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, edit->stat1.st_mode);
     if (fd == -1)
         goto error_save;
 
     /* pipe save */
-    p = edit_get_write_filter (savename, real_filename);
+    p = edit_get_write_filter (savename_vpath, real_filename_vpath);
     if (p != NULL)
     {
         FILE *file;
@@ -323,18 +322,19 @@ edit_save_file (WEdit * edit, const char *filename)
             goto error_save;
 
         /* Update the file information, especially the mtime. */
-        if (mc_stat (savename, &edit->stat1) == -1)
+        if (mc_stat (savename_vpath, &edit->stat1) == -1)
             goto error_save;
     }
     else
     {                           /* change line breaks */
         FILE *file;
+        const vfs_path_element_t *path_element;
 
         mc_close (fd);
 
-        file = (FILE *) fopen (savename, "w");
-
-        if (file)
+        path_element = vfs_path_get_by_index (savename_vpath, -1);
+        file = (FILE *) fopen (path_element->path, "w");
+        if (file != NULL)
         {
             filelen = edit_write_stream (edit, file);
             fclose (file);
@@ -343,7 +343,7 @@ edit_save_file (WEdit * edit, const char *filename)
         {
             char *msg;
 
-            msg = g_strdup_printf (_("Cannot open file for writing: %s"), savename);
+            msg = g_strdup_printf (_("Cannot open file for writing: %s"), path_element->path);
             edit_error_dialog (_("Error"), msg);
             g_free (msg);
             goto error_save;
@@ -355,28 +355,33 @@ edit_save_file (WEdit * edit, const char *filename)
 
     if (this_save_mode == EDIT_DO_BACKUP)
     {
+        vfs_path_t *tmp_vpath;
+        gboolean ok;
+
+#ifdef HAVE_ASSERT_H
         assert (option_backup_ext != NULL);
-        tmp = g_strconcat (real_filename, option_backup_ext, (char *) NULL);
-        if (mc_rename (real_filename, tmp) == -1)
-        {
-            g_free (tmp);
+#endif
+        tmp_vpath = vfs_path_append_new (real_filename_vpath, option_backup_ext, (char *) NULL);
+        ok = (mc_rename (real_filename_vpath, tmp_vpath) != -1);
+        vfs_path_free (tmp_vpath);
+        if (!ok)
             goto error_save;
-        }
     }
 
     if (this_save_mode != EDIT_QUICK_SAVE)
-        if (mc_rename (savename, real_filename) == -1)
+        if (mc_rename (savename_vpath, real_filename_vpath) == -1)
             goto error_save;
-    g_free (savename);
-    g_free (real_filename);
+
+    vfs_path_free (real_filename_vpath);
+    vfs_path_free (savename_vpath);
     return 1;
   error_save:
     /*  FIXME: Is this safe ?
      *  if (this_save_mode != EDIT_QUICK_SAVE)
      *      mc_unlink (savename);
      */
-    g_free (real_filename);
-    g_free (savename);
+    vfs_path_free (real_filename_vpath);
+    vfs_path_free (savename_vpath);
     return 0;
 }
 
@@ -394,7 +399,7 @@ edit_check_newline (WEdit * edit)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static char *
+static vfs_path_t *
 edit_get_save_file_as (WEdit * edit)
 {
 #define DLG_WIDTH 64
@@ -402,7 +407,8 @@ edit_get_save_file_as (WEdit * edit)
 
     static LineBreaks cur_lb = LB_ASIS;
 
-    char *filename = edit->filename;
+    char *filename = vfs_path_to_str (edit->filename_vpath);
+    char *filename_res;
 
     const char *lb_names[LB_NAMES] = {
         N_("&Do not change"),
@@ -417,7 +423,7 @@ edit_get_save_file_as (WEdit * edit)
         QUICK_RADIO (5, DLG_WIDTH, DLG_HEIGHT - 8, DLG_HEIGHT, LB_NAMES, lb_names, (int *) &cur_lb),
         QUICK_LABEL (3, DLG_WIDTH, DLG_HEIGHT - 9, DLG_HEIGHT, N_("Change line breaks to:")),
         QUICK_INPUT (3, DLG_WIDTH, DLG_HEIGHT - 11, DLG_HEIGHT, filename, DLG_WIDTH - 6, 0,
-                     "save-as", &filename),
+                     "save-as", &filename_res),
         QUICK_LABEL (3, DLG_WIDTH, DLG_HEIGHT - 12, DLG_HEIGHT, N_("Enter file name:")),
         QUICK_END
     };
@@ -431,18 +437,24 @@ edit_get_save_file_as (WEdit * edit)
     if (quick_dialog (&Quick_options) != B_CANCEL)
     {
         char *fname;
+        vfs_path_t *ret_vpath;
 
         edit->lb = cur_lb;
-        fname = tilde_expand (filename);
-        g_free (filename);
-        return fname;
+        fname = tilde_expand (filename_res);
+        g_free (filename_res);
+        ret_vpath = vfs_path_from_str (fname);
+        g_free (fname);
+        return ret_vpath;
     }
+    g_free (filename);
 
     return NULL;
 
 #undef DLG_WIDTH
 #undef DLG_HEIGHT
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 /** returns 1 on success */
 
@@ -452,12 +464,12 @@ edit_save_cmd (WEdit * edit)
     int res, save_lock = 0;
 
     if (!edit->locked && !edit->delete_file)
-        save_lock = edit_lock_file (edit);
-    res = edit_save_file (edit, edit->filename);
+        save_lock = lock_file (edit->filename_vpath);
+    res = edit_save_file (edit, edit->filename_vpath);
 
     /* Maintain modify (not save) lock on failure */
     if ((res > 0 && edit->locked) || save_lock)
-        edit->locked = edit_unlock_file (edit);
+        edit->locked = unlock_file (edit->filename_vpath);
 
     /* On failure try 'save as', it does locking on its own */
     if (!res)
@@ -476,27 +488,20 @@ edit_save_cmd (WEdit * edit)
 /** returns 1 on error */
 
 static int
-edit_load_file_from_filename (WEdit * edit, char *exp)
+edit_load_file_from_filename (WEdit * edit, const vfs_path_t * exp_vpath)
 {
     int prev_locked = edit->locked;
-    char *prev_filename = g_strdup (edit->filename);
+    vfs_path_t *prev_filename;
+    int ret = 0;
 
-    if (!edit_reload (edit, exp))
-    {
-        g_free (prev_filename);
-        return 1;
-    }
+    prev_filename = vfs_path_clone (edit->filename_vpath);
+    if (!edit_reload (edit, exp_vpath))
+        ret = 1;
+    else if (prev_locked)
+        unlock_file (prev_filename);
 
-    if (prev_locked)
-    {
-        char *fullpath;
-
-        fullpath = mc_build_filename (edit->dir, prev_filename, (char *) NULL);
-        unlock_file (fullpath);
-        g_free (fullpath);
-    }
-    g_free (prev_filename);
-    return 0;
+    vfs_path_free (prev_filename);
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -504,7 +509,7 @@ edit_load_file_from_filename (WEdit * edit, char *exp)
 static void
 edit_load_syntax_file (WEdit * edit)
 {
-    char *extdir;
+    vfs_path_t *extdir_vpath;
     int dir = 0;
 
     if (geteuid () == 0)
@@ -514,26 +519,28 @@ edit_load_syntax_file (WEdit * edit)
                             _("&User"), _("&System Wide"));
     }
 
-    extdir = g_build_filename (mc_global.sysconfig_dir, "syntax", "Syntax", (char *) NULL);
-    if (!exist_file (extdir))
+    extdir_vpath =
+        vfs_path_build_filename (mc_global.sysconfig_dir, "syntax", "Syntax", (char *) NULL);
+    if (!exist_file (vfs_path_get_last_path_str (extdir_vpath)))
     {
-        g_free (extdir);
-        extdir = g_build_filename (mc_global.share_data_dir, "syntax", "Syntax", (char *) NULL);
+        vfs_path_free (extdir_vpath);
+        extdir_vpath =
+            vfs_path_build_filename (mc_global.share_data_dir, "syntax", "Syntax", (char *) NULL);
     }
 
     if (dir == 0)
     {
-        char *buffer;
+        vfs_path_t *user_syntax_file_vpath;
 
-        buffer = mc_config_get_full_path (EDIT_SYNTAX_FILE);
-        check_for_default (extdir, buffer);
-        edit_load_file_from_filename (edit, buffer);
-        g_free (buffer);
+        user_syntax_file_vpath = mc_config_get_full_vpath (EDIT_SYNTAX_FILE);
+        check_for_default (extdir_vpath, user_syntax_file_vpath);
+        edit_load_file_from_filename (edit, user_syntax_file_vpath);
+        vfs_path_free (user_syntax_file_vpath);
     }
     else if (dir == 1)
-        edit_load_file_from_filename (edit, extdir);
+        edit_load_file_from_filename (edit, extdir_vpath);
 
-    g_free (extdir);
+    vfs_path_free (extdir_vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -541,53 +548,54 @@ edit_load_syntax_file (WEdit * edit)
 static void
 edit_load_menu_file (WEdit * edit)
 {
-    char *buffer;
-    char *menufile;
+    vfs_path_t *buffer_vpath;
+    vfs_path_t *menufile_vpath;
     int dir = 0;
 
     dir = query_dialog (_("Menu edit"),
                         _("Which menu file do you want to edit?"), D_NORMAL,
                         geteuid () != 0 ? 2 : 3, _("&Local"), _("&User"), _("&System Wide"));
 
-    menufile = concat_dir_and_file (mc_global.sysconfig_dir, EDIT_GLOBAL_MENU);
+    menufile_vpath = vfs_path_build_filename (mc_global.sysconfig_dir, EDIT_GLOBAL_MENU, NULL);
 
-    if (!exist_file (menufile))
+    if (!exist_file (vfs_path_get_last_path_str (menufile_vpath)))
     {
-        g_free (menufile);
-        menufile = concat_dir_and_file (mc_global.share_data_dir, EDIT_GLOBAL_MENU);
+        vfs_path_free (menufile_vpath);
+        menufile_vpath = vfs_path_build_filename (mc_global.share_data_dir, EDIT_GLOBAL_MENU, NULL);
     }
 
     switch (dir)
     {
     case 0:
-        buffer = g_strdup (EDIT_LOCAL_MENU);
-        check_for_default (menufile, buffer);
-        chmod (buffer, 0600);
+        buffer_vpath = vfs_path_from_str (EDIT_LOCAL_MENU);
+        check_for_default (menufile_vpath, buffer_vpath);
+        chmod (vfs_path_get_last_path_str (buffer_vpath), 0600);
         break;
 
     case 1:
-        buffer = mc_config_get_full_path (EDIT_HOME_MENU);
-        check_for_default (menufile, buffer);
+        buffer_vpath = mc_config_get_full_vpath (EDIT_HOME_MENU);
+        check_for_default (menufile_vpath, buffer_vpath);
         break;
 
     case 2:
-        buffer = concat_dir_and_file (mc_global.sysconfig_dir, EDIT_GLOBAL_MENU);
-        if (!exist_file (buffer))
+        buffer_vpath = vfs_path_build_filename (mc_global.sysconfig_dir, EDIT_GLOBAL_MENU, NULL);
+        if (!exist_file (vfs_path_get_last_path_str (buffer_vpath)))
         {
-            g_free (buffer);
-            buffer = concat_dir_and_file (mc_global.share_data_dir, EDIT_GLOBAL_MENU);
+            vfs_path_free (buffer_vpath);
+            buffer_vpath =
+                vfs_path_build_filename (mc_global.share_data_dir, EDIT_GLOBAL_MENU, NULL);
         }
         break;
 
     default:
-        g_free (menufile);
+        vfs_path_free (menufile_vpath);
         return;
     }
 
-    edit_load_file_from_filename (edit, buffer);
+    edit_load_file_from_filename (edit, buffer_vpath);
 
-    g_free (buffer);
-    g_free (menufile);
+    vfs_path_free (buffer_vpath);
+    vfs_path_free (menufile_vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -703,6 +711,167 @@ edit_block_delete (WEdit * edit)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/**
+ * Get EOL symbol for searching.
+ *
+ * @param edit editor object
+ * @return EOL symbol
+ */
+
+static inline char
+edit_search_get_current_end_line_char (const WEdit * edit)
+{
+    switch (edit->lb)
+    {
+    case LB_MAC:
+        return '\r';
+    default:
+        return '\n';
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Checking if search condition have BOL(^) or EOL ($) regexp special characters.
+ *
+ * @param search search object
+ * @return result of checks.
+ */
+
+static edit_search_line_t
+edit_get_search_line_type (mc_search_t * search)
+{
+    edit_search_line_t search_line_type = 0;
+
+    if (search->search_type != MC_SEARCH_T_REGEX)
+        return search_line_type;
+
+    if (*search->original == '^')
+        search_line_type |= AT_START_LINE;
+
+    if (search->original[search->original_len - 1] == '$')
+        search_line_type |= AT_END_LINE;
+    return search_line_type;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Calculating the start position of next line.
+ *
+ * @param edit              editor object
+ * @param current_pos       current position
+ * @param max_pos           max position
+ * @param end_string_symbol end of line symbol
+ * @return start position of next line
+ */
+
+static off_t
+edit_calculate_start_of_next_line (WEdit * edit, off_t current_pos, off_t max_pos,
+                                   char end_string_symbol)
+{
+    off_t i;
+
+    for (i = current_pos; i < max_pos; i++)
+    {
+        current_pos++;
+        if (edit_get_byte (edit, i) == end_string_symbol)
+            break;
+    }
+
+    return current_pos;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Calculating the end position of previous line.
+ *
+ * @param edit              editor object
+ * @param current_pos       current position
+ * @param end_string_symbol end of line symbol
+ * @return end position of previous line
+ */
+
+static off_t
+edit_calculate_end_of_previous_line (WEdit * edit, off_t current_pos, char end_string_symbol)
+{
+    off_t i;
+
+    for (i = current_pos - 1; i >= 0; i--)
+        if (edit_get_byte (edit, i) == end_string_symbol)
+            break;
+
+    return i;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Calculating the start position of previous line.
+ *
+ * @param edit              editor object
+ * @param current_pos       current position
+ * @param end_string_symbol end of line symbol
+ * @return start position of previous line
+ */
+
+static inline off_t
+edit_calculate_start_of_previous_line (WEdit * edit, off_t current_pos, char end_string_symbol)
+{
+    current_pos = edit_calculate_end_of_previous_line (edit, current_pos, end_string_symbol);
+    current_pos = edit_calculate_end_of_previous_line (edit, current_pos, end_string_symbol);
+
+    return (current_pos + 1);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Calculating the start position of current line.
+ *
+ * @param edit              editor object
+ * @param current_pos       current position
+ * @param end_string_symbol end of line symbol
+ * @return start position of current line
+ */
+
+static inline off_t
+edit_calculate_start_of_current_line (WEdit * edit, off_t current_pos, char end_string_symbol)
+{
+    current_pos = edit_calculate_end_of_previous_line (edit, current_pos, end_string_symbol);
+
+    return (current_pos + 1);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Fixing (if needed) search start position if 'only in selection' option present.
+ *
+ * @param edit              editor object
+ */
+
+static void
+edit_search_fix_search_start_if_selection (WEdit * edit)
+{
+    long start_mark = 0;
+    long end_mark = 0;
+
+    if (!edit_search_options.only_in_selection)
+        return;
+
+    if (eval_marks (edit, &start_mark, &end_mark) != 0)
+        return;
+
+    if (edit_search_options.backwards)
+    {
+        if (edit->search_start > end_mark || edit->search_start <= start_mark)
+            edit->search_start = end_mark;
+    }
+    else
+    {
+        if (edit->search_start < start_mark || edit->search_start >= end_mark)
+            edit->search_start = start_mark;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
 
 static gboolean
 editcmd_find (WEdit * edit, gsize * len)
@@ -712,7 +881,11 @@ editcmd_find (WEdit * edit, gsize * len)
     long start_mark = 0;
     long end_mark = edit->last_byte;
     int mark_res = 0;
+    char end_string_symbol;
 
+    end_string_symbol = edit_search_get_current_end_line_char (edit);
+
+    /* prepare for search */
     if (edit_search_options.only_in_selection)
     {
         mark_res = eval_marks (edit, &start_mark, &end_mark);
@@ -722,19 +895,26 @@ editcmd_find (WEdit * edit, gsize * len)
             edit->search->error_str = g_strdup (_("Search string not found"));
             return FALSE;
         }
-        if (edit_search_options.backwards)
+
+        /* fix the start and the end of search block positions */
+        if ((edit->search_line_type & AT_START_LINE) != 0
+            && (start_mark != 0 || edit_get_byte (edit, start_mark - 1) != end_string_symbol))
         {
-            if (search_start > end_mark || search_start <= start_mark)
-            {
-                search_start = end_mark;
-            }
+            start_mark =
+                edit_calculate_start_of_next_line (edit, start_mark, edit->last_byte,
+                                                   end_string_symbol);
         }
-        else
+        if ((edit->search_line_type & AT_END_LINE) != 0
+            && (end_mark - 1 != edit->last_byte
+                || edit_get_byte (edit, end_mark) != end_string_symbol))
         {
-            if (search_start < start_mark || search_start >= end_mark)
-            {
-                search_start = start_mark;
-            }
+            end_mark = edit_calculate_end_of_previous_line (edit, end_mark, end_string_symbol);
+        }
+        if (start_mark >= end_mark)
+        {
+            edit->search->error = MC_SEARCH_E_NOTFOUND;
+            edit->search->error_str = g_strdup (_("Search string not found"));
+            return FALSE;
         }
     }
     else
@@ -742,13 +922,21 @@ editcmd_find (WEdit * edit, gsize * len)
         if (edit_search_options.backwards)
             end_mark = max (1, edit->curs1) - 1;
     }
+
+    /* search */
     if (edit_search_options.backwards)
     {
+        /* backward search */
         search_end = end_mark;
+
+        if ((edit->search_line_type & AT_START_LINE) != 0)
+            search_start =
+                edit_calculate_start_of_current_line (edit, search_start, end_string_symbol);
+
         while ((int) search_start >= start_mark)
         {
-            if (search_end > (off_t) (search_start + edit->search->original_len) &&
-                mc_search_is_fixed_search_str (edit->search))
+            if (search_end > (off_t) (search_start + edit->search->original_len)
+                && mc_search_is_fixed_search_str (edit->search))
             {
                 search_end = search_start + edit->search->original_len;
             }
@@ -757,12 +945,22 @@ editcmd_find (WEdit * edit, gsize * len)
             {
                 return TRUE;
             }
-            search_start--;
+
+
+            if ((edit->search_line_type & AT_START_LINE) != 0)
+                search_start =
+                    edit_calculate_start_of_previous_line (edit, search_start, end_string_symbol);
+            else
+                search_start--;
         }
         edit->search->error_str = g_strdup (_("Search string not found"));
     }
     else
     {
+        /* forward search */
+        if ((edit->search_line_type & AT_START_LINE) != 0 && search_start != start_mark)
+            search_start =
+                edit_calculate_start_of_next_line (edit, search_start, end_mark, end_string_symbol);
         return mc_search_run (edit->search, (void *) edit, search_start, end_mark, len);
     }
     return FALSE;
@@ -889,7 +1087,11 @@ static void
 edit_search (WEdit * edit)
 {
     if (editcmd_dialog_search_show (edit))
+    {
+        edit->search_line_type = edit_get_search_line_type (edit->search);
+        edit_search_fix_search_start_if_selection (edit);
         edit_do_search (edit);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1401,7 +1603,9 @@ menu_save_mode_cmd (void)
     size_t maxlen = 0;
     size_t w0, w1, b_len, w3;
 
+#ifdef HAVE_ASSERT_H
     assert (option_backup_ext != NULL);
+#endif
 
     /* OK/Cancel buttons */
     w0 = str_term_width1 (_(widgets[0].u.button.text)) + 3;
@@ -1440,16 +1644,13 @@ menu_save_mode_cmd (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_set_filename (WEdit * edit, const char *name)
+edit_set_filename (WEdit * edit, const vfs_path_t * name_vpath)
 {
-    g_free (edit->filename);
+    vfs_path_free (edit->filename_vpath);
+    edit->filename_vpath = vfs_path_clone (name_vpath);
 
-    if (name == NULL)
-        name = "";
-
-    edit->filename = tilde_expand (name);
-    if (edit->dir == NULL && !g_path_is_absolute (name))
-        edit->dir = vfs_get_current_dir ();
+    if (edit->dir_vpath == NULL)
+        edit->dir_vpath = vfs_path_clone (vfs_get_raw_current_dir ());
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1460,32 +1661,40 @@ int
 edit_save_as_cmd (WEdit * edit)
 {
     /* This heads the 'Save As' dialog box */
-    char *exp;
+    vfs_path_t *exp_vpath;
     int save_lock = 0;
     int different_filename = 0;
 
     if (!edit_check_newline (edit))
         return 0;
 
-    exp = edit_get_save_file_as (edit);
+    exp_vpath = edit_get_save_file_as (edit);
     edit_push_undo_action (edit, KEY_PRESS + edit->start_display);
 
-    if (exp)
+    if (exp_vpath != NULL)
     {
-        if (!*exp)
-        {
-            g_free (exp);
-            edit->force |= REDRAW_COMPLETELY;
-            return 0;
-        }
+        if (vfs_path_len (exp_vpath) == 0)
+            goto ret;
         else
         {
             int rv;
-            if (strcmp (edit->filename, exp))
+
+            if (vfs_path_cmp (edit->filename_vpath, exp_vpath) != 0)
             {
                 int file;
+                struct stat sb;
+
+                if (mc_stat (exp_vpath, &sb) == 0 && !S_ISREG (sb.st_mode))
+                {
+                    edit_error_dialog (_("Save as"),
+                                       get_sys_error (_
+                                                      ("Cannot save: destination is not a regular file")));
+                    goto ret;
+                }
+
                 different_filename = 1;
-                file = mc_open (exp, O_RDONLY | O_BINARY);
+                file = mc_open (exp_vpath, O_RDONLY | O_BINARY);
+
                 if (file != -1)
                 {
                     /* the file exists */
@@ -1494,23 +1703,19 @@ edit_save_as_cmd (WEdit * edit)
                     if (edit_query_dialog2
                         (_("Warning"),
                          _("A file already exists with this name"), _("&Overwrite"), _("&Cancel")))
-                    {
-                        edit->force |= REDRAW_COMPLETELY;
-                        g_free (exp);
-                        return 0;
-                    }
+                        goto ret;
                 }
                 else
                 {
                     edit->stat1.st_mode |= S_IWUSR;
                 }
-                save_lock = lock_file (exp);
+                save_lock = lock_file (exp_vpath);
             }
             else
             {
                 /* filenames equal, check if already locked */
                 if (!edit->locked && !edit->delete_file)
-                    save_lock = lock_file (exp);
+                    save_lock = lock_file (exp_vpath);
             }
 
             if (different_filename)
@@ -1522,7 +1727,7 @@ edit_save_as_cmd (WEdit * edit)
                 edit->stat1.st_mode |= S_IWRITE;
             }
 
-            rv = edit_save_file (edit, exp);
+            rv = edit_save_file (edit, exp_vpath);
             switch (rv)
             {
             case 1:
@@ -1530,24 +1735,24 @@ edit_save_as_cmd (WEdit * edit)
                 if (different_filename)
                 {
                     if (save_lock)
-                        unlock_file (exp);
+                        unlock_file (exp_vpath);
                     if (edit->locked)
-                        edit->locked = edit_unlock_file (edit);
+                        edit->locked = unlock_file (edit->filename_vpath);
                 }
                 else
                 {
                     if (edit->locked || save_lock)
-                        edit->locked = edit_unlock_file (edit);
+                        edit->locked = unlock_file (edit->filename_vpath);
                 }
 
-                edit_set_filename (edit, exp);
+                edit_set_filename (edit, exp_vpath);
                 if (edit->lb != LB_ASIS)
-                    edit_reload (edit, exp);
-                g_free (exp);
+                    edit_reload (edit, exp_vpath);
                 edit->modified = 0;
                 edit->delete_file = 0;
                 if (different_filename)
                     edit_load_syntax (edit, NULL, edit->syntax_type);
+                vfs_path_free (exp_vpath);
                 edit->force |= REDRAW_COMPLETELY;
                 return 1;
             default:
@@ -1556,13 +1761,14 @@ edit_save_as_cmd (WEdit * edit)
             case -1:
                 /* Failed, so maintain modify (not save) lock */
                 if (save_lock)
-                    unlock_file (exp);
-                g_free (exp);
-                edit->force |= REDRAW_COMPLETELY;
-                return 0;
+                    unlock_file (exp_vpath);
+                break;
             }
         }
     }
+
+  ret:
+    vfs_path_free (exp_vpath);
     edit->force |= REDRAW_COMPLETELY;
     return 0;
 }
@@ -1611,7 +1817,7 @@ edit_execute_macro (WEdit * edit, int hotkey)
             }
         }
     }
-    edit_update_screen (edit);
+
     return res;
 }
 
@@ -1836,18 +2042,24 @@ edit_save_confirm_cmd (WEdit * edit)
 {
     gchar *f = NULL;
 
+    if (edit->filename_vpath == NULL)
+        return edit_save_as_cmd (edit);
+
     if (!edit_check_newline (edit))
         return 0;
 
     if (edit_confirm_save)
     {
-        f = g_strdup_printf (_("Confirm save file: \"%s\""), edit->filename);
-        if (edit_query_dialog2 (_("Save file"), f, _("&Save"), _("&Cancel")))
-        {
-            g_free (f);
-            return 0;
-        }
+        char *filename;
+        gboolean ok;
+
+        filename = vfs_path_to_str (edit->filename_vpath);
+        f = g_strdup_printf (_("Confirm save file: \"%s\""), filename);
+        g_free (filename);
+        ok = (edit_query_dialog2 (_("Save file"), f, _("&Save"), _("&Cancel")) == 0);
         g_free (f);
+        if (!ok)
+            return 0;
     }
     return edit_save_cmd (edit);
 }
@@ -1880,8 +2092,6 @@ edit_new_cmd (WEdit * edit)
 int
 edit_load_cmd (WEdit * edit, edit_current_file_t what)
 {
-    char *exp;
-
     if (edit->modified
         && (edit_query_dialog2
             (_("Warning"),
@@ -1895,14 +2105,26 @@ edit_load_cmd (WEdit * edit, edit_current_file_t what)
     switch (what)
     {
     case EDIT_FILE_COMMON:
-        exp = input_expand_dialog (_("Load"), _("Enter file name:"),
-                                   MC_HISTORY_EDIT_LOAD, edit->filename);
-
-        if (exp)
         {
-            if (*exp)
-                edit_load_file_from_filename (edit, exp);
-            g_free (exp);
+            char *filename, *exp;
+
+            filename = vfs_path_to_str (edit->filename_vpath);
+            exp = input_expand_dialog (_("Load"), _("Enter file name:"),
+                                       MC_HISTORY_EDIT_LOAD, filename);
+            g_free (filename);
+
+            if (exp != NULL)
+            {
+                if (*exp != '\0')
+                {
+                    vfs_path_t *exp_vpath;
+
+                    exp_vpath = vfs_path_from_str (exp);
+                    edit_load_file_from_filename (edit, exp_vpath);
+                    vfs_path_free (exp_vpath);
+                }
+                g_free (exp);
+            }
         }
         break;
 
@@ -2244,6 +2466,7 @@ edit_replace_cmd (WEdit * edit, int again)
     static char *saved2 = NULL;
     char *input1 = NULL;        /* user input from the dialog */
     char *input2 = NULL;
+    GString *input2_str = NULL;
     char *disp1 = NULL;
     char *disp2 = NULL;
     long times_replaced = 0;
@@ -2269,6 +2492,7 @@ edit_replace_cmd (WEdit * edit, int again)
     else
     {
         char *tmp_inp1, *tmp_inp2;
+
         disp1 = edit_replace_cmd__conv_to_display (saved1 ? saved1 : (char *) "");
         disp2 = edit_replace_cmd__conv_to_display (saved2 ? saved2 : (char *) "");
 
@@ -2299,6 +2523,8 @@ edit_replace_cmd (WEdit * edit, int again)
         edit->search = NULL;
     }
 
+    input2_str = g_string_new (input2);
+
     if (!edit->search)
     {
         edit->search = mc_search_new (input1, -1);
@@ -2312,6 +2538,8 @@ edit_replace_cmd (WEdit * edit, int again)
         edit->search->is_case_sensitive = edit_search_options.case_sens;
         edit->search->whole_words = edit_search_options.whole_words;
         edit->search->search_fn = edit_search_cmd_callback;
+        edit->search_line_type = edit_get_search_line_type (edit->search);
+        edit_search_fix_search_start_if_selection (edit);
     }
 
     if (edit->found_len && edit->search_start == edit->found_start + 1
@@ -2343,7 +2571,7 @@ edit_replace_cmd (WEdit * edit, int again)
         if ((edit->search_start >= 0) && (edit->search_start < edit->last_byte))
         {
             gsize i;
-            GString *tmp_str, *repl_str;
+            GString *repl_str;
 
             edit->found_start = edit->search_start;
             i = edit->found_len = len;
@@ -2392,10 +2620,7 @@ edit_replace_cmd (WEdit * edit, int again)
                 }
             }
 
-            /* don't process string each time */
-            tmp_str = g_string_new (input2);
-            repl_str = mc_search_prepare_replace_str (edit->search, tmp_str);
-            g_string_free (tmp_str, TRUE);
+            repl_str = mc_search_prepare_replace_str (edit->search, input2_str);
 
             if (edit->search->error != MC_SEARCH_E_OK)
             {
@@ -2417,10 +2642,12 @@ edit_replace_cmd (WEdit * edit, int again)
 
             /* so that we don't find the same string again */
             if (edit_search_options.backwards)
+            {
                 edit->search_start--;
+            }
             else
             {
-                edit->search_start += edit->found_len;
+                edit->search_start += edit->found_len + (len == 0 ? 1 : 0);
 
                 if (edit->search_start >= edit->last_byte)
                     break;
@@ -2454,6 +2681,8 @@ edit_replace_cmd (WEdit * edit, int again)
   cleanup:
     g_free (input1);
     g_free (input2);
+    if (input2_str != NULL)
+        g_string_free (input2_str, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2469,6 +2698,7 @@ edit_search_cmd_callback (const void *user_data, gsize char_offset)
 void
 edit_search_cmd (WEdit * edit, gboolean again)
 {
+
     if (edit == NULL)
         return;
 
@@ -2505,6 +2735,7 @@ edit_search_cmd (WEdit * edit, gboolean again)
                 edit->search->is_case_sensitive = edit_search_options.case_sens;
                 edit->search->whole_words = edit_search_options.whole_words;
                 edit->search->search_fn = edit_search_cmd_callback;
+                edit->search_line_type = edit_get_search_line_type (edit->search);
                 edit_do_search (edit);
             }
         }
@@ -2533,7 +2764,7 @@ edit_ok_to_exit (WEdit * edit)
     if (!edit->modified)
         return TRUE;
 
-    if (!mc_global.widget.midnight_shutdown)
+    if (!mc_global.midnight_shutdown)
     {
         if (!edit_check_newline (edit))
             return FALSE;
@@ -2559,8 +2790,8 @@ edit_ok_to_exit (WEdit * edit)
     case 0:                    /* Yes */
         edit_push_markers (edit);
         edit_set_markers (edit, 0, 0, 0, 0);
-        if (!edit_save_cmd (edit) || mc_global.widget.midnight_shutdown)
-            return mc_global.widget.midnight_shutdown;
+        if (!edit_save_cmd (edit) || mc_global.midnight_shutdown)
+            return mc_global.midnight_shutdown;
         break;
     case 1:                    /* No */
         break;
@@ -2579,19 +2810,24 @@ int
 edit_save_block (WEdit * edit, const char *filename, long start, long finish)
 {
     int len, file;
+    vfs_path_t *vpath;
 
-    file = mc_open (filename, O_CREAT | O_WRONLY | O_TRUNC,
+    vpath = vfs_path_from_str (filename);
+    file = mc_open (vpath, O_CREAT | O_WRONLY | O_TRUNC,
                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | O_BINARY);
+    vfs_path_free (vpath);
     if (file == -1)
         return 0;
 
     if (edit->column_highlight)
     {
         int r;
+
         r = mc_write (file, VERTICAL_MAGIC, sizeof (VERTICAL_MAGIC));
         if (r > 0)
         {
             unsigned char *block, *p;
+
             p = block = edit_get_block (edit, start, finish, &len);
             while (len)
             {
@@ -2608,6 +2844,7 @@ edit_save_block (WEdit * edit, const char *filename, long start, long finish)
     {
         unsigned char *buf;
         int i = start, end;
+
         len = finish - start;
         buf = g_malloc0 (TEMP_BUF_LEN);
         while (start != finish)
@@ -2680,12 +2917,13 @@ edit_cut_to_X_buf_cmd (WEdit * edit)
 void
 edit_paste_from_X_buf_cmd (WEdit * edit)
 {
-    gchar *tmp;
+    vfs_path_t *tmp;
+
     /* try use external clipboard utility */
     mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_from_ext_clip", NULL);
-    tmp = mc_config_get_full_path (EDIT_CLIP_FILE);
+    tmp = mc_config_get_full_vpath (EDIT_CLIP_FILE);
     edit_insert_file (edit, tmp);
-    g_free (tmp);
+    vfs_path_free (tmp);
 }
 
 
@@ -2778,43 +3016,38 @@ edit_save_block_cmd (WEdit * edit)
 
 
 /* --------------------------------------------------------------------------------------------- */
-/** returns 1 on success */
+/** returns TRUE on success */
 
-int
+gboolean
 edit_insert_file_cmd (WEdit * edit)
 {
-    gchar *tmp;
+    char *tmp;
     char *exp;
+    gboolean ret = FALSE;
 
     tmp = mc_config_get_full_path (EDIT_CLIP_FILE);
     exp = input_expand_dialog (_("Insert file"), _("Enter file name:"),
                                MC_HISTORY_EDIT_INSERT_FILE, tmp);
     g_free (tmp);
+
     edit_push_undo_action (edit, KEY_PRESS + edit->start_display);
-    if (exp)
+
+    if (exp != NULL && *exp != '\0')
     {
-        if (!*exp)
-        {
-            g_free (exp);
-            return 0;
-        }
-        else
-        {
-            if (edit_insert_file (edit, exp) != 0)
-            {
-                g_free (exp);
-                edit->force |= REDRAW_COMPLETELY;
-                return 1;
-            }
-            else
-            {
-                g_free (exp);
-                edit_error_dialog (_("Insert file"), get_sys_error (_("Cannot insert file")));
-            }
-        }
+        vfs_path_t *exp_vpath;
+
+        exp_vpath = vfs_path_from_str (exp);
+        ret = (edit_insert_file (edit, exp_vpath) >= 0);
+        vfs_path_free (exp_vpath);
+
+        if (!ret)
+            edit_error_dialog (_("Insert file"), get_sys_error (_("Cannot insert file")));
     }
+
+    g_free (exp);
+
     edit->force |= REDRAW_COMPLETELY;
-    return 0;
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2877,9 +3110,14 @@ edit_sort_cmd (WEdit * edit)
 
     if (edit_block_delete_cmd (edit))
         return 1;
-    tmp = mc_config_get_full_path (EDIT_TEMP_FILE);
-    edit_insert_file (edit, tmp);
-    g_free (tmp);
+
+    {
+        vfs_path_t *tmp_vpath;
+
+        tmp_vpath = mc_config_get_full_vpath (EDIT_TEMP_FILE);
+        edit_insert_file (edit, tmp_vpath);
+        vfs_path_free (tmp_vpath);
+    }
     return 0;
 }
 
@@ -2916,9 +3154,14 @@ edit_ext_cmd (WEdit * edit)
     }
 
     edit->force |= REDRAW_COMPLETELY;
-    tmp = mc_config_get_full_path (EDIT_TEMP_FILE);
-    edit_insert_file (edit, tmp);
-    g_free (tmp);
+
+    {
+        vfs_path_t *tmp_vpath;
+
+        tmp_vpath = mc_config_get_full_vpath (EDIT_TEMP_FILE);
+        edit_insert_file (edit, tmp_vpath);
+        vfs_path_free (tmp_vpath);
+    }
     return 0;
 }
 
@@ -3131,9 +3374,9 @@ edit_load_forward_cmd (WEdit * edit)
             return 1;
         }
         edit_stack_iterator++;
-        if (edit_history_moveto[edit_stack_iterator].filename)
+        if (edit_history_moveto[edit_stack_iterator].filename_vpath)
         {
-            edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename,
+            edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename_vpath,
                               edit_history_moveto[edit_stack_iterator].line);
             return 0;
         }
@@ -3167,9 +3410,9 @@ edit_load_back_cmd (WEdit * edit)
     if (edit_stack_iterator > 0)
     {
         edit_stack_iterator--;
-        if (edit_history_moveto[edit_stack_iterator].filename)
+        if (edit_history_moveto[edit_stack_iterator].filename_vpath)
         {
-            edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename,
+            edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename_vpath,
                               edit_history_moveto[edit_stack_iterator].line);
             return 0;
         }

@@ -504,7 +504,7 @@ hotlist_button_callback (WButton * button, int action)
 
 #ifdef	ENABLE_VFS
     case B_FREE_ALL_VFS:
-        vfs_expire (1);
+        vfs_expire (TRUE);
         /* fall through */
 
     case B_REFRESH_VFS:
@@ -1092,7 +1092,7 @@ add_new_entry_cmd (void)
     int ret;
 
     /* Take current directory as default value for input fields */
-    to_free = title = url = strip_password (g_strdup (current_panel->cwd), 1);
+    to_free = title = url = vfs_path_to_str_flags (current_panel->cwd_vpath, 0, VPF_STRIP_PASSWORD);
 
     ret = add_new_entry_input (_("New hotlist entry"), _("Directory label:"),
                                _("Directory path:"), "[Hotlist]", &title, &url);
@@ -1227,35 +1227,33 @@ remove_from_hotlist (struct hotlist *entry)
 
     if (confirm_directory_hotlist_delete)
     {
-        char *title;
+        char text[BUF_MEDIUM];
         int result;
-
-        title = g_strconcat (_("Remove:"), " ", str_trunc (entry->label, 30), (char *) NULL);
 
         if (safe_delete)
             query_set_sel (1);
-        result = query_dialog (title,
-                               _("Are you sure you want to remove this entry?"),
-                               D_ERROR, 2, _("&Yes"), _("&No"));
 
-        g_free (title);
-
+        g_snprintf (text, sizeof (text), _("Are you sure you want to remove entry \"%s\"?"),
+                    str_trunc (entry->label, 30));
+        result = query_dialog (Q_ ("DialogTitle|Delete"), text, D_ERROR | D_CENTER, 2,
+                               _("&Yes"), _("&No"));
         if (result != 0)
             return;
     }
 
     if (entry->type == HL_TYPE_GROUP)
     {
-        if (entry->head)
+        struct hotlist *head = entry->head;
+
+        if (head != NULL && (head->type != HL_TYPE_DOTDOT || head->next != NULL))
         {
-            char *header;
+            char text[BUF_MEDIUM];
             int result;
 
-            header = g_strconcat (_("Remove:"), " ", str_trunc (entry->label, 30), (char *) NULL);
-            result = query_dialog (header, _("Group not empty.\nRemove it?"),
-                                   D_ERROR, 2, _("&Yes"), _("&No"));
-            g_free (header);
-
+            g_snprintf (text, sizeof (text), _("Group \"%s\" is not empty.\nRemove it?"),
+                        str_trunc (entry->label, 30));
+            result = query_dialog (Q_ ("DialogTitle|Delete"), text, D_ERROR | D_CENTER, 2,
+                                   _("&Yes"), _("&No"));
             if (result != 0)
                 return;
         }
@@ -1434,14 +1432,11 @@ hot_load_group (struct hotlist *grp)
             break;
         case TKN_ENTRY:
             {
-                vfs_path_t *vpath;
                 CHECK_TOKEN (TKN_STRING);
                 label = g_strdup (tkn_buf->str);
                 CHECK_TOKEN (TKN_URL);
                 CHECK_TOKEN (TKN_STRING);
-                vpath = vfs_path_from_str_flags (tkn_buf->str, VPF_USE_DEPRECATED_PARSER);
-                url = vfs_path_to_str (vpath);
-                vfs_path_free (vpath);
+                url = g_strdup (tkn_buf->str);
                 add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
                 SKIP_TO_EOL;
             }
@@ -1491,14 +1486,11 @@ hot_load_file (struct hotlist *grp)
             break;
         case TKN_ENTRY:
             {
-                vfs_path_t *vpath;
                 CHECK_TOKEN (TKN_STRING);
                 label = g_strdup (tkn_buf->str);
                 CHECK_TOKEN (TKN_URL);
                 CHECK_TOKEN (TKN_STRING);
-                vpath = vfs_path_from_str_flags (tkn_buf->str, VPF_USE_DEPRECATED_PARSER);
-                url = vfs_path_to_str (vpath);
-                vfs_path_free (vpath);
+                url = g_strdup (tkn_buf->str);
                 add2hotlist (label, url, HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
                 SKIP_TO_EOL;
             }
@@ -1696,14 +1688,18 @@ add_dotdot_to_list (void)
 void
 add2hotlist_cmd (void)
 {
-    char *lc_prompt, *label;
-    const char *cp = _("Label for \"%s\":");
-    int l = str_term_width1 (cp);
-    char *label_string = g_strdup (current_panel->cwd);
+    char *lc_prompt;
+    const char *cp = N_("Label for \"%s\":");
+    int l;
+    char *label_string, *label;
 
-    strip_password (label_string, 1);
+#ifdef ENABLE_NLS
+    cp = _(cp);
+#endif
 
-    lc_prompt = g_strdup_printf (cp, path_trunc (current_panel->cwd, COLS - 2 * UX - (l + 8)));
+    l = str_term_width1 (cp);
+    label_string = vfs_path_to_str_flags (current_panel->cwd_vpath, 0, VPF_STRIP_PASSWORD);
+    lc_prompt = g_strdup_printf (cp, str_trunc (label_string, COLS - 2 * UX - (l + 8)));
     label = input_dialog (_("Add to hotlist"), lc_prompt, MC_HISTORY_HOTLIST_ADD, label_string);
     g_free (lc_prompt);
 

@@ -203,6 +203,13 @@ static const GOptionEntry argument_terminal_table[] = {
     },
 
     {
+     "no-x11", 'X', ARGS_TERM_OPTIONS, G_OPTION_ARG_NONE,
+     &mc_global.tty.disable_x11,
+     N_("Disable X11 support"),
+     NULL
+    },
+
+    {
      "oldmouse", 'g', ARGS_TERM_OPTIONS, G_OPTION_ARG_NONE,
      &mc_global.tty.old_mouse,
      N_("Tries to use an old highlight mouse tracking"),
@@ -297,7 +304,7 @@ static const GOptionEntry argument_color_table[] = {
 
     {
      "skin", 'S', ARGS_COLOR_OPTIONS, G_OPTION_ARG_STRING,
-     &mc_global.skin,
+     &mc_global.tty.skin,
      N_("Show mc with specified skin"),
      "<string>"
     },
@@ -409,11 +416,193 @@ mc_args_add_extended_info_to_help (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-mc_setup_by_args (int argc, char *argv[])
+static gchar *
+mc_args__convert_help_to_syscharset (const gchar * charset, const gchar * error_message,
+                                     const gchar * help_str)
+{
+    GString *buffer;
+    GIConv conv;
+    gchar *full_help_str;
+
+    buffer = g_string_new ("");
+    conv = g_iconv_open (charset, "UTF-8");
+    full_help_str = g_strdup_printf ("%s\n\n%s\n", error_message, help_str);
+
+    str_convert (conv, full_help_str, buffer);
+
+    g_free (full_help_str);
+    g_iconv_close (conv);
+
+    return g_string_free (buffer, FALSE);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static gboolean
+parse_mc_e_argument (const gchar * option_name, const gchar * value, gpointer data, GError ** error)
+{
+    (void) option_name;
+    (void) data;
+    (void) error;
+
+    mc_global.mc_run_mode = MC_RUN_EDITOR;
+    mc_run_param0 = g_strdup (value);
+
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static gboolean
+parse_mc_v_argument (const gchar * option_name, const gchar * value, gpointer data, GError ** error)
+{
+    (void) option_name;
+    (void) data;
+    (void) error;
+
+    mc_global.mc_run_mode = MC_RUN_VIEWER;
+    mc_run_param0 = g_strdup (value);
+
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+mc_args_parse (int *argc, char ***argv, const char *translation_domain, GError ** error)
+{
+    const gchar *_system_codepage;
+    gboolean ok = TRUE;
+
+    _system_codepage = str_detect_termencoding ();
+
+#ifdef ENABLE_NLS
+    if (!str_isutf8 (_system_codepage))
+        bind_textdomain_codeset ("mc", "UTF-8");
+#endif
+
+    context = g_option_context_new (mc_args_add_usage_info ());
+
+    g_option_context_set_ignore_unknown_options (context, FALSE);
+
+    mc_args_add_extended_info_to_help ();
+
+    main_group = g_option_group_new ("main", _("Main options"), _("Main options"), NULL, NULL);
+
+    g_option_group_add_entries (main_group, argument_main_table);
+    g_option_context_set_main_group (context, main_group);
+    g_option_group_set_translation_domain (main_group, translation_domain);
+
+    terminal_group = g_option_group_new ("terminal", _("Terminal options"),
+                                         _("Terminal options"), NULL, NULL);
+
+    g_option_group_add_entries (terminal_group, argument_terminal_table);
+    g_option_context_add_group (context, terminal_group);
+    g_option_group_set_translation_domain (terminal_group, translation_domain);
+
+    color_group = mc_args_new_color_group ();
+
+    g_option_group_add_entries (color_group, argument_color_table);
+    g_option_context_add_group (context, color_group);
+    g_option_group_set_translation_domain (color_group, translation_domain);
+
+    if (!g_option_context_parse (context, argc, argv, error))
+    {
+        GError *error2 = NULL;
+
+        if (*error == NULL)
+            *error = g_error_new (MC_ERROR, 0, "%s\n", _("Arguments parse error!"));
+        else
+        {
+            gchar *help_str;
+
+#if GLIB_CHECK_VERSION(2,14,0)
+            help_str = g_option_context_get_help (context, TRUE, NULL);
+#else
+            help_str = g_strdup ("");
+#endif
+            if (str_isutf8 (_system_codepage))
+                error2 = g_error_new ((*error)->domain, (*error)->code, "%s\n\n%s\n",
+                                      (*error)->message, help_str);
+            else
+            {
+                gchar *full_help_str;
+
+                full_help_str =
+                    mc_args__convert_help_to_syscharset (_system_codepage, (*error)->message,
+                                                         help_str);
+                error2 = g_error_new ((*error)->domain, (*error)->code, "%s", full_help_str);
+                g_free (full_help_str);
+            }
+
+            g_free (help_str);
+            g_error_free (*error);
+            *error = error2;
+        }
+
+        ok = FALSE;
+    }
+
+    g_option_context_free (context);
+    mc_args_clean_temp_help_strings ();
+
+#ifdef ENABLE_NLS
+    if (!str_isutf8 (_system_codepage))
+        bind_textdomain_codeset ("mc", _system_codepage);
+#endif
+
+    return ok;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+mc_args_show_info (void)
+{
+    if (mc_args__show_version)
+    {
+        show_version ();
+        return FALSE;
+    }
+
+    if (mc_args__show_datadirs)
+    {
+        printf ("%s (%s)\n", mc_global.sysconfig_dir, mc_global.share_data_dir);
+        return FALSE;
+    }
+
+    if (mc_args__show_datadirs_extended)
+    {
+        show_datadirs_extended ();
+        return FALSE;
+    }
+
+    if (mc_args__show_configure_opts)
+    {
+        show_configure_options ();
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+mc_setup_by_args (int argc, char **argv, GError ** error)
 {
     const char *base;
     char *tmp;
+
+    if (mc_args__force_colors)
+        mc_global.tty.disable_colors = FALSE;
+
+#ifdef HAVE_SUBSHELL_SUPPORT
+    if (mc_args__nouse_subshell)
+        mc_global.tty.use_subshell = FALSE;
+#endif /* HAVE_SUBSHELL_SUPPORT */
 
 #ifdef ENABLE_VFS_SMB
     if (mc_args__debug_level != 0)
@@ -422,11 +611,16 @@ mc_setup_by_args (int argc, char *argv[])
 
     if (mc_args__netfs_logfile != NULL)
     {
+        vfs_path_t *vpath;
 #ifdef ENABLE_VFS_FTP
-        mc_setctl ("ftp://", VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
+        vpath = vfs_path_from_str ("ftp://");
+        mc_setctl (vpath, VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
+        vfs_path_free (vpath);
 #endif /* ENABLE_VFS_FTP */
 #ifdef ENABLE_VFS_SMB
-        mc_setctl ("smb://", VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
+        vpath = vfs_path_from_str ("smb://");
+        mc_setctl (vpath, VFS_SETCTL_LOGFILE, (void *) mc_args__netfs_logfile);
+        vfs_path_free (vpath);
 #endif /* ENABLE_VFS_SMB */
     }
 
@@ -459,13 +653,21 @@ mc_setup_by_args (int argc, char *argv[])
             {
                 char *fname;
                 struct stat st;
+                vfs_path_t *tmp_vpath, *fname_vpath;
+                gboolean ok;
 
                 fname = g_strndup (tmp, p - 1 - tmp);
+                tmp_vpath = vfs_path_from_str (tmp);
+                fname_vpath = vfs_path_from_str (fname);
                 /*
                  * Check that the file before the colon actually exists.
                  * If it doesn't exist, revert to the old behavior.
                  */
-                if (mc_stat (tmp, &st) == -1 && mc_stat (fname, &st) != -1)
+                ok = mc_stat (tmp_vpath, &st) == -1 && mc_stat (fname_vpath, &st) != -1;
+                vfs_path_free (tmp_vpath);
+                vfs_path_free (fname_vpath);
+
+                if (ok)
                 {
                     mc_run_param0 = fname;
                     mc_args__edit_start_line = atoi (p);
@@ -517,8 +719,8 @@ mc_setup_by_args (int argc, char *argv[])
             mc_run_param0 = g_strdup (tmp);
         else
         {
-            fprintf (stderr, "%s\n", _("No arguments given to the viewer."));
-            exit (EXIT_FAILURE);
+            *error = g_error_new (MC_ERROR, 0, "%s\n", _("No arguments given to the viewer."));
+            return FALSE;
         }
         mc_global.mc_run_mode = MC_RUN_VIEWER;
     }
@@ -529,8 +731,9 @@ mc_setup_by_args (int argc, char *argv[])
 
         if (argc < 3)
         {
-            fprintf (stderr, "%s\n", _("Two files are required to evoke the diffviewer."));
-            exit (EXIT_FAILURE);
+            *error = g_error_new (MC_ERROR, 0, "%s\n",
+                                  _("Two files are required to evoke the diffviewer."));
+            return FALSE;
         }
 
         if (tmp != NULL)
@@ -572,178 +775,8 @@ mc_setup_by_args (int argc, char *argv[])
             break;
         }
     }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static gboolean
-mc_args_process (int argc, char *argv[])
-{
-    if (mc_args__show_version)
-    {
-        show_version ();
-        return FALSE;
-    }
-    if (mc_args__show_datadirs)
-    {
-        printf ("%s (%s)\n", mc_global.sysconfig_dir, mc_global.share_data_dir);
-        return FALSE;
-    }
-
-    if (mc_args__show_datadirs_extended)
-    {
-        show_datadirs_extended ();
-        return FALSE;
-    }
-
-    if (mc_args__show_configure_opts)
-    {
-        show_configure_options ();
-        return FALSE;
-    }
-
-    if (mc_args__force_colors)
-        mc_global.tty.disable_colors = FALSE;
-
-#ifdef HAVE_SUBSHELL_SUPPORT
-    if (mc_args__nouse_subshell)
-        mc_global.tty.use_subshell = FALSE;
-#endif /* HAVE_SUBSHELL_SUPPORT */
-
-    mc_setup_by_args (argc, argv);
 
     return TRUE;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static gchar *
-mc_args__convert_help_to_syscharset (const gchar * charset, const gchar * error_message,
-                                     const gchar * help_str)
-{
-    GString *buffer = g_string_new ("");
-    GIConv conv = g_iconv_open (charset, "UTF-8");
-    gchar *full_help_str = g_strdup_printf ("%s\n\n%s\n", error_message, help_str);
-
-    str_convert (conv, full_help_str, buffer);
-
-    g_free (full_help_str);
-    g_iconv_close (conv);
-
-    return g_string_free (buffer, FALSE);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static gboolean
-parse_mc_e_argument (const gchar * option_name, const gchar * value, gpointer data, GError ** error)
-{
-    (void) option_name;
-    (void) data;
-    (void) error;
-
-    mc_global.mc_run_mode = MC_RUN_EDITOR;
-    mc_run_param0 = g_strdup (value);
-
-    return TRUE;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static gboolean
-parse_mc_v_argument (const gchar * option_name, const gchar * value, gpointer data, GError ** error)
-{
-    (void) option_name;
-    (void) data;
-    (void) error;
-
-    mc_global.mc_run_mode = MC_RUN_VIEWER;
-    mc_run_param0 = g_strdup (value);
-
-    return TRUE;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-/*** public functions ****************************************************************************/
-
-/* --------------------------------------------------------------------------------------------- */
-
-gboolean
-mc_args_handle (int argc, char **argv, const char *translation_domain)
-{
-    GError *error = NULL;
-    const gchar *_system_codepage = str_detect_termencoding ();
-
-#ifdef ENABLE_NLS
-    if (!str_isutf8 (_system_codepage))
-        bind_textdomain_codeset ("mc", "UTF-8");
-#endif
-
-    context = g_option_context_new (mc_args_add_usage_info ());
-
-    g_option_context_set_ignore_unknown_options (context, FALSE);
-
-    mc_args_add_extended_info_to_help ();
-
-    main_group = g_option_group_new ("main", _("Main options"), _("Main options"), NULL, NULL);
-
-    g_option_group_add_entries (main_group, argument_main_table);
-    g_option_context_set_main_group (context, main_group);
-    g_option_group_set_translation_domain (main_group, translation_domain);
-
-    terminal_group = g_option_group_new ("terminal", _("Terminal options"),
-                                         _("Terminal options"), NULL, NULL);
-
-    g_option_group_add_entries (terminal_group, argument_terminal_table);
-    g_option_context_add_group (context, terminal_group);
-    g_option_group_set_translation_domain (terminal_group, translation_domain);
-
-    color_group = mc_args_new_color_group ();
-
-    g_option_group_add_entries (color_group, argument_color_table);
-    g_option_context_add_group (context, color_group);
-    g_option_group_set_translation_domain (color_group, translation_domain);
-
-    if (!g_option_context_parse (context, &argc, &argv, &error))
-    {
-        if (error != NULL)
-        {
-            gchar *full_help_str;
-            gchar *help_str;
-
-#if GLIB_CHECK_VERSION(2,14,0)
-            help_str = g_option_context_get_help (context, TRUE, NULL);
-#else
-            help_str = g_strdup ("");
-#endif
-            if (!str_isutf8 (_system_codepage))
-                full_help_str =
-                    mc_args__convert_help_to_syscharset (_system_codepage, error->message,
-                                                         help_str);
-            else
-                full_help_str = g_strdup_printf ("%s\n\n%s\n", error->message, help_str);
-
-            fprintf (stderr, "%s", full_help_str);
-
-            g_free (help_str);
-            g_free (full_help_str);
-            g_error_free (error);
-        }
-        g_option_context_free (context);
-        mc_args_clean_temp_help_strings ();
-        return FALSE;
-    }
-
-    g_option_context_free (context);
-    mc_args_clean_temp_help_strings ();
-
-#ifdef ENABLE_NLS
-    if (!str_isutf8 (_system_codepage))
-        bind_textdomain_codeset ("mc", _system_codepage);
-#endif
-
-    return mc_args_process (argc, argv);
 }
 
 /* --------------------------------------------------------------------------------------------- */

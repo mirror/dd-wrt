@@ -166,7 +166,7 @@ vfs_findgid (const char *gname)
  */
 
 int
-vfs_mkstemps (char **pname, const char *prefix, const char *param_basename)
+vfs_mkstemps (vfs_path_t ** pname_vpath, const char *prefix, const char *param_basename)
 {
     const char *p;
     char *suffix, *q;
@@ -197,7 +197,7 @@ vfs_mkstemps (char **pname, const char *prefix, const char *param_basename)
     }
     *q = 0;
 
-    fd = mc_mkstemps (pname, prefix, suffix);
+    fd = mc_mkstemps (pname_vpath, prefix, suffix);
     g_free (suffix);
     return fd;
 }
@@ -230,14 +230,16 @@ vfs_url_split (const char *path, int default_port, vfs_url_flags_t flags)
     vfs_path_element_t *path_element;
 
     char *pcopy;
+    size_t pcopy_len;
     const char *pend;
     char *dir, *colon, *inner_colon, *at, *rest;
 
     path_element = g_new0 (vfs_path_element_t, 1);
     path_element->port = default_port;
 
-    pcopy = g_strdup (path);
-    pend = pcopy + strlen (pcopy);
+    pcopy_len = strlen (path);
+    pcopy = g_strndup (path, pcopy_len);
+    pend = pcopy + pcopy_len;
     dir = pcopy;
 
     if ((flags & URL_NOSLASH) == 0)
@@ -249,7 +251,7 @@ vfs_url_split (const char *path, int default_port, vfs_url_flags_t flags)
             path_element->path = g_strdup (PATH_SEP_STR);
         else
         {
-            path_element->path = g_strdup (dir);
+            path_element->path = g_strndup (dir, pcopy_len - (size_t) (dir - pcopy));
             *dir = '\0';
         }
     }
