@@ -1,5 +1,4 @@
 /*
- *   $Id: radvd.c,v 1.61 2011/05/04 17:22:57 reubenhwk Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -39,9 +38,9 @@ char usage_str[] = {
 "  -l, --logfile=PATH     Sets the log file.\n"
 "  -m, --logmethod=X      Sets the log method to one of: syslog, stderr, stderr_syslog, logfile, or none.\n"
 "  -p, --pidfile=PATH     Sets the pid file.\n"
-"  -s, --singleprocess    Use privsep.\n"
 "  -t, --chrootdir=PATH   Chroot to the specified path.\n"
 "  -u, --username=USER    Switch to the specified user.\n"
+"  -n, --nodaemon         Prevent the daemonizing.\n"
 "  -v, --version          Print the version and quit.\n"
 };
 
@@ -58,13 +57,14 @@ struct option prog_opt[] = {
 	{"version", 0, 0, 'v'},
 	{"help", 0, 0, 'h'},
 	{"singleprocess", 0, 0, 's'},
+	{"nodaemon", 0, 0, 'n'},
 	{NULL, 0, 0, 0}
 };
 
 #else
 
 char usage_str[] =
-	"[-hsvc] [-d level] [-C config_file] [-m log_method] [-l log_file]\n"
+	"[-hsvcn] [-d level] [-C config_file] [-m log_method] [-l log_file]\n"
 	"\t[-f facility] [-p pid_file] [-u username] [-t chrootdir]";
 
 #endif
@@ -93,20 +93,20 @@ void usage(void);
 int drop_root_privileges(const char *);
 int readin_config(char *);
 int check_conffile_perm(const char *, const char *);
+pid_t strtopid(char const * pidstr);
+void write_pid_file(char const *);
 void main_loop(void);
 
 int
 main(int argc, char *argv[])
 {
-	char pidstr[16];
-	ssize_t ret;
 	int c, log_method;
 	char *logfile, *pidfile;
-	int facility, fd;
+	int facility;
 	char *username = NULL;
 	char *chrootdir = NULL;
 	int configtest = 0;
-	int singleprocess = 0;
+	int daemonize = 1;
 #ifdef HAVE_GETOPT_LONG
 	int opt_idx;
 #endif
@@ -122,7 +122,7 @@ main(int argc, char *argv[])
 	pidfile = PATH_RADVD_PID;
 
 	/* parse args */
-#define OPTIONS_STR "d:C:l:m:p:t:u:vhcs"
+#define OPTIONS_STR "d:C:l:m:p:t:u:vhcsn"
 #ifdef HAVE_GETOPT_LONG
 	while ((c = getopt_long(argc, argv, OPTIONS_STR, prog_opt, &opt_idx)) > 0)
 #else
@@ -185,7 +185,10 @@ main(int argc, char *argv[])
 			configtest = 1;
 			break;
 		case 's':
-			singleprocess = 1;
+			fprintf(stderr, "privsep is not optional.  This options will be removed in a near future release.");
+			break;
+		case 'n':
+			daemonize = 0;
 			break;
 		case 'h':
 			usage();
@@ -266,19 +269,67 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 
+#ifdef USE_PRIVSEP
+	dlog(LOG_DEBUG, 3, "Initializing privsep");
+	if (privsep_init() < 0) {
+		perror("Failed to initialize privsep.");
+		exit(1);
+	}
+#endif
+
 	/* drop root privileges if requested. */
 	if (username) {
-		if (!singleprocess) {
-		 	dlog(LOG_DEBUG, 3, "Initializing privsep");
-		 	if (privsep_init() < 0)
-				flog(LOG_WARNING, "Failed to initialize privsep.");
-		}
-
 		if (drop_root_privileges(username) < 0) {
 			perror("drop_root_privileges");
 			exit(1);
 		}
 	}
+
+	/*
+	 * okay, config file is read in, socket and stuff is setup, so
+	 * lets fork now...
+	 */
+
+	if (get_debuglevel() == 0) {
+
+		if (daemonize) {
+			/* Detach from controlling terminal */
+			if (daemon(0, 0) < 0)
+				perror("daemon");
+		}
+	}
+
+	write_pid_file(pidfile);
+
+	/*
+	 *	config signal handlers
+	 */
+	signal(SIGHUP, sighup_handler);
+	signal(SIGTERM, sigterm_handler);
+	signal(SIGINT, sigint_handler);
+	signal(SIGUSR1, sigusr1_handler);
+
+	config_interface();
+	kickoff_adverts();
+	main_loop();
+	flog(LOG_INFO, "sending stop adverts", pidfile);
+	stop_adverts();
+	flog(LOG_INFO, "removing %s", pidfile);
+	unlink(pidfile);
+
+	return 0;
+}
+
+
+pid_t strtopid(char const * pidstr)
+{
+	return atol(pidstr);
+}
+
+void write_pid_file(char const * pidfile)
+{
+	int fd, ret;
+	char pidstr[32];
 
 	if ((fd = open(pidfile, O_RDONLY, 0)) > 0)
 	{
@@ -288,11 +339,14 @@ main(int argc, char *argv[])
 			flog(LOG_ERR, "cannot read radvd pid file, terminating: %s", strerror(errno));
 			exit(1);
 		}
-		pidstr[ret] = '\0';
-		if (!kill((pid_t)atol(pidstr), 0))
-		{
-			flog(LOG_ERR, "radvd already running, terminating.");
-			exit(1);
+		if (ret > 0) {
+				pid_t pid;
+				pidstr[ret] = '\0';
+				pid = strtopid(pidstr);
+				if (pid > 0 && !kill(pid, 0)) {
+					flog(LOG_ERR, "radvd already running, terminating.");
+					exit(1);
+				}
 		}
 		close(fd);
 		fd = open(pidfile, O_CREAT|O_TRUNC|O_WRONLY, 0644);
@@ -306,38 +360,6 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	/*
-	 * okay, config file is read in, socket and stuff is setup, so
-	 * lets fork now...
-	 */
-
-	if (get_debuglevel() == 0) {
-
-		/* Detach from controlling terminal */
-		if (daemon(0, 0) < 0)
-			perror("daemon");
-
-		/* close old logfiles, including stderr */
-		log_close();
-
-		/* reopen logfiles, but don't log to stderr unless explicitly requested */
-		if (log_method == L_STDERR_SYSLOG)
-			log_method = L_SYSLOG;
-		if (log_open(log_method, pname, logfile, facility) < 0) {
-			perror("log_open");
-			exit(1);
-		}
-
-	}
-
-	/*
-	 *	config signal handlers
-	 */
-	signal(SIGHUP, sighup_handler);
-	signal(SIGTERM, sigterm_handler);
-	signal(SIGINT, sigint_handler);
-	signal(SIGUSR1, sigusr1_handler);
-
 	snprintf(pidstr, sizeof(pidstr), "%ld\n", (long)getpid());
 
 	ret = write(fd, pidstr, strlen(pidstr));
@@ -348,14 +370,6 @@ main(int argc, char *argv[])
 	}
 
 	close(fd);
-
-	config_interface();
-	kickoff_adverts();
-	main_loop();
-	stop_adverts();
-	unlink(pidfile);
-
-	return 0;
 }
 
 void main_loop(void)
@@ -397,7 +411,7 @@ void main_loop(void)
 			}
 		}
 
-		dlog(LOG_DEBUG, 3, "polling for %g seconds.", timeout/1000.0);
+		dlog(LOG_DEBUG, 5, "polling for %g seconds.", timeout/1000.0);
 
 		rc = poll(fds, sizeof(fds)/sizeof(fds[0]), timeout);
 
@@ -431,7 +445,7 @@ void main_loop(void)
 				timer_handler(next);
 		}
 		else if ( rc == -1 ) {
-			flog(LOG_ERR, "poll error: %s", strerror(errno));
+			dlog(LOG_INFO, 3, "poll returned early: %s", strerror(errno));
 		}
 
 		if (sigterm_received || sigint_received) {
@@ -441,12 +455,14 @@ void main_loop(void)
 
 		if (sighup_received)
 		{
+			dlog(LOG_INFO, 3, "sig hup received.\n");
 			reload_config();
 			sighup_received = 0;
 		}
 
 		if (sigusr1_received)
 		{
+			dlog(LOG_INFO, 3, "sig usr1 received.\n");
 			reset_prefix_lifetimes();
 			sigusr1_received = 0;
 		}
@@ -555,12 +571,6 @@ void reload_config(void)
 
 	flog(LOG_INFO, "attempting to reread config file");
 
-	dlog(LOG_DEBUG, 4, "reopening log");
-	if (log_reopen() < 0) {
-		perror("log_reopen");
-		exit(1);
-	}
-
 	iface=IfaceList;
 	while(iface)
 	{
@@ -638,8 +648,6 @@ sighup_handler(int sig)
 	/* Linux has "one-shot" signals, reinstall the signal handler */
 	signal(SIGHUP, sighup_handler);
 
-	dlog(LOG_DEBUG, 4, "sighup_handler called");
-
 	sighup_received = 1;
 }
 
@@ -649,12 +657,9 @@ sigterm_handler(int sig)
 	/* Linux has "one-shot" signals, reinstall the signal handler */
 	signal(SIGTERM, sigterm_handler);
 
-	dlog(LOG_DEBUG, 4, "sigterm_handler called");
-
 	++sigterm_received;
 
 	if(sigterm_received > 1){
-		dlog(LOG_ERR, 1, "sigterm_handler called %d times...aborting...", sigterm_received);
 		abort();
 	}
 }
@@ -665,12 +670,9 @@ sigint_handler(int sig)
 	/* Linux has "one-shot" signals, reinstall the signal handler */
 	signal(SIGINT, sigint_handler);
 
-	dlog(LOG_DEBUG, 4, "sigint_handler called");
-
 	++sigint_received;
 
 	if(sigint_received > 1){
-		dlog(LOG_ERR, 1, "sigint_handler called %d times...aborting...", sigint_received);
 		abort();
 	}
 }
@@ -712,10 +714,7 @@ void sigusr1_handler(int sig)
 	/* Linux has "one-shot" signals, reinstall the signal handler */
 	signal(SIGUSR1, sigusr1_handler);
 
-	dlog(LOG_DEBUG, 4, "sigusr1_handler called");
-
 	sigusr1_received = 1;
-
 }
 
 int

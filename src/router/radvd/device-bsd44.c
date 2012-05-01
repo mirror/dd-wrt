@@ -1,5 +1,4 @@
 /*
- *   $Id: device-bsd44.c,v 1.29 2011/02/06 03:41:38 reubenhwk Exp $
  *
  *   Authors:
  *    Craig Metz		<cmetz@inner.net>
