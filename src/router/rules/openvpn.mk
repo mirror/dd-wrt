@@ -48,14 +48,10 @@ openvpn: $(SSL_DEP) openvpn-configure
 #endif
 	make -j 4 -C lzo clean
 	make -j 4 -C lzo
-ifneq ($(CONFIG_MADWIFI),y)
-ifneq ($(CONFIG_DANUBE),y)
 ifneq ($(CONFIG_FREERADIUS),y)
 ifneq ($(CONFIG_POUND),y)
 ifneq ($(CONFIG_IPETH),y)
 	rm -f openssl/*.so*
-endif
-endif
 endif
 endif
 endif
