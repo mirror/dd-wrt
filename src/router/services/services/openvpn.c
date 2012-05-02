@@ -120,7 +120,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "server %s %s\n",
 				nvram_safe_get("openvpn_net"),
 				nvram_safe_get("openvpn_mask"));
-			fprintf(fp, "dev tun0\n");
+			fprintf(fp, "dev tun2\n");
 //                      fprintf(fp, "tun-ipv6\n"); //enable ipv6 support. not supported on server in version 2.1.3
 		} else if (nvram_match("openvpn_tuntap", "tap") &&
 			   nvram_match("openvpn_proxy", "0")) {
@@ -129,13 +129,13 @@ void start_openvpnserver(void)
 				nvram_safe_get("openvpn_mask"),
 				nvram_safe_get("openvpn_startip"),
 				nvram_safe_get("openvpn_endip"));
-			fprintf(fp, "dev tap0\n");
+			fprintf(fp, "dev tap2\n");
 		} else if (nvram_match("openvpn_tuntap", "tap") &&
 			   nvram_match("openvpn_proxy", "1") &&
 			   nvram_match("openvpn_redirgate", "1"))
-			fprintf(fp, "server-bridge\n" "dev tap0\n");
+			fprintf(fp, "server-bridge\n" "dev tap2\n");
 		else
-			fprintf(fp, "server-bridge nogw\n" "dev tap0\n");
+			fprintf(fp, "server-bridge nogw\n" "dev tap2\n");
 		if (strlen(nvram_safe_get("openvpn_tlsauth")) > 0)
 			fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		if (strlen(nvram_safe_get("openvpn_crl")) > 0)
@@ -161,8 +161,8 @@ void start_openvpnserver(void)
 #endif
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl addif br0 tap0\n"
-			"ifconfig tap0 0.0.0.0 promisc up\n"
+		fprintf(fp, "brctl addif br0 tap2\n"
+			"ifconfig tap2 0.0.0.0 promisc up\n"
 			"stopservice wshaper\n"
 			"startservice wshaper\n");
 	}
@@ -171,22 +171,22 @@ void start_openvpnserver(void)
 		fprintf(fp, "insmod ebtables\n"
 			"insmod ebtable_filter\n"
 			"insmod ebt_pkttype\n"
-			"ebtables -D FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
-			"ebtables -D OUTPUT -o tap0 --pkttype-type multicast -j DROP\n"
-			"ebtables -A FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
-			"ebtables -A OUTPUT -o tap0 --pkttype-type multicast -j DROP\n");
+			"ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
+			"ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n"
+			"ebtables -A FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
+			"ebtables -A OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");
 		//for testing only
 //	if (nvram_match("openvpn_dhcpbl", "1") //block dhcp on bridged vpns
 //		&& nvram_match("openvpn_tuntap", "tap")
 //		&& nvram_match("openvpn_proxy", "0"))
 		fprintf(fp, "insmod ebtables\n"
 			"insmod ebtable_filter\n" "insmod ebt_ip\n"
-			"ebtables -D INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -I INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -I FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -I FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
+			"ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -I INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -I FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -I FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
 	fprintf(fp, "startservice set_routes\n");
 	fclose(fp);
 
@@ -199,20 +199,20 @@ void start_openvpnserver(void)
 		fprintf(fp, "gpio disable %s\n", gpiovpn);
 #endif
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl delif br0 tap0\n" "ifconfig tap0 down\n");
+		fprintf(fp, "brctl delif br0 tap2\n" "ifconfig tap2 down\n");
 	}
 	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
 		&& nvram_match("openvpn_tuntap", "tap"))
 		fprintf(fp, 
-			"ebtables -D FORWARD -o tap0 --pkttype-type multicast -j DROP\n"
-			"ebtables -D OUTPUT -o tap0 --pkttype-type multicast -j DROP\n");
+			"ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
+			"ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");
 	if (nvram_match("openvpn_dhcpbl", "1") //block dhcp on bridged vpns
 		&& nvram_match("openvpn_tuntap", "tap")
 		&& nvram_match("openvpn_proxy", "0"))
 		fprintf(fp,
-			"ebtables -D INPUT -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -i tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -o tap0 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
+			"ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
+			"ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
