@@ -1997,11 +1997,11 @@ static void filter_input(void)
 		save2file("-A INPUT -p %s --dport %s -j %s\n",
 			  nvram_match("openvpn_proto", "udp") ? "udp" : "tcp",
 			  nvram_safe_get("openvpn_port"), log_accept);
-		save2file("-A INPUT -i %s0 -j %s\n",
+		save2file("-A INPUT -i %s2 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
-		save2file("-A FORWARD -i %s0 -j %s\n",
+		save2file("-A FORWARD -i %s2 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
-		save2file("-A FORWARD -o %s0 -j %s\n",
+		save2file("-A FORWARD -o %s2 -j %s\n",
 			  nvram_safe_get("openvpn_tuntap"), log_accept);
 	}
 #endif
