@@ -1,5 +1,4 @@
-CC	= gcc
-COPTS	= -O2 -g
+#CC	= gcc
 CFLAGS	= $(COPTS) -I.. -I../../include -fPIC
 LDFLAGS	= -shared
 LDADD   = -lutil
