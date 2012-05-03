@@ -94,8 +94,7 @@ ifeq ($(ARCHITECTURE),broadcom)
 CFLAGS= -DBROADCOM
 endif
 
-CFLAGS+= -ffunction-sections -fdata-sections -Wl,--gc-sections -Wall $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
-
+CFLAGS+= -Wall $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
 
 
 ifdef CHAPMS
