@@ -660,6 +660,7 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
 	char *pppd_argv[14];
 	int an = 0;
 	sigset_t sigs;
+	static char pppInterfaceIPs[33];
 
 	pppd_argv[an++] = ppp_binary;
 
@@ -760,7 +761,6 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
 	}
 	
 	if (*pppaddrs[0] || *pppaddrs[1]) {
-		char pppInterfaceIPs[33];
 		sprintf(pppInterfaceIPs, "%s:%s", pppaddrs[0], pppaddrs[1]);
 		pppd_argv[an++] = pppInterfaceIPs;
 	}
@@ -784,6 +784,10 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
 	sigfillset(&sigs);
 	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 	/* run pppd now */
+	syslog(LOG_DEBUG, "CALL %s",pppd_argv[0]);
+	int i;
+	for (i=0;i<an-1;i++)
+	    syslog(LOG_DEBUG,"ARGUMENT %d:%s",i,pppd_argv[i]);
 	execvp(pppd_argv[0], pppd_argv);
 	/* execvp() failed */
 	syslog(LOG_ERR, 
