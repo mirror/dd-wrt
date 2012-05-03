@@ -320,7 +320,7 @@ endif
 ifeq ($(CONFIG_WAVESAT),y)
 	make -f Makefile.laguna wavesat-install
 endif
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
