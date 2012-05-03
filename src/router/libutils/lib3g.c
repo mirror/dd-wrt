@@ -186,6 +186,17 @@ static void modeswitch_onda2(int needreset, char *controldev)
 	sleep(2);
 }
 
+static void modeswitch_pantech(int needreset, char *controldev)
+{
+	system
+	    ("usb_modeswitch -v 0x106c -p 0x3b03 -M 555342431234567824000000800008ff024445564348470000000000000000");
+	system
+	    ("usb_modeswitch -v 0x106c -p 0x3b05 -M 555342431234567824000000800008ff020000000000000000000000000000");
+	system
+	    ("usb_modeswitch -v 0x106c -p 0x3b06 -M 55534243b82e238c24000000800008ff020000000000000000000000000000");
+	sleep(2);
+}
+
 static void modeswitch_sierra(int needreset, char *controldev)
 {
 	FILE *out = fopen("/tmp/usb_modeswitch.conf", "wb");
@@ -193,7 +204,7 @@ static void modeswitch_sierra(int needreset, char *controldev)
 	fprintf(out, "DefaultVendor=0x1199\n"
 		"DefaultProduct=0x0fff\n"
 		"TargetVendor=0x1199\n"
-		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0029,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a\"\n"
+		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0029,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a,6880,6890,6893,68a3,68aa\"\n"
 		"SierraMode=1\n" "CheckSuccess=10\n");
 	fclose(out);
 	system("usb_modeswitch -c /tmp/usb_modeswitch.conf");
@@ -214,6 +225,7 @@ static void modeswitch_huawei(int needreset, char *controldev)
 {
 	system("usb_modeswitch -v 0x12d1 -p 0x1001 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1003 -H");
+	system("usb_modeswitch -v 0x12d1 -p 0x1009 -H");	
 	system("usb_modeswitch -v 0x12d1 -p 0x1411 -H");
 	system("usb_modeswitch -v 0x12d1 -p 0x1414 -H");
 	system
@@ -233,7 +245,7 @@ static void modeswitch_huawei(int needreset, char *controldev)
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x14c4 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
-	    ("usb_modeswitch -v 0x12d1 -p 0x14c6 -M 55534243123456780000000000000011062000000100000000000000000000");
+	    ("usb_modeswitch -v 0x12d1 -p 0x14d1 -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
 	    ("usb_modeswitch -v 0x12d1 -p 0x14fe -M 55534243123456780000000000000011062000000100000000000000000000");
 	system
@@ -458,7 +470,13 @@ static struct DEVICES devicelist[] = {
 //PANTECH (Curitel)
 	{0x106c, 0x3711, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-150"},	//
 	{0x106c, 0x3714, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-175"},	//
+	{0x106c, 0x3715, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-175AL"},	//
+	{0x106c, 0x3716, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-190"},	//
+	{0x106c, 0x3717, "option", "0", "0", 2 | ACM, NULL, "PANTECH UM-185C/UM185E"},	//
 	{0x106c, 0x3718, "option", "0", "0", 2 | ACM, NULL, "PANTECH UML-290 4G Modem"},	//
+	{0x106c, 0x3b03, "option", "0", "0", 2, &modeswitch_pantech, "PANTECH UM-175AL"},	//
+	{0x106c, 0x3b05, "option", "0", "0", 2, &modeswitch_pantech, "PANTECH UM-190"},	//
+	{0x106c, 0x3b06, "option", "0", "0", 2, &modeswitch_pantech, "PANTECH UM-185C/UM185E"},	//
 
 //Sierra Wireless
 	{0x1199, 0x0017, "sierra", "3", "4", 1, NULL, "Sierra Wireless Modem Mode"},	//
@@ -516,6 +534,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6893, "sierra", "3", "3", 1, NULL, "Sierra Wireless Compass 889"},	//
 //      {0x1199, 0x68a3, "sierra", "3", "4", 1, NULL, "Sierra Wireless Compass 889"},   //alternate variant
 	{0x1199, 0x68a3, "sierra", "3", "3", 1, &reset_mc, "Sierra Wireless MC8700/Compass Direct IP"},	//
+	{0x1199, 0x68aa, "sierra", "3", "3", 1, NULL, "Sierra Wireless AC320U/AC330U 4G LTE"},	//
 
 //Huawei Technologies
 	{0x12d1, 0x1001, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI/Option E600/E620 or generic"},	//
@@ -552,12 +571,14 @@ static struct DEVICES devicelist[] = {
 	{0x12d1, 0x14c9, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3770"},	//
 	{0x12d1, 0x14ca, "option", "0", "0", 2, NULL, "Vodafone (Huawei) K3771"},	//
 	{0x12d1, 0x14d1, "option", "0", "0", 2, &modeswitch_huawei, "HUAWEI E-182E"},	//
+	{0x12d1, 0x14db, "option", "0", "0", 2, NULL, "Huawei E353"},	//	
 	{0x12d1, 0x14fe, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E352,E353"},	//
 	{0x12d1, 0x1505, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E398"},	//	
 	{0x12d1, 0x1506, "option", "0", "0", 2, NULL, "Huawei E367/E398 whatever"},	//
 	{0x12d1, 0x150f, "option", "0", "0", 2, NULL, "Huawei E367"},	//	
 	{0x12d1, 0x1520, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K3765"},	//
 	{0x12d1, 0x1521, "option", "0", "0", 2, &modeswitch_huawei, "Huawei K4505"},	//
+	{0x12d1, 0x1523, "option", "0", "0", 2, &modeswitch_huawei, "Huawei R120"},	//
 	{0x12d1, 0x1553, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E1553"},	//
 	{0x12d1, 0x1557, "option", "0", "0", 2, &modeswitch_huawei, "Huawei E173"},	//
 	{0x12d1, 0x1c05, "option", "0", "0", 2, NULL, "Huawei E173s Modem Mode"},	//
