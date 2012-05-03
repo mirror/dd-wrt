@@ -764,7 +764,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 	int count = 0;
 
 	while (!feof(in) && fscanf(in, "%d", &chan) == 1) {
-		list[count++] = chan;
+		retlist[count++] = chan;
 	}
 	pclose(in);
 #ifdef BUFFALO_JP
