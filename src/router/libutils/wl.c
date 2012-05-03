@@ -621,6 +621,7 @@ static int getcenterchannel(chanspec_t chspec)
 #endif
 int getchannels(unsigned int *retlist, char *ifname)
 {
+#ifdef HAVE_80211AC
 	char buf[WLC_IOCTL_MAXLEN];
 	int buflen;
 	int ret;
@@ -744,6 +745,35 @@ int getchannels(unsigned int *retlist, char *ifname)
 	}
 
 	return count;
+
+#else //HAVE_80211AC
+
+	// int ret, num;
+	// num = (sizeof (*list) - 4) / 6; /* Maximum number of entries in the
+	// buffer */
+	// memcpy (list, &num, 4); /* First 4 bytes are the number of ent. */
+
+	// ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
+	// fprintf(stderr,"get channels\n");
+	char exec[64];
+
+	sprintf(exec, "wl -i %s channels", ifname);
+	FILE *in = popen(exec, "r");
+
+	int chan;
+	int count = 0;
+
+	while (!feof(in) && fscanf(in, "%d", &chan) == 1) {
+		list[count++] = chan;
+	}
+	pclose(in);
+#ifdef BUFFALO_JP
+	return count - 1;
+#else
+	return count;
+#endif
+
+#endif
 }
 
 #ifdef TEST
