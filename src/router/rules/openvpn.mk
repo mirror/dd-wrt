@@ -50,9 +50,11 @@ openvpn: $(SSL_DEP) openvpn-configure
 	make -j 4 -C lzo
 ifneq ($(CONFIG_FREERADIUS),y)
 ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_AIRCRACK),y)
 ifneq ($(CONFIG_POUND),y)
 ifneq ($(CONFIG_IPETH),y)
 	rm -f openssl/*.so*
+endif
 endif
 endif
 endif
