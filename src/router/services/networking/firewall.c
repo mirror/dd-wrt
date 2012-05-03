@@ -1959,10 +1959,16 @@ static void filter_input(void)
 	 * Impede DoS/Bruteforce, redcuce possilbe bruteforce on pptp server
 	 */
 #ifndef HAVE_MICRO
-	if (nvram_match("pptpd_enable", "1") && nvram_match("limit_pptp", "1")) {
-		save2file
-		    ("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
-		     wanface, PPTP_PORT);
+	if (nvram_match("pptpd_enable", "1")) {
+		if (nvram_match("limit_pptp", "1")) {
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport %d -j logbrute\n",
+			     wanface, PPTP_PORT);
+		} else {
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport %d -j ACCEPT\n",
+			     wanface, PPTP_PORT);
+		}
 	}
 #endif
 	if (nvram_match("pptpd_enable", "1")
@@ -2078,10 +2084,16 @@ static void filter_input(void)
 	 * Impede DoS/Bruteforce, reduce load on ssh
 	 */
 #ifndef HAVE_MICRO
-	if (remotessh && nvram_match("limit_ssh", "1")) {
-		save2file
-		    ("-A INPUT -i %s -p tcp --dport %s -j logbrute\n",
-		     wanface, nvram_safe_get("sshd_port"));
+	if (remotessh) {
+
+		if (nvram_match("limit_ssh", "1"))
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport %s -j logbrute\n",
+			     wanface, nvram_safe_get("sshd_port"));
+		else
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport %s -j ACCEPT\n",
+			     wanface, nvram_safe_get("sshd_port"));
 	}
 #endif
 	/*
@@ -2101,9 +2113,15 @@ static void filter_input(void)
 	 * Impede DoS/Bruteforce, reduce load on Telnet
 	 */
 #ifndef HAVE_MICRO
-	if (remotetelnet && nvram_match("limit_telnet", "1")) {
-		save2file("-A INPUT -i %s -p tcp --dport 23 -j logbrute\n",
-			  wanface);
+	if (remotetelnet) {
+		if (nvram_match("limit_telnet", "1"))
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport 23 -j logbrute\n",
+			     wanface);
+		else
+			save2file
+			    ("-A INPUT -i %s -p tcp --dport 23 -j ACCEPT\n",
+			     wanface);
 	}
 #endif
 	if (remotetelnet) {
