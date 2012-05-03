@@ -784,10 +784,6 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs)
 	sigfillset(&sigs);
 	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 	/* run pppd now */
-	syslog(LOG_DEBUG, "CALL %s",pppd_argv[0]);
-	int i;
-	for (i=0;i<an-1;i++)
-	    syslog(LOG_DEBUG,"ARGUMENT %d:%s",i,pppd_argv[i]);
 	execvp(pppd_argv[0], pppd_argv);
 	/* execvp() failed */
 	syslog(LOG_ERR, 
