@@ -667,12 +667,12 @@ usb.usb_core="USB Kern-Unterstützung";
 usb.usb_uhci="USB 1.1 Unterstützung (UHCI)";
 usb.usb_ohci="USB 1.1 Unterstützung (OHCI)";
 usb.usb_ehci="USB 2.0 Unterstützung";
-usb.usb_storage="USB Storage Unterstützung";
+usb.usb_storage="USB Speicher Unterstützung";
 usb.usb_printer="USB Drucker Unterstützung";
-usb.usb_automnt="Automatisches Drive Mount";
-usb.usb_mntpoint="Disk Mount Punkt";
-usb.usb_runonmount="Ausführen-bei-mount Script Name";
-usb.usb_diskinfo="Disk Info";
+usb.usb_automnt="Automatisches Speicher einhängen";
+usb.usb_mntpoint="Speicher Einhaengepunkt";
+usb.usb_runonmount="Ausführen-beim-einhängen Script Name";
+usb.usb_diskinfo="Speicher Info";
 nas.titl="NAS";
 nas.proftpd_legend="FTP Server";
 nas.proftpd_srv="ProFTPD";
@@ -680,10 +680,9 @@ nas.proftpd_port="Server Port";
 nas.proftpd_dir="Datei Verzeichnis";
 nas.proftpd_passw="Nutzer Passwort Liste";
 nas.proftpd_writeen="Schreiberlaubnis";
-nas.proftpd_anon="Anonymes Login (Nur-Lesen)";
+nas.proftpd_anon="Anonymer Login (Nur-Lesen)";
 nas.proftpd_anon_subdir="Anonymes Heimat Unterverzeichnis";
 nas.samba3_legend="Dateifreigabe";
-
 
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
 
