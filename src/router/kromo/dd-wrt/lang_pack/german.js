@@ -682,6 +682,7 @@ nas.proftpd_passw="Nutzer Passwort Liste";
 nas.proftpd_writeen="Schreiberlaubnis";
 nas.proftpd_anon="Anonymes Login (Nur-Lesen)";
 nas.proftpd_anon_subdir="Anonymes Heimat Unterverzeichnis";
+nas.samba3_legend="Dateifreigabe";
 
 
 hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
@@ -1414,6 +1415,29 @@ service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
 service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
+
+service.samba3_srv="Samba";
+service.samba3_srvstr="Server String";
+service.samba3_pub="Öffentliche Freigabe";
+service.samba3_config="Eigene Konfiguration";
+service.samba3_workgrp="Arbeitsgruppe";
+service.samba3_dirpath="Verzechnispfad";
+service.samba3_usr1="Benutzer1";
+service.samba3_pass1=" Passwort1";
+service.samba3_usr2="Benutzer2";
+service.samba3_pass2=" Passwort2";
+service.samba3_pubacl="Nur Lesen";
+service.samba3_advanced="Erweitert"
+service.samba3_custom="Eigene Konfiguration benutzen";
+service.samba3_shares="Freigaben";
+service.samba3_share_path="Pfad";
+service.samba3_share_label="Name";
+service.samba3_share_public="Öffentlich";
+service.samba3_share_access="Zugriff";
+service.samba3_users="Benutzer";
+service.samba3_username="Benutzer";
+service.samba3_password="Passwort";
+service.samba3_user_shares="Zugang zu Freigaben"; 
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
