@@ -57,6 +57,7 @@ var update;
 addEvent(window, "load", function() {
 
 		toggle_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pppoeserver_clip, 'idpppoeiploc', <% nvram_else_match("pppoeserver_clip", "local", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pppoeserver_enabled, 'idpppoesrv', <% nvram_else_match("pppoeserver_enabled", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
@@ -117,14 +118,30 @@ addEvent(window, "unload", function() {
 				<% show_ifselect("pppoeserver_interface"); %>
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
+				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="1" <% nvram_checked("pppoeserver_clip", "1"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("radius.legend"); %>
+				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="0" <% nvram_checked("pppoeserver_clip", "0"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("service.pppoesrv_chaps"); %>
+			</div>
+			<div id="idpppoeiploc">			
+				<div class="setting">
 				<div class="label"><% tran("service.pptp_client"); %></div>
-				<textarea cols="20" rows="2" id="pppoeserver_pool" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)"></textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-					var pppoeserver_pool = fix_cr( '<% nvram_get("pppoeserver_pool"); %>' );
-					document.getElementById("pppoeserver_pool").value = pppoeserver_pool;
-				//]]>
-				</script>
+					<textarea cols="20" rows="2" id="pppoeserver_pool" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)"></textarea>
+					<script type="text/javascript">
+					//<![CDATA[
+						var pppoeserver_pool = fix_cr( '<% nvram_get("pppoeserver_pool"); %>' );
+						document.getElementById("pppoeserver_pool").value = pppoeserver_pool;
+					//]]>
+					</script>
+				</div>
+				<div class="setting">
+					<div class="label"><% tran("service.pppoesrv_limit"); %></div>
+					<input size="5" maxlength="4" class="num" name="pppoeserver_clcount" value="<% nvram_get("pppoeserver_clcount"); %>" />
+					<span class="default"><script type="text/javascript">
+					//<![CDATA[
+					document.write("(" + share.deflt + ": 64)");
+					//]]>
+					</script></span>
+				</div>
 			</div>
 			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
