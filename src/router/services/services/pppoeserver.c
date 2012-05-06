@@ -356,13 +356,13 @@ void start_pppoeserver(void)
 		}
 
 		//create the ip pool file
-		fp = fopen("/tmp/pppoeserver/pool", "wb");
-		fprintf(fp, "%s\n", nvram_safe_get("pppoeserver_pool"));
-		fclose(fp);
+		//fp = fopen("/tmp/pppoeserver/pool", "wb");
+		//fprintf(fp, "%s\n", nvram_safe_get("pppoeserver_pool"));
+		//fclose(fp);
 
 		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
 			"-L", getifip(), "-i", "-x", nvram_safe_get("pppoeserver_sessionlimit"), 
-			"-N", "512", "-p", "/tmp/pppoeserver/pool", 
+			"-N", nvram_safe_get("pppoeserver_clcount"), "-R", nvram_safe_get("pppoeserver_pool"), 
 			"-X", "/var/run/pppoeserver.pid");	
 		dd_syslog(LOG_INFO,
 			  "rp-pppoe : pppoe server successfully started\n");
