@@ -2520,6 +2520,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_tlscip", "0", 0},
 	{"openvpn_proxy", "0", 0},
 	{"openvpn_ccddef", "", 0},
+	{"openvpn_dhcpbl", "0", 0},
 
 #endif
 #ifdef HAVE_KODATA
