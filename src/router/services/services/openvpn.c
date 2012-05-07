@@ -176,9 +176,9 @@ void start_openvpnserver(void)
 			"ebtables -A FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -A OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");
 		//for testing only
-//	if (nvram_match("openvpn_dhcpbl", "1") //block dhcp on bridged vpns
-//		&& nvram_match("openvpn_tuntap", "tap")
-//		&& nvram_match("openvpn_proxy", "0"))
+	if (nvram_match("openvpn_dhcpbl", "1") //block dhcp on bridged vpns
+		&& nvram_match("openvpn_tuntap", "tap")
+		&& nvram_match("openvpn_proxy", "0"))
 		fprintf(fp, "insmod ebtables\n"
 			"insmod ebtable_filter\n" "insmod ebt_ip\n"
 			"ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
@@ -198,21 +198,8 @@ void start_openvpnserver(void)
 	if (gpiovpn != NULL)
 		fprintf(fp, "gpio disable %s\n", gpiovpn);
 #endif
-	if (nvram_match("openvpn_tuntap", "tap")) {
+	if (nvram_match("openvpn_tuntap", "tap")) 
 		fprintf(fp, "brctl delif br0 tap2\n" "ifconfig tap2 down\n");
-	}
-	if (nvram_match("block_multicast", "0") //block multicast on bridged vpns
-		&& nvram_match("openvpn_tuntap", "tap"))
-		fprintf(fp, 
-			"ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
-			"ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");
-	if (nvram_match("openvpn_dhcpbl", "1") //block dhcp on bridged vpns
-		&& nvram_match("openvpn_tuntap", "tap")
-		&& nvram_match("openvpn_proxy", "0"))
-		fprintf(fp,
-			"ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n"
-			"ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
 	fclose(fp);
 
 	chmod("/tmp/openvpn/route-up.sh", 0700);
@@ -246,6 +233,12 @@ void stop_openvpnserver(void)
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
 		eval("stopservice", "wshaper");
 		eval("startservice", "wshaper");
+		//remove btables rules on shutdown	
+		sytem("ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP\n");
+		sytem("ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");	
+		sytem("ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
+		sytem("ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
+		sytem("ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
 	}
 
 	return;
