@@ -54,11 +54,15 @@
 				</div>
 				<div class="setting">
 					<div class="label"><% tran("service.vpnd_mask"); %></div>
-					<input size="15" maxlength="15" name="openvpn_mask_br" value="<% nvram_get("openvpn_mask"); %>" />
-				</div>
+					<input size="15" maxlength="15" name="openvpn_mask" value="<% nvram_get("openvpn_mask"); %>" />
+				</div>		
+				<div class="setting">
+					<div class="label"><% tran("service.vpnd_dhcpbl"); %></div>
+					<input class="spaceradio" type="radio" name="openvpn_dhcpbl" value="1" <% nvram_checked("openvpn_dhcpbl", "1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="openvpn_dhcpbl" value="0" <% nvram_checked("openvpn_dhcpbl", "0"); %> /><% tran("share.disable"); %>
+				</div>						
 			</div>
 		</div>
-
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
 			<input size="5" maxlength="5" class="num" name="openvpn_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("openvpn_port"); %>" />
