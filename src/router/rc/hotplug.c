@@ -39,19 +39,6 @@ int main(int argc, char **argv)
 	if (argc >= 2) {
 //              sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
-#ifdef HAVE_IPETH
-			if (nvram_match("wan_proto", "iphone")) {
-				char *action = getenv("ACTION");
-				char *id = getenv("PHYSDEVDRIVER");
-				if (!id)
-				    id = getenv("DEVICENAME");
-				if (action && !strcmp(action, "add") && id
-				    && (!strcmp(id, "ipheth") || !strcmp(id, "iph0"))) {
-					eval("ipheth-loop");
-					return 0;
-				}
-			}
-#endif
 			start_service("hotplug_net");
 
 			return 0;
