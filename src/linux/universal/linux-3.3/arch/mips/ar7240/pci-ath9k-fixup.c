@@ -56,6 +56,8 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 
 	if (*cal_data != 0xa55a && *cal_data != 0x5aa5) {
 		pr_err("pci %s: invalid calibration data\n", pci_name(dev));
+		ar71xx_pci_plat_dev_init = NULL;
+		dev->dev.platform_data = NULL; //clear empty settings
 		return;
 	}
 
