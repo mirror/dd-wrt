@@ -323,9 +323,10 @@ int __init ar7240_platform_init(void)
 	void __iomem *base;
 	u32 t;
 
+#ifdef CONFIG_DIR825C1
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
-
+#endif
 
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 
