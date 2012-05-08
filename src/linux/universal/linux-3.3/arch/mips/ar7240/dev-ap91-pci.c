@@ -30,7 +30,6 @@ static struct ar71xx_pci_irq ap91_pci_irqs[] __initdata = {
 		.irq	= AR71XX_PCI_IRQ_DEV0,
 	}
 };
-
 static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 {
 	switch (PCI_SLOT(dev->devfn)) {
@@ -66,7 +65,6 @@ void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 
 	ar71xx_pci_plat_dev_init = ap91_pci_plat_dev_init;
 	ar71xx_pci_init(ARRAY_SIZE(ap91_pci_irqs), ap91_pci_irqs);
-
 	pci_enable_ath9k_fixup(0, wmac_data.eeprom_data);
 }
 #endif
