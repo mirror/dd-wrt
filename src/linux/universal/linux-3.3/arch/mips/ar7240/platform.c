@@ -394,8 +394,11 @@ int __init ar7240_platform_init(void)
 	ar9xxx_add_device_wmac(ee, mac);
 #elif CONFIG_WASP_SUPPORT
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
+#ifdef CONFIG_DIR825C1
 	ar9xxx_add_device_wmac(ee, mac0);
-
+#else
+	ar9xxx_add_device_wmac(ee, NULL);
+#endif
 #ifdef CONFIG_DIR825C1
 	ap91_pci_init(ee+0x4000, mac1);
 #else
