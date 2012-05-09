@@ -111,6 +111,7 @@ clean :
 	-make -C libgpg-error clean
 	-rm -f libgpg-error/Makefile
 	-rm -f libgcrypt/Makefile
+	-rm -f .depend
 	-rm -f $(OBJS) $(BINOBJS) $(BINS) tags
 
 distclean : clean
