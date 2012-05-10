@@ -233,12 +233,12 @@ void stop_openvpnserver(void)
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
 		eval("stopservice", "wshaper");
 		eval("startservice", "wshaper");
-		//remove btables rules on shutdown	
-		sytem("ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP\n");
-		sytem("ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");	
-		sytem("ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
-		sytem("ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
-		sytem("ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP\n");
+		//remove ebtables rules on shutdown	
+		sytem("/usr/sbin/ebtables -D FORWARD -o tap2 --pkttype-type multicast -j DROP");
+		sytem("/usr/sbin/ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP");	
+		sytem("/usr/sbin/ebtables -D INPUT -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
+		sytem("/usr/sbin/ebtables -D FORWARD -i tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
+		sytem("/usr/sbin/ebtables -D FORWARD -o tap2 --protocol IPv4 --ip-proto udp --ip-sport 67:68 -j DROP");
 	}
 
 	return;
