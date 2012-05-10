@@ -2,6 +2,7 @@
  * pppoeserver.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *					  2011-2012 Sash	
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -80,7 +81,21 @@ static void makeipup(void)
 
 	FILE *fp = fopen("/tmp/pppoeserver/ip-up", "w");
 
-	fprintf(fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
+	fprintf(fp, "#!/bin/sh\n");
+		/* block ppp discovery when server is full
+		if we have max concurrent connections -> ignore new PPP discovery 
+		if wan = ppp && wan = enabled => ppp - 1 */
+	if (nvram_match("pppoeserver_clip", "local"))
+		fprintf(fp, "if [ `ifconfig|grep ppp -c` -ge `nvram get pppoeserver_clcount` ]\n"
+		"\t\ then if [ `lsmod|grep ebtables -c` -eq 0 ]\n"
+		"\t\t	&& [ `lsmod|grep ebtable_filter -c` -eq 0 ]\n"
+		"\t\t then insmod ebtables\n"
+		"\t\t\t insmod ebtable_filter\n"
+		"\t\t fi\n"
+		"if [ `ebtables -L|grep PPP_DISC|grep DROP -c` -eq 0 ]\n"
+		"then ebtables -I INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"	//drop pppoe discovery
+		"fi\n");
+
 		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
 		"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
@@ -88,18 +103,19 @@ static void makeipup(void)
 		"iptables -I INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
-		"echo 1 > /proc/sys/net/ipv4/conf/br0/proxy_arp\n"
-		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n");
+		"echo 1 > /proc/sys/net/ipv4/conf/br0/proxy_arp\n"		
+		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
+		"startservice set_routes\n"	// reinitialize );
 		//	per peer shaping
 	if (nvram_match("pppoeradius_enabled", "1")) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 			"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
 			"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//only if Speed limit !0 and !empty
 			"then	tc qdisc del root dev $1\n"	//
-			"	tc qdisc del dev $1 ingress\n"	//
-			" 	tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
-			" 	tc qdisc add dev $1 handle ffff: ingress\n"	//
-			" 	tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
+			"\t tc qdisc del dev $1 ingress\n"	//
+			"\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
+			"\t tc qdisc add dev $1 handle ffff: ingress\n"	//
+			"\t tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
 			"fi\n");
 		}
 //tc qdisc add dev $1 root red min 150KB max 450KB limit 600KB burst 200 avpkt 1000 probability 0.02 bandwidth 100Mbit
@@ -127,6 +143,11 @@ static void makeipup(void)
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n");	//
+	if (nvram_match("pppoeserver_clip", "local"))
+		fprintf(fp, 
+		"if [ `ifconfig|grep ppp -c` -lt `nvram get pppoeserver_clcount` ]\n"
+		"then ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"
+		"fi\n");
 	if (nvram_match("pppoeradius_enabled", "1"))
 		fprintf(fp, "tc qdisc del root dev $1\n"	//
 			"tc qdisc del dev $1 ingress\n");
@@ -355,11 +376,6 @@ void start_pppoeserver(void)
 			makeipup();
 		}
 
-		//create the ip pool file
-		//fp = fopen("/tmp/pppoeserver/pool", "wb");
-		//fprintf(fp, "%s\n", nvram_safe_get("pppoeserver_pool"));
-		//fclose(fp);
-
 		eval("pppoe-server", "-k", "-I", nvram_safe_get("pppoeserver_interface"), 
 			"-L", getifip(), "-i", "-x", nvram_safe_get("pppoeserver_sessionlimit"), 
 			"-N", nvram_safe_get("pppoeserver_clcount"), "-R", nvram_safe_get("pppoeserver_pool"), 
@@ -377,6 +393,7 @@ void stop_pppoeserver(void)
 	//	backup peer data
 		if (nvram_match("sys_enable_jffs2", "1"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/");
+		system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP);
 	}
 
 }

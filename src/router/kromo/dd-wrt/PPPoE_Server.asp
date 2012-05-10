@@ -118,23 +118,17 @@ addEvent(window, "unload", function() {
 				<% show_ifselect("pppoeserver_interface"); %>
 			</div>
 			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
-				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="1" <% nvram_checked("pppoeserver_clip", "1"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("radius.legend"); %>
-				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="0" <% nvram_checked("pppoeserver_clip", "0"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("service.pppoesrv_chaps"); %>
+				<div class="label"><% tran("share.ip"); %></div>
+				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="radius" <% nvram_checked("pppoeserver_clip", "radius"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("radius.legend"); %>
+				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="local" <% nvram_checked("pppoeserver_clip", "local"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("share.localip"); %>
 			</div>
 			<div id="idpppoeiploc">			
 				<div class="setting">
-				<div class="label"><% tran("service.pptp_client"); %></div>
-					<textarea cols="20" rows="2" id="pppoeserver_pool" name="pppoeserver_pool" onblur="valid_ip_str(this, share.ip)"></textarea>
-					<script type="text/javascript">
-					//<![CDATA[
-						var pppoeserver_pool = fix_cr( '<% nvram_get("pppoeserver_pool"); %>' );
-						document.getElementById("pppoeserver_pool").value = pppoeserver_pool;
-					//]]>
-					</script>
-				</div>
+					<div class="label"><% tran("filterIP.ip_range"); %></div>
+					<input size="15" maxlength="20" class="num" name="pppoeserver_pool" value="<% nvram_get("pppoeserver_pool"); %>" />
+				</div>			
 				<div class="setting">
-					<div class="label"><% tran("service.pppoesrv_limit"); %></div>
+					<div class="label"><% tran("wl_adv.label10"); %></div>
 					<input size="5" maxlength="4" class="num" name="pppoeserver_clcount" value="<% nvram_get("pppoeserver_clcount"); %>" />
 					<span class="default"><script type="text/javascript">
 					//<![CDATA[

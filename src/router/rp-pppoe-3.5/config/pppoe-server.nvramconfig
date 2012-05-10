@@ -22,4 +22,4 @@
  "pppoeserver_interface" "" "NULL" "TRUE" "0" 
  "pppoeserver_pool" "" "NULL" "TRUE" "0"
  "pppoeserver_clip" "client ip switch" "CHOICE"  "2" "radius"  "local"  "FALSE" "0"
- "pppoeserver_clcount" "client count" "NULL" "TRUE" "0"
+ "pppoeserver_clcount" "client count" "NULL" "FALSE" "0"

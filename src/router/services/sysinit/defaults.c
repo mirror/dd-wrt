@@ -2849,7 +2849,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_acctserverport_backup", "1813", 0},
 	{"pppoeserver_sharedkey", "", 0},
 	{"pppoeserver_sharedkey_backup", "", 0},
-	{"pppoeserver_pool", "192.168.1.10-100", 0}, 
+	{"pppoeserver_pool", "192.168.1.100", 0}, 
 	{"pppoeserver_clip", "local", 0},
 	{"pppoeserver_clcount", "64", 0},
 #endif
