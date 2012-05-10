@@ -270,7 +270,7 @@ static void do_aqos_check(void)
 			
 			// create default rule for ip
 			add_userip(ipnet, qosidx, defaulup, defauldown, defaultlan);
-			qosidx += 1;
+			qosidx += 10;
 			memset(ip_buf, 0, 32);
 			memset(mac_buf, 0, 32);
 			continue;
@@ -286,7 +286,7 @@ static void do_aqos_check(void)
 			
 			// create default rule for mac
 			add_usermac(mac_buf, qosidx, defaulup, defauldown, defaultlan);
-			qosidx += 1;
+			qosidx += 10;
 		}
 		memset(ip_buf, 0, 32);
 		memset(mac_buf, 0, 32);

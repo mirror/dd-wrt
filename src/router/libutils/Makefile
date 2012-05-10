@@ -957,6 +957,10 @@ ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
 
+ifeq ($(CONFIG_SVQOS),y)
+CFLAGS += -DHAVE_SVQOS
+endif
+
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
