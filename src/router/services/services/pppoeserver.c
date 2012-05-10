@@ -393,7 +393,7 @@ void stop_pppoeserver(void)
 	//	backup peer data
 		if (nvram_match("sys_enable_jffs2", "1"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/");
-		system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP);
+		system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 	}
 
 }
