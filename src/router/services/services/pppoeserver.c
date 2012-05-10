@@ -2,7 +2,7 @@
  * pppoeserver.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
- *					  2011-2012 Sash	
+ *					  all bugs added by 2011-2012 Sash	
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
