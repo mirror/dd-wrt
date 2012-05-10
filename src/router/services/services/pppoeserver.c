@@ -105,7 +105,7 @@ static void makeipup(void)
 		"iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		"echo 1 > /proc/sys/net/ipv4/conf/br0/proxy_arp\n"		
 		"echo 1 > /proc/sys/net/ipv4/conf/$1/proxy_arp\n"
-		"startservice set_routes\n"	// reinitialize );
+		"startservice set_routes\n");	// reinitialize 
 		//	per peer shaping
 	if (nvram_match("pppoeradius_enabled", "1")) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
