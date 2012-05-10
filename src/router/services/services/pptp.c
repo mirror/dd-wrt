@@ -235,7 +235,7 @@ void start_pptpd(void)
 		//	per peer shaping		
 		"IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"		//
 		"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"	//
-		"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//Speed limit !=0 and !empty
+		"if [ ! -z $IN ] && [ ! -z $OUT ] && [ $IN -gt 0 ] && [ $OUT -gt 0 ]\n"	//Speed limit !0 and !empty
 		"then	tc qdisc del root dev $1\n"	//
 		"	tc qdisc del dev $1 ingress\n"	//
 		" 	tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"	//
