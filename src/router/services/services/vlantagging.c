@@ -235,6 +235,10 @@ void start_bridging(void)
 	start_set_routes();
 }
 
+extern char *getBridgeMTU(char *);
+extern char *getMTU(char *);
+
+/* moved to utils.c
 char *getBridgeMTU(char *ifname)
 {
 	static char word[256];
@@ -271,6 +275,7 @@ char *getMTU(char *ifname)
 		return "1500";
 	return mtu;
 }
+*/
 
 char *getBridge(char *ifname)
 {

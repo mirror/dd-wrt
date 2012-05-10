@@ -148,177 +148,734 @@ unsigned int daysformonth(unsigned int month, unsigned int year)
 				&& (month == 2)));
 }
 
-#ifdef HAVE_AQOS
-
-/* obsolete
-static char *get_wshaper_dev(void)
+char *getBridgeMTU(char *ifname)
 {
-//	if (nvram_match("wshaper_dev", "WAN"))
+    static char word[256];
+    char *next, *wordlist;
+
+    wordlist = nvram_safe_get("bridges");
+    foreach(word, wordlist, next) {
+        char *stp = word;
+        char *bridge = strsep(&stp, ">");
+        char *mtu = stp;
+        char *prio = strsep(&mtu, ">");
+
+        if (prio)
+            strsep(&mtu, ">");
+
+        if (!bridge || !stp)
+            break;
+        if (!strcmp(bridge, ifname)) {
+            if (!prio || !mtu)
+                return "1500";
+            else
+                return mtu;
+        }
+    }
+    return "1500";
+}
+
+char *getMTU(char *ifname)
+{
+    if (!ifname)
+        return "1500";
+    char *mtu = nvram_nget("%s_mtu", ifname);
+    if (!mtu || strlen(mtu) == 0)
+        return "1500";
+    return mtu;
+}
+
+#ifdef HAVE_SVQOS
+char 
+*get_wshaper_dev(void)
+{
+	if (nvram_match("wshaper_dev", "WAN"))
 		return get_wan_face();
-//	else
-//		return "br0";
-}
-*/
-
-static char *get_wanface(void)
-{
-	char *dev = get_wan_face();
-
-	if (!strcmp(dev, "br0"))
-		dev = NULL;
-	return dev;
+	else
+		return "br0";
 }
 
-void add_userip(char *ip, int idx, char *upstream, char *downstream,
-		char *lanstream)
+char 
+*get_mtu_val(void)
 {
-	system2("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
-	system2
-	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
-	system2("iptables -t mangle -D FILTER_IN -j RETURN");
-
-	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
-	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
-
-	int base = 1200 + idx;
-	char *dev = get_wanface();
-
-	long int lanlevel = atol(lanstream);
-	if (lanlevel < 1)
-		lanlevel = 1000000;
-
-	if (dev) {
-		/* egress */
-		if (nvram_match("qos_type", "0"))
-			sysprintf
-			    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-			     dev, base, upstream, upstream);
+	if (nvram_match("wshaper_dev", "WAN")
+	    && !strcmp(get_wshaper_dev(), "ppp0"))
+		return nvram_safe_get("wan_mtu");
+	else if (nvram_match("wshaper_dev", "WAN")) {
+		if (nvram_match("wan_mtu", "1500"))
+			return getMTU(get_wshaper_dev());
 		else
-			sysprintf
-			    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-			     dev, base, upstream, upstream);
-
-		sysprintf
-		    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-		     dev, base, base);
-		sysprintf
-		    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		     dev, base, base);
-	}
-
-	/* ingress */
-	if (nvram_match("qos_type", "0")) {
-		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-		     "imq0", base, downstream, downstream);
-		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %dkbit ceil %dkbit prio 5",
-		     "imq1", base, lanlevel, lanlevel);
-	} else {
-		sysprintf
-		    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-		     "imq0", base, downstream, downstream);
-		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq1", base, lanlevel, lanlevel);
-	}
-
-	sysprintf
-	    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-	     "imq0", base, base);
-
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     "imq0", base, base);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     "imq1", base, base);
-
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 1 -j MARK --set-mark %d",
-	     ip, base);
-	sysprintf
-	    ("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 1 -j MARK --set-mark %d",
-	     ip, base);
-	sysprintf
-	    ("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
-	     ip, base);
-	sysprintf
-	    ("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
-	     ip, base);
-
-	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
-	system2
-	    ("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
-	system2("iptables -t mangle -A FILTER_IN -j RETURN");
-
-	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
-	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
+			return nvram_safe_get("wan_mtu");
+	} else
+		return getBridgeMTU(get_wshaper_dev());
 }
 
-void add_usermac(char *mac, int idx, char *upstream, char *downstream,
-		 char *lanstream)
+void
+add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
 {
-	int base = 1200 + idx;
-	char *dev = get_wanface();
-	long int lanlevel = atol(lanstream);
+	int idx = atoi(level) / 10;
 
-	if (lanlevel < 1)
-		lanlevel = 1000000;
+	if (idx == 10)
+		idx = 0;
 
-	if (dev) {
-		/* egress */
-		if (nvram_match("qos_type", "0"))
-			sysprintf
-			    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-			     dev, base, upstream, upstream);
-		else
-			sysprintf
-			    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-			     dev, base, upstream, upstream);
-
+	if (strstr(type, "udp") || strstr(type, "both")) 
+	{
 		sysprintf
-		    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-		     dev, base, base);
+			("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -m mac --mac-source %s -j MARK --set-mark %d",
+			 data, client, base+idx);
 		sysprintf
-		    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-		     dev, base, base);
+			("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -m mac --mac-source %s -j MARK --set-mark %d",
+			 data, client, base+idx);
 	}
 
-	/* ingress */
-	if (nvram_match("qos_type", "0")) {
+	if (strstr(type, "tcp") || strstr(type, "both")) 
+	{
 		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit prio 5",
-		     "imq0", base, downstream, downstream);
+			("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -m mac --mac-source %s -j MARK --set-mark %d",
+			 data, client, base+idx);
 		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %dkbit ceil %dkbit prio 5",
-		     "imq1", base, lanlevel, lanlevel);
-	} else {
-		sysprintf
-		    ("tc class add dev %s parent 1:1 classid 1:%d hfsc sc rate %skbit ul rate %skbit",
-		     "imq0", base, downstream, downstream);
-		sysprintf
-		    ("tc class add dev %s parent 1:2 classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq1", base, lanlevel, lanlevel);
+			("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -m mac --mac-source %s -j MARK --set-mark %d",
+			 data, client, base+idx);
 	}
 
-	sysprintf
-	    ("tc qdisc add dev %s handle %d: parent 1:%d sfq quantum 1514b perturb 15",
-	     "imq0", base, base);
+	if (strstr(type, "l7")) 
+	{
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -m mac --mac-source %s -j MARK --set-mark %d",
+			 name, client, base+idx);
+	}
 
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     "imq0", base, base);
-	sysprintf
-	    ("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
-	     "imq1", base, base);
-
-	sysprintf
-	    ("iptables -t mangle -I FILTER_IN 2 -m mac --mac-source %s -m mark --mark 1 -j MARK --set-mark %d",
-	     mac, base);
-}
-
+#ifdef HAVE_OPENDPI
+	if (strstr(type, "dpi")) 
+	{
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -m mac --mac-source %s -m opendpi --%s -j MARK --set-mark %d",
+			 client, name, base+idx);
+	}
 #endif
+
+	if (strstr(type, "p2p")) 
+	{
+		char *proto = NULL;
+		char *realname = name;
+
+		if (!strcasecmp(realname, "applejuice"))
+			proto = "apple";
+		else if (!strcasecmp(realname, "ares"))
+			proto = "ares";
+		else if (!strcasecmp(realname, "bearshare"))
+			proto = "gnu";
+		else if (!strcasecmp(realname, "bittorrent"))
+			proto = "bit";
+		else if (!strcasecmp(realname, "directconnect"))
+			proto = "dc";
+		else if (!strcasecmp(realname, "edonkey"))
+			proto = "edk";
+		else if (!strcasecmp(realname, "gnutella"))
+			proto = "gnu";
+		else if (!strcasecmp(realname, "kazaa"))
+			proto = "kazaa";
+		else if (!strcasecmp(realname, "mute"))
+			proto = "mute";
+		else if (!strcasecmp(realname, "soulseek"))
+			proto = "soul";
+		else if (!strcasecmp(realname, "waste"))
+			proto = "waste";
+		else if (!strcasecmp(realname, "winmx"))
+			proto = "winmx";
+		else if (!strcasecmp(realname, "xdcc"))
+			proto = "xdcc";
+		if (proto) 
+		{
+			insmod("ipt_ipp2p");
+
+			sysprintf
+				("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -m mac --mac-source %s -j MARK --set-mark %d",
+				 proto, client, base+idx);
+
+			if (!strcmp(proto, "bit")) 
+			{
+				// bittorrent detection enhanced 
+#ifdef HAVE_MICRO
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %s",
+					 client, base+idx);
+#else
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -m mac --mac-source %s -j MARK --set-mark %d",
+					 client, base+idx);
+#endif
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -m mac --mac-source %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -m mac --mac-source %s -j MARK --set-mark %d",
+					 client, base+idx);
+			}
+		}
+	}
+}
+
+void
+add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
+{
+	int idx = atoi(level) / 10;
+
+	if (idx == 10)
+		idx = 0;
+
+	if (strstr(type, "udp") || strstr(type, "both")) 
+	{
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --dport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p udp -m udp --sport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --dport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p udp -m udp --sport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+	}
+
+	if (strstr(type, "tcp") || strstr(type, "both")) 
+	{
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -s %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --dport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -p tcp -m tcp --sport %s -d %s -j MARK --set-mark %d",
+			 data, client, base+idx);
+	}
+
+	if (strstr(type, "l7")) 
+	{
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -s %s -j MARK --set-mark %d",
+			 name, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto %s -d %s -j MARK --set-mark %d",
+			 name, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -s %s -j MARK --set-mark %d",
+			 name, client, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto %s -d %s -j MARK --set-mark %d",
+			 name, client, base+idx);
+	}
+
+#ifdef HAVE_OPENDPI
+	if (strstr(type, "dpi")) 
+	{
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -s %s -m opendpi --%s -j MARK --set-mark %d",
+			 client, name, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_OUT 3 -d %s -m opendpi --%s -j MARK --set-mark %d",
+			 client, name, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -s %s -m opendpi --%s -j MARK --set-mark %d",
+			 client, name, base+idx);
+		sysprintf
+			("iptables -t mangle -I FILTER_IN 4 -d %s -m opendpi --%s -j MARK --set-mark %d",
+			 client, name, base+idx);
+	}
+#endif
+
+	if (strstr(type, "p2p")) 
+	{
+		char *proto = NULL;
+		char *realname = name;
+
+		if (!strcasecmp(realname, "applejuice"))
+			proto = "apple";
+		else if (!strcasecmp(realname, "ares"))
+			proto = "ares";
+		else if (!strcasecmp(realname, "bearshare"))
+			proto = "gnu";
+		else if (!strcasecmp(realname, "bittorrent"))
+			proto = "bit";
+		else if (!strcasecmp(realname, "directconnect"))
+			proto = "dc";
+		else if (!strcasecmp(realname, "edonkey"))
+			proto = "edk";
+		else if (!strcasecmp(realname, "gnutella"))
+			proto = "gnu";
+		else if (!strcasecmp(realname, "kazaa"))
+			proto = "kazaa";
+		else if (!strcasecmp(realname, "mute"))
+			proto = "mute";
+		else if (!strcasecmp(realname, "soulseek"))
+			proto = "soul";
+		else if (!strcasecmp(realname, "waste"))
+			proto = "waste";
+		else if (!strcasecmp(realname, "winmx"))
+			proto = "winmx";
+		else if (!strcasecmp(realname, "xdcc"))
+			proto = "xdcc";
+		if (proto) 
+		{
+			insmod("ipt_ipp2p");
+
+			sysprintf
+				("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %d",
+				 proto, client, base+idx);
+			sysprintf
+				("iptables -t mangle -I FILTER_OUT 3 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %d",
+				 proto, client, base+idx);
+			sysprintf
+				("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -s %s -j MARK --set-mark %d",
+				 proto, client, base+idx);
+			sysprintf
+				("iptables -t mangle -I FILTER_IN 4 -p tcp -m ipp2p --%s -d %s -j MARK --set-mark %d",
+				 proto, client, base+idx);
+
+			if (!strcmp(proto, "bit")) 
+			{
+				// bittorrent detection enhanced 
+#ifdef HAVE_MICRO
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt -s %s -j MARK --set-mark %s",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt -d %s -j MARK --set-mark %s",
+					 client, base+idx);
+#else
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -s %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m length --length 0:550 -m layer7 --l7proto bt -d %s -j MARK --set-mark %d",
+					 client, base+idx);
+#endif
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -s %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt1 -d %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_OUT 3 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -s %s -j MARK --set-mark %d",
+					 client, base+idx);
+				sysprintf
+					("iptables -t mangle -I FILTER_IN 4 -m layer7 --l7proto bt2 -d %s -j MARK --set-mark %d",
+					 client, base+idx);
+			}
+		}
+	}
+}
+
+#ifdef HAVE_AQOS
+void
+add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate)
+{
+	char *wan_dev = get_wan_face();
+
+	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
+	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
+	unsigned long lanlimit = 1000000;
+
+	unsigned int quantum = atoi(get_mtu_val()) + 14;
+
+	uplimit = uprate;
+	downlimit = downrate;
+
+	if (lanrate < 1)
+		lanrate = lanlimit;
+
+	if (nvram_match("qos_type", "0")) {		// HTB
+		sysprintf		// interior
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d",
+			 wan_dev, 2, base, uprate, uplimit, quantum);
+		sysprintf		// expempt
+			("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0",
+			 wan_dev, base, base+1, uprate, uplimit, quantum);
+		sysprintf		// premium
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 wan_dev, base, base+2, uprate/100*75, uplimit, quantum);
+		sysprintf		// express
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 wan_dev, base, base+3, uprate/100*15, uplimit, quantum);
+		sysprintf		// standard
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 wan_dev, base, base+4, uprate/100*10, uplimit, quantum);
+		sysprintf		// bulk
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 wan_dev, base, base+5, 1, uplimit, quantum);
+
+		sysprintf		// interior
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d",
+			 "imq0", 2, base, downrate, downlimit, quantum);
+		sysprintf		// exempt
+			("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0",
+			 "imq0", base, base+1, downrate, downlimit, quantum);
+		sysprintf		// premium
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 "imq0", base, base+2, downrate/100*75, downlimit, quantum);
+		sysprintf		// express
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 "imq0", base, base+3, downrate/100*15, downlimit, quantum);
+		sysprintf		// standard
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 "imq0", base, base+4, downrate/100*10, downlimit, quantum);
+		sysprintf		// bulk
+			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+			 "imq0", base, base+5, 1, downlimit, quantum);
+
+		if (nvram_match("wshaper_dev", "LAN")) {
+			sysprintf		// interior
+				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d",
+				 "imq1", 2, base, lanrate, lanlimit, quantum);
+			sysprintf		// exempt
+				("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0",
+				 "imq1", base, base+1, lanrate, lanlimit, quantum);
+			sysprintf		// premium
+				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+				 "imq1", base, base+2, lanrate/100*75, lanlimit, quantum);
+			sysprintf		// express
+				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+				 "imq1", base, base+3, lanrate/100*15, lanlimit, quantum);
+			sysprintf		// standard
+				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+				 "imq1", base, base+4, lanrate/100*10, lanlimit, quantum);
+			sysprintf		// bulk
+				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
+				 "imq1", base, base+5, 1, lanlimit, quantum);
+		}
+	} else {	// HFSC
+		sysprintf		// interior
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 wan_dev, 1, base, uprate, uplimit);
+		sysprintf		// exempt (srv)
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d",
+			 wan_dev, base, base+1, uprate, uplimit);
+		sysprintf		// premium
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 wan_dev, base, base+2, uprate/100*75, uplimit);
+		sysprintf		// express
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 wan_dev, base, base+3, uprate/100*15, uplimit);
+		sysprintf		// standard
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 wan_dev, base, base+4, uprate/100*10, uplimit);
+		sysprintf		// bulk
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 wan_dev, base, base+5, 1, uplimit);
+
+		sysprintf
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 "imq0", 1, base, downrate, downlimit);
+		sysprintf
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d",
+			 "imq0", base, base+1, downrate, downlimit);
+		sysprintf
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 "imq0", base, base+2, downrate/100*75, downlimit);
+		sysprintf
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 "imq0", base, base+3, downrate/100*15, downlimit);
+		sysprintf
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 "imq0", base, base+4, downrate/100*10, downlimit);
+		sysprintf
+			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+			 "imq0", base, base+5, 1, downlimit);
+
+		if (nvram_match("wshaper_dev", "LAN")) {
+			sysprintf
+				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+				 "imq1", 1, base, lanlimit, lanlimit);
+			sysprintf
+				("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d",
+				 "imq1", base, base+1, lanlimit, lanlimit);
+			sysprintf
+				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+				 "imq1", base, base+2, lanlimit/100*75, lanlimit);
+			sysprintf
+				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+				 "imq1", base, base+3, lanlimit/100*15, lanlimit);
+			sysprintf
+				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+				 "imq1", base, base+4, lanlimit/100*10, lanlimit);
+			sysprintf
+				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
+				 "imq1", base, base+5, 1, lanlimit);
+		}
+	}
+
+	// filter rules
+	sysprintf
+		("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
+		 wan_dev, base, base+1);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
+		 wan_dev, base+1, base+2);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		 wan_dev, base+2, base+3);	
+	sysprintf
+		("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
+		 wan_dev, base+3, base+4);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
+		 wan_dev, base+4, base+5);
+
+	sysprintf
+		("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
+		 "imq0", base, base+1);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
+		 "imq0", base+1, base+2);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+		 "imq0", base+2, base+3);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
+		 "imq0", base+3, base+4);
+	sysprintf
+		("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
+		 "imq0", base+4, base+5);
+
+	if (nvram_match("wshaper_dev", "LAN")) {
+		sysprintf
+			("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d",
+			 "imq1", base, base+1);
+		sysprintf
+			("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d",
+			 "imq1", base+1, base+2);
+		sysprintf
+			("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d",
+			 "imq1", base+2, base+3);
+		sysprintf
+			("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d",
+			 "imq1", base+3, base+4);
+		sysprintf
+			("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d",
+			 "imq1", base+4, base+5);
+	}
+
+	// leaf qdiscs
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 wan_dev, base+1, base+1, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 wan_dev, base+2, base+2, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 wan_dev, base+3, base+3, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 wan_dev, base+4, base+4, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 wan_dev, base+5, base+5, quantum);
+
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 "imq0", base+1, base+1, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 "imq0", base+2, base+2, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 "imq0", base+3, base+3, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 "imq0", base+4, base+4, quantum);
+	sysprintf
+		("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+		 "imq0", base+5, base+5, quantum);
+
+	if (nvram_match("wshaper_dev", "LAN")) {
+		sysprintf
+			("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			 "imq1", base+1, base+1, quantum);
+		sysprintf
+			("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			 "imq1", base+2, base+2, quantum);
+		sysprintf
+			("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			 "imq1", base+3, base+3, quantum);
+		sysprintf
+			("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			 "imq1",base+4, base+4, quantum);
+		sysprintf
+			("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10",
+			 "imq1", base+5, base+5, quantum);
+	}
+}
+
+void
+add_usermac(char *mac, int base, char *upstream, char *downstream, char *lanstream)
+{
+	unsigned int uprate = atoi(upstream);
+	unsigned int downrate = atoi(downstream);
+	unsigned long lanrate = atoi(lanstream);
+
+	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char *qos_svcs = nvram_safe_get("svqos_svcs");
+
+	system2
+		("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
+	system2
+		("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2
+		("iptables -t mangle -D FILTER_IN -j RETURN");
+
+	add_client_classes(base, uprate, downrate, lanrate);
+
+	do {
+		if (sscanf
+			(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata,
+			 srvlevel) < 4)
+			break;
+
+		add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, mac);
+	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+
+	sysprintf
+		("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark 0 -j MARK --set-mark %d",
+		 mac, base);
+
+	system2
+		("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
+	system2
+		("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2
+		("iptables -t mangle -A FILTER_IN -j RETURN");
+}
+
+void 
+add_userip(char *ip, int base, char *upstream, char *downstream, char *lanstream)
+{
+	unsigned int uprate = atoi(upstream);
+	unsigned int downrate = atoi(downstream);
+	unsigned long lanrate = atoi(lanstream);
+
+//	int ret;
+	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char *qos_svcs = nvram_safe_get("svqos_svcs");
+
+	system2
+		("iptables -t mangle -D FILTER_IN -j CONNMARK --save");
+	system2
+		("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2
+		("iptables -t mangle -D FILTER_IN -j RETURN");
+
+	system2
+		("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
+	system2
+		("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+	system2
+		("iptables -t mangle -D FILTER_OUT -j VPN_DSCP");
+	system2
+		("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
+	system2
+		("iptables -t mangle -D FILTER_OUT -j RETURN");
+
+	add_client_classes(base, uprate, downrate, lanrate);
+
+	do {
+		if (sscanf
+			(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata,
+			 srvlevel) < 4)
+			break;
+
+		add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, ip);
+	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
+
+	sysprintf
+		("iptables -t mangle -A FILTER_OUT -s %s -m mark --mark 0 -j MARK --set-mark %d",
+		 ip, base);
+	sysprintf
+		("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
+		 ip, base);
+	sysprintf
+		("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 0 -j MARK --set-mark %d",
+		 ip, base);
+	sysprintf
+		("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 0 -j MARK --set-mark %d",
+		 ip, base);	
+
+	system2
+		("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
+	system2
+		("iptables -t mangle -A FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
+	system2
+		("iptables -t mangle -A FILTER_IN -j RETURN");
+
+	system2
+		("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");
+	system2
+		("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+	system2
+		("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
+	system2
+		("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
+	system2
+		("iptables -t mangle -A FILTER_OUT -j RETURN");
+}
+#endif
+#endif
+
 int buf_to_file(char *path, char *buf)
 {
 	FILE *fp;

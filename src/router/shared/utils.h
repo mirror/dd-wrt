@@ -834,9 +834,19 @@ void lcdmessaged(char *dual, char *message);
 #define lcdmessaged(a,b)
 #endif
 
+extern char *getBridgeMTU(char *);
+extern char *getMTU(char *);
+
+#ifdef HAVE_SVQOS
+extern char *get_wshaper_dev(void);
+extern char *get_mtu_val(void);
+extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
+extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 #ifdef HAVE_AQOS
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate);
 extern void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream);
 extern void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream);
+#endif
 #endif
 
 void getHostName(char *buf, char *ip);
