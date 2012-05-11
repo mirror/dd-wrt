@@ -27,12 +27,9 @@
 #include "wireless_generic.c"
 
 typedef struct wl_rateset_compat {
-	uint32	count;			/* # rates in this set */
-	uint8	rates[16];	/* rates in 500kbps units w/hi bit set if basic */
+	uint32 count;		/* # rates in this set */
+	uint8 rates[16];	/* rates in 500kbps units w/hi bit set if basic */
 } wl_rateset_compat_t;
-
-
-
 
 typedef struct {
 	uint16 ver;		/* version of this struct */
@@ -54,6 +51,30 @@ typedef struct {
 	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
 } sta_info_compat_t;
 
+typedef struct wl_rateset_compat {
+	uint32 count;		/* # rates in this set */
+	uint8 rates[255];	/* rates in 500kbps units w/hi bit set if basic */
+} wl_rateset_compat_old_t;
+
+typedef struct {
+	uint16 ver;		/* version of this struct */
+	uint16 len;		/* length in bytes of this structure */
+	uint16 cap;		/* sta's advertised capabilities */
+	uint32 flags;		/* flags defined below */
+	uint32 idle;		/* time since data pkt rx'd from sta */
+	struct ether_addr ea;	/* Station address */
+	wl_rateset_compat_old_t rateset;	/* rateset in use */
+	uint32 in;		/* seconds elapsed since associated */
+	uint32 listen_interval_inms;	/* Min Listen interval in ms for this STA */
+	uint32 tx_pkts;		/* # of packets transmitted */
+	uint32 tx_failures;	/* # of packets failed */
+	uint32 rx_ucast_pkts;	/* # of unicast packets received */
+	uint32 rx_mcast_pkts;	/* # of multicast packets received */
+	uint32 tx_rate;		/* Rate of last successful tx frame */
+	uint32 rx_rate;		/* Rate of last successful rx frame */
+	uint32 rx_decrypt_succeeds;	/* # of packet decrypted successfully */
+	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
+} sta_info_compat_old_t;
 
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
@@ -145,6 +166,7 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 #define WL_STA_SCBSTATS		0x4000	/* Per STA debug stats */
 #endif
 		sta_info_compat_t *sta;
+		sta_info_compat_old_t *staold;
 		char *param;
 		int buflen;
 		char buf[WLC_IOCTL_MEDLEN];
@@ -155,17 +177,33 @@ ej_active_wireless_if(webs_t wp, int argc, char_t ** argv,
 		if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
 			/* display the sta info */
 			sta = (sta_info_compat_t *) buf;
-			if (sta->flags & WL_STA_SCBSTATS) {
-				int tx = sta->tx_rate;
-				int rx = sta->rx_rate;
-				if (tx > 0)
-					sprintf(txrate, "%dM",
-						tx / 1000);
-				
-				if (rx > 0)
-					sprintf(rxrate, "%dM",
-						rx / 1000);
-				strcpy(time, UPTIME(sta->in));
+			if (sta->ver == 2) {
+				staold = (sta_info_compat_old_t *) buf;
+				if (staold->flags & WL_STA_SCBSTATS) {
+					int tx = staold->tx_rate;
+					int rx = staold->rx_rate;
+					if (tx > 0)
+						sprintf(txrate, "%dM",
+							tx / 1000);
+
+					if (rx > 0)
+						sprintf(rxrate, "%dM",
+							rx / 1000);
+					strcpy(time, UPTIME(staold->in));
+				}
+			} else {	// sta->ver == 3
+				if (sta->flags & WL_STA_SCBSTATS) {
+					int tx = sta->tx_rate;
+					int rx = sta->rx_rate;
+					if (tx > 0)
+						sprintf(txrate, "%dM",
+							tx / 1000);
+
+					if (rx > 0)
+						sprintf(rxrate, "%dM",
+							rx / 1000);
+					strcpy(time, UPTIME(sta->in));
+				}
 			}
 		}
 
