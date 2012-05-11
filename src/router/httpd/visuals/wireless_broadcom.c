@@ -51,7 +51,7 @@ typedef struct {
 	uint32 rx_decrypt_failures;	/* # of packet decrypted unsuccessfully */
 } sta_info_compat_t;
 
-typedef struct wl_rateset_compat {
+typedef struct wl_rateset_old_compat {
 	uint32 count;		/* # rates in this set */
 	uint8 rates[255];	/* rates in 500kbps units w/hi bit set if basic */
 } wl_rateset_compat_old_t;
