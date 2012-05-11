@@ -1219,7 +1219,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 	int eap_timeout;
 	struct eapol_state_machine *sm;
 	int override_eapReq = 0;
-	static int qosidx=500;
+	static int qosidx=3910;
 	sm = ieee802_1x_search_radius_identifier(hapd, msg->hdr->identifier);
 	if (sm == NULL) {
 		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Could not find matching "
@@ -1315,8 +1315,8 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 		    //case 3 = change required, exists, new setting 
 		    if (!ret)
 			{
-			qosidx+=2;
-			if (qosidx>500)
+			qosidx+=10;
+			if (qosidx>6400)
 			    qosidx=0;
 			wpa_printf(MSG_DEBUG, "bandwidth rule is new, no flush required!\n");			
 			add_usermac(mac, qosidx, uplevel,downlevel,"0" );
