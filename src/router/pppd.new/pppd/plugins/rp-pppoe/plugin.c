@@ -209,7 +209,7 @@ static int
 PPPOEConnectDevice(void)
 {
     struct sockaddr_pppox sp;
-    static int qosidx=500;
+    static int qosidx=6410;
 
     strlcpy(ppp_devnam, devnam, sizeof(ppp_devnam));
     if (existingSession) {
@@ -274,8 +274,8 @@ PPPOEConnectDevice(void)
 	int ret = addrule(mac,uplevel,downlevel);
 		    if (!ret)
 			{
-			qosidx+=2;
-			if (qosidx>500)
+			qosidx+=10;
+			if (qosidx>8190)
 			    qosidx=0;
 			add_usermac(mac, qosidx, uplevel,downlevel,"0" );
 			}else if (ret>1)
