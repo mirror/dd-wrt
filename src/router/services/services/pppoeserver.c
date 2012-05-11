@@ -87,14 +87,13 @@ static void makeipup(void)
 		if wan = ppp && wan = enabled => ppp - 1 */
 	if (nvram_match("pppoeserver_clip", "local"))
 		fprintf(fp, "if [ `ifconfig|grep ppp -c` -ge `nvram get pppoeserver_clcount` ]\n"
-		"\t\t then if [ `lsmod|grep ebtables -c` -eq 0 ]\n"
-		"\t\t	&& [ `lsmod|grep ebtable_filter -c` -eq 0 ]\n"
-		"\t\t then insmod ebtables\n"
-		"\t\t\t insmod ebtable_filter\n"
-		"\t\t fi\n"
-		"if [ `ebtables -L|grep PPP_DISC|grep DROP -c` -eq 0 ]\n"
-		"then ebtables -I INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"	//drop pppoe discovery
-		"fi\n"
+		"then if [ `lsmod|grep ebtables -c` -eq 0 ]\n"
+		"\t	&& [ `lsmod|grep ebtable_filter -c` -eq 0 ]\n"
+		"\t then insmod ebtables\n"
+		"\t\t insmod ebtable_filter\n" "\t fi\n"
+		"\t if [ `ebtables -L|grep PPP_DISC|grep DROP -c` -eq 0 ]\n"
+		"\t then ebtables -I INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"	//drop pppoe discovery
+		"\t fi\n" "fi\n
 		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
 		"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
