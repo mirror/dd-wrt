@@ -171,7 +171,7 @@ int containsIP(char *ip)
 	return 0;
 }
 
-static int qosidx = 1000;
+static int qosidx = 1310;
 
 int containsMAC(char *ip)
 {
@@ -706,7 +706,7 @@ int main(int argc, char **argv)
 		_exit(0);
 	}
 #ifdef HAVE_AQOS
-	qosidx = 1000;
+	qosidx = 1310;
 #endif
 	/* 
 	 * Most of time it goes to sleep 
