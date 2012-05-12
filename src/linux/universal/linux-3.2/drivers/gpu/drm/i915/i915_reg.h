@@ -442,6 +442,7 @@
 #define   INSTPM_AGPBUSY_DIS (1<<11) /* gen3: when disabled, pending interrupts
 					will not assert AGPBUSY# and will only
 					be delivered when out of C3. */
+#define   INSTPM_FORCE_ORDERING				(1<<7) /* GEN6+ */
 #define ACTHD	        0x020c8
 #define FW_BLC		0x020d8
 #define FW_BLC2		0x020dc
@@ -522,6 +523,7 @@
 #define   CM0_MASK_SHIFT          16
 #define   CM0_IZ_OPT_DISABLE      (1<<6)
 #define   CM0_ZR_OPT_DISABLE      (1<<5)
+#define	  CM0_STC_EVICT_DISABLE_LRA_SNB	(1<<5)
 #define   CM0_DEPTH_EVICT_DISABLE (1<<4)
 #define   CM0_COLOR_EVICT_DISABLE (1<<3)
 #define   CM0_DEPTH_WRITE_DISABLE (1<<1)
