@@ -93,7 +93,7 @@ static void makeipup(void)
 		"\t\t insmod ebtable_filter\n" "\t fi\n"
 		"\t if [ `ebtables -L|grep PPP_DISC|grep DROP -c` -eq 0 ]\n"
 		"\t then ebtables -I INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"	//drop pppoe discovery
-		"\t fi\n" "fi\n
+		"\t fi\n" "fi\n"
 		"echo \"$PPPD_PID\t$1\t$5\t$PEERNAME\" >> /tmp/pppoe_connected\n"
 		//	just an uptime test
 		"echo \"`date +%%s`\t$PEERNAME\" >> /tmp/pppoe_uptime\n"	//
