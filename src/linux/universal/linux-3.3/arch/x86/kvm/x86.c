@@ -2997,6 +2997,8 @@ static void write_protect_slot(struct kvm *kvm,
 			       unsigned long *dirty_bitmap,
 			       unsigned long nr_dirty_pages)
 {
+	spin_lock(&kvm->mmu_lock);
+
 	/* Not many dirty pages compared to # of shadow pages. */
 	if (nr_dirty_pages < kvm->arch.n_used_mmu_pages) {
 		unsigned long gfn_offset;
@@ -3004,16 +3006,13 @@ static void write_protect_slot(struct kvm *kvm,
 		for_each_set_bit(gfn_offset, dirty_bitmap, memslot->npages) {
 			unsigned long gfn = memslot->base_gfn + gfn_offset;
 
-			spin_lock(&kvm->mmu_lock);
 			kvm_mmu_rmap_write_protect(kvm, gfn, memslot);
-			spin_unlock(&kvm->mmu_lock);
 		}
 		kvm_flush_remote_tlbs(kvm);
-	} else {
-		spin_lock(&kvm->mmu_lock);
+	} else
 		kvm_mmu_slot_remove_write_access(kvm, memslot->id);
-		spin_unlock(&kvm->mmu_lock);
-	}
+
+	spin_unlock(&kvm->mmu_lock);
 }
 
 /*
@@ -3131,6 +3130,9 @@ long kvm_arch_vm_ioctl(struct file *filp,
 		mutex_lock(&kvm->lock);
 		r = -EEXIST;
 		if (kvm->arch.vpic)
+			goto create_irqchip_unlock;
+		r = -EINVAL;
+		if (atomic_read(&kvm->online_vcpus))
 			goto create_irqchip_unlock;
 		r = -ENOMEM;
 		vpic = kvm_create_pic(kvm);
@@ -5955,6 +5957,11 @@ void kvm_arch_hardware_unsetup(void)
 void kvm_arch_check_processor_compat(void *rtn)
 {
 	kvm_x86_ops->check_processor_compatibility(rtn);
+}
+
+bool kvm_vcpu_compatible(struct kvm_vcpu *vcpu)
+{
+	return irqchip_in_kernel(vcpu->kvm) == (vcpu->arch.apic != NULL);
 }
 
 int kvm_arch_vcpu_init(struct kvm_vcpu *vcpu)
