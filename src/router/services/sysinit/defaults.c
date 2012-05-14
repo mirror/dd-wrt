@@ -2839,7 +2839,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_encryption", "0", 0},
 	{"pppoeserver_lcpechoint", "5", 0},
 	{"pppoeserver_lcpechofail", "12", 0},
-	{"pppoeserver_sessionlimit", "10", 0},
+	{"pppoeserver_sessionlimit", "0", 0},
 	{"pppoeserver_chaps", "", 0},
 	{"pppoeserver_chapsnum", "0", 0},
 	{"pppoeserver_idle", "0", 0},
