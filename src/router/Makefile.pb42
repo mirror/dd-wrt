@@ -1045,6 +1045,9 @@ ifeq ($(CONFIG_WR741),y)
 	-./tools/tplink/mktplinkfw -B TL-WR740NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv3-firmware.bin mips-uclibc/tplink-WR740NDv3-firmware.bin
 
+	-./tools/tplink/mktplinkfw -B TL-WR740NDv3WW -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3ww-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv3ww-firmware.bin mips-uclibc/tplink-WR740NDv3ww-firmware.bin
+
 	-./tools/tplink/mktplinkfw -B TL-WR743NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR743NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR743NDv1-firmware.bin mips-uclibc/tplink-WR743NDv1-firmware.bin
 
