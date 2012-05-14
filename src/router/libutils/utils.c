@@ -1908,6 +1908,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	setRouter("TP-Link TL-WR743ND v1");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_MR3020
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("TP-Link TL-MR3020");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR703
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
@@ -3985,7 +3990,12 @@ int led_control(int type, int act)
 		ses_gpio = 0x005;
 //              usb_gpio = 0x101;
 #endif
-#ifdef HAVE_WR703
+#ifdef HAVE_MR3020
+		diag_gpio = 0x11b;
+		ses_gpio = 0x11a;
+		sec0_gpio = 0x11a;
+		usb_power = 0x008;		
+#elif HAVE_WR703
 		diag_gpio = 0x11b;
 		ses_gpio = 0x001;
 		sec0_gpio = 0x001;
