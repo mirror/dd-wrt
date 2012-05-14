@@ -5,7 +5,7 @@
  "pppoeserver_mppc" "" "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "pppoeserver_lcpechoint" "" "RANGE"  "0"  "9999"  "FALSE" "0"
  "pppoeserver_lcpechofail" "" "RANGE"  "0"  "9999"  "FALSE" "0"
- "pppoeserver_sessionlimit" "" "RANGE"  "1"  "99999"  "FALSE" "0"
+ "pppoeserver_sessionlimit" "" "RANGE"  "0"  "99999"  "FALSE" "0"
  "pppoeserver_chaps" "" "CHAPTABLE" "FALSE" "0"
  "pppoeserver_idle" "" "RANGE"  "0"  "9999"  "FALSE" "0"
  "pppoeserver_authserverip" "" "NULL"  "TRUE" "0" 
