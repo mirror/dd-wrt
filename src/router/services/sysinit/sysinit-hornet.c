@@ -55,17 +55,19 @@
 
 static void setSwitchLED(int gpio, int portmask)
 {
-sysprintf("echo switch0 > /sys/class/leds/generic_%d/trigger",gpio);
-sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask",portmask,gpio);
+	sysprintf("echo switch0 > /sys/class/leds/generic_%d/trigger", gpio);
+	sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask", portmask,
+		  gpio);
 }
 
-static void setEthLED(int gpio,char *eth)
+static void setEthLED(int gpio, char *eth)
 {
-sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger",gpio);
-sysprintf("echo %s > /sys/class/leds/generic_%d/device_name",eth,gpio);
-sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode",gpio);
+	sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger", gpio);
+	sysprintf("echo %s > /sys/class/leds/generic_%d/device_name", eth,
+		  gpio);
+	sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode",
+		  gpio);
 }
-
 
 void start_sysinit(void)
 {
@@ -73,7 +75,6 @@ void start_sysinit(void)
 
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
-
 
 	/*
 	 * Setup console 
@@ -112,28 +113,28 @@ void start_sysinit(void)
 #ifndef HAVE_ATH9K
 		MAC_SUB(mac);
 #endif
-	
 
 	}
-
 #endif
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 
-
 #ifdef HAVE_WR741V4
 #ifdef HAVE_SWCONFIG
-		system("swconfig dev eth1 set reset 1");
-		system("swconfig dev eth1 set enable_vlan 0");
-		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
-		system("swconfig dev eth1 set apply");
+	system("swconfig dev eth1 set reset 1");
+	system("swconfig dev eth1 set enable_vlan 0");
+	system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
+	system("swconfig dev eth1 set apply");
 #endif
 #ifndef HAVE_WR703
-	setEthLED(13,"eth0");
-	setSwitchLED(14,0x4);
-	setSwitchLED(15,0x8);
-	setSwitchLED(16,0x10);
-	setSwitchLED(17,0x02);
+	setEthLED(13, "eth0");
+	setSwitchLED(14, 0x4);
+	setSwitchLED(15, 0x8);
+	setSwitchLED(16, 0x10);
+	setSwitchLED(17, 0x02);
+#endif
+#ifdef HAVE_MR3020
+	setEthLED(17, "eth1");
 #endif
 #endif
 	struct ifreq ifr;
@@ -163,7 +164,7 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
-	setWirelessLed(0,0);
+	setWirelessLed(0, 0);
 
 	/*
 	 * Set a sane date 
