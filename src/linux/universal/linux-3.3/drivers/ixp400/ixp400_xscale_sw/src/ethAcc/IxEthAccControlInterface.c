@@ -120,8 +120,10 @@ ixEthAccPortPromiscuousModeClear(IxEthAccPortId portId)
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortPromiscuousModeClearPriv(portId);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -136,8 +138,10 @@ ixEthAccPortPromiscuousModeSet(IxEthAccPortId portId)
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortPromiscuousModeSetPriv(portId);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -152,8 +156,10 @@ ixEthAccPortUnicastMacAddressSet(IxEthAccPortId portId, IxEthAccMacAddr *macAddr
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortUnicastMacAddressSetPriv(portId, macAddr);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -168,8 +174,10 @@ ixEthAccPortUnicastMacAddressGet(IxEthAccPortId portId, IxEthAccMacAddr *macAddr
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortUnicastMacAddressGetPriv(portId, macAddr);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -184,8 +192,10 @@ ixEthAccPortMulticastAddressJoin(IxEthAccPortId portId, IxEthAccMacAddr *macAddr
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortMulticastAddressJoinPriv(portId, macAddr);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -200,8 +210,10 @@ ixEthAccPortMulticastAddressJoinAll(IxEthAccPortId portId)
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortMulticastAddressJoinAllPriv(portId);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -216,8 +228,10 @@ ixEthAccPortMulticastAddressLeave(IxEthAccPortId portId, IxEthAccMacAddr *macAdd
 	return (IX_ETH_ACC_FAIL);
     }
 
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortMulticastAddressLeavePriv(portId, macAddr);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
@@ -231,9 +245,10 @@ ixEthAccPortMulticastAddressLeaveAll(IxEthAccPortId portId)
     {
 	return (IX_ETH_ACC_FAIL);
     }
-
+    if (!in_atomic())
     ixOsalMutexLock(&ixEthAccControlInterfaceMutex, IX_OSAL_WAIT_FOREVER);
     result = ixEthAccPortMulticastAddressLeaveAllPriv(portId);
+    if (!in_atomic())
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
