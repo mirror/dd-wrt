@@ -2562,14 +2562,14 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_WIKINGS
 			if (base > 28)
 				base = 28;
-#ifdef HAVE_SUB3
+/*#ifdef HAVE_SUB3
 			if (base > 25)
 				base = 25;
 #endif
 #ifdef HAVE_SUB6
 			if (base > 22)
 				base = 22;
-#endif
+#endif*/
 #endif
 
 #ifdef HAVE_ESPOD
