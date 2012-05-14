@@ -109,12 +109,12 @@ static void makeipup(void)
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
 			"OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n"
 			"if [ ! -z $IN ] &&  [ $IN -gt 0 ]\n"
-			"then tc qdisc del dev $1 ingress\n"
-			"\t tc qdisc add dev $1 handle ffff: ingress\n"	//
+			"then tc qdisc del dev $1 ingress\n" "\t sleep 1\n"
+			"\t tc qdisc add dev $1 handle ffff: ingress\n"	"\t sleep 1\n"
 			"\t tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n"
-			"fi\n"
+			"fi\n" "sleep 1\n"
 			"if [ ! -z $OUT ] && [ $OUT -gt 0 ]\n"	//only if Speed limit !0 and !empty
-			"then	tc qdisc del root dev $1\n"
+			"then	tc qdisc del root dev $1\n" "\t sleep 1\n"
 			"\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n"
 			"fi\n");
 		}
@@ -143,13 +143,13 @@ static void makeipup(void)
 		"iptables -D INPUT -i $1 -j ACCEPT\n"	//
 		"iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"	//
 		"iptables -D FORWARD -i $1 -j ACCEPT\n");	//
-	if (nvram_match("pppoeserver_clip", "local"))
+	/*if (nvram_match("pppoeserver_clip", "local"))
 		fprintf(fp, 
 		"if [ `ifconfig|grep ppp -c` -lt `nvram get pppoeserver_clcount` ]\n"
 		"then ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP\n"
-		"fi\n");
+		"fi\n"); */
 	if (nvram_match("pppoeradius_enabled", "1"))
-		fprintf(fp, "tc qdisc del root dev $1\n"	//
+		fprintf(fp, "tc qdisc del root dev $1\n" "sleep 1\n"
 			"tc qdisc del dev $1 ingress\n");
 	fclose(fp);
 
@@ -393,7 +393,7 @@ void stop_pppoeserver(void)
 	//	backup peer data
 		if (nvram_match("sys_enable_jffs2", "1"))
 		    system("/bin/cp /tmp/pppoe_peer.db /jffs/etc/");
-		system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
+		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 	}
 
 }
