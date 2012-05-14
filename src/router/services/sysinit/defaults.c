@@ -1731,6 +1731,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptpd_radport", "1812", 0},
 	{"pptpd_acctport", "1813", 0},
 	{"pptpd_radpass", "", 0},
+	{"pptpd_conn", "64", 0},
 	{"pptp_reorder", "0", 0},
 	{"pptp_extraoptions", "", 0},
 #ifdef HAVE_GGEW
