@@ -1,1 +1,2 @@
 "ttraff_enable"  "Ttraff Enable/Disable" "CHOICE" "2" "0" "1" "FALSE" "0"
+"ttraff_iface"  "Ttraff Interface"	"NULL"	"FALSE"	"0"
