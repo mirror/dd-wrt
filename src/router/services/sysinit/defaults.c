@@ -2827,6 +2827,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"usb_runonmount", "", 0},
 #endif
 	{"ttraff_enable", "1", 0},
+	{"ttraff_iface", "", 0},
 #ifdef HAVE_PPPOESERVER
 	{"pppoeserver_enabled", "0", 0},
 	{"pppoeserver_interface", "br0", 0},
@@ -2843,7 +2844,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pppoeserver_chapsnum", "0", 0},
 	{"pppoeserver_idle", "0", 0},
 	{"pppoeserver_authserverip", "192.168.1.1", 0},
-	{"pppoeserver_authserverip_backup", "0.0.0.0", 0},
+	{"pppoeserver_authserverip_backup", "", 0},
 	{"pppoeserver_authserverport", "1812", 0},
 	{"pppoeserver_authserverport_backup", "1812", 0},
 	{"pppoeserver_acctserverport", "1813", 0},
