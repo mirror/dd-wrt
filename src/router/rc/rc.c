@@ -153,6 +153,12 @@ int redial_main(int argc, char **argv)
 					start_service("wan_redial");
 				}
 #endif
+#ifdef HAVE_IPETH
+				else if (nvram_match("wan_proto", "iphone")) {
+					sleep(1);
+					start_service("wan_redial");
+				}
+#endif
 				exit(0);
 				break;
 			default:

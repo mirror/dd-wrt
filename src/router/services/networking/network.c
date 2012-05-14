@@ -3867,6 +3867,9 @@ void start_wan(int status)
 		eval("ipheth-loop");
 		eval("ifconfig","iph0","up");
 		start_dhcpc("iph0", NULL, NULL, 1);
+		if (status != REDIAL) {
+			start_redial();
+		}
 	}
 #endif
 #ifdef HAVE_PPTP
@@ -3874,7 +3877,7 @@ void start_wan(int status)
 		start_pptp(status);
 	}
 #endif
-#ifdef HAVE_L2TP
+#ifdef HAVE_L2TPOB
 	else if (strcmp(wan_proto, "l2tp") == 0) {
 		insmod("n_hdlc");
 		if (isClient()) {
