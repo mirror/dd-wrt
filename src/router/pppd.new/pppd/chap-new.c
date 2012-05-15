@@ -28,11 +28,12 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: chap-new.c,v 1.8 2005/07/13 10:41:58 paulus Exp $"
+#define RCSID	"$Id: chap-new.c,v 1.9 2007/06/19 02:08:35 carlsonj Exp $"
 
 #include <stdlib.h>
 #include <string.h>
 #include "pppd.h"
+#include "session.h"
 #include "chap-new.h"
 #include "chap-md5.h"
 
@@ -366,6 +367,22 @@ chap_handle_response(struct chap_server_state *ss, int id,
 
 	if (ss->flags & CHALLENGE_VALID) {
 		ss->flags &= ~CHALLENGE_VALID;
+		if (!(ss->flags & AUTH_DONE) && !(ss->flags & AUTH_FAILED)) {
+		    /*
+		     * Auth is OK, so now we need to check session restrictions
+		     * to ensure everything is OK, but only if we used a
+		     * plugin, and only if we're configured to check.  This
+		     * allows us to do PAM checks on PPP servers that
+		     * authenticate against ActiveDirectory, and use AD for
+		     * account info (like when using Winbind integrated with
+		     * PAM).
+		     */
+		    if (session_mgmt &&
+			session_check(name, NULL, devnam, NULL) == 0) {
+			ss->flags |= AUTH_FAILED;
+			warn("Peer %q failed CHAP Session verification", name);
+		    }
+		}
 		if (ss->flags & AUTH_FAILED) {
 			auth_peer_fail(0, PPP_CHAP);
 		} else {

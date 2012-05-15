@@ -39,7 +39,7 @@
  * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pppd.h,v 1.91 2005/08/25 23:59:34 paulus Exp $
+ * $Id: pppd.h,v 1.96 2008/06/23 11:47:18 paulus Exp $
  */
 
 /*
@@ -115,19 +115,19 @@ typedef struct {
 #define OPT_VALUE	0xff	/* mask for presupplied value */
 #define OPT_HEX		0x100	/* int option is in hex */
 #define OPT_NOARG	0x200	/* option doesn't take argument */
-#define OPT_OR		0x400	/* OR in argument to value */
-#define OPT_INC		0x800	/* increment value */
+#define OPT_OR		0x400	/* for u32, OR in argument to value */
+#define OPT_INC		0x400	/* for o_int, increment value */
 #define OPT_A2OR	0x800	/* for o_bool, OR arg to *(u_char *)addr2 */
 #define OPT_PRIV	0x1000	/* privileged option */
 #define OPT_STATIC	0x2000	/* string option goes into static array */
+#define OPT_NOINCR	0x2000	/* for o_int, value mustn't be increased */
 #define OPT_LLIMIT	0x4000	/* check value against lower limit */
 #define OPT_ULIMIT	0x8000	/* check value against upper limit */
 #define OPT_LIMITS	(OPT_LLIMIT|OPT_ULIMIT)
 #define OPT_ZEROOK	0x10000	/* 0 value is OK even if not within limits */
 #define OPT_HIDE	0x10000	/* for o_string, print value as ?????? */
-#define OPT_A2LIST	0x10000 /* for o_special, keep list of values */
-#define OPT_A2CLRB	0x10000 /* o_bool, clr val bits in *(u_char *)addr2 */
-#define OPT_NOINCR	0x20000	/* value mustn't be increased */
+#define OPT_A2LIST	0x20000 /* for o_special, keep list of values */
+#define OPT_A2CLRB	0x20000 /* o_bool, clr val bits in *(u_char *)addr2 */
 #define OPT_ZEROINF	0x40000	/* with OPT_NOINCR, 0 == infinity */
 #define OPT_PRIO	0x80000	/* process option priorities for this option */
 #define OPT_PRIOSUB	0x100000 /* subsidiary member of priority group */
@@ -293,6 +293,7 @@ extern char	passwd[MAXSECRETLEN];	/* Password for PAP or CHAP */
 extern bool	auth_required;	/* Peer is required to authenticate */
 extern bool	persist;	/* Reopen link after it goes down */
 extern bool	uselogin;	/* Use /etc/passwd for checking PAP */
+extern bool	session_mgmt;	/* Do session management (login records) */
 extern char	our_name[MAXNAMELEN];/* Our name for authentication purposes */
 extern char	remote_name[MAXNAMELEN]; /* Peer's name for authentication */
 extern bool	explicit_remote;/* remote_name specified with remotename opt */
@@ -486,7 +487,7 @@ void timeout __P((void (*func)(void *), void *arg, int s, int us));
 				/* Call func(arg) after s.us seconds */
 void untimeout __P((void (*func)(void *), void *arg));
 				/* Cancel call to func(arg) */
-void record_child __P((int, char *, void (*) (void *), void *));
+void record_child __P((int, char *, void (*) (void *), void *, int));
 pid_t safe_fork __P((int, int, int));	/* Fork & close stuff in child */
 int  device_script __P((char *cmd, int in, int out, int dont_wait));
 				/* Run `cmd' with given stdin and stdout */
@@ -546,7 +547,7 @@ void error __P((char *, ...));	/* log an error message */
 void fatal __P((char *, ...));	/* log an error message and die(1) */
 #endif
 
-void init_pr_log __P((char *, int));	/* initialize for using pr_log */
+void init_pr_log __P((const char *, int)); /* initialize for using pr_log */
 void pr_log __P((void *, char *, ...));	/* printer fn, output to syslog */
 void end_pr_log __P((void));	/* finish up after using pr_log */
 void dump_packet __P((const char *, u_char *, int));
@@ -746,6 +747,7 @@ extern void (*ip_choose_hook) __P((u_int32_t *));
 
 extern int (*chap_check_hook) __P((void));
 extern int (*chap_passwd_hook) __P((char *user, char *passwd));
+extern void (*multilink_join_hook) __P((void));
 
 /* Let a plugin snoop sent and received packets.  Useful for L2TP */
 extern void (*snoop_recv_hook) __P((unsigned char *p, int len));

@@ -1,5 +1,5 @@
 .\" manual page [] for pppd 2.4
-.\" $Id: pppd.8,v 1.88 2006/06/16 00:01:23 paulus Exp $
+.\" $Id: pppd.8,v 1.90 2008/03/26 12:09:40 paulus Exp $
 .\" SH section heading
 .\" SS subsection heading
 .\" LP paragraph
@@ -352,6 +352,16 @@ With the \fBdump\fR option, pppd will print out all the option values
 which have been set.  This option is like the \fBdryrun\fR option
 except that pppd proceeds as normal rather than exiting.
 .TP
+.B enable-session
+Enables session accounting via PAM or wtwp/wtmpx, as appropriate.
+When PAM is enabled, the PAM "account" and "session" module stacks
+determine behavior, and are enabled for all PPP authentication
+protocols.  When PAM is disabled, wtmp/wtmpx entries are recorded
+regardless of whether the peer name identifies a valid user on the
+local system, making peers visible in the last(1) log.  This feature
+is automatically enabled when the pppd \fBlogin\fR option is used.
+Session accounting is disabled by default.
+.TP
 .B endpoint \fI<epdisc>
 Sets the endpoint discriminator sent by the local machine to the peer
 during multilink negotiation to \fI<epdisc>\fR.  The default is to use
@@ -602,7 +612,8 @@ the user who invoked pppd, in append mode.
 Use the system password database for authenticating the peer using
 PAP, and record the user in the system wtmp file.  Note that the peer
 must have an entry in the /etc/ppp/pap\-secrets file as well as the
-system password database to be allowed access.
+system password database to be allowed access.  See also the
+\fBenable\-session\fR option.
 .TP
 .B maxconnect \fIn
 Terminate the connection when it has been available for network
@@ -818,6 +829,17 @@ Do not accept or agree to Predictor\-1 compression.
 Disable the \fIproxyarp\fR option.  The system administrator who
 wishes to prevent users from creating proxy ARP entries with pppd can
 do so by placing this option in the /etc/ppp/options file.
+.TP
+.B noremoteip
+Allow pppd to operate without having an IP address for the peer.  This
+option is only available under Linux.  Normally, pppd will request the
+peer's IP address, and if the peer does not supply it, pppd will not
+bring up the link for IP traffic.  With this option, if the peer does
+not supply its IP address, pppd will not ask the peer for it, and will
+not set the destination address of the ppp interface.  In this
+situation, the ppp interface can be used for routing by creating
+device routes, but the peer itself cannot be addressed directly for IP
+traffic.
 .TP
 .B notty
 Normally, pppd requires a terminal device.  With this option, pppd

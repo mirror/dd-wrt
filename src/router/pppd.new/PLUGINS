@@ -231,6 +231,13 @@ packet is in p; its length is len.  This allows plugins to "snoop in"
 on the pppd conversation.  The hooks may prove useful in implmenting
 L2TP.
 
+
+void (*multilink_join_hook)();
+
+This is called whenever a new link completes LCP negotiation and joins
+the bundle, if we are doing multilink.
+
+
 A plugin registers itself with a notifier by declaring a procedure of
 the form:
 
@@ -277,4 +284,4 @@ Here is a list of the currently-implemented notifiers in pppd.
 
 
 
-## $Id: PLUGINS,v 1.7 2005/07/12 08:56:07 paulus Exp $ ##
+## $Id: PLUGINS,v 1.8 2008/06/15 07:02:18 paulus Exp $ ##

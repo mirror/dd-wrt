@@ -25,65 +25,11 @@ a value of 5.  If you enable PPP debugging with the "debug" option and
 see something like the following in your logs, the remote server is
 requesting MS-CHAP:
 
-  rcvd [LCP ConfReq id=0x2 <asyncmap 0x0> <auth chap 80> <magic 0x46a3>]
-                                           ^^^^^^^^^^^^
+  rcvd [LCP ConfReq id=0x2 <asyncmap 0x0> <auth MS> <magic 0x46a3>]
+                                           ^^^^^^^
 
-The standard pppd implementation will indicate its lack of support for
-MS-CHAP by NAKing it:
-
-  sent [LCP ConfNak id=0x2 <auth chap 05>]
-
-Windows NT Server systems are often configured to "Accept only
-Microsoft Authentication" (this is intended to enhance security).  Up
-until now, that meant that you couldn't use this version of PPPD to
-connect to such a system.
-
-
-BUILDING THE PPPD
-
-MS-CHAP uses a combination of MD4 hashing and DES encryption for
-authentication.  You may need to get Eric Young's libdes library in
-order to use my MS-CHAP extensions.  A lot of UNIX systems already
-have DES encryption available via the crypt(3), encrypt(3) and
-setkey(3) interfaces.  Some may (such as that on Digital UNIX)
-provide only the encryption mechanism and will not perform
-decryption.  This is okay.  We only need to encrypt to perform
-MS-CHAP authentication.
-
-If you have encrypt/setkey available, then hopefully you need only
-define these two things in your Makefile: -DUSE_CRYPT and -DCHAPMS.
-Skip the paragraphs below about obtaining and building libdes.  Do
-the "make clean" and "make" as described below.  Linux users
-should not need to modify their Makefiles.  Instead,
-just do "make CHAPMS=1 USE_CRYPT=1".
-
-If you don't have encrypt and setkey, you will need Eric Young's
-libdes library.  You can find it in:
-
-ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.psy.uq.oz.au/DES/libdes-3.06.tar.gz
-
-Australian residents can get libdes from Eric Young's site:
-
-ftp://ftp.psy.uq.oz.au/pub/Crypto/DES/libdes-3.06.tar.gz
-
-It is also available on many other sites (ask Archie).
-
-I used libdes-3.06, but hopefully anything newer than that will work
-also.  Get the library, build and test it on your system, and install
-it somewhere (typically /usr/local/lib and /usr/local/include).
-
-
-
-You should now be ready to (re)compile the PPPD.  Go to the pppd
-subdirectory and make sure the Makefile contains "-DCHAPMS" in the
-CFLAGS or COMPILE_FLAGS macro, and that the LIBS macro (or LDADD for
-BSD systems) contains "-ldes".  Depending on your system and where the
-DES library was installed, you may also need to alter the include and
-library paths used by your compiler.
-
-Do a "make clean" and then a "make" to rebuild pppd.  Assuming all
-goes well, install the new pppd and move on to the CONFIGURATION
-section.
+MS-CHAP is enabled by default under Linux in pppd/Makefile.linux by
+the line "CHAPMS=y".
 
 
 CONFIGURATION
