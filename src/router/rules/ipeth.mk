@@ -100,10 +100,22 @@ ipeth-configure:
 
 
 ipeth:
+ifneq ($(CONFIG_FREERADIUS),y)
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_AIRCRACK),y)
+ifneq ($(CONFIG_POUND),y)
+ifneq ($(CONFIG_OPENVPN),y)
+	rm -f openssl/*.so*
+endif
+endif
+endif
+endif
+endif
 	$(MAKE) -C $(TOP)/ipeth/libxml2
 	$(MAKE) -C $(TOP)/ipeth/libplist
 	$(MAKE) -C $(TOP)/ipeth/libusbmuxd 
 	$(MAKE) -C $(TOP)/ipeth/libimobiledevice
+	$(MAKE) -C $(TOP)/ipeth/ipheth-pair clean
 	$(MAKE) -C $(TOP)/ipeth/ipheth-pair
 	
 ipeth-clean:
