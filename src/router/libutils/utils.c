@@ -3991,9 +3991,8 @@ int led_control(int type, int act)
 //              usb_gpio = 0x101;
 #endif
 #ifdef HAVE_MR3020
-		diag_gpio = 0x11b;
-		ses_gpio = 0x11a;
-		sec0_gpio = 0x11a;
+		connected_gpio = 0x11b;
+		diag_gpio = 0x11a;
 		usb_power = 0x008;		
 #elif HAVE_WR703
 		diag_gpio = 0x11b;
