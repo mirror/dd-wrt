@@ -38,8 +38,8 @@ include $(TOP)/.config
 
 all: rp-pppoe.so pppoe-discovery
 
-pppoe-discovery: libplugin.a pppoe-discovery.o
-	$(CC) -o pppoe-discovery pppoe-discovery.o libplugin.a
+pppoe-discovery: pppoe-discovery.o debug.o
+	$(CC) -o pppoe-discovery pppoe-discovery.o
 
 
 pppoe-discovery: pppoe-discovery.o debug.o
