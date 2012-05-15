@@ -2,34 +2,34 @@ export OPENSSL_TARGET := linux-openwrt
 ifeq ($(ARCH),armeb)
 export OPENSSL_TARGET := linux-armv4
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
-export OPENSSL_CMAKEFLAGS := -DASMAES512
+export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),arm)
 export OPENSSL_TARGET := linux-armv4
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
-export OPENSSL_CMAKEFLAGS := -DASMAES512
+export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),mips)
 export OPENSSL_TARGET := linux-mips
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes_cbc.o aes-mips.o"
-export OPENSSL_CMAKEFLAGS := -DASMAES512
+export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),mipsel)
 export OPENSSL_TARGET := linux-mips
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
 export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes_cbc.o aes-mips.o"
-export OPENSSL_CMAKEFLAGS := -DASMAES512
+export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-ppc
-#export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
+export OPENSSL_MAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-i386
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-586.o aes_cbc.o"
-#export OPENSSL_CMAKEFLAGS := -DOPENSSL_FIPS_AES_ASM=1 -DOPENSSL_BN_ASM_PART_WORDS -DASMAES512 -DOPENSSL_IA32_SSE2
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 
 openssl:
