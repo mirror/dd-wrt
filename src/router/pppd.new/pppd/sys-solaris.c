@@ -85,7 +85,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: sys-solaris.c,v 1.14 2005/05/04 21:31:20 carlsonj Exp $"
+#define RCSID	"$Id: sys-solaris.c,v 1.16 2008/01/30 14:26:53 carlsonj Exp $"
 
 #include <limits.h>
 #include <stdio.h>
@@ -2220,7 +2220,7 @@ get_hw_addr_dlpi(name, hwaddr)
     char *name;
     struct sockaddr *hwaddr;
 {
-    char *p, *q;
+    char *q;
     int unit, iffd, adrlen;
     unsigned char *adrp;
     char ifdev[24];
@@ -2465,8 +2465,13 @@ logwtmp(line, name, host)
     if (name[0] != 0) {
 	/* logging in */
 	strncpy(utmpx.ut_user, name, sizeof(utmpx.ut_user));
-	strncpy(utmpx.ut_id, ifname, sizeof(utmpx.ut_id));
 	strncpy(utmpx.ut_line, line, sizeof(utmpx.ut_line));
+	strncpy(utmpx.ut_host, host, sizeof(utmpx.ut_host));
+	if (*host != '\0') {
+	    utmpx.ut_syslen = strlen(host) + 1;
+	    if (utmpx.ut_syslen > sizeof(utmpx.ut_host))
+		utmpx.ut_syslen = sizeof(utmpx.ut_host);
+	}
 	utmpx.ut_pid = getpid();
 	utmpx.ut_type = USER_PROCESS;
     } else {
@@ -2739,7 +2744,6 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 {
     int mfd, sfd;
     char *pty_name;
-    struct termios tios;
 
     mfd = open("/dev/ptmx", O_RDWR);
     if (mfd < 0) {

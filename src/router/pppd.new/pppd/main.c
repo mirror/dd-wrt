@@ -66,7 +66,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: main.c,v 1.153 2006/06/04 03:52:50 paulus Exp $"
+#define RCSID	"$Id: main.c,v 1.156 2008/06/23 11:47:18 paulus Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -220,6 +220,7 @@ struct subprocess {
     char	*prog;
     void	(*done) __P((void *));
     void	*arg;
+    int		killable;
     struct subprocess *next;
 };
 
@@ -963,7 +964,7 @@ struct protocol_list {
     { 0x8051,	"KNX Bridging Control Protocol" },
     { 0x8053,	"Encryption Control Protocol" },
     { 0x8055,	"Individual Link Encryption Control Protocol" },
-    { 0x8057,	"IPv6 Control Protovol" },
+    { 0x8057,	"IPv6 Control Protocol" },
     { 0x8059,	"PPP Muxing Control Protocol" },
     { 0x805b,	"Vendor-Specific Network Control Protocol (VSNCP)" },
     { 0x806f,	"Stampede Bridging Control Protocol" },
@@ -1388,7 +1389,21 @@ kill_my_pg(sig)
     int sig;
 {
     struct sigaction act, oldact;
+    struct subprocess *chp;
 
+    if (!detached) {
+	/*
+	 * There might be other things in our process group that we
+	 * didn't start that would get hit if we did a kill(0), so
+	 * just send the signal individually to our children.
+	 */
+	for (chp = children; chp != NULL; chp = chp->next)
+	    if (chp->killable)
+		kill(chp->pid, sig);
+	return;
+    }
+
+    /* We've done a setsid(), so we can just use a kill(0) */
     sigemptyset(&act.sa_mask);		/* unnecessary in fact */
     act.sa_handler = SIG_IGN;
     act.sa_flags = 0;
@@ -1572,6 +1587,8 @@ safe_fork(int infd, int outfd, int errfd)
 	if (errfd == 0 || errfd == 1)
 		errfd = dup(errfd);
 
+	closelog();
+
 	/* dup the in, out, err fds to 0, 1, 2 */
 	if (infd != 0)
 		dup2(infd, 0);
@@ -1580,7 +1597,6 @@ safe_fork(int infd, int outfd, int errfd)
 	if (errfd != 2)
 		dup2(errfd, 2);
 
-	closelog();
 	if (log_to_fd > 2)
 		close(log_to_fd);
 	if (the_channel->close)
@@ -1637,15 +1653,15 @@ device_script(program, in, out, dont_wait)
     }
 
     if (pid != 0) {
-	if (dont_wait) {
-	    record_child(pid, program, NULL, NULL);
-	    status = 0;
-	} else {
+	record_child(pid, program, NULL, NULL, 1);
+	status = 0;
+	if (!dont_wait) {
 	    while (waitpid(pid, &status, 0) < 0) {
 		if (errno == EINTR)
 		    continue;
 		fatal("error waiting for (dis)connection process: %m");
 	    }
+	    forget_child(pid, status);
 	    --conn_running;
 	}
 	return (status == 0 ? 0 : -1);
@@ -1667,7 +1683,7 @@ device_script(program, in, out, dont_wait)
 
 
 /*
- * run-program - execute a program with given arguments,
+ * run_program - execute a program with given arguments,
  * but don't wait for it unless wait is non-zero.
  * If the program can't be executed, logs an error unless
  * must_exist is 0 and the program file doesn't exist.
@@ -1710,7 +1726,7 @@ run_program(prog, args, must_exist, done, arg, wait)
     if (pid != 0) {
 	if (debug)
 	    dbglog("Script %s started (pid %d)", prog, pid);
-	record_child(pid, prog, done, arg);
+	record_child(pid, prog, done, arg, 0);
 	if (wait) {
 	    while (waitpid(pid, &status, 0) < 0) {
 		if (errno == EINTR)
@@ -1753,11 +1769,12 @@ run_program(prog, args, must_exist, done, arg, wait)
  * to use.
  */
 void
-record_child(pid, prog, done, arg)
+record_child(pid, prog, done, arg, killable)
     int pid;
     char *prog;
     void (*done) __P((void *));
     void *arg;
+    int killable;
 {
     struct subprocess *chp;
 
@@ -1772,6 +1789,7 @@ record_child(pid, prog, done, arg)
 	chp->done = done;
 	chp->arg = arg;
 	chp->next = children;
+	chp->killable = killable;
 	children = chp;
     }
 }
@@ -2078,7 +2096,7 @@ update_db_entry()
     dbuf.dptr = vbuf;
     dbuf.dsize = vlen;
     if (tdb_store(pppdb, key, dbuf, TDB_REPLACE))
-	error("tdb_store failed: %s", tdb_error(pppdb));
+	error("tdb_store failed: %s", tdb_errorstr(pppdb));
 
     if (vbuf)
         free(vbuf);
@@ -2099,7 +2117,7 @@ add_db_key(str)
     dbuf.dptr = db_key;
     dbuf.dsize = strlen(db_key);
     if (tdb_store(pppdb, key, dbuf, TDB_REPLACE))
-	error("tdb_store key failed: %s", tdb_error(pppdb));
+	error("tdb_store key failed: %s", tdb_errorstr(pppdb));
 }
 
 /*

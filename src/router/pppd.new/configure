@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: configure,v 1.37 2005/06/26 23:53:17 carlsonj Exp $
+# $Id: configure,v 1.38 2008/06/15 07:08:49 paulus Exp $
 
 # Where to install stuff by default
 DESTDIR=/usr/local
@@ -194,7 +194,8 @@ if [ -d "$ksrc" ]; then
     mkmkf $ksrc/Makefile.top Makefile
     mkmkf $ksrc/Makedefs$compiletype Makedefs.com
     for dir in pppd pppstats chat pppdump pppd/plugins pppd/plugins/rp-pppoe \
-	       pppd/plugins/radius pppd/plugins/pppoatm; do
+	       pppd/plugins/radius pppd/plugins/pppoatm \
+	       pppd/plugins/pppol2tp; do
 	mkmkf $dir/Makefile.$makext $dir/Makefile
     done
     if [ -f $ksrc/Makefile.$makext$archvariant ]; then

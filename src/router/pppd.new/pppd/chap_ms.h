@@ -68,7 +68,7 @@
 #define MS_CHAP2_FLAGS		48
 
 #ifdef MPPE
-#include <net/ppp-comp.h>	/* MPPE_MAX_KEY_LEN */
+#include "mppe.h"	/* MPPE_MAX_KEY_LEN */
 extern u_char mppe_send_key[MPPE_MAX_KEY_LEN];
 extern u_char mppe_recv_key[MPPE_MAX_KEY_LEN];
 extern int mppe_keys_set;

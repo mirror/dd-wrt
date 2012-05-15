@@ -4,6 +4,8 @@ PPP Support for MPPE (Microsoft Point to Point Encryption)
 Frank Cusack		frank@google.com
 Mar 19, 2002
 
+Updated by Paul Mackerras, Sep 2008
+
 
 DISCUSSION
 
@@ -59,17 +61,9 @@ RADIUS support for MPPE is from Ralf Hofmann, <ralf.hofmann@elvido.net>.
 BUILDING THE PPPD
 
 The userland component of PPPD has no additional requirements above
-those for MS-CHAP and MS-CHAPv2.  The kernel, however, requires SHA-1
-and ARCFOUR.  Public domain implementations of these are provided.
+those for MS-CHAP and MS-CHAPv2.
 
-Until such time as MPPE support ships with kernels, you can use
-the Linux 2.2 or 2.4 implementation that comes with PPPD.  Run the
-ppp/linux/mppe/mppeinstall.sh script, giving it the location to your
-kernel source.  Then add the CONFIG_PPP_MPPE option to your config and
-rebuild the kernel.  The ppp_mppe.o module is added, and the ppp.o module
-(2.2) or ppp_generic.o (2.4) is modified (unfortunately).  You'll need
-the new ppp.o/ppp_generic.o since it does the right thing for the 4
-extra bytes problem discussed above.
+MPPE support is now included in the mainline Linux kernel releases.
 
 
 CONFIGURATION
@@ -79,7 +73,6 @@ than 2.4.15, you will need to add
 
     alias ppp-compress-18 ppp_mppe
 
-to /etc/modules.conf.  (A patch for earlier versions of modutils is included
-with the kernel patches.)
+to /etc/modules.conf.
 
 

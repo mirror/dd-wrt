@@ -280,8 +280,11 @@ void mp_bundle_terminated()
 	key.dsize = strlen(blinks_id);
 	tdb_delete(pppdb, key);
 	unlock_db();
-	
-new_phase(PHASE_DEAD);
+
+	new_phase(PHASE_DEAD);
+
+	doing_multilink = 0;
+	multilink_master = 0;
 }
 
 static void make_bundle_links(int append)

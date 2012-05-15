@@ -14,7 +14,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: debug.c,v 1.1 2001/12/14 02:55:20 mostrows Exp $";
+"$Id: debug.c,v 1.2 2008/06/09 08:34:23 paulus Exp $";
 
 #include "pppoe.h"
 #include <sys/time.h>
@@ -116,6 +116,8 @@ dumpPacket(FILE *fp, PPPoEPacket *packet, char const *dir)
     case CODE_PADR: fprintf(fp, "PADR "); break;
     case CODE_PADS: fprintf(fp, "PADS "); break;
     case CODE_PADT: fprintf(fp, "PADT "); break;
+    case CODE_PADM: fprintf(fp, "PADM "); break;
+    case CODE_PADN: fprintf(fp, "PADN "); break;
     case CODE_SESS: fprintf(fp, "SESS "); break;
     }
 
