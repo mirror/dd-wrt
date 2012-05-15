@@ -68,12 +68,13 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: tty.c,v 1.25 2006/06/04 07:04:57 paulus Exp $"
+#define RCSID	"$Id: tty.c,v 1.27 2008/07/01 12:27:56 paulus Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
@@ -553,7 +554,6 @@ int connect_tty()
 	 * out and we want to use the modem lines, we reopen it later
 	 * in order to wait for the carrier detect signal from the modem.
 	 */
-	hungup = 0;
 	got_sigterm = 0;
 	connector = doing_callback? callback_script: connect_script;
 	if (devnam[0] != 0) {
@@ -688,11 +688,11 @@ int connect_tty()
 			if (device_script(initializer, ttyfd, ttyfd, 0) < 0) {
 				error("Initializer script failed");
 				status = EXIT_INIT_FAILED;
-				goto errret;
+				goto errretf;
 			}
 			if (got_sigterm) {
 				disconnect_tty();
-				goto errret;
+				goto errretf;
 			}
 			info("Serial port initialized.");
 		}
@@ -701,11 +701,11 @@ int connect_tty()
 			if (device_script(connector, ttyfd, ttyfd, 0) < 0) {
 				error("Connect script failed");
 				status = EXIT_CONNECT_FAILED;
-				goto errret;
+				goto errretf;
 			}
 			if (got_sigterm) {
 				disconnect_tty();
-				goto errret;
+				goto errretf;
 			}
 			info("Serial connection established.");
 		}
@@ -754,6 +754,9 @@ int connect_tty()
 
 	return ttyfd;
 
+ errretf:
+	if (real_ttyfd >= 0)
+		tcflush(real_ttyfd, TCIOFLUSH);
  errret:
 	if (pty_master >= 0) {
 		close(pty_master);
@@ -941,7 +944,7 @@ start_charshunt(ifd, ofd)
 	exit(0);
     }
     charshunt_pid = cpid;
-    record_child(cpid, "pppd (charshunt)", charshunt_done, NULL);
+    record_child(cpid, "pppd (charshunt)", charshunt_done, NULL, 1);
     return 1;
 }
 

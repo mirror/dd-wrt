@@ -95,7 +95,7 @@ chap_md5_make_response(unsigned char *response, int id, char *our_name,
 
 	MD5_Init(&ctx);
 	MD5_Update(&ctx, &idbyte, 1);
-	MD5_Update(&ctx, secret, secret_len);
+	MD5_Update(&ctx, (u_char *)secret, secret_len);
 	MD5_Update(&ctx, challenge, challenge_len);
 	MD5_Final(&response[1], &ctx);
 	response[0] = MD5_HASH_SIZE;

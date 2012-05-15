@@ -19,10 +19,11 @@
 * modify it under the terms of the GNU General Public License
 * as published by the Free Software Foundation; either version
 * 2 of the License, or (at your option) any later version.
+*
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: plugin.c,v 1.15 2006/05/29 23:29:16 paulus Exp $";
+"$Id: plugin.c,v 1.17 2008/06/15 04:35:50 paulus Exp $";
 
 #define _GNU_SOURCE 1
 #include "pppoe.h"
@@ -32,10 +33,9 @@ static char const RCSID[] =
 #include "pppd/lcp.h"
 #include "pppd/ipcp.h"
 #include "pppd/ccp.h"
-#include "pppd/pathnames.h"
+/* #include "pppd/pathnames.h" */
 
 #include <linux/types.h>
-#include <syslog.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -48,9 +48,15 @@ static char const RCSID[] =
 #include <signal.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
-#include "ppp_defs.h"
-#include "if_ppp.h"
-#include "if_pppox.h"
+#include <linux/socket.h>
+#include <linux/ppp_defs.h>
+#include <linux/if_ppp.h>
+#include <linux/if_pppol2tp.h>
+#include <linux/if_pppox.h>
+
+#ifndef _ROOT_PATH
+#define _ROOT_PATH ""
+#endif
 
 #define _PATH_ETHOPT         _ROOT_PATH "/etc/ppp/options."
 
@@ -63,6 +69,8 @@ char *pppd_pppoe_service = NULL;
 static char *acName = NULL;
 static char *existingSession = NULL;
 static int printACNames = 0;
+static char *pppoe_reqd_mac = NULL;
+unsigned char pppoe_reqd_mac_addr[6];
 
 static int PPPoEDevnameHook(char *cmd, char **argv, int doit);
 static option_t Options[] = {
@@ -78,9 +86,11 @@ static option_t Options[] = {
       "Attach to existing session (sessid:macaddr)" },
     { "rp_pppoe_verbose", o_int, &printACNames,
       "Be verbose about discovered access concentrators"},
+    { "pppoe-mac", o_string, &pppoe_reqd_mac,
+      "Only connect to specified MAC address" },
     { NULL }
 };
-
+int (*OldDevnameHook)(char *cmd, char **argv, int doit) = NULL;
 static PPPoEConnection *conn = NULL;
 
 /**********************************************************************
@@ -97,20 +107,17 @@ PPPOEInitDevice(void)
 {
     conn = malloc(sizeof(PPPoEConnection));
     if (!conn) {
-	fatal("Could not allocate memory for PPPoE session");
+	novm("PPPoE session data");
     }
     memset(conn, 0, sizeof(PPPoEConnection));
-    if (acName) {
-	SET_STRING(conn->acName, acName);
-    }
-    if (pppd_pppoe_service) {
-	SET_STRING(conn->serviceName, pppd_pppoe_service);
-    }
-    SET_STRING(conn->ifName, devnam);
+    conn->acName = acName;
+    conn->serviceName = pppd_pppoe_service;
+    conn->ifName = devnam;
     conn->discoverySocket = -1;
     conn->sessionSocket = -1;
     conn->useHostUniq = 1;
     conn->printACNames = printACNames;
+    conn->discoveryTimeout = PADI_TIMEOUT;
     return 1;
 }
 
@@ -238,7 +245,8 @@ PPPOEConnectDevice(void)
     /* Make the session socket */
     conn->sessionSocket = socket(AF_PPPOX, SOCK_STREAM, PX_PROTO_OE);
     if (conn->sessionSocket < 0) {
-	fatal("Failed to create PPPoE socket: %m");
+	error("Failed to create PPPoE socket: %m");
+	goto errout;
     }
     sp.sa_family = AF_PPPOX;
     sp.sa_protocol = PX_PROTO_OE;
@@ -254,11 +262,22 @@ PPPOEConnectDevice(void)
 	    (unsigned) conn->peerEth[3],
 	    (unsigned) conn->peerEth[4],
 	    (unsigned) conn->peerEth[5]);
+    warn("Connected to %02X:%02X:%02X:%02X:%02X:%02X via interface %s",
+	 (unsigned) conn->peerEth[0],
+	 (unsigned) conn->peerEth[1],
+	 (unsigned) conn->peerEth[2],
+	 (unsigned) conn->peerEth[3],
+	 (unsigned) conn->peerEth[4],
+	 (unsigned) conn->peerEth[5],
+	 conn->ifName);
+
+    script_setenv("MACREMOTE", remote_number, 0);
 
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
 		sizeof(struct sockaddr_pppox)) < 0) {
 	fatal("Failed to connect PPPoE socket: %d %m", errno);
-	return -1;
+	close(conn->sessionSocket);
+	goto errout;
     }
 #ifdef HAVE_AQOS
     if (bandwidthup!=0 && bandwidthdown!=0)
@@ -285,6 +304,15 @@ PPPOEConnectDevice(void)
 	}
 #endif
     return conn->sessionSocket;
+
+ errout:
+    if (conn->discoverySocket >= 0) {
+	sendPADT(conn, NULL);
+	close(conn->discoverySocket);
+	conn->discoverySocket = -1;
+    }
+    return -1;
+
 }
 
 /*static void
@@ -347,21 +375,20 @@ PPPOEDisconnectDevice(void)
     memcpy(sp.sa_addr.pppoe.dev, conn->ifName, IFNAMSIZ);
     memcpy(sp.sa_addr.pppoe.remote, conn->peerEth, ETH_ALEN);
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
-		sizeof(struct sockaddr_pppox)) < 0) {
-	fatal("Failed to disconnect PPPoE socket: %d %m", errno);
-	return;
-    }
+		sizeof(struct sockaddr_pppox)) < 0)
+	error("Failed to disconnect PPPoE socket: %d %m", errno);
     close(conn->sessionSocket);
     /* don't send PADT?? */
-    close(conn->discoverySocket);
+    if (conn->discoverySocket >= 0)
+	close(conn->discoverySocket);
 }
 
 static void
 PPPOEDeviceOptions(void)
 {
     char buf[256];
-    snprintf(buf, 256, _PATH_ETHOPT "%s",devnam);
-    if(!options_from_file(buf, 0, 0, 1))
+    snprintf(buf, 256, _PATH_ETHOPT "%s", devnam);
+    if (!options_from_file(buf, 0, 0, 1))
 	exit(EXIT_OPTION_ERROR);
 
 }
@@ -459,62 +486,23 @@ plugin_init(void)
 	 RP_VERSION, VERSION);
 }
 
-/**********************************************************************
-*%FUNCTION: fatalSys
-*%ARGUMENTS:
-* str -- error message
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Prints a message plus the errno value to stderr and syslog and exits.
-***********************************************************************/
-void
-fatalSys(char const *str)
-{
-    char buf[1024];
-    int i = errno;
-    sprintf(buf, "%.256s: %.256s", str, strerror(i));
-    printErr(buf);
-    sprintf(buf, "RP-PPPoE: %.256s: %.256s", str, strerror(i));
-    sendPADT(conn, buf);
-    exit(1);
-}
-
-/**********************************************************************
-*%FUNCTION: rp_fatal
-*%ARGUMENTS:
-* str -- error message
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Prints a message to stderr and syslog and exits.
-***********************************************************************/
-void
-rp_fatal(char const *str)
-{
-    char buf[1024];
-    printErr(str);
-    sprintf(buf, "RP-PPPoE: %.256s", str);
-    sendPADT(conn, buf);
-    exit(1);
-}
-/**********************************************************************
-*%FUNCTION: sysErr
-*%ARGUMENTS:
-* str -- error message
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Prints a message plus the errno value to syslog.
-***********************************************************************/
-void
-sysErr(char const *str)
-{
-    rp_fatal(str);
-}
-
 void pppoe_check_options(void)
 {
+    unsigned int mac[6];
+    int i;
+
+    if (pppoe_reqd_mac != NULL) {
+	if (sscanf(pppoe_reqd_mac, "%x:%x:%x:%x:%x:%x",
+		   &mac[0], &mac[1], &mac[2], &mac[3],
+		   &mac[4], &mac[5]) != 6) {
+	    option_error("cannot parse pppoe-mac option value");
+	    exit(EXIT_OPTION_ERROR);
+	}
+	for (i = 0; i < 6; ++i)
+	    conn->req_peer_mac[i] = mac[i];
+	conn->req_peer = 1;
+    }
+
     lcp_allowoptions[0].neg_accompression = 0;
     lcp_wantoptions[0].neg_accompression = 0;
 
@@ -540,15 +528,15 @@ void pppoe_check_options(void)
 }
 
 struct channel pppoe_channel = {
-    options: Options,
-    process_extra_options: &PPPOEDeviceOptions,
-    check_options: pppoe_check_options,
-    connect: &PPPOEConnectDevice,
-    disconnect: &PPPOEDisconnectDevice,
-    establish_ppp: &generic_establish_ppp,
-    disestablish_ppp: &generic_disestablish_ppp,
-    send_config: NULL,
-    recv_config: &PPPOERecvConfig,
-    close: NULL,
-    cleanup: NULL
+    .options = Options,
+    .process_extra_options = &PPPOEDeviceOptions,
+    .check_options = pppoe_check_options,
+    .connect = &PPPOEConnectDevice,
+    .disconnect = &PPPOEDisconnectDevice,
+    .establish_ppp = &generic_establish_ppp,
+    .disestablish_ppp = &generic_disestablish_ppp,
+    .send_config = NULL,
+    .recv_config = &PPPOERecvConfig,
+    .close = NULL,
+    .cleanup = NULL
 };

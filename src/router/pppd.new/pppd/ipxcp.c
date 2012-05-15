@@ -289,7 +289,7 @@ static int
 setipxnode(argv)
     char **argv;
 {
-    char *end;
+    u_char *end;
     int have_his = 0;
     u_char our_node[6];
     u_char his_node[6];
@@ -343,7 +343,7 @@ static int
 setipxname (argv)
     char **argv;
 {
-    char *dest = ipxcp_wantoptions[0].name;
+    u_char *dest = ipxcp_wantoptions[0].name;
     char *src  = *argv;
     int  count;
     char ch;
@@ -593,7 +593,7 @@ ipxcp_cilen(f)
 
     len	 = go->neg_nn	    ? CILEN_NETN     : 0;
     len += go->neg_node	    ? CILEN_NODEN    : 0;
-    len += go->neg_name	    ? CILEN_NAME + strlen (go->name) - 1 : 0;
+    len += go->neg_name	    ? CILEN_NAME + strlen ((char *)go->name) - 1 : 0;
 
     /* RFC says that defaults should not be included. */
     if (go->neg_router && to_external(go->router) != RIP_SAP)
@@ -630,7 +630,7 @@ ipxcp_addci(f, ucp, lenp)
     }
 
     if (go->neg_name) {
-	int cilen = strlen (go->name);
+	    int cilen = strlen ((char *)go->name);
 	int indx;
 	PUTCHAR (IPX_ROUTER_NAME, ucp);
 	PUTCHAR (CILEN_NAME + cilen - 1, ucp);
@@ -699,7 +699,7 @@ ipxcp_ackci(f, p, len)
     }
 
 #define ACKCINODE(opt,neg,val) ACKCICHARS(opt,neg,val,sizeof(val))
-#define ACKCINAME(opt,neg,val) ACKCICHARS(opt,neg,val,strlen(val))
+#define ACKCINAME(opt,neg,val) ACKCICHARS(opt,neg,val,strlen((char *)val))
 
 #define ACKCINETWORK(opt, neg, val) \
     if (neg) { \
@@ -923,7 +923,7 @@ ipxcp_rejci(f, p, len)
     }
 
 #define REJCINODE(opt,neg,val) REJCICHARS(opt,neg,val,sizeof(val))
-#define REJCINAME(opt,neg,val) REJCICHARS(opt,neg,val,strlen(val))
+#define REJCINAME(opt,neg,val) REJCICHARS(opt,neg,val,strlen((char *)val))
 
 #define REJCIVOID(opt, neg) \
     if (neg && p[0] == opt) { \
@@ -1457,8 +1457,8 @@ ipxcp_script(f, script)
     argv[6]  = strremote;
     argv[7]  = strproto_lcl;
     argv[8]  = strproto_rmt;
-    argv[9]  = go->name;
-    argv[10] = ho->name;
+    argv[9]  = (char *)go->name;
+    argv[10] = (char *)ho->name;
     argv[11] = ipparam;
     argv[12] = strpid;
     argv[13] = NULL;
@@ -1584,7 +1584,7 @@ ipxcp_printpkt(p, plen, printer, arg)
     case TERMREQ:
 	if (len > 0 && *p >= ' ' && *p < 0x7f) {
 	    printer(arg, " ");
-	    print_string(p, len, printer, arg);
+	    print_string((char *)p, len, printer, arg);
 	    p += len;
 	    len = 0;
 	}

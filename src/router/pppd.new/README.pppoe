@@ -5,12 +5,13 @@
 		8 August 2001
 
 		for ppp-2.4.2
+		Updated for ppp-2.4.5 by Paul Mackerras, Sep 08
 
 1. Introduction
 ---------------
 
 This document describes the support for PPP over Ethernet (PPPoE)
-included with this packages.  It is assumed that the reader is
+included with this package.  It is assumed that the reader is
 familiar with Linux PPP (as it pertains to tty/modem-based
 connections).  In particular, users of PPP in the Linux 2.2 series
 kernels should ensure they are familiar with the changes to the PPP
@@ -19,7 +20,7 @@ PPPoE features.
 
 If you are not familiar with PPP, I recommend looking at other
 packages which include end-user configuration tools, such as Roaring
-Penguin (http://www.roaringpenguin.com/pppoe)
+Penguin (http://www.roaringpenguin.com/pppoe).
 
 PPPoE is a protocol typically used by *DSL providers to manage IP
 addresses and authenticate users.  Essentially, PPPoE provides for a
@@ -42,10 +43,8 @@ This section is a quick guide for getting PPPoE working, to allow one
 to connect to their ISP who is providing PPPoE based services.
 
 1.  Enable "Prompt for development and/or incomplete code/drivers" and
-    "PPP over Ethernet" in your kernel configuration.  If you choose to
-    use the PPP over Ethernet driver as a module adding "alias
-    net-pf-24 pppoe" to /etc/modules.conf will enable auto-loading
-    of the modules.
+    "PPP over Ethernet" in your kernel configuration.  Most distributions
+    will include the kernel PPPoE module by default.
 
 2.  Compile and install your kernel.
 

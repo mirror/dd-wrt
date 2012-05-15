@@ -5,6 +5,7 @@
 		8 March 2001
 
 		for ppp-2.4.2
+		Updated for ppp-2.4.5, Sep 08
 
 1. Introduction
 ---------------
@@ -13,8 +14,8 @@ The Linux PPP implementation includes both kernel and user-level
 parts.  This package contains the user-level part, which consists of
 the PPP daemon (pppd) and associated utilities.  In the past this
 package has contained updated kernel drivers.  This is no longer
-necessary, as the current 2.2 and 2.4 kernel sources contain
-up-to-date drivers.
+necessary, as the current kernel sources contain up-to-date drivers
+(and have done since the 2.4.x kernel series).
 
 The Linux PPP implementation is capable of being used both for
 initiating PPP connections (as a `client') or for handling incoming
@@ -47,7 +48,7 @@ the link down, when it negotiates a graceful disconnect.
 
 2.1 Kernel driver
 
-Assuming you are running a recent 2.2 or 2.4 (or later) series kernel,
+Assuming you are running a recent 2.4 or 2.6 (or later) series kernel,
 the kernel source code will contain an up-to-date kernel PPP driver.
 If the PPP driver was included in your kernel configuration when your
 kernel was built, then you only need to install the user-level
@@ -64,7 +65,7 @@ under /lib/modules and is loaded into the kernel when needed.
 
 The 2.2 series kernels contain an older version of the kernel PPP
 driver, one which doesn't support multilink.  If you want multilink,
-you need to run the latest 2.4 series kernel.  The kernel PPP driver
+you need to run a 2.4 or 2.6 series kernel.  The kernel PPP driver
 was completely rewritten for the 2.4 series kernels to support
 multilink and to allow it to operate over diverse kinds of
 communication medium (the 2.2 driver only operates over serial ports
@@ -94,7 +95,7 @@ If you obtained this package in .rpm or .deb format, you simply follow
 the usual procedure for installing the package.
 
 If you are using the .tar.gz form of this package, then cd into the
-ppp-2.4.1b1 directory you obtained by unpacking the archive and issue
+ppp-2.4.5 directory you obtained by unpacking the archive and issue
 the following commands:
 
 $ ./configure
@@ -111,33 +112,14 @@ files.
 2.3 System setup for 2.4 kernels
 
 Under the 2.4 series kernels, pppd needs to be able to open /dev/ppp,
-character device (108,0).  If you are using devfs (the device
-filesystem), the /dev/ppp node will automagically appear when the
-ppp_generic module is loaded, or at startup if ppp_generic is compiled
-in.
+character device (108,0).  If you are using udev (as most distributions
+do), the /dev/ppp node should be created by udevd.
 
-If you have ppp_generic as a module, and you are using devfsd (the
-devfs daemon), you will need to add a line like this to your
-/etc/devfsd.conf:
-
-LOOKUP		ppp		MODLOAD
-
-Otherwise you will need to create a /dev/ppp device node with the
+Otherwise you may need to create a /dev/ppp device node with the
 commands:
 
 # mknod /dev/ppp c 108 0
 # chmod 600 /dev/ppp
-
-If you use module autoloading and have PPP as a module, you will need
-to add the following to your /etc/modules.conf or /etc/conf.modules:
-
-alias /dev/ppp		ppp_generic
-alias char-major-108	ppp_generic
-alias tty-ldisc-3	ppp_async
-alias tty-ldisc-14	ppp_synctty
-alias ppp-compress-21	bsd_comp
-alias ppp-compress-24	ppp_deflate
-alias ppp-compress-26	ppp_deflate
 
 
 2.4 System setup under 2.2 series kernels

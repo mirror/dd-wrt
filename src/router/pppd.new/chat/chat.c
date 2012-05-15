@@ -1303,7 +1303,7 @@ register char *s;
 
     if (verbose) {
 	if (quiet)
-	    msgf("send (??????)");
+	    msgf("send (?????\?)");
 	else
 	    msgf("send (%v)", s);
     }

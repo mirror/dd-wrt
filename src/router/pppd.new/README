@@ -8,11 +8,10 @@ Introduction.
 
 The Point-to-Point Protocol (PPP) provides a standard way to establish
 a network connection over a serial link.  At present, this package
-supports IP and the protocols layered above IP, such as TCP and UDP.
-The Linux and Solaris ports of this package have optional support for
-IPV6; the Linux port of this package also has support for IPX.
+supports IP and IPV6 and the protocols layered above them, such as TCP
+and UDP.  The Linux port of this package also has support for IPX.
 
-This software consists of two parts:
+This PPP implementation consists of two parts:
 
 - Kernel code, which establishes a network interface and passes
 packets between the serial port, the kernel networking code and the
@@ -28,6 +27,13 @@ The platforms supported by this package are Linux and Solaris.  I have
 code for NeXTStep, FreeBSD, SunOS 4.x, SVR4, Tru64 (Digital Unix), AIX
 and Ultrix but no active maintainers for these platforms.  Code for
 all of these except AIX is included in the ppp-2.3.11 release.
+
+The kernel code for Linux is no longer distributed with this package,
+since the relevant kernel code is in the official Linux kernel source
+(and has been for many years) and is included in all reasonably modern
+Linux distributions.  The Linux kernel code supports using PPP over
+things other than serial ports, such as PPP over Ethernet and PPP over
+ATM.
 
 
 Installation.
@@ -55,8 +61,31 @@ use any IP address.  (This only applies where the peer is
 authenticating itself to you, of course.)
 
 
-What's new in ppp-2.4.4.
+What's new in ppp-2.4.5.
 ************************
+
+* Under Linux, pppd can now operate in a mode where it doesn't request
+  the peer's IP address, as some peers refuse to supply an IP address.
+  Since Linux supports device routes as well as gateway routes, it's
+  possible to have no remote IP address assigned to the ppp interface
+  and still route traffic over it.
+
+* Pppd now works better with 3G modems that do strange things such as
+  sending IPCP Configure-Naks with the same values over and over again.
+
+* The PPP over L2TP plugin is included, which works with the pppol2tp
+  PPP channel code in the Linux kernel.  This allows pppd to be used
+  to set up tunnels using the Layer 2 Tunneling Protocol.
+
+* A new 'enable-session' option has been added, which enables session
+  accounting via PAM or wtwp/wtmpx, as appropriate.  See the pppd man
+  page for details.
+
+* Several bugs have been fixed.
+
+
+What was new in ppp-2.4.4.
+**************************
 
 * Pppd will now run /etc/ppp/ip-pre-up, if it exists, after creating
   the ppp interface and configuring its IP addresses but before
@@ -226,23 +255,6 @@ BSD-Compress and Deflate (which uses the same algorithm as gzip) don't
 ever expand packets.
 
 
-Patents.
-********
-
-The BSD-Compress algorithm used for packet compression is the same as
-that used in the Unix "compress" command.  It was apparently covered
-by U.S. patents 4,814,746 (owned by IBM) and 4,558,302 (owned by
-Unisys), and corresponding patents in various other countries (but not
-Australia).  Apparently the Unisys patent expired in the US on 20 June
-2003, but the IBM patent is still pending.
-
-If these patents are of concern in your situation, you can build the
-package without including BSD-Compress.  To do this, edit
-net/ppp-comp.h to change the definition of DO_BSD_COMPRESS to 0.  The
-bsd-comp.c files are then no longer needed, so the references to
-bsd-comp.o may optionally be removed from the Makefiles.
-
-
 Contacts.
 *********
 
@@ -276,4 +288,3 @@ The primary site for releases of this software is:
 	ftp://ftp.samba.org/pub/ppp/
 
 
-($Id: README,v 1.37 2006/05/29 23:51:29 paulus Exp $)

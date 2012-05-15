@@ -24,7 +24,7 @@
 *
 ***********************************************************************/
 static char const RCSID[] =
-"$Id: radius.c,v 1.31 2006/05/22 00:01:40 paulus Exp $";
+"$Id: radius.c,v 1.32 2008/05/26 09:18:08 paulus Exp $";
 
 #include "pppd.h"
 #include "chap-new.h"
@@ -958,6 +958,9 @@ radius_acct_stop(void)
     if (!rstate.accounting_started) {
 	return;
     }
+
+    if (rstate.acct_interim_interval)
+	UNTIMEOUT(radius_acct_interim, NULL);
 
     rstate.accounting_started = 0;
     rc_avpair_add(&send, PW_ACCT_SESSION_ID, rstate.session_id,

@@ -28,7 +28,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: utils.c,v 1.24 2004/11/04 10:02:26 paulus Exp $"
+#define RCSID	"$Id: utils.c,v 1.25 2008/06/03 12:06:37 paulus Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -236,8 +236,8 @@ vslprintf(buf, buflen, fmt, args)
 		base = 10;
 		break;
 	    default:
-		*buf++ = '%'; --buflen;
-		*buf++ = 'l'; --buflen;
+		OUTCHAR('%');
+		OUTCHAR('l');
 		--fmt;		/* so %lz outputs %lz etc. */
 		continue;
 	    }
@@ -527,7 +527,7 @@ static int llevel;		/* level for logging */
 
 void
 init_pr_log(prefix, level)
-     char *prefix;
+     const char *prefix;
      int level;
 {
 	linep = line;
