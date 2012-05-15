@@ -1450,7 +1450,7 @@ int len;
 		MD5_Init(&mdContext);
 		typenum = id;
 		MD5_Update(&mdContext, &typenum, 1);
-		MD5_Update(&mdContext, secret, secret_len);
+		MD5_Update(&mdContext, (u_char *)secret, secret_len);
 		BZERO(secret, sizeof (secret));
 		MD5_Update(&mdContext, inp, vallen);
 		MD5_Final(hash, &mdContext);
@@ -1875,7 +1875,7 @@ int len;
 		}
 		MD5_Init(&mdContext);
 		MD5_Update(&mdContext, &esp->es_server.ea_id, 1);
-		MD5_Update(&mdContext, secret, secret_len);
+		MD5_Update(&mdContext, (u_char *)secret, secret_len);
 		BZERO(secret, sizeof (secret));
 		MD5_Update(&mdContext, esp->es_challenge, esp->es_challen);
 		MD5_Final(hash, &mdContext);

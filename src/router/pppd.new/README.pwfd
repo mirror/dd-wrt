@@ -17,7 +17,7 @@ The passwordfd feature offers a simpler and more secure solution. The program
 that starts the pppd opens a pipe and writes the password into it. The pppd
 simply reads the password from that pipe.
 
-This methods is used for quiet a while on SuSE Linux by the programs wvdial,
+This methods is used for quite a while on SuSE Linux by the programs wvdial,
 kppp and smpppd.
 
 
