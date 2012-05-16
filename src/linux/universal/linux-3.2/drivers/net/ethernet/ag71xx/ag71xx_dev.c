@@ -1066,6 +1066,9 @@ static inline void phy_dev_init(void)
 	ar71xx_add_device_mdio(0, ~BIT(0));
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
+#elif CONFIG_WP543
+	ar71xx_eth0_data.phy_mask = 0xf;
+	ar71xx_add_device_mdio(0, ~ar71xx_eth0_data.phy_mask);
 #else
 #ifdef CONFIG_MTD_AR7100_SPI_FLASH
 	if (compex)
