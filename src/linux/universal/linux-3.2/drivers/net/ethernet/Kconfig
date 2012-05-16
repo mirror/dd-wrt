@@ -400,6 +400,8 @@ config WNDR3700
     bool "WNDR3700 Support"
     depends on CAMEO_REALTEK_PHY
 
+config WP543
+    bool "WP543 Support"
 
 
 config  AG7240_LEN_PER_TX_DS 
