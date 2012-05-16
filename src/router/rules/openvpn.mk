@@ -35,13 +35,19 @@ CONFIGURE_ARGS += \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L../$(SSL_LIB_PATH) -L../lzo -L../lzo/src/.libs -ldl" \
 	ac_cv_func_epoll_create=yes
 
-openvpn-configure: $(SSL_DEP)
+openvpn-conf-prep:
+	-rm -f openvpn/Makefile
+
+openvpn-conf: $(SSL_DEP)
 	if ! test -e "lzo/Makefile"; then cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"; fi
 	make -j 4 -C lzo
 	#if ! test -e "$(OVPN)/Makefile"; then cd $(OVPN) && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-pthread --disable-plugins --enable-debug --enable-password-save --enable-management --enable-lzo --enable-server --enable-multihome CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs -ldl" ac_cv_func_epoll_create=no; fi 
 	if ! test -e "$(OVPN)/Makefile"; then cd $(OVPN) && ./configure $(CONFIGURE_ARGS); fi 
 
-openvpn: $(SSL_DEP) openvpn-configure
+
+openvpn-configure: openvpn-conf-prep openvpn-conf
+
+openvpn: $(SSL_DEP) openvpn-conf
 #ifeq ($(CONFIG_NEWMEDIA),y)
 #else
 #	cd $(OVPN) && ./configure --host=$(ARCH)-linux CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --enable-http --enable-password-save CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs  -ffunction-sections -fdata-sections -Wl,--gc-sections"
