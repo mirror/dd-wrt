@@ -31,8 +31,8 @@ CONFIGURE_ARGS += \
 	--with-ssl-lib=$(SSL_LIB_PATH) \
 	--with-ssl-type=$(SSL_TYPE) \
 	$(SSL_ADDOPT) \
-	CFLAGS="$(COPTS) -DNEED_PRINTF" \
-	LDFLAGS="-L../$(SSL_LIB_PATH) -L../lzo -L../lzo/src/.libs -ldl" \
+	CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L../$(SSL_LIB_PATH) -L../lzo -L../lzo/src/.libs -ldl" \
 	ac_cv_func_epoll_create=yes
 
 openvpn-configure: $(SSL_DEP)
