@@ -490,7 +490,7 @@ void __init change_floppy(char *fmt, ...)
 void __init mount_root(void)
 {
 #ifdef CONFIG_ROOT_NFS
-	if (MAJOR(BASE_ROOT) == UNNAMED_MAJOR) {
+	if (BASE_ROOT == Root_NFS) {
 		if (mount_nfs_root())
 			return;
 
