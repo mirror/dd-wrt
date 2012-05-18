@@ -109,7 +109,8 @@ int site_survey_main(int argc, char *argv[])
 #define DOT11_CAP_IBSS				0x0002
 #define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32], ext[32];
+	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32],
+	    ext[32];
 	int i = 0;
 
 	unlink(SITE_SURVEY_DB);
@@ -130,7 +131,7 @@ int site_survey_main(int argc, char *argv[])
 //      fscanf(scan, "%s %s", b1, b2);  // skip first line
 //      fscanf(scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7);       //skip second line
 	i = 0;
-	int c=0;
+	int c = 0;
 	do {
 		if (feof(scan))
 			break;
@@ -141,32 +142,30 @@ int site_survey_main(int argc, char *argv[])
 		b2[32] = 0;
 		b2[strlen(b2)] = 0;
 		//kill trailing blanks
-		for (c=0;c<32;c++)
-		    {
-		    if (b2[31-c]!=0x20)
-			break;
-		    b2[31-c]=0;
-		    }
+		for (c = 0; c < 32; c++) {
+			if (b2[31 - c] != 0x20)
+				break;
+			b2[31 - c] = 0;
+		}
 		//skip leading blanks
-		for (c=0;c<32;c++)
-		    {
-		    if (b2[c]!=0x20)
-			break;
-		    }
-		if (c && c<32)
-		    {
-		    for (i=0;i<32-c;i++)
-			b2[i]=b2[i+c];
-		    }
-		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, ext,b7);	//skip second line
+		for (c = 0; c < 32; c++) {
+			if (b2[c] != 0x20)
+				break;
+		}
+		if (c && c < 32) {
+			for (i = 0; i < 32 - c; i++)
+				b2[i] = b2[i + c];
+		}
+		int ret = fscanf(scan, "%s %s %s %s %s %s", b3, b4, b5, b6, ext, b7);	//skip second line
 		if (ret < 5)
 			break;
-		if (ret==6)
-		    skipline(scan);
+		if (ret == 6)
+			skipline(scan);
 		else
-		    strncpy(b7,ext,31);
+			strncpy(b7, ext, 31);
 		site_survey_lists[i].channel = atoi(b1);	// channel
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency =
+		    ieee80211_ieee2mhz(site_survey_lists[i].channel);
 		strcpy(site_survey_lists[i].SSID, b2);	//SSID
 		strcpy(site_survey_lists[i].BSSID, b3);	//BSSID
 		site_survey_lists[i].phy_noise = -95;	// no way

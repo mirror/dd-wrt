@@ -470,19 +470,19 @@ int site_survey_main(int argc, char *argv[])
 #ifndef HAVE_RB500
 		site_survey_lists[i].channel = bss_info->chanspec & 0xff;
 #endif
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel);
+		site_survey_lists[i].frequency =
+		    ieee80211_ieee2mhz(site_survey_lists[i].channel);
 #ifdef WL_CHANSPEC_BW_80
-		switch(bss_info->chanspec & 0x3800)
-		{
+		switch (bss_info->chanspec & 0x3800) {
 		case WL_CHANSPEC_BW_80:
-		site_survey_lists[i].channel|=0x1000;
-		break;
+			site_survey_lists[i].channel |= 0x1000;
+			break;
 		case WL_CHANSPEC_BW_8080:
-		site_survey_lists[i].channel|=0x1100;
-		break;
+			site_survey_lists[i].channel |= 0x1100;
+			break;
 		case WL_CHANSPEC_BW_160:
-		site_survey_lists[i].channel|=0x1200;
-		break;
+			site_survey_lists[i].channel |= 0x1200;
+			break;
 		}
 #endif
 
@@ -505,7 +505,11 @@ int site_survey_main(int argc, char *argv[])
 	}
 	write_site_survey();
 	open_site_survey();
-	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].SSID[0]; i++) {
+	// modded by ascott and fractal, may 17th, 2012 to show "hidden" SSIDS
+	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]; i++) {
+		if (site_survey_lists[i].SSID[0] == 0) {
+			strcpy(site_survey_lists[i].SSID, "hidden");
+		}
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,

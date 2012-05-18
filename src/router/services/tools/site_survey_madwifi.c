@@ -99,8 +99,6 @@ static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
 	  (((const u_int8_t *)(p))[2] << 16) |		\
 	  (((const u_int8_t *)(p))[3] << 24)))
 
-
-
 static __inline int iswpaoui(const unsigned char *frm)
 {
 	return frm[1] > 3
@@ -130,11 +128,9 @@ static int __inline ismtikoui(const unsigned char *frm)
 	return frm[1] > 3 && LE_READ_4(frm + 2) == MTIK_OUI;
 }
 
-
-
 static int fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
-int r =0;
+	int r = 0;
 	memset(encinfo, 0, 128);
 	while (ielen > 0) {
 		switch (vp[0]) {
@@ -161,7 +157,7 @@ int r =0;
 	}
 	if (strlen(encinfo) > 0)
 		encinfo[strlen(encinfo) - 1] = 0;
-return r;
+	return r;
 }
 
 static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
@@ -173,6 +169,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return (i < 17 ? NULL : a);
 }
+
 int site_survey_main_11n(int argc, char *argv[]);
 
 int site_survey_main(int argc, char *argv[])
@@ -192,15 +189,15 @@ int site_survey_main(int argc, char *argv[])
 #ifdef HAVE_ATH9K
 #ifndef HAVE_NOWIFI
 	if (is_ath9k(sta)) {
-	    return site_survey_main_mac802211(argc,argv);
+		return site_survey_main_mac802211(argc, argv);
 	}
 #endif
 #endif
 #ifdef HAVE_MADWIFI_MIMO
 #ifndef HAVE_NOWIFI
 	if (is_ar5008(sta)) {
-	    return site_survey_main_11n(argc,argv);
-	    }
+		return site_survey_main_11n(argc, argv);
+	}
 #endif
 #endif
 	unsigned char *buf = malloc(24 * 1024);
@@ -244,10 +241,10 @@ int site_survey_main(int argc, char *argv[])
 		// site_survey_lists[i].athcaps = sr->isr_athflags;
 		site_survey_lists[i].rate_count = sr->isr_nrates;
 		int n11 = fillenc(site_survey_lists[i].ENCINFO,
-			(unsigned char *)(vp + sr->isr_ssid_len),
-			sr->isr_ie_len);
+				  (unsigned char *)(vp + sr->isr_ssid_len),
+				  sr->isr_ie_len);
 		if (n11)
-		    site_survey_lists[i].rate_count = n11; 
+			site_survey_lists[i].rate_count = n11;
 		cp += sr->isr_len, len -= sr->isr_len;
 		i++;
 	}
@@ -257,6 +254,9 @@ int site_survey_main(int argc, char *argv[])
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
 	     && site_survey_lists[i].channel != 0; i++) {
+		if (site_survey_lists[i].SSID[0] == 0) {
+			strcpy(site_survey_lists[i].SSID, "hidden");
+		}
 
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
