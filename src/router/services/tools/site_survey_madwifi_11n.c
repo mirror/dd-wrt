@@ -312,6 +312,9 @@ int site_survey_main_11n(int argc, char *argv[])
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
 	     && site_survey_lists[i].channel != 0; i++) {
+		if (site_survey_lists[i].SSID[0] == 0) {
+			strcpy(site_survey_lists[i].SSID, "hidden");
+		}
 
 		fprintf(stderr,
 			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
@@ -353,4 +356,3 @@ static int open_site_survey(void)
 	}
 	return 0;
 }
-
