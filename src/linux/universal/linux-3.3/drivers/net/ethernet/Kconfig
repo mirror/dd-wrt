@@ -403,6 +403,7 @@ config WNDR3700
 
 config WP543
     bool "WP543 Support"
+    depends on MACH_AR7100
 
 
 
