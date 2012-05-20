@@ -402,6 +402,7 @@ config WNDR3700
 
 config WP543
     bool "WP543 Support"
+    depends on MACH_AR7100
 
 
 config  AG7240_LEN_PER_TX_DS 
