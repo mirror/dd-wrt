@@ -7,13 +7,13 @@ defaultroute
 lock
 noauth
 nodetach
-refuse-eap
-#refuse-pap
-#refuse-chap
-#refuse-mschap
+#refuse-eap
+refuse-pap
+refuse-chap
+refuse-mschap
 nobsdcomp
 nodeflate
-#mppe required,stateless	#,no40,no56
+#mppe required,stateless,no40,no56
 mppc
 lcp-echo-failure 30
 lcp-echo-interval 2
