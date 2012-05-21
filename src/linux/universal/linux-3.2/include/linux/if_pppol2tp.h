@@ -11,7 +11,6 @@
  *		2 of the License, or (at your option) any later version.
  *
  */
-
 #ifndef __LINUX_IF_PPPOL2TP_H
 #define __LINUX_IF_PPPOL2TP_H
 
