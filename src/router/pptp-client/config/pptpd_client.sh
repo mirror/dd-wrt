@@ -5,6 +5,7 @@ SEC=$(/usr/sbin/nvram get pptpd_client_srvsec)
 MTU=$(/usr/sbin/nvram get pptpd_client_srvmtu)
 MRU=$(/usr/sbin/nvram get pptpd_client_srvmru)
 sleep 30
+rm /tmp/pptpd_client/ -R
 mkdir /tmp/pptpd_client
 mkdir /tmp/ppp
 cp /etc/config/pptpd_client.options /tmp/pptpd_client/options.vpn
