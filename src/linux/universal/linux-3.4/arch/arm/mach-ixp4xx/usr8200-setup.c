@@ -195,6 +195,7 @@ static void __init usr8200_init(void)
 MACHINE_START(USR8200, "USRobotics USR8200")
 	/* Maintainer: Peter Denison <openwrt@marshadder.org> */
 	.map_io		= ixp4xx_map_io,
+	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,

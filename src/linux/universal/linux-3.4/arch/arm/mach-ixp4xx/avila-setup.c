@@ -471,6 +471,7 @@ MACHINE_END
 MACHINE_START(WAVESAT_AVILA, "Gateworks/Wavesat Avila Network Platform")
 	/* Maintainer: Deepak Saxena <dsaxena@plexity.net> */
 	.map_io		= ixp4xx_map_io,
+	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,

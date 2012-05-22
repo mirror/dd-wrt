@@ -391,6 +391,7 @@ static void __init cambria_init(void)
 MACHINE_START(CAMBRIA, "Gateworks Cambria Series")
   /* Maintainer: Chris Lang <clang@gateworks.com> */
   .map_io   = ixp4xx_map_io,
+  .init_early	= ixp4xx_init_early,
   .init_irq = ixp4xx_init_irq,
   .timer    = &ixp4xx_timer,
   .atag_offset  = 0x0100,
