@@ -114,7 +114,7 @@ _nvram_read(char *buf)
 //	ret = master->read(master, offset,
 //			   master->erasesize, &retlen, (void *)buf);
 
-	if (!nvram_mtd || nvram_mtd->_read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
+	if (!nvram_mtd || mtd_read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
 	    if (header2->magic==NVRAM_MAGIC)
@@ -271,7 +271,7 @@ nvram_commit(void)
 	if ((i = erasesize - NVRAM_SPACE) > 0) {
 		offset = nvram_mtd->size - erasesize;
 		len = 0;
-		ret = nvram_mtd->_read(nvram_mtd, offset, i, &len, buf);
+		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
 		if (ret || len != i) {
 			printk("nvram_commit: read error ret = %d, len = %d/%d\n", ret, len, i);
 			ret = -EIO;
@@ -303,10 +303,9 @@ nvram_commit(void)
 		add_wait_queue(&wait_q, &wait);
 
 		/* Unlock sector blocks */
-		if (nvram_mtd->_unlock)
-			nvram_mtd->_unlock(nvram_mtd, offset, nvram_mtd->erasesize);
+		mtd_unlock(nvram_mtd, offset, nvram_mtd->erasesize);
 
-		if ((ret = nvram_mtd->_erase(nvram_mtd, &erase))) {
+		if ((ret = mtd_erase(nvram_mtd, &erase))) {
 			set_current_state(TASK_RUNNING);
 			remove_wait_queue(&wait_q, &wait);
 			printk("nvram_commit: erase error\n");
@@ -321,7 +320,7 @@ nvram_commit(void)
 	/* Write partition up to end of data area */
 	offset = nvram_mtd->size - erasesize;
 	i = erasesize - NVRAM_SPACE + header->len;
-	ret = nvram_mtd->_write(nvram_mtd, offset, i, &len, buf);
+	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
 		printk("nvram_commit: write error\n");
 		ret = -EIO;
@@ -329,7 +328,7 @@ nvram_commit(void)
 	}
 
 	offset = nvram_mtd->size - erasesize;
-	ret = nvram_mtd->_read(nvram_mtd, offset, 4, &len, buf);
+	ret = mtd_read(nvram_mtd, offset, 4, &len, buf);
 
  done:
 	mutex_unlock(&nvram_sem);
