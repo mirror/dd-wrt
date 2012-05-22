@@ -348,9 +348,9 @@ static int __init ar7240_flash_init(void)
 		mtd->numeraseregions = 0;
 		mtd->eraseregions = NULL;
 		mtd->owner = THIS_MODULE;
-		mtd->erase = ar7240_flash_erase;
-		mtd->read = ar7240_flash_read;
-		mtd->write = ar7240_flash_write;
+		mtd->_erase = ar7240_flash_erase;
+		mtd->_read = ar7240_flash_read;
+		mtd->_write = ar7240_flash_write;
 
 		printk(KERN_EMERG "scanning for root partition\n");
 

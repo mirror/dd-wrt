@@ -835,9 +835,9 @@ static int __init ar7240_flash_init(void)
 	mtd->numeraseregions    =   0;
 	mtd->eraseregions       =   NULL;
 	mtd->owner              =   THIS_MODULE;
-	mtd->erase              =   ar7240_flash_erase;
-	mtd->read               =   ar7240_flash_read;
-	mtd->write              =   ar7240_flash_write;
+	mtd->_erase              =   ar7240_flash_erase;
+	mtd->_read               =   ar7240_flash_read;
+	mtd->_write              =   ar7240_flash_write;
 	mtd->writesize          =   1;
 	mtd->priv				= g_flash_geoms;
 
@@ -849,7 +849,7 @@ static int __init ar7240_flash_init(void)
 	unsigned int rootsize,len;
 
 		while ((offset + mtd->erasesize) < mtd->size) {
-			mtd->read(mtd,offset,512,&retlen,&buf[0]);
+			mtd_read(mtd,offset,512,&retlen,&buf[0]);
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 				sb = (struct squashfs_super_block *)buf;
