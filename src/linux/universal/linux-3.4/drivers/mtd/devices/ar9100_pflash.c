@@ -264,9 +264,9 @@ __init ar9100_flash_init(void)
     mtd->numeraseregions = 0;
     mtd->eraseregions = NULL;
     mtd->owner = THIS_MODULE;
-    mtd->erase = ar9100_flash_erase;
-    mtd->read = ar9100_flash_read;
-    mtd->write = ar9100_flash_write;
+    mtd->_erase = ar9100_flash_erase;
+    mtd->_read = ar9100_flash_read;
+    mtd->_write = ar9100_flash_write;
     mtd->priv = (void *)(&flash_geom_tbl[index]);
 
 	printk(KERN_EMERG "scanning for root partition\n");

@@ -87,7 +87,7 @@ struct ath_otg_vars {
  * OTG Driver Information
  */
 struct ath_otg {
-	struct otg_transceiver		otg;
+	struct usb_phy			otg;
 	struct work_struct		work;
 	struct ath_otg_vars		state;
 	struct otg_reg __iomem		*otg_reg;

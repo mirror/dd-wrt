@@ -712,9 +712,9 @@ static int __init ar7100_flash_init (void)
 	mtd->numeraseregions    =   0;
 	mtd->eraseregions       =   NULL;
 	mtd->owner              =   THIS_MODULE;
-	mtd->erase              =   ar7100_flash_erase;
-	mtd->read               =   ar7100_flash_read;
-	mtd->write              =   ar7100_flash_write;
+	mtd->_erase              =   ar7100_flash_erase;
+	mtd->_read               =   ar7100_flash_read;
+	mtd->_write              =   ar7100_flash_write;
 	mtd->priv				= g_flash_geoms;
 	int offset = 0;
 	struct squashfs_super_block *sb;
@@ -724,7 +724,7 @@ static int __init ar7100_flash_init (void)
 	unsigned int rootsize,len;
 
 		while ((offset + mtd->erasesize) < mtd->size) {
-			mtd->read(mtd,offset,512,&retlen,&buf[0]);
+			mtd_read(mtd,offset,512,&retlen,&buf[0]);
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 				sb = (struct squashfs_super_block *)buf;
