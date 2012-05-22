@@ -161,6 +161,7 @@ static void __init pronghornmetro_init(void)
 #ifdef CONFIG_MACH_PRONGHORNMETRO
 MACHINE_START(PRONGHORNMETRO, "ADI Engineering Pronghorn Metro")
 	.map_io		= ixp4xx_map_io,
+	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,
@@ -175,6 +176,7 @@ MACHINE_END
 #ifdef CONFIG_MACH_PRONGHORN
 MACHINE_START(PRONGHORN, "ADI Engineering Pronghorn")
 	.map_io		= ixp4xx_map_io,
+	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,

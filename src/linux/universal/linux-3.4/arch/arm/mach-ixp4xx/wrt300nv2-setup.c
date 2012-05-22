@@ -98,6 +98,7 @@ static void __init wrt300nv2_init(void)
 MACHINE_START(WRT300NV2, "Linksys WRT300N v2")
 	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
 	.map_io		= ixp4xx_map_io,
+	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.timer		= &ixp4xx_timer,
 	.atag_offset	= 0x0100,
