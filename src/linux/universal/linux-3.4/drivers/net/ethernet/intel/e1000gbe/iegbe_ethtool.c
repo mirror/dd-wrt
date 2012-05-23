@@ -44,6 +44,7 @@ GPL LICENSE SUMMARY
 
 #ifdef    SIOCETHTOOL
 #include <asm/uaccess.h>
+#endif
 
 #ifdef ETHTOOL_OPS_COMPAT
 #include "kcompat_ethtool.c"
@@ -327,6 +328,7 @@ iegbe_set_pauseparam(struct net_device *netdev,
     return 0;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
 static uint32_t
 iegbe_get_rx_csum(struct net_device *netdev)
 {
@@ -392,6 +394,7 @@ iegbe_set_tso(struct net_device *netdev, uint32_t data)
     return 0;
 } 
 #endif /* NETIF_F_TSO */
+#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)) */
 
 static uint32_t
 iegbe_get_msglevel(struct net_device *netdev)
@@ -807,6 +810,7 @@ err_setup_rx:
             E1000_82542_##R : E1000_##R;                           \
         return 1;         }  }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
 static int
 iegbe_reg_test(struct iegbe_adapter *adapter, uint64_t *data)
 {
@@ -1710,6 +1714,7 @@ iegbe_diag_test(struct net_device *netdev,
     }
     msleep_interruptible(0xfa0);
 }
+#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)) */
 
 static void
 iegbe_get_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
@@ -1812,6 +1817,7 @@ iegbe_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
 /* bit defines for adapter->led_status */
 #define E1000_LED_ON        0
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
 static void
 iegbe_led_blink_callback(unsigned long data)
 {
@@ -1864,6 +1870,7 @@ iegbe_phys_id(struct net_device *netdev, uint32_t data)
 
     return 0;
 }
+#endif
 
 static int
 iegbe_nway_reset(struct net_device *netdev)
@@ -1876,11 +1883,13 @@ iegbe_nway_reset(struct net_device *netdev)
     return 0;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
 static int 
 iegbe_get_stats_count(struct net_device *netdev)
 {
     return E1000_STATS_LEN;
 }
+#endif
 
 static void 
 iegbe_get_ethtool_stats(struct net_device *netdev, 
@@ -1936,6 +1945,8 @@ struct ethtool_ops iegbe_ethtool_ops = {
     .set_ringparam          = iegbe_set_ringparam,
     .get_pauseparam        = iegbe_get_pauseparam,
     .set_pauseparam        = iegbe_set_pauseparam,
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
     .get_rx_csum        = iegbe_get_rx_csum,
     .set_rx_csum        = iegbe_set_rx_csum,
     .get_tx_csum            = iegbe_get_tx_csum,
@@ -1948,9 +1959,10 @@ struct ethtool_ops iegbe_ethtool_ops = {
 #endif
 //    .self_test_count        = iegbe_diag_test_count,
     .self_test              = iegbe_diag_test,
-    .get_strings            = iegbe_get_strings,
     .set_phys_id                = iegbe_phys_id,
-//    .get_stats_count        = iegbe_get_stats_count,
+    .get_stats_count        = iegbe_get_stats_count,
+#endif    /* SIOCETHTOOL */
+    .get_strings            = iegbe_get_strings,
     .get_ethtool_stats      = iegbe_get_ethtool_stats,
 };
 
@@ -1958,4 +1970,3 @@ void set_ethtool_ops(struct net_device *netdev)
 {
     SET_ETHTOOL_OPS(netdev, &iegbe_ethtool_ops);
 }
-#endif    /* SIOCETHTOOL */
