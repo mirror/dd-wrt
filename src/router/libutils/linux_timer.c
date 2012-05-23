@@ -137,6 +137,7 @@ void init_event_queue(int n)
 {
 	int i;
 	struct itimerval tv;
+	struct itimerval tv_empty;
 
 	g_maxevents = n;
 	event_freelist = (struct event *)safe_malloc(n * sizeof(struct event));
@@ -152,8 +153,8 @@ void init_event_queue(int n)
 	tv.it_value.tv_sec = 0;
 	tv.it_value.tv_usec = 0;
 	setitimer(ITIMER_REAL, &tv, 0);
-	// getitimer (ITIMER_REAL, &tv);
-	setitimer(ITIMER_REAL, 0, &tv);
+	memset(&tv_empty,sizeof(tv_empty),0);
+	setitimer(ITIMER_REAL, &tv_empty, &tv);
 	g_granularity = tv.it_interval.tv_usec;
 	if (g_granularity < 1)
 		g_granularity = 1;
