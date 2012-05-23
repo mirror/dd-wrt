@@ -165,7 +165,7 @@ int __init init_ar531x(void)
 
 		    buf=vmalloc(mymtd->erasesize);
 			if (buf) {
-			    ret=mymtd->read(mymtd,0,mymtd->erasesize, &retlen, buf);
+			    ret=mtd_read(mymtd,0,mymtd->erasesize, &retlen, buf);
 			    if (ret) 
 				{
 				vfree(buf);
