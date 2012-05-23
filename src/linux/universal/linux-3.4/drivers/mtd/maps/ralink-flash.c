@@ -330,7 +330,7 @@ int nvramsize = ralink_mtd[0]->erasesize;
 			    while((offset+ralink_mtd[0]->erasesize)<ralink_mtd[0]->size)
 			    {
 			    int retlen;
-			    ralink_mtd[0]->read(ralink_mtd[0],offset,4, &retlen, buf);
+			    mtd_read(ralink_mtd[0],offset,4, &retlen, buf);
 //			    printk(KERN_EMERG "%X: %c %c %c %c\n",offset,buf[0],buf[1],buf[2],buf[3]);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
@@ -436,7 +436,7 @@ int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
 		return -ENOMEM;
 	}
 
-	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
+	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
 	if (ret != 0) {
 		put_mtd_device(mtd);
 		kfree(bak);
@@ -484,7 +484,7 @@ int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf)
 	if (IS_ERR(mtd))
 		return (int)mtd;
 
-	ret = mtd->read(mtd, from, len, &rdlen, buf);
+	ret = mtd_read(mtd, from, len, &rdlen, buf);
 	if (rdlen != len)
 		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
 

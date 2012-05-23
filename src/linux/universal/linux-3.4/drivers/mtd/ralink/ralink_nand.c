@@ -1898,11 +1898,11 @@ int __devinit ra_nand_init(void)
 	//ranfc_mtd->numberaseregions
 	//ranfc_mtd->eraseregions
 	//ranfc_mtd->bansize
-	ranfc_mtd->erase 	= ramtd_nand_erase;
+	ranfc_mtd->_erase 	= ramtd_nand_erase;
 	//ranfc_mtd->point
 	//ranfc_mtd->unpoint
-	ranfc_mtd->read		= ramtd_nand_read;
-	ranfc_mtd->write	= ramtd_nand_write;
+	ranfc_mtd->_read		= ramtd_nand_read;
+	ranfc_mtd->_write	= ramtd_nand_write;
 	ranfc_mtd->read_oob	= ramtd_nand_readoob;
 	ranfc_mtd->write_oob	= ramtd_nand_writeoob;
 	//ranfc_mtd->get_fact_prot_info; ranfc_mtd->read_fact_prot_reg; 
