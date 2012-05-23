@@ -732,25 +732,7 @@ extern void dump_stack(void);
 #endif
 #endif /* < 2.6.30 */
 
-static inline struct net_device *vlan_group_get_device(struct vlan_group *vg,
-						       u16 vlan_id)
-{
-	struct net_device **array;
-	array = vg->vlan_devices_arrays[vlan_id / VLAN_GROUP_ARRAY_PART_LEN];
-	return array ? array[vlan_id % VLAN_GROUP_ARRAY_PART_LEN] : NULL;
-}
-
-static inline void vlan_group_set_device(struct vlan_group *vg,
-					 u16 vlan_id,
-					 struct net_device *dev)
-{
-	struct net_device **array;
-	if (!vg)
-		return;
-	array = vg->vlan_devices_arrays[vlan_id / VLAN_GROUP_ARRAY_PART_LEN];
-	array[vlan_id % VLAN_GROUP_ARRAY_PART_LEN] = dev;
-}
-
+#include "../../../../net/8021q/vlan.h"
 
 #endif /* _KCOMPAT_H_ */
 

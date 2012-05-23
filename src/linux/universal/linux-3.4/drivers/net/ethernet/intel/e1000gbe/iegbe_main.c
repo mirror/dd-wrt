@@ -159,9 +159,9 @@ static void iegbe_smartspeed(struct iegbe_adapter *adapter);
 static inline int iegbe_82547_fifo_workaround(struct iegbe_adapter *adapter,
                           struct sk_buff *skb);
 
-static void iegbe_vlan_rx_register(struct net_device *netdev, struct vlan_group *grp);
-static void iegbe_vlan_rx_add_vid(struct net_device *netdev, uint16_t vid);
-static void iegbe_vlan_rx_kill_vid(struct net_device *netdev, uint16_t vid);
+static bool iegbe_vlan_used(struct iegbe_adapter *adapter);
+static int iegbe_vlan_rx_add_vid(struct net_device *netdev, uint16_t vid);
+static int iegbe_vlan_rx_kill_vid(struct net_device *netdev, uint16_t vid);
 static void iegbe_restore_vlan(struct iegbe_adapter *adapter);
 
 static int iegbe_notify_reboot(struct notifier_block *,
@@ -324,8 +324,8 @@ static void iegbe_update_mng_vlan(struct iegbe_adapter *adapter)
         struct net_device *netdev = adapter->netdev;
 	u16 vid = hw->mng_cookie.vlan_id;
         u16 old_vid = adapter->mng_vlan_id;
-        if (adapter->vlgrp) {
-                if (!vlan_group_get_device(adapter->vlgrp, vid)) {
+        if (iegbe_vlan_used(adapter)) {
+                if (!test_bit(old_vid, adapter->active_vlans)) {
 			if (hw->mng_cookie.status &
                                 E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) {
                                 iegbe_vlan_rx_add_vid(netdev, vid);
@@ -335,7 +335,7 @@ static void iegbe_update_mng_vlan(struct iegbe_adapter *adapter)
 
                         if ((old_vid != (u16)E1000_MNG_VLAN_NONE) &&
                                         (vid != old_vid) &&
-                            !vlan_group_get_device(adapter->vlgrp, old_vid))
+                            !test_bit(old_vid, adapter->active_vlans))
                                 iegbe_vlan_rx_kill_vid(netdev, old_vid);
                 } else
                         adapter->mng_vlan_id = vid;
@@ -736,7 +736,6 @@ static const struct net_device_ops iegbe_netdev_ops = {
 	.ndo_do_ioctl		= iegbe_ioctl,
 	.ndo_validate_addr	= eth_validate_addr,
 
-	.ndo_vlan_rx_register	= iegbe_vlan_rx_register,
 	.ndo_vlan_rx_add_vid	= iegbe_vlan_rx_add_vid,
 	.ndo_vlan_rx_kill_vid	= iegbe_vlan_rx_kill_vid,
 #ifdef CONFIG_NET_POLL_CONTROLLER
@@ -770,7 +769,6 @@ static int __devinit iegbe_probe(struct pci_dev *pdev,
 	u16 eeprom_data = 0;
 	u16 eeprom_apme_mask = E1000_EEPROM_APME;
 	int bars; 
-	DECLARE_MAC_BUF(mac);
 
 	bars = pci_select_bars(pdev, IORESOURCE_MEM);
 	err = pci_enable_device(pdev);
@@ -1250,8 +1248,7 @@ static int iegbe_close(struct net_device *netdev)
 
 	if ((hw->mng_cookie.status &
 			  E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) &&
-	     !(adapter->vlgrp &&
-	       vlan_group_get_device(adapter->vlgrp, adapter->mng_vlan_id))) {
+	     !test_bit(adapter->mng_vlan_id, adapter->active_vlans)) {
 		iegbe_vlan_rx_kill_vid(netdev, adapter->mng_vlan_id);
 	}
 	return 0;
@@ -2166,14 +2163,13 @@ static void iegbe_set_rx_mode(struct net_device *netdev)
 	struct iegbe_hw *hw = &adapter->hw;
 	struct netdev_hw_addr *ha;
 	bool use_uc = false;
-	#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35) 
-	#else
-	struct dev_mc_list *mc_ptr;
-	#endif
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
+ 	struct dev_addr_list *mc_ptr;
+#endif
+ 	u32 hash_value;
+	int mta_reg_count = E1000_NUM_MTA_REGISTERS;
 	u32 rctl;
-	u32 hash_value;
 	int i, rar_entries = E1000_RAR_ENTRIES;
-int mta_reg_count = E1000_NUM_MTA_REGISTERS;
 
 	/* reserve RAR[14] for LAA over-write work-around */
 	if (hw->mac_type == iegbe_82571)
@@ -2260,6 +2256,7 @@ int mta_reg_count = E1000_NUM_MTA_REGISTERS;
 
 	#else
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0))
 	mc_ptr = netdev->mc_list;
 
 	for (; i < rar_entries; i++) {
@@ -2279,6 +2276,7 @@ int mta_reg_count = E1000_NUM_MTA_REGISTERS;
 		E1000_WRITE_REG_ARRAY(hw, MTA, i, 0);
 		E1000_WRITE_FLUSH(&adapter->hw);
 	}
+#endif
 
 	/* load any remaining addresses into the hash table */
 
@@ -2861,14 +2859,14 @@ static int iegbe_tx_map(struct iegbe_adapter *adapter,
              * Avoid terminating buffers within evenly-aligned
              * dwords. */
             if(unlikely(adapter->pcix_82544 &&
-			   !((unsigned long)(skb_frag_page(frag)+offset+size-1) & 4) &&
+			   !((unsigned long)(frag->page.p+offset+size-1) & 4) &&
 			   size > 4))
 				size -= 4;
 
             buffer_info->length = size;
             buffer_info->dma =
                 pci_map_page(adapter->pdev,
-                    skb_frag_page(frag),
+                    frag->page.p,
                     offset,
                     size,
                     PCI_DMA_TODEVICE);
@@ -3171,7 +3169,7 @@ static int iegbe_xmit_frame(struct sk_buff *skb, struct net_device *netdev)
 		}
 	}
 
-	if (unlikely(adapter->vlgrp && vlan_tx_tag_present(skb))) {
+	if (unlikely(iegbe_vlan_used(adapter) && vlan_tx_tag_present(skb))) {
 		tx_flags |= E1000_TX_FLAGS_VLAN;
 		tx_flags |= (vlan_tx_tag_get(skb) << E1000_TX_FLAGS_VLAN_SHIFT);
 	}
@@ -3872,10 +3870,12 @@ static bool iegbe_clean_rx_irq(struct iegbe_adapter *adapter,
 
 		skb->protocol = eth_type_trans(skb, netdev);
 
-		if (unlikely(adapter->vlgrp &&
+		if (unlikely(iegbe_vlan_used(adapter) &&
 			    (status & E1000_RXD_STAT_VP))) {
-			vlan_hwaccel_receive_skb(skb, adapter->vlgrp,
-						 le16_to_cpu(rx_desc->special));
+			u16 vid;
+
+			vid = le16_to_cpu(rx_desc->special);
+			__vlan_hwaccel_put_tag(skb, vid);
 		} else {
 			netif_receive_skb(skb);
 		}
@@ -4026,9 +4026,10 @@ copydone:
 			   cpu_to_le16(E1000_RXDPS_HDRSTAT_HDRSP)))
             adapter->rx_hdr_split++;
 
-        if(unlikely(adapter->vlgrp && (staterr & E1000_RXD_STAT_VP))) {
-            vlan_hwaccel_receive_skb(skb, adapter->vlgrp,
-				le16_to_cpu(rx_desc->wb.middle.vlan));
+        if(unlikely(iegbe_vlan_used(adapter) && (staterr & E1000_RXD_STAT_VP))) {
+	    u16 vid;
+	    vid = le16_to_cpu(rx_desc->wb.middle.vlan);
+	    __vlan_hwaccel_put_tag(skb, vid);
         } else {
             netif_receive_skb(skb);
         }
@@ -4536,17 +4537,25 @@ iegbe_io_write(struct iegbe_hw *hw, unsigned long port, uint32_t value)
     outl(value, port);
 }
 
-static void iegbe_vlan_rx_register(struct net_device *netdev,
-				   struct vlan_group *grp)
+static bool iegbe_vlan_used(struct iegbe_adapter *adapter)
+{
+	u16 vid;
+
+	for_each_set_bit(vid, adapter->active_vlans, VLAN_N_VID)
+		return true;
+
+	return false;
+}
+
+static void iegbe_vlan_mode(struct net_device *netdev, bool vlan_on)
 {
     struct iegbe_adapter *adapter = netdev_priv(netdev);
     uint32_t ctrl, rctl;
 
 	if (!test_bit(__E1000_DOWN, &adapter->flags))
     iegbe_irq_disable(adapter);
-    adapter->vlgrp = grp;
 
-    if(grp) {
+    if(vlan_on) {
         /* enable VLAN tag insert/strip */
         ctrl = E1000_READ_REG(&adapter->hw, CTRL);
         ctrl |= E1000_CTRL_VME;
@@ -4578,30 +4587,37 @@ static void iegbe_vlan_rx_register(struct net_device *netdev,
     iegbe_irq_enable(adapter);
 }
 
-static void iegbe_vlan_rx_add_vid(struct net_device *netdev, u16 vid)
+static int iegbe_vlan_rx_add_vid(struct net_device *netdev, u16 vid)
 {
     struct iegbe_adapter *adapter = netdev_priv(netdev);
     uint32_t vfta, index;
     if((adapter->hw.mng_cookie.status &
         E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) &&
         (vid == adapter->mng_vlan_id)) {
-        return;
+        return 0;
     }
+
+    if (!iegbe_vlan_used(adapter))
+	iegbe_vlan_mode(netdev, true);
+
     /* add VID to filter table */
     index = (vid >> 0x5) & 0x7F;
     vfta = E1000_READ_REG_ARRAY(&adapter->hw, VFTA, index);
     vfta |= (0x1 << (vid & 0x1F));
     iegbe_write_vfta(&adapter->hw, index, vfta);
+
+    set_bit(vid, adapter->active_vlans);
+
+    return 0;
 }
 
-static void iegbe_vlan_rx_kill_vid(struct net_device *netdev, u16 vid)
+static int iegbe_vlan_rx_kill_vid(struct net_device *netdev, u16 vid)
 {
 	struct iegbe_adapter *adapter = netdev_priv(netdev);
 	u32 vfta, index;
 
 	if (!test_bit(__E1000_DOWN, &adapter->flags))
 	iegbe_irq_disable(adapter);
-	vlan_group_set_device(adapter->vlgrp, vid, NULL);
 	if (!test_bit(__E1000_DOWN, &adapter->flags))
 	iegbe_irq_enable(adapter);
 
@@ -4610,20 +4626,25 @@ static void iegbe_vlan_rx_kill_vid(struct net_device *netdev, u16 vid)
 	vfta = E1000_READ_REG_ARRAY(&adapter->hw, VFTA, index);
 	vfta &= ~(0x1 << (vid & 0x1F));
 	iegbe_write_vfta(&adapter->hw, index, vfta);
+
+	clear_bit(vid, adapter->active_vlans);
+
+	if (!iegbe_vlan_used(adapter))
+		iegbe_vlan_mode(netdev, false);
+
+	return 0;
+
 }
 
 static void iegbe_restore_vlan(struct iegbe_adapter *adapter)
 {
-	iegbe_vlan_rx_register(adapter->netdev, adapter->vlgrp);
-
-	if (adapter->vlgrp) {
 		u16 vid;
-		for (vid = 0x0; vid < VLAN_N_VID; vid++) {
-			if (!vlan_group_get_device(adapter->vlgrp, vid))
-				continue;
-			iegbe_vlan_rx_add_vid(adapter->netdev, vid);
-		}
-	}
+	if (!iegbe_vlan_used(adapter))
+		return;
+
+	iegbe_vlan_mode(adapter->netdev, true);
+	for_each_set_bit(vid, adapter->active_vlans, VLAN_N_VID)
+ 			iegbe_vlan_rx_add_vid(adapter->netdev, vid);
 }
 
 
