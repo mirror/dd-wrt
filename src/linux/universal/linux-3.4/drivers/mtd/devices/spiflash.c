@@ -805,12 +805,12 @@ static int spiflash_probe(struct platform_device *pdev)
 	mtd->writesize = 1;
    	mtd->numeraseregions = 0;
    	mtd->eraseregions = NULL;
-   	mtd->erase = spiflash_erase;
-   	mtd->read = spiflash_read;
+   	mtd->_erase = spiflash_erase;
+   	mtd->_read = spiflash_read;
 #ifdef CONFIG_MTD_SPIFLASH_PP
-	mtd->write = spiflash_page_write;
+	mtd->_write = spiflash_page_write;
 #else
-	mtd->write = spiflash_write;
+	mtd->_write = spiflash_write;
 #endif
 	mtd->owner = THIS_MODULE;
 

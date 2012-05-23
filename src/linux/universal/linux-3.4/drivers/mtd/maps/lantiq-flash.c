@@ -361,7 +361,7 @@ int ra_mtd_read(int num,int from, int len, u_char *buf)
 	printk(KERN_INFO "read ralink eeprom from %X with len %X to %p (device %d)\n",from,len,buf,num);
 	mtd = get_mtd_device(NULL, num);
 
-	ret = mtd->read(mtd, from, len, &rdlen, buf);
+	ret = mtd_read(mtd, from, len, &rdlen, buf);
 	if (rdlen != len)
 		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
 
