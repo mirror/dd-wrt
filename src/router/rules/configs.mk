@@ -243,6 +243,9 @@ configs-checkout:
 configs-update:
 #	svn commit -m "faster hand optimized mksquashfs-lzma tool" $(LINUXDIR)
 	svn update $(LINUXDIR)
+	svn update $(LINUXDIR)/../linux-3.3
+	svn update $(LINUXDIR)/../linux-3.4
+	svn update $(LINUXDIR)/../linux-3.2
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP)
 
