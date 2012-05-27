@@ -1565,7 +1565,7 @@ static inline int pskb_network_may_pull(struct sk_buff *skb, unsigned int len)
  * NET_IP_ALIGN(2) + ethernet_header(14) + IP_header(20/40) + ports(8)
  */
 #ifndef NET_SKB_PAD
-#define NET_SKB_PAD	max(32, L1_CACHE_BYTES)
+#define NET_SKB_PAD	max(48, L1_CACHE_BYTES)
 #endif
 
 extern int ___pskb_trim(struct sk_buff *skb, unsigned int len);
@@ -1883,12 +1883,15 @@ static inline int skb_clone_writable(const struct sk_buff *skb, unsigned int len
 static inline int __skb_cow(struct sk_buff *skb, unsigned int headroom,
 			    int cloned)
 {
+	unsigned int alloc_headroom = headroom;
 	int delta = 0;
 
 	if (headroom < NET_SKB_PAD)
-		headroom = NET_SKB_PAD;
-	if (headroom > skb_headroom(skb))
-		delta = headroom - skb_headroom(skb);
+		alloc_headroom = NET_SKB_PAD;
+	if (headroom > skb_headroom(skb) ||
+	    (cloned && alloc_headroom > skb_headroom(skb))) {
+		delta = alloc_headroom - skb_headroom(skb);
+	}
 
 	if (delta || cloned)
 		return pskb_expand_head(skb, ALIGN(delta, NET_SKB_PAD), 0,
