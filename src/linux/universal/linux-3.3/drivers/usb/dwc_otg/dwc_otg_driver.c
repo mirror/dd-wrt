@@ -645,12 +645,10 @@ dwc_otg_driver_probe(struct platform_device *_dev)
 	int32_t	snpsid;
 	struct resource *res;
 	gusbcfg_data_t usbcfg = {.d32 = 0};
-	printk(KERN_INFO "PIN %d\n",pin);
 
 	// GPIOs
 	if(pin >= 0)
 	{
-		printk(KERN_INFO "enable usb power on PIN %d\n",pin);
 		gpio_request(pin, "usb_power");
 		gpio_direction_output(pin, 1);
 		gpio_set_value(pin, 1);
@@ -861,6 +859,7 @@ static int __init dwc_otg_init(void)
     int retval = 0;
 
     printk(KERN_INFO "%s: version %s\n", dwc_driver_name, DWC_DRIVER_VERSION);
+
 
 	// ifxmips setup
     retval = ifx_usb_hc_init(dwc_iomem_base, dwc_irq);
