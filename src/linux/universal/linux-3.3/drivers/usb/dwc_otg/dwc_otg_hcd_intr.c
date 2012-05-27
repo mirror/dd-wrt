@@ -1278,8 +1278,6 @@ static int32_t handle_hc_ack_intr(dwc_otg_hcd_t *_hcd,
 			 * automatically executes the PING, then the transfer.
 			 */
 		    halt_channel(_hcd, _hc, _qtd, DWC_OTG_HC_XFER_ACK, must_free);
-		} else {
-		    halt_channel(_hcd, _hc, _qtd, _hc->halt_status, must_free);
 		}
 	}
 
