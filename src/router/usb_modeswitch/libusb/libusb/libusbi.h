@@ -1,6 +1,6 @@
 /*
  * Internal header for libusb
- * Copyright (C) 2007-2008 Daniel Drake <dsd@gentoo.org>
+ * Copyright (C) 2007-2009 Daniel Drake <dsd@gentoo.org>
  * Copyright (c) 2001 Johannes Erdfelt <johannes@erdfelt.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -187,7 +187,19 @@ struct libusb_context {
 	 * event handling */
 	pthread_mutex_t event_waiters_lock;
 	pthread_cond_t event_waiters_cond;
+
+#ifdef USBI_TIMERFD_AVAILABLE
+	/* used for timeout handling, if supported by OS.
+	 * this timerfd is maintained to trigger on the next pending timeout */
+	int timerfd;
+#endif
 };
+
+#ifdef USBI_TIMERFD_AVAILABLE
+#define usbi_using_timerfd(ctx) ((ctx)->timerfd >= 0)
+#else
+#define usbi_using_timerfd(ctx) (0)
+#endif
 
 struct libusb_device {
 	/* lock protects refcnt, everything else is finalized at initialization
@@ -242,6 +254,15 @@ struct usbi_transfer {
 	struct timeval timeout;
 	int transferred;
 	uint8_t flags;
+
+	/* this lock is held during libusb_submit_transfer() and
+	 * libusb_cancel_transfer() (allowing the OS backend to prevent duplicate
+	 * cancellation, submission-during-cancellation, etc). the OS backend
+	 * should also take this lock in the handle_events path, to prevent the user
+	 * cancelling the transfer from another thread while you are processing
+	 * its completion (presumably there would be races within your OS backend
+	 * if this were possible). */
+	pthread_mutex_t lock;
 };
 
 #define __USBI_TRANSFER_TO_LIBUSB_TRANSFER(transfer) \
@@ -279,9 +300,9 @@ struct libusb_device *usbi_get_device_by_session_id(struct libusb_context *ctx,
 int usbi_sanitize_device(struct libusb_device *dev);
 void usbi_handle_disconnect(struct libusb_device_handle *handle);
 
-void usbi_handle_transfer_completion(struct usbi_transfer *itransfer,
+int usbi_handle_transfer_completion(struct usbi_transfer *itransfer,
 	enum libusb_transfer_status status);
-void usbi_handle_transfer_cancellation(struct usbi_transfer *transfer);
+int usbi_handle_transfer_cancellation(struct usbi_transfer *transfer);
 
 int usbi_parse_descriptor(unsigned char *source, char *descriptor, void *dest,
 	int host_endian);
@@ -733,6 +754,10 @@ struct usbi_os_backend {
 	 * This function should also be able to detect disconnection of the
 	 * device, reporting that situation with usbi_handle_disconnect().
 	 *
+	 * When processing an event related to a transfer, you probably want to
+	 * take usbi_transfer.lock to prevent races. See the documentation for
+	 * the usbi_transfer structure.
+	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
 	int (*handle_events)(struct libusb_context *ctx,
@@ -747,6 +772,11 @@ struct usbi_os_backend {
 	                             time (usually boot).
 	 */
 	int (*clock_gettime)(int clkid, struct timespec *tp);
+
+#ifdef USBI_TIMERFD_AVAILABLE
+	/* clock ID of the clock that should be used for timerfd */
+	clockid_t (*get_timerfd_clockid)(void);
+#endif
 
 	/* Number of bytes to reserve for per-device private backend data.
 	 * This private data area is accessible through the "os_priv" field of
