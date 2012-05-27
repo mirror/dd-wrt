@@ -1190,7 +1190,7 @@ static inline int skb_network_offset(const struct sk_buff *skb)
  * headroom, you should not reduce this.
  */
 #ifndef NET_SKB_PAD
-#define NET_SKB_PAD	16
+#define NET_SKB_PAD	max(48, L1_CACHE_BYTES)
 #endif
 
 extern int ___pskb_trim(struct sk_buff *skb, unsigned int len);
@@ -1358,12 +1358,15 @@ static inline int skb_clone_writable(struct sk_buff *skb, int len)
 static inline int __skb_cow(struct sk_buff *skb, unsigned int headroom,
 			    int cloned)
 {
+	unsigned int alloc_headroom = headroom;
 	int delta = 0;
 
 	if (headroom < NET_SKB_PAD)
-		headroom = NET_SKB_PAD;
-	if (headroom > skb_headroom(skb))
-		delta = headroom - skb_headroom(skb);
+		alloc_headroom = NET_SKB_PAD;
+	if (headroom > skb_headroom(skb) ||
+	    (cloned && alloc_headroom > skb_headroom(skb))) {
+		delta = alloc_headroom - skb_headroom(skb);
+	}
 
 	if (delta || cloned)
 		return pskb_expand_head(skb, ALIGN(delta, NET_SKB_PAD), 0,
