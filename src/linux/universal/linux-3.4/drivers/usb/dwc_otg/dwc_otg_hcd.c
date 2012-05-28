@@ -1587,8 +1587,6 @@ static void do_in_ack(void)
 }
 #endif /* DWC_HS_ELECT_TST */
 
-
-
 /** Handles hub class-specific requests.*/
 int dwc_otg_hcd_hub_control(struct usb_hcd *_hcd, 
 		u16 _typeReq, 
