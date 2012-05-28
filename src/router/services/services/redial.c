@@ -73,6 +73,7 @@ void start_redial(void)
 		return;		// not required, already running
 	}
 
+	mkdir("/tmp/ppp", 0777);
 	symlink("/sbin/rc", "/tmp/ppp/redial");
 
 	ret = _evalpid(redial_argv, NULL, 0, &pid);
