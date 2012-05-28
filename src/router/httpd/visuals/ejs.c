@@ -2192,6 +2192,9 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_3G
 		   || !strcmp(wan_proto, "3g")
 #endif
+#ifdef HAVE_IPETH
+		   || !strcmp(wan_proto, "iphone")
+#endif
 	    ) {
 		wan_ipaddr =
 		    wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";

@@ -3863,6 +3863,8 @@ void start_wan(int status)
 		}
 		insmod("ipheth");
 		stop_process("ipheth-loop","IPhone Pairing daemon");
+		stop_process("usbmuxd","IPhone Mux daemon");
+		stop_process("udhcpc","DHCP Client");
 		eval("usbmuxd");
 		eval("ipheth-loop");
 		eval("ifconfig","iph0","up");
