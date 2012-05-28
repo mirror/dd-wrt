@@ -3025,6 +3025,8 @@ int check_wan_link(int num)
 				}
 			}
 			fclose(fp);
+			if (nvram_match("wan_ipaddr","0.0.0.0") || nvram_match("wan_ipaddr",""))
+				wan_link = 0;
 
 		}
 	} else
