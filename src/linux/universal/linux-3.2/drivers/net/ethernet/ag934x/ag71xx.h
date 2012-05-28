@@ -50,9 +50,9 @@
 #define AG71XX_INT_INIT	(AG71XX_INT_ERR | AG71XX_INT_POLL)
 
 #define AG71XX_TX_MTU_LEN	1540
-#define AG71XX_RX_PKT_RESERVE	64
 #define AG71XX_RX_PKT_SIZE	\
-	(AG71XX_RX_PKT_RESERVE + ETH_FRAME_LEN + ETH_FCS_LEN + VLAN_HLEN)
+	(ETH_FRAME_LEN + ETH_FCS_LEN + VLAN_HLEN)
+#define AG71XX_RX_BUF_SIZE (AG71XX_RX_PKT_SIZE + NET_SKB_PAD + NET_IP_ALIGN)
 
 #define AG71XX_TX_RING_SIZE_DEFAULT	64
 #define AG71XX_RX_RING_SIZE_DEFAULT	128
@@ -61,7 +61,7 @@
 #define AG71XX_RX_RING_SIZE_MAX		256
 
 #ifdef CONFIG_AG71XX_DEBUG
-#define DBG(fmt, args...)	printk(KERN_DEBUG fmt, ## args)
+#define DBG(fmt, args...)	pr_debug(fmt, ## args)
 #else
 #define DBG(fmt, args...)	do {} while (0)
 #endif
@@ -85,7 +85,10 @@ struct ag71xx_desc {
 } __attribute__((aligned(4)));
 
 struct ag71xx_buf {
-	struct sk_buff		*skb;
+	union {
+		struct sk_buff	*skb;
+		void		*rx_buf;
+	};
 	struct ag71xx_desc	*desc;
 	dma_addr_t		dma_addr;
 	unsigned long		timestamp;
