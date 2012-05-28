@@ -189,37 +189,53 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 		return;
 
 	for (i = 0; i < ring->size; i++)
-		if (ring->buf[i].skb) {
+		if (ring->buf[i].rx_buf) {
 			dma_unmap_single(&ag->dev->dev, ring->buf[i].dma_addr,
-					 AG71XX_RX_PKT_SIZE, DMA_FROM_DEVICE);
-			kfree_skb(ring->buf[i].skb);
+					 AG71XX_RX_BUF_SIZE, DMA_FROM_DEVICE);
+			kfree(ring->buf[i].rx_buf);
 		}
 }
 
-static int ag71xx_rx_reserve(struct ag71xx *ag)
+static int ag71xx_buffer_offset(struct ag71xx *ag)
 {
-	int reserve = 0;
+	int offset = NET_SKB_PAD;
 
-	if (ag71xx_get_pdata(ag)->is_ar724x) {
-		if (!ag71xx_has_ar8216(ag))
-			reserve = 2;
+	/*
+	 * On AR71xx/AR91xx packets must be 4-byte aligned.
+	 *
+	 * When using builtin AR8216 support, hardware adds a 2-byte header,
+	 * so we don't need any extra alignment in that case.
+	 */
+	if (!ag71xx_get_pdata(ag)->is_ar724x || ag71xx_has_ar8216(ag))
+		return offset;
 
-		if (ag->phy_dev)
-			reserve += 4 - (ag->phy_dev->pkt_align % 4);
-
-		reserve %= 4;
-	}
-
-	return reserve + AG71XX_RX_PKT_RESERVE;
+	return offset + NET_IP_ALIGN;
 }
 
+static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
+			       int offset)
+{
+	void *data;
+
+	data = kmalloc(AG71XX_RX_BUF_SIZE +
+		       SKB_DATA_ALIGN(sizeof(struct skb_shared_info)),
+		       GFP_ATOMIC);
+	if (!data)
+		return false;
+
+	buf->rx_buf = data;
+	buf->dma_addr = dma_map_single(&ag->dev->dev, data,
+				       AG71XX_RX_BUF_SIZE, DMA_FROM_DEVICE);
+	buf->desc->data = (u32) buf->dma_addr + offset;
+	return true;
+}
 
 static int ag71xx_ring_rx_init(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
-	unsigned int reserve = ag71xx_rx_reserve(ag);
 	unsigned int i;
 	int ret;
+	int offset = ag71xx_buffer_offset(ag);
 
 	ret = 0;
 	for (i = 0; i < ring->size; i++) {
@@ -232,24 +248,11 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 	}
 
 	for (i = 0; i < ring->size; i++) {
-		struct sk_buff *skb;
-		dma_addr_t dma_addr;
-
-		skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + reserve);
-		if (!skb) {
+		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], offset)) {
 			ret = -ENOMEM;
 			break;
 		}
 
-		skb->dev = ag->dev;
-		skb_reserve(skb, reserve);
-
-		dma_addr = dma_map_single(&ag->dev->dev, skb->data,
-					  AG71XX_RX_PKT_SIZE,
-					  DMA_FROM_DEVICE);
-		ring->buf[i].skb = skb;
-		ring->buf[i].dma_addr = dma_addr;
-		ring->buf[i].desc->data = (u32) dma_addr;
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
 	}
 
@@ -265,8 +268,8 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
-	unsigned int reserve = ag71xx_rx_reserve(ag);
 	unsigned int count;
+	int offset = ag71xx_buffer_offset(ag);
 
 	count = 0;
 	for (; ring->curr - ring->dirty > 0; ring->dirty++) {
@@ -274,25 +277,9 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 
 		i = ring->dirty % ring->size;
 
-		if (ring->buf[i].skb == NULL) {
-			dma_addr_t dma_addr;
-			struct sk_buff *skb;
-
-			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + reserve);
-			if (skb == NULL)
-				break;
-
-			skb_reserve(skb, reserve);
-			skb->dev = ag->dev;
-
-			dma_addr = dma_map_single(&ag->dev->dev, skb->data,
-						  AG71XX_RX_PKT_SIZE,
-						  DMA_FROM_DEVICE);
-
-			ring->buf[i].skb = skb;
-			ring->buf[i].dma_addr = dma_addr;
-			ring->buf[i].desc->data = (u32) dma_addr;
-		}
+		if (!ring->buf[i].rx_buf &&
+		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset))
+			break;
 
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
 		count++;
@@ -871,6 +858,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 {
 	struct net_device *dev = ag->dev;
 	struct ag71xx_ring *ring = &ag->rx_ring;
+	int offset = ag71xx_buffer_offset(ag);
 	int done = 0;
 
 	DBG("%s: rx packets, limit=%d, curr=%u, dirty=%u\n",
@@ -893,18 +881,25 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
 
-		skb = ring->buf[i].skb;
 		pktlen = ag71xx_desc_pktlen(desc);
 		pktlen -= ETH_FCS_LEN;
 
 		dma_unmap_single(&dev->dev, ring->buf[i].dma_addr,
-				 AG71XX_RX_PKT_SIZE, DMA_FROM_DEVICE);
+				 AG71XX_RX_BUF_SIZE, DMA_FROM_DEVICE);
 
 		dev->last_rx = jiffies;
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
+		skb = build_skb(ring->buf[i].rx_buf);
+		if (!skb) {
+			kfree(ring->buf[i].rx_buf);
+			goto next;
+		}
+
+		skb_reserve(skb, offset);
 		skb_put(skb, pktlen);
+
 		if (ag71xx_has_ar8216(ag))
 			err = ag71xx_remove_ar8216_header(ag, skb, pktlen);
 
@@ -914,15 +909,12 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		} else {
 			skb->dev = dev;
 			skb->ip_summed = CHECKSUM_NONE;
-			if (ag->phy_dev) {
-				ag->phy_dev->netif_receive_skb(skb);
-			} else {
-				skb->protocol = eth_type_trans(skb, dev);
-				netif_receive_skb(skb);
-			}
+			skb->protocol = eth_type_trans(skb, dev);
+			netif_receive_skb(skb);
 		}
 
-		ring->buf[i].skb = NULL;
+next:
+		ring->buf[i].rx_buf = NULL;
 		done++;
 
 		ring->curr++;
@@ -956,7 +948,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	ag71xx_debugfs_update_napi_stats(ag, rx_done, tx_done);
 
 	rx_ring = &ag->rx_ring;
-	if (rx_ring->buf[rx_ring->dirty % rx_ring->size].skb == NULL)
+	if (rx_ring->buf[rx_ring->dirty % rx_ring->size].rx_buf == NULL)
 		goto oom;
 
 	status = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
