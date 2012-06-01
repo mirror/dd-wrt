@@ -1,4 +1,3 @@
-
 		.macro test_for_cache_ipi, irqnr, irqstat, base, tmp
 		bic	\irqnr, \irqstat, #0x1c00
 		mov 	\tmp, #0
