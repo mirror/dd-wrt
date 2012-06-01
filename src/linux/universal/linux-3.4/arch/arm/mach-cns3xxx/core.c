@@ -23,6 +23,8 @@
 #include <mach/cns3xxx.h>
 #include "core.h"
 
+
+
 static struct map_desc cns3xxx_io_desc[] __initdata = {
 	{
 		.virtual	= CNS3XXX_TC11MP_TWD_BASE_VIRT,
@@ -150,10 +152,10 @@ static struct gpio_chip cns3xxx_gpio_chip = {
 	.to_irq			= cns3xxx_gpio_to_irq,
 };
 
-static DEFINE_TWD_LOCAL_TIMER(twd_local_timer,
-			      CNS3XXX_TC11MP_TWD_BASE_VIRT,
-			      IRQ_LOCALTIMER);
 
+static DEFINE_TWD_LOCAL_TIMER(twd_local_timer,
+			      CNS3XXX_TC11MP_TWD_BASE,
+			      IRQ_LOCALTIMER);
 
 void __init cns3xxx_common_init(void)
 {
@@ -169,12 +171,6 @@ void __init cns3xxx_common_init(void)
 #endif
 #ifdef CONFIG_CACHE_L2CC
 	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
-#endif
-#ifdef CONFIG_LOCAL_TIMERS
-	int err = twd_local_timer_register(&twd_local_timer);
-	if (err)
-		pr_err("twd_local_timer_register failed %d\n", err);
-//	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
 #endif
 	gpiochip_add(&cns3xxx_gpio_chip);
 }
@@ -321,7 +317,6 @@ static void __init cns3xxx_clocksource_init(void)
 		clocksource_khz2mult(100, clocksource_cns3xxx.shift);
 	clocksource_register(&clocksource_cns3xxx);
 }
-
 /*
  * Set up the clock source and clock events devices
  */
@@ -360,6 +355,12 @@ static void __init __cns3xxx_timer_init(unsigned int timer_irq)
 
 	cns3xxx_clocksource_init();
 	cns3xxx_clockevents_init(timer_irq);
+#ifdef CONFIG_LOCAL_TIMERS
+	int err = twd_local_timer_register(&twd_local_timer);
+	if (err)
+		pr_err("twd_local_timer_register failed %d\n", err);
+//	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
+#endif
 }
 
 static void __init cns3xxx_timer_init(void)
