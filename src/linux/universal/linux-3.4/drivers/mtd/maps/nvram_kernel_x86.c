@@ -179,7 +179,7 @@ _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
 		return NULL;
 
 	if (!t) {
-		if (!(t = vmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1)))
+		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
 			return NULL;
 
 		/* Copy name */
@@ -205,7 +205,7 @@ _nvram_free(struct nvram_tuple *t)
 	if (!t)
 		nvram_offset = 0;
 	else
-		vfree(t);
+		kfree(t);
 }
 
 int
@@ -218,10 +218,10 @@ nvram_set(const char *name, const char *value)
 	spin_lock_irqsave(&nvram_lock, flags);
 	if ((ret = _nvram_set(name, value))) {
 		/* Consolidate space and try again */
-		if ((header = vmalloc(NVRAM_SPACE))) {
+		if ((header = kmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
 			if (_nvram_commit(header) == 0)
 				ret = _nvram_set(name, value);
-			vfree(header);
+			kfree(header);
 		}
 	}
 	spin_unlock_irqrestore(&nvram_lock, flags);
@@ -367,7 +367,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 	unsigned long off;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = vmalloc(count)))
+		if (!(name = kmalloc(count, GFP_KERNEL)))
 			return -ENOMEM;
 	}
 
@@ -407,7 +407,7 @@ dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
  
 done:
 	if (name != tmp)
-		vfree(name);
+		kfree(name);
 
 	return ret;
 }
@@ -419,7 +419,7 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 	ssize_t ret;
 
 	if (count > sizeof(tmp)) {
-		if (!(name = vmalloc(count)))
+		if (!(name = kmalloc(count, GFP_KERNEL)))
 			return -ENOMEM;
 	}
 
@@ -437,7 +437,7 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 
  done:
 	if (name != tmp)
-		vfree(name);
+		kfree(name);
 
 	return ret;
 }	
