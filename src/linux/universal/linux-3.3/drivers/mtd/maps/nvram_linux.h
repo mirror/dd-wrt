@@ -1,6 +1,5 @@
 #ifndef __NVRAM_LINUX__
 #define	__NVRAM_LINUX__
-#include <linux/vmalloc.h>
 
 //typedef unsigned int	uint;
 typedef unsigned long	uint32;
@@ -18,8 +17,8 @@ typedef unsigned char	uint8;
 #define	ltoh32
 #define	htol32
 #define	bzero(b, len)		memset((b), '\0', (len))
-#define	MALLOC(size)		vmalloc((size))
-#define	MFREE(addr, size)	vfree((addr))
+#define	MALLOC(size)		kmalloc((size),GFP_ATOMIC)
+#define	MFREE(addr, size)	kfree((addr))
 
 #define	CRC8_USED		/* for nvram header verify */
 //#define	CRC32_USED		/* for trx header verify */
