@@ -2066,8 +2066,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -3257,7 +3257,31 @@ void start_wan(int status)
 					     nvram_safe_get("wan_apn"),
 					     controldevice);
 			// Lets open option file and enter all the parameters.
+			char *username = nvram_safe_get("ppp_username");
+			char *passwd = nvram_safe_get("ppp_passwd");
+			if (strlen(username) && strlen(passwd)) {
+				if ((fp = fopen("/tmp/ppp/chap-secrets", "w"))) {
+					fprintf(fp, "\"%s\" * \"%s\" *\n",
+						username, passwd);
+					fclose(fp);
+					chmod("/tmp/ppp/chap-secrets", 0600);
+				}
+
+				if ((fp = fopen("/tmp/ppp/pap-secrets", "w"))) {
+					fprintf(fp, "\"%s\" * \"%s\" *\n",
+						username, passwd);
+					fclose(fp);
+					chmod("/tmp/ppp/pap-secrets", 0600);
+				}
+			}
+
 			fp = fopen("/tmp/ppp/options.pppoe", "w");
+			if (strlen(username) && strlen(passwd)) {
+				fprintf(fp,
+					"chap-secrets /tmp/ppp/chap-secrets");
+				fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets");
+			}
+
 			fprintf(fp, "defaultroute\n");
 			fprintf(fp, "usepeerdns\n");
 			fprintf(fp, "noipdefault\n");
@@ -3289,12 +3313,10 @@ void start_wan(int status)
 			fprintf(fp,
 				"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",
 				dial, nvram_safe_get("3gdata"));
-			if (strlen(nvram_safe_get("ppp_username")))
-				fprintf(fp, "user '%s'\n",
-					nvram_safe_get("ppp_username"));
-			if (strlen(nvram_safe_get("ppp_passwd")))
-				fprintf(fp, "password '%s'\n",
-					nvram_safe_get("ppp_passwd"));
+			if (strlen(username))
+				fprintf(fp, "user '%s'\n", username);
+			if (strlen(passwd))
+				fprintf(fp, "password '%s'\n", passwd);
 			fprintf(fp, "%s\n", nvram_safe_get("3gdata"));
 
 			fclose(fp);
@@ -3862,12 +3884,12 @@ void start_wan(int status)
 			start_drivers();
 		}
 		insmod("ipheth");
-		stop_process("ipheth-loop","IPhone Pairing daemon");
-		stop_process("usbmuxd","IPhone Mux daemon");
-		stop_process("udhcpc","DHCP Client");
+		stop_process("ipheth-loop", "IPhone Pairing daemon");
+		stop_process("usbmuxd", "IPhone Mux daemon");
+		stop_process("udhcpc", "DHCP Client");
 		eval("usbmuxd");
 		eval("ipheth-loop");
-		eval("ifconfig","iph0","up");
+		eval("ifconfig", "iph0", "up");
 		start_dhcpc("iph0", NULL, NULL, 1);
 		if (status != REDIAL) {
 			start_redial();
@@ -4058,7 +4080,7 @@ void start_wan_done(char *wan_ifname)
 		    nvram_safe_get("pptp_get_ip") :
 		    nvram_safe_get("wan_gateway");
 		if (strcmp(gateway, "0.0.0.0")) {
-//			route_add(wan_ifname, 0, gateway, NULL,"255.255.255.255");
+//                      route_add(wan_ifname, 0, gateway, NULL,"255.255.255.255");
 
 			while (route_add
 			       (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
