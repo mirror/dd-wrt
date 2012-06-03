@@ -3888,7 +3888,7 @@ void start_wan(int status)
 		stop_process("usbmuxd", "IPhone Mux daemon");
 		stop_process("udhcpc", "DHCP Client");
 		eval("usbmuxd");
-		eval("ipheth-loop");
+		eval("ipheth-pair");
 		eval("ifconfig", "iph0", "up");
 		start_dhcpc("iph0", NULL, NULL, 1);
 		if (status != REDIAL) {
