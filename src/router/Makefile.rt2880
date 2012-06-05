@@ -182,6 +182,9 @@ endif
 ifeq ($(CONFIG_DIR615),y)
 	cp $(LINUXDIR)/.config_rt3052 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIR615H),y)
+	cp $(LINUXDIR)/.config_rt3352 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_W502U),y)
 	cp $(LINUXDIR)/.config_w502u $(LINUXDIR)/.config
 endif
@@ -471,6 +474,9 @@ ifeq ($(CONFIG_DIR615),y)
 	./tools/buildimg/packimgs -v -o mipsel-uclibc/raw.img -i mipsel-uclibc/aligned.uimage
 #	./tools/buildimg/v2image -v -i mipsel-uclibc/raw.img -o mipsel-uclibc/dir615d2-web.bin -d /dev/mtdblock/2 -s wrgn23_dlwbr_dir615 -c
 	./tools/buildimg/v2image -v -i mipsel-uclibc/raw.img -o mipsel-uclibc/dir615d-web.bin -d /dev/mtdblock/2 -s wrgn22_dlwbr_dir615 -c
+endif
+ifeq ($(CONFIG_DIR615H),y)
+	./tools/senao/header.x86 -s mipsel-uclibc/aligned.uimage -d mipsel-uclibc/dir615h-web.bin -a -t kernel
 endif
 ifeq ($(CONFIG_DIR300),y)
 	./tools/buildimg/packimgs -v -o mipsel-uclibc/raw.img -i mipsel-uclibc/aligned.uimage
