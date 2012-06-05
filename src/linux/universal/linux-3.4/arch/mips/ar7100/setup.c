@@ -29,7 +29,6 @@
 #include <asm/pgtable.h>
 #include <asm/processor.h>
 #include <asm/reboot.h>
-#include <asm/system.h>
 #include <asm/serial.h>
 #include <asm/traps.h>
 #include <linux/serial_core.h>
