@@ -1875,10 +1875,10 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("TP-Link TL-WR840N v1");
 	return ROUTER_BOARD_PB42;
-#elif HAVE_MR3240
+#elif HAVE_MR3420
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
-	setRouter("TP-Link TL-MR3240");
+	setRouter("TP-Link TL-MR3420");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841v7
 	nvram_default_get("ath0_rxantenna", "3");
@@ -4016,7 +4016,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x001;
 		sec0_gpio = 0x001;
 
-#elif HAVE_MR3240
+#elif HAVE_MR3420
 		diag_gpio = 0x101;
 		connected_gpio = 0x108;
 		usb_power = 0x006;
