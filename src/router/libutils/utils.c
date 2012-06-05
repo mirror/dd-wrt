@@ -1249,6 +1249,9 @@ int internal_getRouterBrand()
 #elif HAVE_W502U
 	setRouter("Alfa AIP-W502U");
 	return ROUTER_BOARD_W502U;
+#elif HAVE_DIR615H
+	setRouter("Dlink-DIR615 rev h");
+	return ROUTER_BOARD_DIR615D;
 #elif HAVE_DIR615
 	setRouter("Dlink-DIR615 rev d");
 	return ROUTER_BOARD_DIR615D;
