@@ -194,7 +194,7 @@ endif
 ifeq ($(CONFIG_WR741),y)
 	cp $(LINUXDIR)/.config_wr741 $(LINUXDIR)/.config
 endif
-ifeq ($(CONFIG_MR3240),y)
+ifeq ($(CONFIG_MR3420),y)
 	cp $(LINUXDIR)/.config_mr3240 $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WR842),y)
@@ -1060,8 +1060,8 @@ ifeq ($(CONFIG_WR741),y)
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv7 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv7-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv7-firmware.bin mips-uclibc/tplink-WR841NDv7-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-MR3240 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3240-firmware.bin
-	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3240-firmware.bin mips-uclibc/tplink-MR3240-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-MR3420 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3420-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3420-firmware.bin mips-uclibc/tplink-MR3420-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B RNX-N300RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N300RT-firmware.bin mips-uclibc/rosewill-RNX-N300RT-firmware.bin
