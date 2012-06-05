@@ -4221,11 +4221,19 @@ int led_control(int type, int act)
 		power_gpio = 0x109;
 		break;
 	case ROUTER_BOARD_DIR615D:
+#ifdef HAVE_DIR615H
+		diag_gpio = 0x007;
+		connected_gpio = 0x10d;
+		disconnected_gpio = 0x10c;
+		ses_gpio = 0x10e;
+		power_gpio = 0x009;
+#else
 		diag_gpio = 0x108;
 		connected_gpio = 0x10c;
 		disconnected_gpio = 0x10e;
 		ses_gpio = 0x10b;
 		power_gpio = 0x109;
+#endif
 		break;
 	case ROUTER_BOARD_W502U:
 		connected_gpio = 0x10d;
