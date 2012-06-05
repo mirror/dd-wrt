@@ -4019,7 +4019,7 @@ int led_control(int type, int act)
 #elif HAVE_MR3240
 		diag_gpio = 0x101;
 		connected_gpio = 0x108;
-		usb_power = 0x006
+		usb_power = 0x006;
 #elif HAVE_WR741
 		diag_gpio = 0x101;
 		ses_gpio = 0x000;
