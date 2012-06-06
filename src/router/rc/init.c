@@ -629,6 +629,11 @@ int main(int argc, char **argv)
 			 * Fall through 
 			 */
 		case STOP:
+			if (state == STOP && check_action() != ACT_IDLE) {
+				state = IDLE;
+				break; //force reboot on upgrade
+			}
+
 			lcdmessage("STOPPING SERVICES");
 			cprintf("STOP\n");
 			killall("udhcpc", SIGKILL);
