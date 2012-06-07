@@ -17,7 +17,7 @@
 #include <linux/skbuff.h>
 #include <linux/rtl8366.h>
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 #include <linux/debugfs.h>
 #endif
 
@@ -579,7 +579,7 @@ static int rtl8366_init_vlan(struct rtl8366_smi *smi)
 	return rtl8366_enable_vlan(smi, 1);
 }
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file)
 {
 	file->private_data = inode->i_private;
@@ -890,7 +890,7 @@ static void rtl8366_debugfs_remove(struct rtl8366_smi *smi)
 #else
 static inline void rtl8366_debugfs_init(struct rtl8366_smi *smi) {}
 static inline void rtl8366_debugfs_remove(struct rtl8366_smi *smi) {}
-#endif /* CONFIG_RTL8366S_PHY_DEBUG_FS */
+#endif /* CONFIG_RTL8366_SMI_DEBUG_FS */
 
 static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 {
@@ -932,6 +932,31 @@ static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
 	mdiobus_unregister(smi->mii_bus);
 	mdiobus_free(smi->mii_bus);
 }
+
+int rtl8366_sw_reset_switch(struct switch_dev *dev)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int err;
+
+	err = smi->ops->reset_chip(smi);
+	if (err)
+		return err;
+
+	err = smi->ops->setup(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_reset_vlan(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_enable_vlan(smi, 1);
+	if (err)
+		return err;
+
+	return rtl8366_enable_all_ports(smi, 1);
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_reset_switch);
 
 int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val)
 {
@@ -1266,8 +1291,6 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (err)
 		goto err_out;
 
-	spin_lock_init(&smi->lock);
-
 	dev_info(smi->parent, "using GPIO pins %u (SDA) and %u (SCK)\n",
 		 smi->gpio_sda, smi->gpio_sck);
 
@@ -1276,6 +1299,10 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 		dev_err(smi->parent, "chip detection failed, err=%d\n", err);
 		goto err_free_sck;
 	}
+
+	err = smi->ops->reset_chip(smi);
+	if (err)
+		goto err_free_sck;
 
 	err = smi->ops->setup(smi);
 	if (err) {
