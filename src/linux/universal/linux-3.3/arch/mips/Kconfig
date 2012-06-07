@@ -877,6 +877,16 @@ config WR941
     depends on AR9100
     default n
 
+config WRT160NL
+    bool "wrt160nl wireless mac?"
+    depends on AR9100
+    default n
+
+config E2100L
+    bool "wrt160nl wireless mac?"
+    depends on AR9100
+    default n
+
 config  AR7100_LOW 
     bool "Support for loading AR7100 in low memory"
     depends on MACH_AR7100
