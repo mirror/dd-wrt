@@ -3027,8 +3027,17 @@ int check_wan_link(int num)
 		if ((fp = fopen("/proc/net/dev", "r"))) {
 			char line[256];
 			while (fgets(line, sizeof(line), fp) != NULL) {
-				if (strstr(line, "iph0")) {
-					wan_link = 1;
+				if (strstr(line, "iph0")) {					
+					int sock;
+					struct ifreq ifr;
+					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+					    break;
+					memset(&ifr, 0, sizeof(struct ifreq));
+					snprintf(ifr.ifr_name, IFNAMSIZ, "iph0");
+					ioctl(sock, SIOCGIFFLAGS, &ifr);
+					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
+						wan_link=1;
+					close(sock);
 					break;
 				}
 			}
