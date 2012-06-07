@@ -31,6 +31,7 @@ obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
 obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi.o
 obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
 obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb.o
+obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
 obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
 obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 #obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o

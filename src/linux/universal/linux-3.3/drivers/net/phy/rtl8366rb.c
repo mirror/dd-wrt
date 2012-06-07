@@ -265,7 +265,7 @@ static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
 	return 0;
 }
 
-static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
+static int rtl8366rb_setup(struct rtl8366_smi *smi)
 {
 	int err;
 
@@ -933,30 +933,6 @@ static int rtl8366rb_sw_reset_port_mibs(struct switch_dev *dev,
 				RTL8366RB_MIB_CTRL_PORT_RESET(val->port_vlan));
 }
 
-static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	int err;
-
-	err = rtl8366rb_reset_chip(smi);
-	if (err)
-		return err;
-
-	err = rtl8366rb_hw_init(smi);
-	if (err)
-		return err;
-
-	err = rtl8366_reset_vlan(smi);
-	if (err)
-		return err;
-
-	err = rtl8366_enable_vlan(smi, 1);
-	if (err)
-		return err;
-
-	return rtl8366_enable_all_ports(smi, 1);
-}
-
 static struct switch_attr rtl8366rb_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1084,7 +1060,7 @@ static const struct switch_dev_ops rtl8366_ops = {
 	.set_vlan_ports = rtl8366_sw_set_vlan_ports,
 	.get_port_pvid = rtl8366_sw_get_port_pvid,
 	.set_port_pvid = rtl8366_sw_set_port_pvid,
-	.reset_switch = rtl8366rb_sw_reset_switch,
+	.reset_switch = rtl8366_sw_reset_switch,
 	.get_port_link = rtl8366rb_sw_get_port_link,
 };
 
@@ -1138,18 +1114,6 @@ static int rtl8366rb_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	return err;
 }
 
-static int rtl8366rb_setup(struct rtl8366_smi *smi)
-{
-	int ret;
-
-	ret = rtl8366rb_reset_chip(smi);
-	if (ret)
-		return ret;
-
-	ret = rtl8366rb_hw_init(smi);
-	return ret;
-}
-
 static int rtl8366rb_detect(struct rtl8366_smi *smi)
 {
 	u32 chip_id = 0;
@@ -1185,6 +1149,7 @@ static int rtl8366rb_detect(struct rtl8366_smi *smi)
 
 static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.detect		= rtl8366rb_detect,
+	.reset_chip	= rtl8366rb_reset_chip,
 	.setup		= rtl8366rb_setup,
 
 	.mii_read	= rtl8366rb_mii_read,
