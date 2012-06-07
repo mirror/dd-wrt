@@ -763,6 +763,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 		}
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
@@ -818,6 +819,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 		}
 
 		pdata->has_gbit = 1;
