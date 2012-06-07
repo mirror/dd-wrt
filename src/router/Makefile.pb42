@@ -289,6 +289,13 @@ endif
 ifeq ($(CONFIG_IPETH),y)
 	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_E2100),y)
+	sed -i 's/\# CONFIG_E2100L is not set/CONFIG_E2100L=y/g' $(LINUXDIR)/.config
+else
+ifeq ($(CONFIG_WRT160NL),y)
+	sed -i 's/\# CONFIG_WRT160NL is not set/CONFIG_WRT160NL=y/g' $(LINUXDIR)/.config
+endif
+endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
