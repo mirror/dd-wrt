@@ -192,6 +192,10 @@ config RTL8366S_PHY_DEBUG_FS
 	depends on DEBUG_FS
 	default n
 
+config RTL8367_PHY
+	tristate "Driver for the Realtek RTL8367R/M switches"
+	select SWCONFIG
+
 endif # RTL8366_SMI
 
 endif # PHYLIB
