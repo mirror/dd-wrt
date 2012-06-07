@@ -211,6 +211,20 @@ extern void ar7100_serial_setup(void);
 
 static char wmac_mac[6];
 
+static void read_ascii_mac(u8 *dest, unsigned int src_addr)
+{
+	int ret;
+	u8 *src = (u8 *)KSEG1ADDR(src_addr);
+
+	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+		     &dest[0], &dest[1], &dest[2],
+		     &dest[3], &dest[4], &dest[5]);
+
+	if (ret != 6)
+		memset(dest, 0, 6);
+}
+
+
 
 int __init ar7100_platform_init(void)
 {
@@ -220,6 +234,15 @@ int __init ar7100_platform_init(void)
 #ifdef CONFIG_WR941
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	memcpy(wmac_mac, mac, sizeof(wmac_mac));
+	ath9k_pdata.macaddr = wmac_mac;
+#endif
+#ifdef CONFIG_WRT160NL
+	read_ascii_mac(wmac_mac, 0x1f03f288);
+	ath9k_pdata.macaddr = wmac_mac;
+
+#endif
+#ifdef CONFIG_E2100L
+	read_ascii_mac(wmac_mac, 0x1f03f29a);
 	ath9k_pdata.macaddr = wmac_mac;
 #endif
 
