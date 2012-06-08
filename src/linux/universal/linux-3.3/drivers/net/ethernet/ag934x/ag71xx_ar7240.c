@@ -293,6 +293,7 @@ struct ar7240sw {
 	int num_ports;
 	u8 ver;
 	bool vlan;
+	bool init;
 	u16 vlan_id[AR7240_MAX_VLANS];
 	u8 vlan_table[AR7240_MAX_VLANS];
 	u8 vlan_tagged;
@@ -872,7 +873,7 @@ ar7240_hw_apply(struct switch_dev *dev)
 	ar7240_vtu_op(as, AR7240_VTU_OP_FLUSH, 0);
 
 	memset(portmask, 0, sizeof(portmask));
-	if (as->vlan) {
+	if (!as->init) {
 		/* calculate the port destination masks and load vlans
 		 * into the vlan translation unit */
 		for (j = 0; j < AR7240_MAX_VLANS; j++) {
@@ -915,6 +916,7 @@ static int
 ar7240_reset_switch(struct switch_dev *dev)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
+	as->init = false;
 	ar7240sw_reset(as);
 	return 0;
 }
@@ -1103,6 +1105,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 		as->vlan_id[i] = i;
 
 	as->vlan_table[0] = ar7240sw_port_mask_all(as);
+	as->init = true;
 
 	return as;
 
