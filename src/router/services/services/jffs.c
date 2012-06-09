@@ -44,6 +44,8 @@ void start_jffs2(void)
 			insmod("crc32");
 			insmod("lzma_compress");
 			insmod("lzma_decompress");
+			insmod("lzo_compress");
+			insmod("lzo_decompress");
 			insmod("jffs2");
 
 			char dev[64];
