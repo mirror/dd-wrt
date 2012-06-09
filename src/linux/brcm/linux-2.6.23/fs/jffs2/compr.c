@@ -216,6 +216,7 @@ uint16_t jffs2_compress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
                         best->stat_compr_orig_size += best_slen;
                         best->stat_compr_new_size  += best_dlen;
                         ret = best->compr;
+			*cpage_out = output_buf;
                 }
                 spin_unlock(&jffs2_compressor_list_lock);
                 break;
@@ -236,9 +237,6 @@ uint16_t jffs2_compress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
 	        *datalen = *cdatalen;
                 none_stat_compr_blocks++;
                 none_stat_compr_size += *datalen;
-        }
-        else {
-                *cpage_out = output_buf;
         }
 	return ret;
 }
