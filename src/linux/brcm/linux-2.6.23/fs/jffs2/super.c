@@ -186,6 +186,33 @@ static int __init init_jffs2_fs(void)
 #ifdef CONFIG_JFFS2_SUMMARY
 	       " (SUMMARY) "
 #endif
+#ifdef CONFIG_JFFS2_ZLIB
+	       " (ZLIB)"
+#endif
+#ifdef CONFIG_JFFS2_LZO
+	       " (LZO)"
+#endif
+#ifdef CONFIG_JFFS2_LZMA
+	       " (LZMA)"
+#endif
+#ifdef CONFIG_JFFS2_RTIME
+	       " (RTIME)"
+#endif
+#ifdef CONFIG_JFFS2_RUBIN
+	       " (RUBIN)"
+#endif
+#ifdef  CONFIG_JFFS2_CMODE_NONE
+	       " (CMODE_NONE)"
+#endif
+#ifdef CONFIG_JFFS2_CMODE_PRIORITY
+	       " (CMODE_PRIORITY)"
+#endif
+#ifdef CONFIG_JFFS2_CMODE_SIZE
+	       " (CMODE_SIZE)"
+#endif
+#ifdef CONFIG_JFFS2_CMODE_FAVOURLZO
+	       " (CMODE_FAVOURLZO)"
+#endif
 	       " © 2001-2006 Red Hat, Inc.\n");
 
 	jffs2_inode_cachep = kmem_cache_create("jffs2_i",

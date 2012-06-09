@@ -1418,6 +1418,29 @@ config JFFS2_ZLIB
 
           Say 'Y' if unsure.
 
+config JFFS2_LZO
+	bool "JFFS2 LZO compression support" if JFFS2_COMPRESSION_OPTIONS
+	select LZO_COMPRESS
+	select LZO_DECOMPRESS
+	depends on JFFS2_FS
+	default n
+	help
+	  minilzo-based compression. Generally works better than Zlib.
+
+	  This feature was added in July, 2007. Say 'N' if you need
+	  compatibility with older bootloaders or kernels.
+
+config JFFS2_LZMA
+	bool "JFFS2 LZMA compression support" if JFFS2_COMPRESSION_OPTIONS
+	select LZMA_COMPRESS
+	select LZMA_DECOMPRESS
+	depends on JFFS2_FS
+	default n
+	help
+	  JFFS2 wrapper to the LZMA C SDK
+
+
+
 config JFFS2_RTIME
 	bool "JFFS2 RTIME compression support" if JFFS2_COMPRESSION_OPTIONS
 	depends on JFFS2_FS
@@ -1456,6 +1479,14 @@ config JFFS2_CMODE_SIZE
         help
           Tries all compressors and chooses the one which has the smallest
           result.
+
+config JFFS2_CMODE_FAVOURLZO
+	bool "Favour LZO"
+	help
+	  Tries all compressors and chooses the one which has the smallest
+	  result but gives some preference to LZO (which has faster
+	  decompression) at the expense of size.
+
 
 endchoice
 
