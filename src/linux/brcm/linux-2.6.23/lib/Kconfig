@@ -78,6 +78,12 @@ config LZO_COMPRESS
 config LZO_DECOMPRESS
 	tristate
 
+config LZMA_COMPRESS
+    tristate
+
+config LZMA_DECOMPRESS
+    tristate
+
 #
 # Generic allocator support is selected if needed
 #
