@@ -24,6 +24,106 @@ static int jffs2_compression_mode = JFFS2_COMPR_MODE_PRIORITY;
 /* Statistics for blocks stored without compression */
 static uint32_t none_stat_compr_blocks=0,none_stat_decompr_blocks=0,none_stat_compr_size=0;
 
+/*
+ * Return 1 to use this compression
+ */
+static int jffs2_is_best_compression(struct jffs2_compressor *this,
+		struct jffs2_compressor *best, uint32_t size, uint32_t bestsize)
+{
+	switch (jffs2_compression_mode) {
+	case JFFS2_COMPR_MODE_SIZE:
+		if (bestsize > size)
+			return 1;
+		return 0;
+	case JFFS2_COMPR_MODE_FAVOURLZO:
+		if ((this->compr == JFFS2_COMPR_LZO) && (bestsize > size))
+			return 1;
+		if ((best->compr != JFFS2_COMPR_LZO) && (bestsize > size))
+			return 1;
+		if ((this->compr == JFFS2_COMPR_LZO) && (bestsize > (size * FAVOUR_LZO_PERCENT / 100)))
+			return 1;
+		if ((bestsize * FAVOUR_LZO_PERCENT / 100) > size)
+			return 1;
+
+		return 0;
+	}
+	/* Shouldn't happen */
+	return 0;
+}
+
+
+/*
+ * jffs2_selected_compress:
+ * @compr: Explicit compression type to use (ie, JFFS2_COMPR_ZLIB).
+ *	If 0, just take the first available compression mode.
+ * @data_in: Pointer to uncompressed data
+ * @cpage_out: Pointer to returned pointer to buffer for compressed data
+ * @datalen: On entry, holds the amount of data available for compression.
+ *	On exit, expected to hold the amount of data actually compressed.
+ * @cdatalen: On entry, holds the amount of space available for compressed
+ *	data. On exit, expected to hold the actual size of the compressed
+ *	data.
+ *
+ * Returns: the compression type used.  Zero is used to show that the data
+ * could not be compressed; probably because we couldn't find the requested
+ * compression mode.
+ */
+static int jffs2_selected_compress(u8 compr, unsigned char *data_in,
+		unsigned char **cpage_out, u32 *datalen, u32 *cdatalen)
+{
+	struct jffs2_compressor *this;
+	int err, ret = JFFS2_COMPR_NONE;
+	uint32_t orig_slen, orig_dlen;
+	char *output_buf;
+
+	output_buf = kmalloc(*cdatalen, GFP_KERNEL);
+	if (!output_buf) {
+		printk(KERN_WARNING "JFFS2: No memory for compressor allocation. Compression failed.\n");
+		return ret;
+	}
+	orig_slen = *datalen;
+	orig_dlen = *cdatalen;
+	spin_lock(&jffs2_compressor_list_lock);
+	list_for_each_entry(this, &jffs2_compressor_list, list) {
+		/* Skip decompress-only and disabled modules */
+		if (!this->compress || this->disabled)
+			continue;
+
+		/* Skip if not the desired compression type */
+		if (compr && (compr != this->compr))
+			continue;
+
+		/*
+		 * Either compression type was unspecified, or we found our
+		 * compressor; either way, we're good to go.
+		 */
+		this->usecount++;
+		spin_unlock(&jffs2_compressor_list_lock);
+
+		*datalen  = orig_slen;
+		*cdatalen = orig_dlen;
+		err = this->compress(data_in, output_buf, datalen, cdatalen, NULL);
+
+		spin_lock(&jffs2_compressor_list_lock);
+		this->usecount--;
+		if (!err) {
+			/* Success */
+			ret = this->compr;
+			this->stat_compr_blocks++;
+			this->stat_compr_orig_size += *datalen;
+			this->stat_compr_new_size += *cdatalen;
+			break;
+		}
+	}
+	spin_unlock(&jffs2_compressor_list_lock);
+	if (ret == JFFS2_COMPR_NONE)
+		kfree(output_buf);
+	else
+		*cpage_out = output_buf;
+
+	return ret;
+}
+
 /* jffs2_compress:
  * @data: Pointer to uncompressed data
  * @cdata: Pointer to returned pointer to buffer for compressed data
@@ -57,38 +157,11 @@ uint16_t jffs2_compress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
         case JFFS2_COMPR_MODE_NONE:
                 break;
         case JFFS2_COMPR_MODE_PRIORITY:
-                output_buf = kmalloc(*cdatalen,GFP_KERNEL);
-                if (!output_buf) {
-                        printk(KERN_WARNING "JFFS2: No memory for compressor allocation. Compression failed.\n");
-                        goto out;
-                }
-                orig_slen = *datalen;
-                orig_dlen = *cdatalen;
-                spin_lock(&jffs2_compressor_list_lock);
-                list_for_each_entry(this, &jffs2_compressor_list, list) {
-                        /* Skip decompress-only backwards-compatibility and disabled modules */
-                        if ((!this->compress)||(this->disabled))
-                                continue;
-
-                        this->usecount++;
-                        spin_unlock(&jffs2_compressor_list_lock);
-                        *datalen  = orig_slen;
-                        *cdatalen = orig_dlen;
-                        compr_ret = this->compress(data_in, output_buf, datalen, cdatalen, NULL);
-                        spin_lock(&jffs2_compressor_list_lock);
-                        this->usecount--;
-                        if (!compr_ret) {
-                                ret = this->compr;
-                                this->stat_compr_blocks++;
-                                this->stat_compr_orig_size += *datalen;
-                                this->stat_compr_new_size  += *cdatalen;
-                                break;
-                        }
-                }
-                spin_unlock(&jffs2_compressor_list_lock);
-                if (ret == JFFS2_COMPR_NONE) kfree(output_buf);
+		ret = jffs2_selected_compress(0, data_in, cpage_out, datalen,
+				cdatalen);
                 break;
         case JFFS2_COMPR_MODE_SIZE:
+	case JFFS2_COMPR_MODE_FAVOURLZO:
                 orig_slen = *datalen;
                 orig_dlen = *cdatalen;
                 spin_lock(&jffs2_compressor_list_lock);
@@ -125,7 +198,8 @@ uint16_t jffs2_compress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
                         spin_lock(&jffs2_compressor_list_lock);
                         this->usecount--;
                         if (!compr_ret) {
-                                if ((!best_dlen)||(best_dlen>*cdatalen)) {
+				if (((!best_dlen) || jffs2_is_best_compression(this, best, *cdatalen, best_dlen))
+						&& (*cdatalen < *datalen)) {
                                         best_dlen = *cdatalen;
                                         best_slen = *datalen;
                                         best = this;
@@ -145,6 +219,14 @@ uint16_t jffs2_compress(struct jffs2_sb_info *c, struct jffs2_inode_info *f,
                 }
                 spin_unlock(&jffs2_compressor_list_lock);
                 break;
+	case JFFS2_COMPR_MODE_FORCELZO:
+		ret = jffs2_selected_compress(JFFS2_COMPR_LZO, data_in,
+				cpage_out, datalen, cdatalen);
+		break;
+	case JFFS2_COMPR_MODE_FORCEZLIB:
+		ret = jffs2_selected_compress(JFFS2_COMPR_ZLIB, data_in,
+				cpage_out, datalen, cdatalen);
+		break;
         default:
                 printk(KERN_ERR "JFFS2: unknow compression mode.\n");
         }
@@ -285,6 +367,9 @@ int __init jffs2_compressors_init(void)
         jffs2_rubinmips_init();
         jffs2_dynrubin_init();
 #endif
+#ifdef CONFIG_JFFS2_LZMA
+        jffs2_lzma_init();
+#endif
 /* Setting default compression mode */
 #ifdef CONFIG_JFFS2_CMODE_NONE
         jffs2_compression_mode = JFFS2_COMPR_MODE_NONE;
@@ -303,6 +388,9 @@ int __init jffs2_compressors_init(void)
 int jffs2_compressors_exit(void)
 {
 /* Unregistering compressors */
+#ifdef CONFIG_JFFS2_LZMA
+        jffs2_lzma_exit();
+#endif
 #ifdef CONFIG_JFFS2_RUBIN
         jffs2_dynrubin_exit();
         jffs2_rubinmips_exit();

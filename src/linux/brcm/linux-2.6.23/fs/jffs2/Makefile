@@ -19,4 +19,6 @@ jffs2-$(CONFIG_JFFS2_FS_POSIX_ACL)	+= acl.o
 jffs2-$(CONFIG_JFFS2_RUBIN)	+= compr_rubin.o
 jffs2-$(CONFIG_JFFS2_RTIME)	+= compr_rtime.o
 jffs2-$(CONFIG_JFFS2_ZLIB)	+= compr_zlib.o
+jffs2-$(CONFIG_JFFS2_LZO)	+= compr_lzo.o
+jffs2-$(CONFIG_JFFS2_LZMA)      += compr_lzma.o
 jffs2-$(CONFIG_JFFS2_SUMMARY)   += summary.o
