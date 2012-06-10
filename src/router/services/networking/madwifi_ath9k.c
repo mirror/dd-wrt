@@ -211,6 +211,16 @@ void configure_single_ath9k(int count)
 		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
+		char *clonename = "def_whwaddr";
+		if (!strcmp(apm, "sta"))
+			clonename = "def_hwaddr";
+		if (nvram_match("mac_clone_enable", "1")
+		    && nvram_invmatch(clonename, "00:00:00:00:00:00")
+		    && nvram_invmatch(clonename, "")) {
+			sysprintf("ifconfig %s hw ether %s", dev,
+				  nvram_safe_get(clonename));
+		}
+
 		setupSupplicant_ath9k(dev, NULL);
 	}
 	char *vifs = nvram_safe_get(wifivifs);
@@ -233,13 +243,12 @@ void configure_single_ath9k(int count)
 		setupHostAP_ath9k(dev, isfirst, counter, 0);
 		isfirst = 0;
 		counter++;
-
 		}
 
 }
 
-void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
-			       int aoss)
+void setupHostAP_generic_ath9k(char *prefix, FILE * fp,
+			       int isrepeater, int aoss)
 {
 	struct wifi_channels *chan;
 	int channel = 0;
@@ -247,7 +256,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	static char nfreq[16];
 	int i = 0;
 	char *caps;
-
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
 	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
@@ -286,18 +294,18 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[5];
 	int iht = 0;
-
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
 	     !strcmp(netmode, "n5-only") ||	//
-	     !strcmp(netmode, "mixed")) && strcmp(akm, "wep") && !aoss) {
+	     !strcmp(netmode, "mixed"))
+	    && strcmp(akm, "wep")
+	    && !aoss) {
 
 		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only")
 		    && strcmp(netmode, "na-only")) {
@@ -399,7 +407,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	free(caps);
 	if (chan)
 		free(chan);
-
 	if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
@@ -410,9 +417,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater,
 	} else {
 		fprintf(fp, "hw_mode=a\n");
 		if (!strcmp(netmode, "a-only")) {
-			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");		
+			fprintf(fp,
+				"supported_rates=60 90 120 180 240 360 480 540\n");
 		}
-	    
+
 	}
 	fprintf(fp, "channel=%d\n", channel);
 	fprintf(fp, "\n");
@@ -424,9 +432,7 @@ static void setMacFilter(FILE * fp, char *iface)
 {
 	char *next;
 	char var[32];
-
 	char nvvar[32];
-
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
 		fprintf(fp, "deny_mac_file=/tmp/%s_deny\n", iface);
@@ -461,23 +467,19 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 {
 	unsigned int addr[6];
 	int i;
-
 	if (sscanf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
 		   &addr[0], &addr[1], &addr[2], &addr[3], &addr[4],
 		   &addr[5]) != 6)
 		return -1;
-
 	/*
 	 * sscanf needs an unsigned int, but mac address bytes cannot exceed 0xff
 	 */
 	for (i = 0; i < 6; i++)
 		mac[i] = addr[i] & 0xff;
-
 	return 0;
 }
 
 extern void addWPS(FILE * fp, char *prefix, int configured);
-
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
@@ -511,12 +513,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #else
 	if (aoss)
 		sprintf(ifname, "aoss");
-
 #endif
 	sprintf(akm, "%s_akm", ifname);
 	if (nvram_match(akm, "8021X"))
 		return;
-
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
@@ -544,8 +544,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		hwbuff[0] |= 2;
 		hwbuff[0] ^= (vapid - 1) << 2;
 	}
-	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
-		hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0],
+		hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 	fprintf(fp, "bssid=%s\n", macaddr);
 	char vathmac[16];
 	sprintf(vathmac, "%s_hwaddr", ifname);
@@ -564,7 +564,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	sprintf(maxassoc, "%s_maxassoc", ifname);
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
-
 	if (aoss) {
 		if (!strncmp(ifname, "aossa", 5))
 			ssid = "ESSID-AOSS-1";
@@ -588,7 +587,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				led_control(LED_SEC0, LED_ON);
 			if (!strncmp(ifname, "ath1", 4))
 				led_control(LED_SEC1, LED_ON);
-
 		}
 		fprintf(fp, "logger_syslog=-1\n");
 		fprintf(fp, "logger_syslog_level=2\n");
@@ -610,7 +608,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "wep_key%d=4D454C434F\n", i - 1);
 			}
 			fprintf(fp, "wep_default_key=0\n");
-
 		} else {
 			for (i = 1; i < 5; i++) {
 				char *athkey =
@@ -626,16 +623,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-	} else if (nvram_match(akm, "psk") ||
-		   nvram_match(akm, "psk2") ||
-		   nvram_match(akm, "psk psk2") ||
-		   nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-		   || nvram_match(akm, "wpa wpa2")) {
+	} else
+	    if (nvram_match(akm, "psk") ||
+		nvram_match(akm, "psk2") ||
+		nvram_match(akm, "psk psk2") ||
+		nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
+		|| nvram_match(akm, "wpa wpa2")) {
 		if (!strncmp(ifname, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(ifname, "ath1", 4))
 			led_control(LED_SEC1, LED_ON);
-
 		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname));
@@ -656,7 +653,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_match(akm, "psk psk2")
 		    || nvram_match(akm, "wpa wpa2"))
 			fprintf(fp, "wpa=3\n");
-
 		if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
 		    || nvram_match(akm, "psk psk2")) {
 			if (strlen(nvram_nget("%s_wpa_psk", ifname)) == 64)
@@ -684,7 +680,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "eap_server=0\n");
 			fprintf(fp, "auth_algs=1\n");
 			fprintf(fp, "radius_retry_primary_interval=60\n");
-
 			fprintf(fp, "auth_server_addr=%s\n",
 				nvram_nget("%s_radius_ipaddr", ifname));
 			fprintf(fp, "auth_server_port=%s\n",
@@ -694,10 +689,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			char check[64];
 			sprintf(check, "%s_radius2_ipaddr", ifname);
 			nvram_default_get(check, "0.0.0.0");
-
 			if (!nvram_nmatch("", "%s_radius2_ipaddr", ifname)
-			    && !nvram_nmatch("0.0.0.0",
-					     "%s_radius2_ipaddr", ifname)
+			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr",
+					     ifname)
 			    && !nvram_nmatch("", "%s_radius2_port", ifname)) {
 				fprintf(fp, "auth_server_addr=%s\n",
 					nvram_nget("%s_radius2_ipaddr",
@@ -775,26 +769,22 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 #endif
 	char akm[16];
 	int i;
-
 	sprintf(akm, "%s_akm", prefix);
-	if (nvram_match(akm, "psk") ||
-	    nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+	if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
+	    || nvram_match(akm, "psk psk2")) {
 		char fstr[32];
 		char psk[16];
 		if (!strncmp(prefix, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "ath1", 4))
 			led_control(LED_SEC1, LED_ON);
-
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
-
 		fprintf(fp, "network={\n");
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
@@ -802,7 +792,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=WPA-PSK\n");
-
 		sprintf(psk, "%s_crypto", prefix);
 		if (nvram_match(psk, "aes")) {
 #if 1
@@ -837,7 +826,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		sprintf(extra, "%s_supplicantext", prefix);
 		if (nvram_invmatch(extra, ""))
 			fwritenvram(extra, fp);
-
 		fclose(fp);
 	} else if (nvram_match(akm, "8021X")) {
 		char fstr[32];
@@ -847,10 +835,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "ath1", 4))
 			led_control(LED_SEC1, LED_ON);
-
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
@@ -874,7 +860,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			sprintf(psk, "/tmp/%s/user.pem", prefix);
 			sprintf(ath, "%s_tls8021xpem", prefix);
 			write_nvram(psk, ath);
-
 			sprintf(psk, "/tmp/%s/user.prv", prefix);
 			sprintf(ath, "%s_tls8021xprv", prefix);
 			write_nvram(psk, ath);
@@ -1027,11 +1012,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-
 		fprintf(fp, "ap_scan=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
-
 		fprintf(fp, "network={\n");
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
@@ -1042,16 +1025,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (nvram_match(akm, "wep")) {
 			int cnt = 0;
 			char *authmode = nvram_nget("%s_authmode", prefix);
-
 			if (!strcmp(authmode, "shared"))
 				fprintf(fp, "auth_alg=SHARED\n");
 			else
 				fprintf(fp, "auth_alg=OPEN\n");
-
 			for (i = 1; i < 5; i++) {
 				char *athkey =
 				    nvram_nget("%s_key%d", prefix, i);
-
 				if (athkey != NULL && strlen(athkey) > 0) {
 					fprintf(fp, "wep_key%d=%s\n", cnt++, athkey);	// setup wep
 				}
@@ -1059,21 +1039,18 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 
 			fprintf(fp, "wep_tx_keyidx=%s\n",
 				nvram_nget("%s_key", prefix));
-
 		}
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
 		if (nvram_invmatch(extra, ""))
 			fwritenvram(extra, fp);
-
 		fclose(fp);
 	}
 
 }
 
 extern void do_hostapd(char *fstr, char *prefix);
-
 void ath9k_start_supplicant(int count)
 {
 // erst hostapd starten fuer repeater mode
@@ -1086,7 +1063,6 @@ void ath9k_start_supplicant(int count)
 	static char mode[80];
 	static char dev[10];
 	static char power[32];
-
 	char *apm, *vifs;
 	static char wl[16];
 	static char ctrliface[32] = "";
@@ -1116,7 +1092,8 @@ void ath9k_start_supplicant(int count)
 		else if (!strcmp(debug, "3"))
 			background = "-Bddd";
 	}
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	    && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
 	} else {
@@ -1173,7 +1150,6 @@ void ath9k_start_supplicant(int count)
 	if (strcmp(apm, "sta")) {
 #endif
 		char bridged[32];
-
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "1", "1")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
@@ -1210,7 +1186,6 @@ void ath9k_start_supplicant(int count)
 			char *m2 = nvram_safe_get(mode);
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
-
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_match(bridged, "1", "1")) {
 					sysprintf
@@ -1219,7 +1194,6 @@ void ath9k_start_supplicant(int count)
 				} else {
 					char ip[32];
 					char mask[32];
-
 					sprintf(ip, "%s_ipaddr", var);
 					sprintf(mask, "%s_netmask", var);
 					sysprintf("ifconfig %s mtu %s",
@@ -1235,12 +1209,17 @@ void ath9k_start_supplicant(int count)
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
 		int s;
 		for (s = 1; s <= 10; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
-			char wdsmacname[32] = { 0 };
+			char wdsvarname[32] = {
+				0
+			};
+			char wdsdevname[32] = {
+				0
+			};
+			char wdsmacname[32] = {
+				0
+			};
 			char *wdsdev;
 			char *hwaddr;
-
 			sprintf(wdsvarname, "%s_wds%d_enable", dev, s);
 			sprintf(wdsdevname, "%s_wds%d_if", dev, s);
 			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
@@ -1261,6 +1240,5 @@ void ath9k_start_supplicant(int count)
 	}
 	int newpower = atoi(nvram_default_get(power, "16"));
 	sysprintf("iw phy %s set txpower fixed %d", wif, newpower * 100);
-
 }
 #endif
