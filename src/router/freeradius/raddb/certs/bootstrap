@@ -33,7 +33,7 @@ fi
 if [ -e ./dh ] ; then
 	echo "Nothing todo";
 else
-	openssl dhparam -out dh 1024 || exit 1;
+	openssl dhparam -out dh -2 -rand /dev/urandom 1024 || exit 1;
 fi
 if [ -e /dev/urandom ] ; then
 	dd if=/dev/urandom of=./random count=10 >/dev/null 2>&1;
