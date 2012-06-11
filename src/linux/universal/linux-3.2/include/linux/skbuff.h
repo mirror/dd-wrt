@@ -1886,8 +1886,6 @@ static inline int __skb_cow(struct sk_buff *skb, unsigned int headroom,
 	unsigned int alloc_headroom = headroom;
 	int delta = 0;
 
-	if (headroom < NET_SKB_PAD)
-		alloc_headroom = NET_SKB_PAD;
 	if (headroom > skb_headroom(skb) ||
 	    (cloned && alloc_headroom > skb_headroom(skb))) {
 		delta = alloc_headroom - skb_headroom(skb);
