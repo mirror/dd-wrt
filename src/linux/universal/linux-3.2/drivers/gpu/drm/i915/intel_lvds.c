@@ -716,6 +716,14 @@ static const struct dmi_system_id intel_no_lvds[] = {
 		},
 	},
 	{
+                .callback = intel_no_lvds_dmi_callback,
+                .ident = "Clientron E830",
+                .matches = {
+                        DMI_MATCH(DMI_SYS_VENDOR, "Clientron"),
+                        DMI_MATCH(DMI_PRODUCT_NAME, "E830"),
+                },
+        },
+        {
 		.callback = intel_no_lvds_dmi_callback,
 		.ident = "Asus EeeBox PC EB1007",
 		.matches = {
@@ -729,6 +737,30 @@ static const struct dmi_system_id intel_no_lvds[] = {
 		.matches = {
 			DMI_MATCH(DMI_BOARD_VENDOR, "ASUSTeK Computer INC."),
 			DMI_MATCH(DMI_BOARD_NAME, "AT5NM10T-I"),
+		},
+	},
+	{
+		.callback = intel_no_lvds_dmi_callback,
+		.ident = "Hewlett-Packard HP t5740e Thin Client",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "Hewlett-Packard"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "HP t5740e Thin Client"),
+		},
+	},
+	{
+		.callback = intel_no_lvds_dmi_callback,
+		.ident = "Hewlett-Packard t5745",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "Hewlett-Packard"),
+			DMI_MATCH(DMI_BOARD_NAME, "hp t5745"),
+		},
+	},
+	{
+		.callback = intel_no_lvds_dmi_callback,
+		.ident = "Hewlett-Packard st5747",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "Hewlett-Packard"),
+			DMI_MATCH(DMI_BOARD_NAME, "hp st5747"),
 		},
 	},
 	{

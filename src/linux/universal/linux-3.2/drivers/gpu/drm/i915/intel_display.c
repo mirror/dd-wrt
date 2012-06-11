@@ -1864,7 +1864,7 @@ static void intel_update_fbc(struct drm_device *dev)
 	if (enable_fbc < 0) {
 		DRM_DEBUG_KMS("fbc set to per-chip default\n");
 		enable_fbc = 1;
-		if (INTEL_INFO(dev)->gen <= 5)
+		if (INTEL_INFO(dev)->gen <= 6)
 			enable_fbc = 0;
 	}
 	if (!enable_fbc) {
@@ -8005,7 +8005,7 @@ void gen6_enable_rps(struct drm_i915_private *dev_priv)
 	I915_WRITE(GEN6_RP_IDLE_HYSTERSIS, 10);
 	I915_WRITE(GEN6_RP_CONTROL,
 		   GEN6_RP_MEDIA_TURBO |
-		   GEN6_RP_USE_NORMAL_FREQ |
+		   GEN6_RP_MEDIA_HW_NORMAL_MODE |
 		   GEN6_RP_MEDIA_IS_GFX |
 		   GEN6_RP_ENABLE |
 		   GEN6_RP_UP_BUSY_AVG |
