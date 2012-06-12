@@ -218,9 +218,9 @@ int mtd_write(const char *path, const char *mtd)
 	long sum = 0;		// for debug
 	int ret = -1;
 	int i;
+	int skipoffset=0;
 	unsigned char lzmaloader[4096];
 	int brand = getRouterBrand();
-
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -508,18 +508,20 @@ int mtd_write(const char *path, const char *mtd)
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
+			again:;
 			fprintf(stderr,
 				"write block [%ld] at [0x%08X]        \n",
 				i * mtd_info.erasesize,
-				base + (i * mtd_info.erasesize));
-			erase_info.start = base + (i * mtd_info.erasesize);
+				base + ((i+skipoffset) * mtd_info.erasesize));
+			erase_info.start = base + ((i+skipoffset) * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0
-			    || write(mtd_fd, buf + (i * mtd_info.erasesize),
+			    || write(mtd_fd, buf + ((i+skipoffset) * mtd_info.erasesize),
 				     mtd_info.erasesize) !=
 			    mtd_info.erasesize) {
-				perror(mtd);
-				goto fail;
+				fprintf(stderr,"erase/write failed, skip block\n");
+				skipoffset++;
+				goto again;
 			}
 		}
 	}
