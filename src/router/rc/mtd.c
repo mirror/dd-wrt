@@ -176,14 +176,13 @@ struct img_info {
 	uint32_t CRC;
 };
 
-
 struct code_header {
 	char magic[4];
-	char res1[4];	// for extra magic
+	char res1[4];		// for extra magic
 	char fwdate[3];
 	char fwvern[3];
-	char id[4];	// U2ND
-	char hw_ver;    // 0) for 4702, 1) for 4712, 2) for 4712L, 3) for 4704
+	char id[4];		// U2ND
+	char hw_ver;		// 0) for 4702, 1) for 4712, 2) for 4712L, 3) for 4704
 	char res2;
 	unsigned short flags;
 	unsigned char res3[10];
@@ -218,7 +217,7 @@ int mtd_write(const char *path, const char *mtd)
 	long sum = 0;		// for debug
 	int ret = -1;
 	int i;
-	int skipoffset=0;
+	int skipoffset = 0;
 	unsigned char lzmaloader[4096];
 	int brand = getRouterBrand();
 	/* 
@@ -236,21 +235,20 @@ int mtd_write(const char *path, const char *mtd)
 		fread(lzmaloader, WGR614_LZMA_LOADER_SIZE, 1, fp);
 		fclose(fp);
 	}
-
-#ifdef HAVE_BCMMODERN		
+#ifdef HAVE_BCMMODERN
 	unsigned long trxhd = STORE32_LE(TRX_MAGIC);
-	
-	if (brand == ROUTER_BELKIN_F7D3301 
-		|| brand == ROUTER_BELKIN_F7D3302
-		|| brand == ROUTER_BELKIN_F7D4302
-		|| brand == ROUTER_BELKIN_F5D8235V3) {
-			if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
-				fread(&trxhd, 4, 1, fp);
-				fclose(fp);
-			}
+
+	if (brand == ROUTER_BELKIN_F7D3301
+	    || brand == ROUTER_BELKIN_F7D3302
+	    || brand == ROUTER_BELKIN_F7D4302
+	    || brand == ROUTER_BELKIN_F5D8235V3) {
+		if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
+			fread(&trxhd, 4, 1, fp);
+			fclose(fp);
+		}
 	}
 #endif
-	
+
 	nvram_set("flash_active", "1");
 	sleep(1);
 
@@ -258,12 +256,13 @@ int mtd_write(const char *path, const char *mtd)
 	 * Examine TRX header 
 	 */
 #ifdef HAVE_WRT160NL
-	fprintf(stderr,"size of ETRX header = %d\n",sizeof(struct etrx_header));
+	fprintf(stderr, "size of ETRX header = %d\n",
+		sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	else
 		return -1;
-	memcpy(&trx,&etrx.trx,sizeof(struct trx_header));
+	memcpy(&trx, &etrx.trx, sizeof(struct trx_header));
 #else
 	if ((fp = fopen(path, "r")))
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
@@ -437,13 +436,13 @@ int mtd_write(const char *path, const char *mtd)
 		    || erase_info.start)
 			count = off = 0;
 		else {
-		#ifdef HAVE_WRT160NL
+#ifdef HAVE_WRT160NL
 			count = off = sizeof(struct etrx_header);
 			memcpy(buf, &etrx, sizeof(struct etrx_header));
-		#else
+#else
 			count = off = sizeof(struct trx_header);
 			memcpy(buf, &trx, sizeof(struct trx_header));
-		#endif
+#endif
 		}
 		// if (fp)
 		count += safe_fread(&buf[off], 1, len - off, fp);
@@ -489,11 +488,11 @@ int mtd_write(const char *path, const char *mtd)
 		/* 
 		 * Check CRC before writing if possible 
 		 */
-		#ifdef HAVE_WRT160NL
+#ifdef HAVE_WRT160NL
 		if (count == trx.len + sizeof(struct code_header)) {
-		#else
-		if (count == trx.len) {		
-		#endif
+#else
+		if (count == trx.len) {
+#endif
 			if (crc != trx.crc32) {
 				fprintf(stderr, "%s: Bad CRC\n", path);
 				goto fail;
@@ -508,21 +507,27 @@ int mtd_write(const char *path, const char *mtd)
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
-			again:;
+		      again:;
 			fprintf(stderr,
 				"write block [%ld] at [0x%08X]        \n",
 				i * mtd_info.erasesize,
-				base + ((i+skipoffset) * mtd_info.erasesize));
-			erase_info.start = base + ((i+skipoffset) * mtd_info.erasesize);
+				base + ((i + skipoffset) * mtd_info.erasesize));
+			erase_info.start =
+			    base + ((i + skipoffset) * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0
-			    || write(mtd_fd, buf + ((i+skipoffset) * mtd_info.erasesize),
-				     mtd_info.erasesize) !=
-			    mtd_info.erasesize) {
-				fprintf(stderr,"erase/write failed, skip block\n");
+			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+				fprintf(stderr,
+					"erase/write failed, skip block\n");
 				skipoffset++;
 				goto again;
 			}
+			lseek(mtd_fd,
+			      (i + skipoffset) * mtd_info.erasesize, SEEK_SET);
+			if (write(mtd_fd,buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
+				perror(mtd);
+				goto fail;
+			}
+
 		}
 	}
 	/* 
@@ -530,21 +535,18 @@ int mtd_write(const char *path, const char *mtd)
 	 */
 	int sector_start;
 	char *tmp;
-
 	if (brand == ROUTER_NETGEAR_WGR614L
 	    || brand == ROUTER_NETGEAR_WNR834B
 	    || brand == ROUTER_NETGEAR_WNR834BV2
 	    || brand == ROUTER_NETGEAR_WNDR3300
-//	    || brand == ROUTER_NETGEAR_WNDR4000
+//          || brand == ROUTER_NETGEAR_WNDR4000
 	    || brand == ROUTER_NETGEAR_WNR3500L) {
 #ifndef NETGEAR_CRC_FAKE
 		cal_chksum = calculate_checksum(2, NULL, 0);
 #endif
-
 		char imageInfo[8];
 		unsigned long cfe_size = CFE_SIZE_128K;
 		unsigned long flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_4M;
-
 		if (brand == ROUTER_NETGEAR_WNR3500L) {
 			cfe_size = CFE_SIZE_256K;
 			if (mtd_info.size > FLASH_SIZE_4M) {
@@ -556,7 +558,7 @@ int mtd_write(const char *path, const char *mtd)
 			cfe_size = CFE_SIZE_256K;
 			flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_8M_2;
 		}
-*/		
+*/
 #ifndef NETGEAR_CRC_FAKE
 		trx.len = STORE32_LE(trx.len);
 		cal_chksum = STORE32_LE(cal_chksum);
@@ -566,25 +568,21 @@ int mtd_write(const char *path, const char *mtd)
 #endif
 		memcpy(&imageInfo[0], (char *)&trx.len, 4);
 		memcpy(&imageInfo[4], (char *)&cal_chksum, 4);
-
 		sector_start =
-		    ((flash_len_chk_addr - cfe_size) / mtd_info.erasesize) *
-		    mtd_info.erasesize;
-
+		    ((flash_len_chk_addr -
+		      cfe_size) / mtd_info.erasesize) * mtd_info.erasesize;
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
 		}
 
 		free(buf);
-
 		if (!(buf = malloc(mtd_info.erasesize))) {
 			//fprintf( stderr, "Error allocating image block\n");
 			goto fail;
 		}
 
 		memset(buf, 0, mtd_info.erasesize);
-
 		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error reading last block from MTD device\n" );
 			goto fail;
@@ -598,15 +596,15 @@ int mtd_write(const char *path, const char *mtd)
 		erase_info.start = sector_start;
 		erase_info.length = mtd_info.erasesize;
 		ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 			//fprintf( stderr, "Error erasing MTD block\n" );
 			goto fail;
 		}
 
-		tmp = buf + ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
+		tmp =
+		    buf +
+		    ((flash_len_chk_addr - cfe_size) % mtd_info.erasesize);
 		memcpy(tmp, imageInfo, sizeof(imageInfo));
-
 		if (write(mtd_fd, buf, mtd_info.erasesize) !=
 		    mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing chksum to MTD device\n" );
@@ -614,9 +612,13 @@ int mtd_write(const char *path, const char *mtd)
 		}
 		//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
 #ifndef NETGEAR_CRC_FAKE
-		fprintf(stderr, "Write len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
+		fprintf(stderr,
+			"Write len/chksum @ 0x%X ...done.\n",
+			flash_len_chk_addr);
 #else
-		fprintf(stderr, "Write fake len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
+		fprintf(stderr,
+			"Write fake len/chksum @ 0x%X ...done.\n",
+			flash_len_chk_addr);
 #endif
 	}
 
@@ -625,21 +627,18 @@ int mtd_write(const char *path, const char *mtd)
 		int offset = trx.offsets[0];
 		sector_start =
 		    (offset / mtd_info.erasesize) * mtd_info.erasesize;
-
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
 		}
 
 		free(buf);
-
 		if (!(buf = malloc(mtd_info.erasesize))) {
 			//fprintf( stderr, "Error allocating image block\n");
 			goto fail;
 		}
 
 		memset(buf, 0, mtd_info.erasesize);
-
 		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error reading first block from MTD device\n" );
 			goto fail;
@@ -653,7 +652,6 @@ int mtd_write(const char *path, const char *mtd)
 		erase_info.start = sector_start;
 		erase_info.length = mtd_info.erasesize;
 		ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 			//fprintf( stderr, "Error erasing MTD block\n" );
 			goto fail;
@@ -674,37 +672,31 @@ int mtd_write(const char *path, const char *mtd)
 		}
 
 		fprintf(stderr, "Write lzma loader...done.\n");
-
 	}			// end
-	
+
 #ifdef HAVE_BCMMODERN
 	/* Write Belkin magic */
-	if (brand == ROUTER_BELKIN_F7D3301 
-		|| brand == ROUTER_BELKIN_F7D3302
-		|| brand == ROUTER_BELKIN_F7D4302
-		|| brand == ROUTER_BELKIN_F5D8235V3) {
+	if (brand == ROUTER_BELKIN_F7D3301
+	    || brand == ROUTER_BELKIN_F7D3302
+	    || brand == ROUTER_BELKIN_F7D4302
+	    || brand == ROUTER_BELKIN_F5D8235V3) {
 
 		sector_start = 0;
 		unsigned long be_magic = STORE32_LE(trxhd);
 		char be_trx[4];
-
 		memcpy(&be_trx[0], (char *)&be_magic, 4);
-		
-
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
 			//fprintf( stderr, "Error seeking the file descriptor\n" );
 			goto fail;
 		}
 
 		free(buf);
-
 		if (!(buf = malloc(mtd_info.erasesize))) {
 			//fprintf( stderr, "Error allocating image block\n");
 			goto fail;
 		}
 
 		memset(buf, 0, mtd_info.erasesize);
-
 		if (read(mtd_fd, buf, mtd_info.erasesize) != mtd_info.erasesize) {
 			//fprintf( stderr, "Error reading first block from MTD device\n" );
 			goto fail;
@@ -718,14 +710,12 @@ int mtd_write(const char *path, const char *mtd)
 		erase_info.start = sector_start;
 		erase_info.length = mtd_info.erasesize;
 		ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 			//fprintf( stderr, "Error erasing MTD block\n" );
 			goto fail;
 		}
 
-		memcpy(buf, be_trx, 4);	
-
+		memcpy(buf, be_trx, 4);
 		if (write(mtd_fd, buf, mtd_info.erasesize) !=
 		    mtd_info.erasesize) {
 			//fprintf( stderr, "Error writing Belkin magic to MTD device\n" );
@@ -733,12 +723,10 @@ int mtd_write(const char *path, const char *mtd)
 		}
 
 		fprintf(stderr, "Write Belkin magic...done.\n");
-
-	}		// end
+	}			// end
 #endif
 
 	ret = 0;
-
 fail:
 	nvram_set("flash_active", "0");
 	if (buf) {
@@ -751,7 +739,6 @@ fail:
 
 	if (mtd_fd >= 0)
 		close(mtd_fd);
-
 	if (fp)
 		fclose(fp);
 #ifdef HAVE_CA8
@@ -759,11 +746,9 @@ fail:
 #ifndef HAVE_USR5453
 	buf = malloc(65536);
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
-
 	fread(buf, 65536, 1, in);
 	fclose(in);
 	struct img_info *image_info;
-
 	image_info = buf + 0x56;
 	image_info->lenght = data_len;
 	image_info->CRC = crc_data;
@@ -778,10 +763,9 @@ fail:
 #ifdef HAVE_WZRHPAG300NH
 	// must delete checksum, otherwise device will not boot anymore. the checksum gets recreated by the bootloader
 	if (!ret)
-	    sysprintf("ubootenv del buf_crc");
+		sysprintf("ubootenv del buf_crc");
 #endif
 	// eval("fischecksum");
-
 	return ret;
 }
 
@@ -796,7 +780,6 @@ int mtd_unlock(const char *mtd)
 	int mtd_fd;
 	struct mtd_info_user mtd_info;
 	struct erase_info_user lock_info;
-
 	/* 
 	 * Open MTD device 
 	 */
@@ -816,7 +799,6 @@ int mtd_unlock(const char *mtd)
 
 	lock_info.start = 0;
 	lock_info.length = mtd_info.size;
-
 	if (ioctl(mtd_fd, MEMUNLOCK, &lock_info)) {
 		fprintf(stderr, "Could not unlock MTD device: %s\n", mtd);
 		perror(mtd);
@@ -835,28 +817,22 @@ static unsigned long calculate_checksum(int action, char *s, int size)
 	static unsigned long c0, c1;
 	unsigned long checksum, b;
 	int i;
-
 	switch (action) {
 	case 0:
 		c0 = c1 = 0;
 		break;
-
 	case 1:
 		for (i = 0; i < size; i++) {
 			c0 += s[i] & 0xff;
 			c1 += c0;
 		}
 		break;
-
 	case 2:
 		b = (c0 & 65535) + ((c0 >> 16) & 65535);
 		c0 = ((b >> 16) + b) & 65535;
-
 		b = (c1 & 65535) + ((c1 >> 16) & 65535);
 		c1 = ((b >> 16) + b) & 65535;
-
 		checksum = ((c1 << 16) | c0);
-
 		return checksum;
 	}
 	return 0;
