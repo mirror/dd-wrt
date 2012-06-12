@@ -87,6 +87,9 @@ endif
 ifeq ($(CONFIG_OVERCLOCKING),y)
 CFLAGS += -DHAVE_OVERCLOCKING
 endif
+ifeq ($(CONFIG_80211AC),y)
+  CFLAGS += -DHAVE_80211AC
+endif
 
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
