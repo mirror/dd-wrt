@@ -3057,7 +3057,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 			continue;
 		}
 
-		int len = 0;
+		int len = 32;
 		len += strlen(new_name) + 1;
 		len += strlen(enable) + 1;
 		len += strlen(proto) + 1;
@@ -3077,16 +3077,18 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		/*cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
 		   cur == buf ? "" : " ", new_name, enable, proto,
 		   i_from, i_to, o_from, o_to); */
-		newbuf = (char *)safe_malloc(strlen(buf) + len);
-		newbuf = strcat(buf, entry);
+		newbuf = (char *)safe_malloc(strlen(buf) + len + 1);
+		strcpy(newbuf, buf);
+		strcat(newbuf, entry);
 		free(entry);
-		buf = (char *)safe_malloc(strlen(newbuf));
-		strcpy(buf, newbuf);
-		free(newbuf);
+		free(buf);
+		buf = newbuf;
 	}
 
 	if (!error)
+		{
 		nvram_set(v->name, buf);
+		}
 	free(buf);
 }
 
