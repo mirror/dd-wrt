@@ -702,7 +702,7 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 	struct squashfs_super_block sb;
 	int len, ret;
 
-	ret = master->read(master, offset, sizeof(sb), &len, (void *) &sb);
+	ret = mtd_read(master, offset, sizeof(sb), &len, (void *) &sb);
 	if (ret || (len != sizeof(sb))) {
 		printk(KERN_ALERT "split_squashfs: error occured while reading "
 			"from \"%s\"\n", master->name);
