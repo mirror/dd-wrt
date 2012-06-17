@@ -16,7 +16,6 @@
 
 #include <asm/io.h>
 #include <asm/uaccess.h>
-#include <asm/system.h>
 #include <asm/addrspace.h>
 
 #define AR5315_DSLBASE          0xB1000000      /* RESET CONTROL MMR */
