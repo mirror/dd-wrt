@@ -505,6 +505,8 @@ ifneq ($(CONFIG_SAMBA),y)
 endif
 ifneq ($(CONFIG_JFFS2),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzo
 endif
 ifneq ($(CONFIG_MMC),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
@@ -644,11 +646,11 @@ ifeq ($(CONFIG_MERAKI),y)
 	dd if=$(ARCH)-uclibc/lzma_vmlinus.m of=$(ARCH)-uclibc/lzma_vmlinus.meraki bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/lzma_vmlinus.meraki
 endif
-ifeq ($(CONFIG_NP25G),y)
-	gzip -9 $(ARCH)-uclibc/lzma_vmlinus.m
-	dd if=$(ARCH)-uclibc/lzma_vmlinus.m.gz of=$(ARCH)-uclibc/lzma_vmlinus.np25g.gz bs=65536 conv=sync
-	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/lzma_vmlinus.np25g.gz
-endif
+#ifeq ($(CONFIG_NP25G),y)
+#	gzip -9 $(ARCH)-uclibc/lzma_vmlinus.m
+#	dd if=$(ARCH)-uclibc/lzma_vmlinus.m.gz of=$(ARCH)-uclibc/lzma_vmlinus.np25g.gz bs=65536 conv=sync
+#	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/lzma_vmlinus.np25g.gz
+#endif
 ifeq ($(CONFIG_DIR300),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dir300 bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.dir300
@@ -790,7 +792,7 @@ ifeq ($(CONFIG_MR3202A),y)
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/mr3202a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3202a
 endif
 ifeq ($(CONFIG_NP25G),y)
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/np25g-firmware.bin $(ARCH)-uclibc/lzma_vmlinus.np25g.gz
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/np25g-firmware.bin $(ARCH)-uclibc/vmlinux.mr3202a
 endif
 ifeq ($(CONFIG_WPE53G),y)
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/np25g-firmware.bin $(ARCH)-uclibc/vmlinux.wpe53g
