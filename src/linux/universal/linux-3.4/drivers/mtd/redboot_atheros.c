@@ -93,7 +93,7 @@ restart:
 	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
 	       master->name, offset);
 
-	ret = master->read(master, offset,
+	ret = mtd_read(master, offset,
 			   master->erasesize, &retlen, (void *)buf);
 
 	if (ret)
