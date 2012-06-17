@@ -1339,7 +1339,8 @@ service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //help container
 var hpppoesrv = new Object();
-hpppoesrv.right2="IP: 0.0.0.0; you'll serve IP's from the pool";
+hpppoesrv.right2="IP: 0.0.0.0 -> You'll serve IP's from the pool";
+hpppoesrv.right3="You MUST set the correct amount of associated clients according your IP range";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
