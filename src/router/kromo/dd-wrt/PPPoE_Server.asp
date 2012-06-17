@@ -117,10 +117,12 @@ addEvent(window, "unload", function() {
 				<div class="label"><% tran("service.pppoesrv_interface"); %></div>
 				<% show_ifselect("pppoeserver_interface"); %>
 			</div>
-			<div class="setting">
-				<div class="label"><% tran("share.ip"); %></div>
-				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="radius" <% nvram_checked("pppoeserver_clip", "radius"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("radius.legend"); %>
-				<input class="spaceradio" type="radio" name="pppoeserver_clip" value="local" <% nvram_checked("pppoeserver_clip", "local"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("share.localip"); %>
+			<div id="idpppoerad">
+				<div class="setting">
+					<div class="label"><% tran("share.ip"); %></div>
+					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="radius" <% nvram_checked("pppoeserver_clip", "radius"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("radius.legend"); %>
+					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="local" <% nvram_checked("pppoeserver_clip", "local"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("share.localip"); %>
+				</div>
 			</div>
 			<div id="idpppoeiploc">			
 				<div class="setting">
@@ -301,6 +303,8 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
+							<dt class="term"><% tran("wl_adv.label1"); %>:</dt>
+							<dd class="definition"><% tran("hpppoesrv.right3"); %></dd>
 							<dt class="term"><% tran("service.pppoesrv_chaps"); %>:</dt>
 							<dd class="definition"><% tran("hpppoesrv.right2"); %></dd>
 						</dl><br />
