@@ -143,6 +143,9 @@ endif
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
 endif
+ifeq ($(CONFIG_NP25G),y)
+CFLAGS += -DHAVE_NP25G
+endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
