@@ -1280,7 +1280,7 @@ service.pppoesrv_chaps="Gerenciamento Local de Usuário (Segredos CHAP)";
 
 //help container
 hpppoesrv.right2="Endereço IP: 0.0.0.0 -> Você fornecerá os endereços IP do pool";
-hpppoesrv.right3="Você DEVE definir a quantidade correta de clientes associados de acordo com sua faixa de endereços IP"
+hpppoesrv.right3="Você DEVE definir a quantidade correta de clientes associados de acordo com sua faixa de endereços IP";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
