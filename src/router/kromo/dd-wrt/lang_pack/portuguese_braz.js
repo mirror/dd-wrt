@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update                             - DD-WRT V24 SP2 by mrc_torres 09/MAR/2012       //
+//      Update (19365 based)               - DD-WRT V24 SP2 by mrc_torres 17/JUN/2012       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -39,9 +39,9 @@ share.mlppp="Single Line Multi Link";
 share.vpi_vci="VPI/VCI";
 share.encaps="Encapsulamento";
 share.payload="Tipo de Carga Útil";
-share.domainname="Nome de Domínio";
-share.wandomainname="Nome de Domínio WAN";
-share.landomainname="Nome de Domínio LAN";
+share.domainname="Nome do Domínio";
+share.wandomainname="Nome do Domínio WAN";
+share.landomainname="Nome do Domínio LAN";
 share.statu="Status";
 share.start="Da Porta";
 share.end="Até a Porta";
@@ -97,7 +97,7 @@ share.dec="Dezembro";
 share.expires="Expira em";
 share.yes="Sim";
 share.no="Não";
-share.filter="Filtro";
+share.filter="Filtrar";
 share.deny="Negar";
 share.range="Faixa";
 share.use="Usar";
@@ -115,7 +115,7 @@ share.noise="Ruído";
 share.beacon="beacon";
 share.openn="Aberto";
 share.dtim="dtim";
-share.rates="Taxas";
+share.rates="Taxa";
 share.rate="Taxa";
 share.txrate="Taxa TX";
 share.rxrate="Taxa RX";
@@ -276,7 +276,7 @@ sbutton.prev="&laquo; Anterior";
 // ** COMMON ERROR MESSAGES  **//
 errmsg.err0="Você deve inserir um Nome de Usuário.";
 errmsg.err1="Você deve inserir o Nome do Roteador.";
-errmsg.err2="Endereço IP fora da classe, por favor ajuste o endereço IP inicial ou o número de usuários.";
+errmsg.err2="Endereço IP fora da classe, por favor, ajuste o endereço IP inicial ou o número de usuários.";
 errmsg.err3="Você deve selecionar um dia no mínimo.";
 errmsg.err4="O tempo final deve ser maior que o tempo inicial.";
 errmsg.err5="O tamanho do Endereço MAC não está correto.";
@@ -284,11 +284,11 @@ errmsg.err6="Você deve inserir uma senha.";
 errmsg.err7="Você deve inserir um Nome de Host.";
 errmsg.err8="Você deve inserir um Endereço IP ou um Nome de Domínio.";
 errmsg.err9="Endereço IP DMZ ilegal.";
-errmsg.err10="A Senha e a Verificação não coincidem. Por favor digite novamente sua senha.";
+errmsg.err10="A Senha e a Verificação não coincidem. Por favor, digite novamente sua senha.";
 errmsg.err11="Espaços em branco não são permitidas na Senha";
 errmsg.err12="Você deve inserir um comando a ser executado.";
 errmsg.err13="Falha na atualização.";
-errmsg.err45="Não disponível em modo HTTPS! Por favor conecte em modo HTTP.";
+errmsg.err45="Não disponível em modo HTTPS! Por favor, conecte em modo HTTP.";
 errmsg.err46="Não disponível em modo HTTPS.";
 
 //common.js error messages
@@ -323,14 +323,14 @@ errmsg.err37="Você deve inserir uma porta UDP para funcionar.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Por favor insira uma Chave Compartilhada!";
+errmsg.err38="Por favor, insira uma Chave Compartilhada!";
 errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais.";
 errmsg.err40="Você deve inserir uma chave no campo Chave ";
 errmsg.err41="Tamanho inválido na Chave ";
 errmsg.err43="Intervalo de Renovação de Chave";
 
 //config.asp error messages
-errmsg.err42="Por favor selecione um arquivo de configuração para restaurar.";
+errmsg.err42="Por favor, selecione um arquivo de configuração para restaurar.";
 
 //WL_ActiveTable.asp error messages
 errmsg.err44="As verificações totais excedem 256 contagens.";
@@ -339,7 +339,7 @@ errmsg.err44="As verificações totais excedem 256 contagens.";
 errmsg.err47="SSID Inválida.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS não é compatível com a configuração atual do roteador. Por favor verifique os seguintes passos:\n * O Modo Wireless deve ser Access Point \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
+errmsg.err48="WDS não é compatível com a configuração atual do roteador. Por favor, verifique os seguintes passos:\n * O Modo Wireless deve ser Access Point \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius está disponível somente no modo Access Point.";
@@ -368,10 +368,10 @@ errmsg.err58="Clique para apagar a concessão.";
 errmsg.err581="Clique para desconectar o cliente pptp";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Não disponível! Por favor habilite a Rede Wireless.";
+errmsg.err59="Não disponível! Por favor, habilite a Rede Wireless.";
 
 //Upgrade.asp error messages
-errmsg.err60="Por favor selecione um arquivo para atualizar.";
+errmsg.err60="Por favor, selecione um arquivo para atualizar.";
 errmsg.err61="Arquivo de imagem incorreto.";
 
 //Services.asp error messages
@@ -498,7 +498,7 @@ config.legend="Backup das Configurações";
 config.mess1="Clique em \"" + sbutton.backup + "\" para baixar o arquivo de backup das configurações para o seu computador.";
 config.h22="Restaurar Configurações";
 config.legend2="Restaurar Configurações";
-config.mess2="Por favor selecione um arquivo para restaurar.";
+config.mess2="Por favor, selecione um arquivo para restaurar.";
 config.mess3="A T E N Ç Ã O !!";
 config.mess4="Faça upload de backups feitos usando este firmware e de um roteador de mesmo modelo.<br />Não utilize nenhum arquivo que não foi criado através desta interface!";
 
@@ -521,7 +521,7 @@ ddns.statu="Status DDNS";
 ddns.system="Servidor DYNDNS";
 ddns.options="Opções Adicionais DDNS";
 ddns.forceupd="Intervalo de Atualização Forçada";
-ddns.wanip="Não use checagem de ip externa";
+ddns.wanip="Não usar checagem de ip externa";
 
 ddnsm.all_closed="O Servidor DDNS está atualmente fechado";
 ddnsm.all_resolving="Resolvendo nome de domínio";
@@ -586,7 +586,7 @@ filterIP.ip_range="Faixa de IPs";
 filter.titl="Restrições de Acesso";
 filter.h2="Acesso à Internet";
 filter.legend="Políticas de Acesso";
-filter.pol="Políticas";
+filter.pol="Política";
 filter.polname="Nome da Política";
 filter.pcs="PCs";
 filter.polallow="Acesso à Internet durante os dias e as horas selecionados.";
@@ -800,7 +800,7 @@ hotspotsys.operatorid="Nome do Usuário Operador";
 hotspotsys.locationid="ID Localização";
 hotspotsys.dhcp="Interface DHCP";
 hotspotsys.net="Rede Remota";
-hotspotsys.customsplash="Splash Page Personalizada(Walled Garden)";
+hotspotsys.customsplash="Splash Page Personalizada (Walled Garden)";
 
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="Minha Rede com Propaganda";
@@ -841,7 +841,7 @@ hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 // ** Info.htm **//
 info.titl="Informações";
 info.h2="Informações do Sistema";
-info.wlanmac="MAC Wireless";
+info.wlanmac="Wireless MAC";
 info.srv="Serviços";
 info.ap="Access Point";
 
@@ -977,7 +977,7 @@ log.accept="Pacotes Aceitos";
 // ** Management.asp **//
 management.titl="Administração";
 management.h2="Gerenciamento do Roteador";
-management.changepassword="Seu Roteador atualmente não está protegido e usa uma combinação padrão insegura de nome de usuário e senha, por favor altere-a utilizando o seguinte diálogo!";
+management.changepassword="Seu Roteador atualmente não está protegido e usa uma combinação padrão insegura de nome de usuário e senha, por favor, altere-a utilizando o seguinte diálogo!";
 management.psswd_legend="Usuário e Senha do Roteador";
 management.psswd_user="Nome de Usuário do Roteador";
 management.psswd_pass="Senha do Roteador";
@@ -1208,7 +1208,7 @@ service.kaid_orbdeepport="Porta ORB Profunda";
 //DHCPd
 service.dhcp_legend="Cliente DHCP";
 service.dhcp_vendor="Ajustar Vendorclass";
-service.dhcp_reqip="Solicitar IP";
+service.dhcp_reqip="Requerer o IP";
 service.dhcp_legend2="Servidor DHCP";
 service.dhcp_srv="Daemon DHCP";
 service.dhcp_jffs2="Usar o JFFS2 para o BD de Concessões";
@@ -1279,7 +1279,8 @@ service.pppoesrv_radkey="Chave Compartilhada Radius ";
 service.pppoesrv_chaps="Gerenciamento Local de Usuário (Segredos CHAP)";
 
 //help container
-hpppoesrv.right2="Endereço IP: 0.0.0.0; você servirá os endereços IP do pool";
+hpppoesrv.right2="Endereço IP: 0.0.0.0 -> Você fornecerá os endereços IP do pool";
+hpppoesrv.right3="Você DEVE definir a quantidade correta de clientes associados de acordo com sua faixa de endereços IP"
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1313,6 +1314,7 @@ service.vpnd_dupcn="Permitir cn duplicado";
 service.vpnd_proxy="Modo Proxy-DHCP";
 service.vpnd_clcon="Script de conexão de cliente";
 service.vpnd_ccddef="Arquivo CCD-Dir DEFAULT";
+service.vpnd_dhcpbl="Bloquear DHCP através do túnel";
 service.vpn_redirgate="Redirecionar Gateway padrão";
 service.vpn_legend="Cliente OpenVPN";
 service.vpn_srv="Iniciar Cliente OpenVPN";
@@ -1353,10 +1355,10 @@ service.ssh_forwarding="Encaminhamento SSH TCP";
 //radiooff.webservices
 service.radiooff_legend="Botão SES / AOSS / EZ-SETUP / WPS";
 service.radiooff_legend_aoss="Função Botão AOSS";
-service.radiooff_srv="Desligando rádio";
+service.radiooff_srv="Desligar o rádio";
 service.radiooff_srv_aoss="AOSS";
 service.radiooff_srv_disabled="Não utilizado";
-service.radiooff_bootoff="Desligar rádio no boot";
+service.radiooff_bootoff="Desligar o rádio no boot";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="Botão SES / AOSS / EZ-SETUP / WPS";
@@ -1512,7 +1514,7 @@ status_band.h2="Monitoramento de Largura de Banda";
 status_band.chg_unit="Alternar para ";
 status_band.chg_scale="Auto-escala";
 status_band.chg_error="Não foi possível obter os dados da interface";
-status_band.chg_collect_initial="Coletando dados iniciais, por favor aguarde...";
+status_band.chg_collect_initial="Coletando dados iniciais, por favor, aguarde...";
 status_band.strin="Entrando";
 status_band.strout="Saindo";
 status_band.follow="acompanhar";
@@ -1635,15 +1637,15 @@ status_openvpn.titl=" Status OpenVPN";
 
 
 // ** Triggering.asp **//
-trforward.titl="Gatilho de Portas";
-trforward.h2="Gatilho de Portas";
+trforward.titl="Disparo de Portas";
+trforward.h2="Disparo de Portas";
 trforward.legend="Encaminhamentos";
 trforward.trrange="Faixa de Portas Engatilhadas";
 trforward.fwdrange="Faixa de Portas Encaminhadas";
 trforward.app="Aplicação";
 
 //help container
-htrforward.right2="Insira o nome do aplicativo para o gatilho (trigger).";
+htrforward.right2="Insira o nome do aplicativo para o disparo (trigger).";
 htrforward.right4="Liste a faixa de portas engatilhadas para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
 htrforward.right6="Liste a faixa de portas encaminhadas para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
 htrforward.right8="Insira o número inicial da porta para a Faixa de Portas Engatilhadas ou Encaminhadas.";
@@ -1657,7 +1659,7 @@ upgrad.legend="Atualização do Firmware";
 upgrad.info1="Após atualizar, resetar para";
 upgrad.resetOff="Não resetar";
 upgrad.resetOn="Configurações padrão";
-upgrad.file="Por favor selecione um arquivo para atualizar";
+upgrad.file="Por favor, selecione um arquivo para atualizar";
 upgrad.warning="A T E N Ç Ã O !!";
 upgrad.mess1="A atualização do firmware pode levar alguns minutos.<br />Não desligue o roteador nem pressione o botão de reset!";
 
@@ -1756,7 +1758,7 @@ wpa.rekey="Intervalo de Renovação da Chave (em segundos)";
 wpa.radius_ipaddr="Endereço do Servidor RADIUS";
 wpa.radius_port="Porta do Servidor RADIUS";
 wpa.radius_key="Chave RADIUS";
-wpa.algorithms="Algoritimos WPA";
+wpa.algorithms="Algoritimo WPA";
 wpa.shared_key="Chave Compartilhada WPA";
 
 
@@ -1865,12 +1867,12 @@ radius.label17="Segredo Compartilhado da Conta Radius";
 radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
-wl_mac.titl="Filtro MACs";
+wl_mac.titl="Filtro de MACs";
 wl_mac.h2="Filtro de MACs Wireless";
 wl_mac.legend="Filtro de MACs";
-wl_mac.label="Usar Filtro MACs";
+wl_mac.label="Usar Filtro de MACs";
 wl_mac.label2="Modo do Filtro";
-wl_mac.deny="Previne que os clientes listados acessem a rede wireless";
+wl_mac.deny="Impede que os clientes listados acessem a rede wireless";
 wl_mac.allow="Permite que somente os clientes listados acessem a rede wireless";
 
 // ** WiMAX
@@ -1992,7 +1994,7 @@ wl_basic.h2="Wireless";
 wl_basic.cardtype="Tipo de Cartão";
 wl_basic.legend="Configurações Básicas";
 wl_basic.label="Modo Wireless";
-wl_basic.label2="Modo de Rede Wireless";
+wl_basic.label2="Modo da Rede Wireless";
 wl_basic.label3="Nome da Rede Wireless (SSID)";
 wl_basic.label4="Canal Wireless";
 wl_basic.label5="Broadcast SSID Wireless";
@@ -2085,21 +2087,21 @@ hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronism
 hwl_basic.right6="Clique a qualquer momento para habilitar ou desabilitar o sinal do rádio (<em>verde</em> indica acesso Wireless permitido e <em>vermelho</em> indica acesso Wireless bloqueado)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
-fail.mess1="Os valores que você inseriu são inválidos. Por favor tente novamente.";
+fail.mess1="Os valores que você inseriu são inválidos. Por favor, tente novamente.";
 fail.mess2="Falha na Atualização.";
 
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Configurações Salvas.";
-success.restore="Configurações Restauradas.<br/>A unidade está reiniciando. Por favor aguarde um momento...";
-success.upgrade="Sucesso na Atualização.<br/>A unidade está reiniciando. Por favor aguarde um momento...";
+success.restore="Configurações Restauradas.<br/>A unidade está reiniciando. Por favor, aguarde um momento...";
+success.upgrade="Sucesso na Atualização.<br/>A unidade está reiniciando. Por favor, aguarde um momento...";
 success.success_noreboot="Configurações efetuadas com sucesso.";
-success.success_reboot=success.success_noreboot + "<br />A unidade está reiniciando. Por favor aguarde um momento...";
+success.success_reboot=success.success_noreboot + "<br />A unidade está reiniciando. Por favor, aguarde um momento...";
 
 success.alert_reset="Todos os parâmetros de configuração foram restaurados para os valores padrão.<br /><br />";
-success.alert1="Por favor verifique os seguintes ítens antes de conectar novamente:";
-success.alert2="Se você alterou o endereço IP do roteador, por favor note que você deve liberar/renovar o(s) endereço(s) do(s) cliente(s) na rede.";
-success.alert3="Se você está conectado via WLAN, por favor associe-se a rede e clique em <em>Continuar</em>.";
+success.alert1="Por favor, verifique os seguintes ítens antes de conectar novamente:";
+success.alert2="Se você alterou o endereço IP do roteador, por favor, note que você deve liberar/renovar o(s) endereço(s) do(s) cliente(s) na rede.";
+success.alert3="Se você está conectado via WLAN, por favor, associe-se a rede e clique em <em>Continuar</em>.";
 
 // ** Logout.asp  **//
 logout.message="Você foi deslogado com sucesso.<br />Obrigado por usar DD-WRT !";
@@ -2116,9 +2118,9 @@ hsas.wan="A interface WAN conecta o seu roteador à Internet ou outras redes. Se 
 hsas.h_routerip="Endereço IP do Roteador";
 hsas.routerip="Este é o endereço IP atribuído ao roteador em sua rede interna. Se você modificar esse dendereço você também precisa utilizá-lo para acessar o Gerenciamento do Roteador depois de aplicar as modificações.";
 hsas.h_dhcp="DHCP";
-hsas.dhcp="Os computadores e outros dispositivos de rede podem obter automaticamente endereços IP via DHCP em sua rede local sem requerer configuração manual. No caso de haver um servidor DHCP rodando em sua rede local, por favor desabilite esta opção para evitar conflitos.";
+hsas.dhcp="Os computadores e outros dispositivos de rede podem obter automaticamente endereços IP via DHCP em sua rede local sem requerer configuração manual. No caso de haver um servidor DHCP rodando em sua rede local, por favor, desabilite esta opção para evitar conflitos.";
 hsas.h_wireless_physical="Interface de Rede Wireless";
-hsas.wireless_physical="As configurações da interface permitem a você definir o comportamento do rádio do roteador. Você pode definir o modo de operação principal (Access Point, Cliente ou Repetidor), modificar o nome da rede wireless e configurações avançadas como a largura do canal. No caso de você alterar a largura do canal do padrão de 20 MHz por favor certifique-se de que seus clientes suportam a largura de canal e estejam configurados adequadamente.";
+hsas.wireless_physical="As configurações da interface permitem a você definir o comportamento do rádio do roteador. Você pode definir o modo de operação principal (Access Point, Cliente ou Repetidor), modificar o nome da rede wireless e configurações avançadas como a largura do canal. No caso de você alterar a largura do canal do padrão de 20 MHz, por favor, certifique-se de que seus clientes suportam a largura de canal e estejam configurados adequadamente.";
 hsas.h_wireless_security="Segurança Wireless";
 hsas.wireless_security="Para facilitar a configuração dos dispositivos clientes você pode modificar a senha da rede wireless. Desabilitar a criptografia ou mudá-la para WEP não é recomendado por motivos de segurança.";
 hsas.h_routername="Nome do Roteador";
