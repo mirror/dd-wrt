@@ -303,7 +303,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dt class="term"><% tran("wl_adv.label1"); %>:</dt>
+							<dt class="term"><% tran("wl_adv.label10"); %>:</dt>
 							<dd class="definition"><% tran("hpppoesrv.right3"); %></dd>
 							<dt class="term"><% tran("service.pppoesrv_chaps"); %>:</dt>
 							<dd class="definition"><% tran("hpppoesrv.right2"); %></dd>
