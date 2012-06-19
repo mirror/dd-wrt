@@ -1,5 +1,5 @@
 ﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 23.jan.2012, svn 18300	//
+//				Slovenian translation DD-WRT by Eko, last revision: 18.jun.2012, svn 19375	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -457,7 +457,7 @@ bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
-bmenu.servicesMilkfish="Milkfish SIP usmerjevalnik";
+bmenu.servicesMilkfish="SIP proksi";
 bmenu.servicesAnchorFree="Moja Ad mreža";
 
 bmenu.statu="Status";
@@ -1339,7 +1339,8 @@ service.pppoesrv_chaps="Lokalno upr. računov (CHAP skrivnosti)";
 
 //help container
 
-hpppoesrv.right2="IP: 0.0.0.0; dodeljevali boste IPje s seznama";
+hpppoesrv.right2="IP: 0.0.0.0 -> dodeljevali boste IPje s seznama";
+hpppoesrv.right3="Nastaviti morate pravilno število pridruženih odjemalcev gleda na IP obseg";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1370,9 +1371,10 @@ service.vpnd_endip="Pool končni IP";
 service.vpnd_cl2cl="Dovoli zvezo odjemalec-odjemalec";
 service.vpnd_switch="Konfiguracija stikala stežnika";
 service.vpnd_dupcn="Dovoli podvojeni cn";
-service.vpnd_proxy="DHCP-Proxy način";
+service.vpnd_proxy="DHCP-Proksi način";
 service.vpnd_clcon="Skripta za priklop odjemalca";
 service.vpnd_ccddef="CCD-Dir DEFAULT datoteka";
+service.vpnd_dhcpbl="Prepreči DHCP skozi tunel";
 service.vpn_redirgate="Preusmeri privzeti prehod";
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Začni OpenVPN";
@@ -1397,8 +1399,8 @@ service.vpn_route="Usmerjanje po politiki";
 
 //help container
 
-hstatus_vpn.right1="Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.";
-hstatus_vpn.right2="Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.";
+hstatus_vpn.right1="<i>Usmerjanje po politiki:</i><br>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.";
+hstatus_vpn.right2="<i>Dodatne nastavitve:</i><br>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
