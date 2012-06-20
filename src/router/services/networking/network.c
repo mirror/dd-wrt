@@ -3901,7 +3901,7 @@ void start_wan(int status)
 		start_pptp(status);
 	}
 #endif
-#ifdef HAVE_L2TPOB
+#ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
 		insmod("n_hdlc");
 		if (isClient()) {
