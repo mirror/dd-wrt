@@ -532,11 +532,11 @@ add_client_classes(unsigned int base, unsigned int uprate,
 		sysprintf	// expempt
 		    ("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", wan_dev, base, base + 1, uprate, uplimit, quantum);
 		sysprintf	// premium
-		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 2, uprate / 100 * 75, uplimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 2, uprate*75/100, uplimit, quantum);
 		sysprintf	// express
-		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 3, uprate / 100 * 15, uplimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 3, uprate*15/100, uplimit, quantum);
 		sysprintf	// standard
-		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 4, uprate / 100 * 10, uplimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 4, uprate*10/100, uplimit, quantum);
 		sysprintf	// bulk
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", wan_dev, base, base + 5, 1, uplimit, quantum);
 
@@ -545,11 +545,11 @@ add_client_classes(unsigned int base, unsigned int uprate,
 		sysprintf	// exempt
 		    ("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq0", base, base + 1, downrate, downlimit, quantum);
 		sysprintf	// premium
-		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 2, downrate / 100 * 75, downlimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 2, downrate*75/100, downlimit, quantum);
 		sysprintf	// express
-		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 3, downrate / 100 * 15, downlimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 3, downrate*15/100, downlimit, quantum);
 		sysprintf	// standard
-		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 4, downrate / 100 * 10, downlimit, quantum);
+		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 4, downrate*10/100, downlimit, quantum);
 		sysprintf	// bulk
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq0", base, base + 5, 1, downlimit, quantum);
 
@@ -559,11 +559,11 @@ add_client_classes(unsigned int base, unsigned int uprate,
 			sysprintf	// exempt
 			    ("tc class ad dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq1", base, base + 1, lanrate, lanlimit, quantum);
 			sysprintf	// premium
-			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 2, lanrate / 100 * 75, lanlimit, quantum);
+			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 2, lanrate*75/100, lanlimit, quantum);
 			sysprintf	// express
-			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 3, lanrate / 100 * 15, lanlimit, quantum);
+			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 3, lanrate*15/100, lanlimit, quantum);
 			sysprintf	// standard
-			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 4, lanrate / 100 * 10, lanlimit, quantum);
+			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 4, lanrate*10/100, lanlimit, quantum);
 			sysprintf	// bulk
 			    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1", "imq1", base, base + 5, 1, lanlimit, quantum);
 		}
@@ -573,11 +573,11 @@ add_client_classes(unsigned int base, unsigned int uprate,
 		sysprintf	// exempt (srv)
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc rt umax 1500b dmax 30ms rate 100kbit ls rate %d ul rate %d", wan_dev, base, base + 1, uprate, uplimit);
 		sysprintf	// premium
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 2, uprate / 100 * 75, uplimit);
+		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 2, uprate*75/100, uplimit);
 		sysprintf	// express
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 3, uprate / 100 * 15, uplimit);
+		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 3, uprate*15/100, uplimit);
 		sysprintf	// standard
-		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 4, uprate / 100 * 10, uplimit);
+		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 4, uprate*10/100, uplimit);
 		sysprintf	// bulk
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 5, 1, uplimit);
 
@@ -589,13 +589,13 @@ add_client_classes(unsigned int base, unsigned int uprate,
 		     "imq0", base, base + 1, downrate, downlimit);
 		sysprintf
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 2, downrate / 100 * 75, downlimit);
+		     "imq0", base, base + 2, downrate*75/100, downlimit);
 		sysprintf
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 3, downrate / 100 * 15, downlimit);
+		     "imq0", base, base + 3, downrate*15/100, downlimit);
 		sysprintf
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-		     "imq0", base, base + 4, downrate / 100 * 10, downlimit);
+		     "imq0", base, base + 4, downrate*10/100, downlimit);
 		sysprintf
 		    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
 		     "imq0", base, base + 5, 1, downlimit);
@@ -609,15 +609,15 @@ add_client_classes(unsigned int base, unsigned int uprate,
 			     "imq1", base, base + 1, lanlimit, lanlimit);
 			sysprintf
 			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 2, lanlimit / 100 * 75,
+			     "imq1", base, base + 2, lanlimit*75/100,
 			     lanlimit);
 			sysprintf
 			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 3, lanlimit / 100 * 15,
+			     "imq1", base, base + 3, lanlimit*15/100,
 			     lanlimit);
 			sysprintf
 			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			     "imq1", base, base + 4, lanlimit / 100 * 10,
+			     "imq1", base, base + 4, lanlimit*10/100,
 			     lanlimit);
 			sysprintf
 			    ("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
