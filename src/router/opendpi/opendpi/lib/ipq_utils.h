@@ -42,4 +42,11 @@
   ((((u64 *)(x))[0]) < (((u64 *)(y))[0]) || ( (((u64 *)(x))[0]) == (((u64 *)(y))[0]) && (((u64 *)(x))[1]) < (((u64 *)(y))[1])) )
 
 
+
+#ifdef HAVE_NTOP
+/* http.c */
+extern char* ntop_strnstr(const char *s, const char *find, size_t slen);
+#endif
+
 #endif							/* _IPQ_UTILS_H_ */
+

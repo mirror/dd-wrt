@@ -137,7 +137,7 @@ extern "C" {
 #define IPOQUE_PROTOCOL_AFP						97
 #define IPOQUE_PROTOCOL_STEALTHNET				98
 #define IPOQUE_PROTOCOL_AIMINI					99
-#define IPOQUE_PROTOCOL_SIP						100
+#define IPOQUE_PROTOCOL_SIP					100
 #define IPOQUE_PROTOCOL_TRUPHONE				101
 #define IPOQUE_PROTOCOL_ICMPV6					102
 #define IPOQUE_PROTOCOL_DHCPV6					103
@@ -154,35 +154,82 @@ extern "C" {
 #define IPOQUE_PROTOCOL_MSSQL					114
 #define IPOQUE_PROTOCOL_PPTP					115
 #define IPOQUE_PROTOCOL_WARCRAFT3				116
-#define IPOQUE_PROTOCOL_WORLD_OF_KUNG_FU		117
+#define IPOQUE_PROTOCOL_WORLD_OF_KUNG_FU		        117
 #define IPOQUE_PROTOCOL_MEEBO					118
 
+#ifdef HAVE_NTOP
 
-#define IPOQUE_LAST_IMPLEMENTED_PROTOCOL        118
+typedef struct {
+  char *string_to_match;
+  int protocol_id;
+} ntop_protocol_match;
+
+#define NTOP_PROTOCOL_FACEBOOK				        119
+#define NTOP_PROTOCOL_TWITTER				        120
+#define NTOP_PROTOCOL_DROPBOX				        121
+#define NTOP_PROTOCOL_GMAIL				        122
+#define NTOP_PROTOCOL_GOOGLE_MAPS			        123
+#define NTOP_PROTOCOL_YOUTUBE				        124
+#define NTOP_PROTOCOL_SKYPE				        125
+#define NTOP_PROTOCOL_GOOGLE				        126
+#define NTOP_PROTOCOL_DCERPC				        127
+#define NTOP_PROTOCOL_NETFLOW				        128
+#define NTOP_PROTOCOL_SFLOW				        129
+#define NTOP_PROTOCOL_HTTP_CONNECT				130
+#define NTOP_PROTOCOL_HTTP_PROXY				131
+#define NTOP_PROTOCOL_CITRIX				        132
+#define NTOP_PROTOCOL_NETFLIX				        133
+#define NTOP_PROTOCOL_LASTFM                                    134
+#define NTOP_PROTOCOL_GROOVESHARK                               135
+#define NTOP_PROTOCOL_SKYFILE_PREPAID                           136
+#define NTOP_PROTOCOL_SKYFILE_RUDICS                            137
+#define NTOP_PROTOCOL_SKYFILE_POSTPAID                          138
+#define NTOP_PROTOCOL_CITRIX_ONLINE                             139
+#define NTOP_PROTOCOL_APPLE                                     140
+#define NTOP_PROTOCOL_WEBEX                                     141
+#define NTOP_PROTOCOL_WHATSAPP                                  142
+#define NTOP_PROTOCOL_APPLE_ICLOUD                              143
+#define NTOP_PROTOCOL_VIBER                                     144
+#define NTOP_PROTOCOL_APPLE_ITUNES                              145
+#define NTOP_PROTOCOL_RADIUS                                    146
+#define NTOP_PROTOCOL_WINDOWS_UPDATE                            147 /* Thierry Laurion */
+
+/* NOTE: REMEMBER TO UPDATE IPOQUE_PROTOCOL_LONG_STRING / IPOQUE_PROTOCOL_SHORT_STRING */
+#endif
+
+#define IPOQUE_LAST_IMPLEMENTED_PROTOCOL                        147
 
 
-#define IPOQUE_MAX_SUPPORTED_PROTOCOLS IPOQUE_LAST_IMPLEMENTED_PROTOCOL
+#define IPOQUE_MAX_SUPPORTED_PROTOCOLS (IPOQUE_LAST_IMPLEMENTED_PROTOCOL + 1)
 
 
-#define IPOQUE_PROTOCOL_LONG_STRING "unknown","FTP","Mail_POP","Mail_SMTP","Mail_IMAP","DNS","IPP","HTTP","MDNS","NTP",\
-	"NETBIOS","NFS","SSDP","BGP","SNMP","XDMCP","SMB","SYSLOG","DHCP","PostgreSQL","MySQL","TDS","DirectDownloadLink","I23V5",\
-	"AppleJuice","DirectConnect","Socrates","WinMX","MANOLITO","PANDO","Filetopia","iMESH","Kontiki","OpenFT","Kazaa/Fasttrack",\
-	"Gnutella","eDonkey","Bittorrent","OFF","AVI","Flash","OGG","MPEG","QuickTime","RealMedia","Windowsmedia","MMS","XBOX","QQ",\
-	"MOVE","RTSP","Feidian","Icecast","PPLive","PPStream","Zattoo","SHOUTCast","SopCast","TVAnts","TVUplayer","VeohTV",\
-	"QQLive","Thunder/Webthunder","Soulseek","GaduGadu","IRC","Popo","Jabber","MSN","Oscar","Yahoo","Battlefield","Quake",\
-	"Second Life","Steam","Halflife2","World of Warcraft","Telnet","STUN","IPSEC","GRE","ICMP","IGMP","EGP","SCTP","OSPF",\
-	"IP in IP","RTP","RDP","VNC","PCAnywhere","SSL","SSH","USENET","MGCP","IAX","TFTP","AFP","StealthNet","Aimini","SIP","Truphone",\
-	"ICMPv6","DHCPv6","Armagetron","CrossFire","Dofus","Fiesta","Florensia","Guildwars","HTTP Application Activesync","Kerberos",\
-	"LDAP","MapleStory","msSQL","PPTP","WARCRAFT3","World of Kung Fu","MEEBO"
-#define IPOQUE_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp",\
-	"bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx",\
-	"manolito","pando","filetopia","iMESH","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi",\
-	"flash","ogg","mpeg","quicktime","realmedia","windowsmedia","mms","xbox","qq","move","rtsp","feidian","icecast","pplive",\
-	"ppstream","zattoo","shoutcast","sopcast","tvants","tvuplayer","veohtv","qqlive","thunder","soulseek","gadugadu","irc",\
-	"popo","jabber","msn","oscar","yahoo","battlefield","quake","secondlife","steam","hl2","worldofwarcraft","telnet","stun",\
-	"ipsec","gre","icmp","igmp","egp","sctp","ospf","ipip","rtp","rdp","vnc","pcanywhere","ssl","ssh","usenet","mgcp","iax",\
-	"tftp","afp","stealthnet","aimini","sip","truphone","icmpv6","dhcpv6","armagetron","crossfire","dofus","fiesta","florensia",\
-	"guildwars","httpactivesync","kerberos","ldap","maplestory","mssql","pptp","warcraft3","wokf","meebo"
+#define IPOQUE_PROTOCOL_LONG_STRING "Unknown","FTP","Mail_POP","Mail_SMTP","Mail_IMAP","DNS","IPP","HTTP","MDNS","NTP",\
+    "NETBIOS","NFS","SSDP","BGP","SNMP","XDMCP","SMB","SYSLOG","DHCP","PostgreSQL","MySQL","TDS","DirectDownloadLink","I23V5", \
+    "AppleJuice","DirectConnect","Socrates","WinMX","MANOLITO","PANDO","Filetopia","iMESH","Kontiki","OpenFT","Kazaa/Fasttrack", \
+    "Gnutella","eDonkey","Bittorrent","OFF","AVI","Flash","OGG","MPEG","QuickTime","RealMedia","Windowsmedia","MMS","XBOX","QQ", \
+    "MOVE","RTSP","Feidian","Icecast","PPLive","PPStream","Zattoo","SHOUTCast","SopCast","TVAnts","TVUplayer","VeohTV",	\
+    "QQLive","Thunder/Webthunder","Soulseek","GaduGadu","IRC","Popo","Jabber","MSN","Oscar","Yahoo","Battlefield","Quake", \
+    "Second Life","Steam","Halflife2","World of Warcraft","Telnet","STUN","IPSEC","GRE","ICMP","IGMP","EGP","SCTP","OSPF", \
+    "IP in IP","RTP","RDP","VNC","PCAnywhere","SSL","SSH","USENET","MGCP","IAX","TFTP","AFP","StealthNet","Aimini","SIP","Truphone", \
+    "ICMPv6","DHCPv6","Armagetron","CrossFire","Dofus","Fiesta","Florensia","Guildwars","HTTP Application Activesync","Kerberos", \
+    "LDAP","MapleStory","msSQL","PPTP","WARCRAFT3","World of Kung Fu","MEEBO", \
+    "FaceBook","Twitter","DropBox","Gmail","Google Maps","YouTube","Skype","Google","DCE RPC","NetFlow_IPFIX","sFlow", \
+    "HTTP Connect","HTTP Proxy","Citrix","Netflix","Last.fm","Grooveshark", \
+    "Skyfile_prepaid","Skyfile_rudics","Skyfile_postpaid","CitrixOnline_GotoMeeting","Apple","Webex",\
+    "WhatsApp","Apple_iCloud","Viber","Apple_iTunes","Radius","WindowsUpdate"
+#define IPOQUE_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
+    "bgp","snmp","xdmcp","smb","syslog","dhcp","postgres","mysql","tds","ddl","i23v5","apple","directconnect","socrates","winmx", \
+    "manolito","pando","filetopia","imesh","kontiki","openft","fasttrack","gnutella","edonkey","bittorrent","off","avi", \
+    "flash","ogg","mpeg","quicktime","realmedia","windowsmedia","mms","xbox","qq","move","rtsp","feidian","icecast","pplive", \
+    "ppstream","zattoo","shoutcast","sopcast","tvants","tvuplayer","veohtv","qqlive","thunder","soulseek","gadugadu","irc", \
+    "popo","jabber","msn","oscar","yahoo","battlefield","quake","secondlife","steam","hl2","worldofwarcraft","telnet","stun", \
+    "ipsec","gre","icmp","igmp","egp","sctp","ospf","ipip","rtp","rdp","vnc","pcanywhere","ssl","ssh","usenet","mgcp","iax", \
+    "tftp","afp","stealthnet","aimini","sip","truphone","icmpv6","dhcpv6","armagetron","crossfire","dofus","fiesta","florensia", \
+    "guildwars","httpactivesync","kerberos","ldap","maplestory","mssql","pptp","warcraft3","wokf","meebo",\
+    "facebook","twitter","dropbox","gmail","gmaps","youtube","skype","google","dcerpc","netflow","sflow", \
+    "http_connect","http_proxy","citrix","netflix","last.fm","grooveshark",\
+    "skyfile_pre", "Skyfile_ru","skyfile_post","citrixonline","imessage_facetime","webex","whatsapp","icloud","viber","itunes", \
+    "radius","winupdate"
 
 #ifdef __cplusplus
 }

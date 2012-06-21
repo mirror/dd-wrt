@@ -268,6 +268,7 @@ void ipoque_search_halflife2(struct ipoque_detection_module_struct
 
 void ipoque_search_xbox(struct ipoque_detection_module_struct
 						*ipoque_struct);
+
 void ipoque_search_smb_tcp(struct ipoque_detection_module_struct
 						   *ipoque_struct);
 
@@ -361,5 +362,20 @@ void ipoque_search_crossfire_tcp_udp(struct ipoque_detection_module_struct *ipoq
 void ipoque_search_guildwars_tcp(struct ipoque_detection_module_struct *ipoque_struct);
 
 void ipoque_search_armagetron_udp(struct ipoque_detection_module_struct *ipoque_struct);
+
+
+#ifdef HAVE_NTOP
+void ntop_search_dropbox(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_skype(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_citrix(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_dcerpc(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_netflow(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_sflow(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_radius(struct ipoque_detection_module_struct *ipoque_struct);
+void ntop_search_wsus(struct ipoque_detection_module_struct *ipoque_struct);
+
+#endif
+
+
 
 #endif							/* __IPOQUE_PROTOCOLS_INCLUDE_FILE__ */

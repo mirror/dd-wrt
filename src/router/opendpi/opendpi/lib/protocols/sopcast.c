@@ -38,7 +38,13 @@ static void ipoque_int_sopcast_add_connection(struct ipoque_detection_module_str
  * NOTE: if you add more patterns please keep the number of if levels
  * low, it is already complex enough
  */
-static inline u8 ipoque_int_is_sopcast_tcp(const u8 * payload, const u16 payload_len)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_int_is_sopcast_tcp(const u8 * payload, const u16 payload_len)
 {
 	if (payload_len != 54)
 		return 0;

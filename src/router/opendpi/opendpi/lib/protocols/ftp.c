@@ -41,7 +41,12 @@ static void ipoque_int_ftp_add_connection(struct ipoque_detection_module_struct
  *
  * this functions is not used to accept, just to not reject
  */
-static inline u8 ipoque_int_check_possible_ftp_command(const struct ipoque_packet_struct *packet)
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_int_check_possible_ftp_command(const struct ipoque_packet_struct *packet)
 {
 	if (packet->payload_packet_len < 3)
 		return 0;
@@ -73,7 +78,12 @@ static inline u8 ipoque_int_check_possible_ftp_command(const struct ipoque_packe
 /**
  * ftp replies are are 3-digit number followed by space or hyphen
  */
-static inline u8 ipoque_int_check_possible_ftp_reply(const struct ipoque_packet_struct *packet)
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_int_check_possible_ftp_reply(const struct ipoque_packet_struct *packet)
 {
 	if (packet->payload_packet_len < 5)
 		return 0;
@@ -96,7 +106,12 @@ static inline u8 ipoque_int_check_possible_ftp_reply(const struct ipoque_packet_
  * there is no real indication whether it is a continuation message, we just
  * require that there are at least 5 ascii characters
  */
-static inline u8 ipoque_int_check_possible_ftp_continuation_reply(const struct ipoque_packet_struct *packet)
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_int_check_possible_ftp_continuation_reply(const struct ipoque_packet_struct *packet)
 {
 	u16 i;
 

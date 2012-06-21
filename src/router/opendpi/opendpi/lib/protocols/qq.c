@@ -75,7 +75,13 @@ static const u16 ipoque_valid_qq_versions[] = {
  * this functions checks whether the packet is a valid qq packet
  * it can handle tcp and udp packets
  */
-static inline u8 ipoque_is_valid_qq_packet(const struct ipoque_packet_struct *packet)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_is_valid_qq_packet(const struct ipoque_packet_struct *packet)
 {
 	u8 real_start = 0;
 	u16 command;
@@ -160,7 +166,13 @@ static inline u8 ipoque_is_valid_qq_packet(const struct ipoque_packet_struct *pa
  * this functions checks whether the packet is a valid qq file transfer packet
  * it can handle tcp and udp packets
  */
-static inline u8 ipoque_is_valid_qq_ft_packet(const struct ipoque_packet_struct *packet)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_is_valid_qq_ft_packet(const struct ipoque_packet_struct *packet)
 {
 	u8 ids, found = 0;
 	u16 version_id;
@@ -410,7 +422,13 @@ static void ipoque_search_qq_udp(struct ipoque_detection_module_struct *ipoque_s
 }
 
 
-static inline void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_search_qq_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

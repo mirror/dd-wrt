@@ -53,7 +53,61 @@ struct iphdr {
       uint32_t daddr;
 };
 
+
+#if defined(HAVE_NTOP) && (defined(WIN32) /* || defined(__FreeBSD__) */)
+
+typedef unsigned char  u_char;
+typedef unsigned short u_short;
+typedef unsigned int   uint;
+typedef unsigned long  u_long;
+typedef u_char  u_int8_t;
+typedef u_short u_int16_t;
+typedef uint   u_int32_t;
+
+#define _WS2TCPIP_H_ /* Avoid compilation problems */
+#define HAVE_SIN6_LEN
+
+/* IPv6 address */
+/* Already defined in WS2tcpip.h */
+struct win_in6_addr
+{
+  union
+  {
+    u_int8_t u6_addr8[16];
+    u_int16_t u6_addr16[8];
+    u_int32_t u6_addr32[4];
+  } in6_u;
+#ifdef s6_addr
+#undef s6_addr
+#endif
+
+#ifdef s6_addr16
+#undef s6_addr16
+#endif
+
+#ifdef s6_addr32
+#undef s6_addr32
+#endif
+
+#define s6_addr                 in6_u.u6_addr8
+// #define s6_addr16               in6_u.u6_addr16
+// #define s6_addr32               in6_u.u6_addr32
+
+};
+
+#define in6_addr win_in6_addr
+
+/* Generic extension header.  */
+struct ip6_ext
+{
+  u_int8_t  ip6e_nxt;		/* next header.  */
+  u_int8_t  ip6e_len;		/* length in units of 8 octets.  */
+};
+
+#else
 #include <arpa/inet.h>
+#endif
+
 #define s6_addr16		__u6_addr.__u6_addr16
 #define s6_addr32		__u6_addr.__u6_addr32
 

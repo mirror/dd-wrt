@@ -33,7 +33,12 @@ static void ipoque_add_connection_as_edonkey(struct ipoque_detection_module_stru
 	ipoque_int_change_protocol(ipoque_struct, IPOQUE_PROTOCOL_EDONKEY, IPOQUE_REAL_PROTOCOL);
 }
 
-static inline u8 check_edk_len(const u8 * payload, u16 payload_packet_len)
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 check_edk_len(const u8 * payload, u16 payload_packet_len)
 {
 	u32 edk_len_parsed = 0;
 	// we use a do / while loop here, because we have checked the byte 0 for 0xe3 or 0xc5 already before this call

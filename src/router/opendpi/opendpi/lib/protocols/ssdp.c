@@ -51,6 +51,15 @@ void ipoque_search_ssdp(struct ipoque_detection_module_struct *ipoque_struct)
 				ipoque_int_ssdp_add_connection(ipoque_struct);
 				return;
 			}
+
+#ifdef HAVE_NTOP
+#define SSDP_HTTP "HTTP/1.1 200 OK\r\n"
+			if(memcmp(packet->payload, SSDP_HTTP, strlen(SSDP_HTTP)) == 0) {
+			  IPQ_LOG(IPOQUE_PROTOCOL_SSDP, ipoque_struct, IPQ_LOG_DEBUG, "found ssdp.\n");
+			  ipoque_int_ssdp_add_connection(ipoque_struct);
+			  return;
+			}
+#endif
 		}
 	}
 
