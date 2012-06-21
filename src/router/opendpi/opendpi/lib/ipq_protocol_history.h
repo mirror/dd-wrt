@@ -61,7 +61,12 @@ void ipoque_int_change_packet_protocol(struct ipoque_detection_module_struct *ip
  * 1.update the flow protocol stack with the new protocol
  * 2.update the packet protocol stack with the new protocol
  */
-ATTRIBUTE_ALWAYS_INLINE static inline void ipoque_int_change_protocol(struct ipoque_detection_module_struct
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	void ipoque_int_change_protocol(struct ipoque_detection_module_struct
 																	  *ipoque_struct, u16 detected_protocol,
 																	  ipoque_protocol_type_t protocol_type)
 {
@@ -71,7 +76,12 @@ ATTRIBUTE_ALWAYS_INLINE static inline void ipoque_int_change_protocol(struct ipo
 
 
 /* turns a packet back to unknown */
-ATTRIBUTE_ALWAYS_INLINE static inline void ipoque_int_reset_packet_protocol(struct ipoque_detection_module_struct
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_int_reset_packet_protocol(struct ipoque_detection_module_struct
 																			*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -85,7 +95,12 @@ ATTRIBUTE_ALWAYS_INLINE static inline void ipoque_int_reset_packet_protocol(stru
 }
 
 /* turns a flow back to unknown */
-ATTRIBUTE_ALWAYS_INLINE static inline void ipoque_int_reset_protocol(struct ipoque_detection_module_struct
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_int_reset_protocol(struct ipoque_detection_module_struct
 																	 *ipoque_struct)
 {
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

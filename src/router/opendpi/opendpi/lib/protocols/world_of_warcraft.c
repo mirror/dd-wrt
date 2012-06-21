@@ -32,7 +32,13 @@ static void ipoque_int_worldofwarcraft_add_connection(struct
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_WORLDOFWARCRAFT, protocol_type);
 }
 
-static inline u8 ipoque_int_is_wow_port(const u16 port)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_int_is_wow_port(const u16 port)
 {
 	if (port == htons(3724) || port == htons(6112) || port == htons(6113) ||
 		port == htons(6114) || port == htons(4000) || port == htons(1119)) {
