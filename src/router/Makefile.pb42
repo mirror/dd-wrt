@@ -494,6 +494,7 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
 endif
 ifneq ($(CONFIG_USB_ADVANCED),y)
@@ -1017,11 +1018,11 @@ ifeq ($(CONFIG_WR941),y)
 	make -C lzma-loader/pb42 clean
 	make -C lzma-loader/pb42
 	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
-	./tools/tplink/mktplinkfw -B TL-WR941NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv2-firmware.bin
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv2-firmware.bin mips-uclibc/tplink-WR941NDv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv2-firmware.bin mips-uclibc/tplink-WR941NDv2-firmware.bin
 
-	./tools/tplink/mktplinkfw -B TL-WR841NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv3-firmware.bin
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv3-firmware.bin mips-uclibc/tplink-WR841NDv3-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv3-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv3-firmware.bin mips-uclibc/tplink-WR841NDv3-firmware.bin
 
 endif
 ifeq ($(CONFIG_WR741),y)
