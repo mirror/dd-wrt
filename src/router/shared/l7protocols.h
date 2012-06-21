@@ -1,5 +1,3 @@
-
-
 /*
  * L7-filter Supported Protocols 
  */
@@ -97,7 +95,11 @@ l7filters filters_list[] = {
 	 "ciscovpn", 0},	// Cisco VPN - VPN client software to a Cisco 
 	// VPN server
 	{
-	 "citrix", 0},		// Citrix ICA - proprietary remote desktop
+	 "citrix", DPI},		// Citrix ICA - proprietary remote desktop
+#ifdef HAVE_OPENDPI
+	{
+	 "citrixonline", 2},		// Citrix ICA - proprietary remote desktop
+#endif
 	// application - http://citrix.com
 	{
 	 "clubbox", 0},
@@ -121,6 +123,8 @@ l7filters filters_list[] = {
 	 "dazhihui", 0},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #ifdef HAVE_OPENDPI
 	{
+	 "dcerpc", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+	{
 	 "ddl", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
 #endif
 	{
@@ -141,6 +145,10 @@ l7filters filters_list[] = {
 #endif
 	{
 	 "doom3", 0},		// Doom 3 - computer game
+#ifdef HAVE_OPENDPI
+	{
+	 "dropbox", 2},	// Dazhihui - stock analysis and trading; Chinese - http://www.gw.com.cn
+#endif
 	{
 	 "edonkey", PDPI},		// eDonkey2000 - P2P filesharing -
 #ifdef HAVE_OPENDPI
@@ -150,6 +158,10 @@ l7filters filters_list[] = {
 	// http://edonkey2000.com and others
 	{
 	 "exe", 0},		// Executable - Microsoft PE file format.
+#ifdef HAVE_OPENDPI
+	{
+	 "facebook", 2},
+#endif
 	{
 	 "fasttrack", DPI},	// FastTrack - P2P filesharing (Kazaa,
 	// Morpheus, iMesh, Grokster, etc)
@@ -188,12 +200,24 @@ l7filters filters_list[] = {
 	{
 	 "gkrellm", 0},		// Gkrellm - a system monitor -
 	// http://gkrellm.net
+#ifdef HAVE_OPENDPI
+	{
+	 "gmail", 2},
+#endif
+#ifdef HAVE_OPENDPI
+	{
+	 "gmaps", 2},
+#endif
 	{
 	 "gnucleuslan", 0},	// GnucleusLAN - LAN-only P2P filesharing
 	{
 	 "gnutella", PDPI},	// Gnutella - P2P filesharing
 	{
 	 "goboogy", 0},		// GoBoogy - a Korean P2P protocol
+#ifdef HAVE_OPENDPI
+	{
+	 "google", 2},
+#endif
 	{
 	 "gogobox", 0},
 	{
@@ -201,6 +225,10 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "gre", 2},
+#endif
+#ifdef HAVE_OPENDPI
+	{
+	 "groveshark", 2},
 #endif
 	{
 	 "gtalk", 0},		// GTalk, a Jabber (XMPP) client
@@ -237,6 +265,13 @@ l7filters filters_list[] = {
 	{
 	 "html", 0},		// (X)HTML - (Extensible) Hypertext Markup
 	// Language - http://w3.org
+#ifdef HAVE_OPENDPI
+	{
+	 "http_connect", 2},		// HTTP - HyperText Transfer Protocol - RFC
+	{
+	 "http_proxy", 2},		// HTTP - HyperText Transfer Protocol - RFC
+	// 2616
+#endif
 	{
 	 "http-rtsp", 0},	// RTSP tunneled within HTTP
 	{
@@ -274,6 +309,10 @@ l7filters filters_list[] = {
 	{
 	 "icecast", 2},
 	{
+	 "icloud", 2},
+	{
+	 "itunes", 2},
+	{
 	 "igmp", 2},
 	{
 	 "icmp", 2},
@@ -294,7 +333,9 @@ l7filters filters_list[] = {
 	// common e-mail protocol)
 #ifdef HAVE_OPENDPI
 	{
-	 "iMESH", 2},
+	 "imesh", 2},
+	{
+	 "imessage_facetime", 2},
 #else
 	{
 	 "imesh", 0},		// iMesh - the native protocol of iMesh, a
@@ -329,9 +370,10 @@ l7filters filters_list[] = {
 	{
 	 "kontiki", 2},
 	{
+	 "last.fm", 2},		// Medal of Honor Allied Assault - an
+	{
 	 "ldap", 2},
 #endif
-
 	// http://www.kugoo.com
 	{
 	 "live365", 0},		// live365 - An Internet radio site -
@@ -398,6 +440,12 @@ l7filters filters_list[] = {
 	 "ncp", 0},		// NCP - Novell Core Protocol
 	{
 	 "netbios", DPI},		// NetBIOS - Network Basic Input Output
+#ifdef HAVE_OPENDPI
+	{
+	 "netflix", 2},		// Medal of Honor Allied Assault - an
+	{
+	 "netflow", 2},		// Medal of Honor Allied Assault - an
+#endif
 #ifdef HAVE_OPENDPI
 	{
 	 "nfs", 2},		// Medal of Honor Allied Assault - an
@@ -512,6 +560,10 @@ l7filters filters_list[] = {
 	 "quake1", 0},		// Quake 1 - A popular computer game.
 	{
 	 "quicktime", DPI},	// Quicktime HTTP
+#ifdef HAVE_OPENDPI
+	{
+	 "radius", 2},
+#endif
 	{
 	 "radmin", 0},		// Famatech Remote Administrator - remote
 	// desktop for MS Windows
@@ -553,11 +605,24 @@ l7filters filters_list[] = {
 	{
 	 "sip", DPI},		// SIP - Session Initiation Protocol -
 	// Internet telephony - RFC 3261
+#ifdef HAVE_OPENDPI
+	{
+	 "skyfile_pre", 2},
+	{
+	 "skyfile_ru", 2},
+	{
+	 "skyfile_post", 2},
+#endif
+#ifdef HAVE_OPENDPI
+	{
+	 "skype", 2},
+#else
 	{
 	 "skypeout", 0},	// Skype to phone - UDP voice call (program
 	// to POTS phone) - http://skype.com
 	{
 	 "skypetoskype", 0},	// Skype to Skype - UDP voice call (program
+#endif
 	// to program) - http://skype.com
 	{
 	 "smb", DPI},		// Samba/SMB - Server Message Block -
@@ -667,6 +732,8 @@ l7filters filters_list[] = {
 	 "tvants", 2},
 	{
 	 "tvuplayer", 2},
+	{
+	 "twitter", 2},
 #endif
 	{
 	 "unknown", 0},		// -
@@ -684,12 +751,20 @@ l7filters filters_list[] = {
 	{
 	 "veohtv", 2},
 #endif
+#ifdef HAVE_OPENDPI
+	{
+	 "viper", 2},
+#endif
 	{
 	 "vnc", DPI},		// VNC - Virtual Network Computing. Also
 	// known as RFB - Remote Frame Buffer
 #ifdef HAVE_OPENDPI
 	{
 	 "warcraft3", 2},
+#endif
+#ifdef HAVE_OPENDPI
+	{
+	 "webex", 2},
 #endif
 	{
 	 "webmail_163", 0},
@@ -717,6 +792,10 @@ l7filters filters_list[] = {
 	 "webmail_yahoo", 0},
 	{
 	 "webmail_yam", 0},
+#ifdef HAVE_OPENDPI
+	{
+	 "whatsapp", 2},
+#endif
 	{
 	 "whois", 0},		// Whois - query/response system, usually
 	// used for domain name info - RFC 3912
@@ -726,6 +805,10 @@ l7filters filters_list[] = {
 #endif
 	{
 	 "winmx", PDPI},		// Whois - query/response system, usually
+#ifdef HAVE_OPENDPI
+	{
+	 "winupdate", 2},
+#endif
 #ifdef HAVE_OPENDPI
 	{
 	 "wokf", 2},
@@ -758,6 +841,10 @@ l7filters filters_list[] = {
 	 "yahoo_login", 0},
 	{
 	 "yahoo_voice", 0},
+#ifdef HAVE_OPENDPI
+	{
+	 "youtube", 2},
+#endif
 #ifdef HAVE_OPENDPI
 	{
 	 "zattoo", 2},
