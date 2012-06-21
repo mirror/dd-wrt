@@ -32,7 +32,13 @@ static void ipoque_int_mgcp_add_connection(struct ipoque_detection_module_struct
 }
 
 
-static inline void ipoque_search_mgcp_connection(struct ipoque_detection_module_struct
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_search_mgcp_connection(struct ipoque_detection_module_struct
 												 *ipoque_struct)
 {
 

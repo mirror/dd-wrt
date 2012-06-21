@@ -342,7 +342,20 @@ struct ipoque_flow_tcp_struct {
 	u32 mail_imap_stage:3;
 #endif
 
-} __attribute__ ((__packed__));
+#ifdef NTOP_PROTOCOL_SKYPE
+  u8 skype_packet_id;
+#endif
+
+#ifdef NTOP_PROTOCOL_CITRIX
+  u8 citrix_packet_id;
+#endif
+} 
+
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+__attribute__ ((__packed__))
+#endif
+;
+
 struct ipoque_flow_udp_struct {
 #ifdef IPOQUE_PROTOCOL_BATTLEFIELD
 	u32 battlefield_msg_id;
@@ -374,8 +387,18 @@ struct ipoque_flow_udp_struct {
 #ifdef IPOQUE_PROTOCOL_XBOX
 	u32 xbox_stage:1;
 #endif
+#ifdef NTOP_PROTOCOL_WINDOWS_UPDATE
+  u32 wsus_stage:1;
+#endif
+#ifdef NTOP_PROTOCOL_SKYPE
+  u8 skype_packet_id;
+#endif
+}
 
-} __attribute__ ((__packed__));
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+__attribute__ ((__packed__))
+#endif
+	;
 
 
 typedef struct ipoque_flow_struct {
@@ -389,7 +412,12 @@ typedef struct ipoque_flow_struct {
 	struct {
 		u8 entry_is_real_protocol:5;
 		u8 current_stack_size_minus_one:3;
-	} __attribute__ ((packed)) protocol_stack_info;
+	} 
+
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+__attribute__ ((__packed__))
+#endif
+	protocol_stack_info;
 #endif
 
 

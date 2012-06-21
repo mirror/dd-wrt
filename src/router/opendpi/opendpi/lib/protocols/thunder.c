@@ -42,7 +42,13 @@ static void ipoque_int_thunder_add_connection(struct ipoque_detection_module_str
 }
 
 
-static inline void ipoque_int_search_thunder_udp(struct ipoque_detection_module_struct
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_int_search_thunder_udp(struct ipoque_detection_module_struct
 												 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -70,7 +76,13 @@ static inline void ipoque_int_search_thunder_udp(struct ipoque_detection_module_
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_THUNDER);
 }
 
-static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_struct
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_struct
 												 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
@@ -122,7 +134,13 @@ static inline void ipoque_int_search_thunder_tcp(struct ipoque_detection_module_
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_THUNDER);
 }
 
-static inline void ipoque_int_search_thunder_http(struct ipoque_detection_module_struct
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_int_search_thunder_http(struct ipoque_detection_module_struct
 												  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

@@ -59,7 +59,13 @@ static void ipoque_int_yahoo_add_connection(struct ipoque_detection_module_struc
 }
 
 
-static inline u8 check_ymsg(const u8 * payload, u16 payload_packet_len)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 check_ymsg(const u8 * payload, u16 payload_packet_len)
 {
 
 	const struct ipoque_yahoo_header *yahoo = (struct ipoque_yahoo_header *) payload;
@@ -372,7 +378,13 @@ static void ipoque_search_yahoo_tcp(struct ipoque_detection_module_struct *ipoqu
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
 }
 
-static inline void ipoque_search_yahoo_udp(struct ipoque_detection_module_struct *ipoque_struct)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void ipoque_search_yahoo_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 
 

@@ -31,7 +31,13 @@ static void ipoque_int_pando_add_connection(struct ipoque_detection_module_struc
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_PANDO, IPOQUE_REAL_PROTOCOL);
 }
 
-static inline u8 search_pando(struct ipoque_detection_module_struct *ipoque_struct)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 search_pando(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 //      struct ipoque_flow_struct       *flow=ipoque_struct->flow;

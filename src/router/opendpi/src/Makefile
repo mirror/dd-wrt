@@ -1,8 +1,11 @@
+
+
+
 OPENDPI_PATH2 := ${TOP}/opendpi/opendpi
 OPENDPI_SRC := opendpi
 OPENDPI_PRO := ${OPENDPI_SRC}/lib/protocols
 
-ccflags-y += -I${src}/${OPENDPI_SRC}/include -I${src}/${OPENDPI_SRC}/lib -DOPENDPI_NETFILTER_MODULE
+ccflags-y += -I${src}/${OPENDPI_SRC}/include -I${src}/${OPENDPI_SRC}/lib -DOPENDPI_NETFILTER_MODULE -DHAVE_NTOP
 
 EXTRA_CFLAGS := $(ccflags-y)
 MODULES_DIR := $(INSTALLDIR)/opendpi/lib/opendpi
@@ -45,7 +48,11 @@ xt_opendpi-y := main.o ${OPENDPI_SRC}/lib/ipq_main.o \
                 ${OPENDPI_PRO}/http_activesync.o ${OPENDPI_PRO}/armagetron.o \
                 ${OPENDPI_PRO}/florensia.o ${OPENDPI_PRO}/world_of_kung_fu.o \
                 ${OPENDPI_PRO}/mssql.o ${OPENDPI_PRO}/guildwars.o \
-                ${OPENDPI_PRO}/crossfire.o ${OPENDPI_PRO}/fiesta.o
+                ${OPENDPI_PRO}/crossfire.o ${OPENDPI_PRO}/fiesta.o \
+		${OPENDPI_PRO}/citrix.o ${OPENDPI_PRO}/netflow.o \
+		${OPENDPI_PRO}/sflow.o ${OPENDPI_PRO}/skype.o \
+		${OPENDPI_PRO}/dcerpc.o ${OPENDPI_PRO}/dropbox.o \
+		${OPENDPI_PRO}/radius.o
 
 all:
 	if test -d ${OPENDPI_SRC}; then \
