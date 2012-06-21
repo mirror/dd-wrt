@@ -24,6 +24,9 @@
 #ifndef __IPOQUE_MAIN_INCLUDE_FILE__
 #define __IPOQUE_MAIN_INCLUDE_FILE__
 
+#ifndef HAVE_NTOP 
+#define HAVE_NTOP 1
+#endif
 
 #ifndef OPENDPI_NETFILTER_MODULE
 #include <stdint.h>
@@ -32,7 +35,8 @@
 #include <string.h>
 #endif
 
-#if 1 && !defined __APPLE__
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+#if 1 && !defined __APPLE__ && !defined __FreeBSD__
 
 #ifndef OPENDPI_NETFILTER_MODULE
 #  include <endian.h>
@@ -42,15 +46,23 @@
 #endif
 
 #endif							/* not WIN32 && not APPLE) */
+#endif /* ntop */
 
 /* default includes */
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || (defined(HAVE_NTOP) && defined(WIN32)) || defined(__FreeBSD__)
 
+#ifndef WIN32
 #include <sys/param.h>
+#endif
+
+#if defined(__FreeBSD__)
+#include <netinet/in.h>
+#endif
 
 #include "../include/ipq_api.h"
 #include "linux_compat.h"
+
 
 #else							/* APPLE */
 
@@ -210,12 +222,21 @@
 #else							/* IPOQUE_ENABLE_DEBUG_MESSAGES */
 
 
+
+#if defined(HAVE_NTOP) && defined(WIN32)
+#define IPQ_LOG_BITTORRENT(...) {}
+#define IPQ_LOG_GNUTELLA(...) {}
+#define IPQ_LOG_EDONKEY(...) {}
+#define IPQ_LOG(...) {}
+
+#else
 #define IPQ_LOG_BITTORRENT(proto, mod, log_level, args...) {}
 
 #define IPQ_LOG_GNUTELLA(proto, mod, log_level, args...) {}
 
 #define IPQ_LOG_EDONKEY(proto, mod, log_level, args...) {}
 #define IPQ_LOG(proto, mod, log_level, args...) {}
+#endif
 
 
 #endif							/* IPOQUE_ENABLE_DEBUG_MESSAGES */
@@ -262,7 +283,11 @@ typedef struct ipoque_packet_struct {
 	struct {
 		u8 entry_is_real_protocol:5;
 		u8 current_stack_size_minus_one:3;
-	} __attribute__ ((packed)) protocol_stack_info;
+	} 
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+__attribute__ ((__packed__))
+#endif
+	protocol_stack_info;
 #endif
 
 	struct ipoque_int_one_line_struct line[IPOQUE_MAX_PARSE_LINES_PER_PACKET];
@@ -391,10 +416,13 @@ typedef struct ipoque_detection_module_struct {
 } ipoque_detection_module_struct_t;
 u32 ipq_bytestream_to_number(const u8 * str, u16 max_chars_to_read, u16 * bytes_read);
 
-#define ATTRIBUTE_ALWAYS_INLINE __attribute__ ((always_inline))
-
-ATTRIBUTE_ALWAYS_INLINE static inline u16 ntohs_ipq_bytestream_to_number(const u8 * str, u16 max_chars_to_read,
-																		 u16 * bytes_read)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	u16 ntohs_ipq_bytestream_to_number(const u8 * str, u16 max_chars_to_read, u16 * bytes_read)
 {
 	u16 val = ipq_bytestream_to_number(str, max_chars_to_read, bytes_read);
 	return ntohs(val);
@@ -423,20 +451,36 @@ u16 ipoque_check_for_email_address(struct ipoque_detection_module_struct *ipoque
 
 
 /* reset ip to zero */
-ATTRIBUTE_ALWAYS_INLINE static inline void ipq_ip_clear(ipq_ip_addr_t * ip)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	void ipq_ip_clear(ipq_ip_addr_t * ip)
 {
 	memset(ip, 0, sizeof(ipq_ip_addr_t));
 }
 
-/* check if given ip is not zero */
-ATTRIBUTE_ALWAYS_INLINE static inline int ipq_ip_is_set(const ipq_ip_addr_t * ip)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	 int ipq_ip_is_set(const ipq_ip_addr_t * ip)
 {
 	return memcmp(ip, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(ipq_ip_addr_t)) != 0;
 }
 
 /* check if the source ip address in packet and ip are equal */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline int ipq_packet_src_ip_eql(const struct ipoque_packet_struct *packet, const ipq_ip_addr_t * ip)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	int ipq_packet_src_ip_eql(const struct ipoque_packet_struct *packet, const ipq_ip_addr_t * ip)
 {
 #ifdef IPOQUE_DETECTION_SUPPORT_IPV6
 	if (packet->iphv6 != NULL) {
@@ -456,8 +500,13 @@ ATTRIBUTE_ALWAYS_INLINE
 }
 
 /* check if the destination ip address in packet and ip are equal */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline int ipq_packet_dst_ip_eql(const struct ipoque_packet_struct *packet, const ipq_ip_addr_t * ip)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	int ipq_packet_dst_ip_eql(const struct ipoque_packet_struct *packet, const ipq_ip_addr_t * ip)
 {
 #ifdef IPOQUE_DETECTION_SUPPORT_IPV6
 	if (packet->iphv6 != NULL) {
@@ -476,8 +525,13 @@ ATTRIBUTE_ALWAYS_INLINE
 }
 
 /* get the source ip address from packet and put it into ip */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline void ipq_packet_src_ip_get(const struct ipoque_packet_struct *packet, ipq_ip_addr_t * ip)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	void ipq_packet_src_ip_get(const struct ipoque_packet_struct *packet, ipq_ip_addr_t * ip)
 {
 	ipq_ip_clear(ip);
 #ifdef IPOQUE_DETECTION_SUPPORT_IPV6
@@ -490,8 +544,13 @@ ATTRIBUTE_ALWAYS_INLINE
 }
 
 /* get the destination ip address from packet and put it into ip */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline void ipq_packet_dst_ip_get(const struct ipoque_packet_struct *packet, ipq_ip_addr_t * ip)
+/* NTOP */
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	void ipq_packet_dst_ip_get(const struct ipoque_packet_struct *packet, ipq_ip_addr_t * ip)
 {
 	ipq_ip_clear(ip);
 #ifdef IPOQUE_DETECTION_SUPPORT_IPV6
@@ -507,8 +566,12 @@ ATTRIBUTE_ALWAYS_INLINE
 /* get the string representation of ip
  * returns a pointer to a static string
  * only valid until the next call of this function */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline char *ipq_get_ip_string(struct ipoque_detection_module_struct *ipoque_struct,
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	char *ipq_get_ip_string(struct ipoque_detection_module_struct *ipoque_struct,
 										  const ipq_ip_addr_t * ip)
 {
 	const u8 *a = (const u8 *) &ip->ipv4;
@@ -528,8 +591,12 @@ ATTRIBUTE_ALWAYS_INLINE
 
 
 /* get the string representation of the source ip address from packet */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline char *ipq_get_packet_src_ip_string(struct ipoque_detection_module_struct *ipoque_struct,
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	char *ipq_get_packet_src_ip_string(struct ipoque_detection_module_struct *ipoque_struct,
 													 const struct ipoque_packet_struct *packet)
 {
 	ipq_ip_addr_t ip;
@@ -538,8 +605,12 @@ ATTRIBUTE_ALWAYS_INLINE
 }
 
 /* get the string representation of the destination ip address from packet */
-ATTRIBUTE_ALWAYS_INLINE
-	static inline char *ipq_get_packet_dst_ip_string(struct ipoque_detection_module_struct *ipoque_struct,
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+static inline
+#else
+__forceinline static
+#endif
+	char *ipq_get_packet_dst_ip_string(struct ipoque_detection_module_struct *ipoque_struct,
 													 const struct ipoque_packet_struct *packet)
 {
 	ipq_ip_addr_t ip;

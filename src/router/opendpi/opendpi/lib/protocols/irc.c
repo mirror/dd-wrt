@@ -37,7 +37,13 @@ static void ipoque_int_irc_add_connection(struct ipoque_detection_module_struct
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_IRC, IPOQUE_REAL_PROTOCOL);
 }
 
-static inline u8 ipoque_is_duplicate(struct ipoque_id_struct *id_t, u16 port)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_is_duplicate(struct ipoque_id_struct *id_t, u16 port)
 {
 	int index = 0;
 	while (index < id_t->irc_number_of_port) {

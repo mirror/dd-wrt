@@ -45,7 +45,13 @@ static void ipoque_int_zattoo_add_connection(struct ipoque_detection_module_stru
 }
 
 
-static inline u8 ipoque_int_zattoo_user_agent_set(struct ipoque_detection_module_struct *ipoque_struct)
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u8 ipoque_int_zattoo_user_agent_set(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	if (ipoque_struct->packet.user_agent_line.ptr != NULL && ipoque_struct->packet.user_agent_line.len == 111) {
 		if (memcmp(ipoque_struct->packet.user_agent_line.ptr +

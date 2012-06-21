@@ -47,7 +47,13 @@ static void ipoque_int_rtp_add_connection(struct ipoque_detection_module_struct
  *   1, if the current packet should count towards the total, or
  *   0, if it it regarded as belonging to the previous reporting interval
  */
-static inline void init_seq(struct ipoque_detection_module_struct *ipoque_struct, struct ipoque_flow_struct *flow,
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 void init_seq(struct ipoque_detection_module_struct *ipoque_struct, struct ipoque_flow_struct *flow,
 							u8 direction, u16 seq, u8 include_current_packet)
 {
 	flow->rtp_seqnum[direction] = seq;
@@ -55,7 +61,13 @@ static inline void init_seq(struct ipoque_detection_module_struct *ipoque_struct
 }
 
 /* returns difference between old and new highest sequence number */
-static inline u16 update_seq(struct ipoque_detection_module_struct *ipoque_struct, struct ipoque_flow_struct *flow,
+	
+#if !(defined(HAVE_NTOP) && defined(WIN32))
+ static inline
+#else
+__forceinline static
+#endif
+	 u16 update_seq(struct ipoque_detection_module_struct *ipoque_struct, struct ipoque_flow_struct *flow,
 							 u8 direction, u16 seq)
 {
 	u16 delta = seq - flow->rtp_seqnum[direction];
