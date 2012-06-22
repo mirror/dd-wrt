@@ -167,15 +167,15 @@ int addrule(char *mac, char *upstream, char *downstream)
     {
     char *newqos = malloc(strlen(qos_mac)*2);
     memset(newqos,0,strlen(qos_mac)*2);
-    char level[32], level2[32], level3[32], data[32], type[32];
+    char level[32], level2[32], level3[32], data[32], type[32], prio[32];
     strcpy(level3, "0");
 	do
     {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s %31s |", data, level, level2 , type, level3) < 4 )
+	if( sscanf( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2 , type, level3, prio) < 6 )
 	    break;
 	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
 	    {
-	    sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,level,level2,type,level3);	    
+	    sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,level,level2,type,level3,prio);	    
 	    ret |=1;
 	    }
 	    else
@@ -184,7 +184,7 @@ int addrule(char *mac, char *upstream, char *downstream)
 	    {
 	    ret |=2;
 	    }
-	    sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,upstream,downstream,"pppd",level3);	    
+	    sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,upstream,downstream,"pppd",level3,prio);	    
 //	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
 	    }
     }
@@ -194,7 +194,7 @@ int addrule(char *mac, char *upstream, char *downstream)
     }else
     {
     char newqos[128];
-    sprintf(newqos,"%s %s %s %s %s |",mac,upstream,downstream,"pppd",level3);	    
+    sprintf(newqos,"%s %s %s %s %s %s |",mac,upstream,downstream,"pppd",level3,prio);	    
     nvram_set("svqos_macs",newqos);    
     }
 return ret;

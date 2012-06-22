@@ -1152,6 +1152,7 @@ qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.gaming="Optimize for Gaming";
 qos.legend2="Services Priority";
+qos.prio_m="Manual";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
