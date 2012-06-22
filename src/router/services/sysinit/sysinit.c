@@ -1187,10 +1187,17 @@ void start_restore_defaults(void)
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "eth0 eth1 ath0", 0},
+#ifdef HAVE_MAKSAT
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
+#else
 		{"wan_ifname", "eth1", 0},
 		{"wan_ifname2", "eth1", 0},
 		{"wan_ifnames", "eth1", 0},
 		{"wan_default", "eth1", 0},
+#endif
 		{0, 0, 0}
 	};
 #elif HAVE_WNR2000
@@ -2896,26 +2903,30 @@ void start_nvram(void)
 		char *newqos = malloc(strlen(qos_mac) + 254);
 		memset(newqos, 0, strlen(qos_mac) + 254);
 
-		char level[32], level2[32], data[32], type[32], level3[32];
+		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
 
 		do {
 			if (sscanf
-			    (qos_mac, "%31s %31s %31s %31s %31s |", data, level,
-			     level2, type, level3) < 5)
+			    (qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level,
+			     level2, type, level3, prio) < 6)
 				break;
 
-			if (!strcmp(level3, "|"))
+			if (!strcmp(level3, "|")) {
 				strcpy(level3, "0");
+				strcpy(prio, "0");
+			}
+			if (!strcmp(prio, "|"))
+				strcpy(prio, "0");
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
 				if (strlen(newqos) > 0)
-					sprintf(newqos, "%s %s %s %s %s %s |",
+					sprintf(newqos, "%s %s %s %s %s %s %s |",
 						newqos, data, level, level2,
-						type, level3);
+						type, level3, prio);
 				else
-					sprintf(newqos, "%s %s %s %s %s |",
+					sprintf(newqos, "%s %s %s %s %s %s |",
 						data, level, level2, type,
-						level3);
+						level3, prio);
 
 			}
 		}
@@ -2930,23 +2941,27 @@ void start_nvram(void)
 		char *newip = malloc(strlen(qos_ip) + 254);
 		memset(newip, 0, strlen(qos_ip) + 254);
 
-		char data[32], level[32], level2[32], level3[32];
+		char data[32], level[32], level2[32], level3[32], prio[32];
 
 		do {
 			if (sscanf
-			    (qos_ip, "%31s %31s %31s %31s |", data, level,
-			     level2, level3) < 4)
+			    (qos_ip, "%31s %31s %31s %31s %31s |", data, level,
+			     level2, level3, prio) < 5)
 				break;
 
-			if (!strcmp(level3, "|"))
+			if (!strcmp(level3, "|")) {
 				strcpy(level3, "0");
+				strcpy(prio, "0");
+			}
+			if (!strcmp(prio, "|"))
+				strcpy(prio, "0");
 
 			if (strlen(newip) > 0)
-				sprintf(newip, "%s %s %s %s %s |", newip, data,
-					level, level2, level3);
+				sprintf(newip, "%s %s %s %s %s %s |", newip, data,
+					level, level2, level3, prio);
 			else
-				sprintf(newip, "%s %s %s %s |", data, level,
-					level2, level3);
+				sprintf(newip, "%s %s %s %s %s |", data, level,
+					level2, level3, prio);
 		}
 		while ((qos_ip = strpbrk(++qos_ip, "|")) && qos_ip++);
 		nvram_set("svqos_ips", newip);

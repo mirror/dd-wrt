@@ -1181,25 +1181,25 @@ int addrule(char *mac, char *upstream, char *downstream)
 	newqos = malloc(len + 128);
 	memset(newqos, 0, len + 128);
 
-	char level[32], level2[32], level3[32], data[32], type[32];
+	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
 	strcpy(level3, "0");
 	if (len > 0) {
 		do {
-			if(sscanf( qos_mac, "%31s %31s %31s %31s %31s |", data, level, level2, type, level3) < 5)
+			if(sscanf( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio) < 6)
 				break;
 			if (!strcasecmp(data,mac)) {
-				sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3);
+				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3,prio);
 				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
 					ret = 1;
 				else
 					ret = 2;
 			} else
-				sprintf(newqos,"%s %s %s %s %s %s |",newqos,data,level,level2,type,level3);
+				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,level,level2,type,level3,prio);
 		} while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
 	}
 
 	if (!ret)
-		sprintf(newqos,"%s %s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3);
+		sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3,prio);
 
 	nvram_set("svqos_macs",newqos);
 	free(newqos);

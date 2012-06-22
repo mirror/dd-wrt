@@ -10,20 +10,7 @@ function svcs_grey(sw_disabled,F) {
 	}
 }
 
-function ips_grey(sw_disabled,F) {
-	F.svqos_ipaddr0.disabled = sw_disabled;
-	F.svqos_ipaddr1.disabled = sw_disabled;
-	F.svqos_ipaddr2.disabled = sw_disabled;
-	F.svqos_ipaddr3.disabled = sw_disabled;
-	F.svqos_netmask.disabled = sw_disabled;
-	F.add_ipsprio_button.disabled = sw_disabled;
-	for (i=0; i<F.svqos_noips.value; i++){
-		eval("F.svqos_ipdel" + i).disabled = sw_disabled;
-		eval("F.svqos_ipprio" + i).disabled = sw_disabled;
-	}
-}
-
-function macs_grey(sw_disabled,F) {
+function macs_grey(sw_disabled,F,overwrite) {
 	F.svqos_hwaddr0.disabled = sw_disabled;
 	F.svqos_hwaddr1.disabled = sw_disabled;
 	F.svqos_hwaddr2.disabled = sw_disabled;
@@ -31,10 +18,31 @@ function macs_grey(sw_disabled,F) {
 	F.svqos_hwaddr4.disabled = sw_disabled;
 	F.svqos_hwaddr5.disabled = sw_disabled;
 	F.add_macprio_button.disabled = sw_disabled;
-	for (i=0; i<F.svqos_nomacs.value; i++){
-		eval("F.svqos_macdel" + i).disabled = sw_disabled;
-		eval("F.svqos_macprio" + i).disabled = sw_disabled;
+	
+	if (sw_disabled == true) {
+		for (i=0; i<F.svqos_nomacs.value; i++){
+			eval("F.svqos_macdel" + i).disabled = sw_disabled;
+			eval("F.svqos_macup" + i).disabled = sw_disabled;
+			eval("F.svqos_macdown" + i).disabled = sw_disabled;
+			eval("F.svqos_maclanlvl" + i).disabled = sw_disabled;
+			eval("F.svqos_macprio" + i).disabled = sw_disabled;
+		}
+	} else {
+		for (i=0; i<F.svqos_nomacs.value; i++) {
+			eval("F.svqos_macdel" + i).disabled = sw_disabled;
+			eval("F.svqos_macprio" + i).disabled = sw_disabled;
+			maclvl_grey(i, eval("F.svqos_macprio" + i), F, overwrite);
+		}
 	}
+}
+
+function maclvl_grey(num,field,F,overwrite) {
+	if (overwrite) var sw_disabled = false; 
+	else var sw_disabled = (field.selectedIndex == 0) ? false : true;
+		
+	eval("F.svqos_macup" + num).disabled = sw_disabled;
+	eval("F.svqos_macdown" + num).disabled = sw_disabled;
+	eval("F.svqos_maclanlvl" + num).disabled = sw_disabled;
 }
 
 function port_grey(sw_disabled,F) {
@@ -46,7 +54,48 @@ function port_grey(sw_disabled,F) {
 	F.svqos_port2bw.disabled = sw_disabled;
 	F.svqos_port3bw.disabled = sw_disabled;
 	F.svqos_port4bw.disabled = sw_disabled;
+}
 
+function ips_grey(sw_disabled,F,overwrite) {
+	F.svqos_ipaddr0.disabled = sw_disabled;
+	F.svqos_ipaddr1.disabled = sw_disabled;
+	F.svqos_ipaddr2.disabled = sw_disabled;
+	F.svqos_ipaddr3.disabled = sw_disabled;
+	F.svqos_netmask.disabled = sw_disabled;
+	F.add_ipsprio_button.disabled = sw_disabled;
+	
+	if (sw_disabled == true) {
+		for (i=0; i<F.svqos_noips.value; i++){
+			eval("F.svqos_ipdel" + i).disabled = sw_disabled;
+			eval("F.svqos_ipup" + i).disabled = sw_disabled;
+			eval("F.svqos_ipdown" + i).disabled = sw_disabled;
+			eval("F.svqos_iplanlvl" + i).disabled = sw_disabled;
+			eval("F.svqos_ipprio" + i).disabled = sw_disabled;
+		}
+	} else {
+		for (i=0; i<F.svqos_noips.value; i++) {
+			eval("F.svqos_ipdel" + i).disabled = sw_disabled;
+			eval("F.svqos_ipprio" + i).disabled = sw_disabled;
+			iplvl_grey(i, eval("F.svqos_ipprio" + i), F, overwrite);
+		}
+	}
+}
+
+function iplvl_grey(num,field,F,overwrite) {
+	if (overwrite) var sw_disabled = false;
+	else var sw_disabled = (field.selectedIndex == 0) ? false : true;
+		
+	eval("F.svqos_ipup" + num).disabled = sw_disabled;
+	eval("F.svqos_ipdown" + num).disabled = sw_disabled;
+	eval("F.svqos_iplanlvl" + num).disabled = sw_disabled;
+}
+
+function defaultlvl_grey(sw_disabled,F) {
+	var sw_disabled = (sw_disabled == true) ? false : true;
+	
+	F.default_uplevel.disabled = sw_disabled;
+	F.default_downlevel.disabled = sw_disabled;
+	F.default_lanlevel.disabled = sw_disabled;
 }
 
 function qos_grey(num,F) {
@@ -60,10 +109,13 @@ function qos_grey(num,F) {
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
 	<% nvram_match("portprio_support","0","/"); %><% nvram_match("portprio_support","0","/"); %>port_grey(sw_disabled, F);
-	macs_grey(sw_disabled, F);
-	ips_grey(sw_disabled, F);
-	svcs_grey(sw_disabled, F);
-}
+	macs_grey(sw_disabled, F, false);
+	ips_grey(sw_disabled, F, false);
+	svcs_grey(sw_disabled, F);		
+	F.svqos_defaults.disabled = sw_disabled;
+	if (sw_disabled == true) defaultlvl_grey(false, F);
+	<% nvram_match("svqos_defaults","0","/"); %><% nvram_match("svqos_defaults","0","/"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);
+} 
 
 function service(id, name, port_start, port_end) {
 	this.id = id;
@@ -103,6 +155,13 @@ function mac_add_submit(F) {
 }
 
 function submitcheck(F) {
+	ips_grey(false, F, true);
+	macs_grey(false, F, true);
+	
+	F.default_uplevel.disabled = false;
+	F.default_downlevel.disabled = false;
+	F.default_lanlevel.disabled = false;
+	
 	if (F._enable_game.checked == false){
 	    F.enable_game.value = 0;
 	}else{
@@ -245,7 +304,7 @@ addEvent(window, "unload", function() {
 									<% get_qosips(); %>
 									<tr>
 										<td>&nbsp;</td>
-										<td colspan="2">
+										<td colspan="3">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
@@ -264,7 +323,7 @@ addEvent(window, "unload", function() {
 									<% get_qosmacs(); %>
 									<tr>
 										<td>&nbsp;</td>
-										<td colspan="2">
+										<td colspan="3">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
