@@ -509,23 +509,61 @@ add_client_ip_srvfilter(char *name, char *type, char *data, char *level,
 
 #ifdef HAVE_AQOS
 void
-add_client_classes(unsigned int base, unsigned int uprate,
-		   unsigned int downrate, unsigned long lanrate)
+add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level)
 {
 	char *wan_dev = get_wan_face();
-
+	
 	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
 	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
 	unsigned long lanlimit = 1000000;
-
+	
 	unsigned int quantum = atoi(get_mtu_val()) + 14;
-
-	uplimit = uprate;
-	downlimit = downrate;
-
+	
 	if (lanrate < 1)
 		lanrate = lanlimit;
 
+#else	
+void
+add_client_classes(unsigned int base, unsigned int level)
+{
+	char *wan_dev = get_wan_face();
+		
+	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
+	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
+	unsigned long lanlimit = 1000000;
+		
+	unsigned int quantum = atoi(get_mtu_val()) + 14;
+		
+	unsigned long uprate=0, downrate=0;		
+
+#endif
+	switch (level) {
+		case 100:
+			uprate = uplimit;
+			downrate = downlimit;
+			break;
+		case 10:
+			uprate = uplimit*75/100;
+			downrate = downlimit*75/100;
+			break;
+		case 20:
+			uprate = uplimit*15/100;
+			downrate = downlimit*15/100;
+			break;
+		case 30:
+			uprate = uplimit*10/100;
+			downrate = downlimit*10/100;
+			break;
+		case 40:
+			uprate = 1;
+			downrate = downlimit*1/100;
+			break;
+		case 0:
+			uplimit = uprate;
+			downlimit = downrate;
+			break;
+	}
+	
 	if (nvram_match("qos_type", "0")) {	// HTB
 		sysprintf	// interior
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", wan_dev, 2, base, uprate, uplimit, quantum);
@@ -727,6 +765,7 @@ add_client_classes(unsigned int base, unsigned int uprate,
 	}
 }
 
+#ifdef HAVE_AQOS
 void
 add_usermac(char *mac, int base, char *upstream, char *downstream,
 	    char *lanstream)
@@ -743,7 +782,7 @@ add_usermac(char *mac, int base, char *upstream, char *downstream,
 	    ("iptables -t mangle -D FILTER_IN -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j MARK --set-mark 0x64");
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
-	add_client_classes(base, uprate, downrate, lanrate);
+	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
 		if (sscanf
@@ -790,7 +829,7 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
 
-	add_client_classes(base, uprate, downrate, lanrate);
+	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
 		if (sscanf
@@ -830,6 +869,8 @@ add_userip(char *ip, int base, char *upstream, char *downstream,
 }
 #endif
 #endif
+
+
 
 int buf_to_file(char *path, char *buf)
 {
@@ -5462,7 +5503,7 @@ int gratarp_main(char *iface)
  *                                             31       23       15       7      0
  * port_forwards         1 bit(s) offset 31  > 10000000 00000000 00000000 00000000
  * sputnik agent         8 bit(s) offset 23  > 01111111 10000000 00000000 00000000
- * quality of service   12 bit(s) offset 11  > 00000000 01111111 11111000 00000000
+ * quality of service   13 bit(s) offset 10  > 00000000 01111111 11111100 00000000
  *
  * the remaining 11 bits are currently not in use
  */
@@ -5476,7 +5517,7 @@ struct NF_MASKS {
 static struct NF_MASKS service_masks[] = {
 	{"FORWARD", 1, 31},
 	{"SPUTNIK", 8, 23},
-	{"QOS", 12, 11},
+	{"QOS", 13, 10},
 };
 
 char *get_NFServiceMark(char *service, uint32 mark)
@@ -5507,3 +5548,4 @@ char *get_NFServiceMark(char *service, uint32 mark)
 	}
 	return "0xffffffff/0xffffffff";
 }
+
