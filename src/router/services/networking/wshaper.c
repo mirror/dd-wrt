@@ -39,6 +39,11 @@ extern char *get_mtu_val(void);
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 
+#ifdef HAVE_AQOS
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
+#else
+extern void add_client_classes(unsigned int base, unsigned int level)
+#endif
 
 static char *get_wanface(void)
 {
@@ -200,6 +205,7 @@ int svqos_set_ports(void)
 }
 
 #ifndef HAVE_AQOS
+/*
 static inline void
 add_client_classes(unsigned int base, unsigned int level)
 {
@@ -219,20 +225,20 @@ add_client_classes(unsigned int base, unsigned int level)
 			downrate = downlimit;
 			break;
 		case 10:
-			uprate = uplimit*75/100;
-			downrate = downlimit*75/100;
+			uprate = uplimit/100*75;
+			downrate = downlimit/100*75;
 			break;
 		case 20:
-			uprate = uplimit*15/100;
-			downrate = downlimit*15/100;
+			uprate = uplimit/100*15;
+			downrate = downlimit/100*15;
 			break;
 		case 30:
-			uprate = uplimit*10/100;
-			downrate = downlimit*10/100;
+			uprate = uplimit/100*10;
+			downrate = downlimit/100*10;
 			break;
 		case 40:
 			uprate = 1;
-			downrate = downlimit*1/100;
+			downrate = downlimit/100*1;
 			break;
 	}
 	
@@ -246,13 +252,13 @@ add_client_classes(unsigned int base, unsigned int level)
 			 wan_dev, base, base+1, uprate, uplimit, quantum);
 		sysprintf		// premium
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-			 wan_dev, base, base+2, (uprate*75/100)+1, uplimit, quantum);
+			 wan_dev, base, base+2, (uprate/100*75)+1, uplimit, quantum);
 		sysprintf		// express
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-			 wan_dev, base, base+3, (uprate*15/100)+1, uplimit, quantum);
+			 wan_dev, base, base+3, (uprate/100*15)+1, uplimit, quantum);
 		sysprintf		// standart
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-			 wan_dev, base, base+4, (uprate*10/100)+1, uplimit, quantum);
+			 wan_dev, base, base+4, (uprate/100*10)+1, uplimit, quantum);
 		sysprintf		// bulk
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
 			 wan_dev, base, base+5, 1, uplimit, quantum);
@@ -265,13 +271,13 @@ add_client_classes(unsigned int base, unsigned int level)
 			 "imq0", base, base+1, downrate, downlimit, quantum);
 		sysprintf		// premium
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-			 "imq0", base, base+2, (downrate*75/100)+1, downlimit, quantum);
+			 "imq0", base, base+2, (downrate/100*75)+1, downlimit, quantum);
 		sysprintf		// express
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-			 "imq0", base, base+3, (downrate*15/100)+1, downlimit, quantum);
+			 "imq0", base, base+3, (downrate/100*15)+1, downlimit, quantum);
 		sysprintf		// standard
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-			 "imq0", base, base+4, (downrate*10/100)+1, downlimit, quantum);
+			 "imq0", base, base+4, (downrate/100*10)+1, downlimit, quantum);
 		sysprintf		// bulk
 			("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
 			 "imq0", base, base+5, 1, downlimit, quantum);
@@ -285,13 +291,13 @@ add_client_classes(unsigned int base, unsigned int level)
 				 "imq1", base, base+1, lanlimit, lanlimit, quantum);
 			sysprintf		// premium
 				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-				 "imq1", base, base+2, lanlimit*75/100, lanlimit, quantum);
+				 "imq1", base, base+2, lanlimit/100*75, lanlimit, quantum);
 			sysprintf		// express
 				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-				 "imq1", base, base+3, lanlimit*15/100, lanlimit, quantum);
+				 "imq1", base, base+3, lanlimit/100*15, lanlimit, quantum);
 			sysprintf		// standard
 				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
-				 "imq1", base, base+4, lanlimit*10/100, lanlimit, quantum);
+				 "imq1", base, base+4, lanlimit/100*10, lanlimit, quantum);
 			sysprintf		// bulk
 				("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 1",
 				 "imq1", base, base+5, 1, lanlimit, quantum);
@@ -305,13 +311,13 @@ add_client_classes(unsigned int base, unsigned int level)
 			 wan_dev, base, base+1, uprate, uplimit);
 		sysprintf		// premium
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 wan_dev, base, base+2, uprate*75/100, uplimit);
+			 wan_dev, base, base+2, uprate/100*75, uplimit);
 		sysprintf		// express
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 wan_dev, base, base+3, uprate*15/100, uplimit);
+			 wan_dev, base, base+3, uprate/100*15, uplimit);
 		sysprintf		// standard
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 wan_dev, base, base+4, uprate*10/100, uplimit);
+			 wan_dev, base, base+4, uprate/100*10, uplimit);
 		sysprintf		// bulk
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
 			 wan_dev, base, base+5, 1, uplimit);
@@ -324,13 +330,13 @@ add_client_classes(unsigned int base, unsigned int level)
 			 "imq0", base, base+1, downrate, downlimit);
 		sysprintf		// premium
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 "imq0", base, base+2, downrate*75/100, downlimit);
+			 "imq0", base, base+2, downrate/100*75, downlimit);
 		sysprintf		// express
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 "imq0", base, base+3, downrate*15/100, downlimit);
+			 "imq0", base, base+3, downrate/100*15, downlimit);
 		sysprintf		// standard
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-			 "imq0", base, base+4, downrate*10/100, downlimit);
+			 "imq0", base, base+4, downrate/100*10, downlimit);
 		sysprintf		// bulk
 			("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
 			 "imq0", base, base+5, 1, downlimit);
@@ -344,13 +350,13 @@ add_client_classes(unsigned int base, unsigned int level)
 				 "imq1", base, base+1, lanlimit, lanlimit);
 			sysprintf		// premium
 				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-				 "imq1", base, base+2, lanlimit*75/100, lanlimit);
+				 "imq1", base, base+2, lanlimit/100*75, lanlimit);
 			sysprintf		// express
 				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-				 "imq1", base, base+3, lanlimit*15/100, lanlimit);
+				 "imq1", base, base+3, lanlimit/100*15, lanlimit);
 			sysprintf		// standard
 				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
-				 "imq1", base, base+4, lanlimit*10/100, lanlimit);
+				 "imq1", base, base+4, lanlimit/100*10, lanlimit);
 			sysprintf
 				("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit",
 				 "imq1", base, base+5, 1, lanlimit);
@@ -459,7 +465,7 @@ add_client_classes(unsigned int base, unsigned int level)
 			 "imq1", base+5, base+5, quantum);
 	}
 }
-
+*/
 #elif HAVE_AQOS
 #ifdef HAVE_OPENVPN
 static inline int is_in_bridge(char *interface)
@@ -488,7 +494,7 @@ static inline int is_in_bridge(char *interface)
 }
 #endif
 
-extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate);
+//extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate);
 //extern void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream);
 //extern void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream);
 
@@ -501,19 +507,19 @@ void aqos_tables(void)
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_svcs = NULL;
 	
-	char level[32], level2[32], level3[32], data[32], type[32];
+	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 	
 	int base = 210;
 	int ret = 0;
 
 	do {
-		ret = sscanf(qos_mac, "%31s %31s %31s %31s %31s |", data, level, level2, type, level3);
-		if (ret < 5)
+		ret = sscanf(qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio);
+		if (ret < 6)
 			break;
 		
 		fprintf(outmacs, "%s\n", data);
-		add_client_classes(base, atoi(level), atoi(level2), atol(level3));
+		add_client_classes(base, atoi(level), atoi(level2), atol(level3), atoi(prio));
 		
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -527,7 +533,7 @@ void aqos_tables(void)
 
 		// not service-prioritized, then default class		
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark 1 -j MARK --set-mark %d",
+			("iptables -t mangle -A FILTER_IN -m mac --mac-source %s -m mark --mark 0 -j MARK --set-mark %d",
 			 data, base+3);
 		
 		base += 10;
@@ -535,12 +541,12 @@ void aqos_tables(void)
 	while ((qos_mac = strpbrk(++qos_mac, "|")) && qos_mac++);
 
 	do {
-		ret = sscanf(qos_ipaddr, "%31s %31s %31s %31s |", data, level, level2, level3);
-		if (ret < 4)
+		ret = sscanf(qos_ipaddr, "%31s %31s %31s %31s %31s |", data, level, level2, level3, prio);
+		if (ret < 5)
 			break;
 		
 		fprintf(outips, "%s\n", data);
-		add_client_classes(base, atoi(level), atoi(level2), atol(level3));
+		add_client_classes(base, atoi(level), atoi(level2), atol(level3), atoi(prio));
 	
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -560,10 +566,10 @@ void aqos_tables(void)
 			("iptables -t mangle -A FILTER_OUT -d %s -m mark --mark 0 -j MARK --set-mark %d",
 			 data, base+3);
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 1 -j MARK --set-mark %d",
+			("iptables -t mangle -A FILTER_IN -s %s -m mark --mark 0 -j MARK --set-mark %d",
 			 data, base+3);
 		sysprintf
-			("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 1 -j MARK --set-mark %d",
+			("iptables -t mangle -A FILTER_IN -d %s -m mark --mark 0 -j MARK --set-mark %d",
 			 data, base+3);
 		
 		base += 10;
