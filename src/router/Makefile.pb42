@@ -752,8 +752,12 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 ifeq ($(CONFIG_BUFFALO_SA),y)
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.84 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.84" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
-	tools/bufenc/encryptRC4 WHR-HP-GN 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
-	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-GN" "WHR-HP-GN" "1.82" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-gn-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WHR-HP-GN 1.84 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-GN" "WHR-HP-GN" "1.84" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-gn-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WHR-G301N 1.84 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-G301N" "WHR-G301N" "1.84" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-g300n-firmware_MULTI.enc
+	tools/bufenc/encryptRC4 WLAE-AG300N 1.84 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WLAE-AG300N" "WLAE-AG300N" "1.84" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/wlae-ag300n-firmware_MULTI.enc
 else
 	tools/bufenc/encryptRC4 WHR-HP-G300N 1.82 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/whr-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -hcrypt="Buffalo" "WHR-HP-G300N" "WHR-HP-G300N" "1.82" "1.01" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/whr-firmware.enc $(ARCH)-uclibc/whr-hp-g300n-firmware_MULTI.enc
