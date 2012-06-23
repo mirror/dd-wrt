@@ -535,7 +535,7 @@ add_client_classes(unsigned int base, unsigned int level)
 	unsigned int quantum = atoi(get_mtu_val()) + 14;
 		
 	unsigned long uprate=0, downrate=0;		
-
+	int lanrate = lanlimit;
 #endif
 	switch (level) {
 		case 100:
