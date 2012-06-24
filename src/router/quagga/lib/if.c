@@ -146,7 +146,7 @@ if_delete_retain (struct interface *ifp)
     (*if_master.if_delete_hook) (ifp);
 
   /* Free connected address list */
-  list_delete (ifp->connected);
+  list_delete_all_node (ifp->connected);
 }
 
 /* Delete and free interface structure. */
@@ -156,6 +156,8 @@ if_delete (struct interface *ifp)
   listnode_delete (iflist, ifp);
 
   if_delete_retain(ifp);
+
+  list_free (ifp->connected);
 
   XFREE (MTYPE_IF, ifp);
 }
@@ -429,19 +431,17 @@ if_dump (const struct interface *ifp)
   struct listnode *node;
   struct connected *c;
 
-  zlog_info ("Interface %s index %d metric %d mtu %d "
-#ifdef HAVE_IPV6
-             "mtu6 %d "
-#endif /* HAVE_IPV6 */
-             "%s",
-	     ifp->name, ifp->ifindex, ifp->metric, ifp->mtu, 
-#ifdef HAVE_IPV6
-	     ifp->mtu6,
-#endif /* HAVE_IPV6 */
-	     if_flag_dump (ifp->flags));
-  
   for (ALL_LIST_ELEMENTS_RO (ifp->connected, node, c))
-    ;
+    zlog_info ("Interface %s index %d metric %d mtu %d "
+#ifdef HAVE_IPV6
+               "mtu6 %d "
+#endif /* HAVE_IPV6 */
+               "%s",
+               ifp->name, ifp->ifindex, ifp->metric, ifp->mtu, 
+#ifdef HAVE_IPV6
+               ifp->mtu6,
+#endif /* HAVE_IPV6 */
+               if_flag_dump (ifp->flags));
 }
 
 /* Interface printing for all interface. */

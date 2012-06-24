@@ -47,9 +47,19 @@
 #include "ospf6_flood.h"
 #include "ospf6d.h"
 
+#include <netinet/ip6.h>
+
 unsigned char conf_debug_ospf6_message[6] = {0x03, 0, 0, 0, 0, 0};
-const char *ospf6_message_type_str[] =
-  { "Unknown", "Hello", "DbDesc", "LSReq", "LSUpdate", "LSAck" };
+static const struct message ospf6_message_type_str [] =
+{
+  { OSPF6_MESSAGE_TYPE_HELLO,    "Hello"    },
+  { OSPF6_MESSAGE_TYPE_DBDESC,   "DbDesc"   },
+  { OSPF6_MESSAGE_TYPE_LSREQ,    "LSReq"    },
+  { OSPF6_MESSAGE_TYPE_LSUPDATE, "LSUpdate" },
+  { OSPF6_MESSAGE_TYPE_LSACK,    "LSAck"    },
+};
+static const size_t ospf6_message_type_str_max =
+  sizeof (ospf6_message_type_str) / sizeof (ospf6_message_type_str[0]);
 
 /* Minimum (besides the standard OSPF packet header) lengths for OSPF
    packets of particular types, offset is the "type" field. */
@@ -126,8 +136,7 @@ ospf6_hello_print (struct ospf6_header *oh)
       zlog_debug ("    Neighbor: %s", neighbor);
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    zlog_debug ("Trailing garbage exists");
+  assert (p == OSPF6_MESSAGE_END (oh));
 }
 
 void
@@ -159,8 +168,7 @@ ospf6_dbdesc_print (struct ospf6_header *oh)
        p += sizeof (struct ospf6_lsa_header))
     ospf6_lsa_header_print_raw ((struct ospf6_lsa_header *) p);
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    zlog_debug ("Trailing garbage exists");
+  assert (p == OSPF6_MESSAGE_END (oh));
 }
 
 void
@@ -183,8 +191,7 @@ ospf6_lsreq_print (struct ospf6_header *oh)
                  ospf6_lstype_name (e->type), id, adv_router);
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    zlog_debug ("Trailing garbage exists");
+  assert (p == OSPF6_MESSAGE_END (oh));
 }
 
 void
@@ -209,35 +216,9 @@ ospf6_lsupdate_print (struct ospf6_header *oh)
        p += OSPF6_LSA_SIZE (p))
     {
       ospf6_lsa_header_print_raw ((struct ospf6_lsa_header *) p);
-      if (OSPF6_LSA_SIZE (p) < sizeof (struct ospf6_lsa_header))
-        {
-          zlog_debug ("    Malformed LSA length, quit printing");
-          break;
-        }
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      char buf[32];
-
-      int num = 0;
-      memset (buf, 0, sizeof (buf));
-
-      zlog_debug ("    Trailing garbage exists");
-      while (p < OSPF6_MESSAGE_END (oh))
-        {
-          snprintf (buf, sizeof (buf), "%s %2x", buf, *p++);
-          num++;
-          if (num == 8)
-            {
-              zlog_debug ("    %s", buf);
-              memset (buf, 0, sizeof (buf));
-              num = 0;
-            }
-        }
-      if (num)
-        zlog_debug ("    %s", buf);
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 }
 
 void
@@ -253,8 +234,7 @@ ospf6_lsack_print (struct ospf6_header *oh)
        p += sizeof (struct ospf6_lsa_header))
     ospf6_lsa_header_print_raw ((struct ospf6_lsa_header *) p);
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    zlog_debug ("Trailing garbage exists");
+  assert (p == OSPF6_MESSAGE_END (oh));
 }
 
 static void
@@ -321,11 +301,7 @@ ospf6_hello_recv (struct in6_addr *src, struct in6_addr *dst,
         twoway++;
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Trailing garbage ignored");
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 
   /* RouterPriority check */
   if (on->priority != hello->priority)
@@ -558,11 +534,7 @@ ospf6_dbdesc_recv_master (struct ospf6_header *oh,
         }
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Trailing garbage ignored");
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 
   /* Increment sequence number */
   on->dbdesc_seqnum ++;
@@ -770,11 +742,7 @@ ospf6_dbdesc_recv_slave (struct ospf6_header *oh,
         ospf6_lsa_delete (his);
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Trailing garbage ignored");
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 
   /* Set sequence number to Master's */
   on->dbdesc_seqnum = ntohl (dbdesc->seqnum);
@@ -910,11 +878,7 @@ ospf6_lsreq_recv (struct in6_addr *src, struct in6_addr *dst,
       ospf6_lsdb_add (ospf6_lsa_copy (lsa), on->lsupdate_list);
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Trailing garbage ignored");
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 
   /* schedule send lsupdate */
   THREAD_OFF (on->thread_send_lsupdate);
@@ -1140,7 +1104,7 @@ ospf6_lsaseq_examin
     if (length < OSPF6_LSA_HEADER_SIZE)
     {
       if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
-        zlog_debug ("%s: undersized (%u B) trailing (#%u) LSA header",
+        zlog_debug ("%s: undersized (%zu B) trailing (#%u) LSA header",
                     __func__, length, counted_lsas);
       return MSG_NG;
     }
@@ -1172,7 +1136,7 @@ ospf6_lsaseq_examin
       if (lsalen > length)
       {
         if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
-          zlog_debug ("%s: anomaly in %s LSA #%u: declared length is %u B, buffered length is %u B",
+          zlog_debug ("%s: anomaly in %s LSA #%u: declared length is %u B, buffered length is %zu B",
                       __func__, ospf6_lstype_name (lsah->type), counted_lsas, lsalen, length);
         return MSG_NG;
       }
@@ -1238,7 +1202,7 @@ ospf6_packet_examin (struct ospf6_header *oh, const unsigned bytesonwire)
   {
     if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
       zlog_debug ("%s: undersized (%u B) %s packet", __func__,
-                  bytesonwire, ospf6_message_type_str[oh->type]);
+                  bytesonwire, LOOKUP (ospf6_message_type_str, oh->type));
     return MSG_NG;
   }
   /* type-specific deeper validation */
@@ -1251,7 +1215,7 @@ ospf6_packet_examin (struct ospf6_header *oh, const unsigned bytesonwire)
       return MSG_OK;
     if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
       zlog_debug ("%s: alignment error in %s packet",
-                  __func__, ospf6_message_type_str[oh->type]);
+                  __func__, LOOKUP (ospf6_message_type_str, oh->type));
     return MSG_NG;
   case OSPF6_MESSAGE_TYPE_DBDESC:
     /* RFC5340 A.3.3, packet header + OSPF6_DB_DESC_MIN_SIZE bytes followed
@@ -1270,7 +1234,7 @@ ospf6_packet_examin (struct ospf6_header *oh, const unsigned bytesonwire)
       return MSG_OK;
     if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
       zlog_debug ("%s: alignment error in %s packet",
-                  __func__, ospf6_message_type_str[oh->type]);
+                  __func__, LOOKUP (ospf6_message_type_str, oh->type));
     return MSG_NG;
   case OSPF6_MESSAGE_TYPE_LSUPDATE:
     /* RFC5340 A.3.5, packet header + OSPF6_LS_UPD_MIN_SIZE bytes followed
@@ -1300,7 +1264,7 @@ ospf6_packet_examin (struct ospf6_header *oh, const unsigned bytesonwire)
     return MSG_NG;
   }
   if (test != MSG_OK && IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
-    zlog_debug ("%s: anomaly in %s packet", __func__, ospf6_message_type_str[oh->type]);
+    zlog_debug ("%s: anomaly in %s packet", __func__, LOOKUP (ospf6_message_type_str, oh->type));
   return test;
 }
 
@@ -1355,7 +1319,6 @@ ospf6_lsupdate_recv (struct in6_addr *src, struct in6_addr *dst,
 {
   struct ospf6_neighbor *on;
   struct ospf6_lsupdate *lsupdate;
-  unsigned long num;
   char *p;
 
   on = ospf6_neighbor_lookup (oh->router_id, oi);
@@ -1378,37 +1341,16 @@ ospf6_lsupdate_recv (struct in6_addr *src, struct in6_addr *dst,
   lsupdate = (struct ospf6_lsupdate *)
     ((caddr_t) oh + sizeof (struct ospf6_header));
 
-  num = ntohl (lsupdate->lsa_number);
-
   /* Process LSAs */
   for (p = (char *) ((caddr_t) lsupdate + sizeof (struct ospf6_lsupdate));
        p < OSPF6_MESSAGE_END (oh) &&
        p + OSPF6_LSA_SIZE (p) <= OSPF6_MESSAGE_END (oh);
        p += OSPF6_LSA_SIZE (p))
     {
-      if (num == 0)
-        break;
-      if (OSPF6_LSA_SIZE (p) < sizeof (struct ospf6_lsa_header))
-        {
-          if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-            zlog_debug ("Malformed LSA length, quit processing");
-          break;
-        }
-
       ospf6_receive_lsa (on, (struct ospf6_lsa_header *) p);
-      num--;
     }
 
-  if (num != 0)
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Malformed LSA number or LSA length");
-    }
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Trailing garbage ignored");
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 
   /* RFC2328 Section 10.9: When the neighbor responds to these requests
      with the proper Link State Update packet(s), the Link state request
@@ -1524,11 +1466,7 @@ ospf6_lsack_recv (struct in6_addr *src, struct in6_addr *dst,
       ospf6_lsa_delete (his);
     }
 
-  if (p != OSPF6_MESSAGE_END (oh))
-    {
-      if (IS_OSPF6_DEBUG_MESSAGE (oh->type, RECV))
-        zlog_debug ("Trailing garbage ignored");
-    }
+  assert (p == OSPF6_MESSAGE_END (oh));
 }
 
 static u_char *recvbuf = NULL;
@@ -1647,11 +1585,9 @@ ospf6_receive (struct thread *thread)
       inet_ntop (AF_INET6, &src, srcname, sizeof (srcname));
       inet_ntop (AF_INET6, &dst, dstname, sizeof (dstname));
       zlog_debug ("%s received on %s",
-                 OSPF6_MESSAGE_TYPE_NAME (oh->type), oi->interface->name);
+                 LOOKUP (ospf6_message_type_str, oh->type), oi->interface->name);
       zlog_debug ("    src: %s", srcname);
       zlog_debug ("    dst: %s", dstname);
-      if (len != ntohs (oh->length))
-        zlog_debug ("Message length does not match actually received: %d", len);
 
       switch (oh->type)
         {
@@ -1671,8 +1607,7 @@ ospf6_receive (struct thread *thread)
             ospf6_lsack_print (oh);
             break;
           default:
-            zlog_debug ("Unknown message");
-            break;
+            assert (0);
         }
     }
 
@@ -1699,9 +1634,7 @@ ospf6_receive (struct thread *thread)
         break;
 
       default:
-        if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_UNKNOWN, RECV))
-          zlog_debug ("Unknown message");
-        break;
+        assert (0);
     }
 
   return 0;
@@ -1740,7 +1673,7 @@ ospf6_send (struct in6_addr *src, struct in6_addr *dst,
       else
         memset (srcname, 0, sizeof (srcname));
       zlog_debug ("%s send on %s",
-                 OSPF6_MESSAGE_TYPE_NAME (oh->type), oi->interface->name);
+                 LOOKUP (ospf6_message_type_str, oh->type), oi->interface->name);
       zlog_debug ("    src: %s", srcname);
       zlog_debug ("    dst: %s", dstname);
 
@@ -1772,6 +1705,13 @@ ospf6_send (struct in6_addr *src, struct in6_addr *dst,
   len = ospf6_sendmsg (src, dst, &oi->interface->ifindex, iovector);
   if (len != ntohs (oh->length))
     zlog_err ("Could not send entire message");
+}
+
+static uint32_t
+ospf6_packet_max(struct ospf6_interface *oi)
+{
+  assert (oi->ifmtu > sizeof (struct ip6_hdr));
+  return oi->ifmtu - (sizeof (struct ip6_hdr));
 }
 
 int
@@ -1820,7 +1760,7 @@ ospf6_hello_send (struct thread *thread)
       if (on->state < OSPF6_NEIGHBOR_INIT)
         continue;
 
-      if (p - sendbuf + sizeof (u_int32_t) > oi->ifmtu)
+      if (p - sendbuf + sizeof (u_int32_t) > ospf6_packet_max(oi))
         {
           if (IS_OSPF6_DEBUG_MESSAGE (OSPF6_MESSAGE_TYPE_HELLO, SEND))
             zlog_debug ("sending Hello message: exceeds I/F MTU");
@@ -1896,7 +1836,7 @@ ospf6_dbdesc_send (struct thread *thread)
 
           /* MTU check */
           if (p - sendbuf + sizeof (struct ospf6_lsa_header) >
-              on->ospf6_if->ifmtu)
+              ospf6_packet_max(on->ospf6_if))
             {
               ospf6_lsa_unlock (lsa);
               break;
@@ -1930,7 +1870,7 @@ ospf6_dbdesc_send_newone (struct thread *thread)
   for (lsa = ospf6_lsdb_head (on->summary_list); lsa;
        lsa = ospf6_lsdb_next (lsa))
     {
-      if (size + sizeof (struct ospf6_lsa_header) > on->ospf6_if->ifmtu)
+      if (size + sizeof (struct ospf6_lsa_header) > ospf6_packet_max(on->ospf6_if))
         {
           ospf6_lsa_unlock (lsa);
           break;
@@ -1997,7 +1937,7 @@ ospf6_lsreq_send (struct thread *thread)
        lsa = ospf6_lsdb_next (lsa))
     {
       /* MTU check */
-      if (p - sendbuf + sizeof (struct ospf6_lsreq_entry) > on->ospf6_if->ifmtu)
+      if (p - sendbuf + sizeof (struct ospf6_lsreq_entry) > ospf6_packet_max(on->ospf6_if))
         {
           ospf6_lsa_unlock (lsa);
           break;
@@ -2066,7 +2006,7 @@ ospf6_lsupdate_send_neighbor (struct thread *thread)
     {
       /* MTU check */
       if ( (p - sendbuf + (unsigned int)OSPF6_LSA_SIZE (lsa->header))
-          > on->ospf6_if->ifmtu)
+          > ospf6_packet_max(on->ospf6_if))
         {
           ospf6_lsa_unlock (lsa);
           break;
@@ -2086,7 +2026,7 @@ ospf6_lsupdate_send_neighbor (struct thread *thread)
     {
       /* MTU check */
       if ( (p - sendbuf + (unsigned int)OSPF6_LSA_SIZE (lsa->header))
-          > on->ospf6_if->ifmtu)
+          > ospf6_packet_max(on->ospf6_if))
         {
           ospf6_lsa_unlock (lsa);
           break;
@@ -2159,7 +2099,7 @@ ospf6_lsupdate_send_interface (struct thread *thread)
     {
       /* MTU check */
       if ( (p - sendbuf + ((unsigned int)OSPF6_LSA_SIZE (lsa->header)))
-          > oi->ifmtu)
+          > ospf6_packet_max(oi))
         {
           ospf6_lsa_unlock (lsa);
           break;
@@ -2226,7 +2166,7 @@ ospf6_lsack_send_neighbor (struct thread *thread)
        lsa = ospf6_lsdb_next (lsa))
     {
       /* MTU check */
-      if (p - sendbuf + sizeof (struct ospf6_lsa_header) > on->ospf6_if->ifmtu)
+      if (p - sendbuf + sizeof (struct ospf6_lsa_header) > ospf6_packet_max(on->ospf6_if))
         {
           /* if we run out of packet size/space here,
              better to try again soon. */
@@ -2286,7 +2226,7 @@ ospf6_lsack_send_interface (struct thread *thread)
        lsa = ospf6_lsdb_next (lsa))
     {
       /* MTU check */
-      if (p - sendbuf + sizeof (struct ospf6_lsa_header) > oi->ifmtu)
+      if (p - sendbuf + sizeof (struct ospf6_lsa_header) > ospf6_packet_max(oi))
         {
           /* if we run out of packet size/space here,
              better to try again soon. */

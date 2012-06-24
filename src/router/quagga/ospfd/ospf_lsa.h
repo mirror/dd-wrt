@@ -153,7 +153,14 @@ struct router_lsa_link
 };
 
 /* OSPF Router-LSAs structure. */
-#define OSPF_ROUTER_LSA_MIN_SIZE                  16U /* w/1 link descriptor */
+#define OSPF_ROUTER_LSA_MIN_SIZE                   4U /* w/0 link descriptors */
+/* There is an edge case, when number of links in a Router-LSA may be 0 without
+   breaking the specification. A router, which has no other links to backbone
+   area besides one virtual link, will not put any VL descriptor blocks into
+   the Router-LSA generated for area 0 until a full adjacency over the VL is
+   reached (RFC2328 12.4.1.3). In this case the Router-LSA initially received
+   by the other end of the VL will have 0 link descriptor blocks, but soon will
+   be replaced with the next revision having 1 descriptor block. */
 struct router_lsa
 {
   struct lsa_header header;
@@ -279,6 +286,7 @@ extern struct in_addr ospf_get_ip_from_ifp (struct ospf_interface *);
 
 extern struct ospf_lsa *ospf_external_lsa_originate (struct ospf *, struct external_info *);
 extern int ospf_external_lsa_originate_timer (struct thread *);
+extern int ospf_default_originate_timer (struct thread *);
 extern struct ospf_lsa *ospf_lsa_lookup (struct ospf_area *, u_int32_t,
 				  struct in_addr, struct in_addr);
 extern struct ospf_lsa *ospf_lsa_lookup_by_id (struct ospf_area *,

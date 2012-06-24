@@ -3,6 +3,9 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* babeld vty socket */
+#undef BABEL_VTYSH_PATH
+
 /* bgpd vty socket */
 #undef BGP_VTYSH_PATH
 
@@ -181,10 +184,6 @@
 /* mallinfo */
 #undef HAVE_MALLINFO
 
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
-   to 0 otherwise. */
-#undef HAVE_MALLOC
-
 /* Define to 1 if you have the `memchr' function. */
 #undef HAVE_MEMCHR
 
@@ -280,10 +279,6 @@
 
 /* prctl */
 #undef HAVE_PR_SET_KEEPCAPS
-
-/* Define to 1 if your system has a GNU libc compatible `realloc' function,
-   and to 0 otherwise. */
-#undef HAVE_REALLOC
 
 /* Have RFC3678 protocol-independed API */
 #undef HAVE_RFC3678
@@ -625,6 +620,9 @@
 /* Have openpam_ttyconv */
 #undef PAM_CONV_FUNC
 
+/* babeld PID */
+#undef PATH_BABELD_PID
+
 /* bgpd PID */
 #undef PATH_BGPD_PID
 
@@ -755,6 +753,11 @@
 /* zebra vty socket */
 #undef ZEBRA_VTYSH_PATH
 
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
 
@@ -783,17 +786,11 @@
 #undef inline
 #endif
 
-/* Define to rpl_malloc if the replacement function should be used. */
-#undef malloc
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
-
-/* Define to rpl_realloc if the replacement function should be used. */
-#undef realloc
 
 /* Define to the equivalent of the C99 'restrict' keyword, or to
    nothing if this is not supported.  Do not define if restrict is

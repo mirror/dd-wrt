@@ -24,8 +24,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 0.99.20.1, last updated 12 March 2012 of `The Quagga
-Manual', for Quagga Version 0.99.20.1.
+   This is Edition 0.99.21, last updated 4 April 2012 of `The Quagga
+Manual', for Quagga Version 0.99.21.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -50,8 +50,8 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga
-0.99.20.1. Quagga is a fork of GNU Zebra.
+TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.21.
+Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -79,6 +79,7 @@ TCP/IP based routing protocols.  This is the Manual for Quagga
 * RIPng::
 * OSPFv2::
 * OSPFv3::
+* Babel::
 * BGP::
 * Configuring Quagga as a Route Server::
 * VTY shell::
@@ -1024,7 +1025,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 0.99.20.1)
+     Hello, this is Quagga (version 0.99.21)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification
@@ -1849,10 +1850,11 @@ functionality.
  -- Route Map: match ip address prefix-list WORD
      Match if route destination is permitted by access-list.
 
- -- Route Map: match ip next-hop A.B.C.D
-     Cisco uses here <access-list>, `ripd' IPv4 address. Match if route
-     has this next-hop (meaning next-hop listed in the rip route table
-     - "show ip rip")
+ -- Route Map: match ip next-hop WORD
+ -- Route Map: match ip next-hop prefix-list WORD
+     Match if route next-hop (meaning next-hop listed in the rip
+     route-table as displayed by "show ip rip") is permitted by
+     access-list.
 
  -- Route Map: match metric <0-4294967295>
      This command match to the metric value of RIP updates.  For other
@@ -2669,9 +2671,6 @@ metric-type (1|2) route-map WORD
           <1-255>
  -- OSPF Command: no distance ospf
 
- -- Command: router zebra
- -- Command: no router zebra
-
 
 File: quagga.info,  Node: Showing OSPF information,  Next: Debugging OSPF,  Prev: Redistribute routes to OSPF,  Up: OSPFv2
 
@@ -2799,7 +2798,7 @@ of networks between the areas:
      !
 
 
-File: quagga.info,  Node: OSPFv3,  Next: BGP,  Prev: OSPFv2,  Up: Top
+File: quagga.info,  Node: OSPFv3,  Next: Babel,  Prev: OSPFv2,  Up: Top
 
 8 OSPFv3
 ********
@@ -2918,10 +2917,131 @@ Example of ospf6d configured on one interface and area:
      !
 
 
-File: quagga.info,  Node: BGP,  Next: Configuring Quagga as a Route Server,  Prev: OSPFv3,  Up: Top
+File: quagga.info,  Node: Babel,  Next: BGP,  Prev: OSPFv3,  Up: Top
 
-9 BGP
-*****
+9 Babel
+*******
+
+Babel is an interior gateway protocol that is suitable both for wired
+networks and for wireless mesh networks.  Babel has been described as
+"RIP on speed" -- it is based on the same principles as RIP, but
+includes a number of refinements that make it react much faster to
+topology changes without ever counting to infinity, and allow it to
+perform reliable link quality estimation on wireless links.  Babel is a
+double-stack routing protocol, meaning that a single Babel instance is
+able to perform routing for both IPv4 and IPv6.
+
+   Quagga implements Babel as described in RFC6126.
+
+* Menu:
+
+* Configuring babeld::
+* Babel configuration::
+* Babel redistribution::
+* Show Babel information::
+* Babel debugging commands::
+
+
+File: quagga.info,  Node: Configuring babeld,  Next: Babel configuration,  Prev: Babel,  Up: Babel
+
+9.1 Configuring babeld
+======================
+
+The `babeld' daemon can be invoked with any of the common options
+(*note Common Invocation Options::).
+
+   The `zebra' daemon must be running before `babeld' is invoked. Also,
+if `zebra' is restarted then `babeld' must be too.
+
+   Configuration of `babeld' is done in its configuration file
+`babeld.conf'.
+
+
+File: quagga.info,  Node: Babel configuration,  Next: Babel redistribution,  Prev: Configuring babeld,  Up: Babel
+
+9.2 Babel configuration
+=======================
+
+ -- Command: router babel
+ -- Command: no router babel
+     Enable or disable Babel routing.
+
+ -- Babel Command: network IFNAME
+ -- Babel Command: no network IFNAME
+     Enable or disable Babel on the given interface.
+
+ -- Interface Command: babel wired
+ -- Interface Command: babel wireless
+     Specifies whether this interface is wireless, which disables a
+     number of optimisations that are only correct on wired interfaces.
+     Specifying `wireless' (the default) is always correct, but may
+     cause slower convergence and extra routing traffic.
+
+ -- Interface Command: babel split-horizon
+ -- Interface Command: no babel split-horizon
+     Specifies whether to perform split-horizon on the interface.
+     Specifying `no babel split-horizon' (the default) is always
+     correct, while `babel split-horizon' is an optimisation that
+     should only be used on symmetric and transitive (wired) networks.
+
+ -- Interface Command: babel hello-interval <20-655340>
+     Specifies the time in milliseconds between two scheduled hellos.
+     On wired links, Babel notices a link failure within two hello
+     intervals; on wireless links, the link quality value is
+     reestimated at every hello interval.  The default is 4000ms.
+
+ -- Interface Command: babel update-interval <20-655340>
+     Specifies the time in milliseconds between two scheduled updates.
+     Since Babel makes extensive use of triggered updates, this can be
+     set to fairly high values on links with little packet loss.  The
+     default is 20000ms.
+
+ -- Babel Command: babel resend-delay <20-655340>
+     Specifies the time in milliseconds after which an "important"
+     request or update will be resent.  The default is 2000ms.  You
+     probably don't want to tweak this value.
+
+
+File: quagga.info,  Node: Babel redistribution,  Next: Show Babel information,  Prev: Babel configuration,  Up: Babel
+
+9.3 Babel redistribution
+========================
+
+ -- Babel command: redistribute KIND
+ -- Babel command: no redistribute KIND
+     Specify which kind of routes should be redistributed into Babel.
+
+
+File: quagga.info,  Node: Show Babel information,  Next: Babel debugging commands,  Prev: Babel redistribution,  Up: Babel
+
+9.4 Show Babel information
+==========================
+
+ -- Command: show babel database
+ -- Command: show babel interface
+ -- Command: show babel neighbour
+ -- Command: show babel parameters
+     These commands dump various parts of `babeld''s internal state.
+     They are mostly useful for troubleshooting.
+
+
+File: quagga.info,  Node: Babel debugging commands,  Prev: Show Babel information,  Up: Babel
+
+9.5 Babel debugging commands
+============================
+
+ -- Babel Command: debug babel KIND
+ -- Babel Command: no debug babel KIND
+     Enable or disable debugging messages of a given kind.  KIND can be
+     one of `common', `kernel', `filter', `timeout', `interface',
+     `route' or `all'.  Note that if you have compiled with the
+     NO_DEBUG flag, then these commands aren't available.
+
+
+File: quagga.info,  Node: BGP,  Next: Configuring Quagga as a Route Server,  Prev: Babel,  Up: Top
+
+10 BGP
+******
 
 BGP stands for a Border Gateway Protocol.  The lastest BGP version is
 4.  It is referred as BGP-4.  BGP-4 is one of the Exterior Gateway
@@ -2954,8 +3074,8 @@ BGP-4.
 
 File: quagga.info,  Node: Starting BGP,  Next: BGP router,  Up: BGP
 
-9.1 Starting BGP
-================
+10.1 Starting BGP
+=================
 
 Default configuration file of `bgpd' is `bgpd.conf'.  `bgpd' searches
 the current directory first then /etc/quagga/bgpd.conf.  All of bgpd's
@@ -2975,8 +3095,8 @@ options may also be specified (*note Common Invocation Options::).
 
 File: quagga.info,  Node: BGP router,  Next: BGP network,  Prev: Starting BGP,  Up: BGP
 
-9.2 BGP router
-==============
+10.2 BGP router
+===============
 
 First of all you must configure BGP router with `router bgp' command.
 To configure BGP router, you need AS number.  AS number is an
@@ -3010,8 +3130,8 @@ one.
 
 File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP router
 
-9.2.1 BGP distance
-------------------
+10.2.1 BGP distance
+-------------------
 
  -- BGP: distance bgp <1-255> <1-255> <1-255>
      This command change distance value of BGP.  Each argument is
@@ -3025,8 +3145,8 @@ File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP ro
 
 File: quagga.info,  Node: BGP decision process,  Next: BGP route flap dampening,  Prev: BGP distance,  Up: BGP router
 
-9.2.2 BGP decision process
---------------------------
+10.2.2 BGP decision process
+---------------------------
 
 1. Weight check
 
@@ -3048,8 +3168,8 @@ File: quagga.info,  Node: BGP decision process,  Next: BGP route flap dampening,
 
 File: quagga.info,  Node: BGP route flap dampening,  Prev: BGP decision process,  Up: BGP router
 
-9.2.3 BGP route flap dampening
-------------------------------
+10.2.3 BGP route flap dampening
+-------------------------------
 
  -- BGP: bgp dampening <1-45> <1-20000> <1-20000> <1-255>
      This command enables BGP route-flap dampening and specifies
@@ -3073,8 +3193,8 @@ File: quagga.info,  Node: BGP route flap dampening,  Prev: BGP decision process,
 
 File: quagga.info,  Node: BGP network,  Next: BGP Peer,  Prev: BGP router,  Up: BGP
 
-9.3 BGP network
-===============
+10.3 BGP network
+================
 
 * Menu:
 
@@ -3085,8 +3205,8 @@ File: quagga.info,  Node: BGP network,  Next: BGP Peer,  Prev: BGP router,  Up: 
 
 File: quagga.info,  Node: BGP route,  Next: Route Aggregation,  Up: BGP network
 
-9.3.1 BGP route
----------------
+10.3.1 BGP route
+----------------
 
  -- BGP: network A.B.C.D/M
      This command adds the announcement network.
@@ -3102,8 +3222,8 @@ File: quagga.info,  Node: BGP route,  Next: Route Aggregation,  Up: BGP network
 
 File: quagga.info,  Node: Route Aggregation,  Next: Redistribute to BGP,  Prev: BGP route,  Up: BGP network
 
-9.3.2 Route Aggregation
------------------------
+10.3.2 Route Aggregation
+------------------------
 
  -- BGP: aggregate-address A.B.C.D/M
      This command specifies an aggregate address.
@@ -3121,8 +3241,8 @@ File: quagga.info,  Node: Route Aggregation,  Next: Redistribute to BGP,  Prev: 
 
 File: quagga.info,  Node: Redistribute to BGP,  Prev: Route Aggregation,  Up: BGP network
 
-9.3.3 Redistribute to BGP
--------------------------
+10.3.3 Redistribute to BGP
+--------------------------
 
  -- BGP: redistribute kernel
      Redistribute kernel route to BGP process.
@@ -3142,8 +3262,8 @@ File: quagga.info,  Node: Redistribute to BGP,  Prev: Route Aggregation,  Up: BG
 
 File: quagga.info,  Node: BGP Peer,  Next: BGP Peer Group,  Prev: BGP network,  Up: BGP
 
-9.4 BGP Peer
-============
+10.4 BGP Peer
+=============
 
 * Menu:
 
@@ -3154,8 +3274,8 @@ File: quagga.info,  Node: BGP Peer,  Next: BGP Peer Group,  Prev: BGP network,  
 
 File: quagga.info,  Node: Defining Peer,  Next: BGP Peer commands,  Up: BGP Peer
 
-9.4.1 Defining Peer
--------------------
+10.4.1 Defining Peer
+--------------------
 
  -- BGP: neighbor PEER remote-as ASN
      Creates a new neighbor whose remote-as is ASN.  PEER can be an
@@ -3173,8 +3293,8 @@ File: quagga.info,  Node: Defining Peer,  Next: BGP Peer commands,  Up: BGP Peer
 
 File: quagga.info,  Node: BGP Peer commands,  Next: Peer filtering,  Prev: Defining Peer,  Up: BGP Peer
 
-9.4.2 BGP Peer commands
------------------------
+10.4.2 BGP Peer commands
+------------------------
 
 In a `router bgp' clause there are neighbor specific configurations
 required.
@@ -3251,8 +3371,8 @@ required.
 
 File: quagga.info,  Node: Peer filtering,  Prev: BGP Peer commands,  Up: BGP Peer
 
-9.4.3 Peer filtering
---------------------
+10.4.3 Peer filtering
+---------------------
 
  -- BGP: neighbor PEER distribute-list NAME [in|out]
      This command specifies a distribute-list for the peer.  DIRECT is
@@ -3268,8 +3388,8 @@ File: quagga.info,  Node: Peer filtering,  Prev: BGP Peer commands,  Up: BGP Pee
 
 File: quagga.info,  Node: BGP Peer Group,  Next: BGP Address Family,  Prev: BGP Peer,  Up: BGP
 
-9.5 BGP Peer Group
-==================
+10.5 BGP Peer Group
+===================
 
  -- BGP: neighbor WORD peer-group
      This command defines a new peer group.
@@ -3280,14 +3400,14 @@ File: quagga.info,  Node: BGP Peer Group,  Next: BGP Address Family,  Prev: BGP 
 
 File: quagga.info,  Node: BGP Address Family,  Next: Autonomous System,  Prev: BGP Peer Group,  Up: BGP
 
-9.6 BGP Address Family
-======================
+10.6 BGP Address Family
+=======================
 
 
 File: quagga.info,  Node: Autonomous System,  Next: BGP Communities Attribute,  Prev: BGP Address Family,  Up: BGP
 
-9.7 Autonomous System
-=====================
+10.7 Autonomous System
+======================
 
 The AS (Autonomous System) number is one of the essential element of
 BGP.  BGP is a distance vector routing protocol, and the AS-Path
@@ -3311,8 +3431,8 @@ Private AS numbers must not to be advertised in the global Internet.
 
 File: quagga.info,  Node: AS Path Regular Expression,  Next: Display BGP Routes by AS Path,  Up: Autonomous System
 
-9.7.1 AS Path Regular Expression
---------------------------------
+10.7.1 AS Path Regular Expression
+---------------------------------
 
 AS path regular expression can be used for displaying BGP routes and AS
 path access list.  AS path regular expression is based on `POSIX
@@ -3350,8 +3470,8 @@ regular expression.
 
 File: quagga.info,  Node: Display BGP Routes by AS Path,  Next: AS Path Access List,  Prev: AS Path Regular Expression,  Up: Autonomous System
 
-9.7.2 Display BGP Routes by AS Path
------------------------------------
+10.7.2 Display BGP Routes by AS Path
+------------------------------------
 
 To show BGP routes which has specific AS path information `show ip bgp'
 command can be used.
@@ -3363,8 +3483,8 @@ command can be used.
 
 File: quagga.info,  Node: AS Path Access List,  Next: Using AS Path in Route Map,  Prev: Display BGP Routes by AS Path,  Up: Autonomous System
 
-9.7.3 AS Path Access List
--------------------------
+10.7.3 AS Path Access List
+--------------------------
 
 AS path access list is user defined AS path.
 
@@ -3377,8 +3497,8 @@ AS path access list is user defined AS path.
 
 File: quagga.info,  Node: Using AS Path in Route Map,  Next: Private AS Numbers,  Prev: AS Path Access List,  Up: Autonomous System
 
-9.7.4 Using AS Path in Route Map
---------------------------------
+10.7.4 Using AS Path in Route Map
+---------------------------------
 
  -- Route Map: match as-path WORD
 
@@ -3387,14 +3507,14 @@ File: quagga.info,  Node: Using AS Path in Route Map,  Next: Private AS Numbers,
 
 File: quagga.info,  Node: Private AS Numbers,  Prev: Using AS Path in Route Map,  Up: Autonomous System
 
-9.7.5 Private AS Numbers
-------------------------
+10.7.5 Private AS Numbers
+-------------------------
 
 
 File: quagga.info,  Node: BGP Communities Attribute,  Next: BGP Extended Communities Attribute,  Prev: Autonomous System,  Up: BGP
 
-9.8 BGP Communities Attribute
-=============================
+10.8 BGP Communities Attribute
+==============================
 
 BGP communities attribute is widely used for implementing policy
 routing.  Network operators can manipulate BGP communities attribute
@@ -3454,8 +3574,8 @@ values are sorted in numerical order.
 
 File: quagga.info,  Node: BGP Community Lists,  Next: Numbered BGP Community Lists,  Up: BGP Communities Attribute
 
-9.8.1 BGP Community Lists
--------------------------
+10.8.1 BGP Community Lists
+--------------------------
 
 BGP community list is a user defined BGP communites attribute list.
 BGP community list can be used for matching or manipulating BGP
@@ -3513,8 +3633,8 @@ expanded community list.
 
 File: quagga.info,  Node: Numbered BGP Community Lists,  Next: BGP Community in Route Map,  Prev: BGP Community Lists,  Up: BGP Communities Attribute
 
-9.8.2 Numbered BGP Community Lists
-----------------------------------
+10.8.2 Numbered BGP Community Lists
+-----------------------------------
 
 When number is used for BGP community list name, the number has special
 meanings.  Community list number in the range from 1 and 99 is standard
@@ -3545,8 +3665,8 @@ named community lists.
 
 File: quagga.info,  Node: BGP Community in Route Map,  Next: Display BGP Routes by Community,  Prev: Numbered BGP Community Lists,  Up: BGP Communities Attribute
 
-9.8.3 BGP Community in Route Map
---------------------------------
+10.8.3 BGP Community in Route Map
+---------------------------------
 
 In Route Map (*note Route Map::), we can match or set BGP communities
 attribute.  Using this feature network operator can implement their
@@ -3586,8 +3706,8 @@ network policy based on BGP communities attribute.
 
 File: quagga.info,  Node: Display BGP Routes by Community,  Next: Using BGP Communities Attribute,  Prev: BGP Community in Route Map,  Up: BGP Communities Attribute
 
-9.8.4 Display BGP Routes by Community
--------------------------------------
+10.8.4 Display BGP Routes by Community
+--------------------------------------
 
 To show BGP routes which has specific BGP communities attribute, `show
 ip bgp' command can be used.  The COMMUNITY value and community list
@@ -3611,8 +3731,8 @@ can be used for `show ip bgp' command.
 
 File: quagga.info,  Node: Using BGP Communities Attribute,  Prev: Display BGP Routes by Community,  Up: BGP Communities Attribute
 
-9.8.5 Using BGP Communities Attribute
--------------------------------------
+10.8.5 Using BGP Communities Attribute
+--------------------------------------
 
 Following configuration is the most typical usage of BGP communities
 attribute.  AS 7675 provides upstream Internet connection to AS 100.
@@ -3714,8 +3834,8 @@ community-list is used.  `deny' community-list is ignored.
 
 File: quagga.info,  Node: BGP Extended Communities Attribute,  Next: Displaying BGP routes,  Prev: BGP Communities Attribute,  Up: BGP
 
-9.9 BGP Extended Communities Attribute
-======================================
+10.9 BGP Extended Communities Attribute
+=======================================
 
 BGP extended communities attribute is introduced with MPLS VPN/BGP
 technology.  MPLS VPN/BGP expands capability of network infrastructure
@@ -3756,8 +3876,8 @@ based format the other is IP address based format.
 
 File: quagga.info,  Node: BGP Extended Community Lists,  Next: BGP Extended Communities in Route Map,  Up: BGP Extended Communities Attribute
 
-9.9.1 BGP Extended Community Lists
-----------------------------------
+10.9.1 BGP Extended Community Lists
+-----------------------------------
 
 Expanded Community Lists is a user defined BGP Expanded Community Lists.
 
@@ -3797,8 +3917,8 @@ EXTCOMMUNITY
 
 File: quagga.info,  Node: BGP Extended Communities in Route Map,  Prev: BGP Extended Community Lists,  Up: BGP Extended Communities Attribute
 
-9.9.2 BGP Extended Communities in Route Map
--------------------------------------------
+10.9.2 BGP Extended Communities in Route Map
+--------------------------------------------
 
  -- Route Map: match extcommunity WORD
 
@@ -3811,8 +3931,8 @@ File: quagga.info,  Node: BGP Extended Communities in Route Map,  Prev: BGP Exte
 
 File: quagga.info,  Node: Displaying BGP routes,  Next: Capability Negotiation,  Prev: BGP Extended Communities Attribute,  Up: BGP
 
-9.10 Displaying BGP Routes
-==========================
+10.10 Displaying BGP Routes
+===========================
 
 * Menu:
 
@@ -3822,8 +3942,8 @@ File: quagga.info,  Node: Displaying BGP routes,  Next: Capability Negotiation, 
 
 File: quagga.info,  Node: Show IP BGP,  Next: More Show IP BGP,  Up: Displaying BGP routes
 
-9.10.1 Show IP BGP
-------------------
+10.10.1 Show IP BGP
+-------------------
 
  -- Command: show ip bgp
  -- Command: show ip bgp A.B.C.D
@@ -3843,8 +3963,8 @@ File: quagga.info,  Node: Show IP BGP,  Next: More Show IP BGP,  Up: Displaying 
 
 File: quagga.info,  Node: More Show IP BGP,  Prev: Show IP BGP,  Up: Displaying BGP routes
 
-9.10.2 More Show IP BGP
------------------------
+10.10.2 More Show IP BGP
+------------------------
 
  -- Command: show ip bgp regexp LINE
      This command display BGP routes using AS path regular expression
@@ -3893,8 +4013,8 @@ File: quagga.info,  Node: More Show IP BGP,  Prev: Show IP BGP,  Up: Displaying 
 
 File: quagga.info,  Node: Capability Negotiation,  Next: Route Reflector,  Prev: Displaying BGP routes,  Up: BGP
 
-9.11 Capability Negotiation
-===========================
+10.11 Capability Negotiation
+============================
 
 When adding IPv6 routing information exchange feature to BGP.  There
 were some proposals.  IETF (Internet Engineering Task Force) IDR (Inter
@@ -3964,8 +4084,8 @@ configured values.
 
 File: quagga.info,  Node: Route Reflector,  Next: Route Server,  Prev: Capability Negotiation,  Up: BGP
 
-9.12 Route Reflector
-====================
+10.12 Route Reflector
+=====================
 
  -- BGP: bgp cluster-id A.B.C.D
 
@@ -3975,8 +4095,8 @@ File: quagga.info,  Node: Route Reflector,  Next: Route Server,  Prev: Capabilit
 
 File: quagga.info,  Node: Route Server,  Next: How to set up a 6-Bone connection,  Prev: Route Reflector,  Up: BGP
 
-9.13 Route Server
-=================
+10.13 Route Server
+==================
 
 At an Internet Exchange point, many ISPs are connected to each other by
 external BGP peering.  Normally these external BGP connection are done
@@ -4004,8 +4124,8 @@ normal BGP router or Route Server or both at the same time.
 
 File: quagga.info,  Node: Multiple instance,  Next: BGP instance and view,  Up: Route Server
 
-9.13.1 Multiple instance
-------------------------
+10.13.1 Multiple instance
+-------------------------
 
 To enable multiple view function of `bgpd', you must turn on multiple
 instance feature beforehand.
@@ -4059,8 +4179,8 @@ neighbor by default.  To send community attribute user has to specify
 
 File: quagga.info,  Node: BGP instance and view,  Next: Routing policy,  Prev: Multiple instance,  Up: Route Server
 
-9.13.2 BGP instance and view
-----------------------------
+10.13.2 BGP instance and view
+-----------------------------
 
 BGP instance is a normal BGP process.  The result of route selection
 goes to the kernel routing table.  You can setup different AS at the
@@ -4103,8 +4223,8 @@ for exchanging BGP routing information.
 
 File: quagga.info,  Node: Routing policy,  Next: Viewing the view,  Prev: BGP instance and view,  Up: Route Server
 
-9.13.3 Routing policy
----------------------
+10.13.3 Routing policy
+----------------------
 
 You can set different routing policy for a peer.  For example, you can
 set different filter for a peer.
@@ -4127,8 +4247,8 @@ distribute-list 2 is applied.
 
 File: quagga.info,  Node: Viewing the view,  Prev: Routing policy,  Up: Route Server
 
-9.13.4 Viewing the view
------------------------
+10.13.4 Viewing the view
+------------------------
 
 To display routing table of BGP view, you must specify view name.
 
@@ -4138,8 +4258,8 @@ To display routing table of BGP view, you must specify view name.
 
 File: quagga.info,  Node: How to set up a 6-Bone connection,  Next: Dump BGP packets and table,  Prev: Route Server,  Up: BGP
 
-9.14 How to set up a 6-Bone connection
-======================================
+10.14 How to set up a 6-Bone connection
+=======================================
 
      zebra configuration
      ===================
@@ -4185,8 +4305,8 @@ File: quagga.info,  Node: How to set up a 6-Bone connection,  Next: Dump BGP pac
 
 File: quagga.info,  Node: Dump BGP packets and table,  Next: BGP Configuration Examples,  Prev: How to set up a 6-Bone connection,  Up: BGP
 
-9.15 Dump BGP packets and table
-===============================
+10.15 Dump BGP packets and table
+================================
 
  -- Command: dump bgp all PATH
  -- Command: dump bgp all PATH INTERVAL
@@ -4203,8 +4323,8 @@ File: quagga.info,  Node: Dump BGP packets and table,  Next: BGP Configuration E
 
 File: quagga.info,  Node: BGP Configuration Examples,  Prev: Dump BGP packets and table,  Up: BGP
 
-9.16 BGP Configuration Examples
-===============================
+10.16 BGP Configuration Examples
+================================
 
 Example of a session to an upstream, advertising only one prefix to it.
 
@@ -4431,7 +4551,7 @@ flaws.
 
 File: quagga.info,  Node: Configuring Quagga as a Route Server,  Next: VTY shell,  Prev: BGP,  Up: Top
 
-10 Configuring Quagga as a Route Server
+11 Configuring Quagga as a Route Server
 ***************************************
 
 The purpose of a Route Server is to centralize the peerings between BGP
@@ -4455,7 +4575,7 @@ Quagga configured as Route Server.
 
 File: quagga.info,  Node: Description of the Route Server model,  Next: Commands for configuring a Route Server,  Up: Configuring Quagga as a Route Server
 
-10.1 Description of the Route Server model
+11.1 Description of the Route Server model
 ==========================================
 
 First we are going to describe the normal processing that BGP
@@ -4495,7 +4615,7 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements
       [X] - 'Out' Filter applied to announcements to Peer X
 " ]
 
-Figure 10.1: Announcement processing inside a "normal" BGP speaker
+Figure 11.1: Announcement processing inside a "normal" BGP speaker
 
  [image src="fig_topologies_full.png" alt="Full Mesh BGP Topology" text="(RF1)--(RF2)
   | \\  / |
@@ -4505,7 +4625,7 @@ Figure 10.1: Announcement processing inside a "normal" BGP speaker
 (RF3)--(RF4)
 " ]
 
-Figure 10.2: Full Mesh
+Figure 11.2: Full Mesh
 
  [image src="fig_topologies_rs.png" alt="Route Server BGP Topology" text="(RF1)  (RF2)
     \\  /
@@ -4514,7 +4634,7 @@ Figure 10.2: Full Mesh
 (RF3)  (RF4)
 " ]
 
-Figure 10.3: Route Server and clients
+Figure 11.3: Route Server and clients
 
    Of course we want that the routing tables obtained in each of the
 routers are the same when using the route server than when not. But as
@@ -4647,13 +4767,13 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements before
             on routes before allowing them into X's RIB.
 " ]
 
-Figure 10.4: Announcement processing model implemented by the Route
+Figure 11.4: Announcement processing model implemented by the Route
 Server
 
 
 File: quagga.info,  Node: Commands for configuring a Route Server,  Next: Example of Route Server Configuration,  Prev: Description of the Route Server model,  Up: Configuring Quagga as a Route Server
 
-10.2 Commands for configuring a Route Server
+11.2 Commands for configuring a Route Server
 ============================================
 
 Now we will describe the commands that have been added to quagga in
@@ -4672,7 +4792,7 @@ order to support the route server features.
 
      With the route server patch, this command, apart from setting the
      transparent mode, creates a new Loc-RIB dedicated to the specified
-     peer (those named `Loc-RIB for X' in *note Figure 10.4:
+     peer (those named `Loc-RIB for X' in *note Figure 11.4:
      fig:rs-processing.). Starting from that moment, every announcement
      received by the route server will be also considered for the new
      Loc-RIB.
@@ -4699,7 +4819,7 @@ order to support the route server features.
      {A.B.C.D|X:X::X:X} is the address of the RS-Client into whose
      Loc-RIB the announce is going to be inserted (how the same export
      policy is applied before different Loc-RIBs is shown in *note
-     Figure 10.4: fig:rs-processing.).
+     Figure 11.4: fig:rs-processing.).
 
  -- Route-map Command: call WORD
      This command (also used inside a route-map) jumps into a different
@@ -4712,7 +4832,7 @@ order to support the route server features.
 
 File: quagga.info,  Node: Example of Route Server Configuration,  Prev: Commands for configuring a Route Server,  Up: Configuring Quagga as a Route Server
 
-10.3 Example of Route Server Configuration
+11.3 Example of Route Server Configuration
 ==========================================
 
 Finally we are going to show how to configure a Quagga daemon to act as
@@ -4735,7 +4855,7 @@ from scenarios which were tested using the VNUML tool VNUML
 
 File: quagga.info,  Node: Configuration of the BGP routers without Route Server,  Next: Configuration of the BGP routers with Route Server,  Up: Example of Route Server Configuration
 
-10.3.1 Configuration of the BGP routers without Route Server
+11.3.1 Configuration of the BGP routers without Route Server
 ------------------------------------------------------------
 
 We will suppose that our initial scenario is an exchange point with
@@ -4811,7 +4931,7 @@ line vty
 
 File: quagga.info,  Node: Configuration of the BGP routers with Route Server,  Next: Configuration of the Route Server itself,  Prev: Configuration of the BGP routers without Route Server,  Up: Example of Route Server Configuration
 
-10.3.2 Configuration of the BGP routers with Route Server
+11.3.2 Configuration of the BGP routers with Route Server
 ---------------------------------------------------------
 
 To convert the initial scenario into one with route server, first we
@@ -4848,7 +4968,7 @@ have disappeared.
 
 File: quagga.info,  Node: Configuration of the Route Server itself,  Next: Further considerations about Import and Export route-maps,  Prev: Configuration of the BGP routers with Route Server,  Up: Example of Route Server Configuration
 
-10.3.3 Configuration of the Route Server itself
+11.3.3 Configuration of the Route Server itself
 -----------------------------------------------
 
 As we said when we described the functions of a route server (*note
@@ -4972,7 +5092,7 @@ process would be identical.
 
 File: quagga.info,  Node: Further considerations about Import and Export route-maps,  Prev: Configuration of the Route Server itself,  Up: Example of Route Server Configuration
 
-10.3.4 Further considerations about Import and Export route-maps
+11.3.4 Further considerations about Import and Export route-maps
 ----------------------------------------------------------------
 
 The current version of the route server patch only allows to specify a
@@ -5045,7 +5165,7 @@ route.
 
 File: quagga.info,  Node: VTY shell,  Next: Filtering,  Prev: Configuring Quagga as a Route Server,  Up: Top
 
-11 VTY shell
+12 VTY shell
 ************
 
 `vtysh' is integrated shell of Quagga software.
@@ -5068,7 +5188,7 @@ settings.
 
 File: quagga.info,  Node: VTY shell username,  Next: VTY shell integrated configuration,  Up: VTY shell
 
-11.1 VTY shell username
+12.1 VTY shell username
 =======================
 
  -- Command: username USERNAME nopassword
@@ -5085,7 +5205,7 @@ File: quagga.info,  Node: VTY shell username,  Next: VTY shell integrated config
 
 File: quagga.info,  Node: VTY shell integrated configuration,  Prev: VTY shell username,  Up: VTY shell
 
-11.2 VTY shell integrated configuration
+12.2 VTY shell integrated configuration
 =======================================
 
  -- Command: service integrated-vtysh-config
@@ -5116,7 +5236,7 @@ File: quagga.info,  Node: VTY shell integrated configuration,  Prev: VTY shell u
 
 File: quagga.info,  Node: Filtering,  Next: Route Map,  Prev: VTY shell,  Up: Top
 
-12 Filtering
+13 Filtering
 ************
 
 Quagga provides many very flexible filtering features.  Filtering is
@@ -5131,7 +5251,7 @@ filtering is defined, it can be applied in any direction.
 
 File: quagga.info,  Node: IP Access List,  Next: IP Prefix List,  Up: Filtering
 
-12.1 IP Access List
+13.1 IP Access List
 ===================
 
  -- Command: access-list NAME permit IPV4-NETWORK
@@ -5146,7 +5266,7 @@ access-list filter permit 10.0.0.0/8
 
 File: quagga.info,  Node: IP Prefix List,  Prev: IP Access List,  Up: Filtering
 
-12.2 IP Prefix List
+13.2 IP Prefix List
 ===================
 
 `ip prefix-list' provides the most powerful prefix based filtering
@@ -5221,7 +5341,7 @@ exactly the length specified in the prefix list.
 
 File: quagga.info,  Node: ip prefix-list description,  Next: ip prefix-list sequential number control,  Up: IP Prefix List
 
-12.2.1 ip prefix-list description
+13.2.1 ip prefix-list description
 ---------------------------------
 
  -- Command: ip prefix-list NAME description DESC
@@ -5235,7 +5355,7 @@ File: quagga.info,  Node: ip prefix-list description,  Next: ip prefix-list sequ
 
 File: quagga.info,  Node: ip prefix-list sequential number control,  Next: Showing ip prefix-list,  Prev: ip prefix-list description,  Up: IP Prefix List
 
-12.2.2 ip prefix-list sequential number control
+13.2.2 ip prefix-list sequential number control
 -----------------------------------------------
 
  -- Command: ip prefix-list sequence-number
@@ -5249,7 +5369,7 @@ File: quagga.info,  Node: ip prefix-list sequential number control,  Next: Showi
 
 File: quagga.info,  Node: Showing ip prefix-list,  Next: Clear counter of ip prefix-list,  Prev: ip prefix-list sequential number control,  Up: IP Prefix List
 
-12.2.3 Showing ip prefix-list
+13.2.3 Showing ip prefix-list
 -----------------------------
 
  -- Command: show ip prefix-list
@@ -5283,7 +5403,7 @@ File: quagga.info,  Node: Showing ip prefix-list,  Next: Clear counter of ip pre
 
 File: quagga.info,  Node: Clear counter of ip prefix-list,  Prev: Showing ip prefix-list,  Up: IP Prefix List
 
-12.2.4 Clear counter of ip prefix-list
+13.2.4 Clear counter of ip prefix-list
 --------------------------------------
 
  -- Command: clear ip prefix-list
@@ -5297,7 +5417,7 @@ File: quagga.info,  Node: Clear counter of ip prefix-list,  Prev: Showing ip pre
 
 File: quagga.info,  Node: Route Map,  Next: IPv6 Support,  Prev: Filtering,  Up: Top
 
-13 Route Map
+14 Route Map
 ************
 
 Route maps provide a means to both filter and/or apply actions to
@@ -5395,7 +5515,7 @@ _Deny_   deny     cont
 
 File: quagga.info,  Node: Route Map Command,  Next: Route Map Match Command,  Up: Route Map
 
-13.1 Route Map Command
+14.1 Route Map Command
 ======================
 
  -- Command: route-map ROUTE-MAP-NAME (permit|deny) ORDER
@@ -5406,7 +5526,7 @@ File: quagga.info,  Node: Route Map Command,  Next: Route Map Match Command,  Up
 
 File: quagga.info,  Node: Route Map Match Command,  Next: Route Map Set Command,  Prev: Route Map Command,  Up: Route Map
 
-13.2 Route Map Match Command
+14.2 Route Map Match Command
 ============================
 
  -- Route-map Command: match ip address ACCESS_LIST
@@ -5427,7 +5547,7 @@ File: quagga.info,  Node: Route Map Match Command,  Next: Route Map Set Command,
 
 File: quagga.info,  Node: Route Map Set Command,  Next: Route Map Call Command,  Prev: Route Map Match Command,  Up: Route Map
 
-13.3 Route Map Set Command
+14.3 Route Map Set Command
 ==========================
 
  -- Route-map Command: set ip next-hop IPV4_ADDRESS
@@ -5457,7 +5577,7 @@ File: quagga.info,  Node: Route Map Set Command,  Next: Route Map Call Command, 
 
 File: quagga.info,  Node: Route Map Call Command,  Next: Route Map Exit Action Command,  Prev: Route Map Set Command,  Up: Route Map
 
-13.4 Route Map Call Command
+14.4 Route Map Call Command
 ===========================
 
  -- Route-map Command: call NAME
@@ -5467,7 +5587,7 @@ File: quagga.info,  Node: Route Map Call Command,  Next: Route Map Exit Action C
 
 File: quagga.info,  Node: Route Map Exit Action Command,  Next: Route Map Examples,  Prev: Route Map Call Command,  Up: Route Map
 
-13.5 Route Map Exit Action Command
+14.5 Route Map Exit Action Command
 ==================================
 
  -- Route-map Command: on-match next
@@ -5482,7 +5602,7 @@ File: quagga.info,  Node: Route Map Exit Action Command,  Next: Route Map Exampl
 
 File: quagga.info,  Node: Route Map Examples,  Prev: Route Map Exit Action Command,  Up: Route Map
 
-13.6 Route Map Examples
+14.6 Route Map Examples
 =======================
 
 A simple example of a route-map:
@@ -5500,13 +5620,13 @@ sophisticated useage of route-maps, including of the `call' action.
 
 File: quagga.info,  Node: IPv6 Support,  Next: Kernel Interface,  Prev: Route Map,  Up: Top
 
-14 IPv6 Support
+15 IPv6 Support
 ***************
 
 Quagga fully supports IPv6 routing.  As described so far, Quagga
-supports RIPng, OSPFv3 and BGP-4+.  You can give IPv6 addresses to an
-interface and configure static IPv6 routing information.  Quagga IPv6
-also provides automatic address configuration via a feature called
+supports RIPng, OSPFv3, Babel and BGP-4+.  You can give IPv6 addresses
+to an interface and configure static IPv6 routing information.  Quagga
+IPv6 also provides automatic address configuration via a feature called
 `address auto configuration'.  To do it, the router must send router
 advertisement messages to the all nodes that exist on the network.
 
@@ -5517,7 +5637,7 @@ advertisement messages to the all nodes that exist on the network.
 
 File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
 
-14.1 Router Advertisement
+15.1 Router Advertisement
 =========================
 
  -- Interface Command: no ipv6 nd suppress-ra
@@ -5562,24 +5682,22 @@ File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
           Default: not set, i.e. hosts do not assume a complete IP
           address is placed.
 
- -- Interface Command: ipv6 nd ra-interval SECONDS
- -- Interface Command: no ipv6 nd ra-interval
+ -- Interface Command: ipv6 nd ra-interval <1-1800>
+ -- Interface Command: no ipv6 nd ra-interval [<1-1800>]
      The  maximum  time allowed between sending unsolicited multicast
-     router advertisements from the interface, in seconds. Must be no
-     less than 3 seconds.
+     router advertisements from the interface, in seconds.
 
      Default: `600'
 
- -- Interface Command: ipv6 nd ra-interval msec MILLISECONDS
- -- Interface Command: no ipv6 nd ra-interval msec
+ -- Interface Command: ipv6 nd ra-interval msec <70-1800000>
+ -- Interface Command: no ipv6 nd ra-interval [msec <70-1800000>]
      The  maximum  time allowed between sending unsolicited multicast
-     router advertisements from the interface, in milliseconds. Must be
-     no less than 30 milliseconds.
+     router advertisements from the interface, in milliseconds.
 
      Default: `600000'
 
- -- Interface Command: ipv6 nd ra-lifetime SECONDS
- -- Interface Command: no ipv6 nd ra-lifetime
+ -- Interface Command: ipv6 nd ra-lifetime <0-9000>
+ -- Interface Command: no ipv6 nd ra-lifetime [<0-9000>]
      The value to be placed in the Router Lifetime field of router
      advertisements sent from the interface, in seconds. Indicates the
      usefulness of the router as a default router on this interface.
@@ -5590,13 +5708,12 @@ File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
 
      Default: `1800'
 
- -- Interface Command: ipv6 nd reachable-time MILLISECONDS
- -- Interface Command: no ipv6 nd reachable-time
+ -- Interface Command: ipv6 nd reachable-time <1-3600000>
+ -- Interface Command: no ipv6 nd reachable-time [<1-3600000>]
      The value to be placed in the Reachable Time field in the Router
      Advertisement messages sent by the router, in milliseconds. The
      configured time enables the router to detect unavailable
-     neighbors. The value zero means unspecified (by this router). Must
-     be no greater than `3,600,000' milliseconds (1 hour).
+     neighbors. The value zero means unspecified (by this router).
 
      Default: `0'
 
@@ -5625,18 +5742,25 @@ File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
 
      Default: not set
 
- -- Interface Command: ipv6 nd home-agent-preference
- -- Interface Command: no ipv6 nd home-agent-preference
+ -- Interface Command: ipv6 nd home-agent-preference <0-65535>
+ -- Interface Command: no ipv6 nd home-agent-preference [<0-65535>]
      The value to be placed in Home Agent Option, when Home Agent
-     config flag is set, which indicates to hosts Home Agent preference.
+     config flag is set, which indicates to hosts Home Agent
+     preference. The default value of 0 stands for the lowest
+     preference possible.
 
      Default: 0
 
- -- Interface Command: ipv6 nd home-agent-lifetime
- -- Interface Command: no ipv6 nd home-agent-lifetime
+   +
+
+ -- Interface Command: ipv6 nd home-agent-lifetime <0-65520>
+     +
+
+ -- Interface Command: no ipv6 nd home-agent-lifetime [<0-65520>]
      The value to be placed in Home Agent Option, when Home Agent
      config flag is set, which indicates to hosts Home Agent Lifetime.
-     A value of 0 means to place Router Lifetime value.
+     The default value of 0 means to place the current Router Lifetime
+     value.
 
      Default: 0
 
@@ -5649,25 +5773,33 @@ File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
      Default: not set
 
  -- Interface Command: ipv6 nd router-preference (high|medium|low)
- -- Interface Command: no ipv6 nd router-preference
+ -- Interface Command: no ipv6 nd router-preference [(high|medium|low)]
      Set default router preference in IPv6 router advertisements per
      RFC4191.
 
      Default: medium
+
+ -- Interface Command: ipv6 nd mtu <1-65535>
+ -- Interface Command: no ipv6 nd mtu [<1-65535>]
+     Include an MTU (type 5) option in each RA packet to assist the
+     attached hosts in proper interface configuration. The announced
+     value is not verified to be consistent with router interface MTU.
+
+     Default: don't advertise any MTU option
 
 interface eth0
  no ipv6 nd suppress-ra
  ipv6 nd prefix 2001:0DB8:5009::/64
 
    For more information see `RFC2462 (IPv6 Stateless Address
-Autoconfiguration)' , `RFC2461 (Neighbor Discovery for IP Version 6
-(IPv6))' , `RFC3775 (Mobility Support in IPv6 (Mobile IPv6))' and
-`RFC4191 (Default Router Preferences and More-Specific Routes)'.
+Autoconfiguration)' , `RFC4861 (Neighbor Discovery for IP Version 6
+(IPv6))' , `RFC6275 (Mobility Support in IPv6)' and `RFC4191 (Default
+Router Preferences and More-Specific Routes)'.
 
 
 File: quagga.info,  Node: Kernel Interface,  Next: SNMP Support,  Prev: IPv6 Support,  Up: Top
 
-15 Kernel Interface
+16 Kernel Interface
 *******************
 
 There are several different methods for reading kernel routing table
@@ -5716,7 +5848,7 @@ interfaces.
 
 File: quagga.info,  Node: SNMP Support,  Next: Zebra Protocol,  Prev: Kernel Interface,  Up: Top
 
-16 SNMP Support
+17 SNMP Support
 ***************
 
 SNMP (Simple Network Managing Protocol) is a widely implemented feature
@@ -5735,7 +5867,7 @@ make the routing protocol MIBs available through it.
 
 File: quagga.info,  Node: Getting and installing an SNMP agent,  Next: SMUX configuration,  Up: SNMP Support
 
-16.1 Getting and installing an SNMP agent
+17.1 Getting and installing an SNMP agent
 =========================================
 
 There are several SNMP agent which support SMUX. We recommend to use
@@ -5748,7 +5880,7 @@ connections from Quagga.
 
 File: quagga.info,  Node: SMUX configuration,  Next: MIB and command reference,  Prev: Getting and installing an SNMP agent,  Up: SNMP Support
 
-16.2 SMUX configuration
+17.2 SMUX configuration
 =======================
 
 To enable SMUX protocol support, Quagga must have been build with the
@@ -5803,7 +5935,7 @@ function `netsnmp_agent_check_packet()' in `agent/snmp_agent.c'.
 
 File: quagga.info,  Node: MIB and command reference,  Next: Handling SNMP Traps,  Prev: SMUX configuration,  Up: SNMP Support
 
-16.3 MIB and command reference
+17.3 MIB and command reference
 ==============================
 
 The following OID numbers are used for the interprocess communication
@@ -5836,7 +5968,7 @@ configuring SNMP:
 
 File: quagga.info,  Node: Handling SNMP Traps,  Prev: MIB and command reference,  Up: SNMP Support
 
-16.4 Handling SNMP Traps
+17.4 Handling SNMP Traps
 ========================
 
 To handle snmp traps make sure your snmp setup of quagga works
@@ -6037,8 +6169,8 @@ traps, like sound a siren, have your display flash, etc., be creative
 
 File: quagga.info,  Node: Zebra Protocol,  Next: Packet Binary Dump Format,  Prev: SNMP Support,  Up: Top
 
-Anhang A Zebra Protocol
-***********************
+Appendix A Zebra Protocol
+*************************
 
 A.1 Overview of the Zebra Protocol
 ==================================
@@ -6138,8 +6270,8 @@ ZEBRA_IPV6_NEXTHOP_LOOKUP                    16
 
 File: quagga.info,  Node: Packet Binary Dump Format,  Next: Command Index,  Prev: Zebra Protocol,  Up: Top
 
-Anhang B Packet Binary Dump Format
-**********************************
+Appendix B Packet Binary Dump Format
+************************************
 
 Quagga can dump routing protocol packet into file with a binary format
 (*note Dump BGP packets and table::).
@@ -6338,896 +6470,4 @@ Constants:
   #define BGP4MP_MESSAGE 1
   #define BGP4MP_ENTRY 2
   #define BGP4MP_SNAPSHOT 3
-
-
-File: quagga.info,  Node: Command Index,  Next: VTY Key Index,  Prev: Packet Binary Dump Format,  Up: Top
-
-Command Index
-*************
-
- [index ]
-* Menu:
-
-* access-class ACCESS-LIST:              Basic Config Commands.
-                                                              (line 142)
-* access-list NAME deny IPV4-NETWORK:    IP Access List.      (line   8)
-* access-list NAME permit IPV4-NETWORK:  IP Access List.      (line   7)
-* aggregate-address A.B.C.D/M:           Route Aggregation.   (line   7)
-* aggregate-address A.B.C.D/M as-set:    Route Aggregation.   (line  10)
-* aggregate-address A.B.C.D/M summary-only: Route Aggregation.
-                                                              (line  14)
-* area <0-4294967295> authentication:    OSPF area.           (line 127)
-* area <0-4294967295> authentication message-digest: OSPF area.
-                                                              (line 134)
-* area <0-4294967295> export-list NAME:  OSPF area.           (line  85)
-* area <0-4294967295> filter-list prefix NAME in: OSPF area.  (line 117)
-* area <0-4294967295> filter-list prefix NAME out: OSPF area. (line 118)
-* area <0-4294967295> import-list NAME:  OSPF area.           (line 109)
-* area <0-4294967295> range A.B.C.D/M:   OSPF area.           (line   8)
-* area <0-4294967295> shortcut:          OSPF area.           (line  55)
-* area <0-4294967295> stub:              OSPF area.           (line  62)
-* area <0-4294967295> stub no-summary:   OSPF area.           (line  74)
-* area <0-4294967295> virtual-link A.B.C.D: OSPF area.        (line  50)
-* area A.B.C.D authentication:           OSPF area.           (line 126)
-* area A.B.C.D authentication message-digest: OSPF area.      (line 133)
-* area A.B.C.D default-cost <0-16777215>: OSPF area.          (line  80)
-* area A.B.C.D export-list NAME:         OSPF area.           (line  84)
-* area A.B.C.D filter-list prefix NAME in: OSPF area.         (line 115)
-* area A.B.C.D filter-list prefix NAME out: OSPF area.        (line 116)
-* area A.B.C.D import-list NAME:         OSPF area.           (line 108)
-* area A.B.C.D range A.B.C.D/M:          OSPF area.           (line   7)
-* area A.B.C.D range IPV4_PREFIX not-advertise: OSPF area.    (line  28)
-* area A.B.C.D range IPV4_PREFIX substitute IPV4_PREFIX: OSPF area.
-                                                              (line  34)
-* area A.B.C.D shortcut:                 OSPF area.           (line  54)
-* area A.B.C.D stub:                     OSPF area.           (line  61)
-* area A.B.C.D stub no-summary:          OSPF area.           (line  73)
-* area A.B.C.D virtual-link A.B.C.D:     OSPF area.           (line  49)
-* auto-cost reference-bandwidth <1-4294967>: OSPF router.     (line 163)
-* bandwidth <1-10000000>:                Interface Commands.  (line  31)
-* banner motd default:                   Basic Config Commands.
-                                                              (line 124)
-* bgp bestpath as-path confed:           BGP decision process.
-                                                              (line  19)
-* bgp cluster-id A.B.C.D:                Route Reflector.     (line   7)
-* bgp config-type cisco:                 Multiple instance.   (line  20)
-* bgp config-type zebra:                 Multiple instance.   (line  53)
-* bgp dampening <1-45> <1-20000> <1-20000> <1-255>: BGP route flap dampening.
-                                                              (line   7)
-* bgp multiple-instance:                 Multiple instance.   (line  10)
-* bgp router-id A.B.C.D:                 BGP router.          (line  22)
-* call NAME:                             Route Map Call Command.
-                                                              (line   7)
-* call WORD:                             Commands for configuring a Route Server.
-                                                              (line  52)
-* clear ip bgp PEER:                     More Show IP BGP.    (line  25)
-* clear ip bgp PEER soft in:             More Show IP BGP.    (line  28)
-* clear ip prefix-list:                  Clear counter of ip prefix-list.
-                                                              (line   7)
-* clear ip prefix-list NAME:             Clear counter of ip prefix-list.
-                                                              (line  11)
-* clear ip prefix-list NAME A.B.C.D/M:   Clear counter of ip prefix-list.
-                                                              (line  13)
-* configure terminal:                    Terminal Mode Commands.
-                                                              (line  13)
-* continue:                              Route Map Exit Action Command.
-                                                              (line   8)
-* continue N:                            Route Map Exit Action Command.
-                                                              (line  12)
-* debug event:                           More Show IP BGP.    (line  39)
-* debug keepalive:                       More Show IP BGP.    (line  43)
-* debug ospf ism:                        Debugging OSPF.      (line  12)
-* debug ospf ism (status|events|timers): Debugging OSPF.      (line  13)
-* debug ospf lsa:                        Debugging OSPF.      (line  22)
-* debug ospf lsa (generate|flooding|refresh): Debugging OSPF. (line  23)
-* debug ospf nsm:                        Debugging OSPF.      (line  17)
-* debug ospf nsm (status|events|timers): Debugging OSPF.      (line  18)
-* debug ospf packet (hello|dd|ls-request|ls-update|ls-ack|all) (send|recv) [detail]: Debugging OSPF.
-                                                              (line   8)
-* debug ospf zebra:                      Debugging OSPF.      (line  27)
-* debug ospf zebra (interface|redistribute): Debugging OSPF.  (line  28)
-* debug rip events:                      RIP Debug Commands.  (line   9)
-* debug rip packet:                      RIP Debug Commands.  (line  15)
-* debug rip zebra:                       RIP Debug Commands.  (line  22)
-* debug ripng events:                    ripngd Terminal Mode Commands.
-                                                              (line  11)
-* debug ripng packet:                    ripngd Terminal Mode Commands.
-                                                              (line  13)
-* debug ripng zebra:                     ripngd Terminal Mode Commands.
-                                                              (line  15)
-* debug update:                          More Show IP BGP.    (line  41)
-* default-information originate <1>:     Redistribute routes to OSPF.
-                                                              (line  37)
-* default-information originate:         How to Announce RIP route.
-                                                              (line  51)
-* default-information originate always:  Redistribute routes to OSPF.
-                                                              (line  43)
-* default-information originate always metric <0-16777214>: Redistribute routes to OSPF.
-                                                              (line  45)
-* default-information originate always metric <0-16777214> metric-type (1|2): Redistribute routes to OSPF.
-                                                              (line  47)
-* default-information originate always metric <0-16777214> metric-type (1|2) route-map WORD: Redistribute routes to OSPF.
-                                                              (line  49)
-* default-information originate metric <0-16777214>: Redistribute routes to OSPF.
-                                                              (line  38)
-* default-information originate metric <0-16777214> metric-type (1|2): Redistribute routes to OSPF.
-                                                              (line  40)
-* default-information originate metric <0-16777214> metric-type (1|2) route-map WORD: Redistribute routes to OSPF.
-                                                              (line  42)
-* default-metric <0-16777214>:           Redistribute routes to OSPF.
-                                                              (line  65)
-* default-metric <1-16>:                 RIP Metric Manipulation.
-                                                              (line  11)
-* description DESCRIPTION ...:           Interface Commands.  (line  24)
-* distance <1-255> <1>:                  Redistribute routes to OSPF.
-                                                              (line  68)
-* distance <1-255>:                      RIP distance.        (line   9)
-* distance <1-255> A.B.C.D/M <1>:        BGP distance.        (line  12)
-* distance <1-255> A.B.C.D/M:            RIP distance.        (line  13)
-* distance <1-255> A.B.C.D/M ACCESS-LIST: RIP distance.       (line  18)
-* distance <1-255> A.B.C.D/M WORD:       BGP distance.        (line  13)
-* distance bgp <1-255> <1-255> <1-255>:  BGP distance.        (line   7)
-* distance ospf (intra-area|inter-area|external) <1-255>: Redistribute routes to OSPF.
-                                                              (line  72)
-* distribute-list ACCESS_LIST (in|out) IFNAME: ripngd Filtering Commands.
-                                                              (line   7)
-* distribute-list ACCESS_LIST DIRECT IFNAME: Filtering RIP Routes.
-                                                              (line   9)
-* distribute-list NAME out (kernel|connected|static|rip|ospf: Redistribute routes to OSPF.
-                                                              (line  58)
-* distribute-list prefix PREFIX_LIST (in|out) IFNAME: Filtering RIP Routes.
-                                                              (line  32)
-* dump bgp all PATH:                     Dump BGP packets and table.
-                                                              (line   7)
-* dump bgp all PATH INTERVAL:            Dump BGP packets and table.
-                                                              (line   8)
-* dump bgp routes PATH:                  Dump BGP packets and table.
-                                                              (line  15)
-* dump bgp updates PATH:                 Dump BGP packets and table.
-                                                              (line  11)
-* dump bgp updates PATH INTERVAL:        Dump BGP packets and table.
-                                                              (line  12)
-* enable password PASSWORD:              Basic Config Commands.
-                                                              (line  14)
-* exec-timeout MINUTE:                   Basic Config Commands.
-                                                              (line 130)
-* exec-timeout MINUTE SECOND:            Basic Config Commands.
-                                                              (line 131)
-* flush_timer TIME:                      ripngd Configuration.
-                                                              (line  12)
-* hostname HOSTNAME:                     Basic Config Commands.
-                                                              (line   7)
-* interface IFNAME:                      Interface Commands.  (line   7)
-* interface IFNAME area AREA:            OSPF6 router.        (line  12)
-* ip address ADDRESS/PREFIX:             Interface Commands.  (line  13)
-* ip address ADDRESS/PREFIX secondary:   Interface Commands.  (line  19)
-* ip as-path access-list WORD {permit|deny} LINE: AS Path Access List.
-                                                              (line   9)
-* ip community-list <1-99> {permit|deny} COMMUNITY: Numbered BGP Community Lists.
-                                                              (line  14)
-* ip community-list <100-199> {permit|deny} COMMUNITY: Numbered BGP Community Lists.
-                                                              (line  20)
-* ip community-list expanded NAME {permit|deny} LINE: BGP Community Lists.
-                                                              (line  30)
-* ip community-list NAME {permit|deny} COMMUNITY: Numbered BGP Community Lists.
-                                                              (line  25)
-* ip community-list standard NAME {permit|deny} COMMUNITY: BGP Community Lists.
-                                                              (line  20)
-* ip extcommunity-list expanded NAME {permit|deny} LINE: BGP Extended Community Lists.
-                                                              (line  21)
-* ip extcommunity-list standard NAME {permit|deny} EXTCOMMUNITY: BGP Extended Community Lists.
-                                                              (line  10)
-* ip ospf authentication message-digest: OSPF interface.      (line  17)
-* ip ospf authentication-key AUTH_KEY:   OSPF interface.      (line   7)
-* ip ospf cost <1-65535>:                OSPF interface.      (line  45)
-* ip ospf dead-interval <1-65535>:       OSPF interface.      (line  50)
-* ip ospf dead-interval minimal hello-multiplier <2-20>: OSPF interface.
-                                                              (line  52)
-* ip ospf hello-interval <1-65535>:      OSPF interface.      (line  69)
-* ip ospf message-digest-key KEYID md5 KEY: OSPF interface.   (line  33)
-* ip ospf network (broadcast|non-broadcast|point-to-multipoint|point-to-point): OSPF interface.
-                                                              (line  80)
-* ip ospf priority <0-255>:              OSPF interface.      (line  84)
-* ip ospf retransmit-interval <1-65535>: OSPF interface.      (line  91)
-* ip ospf transmit-delay:                OSPF interface.      (line  97)
-* ip prefix-list NAME (permit|deny) PREFIX [le LEN] [ge LEN]: IP Prefix List.
-                                                              (line  16)
-* ip prefix-list NAME description DESC:  ip prefix-list description.
-                                                              (line   7)
-* ip prefix-list NAME seq NUMBER (permit|deny) PREFIX [le LEN] [ge LEN]: IP Prefix List.
-                                                              (line  18)
-* ip prefix-list sequence-number:        ip prefix-list sequential number control.
-                                                              (line   7)
-* ip protocol PROTOCOL route-map ROUTEMAP: zebra Route Filtering.
-                                                              (line  12)
-* ip rip authentication key-chain KEY-CHAIN: RIP Authentication.
-                                                              (line  43)
-* ip rip authentication mode md5:        RIP Authentication.  (line  29)
-* ip rip authentication mode text:       RIP Authentication.  (line  33)
-* ip rip authentication string STRING:   RIP Authentication.  (line  37)
-* ip rip receive version VERSION:        RIP Version Control. (line  44)
-* ip rip send version VERSION:           RIP Version Control. (line  33)
-* ip route NETWORK GATEWAY:              Static Route Commands.
-                                                              (line  10)
-* ip route NETWORK GATEWAY DISTANCE:     Static Route Commands.
-                                                              (line  36)
-* ip route NETWORK NETMASK GATEWAY:      Static Route Commands.
-                                                              (line  25)
-* ip split-horizon:                      RIP Configuration.   (line  70)
-* ipv6 address ADDRESS/PREFIX:           Interface Commands.  (line  14)
-* ipv6 nd adv-interval-option:           Router Advertisement.
-                                                              (line 127)
-* ipv6 nd home-agent-config-flag:        Router Advertisement.
-                                                              (line 104)
-* ipv6 nd home-agent-lifetime:           Router Advertisement.
-                                                              (line 119)
-* ipv6 nd home-agent-preference:         Router Advertisement.
-                                                              (line 112)
-* ipv6 nd managed-config-flag:           Router Advertisement.
-                                                              (line  87)
-* ipv6 nd other-config-flag:             Router Advertisement.
-                                                              (line  96)
-* ipv6 nd prefix IPV6PREFIX [VALID-LIFETIME] [PREFERRED-LIFETIME] [off-link] [no-autoconfig] [router-address]: Router Advertisement.
-                                                              (line  14)
-* ipv6 nd ra-interval msec MILLISECONDS: Router Advertisement.
-                                                              (line  57)
-* ipv6 nd ra-interval SECONDS:           Router Advertisement.
-                                                              (line  49)
-* ipv6 nd ra-lifetime SECONDS:           Router Advertisement.
-                                                              (line  65)
-* ipv6 nd reachable-time MILLISECONDS:   Router Advertisement.
-                                                              (line  77)
-* ipv6 nd router-preference (high|medium|low): Router Advertisement.
-                                                              (line 135)
-* ipv6 nd suppress-ra:                   Router Advertisement.
-                                                              (line  10)
-* ipv6 ospf6 cost COST:                  OSPF6 interface.     (line   7)
-* ipv6 ospf6 dead-interval DEADINTERVAL: OSPF6 interface.     (line  13)
-* ipv6 ospf6 hello-interval HELLOINTERVAL: OSPF6 interface.   (line  10)
-* ipv6 ospf6 priority PRIORITY:          OSPF6 interface.     (line  20)
-* ipv6 ospf6 retransmit-interval RETRANSMITINTERVAL: OSPF6 interface.
-                                                              (line  17)
-* ipv6 ospf6 transmit-delay TRANSMITDELAY: OSPF6 interface.   (line  23)
-* ipv6 route NETWORK GATEWAY:            Static Route Commands.
-                                                              (line  77)
-* ipv6 route NETWORK GATEWAY DISTANCE:   Static Route Commands.
-                                                              (line  78)
-* line vty:                              Basic Config Commands.
-                                                              (line 121)
-* link-detect:                           Interface Commands.  (line  37)
-* list:                                  Terminal Mode Commands.
-                                                              (line  24)
-* log facility FACILITY:                 Basic Config Commands.
-                                                              (line  81)
-* log file FILENAME:                     Basic Config Commands.
-                                                              (line  41)
-* log file FILENAME LEVEL:               Basic Config Commands.
-                                                              (line  42)
-* log monitor:                           Basic Config Commands.
-                                                              (line  68)
-* log monitor LEVEL:                     Basic Config Commands.
-                                                              (line  69)
-* log record-priority:                   Basic Config Commands.
-                                                              (line  87)
-* log stdout:                            Basic Config Commands.
-                                                              (line  28)
-* log stdout LEVEL:                      Basic Config Commands.
-                                                              (line  29)
-* log syslog:                            Basic Config Commands.
-                                                              (line  59)
-* log syslog LEVEL:                      Basic Config Commands.
-                                                              (line  60)
-* log timestamp precision <0-6>:         Basic Config Commands.
-                                                              (line  97)
-* log trap LEVEL:                        Basic Config Commands.
-                                                              (line  17)
-* log-adjacency-changes [detail]:        OSPF router.         (line  73)
-* logmsg LEVEL MESSAGE:                  Terminal Mode Commands.
-                                                              (line  34)
-* match as-path WORD:                    Using AS Path in Route Map.
-                                                              (line   7)
-* match aspath AS_PATH:                  Route Map Match Command.
-                                                              (line  13)
-* match community COMMUNITY_LIST:        Route Map Match Command.
-                                                              (line  19)
-* match community WORD:                  BGP Community in Route Map.
-                                                              (line  13)
-* match community WORD exact-match:      BGP Community in Route Map.
-                                                              (line  14)
-* match extcommunity WORD:               BGP Extended Communities in Route Map.
-                                                              (line   7)
-* match interface WORD:                  RIP route-map.       (line  26)
-* match ip address ACCESS_LIST:          Route Map Match Command.
-                                                              (line   7)
-* match ip address prefix-list WORD:     RIP route-map.       (line  39)
-* match ip address WORD:                 RIP route-map.       (line  38)
-* match ip next-hop A.B.C.D:             RIP route-map.       (line  42)
-* match ip next-hop IPV4_ADDR:           Route Map Match Command.
-                                                              (line  10)
-* match metric <0-4294967295>:           RIP route-map.       (line  47)
-* match metric METRIC:                   Route Map Match Command.
-                                                              (line  16)
-* match peer {A.B.C.D|X:X::X:X}:         Commands for configuring a Route Server.
-                                                              (line  34)
-* max-metric router-lsa [on-startup|on-shutdown] <5-86400>: OSPF router.
-                                                              (line 130)
-* max-metric router-lsa administrative:  OSPF router.         (line 131)
-* multicast:                             Interface Commands.  (line  27)
-* neigbor {A.B.C.D|X.X::X.X|peer-group} route-map WORD {import|export}: Commands for configuring a Route Server.
-                                                              (line  29)
-* neighbor A.B.C.D:                      RIP Configuration.   (line  34)
-* neighbor A.B.C.D route-server-client:  Commands for configuring a Route Server.
-                                                              (line  11)
-* neighbor PEER default-originate:       BGP Peer commands.   (line  59)
-* neighbor PEER description ...:         BGP Peer commands.   (line  20)
-* neighbor PEER distribute-list NAME [in|out]: Peer filtering.
-                                                              (line   7)
-* neighbor PEER dont-capability-negotiate: Capability Negotiation.
-                                                              (line  51)
-* neighbor PEER ebgp-multihop:           BGP Peer commands.   (line  17)
-* neighbor PEER filter-list NAME [in|out]: Peer filtering.    (line  13)
-* neighbor PEER interface IFNAME:        BGP Peer commands.   (line  33)
-* neighbor PEER maximum-prefix NUMBER:   BGP Peer commands.   (line  76)
-* neighbor PEER next-hop-self:           BGP Peer commands.   (line  43)
-* neighbor PEER override-capability:     Capability Negotiation.
-                                                              (line  67)
-* neighbor PEER peer-group WORD:         BGP Peer Group.      (line  10)
-* neighbor PEER port PORT:               BGP Peer commands.   (line  65)
-* neighbor PEER prefix-list NAME [in|out]: Peer filtering.    (line  11)
-* neighbor PEER remote-as ASN:           Defining Peer.       (line   7)
-* neighbor PEER route-map NAME [in|out]: Peer filtering.      (line  15)
-* neighbor PEER route-reflector-client:  Route Reflector.     (line   9)
-* neighbor PEER send-community:          BGP Peer commands.   (line  68)
-* neighbor PEER shutdown:                BGP Peer commands.   (line  10)
-* neighbor PEER strict-capability-match: Capability Negotiation.
-                                                              (line  40)
-* neighbor PEER update-source <IFNAME|ADDRESS>: BGP Peer commands.
-                                                              (line  48)
-* neighbor PEER version VERSION:         BGP Peer commands.   (line  24)
-* neighbor PEER weight WEIGHT:           BGP Peer commands.   (line  71)
-* neighbor PEER-GROUP route-server-client: Commands for configuring a Route Server.
-                                                              (line  10)
-* neighbor WORD peer-group:              BGP Peer Group.      (line   7)
-* neighbor X:X::X:X route-server-client: Commands for configuring a Route Server.
-                                                              (line  12)
-* network A.B.C.D/M:                     BGP route.           (line   7)
-* network A.B.C.D/M area <0-4294967295>: OSPF router.         (line 175)
-* network A.B.C.D/M area A.B.C.D:        OSPF router.         (line 174)
-* network IFNAME <1>:                    ripngd Configuration.
-                                                              (line  18)
-* network IFNAME:                        RIP Configuration.   (line  27)
-* network NETWORK <1>:                   ripngd Configuration.
-                                                              (line  15)
-* network NETWORK:                       RIP Configuration.   (line  15)
-* no aggregate-address A.B.C.D/M:        Route Aggregation.   (line  18)
-* no area <0-4294967295> authentication: OSPF area.           (line 129)
-* no area <0-4294967295> export-list NAME: OSPF area.         (line  87)
-* no area <0-4294967295> filter-list prefix NAME in: OSPF area.
-                                                              (line 121)
-* no area <0-4294967295> filter-list prefix NAME out: OSPF area.
-                                                              (line 122)
-* no area <0-4294967295> import-list NAME: OSPF area.         (line 111)
-* no area <0-4294967295> range A.B.C.D/M: OSPF area.          (line  10)
-* no area <0-4294967295> shortcut:       OSPF area.           (line  57)
-* no area <0-4294967295> stub:           OSPF area.           (line  64)
-* no area <0-4294967295> stub no-summary: OSPF area.          (line  76)
-* no area <0-4294967295> virtual-link A.B.C.D: OSPF area.     (line  52)
-* no area A.B.C.D authentication:        OSPF area.           (line 128)
-* no area A.B.C.D default-cost <0-16777215>: OSPF area.       (line  81)
-* no area A.B.C.D export-list NAME:      OSPF area.           (line  86)
-* no area A.B.C.D filter-list prefix NAME in: OSPF area.      (line 119)
-* no area A.B.C.D filter-list prefix NAME out: OSPF area.     (line 120)
-* no area A.B.C.D import-list NAME:      OSPF area.           (line 110)
-* no area A.B.C.D range A.B.C.D/M:       OSPF area.           (line   9)
-* no area A.B.C.D range IPV4_PREFIX not-advertise: OSPF area. (line  29)
-* no area A.B.C.D range IPV4_PREFIX substitute IPV4_PREFIX: OSPF area.
-                                                              (line  36)
-* no area A.B.C.D shortcut:              OSPF area.           (line  56)
-* no area A.B.C.D stub:                  OSPF area.           (line  63)
-* no area A.B.C.D stub no-summary:       OSPF area.           (line  75)
-* no area A.B.C.D virtual-link A.B.C.D:  OSPF area.           (line  51)
-* no auto-cost reference-bandwidth:      OSPF router.         (line 164)
-* no bandwidth <1-10000000>:             Interface Commands.  (line  32)
-* no banner motd:                        Basic Config Commands.
-                                                              (line 127)
-* no bgp multiple-instance:              Multiple instance.   (line  14)
-* no debug event:                        More Show IP BGP.    (line  45)
-* no debug keepalive:                    More Show IP BGP.    (line  49)
-* no debug ospf ism:                     Debugging OSPF.      (line  14)
-* no debug ospf ism (status|events|timers): Debugging OSPF.   (line  15)
-* no debug ospf lsa:                     Debugging OSPF.      (line  24)
-* no debug ospf lsa (generate|flooding|refresh): Debugging OSPF.
-                                                              (line  25)
-* no debug ospf nsm:                     Debugging OSPF.      (line  19)
-* no debug ospf nsm (status|events|timers): Debugging OSPF.   (line  20)
-* no debug ospf packet (hello|dd|ls-request|ls-update|ls-ack|all) (send|recv) [detail]: Debugging OSPF.
-                                                              (line  10)
-* no debug ospf zebra:                   Debugging OSPF.      (line  29)
-* no debug ospf zebra (interface|redistribute): Debugging OSPF.
-                                                              (line  30)
-* no debug update:                       More Show IP BGP.    (line  47)
-* no default-information originate:      Redistribute routes to OSPF.
-                                                              (line  50)
-* no default-metric:                     Redistribute routes to OSPF.
-                                                              (line  66)
-* no default-metric <1-16>:              RIP Metric Manipulation.
-                                                              (line  12)
-* no distance <1-255> <1>:               Redistribute routes to OSPF.
-                                                              (line  69)
-* no distance <1-255>:                   RIP distance.        (line  10)
-* no distance <1-255> A.B.C.D/M:         RIP distance.        (line  14)
-* no distance <1-255> A.B.C.D/M ACCESS-LIST: RIP distance.    (line  19)
-* no distance ospf:                      Redistribute routes to OSPF.
-                                                              (line  73)
-* no distribute-list NAME out (kernel|connected|static|rip|ospf: Redistribute routes to OSPF.
-                                                              (line  60)
-* no exec-timeout:                       Basic Config Commands.
-                                                              (line 138)
-* no ip address ADDRESS/PREFIX:          Interface Commands.  (line  15)
-* no ip address ADDRESS/PREFIX secondary: Interface Commands. (line  20)
-* no ip as-path access-list WORD:        AS Path Access List. (line  12)
-* no ip as-path access-list WORD {permit|deny} LINE: AS Path Access List.
-                                                              (line  13)
-* no ip community-list expanded NAME:    BGP Community Lists. (line  37)
-* no ip community-list NAME:             BGP Community Lists. (line  35)
-* no ip community-list standard NAME:    BGP Community Lists. (line  36)
-* no ip extcommunity-list expanded NAME: BGP Extended Community Lists.
-                                                              (line  29)
-* no ip extcommunity-list NAME:          BGP Extended Community Lists.
-                                                              (line  27)
-* no ip extcommunity-list standard NAME: BGP Extended Community Lists.
-                                                              (line  28)
-* no ip ospf authentication-key:         OSPF interface.      (line   8)
-* no ip ospf cost:                       OSPF interface.      (line  46)
-* no ip ospf dead-interval:              OSPF interface.      (line  53)
-* no ip ospf hello-interval:             OSPF interface.      (line  70)
-* no ip ospf message-digest-key:         OSPF interface.      (line  34)
-* no ip ospf network:                    OSPF interface.      (line  81)
-* no ip ospf priority:                   OSPF interface.      (line  85)
-* no ip ospf retransmit interval:        OSPF interface.      (line  92)
-* no ip ospf transmit-delay:             OSPF interface.      (line  98)
-* no ip prefix-list NAME:                IP Prefix List.      (line  67)
-* no ip prefix-list NAME description [DESC]: ip prefix-list description.
-                                                              (line  11)
-* no ip prefix-list sequence-number:     ip prefix-list sequential number control.
-                                                              (line  11)
-* no ip rip authentication key-chain KEY-CHAIN: RIP Authentication.
-                                                              (line  44)
-* no ip rip authentication mode md5:     RIP Authentication.  (line  30)
-* no ip rip authentication mode text:    RIP Authentication.  (line  34)
-* no ip rip authentication string STRING: RIP Authentication. (line  38)
-* no ip split-horizon:                   RIP Configuration.   (line  71)
-* no ipv6 address ADDRESS/PREFIX:        Interface Commands.  (line  16)
-* no ipv6 nd adv-interval-option:        Router Advertisement.
-                                                              (line 128)
-* no ipv6 nd home-agent-config-flag:     Router Advertisement.
-                                                              (line 105)
-* no ipv6 nd home-agent-lifetime:        Router Advertisement.
-                                                              (line 120)
-* no ipv6 nd home-agent-preference:      Router Advertisement.
-                                                              (line 113)
-* no ipv6 nd managed-config-flag:        Router Advertisement.
-                                                              (line  88)
-* no ipv6 nd other-config-flag:          Router Advertisement.
-                                                              (line  97)
-* no ipv6 nd ra-interval:                Router Advertisement.
-                                                              (line  50)
-* no ipv6 nd ra-interval msec:           Router Advertisement.
-                                                              (line  58)
-* no ipv6 nd ra-lifetime:                Router Advertisement.
-                                                              (line  66)
-* no ipv6 nd reachable-time:             Router Advertisement.
-                                                              (line  78)
-* no ipv6 nd router-preference:          Router Advertisement.
-                                                              (line 136)
-* no ipv6 nd suppress-ra:                Router Advertisement.
-                                                              (line   7)
-* no link-detect:                        Interface Commands.  (line  38)
-* no log facility:                       Basic Config Commands.
-                                                              (line  82)
-* no log file:                           Basic Config Commands.
-                                                              (line  43)
-* no log monitor:                        Basic Config Commands.
-                                                              (line  70)
-* no log record-priority:                Basic Config Commands.
-                                                              (line  88)
-* no log stdout:                         Basic Config Commands.
-                                                              (line  30)
-* no log syslog:                         Basic Config Commands.
-                                                              (line  61)
-* no log timestamp precision:            Basic Config Commands.
-                                                              (line  98)
-* no log trap:                           Basic Config Commands.
-                                                              (line  18)
-* no log-adjacency-changes [detail]:     OSPF router.         (line  74)
-* no max-metric router-lsa [on-startup|on-shutdown|administrative]: OSPF router.
-                                                              (line 133)
-* no multicast:                          Interface Commands.  (line  28)
-* no neighbor A.B.C.D:                   RIP Configuration.   (line  35)
-* no neighbor PEER default-originate:    BGP Peer commands.   (line  60)
-* no neighbor PEER description ...:      BGP Peer commands.   (line  21)
-* no neighbor PEER dont-capability-negotiate: Capability Negotiation.
-                                                              (line  52)
-* no neighbor PEER ebgp-multihop:        BGP Peer commands.   (line  18)
-* no neighbor PEER interface IFNAME:     BGP Peer commands.   (line  34)
-* no neighbor PEER maximum-prefix NUMBER: BGP Peer commands.  (line  77)
-* no neighbor PEER next-hop-self:        BGP Peer commands.   (line  44)
-* no neighbor PEER override-capability:  Capability Negotiation.
-                                                              (line  68)
-* no neighbor PEER route-reflector-client: Route Reflector.   (line  10)
-* no neighbor PEER shutdown:             BGP Peer commands.   (line  11)
-* no neighbor PEER strict-capability-match: Capability Negotiation.
-                                                              (line  41)
-* no neighbor PEER update-source:        BGP Peer commands.   (line  49)
-* no neighbor PEER weight WEIGHT:        BGP Peer commands.   (line  72)
-* no network A.B.C.D/M:                  BGP route.           (line  16)
-* no network A.B.C.D/M area <0-4294967295>: OSPF router.      (line 177)
-* no network A.B.C.D/M area A.B.C.D:     OSPF router.         (line 176)
-* no network IFNAME:                     RIP Configuration.   (line  28)
-* no network NETWORK:                    RIP Configuration.   (line  16)
-* no ospf abr-type TYPE:                 OSPF router.         (line  27)
-* no ospf rfc1583compatibility:          OSPF router.         (line  63)
-* no ospf router-id:                     OSPF router.         (line  17)
-* no passive-interface IFNAME:           RIP Configuration.   (line  58)
-* no passive-interface INTERFACE:        OSPF router.         (line  80)
-* no redistribute (kernel|connected|static|rip|bgp): Redistribute routes to OSPF.
-                                                              (line  22)
-* no redistribute bgp:                   How to Announce RIP route.
-                                                              (line  44)
-* no redistribute connected:             How to Announce RIP route.
-                                                              (line  26)
-* no redistribute kernel:                How to Announce RIP route.
-                                                              (line  10)
-* no redistribute ospf:                  How to Announce RIP route.
-                                                              (line  36)
-* no redistribute static:                How to Announce RIP route.
-                                                              (line  18)
-* no route A.B.C.D/M:                    How to Announce RIP route.
-                                                              (line  54)
-* no router bgp ASN:                     BGP router.          (line  19)
-* no router ospf:                        OSPF router.         (line  11)
-* no router rip:                         RIP Configuration.   (line  12)
-* no router zebra:                       Redistribute routes to OSPF.
-                                                              (line  76)
-* no shutdown:                           Interface Commands.  (line  10)
-* no smux peer OID:                      MIB and command reference.
-                                                              (line  29)
-* no smux peer OID PASSWORD:             MIB and command reference.
-                                                              (line  32)
-* no timers basic:                       RIP Timers.          (line  31)
-* no timers throttle spf:                OSPF router.         (line  92)
-* no version:                            RIP Version Control. (line  30)
-* offset-list ACCESS-LIST (in|out):      RIP Metric Manipulation.
-                                                              (line  20)
-* offset-list ACCESS-LIST (in|out) IFNAME: RIP Metric Manipulation.
-                                                              (line  21)
-* on-match goto N:                       Route Map Exit Action Command.
-                                                              (line  11)
-* on-match next:                         Route Map Exit Action Command.
-                                                              (line   7)
-* ospf abr-type TYPE:                    OSPF router.         (line  26)
-* ospf rfc1583compatibility:             OSPF router.         (line  62)
-* ospf router-id A.B.C.D:                OSPF router.         (line  16)
-* passive-interface (IFNAME|default):    RIP Configuration.   (line  57)
-* passive-interface INTERFACE:           OSPF router.         (line  79)
-* password PASSWORD:                     Basic Config Commands.
-                                                              (line  10)
-* redistribute (kernel|connected|static|rip|bgp): Redistribute routes to OSPF.
-                                                              (line   7)
-* redistribute (kernel|connected|static|rip|bgp) metric <0-16777214>: Redistribute routes to OSPF.
-                                                              (line  15)
-* redistribute (kernel|connected|static|rip|bgp) metric <0-16777214> route-map WORD: Redistribute routes to OSPF.
-                                                              (line  17)
-* redistribute (kernel|connected|static|rip|bgp) metric-type (1|2): Redistribute routes to OSPF.
-                                                              (line  11)
-* redistribute (kernel|connected|static|rip|bgp) metric-type (1|2) metric <0-16777214>: Redistribute routes to OSPF.
-                                                              (line  19)
-* redistribute (kernel|connected|static|rip|bgp) metric-type (1|2) metric <0-16777214> route-map WORD: Redistribute routes to OSPF.
-                                                              (line  21)
-* redistribute (kernel|connected|static|rip|bgp) metric-type (1|2) route-map WORD: Redistribute routes to OSPF.
-                                                              (line  13)
-* redistribute (kernel|connected|static|rip|bgp) ROUTE-MAP: Redistribute routes to OSPF.
-                                                              (line   9)
-* redistribute bgp:                      How to Announce RIP route.
-                                                              (line  41)
-* redistribute bgp metric <0-16>:        How to Announce RIP route.
-                                                              (line  42)
-* redistribute bgp route-map ROUTE-MAP:  How to Announce RIP route.
-                                                              (line  43)
-* redistribute connected <1>:            Redistribute to BGP. (line  13)
-* redistribute connected <2>:            Redistribute routes to OSPF6.
-                                                              (line   8)
-* redistribute connected:                How to Announce RIP route.
-                                                              (line  23)
-* redistribute connected metric <0-16>:  How to Announce RIP route.
-                                                              (line  24)
-* redistribute connected route-map ROUTE-MAP: How to Announce RIP route.
-                                                              (line  25)
-* redistribute kernel <1>:               Redistribute to BGP. (line   7)
-* redistribute kernel:                   How to Announce RIP route.
-                                                              (line   7)
-* redistribute kernel metric <0-16>:     How to Announce RIP route.
-                                                              (line   8)
-* redistribute kernel route-map ROUTE-MAP: How to Announce RIP route.
-                                                              (line   9)
-* redistribute ospf <1>:                 Redistribute to BGP. (line  19)
-* redistribute ospf:                     How to Announce RIP route.
-                                                              (line  33)
-* redistribute ospf metric <0-16>:       How to Announce RIP route.
-                                                              (line  34)
-* redistribute ospf route-map ROUTE-MAP: How to Announce RIP route.
-                                                              (line  35)
-* redistribute rip:                      Redistribute to BGP. (line  16)
-* redistribute ripng:                    Redistribute routes to OSPF6.
-                                                              (line   9)
-* redistribute static <1>:               Redistribute to BGP. (line  10)
-* redistribute static <2>:               Redistribute routes to OSPF6.
-                                                              (line   7)
-* redistribute static:                   How to Announce RIP route.
-                                                              (line  15)
-* redistribute static metric <0-16>:     How to Announce RIP route.
-                                                              (line  16)
-* redistribute static route-map ROUTE-MAP: How to Announce RIP route.
-                                                              (line  17)
-* route A.B.C.D/M:                       How to Announce RIP route.
-                                                              (line  53)
-* route NETWORK:                         ripngd Configuration.
-                                                              (line  21)
-* route-map ROUTE-MAP-NAME (permit|deny) ORDER: Route Map Command.
-                                                              (line   7)
-* router bgp AS-NUMBER:                  BGP instance and view.
-                                                              (line  11)
-* router bgp AS-NUMBER view NAME:        BGP instance and view.
-                                                              (line  28)
-* router bgp ASN:                        BGP router.          (line  13)
-* router ospf:                           OSPF router.         (line  10)
-* router ospf6:                          OSPF6 router.        (line   7)
-* router rip:                            RIP Configuration.   (line   7)
-* router ripng:                          ripngd Configuration.
-                                                              (line   9)
-* router zebra <1>:                      Redistribute routes to OSPF.
-                                                              (line  75)
-* router zebra:                          ripngd Configuration.
-                                                              (line  24)
-* router-id A.B.C.D:                     OSPF6 router.        (line   9)
-* service advanced-vty:                  Basic Config Commands.
-                                                              (line 114)
-* service integrated-vtysh-config:       VTY shell integrated configuration.
-                                                              (line   7)
-* service password-encryption:           Basic Config Commands.
-                                                              (line 111)
-* service terminal-length <0-512>:       Basic Config Commands.
-                                                              (line 117)
-* set as-path prepend AS-PATH:           Using AS Path in Route Map.
-                                                              (line   9)
-* set as-path prepend AS_PATH:           Route Map Set Command.
-                                                              (line  19)
-* set comm-list WORD delete:             BGP Community in Route Map.
-                                                              (line  34)
-* set community COMMUNITY <1>:           Route Map Set Command.
-                                                              (line  22)
-* set community COMMUNITY:               BGP Community in Route Map.
-                                                              (line  23)
-* set community COMMUNITY additive:      BGP Community in Route Map.
-                                                              (line  24)
-* set community none:                    BGP Community in Route Map.
-                                                              (line  22)
-* set extcommunity rt EXTCOMMUNITY:      BGP Extended Communities in Route Map.
-                                                              (line   9)
-* set extcommunity soo EXTCOMMUNITY:     BGP Extended Communities in Route Map.
-                                                              (line  12)
-* set ip next-hop A.B.C.D:               RIP route-map.       (line  52)
-* set ip next-hop IPV4_ADDRESS:          Route Map Set Command.
-                                                              (line   7)
-* set ipv6 next-hop global IPV6_ADDRESS: Route Map Set Command.
-                                                              (line  25)
-* set ipv6 next-hop local IPV6_ADDRESS:  Route Map Set Command.
-                                                              (line  28)
-* set local-preference LOCAL_PREF:       Route Map Set Command.
-                                                              (line  10)
-* set metric <0-4294967295>:             RIP route-map.       (line  57)
-* set metric METRIC:                     Route Map Set Command.
-                                                              (line  16)
-* set src ADDRESS:                       zebra Route Filtering.
-                                                              (line  17)
-* set weight WEIGHT:                     Route Map Set Command.
-                                                              (line  13)
-* show debug:                            More Show IP BGP.    (line  37)
-* show debugging ospf:                   Debugging OSPF.      (line  32)
-* show debugging rip:                    RIP Debug Commands.  (line  29)
-* show debugging ripng:                  ripngd Terminal Mode Commands.
-                                                              (line   9)
-* show interface:                        zebra Terminal Mode Commands.
-                                                              (line  21)
-* show ip bgp:                           Show IP BGP.         (line   7)
-* show ip bgp A.B.C.D:                   Show IP BGP.         (line   8)
-* show ip bgp community:                 Display BGP Routes by Community.
-                                                              (line  11)
-* show ip bgp community COMMUNITY <1>:   More Show IP BGP.    (line  11)
-* show ip bgp community COMMUNITY:       Display BGP Routes by Community.
-                                                              (line  12)
-* show ip bgp community COMMUNITY exact-match <1>: More Show IP BGP.
-                                                              (line  12)
-* show ip bgp community COMMUNITY exact-match: Display BGP Routes by Community.
-                                                              (line  13)
-* show ip bgp community-list WORD <1>:   More Show IP BGP.    (line  16)
-* show ip bgp community-list WORD:       Display BGP Routes by Community.
-                                                              (line  20)
-* show ip bgp community-list WORD exact-match <1>: More Show IP BGP.
-                                                              (line  17)
-* show ip bgp community-list WORD exact-match: Display BGP Routes by Community.
-                                                              (line  21)
-* show ip bgp dampened-paths:            More Show IP BGP.    (line  31)
-* show ip bgp flap-statistics:           More Show IP BGP.    (line  34)
-* show ip bgp neighbor [PEER]:           More Show IP BGP.    (line  23)
-* show ip bgp regexp LINE <1>:           More Show IP BGP.    (line   7)
-* show ip bgp regexp LINE:               Display BGP Routes by AS Path.
-                                                              (line  10)
-* show ip bgp summary:                   More Show IP BGP.    (line  21)
-* show ip bgp view NAME:                 Viewing the view.    (line   9)
-* show ip bgp X:X::X:X:                  Show IP BGP.         (line   9)
-* show ip community-list:                BGP Community Lists. (line  42)
-* show ip community-list NAME:           BGP Community Lists. (line  43)
-* show ip extcommunity-list:             BGP Extended Community Lists.
-                                                              (line  35)
-* show ip extcommunity-list NAME:        BGP Extended Community Lists.
-                                                              (line  36)
-* show ip ospf:                          Showing OSPF information.
-                                                              (line   7)
-* show ip ospf database:                 Showing OSPF information.
-                                                              (line  20)
-* show ip ospf database (asbr-summary|external|network|router|summary): Showing OSPF information.
-                                                              (line  23)
-* show ip ospf database (asbr-summary|external|network|router|summary) adv-router ADV-ROUTER: Showing OSPF information.
-                                                              (line  30)
-* show ip ospf database (asbr-summary|external|network|router|summary) LINK-STATE-ID: Showing OSPF information.
-                                                              (line  25)
-* show ip ospf database (asbr-summary|external|network|router|summary) LINK-STATE-ID adv-router ADV-ROUTER: Showing OSPF information.
-                                                              (line  28)
-* show ip ospf database (asbr-summary|external|network|router|summary) LINK-STATE-ID self-originate: Showing OSPF information.
-                                                              (line  33)
-* show ip ospf database (asbr-summary|external|network|router|summary) self-originate: Showing OSPF information.
-                                                              (line  35)
-* show ip ospf database max-age:         Showing OSPF information.
-                                                              (line  37)
-* show ip ospf database self-originate:  Showing OSPF information.
-                                                              (line  39)
-* show ip ospf interface [INTERFACE]:    Showing OSPF information.
-                                                              (line  11)
-* show ip ospf neighbor:                 Showing OSPF information.
-                                                              (line  15)
-* show ip ospf neighbor detail:          Showing OSPF information.
-                                                              (line  17)
-* show ip ospf neighbor INTERFACE:       Showing OSPF information.
-                                                              (line  16)
-* show ip ospf neighbor INTERFACE detail: Showing OSPF information.
-                                                              (line  18)
-* show ip ospf route:                    Showing OSPF information.
-                                                              (line  41)
-* show ip prefix-list:                   Showing ip prefix-list.
-                                                              (line   7)
-* show ip prefix-list [NAME]:            zebra Terminal Mode Commands.
-                                                              (line  23)
-* show ip prefix-list detail:            Showing ip prefix-list.
-                                                              (line  31)
-* show ip prefix-list detail NAME:       Showing ip prefix-list.
-                                                              (line  33)
-* show ip prefix-list NAME:              Showing ip prefix-list.
-                                                              (line  10)
-* show ip prefix-list NAME A.B.C.D/M:    Showing ip prefix-list.
-                                                              (line  17)
-* show ip prefix-list NAME A.B.C.D/M first-match: Showing ip prefix-list.
-                                                              (line  25)
-* show ip prefix-list NAME A.B.C.D/M longer: Showing ip prefix-list.
-                                                              (line  23)
-* show ip prefix-list NAME seq NUM:      Showing ip prefix-list.
-                                                              (line  13)
-* show ip prefix-list summary:           Showing ip prefix-list.
-                                                              (line  27)
-* show ip prefix-list summary NAME:      Showing ip prefix-list.
-                                                              (line  29)
-* show ip protocol:                      zebra Terminal Mode Commands.
-                                                              (line  27)
-* show ip protocols:                     Show RIP Information.
-                                                              (line  17)
-* show ip rip:                           Show RIP Information.
-                                                              (line   9)
-* show ip ripng:                         ripngd Terminal Mode Commands.
-                                                              (line   7)
-* show ip route:                         zebra Terminal Mode Commands.
-                                                              (line   7)
-* show ipforward:                        zebra Terminal Mode Commands.
-                                                              (line  29)
-* show ipv6 ospf6 [INSTANCE_ID]:         Showing OSPF6 information.
-                                                              (line   7)
-* show ipv6 ospf6 database:              Showing OSPF6 information.
-                                                              (line  11)
-* show ipv6 ospf6 interface:             Showing OSPF6 information.
-                                                              (line  15)
-* show ipv6 ospf6 neighbor:              Showing OSPF6 information.
-                                                              (line  18)
-* show ipv6 ospf6 request-list A.B.C.D:  Showing OSPF6 information.
-                                                              (line  21)
-* show ipv6 route:                       zebra Terminal Mode Commands.
-                                                              (line  19)
-* show ipv6 route ospf6:                 Showing OSPF6 information.
-                                                              (line  24)
-* show ipv6forward:                      zebra Terminal Mode Commands.
-                                                              (line  34)
-* show logging:                          Terminal Mode Commands.
-                                                              (line  30)
-* show route-map [NAME]:                 zebra Terminal Mode Commands.
-                                                              (line  25)
-* show version:                          Terminal Mode Commands.
-                                                              (line  27)
-* shutdown:                              Interface Commands.  (line   9)
-* smux peer OID:                         MIB and command reference.
-                                                              (line  28)
-* smux peer OID PASSWORD:                MIB and command reference.
-                                                              (line  31)
-* table TABLENO:                         Static Route Commands.
-                                                              (line  81)
-* terminal length <0-512>:               Terminal Mode Commands.
-                                                              (line  17)
-* timers basic UPDATE TIMEOUT GARBAGE:   RIP Timers.          (line   7)
-* timers throttle spf DELAY INITIAL-HOLDTIME MAX-HOLDTIME: OSPF router.
-                                                              (line  91)
-* username USERNAME nopassword:          VTY shell username.  (line   7)
-* version VERSION:                       RIP Version Control. (line  20)
-* who:                                   Terminal Mode Commands.
-                                                              (line  21)
-* write file:                            Terminal Mode Commands.
-                                                              (line  10)
-* write terminal:                        Terminal Mode Commands.
-                                                              (line   7)
-
-
-File: quagga.info,  Node: VTY Key Index,  Next: Index,  Prev: Command Index,  Up: Top
-
-VTY Key Index
-*************
-
- [index ]
-* Menu:
-
-* <DEL>:                                 CLI Editing Commands. (line 11)
-* <DOWN>:                                CLI Advanced Commands.
-                                                               (line 17)
-* <LEFT>:                                CLI Movement Commands.
-                                                               (line 15)
-* <RIGHT>:                               CLI Movement Commands.
-                                                               (line 11)
-* <TAB>:                                 CLI Advanced Commands.
-                                                               (line 24)
-* <UP>:                                  CLI Advanced Commands.
-                                                               (line 21)
-* ?:                                     CLI Advanced Commands.
-                                                               (line 27)
-* C-a:                                   CLI Movement Commands.
-                                                               (line 24)
-* C-b:                                   CLI Movement Commands.
-                                                               (line 15)
-* C-c:                                   CLI Advanced Commands.
-                                                               (line 10)
-* C-d:                                   CLI Editing Commands. (line 14)
-* C-e:                                   CLI Movement Commands.
-                                                               (line 27)
-* C-f:                                   CLI Movement Commands.
-                                                               (line 11)
-* C-h:                                   CLI Editing Commands. (line 11)
-* C-k:                                   CLI Editing Commands. (line 23)
-* C-n:                                   CLI Advanced Commands.
-                                                               (line 17)
-* C-p:                                   CLI Advanced Commands.
-                                                               (line 21)
-* C-t:                                   CLI Editing Commands. (line 29)
-* C-u:                                   CLI Editing Commands. (line 26)
-* C-w:                                   CLI Editing Commands. (line 20)
-* C-z:                                   CLI Advanced Commands.
-                                                               (line 13)
-* M-b:                                   CLI Movement Commands.
-                                                               (line 21)
-* M-d:                                   CLI Editing Commands. (line 17)
-* M-f:                                   CLI Movement Commands.
-                                                               (line 18)
 

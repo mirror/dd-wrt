@@ -300,7 +300,7 @@ ospf_packet_dup (struct ospf_packet *op)
 }
 
 /* XXX inline */
-static inline unsigned int
+static unsigned int
 ospf_packet_authspace (struct ospf_interface *oi)
 {
   int auth = 0;
@@ -1592,8 +1592,13 @@ ospf_ls_upd_list_lsa (struct ospf_neighbor *nbr, struct stream *s,
       sum = lsah->checksum;
       if (sum != ospf_lsa_checksum (lsah))
 	{
-	  zlog_warn ("Link State Update: LSA checksum error %x, %x.",
-		     sum, lsah->checksum);
+	  /* (bug #685) more details in a one-line message make it possible
+	   * to identify problem source on the one hand and to have a better
+	   * chance to compress repeated messages in syslog on the other */
+	  zlog_warn ("Link State Update: LSA checksum error %x/%x, ID=%s from: nbr %s, router ID %s, adv router %s",
+		     sum, lsah->checksum, inet_ntoa (lsah->id),
+		     inet_ntoa (nbr->src), inet_ntoa (nbr->router_id),
+		     inet_ntoa (lsah->adv_router));
 	  continue;
 	}
 
@@ -2140,7 +2145,7 @@ ospf_recv_packet (int fd, struct interface **ifp, struct stream *ibuf)
   
   ip_len = iph->ip_len;
   
-#if !defined(GNU_LINUX) && (OpenBSD < 200311)
+#if !defined(GNU_LINUX) && (OpenBSD < 200311) && (__FreeBSD_version < 1000000)
   /*
    * Kernel network code touches incoming IP header parameters,
    * before protocol specific processing.
@@ -2232,7 +2237,7 @@ ospf_associate_packet_vl (struct ospf *ospf, struct interface *ifp,
   return NULL;
 }
 
-static inline int
+static int
 ospf_check_area_id (struct ospf_interface *oi, struct ospf_header *ospfh)
 {
   /* Check match the Area ID of the receiving interface. */
