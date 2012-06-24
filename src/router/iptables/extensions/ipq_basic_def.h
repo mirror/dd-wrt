@@ -1,6 +1,6 @@
 /*
  * ipq_basic_def.h
- * Copyright (C) 2009-2010 by ipoque GmbH
+ * Copyright (C) 2009-2011 by ipoque GmbH
  * 
  * This file is part of OpenDPI, an open source deep packet inspection
  * library based on the PACE technology by ipoque GmbH
@@ -49,6 +49,7 @@ extern "C" {
 #ifndef u8
 #define u8 	unsigned char
 #endif
+
 
 /* generic timestamp counter size */
 #define IPOQUE_TIMESTAMP_COUNTER_SIZE		u32
