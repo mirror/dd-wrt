@@ -827,6 +827,13 @@ static void nat_postrouting(void)
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
 			     nvram_safe_get("pptp_ifname"), inet_ntoa(ifaddr));
 		}
+		if (nvram_match("wan_proto", "l2tp")) {
+			struct in_addr ifaddr;
+			osl_ifaddr(nvram_safe_get("wan_ifname"), &ifaddr);
+			save2file
+			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
+			     nvram_safe_get("wan_ifname"), inet_ntoa(ifaddr));
+		}
 		char *method = "MASQUERADE";
 
 		if (nvram_match("block_loopback", "1"))
