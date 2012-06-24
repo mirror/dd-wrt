@@ -1020,16 +1020,7 @@ void stop_wshaper(void)
 	rmmod("xt_dscp");
 	rmmod("xt_DSCP");
 	rmmod("xt_physdev");
-#endif
-	
-	rmmod("ipt_mark");
-	rmmod("xt_mark");
-	rmmod("ipt_CONNMARK");
-	rmmod("xt_CONNMARK");
-	rmmod("/lib/opendpi/xt_opendpi.ko");
-	rmmod("ipt_layer7");
-	rmmod("ipt_mac");
-	rmmod("xt_mac");		
+#endif	
 	rmmod("xt_IMQ");		
 	rmmod("ipt_IMQ");		
 	rmmod("imq");
