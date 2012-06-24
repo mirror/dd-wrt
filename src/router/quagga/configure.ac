@@ -7,7 +7,7 @@
 ##
 AC_PREREQ(2.53)
 
-AC_INIT(Quagga, 0.99.20.1, [https://bugzilla.quagga.net])
+AC_INIT(Quagga, 0.99.21, [https://bugzilla.quagga.net])
 AC_CONFIG_SRCDIR(lib/zebra.h)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -71,6 +71,16 @@ AC_PROG_EGREP
 dnl autoconf 2.59 appears not to support AC_PROG_SED
 dnl AC_PROG_SED
 AC_CHECK_PROG([SED],[sed],[sed],[/bin/false])
+
+dnl pdflatex and latexmk are needed to build HACKING.pdf
+AC_CHECK_PROG([PDFLATEX],[pdflatex],[pdflatex],[/bin/false])
+AC_CHECK_PROG([LATEXMK],[latexmk],[latexmk],[/bin/false])
+if test "x$PDFLATEX" = "x/bin/false" -o "x$LATEXMK" = "x/bin/false"; then
+	AC_MSG_WARN([Will not be able to make PDF versions of TeX documents])
+else
+	HAVE_LATEX=true
+fi
+AM_CONDITIONAL([HAVE_LATEX], [test "x$HAVE_LATEX" = "xtrue"])
 
 dnl ------------------------------------------------------------------
 dnl Intel compiler check. Although Intel tries really hard to make icc
@@ -197,6 +207,8 @@ AC_ARG_ENABLE(ospfd,
 [  --disable-ospfd         do not build ospfd])
 AC_ARG_ENABLE(ospf6d,
 [  --disable-ospf6d        do not build ospf6d])
+AC_ARG_ENABLE(babeld,
+[  --disable-babeld        do not build babeld])
 AC_ARG_ENABLE(watchquagga,
 [  --disable-watchquagga   do not build watchquagga])
 AC_ARG_ENABLE(isisd,
@@ -612,6 +624,7 @@ dnl	 [TODO] on Linux, and in [TODO] on Solaris.
   *    ) ;;
 esac
 AC_SUBST(LIBREADLINE)
+AM_CONDITIONAL(VTYSH, test "x$VTYSH" = "xvtysh")
 
 dnl ----------
 dnl PAM module
@@ -692,11 +705,9 @@ dnl ----------------------------
 AC_FUNC_CHOWN
 AC_FUNC_FNMATCH
 AC_FUNC_FORK
-AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_MKTIME
 AC_FUNC_STRFTIME
-AC_FUNC_REALLOC
 AC_FUNC_STAT
 AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
@@ -1008,10 +1019,18 @@ dnl -----------------------------
 dnl check ipforward detect method
 dnl -----------------------------
 AC_CACHE_CHECK([ipforward method], [quagga_cv_ipforward_method],
-[for quagga_cv_ipforward_method in /proc/net/snmp /dev/ip /dev/null;
-do
-  test x`ls $quagga_cv_ipforward_method 2>/dev/null` = x"$quagga_cv_ipforward_method" && break
-done
+[if test x$cross_compiling = xyes; then
+  if test x"$opsys" = x"gnu-linux"; then
+    quagga_cv_ipforward_method=/proc/net/snmp
+  else
+    quagga_cv_ipforward_method=/dev/ip
+  fi
+else
+  for quagga_cv_ipforward_method in /proc/net/snmp /dev/ip /dev/null;
+  do
+    test x`ls $quagga_cv_ipforward_method 2>/dev/null` = x"$quagga_cv_ipforward_method" && break
+  done
+fi
 case $quagga_cv_ipforward_method in
   "/proc/net/snmp")  quagga_cv_ipforward_method="proc";;
   "/dev/ip")         
@@ -1210,30 +1229,42 @@ if test "${enable_zebra}" = "no";then
 else
   ZEBRA="zebra"
 fi
+AM_CONDITIONAL(ZEBRA, test "x$ZEBRA" = "xzebra")
 
 if test "${enable_bgpd}" = "no";then
   BGPD=""
 else
   BGPD="bgpd"
 fi
+AM_CONDITIONAL(BGPD, test "x$BGPD" = "xbgpd")
 
 if test "${enable_ripd}" = "no";then
   RIPD=""
 else
   RIPD="ripd"
 fi
+AM_CONDITIONAL(RIPD, test "x$RIPD" = "xripd")
 
 if test "${enable_ospfd}" = "no";then
   OSPFD=""
 else
   OSPFD="ospfd"
 fi
+AM_CONDITIONAL(OSPFD, test "x$OSPFD" = "xospfd")
+
+if test "${enable_babeld}" = "no";then
+  BABELD=""
+else
+  BABELD="babeld"
+fi
+AM_CONDITIONAL(BABELD, test "x$BABELD" = "xbabeld")
 
 if test "${enable_watchquagga}" = "no";then
   WATCHQUAGGA=""
 else
   WATCHQUAGGA="watchquagga"
 fi
+AM_CONDITIONAL(WATCHQUAGGA, test "x$WATCHQUAGGA" = "xwatchquagga")
 
 OSPFCLIENT=""
 if test "${enable_opaque_lsa}" != "no"; then
@@ -1246,24 +1277,28 @@ if test "${enable_opaque_lsa}" != "no"; then
   fi
 
 fi
+AM_CONDITIONAL(OSPFCLIENT, test "x$OSPFCLIENT" = "xospfclient")
 
 case "${enable_ripngd}" in
   "yes") RIPNGD="ripngd";;
   "no" ) RIPNGD="";;
   *    ) ;;
 esac
+AM_CONDITIONAL(RIPNGD, test "x$RIPNGD" = "xripngd")
 
 case "${enable_ospf6d}" in
   "yes") OSPF6D="ospf6d";;
   "no" ) OSPF6D="";;
   *    ) ;;
 esac
+AM_CONDITIONAL(OSPF6D, test "x$OSPF6D" = "xospf6d")
 
 case "${enable_isisd}" in
   "yes") ISISD="isisd";;
   "no" ) ISISD="";;
   *    ) ;;
 esac
+AM_CONDITIONAL(ISISD, test "x$ISISD" = "xisisd")
 
 # XXX Perhaps auto-enable on Solaris, but that's messy for cross builds.
 case "${enable_solaris}" in
@@ -1285,6 +1320,7 @@ AC_SUBST(RIPD)
 AC_SUBST(RIPNGD)
 AC_SUBST(OSPFD)
 AC_SUBST(OSPF6D)
+AC_SUBST(BABELD)
 AC_SUBST(WATCHQUAGGA)
 AC_SUBST(ISISD)
 AC_SUBST(SOLARIS)
@@ -1528,6 +1564,7 @@ AC_DEFINE_UNQUOTED(PATH_RIPNGD_PID, "$quagga_statedir/ripngd.pid",ripngd PID)
 AC_DEFINE_UNQUOTED(PATH_BGPD_PID, "$quagga_statedir/bgpd.pid",bgpd PID)
 AC_DEFINE_UNQUOTED(PATH_OSPFD_PID, "$quagga_statedir/ospfd.pid",ospfd PID)
 AC_DEFINE_UNQUOTED(PATH_OSPF6D_PID, "$quagga_statedir/ospf6d.pid",ospf6d PID)
+AC_DEFINE_UNQUOTED(PATH_BABELD_PID, "$quagga_statedir/babeld.pid",babeld PID)
 AC_DEFINE_UNQUOTED(PATH_ISISD_PID, "$quagga_statedir/isisd.pid",isisd PID)
 AC_DEFINE_UNQUOTED(PATH_WATCHQUAGGA_PID, "$quagga_statedir/watchquagga.pid",watchquagga PID)
 AC_DEFINE_UNQUOTED(ZEBRA_SERV_PATH, "$quagga_statedir/zserv.api",zebra api socket)
@@ -1537,6 +1574,7 @@ AC_DEFINE_UNQUOTED(RIPNG_VTYSH_PATH, "$quagga_statedir/ripngd.vty",ripng vty soc
 AC_DEFINE_UNQUOTED(BGP_VTYSH_PATH, "$quagga_statedir/bgpd.vty",bgpd vty socket)
 AC_DEFINE_UNQUOTED(OSPF_VTYSH_PATH, "$quagga_statedir/ospfd.vty",ospfd vty socket)
 AC_DEFINE_UNQUOTED(OSPF6_VTYSH_PATH, "$quagga_statedir/ospf6d.vty",ospf6d vty socket)
+AC_DEFINE_UNQUOTED(BABEL_VTYSH_PATH, "$quagga_statedir/babeld.vty",babeld vty socket)
 AC_DEFINE_UNQUOTED(ISIS_VTYSH_PATH, "$quagga_statedir/isisd.vty",isisd vty socket)
 AC_DEFINE_UNQUOTED(DAEMON_VTY_DIR, "$quagga_statedir",daemon vty directory)
 
@@ -1561,8 +1599,9 @@ AC_MSG_RESULT($ac_cv_htonl_works)
 
 AC_CONFIG_FILES([Makefile lib/Makefile zebra/Makefile ripd/Makefile 
 	  ripngd/Makefile bgpd/Makefile ospfd/Makefile watchquagga/Makefile
-	  ospf6d/Makefile isisd/Makefile vtysh/Makefile doc/Makefile 
-	  ospfclient/Makefile tests/Makefile m4/Makefile redhat/Makefile
+	  ospf6d/Makefile isisd/Makefile babeld/Makefile vtysh/Makefile
+          doc/Makefile ospfclient/Makefile tests/Makefile m4/Makefile
+          redhat/Makefile
 	  pkgsrc/Makefile
 	  redhat/quagga.spec 
 	  lib/version.h

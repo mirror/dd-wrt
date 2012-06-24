@@ -57,6 +57,10 @@ struct bgp_info
   /* Extra information */
   struct bgp_info_extra *extra;
   
+
+  /* Multipath information */
+  struct bgp_info_mpath *mpath;
+
   /* Uptime.  */
   time_t uptime;
 
@@ -76,6 +80,8 @@ struct bgp_info
 #define BGP_INFO_STALE          (1 << 8)
 #define BGP_INFO_REMOVED        (1 << 9)
 #define BGP_INFO_COUNTED	(1 << 10)
+#define BGP_INFO_MULTIPATH      (1 << 11)
+#define BGP_INFO_MULTIPATH_CHG  (1 << 12)
 
   /* BGP route type.  This can be static, RIP, OSPF, BGP etc.  */
   u_char type;
@@ -192,7 +198,9 @@ extern int bgp_nlri_parse (struct peer *, struct attr *, struct bgp_nlri *);
 
 extern int bgp_maximum_prefix_overflow (struct peer *, afi_t, safi_t, int);
 
-extern void bgp_redistribute_add (struct prefix *, struct in_addr *, u_int32_t, u_char);
+extern void bgp_redistribute_add (struct prefix *, const struct in_addr *,
+				  const struct in6_addr *,
+				  u_int32_t, u_char);
 extern void bgp_redistribute_delete (struct prefix *, u_char);
 extern void bgp_redistribute_withdraw (struct bgp *, afi_t, int);
 
