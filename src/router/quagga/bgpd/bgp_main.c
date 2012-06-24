@@ -35,6 +35,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "routemap.h"
 #include "filter.h"
 #include "plist.h"
+#include "stream.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_attr.h"
@@ -47,6 +48,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "bgpd/bgp_clist.h"
 #include "bgpd/bgp_debug.h"
 #include "bgpd/bgp_filter.h"
+#include "bgpd/bgp_zebra.h"
 
 /* bgpd options, we use GNU getopt library. */
 static const struct option longopts[] = 
@@ -54,6 +56,7 @@ static const struct option longopts[] =
   { "daemon",      no_argument,       NULL, 'd'},
   { "config_file", required_argument, NULL, 'f'},
   { "pid_file",    required_argument, NULL, 'i'},
+  { "socket",      required_argument, NULL, 'z'},
   { "bgp_port",    required_argument, NULL, 'p'},
   { "listenon",    required_argument, NULL, 'l'},
   { "vty_addr",    required_argument, NULL, 'A'},
@@ -119,6 +122,7 @@ static zebra_capabilities_t _caps_p [] =
 {
     ZCAP_BIND, 
     ZCAP_NET_RAW,
+    ZCAP_NET_ADMIN,
 };
 
 struct zebra_privs_t bgpd_privs =
@@ -149,6 +153,7 @@ redistribution between different routing protocols.\n\n\
 -d, --daemon       Runs in daemon mode\n\
 -f, --config_file  Set configuration file name\n\
 -i, --pid_file     Set process identifier file name\n\
+-z, --socket       Set path of zebra socket\n\
 -p, --bgp_port     Set bgp protocol's port number\n\
 -l, --listenon     Listen on specified address (implies -n)\n\
 -A, --vty_addr     Set vty's bind address\n\
@@ -196,6 +201,7 @@ sigint (void)
   if (! retain_mode)
     bgp_terminate ();
 
+  zprivs_terminate (&bgpd_privs);
   bgp_exit (0);
 }
 
@@ -293,6 +299,8 @@ bgp_exit (int status)
     zclient_free (zclient);
   if (zlookup)
     zclient_free (zlookup);
+  if (bgp_nexthop_buf)
+    stream_free (bgp_nexthop_buf);
 
   /* reverse bgp_master_init */
   if (master)
@@ -335,7 +343,7 @@ main (int argc, char **argv)
   /* Command line argument treatment. */
   while (1) 
     {
-      opt = getopt_long (argc, argv, "df:i:hp:l:A:P:rnu:g:vC", longopts, 0);
+      opt = getopt_long (argc, argv, "df:i:z:hp:l:A:P:rnu:g:vC", longopts, 0);
     
       if (opt == EOF)
 	break;
@@ -353,6 +361,9 @@ main (int argc, char **argv)
         case 'i':
           pid_file = optarg;
           break;
+	case 'z':
+	  zclient_serv_path_set (optarg);
+	  break;
 	case 'p':
 	  tmp_port = atoi (optarg);
 	  if (tmp_port <= 0 || tmp_port > 0xffff)

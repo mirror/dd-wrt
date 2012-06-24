@@ -417,7 +417,8 @@ struct in_pktinfo
 #define ZEBRA_ROUTER_ID_ADD               20
 #define ZEBRA_ROUTER_ID_DELETE            21
 #define ZEBRA_ROUTER_ID_UPDATE            22
-#define ZEBRA_MESSAGE_MAX                 23
+#define ZEBRA_HELLO                       23
+#define ZEBRA_MESSAGE_MAX                 24
 
 /* Marker value used in new Zserv, in the byte location corresponding
  * the command value in the old zserv header. To allow old and new
@@ -425,19 +426,8 @@ struct in_pktinfo
  */
 #define ZEBRA_HEADER_MARKER              255
 
-/* Zebra route's types. */
-#define ZEBRA_ROUTE_SYSTEM               0
-#define ZEBRA_ROUTE_KERNEL               1
-#define ZEBRA_ROUTE_CONNECT              2
-#define ZEBRA_ROUTE_STATIC               3
-#define ZEBRA_ROUTE_RIP                  4
-#define ZEBRA_ROUTE_RIPNG                5
-#define ZEBRA_ROUTE_OSPF                 6
-#define ZEBRA_ROUTE_OSPF6                7
-#define ZEBRA_ROUTE_ISIS                 8
-#define ZEBRA_ROUTE_BGP                  9
-#define ZEBRA_ROUTE_HSLS		 10
-#define ZEBRA_ROUTE_MAX                  11
+/* Zebra route's types are defined in route_types.h */
+#include "route_types.h"
 
 /* Note: whenever a new route-type or zserv-command is added the
  * corresponding {command,route}_types[] table in lib/log.c MUST be
@@ -451,6 +441,10 @@ extern char zebra_route_char(unsigned int route_type);
  * e.g. ZEBRA_INTERFACE_ADD -> "ZEBRA_INTERFACE_ADD" */
 /* Map a protocol name to its number. e.g. ZEBRA_ROUTE_BGP->9*/
 extern int proto_name2num(const char *s);
+/* Map redistribute X argument to protocol number.
+ * unlike proto_name2num, this accepts shorthands and takes
+ * an AFI value to restrict input */
+extern int proto_redistnum(int afi, const char *s);
 
 extern const char *zserv_command_string (unsigned int command);
 
@@ -500,7 +494,7 @@ extern const char *zserv_command_string (unsigned int command);
 /* Subsequent Address Family Identifier. */
 #define SAFI_UNICAST              1
 #define SAFI_MULTICAST            2
-#define SAFI_UNICAST_MULTICAST    3
+#define SAFI_RESERVED_3           3
 #define SAFI_MPLS_VPN             4
 #define SAFI_MAX                  5
 
