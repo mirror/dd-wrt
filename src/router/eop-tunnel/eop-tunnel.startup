@@ -1,13 +1,6 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
 
-if [ `$nv get wan_proto` == disabled ]
-then
-	localip=`$nv get lan_ipaddr`
-else
-	localip=`$nv get wan_ipaddr`
-fi
-
 if [ `lsmod | grep etherip -c` -eq 0 ]
 then 
 	insmod etherip
@@ -27,14 +20,14 @@ do
 	then
 		if [ `$nv get oet${i}_bridged` -eq 1 ]
 		then
-			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $localip
+			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			ip link set dev oet${i} up
 			ifconfig oet${i} up 2>&1 > /dev/null
 			ifconfig oet${i} promisc 2>&1 > /dev/null
 			brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
 		else
-			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $localip
+			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_ipaddr)
 			ip link set dev oet${i} up
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
     		fi
