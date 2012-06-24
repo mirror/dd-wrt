@@ -1017,8 +1017,6 @@ void stop_wshaper(void)
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables","0");
 
 #ifdef HAVE_OPENVPN
-	rmmod("xt_dscp");
-	rmmod("xt_DSCP");
 	rmmod("xt_physdev");
 #endif	
 	rmmod("xt_IMQ");		
