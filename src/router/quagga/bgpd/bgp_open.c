@@ -93,11 +93,8 @@ bgp_capability_vty_out (struct vty *vty, struct peer *peer)
 	    case SAFI_MULTICAST:
 	      vty_out (vty, "SAFI Multicast");
 	      break;
-	    case SAFI_UNICAST_MULTICAST:
-	      vty_out (vty, "SAFI Unicast Multicast");
-	      break;
-	    case BGP_SAFI_VPNV4:
-	      vty_out (vty, "SAFI MPLS-VPN");
+	    case SAFI_MPLS_LABELED_VPN:
+	      vty_out (vty, "SAFI MPLS-labeled VPN");
 	      break;
 	    default:
 	      vty_out (vty, "SAFI Unknown %d ", mpc.safi);
@@ -127,14 +124,6 @@ bgp_capability_mp_data (struct stream *s, struct capability_mp_data *mpc)
 int
 bgp_afi_safi_valid_indices (afi_t afi, safi_t *safi)
 {
-  /* VPNvX are AFI specific */
-  if ((afi == AFI_IP6 && *safi == BGP_SAFI_VPNV4)
-      || (afi == AFI_IP && *safi == BGP_SAFI_VPNV6))
-    {
-      zlog_warn ("Invalid afi/safi combination (%u/%u)", afi, *safi);
-      return 0;
-    }
-  
   switch (afi)
     {
       case AFI_IP:
@@ -143,9 +132,8 @@ bgp_afi_safi_valid_indices (afi_t afi, safi_t *safi)
 #endif
         switch (*safi)
           {
-            /* BGP VPNvX SAFI isn't contigious with others, remap */
-            case BGP_SAFI_VPNV4:
-            case BGP_SAFI_VPNV6:
+            /* BGP MPLS-labeled VPN SAFI isn't contigious with others, remap */
+            case SAFI_MPLS_LABELED_VPN:
               *safi = SAFI_MPLS_VPN;
             case SAFI_UNICAST:
             case SAFI_MULTICAST:
@@ -392,7 +380,7 @@ bgp_capability_restart (struct peer *peer, struct capability_header *caphdr)
                   peer->v_gr_restart);
     }
 
-  while (stream_get_getp (s) + 4 < end)
+  while (stream_get_getp (s) + 4 <= end)
     {
       afi_t afi = stream_getw (s);
       safi_t safi = stream_getc (s);
@@ -476,11 +464,16 @@ static const size_t cap_minsizes[] =
   [CAPABILITY_CODE_ORF_OLD]	= sizeof (struct capability_orf_entry),
 };
 
-/* Parse given capability.
+/**
+ * Parse given capability.
  * XXX: This is reading into a stream, but not using stream API
+ *
+ * @param[out] mp_capability Set to 1 on return iff one or more Multiprotocol
+ *                           capabilities were encountered.
  */
 static int
-bgp_capability_parse (struct peer *peer, size_t length, u_char **error)
+bgp_capability_parse (struct peer *peer, size_t length, int *mp_capability,
+		      u_char **error)
 {
   int ret;
   struct stream *s = BGP_INPUT (peer);
@@ -552,6 +545,8 @@ bgp_capability_parse (struct peer *peer, size_t length, u_char **error)
         {
           case CAPABILITY_CODE_MP:
             {
+	      *mp_capability = 1;
+
               /* Ignore capability when override-capability is set. */
               if (! CHECK_FLAG (peer->flags, PEER_FLAG_OVERRIDE_CAPABILITY))
                 {
@@ -724,9 +719,13 @@ end:
   return as4;
 }
 
-/* Parse open option */
+/**
+ * Parse open option.
+ *
+ * @param[out] mp_capability @see bgp_capability_parse() for semantics.
+ */
 int
-bgp_open_option_parse (struct peer *peer, u_char length, int *capability)
+bgp_open_option_parse (struct peer *peer, u_char length, int *mp_capability)
 {
   int ret;
   u_char *error;
@@ -779,8 +778,7 @@ bgp_open_option_parse (struct peer *peer, u_char length, int *capability)
 	  ret = bgp_auth_parse (peer, opt_length);
 	  break;
 	case BGP_OPEN_OPT_CAP:
-	  ret = bgp_capability_parse (peer, opt_length, &error);
-	  *capability = 1;
+	  ret = bgp_capability_parse (peer, opt_length, mp_capability, &error);
 	  break;
 	default:
 	  bgp_notify_send (peer, 
@@ -823,9 +821,10 @@ bgp_open_option_parse (struct peer *peer, u_char length, int *capability)
 	}
     }
 
-  /* Check there is no common capability send Unsupported Capability
+  /* Check there are no common AFI/SAFIs and send Unsupported Capability
      error. */
-  if (*capability && ! CHECK_FLAG (peer->flags, PEER_FLAG_OVERRIDE_CAPABILITY))
+  if (*mp_capability &&
+      ! CHECK_FLAG (peer->flags, PEER_FLAG_OVERRIDE_CAPABILITY))
     {
       if (! peer->afc_nego[AFI_IP][SAFI_UNICAST] 
 	  && ! peer->afc_nego[AFI_IP][SAFI_MULTICAST]
@@ -833,7 +832,9 @@ bgp_open_option_parse (struct peer *peer, u_char length, int *capability)
 	  && ! peer->afc_nego[AFI_IP6][SAFI_UNICAST]
 	  && ! peer->afc_nego[AFI_IP6][SAFI_MULTICAST])
 	{
-	  plog_err (peer->log, "%s [Error] No common capability", peer->host);
+	  plog_err (peer->log, "%s [Error] Configured AFI/SAFIs do not "
+		    "overlap with received MP capabilities",
+		    peer->host);
 
 	  if (error != error_data)
 
@@ -863,7 +864,7 @@ bgp_open_capability_orf (struct stream *s, struct peer *peer,
   int number_of_orfs = 0;
 
   if (safi == SAFI_MPLS_VPN)
-    safi = BGP_SAFI_VPNV4;
+    safi = SAFI_MPLS_LABELED_VPN;
 
   stream_putc (s, BGP_OPEN_OPT_CAP);
   capp = stream_get_endp (s);           /* Set Capability Len Pointer */
@@ -971,7 +972,7 @@ bgp_open_capability (struct stream *s, struct peer *peer)
       stream_putc (s, CAPABILITY_CODE_MP_LEN);
       stream_putw (s, AFI_IP);
       stream_putc (s, 0);
-      stream_putc (s, BGP_SAFI_VPNV4);
+      stream_putc (s, SAFI_MPLS_LABELED_VPN);
     }
 #ifdef HAVE_IPV6
   /* IPv6 unicast. */

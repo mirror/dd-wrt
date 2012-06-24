@@ -46,11 +46,11 @@ info_TEXINFOS = quagga.texi
 quagga.pdf: $(info_TEXINFOS) $(figures_pdf) $(quagga_TEXINFOS)
 	$(TEXI2PDF) -o "$@" $<
 
-quagga_TEXINFOS = appendix.texi basic.texi bgpd.texi filter.texi install.texi \
-	ipv6.texi kernel.texi main.texi ospf6d.texi ospfd.texi overview.texi \
-	protocol.texi ripd.texi ripngd.texi routemap.texi snmp.texi \
-	vtysh.texi routeserver.texi defines.texi $(figures_png) snmptrap.texi \
-	$(figures_txt)
+quagga_TEXINFOS = appendix.texi babeld.texi basic.texi bgpd.texi filter.texi \
+	install.texi ipv6.texi kernel.texi main.texi ospf6d.texi ospfd.texi \
+	overview.texi protocol.texi ripd.texi ripngd.texi routemap.texi \
+	snmp.texi vtysh.texi routeserver.texi defines.texi $(figures_png) \
+	snmptrap.texi $(figures_txt)
 
 .png.eps:
 	$(PNGTOEPS) $< "$@"
@@ -61,9 +61,51 @@ quagga_TEXINFOS = appendix.texi basic.texi bgpd.texi filter.texi install.texi \
 .dia.png:
 	$(DIATOPNG) "$@" $<
 
-man_MANS = vtysh.1 bgpd.8 ospf6d.8 ospfd.8 ripd.8 ripngd.8 zebra.8 isisd.8
+man_MANS = 
 
-EXTRA_DIST = BGP-TypeCode draft-zebra-00.ms draft-zebra-00.txt $(man_MANS) \
+if BGPD
+man_MANS += bgpd.8
+endif
+
+if ISISD
+man_MANS += isisd.8
+endif
+
+if OSPF6D
+man_MANS += ospf6d.8
+endif
+
+if OSPFCLIENT
+man_MANS += ospfclient.8
+endif
+
+if OSPFD
+man_MANS += ospfd.8
+endif
+
+if RIPD
+man_MANS += ripd.8
+endif
+
+if RIPNGD
+man_MANS += ripngd.8
+endif
+
+if VTYSH
+man_MANS += vtysh.1
+endif
+
+if WATCHQUAGGA
+man_MANS += watchquagga.8
+endif
+
+if ZEBRA
+man_MANS += zebra.8
+endif
+
+EXTRA_DIST = BGP-TypeCode draft-zebra-00.ms draft-zebra-00.txt \
+	bgpd.8 isisd.8 ospf6d.8 ospfclient.8 ospfd.8 ripd.8 \
+	ripngd.8 vtysh.1 watchquagga.8 zebra.8 \
 	mpls/ChangeLog.opaque.txt mpls/cli_summary.txt \
 	mpls/opaque_lsa.txt mpls/ospfd.conf \
 	$(figures_sources) $(figures_png) $(figures_txt)
