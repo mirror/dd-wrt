@@ -42,7 +42,7 @@ extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *le
 #ifdef HAVE_AQOS
 extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
 #else
-extern void add_client_classes(unsigned int base, unsigned int level)
+extern void add_client_classes(unsigned int base, unsigned int level);
 #endif
 
 static char *get_wanface(void)
