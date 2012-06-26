@@ -31,7 +31,8 @@ function macs_grey(sw_disabled,F,overwrite) {
 		for (i=0; i<F.svqos_nomacs.value; i++) {
 			eval("F.svqos_macdel" + i).disabled = sw_disabled;
 			eval("F.svqos_macprio" + i).disabled = sw_disabled;
-			maclvl_grey(i, eval("F.svqos_macprio" + i), F, overwrite);
+			if (eval("F.svqos_macup" + i))
+				maclvl_grey(i, eval("F.svqos_macprio" + i), F, overwrite);
 		}
 	}
 }
@@ -76,7 +77,8 @@ function ips_grey(sw_disabled,F,overwrite) {
 		for (i=0; i<F.svqos_noips.value; i++) {
 			eval("F.svqos_ipdel" + i).disabled = sw_disabled;
 			eval("F.svqos_ipprio" + i).disabled = sw_disabled;
-			iplvl_grey(i, eval("F.svqos_ipprio" + i), F, overwrite);
+			if (eval("F.svqos_ipup" + i))
+				iplvl_grey(i, eval("F.svqos_ipprio" + i), F, overwrite);
 		}
 	}
 }
@@ -158,10 +160,12 @@ function submitcheck(F) {
 	ips_grey(false, F, true);
 	macs_grey(false, F, true);
 	
-	F.default_uplevel.disabled = false;
-	F.default_downlevel.disabled = false;
-	F.default_lanlevel.disabled = false;
-	
+	if (F.default_uplevel) {
+		F.default_uplevel.disabled = false;
+		F.default_downlevel.disabled = false;
+		F.default_lanlevel.disabled = false;
+	}
+
 	if (F._enable_game.checked == false){
 	    F.enable_game.value = 0;
 	}else{
