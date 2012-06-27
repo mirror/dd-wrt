@@ -2,12 +2,12 @@
 .\"     Title: pdbedit
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/22/2012
+.\"      Date: 06/22/2012
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "PDBEDIT" "8" "01/22/2012" "Samba 3\&.6" "System Administration tools"
+.TH "PDBEDIT" "8" "06/22/2012" "Samba 3\&.6" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -33,7 +33,7 @@ The pdbedit program is used to manage the users accounts stored in the sam datab
 .PP
 The pdbedit tool uses the passdb modular interface and is independent from the kind of users database used (currently there are smbpasswd, ldap, nis+ and tdb based and more can be added without changing the tool)\&.
 .PP
-There are five main ways to use pdbedit: adding a user account, removing a user account, modifing a user account, listing user accounts, importing users accounts\&.
+There are five main ways to use pdbedit: adding a user account, removing a user account, modifying a user account, listing user accounts, importing users accounts\&.
 .SH "OPTIONS"
 .PP
 \-L|\-\-list
@@ -128,7 +128,7 @@ in list operations\&.
 .PP
 \-f|\-\-fullname fullname
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the user\'s full name\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\'s full name\&.
 .sp
 Example:
 \-f "Simo Sorce"
@@ -136,7 +136,7 @@ Example:
 .PP
 \-h|\-\-homedir homedir
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the user\'s home directory network path\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\'s home directory network path\&.
 .sp
 Example:
 \-h "\e\e\e\eBERSERKER\e\esorce"
@@ -144,7 +144,7 @@ Example:
 .PP
 \-D|\-\-drive drive
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the windows drive letter to be used to map the home directory\&.
+This option can be used while adding or modifying a user account\&. It will specify the windows drive letter to be used to map the home directory\&.
 .sp
 Example:
 \-D "H:"
@@ -152,7 +152,7 @@ Example:
 .PP
 \-S|\-\-script script
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the user\'s logon script path\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\'s logon script path\&.
 .sp
 Example:
 \-S "\e\e\e\eBERSERKER\e\enetlogon\e\esorce\&.bat"
@@ -160,7 +160,7 @@ Example:
 .PP
 \-p|\-\-profile profile
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the user\'s profile directory\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\'s profile directory\&.
 .sp
 Example:
 \-p "\e\e\e\eBERSERKER\e\enetlogon"
@@ -503,7 +503,7 @@ This option forces all users to change their password upon next login\&.
 .PP
 \-N|\-\-account\-desc description
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the user\'s description field\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\'s description field\&.
 .sp
 Example:
 \-N "test description"
@@ -511,7 +511,7 @@ Example:
 .PP
 \-Z|\-\-logon\-hours\-reset
 .RS 4
-This option can be used while adding or modifing a user account\&. It will reset the user\'s allowed logon hours\&. A user may login at any time afterwards\&.
+This option can be used while adding or modifying a user account\&. It will reset the user\'s allowed logon hours\&. A user may login at any time afterwards\&.
 .sp
 Example:
 \-Z
@@ -519,7 +519,7 @@ Example:
 .PP
 \-z|\-\-bad\-password\-count\-reset
 .RS 4
-This option can be used while adding or modifing a user account\&. It will reset the stored bad login counter from a specified user\&.
+This option can be used while adding or modifying a user account\&. It will reset the stored bad login counter from a specified user\&.
 .sp
 Example:
 \-z
@@ -535,7 +535,7 @@ Example:
 .PP
 \-I|\-\-domain
 .RS 4
-This option can be used while adding or modifing a user account\&. It will specify the user\'s domain field\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\'s domain field\&.
 .sp
 Example:
 \-I "MYDOMAIN"

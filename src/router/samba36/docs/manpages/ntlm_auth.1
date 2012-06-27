@@ -2,12 +2,12 @@
 .\"     Title: ntlm_auth
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/22/2012
+.\"      Date: 06/22/2012
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "NTLM_AUTH" "1" "01/22/2012" "Samba 3\&.6" "User Commands"
+.TH "NTLM_AUTH" "1" "06/22/2012" "Samba 3\&.6" "User Commands"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -144,7 +144,7 @@ LANMAN\-Challenge
 The 8 byte
 LANMAN Challenge
 value, generated randomly by the server, or (in cases such as MSCHAPv2) generated in some way by both the server and the client\&.
-.PP \fBExample\ \&7.\ \&\fR LANMAN\-Challege: 0102030405060708
+.PP \fBExample\ \&7.\ \&\fR LANMAN\-Challenge: 0102030405060708
 .RE
 .PP
 LANMAN\-Response
@@ -174,13 +174,13 @@ The user\'s password\&. This would be provided by a network client, if the helpe
 .PP
 Request\-User\-Session\-Key
 .RS 4
-Apon sucessful authenticaiton, return the user session key associated with the login\&.
+Upon successful authenticaiton, return the user session key associated with the login\&.
 .PP \fBExample\ \&12.\ \&\fR Request\-User\-Session\-Key: Yes
 .RE
 .PP
 Request\-LanMan\-Session\-Key
 .RS 4
-Apon sucessful authenticaiton, return the LANMAN session key associated with the login\&.
+Upon successful authenticaiton, return the LANMAN session key associated with the login\&.
 .PP \fBExample\ \&13.\ \&\fR Request\-LanMan\-Session\-Key: Yes
 .RE
 .if n \{\
@@ -195,7 +195,7 @@ Apon sucessful authenticaiton, return the LANMAN session key associated with the
 \fBWarning\fR
 .ps -1
 .br
-Implementors should take care to base64 encode
+Implementers should take care to base64 encode
 		any data (such as usernames/passwords) that may contain malicous user data, such as
 		a newline\&.  They may also need to decode strings from
 		the helper, which likewise may have been base64 encoded\&..sp .5v
@@ -244,7 +244,7 @@ For the NTLMSSP based server roles, this parameter specifies the expected passwo
 .PP
 \-\-request\-lm\-key
 .RS 4
-Retreive LM session key
+Retrieve LM session key
 .RE
 .PP
 \-\-request\-nt\-key
@@ -357,7 +357,7 @@ auth_param basic program ntlm_auth \-\-helper\-protocol=squid\-2\&.5\-basic \-\-
 .\}
 .SH "TROUBLESHOOTING"
 .PP
-If you\'re experiencing problems with authenticating Internet Explorer running under MS Windows 9X or Millenium Edition against ntlm_auth\'s NTLMSSP authentication helper (\-\-helper\-protocol=squid\-2\&.5\-ntlmssp), then please read
+If you\'re experiencing problems with authenticating Internet Explorer running under MS Windows 9X or Millennium Edition against ntlm_auth\'s NTLMSSP authentication helper (\-\-helper\-protocol=squid\-2\&.5\-ntlmssp), then please read
 the Microsoft Knowledge Base article #239869 and follow instructions described there\&.
 .SH "VERSION"
 .PP
