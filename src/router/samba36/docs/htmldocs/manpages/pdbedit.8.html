@@ -3,7 +3,7 @@
 	independent from the kind of users database used (currently there
 	are smbpasswd, ldap, nis+ and tdb based and more can be added
 	without changing the tool).</p><p>There are five main ways to use pdbedit: adding a user account,
-	removing a user account, modifing a user account, listing user
+	removing a user account, modifying a user account, listing user
 	accounts, importing users accounts.</p></div><div class="refsect1" title="OPTIONS"><a name="id265892"></a><h2>OPTIONS</h2><div class="variablelist"><dl><dt><span class="term">-L|--list</span></dt><dd><p>This option lists all the user accounts
 		present in the users database.
 		This option prints a list of user/uid pairs separated by
@@ -47,18 +47,18 @@ samba:45:0F2B255F7B67A7A9AAD3B435B51404EE:
 		It is <span class="emphasis"><em>required</em></span> in add, remove and modify
 		operations and <span class="emphasis"><em>optional</em></span> in list
 		operations.</p></dd><dt><span class="term">-f|--fullname fullname</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the user's full
+		modifying a user account. It will specify the user's full
 		name. </p><p>Example: <code class="literal">-f "Simo Sorce"</code></p></dd><dt><span class="term">-h|--homedir homedir</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the user's home
+		modifying a user account. It will specify the user's home
 		directory network path.</p><p>Example: <code class="literal">-h "\\\\BERSERKER\\sorce"</code>
 		</p></dd><dt><span class="term">-D|--drive drive</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the windows drive
+		modifying a user account. It will specify the windows drive
 		letter to be used to map the home directory.</p><p>Example: <code class="literal">-D "H:"</code>
 		</p></dd><dt><span class="term">-S|--script script</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the user's logon
+		modifying a user account. It will specify the user's logon
 		script path.</p><p>Example: <code class="literal">-S "\\\\BERSERKER\\netlogon\\sorce.bat"</code>
 		</p></dd><dt><span class="term">-p|--profile profile</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the user's profile
+		modifying a user account. It will specify the user's profile
 		directory.</p><p>Example: <code class="literal">-p "\\\\BERSERKER\\netlogon"</code>
 		</p></dd><dt><span class="term">-M|'--machine SID' SID|rid</span></dt><dd><p>
 		This option can be used while adding or modifying a machine account. It
@@ -125,19 +125,19 @@ account policy value for bad lockout attempt is now 3
 		tdb-store into a passdb backend, e.g. an LDAP directory server.</p><p>Example: <code class="literal">pdbedit -y -i tdbsam: -e ldapsam:ldap://my.ldap.host</code></p></dd><dt><span class="term">--force-initialized-passwords</span></dt><dd><p>This option forces all users to change their
 				password upon next login.
 		</p></dd><dt><span class="term">-N|--account-desc description</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the user's description
+		modifying a user account. It will specify the user's description
 		field.</p><p>Example: <code class="literal">-N "test description"</code>
 		</p></dd><dt><span class="term">-Z|--logon-hours-reset</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will reset the user's allowed logon
+		modifying a user account. It will reset the user's allowed logon
 		hours. A user may login at any time afterwards.</p><p>Example: <code class="literal">-Z</code>
 		</p></dd><dt><span class="term">-z|--bad-password-count-reset</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will reset the stored bad login
+		modifying a user account. It will reset the stored bad login
 		counter from a specified user.</p><p>Example: <code class="literal">-z</code>
 		</p></dd><dt><span class="term">--policies-reset</span></dt><dd><p>This option can be used to reset the general
 				password policies stored for a domain to their
 				default values.</p><p>Example: <code class="literal">--policies-reset</code>
 		</p></dd><dt><span class="term">-I|--domain</span></dt><dd><p>This option can be used while adding or
-		modifing a user account. It will specify the user's domain field.</p><p>Example: <code class="literal">-I "MYDOMAIN"</code>
+		modifying a user account. It will specify the user's domain field.</p><p>Example: <code class="literal">-I "MYDOMAIN"</code>
 		</p></dd><dt><span class="term">--time-format</span></dt><dd><p>This option is currently not being used.</p></dd><dt><span class="term">-h|--help</span></dt><dd><p>Print a summary of command line options.
 </p></dd><dt><span class="term">-d|--debuglevel=level</span></dt><dd><p><em class="replaceable"><code>level</code></em> is an integer 
 from 0 to 10. The default value if this parameter is 
