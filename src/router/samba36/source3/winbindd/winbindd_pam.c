@@ -1078,7 +1078,8 @@ static NTSTATUS winbindd_dual_pam_auth_kerberos(struct winbindd_domain *domain,
 			DEBUG(3, ("Authentication for domain for [%s] -> [%s]\\[%s] failed as %s is not a trusted domain\n",
 				  state->request->data.auth.user, name_domain, name_user, name_domain));
 
-			contact_domain = find_our_domain();
+			result =  NT_STATUS_NO_SUCH_USER;
+			goto done;
 		}
 	}
 
@@ -1165,6 +1166,18 @@ static NTSTATUS winbind_samlogon_retry_loop(struct winbindd_domain *domain,
 		if (!NT_STATUS_IS_OK(result)) {
 			DEBUG(3,("could not open handle to NETLOGON pipe (error: %s)\n",
 				  nt_errstr(result)));
+			if (NT_STATUS_EQUAL(result, NT_STATUS_IO_TIMEOUT)) {
+				if (attempts > 0) {
+					DEBUG(3, ("This is the second problem for this "
+						"particular call, forcing the close of "
+						"this connection\n"));
+					invalidate_cm_connection(&domain->conn);
+				} else {
+					DEBUG(3, ("First call to cm_connect_netlogon "
+						"has timed out, retrying\n"));
+					continue;
+				}
+			}
 			return result;
 		}
 		auth = netlogon_pipe->auth;
@@ -1220,7 +1233,7 @@ static NTSTATUS winbind_samlogon_retry_loop(struct winbindd_domain *domain,
 			domain->can_do_validation6 = false;
 		}
 
-		if (domain->can_do_samlogon_ex) {
+		if (domain->can_do_samlogon_ex && domain->can_do_validation6) {
 			result = rpccli_netlogon_sam_network_logon_ex(
 					netlogon_pipe,
 					mem_ctx,
@@ -1230,7 +1243,7 @@ static NTSTATUS winbind_samlogon_retry_loop(struct winbindd_domain *domain,
 					domainname,	/* target domain */
 					workstation,	/* workstation */
 					chal,
-					domain->can_do_validation6 ? 6 : 3,
+					6,
 					lm_response,
 					nt_response,
 					info3);
@@ -1308,7 +1321,7 @@ static NTSTATUS winbind_samlogon_retry_loop(struct winbindd_domain *domain,
 		   rpc changetrustpw' */
 
 		if ( NT_STATUS_EQUAL(result, NT_STATUS_ACCESS_DENIED) ) {
-			DEBUG(3,("winbindd_pam_auth: sam_logon returned "
+			DEBUG(3,("winbind_samlogon_retry_loop: sam_logon returned "
 				 "ACCESS_DENIED.  Maybe the trust account "
 				"password was changed and we didn't know it. "
 				 "Killing connections to domain %s\n",
@@ -1319,6 +1332,13 @@ static NTSTATUS winbind_samlogon_retry_loop(struct winbindd_domain *domain,
 
 	} while ( (attempts < 2) && retry );
 
+	if (NT_STATUS_EQUAL(result, NT_STATUS_IO_TIMEOUT)) {
+		DEBUG(3,("winbind_samlogon_retry_loop: sam_network_logon(ex) "
+				"returned NT_STATUS_IO_TIMEOUT after the retry."
+				"Killing connections to domain %s\n",
+			domainname));
+		invalidate_cm_connection(&domain->conn);
+	}
 	return result;
 }
 

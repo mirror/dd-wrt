@@ -829,6 +829,7 @@ VFS_READAHEAD_OBJ = modules/vfs_readahead.o
 VFS_TSMSM_OBJ = modules/vfs_tsmsm.o
 VFS_FILEID_OBJ = modules/vfs_fileid.o
 VFS_AIO_FORK_OBJ = modules/vfs_aio_fork.o
+VFS_AIO_PTHREAD_OBJ = modules/vfs_aio_pthread.o
 VFS_PREOPEN_OBJ = modules/vfs_preopen.o
 VFS_SYNCOPS_OBJ = modules/vfs_syncops.o
 VFS_ACL_XATTR_OBJ = modules/vfs_acl_xattr.o
@@ -2795,7 +2796,7 @@ bin/vlp@EXEEXT@: $(BINARY_PREREQS) $(VLP_OBJ) $(LIBTDB)
 bin/winbind_krb5_locator.@SHLIBEXT@: $(BINARY_PREREQS) $(WINBIND_KRB5_LOCATOR_OBJ) $(LIBWBCLIENT)
 	@echo "Linking $@"
 	@$(SHLD) $(LDSHFLAGS) -o $@ $(WINBIND_KRB5_LOCATOR_OBJ) $(LIBWBCLIENT_LIBS) $(KRB5LIBS) \
-		@SONAMEFLAG@`basename $@`
+		$(LIBREPLACE_LIBS) @SONAMEFLAG@`basename $@`
 
 bin/pam_winbind.@SHLIBEXT@: $(BINARY_PREREQS) $(PAM_WINBIND_OBJ) $(LIBTALLOC) $(LIBWBCLIENT)
 	@echo "Linking shared library $@"
@@ -3058,6 +3059,10 @@ bin/fileid.@SHLIBEXT@: $(BINARY_PREREQS) $(VFS_FILEID_OBJ)
 bin/aio_fork.@SHLIBEXT@: $(BINARY_PREREQS) $(VFS_AIO_FORK_OBJ)
 	@echo "Building plugin $@"
 	@$(SHLD_MODULE) $(VFS_AIO_FORK_OBJ)
+
+bin/aio_pthread.@SHLIBEXT@: $(BINARY_PREREQS) $(VFS_AIO_PTHREAD_OBJ) lib/pthreadpool/pthreadpool.o
+	@echo "Building plugin $@"
+	@$(SHLD_MODULE) $(VFS_AIO_PTHREAD_OBJ) lib/pthreadpool/pthreadpool.o -lpthread
 
 bin/preopen.@SHLIBEXT@: $(BINARY_PREREQS) $(VFS_PREOPEN_OBJ)
 	@echo "Building plugin $@"
@@ -3582,7 +3587,6 @@ bin/ndrdump4: $(BINARY_PREREQS)
 vfs_examples:
 	( \
 	cd ../examples/VFS && \
-	./autogen.sh && \
 	./configure && \
 	make clean && \
 	make \

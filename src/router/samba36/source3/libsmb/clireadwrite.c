@@ -133,10 +133,17 @@ struct tevent_req *cli_read_andx_create(TALLOC_CTX *mem_ctx,
 	SSVAL(state->vwv + 8, 0, 0);
 	SSVAL(state->vwv + 9, 0, 0);
 
-	if ((uint64_t)offset >> 32) {
+	if (cli->capabilities & CAP_LARGE_FILES) {
 		SIVAL(state->vwv + 10, 0,
 		      (((uint64_t)offset)>>32) & 0xffffffff);
-		wct += 2;
+		wct = 12;
+	} else {
+		if ((((uint64_t)offset) & 0xffffffff00000000LL) != 0) {
+			DEBUG(10, ("cli_read_andx_send got large offset where "
+				   "the server does not support it\n"));
+			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+			return tevent_req_post(req, ev);
+		}
 	}
 
 	subreq = cli_smb_req_create(state, ev, cli, SMBreadX, 0, wct,
@@ -215,7 +222,7 @@ static void cli_read_andx_done(struct tevent_req *subreq)
 
 	state->buf = (uint8_t *)smb_base(inbuf) + SVAL(vwv+6, 0);
 
-	if (trans_oob(smb_len(inbuf), SVAL(vwv+6, 0), state->received)
+	if (trans_oob(smb_len_large(inbuf), SVAL(vwv+6, 0), state->received)
 	    || ((state->received != 0) && (state->buf < bytes))) {
 		DEBUG(5, ("server returned invalid read&x data offset\n"));
 		tevent_req_nterror(req, NT_STATUS_INVALID_NETWORK_RESPONSE);

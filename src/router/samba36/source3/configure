@@ -36638,6 +36638,9 @@ $as_echo "#define WITH_PTHREADPOOL 1" >>confdefs.h
 
     PTHREADPOOLTEST="bin/pthreadpooltest\$(EXEEXT)"
 
+    if test x"$samba_cv_HAVE_AIO" = x"yes"; then
+        default_shared_modules="$default_shared_modules vfs_aio_pthread"
+    fi
 fi
 
 #################################################
@@ -39229,6 +39232,41 @@ $as_echo "shared" >&6; }
 $as_echo "static" >&6; }
 	else
 	    string_ignored_modules="$string_ignored_modules vfs_aio_fork"
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not" >&5
+$as_echo "not" >&6; }
+	fi
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking how to build vfs_aio_pthread" >&5
+$as_echo_n "checking how to build vfs_aio_pthread... " >&6; }
+	if test "$MODULE_vfs_aio_pthread"; then
+		DEST=$MODULE_vfs_aio_pthread
+	elif test "$MODULE_vfs" -a "$MODULE_DEFAULT_vfs_aio_pthread"; then
+		DEST=$MODULE_vfs
+	else
+		DEST=$MODULE_DEFAULT_vfs_aio_pthread
+	fi
+
+	if test x"$DEST" = xSHARED; then
+
+$as_echo "#define vfs_aio_pthread_init init_samba_module" >>confdefs.h
+
+		VFS_MODULES="$VFS_MODULES "bin/aio_pthread.$SHLIBEXT""
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: shared" >&5
+$as_echo "shared" >&6; }
+
+		string_shared_modules="$string_shared_modules vfs_aio_pthread"
+	elif test x"$DEST" = xSTATIC; then
+		init_static_modules_vfs="$init_static_modules_vfs  vfs_aio_pthread_init();"
+		decl_static_modules_vfs="$decl_static_modules_vfs extern NTSTATUS vfs_aio_pthread_init(void);"
+		string_static_modules="$string_static_modules vfs_aio_pthread"
+		VFS_STATIC="$VFS_STATIC \$(VFS_AIO_PTHREAD_OBJ)"
+
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
+$as_echo "static" >&6; }
+	else
+	    string_ignored_modules="$string_ignored_modules vfs_aio_pthread"
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: not" >&5
 $as_echo "not" >&6; }
 	fi

@@ -101,6 +101,8 @@ struct aio_child {
 	bool dont_delete;	/* Marked as in use since last cleanup */
 	bool cancelled;
 	bool read_cmd;
+	bool called_from_suspend;
+	bool completion_done;
 };
 
 struct aio_child_list {
@@ -432,8 +434,13 @@ static void handle_aio_completion(struct event_context *event_ctx,
 		       child->retval.size);
 	}
 
+	if (child->called_from_suspend) {
+		child->completion_done = true;
+		return;
+	}
 	aio_ex = (struct aio_extra *)child->aiocb->aio_sigevent.sigev_value.sival_ptr;
 	smbd_aio_complete_aio_ex(aio_ex);
+	TALLOC_FREE(aio_ex);
 }
 
 static int aio_child_destructor(struct aio_child *child)
@@ -826,6 +833,8 @@ static int aio_fork_suspend(struct vfs_handle_struct *handle,
 		 */
 
 		for (child = children->children; child != NULL; child = child->next) {
+			struct tevent_fd *event;
+
 			if (child->aiocb == NULL) {
 				continue;
 			}
@@ -840,18 +849,16 @@ static int aio_fork_suspend(struct vfs_handle_struct *handle,
 				continue;
 			}
 
-			/* We're never using this event on the
-			 * main event context again... */
-			TALLOC_FREE(child->sock_event);
+			event = event_add_fd(ev,
+					     frame,
+					     child->sockfd,
+					     EVENT_FD_READ,
+					     handle_aio_completion,
+					     child);
 
-			child->sock_event = event_add_fd(ev,
-						child,
-						child->sockfd,
-						EVENT_FD_READ,
-						handle_aio_completion,
-						child);
+			child->called_from_suspend = true;
 
-			while (1) {
+			while (!child->completion_done) {
 				if (tevent_loop_once(ev) == -1) {
 					goto out;
 				}
@@ -859,12 +866,6 @@ static int aio_fork_suspend(struct vfs_handle_struct *handle,
 				if (timed_out) {
 					errno = EAGAIN;
 					goto out;
-				}
-
-				/* We set child->aiocb to NULL in our hooked
-				 * AIO_RETURN(). */
-				if (child->aiocb == NULL) {
-					break;
 				}
 			}
 		}

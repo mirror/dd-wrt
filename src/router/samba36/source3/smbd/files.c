@@ -28,12 +28,26 @@
 #define FILE_HANDLE_OFFSET 0x1000
 
 /****************************************************************************
- Return a unique number identifying this fsp over the life of this pid.
+ Return a unique number identifying this fsp over the life of this pid,
+ and try to make it as globally unique as possible.
+ See bug #8995 for the details.
 ****************************************************************************/
 
 static unsigned long get_gen_count(struct smbd_server_connection *sconn)
 {
+	/*
+	 * While fsp->fh->gen_id is 'unsigned long' currently
+	 * (which might by 8 bytes),
+	 * there's some oplock code which truncates it to
+	 * uint32_t(using IVAL()).
+	 */
+	if (sconn->file_gen_counter == 0) {
+		sconn->file_gen_counter = generate_random();
+	}
 	sconn->file_gen_counter += 1;
+	if (sconn->file_gen_counter >= UINT32_MAX) {
+		sconn->file_gen_counter = 0;
+	}
 	if (sconn->file_gen_counter == 0) {
 		sconn->file_gen_counter += 1;
 	}
@@ -283,6 +297,10 @@ files_struct *file_find_dif(struct smbd_server_connection *sconn,
 {
 	int count=0;
 	files_struct *fsp;
+
+	if (gen_id == 0) {
+		return NULL;
+	}
 
 	for (fsp=sconn->files; fsp; fsp=fsp->next,count++) {
 		/* We can have a fsp->fh->fd == -1 here as it could be a stat open. */
@@ -545,6 +563,75 @@ files_struct *file_fsp(struct smb_request *req, uint16 fid)
 	if (fsp != NULL) {
 		req->chain_fsp = fsp;
 	}
+	return fsp;
+}
+
+uint64_t fsp_persistent_id(const struct files_struct *fsp)
+{
+	uint64_t persistent_id;
+
+	/*
+	 * This calculates a number that is most likely
+	 * globally unique. In future we will have a database
+	 * to make it completely unique.
+	 *
+	 * 32-bit random gen_id
+	 * 16-bit truncated open_time
+	 * 16-bit fnum (valatile_id)
+	 */
+	persistent_id = fsp->fh->gen_id & UINT32_MAX;
+	persistent_id <<= 16;
+	persistent_id &= 0x0000FFFFFFFF0000LLU;
+	persistent_id |= fsp->open_time.tv_usec & UINT16_MAX;
+	persistent_id <<= 16;
+	persistent_id &= 0xFFFFFFFFFFFF0000LLU;
+	persistent_id |= fsp->fnum & UINT16_MAX;
+
+	return persistent_id;
+}
+
+struct files_struct *file_fsp_smb2(struct smbd_smb2_request *smb2req,
+				   uint64_t persistent_id,
+				   uint64_t volatile_id)
+{
+	struct files_struct *fsp;
+	uint64_t fsp_persistent;
+
+	if (smb2req->compat_chain_fsp != NULL) {
+		return smb2req->compat_chain_fsp;
+	}
+
+	if (volatile_id > UINT16_MAX) {
+		return NULL;
+	}
+
+	fsp = file_fnum(smb2req->sconn, (uint16_t)volatile_id);
+	if (fsp == NULL) {
+		return NULL;
+	}
+	fsp_persistent = fsp_persistent_id(fsp);
+
+	if (persistent_id != fsp_persistent) {
+		return NULL;
+	}
+
+	if (smb2req->tcon == NULL) {
+		return NULL;
+	}
+
+	if (smb2req->tcon->compat_conn != fsp->conn) {
+		return NULL;
+	}
+
+	if (smb2req->session == NULL) {
+		return NULL;
+	}
+
+	if (smb2req->session->vuid != fsp->vuid) {
+		return NULL;
+	}
+
+	smb2req->compat_chain_fsp = fsp;
 	return fsp;
 }
 

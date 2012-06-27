@@ -3376,6 +3376,9 @@
 /* Whether to build vfs_aio_fork as shared module */
 #undef vfs_aio_fork_init
 
+/* Whether to build vfs_aio_pthread as shared module */
+#undef vfs_aio_pthread_init
+
 /* Whether to build vfs_aixacl2 as shared module */
 #undef vfs_aixacl2_init
 
