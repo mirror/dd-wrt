@@ -91,7 +91,7 @@ __forceinline static
 }
 
 
-void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_mgcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 
 	ipoque_search_mgcp_connection(ipoque_struct);

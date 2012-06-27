@@ -34,7 +34,7 @@ static void ipoque_int_crossfire_add_connection(struct ipoque_detection_module_s
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_CROSSFIRE, protocol_type);
 }
 
-void ipoque_search_crossfire_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_search_crossfire_tcp_udp(struct ipoque_detection_module_struct
 									 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

@@ -213,7 +213,7 @@ static void ipoque_rtp_search(struct ipoque_detection_module_struct *ipoque_stru
 }
 
 
-void ipoque_search_rtp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_rtp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

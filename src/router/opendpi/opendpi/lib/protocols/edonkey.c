@@ -157,7 +157,7 @@ static void ipoque_int_edonkey_tcp(struct ipoque_detection_module_struct *ipoque
 }
 
 
-void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_edonkey(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	if (packet->detected_protocol_stack[0] != IPOQUE_PROTOCOL_EDONKEY) {

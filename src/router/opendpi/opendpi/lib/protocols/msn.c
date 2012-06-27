@@ -528,7 +528,7 @@ static void ipoque_search_udp_msn_misc(struct ipoque_detection_module_struct
 }
 
 
-void ipoque_search_msn(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_msn(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

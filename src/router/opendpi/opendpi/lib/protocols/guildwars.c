@@ -33,7 +33,7 @@ static void ipoque_int_guildwars_add_connection(struct ipoque_detection_module_s
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_GUILDWARS, IPOQUE_REAL_PROTOCOL);
 }
 
-void ipoque_search_guildwars_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_guildwars_tcp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

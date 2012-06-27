@@ -40,7 +40,7 @@ static void ntop_check_sflow(struct ipoque_detection_module_struct *ipoque_struc
   }
 }
 
-void ntop_search_sflow(struct ipoque_detection_module_struct *ipoque_struct)
+static void ntop_search_sflow(struct ipoque_detection_module_struct *ipoque_struct)
 {
   IPQ_LOG(NTOP_PROTOCOL_SFLOW, ipoque_struct, IPQ_LOG_DEBUG, "sflow detection...\n");
   ntop_check_sflow(ipoque_struct);

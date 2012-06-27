@@ -56,7 +56,7 @@ static void check_content_type_and_change_protocol(struct ipoque_detection_modul
 	return;
 }
 
-void ipoque_search_jabber_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_jabber_tcp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

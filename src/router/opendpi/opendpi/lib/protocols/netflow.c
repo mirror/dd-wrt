@@ -50,7 +50,7 @@ static void ntop_check_netflow(struct ipoque_detection_module_struct *ipoque_str
   }
 }
 
-void ntop_search_netflow(struct ipoque_detection_module_struct *ipoque_struct)
+static void ntop_search_netflow(struct ipoque_detection_module_struct *ipoque_struct)
 {
   IPQ_LOG(NTOP_PROTOCOL_NETFLOW, ipoque_struct, IPQ_LOG_DEBUG, "netflow detection...\n");
   ntop_check_netflow(ipoque_struct);

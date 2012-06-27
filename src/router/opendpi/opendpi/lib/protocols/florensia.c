@@ -32,7 +32,7 @@ static void ipoque_florensia_add_connection(struct ipoque_detection_module_struc
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_FLORENSIA, IPOQUE_REAL_PROTOCOL);
 }
 
-void ipoque_search_florensia(struct ipoque_detection_module_struct
+static void ipoque_search_florensia(struct ipoque_detection_module_struct
 							 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

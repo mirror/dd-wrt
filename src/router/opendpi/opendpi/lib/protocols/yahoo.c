@@ -398,7 +398,7 @@ __forceinline static
 	IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, IPOQUE_PROTOCOL_YAHOO);
 }
 
-void ipoque_search_yahoo(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_yahoo(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

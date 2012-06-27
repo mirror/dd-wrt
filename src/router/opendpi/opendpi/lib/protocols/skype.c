@@ -91,7 +91,7 @@ static void ntop_check_skype(struct ipoque_detection_module_struct *ipoque_struc
   }
 }
 
-void ntop_search_skype(struct ipoque_detection_module_struct *ipoque_struct)
+static void ntop_search_skype(struct ipoque_detection_module_struct *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 

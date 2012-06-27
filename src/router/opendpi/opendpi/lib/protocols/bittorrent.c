@@ -366,7 +366,7 @@ static void ipoque_int_search_bittorrent_tcp(struct ipoque_detection_module_stru
   return;
 }
 
-void ipoque_search_bittorrent(struct ipoque_detection_module_struct
+static void ipoque_search_bittorrent(struct ipoque_detection_module_struct
 			      *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;

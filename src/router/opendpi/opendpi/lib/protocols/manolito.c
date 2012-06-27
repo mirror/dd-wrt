@@ -109,7 +109,7 @@ u8 search_manolito_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 	return 0;
 }
 
-void ipoque_search_manolito_tcp_udp(struct
+static void ipoque_search_manolito_tcp_udp(struct
 									ipoque_detection_module_struct
 									*ipoque_struct)
 {
