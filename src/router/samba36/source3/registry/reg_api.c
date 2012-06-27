@@ -89,6 +89,7 @@ static WERROR fill_value_cache(struct registry_key *key)
 		}
 	}
 
+	TALLOC_FREE(key->values);
 	werr = regval_ctr_init(key, &(key->values));
 	W_ERROR_NOT_OK_RETURN(werr);
 
@@ -115,7 +116,7 @@ static WERROR fill_subkey_cache(struct registry_key *key)
 
 	if (fetch_reg_keys(key->key, key->subkeys) == -1) {
 		TALLOC_FREE(key->subkeys);
-		return WERR_NO_MORE_ITEMS;
+		return WERR_BADFILE;
 	}
 
 	return WERR_OK;
@@ -136,7 +137,6 @@ static WERROR regkey_open_onelevel(TALLOC_CTX *mem_ctx,
 	WERROR     	result = WERR_OK;
 	struct registry_key *regkey;
 	struct registry_key_handle *key;
-	struct regsubkey_ctr	*subkeys = NULL;
 
 	DEBUG(7,("regkey_open_onelevel: name = [%s]\n", name));
 
@@ -150,7 +150,8 @@ static WERROR regkey_open_onelevel(TALLOC_CTX *mem_ctx,
 		goto done;
 	}
 
-	if ( !(W_ERROR_IS_OK(result = regdb_open())) ) {
+	result = regdb_open();
+	if (!(W_ERROR_IS_OK(result))) {
 		goto done;
 	}
 
@@ -193,27 +194,20 @@ static WERROR regkey_open_onelevel(TALLOC_CTX *mem_ctx,
 
 	/* Look up the table of registry I/O operations */
 
-	if ( !(key->ops = reghook_cache_find( key->name )) ) {
+	key->ops = reghook_cache_find( key->name );
+	if (key->ops == NULL) {
 		DEBUG(0,("reg_open_onelevel: Failed to assign "
 			 "registry_ops to [%s]\n", key->name ));
 		result = WERR_BADFILE;
 		goto done;
 	}
 
-	/* check if the path really exists; failed is indicated by -1 */
-	/* if the subkey count failed, bail out */
+	/* FIXME: Existence is currently checked by fetching the subkeys */
 
-	result = regsubkey_ctr_init(key, &subkeys);
+	result = fill_subkey_cache(regkey);
 	if (!W_ERROR_IS_OK(result)) {
 		goto done;
 	}
-
-	if ( fetch_reg_keys( key, subkeys ) == -1 )  {
-		result = WERR_BADFILE;
-		goto done;
-	}
-
-	TALLOC_FREE( subkeys );
 
 	if ( !regkey_access_check( key, access_desired, &key->access_granted,
 				   token ) ) {
@@ -256,13 +250,15 @@ WERROR reg_openkey(TALLOC_CTX *mem_ctx, struct registry_key *parent,
 {
 	struct registry_key *direct_parent = parent;
 	WERROR err;
-	char *p, *path, *to_free;
+	char *p, *path;
 	size_t len;
+	TALLOC_CTX *frame = talloc_stackframe();
 
-	if (!(path = SMB_STRDUP(name))) {
-		return WERR_NOMEM;
+	path = talloc_strdup(frame, name);
+	if (path == NULL) {
+		err = WERR_NOMEM;
+		goto error;
 	}
-	to_free = path;
 
 	len = strlen(path);
 
@@ -274,21 +270,18 @@ WERROR reg_openkey(TALLOC_CTX *mem_ctx, struct registry_key *parent,
 		char *name_component;
 		struct registry_key *tmp;
 
-		if (!(name_component = SMB_STRNDUP(path, (p - path)))) {
+		name_component = talloc_strndup(frame, path, (p - path));
+		if (name_component == NULL) {
 			err = WERR_NOMEM;
 			goto error;
 		}
 
-		err = regkey_open_onelevel(mem_ctx, direct_parent,
+		err = regkey_open_onelevel(frame, direct_parent,
 					   name_component, parent->token,
 					   KEY_ENUMERATE_SUB_KEYS, &tmp);
-		SAFE_FREE(name_component);
 
 		if (!W_ERROR_IS_OK(err)) {
 			goto error;
-		}
-		if (direct_parent != parent) {
-			TALLOC_FREE(direct_parent);
 		}
 
 		direct_parent = tmp;
@@ -297,11 +290,9 @@ WERROR reg_openkey(TALLOC_CTX *mem_ctx, struct registry_key *parent,
 
 	err = regkey_open_onelevel(mem_ctx, direct_parent, path, parent->token,
 				   desired_access, pkey);
- error:
-	if (direct_parent != parent) {
-		TALLOC_FREE(direct_parent);
-	}
-	SAFE_FREE(to_free);
+
+error:
+	talloc_free(frame);
 	return err;
 }
 
@@ -375,6 +366,43 @@ WERROR reg_enumvalue(TALLOC_CTX *mem_ctx, struct registry_key *key,
 	return WERR_OK;
 }
 
+static WERROR reg_enumvalue_nocachefill(TALLOC_CTX *mem_ctx,
+					struct registry_key *key,
+					uint32 idx, char **pname,
+					struct registry_value **pval)
+{
+	struct registry_value *val;
+	struct regval_blob *blob;
+
+	if (!(key->key->access_granted & KEY_QUERY_VALUE)) {
+		return WERR_ACCESS_DENIED;
+	}
+
+	if (idx >= regval_ctr_numvals(key->values)) {
+		return WERR_NO_MORE_ITEMS;
+	}
+
+	blob = regval_ctr_specific_value(key->values, idx);
+
+	val = talloc_zero(mem_ctx, struct registry_value);
+	if (val == NULL) {
+		return WERR_NOMEM;
+	}
+
+	val->type = regval_type(blob);
+	val->data = data_blob_talloc(mem_ctx, regval_data_p(blob), regval_size(blob));
+
+	if (pname
+	    && !(*pname = talloc_strdup(
+			 mem_ctx, regval_name(blob)))) {
+		TALLOC_FREE(val);
+		return WERR_NOMEM;
+	}
+
+	*pval = val;
+	return WERR_OK;
+}
+
 WERROR reg_queryvalue(TALLOC_CTX *mem_ctx, struct registry_key *key,
 		      const char *name, struct registry_value **pval)
 {
@@ -393,7 +421,14 @@ WERROR reg_queryvalue(TALLOC_CTX *mem_ctx, struct registry_key *key,
 		struct regval_blob *blob;
 		blob = regval_ctr_specific_value(key->values, i);
 		if (strequal(regval_name(blob), name)) {
-			return reg_enumvalue(mem_ctx, key, i, NULL, pval);
+			/*
+			 * don't use reg_enumvalue here:
+			 * re-reading the values from the disk
+			 * would change the indexing and break
+			 * this function.
+			 */
+			return reg_enumvalue_nocachefill(mem_ctx, key, i,
+							 NULL, pval);
 		}
 	}
 
@@ -522,11 +557,23 @@ WERROR reg_createkey(TALLOC_CTX *ctx, struct registry_key *parent,
 	TALLOC_CTX *mem_ctx;
 	char *path, *end;
 	WERROR err;
+	uint32_t access_granted;
 
-	if (!(mem_ctx = talloc_new(ctx))) return WERR_NOMEM;
+	mem_ctx = talloc_new(ctx);
+	if (mem_ctx == NULL) {
+		return WERR_NOMEM;
+	}
 
-	if (!(path = talloc_strdup(mem_ctx, subkeypath))) {
+	path = talloc_strdup(mem_ctx, subkeypath);
+	if (path == NULL) {
 		err = WERR_NOMEM;
+		goto done;
+	}
+
+	err = regdb_transaction_start();
+	if (!W_ERROR_IS_OK(err)) {
+		DEBUG(0, ("reg_createkey: failed to start transaction: %s\n",
+			  win_errstr(err)));
 		goto done;
 	}
 
@@ -539,7 +586,7 @@ WERROR reg_createkey(TALLOC_CTX *ctx, struct registry_key *parent,
 		err = reg_createkey(mem_ctx, key, path,
 				    KEY_ENUMERATE_SUB_KEYS, &tmp, &action);
 		if (!W_ERROR_IS_OK(err)) {
-			goto done;
+			goto trans_done;
 		}
 
 		if (key != parent) {
@@ -560,24 +607,25 @@ WERROR reg_createkey(TALLOC_CTX *ctx, struct registry_key *parent,
 		if (paction != NULL) {
 			*paction = REG_OPENED_EXISTING_KEY;
 		}
-		goto done;
+		goto trans_done;
 	}
 
 	if (!W_ERROR_EQUAL(err, WERR_BADFILE)) {
 		/*
 		 * Something but "notfound" has happened, so bail out
 		 */
-		goto done;
+		goto trans_done;
 	}
 
 	/*
-	 * We have to make a copy of the current key, as we opened it only
-	 * with ENUM_SUBKEY access.
+	 * We may (e.g. in the iteration) have opened the key with ENUM_SUBKEY.
+	 * Instead of re-opening the key with CREATE_SUB_KEY, we simply
+	 * duplicate the access check here and skip the expensive full open.
 	 */
-
-	err = reg_openkey(mem_ctx, key, "", KEY_CREATE_SUB_KEY,
-			  &create_parent);
-	if (!W_ERROR_IS_OK(err)) {
+	if (!regkey_access_check(key->key, KEY_CREATE_SUB_KEY, &access_granted,
+				 key->token))
+	{
+		err = WERR_ACCESS_DENIED;
 		goto done;
 	}
 
@@ -585,19 +633,31 @@ WERROR reg_createkey(TALLOC_CTX *ctx, struct registry_key *parent,
 	 * Actually create the subkey
 	 */
 
-	err = fill_subkey_cache(create_parent);
-	if (!W_ERROR_IS_OK(err)) goto done;
-
 	err = create_reg_subkey(key->key, path);
-	W_ERROR_NOT_OK_GOTO_DONE(err);
+	if (!W_ERROR_IS_OK(err)) {
+		goto trans_done;
+	}
 
 	/*
 	 * Now open the newly created key
 	 */
 
-	err = reg_openkey(ctx, create_parent, path, desired_access, pkey);
+	err = reg_openkey(ctx, key, path, desired_access, pkey);
 	if (W_ERROR_IS_OK(err) && (paction != NULL)) {
 		*paction = REG_CREATED_NEW_KEY;
+	}
+
+trans_done:
+	if (W_ERROR_IS_OK(err)) {
+		err = regdb_transaction_commit();
+		if (!W_ERROR_IS_OK(err)) {
+			DEBUG(0, ("reg_createkey: Error committing transaction: %s\n", win_errstr(err)));
+		}
+	} else {
+		WERROR err1 = regdb_transaction_cancel();
+		if (!W_ERROR_IS_OK(err1)) {
+			DEBUG(0, ("reg_createkey: Error cancelling transaction: %s\n", win_errstr(err1)));
+		}
 	}
 
  done:
@@ -622,12 +682,19 @@ WERROR reg_deletekey(struct registry_key *parent, const char *path)
 	err = reg_openkey(mem_ctx, parent, name, REG_KEY_READ, &key);
 	W_ERROR_NOT_OK_GOTO_DONE(err);
 
+	err = regdb_transaction_start();
+	if (!W_ERROR_IS_OK(err)) {
+		DEBUG(0, ("reg_deletekey: Error starting transaction: %s\n",
+			  win_errstr(err)));
+		goto done;
+	}
+
 	err = fill_subkey_cache(key);
-	W_ERROR_NOT_OK_GOTO_DONE(err);
+	W_ERROR_NOT_OK_GOTO(err, trans_done);
 
 	if (regsubkey_ctr_numkeys(key->subkeys) > 0) {
 		err = WERR_ACCESS_DENIED;
-		goto done;
+		goto trans_done;
 	}
 
 	/* no subkeys - proceed with delete */
@@ -637,7 +704,7 @@ WERROR reg_deletekey(struct registry_key *parent, const char *path)
 
 		err = reg_openkey(mem_ctx, parent, name,
 				  KEY_CREATE_SUB_KEY, &tmp_key);
-		W_ERROR_NOT_OK_GOTO_DONE(err);
+		W_ERROR_NOT_OK_GOTO(err, trans_done);
 
 		parent = tmp_key;
 		name = end+1;
@@ -645,10 +712,23 @@ WERROR reg_deletekey(struct registry_key *parent, const char *path)
 
 	if (name[0] == '\0') {
 		err = WERR_INVALID_PARAM;
-		goto done;
+		goto trans_done;
 	}
 
 	err = delete_reg_subkey(parent->key, name);
+
+trans_done:
+	if (W_ERROR_IS_OK(err)) {
+		err = regdb_transaction_commit();
+		if (!W_ERROR_IS_OK(err)) {
+			DEBUG(0, ("reg_deletekey: Error committing transaction: %s\n", win_errstr(err)));
+		}
+	} else {
+		WERROR err1 = regdb_transaction_cancel();
+		if (!W_ERROR_IS_OK(err1)) {
+			DEBUG(0, ("reg_deletekey: Error cancelling transaction: %s\n", win_errstr(err1)));
+		}
+	}
 
 done:
 	TALLOC_FREE(mem_ctx);
@@ -666,8 +746,17 @@ WERROR reg_setvalue(struct registry_key *key, const char *name,
 		return WERR_ACCESS_DENIED;
 	}
 
-	if (!W_ERROR_IS_OK(err = fill_value_cache(key))) {
+	err = regdb_transaction_start();
+	if (!W_ERROR_IS_OK(err)) {
+		DEBUG(0, ("reg_setvalue: Failed to start transaction: %s\n",
+			  win_errstr(err)));
 		return err;
+	}
+
+	err = fill_value_cache(key);
+	if (!W_ERROR_IS_OK(err)) {
+		DEBUG(0, ("reg_setvalue: Error filling value cache: %s\n", win_errstr(err)));
+		goto done;
 	}
 
 	existing = regval_ctr_getvalue(key->values, name);
@@ -675,8 +764,10 @@ WERROR reg_setvalue(struct registry_key *key, const char *name,
 	if ((existing != NULL) &&
 	    (regval_size(existing) == val->data.length) &&
 	    (memcmp(regval_data_p(existing), val->data.data,
-		    val->data.length) == 0)) {
-		return WERR_OK;
+		    val->data.length) == 0))
+	{
+		err = WERR_OK;
+		goto done;
 	}
 
 	res = regval_ctr_addvalue(key->values, name, val->type,
@@ -684,15 +775,33 @@ WERROR reg_setvalue(struct registry_key *key, const char *name,
 
 	if (res == 0) {
 		TALLOC_FREE(key->values);
-		return WERR_NOMEM;
+		err = WERR_NOMEM;
+		goto done;
 	}
 
 	if (!store_reg_values(key->key, key->values)) {
 		TALLOC_FREE(key->values);
-		return WERR_REG_IO_FAILURE;
+		DEBUG(0, ("reg_setvalue: store_reg_values failed\n"));
+		err = WERR_REG_IO_FAILURE;
+		goto done;
 	}
 
-	return WERR_OK;
+	err = WERR_OK;
+
+done:
+	if (W_ERROR_IS_OK(err)) {
+		err = regdb_transaction_commit();
+		if (!W_ERROR_IS_OK(err)) {
+			DEBUG(0, ("reg_setvalue: Error committing transaction: %s\n", win_errstr(err)));
+		}
+	} else {
+		WERROR err1 = regdb_transaction_cancel();
+		if (!W_ERROR_IS_OK(err1)) {
+			DEBUG(0, ("reg_setvalue: Error cancelling transaction: %s\n", win_errstr(err1)));
+		}
+	}
+
+	return err;
 }
 
 static WERROR reg_value_exists(struct registry_key *key, const char *name)
@@ -716,23 +825,50 @@ WERROR reg_deletevalue(struct registry_key *key, const char *name)
 		return WERR_ACCESS_DENIED;
 	}
 
-	if (!W_ERROR_IS_OK(err = fill_value_cache(key))) {
+	err = regdb_transaction_start();
+	if (!W_ERROR_IS_OK(err)) {
+		DEBUG(0, ("reg_deletevalue: Failed to start transaction: %s\n",
+			  win_errstr(err)));
 		return err;
+	}
+
+	err = fill_value_cache(key);
+	if (!W_ERROR_IS_OK(err)) {
+		DEBUG(0, ("reg_deletevalue; Error filling value cache: %s\n",
+			  win_errstr(err)));
+		goto done;
 	}
 
 	err = reg_value_exists(key, name);
 	if (!W_ERROR_IS_OK(err)) {
-		return err;
+		goto done;
 	}
 
 	regval_ctr_delvalue(key->values, name);
 
 	if (!store_reg_values(key->key, key->values)) {
 		TALLOC_FREE(key->values);
-		return WERR_REG_IO_FAILURE;
+		err = WERR_REG_IO_FAILURE;
+		DEBUG(0, ("reg_deletevalue: store_reg_values failed\n"));
+		goto done;
 	}
 
-	return WERR_OK;
+	err = WERR_OK;
+
+done:
+	if (W_ERROR_IS_OK(err)) {
+		err = regdb_transaction_commit();
+		if (!W_ERROR_IS_OK(err)) {
+			DEBUG(0, ("reg_deletevalue: Error committing transaction: %s\n", win_errstr(err)));
+		}
+	} else {
+		WERROR err1 = regdb_transaction_cancel();
+		if (!W_ERROR_IS_OK(err1)) {
+			DEBUG(0, ("reg_deletevalue: Error cancelling transaction: %s\n", win_errstr(err1)));
+		}
+	}
+
+	return err;
 }
 
 WERROR reg_getkeysecurity(TALLOC_CTX *mem_ctx, struct registry_key *key,

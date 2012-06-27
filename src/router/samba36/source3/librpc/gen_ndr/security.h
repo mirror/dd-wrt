@@ -447,14 +447,14 @@ struct security_token {
 	struct dom_sid *sids;/* [size_is(num_sids)] */
 	uint64_t privilege_mask;
 	uint32_t rights_mask;
-}/* [public] */;
+}/* [gensize,public] */;
 
 struct security_unix_token {
 	uid_t uid;
 	uid_t gid;
 	uint32_t ngroups;
 	gid_t *groups;/* [size_is(ngroups)] */
-}/* [public] */;
+}/* [gensize,public] */;
 
 /* bitmap security_secinfo */
 #define SECINFO_OWNER ( 0x00000001 )

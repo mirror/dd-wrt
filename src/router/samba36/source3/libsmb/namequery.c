@@ -1078,7 +1078,7 @@ static int remove_duplicate_addrs2(struct ip_service *iplist, int count )
 	DEBUG(10,("remove_duplicate_addrs2: "
 			"looking for duplicate address/port pairs\n"));
 
-	/* one loop to remove duplicates */
+	/* One loop to set duplicates to a zero addr. */
 	for ( i=0; i<count; i++ ) {
 		if ( is_zero_addr(&iplist[i].ss)) {
 			continue;
@@ -1092,18 +1092,17 @@ static int remove_duplicate_addrs2(struct ip_service *iplist, int count )
 		}
 	}
 
-	/* one loop to clean up any holes we left */
-	/* first ip should never be a zero_ip() */
-	for (i = 0; i<count; ) {
-		if (is_zero_addr(&iplist[i].ss) ) {
-			if (i != count-1) {
-				memmove(&iplist[i], &iplist[i+1],
-					(count - i - 1)*sizeof(iplist[i]));
+	/* Now remove any addresses set to zero above. */
+	for (i = 0; i < count; i++) {
+		while (i < count &&
+				is_zero_addr(&iplist[i].ss)) {
+			if (count-i-1>0) {
+				memmove(&iplist[i],
+					&iplist[i+1],
+					(count-i-1)*sizeof(struct ip_service));
 			}
 			count--;
-			continue;
 		}
-		i++;
 	}
 
 	return count;
@@ -1339,6 +1338,10 @@ static bool name_query_validator(struct packet_struct *p, void *private_data)
 		putip((char *)&ip,&nmb->answers->rdata[2+i*6]);
 		in_addr_to_sockaddr_storage(&addr, ip);
 
+		if (is_zero_addr(&addr)) {
+			continue;
+		}
+
 		for (j=0; j<state->num_addrs; j++) {
 			if (sockaddr_equal(
 				    (struct sockaddr *)&addr,
@@ -1476,32 +1479,53 @@ NTSTATUS name_query(const char *name, int name_type,
 }
 
 /********************************************************
- convert an array if struct sockaddr_storage to struct ip_service
+ Convert an array if struct sockaddr_storage to struct ip_service
  return false on failure.  Port is set to PORT_NONE;
+ pcount is [in/out] - it is the length of ss_list on input,
+ and the length of return_iplist on output as we remove any
+ zero addresses from ss_list.
 *********************************************************/
 
 static bool convert_ss2service(struct ip_service **return_iplist,
 		const struct sockaddr_storage *ss_list,
-		int count)
+		int *pcount)
 {
 	int i;
+	int orig_count = *pcount;
+	int real_count = 0;
 
-	if ( count==0 || !ss_list )
+	if (orig_count==0 || !ss_list )
 		return False;
+
+	/* Filter out zero addrs. */
+	for ( i=0; i<orig_count; i++ ) {
+		if (is_zero_addr(&ss_list[i])) {
+			continue;
+		}
+		real_count++;
+	}
+	if (real_count==0) {
+		return false;
+	}
 
 	/* copy the ip address; port will be PORT_NONE */
-	if ((*return_iplist = SMB_MALLOC_ARRAY(struct ip_service, count)) ==
+	if ((*return_iplist = SMB_MALLOC_ARRAY(struct ip_service, real_count)) ==
 			NULL) {
 		DEBUG(0,("convert_ip2service: malloc failed "
-			"for %d enetries!\n", count ));
+			"for %d enetries!\n", real_count ));
 		return False;
 	}
 
-	for ( i=0; i<count; i++ ) {
-		(*return_iplist)[i].ss   = ss_list[i];
-		(*return_iplist)[i].port = PORT_NONE;
-	}
+	for ( i=0, real_count = 0; i<orig_count; i++ ) {
+		if (is_zero_addr(&ss_list[i])) {
+			continue;
+		}
+		(*return_iplist)[real_count].ss   = ss_list[i];
+		(*return_iplist)[real_count].port = PORT_NONE;
+		real_count++;
+        }
 
+	*pcount = real_count;
 	return true;
 }
 
@@ -1685,7 +1709,7 @@ NTSTATUS resolve_wins(const char *name,
 success:
 
 	status = NT_STATUS_OK;
-	if (!convert_ss2service(return_iplist, ss_list, *return_count))
+	if (!convert_ss2service(return_iplist, ss_list, return_count))
 		status = NT_STATUS_INVALID_PARAMETER;
 
 	TALLOC_FREE(ss_list);
@@ -1729,7 +1753,7 @@ static NTSTATUS resolve_lmhosts(const char *name, int name_type,
 	if (NT_STATUS_IS_OK(status)) {
 		if (convert_ss2service(return_iplist, 
 				       ss_list,
-				       *return_count)) {
+				       return_count)) {
 			talloc_free(ctx);
 			return NT_STATUS_OK;
 		} else {
@@ -1802,6 +1826,10 @@ static NTSTATUS resolve_hosts(const char *name, int name_type,
 		ZERO_STRUCT(ss);
 		memcpy(&ss, res->ai_addr, res->ai_addrlen);
 
+		if (is_zero_addr(&ss)) {
+			continue;
+		}
+
 		*return_count += 1;
 
 		*return_iplist = SMB_REALLOC_ARRAY(*return_iplist,
@@ -1838,7 +1866,7 @@ static NTSTATUS resolve_ads(const char *name,
 			    struct ip_service **return_iplist,
 			    int *return_count)
 {
-	int 			i, j;
+	int 			i;
 	NTSTATUS  		status;
 	TALLOC_CTX		*ctx;
 	struct dns_rr_srv	*dcs = NULL;
@@ -1887,8 +1915,12 @@ static NTSTATUS resolve_ads(const char *name,
 	}
 
 	for (i=0;i<numdcs;i++) {
-		numaddrs += MAX(dcs[i].num_ips,1);
-	}
+		if (!dcs[i].ss_s) {
+			numaddrs += 1;
+		} else {
+			numaddrs += dcs[i].num_ips;
+		}
+        }
 
 	if ((*return_iplist = SMB_MALLOC_ARRAY(struct ip_service, numaddrs)) ==
 			NULL ) {
@@ -1901,42 +1933,77 @@ static NTSTATUS resolve_ads(const char *name,
 	/* now unroll the list of IP addresses */
 
 	*return_count = 0;
-	i = 0;
-	j = 0;
-	while ( i < numdcs && (*return_count<numaddrs) ) {
-		struct ip_service *r = &(*return_iplist)[*return_count];
 
-		r->port = dcs[i].port;
-
+	for (i = 0; i < numdcs && (*return_count<numaddrs); i++ ) {
 		/* If we don't have an IP list for a name, lookup it up */
-
 		if (!dcs[i].ss_s) {
-			interpret_string_addr(&r->ss, dcs[i].hostname, 0);
-			i++;
-			j = 0;
-		} else {
-			/* use the IP addresses from the SRV sresponse */
+			/* We need to get all IP addresses here. */
+			struct addrinfo *res = NULL;
+			struct addrinfo *p;
+			int extra_addrs = 0;
 
-			if ( j >= dcs[i].num_ips ) {
-				i++;
-				j = 0;
+			if (!interpret_string_addr_internal(&res,
+						dcs[i].hostname,
+						0)) {
 				continue;
 			}
-
-			r->ss = dcs[i].ss_s[j];
-			j++;
-		}
-
-		/* make sure it is a valid IP.  I considered checking the
-		 * negative connection cache, but this is the wrong place
-		 * for it. Maybe only as a hack. After think about it, if
-		 * all of the IP addresses returned from DNS are dead, what
-		 * hope does a netbios name lookup have ? The standard reason
-		 * for falling back to netbios lookups is that our DNS server
-		 * doesn't know anything about the DC's   -- jerry */
-
-		if (!is_zero_addr(&r->ss)) {
-			(*return_count)++;
+			/* Add in every IP from the lookup. How
+			   many is that ? */
+			for (p = res; p; p = p->ai_next) {
+				struct sockaddr_storage ss;
+				memcpy(&ss, p->ai_addr, p->ai_addrlen);
+				if (is_zero_addr(&ss)) {
+					continue;
+				}
+				extra_addrs++;
+			}
+			if (extra_addrs > 1) {
+				/* We need to expand the return_iplist array
+				   as we only budgeted for one address. */
+				numaddrs += (extra_addrs-1);
+				*return_iplist = SMB_REALLOC_ARRAY(*return_iplist,
+						struct ip_service,
+						numaddrs);
+				if (*return_iplist == NULL) {
+					if (res) {
+						freeaddrinfo(res);
+					}
+					talloc_destroy(ctx);
+					return NT_STATUS_NO_MEMORY;
+				}
+			}
+			for (p = res; p; p = p->ai_next) {
+				(*return_iplist)[*return_count].port = dcs[i].port;
+				memcpy(&(*return_iplist)[*return_count].ss,
+						p->ai_addr,
+						p->ai_addrlen);
+				if (is_zero_addr(&(*return_iplist)[*return_count].ss)) {
+					continue;
+				}
+				(*return_count)++;
+				/* Should never happen, but still... */
+				if (*return_count>=numaddrs) {
+					break;
+				}
+			}
+			if (res) {
+				freeaddrinfo(res);
+			}
+		} else {
+			/* use all the IP addresses from the SRV sresponse */
+			int j;
+			for (j = 0; j < dcs[i].num_ips; j++) {
+				(*return_iplist)[*return_count].port = dcs[i].port;
+				(*return_iplist)[*return_count].ss = dcs[i].ss_s[j];
+				if (is_zero_addr(&(*return_iplist)[*return_count].ss)) {
+					continue;
+				}
+                                (*return_count)++;
+				/* Should never happen, but still... */
+				if (*return_count>=numaddrs) {
+					break;
+				}
+			}
 		}
 	}
 
@@ -1993,6 +2060,10 @@ NTSTATUS internal_resolve_name(const char *name,
 			SAFE_FREE(*return_iplist);
 			return NT_STATUS_INVALID_PARAMETER;
 		}
+		if (is_zero_addr(&(*return_iplist)->ss)) {
+			SAFE_FREE(*return_iplist);
+			return NT_STATUS_UNSUCCESSFUL;
+		}
 		*return_count = 1;
 		return NT_STATUS_OK;
 	}
@@ -2000,6 +2071,8 @@ NTSTATUS internal_resolve_name(const char *name,
 	/* Check name cache */
 
 	if (namecache_fetch(name, name_type, return_iplist, return_count)) {
+		*return_count = remove_duplicate_addrs2(*return_iplist,
+					*return_count );
 		/* This could be a negative response */
 		if (*return_count > 0) {
 			return NT_STATUS_OK;
@@ -2074,7 +2147,7 @@ NTSTATUS internal_resolve_name(const char *name,
 			if (NT_STATUS_IS_OK(status)) {
 				if (!convert_ss2service(return_iplist,
 							ss_list,
-							*return_count)) {
+							return_count)) {
 					status = NT_STATUS_NO_MEMORY;
 				}
 				goto done;
@@ -2100,10 +2173,7 @@ NTSTATUS internal_resolve_name(const char *name,
 	controllers including the PDC in iplist[1..n].  Iterating over
 	the iplist when the PDC is down will cause two sets of timeouts. */
 
-	if ( *return_count ) {
-		*return_count = remove_duplicate_addrs2(*return_iplist,
-					*return_count );
-	}
+	*return_count = remove_duplicate_addrs2(*return_iplist, *return_count );
 
 	/* Save in name cache */
 	if ( DEBUGLEVEL >= 100 ) {
@@ -2119,7 +2189,9 @@ NTSTATUS internal_resolve_name(const char *name,
 		}
 	}
 
-	namecache_store(name, name_type, *return_count, *return_iplist);
+	if (*return_count) {
+		namecache_store(name, name_type, *return_count, *return_iplist);
+	}
 
 	/* Display some debugging info */
 
@@ -2582,10 +2654,7 @@ static NTSTATUS get_dc_list(const char *domain,
 	/* need to remove duplicates in the list if we have any
 	   explicit password servers */
 
-	if (local_count) {
-		local_count = remove_duplicate_addrs2(return_iplist,
-				local_count );
-	}
+	local_count = remove_duplicate_addrs2(return_iplist, local_count );
 
 	/* For DC's we always prioritize IPv4 due to W2K3 not
 	 * supporting LDAP, KRB5 or CLDAP over IPv6. */
