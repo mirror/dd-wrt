@@ -706,7 +706,7 @@ u8 search_ddl_domains(struct ipoque_detection_module_struct *ipoque_struct)
 }
 
 
-void ipoque_search_direct_download_link_tcp(struct
+static void ipoque_search_direct_download_link_tcp(struct
 											ipoque_detection_module_struct
 											*ipoque_struct)
 {

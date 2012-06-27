@@ -32,7 +32,7 @@ static void ipoque_int_icecast_add_connection(struct ipoque_detection_module_str
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_ICECAST, IPOQUE_CORRELATED_PROTOCOL);
 }
 
-void ipoque_search_icecast_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_icecast_tcp(struct ipoque_detection_module_struct
 							   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

@@ -388,7 +388,7 @@ static void search_active_ftp_mode(struct ipoque_detection_module_struct *ipoque
 }
 
 
-void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_ftp_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

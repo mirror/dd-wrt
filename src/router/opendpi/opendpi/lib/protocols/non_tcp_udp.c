@@ -56,7 +56,7 @@
 }
 
 
-void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_search_in_non_tcp_udp(struct ipoque_detection_module_struct
 								  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

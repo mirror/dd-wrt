@@ -34,7 +34,7 @@ static void ipoque_int_fasttrack_add_connection(struct ipoque_detection_module_s
 }
 
 
-void ipoque_search_fasttrack_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_fasttrack_tcp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

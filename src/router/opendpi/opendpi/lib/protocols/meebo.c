@@ -35,7 +35,7 @@ static void ipoque_int_meebo_add_connection(struct ipoque_detection_module_struc
 
 
 
-void ipoque_search_meebo(struct ipoque_detection_module_struct
+static void ipoque_search_meebo(struct ipoque_detection_module_struct
 						 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

@@ -34,7 +34,7 @@ static void ipoque_int_dhcpv6_add_connection(struct ipoque_detection_module_stru
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_DHCPV6, IPOQUE_REAL_PROTOCOL);
 }
 
-void ipoque_search_dhcpv6_udp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_dhcpv6_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

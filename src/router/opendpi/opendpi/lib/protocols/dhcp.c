@@ -33,7 +33,7 @@ static void ipoque_int_dhcp_add_connection(struct ipoque_detection_module_struct
 }
 
 
-void ipoque_search_dhcp_udp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_dhcp_udp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

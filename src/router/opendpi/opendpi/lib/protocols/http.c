@@ -546,7 +546,7 @@ static void parseHttpSubprotocol(struct ipoque_detection_module_struct *ipoque_s
 }
 #endif
 
-static void check_content_type_and_change_protocol(struct ipoque_detection_module_struct
+static void http_check_content_type_and_change_protocol(struct ipoque_detection_module_struct
 						   *ipoque_struct)
 {
 #ifdef IPOQUE_PROTOCOL_MPEG
@@ -750,7 +750,7 @@ static void http_bitmask_exclude(struct ipoque_flow_struct *flow)
 #endif
 }
 
-void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;
   struct ipoque_flow_struct *flow = ipoque_struct->flow;
@@ -818,7 +818,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 	IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "http structure detected, adding\n");
 
 	ipoque_int_http_add_connection(ipoque_struct, (filename_start == 8) ? NTOP_PROTOCOL_HTTP_CONNECT : IPOQUE_PROTOCOL_HTTP);
-	check_content_type_and_change_protocol(ipoque_struct);
+	http_check_content_type_and_change_protocol(ipoque_struct);
 	/* HTTP found, look for host... */
 	if (packet->host_line.ptr != NULL) {
 	  /* aaahh, skip this direction and wait for a server reply here */
@@ -856,7 +856,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 
       if (packet->line[0].len >= 9 && memcmp(&packet->line[0].ptr[packet->line[0].len - 9], " HTTP/1.", 8) == 0) {
 	ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP);
-	check_content_type_and_change_protocol(ipoque_struct);
+	http_check_content_type_and_change_protocol(ipoque_struct);
 	IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG,
 		"HTTP START HTTP found in 2. packet, check host here...\n");
 	/* HTTP found, look for host... */
@@ -891,7 +891,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
 		"resetting to http and search for other protocols later.\n");
 	ipoque_int_http_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP);
       }
-      check_content_type_and_change_protocol(ipoque_struct);
+      http_check_content_type_and_change_protocol(ipoque_struct);
       /* HTTP found, look for host... */
       if (packet->host_line.ptr != NULL) {
 	IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG,
@@ -906,7 +906,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
     } else if (flow->l4.tcp.http_stage == 1) {
       // parse packet and maybe find a packet info with host ptr,...
       ipq_parse_packet_line_info(ipoque_struct);
-      check_content_type_and_change_protocol(ipoque_struct);
+      http_check_content_type_and_change_protocol(ipoque_struct);
       IPQ_LOG(IPOQUE_PROTOCOL_HTTP, ipoque_struct, IPQ_LOG_DEBUG, "HTTP RUN second packet scanned\n");
       /* HTTP found, look for host... */
       flow->l4.tcp.http_stage = 2;
@@ -919,7 +919,7 @@ void ipoque_search_http_tcp(struct ipoque_detection_module_struct *ipoque_struct
   if (flow->l4.tcp.http_stage > 0) {
     /* first packet from server direction, might have a content line */
     ipq_parse_packet_line_info(ipoque_struct);
-    check_content_type_and_change_protocol(ipoque_struct);
+    http_check_content_type_and_change_protocol(ipoque_struct);
 
 
     if (packet->empty_line_position_set != 0 || flow->l4.tcp.http_empty_line_seen == 1) {

@@ -203,7 +203,7 @@ static void ipoque_search_sopcast_udp(struct ipoque_detection_module_struct
 
 }
 
-void ipoque_search_sopcast(struct ipoque_detection_module_struct
+static void ipoque_search_sopcast(struct ipoque_detection_module_struct
 						   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
