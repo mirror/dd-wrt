@@ -1185,10 +1185,11 @@ static bool dcip_to_name(TALLOC_CTX *mem_ctx,
 		}
 
 		ads_destroy( &ads );
+		return false;
 	}
 #endif
 
-	status = nbt_getdc(winbind_messaging_context(), pss, domain->name,
+	status = nbt_getdc(winbind_messaging_context(), 10, pss, domain->name,
 			   &domain->sid, nt_version, mem_ctx, &nt_version,
 			   &dc_name, NULL);
 	if (NT_STATUS_IS_OK(status)) {
@@ -1926,6 +1927,8 @@ static bool set_dc_type_and_flags_trustinfo( struct winbindd_domain *domain )
 				 "running active directory.\n", domain->name, 
 				 domain->active_directory ? "" : "NOT "));
 
+			domain->can_do_ncacn_ip_tcp = domain->active_directory;
+			domain->can_do_validation6 = domain->active_directory;
 
 			domain->initialized = True;
 

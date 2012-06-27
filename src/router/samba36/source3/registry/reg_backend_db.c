@@ -320,7 +320,7 @@ static NTSTATUS init_registry_data_action(struct db_context *db,
 
 		/* preserve existing values across restarts. Only add new ones */
 
-		if (!regval_ctr_key_exists(values,
+		if (!regval_ctr_value_exists(values,
 					builtin_registry_values[i].valuename))
 		{
 			regdb_ctr_add_value(values,
@@ -364,7 +364,7 @@ WERROR init_registry_data(void)
 		regdb_fetch_values_internal(regdb,
 					    builtin_registry_values[i].path,
 					    values);
-		if (!regval_ctr_key_exists(values,
+		if (!regval_ctr_value_exists(values,
 					builtin_registry_values[i].valuename))
 		{
 			TALLOC_FREE(values);
@@ -984,7 +984,11 @@ static NTSTATUS regdb_store_keys_action(struct db_context *db,
 		TALLOC_FREE(path);
 	}
 
-	werr = WERR_OK;
+	/*
+	 * Update the seqnum in the container to possibly
+	 * prevent next read from going to disk
+	 */
+	werr = regsubkey_ctr_set_seqnum(store_ctx->ctr, db->get_seqnum(db));
 
 done:
 	talloc_free(mem_ctx);
@@ -1611,6 +1615,7 @@ static WERROR regdb_fetch_keys_internal(struct db_context *db, const char *key,
 	fstring subkeyname;
 	TALLOC_CTX *frame = talloc_stackframe();
 	TDB_DATA value;
+	int seqnum[2], count;
 
 	DEBUG(11,("regdb_fetch_keys: Enter key => [%s]\n", key ? key : "NULL"));
 
@@ -1620,10 +1625,31 @@ static WERROR regdb_fetch_keys_internal(struct db_context *db, const char *key,
 		goto done;
 	}
 
-	werr = regsubkey_ctr_set_seqnum(ctr, db->get_seqnum(db));
+	werr = regsubkey_ctr_reinit(ctr);
 	W_ERROR_NOT_OK_GOTO_DONE(werr);
 
-	value = regdb_fetch_key_internal(db, frame, key);
+	count = 0;
+	ZERO_STRUCT(value);
+	seqnum[0] = db->get_seqnum(db);
+
+	do {
+		count++;
+		TALLOC_FREE(value.dptr);
+		value = regdb_fetch_key_internal(db, frame, key);
+		seqnum[count % 2] = db->get_seqnum(db);
+
+	} while (seqnum[0] != seqnum[1]);
+
+	if (count > 1) {
+		DEBUG(5, ("regdb_fetch_keys_internal: it took %d attempts to "
+			  "fetch key '%s' with constant seqnum\n",
+			  count, key));
+	}
+
+	werr = regsubkey_ctr_set_seqnum(ctr, seqnum[0]);
+	if (!W_ERROR_IS_OK(werr)) {
+		goto done;
+	}
 
 	if (value.dsize == 0 || value.dptr == NULL) {
 		DEBUG(10, ("regdb_fetch_keys: no subkeys found for key [%s]\n",
@@ -1638,9 +1664,6 @@ static WERROR regdb_fetch_keys_internal(struct db_context *db, const char *key,
 		werr = WERR_NOT_FOUND;
 		goto done;
 	}
-
-	werr = regsubkey_ctr_reinit(ctr);
-	W_ERROR_NOT_OK_GOTO_DONE(werr);
 
 	for (i=0; i<num_items; i++) {
 		len += tdb_unpack(buf+len, buflen-len, "f", subkeyname);
@@ -1707,7 +1730,8 @@ static int regdb_unpack_values(struct regval_ctr *values, uint8 *buf, int buflen
 				(uint8_t *)data_p, size);
 		SAFE_FREE(data_p); /* 'B' option to tdb_unpack does a malloc() */
 
-		DEBUG(8,("specific: [%s], len: %d\n", valuename, size));
+		DEBUG(10, ("regdb_unpack_values: value[%d]: name[%s] len[%d]\n",
+			   i, valuename, size));
 	}
 
 	return len;
@@ -1760,10 +1784,14 @@ static int regdb_fetch_values_internal(struct db_context *db, const char* key,
 	int ret = 0;
 	TDB_DATA value;
 	WERROR werr;
+	int seqnum[2], count;
 
-	DEBUG(10,("regdb_fetch_values: Looking for value of key [%s] \n", key));
+	DEBUG(10,("regdb_fetch_values: Looking for values of key [%s]\n", key));
 
 	if (!regdb_key_exists(db, key)) {
+		DEBUG(10, ("regb_fetch_values: key [%s] does not exist\n",
+			   key));
+		ret = -1;
 		goto done;
 	}
 
@@ -1772,10 +1800,27 @@ static int regdb_fetch_values_internal(struct db_context *db, const char* key,
 		goto done;
 	}
 
-	werr = regval_ctr_set_seqnum(values, db->get_seqnum(db));
-	W_ERROR_NOT_OK_GOTO_DONE(werr);
+	ZERO_STRUCT(value);
+	count = 0;
+	seqnum[0] = db->get_seqnum(db);
 
-	value = regdb_fetch_key_internal(db, ctx, keystr);
+	do {
+		count++;
+		TALLOC_FREE(value.dptr);
+		value = regdb_fetch_key_internal(db, ctx, keystr);
+		seqnum[count % 2] = db->get_seqnum(db);
+	} while (seqnum[0] != seqnum[1]);
+
+	if (count > 1) {
+		DEBUG(5, ("regdb_fetch_values_internal: it took %d attempts "
+			  "to fetch key '%s' with constant seqnum\n",
+			  count, key));
+	}
+
+	werr = regval_ctr_set_seqnum(values, seqnum[0]);
+	if (!W_ERROR_IS_OK(werr)) {
+		goto done;
+	}
 
 	if (!value.dptr) {
 		/* all keys have zero values by default */
@@ -1804,8 +1849,9 @@ static bool regdb_store_values_internal(struct db_context *db, const char *key,
 	int len;
 	NTSTATUS status;
 	bool result = false;
+	WERROR werr;
 
-	DEBUG(10,("regdb_store_values: Looking for value of key [%s] \n", key));
+	DEBUG(10,("regdb_store_values: Looking for values of key [%s]\n", key));
 
 	if (!regdb_key_exists(db, key)) {
 		goto done;
@@ -1846,8 +1892,17 @@ static bool regdb_store_values_internal(struct db_context *db, const char *key,
 	}
 
 	status = dbwrap_trans_store_bystring(db, keystr, data, TDB_REPLACE);
+	if (!NT_STATUS_IS_OK(status)) {
+		DEBUG(0, ("regdb_store_values_internal: error storing: %s\n", nt_errstr(status)));
+		goto done;
+	}
 
-	result = NT_STATUS_IS_OK(status);
+	/*
+	 * update the seqnum in the cache to prevent the next read
+	 * from going to disk
+	 */
+	werr = regval_ctr_set_seqnum(values, db->get_seqnum(db));
+	result = W_ERROR_IS_OK(status);
 
 done:
 	TALLOC_FREE(ctx);

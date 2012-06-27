@@ -51,9 +51,11 @@ void ndr_print_sec_desc_buf(struct ndr_print *ndr, const char *name, const struc
 enum ndr_err_code ndr_push_security_token(struct ndr_push *ndr, int ndr_flags, const struct security_token *r);
 enum ndr_err_code ndr_pull_security_token(struct ndr_pull *ndr, int ndr_flags, struct security_token *r);
 void ndr_print_security_token(struct ndr_print *ndr, const char *name, const struct security_token *r);
+size_t ndr_size_security_token(const struct security_token *r, int flags);
 enum ndr_err_code ndr_push_security_unix_token(struct ndr_push *ndr, int ndr_flags, const struct security_unix_token *r);
 enum ndr_err_code ndr_pull_security_unix_token(struct ndr_pull *ndr, int ndr_flags, struct security_unix_token *r);
 void ndr_print_security_unix_token(struct ndr_print *ndr, const char *name, const struct security_unix_token *r);
+size_t ndr_size_security_unix_token(const struct security_unix_token *r, int flags);
 enum ndr_err_code ndr_push_security_secinfo(struct ndr_push *ndr, int ndr_flags, uint32_t r);
 enum ndr_err_code ndr_pull_security_secinfo(struct ndr_pull *ndr, int ndr_flags, uint32_t *r);
 void ndr_print_security_secinfo(struct ndr_print *ndr, const char *name, uint32_t r);
