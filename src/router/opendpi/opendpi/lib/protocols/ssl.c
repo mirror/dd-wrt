@@ -162,55 +162,57 @@ int getSSLcertificate(struct ipoque_detection_module_struct *ipoque_struct, char
     } else if(handshake_protocol == 0x01 /* Client Hello */) {
       u_int offset, base_offset = 43;
       u_int16_t session_id_len = packet->payload[base_offset];
-      u_int16_t cypher_len =  packet->payload[session_id_len+base_offset+2];
+      if((session_id_len+base_offset+2) >= total_len) { 
+	u_int16_t cypher_len =  packet->payload[session_id_len+base_offset+2];
 
-      offset = base_offset + session_id_len + cypher_len + 2;
+	offset = base_offset + session_id_len + cypher_len + 2;
 
-      if(offset < total_len) {
-	u_int16_t compression_len;
-	u_int16_t extensions_len;
+	if(offset < total_len) {
+	  u_int16_t compression_len;
+	  u_int16_t extensions_len;
 
-	compression_len = packet->payload[offset+1];
-	offset += compression_len + 3;
-	extensions_len = packet->payload[offset];
+	  compression_len = packet->payload[offset+1];
+	  offset += compression_len + 3;
+	  extensions_len = packet->payload[offset];
 
-	if((extensions_len+offset) < total_len) {
-	  u_int16_t extension_offset = 1; /* Move to the first extension */
+	  if((extensions_len+offset) < total_len) {
+	    u_int16_t extension_offset = 1; /* Move to the first extension */
 
-	  while(extension_offset < extensions_len) {
-	    u_int16_t extension_id, extension_len;
+	    while(extension_offset < extensions_len) {
+	      u_int16_t extension_id, extension_len;
 
-	    memcpy(&extension_id, &packet->payload[offset+extension_offset], 2);
-	    extension_offset += 2;
+	      memcpy(&extension_id, &packet->payload[offset+extension_offset], 2);
+	      extension_offset += 2;
 
-	    memcpy(&extension_len, &packet->payload[offset+extension_offset], 2);
-	    extension_offset += 2;
+	      memcpy(&extension_len, &packet->payload[offset+extension_offset], 2);
+	      extension_offset += 2;
 
-	    extension_id = ntohs(extension_id), extension_len = ntohs(extension_len);
+	      extension_id = ntohs(extension_id), extension_len = ntohs(extension_len);
 
-	    if(extension_id == 0) {
-	      u_int begin = 0,len;
-	      char *server_name = (char*)&packet->payload[offset+extension_offset];
+	      if(extension_id == 0) {
+		u_int begin = 0,len;
+		char *server_name = (char*)&packet->payload[offset+extension_offset];
 
-	      while(begin < extension_len) {
-		if((!isprint(server_name[begin]))
-		   || ispunct(server_name[begin])
-		   || isspace(server_name[begin]))
-		  begin++;
-		else
-		  break;
+		while(begin < extension_len) {
+		  if((!isprint(server_name[begin]))
+		     || ispunct(server_name[begin])
+		     || isspace(server_name[begin]))
+		    begin++;
+		  else
+		    break;
+		}
+
+		len = min(extension_len-begin, buffer_len-1);
+		strncpy(buffer, &server_name[begin], len);
+		buffer[len] = '\0';
+		stripCertificateTrailer(buffer, buffer_len);
+
+		/* We're happy now */
+		return(2 /* Client Certificate */);
 	      }
 
-	      len = min(extension_len-begin, buffer_len-1);
-	      strncpy(buffer, &server_name[begin], len);
-	      buffer[len] = '\0';
-	      stripCertificateTrailer(buffer, buffer_len);
-
-	      /* We're happy now */
-	      return(2 /* Client Certificate */);
+	      extension_offset += extension_len;
 	    }
-
-	    extension_offset += extension_len;
 	  }
 	}
       }
