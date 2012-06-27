@@ -58,7 +58,7 @@ compile time.</p></dd><dt><span class="term">-i</span></dt><dd><p>Run interactiv
 	    message for the printer and unix jobid
 	    specified.</p></dd></dl></div><p>
 	Note that this message only sends notification that an
-	event has occured.  It doesn't actually cause the
+	event has occurred.  It doesn't actually cause the
 	event to happen.
 	</p><p>This message can only be sent to <code class="constant">smbd</code>. </p></dd><dt><span class="term">samsync</span></dt><dd><p>Order smbd to synchronise sam database from PDC (being BDC). Can only be sent to <code class="constant">smbd</code>. </p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Not working at the moment</p></div></dd><dt><span class="term">samrepl</span></dt><dd><p>Send sam replication message, with specified serial. Can only be sent to <code class="constant">smbd</code>. Should not be used manually.</p></dd><dt><span class="term">dmalloc-mark</span></dt><dd><p>Set a mark for dmalloc. Can be sent to both smbd and nmbd. Only available if samba is built with dmalloc support. </p></dd><dt><span class="term">dmalloc-log-changed</span></dt><dd><p>
 	Dump the pointers that have changed since the mark set by dmalloc-mark. 

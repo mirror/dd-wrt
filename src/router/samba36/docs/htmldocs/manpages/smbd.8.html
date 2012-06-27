@@ -109,14 +109,14 @@ log.smbd, etc...). The log file is never removed by the client.
 		is not specific to the server, however.</p></dd></dl></div></div><div class="refsect1" title="PAM INTERACTION"><a name="id307364"></a><h2>PAM INTERACTION</h2><p>Samba uses PAM for authentication (when presented with a plaintext 
 	password), for account checking (is this account disabled?) and for
 	session management.  The degree too which samba supports PAM is restricted
-	by the limitations of the SMB protocol and the <a class="link" href="smb.conf.5.html#OBEYPAMRESTRICTIONS" target="_top">obey pam restrictions</a> <a class="citerefentry" href="smb.conf.5.html"><span class="citerefentry"><span class="refentrytitle">smb.conf</span>(5)</span></a> paramater.  When this is set, the following restrictions apply:
+	by the limitations of the SMB protocol and the <a class="link" href="smb.conf.5.html#OBEYPAMRESTRICTIONS" target="_top">obey pam restrictions</a> <a class="citerefentry" href="smb.conf.5.html"><span class="citerefentry"><span class="refentrytitle">smb.conf</span>(5)</span></a> parameter.  When this is set, the following restrictions apply:
 	</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><span class="emphasis"><em>Account Validation</em></span>:  All accesses to a 
 	samba server are checked 
-	against PAM to see if the account is vaild, not disabled and is permitted to 
+	against PAM to see if the account is valid, not disabled and is permitted to
 	login at this time.  This also applies to encrypted logins.
 	</p></li><li class="listitem"><p><span class="emphasis"><em>Session Management</em></span>:  When not using share 
-	level secuirty, users must pass PAM's session checks before access 
-	is granted.  Note however, that this is bypassed in share level secuirty.  
+	level security, users must pass PAM's session checks before access
+	is granted.  Note however, that this is bypassed in share level security.
 	Note also that some older pam configuration files may need a line 
 	added for session support. 
 	</p></li></ul></div></div><div class="refsect1" title="VERSION"><a name="id307412"></a><h2>VERSION</h2><p>This man page is correct for version 3 of 
