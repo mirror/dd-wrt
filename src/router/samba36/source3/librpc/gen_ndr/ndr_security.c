@@ -1018,6 +1018,11 @@ _PUBLIC_ void ndr_print_security_token(struct ndr_print *ndr, const char *name, 
 	ndr->depth--;
 }
 
+_PUBLIC_ size_t ndr_size_security_token(const struct security_token *r, int flags)
+{
+	return ndr_size_struct(r, flags, (ndr_push_flags_fn_t)ndr_push_security_token);
+}
+
 _PUBLIC_ enum ndr_err_code ndr_push_security_unix_token(struct ndr_push *ndr, int ndr_flags, const struct security_unix_token *r)
 {
 	uint32_t cntr_groups_0;
@@ -1082,6 +1087,11 @@ _PUBLIC_ void ndr_print_security_unix_token(struct ndr_print *ndr, const char *n
 	}
 	ndr->depth--;
 	ndr->depth--;
+}
+
+_PUBLIC_ size_t ndr_size_security_unix_token(const struct security_unix_token *r, int flags)
+{
+	return ndr_size_struct(r, flags, (ndr_push_flags_fn_t)ndr_push_security_unix_token);
 }
 
 _PUBLIC_ enum ndr_err_code ndr_push_security_secinfo(struct ndr_push *ndr, int ndr_flags, uint32_t r)

@@ -373,6 +373,10 @@ bool file_find_subpath(files_struct *dir_fsp);
 void file_sync_all(connection_struct *conn);
 void file_free(struct smb_request *req, files_struct *fsp);
 files_struct *file_fsp(struct smb_request *req, uint16 fid);
+uint64_t fsp_persistent_id(const struct files_struct *fsp);
+struct files_struct *file_fsp_smb2(struct smbd_smb2_request *smb2req,
+				   uint64_t persistent_id,
+				   uint64_t volatile_id);
 NTSTATUS dup_file_fsp(struct smb_request *req, files_struct *from,
 		      uint32 access_mask, uint32 share_access,
 		      uint32 create_options, files_struct *to);
@@ -559,6 +563,15 @@ void send_nt_replies(connection_struct *conn,
 void reply_ntcreate_and_X(struct smb_request *req);
 NTSTATUS set_sd(files_struct *fsp, uint8_t *data, uint32_t sd_len,
                        uint32_t security_info_sent);
+NTSTATUS smb_fsctl(struct files_struct *fsp,
+		       TALLOC_CTX *ctx,
+		       uint32_t function,
+		       uint16_t req_flags,  /* Needed for UNICODE ... */
+		       const uint8_t *_in_data,
+		       uint32_t in_len,
+		       uint8_t **_out_data,
+		       uint32_t max_out_len,
+		       uint32_t *out_len);
 struct ea_list *read_nttrans_ea_list(TALLOC_CTX *ctx, const char *pdata, size_t data_size);
 void reply_ntcancel(struct smb_request *req);
 void reply_ntrename(struct smb_request *req);
@@ -953,7 +966,7 @@ void server_encryption_shutdown(void);
 
 bool unix_token_equal(const struct security_unix_token *t1, const struct security_unix_token *t2);
 bool push_sec_ctx(void);
-void set_sec_ctx(uid_t uid, gid_t gid, int ngroups, gid_t *groups, struct security_token *token);
+void set_sec_ctx(uid_t uid, gid_t gid, int ngroups, gid_t *groups, const struct security_token *token);
 void set_root_sec_ctx(void);
 bool pop_sec_ctx(void);
 void init_sec_ctx(void);

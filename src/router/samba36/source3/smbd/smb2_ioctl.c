@@ -29,8 +29,8 @@
 static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,
 					       struct tevent_context *ev,
 					       struct smbd_smb2_request *smb2req,
+					       struct files_struct *in_fsp,
 					       uint32_t in_ctl_code,
-					       uint64_t in_file_id_volatile,
 					       DATA_BLOB in_input,
 					       uint32_t in_max_output,
 					       uint32_t in_flags);
@@ -47,6 +47,7 @@ NTSTATUS smbd_smb2_request_process_ioctl(struct smbd_smb2_request *req)
 	uint32_t in_ctl_code;
 	uint64_t in_file_id_persistent;
 	uint64_t in_file_id_volatile;
+	struct files_struct *in_fsp = NULL;
 	uint32_t in_input_offset;
 	uint32_t in_input_length;
 	DATA_BLOB in_input_buffer;
@@ -88,20 +89,21 @@ NTSTATUS smbd_smb2_request_process_ioctl(struct smbd_smb2_request *req)
 	in_input_buffer.data = (uint8_t *)req->in.vector[i+2].iov_base;
 	in_input_buffer.length = in_input_length;
 
-	if (req->compat_chain_fsp) {
-		/* skip check */
-	} else if (in_file_id_persistent == UINT64_MAX &&
+	if (in_file_id_persistent == UINT64_MAX &&
 		   in_file_id_volatile == UINT64_MAX) {
 		/* without a handle */
-	} else if (in_file_id_persistent != in_file_id_volatile) {
-		return smbd_smb2_request_error(req, NT_STATUS_FILE_CLOSED);
+	} else {
+		in_fsp = file_fsp_smb2(req, in_file_id_persistent,
+					in_file_id_volatile);
+		if (in_fsp == NULL) {
+			return smbd_smb2_request_error(req, NT_STATUS_FILE_CLOSED);
+		}
 	}
 
 	subreq = smbd_smb2_ioctl_send(req,
 				      req->sconn->smb2.event_ctx,
-				      req,
+				      req, in_fsp,
 				      in_ctl_code,
-				      in_file_id_volatile,
 				      in_input_buffer,
 				      in_max_output_length,
 				      in_flags);
@@ -222,8 +224,8 @@ static void smbd_smb2_ioctl_pipe_read_done(struct tevent_req *subreq);
 static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,
 					       struct tevent_context *ev,
 					       struct smbd_smb2_request *smb2req,
+					       struct files_struct *fsp,
 					       uint32_t in_ctl_code,
-					       uint64_t in_file_id_volatile,
 					       DATA_BLOB in_input,
 					       uint32_t in_max_output,
 					       uint32_t in_flags)
@@ -231,7 +233,6 @@ static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,
 	struct tevent_req *req;
 	struct smbd_smb2_ioctl_state *state;
 	struct smb_request *smbreq;
-	files_struct *fsp = NULL;
 	struct tevent_req *subreq;
 
 	req = tevent_req_create(mem_ctx, &state,
@@ -241,36 +242,21 @@ static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,
 	}
 	state->smb2req = smb2req;
 	state->smbreq = NULL;
-	state->fsp = NULL;
+	state->fsp = fsp;
 	state->in_input = in_input;
 	state->in_max_output = in_max_output;
 	state->out_output = data_blob_null;
 
-	DEBUG(10,("smbd_smb2_ioctl: file_id[0x%016llX]\n",
-		  (unsigned long long)in_file_id_volatile));
+	DEBUG(10, ("smbd_smb2_ioctl: ctl_code[0x%08x] %s fnum[%d]\n",
+		(unsigned)in_ctl_code,
+		fsp ? fsp_str_dbg(fsp) : "<no handle>",
+		fsp ? fsp->fnum : -1));
 
 	smbreq = smbd_smb2_fake_smb_request(smb2req);
 	if (tevent_req_nomem(smbreq, req)) {
 		return tevent_req_post(req, ev);
 	}
 	state->smbreq = smbreq;
-
-	if (in_file_id_volatile != UINT64_MAX) {
-		fsp = file_fsp(smbreq, (uint16_t)in_file_id_volatile);
-		if (fsp == NULL) {
-			tevent_req_nterror(req, NT_STATUS_FILE_CLOSED);
-			return tevent_req_post(req, ev);
-		}
-		if (smbreq->conn != fsp->conn) {
-			tevent_req_nterror(req, NT_STATUS_FILE_CLOSED);
-			return tevent_req_post(req, ev);
-		}
-		if (smb2req->session->vuid != fsp->vuid) {
-			tevent_req_nterror(req, NT_STATUS_FILE_CLOSED);
-			return tevent_req_post(req, ev);
-		}
-		state->fsp = fsp;
-	}
 
 	switch (in_ctl_code) {
 	case 0x00060194: /* FSCTL_DFS_GET_REFERRALS */
@@ -379,24 +365,9 @@ static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,
 					req);
 		return req;
 
-	case 0x00144064:	/* FSCTL_SRV_ENUMERATE_SNAPSHOTS */
-	{
-		/*
-		 * This is called to retrieve the number of Shadow Copies (a.k.a. snapshots)
-		 * and return their volume names.  If max_data_count is 16, then it is just
-		 * asking for the number of volumes and length of the combined names.
-		 *
-		 * pdata is the data allocated by our caller, but that uses
-		 * total_data_count (which is 0 in our case) rather than max_data_count.
-		 * Allocate the correct amount and return the pointer to let
-		 * it be deallocated when we return.
-		 */
-		struct shadow_copy_data *shadow_data = NULL;
-		bool labels = False;
-		uint32_t labels_data_count = 0;
-		uint32_t data_count;
-		uint32_t i;
-		char *pdata;
+	default: {
+		uint8_t *out_data = NULL;
+		uint32_t out_data_len = 0;
 		NTSTATUS status;
 
 		if (fsp == NULL) {
@@ -404,113 +375,32 @@ static struct tevent_req *smbd_smb2_ioctl_send(TALLOC_CTX *mem_ctx,
 			return tevent_req_post(req, ev);
 		}
 
-		if (in_max_output < 16) {
-			DEBUG(0,("FSCTL_GET_SHADOW_COPY_DATA: "
-				 "in_max_output(%u) < 16 is invalid!\n",
-				 in_max_output));
-			tevent_req_nterror(req, NT_STATUS_INVALID_PARAMETER);
+		status = smb_fsctl(fsp,
+				       state,
+				       in_ctl_code,
+				       smbreq->flags2,
+				       in_input.data,
+				       in_input.length,
+				       &out_data,
+				       in_max_output,
+				       &out_data_len);
+		state->out_output = data_blob_const(out_data, out_data_len);
+		if (NT_STATUS_IS_OK(status)) {
+			tevent_req_done(req);
 			return tevent_req_post(req, ev);
 		}
 
-		if (in_max_output > 16) {
-			labels = True;
-		}
-
-		shadow_data = TALLOC_ZERO_P(talloc_tos(),
-					    struct shadow_copy_data);
-		if (tevent_req_nomem(shadow_data, req)) {
-			DEBUG(0,("TALLOC_ZERO() failed!\n"));
-			return tevent_req_post(req, ev);
-		}
-
-		/*
-		 * Call the VFS routine to actually do the work.
-		 */
-		if (SMB_VFS_GET_SHADOW_COPY_DATA(fsp, shadow_data, labels)
-		    != 0) {
-			if (errno == ENOSYS) {
-				DEBUG(5, ("FSCTL_GET_SHADOW_COPY_DATA: "
-					  "connectpath %s, not supported.\n",
-					  smbreq->conn->connectpath));
-				status = NT_STATUS_NOT_SUPPORTED;
+		if (NT_STATUS_EQUAL(status, NT_STATUS_NOT_SUPPORTED)) {
+			if (IS_IPC(smbreq->conn)) {
+				status = NT_STATUS_FS_DRIVER_REQUIRED;
 			} else {
-				DEBUG(0,("FSCTL_GET_SHADOW_COPY_DATA: "
-					 "connectpath %s, failed.\n",
-					 smbreq->conn->connectpath));
-				status = map_nt_error_from_unix(errno);
-			}
-			TALLOC_FREE(shadow_data);
-			tevent_req_nterror(req, status);
-			return tevent_req_post(req, ev);
-		}
-
-		labels_data_count =
-			(shadow_data->num_volumes*2*sizeof(SHADOW_COPY_LABEL))
-			+ 2;
-
-		if (labels) {
-			data_count = 12+labels_data_count+4;
-		} else {
-			data_count = 16;
-		}
-
-		if (labels && (in_max_output < data_count)) {
-			DEBUG(0, ("FSCTL_GET_SHADOW_COPY_DATA: "
-				  "in_max_output(%u) too small (%u) bytes "
-				  "needed!\n", in_max_output, data_count));
-			TALLOC_FREE(shadow_data);
-			tevent_req_nterror(req, NT_STATUS_BUFFER_TOO_SMALL);
-			return tevent_req_post(req, ev);
-		}
-
-		state->out_output = data_blob_talloc(state, NULL, data_count);
-		if (tevent_req_nomem(state->out_output.data, req)) {
-			return tevent_req_post(req, ev);
-		}
-
-		pdata = (char *)state->out_output.data;
-
-		/* num_volumes 4 bytes */
-		SIVAL(pdata, 0, shadow_data->num_volumes);
-
-		if (labels) {
-			/* num_labels 4 bytes */
-			SIVAL(pdata, 4, shadow_data->num_volumes);
-		}
-
-		/* needed_data_count 4 bytes */
-		SIVAL(pdata, 8, labels_data_count+4);
-
-		pdata += 12;
-
-		DEBUG(10,("FSCTL_GET_SHADOW_COPY_DATA: %u volumes for "
-			  "path[%s].\n",
-			  shadow_data->num_volumes, fsp_str_dbg(fsp)));
-		if (labels && shadow_data->labels) {
-			for (i=0; i<shadow_data->num_volumes; i++) {
-				srvstr_push(pdata, smbreq->flags2,
-					    pdata, shadow_data->labels[i],
-					    2*sizeof(SHADOW_COPY_LABEL),
-					    STR_UNICODE|STR_TERMINATE);
-				pdata += 2*sizeof(SHADOW_COPY_LABEL);
-				DEBUGADD(10, ("Label[%u]: '%s'\n", i,
-					      shadow_data->labels[i]));
+				status = NT_STATUS_INVALID_DEVICE_REQUEST;
 			}
 		}
 
-		TALLOC_FREE(shadow_data);
-
-		tevent_req_done(req);
+		tevent_req_nterror(req, status);
 		return tevent_req_post(req, ev);
-        }
-
-	default:
-		if (IS_IPC(smbreq->conn)) {
-			tevent_req_nterror(req, NT_STATUS_FS_DRIVER_REQUIRED);
-			return tevent_req_post(req, ev);
-		}
-		tevent_req_nterror(req, NT_STATUS_INVALID_DEVICE_REQUEST);
-		return tevent_req_post(req, ev);
+	}
 	}
 
 	tevent_req_nterror(req, NT_STATUS_INTERNAL_ERROR);

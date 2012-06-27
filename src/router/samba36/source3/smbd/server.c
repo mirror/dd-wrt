@@ -285,6 +285,25 @@ static void remove_child_pid(pid_t pid, bool unclean_shutdown)
 	static struct timed_event *cleanup_te;
 	struct server_id child_id;
 
+	child_id = procid_self(); /* Just initialize pid and potentially vnn */
+	child_id.pid = pid;
+
+	for (child = children; child != NULL; child = child->next) {
+		if (child->pid == pid) {
+			struct child_pid *tmp = child;
+			DLIST_REMOVE(children, child);
+			SAFE_FREE(tmp);
+			num_children -= 1;
+			break;
+		}
+	}
+
+	if (child == NULL) {
+		/* not all forked child processes are added to the children list */
+		DEBUG(2, ("Could not find child %d -- ignoring\n", (int)pid));
+		return;
+	}
+
 	if (unclean_shutdown) {
 		/* a child terminated uncleanly so tickle all
 		   processes to see if they can grab any of the
@@ -303,26 +322,10 @@ static void remove_child_pid(pid_t pid, bool unclean_shutdown)
 		}
 	}
 
-	child_id = procid_self(); /* Just initialize pid and potentially vnn */
-	child_id.pid = pid;
-
 	if (!serverid_deregister(child_id)) {
 		DEBUG(1, ("Could not remove pid %d from serverid.tdb\n",
 			  (int)pid));
 	}
-
-	for (child = children; child != NULL; child = child->next) {
-		if (child->pid == pid) {
-			struct child_pid *tmp = child;
-			DLIST_REMOVE(children, child);
-			SAFE_FREE(tmp);
-			num_children -= 1;
-			return;
-		}
-	}
-
-	/* not all forked child processes are added to the children list */
-	DEBUG(1, ("Could not find child %d -- ignoring\n", (int)pid));
 }
 
 /****************************************************************************
@@ -449,7 +452,7 @@ static void smbd_accept_connection(struct tevent_context *ev,
 	 * Generate a unique id in the parent process so that we use
 	 * the global random state in the parent.
 	 */
-	generate_random_buffer((uint8_t *)&unique_id, sizeof(unique_id));
+	unique_id = serverid_get_random_unique_id();
 
 	pid = sys_fork();
 	if (pid == 0) {
@@ -922,7 +925,6 @@ extern void build_options(bool screen);
 	struct smbd_parent_context *parent = NULL;
 	TALLOC_CTX *frame;
 	NTSTATUS status;
-	uint64_t unique_id;
 
 	/*
 	 * Do this before any other talloc operation
@@ -1121,8 +1123,7 @@ extern void build_options(bool screen);
 		become_daemon(Fork, no_process_group, log_stdout);
 	}
 
-        generate_random_buffer((uint8_t *)&unique_id, sizeof(unique_id));
-        set_my_unique_id(unique_id);
+	set_my_unique_id(serverid_get_random_unique_id());
 
 #if HAVE_SETPGID
 	/*
@@ -1215,11 +1216,6 @@ extern void build_options(bool screen);
 		exit(1);
 #endif
 
-#ifdef PRINTER_SUPPORT
-	if (!print_backend_init(smbd_messaging_context()))
-		exit(1);
-#endif
-
 	/* Open the share_info.tdb here, so we don't have to open
 	   after the fork on every single connection.  This is a small
 	   performance improvment and reduces the total number of system
@@ -1235,6 +1231,11 @@ extern void build_options(bool screen);
 			  nt_errstr(status)));
 		return -1;
 	}
+
+#ifdef PRINTER_SUPPORT
+	if (!print_backend_init(smbd_messaging_context()))
+		exit(1);
+#endif
 
 	if (!init_guest_info()) {
 		DEBUG(0,("ERROR: failed to setup guest info.\n"));

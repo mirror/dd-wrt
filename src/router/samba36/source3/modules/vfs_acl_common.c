@@ -166,7 +166,7 @@ static NTSTATUS create_acl_blob(const struct security_descriptor *psd,
  CREATOR_OWNER/CREATOR_GROUP/WORLD.
 *******************************************************************/
 
-static void add_directory_inheritable_components(vfs_handle_struct *handle,
+static NTSTATUS add_directory_inheritable_components(vfs_handle_struct *handle,
                                 const char *name,
 				SMB_STRUCT_STAT *psbuf,
 				struct security_descriptor *psd)
@@ -184,7 +184,7 @@ static void add_directory_inheritable_components(vfs_handle_struct *handle,
 						num_aces + 3);
 
 	if (new_ace_list == NULL) {
-		return;
+		return NT_STATUS_NO_MEMORY;
 	}
 
 	/* Fake a quick smb_filename. */
@@ -236,8 +236,19 @@ static void add_directory_inheritable_components(vfs_handle_struct *handle,
 			SEC_ACE_FLAG_CONTAINER_INHERIT|
 				SEC_ACE_FLAG_OBJECT_INHERIT|
 				SEC_ACE_FLAG_INHERIT_ONLY);
-	psd->dacl->aces = new_ace_list;
-	psd->dacl->num_aces += 3;
+	if (psd->dacl) {
+		psd->dacl->aces = new_ace_list;
+		psd->dacl->num_aces += 3;
+	} else {
+		psd->dacl = make_sec_acl(talloc_tos(),
+				NT4_ACL_REVISION,
+				3,
+				new_ace_list);
+		if (psd->dacl == NULL) {
+			return NT_STATUS_NO_MEMORY;
+		}
+	}
+	return NT_STATUS_OK;
 }
 
 /*******************************************************************
@@ -393,10 +404,14 @@ static NTSTATUS get_nt_acl_internal(vfs_handle_struct *handle,
 			if (is_directory &&
 				!sd_has_inheritable_components(psd,
 							true)) {
-				add_directory_inheritable_components(handle,
+				status = add_directory_inheritable_components(
+							handle,
 							name,
 							psbuf,
 							psd);
+				if (!NT_STATUS_IS_OK(status)) {
+					return status;
+				}
 			}
 			/* The underlying POSIX module always sets
 			   the ~SEC_DESC_DACL_PROTECTED bit, as ACLs
@@ -559,7 +574,6 @@ static NTSTATUS check_parent_acl_common(vfs_handle_struct *handle,
 				uint32_t access_mask,
 				struct security_descriptor **pp_parent_desc)
 {
-	char *parent_name = NULL;
 	struct security_descriptor *parent_desc = NULL;
 	uint32_t access_granted = 0;
 	NTSTATUS status;
@@ -578,9 +592,8 @@ static NTSTATUS check_parent_acl_common(vfs_handle_struct *handle,
 					&access_granted);
 	if(!NT_STATUS_IS_OK(status)) {
 		DEBUG(10,("check_parent_acl_common: access check "
-			"on directory %s for "
+			"on parent directory of "
 			"path %s for mask 0x%x returned %s\n",
-			parent_name,
 			path,
 			access_mask,
 			nt_errstr(status) ));
@@ -806,22 +819,58 @@ static NTSTATUS fset_nt_acl_common(vfs_handle_struct *handle, files_struct *fsp,
 		NDR_PRINT_DEBUG(security_descriptor,
 			CONST_DISCARD(struct security_descriptor *,psd));
 	}
-	create_acl_blob(psd, &blob, XATTR_SD_HASH_TYPE_SHA256, hash);
-	store_acl_blob_fsp(handle, fsp, &blob);
+	status = create_acl_blob(psd, &blob, XATTR_SD_HASH_TYPE_SHA256, hash);
+	if (!NT_STATUS_IS_OK(status)) {
+		DEBUG(10, ("fset_nt_acl_xattr: create_acl_blob failed\n"));
+		return status;
+	}
 
-	return NT_STATUS_OK;
+	status = store_acl_blob_fsp(handle, fsp, &blob);
+
+	return status;
 }
 
 static SMB_STRUCT_DIR *opendir_acl_common(vfs_handle_struct *handle,
 			const char *fname, const char *mask, uint32 attr)
 {
-	NTSTATUS status = check_parent_acl_common(handle, fname,
-					SEC_DIR_LIST, NULL);
+	NTSTATUS status;
+	uint32_t access_granted = 0;
+	struct security_descriptor *sd = NULL;
 
+	status = get_nt_acl_internal(handle,
+				NULL,
+				fname,
+				(SECINFO_OWNER |
+				 SECINFO_GROUP |
+				 SECINFO_DACL  |
+				 SECINFO_SACL),
+				&sd);
 	if (!NT_STATUS_IS_OK(status)) {
+		DEBUG(10,("opendir_acl_common: "
+			"get_nt_acl_internal for dir %s "
+			"failed with error %s\n",
+			fname,
+			nt_errstr(status) ));
 		errno = map_errno_from_nt_status(status);
 		return NULL;
 	}
+
+	/* See if we can access it. */
+	status = smb1_file_se_access_check(handle->conn,
+				sd,
+				get_current_nttok(handle->conn),
+				SEC_DIR_LIST,
+				&access_granted);
+	if (!NT_STATUS_IS_OK(status)) {
+		DEBUG(10,("opendir_acl_common: %s open "
+			"for access SEC_DIR_LIST "
+			"refused with error %s\n",
+			fname,
+			nt_errstr(status) ));
+		errno = map_errno_from_nt_status(status);
+		return NULL;
+	}
+
 	return SMB_VFS_NEXT_OPENDIR(handle, fname, mask, attr);
 }
 

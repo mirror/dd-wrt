@@ -696,6 +696,14 @@ NTSTATUS set_conn_force_user_group(connection_struct *conn, int snum)
 			return status;
 		}
 
+		/* We don't want to replace the original sanitized_username
+		   as it is the original user given in the connect attempt.
+		   This is used in '%U' substitutions. */
+		TALLOC_FREE(forced_serverinfo->sanitized_username);
+		forced_serverinfo->sanitized_username =
+			talloc_move(forced_serverinfo,
+				&conn->session_info->sanitized_username);
+
 		TALLOC_FREE(conn->session_info);
 		conn->session_info = forced_serverinfo;
 
@@ -729,6 +737,33 @@ NTSTATUS set_conn_force_user_group(connection_struct *conn, int snum)
 	}
 
 	return NT_STATUS_OK;
+}
+
+/****************************************************************************
+  Setup the share access mask for a connection.
+****************************************************************************/
+
+static void create_share_access_mask(connection_struct *conn, int snum)
+{
+	const struct security_token *token = conn->session_info->security_token;
+
+	share_access_check(token,
+			lp_servicename(snum),
+			MAXIMUM_ALLOWED_ACCESS,
+			&conn->share_access);
+
+	if (security_token_has_privilege(token, SEC_PRIV_SECURITY)) {
+		conn->share_access |= SEC_FLAG_SYSTEM_SECURITY;
+	}
+	if (security_token_has_privilege(token, SEC_PRIV_RESTORE)) {
+		conn->share_access |= (SEC_RIGHTS_PRIV_RESTORE);
+	}
+	if (security_token_has_privilege(token, SEC_PRIV_BACKUP)) {
+		conn->share_access |= (SEC_RIGHTS_PRIV_BACKUP);
+	}
+	if (security_token_has_privilege(token, SEC_PRIV_TAKE_OWNERSHIP)) {
+		conn->share_access |= (SEC_STD_WRITE_OWNER);
+	}
 }
 
 /****************************************************************************
@@ -845,9 +880,7 @@ static connection_struct *make_connection_snum(struct smbd_server_connection *sc
 	 *
 	 */
 
-	share_access_check(conn->session_info->security_token,
-			   lp_servicename(snum), MAXIMUM_ALLOWED_ACCESS,
-			   &conn->share_access);
+	create_share_access_mask(conn, snum);
 
 	if ((conn->share_access & FILE_WRITE_DATA) == 0) {
 		if ((conn->share_access & FILE_READ_DATA) == 0) {
