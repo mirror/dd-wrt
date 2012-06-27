@@ -36,7 +36,7 @@ static void ipoque_int_vnc_add_connection(struct ipoque_detection_module_struct
   return 1 if it is a http packet
 */
 
-void ipoque_search_vnc_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_vnc_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

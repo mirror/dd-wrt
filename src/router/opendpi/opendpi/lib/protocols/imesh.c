@@ -33,7 +33,7 @@ static void ipoque_int_imesh_add_connection(struct ipoque_detection_module_struc
 }
 
 
-void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
+static void ipoque_search_imesh_tcp_udp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

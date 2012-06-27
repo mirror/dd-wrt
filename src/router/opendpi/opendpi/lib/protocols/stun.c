@@ -139,7 +139,7 @@ static ipoque_int_stun_result_t ipoque_int_check_stun(struct ipoque_detection_mo
 	return IPOQUE_IS_NOT_STUN;
 }
 
-void ipoque_search_stun(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_stun(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

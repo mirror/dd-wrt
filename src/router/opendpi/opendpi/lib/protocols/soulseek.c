@@ -45,7 +45,7 @@ static void ipoque_int_soulseek_add_connection(struct ipoque_detection_module_st
 	return;
 }
 
-void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_soulseek_tcp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

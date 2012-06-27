@@ -30,7 +30,7 @@ static void ipoque_int_flash_add_connection(struct ipoque_detection_module_struc
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_FLASH, IPOQUE_REAL_PROTOCOL);
 }
 
-void ipoque_search_flash(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_flash(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

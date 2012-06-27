@@ -30,7 +30,7 @@ static void ipoque_int_ppstream_add_connection(struct ipoque_detection_module_st
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_PPSTREAM, IPOQUE_REAL_PROTOCOL);
 }
 
-void ipoque_search_ppstream(struct ipoque_detection_module_struct
+static void ipoque_search_ppstream(struct ipoque_detection_module_struct
 							*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

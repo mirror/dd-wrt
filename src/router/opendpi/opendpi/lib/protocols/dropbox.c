@@ -56,7 +56,7 @@ static void ntop_check_dropbox(struct ipoque_detection_module_struct *ipoque_str
   IPOQUE_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NTOP_PROTOCOL_DROPBOX);
 }
 
-void ntop_search_dropbox(struct ipoque_detection_module_struct *ipoque_struct)
+static void ntop_search_dropbox(struct ipoque_detection_module_struct *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 

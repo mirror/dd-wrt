@@ -433,7 +433,7 @@ static void ipoque_search_directconnect_udp(struct ipoque_detection_module_struc
 
 }
 
-void ipoque_search_directconnect(struct ipoque_detection_module_struct
+static void ipoque_search_directconnect(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

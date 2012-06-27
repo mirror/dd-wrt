@@ -47,7 +47,7 @@ static u8 is_special_aimini_host(struct ipoque_int_one_line_struct host_line)
 	return 0;
 }
 
-void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_aimini(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

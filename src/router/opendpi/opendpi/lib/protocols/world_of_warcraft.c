@@ -47,7 +47,7 @@ __forceinline static
 	return 0;
 }
 
-void ipoque_search_worldofwarcraft(struct ipoque_detection_module_struct
+static void ipoque_search_worldofwarcraft(struct ipoque_detection_module_struct
 								   *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

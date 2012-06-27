@@ -260,7 +260,7 @@ static void ipoque_search_oscar_tcp_connect(struct ipoque_detection_module_struc
 	}
 }
 
-void ipoque_search_oscar(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_oscar(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	if (packet->tcp != NULL) {

@@ -127,7 +127,7 @@ static int ipoque_int_mail_pop_check_for_client_commands(struct ipoque_detection
 
 
 
-void ipoque_search_mail_pop_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_mail_pop_tcp(struct ipoque_detection_module_struct
 								*ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
