@@ -2,7 +2,7 @@
 	<a class="citerefentry" href="samba.7.html"><span class="citerefentry"><span class="refentrytitle">samba</span>(7)</span></a> suite.</p><p>The <code class="literal">vfs_readonly</code> VFS module marks a share
 	as read only for all clients connecting within the configured
 	time period. Clients connecting during this time will be denied
-	write access to all files in the share, irrespective of ther
+	write access to all files in the share, irrespective of their
 	actual access privileges.</p><p>This module is stackable.</p></div><div class="refsect1" title="OPTIONS"><a name="id266829"></a><h2>OPTIONS</h2><div class="variablelist"><dl><dt><span class="term">readonly:period = BEGIN, END</span></dt><dd><p>Only mark the share as read only if the client
 		connection was made between the times marked by the
 		BEGIN and END date specifiers.

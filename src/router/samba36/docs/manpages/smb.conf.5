@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/22/2012
+.\"      Date: 06/22/2012
 .\"    Manual: File Formats and Conventions
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "01/22/2012" "Samba 3\&.6" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "06/22/2012" "Samba 3\&.6" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -6432,7 +6432,7 @@ max stat cache size (G)
 .RS 4
 This parameter limits the size in memory of any
 \fIstat cache\fR
-being used to speed up case insensitive name mappings\&. It represents the number of kilobyte (1024) units the stat cache can use\&. A value of zero, meaning unlimited, is not advisable due to increased memory useage\&. You should not need to change this parameter\&.
+being used to speed up case insensitive name mappings\&. It represents the number of kilobyte (1024) units the stat cache can use\&. A value of zero, meaning unlimited, is not advisable due to increased memory usage\&. You should not need to change this parameter\&.
 .sp
 Default:
 \fI\fImax stat cache size\fR\fR\fI = \fR\fI256\fR\fI \fR
@@ -6781,7 +6781,7 @@ name resolve order = wins bcast
 DC lookups will still be done via DNS, but fallbacks to netbios names will not inundate your DNS servers with needless querys for DOMAIN<0x1c> lookups\&.
 .sp
 Default:
-\fI\fIname resolve order\fR\fR\fI = \fR\fIlmhosts host wins bcast\fR\fI \fR
+\fI\fIname resolve order\fR\fR\fI = \fR\fIlmhosts wins host bcast\fR\fI \fR
 .sp
 Example:
 \fI\fIname resolve order\fR\fR\fI = \fR\fIlmhosts bcast host\fR\fI \fR
@@ -8055,6 +8055,8 @@ This boolean parameter was added to fix the problems that people have been havin
 When not in domain mode with winbindd then the security info copied onto the local workstation has no meaning to the logged in user (SID) on that workstation so the profile storing fails\&. Adding this parameter onto a share used for profile storage changes two things about the returned Windows ACL\&. Firstly it changes the owner and group owner of all reported files and directories to be BUILTIN\e\eAdministrators, BUILTIN\e\eUsers respectively (SIDs S\-1\-5\-32\-544, S\-1\-5\-32\-545)\&. Secondly it adds an ACE entry of "Full Control" to the SID BUILTIN\e\eUsers to every returned ACL\&. This will allow any Windows 2000 or XP workstation user to access the profile\&.
 .sp
 Note that if you have multiple users logging on to a workstation then in order to prevent them from being able to access each others profiles you must remove the "Bypass traverse checking" advanced user right\&. This will prevent access to other users profile directories as the top level profile directory (named after the user) is created by the workstation profile code and has an ACL restricting entry to the directory tree to the owning user\&.
+.sp
+Note that this parameter should be set to yes on dedicated profile shares only\&. On other shares, it might cause incorrect file ownerships\&.
 .sp
 Default:
 \fI\fIprofile acls\fR\fR\fI = \fR\fIno\fR\fI \fR

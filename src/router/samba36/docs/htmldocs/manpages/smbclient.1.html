@@ -117,7 +117,7 @@
 		server support the UNIX extensions. Request that the connection be
 		encrypted. This is new for Samba 3.2 and will only work with Samba
 		3.2 or above servers. Negotiates SMB encryption using GSSAPI. Uses
-		the given credentials for the encryption negotiaion (either kerberos
+		the given credentials for the encryption negotiation (either kerberos
 		or NTLMv1/v2 if given domain/username/password triple. Fails the
 		connection if encryption cannot be negotiated.
 		</p></dd><dt><span class="term">-d|--debuglevel=level</span></dt><dd><p><em class="replaceable"><code>level</code></em> is an integer 
@@ -250,7 +250,7 @@ options. </p></dd><dt><span class="term">-T|--tar tar options</span></dt><dd><p>
 		</p><p><span class="emphasis"><em>Tar Filenames</em></span></p><p>All file names can be given as DOS path names (with '\\' 
 		as the component separator) or as UNIX path names (with '/' as 
 		the component separator). </p><p><span class="emphasis"><em>Examples</em></span></p><p>Restore from tar file <code class="filename">backup.tar</code> into myshare on mypc 
-		(no password on share). </p><p><code class="literal">smbclient //mypc/yshare "" -N -Tx backup.tar
+		(no password on share). </p><p><code class="literal">smbclient //mypc/myshare "" -N -Tx backup.tar
 		</code></p><p>Restore everything except <code class="filename">users/docs</code>
 		</p><p><code class="literal">smbclient //mypc/myshare "" -N -TXx backup.tar 
 		users/docs</code></p><p>Create a tar file of the files beneath <code class="filename">
@@ -321,7 +321,7 @@ options. </p></dd><dt><span class="term">-T|--tar tar options</span></dt><dd><p>
 		to delete all files matching <em class="replaceable"><code>mask</code></em> from the current working
 		directory on the server. </p></dd><dt><span class="term">dir &lt;mask&gt;</span></dt><dd><p>A list of the files matching <em class="replaceable"><code>mask</code></em> in the current
 		working directory on the server will be retrieved from the server
-		and displayed. </p></dd><dt><span class="term">du &lt;filename&gt;</span></dt><dd><p>Does a directory listing and then prints out the current disk useage and free space on a share.
+		and displayed. </p></dd><dt><span class="term">du &lt;filename&gt;</span></dt><dd><p>Does a directory listing and then prints out the current disk usage and free space on a share.
 		</p></dd><dt><span class="term">echo &lt;number&gt; &lt;data&gt;</span></dt><dd><p>Does an SMBecho request to ping the server. Used for internal Samba testing purposes.
 		</p></dd><dt><span class="term">exit</span></dt><dd><p>Terminate the connection with the server and exit
 		from the program. </p></dd><dt><span class="term">get &lt;remote file name&gt; [local file name]</span></dt><dd><p>Copy the file called <code class="filename">remote file name</code> from

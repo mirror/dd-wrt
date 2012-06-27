@@ -60,7 +60,7 @@
                 finished supplying data to the other.  (Which in turn
                 could cause the helper to authenticate the
                 user). </p><p>Currently implemented parameters from the
-		external program to the helper are:</p><div class="variablelist"><div class="warning" title="Warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3>Implementors should take care to base64 encode
+		external program to the helper are:</p><div class="variablelist"><div class="warning" title="Warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3>Implementers should take care to base64 encode
 		any data (such as usernames/passwords) that may contain malicous user data, such as
 		a newline.  They may also need to decode strings from
 		the helper, which likewise may have been base64 encoded.</div><dl><dt><span class="term">Username</span></dt><dd><p>The username, expected to be in
@@ -74,7 +74,7 @@
                 generated randomly by the server, or (in cases such as
                 MSCHAPv2) generated in some way by both the server and
                 the client.
-                </p><div class="example"><a name="id307176"></a><p class="title"><b>Example 7. </b></p><div class="example-contents">LANMAN-Challege: 0102030405060708</div></div><p><br class="example-break"></p></dd><dt><span class="term">LANMAN-Response</span></dt><dd><p>The 24 byte <code class="literal">LANMAN Response</code> value,
+                </p><div class="example"><a name="id307176"></a><p class="title"><b>Example 7. </b></p><div class="example-contents">LANMAN-Challenge: 0102030405060708</div></div><p><br class="example-break"></p></dd><dt><span class="term">LANMAN-Response</span></dt><dd><p>The 24 byte <code class="literal">LANMAN Response</code> value,
                 calculated from the user's password and the supplied
                 <code class="literal">LANMAN Challenge</code>.  Typically, this
                 is provided over the network by a client wishing to authenticate.
@@ -86,9 +86,9 @@
                 provided by a network client, if the helper is being
                 used in a legacy situation that exposes plaintext
                 passwords in this way.
-                 </p><div class="example"><a name="id307248"></a><p class="title"><b>Example 10. </b></p><div class="example-contents">Password: samba2</div></div><p><br class="example-break"></p><div class="example"><a name="id307252"></a><p class="title"><b>Example 11. </b></p><div class="example-contents">Password:: c2FtYmEy</div></div><p><br class="example-break"></p></dd><dt><span class="term">Request-User-Session-Key</span></dt><dd><p>Apon sucessful authenticaiton, return
+                 </p><div class="example"><a name="id307248"></a><p class="title"><b>Example 10. </b></p><div class="example-contents">Password: samba2</div></div><p><br class="example-break"></p><div class="example"><a name="id307252"></a><p class="title"><b>Example 11. </b></p><div class="example-contents">Password:: c2FtYmEy</div></div><p><br class="example-break"></p></dd><dt><span class="term">Request-User-Session-Key</span></dt><dd><p>Upon successful authenticaiton, return
                 the user session key associated with the login.
-                 </p><div class="example"><a name="id307268"></a><p class="title"><b>Example 12. </b></p><div class="example-contents">Request-User-Session-Key: Yes</div></div><p><br class="example-break"></p></dd><dt><span class="term">Request-LanMan-Session-Key</span></dt><dd><p>Apon sucessful authenticaiton, return
+                 </p><div class="example"><a name="id307269"></a><p class="title"><b>Example 12. </b></p><div class="example-contents">Request-User-Session-Key: Yes</div></div><p><br class="example-break"></p></dd><dt><span class="term">Request-LanMan-Session-Key</span></dt><dd><p>Upon successful authenticaiton, return
                 the LANMAN session key associated with the login.
                  </p><div class="example"><a name="id307285"></a><p class="title"><b>Example 13. </b></p><div class="example-contents">Request-LanMan-Session-Key: Yes</div></div><p><br class="example-break"></p></dd></dl></div></dd></dl></div></dd><dt><span class="term">--username=USERNAME</span></dt><dd><p>
 	Specify username of user to authenticate
@@ -100,7 +100,7 @@
 	not specified on the command line, this is prompted for when
 	required.  </p><p>For the NTLMSSP based server roles, this parameter
 	  specifies the expected password, allowing testing without
-	  winbindd operational.</p></dd><dt><span class="term">--request-lm-key</span></dt><dd><p>Retreive LM session key</p></dd><dt><span class="term">--request-nt-key</span></dt><dd><p>Request NT key</p></dd><dt><span class="term">--diagnostics</span></dt><dd><p>Perform Diagnostics on the authentication
+	  winbindd operational.</p></dd><dt><span class="term">--request-lm-key</span></dt><dd><p>Retrieve LM session key</p></dd><dt><span class="term">--request-nt-key</span></dt><dd><p>Request NT key</p></dd><dt><span class="term">--diagnostics</span></dt><dd><p>Perform Diagnostics on the authentication
 	chain.  Uses the password from <code class="literal">--password</code>
 	or prompts for one.</p></dd><dt><span class="term">--require-membership-of={SID|Name}</span></dt><dd><p>Require that a user be a member of specified 
 	    group (either name or SID) for authentication to succeed.</p></dd><dt><span class="term">-d|--debuglevel=level</span></dt><dd><p><em class="replaceable"><code>level</code></em> is an integer 
@@ -128,7 +128,7 @@ compile time.</p></dd><dt><span class="term">-l|--log-basename=logdirectory</spa
 <code class="constant">".progname"</code> will be appended (e.g. log.smbclient, 
 log.smbd, etc...). The log file is never removed by the client.
 </p></dd><dt><span class="term">-h|--help</span></dt><dd><p>Print a summary of command line options.
-</p></dd></dl></div></div><div class="refsect1" title="EXAMPLE SETUP"><a name="id307538"></a><h2>EXAMPLE SETUP</h2><p>To setup ntlm_auth for use by squid 2.5, with both basic and
+</p></dd></dl></div></div><div class="refsect1" title="EXAMPLE SETUP"><a name="id307539"></a><h2>EXAMPLE SETUP</h2><p>To setup ntlm_auth for use by squid 2.5, with both basic and
 	NTLMSSP authentication, the following
 	should be placed in the <code class="filename">squid.conf</code> file.
 </p><pre class="programlisting">
@@ -145,7 +145,7 @@ auth_param basic credentialsttl 2 hours
 auth_param ntlm program ntlm_auth --helper-protocol=squid-2.5-ntlmssp --require-membership-of='WORKGROUP\Domain Users'
 auth_param basic program ntlm_auth --helper-protocol=squid-2.5-basic --require-membership-of='WORKGROUP\Domain Users'
 </pre></div><div class="refsect1" title="TROUBLESHOOTING"><a name="id307587"></a><h2>TROUBLESHOOTING</h2><p>If you're experiencing problems with authenticating Internet Explorer running
-	under MS Windows 9X or Millenium Edition against ntlm_auth's NTLMSSP authentication
+	under MS Windows 9X or Millennium Edition against ntlm_auth's NTLMSSP authentication
 	helper (--helper-protocol=squid-2.5-ntlmssp), then please read 
 	<a class="ulink" href="http://support.microsoft.com/support/kb/articles/Q239/8/69.ASP" target="_top">
 	the Microsoft Knowledge Base article #239869 and follow instructions described there</a>.
