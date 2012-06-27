@@ -24,6 +24,7 @@
 #include "ipq_main.h"
 #include "ipq_protocols.h"
 #include "ipq_utils.h"
+#include "protocols.c"
 
 u32 ipoque_detection_get_sizeof_ipoque_flow_struct(void)
 {

@@ -499,7 +499,7 @@ static u8 ipoque_search_sslv3_direction1(struct ipoque_detection_module_struct *
 
 }
 
-void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_ssl_tcp(struct ipoque_detection_module_struct *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;
   struct ipoque_flow_struct *flow = ipoque_struct->flow;

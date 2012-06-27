@@ -85,7 +85,7 @@ static void ipoque_search_setup_iax(struct ipoque_detection_module_struct *ipoqu
 
 }
 
-void ipoque_search_iax(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_iax(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 //      struct ipoque_flow_struct       *flow=ipoque_struct->flow;

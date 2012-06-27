@@ -62,7 +62,7 @@ static void ntop_check_radius(struct ipoque_detection_module_struct *ipoque_stru
   }
 }
 
-void ntop_search_radius(struct ipoque_detection_module_struct *ipoque_struct)
+static void ntop_search_radius(struct ipoque_detection_module_struct *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 

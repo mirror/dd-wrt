@@ -31,7 +31,7 @@ static void ipoque_int_veohtv_add_connection(struct ipoque_detection_module_stru
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_HTTP_APPLICATION_VEOHTV, protocol_type);
 }
 
-void ipoque_search_veohtv_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_veohtv_tcp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

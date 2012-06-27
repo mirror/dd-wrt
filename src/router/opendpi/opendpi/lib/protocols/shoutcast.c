@@ -31,7 +31,7 @@ static void ipoque_int_shoutcast_add_connection(struct ipoque_detection_module_s
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_SHOUTCAST, IPOQUE_CORRELATED_PROTOCOL);
 }
 
-void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_shoutcast_tcp(struct ipoque_detection_module_struct
 								 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

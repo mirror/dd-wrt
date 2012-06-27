@@ -32,7 +32,7 @@ static void ipoque_int_feidian_add_connection(struct ipoque_detection_module_str
 }
 
 
-void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_feidian(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;
 	struct ipoque_flow_struct *flow = ipoque_struct->flow;

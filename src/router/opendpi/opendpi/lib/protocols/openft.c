@@ -30,7 +30,7 @@ static void ipoque_int_openft_add_connection(struct ipoque_detection_module_stru
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_OPENFT, IPOQUE_CORRELATED_PROTOCOL);
 }
 
-void ipoque_search_openft_tcp(struct ipoque_detection_module_struct
+static void ipoque_search_openft_tcp(struct ipoque_detection_module_struct
 							  *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

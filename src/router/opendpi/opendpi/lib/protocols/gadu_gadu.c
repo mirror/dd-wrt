@@ -462,7 +462,7 @@ static void ipoque_search_gadugadu_tcp(struct ipoque_detection_module_struct
 
 }
 
-void ipoque_search_gadugadu(struct ipoque_detection_module_struct *ipoque_struct)
+static void ipoque_search_gadugadu(struct ipoque_detection_module_struct *ipoque_struct)
 {
 	ipoque_search_gadugadu_tcp(ipoque_struct);
 }

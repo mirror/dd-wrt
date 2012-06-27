@@ -31,7 +31,7 @@ static void ipoque_int_xdmcp_add_connection(struct ipoque_detection_module_struc
 	ipoque_int_add_connection(ipoque_struct, IPOQUE_PROTOCOL_XDMCP, IPOQUE_REAL_PROTOCOL);
 }
 
-void ipoque_search_xdmcp(struct ipoque_detection_module_struct
+static void ipoque_search_xdmcp(struct ipoque_detection_module_struct
 						 *ipoque_struct)
 {
 	struct ipoque_packet_struct *packet = &ipoque_struct->packet;

@@ -28,7 +28,7 @@ static void ntop_int_dcerpc_add_connection(struct ipoque_detection_module_struct
   ipoque_int_add_connection(ipoque_struct, NTOP_PROTOCOL_DCERPC, IPOQUE_REAL_PROTOCOL);
 }
 
-void ntop_search_dcerpc(struct ipoque_detection_module_struct *ipoque_struct)
+static void ntop_search_dcerpc(struct ipoque_detection_module_struct *ipoque_struct)
 {
   struct ipoque_packet_struct *packet = &ipoque_struct->packet;
   struct ipoque_flow_struct *flow = ipoque_struct->flow;
