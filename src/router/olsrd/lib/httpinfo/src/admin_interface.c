@@ -93,7 +93,7 @@ build_admin_body(char *buf, uint32_t bufsize __attribute__ ((unused)))
   size += snprintf(&buf[size], bufsize - size, "<tr>\n");
 
   size += snprintf(&buf[size], bufsize - size, admin_basic_setting_int, "Debug level:", "debug_level", 2, olsr_cnf->debug_level);
-  size += snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "Pollrate:", "pollrate", 4, olsr_cnf->pollrate);
+  size += snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "Pollrate:", "pollrate", 4, (double)olsr_cnf->pollrate);
   size += snprintf(&buf[size], bufsize - size, admin_basic_setting_string, "TOS:", "tos", 6, "TBD");
 
   size += snprintf(&buf[size], bufsize - size, "</tr>\n" "<tr>\n");
@@ -108,14 +108,14 @@ build_admin_body(char *buf, uint32_t bufsize __attribute__ ((unused)))
   if (olsr_cnf->use_hysteresis) {
     size +=
       snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "Hyst scaling:", "hyst_scaling", 4,
-               olsr_cnf->hysteresis_param.scaling);
+    		  (double)olsr_cnf->hysteresis_param.scaling);
 
     size +=
       snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "Lower thr:", "hyst_lower", 4,
-               olsr_cnf->hysteresis_param.thr_low);
+    		  (double)olsr_cnf->hysteresis_param.thr_low);
     size +=
       snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "Upper thr:", "hyst_upper", 4,
-               olsr_cnf->hysteresis_param.thr_high);
+    		  (double)olsr_cnf->hysteresis_param.thr_high);
   } else {
     size += snprintf(&buf[size], bufsize - size, "<td>Hysteresis disabled</td>\n");
   }
@@ -124,7 +124,7 @@ build_admin_body(char *buf, uint32_t bufsize __attribute__ ((unused)))
 
   if (olsr_cnf->lq_level) {
     size += snprintf(&buf[size], bufsize - size, admin_basic_setting_int, "LQ level:", "lq_level", 1, olsr_cnf->lq_level);
-    size += snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "LQ aging:", "lq_aging", 2, olsr_cnf->lq_aging);
+    size += snprintf(&buf[size], bufsize - size, admin_basic_setting_float, "LQ aging:", "lq_aging", 2, (double)olsr_cnf->lq_aging);
   } else {
     size += snprintf(&buf[size], bufsize - size, "<td>LQ disabled</td>\n");
   }

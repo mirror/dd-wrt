@@ -9,7 +9,7 @@ LIBDIR =	$(DESTDIR)/usr/lib
 SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
 HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
 
-CPPFLAGS += 	-Dlinux -DLINUX_NETLINK_ROUTING
+CPPFLAGS += 	-Dlinux
 LIBS +=		
 
 PLUGIN_SONAME ?= lib$(PLUGIN_NAME).so

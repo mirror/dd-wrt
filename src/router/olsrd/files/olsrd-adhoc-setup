@@ -1,0 +1,76 @@
+#!/bin/sh
+
+channel=7
+essid=olsr.org
+
+if [ -x /usr/bin/nmcli ]; then
+	echo -n "Turning off NetworkManager wifi control: "
+    /usr/bin/nmcli nm wifi off
+    echo "done"
+fi
+
+if [ "$1" = "" ]; then
+    wlan=`/sbin/iwconfig 2>&1 | grep 'IEEE 802.11' | head -1 | cut -d ' ' -f 1`
+else
+    wlan=$1
+fi
+
+if [ "$wlan" = "" ]; then
+    echo "No wifi network interface found! Perhaps you need to modprobe?"
+    exit
+fi
+
+
+echo -n "Setting up ad-hoc networking: "
+
+# ifconfig down before setting ad-hoc mode because some chips require that
+/sbin/ifconfig $wlan down
+
+# disassociate from current BSSID in case an ad-hoc BSSID already stuck there
+/sbin/iwconfig $wlan ap 00:00:00:00:00:00
+
+sleep 1
+
+/sbin/iwconfig $wlan mode ad-hoc
+/sbin/iwconfig $wlan channel $channel
+/sbin/iwconfig $wlan essid $essid
+/sbin/iwconfig $wlan key off
+/sbin/iwconfig $wlan rate auto
+/sbin/iwconfig $wlan txpower auto
+# many devices don't support the follow options so hide the errors
+/sbin/iwconfig $wlan modu auto  > /dev/null 2>&1
+/sbin/iwconfig $wlan commit     > /dev/null 2>&1
+
+/sbin/ifconfig $wlan up
+
+# some cards what to be configured after the interface is up
+sleep 4
+mode=`iwgetid --mode --raw`
+if [ "$mode" != "1" ]; then
+    /sbin/iwconfig $wlan mode ad-hoc
+    /sbin/iwconfig $wlan channel $channel
+    /sbin/iwconfig $wlan essid $essid
+    /sbin/iwconfig $wlan commit     > /dev/null 2>&1
+fi
+
+# Wait for things to settle before trying the next step
+sleep 2
+echo "done"
+
+echo -n "Setting up IP address: "
+# get MAC to generate hopefully unique IP address with, by using the last two
+# hex pairs as the last two hex pairs for the IP address, converting the hex
+# to decimal first.
+MAC=`/sbin/ifconfig | grep wlan0 | sed 's|.*HWaddr ||'`
+MAC5=`echo $MAC | cut -d : -f 5`
+MAC6=`echo $MAC | cut -d : -f 6`
+ip3=`printf %d 0x$MAC5`
+ip4=`printf %d 0x$MAC6`
+net=172.29
+ip=$net.$ip3.$ip4
+
+/sbin/ifconfig $wlan inet $ip broadcast $net.255.255
+echo "done"
+
+echo "OLSR ad-hoc setup on $wlan using $essid on channel $channel with IP $ip"
+echo "    ad-hoc Cell BSSID: `iwgetid --ap --raw`"

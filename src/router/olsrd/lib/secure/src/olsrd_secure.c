@@ -38,7 +38,7 @@
 /* Adjustments made to ensure data going out is converted to network
  * byte ordering.  Also, to ensure incoming data is converted before
  * it is used and before checksums are calculated as well.
- * 06/06/2011 - Rusty Haddock AE5AE -- for the HSMM-MESH project.
+ * Rusty Haddock AE5AE -- for the HSMM-MESH project.
  */
 
 /*
@@ -345,7 +345,7 @@ add_signature(uint8_t * pck, int *size)
   *size += sizeof(struct s_olsrmsg);
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, pck, *size - SIGNATURE_SIZE);
@@ -431,7 +431,8 @@ validate_packet(struct interface *olsr_if, const char *pck, int *size)
     case (SCHEME):
       goto one_checksum_SHA;    /* Ahhh... fix this */
       break;
-
+    default:
+    	break;
     }
     break;
 
@@ -444,7 +445,7 @@ validate_packet(struct interface *olsr_if, const char *pck, int *size)
 one_checksum_SHA:
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, pck, *size - SIGNATURE_SIZE);
@@ -578,7 +579,7 @@ send_challenge(struct interface *olsr_if, const union olsr_ip_addr *new_host)
   olsr_printf(3, "[ENC]Size: %lu\n", (unsigned long)sizeof(struct challengemsg));
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, &cmsg, sizeof(struct challengemsg) - SIGNATURE_SIZE);
@@ -588,7 +589,8 @@ send_challenge(struct interface *olsr_if, const union olsr_ip_addr *new_host)
     /* Create the hash */
     CHECKSUM(checksum_cache, (sizeof(struct challengemsg) - SIGNATURE_SIZE) + KEYLENGTH, cmsg.signature);
   }
-  olsr_printf(3, "[ENC]Sending timestamp request to %s challenge 0x%x\n", olsr_ip_to_string(&buf, new_host), challenge);
+  olsr_printf(3, "[ENC]Sending timestamp request to %s challenge 0x%x\n",
+	      olsr_ip_to_string(&buf, new_host), challenge);
 
   /* Add to buffer */
   net_outbuffer_push(olsr_if, &cmsg, sizeof(struct challengemsg));
@@ -643,7 +645,7 @@ parse_cres(struct interface *olsr_if, char *in_msg)
   /* Check signature */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, msg, sizeof(struct c_respmsg) - SIGNATURE_SIZE);
@@ -672,14 +674,16 @@ parse_cres(struct interface *olsr_if, char *in_msg)
   olsr_printf(3, "[ENC]Entry-challenge 0x%x\n", entry->challenge);
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     uint32_t netorder_challenge;
 
     /* First the challenge received */
     /* But we have to calculate our hash with the challenge in
-     * network order just like the remote host did!  06/06/2011 AE5AE */
+     * network order just like the remote host did!  6-Jun-2011 AE5AE */
     netorder_challenge = htonl(entry->challenge);
     memcpy(checksum_cache, &netorder_challenge, sizeof(uint32_t));
+/*     memcpy(checksum_cache, &entry->challenge, 4); */
+
     /* Then the local IP */
     memcpy(&checksum_cache[sizeof(uint32_t)], &msg->originator, olsr_cnf->ipsize);
 
@@ -688,7 +692,8 @@ parse_cres(struct interface *olsr_if, char *in_msg)
   }
 
   if (memcmp(msg->res_sig, sha1_hash, SIGNATURE_SIZE) != 0) {
-    olsr_printf(1, "[ENC]Error in challenge signature from %s!\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator));
+    olsr_printf(1, "[ENC]Error in challenge signature from %s!\n",
+		olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator));
 
     return 0;
   }
@@ -700,20 +705,22 @@ parse_cres(struct interface *olsr_if, char *in_msg)
   entry->challenge = 0;
   entry->validated = 1;
 
-  /* Bring timestamp to host order before arith. 05/31/2011  AE5AE */
+  /* Bring timestamp to host order before arith. 2011/05/31 AE5AE */
   entry->diff = now.tv_sec - ntohl(msg->timestamp);
 
   /* update validtime - validated entry */
   entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
 
-  olsr_printf(1, "[ENC]%s registered with diff %d!\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator),
+  olsr_printf(1, "[ENC]%s registered with diff %d!\n",
+	      olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->originator),
               entry->diff);
 
   /* Send response-response */
   send_rres(olsr_if, (union olsr_ip_addr *)&msg->originator,
 	    (union olsr_ip_addr *)&msg->destination, msg->challenge);
-/* Don't give send_rres() the challenge in host order, the checksum needs to
- * be calculated in network order.  06/06/2011  AE5AE */
+/* 	    (union olsr_ip_addr *)&msg->destination, ntohl(msg->challenge)); */
+/* Don't give send_rres() the challenge in host order, as the checksum needs to
+ * be calculated in network order.   06-Jun-2011  AE5AE */
 
   return 1;
 }
@@ -739,7 +746,7 @@ parse_rres(char *in_msg)
   /* Check signature */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, msg, sizeof(struct r_respmsg) - SIGNATURE_SIZE);
@@ -768,13 +775,14 @@ parse_rres(char *in_msg)
   olsr_printf(3, "[ENC]Entry-challenge 0x%x\n", entry->challenge);
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     uint32_t netorder_challenge;
 
     /* First the challenge received */
-    /* But we have to calculate our hash with the challenge in network order! 06/06/2011  AE5AE */
+    /* But we have to calculate our hash with the challenge in network order!  6-Jun-2011 AE5AE */
     netorder_challenge = htonl(entry->challenge);
     memcpy(checksum_cache, &netorder_challenge, sizeof(uint32_t));
+/*     memcpy(checksum_cache, &entry->challenge, 4); */
 
     /* Then the local IP */
     memcpy(&checksum_cache[sizeof(uint32_t)], &msg->originator, olsr_cnf->ipsize);
@@ -796,8 +804,9 @@ parse_rres(char *in_msg)
   entry->challenge = 0;
   entry->validated = 1;
 
-  /* Bring timestamp to host order before arith. 05/31/2011  AE5AE */
+  /* Bring timestamp to host order before arith. 2011/05/31 AE5AE */
   entry->diff = now.tv_sec - ntohl(msg->timestamp);
+
 
   /* update validtime - validated entry */
   entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
@@ -855,7 +864,7 @@ parse_challenge(struct interface *olsr_if, char *in_msg)
   /* Check signature */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, msg, sizeof(struct challengemsg) - SIGNATURE_SIZE);
@@ -882,8 +891,9 @@ parse_challenge(struct interface *olsr_if, char *in_msg)
 
   send_cres(olsr_if, (union olsr_ip_addr *)&msg->originator,
 	    (union olsr_ip_addr *)&msg->destination, msg->challenge, entry);
+/* 	    (union olsr_ip_addr *)&msg->destination, ntohl(msg->challenge), entry); */
 /* Don't give send_cres() the challenge in host order, as the checksum needs to
- * be calculated with network order.   06/06/2011  AE5AE */
+ * be calculated with network order.   06-Jun-2011  AE5AE */
 
   return 1;
 }
@@ -919,10 +929,11 @@ send_cres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   crmsg.seqno = htons(get_msg_seqno());
 
   /* set timestamp */
-  /* but swap the byte order to the network order before sending!  05/28/2011  AE5AE */
+  /* but swap the byte order to the network order before sending!  2011/05/28 AE5AE */
   crmsg.timestamp = htonl(now.tv_sec);
 #ifndef WIN32
-  /* Don't print htonl()'d time, use original now.tv_sec.  05/31/2011  AE5AE */
+  /* Don't print htonl()'d time, use now.tv_sec 2011/05/31 AE5AE */
+/*   olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)crmsg.timestamp); */
   olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)now.tv_sec);
 #endif
 
@@ -933,7 +944,7 @@ send_cres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   /* Create digest of received challenge + IP */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the challenge received */
     memcpy(checksum_cache, &chal_in, 4);
@@ -947,7 +958,7 @@ send_cres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   /* Now create the digest of the message and the key */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, &crmsg, sizeof(struct c_respmsg) - SIGNATURE_SIZE);
@@ -991,11 +1002,12 @@ send_rres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   rrmsg.seqno = htons(get_msg_seqno());
 
   /* set timestamp */
-  /* But swap the byte order to the network order!  05/28/2011  AE5AE */
+  /* But swap the byte order to the network order!  2011/05/28 AE5AE */
   rrmsg.timestamp = htonl(now.tv_sec);
 
 #ifndef WIN32
-  /* don't print htonl()'d time, use original now.tv_sec.  05/31/2011  AE5AE */
+  /* olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)rrmsg.timestamp); */
+  /* don't print htonl()'d time, use now. 2011/05/31 AE5AE */
   olsr_printf(3, "[ENC]Timestamp %lld\n", (long long)now.tv_sec);
 #endif
   /* Fill subheader */
@@ -1004,7 +1016,7 @@ send_rres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   /* Create digest of received challenge + IP */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the challenge received */
     memcpy(checksum_cache, &chal_in, 4);
@@ -1018,7 +1030,7 @@ send_rres(struct interface *olsr_if, union olsr_ip_addr *to, union olsr_ip_addr 
   /* Now create the digest of the message and the key */
 
   {
-    uint8_t checksum_cache[512 + KEYLENGTH];
+    uint8_t checksum_cache[1512 + KEYLENGTH];
     /* Create packet + key cache */
     /* First the OLSR packet + signature message - digest */
     memcpy(checksum_cache, &rrmsg, sizeof(struct r_respmsg) - SIGNATURE_SIZE);
@@ -1086,7 +1098,8 @@ timeout_timestamps(void *foo __attribute__ ((unused)))
         entry_to_delete = tmp_list;
         tmp_list = tmp_list->next;
 
-        olsr_printf(1, "[ENC]timestamp info for %s timed out.. deleting it\n", olsr_ip_to_string(&buf, &entry_to_delete->addr));
+        olsr_printf(1, "[ENC]timestamp info for %s timed out.. deleting it\n",
+		    olsr_ip_to_string(&buf, &entry_to_delete->addr));
 
         /*Delete it */
         entry_to_delete->next->prev = entry_to_delete->prev;

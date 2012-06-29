@@ -126,6 +126,7 @@ static void ipc_print_interface(struct autobuf *);
 #define SIW_INTERFACE 0x0080
 #define SIW_CONFIG 0x0100
 #define SIW_2HOP 0x0200
+#define SIW_VERSION 0x0400
 
 /* ALL = neigh link route hna mid topo */
 #define SIW_ALL 0x003F
@@ -319,6 +320,7 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
         if (0 != strstr(requ, "/con")) send_what |= SIW_CONFIG;
         if (0 != strstr(requ, "/int")) send_what |= SIW_INTERFACE;
         if (0 != strstr(requ, "/2ho")) send_what |= SIW_2HOP;
+        if (0 != strstr(requ, "/ver")) send_what |= SIW_VERSION;
       }
     }
     if ( send_what == 0 ) send_what = SIW_ALL;
@@ -615,6 +617,11 @@ ipc_print_config(struct autobuf *abuf)
 }
 
 static void
+ipc_print_version(struct autobuf *abuf)
+{
+abuf_appendf(abuf, "Version: %s (built on %s on %s)\n", olsrd_version, build_date, build_host);
+}
+static void
 ipc_print_interface(struct autobuf *abuf)
 {
   const struct olsr_if *ifs;
@@ -729,6 +736,8 @@ send_info(unsigned int send_what, int the_socket)
   if ((send_what & SIW_INTERFACE) == SIW_INTERFACE) ipc_print_interface(&abuf);
   /* 2hop neighbour list */
   if ((send_what & SIW_2HOP) == SIW_2HOP) ipc_print_neigh(&abuf,true);
+  /* version */
+  if ((send_what & SIW_VERSION) == SIW_VERSION) ipc_print_version(&abuf);
 
   outbuffer[outbuffer_count] = olsr_malloc(abuf.len, "txt output buffer");
   outbuffer_size[outbuffer_count] = abuf.len;

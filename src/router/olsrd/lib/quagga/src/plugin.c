@@ -2,7 +2,7 @@
  * OLSRd Quagga plugin
  *
  * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2010 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -49,8 +49,8 @@ int
 zplugin_redistribute(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   const char *zroute_types[] = { "system", "kernel", "connect",
-    "static", "rip", "ripng", "ospf", "ospf6", "isis", "bgp",
-    "hsls", "olsr", "batman"
+                                 "static", "rip", "ripng", "ospf", "ospf6", "isis", "bgp",
+                                 "hsls", "olsr", "batman", "babel"
   };
   unsigned int i;
 
@@ -144,7 +144,7 @@ zplugin_version(const char *value, void *data __attribute__ ((unused)), set_plug
 
   if (set_plugin_int(value, &version, addon))
     return 1;
-  if (version < 0 || version > 1)
+  if (version < 0 || version > 2)
     return 1;
   zebra.version = version;
 

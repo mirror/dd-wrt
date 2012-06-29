@@ -3,11 +3,10 @@
 #
 # 1) Download and extract the Android NDK from
 #    http://developer.android.com/sdk/ndk/index.html
-#    (e.g. into to /opt, otherwise call 'make NDK=')
+#    (e.g. into to /opt, otherwise call 'make NDK_BASE=')
 #
 # 2) Compile olsrd with the make command:
-#    make OS=android DEBUG=0 build_all
-#    (expect lots of warnings which is normal)
+#    make OS=android DEBUG=0 NDK_BASE=/opt
 #
 # 3) Install olsrd on your local PC, e.g.
 #    sudo make OS=android DEBUG=0 install_all
@@ -34,20 +33,31 @@ LIBDIR = $(PREFIX)/lib
 DOCDIR =
 MANDIR =
 
-SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
-HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
+# there probably should be an Android log.c and misc.c to support
+# Logcat, but this works for now
+SRCS += $(wildcard src/unix/*.c src/linux/*.c)
+HDRS += $(wildcard src/unix/*.h src/linux/*.h)
 
-CPPFLAGS += 	-Dlinux -DLINUX_NETLINK_ROUTING
-CPPFLAGS += 	-Dandroid
+# Android didn't add regex until android-8 so include this one
+REGEX_SRCS = \
+	android/regex/regcomp.c \
+	android/regex/regerror.c \
+	android/regex/regexec.c \
+	android/regex/regfree.c
+REGEX_OBJS = $(REGEX_SRCS:.c=.o)
 
-# bionic libc: missing declaration
-CPPFLAGS +=	-DINET_ADDRSTRLEN=16
+CPPFLAGS += 	-Dlinux
+
+CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
 # bionic libc: missing declarations
+CPPFLAGS +=	-DINET_ADDRSTRLEN=16
 CPPFLAGS +=	-D'IPTOS_PREC(tos)=((tos)&0xe0)'
 CPPFLAGS +=	-D'IPTOS_TOS(tos)=((tos)&0x1e)'
-CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
+# Android NDK is missing some Linux headers and regex, we have them here:
+CPPFLAGS += -I$(TOPDIR)/android
 
 # Compilation flags from build/toolchains/arm-eabi-4.2.1/setup.mk
+#  * removed -fstrict-aliasing since the code has a lot of type-punning
 CPPFLAGS +=  \
 	-march=armv5te -mtune=xscale \
 	-msoft-float -fpic \
@@ -61,13 +71,22 @@ CPPFLAGS +=  \
 ifeq ($(DEBUG),0)
 CPPFLAGS +=  \
 	-fomit-frame-pointer \
-	-fstrict-aliasing \
 	-funswitch-loops \
 	-finline-limit=300
 else
 CPPFLAGS += \
-	-fno-omit-frame-pointer \
-	-fno-strict-aliasing
+	-fno-omit-frame-pointer
+endif
+
+ifdef OLSRD_PLUGIN
+GENERATE_PIC = true
+endif
+
+LDFLAGS += -llog
+
+ifdef GENERATE_PIC
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
 endif
 
 PLUGIN_SONAME ?= $(PLUGIN_NAME)
@@ -77,44 +96,34 @@ INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME);
 UNINSTALL_LIB =	rm -f $(LIBDIR)/$(PLUGIN_FULLNAME); \
 		/sbin/ldconfig -n $(LIBDIR)
 
-ifdef OLSRD_PLUGIN
-GENERATE_PIC = true
-endif
+HOST = arm-linux-androideabi
+NDK_BASE = /opt/android-ndk
+CURRENT_SYSTEM := $(shell uname -s | tr A-Z a-z)
+NDK_TOOLCHAIN_BASE = $(NDK_BASE)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/$(CURRENT_SYSTEM)-x86
 
-ifdef GENERATE_PIC
-CFLAGS +=	-fPIC
-LDFLAGS +=	-fPIC
-endif
+NDK_PLATFORM_VERSION = 4
+NDK_SYSROOT = $(NDK_BASE)/platforms/android-$(NDK_PLATFORM_VERSION)/arch-arm
+CROSS_COMPILE = $(NDK_TOOLCHAIN_BASE)/bin/$(HOST)-
 
-NDK = /opt/android-ndk-r4b
-NDK_ARCH = $(NDK)/build/platforms/android-3/arch-arm
-
-ifneq ($(shell uname -m),armv6l)
-# You are not compiling with Debian direct on the phone
-CURRENT_SYSTEM = $(shell uname -s | tr A-Z a-z)
-CROSS_COMPILE = $(NDK)/build/prebuilt/$(CURRENT_SYSTEM)-x86/arm-eabi-4.2.1/bin/arm-eabi-
-CC = $(CROSS_COMPILE)gcc
+CC = $(CROSS_COMPILE)gcc --sysroot="$(NDK_SYSROOT)"
+LD = $(CROSS_COMPILE)ld
+AR = $(CROSS_COMPILE)ar
 ifeq ($(DEBUG),0)
 STRIP = $(CROSS_COMPILE)strip
 endif
-endif
 
-CFLAGS += -I$(NDK_ARCH)/usr/include
-CFLAGS += -I$(TOPDIR)/android
 
-LDFLAGS += -nostartfiles -nodefaultlibs -nostdlib -Bdynamic
-LDFLAGS += -Wl,--dynamic-linker -Wl,/system/bin/linker
-LDFLAGS += -L$(NDK_ARCH)/usr/lib
-LDFLAGS += -Wl,-rpath-link -Wl,$(NDK_ARCH)/usr/lib
-LDFLAGS += -llog
-ifndef OLSRD_PLUGIN
-LDFLAGS += $(NDK_ARCH)/usr/lib/crtbegin_dynamic.o
-endif
+# The Android NDK didn't add proper regex support until android-8
+# (2.2), so we include the Android files here, and build with
+# -DPOSIX_MISTAKE like Android does.
+$(REGEX_OBJS): $(REGEX_SRCS)
+	echo "[CC] $<"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -DPOSIX_MISTAKE -c -o $@ $<
 
-LIBS += -Wl,-lc -Wl,-lm -Wl,-lgcc
-ifndef OLSRD_PLUGIN
-LIBS += $(NDK_ARCH)/usr/lib/crtend_android.o
-endif
+regex: $(REGEX_OBJS)
+
+regex_clean:
+	rm -f $(REGEX_OBJS)
 
 # Local Variables:
 # mode: makefile

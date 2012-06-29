@@ -1,16 +1,68 @@
-LoadPlugin "olsrd_txtinfo.so.0.1"
-{
-        PlParam "accept" "10.247.200.4"
-}
 
-ABOUT
-
-telnet 127.0.0.1 2006
-or
-wget localhost:2006 -qO -
+   PLUGIN USAGE
+==================
 
 installation:
 make
 make install
 
-- Lorenz Schori
+echo /all | nc 127.0.0.1 2006
+ or
+telnet 127.0.0.1 2006 (and type /all then enter)
+ or
+wget http://localhost:2006/all -qO -
+ or
+curl http://localhost:2006/all
+
+Or in a web browser: http://localhost:2006/all
+
+The output shows the links of the node, its neighbors, the topology
+table, HNA (Host and Network Association) and MID (Multiple Interface
+Declaration) tables and the actual routing table.
+
+So what commands does the txtinfo plugin accept?
+
+    * Config: "/config" -> send_what=SIW_CONFIG
+    * Gateways: "/gateway" -> send_what=SIW_GATEWAY
+    * HNA: "/hna" -> send_what=SIW_HNA
+    * Interfaces: "/interface" -> send_what=SIW_INTERFACE
+    * Links: "/link" -> send_what=SIW_LINK
+    * MID: "/mid" -> send_what=SIW_MID
+    * Neighbors: "/neigh" -> send_what=SIW_NEIGH
+    * Routes: "/route" -> send_what=SIW_ROUTE
+    * Topology: "/topo" -> send_what=SIW_TOPO
+    * 2-hop neighbors: "/2hop" -> send_what=SIW_2HOP
+
+This is the same as the "/neigh" and "/link" commands combined:
+
+    * "/neighbours" -> send_what = SIW_NEIGHLINK -> neighbours and links
+
+Then there is "/all" which returns all of the most commonly used
+commands above (but not every command above). "/all" is the same as
+"/links/neigh/topo/hna/mid/routes".
+
+http://www.olsr.org/?q=node/26
+
+
+   PLUGIN CONFIGURATION
+==========================
+
+The plugin accepts two parameters: "port" and "accept". There are no
+futher parameters.  Here's an example configuration for UNIX systems
+(for Windows, change the plugin to end in .dll):
+
+LoadPlugin "olsrd_txtinfo.so.0.1"
+{
+    # the default port is 2006 but you can change it like this:
+    #PlParam     "port"   "8080"
+
+    # You can set a "accept" single address to allow to connect to
+    # txtinfo. If no address is specified, then localhost (127.0.0.1)
+    # is allowed by default.  txtinfo will only use the first "accept"
+    # parameter specified and will ignore the rest.
+
+    # to allow a specific host:
+    #PlParam      "accept" "172.29.44.23"
+    # if you set it to 0.0.0.0, it will accept all connections
+    #PlParam      "accept" "0.0.0.0"
+}

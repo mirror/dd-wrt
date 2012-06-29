@@ -213,7 +213,7 @@ olsr_process_changes(void)
   if (olsr_cnf->debug_level > 0) {
     if (olsr_cnf->debug_level > 2) {
       olsr_print_mid_set();
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
     olsr_print_gateway_entries();
 #endif
 
