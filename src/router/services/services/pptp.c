@@ -205,8 +205,8 @@ void start_pptpd(void)
 	fp = fopen("/tmp/pptpd/pptpd.conf", "w");
 	if (nvram_match("pptpd_bcrelay", "1"))
 		fprintf(fp, "bcrelay %s\n", nvram_safe_get("lan_ifname"));
-	fprintf(fp, "localip %s\n"
-		"remoteip %s\n", nvram_safe_get("pptpd_lip"),
+	fprintf(fp, "connections %s\nlocalip %s\n"
+		"remoteip %s\n", nvram_safe_get("pptpd_conn"),nvram_safe_get("pptpd_lip"),
 		nvram_safe_get("pptpd_rip"));
 	fclose(fp);
 
