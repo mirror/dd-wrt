@@ -29,6 +29,7 @@
 #define _OLSRD_FORNTEND_COMMON
 
 #include <gtk/gtk.h>
+#include <glib.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <stdio.h>

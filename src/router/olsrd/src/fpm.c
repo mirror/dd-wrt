@@ -111,7 +111,9 @@ fpm
 fpmdiv(fpm a, fpm b)
 {
   fpm r;
-  assert(FPM_INT_MIN <= ((long long)(sfpm) a << FPM_BIT) && ((long long)(sfpm) a << FPM_BIT) <= FPM_INT_MAX);
+  long long tmp = ((long long)(sfpm) a << FPM_BIT);
+  assert(FPM_INT_MIN <= tmp);
+  assert(tmp <= FPM_INT_MAX);
   r = (fpm) fpmdiv_def((sfpm) a, (sfpm) b);
   return r;
 }

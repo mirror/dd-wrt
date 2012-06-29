@@ -86,6 +86,25 @@
 
 # SmartGatewayAllowNAT yes
 
+# Determines the period (in milliseconds) on which a new smart gateway
+# selection is performed.
+# (default is 10000 milliseconds)
+
+# SmartGatewayPeriod 10000
+
+# Determines the number of times the link state database must be stable
+# before a new smart gateway is selected.
+# (default is 6)
+
+# SmartGatewayStableCount 6
+
+# When another gateway than the current one has a cost of less than the cost
+# of the current gateway multiplied by SmartGatewayThreshold then the smart
+# gateway is switched to the other gateway. The unit is percentage.
+# (defaults to 0)
+
+# SmartGatewayThreshold 0
+
 # Defines what kind of Uplink this node will publish as a
 # smartgateway. The existence of the uplink is detected by
 # a route to 0.0.0.0/0, ::ffff:0:0/96 and/or 2000::/3.
@@ -175,11 +194,18 @@ Hna6
 # LoadPlugin "olsrd_txtinfo.dll"
 LoadPlugin "olsrd_txtinfo.so.0.1"
 {
-    # port number the txtinfo plugin will be listening, default 2006
-#   PlParam     "port"   "81"
-    # ip address that can access the plugin, use "0.0.0.0"
-    # to allow everyone
-    PlParam     "Accept"   "127.0.0.1"
+    # the default port is 2006 but you can change it like this:
+    #PlParam     "port"   "8080"
+
+    # You can set a "accept" single address to allow to connect to
+    # txtinfo. If no address is specified, then localhost (127.0.0.1)
+    # is allowed by default.  txtinfo will only use the first "accept"
+    # parameter specified and will ignore the rest.
+
+    # to allow a specific host:
+    #PlParam      "accept" "172.29.44.23"
+    # if you set it to 0.0.0.0, it will accept all connections
+    #PlParam      "accept" "0.0.0.0"
 }
 
 #############################################

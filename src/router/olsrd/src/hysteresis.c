@@ -155,7 +155,7 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
 #endif
     lnk->L_link_quality = olsr_hyst_calc_stability(lnk->L_link_quality);
 #ifdef DEBUG
-    OLSR_PRINTF(3, "HYST[%s]: %f\n", olsr_ip_to_string(&buf, remote), lnk->L_link_quality);
+    OLSR_PRINTF(3, "HYST[%s]: %f\n", olsr_ip_to_string(&buf, remote), (double)lnk->L_link_quality);
 #endif
 
     /*
@@ -169,7 +169,7 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
       while (lnk->olsr_seqno != seqno) {
         lnk->L_link_quality = olsr_hyst_calc_instability(lnk->L_link_quality);
 #ifdef DEBUG
-        OLSR_PRINTF(5, "HYST[%s] PACKET LOSS! %f\n", olsr_ip_to_string(&buf, remote), lnk->L_link_quality);
+        OLSR_PRINTF(5, "HYST[%s] PACKET LOSS! %f\n", olsr_ip_to_string(&buf, remote), (double)lnk->L_link_quality);
 #endif
         if (lnk->L_link_quality < olsr_cnf->hysteresis_param.thr_low)
           break;

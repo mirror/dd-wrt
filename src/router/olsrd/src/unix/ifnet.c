@@ -39,7 +39,7 @@
  *
  */
 
-#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__
 #define ifr_netmask ifr_addr
 #endif
 
@@ -631,7 +631,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     ifs.int6_multaddr.sin6_port = htons(olsr_cnf->olsrport);
     ifs.int6_multaddr.sin6_addr =  iface->cnf->ipv6_multicast.v6;
 
-#ifdef __MacOSX__
+#ifdef __APPLE__
     ifs.int6_multaddr.sin6_scope_id = 0;
 #endif
 

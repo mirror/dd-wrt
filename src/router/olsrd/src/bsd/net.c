@@ -97,7 +97,7 @@
 #include <net80211/ieee80211_ioctl.h>
 #endif
 
-#if defined __FreeBSD__ || __FreeBSD_kernel__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__
 #include <net/if_var.h>
 #include <net/ethernet.h>
 #include <netinet/in_var.h>
@@ -108,7 +108,7 @@
 #endif
 #endif
 
-#ifdef __MacOSX__
+#ifdef __APPLE__
 #include <ifaddrs.h>
 #include <net/if_var.h>
 #include <net/ethernet.h>
@@ -135,7 +135,7 @@ static int
 set_sysctl_int(const char *name, int new)
 {
   int old;
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__MacOSX__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__NetBSD__)
   size_t len = sizeof(old);
 #else
   unsigned int len = sizeof(old);
@@ -197,7 +197,7 @@ net_os_set_global_ifoptions(void) {
     name = "net.inet6.icmp6.rediraccept";
 
   ignore_redir = set_sysctl_int(name, 0);
-#elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__
+#elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__
   if (olsr_cnf->ip_version == AF_INET) {
     name = "net.inet.icmp.drop_redirect";
     ignore_redir = set_sysctl_int(name, 1);
@@ -250,7 +250,7 @@ net_os_restore_ifoptions(void) {
 
 #ifdef __OpenBSD__
   name = olsr_cnf->ip_version == AF_INET ? "net.inet.icmp.rediraccept" : "net.inet6.icmp6.rediraccept";
-#elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__
+#elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__
   name = olsr_cnf->ip_version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.rediraccept";
 #else
   name = olsr_cnf->ip_version == AF_INET ? "net.inet.icmp.drop_redirect" : "net.inet6.icmp6.drop_redirect";
@@ -473,7 +473,7 @@ join_mcast(struct interface *ifs, int sock)
 
     /* rfc 3493 */
 #ifdef IPV6_JOIN_GROUP
-    /* Join reciever group */
+    /* Join receiver group */
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0)
 #else /* rfc 2133, obsoleted */
     /* Join receiver group */

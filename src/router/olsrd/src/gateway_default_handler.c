@@ -15,7 +15,7 @@
 
 #include "assert.h"
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
 static uint32_t gw_def_nodecount, gw_def_stablecount;
 static bool gw_def_finished_ipv4, gw_def_finished_ipv6;
 
@@ -43,6 +43,7 @@ static void gw_default_choose_gateway(void) {
   olsr_linkcost cost_ipv4, cost_ipv6;
   struct gateway_entry *gw;
   bool dual;
+  olsr_linkcost path_cost_times_threshold;
 
   cost_ipv4 = ROUTE_COST_BROKEN;
   cost_ipv6 = ROUTE_COST_BROKEN;
@@ -56,13 +57,18 @@ static void gw_default_choose_gateway(void) {
       continue;
     }
 
-    if (!gw_def_finished_ipv4 && gw->ipv4 && gw->ipv4nat == olsr_cnf->smart_gw_allow_nat && tc->path_cost < cost_ipv4) {
-      inet_ipv4 = gw;
-      cost_ipv4 = tc->path_cost;
+    if (olsr_cnf->smart_gw_thresh == 0) {
+      path_cost_times_threshold = tc->path_cost;
+    } else {
+      path_cost_times_threshold = ((long long)tc->path_cost * (long long)olsr_cnf->smart_gw_thresh + 50LL) / 100LL;
     }
-    if (!gw_def_finished_ipv6 && gw->ipv6 && tc->path_cost < cost_ipv6) {
+    if (!gw_def_finished_ipv4 && gw->ipv4 && gw->ipv4nat == olsr_cnf->smart_gw_allow_nat && path_cost_times_threshold < cost_ipv4) {
+      inet_ipv4 = gw;
+      cost_ipv4 = path_cost_times_threshold;
+    }
+    if (!gw_def_finished_ipv6 && gw->ipv6 && path_cost_times_threshold < cost_ipv6) {
       inet_ipv6 = gw;
-      cost_ipv6 = tc->path_cost;
+      cost_ipv6 = path_cost_times_threshold;
     }
   } OLSR_FOR_ALL_GATEWAY_ENTRIES_END(gw)
 
@@ -78,13 +84,13 @@ static void gw_default_choose_gateway(void) {
   }
 
   /* finished ? */
-  if (gw_def_finished_ipv4 && gw_def_finished_ipv6) {
+  if ((olsr_cnf->smart_gw_thresh == 0) && gw_def_finished_ipv4 && gw_def_finished_ipv6) {
     olsr_stop_timer(gw_def_timer);
     gw_def_timer = NULL;
   }
 }
 
-/* timer for laze gateway selection */
+/* timer for lazy gateway selection */
 static void gw_default_timer(void *unused __attribute__ ((unused))) {
   /* accept a 10% increase without trigger a stablecount reset */
   if (tc_tree.count * 10 <= gw_def_nodecount * 11) {
@@ -98,7 +104,7 @@ static void gw_default_timer(void *unused __attribute__ ((unused))) {
     gw_def_stablecount = 0;
   }
 
-  if (gw_def_stablecount >= GW_DEFAULT_STABLE_COUNT) {
+  if (gw_def_stablecount >= olsr_cnf->smart_gw_stablecount) {
     gw_default_choose_gateway();
   }
 }
@@ -110,17 +116,17 @@ static void gw_default_startup_handler(void) {
   gw_def_stablecount = 0;
 
   /* get new ipv4 GW if we use OLSRv4 or NIIT */
-  gw_def_finished_ipv4 = olsr_cnf->ip_version == AF_INET6 && !olsr_cnf->use_niit;
+  gw_def_finished_ipv4 = !(olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit);
 
   /* get new ipv6 GW if we use OLSRv6 */
-  gw_def_finished_ipv6 = olsr_cnf->ip_version == AF_INET;
+  gw_def_finished_ipv6 = !(olsr_cnf->ip_version == AF_INET6);
 
   /* keep in mind we might be a gateway ourself */
   gw_def_finished_ipv4 |= olsr_cnf->has_ipv4_gateway;
   gw_def_finished_ipv6 |= olsr_cnf->has_ipv6_gateway;
 
   /* start gateway selection timer */
-  olsr_set_timer(&gw_def_timer, GW_DEFAULT_TIMER_INTERVAL, 0, true, &gw_default_timer, NULL, 0);
+  olsr_set_timer(&gw_def_timer, olsr_cnf->smart_gw_period, 0, true, &gw_default_timer, NULL, 0);
 }
 
 static void gw_default_update_handler(struct gateway_entry *gw) {
@@ -179,11 +185,11 @@ void olsr_gw_default_init(void) {
 void olsr_gw_default_lookup_gateway(bool ipv4, bool ipv6) {
   if (ipv4) {
     /* get new ipv4 GW if we use OLSRv4 or NIIT */
-    gw_def_finished_ipv4 = olsr_cnf->ip_version == AF_INET6 && !olsr_cnf->use_niit;
+    gw_def_finished_ipv4 = !(olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit);
   }
   if (ipv6) {
     /* get new ipv6 GW if we use OLSRv6 */
-    gw_def_finished_ipv6 = olsr_cnf->ip_version == AF_INET;
+    gw_def_finished_ipv6 = !(olsr_cnf->ip_version == AF_INET6);
   }
 
   if (!(gw_def_finished_ipv4 && gw_def_finished_ipv6)) {

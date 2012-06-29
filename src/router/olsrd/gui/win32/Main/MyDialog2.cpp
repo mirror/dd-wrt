@@ -241,10 +241,10 @@ int MyDialog2::OpenConfigFile(CString PathName)
 	if (Conf != NULL)
 		olsrd_free_cnf(Conf);
 
-	Conf = olsrd_parse_cnf(PathName);
-
-	if (Conf == NULL)
+	if (olsrd_parse_cnf(PathName) < 0)
 		return -1;
+
+	Conf = olsr_cnf;
 
 	for (i = 0; i < NumInt; i++)
 		m_InterfaceList.SetCheck(i, FALSE);

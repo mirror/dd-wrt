@@ -208,7 +208,7 @@ plugin_ipc_init(void)
     CLOSE(ipc_socket);
     return 0;
   }
-#if (defined __FreeBSD__ || __FreeBSD_kernel__) && defined SO_NOSIGPIPE
+#if (defined __FreeBSD__ || defined __FreeBSD_kernel__) && defined SO_NOSIGPIPE
   if (setsockopt(ipc_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *)&yes, sizeof(yes)) < 0) {
     perror("SO_REUSEADDR failed");
     CLOSE(ipc_socket);

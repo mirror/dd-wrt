@@ -94,27 +94,41 @@ jenkins_hash(const uint8_t * k, uint32_t length)
   switch (len) {
   case 11:
     c += ((uint32_t) k[10] << 24);
+    /* no break */
   case 10:
     c += ((uint32_t) k[9] << 16);
+    /* no break */
   case 9:
     c += ((uint32_t) k[8] << 8);
     /* the first byte of c is reserved for the length */
+    /* no break */
   case 8:
     b += ((uint32_t) k[7] << 24);
+    /* no break */
   case 7:
     b += ((uint32_t) k[6] << 16);
+    /* no break */
   case 6:
     b += ((uint32_t) k[5] << 8);
+    /* no break */
   case 5:
     b += k[4];
+    /* no break */
   case 4:
     a += ((uint32_t) k[3] << 24);
+    /* no break */
   case 3:
     a += ((uint32_t) k[2] << 16);
+    /* no break */
   case 2:
     a += ((uint32_t) k[1] << 8);
+    /* no break */
   case 1:
     a += k[0];
+    break;
+
+  default:
+	  break;
   }
   __jhash_mix(a, b, c);
 

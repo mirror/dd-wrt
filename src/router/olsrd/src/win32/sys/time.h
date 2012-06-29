@@ -79,10 +79,14 @@
   while (0)
 
 #if !defined WINCE
+
+#ifndef _TIMESPEC_DEFINED
+#define _TIMESPEC_DEFINED
 struct timespec {
   unsigned int tv_sec;
   unsigned int tv_nsec;
 };
+#endif
 #else
 #include <time.h>
 #endif

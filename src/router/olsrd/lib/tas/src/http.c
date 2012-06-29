@@ -1653,6 +1653,8 @@ serviceConn(struct connInfo *info)
       return -1;
 
     return 0;
+  default:
+	  return -1;
   }
 
   return 0;

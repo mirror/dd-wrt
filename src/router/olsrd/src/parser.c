@@ -287,7 +287,7 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
   if (ntohs(olsr->olsr_packlen) !=(uint16_t) size) {
     struct ipaddr_str buf;
-    OLSR_PRINTF(1, "Size error detected in received packet.\nRecieved %d, in packet %d\n", size, ntohs(olsr->olsr_packlen));
+    OLSR_PRINTF(1, "Size error detected in received packet.\nReceived %d, in packet %d\n", size, ntohs(olsr->olsr_packlen));
 
     olsr_syslog(OLSR_LOG_ERR, " packet length error in  packet received from %s!", olsr_ip_to_string(&buf, from_addr));
     return;
@@ -422,7 +422,7 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
 /**
  *Processing OLSR data from socket. Reading data, setting
- *wich interface recieved the message, Sends IPC(if used)
+ *wich interface received the message, Sends IPC(if used)
  *and passes the packet on to parse_packet().
  *
  *@param fd the filedescriptor that data should be read from.
@@ -464,14 +464,16 @@ olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
     }
     if (olsr_cnf->ip_version == AF_INET) {
       /* IPv4 sender address */
-      memcpy(&from_addr.v4, &((struct sockaddr_in *)&from)->sin_addr, sizeof(from_addr.v4));
+      void * src = &((struct sockaddr_in *)&from)->sin_addr;
+      memcpy(&from_addr.v4, src, sizeof(from_addr.v4));
     } else {
       /* IPv6 sender address */
-      memcpy(&from_addr.v6, &((struct sockaddr_in6 *)&from)->sin6_addr, sizeof(from_addr.v6));
+      void * src = &((struct sockaddr_in6 *)&from)->sin6_addr;
+      memcpy(&from_addr.v6, src, sizeof(from_addr.v6));
     }
 
 #ifdef DEBUG
-    OLSR_PRINTF(5, "Recieved a packet from %s\n",
+    OLSR_PRINTF(5, "Received a packet from %s\n",
         olsr_ip_to_string(&buf, &from_addr));
 #endif
 
@@ -515,7 +517,7 @@ olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
 
 /**
  *Processing OLSR data from socket. Reading data, setting
- *wich interface recieved the message, Sends IPC(if used)
+ *wich interface received the message, Sends IPC(if used)
  *and passes the packet on to parse_packet().
  *
  *@param fd the filedescriptor that data should be read from.

@@ -289,7 +289,7 @@ default_lq_ffeth_timer(void __attribute__ ((unused)) * context)
 static void
 default_lq_initialize_ffeth(void)
 {
-  if (olsr_cnf->lq_nat_thresh < 1.0) {
+  if (olsr_cnf->lq_nat_thresh < 1.0f) {
     fprintf(stderr, "Warning, nat_treshold < 1.0 is more likely to produce loops with etx_ffeth\n");
   }
   olsr_packetparser_add_function(&default_lq_parser_ffeth);

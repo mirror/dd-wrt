@@ -5,7 +5,7 @@ OBJS = $(SRC:.c=.o)
 CC = gcc
 CFLAGS = -c -g -Wall -Werror -I./src
 LFLAGS = -g -Wall 
-BUILDLIBS = -L/usr/lib -lpcap -Wl
+BUILDLIBS = -lpcap -Wl
 
 .c.o:
 	${CC} ${CFLAGS} -o $@ $^
