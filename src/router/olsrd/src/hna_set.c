@@ -216,7 +216,7 @@ olsr_delete_hna_net_entry(struct hna_net *net_to_delete) {
   struct hna_entry *hna_gw;
   bool removed_entry = false;
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   if (is_prefix_inetgw(&net_to_delete->hna_prefix)) {
     /* modify smart gateway entry if necessary */
     olsr_delete_gateway_entry(&net_to_delete->hna_gw->A_gateway_addr, net_to_delete->hna_prefix.prefix_len);
@@ -444,7 +444,7 @@ olsr_input_hna(union olsr_message *m, struct interface *in_if __attribute__ ((un
     pkt_get_ipaddress(&curr, &mask);
     prefix.prefix_len = olsr_netmask_to_prefix(&mask);
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
     if (olsr_cnf->smart_gw_active && olsr_is_smart_gateway(&prefix, &mask)) {
       olsr_update_gateway_entry(&originator, &mask, prefix.prefix_len, msg_seq_number);
     }

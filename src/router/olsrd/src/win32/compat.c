@@ -410,7 +410,9 @@ inet_ntop6(const unsigned char *src, char *dst, int size)
     words[i / 2] = (src[i] << 8) | src[i + 1];
 
   best.base = -1;
+  best.len = 0;
   cur.base = -1;
+  cur.len = 0;
 
   for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
     if (words[i] == 0) {

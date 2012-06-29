@@ -221,20 +221,23 @@ More information on NIIT can be found at: http://wiki.freifunk.net/Niit
     5.) Smart gateways (asymmetric gateway tunnels)
 *******************************************************
 
+    5.1) Introduction
+
 The smart gateway mechanism was written by Markus Kittenberger and
 Henning Rogge to allow an OLSR user to directly choose their default
 Internet gateway instead of relying on the hop by hop decisions on
 the way to the gateway. OLSRd 0.6.0 can create an IPIP tunnel
-to the gateways OLSRd address to side-step the same nasty effects
+to the gateway's OLSRd address to side-step the same nasty effects
 described in the NAT-Threshold section.
 
 The smart gateway code can be split into two sections, one is
 responsible for announcing the existence of a smart gateway uplink
 and one (on the client nodes) to choose an uplink and create the
-tunnel to the gateway. It uses a modified (but backward compatible)
-special HNA to signal the gateways to the clients. The clients can
-use a plugin (or the integrated default code) to choose one of the
-available gateways and change it if necessary.
+tunnel to the gateway. The announcing code uses a modified (but
+backward compatible) special HNA to signal the gateways to the
+clients. The clients can use a plugin (or the integrated default
+code) to choose one of the available gateways and change it if
+necessary.
 
 The smart gateway system is setup by several configuration parameters,
 most of them with a sane default setting. The whole system can be
@@ -245,14 +248,26 @@ SmartGateway <yes/no>
 All other parameters will be ignored if SmartGateway is set to "no"
 (the default is "no").
 
-On the client side there is a single additional parameter which
-controls if you want to allow the selection of an outgoing ipv4
-gateway with NAT (Network Address Translation).
 
-SmartGatewayAllowNAT <yes/no>
+    5.2) Client Side
 
-The uplink side of the smart gateway code has four parameters to
-set up the type of the uplink:
+1- SmartGatewayAllowNAT controls whether you want to allow the selection
+   of an outgoing ipv4 gateway with NAT (Network Address Translation).
+   The default setting is "yes".
+2- SmartGatewayPeriod determines the period (in milliseconds) on which
+   a new smart gateway selection is performed.
+   The default setting is 10000 milliseconds.
+3- SmartGatewayStableCount determines the number of times the link state
+   database must be stable before a new smart gateway is selected.
+   The default setting is 6.
+4- SmartGatewayThreshold controls whether you want to allow re-selection
+   of a new outgoing gateway if its routing cost is lower or equal to the
+   configured percentage of the routing cost of the current gateway.
+   The default setting is 0, which disables it.
+
+
+    5.3) Uplink Side
+
 1- SmartGatewayUplink defines which kind of uplink is exported to the
    other mesh nodes. The existence of the uplink is detected by looking
    for a local HNA of 0.0.0.0/0, ::ffff:0:0/96 or 2000::/3. The default
@@ -268,10 +283,8 @@ set up the type of the uplink:
    translation. The maximum prefix length is 64 bits,
    the default is ::/0 (no prefix).
 
-SmartGatewayUplink <none/ipv4/ipv6/both>
-SmartGatewayUplinkNAT <yes/no>
-SmartGatewaySpeed <uplink> <downlink>
-SmartGatewayPrefix <prefix>
+
+    5.4) Architecture & Notes
 
 On the smart gateway server (the OLSR instance announcing 'Internet here!' via
 HNA 0/0 or similar) the implicit tunl0 interface is used to forward incoming

@@ -129,7 +129,7 @@ mapwrite_work(FILE * fmap)
     }
   }
   lookup_defhna_latlon(&ip);
-  sprintf(my_latlon_str, "%f,%f,%d", my_lat, my_lon, get_isdefhna_latlon());
+  sprintf(my_latlon_str, "%f,%f,%d", (double)my_lat, (double)my_lon, get_isdefhna_latlon());
   if (0 >
       fprintf(fmap, "Self('%s',%s,'%s','%s');\n", olsr_ip_to_string(&strbuf1, &olsr_cnf->main_addr), my_latlon_str,
               olsr_ip_to_string(&strbuf2, &ip), my_names->name)) {

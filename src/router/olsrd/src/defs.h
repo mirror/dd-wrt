@@ -100,7 +100,9 @@ extern FILE *debug_handle;
 /* Returns TRUE if a timestamp is expired */
 #define TIMED_OUT(s1)	olsr_isTimedOut(s1)
 
+#ifndef ARRAYSIZE
 #define ARRAYSIZE(x)	(sizeof(x)/sizeof(*(x)))
+#endif
 #ifndef MAX
 #define MAX(x,y)	((x) > (y) ? (x) : (y))
 #endif

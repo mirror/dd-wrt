@@ -63,14 +63,6 @@
 #include <net/if.h>
 
 /*
- * This file contains the rtnetlink version of the linux routing code.
- * You will find the old ioctl version in kernel_routes_ioctl.c
- *
- * You can deactivate this code (and activating the ioctl one)
- * by removing the -DLINUX_NETLINK_ROUTING from make/Makefile.linux
- */
-#ifdef LINUX_NETLINK_ROUTING
-/*
  * The ARM compile complains about alignment. Copied
  * from /usr/include/linux/netlink.h and adapted for ARM
  */
@@ -660,7 +652,6 @@ olsr_ioctl_del_route6(const struct rt_entry *rt)
   return olsr_os_process_rt_entry(AF_INET6, rt, false);
 }
 
-#endif
 /*
  * Local Variables:
  * c-basic-offset: 2

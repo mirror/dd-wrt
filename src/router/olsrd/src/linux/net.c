@@ -86,9 +86,13 @@
 #define PROC_IF_SPOOF "/proc/sys/net/ipv4/conf/%s/rp_filter"
 #define PROC_ALL_SPOOF "/proc/sys/net/ipv4/conf/all/rp_filter"
 
-
 /* list of IPv6 interfaces */
 #define PATH_PROCNET_IFINET6           "/proc/net/if_inet6"
+
+/* values olsrd wants in procfs */
+#define OLSRD_FORWARD_VALUE '1'
+#define OLSRD_REDIRECT_VALUE '0'
+#define OLSRD_SPOOF_VALUE '0'
 
 /*
  *Wireless definitions for ioctl calls
@@ -139,7 +143,7 @@ static int writeToProc(const char *file, char *old, char value) {
     return -1;
   }
 
-  if (rv != value) {
+  if (rv != value && value != 0) {
     if (lseek(fd, SEEK_SET, 0) == -1) {
       OLSR_PRINTF(0, "Error, cannot rewind proc entry %s: %s (%d)\n", file, strerror(errno), errno);
       return -1;
@@ -159,8 +163,17 @@ static int writeToProc(const char *file, char *old, char value) {
   if (old) {
     *old = rv;
   }
-  olsr_syslog(OLSR_LOG_INFO, "Writing '%c' (was %c) to %s", value, rv, file);
+
+  if (value) {
+    olsr_syslog(OLSR_LOG_INFO, "Writing '%c' (was %c) to %s", value, rv, file);
+  }
   return 0;
+}
+
+/* write new value to proc file if current value is different*/
+static int restoreProc(const char *file, char original, char value) {
+  if ( original == value ) return 0;
+  else return writeToProc(file, NULL, original);
 }
 
 static bool is_at_least_linuxkernel_2_6_31(void) {
@@ -205,10 +218,15 @@ kernel_parse_error:
  */
 void
 net_os_set_global_ifoptions(void) {
-  if (writeToProc(olsr_cnf->ip_version == AF_INET ? PROC_IPFORWARD_V4 : PROC_IPFORWARD_V6, &orig_fwd_state, '1')) {
+
+  if (writeToProc(olsr_cnf->ip_version == AF_INET ? PROC_IPFORWARD_V4 : PROC_IPFORWARD_V6, &orig_fwd_state,
+          olsr_cnf->set_ip_forward ? OLSRD_FORWARD_VALUE : 0 )) {
     OLSR_PRINTF(1, "Warning, could not enable IP forwarding!\n"
         "you should manually ensure that IP forwarding is enabled!\n\n");
     olsr_startup_sleep(3);
+  }
+  else if ((!olsr_cnf->set_ip_forward) && (orig_fwd_state != OLSRD_FORWARD_VALUE)) {
+    olsr_exit("IP forwarding not activated, shutting down.\n", 1);
   }
 
   if (olsr_cnf->smart_gw_active) {
@@ -217,9 +235,9 @@ net_os_set_global_ifoptions(void) {
     /* Generate the procfile name */
     if (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit) {
       snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF);
-      if (writeToProc(procfile, &orig_tunnel_rp_filter, '0')) {
+      if (writeToProc(procfile, &orig_tunnel_rp_filter, OLSRD_SPOOF_VALUE)) {
         OLSR_PRINTF(0, "WARNING! Could not disable the IP spoof filter for tunnel!\n"
-            "you should mannually ensure that IP spoof filtering is disabled!\n\n");
+            "you should manually ensure that IP spoof filtering is disabled!\n\n");
 
         olsr_startup_sleep(3);
       }
@@ -228,9 +246,9 @@ net_os_set_global_ifoptions(void) {
 #if 0 // should not be necessary for IPv6
     if (olsr_cnf->ip_version == AF_INET6) {
       snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF6);
-      if (writeToProc(procfile, &orig_tunnel6_rp_filter, '0')) {
+      if (writeToProc(procfile, &orig_tunnel6_rp_filter, OLSRD_SPOOF_VALUE)) {
         OLSR_PRINTF(0, "WARNING! Could not disable the IP spoof filter for tunnel6!\n"
-            "you should mannually ensure that IP spoof filtering is disabled!\n\n");
+            "you should manually ensure that IP spoof filtering is disabled!\n\n");
 
         olsr_startup_sleep(3);
       }
@@ -239,7 +257,7 @@ net_os_set_global_ifoptions(void) {
   }
 
   if (olsr_cnf->ip_version == AF_INET) {
-    if (writeToProc(PROC_ALL_REDIRECT, &orig_global_redirect_state, '0')) {
+    if (writeToProc(PROC_ALL_REDIRECT, &orig_global_redirect_state, OLSRD_REDIRECT_VALUE)) {
       OLSR_PRINTF(1, "WARNING! Could not disable ICMP redirects!\n"
           "you should manually ensure that ICMP redirects are disabled!\n\n");
 
@@ -248,7 +266,7 @@ net_os_set_global_ifoptions(void) {
 
     /* check kernel version and disable global rp_filter */
     if (is_at_least_linuxkernel_2_6_31()) {
-      if (writeToProc(PROC_ALL_SPOOF, &orig_global_rp_filter, '0')) {
+      if (writeToProc(PROC_ALL_SPOOF, &orig_global_rp_filter, OLSRD_SPOOF_VALUE)) {
         OLSR_PRINTF(1, "WARNING! Could not disable global rp_filter (necessary for kernel 2.6.31 and higher!\n"
             "you should manually ensure that rp_filter is disabled!\n\n");
 
@@ -273,9 +291,9 @@ net_os_set_ifoptions(const char *if_name, struct interface *iface)
   /* Generate the procfile name */
   snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, if_name);
 
-  if (writeToProc(procfile, &iface->nic_state.redirect, '0')) {
+  if (writeToProc(procfile, &iface->nic_state.redirect, OLSRD_REDIRECT_VALUE)) {
     OLSR_PRINTF(0, "WARNING! Could not disable ICMP redirects!\n"
-        "you should mannually ensure that ICMP redirects are disabled!\n\n");
+        "you should manually ensure that ICMP redirects are disabled!\n\n");
     olsr_startup_sleep(3);
     return 0;
   }
@@ -283,9 +301,9 @@ net_os_set_ifoptions(const char *if_name, struct interface *iface)
   /* Generate the procfile name */
   snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, if_name);
 
-  if (writeToProc(procfile, &iface->nic_state.spoof, '0')) {
+  if (writeToProc(procfile, &iface->nic_state.spoof, OLSRD_SPOOF_VALUE)) {
     OLSR_PRINTF(0, "WARNING! Could not disable the IP spoof filter!\n"
-        "you should mannually ensure that IP spoof filtering is disabled!\n\n");
+        "you should manually ensure that IP spoof filtering is disabled!\n\n");
 
     olsr_startup_sleep(3);
     return 0;
@@ -304,22 +322,24 @@ net_os_restore_ifoptions(void)
 
   OLSR_PRINTF(1, "Restoring network state\n");
 
-  /* Restore IP forwarding to "off" */
-  if (writeToProc(olsr_cnf->ip_version == AF_INET ? PROC_IPFORWARD_V4 : PROC_IPFORWARD_V6, NULL, orig_fwd_state)) {
-    OLSR_PRINTF(1, "Error, could not restore ip_forward settings\n");
+  /* Restore IP forwarding to original value */
+  if (olsr_cnf->set_ip_forward) {
+    if (restoreProc(olsr_cnf->ip_version == AF_INET ? PROC_IPFORWARD_V4 : PROC_IPFORWARD_V6, orig_fwd_state, OLSRD_FORWARD_VALUE)) {
+      OLSR_PRINTF(1, "Error, could not restore ip_forward settings\n");
+    }
   }
 
   if (olsr_cnf->smart_gw_active && (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit)) {
     /* Generate the procfile name */
     snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF);
-    if (writeToProc(procfile, NULL, orig_tunnel_rp_filter)) {
+    if (restoreProc(procfile, orig_tunnel_rp_filter, OLSRD_SPOOF_VALUE)) {
       OLSR_PRINTF(0, "WARNING! Could not restore the IP spoof filter for tunnel!\n");
     }
 
 #if 0 // should not be necessary for IPv6
     if (olsr_cnf->ip_version == AF_INET6) {
       snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, TUNNEL_ENDPOINT_IF6);
-      if (writeToProc(procfile, NULL, orig_tunnel6_rp_filter)) {
+      if (restoreProc(procfile, orig_tunnel6_rp_filter, OLSRD_SPOOF_VALUE)) {
         OLSR_PRINTF(0, "WARNING! Could not restore the IP spoof filter for tunnel6!\n");
       }
     }
@@ -328,13 +348,13 @@ net_os_restore_ifoptions(void)
 
   if (olsr_cnf->ip_version == AF_INET) {
     /* Restore global ICMP redirect setting */
-    if (writeToProc(PROC_ALL_REDIRECT, NULL, orig_global_redirect_state)) {
+    if (restoreProc(PROC_ALL_REDIRECT, orig_global_redirect_state, OLSRD_REDIRECT_VALUE)) {
       OLSR_PRINTF(1, "Error, could not restore global icmp_redirect setting\n");
     }
 
     /* Restore global rp_filter setting for linux 2.6.31+ */
     if (is_at_least_linuxkernel_2_6_31()) {
-      if (writeToProc(PROC_ALL_SPOOF, NULL, orig_global_rp_filter)) {
+      if (restoreProc(PROC_ALL_SPOOF, orig_global_rp_filter, OLSRD_SPOOF_VALUE)) {
         OLSR_PRINTF(1, "Error, could not restore global rp_filter setting\n");
       }
     }
@@ -345,13 +365,13 @@ net_os_restore_ifoptions(void)
 
       /* ICMP redirects */
       snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, ifs->int_name);
-      if (writeToProc(procfile, NULL, ifs->nic_state.redirect)) {
+      if (restoreProc(procfile, ifs->nic_state.redirect, OLSRD_REDIRECT_VALUE)) {
         OLSR_PRINTF(1, "Error, could not restore icmp_redirect for interface %s\n", ifs->int_name);
       }
 
       /* Spoof filter */
       sprintf(procfile, PROC_IF_SPOOF, ifs->int_name);
-      if (writeToProc(procfile, NULL, ifs->nic_state.spoof)) {
+      if (restoreProc(procfile, ifs->nic_state.spoof, OLSRD_SPOOF_VALUE)) {
         OLSR_PRINTF(1, "Error, could not restore rp_filter for interface %s\n", ifs->int_name);
       }
     }
@@ -589,7 +609,7 @@ join_mcast(struct interface *ifs, int sock)
   mcastreq.ipv6mr_multiaddr = ifs->int6_multaddr.sin6_addr;
   mcastreq.ipv6mr_interface = ifs->if_index;
 
-#if !defined __FreeBSD__ && !defined __FreeBSD_kernel__ && !defined __MacOSX__ && !defined __NetBSD__
+#if !defined __FreeBSD__ && !defined __FreeBSD_kernel__ && !defined __APPLE__ && !defined __NetBSD__
   OLSR_PRINTF(3, "Interface %s joining multicast %s...", ifs->int_name, ip6_to_string(&buf, &ifs->int6_multaddr.sin6_addr));
   /* Send multicast */
   if (setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0) {
@@ -602,10 +622,10 @@ join_mcast(struct interface *ifs, int sock)
 
   /* Old libc fix */
 #ifdef IPV6_JOIN_GROUP
-  /* Join reciever group */
+  /* Join receiver group */
   if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0)
 #else
-  /* Join reciever group */
+  /* Join receiver group */
   if (setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&mcastreq, sizeof(struct ipv6_mreq)) < 0)
 #endif
   {

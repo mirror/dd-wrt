@@ -1,0 +1,3 @@
+This plugin depends on the NMEA parsing library that can be found at:
+
+	https://github.com/AHR-Project/nmealib

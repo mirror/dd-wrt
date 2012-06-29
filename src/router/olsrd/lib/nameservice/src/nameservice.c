@@ -245,7 +245,7 @@ set_nameservice_float(const char *value, void *data, set_plugin_parameter_addon 
 {
   if (data != NULL) {
     sscanf(value, "%f", (float *)data);
-    OLSR_PRINTF(1, "%s float %f\n", "Got", *(float *)data);
+    OLSR_PRINTF(1, "%s float %f\n", "Got", (double)(*(float *)data));
   } else {
     OLSR_PRINTF(0, "%s float %s\n", "Ignored", value);
   }
@@ -448,6 +448,9 @@ remove_nonvalid_names_from_list(struct name_entry *my_list, int type)
   case NAME_LATLON:
     valid = is_latlon_wellformed(my_list->name);
     break;
+  default:
+	valid = false;
+	break;
   }
 
   if (!valid) {
@@ -746,11 +749,11 @@ encap_namemsg(struct namemsg *msg)
       OLSR_PRINTF(0, "NAME PLUGIN: cant read latlon in file %s\n", latlon_in_file);
     }
   }
-  if (0.0 != my_lat && 0.0 != my_lon) {
+  if (0.0f != my_lat && 0.0f != my_lon) {
     char s[64];
     struct name_entry e;
     memset(&e, 0, sizeof(e));
-    sprintf(s, "%f,%f,%d", my_lat, my_lon, get_isdefhna_latlon());
+    sprintf(s, "%f,%f,%d", (double)my_lat, (double)my_lon, get_isdefhna_latlon());
     e.len = strlen(s);
     e.type = NAME_LATLON;
     e.name = s;
@@ -1569,7 +1572,7 @@ is_latlon_wellformed(const char *latlon_line)
   int hna = -1;
   float a = 0.0, b = 0.0;
   sscanf(latlon_line, "%f,%f,%d", &a, &b, &hna);
-  return (a != 0.0 && b != 0.0 && -1 != hna);
+  return (a != 0.0f && b != 0.0f && -1 != hna);
 }
 
 /**

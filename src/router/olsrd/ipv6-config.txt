@@ -1,0 +1,32 @@
+Globale Parameter:          Default       Options
+
+Originator                  first         first, <ipv4/6>
+
+
+Interface-Parameter:
+
+
+                            Default       Options
+
+Ip4Broadcast/IPv4Multicast  interface     interface, <ipv4>
+IPv6Multicast               FF02::1       link-local, <ipv6>
+IPv4Src                     interface     interface, <ipv4>
+IPv6Src                     interface     interface, link-local, site-local, global, <ipv6>
+
+
+
+FILE: /proc/net/if_inet6
+
+/*
+ *	Addr scopes
+ */
+#ifdef __KERNEL__
+#define IPV6_ADDR_MC_SCOPE(a)	\
+	((a)->s6_addr[1] & 0x0f)	/* nonstandard */
+#define __IPV6_ADDR_SCOPE_INVALID	-1
+#endif
+#define IPV6_ADDR_SCOPE_NODELOCAL	0x01
+#define IPV6_ADDR_SCOPE_LINKLOCAL	0x02
+#define IPV6_ADDR_SCOPE_SITELOCAL	0x05
+#define IPV6_ADDR_SCOPE_ORGLOCAL	0x08
+#define IPV6_ADDR_SCOPE_GLOBAL		0x0e

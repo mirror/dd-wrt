@@ -134,6 +134,7 @@ print_olsr_serialized_message(FILE * handle, union olsr_message * msg)
     break;
   default:
     print_messagedump(handle, (uint8_t *) msg, ntohs(msg->v4.olsr_msgsize));
+    break;
   }
 
   fprintf(handle, "   --------------------------------------\n\n");

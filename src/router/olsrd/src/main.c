@@ -61,7 +61,7 @@
 #include "gateway.h"
 #include "olsr_niit.h"
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
 #include <linux/types.h>
 #include <linux/rtnetlink.h>
 #include "kernel_routes.h"
@@ -80,9 +80,9 @@ bool olsr_win32_end_flag = false;
 static void olsr_shutdown(int) __attribute__ ((noreturn));
 #endif
 
-#if defined android
+#if defined __ANDROID__
 #define DEFAULT_LOCKFILE_PREFIX "/data/local/olsrd"
-#elif defined linux || __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
+#elif defined linux || defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
 #define DEFAULT_LOCKFILE_PREFIX "/var/run/olsrd"
 #elif defined WIN32
 #define DEFAULT_LOCKFILE_PREFIX "C:\\olsrd"
@@ -129,7 +129,7 @@ struct olsr_cookie_info *def_timer_ci = NULL;
 static int olsr_create_lock_file(bool noExitOnFail) {
 #ifdef WIN32
     bool success;
-    HANDLE lck, lock;
+    HANDLE lck;
 
     lck = CreateFile(lock_file_name,
             GENERIC_READ | GENERIC_WRITE,
@@ -139,7 +139,7 @@ static int olsr_create_lock_file(bool noExitOnFail) {
             FILE_ATTRIBUTE_NORMAL |
             FILE_FLAG_DELETE_ON_CLOSE,
             NULL);
-  lock = CreateEvent(NULL, TRUE, FALSE, lock_file_name);
+  CreateEvent(NULL, TRUE, FALSE, lock_file_name);
   if (INVALID_HANDLE_VALUE == lck || ERROR_ALREADY_EXISTS == GetLastError()) {
     if (noExitOnFail) {
       return -1;
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
   bool loadedConfig = false;
   int i;
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   struct interface *ifn;
 #endif
 
@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
 #endif
     olsr_exit(__func__, 0);
   }
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   olsr_cnf->rtnl_s = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
   if (olsr_cnf->rtnl_s < 0) {
     olsr_syslog(OLSR_LOG_ERR, "rtnetlink socket: %m");
@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
   /*
    * create routing socket
    */
-#if defined __FreeBSD__ || __FreeBSD_kernel__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__
   olsr_cnf->rts = socket(PF_ROUTE, SOCK_RAW, 0);
   if (olsr_cnf->rts < 0) {
     olsr_syslog(OLSR_LOG_ERR, "routing socket: %m");
@@ -440,7 +440,7 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   /* initialize gateway system */
   if (olsr_cnf->smart_gw_active) {
     if (olsr_init_gateways()) {
@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
     } else {
       olsr_cnf->willingness = olsr_calculate_willingness();
 
-      OLSR_PRINTF(1, "Willingness set to %d - next update in %.1f secs\n", olsr_cnf->willingness, olsr_cnf->will_int);
+      OLSR_PRINTF(1, "Willingness set to %d - next update in %.1f secs\n", olsr_cnf->willingness, (double)olsr_cnf->will_int);
     }
   }
 
@@ -556,7 +556,7 @@ int main(int argc, char *argv[]) {
 
   OLSR_PRINTF(1, "Main address: %s\n\n", olsr_ip_to_string(&buf, &olsr_cnf->main_addr));
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   /* create policy routing rules with priorities if necessary */
   if (DEF_RT_NONE != olsr_cnf->rt_table_pri) {
     olsr_os_policy_rule(olsr_cnf->ip_version,
@@ -739,7 +739,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
 
   olsr_delete_all_mid_entries();
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   /* trigger gateway selection */
   if (olsr_cnf->smart_gw_active) {
     olsr_cleanup_gateways();
@@ -770,7 +770,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
     close(ifn->olsr_socket);
     close(ifn->send_socket);
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
     if (DEF_RT_NONE != olsr_cnf->rt_table_defaultolsr_pri) {
       olsr_os_policy_rule(olsr_cnf->ip_version, olsr_cnf->rt_table_default,
           olsr_cnf->rt_table_defaultolsr_pri, ifn->int_name, false);
@@ -787,7 +787,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
   /* ioctl socket */
   close(olsr_cnf->ioctl_s);
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   if (DEF_RT_NONE != olsr_cnf->rt_table_pri) {
     olsr_os_policy_rule(olsr_cnf->ip_version,
         olsr_cnf->rt_table, olsr_cnf->rt_table_pri, NULL, false);
@@ -804,7 +804,7 @@ static void olsr_shutdown(int signo __attribute__ ((unused)))
   close (olsr_cnf->rt_monitor_socket);
 #endif
 
-#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__
   /* routing socket */
   close(olsr_cnf->rts);
 #endif
@@ -948,9 +948,9 @@ static int olsr_process_arguments(int argc, char *argv[],
 
       sscanf(*argv, "%f", &tmp_lq_aging);
 
-      if (tmp_lq_aging < MIN_LQ_AGING || tmp_lq_aging > MAX_LQ_AGING) {
-        printf("LQ aging factor %f not allowed. Range [%f-%f]\n", tmp_lq_aging,
-            MIN_LQ_AGING, MAX_LQ_AGING);
+      if (tmp_lq_aging < (float)MIN_LQ_AGING || tmp_lq_aging > (float)MAX_LQ_AGING) {
+        printf("LQ aging factor %f not allowed. Range [%f-%f]\n", (double)tmp_lq_aging,
+        		(double)MIN_LQ_AGING, (double)MAX_LQ_AGING);
         olsr_exit(__func__, EXIT_FAILURE);
       }
       olsr_cnf->lq_aging = tmp_lq_aging;
@@ -967,9 +967,9 @@ static int olsr_process_arguments(int argc, char *argv[],
 
       sscanf(*argv, "%f", &tmp_lq_nat_thresh);
 
-      if (tmp_lq_nat_thresh < 0.1 || tmp_lq_nat_thresh > 1.0) {
+      if (tmp_lq_nat_thresh < 0.1f || tmp_lq_nat_thresh > 1.0f) {
         printf("NAT threshold %f not allowed. Range [%f-%f]\n",
-            tmp_lq_nat_thresh, 0.1, 1.0);
+        		(double)tmp_lq_nat_thresh, (double)0.1, (double)1.0);
         olsr_exit(__func__, EXIT_FAILURE);
       }
       olsr_cnf->lq_nat_thresh = tmp_lq_nat_thresh;

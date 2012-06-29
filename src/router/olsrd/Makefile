@@ -39,7 +39,7 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.6.2
+VERS =		0.6.3
 
 TOPDIR = .
 include Makefile.inc
@@ -82,7 +82,7 @@ src/builddata.c:
 	@echo "const char build_host[] = \"$(shell hostname)\";" >> "$@" 
 
 
-.PHONY: help libs clean_libs libs_clean clean uberclean install_libs uninstall_libs libs_install libs_uninstall install_bin uninstall_bin install_olsrd uninstall_olsrd install uninstall build_all install_all uninstall_all clean_all 
+.PHONY: help libs clean_libs libs_clean clean distclean uberclean install_libs uninstall_libs libs_install libs_uninstall install_bin uninstall_bin install_olsrd uninstall_olsrd install uninstall build_all install_all uninstall_all clean_all 
 
 clean:
 	-rm -f $(OBJS) $(SRCS:%.c=%.d) $(EXENAME) $(EXENAME).exe src/builddata.c $(TMPFILES)
@@ -93,10 +93,14 @@ clean:
 	-rm -fr gui/win32/Main/Release
 	-rm -fr gui/win32/Shim/Release
 
-uberclean:	clean clean_libs
+clean_gui:
+	$(MAKE) -C gui/linux-gtk clean
+
+distclean: uberclean
+uberclean:	clean clean_libs clean_gui
 	-rm -f $(TAGFILE)
 #	BSD-xargs has no "--no-run-if-empty" aka "-r"
-	find . \( -name '*.[od]' -o -name '*~' \) -not -path "*/.hg*" -print0 | xargs -0 rm -f
+	find . \( -name '*.[od]' -o -name '*~' \) -not -path "*/.hg*" -type f -print0 | xargs -0 rm -f
 	@$(MAKECMD) -C $(SWITCHDIR) clean
 	@$(MAKECMD) -C $(CFGDIR) clean
 
@@ -161,15 +165,15 @@ rpm:
 
 # This is quite ugly but at least it works
 ifeq ($(OS),linux)
-SUBDIRS = $(notdir $(shell find lib -maxdepth 2 -name Makefile -not -path lib/Makefile -printf "%h\n"|sort))
+SUBDIRS = arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph quagga secure tas txtinfo watchdog
 else
 ifeq ($(OS),win32)
-SUBDIRS := dot_draw httpinfo mini pgraph secure txtinfo
+SUBDIRS := dot_draw httpinfo jsoninfo mini pgraph secure txtinfo
 else
 ifeq ($(OS),android)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw_plain httpinfo mini nameservice pgraph secure tas txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw_plain httpinfo jsoninfo mini nameservice pgraph secure tas txtinfo watchdog
 else
-SUBDIRS := dot_draw dyn_gw dyn_gw_plain httpinfo mini nameservice pgraph secure txtinfo watchdog
+SUBDIRS := dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mini nameservice pgraph secure txtinfo watchdog
 endif
 endif
 endif
@@ -179,6 +183,7 @@ libs:
 
 libs_clean clean_libs:
 		-for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) clean;rm -f lib/$$dir/*.so lib/$$dir/*.dll;done
+		-rm -f $(REGEX_OBJS)
 
 libs_install install_libs:
 		@set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) install;done
@@ -192,8 +197,10 @@ libs_uninstall uninstall_libs:
 #
 
 arprefresh:
-		@$(MAKECMD) -C lib/arprefresh clean
 		@$(MAKECMD) -C lib/arprefresh
+
+arprefresh_clean:
+		@$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) clean
 
 arprefresh_install:
 		@$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) install
@@ -202,8 +209,10 @@ arprefresh_uninstall:
 		@$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) uninstall
 
 bmf:
-		@$(MAKECMD) -C lib/bmf clean
 		@$(MAKECMD) -C lib/bmf
+
+bmf_clean:
+		@$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) clean
 
 bmf_install:
 		@$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) install
@@ -212,8 +221,10 @@ bmf_uninstall:
 		@$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) uninstall
 
 dot_draw:
-		@$(MAKECMD) -C lib/dot_draw clean
 		@$(MAKECMD) -C lib/dot_draw
+
+dot_draw_clean:
+		@$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) clean
 
 dot_draw_install:
 		@$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) install
@@ -222,8 +233,10 @@ dot_draw_uninstall:
 		@$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) uninstall
 
 dyn_gw:
-		@$(MAKECMD) -C lib/dyn_gw clean
 		@$(MAKECMD) -C lib/dyn_gw
+
+dyn_gw_clean:
+		@$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) clean
 
 dyn_gw_install:
 		@$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) install
@@ -232,8 +245,10 @@ dyn_gw_uninstall:
 		@$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) uninstall
 
 dyn_gw_plain:
-		@$(MAKECMD) -C lib/dyn_gw_plain clean
 		@$(MAKECMD) -C lib/dyn_gw_plain
+
+dyn_gw_plain_clean:
+		@$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) clean
 
 dyn_gw_plain_install:
 		@$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) install
@@ -242,8 +257,10 @@ dyn_gw_plain_uninstall:
 		@$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) uninstall
 
 httpinfo:
-		@$(MAKECMD) -C lib/httpinfo clean
 		@$(MAKECMD) -C lib/httpinfo
+
+httpinfo_clean:
+		@$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) clean
 
 httpinfo_install:
 		@$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) install
@@ -251,9 +268,23 @@ httpinfo_install:
 httpinfo_uninstall:
 		@$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) uninstall
 
+jsoninfo:
+		@$(MAKECMD) -C lib/jsoninfo
+
+jsoninfo_clean:
+		@$(MAKECMD) -C lib/jsoninfo DESTDIR=$(DESTDIR) clean
+
+jsoninfo_install:
+		@$(MAKECMD) -C lib/jsoninfo DESTDIR=$(DESTDIR) install
+
+jsoninfo_uninstall:
+		@$(MAKECMD) -C lib/jsoninfo DESTDIR=$(DESTDIR) uninstall
+
 mdns:
-		@$(MAKECMD) -C lib/mdns clean
 		@$(MAKECMD) -C lib/mdns
+
+mdns_clean:
+		@$(MAKECMD) -C lib/mdns DESTDIR=$(DESTDIR) clean
 
 mdns_install:
 		@$(MAKECMD) -C lib/mdns DESTDIR=$(DESTDIR) install
@@ -265,9 +296,15 @@ mdns_uninstall:
 # no targets for mini: it's an example plugin
 #
 
-nameservice:
+# nameserver uses regex, which was only recently added to Android.  On
+# Android, $(REGEX_OBJS) will have all of the files needed, on all
+# other platforms, it'll be empty and therefore ignored.
+nameservice: $(REGEX_OBJS)
 		@$(MAKECMD) -C lib/nameservice clean
 		@$(MAKECMD) -C lib/nameservice
+
+nameservice_clean:
+		@$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) clean
 
 nameservice_install:
 		@$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) install
@@ -276,8 +313,10 @@ nameservice_uninstall:
 		@$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) uninstall
 
 p2pd:
-		@$(MAKECMD) -C lib/p2pd clean
 		@$(MAKECMD) -C lib/p2pd
+
+p2pd_clean:
+		@$(MAKECMD) -C lib/p2pd DESTDIR=$(DESTDIR) clean
 
 p2pd_install:
 		@$(MAKECMD) -C lib/p2pd DESTDIR=$(DESTDIR) install
@@ -286,8 +325,10 @@ p2pd_uninstall:
 		@$(MAKECMD) -C lib/p2pd DESTDIR=$(DESTDIR) uninstall
 
 pgraph:
-		@$(MAKECMD) -C lib/pgraph clean
 		@$(MAKECMD) -C lib/pgraph
+
+pgraph_clean:
+		@$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) clean
 
 pgraph_install:
 		@$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) install
@@ -295,9 +336,23 @@ pgraph_install:
 pgraph_uninstall:
 		@$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) uninstall
 
+pud:
+		@$(MAKECMD) -C lib/pud
+
+pud_clean:
+		@$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) clean
+
+pud_install:
+		@$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) install
+
+pud_uninstall:
+		@$(MAKECMD) -C lib/pud DESTDIR=$(DESTDIR) uninstall
+
 quagga:
-		@$(MAKECMD) -C lib/quagga clean
 		@$(MAKECMD) -C lib/quagga
+
+quagga_clean:
+		@$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) clean
 
 quagga_install:
 		@$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) install
@@ -306,8 +361,10 @@ quagga_uninstall:
 		@$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) uninstall
 
 secure:
-		@$(MAKECMD) -C lib/secure clean
 		@$(MAKECMD) -C lib/secure
+
+secure_clean:
+		@$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) clean
 
 secure_install:
 		@$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) install
@@ -315,9 +372,23 @@ secure_install:
 secure_uninstall:
 		@$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) uninstall
 
+sgwdynspeed:
+		@$(MAKECMD) -C lib/sgwdynspeed
+
+sgwdynspeed_clean:
+		@$(MAKECMD) -C lib/sgwdynspeed DESTDIR=$(DESTDIR) clean
+
+sgwdynspeed_install:
+		@$(MAKECMD) -C lib/sgwdynspeed DESTDIR=$(DESTDIR) install
+
+sgwdynspeed_uninstall:
+		@$(MAKECMD) -C lib/sgwdynspeed DESTDIR=$(DESTDIR) uninstall
+
 tas:
-		@$(MAKECMD) -C lib/tas clean
 		@$(MAKECMD) -C lib/tas
+
+tas_clean:
+		@$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) clean
 
 tas_install:
 		@$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) install
@@ -326,8 +397,10 @@ tas_uninstall:
 		@$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) uninstall
 
 txtinfo:
-		@$(MAKECMD) -C lib/txtinfo clean
 		@$(MAKECMD) -C lib/txtinfo
+
+txtinfo_clean:
+		@$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) clean
 
 txtinfo_install:
 		@$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) install
@@ -336,9 +409,10 @@ txtinfo_uninstall:
 		@$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) uninstall
 
 watchdog:
-		@$(MAKECMD) -C lib/watchdog clean
 		@$(MAKECMD) -C lib/watchdog
 
+watchdog_clean:
+		@$(MAKECMD) -C lib/watchdog DESTDIR=$(DESTDIR) clean
 
 watchdog_install:
 		@$(MAKECMD) -C lib/watchdog DESTDIR=$(DESTDIR) install

@@ -90,6 +90,17 @@ WARNINGS +=	-Wshadow
 WARNINGS +=	-Wformat
 WARNINGS +=	-Wsequence-point
 WARNINGS +=	-Wcast-align
+WARNINGS +=	-Wdouble-promotion
+WARNINGS +=	-Wformat-security
+WARNINGS +=	-Wformat-y2k
+WARNINGS +=	-Winit-self
+WARNINGS +=	-Wswitch-default
+WARNINGS +=	-Wsync-nand
+WARNINGS +=	-Wundef
+WARNINGS +=	-Wlogical-op
+WARNINGS +=	-Wjump-misses-init
+WARNINGS +=	-Wtrampolines
+WARNINGS +=	-Wunused-parameter
 # the following 2 do not work yet and need more work on it
 #WARNINGS +=	-Wconversion
 #WARNINGS +=	-Wredundant-decls
@@ -200,6 +211,10 @@ ifeq ($(NO_DEBUG_MESSAGES),1)
 CPPFLAGS +=	-DNODEBUG
 endif
 
+ifeq ($(OS),linux)
+CPPFLAGS+=-DHTTPINFO_PUD -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include
+endif
+
 # a make function to quote "/" and "."
 quote = $(subst .,\.,$(subst /,\/,$1))
 
@@ -232,12 +247,13 @@ help:
 	@echo ' by setting the OS variable! Valid  '
 	@echo ' target OSes are:                   '
 	@echo ' ---------------------------------  '
-	@echo ' linux - GNU/Linux                  '
-	@echo ' win32 - MS Windows                 '
-	@echo ' fbsd  - FreeBSD                    '
-	@echo ' nbsd  - NetBSD                     '
-	@echo ' obsd  - OpenBSD                    '
-	@echo ' osx   - Mac OS X                   '
+	@echo ' linux   - GNU/Linux                '
+	@echo ' win32   - MS Windows               '
+	@echo ' fbsd    - FreeBSD                  '
+	@echo ' nbsd    - NetBSD                   '
+	@echo ' obsd    - OpenBSD                  '
+	@echo ' osx     - Mac OS X                 '
+	@echo ' android - Android                  '
 	@echo ' ---------------------------------  '
 	@echo ' Example - build for windows:       '
 	@echo ' make OS=win32                      '

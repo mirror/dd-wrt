@@ -11,9 +11,9 @@ It allows olsrd to redistribute from various quagga-protocols
 as well as to export olsr-routes to quagga so that they can be
 redistributed by the quagga-routing-daemons.
 
-You also need a source distribution of quagga-0.98.6 or quagga-0.99.15.
+You also need a source distribution of quagga-0.98.6 or quagga-0.99.21.
 The quagga source tree needs to be patched with quagga-0.98.6.diff or
-quagga-0.99.15.diff, respectively, compiled and installed via
+quagga-0.99.21.diff, respectively, compiled and installed via
 'make install'.
 
 ---------------------------------------------------------------------
@@ -48,7 +48,10 @@ PlParam "Port" "<port>"
 
 PlParam "Version" "<version>"
         sets the version of packet format to communicate with zebra.
-	use "0" for Quagga 0.98.x and "1" for Quagga 0.99.x.
+	use:
+	   "0" for Quagga 0.98.x
+	   "1" for Quagga 0.99.17 up to 0.99.20.1
+	   "2" for Quagga 0.99.21 and above
 	defaults to "0".
 
 ---------------------------------------------------------------------
@@ -65,9 +68,9 @@ LoadPlugin "olsrd_quagga.so.0.2.2"
 	PlParam "Distance" "125" 
 	PlParam "LocalPref" "false"
 	PlParam "SockPath" "/var/run/zserv.api"
-	PlParam "Version" "1"
+	PlParam "Version" "2"
 }
 
 
 ---------------------------------------------------------------------
-EOF / 10.03.2010
+EOF / 31.05.2012

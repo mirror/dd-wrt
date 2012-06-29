@@ -2,7 +2,7 @@
  * OLSRd Quagga plugin
  *
  * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2010 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -32,6 +32,7 @@
 #define ZEBRA_IPV6_ROUTE_DELETE         10
 #define ZEBRA_REDISTRIBUTE_ADD         11
 #define ZEBRA_REDISTRIBUTE_DELETE      12
+#define ZEBRA_HELLO                    23
 
 /* Zebra nexthop flags */
 #define ZEBRA_NEXTHOP_IFINDEX		1
@@ -44,6 +45,9 @@
 #define ZAPI_MESSAGE_DISTANCE		0x04
 #define ZAPI_MESSAGE_METRIC		0x08
 
+/* Subsequent Address Family Identifier */
+#define SAFI_UNICAST                    1
+
 /* Zebra flags */
 #define ZEBRA_FLAG_SELECTED		0x10
 
@@ -51,6 +55,7 @@ struct zroute {
   unsigned char type;
   unsigned char flags;
   unsigned char message;
+  uint16_t safi;
   unsigned char prefixlen;
   union olsr_ip_addr prefix;
   unsigned char nexthop_num;

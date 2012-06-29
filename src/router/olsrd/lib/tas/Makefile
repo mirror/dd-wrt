@@ -65,6 +65,7 @@ $(PLUGIN_FULLNAME): $(OBJS) version-script.txt
 
 # this is not nice but there is no nicer solution
 src/lua/lapi.o src/lua/ltable.o:  CFLAGS += -Wno-cast-qual
+src/lua/ldebug.o src/lua/ldo.o src/lua/lbaselib.o src/lua/ldblib.o src/lua/lvm.o src/lua/lapi.o: CFLAGS += -Wno-switch-default
 
 install:	$(PLUGIN_FULLNAME)
 		$(STRIP) $(PLUGIN_FULLNAME)

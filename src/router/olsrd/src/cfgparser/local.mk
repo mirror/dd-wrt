@@ -60,7 +60,7 @@ $(C)oscan.c: $(C)oscan.lex $(C)Makefile
 
 # we need a dependency to generate oparse before we compile oscan.c
 $(C)oscan.o: $(C)oparse.c
-$(C)oscan.o: CFLAGS := $(filter-out -Wunreachable-code -Wsign-compare,$(CFLAGS)) -Wno-sign-compare
+$(C)oscan.o: CFLAGS := $(filter-out -Wunreachable-code -Wsign-compare,$(CFLAGS)) -Wno-sign-compare -Wno-switch-default
 # we need potentially another -I directory
 $(C)oscan.o: CPPFLAGS += $(if $(CFGDIR),-I$(CFGDIR)) -DYY_NO_INPUT
 

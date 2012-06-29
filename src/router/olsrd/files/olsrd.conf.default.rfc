@@ -174,11 +174,18 @@ LinkQualityFishEye  0
 # LoadPlugin "olsrd_txtinfo.dll"
 LoadPlugin "olsrd_txtinfo.so.0.1"
 {
-    # port number the txtinfo plugin will be listening, default 2006
-#   PlParam     "port"   "81"
-    # ip address that can access the plugin, use "0.0.0.0"
-    # to allow everyone
-    PlParam     "Accept"   "127.0.0.1"
+    # the default port is 2006 but you can change it like this:
+    #PlParam     "port"   "8080"
+
+    # You can set a "accept" single address to allow to connect to
+    # txtinfo. If no address is specified, then localhost (127.0.0.1)
+    # is allowed by default.  txtinfo will only use the first "accept"
+    # parameter specified and will ignore the rest.
+
+    # to allow a specific host:
+    #PlParam      "accept" "172.29.44.23"
+    # if you set it to 0.0.0.0, it will accept all connections
+    #PlParam      "accept" "0.0.0.0"
 }
 
 ######################################
