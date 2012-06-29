@@ -820,6 +820,12 @@ static void nat_postrouting(void)
 			save2file
 			    ("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n",
 			     lan_cclass, loopmask, wanface, wanaddr);
+
+		char *wan_ifname_tun = nvram_safe_get("wan_ifname");
+		if (isClient()) {
+			wan_ifname_tun = getSTA();
+		}
+		
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(nvram_safe_get("pptp_ifname"), &ifaddr);
@@ -832,7 +838,7 @@ static void nat_postrouting(void)
 			osl_ifaddr(nvram_safe_get("wan_ifname"), &ifaddr);
 			save2file
 			    ("-A POSTROUTING -o %s -j SNAT --to-source %s\n",
-			     nvram_safe_get("wan_ifname"), inet_ntoa(ifaddr));
+			     wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 		char *method = "MASQUERADE";
 
