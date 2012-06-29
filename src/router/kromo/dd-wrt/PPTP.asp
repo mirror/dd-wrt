@@ -131,7 +131,16 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptp_client"); %></div>
-			<input size="60" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
+			<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("wl_adv.label10"); %></div>
+			<input size="5" maxlength="5" class="num" name="pptpd_conn" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_conn"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 64)");
+			//]]>
+			</script></span>
 		</div>
 
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
