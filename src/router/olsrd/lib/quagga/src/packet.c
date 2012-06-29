@@ -2,7 +2,7 @@
  * OLSRd Quagga plugin
  *
  * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2010 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -28,24 +28,45 @@ unsigned char
 {
   int count;
   uint8_t len;
-  uint16_t size;
+  uint16_t size, safi;
   uint32_t ind, metric;
   unsigned char *cmdopt, *t;
 
   cmdopt = olsr_malloc(ZEBRA_MAX_PACKET_SIZ, "QUAGGA: New route packet");
 
   t = &cmdopt[2];
-  if (zebra.version) {
+  switch (zebra.version) {
+  case 0:
+    *t++ = (unsigned char) cmd;
+    break;
+  case 1:
+  case 2:
     *t++ = ZEBRA_HEADER_MARKER;
     *t++ = zebra.version;
     cmd = htons(cmd);
     memcpy(t, &cmd, sizeof cmd);
     t += sizeof cmd;
-  } else
-      *t++ = (unsigned char) cmd;
+    break;
+  default:
+    olsr_exit("(QUAGGA) Unsupported zebra packet version!\n", EXIT_FAILURE);
+    break;
+  }
   *t++ = r->type;
   *t++ = r->flags;
   *t++ = r->message;
+  switch (zebra.version) {
+  case 0:
+  case 1:
+    break;
+  case 2:
+    safi = htons(r->safi);
+    memcpy(t, &safi, sizeof safi);
+    t += sizeof safi;
+    break;
+  default:
+    olsr_exit("(QUAGGA) Unsupported zebra packet version!\n", EXIT_FAILURE);
+    break;
+  }
   *t++ = r->prefixlen;
   len = (r->prefixlen + 7) / 8;
   if (olsr_cnf->ip_version == AF_INET)
@@ -57,23 +78,23 @@ unsigned char
   if (r->message & ZAPI_MESSAGE_NEXTHOP) {
     *t++ = r->nexthop_num + r->ifindex_num;
 
-      for (count = 0; count < r->nexthop_num; count++) {
-        if (olsr_cnf->ip_version == AF_INET) {
-          *t++ = ZEBRA_NEXTHOP_IPV4;
-          memcpy(t, &r->nexthop[count].v4.s_addr, sizeof r->nexthop[count].v4.s_addr);
-          t += sizeof r->nexthop[count].v4.s_addr;
-        } else {
-          *t++ = ZEBRA_NEXTHOP_IPV6;
-          memcpy(t, r->nexthop[count].v6.s6_addr, sizeof r->nexthop[count].v6.s6_addr);
-          t += sizeof r->nexthop[count].v6.s6_addr;
-        }
+    for (count = 0; count < r->nexthop_num; count++) {
+      if (olsr_cnf->ip_version == AF_INET) {
+        *t++ = ZEBRA_NEXTHOP_IPV4;
+        memcpy(t, &r->nexthop[count].v4.s_addr, sizeof r->nexthop[count].v4.s_addr);
+        t += sizeof r->nexthop[count].v4.s_addr;
+      } else {
+        *t++ = ZEBRA_NEXTHOP_IPV6;
+        memcpy(t, r->nexthop[count].v6.s6_addr, sizeof r->nexthop[count].v6.s6_addr);
+        t += sizeof r->nexthop[count].v6.s6_addr;
       }
-      for (count = 0; count < r->ifindex_num; count++) {
-        *t++ = ZEBRA_NEXTHOP_IFINDEX;
-        ind = htonl(r->ifindex[count]);
-        memcpy(t, &ind, sizeof ind);
-        t += sizeof ind;
-      }
+    }
+    for (count = 0; count < r->ifindex_num; count++) {
+      *t++ = ZEBRA_NEXTHOP_IFINDEX;
+      ind = htonl(r->ifindex[count]);
+      memcpy(t, &ind, sizeof ind);
+      t += sizeof ind;
+    }
   }
   if ((r->message & ZAPI_MESSAGE_DISTANCE) > 0)
     *t++ = r->distance;
@@ -97,14 +118,22 @@ unsigned char
   data = olsr_malloc(ZEBRA_MAX_PACKET_SIZ , "QUAGGA: New redistribute packet");
 
   pnt = &data[2];
-  if (zebra.version) {
+  switch (zebra.version) {
+  case 0:
+    *pnt++ = (unsigned char) cmd;
+    break;
+  case 1:
+  case 2:
     *pnt++ = ZEBRA_HEADER_MARKER;
     *pnt++ = zebra.version;
     cmd = htons(cmd);
     memcpy(pnt, &cmd, sizeof cmd);
     pnt += sizeof cmd;
-  } else
-      *pnt++ = (unsigned char) cmd;
+    break;
+  default:
+    olsr_exit("(QUAGGA) Unsupported zebra packet version!\n", EXIT_FAILURE);
+    break;
+  }
   *pnt++ = type;
   size = htons(pnt - data);
   memcpy(data, &size, sizeof size);

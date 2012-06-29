@@ -59,7 +59,7 @@
 
 #define PARSER_DEBUG 1
 
-#if PARSER_DEBUG
+#if defined PARSER_DEBUG && PARSER_DEBUG
 #define PARSER_DEBUG_PRINTF(x, args...)   printf(x, ##args)
 #else
 #define PARSER_DEBUG_PRINTF(x, args...)   do { } while (0)
@@ -87,10 +87,10 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
   int i;
   struct olsr_if *walker;
 
-#if PARSER_DEBUG > 0
+#if defined PARSER_DEBUG && PARSER_DEBUG > 0
   printf("\tLinkQualityMult %s %0.2f\n",
          (ip_addr_arg != NULL) ? ip_addr_arg->string : "any",
-         mult_arg->floating);
+         (double)mult_arg->floating);
 #endif
 
   memset(&addr, 0, sizeof(addr));
@@ -216,12 +216,16 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_USE_NIIT
 %token TOK_SMART_GW
 %token TOK_SMART_GW_ALLOW_NAT
+%token TOK_SMART_GW_PERIOD
+%token TOK_SMART_GW_STABLECOUNT
+%token TOK_SMART_GW_THRESH
 %token TOK_SMART_GW_UPLINK
 %token TOK_SMART_GW_UPLINK_NAT
 %token TOK_SMART_GW_SPEED
 %token TOK_SMART_GW_PREFIX
 %token TOK_SRC_IP_ROUTES
 %token TOK_MAIN_IP
+%token TOK_SET_IPFORWARD
 
 %token TOK_HOSTLABEL
 %token TOK_NETLABEL
@@ -295,12 +299,16 @@ stmt:       idebug
           | suse_niit
           | bsmart_gw
           | bsmart_gw_allow_nat
+          | ismart_gw_period
+          | asmart_gw_stablecount
+          | asmart_gw_thresh
           | ssmart_gw_uplink
           | bsmart_gw_uplink_nat
           | ismart_gw_speed
           | ismart_gw_prefix
           | bsrc_ip_routes
           | amain_ip
+          | bset_ipforward
 ;
 
 block:      TOK_HNA4 hna4body
@@ -648,7 +656,7 @@ isethelloint: TOK_HELLOINT TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tHELLO interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHELLO interval: %0.2f\n", (double)$2->floating);
 
 	SET_IFS_CONF(ifs, ifcnt, hello_params.emission_interval, $2->floating);
 
@@ -660,7 +668,7 @@ isethelloval: TOK_HELLOVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tHELLO validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHELLO validity: %0.2f\n", (double)$2->floating);
 
 	SET_IFS_CONF(ifs, ifcnt, hello_params.validity_time, $2->floating);
 
@@ -672,7 +680,7 @@ isettcint: TOK_TCINT TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tTC interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tTC interval: %0.2f\n", (double)$2->floating);
 
 	SET_IFS_CONF(ifs, ifcnt, tc_params.emission_interval, $2->floating);
 
@@ -684,7 +692,7 @@ isettcval: TOK_TCVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
   
-  PARSER_DEBUG_PRINTF("\tTC validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tTC validity: %0.2f\n", (double)$2->floating);
   
  SET_IFS_CONF(ifs, ifcnt, tc_params.validity_time, $2->floating);
 
@@ -697,7 +705,7 @@ isetmidint: TOK_MIDINT TOK_FLOAT
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
 
-  PARSER_DEBUG_PRINTF("\tMID interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tMID interval: %0.2f\n", (double)$2->floating);
   
   SET_IFS_CONF(ifs, ifcnt, mid_params.emission_interval, $2->floating);
 
@@ -709,7 +717,7 @@ isetmidval: TOK_MIDVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tMID validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tMID validity: %0.2f\n", (double)$2->floating);
   
   SET_IFS_CONF(ifs, ifcnt, mid_params.validity_time, $2->floating);
 
@@ -721,7 +729,7 @@ isethnaint: TOK_HNAINT TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
   
-  PARSER_DEBUG_PRINTF("\tHNA interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHNA interval: %0.2f\n", (double)$2->floating);
 
   SET_IFS_CONF(ifs, ifcnt, hna_params.emission_interval, $2->floating);
 
@@ -733,7 +741,7 @@ isethnaval: TOK_HNAVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = olsr_cnf->interfaces;
 
-  PARSER_DEBUG_PRINTF("\tHNA validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHNA validity: %0.2f\n", (double)$2->floating);
 
   SET_IFS_CONF(ifs, ifcnt, hna_params.validity_time, $2->floating);
 
@@ -1146,7 +1154,7 @@ busehyst: TOK_USEHYST TOK_BOOLEAN
 fhystscale: TOK_HYSTSCALE TOK_FLOAT
 {
   olsr_cnf->hysteresis_param.scaling = $2->floating;
-  PARSER_DEBUG_PRINTF("Hysteresis Scaling: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Hysteresis Scaling: %0.2f\n", (double)$2->floating);
   free($2);
 }
 ;
@@ -1154,7 +1162,7 @@ fhystscale: TOK_HYSTSCALE TOK_FLOAT
 fhystupper: TOK_HYSTUPPER TOK_FLOAT
 {
   olsr_cnf->hysteresis_param.thr_high = $2->floating;
-  PARSER_DEBUG_PRINTF("Hysteresis UpperThr: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Hysteresis UpperThr: %0.2f\n", (double)$2->floating);
   free($2);
 }
 ;
@@ -1162,14 +1170,14 @@ fhystupper: TOK_HYSTUPPER TOK_FLOAT
 fhystlower: TOK_HYSTLOWER TOK_FLOAT
 {
   olsr_cnf->hysteresis_param.thr_low = $2->floating;
-  PARSER_DEBUG_PRINTF("Hysteresis LowerThr: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Hysteresis LowerThr: %0.2f\n", (double)$2->floating);
   free($2);
 }
 ;
 
 fpollrate: TOK_POLLRATE TOK_FLOAT
 {
-  PARSER_DEBUG_PRINTF("Pollrate %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Pollrate %0.2f\n", (double)$2->floating);
   olsr_cnf->pollrate = $2->floating;
   free($2);
 }
@@ -1177,7 +1185,7 @@ fpollrate: TOK_POLLRATE TOK_FLOAT
 
 fnicchgspollrt: TOK_NICCHGSPOLLRT TOK_FLOAT
 {
-  PARSER_DEBUG_PRINTF("NIC Changes Pollrate %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("NIC Changes Pollrate %0.2f\n", (double)$2->floating);
   olsr_cnf->nic_chgs_pollrate = $2->floating;
   free($2);
 }
@@ -1217,7 +1225,7 @@ alq_fish: TOK_LQ_FISH TOK_INTEGER
 
 alq_aging: TOK_LQ_AGING TOK_FLOAT
 {
-  PARSER_DEBUG_PRINTF("Link quality aging factor %f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Link quality aging factor %f\n", (double)$2->floating);
   olsr_cnf->lq_aging = $2->floating;
   free($2);
 }
@@ -1225,7 +1233,7 @@ alq_aging: TOK_LQ_AGING TOK_FLOAT
 
 amin_tc_vtime: TOK_MIN_TC_VTIME TOK_FLOAT
 {
-  PARSER_DEBUG_PRINTF("Minimum TC validity time %f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Minimum TC validity time %f\n", (double)$2->floating);
   olsr_cnf->min_tc_vtime = $2->floating;
   free($2);
 }
@@ -1248,7 +1256,7 @@ alq_plugin: TOK_LQ_PLUGIN TOK_STRING
 
 anat_thresh: TOK_LQ_NAT_THRESH TOK_FLOAT
 {
-  PARSER_DEBUG_PRINTF("NAT threshold %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("NAT threshold %0.2f\n", (double)$2->floating);
   olsr_cnf->lq_nat_thresh = $2->floating;
   free($2);
 }
@@ -1283,6 +1291,30 @@ bsmart_gw_allow_nat: TOK_SMART_GW_ALLOW_NAT TOK_BOOLEAN
 	PARSER_DEBUG_PRINTF("Smart gateway allow client nat: %s\n", $2->boolean ? "yes" : "no");
 	olsr_cnf->smart_gw_allow_nat = $2->boolean;
 	free($2);
+}
+;
+
+ismart_gw_period: TOK_SMART_GW_PERIOD TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway period: %d\n", $2->integer);
+  olsr_cnf->smart_gw_period = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_stablecount: TOK_SMART_GW_STABLECOUNT TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway stablecount: %d\n", $2->integer);
+  olsr_cnf->smart_gw_stablecount = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_thresh: TOK_SMART_GW_THRESH TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway threshold: %d\n", $2->integer);
+  olsr_cnf->smart_gw_thresh = $2->integer;
+  free($2);
 }
 ;
 
@@ -1388,6 +1420,16 @@ amain_ip: TOK_MAIN_IP TOK_IPV4_ADDR
   }
   free($2);
 }
+;
+
+bset_ipforward: TOK_SET_IPFORWARD TOK_BOOLEAN
+{
+  PARSER_DEBUG_PRINTF("Set IP-Forward procfile variable: %s\n", $2->boolean ? "yes" : "no");
+  olsr_cnf->set_ip_forward = $2->boolean;
+  free($2);
+}
+;
+
 
 plblock: TOK_PLUGIN TOK_STRING
 {

@@ -230,15 +230,15 @@ default_lq_print_fpm(void *ptr, char separator, struct lqtextbuffer *buffer)
 {
   struct default_lq_fpm *lq = ptr;
 
-  snprintf(buffer->buf, sizeof(buffer->buf), "%0.3f%c%0.3f", (float)(lq->valueLq) / 255.0, separator,
-           (float)(lq->valueNlq) / 255.0);
+  snprintf(buffer->buf, sizeof(buffer->buf), "%0.3f%c%0.3f", (double)(lq->valueLq) / (double)255.0, separator,
+		  (double)(lq->valueNlq) / (double)255.0);
   return buffer->buf;
 }
 
 static const char *
 default_lq_print_cost_fpm(olsr_linkcost cost, struct lqtextbuffer *buffer)
 {
-  snprintf(buffer->buf, sizeof(buffer->buf), "%.3f", (float)(cost) / LQ_FPM_LINKCOST_MULTIPLIER);
+  snprintf(buffer->buf, sizeof(buffer->buf), "%.3f", (double)(cost) / (double)LQ_FPM_LINKCOST_MULTIPLIER);
   return buffer->buf;
 }
 

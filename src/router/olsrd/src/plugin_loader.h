@@ -52,7 +52,7 @@
 typedef int (*plugin_init_func) (void);
 typedef int (*get_interface_version_func) (void);
 
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
 
 /* version 4 */
 typedef int (*register_param_func) (char *, char *);
@@ -68,7 +68,7 @@ struct olsr_plugin {
   struct plugin_param *params;
   int plugin_interface_version;
 
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
   /* version 4 */
   register_param_func register_param;
 #endif

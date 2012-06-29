@@ -12,7 +12,6 @@ LIBDIR =	$(DESTDIR)/usr/lib
 SRCS +=		$(wildcard src/bsd/*.c src/unix/*.c)
 HDRS +=		$(wildcard src/bsd/*.h src/unix/*.h)
 
-CPPFLAGS +=	-D__MacOSX__
 LIBS +=		
 
 PLUGIN_SONAME ?= $(PLUGIN_NAME)

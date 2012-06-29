@@ -53,7 +53,7 @@
 
 void olsr_openlog(const char *ident);
 
-#if SYSLOG_NUMBERING
+#if defined SYSLOG_NUMBERING && SYSLOG_NUMBERING
 void olsr_syslog_real(int level, const char *format, ...) __attribute__ ((format(printf, 2, 3)));
 
 extern unsigned int olsr_syslog_ctr;

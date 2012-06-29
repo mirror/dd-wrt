@@ -459,7 +459,7 @@ handle_fds(uint32_t next_interval)
 void __attribute__ ((noreturn))
 olsr_scheduler(void)
 {
-  OLSR_PRINTF(1, "Scheduler started - polling every %f ms\n", olsr_cnf->pollrate);
+  OLSR_PRINTF(1, "Scheduler started - polling every %f ms\n", (double)olsr_cnf->pollrate);
 
   /* Main scheduler loop */
   while (true) {

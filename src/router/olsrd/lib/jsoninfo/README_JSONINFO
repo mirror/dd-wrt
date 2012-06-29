@@ -1,0 +1,64 @@
+
+   PLUGIN USAGE
+==================
+
+installation:
+make
+make install
+
+
+There are a number of commands for getting information from this
+plugin.  They are designed to be tacked onto a URL, but can also be
+sent directly via a network socket. The commands are similar to the
+txtinfo plugin, but not exactly the same.
+
+If there is no command or no recognized command, then it sends the
+/status output, which is the combination of /neighbors, /links,
+/routes, /hna, /mid, /topology, /gateways, and /interfaces.
+
+grouped information:
+* /all - all of the data in JSON format
+* /runtime - all of the data that reflects the runtime status of olsrd and the mesh
+* /startup - all of the data about the startup configuration
+
+runtime information:
+* /neighbors (including 2-hop)
+* /links
+* /routes
+* /hna
+* /mid
+* /topology
+* /gateways
+* /interfaces
+* /status - data that changes during runtime (all above commands combined)
+
+start-up information:
+* /config - the current configuration, i.e. what was loaded from the olsrd.conf
+* /plugins - currently loaded plugins and their config parameters
+
+start-up information not in JSON format:
+* /olsrd.conf - the current config, formatted for writing directly to /etc/olsrd.conf
+
+
+   PLUGIN CONFIGURATION
+==========================
+
+The plugin accepts two parameters: "port" and "accept". There are no
+futher parameters.  Here's an example configuration for UNIX systems
+(for Windows, change the plugin to end in .dll):
+
+LoadPlugin "olsrd_jsoninfo.so.0.1"
+{
+    # the default port is 9090 but you can change it like this:
+    #PlParam     "port"   "8080"
+
+    # You can set a "accept" single address to allow to connect to
+    # jsoninfo. If no address is specified, then localhost (127.0.0.1)
+    # is allowed by default.  jsoninfo will only use the first "accept"
+    # parameter specified and will ignore the rest.
+
+    # to allow a specific host:
+    #PlParam      "accept" "172.29.44.23"
+    # if you set it to 0.0.0.0, it will accept all connections
+    #PlParam      "accept" "0.0.0.0"
+}

@@ -100,7 +100,7 @@ int IsMulticast(union olsr_ip_addr* ipAddress)
 {
   assert(ipAddress != NULL);
 
-  return (ntohl(ipAddress->v4.s_addr) & 0xF0000000) == 0xE0000000;
+  return IN_MULTICAST(ntohl(ipAddress->v4.s_addr));
 }
 
 /* -------------------------------------------------------------------------

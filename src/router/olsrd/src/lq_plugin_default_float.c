@@ -102,11 +102,11 @@ default_lq_calc_cost_float(const void *ptr)
   const struct default_lq_float *lq = ptr;
   olsr_linkcost cost;
 
-  if (lq->lq < MINIMAL_USEFUL_LQ || lq->nlq < MINIMAL_USEFUL_LQ) {
+  if (lq->lq < (float)MINIMAL_USEFUL_LQ || lq->nlq < (float)MINIMAL_USEFUL_LQ) {
     return LINK_COST_BROKEN;
   }
 
-  cost = (olsr_linkcost) (1.0 / (lq->lq * lq->nlq) * LQ_PLUGIN_LC_MULTIPLIER);
+  cost = (olsr_linkcost) (1.0f / (lq->lq * lq->nlq) * (float)LQ_PLUGIN_LC_MULTIPLIER);
 
   if (cost > LINK_COST_BROKEN)
     return LINK_COST_BROKEN;
@@ -139,8 +139,8 @@ default_lq_deserialize_hello_lq_pair_float(const uint8_t ** curr, void *ptr)
   pkt_get_u8(curr, &nlq_value);
   pkt_ignore_u16(curr);
 
-  lq->lq = (float)lq_value / 255.0;
-  lq->nlq = (float)nlq_value / 255.0;
+  lq->lq = (float)lq_value / 255.0f;
+  lq->nlq = (float)nlq_value / 255.0f;
 }
 
 static int
@@ -166,8 +166,8 @@ default_lq_deserialize_tc_lq_pair_float(const uint8_t ** curr, void *ptr)
   pkt_get_u8(curr, &nlq_value);
   pkt_ignore_u16(curr);
 
-  lq->lq = (float)lq_value / 255.0;
-  lq->nlq = (float)nlq_value / 255.0;
+  lq->lq = (float)lq_value / 255.0f;
+  lq->nlq = (float)nlq_value / 255.0f;
 }
 
 static void
@@ -219,14 +219,14 @@ default_lq_print_float(void *ptr, char separator, struct lqtextbuffer *buffer)
 {
   struct default_lq_float *lq = ptr;
 
-  snprintf(buffer->buf, sizeof(struct lqtextbuffer), "%2.3f%c%2.3f", lq->lq, separator, lq->nlq);
+  snprintf(buffer->buf, sizeof(struct lqtextbuffer), "%2.3f%c%2.3f", (double)lq->lq, separator, (double)lq->nlq);
   return buffer->buf;
 }
 
 static const char *
 default_lq_print_cost_float(olsr_linkcost cost, struct lqtextbuffer *buffer)
 {
-  snprintf(buffer->buf, sizeof(struct lqtextbuffer), "%2.3f", ((float)cost) / LQ_PLUGIN_LC_MULTIPLIER);
+  snprintf(buffer->buf, sizeof(struct lqtextbuffer), "%2.3f", (double)(((float)cost) / (float)LQ_PLUGIN_LC_MULTIPLIER));
 
   return buffer->buf;
 }

@@ -42,7 +42,7 @@
 #include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_arp.h>
-#ifndef android
+#ifndef __ANDROID__
 #include <net/ethernet.h>
 #endif
 #include <netinet/ip.h>

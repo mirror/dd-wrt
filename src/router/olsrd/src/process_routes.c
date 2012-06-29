@@ -69,7 +69,7 @@ static struct list_node chg_kernel_list;
  *
  */
 uint8_t
-olsr_rt_flags(const struct rt_entry *rt)
+olsr_rt_flags(const struct rt_entry *rt, int add)
 {
   const struct rt_nexthop *nh;
   uint8_t flags = RTF_UP;
@@ -79,7 +79,8 @@ olsr_rt_flags(const struct rt_entry *rt)
     flags |= RTF_HOST;
   }
 
-  nh = olsr_get_nh(rt);
+  if (add) nh = olsr_get_nh(rt);
+  else nh = &rt->rt_nexthop;
 
   if (!ipequal(&rt->rt_dst.prefix, &nh->gateway)) {
     flags |= RTF_GATEWAY;
@@ -177,7 +178,7 @@ olsr_delete_kernel_route(struct rt_entry *rt)
       olsr_syslog(OLSR_LOG_ERR, "Delete route %s: %s", routestr, err_msg);
       return -1;
     }
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
     /* call NIIT handler (always)*/
     if (olsr_cnf->use_niit) {
       olsr_niit_handle_route(rt, false);
@@ -218,7 +219,7 @@ olsr_add_kernel_route(struct rt_entry *rt)
       rt->rt_nexthop = rt->rt_best->rtp_nexthop;
       rt->rt_metric = rt->rt_best->rtp_metric;
 
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
       /* call NIIT handler */
       if (olsr_cnf->use_niit) {
         olsr_niit_handle_route(rt, true);
@@ -251,10 +252,15 @@ olsr_chg_kernel_routes(struct list_node *head_node)
   while (!list_is_empty(head_node)) {
     rt = changelist2rt(head_node->next);
 
-/*deleting routes should not be required anymore as we use (NLM_F_CREATE | NLM_F_REPLACE) in linux rtnetlink*/
-#ifdef LINUX_NETLINK_ROUTING
-    /*delete routes with ipv6 only as it still doesn`t support NLM_F_REPLACE*/
-    if (((olsr_cnf->ip_version != AF_INET )
+#ifdef linux
+    /*
+    *   actively deleting routes is not necessary as we use (NLM_F_CREATE | NLM_F_REPLACE) with linux
+    *        (i.e. new routes simply overwrite the old ones in kernel)
+    *   BUT: We still have to actively delete routes if fib_metric != FLAT or we run on ipv6.
+    *        As NLM_F_REPLACE is not supported with IPv6, or simply of no use with varying route metrics.
+    *        We also actively delete routes if custom route functions are in place. (e.g. quagga plugin)
+    */
+    if (((olsr_cnf->ip_version != AF_INET ) || (olsr_cnf->fib_metric != FIBM_FLAT)
          || (olsr_addroute_function != olsr_ioctl_add_route) || (olsr_addroute6_function != olsr_ioctl_add_route6)
          || (olsr_delroute_function != olsr_ioctl_del_route) || (olsr_delroute6_function != olsr_ioctl_del_route6))
         && (rt->rt_nexthop.iif_index > -1)) {
@@ -263,7 +269,7 @@ olsr_chg_kernel_routes(struct list_node *head_node)
 #else
     /*no rtnetlink we have to delete routes*/
     if (rt->rt_nexthop.iif_index > -1) olsr_delete_kernel_route(rt);
-#endif /*LINUX_NETLINK_ROUTING*/
+#endif /* linux */
 
     olsr_add_kernel_route(rt);
 
@@ -413,7 +419,7 @@ olsr_update_kernel_routes(void)
   /* route changes */
   olsr_chg_kernel_routes(&chg_kernel_list);
 
-#if DEBUG
+#if defined DEBUG && DEBUG
   olsr_print_routing_table(&routingtree);
 #endif
 }

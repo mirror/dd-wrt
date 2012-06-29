@@ -87,7 +87,7 @@ olsr_load_plugins(void)
 static int
 olsr_load_dl(char *libname, struct plugin_param *params)
 {
-#if TESTLIB_PATH
+#if defined TESTLIB_PATH && TESTLIB_PATH
   char path[256] = "/usr/testlib/";
 #endif
   struct olsr_plugin *plugin = olsr_malloc(sizeof(struct olsr_plugin), "Plugin entry");
@@ -95,7 +95,7 @@ olsr_load_dl(char *libname, struct plugin_param *params)
 
   OLSR_PRINTF(0, "---------- LOADING LIBRARY %s ----------\n", libname);
 
-#if TESTLIB_PATH
+#if defined TESTLIB_PATH && TESTLIB_PATH
   strcat(path, libname);
   plugin->dlhandle = dlopen(path, RTLD_NOW);
 #else
@@ -131,7 +131,7 @@ olsr_load_dl(char *libname, struct plugin_param *params)
   return rv;
 }
 
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
 static int
 try_old_versions(const struct olsr_plugin *plugin)
 {
@@ -183,14 +183,14 @@ olsr_add_dl(struct olsr_plugin *plugin)
                 "\nWARNING: YOU ARE USING AN OLD DEPRECATED PLUGIN INTERFACE!\n"
                 "DETECTED VERSION %d AND THE CURRENT VERSION IS %d\n" "PLEASE UPGRADE YOUR PLUGIN!\n", plugin_interface_version,
                 MOST_RECENT_PLUGIN_INTERFACE_VERSION);
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
     OLSR_PRINTF(0, "WILL CONTINUE IN 5 SECONDS...\n\n");
     sleep(5);
 #else
     return -1;
 #endif
   }
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
   /* new plugin interface */
   if (plugin_interface_version < LAST_SUPPORTED_PLUGIN_INTERFACE_VERSION) {
     OLSR_PRINTF(0,
@@ -216,7 +216,7 @@ olsr_add_dl(struct olsr_plugin *plugin)
   if (get_plugin_parameters != NULL) {
     (*get_plugin_parameters) (&plugin->plugin_parameters, &plugin->plugin_parameters_size);
   } else {
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
     /* Fetch the parameter function */
     OLSR_PRINTF(1, "Trying to fetch param function: ");
 
@@ -282,7 +282,7 @@ init_olsr_plugin(struct olsr_plugin *entry)
           rv = -1;
         }
       }
-#if SUPPORT_OLD_PLUGIN_VERSIONS
+#if defined SUPPORT_OLD_PLUGIN_VERSIONS && SUPPORT_OLD_PLUGIN_VERSIONS
     } else if (entry->register_param != NULL) {
       int rc;
       OLSR_PRINTF(0, "Registering parameter \"%s\": ", params->key);

@@ -108,7 +108,7 @@ add_del_route(const struct rt_entry *rt, int add)
   rtm->rtm_version = RTM_VERSION;
   rtm->rtm_type = add ? RTM_ADD : RTM_DELETE;
   rtm->rtm_index = 0;           /* is ignored in outgoing messages */
-  rtm->rtm_flags = olsr_rt_flags(rt);
+  rtm->rtm_flags = olsr_rt_flags(rt, add);
   rtm->rtm_pid = OLSR_PID;
   rtm->rtm_seq = ++seq;
 
@@ -269,7 +269,7 @@ add_del_route6(const struct rt_entry *rt, int add)
   rtm->rtm_version = RTM_VERSION;
   rtm->rtm_type = (add != 0) ? RTM_ADD : RTM_DELETE;
   rtm->rtm_index = 0;
-  rtm->rtm_flags = olsr_rt_flags(rt);
+  rtm->rtm_flags = olsr_rt_flags(rt, add);
   rtm->rtm_pid = OLSR_PID;
   rtm->rtm_seq = ++seq;
 
@@ -357,7 +357,7 @@ add_del_route6(const struct rt_entry *rt, int add)
     drtm->rtm_version = RTM_VERSION;
     drtm->rtm_type = RTM_DELETE;
     drtm->rtm_index = 0;
-    drtm->rtm_flags = olsr_rt_flags(rt);
+    drtm->rtm_flags = olsr_rt_flags(rt, add);
     drtm->rtm_seq = ++seq;
 
     walker = dbuff + sizeof(struct rt_msghdr);

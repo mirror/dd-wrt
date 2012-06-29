@@ -9,9 +9,8 @@ SRCS +=		$(wildcard src/win32/*.c)
 HDRS +=		$(wildcard src/win32/*.h)
 
 CPPFLAGS +=	-DWIN32 -D_WIN32_WINNT=0x0600
-LIBS +=		-mno-cygwin -lws2_32 -liphlpapi
+LIBS +=		-lws2_32 -liphlpapi
 CPPFLAGS += 	-I$(TOPDIR)/src/win32
-CFLAGS +=	-mno-cygwin
 
 PLUGIN_SONAME ?= $(PLUGIN_NAME)
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).dll
@@ -28,88 +27,132 @@ OS_LIB_PTHREAD =
 OS_CFLAG_PTHREAD =
 OS_LIB_DYNLOAD =
 
+
+# Notes for compiling olsrd.exe under Windows using MinGW
+# ----------------------------------------------------
+# You can build olsrd.exe using MinGW on either Windows or GNU/Linux.
+# For MinGW on Windows, run this in the msys shell:
+#
+#   cd olsrd
+#   make clean_all
+#   make build_all OS=win32
+#
+# MinGW also runs on GNU/Linux so you can build Windows binaries on
+# any GNU/Linux machine.  It is especially easy on a
+# Debian/Ubuntu/Mint system:
+#
+#   sudo apt-get install mingw32 flex bison make
+#   cd olsrd
+#   make clean_all
+#   CC=i586-mingw32msvc-gcc make build_all OS=win32
+
+
+# Notes for compiling olsrd.exe under Windows using Cygwin
+# ----------------------------------------------------
+# You need at least Cygwin installed. Start the Cygwin setup and select
+# flex,bison,make,mingw-core. Then run "make all libs" to compile olsrd.exe
+# and the plugin DLLs. To compile the GUI, you need MSVC6, PlatformSDK and
+# the NSIS installer. Adapt the path names below and run "make win32setup".
+# Alternatively, set environment vars e.g. in the Windows registry under
+# HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment e.g.
+#
+# set PATH=C:\PROGRA~1\MICROS~4\VC98\BIN;C:\PROGRA~1\MIFD68~1\BIN;C:\PROGRA~1\NSIS;%PATH%
+# set LIB=C:\PROGRA~1\MIFD68~1\LIB;C:\PROGRA~1\MICROS~4\VC98\LIB;C:\PROGRA~1\MICROS~4\VC98\MFC\LIB
+# set INCLUDE=C:\PROGRA~1\MIFD68~1\INCLUDE;C:\PROGRA~1\MICROS~4\VC98\INCLUDE;C:\PROGRA~1\MICROS~4\VC98\MFC\INCLUDE
+#
+# You can install Cygwin under Wine. Then "wineconsole make all libs win32lib"
+# does it's job (slowly), but there may be issues while re-invoking MSVC from
+# bash.exe during "wineconsole win32setup". Note, that Wine on EXT2/EXT3 prevents
+# the Cygwin "!<symlink>" files from working somehow. You may need to install Cygwin
+# under Windows to get a correct gcc/mingw setup, then copy to your Linux
+# box, then replace all "!<symlink>" files by real symlinks, e.g.
+#
+# cd ~/.wine/drive_c/Programme/cygwin
+# for src in $(grep '!<symlink>' . -rl 2>&-);do
+#  if [ $(stat -c "%s" $src) -lt 100 ];then
+#   dst=$(sed -e's/^\!<symlink>//' $src)
+#   echo "ln -sf $dst $src"
+#  fi
+# done
+#
+# Required software versions:
+# MSVC6 GUI (with MFC!) runs under Wine (copy MFC42.DLL & MSVCP60.DLL)
+# Platform SDK, search for "February 2003 SDK"
+# Cygwin 1.5.x and Wine-1.1.0 or above
+
+PROGDIR = c:/Programme
+PROGCYG = /cygdrive/c/Programme
+PSDKDIR = $(PROGDIR)/Microsoft SDK
+PSDKCYG = $(PROGCYG)/Microsoft\ SDK
+MSVCDIR = $(PROGDIR)/Microsoft Visual Studio
+MSVCCYG = $(PROGCYG)/Microsoft\ Visual\ Studio
+NSISDIR = $(PROGDIR)/NSIS
+NSISCYG = $(PROGCYG)/NSIS
+
+# Necessary for running cygwin under wine. Both the "-C" option and MAKELEVEL>0 will oops...
+MAKE := sh -c 'cmd=$$0;while [ 0 -lt $$\# ];do case $$1 in -C) cmd="cd $$2 && $$cmd";shift 2;; *) cmd="$$cmd \"$$1\"";shift;;esac;done;sh -c "export MAKELEVEL=0 && $$cmd"' $(MAKE)
+
+gui/win32/Shim/Release/shim.obj: gui/win32/Shim/shim.c
+		test -d $(dir $@) || mkdir -p $(dir $@)
+		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && CL.EXE \
+			/I"$(PSDKDIR)/Include" /I"$(MSVCDIR)/VC98/Include" \
+			/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" \
+			/Fp"$(dir $@)/Shim.pch" /YX /Fo"$(dir $@)/" /Fd"$(dir $@)/" /FD /c "$<"
+
+gui/win32/Shim/Release/Shim.exe: gui/win32/Shim/Release/shim.obj
+		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && LINK.EXE \
+			/LIBPATH:"$(PSDKDIR)/Lib" /LIBPATH:"$(MSVCDIR)/VC98/Lib" \
+			kernel32.lib user32.lib \
+			/nologo /subsystem:console /incremental:no /machine:I386 /out:"$@" "$^"
+
+WIN32FILES+=Frontend
+WIN32FILES+=FrontendDlg
+WIN32FILES+=HnaEntry
+WIN32FILES+=MidEntry
+WIN32FILES+=MprEntry
+WIN32FILES+=MyDialog1
+WIN32FILES+=MyDialog2
+WIN32FILES+=MyDialog3
+WIN32FILES+=MyDialog4
+WIN32FILES+=MyEdit
+WIN32FILES+=MyTabCtrl
+WIN32FILES+=NodeEntry
+WIN32FILES+=StdAfx
+WIN32FILES+=TrayIcon
+
+WIN32CPPFILES=$(addprefix gui/win32/Main/, $(addsuffix .cpp,  $(WIN32FILES)))
+WIN32OBJFILES=$(addprefix gui/win32/Main/Release/, $(addsuffix .obj,  $(WIN32FILES)))
+
+gui/win32/Main/Release/Frontend.res: gui/win32/Main/Frontend.rc
+		test -d $(dir $@) || mkdir -p $(dir $@)
+		PATH=$(PSDKCYG)/Bin:$(MSVCCYG)/Common/MSDev98/Bin:$$PATH && RC.EXE \
+			/l 0x407 /i"$(PSDKDIR)/Include" /i"$(MSVCDIR)/VC98/MFC/Include" /fo"$@" /d NDEBUG "$<"
+
+gui/win32/Main/Release/Switch.exe: gui/win32/Main/olsrd_cfgparser.lib gui/win32/Main/Release/Frontend.res $(WIN32CPPFILES)
+		test -d $(dir $@) || mkdir -p $(dir $@)
+		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && CL.EXE \
+			/I"$(PSDKDIR)/Include" /I"$(MSVCDIR)/VC98/Include" /I"$(MSVCDIR)/VC98/MFC/Include" /I"src" \
+			/nologo /MT /W4 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
+			/Fp"$(dir $@)/Frontend.pch" /YX"stdafx.h" /Fo"$(dir $@)/" /Fd"$(dir $@)/" /FD /c \
+			$(WIN32CPPFILES)
+		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && LINK.EXE \
+			/LIBPATH:"$(PSDKDIR)/Lib" /LIBPATH:"$(MSVCDIR)/VC98/Lib" /LIBPATH:"$(MSVCDIR)/VC98/MFC/Lib" \
+			ws2_32.lib iphlpapi.lib \
+			gui/win32/Main/olsrd_cfgparser.lib gui/win32/Main/Release/Frontend.res \
+			/nologo /subsystem:windows /incremental:no /machine:I386 /out:"$@" \
+			$(WIN32OBJFILES)
+
+win32setup: gui/win32/Inst/installer.nsi default_target libs gui/win32/Shim/Release/Shim.exe gui/win32/Main/Release/Switch.exe
+		PATH=$(NSISCYG):$$PATH && makensis.exe $<
+
 win32lib: gui/win32/Main/olsrd_cfgparser.lib
 
 gui/win32/Main/olsrd_cfgparser.lib: cfgparser
 		@# Using the cygwin dlltool does not work (missing functions hooks)
 		@# dlltool --input-def src/cfgparser/olsrd_cfgparser.def --dllname src/cfgparser/olsrd_cfgparser.dll --output-lib $@
 		@# Use the Microsoft Lib Tool instead
-		lib /machine:i386 /def:src/cfgparser/olsrd_cfgparser.def /out:gui/win32/Main/olsrd_cfgparser.lib
-
-olsr-$(VERS).zip: gui/win32/release/Main.exe \
-		gui/win32/release/Shim.exe \
-		olsrd.exe \
-		olsr_switch.exe \
-		src/cfgparser/olsrd_cfgparser.dll \
-		README \
-		README-Link-Quality.html \
-		README-Link-Quality-Fish-Eye.txt \
-		README-Olsr-Switch.html \
-		gui/win32/Inst/linux-manual.txt \
-		files/olsrd.conf.win32.rfc \
-		files/olsrd.conf.win32.lq \
-		gui/win32/Main/RFC-Default.olsr \
-		gui/win32/Main/LQ-Default.olsr \
-		lib/dot_draw/olsrd_dot_draw.dll \
-		lib/httpinfo/olsrd_httpinfo.dll
-		$(STRIP) olsrd.exe
-		$(STRIP) olsr_switch.exe
-		$(STRIP) src/cfgparser/olsrd_cfgparser.dll
-		$(STRIP) lib/dot_draw/olsrd_dot_draw.dll
-		$(STRIP) lib/httpinfo/olsrd_httpinfo.dll
-		rm -rf $(TEMP)/olsr-$(VERS)
-		rm -f $(TEMP)/olsr-$(VERS).zip
-		rm -f olsr-$(VERS).zip
-		mkdir $(TEMP)/olsr-$(VERS)
-		cp gui/win32/release/Main.exe $(TEMP)/olsr-$(VERS)/Switch.exe
-		cp gui/win32/release/Shim.exe $(TEMP)/olsr-$(VERS)
-		cp olsrd.exe $(TEMP)/olsr-$(VERS)
-		cp olsr_switch.exe $(TEMP)/olsr-$(VERS)
-		cp src/cfgparser/olsrd_cfgparser.dll $(TEMP)/olsr-$(VERS)
-		cp README $(TEMP)/olsr-$(VERS)
-		cp README-Link-Quality.html $(TEMP)/olsr-$(VERS)
-		cp README-Link-Quality-Fish-Eye.txt $(TEMP)/olsr-$(VERS)
-		cp README-Olsr-Switch.html $(TEMP)/olsr-$(VERS)
-		cp gui/win32/Inst/linux-manual.txt $(TEMP)/olsr-$(VERS)
-		cp files/olsrd.conf.win32.rfc $(TEMP)/olsr-$(VERS)/olsrd.conf.rfc
-		cp files/olsrd.conf.win32.lq $(TEMP)/olsr-$(VERS)/olsrd.conf.lq
-		cp gui/win32/Main/RFC-Default.olsr $(TEMP)/olsr-$(VERS)
-		cp gui/win32/Main/LQ-Default.olsr $(TEMP)/olsr-$(VERS)/Default.olsr
-		cp lib/dot_draw/olsrd_dot_draw.dll $(TEMP)/olsr-$(VERS)
-		cp lib/httpinfo/olsrd_httpinfo.dll $(TEMP)/olsr-$(VERS)
-		echo y | cacls $(TEMP)\olsr-$(VERS) /T /G Everyone:F
-		cd "$(TEMP)"; zip -q -r olsr-$(VERS).zip olsr-$(VERS)
-		cp $(TEMP)/olsr-$(VERS).zip .
-		rm -rf $(TEMP)/olsr-$(VERS)
-		rm -f $(TEMP)/olsr-$(VERS).zip
-
-olsr-$(VERS)-setup.exe:	gui/win32/release/Main.exe \
-		gui/win32/release/Shim.exe \
-		olsrd.exe \
-		olsr_switch.exe \
-		src/cfgparser/olsrd_cfgparser.dll \
-		README \
-		README-Link-Quality.html \
-		README-Link-Quality-Fish-Eye.txt \
-		README-Olsr-Switch.html \
-		gui/win32/Inst/linux-manual.txt \
-		files/olsrd.conf.win32.rfc \
-		files/olsrd.conf.win32.lq \
-		gui/win32/Main/RFC-Default.olsr \
-		gui/win32/Main/LQ-Default.olsr \
-		lib/dot_draw/olsrd_dot_draw.dll \
-		lib/httpinfo/olsrd_httpinfo.dll \
-		gui/win32/Inst/installer.nsi
-		$(STRIP) olsrd.exe
-		$(STRIP) olsr_switch.exe
-		$(STRIP) src/cfgparser/olsrd_cfgparser.dll
-		$(STRIP) lib/dot_draw/olsrd_dot_draw.dll
-		$(STRIP) lib/nameservice/olsrd_nameservice.dll
-		$(STRIP) lib/httpinfo/olsrd_httpinfo.dll
-		rm -f olsr-setup.exe
-		rm -f olsr-$(VERS)-setup.exe
-		C:/Program\ Files/NSIS/makensis gui\win32\Inst\installer.nsi
-		mv olsr-setup.exe olsr-$(VERS)-setup.exe
+		PATH=$(MSVCCYG)/VC98/Bin:$$PATH && LIB.EXE \
+			/machine:i386 /def:src/cfgparser/olsrd_cfgparser.def /out:gui/win32/Main/olsrd_cfgparser.lib
 
 # Local Variables:
 # mode: makefile

@@ -1,5 +1,18 @@
 This file states changes as of version 0.2.4:
 
+
+0.6.3 --------------------------------------------------------------------
+
+Bugfix and plugin release 0.6.3
+
+- PUD plugin (position update plugin)
+- JSONinfo plugin
+- sgwdynspeed plugin (select dynamic smart gateway based on gw speed)
+- Update on Quagga plugin (for new Quagga)
+- Fixes for Androids
+- Some fixes for GTK and Win32 gui
+- Lots of core fixes to support new compiler warnings
+
 0.6.2 --------------------------------------------------------------------
 
 Bugfix release for 0.6.1

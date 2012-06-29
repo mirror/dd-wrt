@@ -1,0 +1,29 @@
+
+This directory contains some Android specific code. (Mostly dealing
+with providing missing filesfrom Android NDK.)
+
+ * regex support was not added until NDK platform android-8 (v2.2)
+
+
+Building olsrd for Android
+--------------------------
+
+In order to build olsrd and the plugins for Android, you will need to
+download the free (as in beer, and mostly as in speech) Android
+NDK: http://developer.android.com/sdk/ndk/index.html
+
+Once you have that installed, run this in your terminal:
+
+  make OS=android NDK_BASE=/path/to/your/android-ndk-r7b build_all
+
+Then you can find olsrd in the root, and the plugin files in lib/*/*.so*
+
+
+Android App
+-----------
+
+As part of the Commotion project, there is an Android app being
+developed to make it easy to install and run OLSR mesh networking on
+Android devices.  This app is called Commotion Mesh Tether:
+
+https://code.commotionwireless.net/projects/commotion-android

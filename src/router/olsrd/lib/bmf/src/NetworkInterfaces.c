@@ -804,7 +804,7 @@ void FindNeighbors(
         "%s: ----> forwarding pkt to %s will cost ETX %5.2f\n",
         PLUGIN_NAME_SHORT,
         olsr_ip_to_string(&buf, &walker->neighbor_iface_addr),
-        currEtx);
+        (double)currEtx);
 
       /* If the candidate neighbor is best reached via another interface, then skip 
        * the candidate neighbor; the candidate neighbor has been / will be selected via that
@@ -1890,9 +1890,9 @@ void AddMulticastRoute(void)
 
   memset(&kernel_route, 0, sizeof(struct rtentry));
 
-  ((struct sockaddr_in*) ARM_NOWARN_ALIGN(&kernel_route.rt_dst))->sin_family = AF_INET;
-  ((struct sockaddr_in*) ARM_NOWARN_ALIGN(&kernel_route.rt_gateway))->sin_family = AF_INET;
-  ((struct sockaddr_in*) ARM_NOWARN_ALIGN(&kernel_route.rt_genmask))->sin_family = AF_INET;
+  ((struct sockaddr *) ARM_NOWARN_ALIGN(&kernel_route.rt_dst))->sa_family = AF_INET;
+  ((struct sockaddr *) ARM_NOWARN_ALIGN(&kernel_route.rt_gateway))->sa_family = AF_INET;
+  ((struct sockaddr *) ARM_NOWARN_ALIGN(&kernel_route.rt_genmask))->sa_family = AF_INET;
 
   /* 224.0.0.0/4 */
   ((struct sockaddr_in *) ARM_NOWARN_ALIGN(&kernel_route.rt_dst))->sin_addr.s_addr = htonl(0xE0000000);
@@ -1935,9 +1935,9 @@ void DeleteMulticastRoute(void)
 
     memset(&kernel_route, 0, sizeof(struct rtentry));
 
-    ((struct sockaddr_in*) ARM_NOWARN_ALIGN(&kernel_route.rt_dst))->sin_family = AF_INET;
-    ((struct sockaddr_in*) ARM_NOWARN_ALIGN(&kernel_route.rt_gateway))->sin_family = AF_INET;
-    ((struct sockaddr_in*) ARM_NOWARN_ALIGN(&kernel_route.rt_genmask))->sin_family = AF_INET;
+    ((struct sockaddr *) ARM_NOWARN_ALIGN(&kernel_route.rt_dst))->sa_family = AF_INET;
+    ((struct sockaddr *) ARM_NOWARN_ALIGN(&kernel_route.rt_gateway))->sa_family = AF_INET;
+    ((struct sockaddr *) ARM_NOWARN_ALIGN(&kernel_route.rt_genmask))->sa_family = AF_INET;
 
     /* 224.0.0.0/4 */
     ((struct sockaddr_in *) ARM_NOWARN_ALIGN(&kernel_route.rt_dst))->sin_addr.s_addr = htonl(0xE0000000);

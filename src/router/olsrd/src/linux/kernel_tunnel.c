@@ -57,8 +57,14 @@
 #include <linux/ip.h>
 #include <linux/if_tunnel.h>
 #include <linux/version.h>
+#if defined linux
+#if !defined LINUX_VERSION_CODE || !defined KERNEL_VERSION
+#error "Both LINUX_VERSION_CODE and KERNEL_VERSION need to be defined"
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,24)
 #include <linux/ip6_tunnel.h>
+#endif
+#endif
 #endif
 
 //ifup includes
@@ -121,6 +127,7 @@ static int os_ip4_tunnel(const char *name, in_addr_t *target)
   struct ifreq ifr;
   int err;
   struct ip_tunnel_parm p;
+  char buffer[INET6_ADDRSTRLEN];
 
   /* only IPIP tunnel if OLSR runs with IPv4 */
   assert (olsr_cnf->ip_version == AF_INET);
@@ -139,14 +146,16 @@ static int os_ip4_tunnel(const char *name, in_addr_t *target)
   ifr.ifr_ifru.ifru_data = (void *) &p;
 
   if ((err = ioctl(olsr_cnf->ioctl_s, target != NULL ? SIOCADDTUNNEL : SIOCDELTUNNEL, &ifr))) {
-    char buffer[INET6_ADDRSTRLEN];
-
     olsr_syslog(OLSR_LOG_ERR, "Cannot %s a tunnel %s to %s: %s (%d)\n",
         target != NULL ? "add" : "remove", name,
         target != NULL ? inet_ntop(olsr_cnf->ip_version, target, buffer, sizeof(buffer)) : "-",
         strerror(errno), errno);
     return 0;
   }
+  olsr_syslog(OLSR_LOG_INFO, "Tunnel %s %s, to %s",
+      name,
+      target != NULL ? "added" : "removed",
+      target != NULL ? inet_ntop(olsr_cnf->ip_version, target, buffer, sizeof(buffer)) : "-");
   return target != NULL ? if_nametoindex(name) : 1;
 }
 

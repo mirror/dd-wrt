@@ -2,7 +2,7 @@
  * OLSRd Quagga plugin
  *
  * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2011 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -63,6 +63,7 @@ zebra_addroute(const struct rt_entry *r)
   route.type = ZEBRA_ROUTE_OLSR;
   route.flags = zebra.flags;
   route.message = ZAPI_MESSAGE_NEXTHOP | ZAPI_MESSAGE_METRIC;
+  route.safi = SAFI_UNICAST;
   route.prefixlen = r->rt_dst.prefix_len;
   if (olsr_cnf->ip_version == AF_INET)
     route.prefix.v4.s_addr = r->rt_dst.prefix.v4.s_addr;
@@ -74,10 +75,10 @@ zebra_addroute(const struct rt_entry *r)
   route.nexthop = NULL;
 
   if ((olsr_cnf->ip_version == AF_INET && r->rt_best->rtp_nexthop.gateway.v4.s_addr == r->rt_dst.prefix.v4.s_addr &&
-        route.prefixlen == 32) ||
+       route.prefixlen == 32) ||
       (olsr_cnf->ip_version == AF_INET6 &&
-        !memcmp(r->rt_best->rtp_nexthop.gateway.v6.s6_addr, r->rt_dst.prefix.v6.s6_addr, sizeof r->rt_best->rtp_nexthop.gateway.v6.s6_addr) &&
-        route.prefixlen == 128)) {
+       !memcmp(r->rt_best->rtp_nexthop.gateway.v6.s6_addr, r->rt_dst.prefix.v6.s6_addr, sizeof r->rt_best->rtp_nexthop.gateway.v6.s6_addr) &&
+       route.prefixlen == 128)) {
     route.ifindex_num++;
     route.ifindex = olsr_malloc(sizeof *route.ifindex, "QUAGGA: New zebra route ifindex");
     *route.ifindex = r->rt_best->rtp_nexthop.iif_index;
@@ -112,6 +113,7 @@ zebra_delroute(const struct rt_entry *r)
   route.type = ZEBRA_ROUTE_OLSR;
   route.flags = zebra.flags;
   route.message = ZAPI_MESSAGE_NEXTHOP | ZAPI_MESSAGE_METRIC;
+  route.safi = SAFI_UNICAST;
   route.prefixlen = r->rt_dst.prefix_len;
   if (olsr_cnf->ip_version == AF_INET)
     route.prefix.v4.s_addr = r->rt_dst.prefix.v4.s_addr;
@@ -123,10 +125,10 @@ zebra_delroute(const struct rt_entry *r)
   route.nexthop = NULL;
 
   if ((olsr_cnf->ip_version == AF_INET && r->rt_nexthop.gateway.v4.s_addr == r->rt_dst.prefix.v4.s_addr &&
-        route.prefixlen == 32) ||
-       (olsr_cnf->ip_version == AF_INET6 &&
-        !memcmp(r->rt_nexthop.gateway.v6.s6_addr, r->rt_dst.prefix.v6.s6_addr, sizeof r->rt_nexthop.gateway.v6.s6_addr) &&
-        route.prefixlen == 128)) {
+       route.prefixlen == 32) ||
+      (olsr_cnf->ip_version == AF_INET6 &&
+       !memcmp(r->rt_nexthop.gateway.v6.s6_addr, r->rt_dst.prefix.v6.s6_addr, sizeof r->rt_nexthop.gateway.v6.s6_addr) &&
+       route.prefixlen == 128)) {
     route.ifindex_num++;
     route.ifindex = olsr_malloc(sizeof *route.ifindex, "QUAGGA: New zebra route ifindex");
     *route.ifindex = r->rt_nexthop.iif_index;
@@ -161,6 +163,15 @@ zebra_redistribute(uint16_t cmd)
       if (zclient_write(zpacket_redistribute(cmd, type)) < 0)
         olsr_exit("(QUAGGA) Could not write redistribute packet!", EXIT_FAILURE);
     }
+
+}
+
+void
+zebra_hello(uint16_t cmd)
+{
+
+  if (zclient_write(zpacket_redistribute(cmd, ZEBRA_ROUTE_OLSR)) < 0)
+    olsr_exit("(QUAGGA) Could not write hello packet!", EXIT_FAILURE);
 
 }
 

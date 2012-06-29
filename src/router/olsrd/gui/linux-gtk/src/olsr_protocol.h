@@ -60,7 +60,7 @@ typedef int32_t olsr_32_t;
 #include <netinet/in.h>
 
 union olsr_ip_addr {
-  olsr_u32_t v4;
+  struct in_addr v4;
   struct in6_addr v6;
 };
 

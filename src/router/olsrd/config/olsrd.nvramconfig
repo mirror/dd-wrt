@@ -7,3 +7,4 @@
 "olsrd_smartgw" "" "CHOICE" "2" "0" "1" "FALSE" "0"
 "olsrd_lqlevel" "" "NULL" "FALSE" "0"
 "olsrd_hna" "" "NULL" "FALSE" "0"
+"olsrd_gateway" "gateway mode" "CHOICE" "2" "0" "1" "FALSE" "0"

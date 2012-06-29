@@ -2,7 +2,7 @@
  * OLSRd Quagga plugin
  *
  * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2010 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -31,6 +31,7 @@ void zebra_fini(void);
 int zebra_addroute(const struct rt_entry *);
 int zebra_delroute(const struct rt_entry *);
 void zebra_redistribute(uint16_t cmd);
+void zebra_hello(uint16_t cmd);
 
 /*
  * Local Variables:

@@ -44,6 +44,9 @@
 
 #include "olsr_types.h"
 #include "common/autobuf.h"
+#ifdef HTTPINFO_PUD
+#include "pud/src/receiver.h"
+#endif
 
 /* set to 1 to collect all startup sleep into one sleep
  * (just as long as the longest sleep)
@@ -78,7 +81,10 @@
 #define DEF_MIN_TC_VTIME     0.0
 #define DEF_USE_NIIT         true
 #define DEF_SMART_GW         false
+#define DEF_GW_PERIOD        10*1000
+#define DEF_GW_STABLE_COUNT  6
 #define DEF_GW_ALLOW_NAT     true
+#define DEF_GW_THRESH        0
 #define DEF_GW_TYPE          GW_UPLINK_IPV46
 #define DEF_GW_UPLINK_NAT    true
 #define DEF_UPLINK_SPEED     128
@@ -111,6 +117,15 @@
 #define MIN_LQ_LEVEL         0
 #define MAX_LQ_AGING         1.0
 #define MIN_LQ_AGING         0.01
+
+#define MIN_SMARTGW_PERIOD   1*1000
+#define MAX_SMARTGW_PERIOD   320000*1000
+
+#define MIN_SMARTGW_STABLE   1
+#define MAX_SMARTGW_STABLE   254
+
+#define MIN_SMARTGW_THRES    10
+#define MAX_SMARTGW_THRES    100
 
 #define MIN_SMARTGW_SPEED    1
 #define MAX_SMARTGW_SPEED    320000000
@@ -251,10 +266,15 @@ struct olsrd_config {
 
   float min_tc_vtime;
 
+  bool set_ip_forward;
+
   char *lock_file;
   bool use_niit;
 
   bool smart_gw_active, smart_gw_allow_nat, smart_gw_uplink_nat;
+  uint32_t smart_gw_period;
+  uint8_t smart_gw_stablecount;
+  uint8_t smart_gw_thresh;
   enum smart_gw_uplinktype smart_gw_type;
   uint32_t smart_gw_uplink, smart_gw_downlink;
   struct olsr_ip_prefix smart_gw_prefix;
@@ -278,15 +298,19 @@ struct olsrd_config {
   bool has_ipv4_gateway, has_ipv6_gateway;
 
   int ioctl_s;                         /* Socket used for ioctl calls */
-#ifdef LINUX_NETLINK_ROUTING
+#ifdef linux
   int rtnl_s;                          /* Socket used for rtnetlink messages */
   int rt_monitor_socket;
 #endif
 
-#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+#if defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__
   int rts;                             /* Socket used for route changes on BSDs */
 #endif
   float lq_nat_thresh;
+
+#ifdef HTTPINFO_PUD
+  TransmitGpsInformation * pud_position;
+#endif
 };
 
 #if defined __cplusplus

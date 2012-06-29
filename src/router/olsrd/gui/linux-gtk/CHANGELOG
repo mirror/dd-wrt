@@ -33,7 +33,7 @@ the implementation did not check for several IP addresses but
 just incremented the struct-array index. A kindof ugly hack fixed
 this.
 
-MESSAGE RECIEVING
+MESSAGE RECEPTION
 
-Recieving of messages not complete - fixed. One could risk just recieving
+Receiving of messages not complete - fixed. One could risk just receiving
 half a message the way it used to be implemented.
