@@ -93,9 +93,7 @@ void start_pptpd(void)
 		"ipcp-accept-remote\n"
 		"lcp-echo-failure 10\n"
 		"lcp-echo-interval 6\n"
-		"connections %s\n"     //allows X concurrent connections (default 100)
 		"mtu %s\n" "mru %s\n",
-		nvram_get("pptpd_conn"),
 		nvram_get("pptpd_mtu") ? nvram_get("pptpd_mtu") : "1450",
 		nvram_get("pptpd_mru") ? nvram_get("pptpd_mru") : "1450");
 	if (!nowins) {
