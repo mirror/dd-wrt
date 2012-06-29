@@ -82,6 +82,10 @@ void start_openvpnserver(void)
 			nvram_safe_get("openvpn_proto"),
 			nvram_safe_get("openvpn_cipher"),
 			nvram_safe_get("openvpn_auth"));
+		if (strlen(nvram_safe_get("openvpn_clcon")) > 0) {
+			write_nvram("/tmp/openvpn/clientconnect", "openvpn_clcon");
+			fprintf(fp, "client-connect /tmp/openvpn/clientconnect\n");
+			}
 		if (nvram_invmatch("openvpn_auth", "none")) //not needed if we have no auth anyway
 			fprintf(fp, "tls-server\n");
 		if (nvram_match("openvpn_dupcn", "1"))
