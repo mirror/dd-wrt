@@ -238,51 +238,6 @@ if (cfg != desired)
  *
  * The above method works because once an interface is claimed, no application
  * or driver is able to select another configuration.
- *
- * \section earlycomp Early transfer completion
- *
- * NOTE: This section is currently Linux-centric. I am not sure if any of these
- * considerations apply to Darwin or other platforms.
- *
- * When a transfer completes early (i.e. when less data is received/sent in
- * any one packet than the transfer buffer allows for) then libusb is designed
- * to terminate the transfer immediately, not transferring or receiving any
- * more data unless other transfers have been queued by the user.
- *
- * On legacy platforms, libusb is unable to do this in all situations. After
- * the incomplete packet occurs, "surplus" data may be transferred. Prior to
- * libusb v1.0.2, this information was lost (and for device-to-host transfers,
- * the corresponding data was discarded). As of libusb v1.0.3, this information
- * is kept (the data length of the transfer is updated) and, for device-to-host
- * transfesr, any surplus data was added to the buffer. Still, this is not
- * a nice solution because it loses the information about the end of the short
- * packet, and the user probably wanted that surplus data to arrive in the next
- * logical transfer.
- *
- * A previous workaround was to only ever submit transfers of size 16kb or
- * less.
- *
- * As of libusb v1.0.4 and Linux v2.6.32, this is fixed. A technical
- * explanation of this issue follows.
- *
- * When you ask libusb to submit a bulk transfer larger than 16kb in size,
- * libusb breaks it up into a number of smaller subtransfers. This is because
- * the usbfs kernel interface only accepts transfers of up to 16kb in size.
- * The subtransfers are submitted all at once so that the kernel can queue
- * them at the hardware level, therefore maximizing bus throughput.
- *
- * On legacy platforms, this caused problems when transfers completed early
- * Upon this event, the kernel would terminate all further packets in that
- * subtransfer (but not any following ones). libusb would note this event and
- * immediately cancel any following subtransfers that had been queued,
- * but often libusb was not fast enough, and the following subtransfers had
- * started before libusb got around to cancelling them.
- *
- * Thanks to an API extension to usbfs, this is fixed with recent kernel and
- * libusb releases. The solution was to allow libusb to communicate to the
- * kernel where boundaries occur between logical libusb-level transfers. When
- * a short transfer (or other error) occurs, the kernel will cancel all the
- * subtransfers until the boundary without allowing those transfers to start.
  */
 
 /**
@@ -671,10 +626,32 @@ API_EXPORTED uint8_t libusb_get_device_address(libusb_device *dev)
 	return dev->device_address;
 }
 
-static const struct libusb_endpoint_descriptor *find_endpoint(
-	struct libusb_config_descriptor *config, unsigned char endpoint)
+/** \ingroup dev
+ * Convenience function to retrieve the wMaxPacketSize value for a particular
+ * endpoint in the active device configuration. This is useful for setting up
+ * isochronous transfers.
+ *
+ * \param dev a device
+ * \param endpoint address of the endpoint in question
+ * \returns the wMaxPacketSize value
+ * \returns LIBUSB_ERROR_NOT_FOUND if the endpoint does not exist
+ * \returns LIBUSB_ERROR_OTHER on other failure
+ */
+API_EXPORTED int libusb_get_max_packet_size(libusb_device *dev,
+	unsigned char endpoint)
 {
 	int iface_idx;
+	struct libusb_config_descriptor *config;
+	int r;
+
+	r = libusb_get_active_config_descriptor(dev, &config);
+	if (r < 0) {
+		usbi_err(DEVICE_CTX(dev),
+			"could not retrieve active config descriptor");
+		return LIBUSB_ERROR_OTHER;
+	}
+
+	r = LIBUSB_ERROR_NOT_FOUND;
 	for (iface_idx = 0; iface_idx < config->bNumInterfaces; iface_idx++) {
 		const struct libusb_interface *iface = &config->interface[iface_idx];
 		int altsetting_idx;
@@ -688,107 +665,16 @@ static const struct libusb_endpoint_descriptor *find_endpoint(
 			for (ep_idx = 0; ep_idx < altsetting->bNumEndpoints; ep_idx++) {
 				const struct libusb_endpoint_descriptor *ep =
 					&altsetting->endpoint[ep_idx];
-				if (ep->bEndpointAddress == endpoint)
-					return ep;
+				if (ep->bEndpointAddress == endpoint) {
+					r = ep->wMaxPacketSize;
+					goto out;
+				}
 			}
 		}
 	}
-	return NULL;
-}
 
-/** \ingroup dev
- * Convenience function to retrieve the wMaxPacketSize value for a particular
- * endpoint in the active device configuration.
- *
- * This function was originally intended to be of assistance when setting up
- * isochronous transfers, but a design mistake resulted in this function
- * instead. It simply returns the wMaxPacketSize value without considering
- * its contents. If you're dealing with isochronous transfers, you probably
- * want libusb_get_max_iso_packet_size() instead.
- *
- * \param dev a device
- * \param endpoint address of the endpoint in question
- * \returns the wMaxPacketSize value
- * \returns LIBUSB_ERROR_NOT_FOUND if the endpoint does not exist
- * \returns LIBUSB_ERROR_OTHER on other failure
- */
-API_EXPORTED int libusb_get_max_packet_size(libusb_device *dev,
-	unsigned char endpoint)
-{
-	struct libusb_config_descriptor *config;
-	const struct libusb_endpoint_descriptor *ep;
-	int r;
-
-	r = libusb_get_active_config_descriptor(dev, &config);
-	if (r < 0) {
-		usbi_err(DEVICE_CTX(dev),
-			"could not retrieve active config descriptor");
-		return LIBUSB_ERROR_OTHER;
-	}
-
-	ep = find_endpoint(config, endpoint);
-	if (!ep)
-		return LIBUSB_ERROR_NOT_FOUND;
-
-	r = ep->wMaxPacketSize;
+out:
 	libusb_free_config_descriptor(config);
-	return r;
-}
-
-/** \ingroup dev
- * Calculate the maximum packet size which a specific endpoint is capable is
- * sending or receiving in the duration of 1 microframe
- *
- * Only the active configution is examined. The calculation is based on the
- * wMaxPacketSize field in the endpoint descriptor as described in section
- * 9.6.6 in the USB 2.0 specifications.
- *
- * If acting on an isochronous or interrupt endpoint, this function will
- * multiply the value found in bits 0:10 by the number of transactions per
- * microframe (determined by bits 11:12). Otherwise, this function just
- * returns the numeric value found in bits 0:10.
- *
- * This function is useful for setting up isochronous transfers, for example
- * you might pass the return value from this function to
- * libusb_set_iso_packet_lengths() in order to set the length field of every
- * isochronous packet in a transfer.
- *
- * Since v1.0.3.
- *
- * \param dev a device
- * \param endpoint address of the endpoint in question
- * \returns the maximum packet size which can be sent/received on this endpoint
- * \returns LIBUSB_ERROR_NOT_FOUND if the endpoint does not exist
- * \returns LIBUSB_ERROR_OTHER on other failure
- */
-API_EXPORTED int libusb_get_max_iso_packet_size(libusb_device *dev,
-	unsigned char endpoint)
-{
-	struct libusb_config_descriptor *config;
-	const struct libusb_endpoint_descriptor *ep;
-	enum libusb_transfer_type ep_type;
-	uint16_t val;
-	int r;
-
-	r = libusb_get_active_config_descriptor(dev, &config);
-	if (r < 0) {
-		usbi_err(DEVICE_CTX(dev),
-			"could not retrieve active config descriptor");
-		return LIBUSB_ERROR_OTHER;
-	}
-
-	ep = find_endpoint(config, endpoint);
-	if (!ep)
-		return LIBUSB_ERROR_NOT_FOUND;
-
-	val = ep->wMaxPacketSize;
-	ep_type = ep->bmAttributes & 0x3;
-	libusb_free_config_descriptor(config);
-
-	r = val & 0x07ff;
-	if (ep_type == LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
-			|| ep_type == LIBUSB_TRANSFER_TYPE_INTERRUPT)
-		r *= (1 + ((val >> 11) & 3));
 	return r;
 }
 
