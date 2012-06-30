@@ -1,7 +1,7 @@
-AUTOMAKE_OPTIONS = dist-bzip2 no-dist-gzip
+AUTOMAKE_OPTIONS = dist-bzip2
 ACLOCAL_AMFLAGS = -I m4
 DISTCLEANFILES = ChangeLog libusb-1.0.pc
-EXTRA_DIST = TODO PORTING
+EXTRA_DIST = TODO PORTING BUGS
 SUBDIRS = libusb doc
 
 if BUILD_EXAMPLES
@@ -17,11 +17,6 @@ ChangeLog:
 
 dist-hook: ChangeLog
 
-reldir = .release/$(distdir)
 dist-up: dist
-	rm -rf $(reldir)
-	mkdir -p $(reldir)
-	cp $(distdir).tar.bz2 $(reldir)
-	rsync -rv $(reldir) dsd_,libusb@frs.sourceforge.net:/home/frs/project/l/li/libusb/libusb-1.0/
-	rm -rf $(reldir)
+	rsync $(distdir).tar.bz2 frs.sourceforge.net:uploads/
 

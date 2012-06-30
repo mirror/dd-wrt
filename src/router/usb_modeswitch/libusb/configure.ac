@@ -1,9 +1,8 @@
-AC_INIT([libusb], [1.0.8])
+AC_INIT([libusb], [1.0.2])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([libusb/core.c])
 AC_CONFIG_MACRO_DIR([m4])
 AM_CONFIG_HEADER([config.h])
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 AC_PREREQ([2.50])
 AC_PROG_CC
@@ -25,7 +24,6 @@ case $host in
 *-darwin*)
 	AC_DEFINE(OS_DARWIN, [], [Darwin backend])
 	AC_SUBST(OS_DARWIN)
-	AC_DEFINE(USBI_OS_HANDLES_TIMEOUT, [], [Backend handles timeout])
 	AC_MSG_RESULT([Darwin/MacOS X])
 	backend="darwin"
 	AM_LDFLAGS="-Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation -Wl,-prebind -no-undefined"
@@ -44,34 +42,6 @@ lt_age="0"
 AC_SUBST(lt_major)
 AC_SUBST(lt_revision)
 AC_SUBST(lt_age)
-
-# timerfd
-AC_CHECK_HEADER([sys/timerfd.h], [timerfd_h=1], [timerfd_h=0])
-AC_ARG_ENABLE([timerfd],
-	[AS_HELP_STRING([--enable-timerfd],
-		[use timerfd for timing (default auto)])],
-	[use_timerfd=$enableval], [use_timerfd='auto'])
-
-if test "x$use_timerfd" = "xyes" -a "x$timerfd_h" = "x0"; then
-	AC_MSG_ERROR([timerfd header not available; glibc 2.9+ required])
-fi
-
-AC_CHECK_DECL([TFD_NONBLOCK], [tfd_hdr_ok=yes], [tfd_hdr_ok=no], [#include <sys/timerfd.h>])
-if test "x$use_timerfd" = "xyes" -a "x$tfd_hdr_ok" = "xno"; then
-	AC_MSG_ERROR([timerfd header not usable; glibc 2.9+ required])
-fi
-
-AC_MSG_CHECKING([whether to use timerfd for timing])
-if test "x$use_timerfd" = "xno"; then
-	AC_MSG_RESULT([no (disabled by user)])
-else
-	if test "x$timerfd_h" = "x1" -a "x$tfd_hdr_ok" = "xyes"; then
-		AC_MSG_RESULT([yes])
-		AC_DEFINE(USBI_TIMERFD_AVAILABLE, [], [timerfd headers available])
-	else
-		AC_MSG_RESULT([no (header not available)])
-	fi
-fi
 
 # Message logging
 AC_ARG_ENABLE([log], [AS_HELP_STRING([--disable-log], [disable all logging])],
