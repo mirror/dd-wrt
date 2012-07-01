@@ -291,14 +291,6 @@ void stop_l2tp(void)
 	stop_process("xl2tpd", "L2TP daemon");
 	stop_process("listen", "connectivity listener");
 
-	rmmod("l2tp_debugfs");
-	rmmod("l2tp_ip");
-	rmmod("l2tp_eth");
-	rmmod("l2tp_ppp");
-	rmmod("l2tp_netlink");
-	rmmod("l2tp_core");
-
-
 	cprintf("done\n");
 	return;
 }
