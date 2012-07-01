@@ -37,6 +37,9 @@ endif
 ifeq ($(CONFIG_PPPOATM),y)
 	$(MAKE) -j 4 -C pppd.new/pppd/plugins/pppoatm
 endif
+ifeq ($(CONFIG_L2TP),y)
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/pppol2tp
+endif
 
 
 pppd-clean pppd-distclean: pppd-symlinks
@@ -58,6 +61,9 @@ endif
 
 ifeq ($(CONFIG_PPPOATM),y)
 	install -D pppd.new/pppd/plugins/pppoatm/pppoatm.so $(INSTALLDIR)/pppd/usr/lib/pppoatm.so
+endif
+ifeq ($(CONFIG_L2TP),y)
+	install -D pppd.new/pppd/plugins/pppol2tp/pppol2tp.so $(INSTALLDIR)/pppd/usr/lib/pppol2tp.so
 endif
 
 ifeq ($(CONFIG_PPPSTATS),y)
