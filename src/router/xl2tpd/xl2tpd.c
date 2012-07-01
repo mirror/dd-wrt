@@ -416,11 +416,22 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
            return -EINVAL;
        }
        stropt[pos++] = strdup ("plugin");
-       stropt[pos++] = strdup ("pppol2tp.so");
+       stropt[pos++] = strdup ("/usr/lib/pppol2tp.so");
        stropt[pos++] = strdup ("pppol2tp");
        stropt[pos] = (char *) malloc (10);
        snprintf (stropt[pos], 10, "%d", fd2);
         pos++;
+       if (c->container->lns) {
+        stropt[pos++] = strdup ("pppol2tp_lns_mode");
+        stropt[pos++] = strdup ("pppol2tp_tunnel_id");
+        stropt[pos] = (char *) malloc (10);
+        snprintf (stropt[pos], 10, "%d", c->container->ourtid);
+            pos++;
+        stropt[pos++] = strdup ("pppol2tp_session_id");
+        stropt[pos] = (char *) malloc (10);
+        snprintf (stropt[pos], 10, "%d", c->ourcid);
+            pos++;
+       }
         stropt[pos] = NULL;
     }
     else
