@@ -62,8 +62,11 @@ struct ppp_opts
 
 extern char hostname[];
 
+#ifdef NEED_PRINTF
+extern void l2tp_log (int level, const char *fmt, ...);
+#else
 #define l2tp_log(level,fmt,...) while(0) {}
-//extern void l2tp_log (int level, const char *fmt, ...);
+#endif
 
 extern struct buffer *new_buf (int);
 extern void udppush_handler (int);

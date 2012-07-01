@@ -48,7 +48,8 @@ void init_log()
 	logopen=1;
     }
 }
-/*
+#ifdef NEED_PRINTF
+
 void l2tp_log (int level, const char *fmt, ...)
 {
     char buf[2048];
@@ -64,7 +65,7 @@ void l2tp_log (int level, const char *fmt, ...)
 	fprintf(stderr, "xl2tpd[%d]: %s", getpid(), buf);
     }
 }
-*/
+#endif
 void set_error (struct call *c, int error, const char *fmt, ...)
 {
     va_list args;
