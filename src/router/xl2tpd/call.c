@@ -680,6 +680,8 @@ struct call *get_call (int tunnel, int call,  struct in_addr addr, int port,
         st->peer.sin_port = port;
 	st->refme  = refme;
 	st->refhim = refhim;
+        st->udp_fd = -1;
+        st->pppox_fd = -1;
         bcopy (&addr, &st->peer.sin_addr, sizeof (addr));
         st->next = tunnels.head;
         tunnels.head = st;
