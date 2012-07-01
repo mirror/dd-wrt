@@ -596,6 +596,9 @@ int control_finish (struct tunnel *t, struct call *c)
         if (gconfig.debug_state)
             l2tp_log (LOG_DEBUG, "%s: sending SCCCN\n", __FUNCTION__);
         control_xmit (buf);
+
+        connect_pppol2tp(t);
+
         /* Schedule a HELLO */
         tv.tv_sec = HELLO_DELAY;
         tv.tv_usec = 0;
@@ -608,6 +611,7 @@ int control_finish (struct tunnel *t, struct call *c)
 		  "Connection established to %s, %d.  Local: %d, Remote: %d (ref=%u/%u).\n",
 		  IPADDY (t->peer.sin_addr),
 		  ntohs (t->peer.sin_port), t->ourtid, t->tid, t->refme, t->refhim);
+
         if (t->lac)
         {
             /* This is part of a LAC, so we want to go ahead
@@ -635,6 +639,9 @@ int control_finish (struct tunnel *t, struct call *c)
 		  IPADDY (t->peer.sin_addr),
 		  ntohs (t->peer.sin_port), t->ourtid, t->tid, t->refme, t->refhim,
 		  t->lns->entname);
+
+        connect_pppol2tp(t);
+
         /* Schedule a HELLO */
         tv.tv_sec = HELLO_DELAY;
         tv.tv_usec = 0;
