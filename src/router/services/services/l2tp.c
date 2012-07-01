@@ -72,13 +72,18 @@ void start_l2tp(int status)
 	stop_pptp();
 #endif
 	stop_l2tp();
-	stop_l2tp();
 
 	snprintf(username, sizeof(username), "%s",
 		 nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 	if (status != REDIAL) {
+		insmod("l2tp_core");
+		insmod("l2tp_netlink");
+		insmod("l2tp_ppp");
+		insmod("l2tp_ip");
+		insmod("l2tp_eth");
+		insmod("l2tp_debugfs");
 		mkdir("/tmp/ppp", 0777);
 		mkdir("/var/run/xl2tpd", 0777);
 		mkdir("/tmp/xl2tpd", 0777);
