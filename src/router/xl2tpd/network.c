@@ -45,12 +45,17 @@ int init_network (void)
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = gconfig.listenaddr; 
     server.sin_port = htons (gconfig.port);
+    int flags;
     if ((server_socket = socket (PF_INET, SOCK_DGRAM, 0)) < 0)
     {
         l2tp_log (LOG_CRIT, "%s: Unable to allocate socket. Terminating.\n",
              __FUNCTION__);
         return -EINVAL;
     };
+
+    flags = 1;
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
+    setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK, &flags, sizeof(flags));
 
     if (bind (server_socket, (struct sockaddr *) &server, sizeof (server)))
     {
@@ -321,6 +326,11 @@ int build_fdset (fd_set *readfds)
 
 	while (tun)
 	{
+		if (tun->udp_fd > -1) {
+			if (tun->udp_fd > max)
+				max = tun->udp_fd;
+			FD_SET (tun->udp_fd, readfds);
+		}
 		call = tun->call_head;
 		while (call)
 		{
@@ -390,6 +400,8 @@ void network_thread ()
     struct iovec iov;
     char cbuf[256];
     unsigned int refme, refhim;
+    int * currentfd;
+    int server_socket_processed;
 
     /* This one buffer can be recycled for everything except control packets */
     buf = new_buf (MAX_RECV_SIZE);
@@ -428,7 +440,21 @@ void network_thread ()
         {
             do_control ();
         }
-        if (FD_ISSET (server_socket, &readfds))
+        server_socket_processed = 0;
+        currentfd = NULL;
+        st = tunnels.head;
+        while (st || !server_socket_processed) {
+            if (st && (st->udp_fd == -1)) {
+                st=st->next;
+                continue;
+            }
+            if (st) {
+                currentfd = &st->udp_fd;
+            } else {
+                currentfd = &server_socket;
+                server_socket_processed = 1;
+            }
+            if (FD_ISSET (*currentfd, &readfds))
         {
             /*
              * Okay, now we're ready for reading and processing new data.
@@ -457,12 +483,19 @@ void network_thread ()
 	    msgh.msg_flags = 0;
 	    
 	    /* Receive one packet. */
-	    recvsize = recvmsg(server_socket, &msgh, 0);
+	    recvsize = recvmsg(*currentfd, &msgh, 0);
 
             if (recvsize < MIN_PAYLOAD_HDR_LEN)
             {
                 if (recvsize < 0)
                 {
+                    if (errno == ECONNREFUSED) {
+                        close(*currentfd);
+                    }
+                    if ((errno == ECONNREFUSED) ||
+                        (errno == EBADF)) {
+                        *currentfd = -1;
+                    }
                     if (errno != EAGAIN)
                         l2tp_log (LOG_WARNING,
                              "%s: recvfrom returned error %d (%s)\n",
@@ -567,6 +600,8 @@ void network_thread ()
 		}
 	    };
 	}
+	if (st) st=st->next;
+	}
 
 	/*
 	 * finished obvious sources, look for data from PPP connections.
@@ -638,4 +673,83 @@ void network_thread ()
         }
     }
 
+}
+
+int connect_pppol2tp(struct tunnel *t) {
+#ifdef USE_KERNEL
+        if (kernel_support) {
+            int ufd = -1, fd2 = -1;
+            int flags;
+            struct sockaddr_pppol2tp sax;
+
+            struct sockaddr_in server;
+            server.sin_family = AF_INET;
+            server.sin_addr.s_addr = gconfig.listenaddr;
+            server.sin_port = htons (gconfig.port);
+            if ((ufd = socket (PF_INET, SOCK_DGRAM, 0)) < 0)
+            {
+                l2tp_log (LOG_CRIT, "%s: Unable to allocate UDP socket. Terminating.\n",
+                    __FUNCTION__);
+                return -EINVAL;
+            };
+
+            flags=1;
+            setsockopt(ufd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
+            setsockopt(ufd, SOL_SOCKET, SO_NO_CHECK, &flags, sizeof(flags));
+
+            if (bind (ufd, (struct sockaddr *) &server, sizeof (server)))
+            {
+                close (ufd);
+                l2tp_log (LOG_CRIT, "%s: Unable to bind UDP socket: %s. Terminating.\n",
+                     __FUNCTION__, strerror(errno), errno);
+                return -EINVAL;
+            };
+            server = t->peer;
+            flags = fcntl(ufd, F_GETFL);
+            if (flags == -1 || fcntl(ufd, F_SETFL, flags | O_NONBLOCK) == -1) {
+                l2tp_log (LOG_WARNING, "%s: Unable to set UDP socket nonblock.\n",
+                     __FUNCTION__);
+                return -EINVAL;
+            }
+            if (connect (ufd, (struct sockaddr *) &server, sizeof(server)) < 0) {
+                l2tp_log (LOG_CRIT, "%s: Unable to connect UDP peer. Terminating.\n",
+                 __FUNCTION__);
+                return -EINVAL;
+            }
+
+            t->udp_fd=ufd;
+
+            fd2 = socket(AF_PPPOX, SOCK_DGRAM, PX_PROTO_OL2TP);
+            if (fd2 < 0) {
+                l2tp_log (LOG_WARNING, "%s: Unable to allocate PPPoL2TP socket.\n",
+                     __FUNCTION__);
+                return -EINVAL;
+            }
+            flags = fcntl(fd2, F_GETFL);
+            if (flags == -1 || fcntl(fd2, F_SETFL, flags | O_NONBLOCK) == -1) {
+                l2tp_log (LOG_WARNING, "%s: Unable to set PPPoL2TP socket nonblock.\n",
+                     __FUNCTION__);
+                return -EINVAL;
+            }
+            sax.sa_family = AF_PPPOX;
+            sax.sa_protocol = PX_PROTO_OL2TP;
+            sax.pppol2tp.pid = 0;
+            sax.pppol2tp.fd = t->udp_fd;
+            sax.pppol2tp.addr.sin_addr.s_addr = t->peer.sin_addr.s_addr;
+            sax.pppol2tp.addr.sin_port = t->peer.sin_port;
+            sax.pppol2tp.addr.sin_family = AF_INET;
+            sax.pppol2tp.s_tunnel  = t->ourtid;
+            sax.pppol2tp.s_session = 0;
+            sax.pppol2tp.d_tunnel  = t->tid;
+            sax.pppol2tp.d_session = 0;
+            if ((connect(fd2, (struct sockaddr *)&sax, sizeof(sax))) < 0) {
+                l2tp_log (LOG_WARNING, "%s: Unable to connect PPPoL2TP socket. %d %s\n",
+                     __FUNCTION__, errno, strerror(errno));
+                close(fd2);
+                return -EINVAL;
+            }
+            t->pppox_fd = fd2;
+        }
+#endif
+    return 0;
 }
