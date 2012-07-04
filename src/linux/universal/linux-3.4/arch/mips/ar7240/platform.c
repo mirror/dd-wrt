@@ -209,7 +209,12 @@ static struct ar8327_platform_data db120_ar8327_data = {
 	.pad0_cfg = &db120_ar8327_pad0_cfg,
 	.cpuport_cfg = {
 		.force_link = 1,
+
+#ifdef CONFIG_DIR615I
+		.speed = AR8327_PORT_SPEED_100,
+#else
 		.speed = AR8327_PORT_SPEED_1000,
+#endif		
 		.duplex = 1,
 		.txpause = 1,
 		.rxpause = 1,
@@ -248,9 +253,10 @@ return NULL;
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
 
-#ifdef CONFIG_DIR825C1
+#if defined(CONFIG_DIR825C1) || defined(CONFIG_DIR615I)
 #define DIR825C1_MAC_LOCATION_0			0x1ffe0004
 #define DIR825C1_MAC_LOCATION_1			0x1ffe0018
+#define DIR615I_MAC_LOCATION_0			0x1fffffb4
 static u8 mac0[6];
 static u8 mac1[6];
 
@@ -328,6 +334,7 @@ int __init ar7240_platform_init(void)
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
 #endif
 
+#ifndef CONFIG_DIR615I
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 
 
@@ -340,8 +347,39 @@ int __init ar7240_platform_init(void)
 
 
 	iounmap(base);
+#else
+	dir825b1_read_ascii_mac(mac0, DIR615I_MAC_LOCATION_0);
+	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+	
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+//	t |= AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
+
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 
 
+	iounmap(base);
+
+#endif
+
+
+#ifdef CONFIG_DIR615I
+	ar71xx_add_device_mdio(1, 0x0);
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_switch_data.phy4_mii_en = 1;
+
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_eth(1);
+#else
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_add_device_mdio(0, 0x0);
 
@@ -369,7 +407,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(1);
-
+#endif
 
 #endif
 
@@ -396,13 +434,17 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *) KSEG1ADDR(0x1fff1000);
 #ifdef CONFIG_DIR825C1
 	ar9xxx_add_device_wmac(ee, mac0);
+#elif CONFIG_DIR615I
+	ar9xxx_add_device_wmac(ee, mac0);
 #else
 	ar9xxx_add_device_wmac(ee, NULL);
 #endif
 #ifdef CONFIG_DIR825C1
 	ap91_pci_init(ee+0x4000, mac1);
 #else
+#ifndef CONFIG_DIR615I
 	ap91_pci_init(NULL, NULL);
+#endif
 #endif
 #else
 	ee = getCalData(0);
