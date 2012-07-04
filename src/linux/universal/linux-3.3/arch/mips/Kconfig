@@ -921,6 +921,7 @@ config DIR615E
     depends on MACH_AR7240
     default n
 
+
 config WR741
     bool "wr741 wireless mac?"
     depends on MACH_AR7240
@@ -934,6 +935,12 @@ config AR7240_EMULATION
 config WASP_SUPPORT
 	bool "build system for WASP based board"
 	depends on MACH_AR7240
+
+config DIR615I
+    bool "dir615i support?"
+    depends on WASP_SUPPORT
+    default n
+
 
 config AR7100_USB_GPIO_LED
     bool "usb led support?"
