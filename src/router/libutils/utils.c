@@ -4170,6 +4170,7 @@ int led_control(int type, int act)
 		power_gpio = 0x00e;
 		diag_gpio = 0x10f;
 		connected_gpio = 0x10c;
+		disconnected_gpio = 0x016;
 #endif
 #ifdef HAVE_WRT400
 		power_gpio = 0x001;
