@@ -189,6 +189,14 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_DIR615I)
+int getbuttonstate()
+{
+	int ret = get_gpio(17);
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_DIR615E)
 int getbuttonstate()
 {
@@ -792,6 +800,9 @@ void period_check(int sig)
 #elif defined(HAVE_DIR600)
 	sesgpio = 0x100;
 	val |= get_gpio(0);	//aoss pushbutton
+#elif defined(HAVE_DIR615I)
+	sesgpio = 0x110;
+	val |= get_gpio(16) << 16;	//aoss pushbutton
 #elif defined(HAVE_DIR615E)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//aoss pushbutton
