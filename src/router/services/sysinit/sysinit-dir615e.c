@@ -193,7 +193,7 @@ void start_sysinit(void)
 	setWirelessLedPhy0(0);
 #endif
 #ifdef HAVE_DIR615I
-	setWirelessLedPhy0(13);
+	setWirelessLedGeneric(0,13);
 #endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
