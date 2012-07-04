@@ -94,6 +94,8 @@ void start_sysinit(void)
 	if (in != NULL) {
 #ifdef HAVE_DIR632
 		fseek(in, 0x40000, SEEK_SET);
+#elif HAVE_DIR615I
+		fseek(in, 0x10000, SEEK_SET);
 #else
 		fseek(in, 0x30000, SEEK_SET);
 #endif
@@ -151,6 +153,8 @@ void start_sysinit(void)
 		system("swconfig dev eth1 set enable_vlan 0");
 		system("swconfig dev eth1 vlan 1 set ports \"0 1 2 3 4\"");
 		system("swconfig dev eth1 set apply");
+
+#ifndef HAVE_DIR615I
 #ifndef HAVE_DIR632
 	setEthLED(17,"eth0");
 	setSwitchLED(13,0x2);
@@ -158,9 +162,9 @@ void start_sysinit(void)
 	setSwitchLED(15,0x8);
 	setSwitchLED(16,0x10);
 #endif
-
 #endif
 
+#endif
 	struct ifreq ifr;
 	int s;
 
@@ -187,6 +191,9 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_DIR632
 	setWirelessLedPhy0(0);
+#endif
+#ifdef HAVE_DIR615I
+	setWirelessLedPhy0(13);
 #endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
